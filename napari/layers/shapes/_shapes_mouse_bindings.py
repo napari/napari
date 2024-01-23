@@ -92,6 +92,7 @@ def select(layer: Shapes, event: MouseEvent) -> Generator[None, None, None]:
     _set_drag_start(layer, layer.world_to_data(event.position))
     yield
 
+    is_moving = False
     # on move
     while event.type == 'mouse_move':
         coordinates = layer.world_to_data(event.position)
@@ -102,6 +103,33 @@ def select(layer: Shapes, event: MouseEvent) -> Generator[None, None, None]:
         if len(layer.selected_data) == 0:
             _drag_selection_box(layer, coordinates)
         else:
+            if not is_moving:
+                if vertex_under_cursor is not None:
+                    layer.events.data(
+                        value=layer.data,
+                        action=ActionType.CHANGING,
+                        data_indices=tuple(
+                            layer.selected_data,
+                        ),
+                        vertex_indices=((vertex_under_cursor,),),
+                    )
+                else:
+                    vertex_indices = tuple(
+                        tuple(
+                            vertex_index
+                            for vertex_index, coord in enumerate(layer.data[i])
+                        )
+                        for i in layer.selected_data
+                    )
+                    layer.events.data(
+                        value=layer.data,
+                        action=ActionType.CHANGING,
+                        data_indices=tuple(
+                            layer.selected_data,
+                        ),
+                        vertex_indices=vertex_indices,
+                    )
+                is_moving = True
             _move_active_element_under_cursor(layer, coordinates)
 
         # if a shape is being moved, update the thumbnail
@@ -111,19 +139,29 @@ def select(layer: Shapes, event: MouseEvent) -> Generator[None, None, None]:
 
     # only emit data once dragging has finished
     if layer._is_moving:
-        vertex_indices = tuple(
-            tuple(
-                vertex_index
-                for vertex_index, coord in enumerate(layer.data[i])
+        vertex = layer._moving_value[1]
+        if vertex is not None:
+            layer.events.data(
+                value=layer.data,
+                action=ActionType.CHANGED,
+                data_indices=tuple(layer.selected_data),
+                vertex_indices=((vertex_under_cursor,),),
             )
-            for i in layer.selected_data
-        )
-        layer.events.data(
-            value=layer.data,
-            action=ActionType.CHANGED,
-            data_indices=tuple(layer.selected_data),
-            vertex_indices=vertex_indices,
-        )
+        else:
+            vertex_indices = tuple(
+                tuple(
+                    vertex_index
+                    for vertex_index, coord in enumerate(layer.data[i])
+                )
+                for i in layer.selected_data
+            )
+            layer.events.data(
+                value=layer.data,
+                action=ActionType.CHANGED,
+                data_indices=tuple(layer.selected_data),
+                vertex_indices=vertex_indices,
+            )
+        is_moving = False
 
     # on release
     shift = 'Shift' in event.modifiers
@@ -683,24 +721,23 @@ def _move_active_element_under_cursor(
     if len(layer.selected_data) == 0:
         return
 
+    # This is None when moving whole shape(s), but not when moving a vertex
     vertex = layer._moving_value[1]
 
     if layer._mode in (
         [Mode.SELECT, Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE, Mode.ADD_LINE]
     ):
-        if layer._mode == Mode.SELECT and not layer._is_moving:
-            vertex_indices = tuple(
-                tuple(
-                    vertex_index
-                    for vertex_index, coord in enumerate(layer.data[i])
-                )
-                for i in layer.selected_data
-            )
+        # explicit is not None because of possibility of vertex being 0
+        if (
+            layer._mode == Mode.SELECT
+            and not layer._is_moving
+            and vertex is not None
+        ):
             layer.events.data(
                 value=layer.data,
                 action=ActionType.CHANGING,
                 data_indices=tuple(layer.selected_data),
-                vertex_indices=vertex_indices,
+                vertex_indices=((vertex,),),
             )
 
         coord = _set_drag_start(layer, coordinates)
