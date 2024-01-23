@@ -360,8 +360,15 @@ class Points(Layer):
         antialiasing=1,
         shown=True,
     ) -> None:
-        if ndim is None and scale is not None:
-            ndim = len(scale)
+        if ndim is None:
+            if scale is not None:
+                ndim = len(scale)
+            elif (
+                data is not None
+                and hasattr(data, 'shape')
+                and len(data.shape) == 2
+            ):
+                ndim = data.shape[1]
 
         data, ndim = fix_data_points(data, ndim)
 

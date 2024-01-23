@@ -337,6 +337,7 @@ class LabelLayerNode(ImageLayerNode):
             ),
             clim=[0, 2**23 - 1],
             texture_format=texture_format,
+            interpolation='nearest',
         )
 
     def get_node(self, ndisplay: int, dtype=None) -> Node:

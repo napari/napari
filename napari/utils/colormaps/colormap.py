@@ -182,6 +182,20 @@ class LabelColormapBase(Colormap):
         # need to validate after drop pydantic 1
         keep_untouched = (cached_property,)
 
+    @overload
+    def _data_to_texture(self, values: np.ndarray) -> np.ndarray:
+        ...
+
+    @overload
+    def _data_to_texture(self, values: np.integer) -> np.integer:
+        ...
+
+    def _data_to_texture(
+        self, values: Union[np.ndarray, np.integer]
+    ) -> Union[np.ndarray, np.integer]:
+        """Map input values to values for send to GPU."""
+        raise NotImplementedError
+
     def _cmap_without_selection(self) -> "LabelColormapBase":
         if self.use_selection:
             cmap = self.__class__(**self.dict())
@@ -232,7 +246,7 @@ class LabelColormapBase(Colormap):
         int
             The selection converted.
         """
-        raise NotImplementedError
+        return int(self._data_to_texture(dtype.type(self.selection)))
 
 
 class LabelColormap(LabelColormapBase):
@@ -255,13 +269,6 @@ class LabelColormap(LabelColormapBase):
             )
         return v
 
-    def _selection_as_minimum_dtype(self, dtype: np.dtype) -> int:
-        return int(
-            _cast_labels_data_to_texture_dtype_auto(
-                dtype.type(self.selection), self
-            )
-        )
-
     def _background_as_minimum_dtype(self, dtype: np.dtype) -> int:
         """Treat background as given dtype and calculate value with min dtype.
 
@@ -275,11 +282,21 @@ class LabelColormap(LabelColormapBase):
         int
             The background converted.
         """
-        return int(
-            _cast_labels_data_to_texture_dtype_auto(
-                dtype.type(self.background_value), self
-            )
-        )
+        return int(self._data_to_texture(dtype.type(self.background_value)))
+
+    @overload
+    def _data_to_texture(self, values: np.ndarray) -> np.ndarray:
+        ...
+
+    @overload
+    def _data_to_texture(self, values: np.integer) -> np.integer:
+        ...
+
+    def _data_to_texture(
+        self, values: Union[np.ndarray, np.integer]
+    ) -> Union[np.ndarray, np.integer]:
+        """Map input values to values for send to GPU."""
+        return _cast_labels_data_to_texture_dtype_auto(values, self)
 
     def _map_without_cache(self, values) -> np.ndarray:
         texture_dtype_values = _zero_preserving_modulo_numpy(
@@ -292,19 +309,21 @@ class LabelColormap(LabelColormapBase):
         mapped[texture_dtype_values == 0] = 0
         return mapped
 
-    def map(self, values) -> np.ndarray:
+    def map(self, values: Union[np.ndarray, np.integer, int]) -> np.ndarray:
         """Map values to colors.
 
         Parameters
         ----------
-        values : np.ndarray or float
+        values : np.ndarray or int
             Values to be mapped.
 
         Returns
         -------
-        np.ndarray of same shape as values, but with last dimension of size 4
+        np.ndarray of the same shape as values,
+            but with the last dimension of size 4
             Mapped colors.
         """
+        original_shape = np.shape(values)
         values = np.atleast_1d(values)
 
         if values.dtype.kind == 'f':
@@ -317,7 +336,7 @@ class LabelColormap(LabelColormapBase):
         if self.use_selection:
             mapped[(values != self.selection)] = 0
 
-        return mapped
+        return np.reshape(mapped, original_shape + (4,))
 
     def shuffle(self, seed: int):
         """Shuffle the colormap colors.
@@ -355,14 +374,21 @@ class DirectLabelColormap(LabelColormapBase):
             kwargs["colors"] = np.zeros(3)
         super().__init__(*args, **kwargs)
 
-    def _selection_as_minimum_dtype(self, dtype: np.dtype) -> int:
-        return int(
-            _cast_labels_data_to_texture_dtype_direct(
-                dtype.type(self.selection), self
-            )
-        )
+    @overload
+    def _data_to_texture(self, values: np.ndarray) -> np.ndarray:
+        ...
 
-    def map(self, values) -> np.ndarray:
+    @overload
+    def _data_to_texture(self, values: np.integer) -> np.integer:
+        ...
+
+    def _data_to_texture(
+        self, values: Union[np.ndarray, np.integer]
+    ) -> Union[np.ndarray, np.integer]:
+        """Map input values to values for send to GPU."""
+        return _cast_labels_data_to_texture_dtype_direct(values, self)
+
+    def map(self, values: Union[np.ndarray, np.integer, int]) -> np.ndarray:
         """Map values to colors.
 
         Parameters
@@ -375,8 +401,15 @@ class DirectLabelColormap(LabelColormapBase):
         np.ndarray of same shape as values, but with last dimension of size 4
             Mapped colors.
         """
-        values = np.atleast_1d(values)
-        if values.dtype.kind in {'f', 'U'}:
+        if isinstance(values, np.integer):
+            values = int(values)
+        if isinstance(values, int):
+            if self.use_selection and values != self.selection:
+                return np.array((0, 0, 0, 0))
+            return self.color_dict.get(values, self.default_color)
+        if isinstance(values, (list, tuple)):
+            values = np.array(values)
+        if not isinstance(values, np.ndarray) or values.dtype.kind in 'fU':
             raise TypeError("DirectLabelColormap can only be used with int")
         mapper = self._get_mapping_from_cache(values.dtype)
         if mapper is not None:
@@ -534,7 +567,12 @@ class DirectLabelColormap(LabelColormapBase):
     @cached_property
     def _array_map(self):
         """Create an array to map labels to texture values of smaller dtype."""
-        max_value = max(x for x in self.color_dict if x is not None)
+
+        max_value = max(
+            (abs(x) for x in self.color_dict if x is not None), default=0
+        )
+        if any(x < 0 for x in self.color_dict if x is not None):
+            max_value *= 2
         if max_value > 2**16:
             raise RuntimeError(  # pragma: no cover
                 "Cannot use numpy implementation for large values of labels "
@@ -561,6 +599,20 @@ class DirectLabelColormap(LabelColormapBase):
         return self.color_dict.get(None, np.array((0, 0, 0, 0)))
         # we provided here default color for backward compatibility
         # if someone is using DirectLabelColormap directly, not through Label layer
+
+
+@overload
+def _convert_small_ints_to_unsigned(
+    data: np.ndarray,
+) -> np.ndarray:
+    ...
+
+
+@overload
+def _convert_small_ints_to_unsigned(
+    data: np.integer,
+) -> np.integer:
+    ...
 
 
 def _convert_small_ints_to_unsigned(
@@ -642,20 +694,26 @@ def _cast_labels_data_to_texture_dtype_auto(
 
     data_arr = np.atleast_1d(data)
     num_colors = len(colormap.colors) - 1
+    zero_preserving_modulo_func = _zero_preserving_modulo
+    if isinstance(data, np.integer):
+        zero_preserving_modulo_func = _zero_preserving_modulo_numpy
 
     dtype = minimum_dtype_for_labels(num_colors + 1)
 
     if colormap.use_selection:
-        selection_in_texture = _zero_preserving_modulo(
+        selection_in_texture = _zero_preserving_modulo_numpy(
             np.array([colormap.selection]), num_colors, dtype
         )
         converted = np.where(
             data_arr == colormap.selection, selection_in_texture, dtype.type(0)
         )
     else:
-        converted = _zero_preserving_modulo(
+        converted = zero_preserving_modulo_func(
             data_arr, num_colors, dtype, colormap.background_value
         )
+
+    if isinstance(data, np.integer):
+        return dtype.type(converted[0])
 
     return np.reshape(converted, original_shape)
 
@@ -810,6 +868,15 @@ def _cast_labels_data_to_texture_dtype_direct(
     if data.itemsize <= 2:
         return data
 
+    if isinstance(data, np.integer):
+        mapper = direct_colormap._label_mapping_and_color_dict[0]
+        target_dtype = minimum_dtype_for_labels(
+            direct_colormap._num_unique_colors + 2
+        )
+        return target_dtype.type(
+            mapper.get(int(data), MAPPING_OF_UNKNOWN_VALUE)
+        )
+
     original_shape = np.shape(data)
     array_data = np.atleast_1d(data)
     return np.reshape(
@@ -827,10 +894,15 @@ def _labels_raw_to_texture_direct_numpy(
 
     See `_cast_labels_data_to_texture_dtype_direct` for more details.
     """
+    if direct_colormap.use_selection:
+        return (data == direct_colormap.selection).astype(np.uint8)
     mapper = direct_colormap._array_map
-
-    if data.dtype.itemsize > 2:
+    if any(x < 0 for x in direct_colormap.color_dict if x is not None):
+        half_shape = mapper.shape[0] // 2 - 1
+        data = np.clip(data, -half_shape, half_shape)
+    else:
         data = np.clip(data, 0, mapper.shape[0] - 1)
+
     return mapper[data]
 
 
@@ -923,14 +995,14 @@ except ModuleNotFoundError:
     _labels_raw_to_texture_direct = _labels_raw_to_texture_direct_numpy
     prange = range
 else:
-    _zero_preserving_modulo_inner_loop = numba.njit(parallel=True)(
+    _zero_preserving_modulo_inner_loop = numba.njit(parallel=True, cache=True)(
         _zero_preserving_modulo_inner_loop
     )
     _zero_preserving_modulo = _zero_preserving_modulo_loop
     _labels_raw_to_texture_direct = _labels_raw_to_texture_direct_loop
-    _labels_raw_to_texture_direct_inner_loop = numba.njit(parallel=True)(
-        _labels_raw_to_texture_direct_inner_loop
-    )
+    _labels_raw_to_texture_direct_inner_loop = numba.njit(
+        parallel=True, cache=True
+    )(_labels_raw_to_texture_direct_inner_loop)
     prange = numba.prange  # type: ignore [misc]
 
     del numba

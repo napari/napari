@@ -5,6 +5,7 @@ from typing import (
     Dict,
     List,
     Optional,
+    Sequence,
     Tuple,
     Union,
     cast,
@@ -38,6 +39,7 @@ from napari.layers.utils.color_transformations import transform_color
 from napari.layers.utils.layer_utils import _FeatureTable
 from napari.utils import config
 from napari.utils._dtype import normalize_dtype, vispy_texture_dtype
+from napari.utils._indexing import elements_in_slice, index_in_slice
 from napari.utils.colormaps import (
     direct_colormap,
     ensure_colormap,
@@ -46,15 +48,11 @@ from napari.utils.colormaps import (
 from napari.utils.colormaps.colormap import (
     LabelColormap,
     LabelColormapBase,
-    _cast_labels_data_to_texture_dtype_auto,
-    _cast_labels_data_to_texture_dtype_direct,
-    _texture_dtype,
 )
 from napari.utils.colormaps.colormap_utils import shuffle_and_extend_colormap
 from napari.utils.events import EmitterGroup, Event
 from napari.utils.events.custom_types import Array
 from napari.utils.geometry import clamp_point_to_bounding_box
-from napari.utils.indexing import index_in_slice
 from napari.utils.migrations import deprecated_constructor_arg_by_attr
 from napari.utils.misc import _is_array_type
 from napari.utils.naming import magic_name
@@ -303,8 +301,6 @@ class Labels(_ImageBase):
         self._color_mode = LabelColorMode.AUTO
         self._show_selected_label = False
         self._contour = 0
-        self._cached_labels = None
-        self._cached_mapped_labels = None
 
         data = self._ensure_int_labels(data)
 
@@ -466,7 +462,6 @@ class Labels(_ImageBase):
         self.colormap = label_colormap(
             self.num_colors, self.seed, self._background_label
         )
-        self._cached_labels = None  # invalidate the cached color mapping
         self._selected_color = self.get_color(self.selected_label)
         self.events.colormap()  # Will update the LabelVispyColormap shader
         self.refresh()
@@ -490,7 +485,6 @@ class Labels(_ImageBase):
             self._random_colormap = shuffle_and_extend_colormap(
                 self._original_random_colormap, self._seed_rng
             )
-        self._cached_labels = None  # invalidate the cached color mapping
         self._selected_color = self.get_color(self.selected_label)
         self.events.colormap()  # Will update the LabelVispyColormap shader
         self.events.selected_label()
@@ -544,8 +538,6 @@ class Labels(_ImageBase):
             num_colors, self.seed, self._background_label
         )
         self._num_colors = num_colors
-        self._cached_labels = None  # invalidate the cached color mapping
-        self._cached_mapped_labels = None
         self.refresh()
         self._selected_color = self.get_color(self.selected_label)
         self.events.selected_label()
@@ -739,7 +731,6 @@ class Labels(_ImageBase):
         self.events.selected_label()
 
         if self.show_selected_label:
-            self._cached_labels = None  # invalidates labels cache
             self.refresh()
 
     @property
@@ -755,7 +746,6 @@ class Labels(_ImageBase):
     @color_mode.setter
     def color_mode(self, color_mode: Union[str, LabelColorMode]):
         color_mode = LabelColorMode(color_mode)
-        self._cached_labels = None  # invalidates labels cache
         self._color_mode = color_mode
         if color_mode == LabelColorMode.AUTO:
             self._colormap = ensure_colormap(self._random_colormap)
@@ -778,7 +768,6 @@ class Labels(_ImageBase):
         self.colormap.use_selection = show_selected
         self.colormap.selection = self.selected_label
         self.events.show_selected_label(show_selected_label=show_selected)
-        self._cached_labels = None
         self.refresh()
 
     @Layer.mode.getter
@@ -867,9 +856,12 @@ class Labels(_ImageBase):
 
         offset = [axis_slice.start for axis_slice in updated_slice]
 
-        colors_sliced = self._raw_to_displayed(
-            raw_displayed, data_slice=updated_slice
-        )
+        if self.contour > 0:
+            colors_sliced = self._raw_to_displayed(
+                raw_displayed, data_slice=updated_slice
+            )
+        else:
+            colors_sliced = self._slice.image.view[updated_slice]
         # The next line is needed to make the following tests pass in
         # napari/_vispy/_tests/:
         # - test_vispy_labels_layer.py::test_labels_painting
@@ -925,31 +917,6 @@ class Labels(_ImageBase):
         )
         return sliced_labels[delta_slice]
 
-    def _get_cache_dtype(self, raw_dtype: np.dtype) -> np.dtype:
-        if self.color_mode == LabelColorMode.DIRECT:
-            return _texture_dtype(
-                self._direct_colormap._num_unique_colors + 2,
-                raw_dtype,
-            )
-        return _texture_dtype(self.num_colors, raw_dtype)
-
-    def _setup_cache(self, labels):
-        """
-        Initializes the cache for the Labels layer
-
-        Parameters
-        ----------
-        labels : numpy array
-            The labels data to be cached
-        """
-        if self._cached_labels is not None:
-            return
-
-        self._cached_labels = np.zeros_like(labels)
-        self._cached_mapped_labels = np.zeros_like(
-            labels, dtype=self._get_cache_dtype(labels.dtype)
-        )
-
     def _raw_to_displayed(
         self, raw, data_slice: Optional[Tuple[slice, ...]] = None
     ) -> np.ndarray:
@@ -975,9 +942,6 @@ class Labels(_ImageBase):
 
         if data_slice is None:
             data_slice = tuple(slice(0, size) for size in raw.shape)
-            self._cached_labels = None
-        else:
-            self._setup_cache(raw)
 
         labels = raw  # for readability
 
@@ -988,42 +952,7 @@ class Labels(_ImageBase):
         if sliced_labels is None:
             sliced_labels = labels[data_slice]
 
-        # cache the labels and keep track of when values are changed
-        update_mask = None
-        if (
-            self._cached_labels is not None
-            and self._cached_labels.shape == labels.shape
-        ):
-            update_mask = self._cached_labels[data_slice] != sliced_labels
-            # Select only a subset with changes for further computations
-            labels_to_map = sliced_labels[update_mask]
-            # Update the cache
-            self._cached_labels[data_slice][update_mask] = labels_to_map
-        else:
-            labels_to_map = sliced_labels
-
-        # If there are no changes, just return the cached image
-        if labels_to_map.size == 0:
-            return self._cached_mapped_labels[data_slice]
-
-        if self.color_mode == LabelColorMode.AUTO:
-            mapped_labels = _cast_labels_data_to_texture_dtype_auto(
-                labels_to_map, self._random_colormap
-            )
-        else:  # direct
-            mapped_labels = _cast_labels_data_to_texture_dtype_direct(
-                labels_to_map, self._direct_colormap
-            )
-
-        if self._cached_labels is not None:
-            if update_mask is not None:
-                self._cached_mapped_labels[data_slice][
-                    update_mask
-                ] = mapped_labels
-            else:
-                self._cached_mapped_labels[data_slice] = mapped_labels
-            return self._cached_mapped_labels[data_slice]
-        return mapped_labels
+        return self.colormap._data_to_texture(sliced_labels)
 
     def _update_thumbnail(self):
         """Update the thumbnail with current data and colormap.
@@ -1069,9 +998,9 @@ class Labels(_ImageBase):
         elif label is None or (
             self.show_selected_label and label != self.selected_label
         ):
-            col = self.colormap.map(self._background_label)[0]
+            col = self.colormap.map(self._background_label)
         else:
-            col = self.colormap.map(label)[0]
+            col = self.colormap.map(label)
         return col
 
     def _get_value_ray(
@@ -1454,6 +1383,27 @@ class Labels(_ImageBase):
 
         self.data_setitem(slice_coord, new_label, refresh)
 
+    def _get_shape_and_dims_to_paint(self) -> Tuple[list, list]:
+        dims_to_paint = sorted(self._get_dims_to_paint())
+        shape = list(self.data.shape)
+
+        if self.n_edit_dimensions < self.ndim:
+            shape = [shape[i] for i in dims_to_paint]
+
+        return shape, dims_to_paint
+
+    def _get_dims_to_paint(self) -> list:
+        return list(self._slice_input.order[-self.n_edit_dimensions :])
+
+    def _get_pt_not_disp(self) -> Dict[int, int]:
+        """
+        Get indices of current visible slice.
+        """
+        point = np.round(self.world_to_data(self._slice_input.point)).astype(
+            int
+        )
+        return {dim: point[dim] for dim in self._slice_input.not_displayed}
+
     def data_setitem(self, indices, value, refresh=True):
         """Set `indices` in `data` to `value`, while writing to edit history.
 
@@ -1473,7 +1423,12 @@ class Labels(_ImageBase):
         ..[1] https://numpy.org/doc/stable/user/basics.indexing.html
         """
         changed_indices = self.data[indices] != value
-        indices = tuple([x[changed_indices] for x in indices])
+        indices = tuple(x[changed_indices] for x in indices)
+
+        if isinstance(value, Sequence):
+            value = np.asarray(value, dtype=self._slice.image.raw.dtype)
+        else:
+            value = self._slice.image.raw.dtype.type(value)
 
         if not indices or indices[0].size == 0:
             return
@@ -1489,6 +1444,13 @@ class Labels(_ImageBase):
         # update the labels image
         self.data[indices] = value
 
+        pt_not_disp = self._get_pt_not_disp()
+        displayed_indices = index_in_slice(indices, pt_not_disp)
+        if isinstance(value, np.ndarray):
+            visible_values = value[elements_in_slice(indices, pt_not_disp)]
+        else:
+            visible_values = value
+
         if not (  # if not a numpy array or numpy-backed xarray
             isinstance(self.data, np.ndarray)
             or isinstance(getattr(self.data, 'data', None), np.ndarray)
@@ -1498,15 +1460,7 @@ class Labels(_ImageBase):
             # array, or a NumPy-array-backed Xarray, is the slice a view and
             # therefore updated automatically.
             # For other types, we update it manually here.
-
-            point = np.round(
-                self.world_to_data(self._slice_input.point)
-            ).astype(int)
-            pt_not_disp = {
-                dim: point[dim] for dim in self._slice_input.not_displayed
-            }
-            displayed_indices = index_in_slice(indices, pt_not_disp)
-            self._slice.image.raw[displayed_indices] = value
+            self._slice.image.raw[displayed_indices] = visible_values
 
         # tensorstore and xarray do not return their indices in
         # np.ndarray format, so they need to be converted explicitly
@@ -1525,6 +1479,11 @@ class Labels(_ImageBase):
             # the original slice because of the morphological dilation
             # (1 pixel because get_countours always applies 1 pixel dilation)
             updated_slice = expand_slice(updated_slice, self.data.shape, 1)
+        else:
+            # update data view
+            self._slice.image.view[
+                displayed_indices
+            ] = self.colormap._data_to_texture(visible_values)
 
         if self._updated_slice is None:
             self._updated_slice = updated_slice

@@ -863,7 +863,7 @@ class _FeatureTable:
         self._defaults = _validate_features(currents, num_data=1)
         if update_indices is not None:
             for k in self._defaults:
-                self._values[k][update_indices] = self._defaults[k][0]
+                self._values.loc[update_indices, k] = self._defaults[k][0]
 
     def resize(
         self,

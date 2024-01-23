@@ -782,7 +782,9 @@ def test_label_colors_matching_widget_auto(
 
 @skip_local_popups
 @skip_on_win_ci
-@pytest.mark.parametrize("use_selection", [True, False])
+@pytest.mark.parametrize(
+    "use_selection", [True, False], ids=["selected", "all"]
+)
 @pytest.mark.parametrize("dtype", [np.uint64, np.uint16, np.uint8, np.int16])
 def test_label_colors_matching_widget_direct(
     qtbot, qt_viewer_with_controls, use_selection, dtype
@@ -819,12 +821,14 @@ def test_label_colors_matching_widget_direct(
         color_box_color, middle_pixel = _update_data(
             layer, label, qtbot, qt_viewer_with_controls, dtype
         )
-        assert np.allclose(color_box_color, middle_pixel, atol=1), label
-        assert np.allclose(
+        npt.assert_almost_equal(
+            color_box_color, middle_pixel, err_msg=f"{label=}"
+        )
+        npt.assert_almost_equal(
             color_box_color,
             layer.color.get(label, layer.color[None]) * 255,
-            atol=1,
-        ), label
+            err_msg=f"{label=}",
+        )
 
 
 def test_axes_labels(make_napari_viewer):
@@ -918,7 +922,7 @@ def test_background_color(qtbot, qt_viewer: QtViewer, dtype):
     data = np.zeros((10, 10), dtype=dtype)
     data[5:] = 10
     layer = qt_viewer.viewer.add_labels(data, opacity=1)
-    color = layer.colormap.map(10)[0] * 255
+    color = layer.colormap.map(10) * 255
 
     backgrounds = (0, 2, -2)
 
@@ -942,7 +946,22 @@ def test_background_color(qtbot, qt_viewer: QtViewer, dtype):
         )
 
 
-@skip_on_win_ci
+def test_rendering_interpolation(qtbot, qt_viewer):
+    data = np.zeros((20, 20, 20), dtype=np.uint8)
+    data[1:-1, 1:-1, 1:-1] = 5
+    layer = qt_viewer.viewer.add_labels(
+        data, opacity=1, rendering="translucent"
+    )
+    layer.selected_label = 5
+    qt_viewer.viewer.dims.ndisplay = 3
+    QApplication.processEvents()
+    canvas_screenshot = qt_viewer.screenshot(flash=False)
+    shape = np.array(canvas_screenshot.shape[:2])
+    pixel = canvas_screenshot[tuple((shape * 0.5).astype(int))]
+    color = layer.colormap.map(5) * 255
+    npt.assert_array_equal(pixel, color)
+
+
 def test_shortcut_passing(make_napari_viewer):
     viewer = make_napari_viewer(ndisplay=3)
     layer = viewer.add_labels(
@@ -1011,7 +1030,7 @@ def test_all_supported_dtypes(qt_viewer):
             tuple(np.array(canvas_screenshot.shape[:2]) // 2)
         ]
         npt.assert_equal(
-            midd_pixel, layer.colormap.map(i)[0] * 255, err_msg=f"{dtype} {i}"
+            midd_pixel, layer.colormap.map(i) * 255, err_msg=f"{dtype} {i}"
         )
 
     layer.color = {
@@ -1038,11 +1057,12 @@ def test_all_supported_dtypes(qt_viewer):
             tuple(np.array(canvas_screenshot.shape[:2]) // 2)
         ]
         npt.assert_equal(
-            midd_pixel, layer.colormap.map(i)[0] * 255, err_msg=f"{dtype} {i}"
+            midd_pixel, layer.colormap.map(i) * 255, err_msg=f"{dtype} {i}"
         )
 
 
 def test_more_than_uint16_colors(qt_viewer):
+    pytest.importorskip("numba")
     # this test is slow (10s locally)
     data = np.zeros((10, 10), dtype=np.uint32)
     colors = {
@@ -1063,5 +1083,5 @@ def test_more_than_uint16_colors(qt_viewer):
             tuple(np.array(canvas_screenshot.shape[:2]) // 2)
         ]
         npt.assert_equal(
-            midd_pixel, layer.colormap.map(i)[0] * 255, err_msg=f"{i}"
+            midd_pixel, layer.colormap.map(i) * 255, err_msg=f"{i}"
         )
