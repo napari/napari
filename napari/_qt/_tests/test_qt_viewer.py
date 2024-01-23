@@ -958,7 +958,7 @@ def test_rendering_interpolation(qtbot, qt_viewer):
     canvas_screenshot = qt_viewer.screenshot(flash=False)
     shape = np.array(canvas_screenshot.shape[:2])
     pixel = canvas_screenshot[tuple((shape * 0.5).astype(int))]
-    color = layer.colormap.map(5)[0] * 255
+    color = layer.colormap.map(5) * 255
     npt.assert_array_equal(pixel, color)
 
 

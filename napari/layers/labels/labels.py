@@ -1399,11 +1399,10 @@ class Labels(_ImageBase):
         """
         Get indices of current visible slice.
         """
-        slice_input = self._slice.slice_input
-        point = np.round(
-            self.world_to_data(slice_input.world_slice.point)
-        ).astype(int)
-        return {dim: point[dim] for dim in slice_input.not_displayed}
+        point = np.round(self.world_to_data(self._slice_input.point)).astype(
+            int
+        )
+        return {dim: point[dim] for dim in self._slice_input.not_displayed}
 
     def data_setitem(self, indices, value, refresh=True):
         """Set `indices` in `data` to `value`, while writing to edit history.
