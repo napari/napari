@@ -920,6 +920,22 @@ def test_background_color(qtbot, qt_viewer: QtViewer, dtype):
         )
 
 
+def test_rendering_interpolation(qtbot, qt_viewer):
+    data = np.zeros((20, 20, 20), dtype=np.uint8)
+    data[1:-1, 1:-1, 1:-1] = 5
+    layer = qt_viewer.viewer.add_labels(
+        data, opacity=1, rendering="translucent"
+    )
+    layer.selected_label = 5
+    qt_viewer.viewer.dims.ndisplay = 3
+    QApplication.processEvents()
+    canvas_screenshot = qt_viewer.screenshot(flash=False)
+    shape = np.array(canvas_screenshot.shape[:2])
+    pixel = canvas_screenshot[tuple((shape * 0.5).astype(int))]
+    color = layer.colormap.map(5)[0] * 255
+    npt.assert_array_equal(pixel, color)
+
+
 def test_shortcut_passing(make_napari_viewer):
     viewer = make_napari_viewer(ndisplay=3)
     layer = viewer.add_labels(
