@@ -50,8 +50,12 @@ class QtLayerTreeModel(QtNodeTreeModel[Layer]):
         ):  # the "checked" state of this item
             if layer.visible:
                 if isinstance(layer, LayerGroup):
-                    parents_visible = all(p._visible for p in layer.iter_parents())
-                    return Qt.Checked if parents_visible else Qt.PartiallyChecked
+                    parents_visible = all(
+                        p._visible for p in layer.iter_parents()
+                    )
+                    return (
+                        Qt.Checked if parents_visible else Qt.PartiallyChecked
+                    )
                 else:
                     return Qt.Checked
             else:

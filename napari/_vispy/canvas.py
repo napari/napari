@@ -14,6 +14,7 @@ from napari._vispy.utils.cursor import QtCursorVisual
 from napari._vispy.utils.gl import get_max_texture_sizes
 from napari._vispy.utils.visual import create_vispy_overlay
 from napari.components.overlays import CanvasOverlay, SceneOverlay
+from napari.layers.layergroup import LayerGroup
 from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.interactions import (
@@ -24,8 +25,6 @@ from napari.utils.interactions import (
     mouse_wheel_callbacks,
 )
 from napari.utils.theme import get_theme
-
-from napari.layers.layergroup import LayerGroup
 
 if TYPE_CHECKING:
     from typing import Callable, Dict, Optional, Tuple, Union
@@ -615,7 +614,7 @@ class VispyCanvas:
 
     def _reorder_layers(self) -> None:
         """When the list is reordered, propagate changes to draw order."""
-        #import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
 
         first_visible_found = False
 

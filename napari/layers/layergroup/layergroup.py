@@ -38,7 +38,7 @@ class LayerGroup(Group[Layer], Layer, _LayerListMixin):
 
             self.selection.events.changed.connect(self._ctx_keys.update)
         # temporary: see note in _on_selection_event
-        #self.selection.events.changed.connect(self._on_selection_changed)
+        # self.selection.events.changed.connect(self._on_selection_changed)
 
     def add_group(self, index=-1):
         lg = LayerGroup()
