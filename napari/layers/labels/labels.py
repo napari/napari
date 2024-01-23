@@ -1526,7 +1526,7 @@ class Labels(_ImageBase):
             # the original slice because of the morphological dilation
             # (1 pixel because get_countours always applies 1 pixel dilation)
             updated_slice = expand_slice(updated_slice, self.data.shape, 1)
-        elif not (self._updated_slice is None or not self.loaded):
+        elif self.loaded:
             # update data view
             self._slice.image.view[
                 displayed_indices
