@@ -2054,6 +2054,13 @@ class Points(Layer):
                 self.data[np.ix_(selection_indices, disp)] + shift
             )
             self.refresh()
+            if not self.events.blocked():
+                self.events.data(
+                    value=self.data,
+                    action=ActionType.CHANGED,
+                    data_indices=tuple(selection_indices),
+                    vertex_indices=((),),
+                )
 
     def _set_drag_start(
         self,

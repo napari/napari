@@ -536,9 +536,6 @@ def test_remove_selected_removes_corresponding_attributes():
     assert_layer_state_equal(state_layer, state_expected)
 
 
-@pytest.mark.xfail(
-    reason="used to test with event emission in _move, but emission is moved to select. Fix required."
-)
 def test_move():
     """Test moving points."""
     shape = (10, 2)
