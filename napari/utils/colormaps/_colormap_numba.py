@@ -12,10 +12,13 @@ if TYPE_CHECKING:
     from napari.utils import DirectLabelColormap
 
 
-__all__ = ['zero_preserving_modulo', 'labels_raw_to_texture_direct']
+__all__ = (
+    'zero_preserving_modulo_numba',
+    'labels_raw_to_texture_direct_numba',
+)
 
 
-def zero_preserving_modulo(
+def zero_preserving_modulo_numba(
     values: np.ndarray, n: int, dtype: np.dtype, to_zero: int = 0
 ) -> np.ndarray:
     """``(values - 1) % n + 1``, but with one specific value mapped to 0.
@@ -82,7 +85,7 @@ def _zero_preserving_modulo_inner_loop(
     return out
 
 
-def labels_raw_to_texture_direct(
+def labels_raw_to_texture_direct_numba(
     data: np.ndarray, direct_colormap: 'DirectLabelColormap'
 ) -> np.ndarray:
     """

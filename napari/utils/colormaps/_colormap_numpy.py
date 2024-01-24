@@ -11,13 +11,13 @@ MAPPING_OF_UNKNOWN_VALUE = 0
 # for simplicity of implementation we select 0
 
 __all__ = (
-    'zero_preserving_modulo',
-    'labels_raw_to_texture_direct',
+    'zero_preserving_modulo_numpy',
+    'labels_raw_to_texture_direct_numpy',
     'minimum_dtype_for_labels',
 )
 
 
-def zero_preserving_modulo(
+def zero_preserving_modulo_numpy(
     values: np.ndarray, n: int, dtype: np.dtype, to_zero: int = 0
 ) -> np.ndarray:
     """``(values - 1) % n + 1``, but with one specific value mapped to 0.
@@ -48,7 +48,7 @@ def zero_preserving_modulo(
     return res
 
 
-def labels_raw_to_texture_direct(
+def labels_raw_to_texture_direct_numpy(
     data: np.ndarray, direct_colormap: 'DirectLabelColormap'
 ) -> np.ndarray:
     """Convert labels data to the data type used in the texture.

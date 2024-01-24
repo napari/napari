@@ -4,8 +4,8 @@ import numpy as np
 
 try:
     from napari.utils.colormaps._colormap_numba import (
-        labels_raw_to_texture_direct as labels_raw_to_texture_direct_numba,
-        zero_preserving_modulo as zero_preserving_modulo_numba,
+        labels_raw_to_texture_direct_numba,
+        zero_preserving_modulo_numba,
     )
 
     NUMBA = True
@@ -16,8 +16,8 @@ except ImportError:
 
 try:
     from napari.utils.colormaps._colormap_partseg import (
-        labels_raw_to_texture_direct as labels_raw_to_texture_direct_partseg,
-        zero_preserving_modulo as zero_preserving_modulo_partseg,
+        labels_raw_to_texture_direct_partseg,
+        zero_preserving_modulo_partseg,
     )
 
     PARTSEG = True

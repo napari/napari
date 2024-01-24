@@ -20,9 +20,9 @@ from napari._pydantic_compat import Field, PrivateAttr, validator
 from napari.utils.color import ColorArray
 from napari.utils.colormaps._colormap_numpy import (
     MAPPING_OF_UNKNOWN_VALUE,
-    labels_raw_to_texture_direct,
+    labels_raw_to_texture_direct_numpy,
     minimum_dtype_for_labels,
-    zero_preserving_modulo,
+    zero_preserving_modulo_numpy,
 )
 from napari.utils.colormaps.colorbars import make_colorbar
 from napari.utils.colormaps.standardize_color import transform_color
@@ -34,15 +34,23 @@ from napari.utils.translations import trans
 
 try:
     from napari.utils.colormaps._colormap_compiled import (
-        labels_raw_to_texture_direct as _labels_raw_to_texture_direct,
-        zero_preserving_modulo as _zero_preserving_modulo,
+        labels_raw_to_texture_direct,
+        zero_preserving_modulo,
     )
 except ImportError:
-    _zero_preserving_modulo = zero_preserving_modulo
-    _labels_raw_to_texture_direct = labels_raw_to_texture_direct
+    zero_preserving_modulo = zero_preserving_modulo_numpy
+    labels_raw_to_texture_direct = labels_raw_to_texture_direct_numpy
 
 if TYPE_CHECKING:
     from numba import typed
+
+
+__all__ = (
+    'Colormap',
+    'ColormapInterpolationMode',
+    'CyclicLabelColormap',
+    'DirectLabelColormap',
+)
 
 
 class ColormapInterpolationMode(StrEnum):
@@ -332,7 +340,7 @@ class CyclicLabelColormap(LabelColormapBase):
         return _cast_labels_data_to_texture_dtype_auto(values, self)
 
     def _map_without_cache(self, values) -> np.ndarray:
-        texture_dtype_values = zero_preserving_modulo(
+        texture_dtype_values = zero_preserving_modulo_numpy(
             values,
             len(self.colors) - 1,
             values.dtype,
@@ -514,7 +522,7 @@ class DirectLabelColormap(LabelColormapBase):
         if mapper is not None:
             mapped = mapper[values]
         else:
-            values_cast = _labels_raw_to_texture_direct(values, self)
+            values_cast = labels_raw_to_texture_direct(values, self)
             mapped = self._map_precast(values_cast, apply_selection=True)
 
         if self.use_selection:
@@ -523,7 +531,7 @@ class DirectLabelColormap(LabelColormapBase):
 
     def _map_without_cache(self, values: np.ndarray) -> np.ndarray:
         cmap = self._cmap_without_selection()
-        cast = _labels_raw_to_texture_direct(values, cmap)
+        cast = labels_raw_to_texture_direct(values, cmap)
         return self._map_precast(cast, apply_selection=False)
 
     def _map_precast(self, values, apply_selection) -> np.ndarray:
@@ -797,14 +805,14 @@ def _cast_labels_data_to_texture_dtype_auto(
 
     data_arr = np.atleast_1d(data)
     num_colors = len(colormap.colors) - 1
-    zero_preserving_modulo_func = _zero_preserving_modulo
+    zero_preserving_modulo_func = zero_preserving_modulo
     if isinstance(data, np.integer):
-        zero_preserving_modulo_func = zero_preserving_modulo
+        zero_preserving_modulo_func = zero_preserving_modulo_numpy
 
     dtype = minimum_dtype_for_labels(num_colors + 1)
 
     if colormap.use_selection:
-        selection_in_texture = zero_preserving_modulo(
+        selection_in_texture = zero_preserving_modulo_numpy(
             np.array([colormap.selection]), num_colors, dtype
         )
         converted = np.where(
@@ -886,7 +894,7 @@ def _cast_labels_data_to_texture_dtype_direct(
     original_shape = np.shape(data)
     array_data = np.atleast_1d(data)
     return np.reshape(
-        _labels_raw_to_texture_direct(array_data, direct_colormap),
+        labels_raw_to_texture_direct(array_data, direct_colormap),
         original_shape,
     )
 
