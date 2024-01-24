@@ -33,7 +33,7 @@ from napari.utils.migrations import deprecated_class_name
 from napari.utils.translations import trans
 
 try:
-    from napari.utils.colormaps._colormap_numba import (
+    from napari.utils.colormaps._colormap_compiled import (
         labels_raw_to_texture_direct as _labels_raw_to_texture_direct,
         zero_preserving_modulo as _zero_preserving_modulo,
     )
