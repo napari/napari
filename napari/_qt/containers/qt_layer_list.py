@@ -70,7 +70,7 @@ class QtLayerList(QtListView[Layer]):
             return
         # prevent Qt handling shift-up and shift-down, pass to Viewer
         if (e.key() == Qt.Key.Key_Up or e.key() == Qt.Key.Key_Down) and (
-            e.modifiers() & Qt.ShiftModifier
+            e.modifiers() & Qt.KeyboardModifier.ShiftModifier
         ):
             e.ignore()
         elif e.key() != Qt.Key.Key_Space:
