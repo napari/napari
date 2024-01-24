@@ -1492,7 +1492,9 @@ class Labels(_ImageBase):
         self.data[indices] = value
 
         pt_not_disp = self._get_pt_not_disp()
-        displayed_indices = index_in_slice(indices, pt_not_disp)
+        displayed_indices = index_in_slice(
+            indices, pt_not_disp, self._slice_input.order
+        )
         if isinstance(value, np.ndarray):
             visible_values = value[elements_in_slice(indices, pt_not_disp)]
         else:

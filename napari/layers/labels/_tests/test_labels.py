@@ -697,6 +697,14 @@ def test_data_setitem_multi_dim():
     )
 
 
+def test_data_setitiem_transposed_axes():
+    data = np.zeros((10, 100), dtype=np.uint32)
+    labels = Labels(data)
+    labels.data_setitem((np.array([9]), np.array([99])), 1)
+    labels._slice_dims([0, 0], 2, [1, 0])
+    labels.data_setitem((np.array([9]), np.array([99])), 2)
+
+
 def test_selecting_label():
     """Test selecting label."""
     np.random.seed(0)
@@ -823,7 +831,7 @@ def test_paint_2d():
 
 
 def test_paint_2d_xarray():
-    """Test the memory usage of painting an xarray indirectly via timeout."""
+    """Test the memory usage of painting a xarray indirectly via timeout."""
     now = time.monotonic()
     data = xr.DataArray(np.zeros((3, 3, 1024, 1024), dtype=np.uint32))
 
