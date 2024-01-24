@@ -136,10 +136,13 @@ def test_minimum_dtype_for_labels(num, dtype):
 @pytest.fixture()
 def disable_jit(monkeypatch):
     pytest.importorskip("numba")
+
+    from napari.utils.colormaps import _colormap_numba
+
     with patch("numba.core.config.DISABLE_JIT", True):
-        importlib.reload(colormap)
+        importlib.reload(_colormap_numba)
         yield
-    importlib.reload(colormap)  # revert to original state
+    importlib.reload(_colormap_numba)  # revert to original state
 
 
 @pytest.mark.parametrize("num,dtype", [(40, np.uint8), (1000, np.uint16)])
