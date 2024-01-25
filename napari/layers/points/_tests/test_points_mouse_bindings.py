@@ -7,6 +7,7 @@ import pytest
 
 from napari.components.dims import Dims
 from napari.layers import Points
+from napari.layers._tests.test_utils import compare_dicts
 from napari.layers.base import ActionType
 from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.interactions import (
@@ -845,9 +846,6 @@ def test_drag_start_selection(
     assert layer._drag_start is None
 
 
-@pytest.mark.xfail(
-    reason='callbacks not properly working when not testing manually.'
-)
 def test_drag_point_with_mouse(create_known_points_layer_2d):
     layer, n_points, _ = create_known_points_layer_2d
     layer.events.data = MagicMock()
@@ -877,15 +875,20 @@ def test_drag_point_with_mouse(create_known_points_layer_2d):
         type='mouse_release', is_dragging=False, modifiers=modifier
     )
     mouse_release_callbacks(layer, event)
-    assert layer.events.data.call_args_list[0][1] == {
+
+    changing_event = {
         "value": old_data,
         "action": ActionType.CHANGING,
         "data_indices": (1,),
         "vertex_indices": ((),),
     }
-    assert layer.events.data.call_args[1] == {
+    changed_event = {
         "value": layer.data,
         "action": ActionType.CHANGED,
         "data_indices": (1,),
         "vertex_indices": ((),),
     }
+    assert compare_dicts(
+        layer.events.data.call_args_list[0][1], changing_event
+    )
+    assert compare_dicts(layer.events.data.call_args[1], changed_event)
