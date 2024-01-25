@@ -1,6 +1,19 @@
 import logging
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
+
+if TYPE_CHECKING:
+    from napari.utils.colormaps import DirectLabelColormap
+
+
+def _dummy_numba(*_: Any, **__: Any) -> np.ndarray:
+    raise NotImplementedError("No numba backend available")
+
+
+def _dummy_partseg(*_: Any, **__: Any) -> np.ndarray:
+    raise NotImplementedError("No numba backend available")
+
 
 try:
     from napari.utils.colormaps._colormap_numba import (
@@ -11,8 +24,8 @@ try:
     NUMBA = True
 except ImportError:
     NUMBA = False
-    zero_preserving_modulo_numba = None
-    labels_raw_to_texture_direct_numba = None
+    zero_preserving_modulo_numba = _dummy_numba
+    labels_raw_to_texture_direct_numba = _dummy_numba
 
 try:
     from napari.utils.colormaps._colormap_partseg import (
@@ -23,8 +36,8 @@ try:
     PARTSEG = True
 except ImportError:
     PARTSEG = False
-    zero_preserving_modulo_partseg = None
-    labels_raw_to_texture_direct_partseg = None
+    zero_preserving_modulo_partseg = _dummy_partseg
+    labels_raw_to_texture_direct_partseg = _dummy_partseg
 
 if not (NUMBA or PARTSEG):
     raise ImportError("No compiled backend available")
@@ -43,7 +56,7 @@ if PARTSEG:
             raise
 
     def labels_raw_to_texture_direct(
-        data: np.ndarray, direct_colormap
+        data: np.ndarray, direct_colormap: 'DirectLabelColormap'
     ) -> np.ndarray:
         try:
             return labels_raw_to_texture_direct_partseg(data, direct_colormap)
