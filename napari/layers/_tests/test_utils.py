@@ -64,7 +64,13 @@ def compare_dicts(dict1, dict2):
 
     This is mainly used to allow for layer.data.events tests in order to avoid comparison of 2 arrays.
 
-    Returns:
+    dict1
+        dict to be compared to other dict2
+    dict2
+        dict to be compared to other dict1
+
+    Returns
+    -------
     bool
         Whether the two dictionaries are equal
     """
