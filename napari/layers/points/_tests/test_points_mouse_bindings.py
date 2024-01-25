@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from typing import List, Optional, Tuple, Union
-from unittest.mock import Mock
+from unittest.mock import MagicMock
 
 import numpy as np
 import pytest
@@ -850,17 +850,7 @@ def test_drag_start_selection(
 )
 def test_drag_point_with_mouse(create_known_points_layer_2d):
     layer, n_points, _ = create_known_points_layer_2d
-    layer.events.data = Mock()
-
-    # Required because otherwise the context blocker in the select function in points_mouse_bindings lacks attributes.
-    layer.events.data.blocker().__enter__ = Mock(
-        return_value=None,
-        side_effect=setattr(layer.events.data, 'blocked', True),
-    )
-    layer.events.data.blocker().__exit__ = Mock(
-        return_value=None,
-        side_effect=setattr(layer.events.data, 'blocked', False),
-    )
+    layer.events.data = MagicMock()
 
     layer.mode = 'select'
     old_data = layer.data.copy()
