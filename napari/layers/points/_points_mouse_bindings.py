@@ -96,13 +96,7 @@ def select(layer, event):
 
     # only emit data once dragging has finished
     if is_moving:
-        layer.events.data(
-            value=layer.data,
-            action=ActionType.CHANGED,
-            data_indices=tuple(layer.selected_data),
-            vertex_indices=((),),
-        )
-        layer._move([], coordinates)
+        layer._move(layer.selected_data, coordinates)
         is_moving = False
 
     # on release

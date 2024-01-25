@@ -1,11 +1,13 @@
 from dataclasses import dataclass, field
 from typing import List, Optional, Tuple, Union
+from unittest.mock import Mock
 
 import numpy as np
 import pytest
 
 from napari.components.dims import Dims
 from napari.layers import Points
+from napari.layers.base import ActionType
 from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.interactions import (
     mouse_move_callbacks,
@@ -841,3 +843,59 @@ def test_drag_start_selection(
         assert False, 'Unreachable code'  # pragma: no cover
     assert layer._drag_box is None
     assert layer._drag_start is None
+
+
+@pytest.mark.xfail(
+    reason='callbacks not properly working when not testing manually.'
+)
+def test_drag_point_with_mouse(create_known_points_layer_2d):
+    layer, n_points, _ = create_known_points_layer_2d
+    layer.events.data = Mock()
+
+    # Required because otherwise the context blocker in the select function in points_mouse_bindings lacks attributes.
+    layer.events.data.blocker().__enter__ = Mock(
+        return_value=None,
+        side_effect=setattr(layer.events.data, 'blocked', True),
+    )
+    layer.events.data.blocker().__exit__ = Mock(
+        return_value=None,
+        side_effect=setattr(layer.events.data, 'blocked', False),
+    )
+
+    layer.mode = 'select'
+    old_data = layer.data.copy()
+    layer.selected_data = {1}
+    initial_position = tuple(layer.data[1])
+
+    new_position = [0, 0]
+    modifier = []
+
+    event = read_only_event(
+        type='mouse_press', position=initial_position, modifiers=modifier
+    )
+    mouse_press_callbacks(layer, event)
+
+    event = read_only_event(
+        type='mouse_move',
+        is_dragging=True,
+        position=new_position,
+        modifiers=modifier,
+    )
+    mouse_move_callbacks(layer, event)
+
+    event = read_only_event(
+        type='mouse_release', is_dragging=False, modifiers=modifier
+    )
+    mouse_release_callbacks(layer, event)
+    assert layer.events.data.call_args_list[0][1] == {
+        "value": old_data,
+        "action": ActionType.CHANGING,
+        "data_indices": (1,),
+        "vertex_indices": ((),),
+    }
+    assert layer.events.data.call_args[1] == {
+        "value": layer.data,
+        "action": ActionType.CHANGED,
+        "data_indices": (1,),
+        "vertex_indices": ((),),
+    }
