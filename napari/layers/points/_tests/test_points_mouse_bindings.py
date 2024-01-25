@@ -849,9 +849,10 @@ def test_drag_start_selection(
 def test_drag_point_with_mouse(create_known_points_layer_2d):
     layer, n_points, _ = create_known_points_layer_2d
     layer.events.data = MagicMock()
-
     layer.mode = 'select'
-    old_data = layer.data.copy()
+    old_data = (
+        layer.data.copy()
+    )  # ensure you have old data, not updated in place
     layer.selected_data = {1}
     initial_position = tuple(layer.data[1])
 
@@ -863,6 +864,19 @@ def test_drag_point_with_mouse(create_known_points_layer_2d):
     )
     mouse_press_callbacks(layer, event)
 
+    # Required to assert before the changing event as otherwise layer.data for changing is updated in place.
+    changing_event = {
+        "value": old_data,
+        "action": ActionType.CHANGING,
+        "data_indices": (1,),
+        "vertex_indices": ((),),
+    }
+
+    def side_effect(*args, **kwargs):
+        if kwargs["action"] == ActionType.CHANGING:
+            assert compare_dicts(kwargs, changing_event)
+
+    layer.events.data.side_effect = side_effect
     event = read_only_event(
         type='mouse_move',
         is_dragging=True,
@@ -876,19 +890,10 @@ def test_drag_point_with_mouse(create_known_points_layer_2d):
     )
     mouse_release_callbacks(layer, event)
 
-    changing_event = {
-        "value": old_data,
-        "action": ActionType.CHANGING,
-        "data_indices": (1,),
-        "vertex_indices": ((),),
-    }
     changed_event = {
         "value": layer.data,
         "action": ActionType.CHANGED,
         "data_indices": (1,),
         "vertex_indices": ((),),
     }
-    assert compare_dicts(
-        layer.events.data.call_args_list[0][1], changing_event
-    )
     assert compare_dicts(layer.events.data.call_args[1], changed_event)
