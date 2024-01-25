@@ -1572,12 +1572,15 @@ class Labels(_ImageBase):
         """
         changed_indices = self.data[indices] != value
         indices = tuple(x[changed_indices] for x in indices)
-
+        
         if isinstance(value, Sequence):
             value = np.asarray(value, dtype=self._slice.image.raw.dtype)
-            value = value[changed_indices]
         else:
             value = self._slice.image.raw.dtype.type(value)
+
+        # Resize value array to remove unchanged elements
+        if isinstance(value, np.ndarray):
+            value = value[changed_indices]
 
         if not indices or indices[0].size == 0:
             return
