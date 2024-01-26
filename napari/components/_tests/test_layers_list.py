@@ -159,9 +159,7 @@ def test_remove_linked_layer():
     layer_a = Image(np.empty((10, 10)))
     layer_b = Image(np.empty((15, 15)))
     layer_c = Image(np.empty((15, 15)))
-    layers.append(layer_a)
-    layers.append(layer_b)
-    layers.append(layer_c)
+    layers.extend([layer_a, layer_b, layer_c])
 
     # link layer_c with layer_b
     layers.link_layers([layer_c, layer_b])
