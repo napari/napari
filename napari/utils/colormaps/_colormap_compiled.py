@@ -12,7 +12,7 @@ def _dummy_numba(*_: Any, **__: Any) -> np.ndarray:
 
 
 def _dummy_partseg(*_: Any, **__: Any) -> np.ndarray:
-    raise NotImplementedError("No numba backend available")
+    raise NotImplementedError("No partseg backend available")
 
 
 try:
@@ -51,7 +51,7 @@ if PARTSEG:
             return zero_preserving_modulo_partseg(values, n, dtype, to_zero)
         except Exception:
             if NUMBA:
-                logging.exception("Error in PartSeg backend")
+                logging.exception("Error in PartSeg backend, trying Numba instead")
                 return zero_preserving_modulo_numba(values, n, dtype, to_zero)
             raise
 
@@ -62,7 +62,7 @@ if PARTSEG:
             return labels_raw_to_texture_direct_partseg(data, direct_colormap)
         except Exception:
             if NUMBA:
-                logging.exception("Error in PartSeg backend")
+                logging.exception("Error in PartSeg backend, trying Numba instead")
                 return labels_raw_to_texture_direct_numba(
                     data, direct_colormap
                 )
