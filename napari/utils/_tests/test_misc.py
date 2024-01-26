@@ -9,6 +9,7 @@ from packaging.version import parse as parse_version
 from napari.utils.misc import (
     StringEnum,
     _is_array_type,
+    _pandas_dataframe_equal,
     _quiet_array_equal,
     abspath_or_url,
     ensure_iterable,
@@ -186,6 +187,7 @@ def test_equality_operator():
 
     import dask.array as da
     import numpy as np
+    import pandas as pd
     import xarray as xr
     import zarr
 
@@ -199,6 +201,9 @@ def test_equality_operator():
     assert (
         pick_equality_operator(xr.DataArray(np.ones((1, 1))))
         == _quiet_array_equal
+    )
+    assert pick_equality_operator(
+        pd.DataFrame({'A': [1]}) == _pandas_dataframe_equal
     )
 
 
