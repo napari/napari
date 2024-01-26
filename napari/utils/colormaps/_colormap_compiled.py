@@ -51,7 +51,9 @@ if PARTSEG:
             return zero_preserving_modulo_partseg(values, n, dtype, to_zero)
         except Exception:
             if NUMBA:
-                logging.exception("Error in PartSeg backend, trying Numba instead")
+                logging.exception(
+                    "Error in PartSeg backend, trying Numba instead"
+                )
                 return zero_preserving_modulo_numba(values, n, dtype, to_zero)
             raise
 
@@ -62,7 +64,9 @@ if PARTSEG:
             return labels_raw_to_texture_direct_partseg(data, direct_colormap)
         except Exception:
             if NUMBA:
-                logging.exception("Error in PartSeg backend, trying Numba instead")
+                logging.exception(
+                    "Error in PartSeg backend, trying Numba instead"
+                )
                 return labels_raw_to_texture_direct_numba(
                     data, direct_colormap
                 )
