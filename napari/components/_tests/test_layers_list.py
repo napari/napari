@@ -156,9 +156,9 @@ def test_remove_selected():
 def test_remove_linked_layer():
     """Test removing a layer that is linked to other layers"""
     layers = LayerList()
-    layer_a = Image(np.random.random((10, 10)))
-    layer_b = Image(np.random.random((15, 15)))
-    layer_c = Image(np.random.random((15, 15)))
+    layer_a = Image(np.empty((10, 10)))
+    layer_b = Image(np.empty((15, 15)))
+    layer_c = Image(np.empty((15, 15)))
     layers.append(layer_a)
     layers.append(layer_b)
     layers.append(layer_c)
