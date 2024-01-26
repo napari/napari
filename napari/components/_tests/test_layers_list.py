@@ -6,6 +6,7 @@ import pytest
 
 from napari.components import LayerList
 from napari.layers import Image
+from napari.layers.utils._link_layers import get_linked_layers
 
 
 def test_empty_layers_list():
@@ -150,6 +151,26 @@ def test_remove_selected():
     layers.select_all()
     layers.remove_selected()
     assert len(layers) == 0
+
+
+def test_remove_linked_layer():
+    """Test removing a layer that is linked to other layers"""
+    layers = LayerList()
+    layer_a = Image(np.random.random((10, 10)))
+    layer_b = Image(np.random.random((15, 15)))
+    layer_c = Image(np.random.random((15, 15)))
+    layers.append(layer_a)
+    layers.append(layer_b)
+    layers.append(layer_c)
+
+    # link layer_c with layer_b
+    layers.link_layers([layer_c, layer_b])
+    assert len(get_linked_layers(layer_c)) == 1
+    assert len(get_linked_layers(layer_b)) == 1
+
+    layers.selection.add(layer_b)
+    layers.remove_selected()
+    assert len(get_linked_layers(layer_c)) == 0
 
 
 @pytest.mark.filterwarnings('ignore::FutureWarning')
