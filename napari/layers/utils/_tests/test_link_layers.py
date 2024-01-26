@@ -75,8 +75,8 @@ def test_adding_points_to_linked_layer():
 
 def test_linking_layers_with_different_modes():
     """Test that layers with different modes can be linked"""
-    l1 = layers.Image(np.empty(10, 10))
-    l2 = layers.Labels(np.empty(10, 10))
+    l1 = layers.Image(np.empty((10, 10)))
+    l2 = layers.Labels(np.empty((10, 10), dtype=np.uint8))
     link_layers([l1, l2])
 
     l2.mode = 'paint'
