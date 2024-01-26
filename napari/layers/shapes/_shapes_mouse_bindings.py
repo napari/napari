@@ -102,35 +102,27 @@ def select(layer: Shapes, event: MouseEvent) -> Generator[None, None, None]:
         # Drag any selected shapes
         if len(layer.selected_data) == 0:
             _drag_selection_box(layer, coordinates)
-        else:
-            if not is_moving:
-                if vertex_under_cursor is not None:
-                    layer.events.data(
-                        value=layer.data,
-                        action=ActionType.CHANGING,
-                        data_indices=tuple(
-                            layer.selected_data,
-                        ),
-                        vertex_indices=((vertex_under_cursor,),),
+        elif not is_moving:
+            if vertex_under_cursor is not None:
+                vertex_indices = ((vertex_under_cursor,),)
+            else:
+                vertex_indices = tuple(
+                    tuple(
+                        vertex_index
+                        for vertex_index, coord in enumerate(layer.data[i])
                     )
-                else:
-                    vertex_indices = tuple(
-                        tuple(
-                            vertex_index
-                            for vertex_index, coord in enumerate(layer.data[i])
-                        )
-                        for i in layer.selected_data
-                    )
-                    layer.events.data(
-                        value=layer.data,
-                        action=ActionType.CHANGING,
-                        data_indices=tuple(
-                            layer.selected_data,
-                        ),
-                        vertex_indices=vertex_indices,
-                    )
-                is_moving = True
-            _move_active_element_under_cursor(layer, coordinates)
+                    for i in layer.selected_data
+                )
+            layer.events.data(
+                value=layer.data,
+                action=ActionType.CHANGING,
+                data_indices=tuple(
+                    layer.selected_data,
+                ),
+                vertex_indices=vertex_indices,
+            )
+            is_moving = True
+        _move_active_element_under_cursor(layer, coordinates)
 
         # if a shape is being moved, update the thumbnail
         if layer._is_moving:
@@ -139,28 +131,12 @@ def select(layer: Shapes, event: MouseEvent) -> Generator[None, None, None]:
 
     # only emit data once dragging has finished
     if layer._is_moving:
-        vertex = layer._moving_value[1]
-        if vertex is not None:
-            layer.events.data(
-                value=layer.data,
-                action=ActionType.CHANGED,
-                data_indices=tuple(layer.selected_data),
-                vertex_indices=((vertex_under_cursor,),),
-            )
-        else:
-            vertex_indices = tuple(
-                tuple(
-                    vertex_index
-                    for vertex_index, coord in enumerate(layer.data[i])
-                )
-                for i in layer.selected_data
-            )
-            layer.events.data(
-                value=layer.data,
-                action=ActionType.CHANGED,
-                data_indices=tuple(layer.selected_data),
-                vertex_indices=vertex_indices,
-            )
+        layer.events.data(
+            value=layer.data,
+            action=ActionType.CHANGED,
+            data_indices=tuple(layer.selected_data),
+            vertex_indices=vertex_indices,
+        )
         is_moving = False
 
     # on release
