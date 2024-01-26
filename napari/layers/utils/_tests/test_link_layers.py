@@ -63,6 +63,16 @@ def test_link_invalid_param():
     assert "Cannot link attributes that are not shared by all layers" in str(e)
 
 
+def test_adding_points_to_linked_layer():
+    """Test that points can be added to a Points layer that is linked"""
+    l1 = layers.Points(None)
+    l2 = layers.Points(None)
+    link_layers([l1, l2])
+
+    l2.add([20, 20])
+    assert len(l2.data)
+
+
 def test_double_linking_noop():
     """Test that linking already linked layers is a noop."""
     l1 = layers.Points(None)
