@@ -1878,7 +1878,7 @@ class Points(Layer):
             and np.all(self._drag_box == self._drag_box_stored)
         ) and not force:
             return
-        self._selected_data_stored = copy(self.selected_data)
+        self._selected_data_stored = Selection(self.selected_data)
         self._value_stored = copy(self._value)
         self._drag_box_stored = copy(self._drag_box)
 

@@ -35,7 +35,9 @@ def elements_in_slice(
 
 
 def index_in_slice(
-    index: Tuple[npt.NDArray[np.int_], ...], position_in_axes: Dict[int, int]
+    index: Tuple[npt.NDArray[np.int_], ...],
+    position_in_axes: Dict[int, int],
+    indices_order: Tuple[int, ...],
 ) -> Tuple[npt.NDArray[np.int_], ...]:
     """Convert a NumPy fancy indexing expression from data to sliced space.
 
@@ -45,6 +47,8 @@ def index_in_slice(
         A NumPy fancy indexing expression [1]_.
     position_in_axes : dict[int, int]
         A dictionary mapping sliced (non-displayed) axes to a slice position.
+    indices_order : tuple of int
+        The order of the indices in data view.
 
     Returns
     -------
@@ -55,9 +59,9 @@ def index_in_slice(
     Examples
     --------
     >>> index = (np.arange(5), np.full(5, 1), np.arange(4, 9))
-    >>> index_in_slice(index, {0: 3})
+    >>> index_in_slice(index, {0: 3}, (0, 1, 2))
     (array([1]), array([7]))
-    >>> index_in_slice(index, {1: 1, 2: 8})
+    >>> index_in_slice(index, {1: 1, 2: 8}, (0, 1, 2))
     (array([4]),)
 
     References
@@ -66,7 +70,7 @@ def index_in_slice(
     """
     index_in_slice = elements_in_slice(index, position_in_axes)
     return tuple(
-        ix[index_in_slice]
-        for i, ix in enumerate(index)
+        index[i][index_in_slice]
+        for i in indices_order
         if i not in position_in_axes
     )
