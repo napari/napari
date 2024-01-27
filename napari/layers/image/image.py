@@ -1221,7 +1221,10 @@ class Image(IntensityVisualizationMixin, _ImageBase):
         if np.allclose(new_contrast_limits, self.contrast_limits):
             return raw
 
-        image = raw * scale + offset
+        if scale < 1:
+            image = raw * scale + offset
+        else:
+            image = (raw + offset / scale) * scale
 
         return image
 
