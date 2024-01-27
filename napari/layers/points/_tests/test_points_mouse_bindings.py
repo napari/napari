@@ -7,7 +7,7 @@ import pytest
 
 from napari.components.dims import Dims
 from napari.layers import Points
-from napari.layers._tests.test_utils import compare_dicts
+from napari.layers._tests._utils import compare_dicts
 from napari.layers.base import ActionType
 from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.interactions import (
