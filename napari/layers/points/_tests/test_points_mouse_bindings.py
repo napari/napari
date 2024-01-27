@@ -896,4 +896,5 @@ def test_drag_point_with_mouse(create_known_points_layer_2d):
         "data_indices": (1,),
         "vertex_indices": ((),),
     }
+    assert not np.array_equal(layer.data, old_data)
     assert compare_dicts(layer.events.data.call_args[1], changed_event)
