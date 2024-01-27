@@ -122,6 +122,14 @@ INVERSE_COLORMAPS = {
     for name, (display_name, value) in inverse_cmaps.items()
 }
 
+_FLOAT32_MAX = np.finfo(np.float32).max
+_MAX_VISPY_SUPPORTED_VALUE = _FLOAT32_MAX / 8
+# Using 8 as divisor comes from experiments.
+# For some reason if use smaller number,
+# the image is not displayed correctly.
+
+_MINIMUM_SHADES_COUNT = 256
+
 
 def _all_rgb():
     """Return all 256**3 valid rgb tuples."""
@@ -916,14 +924,15 @@ class CoercedContrastLimits(NamedTuple):
 
 def _coerce_contrast_limits(contrast_limits: Tuple[float, float]):
     """Coerce contrast limits to be in the float32 range."""
-    vispy_max = float(np.finfo(np.float32).max / 8)
-    if np.abs(contrast_limits).max() > vispy_max:
+    if np.abs(contrast_limits).max() > _MAX_VISPY_SUPPORTED_VALUE:
         return scale_down(contrast_limits)
 
     c_min = np.float32(contrast_limits[0])
+    c_max = np.float32(contrast_limits[1])
+    dist = c_max - c_min
     if (
-        np.float32(contrast_limits[1]) - c_min
-        < (np.nextafter(c_min, np.float32(np.inf)) - c_min) * 64
+        dist < np.spacing(c_min) * _MINIMUM_SHADES_COUNT
+        or dist < np.spacing(c_max) * _MINIMUM_SHADES_COUNT
     ):
         return scale_up(contrast_limits)
 
@@ -932,18 +941,14 @@ def _coerce_contrast_limits(contrast_limits: Tuple[float, float]):
 
 def scale_down(contrast_limits: Tuple[float, float]):
     """Scale down contrast limits to be in the float32 range."""
-    vispy_max = float(np.finfo(np.float32).max / 8)
-    # Using 8 as divisor comes from experiments.
-    # For some reason if use smaller number,
-    # the image is not displayed correctly.
-    vispy_min = float(np.finfo(np.float32).min / 8)
     scale = min(
         1.0,
-        (vispy_max - vispy_min) / (contrast_limits[1] - contrast_limits[0]),
+        (_MAX_VISPY_SUPPORTED_VALUE * 2)
+        / (contrast_limits[1] - contrast_limits[0]),
     )
     ctrl_lim = contrast_limits[0] * scale, contrast_limits[1] * scale
-    left_shift = max(0.0, vispy_min - ctrl_lim[0])
-    right_shift = max(0.0, ctrl_lim[1] - vispy_max)
+    left_shift = max(0.0, -_MAX_VISPY_SUPPORTED_VALUE - ctrl_lim[0])
+    right_shift = max(0.0, ctrl_lim[1] - _MAX_VISPY_SUPPORTED_VALUE)
     offset = left_shift - right_shift
     ctrl_lim = (ctrl_lim[0] + offset, ctrl_lim[1] + offset)
     return CoercedContrastLimits(ctrl_lim, offset, scale)

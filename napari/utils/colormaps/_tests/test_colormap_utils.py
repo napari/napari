@@ -54,7 +54,7 @@ def test_coerce_contrast_limits_with_valid_input():
 
 
 def test_coerce_contrast_limits_with_large_values():
-    contrast_limits = (0, 1e40)
+    contrast_limits = (0, float(np.finfo(np.float32).max) * 100)
     result = _coerce_contrast_limits(contrast_limits)
     assert isinstance(result, CoercedContrastLimits)
     assert np.isclose(result.contrast_limits[0], np.finfo(np.float32).min / 8)
@@ -63,8 +63,9 @@ def test_coerce_contrast_limits_with_large_values():
     assert result.scale < 1.0
 
 
-def test_coerce_contrast_limits_with_large_values_symetric():
-    contrast_limits = (-1e40, 1e40)
+def test_coerce_contrast_limits_with_large_values_symmetric():
+    above_float32_max = float(np.finfo(np.float32).max) * 100
+    contrast_limits = (-above_float32_max, above_float32_max)
     result = _coerce_contrast_limits(contrast_limits)
     assert isinstance(result, CoercedContrastLimits)
     assert np.isclose(result.contrast_limits[0], np.finfo(np.float32).min / 8)
@@ -74,7 +75,8 @@ def test_coerce_contrast_limits_with_large_values_symetric():
 
 
 def test_coerce_contrast_limits_with_large_values_above_limit():
-    contrast_limits = (1e39, 9e40)
+    f32_max = float(np.finfo(np.float32).max)
+    contrast_limits = (f32_max * 10, f32_max * 100)
     result = _coerce_contrast_limits(contrast_limits)
     assert isinstance(result, CoercedContrastLimits)
     assert np.isclose(result.contrast_limits[0], np.finfo(np.float32).min / 8)

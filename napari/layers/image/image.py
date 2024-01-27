@@ -535,6 +535,9 @@ class _ImageBase(Layer, ABC):
         for both sync and async slicing.
         """
         response = response.to_displayed(self._raw_to_displayed)
+        # We call to_displayed here to ensure that if the contrast limits
+        # are outside the range of sup[ported by vispy, then data vie is
+        # rescaled to fit within the range.
         self._slice_input = response.slice_input
         self._transforms[0] = response.tile_to_data
         self._slice = response
@@ -1196,7 +1199,11 @@ class Image(IntensityVisualizationMixin, _ImageBase):
     def _raw_to_displayed(self, raw: np.ndarray) -> np.ndarray:
         """Determine displayed image from raw image.
 
-        For normal image layers, just return the actual image.
+        This function checks if current contrast_limits are within the range
+        supported by vispy.
+        If yes, it returns the raw image.
+        If not, it rescales the raw image to fit within
+        the range supported by vispy.
 
         Parameters
         ----------
@@ -1208,11 +1215,13 @@ class Image(IntensityVisualizationMixin, _ImageBase):
         image : array
             Displayed array.
         """
-        lim_tup = _coerce_contrast_limits(self.contrast_limits)
-        if np.allclose(lim_tup.contrast_limits, self.contrast_limits):
+        new_contrast_limits, scale, offset = _coerce_contrast_limits(
+            self.contrast_limits
+        )
+        if np.allclose(new_contrast_limits, self.contrast_limits):
             return raw
 
-        image = raw * lim_tup.scale + lim_tup.offset
+        image = raw * scale + offset
 
         return image
 
