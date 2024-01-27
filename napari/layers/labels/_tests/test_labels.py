@@ -701,7 +701,8 @@ def test_data_setitem_multi_dim():
     data = zarr.zeros((10, 10, 10), chunks=(5, 5, 5), dtype=np.uint32)
     labels = Labels(data)
     labels.data_setitem(
-        (np.array([0, 1]), np.array([1, 1]), np.array([0, 0])), [1, 2]
+        (np.array([0, 1, 1]), np.array([1, 1, 2]), np.array([0, 0, 0])),
+        [1, 2, 0],
     )
 
 

@@ -1578,6 +1578,10 @@ class Labels(_ImageBase):
         else:
             value = self._slice.image.raw.dtype.type(value)
 
+        # Resize value array to remove unchanged elements
+        if isinstance(value, np.ndarray):
+            value = value[changed_indices]
+
         if not indices or indices[0].size == 0:
             return
 
