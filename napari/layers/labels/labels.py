@@ -1578,6 +1578,10 @@ class Labels(_ImageBase):
         else:
             value = self._slice.image.raw.dtype.type(value)
 
+        # Resize value array to remove unchanged elements
+        if isinstance(value, np.ndarray):
+            value = value[changed_indices]
+
         if not indices or indices[0].size == 0:
             return
 
@@ -1593,7 +1597,9 @@ class Labels(_ImageBase):
         self.data[indices] = value
 
         pt_not_disp = self._get_pt_not_disp()
-        displayed_indices = index_in_slice(indices, pt_not_disp)
+        displayed_indices = index_in_slice(
+            indices, pt_not_disp, self._slice.slice_input.order
+        )
         if isinstance(value, np.ndarray):
             visible_values = value[elements_in_slice(indices, pt_not_disp)]
         else:
