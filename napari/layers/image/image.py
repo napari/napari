@@ -536,7 +536,7 @@ class _ImageBase(Layer, ABC):
         """
         response = response.to_displayed(self._raw_to_displayed)
         # We call to_displayed here to ensure that if the contrast limits
-        # are outside the range of sup[ported by vispy, then data vie is
+        # are outside the range of supported by vispy, then data view is
         # rescaled to fit within the range.
         self._slice_input = response.slice_input
         self._transforms[0] = response.tile_to_data
