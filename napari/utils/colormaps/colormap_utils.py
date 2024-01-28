@@ -122,7 +122,7 @@ INVERSE_COLORMAPS = {
     for name, (display_name, value) in inverse_cmaps.items()
 }
 
-_FLOAT32_MAX = np.finfo(np.float32).max
+_FLOAT32_MAX = float(np.finfo(np.float32).max)
 _MAX_VISPY_SUPPORTED_VALUE = _FLOAT32_MAX / 8
 # Using 8 as divisor comes from experiments.
 # For some reason if use smaller number,
@@ -947,7 +947,7 @@ def _coerce_contrast_limits(contrast_limits: Tuple[float, float]):
 
 def scale_down(contrast_limits: Tuple[float, float]):
     """Scale down contrast limits to be in the float32 range."""
-    scale = min(
+    scale: float = min(
         1.0,
         (_MAX_VISPY_SUPPORTED_VALUE * 2)
         / (contrast_limits[1] - contrast_limits[0]),
