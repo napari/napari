@@ -113,14 +113,6 @@ def select(layer: Shapes, event: MouseEvent) -> Generator[None, None, None]:
                     )
                     for i in layer.selected_data
                 )
-            layer.events.data(
-                value=layer.data,
-                action=ActionType.CHANGING,
-                data_indices=tuple(
-                    layer.selected_data,
-                ),
-                vertex_indices=vertex_indices,
-            )
             is_moving = True
         _move_active_element_under_cursor(layer, coordinates)
 
@@ -844,6 +836,13 @@ def _move_active_element_under_cursor(
         ]
         and vertex is not None
     ):
+        if not layer._is_moving:
+            layer.events.data(
+                value=layer.data,
+                action=ActionType.CHANGING,
+                data_indices=tuple(layer.selected_data),
+                vertex_indices=((vertex,),),
+            )
         layer._moving_coordinates = coordinates
         layer._is_moving = True
         index = layer._moving_value[0]
