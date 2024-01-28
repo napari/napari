@@ -921,6 +921,12 @@ class CoercedContrastLimits(NamedTuple):
     offset: float
     scale: float
 
+    def coerce_data(self, data: np.ndarray) -> np.ndarray:
+        if self.scale < 1:
+            return data * self.scale + self.offset
+
+        return (data + self.offset / self.scale) * self.scale
+
 
 def _coerce_contrast_limits(contrast_limits: Tuple[float, float]):
     """Coerce contrast limits to be in the float32 range."""

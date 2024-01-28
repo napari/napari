@@ -1215,18 +1215,13 @@ class Image(IntensityVisualizationMixin, _ImageBase):
         image : array
             Displayed array.
         """
-        new_contrast_limits, scale, offset = _coerce_contrast_limits(
-            self.contrast_limits
-        )
-        if np.allclose(new_contrast_limits, self.contrast_limits):
+        fixed_contrast_info = _coerce_contrast_limits(self.contrast_limits)
+        if np.allclose(
+            fixed_contrast_info.contrast_limits, self.contrast_limits
+        ):
             return raw
 
-        if scale < 1:
-            image = raw * scale + offset
-        else:
-            image = (raw + offset / scale) * scale
-
-        return image
+        return fixed_contrast_info.coerce_data(raw)
 
     @IntensityVisualizationMixin.contrast_limits.setter  # type: ignore [attr-defined]
     def contrast_limits(self, contrast_limits):

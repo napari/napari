@@ -1,4 +1,5 @@
 import numpy as np
+import numpy.testing as npt
 import pytest
 
 from napari.utils.colormaps.colormap_utils import (
@@ -51,6 +52,9 @@ def test_coerce_contrast_limits_with_valid_input():
     assert np.allclose(result.contrast_limits, contrast_limits)
     assert result.offset == 0
     assert np.isclose(result.scale, 1.0)
+    npt.assert_allclose(
+        result.contrast_limits, result.coerce_data(np.array(contrast_limits))
+    )
 
 
 def test_coerce_contrast_limits_with_large_values():
@@ -61,6 +65,9 @@ def test_coerce_contrast_limits_with_large_values():
     assert np.isclose(result.contrast_limits[1], np.finfo(np.float32).max / 8)
     assert result.offset < 0
     assert result.scale < 1.0
+    npt.assert_allclose(
+        result.contrast_limits, result.coerce_data(np.array(contrast_limits))
+    )
 
 
 def test_coerce_contrast_limits_with_large_values_symmetric():
@@ -72,6 +79,9 @@ def test_coerce_contrast_limits_with_large_values_symmetric():
     assert np.isclose(result.contrast_limits[1], np.finfo(np.float32).max / 8)
     assert result.offset == 0
     assert result.scale < 1.0
+    npt.assert_allclose(
+        result.contrast_limits, result.coerce_data(np.array(contrast_limits))
+    )
 
 
 def test_coerce_contrast_limits_with_large_values_above_limit():
@@ -83,6 +93,9 @@ def test_coerce_contrast_limits_with_large_values_above_limit():
     assert np.isclose(result.contrast_limits[1], np.finfo(np.float32).max / 8)
     assert result.offset < 0
     assert result.scale < 1.0
+    npt.assert_allclose(
+        result.contrast_limits, result.coerce_data(np.array(contrast_limits))
+    )
 
 
 def test_coerce_contrast_limits_small_values():
@@ -93,3 +106,6 @@ def test_coerce_contrast_limits_small_values():
     assert np.isclose(result.contrast_limits[1], 1)
     assert result.offset < 0
     assert result.scale > 1
+    npt.assert_allclose(
+        result.contrast_limits, result.coerce_data(np.array(contrast_limits))
+    )

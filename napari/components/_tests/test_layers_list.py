@@ -19,15 +19,13 @@ def test_empty_layers_list():
 
 
 def test_initialize_from_list():
-    layers = LayerList(
-        [Image(np.random.random((10, 10))), Image(np.random.random((10, 10)))]
-    )
+    layers = LayerList([Image(np.empty((10, 10))), Image(np.empty((10, 10)))])
     assert len(layers) == 2
 
 
 def test_adding_layer():
     layers = LayerList()
-    layer = Image(np.random.random((10, 10)))
+    layer = Image(np.empty((10, 10)))
     layers.append(layer)
 
     # LayerList should err if you add anything other than a layer
@@ -39,7 +37,7 @@ def test_adding_layer():
 
 def test_removing_layer():
     layers = LayerList()
-    layer = Image(np.random.random((10, 10)))
+    layer = Image(np.empty((10, 10)))
     layers.append(layer)
     layers.remove(layer)
 
@@ -49,7 +47,7 @@ def test_removing_layer():
 def test_popping_layer():
     """Test popping a layer off layerlist."""
     layers = LayerList()
-    layer = Image(np.random.random((10, 10)))
+    layer = Image(np.empty((10, 10)))
     layers.append(layer)
     assert len(layers) == 1
     layers.pop(0)
@@ -61,7 +59,7 @@ def test_indexing():
     Test indexing into a LayerList
     """
     layers = LayerList()
-    layer = Image(np.random.random((10, 10)), name='image')
+    layer = Image(np.empty((10, 10)), name='image')
     layers.append(layer)
 
     assert layers[0] == layer
@@ -73,8 +71,8 @@ def test_insert():
     Test inserting into a LayerList
     """
     layers = LayerList()
-    layer_a = Image(np.random.random((10, 10)), name='image_a')
-    layer_b = Image(np.random.random((15, 15)), name='image_b')
+    layer_a = Image(np.empty((10, 10)), name='image_a')
+    layer_b = Image(np.empty((15, 15)), name='image_b')
     layers.append(layer_a)
     layers.insert(0, layer_b)
 
@@ -86,8 +84,8 @@ def test_get_index():
     Test getting indexing from LayerList
     """
     layers = LayerList()
-    layer_a = Image(np.random.random((10, 10)), name='image_a')
-    layer_b = Image(np.random.random((15, 15)), name='image_b')
+    layer_a = Image(np.empty((10, 10)), name='image_a')
+    layer_b = Image(np.empty((15, 15)), name='image_b')
     layers.append(layer_a)
     layers.append(layer_b)
 
@@ -102,9 +100,9 @@ def test_reordering():
     Test indexing into a LayerList by name
     """
     layers = LayerList()
-    layer_a = Image(np.random.random((10, 10)), name='image_a')
-    layer_b = Image(np.random.random((15, 15)), name='image_b')
-    layer_c = Image(np.random.random((15, 15)), name='image_c')
+    layer_a = Image(np.empty((10, 10)), name='image_a')
+    layer_b = Image(np.empty((15, 15)), name='image_b')
+    layer_c = Image(np.empty((15, 15)), name='image_c')
     layers.append(layer_a)
     layers.append(layer_b)
     layers.append(layer_c)
@@ -121,8 +119,8 @@ def test_reordering():
 def test_clearing_layerlist():
     """Test clearing layer list."""
     layers = LayerList()
-    layer = Image(np.random.random((10, 10)))
-    layer2 = Image(np.random.random((10, 10)))
+    layer = Image(np.empty((10, 10)))
+    layer2 = Image(np.empty((10, 10)))
     layers.append(layer)
     layers.append(layer2)
     assert len(layers) == 2
@@ -134,9 +132,9 @@ def test_clearing_layerlist():
 def test_remove_selected():
     """Test removing selected layers."""
     layers = LayerList()
-    layer_a = Image(np.random.random((10, 10)))
-    layer_b = Image(np.random.random((15, 15)))
-    layer_c = Image(np.random.random((15, 15)))
+    layer_a = Image(np.empty((10, 10)))
+    layer_b = Image(np.empty((15, 15)))
+    layer_c = Image(np.empty((15, 15)))
     layers.append(layer_a)
     layers.append(layer_b)
     layers.append(layer_c)
@@ -177,10 +175,10 @@ def test_move_selected():
     Test removing selected layers
     """
     layers = LayerList()
-    layer_a = Image(np.random.random((10, 10)))
-    layer_b = Image(np.random.random((15, 15)))
-    layer_c = Image(np.random.random((15, 15)))
-    layer_d = Image(np.random.random((15, 15)))
+    layer_a = Image(np.empty((10, 10)))
+    layer_b = Image(np.empty((15, 15)))
+    layer_c = Image(np.empty((15, 15)))
+    layer_d = Image(np.empty((15, 15)))
     layers.append(layer_a)
     layers.append(layer_b)
     layers.append(layer_c)
@@ -282,8 +280,8 @@ def test_move_selected():
     assert layers.selection == {layer_a, layer_c}
     layers.move_multiple((2, 0, 3, 1), 0)
 
-    layer_e = Image(np.random.random((15, 15)))
-    layer_f = Image(np.random.random((15, 15)))
+    layer_e = Image(np.empty((15, 15)))
+    layer_f = Image(np.empty((15, 15)))
     layers.append(layer_e)
     layers.append(layer_f)
     # Check current order is correct
@@ -316,10 +314,10 @@ def test_toggle_visibility():
     Test toggling layer visibility
     """
     layers = LayerList()
-    layer_a = Image(np.random.random((10, 10)))
-    layer_b = Image(np.random.random((15, 15)))
-    layer_c = Image(np.random.random((15, 15)))
-    layer_d = Image(np.random.random((15, 15)))
+    layer_a = Image(np.empty((10, 10)))
+    layer_b = Image(np.empty((15, 15)))
+    layer_c = Image(np.empty((15, 15)))
+    layer_d = Image(np.empty((15, 15)))
     layers.append(layer_a)
     layers.append(layer_b)
     layers.append(layer_c)
@@ -447,7 +445,6 @@ def test_layers_save_svg(tmpdir, layers, napari_svg_name):
 
 def test_world_extent():
     """Test world extent after adding layers."""
-    np.random.seed(0)
     layers = LayerList()
 
     # Empty data is taken to be 512 x 512
@@ -457,7 +454,7 @@ def test_world_extent():
 
     # Add one layer
     layer_a = Image(
-        np.random.random((6, 10, 15)), scale=(3, 1, 1), translate=(10, 20, 5)
+        np.empty((6, 10, 15)), scale=(3, 1, 1), translate=(10, 20, 5)
     )
     layers.append(layer_a)
     np.testing.assert_allclose(layer_a.extent.world[0], (10, 20, 5))
@@ -468,7 +465,7 @@ def test_world_extent():
 
     # Add another layer
     layer_b = Image(
-        np.random.random((8, 6, 15)), scale=(6, 2, 1), translate=(-5, -10, 10)
+        np.empty((8, 6, 15)), scale=(6, 2, 1), translate=(-5, -10, 10)
     )
     layers.append(layer_b)
     np.testing.assert_allclose(layer_b.extent.world[0], (-5, -10, 10))
@@ -480,17 +477,16 @@ def test_world_extent():
 
 def test_world_extent_mixed_ndim():
     """Test world extent after adding layers of different dimensionality."""
-    np.random.seed(0)
     layers = LayerList()
 
     # Add 3D layer
-    layer_a = Image(np.random.random((15, 15, 15)), scale=(4, 12, 2))
+    layer_a = Image(np.empty((15, 15, 15)), scale=(4, 12, 2))
     layers.append(layer_a)
     np.testing.assert_allclose(layers.extent.world[0], (0, 0, 0))
     np.testing.assert_allclose(layers.extent.world[1], (56, 168, 28))
 
     # Add 2D layer
-    layer_b = Image(np.random.random((10, 10)), scale=(6, 4))
+    layer_b = Image(np.empty((10, 10)), scale=(6, 4))
     layers.append(layer_b)
     np.testing.assert_allclose(layers.extent.world[0], (0, 0, 0))
     np.testing.assert_allclose(layers.extent.world[1], (56, 168, 36))
@@ -502,12 +498,9 @@ def test_world_extent_mixed_flipped():
     # Flipped data results in a negative scale value which should be
     # made positive when taking into consideration for the step size
     # calculation
-    np.random.seed(0)
     layers = LayerList()
 
-    layer = Image(
-        np.random.random((15, 15)), affine=[[0, 1, 0], [1, 0, 0], [0, 0, 1]]
-    )
+    layer = Image(np.empty((15, 15)), affine=[[0, 1, 0], [1, 0, 0], [0, 0, 1]])
     layers.append(layer)
     np.testing.assert_allclose(layer._data_to_world.scale, (1, -1))
     np.testing.assert_allclose(layers.extent.step, (1, 1))
@@ -515,18 +508,17 @@ def test_world_extent_mixed_flipped():
 
 def test_ndim():
     """Test world extent after adding layers."""
-    np.random.seed(0)
     layers = LayerList()
 
     assert layers.ndim == 2
 
     # Add one layer
-    layer_a = Image(np.random.random((10, 15)))
+    layer_a = Image(np.empty((10, 15)))
     layers.append(layer_a)
     assert layers.ndim == 2
 
     # Add another layer
-    layer_b = Image(np.random.random((8, 6, 15)))
+    layer_b = Image(np.empty((8, 6, 15)))
     layers.append(layer_b)
     assert layers.ndim == 3
 
@@ -537,9 +529,9 @@ def test_ndim():
 
 def test_name_uniqueness():
     layers = LayerList()
-    layers.append(Image(np.random.random((10, 15)), name="Image [1]"))
-    layers.append(Image(np.random.random((10, 15)), name="Image"))
-    layers.append(Image(np.random.random((10, 15)), name="Image"))
+    layers.append(Image(np.empty((10, 15)), name="Image [1]"))
+    layers.append(Image(np.empty((10, 15)), name="Image"))
+    layers.append(Image(np.empty((10, 15)), name="Image"))
     assert [x.name for x in layers] == ['Image [1]', 'Image', 'Image [2]']
 
 
@@ -547,7 +539,7 @@ def test_readd_layers():
     layers = LayerList()
     imgs = []
     for _i in range(5):
-        img = Image(np.random.rand(10, 10, 10))
+        img = Image(np.empty(10, 10, 10))
         layers.append(img)
         imgs.append(img)
 
