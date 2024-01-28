@@ -539,7 +539,7 @@ def test_readd_layers():
     layers = LayerList()
     imgs = []
     for _i in range(5):
-        img = Image(np.empty(10, 10, 10))
+        img = Image(np.empty((10, 10, 10)))
         layers.append(img)
         imgs.append(img)
 
