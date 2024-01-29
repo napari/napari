@@ -319,11 +319,13 @@ class LabelLayerNode(ImageLayerNode):
 
     def _setup_nodes(self, texture_format):
         self._image_node = LabelNode(
-            None
-            if (texture_format is None or texture_format == 'auto')
-            else np.zeros(
-                (1, 1),
-                dtype=get_dtype_from_vispy_texture_format(texture_format),
+            (
+                None
+                if (texture_format is None or texture_format == 'auto')
+                else np.zeros(
+                    (1, 1),
+                    dtype=get_dtype_from_vispy_texture_format(texture_format),
+                )
             ),
             method='auto',
             texture_format=texture_format,

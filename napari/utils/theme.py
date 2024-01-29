@@ -232,18 +232,15 @@ def get_system_theme() -> str:
 
 
 @overload
-def get_theme(theme_id: str) -> Theme:
-    ...
+def get_theme(theme_id: str) -> Theme: ...
 
 
 @overload
-def get_theme(theme_id: str, as_dict: Literal[False]) -> Theme:
-    ...
+def get_theme(theme_id: str, as_dict: Literal[False]) -> Theme: ...
 
 
 @overload
-def get_theme(theme_id: str, as_dict: Literal[True]) -> Dict[str, Any]:
-    ...
+def get_theme(theme_id: str, as_dict: Literal[True]) -> Dict[str, Any]: ...
 
 
 def get_theme(theme_id: str, as_dict: Optional[bool] = None):

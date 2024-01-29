@@ -175,8 +175,7 @@ def test_get_potential_readers_gives_napari(
     builtins, tmp_plugin: DynamicPlugin
 ):
     @tmp_plugin.contribute.reader(filename_patterns=['*.tif'])
-    def read_tif(path):
-        ...
+    def read_tif(path): ...
 
     readers = get_potential_readers('my_file.tif')
     assert 'napari' in readers
@@ -187,12 +186,10 @@ def test_get_potential_readers_finds_readers(tmp_plugin: DynamicPlugin):
     tmp2 = tmp_plugin.spawn(register=True)
 
     @tmp_plugin.contribute.reader(filename_patterns=['*.tif'])
-    def read_tif(path):
-        ...
+    def read_tif(path): ...
 
     @tmp2.contribute.reader(filename_patterns=['*.*'])
-    def read_all(path):
-        ...
+    def read_all(path): ...
 
     readers = get_potential_readers('my_file.tif')
     assert len(readers) == 2
@@ -200,8 +197,7 @@ def test_get_potential_readers_finds_readers(tmp_plugin: DynamicPlugin):
 
 def test_get_potential_readers_extension_case(tmp_plugin: DynamicPlugin):
     @tmp_plugin.contribute.reader(filename_patterns=['*.tif'])
-    def read_tif(path):
-        ...
+    def read_tif(path): ...
 
     readers = get_potential_readers('my_file.TIF')
     assert len(readers) == 1
@@ -215,8 +211,7 @@ def test_get_potential_readers_plugin_name_disp_name(
     tmp_plugin: DynamicPlugin,
 ):
     @tmp_plugin.contribute.reader(filename_patterns=['*.fake'])
-    def read_tif(path):
-        ...
+    def read_tif(path): ...
 
     readers = get_potential_readers('my_file.fake')
     assert readers[tmp_plugin.name] == tmp_plugin.display_name
@@ -233,12 +228,10 @@ def test_get_all_readers(tmp_plugin: DynamicPlugin):
     tmp2 = tmp_plugin.spawn(register=True)
 
     @tmp_plugin.contribute.reader(filename_patterns=['*.fake'])
-    def read_tif(path):
-        ...
+    def read_tif(path): ...
 
     @tmp2.contribute.reader(filename_patterns=['.fake2'])
-    def read_all(path):
-        ...
+    def read_all(path): ...
 
     npe2_readers, npe1_readers = get_all_readers()
     assert len(npe2_readers) == 2
@@ -251,12 +244,10 @@ def test_get_filename_patterns_fake_plugin():
 
 def test_get_filename_patterns(tmp_plugin: DynamicPlugin):
     @tmp_plugin.contribute.reader(filename_patterns=['*.tif'])
-    def read_tif(path):
-        ...
+    def read_tif(path): ...
 
     @tmp_plugin.contribute.reader(filename_patterns=['*.csv'])
-    def read_csv(pth):
-        ...
+    def read_csv(pth): ...
 
     patterns = get_filename_patterns_for_reader(tmp_plugin.name)
     assert len(patterns) == 2
