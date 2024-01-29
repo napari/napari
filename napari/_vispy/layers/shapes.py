@@ -9,6 +9,8 @@ from napari.utils.events import disconnect_events
 
 
 class VispyShapesLayer(VispyBaseLayer):
+    node: ShapesVisual
+
     def __init__(self, layer) -> None:
         node = ShapesVisual()
         super().__init__(layer, node)
@@ -20,8 +22,8 @@ class VispyShapesLayer(VispyBaseLayer):
         self.layer.text.events.connect(self._on_text_change)
 
         # TODO: move to overlays
-        self.node._subvisuals[3].symbol = 'square'
-        self.node._subvisuals[3].scaling = False
+        self.node.highlight_vertices.symbol = 'square'
+        self.node.highlight_vertices.scaling = False
 
         self.reset()
         self._on_data_change()
@@ -48,7 +50,7 @@ class VispyShapesLayer(VispyBaseLayer):
         ):
             vertices = np.pad(vertices, ((0, 0), (0, 1)), mode='constant')
 
-        self.node._subvisuals[0].set_data(
+        self.node.shape_faces.set_data(
             vertices=vertices, faces=faces, face_colors=colors
         )
 
@@ -68,7 +70,7 @@ class VispyShapesLayer(VispyBaseLayer):
             vertices = np.zeros((3, self.layer._slice_input.ndisplay))
             faces = np.array([[0, 1, 2]])
 
-        self.node._subvisuals[1].set_data(
+        self.node.shape_highlights.set_data(
             vertices=vertices,
             faces=faces,
             color=self.layer._highlight_color,
@@ -92,7 +94,7 @@ class VispyShapesLayer(VispyBaseLayer):
         else:
             size = self.layer._vertex_size
 
-        self.node._subvisuals[3].set_data(
+        self.node.highlight_vertices.set_data(
             vertices,
             size=size,
             face_color=face_color,
@@ -104,7 +106,7 @@ class VispyShapesLayer(VispyBaseLayer):
             pos = np.zeros((1, self.layer._slice_input.ndisplay))
             width = 0
 
-        self.node._subvisuals[2].set_data(
+        self.node.highlight_lines.set_data(
             pos=pos, color=edge_color, width=width
         )
 
@@ -122,8 +124,7 @@ class VispyShapesLayer(VispyBaseLayer):
 
     def _get_text_node(self):
         """Function to get the text node from the Compound visual"""
-        text_node = self.node._subvisuals[-1]
-        return text_node
+        return self.node.text
 
     def _on_text_change(self, event=None):
         if event is not None:
