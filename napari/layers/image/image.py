@@ -966,6 +966,11 @@ class Image(IntensityVisualizationMixin, _ImageBase):
         return state
 
     def _update_slice_response(self, response: _ImageSliceResponse) -> None:
+        if self._keep_auto_contrast:
+            data = response.image.raw
+            input_data = data[-1] if self.multiscale else data
+            self.contrast_limits = calc_data_range(input_data, rgb=self.rgb)
+
         super()._update_slice_response(response)
 
         # Maybe reset the contrast limits based on the new slice.
@@ -1123,7 +1128,7 @@ class Image(IntensityVisualizationMixin, _ImageBase):
 
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap."""
-        image = self._slice.thumbnail.view
+        image = self._slice.thumbnail.raw
 
         if self._slice_input.ndisplay == 3 and self.ndim > 2:
             image = np.max(image, axis=0)
