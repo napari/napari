@@ -16,9 +16,21 @@ This release is mostly a bug fix release. We aim for the next release to be 0.5.
 
 Highlights in `v0.4.19`:
 
-The removal of public access to `viewer.window.qt_viewer` has been postponed to `v0.6.0` ([napari/napari/#6283](https://github.com/napari/napari/pull/6283)). If you're interested in some feature that's currently behind private or deprecated API, please make an issue on the napari repo requesting the feature to be exposed!
+A new feature: [napari/napari#6102](https://github.com/napari/napari/pull/6102) added convenient parsing of color names and hex color strings in layer data
+and generating black-to-color colormaps when adding layers to the viewer. 
+For example, one can now use: `viewer.add_image(data, colormap="crimson")` or `viewer.add_image(data, colormap="#FAFA00").
+To see what color names can be handled, please refer to the 
+[vispy` dictionary of colors](https://github.com/vispy/vispy/blob/269ed1ac4d8126421fd5a7eb06a2996d63f46b17/vispy/color/_color_dict.py#L181).
+Note: there is a namespace collision for the case of `orange` which is both a proper `vispy` colormap name and a color name. 
+Previously, `orange` was handled as the `vispy` colormap, which is from white to orange. 
+However, with 0.4.19, `orange` will be handled as a color and the generated colormap will be from black to orange. 
 
-napari is now pydantic 2 compatible. At this moment we are using `pydantic.v1` to achieve this. Additionally, for this release, the napari conda bundle will be shipped with pydantic v1, but
+The removal of public access to `viewer.window.qt_viewer` has been postponed to `v0.6.0` ([napari/napari/#6283](https://github.com/napari/napari/pull/6283)).
+If you're interested in some feature that's currently behind private or deprecated API,
+please make an issue on the napari repo requesting the feature to be exposed!
+
+napari is now pydantic 2 compatible. At this moment we are using `pydantic.v1` to achieve this. 
+Additionally, for this release, the napari conda bundle will be shipped with pydantic v1, but
 we expect that in the next release we will ship the bundle with pydantic v2.
 Please, if you are a plugin developer and your plugin uses pydantic, ensure
 that it is compatible with pydantic v2 ([napari/napari/#6358](https://github.com/napari/napari/pull/6358)).
@@ -28,6 +40,7 @@ We have fixed problems with rendering some labels in incorrect color by sequence
 [napari/napari/#6411](https://github.com/napari/napari/pull/6411),
 [napari/napari/#6467](https://github.com/napari/napari/pull/6467),
 [napari/napari/#6439](https://github.com/napari/napari/pull/6439).
+[napari/napari/#6607](https://github.com/napari/napari/pull/6607).
 This also improves performance of rendering labels.
 However, there are still some limitations.
 Best performance is for labels encoded as (u)int8.
@@ -44,9 +57,13 @@ Also we experiment a little with current options and increase the size of
 send data (uint8, uint16 and float32) decrease performance of rendering on GPU.
 The test was performed on NVIDIA GeForce RTX 3060 with 12GB VRAM.
 
-If you have any questions or suggestions regarding napari core, for example, on how to adapt your plugin to be compatible with future napari versions, please get in touch! We have weekly community meetings, for which you can find the schedule [here](https://napari.org/stable/community/meeting_schedule.html). We would like to hear from you.
+If you have any questions or suggestions regarding napari core, for example, 
+on how to adapt your plugin to be compatible with future napari versions, please get in touch!
+We have weekly community meetings, for which you can find the schedule [here](https://napari.org/stable/community/meeting_schedule.html).
+We would like to hear from you.
 
 - Use a shader for low discrepancy label conversion ([napari/napari/#3308](https://github.com/napari/napari/pull/3308))
+- Automatic recognition of hex colour strings in layer data ([napari/napari/#6102](https://github.com/napari/napari/pull/6102))
 - Postpone qt_viewer deprecation to 0.6.0 ([napari/napari/#6283](https://github.com/napari/napari/pull/6283))
 - Pydantic 2 compatibility using `pydantic.v1`  ([napari/napari/#6358](https://github.com/napari/napari/pull/6358))
 - Initial deprecations for Labels API ([napari/napari/#6542](https://github.com/napari/napari/pull/6542))
@@ -129,9 +146,17 @@ If you have any questions or suggestions regarding napari core, for example, on 
 - Fix labels mapping cache by filling it with background, not 0 ([napari/napari/#6580](https://github.com/napari/napari/pull/6580))
 - Initialize ndim value for Points layer using data shape if available ([napari/napari/#6593](https://github.com/napari/napari/pull/6593))
 - Fix wrong working interpolation of labels in 3d ([napari/napari/#6596](https://github.com/napari/napari/pull/6596))
+- Fix points `changed` event emission ([napari/napari/#6611](https://github.com/napari/napari/pull/6611))
+- Fix `Labels.data_setitem` setting of view by taking dims order into account ([napari/napari/#6616](https://github.com/napari/napari/pull/6616))
+- Fixing data_setitem function of label layer ([napari/napari/#6618](https://github.com/napari/napari/pull/6618))
+- Fix points selection ([napari/napari/#6621](https://github.com/napari/napari/pull/6621))
+- Select only linked layers already present in layer list ([napari/napari/#6622](https://github.com/napari/napari/pull/6622))
+- Bug fixes to multiple issues with linked layers ([napari/napari/#6623](https://github.com/napari/napari/pull/6623))
+- Fix rendering of vertexes of shape layers with small scale ([napari/napari/#6628](https://github.com/napari/napari/pull/6628))
 
 ## API Changes
 
+- Automatic recognition of hex colour strings in layer data ([napari/napari/#6102](https://github.com/napari/napari/pull/6102))
 - Layer data events before and after ([napari/napari/#6178](https://github.com/napari/napari/pull/6178))
 
 ## Deprecations
@@ -147,8 +172,8 @@ If you have any questions or suggestions regarding napari core, for example, on 
 
 - Add HIP workshop to documentation/workshops ([napari/napari/#5117](https://github.com/napari/napari/pull/5117))
 - Update README.md for conda install change ([napari/napari/#6123](https://github.com/napari/napari/pull/6123))
-- Add 0.4.19 release notes ([napari/napari/#6376](https://github.com/napari/napari/pull/6376))
 - Cherry-pick docs for 0.4.19 release  ([napari/napari/#6384](https://github.com/napari/napari/pull/6384))
+- Add 0.4.19 release notes ([napari/napari/#6376](https://github.com/napari/napari/pull/6376))
 - Update docs contribution guide for two-repo setup ([napari/docs/#5](https://github.com/napari/docs/pull/5))
 - Improve makefile ([napari/docs/#41](https://github.com/napari/docs/pull/41))
 - add foundation grant onboarding workshop ([napari/docs/#55](https://github.com/napari/docs/pull/55))
@@ -222,11 +247,13 @@ If you have any questions or suggestions regarding napari core, for example, on 
 - test: [Automatic] Constraints upgrades: `app-model`, `babel`, `certifi`, `dask`, `fsspec`, `hypothesis`, `imageio`, `ipython`, `jsonschema`, `lxml`, `magicgui`, `matplotlib`, `numba`, `numpy`, `pandas`, `pillow`, `pint`, `psutil`, `psygnal`, `pydantic`, `pygments`, `pyqt6`, `pytest-qt`, `qtconsole`, `rich`, `scipy`, `tensorstore`, `tifffile`, `torch`, `virtualenv`, `wrapt`, `xarray` ([napari/napari/#6559](https://github.com/napari/napari/pull/6559))
 - Do not require triangle on macos arm ([napari/napari/#6603](https://github.com/napari/napari/pull/6603))
 - No-cache fast painting ([napari/napari/#6607](https://github.com/napari/napari/pull/6607))
+- test: [Automatic] Constraints upgrades: `dask`, `hypothesis`, `ipython`, `jsonschema`, `lxml`, `npe2`, `numpy`, `pillow`, `psutil`, `pytest`, `scipy`, `tensorstore`, `toolz`, `xarray` ([napari/napari/#6608](https://github.com/napari/napari/pull/6608))
 - Ignore pandas pyarrow warning ([napari/napari/#6609](https://github.com/napari/napari/pull/6609))
 - Update docs to suggest python 3.10 install ([napari/docs/#246](https://github.com/napari/docs/pull/246))
+- Move Nick and Loic to emeritus, sort emeritus core devs ([napari/docs/#339](https://github.com/napari/docs/pull/339))
 
 
-## 19 authors added to this release (alphabetical)
+## 20 authors added to this release (alphabetical)
 
 - [akuten1298](https://github.com/napari/napari/commits?author=akuten1298) - @akuten1298
 - [Andrew Sweet](https://github.com/napari/napari/commits?author=andy-sweet) - @andy-sweet
@@ -241,6 +268,7 @@ If you have any questions or suggestions regarding napari core, for example, on 
 - [Jaime Rodríguez-Guerra](https://github.com/napari/napari/commits?author=jaimergp) - @jaimergp
 - [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - @jni
 - [Kira Evans](https://github.com/napari/napari/commits?author=kne42) - @kne42
+- [Leopold Franz](https://github.com/napari/napari/commits?author=leopold-franz) - @leopold-franz
 - [Lorenzo Gaifas](https://github.com/napari/napari/commits?author=brisvag) - @brisvag
 - [Lucy Liu](https://github.com/napari/napari/commits?author=lucyleeow) - @lucyleeow
 - [Peter Sobolewski](https://github.com/napari/napari/commits?author=psobolewskiPhD) - @psobolewskiPhD
@@ -313,9 +341,10 @@ If you have any questions or suggestions regarding napari core, for example, on 
 
 ## New Contributors
 
-There are 4 new contributors for this release:
+There are 5 new contributors for this release:
 
 - akuten1298 [napari](https://github.com/napari/napari/commits?author=akuten1298) - @akuten1298
 - dgmccart [docs](https://github.com/napari/docs/commits?author=dgmccart) - @dgmccart
 - Egor Zindy [napari](https://github.com/napari/napari/commits?author=zindy) - @zindy
 - Elena Pascal [napari](https://github.com/napari/napari/commits?author=elena-pascal) - @elena-pascal
+- Leopold Franz [napari](https://github.com/napari/napari/commits?author=leopold-franz) - @leopold-franz
