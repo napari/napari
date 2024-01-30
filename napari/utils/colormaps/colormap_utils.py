@@ -937,8 +937,8 @@ def _coerce_contrast_limits(contrast_limits: Tuple[float, float]):
     c_max = np.float32(contrast_limits[1])
     dist = c_max - c_min
     if (
-        dist < np.spacing(c_min) * _MINIMUM_SHADES_COUNT
-        or dist < np.spacing(c_max) * _MINIMUM_SHADES_COUNT
+        dist < np.abs(np.spacing(c_min)) * _MINIMUM_SHADES_COUNT
+        or dist < np.abs(np.spacing(c_max)) * _MINIMUM_SHADES_COUNT
     ):
         return scale_up(contrast_limits)
 
