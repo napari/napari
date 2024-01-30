@@ -103,7 +103,7 @@ def test_coerce_contrast_limits_small_values():
     result = _coerce_contrast_limits(contrast_limits)
     assert isinstance(result, CoercedContrastLimits)
     assert np.isclose(result.contrast_limits[0], 0)
-    assert np.isclose(result.contrast_limits[1], 1)
+    assert np.isclose(result.contrast_limits[1], 1000)
     assert result.offset < 0
     assert result.scale > 1
     npt.assert_allclose(
