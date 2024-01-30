@@ -4,6 +4,8 @@
 #
 #    pip-compile --allow-unsafe --extra=pyqt5 --extra=pyqt6_experimental --extra=pyside2 --extra=pyside6_experimental --extra=testing --output-file=./resources/constraints/constraints_py3.10_docs.txt --strip-extras ./resources/constraints/pydantic_le_2.txt ./resources/constraints/version_denylist.txt ./setup.cfg docs/requirements.txt resources/constraints/version_denylist_examples.txt
 #
+accessible-pygments==0.0.4
+    # via pydata-sphinx-theme
 alabaster==0.7.16
     # via sphinx
 app-model==0.2.4
@@ -25,9 +27,10 @@ attrs==23.2.0
 babel==2.14.0
     # via
     #   napari (./setup.cfg)
+    #   pydata-sphinx-theme
     #   sphinx
 beautifulsoup4==4.12.3
-    # via napari-sphinx-theme
+    # via pydata-sphinx-theme
 build==1.0.3
     # via npe2
 cachey==0.2.1
@@ -55,15 +58,11 @@ comm==0.2.1
 contourpy==1.2.0
     # via matplotlib
 coverage==7.4.1
-    # via
-    #   coverage
-    #   pytest-cov
+    # via pytest-cov
 cycler==0.12.1
     # via matplotlib
 dask==2024.1.1
-    # via
-    #   dask
-    #   napari (./setup.cfg)
+    # via napari (./setup.cfg)
 debugpy==1.8.0
     # via ipykernel
 decorator==5.1.1
@@ -75,7 +74,7 @@ docstring-parser==0.15
 docutils==0.17.1
     # via
     #   myst-parser
-    #   napari-sphinx-theme
+    #   pydata-sphinx-theme
     #   sphinx
     #   sphinx-tabs
 exceptiongroup==1.2.0
@@ -234,7 +233,7 @@ napari-plugin-engine==0.2.0
     #   napari-svg
 napari-plugin-manager==0.1.0a2
     # via napari (./setup.cfg)
-napari-sphinx-theme==0.2.1
+napari-sphinx-theme==0.3.1
     # via -r docs/requirements.txt
 napari-svg==0.1.10
     # via napari (./setup.cfg)
@@ -334,6 +333,7 @@ packaging==23.2
     #   nibabel
     #   nilearn
     #   pooch
+    #   pydata-sphinx-theme
     #   pytest
     #   qtconsole
     #   qtpy
@@ -402,10 +402,14 @@ pydantic==1.10.14
     #   pydantic-compat
 pydantic-compat==0.1.2
     # via app-model
+pydata-sphinx-theme==0.14.4
+    # via napari-sphinx-theme
 pygments==2.17.2
     # via
+    #   accessible-pygments
     #   ipython
     #   napari (./setup.cfg)
+    #   pydata-sphinx-theme
     #   qtconsole
     #   rich
     #   sphinx
@@ -517,9 +521,7 @@ rpds-py==0.17.1
     #   jsonschema
     #   referencing
 scikit-image==0.22.0
-    # via
-    #   napari (./setup.cfg)
-    #   scikit-image
+    # via napari (./setup.cfg)
 scikit-learn==1.4.0
     # via nilearn
 scipy==1.12.0 ; python_version >= "3.9"
@@ -546,15 +548,15 @@ sortedcontainers==2.4.0
     # via hypothesis
 soupsieve==2.5
     # via beautifulsoup4
-sphinx==4.5.0
+sphinx==5.3.0
     # via
-    #   -r docs/requirements.txt
     #   myst-nb
     #   myst-parser
-    #   napari-sphinx-theme
     #   numpydoc
+    #   pydata-sphinx-theme
     #   sphinx-autobuild
     #   sphinx-autodoc-typehints
+    #   sphinx-copybutton
     #   sphinx-design
     #   sphinx-external-toc
     #   sphinx-favicon
@@ -564,6 +566,8 @@ sphinx==4.5.0
 sphinx-autobuild==2021.3.14
     # via -r docs/requirements.txt
 sphinx-autodoc-typehints==1.12.0
+    # via -r docs/requirements.txt
+sphinx-copybutton==0.5.2
     # via -r docs/requirements.txt
 sphinx-design==0.4.1
     # via -r docs/requirements.txt
@@ -660,6 +664,7 @@ typing-extensions==4.9.0
     #   pint
     #   psygnal
     #   pydantic
+    #   pydata-sphinx-theme
     #   sqlalchemy
     #   superqt
     #   torch
@@ -694,3 +699,4 @@ setuptools==69.0.3
     # via
     #   imageio-ffmpeg
     #   nodeenv
+    #   sphinx-copybutton
