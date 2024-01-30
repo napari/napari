@@ -92,7 +92,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.97.1
+hypothesis==6.97.2
     # via napari (./setup.cfg)
 idna==3.6
     # via requests
@@ -390,7 +390,7 @@ python-dateutil==2.8.2
     #   jupyter-client
     #   matplotlib
     #   pandas
-pytz==2023.3.post1
+pytz==2023.4
     # via pandas
 pyyaml==6.0.1
     # via
@@ -414,7 +414,7 @@ qtpy==2.4.1
     #   napari-plugin-manager
     #   qtconsole
     #   superqt
-referencing==0.32.1
+referencing==0.33.0
     # via
     #   jsonschema
     #   jsonschema-specifications
@@ -484,7 +484,7 @@ tensorstore==0.1.52
     # via
     #   -r ./resources/constraints/version_denylist.txt
     #   napari (./setup.cfg)
-tifffile==2023.12.9
+tifffile==2024.1.30
     # via
     #   napari (./setup.cfg)
     #   scikit-image
