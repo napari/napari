@@ -12,7 +12,7 @@ kernelspec:
   name: python3
 ---
 (napari-quick-start)=
-# napari quick start
+# Quick start
 
 +++
 

@@ -254,6 +254,11 @@ class QContrastLimitsPopup(QRangeSliderPopup):
         def reset():
             layer.reset_contrast_limits()
             layer.contrast_limits_range = layer.contrast_limits
+            decimals_ = range_to_decimals(
+                layer.contrast_limits_range, layer.dtype
+            )
+            self.slider.setDecimals(decimals_)
+            self.slider.setSingleStep(10**-decimals_)
 
         reset_btn = QPushButton("reset")
         reset_btn.setObjectName("reset_clims_button")

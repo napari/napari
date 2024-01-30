@@ -16,7 +16,7 @@ env:
   COLUMNS: 120
 
 concurrency:
-  group: comprehensive-test
+  group: comprehensive-test-v0.4.19
 
 jobs:
   manifest:

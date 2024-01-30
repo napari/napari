@@ -216,6 +216,22 @@ class VispyBaseLayer(ABC):
             affine_matrix = affine_matrix @ affine_offset
         self._master_transform.matrix = affine_matrix
 
+        # Because of performance reason, for multiscale images
+        # we load only visible part of data to GPU.
+        # To place this part of data correctly we update transform,
+        # but this leads to incorrect placement of child layers.
+        # To fix this we need to update child layers transform.
+        child_matrix = np.eye(4)
+        child_matrix[-1, : len(translate)] = (
+            self.layer.translate[self.layer._slice_input.displayed][::-1]
+            + self.layer.affine.translate[self.layer._slice_input.displayed][
+                ::-1
+            ]
+            - translate
+        )
+        for child in self.node.children:
+            child.transform.matrix = child_matrix
+
     def _on_experimental_clipping_planes_change(self):
         if hasattr(self.node, 'clipping_planes') and hasattr(
             self.layer, 'experimental_clipping_planes'

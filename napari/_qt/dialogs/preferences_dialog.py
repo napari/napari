@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Tuple, cast
 
 from qtpy.QtCore import QSize, Qt, Signal
 from qtpy.QtWidgets import (
+    QApplication,
     QDialog,
     QHBoxLayout,
     QListWidget,
@@ -209,12 +210,23 @@ class PreferencesDialog(QDialog):
 
     def _restore_default_dialog(self):
         """Launches dialog to confirm restore settings choice."""
+        prev = QApplication.instance().testAttribute(
+            Qt.ApplicationAttribute.AA_DontUseNativeDialogs
+        )
+        QApplication.instance().setAttribute(
+            Qt.ApplicationAttribute.AA_DontUseNativeDialogs, True
+        )
+
         response = QMessageBox.question(
             self,
             trans._("Restore Settings"),
             trans._("Are you sure you want to restore default settings?"),
-            QMessageBox.RestoreDefaults | QMessageBox.Cancel,
-            QMessageBox.RestoreDefaults,
+            QMessageBox.StandardButton.RestoreDefaults
+            | QMessageBox.StandardButton.Cancel,
+            QMessageBox.StandardButton.RestoreDefaults,
+        )
+        QApplication.instance().setAttribute(
+            Qt.ApplicationAttribute.AA_DontUseNativeDialogs, prev
         )
         if response == QMessageBox.RestoreDefaults:
             self._settings.reset()

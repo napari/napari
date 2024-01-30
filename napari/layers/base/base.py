@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import copy
+import inspect
 import itertools
 import os.path
 import warnings
-from abc import ABC, abstractmethod
+from abc import ABC, ABCMeta, abstractmethod
 from collections import defaultdict, namedtuple
 from contextlib import contextmanager
 from functools import cached_property
@@ -75,8 +77,21 @@ def no_op(layer: Layer, event: Event) -> None:
     return
 
 
+class PostInit(ABCMeta):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        sig = inspect.signature(self.__init__)
+        params = tuple(sig.parameters.values())
+        self.__signature__ = sig.replace(parameters=params[1:])
+
+    def __call__(self, *args, **kwargs):
+        obj = super().__call__(*args, **kwargs)
+        obj._post_init()
+        return obj
+
+
 @mgui.register_type(choices=get_layers, return_callback=add_layer_to_viewer)
-class Layer(KeymapProvider, MousemapProvider, ABC):
+class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     """Base layer class.
 
     Parameters
@@ -240,6 +255,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         Mode.PAN_ZOOM: 'standard',
         Mode.TRANSFORM: 'standard',
     }
+    events: EmitterGroup
 
     def __init__(
         self,
@@ -300,12 +316,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         self._ndim = ndim
 
-        self._slice_input = _SliceInput(
-            ndisplay=2,
-            point=(0,) * ndim,
-            order=tuple(range(ndim)),
-        )
-
         # Create a transform chain consisting of four transforms:
         # 1. `tile2data`: An initial transform only needed to display tiles
         #   of an image. It maps pixels of the tile into the coordinate space
@@ -339,6 +349,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 coerce_affine(affine, ndim=ndim, name='physical2world'),
                 Affine(np.ones(ndim), np.zeros(ndim), name='world2grid'),
             ]
+        )
+
+        self._slice_input = _SliceInput(
+            ndisplay=2,
+            point=self.data_to_world((0,) * ndim),
+            order=tuple(range(ndim)),
         )
 
         self.corner_pixels = np.zeros((2, ndim), dtype=int)
@@ -421,6 +437,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         # TODO: we try to avoid inner event connection, but this might be the only way
         #       until we figure out nested evented objects
         self._overlays.events.connect(self.events._overlays)
+
+    def _post_init(self):
+        """Post init hook for subclasses to use."""
 
     def __str__(self):
         """Return self.name."""
@@ -746,7 +765,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """Update the dimensionality of transforms and slices when data changes."""
         ndim = self._get_ndim()
 
-        old_ndim = self._ndim
+        old_ndim = self._transforms['tile2data'].ndim
         if old_ndim > ndim:
             keep_axes = range(old_ndim - ndim, old_ndim)
             self._transforms = self._transforms.set_slice(keep_axes)
@@ -781,6 +800,19 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         extent_data : array, shape (2, D)
         """
         raise NotImplementedError
+
+    @property
+    def _extent_data_augmented(self) -> np.ndarray:
+        """Extent of layer in data coordinates.
+
+        Differently from Layer._extent_data, this also includes the "size" of
+        data points; for example, Point sizes and Image pixel width are included.
+
+        Returns
+        -------
+        extent_data : array, shape (2, D)
+        """
+        return self._extent_data
 
     @property
     def _extent_world(self) -> np.ndarray:
@@ -1424,6 +1456,25 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """An axis aligned (ndisplay, 2) bounding box around the data"""
         return self._extent_data[:, dims_displayed].T
 
+    def _display_bounding_box_augmented(
+        self, dims_displayed: List[int]
+    ) -> npt.NDArray:
+        """An augmented, axis-aligned (ndisplay, 2) bounding box.
+
+        This bounding box includes the size of the layer in best resolution, including required padding
+        """
+        return self._extent_data_augmented[:, dims_displayed].T
+
+    def _display_bounding_box_augmented_data_level(
+        self, dims_displayed: List[int]
+    ) -> npt.NDArray:
+        """An augmented, axis-aligned (ndisplay, 2) bounding box.
+
+        If the layer is multiscale layer, then returns the
+        bounding box of the data at the current level
+        """
+        return self._display_bounding_box_augmented(dims_displayed)
+
     def click_plane_from_click_data(
         self,
         click_position: np.ndarray,
@@ -1664,6 +1715,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 self.refresh()
 
         else:
+            # set the data_level so that it is the lowest resolution in 3d view
+            if self.multiscale is True:
+                self._data_level = len(self.level_shapes) - 1
+
             # The stored corner_pixels attribute must contain valid indices.
             corners = np.zeros((2, self.ndim), dtype=int)
             # Some empty layers (e.g. Points) may have a data extent that only
@@ -1835,6 +1890,29 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             self.events.select()
         else:
             self.events.deselect()
+
+    def __copy__(self):
+        """Create a copy of this layer.
+
+        Returns
+        -------
+        layer : napari.layers.Layer
+            Copy of this layer.
+
+        Notes
+        -----
+        This method is defined for purpose of asv memory benchmarks.
+        The copy of data is intentional for properly estimating memory
+        usage for layer.
+
+        If you want a to copy a layer without coping the data please use
+        `layer.create(*layer.as_layer_data_tuple())`
+
+        If you change this method, validate if memory benchmarks are still
+        working properly.
+        """
+        data, meta, layer_type = self.as_layer_data_tuple()
+        return self.create(copy.copy(data), meta=meta, layer_type=layer_type)
 
     @classmethod
     def create(

@@ -14,13 +14,14 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
+import os
 import re
 from importlib import import_module
 from pathlib import Path
 from urllib.parse import urlparse, urlunparse
 
-import qtgallery
 from jinja2.filters import FILTERS
+from sphinx_gallery import scrapers
 from sphinx_gallery.sorting import ExampleTitleSortKey
 
 import napari
@@ -78,7 +79,7 @@ tags_extension = ["md", "rst"]
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'napari'
+html_theme = 'napari_sphinx_theme'
 
 # Define the json_url for our version switcher.
 json_url = "https://napari.org/dev/_static/version_switcher.json"
@@ -90,12 +91,17 @@ html_theme_options = {
         {"name": "napari hub", "url": "https://napari-hub.org"}
     ],
     "github_url": "https://github.com/napari/napari",
-    "navbar_start": ["navbar-project"],
+    "navbar_start": ["navbar-logo", "navbar-project"],
     "navbar_end": ["version-switcher", "navbar-icon-links"],
     "switcher": {
         "json_url": json_url,
         "version_match": version_match,
     },
+    "navbar_persistent": [],
+    "header_links_before_dropdown": 6,
+    "secondary_sidebar_items": ["page-toc"],
+    "pygment_light_style": "napari",
+    "pygment_dark_style": "napari",
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -152,10 +158,10 @@ myst_enable_extensions = [
     'tasklist',
 ]
 
-myst_heading_anchors = 3
+myst_heading_anchors = 4
 
 version_string = '.'.join(str(x) for x in __version_tuple__[:3])
-python_version = '3.9'
+python_version = '3.10'
 python_version_range = '3.8-3.10'
 python_minimum_version = '3.8'
 
@@ -168,6 +174,8 @@ myst_substitutions = {
     "python_version_code": f"`python={python_version}`",
     "conda_create_env": f"```sh\nconda create -y -n napari-env -c conda-forge python={python_version}\nconda activate napari-env\n```",
 }
+
+myst_footnote_transition = False
 
 nb_output_stderr = 'show'
 
@@ -194,12 +202,46 @@ exclude_patterns = [
 napoleon_custom_sections = [('Events', 'params_style')]
 
 
-def reset_napari_theme(gallery_conf, fname):
+def reset_napari(gallery_conf, fname):
+    from qtpy.QtWidgets import QApplication
+
     from napari.settings import get_settings
 
     settings = get_settings()
     settings.appearance.theme = 'dark'
-    qtgallery.reset_qapp(gallery_conf, fname)
+
+    # Disabling `QApplication.exec_` means example scripts can call `exec_`
+    # (scripts work when run normally) without blocking example execution by
+    # sphinx-gallery. (from qtgallery)
+    QApplication.exec_ = lambda _: None
+
+
+def napari_scraper(block, block_vars, gallery_conf):
+    """Basic napari window scraper.
+
+    Looks for any QtMainWindow instances and takes a screenshot of them.
+
+    `app.processEvents()` allows Qt events to propagateo and prevents hanging.
+    """
+    imgpath_iter = block_vars['image_path_iterator']
+
+    if app := napari.qt.get_app():
+        app.processEvents()
+    else:
+        return ""
+
+    img_paths = []
+    for win, img_path in zip(
+        reversed(napari._qt.qt_main_window._QtMainWindow._instances),
+        imgpath_iter,
+    ):
+        img_paths.append(img_path)
+        win._window.screenshot(img_path, canvas_only=False)
+
+    napari.Viewer.close_all()
+    app.processEvents()
+
+    return scrapers.figure_rst(img_paths, gallery_conf['src_dir'])
 
 
 sphinx_gallery_conf = {
@@ -211,28 +253,44 @@ sphinx_gallery_conf = {
     / 'napari'
     / 'resources'
     / 'logo.png',
-    'plot_gallery': True,
+    'plot_gallery': "'True'",  # https://github.com/sphinx-gallery/sphinx-gallery/pull/304/files
     'download_all_examples': False,
     'min_reported_time': 10,
     'only_warn_on_example_error': True,
     'image_scrapers': (
         "matplotlib",
-        qtgallery.qtscraper,
+        napari_scraper,
     ),
-    'reset_modules': (reset_napari_theme,),
+    'reset_modules': (reset_napari,),
     'reference_url': {'napari': None},
     'within_subsection_order': ExampleTitleSortKey,
 }
 
+GOOGLE_CALENDAR_API_KEY = os.environ.get('GOOGLE_CALENDAR_API_KEY', '')
+
+
+def add_google_calendar_secrets(app, docname, source):
+    """Add google calendar api key to meeting schedule page.
+
+    The source argument is a list whose single element is the contents of the
+    source file. You can process the contents and replace this item to implement
+    source-level transformations.
+    """
+    if docname == 'community/meeting_schedule':
+        source[0] = source[0].replace('{API_KEY}', GOOGLE_CALENDAR_API_KEY)
+
 
 def setup(app):
-    """Ignore .ipynb files.
+    """Set up docs build.
 
-    Prevents sphinx from complaining about multiple files found for document
-    when generating the gallery.
+    * Ignores .ipynb files to prevent sphinx from complaining about multiple
+      files found for document when generating the gallery
+    * Rewrites github anchors to be comparable
+    * Adds google calendar api key to meetings schedule page
 
     """
     app.registry.source_suffix.pop(".ipynb", None)
+    app.connect('source-read', add_google_calendar_secrets)
     app.connect('linkcheck-process-uri', rewrite_github_anchor)
 
 

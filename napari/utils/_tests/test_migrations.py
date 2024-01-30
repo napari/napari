@@ -1,6 +1,8 @@
 import pytest
 
-from napari.utils.migrations import rename_argument
+from napari.utils.migrations import (
+    rename_argument,
+)
 
 
 def test_simple():

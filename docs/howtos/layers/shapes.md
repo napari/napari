@@ -20,7 +20,7 @@ GUI and from the console.
 
 ## When to use the shapes layer
 
-The points layer allows you to display a list of an NxD arrays, where each array
+The `Shapes` layer allows you to display a list of an NxD arrays, where each array
 corresponds to one shape, specified by N points in D coordinates. You can adjust
 the position, size, face color, edge color, and opacity of all the shapes
 independently, both programmatically and from the GUI.

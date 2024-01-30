@@ -109,6 +109,11 @@ should be covered by at least one test. Good tests not only execute the code,
 but explore corner cases.  It can be tempting not to review tests, but please
 do so.
 
+7. **Labels and Milestones:** Make sure you add the appropriate labels and
+milestone to PRs before merging. This should be done both in the main napari
+repo and in the docs repo. Both repos have a CI check, triggered by the
+`ready_to_merge` label, which will fail if the milestone is not set in the PR.
+
 Other changes may be *nitpicky*: spelling mistakes, formatting,
 etc. Do not insist contributors make these changes, but instead you should offer
 to make these changes by [pushing to their branch](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/committing-changes-to-a-pull-request-branch-created-from-a-fork), or using GitHub’s [suggestion](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/reviewing-changes-in-pull-requests/commenting-on-a-pull-request)

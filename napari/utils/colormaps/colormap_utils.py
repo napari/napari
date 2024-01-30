@@ -1,5 +1,6 @@
 import warnings
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
+from functools import lru_cache
 from threading import Lock
 from typing import Dict, List, Optional, Tuple, Union
 
@@ -18,8 +19,9 @@ from napari.utils.colormaps.bop_colors import bopd
 from napari.utils.colormaps.colormap import (
     Colormap,
     ColormapInterpolationMode,
+    CyclicLabelColormap,
     DirectLabelColormap,
-    LabelColormap,
+    minimum_dtype_for_labels,
 )
 from napari.utils.colormaps.inverse_colormaps import inverse_cmaps
 from napari.utils.colormaps.standardize_color import transform_color
@@ -407,7 +409,7 @@ def _color_random(n, *, colorspace='lab', tolerance=0.0, seed=0.5):
 
 def label_colormap(
     num_colors=256, seed=0.5, background_value=0
-) -> LabelColormap:
+) -> CyclicLabelColormap:
     """Produce a colormap suitable for use with a given label set.
 
     Parameters
@@ -420,13 +422,16 @@ def label_colormap(
 
     Returns
     -------
-    colormap : napari.utils.LabelColormap
+    colormap : napari.utils.CyclicLabelColormap
         A colormap for use with labels remapped to [0, 1].
 
     Notes
     -----
     0 always maps to fully transparent.
     """
+    if num_colors < 1:
+        raise ValueError("num_colors must be >= 1")
+
     # Starting the control points slightly above 0 and below 1 is necessary
     # to ensure that the background pixel 0 is transparent
     midpoints = np.linspace(0.00001, 1 - 0.00001, num_colors + 1)
@@ -453,17 +458,111 @@ def label_colormap(
         len(control_points) - 1,
     )
 
-    colors = colors[indices][:-2]
     # here is an ugly hack to restore classical napari color order.
+    colors = colors[indices][:-1]
 
-    return LabelColormap(
+    # ensure that we not need to deal with differences in float rounding for
+    # CPU and GPU.
+    uint8_max = np.iinfo(np.uint8).max
+    rgb8_colors = (colors * uint8_max).astype(np.uint8)
+    colors = rgb8_colors.astype(np.float32) / uint8_max
+
+    return CyclicLabelColormap(
         name='label_colormap',
         display_name=trans._p('colormap', 'low discrepancy colors'),
         colors=colors,
         controls=np.linspace(0, 1, len(colors) + 1),
         interpolation='zero',
         background_value=background_value,
+        seed=seed,
     )
+
+
+@lru_cache
+def _primes(upto=2**16):
+    """Generate primes up to a given number.
+
+    Parameters
+    ----------
+    upto : int
+        The upper limit of the primes to generate.
+
+    Returns
+    -------
+    primes : np.ndarray
+        The primes up to the upper limit.
+    """
+    primes = np.arange(3, upto + 1, 2)
+    isprime = np.ones((upto - 1) // 2, dtype=bool)
+    max_factor = int(np.sqrt(upto))
+    for factor in primes[: max_factor // 2]:
+        if isprime[(factor - 2) // 2]:
+            isprime[(factor * 3 - 2) // 2 : None : factor] = 0
+    return np.concatenate(([2], primes[isprime]))
+
+
+def shuffle_and_extend_colormap(
+    colormap: CyclicLabelColormap, seed: int, min_random_choices: int = 5
+) -> CyclicLabelColormap:
+    """Shuffle the colormap colors and extend it to more colors.
+
+    The new number of colors will be a prime number that fits into the same
+    dtype as the current number of colors in the colormap.
+
+    Parameters
+    ----------
+    colormap : napari.utils.CyclicLabelColormap
+        Colormap to shuffle and extend.
+    seed : int
+        Seed for the random number generator.
+    min_random_choices : int
+        Minimum number of new table sizes to choose from. When choosing table
+        sizes, every choice gives a 1/size chance of two labels being mapped
+        to the same color. Since we try to stay within the same dtype as the
+        original colormap, if the number of original colors is close to the
+        maximum value for the dtype, there will not be enough prime numbers
+        up to the dtype max to ensure that two labels can always be
+        distinguished after one or few shuffles. In that case, we discard
+        some colors and choose the `min_random_choices` largest primes to fit
+        within the dtype.
+
+    Returns
+    -------
+    colormap : napari.utils.CyclicLabelColormap
+        Shuffled and extended colormap.
+    """
+    rng = np.random.default_rng(seed)
+    n_colors_prev = len(colormap.colors)
+    dtype = minimum_dtype_for_labels(n_colors_prev)
+    indices = np.arange(n_colors_prev)
+    rng.shuffle(indices)
+    shuffled_colors = colormap.colors[indices]
+
+    primes = _primes(
+        np.iinfo(dtype).max if np.issubdtype(dtype, np.integer) else 2**24
+    )
+    valid_primes = primes[primes > n_colors_prev]
+    if len(valid_primes) < min_random_choices:
+        valid_primes = primes[-min_random_choices:]
+    n_colors = rng.choice(valid_primes)
+    n_color_diff = n_colors - n_colors_prev
+
+    extended_colors = np.concatenate(
+        (
+            shuffled_colors[: min(n_color_diff, 0) or None],
+            shuffled_colors[rng.choice(indices, size=max(n_color_diff, 0))],
+        ),
+        axis=0,
+    )
+
+    new_colormap = CyclicLabelColormap(
+        name=colormap.name,
+        colors=extended_colors,
+        controls=np.linspace(0, 1, len(extended_colors) + 1),
+        interpolation='zero',
+        background_value=colormap.background_value,
+    )
+    return new_colormap
 
 
 def direct_colormap(color_dict=None):
@@ -481,10 +580,9 @@ def direct_colormap(color_dict=None):
         to an array.
     """
     # we don't actually use the color array, so pass dummy.
-    d = DirectLabelColormap(np.zeros(3))
-    if color_dict is not None:
-        d.color_dict.update(color_dict)
-    return d
+    return DirectLabelColormap(
+        color_dict=color_dict or defaultdict(lambda: np.zeros(4)),
+    )
 
 
 def vispy_or_mpl_colormap(name):
@@ -566,6 +664,11 @@ AVAILABLE_COLORMAPS_LOCK = Lock()
 MAGENTA_GREEN = ['magenta', 'green']
 RGB = ['red', 'green', 'blue']
 CYMRGB = ['cyan', 'yellow', 'magenta', 'red', 'green', 'blue']
+
+
+AVAILABLE_LABELS_COLORMAPS = {
+    'lodisc-50': label_colormap(50),
+}
 
 
 def _increment_unnamed_colormap(

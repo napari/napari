@@ -24,10 +24,9 @@ We will walk through the code in the following sections.
 from typing import List
 
 from dask_image.imread import imread
-import napari
 from magicgui.widgets import ComboBox, Container
+import napari
 import numpy as np
-
 
 COLOR_CYCLE = [
     '#1f77b4',
@@ -46,21 +45,22 @@ COLOR_CYCLE = [
 def create_label_menu(points_layer, labels):
     """Create a label menu widget that can be added to the napari viewer dock
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     points_layer : napari.layers.Points
         a napari points layer
     labels : List[str]
         list of the labels for each keypoint to be annotated (e.g., the body parts to be labeled).
 
-    Returns:
-    --------
+    Returns
+    -------
     label_menu : Container
         the magicgui Container with our dropdown menu widget
     """
     # Create the label selection menu
     label_menu = ComboBox(label='feature_label', choices=labels)
     label_widget = Container(widgets=[label_menu])
+
 
     def update_label_menu(event):
         """Update the label menu when the point selection changes"""
@@ -70,12 +70,12 @@ def create_label_menu(points_layer, labels):
 
     points_layer.events.current_properties.connect(update_label_menu)
 
-    def label_changed(event):
+    def label_changed(new_label):
         """Update the Points layer when the label menu selection changes"""
-        selected_label = event.value
         current_properties = points_layer.current_properties
-        current_properties['label'] = np.asarray([selected_label])
+        current_properties['label'] = np.asarray([new_label])
         points_layer.current_properties = current_properties
+        points_layer.refresh_colors()
 
     label_menu.changed.connect(label_changed)
 
@@ -99,14 +99,14 @@ def point_annotator(
 
     viewer = napari.view_image(stack)
     points_layer = viewer.add_points(
-        properties={'label': labels},
+        ndim=3,
+        property_choices={'label': labels},
         edge_color='label',
         edge_color_cycle=COLOR_CYCLE,
         symbol='o',
         face_color='transparent',
-        edge_width=8,
+        edge_width=0.5,  # fraction of point size
         size=12,
-        ndim=3
     )
     points_layer.edge_color_mode = 'cycle'
 
@@ -124,15 +124,17 @@ def point_annotator(
         new_label = labels[new_ind]
         current_properties['label'] = np.array([new_label])
         points_layer.current_properties = current_properties
+        points_layer.refresh_colors()
 
     def next_on_click(layer, event):
         """Mouse click binding to advance the label when a point is added"""
         if layer.mode == 'add':
+            # By default, napari selects the point that was just added.
+            # Disable that behavior, as the highlight gets in the way
+            # and also causes next_label to change the color of the
+            # point that was just added.
+            layer.selected_data = set()
             next_label()
-
-            # by default, napari selects the point that was just added
-            # disable that behavior, as the highlight gets in the way
-            layer.selected_data = {}
 
     points_layer.mode = 'add'
     points_layer.mouse_drag_callbacks.append(next_on_click)
@@ -148,6 +150,9 @@ def point_annotator(
         new_label = labels[new_ind]
         current_properties['label'] = np.array([new_label])
         points_layer.current_properties = current_properties
+        points_layer.refresh_colors()
+
+    napari.run()
 ```
 
 ## `point_annotator()`
@@ -158,8 +163,8 @@ See below for the function definition.
 
 ```python
 def point_annotator(
-    im_path: str,
-    labels: List[str],
+        im_path: str,
+        labels: List[str],
 ):
     """Create a GUI for annotating points in a series of images.
 
@@ -206,16 +211,15 @@ As discussed above, we will be storing which feature of interest each point corr
 To visualize the feature each point represents, we set the edge color as a color cycle mapped to the `label` property (`edge_color='label'`).
 
 ```python
-properties = {'label': labels}
 points_layer = viewer.add_points(
-    properties=properties,
+    ndim=3,
+    property_choices={'label': labels},
     edge_color='label',
     edge_color_cycle=COLOR_CYCLE,
     symbol='o',
     face_color='transparent',
-    edge_width=8,
+    edge_width=0.5,  # fraction of point size
     size=12,
-    ndim=3
 )
 ```
 
@@ -259,14 +263,14 @@ GUI interactive.
 def create_label_menu(points_layer, labels):
     """Create a label menu widget that can be added to the napari viewer dock
 
-    Parameters:
+    Parameters
     -----------
     points_layer : napari.layers.Points
         a napari points layer
     labels : List[str]
         list of the labels for each keypoint to be annotated (e.g., the body parts to be labeled).
 
-    Returns:
+    Returns
     --------
     label_menu : Container
         the magicgui Container with our dropdown menu widget
@@ -288,7 +292,7 @@ We then need to connect the dropdown menu (`label_menu`) to the points layer to 
 First, we define a function to update the label dropdown menu GUI when the value of the selected point or next point to be added is changed.
 On the points layer, the property values of the next point to be added are stored in the `current_properties` property.
 The points layer has an event that gets emitted when the `current_properties` property is changed (`points_layer.events.current_properties`).
-We connect the function we created to the event so that `update_label_menu()` is called whenever `Points.current_property` is changed.
+We connect the function we created to the event so that `update_label_menu()` is called whenever `Points.current_properties` is changed.
 
 ```python
 def update_label_menu(event):
@@ -305,12 +309,12 @@ Similar to the points layer, the magicgui object has an event that gets emitted 
 To ensure the points layer is updated whenever the GUI selection is changed, we connect `label_changed()` to the `label_menu.changed` event.
 
 ```python
-def label_changed(event):
+def label_changed(new_label):
     """Update the Points layer when the label menu selection changes"""
-    selected_label = event.value
     current_properties = points_layer.current_properties
-    current_properties['label'] = np.asarray([selected_label])
+    current_properties['label'] = np.asarray([new_label])
     points_layer.current_properties = current_properties
+    points_layer.refresh_colors()
 
 label_menu.changed.connect(label_changed)
 ```
@@ -350,6 +354,7 @@ def next_label(event=None):
     new_label = labels[new_ind]
     current_properties['label'] = np.array([new_label])
     points_layer.current_properties = current_properties
+    points_layer.refresh_colors()
 ```
 
 We can do the same with another function that instead decrements the label with wraparound.
@@ -366,6 +371,7 @@ def prev_label(event):
     new_label = labels[new_ind]
     current_properties['label'] = np.array([new_label])
     points_layer.current_properties = current_properties
+    points_layer.refresh_colors()
 ```
 
 ## Mousebinding to iterate through labels
@@ -380,13 +386,13 @@ Finally,
 ```python
 def next_on_click(layer, event):
     """Mouse click binding to advance the label when a point is added"""
-    # only do something if we are adding points
     if layer.mode == 'add':
+        # By default, napari selects the point that was just added.
+        # Disable that behavior, as the highlight gets in the way
+        # and also causes next_label to change the color of the
+        # point that was just added.
+        layer.selected_data = set()
         next_label()
-
-        # by default, napari selects the point that was just added
-        # disable that behavior, as the highlight gets in the way
-        layer.selected_data = []
 ```
 
 After creating the function, we then add it to the `points_layer` mouse drag callbacks.

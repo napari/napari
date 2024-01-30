@@ -163,7 +163,7 @@ def add_line(layer: Shapes, event: MouseEvent) -> None:
         A proxy read only wrapper around a vispy mouse event.
     """
     # full size is the initial offset of the second point compared to the first point of the line.
-    size = layer._vertex_size * layer.scale_factor / 4
+    size = layer._normalized_vertex_radius / 2
     full_size = np.zeros(layer.ndim, dtype=float)
     for i in layer._slice_input.displayed:
         full_size[i] = size
@@ -192,7 +192,7 @@ def add_ellipse(layer: Shapes, event: MouseEvent):
     event: MouseEvent
         A proxy read only wrapper around a vispy mouse event.
     """
-    size = layer._vertex_size * layer.scale_factor / 4
+    size = layer._normalized_vertex_radius / 2
     size_h = np.zeros(layer.ndim, dtype=float)
     size_h[layer._slice_input.displayed[0]] = size
     size_v = np.zeros(layer.ndim, dtype=float)
@@ -218,7 +218,7 @@ def add_rectangle(layer: Shapes, event: MouseEvent) -> None:
     event: MouseEvent
         A proxy read only wrapper around a vispy mouse event.
     """
-    size = layer._vertex_size * layer.scale_factor / 4
+    size = layer._normalized_vertex_radius / 2
     size_h = np.zeros(layer.ndim, dtype=float)
     size_h[layer._slice_input.displayed[0]] = size
     size_v = np.zeros(layer.ndim, dtype=float)
@@ -764,10 +764,10 @@ def _move_active_element_under_cursor(
 
             # prevent box from shrinking below a threshold size
             size = (np.linalg.norm(box[Box.TOP_LEFT] - box_center),)
-            threshold = (
-                layer._vertex_size * layer.scale_factor / layer.scale[-1] / 2
-            )
-            if np.linalg.norm(size * drag_scale) < threshold:
+            if (
+                np.linalg.norm(size * drag_scale)
+                < layer._normalized_vertex_radius
+            ):
                 drag_scale[:] = 1
             # on vertical/horizontal drags we get scale of 0
             # when we actually simply don't want to scale

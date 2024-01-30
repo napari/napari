@@ -1,3 +1,5 @@
+import copy
+
 import numpy as np
 import pytest
 
@@ -415,4 +417,26 @@ def test_surface_wireframe():
     )
     assert isinstance(surface_layer.wireframe, SurfaceWireframe)
     assert surface_layer.wireframe.visible is True
-    assert np.all(surface_layer.wireframe.color == (1, 0, 0, 1))
+    assert np.array_equal(surface_layer.wireframe.color, (1, 0, 0, 1))
+
+
+def test_surface_copy():
+    vertices = np.array(
+        [
+            [3, 0, 0],
+            [3, 0, 3],
+            [3, 3, 0],
+            [5, 0, 0],
+            [5, 0, 3],
+            [5, 3, 0],
+            [2, 50, 50],
+            [2, 50, 100],
+            [2, 100, 50],
+        ]
+    )
+    faces = np.array([[0, 1, 2], [3, 4, 5], [6, 7, 8]])
+    values = np.array([1, 2, 3, 1, 2, 3, 1, 2, 3])
+
+    l1 = Surface((vertices, faces, values))
+    l2 = copy.copy(l1)
+    assert l1.data[0] is not l2.data[0]

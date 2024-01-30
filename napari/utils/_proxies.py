@@ -100,8 +100,12 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
             typ = type(self.__wrapped__).__name__
 
             self._private_attr_warning(name, typ)
+        with warnings.catch_warnings(record=True) as cx_manager:
+            data = self.create(super().__getattr__(name))
+        for warning in cx_manager:
+            warnings.warn(warning.message, warning.category, stacklevel=2)
 
-        return self.create(super().__getattr__(name))
+        return data
 
     def __setattr__(self, name: str, value: Any):
         if (
