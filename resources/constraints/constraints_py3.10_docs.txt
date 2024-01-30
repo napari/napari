@@ -230,7 +230,7 @@ napari-plugin-engine==0.2.0
     #   napari-svg
 napari-plugin-manager==0.1.0a2
     # via napari (./setup.cfg)
-napari-sphinx-theme==0.2.1
+napari-sphinx-theme==0.3.0
     # via -r docs/requirements.txt
 napari-svg==0.1.10
     # via napari (./setup.cfg)
@@ -399,6 +399,8 @@ pydantic==1.10.14
     #   pydantic-compat
 pydantic-compat==0.1.2
     # via app-model
+pydata-sphinx-theme==0.14.4
+    # via napari-sphinx-theme
 pygments==2.17.2
     # via
     #   ipython
@@ -546,7 +548,7 @@ sortedcontainers==2.4.0
     # via hypothesis
 soupsieve==2.5
     # via beautifulsoup4
-sphinx==4.5.0
+sphinx==5.3.0
     # via
     #   -r docs/requirements.txt
     #   myst-nb

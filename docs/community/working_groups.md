@@ -18,10 +18,9 @@ We believe working groups are a helpful way to move forward work on particular t
 
 ## Existing working groups
 
-- Bundled Application (Co-Leads: [Gonzalo Peña-Castellanos](https://github.com/goanpeca) and [Ziyang Liu](https://github.com/potating-potato))
-- Plugins (Co-Leads: [Talley Lambert](https://github.com/tlambert03) and [Nathan Clack](https://github.com/nclack))
-- Architecture (Co-Leads: [Juan Nunez-Iglesias](https://github.com/jni) and [Andy Sweet](https://github.com/andy-sweet))
-- Documentation (Co-Leads: [Genevieve Buckley](https://github.com/GenevieveBuckley) and [Justin Kiggins](https://github.com/neuromusic))
+- Bundled Application (Co-Leads: [Jaime Rodríguez-Guerra](https://github.com/jaimergp) and [Gonzalo Peña-Castellanos](https://github.com/goanpeca))
+- Documentation (Co-Leads: [Peter Sobolewski](https://github.com/psobolewskiPhD) and [Melissa Weber Mendonça](https://github.com/melissawm/))
+- Graphs layer (Co-Leads: [Draga Doncila Pop](https://github.com/DragaDoncila) and [Jordão Bragantini](https://github.com/JoOkuma))
 
 ## How to join an existing working group
 

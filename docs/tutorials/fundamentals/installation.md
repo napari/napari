@@ -15,7 +15,7 @@ jupyter:
 
 (installation)=
 
-# How to install napari on your machine
+# How to install napari
 
 Welcome to the **napari** installation guide!
 
@@ -25,11 +25,8 @@ This guide will teach you how to do a clean install of **napari** and launch the
 If you want to contribute code back into napari, you should follow the [development installation instructions in the contributing guide](https://napari.org/developers/contributing.html) instead.
 ```
 
-## Prerequisites
+## Install as Python package (recommended)
 
-Prerequisites differ depending on how you want to install napari.
-
-### Prerequisites for installing napari as a Python package
 This installation method allows you to use napari from Python to programmatically
 interact with the app. It is the best way to install napari and make full use of
 all its features.
@@ -41,15 +38,6 @@ It requires:
 You may also want:
 - an environment manager like [conda](https://docs.conda.io/en/latest/miniconda.html) or
 [venv](https://docs.python.org/3/library/venv.html) **(Highly recommended)**
-
-### Prerequisites for installing napari as a bundled app
-This is the easiest way to install napari if you only wish to use it as a standalone GUI app.
-This installation method does not have any prerequisites.
-
-[Click here](#install-as-a-bundled-app) to see instructions
-for installing the bundled app.
-
-## Install as Python package (recommended)
 
 Python package distributions of napari can be installed via `pip`, `conda-forge`, or from source.
 
@@ -85,6 +73,8 @@ python -m pip install "napari[all]" --upgrade
 *(See [Choosing a different Qt backend](#choosing-a-different-qt-backend) below for an explanation of the `[all]`
 notation.)*
 
+*(See[Using constraints file](#using-constraints-file) for help installing older versions of napari)*
+
 ````
 
 
@@ -96,7 +86,7 @@ conda-forge channel. We also recommend this path for users of arm64 macOS machin
 (Apple Silicon, meaning a processor with a name like "M1"). You can install it with:
 
 ```sh
-conda install -c conda-forge napari
+conda install -c conda-forge napari pyqt
 ```
 
 You can then upgrade to a new version of napari using:
@@ -108,7 +98,7 @@ conda update napari
 If you want to install napari with PySide2 as the backend you need to install it using
 
 ```sh
-conda install -c conda-forge "napari=*=*pyside2"
+conda install -c conda-forge napari pyside2
 ```
 ````
 
@@ -151,7 +141,7 @@ python -m pip install "git+https://github.com/napari/napari.git#egg=napari[all]"
 ````
 
 <!-- #region -->
-## Checking it worked
+### Checking it worked
 
 After installation you should be able to launch napari from the command line by
 simply running
@@ -168,7 +158,14 @@ the current release {{ napari_version }}, using command: `napari --version` .
 ````
 ![macOS desktop with a napari viewer window without any image opened in the foreground, and a terminal in the background with the appropriate conda environment activated (if applicable) and the command to open napari entered.](../assets/tutorials/launch_cli_empty.png)
 
-## Choosing a different Qt backend
+````{note}
+On some platforms, particularly macOS and Windows, there may be a ~30 second 
+delay before the viewer appears on first launch. This is expected and subsequent
+launches should be quick. However, anti-malware and other security software 
+measures may further delay launches—even after the first launch.
+````
+
+### Choosing a different Qt backend
 
 napari needs a library called [Qt](https://www.qt.io/) to run its user interface
 (UI). In Python, there are two alternative libraries to run this, called
@@ -207,6 +204,25 @@ and then use `pip install napari`.
 ```{note}
 If you switch backends, it's a good idea to `pip uninstall` the one
 you're not using.
+```
+
+### Using constraints files
+
+Since napari 0.4.18, we store constraints files with information about each exact dependency version against which napari was tested.
+This could be useful if you need to install napari as a package from PyPI, and prevents creating environments where napari does not start or work properly.
+
+The constraints files are stored in the napari repository under `resources/constraints/constraints_py3.10.txt`. To find
+constraints for specific releases, go under the link `https://github.com/napari/napari/tree/{tag}/resources/constraints`
+replacing `{tag}` with the desired napari version.
+
+```sh
+pip install napari[backend_selection] -c path/to/constraints/file
+```
+
+For example, if you would like to install napari on python 3.10:
+
+```sh
+pip install napari[all, pyqt] -c constraints_py3.10.txt
 ```
 
 ## Install as a bundled app

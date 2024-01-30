@@ -7,9 +7,28 @@ This page contains a list, to make them easier to find online.
 You can find more videos of talks, tutorials and demos on the
 [napari youtube channel](https://www.youtube.com/channel/UCbTgw84ew4pxTJ9qu3W2hqg/playlists).
 
+```{admonition} Got a workshop?
+If you are looking to create your own workshop, you can use the
+[napari workshop template](https://github.com/napari/napari-workshop-template)
+as a starting point.
+
+If you have organized a napari workshop and would like to see it featured here
+in this page, you can
+[send a Pull Request to the napari/docs repository](../developers/documentation/index.md)
+or contact the core developers on [zulip chat](https://napari.zulipchat.com/login/).
+```
+
 ## Workshops
 
 *Workshops are listed from newest to oldest.*
+* September 2023
+  * [Plugin design](https://chanzuckerberg.github.io/napari-plugin-accel-workshops/workshops/design23.html) and [software development workshop](https://chanzuckerberg.github.io/napari-plugin-accel-workshops/workshops/softwaredev.html) for [napari plugin grantees](https://chanzuckerberg.com/rfa/napari-plugin-grants/).
+  * [Bioimage Analysis with Python and Napari (video lecture)](https://www.youtube.com/watch?v=QDS5t7oZH-c) at the [EMBO Practical Course for Advanced Methods in Bioimage Analysis](https://www.embl.org/about/info/course-and-conference-office/events/bia23-01/)  
+  
+* November 2022, napari foundation grant onboarding
+  * [Getting started with napari plugin development slide deck](https://docs.google.com/presentation/d/15lrFRLPm9bfmU4hgcVwoduIJr5bqhoHo7ZeWLO6H_Us/edit?usp=sharing)
+  * [Watch it here](https://drive.google.com/file/d/1IYDV-GTGEYh5j_tvBaWYEZ_tQXTqmJkr/view?usp=share_link)
+
 
 * September 2022, Helmholtz Imaging Summer Academy
   * [Image analysis with Python and Napari](https://biapol.github.io/HIP_Introduction_to_Napari_and_image_processing_with_Python_2022/intro.html) 
@@ -48,16 +67,3 @@ You can find more videos of talks, tutorials and demos on the
 * June 2020, [NEUBIAS Academy@Home workshop](http://eubias.org/NEUBIAS/training-schools/neubias-academy-home/neubias-academy-archive-spring2020/)
   * [Watch it here](https://www.youtube.com/watch?v=VgvDSq5aCDQ) (1 hour and 30 minute video)
   * [Workshop materials available here](https://github.com/sofroniewn/napari-training-course)
-
-### Add your own workshop to this list
-
-If you have organized a napari workshop and would like to see it featured here
-in this page, you can
-[send a Pull Request to the napari/docs repository](../developers/documentation/index.md)
-or contact the core developers on [zulip chat](https://napari.zulipchat.com/login/).
-
-### napari workshop template
-
-If you are looking to create your own workshop, you can use the
-[napari workshop template](https://github.com/napari/napari-workshop-template)
-as a starting point.
