@@ -243,7 +243,9 @@ class VispyBaseLayer(ABC, Generic[_L]):
             self.layer.translate[dims_displayed]
             + self.layer.affine.translate[dims_displayed]
         )[::-1]
-        trans_rotate = self.layer._transforms.simplified.rotate[dims_displayed]
+        trans_rotate = self.layer._transforms.simplified.rotate[
+            np.ix_(dims_displayed, dims_displayed)
+        ]
         new_translate = (
             np.dot(trans_rotate, (translate_child - translate)) / trans_scale
         )
