@@ -29,7 +29,7 @@ def draw(layer, event):
 
     coordinates = mouse_event_to_labels_coordinate(layer, event)
     if layer._mode == Mode.ERASE:
-        new_label = layer._background_label
+        new_label = layer.colormap.background_value
     else:
         new_label = layer.selected_label
 
