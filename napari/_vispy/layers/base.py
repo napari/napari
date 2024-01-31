@@ -242,21 +242,23 @@ class VispyBaseLayer(ABC, Generic[_L]):
             raise ValueError(
                 "simplified transform is None"
             )  # pragma: no cover
-        trans_scale = simplified_transform.scale[dims_displayed][::-1]
         translate_child = (
             self.layer.translate[dims_displayed]
             + self.layer.affine.translate[dims_displayed]
         )[::-1]
         if self.layer.affine.ndim > len(dims_displayed):
-            trans_rotate = Affine(
+            aff = Affine(
                 linear_matrix=simplified_transform.linear_matrix[
                     np.ix_(dims_displayed, dims_displayed)
                 ]
-            ).rotate
+            )
+            trans_rotate = aff.rotate
+            trans_scale = aff.scale[::-1]
         else:
             trans_rotate = simplified_transform.rotate[
                 np.ix_(dims_displayed, dims_displayed)
             ]
+            trans_scale = simplified_transform.scale[dims_displayed][::-1]
         new_translate = (
             np.dot(trans_rotate, (translate_child - translate)) / trans_scale
         )
