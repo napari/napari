@@ -379,6 +379,7 @@ class Graph(_BasePoints):
             slice_input=slice_input,
             data=self.data,
             data_slice=data_slice,
+            projection_mode=self.projection_mode,
             out_of_slice_display=self.out_of_slice_display,
             size=self.size,
         )

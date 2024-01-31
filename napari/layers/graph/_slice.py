@@ -6,6 +6,7 @@ from napari_graph import BaseGraph
 from numpy.typing import ArrayLike
 
 from napari.layers.base._slice import _next_request_id
+from napari.layers.points._points_constants import PointsProjectionMode
 from napari.layers.points._slice import _PointSliceResponse
 from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 
@@ -60,6 +61,7 @@ class _GraphSliceRequest:
     slice_input: _SliceInput
     data: BaseGraph = field(repr=False)
     data_slice: _ThickNDSlice = field(repr=False)
+    projection_mode: PointsProjectionMode
     size: Any = field(repr=False)
     out_of_slice_display: bool = field(repr=False)
     id: int = field(default_factory=_next_request_id)
@@ -90,24 +92,32 @@ class _GraphSliceRequest:
                 request_id=self.id,
             )
 
-        # We want a numpy array so we can use fancy indexing with the non-displayed
-        # indices, but as self.dims_indices can (and often/always does) contain slice
-        # objects, the array has dtype=object which is then very slow for the
-        # arithmetic below. As Points._round_index is always False, we can safely
-        # convert to float to get a major performance improvement.
-        not_disp_indices, m_left, m_right = self.data_slice[
-            not_disp
-        ].as_array()
+        point, m_left, m_right = self.data_slice[not_disp].as_array()
+
+        if self.projection_mode == 'none':
+            low = point.copy()
+            high = point.copy()
+        else:
+            low = point - m_left
+            high = point + m_right
+
+        # assume slice thickness of 1 in data pixels
+        # (same as before thick slices were implemented)
+        too_thin_slice = np.isclose(high, low)
+        low[too_thin_slice] -= 0.5
+        high[too_thin_slice] += 0.5
+
+        in_slice, node_indices, edges_indices, scale = self._get_slice_data(
+            not_disp, low, high
+        )
 
         if self.out_of_slice_display and self.slice_input.ndim > 2:
             (
                 node_indices,
                 edges_indices,
                 scale,
-            ) = self._get_out_of_display_slice_data(not_disp, not_disp_indices)
-        else:
-            node_indices, edges_indices, scale = self._get_slice_data(
-                not_disp, not_disp_indices
+            ) = self._get_out_of_display_slice_data(
+                not_disp, low, high, in_slice
             )
 
         return _GraphSliceResponse(
@@ -121,7 +131,9 @@ class _GraphSliceRequest:
     def _get_out_of_display_slice_data(
         self,
         not_disp: Sequence[int],
-        not_disp_indices: np.ndarray,
+        low: np.ndarray,
+        high: np.ndarray,
+        in_slice: np.ndarray,
     ) -> Tuple[np.ndarray, np.ndarray, ArrayLike]:
         """
         Slices data according to non displayed indices
@@ -132,7 +144,11 @@ class _GraphSliceRequest:
         ixgrid = np.ix_(valid_nodes, not_disp)
         data = self.data.coords_buffer[ixgrid]
         sizes = self.size[valid_nodes, np.newaxis] / 2
-        distances = np.abs(data - not_disp_indices)
+        dist_from_low = np.abs(data - low)
+        dist_from_high = np.abs(data - high)
+        # keep distance of the closest margin
+        distances = np.minimum(dist_from_low, dist_from_high)
+        distances[in_slice] = 0
         matches = np.all(distances <= sizes, axis=1)
         if not np.any(matches):
             return np.empty(0, dtype=int), np.empty(0, dtype=int), 1
@@ -148,20 +164,20 @@ class _GraphSliceRequest:
 
     def _get_slice_data(
         self,
-        not_disp: Sequence[int],
-        not_disp_indices: np.ndarray,
-    ) -> Tuple[np.ndarray, np.ndarray, int]:
+        not_disp: np.ndarray,
+        low: np.ndarray,
+        high: np.ndarray,
+    ) -> np.ndarray:
         """
-        Slices data according to non displayed indices
+        Slices data according to displayed indices
         while ignoring not initialized nodes from graph.
         """
         valid_nodes = self.data.initialized_buffer_mask()
         data = self.data.coords_buffer[np.ix_(valid_nodes, not_disp)]
-        distances = np.abs(data - not_disp_indices)
-        matches = np.all(distances <= 0.5, axis=1)
+        matches = np.all((data >= low) & (data <= high), axis=1)
         valid_nodes[valid_nodes] = matches
         slice_indices = np.where(valid_nodes)[0].astype(int)
         edge_indices = self.data.subgraph_edges(
             slice_indices, is_buffer_domain=True
         )
-        return slice_indices, edge_indices, 1
+        return matches, slice_indices, edge_indices, 1
