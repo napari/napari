@@ -238,7 +238,9 @@ class VispyBaseLayer(ABC, Generic[_L]):
         dims_displayed = self.layer._slice_input.displayed
         simplified_transform = self.layer._transforms.simplified
         if simplified_transform is None:
-            raise ValueError("simplified transform is None")
+            raise ValueError(
+                "simplified transform is None"
+            )  # pragma: no cover
         trans_scale = simplified_transform.scale[dims_displayed][::-1]
         translate_child = (
             self.layer.translate[dims_displayed]
