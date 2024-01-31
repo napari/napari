@@ -50,10 +50,21 @@ If you are using napari or interested in how napari could be used in your work, 
         modal.style.display = "block";
         var eventTitle = eventObj.title.charAt(0).toUpperCase() + eventObj.title.slice(1);
         document.getElementById("details").innerHTML = '<b>' + eventTitle + '</b>' + '<br>' + eventObj.extendedProps.description;
-        //When the user clicks on <span> (x), close the modal
+        // When the user clicks on <span> (x), close the modal
         span.onclick = function() {
           modal.style.display = "none";
         }
+        // When the user clicks anywhere outside of the modal, close it
+        modal.onclick = function(event) {
+          if (event.target.id == "myModal") {
+            modal.style.display = "none";
+          }
+        }
+        window.addEventListener('keydown', function (event) {
+          if (event.key === 'Escape') {
+            modal.style.display = 'none'
+          }
+        })
       },
       eventDisplay: 'block',
     });
