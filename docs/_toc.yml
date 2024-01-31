@@ -130,6 +130,7 @@ subtrees:
           - file: naps/6-contributable-menus
           - file: naps/7-key-binding-dispatch
           - file: naps/8-telemetry
+          - file: naps/9-multiple-canvases
       - file: developers/documentation/index
         subtrees:
         - entries:
