@@ -227,7 +227,6 @@ The types are no longer "add", "remove", and "change", but "adding", "added",
 control over when to take action in response to an event.
 
 
-
 ## Deprecations
 
 [#6542](https://github.com/napari/napari/pull/6542) made a number of
@@ -296,6 +295,7 @@ replacements:
 - Update selection instructions in Points tutorial for Shift-A keybinding ([napari/docs/#238](https://github.com/napari/docs/pull/238))
 - fix outdated dimension sliders documentation ([napari/docs/#241](https://github.com/napari/docs/pull/241))
 - Update napari-workshops.md ([napari/docs/#243](https://github.com/napari/docs/pull/243))
+- Add NAP for multicanvas ([napari/docs/#249](https://github.com/napari/docs/pull/249))
 - [Fix error] Image layers can't have converted data type using contextual menu, only Labels ([napari/docs/#252](https://github.com/napari/docs/pull/252))
 - Installation guide: Mention slow first launch time ([napari/docs/#253](https://github.com/napari/docs/pull/253))
 - Update to use napari-sphinx-theme 0.3.0 ([napari/docs/#267](https://github.com/napari/docs/pull/267))
@@ -307,6 +307,9 @@ replacements:
 - Update working groups leads ([napari/docs/#327](https://github.com/napari/docs/pull/327))
 - Close calendar event popover when clicking outside it ([napari/docs/#337](https://github.com/napari/docs/pull/337))
 - Move Nick and Loic to emeritus, sort emeritus core devs ([napari/docs/#339](https://github.com/napari/docs/pull/339))
+- Update conf.py to display the announcement banner ([napari/docs/#342](https://github.com/napari/docs/pull/342))
+- Rename `myModal` to `eventDetailBackground` in meetings schedule ([napari/docs/#343](https://github.com/napari/docs/pull/343))
+- add melissa to core devs ([napari/docs/#345](https://github.com/napari/docs/pull/345))
 
 ## Other Pull Requests
 
@@ -390,7 +393,7 @@ replacements:
 - [Wouter-Michiel Vierdag](https://github.com/napari/napari/commits?author=melonora) - @melonora
 
 
-## 17 docs authors added to this release (alphabetical)
+## 18 docs authors added to this release (alphabetical)
 
 - [Alister Burt](https://github.com/napari/docs/commits?author=alisterburt) - @alisterburt
 - [Ashley Anderson](https://github.com/napari/docs/commits?author=aganders3) - @aganders3
@@ -401,6 +404,7 @@ replacements:
 - [Grzegorz Bokota](https://github.com/napari/docs/commits?author=Czaki) - @Czaki
 - [Jaime Rodríguez-Guerra](https://github.com/napari/docs/commits?author=jaimergp) - @jaimergp
 - [Juan Nunez-Iglesias](https://github.com/napari/docs/commits?author=jni) - @jni
+- [Kevin Yamauchi](https://github.com/napari/docs/commits?author=kevinyamauchi) - @kevinyamauchi
 - [Kira Evans](https://github.com/napari/docs/commits?author=kne42) - @kne42
 - [Lucy Liu](https://github.com/napari/docs/commits?author=lucyleeow) - @lucyleeow
 - [Melissa Weber Mendonça](https://github.com/napari/docs/commits?author=melissawm) - @melissawm
@@ -411,9 +415,10 @@ replacements:
 - [Wouter-Michiel Vierdag](https://github.com/napari/docs/commits?author=melonora) - @melonora
 
 
-## 17 docs reviewers added to this release (alphabetical)
+## 18 docs reviewers added to this release (alphabetical)
 
 - [Andrew Sweet](https://github.com/napari/docs/commits?author=andy-sweet) - @andy-sweet
+- [Ashley Anderson](https://github.com/napari/docs/commits?author=aganders3) - @aganders3
 - [Constantin Pape](https://github.com/napari/docs/commits?author=constantinpape) - @constantinpape
 - [David Stansby](https://github.com/napari/docs/commits?author=dstansby) - @dstansby
 - [Draga Doncila Pop](https://github.com/napari/docs/commits?author=DragaDoncila) - @DragaDoncila
