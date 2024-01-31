@@ -92,7 +92,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.97.2
+hypothesis==6.97.3
     # via napari (./setup.cfg)
 idna==3.6
     # via requests
@@ -246,7 +246,7 @@ nvidia-cusparse-cu12==12.1.0.106
     # via
     #   nvidia-cusolver-cu12
     #   torch
-nvidia-nccl-cu12==2.18.1
+nvidia-nccl-cu12==2.19.3
     # via torch
 nvidia-nvjitlink-cu12==12.3.101
     # via
@@ -287,7 +287,7 @@ pillow==10.2.0
     #   scikit-image
 pint==0.23
     # via napari (./setup.cfg)
-platformdirs==4.1.0
+platformdirs==4.2.0
     # via
     #   jupyter-core
     #   pooch
@@ -503,7 +503,7 @@ toolz==0.12.1
     #   dask
     #   napari (./setup.cfg)
     #   partd
-torch==2.1.2
+torch==2.2.0
     # via napari (./setup.cfg)
 tornado==6.4
     # via
@@ -520,7 +520,7 @@ traitlets==5.14.1
     #   jupyter-core
     #   matplotlib-inline
     #   qtconsole
-triton==2.1.0
+triton==2.2.0
     # via torch
 typer==0.9.0
     # via npe2
@@ -538,7 +538,7 @@ typing-extensions==4.9.0
     #   typer
 tzdata==2023.4
     # via pandas
-urllib3==2.1.0
+urllib3==2.2.0
     # via requests
 virtualenv==20.25.0
     # via napari (./setup.cfg)
