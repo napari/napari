@@ -85,11 +85,8 @@ available, see the
 RGB hex color prefixed with `#`, as in
 `napari.imshow(data, colormap=`#88ff1a`)`.
 
-(Amusing side note/API break: it turns out that "orange" is both the name of a
-white-to-orange colormap in VisPy, and one of the color names in the color
-dictionary, which then produces a *black-to-orange* colormap! We decided to use
-the new, color-name behavior in this update. So if you are wondering why your
-`imshow(data, colormap='orange')` calls look different — this is why.)
+(For an amusing side note, though, check out the [API Changes](#api-changes)
+note related to this PR. 😅)
 
 ### Some technical stuff
 
@@ -214,13 +211,48 @@ Read on for the full list of changes that went into this release.
 
 ## API Changes
 
-- Automatic recognition of hex colour strings in layer data ([napari/napari/#6102](https://github.com/napari/napari/pull/6102))
-- Layer data events before and after ([napari/napari/#6178](https://github.com/napari/napari/pull/6178))
+
+[#6102](https://github.com/napari/napari/pull/6102) added the ability to set
+linear colormaps from black to a named color by using `colormap="color-name"`
+syntax. It turns out that "orange" is both the name of a
+white-to-orange colormap in VisPy, and one of the color names in the color
+dictionary, therefore implicitly a *black-to-orange* colormap! We decided to use
+the new, color-name behavior in this update. So if you are wondering why your
+`imshow(data, colormap='orange')` calls look different — this is why.
+
+In [#6178](https://github.com/napari/napari/pull/6178), the "action" type of
+events emitted when editing Shapes or Points was changed to be more granular.
+The types are no longer "add", "remove", and "change", but "adding", "added",
+"removing", "removed", "changing", and "changed". This gives listeners more
+control over when to take action in response to an event.
+
+
 
 ## Deprecations
 
+[#6542](https://github.com/napari/napari/pull/6542) made a number of
+deprecations to the Labels API to simplify it. Rather than having color-related
+properties strewn all over the layer, color control is moved strictly to the
+layer's `colormap`. Here is the full list of deprecated attributes and their
+replacements:
+
+- num_colors: `layer.num_colors` becomes `len(layer.colormap)`.
+  `layer.num_colors = n` becomes `layer.colormap = label_colormap(n)`.
+- `napari.utils.colormaps.LabelColormap` is deprecated and has been renamed to
+  `napari.utils.colormaps.CyclicLabelColormap`.
+- color: `layer.color` becomes `layer.colormap.color_dict`.
+  `layer.color = color_dict` becomes
+  `layer.colormap = DirectLabelColormap(color_dict)`.
+- _background_label: `layer._background_label` is now at
+  `layer.colormap.background_value`.
+- color_mode: `layer.color_mode` is set by setting the colormap using the
+  corresponding colormap type (`CyclicLabelColormap` or `DirectLabelColormap`;
+  these classes can be imported from `napari.utils.colormaps`.).
+- `seed`: was only used for shifting labels around in [0, 1]. It is
+  superseded by `layer.new_colormap()` which was implemented in
+  [#6460](https://github.com/napari/napari/pull/6460).
+
 - Postpone qt_viewer deprecation to 0.6.0 ([napari/napari/#6283](https://github.com/napari/napari/pull/6283))
-- Initial deprecations for Labels API ([napari/napari/#6542](https://github.com/napari/napari/pull/6542))
 
 ## Build Tools
 
@@ -273,6 +305,7 @@ Read on for the full list of changes that went into this release.
 - Add Kyle to steering council, make Talley emeritus ([napari/docs/#322](https://github.com/napari/docs/pull/322))
 - move self to emeritus ([napari/docs/#323](https://github.com/napari/docs/pull/323))
 - Update working groups leads ([napari/docs/#327](https://github.com/napari/docs/pull/327))
+- Close calendar event popover when clicking outside it ([napari/docs/#337](https://github.com/napari/docs/pull/337))
 - Move Nick and Loic to emeritus, sort emeritus core devs ([napari/docs/#339](https://github.com/napari/docs/pull/339))
 
 ## Other Pull Requests
