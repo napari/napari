@@ -236,14 +236,15 @@ class VispyBaseLayer(ABC, Generic[_L]):
         # but this leads to incorrect placement of child layers.
         # To fix this we need to update child layers transform.
         dims_displayed = self.layer._slice_input.displayed
-        trans_scale = self.layer._transforms.simplified.scale[dims_displayed][
-            ::-1
-        ]
+        simplified_transform = self.layer._transforms.simplified
+        if simplified_transform is None:
+            raise ValueError("simplified transform is None")
+        trans_scale = simplified_transform.scale[dims_displayed][::-1]
         translate_child = (
             self.layer.translate[dims_displayed]
             + self.layer.affine.translate[dims_displayed]
         )[::-1]
-        trans_rotate = self.layer._transforms.simplified.rotate[
+        trans_rotate = simplified_transform.rotate[
             np.ix_(dims_displayed, dims_displayed)
         ]
         new_translate = (
