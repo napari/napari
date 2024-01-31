@@ -124,12 +124,7 @@ us on Mastodon](https://fosstodon.org/@napari)!
 
 Read on for the full list of changes that went into this release.
 
-
-- Use a shader for low discrepancy label conversion ([napari/napari/#3308](https://github.com/napari/napari/pull/3308))
-- Automatic recognition of hex colour strings in layer data ([napari/napari/#6102](https://github.com/napari/napari/pull/6102))
 - Postpone qt_viewer deprecation to 0.6.0 ([napari/napari/#6283](https://github.com/napari/napari/pull/6283))
-- Pydantic 2 compatibility using `pydantic.v1`  ([napari/napari/#6358](https://github.com/napari/napari/pull/6358))
-- Initial deprecations for Labels API ([napari/napari/#6542](https://github.com/napari/napari/pull/6542))
 
 ## New Features
 
