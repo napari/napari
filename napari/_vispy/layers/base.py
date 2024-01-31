@@ -242,7 +242,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
                 ::-1
             ]
             - translate
-        )
+        ) / self.layer.scale[self.layer._slice_input.displayed][::-1]
         for child in self.node.children:
             child.transform.matrix = child_matrix
 
