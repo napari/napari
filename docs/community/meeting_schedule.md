@@ -8,7 +8,7 @@ If you are using napari or interested in how napari could be used in your work, 
 
 <div id='timezone'></div>
 
-<div id="myModal" class="modal">
+<div id="eventDetailBackground" class="modal">
   <!-- Modal content -->
   <div class="modal-content">
     <div class="modal-header">
@@ -46,14 +46,25 @@ If you are using napari or interested in how napari could be used in your work, 
         // Get the <span> element that closes the modal
         var span = document.getElementsByClassName("close")[0];
         // Get the modal
-        var modal = document.getElementById("myModal");
+        var modal = document.getElementById("eventDetailBackground");
         modal.style.display = "block";
         var eventTitle = eventObj.title.charAt(0).toUpperCase() + eventObj.title.slice(1);
         document.getElementById("details").innerHTML = '<b>' + eventTitle + '</b>' + '<br>' + eventObj.extendedProps.description;
-        //When the user clicks on <span> (x), close the modal
+        // When the user clicks on <span> (x), close the modal
         span.onclick = function() {
           modal.style.display = "none";
         }
+        // When the user clicks anywhere outside of the modal, close it
+        modal.onclick = function(event) {
+          if (event.target.id == "eventDetailBackground") {
+            modal.style.display = "none";
+          }
+        }
+        window.addEventListener('keydown', function (event) {
+          if (event.key === 'Escape') {
+            modal.style.display = 'none'
+          }
+        })
       },
       eventDisplay: 'block',
     });
