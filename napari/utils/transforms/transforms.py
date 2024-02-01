@@ -499,10 +499,9 @@ class Affine(Transform):
             for i in range(len(scale)):
                 self._linear_matrix[i, i] = scale[i]
         else:
-            rotate, _, shear = decompose_linear_matrix(
-                self.linear_matrix, upper_triangular=self._upper_triangular
+            self._linear_matrix = compose_linear_matrix(
+                self.rotate, scale, self.shear
             )
-            self._linear_matrix = compose_linear_matrix(rotate, scale, shear)
         self._clean_cache()
 
     @property
@@ -532,10 +531,9 @@ class Affine(Transform):
     @rotate.setter
     def rotate(self, rotate):
         """Set the rotation of the transform."""
-        _, scale, shear = decompose_linear_matrix(
-            self.linear_matrix, upper_triangular=self._upper_triangular
+        self._linear_matrix = compose_linear_matrix(
+            rotate, self.scale, self.shear
         )
-        self._linear_matrix = compose_linear_matrix(rotate, scale, shear)
         self._clean_cache()
 
     @property
@@ -563,10 +561,9 @@ class Affine(Transform):
                 )
         else:
             self._upper_triangular = True
-        rotate, scale, _ = decompose_linear_matrix(
-            self.linear_matrix, upper_triangular=self._upper_triangular
+        self._linear_matrix = compose_linear_matrix(
+            self.rotate, self.scale, shear
         )
-        self._linear_matrix = compose_linear_matrix(rotate, scale, shear)
         self._clean_cache()
 
     @property
