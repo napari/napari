@@ -1,5 +1,5 @@
 import warnings
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from functools import lru_cache
 from threading import Lock
 from typing import Dict, Iterable, List, Optional, Tuple, Union
@@ -19,8 +19,8 @@ from napari.utils.colormaps.bop_colors import bopd
 from napari.utils.colormaps.colormap import (
     Colormap,
     ColormapInterpolationMode,
+    CyclicLabelColormap,
     DirectLabelColormap,
-    LabelColormap,
     minimum_dtype_for_labels,
 )
 from napari.utils.colormaps.inverse_colormaps import inverse_cmaps
@@ -409,7 +409,7 @@ def _color_random(n, *, colorspace='lab', tolerance=0.0, seed=0.5):
 
 def label_colormap(
     num_colors=256, seed=0.5, background_value=0
-) -> LabelColormap:
+) -> CyclicLabelColormap:
     """Produce a colormap suitable for use with a given label set.
 
     Parameters
@@ -422,7 +422,7 @@ def label_colormap(
 
     Returns
     -------
-    colormap : napari.utils.LabelColormap
+    colormap : napari.utils.CyclicLabelColormap
         A colormap for use with labels remapped to [0, 1].
 
     Notes
@@ -467,13 +467,14 @@ def label_colormap(
     rgb8_colors = (colors * uint8_max).astype(np.uint8)
     colors = rgb8_colors.astype(np.float32) / uint8_max
 
-    return LabelColormap(
+    return CyclicLabelColormap(
         name='label_colormap',
         display_name=trans._p('colormap', 'low discrepancy colors'),
         colors=colors,
         controls=np.linspace(0, 1, len(colors) + 1),
         interpolation='zero',
         background_value=background_value,
+        seed=seed,
     )
 
 
@@ -501,8 +502,8 @@ def _primes(upto=2**16):
 
 
 def shuffle_and_extend_colormap(
-    colormap: LabelColormap, seed: int, min_random_choices: int = 5
-) -> LabelColormap:
+    colormap: CyclicLabelColormap, seed: int, min_random_choices: int = 5
+) -> CyclicLabelColormap:
     """Shuffle the colormap colors and extend it to more colors.
 
     The new number of colors will be a prime number that fits into the same
@@ -510,7 +511,7 @@ def shuffle_and_extend_colormap(
 
     Parameters
     ----------
-    colormap : napari.utils.LabelColormap
+    colormap : napari.utils.CyclicLabelColormap
         Colormap to shuffle and extend.
     seed : int
         Seed for the random number generator.
@@ -527,7 +528,7 @@ def shuffle_and_extend_colormap(
 
     Returns
     -------
-    colormap : napari.utils.LabelColormap
+    colormap : napari.utils.CyclicLabelColormap
         Shuffled and extended colormap.
     """
     rng = np.random.default_rng(seed)
@@ -554,7 +555,7 @@ def shuffle_and_extend_colormap(
         axis=0,
     )
 
-    new_colormap = LabelColormap(
+    new_colormap = CyclicLabelColormap(
         name=colormap.name,
         colors=extended_colors,
         controls=np.linspace(0, 1, len(extended_colors) + 1),
@@ -579,10 +580,9 @@ def direct_colormap(color_dict=None):
         to an array.
     """
     # we don't actually use the color array, so pass dummy.
-    d = DirectLabelColormap(np.zeros(3))
-    if color_dict is not None:
-        d.color_dict.update(color_dict)
-    return d
+    return DirectLabelColormap(
+        color_dict=color_dict or defaultdict(lambda: np.zeros(4)),
+    )
 
 
 def vispy_or_mpl_colormap(name) -> Colormap:
@@ -664,6 +664,11 @@ AVAILABLE_COLORMAPS_LOCK = Lock()
 MAGENTA_GREEN = ['magenta', 'green']
 RGB = ['red', 'green', 'blue']
 CYMRGB = ['cyan', 'yellow', 'magenta', 'red', 'green', 'blue']
+
+
+AVAILABLE_LABELS_COLORMAPS = {
+    'lodisc-50': label_colormap(50),
+}
 
 
 def _increment_unnamed_colormap(
