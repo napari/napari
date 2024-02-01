@@ -488,7 +488,7 @@ class Affine(Transform):
         """Return the scale of the transform."""
         if self._is_diagonal:
             return np.diag(self._linear_matrix)
-        self._setup_decompose_linear_matrix_cacahe()
+        self._setup_decompose_linear_matrix_cache()
         return self._cache_dict["decompose_linear_matrix"][1]
 
     @scale.setter
@@ -500,7 +500,7 @@ class Affine(Transform):
                 self._linear_matrix[i, i] = scale[i]
         else:
             self._linear_matrix = compose_linear_matrix(
-                self.rotate, scale, self.shear
+                self.rotate, scale, self._shear_cache
             )
         self._clean_cache()
 
@@ -515,7 +515,7 @@ class Affine(Transform):
         self._translate = translate_to_vector(translate, ndim=self.ndim)
         self._clean_cache()
 
-    def _setup_decompose_linear_matrix_cacahe(self):
+    def _setup_decompose_linear_matrix_cache(self):
         if "decompose_linear_matrix" in self._cache_dict:
             return
         self._cache_dict["decompose_linear_matrix"] = decompose_linear_matrix(
@@ -525,14 +525,14 @@ class Affine(Transform):
     @property
     def rotate(self) -> npt.NDArray:
         """Return the rotation of the transform."""
-        self._setup_decompose_linear_matrix_cacahe()
+        self._setup_decompose_linear_matrix_cache()
         return self._cache_dict["decompose_linear_matrix"][0]
 
     @rotate.setter
     def rotate(self, rotate):
         """Set the rotation of the transform."""
         self._linear_matrix = compose_linear_matrix(
-            rotate, self.scale, self.shear
+            rotate, self.scale, self._shear_cache
         )
         self._clean_cache()
 
@@ -541,7 +541,12 @@ class Affine(Transform):
         """Return the shear of the transform."""
         if self._is_diagonal:
             return np.zeros((self.ndim,))
-        self._setup_decompose_linear_matrix_cacahe()
+        self._setup_decompose_linear_matrix_cache()
+        return self._cache_dict["decompose_linear_matrix"][2]
+
+    @property
+    def _shear_cache(self):
+        self._setup_decompose_linear_matrix_cache()
         return self._cache_dict["decompose_linear_matrix"][2]
 
     @shear.setter
