@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import copy
+import inspect
 import itertools
 import logging
 import os.path
 import warnings
-from abc import ABC, abstractmethod
+from abc import ABC, ABCMeta, abstractmethod
 from collections import defaultdict
 from contextlib import contextmanager
 from functools import cached_property
@@ -101,8 +102,21 @@ def no_op(layer: Layer, event: Event) -> None:
     return
 
 
+class PostInit(ABCMeta):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        sig = inspect.signature(self.__init__)
+        params = tuple(sig.parameters.values())
+        self.__signature__ = sig.replace(parameters=params[1:])
+
+    def __call__(self, *args, **kwargs):
+        obj = super().__call__(*args, **kwargs)
+        obj._post_init()
+        return obj
+
+
 @mgui.register_type(choices=get_layers, return_callback=add_layer_to_viewer)
-class Layer(KeymapProvider, MousemapProvider, ABC):
+class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     """Base layer class.
 
     Parameters
@@ -451,6 +465,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._overlays.events.connect(self.events._overlays)
 
         self._refresh_blocked = False
+
+    def _post_init(self):
+        """Post init hook for subclasses to use."""
 
     def __str__(self):
         """Return self.name."""

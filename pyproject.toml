@@ -176,6 +176,7 @@ filterwarnings = [
   "ignore:distutils Version classes are deprecated::",
   "ignore:There is no current event loop:DeprecationWarning:",
   "ignore:numba not installed, falling back to stubs. Install numba for better napari-graph performance.:UserWarning",
+  "ignore:(?s).*Pyarrow will become a required dependency of pandas:DeprecationWarning",  # pandas pyarrow (pandas<3.0),
 ]
 markers = [
     "examples: Test of examples",

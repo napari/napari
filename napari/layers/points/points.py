@@ -1576,7 +1576,7 @@ class _BasePoints(Layer):
             and np.array_equal(self._drag_box, self._drag_box_stored)
         ) and not force:
             return
-        self._selected_data_stored = copy(self.selected_data)
+        self._selected_data_stored = Selection(self.selected_data)
         self._value_stored = copy(self._value)
         self._drag_box_stored = copy(self._drag_box)
 
@@ -1710,12 +1710,12 @@ class _BasePoints(Layer):
             shift = np.array(position)[disp] - center - self._drag_start
             self._move_points(ixgrid, shift)
             self.refresh()
-        self.events.data(
-            value=self.data,
-            action=ActionType.CHANGED,
-            data_indices=tuple(selection_indices),
-            vertex_indices=((),),
-        )
+            self.events.data(
+                value=self.data,
+                action=ActionType.CHANGED,
+                data_indices=tuple(selection_indices),
+                vertex_indices=((),),
+            )
 
     @abstractmethod
     def _move_points(
@@ -2198,8 +2198,15 @@ class Points(_BasePoints):
         shown=True,
         projection_mode='none',
     ) -> None:
-        if ndim is None and scale is not None:
-            ndim = len(scale)
+        if ndim is None:
+            if scale is not None:
+                ndim = len(scale)
+            elif (
+                data is not None
+                and hasattr(data, 'shape')
+                and len(data.shape) == 2
+            ):
+                ndim = data.shape[1]
 
         data, ndim = fix_data_points(data, ndim)
 
