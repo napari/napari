@@ -488,10 +488,8 @@ class Affine(Transform):
         """Return the scale of the transform."""
         if self._is_diagonal:
             return np.diag(self._linear_matrix)
-
-        return decompose_linear_matrix(
-            self._linear_matrix, upper_triangular=self._upper_triangular
-        )[1]
+        self._setup_decompose_linear_matrix_cacahe()
+        return self._cache_dict["decompose_linear_matrix"][1]
 
     @scale.setter
     def scale(self, scale):
@@ -518,12 +516,18 @@ class Affine(Transform):
         self._translate = translate_to_vector(translate, ndim=self.ndim)
         self._clean_cache()
 
+    def _setup_decompose_linear_matrix_cacahe(self):
+        if "decompose_linear_matrix" in self._cache_dict:
+            return
+        self._cache_dict["decompose_linear_matrix"] = decompose_linear_matrix(
+            self.linear_matrix, upper_triangular=self._upper_triangular
+        )
+
     @property
     def rotate(self) -> npt.NDArray:
         """Return the rotation of the transform."""
-        return decompose_linear_matrix(
-            self.linear_matrix, upper_triangular=self._upper_triangular
-        )[0]
+        self._setup_decompose_linear_matrix_cacahe()
+        return self._cache_dict["decompose_linear_matrix"][0]
 
     @rotate.setter
     def rotate(self, rotate):
@@ -539,9 +543,8 @@ class Affine(Transform):
         """Return the shear of the transform."""
         if self._is_diagonal:
             return np.zeros((self.ndim,))
-        return decompose_linear_matrix(
-            self.linear_matrix, upper_triangular=self._upper_triangular
-        )[2]
+        self._setup_decompose_linear_matrix_cacahe()
+        return self._cache_dict["decompose_linear_matrix"][2]
 
     @shear.setter
     def shear(self, shear):
