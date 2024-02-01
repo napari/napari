@@ -1030,9 +1030,6 @@ class Labels(_ImageBase):
 
         if data_slice is None:
             data_slice = tuple(slice(0, size) for size in raw.shape)
-            self._cached_labels = None
-        else:
-            self._setup_cache(raw)
 
         labels = raw  # for readability
 

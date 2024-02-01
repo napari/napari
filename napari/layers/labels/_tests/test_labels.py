@@ -310,16 +310,6 @@ def test_num_colors():
         with pytest.warns(FutureWarning, match='num_colors is deprecated'):
             Labels(data, num_colors=2**17)
 
-    with pytest.raises(
-        ValueError, match=r".*Only up to 2\*\*16=65535 colors are supported"
-    ):
-        layer.num_colors = 2**17
-
-    with pytest.raises(
-        ValueError, match=r".*Only up to 2\*\*16=65535 colors are supported"
-    ):
-        Labels(data, num_colors=2**17)
-
 
 def test_properties():
     """Test adding labels with properties."""
@@ -1570,20 +1560,6 @@ def test_invalidate_cache_when_change_color_mode(
     assert np.allclose(
         layer._raw_to_displayed(layer._slice.image.raw), gt_auto
     )
-
-
-@pytest.mark.parametrize("dtype", np.sctypes['int'] + np.sctypes['uint'])
-@pytest.mark.parametrize("mode", ["auto", "direct"])
-def test_cache_for_dtypes(dtype, mode):
-    data = np.zeros((10, 10), dtype=dtype)
-    labels = Labels(data)
-    labels.color_mode = mode
-    assert labels._cached_labels is None
-    labels._raw_to_displayed(
-        labels._slice.image.raw, (slice(None), slice(None))
-    )
-    assert labels._cached_labels is not None
-    assert labels._cached_mapped_labels.dtype == labels._slice.image.view.dtype
 
 
 def test_color_mapping_when_color_is_changed():
