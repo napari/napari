@@ -384,7 +384,7 @@ def decompose_linear_matrix(
     scale = np.abs(scale_with_sign)
     normalize = scale / scale_with_sign
 
-    tri *= normalize
+    tri *= normalize.reshape((-1, 1))
     rotate *= normalize
 
     # Take any reflection into account
