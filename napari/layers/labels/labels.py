@@ -55,15 +55,12 @@ from napari.utils.colormaps import (
 )
 from napari.utils.colormaps.colormap import (
     CyclicLabelColormap,
-    DirectLabelColormap,
     LabelColormapBase,
 )
 from napari.utils.colormaps.colormap_utils import shuffle_and_extend_colormap
 from napari.utils.events import EmitterGroup, Event
 from napari.utils.events.custom_types import Array
-from napari.utils.events.event import WarningEmitter
 from napari.utils.geometry import clamp_point_to_bounding_box
-from napari.utils.migrations import deprecated_constructor_arg_by_attr
 from napari.utils.misc import StringEnum, _is_array_type
 from napari.utils.naming import magic_name
 from napari.utils.status_messages import generate_layer_coords_status
@@ -276,9 +273,6 @@ class Labels(_ImageBase):
 
     _history_limit = 100
 
-    @deprecated_constructor_arg_by_attr("color")
-    @deprecated_constructor_arg_by_attr("num_colors")
-    @deprecated_constructor_arg_by_attr("seed")
     def __init__(
         self,
         data,
@@ -348,15 +342,6 @@ class Labels(_ImageBase):
         self.events.add(
             brush_shape=Event,
             brush_size=Event,
-            color_mode=WarningEmitter(
-                trans._(
-                    'Labels.events.color_mode is deprecated since 0.4.19 and '
-                    'will be removed in 0.5.0, please use '
-                    'Labels.events.colormap.',
-                    deferred=True,
-                ),
-                type_name='color_mode',
-            ),
             colormap=Event,
             contiguous=Event,
             contour=Event,
@@ -481,33 +466,6 @@ class Labels(_ImageBase):
         )
         return abs(self.brush_size * min_scale)
 
-    @property
-    def seed(self):
-        """float: Seed for colormap random generator."""
-        warnings.warn(
-            "seed is deprecated since 0.4.19 and will be removed in 0.5.0, "
-            "please check Labels.colormap directly.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        return self._random_colormap.seed
-
-    @seed.setter
-    def seed(self, seed):
-        warnings.warn(
-            "seed is deprecated since 0.4.19 and will be removed in 0.5.0, "
-            "please use the new_colormap method instead, or set the colormap "
-            "directly.",
-            FutureWarning,
-            stacklevel=2,
-        )
-
-        self.colormap = label_colormap(
-            len(self.colormap) - 1,
-            seed=seed,
-            background_value=self.colormap.background_value,
-        )
-
     def new_colormap(self, seed: Optional[int] = None):
         if seed is None:
             seed = np.random.default_rng().integers(2**32 - 1)
@@ -554,39 +512,6 @@ class Labels(_ImageBase):
         self.events.colormap()  # Will update the LabelVispyColormap shader
         self.events.selected_label()
         self.refresh()
-
-    @property
-    def num_colors(self):
-        """int: Number of unique colors to use in colormap."""
-        warnings.warn(
-            trans._(
-                'Labels.num_colors is deprecated since 0.4.19 and will be '
-                'removed in 0.5.0, please use len(Labels.colormap) '
-                'instead.',
-                deferred=True,
-            ),
-            FutureWarning,
-            stacklevel=2,
-        )
-        return len(self.colormap)
-
-    @num_colors.setter
-    def num_colors(self, num_colors):
-        warnings.warn(
-            trans._(
-                'Setting Labels.num_colors is deprecated since 0.4.19 and '
-                'will be removed in 0.5.0, please set Labels.colormap '
-                'instead.',
-                deferred=True,
-            ),
-            FutureWarning,
-            stacklevel=2,
-        )
-        self.colormap = label_colormap(
-            num_colors - 1,
-            seed=self._random_colormap.seed,
-            background_value=self.colormap.background_value,
-        )
 
     @property
     def data(self) -> LayerDataProtocol:
@@ -647,35 +572,6 @@ class Labels(_ImageBase):
         elif features.shape[1] > 0:
             label_index = {i: i for i in range(features.shape[0])}
         return label_index
-
-    @property
-    def color(self) -> dict:
-        """dict: custom color dict for label coloring"""
-        warnings.warn(
-            "Labels.color is deprecated since 0.4.19 and will be removed in "
-            "0.5.0, please use Labels.colormap.color_dict instead. Note: this"
-            "will only work when the colormap is a DirectLabelsColormap.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        return {**self._direct_colormap.color_dict}
-
-    @color.setter
-    def color(self, color: Dict[Optional[int], Union[str, np.ndarray]]):
-        warnings.warn(
-            "Labels.color is deprecated since 0.4.19 and will be removed in "
-            "0.5.0, please set Labels.colormap directly with an instance "
-            "of napari.utils.colormaps.DirectLabelColormap instead.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        color = dict(color) if color else {}
-
-        color[self.colormap.background_value] = color.get(
-            self.colormap.background_value, 'transparent'
-        )
-        color[None] = color.get(None, 'black')
-        self.colormap = DirectLabelColormap(color_dict=color)
 
     def _is_default_colors(self, color):
         """Returns True if color contains only default colors, otherwise False.
@@ -782,55 +678,6 @@ class Labels(_ImageBase):
             self.selected_label = self.colormap.background_value
         else:
             self.selected_label = self._prev_selected_label
-
-    @property
-    def color_mode(self):
-        """Color mode to change how color is represented.
-
-        AUTO (default) allows color to be set via a hash function with a seed.
-
-        DIRECT allows color of each label to be set directly by a color dict.
-        """
-        warnings.warn(
-            trans._(
-                'Labels.color_mode is deprecated since 0.4.19 and will be '
-                'removed in 0.5.0. Please check type(Labels.colormap) '
-                'instead. napari.utils.colormaps.CyclicLabelColormap '
-                'corresponds to AUTO color mode, and '
-                'napari.utils.colormaps.DirectLabelColormap'
-                ' corresponds to DIRECT color mode.',
-                deferred=True,
-            ),
-            FutureWarning,
-            stacklevel=2,
-        )
-        return str(self._color_mode)
-
-    @color_mode.setter
-    def color_mode(self, color_mode: Union[str, LabelColorMode]):
-        warnings.warn(
-            trans._(
-                'Labels.color_mode is deprecated since 0.4.19 and will be '
-                'removed in 0.5.0. Please set Labels.colormap instead, to an'
-                'instance of napari.utils.colormaps.CyclicLabelColormap for '
-                '"auto" mode, or napari.utils.colormaps.DirectLabelColormap '
-                'for "direct" mode.',
-                deferred=True,
-            ),
-            FutureWarning,
-            stacklevel=2,
-        )
-        color_mode = LabelColorMode(color_mode)
-        self._color_mode = color_mode
-        if color_mode == LabelColorMode.AUTO:
-            self._colormap = self._random_colormap
-        else:
-            self._colormap = self._direct_colormap
-        self._selected_color = self.get_color(self.selected_label)
-        self.events.color_mode()
-        self.events.colormap()  # If remove this emitting, connect shader update to color_mode
-        self.events.selected_label()
-        self.refresh()
 
     @property
     def show_selected_label(self):
