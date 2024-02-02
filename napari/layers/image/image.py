@@ -1,5 +1,6 @@
 """Image class.
 """
+
 from __future__ import annotations
 
 import types

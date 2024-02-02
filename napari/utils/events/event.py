@@ -79,7 +79,6 @@ from napari.utils.translations import trans
 
 
 class Event:
-
     """Class describing events that occur and can be reacted to with callbacks.
     Each event instance contains information about a single event that has
     occurred such as a key press, mouse motion, timer activation, etc.
@@ -235,9 +234,9 @@ class _WeakCounter(Generic[_T]):
     """
 
     def __init__(self) -> None:
-        self._counter: weakref.WeakKeyDictionary[
-            _T, int
-        ] = weakref.WeakKeyDictionary()
+        self._counter: weakref.WeakKeyDictionary[_T, int] = (
+            weakref.WeakKeyDictionary()
+        )
         self._nonecount = 0
 
     def update(self, iterable: Iterable[_T]):
@@ -254,7 +253,6 @@ class _WeakCounter(Generic[_T]):
 
 
 class EventEmitter:
-
     """Encapsulates a list of event callbacks.
 
     Each instance of EventEmitter represents the source of a stream of similar
@@ -930,7 +928,6 @@ class WarningEmitter(EventEmitter):
 
 
 class EmitterGroup(EventEmitter):
-
     """EmitterGroup instances manage a set of related
     :class:`EventEmitters <vispy.event.EventEmitter>`.
     Its primary purpose is to provide organization for objects
@@ -1180,7 +1177,6 @@ class EmitterGroup(EventEmitter):
 
 
 class EventBlocker:
-
     """Represents a block for an EventEmitter to be used in a context
     manager (i.e. 'with' statement).
     """
@@ -1204,7 +1200,6 @@ class EventBlocker:
 
 
 class EventBlockerAll:
-
     """Represents a block_all for an EmitterGroup to be used in a context
     manager (i.e. 'with' statement).
     """
