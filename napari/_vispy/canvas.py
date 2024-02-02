@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING
 from weakref import WeakSet
 
 import numpy as np
+from app_model.backends.qt import qkey2modelkey, qmods2modelmods
+from qtpy.QtCore import Qt
 from superqt.utils import qthrottled
 from vispy.scene import SceneCanvas as SceneCanvas_, Widget
 
@@ -29,7 +31,7 @@ if TYPE_CHECKING:
     from typing import Callable, Dict, Optional, Tuple, Union
 
     import numpy.typing as npt
-    from qtpy.QtCore import Qt, pyqtBoundSignal
+    from qtpy.QtCore import pyqtBoundSignal
     from qtpy.QtGui import QCursor, QImage
     from vispy.app.backends._qt import CanvasBackendDesktop
     from vispy.app.canvas import DrawEvent, MouseEvent, ResizeEvent
@@ -40,7 +42,6 @@ if TYPE_CHECKING:
     from napari.components.overlays import Overlay
     from napari.layers import Layer
     from napari.utils.events.event import Event
-    from napari.utils.key_bindings import KeymapHandler
 
 
 class NapariSceneCanvas(SceneCanvas_):
@@ -81,8 +82,6 @@ class VispyCanvas:
         A QtCursorVisual enum with as names the names of particular cursor styles and as value either a staticmethod
         creating a bitmap or a Qt.CursorShape enum value corresponding to the particular cursor name. This enum only
         contains cursors supported by Napari in Vispy.
-    _key_map_handler : napari.utils.key_bindings.KeymapHandler
-        KeymapHandler handling the calling functionality when keys are pressed that have a callback function mapped.
     _last_theme_color : Optional[npt.NDArray[np.float]]
         Theme color represented as numpy ndarray of shape (4,) before theme change
         was applied.
@@ -98,7 +97,6 @@ class VispyCanvas:
     def __init__(
         self,
         viewer: ViewerModel,
-        key_map_handler: KeymapHandler,
         *args,
         **kwargs,
     ) -> None:
@@ -117,7 +115,6 @@ class VispyCanvas:
         )
         self.layer_to_visual: Dict[Layer, VispyBaseLayer] = {}
         self._overlay_to_visual: Dict[Overlay, VispyBaseOverlay] = {}
-        self._key_map_handler = key_map_handler
         self._instances.add(self)
 
         self.bgcolor = transform_color(
@@ -137,12 +134,8 @@ class VispyCanvas:
         self._scene_canvas.context.set_depth_func('lequal')
 
         # Connecting events from SceneCanvas
-        self._scene_canvas.events.key_press.connect(
-            self._key_map_handler.on_key_press
-        )
-        self._scene_canvas.events.key_release.connect(
-            self._key_map_handler.on_key_release
-        )
+        self._scene_canvas.events.key_press.connect(self._on_key_press)
+        self._scene_canvas.events.key_release.connect(self._on_key_release)
         self._scene_canvas.events.draw.connect(self.enable_dims_play)
         self._scene_canvas.events.draw.connect(self.camera.on_draw)
 
@@ -487,6 +480,45 @@ class VispyCanvas:
         None
         """
         self._process_mouse_event(mouse_wheel_callbacks, event)
+
+    def _on_key_press(self, event):
+        """Called whenever key pressed in canvas.
+        Parameters
+        ----------
+        event : vispy.util.event.Event
+            The vispy key press event that triggered this method.
+        """
+        if event.native is not None:
+            qevent = event.native
+            if qevent.key() == Qt.Key.Key_unknown:
+                return
+
+            mods, key = qmods2modelmods(qevent.modifiers()), qkey2modelkey(
+                qevent.key()
+            )
+            self.viewer._dispatcher.on_key_press(
+                mods, key, qevent.isAutoRepeat()
+            )
+            qevent.accept()
+
+    def _on_key_release(self, event):
+        """Called whenever key released in canvas.
+        Parameters
+        ----------
+        event : vispy.util.event.Event
+            The vispy key release event that triggered this method.
+        """
+        if event.native is not None:
+            qevent = event.native
+            if qevent.key == Qt.Key.Key_unknown or qevent.isAutoRepeat():
+                # on linux press down is treated as multiple press and release
+                return
+
+            mods, key = qmods2modelmods(qevent.modifiers()), qkey2modelkey(
+                qevent.key()
+            )
+            self.viewer._dispatcher.on_key_release(mods, key)
+            qevent.accept()
 
     @property
     def _canvas_corners_in_world(self) -> npt.NDArray:

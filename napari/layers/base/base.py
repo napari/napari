@@ -62,7 +62,7 @@ from napari.utils.geometry import (
     find_front_back_face,
     intersect_line_with_axis_aligned_bounding_box_3d,
 )
-from napari.utils.key_bindings import KeymapProvider
+from napari.utils.key_bindings.legacy import KeymapProvider
 from napari.utils.misc import StringEnum
 from napari.utils.mouse_bindings import MousemapProvider
 from napari.utils.naming import magic_name

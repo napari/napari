@@ -47,7 +47,6 @@ from qtpy.QtWidgets import (
 )
 from superqt.utils import QSignalThrottler
 
-from napari._app_model.constants import MenuId
 from napari._app_model.context import get_context
 from napari._qt import menus
 from napari._qt._qapp_model import build_qmodel_menu
@@ -69,6 +68,7 @@ from napari._qt.widgets.qt_viewer_dock_widget import (
     QtViewerDockWidget,
 )
 from napari._qt.widgets.qt_viewer_status_bar import ViewerStatusBar
+from napari.constants import MenuId
 from napari.plugins import (
     menu_item_template as plugin_menu_item_template,
     plugin_manager,
@@ -116,6 +116,11 @@ class _QtMainWindow(QMainWindow):
         self, viewer: 'Viewer', window: 'Window', parent=None
     ) -> None:
         super().__init__(parent)
+
+        # this is the line that initializes any Qt-based app-model Actions that
+        # were defined somewhere in the `_qt` module and imported in init_qactions
+        init_qactions()
+
         self._ev = None
         self._window = window
         self._qt_viewer = QtViewer(viewer, show_welcome_screen=True)
@@ -173,10 +178,6 @@ class _QtMainWindow(QMainWindow):
         handle = self.windowHandle()
         if handle is not None:
             handle.screenChanged.connect(self._qt_viewer.canvas.screen_changed)
-
-        # this is the line that initializes any Qt-based app-model Actions that
-        # were defined somewhere in the `_qt` module and imported in init_qactions
-        init_qactions()
 
         self.status_throttler = QSignalThrottler(parent=self)
         self.status_throttler.setTimeout(50)

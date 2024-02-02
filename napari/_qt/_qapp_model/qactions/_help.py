@@ -8,9 +8,9 @@ from typing import List
 
 from app_model.types import Action, KeyBindingRule, KeyCode, KeyMod
 
-from napari._app_model.constants import CommandId, MenuGroup, MenuId
 from napari._qt.dialogs.qt_about import QtAbout
 from napari._qt.qt_main_window import Window
+from napari.constants import CommandId, MenuGroup, MenuId
 from napari.utils.translations import trans
 
 try:

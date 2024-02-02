@@ -27,6 +27,7 @@ from qtpy.QtGui import QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 from superqt import ensure_main_thread
 
+from napari._qt._qapp_model import QKeyBindingDispatcher
 from napari._qt.containers import QtLayerList
 from napari._qt.dialogs.qt_reader_dialog import handle_gui_reading
 from napari._qt.dialogs.screenshot_dialog import ScreenshotDialog
@@ -55,7 +56,6 @@ from napari.utils.history import (
     update_save_history,
 )
 from napari.utils.io import imsave
-from napari.utils.key_bindings import KeymapHandler
 from napari.utils.misc import in_ipython, in_jupyter
 from napari.utils.naming import CallerFrame
 from napari.utils.notifications import show_info
@@ -193,13 +193,21 @@ class QtViewer(QSplitter):
         )
 
         self.viewer = viewer
+
+        from napari._app_model._app import get_app
+
+        app = get_app()
+
+        self._qdispatcher = QKeyBindingDispatcher(
+            app.commands, app.action_is_repeatable, parent=self
+        )
+        viewer._dispatcher.dispatch.connect(self._qdispatcher.onDispatch)
+
         self.dims = QtDims(self.viewer.dims)
         self._controls = None
         self._layers = None
         self._layersButtons = None
         self._viewerButtons = None
-        self._key_map_handler = KeymapHandler()
-        self._key_map_handler.keymap_providers = [self.viewer]
         self._console_backlog = []
         self._console = None
 
@@ -212,7 +220,6 @@ class QtViewer(QSplitter):
         self.canvas = canvas_class(
             viewer=viewer,
             parent=self,
-            key_map_handler=self._key_map_handler,
             size=self.viewer._canvas_size,
             autoswap=get_settings().experimental.autoswap_buffers,  # see #5734
         )
@@ -237,12 +244,8 @@ class QtViewer(QSplitter):
 
         self.viewer._layer_slicer.events.ready.connect(self._on_slice_ready)
 
-        self._on_active_change()
         self.viewer.layers.events.inserted.connect(self._update_welcome_screen)
         self.viewer.layers.events.removed.connect(self._update_welcome_screen)
-        self.viewer.layers.selection.events.active.connect(
-            self._on_active_change
-        )
 
         self.viewer.layers.events.inserted.connect(self._on_add_layer_change)
 
@@ -255,9 +258,6 @@ class QtViewer(QSplitter):
         self._remote_manager = _create_remote_manager(
             self.viewer.layers, self._qt_poll
         )
-
-        # bind shortcuts stored in settings last.
-        self._bind_shortcuts()
 
         settings = get_settings()
         self._update_dask_cache_settings(settings.application.dask)
@@ -434,13 +434,6 @@ class QtViewer(QSplitter):
     def _ensure_connect(self):
         # lazy load console
         id(self.console)
-
-    def _bind_shortcuts(self):
-        """Bind shortcuts stored in SETTINGS to actions."""
-        for action, shortcuts in get_settings().shortcuts.shortcuts.items():
-            action_manager.unbind_shortcut(action)
-            for shortcut in shortcuts:
-                action_manager.bind_shortcut(action, shortcut)
 
     def _create_performance_dock_widget(self):
         """Create the dock widget that shows performance metrics."""
@@ -640,14 +633,6 @@ class QtViewer(QSplitter):
                 layer.events.set_data()
                 layer._update_thumbnail()
                 layer._set_highlight(force=True)
-
-    def _on_active_change(self):
-        """When active layer changes change keymap handler."""
-        self._key_map_handler.keymap_providers = (
-            [self.viewer]
-            if self.viewer.layers.selection.active is None
-            else [self.viewer.layers.selection.active, self.viewer]
-        )
 
     def _on_add_layer_change(self, event):
         """When a layer is added, set its parent and order.
@@ -985,7 +970,7 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : qtpy.QtGui.QKeyEvent
             Event from the Qt context.
         """
         self.canvas._scene_canvas._backend._keyEvent(
@@ -998,7 +983,7 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : qtpy.QtGui.QKeyEvent
             Event from the Qt context.
         """
         self.canvas._scene_canvas._backend._keyEvent(

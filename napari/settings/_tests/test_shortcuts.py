@@ -1,8 +1,12 @@
 from typing import Dict, List
+from unittest.mock import Mock
 
+import pytest
 from app_model.types import KeyBinding, KeyCode, KeyMod
 
-_default_shortcuts = {
+from napari.settings._shortcuts import ShortcutRule, ShortcutsSettings
+
+_legacy_shortcuts = {
     # viewer
     'napari:toggle_console_visibility': [
         KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyC
@@ -92,7 +96,146 @@ _default_shortcuts = {
     'napari:activate_surface_transform_mode': [KeyCode.Digit2],
 }
 
-default_shortcuts: Dict[str, List[KeyBinding]] = {
+LEGACY_SHORTCUTS: Dict[str, List[KeyBinding]] = {
     name: [KeyBinding.from_int(kb) for kb in value]
-    for name, value in _default_shortcuts.items()
+    for name, value in _legacy_shortcuts.items()
 }
+
+
+def test_shortcut_settings_load_legacy_ignores_defaults():
+    shortcuts = ShortcutsSettings(shortcuts=LEGACY_SHORTCUTS)
+    assert shortcuts.shortcuts == []
+
+
+def test_shorcut_settings_load_legacy_overwrite():
+    custom_shortcuts = LEGACY_SHORTCUTS.copy()
+    custom_shortcuts['napari:activate_add_rectangle_mode'] = [
+        KeyBinding.from_int(KeyCode.Digit8)
+    ]
+    custom_shortcuts['napari:activate_add_ellipse_mode'] = [
+        KeyBinding.from_int(KeyCode.Digit9),
+        KeyBinding.from_int(KeyCode.KeyE),
+    ]
+
+    shortcuts = ShortcutsSettings(shortcuts=custom_shortcuts)
+    assert shortcuts.dict()['shortcuts'] == [
+        {
+            'key': 'r',
+            'command': '-napari:shapes:activate_add_rectangle_mode',
+            'when': 'active_layer_type == "shapes"',
+        },
+        {
+            'key': '8',
+            'command': 'napari:shapes:activate_add_rectangle_mode',
+            'when': 'active_layer_type == "shapes"',
+        },
+        {
+            'key': '9',
+            'command': 'napari:shapes:activate_add_ellipse_mode',
+            'when': 'active_layer_type == "shapes"',
+        },
+    ]
+
+
+def test_shorcut_rule():
+    rule = ShortcutRule(key='a', command='b', when=None)
+    with pytest.raises(TypeError, match='mutation'):
+        rule.command = 'c'
+
+
+def test_shortcut_settings_add():
+    shortcuts = ShortcutsSettings()
+    mock = Mock()
+    shortcuts.events.shortcuts.connect(mock)
+
+    shortcuts.add_shortcut('r', 'command')
+    mock.assert_called_once()
+    assert shortcuts.dict()['shortcuts'] == [
+        {'key': 'r', 'command': 'command', 'when': None}
+    ]
+
+
+def test_shortcut_settings_remove():
+    shortcuts = ShortcutsSettings(
+        shortcuts=[{'key': 'r', 'command': 'command', 'when': None}]
+    )
+    mock = Mock()
+    shortcuts.events.shortcuts.connect(mock)
+
+    shortcuts.remove_shortcut('r', 'command')
+    mock.assert_called_once()
+    assert shortcuts.shortcuts == []
+
+
+def test_shortcut_settings_overwrite():
+    shortcuts = ShortcutsSettings()
+    mock = Mock()
+    shortcuts.events.shortcuts.connect(mock)
+
+    shortcuts.shortcuts = [
+        {
+            'key': '0',
+            'command': 'a',
+        },
+        {
+            'key': '1',
+            'command': 'b',
+        },
+        {
+            'key': '2',
+            'command': 'c',
+        },
+    ]
+    mock.assert_called_once()
+
+    mock.reset_mock()
+    shortcuts.overwrite_shortcut('2', '3', 'c')
+    assert shortcuts.dict()['shortcuts'] == [
+        {
+            'key': '0',
+            'command': 'a',
+            'when': None,
+        },
+        {
+            'key': '1',
+            'command': 'b',
+            'when': None,
+        },
+        {
+            'key': '3',
+            'command': 'c',
+            'when': None,
+        },
+    ]
+    mock.assert_called_once()
+
+    mock.reset_mock()
+    shortcuts.overwrite_shortcut('0', '9', 'd')
+    assert shortcuts.dict()['shortcuts'] == [
+        {
+            'key': '0',
+            'command': 'a',
+            'when': None,
+        },
+        {
+            'key': '1',
+            'command': 'b',
+            'when': None,
+        },
+        {
+            'key': '3',
+            'command': 'c',
+            'when': None,
+        },
+        {
+            'key': '0',
+            'command': '-d',
+            'when': None,
+        },
+        {
+            'key': '9',
+            'command': 'd',
+            'when': None,
+        },
+    ]
+    mock.assert_called_once()

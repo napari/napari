@@ -4,13 +4,13 @@ from typing import List
 
 from app_model.types import Action, KeyCode, KeyMod, StandardKeyBinding
 
-from napari._app_model.constants import CommandId, MenuGroup, MenuId
 from napari._app_model.context import (
     LayerListContextKeys as LLCK,
     LayerListSelectionContextKeys as LLSCK,
 )
 from napari._qt.qt_main_window import Window
 from napari._qt.qt_viewer import QtViewer
+from napari.constants import CommandId, MenuGroup, MenuId
 from napari.utils.translations import trans
 
 

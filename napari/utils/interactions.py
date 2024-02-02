@@ -4,10 +4,11 @@ import sys
 import warnings
 from typing import List
 
+from app_model.types import KeyBinding, KeyCode, SimpleKeyBinding
 from numpydoc.docscrape import FunctionDoc
 
-from napari.utils.key_bindings import (
-    KeyBinding,
+from napari.utils.key_bindings.constants import VALID_KEYS
+from napari.utils.key_bindings.legacy import (
     KeyBindingLike,
     coerce_keybinding,
 )
@@ -247,12 +248,12 @@ elif sys.platform.startswith('linux'):
     KEY_SYMBOLS.update({'Meta': 'Super'})
 
 
-def _kb2mods(key_bind: KeyBinding) -> List[str]:
+def _kb2mods(key_bind: SimpleKeyBinding) -> List[str]:
     """Extract list of modifiers from a key binding.
 
     Parameters
     ----------
-    key_bind : KeyBinding
+    key_bind : SimpleKeyBinding
         The key binding whose mods are to be extracted.
 
     Returns
@@ -298,12 +299,29 @@ class Shortcut:
 
         try:
             self._kb = coerce_keybinding(shortcut)
+            if len(self._kb.parts) == 1:
+                part0 = self._kb.part0
+                mods = _kb2mods(part0)
+                if part0.key == KeyCode.UNKNOWN and len(mods) == 1:
+                    self._kb = KeyBinding.from_str(mods[0])
+                    if isinstance(shortcut, str) and shortcut.lower() not in (
+                        'meta',
+                        'ctrl',
+                        'control',
+                        'alt',
+                        'option',
+                        'shift',
+                    ):
+                        error = True
         except ValueError:
             error = True
         else:
             for part in self._kb.parts:
-                shortcut_key = str(part.key)
-                if len(shortcut_key) > 1 and shortcut_key not in KEY_SYMBOLS:
+                if (
+                    not part.is_modifier_key()
+                    and part.key not in VALID_KEYS
+                    or part.key == KeyCode.UNKNOWN
+                ):
                     error = True
 
         if error:
@@ -317,7 +335,7 @@ class Shortcut:
 
         This replace platform specific symbols, like ↵ by Enter,  ⌘ by Command on MacOS....
         """
-        # edge case, shortcut combinaison where `+` is a key.
+        # edge case, shortcut combination where `+` is a key.
         # this should be rare as on english keyboard + is Shift-Minus.
         # but not unheard of. In those case `+` is always at the end with `++`
         # as you can't get two non-modifier keys,  or alone.

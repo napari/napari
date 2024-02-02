@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from concurrent.futures import Future
     from typing import Protocol
 
-    from napari.utils.key_bindings import KeymapProvider
+    from napari.utils.key_bindings.legacy import KeymapProvider
 
     class SignalInstance(Protocol):
         def connect(self, callback: Callable) -> None:
@@ -290,6 +290,8 @@ class ActionManager:
             this warning will be emitted.
 
         """
+        self._validate_action_name(name)
+
         action = self._actions.get(name, None)
         if action is None:
             warnings.warn(
@@ -327,34 +329,6 @@ class ActionManager:
         ttip += f'[{name}]' if self._tooltip_include_action_name else ''
         return ttip
 
-    def _get_layer_shortcuts(self, layers) -> dict:
-        """
-        Get shortcuts filtered by the given layers.
-
-        Parameters
-        ----------
-        layers : list of layers
-            Layers to use for shortcuts filtering.
-
-        Returns
-        -------
-        dict
-            Dictionary of layers with dictionaries of shortcuts to
-            descriptions.
-        """
-        layer_shortcuts = {}
-        for layer in layers:
-            layer_shortcuts[layer] = {}
-            for name, shortcuts in self._shortcuts.items():
-                action = self._actions.get(name, None)
-                if action and layer == action.keymapprovider:
-                    for shortcut in shortcuts:
-                        layer_shortcuts[layer][
-                            str(shortcut)
-                        ] = action.description
-
-        return layer_shortcuts
-
     def _get_provider_actions(self, provider) -> dict:
         """
         Get actions filtered by the given provider.
@@ -376,60 +350,26 @@ class ActionManager:
             if action and provider == action.keymapprovider
         }
 
-    def _get_active_shortcuts(self, active_keymap):
-        """
-        Get active shortcuts for the given active keymap.
-
-        Parameters
-        ----------
-        active_keymap : KeymapProvider
-            The active keymap provider.
-
-        Returns
-        -------
-        dict
-            Dictionary of shortcuts to descriptions.
-        """
-        active_func_names = [i[1].__name__ for i in active_keymap.items()]
-        active_shortcuts = {}
-        for name, shortcuts in self._shortcuts.items():
-            action = self._actions.get(name, None)
-            if action and action.command.__name__ in active_func_names:
-                for shortcut in shortcuts:
-                    active_shortcuts[str(shortcut)] = action.description
-
-        return active_shortcuts
-
-    def _get_repeatable_shortcuts(self, active_keymap) -> list:
-        """
-        Get active, repeatable shortcuts for the given active keymap.
-
-        Parameters
-        ----------
-        active_keymap : KeymapProvider
-            The active keymap provider.
-
-        Returns
-        -------
-        list
-            List of shortcuts that are repeatable.
-        """
-        active_func_names = {i[1].__name__ for i in active_keymap.items()}
-        active_repeatable_shortcuts = []
-        for name, shortcuts in self._shortcuts.items():
-            action = self._actions.get(name, None)
-            if (
-                action
-                and action.command.__name__ in active_func_names
-                and action.repeatable
-            ):
-                active_repeatable_shortcuts.extend(shortcuts)
-
-        return active_repeatable_shortcuts
-
     def trigger(self, name: str) -> Any:
         """Trigger the action `name`."""
         return self._actions[name].injected()
 
 
 action_manager = ActionManager()
+
+
+def new_name_to_old(name: str) -> str:
+    """Converts a new name to its corresponding old one for action manager use.
+
+    Parameters
+    ----------
+    name : str
+        Current name.
+
+    Returns
+    -------
+    str
+        Legacy name.
+    """
+    prefix, *group, command = name.split(':')
+    return f'{prefix}:{command}'

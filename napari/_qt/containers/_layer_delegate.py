@@ -42,12 +42,12 @@ from qtpy.QtCore import QPoint, QSize, Qt, Signal
 from qtpy.QtGui import QMouseEvent, QMovie, QPixmap
 from qtpy.QtWidgets import QStyledItemDelegate
 
-from napari._app_model.constants import MenuId
 from napari._app_model.context import get_context
 from napari._qt._qapp_model import build_qmodel_menu
 from napari._qt.containers._base_item_model import ItemRole
 from napari._qt.containers.qt_layer_model import LoadedRole, ThumbnailRole
 from napari._qt.qt_resources import QColoredSVGIcon
+from napari.constants import MenuId
 from napari.resources import LOADING_GIF_PATH
 
 if TYPE_CHECKING:

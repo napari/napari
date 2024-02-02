@@ -26,6 +26,7 @@ import numpy as np
 # This cannot be condition to TYPE_CHEKCKING or the stubgen fails
 # with underfined Context.
 from app_model.expressions import Context
+from app_model.types import KeyBinding
 
 from napari import layers
 from napari._pydantic_compat import Extra, Field, PrivateAttr, validator
@@ -80,7 +81,6 @@ from napari.types import (
     SampleData,
 )
 from napari.utils._register import create_func as create_add_method
-from napari.utils.action_manager import action_manager
 from napari.utils.colormaps import ensure_colormap
 from napari.utils.events import (
     Event,
@@ -89,7 +89,8 @@ from napari.utils.events import (
     disconnect_events,
 )
 from napari.utils.events.event import WarningEmitter
-from napari.utils.key_bindings import KeymapProvider
+from napari.utils.key_bindings import KeyBindingDispatcher
+from napari.utils.key_bindings.legacy import KeymapProvider
 from napari.utils.migrations import rename_argument
 from napari.utils.misc import is_sequence
 from napari.utils.mouse_bindings import MousemapProvider
@@ -203,6 +204,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     # 2-tuple indicating height and width
     _canvas_size: Tuple[int, int] = (800, 600)
     _ctx: Context
+    _dispatch_ctx: Context
+    _dispatcher: KeyBindingDispatcher
     # To check if mouse is over canvas to avoid race conditions between
     # different events systems
     mouse_over_canvas: bool = False
@@ -215,7 +218,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self, title='napari', ndisplay=2, order=(), axis_labels=()
     ) -> None:
         # max_depth=0 means don't look for parent contexts.
+        from napari._app_model._app import get_app
         from napari._app_model.context import create_context
+
+        app = get_app()
 
         # FIXME: just like the LayerList, this object should ideally be created
         # elsewhere.  The app should know about the ViewerModel, but not vice versa.
@@ -231,6 +237,15 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             },
         )
         self.__config__.extra = Extra.ignore
+
+        self._dispatch_ctx = Context(
+            self._ctx, self.layers._ctx, self.layers._selection_ctx
+        )
+        # FIXME: ideally the dispatcher should live in the app and then switch contexts
+        # depending on the selected viewer
+        self._dispatcher = KeyBindingDispatcher(
+            app.keybindings, self._dispatch_ctx
+        )
 
         settings = get_settings()
         self.tooltip.visible = settings.appearance.layer_tooltip_visibility
@@ -440,6 +455,20 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         empty_labels = np.zeros(shape, dtype=np.uint8)
         self.add_labels(empty_labels, translate=np.array(corner), scale=scale)
 
+    def _new_shapes(self):
+        """Create new default shapes layer"""
+        self.add_shapes(
+            ndim=max(self.dims.ndim, 2),
+            scale=self.layers.extent.step,
+        )
+
+    def _new_points(self):
+        """Create new default points layer"""
+        self.add_points(
+            ndim=max(self.dims.ndim, 2),
+            scale=self.layers.extent.step,
+        )
+
     def _on_layer_reload(self, event: Event) -> None:
         self._layer_slicer.submit(
             layers=[event.layer], dims=self.dims, force=True
@@ -636,11 +665,14 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.reset_view()
             self.dims._go_to_center_step()
 
-    @staticmethod
-    def _layer_help_from_mode(layer: Layer):
+    def _layer_help_from_mode(self, layer: Layer):
         """
-        Update layer help text base on layer mode.
+        Update layer help text based on layer mode.
         """
+        from napari._app_model import get_app
+
+        app = get_app()
+
         layer_to_func_and_mode: Dict[Type[Layer], List] = {
             Points: points_fun_to_mode,
             Labels: labels_fun_to_mode,
@@ -652,22 +684,25 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         }
 
         help_li = []
-        shortcuts = get_settings().shortcuts.shortcuts
 
         for fun, mode_ in layer_to_func_and_mode.get(layer.__class__, []):
             if mode_ == layer.mode:
                 continue
-            action_name = f"napari:{fun.__name__}"
-            desc = action_manager._actions[action_name].description.lower()
-            if not shortcuts.get(action_name, []):
-                continue
-            help_li.append(
-                trans._(
-                    "use <{shortcut}> for {desc}",
-                    shortcut=shortcuts[action_name][0],
-                    desc=desc,
-                )
+            command_id = (
+                f"napari:{layer.__class__.__name__.lower()}:{fun.__name__}"
             )
+            command = app.commands[command_id]
+            desc = command.title.lower()
+
+            for key, cmd in self._dispatcher.active_keymap.items():
+                if cmd == command_id:
+                    help_li.append(
+                        trans._(
+                            "use <{shortcut}> for {desc}",
+                            shortcut=str(KeyBinding.from_int(key)),
+                            desc=desc,
+                        )
+                    )
 
         layer.help = ", ".join(help_li)
 

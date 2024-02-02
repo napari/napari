@@ -21,7 +21,10 @@ from app_model.types import SubmenuItem
 from npe2 import io_utils, plugin_manager as pm
 from npe2.manifest import contributions
 
+from napari.constants import MenuGroup, MenuId
+from napari.constants._menus import is_menu_contributable
 from napari.errors.reader_errors import MultipleReaderError
+from napari.utils.key_bindings import KeyBindingWeights
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -356,7 +359,7 @@ def on_plugins_registered(manifests: Set[PluginManifest]):
 def _rebuild_npe1_samples_menu() -> None:
     """Register submenu and actions for all npe1 plugins, clearing all first."""
     from napari._app_model import get_app
-    from napari._app_model.constants import MenuGroup, MenuId
+    from napari.constants import MenuGroup, MenuId
     from napari.plugins import menu_item_template, plugin_manager
 
     app = get_app()
@@ -442,7 +445,6 @@ def _get_samples_submenu_actions(
     mf: PluginManifest,
 ) -> Tuple[List[Any], List[Any]]:
     """Get sample data submenu and actions for a single npe2 plugin manifest."""
-    from napari._app_model.constants import MenuGroup, MenuId
     from napari.plugins import menu_item_template
 
     # If no sample data, return
@@ -521,12 +523,12 @@ def _npe2_manifest_to_actions(
     mf: PluginManifest,
 ) -> Tuple[List[Action], List[Tuple[str, SubmenuItem]]]:
     """Gather actions and submenus from a npe2 manifest, export app_model types."""
-    from app_model.types import Action, MenuRule
-
-    from napari._app_model.constants._menus import is_menu_contributable
+    from app_model.types import Action, KeyBindingRule, MenuRule
 
     cmds: DefaultDict[str, List[MenuRule]] = DefaultDict(list)
     submenus: List[Tuple[str, SubmenuItem]] = []
+    keybindings: Dict[str, List[KeyBindingRule]] = DefaultDict(list)
+
     for menu_id, items in mf.contributions.menus.items():
         if is_menu_contributable(menu_id):
             for item in items:
@@ -537,6 +539,18 @@ def _npe2_manifest_to_actions(
                     subitem = _npe2_submenu_to_app_model(item)
                     submenus.append((menu_id, subitem))
 
+    for key_bind in mf.contributions.keybindings or ():
+        keybindings[key_bind.command].append(
+            KeyBindingRule(
+                primary=key_bind.key,
+                win=key_bind.win,
+                mac=key_bind.mac,
+                linux=key_bind.linux,
+                when=key_bind.when,
+                weight=KeyBindingWeights.PLUGIN,
+            )
+        )
+
     # Filter sample data commands (not URIs) as they are registered via
     # `_get_samples_submenu_actions`
     sample_data_commands = {
@@ -545,22 +559,21 @@ def _npe2_manifest_to_actions(
         if hasattr(contrib, 'command')
     }
 
-    actions: List[Action] = []
-    for cmd in mf.contributions.commands or ():
-        if cmd.id not in sample_data_commands:
-            actions.append(
-                Action(
-                    id=cmd.id,
-                    title=cmd.title,
-                    category=cmd.category,
-                    tooltip=cmd.short_title or cmd.title,
-                    icon=cmd.icon,
-                    enablement=cmd.enablement,
-                    callback=cmd.python_name or '',
-                    menus=cmds.get(cmd.id),
-                    keybindings=[],
-                )
-            )
+    actions: List[Action] = [
+        Action(
+            id=cmd.id,
+            title=cmd.title,
+            category=cmd.category,
+            tooltip=cmd.short_title or cmd.title,
+            icon=cmd.icon,
+            enablement=cmd.enablement,
+            callback=cmd.python_name or '',
+            menus=cmds.get(cmd.id),
+            keybindings=keybindings.get(cmd.id),
+        )
+        for cmd in mf.contributions.commands or ()
+        if cmd.id not in sample_data_commands
+    ]
 
     return actions, submenus
 

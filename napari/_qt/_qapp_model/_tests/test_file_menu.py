@@ -9,7 +9,7 @@ from npe2.manifest.contributions import SampleDataURI
 from qtpy.QtWidgets import QMenu
 
 from napari._app_model import get_app
-from napari._app_model.constants import CommandId, MenuId
+from napari.constants import CommandId, MenuId
 from napari.layers import Image
 from napari.utils.action_manager import action_manager
 

@@ -1,7 +1,7 @@
 from app_model.types import SubmenuItem
 
-from napari._app_model.constants import MenuGroup, MenuId
 from napari._app_model.context import LayerListSelectionContextKeys as LLSCK
+from napari.constants import MenuGroup, MenuId
 from napari.utils.translations import trans
 
 SUBMENUS = [
