@@ -307,27 +307,28 @@ class StringEnumMeta(EnumMeta):
             start=start,
         )
 
-    def keys(self):
+    def keys(self) -> List[str]:
         return list(map(str, self))
 
 
 class StringEnum(Enum, metaclass=StringEnumMeta):
+    @staticmethod
     def _generate_next_value_(name, start, count, last_values):
         """autonaming function assigns each value its own name as a value"""
         return name.lower()
 
-    def __str__(self):
+    def __str__(self) -> str:
         """String representation: The string method returns the lowercase
         string of the Enum name
         """
         return self.value
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         if type(self) is type(other):
             return self is other
         if isinstance(other, str):
             return str(self) == other
-        return NotImplemented
+        return False
 
     def __hash__(self):
         return hash(str(self))
@@ -486,6 +487,10 @@ def _quiet_array_equal(*a, **k):
         return np.array_equal(*a, **k)
 
 
+def _pandas_dataframe_equal(df1, df2):
+    return df1.equals(df2)
+
+
 def _arraylike_short_names(obj) -> Iterator[str]:
     """Yield all the short names of an array-like or its class."""
     type_ = type(obj) if not inspect.isclass(obj) else obj
@@ -524,6 +529,7 @@ def pick_equality_operator(obj) -> Callable[[Any, Any], bool]:
         'dask.Delayed': operator.is_,  # dask.delayed.Delayed
         'zarr.Array': operator.is_,  # zarr.core.Array
         'xarray.DataArray': _quiet_array_equal,  # xarray.core.dataarray.DataArray
+        'pandas.DataFrame': _pandas_dataframe_equal,  # pandas.DataFrame.equals
     }
 
     for name in _arraylike_short_names(obj):

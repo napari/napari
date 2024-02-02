@@ -366,7 +366,7 @@ class Points(Layer):
         rotate=None,
         shear=None,
         affine=None,
-        opacity=1,
+        opacity=1.0,
         blending='translucent',
         visible=True,
         cache=True,
@@ -378,8 +378,15 @@ class Points(Layer):
         shown=True,
         projection_mode='none',
     ) -> None:
-        if ndim is None and scale is not None:
-            ndim = len(scale)
+        if ndim is None:
+            if scale is not None:
+                ndim = len(scale)
+            elif (
+                data is not None
+                and hasattr(data, 'shape')
+                and len(data.shape) == 2
+            ):
+                ndim = data.shape[1]
 
         data, ndim = fix_data_points(data, ndim)
 
@@ -1607,10 +1614,12 @@ class Points(Layer):
     def _update_draw(
         self, scale_factor, corner_pixels_displayed, shape_threshold
     ):
+        prev_scale = self.scale_factor
         super()._update_draw(
             scale_factor, corner_pixels_displayed, shape_threshold
         )
-        self._set_highlight(force=True)
+        # update highlight only if scale has changed, otherwise causes a cycle
+        self._set_highlight(force=(prev_scale != self.scale_factor))
 
     def _get_value(self, position) -> Optional[int]:
         """Index of the point at a given 2D position in data coordinates.
@@ -1858,7 +1867,7 @@ class Points(Layer):
             and np.array_equal(self._drag_box, self._drag_box_stored)
         ) and not force:
             return
-        self._selected_data_stored = copy(self.selected_data)
+        self._selected_data_stored = Selection(self.selected_data)
         self._value_stored = copy(self._value)
         self._drag_box_stored = copy(self._drag_box)
 
@@ -2045,12 +2054,12 @@ class Points(Layer):
                 self.data[np.ix_(selection_indices, disp)] + shift
             )
             self.refresh()
-        self.events.data(
-            value=self.data,
-            action=ActionType.CHANGED,
-            data_indices=tuple(selection_indices),
-            vertex_indices=((),),
-        )
+            self.events.data(
+                value=self.data,
+                action=ActionType.CHANGED,
+                data_indices=tuple(selection_indices),
+                vertex_indices=((),),
+            )
 
     def _set_drag_start(
         self,

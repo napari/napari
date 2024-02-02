@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from functools import partial
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -30,6 +31,7 @@ if TYPE_CHECKING:
     from npe2.types import LayerData, SampleDataCreator, WidgetCreator
     from qtpy.QtWidgets import QMenu
 
+    from napari._qt.qt_viewer import QtViewer
     from napari.layers import Layer
     from napari.types import SampleDict
 
@@ -355,7 +357,6 @@ def _rebuild_npe1_samples_menu() -> None:
     """Register submenu and actions for all npe1 plugins, clearing all first."""
     from napari._app_model import get_app
     from napari._app_model.constants import MenuGroup, MenuId
-    from napari._qt.qt_viewer import QtViewer
     from napari.plugins import menu_item_template, plugin_manager
 
     app = get_app()
@@ -397,7 +398,7 @@ def _rebuild_npe1_samples_menu() -> None:
                     qt_viewer.viewer.open_sample(plugin, sample)
                 except MultipleReaderError as e:
                     handle_gui_reading(
-                        e.paths,
+                        [str(p) for p in e.paths],
                         qt_viewer,
                         stack=False,
                     )
@@ -422,15 +423,27 @@ def _rebuild_npe1_samples_menu() -> None:
         plugin_manager._unreg_sample_actions = unreg_sample_actions
 
 
+# Note `QtViewer` gets added to `injection_store.namespace` during
+# `init_qactions` so does not need to be imported for type annotation resolution
+def _add_sample(qt_viewer: QtViewer, plugin=str, sample=str) -> None:
+    from napari._qt.dialogs.qt_reader_dialog import handle_gui_reading
+
+    try:
+        qt_viewer.viewer.open_sample(plugin, sample)
+    except MultipleReaderError as e:
+        handle_gui_reading(
+            [str(p) for p in e.paths],
+            qt_viewer,
+            stack=False,
+        )
+
+
 def _get_samples_submenu_actions(
     mf: PluginManifest,
 ) -> Tuple[List[Any], List[Any]]:
     """Get sample data submenu and actions for a single npe2 plugin manifest."""
     from napari._app_model.constants import MenuGroup, MenuId
     from napari.plugins import menu_item_template
-
-    if TYPE_CHECKING:
-        from napari._qt.qt_viewer import QtViewer
 
     # If no sample data, return
     if not mf.contributions.sample_data:
@@ -454,22 +467,11 @@ def _get_samples_submenu_actions(
 
     sample_actions: List[Action] = []
     for sample in sample_data:
-
-        def _add_sample(
-            qt_viewer: QtViewer,
+        _add_sample_partial = partial(
+            _add_sample,
             plugin=mf.name,
             sample=sample.key,
-        ):
-            from napari._qt.dialogs.qt_reader_dialog import handle_gui_reading
-
-            try:
-                qt_viewer.viewer.open_sample(plugin, sample)
-            except MultipleReaderError as e:
-                handle_gui_reading(
-                    e.paths,
-                    qt_viewer,
-                    stack=False,
-                )
+        )
 
         if multiprovider:
             title = sample.display_name
@@ -484,7 +486,7 @@ def _get_samples_submenu_actions(
             id=f'{mf.name}:{sample.key}',
             title=title,
             menus=[{'id': submenu_id, 'group': MenuGroup.NAVIGATION}],
-            callback=_add_sample,
+            callback=_add_sample_partial,
         )
         sample_actions.append(action)
     return submenu, sample_actions

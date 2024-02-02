@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 
+from napari.components.dims import RangeTuple
 from napari.layers import Layer
 from napari.layers.utils.layer_utils import Extent
 from napari.utils.events.containers import SelectableEventedList
@@ -193,6 +194,13 @@ class LayerList(SelectableEventedList[Layer]):
         new_layer.events._extent_augmented.connect(self._clean_cache)
         super().insert(index, new_layer)
 
+    def remove_selected(self):
+        """Remove selected layers from LayerList, but first unlink them."""
+        if not self.selection:
+            return
+        self.unlink_layers(self.selection)
+        super().remove_selected()
+
     def toggle_selected_visibility(self):
         """Toggle visibility of selected layers"""
         for layer in self.selection:
@@ -352,10 +360,12 @@ class LayerList(SelectableEventedList[Layer]):
         return self.get_extent(list(self))
 
     @property
-    def _ranges(self) -> Tuple[Tuple[float, float, float], ...]:
+    def _ranges(self) -> Tuple[RangeTuple, ...]:
         """Get ranges for Dims.range in world coordinates."""
         ext = self.extent
-        return tuple(zip(ext.world[0], ext.world[1], ext.step))
+        return tuple(
+            RangeTuple(*x) for x in zip(ext.world[0], ext.world[1], ext.step)
+        )
 
     @property
     def ndim(self) -> int:

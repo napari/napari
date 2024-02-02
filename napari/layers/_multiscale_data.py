@@ -44,6 +44,16 @@ class MultiScaleData(Sequence[LayerDataProtocol]):
             assert_protocol(d)
 
     @property
+    def size(self) -> int:
+        """Return size of the first scale.."""
+        return self._data[0].size
+
+    @property
+    def ndim(self) -> int:
+        """Return ndim of the first scale.."""
+        return self._data[0].ndim
+
+    @property
     def dtype(self) -> np.dtype:
         """Return dtype of the first scale.."""
         return self._data[0].dtype

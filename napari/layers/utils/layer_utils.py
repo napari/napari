@@ -6,6 +6,7 @@ import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Dict,
     List,
     NamedTuple,
@@ -28,6 +29,8 @@ if TYPE_CHECKING:
     from typing import Mapping
 
     import numpy.typing as npt
+
+    from napari.layers._data_protocols import LayerDataProtocol
 
 
 class Extent(NamedTuple):
@@ -60,8 +63,8 @@ def register_layer_action(
     keymapprovider,
     description: str,
     repeatable: bool = False,
-    shortcuts: Optional[str] = None,
-):
+    shortcuts: Optional[Union[str, List[str]]] = None,
+) -> Callable[[Callable], Callable]:
     """
     Convenient decorator to register an action with the current Layers
 
@@ -90,7 +93,7 @@ def register_layer_action(
 
     """
 
-    def _inner(func):
+    def _inner(func: Callable) -> Callable:
         nonlocal shortcuts
         name = 'napari:' + func.__name__
 
@@ -204,7 +207,9 @@ def _nanmax(array):
     return max_value
 
 
-def calc_data_range(data, rgb=False) -> Tuple[float, float]:
+def calc_data_range(
+    data: LayerDataProtocol, rgb: bool = False
+) -> Tuple[float, float]:
     """Calculate range of data values. If all values are equal return [0, 1].
 
     Parameters
@@ -228,7 +233,7 @@ def calc_data_range(data, rgb=False) -> Tuple[float, float]:
         return (0, 255)
 
     center: Union[int, List[int]]
-
+    reduced_data: Union[List, LayerDataProtocol]
     if data.size > 1e7 and (data.ndim == 1 or (rgb and data.ndim == 2)):
         # If data is very large take the average of start, middle and end.
         center = int(data.shape[0] // 2)
@@ -281,7 +286,7 @@ def calc_data_range(data, rgb=False) -> Tuple[float, float]:
     return (float(min_val), float(max_val))
 
 
-def segment_normal(a, b, p=(0, 0, 1)):
+def segment_normal(a, b, p=(0, 0, 1)) -> np.ndarray:
     """Determines the unit normal of the vector from a to b.
 
     Parameters
@@ -301,6 +306,8 @@ def segment_normal(a, b, p=(0, 0, 1)):
     """
     d = b - a
 
+    norm: Any  # float or array or float, mypy has some difficulities.
+
     if d.ndim == 1:
         normal = np.array([d[1], -d[0]]) if len(d) == 2 else np.cross(d, p)
         norm = np.linalg.norm(normal)
@@ -315,9 +322,7 @@ def segment_normal(a, b, p=(0, 0, 1)):
         norm = np.linalg.norm(normal, axis=1, keepdims=True)
         ind = norm == 0
         norm[ind] = 1
-    unit_norm = normal / norm
-
-    return unit_norm
+    return normal / norm
 
 
 def convert_to_uint8(data: np.ndarray) -> Optional[np.ndarray]:
@@ -367,7 +372,7 @@ def convert_to_uint8(data: np.ndarray) -> Optional[np.ndarray]:
         return np.right_shift(data, (data.dtype.itemsize - 1) * 8 - 1).astype(
             out_dtype
         )
-    return None
+    raise NotImplementedError
 
 
 def get_current_properties(
@@ -839,7 +844,7 @@ class _FeatureTable:
         self._defaults = _validate_features(currents, num_data=1)
         if update_indices is not None:
             for k in self._defaults:
-                self._values[k][update_indices] = self._defaults[k][0]
+                self._values.loc[update_indices, k] = self._defaults[k][0]
 
     def resize(
         self,

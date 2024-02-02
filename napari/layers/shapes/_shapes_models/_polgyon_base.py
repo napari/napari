@@ -102,7 +102,7 @@ class PolygonBase(Shape):
             if self._closed:
                 data = np.append(data, data[:1], axis=0)
 
-            tck, _ = splprep(
+            tck, *_ = splprep(
                 data.T, s=0, k=self.interpolation_order, per=self._closed
             )
 
