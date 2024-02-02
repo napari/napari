@@ -17,10 +17,6 @@ qt:
       - 'napari/qt/**/*.py'
       - 'napari/qt/**/*.py'
 
-task:
-  - changed-files:
-    - any-glob-to-any-file: '.github/**/*'
-
 tests:
   - changed-files:
     - any-glob-to-any-file: '**/*/_tests/**/*.py'
