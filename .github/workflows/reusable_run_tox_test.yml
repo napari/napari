@@ -60,7 +60,7 @@ jobs:
           path: dist
 
       - name: Set up Python ${{ inputs.python_version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ inputs.python_version }}
           cache: "pip"
