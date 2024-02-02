@@ -120,6 +120,12 @@ contributions:
     - id: napari.data.text
       title: Generate text sample
       python_name: napari_builtins._skimage_data:text
+    - id: napari.data.balls_2d
+      title: Generate 2d_balls sample
+      python_name: napari_builtins._ndims_balls:labeled_particles2d
+    - id: napari.data.balls_3d
+      title: Generate 3d_balls sample
+      python_name: napari_builtins._ndims_balls:labeled_particles3d
 
   readers:
     - command: napari.get_reader
@@ -198,6 +204,12 @@ contributions:
     - display_name: Astronaut (RGB)
       key: astronaut
       command: napari.data.astronaut
+    - display_name: Balls
+      key: balls_2d
+      command: napari.data.balls_2d
+    - display_name: Balls (3D)
+      key: balls_3d
+      command: napari.data.balls_3d
     - display_name: Binary Blobs
       key: binary_blobs
       command: napari.data.binary_blobs

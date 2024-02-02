@@ -103,7 +103,7 @@ class _ImageSliceResponse:
         shape = (1,) * slice_input.ndisplay
         if rgb:
             shape = shape + (3,)
-        data = np.zeros(shape)
+        data = np.zeros(shape, dtype=np.uint8)
         image = _ImageView.from_view(data)
         ndim = slice_input.ndim
         tile_to_data = Affine(
