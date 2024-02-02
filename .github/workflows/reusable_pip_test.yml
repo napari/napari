@@ -27,6 +27,10 @@ jobs:
         env:
           PIP_CONSTRAINT: napari-from-github/resources/constraints/constraints_py3.9.txt
 
+      - name: uninstall numba
+        run: |
+          pip uninstall -y numba
+
       - name: Test
         uses: aganders3/headless-gui@v1
         with:

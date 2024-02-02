@@ -2,7 +2,7 @@ magicgui
 mypy
 numpy
 npe2
-pydantic
+pydantic<2
 qtpy
 pyqt6
 types-PyYAML
