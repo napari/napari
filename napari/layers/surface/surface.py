@@ -1,8 +1,9 @@
 import copy
 import warnings
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
+import pandas as pd
 
 from napari.layers.base import Layer
 from napari.layers.intensity_mixin import IntensityVisualizationMixin
@@ -15,7 +16,7 @@ from napari.layers.surface.wireframe import SurfaceWireframe
 from napari.layers.utils.interactivity_utils import (
     nd_line_segment_to_displayed_data_ray,
 )
-from napari.layers.utils.layer_utils import calc_data_range
+from napari.layers.utils.layer_utils import _FeatureTable, calc_data_range
 from napari.utils.colormaps import AVAILABLE_COLORMAPS
 from napari.utils.events import Event
 from napari.utils.events.event_utils import connect_no_arg
@@ -141,6 +142,11 @@ class Surface(IntensityVisualizationMixin, Layer):
         Indices of mesh triangles.
     vertex_values : (K0, ..., KL, N) array
         Values used to color vertices.
+    features : DataFrame-like
+        Features table where each row corresponds to a vertex and each column
+        is a feature.
+    feature_defaults : DataFrame-like
+        Stores the default value of each feature in a table with one row.
     colormap : str, napari.utils.Colormap, tuple, dict
         Colormap to use for luminance images. If a string must be the name
         of a supported colormap from vispy or matplotlib. If a tuple the
@@ -184,6 +190,8 @@ class Surface(IntensityVisualizationMixin, Layer):
         self,
         data,
         *,
+        features=None,
+        feature_defaults=None,
         colormap='gray',
         contrast_limits=None,
         gamma=1.0,
@@ -235,6 +243,8 @@ class Surface(IntensityVisualizationMixin, Layer):
             normals=Event,
             texture=Event,
             texcoords=Event,
+            features=Event,
+            feature_defaults=Event,
         )
 
         # assign mesh data and establish default behavior
@@ -252,6 +262,12 @@ class Surface(IntensityVisualizationMixin, Layer):
             self._vertex_values = data[2]
         else:
             self._vertex_values = np.ones(len(self._vertices))
+
+        self._feature_table = _FeatureTable.from_layer(
+            features=features,
+            feature_defaults=feature_defaults,
+            num_data=len(data[0]),
+        )
 
         self._texture = texture
         self._texcoords = texcoords
@@ -425,6 +441,47 @@ class Surface(IntensityVisualizationMixin, Layer):
         return extrema
 
     @property
+    def features(self):
+        """Dataframe-like features table.
+
+        It is an implementation detail that this is a `pandas.DataFrame`. In the future,
+        we will target the currently-in-development Data API dataframe protocol [1].
+        This will enable us to use alternate libraries such as xarray or cuDF for
+        additional features without breaking existing usage of this.
+
+        If you need to specifically rely on the pandas API, please coerce this to a
+        `pandas.DataFrame` using `features_to_pandas_dataframe`.
+
+        References
+        ----------
+        .. [1]: https://data-apis.org/dataframe-protocol/latest/API.html
+        """
+        return self._feature_table.values
+
+    @features.setter
+    def features(
+        self,
+        features: Union[Dict[str, np.ndarray], pd.DataFrame],
+    ) -> None:
+        self._feature_table.set_values(features, num_data=len(self.data[0]))
+        self.events.features()
+
+    @property
+    def feature_defaults(self):
+        """Dataframe-like with one row of feature default values.
+
+        See `features` for more details on the type of this property.
+        """
+        return self._feature_table.defaults
+
+    @feature_defaults.setter
+    def feature_defaults(
+        self, defaults: Union[Dict[str, Any], pd.DataFrame]
+    ) -> None:
+        self._feature_table.set_defaults(defaults)
+        self.events.feature_defaults()
+
+    @property
     def shading(self):
         return str(self._shading)
 
@@ -522,6 +579,8 @@ class Surface(IntensityVisualizationMixin, Layer):
                 'gamma': self.gamma,
                 'shading': self.shading,
                 'data': self.data,
+                'features': self.features,
+                'feature_defaults': self.feature_defaults,
                 'wireframe': self.wireframe.dict(),
                 'normals': self.normals.dict(),
                 'texture': self.texture,

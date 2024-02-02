@@ -487,6 +487,10 @@ def _quiet_array_equal(*a, **k):
         return np.array_equal(*a, **k)
 
 
+def _pandas_dataframe_equal(df1, df2):
+    return df1.equals(df2)
+
+
 def _arraylike_short_names(obj) -> Iterator[str]:
     """Yield all the short names of an array-like or its class."""
     type_ = type(obj) if not inspect.isclass(obj) else obj
@@ -525,6 +529,7 @@ def pick_equality_operator(obj) -> Callable[[Any, Any], bool]:
         'dask.Delayed': operator.is_,  # dask.delayed.Delayed
         'zarr.Array': operator.is_,  # zarr.core.Array
         'xarray.DataArray': _quiet_array_equal,  # xarray.core.dataarray.DataArray
+        'pandas.DataFrame': _pandas_dataframe_equal,  # pandas.DataFrame.equals
     }
 
     for name in _arraylike_short_names(obj):
