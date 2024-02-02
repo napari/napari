@@ -3,6 +3,7 @@ normalize and broadcast the color inputs they receive into a more standardized f
 a numpy array with N rows, N being the number of data points, and a dtype of np.float32.
 
 """
+
 import warnings
 from itertools import cycle
 from typing import Tuple

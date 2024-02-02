@@ -65,23 +65,20 @@ def test_bind_key_decorator():
     kb = {}
 
     @bind_key(kb, 'A')
-    def foo():
-        ...
+    def foo(): ...
 
     assert kb == {KeyBinding.from_str("A"): foo}
 
 
 def test_keymap_provider():
-    class Foo(KeymapProvider):
-        ...
+    class Foo(KeymapProvider): ...
 
     assert Foo.class_keymap == {}
 
     foo = Foo()
     assert foo.keymap == {}
 
-    class Bar(Foo):
-        ...
+    class Bar(Foo): ...
 
     assert Bar.class_keymap == {}
     assert Bar.class_keymap is not Foo.class_keymap
@@ -93,8 +90,7 @@ def test_keymap_provider():
 
 
 def test_bind_keymap():
-    class Foo:
-        ...
+    class Foo: ...
 
     def bar(foo):
         return foo
@@ -353,8 +349,7 @@ def test_handle_on_release_bindings():
 
 
 def test_bind_key_method():
-    class Foo2(KeymapProvider):
-        ...
+    class Foo2(KeymapProvider): ...
 
     foo = Foo2()
 
@@ -382,8 +377,7 @@ def test_key_release_callback(monkeypatch):
     called2 = False
     monkeypatch.setattr(time, "time", lambda: 1)
 
-    class Foo(KeymapProvider):
-        ...
+    class Foo(KeymapProvider): ...
 
     foo = Foo()
 

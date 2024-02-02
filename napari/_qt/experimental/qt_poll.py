@@ -3,6 +3,7 @@
 Poll visuals or other objects so they can do things even when the
 mouse/camera are not moving. Usually for just a short period of time.
 """
+
 import time
 from typing import Optional
 

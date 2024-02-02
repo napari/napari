@@ -1635,9 +1635,9 @@ class Labels(_ImageBase):
             updated_slice = expand_slice(updated_slice, self.data.shape, 1)
         else:
             # update data view
-            self._slice.image.view[
-                displayed_indices
-            ] = self.colormap._data_to_texture(visible_values)
+            self._slice.image.view[displayed_indices] = (
+                self.colormap._data_to_texture(visible_values)
+            )
 
         if self._updated_slice is None:
             self._updated_slice = updated_slice

@@ -18,14 +18,12 @@ if TYPE_CHECKING:
     from napari.utils.key_bindings import KeymapProvider
 
     class SignalInstance(Protocol):
-        def connect(self, callback: Callable) -> None:
-            ...
+        def connect(self, callback: Callable) -> None: ...
 
     class Button(Protocol):
         clicked: SignalInstance
 
-        def setToolTip(self, text: str) -> None:
-            ...
+        def setToolTip(self, text: str) -> None: ...
 
     class ShortcutEvent:
         name: str

@@ -48,6 +48,7 @@ three of these should be removed before merging the PR into main. While
 they have almost zero overhead when perfmon is disabled, it's still better
 not to leave them in the code. Think of them as similar to debug prints.
 """
+
 import os
 
 from napari.utils.perf._config import perf_config
