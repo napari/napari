@@ -202,7 +202,7 @@ jobs:
           pip install asv[virtualenv]
 
       - name: Run benchmarks
-        uses: aganders3/headless-gui@v1
+        uses: aganders3/headless-gui@v2
         with:
           run: |
             asv machine --yes
