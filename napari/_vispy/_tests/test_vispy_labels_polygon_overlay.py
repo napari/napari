@@ -38,7 +38,7 @@ def test_vispy_labels_polygon_overlay(make_napari_viewer):
     assert not vispy_labels_polygon._line.visible
     assert vispy_labels_polygon._polygon.visible
 
-    layer.selected_label = layer._background_label
+    layer.selected_label = layer.colormap.background_value
     assert vispy_labels_polygon._polygon.color.is_blank
 
 

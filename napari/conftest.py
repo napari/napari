@@ -471,7 +471,7 @@ def dangling_qthreads(monkeypatch, qtbot, request):
 
     if "disable_qthread_start" in request.keywords:
 
-        def my_start(*_, **__):
+        def my_start(self, priority=QThread.InheritPriority):
             """dummy function to prevent thread start"""
 
     else:
@@ -531,7 +531,7 @@ def dangling_qthread_pool(monkeypatch, request):
 
     if "disable_qthread_pool_start" in request.keywords:
 
-        def my_start(*_, **__):
+        def my_start(self, runnable, priority=0):
             """dummy function to prevent thread start"""
 
     else:
@@ -588,7 +588,7 @@ def dangling_qtimers(monkeypatch, request):
     if "disable_qtimer_start" in request.keywords:
         from pytestqt.qt_compat import qt_api
 
-        def my_start(*_, **__):
+        def my_start(self, msec=None):
             """dummy function to prevent timer start"""
 
         _single_shot = my_start
@@ -709,7 +709,7 @@ def dangling_qanimations(monkeypatch, request):
 
     if "disable_qanimation_start" in request.keywords:
 
-        def my_start(*_, **__):
+        def my_start(self):
             """dummy function to prevent thread start"""
 
     else:

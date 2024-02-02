@@ -6,6 +6,7 @@ from typing import (
     DefaultDict,
     Dict,
     List,
+    Literal,
     Optional,
     Tuple,
     Union,
@@ -18,9 +19,11 @@ import numpy as np
 from napari._pydantic_compat import Field, PrivateAttr, validator
 from napari.utils.color import ColorArray
 from napari.utils.colormaps.colorbars import make_colorbar
+from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.compat import StrEnum
 from napari.utils.events import EventedModel
 from napari.utils.events.custom_types import Array
+from napari.utils.migrations import deprecated_class_name
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -132,6 +135,9 @@ class Colormap(EventedModel):
     def __iter__(self):
         yield from (self.colors, self.controls, self.interpolation)
 
+    def __len__(self):
+        return len(self.colors)
+
     def map(self, values):
         values = np.atleast_1d(values)
         if self.interpolation == ColormapInterpolationMode.LINEAR:
@@ -169,7 +175,9 @@ class LabelColormapBase(Colormap):
     use_selection: bool = False
     selection: int = 0
     background_value: int = 0
-    interpolation: ColormapInterpolationMode = ColormapInterpolationMode.ZERO
+    interpolation: Literal[ColormapInterpolationMode.ZERO] = Field(
+        ColormapInterpolationMode.ZERO, frozen=True
+    )
     _cache_mapping: Dict[Tuple[np.dtype, np.dtype], np.ndarray] = PrivateAttr(
         default={}
     )
@@ -181,6 +189,20 @@ class LabelColormapBase(Colormap):
         # it is required until we drop Pydantic 1 or Python 3.11 and older
         # need to validate after drop pydantic 1
         keep_untouched = (cached_property,)
+
+    @overload
+    def _data_to_texture(self, values: np.ndarray) -> np.ndarray:
+        ...
+
+    @overload
+    def _data_to_texture(self, values: np.integer) -> np.integer:
+        ...
+
+    def _data_to_texture(
+        self, values: Union[np.ndarray, np.integer]
+    ) -> Union[np.ndarray, np.integer]:
+        """Map input values to values for send to GPU."""
+        raise NotImplementedError
 
     def _cmap_without_selection(self) -> "LabelColormapBase":
         if self.use_selection:
@@ -232,17 +254,31 @@ class LabelColormapBase(Colormap):
         int
             The selection converted.
         """
-        raise NotImplementedError
+        return int(self._data_to_texture(dtype.type(self.selection)))
 
 
-class LabelColormap(LabelColormapBase):
-    """Colormap that shuffles values before mapping to colors.
+class CyclicLabelColormap(LabelColormapBase):
+    """Color cycle with a background value.
 
     Attributes
     ----------
-    seed : float
+    colors : ColorArray
+        Colors to be used for mapping.
+        For values above the number of colors,
+        the colors will be cycled.
     use_selection : bool
+        Whether map only selected label.
+        If `True` only selected label will be mapped to not transparent color.
     selection : int
+        The selected label.
+    background_value : int
+        Which value should be treated as a background
+        and mapped to transparent color.
+    interpolation : Literal['zero']
+        required by implementation, please do not set value
+    seed : float
+        seed used for random color generation. Used for reproducibility.
+        It will be removed in the future release.
     """
 
     seed: float = 0.5
@@ -254,13 +290,6 @@ class LabelColormap(LabelColormapBase):
                 "Only up to 2**16=65535 colors are supported for LabelColormap"
             )
         return v
-
-    def _selection_as_minimum_dtype(self, dtype: np.dtype) -> int:
-        return int(
-            _cast_labels_data_to_texture_dtype_auto(
-                dtype.type(self.selection), self
-            )
-        )
 
     def _background_as_minimum_dtype(self, dtype: np.dtype) -> int:
         """Treat background as given dtype and calculate value with min dtype.
@@ -275,11 +304,21 @@ class LabelColormap(LabelColormapBase):
         int
             The background converted.
         """
-        return int(
-            _cast_labels_data_to_texture_dtype_auto(
-                dtype.type(self.background_value), self
-            )
-        )
+        return int(self._data_to_texture(dtype.type(self.background_value)))
+
+    @overload
+    def _data_to_texture(self, values: np.ndarray) -> np.ndarray:
+        ...
+
+    @overload
+    def _data_to_texture(self, values: np.integer) -> np.integer:
+        ...
+
+    def _data_to_texture(
+        self, values: Union[np.ndarray, np.integer]
+    ) -> Union[np.ndarray, np.integer]:
+        """Map input values to values for send to GPU."""
+        return _cast_labels_data_to_texture_dtype_auto(values, self)
 
     def _map_without_cache(self, values) -> np.ndarray:
         texture_dtype_values = _zero_preserving_modulo_numpy(
@@ -292,19 +331,21 @@ class LabelColormap(LabelColormapBase):
         mapped[texture_dtype_values == 0] = 0
         return mapped
 
-    def map(self, values) -> np.ndarray:
+    def map(self, values: Union[np.ndarray, np.integer, int]) -> np.ndarray:
         """Map values to colors.
 
         Parameters
         ----------
-        values : np.ndarray or float
+        values : np.ndarray or int
             Values to be mapped.
 
         Returns
         -------
-        np.ndarray of same shape as values, but with last dimension of size 4
+        np.ndarray of the same shape as values,
+            but with the last dimension of size 4
             Mapped colors.
         """
+        original_shape = np.shape(values)
         values = np.atleast_1d(values)
 
         if values.dtype.kind == 'f':
@@ -317,7 +358,7 @@ class LabelColormap(LabelColormapBase):
         if self.use_selection:
             mapped[(values != self.selection)] = 0
 
-        return mapped
+        return np.reshape(mapped, original_shape + (4,))
 
     def shuffle(self, seed: int):
         """Shuffle the colormap colors.
@@ -331,6 +372,14 @@ class LabelColormap(LabelColormapBase):
         self.events.colors(value=self.colors)
 
 
+LabelColormap = deprecated_class_name(
+    CyclicLabelColormap,
+    'LabelColormap',
+    version='0.5.0',
+    since_version='0.4.19',
+)
+
+
 class DirectLabelColormap(LabelColormapBase):
     """Colormap using a direct mapping from labels to color using a dict.
 
@@ -338,10 +387,14 @@ class DirectLabelColormap(LabelColormapBase):
     ----------
     color_dict: dict from int to (3,) or (4,) array
         The dictionary mapping labels to colors.
+
     use_selection : bool
-        Whether to color using the selected label.
+        Whether to map only the selected label to a color.
+        If `True` only selected label will be not transparent.
     selection : int
         The selected label.
+    colors : ColorArray
+        Exist because of implementation details. Please do not use it.
     """
 
     color_dict: DefaultDict[Optional[int], np.ndarray] = Field(
@@ -355,6 +408,53 @@ class DirectLabelColormap(LabelColormapBase):
             kwargs["colors"] = np.zeros(3)
         super().__init__(*args, **kwargs)
 
+    def __len__(self):
+        """Overwrite from base class because .color is a dummy array.
+
+        This returns the number of colors in the colormap, including
+        background and unmapped labels.
+        """
+        return self._num_unique_colors + 2
+
+    @validator("color_dict", pre=True, always=True, allow_reuse=True)
+    def _validate_color_dict(cls, v, values):
+        """Ensure colors are RGBA arrays, not strings.
+
+        Parameters
+        ----------
+        cls : type
+            The class of the object being instantiated.
+        v : MutableMapping
+            A mapping from integers to colors. It *may* have None as a key,
+            which indicates the color to map items not in the dictionary.
+            Alternatively, it could be a defaultdict.
+        values : dict[str, Any]
+            A dictionary mapping previously-validated attributes to their
+            validated values. Attributes are validated in the order in which
+            they are defined.
+
+        Returns
+        -------
+        res : (default)dict[int, np.ndarray[float]]
+            A properly-formatted dictionary mapping labels to RGBA arrays.
+        """
+        if not isinstance(v, defaultdict) and None not in v:
+            raise ValueError(
+                "color_dict must contain None or be defaultdict instance"
+            )
+        res = {
+            label: transform_color(color_str)[0]
+            for label, color_str in v.items()
+        }
+        if (
+            'background_value' in values
+            and (bg := values['background_value']) not in res
+        ):
+            res[bg] = transform_color('transparent')[0]
+        if isinstance(v, defaultdict):
+            res = defaultdict(v.default_factory, res)
+        return res
+
     def _selection_as_minimum_dtype(self, dtype: np.dtype) -> int:
         return int(
             _cast_labels_data_to_texture_dtype_direct(
@@ -362,7 +462,21 @@ class DirectLabelColormap(LabelColormapBase):
             )
         )
 
-    def map(self, values) -> np.ndarray:
+    @overload
+    def _data_to_texture(self, values: np.ndarray) -> np.ndarray:
+        ...
+
+    @overload
+    def _data_to_texture(self, values: np.integer) -> np.integer:
+        ...
+
+    def _data_to_texture(
+        self, values: Union[np.ndarray, np.integer]
+    ) -> Union[np.ndarray, np.integer]:
+        """Map input values to values for send to GPU."""
+        return _cast_labels_data_to_texture_dtype_direct(values, self)
+
+    def map(self, values: Union[np.ndarray, np.integer, int]) -> np.ndarray:
         """Map values to colors.
 
         Parameters
@@ -375,8 +489,15 @@ class DirectLabelColormap(LabelColormapBase):
         np.ndarray of same shape as values, but with last dimension of size 4
             Mapped colors.
         """
-        values = np.atleast_1d(values)
-        if values.dtype.kind in {'f', 'U'}:
+        if isinstance(values, np.integer):
+            values = int(values)
+        if isinstance(values, int):
+            if self.use_selection and values != self.selection:
+                return np.array((0, 0, 0, 0))
+            return self.color_dict.get(values, self.default_color)
+        if isinstance(values, (list, tuple)):
+            values = np.array(values)
+        if not isinstance(values, np.ndarray) or values.dtype.kind in 'fU':
             raise TypeError("DirectLabelColormap can only be used with int")
         mapper = self._get_mapping_from_cache(values.dtype)
         if mapper is not None:
@@ -422,7 +543,11 @@ class DirectLabelColormap(LabelColormapBase):
 
     @cached_property
     def _num_unique_colors(self) -> int:
-        """Count the number of unique colors in the colormap."""
+        """Count the number of unique colors in the colormap.
+
+        This number does not include background or the default color for
+        unmapped labels.
+        """
         return len({tuple(x) for x in self.color_dict.values()})
 
     def _clear_cache(self):
@@ -534,7 +659,12 @@ class DirectLabelColormap(LabelColormapBase):
     @cached_property
     def _array_map(self):
         """Create an array to map labels to texture values of smaller dtype."""
-        max_value = max(x for x in self.color_dict if x is not None)
+
+        max_value = max(
+            (abs(x) for x in self.color_dict if x is not None), default=0
+        )
+        if any(x < 0 for x in self.color_dict if x is not None):
+            max_value *= 2
         if max_value > 2**16:
             raise RuntimeError(  # pragma: no cover
                 "Cannot use numpy implementation for large values of labels "
@@ -561,6 +691,20 @@ class DirectLabelColormap(LabelColormapBase):
         return self.color_dict.get(None, np.array((0, 0, 0, 0)))
         # we provided here default color for backward compatibility
         # if someone is using DirectLabelColormap directly, not through Label layer
+
+
+@overload
+def _convert_small_ints_to_unsigned(
+    data: np.ndarray,
+) -> np.ndarray:
+    ...
+
+
+@overload
+def _convert_small_ints_to_unsigned(
+    data: np.integer,
+) -> np.integer:
+    ...
 
 
 def _convert_small_ints_to_unsigned(
@@ -592,7 +736,7 @@ def _convert_small_ints_to_unsigned(
 @overload
 def _cast_labels_data_to_texture_dtype_auto(
     data: np.ndarray,
-    colormap: LabelColormap,
+    colormap: CyclicLabelColormap,
 ) -> np.ndarray:
     ...
 
@@ -600,14 +744,14 @@ def _cast_labels_data_to_texture_dtype_auto(
 @overload
 def _cast_labels_data_to_texture_dtype_auto(
     data: np.integer,
-    colormap: LabelColormap,
+    colormap: CyclicLabelColormap,
 ) -> np.integer:
     ...
 
 
 def _cast_labels_data_to_texture_dtype_auto(
     data: Union[np.ndarray, np.integer],
-    colormap: LabelColormap,
+    colormap: CyclicLabelColormap,
 ) -> Union[np.ndarray, np.integer]:
     """Convert labels data to the data type used in the texture.
 
@@ -628,7 +772,7 @@ def _cast_labels_data_to_texture_dtype_auto(
     ----------
     data : np.ndarray
         Labels data to be converted.
-    colormap : LabelColormap
+    colormap : CyclicLabelColormap
         Colormap used to display the labels data.
 
     Returns
@@ -642,20 +786,26 @@ def _cast_labels_data_to_texture_dtype_auto(
 
     data_arr = np.atleast_1d(data)
     num_colors = len(colormap.colors) - 1
+    zero_preserving_modulo_func = _zero_preserving_modulo
+    if isinstance(data, np.integer):
+        zero_preserving_modulo_func = _zero_preserving_modulo_numpy
 
     dtype = minimum_dtype_for_labels(num_colors + 1)
 
     if colormap.use_selection:
-        selection_in_texture = _zero_preserving_modulo(
+        selection_in_texture = _zero_preserving_modulo_numpy(
             np.array([colormap.selection]), num_colors, dtype
         )
         converted = np.where(
             data_arr == colormap.selection, selection_in_texture, dtype.type(0)
         )
     else:
-        converted = _zero_preserving_modulo(
+        converted = zero_preserving_modulo_func(
             data_arr, num_colors, dtype, colormap.background_value
         )
+
+    if isinstance(data, np.integer):
+        return dtype.type(converted[0])
 
     return np.reshape(converted, original_shape)
 
@@ -797,7 +947,7 @@ def _cast_labels_data_to_texture_dtype_direct(
     ----------
     data : np.ndarray | np.integer
         Labels data to be converted.
-    direct_colormap : LabelColormap
+    direct_colormap : CyclicLabelColormap
         Colormap used to display the labels data.
 
     Returns
@@ -809,6 +959,15 @@ def _cast_labels_data_to_texture_dtype_direct(
 
     if data.itemsize <= 2:
         return data
+
+    if isinstance(data, np.integer):
+        mapper = direct_colormap._label_mapping_and_color_dict[0]
+        target_dtype = minimum_dtype_for_labels(
+            direct_colormap._num_unique_colors + 2
+        )
+        return target_dtype.type(
+            mapper.get(int(data), MAPPING_OF_UNKNOWN_VALUE)
+        )
 
     original_shape = np.shape(data)
     array_data = np.atleast_1d(data)
@@ -827,10 +986,15 @@ def _labels_raw_to_texture_direct_numpy(
 
     See `_cast_labels_data_to_texture_dtype_direct` for more details.
     """
+    if direct_colormap.use_selection:
+        return (data == direct_colormap.selection).astype(np.uint8)
     mapper = direct_colormap._array_map
-
-    if data.dtype.itemsize > 2:
+    if any(x < 0 for x in direct_colormap.color_dict if x is not None):
+        half_shape = mapper.shape[0] // 2 - 1
+        data = np.clip(data, -half_shape, half_shape)
+    else:
         data = np.clip(data, 0, mapper.shape[0] - 1)
+
     return mapper[data]
 
 
@@ -923,14 +1087,14 @@ except ModuleNotFoundError:
     _labels_raw_to_texture_direct = _labels_raw_to_texture_direct_numpy
     prange = range
 else:
-    _zero_preserving_modulo_inner_loop = numba.njit(parallel=True)(
+    _zero_preserving_modulo_inner_loop = numba.njit(parallel=True, cache=True)(
         _zero_preserving_modulo_inner_loop
     )
     _zero_preserving_modulo = _zero_preserving_modulo_loop
     _labels_raw_to_texture_direct = _labels_raw_to_texture_direct_loop
-    _labels_raw_to_texture_direct_inner_loop = numba.njit(parallel=True)(
-        _labels_raw_to_texture_direct_inner_loop
-    )
+    _labels_raw_to_texture_direct_inner_loop = numba.njit(
+        parallel=True, cache=True
+    )(_labels_raw_to_texture_direct_inner_loop)
     prange = numba.prange  # type: ignore [misc]
 
     del numba
