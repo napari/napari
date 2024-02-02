@@ -31,4 +31,6 @@ vispy:
 
 maintenance:
   - changed-files:
-    - any-glob-to-any-file: '.pre-commit-config.yaml'
+    - any-glob-to-any-file:
+      - '.pre-commit-config.yaml'
+      - '.github/**/*'
