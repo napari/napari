@@ -4,7 +4,8 @@
 import json
 import os
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from types import ModuleType
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import wrapt
 
@@ -22,7 +23,9 @@ class PerfmonConfigError(Exception):
         self.message = message
 
 
-def _patch_perf_timer(parent: Any, callable_name: str, label: str) -> None:
+def _patch_perf_timer(
+    parent: Union[ModuleType, type], callable_name: str, label: str
+) -> None:
     """Patches the callable to run it inside a perf_timer.
 
     Parameters

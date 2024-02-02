@@ -4,7 +4,7 @@
 import contextlib
 import os
 from time import perf_counter_ns
-from typing import Any, Callable, Dict, Generator, Optional, Tuple
+from typing import Callable, Dict, Generator, Optional, Tuple
 
 from napari.utils.perf._event import PerfEvent
 from napari.utils.perf._stat import Stat
@@ -285,15 +285,29 @@ else:
     # Make sure no one accesses the timers when they are disabled.
     timers = None
 
-    def add_instant_event(name: str, **kwargs: Any) -> None:
+    def add_instant_event(
+        name: str,
+        *,
+        category: Optional[str] = None,
+        process_id: Optional[int] = None,
+        thread_id: Optional[int] = None,
+        **kwargs: float,
+    ) -> None:
         pass
 
-    def add_counter_event(name: str, **kwargs: Dict[str, float]) -> None:
+    def add_counter_event(name: str, **kwargs: float) -> None:
         pass
 
     # perf_timer is disabled. Using contextlib.nullcontext did not work.
     @contextlib.contextmanager
     def perf_timer(
-        name: str, category: Optional[str] = None, **kwargs: Any
+        name: str,
+        category: Optional[str] = None,
+        print_time: bool = False,
+        *,
+        process_id: Optional[int] = None,
+        thread_id: Optional[int] = None,
+        phase: str = "X",
+        **kwargs: float,
     ) -> Generator[None, None, None]:
         yield
