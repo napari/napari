@@ -21,10 +21,11 @@ jobs:
           pip install codecov
 
       - name: Download coverage data
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
-          name: coverage reports
+          pattern: coverage reports*
           path: coverage
+          merge-multiple: true
 
       - name: combine coverage data
         run: |
