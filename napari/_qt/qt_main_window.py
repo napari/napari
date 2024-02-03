@@ -636,9 +636,9 @@ class Window:
         qapp = get_app()
 
         # Dictionary holding dock widgets
-        self._dock_widgets: MutableMapping[
-            str, QtViewerDockWidget
-        ] = WeakValueDictionary()
+        self._dock_widgets: MutableMapping[str, QtViewerDockWidget] = (
+            WeakValueDictionary()
+        )
         self._unnamed_dockwidget_count = 1
 
         self._pref_dialog = None

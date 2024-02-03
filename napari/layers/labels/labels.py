@@ -7,6 +7,7 @@ from typing import (
     Dict,
     List,
     Optional,
+    Sequence,
     Tuple,
     Union,
     cast,
@@ -45,26 +46,23 @@ from napari.layers.labels._labels_utils import (
     interpolate_coordinates,
     sphere_indices,
 )
-from napari.layers.utils.color_transformations import transform_color
 from napari.layers.utils.layer_utils import _FeatureTable
 from napari.utils._dtype import normalize_dtype, vispy_texture_dtype
+from napari.utils._indexing import elements_in_slice, index_in_slice
 from napari.utils.colormaps import (
     direct_colormap,
-    ensure_colormap,
     label_colormap,
 )
 from napari.utils.colormaps.colormap import (
-    LabelColormap,
+    CyclicLabelColormap,
+    DirectLabelColormap,
     LabelColormapBase,
-    _cast_labels_data_to_texture_dtype_auto,
-    _cast_labels_data_to_texture_dtype_direct,
-    _texture_dtype,
 )
 from napari.utils.colormaps.colormap_utils import shuffle_and_extend_colormap
 from napari.utils.events import EmitterGroup, Event
 from napari.utils.events.custom_types import Array
+from napari.utils.events.event import WarningEmitter
 from napari.utils.geometry import clamp_point_to_bounding_box
-from napari.utils.indexing import index_in_slice
 from napari.utils.migrations import deprecated_constructor_arg_by_attr
 from napari.utils.misc import StringEnum, _is_array_type
 from napari.utils.naming import magic_name
@@ -97,9 +95,9 @@ class Labels(_ImageBase):
     cache : bool
         Whether slices of out-of-core datasets should be cached upon retrieval.
         Currently, this only applies to dask arrays.
-    color : dict of int or None to str or array
-        Custom label to color mapping. Values must be valid color names or RGBA
-        arrays. None is used when no color is specified for a label.
+    colormap : CyclicLabelColormap or DirectLabelColormap or None
+        Colormap to use for the labels. If None, a random colormap will be
+        used.
     depiction : str
         3D Depiction mode. Must be one of {'volume', 'plane'}.
         The default value is 'volume'.
@@ -122,8 +120,6 @@ class Labels(_ImageBase):
         displayed.
     name : str
         Name of the layer.
-    num_colors : int
-        Number of unique colors to use in colormap.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     plane : dict or SlicingPlane
@@ -150,8 +146,6 @@ class Labels(_ImageBase):
         np.degrees if needed.
     scale : tuple of float
         Scale factors for the layer.
-    seed_rng : int
-        Seed for colormap shuffle random generator.
     shear : 1-D array or n-D array
         Either a vector of upper triangular values, or an nD shear matrix with
         ones along the main diagonal.
@@ -177,7 +171,8 @@ class Labels(_ImageBase):
     metadata : dict
         Labels metadata.
     num_colors : int
-        Number of unique colors to use in colormap.
+        Number of unique colors to use in colormap. DEPRECATED: set
+        ``colormap`` directly, using `napari.utils.colormaps.label_colormap`.
     features : Dataframe-like
         Features table where each row corresponds to a label and each column
         is a feature. The first row corresponds to the background label.
@@ -189,9 +184,11 @@ class Labels(_ImageBase):
         Custom label to color mapping. Values must be valid color names or RGBA
         arrays. While there is no limit to the number of custom labels, the
         the layer will render incorrectly if they map to more than 1024 distinct
-        colors.
+        colors. DEPRECATED: set ``colormap`` directly, using
+        `napari.utils.colormaps.DirectLabelColormap`.
     seed : float
-        Seed for colormap random generator.
+        Seed for colormap random generator. DEPRECATED: set ``colormap``
+        directly, using `napari.utils.colormaps.label_colormap`.
     opacity : float
         Opacity of the labels, must be between 0 and 1.
     contiguous : bool
@@ -279,6 +276,8 @@ class Labels(_ImageBase):
 
     _history_limit = 100
 
+    @deprecated_constructor_arg_by_attr("color")
+    @deprecated_constructor_arg_by_attr("num_colors")
     @deprecated_constructor_arg_by_attr("seed")
     def __init__(
         self,
@@ -287,14 +286,13 @@ class Labels(_ImageBase):
         affine=None,
         blending='translucent',
         cache=True,
-        color=None,
+        colormap=None,
         depiction='volume',
         experimental_clipping_planes=None,
         features=None,
         metadata=None,
         multiscale=None,
         name=None,
-        num_colors=49,
         opacity=0.7,
         plane=None,
         properties=None,
@@ -302,7 +300,6 @@ class Labels(_ImageBase):
         rendering='iso_categorical',
         rotate=None,
         scale=None,
-        seed_rng=None,
         shear=None,
         translate=None,
         visible=True,
@@ -311,19 +308,19 @@ class Labels(_ImageBase):
             name = magic_name(data)
 
         self._seed = 0.5
-        self._seed_rng: Optional[int] = seed_rng
-        self._background_label = 0
-        self._num_colors = num_colors
+        # We use 50 colors (49 + transparency) by default for historical
+        # consistency. This may change in future versions.
         self._random_colormap = label_colormap(
-            self.num_colors, self.seed, self._background_label
+            49, self._seed, background_value=0
         )
         self._original_random_colormap = self._random_colormap
-        self._direct_colormap = direct_colormap()
+        self._direct_colormap = direct_colormap(
+            {0: 'transparent', None: 'black'}
+        )
+        self._colormap = self._random_colormap
         self._color_mode = LabelColorMode.AUTO
         self._show_selected_label = False
         self._contour = 0
-        self._cached_labels = None
-        self._cached_mapped_labels = np.zeros((0, 4), dtype=np.uint8)
 
         data = self._ensure_int_labels(data)
 
@@ -351,7 +348,15 @@ class Labels(_ImageBase):
         self.events.add(
             brush_shape=Event,
             brush_size=Event,
-            color_mode=Event,
+            color_mode=WarningEmitter(
+                trans._(
+                    'Labels.events.color_mode is deprecated since 0.4.19 and '
+                    'will be removed in 0.5.0, please use '
+                    'Labels.events.colormap.',
+                    deferred=True,
+                ),
+                type_name='color_mode',
+            ),
             colormap=Event,
             contiguous=Event,
             contour=Event,
@@ -386,7 +391,8 @@ class Labels(_ImageBase):
         self._prev_selected_label = None
         self._selected_color = self.get_color(self._selected_label)
         self._updated_slice = None
-        self.color = color
+        if colormap is not None:
+            self._set_colormap(colormap)
 
         self._status = self.mode
         self._preserve_labels = False
@@ -478,63 +484,50 @@ class Labels(_ImageBase):
     @property
     def seed(self):
         """float: Seed for colormap random generator."""
-        return self._seed
+        warnings.warn(
+            "seed is deprecated since 0.4.19 and will be removed in 0.5.0, "
+            "please check Labels.colormap directly.",
+            FutureWarning,
+            stacklevel=2,
+        )
+        return self._random_colormap.seed
 
     @seed.setter
     def seed(self, seed):
         warnings.warn(
-            "seed is deprecated since 0.4.19 and will be removed in 0.5.0, please use seed_rng instead",
+            "seed is deprecated since 0.4.19 and will be removed in 0.5.0, "
+            "please use the new_colormap method instead, or set the colormap "
+            "directly.",
             FutureWarning,
             stacklevel=2,
         )
 
-        self._seed = seed
         self.colormap = label_colormap(
-            self.num_colors, self.seed, self._background_label
+            len(self.colormap) - 1,
+            seed=seed,
+            background_value=self.colormap.background_value,
         )
-        self._cached_labels = None  # invalidate the cached color mapping
-        self._selected_color = self.get_color(self.selected_label)
-        self.events.colormap()  # Will update the LabelVispyColormap shader
-        self.refresh()
-        self.events.selected_label()
 
-    @property
-    def seed_rng(self) -> Optional[int]:
-        return self._seed_rng
+    def new_colormap(self, seed: Optional[int] = None):
+        if seed is None:
+            seed = np.random.default_rng().integers(2**32 - 1)
 
-    @seed_rng.setter
-    def seed_rng(self, seed_rng: Optional[int]) -> None:
-        if seed_rng == self._seed_rng:
-            return
-        self._seed_rng = seed_rng
-
-        if self._seed_rng is None:
-            self.colormap = label_colormap(
-                self.num_colors, self.seed, self._background_label
-            )
-        else:
-            self._random_colormap = shuffle_and_extend_colormap(
-                self._original_random_colormap, self._seed_rng
-            )
-        self._cached_labels = None  # invalidate the cached color mapping
-        self._selected_color = self.get_color(self.selected_label)
-        self.events.colormap()  # Will update the LabelVispyColormap shader
-        self.events.selected_label()
-
-        self.refresh()
+        orig = self._original_random_colormap
+        self.colormap = shuffle_and_extend_colormap(
+            self._original_random_colormap, seed
+        )
+        self._original_random_colormap = orig
 
     @property
     def colormap(self) -> LabelColormapBase:
-        if self.color_mode == LabelColorMode.AUTO:
-            return self._random_colormap
-        return self._direct_colormap
+        return self._colormap
 
     @colormap.setter
     def colormap(self, colormap: LabelColormapBase):
         self._set_colormap(colormap)
 
     def _set_colormap(self, colormap):
-        if isinstance(colormap, LabelColormap):
+        if isinstance(colormap, CyclicLabelColormap):
             self._random_colormap = colormap
             self._original_random_colormap = colormap
             self._colormap = self._random_colormap
@@ -555,26 +548,45 @@ class Labels(_ImageBase):
             else:
                 color_mode = LabelColorMode.DIRECT
                 self._colormap = self._direct_colormap
+        self._cached_labels = None  # invalidate the cached color mapping
         self._selected_color = self.get_color(self.selected_label)
+        self._color_mode = color_mode
         self.events.colormap()  # Will update the LabelVispyColormap shader
-        self.color_mode = color_mode
+        self.events.selected_label()
+        self.refresh()
 
     @property
     def num_colors(self):
         """int: Number of unique colors to use in colormap."""
-        return self._num_colors
+        warnings.warn(
+            trans._(
+                'Labels.num_colors is deprecated since 0.4.19 and will be '
+                'removed in 0.5.0, please use len(Labels.colormap) '
+                'instead.',
+                deferred=True,
+            ),
+            FutureWarning,
+            stacklevel=2,
+        )
+        return len(self.colormap)
 
     @num_colors.setter
     def num_colors(self, num_colors):
-        self.colormap = label_colormap(
-            num_colors, self.seed, self._background_label
+        warnings.warn(
+            trans._(
+                'Setting Labels.num_colors is deprecated since 0.4.19 and '
+                'will be removed in 0.5.0, please set Labels.colormap '
+                'instead.',
+                deferred=True,
+            ),
+            FutureWarning,
+            stacklevel=2,
         )
-        self._num_colors = num_colors
-        self._cached_labels = None  # invalidate the cached color mapping
-        self._cached_mapped_labels = None
-        self.refresh()
-        self._selected_color = self.get_color(self.selected_label)
-        self.events.selected_label()
+        self.colormap = label_colormap(
+            num_colors - 1,
+            seed=self._random_colormap.seed,
+            background_value=self.colormap.background_value,
+        )
 
     @property
     def data(self) -> LayerDataProtocol:
@@ -639,36 +651,37 @@ class Labels(_ImageBase):
     @property
     def color(self) -> dict:
         """dict: custom color dict for label coloring"""
+        warnings.warn(
+            "Labels.color is deprecated since 0.4.19 and will be removed in "
+            "0.5.0, please use Labels.colormap.color_dict instead. Note: this"
+            "will only work when the colormap is a DirectLabelsColormap.",
+            FutureWarning,
+            stacklevel=2,
+        )
         return {**self._direct_colormap.color_dict}
 
     @color.setter
-    def color(self, color):
-        if not color:
-            color = {}
+    def color(self, color: Dict[Optional[int], Union[str, np.ndarray]]):
+        warnings.warn(
+            "Labels.color is deprecated since 0.4.19 and will be removed in "
+            "0.5.0, please set Labels.colormap directly with an instance "
+            "of napari.utils.colormaps.DirectLabelColormap instead.",
+            FutureWarning,
+            stacklevel=2,
+        )
+        color = dict(color) if color else {}
 
-        if self._background_label not in color:
-            color[self._background_label] = 'transparent'
-
-        default_color = color.pop(None, 'black')
-        # this is default color for label that is not in the color dict
-        # is provided as None key
-        # we pop it as `None` cannot be cast to float
-
-        color[None] = default_color
-
-        colors = {
-            label: transform_color(color_str)[0]
-            for label, color_str in color.items()
-        }
-
-        self._color = colors
-        self.colormap = direct_colormap(colors)
+        color[self.colormap.background_value] = color.get(
+            self.colormap.background_value, 'transparent'
+        )
+        color[None] = color.get(None, 'black')
+        self.colormap = DirectLabelColormap(color_dict=color)
 
     def _is_default_colors(self, color):
         """Returns True if color contains only default colors, otherwise False.
 
         Default colors are black for `None` and transparent for
-        `self._background_label`.
+        `self.colormap.background_value`.
 
         Parameters
         ----------
@@ -680,19 +693,15 @@ class Labels(_ImageBase):
         bool
             True if color contains only default colors, otherwise False.
         """
-        if len(color) != 2:
+        if {None, self.colormap.background_value} != set(color.keys()):
             return False
 
-        if not hasattr(self, '_color'):
+        if not np.allclose(color[None], [0, 0, 0, 1]):
             return False
-
-        default_keys = [None, self._background_label]
-        if set(default_keys) != set(color.keys()):
+        if not np.allclose(
+            color[self.colormap.background_value], [0, 0, 0, 0]
+        ):
             return False
-
-        for key in default_keys:
-            if not np.allclose(self._color[key], color[key]):
-                return False
 
         return True
 
@@ -733,7 +742,6 @@ class Labels(_ImageBase):
         state.update(
             {
                 'multiscale': self.multiscale,
-                'num_colors': self.num_colors,
                 'properties': self.properties,
                 'rendering': self.rendering,
                 'depiction': self.depiction,
@@ -741,10 +749,9 @@ class Labels(_ImageBase):
                 'experimental_clipping_planes': [
                     plane.dict() for plane in self.experimental_clipping_planes
                 ],
-                'seed_rng': self.seed_rng,
                 'data': self.data,
-                'color': self.color,
                 'features': self.features,
+                'colormap': self.colormap,
             }
         )
         return state
@@ -767,13 +774,12 @@ class Labels(_ImageBase):
         self.events.selected_label()
 
         if self.show_selected_label:
-            self._cached_labels = None  # invalidates labels cache
             self.refresh()
 
     def swap_selected_and_background_labels(self):
         """Swap between the selected label and the background label."""
-        if self.selected_label != self._background_label:
-            self.selected_label = self._background_label
+        if self.selected_label != self.colormap.background_value:
+            self.selected_label = self.colormap.background_value
         else:
             self.selected_label = self._prev_selected_label
 
@@ -785,17 +791,41 @@ class Labels(_ImageBase):
 
         DIRECT allows color of each label to be set directly by a color dict.
         """
+        warnings.warn(
+            trans._(
+                'Labels.color_mode is deprecated since 0.4.19 and will be '
+                'removed in 0.5.0. Please check type(Labels.colormap) '
+                'instead. napari.utils.colormaps.CyclicLabelColormap '
+                'corresponds to AUTO color mode, and '
+                'napari.utils.colormaps.DirectLabelColormap'
+                ' corresponds to DIRECT color mode.',
+                deferred=True,
+            ),
+            FutureWarning,
+            stacklevel=2,
+        )
         return str(self._color_mode)
 
     @color_mode.setter
     def color_mode(self, color_mode: Union[str, LabelColorMode]):
+        warnings.warn(
+            trans._(
+                'Labels.color_mode is deprecated since 0.4.19 and will be '
+                'removed in 0.5.0. Please set Labels.colormap instead, to an'
+                'instance of napari.utils.colormaps.CyclicLabelColormap for '
+                '"auto" mode, or napari.utils.colormaps.DirectLabelColormap '
+                'for "direct" mode.',
+                deferred=True,
+            ),
+            FutureWarning,
+            stacklevel=2,
+        )
         color_mode = LabelColorMode(color_mode)
-        self._cached_labels = None  # invalidates labels cache
         self._color_mode = color_mode
         if color_mode == LabelColorMode.AUTO:
-            self._colormap = ensure_colormap(self._random_colormap)
+            self._colormap = self._random_colormap
         else:
-            self._colormap = ensure_colormap(self._direct_colormap)
+            self._colormap = self._direct_colormap
         self._selected_color = self.get_color(self.selected_label)
         self.events.color_mode()
         self.events.colormap()  # If remove this emitting, connect shader update to color_mode
@@ -813,7 +843,6 @@ class Labels(_ImageBase):
         self.colormap.use_selection = show_selected
         self.colormap.selection = self.selected_label
         self.events.show_selected_label(show_selected_label=show_selected)
-        self._cached_labels = None
         self.refresh()
 
     # Only overriding to change the docstring
@@ -914,9 +943,12 @@ class Labels(_ImageBase):
 
         offset = [axis_slice.start for axis_slice in updated_slice]
 
-        colors_sliced = self._raw_to_displayed(
-            raw_displayed, data_slice=updated_slice
-        )
+        if self.contour > 0:
+            colors_sliced = self._raw_to_displayed(
+                raw_displayed, data_slice=updated_slice
+            )
+        else:
+            colors_sliced = self._slice.image.view[updated_slice]
         # The next line is needed to make the following tests pass in
         # napari/_vispy/_tests/:
         # - test_vispy_labels_layer.py::test_labels_painting
@@ -962,7 +994,7 @@ class Labels(_ImageBase):
         sliced_labels = get_contours(
             labels[expanded_slice],
             self.contour,
-            self._background_label,
+            self.colormap.background_value,
         )
 
         # Remove the latest one-pixel border from the result
@@ -971,44 +1003,6 @@ class Labels(_ImageBase):
             for s1, s2 in zip(data_slice, expanded_slice)
         )
         return sliced_labels[delta_slice]
-
-    def _get_cache_dtype(self, raw_dtype: np.dtype) -> np.dtype:
-        if self.color_mode == LabelColorMode.DIRECT:
-            return _texture_dtype(
-                self._direct_colormap._num_unique_colors + 2,
-                raw_dtype,
-            )
-        return _texture_dtype(self.num_colors, raw_dtype)
-
-    def _setup_cache(self, labels):
-        """
-        Initializes the cache for the Labels layer
-
-        Parameters
-        ----------
-        labels : numpy array
-            The labels data to be cached
-        """
-        if self._cached_labels is not None:
-            return
-
-        if isinstance(self._colormap, LabelColormap):
-            mapped_background = _cast_labels_data_to_texture_dtype_auto(
-                labels.dtype.type(self.colormap.background_value),
-                self._random_colormap,
-            )
-        else:  # direct
-            mapped_background = _cast_labels_data_to_texture_dtype_direct(
-                labels.dtype.type(self.colormap.background_value),
-                self._direct_colormap,
-            )
-
-        self._cached_labels = np.zeros_like(labels)
-        self._cached_mapped_labels = np.full(
-            shape=labels.shape,
-            fill_value=mapped_background,
-            dtype=self._get_cache_dtype(labels.dtype),
-        )
 
     def _raw_to_displayed(
         self, raw, data_slice: Optional[Tuple[slice, ...]] = None
@@ -1036,9 +1030,6 @@ class Labels(_ImageBase):
 
         if data_slice is None:
             data_slice = tuple(slice(0, size) for size in raw.shape)
-            self._cached_labels = None
-        else:
-            self._setup_cache(raw)
 
         labels = raw  # for readability
 
@@ -1049,43 +1040,7 @@ class Labels(_ImageBase):
         if sliced_labels is None:
             sliced_labels = labels[data_slice]
 
-        # cache the labels and keep track of when values are changed
-        update_mask = None
-        if (
-            self._cached_labels is not None
-            and self._cached_mapped_labels is not None
-            and self._cached_labels.shape == labels.shape
-        ):
-            update_mask = self._cached_labels[data_slice] != sliced_labels
-            # Select only a subset with changes for further computations
-            labels_to_map = sliced_labels[update_mask]
-            # Update the cache
-            self._cached_labels[data_slice][update_mask] = labels_to_map
-        else:
-            labels_to_map = sliced_labels
-
-        # If there are no changes, just return the cached image
-        if labels_to_map.size == 0:
-            return self._cached_mapped_labels[data_slice]
-
-        if self.color_mode == LabelColorMode.AUTO:
-            mapped_labels = _cast_labels_data_to_texture_dtype_auto(
-                labels_to_map, self._random_colormap
-            )
-        else:  # direct
-            mapped_labels = _cast_labels_data_to_texture_dtype_direct(
-                labels_to_map, self._direct_colormap
-            )
-
-        if self._cached_labels is not None:
-            if update_mask is not None:
-                self._cached_mapped_labels[data_slice][
-                    update_mask
-                ] = mapped_labels
-            else:
-                self._cached_mapped_labels[data_slice] = mapped_labels
-            return self._cached_mapped_labels[data_slice]
-        return mapped_labels
+        return self.colormap._data_to_texture(sliced_labels)
 
     def _update_thumbnail(self):
         """Update the thumbnail with current data and colormap.
@@ -1121,19 +1076,16 @@ class Labels(_ImageBase):
 
         self.thumbnail = color_array
 
-    def new_colormap(self):
-        self.seed_rng = np.random.default_rng().integers(2**32 - 1)
-
     def get_color(self, label):
         """Return the color corresponding to a specific label."""
-        if label == self._background_label:
+        if label == self.colormap.background_value:
             col = None
         elif label is None or (
             self.show_selected_label and label != self.selected_label
         ):
-            col = self.colormap.map(self._background_label)[0]
+            col = self.colormap.map(self.colormap.background_value)
         else:
-            col = self.colormap.map(label)[0]
+            col = self.colormap.map(label)
         return col
 
     def _get_value_ray(
@@ -1370,7 +1322,8 @@ class Labels(_ImageBase):
         # If requested new label doesn't change old label then return
         old_label = np.asarray(self.data[int_coord]).item()
         if old_label == new_label or (
-            self.preserve_labels and old_label != self._background_label
+            self.preserve_labels
+            and old_label != self.colormap.background_value
         ):
             return
 
@@ -1567,10 +1520,12 @@ class Labels(_ImageBase):
         # subset it if we want to only paint into background/only erase
         # current label
         if self.preserve_labels:
-            if new_label == self._background_label:
+            if new_label == self.colormap.background_value:
                 keep_coords = self.data[slice_coord] == self.selected_label
             else:
-                keep_coords = self.data[slice_coord] == self._background_label
+                keep_coords = (
+                    self.data[slice_coord] == self.colormap.background_value
+                )
             slice_coord = tuple(sc[keep_coords] for sc in slice_coord)
 
         self.data_setitem(slice_coord, new_label, refresh)
@@ -1586,6 +1541,16 @@ class Labels(_ImageBase):
 
     def _get_dims_to_paint(self) -> list:
         return list(self._slice_input.order[-self.n_edit_dimensions :])
+
+    def _get_pt_not_disp(self) -> Dict[int, int]:
+        """
+        Get indices of current visible slice.
+        """
+        slice_input = self._slice.slice_input
+        point = np.round(
+            self.world_to_data(slice_input.world_slice.point)
+        ).astype(int)
+        return {dim: point[dim] for dim in slice_input.not_displayed}
 
     def data_setitem(self, indices, value, refresh=True):
         """Set `indices` in `data` to `value`, while writing to edit history.
@@ -1606,7 +1571,16 @@ class Labels(_ImageBase):
         ..[1] https://numpy.org/doc/stable/user/basics.indexing.html
         """
         changed_indices = self.data[indices] != value
-        indices = tuple([x[changed_indices] for x in indices])
+        indices = tuple(x[changed_indices] for x in indices)
+
+        if isinstance(value, Sequence):
+            value = np.asarray(value, dtype=self._slice.image.raw.dtype)
+        else:
+            value = self._slice.image.raw.dtype.type(value)
+
+        # Resize value array to remove unchanged elements
+        if isinstance(value, np.ndarray):
+            value = value[changed_indices]
 
         if not indices or indices[0].size == 0:
             return
@@ -1622,6 +1596,15 @@ class Labels(_ImageBase):
         # update the labels image
         self.data[indices] = value
 
+        pt_not_disp = self._get_pt_not_disp()
+        displayed_indices = index_in_slice(
+            indices, pt_not_disp, self._slice.slice_input.order
+        )
+        if isinstance(value, np.ndarray):
+            visible_values = value[elements_in_slice(indices, pt_not_disp)]
+        else:
+            visible_values = value
+
         if not (  # if not a numpy array or numpy-backed xarray
             isinstance(self.data, np.ndarray)
             or isinstance(getattr(self.data, 'data', None), np.ndarray)
@@ -1631,15 +1614,7 @@ class Labels(_ImageBase):
             # array, or a NumPy-array-backed Xarray, is the slice a view and
             # therefore updated automatically.
             # For other types, we update it manually here.
-            slice_input = self._slice.slice_input
-            point = np.round(
-                self.world_to_data(slice_input.world_slice.point)
-            ).astype(int)
-            pt_not_disp = {
-                dim: point[dim] for dim in slice_input.not_displayed
-            }
-            displayed_indices = index_in_slice(indices, pt_not_disp)
-            self._slice.image.raw[displayed_indices] = value
+            self._slice.image.raw[displayed_indices] = visible_values
 
         # tensorstore and xarray do not return their indices in
         # np.ndarray format, so they need to be converted explicitly
@@ -1658,6 +1633,11 @@ class Labels(_ImageBase):
             # the original slice because of the morphological dilation
             # (1 pixel because get_countours always applies 1 pixel dilation)
             updated_slice = expand_slice(updated_slice, self.data.shape, 1)
+        else:
+            # update data view
+            self._slice.image.view[displayed_indices] = (
+                self.colormap._data_to_texture(visible_values)
+            )
 
         if self._updated_slice is None:
             self._updated_slice = updated_slice

@@ -145,16 +145,13 @@ class TransformChain(EventedList[_T], Transform, Generic[_T]):
         return TransformChain(iterable)
 
     @overload
-    def __getitem__(self, key: int) -> _T:
-        ...
+    def __getitem__(self, key: int) -> _T: ...
 
     @overload
-    def __getitem__(self, key: str) -> _T:
-        ...
+    def __getitem__(self, key: str) -> _T: ...
 
     @overload
-    def __getitem__(self, key: slice) -> 'TransformChain[_T]':
-        ...
+    def __getitem__(self, key: slice) -> 'TransformChain[_T]': ...
 
     def __getitem__(self, key):
         if f"getitem_{key}" not in self._cache_dict:

@@ -14,6 +14,7 @@ from napari.components.overlays.base import (
 )
 from napari.layers import Layer
 from napari.utils.events import disconnect_events
+from napari.utils.transforms import Affine
 
 _L = TypeVar("_L", bound=Layer)
 
@@ -235,14 +236,34 @@ class VispyBaseLayer(ABC, Generic[_L]):
         # To place this part of data correctly we update transform,
         # but this leads to incorrect placement of child layers.
         # To fix this we need to update child layers transform.
-        child_matrix = np.eye(4)
-        child_matrix[-1, : len(translate)] = (
-            self.layer.translate[self.layer._slice_input.displayed][::-1]
-            + self.layer.affine.translate[self.layer._slice_input.displayed][
-                ::-1
+        dims_displayed = self.layer._slice_input.displayed
+        simplified_transform = self.layer._transforms.simplified
+        if simplified_transform is None:
+            raise ValueError(
+                "simplified transform is None"
+            )  # pragma: no cover
+        translate_child = (
+            self.layer.translate[dims_displayed]
+            + self.layer.affine.translate[dims_displayed]
+        )[::-1]
+        if self.layer.affine.ndim > len(dims_displayed):
+            aff = Affine(
+                linear_matrix=simplified_transform.linear_matrix[
+                    np.ix_(dims_displayed, dims_displayed)
+                ]
+            )
+            trans_rotate = aff.rotate
+            trans_scale = aff.scale[::-1]
+        else:
+            trans_rotate = simplified_transform.rotate[
+                np.ix_(dims_displayed, dims_displayed)
             ]
-            - translate
+            trans_scale = simplified_transform.scale[dims_displayed][::-1]
+        new_translate = (
+            np.dot(trans_rotate, (translate_child - translate)) / trans_scale
         )
+        child_matrix = np.eye(4)
+        child_matrix[-1, : len(translate)] = new_translate
         for child in self.node.children:
             child.transform.matrix = child_matrix
 

@@ -1,5 +1,6 @@
 """Automatically generate names.
 """
+
 import inspect
 import re
 from collections import ChainMap

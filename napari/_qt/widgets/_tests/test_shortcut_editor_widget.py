@@ -85,18 +85,22 @@ def test_restore_defaults(shortcut_editor_widget):
     [
         (
             "U",
-            Qt.KeyboardModifier.MetaModifier
-            if sys.platform == "darwin"
-            else Qt.KeyboardModifier.ControlModifier,
+            (
+                Qt.KeyboardModifier.MetaModifier
+                if sys.platform == "darwin"
+                else Qt.KeyboardModifier.ControlModifier
+            ),
             [KEY_SYMBOLS["Ctrl"], "U"],
         ),
         (
             "Y",
-            Qt.KeyboardModifier.MetaModifier
-            | Qt.KeyboardModifier.ShiftModifier
-            if sys.platform == "darwin"
-            else Qt.KeyboardModifier.ControlModifier
-            | Qt.KeyboardModifier.ShiftModifier,
+            (
+                Qt.KeyboardModifier.MetaModifier
+                | Qt.KeyboardModifier.ShiftModifier
+                if sys.platform == "darwin"
+                else Qt.KeyboardModifier.ControlModifier
+                | Qt.KeyboardModifier.ShiftModifier
+            ),
             [KEY_SYMBOLS["Ctrl"], KEY_SYMBOLS["Shift"], "Y"],
         ),
     ],
