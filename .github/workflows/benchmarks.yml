@@ -165,7 +165,7 @@ jobs:
 
           fi
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: asv-benchmark-results-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}
