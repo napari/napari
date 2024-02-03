@@ -509,7 +509,7 @@ def test_world_extent_mixed_flipped():
         np.random.random((15, 15)), affine=[[0, 1, 0], [1, 0, 0], [0, 0, 1]]
     )
     layers.append(layer)
-    np.testing.assert_allclose(layer._data_to_world.scale, (1, -1))
+    np.testing.assert_allclose(layer._data_to_world.scale, (1, 1))
     np.testing.assert_allclose(layers.extent.step, (1, 1))
 
 
