@@ -35,6 +35,7 @@ from napari.layers.utils.plane import SlicingPlane
 from napari.utils._dask_utils import DaskIndexer
 from napari.utils._dtype import get_dtype_limits, normalize_dtype
 from napari.utils.colormaps import AVAILABLE_COLORMAPS, ensure_colormap
+from napari.utils.colormaps.colormap_utils import _coerce_contrast_limits
 from napari.utils.events import Event
 from napari.utils.events.event import WarningEmitter
 from napari.utils.events.event_utils import connect_no_arg
@@ -456,7 +457,7 @@ class _ImageBase(Layer, ABC):
         self._custom_interpolation_kernel_2d = np.array(value, np.float32)
         self.events.custom_interpolation_kernel_2d()
 
-    def _raw_to_displayed(self, raw):
+    def _raw_to_displayed(self, raw: np.ndarray) -> np.ndarray:
         """Determine displayed image from raw image.
 
         For normal image layers, just return the actual image.
@@ -471,8 +472,7 @@ class _ImageBase(Layer, ABC):
         image : array
             Displayed array.
         """
-        image = raw
-        return image
+        raise NotImplementedError
 
     def _set_view_slice(self) -> None:
         """Set the slice output based on this layer's current state."""
@@ -535,6 +535,10 @@ class _ImageBase(Layer, ABC):
         """Update the slice output state currently on the layer. Currently used
         for both sync and async slicing.
         """
+        response = response.to_displayed(self._raw_to_displayed)
+        # We call to_displayed here to ensure that if the contrast limits
+        # are outside the range of supported by vispy, then data view is
+        # rescaled to fit within the range.
         self._slice_input = response.slice_input
         self._transforms[0] = response.tile_to_data
         self._slice = response
@@ -963,6 +967,11 @@ class Image(IntensityVisualizationMixin, _ImageBase):
         return state
 
     def _update_slice_response(self, response: _ImageSliceResponse) -> None:
+        if self._keep_auto_contrast:
+            data = response.image.raw
+            input_data = data[-1] if self.multiscale else data
+            self.contrast_limits = calc_data_range(input_data, rgb=self.rgb)
+
         super()._update_slice_response(response)
 
         # Maybe reset the contrast limits based on the new slice.
@@ -995,9 +1004,9 @@ class Image(IntensityVisualizationMixin, _ImageBase):
         # note, we don't support changing multiscale in an Image instance
         self._data = MultiScaleData(data) if self.multiscale else data  # type: ignore
         self._update_dims()
-        self.events.data(value=self.data)
         if self._keep_auto_contrast:
             self.reset_contrast_limits()
+        self.events.data(value=self.data)
         self._reset_editable()
 
     @property
@@ -1120,7 +1129,7 @@ class Image(IntensityVisualizationMixin, _ImageBase):
 
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap."""
-        image = self._slice.thumbnail.view
+        image = self._slice.thumbnail.raw
 
         if self._slice_input.ndisplay == 3 and self.ndim > 2:
             image = np.max(image, axis=0)
@@ -1181,7 +1190,7 @@ class Image(IntensityVisualizationMixin, _ImageBase):
         if mode == 'data':
             input_data = self.data[-1] if self.multiscale else self.data
         elif mode == 'slice':
-            data = self._slice.image.view  # ugh
+            data = self._slice.image.raw  # ugh
             input_data = data[-1] if self.multiscale else data
         else:
             raise ValueError(
@@ -1192,3 +1201,44 @@ class Image(IntensityVisualizationMixin, _ImageBase):
                 )
             )
         return calc_data_range(input_data, rgb=self.rgb)
+
+    def _raw_to_displayed(self, raw: np.ndarray) -> np.ndarray:
+        """Determine displayed image from raw image.
+
+        This function checks if current contrast_limits are within the range
+        supported by vispy.
+        If yes, it returns the raw image.
+        If not, it rescales the raw image to fit within
+        the range supported by vispy.
+
+        Parameters
+        ----------
+        raw : array
+            Raw array.
+
+        Returns
+        -------
+        image : array
+            Displayed array.
+        """
+        fixed_contrast_info = _coerce_contrast_limits(self.contrast_limits)
+        if np.allclose(
+            fixed_contrast_info.contrast_limits, self.contrast_limits
+        ):
+            return raw
+
+        return fixed_contrast_info.coerce_data(raw)
+
+    @IntensityVisualizationMixin.contrast_limits.setter  # type: ignore [attr-defined]
+    def contrast_limits(self, contrast_limits):
+        IntensityVisualizationMixin.contrast_limits.fset(self, contrast_limits)
+        if not np.allclose(
+            _coerce_contrast_limits(self.contrast_limits).contrast_limits,
+            self.contrast_limits,
+        ):
+            prev = self._keep_auto_contrast
+            self._keep_auto_contrast = False
+            try:
+                self.refresh()
+            finally:
+                self._keep_auto_contrast = prev

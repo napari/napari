@@ -156,9 +156,9 @@ def test_remove_selected():
 def test_remove_linked_layer():
     """Test removing a layer that is linked to other layers"""
     layers = LayerList()
-    layer_a = Image(np.empty((10, 10)))
-    layer_b = Image(np.empty((15, 15)))
-    layer_c = Image(np.empty((15, 15)))
+    layer_a = Image(np.random.random((10, 10)))
+    layer_b = Image(np.random.random((15, 15)))
+    layer_c = Image(np.random.random((15, 15)))
     layers.extend([layer_a, layer_b, layer_c])
 
     # link layer_c with layer_b
@@ -447,7 +447,6 @@ def test_layers_save_svg(tmpdir, layers, napari_svg_name):
 
 def test_world_extent():
     """Test world extent after adding layers."""
-    np.random.seed(0)
     layers = LayerList()
 
     # Empty data is taken to be 512 x 512
@@ -480,7 +479,6 @@ def test_world_extent():
 
 def test_world_extent_mixed_ndim():
     """Test world extent after adding layers of different dimensionality."""
-    np.random.seed(0)
     layers = LayerList()
 
     # Add 3D layer
@@ -502,7 +500,6 @@ def test_world_extent_mixed_flipped():
     # Flipped data results in a negative scale value which should be
     # made positive when taking into consideration for the step size
     # calculation
-    np.random.seed(0)
     layers = LayerList()
 
     layer = Image(
@@ -515,7 +512,6 @@ def test_world_extent_mixed_flipped():
 
 def test_ndim():
     """Test world extent after adding layers."""
-    np.random.seed(0)
     layers = LayerList()
 
     assert layers.ndim == 2
@@ -547,7 +543,7 @@ def test_readd_layers():
     layers = LayerList()
     imgs = []
     for _i in range(5):
-        img = Image(np.random.rand(10, 10, 10))
+        img = Image(np.random.random((10, 10, 10)))
         layers.append(img)
         imgs.append(img)
 
