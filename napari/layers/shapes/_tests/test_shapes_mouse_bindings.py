@@ -104,6 +104,10 @@ def test_add_simple_shape(shape_type, create_known_shapes_layer):
     np.testing.assert_allclose(new_shape_max, known_non_shape_end)
     assert layer.shape_type[-1] == shape_type
 
+    # Ensure it's selected, accounting for zero-indexing
+    assert len(layer.selected_data) == 1
+    assert layer.selected_data == {n_shapes}
+
 
 def test_polygon_lasso_tablet(create_known_shapes_layer):
     """Draw polygon with tablet simulated by mouse drag event."""
