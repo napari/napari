@@ -5,7 +5,6 @@ import subprocess
 import sys
 
 import napari
-from napari._vispy.utils.gl import get_max_texture_sizes
 
 OS_RELEASE_PATH = "/etc/os-release"
 
@@ -132,6 +131,8 @@ def sys_info(as_html: bool = False) -> str:
     text += "<br><b>OpenGL:</b><br>"
 
     if loaded.get('vispy', False):
+        from napari._vispy.utils.gl import get_max_texture_sizes
+
         sys_info_text = (
             "<br>".join(
                 [
