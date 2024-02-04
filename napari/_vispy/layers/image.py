@@ -65,7 +65,11 @@ class ImageLayerNode:
             # early when we are creating the wrong nodes or
             # textures for our data
             raise ValueError(
-                f"dtype {dtype} does not match texture_format={res.texture_format}"
+                trans._(
+                    "dtype {dtype} does not match texture_format={texture_format}",
+                    dtype=dtype,
+                    texture_format=res.texture_format,
+                )
             )
         return res
 
