@@ -70,9 +70,9 @@ class QtLayerList(QtListView[Layer]):
             return
         # capture arrows with modifiers so they are handled by Viewer keybindings
         if (e.key() == Qt.Key.Key_Up or e.key() == Qt.Key.Key_Down) and (
-            e.modifiers() & Qt.AltModifier
-            or e.modifiers() & Qt.ControlModifier
-            or e.modifiers() & Qt.MetaModifier
+            e.modifiers() & Qt.KeyboardModifier.AltModifier
+            or e.modifiers() & Qt.KeyboardModifier.ControlModifier
+            or e.modifiers() & Qt.KeyboardModifier.MetaModifier
         ):
             e.ignore()
         elif e.key() != Qt.Key.Key_Space:
