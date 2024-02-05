@@ -1,5 +1,6 @@
 import dask.array as da
 import numpy as np
+import numpy.testing as npt
 import pytest
 import xarray as xr
 
@@ -945,6 +946,27 @@ def test_thick_slice():
     layer.projection_mode = 'max'
     np.testing.assert_array_equal(
         layer._slice.image.raw, np.max(data[2:4], axis=0)
+    )
+
+
+def test_adjust_contrast_out_of_range():
+    arr = np.linspace(1, 9, 5 * 5, dtype=np.float64).reshape((5, 5))
+    img_lay = Image(arr)
+    npt.assert_array_equal(img_lay._slice.image.view, img_lay._slice.image.raw)
+    img_lay.contrast_limits = (0, float(np.finfo(np.float32).max) * 2)
+    assert not np.array_equal(
+        img_lay._slice.image.view, img_lay._slice.image.raw
+    )
+
+
+def test_adjust_contrast_limits_range_set_data():
+    arr = np.linspace(1, 9, 5 * 5, dtype=np.float64).reshape((5, 5))
+    img_lay = Image(arr)
+    img_lay._keep_auto_contrast = True
+    npt.assert_array_equal(img_lay._slice.image.view, img_lay._slice.image.raw)
+    img_lay.data = arr * 1e39
+    assert not np.array_equal(
+        img_lay._slice.image.view, img_lay._slice.image.raw
     )
 
 

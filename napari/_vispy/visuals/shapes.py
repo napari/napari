@@ -18,3 +18,28 @@ class ShapesVisual(ClippingPlanesMixin, Compound):
 
     def __init__(self) -> None:
         super().__init__([Mesh(), Mesh(), Line(), Markers(), Text()])
+
+    @property
+    def shape_faces(self) -> Mesh:
+        """Mesh for shape faces"""
+        return self._subvisuals[0]
+
+    @property
+    def shape_highlights(self) -> Mesh:
+        """Mesh for shape highlights"""
+        return self._subvisuals[1]
+
+    @property
+    def highlight_lines(self) -> Line:
+        """Lines for shape highlights"""
+        return self._subvisuals[2]
+
+    @property
+    def highlight_vertices(self) -> Markers:
+        """Vertices for shape highlights"""
+        return self._subvisuals[3]
+
+    @property
+    def text(self) -> Text:
+        """Text labels"""
+        return self._subvisuals[4]
