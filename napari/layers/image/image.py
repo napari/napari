@@ -1248,7 +1248,8 @@ class Image(IntensityVisualizationMixin, _ImageBase):
 
     @IntensityVisualizationMixin.contrast_limits.setter  # type: ignore [attr-defined]
     def contrast_limits(self, contrast_limits):
-        IntensityVisualizationMixin.contrast_limits.fset(self, contrast_limits)
+        # See https://github.com/python/mypy/issues/16426 for typing issue
+        IntensityVisualizationMixin.contrast_limits.fset(self, contrast_limits)  # type: ignore [attr-defined]
         if not np.allclose(
             _coerce_contrast_limits(self.contrast_limits).contrast_limits,
             self.contrast_limits,
