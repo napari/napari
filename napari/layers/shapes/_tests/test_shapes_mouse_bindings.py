@@ -149,6 +149,10 @@ def test_polygon_lasso_tablet(create_known_shapes_layer):
     assert layer.shape_type[-1] == 'polygon'
     assert not layer._is_creating
 
+    # Ensure it's selected, accounting for zero-indexing
+    assert len(layer.selected_data) == 1
+    assert layer.selected_data == {n_shapes}
+
 
 def test_polygon_lasso_mouse(create_known_shapes_layer):
     """Draw polygon with mouse. Events in sequence are mouse press, release, move, press, release"""
@@ -185,6 +189,10 @@ def test_polygon_lasso_mouse(create_known_shapes_layer):
     assert np.array_equal(desired_shape, layer.data[-1])
     assert layer.shape_type[-1] == 'polygon'
     assert not layer._is_creating
+
+    # Ensure it's selected, accounting for zero-indexing
+    assert len(layer.selected_data) == 1
+    assert layer.selected_data == {n_shapes}
 
 
 def test_distance_polygon_creating(create_known_shapes_layer):
@@ -252,6 +260,10 @@ def test_add_complex_shape(shape_type, create_known_shapes_layer):
     assert layer.data[-1].shape, desired_shape.shape
     np.testing.assert_allclose(layer.data[-1], desired_shape)
     assert layer.shape_type[-1] == shape_type
+
+    # Ensure it's selected, accounting for zero-indexing
+    assert len(layer.selected_data) == 1
+    assert layer.selected_data == {n_shapes}
 
 
 def test_vertex_insert(create_known_shapes_layer):
