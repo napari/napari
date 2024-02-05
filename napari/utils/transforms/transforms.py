@@ -541,11 +541,6 @@ class Affine(Transform):
         self._setup_decompose_linear_matrix_cache()
         return self._cache_dict["decompose_linear_matrix"][2]
 
-    @property
-    def _shear_cache(self):
-        self._setup_decompose_linear_matrix_cache()
-        return self._cache_dict["decompose_linear_matrix"][2]
-
     @shear.setter
     def shear(self, shear):
         """Set the shear of the transform."""
@@ -567,6 +562,11 @@ class Affine(Transform):
             self.rotate, self.scale, shear
         )
         self._clean_cache()
+
+    @property
+    def _shear_cache(self):
+        self._setup_decompose_linear_matrix_cache()
+        return self._cache_dict["decompose_linear_matrix"][2]
 
     @property
     def linear_matrix(self) -> npt.NDArray:
