@@ -140,11 +140,14 @@ def orient_plane_normal_around_cursor(layer: Image, plane_normal: tuple):
 
     # update plane position
     if point_in_bounding_box(intersection, bounding_box):
-        layer.plane.position = intersection
+        layer.plane.position = tuple(intersection.tolist())
 
     # update plane normal
-    layer.plane.normal = layer._world_to_displayed_data_ray(
-        np.asarray(plane_normal), dims_displayed=layer._slice_input.displayed
+    layer.plane.normal = tuple(
+        layer._world_to_displayed_data_ray(
+            np.asarray(plane_normal),
+            dims_displayed=layer._slice_input.displayed,
+        ).tolist()
     )
 
 

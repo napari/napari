@@ -50,7 +50,7 @@ def move_plane_along_normal(
     ):
         return None
 
-    layer.plane.position = intersection
+    layer.plane.position = tuple(intersection.tolist())
 
     # Store original plane position and disable interactivity during plane drag
     original_plane_position = np.copy(layer.plane.position)
@@ -64,7 +64,7 @@ def move_plane_along_normal(
             start_position=initial_position_world,
             end_position=np.asarray(event.position),
             view_direction=np.asarray(event.view_direction),
-            vector=layer.plane.normal,
+            vector=np.array(layer.plane.normal),
             dims_displayed=event.dims_displayed,
         )
 
@@ -108,4 +108,4 @@ def set_plane_position(layer: Image, event: Event) -> None:
     ):
         return
 
-    layer.plane.position = intersection
+    layer.plane.position = tuple(intersection.tolist())
