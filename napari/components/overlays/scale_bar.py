@@ -1,4 +1,5 @@
 """Scale bar model."""
+
 from typing import Optional
 
 from napari._pydantic_compat import Field

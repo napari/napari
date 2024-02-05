@@ -758,9 +758,9 @@ def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
         triangles[2 * idx_bevel, idx_offset] = len(centers) + np.arange(
             len(idx_bevel)
         )
-        triangles[
-            2 * idx_bevel + (1 - idx_offset), idx_offset
-        ] = n_centers + np.arange(len(idx_bevel))
+        triangles[2 * idx_bevel + (1 - idx_offset), idx_offset] = (
+            n_centers + np.arange(len(idx_bevel))
+        )
 
         # add center triangle
         triangles0 = np.tile(np.array([[0, 1, 2]]), (len(idx_bevel), 1))

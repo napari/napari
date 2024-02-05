@@ -31,7 +31,7 @@ jobs:
           mv dist/*.whl dist/napari-0.0.1-py3-none-any.whl
 
       - name: Upload wheel
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: wheel
           path: dist/*.whl

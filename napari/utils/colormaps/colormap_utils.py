@@ -2,7 +2,7 @@ import warnings
 from collections import OrderedDict, defaultdict
 from functools import lru_cache
 from threading import Lock
-from typing import Dict, Iterable, List, Optional, Tuple, Union
+from typing import Dict, Iterable, List, NamedTuple, Optional, Tuple, Union
 
 import numpy as np
 import skimage.color as colorconv
@@ -121,6 +121,14 @@ INVERSE_COLORMAPS = {
     name: Colormap(value, name=name, display_name=display_name)
     for name, (display_name, value) in inverse_cmaps.items()
 }
+
+_FLOAT32_MAX = float(np.finfo(np.float32).max)
+_MAX_VISPY_SUPPORTED_VALUE = _FLOAT32_MAX / 8
+# Using 8 as divisor comes from experiments.
+# For some reason if use smaller number,
+# the image is not displayed correctly.
+
+_MINIMUM_SHADES_COUNT = 256
 
 
 def _all_rgb():
@@ -906,3 +914,55 @@ def display_name_to_name(display_name):
     return display_name_map.get(
         display_name, next(iter(AVAILABLE_COLORMAPS.keys()))
     )
+
+
+class CoercedContrastLimits(NamedTuple):
+    contrast_limits: Tuple[float, float]
+    offset: float
+    scale: float
+
+    def coerce_data(self, data: np.ndarray) -> np.ndarray:
+        if self.scale <= 1:
+            return data * self.scale + self.offset
+
+        return (data + self.offset / self.scale) * self.scale
+
+
+def _coerce_contrast_limits(contrast_limits: Tuple[float, float]):
+    """Coerce contrast limits to be in the float32 range."""
+    if np.abs(contrast_limits).max() > _MAX_VISPY_SUPPORTED_VALUE:
+        return scale_down(contrast_limits)
+
+    c_min = np.float32(contrast_limits[0])
+    c_max = np.float32(contrast_limits[1])
+    dist = c_max - c_min
+    if (
+        dist < np.abs(np.spacing(c_min)) * _MINIMUM_SHADES_COUNT
+        or dist < np.abs(np.spacing(c_max)) * _MINIMUM_SHADES_COUNT
+    ):
+        return scale_up(contrast_limits)
+
+    return CoercedContrastLimits(contrast_limits, 0, 1)
+
+
+def scale_down(contrast_limits: Tuple[float, float]):
+    """Scale down contrast limits to be in the float32 range."""
+    scale: float = min(
+        1.0,
+        (_MAX_VISPY_SUPPORTED_VALUE * 2)
+        / (contrast_limits[1] - contrast_limits[0]),
+    )
+    ctrl_lim = contrast_limits[0] * scale, contrast_limits[1] * scale
+    left_shift = max(0.0, -_MAX_VISPY_SUPPORTED_VALUE - ctrl_lim[0])
+    right_shift = max(0.0, ctrl_lim[1] - _MAX_VISPY_SUPPORTED_VALUE)
+    offset = left_shift - right_shift
+    ctrl_lim = (ctrl_lim[0] + offset, ctrl_lim[1] + offset)
+    return CoercedContrastLimits(ctrl_lim, offset, scale)
+
+
+def scale_up(contrast_limits: Tuple[float, float]):
+    """Scale up contrast limits to be in the float32 precision."""
+    scale = 1000 / (contrast_limits[1] - contrast_limits[0])
+    shift = -contrast_limits[0] * scale
+
+    return CoercedContrastLimits((0, 1000), shift, scale)

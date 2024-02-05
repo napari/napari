@@ -2,6 +2,7 @@
 
 see module docstring of evented_list.py for more details
 """
+
 from __future__ import annotations
 
 import contextlib
@@ -165,22 +166,24 @@ class NestableEventedList(EventedList[_T]):
     # def remove(self, value: T): ...
 
     @overload  # type: ignore
-    def __getitem__(self, key: int) -> Union[_T, NestableEventedList[_T]]:
-        ...  # pragma: no cover
+    def __getitem__(
+        self, key: int
+    ) -> Union[_T, NestableEventedList[_T]]: ...  # pragma: no cover
 
     @overload
-    def __getitem__(self, key: ParentIndex) -> NestableEventedList[_T]:
-        ...  # pragma: no cover
+    def __getitem__(
+        self, key: ParentIndex
+    ) -> NestableEventedList[_T]: ...  # pragma: no cover
 
     @overload
-    def __getitem__(self, key: slice) -> NestableEventedList[_T]:
-        ...  # pragma: no cover
+    def __getitem__(
+        self, key: slice
+    ) -> NestableEventedList[_T]: ...  # pragma: no cover
 
     @overload
     def __getitem__(
         self, key: NestedIndex
-    ) -> Union[_T, NestableEventedList[_T]]:
-        ...  # pragma: no cover
+    ) -> Union[_T, NestableEventedList[_T]]: ...  # pragma: no cover
 
     def __getitem__(self, key: MaybeNestedIndex):
         if isinstance(key, tuple):
@@ -193,12 +196,14 @@ class NestableEventedList(EventedList[_T]):
         return super().__getitem__(key)
 
     @overload
-    def __setitem__(self, key: Union[int, NestedIndex], value: _T):
-        ...  # pragma: no cover
+    def __setitem__(
+        self, key: Union[int, NestedIndex], value: _T
+    ): ...  # pragma: no cover
 
     @overload
-    def __setitem__(self, key: slice, value: Iterable[_T]):
-        ...  # pragma: no cover
+    def __setitem__(
+        self, key: slice, value: Iterable[_T]
+    ): ...  # pragma: no cover
 
     def __setitem__(self, key: MaybeNestedIndex, value):
         # NOTE: if we check isinstance(..., MutableList), then we'll actually

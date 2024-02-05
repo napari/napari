@@ -32,7 +32,6 @@ into two statements with the yield keyword::
 To create a keymap that will block others, ``bind_key(..., ...)```.
 """
 
-
 import contextlib
 import inspect
 import sys
