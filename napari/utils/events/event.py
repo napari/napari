@@ -59,9 +59,9 @@ from typing import (
     Any,
     Callable,
     Dict,
-    Generator,
     Generic,
     Iterable,
+    Iterator,
     List,
     Literal,
     Optional,
@@ -1082,7 +1082,7 @@ class EmitterGroup(EventEmitter):
         """List of current emitters in this group."""
         return self._emitters
 
-    def __iter__(self) -> Generator[str, None, None]:
+    def __iter__(self) -> Iterator[str]:
         """
         Iterates over the names of emitters in this group.
         """

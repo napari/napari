@@ -254,7 +254,7 @@ def save_layers(
         if writer_name:
             warnings.warn(
                 trans._(
-                    "Plugin \'{name}\' was selected but did not return any written paths.",
+                    "Plugin \'{name}\' was selected but did not return any written paths.",  # noqa: Q004
                     deferred=True,
                     name=writer_name,
                 )
