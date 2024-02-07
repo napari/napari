@@ -9,6 +9,7 @@ import numpy as np
 
 from napari.components.dims import Dims
 from napari.layers import Labels
+from napari.utils.colormaps import DirectLabelColormap
 
 from .utils import Skiper, labeled_particles
 
@@ -93,12 +94,13 @@ class LabelsDrawing2DSuite:
             (n, n), dtype=np.int32, n=int(np.log2(n) ** 2), seed=1
         )
 
-        colors = None
+        self.layer = Labels(self.data)
+
         if color_mode == 'direct':
             random_label_ids = np.random.randint(64, size=50)
             colors = {i + 1: np.random.random(4) for i in random_label_ids}
-
-        self.layer = Labels(self.data, color=colors)
+            colors[None] = np.array([0, 0, 0, 0.3])
+            self.layer.colormap = DirectLabelColormap(color_dict=colors)
 
         self.layer.brush_size = brush_size
         self.layer.contour = contour
@@ -130,9 +132,10 @@ class Labels2DColorDirectSuite(Labels2DSuite):
         random_label_ids = np.random.randint(
             low=max(-10000, info.min), high=min(10000, info.max), size=20
         )
+        colors = {i + 1: np.random.random(4) for i in random_label_ids}
+        colors[None] = np.array([0, 0, 0, 0.3])
         self.layer = Labels(
-            self.data,
-            color={i + 1: np.random.random(4) for i in random_label_ids},
+            self.data, colormap=DirectLabelColormap(color_dict=colors)
         )
         self.layer._raw_to_displayed(
             self.layer._slice.image.raw, (slice(0, n), slice(0, n))

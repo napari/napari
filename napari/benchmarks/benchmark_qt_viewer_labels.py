@@ -15,6 +15,7 @@ from skimage.morphology import diamond, octahedron
 import napari
 from napari.components.viewer_model import ViewerModel
 from napari.qt import QtViewer
+from napari.utils.colormaps import DirectLabelColormap
 
 from .utils import Skiper
 
@@ -144,7 +145,7 @@ class LabelRendering:
             )
             colors[None] = "yellow"
             colors[0] = "transparent"
-            self.layer.color = colors
+            self.layer.colormap = DirectLabelColormap(color_dict=colors)
         self.qt_viewr.show()
 
     @staticmethod
