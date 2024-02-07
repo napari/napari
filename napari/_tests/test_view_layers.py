@@ -42,7 +42,7 @@ def test_docstring(layer):
     # check summary section
     method_summary = ' '.join(method_doc['Summary'])  # join multi-line summary
 
-    summary_format = 'Add an? .+? layer to the layer list.'
+    summary_format = 'Add an? .+? layers? to the layer list.'
 
     assert re.match(
         summary_format, method_summary
