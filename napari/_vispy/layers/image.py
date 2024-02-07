@@ -350,8 +350,7 @@ class VispyImageLayer(VispyScalarFieldBaseLayer):
         self._update_mip_minip_cutoff()
 
     def _on_gamma_change(self) -> None:
-        if len(self.node.shared_program.frag._set_items) > 0:
-            self.node.gamma = self.layer.gamma
+        self.node.gamma = self.layer.gamma
 
     def _on_iso_threshold_change(self) -> None:
         if isinstance(self.node, VolumeNode):
