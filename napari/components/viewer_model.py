@@ -774,7 +774,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         channel_axis : int, optional
             Axis to expand image along. If provided, each channel in the data
             will be added as an individual image layer. In channel_axis mode,
-            all other parameters MAY be provided as lists, and the Nth value
+            other parameters MAY be provided as lists. The Nth value of the list
             will be applied to the Nth channel in the data. If a single value
             is provided, it will be broadcast to all Layers.
             All parameters except data, rgb, and multiscale can be provided as
@@ -791,20 +791,22 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         blending : str or list of str
             One of a list of preset blending modes that determines how RGB and
             alpha values of the layer visual get mixed. Allowed values are
-            {'opaque', 'translucent', and 'additive'}.
+            {'translucent', 'translucent_no_depth', 'additive', 'minimum', 'opaque'}.
         cache : bool or list of bool
             Whether slices of out-of-core datasets should be cached upon
             retrieval. Currently, this only applies to dask arrays.
         colormap : str, napari.utils.Colormap, tuple, dict, list or list of these types
-            Colormaps to use for luminance images. If a string must be the name
-            of a supported colormap from vispy or matplotlib. If a tuple, the
+            Colormaps to use for luminance images. If a string, it can be the name
+            of a supported colormap from vispy or matplotlib or the name of
+            a vispy color or a hexadecimal RGB color representation. 
+            If a tuple, the
             first value must be a string to assign as a name to a colormap and
             the second item must be a Colormap. If a dict, the key must be a
             string to assign as a name to a colormap and the value must be a
             Colormap.
         contrast_limits : list (2,)
-            Color limits to be used for determining the colormap bounds for
-            luminance images. If not passed is calculated as the min and max of
+            Value limits to be used for determining the minimum and maximum colormap bounds for
+            luminance images. If not passed, they will be calculated as the min and max of
             the image.
         custom_interpolation_kernel_2d : np.ndarray
             Convolution kernel used with the 'custom' interpolation mode in 2D rendering.
@@ -833,7 +835,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             Layer metadata.
         multiscale : bool
             Whether the data is a multiscale image or not. Multiscale data is
-            represented by a list of array like image data. If not specified by
+            represented by a list of array-like image data. If not specified by
             the user and if the data is a list of arrays that decrease in shape,
             then it will be taken to be multiscale. The first image in the list
             should be the largest. Please note multiscale rendering is only
