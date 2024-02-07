@@ -798,9 +798,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         colormap : str, napari.utils.Colormap, tuple, dict, list or list of these types
             Colormaps to use for luminance images. If a string, it can be the name
             of a supported colormap from vispy or matplotlib or the name of
-            a vispy color or a hexadecimal RGB color representation. 
-            If a tuple, the first value must be a string to assign as a name to a 
-            colormap and the second item must be a Colormap. If a dict, the key must 
+            a vispy color or a hexadecimal RGB color representation.
+            If a tuple, the first value must be a string to assign as a name to a
+            colormap and the second item must be a Colormap. If a dict, the key must
             be a string to assign as a name to a colormap and the value must be a
             Colormap.
         contrast_limits : list (2,)
