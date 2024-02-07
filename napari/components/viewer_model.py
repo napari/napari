@@ -798,11 +798,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         colormap : str, napari.utils.Colormap, tuple, dict, list or list of these types
             Colormaps to use for luminance images. If a string, it can be the name
             of a supported colormap from vispy or matplotlib or the name of
-            a vispy color or a hexadecimal RGB color representation.
-            If a tuple, the
-            first value must be a string to assign as a name to a colormap and
-            the second item must be a Colormap. If a dict, the key must be a
-            string to assign as a name to a colormap and the value must be a
+            a vispy color or a hexadecimal RGB color representation. 
+            If a tuple, the first value must be a string to assign as a name to a 
+            colormap and the second item must be a Colormap. If a dict, the key must 
+            be a string to assign as a name to a colormap and the value must be a
             Colormap.
         contrast_limits : list (2,)
             Value limits to be used for determining the minimum and maximum colormap bounds for
@@ -850,16 +849,16 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             data coordinates. Valid dictionary keys are
             {'position', 'normal', 'thickness', and 'enabled'}.
         projection_mode : str
-            How data outside the viewed dimensions but inside the thick Dims slice will
+            How data outside the viewed dimensions, but inside the thick Dims slice will
             be projected onto the viewed dimensions. Must fit to cls._projectionclass
         rendering : str or list of str
             Rendering mode used by vispy. Must be one of our supported
             modes. If a list then must be same length as the axis that is being
             expanded as channels.
         rgb : bool, optional
-            Whether the image is rgb RGB or RGBA if rgb. If not
-            specified by user and the last dimension of the data has length 3 or 4
-            it will be set as `True`. If `False` the image is interpreted as a
+            Whether the image is RGB or RGBA if rgb. If not
+            specified by user, but the last dimension of the data has length 3 or 4,
+            it will be set as `True`. If `False`, the image is interpreted as a
             luminance image.
         rotate : float, 3-tuple of float, n-D array or list.
             If a float, convert into a 2D rotation matrix using that value as an
