@@ -54,6 +54,9 @@ class IntensityVisualizationMixin:
         mode = mode or self._auto_contrast_source
         self.contrast_limits = self._calc_data_range(mode)
 
+    def _calc_data_range(self, mode):
+        raise NotImplementedError
+
     def reset_contrast_limits_range(self, mode=None):
         """Scale contrast limits range to data type if dtype is an integer,
         or use the current maximum data range otherwise.
@@ -152,6 +155,6 @@ class IntensityVisualizationMixin:
 
     @gamma.setter
     def gamma(self, value):
-        self._gamma = value
+        self._gamma = float(value)
         self._update_thumbnail()
         self.events.gamma()

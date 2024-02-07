@@ -55,6 +55,13 @@ class QtWelcomeWidget(QWidget):
 
         # TODO: Use action manager for shortcut query and handling
         shortcut_layout = QFormLayout()
+        sc = QKeySequence('Ctrl+N', QKeySequence.PortableText).toString(
+            QKeySequence.NativeText
+        )
+        shortcut_layout.addRow(
+            QtShortcutLabel(sc),
+            QtShortcutLabel(trans._("New Image from Clipboard")),
+        )
         sc = QKeySequence('Ctrl+O', QKeySequence.PortableText).toString(
             QKeySequence.NativeText
         )

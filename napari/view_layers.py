@@ -12,6 +12,7 @@ of the layer types, like "image", "points", etc...):
         add_method(*args, **kwargs)
         return viewer
 """
+
 import inspect
 from typing import Any, List, Optional, Tuple
 
@@ -221,7 +222,7 @@ def imshow(
     rgb=None,
     colormap=None,
     contrast_limits=None,
-    gamma=1,
+    gamma=1.0,
     interpolation2d='nearest',
     interpolation3d='linear',
     rendering='mip',
@@ -235,7 +236,7 @@ def imshow(
     rotate=None,
     shear=None,
     affine=None,
-    opacity=1,
+    opacity=1.0,
     blending=None,
     visible=True,
     multiscale=None,

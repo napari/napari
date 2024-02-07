@@ -1,6 +1,7 @@
 """
 A Class for generating QIcons from SVGs with arbitrary colors at runtime.
 """
+
 from typing import Optional, Union
 
 from qtpy.QtCore import QByteArray, QPoint, QRect, QRectF, Qt

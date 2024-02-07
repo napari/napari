@@ -1,5 +1,6 @@
 """PerfEvent class.
 """
+
 import os
 import threading
 from typing import NamedTuple, Optional

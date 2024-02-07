@@ -6,13 +6,15 @@ from typing import Dict, Optional
 import numpy as np
 from vispy.color import Colormap as VispyColormap
 from vispy.scene.node import Node
+from vispy.visuals import ImageVisual
 
 from napari._vispy.layers.base import VispyBaseLayer
 from napari._vispy.utils.gl import fix_data_dtype, get_gl_extensions
 from napari._vispy.visuals.image import Image as ImageNode
 from napari._vispy.visuals.volume import Volume as VolumeNode
 from napari.layers.base._base_constants import Blending
-from napari.layers.image.image import _ImageBase
+from napari.layers.image.image import Image, _ImageBase
+from napari.utils.colormaps.colormap_utils import _coerce_contrast_limits
 from napari.utils.translations import trans
 
 
@@ -31,9 +33,11 @@ class ImageLayerNode:
 
         self._custom_node = custom_node
         self._image_node = ImageNode(
-            None
-            if (texture_format is None or texture_format == 'auto')
-            else np.array([[0.0]], dtype=np.float32),
+            (
+                None
+                if (texture_format is None or texture_format == 'auto')
+                else np.array([[0.0]], dtype=np.float32)
+            ),
             method='auto',
             texture_format=texture_format,
         )
@@ -60,11 +64,17 @@ class ImageLayerNode:
             # it is a bug to hit this error — it is here to catch bugs
             # early when we are creating the wrong nodes or
             # textures for our data
-            raise ValueError("dtype does not match texture_format")
+            raise ValueError(
+                trans._(
+                    "dtype {dtype} does not match texture_format={texture_format}",
+                    dtype=dtype,
+                    texture_format=res.texture_format,
+                )
+            )
         return res
 
 
-class VispyImageLayer(VispyBaseLayer[_ImageBase]):
+class VispyScalarFieldBaseLayer(VispyBaseLayer[_ImageBase]):
     def __init__(
         self,
         layer: _ImageBase,
@@ -84,19 +94,7 @@ class VispyImageLayer(VispyBaseLayer[_ImageBase]):
 
         self.layer.events.rendering.connect(self._on_rendering_change)
         self.layer.events.depiction.connect(self._on_depiction_change)
-        self.layer.events.interpolation2d.connect(
-            self._on_interpolation_change
-        )
-        self.layer.events.interpolation3d.connect(
-            self._on_interpolation_change
-        )
         self.layer.events.colormap.connect(self._on_colormap_change)
-        self.layer.events.contrast_limits.connect(
-            self._on_contrast_limits_change
-        )
-        self.layer.events.gamma.connect(self._on_gamma_change)
-        self.layer.events.iso_threshold.connect(self._on_iso_threshold_change)
-        self.layer.events.attenuation.connect(self._on_attenuation_change)
         self.layer.plane.events.position.connect(
             self._on_plane_position_change
         )
@@ -108,9 +106,10 @@ class VispyImageLayer(VispyBaseLayer[_ImageBase]):
             self._on_custom_interpolation_kernel_2d_change
         )
 
-        # display_change is special (like data_change) because it requires a self.reset()
-        # this means that we have to call it manually. Also, it must be called before reset
-        # in order to set the appropriate node first
+        # display_change is special (like data_change) because it requires a
+        # self.reset(). This means that we have to call it manually. Also,
+        # it must be called before reset in order to set the appropriate node
+        # first
         self._on_display_change()
         self.reset()
         self._on_data_change()
@@ -160,7 +159,7 @@ class VispyImageLayer(VispyBaseLayer[_ImageBase]):
         # Check if ndisplay has changed current node type needs updating
         if (ndisplay == 3 and not isinstance(node, VolumeNode)) or (
             ndisplay == 2
-            and not isinstance(node, ImageNode)
+            and not isinstance(node, ImageVisual)
             or node != self.node
         ):
             self._on_display_change(data)
@@ -172,13 +171,6 @@ class VispyImageLayer(VispyBaseLayer[_ImageBase]):
         self._on_matrix_change()
         node.update()
 
-    def _on_interpolation_change(self) -> None:
-        self.node.interpolation = (
-            self.layer.interpolation2d
-            if self.layer._slice_input.ndisplay == 2
-            else self.layer.interpolation3d
-        )
-
     def _on_custom_interpolation_kernel_2d_change(self) -> None:
         if self.layer._slice_input.ndisplay == 2:
             self.node.custom_kernel = self.layer.custom_interpolation_kernel_2d
@@ -186,12 +178,145 @@ class VispyImageLayer(VispyBaseLayer[_ImageBase]):
     def _on_rendering_change(self) -> None:
         if isinstance(self.node, VolumeNode):
             self.node.method = self.layer.rendering
-            self._on_attenuation_change()
-            self._on_iso_threshold_change()
 
     def _on_depiction_change(self) -> None:
         if isinstance(self.node, VolumeNode):
             self.node.raycasting_mode = str(self.layer.depiction)
+
+    def _on_blending_change(self, event=None) -> None:
+        super()._on_blending_change()
+
+    def _on_plane_thickness_change(self) -> None:
+        if isinstance(self.node, VolumeNode):
+            self.node.plane_thickness = self.layer.plane.thickness
+
+    def _on_plane_position_change(self) -> None:
+        if isinstance(self.node, VolumeNode):
+            self.node.plane_position = self.layer.plane.position
+
+    def _on_plane_normal_change(self) -> None:
+        if isinstance(self.node, VolumeNode):
+            self.node.plane_normal = self.layer.plane.normal
+
+    def _on_colormap_change(self, event=None) -> None:
+        raise NotImplementedError
+
+    def reset(self, event=None) -> None:
+        super().reset()
+        self._on_rendering_change()
+        self._on_depiction_change()
+        self._on_plane_position_change()
+        self._on_plane_normal_change()
+        self._on_plane_thickness_change()
+        self._on_custom_interpolation_kernel_2d_change()
+
+    def downsample_texture(
+        self, data: np.ndarray, MAX_TEXTURE_SIZE: int
+    ) -> np.ndarray:
+        """Downsample data based on maximum allowed texture size.
+
+        Parameters
+        ----------
+        data : array
+            Data to be downsampled if needed.
+        MAX_TEXTURE_SIZE : int
+            Maximum allowed texture size.
+
+        Returns
+        -------
+        data : array
+            Data that now fits inside texture.
+        """
+        if np.any(np.greater(data.shape, MAX_TEXTURE_SIZE)):
+            if self.layer.multiscale:
+                raise ValueError(
+                    trans._(
+                        "Shape of individual tiles in multiscale {shape} cannot "
+                        "exceed GL_MAX_TEXTURE_SIZE {texture_size}. Rendering is "
+                        "currently in {ndisplay}D mode.",
+                        deferred=True,
+                        shape=data.shape,
+                        texture_size=MAX_TEXTURE_SIZE,
+                        ndisplay=self.layer._slice_input.ndisplay,
+                    )
+                )
+            warnings.warn(
+                trans._(
+                    "data shape {shape} exceeds GL_MAX_TEXTURE_SIZE {texture_size}"
+                    " in at least one axis and will be downsampled."
+                    " Rendering is currently in {ndisplay}D mode.",
+                    deferred=True,
+                    shape=data.shape,
+                    texture_size=MAX_TEXTURE_SIZE,
+                    ndisplay=self.layer._slice_input.ndisplay,
+                )
+            )
+            downsample = np.ceil(
+                np.divide(data.shape, MAX_TEXTURE_SIZE)
+            ).astype(int)
+            scale = np.ones(self.layer.ndim)
+            for i, d in enumerate(self.layer._slice_input.displayed):
+                scale[d] = downsample[i]
+
+            # tile2data is a ScaleTransform thus is has a .scale attribute, but
+            # mypy cannot know this.
+            self.layer._transforms['tile2data'].scale = scale
+
+            self._on_matrix_change()
+            slices = tuple(slice(None, None, ds) for ds in downsample)
+            data = data[slices]
+        return data
+
+
+class VispyImageLayer(VispyScalarFieldBaseLayer):
+    layer: Image
+
+    def __init__(
+        self,
+        layer: Image,
+        node=None,
+        texture_format='auto',
+        layer_node_class=ImageLayerNode,
+    ) -> None:
+        super().__init__(
+            layer,
+            node=node,
+            texture_format=texture_format,
+            layer_node_class=layer_node_class,
+        )
+
+        self.layer.events.interpolation2d.connect(
+            self._on_interpolation_change
+        )
+        self.layer.events.interpolation3d.connect(
+            self._on_interpolation_change
+        )
+        self.layer.events.contrast_limits.connect(
+            self._on_contrast_limits_change
+        )
+        self.layer.events.gamma.connect(self._on_gamma_change)
+        self.layer.events.iso_threshold.connect(self._on_iso_threshold_change)
+        self.layer.events.attenuation.connect(self._on_attenuation_change)
+
+        # display_change is special (like data_change) because it requires a
+        # self.reset(). This means that we have to call it manually. Also,
+        # it must be called before reset in order to set the appropriate node
+        # first
+        self._on_display_change()
+        self.reset()
+        self._on_data_change()
+
+    def _on_interpolation_change(self) -> None:
+        self.node.interpolation = (
+            self.layer.interpolation2d
+            if self.layer._slice_input.ndisplay == 2
+            else self.layer.interpolation3d
+        )
+
+    def _on_rendering_change(self) -> None:
+        super()._on_rendering_change()
+        self._on_attenuation_change()
+        self._on_iso_threshold_change()
 
     def _on_colormap_change(self, event=None) -> None:
         self.node.cmap = VispyColormap(*self.layer.colormap)
@@ -210,7 +335,9 @@ class VispyImageLayer(VispyBaseLayer[_ImageBase]):
                 self.node.minip_cutoff = None
 
     def _on_contrast_limits_change(self) -> None:
-        self.node.clim = self.layer.contrast_limits
+        self.node.clim = _coerce_contrast_limits(
+            self.layer.contrast_limits
+        ).contrast_limits
         # cutoffs must be updated after clims, so we can set them to the new values
         self._update_mip_minip_cutoff()
         # iso also may depend on contrast limit values
@@ -240,83 +367,12 @@ class VispyImageLayer(VispyBaseLayer[_ImageBase]):
         if isinstance(self.node, VolumeNode):
             self.node.attenuation = self.layer.attenuation
 
-    def _on_plane_thickness_change(self) -> None:
-        if isinstance(self.node, VolumeNode):
-            self.node.plane_thickness = self.layer.plane.thickness
-
-    def _on_plane_position_change(self) -> None:
-        if isinstance(self.node, VolumeNode):
-            self.node.plane_position = self.layer.plane.position
-
-    def _on_plane_normal_change(self) -> None:
-        if isinstance(self.node, VolumeNode):
-            self.node.plane_normal = self.layer.plane.normal
-
     def reset(self, event=None) -> None:
         super().reset()
         self._on_interpolation_change()
         self._on_colormap_change()
         self._on_contrast_limits_change()
         self._on_gamma_change()
-        self._on_rendering_change()
-        self._on_depiction_change()
-        self._on_plane_position_change()
-        self._on_plane_normal_change()
-        self._on_plane_thickness_change()
-        self._on_custom_interpolation_kernel_2d_change()
-
-    def downsample_texture(
-        self, data: np.ndarray, MAX_TEXTURE_SIZE: int
-    ) -> np.ndarray:
-        """Downsample data based on maximum allowed texture size.
-
-        Parameters
-        ----------
-        data : array
-            Data to be downsampled if needed.
-        MAX_TEXTURE_SIZE : int
-            Maximum allowed texture size.
-
-        Returns
-        -------
-        data : array
-            Data that now fits inside texture.
-        """
-        if np.any(np.greater(data.shape, MAX_TEXTURE_SIZE)):
-            if self.layer.multiscale:
-                raise ValueError(
-                    trans._(
-                        "Shape of in dividual tiles in multiscale {shape} cannot exceed GL_MAX_TEXTURE_SIZE {texture_size}. Rendering is currently in {ndisplay}D mode.",
-                        deferred=True,
-                        shape=data.shape,
-                        texture_size=MAX_TEXTURE_SIZE,
-                        ndisplay=self.layer._slice_input.ndisplay,
-                    )
-                )
-            warnings.warn(
-                trans._(
-                    "data shape {shape} exceeds GL_MAX_TEXTURE_SIZE {texture_size} in at least one axis and will be downsampled. Rendering is currently in {ndisplay}D mode.",
-                    deferred=True,
-                    shape=data.shape,
-                    texture_size=MAX_TEXTURE_SIZE,
-                    ndisplay=self.layer._slice_input.ndisplay,
-                )
-            )
-            downsample = np.ceil(
-                np.divide(data.shape, MAX_TEXTURE_SIZE)
-            ).astype(int)
-            scale = np.ones(self.layer.ndim)
-            for i, d in enumerate(self.layer._slice_input.displayed):
-                scale[d] = downsample[i]
-
-            # tile2data is a ScaleTransform thus is has a .scale attribute, but
-            # mypy cannot know this.
-            self.layer._transforms['tile2data'].scale = scale
-
-            self._on_matrix_change()
-            slices = tuple(slice(None, None, ds) for ds in downsample)
-            data = data[slices]
-        return data
 
 
 _VISPY_FORMAT_TO_DTYPE: Dict[Optional[str], np.dtype] = {

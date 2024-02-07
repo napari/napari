@@ -434,7 +434,18 @@ def _mock_app():
             Application.destroy('test_app')
 
 
-def _get_calling_place(depth=1):
+def _get_calling_stack():  # pragma: no cover
+    stack = []
+    for i in range(2, sys.getrecursionlimit()):
+        try:
+            frame = sys._getframe(i)
+        except ValueError:
+            break
+        stack.append(f"{frame.f_code.co_filename}:{frame.f_lineno}")
+    return "\n".join(stack)
+
+
+def _get_calling_place(depth=1):  # pragma: no cover
     if not hasattr(sys, "_getframe"):
         return ""
     frame = sys._getframe(1 + depth)
@@ -460,7 +471,7 @@ def dangling_qthreads(monkeypatch, qtbot, request):
 
     if "disable_qthread_start" in request.keywords:
 
-        def my_start(*_, **__):
+        def my_start(self, priority=QThread.InheritPriority):
             """dummy function to prevent thread start"""
 
     else:
@@ -520,7 +531,7 @@ def dangling_qthread_pool(monkeypatch, request):
 
     if "disable_qthread_pool_start" in request.keywords:
 
-        def my_start(*_, **__):
+        def my_start(self, runnable, priority=0):
             """dummy function to prevent thread start"""
 
     else:
@@ -577,7 +588,7 @@ def dangling_qtimers(monkeypatch, request):
     if "disable_qtimer_start" in request.keywords:
         from pytestqt.qt_compat import qt_api
 
-        def my_start(*_, **__):
+        def my_start(self, msec=None):
             """dummy function to prevent timer start"""
 
         _single_shot = my_start
@@ -595,7 +606,10 @@ def dangling_qtimers(monkeypatch, request):
     else:
 
         def my_start(self, msec=None):
-            timer_dkt[self] = _get_calling_place()
+            calling_place = _get_calling_place()
+            if "superqt" in calling_place and "throttler" in calling_place:
+                calling_place += f" - {_get_calling_place(2)}"
+            timer_dkt[self] = calling_place
             if msec is not None:
                 base_start(self, msec)
             else:
@@ -608,6 +622,9 @@ def dangling_qtimers(monkeypatch, request):
                 t.timeout.connect(reciver)
             else:
                 t.timeout.connect(getattr(reciver, method))
+            calling_place = _get_calling_place(2)
+            if "superqt" in calling_place and "throttler" in calling_place:
+                calling_place += _get_calling_stack()
             single_shot_list.append((t, _get_calling_place(2)))
             base_start(t, msec)
 
@@ -692,7 +709,7 @@ def dangling_qanimations(monkeypatch, request):
 
     if "disable_qanimation_start" in request.keywords:
 
-        def my_start(*_, **__):
+        def my_start(self):
             """dummy function to prevent thread start"""
 
     else:

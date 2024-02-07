@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import copy
+import inspect
 import itertools
 import logging
 import os.path
 import warnings
-from abc import ABC, abstractmethod
+from abc import ABC, ABCMeta, abstractmethod
 from collections import defaultdict
 from contextlib import contextmanager
 from functools import cached_property
@@ -100,8 +102,21 @@ def no_op(layer: Layer, event: Event) -> None:
     return
 
 
+class PostInit(ABCMeta):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        sig = inspect.signature(self.__init__)
+        params = tuple(sig.parameters.values())
+        self.__signature__ = sig.replace(parameters=params[1:])
+
+    def __call__(self, *args, **kwargs):
+        obj = super().__call__(*args, **kwargs)
+        obj._post_init()
+        return obj
+
+
 @mgui.register_type(choices=get_layers, return_callback=add_layer_to_viewer)
-class Layer(KeymapProvider, MousemapProvider, ABC):
+class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     """Base layer class.
 
     Parameters
@@ -286,7 +301,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         rotate=None,
         shear=None,
         affine=None,
-        opacity=1,
+        opacity=1.0,
         blending='translucent',
         visible=True,
         multiscale=False,
@@ -332,6 +347,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._experimental_clipping_planes = ClippingPlaneList()
         self._mode = self._modeclass('pan_zoom')
         self._projection_mode = self._projectionclass(str(projection_mode))
+        self._refresh_blocked = False
 
         self._ndim = ndim
 
@@ -447,6 +463,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         # TODO: we try to avoid inner event connection, but this might be the only way
         #       until we figure out nested evented objects
         self._overlays.events.connect(self.events._overlays)
+
+    def _post_init(self):
+        """Post init hook for subclasses to use."""
 
     def __str__(self):
         """Return self.name."""
@@ -643,7 +662,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 )
             )
 
-        self._opacity = opacity
+        self._opacity = float(opacity)
         self._update_thumbnail()
         self.events.opacity()
 
@@ -1401,8 +1420,21 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             Bool that forces a redraw to occur when `True`.
         """
 
+    @contextmanager
+    def _block_refresh(self):
+        """Prevent refresh calls from updating view."""
+        previous = self._refresh_blocked
+        self._refresh_blocked = True
+        try:
+            yield
+        finally:
+            self._refresh_blocked = previous
+
     def refresh(self, event=None):
         """Refresh all layer data based on current view slice."""
+        if self._refresh_blocked:
+            logger.debug('Layer.refresh blocked: %s', self)
+            return
         logger.debug('Layer.refresh: %s', self)
         # If async is enabled then emit an event that the viewer should handle.
         if get_settings().experimental.async_:
@@ -2057,6 +2089,29 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         from napari.plugins.io import save_layers
 
         return save_layers(path, [self], plugin=plugin)
+
+    def __copy__(self):
+        """Create a copy of this layer.
+
+        Returns
+        -------
+        layer : napari.layers.Layer
+            Copy of this layer.
+
+        Notes
+        -----
+        This method is defined for purpose of asv memory benchmarks.
+        The copy of data is intentional for properly estimating memory
+        usage for layer.
+
+        If you want a to copy a layer without coping the data please use
+        `layer.create(*layer.as_layer_data_tuple())`
+
+        If you change this method, validate if memory benchmarks are still
+        working properly.
+        """
+        data, meta, layer_type = self.as_layer_data_tuple()
+        return self.create(copy.copy(data), meta=meta, layer_type=layer_type)
 
     @classmethod
     def create(

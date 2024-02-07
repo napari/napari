@@ -2,6 +2,7 @@
 These convenience functions will be useful for searching pypi for packages
 that match the plugin naming convention, and retrieving related metadata.
 """
+
 import json
 from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache
@@ -90,6 +91,7 @@ def iter_napari_plugin_info() -> Iterator[Tuple[PackageMetadata, bool, dict]]:
         _conda = executor.submit(conda_map)
 
     conda = _conda.result()
+    conda_set = {normalized_name(x) for x in conda}
     for info in data.result():
         info_copy = dict(info)
         info_copy.pop("display_name", None)
@@ -111,4 +113,4 @@ def iter_napari_plugin_info() -> Iterator[Tuple[PackageMetadata, bool, dict]]:
         info_["name"] = normalized_name(info_["name"])
         meta = PackageMetadata(**info_)
 
-        yield meta, (info_["name"] in conda), extra_info
+        yield meta, (info_["name"] in conda_set), extra_info

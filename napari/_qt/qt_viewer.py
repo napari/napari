@@ -21,7 +21,8 @@ from typing import (
 )
 from weakref import WeakSet, ref
 
-from qtpy.QtCore import QCoreApplication, QObject, Qt
+import numpy as np
+from qtpy.QtCore import QCoreApplication, QObject, Qt, QUrl
 from qtpy.QtGui import QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 from superqt import ensure_main_thread
@@ -57,6 +58,7 @@ from napari.utils.io import imsave
 from napari.utils.key_bindings import KeymapHandler
 from napari.utils.misc import in_ipython, in_jupyter
 from napari.utils.naming import CallerFrame
+from napari.utils.notifications import show_info
 from napari.utils.translations import trans
 from napari_builtins.io import imsave_extensions
 
@@ -772,7 +774,6 @@ class QtViewer(QSplitter):
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
         """
-        # CAN REMOVE THIS AFTER DEPRECATION IS DONE, see self.screenshot.
         img = self.canvas.screenshot()
         if flash:
             from napari._qt.utils import add_flash_animation
@@ -784,7 +785,7 @@ class QtViewer(QSplitter):
             add_flash_animation(self._welcome_widget)
         return img
 
-    def screenshot(self, path=None, flash=True):
+    def screenshot(self, path=None, flash=True) -> np.ndarray:
         """Take currently displayed screen and convert to an image array.
 
         Parameters
@@ -1029,6 +1030,43 @@ class QtViewer(QSplitter):
             'Hold <Alt> key to open plugin selection. Hold <Shift> to open files as stack.'
         )
 
+    def _image_from_clipboard(self):
+        """Insert image from clipboard as a new layer if clipboard contains an image or link."""
+        cb = QGuiApplication.clipboard()
+        if cb.mimeData().hasImage():
+            image = cb.image()
+            if image.isNull():
+                return
+            arr = QImg2array(image)
+            self.viewer.add_image(arr)
+            return
+        if cb.mimeData().hasUrls():
+            show_info("No image in clipboard, trying to open link instead.")
+            self._open_from_list_of_urls_data(
+                cb.mimeData().urls(), stack=False, choose_plugin=False
+            )
+            return
+        if cb.mimeData().hasText():
+            show_info(
+                "No image in clipboard, trying to parse text in clipboard as a link."
+            )
+            url_list = []
+            for line in cb.mimeData().text().split("\n"):
+                url = QUrl(line.strip())
+                if url.isEmpty():
+                    continue
+                if url.scheme() == '':
+                    url.setScheme('file')
+                if url.isLocalFile() and not Path(url.toLocalFile()).exists():
+                    break
+                url_list.append(url)
+            else:
+                self._open_from_list_of_urls_data(
+                    url_list, stack=False, choose_plugin=False
+                )
+                return
+        show_info("No image or link in clipboard.")
+
     def dropEvent(self, event):
         """Add local files and web URLS with drag and drop.
 
@@ -1051,8 +1089,17 @@ class QtViewer(QSplitter):
             QGuiApplication.keyboardModifiers()
             & Qt.KeyboardModifier.AltModifier
         )
+        self._open_from_list_of_urls_data(
+            event.mimeData().urls(),
+            stack=bool(shift_down),
+            choose_plugin=bool(alt_down),
+        )
+
+    def _open_from_list_of_urls_data(
+        self, urls_list: List[QUrl], stack: bool, choose_plugin: bool
+    ):
         filenames = []
-        for url in event.mimeData().urls():
+        for url in urls_list:
             if url.isLocalFile():
                 # directories get a trailing "/", Path conversion removes it
                 filenames.append(str(Path(url.toLocalFile())))
@@ -1061,8 +1108,8 @@ class QtViewer(QSplitter):
 
         self._qt_open(
             filenames,
-            stack=bool(shift_down),
-            choose_plugin=bool(alt_down),
+            stack=stack,
+            choose_plugin=choose_plugin,
         )
 
     def closeEvent(self, event):

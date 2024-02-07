@@ -11,6 +11,10 @@ on:
   workflow_dispatch:
   workflow_call:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-and-upload:
     name: Build & Upload Artifact
@@ -29,7 +33,7 @@ jobs:
           # ensure version metadata is proper
           fetch-depth: 0
 
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.10"
           cache-dependency-path: |
@@ -52,17 +56,21 @@ jobs:
           python -c 'import napari.layers; print(napari.layers.__doc__)'
 
       - name: Build Docs
-        uses: aganders3/headless-gui@v1
+        uses: aganders3/headless-gui@v2
         env:
           GOOGLE_CALENDAR_ID: ${{ secrets.GOOGLE_CALENDAR_ID }}
           GOOGLE_CALENDAR_API_KEY: ${{ secrets.GOOGLE_CALENDAR_API_KEY }}
           PIP_CONSTRAINT: ${{ github.workspace }}/napari/resources/constraints/constraints_py3.10_docs.txt
         with:
           run:  make -C docs docs
-
+          # skipping setup stops the action from running the default (tiling) window manager
+          # the window manager is not necessary for docs builds at this time and it was causing
+          # problems with screenshots (https://github.com/napari/docs/issues/285)
+          linux-setup: "echo 'skip setup'"
+          linux-teardown: "echo 'skip teardown'"
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: docs
           path: docs/docs/_build

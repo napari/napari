@@ -736,7 +736,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         rgb=None,
         colormap=None,
         contrast_limits=None,
-        gamma=1,
+        gamma=1.0,
         interpolation2d='nearest',
         interpolation3d='linear',
         rendering='mip',
@@ -750,7 +750,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         rotate=None,
         shear=None,
         affine=None,
-        opacity=1,
+        opacity=1.0,
         blending=None,
         visible=True,
         multiscale=None,
@@ -886,6 +886,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             Properties defining plane rendering in 3D. Properties are defined in
             data coordinates. Valid dictionary keys are
             {'position', 'normal', 'thickness', and 'enabled'}.
+        projection_mode : str
+            How data outside the viewed dimensions but inside the thick Dims slice will
+            be projected onto the viewed dimensions. Must fit to cls._projectionclass
         experimental_clipping_planes : list of dicts, list of ClippingPlane, or ClippingPlaneList
             Each dict defines a clipping plane in 3D in data coordinates.
             Valid dictionary keys are {'position', 'normal', and 'enabled'}.
@@ -1179,9 +1182,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         with progress(
             paths,
             desc=trans._('Opening Files'),
-            total=0
-            if len(paths) == 1
-            else None,  # indeterminate bar for 1 file
+            total=(
+                0 if len(paths) == 1 else None
+            ),  # indeterminate bar for 1 file
         ) as pbr:
             for _path in pbr:
                 # If _path is a list, set stack to True
@@ -1556,7 +1559,7 @@ def _normalize_layer_data(data: LayerData) -> FullLayerData:
             )
     else:
         _data.append(guess_labels(_data[0]))
-    return tuple(_data)  # type: ignore
+    return tuple(_data)
 
 
 def _unify_data_and_user_kwargs(
@@ -1649,14 +1652,14 @@ def prune_kwargs(kwargs: Dict[str, Any], layer_type: str) -> Dict[str, Any]:
     >>> test_kwargs = {
     ...     'scale': (0.75, 1),
     ...     'blending': 'additive',
-    ...     'num_colors': 10,
+    ...     'size': 10,
     ... }
     >>> prune_kwargs(test_kwargs, 'image')
     {'scale': (0.75, 1), 'blending': 'additive'}
 
     >>> # only labels has the ``num_colors`` argument
-    >>> prune_kwargs(test_kwargs, 'labels')
-    {'scale': (0.75, 1), 'blending': 'additive', 'num_colors': 10}
+    >>> prune_kwargs(test_kwargs, 'points')
+    {'scale': (0.75, 1), 'blending': 'additive', 'size': 10}
     """
     add_method = getattr(ViewerModel, 'add_' + layer_type, None)
     if not add_method or layer_type == 'layer':

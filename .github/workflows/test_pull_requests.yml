@@ -15,6 +15,23 @@ env:
   COLUMNS: 120
 
 jobs:
+  import_lint:
+    name: Import lint
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install tox
+      - name: Run import lint
+        run: tox -e import-lint
+
   manifest:
     # make sure all necessary files will be bundled in the release
     name: Check Manifest
@@ -22,7 +39,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache-dependency-path: setup.cfg
@@ -45,7 +62,7 @@ jobs:
     timeout-minutes: 2
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.x"
       - name: Check localization formatting
@@ -95,8 +112,8 @@ jobs:
         coverage: [ cov ]
         pydantic: ["_pydantic_1"]
         include:
-          # Windows py38
-          - python: 3.8
+          # Windows py39
+          - python: 3.9
             platform: windows-latest
             backend: pyqt5,pyside2
             coverage: no_cov
@@ -176,7 +193,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: 3.11
           cache-dependency-path: setup.cfg
