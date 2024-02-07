@@ -760,7 +760,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         translate=None,
         visible=True,
     ) -> Union[Image, List[Image]]:
-        """Add an one or more Image layer to the layer list.
+        """Add an one or more Image layers to the layer list.
 
         Parameters
         ----------
