@@ -33,7 +33,7 @@ build==1.0.3
     # via npe2
 cachey==0.2.1
     # via napari (napari_repo/setup.cfg)
-certifi==2023.11.17
+certifi==2024.2.2
     # via
     #   napari (napari_repo/setup.cfg)
     #   requests
@@ -86,7 +86,7 @@ fonttools==4.47.2
     # via matplotlib
 freetype-py==2.4.0
     # via vispy
-fsspec==2023.12.2
+fsspec==2024.2.0
     # via
     #   dask
     #   napari (napari_repo/setup.cfg)
@@ -95,7 +95,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.97.3
+hypothesis==6.98.1
     # via napari (napari_repo/setup.cfg)
 idna==3.6
     # via requests
@@ -169,7 +169,7 @@ magicgui==0.8.1
     # via napari (napari_repo/setup.cfg)
 markdown-it-py==3.0.0
     # via rich
-markupsafe==2.1.4
+markupsafe==2.1.5
     # via jinja2
 matplotlib==3.7.4
     # via napari (napari_repo/setup.cfg)
@@ -390,7 +390,7 @@ pytest-cov==4.1.0
     # via -r napari_repo/resources/constraints/version_denylist.txt
 pytest-json-report==1.5.0
     # via -r napari_repo/resources/constraints/version_denylist.txt
-pytest-metadata==3.0.0
+pytest-metadata==3.1.0
     # via pytest-json-report
 pytest-pretty==1.2.0
     # via napari (napari_repo/setup.cfg)
@@ -401,7 +401,7 @@ python-dateutil==2.8.2
     #   jupyter-client
     #   matplotlib
     #   pandas
-pytz==2023.4
+pytz==2024.1
     # via
     #   babel
     #   pandas
@@ -579,5 +579,5 @@ zipp==3.17.0
     #   importlib-resources
 
 # The following packages are considered to be unsafe in a requirements file:
-pip==23.3.2
+pip==24.0
     # via napari-plugin-manager
