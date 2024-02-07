@@ -262,6 +262,15 @@ def imshow(
          a multiscale image. Please note multiscale rendering is only
          supported in 2D. In 3D, only the lowest resolution scale is
          displayed.
+    channel_axis : int, optional
+        Axis to expand image along. If provided, each channel in the data
+        will be added as an individual image layer. In channel_axis mode,
+        all other parameters MAY be provided as lists, and the Nth value
+        will be applied to the Nth channel in the data. If a single value
+        is provided, it will be broadcast to all Layers.
+        All parameters except data, rgb, and multiscale can be provided as
+        list of values. If a list is provided, it must be the same length as
+        the axis that is being expanded as channels.
      affine : n-D array or napari.utils.transforms.Affine
          (N+1, N+1) affine transformation matrix in homogeneous coordinates.
          The first (N, N) entries correspond to a linear transform and
@@ -277,15 +286,6 @@ def imshow(
      cache : bool or list of bool
          Whether slices of out-of-core datasets should be cached upon
          retrieval. Currently, this only applies to dask arrays.
-     channel_axis : int, optional
-         Axis to expand image along. If provided, each channel in the data
-         will be added as an individual image layer. In channel_axis mode,
-         all other parameters MAY be provided as lists, and the Nth value
-         will be applied to the Nth channel in the data. If a single value
-         is provided, it will be broadcast to all Layers.
-         All parameters except data, rgb, and multiscale can be provided as
-         list of values. If a list is provided, it must be the same length as
-         the axis that is being expanded as channels.
      colormap : str, napari.utils.Colormap, tuple, dict, list or list of these types
          Colormaps to use for luminance images. If a string must be the name
          of a supported colormap from vispy or matplotlib. If a tuple, the
