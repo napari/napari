@@ -633,20 +633,21 @@ class Image(IntensityVisualizationMixin, _ImageBase):
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
-        {'opaque', 'translucent', and 'additive'}.
+        {'translucent', 'translucent_no_depth', 'additive', 'minimum', 'opaque'}.
     cache : bool
         Whether slices of out-of-core datasets should be cached upon retrieval.
         Currently, this only applies to dask arrays.
     colormap : str, napari.utils.Colormap, tuple, dict
-        Colormap to use for luminance images. If a string must be the name
-        of a supported colormap from vispy or matplotlib. If a tuple, the
-        first value must be a string to assign as a name to a colormap and
-        the second item must be a Colormap. If a dict, the key must be a
-        string to assign as a name to a colormap and the value must be a
+        Colormaps to use for luminance images. If a string, it can be the name
+        of a supported colormap from vispy or matplotlib or the name of
+        a vispy color or a hexadecimal RGB color representation.
+        If a tuple, the first value must be a string to assign as a name to a
+        colormap and the second item must be a Colormap. If a dict, the key must
+        be a string to assign as a name to a colormap and the value must be a
         Colormap.
     contrast_limits : list (2,)
-        Color limits to be used for determining the colormap bounds for
-        luminance images. If not passed is calculated as the min and max of
+        Value limits to be used for determining the minimum and maximum colormap bounds for
+        luminance images. If not passed, they will be calculated as the min and max of
         the image.
     custom_interpolation_kernel_2d : np.ndarray
         Convolution kernel used with the 'custom' interpolation mode in 2D rendering.
@@ -675,7 +676,7 @@ class Image(IntensityVisualizationMixin, _ImageBase):
         Layer metadata.
     multiscale : bool
         Whether the data is a multiscale image or not. Multiscale data is
-        represented by a list of array like image data. If not specified by
+        represented by a list of array-like image data. If not specified by
         the user and if the data is a list of arrays that decrease in shape,
         then it will be taken to be multiscale. The first image in the list
         should be the largest. Please note multiscale rendering is only
@@ -690,15 +691,16 @@ class Image(IntensityVisualizationMixin, _ImageBase):
         data coordinates. Valid dictionary keys are
         {'position', 'normal', 'thickness', and 'enabled'}.
     projection_mode : str
-        How data outside the viewed dimensions but inside the thick Dims slice will
+        How data outside the viewed dimensions, but inside the thick Dims slice will
         be projected onto the viewed dimensions. Must fit to ImageProjectionMode
     rendering : str
         Rendering mode used by vispy. Must be one of our supported
         modes.
     rgb : bool, optional
-        Whether the image is rgb RGB or RGBA. If not specified by user and
-        the last dimension of the data has length 3 or 4 it will be set as
-        `True`. If `False` the image is interpreted as a luminance image.
+        Whether the image is RGB or RGBA if rgb. If not
+        specified by user, but the last dimension of the data has length 3 or 4,
+        it will be set as `True`. If `False`, the image is interpreted as a
+        luminance image.
     rotate : float, 3-tuple of float, or n-D array.
         If a float, convert into a 2D rotation matrix using that value as an
         angle. If 3-tuple, convert into a 3D rotation matrix, using a yaw,
