@@ -639,9 +639,9 @@ class Image(IntensityVisualizationMixin, _ImageBase):
         Currently, this only applies to dask arrays.
     colormap : str, napari.utils.Colormap, tuple, dict
         Colormap to use for luminance images. If a string must be the name
-        of a supported colormap from vispy or matplotlib. If a tuple the
+        of a supported colormap from vispy or matplotlib. If a tuple, the
         first value must be a string to assign as a name to a colormap and
-        the second item must be a Colormap. If a dict the key must be a
+        the second item must be a Colormap. If a dict, the key must be a
         string to assign as a name to a colormap and the value must be a
         Colormap.
     contrast_limits : list (2,)
@@ -658,13 +658,13 @@ class Image(IntensityVisualizationMixin, _ImageBase):
         Valid dictionary keys are {'position', 'normal', and 'enabled'}.
         Values on the negative side of the normal are discarded if the plane is enabled.
     gamma : float
-        Gamma correction for determining colormap linearity. Defaults to 1.
+        Gamma correction for determining colormap linearity; defaults to 1.
     interpolation2d : str
         Interpolation mode used by vispy for rendering 2d data.
         Must be one of our supported modes.
         (for list of supported modes see Interpolation enum)
         'custom' is a special mode for 2D interpolation in which a regular grid
-        of samples are taken from the texture around a position using 'linear'
+        of samples is taken from the texture around a position using 'linear'
         interpolation before being multiplied with a custom interpolation kernel
         (provided with 'custom_interpolation_kernel_2d').
     interpolation3d : str
@@ -676,7 +676,7 @@ class Image(IntensityVisualizationMixin, _ImageBase):
     multiscale : bool
         Whether the data is a multiscale image or not. Multiscale data is
         represented by a list of array like image data. If not specified by
-        the user and if the data is a list of arrays that decrease in shape
+        the user and if the data is a list of arrays that decrease in shape,
         then it will be taken to be multiscale. The first image in the list
         should be the largest. Please note multiscale rendering is only
         supported in 2D. In 3D, only the lowest resolution scale is
@@ -695,16 +695,16 @@ class Image(IntensityVisualizationMixin, _ImageBase):
     rendering : str
         Rendering mode used by vispy. Must be one of our supported
         modes.
-    rgb : bool
+    rgb : bool, optional
         Whether the image is rgb RGB or RGBA. If not specified by user and
         the last dimension of the data has length 3 or 4 it will be set as
         `True`. If `False` the image is interpreted as a luminance image.
     rotate : float, 3-tuple of float, or n-D array.
-        If a float convert into a 2D rotation matrix using that value as an
-        angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
-        pitch, roll convention. Otherwise assume an nD rotation. Angles are
+        If a float, convert into a 2D rotation matrix using that value as an
+        angle. If 3-tuple, convert into a 3D rotation matrix, using a yaw,
+        pitch, roll convention. Otherwise, assume an nD rotation. Angles are
         assumed to be in degrees. They can be converted from radians with
-        np.degrees if needed.
+        'np.degrees' if needed.
     scale : tuple of float
         Scale factors for the layer.
     shear : 1-D array or n-D array
