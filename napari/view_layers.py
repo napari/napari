@@ -421,6 +421,6 @@ def imshow(
         title=title,
         ndisplay=ndisplay,
         order=order,
-        axi_labels=axis_labels,
+        axis_labels=axis_labels,
         show=show,
     )
