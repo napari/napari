@@ -57,7 +57,7 @@ class ImageLayerNode:
         # Return Image or Volume node based on 2D or 3D.
         res = self._image_node if ndisplay == 2 else self._volume_node
         if (
-            res.texture_format != "auto"
+            res.texture_format not in {"auto", None}
             and dtype is not None
             and _VISPY_FORMAT_TO_DTYPE[res.texture_format] != dtype
         ):
