@@ -7,11 +7,11 @@ from napari._vispy.visuals.graph import GraphVisual
 class VispyGraphLayer(VispyPointsLayer):
     _visual = GraphVisual
 
-    def _on_data_change(self):
+    def _on_data_change(self) -> None:
         self._set_graph_edges_data()
         super()._on_data_change()
 
-    def _set_graph_edges_data(self):
+    def _set_graph_edges_data(self) -> None:
         """Sets the LineVisual (subvisual[4]) with the graph edges data"""
         subvisual = self.node._subvisuals[4]
         edges = self.layer._view_edges_coordinates
