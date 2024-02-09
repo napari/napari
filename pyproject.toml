@@ -496,6 +496,7 @@ warn_unused_ignores = false
 [[tool.mypy.overrides]]
 module = [
     "napari._qt.menus.plugins_menu",
+    "napari._vispy.layers.graph",
     "napari._vispy.layers.labels",
     "napari._vispy.layers.points",
     "napari._vispy.layers.shapes",
