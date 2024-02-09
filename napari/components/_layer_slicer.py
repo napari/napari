@@ -41,8 +41,7 @@ logger = logging.getLogger("napari.components._layer_slicer")
 class _SliceRequest(Protocol):
     id: int
 
-    def __call__(self) -> Any:
-        ...
+    def __call__(self) -> Any: ...
 
 
 @runtime_checkable

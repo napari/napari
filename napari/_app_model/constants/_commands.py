@@ -8,6 +8,7 @@ documentation.
 CommandId values should be namespaced, e.g. 'napari:layer:something' for a command
 that operates on layers.
 """
+
 from typing import NamedTuple, Optional
 
 from napari.utils.compat import StrEnum

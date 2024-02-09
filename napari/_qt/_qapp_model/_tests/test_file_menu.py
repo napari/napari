@@ -22,12 +22,10 @@ def test_sample_data_triggers_reader_dialog(
     tmp2 = tmp_plugin.spawn(register=True)
 
     @tmp_plugin.contribute.reader(filename_patterns=['*.tif'])
-    def _(path):
-        ...
+    def _(path): ...
 
     @tmp2.contribute.reader(filename_patterns=['*.tif'])
-    def _(path):
-        ...
+    def _(path): ...
 
     # make a sample data reader for tif file
     my_sample = SampleDataURI(

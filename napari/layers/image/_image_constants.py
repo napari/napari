@@ -51,6 +51,8 @@ class Interpolation(StringEnum):
     SPLINE36 = auto()
     CUSTOM = auto()
 
+    value: InterpolationStr
+
     @classmethod
     def view_subset(
         cls,

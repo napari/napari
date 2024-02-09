@@ -1,5 +1,6 @@
 """PerfTraceFile class to write the chrome://tracing file format (JSON)
 """
+
 import json
 from time import perf_counter_ns
 from typing import TYPE_CHECKING, List

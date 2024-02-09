@@ -76,10 +76,21 @@ labels_fun_to_mode = [
 def new_label(layer: Labels):
     """Set the currently selected label to the largest used label plus one."""
     if isinstance(layer.data, np.ndarray):
-        layer.selected_label = np.max(layer.data) + 1
+        new_selected_label = np.max(layer.data) + 1
+        if layer.selected_label == new_selected_label:
+            show_info(
+                trans._(
+                    "Current selected label is not being used. You will need to use it first "
+                    "to be able to set the current select label to the next one available",
+                )
+            )
+        else:
+            layer.selected_label = new_selected_label
     else:
         show_info(
-            "Calculating empty label on non-numpy array is not supported"
+            trans._(
+                "Calculating empty label on non-numpy array is not supported"
+            )
         )
 
 

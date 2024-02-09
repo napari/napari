@@ -1,5 +1,6 @@
 """This module holds Protocols that layer.data objects are expected to provide.
 """
+
 from __future__ import annotations
 
 from typing import (

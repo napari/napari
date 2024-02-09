@@ -187,9 +187,9 @@ class QuantitativeColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
         colors fails.
     """
 
-    encoding_type: Literal[
+    encoding_type: Literal['QuantitativeColorEncoding'] = (
         'QuantitativeColorEncoding'
-    ] = 'QuantitativeColorEncoding'
+    )
     feature: str
     colormap: Colormap
     contrast_limits: Optional[Tuple[float, float]] = None
