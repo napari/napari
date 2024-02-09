@@ -71,3 +71,15 @@ def test_3d_slice_of_4d_image_with_order(order):
 
     scene_size = vispy_image_scene_size(vispy_image)
     np.testing.assert_array_equal((16, 16, 16), scene_size)
+
+
+def test_lack_of_float_support(monkeypatch):
+    """
+    Test to keep fix of https://github.com/napari/napari/issues/3988
+    working
+    """
+    monkeypatch.setattr(
+        "napari._vispy.layers.image.get_gl_extensions", lambda: ""
+    )
+    image = Image(np.zeros((16, 8, 4, 2), dtype="uint8"), scale=(1, 2, 4, 8))
+    VispyImageLayer(image)
