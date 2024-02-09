@@ -70,7 +70,7 @@ class _GraphSliceRequest:
         # Return early if no data
         if self.data.n_nodes == 0:
             return _GraphSliceResponse(
-                indices=np.asarray([]),
+                indices=[],
                 edges_indices=[],
                 scale=np.empty(0),
                 slice_input=self.slice_input,

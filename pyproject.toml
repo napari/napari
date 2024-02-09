@@ -316,6 +316,7 @@ module = [
     'napari.layers._layer_actions',
     'napari.layers._multiscale_data',
     'napari.layers.intensity_mixin',
+    'napari.layers.graph.graph',
     'napari.layers.points._points_key_bindings',
     'napari.layers.points._points_utils',
     'napari.layers.points._slice',
