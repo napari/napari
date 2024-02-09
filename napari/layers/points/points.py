@@ -1427,7 +1427,7 @@ class Points(Layer):
                 'border_color': (
                     self.border_color
                     if self.data.size
-                    else [self.border_color]
+                    else [self.current_border_color]
                 ),
                 'border_color_cycle': self.border_color_cycle,
                 'border_colormap': self.border_colormap.dict(),
