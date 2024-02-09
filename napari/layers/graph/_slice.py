@@ -164,7 +164,7 @@ class _GraphSliceRequest:
 
     def _get_slice_data(
         self,
-        not_disp: np.ndarray,
+        not_disp: ArrayLike,
         low: np.ndarray,
         high: np.ndarray,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, ArrayLike]:
