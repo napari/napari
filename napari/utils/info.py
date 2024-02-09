@@ -131,6 +131,8 @@ def sys_info(as_html: bool = False) -> str:
     text += "<br><b>OpenGL:</b><br>"
 
     if loaded.get('vispy', False):
+        from napari._vispy.utils.gl import get_max_texture_sizes
+
         sys_info_text = (
             "<br>".join(
                 [
@@ -142,6 +144,8 @@ def sys_info(as_html: bool = False) -> str:
             .replace("<br>", "<br>  - ")
         )
         text += f'  - {sys_info_text}<br>'
+        _, max_3d_texture_size = get_max_texture_sizes()
+        text += f'  - GL_MAX_3D_TEXTURE_SIZE: {max_3d_texture_size}<br>'
     else:
         text += "  - failed to load vispy"
 
