@@ -3,6 +3,7 @@
 View actions that do require Qt should go in
 `napari/_qt/_qapp_model/qactions/_help.py`.
 """
+
 import webbrowser
 from typing import List
 

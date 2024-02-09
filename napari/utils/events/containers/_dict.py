@@ -1,4 +1,5 @@
 """Evented dictionary"""
+
 from typing import (
     Any,
     Dict,

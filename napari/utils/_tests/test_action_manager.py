@@ -1,6 +1,7 @@
 """
 This module test some of the behavior of action manager.
 """
+
 from unittest.mock import Mock
 
 import pytest

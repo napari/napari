@@ -1,6 +1,7 @@
 """
 File with things that are useful for testing, but not to be fixtures
 """
+
 from dataclasses import dataclass, field
 from typing import List, Optional, Tuple, Union
 

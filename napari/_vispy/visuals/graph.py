@@ -4,7 +4,7 @@ from napari._vispy.visuals.points import PointsVisual
 
 
 class GraphVisual(PointsVisual):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         # connect='segments' indicates you need start point and end point for
         # each segment, rather than just a list of points. This mode means you

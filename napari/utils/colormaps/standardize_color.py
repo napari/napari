@@ -17,6 +17,7 @@ representations, warn the users of their misbehaving and return a default
 white color array, since it seems unreasonable to crash the entire napari
 session due to mis-represented colors.
 """
+
 import functools
 import types
 import warnings

@@ -121,7 +121,20 @@ class _ImageSliceResponse:
     def to_displayed(
         self, converter: Callable[[np.ndarray], np.ndarray]
     ) -> '_ImageSliceResponse':
-        """Returns a raw slice converted for display, which is needed for Labels."""
+        """
+        Returns a raw slice converted for display,
+        which is needed for Labels and Image.
+
+        Parameters
+        ----------
+        converter : Callable[[np.ndarray], np.ndarray]
+            A function that converts the raw image to a vispy viewable image.
+
+        Returns
+        -------
+        _ImageSliceResponse
+            Contains the converted image and thumbnail.
+        """
         image = _ImageView.from_raw(raw=self.image.raw, converter=converter)
         thumbnail = image
         if self.thumbnail is not self.image:

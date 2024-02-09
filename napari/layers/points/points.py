@@ -1043,18 +1043,22 @@ class _BasePoints(Layer):
         state = self._get_base_state()
         state.update(
             {
-                'symbol': self.symbol if not_empty else [self.current_symbol],
+                'symbol': (
+                    self.symbol if not_empty else [self.current_symbol]
+                ),
                 'border_width': self.border_width,
                 'border_width_is_relative': self.border_width_is_relative,
-                'face_color': self.face_color
-                if not_empty
-                else [self.current_face_color],
+                'face_color': (
+                    self.face_color if not_empty else [self.current_face_color]
+                ),
                 'face_color_cycle': self.face_color_cycle,
                 'face_colormap': self.face_colormap.dict(),
                 'face_contrast_limits': self.face_contrast_limits,
-                'border_color': self.border_color
-                if not_empty
-                else [self.current_border_color],
+                'border_color': (
+                    self.border_color
+                    if not_empty
+                    else [self.current_border_color]
+                ),
                 'border_color_cycle': self.border_color_cycle,
                 'border_colormap': self.border_colormap.dict(),
                 'border_contrast_limits': self.border_contrast_limits,

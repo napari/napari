@@ -70,7 +70,7 @@ class _GraphSliceRequest:
         # Return early if no data
         if self.data.n_nodes == 0:
             return _GraphSliceResponse(
-                indices=[],
+                indices=np.asarray([]),
                 edges_indices=[],
                 scale=np.empty(0),
                 slice_input=self.slice_input,
@@ -167,7 +167,7 @@ class _GraphSliceRequest:
         not_disp: np.ndarray,
         low: np.ndarray,
         high: np.ndarray,
-    ) -> np.ndarray:
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, ArrayLike]:
         """
         Slices data according to displayed indices
         while ignoring not initialized nodes from graph.

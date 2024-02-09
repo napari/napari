@@ -1,5 +1,6 @@
 """guess_rgb, guess_multiscale, guess_labels.
 """
+
 from typing import Any, Callable, Literal, Sequence, Tuple, Union
 
 import numpy as np

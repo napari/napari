@@ -2,6 +2,7 @@
 These convenience functions will be useful for searching pypi for packages
 that match the plugin naming convention, and retrieving related metadata.
 """
+
 import json
 from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache

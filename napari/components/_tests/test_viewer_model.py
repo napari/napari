@@ -862,12 +862,10 @@ def test_open_or_get_error_multiple_readers(tmp_plugin: DynamicPlugin):
     tmp2 = tmp_plugin.spawn(register=True)
 
     @tmp_plugin.contribute.reader(filename_patterns=['*.fake'])
-    def _(path):
-        ...
+    def _(path): ...
 
     @tmp2.contribute.reader(filename_patterns=['*.fake'])
-    def _(path):
-        ...
+    def _(path): ...
 
     with pytest.raises(
         MultipleReaderError, match='Multiple plugins found capable'
@@ -910,8 +908,7 @@ def test_open_or_get_error_prefered_plugin(
     np.save(pth, np.random.random((10, 10)))
 
     @tmp_plugin.contribute.reader(filename_patterns=['*.npy'])
-    def _(path):
-        ...
+    def _(path): ...
 
     get_settings().plugins.extension2reader = {'*.npy': builtins.name}
 
@@ -942,12 +939,10 @@ def test_open_or_get_error_no_prefered_plugin_many_available(
     tmp2 = tmp_plugin.spawn(register=True)
 
     @tmp_plugin.contribute.reader(filename_patterns=['*.fake'])
-    def _(path):
-        ...
+    def _(path): ...
 
     @tmp2.contribute.reader(filename_patterns=['*.fake'])
-    def _(path):
-        ...
+    def _(path): ...
 
     get_settings().plugins.extension2reader = {'*.fake': 'not-a-plugin'}
 

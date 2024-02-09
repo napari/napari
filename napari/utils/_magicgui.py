@@ -11,6 +11,7 @@ of those custom classes, magicgui will know what to do with it.
 Because of headless tests the tests for this module are
 in napari/_tests/test_magicgui.py
 """
+
 from __future__ import annotations
 
 import weakref
