@@ -138,6 +138,16 @@ def test_add_labels():
     assert viewer.dims.ndim == 2
 
 
+def test_add_labels_warnings():
+    """Test adding labels image."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    with pytest.warns(
+        FutureWarning, match="Setting Labels.num_colors is deprecated since"
+    ):
+        viewer.add_labels(np.zeros((10, 15), dtype=np.uint8), num_colors=20)
+
+
 def test_add_points():
     """Test adding points."""
     viewer = ViewerModel()
@@ -852,12 +862,10 @@ def test_open_or_get_error_multiple_readers(tmp_plugin: DynamicPlugin):
     tmp2 = tmp_plugin.spawn(register=True)
 
     @tmp_plugin.contribute.reader(filename_patterns=['*.fake'])
-    def _(path):
-        ...
+    def _(path): ...
 
     @tmp2.contribute.reader(filename_patterns=['*.fake'])
-    def _(path):
-        ...
+    def _(path): ...
 
     with pytest.raises(
         MultipleReaderError, match='Multiple plugins found capable'
@@ -900,8 +908,7 @@ def test_open_or_get_error_prefered_plugin(
     np.save(pth, np.random.random((10, 10)))
 
     @tmp_plugin.contribute.reader(filename_patterns=['*.npy'])
-    def _(path):
-        ...
+    def _(path): ...
 
     get_settings().plugins.extension2reader = {'*.npy': builtins.name}
 
@@ -932,12 +939,10 @@ def test_open_or_get_error_no_prefered_plugin_many_available(
     tmp2 = tmp_plugin.spawn(register=True)
 
     @tmp_plugin.contribute.reader(filename_patterns=['*.fake'])
-    def _(path):
-        ...
+    def _(path): ...
 
     @tmp2.contribute.reader(filename_patterns=['*.fake'])
-    def _(path):
-        ...
+    def _(path): ...
 
     get_settings().plugins.extension2reader = {'*.fake': 'not-a-plugin'}
 

@@ -1,5 +1,6 @@
 """This module holds Protocols that layer.data objects are expected to provide.
 """
+
 from __future__ import annotations
 
 from typing import (
@@ -80,6 +81,14 @@ class LayerDataProtocol(Protocol):
         self, key: Union[Index, Tuple[Index, ...], LayerDataProtocol]
     ) -> LayerDataProtocol:
         """Returns self[key]."""
+
+    @property
+    def size(self) -> int:
+        """The size is necessary to calculate the data range"""
+
+    @property
+    def ndim(self) -> int:
+        """The number of dimension of the underlying data"""
 
 
 def assert_protocol(obj: Any, protocol: type = LayerDataProtocol):

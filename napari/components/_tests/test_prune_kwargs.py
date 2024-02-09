@@ -5,7 +5,6 @@ from napari.components.viewer_model import prune_kwargs
 TEST_KWARGS = {
     'scale': (0.75, 1),
     'blending': 'translucent',
-    'num_colors': 10,
     'edge_color': 'red',
     'border_color': 'blue',
     'z_index': 20,
@@ -31,7 +30,6 @@ EXPECTATIONS = [
         'labels',
         {
             'scale': (0.75, 1),
-            'num_colors': 10,
             'multiscale': False,
             'name': 'name',
             'blending': 'translucent',

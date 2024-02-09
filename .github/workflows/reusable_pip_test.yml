@@ -12,7 +12,7 @@ jobs:
           path: napari-from-github
 
       - name: Set up Python 3.9
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: 3.9
           cache: "pip"
@@ -27,8 +27,12 @@ jobs:
         env:
           PIP_CONSTRAINT: napari-from-github/resources/constraints/constraints_py3.9.txt
 
+      - name: uninstall numba
+        run: |
+          pip uninstall -y numba
+
       - name: Test
-        uses: aganders3/headless-gui@v1
+        uses: aganders3/headless-gui@v2
         with:
           run: |
             python -m pytest --pyargs napari --color=yes --basetemp=.pytest_tmp
