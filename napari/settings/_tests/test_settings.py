@@ -272,6 +272,25 @@ def test_settings_env_variables_do_not_write_to_disk(tmp_path, monkeypatch):
     assert NapariSettings(fake_path).appearance.theme == "light"
 
 
+def test_settings_env_variables_override_file(tmp_path, monkeypatch):
+    # create a settings file with async_ = true
+    data = "experimental:\n   async_: true"
+    fake_path = tmp_path / 'fake_path.yml'
+    fake_path.write_text(data)
+
+    # make sure they wrote correctly
+    disk_settings = fake_path.read_text()
+    assert 'async_: true' in disk_settings
+    # make sure they load correctly
+    assert NapariSettings(fake_path).experimental.async_ is True
+
+    # now load settings again with an Env-var override
+    monkeypatch.setenv('NAPARI_ASYNC', '0')
+    settings = NapariSettings(fake_path)
+    # make sure the override worked, and save again
+    assert settings.experimental.async_ is False
+
+
 def test_settings_only_saves_non_default_values(monkeypatch, tmp_path):
     from yaml import safe_load
 
