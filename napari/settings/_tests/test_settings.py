@@ -217,6 +217,11 @@ def test_settings_env_variables(monkeypatch):
     monkeypatch.setenv('NAPARI_PLUGINS_EXTENSION2READER', '{"*.zarr": "hi"}')
     assert NapariSettings(None).plugins.extension2reader == {"*.zarr": "hi"}
 
+    # can also use short `env` name for EventedSettings class
+    assert NapariSettings(None).experimental.async_ is False
+    monkeypatch.setenv('NAPARI_ASYNC', '1')
+    assert NapariSettings(None).experimental.async_ is True
+
 
 def test_settings_env_variables_fails(monkeypatch):
     monkeypatch.setenv('NAPARI_APPEARANCE_THEME', 'FOOBAR')
