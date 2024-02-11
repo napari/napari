@@ -80,12 +80,12 @@ class TypedMutableSequence(MutableSequence[_T]):
         return id(self)
 
     @overload
-    def __setitem__(self, key: int, value: _T):
-        ...  # pragma: no cover
+    def __setitem__(self, key: int, value: _T): ...  # pragma: no cover
 
     @overload
-    def __setitem__(self, key: slice, value: Iterable[_T]):
-        ...  # pragma: no cover
+    def __setitem__(
+        self, key: slice, value: Iterable[_T]
+    ): ...  # pragma: no cover
 
     def __setitem__(self, key, value):
         if isinstance(key, slice):
@@ -114,16 +114,15 @@ class TypedMutableSequence(MutableSequence[_T]):
         return super().__contains__(key)
 
     @overload
-    def __getitem__(self, key: str) -> _T:
-        ...  # pragma: no cover
+    def __getitem__(self, key: str) -> _T: ...  # pragma: no cover
 
     @overload
-    def __getitem__(self, key: int) -> _T:
-        ...  # pragma: no cover
+    def __getitem__(self, key: int) -> _T: ...  # pragma: no cover
 
     @overload
-    def __getitem__(self, key: slice) -> 'TypedMutableSequence[_T]':
-        ...  # pragma: no cover
+    def __getitem__(
+        self, key: slice
+    ) -> 'TypedMutableSequence[_T]': ...  # pragma: no cover
 
     def __getitem__(self, key):
         """Get an item from the list

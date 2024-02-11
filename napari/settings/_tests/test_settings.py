@@ -1,4 +1,5 @@
 """Tests for the settings manager."""
+
 import os
 from pathlib import Path
 

@@ -51,14 +51,12 @@ _S = TypeVar("_S")
 _R = TypeVar("_R")
 
 
-class FunctionWorker(_qthreading.FunctionWorker[_R], _NotifyingMixin):
-    ...
+class FunctionWorker(_qthreading.FunctionWorker[_R], _NotifyingMixin): ...
 
 
 class GeneratorWorker(
     _qthreading.GeneratorWorker[_Y, _S, _R], _NotifyingMixin
-):
-    ...
+): ...
 
 
 # these are re-implemented from superqt just to provide progress

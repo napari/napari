@@ -22,6 +22,7 @@ define an __all__ = [...] attribute in the module. Otherwise, all non-private
 callable methods will be stubbed.
 
 """
+
 import importlib
 import inspect
 import subprocess

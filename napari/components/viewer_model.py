@@ -1182,9 +1182,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         with progress(
             paths,
             desc=trans._('Opening Files'),
-            total=0
-            if len(paths) == 1
-            else None,  # indeterminate bar for 1 file
+            total=(
+                0 if len(paths) == 1 else None
+            ),  # indeterminate bar for 1 file
         ) as pbr:
             for _path in pbr:
                 # If _path is a list, set stack to True
@@ -1652,14 +1652,14 @@ def prune_kwargs(kwargs: Dict[str, Any], layer_type: str) -> Dict[str, Any]:
     >>> test_kwargs = {
     ...     'scale': (0.75, 1),
     ...     'blending': 'additive',
-    ...     'num_colors': 10,
+    ...     'size': 10,
     ... }
     >>> prune_kwargs(test_kwargs, 'image')
     {'scale': (0.75, 1), 'blending': 'additive'}
 
     >>> # only labels has the ``num_colors`` argument
-    >>> prune_kwargs(test_kwargs, 'labels')
-    {'scale': (0.75, 1), 'blending': 'additive', 'num_colors': 10}
+    >>> prune_kwargs(test_kwargs, 'points')
+    {'scale': (0.75, 1), 'blending': 'additive', 'size': 10}
     """
     add_method = getattr(ViewerModel, 'add_' + layer_type, None)
     if not add_method or layer_type == 'layer':

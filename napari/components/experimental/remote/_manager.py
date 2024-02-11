@@ -1,5 +1,6 @@
 """RemoteManager class.
 """
+
 import logging
 
 from napari.components.experimental.remote._commands import RemoteCommands

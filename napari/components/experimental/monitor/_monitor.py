@@ -5,6 +5,7 @@ for having a wrapper class is that so the rest of napari does not
 need to import any multiprocessing code unless actually using
 the monitor.
 """
+
 import errno
 import json
 import logging

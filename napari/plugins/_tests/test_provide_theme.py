@@ -1,4 +1,5 @@
 """Test `napari_experimental_provide_theme` hook specification."""
+
 from typing import TYPE_CHECKING
 
 import pytest
