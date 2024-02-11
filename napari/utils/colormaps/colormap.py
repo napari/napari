@@ -210,12 +210,10 @@ class LabelColormapBase(Colormap):
         keep_untouched = (cached_property,)
 
     @overload
-    def _data_to_texture(self, values: np.ndarray) -> np.ndarray:
-        ...
+    def _data_to_texture(self, values: np.ndarray) -> np.ndarray: ...
 
     @overload
-    def _data_to_texture(self, values: np.integer) -> np.integer:
-        ...
+    def _data_to_texture(self, values: np.integer) -> np.integer: ...
 
     def _data_to_texture(
         self, values: Union[np.ndarray, np.integer]
@@ -326,12 +324,10 @@ class CyclicLabelColormap(LabelColormapBase):
         return int(self._data_to_texture(dtype.type(self.background_value)))
 
     @overload
-    def _data_to_texture(self, values: np.ndarray) -> np.ndarray:
-        ...
+    def _data_to_texture(self, values: np.ndarray) -> np.ndarray: ...
 
     @overload
-    def _data_to_texture(self, values: np.integer) -> np.integer:
-        ...
+    def _data_to_texture(self, values: np.integer) -> np.integer: ...
 
     def _data_to_texture(
         self, values: Union[np.ndarray, np.integer]
@@ -482,12 +478,10 @@ class DirectLabelColormap(LabelColormapBase):
         )
 
     @overload
-    def _data_to_texture(self, values: np.ndarray) -> np.ndarray:
-        ...
+    def _data_to_texture(self, values: np.ndarray) -> np.ndarray: ...
 
     @overload
-    def _data_to_texture(self, values: np.integer) -> np.integer:
-        ...
+    def _data_to_texture(self, values: np.integer) -> np.integer: ...
 
     def _data_to_texture(
         self, values: Union[np.ndarray, np.integer]
@@ -715,15 +709,13 @@ class DirectLabelColormap(LabelColormapBase):
 @overload
 def _convert_small_ints_to_unsigned(
     data: np.ndarray,
-) -> np.ndarray:
-    ...
+) -> np.ndarray: ...
 
 
 @overload
 def _convert_small_ints_to_unsigned(
     data: np.integer,
-) -> np.integer:
-    ...
+) -> np.integer: ...
 
 
 def _convert_small_ints_to_unsigned(
@@ -756,16 +748,14 @@ def _convert_small_ints_to_unsigned(
 def _cast_labels_data_to_texture_dtype_auto(
     data: np.ndarray,
     colormap: CyclicLabelColormap,
-) -> np.ndarray:
-    ...
+) -> np.ndarray: ...
 
 
 @overload
 def _cast_labels_data_to_texture_dtype_auto(
     data: np.integer,
     colormap: CyclicLabelColormap,
-) -> np.integer:
-    ...
+) -> np.integer: ...
 
 
 def _cast_labels_data_to_texture_dtype_auto(
@@ -832,15 +822,13 @@ def _cast_labels_data_to_texture_dtype_auto(
 @overload
 def _cast_labels_data_to_texture_dtype_direct(
     data: np.ndarray, direct_colormap: DirectLabelColormap
-) -> np.ndarray:
-    ...
+) -> np.ndarray: ...
 
 
 @overload
 def _cast_labels_data_to_texture_dtype_direct(
     data: np.integer, direct_colormap: DirectLabelColormap
-) -> np.integer:
-    ...
+) -> np.integer: ...
 
 
 def _cast_labels_data_to_texture_dtype_direct(

@@ -4,6 +4,7 @@ Custom layers must inherit from Layer and pass along the
 `visual node <https://vispy.org/api/vispy.scene.visuals.html>`_
 to the super constructor.
 """
+
 import inspect as _inspect
 from typing import Set
 

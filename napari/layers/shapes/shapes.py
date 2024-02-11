@@ -2570,7 +2570,6 @@ class Shapes(Layer):
         """Reset properties used in shape drawing."""
         index = copy(self._moving_value[0])
         self._is_moving = False
-        self.selected_data = set()
         self._drag_start = None
         self._drag_box = None
         self._is_selecting = False

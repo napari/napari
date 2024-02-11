@@ -1,5 +1,6 @@
 """PerfTimers class and global instance.
 """
+
 import contextlib
 import os
 from time import perf_counter_ns

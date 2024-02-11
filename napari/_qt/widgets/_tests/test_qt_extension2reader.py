@@ -24,8 +24,7 @@ def tif_reader(tmp_plugin: DynamicPlugin):
     tmp2 = tmp_plugin.spawn(name='tif_reader', register=True)
 
     @tmp2.contribute.reader(filename_patterns=['*.tif'])
-    def _(path):
-        ...
+    def _(path): ...
 
     return tmp2
 
@@ -35,8 +34,7 @@ def npy_reader(tmp_plugin: DynamicPlugin):
     tmp2 = tmp_plugin.spawn(name='npy_reader', register=True)
 
     @tmp2.contribute.reader(filename_patterns=['*.npy'])
-    def _(path):
-        ...
+    def _(path): ...
 
     return tmp2
 
@@ -95,8 +93,7 @@ def test_all_readers_in_dropdown(
     extension2reader_widget, tmp_plugin, tif_reader
 ):
     @tmp_plugin.contribute.reader(filename_patterns=['*'])
-    def _(path):
-        ...
+    def _(path): ...
 
     npe2_readers = {
         tmp_plugin.name: tmp_plugin.display_name,
@@ -117,8 +114,7 @@ def test_directory_readers_not_in_dropdown(
     @tmp_plugin.contribute.reader(
         filename_patterns=[], accepts_directories=True
     )
-    def f(path):
-        ...
+    def f(path): ...
 
     widget = extension2reader_widget(
         npe2_readers={tmp_plugin.name: tmp_plugin.display_name},
@@ -169,8 +165,7 @@ def test_filtering_readers_complex_pattern(
     @tif_reader.contribute.reader(
         filename_patterns=['my-specific-folder/*.tif']
     )
-    def f(path):
-        ...
+    def f(path): ...
 
     widget = extension2reader_widget(npe1_readers={})
 
@@ -225,8 +220,7 @@ def test_editing_preference(extension2reader_widget, tif_reader):
     tiff2 = tif_reader.spawn(register=True)
 
     @tiff2.contribute.reader(filename_patterns=["*.tif"])
-    def ff(path):
-        ...
+    def ff(path): ...
 
     get_settings().plugins.extension2reader = {'*.tif': tif_reader.name}
 
