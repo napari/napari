@@ -4,6 +4,7 @@ The debug menu is for developer-focused functionality that we want to be
 easy-to-use and discoverable, but which is not for the average user.
 
 """
+
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QTimer

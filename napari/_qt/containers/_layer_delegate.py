@@ -33,6 +33,7 @@ General rendering flow:
    https://doc.qt.io/qt-5/stylesheet-reference.html#list-of-sub-controls
 
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING

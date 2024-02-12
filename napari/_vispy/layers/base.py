@@ -235,14 +235,26 @@ class VispyBaseLayer(ABC, Generic[_L]):
         # To place this part of data correctly we update transform,
         # but this leads to incorrect placement of child layers.
         # To fix this we need to update child layers transform.
-        child_matrix = np.eye(4)
-        child_matrix[-1, : len(translate)] = (
-            self.layer.translate[self.layer._slice_input.displayed][::-1]
-            + self.layer.affine.translate[self.layer._slice_input.displayed][
-                ::-1
-            ]
-            - translate
+        dims_displayed = self.layer._slice_input.displayed
+        simplified_transform = self.layer._transforms.simplified
+        if simplified_transform is None:
+            raise ValueError(
+                "simplified transform is None"
+            )  # pragma: no cover
+        translate_child = (
+            self.layer.translate[dims_displayed]
+            + self.layer.affine.translate[dims_displayed]
+        )[::-1]
+        trans_rotate = simplified_transform.rotate[
+            np.ix_(dims_displayed, dims_displayed)
+        ]
+        trans_scale = simplified_transform.scale[dims_displayed][::-1]
+        new_translate = (
+            trans_rotate @ (translate_child - translate) / trans_scale
         )
+
+        child_matrix = np.eye(4)
+        child_matrix[-1, : len(translate)] = new_translate
         for child in self.node.children:
             child.transform.matrix = child_matrix
 
