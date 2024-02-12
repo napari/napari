@@ -73,10 +73,10 @@ def test_3d_slice_of_4d_image_with_order(order):
     np.testing.assert_array_equal((16, 16, 16), scene_size)
 
 
-def test_lack_of_float_support(monkeypatch):
-    """
-    Test to keep fix of https://github.com/napari/napari/issues/3988
-    working
+def test_no_float32_texture_support(monkeypatch):
+    """Ensure Image node can be created if OpenGL driver lacks float textures.
+    
+    See #3988, #3990, #6652.
     """
     monkeypatch.setattr(
         "napari._vispy.layers.image.get_gl_extensions", lambda: ""
