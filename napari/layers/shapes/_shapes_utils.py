@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from collections import defaultdict
 from typing import TYPE_CHECKING
 
 import numpy as np
+from skimage import measure
 from skimage.draw import line, polygon2mask
 from vispy.geometry import PolygonData
 from vispy.visuals.tube import _frenet_frames
@@ -531,6 +533,70 @@ def triangulate_ellipse(corners, num_segments=100):
     return vertices, triangles
 
 
+def _generate_triangle_constraints(vertices):
+    """Get list of edges that must be in a triangulation for a given polygon.
+
+    Parameters
+    ----------
+    vertices: np.ndarray[np.floating], shape (N, 2)
+        The 2D coordinates of the polygon's vertices. They are expected to be
+        in the order in which they appear in the polygon: that is, vertices
+        that follow each other are expected to be connected to each other. The
+        exception is if the same edge is visited twice (in any direction): such
+        edges are removed.
+
+        Holes are expected to be represented by a polygon embedded within the
+        larger polygon but winding in the opposite direction.
+
+    Returns
+    -------
+    edges: np.ndarray[np.intp], shape (M, 2)
+        List of edges in the polygon, expressed as an array of pairs of vertex
+        indices. This is usually [(0, 1), (1, 2), ... (N-1, 0)], but edges
+        that are visited twice are removed.
+    """
+    if tuple(vertices[0]) == tuple(vertices[-1]):  # closed polygon
+        vertices = vertices[:-1]  # make closing implicit
+    len_data = len(vertices)
+    edges = np.empty((len_data, 2), dtype=np.uint32)
+    edges[:, 0] = np.arange(len_data)
+    edges[:, 1] = np.arange(1, len_data + 1)
+    # connect last with first vertex
+    edges[-1, 1] = 0
+    _, ix, inv = np.unique(
+        vertices, axis=0, return_index=True, return_inverse=True
+    )
+    edges_unique = ix[inv][edges]
+    edges_dict = defaultdict(int)
+    for edge in edges_unique:
+        edges_dict[frozenset(edge)] += 1
+    edges = np.array([list(e) for e in edges_dict if edges_dict[e] == 1])
+    return edges
+
+
+def _cull_triangles_not_in_poly(vertices, triangles):
+    """Remove triangles that are not inside the polygon.
+
+    Parameters
+    ----------
+    vertices: np.ndarray[np.floating], shape (N, 2)
+        The vertices defining the polygon. Holes in the polygon are defined by
+        an embedded polygon that starts from an arbitrary point in the
+        enclosing polygon and wind in the opposite direction.
+    triangles: np.ndarray[np.intp], shape (M, 3)
+        Triangles in the triangulation, defined by three indices into the
+        vertex array.
+
+    Returns
+    -------
+    culled_triangles: np.ndarray[np.intp], shape (P, 3), P ≤ M
+        A subset of the input triangles.
+    """
+    centers = np.mean(vertices[triangles], axis=1)
+    in_poly = measure.points_in_poly(centers, vertices)
+    return triangles[in_poly]
+
+
 def triangulate_face(data):
     """Determines the triangulation of the face of a shape.
 
@@ -547,18 +613,14 @@ def triangulate_face(data):
         Px3 array of the indices of the vertices that will form the
         triangles of the triangulation
     """
+    vertices = data
 
     if triangulate is not None:
-        len_data = len(data)
-
-        edges = np.empty((len_data, 2), dtype=np.uint32)
-        edges[:, 0] = np.arange(len_data)
-        edges[:, 1] = np.arange(1, len_data + 1)
-        # connect last with first vertex
-        edges[-1, 1] = 0
-
-        res = triangulate({"vertices": data, "segments": edges}, "p")
+        edges = _generate_triangle_constraints(data)
+        print('triangulating with triangle')
+        res = triangulate({"vertices": vertices, "segments": edges}, opts='p')
         vertices, triangles = res['vertices'], res['triangles']
+        triangles = _cull_triangles_not_in_poly(vertices, triangles)
     else:
         vertices, triangles = PolygonData(vertices=data).triangulate()
 
