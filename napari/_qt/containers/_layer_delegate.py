@@ -47,13 +47,17 @@ from napari._app_model.constants import MenuId
 from napari._app_model.context import get_context
 from napari._qt._qapp_model import build_qmodel_menu
 from napari._qt.containers._base_item_model import ItemRole
-from napari._qt.containers.qt_layer_model import LoadedRole, ThumbnailRole
+from napari._qt.containers.qt_layer_model import (
+    ErroredRole,
+    LoadedRole,
+    ThumbnailRole,
+)
 from napari._qt.qt_resources import QColoredSVGIcon
 from napari.resources import LOADING_GIF_PATH
 
 if TYPE_CHECKING:
     from qtpy import QtCore
-    from qtpy.QtGui import QPainter
+    from qtpy.QtGui import QIcon, QPainter, QPalette
     from qtpy.QtWidgets import QStyleOptionViewItem, QWidget
 
     from napari.components.layerlist import LayerList
@@ -100,6 +104,8 @@ class LayerDelegate(QStyledItemDelegate):
         super().paint(painter, option, index)
         # paint loading indicator if needed
         self._paint_loading(painter, option, index)
+        # paint errored indicator
+        self._paint_errored(painter, option, index)
         # paint the thumbnail
         self._paint_thumbnail(painter, option, index)
 
@@ -116,18 +122,29 @@ class LayerDelegate(QStyledItemDelegate):
         else:
             icon_name = f'new_{layer._type_string}'
 
-        try:
-            icon = QColoredSVGIcon.from_resources(icon_name)
-        except ValueError:
+        icon = self._get_icon(icon_name, option.palette)
+        if icon is None:
             return
-        # guessing theme rather than passing it through.
-        bg = option.palette.color(option.palette.ColorRole.Window).red()
-        option.icon = icon.colored(theme='dark' if bg < 128 else 'light')
+        option.icon = icon
         option.decorationSize = QSize(18, 18)
         option.decorationPosition = (
             option.Position.Right
         )  # put icon on the right
         option.features |= option.ViewItemFeature.HasDecoration
+
+    def _get_icon(self, icon_name: str, palette: QPalette) -> QIcon:
+        """
+        Get icon colored following current selected theme.
+        """
+        try:
+            icon = QColoredSVGIcon.from_resources(icon_name)
+        except ValueError:
+            return None
+        # guessing theme rather than passing it through.
+        red_color_component = palette.color(palette.ColorRole.Window).red()
+        return icon.colored(
+            theme='dark' if red_color_component < 128 else 'light'
+        )
 
     def _paint_loading(
         self,
@@ -145,11 +162,30 @@ class LayerDelegate(QStyledItemDelegate):
             load_rect.setHeight(h)
             painter.drawPixmap(load_rect, self._load_movie.currentPixmap())
 
+    def _paint_errored(
+        self,
+        painter: QPainter,
+        option: QStyleOptionViewItem,
+        index: QtCore.QModelIndex,
+    ):
+        """Paint the layer error indicator."""
+        errored = index.data(ErroredRole)
+        loaded = index.data(LoadedRole)
+        if errored and loaded:
+            error_rect = option.rect.translated(4, 8)
+            h = index.data(Qt.ItemDataRole.SizeHintRole).height() - 16
+            error_rect.setWidth(h)
+            error_rect.setHeight(h)
+            icon = self._get_icon("warning", option.palette)
+            if icon:
+                painter.drawPixmap(error_rect, icon.pixmap(QSize(18, 18)))
+
     def _paint_thumbnail(self, painter, option, index):
         """paint the layer thumbnail."""
         # paint the thumbnail
         # MAGICNUMBER: numbers from the margin applied in the stylesheet to
         # QtLayerTreeView::item
+        errored = index.data(ErroredRole)
         loaded = index.data(LoadedRole)
         if loaded:
             # only pause the loading movie if all the layers are loaded. The
@@ -160,7 +196,7 @@ class LayerDelegate(QStyledItemDelegate):
             all_loaded = index.model().sourceModel().all_loaded()
             if all_loaded:
                 self._load_movie.setPaused(True)
-
+        if not errored and loaded:
             thumb_rect = option.rect.translated(-2, 2)
             h = index.data(Qt.ItemDataRole.SizeHintRole).height() - 4
             thumb_rect.setWidth(h)

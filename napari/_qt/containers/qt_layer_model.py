@@ -11,6 +11,7 @@ from napari.utils.translations import trans
 
 ThumbnailRole = Qt.UserRole + 2
 LoadedRole = Qt.UserRole + 3
+ErroredRole = Qt.UserRole + 4
 
 
 class QtLayerListModel(QtListModel[Layer]):
@@ -36,9 +37,21 @@ class QtLayerListModel(QtListModel[Layer]):
             return layer.name
         if role == Qt.ItemDataRole.ToolTipRole:  # for tooltip
             layer_source_info = layer.get_source_str()
-            if layer_loaded:
-                return layer_source_info
-            return trans._('{source} (loading)', source=layer_source_info)
+            if not layer_loaded:
+                layer_source_info = trans._(
+                    '{source} (loading)', source=layer_source_info
+                )
+            elif layer.errored:
+                failure_message = trans._("Layer failed loading")
+                options_message = trans._("Try refreshing or reloading layer")
+                layer_source_info = (
+                    "<p style='white-space:pre; text-align: center;'>"
+                    f"<b>{failure_message}</b>"
+                    "<br>"
+                    f"{options_message}"
+                    "</p>"
+                )
+            return layer_source_info
         if (
             role == Qt.ItemDataRole.CheckStateRole
         ):  # the "checked" state of this item
@@ -57,6 +70,8 @@ class QtLayerListModel(QtListModel[Layer]):
                 thumbnail.shape[0],
                 QImage.Format_RGBA8888,
             )
+        if role == ErroredRole:
+            return layer.errored
         if role == LoadedRole:
             return layer_loaded
         # normally you'd put the icon in DecorationRole, but we do that in the
@@ -88,6 +103,19 @@ class QtLayerListModel(QtListModel[Layer]):
         self.dataChanged.emit(index, index, [role])
         return True
 
+    def flags(self, index):
+        layer_loaded = index.data(LoadedRole)
+        layer_errored = index.data(ErroredRole)
+        flags = super().flags(index)
+
+        if layer_errored and layer_loaded:
+            flags = Qt.ItemFlag.NoItemFlags
+            layer = self.getItem(index)
+            if layer in self._root.selection:
+                self._root.selection = []
+
+        return flags
+
     def all_loaded(self):
         """Return if all the layers are loaded."""
         return all(
@@ -105,6 +133,7 @@ class QtLayerListModel(QtListModel[Layer]):
             'thumbnail': ThumbnailRole,
             'visible': Qt.ItemDataRole.CheckStateRole,
             'name': Qt.ItemDataRole.DisplayRole,
+            'errored': ErroredRole,
             'loaded': LoadedRole,
         }.get(event.type)
         roles = [role] if role is not None else []

@@ -44,6 +44,8 @@ LAYER_ACTIONS: List[Action] = [
         id=CommandId.LAYER_DUPLICATE,
         title=CommandId.LAYER_DUPLICATE.command_title,
         callback=_layer_actions._duplicate_layer,
+        enablement=(LLSCK.num_selected_layers >= 1)
+        & ~LLSCK.selected_errored_layer,
         menus=[LAYERCTX_SPLITMERGE],
     ),
     Action(
@@ -71,6 +73,7 @@ LAYER_ACTIONS: List[Action] = [
             )
             & LLSCK.all_selected_layers_same_type
             & ~LLSCK.selected_empty_shapes_layer
+            & ~LLSCK.selected_errored_layer
         ),
         menus=[LAYERCTX_CONVERSION],
     ),
@@ -81,6 +84,7 @@ LAYER_ACTIONS: List[Action] = [
         enablement=(
             (LLSCK.num_selected_labels_layers >= 1)
             & LLSCK.all_selected_layers_same_type
+            & ~LLSCK.selected_errored_layer
         ),
         menus=[LAYERCTX_CONVERSION],
     ),
@@ -92,6 +96,7 @@ LAYER_ACTIONS: List[Action] = [
             (LLSCK.num_selected_layers > 1)
             & (LLSCK.num_selected_image_layers == LLSCK.num_selected_layers)
             & LLSCK.all_selected_layers_same_shape
+            & ~LLSCK.selected_errored_layer
         ),
         menus=[LAYERCTX_SPLITMERGE],
     ),
@@ -99,6 +104,8 @@ LAYER_ACTIONS: List[Action] = [
         id=CommandId.LAYER_TOGGLE_VISIBILITY,
         title=CommandId.LAYER_TOGGLE_VISIBILITY.command_title,
         callback=_layer_actions._toggle_visibility,
+        enablement=(LLSCK.num_selected_layers >= 1)
+        & ~LLSCK.selected_errored_layer,
         menus=[
             {
                 'id': MenuId.LAYERLIST_CONTEXT,
