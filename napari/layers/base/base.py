@@ -744,7 +744,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @scale.setter
     def scale(self, scale: Optional[npt.NDArray]) -> None:
         if scale is None:
-            scale = np.array([1]) * self.ndim
+            scale = np.array([1] * self.ndim)
         self._transforms['data2physical'].scale = np.array(scale)
         self._clear_extents_and_refresh()
         self.events.scale()
