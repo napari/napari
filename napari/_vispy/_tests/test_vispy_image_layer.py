@@ -75,7 +75,7 @@ def test_3d_slice_of_4d_image_with_order(order):
 
 def test_no_float32_texture_support(monkeypatch):
     """Ensure Image node can be created if OpenGL driver lacks float textures.
-    
+
     See #3988, #3990, #6652.
     """
     monkeypatch.setattr(
