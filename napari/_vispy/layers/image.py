@@ -57,14 +57,20 @@ class ImageLayerNode:
         # Return Image or Volume node based on 2D or 3D.
         res = self._image_node if ndisplay == 2 else self._volume_node
         if (
-            res.texture_format != "auto"
+            res.texture_format not in {"auto", None}
             and dtype is not None
             and _VISPY_FORMAT_TO_DTYPE[res.texture_format] != dtype
         ):
             # it is a bug to hit this error — it is here to catch bugs
             # early when we are creating the wrong nodes or
             # textures for our data
-            raise ValueError("dtype does not match texture_format")
+            raise ValueError(
+                trans._(
+                    "dtype {dtype} does not match texture_format={texture_format}",
+                    dtype=dtype,
+                    texture_format=res.texture_format,
+                )
+            )
         return res
 
 
@@ -344,8 +350,7 @@ class VispyImageLayer(VispyScalarFieldBaseLayer):
         self._update_mip_minip_cutoff()
 
     def _on_gamma_change(self) -> None:
-        if len(self.node.shared_program.frag._set_items) > 0:
-            self.node.gamma = self.layer.gamma
+        self.node.gamma = self.layer.gamma
 
     def _on_iso_threshold_change(self) -> None:
         if isinstance(self.node, VolumeNode):
