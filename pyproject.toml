@@ -663,7 +663,6 @@ module = [
     "napari._vispy.visuals.axes",
     "napari.layers.labels._labels_mouse_bindings",
     "napari.layers.utils.color_manager_utils",
-    "napari.layers.vectors._slice",
     "napari.utils.colormaps.vendored._cm",
     "napari.utils.colormaps.vendored.cm",
     "napari.utils.status_messages",
