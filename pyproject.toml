@@ -650,7 +650,8 @@ module = [
     "napari.utils.translations",
     "napari.utils.tree.node",
     "napari.viewer",
-    "napari.layers.shapes._shape_list"
+    "napari.layers.shapes._shape_list",
+    "napari.layers.vectors.vectors",
 ]
 disallow_incomplete_defs = false
 disallow_untyped_calls = false
@@ -702,7 +703,6 @@ module = [
     "napari.layers.surface.surface",
     "napari.layers.tracks.tracks",
     "napari.layers.utils.layer_utils",
-    "napari.layers.vectors.vectors",
     "napari.utils._dtype",
     "napari.utils.colormaps.colormap_utils",
     "napari.utils.misc",

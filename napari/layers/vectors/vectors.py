@@ -408,7 +408,7 @@ class Vectors(Layer):
                     else [self._edge.current_color]
                 ),
                 'edge_color_cycle': self.edge_color_cycle,
-                'edge_colormap': self.edge_colormap.dict(),
+                'edge_colormap': self.edge_colormap[1].dict(),
                 'edge_contrast_limits': self.edge_contrast_limits,
                 'data': self.data,
                 'properties': self.properties,
@@ -717,7 +717,7 @@ class Vectors(Layer):
     def _update_thumbnail(self):
         """Update thumbnail with current vectors and colors."""
         # Set the default thumbnail to black, opacity 1
-        colormapped = np.zeros(self._thumbnail_shape)
+        colormapped = np.zeros(self._thumbnail_shape, dtype=np.uint8)
         colormapped[..., 3] = 1
         if len(self.data) == 0:
             self.thumbnail = colormapped
@@ -762,7 +762,9 @@ class Vectors(Layer):
                 y_vals = np.linspace(start[1], stop[1], step)
                 for x, y in zip(x_vals, y_vals):
                     colormapped[int(x), int(y), :] = ec
-            colormapped[..., 3] *= self.opacity
+            colormapped[..., 3] = (colormapped[..., 3] * self.opacity).astype(
+                np.uint8
+            )
             self.thumbnail = colormapped
 
     def _get_value(self, position):
