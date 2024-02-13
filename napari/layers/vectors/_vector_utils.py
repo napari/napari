@@ -1,11 +1,12 @@
 from typing import Optional, Tuple
 
 import numpy as np
+import numpy.typing as npt
 
 from napari.utils.translations import trans
 
 
-def convert_image_to_coordinates(vectors) -> np.ndarray:
+def convert_image_to_coordinates(vectors: npt.NDArray) -> npt.NDArray:
     """To convert an image-like array with elements (y-proj, x-proj) into a
     position list of coordinates
     Every pixel position (n, m) results in two output coordinates of (N,2)
