@@ -51,7 +51,7 @@ def test_plugin_manager(make_napari_viewer, monkeypatch, qtbot):
 
     actions = plugins_menu.actions()
     for action in actions:
-        if action.text() == "Plugin Manager":
+        if action.text() == 'Plugin Manager':
             break
     else:  # pragma: no cover
         found = [action.text() for action in actions]
@@ -73,5 +73,5 @@ def test_no_plugin_manager(make_napari_viewer, monkeypatch):
 
     actions = plugins_menu.actions()
     for action in actions:
-        if action.text() == "Plugin Manager":
-            raise AssertionError(f"Plugin Manager was found: {action}")
+        if action.text() == 'Plugin Manager':
+            raise AssertionError(f'Plugin Manager was found: {action}')

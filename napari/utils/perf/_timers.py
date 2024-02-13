@@ -10,7 +10,7 @@ from napari.utils.perf._event import PerfEvent
 from napari.utils.perf._stat import Stat
 from napari.utils.perf._trace_file import PerfTraceFile
 
-USE_PERFMON = os.getenv("NAPARI_PERFMON", "0") != "0"
+USE_PERFMON = os.getenv('NAPARI_PERFMON', '0') != '0'
 
 
 class PerfTimers:
@@ -65,7 +65,7 @@ class PerfTimers:
         if self.trace_file is not None:
             self.trace_file.add_event(event)
 
-        if event.phase == "X":  # Complete Event
+        if event.phase == 'X':  # Complete Event
             # Update our self.timers (in milliseconds).
             name = event.name
             duration_ms = event.duration_ms
@@ -85,7 +85,7 @@ class PerfTimers:
             Arguments to display in the Args section of the Tracing GUI.
         """
         now = perf_counter_ns()
-        self.add_event(PerfEvent(name, now, now, phase="I", **kwargs))
+        self.add_event(PerfEvent(name, now, now, phase='I', **kwargs))
 
     def add_counter_event(self, name: str, **kwargs: float) -> None:
         """Add one counter event.
@@ -107,7 +107,7 @@ class PerfTimers:
                 name,
                 now,
                 now,
-                phase="C",
+                phase='C',
                 category=None,
                 process_id=None,
                 thread_id=None,
@@ -190,7 +190,7 @@ def block_timer(
     if timers:
         timers.add_event(event)
     if print_time:
-        print(f"{name} {event.duration_ms:.3f}ms")
+        print(f'{name} {event.duration_ms:.3f}ms')
 
 
 def _create_timer():

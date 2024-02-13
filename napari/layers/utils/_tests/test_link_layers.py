@@ -60,7 +60,7 @@ def test_link_invalid_param():
     l2 = layers.Points(None)
     with pytest.raises(ValueError) as e:
         link_layers([l1, l2], ('rendering',))
-    assert "Cannot link attributes that are not shared by all layers" in str(e)
+    assert 'Cannot link attributes that are not shared by all layers' in str(e)
 
 
 def test_adding_points_to_linked_layer():

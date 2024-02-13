@@ -38,13 +38,13 @@ def get_tb_formatter() -> Callable[[ExcInfo, bool, str], str]:
             )
             vbtb = IPython.core.ultratb.VerboseTB(color_scheme=color)
             if as_html:
-                ansi_string = vbtb.text(*info).replace(" ", "&nbsp;")
-                html = "".join(ansi2html(ansi_string))
-                html = html.replace("\n", "<br>")
+                ansi_string = vbtb.text(*info).replace(' ', '&nbsp;')
+                html = ''.join(ansi2html(ansi_string))
+                html = html.replace('\n', '<br>')
                 html = (
                     "<span style='font-family: monaco,courier,monospace;'>"
                     + html
-                    + "</span>"
+                    + '</span>'
                 )
                 tb_text = html
             else:
@@ -91,7 +91,7 @@ def get_tb_formatter() -> Callable[[ExcInfo, bool, str], str]:
                     lambda arr: f'{type(arr)} {arr.shape} {arr.dtype}'
                 )
                 if as_html:
-                    html = "\n".join(cgitb_chain(info[1]))
+                    html = '\n'.join(cgitb_chain(info[1]))
                     # cgitb has a lot of hardcoded colors that don't work for us
                     # remove bgcolor, and let theme handle it
                     html = re.sub('bgcolor="#.*"', '', html)
@@ -103,21 +103,21 @@ def get_tb_formatter() -> Callable[[ExcInfo, bool, str], str]:
                     )
                     # weird 2-part syntax is a workaround for hard-to-grep text.
                     html = html.replace(
-                        "<p>A problem occurred in a Python script.  "
-                        "Here is the sequence of",
-                        "",
+                        '<p>A problem occurred in a Python script.  '
+                        'Here is the sequence of',
+                        '',
                     )
                     html = html.replace(
-                        "function calls leading up to the error, "
-                        "in the order they occurred.</p>",
-                        "<br>",
+                        'function calls leading up to the error, '
+                        'in the order they occurred.</p>',
+                        '<br>',
                     )
                     # remove hardcoded fonts
-                    html = html.replace('face="helvetica, arial"', "")
+                    html = html.replace('face="helvetica, arial"', '')
                     html = (
                         "<span style='font-family: monaco,courier,monospace;'>"
                         + html
-                        + "</span>"
+                        + '</span>'
                     )
                     tb_text = html
                 else:
@@ -146,22 +146,22 @@ def get_tb_formatter() -> Callable[[ExcInfo, bool, str], str]:
 
 
 ANSI_STYLES = {
-    1: {"font_weight": "bold"},
-    2: {"font_weight": "lighter"},
-    3: {"font_weight": "italic"},
-    4: {"text_decoration": "underline"},
-    5: {"text_decoration": "blink"},
-    6: {"text_decoration": "blink"},
-    8: {"visibility": "hidden"},
-    9: {"text_decoration": "line-through"},
-    30: {"color": "black"},
-    31: {"color": "red"},
-    32: {"color": "green"},
-    33: {"color": "yellow"},
-    34: {"color": "blue"},
-    35: {"color": "magenta"},
-    36: {"color": "cyan"},
-    37: {"color": "white"},
+    1: {'font_weight': 'bold'},
+    2: {'font_weight': 'lighter'},
+    3: {'font_weight': 'italic'},
+    4: {'text_decoration': 'underline'},
+    5: {'text_decoration': 'blink'},
+    6: {'text_decoration': 'blink'},
+    8: {'visibility': 'hidden'},
+    9: {'text_decoration': 'line-through'},
+    30: {'color': 'black'},
+    31: {'color': 'red'},
+    32: {'color': 'green'},
+    33: {'color': 'yellow'},
+    34: {'color': 'blue'},
+    35: {'color': 'magenta'},
+    36: {'color': 'cyan'},
+    37: {'color': 'white'},
 }
 
 
@@ -186,17 +186,17 @@ def ansi2html(
     previous_end = 0
     in_span = False
     ansi_codes = []
-    ansi_finder = re.compile("\033\\[([\\d;]*)([a-zA-Z])")
+    ansi_finder = re.compile('\033\\[([\\d;]*)([a-zA-Z])')
     for match in ansi_finder.finditer(ansi_string):
         yield ansi_string[previous_end : match.start()]
         previous_end = match.end()
         params, command = match.groups()
 
-        if command not in "mM":
+        if command not in 'mM':
             continue
 
         try:
-            params = [int(p) for p in params.split(";")]
+            params = [int(p) for p in params.split(';')]
         except ValueError:
             params = [0]
 
@@ -205,29 +205,29 @@ def ansi2html(
                 params = params[i + 1 :]
                 if in_span:
                     in_span = False
-                    yield "</span>"
+                    yield '</span>'
                 ansi_codes = []
                 if not params:
                     continue
 
         ansi_codes.extend(params)
         if in_span:
-            yield "</span>"
+            yield '</span>'
             in_span = False
 
         if not ansi_codes:
             continue
 
         style = [
-            "; ".join([f"{k}: {v}" for k, v in styles[k].items()]).strip()
+            '; '.join([f'{k}: {v}' for k, v in styles[k].items()]).strip()
             for k in ansi_codes
             if k in styles
         ]
-        yield '<span style="%s">' % "; ".join(style)
+        yield '<span style="%s">' % '; '.join(style)
 
         in_span = True
 
     yield ansi_string[previous_end:]
     if in_span:
-        yield "</span>"
+        yield '</span>'
         in_span = False

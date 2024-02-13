@@ -33,7 +33,7 @@ class QtFontSizePreview(QFrame):
     ) -> None:
         super().__init__(parent)
 
-        self._text = text or ""
+        self._text = text or ''
 
         # Widget
         self._preview = QPlainTextEdit(self)
@@ -107,12 +107,12 @@ class QtSizeSliderPreviewWidget(QWidget):
         value: typing.Optional[int] = None,
         min_value: int = 1,
         max_value: int = 50,
-        unit: str = "px",
+        unit: str = 'px',
     ) -> None:
         super().__init__(parent)
 
-        description = description or ""
-        preview_text = preview_text or ""
+        description = description or ''
+        preview_text = preview_text or ''
         self._value = value if value else self.fontMetrics().height()
         self._min_value = min_value
         self._max_value = max_value
@@ -138,7 +138,7 @@ class QtSizeSliderPreviewWidget(QWidget):
         self._slider.setMinimum(min_value)
         self._slider.setMaximum(max_value)
         self._preview.setText(preview_text)
-        self._preview_label.setText(trans._("preview"))
+        self._preview_label.setText(trans._('preview'))
         self._preview_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         self.setFocusProxy(self._lineedit)
 
@@ -178,7 +178,7 @@ class QtSizeSliderPreviewWidget(QWidget):
 
     def _update_line_width(self):
         """Update width ofg line text edit."""
-        txt = "m" * (1 + len(str(self._max_value)))
+        txt = 'm' * (1 + len(str(self._max_value)))
         fm = self._lineedit.fontMetrics()
         if hasattr(fm, 'horizontalAdvance'):
             # Qt >= 5.11
@@ -191,7 +191,7 @@ class QtSizeSliderPreviewWidget(QWidget):
 
     def _update_value(self, value: typing.Union[int, str]):
         """Update internal value and emit if changed."""
-        if value == "":
+        if value == '':
             value = int(self._value)
 
         value = int(value)
@@ -304,7 +304,7 @@ class QtSizeSliderPreviewWidget(QWidget):
         if value >= self._max_value:
             raise ValueError(
                 trans._(
-                    "Minimum value must be smaller than {max_value}",
+                    'Minimum value must be smaller than {max_value}',
                     max_value=self._max_value,
                 )
             )
@@ -336,7 +336,7 @@ class QtSizeSliderPreviewWidget(QWidget):
         if value <= self._min_value:
             raise ValueError(
                 trans._(
-                    "Maximum value must be larger than {min_value}",
+                    'Maximum value must be larger than {min_value}',
                     min_value=self._min_value,
                 )
             )

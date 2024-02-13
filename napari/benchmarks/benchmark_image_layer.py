@@ -14,7 +14,7 @@ class Image2DSuite:
 
     params = [2**i for i in range(4, 13)]
 
-    if "PR" in os.environ:
+    if 'PR' in os.environ:
         skip_params = [(2**i,) for i in range(6, 13)]
 
     def setup(self, n):
@@ -60,12 +60,12 @@ class Image3DSuite:
     """Benchmarks for the Image layer with 3D data."""
 
     params = [2**i for i in range(4, 11)]
-    if "PR" in os.environ:
+    if 'PR' in os.environ:
         skip_params = [(2**i,) for i in range(6, 11)]
 
     def setup(self, n):
-        if "CI" in os.environ and n > 512:
-            raise NotImplementedError("Skip on CI (not enough memory)")
+        if 'CI' in os.environ and n > 512:
+            raise NotImplementedError('Skip on CI (not enough memory)')
 
         np.random.seed(0)
         self.data = np.random.random((n, n, n))
