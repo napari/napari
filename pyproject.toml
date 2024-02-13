@@ -640,7 +640,6 @@ module = [
     "napari.layers.surface._surface_key_bindings",
     "napari.layers.tracks._tracks_key_bindings",
     "napari.layers.utils._slice_input",
-    "napari.layers.vectors._vectors_key_bindings",
     "napari.utils._register",
     "napari.utils.colormaps.categorical_colormap",
     "napari.utils.colormaps.standardize_color",
