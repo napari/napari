@@ -619,7 +619,13 @@ class Affine(Transform):
             )
         return self._cache_dict['inverse']
 
-    def compose(self, transform: 'Transform') -> 'Transform':
+    @overload
+    def compose(self, transform: 'Affine') -> 'Affine': ...
+
+    @overload
+    def compose(self, transform: 'Transform') -> 'Transform': ...
+
+    def compose(self, transform):
         """Return the composite of this transform and the provided one."""
         if not isinstance(transform, Affine):
             return super().compose(transform)
