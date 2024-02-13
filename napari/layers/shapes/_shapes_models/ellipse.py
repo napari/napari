@@ -79,7 +79,7 @@ class Ellipse(Shape):
         self._data = data
         self._update_displayed_data()
 
-    def _update_displayed_data(self):
+    def _update_displayed_data(self) -> None:
         """Update the data that is to be displayed."""
         # Build boundary vertices with num_segments
         vertices, triangles = triangulate_ellipse(self.data_displayed)
