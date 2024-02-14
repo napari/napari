@@ -26,8 +26,8 @@ def _show_about(window: Window):
 
 Q_HELP_ACTIONS: List[Action] = [
     Action(
-        id=CommandId.NAPARI_ABOUT,
-        title=CommandId.NAPARI_ABOUT.command_title,
+        id=CommandId.NAPARI_INFO,
+        title=CommandId.NAPARI_INFO.command_title,
         callback=_show_about,
         menus=[{"id": MenuId.MENUBAR_HELP, 'group': MenuGroup.RENDER}],
         status_tip=trans._('About napari'),
