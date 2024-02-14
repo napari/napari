@@ -97,10 +97,10 @@ class NapariPluginManager(PluginManager):
 
         # TODO: remove once npe1 deprecated
         # appmodel sample menu actions/submenu unregister functions used in
-        # `_build_npe1_samples_menu`
+        # `_rebuild_npe1_samples_menu`
         self._unreg_sample_submenus = None
         self._unreg_sample_actions = None
-        # appmodel plugin menu actions/submenu unregister functions used in
+        # appmodel plugins menu actions/submenu unregister functions used in
         # `_rebuild_npe1_plugins_menu`
         self._unreg_plugin_submenus = None
         self._unreg_plugin_actions = None

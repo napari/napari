@@ -52,7 +52,10 @@ from napari._app_model.context import get_context
 from napari._qt import menus
 from napari._qt._qapp_model import build_qmodel_menu
 from napari._qt._qapp_model.qactions import init_qactions
-from napari._qt._qplugins import _rebuild_npe1_samples_menu
+from napari._qt._qplugins import (
+    _rebuild_npe1_plugins_menu,
+    _rebuild_npe1_samples_menu,
+)
 from napari._qt.dialogs.confirm_close_dialog import ConfirmCloseDialog
 from napari._qt.dialogs.preferences_dialog import PreferencesDialog
 from napari._qt.dialogs.qt_activity_dialog import QtActivityDialog
@@ -809,6 +812,7 @@ class Window:
     def _update_plugin_menu_state(self):
         self._update_menu_state('plugins_menu')
 
+    # TODO: Remove once npe1 deprecated
     def _setup_npe1_samples_menu(self):
         """Register npe1 sample data, build menu and connect to events."""
         plugin_manager.discover_sample_data()
@@ -817,6 +821,17 @@ class Window:
         plugin_manager.events.registered.connect(_rebuild_npe1_samples_menu)
         plugin_manager.events.unregistered.connect(_rebuild_npe1_samples_menu)
         _rebuild_npe1_samples_menu()
+
+    def _setup_npe1_plugins_menu(self):
+        from napari.plugins._npe2 import index_npe1_adapters
+
+        index_npe1_adapters()
+
+        plugin_manager.discover_widgets()
+        plugin_manager.events.registered.connect(_rebuild_npe1_plugins_menu)
+        plugin_manager.events.disabled.connect(_rebuild_npe1_plugins_menu)
+        plugin_manager.events.unregistered.connect(_rebuild_npe1_plugins_menu)
+        _rebuild_npe1_plugins_menu()
 
     def _add_menus(self):
         """Add menubar to napari app."""
