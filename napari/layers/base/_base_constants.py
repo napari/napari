@@ -104,7 +104,7 @@ class InteractionBoxHandle(IntEnum):
         }
 
         opposites.update({v: k for k, v in opposites.items()})
-        if (opposite := opposites.get(handle, None)) is None:
+        if (opposite := opposites.get(handle)) is None:
             raise ValueError(f'{handle} has no opposite handle.')
         return opposite
 
