@@ -324,7 +324,7 @@ def _get_widget_viewer_param(
 def _toggle_or_get_widget(
     plugin: str,
     widget_name: str,
-    name: str,
+    full_name: str,
 ) -> Optional[Tuple[Union[FunctionGui, QWidget, Widget], str]]:
     """Toggle if widget already built otherwise return widget.
 
@@ -342,7 +342,7 @@ def _toggle_or_get_widget(
         )
 
     window = viewer.window
-    if window and (dock_widget := window._dock_widgets.get(name)):
+    if window and (dock_widget := window._dock_widgets.get(full_name)):
         dock_widget.setVisible(not dock_widget.isVisible())
         return None
 
@@ -353,10 +353,10 @@ def _toggle_or_get_widget(
     kwargs = {}
     if widget_param:
         kwargs[widget_param] = viewer
-    return widget_callable(**kwargs), name
+    return widget_callable(**kwargs), full_name
 
 
-def _get_current_dock_status(name: str) -> bool:
+def _get_current_dock_status(full_name: str) -> bool:
     window = _provide_window()
     if window is None:
         raise RuntimeError(  # pragma: no cover
@@ -365,8 +365,8 @@ def _get_current_dock_status(name: str) -> bool:
                 deferred=True,
             )
         )
-    if name in window._dock_widgets:
-        return window._dock_widgets[name].isVisible()
+    if full_name in window._dock_widgets:
+        return window._dock_widgets[full_name].isVisible()
     return False
 
 
@@ -398,16 +398,14 @@ def _build_widgets_submenu_actions(
             _toggle_or_get_widget,
             plugin=mf.name,
             widget_name=widget.display_name,
-            name=full_name,
+            full_name=full_name,
         )
         _get_current_dock_status_partial = partial(
             _get_current_dock_status,
-            name=full_name,
+            full_name=full_name,
         )
 
-        title = full_name
-        if multiprovider:
-            title = widget.display_name
+        title = full_name if multiprovider else widget.display_name
         # To display '&' instead of creating a shortcut
         title = title.replace("&", "&&")
 
