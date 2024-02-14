@@ -2,6 +2,7 @@
 
 Non-Qt plugin functions can be found in: `napari/plugins/_npe2.py`
 """
+
 from __future__ import annotations
 
 import inspect

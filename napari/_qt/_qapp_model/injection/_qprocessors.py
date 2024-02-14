@@ -2,6 +2,7 @@
 
 Non-Qt processors can be found in `napari/_app_model/injection/_processors.py`.
 """
+
 from typing import (
     Callable,
     Dict,

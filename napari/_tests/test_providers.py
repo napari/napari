@@ -3,6 +3,7 @@
 Because `_provide_viewer` needs `_QtMainWindow` (otherwise returns `None`)
 tests are here in `napari/_tests`, which are not run in headless mode.
 """
+
 from app_model.types import Action
 
 from napari._app_model._app import get_app

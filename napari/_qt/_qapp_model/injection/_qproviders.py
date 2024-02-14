@@ -2,6 +2,7 @@
 
 Non-Qt providers can be found in `napari/_app_model/injection/_providers.py`.
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional
