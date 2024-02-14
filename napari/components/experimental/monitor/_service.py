@@ -92,6 +92,7 @@ Future Work
 We plan to investigate the use of numpy shared memory buffers for bulk
 binary data. Possibly using recarray to organized things.
 """
+
 import copy
 import logging
 import os

@@ -1,5 +1,6 @@
 """OpenGL Utilities.
 """
+
 from contextlib import contextmanager
 from functools import lru_cache
 from typing import Any, Generator, Tuple, Union, cast

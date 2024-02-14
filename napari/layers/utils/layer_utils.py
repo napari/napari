@@ -30,6 +30,8 @@ if TYPE_CHECKING:
 
     import numpy.typing as npt
 
+    from napari.layers._data_protocols import LayerDataProtocol
+
 
 class Extent(NamedTuple):
     """Extent of coordinates in a local data space and world space.
@@ -205,7 +207,9 @@ def _nanmax(array):
     return max_value
 
 
-def calc_data_range(data, rgb=False) -> Tuple[float, float]:
+def calc_data_range(
+    data: LayerDataProtocol, rgb: bool = False
+) -> Tuple[float, float]:
     """Calculate range of data values. If all values are equal return [0, 1].
 
     Parameters
@@ -229,7 +233,7 @@ def calc_data_range(data, rgb=False) -> Tuple[float, float]:
         return (0, 255)
 
     center: Union[int, List[int]]
-
+    reduced_data: Union[List, LayerDataProtocol]
     if data.size > 1e7 and (data.ndim == 1 or (rgb and data.ndim == 2)):
         # If data is very large take the average of start, middle and end.
         center = int(data.shape[0] // 2)
@@ -321,7 +325,7 @@ def segment_normal(a, b, p=(0, 0, 1)) -> np.ndarray:
     return normal / norm
 
 
-def convert_to_uint8(data: np.ndarray) -> Optional[np.ndarray]:
+def convert_to_uint8(data: np.ndarray) -> np.ndarray:
     """
     Convert array content to uint8, always returning a copy.
 
@@ -594,7 +598,12 @@ def compute_multiscale_level_and_corners(
     return level, corners
 
 
-def coerce_affine(affine, *, ndim, name=None):
+def coerce_affine(
+    affine: Union[npt.ArrayLike, Affine],
+    *,
+    ndim: int,
+    name: Optional[str] = None,
+) -> Affine:
     """Coerce a user input into an affine transform object.
 
     If the input is already an affine transform object, that same object is returned
@@ -679,7 +688,11 @@ def dims_displayed_world_to_layer(
     return dims_displayed
 
 
-def get_extent_world(data_extent, data_to_world, centered=None):
+def get_extent_world(
+    data_extent: npt.NDArray,
+    data_to_world: Affine,
+    centered: Optional[Any] = None,
+) -> npt.NDArray:
     """Range of layer in world coordinates base on provided data_extent
 
     Parameters
@@ -840,7 +853,7 @@ class _FeatureTable:
         self._defaults = _validate_features(currents, num_data=1)
         if update_indices is not None:
             for k in self._defaults:
-                self._values[k][update_indices] = self._defaults[k][0]
+                self._values.loc[update_indices, k] = self._defaults[k][0]
 
     def resize(
         self,

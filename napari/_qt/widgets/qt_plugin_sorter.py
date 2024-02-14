@@ -1,5 +1,6 @@
 """Provides a QtPluginSorter that allows the user to change plugin call order.
 """
+
 from __future__ import annotations
 
 import re

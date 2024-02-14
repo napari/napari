@@ -32,7 +32,6 @@ into two statements with the yield keyword::
 To create a keymap that will block others, ``bind_key(..., ...)```.
 """
 
-
 import contextlib
 import inspect
 import sys
@@ -309,7 +308,15 @@ class KeymapProvider:
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self.keymap = {}
+        self._keymap = {}
+
+    @property
+    def keymap(self):
+        return self._keymap
+
+    @keymap.setter
+    def keymap(self, value):
+        self._keymap = {coerce_keybinding(k): v for k, v in value.items()}
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)

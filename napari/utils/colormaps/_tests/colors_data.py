@@ -9,6 +9,7 @@ doesn't parse lists like [Color('red'), Color('red')]. Second, the color of
 'g' and 'green' is different. We're consistent with vispy's behavior ATM,
 but it might change in a future release.
 """
+
 import numpy as np
 from vispy.color import Color, ColorArray
 

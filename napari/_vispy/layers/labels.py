@@ -10,14 +10,14 @@ from napari._vispy.layers.image import (
     _DTYPE_TO_VISPY_FORMAT,
     _VISPY_FORMAT_TO_DTYPE,
     ImageLayerNode,
-    VispyImageLayer,
+    VispyScalarFieldBaseLayer,
     get_dtype_from_vispy_texture_format,
 )
 from napari._vispy.utils.gl import get_max_texture_sizes
 from napari._vispy.visuals.labels import LabelNode
 from napari._vispy.visuals.volume import Volume as VolumeNode
 from napari.utils.colormaps.colormap import (
-    LabelColormap,
+    CyclicLabelColormap,
     _texture_dtype,
 )
 
@@ -94,7 +94,7 @@ vec4 sample_label_color(float t) {
 class LabelVispyColormap(VispyColormap):
     def __init__(
         self,
-        colormap: LabelColormap,
+        colormap: CyclicLabelColormap,
         view_dtype: np.dtype,
         raw_dtype: np.dtype,
     ):
@@ -178,7 +178,7 @@ def build_textures_from_dict(
 
 
 def _select_colormap_texture(
-    colormap: LabelColormap, view_dtype, raw_dtype
+    colormap: CyclicLabelColormap, view_dtype, raw_dtype
 ) -> np.ndarray:
     if raw_dtype.itemsize > 2:
         color_texture = colormap._get_mapping_from_cache(view_dtype)
@@ -192,7 +192,7 @@ def _select_colormap_texture(
     return color_texture.reshape(256, -1, 4)
 
 
-class VispyLabelsLayer(VispyImageLayer):
+class VispyLabelsLayer(VispyScalarFieldBaseLayer):
     layer: 'Labels'
 
     def __init__(self, layer, node=None, texture_format='r8') -> None:
@@ -203,7 +203,6 @@ class VispyLabelsLayer(VispyImageLayer):
             layer_node_class=LabelLayerNode,
         )
 
-        # self.layer.events.color_mode.connect(self._on_colormap_change)
         self.layer.events.labels_update.connect(self._on_partial_labels_update)
         self.layer.events.selected_label.connect(self._on_colormap_change)
         self.layer.events.show_selected_label.connect(self._on_colormap_change)
@@ -220,8 +219,6 @@ class VispyLabelsLayer(VispyImageLayer):
                 if rendering != 'translucent'
                 else 'translucent_categorical'
             )
-            self._on_attenuation_change()
-            self._on_iso_threshold_change()
 
     def _on_colormap_change(self, event=None):
         # self.layer.colormap is a labels_colormap, which is an evented model
@@ -234,11 +231,11 @@ class VispyLabelsLayer(VispyImageLayer):
         ):
             return
         colormap = self.layer.colormap
-        mode = self.layer.color_mode
+        auto_mode = isinstance(colormap, CyclicLabelColormap)
         view_dtype = self.layer._slice.image.view.dtype
         raw_dtype = self.layer._slice.image.raw.dtype
-        if mode == 'auto' or (mode == "direct" and raw_dtype.itemsize <= 2):
-            if raw_dtype.itemsize > 2 and isinstance(colormap, LabelColormap):
+        if auto_mode or raw_dtype.itemsize <= 2:
+            if raw_dtype.itemsize > 2:
                 # If the view dtype is different from the raw dtype, it is possible
                 # that background pixels are not the same value as the `background_value`.
                 # For example, if raw_dtype is int8 and background_value is `-1`
@@ -247,7 +244,7 @@ class VispyLabelsLayer(VispyImageLayer):
                 # to uint8 or uint16 and background_value is always 0 in a view array.
                 # The LabelColormap is EventedModel, so we need to make
                 # a copy instead of temporary overwrite the background_value
-                colormap = LabelColormap(**colormap.dict())
+                colormap = CyclicLabelColormap(**colormap.dict())
                 colormap.background_value = (
                     colormap._background_as_minimum_dtype(raw_dtype)
                 )
@@ -264,7 +261,7 @@ class VispyLabelsLayer(VispyImageLayer):
             )
             self.texture_data = color_texture
 
-        elif mode == 'direct':  # only for raw_dtype.itemsize > 2
+        elif not auto_mode:  # only for raw_dtype.itemsize > 2
             color_dict = colormap._values_mapping_to_minimum_values_set()[1]
             max_size = get_max_texture_sizes()[0]
             val_texture = build_textures_from_dict(color_dict, max_size)
@@ -310,6 +307,10 @@ class VispyLabelsLayer(VispyImageLayer):
         )
         self.node.update()
 
+    def reset(self, event=None) -> None:
+        super().reset()
+        self._on_colormap_change()
+
 
 class LabelLayerNode(ImageLayerNode):
     def __init__(self, custom_node: Node = None, texture_format=None):
@@ -318,11 +319,13 @@ class LabelLayerNode(ImageLayerNode):
 
     def _setup_nodes(self, texture_format):
         self._image_node = LabelNode(
-            None
-            if (texture_format is None or texture_format == 'auto')
-            else np.zeros(
-                (1, 1),
-                dtype=get_dtype_from_vispy_texture_format(texture_format),
+            (
+                None
+                if (texture_format is None or texture_format == 'auto')
+                else np.zeros(
+                    (1, 1),
+                    dtype=get_dtype_from_vispy_texture_format(texture_format),
+                )
             ),
             method='auto',
             texture_format=texture_format,
@@ -335,6 +338,7 @@ class LabelLayerNode(ImageLayerNode):
             ),
             clim=[0, 2**23 - 1],
             texture_format=texture_format,
+            interpolation='nearest',
         )
 
     def get_node(self, ndisplay: int, dtype=None) -> Node:
