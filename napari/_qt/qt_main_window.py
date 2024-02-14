@@ -873,7 +873,7 @@ class Window:
             title=trans._('&Plugins'),
             parent=self._qt_window,
         )
-
+        self._setup_npe1_plugins_menu()
         self.plugins_menu.aboutToShow.connect(self._update_plugin_menu_state)
         self.main_menu.addMenu(self.plugins_menu)
         # window menu
