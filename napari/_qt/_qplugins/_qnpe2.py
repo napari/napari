@@ -110,21 +110,6 @@ def _rebuild_npe1_samples_menu() -> None:
         plugin_manager._unreg_sample_actions = unreg_sample_actions
 
 
-# Note `QtViewer` gets added to `injection_store.namespace` during
-# `init_qactions` so does not need to be imported for type annotation resolution
-def _add_sample(qt_viewer: QtViewer, plugin: str, sample: str) -> None:
-    from napari._qt.dialogs.qt_reader_dialog import handle_gui_reading
-
-    try:
-        qt_viewer.viewer.open_sample(plugin, sample)
-    except MultipleReaderError as e:
-        handle_gui_reading(
-            [str(p) for p in e.paths],
-            qt_viewer,
-            stack=False,
-        )
-
-
 def _get_contrib_parent_menu(
     multiprovider: bool,
     parent_menu: MenuId,
@@ -151,6 +136,21 @@ def _get_contrib_parent_menu(
     else:
         submenu_id = parent_menu
     return submenu_id, submenu
+
+
+# Note `QtViewer` gets added to `injection_store.namespace` during
+# `init_qactions` so does not need to be imported for type annotation resolution
+def _add_sample(qt_viewer: QtViewer, plugin: str, sample: str) -> None:
+    from napari._qt.dialogs.qt_reader_dialog import handle_gui_reading
+
+    try:
+        qt_viewer.viewer.open_sample(plugin, sample)
+    except MultipleReaderError as e:
+        handle_gui_reading(
+            [str(p) for p in e.paths],
+            qt_viewer,
+            stack=False,
+        )
 
 
 def _build_samples_submenu_actions(
