@@ -26,8 +26,8 @@ def _add_plugin_dock_widget(
     if viewer is None:
         viewer = _provide_viewer()
     if viewer:
-        widget, display_name = widget_name_tuple
-        viewer.window.add_dock_widget(widget, name=display_name)
+        widget, full_name = widget_name_tuple
+        viewer.window.add_dock_widget(widget, name=full_name)
     else:
         raise RuntimeError(
             trans._(
