@@ -29,7 +29,7 @@ skip = [
     'embed_ipython_.py',  # fails without monkeypatch
     'new_theme.py',  # testing theme is extremely slow on CI
     'dynamic-projections-dask.py',  # extremely slow / does not finish
-    'surface_multi_textures_.py',  # resource not available
+    'surface_multi_texture_.py',  # resource not available
 ]
 # To skip examples during docs build end name with `_.py`
 
