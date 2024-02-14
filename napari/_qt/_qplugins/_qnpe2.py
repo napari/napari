@@ -413,7 +413,7 @@ def _build_widgets_submenu_actions(
             full_name=full_name,
         )
 
-        title = full_name if multiprovider else widget.display_name
+        title = widget.display_name if multiprovider else full_name
         # To display '&' instead of creating a shortcut
         title = title.replace("&", "&&")
 

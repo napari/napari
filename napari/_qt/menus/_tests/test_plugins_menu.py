@@ -57,6 +57,8 @@ def test_plugin_multiple_widget_menu(
     assert tmp_plugin.display_name == 'Temp Plugin'
     plugin_menu = app.menus.get_menu('napari/plugins')
     assert plugin_menu[0].title == tmp_plugin.display_name
+    plugin_submenu = app.menus.get_menu('napari/plugins/tmp_plugin')
+    assert plugin_submenu[0].command.title == 'Widget 1'
     assert len(viewer.window._dock_widgets) == 0
     assert 'tmp_plugin:Widget 1' in app.commands
     # Trigger the action, opening the first widget: `Widget 1`
