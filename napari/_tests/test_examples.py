@@ -29,7 +29,9 @@ skip = [
     'embed_ipython_.py',  # fails without monkeypatch
     'new_theme.py',  # testing theme is extremely slow on CI
     'dynamic-projections-dask.py',  # extremely slow / does not finish
+    'surface_multi_textures_.py',  # resource not available
 ]
+# To skip examples during docs build end name with `_.py`
 
 EXAMPLE_DIR = Path(napari.__file__).parent.parent / 'examples'
 # using f.name here and re-joining at `run_path()` for test key presentation
