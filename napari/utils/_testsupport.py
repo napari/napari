@@ -58,7 +58,7 @@ def fail_obj_graph(Klass):
 
         gc.collect()
         file_path = Path(
-            f'{Klass.__name__}-leak-backref-graph-{COUNTER}.pdf'
+            f'{Klass.__name__}-leak-backref-graph-{COUNTER}.dot'
         ).absolute()
         objgraph.show_backrefs(
             list(Klass._instances),
