@@ -92,6 +92,11 @@ jobs:
             platform: ubuntu-latest
             backend: pyqt6
             pydantic: ""
+          - python: 3.8
+            platform: ubuntu-20.04
+            backend: pyqt5
+            MIN_REQ: 1
+            coverage: cov
     with:
       python_version: ${{ matrix.python }}
       platform: ${{ matrix.platform }}
