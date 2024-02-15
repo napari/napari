@@ -4,6 +4,7 @@ import sys
 import warnings
 from contextlib import suppress
 from dataclasses import dataclass
+from pathlib import Path
 from typing import TYPE_CHECKING, List, Tuple
 from unittest.mock import patch
 from weakref import WeakSet
@@ -63,9 +64,13 @@ def fail_obj_graph(Klass):
             filename=f'{Klass.__name__}-leak-backref-graph-{COUNTER}.pdf',
         )
 
+        Klass._instances.clear()
+
         # DO not remove len, this can break as C++ obj are gone, but python objects
         # still hang around and _repr_ would crash.
-        assert False, len(Klass._instances)
+        assert (
+            False
+        ), f"{len(Klass._instances)} {Path(f'{Klass.__name__}-leak-backref-graph-{COUNTER}.pdf').absolute()}"
 
 
 @pytest.fixture
