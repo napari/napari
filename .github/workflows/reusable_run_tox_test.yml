@@ -183,7 +183,6 @@ jobs:
       - name: debug ls
         if: always()
         run: |
-          dot -V
           pwd
           ls -la
 
