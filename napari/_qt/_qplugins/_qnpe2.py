@@ -7,8 +7,10 @@ from __future__ import annotations
 
 import inspect
 from functools import partial
+from itertools import chain
 from typing import (
     TYPE_CHECKING,
+    Any,
     List,
     Optional,
     Tuple,
@@ -149,23 +151,24 @@ def _rebuild_npe1_plugins_menu() -> None:
         unreg()
 
     widget_actions: List[Action] = []
-    for hook_type, (plugin_name, widgets) in plugin_manager.iter_widgets():
+    widget_submenus: List[Any] = []
+    for hook_type, (plugin_name, widgets) in chain(
+        plugin_manager.iter_widgets()
+    ):
         multiprovider = len(widgets) > 1
         if multiprovider:
             submenu_id = f'napari/plugins/{plugin_name}'
-            submenu = [
-                (
-                    MenuId.MENUBAR_PLUGINS,
-                    SubmenuItem(
-                        submenu=submenu_id,
-                        title=trans._(plugin_name),
-                        group=MenuGroup.PLUGIN_MULTI_SUBMENU,
-                    ),
+            submenu = (
+                MenuId.MENUBAR_PLUGINS,
+                SubmenuItem(
+                    submenu=submenu_id,
+                    title=trans._(plugin_name),
+                    group=MenuGroup.PLUGIN_MULTI_SUBMENU,
                 ),
-            ]
+            )
+            widget_submenus.append(submenu)
         else:
             submenu_id = MenuId.MENUBAR_PLUGINS
-            submenu = []
 
         for widget_name in widgets:
             full_name = menu_item_template.format(plugin_name, widget_name)
@@ -198,10 +201,12 @@ def _rebuild_npe1_plugins_menu() -> None:
             )
             widget_actions.append(action)
 
-    unreg_plugin_submenus = app.menus.append_menu_items(submenu)
-    plugin_manager._unreg_sample_submenus = unreg_plugin_submenus
-    unreg_plugin_actions = app.register_actions(widget_actions)
-    plugin_manager._unreg_sample_actions = unreg_plugin_actions
+    if widget_submenus:
+        unreg_plugin_submenus = app.menus.append_menu_items(widget_submenus)
+        plugin_manager._unreg_plugin_submenus = unreg_plugin_submenus
+    if widget_actions:
+        unreg_plugin_actions = app.register_actions(widget_actions)
+        plugin_manager._unreg_plugin_actions = unreg_plugin_actions
 
 
 def _get_contrib_parent_menu(
