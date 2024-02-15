@@ -57,20 +57,24 @@ def fail_obj_graph(Klass):
         import gc
 
         gc.collect()
-
+        file_path = Path(
+            f'{Klass.__name__}-leak-backref-graph-{COUNTER}.pdf'
+        ).absolute()
         objgraph.show_backrefs(
             list(Klass._instances),
             max_depth=20,
-            filename=f'{Klass.__name__}-leak-backref-graph-{COUNTER}.pdf',
+            filename=str(file_path),
         )
 
         Klass._instances.clear()
+
+        assert file_path.exists()
 
         # DO not remove len, this can break as C++ obj are gone, but python objects
         # still hang around and _repr_ would crash.
         assert (
             False
-        ), f"{len(Klass._instances)} {Path(f'{Klass.__name__}-leak-backref-graph-{COUNTER}.pdf').absolute()}"
+        ), f"{len(Klass._instances)} leaked {Klass.__name__} instances. Graph saved to {file_path}"
 
 
 @pytest.fixture
