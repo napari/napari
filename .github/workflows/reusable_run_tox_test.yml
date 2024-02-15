@@ -70,11 +70,8 @@ jobs:
 
       - uses: tlambert03/setup-qt-libs@v1
 
-      - name: Install graphviz
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y graphviz
+      - name: Setup Graphviz
+        uses: ts-graphviz/setup-graphviz@v2
 
       # strategy borrowed from vispy for installing opengl libs on windows
       - name: Install Windows OpenGL
