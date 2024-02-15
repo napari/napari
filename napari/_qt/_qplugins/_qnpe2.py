@@ -185,7 +185,12 @@ def _rebuild_npe1_plugins_menu() -> None:
             action: Action = Action(
                 id=f'{plugin_name}:{widget_name.replace("&", "&&")}',
                 title=title.replace("&", "&&"),
-                menus=[{'id': submenu_id, 'group': MenuGroup.NAVIGATION}],
+                menus=[
+                    {
+                        'id': submenu_id,
+                        'group': MenuGroup.PLUGIN_SINGLE_CONTRIBUTIONS,
+                    }
+                ],
                 callback=_widget_callback,
                 toggled=ToggleRule(
                     get_current=_get_current_dock_status_partial
@@ -193,10 +198,10 @@ def _rebuild_npe1_plugins_menu() -> None:
             )
             widget_actions.append(action)
 
-        unreg_plugin_submenus = app.menus.append_menu_items(submenu)
-        plugin_manager._unreg_sample_submenus = unreg_plugin_submenus
-        unreg_plugin_actions = app.register_actions(widget_actions)
-        plugin_manager._unreg_sample_actions = unreg_plugin_actions
+    unreg_plugin_submenus = app.menus.append_menu_items(submenu)
+    plugin_manager._unreg_sample_submenus = unreg_plugin_submenus
+    unreg_plugin_actions = app.register_actions(widget_actions)
+    plugin_manager._unreg_sample_actions = unreg_plugin_actions
 
 
 def _get_contrib_parent_menu(
