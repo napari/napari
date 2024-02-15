@@ -52,9 +52,9 @@ def fail_obj_graph(Klass):
         return
 
     if len(Klass._instances) != 0:
-        global COUNTER
-        COUNTER += 1
-        import gc
+        # global COUNTER
+        # COUNTER += 1
+        # import gc
 
         gc.collect()
         file_path = Path(
