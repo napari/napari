@@ -45,7 +45,6 @@ Q_HELP_ACTIONS: List[Action] = [
             }
         ],
         status_tip=trans._('About napari'),
-        keybindings=[KeyBindingRule(primary=KeyMod.CtrlCmd | KeyCode.Slash)],
     ),
 ]
 
