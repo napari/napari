@@ -183,6 +183,7 @@ jobs:
       - name: debug ls
         if: always()
         run: |
+          pwd
           ls -la
 
       - name: Upload leaked viewer graph
