@@ -121,6 +121,7 @@ jobs:
           python tools/split_qt_backend.py 3 ${{ inputs.qt_backend }} >> $GITHUB_ENV
 
       - name: Determine wheel name
+        shell: bash
         run: |
           WHEEL=$(ls dist/*.whl)
           echo "WHEEL=$WHEEL" >> $GITHUB_ENV
