@@ -52,9 +52,9 @@ def fail_obj_graph(Klass):
         return
 
     if len(Klass._instances) != 0:
-        # global COUNTER
-        # COUNTER += 1
-        # import gc
+        global COUNTER
+        COUNTER += 1
+        import gc
 
         gc.collect()
         file_path = Path(
@@ -72,9 +72,7 @@ def fail_obj_graph(Klass):
 
         # DO not remove len, this can break as C++ obj are gone, but python objects
         # still hang around and _repr_ would crash.
-        assert (
-            False
-        ), f"{len(Klass._instances)} leaked {Klass.__name__} instances. Graph saved to {file_path}"
+        assert False
 
 
 @pytest.fixture
