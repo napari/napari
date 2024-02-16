@@ -1,4 +1,5 @@
 """Status bar widget on the viewer MainWindow"""
+
 from typing import TYPE_CHECKING, Optional, cast
 
 from qtpy.QtCore import QEvent, Qt

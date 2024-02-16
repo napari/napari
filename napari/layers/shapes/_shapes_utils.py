@@ -44,9 +44,9 @@ def inside_boxes(boxes):
     BCBM = np.multiply(BC, BM).sum(1)
     BCBC = np.multiply(BC, BC).sum(1)
 
-    c1 = 0 <= ABAM
+    c1 = ABAM >= 0
     c2 = ABAM <= ABAB
-    c3 = 0 <= BCBM
+    c3 = BCBM >= 0
     c4 = BCBM <= BCBC
 
     inside = np.all(np.array([c1, c2, c3, c4]), axis=0)
@@ -758,9 +758,9 @@ def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
         triangles[2 * idx_bevel, idx_offset] = len(centers) + np.arange(
             len(idx_bevel)
         )
-        triangles[
-            2 * idx_bevel + (1 - idx_offset), idx_offset
-        ] = n_centers + np.arange(len(idx_bevel))
+        triangles[2 * idx_bevel + (1 - idx_offset), idx_offset] = (
+            n_centers + np.arange(len(idx_bevel))
+        )
 
         # add center triangle
         triangles0 = np.tile(np.array([[0, 1, 2]]), (len(idx_bevel), 1))

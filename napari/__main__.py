@@ -1,6 +1,7 @@
 """
 napari command line viewer.
 """
+
 import argparse
 import contextlib
 import logging

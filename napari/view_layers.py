@@ -12,6 +12,7 @@ of the layer types, like "image", "points", etc...):
         add_method(*args, **kwargs)
         return viewer
 """
+
 import inspect
 from typing import Any, List, Optional, Tuple
 

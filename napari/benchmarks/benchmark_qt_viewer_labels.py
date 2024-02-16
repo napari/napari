@@ -5,6 +5,7 @@
 import os
 from dataclasses import dataclass
 from functools import lru_cache
+from itertools import cycle
 from typing import List
 
 import numpy as np
@@ -119,7 +120,7 @@ class LabelRendering:
     params = (
         [10, 30, 300, 1500],
         [np.uint8, np.uint16, np.uint32],
-        ["auto"],  # "direct"],
+        ["auto", "direct"],
     )
     if "GITHUB_ACTIONS" in os.environ:
         skip_params = Skiper(lambda x: x[0] > 20)
@@ -134,6 +135,16 @@ class LabelRendering:
         self.viewer = ViewerModel()
         self.qt_viewr = QtViewer(self.viewer)
         self.layer = self.viewer.add_labels(self.data, scale=scale)
+        if label_mode == "direct":
+            colors = dict(
+                zip(
+                    range(10, 2000),
+                    cycle(["red", "green", "blue", "pink", "magenta"]),
+                )
+            )
+            colors[None] = "yellow"
+            colors[0] = "transparent"
+            self.layer.color = colors
         self.qt_viewr.show()
 
     @staticmethod

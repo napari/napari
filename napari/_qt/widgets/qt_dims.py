@@ -98,7 +98,6 @@ class QtDims(QWidget):
 
     def _update_display(self):
         """Updates display for all sliders."""
-        self.stop()
         widgets = reversed(list(enumerate(self.slider_widgets)))
         nsteps = self.dims.nsteps
         for axis, widget in widgets:
@@ -116,10 +115,10 @@ class QtDims(QWidget):
         self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
         self._resize_slice_labels()
         self._resize_axis_labels()
+        self.stop()
 
     def _update_nsliders(self):
         """Updates the number of sliders based on the number of dimensions."""
-        self.stop()
         self._trim_sliders(0)
         self._create_sliders(self.dims.ndim)
         self._update_display()
@@ -127,6 +126,7 @@ class QtDims(QWidget):
             self._update_range()
             if self._displayed_sliders[i]:
                 self._update_slider()
+        self.stop()
 
     def _resize_axis_labels(self):
         """When any of the labels get updated, this method updates all label

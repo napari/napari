@@ -261,8 +261,7 @@ def test_update_with_inner_model_union():
 def test_update_with_inner_model_protocol():
     @runtime_checkable
     class InnerProtocol(Protocol):
-        def string(self) -> str:
-            ...
+        def string(self) -> str: ...
 
         # Protocol fields are not successfully set without explicit validation.
         @classmethod

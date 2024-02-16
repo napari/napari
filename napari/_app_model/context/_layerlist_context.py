@@ -122,7 +122,24 @@ def _active_shape(s: LayerSel) -> Optional[Tuple[int, ...]]:
 
 
 def _same_shape(s: LayerSel) -> bool:
-    return len({getattr(x.data, "shape", ()) for x in s}) == 1
+    """Return true when all given layers have the same shape.
+
+    Notes
+    -----
+    The cast to tuple() is needed because some array libraries, specifically
+    Apple's mlx [1]_, return a list, which is not hashable and thus causes the
+    set (``{}``) to fail.
+
+    The Data APIs Array spec specifies that ``.shape`` should be a tuple, or,
+    if a custom type, it should be an immutable type [2]_, so in time, the cast
+    to tuple could be removed, once all major libraries support the spec.
+
+    References
+    ----------
+    .. [1] https://github.com/ml-explore/mlx
+    .. [2] https://data-apis.org/array-api/latest/API_specification/generated/array_api.array.shape.html
+    """
+    return len({tuple(getattr(x.data, "shape", ())) for x in s}) == 1
 
 
 def _active_dtype(s: LayerSel) -> DTypeLike:

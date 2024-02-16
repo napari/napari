@@ -3,13 +3,16 @@
 # or the napari documentation on benchmarking
 # https://github.com/napari/napari/blob/main/docs/BENCHMARKS.md
 import os
+from copy import copy
 
 import numpy as np
 
 from napari.components.dims import Dims
 from napari.layers import Labels
 
-from .utils import Skiper
+from .utils import Skiper, labeled_particles
+
+MAX_VAL = 2**23
 
 
 class Labels2DSuite:
@@ -23,7 +26,9 @@ class Labels2DSuite:
 
     def setup(self, n, dtype):
         np.random.seed(0)
-        self.data = np.random.randint(20, size=(n, n), dtype=dtype)
+        self.data = labeled_particles(
+            (n, n), dtype=dtype, n=int(np.log2(n) ** 2), seed=1
+        )
         self.layer = Labels(self.data)
         self.layer._raw_to_displayed(self.data, (slice(0, n), slice(0, n)))
 
@@ -66,7 +71,7 @@ class Labels2DSuite:
 
     def mem_layer(self, *_):
         """Memory used by layer."""
-        return self.layer
+        return copy(self.layer)
 
     def mem_data(self, *_):
         """Memory used by raw data."""
@@ -84,7 +89,9 @@ class LabelsDrawing2DSuite:
 
     def setup(self, n, brush_size, color_mode, contour):
         np.random.seed(0)
-        self.data = np.random.randint(64, size=(n, n), dtype=np.int32)
+        self.data = labeled_particles(
+            (n, n), dtype=np.int32, n=int(np.log2(n) ** 2), seed=1
+        )
 
         colors = None
         if color_mode == 'direct':
@@ -117,11 +124,8 @@ class Labels2DColorDirectSuite(Labels2DSuite):
             raise NotImplementedError("Skip on PR (speedup)")
         np.random.seed(0)
         info = np.iinfo(dtype)
-        self.data = np.random.randint(
-            low=max(-10000, info.min),
-            high=min(10000, info.max),
-            size=(n, n),
-            dtype=dtype,
+        self.data = labeled_particles(
+            (n, n), dtype=dtype, n=int(np.log2(n) ** 2), seed=1
         )
         random_label_ids = np.random.randint(
             low=max(-10000, info.min), high=min(10000, info.max), size=20
@@ -148,7 +152,9 @@ class Labels3DSuite:
             raise NotImplementedError("Skip on CI (not enough memory)")
 
         np.random.seed(0)
-        self.data = np.random.randint(20, size=(n, n, n), dtype=dtype)
+        self.data = labeled_particles(
+            (n, n, n), dtype=dtype, n=int(np.log2(n) ** 2), seed=1
+        )
         self.layer = Labels(self.data)
         self.layer._slice_dims(Dims(ndim=3, ndisplay=3))
         self.layer._raw_to_displayed(
@@ -196,7 +202,7 @@ class Labels3DSuite:
 
     def mem_layer(self, *_):
         """Memory used by layer."""
-        return self.layer
+        return copy(self.layer)
 
     def mem_data(self, *_):
         """Memory used by raw data."""
