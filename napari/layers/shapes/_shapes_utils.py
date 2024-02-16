@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections import defaultdict
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -550,7 +549,9 @@ def _generate_triangle_constraints(vertices):
 
     Returns
     -------
-    edges: np.ndarray[np.intp], shape (M, 2)
+    new_vertices: np.ndarray[np.floating], shape (M, 2)
+        Vertices with duplicate nodes removed.
+    edges: np.ndarray[np.intp], shape (P, 2)
         List of edges in the polygon, expressed as an array of pairs of vertex
         indices. This is usually [(0, 1), (1, 2), ... (N-1, 0)], but edges
         that are visited twice are removed.
@@ -558,34 +559,35 @@ def _generate_triangle_constraints(vertices):
     if tuple(vertices[0]) == tuple(vertices[-1]):  # closed polygon
         vertices = vertices[:-1]  # make closing implicit
     len_data = len(vertices)
-    edges = np.empty((len_data, 2), dtype=np.uint32)
-    edges[:, 0] = np.arange(len_data)
-    edges[:, 1] = np.arange(1, len_data + 1)
+    edges_raw = np.empty((len_data, 2), dtype=np.uint32)
+    edges_raw[:, 0] = np.arange(len_data)
+    edges_raw[:, 1] = np.arange(1, len_data + 1)
     # connect last with first vertex
-    edges[-1, 1] = 0
-    _, ix, inv = np.unique(
-        vertices, axis=0, return_index=True, return_inverse=True
+    edges_raw[-1, 1] = 0
+    new_vertices, inv = np.unique(vertices, axis=0, return_inverse=True)
+    edges_unique_nodes = inv[edges_raw]
+    edges, ct = np.unique(
+        np.sort(edges_unique_nodes, axis=1), axis=0, return_counts=True
     )
-    edges_unique = ix[inv][edges]
-    edges_dict = defaultdict(int)
-    for edge in edges_unique:
-        edges_dict[frozenset(edge)] += 1
-    edges = np.array([list(e) for e in edges_dict if edges_dict[e] == 1])
-    return edges
+    return new_vertices, edges[ct == 1]
 
 
-def _cull_triangles_not_in_poly(vertices, triangles):
+def _cull_triangles_not_in_poly(vertices, triangles, poly):
     """Remove triangles that are not inside the polygon.
 
     Parameters
     ----------
     vertices: np.ndarray[np.floating], shape (N, 2)
-        The vertices defining the polygon. Holes in the polygon are defined by
+        The vertices of the triangulation. Holes in the polygon are defined by
         an embedded polygon that starts from an arbitrary point in the
         enclosing polygon and wind in the opposite direction.
     triangles: np.ndarray[np.intp], shape (M, 3)
         Triangles in the triangulation, defined by three indices into the
         vertex array.
+    poly: np.ndarray[np.floating], shape (P, 2)
+        The vertices of the polygon. Holes in the polygon are defined by
+        an embedded polygon that starts from an arbitrary point in the
+        enclosing polygon and wind in the opposite direction.
 
     Returns
     -------
@@ -593,16 +595,16 @@ def _cull_triangles_not_in_poly(vertices, triangles):
         A subset of the input triangles.
     """
     centers = np.mean(vertices[triangles], axis=1)
-    in_poly = measure.points_in_poly(centers, vertices)
+    in_poly = measure.points_in_poly(centers, poly)
     return triangles[in_poly]
 
 
-def triangulate_face(data):
+def triangulate_face(polygon_vertices):
     """Determines the triangulation of the face of a shape.
 
     Parameters
     ----------
-    data : np.ndarray
+    polygon_vertices : np.ndarray
         Nx2 array of vertices of shape to be triangulated
 
     Returns
@@ -613,16 +615,20 @@ def triangulate_face(data):
         Px3 array of the indices of the vertices that will form the
         triangles of the triangulation
     """
-    vertices = data
-
     if triangulate is not None:
-        edges = _generate_triangle_constraints(data)
-        print('triangulating with triangle')
-        res = triangulate({"vertices": vertices, "segments": edges}, opts='p')
-        vertices, triangles = res['vertices'], res['triangles']
-        triangles = _cull_triangles_not_in_poly(vertices, triangles)
+        raw_vertices, edges = _generate_triangle_constraints(polygon_vertices)
+        res = triangulate(
+            {'vertices': raw_vertices, 'segments': edges}, opts='p'
+        )
+        vertices = res['vertices']
+        raw_triangles = res['triangles']
+        triangles = _cull_triangles_not_in_poly(
+            vertices, raw_triangles, polygon_vertices
+        )
     else:
-        vertices, triangles = PolygonData(vertices=data).triangulate()
+        vertices, triangles = PolygonData(
+            vertices=polygon_vertices
+        ).triangulate()
 
     triangles = triangles.astype(np.uint32)
 
