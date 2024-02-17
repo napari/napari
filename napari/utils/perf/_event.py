@@ -94,7 +94,7 @@ class PerfEvent:
         category: Optional[str] = None,
         process_id: Optional[int] = None,
         thread_id: Optional[int] = None,
-        phase: str = "X",  # "X" is a "complete event" in their spec.
+        phase: str = 'X',  # "X" is a "complete event" in their spec.
         **kwargs: float,
     ) -> None:
         if process_id is None:

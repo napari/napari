@@ -96,7 +96,7 @@ def guess_multiscale(
     return True, MultiScaleData(data)
 
 
-def guess_labels(data: Any) -> Literal["labels", "image"]:
+def guess_labels(data: Any) -> Literal['labels', 'image']:
     """Guess if array contains labels data."""
 
     if hasattr(data, 'dtype') and data.dtype in (

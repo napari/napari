@@ -141,7 +141,7 @@ def configure_dask(data: Any, cache: bool = True) -> DaskIndexer:
     def dask_optimized_slicing(
         memfrac: float = 0.5,
     ) -> Iterator[Tuple[Any, Any]]:
-        opts = {"optimization.fuse.active": False}
+        opts = {'optimization.fuse.active': False}
         with dask.config.set(opts) as cfg, _cache as c:
             yield cfg, c
 

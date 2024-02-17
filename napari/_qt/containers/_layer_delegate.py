@@ -201,7 +201,7 @@ class LayerDelegate(QStyledItemDelegate):
         ):
             pnt = (
                 event.globalPosition().toPoint()
-                if hasattr(event, "globalPosition")
+                if hasattr(event, 'globalPosition')
                 else event.globalPos()
             )
 

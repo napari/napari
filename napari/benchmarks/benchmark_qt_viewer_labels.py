@@ -116,40 +116,40 @@ def setup_rendering_data(radius, dtype):
 class LabelRendering:
     """Benchmarks for rendering the Labels layer."""
 
-    param_names = ["radius", "dtype", "mode"]
+    param_names = ['radius', 'dtype', 'mode']
     params = (
         [10, 30, 300, 1500],
         [np.uint8, np.uint16, np.uint32],
-        ["auto", "direct"],
+        ['auto', 'direct'],
     )
-    if "GITHUB_ACTIONS" in os.environ:
+    if 'GITHUB_ACTIONS' in os.environ:
         skip_params = Skiper(lambda x: x[0] > 20)
-    if "PR" in os.environ:
+    if 'PR' in os.environ:
         skip_params = Skiper(lambda x: x[0] > 20)
 
     def setup(self, radius, dtype, label_mode):
-        self.steps = 4 if "GITHUB_ACTIONS" in os.environ else 10
+        self.steps = 4 if 'GITHUB_ACTIONS' in os.environ else 10
         self.app = QApplication.instance() or QApplication([])
         self.data = setup_rendering_data(radius, dtype)
         scale = self.data.shape[-1] / np.array(self.data.shape)
         self.viewer = ViewerModel()
         self.qt_viewr = QtViewer(self.viewer)
         self.layer = self.viewer.add_labels(self.data, scale=scale)
-        if label_mode == "direct":
+        if label_mode == 'direct':
             colors = dict(
                 zip(
                     range(10, 2000),
-                    cycle(["red", "green", "blue", "pink", "magenta"]),
+                    cycle(['red', 'green', 'blue', 'pink', 'magenta']),
                 )
             )
-            colors[None] = "yellow"
-            colors[0] = "transparent"
+            colors[None] = 'yellow'
+            colors[0] = 'transparent'
             self.layer.color = colors
         self.qt_viewr.show()
 
     @staticmethod
     def teardown(self, *_):
-        if hasattr(self, "viewer"):
+        if hasattr(self, 'viewer'):
             self.qt_viewr.close()
 
     def _time_iterate_components(self, *_):

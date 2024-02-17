@@ -489,7 +489,7 @@ def is_diagonal(matrix, tol=1e-8):
     if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1]:
         raise ValueError(
             trans._(
-                "matrix must be square, but shape={shape}",
+                'matrix must be square, but shape={shape}',
                 deferred=True,
                 shape=matrix.shape,
             )

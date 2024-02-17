@@ -16,7 +16,7 @@ from typing import Optional
 
 from napari.utils.translations import trans
 
-LOGGER = logging.getLogger("napari.monitor")
+LOGGER = logging.getLogger('napari.monitor')
 
 # If False monitor is disabled even if we meet all other requirements.
 ENABLE_MONITOR = True
@@ -40,7 +40,7 @@ def _load_config(path: str) -> dict:
         raise FileNotFoundError(
             errno.ENOENT,
             trans._(
-                "Monitor: Config file not found: {path}",
+                'Monitor: Config file not found: {path}',
                 deferred=True,
                 path=path,
             ),
@@ -60,8 +60,8 @@ def _load_monitor_config() -> Optional[dict]:
     """
     # We shouldn't even call into this file unless NAPARI_MON is defined
     # but check to be sure.
-    value = os.getenv("NAPARI_MON")
-    if value in [None, "0"]:
+    value = os.getenv('NAPARI_MON')
+    if value in [None, '0']:
         return None
 
     return _load_config(value)
@@ -86,7 +86,7 @@ def _setup_logging(config: dict) -> None:
     fh = logging.FileHandler(log_path)
     LOGGER.addHandler(fh)
     LOGGER.setLevel(logging.DEBUG)
-    LOGGER.info("Writing to log path %s", log_path)
+    LOGGER.info('Writing to log path %s', log_path)
 
 
 def _get_monitor_config() -> Optional[dict]:
@@ -108,18 +108,18 @@ def _get_monitor_config() -> Optional[dict]:
         # were added in 3.8, but the 3.8 implemention was buggy. It's
         # possible we could backport to or otherwise fix 3.8 or even 3.7,
         # but for now we're making 3.9 a requirement.
-        print("Monitor: not starting, requires Python 3.9 or newer")
+        print('Monitor: not starting, requires Python 3.9 or newer')
         return None
 
     if not ENABLE_MONITOR:
-        print("Monitor: not starting, disabled")
+        print('Monitor: not starting, disabled')
         return None
 
     # The NAPARI_MON environment variable points to our config file.
     config = _load_monitor_config()
 
     if config is None:
-        print("Monitor: not starting, no usable config file")
+        print('Monitor: not starting, no usable config file')
         return None
 
     return config

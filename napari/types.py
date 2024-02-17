@@ -107,13 +107,13 @@ class SampleDict(TypedDict):
 ArrayBase: Type[np.ndarray] = np.ndarray
 
 
-ImageData = NewType("ImageData", np.ndarray)
-LabelsData = NewType("LabelsData", np.ndarray)
-PointsData = NewType("PointsData", np.ndarray)
-ShapesData = NewType("ShapesData", List[np.ndarray])
-SurfaceData = NewType("SurfaceData", Tuple[np.ndarray, np.ndarray, np.ndarray])
-TracksData = NewType("TracksData", np.ndarray)
-VectorsData = NewType("VectorsData", np.ndarray)
+ImageData = NewType('ImageData', np.ndarray)
+LabelsData = NewType('LabelsData', np.ndarray)
+PointsData = NewType('PointsData', np.ndarray)
+ShapesData = NewType('ShapesData', List[np.ndarray])
+SurfaceData = NewType('SurfaceData', Tuple[np.ndarray, np.ndarray, np.ndarray])
+TracksData = NewType('TracksData', np.ndarray)
+VectorsData = NewType('VectorsData', np.ndarray)
 _LayerData = Union[
     ImageData,
     LabelsData,
@@ -124,7 +124,7 @@ _LayerData = Union[
     VectorsData,
 ]
 
-LayerDataTuple = NewType("LayerDataTuple", tuple)
+LayerDataTuple = NewType('LayerDataTuple', tuple)
 
 
 def image_reader_to_layerdata_reader(
