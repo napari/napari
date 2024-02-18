@@ -309,10 +309,16 @@ class TrackManager:
     def build_tracks(self):
         """build the tracks"""
 
+        # Track ids associated to all vertices, sorted by time
         points_id = self.data[:, 0][self._ordered_points_idx].copy()
+        # Coordinates of all vertices
         track_vertices = self.data[:, 1:].copy()
 
+        # Indices in the data array just before the track id changes
         indices_new_id = np.where(np.diff(self.data[:, 0]))[0]
+
+        # Define track_connex as an array full of 'True', then set to 'False'
+        # at the indices just before the track id changes
         track_connex = np.ones(self.data.shape[0], dtype=bool)
         track_connex[indices_new_id] = False
 
