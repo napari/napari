@@ -283,7 +283,7 @@ class TrackManager:
 
         return new_graph
 
-    def build_tracks(self):
+    def build_tracks_old(self):
         """build the tracks"""
 
         points_id = []
@@ -305,6 +305,20 @@ class TrackManager:
         self._points_id = np.array(points_id)[self._ordered_points_idx]
         self._track_vertices = np.concatenate(track_vertices, axis=0)
         self._track_connex = np.concatenate(track_connex, axis=0)
+
+    def build_tracks(self):
+        """build the tracks"""
+
+        points_id = self.data[:, 0][self._ordered_points_idx].copy()
+        track_vertices = self.data[:, 1:].copy()
+
+        indices_new_id = np.where(np.diff(self.data[:, 0]))[0]
+        track_connex = np.ones(self.data.shape[0], dtype=bool)
+        track_connex[indices_new_id] = False
+
+        self._points_id = points_id
+        self._track_vertices = track_vertices
+        self._track_connex = track_connex
 
     def build_graph(self):
         """build the track graph"""
