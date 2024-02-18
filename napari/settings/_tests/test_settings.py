@@ -288,7 +288,7 @@ def test_settings_env_variables_do_not_write_to_disk(tmp_path, monkeypatch):
 
 def test_settings_env_variables_override_file(tmp_path, monkeypatch):
     # create a settings file with async_ = true
-    data = "experimental:\n   async_: true\n   autoswap_buffers: true"
+    data = 'experimental:\n   async_: true\n   autoswap_buffers: true'
     fake_path = tmp_path / 'fake_path.yml'
     fake_path.write_text(data)
 
