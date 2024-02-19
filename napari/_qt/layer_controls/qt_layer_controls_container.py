@@ -126,7 +126,7 @@ class QtLayerControlsContainer(QStackedWidget):
         for widget in self.widgets.values():
             if widget is not self.empty_widget:
                 # TODO: Validation should be removed
-                on_theme_changed = getattr(widget, "on_theme_changed", None)
+                on_theme_changed = getattr(widget, 'on_theme_changed', None)
                 if on_theme_changed:
                     on_theme_changed(event)
 

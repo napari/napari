@@ -11,9 +11,9 @@ from napari._qt.layer_controls.widgets.qt_text_visibility import (
 )
 
 __all__ = [
-    "QtEdgeColorControl",
-    "QtEdgeWidthSliderControl",
-    "QtFaceColorControl",
-    "QtOpacityBlendingControls",
-    "QtTextVisibilityControl",
+    'QtEdgeColorControl',
+    'QtEdgeWidthSliderControl',
+    'QtFaceColorControl',
+    'QtOpacityBlendingControls',
+    'QtTextVisibilityControl',
 ]

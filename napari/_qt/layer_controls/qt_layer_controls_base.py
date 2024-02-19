@@ -84,7 +84,7 @@ class QtCollapsibleLayerControlsSection(QCollapsible):
     layer controls collapsible sections. See `addRowToSection`
     """
 
-    def __init__(self, title: str = "", parent: QWidget = None) -> None:
+    def __init__(self, title: str = '', parent: QWidget = None) -> None:
         super().__init__(title=title, parent=parent)
         # Use `clicked` instead of `toggled` to prevent `QPropertyAnimation` leak
         self._toggle_btn.toggled.disconnect()
@@ -110,14 +110,14 @@ class QtCollapsibleLayerControlsSection(QCollapsible):
     def expand(self, animate: bool = True) -> None:
         super().expand(animate=animate)
         self._toggle_btn.setToolTip(
-            trans._("Collapse {title} layer controls", title=self._text)
+            trans._('Collapse {title} layer controls', title=self._text)
         )
         self._content.show()
 
     def collapse(self, animate: bool = True) -> None:
         super().collapse(animate=animate)
         self._toggle_btn.setToolTip(
-            trans._("Expand {title} layer controls", title=self._text)
+            trans._('Expand {title} layer controls', title=self._text)
         )
         self._content.hide()
 
@@ -385,10 +385,10 @@ class NewQtLayerControls(
 
         # Setup layer controls sections
         self._annotation_controls_section = QtCollapsibleLayerControlsSection(
-            trans._("annotation")
+            trans._('annotation')
         )
         self._display_controls_section = QtCollapsibleLayerControlsSection(
-            trans._("display")
+            trans._('display')
         )
         controls_scrollarea = QScrollArea()
         controls_scrollarea.setWidgetResizable(True)
@@ -684,7 +684,7 @@ class NewQtLayerControls(
         if controls is None:
             controls = []
         self._add_widget_controls(
-            "_annotation_controls_section",
+            '_annotation_controls_section',
             wrapper,
             controls=controls,
             add_wrapper=add_wrapper,
@@ -714,7 +714,7 @@ class NewQtLayerControls(
         if controls is None:
             controls = []
         self._add_widget_controls(
-            "_display_controls_section",
+            '_display_controls_section',
             wrapper,
             controls=controls,
             add_wrapper=add_wrapper,
