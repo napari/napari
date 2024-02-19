@@ -14,16 +14,16 @@ from napari import __version__
 from napari._app_model.constants import CommandId, MenuGroup, MenuId
 
 v = parse(__version__)
-VERSION = "dev" if v.is_devrelease else str(v)
+VERSION = 'dev' if v.is_devrelease else str(v)
 
 HELP_URLS = {
-    "getting_started": f'https://napari.org/{VERSION}/tutorials/start_index.html',
-    "tutorials": f'https://napari.org/{VERSION}/tutorials/index.html',
-    "layers_guide": f'https://napari.org/{VERSION}/howtos/layers/index.html',
-    "examples_gallery": f'https://napari.org/{VERSION}/gallery.html',
-    "release_notes": f'https://napari.org/{VERSION}/release/release_{VERSION.replace(".", "_")}.html',
-    "github_issue": 'https://github.com/napari/napari/issues',
-    "homepage": 'https://napari.org',
+    'getting_started': f'https://napari.org/{VERSION}/tutorials/start_index.html',
+    'tutorials': f'https://napari.org/{VERSION}/tutorials/index.html',
+    'layers_guide': f'https://napari.org/{VERSION}/howtos/layers/index.html',
+    'examples_gallery': f'https://napari.org/{VERSION}/gallery.html',
+    'release_notes': f'https://napari.org/{VERSION}/release/release_{VERSION.replace(".", "_")}.html',
+    'github_issue': 'https://github.com/napari/napari/issues',
+    'homepage': 'https://napari.org',
 }
 
 HELP_ACTIONS: List[Action] = [
@@ -60,7 +60,7 @@ HELP_ACTIONS: List[Action] = [
         menus=[
             {
                 'id': MenuId.MENUBAR_HELP,
-                'when': VERSION != "dev",
+                'when': VERSION != 'dev',
                 'group': MenuGroup.NAVIGATION,
             }
         ],
@@ -74,7 +74,7 @@ HELP_ACTIONS: List[Action] = [
         menus=[
             {
                 'id': MenuId.MENUBAR_HELP,
-                'when': VERSION == "dev",
+                'when': VERSION == 'dev',
                 'group': MenuGroup.NAVIGATION,
             }
         ],

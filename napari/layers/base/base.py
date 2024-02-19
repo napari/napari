@@ -80,7 +80,7 @@ if TYPE_CHECKING:
     from napari.layers._source import Source
 
 
-logger = logging.getLogger("napari.layers.base.base")
+logger = logging.getLogger('napari.layers.base.base')
 
 
 def no_op(layer: Layer, event: Event) -> None:
@@ -435,7 +435,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             help=Event,
             interactive=WarningEmitter(
                 trans._(
-                    "layer.events.interactive is deprecated since 0.4.18 and will be removed in 0.6.0. Please use layer.events.mouse_pan and layer.events.mouse_zoom",
+                    'layer.events.interactive is deprecated since 0.4.18 and will be removed in 0.6.0. Please use layer.events.mouse_pan and layer.events.mouse_zoom',
                     deferred=True,
                 ),
                 type_name='interactive',
@@ -476,7 +476,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
     def __repr__(self) -> str:
         cls = type(self)
-        return f"<{cls.__name__} layer {self.name!r} at {hex(id(self))}>"
+        return f'<{cls.__name__} layer {self.name!r} at {hex(id(self))}>'
 
     def _mode_setter_helper(self, mode_in: Union[Mode, str]) -> StringEnum:
         """
@@ -514,7 +514,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         if mode not in self._modeclass:
             raise ValueError(
                 trans._(
-                    "Mode not recognized: {mode}", deferred=True, mode=mode
+                    'Mode not recognized: {mode}', deferred=True, mode=mode
                 )
             )
 
@@ -1069,7 +1069,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     def interactive(self) -> bool:
         warnings.warn(
             trans._(
-                "Layer.interactive is deprecated since napari 0.4.18 and will be removed in 0.6.0. Please use Layer.mouse_pan and Layer.mouse_zoom instead"
+                'Layer.interactive is deprecated since napari 0.4.18 and will be removed in 0.6.0. Please use Layer.mouse_pan and Layer.mouse_zoom instead'
             ),
             FutureWarning,
             stacklevel=2,
@@ -1080,7 +1080,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     def interactive(self, interactive: bool) -> None:
         warnings.warn(
             trans._(
-                "Layer.interactive is deprecated since napari 0.4.18 and will be removed in 0.6.0. Please use Layer.mouse_pan and Layer.mouse_zoom instead"
+                'Layer.interactive is deprecated since napari 0.4.18 and will be removed in 0.6.0. Please use Layer.mouse_pan and Layer.mouse_zoom instead'
             ),
             FutureWarning,
             stacklevel=2,
@@ -2068,7 +2068,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         msg : string
             String containing a message that can be used as a tooltip.
         """
-        return ""
+        return ''
 
     def save(self, path: str, plugin: Optional[str] = None) -> List[str]:
         """Save this layer to ``path`` with default (or specified) plugin.
@@ -2193,7 +2193,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             bad_key = str(exc).split('keyword argument ')[-1]
             raise TypeError(
                 trans._(
-                    "_add_layer_from_data received an unexpected keyword argument ({bad_key}) for layer type {layer_type}",
+                    '_add_layer_from_data received an unexpected keyword argument ({bad_key}) for layer type {layer_type}',
                     deferred=True,
                     bad_key=bad_key,
                     layer_type=layer_type,

@@ -48,7 +48,7 @@ Q_FILE_ACTIONS: List[Action] = [
         title=CommandId.IMAGE_FROM_CLIPBOARD.command_title,
         callback=QtViewer._image_from_clipboard,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.NAVIGATION}],
-        keybindings=[{"primary": KeyMod.CtrlCmd | KeyCode.KeyN}],
+        keybindings=[{'primary': KeyMod.CtrlCmd | KeyCode.KeyN}],
     ),
     Action(
         id=CommandId.DLG_OPEN_FILES,
@@ -178,7 +178,7 @@ Q_FILE_ACTIONS: List[Action] = [
                 'id': MenuId.MENUBAR_FILE,
                 'group': MenuGroup.CLOSE,
                 'when': (
-                    Path(sys.executable).parent / ".napari_is_bundled"
+                    Path(sys.executable).parent / '.napari_is_bundled'
                 ).exists(),
             }
         ],

@@ -92,7 +92,7 @@ class QtLayerControlsContainer(QStackedWidget):
 
         self.setMouseTracking(True)
         self.empty_widget = QFrame()
-        self.empty_widget.setObjectName("empty_controls_widget")
+        self.empty_widget.setObjectName('empty_controls_widget')
         self.widgets = {}
         self.addWidget(self.empty_widget)
         self.setCurrentWidget(self.empty_widget)

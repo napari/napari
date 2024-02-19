@@ -407,7 +407,7 @@ def test_labels_painting(make_napari_viewer):
     assert screenshot[:, :, :2].max() > 0
 
 
-@pytest.mark.skip("Welcome visual temporarily disabled")
+@pytest.mark.skip('Welcome visual temporarily disabled')
 @skip_on_win_ci
 @skip_local_popups
 def test_welcome(make_napari_viewer):

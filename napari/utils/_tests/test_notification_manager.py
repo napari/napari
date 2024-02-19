@@ -31,7 +31,7 @@ class PurposefulException(Exception):
 
 def test_notification_repr_has_message():
     assert "='this is the message'" in repr(
-        Notification("this is the message")
+        Notification('this is the message')
     )
 
 
@@ -65,12 +65,12 @@ def test_notification_manager_no_gui(monkeypatch):
         # test that exceptions that go through sys.excepthook are catalogued
 
         with pytest.raises(PurposefulException):
-            raise PurposefulException("this is an exception")
+            raise PurposefulException('this is an exception')
 
         # pytest intercepts the error, so we can manually call sys.excepthook
         assert sys.excepthook == notification_manager.receive_error
         try:
-            raise ValueError("a")
+            raise ValueError('a')
         except ValueError:
             sys.excepthook(*sys.exc_info())
         assert len(notification_manager.records) == 3
@@ -119,7 +119,7 @@ def test_notification_manager_no_gui_with_threading():
 
     def _raise():
         with pytest.raises(PurposefulException):
-            raise PurposefulException("this is an exception")
+            raise PurposefulException('this is an exception')
 
     previous_threading_exhook = threading.excepthook
 
@@ -139,7 +139,7 @@ def test_notification_manager_no_gui_with_threading():
         exception_thread.join(timeout=DEFAULT_TIMEOUT_SECS)
 
         try:
-            raise ValueError("a")
+            raise ValueError('a')
         except ValueError:
             threading.excepthook(sys.exc_info())
 

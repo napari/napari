@@ -10,9 +10,9 @@ from napari.utils.translations import trans
 class ShortcutsSettings(EventedModel):
     shortcuts: Dict[str, List[KeyBinding]] = Field(
         default_shortcuts,
-        title=trans._("shortcuts"),
+        title=trans._('shortcuts'),
         description=trans._(
-            "Set keyboard shortcuts for actions.",
+            'Set keyboard shortcuts for actions.',
         ),
     )
 
