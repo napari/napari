@@ -415,7 +415,7 @@ def mock_console(request, qapp):
     use the `enable_console` marker. It's not autouse to avoid use on headless
     tests (without Qt); instead it's enabled in `pytest_runtest_setup`.
     """
-    if "enable_console" in request.keywords:
+    if 'enable_console' in request.keywords:
         yield
         return
 
@@ -439,7 +439,7 @@ def mock_console(request, qapp):
             # Disconnect theme update
             self.viewer.events.theme.disconnect(self._update_theme)
 
-    with patch("napari_console.QtConsole", FakeQtConsole):
+    with patch('napari_console.QtConsole', FakeQtConsole):
         yield
 
 
@@ -795,11 +795,11 @@ def pytest_runtest_setup(item):
 
         item.fixturenames.extend(
             [
-                "dangling_qthread_pool",
-                "dangling_qanimations",
-                "dangling_qthreads",
-                "dangling_qtimers",
-                "mock_console",
+                'dangling_qthread_pool',
+                'dangling_qanimations',
+                'dangling_qthreads',
+                'dangling_qtimers',
+                'mock_console',
             ]
         )
 
