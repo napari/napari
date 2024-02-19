@@ -6,11 +6,11 @@ because it requires qt, and should be omitted from headless tests.
 
 import pytest
 
-pytest_plugins = "pytester"
+pytest_plugins = 'pytester'
 
 
-@pytest.mark.filterwarnings("ignore:`type` argument to addoption()::")
-@pytest.mark.filterwarnings("ignore:The TerminalReporter.writer::")
+@pytest.mark.filterwarnings('ignore:`type` argument to addoption()::')
+@pytest.mark.filterwarnings('ignore:The TerminalReporter.writer::')
 def test_make_napari_viewer(pytester_pretty):
     """Make sure that our make_napari_viewer plugin works."""
 

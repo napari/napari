@@ -16,12 +16,12 @@ from napari.utils.translations import trans
 class ConfirmCloseDialog(QDialog):
     def __init__(self, parent, close_app=False) -> None:
         super().__init__(parent)
-        cancel_btn = QPushButton(trans._("Cancel"))
-        close_btn = QPushButton(trans._("Close"))
-        close_btn.setObjectName("warning_icon_btn")
+        cancel_btn = QPushButton(trans._('Cancel'))
+        close_btn = QPushButton(trans._('Close'))
+        close_btn.setObjectName('warning_icon_btn')
         icon_label = QWidget()
 
-        self.do_not_ask = QCheckBox(trans._("Do not ask in future"))
+        self.do_not_ask = QCheckBox(trans._('Do not ask in future'))
 
         if close_app:
             self.setWindowTitle(trans._('Close Application?'))
@@ -31,9 +31,9 @@ class ConfirmCloseDialog(QDialog):
                     QKeySequence.NativeText
                 ),
             )
-            close_btn.setObjectName("error_icon_btn")
+            close_btn.setObjectName('error_icon_btn')
             close_btn.setShortcut(QKeySequence('Ctrl+Q'))
-            icon_label.setObjectName("error_icon_element")
+            icon_label.setObjectName('error_icon_element')
         else:
             self.setWindowTitle(trans._('Close Window?'))
             text = trans._(
@@ -42,9 +42,9 @@ class ConfirmCloseDialog(QDialog):
                     QKeySequence.NativeText
                 ),
             )
-            close_btn.setObjectName("warning_icon_btn")
+            close_btn.setObjectName('warning_icon_btn')
             close_btn.setShortcut(QKeySequence('Ctrl+W'))
-            icon_label.setObjectName("warning_icon_element")
+            icon_label.setObjectName('warning_icon_element')
 
         cancel_btn.clicked.connect(self.reject)
         close_btn.clicked.connect(self.accept)

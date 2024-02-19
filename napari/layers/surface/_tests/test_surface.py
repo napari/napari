@@ -322,7 +322,7 @@ def test_vertex_colors():
 
 
 @pytest.mark.parametrize(
-    "ray_start,ray_direction,expected_value,expected_index",
+    'ray_start,ray_direction,expected_value,expected_index',
     [
         ([0, 1, 1], [1, 0, 0], 2, 0),
         ([10, 1, 1], [-1, 0, 0], 2, 1),
@@ -360,7 +360,7 @@ def test_get_value_3d(
 
 
 @pytest.mark.parametrize(
-    "ray_start,ray_direction,expected_value,expected_index",
+    'ray_start,ray_direction,expected_value,expected_index',
     [
         ([0, 0, 1, 1], [0, 1, 0, 0], 2, 0),
         ([0, 10, 1, 1], [0, -1, 0, 0], 2, 1),
@@ -418,7 +418,7 @@ def test_surface_normals():
     faces = np.array([[0, 1, 2], [3, 4, 5], [6, 7, 8]])
     values = np.array([1, 2, 3, 1, 2, 3, 1, 2, 3])
 
-    normals = {"face": {"visible": True, "color": 'red'}}
+    normals = {'face': {'visible': True, 'color': 'red'}}
     surface_layer = Surface((vertices, faces, values), normals=normals)
     assert isinstance(surface_layer.normals, SurfaceNormals)
     assert surface_layer.normals.face.visible is True
@@ -453,7 +453,7 @@ def test_surface_wireframe():
     faces = np.array([[0, 1, 2], [3, 4, 5], [6, 7, 8]])
     values = np.array([1, 2, 3, 1, 2, 3, 1, 2, 3])
 
-    wireframe = {"visible": True, "color": 'red'}
+    wireframe = {'visible': True, 'color': 'red'}
     surface_layer = Surface((vertices, faces, values), wireframe=wireframe)
     assert isinstance(surface_layer.wireframe, SurfaceWireframe)
     assert surface_layer.wireframe.visible is True

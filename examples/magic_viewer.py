@@ -14,7 +14,7 @@ import napari
 # the viewer that the function is embedded in, when the function is added to
 # the viewer with add_function_widget.
 def my_function(viewer: napari.Viewer):
-    print(viewer, f"with {len(viewer.layers)} layers")
+    print(viewer, f'with {len(viewer.layers)} layers')
 
 
 viewer = napari.Viewer()

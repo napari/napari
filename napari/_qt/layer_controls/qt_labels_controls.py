@@ -175,7 +175,7 @@ class QtLabelsControls(QtLayerControls):
 
         selectedColorCheckbox = QCheckBox()
         selectedColorCheckbox.setToolTip(
-            trans._("Display only selected label")
+            trans._('Display only selected label')
         )
         selectedColorCheckbox.stateChanged.connect(self.toggle_selected_mode)
         self.selectedColorCheckbox = selectedColorCheckbox
@@ -362,7 +362,7 @@ class QtLabelsControls(QtLayerControls):
         elif mode == Mode.ERASE:
             self.erase_button.setChecked(True)
         elif mode != Mode.TRANSFORM:
-            raise ValueError(trans._("Mode not recognized"))
+            raise ValueError(trans._('Mode not recognized'))
 
     def changeRendering(self, text):
         """Change rendering mode for image display.

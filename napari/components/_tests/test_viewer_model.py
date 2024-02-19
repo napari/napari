@@ -57,11 +57,11 @@ def test_add_image_colormap_variants():
     assert viewer.add_image(data, colormap='fire')
 
     # as tuple
-    cmap_tuple = ("my_colormap", Colormap(['g', 'm', 'y']))
+    cmap_tuple = ('my_colormap', Colormap(['g', 'm', 'y']))
     assert viewer.add_image(data, colormap=cmap_tuple)
 
     # as dict
-    cmap_dict = {"your_colormap": Colormap(['g', 'r', 'y'])}
+    cmap_dict = {'your_colormap': Colormap(['g', 'r', 'y'])}
     assert viewer.add_image(data, colormap=cmap_dict)
 
     # as Colormap instance
@@ -139,7 +139,7 @@ def test_add_labels_warnings():
     viewer = ViewerModel()
     np.random.seed(0)
     with pytest.warns(
-        FutureWarning, match="Setting Labels.num_colors is deprecated since"
+        FutureWarning, match='Setting Labels.num_colors is deprecated since'
     ):
         viewer.add_labels(np.zeros((10, 15), dtype=np.uint8), num_colors=20)
 

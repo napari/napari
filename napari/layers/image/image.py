@@ -797,10 +797,10 @@ class Image(IntensityVisualizationMixin, _ImageBase):
     _projectionclass = ImageProjectionMode
 
     @rename_argument(
-        from_name="interpolation",
-        to_name="interpolation2d",
-        version="0.6.0",
-        since_version="0.4.17",
+        from_name='interpolation',
+        to_name='interpolation2d',
+        version='0.6.0',
+        since_version='0.4.17',
     )
     def __init__(
         self,
@@ -1030,7 +1030,7 @@ class Image(IntensityVisualizationMixin, _ImageBase):
         """
         warnings.warn(
             trans._(
-                "Interpolation attribute is deprecated since 0.4.17. Please use interpolation2d or interpolation3d",
+                'Interpolation attribute is deprecated since 0.4.17. Please use interpolation2d or interpolation3d',
             ),
             category=DeprecationWarning,
             stacklevel=2,
@@ -1046,7 +1046,7 @@ class Image(IntensityVisualizationMixin, _ImageBase):
         """Set current interpolation mode."""
         warnings.warn(
             trans._(
-                "Interpolation setting is deprecated since 0.4.17. Please use interpolation2d or interpolation3d",
+                'Interpolation setting is deprecated since 0.4.17. Please use interpolation2d or interpolation3d',
             ),
             category=DeprecationWarning,
             stacklevel=2,

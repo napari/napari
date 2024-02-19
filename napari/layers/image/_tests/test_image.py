@@ -209,7 +209,7 @@ def test_non_rgb_image():
     assert layer._data_view.shape == shape[-2:]
 
 
-@pytest.mark.parametrize("shape", [(10, 15, 6), (10, 10)])
+@pytest.mark.parametrize('shape', [(10, 15, 6), (10, 10)])
 def test_error_non_rgb_image(shape):
     """Test error on trying non rgb as rgb."""
     # If rgb is set to be True in constructor but the last dim has a
@@ -644,7 +644,7 @@ def test_out_of_range_no_contrast(dtype):
 
 
 @pytest.mark.parametrize(
-    "scale",
+    'scale',
     [
         (None),
         ([1, 1]),
@@ -662,7 +662,7 @@ def test_image_scale(scale):
 
 
 @pytest.mark.parametrize(
-    "translate",
+    'translate',
     [
         (None),
         ([1, 1]),
@@ -839,7 +839,7 @@ def test_tensorstore_image():
 
 
 @pytest.mark.parametrize(
-    "start_position, end_position, view_direction, vector, expected_value",
+    'start_position, end_position, view_direction, vector, expected_value',
     [
         # drag vector parallel to view direction
         # projected onto perpendicular vector
