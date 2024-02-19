@@ -190,9 +190,7 @@ platformdirs==2.6.2
     #   jupyter-core
     #   virtualenv
 pluggy==1.4.0
-    # via
-    #   pytest
-    #   pytest-qt
+    # via pytest
 pooch==1.6.0
     # via scikit-image
 pretend==1.0.9
@@ -235,7 +233,7 @@ pytest==7.0.0
     #   pytest-pretty
     #   pytest-qt
 pytest-pretty==1.1.0
-pytest-qt==4.4.0
+pytest-qt==4.3.1
 python-dateutil==2.8.2
     # via
     #   jupyter-client

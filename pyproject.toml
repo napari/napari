@@ -135,7 +135,7 @@ testing = [
     "pooch>=1.6.0",
     "coverage>7",
     "pretend>=1.0.9",
-    "pytest-qt>=4.4",
+    "pytest-qt>=4.3.1",
     "pytest-pretty>=1.1.0",
     "pytest>=7.0.0",
     "tensorstore>=0.1.13",
