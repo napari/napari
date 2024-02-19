@@ -39,7 +39,7 @@ Q_HELP_ACTIONS: List[Action] = [
         callback=_show_about,
         menus=[
             {
-                "id": MenuId.MENUBAR_HELP,
+                'id': MenuId.MENUBAR_HELP,
                 'group': MenuGroup.RENDER,
                 'when': sys.platform == 'darwin',
             }
