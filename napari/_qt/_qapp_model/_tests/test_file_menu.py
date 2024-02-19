@@ -65,6 +65,7 @@ def test_plugin_display_name_use_for_multiple_samples(
     app.commands.execute_command('napari:astronaut')
     assert len(viewer.layers) == 1
     assert viewer.layers[0].name == 'astronaut'
+    del samples_menu
 
 
 def test_sample_menu_plugin_state_change(
