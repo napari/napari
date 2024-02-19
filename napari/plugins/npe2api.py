@@ -71,7 +71,7 @@ class SummaryDict(_ShortSummaryDict):
 @lru_cache
 def plugin_summaries() -> List[SummaryDict]:
     """Return PackageMetadata object for all known napari plugins."""
-    url = "https://npe2api.vercel.app/api/extended_summary"
+    url = 'https://npe2api.vercel.app/api/extended_summary'
     with urlopen(Request(url, headers={'User-Agent': _user_agent()})) as resp:
         return json.load(resp)
 
@@ -79,7 +79,7 @@ def plugin_summaries() -> List[SummaryDict]:
 @lru_cache
 def conda_map() -> Dict[PyPIname, Optional[str]]:
     """Return map of PyPI package name to conda_channel/package_name ()."""
-    url = "https://npe2api.vercel.app/api/conda"
+    url = 'https://npe2api.vercel.app/api/conda'
     with urlopen(Request(url, headers={'User-Agent': _user_agent()})) as resp:
         return json.load(resp)
 
@@ -94,9 +94,9 @@ def iter_napari_plugin_info() -> Iterator[Tuple[PackageMetadata, bool, dict]]:
     conda_set = {normalized_name(x) for x in conda}
     for info in data.result():
         info_copy = dict(info)
-        info_copy.pop("display_name", None)
-        pypi_versions = info_copy.pop("pypi_versions")
-        conda_versions = info_copy.pop("conda_versions")
+        info_copy.pop('display_name', None)
+        pypi_versions = info_copy.pop('pypi_versions')
+        conda_versions = info_copy.pop('conda_versions')
         info_ = cast(_ShortSummaryDict, info_copy)
 
         # TODO: use this better.
@@ -106,11 +106,11 @@ def iter_napari_plugin_info() -> Iterator[Tuple[PackageMetadata, bool, dict]]:
         # TODO: once the new version of npe2 is out, this can be refactored
         # to all the metadata includes the conda and pypi versions.
         extra_info = {
-            'home_page': info_.get("home_page", ""),
+            'home_page': info_.get('home_page', ''),
             'pypi_versions': pypi_versions,
             'conda_versions': conda_versions,
         }
-        info_["name"] = normalized_name(info_["name"])
+        info_['name'] = normalized_name(info_['name'])
         meta = PackageMetadata(**info_)
 
-        yield meta, (info_["name"] in conda_set), extra_info
+        yield meta, (info_['name'] in conda_set), extra_info

@@ -35,7 +35,7 @@ class ActivityToggleItem(QWidget):
         self.setLayout(QHBoxLayout())
 
         self._activityBtn = QToolButton()
-        self._activityBtn.setObjectName("QtActivityButton")
+        self._activityBtn.setObjectName('QtActivityButton')
         self._activityBtn.setToolButtonStyle(
             Qt.ToolButtonStyle.ToolButtonTextBesideIcon
         )
@@ -44,7 +44,7 @@ class ActivityToggleItem(QWidget):
         self._activityBtn.setText(trans._('activity'))
         self._activityBtn.setCheckable(True)
 
-        self._inProgressIndicator = QLabel(trans._("in progress..."), self)
+        self._inProgressIndicator = QLabel(trans._('in progress...'), self)
         sp = self._inProgressIndicator.sizePolicy()
         sp.setRetainSizeWhenHidden(True)
         self._inProgressIndicator.setSizePolicy(sp)
@@ -101,7 +101,7 @@ class QtActivityDialog(QDialog):
             QSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
         )
         line = QFrame(self)
-        line.setObjectName("QtCustomTitleBarLine")
+        line.setObjectName('QtCustomTitleBarLine')
         titleLayout = QHBoxLayout()
         titleLayout.setSpacing(4)
         titleLayout.setContentsMargins(8, 1, 8, 0)
@@ -287,7 +287,7 @@ def remove_separators(current_pbars):
         parent and new progress bar to remove separators from
     """
     for current_pbar in current_pbars:
-        if line_widg := current_pbar.findChild(QFrame, "QtCustomTitleBarLine"):
+        if line_widg := current_pbar.findChild(QFrame, 'QtCustomTitleBarLine'):
             current_pbar.layout().removeWidget(line_widg)
             line_widg.hide()
             line_widg.deleteLater()

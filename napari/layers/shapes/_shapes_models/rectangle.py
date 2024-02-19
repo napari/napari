@@ -61,7 +61,7 @@ class Rectangle(Shape):
         if len(data) != 4:
             raise ValueError(
                 trans._(
-                    "Data shape does not match a rectangle. Rectangle expects four corner vertices, {number} provided.",
+                    'Data shape does not match a rectangle. Rectangle expects four corner vertices, {number} provided.',
                     deferred=True,
                     number=len(data),
                 )

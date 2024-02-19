@@ -67,10 +67,10 @@ def test_non_existing_bindings():
 def test_viewer_actions(make_napari_viewer, func):
     viewer = make_napari_viewer()
 
-    if func.__name__ == 'toggle_fullscreen' and not os.getenv("CI"):
-        pytest.skip("Fullscreen cannot be tested in CI")
+    if func.__name__ == 'toggle_fullscreen' and not os.getenv('CI'):
+        pytest.skip('Fullscreen cannot be tested in CI')
     if func.__name__ == 'play':
-        pytest.skip("Play cannot be tested with Pytest")
+        pytest.skip('Play cannot be tested with Pytest')
     func(viewer)
 
 
@@ -137,10 +137,10 @@ def test_add_layer_magic_name(
     # Tests for issue #1709
     viewer = make_napari_viewer()  # noqa: F841
     layer = eval_with_filename(
-        "add_layer_by_type(viewer, layer_class, a_unique_name)",
-        "somefile.py",
+        'add_layer_by_type(viewer, layer_class, a_unique_name)',
+        'somefile.py',
     )
-    assert layer.name == "a_unique_name"
+    assert layer.name == 'a_unique_name'
 
 
 @skip_on_win_ci
@@ -208,7 +208,7 @@ def test_changing_theme(make_napari_viewer):
     equal = (screenshot_dark == screenshot_light).min(-1)
 
     # more than 99.5% of the pixels have changed
-    assert (np.count_nonzero(equal) / equal.size) < 0.05, "Themes too similar"
+    assert (np.count_nonzero(equal) / equal.size) < 0.05, 'Themes too similar'
 
     with pytest.raises(ValueError):
         viewer.theme = 'nonexistent_theme'

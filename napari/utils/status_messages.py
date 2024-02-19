@@ -50,7 +50,7 @@ def generate_layer_coords_status(
         full_coord = map(str, np.round(np.array(position)).astype(int))
         msg = f" [{' '.join(full_coord)}]"
     else:
-        msg = ""
+        msg = ''
 
     if value is not None:
         if isinstance(value, tuple) and value != (None, None):
@@ -85,7 +85,7 @@ def generate_layer_status(name, position, value):
         full_coord = map(str, np.round(position).astype(int))
         msg = f"{name} [{' '.join(full_coord)}]"
     else:
-        msg = f"{name}"
+        msg = f'{name}'
 
     if value is not None:
         if isinstance(value, tuple) and value != (None, None):
