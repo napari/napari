@@ -103,10 +103,10 @@ class Event:
     """
 
     @rename_argument(
-        from_name="type",
-        to_name="type_name",
-        version="0.6.0",
-        since_version="0.4.18",
+        from_name='type',
+        to_name='type_name',
+        version='0.6.0',
+        since_version='0.4.18',
     )
     def __init__(
         self, type_name: str, native: Any = None, **kwargs: Any
@@ -187,7 +187,7 @@ class Event:
         _event_repr_depth += 1
         try:
             if _event_repr_depth > 2:
-                return "<...>"
+                return '<...>'
             attrs = []
             for name in dir(self):
                 if name.startswith('_'):
@@ -199,7 +199,7 @@ class Event:
                     continue
                 attr = getattr(self, name)
 
-                attrs.append(f"{name}={attr!r}")
+                attrs.append(f'{name}={attr!r}')
         finally:
             _event_repr_depth -= 1
         return f'<{self.__class__.__name__} {" ".join(attrs)}>'
@@ -223,7 +223,7 @@ CallbackStr = Tuple[
 ]  # dereferenced method
 
 
-_T = TypeVar("_T")
+_T = TypeVar('_T')
 
 
 class _WeakCounter(Generic[_T]):
@@ -289,7 +289,7 @@ class EventEmitter:
         The class of events that this emitter will generate.
     """
 
-    @rename_argument("type", "type_name", "0.6.0", "0.4.18")
+    @rename_argument('type', 'type_name', '0.6.0', '0.4.18')
     def __init__(
         self,
         source: Any = None,
@@ -638,7 +638,7 @@ class EventEmitter:
                     return obj, name
             raise RuntimeError(
                 trans._(
-                    "During bind method {callback} of object {obj} an error happen",
+                    'During bind method {callback} of object {obj} an error happen',
                     deferred=True,
                     callback=callback,
                     obj=obj,
@@ -657,7 +657,7 @@ class EventEmitter:
         if sum(map(_is_pos_arg, parameters_list)) > 1:
             raise RuntimeError(
                 trans._(
-                    "Binning function cannot have more than one positional argument",
+                    'Binning function cannot have more than one positional argument',
                     deferred=True,
                 )
             )
@@ -750,7 +750,7 @@ class EventEmitter:
                     if cb is None:
                         warnings.warn(
                             trans._(
-                                "Problem with function {old_cb} of {obj} connected to event {self_}",
+                                'Problem with function {old_cb} of {obj} connected to event {self_}',
                                 deferred=True,
                                 old_cb=old_cb[1],
                                 obj=obj,
@@ -779,7 +779,7 @@ class EventEmitter:
             if ps is not self.source:
                 raise RuntimeError(
                     trans._(
-                        "Event source-stack mismatch.",
+                        'Event source-stack mismatch.',
                         deferred=True,
                     )
                 )
@@ -826,7 +826,7 @@ class EventEmitter:
         else:
             raise ValueError(
                 trans._(
-                    "Event emitters can be called with an Event instance or with keyword arguments only.",
+                    'Event emitters can be called with an Event instance or with keyword arguments only.',
                     deferred=True,
                 )
             )
@@ -858,7 +858,7 @@ class EventEmitter:
         if callback not in self._blocked or self._blocked[callback] == 0:
             raise RuntimeError(
                 trans._(
-                    "Cannot unblock {self_} for callback {callback}; emitter was not previously blocked.",
+                    'Cannot unblock {self_} for callback {callback}; emitter was not previously blocked.',
                     deferred=True,
                     self_=self,
                     callback=callback,
@@ -973,7 +973,7 @@ class EmitterGroup(EventEmitter):
         EventEmitter.__init__(self, source)
 
         self.auto_connect = auto_connect
-        self.auto_connect_format = "on_%s"
+        self.auto_connect_format = 'on_%s'
         self._emitters: Dict[str, EventEmitter] = {}
         # whether the sub-emitters have been connected to the group:
         self._emitters_connected: bool = False
@@ -1253,5 +1253,5 @@ def set_event_tracing_enabled(enabled=True, cfg=None):
         _log_event_stack = _noop
 
 
-if os.getenv("NAPARI_DEBUG_EVENTS", '').lower() in ('1', 'true'):
+if os.getenv('NAPARI_DEBUG_EVENTS', '').lower() in ('1', 'true'):
     set_event_tracing_enabled(True)

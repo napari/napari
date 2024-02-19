@@ -26,7 +26,7 @@ class TextManagerSuite:
         ],
     ]
 
-    if "PR" in os.environ:
+    if 'PR' in os.environ:
         skip_params = Skiper(lambda x: x[0] > 2**6)
 
     def setup(self, n, string):

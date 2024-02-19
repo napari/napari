@@ -312,7 +312,7 @@ def get_layers_data(gui: CategoricalWidget) -> List[Tuple[str, Any]]:
     if not (viewer := find_viewer_ancestor(gui.native)):
         return ()
 
-    layer_type_name = gui.annotation.__name__.replace("Data", "").title()
+    layer_type_name = gui.annotation.__name__.replace('Data', '').title()
     layer_type = getattr(layers, layer_type_name)
     choices = []
     for layer in [x for x in viewer.layers if isinstance(x, layer_type)]:

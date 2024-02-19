@@ -41,7 +41,7 @@ from strings_list import (
 )
 
 REPO_ROOT = Path(__file__).resolve()
-NAPARI_MODULE = (REPO_ROOT / "napari").relative_to(REPO_ROOT)
+NAPARI_MODULE = (REPO_ROOT / 'napari').relative_to(REPO_ROOT)
 
 # Types
 StringIssuesDict = Dict[str, List[Tuple[int, str]]]
@@ -75,12 +75,12 @@ class FindTransStrings(ast.NodeVisitor):
         kwargs : kwargs
             List of keyword arguments passed to translation method.
         """
-        singular_kwargs = set(kwargs) - set({"n"})
+        singular_kwargs = set(kwargs) - set({'n'})
         plural_kwargs = set(kwargs)
 
         # If using trans methods with `context`, remove it since we are
         # only interested in the singular and plural strings (if any)
-        if method_name in ["_p", "_np"]:
+        if method_name in ['_p', '_np']:
             args = args[1:]
 
         # Iterate on strings passed to the trans method. Could be just a
@@ -113,9 +113,9 @@ class FindTransStrings(ast.NodeVisitor):
                 self._trans_errors.append(error)
 
     def visit_Call(self, node):
-        method_name, args, kwargs = "", [], []
+        method_name, args, kwargs = '', [], []
         with suppress(AttributeError):
-            if node.func.value.id == "trans":
+            if node.func.value.id == 'trans':
                 method_name = node.func.attr
                 # Args
                 for item in [arg.value for arg in node.args]:
@@ -123,7 +123,7 @@ class FindTransStrings(ast.NodeVisitor):
                     self._found.add(item)
                 # Kwargs
                 kwargs = [
-                    kw.arg for kw in node.keywords if kw.arg != "deferred"
+                    kw.arg for kw in node.keywords if kw.arg != 'deferred'
                 ]
 
         if method_name:
@@ -179,7 +179,7 @@ def find_files(
     path: str,
     skip_folders: tuple,
     skip_files: tuple,
-    extensions: tuple = (".py",),
+    extensions: tuple = ('.py',),
 ) -> List[str]:
     """Find recursively all files in path.
 
@@ -258,7 +258,7 @@ def find_docstrings(fpath: str) -> Dict[str, str]:
 
     results = {}
     for doc in docstrings:
-        key = " ".join([it for it in doc.split() if it != ""])
+        key = ' '.join([it for it in doc.split() if it != ''])
         results[key] = doc
 
     return results
@@ -366,7 +366,7 @@ def find_strings(fpath: str) -> Dict[Tuple[int, str], Tuple[int, str]]:
                     string = eval(tokstr[1:])
 
                 if isinstance(string, str):
-                    key = " ".join([it for it in string.split() if it != ""])
+                    key = ' '.join([it for it in string.split() if it != ''])
                     strings[(lineno, key)] = (lineno, string)
 
     return strings
@@ -396,7 +396,7 @@ def find_trans_strings(
     trans_strings = {}
     show_trans_strings.visit(module)
     for string in show_trans_strings._found:
-        key = " ".join(list(string.split()))
+        key = ' '.join(list(string.split()))
         trans_strings[key] = string
 
     errors = list(show_trans_strings._trans_errors)
@@ -419,8 +419,8 @@ def import_module_by_path(fpath: str) -> Optional[ModuleType]:
     """
     import importlib.util
 
-    fpath = fpath.replace("\\", "/")
-    module_name = fpath.replace(".py", "").replace("/", ".")
+    fpath = fpath.replace('\\', '/')
+    module_name = fpath.replace('.py', '').replace('/', '.')
 
     try:
         module = importlib.import_module(module_name)
@@ -468,7 +468,7 @@ def find_issues(
         skip_words_for_file_check = skip_words_for_file[:]
         module = import_module_by_path(fpath)
         if module is None:
-            raise RuntimeError(f"Error loading {fpath}")
+            raise RuntimeError(f'Error loading {fpath}')
 
         try:
             __all__strings = module.__all__
@@ -486,8 +486,8 @@ def find_issues(
                 and string not in trans_strings
                 and value not in skip_words_for_file
                 and value not in __all__strings
-                and string != ""
-                and string.strip() != ""
+                and string != ''
+                and string.strip() != ''
                 and value not in SKIP_WORDS_GLOBAL
             ):
                 issues[fpath].append((_lineno, value))
@@ -514,7 +514,7 @@ def _checks():
     return issues, outdated_strings, trans_errors
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope='module')
 def checks():
     return _checks()
 
@@ -524,35 +524,35 @@ def checks():
 def test_missing_translations(checks):
     issues, _, _ = checks
     print(
-        "\nSome strings on the following files might need to be translated "
-        "or added to the skip list.\nSkip list is located at "
-        "`tools/strings_list.py` file.\n\n"
+        '\nSome strings on the following files might need to be translated '
+        'or added to the skip list.\nSkip list is located at '
+        '`tools/strings_list.py` file.\n\n'
     )
     for fpath, values in issues.items():
         print(f"{fpath}\n{'*' * len(fpath)}")
         unique_values = set()
         for line, value in values:
             unique_values.add(value)
-            print(f"{line}:\t{value!r}")
+            print(f'{line}:\t{value!r}')
 
-        print("\n")
+        print('\n')
 
         if fpath in SKIP_WORDS:
             print(
                 f"List below can be copied directly to `tools/strings_list.py` file inside the '{fpath}' key:\n"
             )
             for value in sorted(unique_values):
-                print(f"        {value!r},")
+                print(f'        {value!r},')
         else:
             print(
-                "List below can be copied directly to `tools/strings_list.py` file:\n"
+                'List below can be copied directly to `tools/strings_list.py` file:\n'
             )
-            print(f"    {fpath!r}: [")
+            print(f'    {fpath!r}: [')
             for value in sorted(unique_values):
-                print(f"        {value!r},")
-            print("    ],")
+                print(f'        {value!r},')
+            print('    ],')
 
-        print("\n")
+        print('\n')
 
     no_issues = not issues
     assert no_issues
@@ -561,13 +561,13 @@ def test_missing_translations(checks):
 def test_outdated_string_skips(checks):
     _, outdated_strings, _ = checks
     print(
-        "\nSome strings on the skip list on the `tools/strings_list.py` are "
-        "outdated.\nPlease remove them from the skip list.\n\n"
+        '\nSome strings on the skip list on the `tools/strings_list.py` are '
+        'outdated.\nPlease remove them from the skip list.\n\n'
     )
     for fpath, values in outdated_strings.items():
         print(f"{fpath}\n{'*' * len(fpath)}")
-        print(", ".join(repr(value) for value in values))
-        print("")
+        print(', '.join(repr(value) for value in values))
+        print('')
 
     no_outdated_strings = not outdated_strings
     assert no_outdated_strings
@@ -576,19 +576,19 @@ def test_outdated_string_skips(checks):
 def test_translation_errors(checks):
     _, _, trans_errors = checks
     print(
-        "\nThe following translation strings do not provide some "
-        "interpolation variables:\n\n"
+        '\nThe following translation strings do not provide some '
+        'interpolation variables:\n\n'
     )
     for fpath, errors in trans_errors.items():
         print(f"{fpath}\n{'*' * len(fpath)}")
         for string, variables in errors:
-            print(f"String:\t\t{string!r}")
+            print(f'String:\t\t{string!r}')
             print(
                 f"Variables:\t{', '.join(repr(value) for value in variables)}"
             )
-            print("")
+            print('')
 
-        print("")
+        print('')
 
     no_trans_errors = not trans_errors
     assert no_trans_errors
@@ -605,24 +605,24 @@ def getch():
     return ch
 
 
-GREEN = "\x1b[1;32m"
-RED = "\x1b[1;31m"
-NORMAL = "\x1b[1;0m"
+GREEN = '\x1b[1;32m'
+RED = '\x1b[1;31m'
+NORMAL = '\x1b[1;0m'
 
 
 def print_colored_diff(old, new):
     lines = list(difflib.unified_diff(old.splitlines(), new.splitlines()))
     for line in lines[2:]:
         if line.startswith('-'):
-            print(f"{RED}{line}{NORMAL}")
+            print(f'{RED}{line}{NORMAL}')
         elif line.startswith('+'):
-            print(f"{GREEN}{line}{NORMAL}")
+            print(f'{GREEN}{line}{NORMAL}')
         else:
             print(line)
 
 
 def clear_screen():
-    print(chr(27) + "[2J")
+    print(chr(27) + '[2J')
 
 
 def _compute_autosugg(raw_code, text):
@@ -677,15 +677,15 @@ if __name__ == '__main__':
 
             clear_screen()
             print(
-                f"{RED}=== About {n_issues} items  in {len(issues)} files to review ==={NORMAL}"
+                f'{RED}=== About {n_issues} items  in {len(issues)} files to review ==={NORMAL}'
             )
 
             print()
-            print(f"{RED}{file}:{line}{NORMAL}", GREEN, repr(text), NORMAL)
+            print(f'{RED}{file}:{line}{NORMAL}', GREEN, repr(text), NORMAL)
             if autosugg:
                 print_colored_diff(raw_code, sugg)
             else:
-                print(f"{RED}f-string nedds manual intervention{NORMAL}")
+                print(f'{RED}f-string nedds manual intervention{NORMAL}')
                 for lt in code[line - 3 : line - 1]:
                     print(' ', lt)
                 print('>', code[line - 1].replace(text, GREEN + text + NORMAL))
@@ -695,20 +695,20 @@ if __name__ == '__main__':
 
             print()
             print(
-                f"{RED}i{NORMAL} : ignore -  add to ignored localised strings"
+                f'{RED}i{NORMAL} : ignore -  add to ignored localised strings'
             )
-            print(f"{RED}c{NORMAL} : continue -  go to next")
+            print(f'{RED}c{NORMAL} : continue -  go to next')
             if autosugg:
-                print(f"{RED}a{NORMAL} : Apply Auto suggestion")
+                print(f'{RED}a{NORMAL} : Apply Auto suggestion')
             else:
-                print("- : Auto suggestion  not available here")
+                print('- : Auto suggestion  not available here')
             if edit_cmd:
-                print(f"{RED}e{NORMAL} : EDIT - using {edit_cmd!r}")
+                print(f'{RED}e{NORMAL} : EDIT - using {edit_cmd!r}')
             else:
                 print(
                     "- : Edit not available, call with python tools/validate_strings.py  '$COMMAND {filename} {linenumber} '"
                 )
-            print(f"{RED}s{NORMAL} : save and quit")
+            print(f'{RED}s{NORMAL} : save and quit')
             print('> ', end='')
             sys.stdout.flush()
             val = getch()

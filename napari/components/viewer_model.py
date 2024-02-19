@@ -254,10 +254,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.events.add(
             layers_change=WarningEmitter(
                 trans._(
-                    "This event will be removed in 0.5.0. Please use viewer.layers.events instead",
+                    'This event will be removed in 0.5.0. Please use viewer.layers.events instead',
                     deferred=True,
                 ),
-                type_name="layers_change",
+                type_name='layers_change',
             ),
             reset_view=Event,
         )
@@ -333,7 +333,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     "Theme '{theme_name}' not found; options are {themes}.",
                     deferred=True,
                     theme_name=v,
-                    themes=", ".join(available_themes()),
+                    themes=', '.join(available_themes()),
                 )
             )
 
@@ -621,7 +621,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         layer.events.affine.connect(self._on_layers_change)
         layer.events.name.connect(self.layers._update_name)
         layer.events.reload.connect(self._on_layer_reload)
-        if hasattr(layer.events, "mode"):
+        if hasattr(layer.events, 'mode'):
             layer.events.mode.connect(self._on_layer_mode_change)
         self._layer_help_from_mode(layer)
 
@@ -657,19 +657,19 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         for fun, mode_ in layer_to_func_and_mode.get(layer.__class__, []):
             if mode_ == layer.mode:
                 continue
-            action_name = f"napari:{fun.__name__}"
+            action_name = f'napari:{fun.__name__}'
             desc = action_manager._actions[action_name].description.lower()
             if not shortcuts.get(action_name, []):
                 continue
             help_li.append(
                 trans._(
-                    "use <{shortcut}> for {desc}",
+                    'use <{shortcut}> for {desc}',
                     shortcut=shortcuts[action_name][0],
                     desc=desc,
                 )
             )
 
-        layer.help = ", ".join(help_li)
+        layer.help = ', '.join(help_li)
 
     def _on_layer_mode_change(self, event):
         self._layer_help_from_mode(event.source)
@@ -723,10 +723,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         return layer
 
     @rename_argument(
-        from_name="interpolation",
-        to_name="interpolation2d",
-        version="0.6.0",
-        since_version="0.4.17",
+        from_name='interpolation',
+        to_name='interpolation2d',
+        version='0.6.0',
+        since_version='0.4.17',
     )
     def add_image(
         self,
@@ -1033,7 +1033,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             except KeyError:
                 available += list(plugin_manager.available_samples())
         # npe2 uri sample data, extract the path so we can use viewer.open
-        elif hasattr(data, "__self__") and hasattr(data.__self__, 'uri'):
+        elif hasattr(data, '__self__') and hasattr(data.__self__, 'uri'):
             if (
                 hasattr(data.__self__, 'reader_plugin')
                 and data.__self__.reader_plugin != reader_plugin
@@ -1046,14 +1046,14 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         if data is None:
             msg = trans._(
-                "Plugin {plugin!r} does not provide sample data named {sample!r}. ",
+                'Plugin {plugin!r} does not provide sample data named {sample!r}. ',
                 plugin=plugin,
                 sample=sample,
                 deferred=True,
             )
             if available:
                 msg = trans._(
-                    "Plugin {plugin!r} does not provide sample data named {sample!r}. Available samples include: {samples}.",
+                    'Plugin {plugin!r} does not provide sample data named {sample!r}. Available samples include: {samples}.',
                     deferred=True,
                     plugin=plugin,
                     sample=sample,
@@ -1061,7 +1061,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 )
             else:
                 msg = trans._(
-                    "Plugin {plugin!r} does not provide sample data named {sample!r}. No plugin samples have been registered.",
+                    'Plugin {plugin!r} does not provide sample data named {sample!r}. No plugin samples have been registered.',
                     deferred=True,
                     plugin=plugin,
                     sample=sample,
@@ -1087,7 +1087,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     ):
                         raise ValueError(
                             trans._(
-                                "Chosen reader {chosen_reader} failed to open sample. Plugin {plugin} declares {original_reader} as the reader for this sample - try calling `open_sample` with no `reader_plugin` or passing {original_reader} explicitly.",
+                                'Chosen reader {chosen_reader} failed to open sample. Plugin {plugin} declares {original_reader} as the reader for this sample - try calling `open_sample` with no `reader_plugin` or passing {original_reader} explicitly.',
                                 deferred=True,
                                 plugin=plugin,
                                 chosen_reader=reader_plugin,
@@ -1268,7 +1268,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         paths = [os.fspath(path) for path in paths]  # PathObjects -> str
         _path = paths[0]
         # we want to display the paths nicely so make a help string here
-        path_message = f"[{_path}], ...]" if len(paths) > 1 else _path
+        path_message = f'[{_path}], ...]' if len(paths) > 1 else _path
         readers = get_potential_readers(_path)
         if not readers:
             raise NoAvailableReaderError(
@@ -1293,7 +1293,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                         "This may be because you've switched environments, or have uninstalled the plugin without updating the reader preference. "
                     )
                     + trans._(
-                        "You can remove this preference in the preference dialog, or by editing `settings.plugins.extension2reader`."
+                        'You can remove this preference in the preference dialog, or by editing `settings.plugins.extension2reader`.'
                     )
                 )
             )
@@ -1325,7 +1325,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         else:
             raise MultipleReaderError(
                 trans._(
-                    "Multiple plugins found capable of reading {path_message}. Select plugin from {plugins} and pass to reading function e.g. `viewer.open(..., plugin=...)`.",
+                    'Multiple plugins found capable of reading {path_message}. Select plugin from {plugins} and pass to reading function e.g. `viewer.open(..., plugin=...)`.',
                     path_message=path_message,
                     plugins=readers,
                     deferred=True,
@@ -1501,7 +1501,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             bad_key = str(exc).split('keyword argument ')[-1]
             raise TypeError(
                 trans._(
-                    "_add_layer_from_data received an unexpected keyword argument ({bad_key}) for layer type {layer_type}",
+                    '_add_layer_from_data received an unexpected keyword argument ({bad_key}) for layer type {layer_type}',
                     deferred=True,
                     bad_key=bad_key,
                     layer_type=layer_type,
@@ -1532,7 +1532,7 @@ def _normalize_layer_data(data: LayerData) -> FullLayerData:
     if not isinstance(data, tuple) and 0 < len(data) < 4:
         raise ValueError(
             trans._(
-                "LayerData must be a 1-, 2-, or 3-tuple",
+                'LayerData must be a 1-, 2-, or 3-tuple',
                 deferred=True,
             )
         )
@@ -1542,7 +1542,7 @@ def _normalize_layer_data(data: LayerData) -> FullLayerData:
         if not isinstance(_data[1], dict):
             raise ValueError(
                 trans._(
-                    "The second item in a LayerData tuple must be a dict",
+                    'The second item in a LayerData tuple must be a dict',
                     deferred=True,
                 )
             )
@@ -1552,7 +1552,7 @@ def _normalize_layer_data(data: LayerData) -> FullLayerData:
         if _data[2] not in layers.NAMES:
             raise ValueError(
                 trans._(
-                    "The third item in a LayerData tuple must be one of: {layers!r}.",
+                    'The third item in a LayerData tuple must be one of: {layers!r}.',
                     deferred=True,
                     layers=layers.NAMES,
                 )
@@ -1665,7 +1665,7 @@ def prune_kwargs(kwargs: Dict[str, Any], layer_type: str) -> Dict[str, Any]:
     if not add_method or layer_type == 'layer':
         raise ValueError(
             trans._(
-                "Invalid layer_type: {layer_type}",
+                'Invalid layer_type: {layer_type}',
                 deferred=True,
                 layer_type=layer_type,
             )

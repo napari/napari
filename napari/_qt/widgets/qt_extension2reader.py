@@ -105,7 +105,7 @@ class Extension2ReaderTable(QWidget):
 
         self._fn_pattern_edit = QLineEdit()
         self._fn_pattern_edit.setPlaceholderText(
-            trans._("Start typing filename pattern...")
+            trans._('Start typing filename pattern...')
         )
         self._fn_pattern_edit.textChanged.connect(
             self._filter_compatible_readers
@@ -173,7 +173,7 @@ class Extension2ReaderTable(QWidget):
         try:
             compatible_readers = get_potential_readers(new_pattern)
         except ValueError as e:
-            if "empty name" not in str(e):
+            if 'empty name' not in str(e):
                 raise
             compatible_readers = {}
         for plugin_name in readers:
@@ -190,7 +190,7 @@ class Extension2ReaderTable(QWidget):
         ):
             self._add_reader_choice(i, plugin_name, display_name)
         if self._new_reader_dropdown.count() == 0:
-            self._new_reader_dropdown.addItem(trans._("None available"))
+            self._new_reader_dropdown.addItem(trans._('None available'))
 
     def _save_new_preference(self, event):
         """Save current preference to settings and show in table"""

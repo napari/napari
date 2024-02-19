@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from qtpy.QtWidgets import QWidget  # type: ignore[attr-defined]
 
 
-ItemType = TypeVar("ItemType")
+ItemType = TypeVar('ItemType')
 
 ItemRole = Qt.UserRole
 SortRole = Qt.UserRole + 1
@@ -201,12 +201,12 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         if not isinstance(root, SelectableEventedList):
             raise TypeError(
                 trans._(
-                    "root must be an instance of {class_name}",
+                    'root must be an instance of {class_name}',
                     deferred=True,
                     class_name=SelectableEventedList,
                 )
             )
-        current_root = getattr(self, "_root", None)
+        current_root = getattr(self, '_root', None)
         if root is current_root:
             return
 

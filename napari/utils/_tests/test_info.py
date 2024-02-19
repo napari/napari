@@ -10,34 +10,34 @@ def test_citation_text():
 
 
 def test_linux_os_name_file(monkeypatch, tmp_path):
-    with open(tmp_path / "os-release", "w") as f_p:
+    with open(tmp_path / 'os-release', 'w') as f_p:
         f_p.write('PRETTY_NAME="Test text"\n')
 
-    monkeypatch.setattr(info, "OS_RELEASE_PATH", str(tmp_path / "os-release"))
+    monkeypatch.setattr(info, 'OS_RELEASE_PATH', str(tmp_path / 'os-release'))
 
-    assert info._linux_sys_name() == "Test text"
+    assert info._linux_sys_name() == 'Test text'
 
-    with open(tmp_path / "os-release", "w") as f_p:
+    with open(tmp_path / 'os-release', 'w') as f_p:
         f_p.write('NAME="Test2"\nVERSION="text"')
 
-    assert info._linux_sys_name() == "Test2 text"
+    assert info._linux_sys_name() == 'Test2 text'
 
-    with open(tmp_path / "os-release", "w") as f_p:
+    with open(tmp_path / 'os-release', 'w') as f_p:
         f_p.write('NAME="Test2"\nVERSION_ID="text2"')
 
-    assert info._linux_sys_name() == "Test2 text2"
+    assert info._linux_sys_name() == 'Test2 text2'
 
-    with open(tmp_path / "os-release", "w") as f_p:
+    with open(tmp_path / 'os-release', 'w') as f_p:
         f_p.write('NAME="Test2"\nVERSION="text"\nVERSION_ID="text2"')
 
-    assert info._linux_sys_name() == "Test2 text"
+    assert info._linux_sys_name() == 'Test2 text'
 
-    with open(tmp_path / "os-release", "w") as f_p:
+    with open(tmp_path / 'os-release', 'w') as f_p:
         f_p.write(
             'PRETTY_NAME="Test text"\nNAME="Test2"\nVERSION="text"\nVERSION_ID="text2"'
         )
 
-    assert info._linux_sys_name() == "Test text"
+    assert info._linux_sys_name() == 'Test text'
 
 
 class _CompletedProcessMock(NamedTuple):
@@ -57,8 +57,8 @@ def _lsb_mock2(*_args, **_kwargs):
 
 
 def test_linux_os_name_lsb(monkeypatch, tmp_path):
-    monkeypatch.setattr(info, "OS_RELEASE_PATH", str(tmp_path / "os-release"))
-    monkeypatch.setattr(subprocess, "run", _lsb_mock)
-    assert info._linux_sys_name() == "Ubuntu Test 20.04"
-    monkeypatch.setattr(subprocess, "run", _lsb_mock2)
-    assert info._linux_sys_name() == "Ubuntu Test 20.05"
+    monkeypatch.setattr(info, 'OS_RELEASE_PATH', str(tmp_path / 'os-release'))
+    monkeypatch.setattr(subprocess, 'run', _lsb_mock)
+    assert info._linux_sys_name() == 'Ubuntu Test 20.04'
+    monkeypatch.setattr(subprocess, 'run', _lsb_mock2)
+    assert info._linux_sys_name() == 'Ubuntu Test 20.05'

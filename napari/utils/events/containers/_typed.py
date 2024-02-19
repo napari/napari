@@ -25,8 +25,8 @@ logger = logging.getLogger(__name__)
 
 Index = Union[int, slice]
 
-_T = TypeVar("_T")
-_L = TypeVar("_L")
+_T = TypeVar('_T')
+_L = TypeVar('_L')
 
 
 class TypedMutableSequence(MutableSequence[_T]):
@@ -239,7 +239,7 @@ class TypedMutableSequence(MutableSequence[_T]):
 
         raise ValueError(
             trans._(
-                "{value!r} is not in list",
+                '{value!r} is not in list',
                 deferred=True,
                 value=value,
             )
