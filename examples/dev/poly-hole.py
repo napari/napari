@@ -1,6 +1,30 @@
+"""Check the triangulation of a complex polygon with a hole in it.
+
+This PR uses the triangle library to display a complex polygon in both
+matplotlib and napari.
+
+See issue https://github.com/napari/napari/issues/5673 and PR
+https://github.com/napari/napari/pull/6654
+"""
+
+import matplotlib.pyplot as plt
 import numpy as np
+from skimage import measure
+from triangle import triangulate
 
 import napari
+from napari.layers.shapes import _shapes_utils as su
+
+
+def pltri(vertices, triangles, *, mask=None, ax=None):
+    if ax is None:
+        fig, ax = plt.subplots()
+    ax.triplot(vertices[:, 1], -vertices[:, 0], triangles)
+    if mask is not None:
+        centers = np.mean(vertices[triangles], axis=1)
+        color = np.where(mask, 'blue', 'red')
+        ax.scatter(centers[:, 1], -centers[:, 0], color=color)
+
 
 a = np.array(
     [[-28.58, 196.34], [-28.08, 196.82], [-28.36, 197.22], [-28.78, 197.39],
@@ -28,6 +52,17 @@ a = np.array(
      [-30.55, 208.11], [-30.23, 208.29], [-30.07, 208.85], [-29.74, 209.02],
      [-29.26, 209.33], [-28.96, 208.98]]
     )
+
+
+v, e = su._generate_triangle_constraints(a)
+res = triangulate({'vertices': v, 'segments': e}, opts='p')
+v2, t = res['vertices'], res['triangles']
+centers = np.mean(v2[t], axis=1)
+in_poly = measure.points_in_poly(centers, a)
+
+fig, ax = plt.subplots()
+pltri(res['vertices'], res['triangles'], mask=in_poly, ax=ax)
+plt.show()
 
 viewer = napari.Viewer()
 layer = viewer.add_shapes(a, shape_type=['polygon'])
