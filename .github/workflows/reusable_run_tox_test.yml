@@ -183,12 +183,6 @@ jobs:
           name: test artifacts ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }}
           path: .pytest_tmp
 
-      - name: debug ls
-        if: always()
-        run: |
-          pwd
-          ls -la
-
       - name: Upload leaked viewer graph
         if: failure()
         uses: actions/upload-artifact@v4
