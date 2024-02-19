@@ -183,6 +183,7 @@ def make_napari_viewer(
     from qtpy.QtWidgets import QApplication, QWidget
 
     from napari import Viewer
+    from napari._app_model import get_app
     from napari._qt._qapp_model.qactions import init_qactions
     from napari._qt.qt_viewer import QtViewer
     from napari.plugins import _initialize_plugins
@@ -279,6 +280,9 @@ def make_napari_viewer(
                 viewer.close()
         else:
             viewer.close()
+
+    app = get_app()
+    app.commands._injection_store.clear()
 
     if GCPASS % 50 == 0 or len(QtViewer._instances):
         gc.collect()
