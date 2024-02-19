@@ -433,7 +433,7 @@ class Shape(ABC):
                     )
                 else:
                     raise RuntimeError(
-                        "Internal error: self.slice_key is None"
+                        'Internal error: self.slice_key is None'
                     )
             displayed_order = argsort(self.dims_displayed)
             mask[tuple(slice_key)] = mask_p.transpose(displayed_order)
