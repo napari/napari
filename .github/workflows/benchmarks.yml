@@ -67,7 +67,7 @@ jobs:
         name: Install Python
         with:
           python-version: "3.11"
-          cache-dependency-path: setup.cfg
+          cache-dependency-path: pyproject.toml
 
       - uses: tlambert03/setup-qt-libs@v1
 
