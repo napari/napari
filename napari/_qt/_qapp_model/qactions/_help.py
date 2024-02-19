@@ -29,7 +29,7 @@ Q_HELP_ACTIONS: List[Action] = [
         id=CommandId.NAPARI_INFO,
         title=CommandId.NAPARI_INFO.command_title,
         callback=_show_about,
-        menus=[{"id": MenuId.MENUBAR_HELP, 'group': MenuGroup.RENDER}],
+        menus=[{'id': MenuId.MENUBAR_HELP, 'group': MenuGroup.RENDER}],
         status_tip=trans._('About napari'),
         keybindings=[KeyBindingRule(primary=KeyMod.CtrlCmd | KeyCode.Slash)],
     ),
@@ -54,6 +54,6 @@ if ask_opt_in is not None:
             id=CommandId.TOGGLE_BUG_REPORT_OPT_IN,
             title=CommandId.TOGGLE_BUG_REPORT_OPT_IN.command_title,
             callback=lambda: ask_opt_in(force=True),
-            menus=[{"id": MenuId.MENUBAR_HELP}],
+            menus=[{'id': MenuId.MENUBAR_HELP}],
         )
     )

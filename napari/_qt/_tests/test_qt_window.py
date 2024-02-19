@@ -59,9 +59,9 @@ def test_set_geometry(make_napari_viewer):
     assert viewer.window.geometry() == values
 
 
-@patch.object(Window, "_update_theme_no_event")
-@patch.object(Window, "_remove_theme")
-@patch.object(Window, "_add_theme")
+@patch.object(Window, '_update_theme_no_event')
+@patch.object(Window, '_remove_theme')
+@patch.object(Window, '_add_theme')
 def test_update_theme(
     mock_add_theme,
     mock_remove_theme,
@@ -70,34 +70,34 @@ def test_update_theme(
 ):
     viewer = make_napari_viewer()
 
-    blue = get_theme("dark")
-    blue.id = "blue"
-    register_theme("blue", blue, "test")
+    blue = get_theme('dark')
+    blue.id = 'blue'
+    register_theme('blue', blue, 'test')
 
     # triggered when theme was added
     mock_add_theme.assert_called()
     mock_remove_theme.assert_not_called()
 
-    unregister_theme("blue")
+    unregister_theme('blue')
     # triggered when theme was removed
     mock_remove_theme.assert_called()
 
     mock_update_theme_no_event.assert_not_called()
-    viewer.theme = "light"
-    theme = _themes["light"]
-    theme.icon = "#FF0000"
+    viewer.theme = 'light'
+    theme = _themes['light']
+    theme.icon = '#FF0000'
     mock_update_theme_no_event.assert_called()
 
 
 def test_lazy_console(make_napari_viewer):
     v = make_napari_viewer()
     assert v.window._qt_viewer._console is None
-    v.update_console({"test": "test"})
+    v.update_console({'test': 'test'})
     assert v.window._qt_viewer._console is None
 
 
 @pytest.mark.skipif(
-    platform.system() == "Darwin", reason="Cannot control menu bar on MacOS"
+    platform.system() == 'Darwin', reason='Cannot control menu bar on MacOS'
 )
 def test_menubar_shortcut(make_napari_viewer):
     v = make_napari_viewer()
@@ -115,7 +115,7 @@ def test_screenshot_to_file(make_napari_viewer, tmp_path):
     Test taking a screenshot using the Window instance and saving it to a file.
     """
     viewer = make_napari_viewer()
-    screenshot_file_path = str(tmp_path / "screenshot.png")
+    screenshot_file_path = str(tmp_path / 'screenshot.png')
 
     np.random.seed(0)
     # Add image

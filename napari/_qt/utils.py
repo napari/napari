@@ -33,8 +33,8 @@ from napari.utils.events.custom_types import Array
 from napari.utils.misc import is_sequence
 from napari.utils.translations import trans
 
-QBYTE_FLAG = "!QBYTE_"
-RICH_TEXT_PATTERN = re.compile("<[^\n]+>")
+QBYTE_FLAG = '!QBYTE_'
+RICH_TEXT_PATTERN = re.compile('<[^\n]+>')
 
 
 def is_qbyte(string: str) -> bool:
@@ -261,12 +261,12 @@ def add_flash_animation(
         Color of the flash animation. By default, we use light gray.
     """
     color = transform_color(color)[0]
-    color = (255 * color).astype("int")
+    color = (255 * color).astype('int')
 
     effect = QGraphicsColorizeEffect(widget)
     widget.setGraphicsEffect(effect)
 
-    widget._flash_animation = QPropertyAnimation(effect, b"color")
+    widget._flash_animation = QPropertyAnimation(effect, b'color')
     widget._flash_animation.setStartValue(QColor(0, 0, 0, 0))
     widget._flash_animation.setEndValue(QColor(0, 0, 0, 0))
     widget._flash_animation.setLoopCount(1)

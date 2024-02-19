@@ -11,21 +11,21 @@ from napari.utils.tree import Group, Node
 def tree_model(qapp):
     root = Group(
         [
-            Node(name="1"),
+            Node(name='1'),
             Group(
                 [
-                    Node(name="2"),
-                    Group([Node(name="3"), Node(name="4")], name="g2"),
-                    Node(name="5"),
-                    Node(name="6"),
-                    Node(name="7"),
+                    Node(name='2'),
+                    Group([Node(name='3'), Node(name='4')], name='g2'),
+                    Node(name='5'),
+                    Node(name='6'),
+                    Node(name='7'),
                 ],
-                name="g1",
+                name='g1',
             ),
-            Node(name="8"),
-            Node(name="9"),
+            Node(name='8'),
+            Node(name='9'),
         ],
-        name="root",
+        name='root',
     )
     return QtNodeTreeModel(root)
 

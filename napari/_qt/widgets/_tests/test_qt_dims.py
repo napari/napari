@@ -271,7 +271,7 @@ def test_update_dims_labels(qtbot):
     # while being elided on the GUI
     first_label.setText('napari')
     assert first_label.text() == view.dims.axis_labels[0]
-    assert "…" in first_label._elidedText()
+    assert '…' in first_label._elidedText()
     assert observed_axis_labels_event
 
     # increase width to check the full text is shown
@@ -329,7 +329,7 @@ def test_play_button(qtbot):
 
     # Check popup updates widget properties (fps, play mode and loop mode)
     button.fpsspin.clear()
-    qtbot.keyClicks(button.fpsspin, "11")
+    qtbot.keyClicks(button.fpsspin, '11')
     qtbot.keyClick(button.fpsspin, Qt.Key_Enter)
     assert slider.fps == button.fpsspin.value() == 11
     button.reverse_check.setChecked(True)

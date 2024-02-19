@@ -390,7 +390,7 @@ class Shape(ABC):
         else:
             raise ValueError(
                 trans._(
-                    "mask shape length must either be 2 or the same as the dimensionality of the shape, expected {expected} got {received}.",
+                    'mask shape length must either be 2 or the same as the dimensionality of the shape, expected {expected} got {received}.',
                     deferred=True,
                     expected=self.data.shape[1],
                     received=len(mask_shape),
