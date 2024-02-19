@@ -104,6 +104,10 @@ def test_add_simple_shape(shape_type, create_known_shapes_layer):
     np.testing.assert_allclose(new_shape_max, known_non_shape_end)
     assert layer.shape_type[-1] == shape_type
 
+    # Ensure it's selected, accounting for zero-indexing
+    assert len(layer.selected_data) == 1
+    assert layer.selected_data == {n_shapes}
+
 
 def test_polygon_lasso_tablet(create_known_shapes_layer):
     """Draw polygon with tablet simulated by mouse drag event."""
@@ -145,6 +149,10 @@ def test_polygon_lasso_tablet(create_known_shapes_layer):
     assert layer.shape_type[-1] == 'polygon'
     assert not layer._is_creating
 
+    # Ensure it's selected, accounting for zero-indexing
+    assert len(layer.selected_data) == 1
+    assert layer.selected_data == {n_shapes}
+
 
 def test_polygon_lasso_mouse(create_known_shapes_layer):
     """Draw polygon with mouse. Events in sequence are mouse press, release, move, press, release"""
@@ -181,6 +189,10 @@ def test_polygon_lasso_mouse(create_known_shapes_layer):
     assert np.array_equal(desired_shape, layer.data[-1])
     assert layer.shape_type[-1] == 'polygon'
     assert not layer._is_creating
+
+    # Ensure it's selected, accounting for zero-indexing
+    assert len(layer.selected_data) == 1
+    assert layer.selected_data == {n_shapes}
 
 
 def test_distance_polygon_creating(create_known_shapes_layer):
@@ -249,6 +261,10 @@ def test_add_complex_shape(shape_type, create_known_shapes_layer):
     np.testing.assert_allclose(layer.data[-1], desired_shape)
     assert layer.shape_type[-1] == shape_type
 
+    # Ensure it's selected, accounting for zero-indexing
+    assert len(layer.selected_data) == 1
+    assert layer.selected_data == {n_shapes}
+
 
 def test_vertex_insert(create_known_shapes_layer):
     """Add vertex to shape."""
@@ -278,16 +294,16 @@ def test_vertex_insert(create_known_shapes_layer):
     assert len(layer.data) == n_shapes
     assert len(layer.data[0]) == n_coord + 1
     assert layer.events.data.call_args_list[0][1] == {
-        "value": old_data,
-        "action": ActionType.CHANGING,
-        "data_indices": tuple(layer.selected_data),
-        "vertex_indices": ((2,),),
+        'value': old_data,
+        'action': ActionType.CHANGING,
+        'data_indices': tuple(layer.selected_data),
+        'vertex_indices': ((2,),),
     }
     assert layer.events.data.call_args[1] == {
-        "value": layer.data,
-        "action": ActionType.CHANGED,
-        "data_indices": tuple(layer.selected_data),
-        "vertex_indices": ((2,),),
+        'value': layer.data,
+        'action': ActionType.CHANGED,
+        'data_indices': tuple(layer.selected_data),
+        'vertex_indices': ((2,),),
     }
     np.testing.assert_allclose(
         np.min(abs(layer.data[0] - known_non_shape), axis=0), [0, 0]
@@ -312,20 +328,20 @@ def test_vertex_remove(create_known_shapes_layer):
     )
     mouse_press_callbacks(layer, event)
     assert layer.events.data.call_args_list[0][1] == {
-        "value": old_data,
-        "action": ActionType.CHANGING,
-        "data_indices": tuple(
+        'value': old_data,
+        'action': ActionType.CHANGING,
+        'data_indices': tuple(
             select,
         ),
-        "vertex_indices": ((0,),),
+        'vertex_indices': ((0,),),
     }
     assert layer.events.data.call_args[1] == {
-        "value": layer.data,
-        "action": ActionType.CHANGED,
-        "data_indices": tuple(
+        'value': layer.data,
+        'action': ActionType.CHANGED,
+        'data_indices': tuple(
             select,
         ),
-        "vertex_indices": ((0,),),
+        'vertex_indices': ((0,),),
     }
     assert len(layer.data) == n_shapes
     assert len(layer.data[0]) == n_coord - 1
@@ -429,16 +445,16 @@ def test_drag_shape(create_known_shapes_layer):
     assert len(layer.selected_data) == 1
     assert layer.selected_data == {0}
     assert layer.events.data.call_args_list[0][1] == {
-        "value": old_data,
-        "action": ActionType.CHANGING,
-        "data_indices": (0,),
-        "vertex_indices": vertex_indices,
+        'value': old_data,
+        'action': ActionType.CHANGING,
+        'data_indices': (0,),
+        'vertex_indices': vertex_indices,
     }
     assert layer.events.data.call_args[1] == {
-        "value": layer.data,
-        "action": ActionType.CHANGED,
-        "data_indices": (0,),
-        "vertex_indices": vertex_indices,
+        'value': layer.data,
+        'action': ActionType.CHANGED,
+        'data_indices': (0,),
+        'vertex_indices': vertex_indices,
     }
     np.testing.assert_allclose(layer.data[0], orig_data + np.array([10, 5]))
 
@@ -529,10 +545,10 @@ def test_drag_vertex(create_known_shapes_layer):
     assert len(layer.selected_data) == 1
     assert layer.selected_data == {0}
     assert layer.events.data.call_args[1] == {
-        "value": layer.data,
-        "action": ActionType.CHANGED,
-        "data_indices": (0,),
-        "vertex_indices": vertex_indices,
+        'value': layer.data,
+        'action': ActionType.CHANGED,
+        'data_indices': (0,),
+        'vertex_indices': vertex_indices,
     }
     np.testing.assert_allclose(layer.data[0][0], [0, 0])
 
@@ -840,7 +856,7 @@ def test_drag_start_selection(
                 [offset_position[0], offset_position[1]],
             )
         else:
-            raise AssertionError("Unreachable code")  # pragma: no cover
+            raise AssertionError('Unreachable code')  # pragma: no cover
     else:
         np.testing.assert_array_equal(
             layer._drag_box, [initial_position, offset_position]
@@ -867,7 +883,7 @@ def test_drag_start_selection(
                 [offset_position[0], offset_position[1]],
             )
         else:
-            raise AssertionError("Unreachable code")  # pragma: no cover
+            raise AssertionError('Unreachable code')  # pragma: no cover
     else:
         np.testing.assert_array_equal(
             layer._drag_box, [initial_position, offset_position]

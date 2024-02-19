@@ -73,7 +73,7 @@ class PolygonBase(Shape):
         if len(data) < 2:
             raise ValueError(
                 trans._(
-                    "Shape needs at least two vertices, {number} provided.",
+                    'Shape needs at least two vertices, {number} provided.',
                     deferred=True,
                     number=len(data),
                 )

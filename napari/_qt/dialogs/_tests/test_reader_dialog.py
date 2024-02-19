@@ -56,7 +56,7 @@ def test_reader_dir_with_extension(tmpdir, reader_dialog):
     assert hasattr(widg, 'persist_checkbox')
     assert (
         widg.persist_checkbox.text()
-        == "Remember this choice for files with a .zarr extension"
+        == 'Remember this choice for files with a .zarr extension'
     )
 
 
@@ -113,12 +113,10 @@ def test_prepare_dialog_options_removes_plugin(tmp_plugin: DynamicPlugin):
     tmp2 = tmp_plugin.spawn(register=True)
 
     @tmp_plugin.contribute.reader(filename_patterns=['*.fake'])
-    def _(path):
-        ...
+    def _(path): ...
 
     @tmp2.contribute.reader(filename_patterns=['*.fake'])
-    def _(path):
-        ...
+    def _(path): ...
 
     readers = prepare_remaining_readers(
         ['my-file.fake'],
@@ -138,12 +136,10 @@ def test_open_sample_data_shows_all_readers(
     tmp2 = tmp_plugin.spawn(register=True)
 
     @tmp_plugin.contribute.reader(filename_patterns=['*.fake'])
-    def _(path):
-        ...
+    def _(path): ...
 
     @tmp2.contribute.reader(filename_patterns=['*.fake'])
-    def _(path):
-        ...
+    def _(path): ...
 
     my_sample = SampleDataURI(
         key='tmp-sample',

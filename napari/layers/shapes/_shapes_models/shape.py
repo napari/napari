@@ -390,7 +390,7 @@ class Shape(ABC):
         else:
             raise ValueError(
                 trans._(
-                    "mask shape length must either be 2 or the same as the dimensionality of the shape, expected {expected} got {received}.",
+                    'mask shape length must either be 2 or the same as the dimensionality of the shape, expected {expected} got {received}.',
                     deferred=True,
                     expected=self.data.shape[1],
                     received=len(mask_shape),
@@ -414,15 +414,13 @@ class Shape(ABC):
         if embedded:
             mask = np.zeros(mask_shape, dtype=bool)
             slice_key = [0] * len(mask_shape)
-            j = 0
             for i in range(len(mask_shape)):
                 if i in self.dims_displayed:
                     slice_key[i] = slice(None)
                 else:
                     slice_key[i] = slice(
-                        self.slice_key[0, j], self.slice_key[1, j] + 1
+                        self.slice_key[0, i], self.slice_key[1, i] + 1
                     )
-                j += 1
             displayed_order = argsort(self.dims_displayed)
             mask[tuple(slice_key)] = mask_p.transpose(displayed_order)
         else:

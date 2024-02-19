@@ -348,7 +348,7 @@ class Shapes(Layer):
     # in the thumbnail
     _max_shapes_thumbnail = 100
 
-    _drag_modes: ClassVar[Dict[Mode, Callable[["Shapes", Event], Any]]] = {
+    _drag_modes: ClassVar[Dict[Mode, Callable[['Shapes', Event], Any]]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
         Mode.SELECT: select,
@@ -363,7 +363,7 @@ class Shapes(Layer):
         Mode.ADD_POLYGON_LASSO: add_path_polygon_lasso,
     }
 
-    _move_modes: ClassVar[Dict[Mode, Callable[["Shapes", Event], Any]]] = {
+    _move_modes: ClassVar[Dict[Mode, Callable[['Shapes', Event], Any]]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
         Mode.SELECT: highlight,
@@ -379,7 +379,7 @@ class Shapes(Layer):
     }
 
     _double_click_modes: ClassVar[
-        Dict[Mode, Callable[["Shapes", Event], Any]]
+        Dict[Mode, Callable[['Shapes', Event], Any]]
     ] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: no_op,
@@ -459,7 +459,7 @@ class Shapes(Layer):
             if ndim is not None and ndim != data_ndim:
                 raise ValueError(
                     trans._(
-                        "Shape dimensions must be equal to ndim",
+                        'Shape dimensions must be equal to ndim',
                         deferred=True,
                     )
                 )
@@ -579,14 +579,14 @@ class Shapes(Layer):
             self._current_edge_color = transform_color_with_defaults(
                 num_entries=1,
                 colors=edge_color,
-                elem_name="edge_color",
-                default="black",
+                elem_name='edge_color',
+                default='black',
             )
             self._current_face_color = transform_color_with_defaults(
                 num_entries=1,
                 colors=face_color,
-                elem_name="face_color",
-                default="black",
+                elem_name='face_color',
+                default='black',
             )
 
         self._text = TextManager._from_layer(
@@ -616,7 +616,7 @@ class Shapes(Layer):
                 num_entries=1,
                 colors=color,
                 elem_name=f'{attribute}_color',
-                default="white",
+                default='white',
             )
 
         elif color_mode == ColorMode.CYCLE:
@@ -696,17 +696,17 @@ class Shapes(Layer):
             or (isinstance(data, list) and len(data) > 0)
         )
         kwargs = {
-            "value": self.data,
-            "vertex_indices": ((),),
-            "data_indices": tuple(i for i in range(len(self.data))),
+            'value': self.data,
+            'vertex_indices': ((),),
+            'data_indices': tuple(i for i in range(len(self.data))),
         }
         if prior_data and data_not_empty:
-            kwargs["action"] = ActionType.CHANGING
+            kwargs['action'] = ActionType.CHANGING
         elif data_not_empty:
-            kwargs["action"] = ActionType.ADDING
-            kwargs["data_indices"] = tuple(i for i in range(len(data)))
+            kwargs['action'] = ActionType.ADDING
+            kwargs['data_indices'] = tuple(i for i in range(len(data)))
         else:
-            kwargs["action"] = ActionType.REMOVING
+            kwargs['action'] = ActionType.REMOVING
 
         self.events.data(**kwargs)
         self._data_view = ShapeList(ndisplay=self._slice_input.ndisplay)
@@ -724,14 +724,14 @@ class Shapes(Layer):
         )
         self._update_dims()
 
-        kwargs["data_indices"] = tuple(i for i in range(len(data)))
-        kwargs["value"] = self.data
+        kwargs['data_indices'] = tuple(i for i in range(len(data)))
+        kwargs['value'] = self.data
         if prior_data and data_not_empty:
-            kwargs["action"] = ActionType.CHANGED
+            kwargs['action'] = ActionType.CHANGED
         elif data_not_empty:
-            kwargs["action"] = ActionType.ADDED
+            kwargs['action'] = ActionType.ADDED
         else:
-            kwargs["action"] = ActionType.REMOVED
+            kwargs['action'] = ActionType.REMOVED
         self.events.data(**kwargs)
 
         self._reset_editable()
@@ -1150,7 +1150,7 @@ class Shapes(Layer):
         transformed_color_cycle, transformed_colors = transform_color_cycle(
             color_cycle=color_cycle,
             elem_name=f'{attribute}_color_cycle',
-            default="white",
+            default='white',
         )
         setattr(self, f'_{attribute}_color_cycle_values', transformed_colors)
         setattr(self, f'_{attribute}_color_cycle', transformed_color_cycle)
@@ -1295,8 +1295,8 @@ class Shapes(Layer):
                 transformed_color = transform_color_with_defaults(
                     num_entries=len(self.data),
                     colors=color,
-                    elem_name="face_color",
-                    default="white",
+                    elem_name='face_color',
+                    default='white',
                 )
                 colors = normalize_and_broadcast_colors(
                     len(self.data), transformed_color
@@ -1385,8 +1385,8 @@ class Shapes(Layer):
                 transformed_color = transform_color_with_defaults(
                     num_entries=n_shapes,
                     colors=color,
-                    elem_name="face_color",
-                    default="white",
+                    elem_name='face_color',
+                    default='white',
                 )
                 init_colors = normalize_and_broadcast_colors(
                     n_shapes, transformed_color
@@ -2212,7 +2212,7 @@ class Shapes(Layer):
         if n_new_shapes > 0:
             total_shapes = n_new_shapes + self.nshapes
             self._feature_table.resize(total_shapes)
-            if hasattr(self, "text"):
+            if hasattr(self, 'text'):
                 self.text.apply(self.features)
 
         if edge_color is None:
@@ -2244,8 +2244,8 @@ class Shapes(Layer):
             transformed_ec = transform_color_with_defaults(
                 num_entries=len(data),
                 colors=edge_color,
-                elem_name="edge_color",
-                default="white",
+                elem_name='edge_color',
+                default='white',
             )
             transformed_edge_color = normalize_and_broadcast_colors(
                 len(data), transformed_ec
@@ -2253,8 +2253,8 @@ class Shapes(Layer):
             transformed_fc = transform_color_with_defaults(
                 num_entries=len(data),
                 colors=face_color,
-                elem_name="face_color",
-                default="white",
+                elem_name='face_color',
+                default='white',
             )
             transformed_face_color = normalize_and_broadcast_colors(
                 len(data), transformed_fc
@@ -2570,7 +2570,6 @@ class Shapes(Layer):
         """Reset properties used in shape drawing."""
         index = copy(self._moving_value[0])
         self._is_moving = False
-        self.selected_data = set()
         self._drag_start = None
         self._drag_box = None
         self._is_selecting = False

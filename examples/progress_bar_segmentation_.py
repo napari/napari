@@ -63,7 +63,7 @@ def try_thresholds():
         binarised_nuclei,
         color={1: 'lightgreen'},
         opacity=0.7,
-        name="Binarised",
+        name='Binarised',
         blending='translucent',
     )
 
@@ -79,7 +79,7 @@ def segment_binarised_ims():
     the progress bar within the loop
     """
     if 'Binarised' not in viewer.layers:
-        raise TypeError("Cannot segment before thresholding")
+        raise TypeError('Cannot segment before thresholding')
     if 'Segmented' in viewer.layers:
         del viewer.layers['Segmented']
     binarised_data = viewer.layers['Binarised'].data
@@ -93,7 +93,7 @@ def segment_binarised_ims():
         for i, binarised_cells in enumerate(pbar):
             # this allows us to manipulate the pbar object within the loop
             # e.g. setting the description.
-            pbar.set_description(all_thresholds[i].__name__.split("_")[1])
+            pbar.set_description(all_thresholds[i].__name__.split('_')[1])
             labelled_im = label(binarised_cells)
             segmented_nuclei.append(labelled_im)
 
@@ -106,7 +106,7 @@ def segment_binarised_ims():
     segmented_nuclei = np.stack(segmented_nuclei)
     viewer.add_labels(
         segmented_nuclei,
-        name="Segmented",
+        name='Segmented',
         blending='translucent',
     )
     viewer.layers['Binarised'].visible = False
@@ -128,13 +128,13 @@ def process_ims():
     # we instantiate a manually controlled `progress` object
     # by just passing a total with no iterable
     with progress(total=2) as pbar:
-        pbar.set_description("Thresholding")
+        pbar.set_description('Thresholding')
         try_thresholds()
         # once one processing step is complete, we increment
         # the value of our progress bar
         pbar.update(1)
 
-        pbar.set_description("Segmenting")
+        pbar.set_description('Segmenting')
         segment_binarised_ims()
         pbar.update(1)
 
@@ -143,21 +143,21 @@ def process_ims():
         # sleep(0.5)
 
 button_layout = QVBoxLayout()
-process_btn = QPushButton("Full Process")
+process_btn = QPushButton('Full Process')
 process_btn.clicked.connect(process_ims)
 button_layout.addWidget(process_btn)
 
-thresh_btn = QPushButton("1.Threshold")
+thresh_btn = QPushButton('1.Threshold')
 thresh_btn.clicked.connect(try_thresholds)
 button_layout.addWidget(thresh_btn)
 
-segment_btn = QPushButton("2.Segment")
+segment_btn = QPushButton('2.Segment')
 segment_btn.clicked.connect(segment_binarised_ims)
 button_layout.addWidget(segment_btn)
 
 action_widget = QWidget()
 action_widget.setLayout(button_layout)
-action_widget.setObjectName("Segmentation")
+action_widget.setObjectName('Segmentation')
 viewer.window.add_dock_widget(action_widget)
 
 # showing the activity dock so we can see the progress bars

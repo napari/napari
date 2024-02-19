@@ -175,14 +175,14 @@ def skip_examples(request):
     """Skip examples test if ."""
     if request.node.get_closest_marker(
         'examples'
-    ) and request.config.getoption("--skip_examples"):
-        pytest.skip("running with --skip_examples")
+    ) and request.config.getoption('--skip_examples'):
+        pytest.skip('running with --skip_examples')
 
 
 # _PYTEST_RAISE=1 will prevent pytest from handling exceptions.
 # Use with a debugger that's set to break on "unhandled exceptions".
 # https://github.com/pytest-dev/pytest/issues/7409
-if os.getenv('_PYTEST_RAISE', "0") != "0":
+if os.getenv('_PYTEST_RAISE', '0') != '0':
 
     @pytest.hookimpl(tryfirst=True)
     def pytest_exception_interact(call):
@@ -305,11 +305,11 @@ def _event_check(instance):
             if name in no_event:
                 assert not hasattr(
                     instance.events, name
-                ), f"event {name} defined"
+                ), f'event {name} defined'
             else:
                 assert hasattr(
                     instance.events, name
-                ), f"event {name} not defined"
+                ), f'event {name} not defined'
 
         return check
 
@@ -332,36 +332,36 @@ def pytest_generate_tests(metafunc):
         for obj in metafunc.cls.get_objects():
             for check, instance, name in _event_check(obj):
                 res.append((check, instance))
-                ids.append(f"{name}-{instance}")
+                ids.append(f'{name}-{instance}')
 
         metafunc.parametrize('event_define_check,obj', res, ids=ids)
 
 
 def pytest_collection_modifyitems(session, config, items):
-    test_subset = os.environ.get("NAPARI_TEST_SUBSET")
+    test_subset = os.environ.get('NAPARI_TEST_SUBSET')
 
     test_order_prefix = [
-        os.path.join("napari", "utils"),
-        os.path.join("napari", "layers"),
-        os.path.join("napari", "components"),
-        os.path.join("napari", "settings"),
-        os.path.join("napari", "plugins"),
-        os.path.join("napari", "_vispy"),
-        os.path.join("napari", "_qt"),
-        os.path.join("napari", "qt"),
-        os.path.join("napari", "_tests"),
-        os.path.join("napari", "_tests", "test_examples.py"),
+        os.path.join('napari', 'utils'),
+        os.path.join('napari', 'layers'),
+        os.path.join('napari', 'components'),
+        os.path.join('napari', 'settings'),
+        os.path.join('napari', 'plugins'),
+        os.path.join('napari', '_vispy'),
+        os.path.join('napari', '_qt'),
+        os.path.join('napari', 'qt'),
+        os.path.join('napari', '_tests'),
+        os.path.join('napari', '_tests', 'test_examples.py'),
     ]
     test_order = [[] for _ in test_order_prefix]
     test_order.append([])  # for not matching tests
     for item in items:
         if test_subset:
-            if test_subset.lower() == "qt" and "qapp" not in item.fixturenames:
+            if test_subset.lower() == 'qt' and 'qapp' not in item.fixturenames:
                 # Skip non Qt tests
                 continue
             if (
-                test_subset.lower() == "headless"
-                and "qapp" in item.fixturenames
+                test_subset.lower() == 'headless'
+                and 'qapp' in item.fixturenames
             ):
                 # Skip Qt tests
                 continue
@@ -393,9 +393,9 @@ def disable_notification_dismiss_timer(monkeypatch):
     with suppress(ImportError):
         from napari._qt.dialogs.qt_notification import NapariQtNotification
 
-        monkeypatch.setattr(NapariQtNotification, "DISMISS_AFTER", 0)
-        monkeypatch.setattr(NapariQtNotification, "FADE_IN_RATE", 0)
-        monkeypatch.setattr(NapariQtNotification, "FADE_OUT_RATE", 0)
+        monkeypatch.setattr(NapariQtNotification, 'DISMISS_AFTER', 0)
+        monkeypatch.setattr(NapariQtNotification, 'FADE_IN_RATE', 0)
+        monkeypatch.setattr(NapariQtNotification, 'FADE_OUT_RATE', 0)
 
 
 @pytest.fixture()
@@ -481,15 +481,15 @@ def _get_calling_stack():  # pragma: no cover
             frame = sys._getframe(i)
         except ValueError:
             break
-        stack.append(f"{frame.f_code.co_filename}:{frame.f_lineno}")
-    return "\n".join(stack)
+        stack.append(f'{frame.f_code.co_filename}:{frame.f_lineno}')
+    return '\n'.join(stack)
 
 
 def _get_calling_place(depth=1):  # pragma: no cover
-    if not hasattr(sys, "_getframe"):
-        return ""
+    if not hasattr(sys, '_getframe'):
+        return ''
     frame = sys._getframe(1 + depth)
-    result = f"{frame.f_code.co_filename}:{frame.f_lineno}"
+    result = f'{frame.f_code.co_filename}:{frame.f_lineno}'
     if not frame.f_code.co_filename.startswith(ROOT_DIR):
         with suppress(ValueError):
             while not frame.f_code.co_filename.startswith(ROOT_DIR):
@@ -497,7 +497,7 @@ def _get_calling_place(depth=1):  # pragma: no cover
                 if frame is None:
                     break
             else:
-                result += f" called from\n{frame.f_code.co_filename}:{frame.f_lineno}"
+                result += f' called from\n{frame.f_code.co_filename}:{frame.f_lineno}'
     return result
 
 
@@ -509,9 +509,9 @@ def dangling_qthreads(monkeypatch, qtbot, request):
     thread_dict = WeakKeyDictionary()
     # dict of threads that have been started but not yet terminated
 
-    if "disable_qthread_start" in request.keywords:
+    if 'disable_qthread_start' in request.keywords:
 
-        def my_start(*_, **__):
+        def my_start(self, priority=QThread.InheritPriority):
             """dummy function to prevent thread start"""
 
     else:
@@ -531,8 +531,8 @@ def dangling_qthreads(monkeypatch, qtbot, request):
                 dangling_threads_li.append((thread, calling))
         except RuntimeError as e:
             if (
-                "wrapped C/C++ object of type" not in e.args[0]
-                and "Internal C++ object" not in e.args[0]
+                'wrapped C/C++ object of type' not in e.args[0]
+                and 'Internal C++ object' not in e.args[0]
             ):
                 raise
 
@@ -542,21 +542,21 @@ def dangling_qthreads(monkeypatch, qtbot, request):
             qtbot.waitUntil(thread.isFinished, timeout=2000)
 
     long_desc = (
-        "If you see this error, it means that a QThread was started in a test "
-        "but not terminated. This can cause segfaults in the test suite. "
-        "Please use the `qtbot` fixture to wait for the thread to finish. "
-        "If you think that the thread is obsolete for this test, you can "
-        "use the `@pytest.mark.disable_qthread_start` mark or  `monkeypatch` "
-        "fixture to patch the `start` method of the "
-        "QThread class to do nothing.\n"
+        'If you see this error, it means that a QThread was started in a test '
+        'but not terminated. This can cause segfaults in the test suite. '
+        'Please use the `qtbot` fixture to wait for the thread to finish. '
+        'If you think that the thread is obsolete for this test, you can '
+        'use the `@pytest.mark.disable_qthread_start` mark or  `monkeypatch` '
+        'fixture to patch the `start` method of the '
+        'QThread class to do nothing.\n'
     )
 
     if len(dangling_threads_li) > 1:
-        long_desc += " The QThreads were started in:\n"
+        long_desc += ' The QThreads were started in:\n'
     else:
-        long_desc += " The QThread was started in:\n"
+        long_desc += ' The QThread was started in:\n'
 
-    assert not dangling_threads_li, long_desc + "\n".join(
+    assert not dangling_threads_li, long_desc + '\n'.join(
         x[1] for x in dangling_threads_li
     )
 
@@ -569,9 +569,9 @@ def dangling_qthread_pool(monkeypatch, request):
     threadpool_dict = WeakKeyDictionary()
     # dict of threadpools that have been used to run QRunnables
 
-    if "disable_qthread_pool_start" in request.keywords:
+    if 'disable_qthread_pool_start' in request.keywords:
 
-        def my_start(*_, **__):
+        def my_start(self, runnable, priority=0):
             """dummy function to prevent thread start"""
 
     else:
@@ -599,21 +599,21 @@ def dangling_qthread_pool(monkeypatch, request):
             thread_pool.waitForDone(2000)
 
     long_desc = (
-        "If you see this error, it means that a QThreadPool was used to run "
-        "a QRunnable in a test but not terminated. This can cause segfaults "
-        "in the test suite. Please use the `qtbot` fixture to wait for the "
-        "thread to finish. If you think that the thread is obsolete for this "
-        "use the `@pytest.mark.disable_qthread_pool_start` mark or  `monkeypatch` "
-        "fixture to patch the `start` "
-        "method of the QThreadPool class to do nothing.\n"
+        'If you see this error, it means that a QThreadPool was used to run '
+        'a QRunnable in a test but not terminated. This can cause segfaults '
+        'in the test suite. Please use the `qtbot` fixture to wait for the '
+        'thread to finish. If you think that the thread is obsolete for this '
+        'use the `@pytest.mark.disable_qthread_pool_start` mark or  `monkeypatch` '
+        'fixture to patch the `start` '
+        'method of the QThreadPool class to do nothing.\n'
     )
     if len(dangling_threads_pools) > 1:
-        long_desc += " The QThreadPools were used in:\n"
+        long_desc += ' The QThreadPools were used in:\n'
     else:
-        long_desc += " The QThreadPool was used in:\n"
+        long_desc += ' The QThreadPool was used in:\n'
 
-    assert not dangling_threads_pools, long_desc + "\n".join(
-        "; ".join(x[1]) for x in dangling_threads_pools
+    assert not dangling_threads_pools, long_desc + '\n'.join(
+        '; '.join(x[1]) for x in dangling_threads_pools
     )
 
 
@@ -625,10 +625,10 @@ def dangling_qtimers(monkeypatch, request):
     timer_dkt = WeakKeyDictionary()
     single_shot_list = []
 
-    if "disable_qtimer_start" in request.keywords:
+    if 'disable_qtimer_start' in request.keywords:
         from pytestqt.qt_compat import qt_api
 
-        def my_start(*_, **__):
+        def my_start(self, msec=None):
             """dummy function to prevent timer start"""
 
         _single_shot = my_start
@@ -640,15 +640,15 @@ def dangling_qtimers(monkeypatch, request):
                 else:
                     base_start(self)
 
-        monkeypatch.setattr(qt_api.QtCore, "QTimer", OldTimer)
+        monkeypatch.setattr(qt_api.QtCore, 'QTimer', OldTimer)
         # This monkeypatch is require to keep `qtbot.waitUntil` working
 
     else:
 
         def my_start(self, msec=None):
             calling_place = _get_calling_place()
-            if "superqt" in calling_place and "throttler" in calling_place:
-                calling_place += f" - {_get_calling_place(2)}"
+            if 'superqt' in calling_place and 'throttler' in calling_place:
+                calling_place += f' - {_get_calling_place(2)}'
             timer_dkt[self] = calling_place
             if msec is not None:
                 base_start(self, msec)
@@ -663,7 +663,7 @@ def dangling_qtimers(monkeypatch, request):
             else:
                 t.timeout.connect(getattr(reciver, method))
             calling_place = _get_calling_place(2)
-            if "superqt" in calling_place and "throttler" in calling_place:
+            if 'superqt' in calling_place and 'throttler' in calling_place:
                 calling_place += _get_calling_stack()
             single_shot_list.append((t, _get_calling_place(2)))
             base_start(t, msec)
@@ -690,18 +690,18 @@ def dangling_qtimers(monkeypatch, request):
             timer.stop()
 
     long_desc = (
-        "If you see this error, it means that a QTimer was started but not stopped. "
-        "This can cause tests to fail, and can also cause segfaults. "
-        "If this test does not require a QTimer to pass you could monkeypatch it out. "
-        "If it does require a QTimer, you should stop or wait for it to finish before test ends. "
+        'If you see this error, it means that a QTimer was started but not stopped. '
+        'This can cause tests to fail, and can also cause segfaults. '
+        'If this test does not require a QTimer to pass you could monkeypatch it out. '
+        'If it does require a QTimer, you should stop or wait for it to finish before test ends. '
     )
     if len(dangling_timers) > 1:
-        long_desc += "The QTimers were started in:\n"
+        long_desc += 'The QTimers were started in:\n'
     else:
-        long_desc += "The QTimer was started in:\n"
+        long_desc += 'The QTimer was started in:\n'
 
     def _check_throttle_info(path):
-        if "superqt" in path and "throttler" in path:
+        if 'superqt' in path and 'throttler' in path:
             return (
                 path
                 + " it's possible that there was a problem with unfinished work by a "
@@ -710,7 +710,7 @@ def dangling_qtimers(monkeypatch, request):
             )
         return path
 
-    assert not dangling_timers, long_desc + "\n".join(
+    assert not dangling_timers, long_desc + '\n'.join(
         _check_throttle_info(x[1]) for x in dangling_timers
     )
 
@@ -732,11 +732,11 @@ def disable_throttling(monkeypatch):
     """
     # if this monkeypath fails then you should update path to GenericSignalThrottler
     monkeypatch.setattr(
-        "superqt.utils._throttler.GenericSignalThrottler.throttle",
+        'superqt.utils._throttler.GenericSignalThrottler.throttle',
         _throttle_mock,
     )
     monkeypatch.setattr(
-        "superqt.utils._throttler.GenericSignalThrottler.flush", _flush_mock
+        'superqt.utils._throttler.GenericSignalThrottler.flush', _flush_mock
     )
 
 
@@ -747,9 +747,9 @@ def dangling_qanimations(monkeypatch, request):
     base_start = QPropertyAnimation.start
     animation_dkt = WeakKeyDictionary()
 
-    if "disable_qanimation_start" in request.keywords:
+    if 'disable_qanimation_start' in request.keywords:
 
-        def my_start(*_, **__):
+        def my_start(self):
             """dummy function to prevent thread start"""
 
     else:
@@ -772,26 +772,26 @@ def dangling_qanimations(monkeypatch, request):
             animation.stop()
 
     long_desc = (
-        "If you see this error, it means that a QPropertyAnimation was started but not stopped. "
-        "This can cause tests to fail, and can also cause segfaults. "
-        "If this test does not require a QPropertyAnimation to pass you could monkeypatch it out. "
-        "If it does require a QPropertyAnimation, you should stop or wait for it to finish before test ends. "
+        'If you see this error, it means that a QPropertyAnimation was started but not stopped. '
+        'This can cause tests to fail, and can also cause segfaults. '
+        'If this test does not require a QPropertyAnimation to pass you could monkeypatch it out. '
+        'If it does require a QPropertyAnimation, you should stop or wait for it to finish before test ends. '
     )
     if len(dangling_animations) > 1:
-        long_desc += " The QPropertyAnimations were started in:\n"
+        long_desc += ' The QPropertyAnimations were started in:\n'
     else:
-        long_desc += " The QPropertyAnimation was started in:\n"
-    assert not dangling_animations, long_desc + "\n".join(
+        long_desc += ' The QPropertyAnimation was started in:\n'
+    assert not dangling_animations, long_desc + '\n'.join(
         x[1] for x in dangling_animations
     )
 
 
 def pytest_runtest_setup(item):
-    if "qapp" in item.fixturenames:
+    if 'qapp' in item.fixturenames:
         # here we do autouse for dangling fixtures only if qapp is used
-        if "qtbot" not in item.fixturenames:
+        if 'qtbot' not in item.fixturenames:
             # for proper waiting for threads to finish
-            item.fixturenames.append("qtbot")
+            item.fixturenames.append('qtbot')
 
         item.fixturenames.extend(
             [
@@ -815,20 +815,20 @@ class NapariTerminalReporter(CustomTerminalReporter):
     currentfspath: Optional[Path]
 
     def write_fspath_result(self, nodeid: str, res, **markup: bool) -> None:
-        if getattr(self, "_start_time", None) is None:
+        if getattr(self, '_start_time', None) is None:
             self._start_time = perf_counter()
-        fspath = self.config.rootpath / nodeid.split("::")[0]
+        fspath = self.config.rootpath / nodeid.split('::')[0]
         if self.currentfspath is None or fspath != self.currentfspath:
             if self.currentfspath is not None and self._show_progress_info:
                 self._write_progress_information_filling_space()
-                if os.environ.get("CI", False):
+                if os.environ.get('CI', False):
                     self.write(
-                        f" [{timedelta(seconds=int(perf_counter() - self._start_time))}]"
+                        f' [{timedelta(seconds=int(perf_counter() - self._start_time))}]'
                     )
             self.currentfspath = fspath
             relfspath = bestrelpath(self.startpath, fspath)
             self._tw.line()
-            self.write(relfspath + " ")
+            self.write(relfspath + ' ')
         self.write(res, flush=True, **markup)
 
 
