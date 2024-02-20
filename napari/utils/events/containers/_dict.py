@@ -64,7 +64,7 @@ class TypedMutableMapping(MutableMapping[_K, _T]):
 
     def __newlike__(
         self, iterable: MutableMapping[_K, _T]
-    ) -> "TypedMutableMapping[_K, _T]":
+    ) -> 'TypedMutableMapping[_K, _T]':
         new = self.__class__()
         # separating this allows subclasses to omit these from their `__init__`
         new._basetypes = self._basetypes

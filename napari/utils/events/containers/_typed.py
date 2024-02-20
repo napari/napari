@@ -174,7 +174,7 @@ class TypedMutableSequence(MutableSequence[_T]):
 
     def __newlike__(
         self, iterable: Iterable[_T]
-    ) -> "TypedMutableSequence[_T]":
+    ) -> 'TypedMutableSequence[_T]':
         new = self.__class__()
         # seperating this allows subclasses to omit these from their `__init__`
         new._basetypes = self._basetypes
@@ -182,11 +182,11 @@ class TypedMutableSequence(MutableSequence[_T]):
         new.extend(iterable)
         return new
 
-    def copy(self) -> "TypedMutableSequence[_T]":
+    def copy(self) -> 'TypedMutableSequence[_T]':
         """Return a shallow copy of the list."""
         return self.__newlike__(self)
 
-    def __add__(self, other: Iterable[_T]) -> "TypedMutableSequence[_T]":
+    def __add__(self, other: Iterable[_T]) -> 'TypedMutableSequence[_T]':
         """Add other to self, return new object."""
         copy = self.copy()
         copy.extend(other)
