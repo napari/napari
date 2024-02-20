@@ -260,7 +260,7 @@ def test_blending():
     assert layer.blending == 'opaque'
 
 
-@pytest.mark.filterwarnings("ignore:.*seed is deprecated.*")
+@pytest.mark.filterwarnings('ignore:.*seed is deprecated.*')
 def test_properties():
     """Test adding labels with properties."""
     np.random.seed(0)

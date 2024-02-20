@@ -143,8 +143,8 @@ class LabelRendering:
                     cycle(['red', 'green', 'blue', 'pink', 'magenta']),
                 )
             )
-            colors[None] = "yellow"
-            colors[0] = "transparent"
+            colors[None] = 'yellow'
+            colors[0] = 'transparent'
             self.layer.colormap = DirectLabelColormap(color_dict=colors)
         self.qt_viewr.show()
 
