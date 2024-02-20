@@ -163,7 +163,7 @@ myst_heading_anchors = 4
 
 version_string = '.'.join(str(x) for x in __version_tuple__[:3])
 python_version = '3.10'
-python_version_range = '3.8-3.10'
+python_version_range = '3.8-3.11'
 python_minimum_version = '3.8'
 
 myst_substitutions = {
