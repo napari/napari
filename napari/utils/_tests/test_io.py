@@ -6,7 +6,7 @@ from napari.utils.io import imsave
 
 
 @pytest.mark.parametrize(
-    "image_file", ["image", "image.png", "image.tif", "image.bmp"]
+    'image_file', ['image', 'image.png', 'image.tif', 'image.bmp']
 )
 def test_imsave(tmp_path, image_file):
     """Save data to image file."""

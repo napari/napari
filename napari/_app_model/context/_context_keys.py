@@ -5,7 +5,7 @@ from app_model.expressions import ContextNamespace as _ContextNamespace
 if TYPE_CHECKING:
     from napari.utils.events import Event
 
-A = TypeVar("A")
+A = TypeVar('A')
 
 
 class ContextNamespace(_ContextNamespace, Generic[A]):

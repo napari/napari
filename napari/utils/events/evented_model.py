@@ -55,7 +55,7 @@ def no_class_attributes():
     - https://codereview.qt-project.org/c/pyside/pyside-setup/+/261411
     """
 
-    if "PySide2" not in sys.modules:
+    if 'PySide2' not in sys.modules:
         yield
         return
 
@@ -111,14 +111,14 @@ class EventedMetaclass(ModelMetaclass):
                 cls.__properties__[name] = attr
                 # determine compare operator
                 if (
-                    hasattr(attr.fget, "__annotations__")
-                    and "return" in attr.fget.__annotations__
+                    hasattr(attr.fget, '__annotations__')
+                    and 'return' in attr.fget.__annotations__
                     and not isinstance(
-                        attr.fget.__annotations__["return"], str
+                        attr.fget.__annotations__['return'], str
                     )
                 ):
                     cls.__eq_operators__[name] = pick_equality_operator(
-                        attr.fget.__annotations__["return"]
+                        attr.fget.__annotations__['return']
                     )
 
         cls.__field_dependents__ = _get_field_dependents(cls)
@@ -200,7 +200,7 @@ def _get_field_dependents(cls: 'EventedModel') -> Dict[str, Set[str]]:
                 )
             for field in fields:
                 if field not in cls.__fields__:
-                    warnings.warn(f"Unrecognized field dependency: {field}")
+                    warnings.warn(f'Unrecognized field dependency: {field}')
                 deps.setdefault(field, set()).add(prop_name)
     else:
         # if dependencies haven't been explicitly defined, we can glean
@@ -229,7 +229,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     _changes_queue: Dict[str, Any] = PrivateAttr(default_factory=dict)
     _primary_changes: Set[str] = PrivateAttr(default_factory=set)
     _delay_check_semaphore: int = PrivateAttr(0)
-    __slots__: ClassVar[Set[str]] = {"__weakref__"}  # type: ignore
+    __slots__: ClassVar[Set[str]] = {'__weakref__'}  # type: ignore
 
     # pydantic BaseModel configuration.  see:
     # https://pydantic-docs.helpmanual.io/usage/model_config/
@@ -249,6 +249,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         # NOTE: json_encoders are also added EventedMetaclass.__new__ if the
         # field declares a _json_encode method.
         json_encoders = _BASE_JSON_ENCODERS
+        # extra = Extra.forbid
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -437,7 +438,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         if not isinstance(values, dict):
             raise TypeError(
                 trans._(
-                    "Unsupported update from {values}",
+                    'Unsupported update from {values}',
                     deferred=True,
                     values=type(values),
                 )

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Iterable, Iterator, MutableSet, TypeVar
 from napari.utils.events import EmitterGroup
 from napari.utils.translations import trans
 
-_T = TypeVar("_T")
+_T = TypeVar('_T')
 
 if TYPE_CHECKING:
     from napari._pydantic_compat import ModelField
@@ -97,7 +97,7 @@ class EventedSet(MutableSet[_T]):
             self._emit_change(added={}, removed=values)
 
     def __repr__(self) -> str:
-        return f"{type(self).__name__}({self._set!r})"
+        return f'{type(self).__name__}({self._set!r})'
 
     def update(self, others: Iterable[_T] = ()) -> None:
         """Update this set with the union of this set and others"""

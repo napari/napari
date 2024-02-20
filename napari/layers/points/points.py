@@ -310,14 +310,14 @@ class Points(Layer):
     _modeclass = Mode
     _projectionclass = PointsProjectionMode
 
-    _drag_modes: ClassVar[Dict[Mode, Callable[["Points", Event], Any]]] = {
+    _drag_modes: ClassVar[Dict[Mode, Callable[['Points', Event], Any]]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
         Mode.ADD: add,
         Mode.SELECT: select,
     }
 
-    _move_modes: ClassVar[Dict[Mode, Callable[["Points", Event], Any]]] = {
+    _move_modes: ClassVar[Dict[Mode, Callable[['Points', Event], Any]]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
         Mode.ADD: no_op,
@@ -378,8 +378,15 @@ class Points(Layer):
         shown=True,
         projection_mode='none',
     ) -> None:
-        if ndim is None and scale is not None:
-            ndim = len(scale)
+        if ndim is None:
+            if scale is not None:
+                ndim = len(scale)
+            elif (
+                data is not None
+                and hasattr(data, 'shape')
+                and len(data.shape) == 2
+            ):
+                ndim = data.shape[1]
 
         data, ndim = fix_data_points(data, ndim)
 
@@ -549,30 +556,30 @@ class Points(Layer):
             or (isinstance(data, list) and len(data) > 0)
         )
         kwargs = {
-            "value": self.data,
-            "vertex_indices": ((),),
-            "data_indices": tuple(i for i in range(len(self.data))),
+            'value': self.data,
+            'vertex_indices': ((),),
+            'data_indices': tuple(i for i in range(len(self.data))),
         }
         if prior_data and data_not_empty:
-            kwargs["action"] = ActionType.CHANGING
+            kwargs['action'] = ActionType.CHANGING
         elif data_not_empty:
-            kwargs["action"] = ActionType.ADDING
-            kwargs["data_indices"] = tuple(i for i in range(len(data)))
+            kwargs['action'] = ActionType.ADDING
+            kwargs['data_indices'] = tuple(i for i in range(len(data)))
         else:
-            kwargs["action"] = ActionType.REMOVING
+            kwargs['action'] = ActionType.REMOVING
 
         self.events.data(**kwargs)
         self._set_data(data)
-        kwargs["data_indices"] = tuple(i for i in range(len(self.data)))
-        kwargs["value"] = self.data
+        kwargs['data_indices'] = tuple(i for i in range(len(self.data)))
+        kwargs['value'] = self.data
 
         if prior_data and data_not_empty:
-            kwargs["action"] = ActionType.CHANGED
+            kwargs['action'] = ActionType.CHANGED
         elif data_not_empty:
-            kwargs["data_indices"] = tuple(i for i in range(len(data)))
-            kwargs["action"] = ActionType.ADDED
+            kwargs['data_indices'] = tuple(i for i in range(len(data)))
+            kwargs['action'] = ActionType.ADDED
         else:
-            kwargs["action"] = ActionType.REMOVED
+            kwargs['action'] = ActionType.REMOVED
         self.events.data(**kwargs)
 
     def _set_data(self, data: Optional[np.ndarray]):
@@ -673,10 +680,10 @@ class Points(Layer):
     ) -> None:
         self._feature_table.set_values(features, num_data=len(self.data))
         self._update_color_manager(
-            self._face, self._feature_table, "face_color"
+            self._face, self._feature_table, 'face_color'
         )
         self._update_color_manager(
-            self._edge, self._feature_table, "edge_color"
+            self._edge, self._feature_table, 'edge_color'
         )
         self.text.refresh(self.features)
         self.events.properties()
@@ -879,7 +886,7 @@ class Points(Layer):
             except ValueError:
                 raise ValueError(
                     trans._(
-                        "Size is not compatible for broadcasting",
+                        'Size is not compatible for broadcasting',
                         deferred=True,
                     )
                 ) from e
@@ -887,8 +894,8 @@ class Points(Layer):
                 self._size = np.mean(size, axis=1)
                 warnings.warn(
                     trans._(
-                        "Since 0.4.18 point sizes must be isotropic; the average from each dimension will be"
-                        " used instead. This will become an error in version 0.6.0.",
+                        'Since 0.4.18 point sizes must be isotropic; the average from each dimension will be'
+                        ' used instead. This will become an error in version 0.6.0.',
                         deferred=True,
                     ),
                     category=DeprecationWarning,
@@ -907,8 +914,8 @@ class Points(Layer):
         if isinstance(size, (list, tuple, np.ndarray)):
             warnings.warn(
                 trans._(
-                    "Since 0.4.18 point sizes must be isotropic; the average from each dimension will be used instead. "
-                    "This will become an error in version 0.6.0.",
+                    'Since 0.4.18 point sizes must be isotropic; the average from each dimension will be used instead. '
+                    'This will become an error in version 0.6.0.',
                     deferred=True,
                 ),
                 category=DeprecationWarning,
@@ -1323,20 +1330,24 @@ class Points(Layer):
         state = self._get_base_state()
         state.update(
             {
-                'symbol': self.symbol
-                if self.data.size
-                else [self.current_symbol],
+                'symbol': (
+                    self.symbol if self.data.size else [self.current_symbol]
+                ),
                 'edge_width': self.edge_width,
                 'edge_width_is_relative': self.edge_width_is_relative,
-                'face_color': self.face_color
-                if self.data.size
-                else [self.current_face_color],
+                'face_color': (
+                    self.face_color
+                    if self.data.size
+                    else [self.current_face_color]
+                ),
                 'face_color_cycle': self.face_color_cycle,
                 'face_colormap': self.face_colormap.dict(),
                 'face_contrast_limits': self.face_contrast_limits,
-                'edge_color': self.edge_color
-                if self.data.size
-                else [self.current_edge_color],
+                'edge_color': (
+                    self.edge_color
+                    if self.data.size
+                    else [self.current_edge_color]
+                ),
                 'edge_color_cycle': self.edge_color_cycle,
                 'edge_colormap': self.edge_colormap.dict(),
                 'edge_contrast_limits': self.edge_contrast_limits,
@@ -1860,7 +1871,7 @@ class Points(Layer):
             and np.array_equal(self._drag_box, self._drag_box_stored)
         ) and not force:
             return
-        self._selected_data_stored = copy(self.selected_data)
+        self._selected_data_stored = Selection(self.selected_data)
         self._value_stored = copy(self._value)
         self._drag_box_stored = copy(self._drag_box)
 
@@ -2047,12 +2058,12 @@ class Points(Layer):
                 self.data[np.ix_(selection_indices, disp)] + shift
             )
             self.refresh()
-        self.events.data(
-            value=self.data,
-            action=ActionType.CHANGED,
-            data_indices=tuple(selection_indices),
-            vertex_indices=((),),
-        )
+            self.events.data(
+                value=self.data,
+                action=ActionType.CHANGED,
+                data_indices=tuple(selection_indices),
+                vertex_indices=((),),
+            )
 
     def _set_drag_start(
         self,
@@ -2290,7 +2301,7 @@ class Points(Layer):
             world=world,
         )
         if properties:
-            source_info['coordinates'] += "; " + ", ".join(properties)
+            source_info['coordinates'] += '; ' + ', '.join(properties)
 
         return source_info
 
@@ -2324,7 +2335,7 @@ class Points(Layer):
         msg : string
             String containing a message that can be used as a tooltip.
         """
-        return "\n".join(
+        return '\n'.join(
             self._get_properties(
                 position,
                 view_direction=view_direction,

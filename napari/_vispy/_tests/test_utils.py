@@ -5,7 +5,7 @@ from vispy.util.quaternion import Quaternion
 
 from napari._pydantic_compat import ValidationError
 from napari._vispy.utils.cursor import QtCursorVisual
-from napari._vispy.utils.quaternion import quaternion2euler
+from napari._vispy.utils.quaternion import quaternion2euler_degrees
 from napari._vispy.utils.visual import get_view_direction_in_scene_coordinates
 from napari.components._viewer_constants import CursorStyle
 
@@ -13,18 +13,16 @@ from napari.components._viewer_constants import CursorStyle
 angles = [[12, 53, 92], [180, -90, 0], [16, 90, 0]]
 
 # Prepare for input and add corresponding values in radians
-angles_param = [(x, True) for x in angles]
-angles_param.extend([(x, False) for x in np.radians(angles)])
 
 
-@pytest.mark.parametrize('angles,degrees', angles_param)
-def test_quaternion2euler(angles, degrees):
+@pytest.mark.parametrize('angles', angles)
+def test_quaternion2euler_degrees(angles):
     """Test quaternion to euler angle conversion."""
 
     # Test for degrees
-    q = Quaternion.create_from_euler_angles(*angles, degrees)
-    ea = quaternion2euler(q, degrees=degrees)
-    q_p = Quaternion.create_from_euler_angles(*ea, degrees=degrees)
+    q = Quaternion.create_from_euler_angles(*angles, degrees=True)
+    ea = quaternion2euler_degrees(q)
+    q_p = Quaternion.create_from_euler_angles(*ea, degrees=True)
 
     # We now compare the corresponding quaternions ; they should be equals or opposites (as they're already unit ones)
     q_values = np.array([q.w, q.x, q.y, q.z])
@@ -96,4 +94,4 @@ def test_set_cursor(make_napari_viewer):
     assert viewer._brush_circle_overlay.size == viewer.cursor.size
 
     with pytest.raises(ValidationError):
-        viewer.cursor.style = "invalid"
+        viewer.cursor.style = 'invalid'

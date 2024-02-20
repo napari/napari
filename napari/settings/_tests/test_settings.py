@@ -1,4 +1,5 @@
 """Tests for the settings manager."""
+
 import os
 from pathlib import Path
 
@@ -45,23 +46,23 @@ def test_settings_file_not_created(test_settings):
 
 
 def test_settings_loads(tmp_path):
-    data = "appearance:\n   theme: light"
+    data = 'appearance:\n   theme: light'
     fake_path = tmp_path / 'fake_path.yml'
     fake_path.write_text(data)
-    assert NapariSettings(fake_path).appearance.theme == "light"
+    assert NapariSettings(fake_path).appearance.theme == 'light'
 
 
 def test_settings_load_invalid_content(tmp_path):
     # This is invalid content
 
     fake_path = tmp_path / 'fake_path.yml'
-    fake_path.write_text(":")
+    fake_path.write_text(':')
     NapariSettings(fake_path)
 
 
 def test_settings_load_invalid_type(tmp_path, caplog):
     # The invalid data will be replaced by the default value
-    data = "appearance:\n   theme: 1"
+    data = 'appearance:\n   theme: 1'
     fake_path = tmp_path / 'fake_path.yml'
     fake_path.write_text(data)
     assert NapariSettings(fake_path).application.save_window_geometry is True
@@ -71,7 +72,7 @@ def test_settings_load_invalid_type(tmp_path, caplog):
 def test_settings_load_strict(tmp_path, monkeypatch):
     # use Config.strict_config_check to enforce good config files
     monkeypatch.setattr(NapariSettings.__config__, 'strict_config_check', True)
-    data = "appearance:\n   theme: 1"
+    data = 'appearance:\n   theme: 1'
     fake_path = tmp_path / 'fake_path.yml'
     fake_path.write_text(data)
     with pytest.raises(ValidationError):
@@ -91,7 +92,7 @@ def test_settings_load_invalid_key(tmp_path, monkeypatch):
 
     monkeypatch.setattr(os, 'environ', {})
     s = NapariSettings(fake_path)
-    assert getattr(s, "non_existing_key", None) is None
+    assert getattr(s, 'non_existing_key', None) is None
     s.save()
     text = fake_path.read_text()
     # removed bad key
@@ -103,21 +104,21 @@ def test_settings_load_invalid_key(tmp_path, monkeypatch):
 
 def test_settings_load_invalid_section(tmp_path):
     # The invalid section will be removed from the file
-    data = "non_existing_section:\n   foo: bar"
+    data = 'non_existing_section:\n   foo: bar'
 
     fake_path = tmp_path / 'fake_path.yml'
     fake_path.write_text(data)
 
     settings_ = NapariSettings(fake_path)
-    assert getattr(settings_, "non_existing_section", None) is None
+    assert getattr(settings_, 'non_existing_section', None) is None
 
 
 def test_settings_to_dict(test_settings):
     data_dict = test_settings.dict()
-    assert isinstance(data_dict, dict) and data_dict.get("application")
+    assert isinstance(data_dict, dict) and data_dict.get('application')
 
     data_dict = test_settings.dict(exclude_defaults=True)
-    assert not data_dict.get("application")
+    assert not data_dict.get('application')
 
 
 def test_settings_to_dict_no_env(monkeypatch):
@@ -126,7 +127,7 @@ def test_settings_to_dict_no_env(monkeypatch):
     assert s.dict()['appearance']['theme'] == 'light'
     assert s.dict(exclude_env=True)['appearance']['theme'] == 'light'
 
-    monkeypatch.setenv("NAPARI_APPEARANCE_THEME", 'light')
+    monkeypatch.setenv('NAPARI_APPEARANCE_THEME', 'light')
     s = NapariSettings(None)
     assert s.dict()['appearance']['theme'] == 'light'
     assert 'theme' not in s.dict(exclude_env=True).get('appearance', {})
@@ -136,11 +137,11 @@ def test_settings_reset(test_settings):
     appearance_id = id(test_settings.appearance)
     test_settings.reset()
     assert id(test_settings.appearance) == appearance_id
-    assert test_settings.appearance.theme == "dark"
-    test_settings.appearance.theme = "light"
-    assert test_settings.appearance.theme == "light"
+    assert test_settings.appearance.theme == 'dark'
+    test_settings.appearance.theme = 'light'
+    assert test_settings.appearance.theme == 'light'
     test_settings.reset()
-    assert test_settings.appearance.theme == "dark"
+    assert test_settings.appearance.theme == 'dark'
     assert id(test_settings.appearance) == appearance_id
 
 
@@ -151,12 +152,12 @@ def test_settings_model(test_settings):
 
     with pytest.raises(ValidationError):
         # Should be a valid string
-        test_settings.appearance.theme = "vaporwave"
+        test_settings.appearance.theme = 'vaporwave'
 
 
 def test_custom_theme_settings(test_settings):
     # See: https://github.com/napari/napari/issues/2340
-    custom_theme_name = "_test_blue_"
+    custom_theme_name = '_test_blue_'
 
     # No theme registered yet, this should fail
     with pytest.raises(ValidationError):
@@ -169,7 +170,7 @@ def test_custom_theme_settings(test_settings):
         primary='rgb(80, 88, 108)',
         current='rgb(184, 112, 0)',
     )
-    register_theme(custom_theme_name, blue_theme, "test")
+    register_theme(custom_theme_name, blue_theme, 'test')
 
     # Theme registered, should pass validation
     test_settings.appearance.theme = custom_theme_name
@@ -196,7 +197,7 @@ def test_model_fields_are_annotated(test_settings):
             )
 
     if errors:
-        raise ValueError("\n\n".join(errors))
+        raise ValueError('\n\n'.join(errors))
 
 
 def test_settings_env_variables(monkeypatch):
@@ -214,7 +215,7 @@ def test_settings_env_variables(monkeypatch):
     # can also use json in nested vars
     assert NapariSettings(None).plugins.extension2reader == {}
     monkeypatch.setenv('NAPARI_PLUGINS_EXTENSION2READER', '{"*.zarr": "hi"}')
-    assert NapariSettings(None).plugins.extension2reader == {"*.zarr": "hi"}
+    assert NapariSettings(None).plugins.extension2reader == {'*.zarr': 'hi'}
 
 
 def test_settings_env_variables_fails(monkeypatch):
@@ -233,14 +234,14 @@ def test_subfield_env_field(monkeypatch):
     class T(NapariSettings):
         sub: Sub
 
-    monkeypatch.setenv("VARNAME", '42')
+    monkeypatch.setenv('VARNAME', '42')
     assert T(sub={}).sub.x == 42
 
 
 # Failing because dark is actually the default...
 def test_settings_env_variables_do_not_write_to_disk(tmp_path, monkeypatch):
     # create a settings file with light theme
-    data = "appearance:\n   theme: light"
+    data = 'appearance:\n   theme: light'
     fake_path = tmp_path / 'fake_path.yml'
     fake_path.write_text(data)
 
@@ -248,7 +249,7 @@ def test_settings_env_variables_do_not_write_to_disk(tmp_path, monkeypatch):
     disk_settings = fake_path.read_text()
     assert 'theme: light' in disk_settings
     # make sure they load correctly
-    assert NapariSettings(fake_path).appearance.theme == "light"
+    assert NapariSettings(fake_path).appearance.theme == 'light'
 
     # now load settings again with an Env-var override
     monkeypatch.setenv('NAPARI_APPEARANCE_THEME', 'dark')
@@ -268,7 +269,7 @@ def test_settings_env_variables_do_not_write_to_disk(tmp_path, monkeypatch):
 
     # and it's back if we reread without the env var override
     monkeypatch.delenv('NAPARI_APPEARANCE_THEME')
-    assert NapariSettings(fake_path).appearance.theme == "light"
+    assert NapariSettings(fake_path).appearance.theme == 'light'
 
 
 def test_settings_only_saves_non_default_values(monkeypatch, tmp_path):

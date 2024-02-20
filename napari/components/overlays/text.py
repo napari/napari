@@ -1,4 +1,5 @@
 """Text label model."""
+
 from napari._pydantic_compat import Field
 from napari.components.overlays.base import CanvasOverlay
 from napari.utils.color import ColorValue
@@ -29,4 +30,4 @@ class TextOverlay(CanvasOverlay):
         default_factory=lambda: ColorValue((0.5, 0.5, 0.5, 1.0))
     )
     font_size: float = 10
-    text: str = ""
+    text: str = ''

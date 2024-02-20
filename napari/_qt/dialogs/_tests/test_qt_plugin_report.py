@@ -24,7 +24,7 @@ def test_error_reporter(qtbot, monkeypatch):
     try:
         # we need to raise to make sure a __traceback__ is attached to the error.
         raise PluginError(
-            error_message, plugin_name='test_plugin', plugin="mock"
+            error_message, plugin_name='test_plugin', plugin='mock'
         )
     except PluginError:
         pass
@@ -42,7 +42,7 @@ def test_error_reporter(qtbot, monkeypatch):
     def mock_webbrowser_open(url, new=0):
         assert new == 2
         assert "Errors for plugin 'test_plugin'" in url
-        assert "Traceback from napari" in url
+        assert 'Traceback from napari' in url
 
     monkeypatch.setattr(webbrowser, 'open', mock_webbrowser_open)
 
