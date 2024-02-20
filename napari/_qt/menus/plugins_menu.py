@@ -38,9 +38,9 @@ class PluginsMenu(NapariMenu):
     def _build(self, event=None):
         self.clear()
         if self._plugin_manager_dialog_cls() is not None:
-            action = self.addAction(trans._("Plugin Manager"))
+            action = self.addAction(trans._('Plugin Manager'))
             action.triggered.connect(self._show_plugin_install_dialog)
-        action = self.addAction(trans._("Plugin Errors..."))
+        action = self.addAction(trans._('Plugin Errors...'))
         action.setStatusTip(
             trans._(
                 'Review stack traces for plugin exceptions and notify developers'
@@ -90,10 +90,10 @@ class PluginsMenu(NapariMenu):
         for wdg_name in widgets:
             key = (plugin_name, wdg_name)
             if multiprovider:
-                action = QAction(wdg_name.replace("&", "&&"), parent=self)
+                action = QAction(wdg_name.replace('&', '&&'), parent=self)
             else:
                 full_name = menu_item_template.format(*key)
-                action = QAction(full_name.replace("&", "&&"), parent=self)
+                action = QAction(full_name.replace('&', '&&'), parent=self)
 
             def _add_toggle_widget(*, key=key, hook_type=hook_type):
                 full_name = menu_item_template.format(*key)
@@ -123,7 +123,7 @@ class PluginsMenu(NapariMenu):
             # TODO: Register via plugin system?
             from napari_plugin_manager.qt_plugin_dialog import QtPluginDialog
         except ImportError as exc:
-            logger.debug("QtPluginDialog not available", exc_info=exc)
+            logger.debug('QtPluginDialog not available', exc_info=exc)
             return None
         else:
             return QtPluginDialog

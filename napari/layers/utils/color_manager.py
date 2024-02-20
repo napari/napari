@@ -188,7 +188,7 @@ class ColorManager(EventedModel):
 
         # set the current color to the last color/property value
         # if it wasn't already set
-        if values.get("current_color") is None and len(colors) > 0:
+        if values.get('current_color') is None and len(colors) > 0:
             values['current_color'] = colors[-1]
             if color_mode in [ColorMode.CYCLE, ColorMode.COLORMAP]:
                 property_values = values['color_properties']
@@ -238,8 +238,8 @@ class ColorManager(EventedModel):
             transformed_color = transform_color_with_defaults(
                 num_entries=n_colors,
                 colors=color,
-                elem_name="color",
-                default="white",
+                elem_name='color',
+                default='white',
             )
             colors = normalize_and_broadcast_colors(
                 n_colors, transformed_color
@@ -303,8 +303,8 @@ class ColorManager(EventedModel):
             transformed_color = transform_color_with_defaults(
                 num_entries=n_colors,
                 colors=new_color,
-                elem_name="color",
-                default="white",
+                elem_name='color',
+                default='white',
             )
             broadcasted_colors = normalize_and_broadcast_colors(
                 n_colors, transformed_color
@@ -557,8 +557,8 @@ class ColorManager(EventedModel):
                     transformed_color = transform_color_with_defaults(
                         num_entries=n_colors,
                         colors=color_values,
-                        elem_name="colors",
-                        default="white",
+                        elem_name='colors',
+                        default='white',
                     )
                     colors = normalize_and_broadcast_colors(
                         n_colors, transformed_color

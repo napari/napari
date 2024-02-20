@@ -146,7 +146,7 @@ def highlight(layer, event):
     layer._set_highlight()
 
 
-_T = TypeVar("_T")
+_T = TypeVar('_T')
 
 
 def _toggle_selected(selection: Set[_T], value: _T) -> Set[_T]:

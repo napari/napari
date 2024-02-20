@@ -18,10 +18,10 @@ def get_text_char_format(style):
 
     text_char_format = QtGui.QTextCharFormat()
     try:
-        text_char_format.setFontFamilies(["monospace"])
+        text_char_format.setFontFamilies(['monospace'])
     except AttributeError:
         text_char_format.setFontFamily(
-            "monospace"
+            'monospace'
         )  # backward compatibility for pyqt5 5.12.3
     if style.get('color'):
         text_char_format.setForeground(QtGui.QColor(f"#{style['color']}"))
@@ -33,7 +33,7 @@ def get_text_char_format(style):
         text_char_format.setFontWeight(QtGui.QFont.Bold)
     if style.get('italic'):
         text_char_format.setFontItalic(True)
-    if style.get("underline"):
+    if style.get('underline'):
         text_char_format.setFontUnderline(True)
 
     # TODO find if it is possible to support border style.

@@ -260,7 +260,7 @@ def test_blending():
     assert layer.blending == 'opaque'
 
 
-@pytest.mark.filterwarnings("ignore:.*seed is deprecated.*")
+@pytest.mark.filterwarnings('ignore:.*seed is deprecated.*')
 def test_seed():
     """Test setting seed."""
     np.random.seed(0)
@@ -302,11 +302,11 @@ def test_num_colors():
 
     assert len(layer.colormap) == 60
 
-    with pytest.raises(ValueError, match=r".*Only up to 2\*\*16=65535 colors"):
+    with pytest.raises(ValueError, match=r'.*Only up to 2\*\*16=65535 colors'):
         with pytest.warns(FutureWarning, match='num_colors is deprecated'):
             layer.num_colors = 2**17
 
-    with pytest.raises(ValueError, match=r".*Only up to 2\*\*16=65535 colors"):
+    with pytest.raises(ValueError, match=r'.*Only up to 2\*\*16=65535 colors'):
         with pytest.warns(FutureWarning, match='num_colors is deprecated'):
             Labels(data, num_colors=2**17)
 
@@ -341,7 +341,7 @@ def test_properties():
     properties = {'class': ['Background']}
     layer = Labels(data, properties=properties)
     layer_message = layer.get_status((0, 0))
-    assert layer_message['coordinates'].endswith("[No Properties]")
+    assert layer_message['coordinates'].endswith('[No Properties]')
 
     properties = {'class': ['Background', 'Class 12'], 'index': [0, 12]}
     label_index = {0: 0, 12: 1}
@@ -402,7 +402,7 @@ def test_multiscale_properties():
     properties = {'class': ['Background']}
     layer = Labels(data, properties=properties)
     layer_message = layer.get_status((0, 0))
-    assert layer_message['coordinates'].endswith("[No Properties]")
+    assert layer_message['coordinates'].endswith('[No Properties]')
 
     properties = {'class': ['Background', 'Class 12'], 'index': [0, 12]}
     label_index = {0: 0, 12: 1}
@@ -510,7 +510,7 @@ def test_n_edit_dimensions():
 
 
 @pytest.mark.parametrize(
-    "input_data, expected_data_view",
+    'input_data, expected_data_view',
     [
         (
             np.array(
@@ -625,7 +625,7 @@ def test_contour(input_data, expected_data_view):
         layer.contour = -1
 
 
-@pytest.mark.parametrize("background_num", [0, 1, 2, -1])
+@pytest.mark.parametrize('background_num', [0, 1, 2, -1])
 def test_background_label(background_num):
     data = np.zeros((10, 10), dtype=np.int32)
     data[1:-1, 1:-1] = 1
@@ -852,7 +852,7 @@ def test_paint_2d_xarray():
     assert isinstance(layer.data, xr.DataArray)
     assert layer.data.sum() == 411
     elapsed = time.monotonic() - now
-    assert elapsed < 1, "test was too slow, computation was likely not lazy"
+    assert elapsed < 1, 'test was too slow, computation was likely not lazy'
 
 
 def test_paint_3d():
@@ -1004,8 +1004,8 @@ def test_thumbnail():
     assert layer.thumbnail.shape == layer._thumbnail_shape
 
 
-@pytest.mark.parametrize("value", [1, 10, 50, -2, -10])
-@pytest.mark.parametrize("dtype", [np.int8, np.int32])
+@pytest.mark.parametrize('value', [1, 10, 50, -2, -10])
+@pytest.mark.parametrize('dtype', [np.int8, np.int32])
 def test_thumbnail_single_color(value, dtype):
     labels = Labels(np.full((10, 10), value, dtype=dtype), opacity=1)
     labels._update_thumbnail()
@@ -1124,7 +1124,7 @@ def test_cursor_size_with_negative_scale():
 
 
 @pytest.mark.xfail(
-    reason="labels are converted to float32 before being mapped"
+    reason='labels are converted to float32 before being mapped'
 )
 def test_large_label_values():
     label_array = 2**23 + np.arange(4, dtype=np.uint64).reshape((2, 2))
@@ -1737,7 +1737,7 @@ def test_copy():
 
 
 @pytest.mark.parametrize(
-    "colormap,expected",
+    'colormap,expected',
     [
         (label_colormap(49, 0.5), [0, 1]),
         (
@@ -1751,11 +1751,11 @@ def test_copy():
             [1, 2],
         ),
     ],
-    ids=["auto", "direct"],
+    ids=['auto', 'direct'],
 )
 def test_draw(colormap, expected):
     labels = Labels(np.zeros((30, 30), dtype=np.uint32))
-    labels.mode = "paint"
+    labels.mode = 'paint'
     labels.colormap = colormap
     labels.selected_label = 1
     npt.assert_array_equal(np.unique(labels._slice.image.raw), [0])
@@ -1773,5 +1773,5 @@ class TestLabels:
     def test_events_defined(self, event_define_check, obj):
         event_define_check(
             obj,
-            {"seed", "num_colors", "color", "seed_rng"},
+            {'seed', 'num_colors', 'color', 'seed_rng'},
         )

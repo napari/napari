@@ -2,7 +2,7 @@ import warnings
 from collections import OrderedDict, defaultdict
 from functools import lru_cache
 from threading import Lock
-from typing import Dict, Iterable, List, Optional, Tuple, Union
+from typing import Dict, Iterable, List, NamedTuple, Optional, Tuple, Union
 
 import numpy as np
 import skimage.color as colorconv
@@ -121,6 +121,14 @@ INVERSE_COLORMAPS = {
     name: Colormap(value, name=name, display_name=display_name)
     for name, (display_name, value) in inverse_cmaps.items()
 }
+
+_FLOAT32_MAX = float(np.finfo(np.float32).max)
+_MAX_VISPY_SUPPORTED_VALUE = _FLOAT32_MAX / 8
+# Using 8 as divisor comes from experiments.
+# For some reason if use smaller number,
+# the image is not displayed correctly.
+
+_MINIMUM_SHADES_COUNT = 256
 
 
 def _all_rgb():
@@ -430,7 +438,7 @@ def label_colormap(
     0 always maps to fully transparent.
     """
     if num_colors < 1:
-        raise ValueError("num_colors must be >= 1")
+        raise ValueError('num_colors must be >= 1')
 
     # Starting the control points slightly above 0 and below 1 is necessary
     # to ensure that the background pixel 0 is transparent
@@ -453,7 +461,7 @@ def label_colormap(
     randomized_values = low_discrepancy_image(values_, seed=seed)
 
     indices = np.clip(
-        np.searchsorted(control_points, randomized_values, side="right") - 1,
+        np.searchsorted(control_points, randomized_values, side='right') - 1,
         0,
         len(control_points) - 1,
     )
@@ -632,7 +640,7 @@ def vispy_or_mpl_colormap(name) -> Colormap:
                     'Colormap "{name}" not found in either vispy or matplotlib. Recognized colormaps are: {colormaps}',
                     deferred=True,
                     name=name,
-                    colormaps=", ".join(sorted(f'"{cm}"' for cm in colormaps)),
+                    colormaps=', '.join(sorted(f'"{cm}"' for cm in colormaps)),
                 )
             ) from e
         mpl_colors = mpl_cmap(np.linspace(0, 1, 256))
@@ -698,7 +706,7 @@ def _increment_unnamed_colormap(
         past_names = [n for n in existing if n.startswith('[unnamed colormap')]
         name = f'[unnamed colormap {len(past_names)}]'
         display_name = trans._(
-            "[unnamed colormap {number}]",
+            '[unnamed colormap {number}]',
             number=len(past_names),
         )
 
@@ -739,7 +747,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
     with AVAILABLE_COLORMAPS_LOCK:
         if isinstance(colormap, str):
             # Is a colormap with this name already available?
-            custom_cmap = AVAILABLE_COLORMAPS.get(colormap, None)
+            custom_cmap = AVAILABLE_COLORMAPS.get(colormap)
             if custom_cmap is None:
                 name = (
                     colormap.lower() if colormap.startswith('#') else colormap
@@ -802,7 +810,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                 if colormap is None:
                     raise TypeError(
                         trans._(
-                            "When providing a tuple as a colormap argument, either 1) the first element must be a string and the second a Colormap instance 2) or the tuple should be convertible to one or more colors",
+                            'When providing a tuple as a colormap argument, either 1) the first element must be a string and the second a Colormap instance 2) or the tuple should be convertible to one or more colors',
                             deferred=True,
                         )
                     )
@@ -826,7 +834,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
             ):
                 raise TypeError(
                     trans._(
-                        "When providing a dict as a colormap, all values must be Colormap instances",
+                        'When providing a dict as a colormap, all values must be Colormap instances',
                         deferred=True,
                     )
                 )
@@ -848,14 +856,14 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
 
                     warnings.warn(
                         trans._(
-                            "only the first item in a colormap dict is used as an argument",
+                            'only the first item in a colormap dict is used as an argument',
                             deferred=True,
                         )
                     )
                 else:
                     raise ValueError(
                         trans._(
-                            "Received an empty dict as a colormap argument.",
+                            'Received an empty dict as a colormap argument.',
                             deferred=True,
                         )
                     )
@@ -906,3 +914,55 @@ def display_name_to_name(display_name):
     return display_name_map.get(
         display_name, next(iter(AVAILABLE_COLORMAPS.keys()))
     )
+
+
+class CoercedContrastLimits(NamedTuple):
+    contrast_limits: Tuple[float, float]
+    offset: float
+    scale: float
+
+    def coerce_data(self, data: np.ndarray) -> np.ndarray:
+        if self.scale <= 1:
+            return data * self.scale + self.offset
+
+        return (data + self.offset / self.scale) * self.scale
+
+
+def _coerce_contrast_limits(contrast_limits: Tuple[float, float]):
+    """Coerce contrast limits to be in the float32 range."""
+    if np.abs(contrast_limits).max() > _MAX_VISPY_SUPPORTED_VALUE:
+        return scale_down(contrast_limits)
+
+    c_min = np.float32(contrast_limits[0])
+    c_max = np.float32(contrast_limits[1])
+    dist = c_max - c_min
+    if (
+        dist < np.abs(np.spacing(c_min)) * _MINIMUM_SHADES_COUNT
+        or dist < np.abs(np.spacing(c_max)) * _MINIMUM_SHADES_COUNT
+    ):
+        return scale_up(contrast_limits)
+
+    return CoercedContrastLimits(contrast_limits, 0, 1)
+
+
+def scale_down(contrast_limits: Tuple[float, float]):
+    """Scale down contrast limits to be in the float32 range."""
+    scale: float = min(
+        1.0,
+        (_MAX_VISPY_SUPPORTED_VALUE * 2)
+        / (contrast_limits[1] - contrast_limits[0]),
+    )
+    ctrl_lim = contrast_limits[0] * scale, contrast_limits[1] * scale
+    left_shift = max(0.0, -_MAX_VISPY_SUPPORTED_VALUE - ctrl_lim[0])
+    right_shift = max(0.0, ctrl_lim[1] - _MAX_VISPY_SUPPORTED_VALUE)
+    offset = left_shift - right_shift
+    ctrl_lim = (ctrl_lim[0] + offset, ctrl_lim[1] + offset)
+    return CoercedContrastLimits(ctrl_lim, offset, scale)
+
+
+def scale_up(contrast_limits: Tuple[float, float]):
+    """Scale up contrast limits to be in the float32 precision."""
+    scale = 1000 / (contrast_limits[1] - contrast_limits[0])
+    shift = -contrast_limits[0] * scale
+
+    return CoercedContrastLimits((0, 1000), shift, scale)

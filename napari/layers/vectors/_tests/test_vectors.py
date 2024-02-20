@@ -170,7 +170,7 @@ def test_no_data_3D_vectors_with_ndim():
     assert layer.data.shape[-1] == 3
 
 
-@pytest.mark.filterwarnings("ignore:Passing `np.nan`:DeprecationWarning:numpy")
+@pytest.mark.filterwarnings('ignore:Passing `np.nan`:DeprecationWarning:numpy')
 def test_empty_3D_vectors():
     """Test instantiating Vectors layer with empty coordinate-like 3D data."""
     shape = (0, 2, 3)
@@ -691,6 +691,6 @@ def test_out_of_slice_display():
 
 def test_empty_data_from_tuple():
     """Test that empty data raises an error."""
-    layer = Vectors(name="vector", ndim=3)
+    layer = Vectors(name='vector', ndim=3)
     layer2 = Vectors.create(*layer.as_layer_data_tuple())
     assert layer2.data.size == 0

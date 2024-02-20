@@ -21,7 +21,7 @@ viewer.add_image(
     scale=(0.29, 0.26, 0.26),
 )
 viewer.scale_bar.visible = True
-viewer.scale_bar.unit = "um"
+viewer.scale_bar.unit = 'um'
 
 if __name__ == '__main__':
     napari.run()

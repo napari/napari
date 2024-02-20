@@ -380,14 +380,14 @@ def decompose_linear_matrix(
         rotate = rotate.T
         tri = upper_tri.T
 
-    scale = np.diag(tri).copy()
+    scale_with_sign = np.diag(tri).copy()
+    scale = np.abs(scale_with_sign)
+    normalize = scale / scale_with_sign
+
+    tri *= normalize.reshape((-1, 1))
+    rotate *= normalize
 
     # Take any reflection into account
-    if np.linalg.det(rotate) < 0:
-        scale[0] *= -1
-        tri[0] *= -1
-        rotate = matrix @ np.linalg.inv(tri)
-
     tri_normalized = tri @ np.linalg.inv(np.diag(scale))
 
     if upper_triangular:
@@ -489,7 +489,7 @@ def is_diagonal(matrix, tol=1e-8):
     if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1]:
         raise ValueError(
             trans._(
-                "matrix must be square, but shape={shape}",
+                'matrix must be square, but shape={shape}',
                 deferred=True,
                 shape=matrix.shape,
             )

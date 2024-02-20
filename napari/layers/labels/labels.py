@@ -242,7 +242,7 @@ class Labels(_ImageBase):
 
     _modeclass = Mode
 
-    _drag_modes: ClassVar[Dict[Mode, Callable[["Labels", Event], None]]] = {  # type: ignore[assignment]
+    _drag_modes: ClassVar[Dict[Mode, Callable[['Labels', Event], None]]] = {  # type: ignore[assignment]
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
         Mode.PICK: pick,
@@ -254,7 +254,7 @@ class Labels(_ImageBase):
 
     brush_size_on_mouse_move = BrushSizeOnMouseMove(min_brush_size=1)
 
-    _move_modes: ClassVar[Dict[StringEnum, Callable[["Labels", Event], None]]] = {  # type: ignore[assignment]
+    _move_modes: ClassVar[Dict[StringEnum, Callable[['Labels', Event], None]]] = {  # type: ignore[assignment]
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
         Mode.PICK: no_op,
@@ -276,9 +276,9 @@ class Labels(_ImageBase):
 
     _history_limit = 100
 
-    @deprecated_constructor_arg_by_attr("color")
-    @deprecated_constructor_arg_by_attr("num_colors")
-    @deprecated_constructor_arg_by_attr("seed")
+    @deprecated_constructor_arg_by_attr('color')
+    @deprecated_constructor_arg_by_attr('num_colors')
+    @deprecated_constructor_arg_by_attr('seed')
     def __init__(
         self,
         data,
@@ -374,7 +374,7 @@ class Labels(_ImageBase):
             LabelsPolygonOverlay,
         )
 
-        self._overlays.update({"polygon": LabelsPolygonOverlay()})
+        self._overlays.update({'polygon': LabelsPolygonOverlay()})
 
         self._feature_table = _FeatureTable.from_layer(
             features=features, properties=properties
@@ -456,7 +456,7 @@ class Labels(_ImageBase):
     @contour.setter
     def contour(self, contour: int) -> None:
         if contour < 0:
-            raise ValueError("contour value must be >= 0")
+            raise ValueError('contour value must be >= 0')
         self._contour = int(contour)
         self.events.contour()
         self.refresh()
@@ -485,8 +485,8 @@ class Labels(_ImageBase):
     def seed(self):
         """float: Seed for colormap random generator."""
         warnings.warn(
-            "seed is deprecated since 0.4.19 and will be removed in 0.5.0, "
-            "please check Labels.colormap directly.",
+            'seed is deprecated since 0.4.19 and will be removed in 0.5.0, '
+            'please check Labels.colormap directly.',
             FutureWarning,
             stacklevel=2,
         )
@@ -495,9 +495,9 @@ class Labels(_ImageBase):
     @seed.setter
     def seed(self, seed):
         warnings.warn(
-            "seed is deprecated since 0.4.19 and will be removed in 0.5.0, "
-            "please use the new_colormap method instead, or set the colormap "
-            "directly.",
+            'seed is deprecated since 0.4.19 and will be removed in 0.5.0, '
+            'please use the new_colormap method instead, or set the colormap '
+            'directly.',
             FutureWarning,
             stacklevel=2,
         )
@@ -652,9 +652,9 @@ class Labels(_ImageBase):
     def color(self) -> dict:
         """dict: custom color dict for label coloring"""
         warnings.warn(
-            "Labels.color is deprecated since 0.4.19 and will be removed in "
-            "0.5.0, please use Labels.colormap.color_dict instead. Note: this"
-            "will only work when the colormap is a DirectLabelsColormap.",
+            'Labels.color is deprecated since 0.4.19 and will be removed in '
+            '0.5.0, please use Labels.colormap.color_dict instead. Note: this'
+            'will only work when the colormap is a DirectLabelsColormap.',
             FutureWarning,
             stacklevel=2,
         )
@@ -663,9 +663,9 @@ class Labels(_ImageBase):
     @color.setter
     def color(self, color: Dict[Optional[int], Union[str, np.ndarray]]):
         warnings.warn(
-            "Labels.color is deprecated since 0.4.19 and will be removed in "
-            "0.5.0, please set Labels.colormap directly with an instance "
-            "of napari.utils.colormaps.DirectLabelColormap instead.",
+            'Labels.color is deprecated since 0.4.19 and will be removed in '
+            '0.5.0, please set Labels.colormap directly with an instance '
+            'of napari.utils.colormaps.DirectLabelColormap instead.',
             FutureWarning,
             stacklevel=2,
         )
@@ -717,7 +717,7 @@ class Labels(_ImageBase):
             if np.issubdtype(normalize_dtype(data_level.dtype), np.floating):
                 raise TypeError(
                     trans._(
-                        "Only integer types are supported for Labels layers, but data contains {data_level_type}.",
+                        'Only integer types are supported for Labels layers, but data contains {data_level_type}.',
                         data_level_type=data_level.dtype,
                     )
                 )
@@ -883,7 +883,7 @@ class Labels(_ImageBase):
         if mode == self._mode:
             return mode
 
-        self._overlays["polygon"].enabled = mode == Mode.POLYGON
+        self._overlays['polygon'].enabled = mode == Mode.POLYGON
         if mode in {Mode.PAINT, Mode.ERASE}:
             self.cursor_size = self._calculate_cursor_size()
 
@@ -984,7 +984,7 @@ class Labels(_ImageBase):
         if labels.ndim > 2:
             warnings.warn(
                 trans._(
-                    "Contours are not displayed during 3D rendering",
+                    'Contours are not displayed during 3D rendering',
                     deferred=True,
                 )
             )
@@ -1451,7 +1451,7 @@ class Labels(_ImageBase):
 
         if len(dims_to_paint) != 2:
             raise NotImplementedError(
-                "Polygon painting is implemented only in 2D."
+                'Polygon painting is implemented only in 2D.'
             )
 
         points = np.array(points, dtype=int)
@@ -1706,7 +1706,7 @@ class Labels(_ImageBase):
             world=world,
         )
         if properties:
-            source_info['coordinates'] += "; " + ", ".join(properties)
+            source_info['coordinates'] += '; ' + ', '.join(properties)
 
         return source_info
 
@@ -1740,7 +1740,7 @@ class Labels(_ImageBase):
         msg : string
             String containing a message that can be used as a tooltip.
         """
-        return "\n".join(
+        return '\n'.join(
             self._get_properties(
                 position,
                 view_direction=view_direction,
