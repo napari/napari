@@ -727,7 +727,7 @@ def test_properties(properties):
     assert layer.get_status(data[1])['coordinates'].endswith('point_type: A')
 
 
-@pytest.mark.parametrize("attribute", ['border', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_adding_properties(attribute):
     """Test adding properties to an existing layer"""
     shape = (10, 2)
@@ -1007,7 +1007,7 @@ def test_border_width():
 
 
 @pytest.mark.parametrize(
-    "border_width",
+    'border_width',
     [1, float(1), np.array([1, 2, 3, 4, 5]), [1, 2, 3, 4, 5]],
 )
 def test_border_width_types(border_width):
@@ -1022,7 +1022,7 @@ def test_border_width_types(border_width):
 
 
 @pytest.mark.parametrize(
-    "border_width",
+    'border_width',
     [int(-1), float(-1), np.array([-1, 2, 3, 4, 5]), [-1, 2, 3, 4, 5]],
 )
 def test_border_width_types_negative(border_width):
@@ -1060,7 +1060,7 @@ def test_out_of_slice_display():
     assert layer.out_of_slice_display is True
 
 
-@pytest.mark.parametrize("attribute", ['border', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_switch_color_mode(attribute):
     """Test switching between color modes"""
     shape = (10, 2)
@@ -1121,7 +1121,7 @@ def test_switch_color_mode(attribute):
     np.testing.assert_allclose(new_border_color, color)
 
 
-@pytest.mark.parametrize("attribute", ['border', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_colormap_without_properties(attribute):
     """Setting the colormode to colormap should raise an exception"""
     shape = (10, 2)
@@ -1133,7 +1133,7 @@ def test_colormap_without_properties(attribute):
         setattr(layer, f'{attribute}_color_mode', 'colormap')
 
 
-@pytest.mark.parametrize("attribute", ['border', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_colormap_with_categorical_properties(attribute):
     """Setting the colormode to colormap should raise an exception"""
     shape = (10, 2)
@@ -1146,7 +1146,7 @@ def test_colormap_with_categorical_properties(attribute):
         setattr(layer, f'{attribute}_color_mode', 'colormap')
 
 
-@pytest.mark.parametrize("attribute", ['border', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_add_colormap(attribute):
     """Test  directly adding a vispy Colormap object"""
     shape = (10, 2)
@@ -1163,7 +1163,7 @@ def test_add_colormap(attribute):
     assert 'unnamed colormap' in layer_colormap.name
 
 
-@pytest.mark.parametrize("attribute", ['border', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_add_point_direct(attribute: str):
     """Test adding points to layer directly"""
     layer = Points()
@@ -1192,7 +1192,7 @@ def test_add_point_direct(attribute: str):
     )
 
 
-@pytest.mark.parametrize("attribute", ['border', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_color_direct(attribute: str):
     """Test setting colors directly"""
     shape = (10, 2)
@@ -1252,7 +1252,7 @@ color_cycle_rgb = [[1, 0, 0], [0, 0, 1]]
 color_cycle_rgba = [[1, 0, 0, 1], [0, 0, 1, 1]]
 
 
-@pytest.mark.parametrize("attribute", ['border', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 @pytest.mark.parametrize(
     'color_cycle',
     [color_cycle_str, color_cycle_rgb, color_cycle_rgba],
@@ -1317,7 +1317,7 @@ def test_color_cycle(attribute, color_cycle):
     )
 
 
-@pytest.mark.parametrize("attribute", ['border', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_color_cycle_dict(attribute):
     """Test setting border/face color with a color cycle dict"""
     data = np.array([[0, 0], [100, 0], [0, 100]])
@@ -1336,7 +1336,7 @@ def test_color_cycle_dict(attribute):
     np.testing.assert_allclose(color_cycle_map[6], [1, 1, 1, 1])  # 6 is white
 
 
-@pytest.mark.parametrize("attribute", ['border', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_add_color_cycle_to_empty_layer(attribute):
     """Test adding a point to an empty layer when border/face color is a color cycle
 
@@ -1377,7 +1377,7 @@ def test_add_color_cycle_to_empty_layer(attribute):
     np.testing.assert_equal(layer.properties, new_properties)
 
 
-@pytest.mark.parametrize("attribute", ['border', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_adding_value_color_cycle(attribute):
     """Test that adding values to properties used to set a color cycle
     and then calling Points.refresh_colors() performs the update and adds the
@@ -1410,7 +1410,7 @@ def test_adding_value_color_cycle(attribute):
     assert 'C' in color_map_keys
 
 
-@pytest.mark.parametrize("attribute", ['border', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_color_colormap(attribute):
     """Test setting border/face color with a colormap"""
     # create Points using with a colormap
@@ -2415,10 +2415,10 @@ def test_empty_data_from_tuple():
 @pytest.mark.parametrize(
     'attribute, new_value',
     [
-        ("size", 20),
-        ("face_color", np.asarray([0.0, 0.0, 1.0, 1.0])),
-        ("border_color", np.asarray([0.0, 0.0, 1.0, 1.0])),
-        ("border_width", np.asarray([0.2])),
+        ('size', 20),
+        ('face_color', np.asarray([0.0, 0.0, 1.0, 1.0])),
+        ('border_color', np.asarray([0.0, 0.0, 1.0, 1.0])),
+        ('border_width', np.asarray([0.2])),
     ],
 )
 def test_new_point_size_editable(attribute, new_value):

@@ -339,34 +339,34 @@ class Points(Layer):
     _max_points_thumbnail = 1024
 
     @rename_argument(
-        "edge_width", "border_width", since_version="0.5.0", version="0.6.0"
+        'edge_width', 'border_width', since_version='0.5.0', version='0.6.0'
     )
     @rename_argument(
-        "edge_width_is_relative",
-        "border_width_is_relative",
-        since_version="0.5.0",
-        version="0.6.0",
+        'edge_width_is_relative',
+        'border_width_is_relative',
+        since_version='0.5.0',
+        version='0.6.0',
     )
     @rename_argument(
-        "edge_color", "border_color", since_version="0.5.0", version="0.6.0"
+        'edge_color', 'border_color', since_version='0.5.0', version='0.6.0'
     )
     @rename_argument(
-        "edge_color_cycle",
-        "border_color_cycle",
-        since_version="0.5.0",
-        version="0.6.0",
+        'edge_color_cycle',
+        'border_color_cycle',
+        since_version='0.5.0',
+        version='0.6.0',
     )
     @rename_argument(
-        "edge_colormap",
-        "border_colormap",
-        since_version="0.5.0",
-        version="0.6.0",
+        'edge_colormap',
+        'border_colormap',
+        since_version='0.5.0',
+        version='0.6.0',
     )
     @rename_argument(
-        "edge_contrast_limits",
-        "border_contrast_limits",
-        since_version="0.5.0",
-        version="0.6.0",
+        'edge_contrast_limits',
+        'border_contrast_limits',
+        since_version='0.5.0',
+        version='0.6.0',
     )
     def __init__(
         self,
@@ -490,20 +490,20 @@ class Points(Layer):
 
         deprecated_events = {}
         for attr in [
-            "{}_width",
-            "current_{}_width",
-            "{}_width_is_relative",
-            "{}_color",
-            "current_{}_color",
+            '{}_width',
+            'current_{}_width',
+            '{}_width_is_relative',
+            '{}_color',
+            'current_{}_color',
         ]:
-            old_attr = attr.format("edge")
-            new_attr = attr.format("border")
+            old_attr = attr.format('edge')
+            new_attr = attr.format('border')
             old_emitter = deprecation_warning_event(
-                "layer.events",
+                'layer.events',
                 old_attr,
                 new_attr,
-                since_version="0.5.0",
-                version="0.6.0",
+                since_version='0.5.0',
+                version='0.6.0',
             )
             getattr(self.events, new_attr).connect(old_emitter)
             deprecated_events[old_attr] = old_emitter
@@ -599,24 +599,24 @@ class Points(Layer):
     def _add_deprecated_properties(cls) -> None:
         """Adds deprecated properties to class."""
         deprecated_properties = [
-            "edge_width",
-            "edge_width_is_relative",
-            "current_edge_width",
-            "edge_color",
-            "edge_color_cycle",
-            "edge_colormap",
-            "edge_contrast_limits",
-            "current_edge_color",
-            "edge_color_mode",
+            'edge_width',
+            'edge_width_is_relative',
+            'current_edge_width',
+            'edge_color',
+            'edge_color_cycle',
+            'edge_colormap',
+            'edge_contrast_limits',
+            'current_edge_color',
+            'edge_color_mode',
         ]
         for old_property in deprecated_properties:
-            new_property = old_property.replace("edge", "border")
+            new_property = old_property.replace('edge', 'border')
             add_deprecated_property(
                 cls,
                 old_property,
                 new_property,
-                since_version="0.5.0",
-                version="0.6.0",
+                since_version='0.5.0',
+                version='0.6.0',
             )
 
     @property
@@ -761,7 +761,7 @@ class Points(Layer):
             self._face, self._feature_table, 'face_color'
         )
         self._update_color_manager(
-            self._border, self._feature_table, "border_color"
+            self._border, self._feature_table, 'border_color'
         )
         self.text.refresh(self.features)
         self.events.properties()
