@@ -17,7 +17,7 @@ class Points2DSuite:
 
     params = [2**i for i in range(4, 18, 2)]
 
-    if "PR" in os.environ:
+    if 'PR' in os.environ:
         skip_params = [(2**i,) for i in range(8, 18, 2)]
 
     def setup(self, n):
@@ -61,7 +61,7 @@ class Points3DSuite:
     """Benchmarks for the Points layer with 3D data."""
 
     params = [2**i for i in range(4, 18, 2)]
-    if "PR" in os.environ:
+    if 'PR' in os.environ:
         skip_params = [(2**i,) for i in range(6, 18, 2)]
 
     def setup(self, n):
@@ -106,7 +106,7 @@ class PointsSlicingSuite:
 
     def setup(self, flatten_slice_axis):
         np.random.seed(0)
-        size = 20000 if "PR" in os.environ else 20000000
+        size = 20000 if 'PR' in os.environ else 20000000
         self.data = np.random.uniform(size=(size, 3), low=0, high=500)
         if flatten_slice_axis:
             self.data[:, 0] = np.round(self.data[:, 0])

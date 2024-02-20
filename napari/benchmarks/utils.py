@@ -146,7 +146,7 @@ def _smallest_dtype(n: int) -> np.dtype:
             return dtype
             break
     else:
-        raise ValueError(f"{n=} is too large for any dtype.")
+        raise ValueError(f'{n=} is too large for any dtype.')
 
 
 @overload

@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 NestedIndex = Tuple[Index, ...]
 MaybeNestedIndex = Union[Index, NestedIndex]
 ParentIndex = NewType('ParentIndex', Tuple[int, ...])
-_T = TypeVar("_T")
+_T = TypeVar('_T')
 
 
 def ensure_tuple_index(index: MaybeNestedIndex) -> NestedIndex:
@@ -58,7 +58,7 @@ def ensure_tuple_index(index: MaybeNestedIndex) -> NestedIndex:
 
     raise TypeError(
         trans._(
-            "Invalid nested index: {index}. Must be an int or tuple",
+            'Invalid nested index: {index}. Must be an int or tuple',
             deferred=True,
             index=index,
         )
@@ -318,7 +318,7 @@ class NestableEventedList(EventedList[_T]):
         if isinstance(dest_i, slice):
             raise TypeError(
                 trans._(
-                    "Destination index may not be a slice",
+                    'Destination index may not be a slice',
                     deferred=True,
                 )
             )
@@ -336,7 +336,7 @@ class NestableEventedList(EventedList[_T]):
             if idx == ():
                 raise IndexError(
                     trans._(
-                        "Group cannot move itself",
+                        'Group cannot move itself',
                         deferred=True,
                     )
                 )
@@ -360,7 +360,7 @@ class NestableEventedList(EventedList[_T]):
             if isinstance(src_i, slice):
                 raise TypeError(
                     trans._(
-                        "Terminal source index may not be a slice",
+                        'Terminal source index may not be a slice',
                         deferred=True,
                     )
                 )
@@ -411,7 +411,7 @@ class NestableEventedList(EventedList[_T]):
             object
         """
         logger.debug(
-            "move(src_index=%s, dest_index=%s)",
+            'move(src_index=%s, dest_index=%s)',
             src_index,
             dest_index,
         )
@@ -423,7 +423,7 @@ class NestableEventedList(EventedList[_T]):
         if isinstance(src_i, slice):
             raise TypeError(
                 trans._(
-                    "Terminal source index may not be a slice",
+                    'Terminal source index may not be a slice',
                     deferred=True,
                 )
             )
@@ -431,7 +431,7 @@ class NestableEventedList(EventedList[_T]):
         if isinstance(dest_i, slice):
             raise TypeError(
                 trans._(
-                    "Destination index may not be a slice",
+                    'Destination index may not be a slice',
                     deferred=True,
                 )
             )
@@ -439,7 +439,7 @@ class NestableEventedList(EventedList[_T]):
         if src_i == ():
             raise ValueError(
                 trans._(
-                    "Group cannot move itself",
+                    'Group cannot move itself',
                     deferred=True,
                 )
             )
@@ -499,4 +499,4 @@ class NestableEventedList(EventedList[_T]):
                 return False
             else:
                 return True
-        raise TypeError(f"Not supported index type {type(index)}")
+        raise TypeError(f'Not supported index type {type(index)}')

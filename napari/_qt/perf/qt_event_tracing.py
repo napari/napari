@@ -35,7 +35,7 @@ class QApplicationWithTracing(QApplication):
         timer_name = _get_event_label(receiver, event)
 
         # Time the event while we handle it.
-        with perf.perf_timer(timer_name, "qt_event"):
+        with perf.perf_timer(timer_name, 'qt_event'):
             return QApplication.notify(self, receiver, event)
 
 
@@ -71,7 +71,7 @@ class EventTypes:
         try:
             return self.string_name[event]
         except KeyError:
-            return trans._("UnknownEvent:{event}", event=event)
+            return trans._('UnknownEvent:{event}', event=event)
 
 
 EVENT_TYPES = EventTypes()
@@ -118,7 +118,7 @@ def _get_event_label(receiver: QWidget, event: QEvent) -> str:
             object_name = None
 
     if object_name:
-        return f"{event_str}:{object_name}"
+        return f'{event_str}:{object_name}'
 
     # There was no object (pretty common).
     return event_str

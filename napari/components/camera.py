@@ -137,7 +137,7 @@ class Camera(EventedModel):
         if np.allclose(np.cross(view_vector, up_vector), 0):
             raise ValueError(
                 trans._(
-                    "view direction and up direction are parallel",
+                    'view direction and up direction are parallel',
                     deferred=True,
                 )
             )

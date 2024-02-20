@@ -15,9 +15,9 @@ data_zarr = zarr.zeros((100_000, 1000, 1000))
 @pytest.mark.parametrize(
     'kwargs',
     [
-        {"multiscale": False, "contrast_limits": [0, 1]},
-        {"multiscale": False},
-        {"contrast_limits": [0, 1]},
+        {'multiscale': False, 'contrast_limits': [0, 1]},
+        {'multiscale': False},
+        {'contrast_limits': [0, 1]},
         {},
     ],
     ids=('all', 'multiscale', 'clims', 'nothing'),
@@ -29,7 +29,7 @@ def test_timing_fast_big_dask(data, kwargs):
     elapsed = time.monotonic() - now
     assert (
         elapsed < 2
-    ), "Test took to long some computation are likely not lazy"
+    ), 'Test took to long some computation are likely not lazy'
 
 
 def test_non_visible_images():

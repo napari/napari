@@ -27,15 +27,15 @@ def test_format_exceptions(cgitb, as_html, monkeypatch):
             raise PluginError(
                 'some error',
                 plugin_name='test_plugin',
-                plugin="mock",
+                plugin='mock',
                 cause=e,
             ) from e
     except PluginError:
         pass
 
     formatted = exceptions.format_exceptions('test_plugin', as_html=as_html)
-    assert "some error" in formatted
-    assert "version: 0.1.0" in formatted
-    assert "plugin package: test-package" in formatted
+    assert 'some error' in formatted
+    assert 'version: 0.1.0' in formatted
+    assert 'plugin package: test-package' in formatted
 
     assert exceptions.format_exceptions('nonexistent', as_html=as_html) == ''

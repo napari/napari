@@ -99,7 +99,7 @@ class LabelVispyColormap(VispyColormap):
         raw_dtype: np.dtype,
     ):
         super().__init__(
-            colors=["w", "w"], controls=None, interpolation='zero'
+            colors=['w', 'w'], controls=None, interpolation='zero'
         )
         if view_dtype.itemsize == 1:
             shader = auto_lookup_shader_uint8
@@ -113,7 +113,7 @@ class LabelVispyColormap(VispyColormap):
             # to 8-bit on the CPU before sending to the shader.
             # It should thus be impossible to reach this condition.
             raise ValueError(  # pragma: no cover
-                f"Cannot use dtype {view_dtype} with LabelVispyColormap"
+                f'Cannot use dtype {view_dtype} with LabelVispyColormap'
             )
 
         selection = colormap._selection_as_minimum_dtype(raw_dtype)
@@ -138,10 +138,10 @@ class DirectLabelVispyColormap(VispyColormap):
         super().__init__(colors, controls=None, interpolation='zero')
         shader = direct_lookup_shader_many if multi else direct_lookup_shader
         self.glsl_map = (
-            shader.replace("$use_selection", str(use_selection).lower())
-            .replace("$selection", str(selection))
-            .replace("$scale", str(scale))
-            .replace("$color_map_size", str(color_map_size))
+            shader.replace('$use_selection', str(use_selection).lower())
+            .replace('$selection', str(selection))
+            .replace('$scale', str(scale))
+            .replace('$color_map_size', str(color_map_size))
         )
 
 
@@ -155,14 +155,14 @@ def build_textures_from_dict(
     """
     if len(color_dict) > 2**23:
         raise ValueError(  # pragma: no cover
-            "Cannot map more than 2**23 colors because of float32 precision. "
-            f"Got {len(color_dict)}"
+            'Cannot map more than 2**23 colors because of float32 precision. '
+            f'Got {len(color_dict)}'
         )
     if len(color_dict) > max_size**2:
         raise ValueError(
-            "Cannot create a 2D texture holding more than "
-            f"{max_size}**2={max_size ** 2} colors."
-            f"Got {len(color_dict)}"
+            'Cannot create a 2D texture holding more than '
+            f'{max_size}**2={max_size ** 2} colors.'
+            f'Got {len(color_dict)}'
         )
     data = np.zeros(
         (
@@ -187,7 +187,7 @@ def _select_colormap_texture(
 
     if color_texture is None:
         raise ValueError(  # pragma: no cover
-            f"Cannot build a texture for dtype {raw_dtype=} and {view_dtype=}"
+            f'Cannot build a texture for dtype {raw_dtype=} and {view_dtype=}'
         )
     return color_texture.reshape(256, -1, 4)
 
@@ -345,7 +345,7 @@ class LabelLayerNode(ImageLayerNode):
         res = self._image_node if ndisplay == 2 else self._volume_node
 
         if (
-            res.texture_format != "auto"
+            res.texture_format != 'auto'
             and dtype is not None
             and _VISPY_FORMAT_TO_DTYPE[res.texture_format] != dtype
         ):
