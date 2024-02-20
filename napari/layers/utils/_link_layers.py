@@ -98,7 +98,7 @@ def link_layers(
         if extra:
             raise ValueError(
                 trans._(
-                    "Cannot link attributes that are not shared by all layers: {extra}. Allowable attrs include:\n{valid_attrs}",
+                    'Cannot link attributes that are not shared by all layers: {extra}. Allowable attrs include:\n{valid_attrs}',
                     deferred=True,
                     extra=extra,
                     valid_attrs=valid_attrs,
@@ -126,8 +126,8 @@ def link_layers(
                 if not eq_op(getattr(l2, attr), new_val):
                     setattr(l2, attr, new_val)
 
-            setter.__doc__ = f"Set {attr!r} on {l1} to that of {l2}"
-            setter.__qualname__ = f"set_{attr}_on_layer_{id(l2)}"
+            setter.__doc__ = f'Set {attr!r} on {l1} to that of {l2}'
+            setter.__qualname__ = f'set_{attr}_on_layer_{id(l2)}'
             return setter
 
         # actually make the connection
@@ -159,7 +159,7 @@ def unlink_layers(layers: Iterable[Layer], attributes: Iterable[str] = ()):
     """
     if not layers:
         raise ValueError(
-            trans._("Must provide at least one layer to unlink", deferred=True)
+            trans._('Must provide at least one layer to unlink', deferred=True)
         )
     layer_refs = [ref(layer) for layer in layers]
     if len(layer_refs) == 1:
@@ -236,7 +236,7 @@ def _get_common_evented_attributes(
     except StopIteration:
         raise ValueError(
             trans._(
-                "``layers`` iterable must have at least one layer",
+                '``layers`` iterable must have at least one layer',
                 deferred=True,
             )
         ) from None
@@ -252,7 +252,7 @@ def _get_common_evented_attributes(
     common_events = set.intersection(*layer_events)
     common_attrs = set.intersection(*(set(dir(lay)) for lay in layers))
     if not with_private:
-        common_attrs = {x for x in common_attrs if not x.startswith("_")}
+        common_attrs = {x for x in common_attrs if not x.startswith('_')}
     common = common_events & common_attrs - exclude
 
     # lastly, discard any method-only events (we just want attrs)

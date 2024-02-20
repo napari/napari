@@ -8,7 +8,7 @@ from napari.components.experimental.remote._messages import RemoteMessages
 from napari.components.layerlist import LayerList
 from napari.utils.events import Event
 
-LOGGER = logging.getLogger("napari.monitor")
+LOGGER = logging.getLogger('napari.monitor')
 
 
 class RemoteManager:

@@ -83,7 +83,7 @@ def test_nD_shapes():
     assert shape_list._mesh.vertices.shape[1] == 3
 
 
-@pytest.mark.parametrize("attribute", ['edge', 'face'])
+@pytest.mark.parametrize('attribute', ['edge', 'face'])
 def test_bad_color_array(attribute):
     """Test adding shapes to ShapeList."""
     np.random.seed(0)

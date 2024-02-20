@@ -7,8 +7,8 @@ from qtpy.QtCore import QMimeData, QModelIndex, Qt
 from napari._qt.containers._base_item_model import _BaseEventedItemModel
 
 logger = logging.getLogger(__name__)
-ListIndexMIMEType = "application/x-list-index"
-ItemType = TypeVar("ItemType")
+ListIndexMIMEType = 'application/x-list-index'
+ItemType = TypeVar('ItemType')
 
 
 class QtListModel(_BaseEventedItemModel[ItemType]):
@@ -27,7 +27,7 @@ class QtListModel(_BaseEventedItemModel[ItemType]):
         return data in formats other than the default internal MIME type,
         reimplement this function to return your list of MIME types.
         """
-        return [ListIndexMIMEType, "text/plain"]
+        return [ListIndexMIMEType, 'text/plain']
 
     def mimeData(self, indices: List[QModelIndex]) -> Optional['QMimeData']:
         """Return an object containing serialized data from `indices`.
@@ -68,7 +68,7 @@ class QtListModel(_BaseEventedItemModel[ItemType]):
             moving_indices = data.indices
 
             logger.debug(
-                "dropMimeData: indices %s ➡ %s",
+                'dropMimeData: indices %s ➡ %s',
                 moving_indices,
                 destRow,
             )
@@ -91,7 +91,7 @@ class ItemMimeData(QMimeData):
         self.indices = tuple(sorted(indices))
         if items:
             self.setData(ListIndexMIMEType, pickle.dumps(self.indices))
-            self.setText(" ".join(str(item) for item in items))
+            self.setText(' '.join(str(item) for item in items))
 
     def formats(self) -> List[str]:
-        return [ListIndexMIMEType, "text/plain"]
+        return [ListIndexMIMEType, 'text/plain']
