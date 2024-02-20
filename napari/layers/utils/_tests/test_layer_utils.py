@@ -524,6 +524,7 @@ def test_xarray_get_chunk_size():
 
     data_shape = (100, 100)
     chunk_shape = (10, 10)
+    chunk_shape_dict = {'x': 10, 'y': 10}
 
     coords = list(range(100))
     data = xr.DataArray(
@@ -531,7 +532,7 @@ def test_xarray_get_chunk_size():
         dims=['y', 'x'],
         coords={'y': coords, 'x': coords},
     )
-    data = data.chunk(chunk_shape)
+    data = data.chunk(chunk_shape_dict)
     chunk_size = _get_chunk_size(data)
     assert np.array_equal(chunk_size, chunk_shape)
 
@@ -658,8 +659,8 @@ def test_layers_to_class_set():
     d1 = Image(np.zeros((10, 10)))
     d2 = Image(np.zeros((10, 10)))
     d3 = Image(zarr.zeros((10, 10)))
-    d4 = Image(xr.DataArray(np.zeros((10, 10))))
-    d5 = Image(d4.data.chunk((5, 5)))
+    d4 = Image(xr.DataArray(np.zeros((10, 10)), dims=['x', 'y']))
+    d5 = Image(d4.data.chunk({'x': 5, 'y': 5}))
     assert _layers_to_class_set([d1, d2]) == {np.ndarray}
     assert _layers_to_class_set([d1, d2, d3]) == {np.ndarray, zarr.Array}
     assert _layers_to_class_set([d4]) == {np.ndarray}

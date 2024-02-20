@@ -495,7 +495,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         count = Counter(sizes)
         # select most popular chunk size (with some randomization if there are multiple)
-        return sorted(count, key=count.get, reverse=True)[0]
+        return sorted(count, key=count.__getitem__, reverse=True)[0]
 
     def _get_class_from_images(self):
         class_set = _layers_to_class_set(self.layers)
