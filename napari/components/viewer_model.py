@@ -123,6 +123,7 @@ def _current_theme() -> str:
 
 DEFAULT_OVERLAYS = {
     'scale_bar': ScaleBarOverlay,
+    'slice_bar': TextOverlay,
     'text': TextOverlay,
     'axes': AxesOverlay,
     'brush_circle': BrushCircleOverlay,
@@ -302,6 +303,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     @property
     def scale_bar(self):
         return self._overlays['scale_bar']
+
+    @property
+    def slice_bar(self):
+        return self._overlays['slice_bar']
 
     @property
     def text_overlay(self):
