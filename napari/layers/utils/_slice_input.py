@@ -11,6 +11,8 @@ from napari.utils.transforms import Affine
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    import numpy.typing as npt
+
     from napari.components.dims import Dims
 
 _T = TypeVar('_T')
@@ -98,12 +100,12 @@ class _ThickNDSlice(Generic[_T]):
             ndim=ndim or self.ndim,
         )
 
-    def as_array(self):
+    def as_array(self) -> npt.NDArray:
         """Return point and left and right margin as a (3, D) array."""
         return np.array([self.point, self.margin_left, self.margin_right])
 
     @classmethod
-    def from_array(cls, arr):
+    def from_array(cls, arr: npt.NDArray) -> _ThickNDSlice:
         """Construct from a (3, D) array of point, left margin and right margin."""
         return cls(
             point=tuple(arr[0]),

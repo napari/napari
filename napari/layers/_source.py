@@ -6,8 +6,8 @@ from contextvars import ContextVar
 from typing import Optional, Tuple
 
 from magicgui.widgets import FunctionGui
-from pydantic import BaseModel, validator
 
+from napari._pydantic_compat import BaseModel, validator
 from napari.layers.base.base import Layer
 
 
@@ -101,7 +101,7 @@ def layer_source(**source_kwargs):
         _LAYER_SOURCE.reset(token)
 
 
-def current_source():
+def current_source() -> Source:
     """Get the current layer :class:`Source` (inferred from context).
 
     The main place this function is used is in :meth:`Layer.__init__`.

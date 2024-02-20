@@ -1,5 +1,7 @@
 from vispy.scene.visuals import Volume as BaseVolume
 
+from napari._vispy.visuals.util import TextureMixin
+
 FUNCTION_DEFINITIONS = """
 // the tolerance for testing equality of floats with floatEqual and floatNotEqual
 const float equality_tolerance = 1e-8;
@@ -114,14 +116,14 @@ vec4 calculateShadedCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)
 """
 
 ISO_CATEGORICAL_SNIPPETS = {
-    "before_loop": """
+    'before_loop': """
         vec4 color3 = vec4(0.0);  // final color
         vec3 dstep = 1.5 / u_shape;  // step to sample derivative, set to match iso shader
         gl_FragColor = vec4(0.0);
         bool discard_fragment = true;
         vec4 label_id = vec4(0.0);
         """,
-    "in_loop": """
+    'in_loop': """
         // check if value is different from the background value
         if ( floatNotEqual(val, categorical_bg_value) ) {
             // Take the last interval in smaller steps
@@ -147,20 +149,20 @@ ISO_CATEGORICAL_SNIPPETS = {
             }
         }
         """,
-    "after_loop": """
+    'after_loop': """
         if (discard_fragment)
             discard;
         """,
 }
 
 TRANSLUCENT_CATEGORICAL_SNIPPETS = {
-    "before_loop": """
+    'before_loop': """
         vec4 color3 = vec4(0.0);  // final color
         gl_FragColor = vec4(0.0);
         bool discard_fragment = true;
         vec4 label_id = vec4(0.0);
         """,
-    "in_loop": """
+    'in_loop': """
         // check if value is different from the background value
         if ( floatNotEqual(val, categorical_bg_value) ) {
             // Take the last interval in smaller steps
@@ -185,7 +187,7 @@ TRANSLUCENT_CATEGORICAL_SNIPPETS = {
             }
         }
         """,
-    "after_loop": """
+    'after_loop': """
         if (discard_fragment)
             discard;
         """,
@@ -200,7 +202,7 @@ rendering_methods['iso_categorical'] = ISO_CATEGORICAL_SNIPPETS
 rendering_methods['translucent_categorical'] = TRANSLUCENT_CATEGORICAL_SNIPPETS
 
 
-class Volume(BaseVolume):
+class Volume(TextureMixin, BaseVolume):
     # add the new rendering method to the snippets dict
     _shaders = shaders
     _rendering_methods = rendering_methods

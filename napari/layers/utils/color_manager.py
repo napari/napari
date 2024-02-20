@@ -3,8 +3,8 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple, Union
 
 import numpy as np
-from pydantic import Field, root_validator, validator
 
+from napari._pydantic_compat import Field, root_validator, validator
 from napari.layers.utils._color_manager_constants import ColorMode
 from napari.layers.utils.color_manager_utils import (
     _validate_colormap_mode,
@@ -188,7 +188,7 @@ class ColorManager(EventedModel):
 
         # set the current color to the last color/property value
         # if it wasn't already set
-        if values.get("current_color") is None and len(colors) > 0:
+        if values.get('current_color') is None and len(colors) > 0:
             values['current_color'] = colors[-1]
             if color_mode in [ColorMode.CYCLE, ColorMode.COLORMAP]:
                 property_values = values['color_properties']
@@ -238,8 +238,8 @@ class ColorManager(EventedModel):
             transformed_color = transform_color_with_defaults(
                 num_entries=n_colors,
                 colors=color,
-                elem_name="color",
-                default="white",
+                elem_name='color',
+                default='white',
             )
             colors = normalize_and_broadcast_colors(
                 n_colors, transformed_color
@@ -303,8 +303,8 @@ class ColorManager(EventedModel):
             transformed_color = transform_color_with_defaults(
                 num_entries=n_colors,
                 colors=new_color,
-                elem_name="color",
-                default="white",
+                elem_name='color',
+                default='white',
             )
             broadcasted_colors = normalize_and_broadcast_colors(
                 n_colors, transformed_color
@@ -557,8 +557,8 @@ class ColorManager(EventedModel):
                     transformed_color = transform_color_with_defaults(
                         num_entries=n_colors,
                         colors=color_values,
-                        elem_name="colors",
-                        default="white",
+                        elem_name='colors',
+                        default='white',
                     )
                     colors = normalize_and_broadcast_colors(
                         n_colors, transformed_color

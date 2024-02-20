@@ -111,7 +111,7 @@ class Tracks(Layer):
         rotate=None,
         shear=None,
         affine=None,
-        opacity=1,
+        opacity=1.0,
         blending='additive',
         visible=True,
         colormap='turbo',
@@ -627,7 +627,7 @@ class Tracks(Layer):
             warn(
                 (
                     trans._(
-                        "Previous color_by key {key!r} not present in features. Falling back to track_id",
+                        'Previous color_by key {key!r} not present in features. Falling back to track_id',
                         deferred=True,
                         key=self._color_by,
                     )

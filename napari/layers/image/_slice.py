@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Any, Callable, Tuple
+from typing import Any, Callable, List, Tuple, Union
 
 import numpy as np
 
@@ -103,7 +103,7 @@ class _ImageSliceResponse:
         shape = (1,) * slice_input.ndisplay
         if rgb:
             shape = shape + (3,)
-        data = np.zeros(shape)
+        data = np.zeros(shape, dtype=np.uint8)
         image = _ImageView.from_view(data)
         ndim = slice_input.ndim
         tile_to_data = Affine(
@@ -121,7 +121,20 @@ class _ImageSliceResponse:
     def to_displayed(
         self, converter: Callable[[np.ndarray], np.ndarray]
     ) -> '_ImageSliceResponse':
-        """Returns a raw slice converted for display, which is needed for Labels."""
+        """
+        Returns a raw slice converted for display,
+        which is needed for Labels and Image.
+
+        Parameters
+        ----------
+        converter : Callable[[np.ndarray], np.ndarray]
+            A function that converts the raw image to a vispy viewable image.
+
+        Returns
+        -------
+        _ImageSliceResponse
+            Contains the converted image and thumbnail.
+        """
         image = _ImageView.from_raw(raw=self.image.raw, converter=converter)
         thumbnail = image
         if self.thumbnail is not self.image:
@@ -307,7 +320,7 @@ class _ImageSliceRequest:
             return (*order, max(order) + 1)
         return order
 
-    def _slice_out_of_bounds(self):
+    def _slice_out_of_bounds(self) -> bool:
         """Check if the data slice is out of bounds for any dimension."""
         data = self.data[0] if self.multiscale else self.data
         for d in self.slice_input.not_displayed:
@@ -325,7 +338,9 @@ class _ImageSliceRequest:
         return False
 
     @staticmethod
-    def _point_to_slices(point):
+    def _point_to_slices(
+        point: Tuple[float, ...]
+    ) -> Tuple[Union[slice, int], ...]:
         # no need to check out of bounds here cause it's guaranteed
 
         # values in point and margins are np.nan if no slicing should happen along that dimension
@@ -337,7 +352,9 @@ class _ImageSliceRequest:
         )
 
     @staticmethod
-    def _data_slice_to_slices(data_slice, dims_displayed):
+    def _data_slice_to_slices(
+        data_slice: _ThickNDSlice, dims_displayed: List[int]
+    ) -> Tuple[slice, ...]:
         slices = [slice(None) for _ in range(data_slice.ndim)]
 
         for dim, (point, m_left, m_right) in enumerate(data_slice):

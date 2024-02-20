@@ -1,5 +1,6 @@
 """MonitorApi class.
 """
+
 import logging
 from multiprocessing.managers import SharedMemoryManager
 from queue import Empty, Queue
@@ -8,10 +9,10 @@ from typing import ClassVar, Dict, NamedTuple
 
 from napari.utils.events import EmitterGroup
 
-LOGGER = logging.getLogger("napari.monitor")
+LOGGER = logging.getLogger('napari.monitor')
 
 # The client needs to know this.
-AUTH_KEY = "napari"
+AUTH_KEY = 'napari'
 
 # Port 0 means the OS chooses an available port. We send the server_port
 # port to the client in its NAPARI_MON_CLIENT variable.
@@ -185,7 +186,7 @@ class MonitorApi:
 
                 if not isinstance(message, dict):
                     LOGGER.warning(
-                        "Ignore message that was not a dict: %s", message
+                        'Ignore message that was not a dict: %s', message
                     )
                     continue
 

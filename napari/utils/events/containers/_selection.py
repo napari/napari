@@ -5,10 +5,10 @@ from napari.utils.events.event import EmitterGroup
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from pydantic.fields import ModelField
+    from napari._pydantic_compat import ModelField
 
-_T = TypeVar("_T")
-_S = TypeVar("_S")
+_T = TypeVar('_T')
+_S = TypeVar('_S')
 
 
 class Selection(EventedSet[_T]):
@@ -70,7 +70,7 @@ class Selection(EventedSet[_T]):
         return super()._emit_change(added=added, removed=removed)
 
     def __repr__(self) -> str:
-        return f"{type(self).__name__}({self._set!r})"
+        return f'{type(self).__name__}({self._set!r})'
 
     def __hash__(self) -> int:
         """Make selection hashable."""
@@ -140,11 +140,11 @@ class Selection(EventedSet[_T]):
     @classmethod
     def validate(cls, v, field: 'ModelField'):
         """Pydantic validator."""
-        from pydantic.utils import sequence_like
+        from napari._pydantic_compat import sequence_like
 
         if isinstance(v, dict):
-            data = v.get("selection", [])
-            current = v.get("_current", None)
+            data = v.get('selection', [])
+            current = v.get('_current', None)
         elif isinstance(v, Selection):
             data = v._set
             current = v._current
@@ -180,7 +180,7 @@ class Selection(EventedSet[_T]):
                 errors.append(error)
 
         if errors:
-            from pydantic import ValidationError
+            from napari._pydantic_compat import ValidationError
 
             raise ValidationError(errors, cls)  # type: ignore
         obj = cls(data=data)

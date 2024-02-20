@@ -31,7 +31,7 @@ class PurposefulException(Exception):
 
 def test_notification_repr_has_message():
     assert "='this is the message'" in repr(
-        Notification("this is the message")
+        Notification('this is the message')
     )
 
 
@@ -65,12 +65,12 @@ def test_notification_manager_no_gui(monkeypatch):
         # test that exceptions that go through sys.excepthook are catalogued
 
         with pytest.raises(PurposefulException):
-            raise PurposefulException("this is an exception")
+            raise PurposefulException('this is an exception')
 
         # pytest intercepts the error, so we can manually call sys.excepthook
         assert sys.excepthook == notification_manager.receive_error
         try:
-            raise ValueError("a")
+            raise ValueError('a')
         except ValueError:
             sys.excepthook(*sys.exc_info())
         assert len(notification_manager.records) == 3
@@ -80,7 +80,9 @@ def test_notification_manager_no_gui(monkeypatch):
         # test that warnings that go through showwarning are catalogued
         # again, pytest intercepts this, so just manually trigger:
         assert warnings.showwarning == notification_manager.receive_warning
-        warnings.showwarning('this is a warning', UserWarning, '', 0)
+        warnings.showwarning(
+            UserWarning('this is a warning'), UserWarning, __file__, 83
+        )
         assert len(notification_manager.records) == 4
         assert store[-1].type == 'warning'
 
@@ -111,11 +113,13 @@ def test_notification_manager_no_gui_with_threading():
     """
 
     def _warn():
-        warnings.showwarning('this is a warning', UserWarning, '', 0)
+        warnings.showwarning(
+            UserWarning('this is a warning'), UserWarning, __file__, 116
+        )
 
     def _raise():
         with pytest.raises(PurposefulException):
-            raise PurposefulException("this is an exception")
+            raise PurposefulException('this is an exception')
 
     previous_threading_exhook = threading.excepthook
 
@@ -135,7 +139,7 @@ def test_notification_manager_no_gui_with_threading():
         exception_thread.join(timeout=DEFAULT_TIMEOUT_SECS)
 
         try:
-            raise ValueError("a")
+            raise ValueError('a')
         except ValueError:
             threading.excepthook(sys.exc_info())
 
@@ -155,3 +159,26 @@ def test_notification_manager_no_gui_with_threading():
     assert threading.excepthook == previous_threading_exhook
 
     assert all(isinstance(x, Notification) for x in store)
+
+
+def test_notification_manager_no_warning_duplication():
+    def fun():
+        warnings.showwarning(
+            UserWarning('This is a warning'),
+            category=UserWarning,
+            filename=__file__,
+            lineno=166,
+        )
+
+    with notification_manager:
+        notification_manager.records.clear()
+        # save all of the events that get emitted
+        store: List[Notification] = []
+        notification_manager.notification_ready.connect(store.append)
+
+        fun()
+        assert len(notification_manager.records) == 1
+        assert store[-1].type == 'warning'
+
+        fun()
+        assert len(notification_manager.records) == 1

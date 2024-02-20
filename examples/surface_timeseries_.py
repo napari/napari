@@ -26,11 +26,11 @@ except ModuleNotFoundError:
 
 import numpy as np
 
-if parse(np.__version__) >= parse("1.24"):
+if parse(np.__version__) >= parse('1.24'):
     raise RuntimeError(
-        "Incompatible numpy version. "
-        "You must have numpy less than 1.24 for nilearn 0.10.1 and below to "
-        "work and download the example data"
+        'Incompatible numpy version. '
+        'You must have numpy less than 1.24 for nilearn 0.10.1 and below to '
+        'work and download the example data'
     )
 
 import napari

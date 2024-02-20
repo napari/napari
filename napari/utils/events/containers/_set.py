@@ -5,10 +5,10 @@ from typing import TYPE_CHECKING, Any, Iterable, Iterator, MutableSet, TypeVar
 from napari.utils.events import EmitterGroup
 from napari.utils.translations import trans
 
-_T = TypeVar("_T")
+_T = TypeVar('_T')
 
 if TYPE_CHECKING:
-    from pydantic.fields import ModelField
+    from napari._pydantic_compat import ModelField
 
 
 class EventedSet(MutableSet[_T]):
@@ -97,7 +97,7 @@ class EventedSet(MutableSet[_T]):
             self._emit_change(added={}, removed=values)
 
     def __repr__(self) -> str:
-        return f"{type(self).__name__}({self._set!r})"
+        return f'{type(self).__name__}({self._set!r})'
 
     def update(self, others: Iterable[_T] = ()) -> None:
         """Update this set with the union of this set and others"""
@@ -165,7 +165,7 @@ class EventedSet(MutableSet[_T]):
     @classmethod
     def validate(cls, v, field: ModelField):
         """Pydantic validator."""
-        from pydantic.utils import sequence_like
+        from napari._pydantic_compat import sequence_like
 
         if not sequence_like(v):
             raise TypeError(
@@ -185,9 +185,9 @@ class EventedSet(MutableSet[_T]):
             if error:
                 errors.append(error)
         if errors:
-            from pydantic import ValidationError
+            from napari._pydantic_compat import ValidationError
 
-            raise ValidationError(errors, cls)  # type: ignore
+            raise ValidationError(errors, cls)
         return cls(v)
 
     def _json_encode(self):

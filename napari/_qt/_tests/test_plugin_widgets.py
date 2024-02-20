@@ -79,13 +79,13 @@ def test_plugin_widgets(monkeypatch, napari_plugin_manager):
     """A smattering of example registered dock widgets and function widgets."""
     tnpm = napari_plugin_manager
     dock_widgets = {
-        "TestP1": {"Widg1": (Widg1, {}), "Widg2": (Widg2, {})},
-        "TestP2": {"Widg3": (Widg3, {})},
+        'TestP1': {'Widg1': (Widg1, {}), 'Widg2': (Widg2, {})},
+        'TestP2': {'Widg3': (Widg3, {})},
     }
-    monkeypatch.setattr(tnpm, "_dock_widgets", dock_widgets)
+    monkeypatch.setattr(tnpm, '_dock_widgets', dock_widgets)
 
     function_widgets = {'TestP3': {'magic': magicfunc}}
-    monkeypatch.setattr(tnpm, "_function_widgets", function_widgets)
+    monkeypatch.setattr(tnpm, '_function_widgets', function_widgets)
     yield
 
 
@@ -172,11 +172,7 @@ def test_making_function_dock_widgets(test_plugin_widgets, make_napari_viewer):
     dw = viewer.window._dock_widgets['magic (TestP3)']
     # make sure that it contains a magicgui widget
     magic_widget = dw.widget()._magic_widget
-    FGui = getattr(magicgui.widgets, 'FunctionGui', None)
-    if FGui is None:
-        # pre magicgui 0.2.6
-        FGui = magicgui.FunctionGui
-    assert isinstance(magic_widget, FGui)
+    assert isinstance(magic_widget, magicgui.widgets.FunctionGui)
     # This magicgui widget uses the parameter annotation to receive a viewer
     assert isinstance(magic_widget.viewer.value, napari.Viewer)
     # The function just returns the viewer... make sure we can call it

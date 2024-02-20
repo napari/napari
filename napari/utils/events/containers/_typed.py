@@ -25,8 +25,8 @@ logger = logging.getLogger(__name__)
 
 Index = Union[int, slice]
 
-_T = TypeVar("_T")
-_L = TypeVar("_L")
+_T = TypeVar('_T')
+_L = TypeVar('_L')
 
 
 class TypedMutableSequence(MutableSequence[_T]):
@@ -80,12 +80,12 @@ class TypedMutableSequence(MutableSequence[_T]):
         return id(self)
 
     @overload
-    def __setitem__(self, key: int, value: _T):
-        ...  # pragma: no cover
+    def __setitem__(self, key: int, value: _T): ...  # pragma: no cover
 
     @overload
-    def __setitem__(self, key: slice, value: Iterable[_T]):
-        ...  # pragma: no cover
+    def __setitem__(
+        self, key: slice, value: Iterable[_T]
+    ): ...  # pragma: no cover
 
     def __setitem__(self, key, value):
         if isinstance(key, slice):
@@ -114,12 +114,15 @@ class TypedMutableSequence(MutableSequence[_T]):
         return super().__contains__(key)
 
     @overload
-    def __getitem__(self, key: int) -> _T:
-        ...  # pragma: no cover
+    def __getitem__(self, key: str) -> _T: ...  # pragma: no cover
 
     @overload
-    def __getitem__(self, key: slice) -> 'TypedMutableSequence[_T]':
-        ...  # pragma: no cover
+    def __getitem__(self, key: int) -> _T: ...  # pragma: no cover
+
+    @overload
+    def __getitem__(
+        self, key: slice
+    ) -> 'TypedMutableSequence[_T]': ...  # pragma: no cover
 
     def __getitem__(self, key):
         """Get an item from the list
@@ -236,13 +239,13 @@ class TypedMutableSequence(MutableSequence[_T]):
 
         raise ValueError(
             trans._(
-                "{value!r} is not in list",
+                '{value!r} is not in list',
                 deferred=True,
                 value=value,
             )
         )
 
-    def _iter_indices(self, start=0, stop=None):
+    def _iter_indices(self, start=0, stop=None) -> Iterable[int]:
         """Iter indices from start to stop.
 
         While this is trivial for this basic sequence type, this method lets

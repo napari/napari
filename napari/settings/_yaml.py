@@ -4,9 +4,9 @@ from enum import Enum
 from typing import TYPE_CHECKING, Type
 
 from app_model.types import KeyBinding
-from pydantic import BaseModel
 from yaml import SafeDumper, dump_all
 
+from napari._pydantic_compat import BaseModel
 from napari.settings._fields import Version
 
 if TYPE_CHECKING:
@@ -81,7 +81,7 @@ class PydanticYamlMixin(BaseModel):
             exclude_none=exclude_none,
         )
         if self.__custom_root_type__:
-            from pydantic.utils import ROOT_KEY
+            from napari._pydantic_compat import ROOT_KEY
 
             data = data[ROOT_KEY]
         return self._yaml_dump(data, dumper, **dumps_kwargs)
