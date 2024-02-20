@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from qtpy.QtWidgets import QWidget  # type: ignore[attr-defined]
 
 
-NodeType = TypeVar("NodeType", bound=Node)
+NodeType = TypeVar('NodeType', bound=Node)
 
 
 class QtNodeTreeView(_BaseEventedItemView[NodeType], QTreeView):

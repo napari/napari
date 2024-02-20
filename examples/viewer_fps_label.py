@@ -13,7 +13,7 @@ import napari
 
 def update_fps(fps):
     """Update fps."""
-    viewer.text_overlay.text = f"{fps:1.1f} FPS"
+    viewer.text_overlay.text = f'{fps:1.1f} FPS'
 
 
 viewer = napari.Viewer()

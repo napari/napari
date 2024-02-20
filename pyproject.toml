@@ -112,7 +112,6 @@ ignore = [
     "A003", # flake8-builtins - we have class attributes violating these rule
     "COM812", # flake8-commas - we don't like adding comma on single line of arguments
     "SIM117", # flake8-simplify - we some of merged with statements are not looking great with black, reanble after drop python 3.9
-    "Q000",
     "RET504", # not fixed yet https://github.com/charliermarsh/ruff/issues/2950
     "TRY003", # require implement multiple exception class
     "RUF005", # problem with numpy compatybility, see https://github.com/charliermarsh/ruff/issues/2142#issuecomment-1451038741
@@ -133,6 +132,8 @@ ignore = [
 
 [tool.ruff.lint.flake8-quotes]
 docstring-quotes = "double"
+inline-quotes = "single"
+multiline-quotes = "double"
 
 [tool.ruff.lint.flake8-tidy-imports]
 # Disallow all relative imports.
@@ -370,6 +371,11 @@ module = [
     "napari.layers._source",
     "napari.layers.shapes._shapes_models.path",
     "napari.layers.shapes._shapes_models.polygon",
+    "napari.layers.shapes._shapes_models._polgyon_base",
+    "napari.layers.shapes._shapes_models.ellipse",
+    "napari.layers.shapes._shapes_models.line",
+    "napari.layers.shapes._shapes_models.rectangle",
+    "napari.layers.shapes._shapes_models.shape",
     "napari.layers.utils.interactivity_utils",
     "napari.layers.vectors._vector_utils",
     "napari.resources._icons",
@@ -501,7 +507,6 @@ module = [
     "napari._vispy.layers.shapes",
     "napari._vispy.layers.surface",
     "napari.components._viewer_key_bindings",
-    "napari.layers.image.image",
     "napari.layers.labels.labels",
     "napari.layers.surface.surface",
     "napari.layers.tracks.tracks",
@@ -524,11 +529,6 @@ module = [
     "napari.conftest",
     "napari.layers.labels._labels_utils",
     "napari.layers.points._points_mouse_bindings",
-    "napari.layers.shapes._shapes_models._polgyon_base",
-    "napari.layers.shapes._shapes_models.ellipse",
-    "napari.layers.shapes._shapes_models.line",
-    "napari.layers.shapes._shapes_models.rectangle",
-    "napari.layers.shapes._shapes_models.shape",
     "napari.layers.tracks._track_utils",
     "napari.utils.colormaps.colormap",
     "napari.utils.events.containers._selectable_list",
@@ -541,7 +541,6 @@ disallow_untyped_defs = false
 [[tool.mypy.overrides]]
 module = [
     "napari.utils.events.containers._typed",
-    "napari.layers.base.base",
 ]
 check_untyped_defs = false
 disallow_incomplete_defs = false
@@ -552,7 +551,8 @@ warn_unused_ignores = false
 [[tool.mypy.overrides]]
 module = [
     "napari.__main__",
-    "napari.utils.colormaps.vendored.colors"
+    "napari.utils.colormaps.vendored.colors",
+    "napari.layers.image.image"
 ]
 check_untyped_defs = false
 disallow_untyped_calls = false
@@ -569,7 +569,8 @@ disallow_untyped_calls = false
 
 [[tool.mypy.overrides]]
 module = [
-    "napari._qt.containers.qt_layer_list"
+    "napari._qt.containers.qt_layer_list",
+    "napari.layers.base.base"
 ]
 check_untyped_defs = false
 disallow_untyped_calls = false

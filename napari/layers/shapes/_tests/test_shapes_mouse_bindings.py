@@ -294,16 +294,16 @@ def test_vertex_insert(create_known_shapes_layer):
     assert len(layer.data) == n_shapes
     assert len(layer.data[0]) == n_coord + 1
     assert layer.events.data.call_args_list[0][1] == {
-        "value": old_data,
-        "action": ActionType.CHANGING,
-        "data_indices": tuple(layer.selected_data),
-        "vertex_indices": ((2,),),
+        'value': old_data,
+        'action': ActionType.CHANGING,
+        'data_indices': tuple(layer.selected_data),
+        'vertex_indices': ((2,),),
     }
     assert layer.events.data.call_args[1] == {
-        "value": layer.data,
-        "action": ActionType.CHANGED,
-        "data_indices": tuple(layer.selected_data),
-        "vertex_indices": ((2,),),
+        'value': layer.data,
+        'action': ActionType.CHANGED,
+        'data_indices': tuple(layer.selected_data),
+        'vertex_indices': ((2,),),
     }
     np.testing.assert_allclose(
         np.min(abs(layer.data[0] - known_non_shape), axis=0), [0, 0]
@@ -328,20 +328,20 @@ def test_vertex_remove(create_known_shapes_layer):
     )
     mouse_press_callbacks(layer, event)
     assert layer.events.data.call_args_list[0][1] == {
-        "value": old_data,
-        "action": ActionType.CHANGING,
-        "data_indices": tuple(
+        'value': old_data,
+        'action': ActionType.CHANGING,
+        'data_indices': tuple(
             select,
         ),
-        "vertex_indices": ((0,),),
+        'vertex_indices': ((0,),),
     }
     assert layer.events.data.call_args[1] == {
-        "value": layer.data,
-        "action": ActionType.CHANGED,
-        "data_indices": tuple(
+        'value': layer.data,
+        'action': ActionType.CHANGED,
+        'data_indices': tuple(
             select,
         ),
-        "vertex_indices": ((0,),),
+        'vertex_indices': ((0,),),
     }
     assert len(layer.data) == n_shapes
     assert len(layer.data[0]) == n_coord - 1
@@ -445,16 +445,16 @@ def test_drag_shape(create_known_shapes_layer):
     assert len(layer.selected_data) == 1
     assert layer.selected_data == {0}
     assert layer.events.data.call_args_list[0][1] == {
-        "value": old_data,
-        "action": ActionType.CHANGING,
-        "data_indices": (0,),
-        "vertex_indices": vertex_indices,
+        'value': old_data,
+        'action': ActionType.CHANGING,
+        'data_indices': (0,),
+        'vertex_indices': vertex_indices,
     }
     assert layer.events.data.call_args[1] == {
-        "value": layer.data,
-        "action": ActionType.CHANGED,
-        "data_indices": (0,),
-        "vertex_indices": vertex_indices,
+        'value': layer.data,
+        'action': ActionType.CHANGED,
+        'data_indices': (0,),
+        'vertex_indices': vertex_indices,
     }
     np.testing.assert_allclose(layer.data[0], orig_data + np.array([10, 5]))
 
@@ -545,10 +545,10 @@ def test_drag_vertex(create_known_shapes_layer):
     assert len(layer.selected_data) == 1
     assert layer.selected_data == {0}
     assert layer.events.data.call_args[1] == {
-        "value": layer.data,
-        "action": ActionType.CHANGED,
-        "data_indices": (0,),
-        "vertex_indices": vertex_indices,
+        'value': layer.data,
+        'action': ActionType.CHANGED,
+        'data_indices': (0,),
+        'vertex_indices': vertex_indices,
     }
     np.testing.assert_allclose(layer.data[0][0], [0, 0])
 
@@ -856,7 +856,7 @@ def test_drag_start_selection(
                 [offset_position[0], offset_position[1]],
             )
         else:
-            raise AssertionError("Unreachable code")  # pragma: no cover
+            raise AssertionError('Unreachable code')  # pragma: no cover
     else:
         np.testing.assert_array_equal(
             layer._drag_box, [initial_position, offset_position]
@@ -883,7 +883,7 @@ def test_drag_start_selection(
                 [offset_position[0], offset_position[1]],
             )
         else:
-            raise AssertionError("Unreachable code")  # pragma: no cover
+            raise AssertionError('Unreachable code')  # pragma: no cover
     else:
         np.testing.assert_array_equal(
             layer._drag_box, [initial_position, offset_position]
