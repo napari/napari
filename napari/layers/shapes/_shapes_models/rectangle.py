@@ -70,7 +70,7 @@ class Rectangle(Shape):
         self._data = data
         self._update_displayed_data()
 
-    def _update_displayed_data(self):
+    def _update_displayed_data(self) -> None:
         """Update the data that is to be displayed."""
         # Add four boundary lines and then two triangles for each
         self._set_meshes(self.data_displayed, face=False)
