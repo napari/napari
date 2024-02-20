@@ -321,7 +321,7 @@ def test_new_labels_scaled_translated_image():
     np.testing.assert_almost_equal(viewer.layers[1].translate, (20, -5))
 
 
-@pytest.mark.parametrize("module_name", ["numpy", "zarr", "tensorstore"])
+@pytest.mark.parametrize('module_name', ['numpy', 'zarr', 'tensorstore'])
 def test_new_labels_follow_class(module_name):
     module = pytest.importorskip(module_name)
     viewer = ViewerModel()
@@ -330,7 +330,7 @@ def test_new_labels_follow_class(module_name):
     )
     viewer.add_image(
         _get_zeros_for_labels_based_on_module(module, None)(
-            shape=(10, 15), dtype="uint8"
+            shape=(10, 15), dtype='uint8'
         ),
         scale=(5, 5),
     )
@@ -348,7 +348,7 @@ def test_new_labels_follow_chunk():
         NewLabelsPolicy.follow_image_class
     )
     viewer.add_image(
-        zarr.zeros(shape=(100, 100), dtype="uint8", chunks=(10, 10)),
+        zarr.zeros(shape=(100, 100), dtype='uint8', chunks=(10, 10)),
         scale=(5, 5),
     )
     viewer._new_labels()
@@ -356,7 +356,7 @@ def test_new_labels_follow_chunk():
     assert viewer.layers[1].data.chunks == (10, 10)
 
     viewer.add_image(
-        zarr.zeros(shape=(100, 100), dtype="uint8", chunks=(20, 20)),
+        zarr.zeros(shape=(100, 100), dtype='uint8', chunks=(20, 20)),
         scale=(5, 5),
     )
 
@@ -366,9 +366,9 @@ def test_new_labels_follow_chunk():
     assert viewer.layers[1].data.chunks == (10, 10)
 
 
-@pytest.mark.parametrize("module_name", ["numpy", "zarr", "tensorstore"])
+@pytest.mark.parametrize('module_name', ['numpy', 'zarr', 'tensorstore'])
 @patch(
-    "psutil.virtual_memory",
+    'psutil.virtual_memory',
     return_value=stub(total=1000000000, available=1000000000),
 )
 def test_new_labels_fit_in_ram(virtual_memory, module_name, array_cls):
@@ -376,10 +376,10 @@ def test_new_labels_fit_in_ram(virtual_memory, module_name, array_cls):
     viewer = ViewerModel()
     get_settings().application.new_labels_policy = NewLabelsPolicy.fit_in_ram
     get_settings().application.new_label_max_factor = 100
-    get_settings().application.new_labels_dtype = "uint64"
+    get_settings().application.new_labels_dtype = 'uint64'
     viewer.add_image(
         _get_zeros_for_labels_based_on_module(module, None)(
-            shape=(10, 15), dtype="uint8"
+            shape=(10, 15), dtype='uint8'
         )
     )
     viewer._new_labels()
@@ -400,9 +400,9 @@ def test_new_labels_fit_in_ram(virtual_memory, module_name, array_cls):
     assert isinstance(viewer.layers[4].data, array_cls)
 
 
-@pytest.mark.parametrize("module_name", ["numpy", "zarr", "tensorstore"])
+@pytest.mark.parametrize('module_name', ['numpy', 'zarr', 'tensorstore'])
 @patch(
-    "psutil.virtual_memory",
+    'psutil.virtual_memory',
     return_value=stub(total=1000000000, available=1000000000),
 )
 def test_new_labels_follow_class_with_fit(
@@ -415,7 +415,7 @@ def test_new_labels_follow_class_with_fit(
     )
     viewer.add_image(
         _get_zeros_for_labels_based_on_module(module, None)(
-            shape=(10, 15), dtype="uint8"
+            shape=(10, 15), dtype='uint8'
         )
     )
     viewer._new_labels()

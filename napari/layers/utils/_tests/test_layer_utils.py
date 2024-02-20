@@ -550,10 +550,10 @@ def test_tensorstore_get_chunk_size():
     spec = {
         'driver': 'zarr',
         'kvstore': {'driver': 'memory'},
-        "metadata": {"chunks": chunk_shape},
+        'metadata': {'chunks': chunk_shape},
     }
     labels = ts.open(
-        spec, create=True, dtype="uint32", shape=data_shape
+        spec, create=True, dtype='uint32', shape=data_shape
     ).result()
 
     chunk_size = _get_chunk_size(labels)
@@ -561,7 +561,7 @@ def test_tensorstore_get_chunk_size():
 
 
 def test_determine_class_for_labels(monkeypatch):
-    monkeypatch.delitem(sys.modules, "tensorstore", raising=False)
+    monkeypatch.delitem(sys.modules, 'tensorstore', raising=False)
     assert _determine_class_for_labels(set()) == np.ndarray
     assert _determine_class_for_labels({np.ndarray}) == np.ndarray
     assert _determine_class_for_labels({np.ndarray, da.Array}) == zarr.Array
@@ -581,10 +581,10 @@ def test_determine_class_for_labels_tensorstore():
 
 
 def test_determine_class_for_labels_warning(monkeypatch):
-    monkeypatch.delitem(sys.modules, "tensorstore", raising=False)
-    monkeypatch.delitem(sys.modules, "zarr", raising=False)
+    monkeypatch.delitem(sys.modules, 'tensorstore', raising=False)
+    monkeypatch.delitem(sys.modules, 'zarr', raising=False)
 
-    with pytest.warns(RuntimeWarning, match="We cannot use dask.array"):
+    with pytest.warns(RuntimeWarning, match='We cannot use dask.array'):
         assert _determine_class_for_labels({da.Array}) == np.ndarray
 
 
@@ -603,7 +603,7 @@ def test_get_zeros_for_labels_based_on_module_dask(monkeypatch):
         return zarr
 
     monkeypatch.setattr(
-        "napari.layers.utils.layer_utils._get_tensorstore_or_zarr", _get_zarr
+        'napari.layers.utils.layer_utils._get_tensorstore_or_zarr', _get_zarr
     )
     assert _get_zeros_for_labels_based_on_module(da, None) is zarr.zeros
 
@@ -613,9 +613,9 @@ def test_get_zeros_for_labels_based_on_module_dask_warning(monkeypatch):
         return None
 
     monkeypatch.setattr(
-        "napari.layers.utils.layer_utils._get_tensorstore_or_zarr", _get_zarr
+        'napari.layers.utils.layer_utils._get_tensorstore_or_zarr', _get_zarr
     )
-    with pytest.warns(RuntimeWarning, match="We cannot use dask.array"):
+    with pytest.warns(RuntimeWarning, match='We cannot use dask.array'):
         assert _get_zeros_for_labels_based_on_module(da, None) is np.zeros
 
 
@@ -626,7 +626,7 @@ def test_get_zeros_for_labels_based_on_module_dask_tensorstore(monkeypatch):
         return ts
 
     monkeypatch.setattr(
-        "napari.layers.utils.layer_utils._get_tensorstore_or_zarr", _get_ts
+        'napari.layers.utils.layer_utils._get_tensorstore_or_zarr', _get_ts
     )
     res = _get_zeros_for_labels_based_on_module(da, (10, 10))
 
@@ -638,7 +638,7 @@ def test_get_zeros_for_labels_based_on_module_dask_tensorstore(monkeypatch):
 
 
 def test_get_zeros_for_labels_based_on_module_unknown():
-    with pytest.warns(RuntimeWarning, match="Unknown data library"):
+    with pytest.warns(RuntimeWarning, match='Unknown data library'):
         assert _get_zeros_for_labels_based_on_module(pytest, None) is np.zeros
 
 
@@ -666,9 +666,9 @@ def test_layers_to_class_set():
     assert _layers_to_class_set([d5]) == {da.Array}
 
 
-@pytest.mark.parametrize("module_name", ["numpy", "zarr.core", "tensorstore"])
+@pytest.mark.parametrize('module_name', ['numpy', 'zarr.core', 'tensorstore'])
 @patch(
-    "psutil.virtual_memory",
+    'psutil.virtual_memory',
     return_value=stub(total=1000000000, available=1000000000),
 )
 def test_determine_labels_class_based_on_ram(virtual_memory, module_name):
@@ -680,7 +680,7 @@ def test_determine_labels_class_based_on_ram(virtual_memory, module_name):
 
     assert (
         _determine_labels_class_based_on_ram(
-            zeros.__class__, zeros.shape, "uint8"
+            zeros.__class__, zeros.shape, 'uint8'
         )
         == module
     )
@@ -689,14 +689,14 @@ def test_determine_labels_class_based_on_ram(virtual_memory, module_name):
 
     assert (
         _determine_labels_class_based_on_ram(
-            zeros.__class__, zeros.shape, "uint8"
+            zeros.__class__, zeros.shape, 'uint8'
         )
         == _get_tensorstore_or_zarr()
     )
 
 
 @patch(
-    "psutil.virtual_memory",
+    'psutil.virtual_memory',
     return_value=stub(total=1000000000, available=1000000000),
 )
 def test_determine_labels_class_based_on_ram_dask(virtual_memory):
@@ -704,7 +704,7 @@ def test_determine_labels_class_based_on_ram_dask(virtual_memory):
 
     assert (
         _determine_labels_class_based_on_ram(
-            zeros.__class__, zeros.shape, "uint8"
+            zeros.__class__, zeros.shape, 'uint8'
         )
         == da.core
     )

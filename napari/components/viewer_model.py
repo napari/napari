@@ -467,7 +467,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         if module is None:
             show_error(
-                "Not enough RAM to allocate labels array. Please install zarr or tensorstore and try again."
+                'Not enough RAM to allocate labels array. Please install zarr or tensorstore and try again.'
             )
             return
         chunk = self._get_chunk_size_from_layers()

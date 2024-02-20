@@ -35,9 +35,8 @@ if TYPE_CHECKING:
     from xarray import DataArray
 
     from napari.layers import Layer
-    from napari.layers._multiscale_data import MultiScaleData
-
     from napari.layers._data_protocols import LayerDataProtocol
+    from napari.layers._multiscale_data import MultiScaleData
 
 
 class Extent(NamedTuple):
@@ -1096,13 +1095,15 @@ def _unique_element(array: Array) -> Optional[Any]:
 
 
 def _get_chunk_size(
-    data: LayerDataProtocol
-    | MultiScaleData
-    | Iterable
-    | npt.NDArray
-    | Iterable[npt.NDArray]
-    | DataArray
-    | None,
+    data: (
+        LayerDataProtocol
+        | MultiScaleData
+        | Iterable
+        | npt.NDArray
+        | Iterable[npt.NDArray]
+        | DataArray
+        | None
+    ),
 ) -> None | tuple[int, ...]:
     """Get chunk size from a given layer.
 
@@ -1118,16 +1119,16 @@ def _get_chunk_size(
     if isinstance(data, np.ndarray):
         return None
 
-    if "zarr" in sys.modules and isinstance(data, sys.modules["zarr"].Array):
+    if 'zarr' in sys.modules and isinstance(data, sys.modules['zarr'].Array):
         return data.chunks
 
-    if "dask.array" in sys.modules and isinstance(
-        data, sys.modules["dask.array"].Array
+    if 'dask.array' in sys.modules and isinstance(
+        data, sys.modules['dask.array'].Array
     ):
         return data.chunksize
 
-    if "tensorstore" in sys.modules and isinstance(
-        data, sys.modules["tensorstore"].TensorStore
+    if 'tensorstore' in sys.modules and isinstance(
+        data, sys.modules['tensorstore'].TensorStore
     ):
         # TensorStore allow to specify different read and write chunk sizes
         # we use the read chunk size to have same chunk size for labels like
@@ -1138,8 +1139,8 @@ def _get_chunk_size(
             return data.shape
         return chunk_shape
 
-    if "xarray" in sys.modules and isinstance(
-        data, sys.modules["xarray"].DataArray
+    if 'xarray' in sys.modules and isinstance(
+        data, sys.modules['xarray'].DataArray
     ):
         return _get_chunk_size(data.data)
     return None
@@ -1178,7 +1179,7 @@ def _get_zeros_for_labels_based_on_module(
     if module is None or module is np:
         return np.zeros
 
-    if module.__name__ in {"dask.array", "dask.array.core"}:
+    if module.__name__ in {'dask.array', 'dask.array.core'}:
         # dask.array does not support fancy indexing
         # so we need to use another backend
 
@@ -1187,21 +1188,21 @@ def _get_zeros_for_labels_based_on_module(
         if module is None:
             warnings.warn(
                 trans._(
-                    "We cannot use dask.array as backend for labels, as it"
-                    " does not support fancy indexing. Please install"
-                    " either tensorstore or zarr"
+                    'We cannot use dask.array as backend for labels, as it'
+                    ' does not support fancy indexing. Please install'
+                    ' either tensorstore or zarr'
                 ),
                 category=RuntimeWarning,
             )
             return np.zeros
 
-    if module.__name__ in {"zarr", "zarr.core"}:
+    if module.__name__ in {'zarr', 'zarr.core'}:
         if chunk is None:
-            return sys.modules["zarr"].zeros
+            return sys.modules['zarr'].zeros
 
-        return functools.partial(sys.modules["zarr"].zeros, chunks=chunk)
+        return functools.partial(sys.modules['zarr'].zeros, chunks=chunk)
 
-    if module.__name__ == "tensorstore":
+    if module.__name__ == 'tensorstore':
         spec = {
             'driver': 'zarr',
             'kvstore': {'driver': 'memory'},
@@ -1218,7 +1219,7 @@ def _get_zeros_for_labels_based_on_module(
 
     warnings.warn(
         trans._(
-            "Unknown data library {lib} for labels creation.",
+            'Unknown data library {lib} for labels creation.',
             lib=str(module.__name__),
         ),
         category=RuntimeWarning,
@@ -1254,23 +1255,23 @@ def _determine_class_for_labels(class_set: set[type]) -> type:
     if not class_set:
         return np.ndarray
     class_set = set(class_set)
-    if _get_mod_class("tensorstore", "TensorStore") in class_set:
-        return sys.modules["tensorstore"].TensorStore
+    if _get_mod_class('tensorstore', 'TensorStore') in class_set:
+        return sys.modules['tensorstore'].TensorStore
 
-    if _get_mod_class("zarr", "Array") in class_set:
-        return sys.modules["zarr"].Array
+    if _get_mod_class('zarr', 'Array') in class_set:
+        return sys.modules['zarr'].Array
 
-    if _get_mod_class("dask.array", "Array") in class_set:
+    if _get_mod_class('dask.array', 'Array') in class_set:
         # dask do not support fancy indexing
-        if "tensorstore" in sys.modules:
-            return sys.modules["tensorstore"].TensorStore
-        if "zarr" in sys.modules:
-            return sys.modules["zarr"].Array
+        if 'tensorstore' in sys.modules:
+            return sys.modules['tensorstore'].TensorStore
+        if 'zarr' in sys.modules:
+            return sys.modules['zarr'].Array
         warnings.warn(
             trans._(
-                "We cannot use dask.array as backend for labels, as it"
-                " does not support fancy indexing. Please install"
-                " either tensorstore or zarr"
+                'We cannot use dask.array as backend for labels, as it'
+                ' does not support fancy indexing. Please install'
+                ' either tensorstore or zarr'
             ),
             category=RuntimeWarning,
         )
