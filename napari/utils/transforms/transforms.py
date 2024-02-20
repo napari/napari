@@ -199,7 +199,9 @@ class TransformChain(EventedList[_T], Transform, Generic[_T]):
             If the transform chain is empty.
         """
         if len(self) == 0:
-            raise ValueError(trans._('Cannot simplify an empty transform chain.'))
+            raise ValueError(
+                trans._('Cannot simplify an empty transform chain.')
+            )
 
         if len(self) == 1:
             return self[0]
