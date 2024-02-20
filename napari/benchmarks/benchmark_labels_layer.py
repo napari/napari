@@ -21,7 +21,7 @@ class Labels2DSuite:
     param_names = ['n', 'dtype']
     params = ([2**i for i in range(4, 13)], [np.uint8, np.int32])
 
-    if "PR" in os.environ:
+    if 'PR' in os.environ:
         skip_params = Skipper(lambda x: x[0] > 2**5)
 
     def setup(self, n, dtype):

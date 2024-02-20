@@ -26,8 +26,8 @@ class Skipper:
         func_ci=always_false,
         func_always=always_false,
     ):
-        self.func_pr = func_pr if "PR" in os.environ else always_false
-        self.func_ci = func_ci if "CI" in os.environ else always_false
+        self.func_pr = func_pr if 'PR' in os.environ else always_false
+        self.func_ci = func_ci if 'CI' in os.environ else always_false
         self.func_always = func_always
 
     def __contains__(self, item):
