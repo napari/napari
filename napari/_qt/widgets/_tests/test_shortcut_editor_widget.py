@@ -13,7 +13,7 @@ from napari.utils.action_manager import action_manager
 from napari.utils.interactions import KEY_SYMBOLS
 
 META_CONTROL_KEY = Qt.KeyboardModifier.ControlModifier
-if sys.platform == "darwin":
+if sys.platform == 'darwin':
     META_CONTROL_KEY = Qt.KeyboardModifier.MetaModifier
 
 
@@ -103,20 +103,20 @@ def test_restore_defaults(shortcut_editor_widget):
         (
             Qt.Key.Key_Backspace,
             META_CONTROL_KEY,
-            [KEY_SYMBOLS["Ctrl"], KEY_SYMBOLS["Backspace"]],
+            [KEY_SYMBOLS['Ctrl'], KEY_SYMBOLS['Backspace']],
         ),
         (
             Qt.Key.Key_Delete,
             META_CONTROL_KEY | Qt.KeyboardModifier.ShiftModifier,
-            [KEY_SYMBOLS["Ctrl"], KEY_SYMBOLS["Shift"], KEY_SYMBOLS["Delete"]],
+            [KEY_SYMBOLS['Ctrl'], KEY_SYMBOLS['Shift'], KEY_SYMBOLS['Delete']],
         ),
         (
             Qt.Key.Key_Backspace,
             META_CONTROL_KEY | Qt.KeyboardModifier.ShiftModifier,
             [
-                KEY_SYMBOLS["Ctrl"],
-                KEY_SYMBOLS["Shift"],
-                KEY_SYMBOLS["Backspace"],
+                KEY_SYMBOLS['Ctrl'],
+                KEY_SYMBOLS['Shift'],
+                KEY_SYMBOLS['Backspace'],
             ],
         ),
     ],
@@ -197,7 +197,7 @@ def test_keybinding_with_only_modifiers(
 
 @skip_local_focus
 @pytest.mark.parametrize(
-    "removal_trigger_key",
+    'removal_trigger_key',
     [
         Qt.Key.Key_Delete,
         Qt.Key.Key_Backspace,
@@ -206,7 +206,7 @@ def test_keybinding_with_only_modifiers(
 def test_remove_shortcut(shortcut_editor_widget, qtbot, removal_trigger_key):
     widget = shortcut_editor_widget()
     shortcut = widget._table.item(0, widget._shortcut_col).text()
-    assert shortcut == KEY_SYMBOLS["Ctrl"]
+    assert shortcut == KEY_SYMBOLS['Ctrl']
 
     x = widget._table.columnViewportPosition(widget._shortcut_col)
     y = widget._table.rowViewportPosition(0)
@@ -222,23 +222,23 @@ def test_remove_shortcut(shortcut_editor_widget, qtbot, removal_trigger_key):
     qtbot.keyClick(QApplication.focusWidget(), Qt.Key.Key_Enter)
 
     shortcut = widget._table.item(0, widget._shortcut_col).text()
-    assert shortcut == ""
+    assert shortcut == ''
 
 
 @skip_local_focus
 @skip_on_mac_ci
 @pytest.mark.parametrize(
-    "modifier_key, modifiers, key_symbols",
+    'modifier_key, modifiers, key_symbols',
     [
         (
-            "shift",
+            'shift',
             None,
-            [KEY_SYMBOLS["Shift"]],
+            [KEY_SYMBOLS['Shift']],
         ),
         (
-            "ctrl",
-            "shift",
-            [KEY_SYMBOLS["Ctrl"], KEY_SYMBOLS["Shift"]],
+            'ctrl',
+            'shift',
+            [KEY_SYMBOLS['Ctrl'], KEY_SYMBOLS['Shift']],
         ),
     ],
 )
@@ -266,7 +266,7 @@ def test_keybinding_editor_modifier_key_detection(
     """
     widget = shortcut_editor_widget()
     shortcut = widget._table.item(0, widget._shortcut_col).text()
-    assert shortcut == KEY_SYMBOLS["Ctrl"]
+    assert shortcut == KEY_SYMBOLS['Ctrl']
 
     x = widget._table.columnViewportPosition(widget._shortcut_col)
     y = widget._table.rowViewportPosition(0)
@@ -300,10 +300,10 @@ def test_keybinding_editor_modifier_key_detection(
     def release_check():
         line_edit.selectAll()
         shortcut = line_edit.selectedText()
-        return shortcut == ""
+        return shortcut == ''
 
     qtbot.waitUntil(lambda: release_check())
 
     qtbot.keyClick(line_edit, Qt.Key_Escape)
     shortcut = widget._table.item(0, widget._shortcut_col).text()
-    assert shortcut == KEY_SYMBOLS["Ctrl"]
+    assert shortcut == KEY_SYMBOLS['Ctrl']
