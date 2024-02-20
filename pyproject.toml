@@ -828,7 +828,12 @@ source = [
     "/home/runner/work/napari/napari/napari",
     "/Users/runner/work/napari/napari/napari",
 ]
-builtins = "napari_builtins/\nD:\\a\\napari\\napari\\napari_builtins\n/home/runner/work/napari/napari/napari_builtins\n/Users/runner/work/napari/napari/napari_builtins"
+builtins = [
+    "napari_builtins/",
+    "D:\\a\\napari\\napari\\napari_builtins",
+    "/home/runner/work/napari/napari/napari_builtins",
+    "/Users/runner/work/napari/napari/napari_builtins",
+]
 
 [tool.importlinter]
 root_package = "napari"
