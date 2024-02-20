@@ -142,7 +142,7 @@ class QtViewerAsyncPointsSuite:
         np.random.seed(0)
         self.viewer = napari.Viewer()
         # Fake image layer to set bounds. Is this really needed?
-        self.empty_image = np.zeros((512, 512, 512), dtype="uint8")
+        self.empty_image = np.zeros((512, 512, 512), dtype='uint8')
         self.viewer.add_image(self.empty_image)
         self.point_data = np.random.randint(512, size=(n_points, 3))
         self.viewer.add_points(self.point_data)
@@ -167,7 +167,7 @@ class QtViewerAsyncPointsAndImage2DSuite:
     params = (n_points, latency, chunksize)
     timeout = 600
 
-    if "PR" in os.environ:
+    if 'PR' in os.environ:
         skip_params = Skiper(
             lambda x: x[0] > 2**14 or x[2] > 512 or x[1] > 0.05
         )

@@ -239,7 +239,7 @@ class Labels(_ImageBase):
 
     _modeclass = Mode
 
-    _drag_modes: ClassVar[Dict[Mode, Callable[["Labels", Event], None]]] = {  # type: ignore[assignment]
+    _drag_modes: ClassVar[Dict[Mode, Callable[['Labels', Event], None]]] = {  # type: ignore[assignment]
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
         Mode.PICK: pick,
@@ -251,7 +251,7 @@ class Labels(_ImageBase):
 
     brush_size_on_mouse_move = BrushSizeOnMouseMove(min_brush_size=1)
 
-    _move_modes: ClassVar[Dict[StringEnum, Callable[["Labels", Event], None]]] = {  # type: ignore[assignment]
+    _move_modes: ClassVar[Dict[StringEnum, Callable[['Labels', Event], None]]] = {  # type: ignore[assignment]
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
         Mode.PICK: no_op,
@@ -359,7 +359,7 @@ class Labels(_ImageBase):
             LabelsPolygonOverlay,
         )
 
-        self._overlays.update({"polygon": LabelsPolygonOverlay()})
+        self._overlays.update({'polygon': LabelsPolygonOverlay()})
 
         self._feature_table = _FeatureTable.from_layer(
             features=features, properties=properties
@@ -441,7 +441,7 @@ class Labels(_ImageBase):
     @contour.setter
     def contour(self, contour: int) -> None:
         if contour < 0:
-            raise ValueError("contour value must be >= 0")
+            raise ValueError('contour value must be >= 0')
         self._contour = int(contour)
         self.events.contour()
         self.refresh()
@@ -613,7 +613,7 @@ class Labels(_ImageBase):
             if np.issubdtype(normalize_dtype(data_level.dtype), np.floating):
                 raise TypeError(
                     trans._(
-                        "Only integer types are supported for Labels layers, but data contains {data_level_type}.",
+                        'Only integer types are supported for Labels layers, but data contains {data_level_type}.',
                         data_level_type=data_level.dtype,
                     )
                 )
@@ -730,7 +730,7 @@ class Labels(_ImageBase):
         if mode == self._mode:
             return mode
 
-        self._overlays["polygon"].enabled = mode == Mode.POLYGON
+        self._overlays['polygon'].enabled = mode == Mode.POLYGON
         if mode in {Mode.PAINT, Mode.ERASE}:
             self.cursor_size = self._calculate_cursor_size()
 
@@ -831,7 +831,7 @@ class Labels(_ImageBase):
         if labels.ndim > 2:
             warnings.warn(
                 trans._(
-                    "Contours are not displayed during 3D rendering",
+                    'Contours are not displayed during 3D rendering',
                     deferred=True,
                 )
             )
@@ -1298,7 +1298,7 @@ class Labels(_ImageBase):
 
         if len(dims_to_paint) != 2:
             raise NotImplementedError(
-                "Polygon painting is implemented only in 2D."
+                'Polygon painting is implemented only in 2D.'
             )
 
         points = np.array(points, dtype=int)
@@ -1482,9 +1482,9 @@ class Labels(_ImageBase):
             updated_slice = expand_slice(updated_slice, self.data.shape, 1)
         else:
             # update data view
-            self._slice.image.view[
-                displayed_indices
-            ] = self.colormap._data_to_texture(visible_values)
+            self._slice.image.view[displayed_indices] = (
+                self.colormap._data_to_texture(visible_values)
+            )
 
         if self._updated_slice is None:
             self._updated_slice = updated_slice
@@ -1553,7 +1553,7 @@ class Labels(_ImageBase):
             world=world,
         )
         if properties:
-            source_info['coordinates'] += "; " + ", ".join(properties)
+            source_info['coordinates'] += '; ' + ', '.join(properties)
 
         return source_info
 
@@ -1587,7 +1587,7 @@ class Labels(_ImageBase):
         msg : string
             String containing a message that can be used as a tooltip.
         """
-        return "\n".join(
+        return '\n'.join(
             self._get_properties(
                 position,
                 view_direction=view_direction,

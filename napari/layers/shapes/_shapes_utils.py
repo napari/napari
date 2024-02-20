@@ -382,7 +382,7 @@ def rectangle_to_box(data):
     if not data.shape[0] == 4:
         raise ValueError(
             trans._(
-                "Data shape does not match expected `[4, D]` shape specifying corners for the rectangle",
+                'Data shape does not match expected `[4, D]` shape specifying corners for the rectangle',
                 deferred=True,
             )
         )
@@ -488,7 +488,7 @@ def triangulate_ellipse(corners, num_segments=100):
     if not corners.shape[0] == 4:
         raise ValueError(
             trans._(
-                "Data shape does not match expected `[4, D]` shape specifying corners for the ellipse",
+                'Data shape does not match expected `[4, D]` shape specifying corners for the ellipse',
                 deferred=True,
             )
         )
@@ -557,7 +557,7 @@ def triangulate_face(data):
         # connect last with first vertex
         edges[-1, 1] = 0
 
-        res = triangulate({"vertices": data, "segments": edges}, "p")
+        res = triangulate({'vertices': data, 'segments': edges}, 'p')
         vertices, triangles = res['vertices'], res['triangles']
     else:
         vertices, triangles = PolygonData(vertices=data).triangulate()
@@ -758,9 +758,9 @@ def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
         triangles[2 * idx_bevel, idx_offset] = len(centers) + np.arange(
             len(idx_bevel)
         )
-        triangles[
-            2 * idx_bevel + (1 - idx_offset), idx_offset
-        ] = n_centers + np.arange(len(idx_bevel))
+        triangles[2 * idx_bevel + (1 - idx_offset), idx_offset] = (
+            n_centers + np.arange(len(idx_bevel))
+        )
 
         # add center triangle
         triangles0 = np.tile(np.array([[0, 1, 2]]), (len(idx_bevel), 1))
@@ -1032,7 +1032,7 @@ def get_default_shape_type(current_type):
     default_type : str
         default shape type
     """
-    default = "polygon"
+    default = 'polygon'
     if not current_type:
         return default
     first_type = current_type[0]
@@ -1138,7 +1138,7 @@ def validate_num_vertices(
         ):
             raise ValueError(
                 trans._(
-                    "{shape_type} {shape} has invalid number of vertices: {shape_length}.",
+                    '{shape_type} {shape} has invalid number of vertices: {shape_length}.',
                     deferred=True,
                     shape_type=shape_type,
                     shape=shape,

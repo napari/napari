@@ -15,7 +15,7 @@ class QtViewerViewVectorSuite:
 
     params = [2**i for i in range(4, 18, 2)]
 
-    if "PR" in os.environ:
+    if 'PR' in os.environ:
         skip_params = [(2**i,) for i in range(8, 18, 2)]
 
     def setup(self, n):

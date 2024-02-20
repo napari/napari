@@ -19,10 +19,10 @@ class Grabber(QWidget):
     def __init__(self) -> None:
         super().__init__()
 
-        self.copy_canvas_btn = QPushButton("Copy Canvas to Clipboard", self)
-        self.copy_canvas_btn.setToolTip("Copy screenshot of the canvas to clipboard.")
-        self.copy_viewer_btn = QPushButton("Copy Viewer to Clipboard", self)
-        self.copy_viewer_btn.setToolTip("Copy screenshot of the entire viewer to clipboard.")
+        self.copy_canvas_btn = QPushButton('Copy Canvas to Clipboard', self)
+        self.copy_canvas_btn.setToolTip('Copy screenshot of the canvas to clipboard.')
+        self.copy_viewer_btn = QPushButton('Copy Viewer to Clipboard', self)
+        self.copy_viewer_btn.setToolTip('Copy screenshot of the entire viewer to clipboard.')
 
         layout = QVBoxLayout(self)
         layout.addWidget(self.copy_canvas_btn)

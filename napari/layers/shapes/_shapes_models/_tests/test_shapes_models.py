@@ -64,7 +64,7 @@ def test_polygon_data_triangle():
 
 
 def test_polygon_data_triangle_module():
-    pytest.importorskip("triangle")
+    pytest.importorskip('triangle')
     data = np.array(
         [
             [10.97627008, 14.30378733],
@@ -98,7 +98,7 @@ def test_polygon():
     assert shape.data_displayed.shape == (6, 2)
     assert shape.slice_key.shape == (2, 0)
     # should get few triangles
-    expected_face = (6, 2) if "triangle" in sys.modules else (8, 2)
+    expected_face = (6, 2) if 'triangle' in sys.modules else (8, 2)
     assert shape._edge_vertices.shape == (16, 2)
     assert shape._face_vertices.shape == expected_face
 
@@ -108,7 +108,7 @@ def test_polygon2():
     shape = Polygon(data, interpolation_order=3)
     # should get many triangles
 
-    expected_face = (249, 2) if "triangle" in sys.modules else (251, 2)
+    expected_face = (249, 2) if 'triangle' in sys.modules else (251, 2)
 
     assert shape._edge_vertices.shape == (500, 2)
     assert shape._face_vertices.shape == expected_face

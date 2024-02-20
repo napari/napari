@@ -121,7 +121,7 @@ def _scale_with_box(
         # (i.e: dragging the central handle of the TransformBox).
         # That's intended, because we get inf or nan, which we can then replace with 1s
         # and thus maintain the size along that axis.
-        warnings.simplefilter("ignore", RuntimeWarning)
+        warnings.simplefilter('ignore', RuntimeWarning)
         scale = center_to_mouse / center_to_handle
         scale = np.nan_to_num(scale, posinf=1, neginf=1)
 

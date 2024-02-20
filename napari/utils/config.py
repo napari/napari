@@ -1,5 +1,6 @@
 """Napari Configuration.
 """
+
 import os
 import warnings
 from typing import Optional
@@ -15,7 +16,7 @@ def _set(env_var: str) -> bool:
     bool
         True if the env var was set to a non-zero value.
     """
-    return os.getenv(env_var) not in [None, "0"]
+    return os.getenv(env_var) not in [None, '0']
 
 
 """
@@ -79,4 +80,4 @@ def __getattr__(name: str) -> Optional[bool]:
 
 
 # Shared Memory Server
-monitor = _set("NAPARI_MON")
+monitor = _set('NAPARI_MON')

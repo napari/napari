@@ -57,11 +57,11 @@ def test_add_image_colormap_variants():
     assert viewer.add_image(data, colormap='fire')
 
     # as tuple
-    cmap_tuple = ("my_colormap", Colormap(['g', 'm', 'y']))
+    cmap_tuple = ('my_colormap', Colormap(['g', 'm', 'y']))
     assert viewer.add_image(data, colormap=cmap_tuple)
 
     # as dict
-    cmap_dict = {"your_colormap": Colormap(['g', 'r', 'y'])}
+    cmap_dict = {'your_colormap': Colormap(['g', 'r', 'y'])}
     assert viewer.add_image(data, colormap=cmap_dict)
 
     # as Colormap instance
@@ -845,12 +845,10 @@ def test_open_or_get_error_multiple_readers(tmp_plugin: DynamicPlugin):
     tmp2 = tmp_plugin.spawn(register=True)
 
     @tmp_plugin.contribute.reader(filename_patterns=['*.fake'])
-    def _(path):
-        ...
+    def _(path): ...
 
     @tmp2.contribute.reader(filename_patterns=['*.fake'])
-    def _(path):
-        ...
+    def _(path): ...
 
     with pytest.raises(
         MultipleReaderError, match='Multiple plugins found capable'
@@ -893,8 +891,7 @@ def test_open_or_get_error_prefered_plugin(
     np.save(pth, np.random.random((10, 10)))
 
     @tmp_plugin.contribute.reader(filename_patterns=['*.npy'])
-    def _(path):
-        ...
+    def _(path): ...
 
     get_settings().plugins.extension2reader = {'*.npy': builtins.name}
 
@@ -925,12 +922,10 @@ def test_open_or_get_error_no_prefered_plugin_many_available(
     tmp2 = tmp_plugin.spawn(register=True)
 
     @tmp_plugin.contribute.reader(filename_patterns=['*.fake'])
-    def _(path):
-        ...
+    def _(path): ...
 
     @tmp2.contribute.reader(filename_patterns=['*.fake'])
-    def _(path):
-        ...
+    def _(path): ...
 
     get_settings().plugins.extension2reader = {'*.fake': 'not-a-plugin'}
 

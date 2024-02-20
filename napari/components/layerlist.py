@@ -166,12 +166,10 @@ class LayerList(SelectableEventedList[Layer]):
         return values
 
     @typing.overload
-    def __getitem__(self, item: Union[int, str]) -> Layer:
-        ...
+    def __getitem__(self, item: Union[int, str]) -> Layer: ...
 
     @typing.overload
-    def __getitem__(self, item: slice) -> Self:
-        ...
+    def __getitem__(self, item: slice) -> Self: ...
 
     def __getitem__(self, item):
         return super().__getitem__(item)
@@ -482,9 +480,9 @@ class LayerList(SelectableEventedList[Layer]):
         )
 
         if selected:
-            msg = trans._("No layers selected", deferred=True)
+            msg = trans._('No layers selected', deferred=True)
         else:
-            msg = trans._("No layers to save", deferred=True)
+            msg = trans._('No layers to save', deferred=True)
 
         if not layers:
             warnings.warn(msg)
