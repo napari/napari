@@ -174,8 +174,8 @@ class QtDims(QWidget):
                 if length > width:
                     width = length
         # gui width of a string of length `width`
-        fm = QFontMetrics(QFont("", 0))
-        width = fm.boundingRect("8" * width).width()
+        fm = QFontMetrics(QFont('', 0))
+        width = fm.boundingRect('8' * width).width()
         for labl in self.findChildren(QWidget, 'slice_label'):
             labl.setFixedWidth(width + 6)
 
@@ -340,8 +340,8 @@ class QtDims(QWidget):
             )
         except RuntimeError as e:  # pragma: no cover
             if (
-                "wrapped C/C++ object of type" not in e.args[0]
-                and "Internal C++ object" not in e.args[0]
+                'wrapped C/C++ object of type' not in e.args[0]
+                and 'Internal C++ object' not in e.args[0]
             ):
                 # checking if threat is partially deleted. Otherwise
                 # reraise exception. For more details see:

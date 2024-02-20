@@ -6,7 +6,7 @@ from napari.utils.events.containers._nested_list import NestableEventedList
 from napari.utils.events.containers._selection import Selectable
 from napari.utils.translations import trans
 
-_T = TypeVar("_T")
+_T = TypeVar('_T')
 
 
 class SelectableEventedList(Selectable[_T], EventedList[_T]):
@@ -54,7 +54,7 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
         if value not in self:
             raise ValueError(
                 trans._(
-                    "Cannot select item that is not in list: {value!r}",
+                    'Cannot select item that is not in list: {value!r}',
                     deferred=True,
                     value=value,
                 )

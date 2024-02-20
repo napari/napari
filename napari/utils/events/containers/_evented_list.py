@@ -149,7 +149,7 @@ class EventedList(TypedMutableSequence[_T]):
                 if not len(value) == len(indices):
                     raise ValueError(
                         trans._(
-                            "attempt to assign sequence of size {size} to extended slice of size {slice_size}",
+                            'attempt to assign sequence of size {size} to extended slice of size {slice_size}',
                             deferred=True,
                             size=len(value),
                             slice_size=len(indices),
@@ -182,7 +182,7 @@ class EventedList(TypedMutableSequence[_T]):
         valid = {int, slice}.union(set(self._lookup))
         raise TypeError(
             trans._(
-                "Deletion index must be {valid!r}, got {dtype}",
+                'Deletion index must be {valid!r}, got {dtype}',
                 deferred=True,
                 valid=valid,
                 dtype=type(key),
@@ -282,8 +282,8 @@ class EventedList(TypedMutableSequence[_T]):
             are not ``int`` or ``slice``.
         """
         logger.debug(
-            "move_multiple(sources={sources}, dest_index={dest_index})",
-            extra={"sources": sources, "dest_index": dest_index},
+            'move_multiple(sources={sources}, dest_index={dest_index})',
+            extra={'sources': sources, 'dest_index': dest_index},
         )
 
         # calling list here makes sure that there are no index errors up front
@@ -329,7 +329,7 @@ class EventedList(TypedMutableSequence[_T]):
         if isinstance(dest_index, slice):
             raise TypeError(
                 trans._(
-                    "Destination index may not be a slice",
+                    'Destination index may not be a slice',
                     deferred=True,
                 )
             )
@@ -343,7 +343,7 @@ class EventedList(TypedMutableSequence[_T]):
             else:
                 raise TypeError(
                     trans._(
-                        "Can only move integer or slice indices, not {t}",
+                        'Can only move integer or slice indices, not {t}',
                         deferred=True,
                         t=type(idx),
                     )

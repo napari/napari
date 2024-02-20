@@ -50,16 +50,16 @@ class EventedDict(TypedMutableMapping[_K, _T]):
         basetype: Union[Type[_T], Sequence[Type[_T]]] = (),
     ) -> None:
         _events = {
-            "changing": None,
-            "changed": None,
-            "adding": None,
-            "added": None,
-            "removing": None,
-            "removed": None,
-            "updated": None,
+            'changing': None,
+            'changed': None,
+            'adding': None,
+            'added': None,
+            'removing': None,
+            'removed': None,
+            'updated': None,
         }
         # For inheritance: If the mro already provides an EmitterGroup, add...
-        if hasattr(self, "events") and isinstance(self.events, EmitterGroup):
+        if hasattr(self, 'events') and isinstance(self.events, EmitterGroup):
             self.events.add(**_events)
         else:
             # otherwise create a new one
@@ -90,7 +90,7 @@ class EventedDict(TypedMutableMapping[_K, _T]):
 
     def _reemit_child_event(self, event: Event) -> None:
         """An item in the dict emitted an event.  Re-emit with key"""
-        if not hasattr(event, "key"):
+        if not hasattr(event, 'key'):
             event.key = self.key(event.source)
 
         # re-emit with this object's EventEmitter

@@ -29,24 +29,26 @@ skip = [
     'embed_ipython_.py',  # fails without monkeypatch
     'new_theme.py',  # testing theme is extremely slow on CI
     'dynamic-projections-dask.py',  # extremely slow / does not finish
+    'surface_multi_texture_.py',  # resource not available
 ]
+# To skip examples during docs build end name with `_.py`
 
 EXAMPLE_DIR = Path(napari.__file__).parent.parent / 'examples'
 # using f.name here and re-joining at `run_path()` for test key presentation
 # (works even if the examples list is empty, as opposed to using an ids lambda)
-examples = [f.name for f in EXAMPLE_DIR.glob("*.py") if f.name not in skip]
+examples = [f.name for f in EXAMPLE_DIR.glob('*.py') if f.name not in skip]
 
 # still some CI segfaults, but only on windows with pyqt5
-if os.getenv("CI") and os.name == 'nt' and API_NAME == 'PyQt5':
+if os.getenv('CI') and os.name == 'nt' and API_NAME == 'PyQt5':
     examples = []
 
-if os.getenv("CI") and os.name == 'nt' and 'to_screenshot.py' in examples:
+if os.getenv('CI') and os.name == 'nt' and 'to_screenshot.py' in examples:
     examples.remove('to_screenshot.py')
 
 
-@pytest.mark.filterwarnings("ignore")
-@pytest.mark.skipif(not examples, reason="No examples were found.")
-@pytest.mark.parametrize("fname", examples)
+@pytest.mark.filterwarnings('ignore')
+@pytest.mark.skipif(not examples, reason='No examples were found.')
+@pytest.mark.parametrize('fname', examples)
 def test_examples(builtins, fname, monkeypatch):
     """Test that all of our examples are still working without warnings."""
 

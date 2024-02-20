@@ -15,7 +15,7 @@ class QtViewerViewImageSuite:
 
     params = [2**i for i in range(4, 13)]
 
-    if "PR" in os.environ:
+    if 'PR' in os.environ:
         skip_params = [(2**i,) for i in range(6, 13)]
 
     def setup(self, n):
@@ -37,7 +37,7 @@ class QtViewerAddImageSuite:
 
     params = [2**i for i in range(4, 13)]
 
-    if "PR" in os.environ:
+    if 'PR' in os.environ:
         skip_params = [(2**i,) for i in range(6, 13)]
 
     def setup(self, n):
@@ -59,7 +59,7 @@ class QtViewerImageSuite:
 
     params = [2**i for i in range(4, 13)]
 
-    if "PR" in os.environ:
+    if 'PR' in os.environ:
         skip_params = [(2**i,) for i in range(6, 13)]
 
     def setup(self, n):
@@ -196,7 +196,7 @@ class QtImageRenderingSuite:
 
     params = [2**i for i in range(4, 13)]
 
-    if "PR" in os.environ:
+    if 'PR' in os.environ:
         skip_params = [(2**i,) for i in range(6, 13)]
 
     def setup(self, n):
@@ -226,7 +226,7 @@ class QtVolumeRenderingSuite:
 
     params = [2**i for i in range(4, 10)]
 
-    if "PR" in os.environ:
+    if 'PR' in os.environ:
         skip_params = [(2**i,) for i in range(6, 10)]
 
     def setup(self, n):

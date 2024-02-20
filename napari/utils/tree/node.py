@@ -28,7 +28,7 @@ class Node:
         The parent of this Node.
     """
 
-    def __init__(self, name: str = "Node") -> None:
+    def __init__(self, name: str = 'Node') -> None:
         self.parent: Optional[Group] = None
         self._name = name
 
@@ -87,7 +87,7 @@ class Node:
 
     def __str__(self):
         """Render ascii tree string representation of this node"""
-        return "\n".join(self._render())
+        return '\n'.join(self._render())
 
     def _render(self) -> List[str]:
         """Return list of strings that can render ascii tree.
@@ -111,7 +111,7 @@ class Node:
             return self
         raise IndexError(
             trans._(
-                "Cannot unparent orphaned Node: {node!r}",
+                'Cannot unparent orphaned Node: {node!r}',
                 deferred=True,
                 node=self,
             ),

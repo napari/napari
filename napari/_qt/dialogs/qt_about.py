@@ -48,7 +48,7 @@ class QtAbout(QDialog):
         # Description
         title_label = QLabel(
             trans._(
-                "<b>napari: a multi-dimensional image viewer for python</b>"
+                '<b>napari: a multi-dimensional image viewer for python</b>'
             )
         )
         title_label.setTextInteractionFlags(
@@ -124,9 +124,9 @@ class QtCopyToClipboardButton(QPushButton):
 
     def __init__(self, text_edit) -> None:
         super().__init__()
-        self.setObjectName("QtCopyToClipboardButton")
+        self.setObjectName('QtCopyToClipboardButton')
         self.text_edit = text_edit
-        self.setToolTip(trans._("Copy to clipboard"))
+        self.setToolTip(trans._('Copy to clipboard'))
         self.clicked.connect(self.copyToClipboard)
 
     def copyToClipboard(self):

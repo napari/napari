@@ -97,8 +97,8 @@ class NotebookScreenshot:
                     'The provided alt text does not constitute valid html, so it was discarded.',
                     stacklevel=3,
                 )
-                alt_text = ""
-            if alt_text == "":
+                alt_text = ''
+            if alt_text == '':
                 alt_text = None
         return alt_text
 
