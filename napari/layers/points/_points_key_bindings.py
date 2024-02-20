@@ -61,7 +61,7 @@ def paste(layer: Points):
 
 
 @register_points_action(
-    trans._("Select all points in the current view slice."),
+    trans._('Select all points in the current view slice.'),
 )
 def select_all_in_slice(layer: Points):
     new_selected = set(layer._indices_view[: len(layer._view_data)])
@@ -71,7 +71,7 @@ def select_all_in_slice(layer: Points):
         layer.selected_data = layer.selected_data - new_selected
         show_info(
             trans._(
-                "Deselected all points in this slice, use Shift-A to deselect all points on the layer. ({n_total} selected)",
+                'Deselected all points in this slice, use Shift-A to deselect all points on the layer. ({n_total} selected)',
                 n_total=len(layer.selected_data),
                 deferred=True,
             )
@@ -82,7 +82,7 @@ def select_all_in_slice(layer: Points):
         layer.selected_data = layer.selected_data | new_selected
         show_info(
             trans._(
-                "Selected {n_new} points in this slice, use Shift-A to select all points on the layer. ({n_total} selected)",
+                'Selected {n_new} points in this slice, use Shift-A to select all points on the layer. ({n_total} selected)',
                 n_new=len(new_selected),
                 n_total=len(layer.selected_data),
                 deferred=True,
@@ -92,13 +92,13 @@ def select_all_in_slice(layer: Points):
 
 
 @register_points_action(
-    trans._("Select all points in the layer."),
+    trans._('Select all points in the layer.'),
 )
 def select_all_data(layer: Points):
     # If all points are already selected, deselect all points
     if len(layer.selected_data) == len(layer.data):
         layer.selected_data = set()
-        show_info(trans._("Cleared all selections.", deferred=True))
+        show_info(trans._('Cleared all selections.', deferred=True))
 
     # Select all points
     else:
@@ -108,7 +108,7 @@ def select_all_data(layer: Points):
         layer.selected_data = new_selected
         show_info(
             trans._(
-                "Selected {n_new} points across all slices, including {n_invis} points not currently visible. ({n_total})",
+                'Selected {n_new} points across all slices, including {n_invis} points not currently visible. ({n_total})',
                 n_new=len(new_selected),
                 n_invis=len(new_selected - view_selected),
                 n_total=len(layer.selected_data),

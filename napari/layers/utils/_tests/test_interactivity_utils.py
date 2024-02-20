@@ -7,7 +7,7 @@ from napari.layers.utils.interactivity_utils import (
 
 
 @pytest.mark.parametrize(
-    "start_position, end_position, view_direction, vector, expected_value",
+    'start_position, end_position, view_direction, vector, expected_value',
     [
         # drag vector parallel to view direction
         # projected onto perpendicular vector

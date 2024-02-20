@@ -79,7 +79,7 @@ class CategoricalColormap(EventedModel):
                 }
             else:
                 colormap = {}
-            fallback_color = params.get("fallback_color", "white")
+            fallback_color = params.get('fallback_color', 'white')
         else:
             colormap = {k: transform_color(v)[0] for k, v in params.items()}
             fallback_color = 'white'

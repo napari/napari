@@ -259,7 +259,7 @@ class ShapeList:
         """
         assert (
             self.__batched_level >= 1
-        ), "call _update_displayed from within self.batched_updates context manager"
+        ), 'call _update_displayed from within self.batched_updates context manager'
         if not self.__batch_force_call:
             self.__update_displayed_called += 1
             return

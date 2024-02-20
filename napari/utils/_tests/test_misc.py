@@ -163,7 +163,7 @@ def test_string_enum():
 
 
 def test_abspath_or_url():
-    relpath = "~" + sep + "something"
+    relpath = '~' + sep + 'something'
     assert abspath_or_url(relpath) == expanduser(relpath)
     assert abspath_or_url('something') == abspath('something')
     assert abspath_or_url(sep + 'something') == abspath(sep + 'something')
@@ -208,8 +208,8 @@ def test_equality_operator():
 
 
 @pytest.mark.skipif(
-    parse_version(package_version("numpy")) >= parse_version("1.25.0"),
-    reason="Numpy 1.25.0 return true for below comparison",
+    parse_version(package_version('numpy')) >= parse_version('1.25.0'),
+    reason='Numpy 1.25.0 return true for below comparison',
 )
 def test_equality_operator_silence():
     import numpy as np
@@ -238,8 +238,8 @@ def test_is_array_type_with_xarray():
         ([([1, 10],)], [([1, 10],)]),
         ([([1, 10], {'name': 'hi'})], [([1, 10], {'name': 'hi'})]),
         (
-            [([1, 10], {'name': 'hi'}, "image")],
-            [([1, 10], {'name': 'hi'}, "image")],
+            [([1, 10], {'name': 'hi'}, 'image')],
+            [([1, 10], {'name': 'hi'}, 'image')],
         ),
         ([], []),
     ],

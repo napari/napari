@@ -312,14 +312,14 @@ class Points(Layer):
     _modeclass = Mode
     _projectionclass = PointsProjectionMode
 
-    _drag_modes: ClassVar[Dict[Mode, Callable[["Points", Event], Any]]] = {
+    _drag_modes: ClassVar[Dict[Mode, Callable[['Points', Event], Any]]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
         Mode.ADD: add,
         Mode.SELECT: select,
     }
 
-    _move_modes: ClassVar[Dict[Mode, Callable[["Points", Event], Any]]] = {
+    _move_modes: ClassVar[Dict[Mode, Callable[['Points', Event], Any]]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
         Mode.ADD: no_op,
@@ -634,30 +634,30 @@ class Points(Layer):
             or (isinstance(data, list) and len(data) > 0)
         )
         kwargs = {
-            "value": self.data,
-            "vertex_indices": ((),),
-            "data_indices": tuple(i for i in range(len(self.data))),
+            'value': self.data,
+            'vertex_indices': ((),),
+            'data_indices': tuple(i for i in range(len(self.data))),
         }
         if prior_data and data_not_empty:
-            kwargs["action"] = ActionType.CHANGING
+            kwargs['action'] = ActionType.CHANGING
         elif data_not_empty:
-            kwargs["action"] = ActionType.ADDING
-            kwargs["data_indices"] = tuple(i for i in range(len(data)))
+            kwargs['action'] = ActionType.ADDING
+            kwargs['data_indices'] = tuple(i for i in range(len(data)))
         else:
-            kwargs["action"] = ActionType.REMOVING
+            kwargs['action'] = ActionType.REMOVING
 
         self.events.data(**kwargs)
         self._set_data(data)
-        kwargs["data_indices"] = tuple(i for i in range(len(self.data)))
-        kwargs["value"] = self.data
+        kwargs['data_indices'] = tuple(i for i in range(len(self.data)))
+        kwargs['value'] = self.data
 
         if prior_data and data_not_empty:
-            kwargs["action"] = ActionType.CHANGED
+            kwargs['action'] = ActionType.CHANGED
         elif data_not_empty:
-            kwargs["data_indices"] = tuple(i for i in range(len(data)))
-            kwargs["action"] = ActionType.ADDED
+            kwargs['data_indices'] = tuple(i for i in range(len(data)))
+            kwargs['action'] = ActionType.ADDED
         else:
-            kwargs["action"] = ActionType.REMOVED
+            kwargs['action'] = ActionType.REMOVED
         self.events.data(**kwargs)
 
     def _set_data(self, data: Optional[np.ndarray]):
@@ -758,7 +758,7 @@ class Points(Layer):
     ) -> None:
         self._feature_table.set_values(features, num_data=len(self.data))
         self._update_color_manager(
-            self._face, self._feature_table, "face_color"
+            self._face, self._feature_table, 'face_color'
         )
         self._update_color_manager(
             self._border, self._feature_table, "border_color"
@@ -964,7 +964,7 @@ class Points(Layer):
             except ValueError:
                 raise ValueError(
                     trans._(
-                        "Size is not compatible for broadcasting",
+                        'Size is not compatible for broadcasting',
                         deferred=True,
                     )
                 ) from e
@@ -972,8 +972,8 @@ class Points(Layer):
                 self._size = np.mean(size, axis=1)
                 warnings.warn(
                     trans._(
-                        "Since 0.4.18 point sizes must be isotropic; the average from each dimension will be"
-                        " used instead. This will become an error in version 0.6.0.",
+                        'Since 0.4.18 point sizes must be isotropic; the average from each dimension will be'
+                        ' used instead. This will become an error in version 0.6.0.',
                         deferred=True,
                     ),
                     category=DeprecationWarning,
@@ -992,8 +992,8 @@ class Points(Layer):
         if isinstance(size, (list, tuple, np.ndarray)):
             warnings.warn(
                 trans._(
-                    "Since 0.4.18 point sizes must be isotropic; the average from each dimension will be used instead. "
-                    "This will become an error in version 0.6.0.",
+                    'Since 0.4.18 point sizes must be isotropic; the average from each dimension will be used instead. '
+                    'This will become an error in version 0.6.0.',
                     deferred=True,
                 ),
                 category=DeprecationWarning,
@@ -2386,7 +2386,7 @@ class Points(Layer):
             world=world,
         )
         if properties:
-            source_info['coordinates'] += "; " + ", ".join(properties)
+            source_info['coordinates'] += '; ' + ', '.join(properties)
 
         return source_info
 
@@ -2420,7 +2420,7 @@ class Points(Layer):
         msg : string
             String containing a message that can be used as a tooltip.
         """
-        return "\n".join(
+        return '\n'.join(
             self._get_properties(
                 position,
                 view_direction=view_direction,

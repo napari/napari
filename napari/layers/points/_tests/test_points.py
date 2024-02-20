@@ -475,16 +475,16 @@ def test_remove_selected_updates_value():
     layer.selected_data = selection
     layer.remove_selected()
     assert layer.events.data.call_args_list[0][1] == {
-        "value": old_data,
-        "action": ActionType.REMOVING,
-        "data_indices": tuple(selection),
-        "vertex_indices": ((),),
+        'value': old_data,
+        'action': ActionType.REMOVING,
+        'data_indices': tuple(selection),
+        'vertex_indices': ((),),
     }
     assert layer.events.data.call_args[1] == {
-        "value": layer.data,
-        "action": ActionType.REMOVED,
-        "data_indices": tuple(selection),
-        "vertex_indices": ((),),
+        'value': layer.data,
+        'action': ActionType.REMOVED,
+        'data_indices': tuple(selection),
+        'vertex_indices': ((),),
     }
     assert layer._value == 2
 
@@ -552,20 +552,20 @@ def test_move():
     assert np.array_equal(layer.data[0], unmoved[0] + [10, 10])
     assert np.array_equal(layer.data[1:], unmoved[1:])
     assert layer.events.data.call_args[1] == {
-        "value": layer.data,
-        "action": ActionType.CHANGED,
-        "data_indices": (0,),
-        "vertex_indices": ((),),
+        'value': layer.data,
+        'action': ActionType.CHANGED,
+        'data_indices': (0,),
+        'vertex_indices': ((),),
     }
 
     # Move two points relative to an initial drag start location
     layer._move([1, 2], [2, 2])
     layer._move([1, 2], np.add([2, 2], [-3, 4]))
     assert layer.events.data.call_args[1] == {
-        "value": layer.data,
-        "action": ActionType.CHANGED,
-        "data_indices": (1, 2),
-        "vertex_indices": ((),),
+        'value': layer.data,
+        'action': ActionType.CHANGED,
+        'data_indices': (1, 2),
+        'vertex_indices': ((),),
     }
     assert np.array_equal(layer.data[1:2], unmoved[1:2] + [-3, 4])
 
@@ -683,7 +683,7 @@ properties_array = {'point_type': _make_cycled_properties(['A', 'B'], 10)}
 properties_list = {'point_type': list(_make_cycled_properties(['A', 'B'], 10))}
 
 
-@pytest.mark.parametrize("properties", [properties_array, properties_list])
+@pytest.mark.parametrize('properties', [properties_array, properties_list])
 def test_properties(properties):
     shape = (10, 2)
     np.random.seed(0)
@@ -723,8 +723,8 @@ def test_properties(properties):
     paste_annotations = np.concatenate((add_annotations, ['A', 'B']), axis=0)
     assert np.array_equal(layer.properties['point_type'], paste_annotations)
 
-    assert layer.get_status(data[0])['coordinates'].endswith("point_type: B")
-    assert layer.get_status(data[1])['coordinates'].endswith("point_type: A")
+    assert layer.get_status(data[0])['coordinates'].endswith('point_type: B')
+    assert layer.get_status(data[1])['coordinates'].endswith('point_type: A')
 
 
 @pytest.mark.parametrize("attribute", ['border', 'face'])
@@ -848,7 +848,7 @@ properties_array = {'point_type': _make_cycled_properties(['A', 'B'], 10)}
 properties_list = {'point_type': list(_make_cycled_properties(['A', 'B'], 10))}
 
 
-@pytest.mark.parametrize("properties", [properties_array, properties_list])
+@pytest.mark.parametrize('properties', [properties_array, properties_list])
 def test_text_from_property_value(properties):
     """Test setting text from a property value"""
     shape = (10, 2)
@@ -859,7 +859,7 @@ def test_text_from_property_value(properties):
     np.testing.assert_equal(layer.text.values, properties['point_type'])
 
 
-@pytest.mark.parametrize("properties", [properties_array, properties_list])
+@pytest.mark.parametrize('properties', [properties_array, properties_list])
 def test_text_from_property_fstring(properties):
     """Test setting text with an f-string from the property value"""
     shape = (10, 2)
@@ -881,18 +881,18 @@ def test_text_from_property_fstring(properties):
     layer.selected_data = {0}
     layer._copy_data()
     layer._paste_data()
-    expected_text_3 = [*expected_text_2, "type-ish: A"]
+    expected_text_3 = [*expected_text_2, 'type-ish: A']
     np.testing.assert_equal(layer.text.values, expected_text_3)
 
     # add point
     layer.selected_data = {0}
     new_shape = np.random.random((1, 2))
     layer.add(new_shape)
-    expected_text_4 = [*expected_text_3, "type-ish: A"]
+    expected_text_4 = [*expected_text_3, 'type-ish: A']
     np.testing.assert_equal(layer.text.values, expected_text_4)
 
 
-@pytest.mark.parametrize("properties", [properties_array, properties_list])
+@pytest.mark.parametrize('properties', [properties_array, properties_list])
 def test_set_text_with_kwarg_dict(properties):
     text_kwargs = {
         'string': 'type: {point_type}',
@@ -918,7 +918,7 @@ def test_set_text_with_kwarg_dict(properties):
         np.testing.assert_equal(layer_value, value)
 
 
-@pytest.mark.parametrize("properties", [properties_array, properties_list])
+@pytest.mark.parametrize('properties', [properties_array, properties_list])
 def test_text_error(properties):
     """creating a layer with text as the wrong type should raise an error"""
     shape = (10, 2)
@@ -1176,16 +1176,16 @@ def test_add_point_direct(attribute: str):
 
     layer.add(coord)
     assert layer.events.data.call_args_list[0][1] == {
-        "value": old_data,
-        "action": ActionType.ADDING,
-        "data_indices": (-1,),
-        "vertex_indices": ((),),
+        'value': old_data,
+        'action': ActionType.ADDING,
+        'data_indices': (-1,),
+        'vertex_indices': ((),),
     }
     assert layer.events.data.call_args[1] == {
-        "value": layer.data,
-        "action": ActionType.ADDED,
-        "data_indices": (-1,),
-        "vertex_indices": ((),),
+        'value': layer.data,
+        'action': ActionType.ADDED,
+        'data_indices': (-1,),
+        'vertex_indices': ((),),
     }
     np.testing.assert_allclose(
         [[1, 0, 0, 1]], getattr(layer, f'{attribute}_color')
@@ -1254,7 +1254,7 @@ color_cycle_rgba = [[1, 0, 0, 1], [0, 0, 1, 1]]
 
 @pytest.mark.parametrize("attribute", ['border', 'face'])
 @pytest.mark.parametrize(
-    "color_cycle",
+    'color_cycle',
     [color_cycle_str, color_cycle_rgb, color_cycle_rgba],
 )
 def test_color_cycle(attribute, color_cycle):
@@ -2407,7 +2407,7 @@ def test_shown_view_size_and_view_data_have_the_same_dimension():
 
 def test_empty_data_from_tuple():
     """Test that empty data raises an error."""
-    layer = Points(name="points")
+    layer = Points(name='points')
     layer2 = Points.create(*layer.as_layer_data_tuple())
     assert layer2.data.size == 0
 
@@ -2427,7 +2427,7 @@ def test_new_point_size_editable(attribute, new_value):
     layer.mode = Mode.ADD
     layer.add((0, 0))
 
-    setattr(layer, f"current_{attribute}", new_value)
+    setattr(layer, f'current_{attribute}', new_value)
     np.testing.assert_allclose(getattr(layer, attribute)[0], new_value)
 
 
@@ -2463,7 +2463,7 @@ def test_set_drag_start():
 
 
 @pytest.mark.parametrize(
-    "dims_indices,target_indices",
+    'dims_indices,target_indices',
     [
         ((8, np.nan, np.nan), [2]),
         ((10, np.nan, np.nan), [0, 1, 3, 4]),
@@ -2548,53 +2548,53 @@ def test_data_setter_events():
 
     layer.data = []
     assert layer.events.data.call_args_list[0][1] == {
-        "value": data,
-        "action": ActionType.REMOVING,
-        "data_indices": tuple(i for i in range(len(data))),
-        "vertex_indices": ((),),
+        'value': data,
+        'action': ActionType.REMOVING,
+        'data_indices': tuple(i for i in range(len(data))),
+        'vertex_indices': ((),),
     }
 
     # Avoid truth value of empty array error
     assert np.array_equal(
-        layer.events.data.call_args_list[1][1]["value"], np.empty((0, 2))
+        layer.events.data.call_args_list[1][1]['value'], np.empty((0, 2))
     )
     assert (
-        layer.events.data.call_args_list[1][1]["action"] == ActionType.REMOVED
+        layer.events.data.call_args_list[1][1]['action'] == ActionType.REMOVED
     )
-    assert layer.events.data.call_args_list[1][1]["data_indices"] == ()
-    assert layer.events.data.call_args_list[1][1]["vertex_indices"] == ((),)
+    assert layer.events.data.call_args_list[1][1]['data_indices'] == ()
+    assert layer.events.data.call_args_list[1][1]['vertex_indices'] == ((),)
 
     layer.data = data
     assert np.array_equal(
-        layer.events.data.call_args_list[2][1]["value"], np.empty((0, 2))
+        layer.events.data.call_args_list[2][1]['value'], np.empty((0, 2))
     )
     assert (
-        layer.events.data.call_args_list[2][1]["action"] == ActionType.ADDING
+        layer.events.data.call_args_list[2][1]['action'] == ActionType.ADDING
     )
-    assert layer.events.data.call_args_list[2][1]["data_indices"] == tuple(
+    assert layer.events.data.call_args_list[2][1]['data_indices'] == tuple(
         i for i in range(len(data))
     )
-    assert layer.events.data.call_args_list[2][1]["vertex_indices"] == ((),)
+    assert layer.events.data.call_args_list[2][1]['vertex_indices'] == ((),)
 
     assert layer.events.data.call_args_list[3][1] == {
-        "value": data,
-        "action": ActionType.ADDED,
-        "data_indices": tuple(i for i in range(len(data))),
-        "vertex_indices": ((),),
+        'value': data,
+        'action': ActionType.ADDED,
+        'data_indices': tuple(i for i in range(len(data))),
+        'vertex_indices': ((),),
     }
 
     layer.data = data
     assert layer.events.data.call_args_list[4][1] == {
-        "value": data,
-        "action": ActionType.CHANGING,
-        "data_indices": tuple(i for i in range(len(layer.data))),
-        "vertex_indices": ((),),
+        'value': data,
+        'action': ActionType.CHANGING,
+        'data_indices': tuple(i for i in range(len(layer.data))),
+        'vertex_indices': ((),),
     }
     assert layer.events.data.call_args_list[5][1] == {
-        "value": data,
-        "action": ActionType.CHANGED,
-        "data_indices": tuple(i for i in range(len(layer.data))),
-        "vertex_indices": ((),),
+        'value': data,
+        'action': ActionType.CHANGED,
+        'data_indices': tuple(i for i in range(len(layer.data))),
+        'vertex_indices': ((),),
     }
 
 

@@ -36,7 +36,7 @@ class Theme(str):
                     '"{value}" is not valid. It must be one of {themes}',
                     deferred=True,
                     value=value,
-                    themes=", ".join(available_themes()),
+                    themes=', '.join(available_themes()),
                 )
             )
 
@@ -73,7 +73,7 @@ class Language(str):
                     '"{value}" is not valid. It must be one of {language_packs}.',
                     deferred=True,
                     value=v,
-                    language_packs=", ".join(language_packs),
+                    language_packs=', '.join(language_packs),
                 )
             )
 
@@ -120,7 +120,7 @@ class Version:
     def parse(cls, version: Union[bytes, str]) -> 'Version':
         """Convert string or bytes into Version object."""
         if isinstance(version, bytes):
-            version = version.decode("UTF-8")
+            version = version.decode('UTF-8')
         match = cls._SEMVER_PATTERN.match(version)
         if match is None:
             raise ValueError(
@@ -158,7 +158,7 @@ class Version:
         elif not isinstance(other, Version):
             raise TypeError(
                 trans._(
-                    "Expected str, bytes, dict, tuple, list, or {cls} instance, but got {other_type}",
+                    'Expected str, bytes, dict, tuple, list, or {cls} instance, but got {other_type}',
                     deferred=True,
                     cls=cls,
                     other_type=type(other),
@@ -180,7 +180,7 @@ class Version:
         yield from self.to_tuple()
 
     def __str__(self) -> str:
-        v = f"{self.major}.{self.minor}.{self.patch}"
+        v = f'{self.major}.{self.minor}.{self.patch}'
         if self.prerelease:  # pragma: no cover
             v += str(self.prerelease)
         if self.build:  # pragma: no cover
