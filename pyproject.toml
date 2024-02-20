@@ -69,7 +69,7 @@ dependencies = [
     "tifffile>=2020.2.16",
     "toolz>=0.10.0",
     "tqdm>=4.56.0",
-    "typing_extensions>=4.2.0",
+    "typing_extensions>=4.9.0",
     "vispy>=0.14.1,<0.15",
     "wrapt>=1.11.1",
 ]
@@ -137,7 +137,7 @@ testing = [
     "pretend>=1.0.9",
     "pytest-qt>=4.3.1",
     "pytest-pretty>=1.1.0",
-    "pytest>=7.0.0",
+    "pytest>=8.0.0",
     "tensorstore>=0.1.13",
     "virtualenv>=20.17",
     "xarray>=0.16.2",

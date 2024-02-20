@@ -13,7 +13,6 @@ attrs==23.2.0
     # via
     #   hypothesis
     #   jsonschema
-    #   pytest
 babel==2.9.0
     # via sphinx
 backcall==0.2.0
@@ -47,6 +46,8 @@ docstring-parser==0.15
     # via magicgui
 docutils==0.19
     # via sphinx
+exceptiongroup==1.2.0
+    # via pytest
 fasteners==0.19
     # via zarr
 filelock==3.13.1
@@ -205,8 +206,6 @@ psygnal==0.5.0
     #   npe2
 ptyprocess==0.7.0
     # via pexpect
-py==1.11.0
-    # via pytest
 pydantic==1.9.0
     # via
     #   app-model
@@ -228,7 +227,7 @@ pyqt5-sip==12.13.0
     # via pyqt5
 pyrsistent==0.20.0
     # via jsonschema
-pytest==7.0.0
+pytest==8.0.0
     # via
     #   pytest-pretty
     #   pytest-qt
@@ -330,7 +329,7 @@ traitlets==5.14.1
     #   qtconsole
 typer==0.9.0
     # via npe2
-typing-extensions==4.2.0
+typing-extensions==4.9.0
     # via
     #   app-model
     #   magicgui
