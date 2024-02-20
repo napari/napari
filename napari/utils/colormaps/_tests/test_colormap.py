@@ -135,11 +135,11 @@ def test_minimum_dtype_for_labels(num, dtype):
 
 @pytest.fixture()
 def disable_jit(monkeypatch):
-    pytest.importorskip("numba")
+    pytest.importorskip('numba')
 
     from napari.utils.colormaps import _colormap_numba
 
-    with patch("numba.core.config.DISABLE_JIT", True):
+    with patch('numba.core.config.DISABLE_JIT', True):
         importlib.reload(_colormap_numba)
         yield
     importlib.reload(_colormap_numba)  # revert to original state
@@ -271,7 +271,7 @@ def test_test_cast_direct_labels_to_minimum_type_no_jit(num, dtype):
 
 
 def test_zero_preserving_modulo_naive_vs_numba():
-    pytest.importorskip("numba")
+    pytest.importorskip('numba')
 
     from napari.utils.colormaps import _colormap_numba
 
@@ -282,7 +282,7 @@ def test_zero_preserving_modulo_naive_vs_numba():
 
 
 def test_zero_preserving_modulo_naive_vs_partseg():
-    pytest.importorskip("PartSegCore_compiled_backend.napari_mapping")
+    pytest.importorskip('PartSegCore_compiled_backend.napari_mapping')
 
     from napari.utils.colormaps import _colormap_partseg
 

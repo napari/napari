@@ -8,11 +8,11 @@ if TYPE_CHECKING:
 
 
 def _dummy_numba(*_: Any, **__: Any) -> np.ndarray:
-    raise NotImplementedError("No numba backend available")
+    raise NotImplementedError('No numba backend available')
 
 
 def _dummy_partseg(*_: Any, **__: Any) -> np.ndarray:
-    raise NotImplementedError("No partseg backend available")
+    raise NotImplementedError('No partseg backend available')
 
 
 try:
@@ -40,7 +40,7 @@ except ImportError:
     labels_raw_to_texture_direct_partseg = _dummy_partseg
 
 if not (NUMBA or PARTSEG):
-    raise ImportError("No compiled backend available")
+    raise ImportError('No compiled backend available')
 
 if PARTSEG:
 
@@ -52,7 +52,7 @@ if PARTSEG:
         except Exception:
             if NUMBA:
                 logging.exception(
-                    "Error in PartSeg backend, trying Numba instead"
+                    'Error in PartSeg backend, trying Numba instead'
                 )
                 return zero_preserving_modulo_numba(values, n, dtype, to_zero)
             raise
@@ -65,7 +65,7 @@ if PARTSEG:
         except Exception:
             if NUMBA:
                 logging.exception(
-                    "Error in PartSeg backend, trying Numba instead"
+                    'Error in PartSeg backend, trying Numba instead'
                 )
                 return labels_raw_to_texture_direct_numba(
                     data, direct_colormap
