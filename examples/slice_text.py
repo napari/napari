@@ -1,8 +1,8 @@
 """
-Scale bar
+Slice text overlay
 =========
 
-Display a 3D volume and the scale bar
+Display a 3D timelapse and the slice text overlay.
 
 .. tags:: experimental
 """
