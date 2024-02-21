@@ -49,6 +49,7 @@ class SliceTextOverlay(CanvasOverlay):
         By default, the function will display the axis label and the
         current slice value.
         This function is responsible for the line breaks and formatting.
+        To ignore a dimension simply return an empty string, ''.
     position : CanvasPosition
         The position of the overlay in the canvas.
     visible : bool
