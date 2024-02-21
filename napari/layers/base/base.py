@@ -1943,6 +1943,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     def _get_source_info(self) -> dict:
         components = {}
         if self.source.reader_plugin:
+            components['layer_name'] = self.name
             components['layer_base'] = os.path.basename(self.source.path or '')
             components['source_type'] = 'plugin'
             try:
@@ -1954,6 +1955,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             return components
 
         if self.source.sample:
+            components['layer_name'] = self.name
             components['layer_base'] = self.name
             components['source_type'] = 'sample'
             try:
@@ -1965,11 +1967,13 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             return components
 
         if self.source.widget:
+            components['layer_name'] = self.name
             components['layer_base'] = self.name
             components['source_type'] = 'widget'
             components['plugin'] = self.source.widget._function.__name__
             return components
 
+        components['layer_name'] = self.name
         components['layer_base'] = self.name
         components['source_type'] = ''
         components['plugin'] = ''
@@ -1977,14 +1981,18 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
     def get_source_str(self) -> str:
         source_info = self._get_source_info()
+        source_str = source_info['layer_name']
+        if source_info['layer_base'] != source_info['layer_name']:
+            source_str += '\n' + source_info['layer_base']
+        if source_info['source_type']:
+            source_str += (
+                '\n'
+                + source_info['source_type']
+                + ' : '
+                + source_info['plugin']
+            )
 
-        return (
-            source_info['layer_base']
-            + ', '
-            + source_info['source_type']
-            + ' : '
-            + source_info['plugin']
-        )
+        return source_str
 
     def get_status(
         self,
