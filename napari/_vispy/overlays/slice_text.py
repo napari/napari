@@ -27,6 +27,8 @@ class VispySliceTextOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
         self.overlay.events.font_size.connect(self._on_font_change)
 
+        self.overlay.events.text_prefix.connect(self._on_data_change)
+        self.overlay.events.slice_parse_function.connect(self._on_data_change)
         self.viewer.dims.events.point.connect(self._on_data_change)
         self.viewer.dims.events.ndisplay.connect(self._on_data_change)
         self.viewer.dims.events.axis_labels.connect(self._on_data_change)
@@ -66,12 +68,9 @@ class VispySliceTextOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         not_displayed_dims = self.viewer.dims.not_displayed
 
         if len(not_displayed_dims) > 0:
-            text = 'Current slice:\n'
+            text = self.overlay.text_prefix
             for dim in not_displayed_dims:
-                num = self.viewer.dims.point[dim]
-                name = self.viewer.dims.axis_labels[dim]
-                formatted_num = format(num, '.5f').rstrip('0').rstrip('.')
-                text += f'{name}={formatted_num}\n'
+                text += self.overlay.slice_parse_function(self.viewer, dim)
         else:
             text = ''
 
