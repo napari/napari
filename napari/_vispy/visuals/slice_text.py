@@ -18,12 +18,9 @@ class SliceText(Compound):
         )
 
     @property
-    def text(self):
+    def text(self) -> Text:
         return self._subvisuals[1]
 
     @property
-    def box(self):
+    def box(self) -> Rectangle:
         return self._subvisuals[0]
-
-    def set_data(self, color):
-        self.text.color = color

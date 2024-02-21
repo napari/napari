@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING, Any
+
 import numpy as np
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
@@ -5,11 +7,21 @@ from napari._vispy.visuals.slice_text import SliceText
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.theme import get_theme
 
+if TYPE_CHECKING:
+    from napari import Viewer
+    from napari.components.overlays.slice_text import SliceTextOverlay
+
 
 class VispySliceTextOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     """Slice bar in world coordinates."""
 
-    def __init__(self, *, viewer, overlay, parent=None) -> None:
+    def __init__(
+        self,
+        *,
+        viewer: 'Viewer',
+        overlay: 'SliceTextOverlay',
+        parent: Any = None,
+    ) -> None:
         super().__init__(
             node=SliceText(), viewer=viewer, overlay=overlay, parent=parent
         )
@@ -35,7 +47,7 @@ class VispySliceTextOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
         self.reset()
 
-    def _on_color_change(self):
+    def _on_color_change(self) -> None:
         color = self.overlay.color
         box_color = self.overlay.box_color
 
@@ -63,7 +75,7 @@ class VispySliceTextOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.node.box.color = box_color
         self.node.text.color = color
 
-    def _on_data_change(self):
+    def _on_data_change(self) -> None:
         """Change color and data of scale bar and box."""
         not_displayed_dims = self.viewer.dims.not_displayed
 
@@ -76,14 +88,14 @@ class VispySliceTextOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
         self.node.text.text = text
 
-    def _on_box_change(self):
+    def _on_box_change(self) -> None:
         self.node.box.visible = self.overlay.box
 
-    def _on_font_change(self):
+    def _on_font_change(self) -> None:
         """Update font information"""
         self.node.text.font_size = self.overlay.font_size
 
-    def reset(self):
+    def reset(self) -> None:
         super().reset()
         self._on_color_change()
         self._on_data_change()

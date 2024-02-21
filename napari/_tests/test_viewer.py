@@ -286,7 +286,7 @@ def test_toggling_aux_overlay(make_napari_viewer, attribute):
 
     # Make scale bar not visible
     aux_overlay.visible = False
-    assert aux_overlay.visible
+    assert not aux_overlay.visible
 
 
 def test_removing_points_data(make_napari_viewer):
