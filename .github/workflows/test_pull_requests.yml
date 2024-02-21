@@ -214,7 +214,7 @@ jobs:
         run: |
           echo ${{ fromJSON(steps.latest_release.outputs.data).target_commitish }}
           echo ${{ fromJSON(steps.latest_release.outputs.data) }}
-          "echo latest release: '${{ steps.get_latest_release.outputs.data }}'"
+          echo "latest release: '${{ steps.get_latest_release.outputs.data }}'"
 
       - name: install dependencies
         run: |
