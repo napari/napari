@@ -160,7 +160,7 @@ def test_no_plugin_manager(monkeypatch, make_napari_viewer):
     def mockreturn(*args):
         return None
 
-    monkeypatch.setattr("importlib.util.find_spec", mockreturn)
+    monkeypatch.setattr('importlib.util.find_spec', mockreturn)
     # We need to reload `_plugins` for the monkeypatching to work
     importlib.reload(_plugins)
 

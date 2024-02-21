@@ -12,7 +12,7 @@ from napari.utils.perf._patcher import patch_callables
 from napari.utils.perf._timers import perf_timer
 from napari.utils.translations import trans
 
-PERFMON_ENV_VAR = "NAPARI_PERFMON"
+PERFMON_ENV_VAR = 'NAPARI_PERFMON'
 
 
 class PerfmonConfigError(Exception):
@@ -37,7 +37,7 @@ def _patch_perf_timer(parent, callable_name: str, label: str) -> None:
 
     @wrapt.patch_function_wrapper(parent, callable_name)
     def perf_time_callable(wrapped, instance, args, kwargs):
-        with perf_timer(f"{label}"):
+        with perf_timer(f'{label}'):
             return wrapped(*args, **kwargs)
 
 
@@ -105,7 +105,7 @@ class PerfmonConfig:
             The name of the list to return.
         """
         try:
-            return self.data["callable_lists"][list_name]
+            return self.data['callable_lists'][list_name]
         except KeyError as e:
             raise PerfmonConfigError(
                 trans._(
@@ -124,7 +124,7 @@ class PerfmonConfig:
         data["trace_callables"] should contain the names of one or more
         lists of callables which are defined in data["callable_lists"].
         """
-        for list_name in self.data["trace_callables"]:
+        for list_name in self.data['trace_callables']:
             callable_list = self._get_callables(list_name)
             patch_callables(callable_list, _patch_perf_timer)
 
@@ -134,7 +134,7 @@ class PerfmonConfig:
         if self.config_path is None:
             return True  # always trace qt events in legacy mode
         try:
-            return self.data["trace_qt_events"]
+            return self.data['trace_qt_events']
         except KeyError:
             return False
 
@@ -144,7 +144,7 @@ class PerfmonConfig:
         if self.config_path is None:
             return None  # don't trace on start in legacy mode
         try:
-            path = self.data["trace_file_on_start"]
+            path = self.data['trace_file_on_start']
 
             # Return None if it was empty string or false.
         except KeyError:
@@ -154,11 +154,11 @@ class PerfmonConfig:
 
 
 def _create_perf_config():
-    value = os.getenv("NAPARI_PERFMON")
+    value = os.getenv('NAPARI_PERFMON')
 
-    if value is None or value == "0":
+    if value is None or value == '0':
         return None  # Totally disabled
-    if value == "1":
+    if value == '1':
         return PerfmonConfig(None)  # Legacy no config, Qt events only.
 
     return PerfmonConfig(value)  # Normal parse the config file.

@@ -34,7 +34,7 @@ expected_distance_multiple = np.array([10, 10, 40, -5])
 
 
 @pytest.mark.parametrize(
-    "point,expected_projected_point,expected_distances",
+    'point,expected_projected_point,expected_distances',
     [
         (single_point, expected_point_single, expected_distance_single),
         (multiple_point, expected_multiple_point, expected_distance_multiple),
@@ -54,7 +54,7 @@ def test_project_point_to_plane(
 
 
 @pytest.mark.parametrize(
-    "vec_1, vec_2",
+    'vec_1, vec_2',
     [
         (np.array([10, 0]), np.array([0, 5])),
         (np.array([0, 5]), np.array([0, 5])),
@@ -73,7 +73,7 @@ def test_rotation_matrix_from_vectors_2d(vec_1, vec_2):
 
 
 @pytest.mark.parametrize(
-    "vec_1, vec_2",
+    'vec_1, vec_2',
     [
         (np.array([10, 0, 0]), np.array([0, 5, 0])),
         (np.array([0, 5, 0]), np.array([0, 5, 0])),
@@ -93,7 +93,7 @@ def test_rotation_matrix_from_vectors_3d(vec_1, vec_2):
 
 
 @pytest.mark.parametrize(
-    "line_position, line_direction, plane_position, plane_normal, expected",
+    'line_position, line_direction, plane_position, plane_normal, expected',
     [
         ([0, 0, 1], [0, 0, -1], [0, 0, 0], [0, 0, 1], [0, 0, 0]),
         ([1, 1, 1], [-1, -1, -1], [0, 0, 0], [0, 0, 1], [0, 0, 0]),
@@ -127,7 +127,7 @@ def test_intersect_line_with_multiple_planes_3d():
 
 
 @pytest.mark.parametrize(
-    "point, bounding_box, expected",
+    'point, bounding_box, expected',
     [
         ([5, 5, 5], np.array([[0, 10], [0, 10], [0, 10]]), [5, 5, 5]),
         ([10, 10, 10], np.array([[0, 10], [0, 10], [0, 10]]), [9, 9, 9]),
@@ -485,7 +485,7 @@ def test_line_in_triangles_3d():
 
 
 @pytest.mark.parametrize(
-    "ray_start,ray_direction,expected_index,expected_position",
+    'ray_start,ray_direction,expected_index,expected_position',
     [
         ([0, 1, 1], [1, 0, 0], 0, [3, 1, 1]),
         ([6, 1, 1], [-1, 0, 0], 1, [5, 1, 1]),

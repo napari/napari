@@ -25,7 +25,7 @@ class QWidget_example(QWidget):
 
 
 class QWidget_string_annnot(QWidget):
-    def __init__(self, test: "napari.viewer.Viewer"):
+    def __init__(self, test: 'napari.viewer.Viewer'):
         super().__init__()  # pragma: no cover
 
 
@@ -110,16 +110,16 @@ def test_plugin_widgets(monkeypatch, napari_plugin_manager):
     """A smattering of example registered dock widgets and function widgets."""
     tnpm = napari_plugin_manager
     dock_widgets = {
-        "TestP1": {
-            "QWidget_example": (QWidget_example, {}),
-            "Widg2": (Widg2, {}),
+        'TestP1': {
+            'QWidget_example': (QWidget_example, {}),
+            'Widg2': (Widg2, {}),
         },
-        "TestP2": {"Widg3": (Widg3, {})},
+        'TestP2': {'Widg3': (Widg3, {})},
     }
-    monkeypatch.setattr(tnpm, "_dock_widgets", dock_widgets)
+    monkeypatch.setattr(tnpm, '_dock_widgets', dock_widgets)
 
     function_widgets = {'TestP3': {'magic': magicfunc}}
-    monkeypatch.setattr(tnpm, "_function_widgets", function_widgets)
+    monkeypatch.setattr(tnpm, '_function_widgets', function_widgets)
     yield
 
 
@@ -136,7 +136,7 @@ def test_inject_viewer_proxy(make_napari_viewer):
 
 
 @pytest.mark.parametrize(
-    "widget_callable, param",
+    'widget_callable, param',
     [
         (QWidget_example, 'napari_viewer'),
         (QWidget_string_annnot, 'test'),
@@ -171,7 +171,7 @@ def test_widget_hide_destroy(make_napari_viewer):
 
 
 @pytest.mark.parametrize(
-    "Widget",
+    'Widget',
     [
         QWidget_example,
         Container_example,

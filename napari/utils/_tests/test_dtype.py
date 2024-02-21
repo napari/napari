@@ -65,7 +65,7 @@ def test_pure_python_types(dtype_str):
 
 
 @pytest.mark.parametrize(
-    "dtype",
+    'dtype',
     [
         int,
         'uint8',

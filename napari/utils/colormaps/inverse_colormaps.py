@@ -12,9 +12,9 @@ I_Orange = [[1, 1, 1], [1, 117 / 255, 0]]  # inverted ChrisLUT OPF Orange
 I_Purple = [[1, 1, 1], [117 / 255, 0, 1]]  # inverted ChrisLUT OPF Purple
 
 inverse_cmaps = {
-    "I Bordeaux": (trans._("I Bordeaux"), I_Bordeaux),
-    "I Blue": (trans._("I Blue"), I_Blue),
-    "I Forest": (trans._("I Forest"), I_Forest),
-    "I Orange": (trans._("I Orange"), I_Orange),
-    "I Purple": (trans._("I Purple"), I_Purple),
+    'I Bordeaux': (trans._('I Bordeaux'), I_Bordeaux),
+    'I Blue': (trans._('I Blue'), I_Blue),
+    'I Forest': (trans._('I Forest'), I_Forest),
+    'I Orange': (trans._('I Orange'), I_Orange),
+    'I Purple': (trans._('I Purple'), I_Purple),
 }

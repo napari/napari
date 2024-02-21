@@ -55,26 +55,26 @@ import napari
 # Download the model
 # ------------------
 download = pooch.DOIDownloader(progressbar=True)
-doi = "10.6084/m9.figshare.22348645.v1"
-tmp_dir = pooch.os_cache("napari-surface-texture-example")
+doi = '10.6084/m9.figshare.22348645.v1'
+tmp_dir = pooch.os_cache('napari-surface-texture-example')
 os.makedirs(tmp_dir, exist_ok=True)
 data_files = {
-    "mesh": "PocilloporaDamicornisSkin.obj",
+    'mesh': 'PocilloporaDamicornisSkin.obj',
     # "materials": "PocilloporaVerrugosaSkinCrop.mtl",  # not yet supported
-    "Texture_0": "PocilloporaDamicornisSkin_Texture_0.jpg",
-    "GeneratedMat2": "PocilloporaDamicornisSkin_GeneratedMat2.png",
+    'Texture_0': 'PocilloporaDamicornisSkin_Texture_0.jpg',
+    'GeneratedMat2': 'PocilloporaDamicornisSkin_GeneratedMat2.png',
 }
-print(f"downloading data into {tmp_dir}")
+print(f'downloading data into {tmp_dir}')
 for file_name in data_files.values():
     if not (tmp_dir / file_name).exists():
-        print(f"downloading {file_name}")
+        print(f'downloading {file_name}')
         download(
-            f"doi:{doi}/{file_name}",
+            f'doi:{doi}/{file_name}',
             output_file=tmp_dir / file_name,
             pooch=None,
         )
     else:
-        print(f"using cached {tmp_dir / file_name}")
+        print(f'using cached {tmp_dir / file_name}')
 
 ###############################################################################
 # Load the model
@@ -83,7 +83,7 @@ for file_name in data_files.values():
 # support reading material properties (.mtl files) nor separate texture and
 # vertex indices (i.e. repeated vertices). Normal vectors read from the file
 # are also ignored and re-calculated from the faces.
-vertices, faces, _normals, texcoords = read_mesh(tmp_dir / data_files["mesh"])
+vertices, faces, _normals, texcoords = read_mesh(tmp_dir / data_files['mesh'])
 
 ###############################################################################
 # Load the textures
@@ -91,17 +91,17 @@ vertices, faces, _normals, texcoords = read_mesh(tmp_dir / data_files["mesh"])
 # This model comes with two textures: `Texture_0` is generated from
 # photogrammetry of the actual object, and `GeneratedMat2` is a generated
 # material to fill in  parts of the model lacking photographic texture.
-photo_texture = imread(tmp_dir / data_files["Texture_0"])
-generated_texture = imread(tmp_dir / data_files["GeneratedMat2"])
+photo_texture = imread(tmp_dir / data_files['Texture_0'])
+generated_texture = imread(tmp_dir / data_files['GeneratedMat2'])
 
 ###############################################################################
 # This is what the texture images look like in 2D:
 fig, axs = plt.subplots(1, 2)
-axs[0].set_title(f"Texture_0 {photo_texture.shape}")
+axs[0].set_title(f'Texture_0 {photo_texture.shape}')
 axs[0].imshow(photo_texture)
 axs[0].set_xticks((0, photo_texture.shape[1]), labels=(0.0, 1.0))
 axs[0].set_yticks((0, photo_texture.shape[0]), labels=(0.0, 1.0))
-axs[1].set_title(f"GeneratedMat2 {generated_texture.shape}")
+axs[1].set_title(f'GeneratedMat2 {generated_texture.shape}')
 axs[1].imshow(generated_texture)
 axs[1].set_xticks((0, generated_texture.shape[1]), labels=(0.0, 1.0))
 axs[1].set_yticks((0, generated_texture.shape[0]), labels=(0.0, 1.0))
@@ -117,13 +117,13 @@ photo_texture_layer = napari.layers.Surface(
     (vertices, faces),
     texture=photo_texture,
     texcoords=texcoords,
-    name="Texture_0",
+    name='Texture_0',
 )
 generated_texture_layer = napari.layers.Surface(
     (vertices, faces),
     texture=generated_texture,
     texcoords=texcoords,
-    name="GeneratedMat2",
+    name='GeneratedMat2',
 )
 
 ###############################################################################

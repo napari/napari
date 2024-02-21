@@ -218,7 +218,7 @@ class _QtMainWindow(QMainWindow):
             # https://doc-snapshots.qt.io/qt6-dev/qmouseevent-obsolete.html#globalPos
             pnt = (
                 e.globalPosition().toPoint()
-                if hasattr(e, "globalPosition")
+                if hasattr(e, 'globalPosition')
                 else e.globalPos()
             )
             QToolTip.showText(pnt, self._qt_viewer.viewer.tooltip.text, self)
@@ -432,7 +432,7 @@ class _QtMainWindow(QMainWindow):
 
     def close(self, quit_app=False, confirm_need=False):
         """Override to handle closing app or just the window."""
-        if hasattr(self.status_throttler, "_timer"):
+        if hasattr(self.status_throttler, '_timer'):
             self.status_throttler._timer.stop()
         if not quit_app and not self._qt_viewer.viewer.layers:
             return super().close()
@@ -469,7 +469,7 @@ class _QtMainWindow(QMainWindow):
             try:
                 parent = parent.parent()
             except AttributeError:
-                parent = getattr(parent, "_parent", None)
+                parent = getattr(parent, '_parent', None)
 
     def show(self, block=False):
         super().show()
@@ -486,7 +486,7 @@ class _QtMainWindow(QMainWindow):
             # of times which makes it hard to track the original size before
             # maximization.
             condition = (
-                self.isMaximized() if os.name == "nt" else self.isFullScreen()
+                self.isMaximized() if os.name == 'nt' else self.isFullScreen()
             )
             if condition and self._old_size is not None:
                 if self._positions and len(self._positions) > 1:
@@ -1058,7 +1058,7 @@ class Window:
             with contextlib.suppress(AttributeError):
                 name = widget.objectName()
             name = name or trans._(
-                "Dock widget {number}",
+                'Dock widget {number}',
                 number=self._unnamed_dockwidget_count,
             )
 
@@ -1155,7 +1155,7 @@ class Window:
             import warnings
 
             with warnings.catch_warnings():
-                warnings.simplefilter("ignore", FutureWarning)
+                warnings.simplefilter('ignore', FutureWarning)
                 # deprecating with 0.4.8, but let's try to keep compatibility.
                 shortcut = dock_widget.shortcut
             if shortcut is not None:
@@ -1203,7 +1203,7 @@ class Window:
             else:
                 raise LookupError(
                     trans._(
-                        "Could not find a dock widget containing: {widget}",
+                        'Could not find a dock widget containing: {widget}',
                         deferred=True,
                         widget=widget,
                     )
@@ -1269,7 +1269,7 @@ class Window:
         if magic_kwargs is None:
             magic_kwargs = {
                 'auto_call': False,
-                'call_button': "run",
+                'call_button': 'run',
                 'layout': 'vertical',
             }
 
@@ -1354,7 +1354,7 @@ class Window:
         except (AttributeError, RuntimeError) as e:
             raise RuntimeError(
                 trans._(
-                    "This viewer has already been closed and deleted. Please create a new one.",
+                    'This viewer has already been closed and deleted. Please create a new one.',
                     deferred=True,
                 )
             ) from e
@@ -1366,7 +1366,7 @@ class Window:
             except (AttributeError, RuntimeError) as e:
                 raise RuntimeError(
                     trans._(
-                        "This viewer has already been closed and deleted. Please create a new one.",
+                        'This viewer has already been closed and deleted. Please create a new one.',
                         deferred=True,
                     )
                 ) from e
@@ -1381,7 +1381,7 @@ class Window:
 
                 warnings.warn(
                     trans._(
-                        "The window geometry settings could not be loaded due to the following error: {err}",
+                        'The window geometry settings could not be loaded due to the following error: {err}',
                         deferred=True,
                         err=err,
                     ),
@@ -1417,7 +1417,7 @@ class Window:
     def _update_theme_font_size(self, event=None):
         settings = get_settings()
         font_size = event.value if event else settings.appearance.font_size
-        extra_variables = {"font_size": f"{font_size}pt"}
+        extra_variables = {'font_size': f'{font_size}pt'}
         self._update_theme(extra_variables=extra_variables)
 
     def _update_theme(self, event=None, extra_variables=None):
@@ -1429,13 +1429,13 @@ class Window:
             value = event.value if event else settings.appearance.theme
             self._qt_viewer.viewer.theme = value
             actual_theme_name = value
-            if value == "system":
+            if value == 'system':
                 # system isn't a theme, so get the name
                 actual_theme_name = get_system_theme()
             # check `font_size` value is always passed when updating style
-            if "font_size" not in extra_variables:
+            if 'font_size' not in extra_variables:
                 extra_variables.update(
-                    {"font_size": f"{settings.appearance.font_size}pt"}
+                    {'font_size': f'{settings.appearance.font_size}pt'}
                 )
             # set the style sheet with the theme name and extra_variables
             self._qt_window.setStyleSheet(

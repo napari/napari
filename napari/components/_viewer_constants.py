@@ -14,10 +14,10 @@ class CanvasPosition(StrEnum):
     """
 
     TOP_LEFT = 'top_left'
-    TOP_CENTER = "top_center"
+    TOP_CENTER = 'top_center'
     TOP_RIGHT = 'top_right'
     BOTTOM_RIGHT = 'bottom_right'
-    BOTTOM_CENTER = "bottom_center"
+    BOTTOM_CENTER = 'bottom_center'
     BOTTOM_LEFT = 'bottom_left'
 
 

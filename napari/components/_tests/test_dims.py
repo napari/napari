@@ -239,14 +239,14 @@ def test_labels_order_when_changing_dims():
 
 
 @pytest.mark.parametrize(
-    "ndim, ax_input, expected", ((2, 1, 1), (2, -1, 1), (4, -3, 1))
+    'ndim, ax_input, expected', ((2, 1, 1), (2, -1, 1), (4, -3, 1))
 )
 def test_assert_axis_in_bounds(ndim, ax_input, expected):
     actual = ensure_axis_in_bounds(ax_input, ndim)
     assert actual == expected
 
 
-@pytest.mark.parametrize("ndim, ax_input", ((2, 2), (2, -3)))
+@pytest.mark.parametrize('ndim, ax_input', ((2, 2), (2, -3)))
 def test_assert_axis_out_of_bounds(ndim, ax_input):
     with pytest.raises(ValueError):
         ensure_axis_in_bounds(ax_input, ndim)

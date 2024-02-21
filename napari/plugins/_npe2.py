@@ -197,7 +197,7 @@ def file_extensions_string_for_layers(
         for writer in writers:
             name = pm.get_manifest(writer.command).display_name
             title = (
-                f"{name} {writer.display_name}"
+                f'{name} {writer.display_name}'
                 if writer.display_name
                 else name
             )
@@ -207,10 +207,10 @@ def file_extensions_string_for_layers(
     #   "<name> (*<ext1> *<ext2> *<ext3>);;+"
 
     def _fmt_exts(es):
-        return " ".join(f"*{e}" for e in es if e) if es else "*.*"
+        return ' '.join(f'*{e}' for e in es if e) if es else '*.*'
 
     return (
-        ";;".join(f"{name} ({_fmt_exts(exts)})" for name, exts in _items()),
+        ';;'.join(f'{name} ({_fmt_exts(exts)})' for name, exts in _items()),
         writers,
     )
 
@@ -426,7 +426,7 @@ def _when_group_order(
     menu_item: contributions.MenuItem,
 ) -> dict:
     """Extract when/group/order from an npe2 Submenu or MenuCommand."""
-    group, _, _order = (menu_item.group or '').partition("@")
+    group, _, _order = (menu_item.group or '').partition('@')
     try:
         order: Optional[float] = float(_order)
     except ValueError:

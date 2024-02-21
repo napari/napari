@@ -339,7 +339,7 @@ def test_layers_populate_immediately(make_napari_viewer):
     """make sure that the layers dropdown is populated upon adding to viewer"""
     from magicgui.widgets import create_widget
 
-    labels_layer = create_widget(annotation=Labels, label="ROI")
+    labels_layer = create_widget(annotation=Labels, label='ROI')
     viewer = make_napari_viewer()
     viewer.add_labels(np.zeros((10, 10), dtype=int))
     assert not len(labels_layer.choices)

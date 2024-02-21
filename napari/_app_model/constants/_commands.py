@@ -67,6 +67,7 @@ class CommandId(StrEnum):
     NAPARI_RELEASE_NOTES = 'napari:window:help:release_notes'
     NAPARI_HOMEPAGE = 'napari:window:help:homepage'
     NAPARI_INFO = 'napari:window:help:info'
+    NAPARI_ABOUT_MACOS = 'napari:window:help:about_macos'
     NAPARI_GITHUB_ISSUE = 'napari:window:help:github_issue'
     TOGGLE_BUG_REPORT_OPT_IN = 'napari:window:help:bug_report_opt_in'
 
@@ -138,7 +139,7 @@ _COMMAND_INFO = {
     CommandId.DLG_CLOSE: _i(trans._('Close Window')),
     CommandId.DLG_QUIT: _i(trans._('Exit')),
     CommandId.RESTART: _i(trans._('Restart')),
-    CommandId.IMAGE_FROM_CLIPBOARD: _i(trans._("New Image from Clipboard")),
+    CommandId.IMAGE_FROM_CLIPBOARD: _i(trans._('New Image from Clipboard')),
 
     # View menubar
     CommandId.TOGGLE_FULLSCREEN: _i(trans._('Toggle Full Screen')),
@@ -166,7 +167,8 @@ _COMMAND_INFO = {
     CommandId.NAPARI_EXAMPLES: _i(trans._('Examples Gallery')),
     CommandId.NAPARI_RELEASE_NOTES: _i(trans._('Release Notes')),
     CommandId.NAPARI_HOMEPAGE: _i(trans._('napari homepage')),
-    CommandId.NAPARI_INFO: _i(trans._('napari Info')),
+    CommandId.NAPARI_INFO: _i(trans._('‎napari Info')),
+    CommandId.NAPARI_ABOUT_MACOS: _i(trans._('About napari')),
     CommandId.NAPARI_GITHUB_ISSUE: _i(trans._('Report an issue on GitHub')),
     CommandId.TOGGLE_BUG_REPORT_OPT_IN: _i(trans._('Bug Reporting Opt In/Out...')),
 

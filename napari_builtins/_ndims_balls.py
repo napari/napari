@@ -10,9 +10,9 @@ def labeled_particles2d():
     )
 
     return [
-        (density, {"name": "density", "metadata": {"seed": seed}}, "image"),
-        (labels, {"name": "labels", "metadata": {"seed": seed}}, "labels"),
-        (points, {"name": "points", "metadata": {"seed": seed}}, "points"),
+        (density, {'name': 'density', 'metadata': {'seed': seed}}, 'image'),
+        (labels, {'name': 'labels', 'metadata': {'seed': seed}}, 'labels'),
+        (points, {'name': 'points', 'metadata': {'seed': seed}}, 'points'),
     ]
 
 
@@ -23,7 +23,7 @@ def labeled_particles3d():
     )
 
     return [
-        (density, {"name": "density", "metadata": {"seed": seed}}, "image"),
-        (labels, {"name": "labels", "metadata": {"seed": seed}}, "labels"),
-        (points, {"name": "points", "metadata": {"seed": seed}}, "points"),
+        (density, {'name': 'density', 'metadata': {'seed': seed}}, 'image'),
+        (labels, {'name': 'labels', 'metadata': {'seed': seed}}, 'labels'),
+        (points, {'name': 'points', 'metadata': {'seed': seed}}, 'points'),
     ]

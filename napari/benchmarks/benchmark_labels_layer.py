@@ -21,7 +21,7 @@ class Labels2DSuite:
     param_names = ['n', 'dtype']
     params = ([2**i for i in range(4, 13)], [np.uint8, np.int32])
 
-    if "PR" in os.environ:
+    if 'PR' in os.environ:
         skip_params = Skiper(lambda x: x[0] > 2**5)
 
     def setup(self, n, dtype):
@@ -84,7 +84,7 @@ class LabelsDrawing2DSuite:
     param_names = ['n', 'brush_size', 'color_mode', 'contour']
     params = ([512, 3072], [8, 64, 256], ['auto', 'direct'], [0, 1])
 
-    if "PR" in os.environ:
+    if 'PR' in os.environ:
         skip_params = Skiper(lambda x: x[0] > 512 or x[1] > 64)
 
     def setup(self, n, brush_size, color_mode, contour):
@@ -120,8 +120,8 @@ class LabelsDrawing2DSuite:
 
 class Labels2DColorDirectSuite(Labels2DSuite):
     def setup(self, n, dtype):
-        if "PR" in os.environ and n > 32:
-            raise NotImplementedError("Skip on PR (speedup)")
+        if 'PR' in os.environ and n > 32:
+            raise NotImplementedError('Skip on PR (speedup)')
         np.random.seed(0)
         info = np.iinfo(dtype)
         self.data = labeled_particles(
@@ -144,12 +144,12 @@ class Labels3DSuite:
 
     param_names = ['n', 'dtype']
     params = ([2**i for i in range(4, 11)], [np.uint8, np.uint32])
-    if "PR" in os.environ:
+    if 'PR' in os.environ:
         skip_params = [(2**i,) for i in range(6, 11)]
 
     def setup(self, n, dtype):
-        if "CI" in os.environ and n > 512:
-            raise NotImplementedError("Skip on CI (not enough memory)")
+        if 'CI' in os.environ and n > 512:
+            raise NotImplementedError('Skip on CI (not enough memory)')
 
         np.random.seed(0)
         self.data = labeled_particles(

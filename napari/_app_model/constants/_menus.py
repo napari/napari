@@ -64,5 +64,5 @@ _CONTRIBUTABLES = {MenuId.LAYERLIST_CONTEXT.value}
 def is_menu_contributable(menu_id: str) -> bool:
     """Return True if the given menu_id is a menu that plugins can contribute to."""
     return (
-        menu_id in _CONTRIBUTABLES if menu_id.startswith("napari/") else True
+        menu_id in _CONTRIBUTABLES if menu_id.startswith('napari/') else True
     )

@@ -62,7 +62,7 @@ def create_func(cls, name=None, doc=None, filename: str = '<string>'):
 
     sig = signature(cls)
     additional_parameters = []
-    if hasattr(cls.__init__, "_deprecated_constructor_args"):
+    if hasattr(cls.__init__, '_deprecated_constructor_args'):
         additional_parameters = [
             Parameter(
                 name=arg,
@@ -73,7 +73,7 @@ def create_func(cls, name=None, doc=None, filename: str = '<string>'):
         ]
     new_sig = sig.replace(
         parameters=[
-            Parameter("self", Parameter.POSITIONAL_OR_KEYWORD),
+            Parameter('self', Parameter.POSITIONAL_OR_KEYWORD),
             *list(sig.parameters.values()),
             *additional_parameters,
         ],
@@ -93,7 +93,7 @@ def create_func(cls, name=None, doc=None, filename: str = '<string>'):
     func.__doc__ = doc
     func.__signature__ = sig.replace(
         parameters=[
-            Parameter("self", Parameter.POSITIONAL_OR_KEYWORD),
+            Parameter('self', Parameter.POSITIONAL_OR_KEYWORD),
             *list(sig.parameters.values()),
         ],
         return_annotation=cls,

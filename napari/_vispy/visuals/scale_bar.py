@@ -22,8 +22,8 @@ class ScaleBar(Compound):
                 Text(
                     text='1px',
                     pos=[0.5, 0.5],
-                    anchor_x="center",
-                    anchor_y="top",
+                    anchor_x='center',
+                    anchor_y='top',
                     font_size=10,
                 ),
                 Line(connect='segments', method='gl', width=3),
