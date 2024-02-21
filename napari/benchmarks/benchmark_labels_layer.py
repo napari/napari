@@ -140,7 +140,8 @@ class Labels2DColorDirectSuite(Labels2DSuite):
 class Labels3DSuite:
     """Benchmarks for the Labels layer with 3D data."""
 
-    params = [2**i for i in range(4, 11)]
+    param_names = ['n', 'dtype']
+    params = ([2**i for i in range(4, 11)], [np.uint8, np.uint32])
 
     skip_params = Skipper(
         func_pr=lambda x: x[0] > 2**6, func_ci=lambda x: x[0] > 2**9
