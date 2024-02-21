@@ -78,7 +78,7 @@ class PointsVisual(ClippingPlanesMixin, Compound):
 
     @spherical.setter
     def spherical(self, value: bool) -> None:
-        self._subvisuals[0].spherical = value
+        self.points_markers.spherical = value
 
     @property
     def canvas_size_limits(self) -> tuple[int, int]:
@@ -86,4 +86,4 @@ class PointsVisual(ClippingPlanesMixin, Compound):
 
     @canvas_size_limits.setter
     def canvas_size_limits(self, value: tuple[int, int]) -> None:
-        self._subvisuals[0].canvas_size_limits = value
+        self.points_markers.canvas_size_limits = value
