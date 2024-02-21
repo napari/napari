@@ -1,17 +1,17 @@
 import numpy as np
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
-from napari._vispy.visuals.slice_bar import SliceBar
+from napari._vispy.visuals.slice_text import SliceText
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.theme import get_theme
 
 
-class VispySliceBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
+class VispySliceTextOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     """Slice bar in world coordinates."""
 
     def __init__(self, *, viewer, overlay, parent=None) -> None:
         super().__init__(
-            node=SliceBar(), viewer=viewer, overlay=overlay, parent=parent
+            node=SliceText(), viewer=viewer, overlay=overlay, parent=parent
         )
         self.x_size = 5
         # need to change from defaults because the anchor is in the center

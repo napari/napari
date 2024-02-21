@@ -1,7 +1,7 @@
 from vispy.scene.visuals import Compound, Rectangle, Text
 
 
-class SliceBar(Compound):
+class SliceText(Compound):
     def __init__(self) -> None:
         # order matters (last is drawn on top)
         super().__init__(

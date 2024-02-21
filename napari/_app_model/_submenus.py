@@ -53,6 +53,8 @@ SUBMENUS = [
     ),
     (
         MenuId.MENUBAR_VIEW,
-        SubmenuItem(submenu=MenuId.VIEW_SLICEBAR, title=trans._('Slice Bar')),
+        SubmenuItem(
+            submenu=MenuId.VIEW_SLICE_TEXT, title=trans._('Slice Bar')
+        ),
     ),
 ]

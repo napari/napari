@@ -26,7 +26,7 @@ viewer.add_image(
 # didn't work before adding the image
 viewer.dims.axis_labels = ('t', 'z', 'y', 'x')
 
-viewer.slice_bar.visible = True
+viewer.slice_text.visible = True
 
 # also showing scale bar to view colision
 viewer.scale_bar.visible = True

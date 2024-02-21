@@ -5,7 +5,7 @@ from napari.components.overlays.base import CanvasOverlay
 from napari.utils.color import ColorValue
 
 
-class SliceBarOverlay(CanvasOverlay):
+class SliceTextOverlay(CanvasOverlay):
     """Slice bar indicating size in world coordinates.
 
     Attributes

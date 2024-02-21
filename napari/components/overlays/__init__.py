@@ -12,7 +12,7 @@ from napari.components.overlays.interaction_box import (
 )
 from napari.components.overlays.labels_polygon import LabelsPolygonOverlay
 from napari.components.overlays.scale_bar import ScaleBarOverlay
-from napari.components.overlays.slice_bar import SliceBarOverlay
+from napari.components.overlays.slice_text import SliceTextOverlay
 from napari.components.overlays.text import TextOverlay
 
 __all__ = [
@@ -24,7 +24,7 @@ __all__ = [
     'TransformBoxOverlay',
     'LabelsPolygonOverlay',
     'ScaleBarOverlay',
-    'SliceBarOverlay',
+    'SliceTextOverlay',
     'SceneOverlay',
     'TextOverlay',
     'BrushCircleOverlay',

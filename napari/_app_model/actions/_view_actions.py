@@ -16,7 +16,7 @@ VIEW_ACTIONS: List[Action] = []
 MENUID_DICT = {
     'axes': MenuId.VIEW_AXES,
     'scale_bar': MenuId.VIEW_SCALEBAR,
-    'slice_bar': MenuId.VIEW_SLICEBAR,
+    'slice_text': MenuId.VIEW_SLICE_TEXT,
 }
 
 for cmd, viewer_attr, sub_attr in (
@@ -28,8 +28,8 @@ for cmd, viewer_attr, sub_attr in (
     (CommandId.TOGGLE_VIEWER_SCALE_BAR, 'scale_bar', 'visible'),
     (CommandId.TOGGLE_VIEWER_SCALE_BAR_COLORED, 'scale_bar', 'colored'),
     (CommandId.TOGGLE_VIEWER_SCALE_BAR_TICKS, 'scale_bar', 'ticks'),
-    (CommandId.TOGGLE_VIEWER_SLICE_BAR, 'slice_bar', 'visible'),
-    (CommandId.TOGGLE_VIEWER_SLICE_BAR_COLORED, 'slice_bar', 'colored'),
+    (CommandId.TOGGLE_VIEWER_SLICE_TEXT, 'slice_text', 'visible'),
+    (CommandId.TOGGLE_VIEWER_SLICE_TEXT_COLORED, 'slice_text', 'colored'),
 ):
     VIEW_ACTIONS.append(
         ViewerToggleAction(

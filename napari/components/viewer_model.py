@@ -41,7 +41,7 @@ from napari.components.overlays import (
     BrushCircleOverlay,
     Overlay,
     ScaleBarOverlay,
-    SliceBarOverlay,
+    SliceTextOverlay,
     TextOverlay,
 )
 from napari.components.tooltip import Tooltip
@@ -124,7 +124,7 @@ def _current_theme() -> str:
 
 DEFAULT_OVERLAYS = {
     'scale_bar': ScaleBarOverlay,
-    'slice_bar': SliceBarOverlay,
+    'slice_text': SliceTextOverlay,
     'text': TextOverlay,
     'axes': AxesOverlay,
     'brush_circle': BrushCircleOverlay,
@@ -306,8 +306,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         return self._overlays['scale_bar']
 
     @property
-    def slice_bar(self):
-        return self._overlays['slice_bar']
+    def slice_text(self):
+        return self._overlays['slice_text']
 
     @property
     def text_overlay(self):
