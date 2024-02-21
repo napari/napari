@@ -92,14 +92,14 @@ def _rebuild_npe1_samples_menu() -> None:
                         stack=False,
                     )
 
-            display_name = sample_dict['display_name'].replace("&", "&&")
+            display_name = sample_dict['display_name'].replace('&', '&&')
             if multiprovider:
                 title = display_name
             else:
                 title = menu_item_template.format(plugin_name, display_name)
 
             action: Action = Action(
-                id=f"{plugin_name}:{display_name}",
+                id=f'{plugin_name}:{display_name}',
                 title=title,
                 menus=[{'id': submenu_id, 'group': MenuGroup.NAVIGATION}],
                 callback=_add_sample,
@@ -124,7 +124,7 @@ def _toggle_or_get_widget_npe1(
     if viewer is None:
         raise RuntimeError(  # pragma: no cover
             trans._(
-                "No current `Viewer` found. Note that widgets cannot be opened in headless mode.",
+                'No current `Viewer` found. Note that widgets cannot be opened in headless mode.',
                 deferred=True,
             )
         )
@@ -187,7 +187,7 @@ def _rebuild_npe1_plugins_menu() -> None:
             )
             action: Action = Action(
                 id=f'{plugin_name}:{widget_name.replace("&", "&&")}',
-                title=title.replace("&", "&&"),
+                title=title.replace('&', '&&'),
                 menus=[
                     {
                         'id': submenu_id,
@@ -286,7 +286,7 @@ def _build_samples_submenu_actions(
                 mf.display_name, sample.display_name
             )
         # To display '&' instead of creating a shortcut
-        title = title.replace("&", "&&")
+        title = title.replace('&', '&&')
 
         action: Action = Action(
             id=f'{mf.name}:{sample.key}',
@@ -306,7 +306,7 @@ def _get_widget_viewer_param(
         widget_callable,
         (QWidget, Widget),
     ):
-        widget_param = ""
+        widget_param = ''
         try:
             sig = inspect.signature(widget_callable.__init__)
         except ValueError:  # pragma: no cover
@@ -327,7 +327,7 @@ def _get_widget_viewer_param(
     elif isinstance(widget_callable, MagicFactory) or inspect.isfunction(
         widget_callable
     ):
-        widget_param = ""
+        widget_param = ''
     else:
         raise TypeError(
             trans._(
@@ -354,7 +354,7 @@ def _toggle_or_get_widget(
     if viewer is None:
         raise RuntimeError(  # pragma: no cover
             trans._(
-                "No current `Viewer` found. Note that widgets cannot be opened in headless mode.",
+                'No current `Viewer` found. Note that widgets cannot be opened in headless mode.',
                 deferred=True,
             )
         )
@@ -379,7 +379,7 @@ def _get_current_dock_status(full_name: str) -> bool:
     if window is None:
         raise RuntimeError(  # pragma: no cover
             trans._(
-                "No current `Window` found. Note that widgets cannot be opened in headless mode.",
+                'No current `Window` found. Note that widgets cannot be opened in headless mode.',
                 deferred=True,
             )
         )
@@ -425,7 +425,7 @@ def _build_widgets_submenu_actions(
 
         title = widget.display_name if multiprovider else full_name
         # To display '&' instead of creating a shortcut
-        title = title.replace("&", "&&")
+        title = title.replace('&', '&&')
 
         widget_actions.append(
             Action(
@@ -468,7 +468,7 @@ def _register_qt_actions(mf: PluginManifest) -> None:
     # `window._dock_widgets`
     if window := _provide_window():
         for widget in mf.contributions.widgets or ():
-            widget_event = Event(type_name="", value=widget.display_name)
+            widget_event = Event(type_name='', value=widget.display_name)
 
             def _remove_widget(event: Event = widget_event) -> None:
                 window._remove_dock_widget(event)

@@ -31,7 +31,7 @@ def _add_plugin_dock_widget(
     else:
         raise RuntimeError(
             trans._(
-                "No current `Viewer` found. Widgets cannot be opened in headless mode.",
+                'No current `Viewer` found. Widgets cannot be opened in headless mode.',
                 deferred=True,
             )
         )

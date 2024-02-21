@@ -42,4 +42,4 @@ def test_publicproxy_viewer(capsys, make_napari_viewer):
     app.register_action(action)
     app.commands.execute_command('some.command.id')
     captured = capsys.readouterr()
-    assert "napari.utils._proxies.PublicOnlyProxy" in captured.out
+    assert 'napari.utils._proxies.PublicOnlyProxy' in captured.out

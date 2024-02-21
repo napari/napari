@@ -21,7 +21,7 @@ def _plugin_manager_dialog_avail() -> bool:
     if plugin_dlg:
         return True
     # not available
-    logger.debug("QtPluginDialog not available")
+    logger.debug('QtPluginDialog not available')
     return False
 
 
