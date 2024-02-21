@@ -22,6 +22,7 @@ define an __all__ = [...] attribute in the module. Otherwise, all non-private
 callable methods will be stubbed.
 
 """
+
 import importlib
 import inspect
 import subprocess
@@ -49,9 +50,9 @@ def _format_module_str(text: str, is_pyi=False) -> str:
     from black import FileMode, format_str
     from isort.api import sort_code_string
 
-    text = sort_code_string(text, profile="black", float_to_top=True)
+    text = sort_code_string(text, profile='black', float_to_top=True)
     text = format_str(text, mode=FileMode(line_length=79, is_pyi=is_pyi))
-    return text.replace("NoneType", "None")
+    return text.replace('NoneType', 'None')
 
 
 def _guess_exports(module, exclude=()) -> List[str]:
@@ -59,7 +60,7 @@ def _guess_exports(module, exclude=()) -> List[str]:
     return [
         k
         for k, v in vars(module).items()
-        if callable(v) and not k.startswith("_") and k not in exclude
+        if callable(v) and not k.startswith('_') and k not in exclude
     ]
 
 
@@ -67,7 +68,7 @@ def _iter_imports(hint) -> Iterator[str]:
     """Get all imports necessary for `hint`"""
     # inspect.formatannotation strips "typing." from type annotations
     # so our signatures won't have it in there
-    if not repr(hint).startswith("typing.") and (orig := get_origin(hint)):
+    if not repr(hint).startswith('typing.') and (orig := get_origin(hint)):
         yield orig.__module__
 
     for arg in get_args(hint):
@@ -84,7 +85,7 @@ def generate_function_stub(func) -> Tuple[Set[str], str]:
     """Generate a stub and imports for a function."""
     sig = inspect.signature(func)
 
-    if hasattr(func, "__wrapped__"):
+    if hasattr(func, '__wrapped__'):
         # unwrap @wraps decorated functions
         func = func.__wrapped__
     globalns = {**getattr(func, '__globals__', {})}
@@ -117,7 +118,7 @@ def _get_subclass_methods(cls: Type[Any]) -> Set[str]:
 
 def generate_class_stubs(cls: Type) -> Tuple[Set[str], str]:
     """Generate a stub and imports for a class."""
-    bases = ", ".join(f'{b.__module__}.{b.__name__}' for b in cls.__bases__)
+    bases = ', '.join(f'{b.__module__}.{b.__name__}' for b in cls.__bases__)
 
     methods = []
     attrs = []
@@ -147,8 +148,8 @@ def generate_class_stubs(cls: Type) -> Tuple[Set[str], str]:
 
     doc = f'"""{cls.__doc__.lstrip()}"""' if cls.__doc__ else '...'
     stub = f'class {cls.__name__}({bases}):\n    {doc}\n'
-    stub += textwrap.indent("\n".join(attrs), '    ')
-    stub += "\n" + textwrap.indent("\n".join(methods), '    ')
+    stub += textwrap.indent('\n'.join(attrs), '    ')
+    stub += '\n' + textwrap.indent('\n'.join(methods), '    ')
 
     return imports, stub
 
@@ -183,20 +184,20 @@ def generate_module_stub(module: Union[str, ModuleType], save=True) -> str:
         stubs.append(stub)
 
     # build the final file string
-    importstr = "\n".join(f'import {n}' for n in imports)
+    importstr = '\n'.join(f'import {n}' for n in imports)
     body = '\n'.join(stubs)
     pyi = PYI_TEMPLATE.format(imports=importstr, body=body)
     # format with black and isort
     # pyi = _format_module_str(pyi)
-    pyi = pyi.replace("NoneType", "None")
+    pyi = pyi.replace('NoneType', 'None')
 
     if save:
-        print("Writing stub:", module.__file__.replace(".py", ".pyi"))
-        file_path = module.__file__.replace(".py", ".pyi")
+        print('Writing stub:', module.__file__.replace('.py', '.pyi'))
+        file_path = module.__file__.replace('.py', '.pyi')
         with open(file_path, 'w') as f:
             f.write(pyi)
-        subprocess.run(["ruff", file_path])
-        subprocess.run(["black", file_path])
+        subprocess.run(['ruff', file_path])
+        subprocess.run(['black', file_path])
 
     return pyi
 

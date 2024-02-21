@@ -22,12 +22,10 @@ def test_sample_data_triggers_reader_dialog(
     tmp2 = tmp_plugin.spawn(register=True)
 
     @tmp_plugin.contribute.reader(filename_patterns=['*.tif'])
-    def _(path):
-        ...
+    def _(path): ...
 
     @tmp2.contribute.reader(filename_patterns=['*.tif'])
-    def _(path):
-        ...
+    def _(path): ...
 
     # make a sample data reader for tif file
     my_sample = SampleDataURI(
@@ -144,9 +142,9 @@ def test_sample_menu_single_data(
 def test_show_shortcuts_actions(make_napari_viewer):
     viewer = make_napari_viewer()
     assert viewer.window._pref_dialog is None
-    action_manager.trigger("napari:show_shortcuts")
+    action_manager.trigger('napari:show_shortcuts')
     assert viewer.window._pref_dialog is not None
-    assert viewer.window._pref_dialog._list.currentItem().text() == "Shortcuts"
+    assert viewer.window._pref_dialog._list.currentItem().text() == 'Shortcuts'
     viewer.window._pref_dialog.close()
 
 
@@ -174,7 +172,7 @@ def get_open_with_plugin_action(viewer, action_text):
 
 
 @pytest.mark.parametrize(
-    "menu_str,dialog_method,dialog_return,filename_call,stack",
+    'menu_str,dialog_method,dialog_return,filename_call,stack',
     [
         (
             'Open File(s)...',

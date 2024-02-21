@@ -10,7 +10,7 @@ from napari.utils.tree.node import Node
 if TYPE_CHECKING:
     from napari.utils.events.containers._nested_list import MaybeNestedIndex
 
-NodeType = TypeVar("NodeType", bound=Node)
+NodeType = TypeVar('NodeType', bound=Node)
 
 
 class Group(Node, SelectableNestableEventedList[NodeType]):
@@ -39,7 +39,7 @@ class Group(Node, SelectableNestableEventedList[NodeType]):
     def __init__(
         self,
         children: Iterable[NodeType] = (),
-        name: str = "Group",
+        name: str = 'Group',
         basetype=Node,
     ) -> None:
         Node.__init__(self, name=name)
@@ -111,10 +111,10 @@ class Group(Node, SelectableNestableEventedList[NodeType]):
 
         for n, child in enumerate(self):
             spacer, bul = (
-                ("   ", "└──") if n == len(self) - 1 else ("  │", "├──")
+                ('   ', '└──') if n == len(self) - 1 else ('  │', '├──')
             )
             child_tree = child._render()
-            lines.append(f"  {bul}" + child_tree.pop(0))
+            lines.append(f'  {bul}' + child_tree.pop(0))
             lines.extend([spacer + lay for lay in child_tree])
 
         return lines

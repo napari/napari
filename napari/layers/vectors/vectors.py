@@ -262,9 +262,11 @@ class Vectors(Layer):
             continuous_colormap=edge_colormap,
             contrast_limits=edge_contrast_limits,
             categorical_colormap=edge_color_cycle,
-            properties=self.properties
-            if self._data.size > 0
-            else self._feature_table.currents(),
+            properties=(
+                self.properties
+                if self._data.size > 0
+                else self._feature_table.currents()
+            ),
         )
 
         # Data containing vectors in the currently viewed slice
@@ -400,9 +402,11 @@ class Vectors(Layer):
                 'length': self.length,
                 'edge_width': self.edge_width,
                 'vector_style': self.vector_style,
-                'edge_color': self.edge_color
-                if self.data.size
-                else [self._edge.current_color],
+                'edge_color': (
+                    self.edge_color
+                    if self.data.size
+                    else [self._edge.current_color]
+                ),
                 'edge_color_cycle': self.edge_color_cycle,
                 'edge_colormap': self.edge_colormap.dict(),
                 'edge_contrast_limits': self.edge_contrast_limits,

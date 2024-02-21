@@ -79,7 +79,7 @@ def test_PublicOnlyProxy(patched_root_dir):
     assert '_private' in dir(t)
 
 
-@pytest.mark.filterwarnings("ignore:Qt libs are available but")
+@pytest.mark.filterwarnings('ignore:Qt libs are available but')
 def test_thread_proxy_guard(monkeypatch, single_threaded_executor):
     class X:
         a = 1
@@ -145,7 +145,7 @@ def test_unwrap_on_call():
     """
     evset = EventedSet()
     public_only_evset = PublicOnlyProxy(evset)
-    text = "aaa"
+    text = 'aaa'
     wrapped_text = PublicOnlyProxy(text)
     public_only_evset.add(wrapped_text)
     retrieved_text = next(iter(evset))
@@ -162,12 +162,12 @@ def test_unwrap_setattr():
 
     @dataclass
     class Sample:
-        attribute = "aaa"
+        attribute = 'aaa'
 
     sample = Sample()
     public_only_sample = PublicOnlyProxy(sample)
 
-    text = "bbb"
+    text = 'bbb'
     wrapped_text = PublicOnlyProxy(text)
 
     public_only_sample.attribute = wrapped_text

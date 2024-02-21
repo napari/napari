@@ -12,6 +12,7 @@ of the layer types, like "image", "points", etc...):
         add_method(*args, **kwargs)
         return viewer
 """
+
 import inspect
 from typing import Any, List, Optional, Tuple
 
@@ -44,7 +45,7 @@ viewer : :class:`napari.Viewer`
 """
 
 _VIEW_DOC = _NumpyDocString(Viewer.__doc__)
-_VIEW_PARAMS = "    " + "\n".join(_VIEW_DOC._str_param_list('Parameters')[2:])
+_VIEW_PARAMS = '    ' + '\n'.join(_VIEW_DOC._str_param_list('Parameters')[2:])
 
 
 def _merge_docstrings(add_method, layer_string):
@@ -56,8 +57,8 @@ def _merge_docstrings(add_method, layer_string):
     # this ugliness is because the indentation of the parsed numpydocstring
     # is different for the first parameter :(
     lines = add_method_doc._str_param_list('Parameters')
-    lines = lines[:3] + textwrap.dedent("\n".join(lines[3:])).splitlines()
-    params = "\n".join(lines) + "\n" + textwrap.dedent(_VIEW_PARAMS)
+    lines = lines[:3] + textwrap.dedent('\n'.join(lines[3:])).splitlines()
+    params = '\n'.join(lines) + '\n' + textwrap.dedent(_VIEW_PARAMS)
     n = 'n' if layer_string.startswith(tuple('aeiou')) else ''
     return _doc_template.format(n=n, layer_string=layer_string, params=params)
 
@@ -83,7 +84,7 @@ def _merge_layer_viewer_sigs_docs(func):
     from napari.utils.misc import _combine_signatures
 
     # get the `Viewer.add_*` method
-    layer_string = func.__name__.replace("view_", "")
+    layer_string = func.__name__.replace('view_', '')
     if layer_string == 'path':
         add_method = Viewer.open
     else:
@@ -155,7 +156,7 @@ def _make_viewer_then(
     }
     if viewer is None:
         viewer = Viewer(**vkwargs)
-    kwargs.update(kwargs.pop("kwargs", {}))
+    kwargs.update(kwargs.pop('kwargs', {}))
     method = getattr(viewer, add_method)
     added = method(*args, **kwargs)
     if isinstance(added, list):
@@ -250,7 +251,7 @@ def imshow(
     order=(),
     axis_labels=(),
     show=True,
-) -> Tuple[Viewer, List["Image"]]:
+) -> Tuple[Viewer, List['Image']]:
     """Load data into an Image layer and return the Viewer and Layer.
 
     Parameters

@@ -1,5 +1,6 @@
 """This module holds Protocols that layer.data objects are expected to provide.
 """
+
 from __future__ import annotations
 
 from typing import (
@@ -23,7 +24,7 @@ if TYPE_CHECKING:
 
     # https://github.com/python/typing/issues/684#issuecomment-548203158
     class ellipsis(Enum):
-        Ellipsis = "..."
+        Ellipsis = '...'
 
     Ellipsis = ellipsis.Ellipsis  # noqa: A001
 else:
@@ -36,7 +37,7 @@ def _raise_protocol_error(obj: Any, protocol: type):
     needed = set(dir(protocol)).union(annotations) - _OBJ_NAMES
     missing = needed - set(dir(obj))
     message = trans._(
-        "Object of type {type_name} does not implement {protocol_name} Protocol.\nMissing methods: {missing_methods}",
+        'Object of type {type_name} does not implement {protocol_name} Protocol.\nMissing methods: {missing_methods}',
         deferred=True,
         type_name=repr(type(obj).__name__),
         protocol_name=repr(protocol.__name__),
