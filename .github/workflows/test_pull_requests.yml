@@ -204,7 +204,7 @@ jobs:
       - uses: octokit/request-action@v2.x
         id: latest_release
         with:
-          route: GET /repos/{owner}/{repo}/releases/latest
+          route: GET /{owner}/{repo}/releases/latest
           owner: napari
           repo: napari
         env:
