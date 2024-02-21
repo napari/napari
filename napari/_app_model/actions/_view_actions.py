@@ -29,6 +29,7 @@ for cmd, viewer_attr, sub_attr in (
     (CommandId.TOGGLE_VIEWER_SCALE_BAR_COLORED, 'scale_bar', 'colored'),
     (CommandId.TOGGLE_VIEWER_SCALE_BAR_TICKS, 'scale_bar', 'ticks'),
     (CommandId.TOGGLE_VIEWER_SLICE_BAR, 'slice_bar', 'visible'),
+    (CommandId.TOGGLE_VIEWER_SLICE_BAR_COLORED, 'slice_bar', 'colored'),
 ):
     VIEW_ACTIONS.append(
         ViewerToggleAction(

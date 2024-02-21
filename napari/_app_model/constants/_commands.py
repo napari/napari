@@ -55,6 +55,7 @@ class CommandId(StrEnum):
     TOGGLE_VIEWER_SCALE_BAR_COLORED = 'napari:window:view:toggle_viewer_scale_bar_colored'
     TOGGLE_VIEWER_SCALE_BAR_TICKS = 'napari:window:view:toggle_viewer_scale_bar_ticks'
     TOGGLE_VIEWER_SLICE_BAR = 'napari:window:view:toggle_viewer_slice_bar'
+    TOGGLE_VIEWER_SLICE_BAR_COLORED = 'napari:window:view:toggle_viewer_slice_bar_colored'
 
     # Help menubar
     NAPARI_GETTING_STARTED = 'napari:window:help:getting_started'
@@ -153,6 +154,7 @@ _COMMAND_INFO = {
     CommandId.TOGGLE_VIEWER_SCALE_BAR_COLORED: _i(trans._('Scale Bar Colored')),
     CommandId.TOGGLE_VIEWER_SCALE_BAR_TICKS: _i(trans._('Scale Bar Ticks')),
     CommandId.TOGGLE_VIEWER_SLICE_BAR: _i(trans._('Slice Bar Visible')),
+    CommandId.TOGGLE_VIEWER_SLICE_BAR_COLORED: _i(trans._('Slice Bar Colored')),
 
     # Help menubar
     CommandId.NAPARI_GETTING_STARTED: _i(trans._('Getting started')),

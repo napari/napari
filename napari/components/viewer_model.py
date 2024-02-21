@@ -41,6 +41,7 @@ from napari.components.overlays import (
     BrushCircleOverlay,
     Overlay,
     ScaleBarOverlay,
+    SliceBarOverlay,
     TextOverlay,
 )
 from napari.components.tooltip import Tooltip
@@ -123,7 +124,7 @@ def _current_theme() -> str:
 
 DEFAULT_OVERLAYS = {
     'scale_bar': ScaleBarOverlay,
-    'slice_bar': TextOverlay,
+    'slice_bar': SliceBarOverlay,
     'text': TextOverlay,
     'axes': AxesOverlay,
     'brush_circle': BrushCircleOverlay,
