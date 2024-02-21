@@ -77,6 +77,7 @@ from napari.plugins import (
     menu_item_template as plugin_menu_item_template,
     plugin_manager,
 )
+from napari.plugins._npe2 import index_npe1_adapters
 from napari.settings import get_settings
 from napari.utils import perf
 from napari.utils._proxies import PublicOnlyProxy
@@ -659,6 +660,9 @@ class Window:
         plugin_manager.discover_themes()
         self._setup_existing_themes()
 
+        # npe1 shim
+        index_npe1_adapters()
+
         self._add_menus()
         self._update_theme()
         self._update_theme_font_size()
@@ -822,11 +826,9 @@ class Window:
         plugin_manager.events.unregistered.connect(_rebuild_npe1_samples_menu)
         _rebuild_npe1_samples_menu()
 
+    # TODO: Remove once npe1 deprecated
     def _setup_npe1_plugins_menu(self):
-        from napari.plugins._npe2 import index_npe1_adapters
-
-        index_npe1_adapters()
-
+        """Register npe1 widgets, build menu and connect to events"""
         plugin_manager.discover_widgets()
         plugin_manager.events.registered.connect(_rebuild_npe1_plugins_menu)
         plugin_manager.events.disabled.connect(_rebuild_npe1_plugins_menu)
