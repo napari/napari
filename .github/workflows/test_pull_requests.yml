@@ -193,6 +193,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - uses: actions/setup-python@v5
         with:
           python-version: 3.11
@@ -208,6 +209,11 @@ jobs:
           repo: napari
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: debug print
+        run: |
+          echo ${{ fromJSON(steps.latest_release.outputs.data).target_commitish }}
+          echo ${{ fromJSON(steps.latest_release.outputs.data) }}
 
       - name: install dependencies
         run: |
