@@ -202,6 +202,7 @@ jobs:
       - uses: tlambert03/setup-qt-libs@v1
 
       - uses: octokit/request-action@v2.x
+        # here we get hash of the latest release commit to compare with PR
         id: latest_release
         with:
           route: GET /repos/{owner}/{repo}/releases/latest
@@ -209,12 +210,6 @@ jobs:
           repo: napari
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: debug print
-        run: |
-          echo ${{ fromJSON(steps.latest_release.outputs.data).target_commitish }}
-          echo ${{ fromJSON(steps.latest_release.outputs.data) }}
-          echo "latest release: '${{ steps.get_latest_release.outputs.data }}'"
 
       - name: install dependencies
         run: |
@@ -233,6 +228,7 @@ jobs:
           PR: 1
 
       - name: Run benchmarks latest release
+        # here we check if the benchmark on the latest release is not broken
         uses: aganders3/headless-gui@v1
         with:
           run: |

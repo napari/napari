@@ -122,10 +122,9 @@ class LabelRendering:
         [np.uint8, np.uint16, np.uint32],
         ['auto', 'direct'],
     )
-    if 'GITHUB_ACTIONS' in os.environ:
-        skip_params = Skipper(lambda x: x[0] > 20)
-    if 'PR' in os.environ:
-        skip_params = Skipper(lambda x: x[0] > 20)
+    skip_params = Skipper(
+        func_pr=lambda x: x[0] > 20, func_ci=lambda x: x[0] > 20
+    )
 
     def setup(self, radius, dtype, label_mode):
         self.steps = 4 if 'GITHUB_ACTIONS' in os.environ else 10
