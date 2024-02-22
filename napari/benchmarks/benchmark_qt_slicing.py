@@ -122,7 +122,7 @@ class QtViewerAsyncImage2DSuite:
 class QtViewerAsyncPointsSuite:
     n_points = [2**i for i in range(12, 18)]
     params = n_points
-    skip_params = Skipper(func_pr=lambda x: x > 2**12)
+    skip_params = Skipper(func_pr=lambda x: x[0] > 2**12)
 
     def setup(self, n_points):
         _ = QApplication.instance() or QApplication([])
