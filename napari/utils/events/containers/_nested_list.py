@@ -199,14 +199,14 @@ class NestableEventedList(EventedList[_T]):
     @overload
     def __setitem__(
         self, key: Union[int, NestedIndex], value: _T
-    ): ...  # pragma: no cover
+    ) -> None: ...  # pragma: no cover
 
     @overload
     def __setitem__(
         self, key: slice, value: Iterable[_T]
-    ): ...  # pragma: no cover
+    ) -> None: ...  # pragma: no cover
 
-    def __setitem__(self, key: MaybeNestedIndex, value) -> None:
+    def __setitem__(self, key, value):
         # NOTE: if we check isinstance(..., MutableList), then we'll actually
         # clobber object of specialized classes being inserted into the list
         # (for instance, subclasses of NestableEventedList)
