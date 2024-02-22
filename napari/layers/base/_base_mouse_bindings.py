@@ -168,7 +168,6 @@ def transform_with_box(
     # we work in data space so we're axis aligned which simplifies calculation
     # same as Layer.data_to_world
     simplified = layer._transforms[1:].simplified
-    assert simplified is not None
     initial_data_to_world = simplified.set_slice(event.dims_displayed)
     initial_world_to_data = initial_data_to_world.inverse
     initial_mouse_pos = np.array(event.position)[event.dims_displayed]
