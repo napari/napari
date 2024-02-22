@@ -18,7 +18,6 @@ on:
 jobs:
   download:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run }}
     steps:
       - name: "Download artifact"
         uses: actions/github-script@v6
