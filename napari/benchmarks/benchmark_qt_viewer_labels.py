@@ -94,7 +94,7 @@ class QtViewerSingleLabelsSuite:
     def time_on_mouse_move(self):
         """Time to drag paint on mouse move."""
         if NAPARI_0_4_19:
-            self.viewer.window._qt_viewer._on_mouse_move(self.event)
+            self.viewer.window._qt_viewer.on_mouse_move(self.event)
         else:
             self.viewer.window._qt_viewer.canvas._on_mouse_move(self.event)
 
