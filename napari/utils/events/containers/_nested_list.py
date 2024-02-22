@@ -480,7 +480,10 @@ class NestableEventedList(EventedList[_T]):
         return e
 
     def _iter_indices(
-        self, start: int = 0, stop: Optional[int] = None, root: Tuple[int, ...]=()
+        self,
+        start: int = 0,
+        stop: Optional[int] = None,
+        root: Tuple[int, ...] = (),
     ) -> Generator[Union[int, Tuple[int]]]:
         """Iter indices from start to stop.
 
