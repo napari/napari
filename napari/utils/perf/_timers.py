@@ -307,7 +307,7 @@ else:
         *,
         process_id: Optional[int] = None,
         thread_id: Optional[int] = None,
-        phase: str = "X",
+        phase: str = 'X',
         **kwargs: float,
     ) -> Generator[None, None, None]:
         yield
