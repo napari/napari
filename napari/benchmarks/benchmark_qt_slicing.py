@@ -51,6 +51,7 @@ class SlowMemoryStore(zarr.storage.MemoryStore):
 class AsyncImage2DSuite:
     params = get_image_params()
     timeout = 300
+    skip_params = Skipper(func_pr=lambda x: x[0] > 0)
 
     def setup(self, latency, dataname):
         shape = SAMPLE_PARAMS[dataname]['shape']
@@ -87,7 +88,7 @@ def _skip_3d_rgb(param):
 
 class QtViewerAsyncImage2DSuite:
     params = get_image_params()
-    skip_params = Skipper(func_always=_skip_3d_rgb)
+    skip_params = Skipper(func_always=_skip_3d_rgb, func_pr=lambda x: x[0] > 0)
     timeout = 300
 
     def setup(self, latency, dataname):
@@ -121,6 +122,7 @@ class QtViewerAsyncImage2DSuite:
 class QtViewerAsyncPointsSuite:
     n_points = [2**i for i in range(12, 18)]
     params = n_points
+    skip_params = Skipper(func_pr=lambda x: x > 2**12)
 
     def setup(self, n_points):
         _ = QApplication.instance() or QApplication([])
