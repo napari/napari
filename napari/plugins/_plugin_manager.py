@@ -105,7 +105,7 @@ class NapariPluginManager(PluginManager):
         self._unreg_plugin_submenus = None
         self._unreg_plugin_actions = None
 
-    def _initialize(self):
+    def _initialize(self) -> None:
         with self.discovery_blocked():
             from napari.settings import get_settings
 
@@ -161,7 +161,7 @@ class NapariPluginManager(PluginManager):
 
         return plugin
 
-    def _on_blocked_change(self, event):
+    def _on_blocked_change(self, event) -> None:
         # things that are "added to the blocked list" become disabled
         for item in event.added:
             self.events.disabled(value=item)
@@ -420,7 +420,7 @@ class NapariPluginManager(PluginManager):
                 )
             )
 
-    def discover_themes(self):
+    def discover_themes(self) -> None:
         """Trigger discovery of theme plugins.
 
         As a "historic" hook, this should only need to be called once.
