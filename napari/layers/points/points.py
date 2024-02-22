@@ -1320,7 +1320,7 @@ class Points(Layer):
         self._set_color_mode(face_color_mode, 'face')
 
     def _set_color_mode(
-        self, color_mode: Union[ColorMode, str], attribute: str
+        self, color_mode: Union[ColorMode, str], attribute: Literal['border', 'face']
     ):
         """Set the face_color_mode or border_color_mode property
 
