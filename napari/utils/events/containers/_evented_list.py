@@ -307,7 +307,7 @@ class EventedList(TypedMutableSequence[_T]):
 
     def _move_plan(
         self, sources: Iterable[Index], dest_index: int
-    ) -> Generator:
+    ) -> Generator[Tuple[int, int], None, None]:
         """Prepared indices for a multi-move.
 
         Given a set of ``sources`` from anywhere in the list,
