@@ -107,7 +107,7 @@ class PointsSlicingSuite:
 
     params = [True, False]
     timeout = 300
-    skip_params = Skipper(lambda x: NAPARI_0_4_19)
+    skip_params = Skipper(lambda _: NAPARI_0_4_19)
 
     def setup(self, flatten_slice_axis):
         np.random.seed(0)
@@ -141,7 +141,10 @@ class PointsToMaskSuite:
         [5, 10],
     ]
 
-    skip_params = Skipper(func_pr=lambda x: x[0] > 256 or x[1][0] > 512)
+    skip_params = Skipper(
+        func_pr=lambda num_points, mask_shape, points_size: num_points > 256
+        or mask_shape[0] > 512
+    )
 
     def setup(self, num_points, mask_shape, point_size):
         np.random.seed(0)

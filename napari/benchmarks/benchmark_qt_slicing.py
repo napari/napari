@@ -51,7 +51,7 @@ class SlowMemoryStore(zarr.storage.MemoryStore):
 class AsyncImage2DSuite:
     params = get_image_params()
     timeout = 300
-    skip_params = Skipper(func_pr=lambda x: x[0] > 0)
+    skip_params = Skipper(func_pr=lambda latency, dataname: latency > 0)
 
     def setup(self, latency, dataname):
         shape = SAMPLE_PARAMS[dataname]['shape']
@@ -81,14 +81,16 @@ class AsyncImage2DSuite:
         self.layer.refresh()
 
 
-def _skip_3d_rgb(param):
-    shape = SAMPLE_PARAMS[param[1]]['shape']
+def _skip_3d_rgb(_latency, dataname):
+    shape = SAMPLE_PARAMS[dataname]['shape']
     return len(shape) == 3 and shape[2] == 3
 
 
 class QtViewerAsyncImage2DSuite:
     params = get_image_params()
-    skip_params = Skipper(func_always=_skip_3d_rgb, func_pr=lambda x: x[0] > 0)
+    skip_params = Skipper(
+        func_always=_skip_3d_rgb, func_pr=lambda latency, dataname: latency > 0
+    )
     timeout = 300
 
     def setup(self, latency, dataname):
@@ -122,7 +124,7 @@ class QtViewerAsyncImage2DSuite:
 class QtViewerAsyncPointsSuite:
     n_points = [2**i for i in range(12, 18)]
     params = n_points
-    skip_params = Skipper(func_pr=lambda x: x[0] > 2**12)
+    skip_params = Skipper(func_pr=lambda n_points: n_points > 2**12)
 
     def setup(self, n_points):
         _ = QApplication.instance() or QApplication([])
@@ -153,7 +155,9 @@ class QtViewerAsyncPointsAndImage2DSuite:
     timeout = 600
 
     skip_params = Skipper(
-        func_pr=lambda x: x[0] > 2**14 or x[2] > 512 or x[1] > 0.05,
+        func_pr=lambda n_points, latency, chunksize: n_points > 2**14
+        or chunksize > 512
+        or latency > 0,
     )
 
     def setup(self, n_points, latency, chunksize):

@@ -24,7 +24,7 @@ class Labels2DSuite:
     param_names = ['n', 'dtype']
     params = ([2**i for i in range(4, 13)], [np.uint8, np.int32])
 
-    skip_params = Skipper(lambda x: x[0] > 2**5)
+    skip_params = Skipper(lambda n, dtype: n > 2**5)
 
     def setup(self, n, dtype):
         np.random.seed(0)
@@ -85,7 +85,9 @@ class LabelsDrawing2DSuite:
 
     param_names = ['n', 'brush_size', 'color_mode', 'contour']
     params = ([512, 3072], [8, 64, 256], ['auto', 'direct'], [0, 1])
-    skip_params = Skipper(func_pr=lambda x: x[0] > 512 or x[1] > 64)
+    skip_params = Skipper(
+        func_pr=lambda n, brush_size, *_: n > 512 or brush_size > 64
+    )
 
     def setup(self, n, brush_size, color_mode, contour):
         np.random.seed(0)
@@ -119,7 +121,7 @@ class LabelsDrawing2DSuite:
 
 
 class Labels2DColorDirectSuite(Labels2DSuite):
-    skip_params = Skipper(func_pr=lambda x: x[0] > 32)
+    skip_params = Skipper(func_pr=lambda n, dtype: n > 32)
 
     def setup(self, n, dtype):
         np.random.seed(0)
@@ -146,7 +148,7 @@ class Labels3DSuite:
     params = ([2**i for i in range(4, 11)], [np.uint8, np.uint32])
 
     skip_params = Skipper(
-        func_pr=lambda x: x[0] > 2**6, func_ci=lambda x: x[0] > 2**9
+        func_pr=lambda n, dtype: n > 2**6, func_ci=lambda n, dtype: n > 2**9
     )
     # CI skip above 2**9 because of memory limits
 

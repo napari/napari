@@ -15,7 +15,7 @@ import numpy as np
 from skimage import morphology
 
 
-def always_false(x):
+def always_false(*_):
     return False
 
 
@@ -32,7 +32,9 @@ class Skipper:
 
     def __contains__(self, item):
         return (
-            self.func_pr(item) or self.func_ci(item) or self.func_always(item)
+            self.func_pr(*item)
+            or self.func_ci(*item)
+            or self.func_always(*item)
         )
 
 

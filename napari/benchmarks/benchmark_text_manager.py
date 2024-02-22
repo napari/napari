@@ -25,7 +25,7 @@ class TextManagerSuite:
         ],
     ]
 
-    skip_params = Skipper(func_pr=lambda x: x[0] > 2**6)
+    skip_params = Skipper(func_pr=lambda n, string: n > 2**6)
 
     def setup(self, n, string):
         np.random.seed(0)

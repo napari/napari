@@ -129,7 +129,8 @@ class LabelRendering:
         ['auto', 'direct'],
     )
     skip_params = Skipper(
-        func_pr=lambda x: x[0] > 20, func_ci=lambda x: x[0] > 20
+        func_pr=lambda radius, *_: radius > 20,
+        func_ci=lambda radius, *_: radius > 20,
     )
 
     def setup(self, radius, dtype, label_mode):
