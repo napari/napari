@@ -660,7 +660,7 @@ class Window:
         plugin_manager.discover_themes()
         self._setup_existing_themes()
 
-        # npe1 shim
+        # import and index all discovered shimmed npe1 plugins
         index_npe1_adapters()
 
         self._add_menus()
