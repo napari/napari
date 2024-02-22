@@ -2,17 +2,20 @@
 # https://asv.readthedocs.io/en/latest/writing_benchmarks.html
 # or the napari documentation on benchmarking
 # https://github.com/napari/napari/blob/main/docs/BENCHMARKS.md
-import os
 from copy import copy
 
 import numpy as np
+from packaging.version import parse as parse_version
 
+import napari
 from napari.components.dims import Dims
 from napari.layers import Labels
 
 from .utils import Skipper, labeled_particles
 
 MAX_VAL = 2**23
+
+NAPARI_0_4_19 = parse_version(napari.__version__) <= parse_version('0.4.19')
 
 
 class Labels2DSuite:
@@ -21,8 +24,7 @@ class Labels2DSuite:
     param_names = ['n', 'dtype']
     params = ([2**i for i in range(4, 13)], [np.uint8, np.int32])
 
-    if 'PR' in os.environ:
-        skip_params = Skipper(lambda x: x[0] > 2**5)
+    skip_params = Skipper(lambda x: x[0] > 2**5)
 
     def setup(self, n, dtype):
         np.random.seed(0)
@@ -154,7 +156,10 @@ class Labels3DSuite:
             (n, n, n), dtype=dtype, n=int(np.log2(n) ** 2), seed=1
         )
         self.layer = Labels(self.data)
-        self.layer._slice_dims(Dims(ndim=3, ndisplay=3))
+        if NAPARI_0_4_19:
+            self.layer._slice_dims((0, 0, 0), ndisplay=3)
+        else:
+            self.layer._slice_dims(Dims(ndim=3, ndisplay=3))
         self.layer._raw_to_displayed(
             self.layer._slice.image.raw,
             (slice(0, n), slice(0, n), slice(0, n)),

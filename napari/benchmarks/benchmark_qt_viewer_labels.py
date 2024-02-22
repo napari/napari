@@ -9,6 +9,7 @@ from itertools import cycle
 from typing import List
 
 import numpy as np
+from packaging.version import parse as parse_version
 from qtpy.QtWidgets import QApplication
 from skimage.morphology import diamond, octahedron
 
@@ -17,6 +18,8 @@ from napari.components.viewer_model import ViewerModel
 from napari.qt import QtViewer
 
 from .utils import Skipper
+
+NAPARI_0_4_19 = parse_version(napari.__version__) <= parse_version('0.4.19')
 
 
 @dataclass
@@ -90,7 +93,10 @@ class QtViewerSingleLabelsSuite:
 
     def time_on_mouse_move(self):
         """Time to drag paint on mouse move."""
-        self.viewer.window._qt_viewer.canvas._on_mouse_move(self.event)
+        if NAPARI_0_4_19:
+            self.viewer.window._qt_viewer._on_mouse_move(self.event)
+        else:
+            self.viewer.window._qt_viewer.canvas._on_mouse_move(self.event)
 
 
 @lru_cache
