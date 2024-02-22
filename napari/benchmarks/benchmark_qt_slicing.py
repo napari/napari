@@ -80,25 +80,20 @@ class AsyncImage2DSuite:
         self.layer.refresh()
 
 
-class QtViewerAsyncImage2DSuite:
-    """
-    TODO: these benchmarks are skipped. Remove func_always=lambda x: True in Skipper to enable.
-    """
+def _skip_3d_rgb(param):
+    shape = SAMPLE_PARAMS[param[1]]['shape']
+    return len(shape) == 3 and shape[2] == 3
 
+
+class QtViewerAsyncImage2DSuite:
     params = get_image_params()
-    skip_params = Skipper(func_always=lambda x: True)
+    skip_params = Skipper(func_always=_skip_3d_rgb)
     timeout = 300
 
     def setup(self, latency, dataname):
         shape = SAMPLE_PARAMS[dataname]['shape']
         chunk_shape = SAMPLE_PARAMS[dataname]['chunk_shape']
         dtype = SAMPLE_PARAMS[dataname]['dtype']
-
-        if len(shape) == 3 and shape[2] == 3:
-            # Skip 2D RGB tests -- scrolling does not apply
-            self.viewer = None
-            raise NotImplementedError
-            # TODO when enabled move this to skipper
 
         store = SlowMemoryStore(load_delay=latency)
         _ = QApplication.instance() or QApplication([])
@@ -124,13 +119,8 @@ class QtViewerAsyncImage2DSuite:
 
 
 class QtViewerAsyncPointsSuite:
-    """
-    TODO: these benchmarks are skipped. Remove func_always=lambda x: True in Skipper to enable.
-    """
-
     n_points = [2**i for i in range(12, 18)]
     params = n_points
-    skip_params = Skipper(func_always=lambda x: True)
 
     def setup(self, n_points):
         _ = QApplication.instance() or QApplication([])
@@ -142,20 +132,18 @@ class QtViewerAsyncPointsSuite:
         self.viewer.add_image(self.empty_image)
         self.point_data = np.random.randint(512, size=(n_points, 3))
         self.viewer.add_points(self.point_data)
+        self.app = QApplication.instance() or QApplication([])
 
     def time_z_scroll(self, *args):
         for z in range(self.empty_image.shape[0]):
             self.viewer.dims.set_current_step(0, z)
+            self.app.processEvents()
 
     def teardown(self, *args):
         self.viewer.window.close()
 
 
 class QtViewerAsyncPointsAndImage2DSuite:
-    """
-    TODO: these benchmarks are skipped. Remove func_always=lambda x: True in Skipper to enable.
-    """
-
     n_points = [2**i for i in range(12, 18, 2)]
     chunksize = [256, 512, 1024]
     latency = [0.05 * i for i in range(3)]
@@ -164,7 +152,6 @@ class QtViewerAsyncPointsAndImage2DSuite:
 
     skip_params = Skipper(
         func_pr=lambda x: x[0] > 2**14 or x[2] > 512 or x[1] > 0.05,
-        func_always=lambda x: True,
     )
 
     def setup(self, n_points, latency, chunksize):
@@ -184,10 +171,12 @@ class QtViewerAsyncPointsAndImage2DSuite:
         self.viewer.add_image(self.image_data)
         self.point_data = np.random.randint(512, size=(n_points, 3))
         self.viewer.add_points(self.point_data)
+        self.app = QApplication.instance() or QApplication([])
 
     def time_z_scroll(self, *args):
         for z in range(self.image_data.shape[0]):
             self.viewer.dims.set_current_step(0, z)
+            self.app.processEvents()
 
     def teardown(self, *args):
         self.viewer.window.close()
