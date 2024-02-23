@@ -225,7 +225,7 @@ jobs:
           run: |
             asv run --show-stderr --quick  --attribute timeout=300 HEAD^!
         env:
-          PR: 1
+          PR: 1 # prevents asv from running very compute-intensive benchmarks
 
       - name: Run benchmarks latest release
         # here we check if the benchmark on the latest release is not broken
@@ -234,4 +234,4 @@ jobs:
           run: |
             asv run --show-stderr --quick  --attribute timeout=300  ${{ fromJSON(steps.latest_release.outputs.data).target_commitish }}^!
         env:
-          PR: 1
+          PR: 1  # prevents asv from running very compute-intensive benchmarks
