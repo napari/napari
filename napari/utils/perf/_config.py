@@ -18,9 +18,6 @@ PERFMON_ENV_VAR = 'NAPARI_PERFMON'
 class PerfmonConfigError(Exception):
     """Error parsing or interpreting config file."""
 
-    def __init__(self, message) -> None:
-        self.message = message
-
 
 def _patch_perf_timer(parent, callable_name: str, label: str) -> None:
     """Patches the callable to run it inside a perf_timer.
