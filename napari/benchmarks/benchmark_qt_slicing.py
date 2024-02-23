@@ -11,7 +11,7 @@ from qtpy.QtWidgets import QApplication
 import napari
 from napari.layers import Image
 
-from .utils import Skipper
+from .utils import Skip
 
 SAMPLE_PARAMS = {
     'skin_data': {
@@ -51,7 +51,7 @@ class SlowMemoryStore(zarr.storage.MemoryStore):
 class AsyncImage2DSuite:
     params = get_image_params()
     timeout = 300
-    skip_params = Skipper(func_pr=lambda latency, dataname: latency > 0)
+    skip_params = Skip(if_in_pr=lambda latency, dataname: latency > 0)
 
     def setup(self, latency, dataname):
         shape = SAMPLE_PARAMS[dataname]['shape']
@@ -88,8 +88,8 @@ def _skip_3d_rgb(_latency, dataname):
 
 class QtViewerAsyncImage2DSuite:
     params = get_image_params()
-    skip_params = Skipper(
-        func_always=_skip_3d_rgb, func_pr=lambda latency, dataname: latency > 0
+    skip_params = Skip(
+        always=_skip_3d_rgb, if_in_pr=lambda latency, dataname: latency > 0
     )
     timeout = 300
 
@@ -124,7 +124,7 @@ class QtViewerAsyncImage2DSuite:
 class QtViewerAsyncPointsSuite:
     n_points = [2**i for i in range(12, 18)]
     params = n_points
-    skip_params = Skipper(func_pr=lambda n_points: n_points > 2**12)
+    skip_params = Skip(if_in_pr=lambda n_points: n_points > 2**12)
 
     def setup(self, n_points):
         _ = QApplication.instance() or QApplication([])
@@ -154,8 +154,8 @@ class QtViewerAsyncPointsAndImage2DSuite:
     params = (n_points, latency, chunksize)
     timeout = 600
 
-    skip_params = Skipper(
-        func_pr=lambda n_points, latency, chunksize: n_points > 2**14
+    skip_params = Skip(
+        if_in_pr=lambda n_points, latency, chunksize: n_points > 2**14
         or chunksize > 512
         or latency > 0,
     )

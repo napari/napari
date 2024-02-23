@@ -8,7 +8,7 @@ import pandas as pd
 
 from napari.layers.utils.text_manager import TextManager
 
-from .utils import Skipper
+from .utils import Skip
 
 
 class TextManagerSuite:
@@ -25,7 +25,7 @@ class TextManagerSuite:
         ],
     ]
 
-    skip_params = Skipper(func_pr=lambda n, string: n > 2**6)
+    skip_params = Skip(if_in_pr=lambda n, string: n > 2**6)
 
     def setup(self, n, string):
         np.random.seed(0)

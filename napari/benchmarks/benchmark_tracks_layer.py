@@ -2,16 +2,16 @@ import numpy as np
 
 from napari.layers import Tracks
 
-from .utils import Skipper
+from .utils import Skip
 
 
 class TracksSuite:
     param_names = ['size', 'n_tracks']
     params = [(5 * np.power(10, np.arange(7))).tolist(), [1, 10, 100, 1000]]
 
-    skip_params = Skipper(
-        func_pr=lambda size, n_tracks: size > 500 or n_tracks > 10,
-        func_always=lambda size, n_tracks: n_tracks * 5 > size,
+    skip_params = Skip(
+        if_in_pr=lambda size, n_tracks: size > 500 or n_tracks > 10,
+        always=lambda size, n_tracks: n_tracks * 5 > size,
     )
     # we skip cases where the number of tracks times five is larger than the size as it is not useful
 

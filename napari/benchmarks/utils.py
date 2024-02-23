@@ -19,16 +19,16 @@ def always_false(*_):
     return False
 
 
-class Skipper:
+class Skip:
     def __init__(
         self,
-        func_pr=always_false,
-        func_ci=always_false,
-        func_always=always_false,
+        if_in_pr: Callable[..., bool] = always_false,
+        if_on_ci: Callable[..., bool] = always_false,
+        always: Callable[..., bool] = always_false,
     ):
-        self.func_pr = func_pr if 'PR' in os.environ else always_false
-        self.func_ci = func_ci if 'CI' in os.environ else always_false
-        self.func_always = func_always
+        self.func_pr = if_in_pr if 'PR' in os.environ else always_false
+        self.func_ci = if_on_ci if 'CI' in os.environ else always_false
+        self.func_always = always
 
     def __contains__(self, item):
         return (

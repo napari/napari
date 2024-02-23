@@ -17,7 +17,7 @@ import napari
 from napari.components.viewer_model import ViewerModel
 from napari.qt import QtViewer
 
-from .utils import Skipper
+from .utils import Skip
 
 NAPARI_0_4_19 = parse_version(napari.__version__) <= parse_version('0.4.19')
 
@@ -128,9 +128,9 @@ class LabelRendering:
         [np.uint8, np.uint16, np.uint32],
         ['auto', 'direct'],
     )
-    skip_params = Skipper(
-        func_pr=lambda radius, *_: radius > 20,
-        func_ci=lambda radius, *_: radius > 20,
+    skip_params = Skip(
+        if_in_pr=lambda radius, *_: radius > 20,
+        if_on_ci=lambda radius, *_: radius > 20,
     )
 
     def setup(self, radius, dtype, label_mode):

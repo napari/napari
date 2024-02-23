@@ -11,7 +11,7 @@ import napari
 from napari.components import Dims
 from napari.layers import Points
 
-from .utils import Skipper
+from .utils import Skip
 
 NAPARI_0_4_19 = parse_version(napari.__version__) <= parse_version('0.4.19')
 
@@ -107,7 +107,7 @@ class PointsSlicingSuite:
 
     params = [True, False]
     timeout = 300
-    skip_params = Skipper(lambda _: NAPARI_0_4_19)
+    skip_params = Skip(always=lambda _: NAPARI_0_4_19)
 
     def setup(self, flatten_slice_axis):
         np.random.seed(0)
@@ -141,8 +141,8 @@ class PointsToMaskSuite:
         [5, 10],
     ]
 
-    skip_params = Skipper(
-        func_pr=lambda num_points, mask_shape, points_size: num_points > 256
+    skip_params = Skip(
+        if_in_pr=lambda num_points, mask_shape, points_size: num_points > 256
         or mask_shape[0] > 512
     )
 
