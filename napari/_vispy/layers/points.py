@@ -10,7 +10,6 @@ from napari.utils.events import disconnect_events
 
 
 class VispyPointsLayer(VispyBaseLayer):
-    _highlight_color = (0, 0.6, 1)
 
     def __init__(self, layer) -> None:
         node = PointsVisual()
@@ -107,15 +106,17 @@ class VispyPointsLayer(VispyBaseLayer):
 
         scale = self.layer.scale[-1]
         scaled_highlight = (
-            settings.appearance.highlight_thickness * self.layer.scale_factor
+            settings.appearance.highlight.highlight_thickness
+            * self.layer.scale_factor
         )
+        highlight_color = tuple(settings.appearance.highlight.highlight_color)
 
         self.node._subvisuals[1].set_data(
             data[:, ::-1],
             size=(size + edge_width) * scale,
             symbol=symbol,
             edge_width=scaled_highlight * 2,
-            edge_color=self._highlight_color,
+            edge_color=highlight_color,
             face_color=transform_color('transparent'),
         )
 
@@ -131,7 +132,7 @@ class VispyPointsLayer(VispyBaseLayer):
 
         self.node._subvisuals[2].set_data(
             pos=pos[:, ::-1],
-            color=self._highlight_color,
+            color=highlight_color,
             width=width,
         )
 
