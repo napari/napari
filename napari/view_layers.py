@@ -295,8 +295,8 @@ def imshow(
         be a string to assign as a name to a colormap and the value must be a
         Colormap.
     contrast_limits : list (2,)
-        Value limits to be used for determining the minimum and maximum colormap bounds for
-        luminance images. If not passed, they will be calculated as the min and max of
+        Intensity value limits to be used for determining the minimum and maximum colormap bounds for
+        luminance images. If not passed, they will be calculated as the min and max intensity value of
         the image.
     custom_interpolation_kernel_2d : np.ndarray
         Convolution kernel used with the 'custom' interpolation mode in 2D rendering.
