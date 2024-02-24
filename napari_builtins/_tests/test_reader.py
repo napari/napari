@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Callable, Optional
 
-import imageio
+import imageio.v3 as iio
 import npe2
 import numpy as np
 import pytest
@@ -24,7 +24,7 @@ def save_image(tmp_path: Path):
         elif dest.suffix in {'.npy'}:
             np.save(str(dest), data_)
         else:
-            imageio.imsave(str(dest), data_)
+            iio.imwrite(str(dest), data_)
         return dest
 
     return _save
@@ -41,6 +41,14 @@ def test_reader_plugin_tif(save_image: Callable[..., Path], ext, stack):
     assert isinstance(layer_data, list)
     assert len(layer_data) == 1
     assert isinstance(layer_data[0], tuple)
+
+
+def test_animated_gif_reader(save_image):
+    threeD_data = (np.random.rand(5, 20, 20, 3) * 255).astype(np.uint8)
+    dest = save_image('animated.gif', threeD_data)
+    layer_data = npe2.read([str(dest)], stack=False)
+    assert len(layer_data) == 1
+    assert layer_data[0][0].shape == (5, 20, 20, 3)
 
 
 def test_reader_plugin_url():
