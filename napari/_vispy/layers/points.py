@@ -79,6 +79,7 @@ class VispyPointsLayer(VispyBaseLayer):
             data[:, ::-1],
             size=size * scale,
             symbol=symbol,
+            # edge_color is the name of the vispy marker visual kwarg
             edge_color=border_color,
             face_color=face_color,
             **border_kw,
