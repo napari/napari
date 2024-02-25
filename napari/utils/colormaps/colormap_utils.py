@@ -256,6 +256,7 @@ def low_discrepancy_image(image, seed=0.5, margin=1 / 256) -> np.ndarray:
         A set of labels or label image.
     seed : float
         The seed from which to start the quasirandom sequence.
+        Effective range is [0,1.0), as only the decimals are used.
     margin : float
         Values too close to 0 or 1 will get mapped to the edge of the colormap,
         so we need to offset to a margin slightly inside those values. Since
@@ -341,6 +342,7 @@ def _low_discrepancy(dim, n, seed=0.5):
         How many points to generate.
     seed : float or array of float, shape (dim,)
         The seed from which to start the quasirandom sequence.
+        Effective range is [0,1.0), as only the decimals are used.
 
     Returns
     -------
@@ -376,6 +378,7 @@ def _color_random(n, *, colorspace='lab', tolerance=0.0, seed=0.5):
         clipped to be in-range).
     seed : float or array of float, shape (3,)
         Value from which to start the quasirandom sequence.
+        Effective range is [0,1.0), as only the decimals are used.
 
     Returns
     -------
@@ -425,8 +428,9 @@ def label_colormap(
     num_colors : int, optional
         Number of unique colors to use. Default used if not given.
         Colors are in addition to a transparent color 0.
-    seed : float or array of float, length 3
+    seed : float, optional
         The seed for the random color generator.
+        Effective range is [0,1.0), as only the decimals are used.
 
     Returns
     -------
