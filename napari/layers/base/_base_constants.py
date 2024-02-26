@@ -1,5 +1,6 @@
 from collections import OrderedDict
 from enum import IntEnum, auto
+from typing import Tuple
 
 from napari.utils.misc import StringEnum
 from napari.utils.translations import trans
@@ -95,7 +96,9 @@ class InteractionBoxHandle(IntEnum):
     INSIDE = 9
 
     @classmethod
-    def opposite_handle(cls, handle):
+    def opposite_handle(
+        cls, handle: 'InteractionBoxHandle'
+    ) -> 'InteractionBoxHandle':
         opposites = {
             InteractionBoxHandle.TOP_LEFT: InteractionBoxHandle.BOTTOM_RIGHT,
             InteractionBoxHandle.TOP_CENTER: InteractionBoxHandle.BOTTOM_CENTER,
@@ -109,7 +112,14 @@ class InteractionBoxHandle(IntEnum):
         return opposite
 
     @classmethod
-    def corners(cls):
+    def corners(
+        cls,
+    ) -> Tuple[
+        'InteractionBoxHandle',
+        'InteractionBoxHandle',
+        'InteractionBoxHandle',
+        'InteractionBoxHandle',
+    ]:
         return (
             cls.TOP_LEFT,
             cls.TOP_RIGHT,

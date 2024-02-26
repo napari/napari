@@ -10,6 +10,7 @@ from napari.utils.events import disconnect_events
 
 
 class VispyPointsLayer(VispyBaseLayer):
+    node: PointsVisual
 
     def __init__(self, layer) -> None:
         node = PointsVisual()
@@ -54,7 +55,7 @@ class VispyPointsLayer(VispyBaseLayer):
             edge_width = self.layer._view_edge_width
             symbol = [str(x) for x in self.layer._view_symbol]
 
-        set_data = self.node._subvisuals[0].set_data
+        set_data = self.node.points_markers.set_data
 
         # use only last dimension to scale point sizes, see #5582
         scale = self.layer.scale[-1]
@@ -111,7 +112,7 @@ class VispyPointsLayer(VispyBaseLayer):
         )
         highlight_color = tuple(settings.appearance.highlight.highlight_color)
 
-        self.node._subvisuals[1].set_data(
+        self.node.selection_markers.set_data(
             data[:, ::-1],
             size=(size + edge_width) * scale,
             symbol=symbol,
@@ -130,7 +131,7 @@ class VispyPointsLayer(VispyBaseLayer):
             pos = self.layer._highlight_box
             width = scaled_highlight
 
-        self.node._subvisuals[2].set_data(
+        self.node.highlight_lines.set_data(
             pos=pos[:, ::-1],
             color=highlight_color,
             width=width,
@@ -152,8 +153,7 @@ class VispyPointsLayer(VispyBaseLayer):
 
     def _get_text_node(self):
         """Function to get the text node from the Compound visual"""
-        text_node = self.node._subvisuals[-1]
-        return text_node
+        return self.node.text
 
     def _on_text_change(self, event=None):
         if event is not None:
@@ -164,7 +164,7 @@ class VispyPointsLayer(VispyBaseLayer):
                 return
         self._update_text()
 
-    def _on_blending_change(self):
+    def _on_blending_change(self, event=None):
         """Function to set the blending mode"""
         points_blending_kwargs = BLENDING_MODES[self.layer.blending]
         self.node.set_gl_state(**points_blending_kwargs)
@@ -175,7 +175,7 @@ class VispyPointsLayer(VispyBaseLayer):
 
         # selection box is always without depth
         box_blending_kwargs = BLENDING_MODES['translucent_no_depth']
-        self.node._subvisuals[2].set_gl_state(**box_blending_kwargs)
+        self.node.highlight_lines.set_gl_state(**box_blending_kwargs)
 
         self.node.update()
 
@@ -184,10 +184,7 @@ class VispyPointsLayer(VispyBaseLayer):
 
     def _on_shading_change(self):
         shading = self.layer.shading
-        if shading == 'spherical':
-            self.node.spherical = True
-        else:
-            self.node.spherical = False
+        self.node.spherical = shading == 'spherical'
 
     def _on_canvas_size_limits_change(self):
         self.node.canvas_size_limits = self.layer.canvas_size_limits
