@@ -215,6 +215,8 @@ def _get_common_evented_attributes(
             'data',
             'features',
             'properties',
+            'size',
+            'symbol',
             'edge_width',
             'edge_color',
             'face_color',
@@ -236,7 +238,6 @@ def _get_common_evented_attributes(
         A set of layers to evaluate for attribute linking.
     exclude : set, optional
         Layer attributes that make no sense to link, or may error on changing.
-        {'thumbnail', 'status', 'name', 'mode', 'data', 'features', 'properties', 'extent', 'loaded'}
     with_private : bool, optional
         include private attributes
 
