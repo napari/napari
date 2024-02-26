@@ -244,3 +244,39 @@ def test_track_ids_ordering() -> None:
 
     layer = Tracks(unsorted_data)
     np.testing.assert_array_equal(sorted_track_ids, layer.features['track_id'])
+
+
+def test_float64_tracks_data() -> None:
+    """Test if float64 data is correctly handled."""
+    # array with float64 values
+    data = np.array([[1, 0, 0, 0, 0], [1, 10**308, 1, 1, 1]], dtype=np.float64) 
+    layer = Tracks(data)
+
+    np.testing.assert_array_equal(layer.data, data)
+
+
+def test_changing_data_inplace() -> None:
+    """Test if layer can be refreshed after changing data in place."""
+
+    data = np.ones((100, 4))
+    data[:, 1] = np.arange(100)
+
+    layer = Tracks(data)
+
+    # Change data in place
+    # coordinates
+    layer.data[50:, -1] = 2
+    layer.refresh()
+
+    # time
+    layer.data[50:, 1] = np.arange(100, 150)
+    layer.refresh()
+
+    # track_id
+    layer.data[50:, 0] = 2
+    layer.refresh()
+
+
+
+
+
