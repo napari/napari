@@ -3,13 +3,23 @@ from __future__ import annotations
 from contextlib import contextmanager
 from functools import partial
 from itertools import combinations, permutations, product
-from typing import TYPE_CHECKING, Callable, DefaultDict, Iterable, Set, Tuple
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    DefaultDict,
+    Generator,
+    Iterable,
+    Optional,
+    Set,
+    Tuple,
+)
 from weakref import ReferenceType, ref
 
 if TYPE_CHECKING:
     from collections import abc
 
     from napari.layers import Layer
+    from napari.utils.events import Event
 
 from napari.utils.events.event import WarningEmitter
 from napari.utils.translations import trans
@@ -116,11 +126,13 @@ def link_layers(
         if key in _UNLINKERS:
             continue
 
-        def _make_l2_setter(l1=lay1, l2=lay2, attr=attribute):
+        def _make_l2_setter(
+            l1: Layer = lay1, l2: Layer = lay2, attr: str = attribute
+        ) -> Callable:
             # get a suitable equality operator for this attribute type
             eq_op = pick_equality_operator(getattr(l1, attr))
 
-            def setter(event=None):
+            def setter(event: Optional[Event] = None) -> None:
                 new_val = getattr(l1, attr)
                 # this line is the important part for avoiding recursion
                 if not eq_op(getattr(l2, attr), new_val):
@@ -144,7 +156,9 @@ def link_layers(
     return links
 
 
-def unlink_layers(layers: Iterable[Layer], attributes: Iterable[str] = ()):
+def unlink_layers(
+    layers: Iterable[Layer], attributes: Iterable[str] = ()
+) -> None:
     """Unlink previously linked ``attributes`` between all layers in ``layers``.
 
     Parameters
@@ -179,7 +193,9 @@ def unlink_layers(layers: Iterable[Layer], attributes: Iterable[str] = ()):
 
 
 @contextmanager
-def layers_linked(layers: Iterable[Layer], attributes: Iterable[str] = ()):
+def layers_linked(
+    layers: Iterable[Layer], attributes: Iterable[str] = ()
+) -> Generator[None, None, None]:
     """Context manager that temporarily links ``attributes`` on ``layers``."""
     links = link_layers(layers, attributes)
     try:
@@ -206,7 +222,7 @@ def _get_common_evented_attributes(
             'loaded',
         )
     ),
-    with_private=False,
+    with_private: bool = False,
 ) -> set[str]:
     """Get the set of common, non-private evented attributes in ``layers``.
 
@@ -269,7 +285,7 @@ def _link_key(lay1: Layer, lay2: Layer, attr: str) -> LinkKey:
     return (ref(lay1), ref(lay2), attr)
 
 
-def _unlink_keys(keys: Iterable[LinkKey]):
+def _unlink_keys(keys: Iterable[LinkKey]) -> None:
     """Disconnect layer linkages by keys."""
     for key in keys:
         disconnecter = _UNLINKERS.pop(key, None)
@@ -279,7 +295,9 @@ def _unlink_keys(keys: Iterable[LinkKey]):
     _LINKED_LAYERS = _rebuild_link_index()
 
 
-def _rebuild_link_index():
+def _rebuild_link_index() -> (
+    DefaultDict[ReferenceType[Layer], Set[ReferenceType[Layer]]]
+):
     links = DefaultDict(set)
     for l1, l2, _attr in _UNLINKERS:
         links[l1].add(l2)
