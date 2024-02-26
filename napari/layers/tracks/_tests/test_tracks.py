@@ -249,7 +249,7 @@ def test_track_ids_ordering() -> None:
 def test_float64_tracks_data() -> None:
     """Test if float64 data is correctly handled."""
     # array with float64 values
-    data = np.array([[1, 0, 0, 0, 0], [1, 10**308, 1, 1, 1]], dtype=np.float64) 
+    data = np.array([[1, 0, 0, 0, 0], [1, 10**308, 1, 1, 1]], dtype=np.float64)
     layer = Tracks(data)
 
     np.testing.assert_array_equal(layer.data, data)
@@ -275,8 +275,3 @@ def test_changing_data_inplace() -> None:
     # track_id
     layer.data[50:, 0] = 2
     layer.refresh()
-
-
-
-
-
