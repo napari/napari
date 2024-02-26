@@ -310,9 +310,9 @@ class TrackManager:
         """build the tracks"""
 
         # Track ids associated to all vertices, sorted by time
-        points_id = self.data[:, 0][self._ordered_points_idx].copy()
+        points_id = self.data[:, 0][self._ordered_points_idx]
         # Coordinates of all vertices
-        track_vertices = self.data[:, 1:].copy()
+        track_vertices = self.data[:, 1:]
 
         # Indices in the data array just before the track id changes
         indices_new_id = np.where(np.diff(self.data[:, 0]))[0]
