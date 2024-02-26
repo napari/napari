@@ -53,9 +53,9 @@ def make_widget(
         data = blobs[:, : image.ndim]
         kwargs = {
             'size': blobs[:, -1],
-            'edge_color': 'red',
-            'edge_width': 2,
-            'edge_width_is_relative': False,
+            'border_color': 'red',
+            'border_width': 2,
+            'border_width_is_relative': False,
             'face_color': 'transparent',
         }
         return (data, kwargs, 'points')
