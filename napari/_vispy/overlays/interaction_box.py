@@ -3,7 +3,7 @@ from napari._vispy.visuals.interaction_box import InteractionBox
 from napari.layers.base._base_constants import InteractionBoxHandle
 
 
-class _VispyBoundingBoxOverlay(LayerOverlayMixin, VispySceneOverlay):
+class _VispyInteractionBoxOverlay(LayerOverlayMixin, VispySceneOverlay):
     def __init__(self, *, layer, overlay, parent=None) -> None:
         super().__init__(
             node=InteractionBox(),
@@ -28,7 +28,7 @@ class _VispyBoundingBoxOverlay(LayerOverlayMixin, VispySceneOverlay):
         self._on_bounds_change()
 
 
-class VispySelectionBoxOverlay(_VispyBoundingBoxOverlay):
+class VispySelectionBoxOverlay(_VispyInteractionBoxOverlay):
     def __init__(self, *, layer, overlay, parent=None) -> None:
         super().__init__(
             layer=layer,
@@ -51,7 +51,7 @@ class VispySelectionBoxOverlay(_VispyBoundingBoxOverlay):
             )
 
 
-class VispyTransformBoxOverlay(_VispyBoundingBoxOverlay):
+class VispyTransformBoxOverlay(_VispyInteractionBoxOverlay):
     def __init__(self, *, layer, overlay, parent=None) -> None:
         super().__init__(
             layer=layer,
@@ -70,6 +70,10 @@ class VispyTransformBoxOverlay(_VispyBoundingBoxOverlay):
             bounds = self.layer._display_bounding_box_augmented_data_level(
                 self.layer._slice_input.displayed
             )
+            if self.layer._array_like:
+                # array-like layers (images) are offset by 0.5 in 2d.
+                bounds += 0.5
+
             # invert axes for vispy
             top_left, bot_right = (tuple(point) for point in bounds.T[:, ::-1])
 
