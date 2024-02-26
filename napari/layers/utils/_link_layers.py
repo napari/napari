@@ -200,9 +200,11 @@ def _get_common_evented_attributes(
             'features',
             'properties',
             'edge_width',
-            'border_widthedge_color',
+            'border_width',
+            'edge_color',
             'face_color',
-            'border_colorextent',
+            'border_color',
+            'extent',
             'loaded',
         )
     ),
