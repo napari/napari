@@ -564,7 +564,10 @@ class QtHighlightPreviewWidget(QWidget):
         self._slider_min_label.setText(str(value))
         self._slider.setMinimum(value)
         self._triangle.setMinimum(value)
-        self._value = max(self._value, self._min_value)
+        self._thickness_value = max(
+            self._value['highlight_thickness'], self._min_value
+        )
+        self._value['highlight_thickness'] = self._thickness_value
         self._refresh()
 
     def minimum(self):
@@ -598,7 +601,10 @@ class QtHighlightPreviewWidget(QWidget):
         self._slider_max_label.setText(str(value))
         self._slider.setMaximum(value)
         self._triangle.setMaximum(value)
-        self._value = min(self._value, self._max_value)
+        self._thickness_value = min(
+            self._value['highlight_thickness'], self._max_value
+        )
+        self._value['highlight_thickness'] = self._thickness_value
         self._refresh()
 
     def maximum(self):
