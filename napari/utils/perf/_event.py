@@ -120,26 +120,26 @@ class PerfEvent:
         self.span = Span(self.span.start_ns, end_ns)
 
     @property
-    def start_us(self):
+    def start_us(self) -> float:
         """Start time in microseconds."""
         return self.span.start_ns / 1e3
 
     @property
-    def start_ms(self):
+    def start_ms(self) -> float:
         """Start time in milliseconds."""
         return self.span.start_ns / 1e6
 
     @property
-    def duration_ns(self):
+    def duration_ns(self) -> int:
         """Duration in nanoseconds."""
         return self.span.end_ns - self.span.start_ns
 
     @property
-    def duration_us(self):
+    def duration_us(self) -> float:
         """Duration in microseconds."""
         return self.duration_ns / 1e3
 
     @property
-    def duration_ms(self):
+    def duration_ms(self) -> float:
         """Duration in milliseconds."""
         return self.duration_ns / 1e6
