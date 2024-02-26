@@ -1,4 +1,4 @@
-from typing import List, Union, cast
+from typing import Any, List, Union, cast
 
 from napari._pydantic_compat import Field
 from napari.settings._fields import Theme
@@ -27,11 +27,11 @@ class HighlightSettings(EventedModel):
 
 
 class AppearanceSettings(EventedModel):
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.highlight.events.connect(self._highlight_changed)
 
-    def _highlight_changed(self):
+    def _highlight_changed(self) -> None:
         self.events.highlight(value=self.highlight)
 
     theme: Theme = Field(
