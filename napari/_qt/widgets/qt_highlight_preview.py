@@ -467,11 +467,14 @@ class QtHighlightPreviewWidget(QWidget):
     def _refresh(self):
         """Set every widget value to the new set value."""
         self.blockSignals(True)
+        # Transform color value from a float representation
+        # (values from 0.0 to 1.0) to RGB values (values from 0 to 255)
+        # to set widgets color.
         color = QColor(
             *(
                 np.ceil(
-                    np.array(self._color_value) * [255, 255, 255, 255]
-                ).astype(int)[:-1]
+                    np.array(self._color_value)[:-1] * [255, 255, 255]
+                ).astype(int)
             )
         )
         self._lineedit.setText(str(self._thickness_value))
@@ -499,8 +502,8 @@ class QtHighlightPreviewWidget(QWidget):
         value : dict
             Highlight value (thickness and color).
         """
-        self._update_thickness_value(dict(value)['highlight_thickness'])
-        self._update_color_value(dict(value)['highlight_color'])
+        self._update_thickness_value(value['highlight_thickness'])
+        self._update_color_value(value['highlight_color'])
         self._refresh()
 
     def description(self):
