@@ -22,7 +22,6 @@ from typing import (
     Tuple,
     Type,
     Union,
-    cast,
 )
 
 import magicgui as mgui
@@ -277,12 +276,16 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     _modeclass: Type[StringEnum] = Mode
     _projectionclass: Type[StringEnum] = BaseProjectionMode
 
-    _drag_modes: ClassVar[Dict[StringEnum, Callable[[Layer, Event], None]]] = {
+    ModeCallable = Callable[
+        ['Layer', Event], Union[None, Generator[None, None, None]]
+    ]
+
+    _drag_modes: ClassVar[Dict[StringEnum, ModeCallable]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
     }
 
-    _move_modes: ClassVar[Dict[StringEnum, Callable[[Layer, Event], None]]] = {
+    _move_modes: ClassVar[Dict[StringEnum, ModeCallable]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
     }
@@ -1475,7 +1478,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         else:
             coords = [0] * (self.ndim - len(position)) + list(position)
 
-        simplified = cast(Affine, self._transforms[1:].simplified)
+        simplified = self._transforms[1:].simplified
         return simplified.inverse(coords)
 
     def data_to_world(self, position):
@@ -1532,8 +1535,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         affine * (rotate * shear * scale + translate)
         """
-        t = self._transforms[1:3].simplified
-        return cast(Affine, t)
+        return self._transforms[1:3].simplified
 
     def _world_to_data_ray(self, vector: npt.ArrayLike) -> npt.NDArray:
         """Convert a vector defining an orientation from world coordinates to data coordinates.
