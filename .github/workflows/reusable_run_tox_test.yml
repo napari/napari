@@ -86,8 +86,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install setuptools tox tox-gh-actions tox-min-req
-          pip install git+https://github.com/czaki/tox-uv
+          pip install setuptools tox tox-gh-actions tox-min-req tox-uv
 
       - name: create _version.py file
         # workaround for not using src layout
