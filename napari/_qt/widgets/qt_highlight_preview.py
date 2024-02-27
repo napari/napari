@@ -470,13 +470,7 @@ class QtHighlightPreviewWidget(QWidget):
         # Transform color value from a float representation
         # (values from 0.0 to 1.0) to RGB values (values from 0 to 255)
         # to set widgets color.
-        color = QColor(
-            *(
-                np.ceil(
-                    np.array(self._color_value)[:-1] * [255, 255, 255]
-                ).astype(int)
-            )
-        )
+        color = QColor(*[int(np.ceil(v * 255)) for v in self._color_value[:3]])
         self._lineedit.setText(str(self._thickness_value))
         self._slider.setValue(self._thickness_value)
         self._triangle.setValue(self._thickness_value, color=color)
