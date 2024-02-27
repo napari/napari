@@ -214,7 +214,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
         affine_matrix[: matrix.shape[0], : matrix.shape[1]] = matrix
         affine_matrix[-1, : len(translate)] = translate
 
-        offset = np.ones(len(self.layer._slice_input.displayed))
+        offset = np.zeros(len(self.layer._slice_input.displayed))
 
         if self._array_like and self.layer._slice_input.ndisplay == 2:
             # Perform pixel offset to shift origin from top left corner
