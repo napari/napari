@@ -13,18 +13,6 @@ if TYPE_CHECKING:
     import numpy.typing as npt
 
 
-def connex(vertices: np.ndarray) -> list:
-    """Connection array to build vertex edges for vispy LineVisual.
-
-    Notes
-    -----
-    See
-    http://api.vispy.org/en/latest/visuals.html#vispy.visuals.LineVisual
-
-    """
-    return [True] * (vertices.shape[0] - 1) + [False]
-
-
 class TrackManager:
     """Manage track data and simplify interactions with the Tracks layer.
 
@@ -282,29 +270,6 @@ class TrackManager:
                     )
 
         return new_graph
-
-    def build_tracks_old(self):
-        """build the tracks"""
-
-        points_id = []
-        track_vertices = []
-        track_connex = []
-
-        # NOTE(arl): this takes some time when the number of tracks is large
-        for idx in self.unique_track_ids:
-            indices = self._vertex_indices_from_id(idx)
-
-            # grab the correct vertices and sort by time
-            vertices = self.data[indices, 1:]
-
-            # coordinates of the text identifiers, vertices and connections
-            points_id += [idx] * vertices.shape[0]
-            track_vertices.append(vertices)
-            track_connex.append(connex(vertices))
-
-        self._points_id = np.array(points_id)[self._ordered_points_idx]
-        self._track_vertices = np.concatenate(track_vertices, axis=0)
-        self._track_connex = np.concatenate(track_connex, axis=0)
 
     def build_tracks(self):
         """build the tracks"""
