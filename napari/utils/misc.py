@@ -60,15 +60,15 @@ def running_as_bundled_app(*, check_conda: bool = True) -> bool:
     # From 0.4.12 we add a sentinel file next to the bundled sys.executable
     warnings.warn(
         trans._(
-            "Briefcase installations are no longer supported as of v0.4.18. "
-            "running_as_bundled_app() will be removed in a 0.6.0 release.",
+            'Briefcase installations are no longer supported as of v0.4.18. '
+            'running_as_bundled_app() will be removed in a 0.6.0 release.',
         ),
         DeprecationWarning,
         stacklevel=2,
     )
     if (
         check_conda
-        and (Path(sys.executable).parent / ".napari_is_bundled").exists()
+        and (Path(sys.executable).parent / '.napari_is_bundled').exists()
     ):
         return True
 
@@ -92,7 +92,7 @@ def running_as_bundled_app(*, check_conda: bool = True) -> bool:
 def running_as_constructor_app() -> bool:
     """Infer whether we are running as a constructor bundle."""
     return (
-        Path(sys.prefix).parent.parent / ".napari_is_bundled_constructor"
+        Path(sys.prefix).parent.parent / '.napari_is_bundled_constructor'
     ).exists()
 
 
@@ -245,7 +245,7 @@ def ensure_sequence_of_iterables(
             # sequence of iterables of wrong length
             raise ValueError(
                 trans._(
-                    "length of {obj} must equal {length}",
+                    'length of {obj} must equal {length}',
                     deferred=True,
                     obj=obj,
                     length=length,
@@ -344,7 +344,7 @@ class StringEnum(Enum, metaclass=StringEnumMeta):
 
 camel_to_snake_pattern = re.compile(r'(.)([A-Z][a-z]+)')
 camel_to_spaces_pattern = re.compile(
-    r"((?<=[a-z])[A-Z]|(?<!\A)[A-R,T-Z](?=[a-z]))"
+    r'((?<=[a-z])[A-Z]|(?<!\A)[A-R,T-Z](?=[a-z]))'
 )
 
 
@@ -354,7 +354,7 @@ def camel_to_snake(name: str) -> str:
 
 
 def camel_to_spaces(val: str) -> str:
-    return camel_to_spaces_pattern.sub(r" \1", val)
+    return camel_to_spaces_pattern.sub(r' \1', val)
 
 
 T = TypeVar('T', str, Path)
@@ -383,7 +383,7 @@ def abspath_or_url(relpath: T, *, must_exist: bool = False) -> T:
 
     if not isinstance(relpath, (str, Path)):
         raise TypeError(
-            trans._("Argument must be a string or Path", deferred=True)
+            trans._('Argument must be a string or Path', deferred=True)
         )
     OriginType = type(relpath)
 
@@ -396,7 +396,7 @@ def abspath_or_url(relpath: T, *, must_exist: bool = False) -> T:
     if must_exist and not (urlp.scheme or urlp.netloc or os.path.exists(path)):
         raise ValueError(
             trans._(
-                "Requested path {path!r} does not exist.",
+                'Requested path {path!r} does not exist.',
                 deferred=True,
                 path=path,
             )
@@ -491,7 +491,7 @@ def ensure_list_of_layer_data_tuple(val: List[Tuple]) -> List[tuple]:
 
 def _quiet_array_equal(*a, **k) -> bool:
     with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", "elementwise comparison")
+        warnings.filterwarnings('ignore', 'elementwise comparison')
         return np.array_equal(*a, **k)
 
 
@@ -596,7 +596,7 @@ def dir_hash(
     if not Path(path).is_dir():
         raise TypeError(
             trans._(
-                "{path} is not a directory.",
+                '{path} is not a directory.',
                 deferred=True,
                 path=path,
             )
@@ -606,7 +606,7 @@ def dir_hash(
     _hash = hash_func()
     for root, _, files in os.walk(path):
         for fname in sorted(files):
-            if fname.startswith(".") and ignore_hidden:
+            if fname.startswith('.') and ignore_hidden:
                 continue
             _file_hash(_hash, Path(root) / fname, Path(path), include_paths)
     return _hash.hexdigest()
@@ -640,7 +640,7 @@ def paths_hash(
     _hash = hash_func()
     for file_path in sorted(paths):
         file_path = Path(file_path)
-        if ignore_hidden and str(file_path.stem).startswith("."):
+        if ignore_hidden and str(file_path.stem).startswith('.'):
             continue
         _file_hash(_hash, file_path, file_path.parent, include_paths)
     return _hash.hexdigest()

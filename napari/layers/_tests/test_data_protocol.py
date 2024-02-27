@@ -24,5 +24,5 @@ def test_layer_protocol(test_data):
 def test_layer_protocol_raises():
     with pytest.raises(TypeError) as e:
         assert_protocol([])  # list doesn't provide the protocol
-    assert "Missing methods: " in str(e)
+    assert 'Missing methods: ' in str(e)
     assert "'shape'" in str(e)

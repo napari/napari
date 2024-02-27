@@ -90,7 +90,7 @@ def imread(filename: str) -> np.ndarray:
 
     if ext.lower() in ('.npy',):
         return np.load(filename)
-    if ext.lower() not in [".tif", ".tiff", ".lsm"]:
+    if ext.lower() not in ['.tif', '.tiff', '.lsm']:
         return imageio.imread(filename)
     import tifffile
 
@@ -101,7 +101,7 @@ def imread(filename: str) -> np.ndarray:
 
 def _guess_zarr_path(path: str) -> bool:
     """Guess whether string path is part of a zarr hierarchy."""
-    return any(part.endswith(".zarr") for part in Path(path).parts)
+    return any(part.endswith('.zarr') for part in Path(path).parts)
 
 
 def read_zarr_dataset(path):
@@ -136,7 +136,7 @@ def read_zarr_dataset(path):
     else:  # pragma: no cover
         raise ValueError(
             trans._(
-                "Not a zarr dataset or group: {path}", deferred=True, path=path
+                'Not a zarr dataset or group: {path}', deferred=True, path=path
             )
         )
     return image, shape
@@ -177,7 +177,7 @@ def magic_imread(
         else [str(filenames)]
     )
     if not _filenames:  # pragma: no cover
-        raise ValueError("No files found")
+        raise ValueError('No files found')
 
     # replace folders with their contents
     filenames_expanded: List[str] = []
@@ -205,7 +205,7 @@ def magic_imread(
     if not filenames_expanded:
         raise ValueError(
             trans._(
-                "No files found in {filenames} after removing subdirectories",
+                'No files found in {filenames} after removing subdirectories',
                 deferred=True,
                 filenames=filenames,
             )
@@ -261,7 +261,7 @@ def magic_imread(
 
 def _points_csv_to_layerdata(
     table: np.ndarray, column_names: List[str]
-) -> "FullLayerData":
+) -> 'FullLayerData':
     """Convert table data and column names from a csv file to Points LayerData.
 
     Parameters
@@ -301,7 +301,7 @@ def _points_csv_to_layerdata(
 
 def _shapes_csv_to_layerdata(
     table: np.ndarray, column_names: List[str]
-) -> "FullLayerData":
+) -> 'FullLayerData':
     """Convert table data and column names from a csv file to Shapes LayerData.
 
     Parameters
@@ -413,7 +413,7 @@ def read_csv(
                         filename=filename,
                     )
                 )
-            if layer_type != require_type and require_type.lower() != "any":
+            if layer_type != require_type and require_type.lower() != 'any':
                 raise ValueError(
                     trans._(
                         'File "{filename}" not recognized as {require_type} data',
@@ -435,7 +435,7 @@ csv_reader_functions = {
 
 def csv_to_layer_data(
     path: str, require_type: Optional[str] = None
-) -> Optional["FullLayerData"]:
+) -> Optional['FullLayerData']:
     """Return layer data from a CSV file if detected as a valid type.
 
     Parameters
@@ -476,7 +476,7 @@ def csv_to_layer_data(
     return None  # only reachable if it is a valid layer type without a reader
 
 
-def _csv_reader(path: Union[str, Sequence[str]]) -> List["LayerData"]:
+def _csv_reader(path: Union[str, Sequence[str]]) -> List['LayerData']:
     if isinstance(path, str):
         layer_data = csv_to_layer_data(path, require_type=None)
         return [layer_data] if layer_data else []
@@ -487,13 +487,13 @@ def _csv_reader(path: Union[str, Sequence[str]]) -> List["LayerData"]:
     ]
 
 
-def _magic_imreader(path: str) -> List["LayerData"]:
+def _magic_imreader(path: str) -> List['LayerData']:
     return [(magic_imread(path),)]
 
 
 def napari_get_reader(
     path: Union[str, List[str]]
-) -> Optional["ReaderFunction"]:
+) -> Optional['ReaderFunction']:
     """Our internal fallback file reader at the end of the reader plugin chain.
 
     This will assume that the filepath is an image, and will pass all of the

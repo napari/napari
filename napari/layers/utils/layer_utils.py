@@ -156,7 +156,7 @@ def register_layer_attr_action(
         except StopIteration as e:
             raise RuntimeError(
                 trans._(
-                    "If actions has no arguments there is no way to know what to set the attribute to.",
+                    'If actions has no arguments there is no way to know what to set the attribute to.',
                     deferred=True,
                 ),
             ) from e
@@ -347,17 +347,17 @@ def convert_to_uint8(data: np.ndarray) -> np.ndarray:
     if data.dtype == out_dtype:
         return data
     in_kind = data.dtype.kind
-    if in_kind == "b":
+    if in_kind == 'b':
         return data.astype(out_dtype) * 255
-    if in_kind == "f":
+    if in_kind == 'f':
         image_out = np.multiply(data, out_max, dtype=data.dtype)
         np.rint(image_out, out=image_out)
         np.clip(image_out, 0, out_max, out=image_out)
         image_out = np.nan_to_num(image_out, copy=False)
         return image_out.astype(out_dtype)
 
-    if in_kind in "ui":
-        if in_kind == "u":
+    if in_kind in 'ui':
+        if in_kind == 'u':
             if data.max() < out_max:
                 return data.astype(out_dtype)
             return np.right_shift(data, (data.dtype.itemsize - 1) * 8).astype(
@@ -454,7 +454,7 @@ def validate_properties(
     if any(v != expected_len for v in lens):
         raise ValueError(
             trans._(
-                "the number of items must be equal for all properties",
+                'the number of items must be equal for all properties',
                 deferred=True,
             )
         )

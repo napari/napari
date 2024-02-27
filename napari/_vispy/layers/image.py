@@ -57,7 +57,7 @@ class ImageLayerNode:
         # Return Image or Volume node based on 2D or 3D.
         res = self._image_node if ndisplay == 2 else self._volume_node
         if (
-            res.texture_format not in {"auto", None}
+            res.texture_format not in {'auto', None}
             and dtype is not None
             and _VISPY_FORMAT_TO_DTYPE[res.texture_format] != dtype
         ):
@@ -66,7 +66,7 @@ class ImageLayerNode:
             # textures for our data
             raise ValueError(
                 trans._(
-                    "dtype {dtype} does not match texture_format={texture_format}",
+                    'dtype {dtype} does not match texture_format={texture_format}',
                     dtype=dtype,
                     texture_format=res.texture_format,
                 )
@@ -119,7 +119,7 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[_ImageBase]):
         self.node.parent = None
         ndisplay = self.layer._slice_input.ndisplay
         self.node = self._layer_node.get_node(
-            ndisplay, getattr(data, "dtype", None)
+            ndisplay, getattr(data, 'dtype', None)
         )
 
         if data is None:
@@ -144,7 +144,7 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[_ImageBase]):
         ndisplay = self.layer._slice_input.ndisplay
 
         node = self._layer_node.get_node(
-            ndisplay, getattr(data, "dtype", None)
+            ndisplay, getattr(data, 'dtype', None)
         )
 
         if ndisplay == 3 and self.layer.ndim == 2:
@@ -231,9 +231,9 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[_ImageBase]):
             if self.layer.multiscale:
                 raise ValueError(
                     trans._(
-                        "Shape of individual tiles in multiscale {shape} cannot "
-                        "exceed GL_MAX_TEXTURE_SIZE {texture_size}. Rendering is "
-                        "currently in {ndisplay}D mode.",
+                        'Shape of individual tiles in multiscale {shape} cannot '
+                        'exceed GL_MAX_TEXTURE_SIZE {texture_size}. Rendering is '
+                        'currently in {ndisplay}D mode.',
                         deferred=True,
                         shape=data.shape,
                         texture_size=MAX_TEXTURE_SIZE,
@@ -242,9 +242,9 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[_ImageBase]):
                 )
             warnings.warn(
                 trans._(
-                    "data shape {shape} exceeds GL_MAX_TEXTURE_SIZE {texture_size}"
-                    " in at least one axis and will be downsampled."
-                    " Rendering is currently in {ndisplay}D mode.",
+                    'data shape {shape} exceeds GL_MAX_TEXTURE_SIZE {texture_size}'
+                    ' in at least one axis and will be downsampled.'
+                    ' Rendering is currently in {ndisplay}D mode.',
                     deferred=True,
                     shape=data.shape,
                     texture_size=MAX_TEXTURE_SIZE,
@@ -375,9 +375,9 @@ class VispyImageLayer(VispyScalarFieldBaseLayer):
 
 
 _VISPY_FORMAT_TO_DTYPE: Dict[Optional[str], np.dtype] = {
-    "r8": np.dtype(np.uint8),
-    "r16": np.dtype(np.uint16),
-    "r32f": np.dtype(np.float32),
+    'r8': np.dtype(np.uint8),
+    'r16': np.dtype(np.uint16),
+    'r32f': np.dtype(np.float32),
 }
 
 _DTYPE_TO_VISPY_FORMAT = {v: k for k, v in _VISPY_FORMAT_TO_DTYPE.items()}

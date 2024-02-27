@@ -56,7 +56,7 @@ def test_reader_dir_with_extension(tmpdir, reader_dialog):
     assert hasattr(widg, 'persist_checkbox')
     assert (
         widg.persist_checkbox.text()
-        == "Remember this choice for files with a .zarr extension"
+        == 'Remember this choice for files with a .zarr extension'
     )
 
 

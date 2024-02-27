@@ -389,7 +389,7 @@ class Surface(IntensityVisualizationMixin, Layer):
             vertex_colors, np.ndarray
         ):
             msg = (
-                f"texture should be None or ndarray; got {type(vertex_colors)}"
+                f'texture should be None or ndarray; got {type(vertex_colors)}'
             )
             raise ValueError(msg)
         self._vertex_colors = vertex_colors
@@ -537,7 +537,7 @@ class Surface(IntensityVisualizationMixin, Layer):
     @texture.setter
     def texture(self, texture: np.ndarray):
         if texture is not None and not isinstance(texture, np.ndarray):
-            msg = f"texture should be None or ndarray; got {type(texture)}"
+            msg = f'texture should be None or ndarray; got {type(texture)}'
             raise ValueError(msg)
         self._texture = texture
         self.events.texture(value=self._texture)
@@ -549,7 +549,7 @@ class Surface(IntensityVisualizationMixin, Layer):
     @texcoords.setter
     def texcoords(self, texcoords: np.ndarray):
         if texcoords is not None and not isinstance(texcoords, np.ndarray):
-            msg = f"texcoords should be None or ndarray; got {type(texcoords)}"
+            msg = f'texcoords should be None or ndarray; got {type(texcoords)}'
             raise ValueError(msg)
         self._texcoords = texcoords
         self.events.texcoords(value=self._texcoords)
@@ -613,10 +613,10 @@ class Surface(IntensityVisualizationMixin, Layer):
             if data.ndim > dims:
                 warnings.warn(
                     trans._(
-                        "Assigning multiple data per vertex after slicing "
-                        "is not allowed. All dimensions corresponding to "
-                        "vertex data must be non-displayed dimensions. Data "
-                        "may not be visible.",
+                        'Assigning multiple data per vertex after slicing '
+                        'is not allowed. All dimensions corresponding to '
+                        'vertex data must be non-displayed dimensions. Data '
+                        'may not be visible.',
                         deferred=True,
                     ),
                     category=UserWarning,

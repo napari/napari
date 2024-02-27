@@ -281,7 +281,7 @@ color_cycle_rgba = [[1, 0, 0, 1], [0, 0, 1, 1]]
 
 
 @pytest.mark.parametrize(
-    "color_cycle",
+    'color_cycle',
     [color_cycle_str, color_cycle_rgb, color_cycle_rgba],
 )
 def test_color_cycle(color_cycle):

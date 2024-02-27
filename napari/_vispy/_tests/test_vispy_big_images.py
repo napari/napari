@@ -31,7 +31,7 @@ def test_big_3D_image(make_napari_viewer):
 
 
 @pytest.mark.parametrize(
-    "shape",
+    'shape',
     [(2, 4), (256, 4048), (4, 20_000), (20_000, 4)],
 )
 def test_downsample_value(make_napari_viewer, shape):

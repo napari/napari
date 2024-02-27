@@ -34,14 +34,14 @@ class QtPopup(QDialog):
 
     def __init__(self, parent) -> None:
         super().__init__(parent)
-        self.setObjectName("QtModalPopup")
+        self.setObjectName('QtModalPopup')
         self.setModal(False)  # if False, then clicking anywhere else closes it
         flags = Qt.Popup | Qt.FramelessWindowHint
         self.setWindowFlags(flags)
         self.setLayout(QVBoxLayout())
 
         self.frame = QFrame()
-        self.frame.setObjectName("QtPopupFrame")
+        self.frame.setObjectName('QtPopupFrame')
         self.layout().addWidget(self.frame)
         self.layout().setContentsMargins(0, 0, 0, 0)
 
@@ -89,7 +89,7 @@ class QtPopup(QDialog):
             if not window:
                 raise ValueError(
                     trans._(
-                        "Specifying position as a string is only possible if the popup has a parent",
+                        'Specifying position as a string is only possible if the popup has a parent',
                         deferred=True,
                     )
                 )
@@ -127,7 +127,7 @@ class QtPopup(QDialog):
         else:
             raise TypeError(
                 trans._(
-                    "Wrong type of position {position}",
+                    'Wrong type of position {position}',
                     deferred=True,
                     position=position,
                 )
