@@ -4,7 +4,8 @@
 import json
 import os
 from pathlib import Path
-from typing import List, Optional
+from types import ModuleType
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import wrapt
 
@@ -19,7 +20,9 @@ class PerfmonConfigError(Exception):
     """Error parsing or interpreting config file."""
 
 
-def _patch_perf_timer(parent, callable_name: str, label: str) -> None:
+def _patch_perf_timer(
+    parent: Union[ModuleType, type], callable_name: str, label: str
+) -> None:
     """Patches the callable to run it inside a perf_timer.
 
     Parameters
@@ -33,7 +36,12 @@ def _patch_perf_timer(parent, callable_name: str, label: str) -> None:
     """
 
     @wrapt.patch_function_wrapper(parent, callable_name)
-    def perf_time_callable(wrapped, instance, args, kwargs):
+    def perf_time_callable(
+        wrapped: Callable,
+        instance: Any,
+        args: Tuple[Any],
+        kwargs: Dict[str, Any],
+    ) -> Callable:
         with perf_timer(f'{label}'):
             return wrapped(*args, **kwargs)
 
@@ -81,7 +89,7 @@ class PerfmonConfig:
         with path.open() as infile:
             self.data = json.load(infile)
 
-    def patch_callables(self):
+    def patch_callables(self) -> None:
         """Patch callables according to the config file.
 
         Call once at startup but after main() has started running. Do not
@@ -113,7 +121,7 @@ class PerfmonConfig:
                 )
             ) from e
 
-    def _patch_callables(self):
+    def _patch_callables(self) -> None:
         """Add a perf_timer to every callable.
 
         Notes
@@ -150,7 +158,7 @@ class PerfmonConfig:
             return path or None
 
 
-def _create_perf_config():
+def _create_perf_config() -> Optional[PerfmonConfig]:
     value = os.getenv('NAPARI_PERFMON')
 
     if value is None or value == '0':

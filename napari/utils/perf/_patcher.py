@@ -24,7 +24,7 @@ class PatchError(Exception):
 
 def _patch_attribute(
     module: types.ModuleType, attribute_str: str, patch_func: PatchFunction
-):
+) -> None:
     """Patch the module's callable pointed to by the attribute string.
 
     Parameters

@@ -4,7 +4,11 @@ import numpy as np
 import pytest
 from npe2 import DynamicPlugin
 
-from napari._tests.utils import good_layer_data, layer_test_data
+from napari._tests.utils import (
+    count_warning_events,
+    good_layer_data,
+    layer_test_data,
+)
 from napari.components import ViewerModel
 from napari.errors import MultipleReaderError, ReaderPluginError
 from napari.errors.reader_errors import NoAvailableReaderError
@@ -755,7 +759,7 @@ def test_add_remove_layer_no_callbacks(Layer, data, ndim):
     # Check that no internal callbacks have been registered
     assert len(layer.events.callbacks) == 0
     for em in layer.events.emitters.values():
-        assert len(em.callbacks) == 0
+        assert len(em.callbacks) == count_warning_events(em.callbacks)
 
     viewer.layers.append(layer)
     # Check layer added correctly
@@ -771,7 +775,7 @@ def test_add_remove_layer_no_callbacks(Layer, data, ndim):
     # Check that all callbacks have been removed
     assert len(layer.events.callbacks) == 0
     for em in layer.events.emitters.values():
-        assert len(em.callbacks) == 0
+        assert len(em.callbacks) == count_warning_events(em.callbacks)
 
 
 @pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
@@ -793,14 +797,17 @@ def test_add_remove_layer_external_callbacks(Layer, data, ndim):
     assert len(layer.events.callbacks) == 1
     for em in layer.events.emitters.values():
         if not isinstance(em, WarningEmitter):
-            assert len(em.callbacks) == 1
+            assert len(em.callbacks) == count_warning_events(em.callbacks) + 1
 
     viewer.layers.append(layer)
     # Check layer added correctly
     assert len(viewer.layers) == 1
 
     # check that adding a layer created new callbacks
-    assert any(len(em.callbacks) > 0 for em in layer.events.emitters.values())
+    assert any(
+        len(em.callbacks) > count_warning_events(em.callbacks)
+        for em in layer.events.emitters.values()
+    )
 
     viewer.layers.remove(layer)
     # Check layer added correctly
@@ -810,7 +817,7 @@ def test_add_remove_layer_external_callbacks(Layer, data, ndim):
     assert len(layer.events.callbacks) == 1
     for em in layer.events.emitters.values():
         if not isinstance(em, WarningEmitter):
-            assert len(em.callbacks) == 1
+            assert len(em.callbacks) == count_warning_events(em.callbacks) + 1
 
 
 @pytest.mark.parametrize(

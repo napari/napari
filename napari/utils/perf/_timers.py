@@ -4,7 +4,7 @@
 import contextlib
 import os
 from time import perf_counter_ns
-from typing import Dict, Optional
+from typing import Dict, Generator, Optional
 
 from napari.utils.perf._event import PerfEvent
 from napari.utils.perf._stat import Stat
@@ -68,13 +68,21 @@ class PerfTimers:
         if event.phase == 'X':  # Complete Event
             # Update our self.timers (in milliseconds).
             name = event.name
-            duration_ms = event.duration_ms
+            duration_ms = int(event.duration_ms)
             if name in self.timers:
                 self.timers[name].add(duration_ms)
             else:
                 self.timers[name] = Stat(duration_ms)
 
-    def add_instant_event(self, name: str, **kwargs) -> None:
+    def add_instant_event(
+        self,
+        name: str,
+        *,
+        category: Optional[str] = None,
+        process_id: Optional[int] = None,
+        thread_id: Optional[int] = None,
+        **kwargs: float,
+    ) -> None:
         """Add one instant event.
 
         Parameters
@@ -85,7 +93,18 @@ class PerfTimers:
             Arguments to display in the Args section of the Tracing GUI.
         """
         now = perf_counter_ns()
-        self.add_event(PerfEvent(name, now, now, phase='I', **kwargs))
+        self.add_event(
+            PerfEvent(
+                name,
+                now,
+                now,
+                phase='I',
+                category=category,
+                process_id=process_id,
+                thread_id=thread_id,
+                **kwargs,
+            )
+        )
 
     def add_counter_event(self, name: str, **kwargs: float) -> None:
         """Add one counter event.
@@ -115,7 +134,7 @@ class PerfTimers:
             )
         )
 
-    def clear(self):
+    def clear(self) -> None:
         """Clear all timers."""
         # After the GUI displays timing information it clears the timers
         # so that we start accumulating fresh information.
@@ -143,8 +162,12 @@ def block_timer(
     name: str,
     category: Optional[str] = None,
     print_time: bool = False,
-    **kwargs,
-):
+    *,
+    process_id: Optional[int] = None,
+    thread_id: Optional[int] = None,
+    phase: str = 'X',
+    **kwargs: float,
+) -> Generator[PerfEvent, None, None]:
     """Time a block of code.
 
     block_timer can be used when perfmon is disabled. Use perf_timer instead
@@ -181,7 +204,16 @@ def block_timer(
 
     # Pass in start_ns for start and end, we call update_end_ns
     # once the block as finished.
-    event = PerfEvent(name, start_ns, start_ns, category, **kwargs)
+    event = PerfEvent(
+        name,
+        start_ns,
+        start_ns,
+        category,
+        process_id=process_id,
+        thread_id=thread_id,
+        phase=phase,
+        **kwargs,
+    )
     yield event
 
     # Update with the real end time.
@@ -230,6 +262,8 @@ def add_counter_event(name: str, **kwargs: Dict[str, float]) -> None:
     """
     timers.add_counter_event(name, **kwargs)
 
+
+timers: Optional[PerfTimers]
 
 if USE_PERFMON:
     timers = PerfTimers()
