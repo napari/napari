@@ -36,12 +36,12 @@ for cmd, viewer_attr, sub_attr in (
     )
 
 
-def _tooltip_visibility_toggle():
+def _tooltip_visibility_toggle() -> None:
     settings = get_settings().appearance
     settings.layer_tooltip_visibility = not settings.layer_tooltip_visibility
 
 
-def _get_current_tooltip_visibility():
+def _get_current_tooltip_visibility() -> bool:
     return get_settings().appearance.layer_tooltip_visibility
 
 
