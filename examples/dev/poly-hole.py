@@ -6,17 +6,28 @@ matplotlib and napari.
 See issue https://github.com/napari/napari/issues/5673 and PR
 https://github.com/napari/napari/pull/6654
 """
-
 import matplotlib.pyplot as plt
 import numpy as np
 from skimage import measure
-from triangle import triangulate
+
+try:
+    from triangle import triangulate
+except ModuleNotFoundError as e:
+    raise ModuleNotFoundError(
+            'Triangle library needs to be installed to run this example.'
+            ) from e
 
 import napari
-from napari.layers.shapes import _shapes_utils as su
+from napari.layers.shapes import _shapes_utils
 
 
 def pltri(vertices, triangles, *, mask=None, ax=None):
+    """Plot a triangulation in Matplotlib.
+
+    This function inverts the y-axis and transposes x and y to match
+    napari's row/columns coordinates. (Which also matches Matplotlib's
+    coordinates for images. ;)
+    """
     if ax is None:
         fig, ax = plt.subplots()
     ax.triplot(vertices[:, 1], -vertices[:, 0], triangles)
@@ -26,6 +37,8 @@ def pltri(vertices, triangles, *, mask=None, ax=None):
         ax.scatter(centers[:, 1], -centers[:, 0], color=color)
 
 
+# polygon with hole from https://github.com/napari/napari/issues/5673
+# rounded to two decimal digits.
 a = np.array(
     [[-28.58, 196.34], [-28.08, 196.82], [-28.36, 197.22], [-28.78, 197.39],
      [-28.86, 197.84], [-29.05, 198.46], [-28.97, 199.  ], [-28.46, 199.89],
@@ -54,7 +67,8 @@ a = np.array(
     )
 
 
-v, e = su._generate_triangle_constraints(a)
+# First, check the utils code manually using matplotlib.
+v, e = _shapes_utils._generate_triangle_constraints(a)
 res = triangulate({'vertices': v, 'segments': e}, opts='p')
 v2, t = res['vertices'], res['triangles']
 centers = np.mean(v2[t], axis=1)
@@ -64,9 +78,13 @@ fig, ax = plt.subplots()
 pltri(res['vertices'], res['triangles'], mask=in_poly, ax=ax)
 plt.show()
 
+
+# next, draw the shape in napari
 viewer = napari.Viewer()
 layer = viewer.add_shapes(a, shape_type=['polygon'])
 
+# these settings help to visualise the polygon data directly in the
+# shapes layer.
 layer.mode = 'direct'
 layer.edge_width = 0
 layer.selected_data = {0}
