@@ -256,6 +256,7 @@ def low_discrepancy_image(image, seed=0.5, margin=1 / 256) -> np.ndarray:
         A set of labels or label image.
     seed : float
         The seed from which to start the quasirandom sequence.
+        Effective range is [0,1.0), as only the decimals are used.
     margin : float
         Values too close to 0 or 1 will get mapped to the edge of the colormap,
         so we need to offset to a margin slightly inside those values. Since
@@ -341,6 +342,7 @@ def _low_discrepancy(dim, n, seed=0.5):
         How many points to generate.
     seed : float or array of float, shape (dim,)
         The seed from which to start the quasirandom sequence.
+        Effective range is [0,1.0), as only the decimals are used.
 
     Returns
     -------
@@ -376,6 +378,7 @@ def _color_random(n, *, colorspace='lab', tolerance=0.0, seed=0.5):
         clipped to be in-range).
     seed : float or array of float, shape (3,)
         Value from which to start the quasirandom sequence.
+        Effective range is [0,1.0), as only the decimals are used.
 
     Returns
     -------
@@ -425,8 +428,9 @@ def label_colormap(
     num_colors : int, optional
         Number of unique colors to use. Default used if not given.
         Colors are in addition to a transparent color 0.
-    seed : float or array of float, length 3
+    seed : float, optional
         The seed for the random color generator.
+        Effective range is [0,1.0), as only the decimals are used.
 
     Returns
     -------
@@ -438,7 +442,7 @@ def label_colormap(
     0 always maps to fully transparent.
     """
     if num_colors < 1:
-        raise ValueError("num_colors must be >= 1")
+        raise ValueError('num_colors must be >= 1')
 
     # Starting the control points slightly above 0 and below 1 is necessary
     # to ensure that the background pixel 0 is transparent
@@ -461,7 +465,7 @@ def label_colormap(
     randomized_values = low_discrepancy_image(values_, seed=seed)
 
     indices = np.clip(
-        np.searchsorted(control_points, randomized_values, side="right") - 1,
+        np.searchsorted(control_points, randomized_values, side='right') - 1,
         0,
         len(control_points) - 1,
     )
@@ -640,7 +644,7 @@ def vispy_or_mpl_colormap(name) -> Colormap:
                     'Colormap "{name}" not found in either vispy or matplotlib. Recognized colormaps are: {colormaps}',
                     deferred=True,
                     name=name,
-                    colormaps=", ".join(sorted(f'"{cm}"' for cm in colormaps)),
+                    colormaps=', '.join(sorted(f'"{cm}"' for cm in colormaps)),
                 )
             ) from e
         mpl_colors = mpl_cmap(np.linspace(0, 1, 256))
@@ -706,7 +710,7 @@ def _increment_unnamed_colormap(
         past_names = [n for n in existing if n.startswith('[unnamed colormap')]
         name = f'[unnamed colormap {len(past_names)}]'
         display_name = trans._(
-            "[unnamed colormap {number}]",
+            '[unnamed colormap {number}]',
             number=len(past_names),
         )
 
@@ -747,7 +751,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
     with AVAILABLE_COLORMAPS_LOCK:
         if isinstance(colormap, str):
             # Is a colormap with this name already available?
-            custom_cmap = AVAILABLE_COLORMAPS.get(colormap, None)
+            custom_cmap = AVAILABLE_COLORMAPS.get(colormap)
             if custom_cmap is None:
                 name = (
                     colormap.lower() if colormap.startswith('#') else colormap
@@ -810,7 +814,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                 if colormap is None:
                     raise TypeError(
                         trans._(
-                            "When providing a tuple as a colormap argument, either 1) the first element must be a string and the second a Colormap instance 2) or the tuple should be convertible to one or more colors",
+                            'When providing a tuple as a colormap argument, either 1) the first element must be a string and the second a Colormap instance 2) or the tuple should be convertible to one or more colors',
                             deferred=True,
                         )
                     )
@@ -834,7 +838,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
             ):
                 raise TypeError(
                     trans._(
-                        "When providing a dict as a colormap, all values must be Colormap instances",
+                        'When providing a dict as a colormap, all values must be Colormap instances',
                         deferred=True,
                     )
                 )
@@ -856,14 +860,14 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
 
                     warnings.warn(
                         trans._(
-                            "only the first item in a colormap dict is used as an argument",
+                            'only the first item in a colormap dict is used as an argument',
                             deferred=True,
                         )
                     )
                 else:
                     raise ValueError(
                         trans._(
-                            "Received an empty dict as a colormap argument.",
+                            'Received an empty dict as a colormap argument.',
                             deferred=True,
                         )
                     )

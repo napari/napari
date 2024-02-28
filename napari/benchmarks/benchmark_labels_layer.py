@@ -2,17 +2,20 @@
 # https://asv.readthedocs.io/en/latest/writing_benchmarks.html
 # or the napari documentation on benchmarking
 # https://github.com/napari/napari/blob/main/docs/BENCHMARKS.md
-import os
 from copy import copy
 
 import numpy as np
+from packaging.version import parse as parse_version
 
+import napari
 from napari.components.dims import Dims
 from napari.layers import Labels
 
-from .utils import Skiper, labeled_particles
+from .utils import Skip, labeled_particles
 
 MAX_VAL = 2**23
+
+NAPARI_0_4_19 = parse_version(napari.__version__) <= parse_version('0.4.19')
 
 
 class Labels2DSuite:
@@ -21,8 +24,7 @@ class Labels2DSuite:
     param_names = ['n', 'dtype']
     params = ([2**i for i in range(4, 13)], [np.uint8, np.int32])
 
-    if "PR" in os.environ:
-        skip_params = Skiper(lambda x: x[0] > 2**5)
+    skip_params = Skip(if_in_pr=lambda n, dtype: n > 2**5)
 
     def setup(self, n, dtype):
         np.random.seed(0)
@@ -83,9 +85,9 @@ class LabelsDrawing2DSuite:
 
     param_names = ['n', 'brush_size', 'color_mode', 'contour']
     params = ([512, 3072], [8, 64, 256], ['auto', 'direct'], [0, 1])
-
-    if "PR" in os.environ:
-        skip_params = Skiper(lambda x: x[0] > 512 or x[1] > 64)
+    skip_params = Skip(
+        if_in_pr=lambda n, brush_size, *_: n > 512 or brush_size > 64
+    )
 
     def setup(self, n, brush_size, color_mode, contour):
         np.random.seed(0)
@@ -119,9 +121,9 @@ class LabelsDrawing2DSuite:
 
 
 class Labels2DColorDirectSuite(Labels2DSuite):
+    skip_params = Skip(if_in_pr=lambda n, dtype: n > 32)
+
     def setup(self, n, dtype):
-        if "PR" in os.environ and n > 32:
-            raise NotImplementedError("Skip on PR (speedup)")
         np.random.seed(0)
         info = np.iinfo(dtype)
         self.data = labeled_particles(
@@ -144,19 +146,22 @@ class Labels3DSuite:
 
     param_names = ['n', 'dtype']
     params = ([2**i for i in range(4, 11)], [np.uint8, np.uint32])
-    if "PR" in os.environ:
-        skip_params = [(2**i,) for i in range(6, 11)]
+
+    skip_params = Skip(
+        if_in_pr=lambda n, dtype: n > 2**6, if_on_ci=lambda n, dtype: n > 2**9
+    )
+    # CI skip above 2**9 because of memory limits
 
     def setup(self, n, dtype):
-        if "CI" in os.environ and n > 512:
-            raise NotImplementedError("Skip on CI (not enough memory)")
-
         np.random.seed(0)
         self.data = labeled_particles(
             (n, n, n), dtype=dtype, n=int(np.log2(n) ** 2), seed=1
         )
         self.layer = Labels(self.data)
-        self.layer._slice_dims(Dims(ndim=3, ndisplay=3))
+        if NAPARI_0_4_19:
+            self.layer._slice_dims((0, 0, 0), ndisplay=3)
+        else:
+            self.layer._slice_dims(Dims(ndim=3, ndisplay=3))
         self.layer._raw_to_displayed(
             self.layer._slice.image.raw,
             (slice(0, n), slice(0, n), slice(0, n)),

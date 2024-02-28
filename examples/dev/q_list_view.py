@@ -37,14 +37,14 @@ view.show()
 
 
 # spy on events
-root.events.reordered.connect(lambda e: print("reordered to: ", e.value))
+root.events.reordered.connect(lambda e: print('reordered to: ', e.value))
 root.selection.events.changed.connect(
     lambda e: print(
-        f"selection changed.  added: {e.added}, removed: {e.removed}"
+        f'selection changed.  added: {e.added}, removed: {e.removed}'
     )
 )
 root.selection.events._current.connect(
-    lambda e: print(f"current item changed to: {e.value}")
+    lambda e: print(f'current item changed to: {e.value}')
 )
 
 

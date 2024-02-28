@@ -19,11 +19,11 @@ from napari.utils.progress import progress
 from napari.utils.translations import trans
 
 __all__ = [
-    "FunctionWorker",
-    "GeneratorWorker",
-    "create_worker",
-    "thread_worker",
-    "register_threadworker_processors",
+    'FunctionWorker',
+    'GeneratorWorker',
+    'create_worker',
+    'thread_worker',
+    'register_threadworker_processors',
 ]
 
 wait_for_workers_to_quit = _qthreading.WorkerBase.await_workers
@@ -46,9 +46,9 @@ class _NotifyingMixin:
         notification_manager.receive_warning(*show_warn_args)
 
 
-_Y = TypeVar("_Y")
-_S = TypeVar("_S")
-_R = TypeVar("_R")
+_Y = TypeVar('_Y')
+_S = TypeVar('_S')
+_R = TypeVar('_R')
 
 
 class FunctionWorker(_qthreading.FunctionWorker[_R], _NotifyingMixin): ...
@@ -165,7 +165,7 @@ def create_worker(
         if isinstance(worker, FunctionWorker) and total != 0:
             warnings.warn(
                 trans._(
-                    "_progress total != 0 but worker is FunctionWorker and will not yield. Returning indeterminate progress bar...",
+                    '_progress total != 0 but worker is FunctionWorker and will not yield. Returning indeterminate progress bar...',
                     deferred=True,
                 ),
                 RuntimeWarning,

@@ -28,7 +28,7 @@ from napari.utils.events.event import EmitterGroup, Event
 if TYPE_CHECKING:
     from napari.components import Dims
 
-logger = logging.getLogger("napari.components._layer_slicer")
+logger = logging.getLogger('napari.components._layer_slicer')
 
 
 # Layers that can be asynchronously sliced must be able to make

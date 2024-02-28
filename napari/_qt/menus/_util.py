@@ -75,7 +75,7 @@ def populate_menu(menu: QMenu, actions: List['MenuItem']):
         if not ax:
             menu.addSeparator()
             continue
-        if not ax.get("when", True):
+        if not ax.get('when', True):
             continue
         if 'menu' in ax:
             sub = ax['menu']
@@ -84,11 +84,11 @@ def populate_menu(menu: QMenu, actions: List['MenuItem']):
                 sub.setParent(menu)
             else:
                 sub = menu.addMenu(sub)
-            populate_menu(sub, ax.get("items", []))
+            populate_menu(sub, ax.get('items', []))
             continue
         action: QAction = menu.addAction(ax['text'])
         if 'slot' in ax:
-            if ax.get("checkable"):
+            if ax.get('checkable'):
                 action.toggled.connect(ax['slot'])
             else:
                 action.triggered.connect(ax['slot'])
@@ -96,9 +96,9 @@ def populate_menu(menu: QMenu, actions: List['MenuItem']):
         action.setStatusTip(ax.get('statusTip', ''))
         if 'menuRole' in ax:
             action.setMenuRole(ax['menuRole'])
-        if ax.get("checkable"):
+        if ax.get('checkable'):
             action.setCheckable(True)
-            action.setChecked(ax.get("checked", False))
+            action.setChecked(ax.get('checked', False))
             if 'check_on' in ax:
                 emitter = ax['check_on']
 

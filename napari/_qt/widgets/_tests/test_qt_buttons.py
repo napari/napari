@@ -40,7 +40,7 @@ def test_push_button(qtbot):
 def test_layers_button_works(make_napari_viewer):
     v = make_napari_viewer()
     layer = v.add_layer(Points())
-    assert layer.mode != "add"
+    assert layer.mode != 'add'
     controls = v.window._qt_viewer.controls.widgets[layer]
     controls.addition_button.click()
-    assert layer.mode == "add"
+    assert layer.mode == 'add'

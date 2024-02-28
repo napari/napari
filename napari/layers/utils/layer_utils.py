@@ -156,7 +156,7 @@ def register_layer_attr_action(
         except StopIteration as e:
             raise RuntimeError(
                 trans._(
-                    "If actions has no arguments there is no way to know what to set the attribute to.",
+                    'If actions has no arguments there is no way to know what to set the attribute to.',
                     deferred=True,
                 ),
             ) from e
@@ -325,7 +325,7 @@ def segment_normal(a, b, p=(0, 0, 1)) -> np.ndarray:
     return normal / norm
 
 
-def convert_to_uint8(data: np.ndarray) -> Optional[np.ndarray]:
+def convert_to_uint8(data: np.ndarray) -> np.ndarray:
     """
     Convert array content to uint8, always returning a copy.
 
@@ -347,17 +347,17 @@ def convert_to_uint8(data: np.ndarray) -> Optional[np.ndarray]:
     if data.dtype == out_dtype:
         return data
     in_kind = data.dtype.kind
-    if in_kind == "b":
+    if in_kind == 'b':
         return data.astype(out_dtype) * 255
-    if in_kind == "f":
+    if in_kind == 'f':
         image_out = np.multiply(data, out_max, dtype=data.dtype)
         np.rint(image_out, out=image_out)
         np.clip(image_out, 0, out_max, out=image_out)
         image_out = np.nan_to_num(image_out, copy=False)
         return image_out.astype(out_dtype)
 
-    if in_kind in "ui":
-        if in_kind == "u":
+    if in_kind in 'ui':
+        if in_kind == 'u':
             if data.max() < out_max:
                 return data.astype(out_dtype)
             return np.right_shift(data, (data.dtype.itemsize - 1) * 8).astype(
@@ -454,7 +454,7 @@ def validate_properties(
     if any(v != expected_len for v in lens):
         raise ValueError(
             trans._(
-                "the number of items must be equal for all properties",
+                'the number of items must be equal for all properties',
                 deferred=True,
             )
         )
@@ -598,7 +598,12 @@ def compute_multiscale_level_and_corners(
     return level, corners
 
 
-def coerce_affine(affine, *, ndim, name=None):
+def coerce_affine(
+    affine: Union[npt.ArrayLike, Affine],
+    *,
+    ndim: int,
+    name: Optional[str] = None,
+) -> Affine:
     """Coerce a user input into an affine transform object.
 
     If the input is already an affine transform object, that same object is returned
@@ -683,7 +688,11 @@ def dims_displayed_world_to_layer(
     return dims_displayed
 
 
-def get_extent_world(data_extent, data_to_world, centered=None):
+def get_extent_world(
+    data_extent: npt.NDArray,
+    data_to_world: Affine,
+    centered: Optional[Any] = None,
+) -> npt.NDArray:
     """Range of layer in world coordinates base on provided data_extent
 
     Parameters

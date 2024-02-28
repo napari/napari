@@ -248,7 +248,7 @@ def orientation(p, q, r):
     return val
 
 
-def is_collinear(points):
+def is_collinear(points: npt.NDArray) -> bool:
     """Determines if a list of 2D points are collinear.
 
     Parameters
@@ -326,7 +326,7 @@ def point_to_lines(point, lines):
     return index, location
 
 
-def create_box(data):
+def create_box(data: npt.NDArray) -> npt.NDArray:
     """Creates the axis aligned interaction box of a list of points
 
     Parameters
@@ -363,7 +363,7 @@ def create_box(data):
     return box
 
 
-def rectangle_to_box(data):
+def rectangle_to_box(data: npt.NDArray) -> npt.NDArray:
     """Converts the four corners of a rectangle into a interaction box like
     representation. If the rectangle is not axis aligned the resulting box
     representation will not be axis aligned either
@@ -383,7 +383,7 @@ def rectangle_to_box(data):
     if not data.shape[0] == 4:
         raise ValueError(
             trans._(
-                "Data shape does not match expected `[4, D]` shape specifying corners for the rectangle",
+                'Data shape does not match expected `[4, D]` shape specifying corners for the rectangle',
                 deferred=True,
             )
         )
@@ -403,7 +403,7 @@ def rectangle_to_box(data):
     return box
 
 
-def find_corners(data):
+def find_corners(data: npt.NDArray) -> npt.NDArray:
     """Finds the four corners of the interaction box defined by an array of
     points
 
@@ -427,27 +427,31 @@ def find_corners(data):
     return corners
 
 
-def center_radii_to_corners(center, radii):
+def center_radii_to_corners(
+    center: npt.NDArray, radii: npt.NDArray
+) -> npt.NDArray:
     """Expands a center and radii into a four corner rectangle
 
     Parameters
     ----------
-    center : np.ndarray | list
-        Length 2 array or list of the center coordinates
-    radii : np.ndarray | list
-        Length 2 array or list of the two radii
+    center : np.ndarray
+        Length 2 array of the center coordinates.
+    radii : np.ndarray
+        Length 2 array of the two radii.
 
     Returns
     -------
     corners : np.ndarray
-        4x2 array of corners of the bounding box
+        4x2 array of corners of the bounding box.
     """
     data = np.array([center + radii, center - radii])
     corners = find_corners(data)
     return corners
 
 
-def triangulate_ellipse(corners, num_segments=100):
+def triangulate_ellipse(
+    corners: npt.NDArray, num_segments: int = 100
+) -> tuple[npt.NDArray, npt.NDArray]:
     """Determines the triangulation of a path. The resulting `offsets` can
     multiplied by a `width` scalar and be added to the resulting `centers`
     to generate the vertices of the triangles for the triangulation, i.e.
@@ -489,7 +493,7 @@ def triangulate_ellipse(corners, num_segments=100):
     if not corners.shape[0] == 4:
         raise ValueError(
             trans._(
-                "Data shape does not match expected `[4, D]` shape specifying corners for the ellipse",
+                'Data shape does not match expected `[4, D]` shape specifying corners for the ellipse',
                 deferred=True,
             )
         )
@@ -599,7 +603,9 @@ def _cull_triangles_not_in_poly(vertices, triangles, poly):
     return triangles[in_poly]
 
 
-def triangulate_face(polygon_vertices):
+def triangulate_face(
+    polygon_vertices: npt.NDArray,
+) -> tuple[npt.NDArray, npt.NDArray]:
     """Determines the triangulation of the face of a shape.
 
     Parameters
@@ -635,7 +641,9 @@ def triangulate_face(polygon_vertices):
     return vertices, triangles
 
 
-def triangulate_edge(path, closed=False):
+def triangulate_edge(
+    path: npt.NDArray, closed: bool = False
+) -> tuple[npt.NDArray, npt.NDArray, npt.NDArray]:
     """Determines the triangulation of a path. The resulting `offsets` can
     multiplied by a `width` scalar and be added to the resulting `centers`
     to generate the vertices of the triangles for the triangulation, i.e.
@@ -926,7 +934,9 @@ def generate_tube_meshes(path, closed=False, tube_points=10):
     return centers, offsets, triangles
 
 
-def path_to_mask(mask_shape, vertices):
+def path_to_mask(
+    mask_shape: npt.NDArray, vertices: npt.NDArray
+) -> npt.NDArray[np.bool_]:
     """Converts a path to a boolean mask with `True` for points lying along
     each edge.
 
@@ -964,7 +974,9 @@ def path_to_mask(mask_shape, vertices):
     return mask
 
 
-def poly_to_mask(mask_shape, vertices):
+def poly_to_mask(
+    mask_shape: npt.ArrayLike, vertices: npt.ArrayLike
+) -> npt.NDArray[np.bool_]:
     """Converts a polygon to a boolean mask with `True` for points
     lying inside the shape. Uses the bounding box of the vertices to reduce
     computation time.
@@ -1100,7 +1112,7 @@ def get_default_shape_type(current_type):
     default_type : str
         default shape type
     """
-    default = "polygon"
+    default = 'polygon'
     if not current_type:
         return default
     first_type = current_type[0]
@@ -1206,7 +1218,7 @@ def validate_num_vertices(
         ):
             raise ValueError(
                 trans._(
-                    "{shape_type} {shape} has invalid number of vertices: {shape_length}.",
+                    '{shape_type} {shape} has invalid number of vertices: {shape_length}.',
                     deferred=True,
                     shape_type=shape_type,
                     shape=shape,

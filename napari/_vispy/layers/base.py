@@ -15,7 +15,7 @@ from napari.components.overlays.base import (
 from napari.layers import Layer
 from napari.utils.events import disconnect_events
 
-_L = TypeVar("_L", bound=Layer)
+_L = TypeVar('_L', bound=Layer)
 
 
 class VispyBaseLayer(ABC, Generic[_L]):
@@ -155,16 +155,16 @@ class VispyBaseLayer(ABC, Generic[_L]):
                 src_color_blending = 'src_alpha'
                 dst_color_blending = 'one_minus_src_alpha'
             blending_kwargs = {
-                "depth_test": blending_kwargs['depth_test'],
-                "cull_face": False,
-                "blend": True,
-                "blend_func": (
+                'depth_test': blending_kwargs['depth_test'],
+                'cull_face': False,
+                'blend': True,
+                'blend_func': (
                     src_color_blending,
                     dst_color_blending,
                     'one',
                     'one',
                 ),
-                "blend_equation": 'func_add',
+                'blend_equation': 'func_add',
             }
 
         self.node.set_gl_state(**blending_kwargs)
@@ -200,7 +200,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
 
     def _on_matrix_change(self):
         # mypy: self.layer._transforms.simplified cannot be None
-        transform = self.layer._transforms.simplified.set_slice(  # type: ignore [union-attr]
+        transform = self.layer._transforms.simplified.set_slice(
             self.layer._slice_input.displayed
         )
         # convert NumPy axis ordering to VisPy axis ordering
@@ -239,7 +239,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
         simplified_transform = self.layer._transforms.simplified
         if simplified_transform is None:
             raise ValueError(
-                "simplified transform is None"
+                'simplified transform is None'
             )  # pragma: no cover
         translate_child = (
             self.layer.translate[dims_displayed]

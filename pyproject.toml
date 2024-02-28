@@ -55,6 +55,33 @@ ignore = [
 
 [tool.ruff]
 line-length = 79
+
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".mypy_cache",
+    ".pants.d",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+    "*vendored*",
+    "*_vendor*",
+]
+
+target-version = "py38"
+fix = true
+
+[tool.ruff.lint]
 select = [
     "E", "F", "W", #flake8
     "UP", # pyupgrade
@@ -85,41 +112,15 @@ ignore = [
     "A003", # flake8-builtins - we have class attributes violating these rule
     "COM812", # flake8-commas - we don't like adding comma on single line of arguments
     "SIM117", # flake8-simplify - we some of merged with statements are not looking great with black, reanble after drop python 3.9
-    "Q000",
     "RET504", # not fixed yet https://github.com/charliermarsh/ruff/issues/2950
     "TRY003", # require implement multiple exception class
     "RUF005", # problem with numpy compatybility, see https://github.com/charliermarsh/ruff/issues/2142#issuecomment-1451038741
     "B028", # need to be fixed
     "PYI015", # it produces bad looking files (@jni opinion)
-
 ]
 
-exclude = [
-    ".bzr",
-    ".direnv",
-    ".eggs",
-    ".git",
-    ".mypy_cache",
-    ".pants.d",
-    ".ruff_cache",
-    ".svn",
-    ".tox",
-    ".venv",
-    "__pypackages__",
-    "_build",
-    "buck-out",
-    "build",
-    "dist",
-    "node_modules",
-    "venv",
-    "*vendored*",
-    "*_vendor*",
-]
 
-target-version = "py38"
-fix = true
-
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "napari/_vispy/__init__.py" = ["E402"]
 "**/_tests/*.py" = ["B011", "INP001", "TRY301", "B018", "RUF012"]
 "napari/utils/_testsupport.py" = ["B011"]
@@ -129,19 +130,21 @@ fix = true
 "**/vendored/**" = ["TID"]
 "napari/benchmarks/**" = ["RUF012", "TID252"]
 
-[tool.ruff.flake8-quotes]
+[tool.ruff.lint.flake8-quotes]
 docstring-quotes = "double"
+inline-quotes = "single"
+multiline-quotes = "double"
 
-[tool.ruff.flake8-tidy-imports]
+[tool.ruff.lint.flake8-tidy-imports]
 # Disallow all relative imports.
 ban-relative-imports = "all"
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 known-first-party=['napari']
 combine-as-imports = true
 
-[tool.ruff.flake8-import-conventions]
-[tool.ruff.flake8-import-conventions.extend-aliases]
+[tool.ruff.lint.flake8-import-conventions]
+[tool.ruff.lint.flake8-import-conventions.extend-aliases]
 # Declare a custom alias for the `matplotlib` module.
 "dask.array" = "da"
 xarray = "xr"
@@ -321,7 +324,6 @@ module = [
     'napari.layers.points.points',
     'napari.layers.shapes._shapes_mouse_bindings',
     'napari.layers.shapes.shapes',
-    'napari.layers.utils._link_layers',
     'napari.layers.utils.color_encoding',
     'napari.layers.utils.color_manager',
     'napari.layers.utils.stack_utils',
@@ -365,17 +367,19 @@ module = [
     "napari._vispy.visuals.markers",
     "napari._vispy.visuals.surface",
     "napari.layers._data_protocols",
-    "napari.layers._source",
     "napari.layers.shapes._shapes_models.path",
     "napari.layers.shapes._shapes_models.polygon",
-    "napari.layers.utils.interactivity_utils",
+    "napari.layers.shapes._shapes_models._polgyon_base",
+    "napari.layers.shapes._shapes_models.ellipse",
+    "napari.layers.shapes._shapes_models.line",
+    "napari.layers.shapes._shapes_models.rectangle",
+    "napari.layers.shapes._shapes_models.shape",
     "napari.layers.vectors._vector_utils",
     "napari.resources._icons",
     "napari.utils.color",
     "napari.utils.events.containers._dict",
     "napari.utils.events.event_utils",
     "napari.utils.migrations",
-    "napari.utils.perf._patcher",
     "napari.utils.validators",
     "napari.window"
 ]
@@ -384,11 +388,6 @@ disallow_untyped_defs = false
 
 [[tool.mypy.overrides]]
 module = [
-    "napari.settings._utils",
-    "napari.settings._appearance",
-    "napari.settings._shortcuts",
-    "napari.settings._application",
-    "napari._app_model.actions._view_actions",
     "napari._event_loop",
     "napari._vispy.utils.quaternion",
     "napari._vispy.visuals.bounding_box",
@@ -400,10 +399,7 @@ module = [
     "napari.components._viewer_mouse_bindings",
     "napari.components.overlays.base",
     "napari.components.overlays.interaction_box",
-    "napari.layers.base._base_constants",
     "napari.utils.colormaps.categorical_colormap_utils",
-    "napari.utils.perf._event",
-    "napari.utils.perf._trace_file",
 ]
 disallow_untyped_defs = false
 
@@ -439,11 +435,9 @@ module = [
     "napari.utils._register",
     "napari.utils.colormaps.categorical_colormap",
     "napari.utils.colormaps.standardize_color",
-    "napari.utils.events.containers._set",
     "napari.utils.geometry",
     "napari.utils.io",
     "napari.utils.notebook_display",
-    "napari.utils.perf._config",
     "napari.utils.transforms.transform_utils",
     "napari.utils.translations",
     "napari.utils.tree.node",
@@ -474,7 +468,6 @@ disallow_untyped_defs = false
 [[tool.mypy.overrides]]
 module = [
     "napari._app_model._app",
-    "napari.utils.events.containers._selection",
     "napari.utils.theme",
 ]
 disallow_incomplete_defs = false
@@ -499,7 +492,6 @@ module = [
     "napari._vispy.layers.shapes",
     "napari._vispy.layers.surface",
     "napari.components._viewer_key_bindings",
-    "napari.layers.image.image",
     "napari.layers.labels.labels",
     "napari.layers.surface.surface",
     "napari.layers.tracks.tracks",
@@ -508,7 +500,6 @@ module = [
     "napari.utils._dtype",
     "napari.utils.colormaps.colormap_utils",
     "napari.utils.misc",
-    "napari.utils.perf._timers"
 ]
 check_untyped_defs = false
 disallow_incomplete_defs = false
@@ -522,14 +513,8 @@ module = [
     "napari.conftest",
     "napari.layers.labels._labels_utils",
     "napari.layers.points._points_mouse_bindings",
-    "napari.layers.shapes._shapes_models._polgyon_base",
-    "napari.layers.shapes._shapes_models.ellipse",
-    "napari.layers.shapes._shapes_models.line",
-    "napari.layers.shapes._shapes_models.rectangle",
-    "napari.layers.shapes._shapes_models.shape",
     "napari.layers.tracks._track_utils",
     "napari.utils.colormaps.colormap",
-    "napari.utils.events.containers._selectable_list",
     "napari.utils.notifications",
 ]
 check_untyped_defs = false
@@ -539,7 +524,6 @@ disallow_untyped_defs = false
 [[tool.mypy.overrides]]
 module = [
     "napari.utils.events.containers._typed",
-    "napari.layers.base.base",
 ]
 check_untyped_defs = false
 disallow_incomplete_defs = false
@@ -550,7 +534,8 @@ warn_unused_ignores = false
 [[tool.mypy.overrides]]
 module = [
     "napari.__main__",
-    "napari.utils.colormaps.vendored.colors"
+    "napari.utils.colormaps.vendored.colors",
+    "napari.layers.image.image"
 ]
 check_untyped_defs = false
 disallow_untyped_calls = false
@@ -567,7 +552,8 @@ disallow_untyped_calls = false
 
 [[tool.mypy.overrides]]
 module = [
-    "napari._qt.containers.qt_layer_list"
+    "napari._qt.containers.qt_layer_list",
+    "napari.layers.base.base"
 ]
 check_untyped_defs = false
 disallow_untyped_calls = false
@@ -578,7 +564,6 @@ warn_unused_ignores = false
 module = [
     "napari._vispy.overlays.bounding_box",
     "napari._vispy.overlays.brush_circle",
-    "napari.layers.base._base_mouse_bindings",
     "napari.utils._test_utils",
 ]
 check_untyped_defs = false
