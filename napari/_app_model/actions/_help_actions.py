@@ -13,7 +13,7 @@ from napari import __version__
 from napari._app_model.constants import CommandId, MenuGroup, MenuId
 
 v = parse(__version__)
-VERSION = "dev" if v.is_devrelease else str(v)
+VERSION = "dev" if v.is_devrelease else str(v.base_version)
 
 HELP_URLS = {
     "getting_started": f'https://napari.org/{VERSION}/tutorials/start_index.html',
