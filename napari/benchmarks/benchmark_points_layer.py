@@ -5,11 +5,15 @@
 import os
 
 import numpy as np
+from packaging.version import parse as parse_version
 
+import napari
 from napari.components import Dims
 from napari.layers import Points
 
-from .utils import Skiper
+from .utils import Skip
+
+NAPARI_0_4_19 = parse_version(napari.__version__) <= parse_version('0.4.19')
 
 
 class Points2DSuite:
@@ -103,6 +107,7 @@ class PointsSlicingSuite:
 
     params = [True, False]
     timeout = 300
+    skip_params = Skip(always=lambda _: NAPARI_0_4_19)
 
     def setup(self, flatten_slice_axis):
         np.random.seed(0)
@@ -136,8 +141,10 @@ class PointsToMaskSuite:
         [5, 10],
     ]
 
-    if 'PR' in os.environ:
-        skip_params = Skiper(lambda x: x[0] > 256 or x[1][0] > 512)
+    skip_params = Skip(
+        if_in_pr=lambda num_points, mask_shape, points_size: num_points > 256
+        or mask_shape[0] > 512
+    )
 
     def setup(self, num_points, mask_shape, point_size):
         np.random.seed(0)

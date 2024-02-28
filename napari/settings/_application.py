@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 from psutil import virtual_memory
 
@@ -32,11 +32,11 @@ class DaskSettings(EventedModel):
 
 
 class ApplicationSettings(EventedModel):
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.dask.events.connect(self._dask_changed)
 
-    def _dask_changed(self):
+    def _dask_changed(self) -> None:
         self.events.dask(value=self.dask)
 
     first_time: bool = Field(
@@ -209,7 +209,7 @@ class ApplicationSettings(EventedModel):
     )
 
     @validator('window_state', allow_reuse=True)
-    def _validate_qbtye(cls, v):
+    def _validate_qbtye(cls, v: str) -> str:
         if v and (not isinstance(v, str) or not v.startswith('!QBYTE_')):
             raise ValueError(
                 trans._("QByte strings must start with '!QBYTE_'")

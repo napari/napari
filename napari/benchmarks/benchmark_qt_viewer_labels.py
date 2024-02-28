@@ -9,6 +9,7 @@ from itertools import cycle
 from typing import List
 
 import numpy as np
+from packaging.version import parse as parse_version
 from qtpy.QtWidgets import QApplication
 from skimage.morphology import diamond, octahedron
 
@@ -17,7 +18,9 @@ from napari.components.viewer_model import ViewerModel
 from napari.qt import QtViewer
 from napari.utils.colormaps import DirectLabelColormap
 
-from .utils import Skiper
+from .utils import Skip
+
+NAPARI_0_4_19 = parse_version(napari.__version__) <= parse_version('0.4.19')
 
 
 @dataclass
@@ -91,7 +94,10 @@ class QtViewerSingleLabelsSuite:
 
     def time_on_mouse_move(self):
         """Time to drag paint on mouse move."""
-        self.viewer.window._qt_viewer.canvas._on_mouse_move(self.event)
+        if NAPARI_0_4_19:
+            self.viewer.window._qt_viewer.on_mouse_move(self.event)
+        else:
+            self.viewer.window._qt_viewer.canvas._on_mouse_move(self.event)
 
 
 @lru_cache
@@ -123,10 +129,10 @@ class LabelRendering:
         [np.uint8, np.uint16, np.uint32],
         ['auto', 'direct'],
     )
-    if 'GITHUB_ACTIONS' in os.environ:
-        skip_params = Skiper(lambda x: x[0] > 20)
-    if 'PR' in os.environ:
-        skip_params = Skiper(lambda x: x[0] > 20)
+    skip_params = Skip(
+        if_in_pr=lambda radius, *_: radius > 20,
+        if_on_ci=lambda radius, *_: radius > 20,
+    )
 
     def setup(self, radius, dtype, label_mode):
         self.steps = 4 if 'GITHUB_ACTIONS' in os.environ else 10
