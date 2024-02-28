@@ -57,7 +57,7 @@ class PerfTraceFile:
         """
         self.events.append(event)
 
-    def close(self):
+    def close(self) -> None:
         """Close the trace file, write all events to disk."""
         event_data = [self._get_event_data(x) for x in self.events]
         with open(self.output_path, 'w') as outf:
