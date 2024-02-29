@@ -286,6 +286,8 @@ class TrackManager:
         # at the indices just before the track id changes
         track_connex = np.ones(self.data.shape[0], dtype=bool)
         track_connex[indices_new_id] = False
+        # Add 'False' for the last entry too (end of the last track)
+        track_connex[-1] = False
 
         self._points_id = points_id
         self._track_vertices = track_vertices
