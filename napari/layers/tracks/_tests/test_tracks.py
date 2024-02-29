@@ -266,3 +266,26 @@ def test_changing_data_inplace() -> None:
     # track_id
     layer.data[50:, 0] = 2
     layer.refresh()
+
+
+def test_track_connex_validity() -> None:
+    """Test if track_connex is valid (i.e if the value False appears as many
+    times as there are tracks."""
+
+    data = np.zeros((11, 4))
+
+    # Track ids
+    data[:-1, 0] = np.repeat(np.arange(1, 6), 2)
+    # create edge case where a track has length one
+    data[-1, 0] = 6
+
+    # Time
+    data[:-1, 1] = np.array([0, 1] * 5)
+    data[-1, 1] = 0
+
+    layer = Tracks(data)
+
+    n_tracks = 5
+
+    # the number of 'False' in the track_connex array should be equal to the number of tracks
+    assert np.sum(~layer._manager.track_connex) == n_tracks
