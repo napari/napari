@@ -22,7 +22,7 @@ plugin_manager = NapariPluginManager()
 
 
 @lru_cache  # only call once
-def _initialize_plugins():
+def _initialize_plugins() -> None:
     _npe2pm = _PluginManager.instance()
 
     settings = get_settings()

@@ -200,7 +200,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
 
     def _on_matrix_change(self):
         # mypy: self.layer._transforms.simplified cannot be None
-        transform = self.layer._transforms.simplified.set_slice(  # type: ignore [union-attr]
+        transform = self.layer._transforms.simplified.set_slice(
             self.layer._slice_input.displayed
         )
         # convert NumPy axis ordering to VisPy axis ordering

@@ -323,7 +323,6 @@ module = [
     'napari.layers.points.points',
     'napari.layers.shapes._shapes_mouse_bindings',
     'napari.layers.shapes.shapes',
-    'napari.layers.utils._link_layers',
     'napari.layers.utils.color_encoding',
     'napari.layers.utils.color_manager',
     'napari.layers.utils.stack_utils',
@@ -367,17 +366,19 @@ module = [
     "napari._vispy.visuals.markers",
     "napari._vispy.visuals.surface",
     "napari.layers._data_protocols",
-    "napari.layers._source",
     "napari.layers.shapes._shapes_models.path",
     "napari.layers.shapes._shapes_models.polygon",
-    "napari.layers.utils.interactivity_utils",
+    "napari.layers.shapes._shapes_models._polgyon_base",
+    "napari.layers.shapes._shapes_models.ellipse",
+    "napari.layers.shapes._shapes_models.line",
+    "napari.layers.shapes._shapes_models.rectangle",
+    "napari.layers.shapes._shapes_models.shape",
     "napari.layers.vectors._vector_utils",
     "napari.resources._icons",
     "napari.utils.color",
     "napari.utils.events.containers._dict",
     "napari.utils.events.event_utils",
     "napari.utils.migrations",
-    "napari.utils.perf._patcher",
     "napari.utils.validators",
     "napari.window"
 ]
@@ -386,11 +387,6 @@ disallow_untyped_defs = false
 
 [[tool.mypy.overrides]]
 module = [
-    "napari.settings._utils",
-    "napari.settings._appearance",
-    "napari.settings._shortcuts",
-    "napari.settings._application",
-    "napari._app_model.actions._view_actions",
     "napari._event_loop",
     "napari._vispy.utils.quaternion",
     "napari._vispy.visuals.bounding_box",
@@ -402,10 +398,7 @@ module = [
     "napari.components._viewer_mouse_bindings",
     "napari.components.overlays.base",
     "napari.components.overlays.interaction_box",
-    "napari.layers.base._base_constants",
     "napari.utils.colormaps.categorical_colormap_utils",
-    "napari.utils.perf._event",
-    "napari.utils.perf._trace_file",
 ]
 disallow_untyped_defs = false
 
@@ -441,11 +434,9 @@ module = [
     "napari.utils._register",
     "napari.utils.colormaps.categorical_colormap",
     "napari.utils.colormaps.standardize_color",
-    "napari.utils.events.containers._set",
     "napari.utils.geometry",
     "napari.utils.io",
     "napari.utils.notebook_display",
-    "napari.utils.perf._config",
     "napari.utils.transforms.transform_utils",
     "napari.utils.translations",
     "napari.utils.tree.node",
@@ -476,7 +467,6 @@ disallow_untyped_defs = false
 [[tool.mypy.overrides]]
 module = [
     "napari._app_model._app",
-    "napari.utils.events.containers._selection",
     "napari.utils.theme",
 ]
 disallow_incomplete_defs = false
@@ -501,7 +491,6 @@ module = [
     "napari._vispy.layers.shapes",
     "napari._vispy.layers.surface",
     "napari.components._viewer_key_bindings",
-    "napari.layers.image.image",
     "napari.layers.labels.labels",
     "napari.layers.surface.surface",
     "napari.layers.tracks.tracks",
@@ -510,7 +499,6 @@ module = [
     "napari.utils._dtype",
     "napari.utils.colormaps.colormap_utils",
     "napari.utils.misc",
-    "napari.utils.perf._timers"
 ]
 check_untyped_defs = false
 disallow_incomplete_defs = false
@@ -524,14 +512,8 @@ module = [
     "napari.conftest",
     "napari.layers.labels._labels_utils",
     "napari.layers.points._points_mouse_bindings",
-    "napari.layers.shapes._shapes_models._polgyon_base",
-    "napari.layers.shapes._shapes_models.ellipse",
-    "napari.layers.shapes._shapes_models.line",
-    "napari.layers.shapes._shapes_models.rectangle",
-    "napari.layers.shapes._shapes_models.shape",
     "napari.layers.tracks._track_utils",
     "napari.utils.colormaps.colormap",
-    "napari.utils.events.containers._selectable_list",
     "napari.utils.notifications",
 ]
 check_untyped_defs = false
@@ -551,7 +533,8 @@ warn_unused_ignores = false
 [[tool.mypy.overrides]]
 module = [
     "napari.__main__",
-    "napari.utils.colormaps.vendored.colors"
+    "napari.utils.colormaps.vendored.colors",
+    "napari.layers.image.image"
 ]
 check_untyped_defs = false
 disallow_untyped_calls = false
@@ -580,7 +563,6 @@ warn_unused_ignores = false
 module = [
     "napari._vispy.overlays.bounding_box",
     "napari._vispy.overlays.brush_circle",
-    "napari.layers.base._base_mouse_bindings",
     "napari.utils._test_utils",
 ]
 check_untyped_defs = false
