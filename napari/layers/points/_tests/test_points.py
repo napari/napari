@@ -143,27 +143,27 @@ def test_empty_layer_with_face_colormap():
     np.testing.assert_allclose(layer._face.current_color, face_color)
 
 
-def test_empty_layer_with_edge_colormap():
+def test_empty_layer_with_border_colormap():
     """Test creating an empty layer where the face color is a colormap
     See: https://github.com/napari/napari/pull/1069
     """
     default_properties = {'point_type': np.array([1.5], dtype=float)}
     layer = Points(
         property_choices=default_properties,
-        edge_color='point_type',
-        edge_colormap='gray',
+        border_color='point_type',
+        border_colormap='gray',
     )
 
-    assert layer.edge_color_mode == 'colormap'
+    assert layer.border_color_mode == 'colormap'
 
     # verify the current_face_color is correct
-    edge_color = np.array([1, 1, 1, 1])
-    np.testing.assert_allclose(layer._edge.current_color, edge_color)
+    border_color = np.array([1, 1, 1, 1])
+    np.testing.assert_allclose(layer._border.current_color, border_color)
 
 
-@pytest.mark.parametrize('feature_name', ('edge', 'face'))
+@pytest.mark.parametrize('feature_name', ('border', 'face'))
 def test_set_current_properties_on_empty_layer_with_color_cycle(feature_name):
-    """Test setting current_properties an empty layer where the face/edge color
+    """Test setting current_properties an empty layer where the face/border color
     is a color cycle.
 
     See: https://github.com/napari/napari/pull/3110
@@ -505,11 +505,11 @@ def test_remove_selected_removes_corresponding_attributes():
     layer = Points(
         data,
         size=size,
-        edge_width=size,
+        border_width=size,
         symbol=symbol,
         features={'feature': feature},
         face_color=color,
-        edge_color=color,
+        border_color=color,
         text=text,
         shown=shown,
     )
@@ -518,11 +518,11 @@ def test_remove_selected_removes_corresponding_attributes():
         data[1:],
         size=size[1:],
         symbol=symbol[1:],
-        edge_width=size[1:],
+        border_width=size[1:],
         features={'feature': feature[1:]},
         feature_defaults={'feature': feature[0]},
         face_color=color[1:],
-        edge_color=color[1:],
+        border_color=color[1:],
         text=text,  # computed from feature
         shown=shown[1:],
     )
@@ -727,7 +727,7 @@ def test_properties(properties):
     assert layer.get_status(data[1])['coordinates'].endswith('point_type: A')
 
 
-@pytest.mark.parametrize('attribute', ['edge', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_adding_properties(attribute):
     """Test adding properties to an existing layer"""
     shape = (10, 2)
@@ -975,61 +975,63 @@ def test_points_errors():
         Points(data, properties=copy(annotations))
 
 
-def test_edge_width():
-    """Test setting edge width."""
+def test_border_width():
+    """Test setting border width."""
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
-    np.testing.assert_array_equal(layer.edge_width, 0.05)
+    np.testing.assert_array_equal(layer.border_width, 0.05)
 
-    layer.edge_width = 0.5
-    np.testing.assert_array_equal(layer.edge_width, 0.5)
+    layer.border_width = 0.5
+    np.testing.assert_array_equal(layer.border_width, 0.5)
 
     # fail outside of range 0, 1 if relative is enabled (default)
     with pytest.raises(ValueError):
-        layer.edge_width = 2
+        layer.border_width = 2
 
-    layer.edge_width_is_relative = False
-    layer.edge_width = 2
-    np.testing.assert_array_equal(layer.edge_width, 2)
+    layer.border_width_is_relative = False
+    layer.border_width = 2
+    np.testing.assert_array_equal(layer.border_width, 2)
 
     # fail if we try to come back again
     with pytest.raises(ValueError):
-        layer.edge_width_is_relative = True
+        layer.border_width_is_relative = True
 
     # all should work on instantiation too
-    layer = Points(data, edge_width=3, edge_width_is_relative=False)
-    np.testing.assert_array_equal(layer.edge_width, 3)
-    assert layer.edge_width_is_relative is False
+    layer = Points(data, border_width=3, border_width_is_relative=False)
+    np.testing.assert_array_equal(layer.border_width, 3)
+    assert layer.border_width_is_relative is False
     with pytest.raises(ValueError):
-        layer.edge_width = -2
+        layer.border_width = -2
 
 
 @pytest.mark.parametrize(
-    'edge_width',
+    'border_width',
     [1, float(1), np.array([1, 2, 3, 4, 5]), [1, 2, 3, 4, 5]],
 )
-def test_edge_width_types(edge_width):
-    """Test edge_width dtypes with valid values"""
+def test_border_width_types(border_width):
+    """Test border_width dtypes with valid values"""
     shape = (5, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    layer = Points(data, edge_width=edge_width, edge_width_is_relative=False)
-    np.testing.assert_array_equal(layer.edge_width, edge_width)
+    layer = Points(
+        data, border_width=border_width, border_width_is_relative=False
+    )
+    np.testing.assert_array_equal(layer.border_width, border_width)
 
 
 @pytest.mark.parametrize(
-    'edge_width',
+    'border_width',
     [int(-1), float(-1), np.array([-1, 2, 3, 4, 5]), [-1, 2, 3, 4, 5]],
 )
-def test_edge_width_types_negative(edge_width):
-    """Test negative values in all edge_width dtypes"""
+def test_border_width_types_negative(border_width):
+    """Test negative values in all border_width dtypes"""
     shape = (5, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     with pytest.raises(ValueError):
-        Points(data, edge_width=edge_width, edge_width_is_relative=False)
+        Points(data, border_width=border_width, border_width_is_relative=False)
 
 
 def test_out_of_slice_display():
@@ -1058,7 +1060,7 @@ def test_out_of_slice_display():
     assert layer.out_of_slice_display is True
 
 
-@pytest.mark.parametrize('attribute', ['edge', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_switch_color_mode(attribute):
     """Test switching between color modes"""
     shape = (10, 2)
@@ -1090,13 +1092,13 @@ def test_switch_color_mode(attribute):
         layer_color, np.repeat([initial_color], shape[0], axis=0)
     )
 
-    # there should not be an edge_color_property
+    # there should not be an border_color_property
     color_manager = getattr(layer, f'_{attribute}')
     color_property = color_manager.color_properties
     assert color_property is None
 
     # transitioning to colormap should raise a warning
-    # because there isn't an edge color property yet and
+    # because there isn't an border color property yet and
     # the first property in points.properties is being automatically selected
     with pytest.warns(UserWarning):
         setattr(layer, f'{attribute}_color_mode', 'colormap')
@@ -1113,13 +1115,13 @@ def test_switch_color_mode(attribute):
     layer_color = transform_color(color_cycle * int(shape[0] / 2))
     np.testing.assert_allclose(color, layer_color)
 
-    # switch back to direct, edge_colors shouldn't change
+    # switch back to direct, border_colors shouldn't change
     setattr(layer, f'{attribute}_color_mode', 'direct')
-    new_edge_color = getattr(layer, f'{attribute}_color')
-    np.testing.assert_allclose(new_edge_color, color)
+    new_border_color = getattr(layer, f'{attribute}_color')
+    np.testing.assert_allclose(new_border_color, color)
 
 
-@pytest.mark.parametrize('attribute', ['edge', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_colormap_without_properties(attribute):
     """Setting the colormode to colormap should raise an exception"""
     shape = (10, 2)
@@ -1131,7 +1133,7 @@ def test_colormap_without_properties(attribute):
         setattr(layer, f'{attribute}_color_mode', 'colormap')
 
 
-@pytest.mark.parametrize('attribute', ['edge', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_colormap_with_categorical_properties(attribute):
     """Setting the colormode to colormap should raise an exception"""
     shape = (10, 2)
@@ -1144,7 +1146,7 @@ def test_colormap_with_categorical_properties(attribute):
         setattr(layer, f'{attribute}_color_mode', 'colormap')
 
 
-@pytest.mark.parametrize('attribute', ['edge', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_add_colormap(attribute):
     """Test  directly adding a vispy Colormap object"""
     shape = (10, 2)
@@ -1161,7 +1163,7 @@ def test_add_colormap(attribute):
     assert 'unnamed colormap' in layer_colormap.name
 
 
-@pytest.mark.parametrize('attribute', ['edge', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_add_point_direct(attribute: str):
     """Test adding points to layer directly"""
     layer = Points()
@@ -1190,7 +1192,7 @@ def test_add_point_direct(attribute: str):
     )
 
 
-@pytest.mark.parametrize('attribute', ['edge', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_color_direct(attribute: str):
     """Test setting colors directly"""
     shape = (10, 2)
@@ -1202,7 +1204,7 @@ def test_color_direct(attribute: str):
     current_color = getattr(layer, f'current_{attribute}_color')
     layer_color = getattr(layer, f'{attribute}_color')
     assert current_color == 'black'
-    assert len(layer.edge_color) == shape[0]
+    assert len(layer.border_color) == shape[0]
     np.testing.assert_allclose(color_array, layer_color)
 
     # With no data selected changing color has no effect
@@ -1211,7 +1213,7 @@ def test_color_direct(attribute: str):
     assert current_color == 'blue'
     np.testing.assert_allclose(color_array, layer_color)
 
-    # Select data and change edge color of selection
+    # Select data and change border color of selection
     selected_data = {0, 1}
     layer.selected_data = {0, 1}
     current_color = getattr(layer, f'current_{attribute}_color')
@@ -1250,13 +1252,13 @@ color_cycle_rgb = [[1, 0, 0], [0, 0, 1]]
 color_cycle_rgba = [[1, 0, 0, 1], [0, 0, 1, 1]]
 
 
-@pytest.mark.parametrize('attribute', ['edge', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 @pytest.mark.parametrize(
     'color_cycle',
     [color_cycle_str, color_cycle_rgb, color_cycle_rgba],
 )
 def test_color_cycle(attribute, color_cycle):
-    """Test setting edge/face color with a color cycle list"""
+    """Test setting border/face color with a color cycle list"""
     # create Points using list color cycle
     shape = (10, 2)
     np.random.seed(0)
@@ -1315,9 +1317,9 @@ def test_color_cycle(attribute, color_cycle):
     )
 
 
-@pytest.mark.parametrize('attribute', ['edge', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_color_cycle_dict(attribute):
-    """Test setting edge/face color with a color cycle dict"""
+    """Test setting border/face color with a color cycle dict"""
     data = np.array([[0, 0], [100, 0], [0, 100]])
     properties = {'my_colors': [2, 6, 3]}
     points_kwargs = {
@@ -1334,9 +1336,9 @@ def test_color_cycle_dict(attribute):
     np.testing.assert_allclose(color_cycle_map[6], [1, 1, 1, 1])  # 6 is white
 
 
-@pytest.mark.parametrize('attribute', ['edge', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_add_color_cycle_to_empty_layer(attribute):
-    """Test adding a point to an empty layer when edge/face color is a color cycle
+    """Test adding a point to an empty layer when border/face color is a color cycle
 
     See: https://github.com/napari/napari/pull/1069
     """
@@ -1349,7 +1351,7 @@ def test_add_color_cycle_to_empty_layer(attribute):
     }
     layer = Points(**points_kwargs)
 
-    # verify the current_edge_color is correct
+    # verify the current_border_color is correct
     expected_color = transform_color(color_cycle[0])[0]
     color_manager = getattr(layer, f'_{attribute}')
     current_color = color_manager.current_color
@@ -1375,11 +1377,11 @@ def test_add_color_cycle_to_empty_layer(attribute):
     np.testing.assert_equal(layer.properties, new_properties)
 
 
-@pytest.mark.parametrize('attribute', ['edge', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_adding_value_color_cycle(attribute):
     """Test that adding values to properties used to set a color cycle
     and then calling Points.refresh_colors() performs the update and adds the
-    new value to the face/edge_color_cycle_map.
+    new value to the face/border_color_cycle_map.
 
     See: https://github.com/napari/napari/issues/988
     """
@@ -1408,9 +1410,9 @@ def test_adding_value_color_cycle(attribute):
     assert 'C' in color_map_keys
 
 
-@pytest.mark.parametrize('attribute', ['edge', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_color_colormap(attribute):
-    """Test setting edge/face color with a colormap"""
+    """Test setting border/face color with a colormap"""
     # create Points using with a colormap
     shape = (10, 2)
     np.random.seed(0)
@@ -1793,23 +1795,23 @@ def test_view_colors():
     face_color = np.array(
         [[1, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1], [0, 0, 1, 1]]
     )
-    edge_color = np.array(
+    border_color = np.array(
         [[0, 0, 1, 1], [1, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]]
     )
 
-    layer = Points(coords, face_color=face_color, edge_color=edge_color)
+    layer = Points(coords, face_color=face_color, border_color=border_color)
     layer._slice_dims(Dims(ndim=3, point=(0, 0, 0)))
     assert np.array_equal(layer._view_face_color, face_color[[0, 1]])
-    assert np.array_equal(layer._view_edge_color, edge_color[[0, 1]])
+    assert np.array_equal(layer._view_border_color, border_color[[0, 1]])
 
     layer._slice_dims(Dims(ndim=3, point=(1, 0, 0)))
     assert np.array_equal(layer._view_face_color, face_color[[2]])
-    assert np.array_equal(layer._view_edge_color, edge_color[[2]])
+    assert np.array_equal(layer._view_border_color, border_color[[2]])
 
     # view colors should return empty array if there are no points
     layer._slice_dims(Dims(ndim=3, point=(2, 0, 0)))
     assert len(layer._view_face_color) == 0
-    assert len(layer._view_edge_color) == 0
+    assert len(layer._view_border_color) == 0
 
 
 def test_interaction_box():
@@ -2415,8 +2417,8 @@ def test_empty_data_from_tuple():
     [
         ('size', 20),
         ('face_color', np.asarray([0.0, 0.0, 1.0, 1.0])),
-        ('edge_color', np.asarray([0.0, 0.0, 1.0, 1.0])),
-        ('edge_width', np.asarray([0.2])),
+        ('border_color', np.asarray([0.0, 0.0, 1.0, 1.0])),
+        ('border_width', np.asarray([0.2])),
     ],
 )
 def test_new_point_size_editable(attribute, new_value):
@@ -2611,3 +2613,28 @@ def test_thick_slice():
     # it will take in the other point
     layer._slice_dims(Dims(ndim=3, point=(0, 0, 0), margin_right=(10, 0, 0)))
     np.testing.assert_array_equal(layer._view_data, data[:, -2:])
+
+
+@pytest.mark.parametrize(
+    'old_name, new_name, value',
+    [
+        ('edge_width', 'border_width', 0.9),
+        ('edge_width_is_relative', 'border_width_is_relative', False),
+        ('current_edge_width', 'current_border_width', 0.9),
+        ('edge_color', 'border_color', 'blue'),
+        ('current_edge_color', 'current_border_color', 'pink'),
+    ],
+)
+def test_events_callback(old_name, new_name, value):
+    data = np.array([[0, 0, 0], [10, 10, 10]])
+    layer = Points(data)
+    old_name_callback = Mock()
+    new_name_callback = Mock()
+    with pytest.warns(FutureWarning):
+        getattr(layer.events, old_name).connect(old_name_callback)
+    getattr(layer.events, new_name).connect(new_name_callback)
+
+    setattr(layer, new_name, value)
+
+    new_name_callback.assert_called_once()
+    old_name_callback.assert_called_once()

@@ -21,13 +21,13 @@ PatchFunction = Callable[[CallableParent, str, str], None]
 class PatchError(Exception):
     """Failed to patch target, config file error?"""
 
-    def __init__(self, message) -> None:
+    def __init__(self, message: str) -> None:
         self.message = message
 
 
 def _patch_attribute(
     module: types.ModuleType, attribute_str: str, patch_func: PatchFunction
-):
+) -> None:
     """Patch the module's callable pointed to by the attribute string.
 
     Parameters
