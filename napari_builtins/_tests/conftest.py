@@ -53,3 +53,8 @@ LAYERS: List[layers.Layer] = [
 @pytest.fixture(params=LAYERS)
 def some_layer(request):
     return request.param
+
+
+@pytest.fixture()
+def layers_list():
+    return LAYERS

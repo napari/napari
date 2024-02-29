@@ -6,6 +6,7 @@ from qtpy import QtCore, QtGui, QtWidgets
 from ...._qt.widgets.qt_extension2reader import Extension2ReaderTable
 from ...._qt.widgets.qt_highlight_preview import QtHighlightSizePreviewWidget
 from ...._qt.widgets.qt_keyboard_settings import ShortcutEditor
+from ...._qt.widgets.qt_font_size import QtFontSizeWidget
 
 from .signal import Signal
 from .utils import is_concrete_schema, iter_layout_widgets, state_property
@@ -643,6 +644,40 @@ class Extension2ReaderWidget(SchemaWidgetMixin, Extension2ReaderTable):
         self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
         self.setGraphicsEffect(self.opacity)
         self.opacity.setOpacity(1)
+
+
+class FontSizeSchemaWidget(SchemaWidgetMixin, QtFontSizeWidget):
+    @state_property
+    def state(self) -> int:
+        return self.value()
+
+    @state.setter
+    def state(self, state: int):
+        self.setValue(state)
+
+    def configure(self):
+        self.valueChanged.connect(self.on_changed.emit)
+        self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
+        self.setGraphicsEffect(self.opacity)
+        self.opacity.setOpacity(1)
+
+        minimum = 1
+        if "minimum" in self.schema:
+            minimum = self.schema["minimum"]
+            if self.schema.get("exclusiveMinimum"):
+                minimum += 1
+
+        maximum = 100
+        if "maximum" in self.schema:
+            maximum = self.schema["maximum"]
+            if self.schema.get("exclusiveMaximum"):
+                maximum -= 1
+
+        self.setRange(minimum, maximum)
+
+    def setDescription(self, description: str):
+        self.description = description
+
 
 class ObjectSchemaWidgetMinix(SchemaWidgetMixin):
     def __init__(

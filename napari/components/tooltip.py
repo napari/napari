@@ -14,4 +14,4 @@ class Tooltip(EventedModel):
 
     # fields
     visible: bool = False
-    text: str = ""
+    text: str = ''

@@ -7,10 +7,10 @@ from qtpy.QtWidgets import QTableWidget, QTableWidgetItem
 
 from napari.utils.translations import trans
 
-email_pattern = re.compile(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
+email_pattern = re.compile(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$')
 url_pattern = re.compile(
-    r"https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}"
-    r"\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)"
+    r'https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}'
+    r'\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)'
 )
 
 
@@ -47,9 +47,9 @@ class QtDictTable(QTableWidget):
     def __init__(
         self,
         parent=None,
-        source: List[dict] = None,
+        source: Optional[List[dict]] = None,
         *,
-        headers: List[str] = None,
+        headers: Optional[List[str]] = None,
         min_section_width: Optional[int] = None,
         max_section_width: int = 480,
     ) -> None:

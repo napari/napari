@@ -33,8 +33,8 @@ from napari.utils.events.custom_types import Array
 from napari.utils.misc import is_sequence
 from napari.utils.translations import trans
 
-QBYTE_FLAG = "!QBYTE_"
-RICH_TEXT_PATTERN = re.compile("<[^\n]+>")
+QBYTE_FLAG = '!QBYTE_'
+RICH_TEXT_PATTERN = re.compile('<[^\n]+>')
 
 
 def is_qbyte(string: str) -> bool:
@@ -146,9 +146,14 @@ def set_widgets_enabled_with_opacity(
 ):
     """Set enabled state on some widgets. If not enabled, decrease opacity."""
     for widget in widgets:
-        widget.setEnabled(enabled)
         op = QGraphicsOpacityEffect(parent)
-        op.setOpacity(1 if enabled else 0.5)
+        op.setOpacity(0.5)
+        # Only enable opacity effect when needed. That prevents layout changes
+        # when setting the color effect for the whole window with the flash
+        # animation option.
+        # See https://github.com/napari/napari/issues/6147
+        op.setEnabled(not enabled)
+        widget.setEnabled(enabled)
         widget.setGraphicsEffect(op)
 
 
@@ -256,12 +261,12 @@ def add_flash_animation(
         Color of the flash animation. By default, we use light gray.
     """
     color = transform_color(color)[0]
-    color = (255 * color).astype("int")
+    color = (255 * color).astype('int')
 
     effect = QGraphicsColorizeEffect(widget)
     widget.setGraphicsEffect(effect)
 
-    widget._flash_animation = QPropertyAnimation(effect, b"color")
+    widget._flash_animation = QPropertyAnimation(effect, b'color')
     widget._flash_animation.setStartValue(QColor(0, 0, 0, 0))
     widget._flash_animation.setEndValue(QColor(0, 0, 0, 0))
     widget._flash_animation.setLoopCount(1)
@@ -370,7 +375,7 @@ def qt_might_be_rich_text(text) -> bool:
         return bool(RICH_TEXT_PATTERN.search(text))
 
 
-def in_qt_main_thread():
+def in_qt_main_thread() -> bool:
     """
     Check if we are in the thread in which QApplication object was created.
 

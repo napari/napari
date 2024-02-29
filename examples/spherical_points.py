@@ -20,7 +20,7 @@ pts_layer = viewer.add_points(
     face_color=colors,
     size=sizes,
     shading='spherical',
-    edge_width=0,
+    border_width=0,
 )
 
 # antialiasing is currently a bit broken, this is especially bad in 3D so

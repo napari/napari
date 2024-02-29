@@ -5,11 +5,24 @@ import sys
 import traceback
 import typing
 import warnings
+import weakref
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, Type, Union
+from types import FrameType
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+)
 from weakref import WeakSet, ref
 
-from qtpy.QtCore import QCoreApplication, QObject, Qt
+import numpy as np
+from qtpy.QtCore import QCoreApplication, QObject, Qt, QUrl
 from qtpy.QtGui import QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 from superqt import ensure_main_thread
@@ -44,12 +57,15 @@ from napari.utils.history import (
 from napari.utils.io import imsave
 from napari.utils.key_bindings import KeymapHandler
 from napari.utils.misc import in_ipython, in_jupyter
+from napari.utils.naming import CallerFrame
+from napari.utils.notifications import show_info
 from napari.utils.translations import trans
 from napari_builtins.io import imsave_extensions
 
 from napari._vispy import VispyCanvas, create_vispy_layer  # isort:skip
 
 if TYPE_CHECKING:
+    from napari_console import QtConsole
     from npe2.manifest.contributions import WriterContribution
 
     from napari._qt.layer_controls import QtLayerControlsContainer
@@ -69,7 +85,7 @@ def _npe2_decode_selected_filter(
     # `[]`. This function will return None.
 
     for entry, writer in zip(
-        ext_str.split(";;"),
+        ext_str.split(';;'),
         writers,
     ):
         if entry.startswith(selected_filter):
@@ -102,24 +118,24 @@ def _extension_string_for_layers(
         if selected_layer._type_string == 'image':
             ext = imsave_extensions()
 
-            ext_list = [f"*{val}" for val in ext]
+            ext_list = [f'*{val}' for val in ext]
             ext_str = ';;'.join(ext_list)
 
             ext_str = trans._(
-                "All Files (*);; Image file types:;;{ext_str}",
+                'All Files (*);; Image file types:;;{ext_str}',
                 ext_str=ext_str,
             )
 
         elif selected_layer._type_string == 'points':
-            ext_str = trans._("All Files (*);; *.csv;;")
+            ext_str = trans._('All Files (*);; *.csv;;')
 
         else:
             # layer other than image or points
-            ext_str = trans._("All Files (*);;")
+            ext_str = trans._('All Files (*);;')
 
     else:
         # multiple layers.
-        ext_str = trans._("All Files (*);;")
+        ext_str = trans._('All Files (*);;')
     return ext_str, []
 
 
@@ -151,7 +167,7 @@ class QtViewer(QSplitter):
     _key_map_handler : napari.utils.key_bindings.KeymapHandler
         KeymapHandler handling the calling functionality when keys are pressed that have a callback function mapped
     _qt_poll : Optional[napari._qt.experimental.qt_poll.QtPoll]
-        A QtPoll object required for octree or monitor.
+        A QtPoll object required for the monitor.
     _remote_manager : napari.components.experimental.remote.RemoteManager
         A remote manager processing commands from remote clients and sending out messages when polled.
     _welcome_widget : napari._qt.widgets.qt_welcome.QtWidgetOverlay
@@ -232,26 +248,13 @@ class QtViewer(QSplitter):
 
         self.setAcceptDrops(True)
 
-        # Create the experimental QtPool for octree and/or monitor.
+        # Create the experimental QtPool for the monitor.
         self._qt_poll = _create_qt_poll(self, self.viewer.camera)
 
         # Create the experimental RemoteManager for the monitor.
         self._remote_manager = _create_remote_manager(
             self.viewer.layers, self._qt_poll
         )
-
-        # moved from the old layerlist... still feels misplaced.
-        # can you help me move this elsewhere?
-        if config.async_loading:
-            from napari._qt.experimental.qt_chunk_receiver import (
-                QtChunkReceiver,
-            )
-
-            # The QtChunkReceiver object allows the ChunkLoader to pass newly
-            # loaded chunks to the layers that requested them.
-            self.chunk_receiver = QtChunkReceiver(self.layers)
-        else:
-            self.chunk_receiver = None
 
         # bind shortcuts stored in settings last.
         self._bind_shortcuts()
@@ -274,7 +277,7 @@ class QtViewer(QSplitter):
         """
         warnings.warn(
             trans._(
-                "Access to QtViewer.view is deprecated since 0.5.0 and will be removed in the napari 0.6.0. Change to QtViewer.canvas.view instead."
+                'Access to QtViewer.view is deprecated since 0.5.0 and will be removed in the napari 0.6.0. Change to QtViewer.canvas.view instead.'
             ),
             FutureWarning,
             stacklevel=2,
@@ -289,12 +292,23 @@ class QtViewer(QSplitter):
         """
         warnings.warn(
             trans._(
-                "Access to QtViewer.camera will become deprecated in the 0.6.0. Change to QtViewer.canvas.camera instead."
+                'Access to QtViewer.camera will become deprecated in the 0.6.0. Change to QtViewer.canvas.camera instead.'
             ),
             FutureWarning,
             stacklevel=2,
         )
         return self.canvas.camera
+
+    @property
+    def chunk_receiver(self) -> None:
+        warnings.warn(
+            trans._(
+                'QtViewer.chunk_receiver is deprecated in version 0.5 and will be removed in a later version. '
+                'More generally the old approach to async loading was removed in version 0.5 so this value is always None. '
+                'If you need to specifically use the old approach, continue to use the latest 0.4 release.'
+            ),
+            DeprecationWarning,
+        )
 
     @staticmethod
     def _update_dask_cache_settings(
@@ -409,12 +423,12 @@ class QtViewer(QSplitter):
 
     def _leave_canvas(self):
         """disable status on canvas leave"""
-        self.viewer.status = ""
+        self.viewer.status = ''
         self.viewer.mouse_over_canvas = False
 
     def _enter_canvas(self):
         """enable status on canvas enter"""
-        self.viewer.status = "Ready"
+        self.viewer.status = 'Ready'
         self.viewer.mouse_over_canvas = True
 
     def _ensure_connect(self):
@@ -525,49 +539,75 @@ class QtViewer(QSplitter):
         """List: items to push to console when instantiated."""
         return self._console_backlog
 
+    def _get_console(self) -> Optional[QtConsole]:
+        """
+        Function for setup console.
+
+        Returns
+        -------
+
+        Notes
+        _____
+        extracted to separated function for simplify testing
+
+        """
+        try:
+            import numpy as np
+
+            # QtConsole imports debugpy that overwrites default breakpoint.
+            # It makes problems with debugging if you do not know this.
+            # So we do not want to overwrite it if it is already set.
+            breakpoint_handler = sys.breakpointhook
+            from napari_console import QtConsole
+
+            sys.breakpointhook = breakpoint_handler
+
+            import napari
+
+            with warnings.catch_warnings():
+                warnings.filterwarnings('ignore')
+                console = QtConsole(self.viewer)
+                console.push(
+                    {'napari': napari, 'action_manager': action_manager}
+                )
+                with CallerFrame(_in_napari) as c:
+                    if c.frame.f_globals.get('__name__', '') == '__main__':
+                        console.push({'np': np})
+                for i in self.console_backlog:
+                    # recover weak refs
+                    console.push(
+                        {
+                            k: self._unwrap_if_weakref(v)
+                            for k, v in i.items()
+                            if self._unwrap_if_weakref(v) is not None
+                        }
+                    )
+                return console
+        except ModuleNotFoundError:
+            warnings.warn(
+                trans._(
+                    'napari-console not found. It can be installed with'
+                    ' "pip install napari_console"'
+                ),
+                stacklevel=1,
+            )
+            return None
+        except ImportError:
+            traceback.print_exc()
+            warnings.warn(
+                trans._(
+                    'error importing napari-console. See console for full error.'
+                ),
+                stacklevel=1,
+            )
+            return None
+
     @property
     def console(self):
         """QtConsole: iPython console terminal integrated into the napari GUI."""
         if self._console is None:
-            try:
-                from napari_console import QtConsole
-
-                import napari
-
-                with warnings.catch_warnings():
-                    warnings.filterwarnings("ignore")
-                    self.console = QtConsole(self.viewer)
-                    self.console.push(
-                        {'napari': napari, 'action_manager': action_manager}
-                    )
-                    for i in self.console_backlog:
-                        # recover weak refs
-                        self.console.push(
-                            {
-                                k: self._unwrap_if_weakref(v)
-                                for k, v in i.items()
-                                if self._unwrap_if_weakref(v) is not None
-                            }
-                        )
-                    self._console_backlog = []
-            except ModuleNotFoundError:
-                warnings.warn(
-                    trans._(
-                        'napari-console not found. It can be installed with'
-                        ' "pip install napari_console"'
-                    ),
-                    stacklevel=1,
-                )
-                self._console = None
-            except ImportError:
-                traceback.print_exc()
-                warnings.warn(
-                    trans._(
-                        'error importing napari-console. See console for full error.'
-                    ),
-                    stacklevel=1,
-                )
-                self._console = None
+            self.console = self._get_console()
+            self._console_backlog = []
         return self._console
 
     @console.setter
@@ -579,17 +619,27 @@ class QtViewer(QSplitter):
 
     @ensure_main_thread
     def _on_slice_ready(self, event):
-        responses = event.value
+        """Callback connected to `viewer._layer_slicer.events.ready`.
+
+        Provides updates after slicing using the slice response data.
+        This only gets triggered on the async slicing path.
+        """
+        responses: Dict[weakref.ReferenceType[Layer], Any] = event.value
         logging.debug('QtViewer._on_slice_ready: %s', responses)
-        for layer, response in responses.items():
-            # Update the layer slice state to temporarily support behavior
-            # that depends on it.
-            layer._update_slice_response(response)
-            # The rest of `Layer.refresh` after `set_view_slice`, where `set_data`
-            # notifies the corresponding vispy layer of the new slice.
-            layer.events.set_data()
-            layer._update_thumbnail()
-            layer._set_highlight(force=True)
+        for weak_layer, response in responses.items():
+            if layer := weak_layer():
+                # Update the layer slice state to temporarily support behavior
+                # that depends on it.
+                layer._update_slice_response(response)
+                # Update the layer's loaded state before everything else,
+                # because they may rely on its updated value.
+                layer._update_loaded_slice_id(response.request_id)
+                # The rest of `Layer.refresh` after `set_view_slice`, where
+                # `set_data` notifies the corresponding vispy layer of the new
+                # slice.
+                layer.events.set_data()
+                layer._update_thumbnail()
+                layer._set_highlight(force=True)
 
     def _on_active_change(self):
         """When active layer changes change keymap handler."""
@@ -645,14 +695,14 @@ class QtViewer(QSplitter):
         """
         msg = ''
         if not len(self.viewer.layers):
-            msg = trans._("There are no layers in the viewer to save")
+            msg = trans._('There are no layers in the viewer to save')
         elif selected and not len(self.viewer.layers.selection):
             msg = trans._(
                 'Please select one or more layers to save,'
                 '\nor use "Save all layers..."'
             )
         if msg:
-            raise OSError(trans._("Nothing to save"))
+            raise OSError(trans._('Nothing to save'))
 
         # prepare list of extensions for drop down menu.
         ext_str, writers = _extension_string_for_layers(
@@ -661,7 +711,7 @@ class QtViewer(QSplitter):
             else self.viewer.layers
         )
 
-        msg = trans._("selected") if selected else trans._("all")
+        msg = trans._('selected') if selected else trans._('all')
         dlg = QFileDialog()
         hist = get_save_history()
         dlg.setHistory(hist)
@@ -696,12 +746,12 @@ class QtViewer(QSplitter):
                     filename, selected=selected, _writer=writer
                 )
                 logging.debug('Saved %s', saved)
-                error_messages = "\n".join(str(x.message.args[0]) for x in wa)
+                error_messages = '\n'.join(str(x.message.args[0]) for x in wa)
 
             if not saved:
                 raise OSError(
                     trans._(
-                        "File {filename} save failed.\n{error_messages}",
+                        'File {filename} save failed.\n{error_messages}',
                         deferred=True,
                         filename=filename,
                         error_messages=error_messages,
@@ -724,7 +774,6 @@ class QtViewer(QSplitter):
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
         """
-        # CAN REMOVE THIS AFTER DEPRECATION IS DONE, see self.screenshot.
         img = self.canvas.screenshot()
         if flash:
             from napari._qt.utils import add_flash_animation
@@ -736,7 +785,7 @@ class QtViewer(QSplitter):
             add_flash_animation(self._welcome_widget)
         return img
 
-    def screenshot(self, path=None, flash=True):
+    def screenshot(self, path=None, flash=True) -> np.ndarray:
         """Take currently displayed screen and convert to an image array.
 
         Parameters
@@ -788,39 +837,36 @@ class QtViewer(QSplitter):
         dlg.setHistory(hist)
 
         open_kwargs = {
-            "parent": self,
-            "caption": caption,
+            'parent': self,
+            'caption': caption,
         }
-        if "pyside" in QFileDialog.__module__.lower():
+        if 'pyside' in QFileDialog.__module__.lower():
             # PySide6
-            open_kwargs["dir"] = hist[0]
+            open_kwargs['dir'] = hist[0]
         else:
-            open_kwargs["directory"] = hist[0]
+            open_kwargs['directory'] = hist[0]
 
         if in_ipython():
-            open_kwargs["options"] = QFileDialog.DontUseNativeDialog
+            open_kwargs['options'] = QFileDialog.DontUseNativeDialog
 
         return dlg.getOpenFileNames(**open_kwargs)[0]
 
-    def _open_files_dialog(self, choose_plugin=False):
+    def _open_files_dialog(self, choose_plugin=False, stack=False):
         """Add files from the menubar."""
         filenames = self._open_file_dialog_uni(trans._('Select file(s)...'))
 
         if (filenames != []) and (filenames is not None):
             for filename in filenames:
                 self._qt_open(
-                    [filename], stack=False, choose_plugin=choose_plugin
+                    [filename],
+                    choose_plugin=choose_plugin,
+                    stack=stack,
                 )
             update_open_history(filenames[0])
 
     def _open_files_dialog_as_stack_dialog(self, choose_plugin=False):
         """Add files as a stack, from the menubar."""
-
-        filenames = self._open_file_dialog_uni(trans._('Select files...'))
-
-        if (filenames != []) and (filenames is not None):
-            self._qt_open(filenames, stack=True, choose_plugin=choose_plugin)
-            update_open_history(filenames[0])
+        return self._open_files_dialog(choose_plugin=choose_plugin, stack=True)
 
     def _open_folder_dialog(self, choose_plugin=False):
         """Add a folder of files from the menubar."""
@@ -848,8 +894,8 @@ class QtViewer(QSplitter):
         filenames: List[str],
         stack: Union[bool, List[List[str]]],
         choose_plugin: bool = False,
-        plugin: str = None,
-        layer_type: str = None,
+        plugin: Optional[str] = None,
+        layer_type: Optional[str] = None,
         **kwargs,
     ):
         """Open files, potentially popping reader dialog for plugin selection.
@@ -897,16 +943,6 @@ class QtViewer(QSplitter):
             )
         except MultipleReaderError:
             handle_gui_reading(filenames, self, stack, **kwargs)
-
-    def _toggle_chunk_outlines(self):
-        """Toggle whether we are drawing outlines around the chunks."""
-        from napari.layers.image.experimental.octree_image import (
-            _OctreeImageBase,
-        )
-
-        for layer in self.viewer.layers:
-            if isinstance(layer, _OctreeImageBase):
-                layer.display.show_grid = not layer.display.show_grid
 
     def toggle_console_visibility(self, event=None):
         """Toggle console visible and not visible.
@@ -994,6 +1030,43 @@ class QtViewer(QSplitter):
             'Hold <Alt> key to open plugin selection. Hold <Shift> to open files as stack.'
         )
 
+    def _image_from_clipboard(self):
+        """Insert image from clipboard as a new layer if clipboard contains an image or link."""
+        cb = QGuiApplication.clipboard()
+        if cb.mimeData().hasImage():
+            image = cb.image()
+            if image.isNull():
+                return
+            arr = QImg2array(image)
+            self.viewer.add_image(arr)
+            return
+        if cb.mimeData().hasUrls():
+            show_info('No image in clipboard, trying to open link instead.')
+            self._open_from_list_of_urls_data(
+                cb.mimeData().urls(), stack=False, choose_plugin=False
+            )
+            return
+        if cb.mimeData().hasText():
+            show_info(
+                'No image in clipboard, trying to parse text in clipboard as a link.'
+            )
+            url_list = []
+            for line in cb.mimeData().text().split('\n'):
+                url = QUrl(line.strip())
+                if url.isEmpty():
+                    continue
+                if url.scheme() == '':
+                    url.setScheme('file')
+                if url.isLocalFile() and not Path(url.toLocalFile()).exists():
+                    break
+                url_list.append(url)
+            else:
+                self._open_from_list_of_urls_data(
+                    url_list, stack=False, choose_plugin=False
+                )
+                return
+        show_info('No image or link in clipboard.')
+
     def dropEvent(self, event):
         """Add local files and web URLS with drag and drop.
 
@@ -1016,8 +1089,17 @@ class QtViewer(QSplitter):
             QGuiApplication.keyboardModifiers()
             & Qt.KeyboardModifier.AltModifier
         )
+        self._open_from_list_of_urls_data(
+            event.mimeData().urls(),
+            stack=bool(shift_down),
+            choose_plugin=bool(alt_down),
+        )
+
+    def _open_from_list_of_urls_data(
+        self, urls_list: List[QUrl], stack: bool, choose_plugin: bool
+    ):
         filenames = []
-        for url in event.mimeData().urls():
+        for url in urls_list:
             if url.isLocalFile():
                 # directories get a trailing "/", Path conversion removes it
                 filenames.append(str(Path(url.toLocalFile())))
@@ -1026,8 +1108,8 @@ class QtViewer(QSplitter):
 
         self._qt_open(
             filenames,
-            stack=bool(shift_down),
-            choose_plugin=bool(alt_down),
+            stack=stack,
+            choose_plugin=choose_plugin,
         )
 
     def closeEvent(self, event):
@@ -1060,11 +1142,7 @@ if TYPE_CHECKING:
 def _create_qt_poll(parent: QObject, camera: Camera) -> Optional[QtPoll]:
     """Create and return a QtPoll instance, if needed.
 
-    Create a QtPoll instance for octree or monitor.
-
-    Octree needs QtPoll so VispyTiledImageLayer can finish in-progress
-    loads even if the camera is not moving. Once loading is finish it will
-    tell QtPoll it no longer needs to be polled.
+    Create a QtPoll instance for the monitor.
 
     Monitor needs QtPoll to poll for incoming messages. This might be
     temporary until we can process incoming messages with a dedicated
@@ -1082,7 +1160,7 @@ def _create_qt_poll(parent: QObject, camera: Camera) -> Optional[QtPoll]:
     Optional[QtPoll]
         The new QtPoll instance, if we need one.
     """
-    if not config.async_octree and not config.monitor:
+    if not config.monitor:
         return None
 
     from napari._qt.experimental.qt_poll import QtPoll
@@ -1129,3 +1207,18 @@ def _create_remote_manager(
     qt_poll.events.poll.connect(monitor.on_poll)
 
     return manager
+
+
+def _in_napari(n: int, frame: FrameType):
+    """
+    Determines whether we are in napari by looking at:
+        1) the frames modules names:
+        2) the min_depth
+    """
+    if n < 2:
+        return True
+    # in-n-out is used in napari for dependency injection.
+    for pref in {'napari.', 'in_n_out.'}:
+        if frame.f_globals.get('__name__', '').startswith(pref):
+            return True
+    return False

@@ -3,6 +3,7 @@ import pytest
 
 from napari._tests.utils import skip_on_win_ci
 from napari._vispy.layers.image import VispyImageLayer
+from napari.components.dims import Dims
 from napari.layers.image import Image
 
 
@@ -88,6 +89,6 @@ def test_clipping_planes_dims():
     vispy_layer = VispyImageLayer(image_layer)
     napari_clip = image_layer.experimental_clipping_planes.as_array()
     # needed to get volume node
-    image_layer._slice_dims(ndisplay=3)
+    image_layer._slice_dims(Dims(ndim=3, ndisplay=3))
     vispy_clip = vispy_layer.node.clipping_planes
-    assert np.all(napari_clip == vispy_clip[..., ::-1])
+    np.testing.assert_array_equal(napari_clip, vispy_clip[..., ::-1])

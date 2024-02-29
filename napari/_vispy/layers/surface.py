@@ -18,6 +18,7 @@ class VispySurfaceLayer(VispyBaseLayer):
     def __init__(self, layer) -> None:
         node = SurfaceVisual()
         self._texture_filter = None
+        self._light_direction = (-1, 1, 1)
         self._meshdata = None
         super().__init__(layer, node)
 
@@ -153,6 +154,7 @@ class VispySurfaceLayer(VispyBaseLayer):
         shading = None if self.layer.shading == 'none' else self.layer.shading
         if not self.node.mesh_data.is_empty():
             self.node.shading = shading
+            self._on_camera_move()
         self.node.update()
 
     def _on_wireframe_visible_change(self):
@@ -188,6 +190,22 @@ class VispySurfaceLayer(VispyBaseLayer):
                 width=self.layer.normals.vertex.width,
                 primitive='vertex',
             )
+
+    def _on_camera_move(self, event=None):
+        if (
+            event is not None
+            and event.type == 'angles'
+            and self.layer._slice_input.ndisplay == 3
+        ):
+            camera = event.source
+            # take displayed up and view directions and flip zyx for vispy
+            up = np.array(camera.up_direction)[::-1]
+            view = np.array(camera.view_direction)[::-1]
+            # combine to get light behind the camera on the top right
+            self._light_direction = view - up + np.cross(up, view)
+
+        if self.node.shading_filter is not None:
+            self.node.shading_filter.light_dir = self._light_direction
 
     def reset(self, event=None):
         super().reset()

@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 from qtpy.QtCore import QSize, Qt, Signal
 from qtpy.QtGui import QColor, QIntValidator, QPainter, QPainterPath, QPen
@@ -28,7 +30,7 @@ class QtStar(QFrame):
     def __init__(
         self,
         parent: QWidget = None,
-        value: int = None,
+        value: Optional[int] = None,
     ) -> None:
         super().__init__(parent)
         self._value = value
@@ -306,11 +308,11 @@ class QtHighlightSizePreviewWidget(QWidget):
     def __init__(
         self,
         parent: QWidget = None,
-        description: str = "",
+        description: str = '',
         value: int = 1,
         min_value: int = 1,
         max_value: int = 10,
-        unit: str = "px",
+        unit: str = 'px',
     ) -> None:
         super().__init__(parent)
 
@@ -349,7 +351,7 @@ class QtHighlightSizePreviewWidget(QWidget):
         self._triangle.setValue(value)
         self._triangle.setMinimum(min_value)
         self._triangle.setMaximum(max_value)
-        self._preview_label.setText(trans._("Preview"))
+        self._preview_label.setText(trans._('Preview'))
         self._preview_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         self._preview_label.setAlignment(Qt.AlignmentFlag.AlignBottom)
         self._preview.setStyleSheet('border: 1px solid white;')
@@ -411,7 +413,7 @@ class QtHighlightSizePreviewWidget(QWidget):
         value : int
             Highlight value.
         """
-        if value == "":
+        if value == '':
             return
         value = int(value)
         value = max(min(value, self._max_value), self._min_value)
@@ -503,7 +505,7 @@ class QtHighlightSizePreviewWidget(QWidget):
         if value >= self._max_value:
             raise ValueError(
                 trans._(
-                    "Minimum value must be smaller than {max_value}",
+                    'Minimum value must be smaller than {max_value}',
                     deferred=True,
                     max_value=self._max_value,
                 )
@@ -537,7 +539,7 @@ class QtHighlightSizePreviewWidget(QWidget):
         if value <= self._min_value:
             raise ValueError(
                 trans._(
-                    "Maximum value must be larger than {min_value}",
+                    'Maximum value must be larger than {min_value}',
                     deferred=True,
                     min_value=self._min_value,
                 )

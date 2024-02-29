@@ -42,7 +42,10 @@ def test_docstring(layer):
     # check summary section
     method_summary = ' '.join(method_doc['Summary'])  # join multi-line summary
 
-    summary_format = 'Add an? .+? layer to the layer list.'
+    if name == 'Image':
+        summary_format = 'Add one or more Image layers to the layer list.'
+    else:
+        summary_format = 'Add an? .+? layers? to the layer list.'
 
     assert re.match(
         summary_format, method_summary
@@ -144,7 +147,9 @@ def test_view_multichannel(qtbot, napari_plugin_manager):
     viewer = napari.view_image(data, channel_axis=-1, show=False)
     assert len(viewer.layers) == data.shape[-1]
     for i in range(data.shape[-1]):
-        assert np.all(viewer.layers[i].data == data.take(i, axis=-1))
+        np.testing.assert_array_equal(
+            viewer.layers[i].data, data.take(i, axis=-1)
+        )
     viewer.close()
 
 
@@ -188,7 +193,7 @@ def test_imshow_multichannel(qtbot, napari_plugin_manager):
     assert len(layers) == data.shape[-1]
     assert isinstance(layers, tuple)
     for i in range(data.shape[-1]):
-        assert np.all(layers[i].data == data.take(i, axis=-1))
+        np.testing.assert_array_equal(layers[i].data, data.take(i, axis=-1))
     viewer.close()
     # Run a full garbage collection here so that any remaining viewer
     # and related instances are removed for future tests that may use

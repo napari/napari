@@ -1,5 +1,6 @@
-from enum import Enum, auto
+from enum import auto
 
+from napari.utils.compat import StrEnum
 from napari.utils.misc import StringEnum
 
 
@@ -22,7 +23,7 @@ class LoopMode(StringEnum):
     BACK_AND_FORTH = auto()
 
 
-class BrushSizeOnMouseModifiers(str, Enum):
+class BrushSizeOnMouseModifiers(StrEnum):
     ALT = 'Alt'
     CTRL = 'Control'
     CTRL_ALT = 'Control+Alt'

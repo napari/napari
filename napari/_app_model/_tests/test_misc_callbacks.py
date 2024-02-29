@@ -1,4 +1,5 @@
 """For testing one off action callbacks"""
+
 from napari._app_model.actions._view_actions import _tooltip_visibility_toggle
 from napari.settings import get_settings
 

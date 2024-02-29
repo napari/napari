@@ -31,7 +31,9 @@ def test_plugin_display_name_use_for_multiple_widgets(
     assert len(viewer.window._dock_widgets) == 0
     plugin_action_menu.actions()[0].trigger()
     assert len(viewer.window._dock_widgets) == 1
-    assert list(viewer.window._dock_widgets.data)[0] == 'Widget 1 (tmp_plugin)'
+    assert (
+        next(iter(viewer.window._dock_widgets.data)) == 'Widget 1 (tmp_plugin)'
+    )
 
 
 def test_import_plugin_manager():
@@ -49,7 +51,7 @@ def test_plugin_manager(make_napari_viewer, monkeypatch, qtbot):
 
     actions = plugins_menu.actions()
     for action in actions:
-        if action.text() == "Plugin Manager":
+        if action.text() == 'Plugin Manager':
             break
     else:  # pragma: no cover
         found = [action.text() for action in actions]
@@ -71,5 +73,5 @@ def test_no_plugin_manager(make_napari_viewer, monkeypatch):
 
     actions = plugins_menu.actions()
     for action in actions:
-        if action.text() == "Plugin Manager":
-            raise AssertionError(f"Plugin Manager was found: {action}")
+        if action.text() == 'Plugin Manager':
+            raise AssertionError(f'Plugin Manager was found: {action}')

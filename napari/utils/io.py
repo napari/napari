@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     import numpy as np
 
 
-def imsave(filename: str, data: "np.ndarray"):
+def imsave(filename: str, data: 'np.ndarray'):
     """Custom implementation of imsave to avoid skimage dependency.
 
     Parameters
@@ -21,12 +21,12 @@ def imsave(filename: str, data: "np.ndarray"):
     """
     ext = os.path.splitext(filename)[1].lower()
     # If no file extension was specified, choose .png by default
-    if ext == "":
-        ext = ".png"
+    if ext == '':
+        ext = '.png'
     # Save screenshot image data to output file
-    if ext in [".png"]:
+    if ext in ['.png']:
         imsave_png(filename, data)
-    elif ext in [".tif", ".tiff"]:
+    elif ext in ['.tif', '.tiff']:
         imsave_tiff(filename, data)
     else:
         import imageio.v3 as iio
@@ -53,7 +53,7 @@ def imsave_png(filename, data):
     # Digital watermark, adds info about the napari version to the bytes of the PNG file
     pnginfo = PIL.PngImagePlugin.PngInfo()
     pnginfo.add_text(
-        "Software", f"napari version {__version__} https://napari.org/"
+        'Software', f'napari version {__version__} https://napari.org/'
     )
     iio.imwrite(
         filename,
@@ -90,7 +90,7 @@ def imsave_tiff(filename, data):
             trans._(
                 'Error parsing tiffile version number {version_number}',
                 deferred=True,
-                version_number=f"{tifffile.__version__:!r}",
+                version_number=f'{tifffile.__version__:!r}',
             )
         )
 
@@ -123,4 +123,4 @@ def __getattr__(name: str):
 
         return getattr(napari_builtins.io, name)
 
-    raise AttributeError(f"module {__name__} has no attribute {name}")
+    raise AttributeError(f'module {__name__} has no attribute {name}')
