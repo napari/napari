@@ -285,7 +285,8 @@ def test_track_connex_validity() -> None:
 
     layer = Tracks(data)
 
-    n_tracks = 5
+    # number of tracks
+    n_tracks = 6
 
     # the number of 'False' in the track_connex array should be equal to the number of tracks
     assert np.sum(~layer._manager.track_connex) == n_tracks
