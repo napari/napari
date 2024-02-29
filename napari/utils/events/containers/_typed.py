@@ -25,8 +25,8 @@ logger = logging.getLogger(__name__)
 
 Index = Union[int, slice]
 
-_T = TypeVar("_T")
-_L = TypeVar("_L")
+_T = TypeVar('_T')
+_L = TypeVar('_L')
 
 
 class TypedMutableSequence(MutableSequence[_T]):
@@ -71,7 +71,7 @@ class TypedMutableSequence(MutableSequence[_T]):
     def __repr__(self) -> str:
         return repr(self._list)
 
-    def __eq__(self, other: object):
+    def __eq__(self, other: object) -> bool:
         return self._list == other
 
     def __hash__(self) -> int:
@@ -80,12 +80,12 @@ class TypedMutableSequence(MutableSequence[_T]):
         return id(self)
 
     @overload
-    def __setitem__(self, key: int, value: _T):
-        ...  # pragma: no cover
+    def __setitem__(self, key: int, value: _T): ...  # pragma: no cover
 
     @overload
-    def __setitem__(self, key: slice, value: Iterable[_T]):
-        ...  # pragma: no cover
+    def __setitem__(
+        self, key: slice, value: Iterable[_T]
+    ): ...  # pragma: no cover
 
     def __setitem__(self, key, value):
         if isinstance(key, slice):
@@ -100,10 +100,10 @@ class TypedMutableSequence(MutableSequence[_T]):
         else:
             self._list[key] = self._type_check(value)
 
-    def insert(self, index: int, value: _T):
+    def insert(self, index: int, value: _T) -> None:
         self._list.insert(index, self._type_check(value))
 
-    def __contains__(self, key):
+    def __contains__(self, key: Any) -> bool:
         if type(key) in self._lookup:
             try:
                 self[self.index(key)]
@@ -114,16 +114,15 @@ class TypedMutableSequence(MutableSequence[_T]):
         return super().__contains__(key)
 
     @overload
-    def __getitem__(self, key: str) -> _T:
-        ...  # pragma: no cover
+    def __getitem__(self, key: str) -> _T: ...  # pragma: no cover
 
     @overload
-    def __getitem__(self, key: int) -> _T:
-        ...  # pragma: no cover
+    def __getitem__(self, key: int) -> _T: ...  # pragma: no cover
 
     @overload
-    def __getitem__(self, key: slice) -> 'TypedMutableSequence[_T]':
-        ...  # pragma: no cover
+    def __getitem__(
+        self, key: slice
+    ) -> 'TypedMutableSequence[_T]': ...  # pragma: no cover
 
     def __getitem__(self, key):
         """Get an item from the list
@@ -155,7 +154,7 @@ class TypedMutableSequence(MutableSequence[_T]):
         result = self._list[key]
         return self.__newlike__(result) if isinstance(result, list) else result
 
-    def __delitem__(self, key):
+    def __delitem__(self, key) -> None:
         _key = self.index(key) if type(key) in self._lookup else key
         del self._list[_key]
 
@@ -173,7 +172,9 @@ class TypedMutableSequence(MutableSequence[_T]):
             )
         return e
 
-    def __newlike__(self, iterable: Iterable[_T]):
+    def __newlike__(
+        self, iterable: Iterable[_T]
+    ) -> 'TypedMutableSequence[_T]':
         new = self.__class__()
         # seperating this allows subclasses to omit these from their `__init__`
         new._basetypes = self._basetypes
@@ -181,11 +182,11 @@ class TypedMutableSequence(MutableSequence[_T]):
         new.extend(iterable)
         return new
 
-    def copy(self) -> Self:
+    def copy(self) -> 'TypedMutableSequence[_T]':
         """Return a shallow copy of the list."""
         return self.__newlike__(self)
 
-    def __add__(self, other: Iterable[_T]) -> Self:
+    def __add__(self, other: Iterable[_T]) -> 'TypedMutableSequence[_T]':
         """Add other to self, return new object."""
         copy = self.copy()
         copy.extend(other)
@@ -240,13 +241,15 @@ class TypedMutableSequence(MutableSequence[_T]):
 
         raise ValueError(
             trans._(
-                "{value!r} is not in list",
+                '{value!r} is not in list',
                 deferred=True,
                 value=value,
             )
         )
 
-    def _iter_indices(self, start=0, stop=None) -> Iterable[int]:
+    def _iter_indices(
+        self, start: int = 0, stop: Optional[int] = None
+    ) -> Iterable[int]:
         """Iter indices from start to stop.
 
         While this is trivial for this basic sequence type, this method lets
@@ -260,5 +263,5 @@ class TypedMutableSequence(MutableSequence[_T]):
         return None  # type: ignore
 
 
-def _noop(x):
+def _noop(x: _T) -> _T:
     return x

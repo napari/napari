@@ -198,7 +198,7 @@ class Dims(EventedModel):
         if set(updated['order']) != set(range(ndim)):
             raise ValueError(
                 trans._(
-                    "Invalid ordering {order} for {ndim} dimensions",
+                    'Invalid ordering {order} for {ndim} dimensions',
                     deferred=True,
                     order=updated['order'],
                     ndim=ndim,
@@ -473,7 +473,7 @@ class Dims(EventedModel):
 
         if len(axis) != len(value):
             raise ValueError(
-                trans._("axis and value sequences must have equal length")
+                trans._('axis and value sequences must have equal length')
             )
 
         for ax in axis:

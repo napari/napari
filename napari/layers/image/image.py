@@ -1,12 +1,13 @@
 """Image class.
 """
+
 from __future__ import annotations
 
 import types
 import warnings
 from abc import ABC
 from contextlib import nullcontext
-from typing import TYPE_CHECKING, List, Sequence, Tuple, Union, cast
+from typing import TYPE_CHECKING, List, Literal, Sequence, Tuple, Union, cast
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -34,6 +35,7 @@ from napari.layers.utils.plane import SlicingPlane
 from napari.utils._dask_utils import DaskIndexer
 from napari.utils._dtype import get_dtype_limits, normalize_dtype
 from napari.utils.colormaps import AVAILABLE_COLORMAPS, ensure_colormap
+from napari.utils.colormaps.colormap_utils import _coerce_contrast_limits
 from napari.utils.events import Event
 from napari.utils.events.event import WarningEmitter
 from napari.utils.events.event_utils import connect_no_arg
@@ -197,7 +199,7 @@ class _ImageBase(Layer, ABC):
         shear=None,
         translate=None,
         visible=True,
-    ) -> None:
+    ):
         if name is None and data is not None:
             name = magic_name(data)
 
@@ -364,7 +366,7 @@ class _ImageBase(Layer, ABC):
         return self._data_level
 
     @data_level.setter
-    def data_level(self, level: int):
+    def data_level(self, level: int) -> None:
         if self._data_level == level:
             return
         self._data_level = level
@@ -401,7 +403,7 @@ class _ImageBase(Layer, ABC):
         return str(self._depiction)
 
     @depiction.setter
-    def depiction(self, depiction: Union[str, VolumeDepiction]):
+    def depiction(self, depiction: Union[str, VolumeDepiction]) -> None:
         """Set the current 3D depiction mode."""
         self._depiction = VolumeDepiction(depiction)
         self._update_plane_callbacks()
@@ -440,7 +442,7 @@ class _ImageBase(Layer, ABC):
         return self._plane
 
     @plane.setter
-    def plane(self, value: Union[dict, SlicingPlane]):
+    def plane(self, value: Union[dict, SlicingPlane]) -> None:
         self._plane.update(value)
         self.events.plane()
 
@@ -455,7 +457,7 @@ class _ImageBase(Layer, ABC):
         self._custom_interpolation_kernel_2d = np.array(value, np.float32)
         self.events.custom_interpolation_kernel_2d()
 
-    def _raw_to_displayed(self, raw):
+    def _raw_to_displayed(self, raw: np.ndarray) -> np.ndarray:
         """Determine displayed image from raw image.
 
         For normal image layers, just return the actual image.
@@ -470,8 +472,7 @@ class _ImageBase(Layer, ABC):
         image : array
             Displayed array.
         """
-        image = raw
-        return image
+        raise NotImplementedError
 
     def _set_view_slice(self) -> None:
         """Set the slice output based on this layer's current state."""
@@ -534,6 +535,10 @@ class _ImageBase(Layer, ABC):
         """Update the slice output state currently on the layer. Currently used
         for both sync and async slicing.
         """
+        response = response.to_displayed(self._raw_to_displayed)
+        # We call to_displayed here to ensure that if the contrast limits
+        # are outside the range of supported by vispy, then data view is
+        # rescaled to fit within the range.
         self._slice_input = response.slice_input
         self._transforms[0] = response.tile_to_data
         self._slice = response
@@ -792,10 +797,10 @@ class Image(IntensityVisualizationMixin, _ImageBase):
     _projectionclass = ImageProjectionMode
 
     @rename_argument(
-        from_name="interpolation",
-        to_name="interpolation2d",
-        version="0.6.0",
-        since_version="0.4.17",
+        from_name='interpolation',
+        to_name='interpolation2d',
+        version='0.6.0',
+        since_version='0.4.17',
     )
     def __init__(
         self,
@@ -827,7 +832,7 @@ class Image(IntensityVisualizationMixin, _ImageBase):
         shear=None,
         translate=None,
         visible=True,
-    ) -> None:
+    ):
         # Determine if rgb
         data_shape = data.shape if hasattr(data, 'shape') else data[0].shape
         rgb_guess = guess_rgb(data_shape)
@@ -962,6 +967,11 @@ class Image(IntensityVisualizationMixin, _ImageBase):
         return state
 
     def _update_slice_response(self, response: _ImageSliceResponse) -> None:
+        if self._keep_auto_contrast:
+            data = response.image.raw
+            input_data = data[-1] if self.multiscale else data
+            self.contrast_limits = calc_data_range(input_data, rgb=self.rgb)
+
         super()._update_slice_response(response)
 
         # Maybe reset the contrast limits based on the new slice.
@@ -978,7 +988,7 @@ class Image(IntensityVisualizationMixin, _ImageBase):
         return self._attenuation
 
     @attenuation.setter
-    def attenuation(self, value: float):
+    def attenuation(self, value: float) -> None:
         self._attenuation = value
         self._update_thumbnail()
         self.events.attenuation()
@@ -989,14 +999,14 @@ class Image(IntensityVisualizationMixin, _ImageBase):
         return self._data
 
     @data.setter
-    def data(self, data: Union[LayerDataProtocol, MultiScaleData]):
+    def data(self, data: Union[LayerDataProtocol, MultiScaleData]) -> None:
         self._data_raw = data
         # note, we don't support changing multiscale in an Image instance
         self._data = MultiScaleData(data) if self.multiscale else data  # type: ignore
         self._update_dims()
-        self.events.data(value=self.data)
         if self._keep_auto_contrast:
             self.reset_contrast_limits()
+        self.events.data(value=self.data)
         self._reset_editable()
 
     @property
@@ -1020,7 +1030,7 @@ class Image(IntensityVisualizationMixin, _ImageBase):
         """
         warnings.warn(
             trans._(
-                "Interpolation attribute is deprecated since 0.4.17. Please use interpolation2d or interpolation3d",
+                'Interpolation attribute is deprecated since 0.4.17. Please use interpolation2d or interpolation3d',
             ),
             category=DeprecationWarning,
             stacklevel=2,
@@ -1036,7 +1046,7 @@ class Image(IntensityVisualizationMixin, _ImageBase):
         """Set current interpolation mode."""
         warnings.warn(
             trans._(
-                "Interpolation setting is deprecated since 0.4.17. Please use interpolation2d or interpolation3d",
+                'Interpolation setting is deprecated since 0.4.17. Please use interpolation2d or interpolation3d',
             ),
             category=DeprecationWarning,
             stacklevel=2,
@@ -1061,7 +1071,9 @@ class Image(IntensityVisualizationMixin, _ImageBase):
         return cast(InterpolationStr, str(self._interpolation2d))
 
     @interpolation2d.setter
-    def interpolation2d(self, value: Union[InterpolationStr, Interpolation]):
+    def interpolation2d(
+        self, value: Union[InterpolationStr, Interpolation]
+    ) -> None:
         if value == 'bilinear':
             raise ValueError(
                 trans._(
@@ -1084,7 +1096,9 @@ class Image(IntensityVisualizationMixin, _ImageBase):
         return cast(InterpolationStr, str(self._interpolation3d))
 
     @interpolation3d.setter
-    def interpolation3d(self, value: Union[InterpolationStr, Interpolation]):
+    def interpolation3d(
+        self, value: Union[InterpolationStr, Interpolation]
+    ) -> None:
         if value == 'custom':
             raise NotImplementedError(
                 'custom interpolation is not implemented yet for 3D rendering'
@@ -1106,7 +1120,7 @@ class Image(IntensityVisualizationMixin, _ImageBase):
         return self._iso_threshold
 
     @iso_threshold.setter
-    def iso_threshold(self, value: float):
+    def iso_threshold(self, value: float) -> None:
         self._iso_threshold = value
         self._update_thumbnail()
         self.events.iso_threshold()
@@ -1119,7 +1133,7 @@ class Image(IntensityVisualizationMixin, _ImageBase):
 
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap."""
-        image = self._slice.thumbnail.view
+        image = self._slice.thumbnail.raw
 
         if self._slice_input.ndisplay == 3 and self.ndim > 2:
             image = np.max(image, axis=0)
@@ -1172,7 +1186,9 @@ class Image(IntensityVisualizationMixin, _ImageBase):
             colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 
-    def _calc_data_range(self, mode='data') -> Tuple[float, float]:
+    def _calc_data_range(
+        self, mode: Literal['data', 'slice'] = 'data'
+    ) -> Tuple[float, float]:
         """
         Calculate the range of the data values in the currently viewed slice
         or full data array
@@ -1180,7 +1196,7 @@ class Image(IntensityVisualizationMixin, _ImageBase):
         if mode == 'data':
             input_data = self.data[-1] if self.multiscale else self.data
         elif mode == 'slice':
-            data = self._slice.image.view  # ugh
+            data = self._slice.image.raw  # ugh
             input_data = data[-1] if self.multiscale else data
         else:
             raise ValueError(
@@ -1191,3 +1207,44 @@ class Image(IntensityVisualizationMixin, _ImageBase):
                 )
             )
         return calc_data_range(input_data, rgb=self.rgb)
+
+    def _raw_to_displayed(self, raw: np.ndarray) -> np.ndarray:
+        """Determine displayed image from raw image.
+
+        This function checks if current contrast_limits are within the range
+        supported by vispy.
+        If yes, it returns the raw image.
+        If not, it rescales the raw image to fit within
+        the range supported by vispy.
+
+        Parameters
+        ----------
+        raw : array
+            Raw array.
+
+        Returns
+        -------
+        image : array
+            Displayed array.
+        """
+        fixed_contrast_info = _coerce_contrast_limits(self.contrast_limits)
+        if np.allclose(
+            fixed_contrast_info.contrast_limits, self.contrast_limits
+        ):
+            return raw
+
+        return fixed_contrast_info.coerce_data(raw)
+
+    @IntensityVisualizationMixin.contrast_limits.setter  # type: ignore [attr-defined]
+    def contrast_limits(self, contrast_limits):
+        IntensityVisualizationMixin.contrast_limits.fset(self, contrast_limits)
+        if not np.allclose(
+            _coerce_contrast_limits(self.contrast_limits).contrast_limits,
+            self.contrast_limits,
+        ):
+            prev = self._keep_auto_contrast
+            self._keep_auto_contrast = False
+            try:
+                self.refresh()
+            finally:
+                self._keep_auto_contrast = prev

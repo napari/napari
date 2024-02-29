@@ -166,12 +166,10 @@ class LayerList(SelectableEventedList[Layer]):
         return values
 
     @typing.overload
-    def __getitem__(self, item: Union[int, str]) -> Layer:
-        ...
+    def __getitem__(self, item: Union[int, str]) -> Layer: ...
 
     @typing.overload
-    def __getitem__(self, item: slice) -> Self:
-        ...
+    def __getitem__(self, item: slice) -> Self: ...
 
     def __getitem__(self, item):
         return super().__getitem__(item)
@@ -193,6 +191,13 @@ class LayerList(SelectableEventedList[Layer]):
         new_layer.events.extent.connect(self._clean_cache)
         new_layer.events._extent_augmented.connect(self._clean_cache)
         super().insert(index, new_layer)
+
+    def remove_selected(self):
+        """Remove selected layers from LayerList, but first unlink them."""
+        if not self.selection:
+            return
+        self.unlink_layers(self.selection)
+        super().remove_selected()
 
     def toggle_selected_visibility(self):
         """Toggle visibility of selected layers"""
@@ -475,9 +480,9 @@ class LayerList(SelectableEventedList[Layer]):
         )
 
         if selected:
-            msg = trans._("No layers selected", deferred=True)
+            msg = trans._('No layers selected', deferred=True)
         else:
-            msg = trans._("No layers to save", deferred=True)
+            msg = trans._('No layers to save', deferred=True)
 
         if not layers:
             warnings.warn(msg)

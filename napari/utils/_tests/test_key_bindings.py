@@ -25,7 +25,7 @@ def test_bind_key():
         return 42
 
     bind_key(kb, 'A', forty_two)
-    assert kb == {KeyBinding.from_str("A"): forty_two}
+    assert kb == {KeyBinding.from_str('A'): forty_two}
 
     # overwrite
     def spam():
@@ -35,7 +35,7 @@ def test_bind_key():
         bind_key(kb, 'A', spam)
 
     bind_key(kb, 'A', spam, overwrite=True)
-    assert kb == {KeyBinding.from_str("A"): spam}
+    assert kb == {KeyBinding.from_str('A'): spam}
 
     # unbind
     bind_key(kb, 'A', None)
@@ -65,23 +65,20 @@ def test_bind_key_decorator():
     kb = {}
 
     @bind_key(kb, 'A')
-    def foo():
-        ...
+    def foo(): ...
 
-    assert kb == {KeyBinding.from_str("A"): foo}
+    assert kb == {KeyBinding.from_str('A'): foo}
 
 
 def test_keymap_provider():
-    class Foo(KeymapProvider):
-        ...
+    class Foo(KeymapProvider): ...
 
     assert Foo.class_keymap == {}
 
     foo = Foo()
     assert foo.keymap == {}
 
-    class Bar(Foo):
-        ...
+    class Bar(Foo): ...
 
     assert Bar.class_keymap == {}
     assert Bar.class_keymap is not Foo.class_keymap
@@ -93,8 +90,7 @@ def test_keymap_provider():
 
 
 def test_bind_keymap():
-    class Foo:
-        ...
+    class Foo: ...
 
     def bar(foo):
         return foo
@@ -353,8 +349,7 @@ def test_handle_on_release_bindings():
 
 
 def test_bind_key_method():
-    class Foo2(KeymapProvider):
-        ...
+    class Foo2(KeymapProvider): ...
 
     foo = Foo2()
 
@@ -380,10 +375,9 @@ def test_bind_key_doc():
 def test_key_release_callback(monkeypatch):
     called = False
     called2 = False
-    monkeypatch.setattr(time, "time", lambda: 1)
+    monkeypatch.setattr(time, 'time', lambda: 1)
 
-    class Foo(KeymapProvider):
-        ...
+    class Foo(KeymapProvider): ...
 
     foo = Foo()
 
@@ -394,21 +388,21 @@ def test_key_release_callback(monkeypatch):
         nonlocal called2
         called2 = True
 
-    @Foo.bind_key("K")
+    @Foo.bind_key('K')
     def callback(x):
         nonlocal called
         called = True
         return _call
 
-    handler.press_key("K")
+    handler.press_key('K')
     assert called
     assert not called2
-    handler.release_key("K")
+    handler.release_key('K')
     assert not called2
 
-    handler.press_key("K")
+    handler.press_key('K')
     assert called
     assert not called2
-    monkeypatch.setattr(time, "time", lambda: 2)
-    handler.release_key("K")
+    monkeypatch.setattr(time, 'time', lambda: 2)
+    handler.release_key('K')
     assert called2

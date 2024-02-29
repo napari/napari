@@ -1,11 +1,23 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Iterable, Iterator, MutableSet, TypeVar
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Generator,
+    Iterable,
+    Iterator,
+    List,
+    MutableSet,
+    Optional,
+    Sequence,
+    Set,
+    TypeVar,
+)
 
 from napari.utils.events import EmitterGroup
 from napari.utils.translations import trans
 
-_T = TypeVar("_T")
+_T = TypeVar('_T')
 
 if TYPE_CHECKING:
     from napari._pydantic_compat import ModelField
@@ -51,11 +63,15 @@ class EventedSet(MutableSet[_T]):
     def __len__(self) -> int:
         return len(self._set)
 
-    def _pre_add_hook(self, value):
+    def _pre_add_hook(self, value: _T) -> _T:
         # for subclasses to potentially check value before adding
         return value
 
-    def _emit_change(self, added=None, removed=None):
+    def _emit_change(
+        self,
+        added: Optional[Set[_T]] = None,
+        removed: Optional[Set[_T]] = None,
+    ) -> None:
         # provides a hook for subclasses to update internal state before emit
         if added is None:
             added = set()
@@ -68,7 +84,7 @@ class EventedSet(MutableSet[_T]):
         if value not in self:
             value = self._pre_add_hook(value)
             self._set.add(value)
-            self._emit_change(added={value}, removed={})
+            self._emit_change(added={value}, removed=set())
 
     def discard(self, value: _T) -> None:
         """Remove an element from a set if it is a member.
@@ -77,7 +93,7 @@ class EventedSet(MutableSet[_T]):
         """
         if value in self:
             self._set.discard(value)
-            self._emit_change(added={}, removed={value})
+            self._emit_change(added=set(), removed={value})
 
     # #### END Required Abstract Methods
 
@@ -94,10 +110,10 @@ class EventedSet(MutableSet[_T]):
         if self._set:
             values = set(self)
             self._set.clear()
-            self._emit_change(added={}, removed=values)
+            self._emit_change(added=set(), removed=values)
 
     def __repr__(self) -> str:
-        return f"{type(self).__name__}({self._set!r})"
+        return f'{type(self).__name__}({self._set!r})'
 
     def update(self, others: Iterable[_T] = ()) -> None:
         """Update this set with the union of this set and others"""
@@ -105,7 +121,7 @@ class EventedSet(MutableSet[_T]):
         if to_add:
             to_add = {self._pre_add_hook(i) for i in to_add}
             self._set.update(to_add)
-            self._emit_change(added=set(to_add), removed={})
+            self._emit_change(added=set(to_add), removed=set())
 
     def copy(self) -> EventedSet[_T]:
         """Return a shallow copy of this set."""
@@ -120,7 +136,7 @@ class EventedSet(MutableSet[_T]):
         to_remove = self._set.intersection(others)
         if to_remove:
             self._set.difference_update(to_remove)
-            self._emit_change(added={}, removed=set(to_remove))
+            self._emit_change(added=set(), removed=set(to_remove))
 
     def intersection(self, others: Iterable[_T] = ()) -> EventedSet[_T]:
         """Return all elements that are in both sets as a new set."""
@@ -159,11 +175,11 @@ class EventedSet(MutableSet[_T]):
         return type(self)(self._set.union(others))
 
     @classmethod
-    def __get_validators__(cls):
+    def __get_validators__(cls) -> Generator:
         yield cls.validate
 
     @classmethod
-    def validate(cls, v, field: ModelField):
+    def validate(cls, v: Sequence, field: ModelField) -> EventedSet:
         """Pydantic validator."""
         from napari._pydantic_compat import sequence_like
 
@@ -190,6 +206,6 @@ class EventedSet(MutableSet[_T]):
             raise ValidationError(errors, cls)
         return cls(v)
 
-    def _json_encode(self):
+    def _json_encode(self) -> List:
         """Return an object that can be used by json.dumps."""
         return list(self)

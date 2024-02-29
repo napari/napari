@@ -27,10 +27,10 @@ pool = ThreadPoolExecutor()
 
 
 @magic_factory(
-    min_sigma={"min": 0.5, "max": 15, "step": 0.5},
-    max_sigma={"min": 1, "max": 200, "step": 0.5},
-    num_sigma={"min": 1, "max": 20},
-    threshold={"min": 0, "max": 1000, "step": 0.1},
+    min_sigma={'min': 0.5, 'max': 15, 'step': 0.5},
+    max_sigma={'min': 1, 'max': 200, 'step': 0.5},
+    num_sigma={'min': 1, 'max': 20},
+    threshold={'min': 0, 'max': 1000, 'step': 0.1},
 )
 def make_widget(
     image: ImageData,
@@ -52,11 +52,11 @@ def make_widget(
         )
         data = blobs[:, : image.ndim]
         kwargs = {
-            "size": blobs[:, -1],
-            "edge_color": "red",
-            "edge_width": 2,
-            "edge_width_is_relative": False,
-            "face_color": "transparent",
+            'size': blobs[:, -1],
+            'border_color': 'red',
+            'border_width': 2,
+            'border_width_is_relative': False,
+            'face_color': 'transparent',
         }
         return (data, kwargs, 'points')
 
@@ -64,7 +64,7 @@ def make_widget(
 
 
 viewer = napari.Viewer()
-viewer.window.add_dock_widget(make_widget(), area="right")
+viewer.window.add_dock_widget(make_widget(), area='right')
 viewer.add_image(data.hubble_deep_field().mean(-1))
 
 napari.run()

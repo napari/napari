@@ -21,13 +21,13 @@ PatchFunction = Callable[[CallableParent, str, str], None]
 class PatchError(Exception):
     """Failed to patch target, config file error?"""
 
-    def __init__(self, message) -> None:
+    def __init__(self, message: str) -> None:
         self.message = message
 
 
 def _patch_attribute(
     module: types.ModuleType, attribute_str: str, patch_func: PatchFunction
-):
+) -> None:
     """Patch the module's callable pointed to by the attribute string.
 
     Parameters
@@ -45,7 +45,7 @@ def _patch_attribute(
     if attribute_str.count('.') > 1:
         raise PatchError(
             trans._(
-                "Nested attribute not found: {attribute_str}",
+                'Nested attribute not found: {attribute_str}',
                 deferred=True,
                 attribute_str=attribute_str,
             )
@@ -59,7 +59,7 @@ def _patch_attribute(
         except AttributeError as e:
             raise PatchError(
                 trans._(
-                    "Module {module_name} has no attribute {attribute_str}",
+                    'Module {module_name} has no attribute {attribute_str}',
                     deferred=True,
                     module_name=module.__name__,
                     attribute_str=attribute_str,
@@ -78,7 +78,7 @@ def _patch_attribute(
     except AttributeError as e:
         raise PatchError(
             trans._(
-                "Parent {parent_str} has no attribute {callable_str}",
+                'Parent {parent_str} has no attribute {callable_str}',
                 deferred=True,
                 parent_str=parent_str,
                 callable_str=callable_str,
@@ -86,11 +86,11 @@ def _patch_attribute(
         ) from e
 
     label = (
-        callable_str if class_str is None else f"{class_str}.{callable_str}"
+        callable_str if class_str is None else f'{class_str}.{callable_str}'
     )
 
     # Patch it with the user-provided patch_func.
-    print(f"Patcher: patching {module.__name__}.{label}")
+    print(f'Patcher: patching {module.__name__}.{label}')
     patch_func(parent, callable_str, label)
 
 
@@ -135,7 +135,7 @@ def _import_module(
                 # The very first top-level module import failed!
                 raise PatchError(
                     trans._(
-                        "Module not found: {module_path}",
+                        'Module not found: {module_path}',
                         deferred=True,
                         module_path=module_path,
                     )
@@ -186,7 +186,7 @@ def patch_callables(callables: List[str], patch_func: PatchFunction) -> None:
     for target_str in callables:
         if target_str in patched:
             # Ignore duplicated targets in the config file.
-            print(f"Patcher: [WARN] skipping duplicate {target_str}")
+            print(f'Patcher: [WARN] skipping duplicate {target_str}')
             continue
 
         # Patch the target and note that we did.
@@ -198,6 +198,6 @@ def patch_callables(callables: List[str], patch_func: PatchFunction) -> None:
             # We don't stop on error because if you switch around branches
             # but keep the same config file, it's easy for your config
             # file to contain targets that aren't in the code.
-            print(f"Patcher: [ERROR] {exc}")
+            print(f'Patcher: [ERROR] {exc}')
 
         patched.add(target_str)

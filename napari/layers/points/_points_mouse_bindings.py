@@ -96,7 +96,7 @@ def select(layer, event):
 
     # only emit data once dragging has finished
     if is_moving:
-        layer._move([], coordinates)
+        layer._move(layer.selected_data, coordinates)
         is_moving = False
 
     # on release
@@ -146,7 +146,7 @@ def highlight(layer, event):
     layer._set_highlight()
 
 
-_T = TypeVar("_T")
+_T = TypeVar('_T')
 
 
 def _toggle_selected(selection: Set[_T], value: _T) -> Set[_T]:
