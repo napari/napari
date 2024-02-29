@@ -214,9 +214,9 @@ class ApplicationSettings(EventedModel):
 
     new_labels_dtype: LabelDTypes = Field(
         default=LabelDTypes.uint8,
-        title=trans._('New labels dtype'),
+        title=trans._('New labels data type'),
         description=trans._(
-            'Select the dtype for new labels layers created using button.'
+            'data type for labels layers created with the "new labels" button.'
         ),
     )
 
