@@ -56,11 +56,11 @@ class NotificationSeverity(StringEnum):
 
     def as_icon(self):
         return {
-            self.ERROR: "ⓧ",
-            self.WARNING: "⚠️",
-            self.INFO: "ⓘ",
-            self.DEBUG: "🐛",
-            self.NONE: "",
+            self.ERROR: 'ⓧ',
+            self.WARNING: '⚠️',
+            self.INFO: 'ⓘ',
+            self.DEBUG: '🐛',
+            self.NONE: '',
         }[self]
 
     def __lt__(self, other):
@@ -172,7 +172,7 @@ class ErrorNotification(Notification):
             self.exception,
             self.exception.__traceback__,
         )
-        return fmt(exc_info, as_html=False, color="NoColor")
+        return fmt(exc_info, as_html=False, color='NoColor')
 
     def __str__(self):
         from napari.utils._tracebacks import get_tb_formatter
@@ -235,7 +235,7 @@ class NotificationManager:
     def __init__(self) -> None:
         self.records: List[Notification] = []
         self.exit_on_error = os.getenv('NAPARI_EXIT_ON_ERROR') in ('1', 'True')
-        self.catch_error = os.getenv("NAPARI_CATCH_ERRORS") not in (
+        self.catch_error = os.getenv('NAPARI_CATCH_ERRORS') not in (
             '0',
             'False',
         )
@@ -309,13 +309,13 @@ class NotificationManager:
         thread: Optional[threading.Thread] = None,
     ):
         if isinstance(value, KeyboardInterrupt):
-            sys.exit("Closed by KeyboardInterrupt")
+            sys.exit('Closed by KeyboardInterrupt')
 
         capture_exception(value)
 
         if self.exit_on_error:
             sys.__excepthook__(exctype, value, traceback)
-            sys.exit("Exit on error")
+            sys.exit('Exit on error')
         if not self.catch_error:
             sys.__excepthook__(exctype, value, traceback)
             return
@@ -399,9 +399,9 @@ def show_console_notification(notification: Notification):
         print(notification)
     except Exception:
         print(
-            "An error occurred while trying to format an error and show it in console.\n"
-            "You can try to uninstall IPython to disable rich traceback formatting\n"
-            "And/or report a bug to napari"
+            'An error occurred while trying to format an error and show it in console.\n'
+            'You can try to uninstall IPython to disable rich traceback formatting\n'
+            'And/or report a bug to napari'
         )
         # this will likely get silenced by QT.
         raise

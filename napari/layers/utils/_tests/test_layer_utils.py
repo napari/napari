@@ -81,7 +81,7 @@ def test_calc_data_range_fast(data):
     val = calc_data_range(data)
     assert len(val) > 0
     elapsed = time.monotonic() - now
-    assert elapsed < 5, "test took too long, computation was likely not lazy"
+    assert elapsed < 5, 'test took too long, computation was likely not lazy'
 
 
 def test_segment_normal_2d():
@@ -110,26 +110,26 @@ def test_dataframe_to_properties():
 
 def test_get_current_properties_with_properties_then_last_values():
     properties = {
-        "face_color": np.array(["cyan", "red", "red"]),
-        "angle": np.array([0.5, 1.5, 1.5]),
+        'face_color': np.array(['cyan', 'red', 'red']),
+        'angle': np.array([0.5, 1.5, 1.5]),
     }
 
     current_properties = get_current_properties(properties, {}, 3)
 
     assert current_properties == {
-        "face_color": "red",
-        "angle": 1.5,
+        'face_color': 'red',
+        'angle': 1.5,
     }
 
 
 def test_get_current_properties_with_property_choices_then_first_values():
     properties = {
-        "face_color": np.empty(0, dtype=str),
-        "angle": np.empty(0, dtype=float),
+        'face_color': np.empty(0, dtype=str),
+        'angle': np.empty(0, dtype=float),
     }
     property_choices = {
-        "face_color": np.array(["cyan", "red"]),
-        "angle": np.array([0.5, 1.5]),
+        'face_color': np.array(['cyan', 'red']),
+        'angle': np.array([0.5, 1.5]),
     }
 
     current_properties = get_current_properties(
@@ -138,8 +138,8 @@ def test_get_current_properties_with_property_choices_then_first_values():
     )
 
     assert current_properties == {
-        "face_color": "cyan",
-        "angle": 0.5,
+        'face_color': 'cyan',
+        'angle': 0.5,
     }
 
 
@@ -177,7 +177,7 @@ def test_coerce_current_properties_invalid_values():
 
 
 @pytest.mark.parametrize(
-    "dims_displayed,ndim_world,ndim_layer,expected",
+    'dims_displayed,ndim_world,ndim_layer,expected',
     [
         ([1, 2, 3], 4, 4, [1, 2, 3]),
         ([0, 1, 2], 4, 4, [0, 1, 2]),
@@ -461,7 +461,7 @@ def test_feature_table_set_defaults_with_missing_column(feature_table):
 
 
 def test_register_label_attr_action(monkeypatch):
-    monkeypatch.setattr(time, "time", lambda: 1)
+    monkeypatch.setattr(time, 'time', lambda: 1)
 
     class Foo(KeymapProvider):
         def __init__(self) -> None:
@@ -473,18 +473,18 @@ def test_register_label_attr_action(monkeypatch):
     handler = KeymapHandler()
     handler.keymap_providers = [foo]
 
-    @register_layer_attr_action(Foo, "value desc", "value", "K")
+    @register_layer_attr_action(Foo, 'value desc', 'value', 'K')
     def set_value_1(x):
         x.value = 1
 
-    handler.press_key("K")
+    handler.press_key('K')
     assert foo.value == 1
-    handler.release_key("K")
+    handler.release_key('K')
     assert foo.value == 1
 
     foo.value = 0
-    handler.press_key("K")
+    handler.press_key('K')
     assert foo.value == 1
-    monkeypatch.setattr(time, "time", lambda: 2)
-    handler.release_key("K")
+    monkeypatch.setattr(time, 'time', lambda: 2)
+    handler.release_key('K')
     assert foo.value == 0

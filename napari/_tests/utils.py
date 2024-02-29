@@ -22,6 +22,7 @@ from napari.layers import (
 )
 from napari.layers._data_protocols import Index, LayerDataProtocol
 from napari.utils.color import ColorArray
+from napari.utils.events.event import WarningEmitter
 
 skip_on_win_ci = pytest.mark.skipif(
     sys.platform.startswith('win') and os.getenv('CI', '0') != '0',
@@ -105,7 +106,7 @@ layer2addmethod = {
 good_layer_data = [
     (np.random.random((10, 10)),),
     (np.random.random((10, 10, 3)), {'rgb': True}),
-    (np.random.randint(20, size=(10, 15)), {'seed_rng': 5}, 'labels'),
+    (np.random.randint(20, size=(10, 15)), {'opacity': 0.9}, 'labels'),
     (np.random.random((10, 2)) * 20, {'face_color': 'blue'}, 'points'),
     (np.random.random((10, 2, 2)) * 20, {}, 'vectors'),
     (np.random.random((10, 4, 2)) * 20, {'opacity': 1}, 'shapes'),
@@ -315,3 +316,13 @@ def assert_colors_equal(actual, expected):
     actual_array = ColorArray.validate(actual)
     expected_array = ColorArray.validate(expected)
     np.testing.assert_array_equal(actual_array, expected_array)
+
+
+def count_warning_events(callbacks) -> int:
+    """
+    Counts the number of WarningEmitter in the callback list.
+    Useful to filter out deprecated events' callbacks.
+    """
+    return len(
+        list(filter(lambda x: isinstance(x, WarningEmitter), callbacks))
+    )

@@ -31,28 +31,28 @@ def mock_pm(npe2pm: 'TestPluginManager'):
 
 
 def test_read(mock_pm: 'TestPluginManager'):
-    _, hookimpl = _npe2.read(["some.fzzy"], stack=False)
+    _, hookimpl = _npe2.read(['some.fzzy'], stack=False)
     mock_pm.commands.get.assert_called_once_with(f'{PLUGIN_NAME}.some_reader')
     assert hookimpl.plugin_name == PLUGIN_NAME
 
     mock_pm.commands.get.reset_mock()
-    _, hookimpl = _npe2.read(["some.fzzy"], stack=True)
+    _, hookimpl = _npe2.read(['some.fzzy'], stack=True)
     mock_pm.commands.get.assert_called_once_with(f'{PLUGIN_NAME}.some_reader')
     mock_pm.commands.get.reset_mock()
     with pytest.raises(ValueError):
-        _npe2.read(["some.randomext"], stack=False)
+        _npe2.read(['some.randomext'], stack=False)
     mock_pm.commands.get.assert_not_called()
 
     mock_pm.commands.get.reset_mock()
     assert (
-        _npe2.read(["some.randomext"], stack=True, plugin='not-npe2-plugin')
+        _npe2.read(['some.randomext'], stack=True, plugin='not-npe2-plugin')
         is None
     )
     mock_pm.commands.get.assert_not_called()
 
     mock_pm.commands.get.reset_mock()
     _, hookimpl = _npe2.read(
-        ["some.fzzy"], stack=False, plugin='my-plugin.some_reader'
+        ['some.fzzy'], stack=False, plugin='my-plugin.some_reader'
     )
     mock_pm.commands.get.assert_called_once_with(f'{PLUGIN_NAME}.some_reader')
     assert hookimpl.plugin_name == PLUGIN_NAME
@@ -64,7 +64,7 @@ def test_read(mock_pm: 'TestPluginManager'):
 )
 def test_read_with_plugin_failure(mock_pm: 'TestPluginManager'):
     with pytest.raises(ValueError):
-        _npe2.read(["some.randomext"], stack=True, plugin=PLUGIN_NAME)
+        _npe2.read(['some.randomext'], stack=True, plugin=PLUGIN_NAME)
 
 
 def test_write(mock_pm: 'TestPluginManager'):
@@ -131,7 +131,7 @@ def test_file_extensions_string_for_layers(mock_pm: 'TestPluginManager'):
 
 
 def test_get_readers(mock_pm):
-    assert _npe2.get_readers("some.fzzy") == {PLUGIN_NAME: 'My Plugin'}
+    assert _npe2.get_readers('some.fzzy') == {PLUGIN_NAME: 'My Plugin'}
 
 
 def test_iter_manifest(mock_pm):

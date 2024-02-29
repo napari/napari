@@ -8,7 +8,7 @@ from napari._vispy.layers.vectors import (
 
 
 @pytest.mark.parametrize(
-    "edge_width, length, dims, style",
+    'edge_width, length, dims, style',
     [
         [0, 0, 2, 'line'],
         [0.3, 0.3, 2, 'line'],
@@ -58,7 +58,7 @@ def test_generate_vector_meshes(edge_width, length, dims, style):
 
 
 @pytest.mark.parametrize(
-    "edge_width, length, style, p",
+    'edge_width, length, style, p',
     [
         [0, 0, 'line', (1, 0, 0)],
         [0.3, 0.3, 'line', (0, 1, 0)],
@@ -97,7 +97,7 @@ def test_generate_vector_meshes_2D(edge_width, length, style, p):
 
 
 @pytest.mark.parametrize(
-    "initial_vector_style, new_vector_style",
+    'initial_vector_style, new_vector_style',
     [
         ['line', 'line'],
         ['line', 'triangle'],

@@ -51,9 +51,9 @@ class CanvasOverlay(Overlay):
         The rendering order of the overlay: lower numbers get rendered first.
     """
 
-    position: Union[
-        CanvasPosition, Tuple[int, int]
-    ] = CanvasPosition.BOTTOM_RIGHT
+    position: Union[CanvasPosition, Tuple[int, int]] = (
+        CanvasPosition.BOTTOM_RIGHT
+    )
     blending: Blending = Blending.TRANSLUCENT_NO_DEPTH
 
 
