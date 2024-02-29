@@ -1,6 +1,7 @@
+import copy
 import itertools
 import time
-import warnings
+from collections import defaultdict
 from dataclasses import dataclass
 from tempfile import TemporaryDirectory
 from typing import List
@@ -12,8 +13,7 @@ import pytest
 import xarray as xr
 import zarr
 from numpy.core.numerictypes import issubdtype
-from numpy.testing import assert_array_almost_equal, assert_raises
-from skimage import data
+from skimage import data as sk_data
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.components import ViewerModel
@@ -22,7 +22,30 @@ from napari.layers import Labels
 from napari.layers.labels._labels_constants import LabelsRendering
 from napari.layers.labels._labels_utils import get_contours
 from napari.utils import Colormap
-from napari.utils.colormaps import label_colormap
+from napari.utils.colormaps import (
+    CyclicLabelColormap,
+    DirectLabelColormap,
+    label_colormap,
+)
+
+
+@pytest.fixture
+def direct_colormap():
+    """Return a DirectLabelColormap."""
+    return DirectLabelColormap(
+        color_dict={
+            0: [0, 0, 0, 0],
+            1: [1, 0, 0, 1],
+            2: [0, 1, 0, 1],
+            None: [0, 0, 1, 1],
+        }
+    )
+
+
+@pytest.fixture
+def random_colormap():
+    """Return a LabelColormap."""
+    return label_colormap(50)
 
 
 def test_random_labels():
@@ -237,46 +260,7 @@ def test_blending():
     assert layer.blending == 'opaque'
 
 
-@pytest.mark.filterwarnings("ignore:.*seed is deprecated.*")
-def test_seed():
-    """Test setting seed."""
-    np.random.seed(0)
-    data = np.random.randint(20, size=(10, 15))
-    layer = Labels(data)
-    assert layer.seed == 0.5
-
-    layer.seed = 0.9
-    assert layer.seed == 0.9
-
-    layer = Labels(data, seed=0.7)
-    assert layer.seed == 0.7
-
-    # ensure setting seed updates the random colormap
-    mapped_07 = layer.colormap.map(layer.data)
-    layer.seed = 0.4
-    mapped_04 = layer.colormap.map(layer.data)
-    assert_raises(
-        AssertionError, assert_array_almost_equal, mapped_07, mapped_04
-    )
-
-
-def test_num_colors():
-    """Test setting number of colors in colormap."""
-    np.random.seed(0)
-    data = np.random.randint(20, size=(10, 15))
-    layer = Labels(data)
-    assert layer.num_colors == 49
-
-    layer.num_colors = 80
-    assert layer.num_colors == 80
-
-    layer = Labels(data, num_colors=60)
-    assert layer.num_colors == 60
-
-    with pytest.raises(ValueError, match="must be between 1 and 65535"):
-        layer.num_colors = 2**17
-
-
+@pytest.mark.filterwarnings('ignore:.*seed is deprecated.*')
 def test_properties():
     """Test adding labels with properties."""
     np.random.seed(0)
@@ -307,7 +291,7 @@ def test_properties():
     properties = {'class': ['Background']}
     layer = Labels(data, properties=properties)
     layer_message = layer.get_status((0, 0))
-    assert layer_message['coordinates'].endswith("[No Properties]")
+    assert layer_message['coordinates'].endswith('[No Properties]')
 
     properties = {'class': ['Background', 'Class 12'], 'index': [0, 12]}
     label_index = {0: 0, 12: 1}
@@ -368,7 +352,7 @@ def test_multiscale_properties():
     properties = {'class': ['Background']}
     layer = Labels(data, properties=properties)
     layer_message = layer.get_status((0, 0))
-    assert layer_message['coordinates'].endswith("[No Properties]")
+    assert layer_message['coordinates'].endswith('[No Properties]')
 
     properties = {'class': ['Background', 'Class 12'], 'index': [0, 12]}
     label_index = {0: 0, 12: 1}
@@ -413,9 +397,13 @@ def test_custom_color_dict():
     """Test custom color dict."""
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
-    layer = Labels(
-        data, color={2: 'white', 4: 'red', 8: 'blue', 16: 'red', 32: 'blue'}
+    cmap = DirectLabelColormap(
+        color_dict=defaultdict(
+            lambda: 'black',
+            {2: 'white', 4: 'red', 8: 'blue', 16: 'red', 32: 'blue'},
+        )
     )
+    layer = Labels(data, colormap=cmap)
 
     # test with custom color dict
     assert isinstance(layer.get_color(2), np.ndarray)
@@ -426,7 +414,6 @@ def test_custom_color_dict():
 
     # test disable custom color dict
     # should not initialize as white since we are using random.seed
-    layer.color_mode = 'auto'
     assert not (layer.get_color(1) == np.array([1.0, 1.0, 1.0, 1.0])).all()
 
 
@@ -473,7 +460,7 @@ def test_n_edit_dimensions():
 
 
 @pytest.mark.parametrize(
-    "input_data, expected_data_view",
+    'input_data, expected_data_view',
     [
         (
             np.array(
@@ -588,7 +575,7 @@ def test_contour(input_data, expected_data_view):
         layer.contour = -1
 
 
-@pytest.mark.parametrize("background_num", [0, 1, 2, -1])
+@pytest.mark.parametrize('background_num', [0, 1, 2, -1])
 def test_background_label(background_num):
     data = np.zeros((10, 10), dtype=np.int32)
     data[1:-1, 1:-1] = 1
@@ -596,8 +583,7 @@ def test_background_label(background_num):
     data[4:-4, 4:-4] = -1
 
     layer = Labels(data)
-    layer._background_label = background_num
-    layer.num_colors = 49
+    layer.colormap = label_colormap(49, background_value=background_num)
     np.testing.assert_array_equal(
         layer._data_view == 0, data == background_num
     )
@@ -656,6 +642,29 @@ def test_contour_local_updates():
     )
 
 
+def test_data_setitem_multi_dim():
+    """
+    this test checks if data_setitem works when some of the indices are
+    outside currently rendered slice
+    """
+    # create zarr zeros array in memory
+    data = zarr.zeros((10, 10, 10), chunks=(5, 5, 5), dtype=np.uint32)
+    labels = Labels(data)
+    labels.data_setitem(
+        (np.array([0, 1, 1]), np.array([1, 1, 2]), np.array([0, 0, 0])),
+        [1, 2, 0],
+    )
+
+
+def test_data_setitiem_transposed_axes():
+    data = np.zeros((10, 100), dtype=np.uint32)
+    labels = Labels(data)
+    dims = Dims(ndim=2, ndisplay=2, order=(1, 0))
+    labels.data_setitem((np.array([9]), np.array([99])), 1)
+    labels._slice_dims(dims)
+    labels.data_setitem((np.array([9]), np.array([99])), 2)
+
+
 def test_selecting_label():
     """Test selecting label."""
     np.random.seed(0)
@@ -689,14 +698,16 @@ def test_show_selected_label():
     original_color = layer.get_color(1)
 
     layer.show_selected_label = True
-    original_background_color = layer.get_color(layer._background_label)
+    original_background_color = layer.get_color(
+        layer.colormap.background_value
+    )
     none_color = layer.get_color(None)
     layer.selected_label = 1
 
     # color of selected label has not changed
     assert np.allclose(layer.get_color(layer.selected_label), original_color)
 
-    current_background_color = layer.get_color(layer._background_label)
+    current_background_color = layer.get_color(layer.colormap.background_value)
     # color of background is background color
     assert current_background_color == original_background_color
 
@@ -780,7 +791,7 @@ def test_paint_2d():
 
 
 def test_paint_2d_xarray():
-    """Test the memory usage of painting an xarray indirectly via timeout."""
+    """Test the memory usage of painting a xarray indirectly via timeout."""
     now = time.monotonic()
     data = xr.DataArray(np.zeros((3, 3, 1024, 1024), dtype=np.uint32))
 
@@ -791,7 +802,7 @@ def test_paint_2d_xarray():
     assert isinstance(layer.data, xr.DataArray)
     assert layer.data.sum() == 411
     elapsed = time.monotonic() - now
-    assert elapsed < 1, "test was too slow, computation was likely not lazy"
+    assert elapsed < 1, 'test was too slow, computation was likely not lazy'
 
 
 def test_paint_3d():
@@ -943,8 +954,8 @@ def test_thumbnail():
     assert layer.thumbnail.shape == layer._thumbnail_shape
 
 
-@pytest.mark.parametrize("value", [1, 10, 50, -2, -10])
-@pytest.mark.parametrize("dtype", [np.int8, np.int32])
+@pytest.mark.parametrize('value', [1, 10, 50, -2, -10])
+@pytest.mark.parametrize('dtype', [np.int8, np.int32])
 def test_thumbnail_single_color(value, dtype):
     labels = Labels(np.full((10, 10), value, dtype=dtype), opacity=1)
     labels._update_thumbnail()
@@ -958,7 +969,7 @@ def test_world_data_extent():
     """Test extent after applying transforms."""
     np.random.seed(0)
     shape = (6, 10, 15)
-    data = np.random.randint(20, size=(shape))
+    data = np.random.randint(20, size=shape)
     layer = Labels(data)
     extent = np.array(((0,) * 3, [s - 1 for s in shape]))
     check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
@@ -983,7 +994,7 @@ def test_undo_redo(
     preserve_labels,
     n_dimensional,
 ):
-    blobs = data.binary_blobs(length=64, volume_fraction=0.3, n_dim=3)
+    blobs = sk_data.binary_blobs(length=64, volume_fraction=0.3, n_dim=3)
     layer = Labels(blobs)
     data_history = [blobs.copy()]
     layer.brush_size = brush_size
@@ -1063,7 +1074,7 @@ def test_cursor_size_with_negative_scale():
 
 
 @pytest.mark.xfail(
-    reason="labels are converted to float32 before being mapped"
+    reason='labels are converted to float32 before being mapped'
 )
 def test_large_label_values():
     label_array = 2**23 + np.arange(4, dtype=np.uint64).reshape((2, 2))
@@ -1444,33 +1455,38 @@ def test_is_default_color():
     layer = Labels(data)
 
     # layer gets instantiated with defaults
-    current_color = layer.color
+    current_color = layer._direct_colormap.color_dict
     assert layer._is_default_colors(current_color)
 
     # setting color to default colors doesn't update color mode
-    layer.color = current_color
-    assert layer.color_mode == 'auto'
+    layer.colormap = DirectLabelColormap(color_dict=current_color)
+    assert isinstance(layer.colormap, CyclicLabelColormap)
 
     # new colors are not default
-    new_color = {0: 'white', 1: 'red', 3: 'green'}
+    new_color = {0: 'white', 1: 'red', 3: 'green', None: 'blue'}
     assert not layer._is_default_colors(new_color)
     # setting the color with non-default colors updates color mode
-    layer.color = new_color
-    assert layer.color_mode == 'direct'
+    layer.colormap = DirectLabelColormap(color_dict=new_color)
+    assert isinstance(layer.colormap, DirectLabelColormap)
 
 
 def test_large_labels_direct_color():
     """Make sure direct color works with large label ranges"""
+    pytest.importorskip('numba')
     data = np.array([[0, 1], [2**16, 2**20]], dtype=np.uint32)
     colors = {1: 'white', 2**16: 'green', 2**20: 'magenta'}
-    layer = Labels(data)
-    layer.color = colors
-
-    assert layer.color_mode == 'direct'
+    layer = Labels(
+        data,
+        colormap=DirectLabelColormap(
+            color_dict=defaultdict(lambda: 'black', colors)
+        ),
+    )
     np.testing.assert_allclose(layer.get_color(2**20), [1.0, 0.0, 1.0, 1.0])
 
 
-def test_invalidate_cache_when_change_color_mode():
+def test_invalidate_cache_when_change_color_mode(
+    direct_colormap, random_colormap
+):
     """Checks if the cache is invalidated when color mode is changed."""
     data = np.zeros((4, 10), dtype=np.int32)
     data[1, :] = np.arange(0, 10)
@@ -1480,11 +1496,11 @@ def test_invalidate_cache_when_change_color_mode():
     gt_auto = layer._raw_to_displayed(layer._slice.image.raw)
     assert gt_auto.dtype == np.uint8
 
-    layer.color_mode = 'direct'
+    layer.colormap = direct_colormap
     layer._cached_labels = None
-    assert layer._raw_to_displayed(layer._slice.image.raw).dtype == np.float32
+    assert layer._raw_to_displayed(layer._slice.image.raw).dtype == np.uint8
 
-    layer.color_mode = 'auto'
+    layer.colormap = random_colormap
     # If the cache is not invalidated, it returns colors for
     # the direct color mode instead of the color for the auto mode
     assert np.allclose(
@@ -1497,12 +1513,24 @@ def test_color_mapping_when_color_is_changed():
 
     data = np.zeros((4, 5), dtype=np.int32)
     data[1, :] = np.arange(0, 5)
-    layer = Labels(data, color={1: 'green', 2: 'red', 3: 'white'})
+    layer = Labels(
+        data,
+        colormap=DirectLabelColormap(
+            color_dict={1: 'green', 2: 'red', 3: 'white', None: 'black'}
+        ),
+    )
     gt_direct_3colors = layer._raw_to_displayed(layer._slice.image.raw)
 
-    layer = Labels(data, color={1: 'green', 2: 'red'})
-    assert layer._raw_to_displayed(layer._slice.image.raw).dtype == np.float32
-    layer.color = {1: 'green', 2: 'red', 3: 'white'}
+    layer = Labels(
+        data,
+        colormap=DirectLabelColormap(
+            color_dict={1: 'green', 2: 'red', None: 'black'}
+        ),
+    )
+    assert layer._raw_to_displayed(layer._slice.image.raw).dtype == np.uint8
+    layer.colormap = DirectLabelColormap(
+        color_dict={1: 'green', 2: 'red', 3: 'white', None: 'black'}
+    )
 
     assert np.allclose(
         layer._raw_to_displayed(layer._slice.image.raw), gt_direct_3colors
@@ -1546,6 +1574,24 @@ def test_color_mapping_when_seed_is_changed():
     )
 
     assert not np.allclose(mapped_colors1, mapped_colors2)
+
+
+@pytest.mark.parametrize('num_colors', [49, 50, 254, 255, 60000, 65534])
+def test_color_shuffling_above_num_colors(num_colors):
+    r"""Check that the color shuffle does not result in the same collisions.
+
+    See https://github.com/napari/napari/issues/6448.
+
+    Note that we don't support more than 2\ :sup:`16` colors, and behavior
+    with more colors is undefined, so we don't test it here.
+    """
+    labels = np.arange(1, 1 + 2 * (num_colors - 1)).reshape((2, -1))
+    layer = Labels(labels, colormap=label_colormap(num_colors - 1))
+    colors0 = layer.colormap.map(labels)
+    assert np.all(colors0[0] == colors0[1])
+    layer.new_colormap()
+    colors1 = layer.colormap.map(labels)
+    assert not np.all(colors1[0] == colors1[1])
 
 
 def test_negative_label():
@@ -1613,17 +1659,6 @@ def test_get_status_with_custom_index():
     )
 
 
-def test_collision_warning():
-    label = Labels(data=np.zeros((10, 10), dtype=np.uint8))
-    with pytest.warns(
-        RuntimeWarning, match="Because integer labels are cast to less-precise"
-    ):
-        label.color = {2**25 + 1: 'red', 2**25 + 2: 'blue'}
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
-        label.color = {1: 'red', 2: 'blue'}
-
-
 def test_labels_features_event():
     event_emitted = False
 
@@ -1639,6 +1674,43 @@ def test_labels_features_event():
     assert event_emitted
 
 
+def test_copy():
+    l1 = Labels(np.zeros((2, 4, 5), dtype=np.uint8))
+    l2 = copy.copy(l1)
+    l3 = Labels.create(*l1.as_layer_data_tuple())
+    assert l1.data is not l2.data
+    assert l1.data is l3.data
+
+
+@pytest.mark.parametrize(
+    'colormap,expected',
+    [
+        (label_colormap(49, 0.5), [0, 1]),
+        (
+            DirectLabelColormap(
+                color_dict={
+                    0: np.array([0, 0, 0, 0]),
+                    1: np.array([1, 0, 0, 1]),
+                    None: np.array([1, 1, 0, 1]),
+                }
+            ),
+            [1, 2],
+        ),
+    ],
+    ids=['auto', 'direct'],
+)
+def test_draw(colormap, expected):
+    labels = Labels(np.zeros((30, 30), dtype=np.uint32))
+    labels.mode = 'paint'
+    labels.colormap = colormap
+    labels.selected_label = 1
+    npt.assert_array_equal(np.unique(labels._slice.image.raw), [0])
+    npt.assert_array_equal(np.unique(labels._slice.image.view), expected[:1])
+    labels._draw(1, (15, 15), (15, 15))
+    npt.assert_array_equal(np.unique(labels._slice.image.raw), [0, 1])
+    npt.assert_array_equal(np.unique(labels._slice.image.view), expected)
+
+
 class TestLabels:
     @staticmethod
     def get_objects():
@@ -1647,5 +1719,5 @@ class TestLabels:
     def test_events_defined(self, event_define_check, obj):
         event_define_check(
             obj,
-            {"seed", "num_colors", "color", "seed_rng"},
+            {'seed', 'num_colors', 'color', 'seed_rng'},
         )

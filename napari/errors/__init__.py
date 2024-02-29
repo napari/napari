@@ -5,7 +5,7 @@ from napari.errors.reader_errors import (
 )
 
 __all__ = [
-    "MultipleReaderError",
-    "NoAvailableReaderError",
-    "ReaderPluginError",
+    'MultipleReaderError',
+    'NoAvailableReaderError',
+    'ReaderPluginError',
 ]

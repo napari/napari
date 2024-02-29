@@ -1,5 +1,6 @@
 from collections import OrderedDict
 from enum import IntEnum, auto
+from typing import Tuple
 
 from napari.utils.misc import StringEnum
 from napari.utils.translations import trans
@@ -46,11 +47,11 @@ class Blending(StringEnum):
 
 BLENDING_TRANSLATIONS = OrderedDict(
     [
-        (Blending.TRANSLUCENT, trans._("translucent")),
-        (Blending.TRANSLUCENT_NO_DEPTH, trans._("translucent_no_depth")),
-        (Blending.ADDITIVE, trans._("additive")),
-        (Blending.MINIMUM, trans._("minimum")),
-        (Blending.OPAQUE, trans._("opaque")),
+        (Blending.TRANSLUCENT, trans._('translucent')),
+        (Blending.TRANSLUCENT_NO_DEPTH, trans._('translucent_no_depth')),
+        (Blending.ADDITIVE, trans._('additive')),
+        (Blending.MINIMUM, trans._('minimum')),
+        (Blending.OPAQUE, trans._('opaque')),
     ]
 )
 
@@ -95,7 +96,9 @@ class InteractionBoxHandle(IntEnum):
     INSIDE = 9
 
     @classmethod
-    def opposite_handle(cls, handle):
+    def opposite_handle(
+        cls, handle: 'InteractionBoxHandle'
+    ) -> 'InteractionBoxHandle':
         opposites = {
             InteractionBoxHandle.TOP_LEFT: InteractionBoxHandle.BOTTOM_RIGHT,
             InteractionBoxHandle.TOP_CENTER: InteractionBoxHandle.BOTTOM_CENTER,
@@ -104,12 +107,19 @@ class InteractionBoxHandle(IntEnum):
         }
 
         opposites.update({v: k for k, v in opposites.items()})
-        if (opposite := opposites.get(handle, None)) is None:
+        if (opposite := opposites.get(handle)) is None:
             raise ValueError(f'{handle} has no opposite handle.')
         return opposite
 
     @classmethod
-    def corners(cls):
+    def corners(
+        cls,
+    ) -> Tuple[
+        'InteractionBoxHandle',
+        'InteractionBoxHandle',
+        'InteractionBoxHandle',
+        'InteractionBoxHandle',
+    ]:
         return (
             cls.TOP_LEFT,
             cls.TOP_RIGHT,

@@ -1,10 +1,14 @@
 import pytest
 
-from napari.utils.migrations import add_deprecated_property, rename_argument
+from napari.utils.migrations import (
+    add_deprecated_property,
+    deprecated_class_name,
+    rename_argument,
+)
 
 
 def test_simple():
-    @rename_argument("a", "b", "1", "0.5")
+    @rename_argument('a', 'b', '1', '0.5')
     def sample_fun(b):
         return b
 
@@ -18,7 +22,7 @@ def test_simple():
 
 def test_constructor():
     class Sample:
-        @rename_argument("a", "b", "1", "0.5")
+        @rename_argument('a', 'b', '1', '0.5')
         def __init__(self, b) -> None:
             self.b = b
 
@@ -44,14 +48,14 @@ def test_deprecated_property() -> None:
     instance = Dummy()
 
     add_deprecated_property(
-        Dummy, "old_property", "new_property", "0.1.0", "0.0.0"
+        Dummy, 'old_property', 'new_property', '0.1.0', '0.0.0'
     )
 
     assert instance.new_property == 0
 
     instance.new_property = 1
 
-    msg = "Dummy.old_property is deprecated since 0.0.0 and will be removed in 0.1.0. Please use new_property"
+    msg = 'Dummy.old_property is deprecated since 0.0.0 and will be removed in 0.1.0. Please use new_property'
 
     with pytest.warns(FutureWarning, match=msg):
         assert instance.old_property == 1
@@ -60,3 +64,22 @@ def test_deprecated_property() -> None:
         instance.old_property = 2
 
     assert instance.new_property == 2
+
+
+def test_deprecated_class_name():
+    """Test the deprecated class name function."""
+
+    class macOS:
+        pass
+
+    MacOSX = deprecated_class_name(
+        macOS, 'MacOSX', version='10.12', since_version='10.11'
+    )
+
+    with pytest.warns(FutureWarning, match='deprecated.*macOS'):
+        _os = MacOSX()
+
+    with pytest.warns(FutureWarning, match='deprecated.*macOS'):
+
+        class MacOSXServer(MacOSX):
+            pass

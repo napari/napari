@@ -4,7 +4,11 @@ import numpy as np
 import pytest
 from npe2 import DynamicPlugin
 
-from napari._tests.utils import good_layer_data, layer_test_data
+from napari._tests.utils import (
+    count_warning_events,
+    good_layer_data,
+    layer_test_data,
+)
 from napari.components import ViewerModel
 from napari.errors import MultipleReaderError, ReaderPluginError
 from napari.errors.reader_errors import NoAvailableReaderError
@@ -57,11 +61,11 @@ def test_add_image_colormap_variants():
     assert viewer.add_image(data, colormap='fire')
 
     # as tuple
-    cmap_tuple = ("my_colormap", Colormap(['g', 'm', 'y']))
+    cmap_tuple = ('my_colormap', Colormap(['g', 'm', 'y']))
     assert viewer.add_image(data, colormap=cmap_tuple)
 
     # as dict
-    cmap_dict = {"your_colormap": Colormap(['g', 'r', 'y'])}
+    cmap_dict = {'your_colormap': Colormap(['g', 'r', 'y'])}
     assert viewer.add_image(data, colormap=cmap_dict)
 
     # as Colormap instance
@@ -745,7 +749,7 @@ def test_add_remove_layer_no_callbacks(Layer, data, ndim):
     # Check that no internal callbacks have been registered
     assert len(layer.events.callbacks) == 0
     for em in layer.events.emitters.values():
-        assert len(em.callbacks) == 0
+        assert len(em.callbacks) == count_warning_events(em.callbacks)
 
     viewer.layers.append(layer)
     # Check layer added correctly
@@ -761,7 +765,7 @@ def test_add_remove_layer_no_callbacks(Layer, data, ndim):
     # Check that all callbacks have been removed
     assert len(layer.events.callbacks) == 0
     for em in layer.events.emitters.values():
-        assert len(em.callbacks) == 0
+        assert len(em.callbacks) == count_warning_events(em.callbacks)
 
 
 @pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
@@ -783,14 +787,17 @@ def test_add_remove_layer_external_callbacks(Layer, data, ndim):
     assert len(layer.events.callbacks) == 1
     for em in layer.events.emitters.values():
         if not isinstance(em, WarningEmitter):
-            assert len(em.callbacks) == 1
+            assert len(em.callbacks) == count_warning_events(em.callbacks) + 1
 
     viewer.layers.append(layer)
     # Check layer added correctly
     assert len(viewer.layers) == 1
 
     # check that adding a layer created new callbacks
-    assert any(len(em.callbacks) > 0 for em in layer.events.emitters.values())
+    assert any(
+        len(em.callbacks) > count_warning_events(em.callbacks)
+        for em in layer.events.emitters.values()
+    )
 
     viewer.layers.remove(layer)
     # Check layer added correctly
@@ -800,7 +807,7 @@ def test_add_remove_layer_external_callbacks(Layer, data, ndim):
     assert len(layer.events.callbacks) == 1
     for em in layer.events.emitters.values():
         if not isinstance(em, WarningEmitter):
-            assert len(em.callbacks) == 1
+            assert len(em.callbacks) == count_warning_events(em.callbacks) + 1
 
 
 @pytest.mark.parametrize(
@@ -845,12 +852,10 @@ def test_open_or_get_error_multiple_readers(tmp_plugin: DynamicPlugin):
     tmp2 = tmp_plugin.spawn(register=True)
 
     @tmp_plugin.contribute.reader(filename_patterns=['*.fake'])
-    def _(path):
-        ...
+    def _(path): ...
 
     @tmp2.contribute.reader(filename_patterns=['*.fake'])
-    def _(path):
-        ...
+    def _(path): ...
 
     with pytest.raises(
         MultipleReaderError, match='Multiple plugins found capable'
@@ -893,8 +898,7 @@ def test_open_or_get_error_prefered_plugin(
     np.save(pth, np.random.random((10, 10)))
 
     @tmp_plugin.contribute.reader(filename_patterns=['*.npy'])
-    def _(path):
-        ...
+    def _(path): ...
 
     get_settings().plugins.extension2reader = {'*.npy': builtins.name}
 
@@ -925,12 +929,10 @@ def test_open_or_get_error_no_prefered_plugin_many_available(
     tmp2 = tmp_plugin.spawn(register=True)
 
     @tmp_plugin.contribute.reader(filename_patterns=['*.fake'])
-    def _(path):
-        ...
+    def _(path): ...
 
     @tmp2.contribute.reader(filename_patterns=['*.fake'])
-    def _(path):
-        ...
+    def _(path): ...
 
     get_settings().plugins.extension2reader = {'*.fake': 'not-a-plugin'}
 

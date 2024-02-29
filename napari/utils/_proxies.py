@@ -2,14 +2,14 @@ import os
 import re
 import sys
 import warnings
-from typing import Any, Callable, Generic, TypeVar, Union
+from typing import Any, Callable, Generic, List, Tuple, TypeVar, Union
 
 import wrapt
 
 from napari.utils import misc
 from napari.utils.translations import trans
 
-_T = TypeVar("_T")
+_T = TypeVar('_T')
 
 
 class ReadOnlyWrapper(wrapt.ObjectProxy):
@@ -17,11 +17,11 @@ class ReadOnlyWrapper(wrapt.ObjectProxy):
     Disable item and attribute setting with the exception of  ``__wrapped__``.
     """
 
-    def __init__(self, wrapped, exceptions=()):
+    def __init__(self, wrapped: Any, exceptions: Tuple[str, ...] = ()):
         super().__init__(wrapped)
         self._self_exceptions = exceptions
 
-    def __setattr__(self, name, val):
+    def __setattr__(self, name: str, val: Any) -> None:
         if (
             name not in ('__wrapped__', '_self_exceptions')
             and name not in self._self_exceptions
@@ -36,7 +36,7 @@ class ReadOnlyWrapper(wrapt.ObjectProxy):
 
         super().__setattr__(name, val)
 
-    def __setitem__(self, name, val):
+    def __setitem__(self, name: str, val: Any) -> None:
         if name not in self._self_exceptions:
             raise TypeError(
                 trans._('cannot set item {name}', deferred=True, name=name)
@@ -54,12 +54,12 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
 
     @staticmethod
     def _is_private_attr(name: str) -> bool:
-        return name.startswith("_") and not (
+        return name.startswith('_') and not (
             name.startswith('__') and name.endswith('__')
         )
 
     @staticmethod
-    def _private_attr_warning(name: str, typ: str):
+    def _private_attr_warning(name: str, typ: str) -> None:
         warnings.warn(
             trans._(
                 "Private attribute access ('{typ}.{name}') in this context (e.g. inside a plugin widget or dock widget) is deprecated and will be unavailable in version 0.5.0",
@@ -82,16 +82,16 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
         # )
 
     @staticmethod
-    def _is_called_from_napari():
+    def _is_called_from_napari() -> bool:
         """
         Check if the getter or setter is called from inner napari.
         """
-        if hasattr(sys, "_getframe"):
+        if hasattr(sys, '_getframe'):
             frame = sys._getframe(2)
             return frame.f_code.co_filename.startswith(misc.ROOT_DIR)
         return False
 
-    def __getattr__(self, name: str):
+    def __getattr__(self, name: str) -> Any:
         if self._is_private_attr(name):
             # allow napari to access private attributes and get an non-proxy
             if self._is_called_from_napari():
@@ -107,13 +107,13 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
 
         return data
 
-    def __setattr__(self, name: str, value: Any):
+    def __setattr__(self, name: str, value: Any) -> None:
         if (
-            os.environ.get("NAPARI_ENSURE_PLUGIN_MAIN_THREAD", "0")
-            not in ("0", "False")
+            os.environ.get('NAPARI_ENSURE_PLUGIN_MAIN_THREAD', '0')
+            not in ('0', 'False')
         ) and not in_main_thread():
             raise RuntimeError(
-                "Setting attributes on a napari object is only allowed from the main Qt thread."
+                'Setting attributes on a napari object is only allowed from the main Qt thread.'
             )
 
         if self._is_private_attr(name):
@@ -144,13 +144,13 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
         setattr(self.__wrapped__, name, value)
         return None
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: Any) -> Any:
         return self.create(super().__getitem__(key))
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return repr(self.__wrapped__)
 
-    def __dir__(self):
+    def __dir__(self) -> List[str]:
         return [x for x in dir(self.__wrapped__) if not _SUNDER.match(x)]
 
     @classmethod
@@ -175,16 +175,16 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
 
 
 class CallablePublicOnlyProxy(PublicOnlyProxy[Callable]):
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args, **kwargs):  # type: ignore [no-untyped-def]
         # if a PublicOnlyProxy is callable, then when we call it we:
         # - unwrap the arguments, to avoid performance issues detailed in
         #   PublicOnlyProxy.__setattr__,
         # - call the unwrapped callable on the unwrapped arguments
         # - wrap the result in a PublicOnlyProxy
-        args = [
+        args = tuple(
             arg.__wrapped__ if isinstance(arg, PublicOnlyProxy) else arg
             for arg in args
-        ]
+        )
         kwargs = {
             k: v.__wrapped__ if isinstance(v, PublicOnlyProxy) else v
             for k, v in kwargs.items()
@@ -230,7 +230,7 @@ def _in_main_thread() -> bool:
         return in_main_thread_py()
     except AttributeError:
         warnings.warn(
-            "Qt libs are available but no QtApplication instance is created"
+            'Qt libs are available but no QtApplication instance is created'
         )
         return in_main_thread_py()
     return res

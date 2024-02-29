@@ -1,6 +1,7 @@
 """
 napari command line viewer.
 """
+
 import argparse
 import contextlib
 import logging
@@ -26,8 +27,8 @@ class InfoAction(argparse.Action):
 
         logging.basicConfig(level=logging.WARNING)
         print(sys_info())
-        print("Plugins:")
-        cli.list(fields="", sort="0", format="compact")
+        print('Plugins:')
+        cli.list(fields='', sort='0', format='compact')
         sys.exit()
 
 
@@ -38,9 +39,9 @@ class PluginInfoAction(argparse.Action):
         from npe2 import cli
 
         cli.list(
-            fields="name,version,npe2,contributions",
-            sort="name",
-            format="table",
+            fields='name,version,npe2,contributions',
+            sort='name',
+            format='table',
         )
         sys.exit()
 
@@ -78,20 +79,20 @@ def validate_unknown_args(unknown: List[str]) -> Dict[str, Any]:
     out: Dict[str, Any] = {}
     valid = set.union(*valid_add_kwargs().values())
     for i, raw_arg in enumerate(unknown):
-        if not raw_arg.startswith("--"):
+        if not raw_arg.startswith('--'):
             continue
         arg = raw_arg.lstrip('-')
 
-        key, *values = arg.split("=", maxsplit=1)
+        key, *values = arg.split('=', maxsplit=1)
         key = key.replace('-', '_')
         if key not in valid:
-            sys.exit(f"error: unrecognized argument: {raw_arg}")
+            sys.exit(f'error: unrecognized argument: {raw_arg}')
 
         if values:
             value = values[0]
         else:
-            if len(unknown) <= i + 1 or unknown[i + 1].startswith("--"):
-                sys.exit(f"error: argument {raw_arg} expected one argument")
+            if len(unknown) <= i + 1 or unknown[i + 1].startswith('--'):
+                sys.exit(f'error: argument {raw_arg} expected one argument')
             value = unknown[i + 1]
         with contextlib.suppress(Exception):
             value = literal_eval(value)
@@ -108,16 +109,16 @@ def parse_sys_argv():
 
     kwarg_options = []
     for layer_type, keys in valid_add_kwargs().items():
-        kwarg_options.append(f"  {layer_type.title()}:")
+        kwarg_options.append(f'  {layer_type.title()}:')
         keys = {k.replace('_', '-') for k in keys}
-        lines = wrap(", ".join(sorted(keys)), break_on_hyphens=False)
-        kwarg_options.extend([f"    {line}" for line in lines])
+        lines = wrap(', '.join(sorted(keys)), break_on_hyphens=False)
+        kwarg_options.extend([f'    {line}' for line in lines])
 
     parser = argparse.ArgumentParser(
         usage=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="optional layer-type-specific arguments (precede with '--'):\n"
-        + "\n".join(kwarg_options),
+        + '\n'.join(kwarg_options),
     )
     parser.add_argument('paths', nargs='*', help='path(s) to view.')
     parser.add_argument(
@@ -125,7 +126,7 @@ def parse_sys_argv():
         '--verbose',
         action='count',
         default=0,
-        help="increase output verbosity",
+        help='increase output verbosity',
     )
     parser.add_argument(
         '-w',
@@ -136,10 +137,10 @@ def parse_sys_argv():
         default=[],
         metavar=('PLUGIN_NAME', 'WIDGET_NAME'),
         help=(
-            "open napari with dock widget from specified plugin name."
-            "(If plugin provides multiple dock widgets, widget name must also "
-            "be provided). Use __all__ to open all dock widgets of a "
-            "specified plugin. Multiple widgets are opened in tabs."
+            'open napari with dock widget from specified plugin name.'
+            '(If plugin provides multiple dock widgets, widget name must also '
+            'be provided). Use __all__ to open all dock widgets of a '
+            'specified plugin. Multiple widgets are opened in tabs.'
         ),
     )
     parser.add_argument(
@@ -180,7 +181,7 @@ def parse_sys_argv():
     )
     parser.add_argument(
         '--layer-type',
-        metavar="TYPE",
+        metavar='TYPE',
         choices=set(layers.NAMES),
         help=(
             'force file to be interpreted as a specific layer type. '
@@ -202,7 +203,7 @@ def parse_sys_argv():
     # this is a hack to allow using "=" as a key=value separator while also
     # allowing nargs='*' on the "paths" argument...
     for idx, item in enumerate(reversed(args.paths)):
-        if item.startswith("--"):
+        if item.startswith('--'):
             unknown.append(args.paths.pop(len(args.paths) - idx - 1))
     kwargs = validate_unknown_args(unknown) if unknown else {}
 
@@ -221,7 +222,7 @@ def _run() -> None:
     level = levels[min(2, args.verbose)]  # prevent index error
     logging.basicConfig(
         level=level,
-        format="%(asctime)s : %(levelname)s : %(threadName)s : %(message)s",
+        format='%(asctime)s : %(levelname)s : %(threadName)s : %(message)s',
         datefmt='%H:%M:%S',
     )
 
@@ -232,7 +233,7 @@ def _run() -> None:
             settings = get_settings()
         settings.reset()
         settings.save()
-        sys.exit("Resetting settings to default values.\n")
+        sys.exit('Resetting settings to default values.\n')
 
     if args.plugin:
         # make sure plugin is only used when files are specified
@@ -443,17 +444,17 @@ def _maybe_rerun_with_macos_fixes():
     # This import mus be here to raise exception about PySide6 problem
 
     if (
-        sys.platform != "darwin"
-        or "pdb" in sys.modules
-        or "pydevd" in sys.modules
+        sys.platform != 'darwin'
+        or 'pdb' in sys.modules
+        or 'pydevd' in sys.modules
     ):
         return
 
-    if "_NAPARI_RERUN_WITH_FIXES" in os.environ:
+    if '_NAPARI_RERUN_WITH_FIXES' in os.environ:
         # This function already ran, do not recurse!
         # We also restore sys.executable to its initial value,
         # if we used a symlink
-        if exe := os.environ.pop("_NAPARI_SYMLINKED_EXECUTABLE", ""):
+        if exe := os.environ.pop('_NAPARI_SYMLINKED_EXECUTABLE', ''):
             sys.executable = exe
         return
 
@@ -467,8 +468,8 @@ def _maybe_rerun_with_macos_fixes():
 
     _MACOS_AT_LEAST_CATALINA = int(platform.release().split('.')[0]) >= 19
     _MACOS_AT_LEAST_BIG_SUR = int(platform.release().split('.')[0]) >= 20
-    _RUNNING_CONDA = "CONDA_PREFIX" in os.environ
-    _RUNNING_PYTHONW = "PYTHONEXECUTABLE" in os.environ
+    _RUNNING_CONDA = 'CONDA_PREFIX' in os.environ
+    _RUNNING_PYTHONW = 'PYTHONEXECUTABLE' in os.environ
 
     # 1) quick fix for Big Sur py3.9 and qt 5
     # https://github.com/napari/napari/pull/1894
@@ -514,35 +515,35 @@ def _maybe_rerun_with_macos_fixes():
         # When napari is launched from the conda bundle shortcut
         # it already has the right 'napari' name in the app title
         # and __CFBundleIdentifier is set to 'com.napari._(<version>)'
-        "napari" not in os.environ.get("__CFBUNDLEIDENTIFIER", "")
+        'napari' not in os.environ.get('__CFBUNDLEIDENTIFIER', '')
         # with a sys.executable named napari,
         # macOS should have picked the right name already
-        or os.path.basename(executable) != "napari"
+        or os.path.basename(executable) != 'napari'
     )
     if _NEEDS_SYMLINK:
-        tempdir = mkdtemp(prefix="symlink-to-fix-macos-menu-name-")
+        tempdir = mkdtemp(prefix='symlink-to-fix-macos-menu-name-')
         # By using a symlink with basename napari
         # we make macOS take 'napari' as the program name
-        napari_link = os.path.join(tempdir, "napari")
+        napari_link = os.path.join(tempdir, 'napari')
         os.symlink(executable, napari_link)
         # Pass original executable to the subprocess so it can restore it later
-        env["_NAPARI_SYMLINKED_EXECUTABLE"] = executable
+        env['_NAPARI_SYMLINKED_EXECUTABLE'] = executable
         executable = napari_link
 
     # if at this point 'executable' is different from 'sys.executable', we
     # need to launch the subprocess to apply the fixes
     if sys.executable != executable:
-        env["_NAPARI_RERUN_WITH_FIXES"] = "1"
-        if Path(sys.argv[0]).name == "napari":
+        env['_NAPARI_RERUN_WITH_FIXES'] = '1'
+        if Path(sys.argv[0]).name == 'napari':
             # launched through entry point, we do that again to avoid
             # issues with working directory getting into sys.path (#5007)
             cmd = [executable, sys.argv[0]]
         else:  # we assume it must have been launched via '-m' syntax
-            cmd = [executable, "-m", "napari"]
+            cmd = [executable, '-m', 'napari']
 
         # this fixes issues running from a venv/virtualenv based virtual
         # environment with certain python distributions (e.g. pyenv, asdf)
-        env["PYTHONEXECUTABLE"] = sys.executable
+        env['PYTHONEXECUTABLE'] = sys.executable
 
         # Append original command line arguments.
         if len(sys.argv) > 1:
@@ -565,7 +566,7 @@ def main():
     # Prevent https://github.com/napari/napari/issues/3415
     # This one fix is needed _after_ a potential relaunch,
     # that's why it's here and not in _maybe_rerun_with_macos_fixes()
-    if sys.platform == "darwin":
+    if sys.platform == 'darwin':
         import multiprocessing
 
         multiprocessing.set_start_method('fork')

@@ -7,11 +7,9 @@ if TYPE_CHECKING:
     from typing import Callable, Protocol
 
     class Emitter(Protocol):
-        def connect(self, callback: Callable):
-            ...
+        def connect(self, callback: Callable): ...
 
-        def disconnect(self, callback: Callable):
-            ...
+        def disconnect(self, callback: Callable): ...
 
 
 def disconnect_events(emitter, listener):

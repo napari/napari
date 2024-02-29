@@ -7,6 +7,7 @@ from napari.layers.utils.layer_utils import (
     register_layer_action,
     register_layer_attr_action,
 )
+from napari.utils.notifications import show_info
 from napari.utils.translations import trans
 
 MIN_BRUSH_SIZE = 1
@@ -30,17 +31,17 @@ def activate_labels_pan_zoom_mode(layer: Labels):
     layer.mode = Mode.PAN_ZOOM
 
 
-@register_label_mode_action(trans._("Activate the paint brush"))
+@register_label_mode_action(trans._('Activate the paint brush'))
 def activate_labels_paint_mode(layer: Labels):
     layer.mode = Mode.PAINT
 
 
-@register_label_mode_action(trans._("Activate the polygon tool"))
+@register_label_mode_action(trans._('Activate the polygon tool'))
 def activate_labels_polygon_mode(layer: Labels):
     layer.mode = Mode.POLYGON
 
 
-@register_label_mode_action(trans._("Activate the fill bucket"))
+@register_label_mode_action(trans._('Activate the fill bucket'))
 def activate_labels_fill_mode(layer: Labels):
     layer.mode = Mode.FILL
 
@@ -51,7 +52,7 @@ def activate_labels_picker_mode(layer: Labels):
     layer.mode = Mode.PICK
 
 
-@register_label_mode_action(trans._("Activate the label eraser"))
+@register_label_mode_action(trans._('Activate the label eraser'))
 def activate_labels_erase_mode(layer: Labels):
     layer.mode = Mode.ERASE
 
@@ -69,16 +70,32 @@ labels_fun_to_mode = [
 
 @register_label_action(
     trans._(
-        "Set the currently selected label to the largest used label plus one."
+        'Set the currently selected label to the largest used label plus one.'
     ),
 )
 def new_label(layer: Labels):
     """Set the currently selected label to the largest used label plus one."""
-    layer.selected_label = np.max(layer.data) + 1
+    if isinstance(layer.data, np.ndarray):
+        new_selected_label = np.max(layer.data) + 1
+        if layer.selected_label == new_selected_label:
+            show_info(
+                trans._(
+                    'Current selected label is not being used. You will need to use it first '
+                    'to be able to set the current select label to the next one available',
+                )
+            )
+        else:
+            layer.selected_label = new_selected_label
+    else:
+        show_info(
+            trans._(
+                'Calculating empty label on non-numpy array is not supported'
+            )
+        )
 
 
 @register_label_action(
-    trans._("Swap between the selected label and the background label."),
+    trans._('Swap between the selected label and the background label.'),
 )
 def swap_selected_and_background_labels(layer: Labels):
     """Swap between the selected label and the background label."""
@@ -86,21 +103,21 @@ def swap_selected_and_background_labels(layer: Labels):
 
 
 @register_label_action(
-    trans._("Decrease the currently selected label by one."),
+    trans._('Decrease the currently selected label by one.'),
 )
 def decrease_label_id(layer: Labels):
     layer.selected_label -= 1
 
 
 @register_label_action(
-    trans._("Increase the currently selected label by one."),
+    trans._('Increase the currently selected label by one.'),
 )
 def increase_label_id(layer: Labels):
     layer.selected_label += 1
 
 
 @register_label_action(
-    trans._("Decrease the paint brush size by one."),
+    trans._('Decrease the paint brush size by one.'),
     repeatable=True,
 )
 def decrease_brush_size(layer: Labels):
@@ -113,7 +130,7 @@ def decrease_brush_size(layer: Labels):
 
 
 @register_label_action(
-    trans._("Increase the paint brush size by one."),
+    trans._('Increase the paint brush size by one.'),
     repeatable=True,
 )
 def increase_brush_size(layer: Labels):
@@ -122,7 +139,7 @@ def increase_brush_size(layer: Labels):
 
 
 @register_layer_attr_action(
-    Labels, trans._("Toggle preserve labels"), "preserve_labels"
+    Labels, trans._('Toggle preserve labels'), 'preserve_labels'
 )
 def toggle_preserve_labels(layer: Labels):
     layer.preserve_labels = not layer.preserve_labels
@@ -141,19 +158,19 @@ def redo(layer: Labels):
 
 
 @register_label_action(
-    trans._("Reset the current polygon"),
+    trans._('Reset the current polygon'),
 )
 def reset_polygon(layer: Labels):
     """Reset the drawing of the current polygon."""
-    layer._overlays["polygon"].points = []
+    layer._overlays['polygon'].points = []
 
 
 @register_label_action(
-    trans._("Complete the current polygon"),
+    trans._('Complete the current polygon'),
 )
 def complete_polygon(layer: Labels):
     """Complete the drawing of the current polygon."""
     # Because layer._overlays has type Overlay, mypy doesn't know that
     # ._overlays["polygon"] has type LabelsPolygonOverlay, so type ignore for now
     # TODO: Improve typing of layer._overlays to fix this
-    layer._overlays["polygon"].add_polygon_to_labels(layer)
+    layer._overlays['polygon'].add_polygon_to_labels(layer)

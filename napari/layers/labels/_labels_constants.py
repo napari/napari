@@ -63,10 +63,11 @@ class LabelColorMode(StringEnum):
 
 BACKSPACE = 'delete' if sys.platform == 'darwin' else 'backspace'
 
+
 LABEL_COLOR_MODE_TRANSLATIONS = OrderedDict(
     [
-        (LabelColorMode.AUTO, trans._("auto")),
-        (LabelColorMode.DIRECT, trans._("direct")),
+        (LabelColorMode.AUTO, trans._('auto')),
+        (LabelColorMode.DIRECT, trans._('direct')),
     ]
 )
 

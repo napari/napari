@@ -31,6 +31,7 @@ from typing import (
 )
 
 import numpy as np
+import numpy.typing as npt
 
 from napari.utils.translations import trans
 
@@ -41,7 +42,7 @@ if TYPE_CHECKING:
 ROOT_DIR = os_path.dirname(os_path.dirname(__file__))
 
 
-def parse_version(v) -> 'packaging.version._BaseVersion':
+def parse_version(v: str) -> 'packaging.version._BaseVersion':
     """Parse a version string and return a packaging.version.Version obj."""
     import packaging.version
 
@@ -51,7 +52,7 @@ def parse_version(v) -> 'packaging.version._BaseVersion':
         return packaging.version.LegacyVersion(v)  # type: ignore[attr-defined]
 
 
-def running_as_bundled_app(*, check_conda=True) -> bool:
+def running_as_bundled_app(*, check_conda: bool = True) -> bool:
     """Infer whether we are running as a bundle."""
     # https://github.com/beeware/briefcase/issues/412
     # https://github.com/beeware/briefcase/pull/425
@@ -59,15 +60,15 @@ def running_as_bundled_app(*, check_conda=True) -> bool:
     # From 0.4.12 we add a sentinel file next to the bundled sys.executable
     warnings.warn(
         trans._(
-            "Briefcase installations are no longer supported as of v0.4.18. "
-            "running_as_bundled_app() will be removed in a 0.6.0 release.",
+            'Briefcase installations are no longer supported as of v0.4.18. '
+            'running_as_bundled_app() will be removed in a 0.6.0 release.',
         ),
         DeprecationWarning,
         stacklevel=2,
     )
     if (
         check_conda
-        and (Path(sys.executable).parent / ".napari_is_bundled").exists()
+        and (Path(sys.executable).parent / '.napari_is_bundled').exists()
     ):
         return True
 
@@ -91,7 +92,7 @@ def running_as_bundled_app(*, check_conda=True) -> bool:
 def running_as_constructor_app() -> bool:
     """Infer whether we are running as a constructor bundle."""
     return (
-        Path(sys.prefix).parent.parent / ".napari_is_bundled_constructor"
+        Path(sys.prefix).parent.parent / '.napari_is_bundled_constructor'
     ).exists()
 
 
@@ -124,14 +125,17 @@ def in_python_repl() -> bool:
     return False
 
 
-def str_to_rgb(arg):
+def str_to_rgb(arg: str) -> List[int]:
     """Convert an rgb string 'rgb(x,y,z)' to a list of ints [x,y,z]."""
-    return list(
-        map(int, re.match(r'rgb\((\d+),\s*(\d+),\s*(\d+)\)', arg).groups())
-    )
+    match = re.match(r'rgb\((\d+),\s*(\d+),\s*(\d+)\)', arg)
+    if match is None:
+        raise ValueError("arg not in format 'rgb(x,y,z)'")
+    return list(map(int, match.groups()))
 
 
-def ensure_iterable(arg, color=False):
+def ensure_iterable(
+    arg: Union[None, str, Enum, float, List, npt.NDArray], color: bool = False
+):
     """Ensure an argument is an iterable. Useful when an input argument
     can either be a single value or a list. If a color is passed then it
     will be treated specially to determine if it is iterable.
@@ -142,7 +146,11 @@ def ensure_iterable(arg, color=False):
     return itertools.repeat(arg)
 
 
-def is_iterable(arg, color=False, allow_none=False):
+def is_iterable(
+    arg: Union[None, str, Enum, float, List, npt.NDArray],
+    color: bool = False,
+    allow_none: bool = False,
+) -> bool:
     """Determine if a single argument is an iterable. If a color is being
     provided and the argument is a 1-D array of length 3 or 4 then the input
     is taken to not be iterable. If allow_none is True, `None` is considered iterable.
@@ -159,7 +167,7 @@ def is_iterable(arg, color=False, allow_none=False):
     return True
 
 
-def is_sequence(arg):
+def is_sequence(arg: Any) -> bool:
     """Check if ``arg`` is a sequence like a list or tuple.
 
     return True:
@@ -177,7 +185,7 @@ def is_sequence(arg):
 
 
 def ensure_sequence_of_iterables(
-    obj,
+    obj: Any,
     length: Optional[int] = None,
     repeat_empty: bool = False,
     allow_none: bool = False,
@@ -237,7 +245,7 @@ def ensure_sequence_of_iterables(
             # sequence of iterables of wrong length
             raise ValueError(
                 trans._(
-                    "length of {obj} must equal {length}",
+                    'length of {obj} must equal {length}',
                     deferred=True,
                     obj=obj,
                     length=length,
@@ -313,7 +321,7 @@ class StringEnumMeta(EnumMeta):
 
 class StringEnum(Enum, metaclass=StringEnumMeta):
     @staticmethod
-    def _generate_next_value_(name, start, count, last_values):
+    def _generate_next_value_(name: str, start, count, last_values) -> str:
         """autonaming function assigns each value its own name as a value"""
         return name.lower()
 
@@ -323,30 +331,30 @@ class StringEnum(Enum, metaclass=StringEnumMeta):
         """
         return self.value
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         if type(self) is type(other):
             return self is other
         if isinstance(other, str):
             return str(self) == other
         return False
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(str(self))
 
 
 camel_to_snake_pattern = re.compile(r'(.)([A-Z][a-z]+)')
 camel_to_spaces_pattern = re.compile(
-    r"((?<=[a-z])[A-Z]|(?<!\A)[A-R,T-Z](?=[a-z]))"
+    r'((?<=[a-z])[A-Z]|(?<!\A)[A-R,T-Z](?=[a-z]))'
 )
 
 
-def camel_to_snake(name):
+def camel_to_snake(name: str) -> str:
     # https://gist.github.com/jaytaylor/3660565
     return camel_to_snake_pattern.sub(r'\1_\2', name).lower()
 
 
-def camel_to_spaces(val):
-    return camel_to_spaces_pattern.sub(r" \1", val)
+def camel_to_spaces(val: str) -> str:
+    return camel_to_spaces_pattern.sub(r' \1', val)
 
 
 T = TypeVar('T', str, Path)
@@ -375,7 +383,7 @@ def abspath_or_url(relpath: T, *, must_exist: bool = False) -> T:
 
     if not isinstance(relpath, (str, Path)):
         raise TypeError(
-            trans._("Argument must be a string or Path", deferred=True)
+            trans._('Argument must be a string or Path', deferred=True)
         )
     OriginType = type(relpath)
 
@@ -388,7 +396,7 @@ def abspath_or_url(relpath: T, *, must_exist: bool = False) -> T:
     if must_exist and not (urlp.scheme or urlp.netloc or os.path.exists(path)):
         raise ValueError(
             trans._(
-                "Requested path {path!r} does not exist.",
+                'Requested path {path!r} does not exist.',
                 deferred=True,
                 path=path,
             )
@@ -397,21 +405,21 @@ def abspath_or_url(relpath: T, *, must_exist: bool = False) -> T:
 
 
 class CallDefault(inspect.Parameter):
-    def __str__(self):
+    def __str__(self) -> str:
         """wrap defaults"""
         kind = self.kind
-        formatted = self._name
+        formatted = self.name
 
         # Fill in defaults
         if (
-            self._default is not inspect._empty
-            or kind == inspect._KEYWORD_ONLY
+            self.default is not inspect._empty
+            or kind == inspect.Parameter.KEYWORD_ONLY
         ):
             formatted = f'{formatted}={formatted}'
 
-        if kind == inspect._VAR_POSITIONAL:
+        if kind == inspect.Parameter.VAR_POSITIONAL:
             formatted = '*' + formatted
-        elif kind == inspect._VAR_KEYWORD:
+        elif kind == inspect.Parameter.VAR_KEYWORD:
             formatted = '**' + formatted
 
         return formatted
@@ -435,7 +443,7 @@ def all_subclasses(cls: Type) -> set:
     )
 
 
-def ensure_n_tuple(val, n, fill=0):
+def ensure_n_tuple(val: Iterable, n: int, fill: int = 0) -> Tuple:
     """Ensure input is a length n tuple.
 
     Parameters
@@ -455,7 +463,7 @@ def ensure_n_tuple(val, n, fill=0):
     return (fill,) * (n - len(tuple_value)) + tuple_value[-n:]
 
 
-def ensure_layer_data_tuple(val):
+def ensure_layer_data_tuple(val: Tuple) -> Tuple:
     msg = trans._(
         'Not a valid layer data tuple: {value!r}',
         deferred=True,
@@ -471,7 +479,7 @@ def ensure_layer_data_tuple(val):
     return val
 
 
-def ensure_list_of_layer_data_tuple(val) -> List[tuple]:
+def ensure_list_of_layer_data_tuple(val: List[Tuple]) -> List[tuple]:
     # allow empty list to be returned but do nothing in that case
     if isinstance(val, list):
         with contextlib.suppress(TypeError):
@@ -481,10 +489,14 @@ def ensure_list_of_layer_data_tuple(val) -> List[tuple]:
     )
 
 
-def _quiet_array_equal(*a, **k):
+def _quiet_array_equal(*a, **k) -> bool:
     with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", "elementwise comparison")
+        warnings.filterwarnings('ignore', 'elementwise comparison')
         return np.array_equal(*a, **k)
+
+
+def _pandas_dataframe_equal(df1, df2):
+    return df1.equals(df2)
 
 
 def _arraylike_short_names(obj) -> Iterator[str]:
@@ -494,7 +506,7 @@ def _arraylike_short_names(obj) -> Iterator[str]:
         yield f'{base.__module__.split(".", maxsplit=1)[0]}.{base.__name__}'
 
 
-def pick_equality_operator(obj) -> Callable[[Any, Any], bool]:
+def pick_equality_operator(obj: Any) -> Callable[[Any, Any], bool]:
     """Return a function that can check equality between ``obj`` and another.
 
     Rather than always using ``==`` (i.e. ``operator.eq``), this function
@@ -525,6 +537,7 @@ def pick_equality_operator(obj) -> Callable[[Any, Any], bool]:
         'dask.Delayed': operator.is_,  # dask.delayed.Delayed
         'zarr.Array': operator.is_,  # zarr.core.Array
         'xarray.DataArray': _quiet_array_equal,  # xarray.core.dataarray.DataArray
+        'pandas.DataFrame': _pandas_dataframe_equal,  # pandas.DataFrame.equals
     }
 
     for name in _arraylike_short_names(obj):
@@ -535,7 +548,7 @@ def pick_equality_operator(obj) -> Callable[[Any, Any], bool]:
     return operator.eq
 
 
-def _is_array_type(array, type_name: str) -> bool:
+def _is_array_type(array: npt.ArrayLike, type_name: str) -> bool:
     """Checks if an array-like instance or class is of the type described by a short name.
 
     This is useful when you want to check the type of array-like quickly without
@@ -556,7 +569,9 @@ def _is_array_type(array, type_name: str) -> bool:
 
 
 def dir_hash(
-    path: Union[str, Path], include_paths=True, ignore_hidden=True
+    path: Union[str, Path],
+    include_paths: bool = True,
+    ignore_hidden: bool = True,
 ) -> str:
     """Compute the hash of a directory, based on structure and contents.
 
@@ -581,7 +596,7 @@ def dir_hash(
     if not Path(path).is_dir():
         raise TypeError(
             trans._(
-                "{path} is not a directory.",
+                '{path} is not a directory.',
                 deferred=True,
                 path=path,
             )
@@ -591,7 +606,7 @@ def dir_hash(
     _hash = hash_func()
     for root, _, files in os.walk(path):
         for fname in sorted(files):
-            if fname.startswith(".") and ignore_hidden:
+            if fname.startswith('.') and ignore_hidden:
                 continue
             _file_hash(_hash, Path(root) / fname, Path(path), include_paths)
     return _hash.hexdigest()
@@ -625,13 +640,15 @@ def paths_hash(
     _hash = hash_func()
     for file_path in sorted(paths):
         file_path = Path(file_path)
-        if ignore_hidden and str(file_path.stem).startswith("."):
+        if ignore_hidden and str(file_path.stem).startswith('.'):
             continue
         _file_hash(_hash, file_path, file_path.parent, include_paths)
     return _hash.hexdigest()
 
 
-def _file_hash(_hash, file: Path, path: Path, include_paths: bool = True):
+def _file_hash(
+    _hash, file: Path, path: Path, include_paths: bool = True
+) -> None:
     """Update hash with based on file contents and optionally relative path.
 
     Parameters
@@ -653,7 +670,9 @@ def _file_hash(_hash, file: Path, path: Path, include_paths: bool = True):
 
 
 def _combine_signatures(
-    *objects: Callable, return_annotation=inspect.Signature.empty, exclude=()
+    *objects: Callable,
+    return_annotation=inspect.Signature.empty,
+    exclude: Iterable[str] = (),
 ) -> inspect.Signature:
     """Create combined Signature from objects, excluding names in `exclude`.
 
@@ -684,7 +703,7 @@ def _combine_signatures(
     return inspect.Signature(new_params, return_annotation=return_annotation)
 
 
-def deep_update(dct: dict, merge_dct: dict, copy=True) -> dict:
+def deep_update(dct: dict, merge_dct: dict, copy: bool = True) -> dict:
     """Merge possibly nested dicts"""
     _dct = dct.copy() if copy else dct
     for k, v in merge_dct.items():
@@ -695,7 +714,7 @@ def deep_update(dct: dict, merge_dct: dict, copy=True) -> dict:
     return _dct
 
 
-def install_certifi_opener():
+def install_certifi_opener() -> None:
     """Install urlopener that uses certifi context.
 
     This is useful in the bundle, where otherwise users might get SSL errors

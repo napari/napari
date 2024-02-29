@@ -123,7 +123,7 @@ def test_qt_highlight_size_preview_widget_defaults(
 def test_qt_highlight_size_preview_widget_description(
     highlight_size_preview_widget,
 ):
-    description = "Some text"
+    description = 'Some text'
     widget = highlight_size_preview_widget(description=description)
     assert widget.description() == description
 
@@ -133,7 +133,7 @@ def test_qt_highlight_size_preview_widget_description(
 
 
 def test_qt_highlight_size_preview_widget_unit(highlight_size_preview_widget):
-    unit = "CM"
+    unit = 'CM'
     widget = highlight_size_preview_widget(unit=unit)
     assert widget.unit() == unit
 
@@ -155,9 +155,9 @@ def test_qt_highlight_size_preview_widget_minimum(
     assert widget.minimum() == 3
     assert widget.value() == 3
     assert widget._slider.minimum() == 3
-    assert widget._slider_min_label.text() == "3"
+    assert widget._slider_min_label.text() == '3'
     assert widget._triangle.minimum() == 3
-    assert widget._lineedit.text() == "3"
+    assert widget._lineedit.text() == '3'
 
 
 def test_qt_highlight_size_preview_widget_minimum_invalid(
@@ -183,7 +183,7 @@ def test_qt_highlight_size_preview_widget_maximum(
     assert widget.maximum() == 20
     assert widget._slider.maximum() == 20
     assert widget._triangle.maximum() == 20
-    assert widget._slider_max_label.text() == "20"
+    assert widget._slider_max_label.text() == '20'
 
     widget.setMaximum(5)
     assert widget.maximum() == 5
@@ -219,12 +219,12 @@ def test_qt_highlight_size_preview_widget_value_invalid(
     widget.setMaximum(50)
     widget.setValue(51)
     assert widget.value() == 50
-    assert widget._lineedit.text() == "50"
+    assert widget._lineedit.text() == '50'
 
     widget.setMinimum(5)
     widget.setValue(1)
     assert widget.value() == 5
-    assert widget._lineedit.text() == "5"
+    assert widget._lineedit.text() == '5'
 
 
 def test_qt_highlight_size_preview_widget_signal(

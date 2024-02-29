@@ -1,7 +1,8 @@
 import warnings
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
+from functools import lru_cache
 from threading import Lock
-from typing import Dict, Iterable, List, Optional, Tuple, Union
+from typing import Dict, Iterable, List, NamedTuple, Optional, Tuple, Union
 
 import numpy as np
 import skimage.color as colorconv
@@ -18,8 +19,9 @@ from napari.utils.colormaps.bop_colors import bopd
 from napari.utils.colormaps.colormap import (
     Colormap,
     ColormapInterpolationMode,
+    CyclicLabelColormap,
     DirectLabelColormap,
-    LabelColormap,
+    minimum_dtype_for_labels,
 )
 from napari.utils.colormaps.inverse_colormaps import inverse_cmaps
 from napari.utils.colormaps.standardize_color import transform_color
@@ -119,6 +121,14 @@ INVERSE_COLORMAPS = {
     name: Colormap(value, name=name, display_name=display_name)
     for name, (display_name, value) in inverse_cmaps.items()
 }
+
+_FLOAT32_MAX = float(np.finfo(np.float32).max)
+_MAX_VISPY_SUPPORTED_VALUE = _FLOAT32_MAX / 8
+# Using 8 as divisor comes from experiments.
+# For some reason if use smaller number,
+# the image is not displayed correctly.
+
+_MINIMUM_SHADES_COUNT = 256
 
 
 def _all_rgb():
@@ -246,6 +256,7 @@ def low_discrepancy_image(image, seed=0.5, margin=1 / 256) -> np.ndarray:
         A set of labels or label image.
     seed : float
         The seed from which to start the quasirandom sequence.
+        Effective range is [0,1.0), as only the decimals are used.
     margin : float
         Values too close to 0 or 1 will get mapped to the edge of the colormap,
         so we need to offset to a margin slightly inside those values. Since
@@ -331,6 +342,7 @@ def _low_discrepancy(dim, n, seed=0.5):
         How many points to generate.
     seed : float or array of float, shape (dim,)
         The seed from which to start the quasirandom sequence.
+        Effective range is [0,1.0), as only the decimals are used.
 
     Returns
     -------
@@ -366,6 +378,7 @@ def _color_random(n, *, colorspace='lab', tolerance=0.0, seed=0.5):
         clipped to be in-range).
     seed : float or array of float, shape (3,)
         Value from which to start the quasirandom sequence.
+        Effective range is [0,1.0), as only the decimals are used.
 
     Returns
     -------
@@ -407,7 +420,7 @@ def _color_random(n, *, colorspace='lab', tolerance=0.0, seed=0.5):
 
 def label_colormap(
     num_colors=256, seed=0.5, background_value=0
-) -> LabelColormap:
+) -> CyclicLabelColormap:
     """Produce a colormap suitable for use with a given label set.
 
     Parameters
@@ -415,18 +428,22 @@ def label_colormap(
     num_colors : int, optional
         Number of unique colors to use. Default used if not given.
         Colors are in addition to a transparent color 0.
-    seed : float or array of float, length 3
+    seed : float, optional
         The seed for the random color generator.
+        Effective range is [0,1.0), as only the decimals are used.
 
     Returns
     -------
-    colormap : napari.utils.LabelColormap
+    colormap : napari.utils.CyclicLabelColormap
         A colormap for use with labels remapped to [0, 1].
 
     Notes
     -----
     0 always maps to fully transparent.
     """
+    if num_colors < 1:
+        raise ValueError('num_colors must be >= 1')
+
     # Starting the control points slightly above 0 and below 1 is necessary
     # to ensure that the background pixel 0 is transparent
     midpoints = np.linspace(0.00001, 1 - 0.00001, num_colors + 1)
@@ -448,7 +465,7 @@ def label_colormap(
     randomized_values = low_discrepancy_image(values_, seed=seed)
 
     indices = np.clip(
-        np.searchsorted(control_points, randomized_values, side="right") - 1,
+        np.searchsorted(control_points, randomized_values, side='right') - 1,
         0,
         len(control_points) - 1,
     )
@@ -462,14 +479,102 @@ def label_colormap(
     rgb8_colors = (colors * uint8_max).astype(np.uint8)
     colors = rgb8_colors.astype(np.float32) / uint8_max
 
-    return LabelColormap(
+    return CyclicLabelColormap(
         name='label_colormap',
         display_name=trans._p('colormap', 'low discrepancy colors'),
         colors=colors,
         controls=np.linspace(0, 1, len(colors) + 1),
         interpolation='zero',
         background_value=background_value,
+        seed=seed,
     )
+
+
+@lru_cache
+def _primes(upto=2**16):
+    """Generate primes up to a given number.
+
+    Parameters
+    ----------
+    upto : int
+        The upper limit of the primes to generate.
+
+    Returns
+    -------
+    primes : np.ndarray
+        The primes up to the upper limit.
+    """
+    primes = np.arange(3, upto + 1, 2)
+    isprime = np.ones((upto - 1) // 2, dtype=bool)
+    max_factor = int(np.sqrt(upto))
+    for factor in primes[: max_factor // 2]:
+        if isprime[(factor - 2) // 2]:
+            isprime[(factor * 3 - 2) // 2 : None : factor] = 0
+    return np.concatenate(([2], primes[isprime]))
+
+
+def shuffle_and_extend_colormap(
+    colormap: CyclicLabelColormap, seed: int, min_random_choices: int = 5
+) -> CyclicLabelColormap:
+    """Shuffle the colormap colors and extend it to more colors.
+
+    The new number of colors will be a prime number that fits into the same
+    dtype as the current number of colors in the colormap.
+
+    Parameters
+    ----------
+    colormap : napari.utils.CyclicLabelColormap
+        Colormap to shuffle and extend.
+    seed : int
+        Seed for the random number generator.
+    min_random_choices : int
+        Minimum number of new table sizes to choose from. When choosing table
+        sizes, every choice gives a 1/size chance of two labels being mapped
+        to the same color. Since we try to stay within the same dtype as the
+        original colormap, if the number of original colors is close to the
+        maximum value for the dtype, there will not be enough prime numbers
+        up to the dtype max to ensure that two labels can always be
+        distinguished after one or few shuffles. In that case, we discard
+        some colors and choose the `min_random_choices` largest primes to fit
+        within the dtype.
+
+    Returns
+    -------
+    colormap : napari.utils.CyclicLabelColormap
+        Shuffled and extended colormap.
+    """
+    rng = np.random.default_rng(seed)
+    n_colors_prev = len(colormap.colors)
+    dtype = minimum_dtype_for_labels(n_colors_prev)
+    indices = np.arange(n_colors_prev)
+    rng.shuffle(indices)
+    shuffled_colors = colormap.colors[indices]
+
+    primes = _primes(
+        np.iinfo(dtype).max if np.issubdtype(dtype, np.integer) else 2**24
+    )
+    valid_primes = primes[primes > n_colors_prev]
+    if len(valid_primes) < min_random_choices:
+        valid_primes = primes[-min_random_choices:]
+    n_colors = rng.choice(valid_primes)
+    n_color_diff = n_colors - n_colors_prev
+
+    extended_colors = np.concatenate(
+        (
+            shuffled_colors[: min(n_color_diff, 0) or None],
+            shuffled_colors[rng.choice(indices, size=max(n_color_diff, 0))],
+        ),
+        axis=0,
+    )
+
+    new_colormap = CyclicLabelColormap(
+        name=colormap.name,
+        colors=extended_colors,
+        controls=np.linspace(0, 1, len(extended_colors) + 1),
+        interpolation='zero',
+        background_value=colormap.background_value,
+    )
+    return new_colormap
 
 
 def direct_colormap(color_dict=None):
@@ -487,10 +592,9 @@ def direct_colormap(color_dict=None):
         to an array.
     """
     # we don't actually use the color array, so pass dummy.
-    d = DirectLabelColormap(np.zeros(3))
-    if color_dict is not None:
-        d.color_dict.update(color_dict)
-    return d
+    return DirectLabelColormap(
+        color_dict=color_dict or defaultdict(lambda: np.zeros(4)),
+    )
 
 
 def vispy_or_mpl_colormap(name) -> Colormap:
@@ -540,7 +644,7 @@ def vispy_or_mpl_colormap(name) -> Colormap:
                     'Colormap "{name}" not found in either vispy or matplotlib. Recognized colormaps are: {colormaps}',
                     deferred=True,
                     name=name,
-                    colormaps=", ".join(sorted(f'"{cm}"' for cm in colormaps)),
+                    colormaps=', '.join(sorted(f'"{cm}"' for cm in colormaps)),
                 )
             ) from e
         mpl_colors = mpl_cmap(np.linspace(0, 1, 256))
@@ -574,6 +678,11 @@ RGB = ['red', 'green', 'blue']
 CYMRGB = ['cyan', 'yellow', 'magenta', 'red', 'green', 'blue']
 
 
+AVAILABLE_LABELS_COLORMAPS = {
+    'lodisc-50': label_colormap(50),
+}
+
+
 def _increment_unnamed_colormap(
     existing: Iterable[str], name: str = '[unnamed colormap]'
 ) -> Tuple[str, str]:
@@ -601,7 +710,7 @@ def _increment_unnamed_colormap(
         past_names = [n for n in existing if n.startswith('[unnamed colormap')]
         name = f'[unnamed colormap {len(past_names)}]'
         display_name = trans._(
-            "[unnamed colormap {number}]",
+            '[unnamed colormap {number}]',
             number=len(past_names),
         )
 
@@ -642,7 +751,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
     with AVAILABLE_COLORMAPS_LOCK:
         if isinstance(colormap, str):
             # Is a colormap with this name already available?
-            custom_cmap = AVAILABLE_COLORMAPS.get(colormap, None)
+            custom_cmap = AVAILABLE_COLORMAPS.get(colormap)
             if custom_cmap is None:
                 name = (
                     colormap.lower() if colormap.startswith('#') else colormap
@@ -705,7 +814,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                 if colormap is None:
                     raise TypeError(
                         trans._(
-                            "When providing a tuple as a colormap argument, either 1) the first element must be a string and the second a Colormap instance 2) or the tuple should be convertible to one or more colors",
+                            'When providing a tuple as a colormap argument, either 1) the first element must be a string and the second a Colormap instance 2) or the tuple should be convertible to one or more colors',
                             deferred=True,
                         )
                     )
@@ -729,7 +838,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
             ):
                 raise TypeError(
                     trans._(
-                        "When providing a dict as a colormap, all values must be Colormap instances",
+                        'When providing a dict as a colormap, all values must be Colormap instances',
                         deferred=True,
                     )
                 )
@@ -751,14 +860,14 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
 
                     warnings.warn(
                         trans._(
-                            "only the first item in a colormap dict is used as an argument",
+                            'only the first item in a colormap dict is used as an argument',
                             deferred=True,
                         )
                     )
                 else:
                     raise ValueError(
                         trans._(
-                            "Received an empty dict as a colormap argument.",
+                            'Received an empty dict as a colormap argument.',
                             deferred=True,
                         )
                     )
@@ -809,3 +918,55 @@ def display_name_to_name(display_name):
     return display_name_map.get(
         display_name, next(iter(AVAILABLE_COLORMAPS.keys()))
     )
+
+
+class CoercedContrastLimits(NamedTuple):
+    contrast_limits: Tuple[float, float]
+    offset: float
+    scale: float
+
+    def coerce_data(self, data: np.ndarray) -> np.ndarray:
+        if self.scale <= 1:
+            return data * self.scale + self.offset
+
+        return (data + self.offset / self.scale) * self.scale
+
+
+def _coerce_contrast_limits(contrast_limits: Tuple[float, float]):
+    """Coerce contrast limits to be in the float32 range."""
+    if np.abs(contrast_limits).max() > _MAX_VISPY_SUPPORTED_VALUE:
+        return scale_down(contrast_limits)
+
+    c_min = np.float32(contrast_limits[0])
+    c_max = np.float32(contrast_limits[1])
+    dist = c_max - c_min
+    if (
+        dist < np.abs(np.spacing(c_min)) * _MINIMUM_SHADES_COUNT
+        or dist < np.abs(np.spacing(c_max)) * _MINIMUM_SHADES_COUNT
+    ):
+        return scale_up(contrast_limits)
+
+    return CoercedContrastLimits(contrast_limits, 0, 1)
+
+
+def scale_down(contrast_limits: Tuple[float, float]):
+    """Scale down contrast limits to be in the float32 range."""
+    scale: float = min(
+        1.0,
+        (_MAX_VISPY_SUPPORTED_VALUE * 2)
+        / (contrast_limits[1] - contrast_limits[0]),
+    )
+    ctrl_lim = contrast_limits[0] * scale, contrast_limits[1] * scale
+    left_shift = max(0.0, -_MAX_VISPY_SUPPORTED_VALUE - ctrl_lim[0])
+    right_shift = max(0.0, ctrl_lim[1] - _MAX_VISPY_SUPPORTED_VALUE)
+    offset = left_shift - right_shift
+    ctrl_lim = (ctrl_lim[0] + offset, ctrl_lim[1] + offset)
+    return CoercedContrastLimits(ctrl_lim, offset, scale)
+
+
+def scale_up(contrast_limits: Tuple[float, float]):
+    """Scale up contrast limits to be in the float32 precision."""
+    scale = 1000 / (contrast_limits[1] - contrast_limits[0])
+    shift = -contrast_limits[0] * scale
+
+    return CoercedContrastLimits((0, 1000), shift, scale)

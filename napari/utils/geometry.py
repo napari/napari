@@ -6,12 +6,12 @@ import numpy.typing as npt
 # normal vectors for a 3D axis-aligned box
 # coordinates are ordered [z, y, x]
 FACE_NORMALS = {
-    "x_pos": np.array([0, 0, 1]),
-    "x_neg": np.array([0, 0, -1]),
-    "y_pos": np.array([0, 1, 0]),
-    "y_neg": np.array([0, -1, 0]),
-    "z_pos": np.array([1, 0, 0]),
-    "z_neg": np.array([-1, 0, 0]),
+    'x_pos': np.array([0, 0, 1]),
+    'x_neg': np.array([0, 0, -1]),
+    'y_pos': np.array([0, 1, 0]),
+    'y_neg': np.array([0, -1, 0]),
+    'z_pos': np.array([1, 0, 0]),
+    'z_neg': np.array([-1, 0, 0]),
 }
 
 
@@ -310,7 +310,7 @@ def bounding_box_to_face_vertices(
     z_min, z_max = bounding_box[-3, :]
 
     face_coords = {
-        "x_pos": np.array(
+        'x_pos': np.array(
             [
                 [z_min, y_min, x_max],
                 [z_min, y_max, x_max],
@@ -318,7 +318,7 @@ def bounding_box_to_face_vertices(
                 [z_max, y_min, x_max],
             ]
         ),
-        "x_neg": np.array(
+        'x_neg': np.array(
             [
                 [z_min, y_min, x_min],
                 [z_min, y_max, x_min],
@@ -326,7 +326,7 @@ def bounding_box_to_face_vertices(
                 [z_max, y_min, x_min],
             ]
         ),
-        "y_pos": np.array(
+        'y_pos': np.array(
             [
                 [z_min, y_max, x_min],
                 [z_min, y_max, x_max],
@@ -334,7 +334,7 @@ def bounding_box_to_face_vertices(
                 [z_max, y_max, x_min],
             ]
         ),
-        "y_neg": np.array(
+        'y_neg': np.array(
             [
                 [z_min, y_min, x_min],
                 [z_min, y_min, x_max],
@@ -342,7 +342,7 @@ def bounding_box_to_face_vertices(
                 [z_max, y_min, x_min],
             ]
         ),
-        "z_pos": np.array(
+        'z_pos': np.array(
             [
                 [z_max, y_min, x_min],
                 [z_max, y_min, x_max],
@@ -350,7 +350,7 @@ def bounding_box_to_face_vertices(
                 [z_max, y_max, x_min],
             ]
         ),
-        "z_neg": np.array(
+        'z_neg': np.array(
             [
                 [z_min, y_min, x_min],
                 [z_min, y_min, x_max],

@@ -13,7 +13,7 @@ def test_viewer_mouse_bindings(qtbot, make_napari_viewer):
     viewer = make_napari_viewer()
     canvas = viewer.window._qt_viewer.canvas
 
-    if os.getenv("CI"):
+    if os.getenv('CI'):
         viewer.show()
 
     mock_press = Mock()
@@ -94,7 +94,7 @@ def test_layer_mouse_bindings(qtbot, make_napari_viewer):
     viewer = make_napari_viewer()
     canvas = viewer.window._qt_viewer.canvas
 
-    if os.getenv("CI"):
+    if os.getenv('CI'):
         viewer.show()
 
     layer = viewer.add_image(np.random.random((10, 20)))
@@ -177,7 +177,7 @@ def test_unselected_layer_mouse_bindings(qtbot, make_napari_viewer):
     viewer = make_napari_viewer()
     canvas = viewer.window._qt_viewer.canvas
 
-    if os.getenv("CI"):
+    if os.getenv('CI'):
         viewer.show()
 
     layer = viewer.add_image(np.random.random((10, 20)))
