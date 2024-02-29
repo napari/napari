@@ -28,7 +28,7 @@ from napari.utils.events.event import EmitterGroup, Event
 if TYPE_CHECKING:
     from napari.components import Dims
 
-logger = logging.getLogger("napari.components._layer_slicer")
+logger = logging.getLogger('napari.components._layer_slicer')
 
 
 # Layers that can be asynchronously sliced must be able to make
@@ -41,8 +41,7 @@ logger = logging.getLogger("napari.components._layer_slicer")
 class _SliceRequest(Protocol):
     id: int
 
-    def __call__(self) -> Any:
-        ...
+    def __call__(self) -> Any: ...
 
 
 @runtime_checkable
@@ -181,11 +180,11 @@ class _LayerSlicer:
 
         Parameters
         ----------
-        layers: iterable of layers
+        layers : iterable of layers
             The layers to slice.
-        dims: Dims
+        dims : Dims
             The dimensions values associated with the view to be sliced.
-        force: bool
+        force : bool
             True if slicing should be forced to occur, even when some cache thinks
             it already has a valid slice ready. False otherwise.
 

@@ -1,4 +1,8 @@
+import sys
+
 import numpy as np
+import pytest
+from vispy.geometry import PolygonData
 
 from napari.layers.shapes._shapes_models import (
     Ellipse,
@@ -7,6 +11,7 @@ from napari.layers.shapes._shapes_models import (
     Polygon,
     Rectangle,
 )
+from napari.layers.shapes._shapes_utils import triangulate_face
 
 
 def test_rectangle():
@@ -42,25 +47,74 @@ def test_nD_rectangle():
     assert shape.data_displayed.shape == (4, 3)
 
 
+def test_polygon_data_triangle():
+    data = np.array(
+        [
+            [10.97627008, 14.30378733],
+            [12.05526752, 10.89766366],
+            [8.47309599, 12.91788226],
+            [8.75174423, 17.83546002],
+            [19.27325521, 7.66883038],
+            [15.83450076, 10.5778984],
+        ]
+    )
+    vertices, _triangles = PolygonData(vertices=data).triangulate()
+
+    assert vertices.shape == (8, 2)
+
+
+def test_polygon_data_triangle_module():
+    pytest.importorskip('triangle')
+    data = np.array(
+        [
+            [10.97627008, 14.30378733],
+            [12.05526752, 10.89766366],
+            [8.47309599, 12.91788226],
+            [8.75174423, 17.83546002],
+            [19.27325521, 7.66883038],
+            [15.83450076, 10.5778984],
+        ]
+    )
+    vertices, _triangles = triangulate_face(data)
+
+    assert vertices.shape == (6, 2)
+
+
 def test_polygon():
     """Test creating Shape with a random polygon."""
     # Test a single six vertex polygon
-    np.random.seed(0)
-    data = 20 * np.random.random((6, 2))
+    data = np.array(
+        [
+            [10.97627008, 14.30378733],
+            [12.05526752, 10.89766366],
+            [8.47309599, 12.91788226],
+            [8.75174423, 17.83546002],
+            [19.27325521, 7.66883038],
+            [15.83450076, 10.5778984],
+        ]
+    )
     shape = Polygon(data)
     np.testing.assert_array_equal(shape.data, data)
     assert shape.data_displayed.shape == (6, 2)
     assert shape.slice_key.shape == (2, 0)
     # should get few triangles
+    expected_face = (6, 2) if 'triangle' in sys.modules else (8, 2)
     assert shape._edge_vertices.shape == (16, 2)
-    assert shape._face_vertices.shape == (8, 2)
+    assert shape._face_vertices.shape == expected_face
 
+
+def test_polygon2():
     data = np.array([[0, 0], [0, 1], [1, 1], [1, 0]])
     shape = Polygon(data, interpolation_order=3)
     # should get many triangles
-    assert shape._edge_vertices.shape == (500, 2)
-    assert shape._face_vertices.shape == (251, 2)
 
+    expected_face = (249, 2) if 'triangle' in sys.modules else (251, 2)
+
+    assert shape._edge_vertices.shape == (500, 2)
+    assert shape._face_vertices.shape == expected_face
+
+
+def test_polygon3():
     data = np.array([[0, 0, 0], [0, 0, 1], [0, 1, 1], [1, 1, 1]])
     shape = Polygon(data, interpolation_order=3, ndisplay=3)
     # should get many vertices

@@ -5,11 +5,15 @@
 import os
 
 import numpy as np
+from packaging.version import parse as parse_version
 
+import napari
 from napari.components import Dims
 from napari.layers import Points
 
-from .utils import Skiper
+from .utils import Skip
+
+NAPARI_0_4_19 = parse_version(napari.__version__) <= parse_version('0.4.19')
 
 
 class Points2DSuite:
@@ -17,7 +21,7 @@ class Points2DSuite:
 
     params = [2**i for i in range(4, 18, 2)]
 
-    if "PR" in os.environ:
+    if 'PR' in os.environ:
         skip_params = [(2**i,) for i in range(8, 18, 2)]
 
     def setup(self, n):
@@ -61,7 +65,7 @@ class Points3DSuite:
     """Benchmarks for the Points layer with 3D data."""
 
     params = [2**i for i in range(4, 18, 2)]
-    if "PR" in os.environ:
+    if 'PR' in os.environ:
         skip_params = [(2**i,) for i in range(6, 18, 2)]
 
     def setup(self, n):
@@ -103,10 +107,11 @@ class PointsSlicingSuite:
 
     params = [True, False]
     timeout = 300
+    skip_params = Skip(always=lambda _: NAPARI_0_4_19)
 
     def setup(self, flatten_slice_axis):
         np.random.seed(0)
-        size = 20000 if "PR" in os.environ else 20000000
+        size = 20000 if 'PR' in os.environ else 20000000
         self.data = np.random.uniform(size=(size, 3), low=0, high=500)
         if flatten_slice_axis:
             self.data[:, 0] = np.round(self.data[:, 0])
@@ -136,8 +141,10 @@ class PointsToMaskSuite:
         [5, 10],
     ]
 
-    if "PR" in os.environ:
-        skip_params = Skiper(lambda x: x[0] > 256 or x[1][0] > 512)
+    skip_params = Skip(
+        if_in_pr=lambda num_points, mask_shape, points_size: num_points > 256
+        or mask_shape[0] > 512
+    )
 
     def setup(self, num_points, mask_shape, point_size):
         np.random.seed(0)

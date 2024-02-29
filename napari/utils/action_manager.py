@@ -18,14 +18,12 @@ if TYPE_CHECKING:
     from napari.utils.key_bindings import KeymapProvider
 
     class SignalInstance(Protocol):
-        def connect(self, callback: Callable) -> None:
-            ...
+        def connect(self, callback: Callable) -> None: ...
 
     class Button(Protocol):
         clicked: SignalInstance
 
-        def setToolTip(self, text: str) -> None:
-            ...
+        def setToolTip(self, text: str) -> None: ...
 
     class ShortcutEvent:
         name: str
@@ -217,7 +215,7 @@ class ActionManager:
         self._validate_action_name(name)
 
         if (action := self._actions.get(name)) and isgeneratorfunction(
-            getattr(action, "command", None)
+            getattr(action, 'command', None)
         ):
             raise ValueError(
                 trans._(
@@ -294,7 +292,7 @@ class ActionManager:
         if action is None:
             warnings.warn(
                 trans._(
-                    "Attempting to unbind an action which does not exists ({name}), this may have no effects. This can happen if your settings are out of date, if you upgraded napari, upgraded or deactivated a plugin, or made a typo in in your custom keybinding.",
+                    'Attempting to unbind an action which does not exists ({name}), this may have no effects. This can happen if your settings are out of date, if you upgraded napari, upgraded or deactivated a plugin, or made a typo in in your custom keybinding.',
                     name=name,
                 ),
                 UserWarning,
@@ -321,7 +319,7 @@ class ActionManager:
 
         if name in self._shortcuts:
             jstr = ' ' + trans._p('<keysequence> or <keysequence>', 'or') + ' '
-            shorts = jstr.join(f"{Shortcut(s)}" for s in self._shortcuts[name])
+            shorts = jstr.join(f'{Shortcut(s)}' for s in self._shortcuts[name])
             ttip += f' ({shorts})'
 
         ttip += f'[{name}]' if self._tooltip_include_action_name else ''

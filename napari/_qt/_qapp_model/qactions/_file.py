@@ -44,6 +44,13 @@ def _close_app(window: Window):
 
 Q_FILE_ACTIONS: List[Action] = [
     Action(
+        id=CommandId.IMAGE_FROM_CLIPBOARD,
+        title=CommandId.IMAGE_FROM_CLIPBOARD.command_title,
+        callback=QtViewer._image_from_clipboard,
+        menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.NAVIGATION}],
+        keybindings=[{'primary': KeyMod.CtrlCmd | KeyCode.KeyN}],
+    ),
+    Action(
         id=CommandId.DLG_OPEN_FILES,
         title=CommandId.DLG_OPEN_FILES.command_title,
         callback=QtViewer._open_files_dialog,
@@ -171,7 +178,7 @@ Q_FILE_ACTIONS: List[Action] = [
                 'id': MenuId.MENUBAR_FILE,
                 'group': MenuGroup.CLOSE,
                 'when': (
-                    Path(sys.executable).parent / ".napari_is_bundled"
+                    Path(sys.executable).parent / '.napari_is_bundled'
                 ).exists(),
             }
         ],
@@ -181,5 +188,6 @@ Q_FILE_ACTIONS: List[Action] = [
         title=CommandId.DLG_QUIT.command_title,
         callback=_close_app,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.CLOSE}],
+        keybindings=[StandardKeyBinding.Quit],
     ),
 ]

@@ -35,7 +35,7 @@ class Ellipse(Shape):
         data,
         *,
         edge_width=1,
-        opacity=1,
+        opacity=1.0,
         z_index=0,
         dims_order=None,
         ndisplay=2,
@@ -70,7 +70,7 @@ class Ellipse(Shape):
         if len(data) != 4:
             raise ValueError(
                 trans._(
-                    "Data shape does not match a ellipse. Ellipse expects four corner vertices, {number} provided.",
+                    'Data shape does not match a ellipse. Ellipse expects four corner vertices, {number} provided.',
                     deferred=True,
                     number=len(data),
                 )
@@ -79,7 +79,7 @@ class Ellipse(Shape):
         self._data = data
         self._update_displayed_data()
 
-    def _update_displayed_data(self):
+    def _update_displayed_data(self) -> None:
         """Update the data that is to be displayed."""
         # Build boundary vertices with num_segments
         vertices, triangles = triangulate_ellipse(self.data_displayed)

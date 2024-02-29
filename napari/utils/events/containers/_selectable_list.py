@@ -1,12 +1,12 @@
 import warnings
-from typing import TypeVar
+from typing import Any, TypeVar
 
 from napari.utils.events.containers._evented_list import EventedList
 from napari.utils.events.containers._nested_list import NestableEventedList
 from napari.utils.events.containers._selection import Selectable
 from napari.utils.translations import trans
 
-_T = TypeVar("_T")
+_T = TypeVar('_T')
 
 
 class SelectableEventedList(Selectable[_T], EventedList[_T]):
@@ -42,39 +42,39 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
         emitted when the current item has changed. (Private event)
     """
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         self._activate_on_insert = True
         super().__init__(*args, **kwargs)
         # bound/unbound methods are ambiguous for mypy so we need to ignore
         # https://mypy.readthedocs.io/en/stable/error_code_list.html?highlight=method-assign#check-that-assignment-target-is-not-a-method-method-assign
         self.selection._pre_add_hook = self._preselect_hook  # type: ignore[method-assign]
 
-    def _preselect_hook(self, value):
+    def _preselect_hook(self, value: _T) -> _T:
         """Called before adding an item to the selection."""
         if value not in self:
             raise ValueError(
                 trans._(
-                    "Cannot select item that is not in list: {value!r}",
+                    'Cannot select item that is not in list: {value!r}',
                     deferred=True,
                     value=value,
                 )
             )
         return value
 
-    def _process_delete_item(self, item: _T):
+    def _process_delete_item(self, item: _T) -> None:
         self.selection.discard(item)
 
-    def insert(self, index: int, value: _T):
+    def insert(self, index: int, value: _T) -> None:
         super().insert(index, value)
         if self._activate_on_insert:
             # Make layer selected and unselect all others
             self.selection.active = value
 
-    def select_all(self):
+    def select_all(self) -> None:
         """Select all items in the list."""
         self.selection.update(self)
 
-    def remove_selected(self):
+    def remove_selected(self) -> None:
         """Remove selected items from list."""
         idx = 0
         for i in list(self.selection):
@@ -90,7 +90,7 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
         if do_add:
             self.selection.add(self[new])
 
-    def move_selected(self, index: int, insert: int):
+    def move_selected(self, index: int, insert: int) -> None:
         """Reorder list by moving the item at index and inserting it
         at the insert index. If additional items are selected these will
         get inserted at the insert index too. This allows for rearranging
@@ -127,7 +127,7 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
         offset = insert >= index
         self.move_multiple(moving, insert + offset)
 
-    def select_next(self, step=1, shift=False):
+    def select_next(self, step: int = 1, shift: bool = False) -> None:
         """Selects next item from list."""
         if self.selection:
             idx = self.index(self.selection._current) + step
@@ -141,7 +141,7 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
         elif len(self) > 0:
             self.selection.active = self[-1 if step > 0 else 0]
 
-    def select_previous(self, shift=False):
+    def select_previous(self, shift: bool = False) -> None:
         """Selects previous item from list."""
         self.select_next(-1, shift=shift)
 

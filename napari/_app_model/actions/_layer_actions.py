@@ -129,8 +129,51 @@ LAYER_ACTIONS: List[Action] = [
         enablement=LLSCK.num_unselected_linked_layers,
         menus=[LAYERCTX_LINK],
     ),
+    Action(
+        id=CommandId.SHOW_SELECTED_LAYERS,
+        title=CommandId.SHOW_SELECTED_LAYERS.command_title,
+        callback=_layer_actions._show_selected,
+        menus=[
+            {
+                'id': MenuId.LAYERLIST_CONTEXT,
+                'group': MenuGroup.NAVIGATION,
+            }
+        ],
+    ),
+    Action(
+        id=CommandId.HIDE_SELECTED_LAYERS,
+        title=CommandId.HIDE_SELECTED_LAYERS.command_title,
+        callback=_layer_actions._hide_selected,
+        menus=[
+            {
+                'id': MenuId.LAYERLIST_CONTEXT,
+                'group': MenuGroup.NAVIGATION,
+            }
+        ],
+    ),
+    Action(
+        id=CommandId.SHOW_UNSELECTED_LAYERS,
+        title=CommandId.SHOW_UNSELECTED_LAYERS.command_title,
+        callback=_layer_actions._show_unselected,
+        menus=[
+            {
+                'id': MenuId.LAYERLIST_CONTEXT,
+                'group': MenuGroup.NAVIGATION,
+            }
+        ],
+    ),
+    Action(
+        id=CommandId.HIDE_UNSELECTED_LAYERS,
+        title=CommandId.HIDE_UNSELECTED_LAYERS.command_title,
+        callback=_layer_actions._hide_unselected,
+        menus=[
+            {
+                'id': MenuId.LAYERLIST_CONTEXT,
+                'group': MenuGroup.NAVIGATION,
+            }
+        ],
+    ),
 ]
-
 
 for _dtype in (
     'int8',
