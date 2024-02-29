@@ -563,16 +563,31 @@ def _generate_triangle_constraints(vertices):
     if tuple(vertices[0]) == tuple(vertices[-1]):  # closed polygon
         vertices = vertices[:-1]  # make closing implicit
     len_data = len(vertices)
+
+    # First, we connect every vertex to its following neighbour,
+    # ignoring the possibility of repeated vertices
     edges_raw = np.empty((len_data, 2), dtype=np.uint32)
     edges_raw[:, 0] = np.arange(len_data)
     edges_raw[:, 1] = np.arange(1, len_data + 1)
     # connect last with first vertex
     edges_raw[-1, 1] = 0
+
+    # Now, we make sure the vertices are unique (repeated vertices cause
+    # problems in spatial algorithms, and those problems can manifest as
+    # segfaults if said algorithms are implemented in C-like languages.)
     new_vertices, inv = np.unique(vertices, axis=0, return_inverse=True)
+
+    # Then, express the edges in terms of the unique nodes
     edges_unique_nodes = inv[edges_raw]
+
+    # Finally, make sure that edges are not repeated. In the case of polygons
+    # with holes, there's typically an edge going from the outer polygon to
+    # the hole, and back, and those edges might not be planar.
+    # This step counts repeated edges...
     edges, ct = np.unique(
         np.sort(edges_unique_nodes, axis=1), axis=0, return_counts=True
     )
+    # and finally, we return only edges that don't repeat:
     return new_vertices, edges[ct == 1]
 
 
