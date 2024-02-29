@@ -819,21 +819,21 @@ builtins = [
 
 [tool.importlinter]
 root_package = "napari"
-include_external_packages = "True"
+include_external_packages = true
 
-[tool.importlinter.contract.1]
-name = "\"Forbid import PyQt and PySide\""
+[[tool.importlinter.contracts]]
+name = "Forbid import PyQt and PySide"
 type = "forbidden"
-source_modules = "\nnapari"
-forbidden_modules = "\nPyQt5\nPySide2"
-ignore_imports = "\nnapari._qt -> PySide2"
+source_modules = "napari"
+forbidden_modules = ["PyQt5", "PySide2", "PyQt6", "PySide6"]
+ignore_imports = "napari._qt -> PySide2"
 
-[tool.importlinter.contract.2]
-name = "\"Block import from qt module in abstract ones\""
+[[tool.importlinter.contracts]]
+name = "Block import from qt module in napari.layers"
 type = "layers"
-layers = "\nnapari.qt\nnapari.layers"
+layers = ["napari.qt","napari.layers"]
 
-[tool.importlinter.contract.3]
-name = "\"Block import from qt module in abstract ones\""
+[[tool.importlinter.contracts]]
+name = "Block import from qt module in napari.components"
 type = "layers"
-layers = "\nnapari.qt\nnapari.components"
+layers = ["napari.qt","napari.components"]
