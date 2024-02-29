@@ -12,10 +12,14 @@ from skimage import measure
 
 try:
     from triangle import triangulate
-except ModuleNotFoundError as e:
-    raise ModuleNotFoundError(
-            'Triangle library needs to be installed to run this example.'
-            ) from e
+except ModuleNotFoundError:
+    from vispy.geometry.triangulation import Triangulation
+    def triangulate(params, opts=None):
+        vertices_raw = params['vertices']
+        edges = params['segments']
+        tri = Triangulation(vertices_raw, edges)
+        tri.triangulate()
+        return {'vertices': tri.pts, 'triangles': tri.tris}
 
 import napari
 from napari.layers.shapes import _shapes_utils

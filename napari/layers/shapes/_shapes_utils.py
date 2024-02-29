@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 from skimage import measure
 from skimage.draw import line, polygon2mask
-from vispy.geometry import PolygonData
+from vispy.geometry import Triangulation
 from vispy.visuals.tube import _frenet_frames
 
 from napari.layers.utils.layer_utils import segment_normal
@@ -636,8 +636,9 @@ def triangulate_face(
         Px3 array of the indices of the vertices that will form the
         triangles of the triangulation
     """
+    raw_vertices, edges = _generate_triangle_constraints(polygon_vertices)
     if triangulate is not None:
-        raw_vertices, edges = _generate_triangle_constraints(polygon_vertices)
+        # if the triangle library is installed, use it because it's faster.
         res = triangulate(
             {'vertices': raw_vertices, 'segments': edges}, opts='p'
         )
@@ -647,9 +648,11 @@ def triangulate_face(
             vertices, raw_triangles, polygon_vertices
         )
     else:
-        vertices, triangles = PolygonData(
-            vertices=polygon_vertices
-        ).triangulate()
+        # otherwise, we use VisPy's triangulation, which is slower and gives
+        # less balanced polygons, but works.
+        tri = Triangulation(raw_vertices, edges)
+        tri.triangulate()
+        vertices, triangles = tri.pts, tri.tris
 
     triangles = triangles.astype(np.uint32)
 
