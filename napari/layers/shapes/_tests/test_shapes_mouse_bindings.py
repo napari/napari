@@ -610,24 +610,10 @@ def test_clicking_the_same_point_is_not_crashing(
     position = tuple(layer.data[0][0])
 
     for _ in range(2):
-        event = ReadOnlyWrapper(
-            Event(
-                type='mouse_press',
-                is_dragging=False,
-                modifiers=[],
-                position=position,
-            )
-        )
+        event = read_only_mouse_event(type='mouse_press', position=position)
         mouse_press_callbacks(layer, event)
 
-        event = ReadOnlyWrapper(
-            Event(
-                type='mouse_release',
-                is_dragging=False,
-                modifiers=[],
-                position=position,
-            )
-        )
+        event = read_only_mouse_event(type='mouse_release', position=position)
         mouse_release_callbacks(layer, event)
 
 
@@ -655,25 +641,17 @@ def test_is_creating_is_false_on_creation(
     assert not layer._is_creating
     layer.events.set_data.connect(is_creating_is_True)
 
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_press',
-            is_dragging=False,
-            modifiers=[],
-            position=position,
-        )
+    event = read_only_mouse_event(
+        type='mouse_press',
+        position=position,
     )
     mouse_press_callbacks(layer, event)
 
     assert layer._is_creating
 
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_release',
-            is_dragging=False,
-            modifiers=[],
-            position=position,
-        )
+    event = read_only_mouse_event(
+        type='mouse_release',
+        position=position,
     )
     mouse_release_callbacks(layer, event)
 
@@ -681,13 +659,9 @@ def test_is_creating_is_false_on_creation(
 
     layer.events.set_data.disconnect(is_creating_is_True)
     layer.events.set_data.connect(is_creating_is_False)
-    end_click = ReadOnlyWrapper(
-        Event(
-            type='mouse_double_click',
-            is_dragging=False,
-            modifiers=[],
-            position=position,
-        )
+    end_click = read_only_mouse_event(
+        type='mouse_double_click',
+        position=position,
     )
     mouse_double_click_callbacks(layer, end_click)
 
