@@ -1,8 +1,8 @@
 # This CI configuration uses griffe to detect api changes. When a PR is opened,
-# this will check the PR branch against its HEAD. If changes are detected, they 
-# will be displayed as a PR comment and uploaded as an artifact. A label of 
+# this will check the PR branch against its HEAD. If changes are detected, they
+# will be displayed as a PR comment and uploaded as an artifact. A label of
 # `api_changes` will also be added to the PR.
-# This workflow also includes a workflow_run to manually trigger checks against 
+# This workflow also includes a workflow_run to manually trigger checks against
 # arbitrary tags or commits.
 name: API changes
 
