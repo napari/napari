@@ -22,9 +22,9 @@ def guess_continuous(color_map: np.ndarray) -> bool:
         True of the property is guessed to be continuous, False if not.
     """
     # if the property is a floating type, guess continuous
-    return (
-        issubclass(color_map.dtype.type, np.floating)
-        or len(np.unique(color_map)) > 16
+    return issubclass(color_map.dtype.type, np.floating) or (
+        len(np.unique(color_map)) > 16
+        and isinstance(color_map.dtype.type, np.integer)
     )
 
 
@@ -32,17 +32,17 @@ def is_color_mapped(color, properties):
     """determines if the new color argument is for directly setting or cycle/colormap"""
     if isinstance(color, str):
         return color in properties
-    elif isinstance(color, dict):
+    if isinstance(color, dict):
         return True
-    elif isinstance(color, (list, np.ndarray)):
+    if isinstance(color, (list, np.ndarray)):
         return False
-    else:
-        raise ValueError(
-            trans._(
-                'face_color should be the name of a color, an array of colors, or the name of an property',
-                deferred=True,
-            )
+
+    raise ValueError(
+        trans._(
+            'face_color should be the name of a color, an array of colors, or the name of an property',
+            deferred=True,
         )
+    )
 
 
 def map_property(

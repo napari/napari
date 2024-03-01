@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple
+from typing import Iterable, List, Optional, Tuple
 
 import numpy as np
 
@@ -243,7 +243,7 @@ def fix_data_points(
         if ndim is not None and ndim != data_ndim:
             raise ValueError(
                 trans._(
-                    "Points dimensions must be equal to ndim",
+                    'Points dimensions must be equal to ndim',
                     deferred=True,
                 )
             )
@@ -251,7 +251,7 @@ def fix_data_points(
     return points, ndim
 
 
-def coerce_symbols(array: np.ndarray) -> np.ndarray:
+def coerce_symbols(array: Iterable) -> np.ndarray:
     """
     Parse an array of symbols and convert it to the correct strings.
 
@@ -264,8 +264,5 @@ def coerce_symbols(array: np.ndarray) -> np.ndarray:
     """
     # dtype has to be object, otherwise np.vectorize will cut it down to `U(N)`,
     # where N is the biggest string currently in the array.
-    array = array.astype(object, copy=True)
-    for k, v in SYMBOL_ALIAS.items():
-        array[(array == k) | (array == k.upper())] = v
-    # otypes necessary for empty arrays
+    array = [SYMBOL_ALIAS.get(k, k) for k in (str(x).lower() for x in array)]
     return np.vectorize(Symbol, otypes=[object])(array)

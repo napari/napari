@@ -34,8 +34,8 @@ viewer.add_points((corners_h @ affine.T)[:, :-1], size=0.5, opacity=.5, face_col
 # Note how the transformed corner points remain at the corners of the transformed image
 
 # Now add the a regridded version of the image transformed with scipy.ndimage.affine_transform
-# Note that we have to use the inverse of the affine as scipy does ‘pull’ (or ‘backward’) resampling,
-# transforming the output space to the input to locate data, but napari does ‘push’ (or ‘forward’) direction,
+# Note that we have to use the inverse of the affine as scipy does `pull` (or `backward`) resampling,
+# transforming the output space to the input to locate data, but napari does `push` (or `forward`) direction,
 # transforming input to output.
 scipy_affine = ndi.affine_transform(image, np.linalg.inv(affine), output_shape=(10, 25), order=5)
 viewer.add_image(scipy_affine, colormap='green', opacity=.5, name='scipy')

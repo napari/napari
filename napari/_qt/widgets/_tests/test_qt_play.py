@@ -20,7 +20,7 @@ def make_worker(
     qtbot.addWidget(qtdims)
     nz = 8
     step = 1
-    dims.set_range(0, (0, nz, step))
+    dims.set_range(0, (0, nz - 1, step))
     slider_widget = qtdims.slider_widgets[0]
     slider_widget.loop_mode = loop_mode
     slider_widget.fps = fps
@@ -69,7 +69,7 @@ CONDITIONS = [
 ]
 
 
-@pytest.mark.parametrize("nframes,fps,mode,rng,result", CONDITIONS)
+@pytest.mark.parametrize('nframes,fps,mode,rng,result', CONDITIONS)
 def test_animation_thread_variants(qtbot, nframes, fps, mode, rng, result):
     """This is mostly testing that AnimationWorker.advance works as expected"""
     with make_worker(

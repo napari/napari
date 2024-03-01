@@ -59,7 +59,7 @@ def _write_spec(tmp_path: Path):
 def test_no_files_raises(tmp_path):
     with pytest.raises(ValueError) as e:
         magic_imread(tmp_path)
-    assert "No files found in" in str(e.value)
+    assert 'No files found in' in str(e.value)
 
 
 def test_guess_zarr_path():
@@ -125,7 +125,7 @@ def test_write_csv(tmpdir):
         csv.reader(output_csv, delimiter=',')
         for row_index, row in enumerate(output_csv):
             if row_index == 0:
-                assert row == "column_1,column_2,column_3\n"
+                assert row == 'column_1,column_2,column_3\n'
             else:
                 output_row_data = [float(i) for i in row.split(',')]
                 np.testing.assert_allclose(
@@ -232,9 +232,7 @@ def test_single_file(spec: ImageSpec, _write_spec, stacks: int):
     fnames = [str(_write_spec(spec)) for _ in range(stacks)]
     [(layer_data,)] = npe2.read(fnames, stack=stacks > 1)
     assert isinstance(layer_data, np.ndarray if stacks == 1 else da.Array)
-    assert layer_data.shape == tuple(
-        i for i in (stacks,) + spec.shape if i > 1
-    )
+    assert layer_data.shape == tuple(i for i in (stacks, *spec.shape) if i > 1)
     assert layer_data.dtype == spec.dtype
 
 
@@ -253,7 +251,7 @@ def test_magic_imread(_write_spec, spec: ImageSpec, stack, use_dask):
     if isinstance(spec, ImageSpec):
         expect_shape = spec.shape
     else:
-        expect_shape = (len(spec),) + spec[0].shape if stack else spec[0].shape
+        expect_shape = (len(spec), *spec[0].shape) if stack else spec[0].shape
     expect_shape = tuple(i for i in expect_shape if i > 1)
 
     expected_arr_type = (
@@ -289,8 +287,8 @@ def test_irregular_images(_write_spec, stack):
         ):
             magic_imread(fnames, use_dask=False, stack=stack)
         return
-    else:
-        images = magic_imread(fnames, use_dask=False, stack=stack)
+
+    images = magic_imread(fnames, use_dask=False, stack=stack)
     assert isinstance(images, list)
     assert len(images) == 2
     assert all(img.shape == spec.shape for img, spec in zip(images, specs))

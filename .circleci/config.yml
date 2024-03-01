@@ -1,0 +1,55 @@
+# As much as possible, this file should be kept in sync with:
+# https://github.com/napari/docs/blob/main/.circleci/config.yaml
+# Use the latest 2.1 version of CircleCI pipeline process engine.
+# See: https://circleci.com/docs/2.1/configuration-reference
+version: 2.1
+# Orbs are reusable packages of CircleCI configuration that you may share across projects.
+# See: https://circleci.com/docs/2.1/orb-intro/
+orbs:
+  python: circleci/python@1.5.0
+jobs:
+  build-docs:
+    docker:
+      # A list of available CircleCI Docker convenience images are available here: https://circleci.com/developer/images/image/cimg/python
+      - image: cimg/python:3.10.13
+    steps:
+      - checkout:
+          path: napari
+      - run:
+          name: Clone docs repo into a subdirectory
+          command: git clone git@github.com:napari/docs.git docs
+      - run:
+          name: Install qt libs + xvfb
+          command: sudo apt-get update && sudo apt-get install -y xvfb libegl1 libdbus-1-3 libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxcb-xinput0 libxcb-xfixes0 x11-utils
+      - run:
+          name: Setup virtual environment
+          command: |
+            python -m venv venv
+            . venv/bin/activate
+            python -m pip install --upgrade pip
+
+      - run:
+          name: Install napari-dev
+          command: |
+            . venv/bin/activate
+            python -m pip install -e "napari/[pyside,dev]"
+          environment:
+            PIP_CONSTRAINT: napari/resources/constraints/constraints_py3.10_docs.txt
+      - run:
+          name: Build docs
+          command: |
+            . venv/bin/activate
+            cd docs
+            xvfb-run --auto-servernum make docs
+          environment:
+            PIP_CONSTRAINT: ../napari/resources/constraints/constraints_py3.10_docs.txt
+      - store_artifacts:
+          path: docs/docs/_build/
+      - persist_to_workspace:
+          root: .
+          paths:
+            - docs/docs/_build/
+workflows:
+  build-docs:
+    jobs:
+      - build-docs

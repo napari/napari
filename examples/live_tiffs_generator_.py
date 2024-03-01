@@ -49,8 +49,8 @@ def main(argv=sys.argv[1:]):
         )
         time.sleep(sleep_time)
     # create a final.log file as an indicator for end of acquisition
-    final_file = open(os.path.join(outdir, 'final.log'), 'w')
-    final_file.close()
+    with open(os.path.join(outdir, 'final.log'), 'w'):
+        pass
 
 
 if __name__ == '__main__':

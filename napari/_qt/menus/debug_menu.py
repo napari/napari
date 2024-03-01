@@ -4,6 +4,7 @@ The debug menu is for developer-focused functionality that we want to be
 easy-to-use and discoverable, but which is not for the average user.
 
 """
+
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QTimer
@@ -22,7 +23,7 @@ class DebugMenu(NapariMenu):
     def __init__(self, window: 'Window') -> None:
         self._win = window
         super().__init__(trans._('&Debug'), window._qt_window)
-        self._perf_menu = NapariMenu(trans._("Performance Trace"), self)
+        self._perf_menu = NapariMenu(trans._('Performance Trace'), self)
 
         ACTIONS = [
             {
@@ -62,14 +63,14 @@ class DebugMenu(NapariMenu):
         hist = get_save_history()
         dlg.setHistory(hist)
         filename, _ = dlg.getSaveFileName(
-            parent=viewer,
-            caption=trans._('Record performance trace file'),
-            directory=hist[0],
-            filter=trans._("Trace Files (*.json)"),
+            viewer,  # parent
+            trans._('Record performance trace file'),  # caption
+            hist[0],  # directory in PyQt, dir in PySide
+            filter=trans._('Trace Files (*.json)'),
         )
         if filename:
-            if not filename.endswith(".json"):
-                filename += ".json"
+            if not filename.endswith('.json'):
+                filename += '.json'
 
             # Schedule this to avoid bogus "MetaCall" event for the entire
             # time the file dialog was up.

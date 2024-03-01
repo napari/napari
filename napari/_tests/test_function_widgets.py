@@ -16,6 +16,7 @@ def test_add_function_widget(make_napari_viewer):
         """Add two layers."""
         if layerA is not None and layerB is not None:
             return napari.layers.Image(layerA.data + layerB.data)
+        return None
 
     dwidg = viewer.window.add_function_widget(image_sum)
     assert dwidg.name == 'image sum'

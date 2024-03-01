@@ -78,11 +78,13 @@ def test_plugin_extension_assignment(napari_plugin_manager):
         def napari_get_reader(path):
             if path.endswith('.png'):
                 return lambda x: None
+            return None
 
         @napari_hook_implementation
         def napari_get_writer(path, *args):
             if path.endswith('.png'):
                 return lambda x: None
+            return None
 
     tnpm: NapariPluginManager = napari_plugin_manager
     tnpm.register(Plugin, name='test_plugin')

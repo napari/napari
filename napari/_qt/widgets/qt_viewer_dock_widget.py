@@ -31,7 +31,7 @@ _sentinel = object()
 
 _SHORTCUT_DEPRECATION_STRING = trans._(
     'The shortcut parameter is deprecated since version 0.4.8, please use the action and shortcut manager APIs. The new action manager and shortcut API allow user configuration and localisation. (got {shortcut})',
-    shortcut="{shortcut}",
+    shortcut='{shortcut}',
 )
 
 
@@ -79,7 +79,7 @@ class QtViewerDockWidget(QDockWidget):
         add_vertical_stretch=True,
         close_btn=True,
     ) -> None:
-        self._ref_qt_viewer: 'ReferenceType[QtViewer]' = ref(qt_viewer)
+        self._ref_qt_viewer: ReferenceType[QtViewer] = ref(qt_viewer)
         super().__init__(name)
         self._parent = qt_viewer
         self.name = name
@@ -229,6 +229,12 @@ class QtViewerDockWidget(QDockWidget):
         # your method to pass uncaught key-combinations to the viewer.
         return self._ref_qt_viewer().keyPressEvent(event)
 
+    def keyReleaseEvent(self, event):
+        # if you subclass QtViewerDockWidget and override the keyReleaseEvent
+        # method, be sure to call super().keyReleaseEvent(event) at the end of
+        # your method to pass uncaught key-combinations to the viewer.
+        return self._ref_qt_viewer().keyReleaseEvent(event)
+
     def _set_title_orientation(self, area):
         if area in (
             Qt.DockWidgetArea.LeftDockWidgetArea,
@@ -272,7 +278,6 @@ class QtViewerDockWidget(QDockWidget):
 
                 viewer.window.plugins_menu.actions()[idx].setChecked(visible)
 
-            self.setVisible(visible)
             # AttributeError: This error happens when the plugins menu is not yet built.
             # ValueError: This error is when the action is from the windows menu.
 
@@ -315,23 +320,23 @@ class QtCustomTitleBar(QLabel):
         self, parent, title: str = '', vertical=False, close_btn=True
     ) -> None:
         super().__init__(parent)
-        self.setObjectName("QtCustomTitleBar")
+        self.setObjectName('QtCustomTitleBar')
         self.setProperty('vertical', str(vertical))
         self.vertical = vertical
         self.setToolTip(trans._('drag to move. double-click to float'))
 
         line = QFrame(self)
-        line.setObjectName("QtCustomTitleBarLine")
+        line.setObjectName('QtCustomTitleBarLine')
 
         self.hide_button = QPushButton(self)
         self.hide_button.setToolTip(trans._('hide this panel'))
-        self.hide_button.setObjectName("QTitleBarHideButton")
+        self.hide_button.setObjectName('QTitleBarHideButton')
         self.hide_button.setCursor(Qt.CursorShape.ArrowCursor)
         self.hide_button.clicked.connect(lambda: self.parent().close())
 
         self.float_button = QPushButton(self)
         self.float_button.setToolTip(trans._('float this panel'))
-        self.float_button.setObjectName("QTitleBarFloatButton")
+        self.float_button.setObjectName('QTitleBarFloatButton')
         self.float_button.setCursor(Qt.CursorShape.ArrowCursor)
         self.float_button.clicked.connect(
             lambda: self.parent().setFloating(not self.parent().isFloating())
@@ -344,7 +349,7 @@ class QtCustomTitleBar(QLabel):
         if close_btn:
             self.close_button = QPushButton(self)
             self.close_button.setToolTip(trans._('close this panel'))
-            self.close_button.setObjectName("QTitleBarCloseButton")
+            self.close_button.setObjectName('QTitleBarCloseButton')
             self.close_button.setCursor(Qt.CursorShape.ArrowCursor)
             self.close_button.clicked.connect(
                 lambda: self.parent().destroyOnClose()

@@ -1,7 +1,6 @@
 from enum import Enum, auto
 
-from pydantic import Field
-
+from napari._pydantic_compat import Field
 from napari.utils.color import ColorValue
 from napari.utils.events import EventedModel
 
@@ -9,6 +8,9 @@ from napari.utils.events import EventedModel
 class NormalMode(Enum):
     FACE = auto()
     VERTEX = auto()
+
+
+_DEFAULT_COLOR = ColorValue('black')
 
 
 class Normals(EventedModel):
@@ -32,7 +34,7 @@ class Normals(EventedModel):
 
     mode: NormalMode = Field(NormalMode.FACE, allow_mutation=False)
     visible: bool = False
-    color: ColorValue = 'black'
+    color: ColorValue = Field(default_factory=lambda: _DEFAULT_COLOR)
     width: float = 1
     length: float = 5
 

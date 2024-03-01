@@ -25,7 +25,7 @@ class QtReaderDialog(QDialog):
         self,
         pth: str = '',
         parent: QWidget = None,
-        readers: Dict[str, str] = None,
+        readers: Optional[Dict[str, str]] = None,
         error_message: str = '',
         persist_checked: bool = True,
     ) -> None:
@@ -62,9 +62,9 @@ class QtReaderDialog(QDialog):
         # add instruction label
         layout = QVBoxLayout()
         if error_message:
-            error_message += "\n"
+            error_message += '\n'
         label = QLabel(
-            f"{error_message}Choose reader for {self._current_file}:"
+            f'{error_message}Choose reader for {self._current_file}:'
         )
         layout.addWidget(label)
 
@@ -118,7 +118,7 @@ class QtReaderDialog(QDialog):
     def add_reader_buttons(self, layout, readers):
         """Add radio button to layout for each reader in readers"""
         for display_name in sorted(readers.values()):
-            button = QRadioButton(f"{display_name}")
+            button = QRadioButton(f'{display_name}')
             self.reader_btn_group.addButton(button)
             layout.addWidget(button)
 
@@ -127,6 +127,7 @@ class QtReaderDialog(QDialog):
         checked_btn = self.reader_btn_group.checkedButton()
         if checked_btn:
             return checked_btn.text()
+        return None
 
     def _get_persist_choice(self):
         """Get persistence checkbox choice"""
@@ -243,10 +244,10 @@ def prepare_remaining_readers(
     if not readers and error:
         raise ReaderPluginError(
             trans._(
-                "Tried to read {path_message} with plugin {plugin}, because it was associated with that file extension/because it is the only plugin capable of reading that path, but it gave an error. Try associating a different plugin or installing a different plugin for this kind of file.",
-                path_message=f"[{paths[0]}, ...]"
-                if len(paths) > 1
-                else paths[0],
+                'Tried to read {path_message} with plugin {plugin}, because it was associated with that file extension/because it is the only plugin capable of reading that path, but it gave an error. Try associating a different plugin or installing a different plugin for this kind of file.',
+                path_message=(
+                    f'[{paths[0]}, ...]' if len(paths) > 1 else paths[0]
+                ),
                 plugin=plugin_name,
             ),
             plugin_name,
@@ -286,9 +287,9 @@ def open_with_dialog_choices(
         viewer to add layers to
     """
     # TODO: disambiguate with reader title
-    plugin_name = [
+    plugin_name = next(
         p_name for p_name, d_name in readers.items() if d_name == display_name
-    ][0]
+    )
     # may throw error, but we let it this time
     qt_viewer.viewer.open(paths, stack=stack, plugin=plugin_name, **kwargs)
 

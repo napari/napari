@@ -1,3 +1,5 @@
+import contextlib
+
 from pygments import highlight
 from pygments.formatter import Formatter
 from pygments.lexers import get_lexer_by_name
@@ -16,10 +18,10 @@ def get_text_char_format(style):
 
     text_char_format = QtGui.QTextCharFormat()
     try:
-        text_char_format.setFontFamilies(["monospace"])
+        text_char_format.setFontFamilies(['monospace'])
     except AttributeError:
         text_char_format.setFontFamily(
-            "monospace"
+            'monospace'
         )  # backward compatibility for pyqt5 5.12.3
     if style.get('color'):
         text_char_format.setForeground(QtGui.QColor(f"#{style['color']}"))
@@ -31,7 +33,7 @@ def get_text_char_format(style):
         text_char_format.setFontWeight(QtGui.QFont.Bold)
     if style.get('italic'):
         text_char_format.setFontItalic(True)
-    if style.get("underline"):
+    if style.get('underline'):
         text_char_format.setFontUnderline(True)
 
     # TODO find if it is possible to support border style.
@@ -80,7 +82,5 @@ class Pylighter(QtGui.QSyntaxHighlighter):
         # The core problem is that pygemnts by default use string streams,
         # that will not handle QTextCharFormat, so wee need use `data` property to work around this.
         for i in range(len(text)):
-            try:
+            with contextlib.suppress(IndexError):
                 self.setFormat(i, 1, self.formatter.data[p + i])
-            except IndexError:
-                pass

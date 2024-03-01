@@ -1,11 +1,14 @@
 import os
 import sys
 from collections import abc
-from typing import Any, Dict
+from contextlib import suppress
+from threading import RLock
+from typing import Any, Dict, Tuple, Union
 
 import numpy as np
 import pandas as pd
 import pytest
+from numpy.typing import DTypeLike
 
 from napari import Viewer
 from napari.layers import (
@@ -17,7 +20,9 @@ from napari.layers import (
     Tracks,
     Vectors,
 )
+from napari.layers._data_protocols import Index, LayerDataProtocol
 from napari.utils.color import ColorArray
+from napari.utils.events.event import WarningEmitter
 
 skip_on_win_ci = pytest.mark.skipif(
     sys.platform.startswith('win') and os.getenv('CI', '0') != '0',
@@ -83,14 +88,12 @@ layer_test_data = [
     ),
 ]
 
-try:
+with suppress(ModuleNotFoundError):
     import tensorstore as ts
 
     m = ts.array(np.random.random((10, 15)))
     p = [ts.array(np.random.random(s)) for s in [(40, 20), (20, 10), (10, 5)]]
     layer_test_data.extend([(Image, m, 2), (Image, p, 2)])
-except ImportError:
-    pass
 
 classes = [Labels, Points, Vectors, Shapes, Surface, Tracks, Image]
 names = [cls.__name__.lower() for cls in classes]
@@ -103,7 +106,7 @@ layer2addmethod = {
 good_layer_data = [
     (np.random.random((10, 10)),),
     (np.random.random((10, 10, 3)), {'rgb': True}),
-    (np.random.randint(20, size=(10, 15)), {'seed': 0.3}, 'labels'),
+    (np.random.randint(20, size=(10, 15)), {'opacity': 0.9}, 'labels'),
     (np.random.random((10, 2)) * 20, {'face_color': 'blue'}, 'points'),
     (np.random.random((10, 2, 2)) * 20, {}, 'vectors'),
     (np.random.random((10, 4, 2)) * 20, {'opacity': 1}, 'shapes'),
@@ -117,6 +120,40 @@ good_layer_data = [
         'surface',
     ),
 ]
+
+
+class LockableData:
+    """A wrapper for napari layer data that blocks read-access with a lock.
+
+    This is useful when testing async slicing with real napari layers because
+    it allows us to control when slicing tasks complete.
+    """
+
+    def __init__(self, data: LayerDataProtocol) -> None:
+        self.data = data
+        self.lock = RLock()
+
+    @property
+    def dtype(self) -> DTypeLike:
+        return self.data.dtype
+
+    @property
+    def shape(self) -> Tuple[int, ...]:
+        return self.data.shape
+
+    @property
+    def ndim(self) -> int:
+        # LayerDataProtocol does not have ndim, but this should be equivalent.
+        return len(self.data.shape)
+
+    def __getitem__(
+        self, key: Union[Index, Tuple[Index, ...], LayerDataProtocol]
+    ) -> LayerDataProtocol:
+        with self.lock:
+            return self.data[key]
+
+    def __len__(self) -> int:
+        return len(self.data)
 
 
 def add_layer_by_type(viewer, layer_type, data, visible=True):
@@ -200,10 +237,10 @@ def check_view_transform_consistency(layer, viewer, transf_dict):
         corresponding to the array of property values
     """
     if layer.multiscale:
-        return None
+        return
 
     # Get an handle on visual layer:
-    vis_lyr = viewer.window._qt_viewer.layer_to_visual[layer]
+    vis_lyr = viewer.window._qt_viewer.canvas.layer_to_visual[layer]
     # Visual layer attributes should match expected from viewer dims:
     for transf_name, transf in transf_dict.items():
         disp_dims = list(viewer.dims.displayed)  # dimensions displayed in 2D
@@ -213,9 +250,7 @@ def check_view_transform_consistency(layer, viewer, transf_dict):
         np.testing.assert_almost_equal(vis_vals, transf[disp_dims])
 
 
-def check_layer_world_data_extent(
-    layer, extent, scale, translate, pixels=False
-):
+def check_layer_world_data_extent(layer, extent, scale, translate):
     """Test extents after applying transforms.
 
     Parameters
@@ -230,12 +265,11 @@ def check_layer_world_data_extent(
         Translation to be applied to layer.
     """
     np.testing.assert_almost_equal(layer.extent.data, extent)
-    world_extent = extent - 0.5 if pixels else extent
-    np.testing.assert_almost_equal(layer.extent.world, world_extent)
+    np.testing.assert_almost_equal(layer.extent.world, extent)
 
     # Apply scale transformation
     layer.scale = scale
-    scaled_world_extent = np.multiply(world_extent, scale)
+    scaled_world_extent = np.multiply(extent, scale)
     np.testing.assert_almost_equal(layer.extent.data, extent)
     np.testing.assert_almost_equal(layer.extent.world, scaled_world_extent)
 
@@ -282,3 +316,13 @@ def assert_colors_equal(actual, expected):
     actual_array = ColorArray.validate(actual)
     expected_array = ColorArray.validate(expected)
     np.testing.assert_array_equal(actual_array, expected_array)
+
+
+def count_warning_events(callbacks) -> int:
+    """
+    Counts the number of WarningEmitter in the callback list.
+    Useful to filter out deprecated events' callbacks.
+    """
+    return len(
+        list(filter(lambda x: isinstance(x, WarningEmitter), callbacks))
+    )

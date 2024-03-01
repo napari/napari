@@ -9,8 +9,8 @@ from typing import (
 )
 
 import numpy as np
-from pydantic import Field, parse_obj_as, validator
 
+from napari._pydantic_compat import Field, parse_obj_as, validator
 from napari.layers.utils.color_transformations import ColorType
 from napari.layers.utils.style_encoding import (
     StyleEncoding,
@@ -187,9 +187,9 @@ class QuantitativeColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
         colors fails.
     """
 
-    encoding_type: Literal[
+    encoding_type: Literal['QuantitativeColorEncoding'] = (
         'QuantitativeColorEncoding'
-    ] = 'QuantitativeColorEncoding'
+    )
     feature: str
     colormap: Colormap
     contrast_limits: Optional[Tuple[float, float]] = None
@@ -204,11 +204,11 @@ class QuantitativeColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
             values = np.interp(values, contrast_limits, (0, 1))
         return self.colormap.map(values)
 
-    @validator('colormap', pre=True, always=True)
+    @validator('colormap', pre=True, always=True, allow_reuse=True)
     def _check_colormap(cls, colormap: ValidColormapArg) -> Colormap:
         return ensure_colormap(colormap)
 
-    @validator('contrast_limits', pre=True, always=True)
+    @validator('contrast_limits', pre=True, always=True, allow_reuse=True)
     def _check_contrast_limits(
         cls, contrast_limits
     ) -> Optional[Tuple[float, float]]:

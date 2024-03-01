@@ -2,8 +2,7 @@ import os
 from pathlib import Path
 from typing import Any, Optional
 
-from pydantic import Field
-
+from napari._pydantic_compat import Field
 from napari.settings._appearance import AppearanceSettings
 from napari.settings._application import ApplicationSettings
 from napari.settings._base import (
@@ -34,33 +33,37 @@ class NapariSettings(EventedConfigFileSettings):
     # 3. You don't need to touch this value if you're just adding a new option
     schema_version: Version = Field(
         CURRENT_SCHEMA_VERSION,
-        description=trans._("Napari settings schema version."),
+        description=trans._('Napari settings schema version.'),
     )
 
     application: ApplicationSettings = Field(
         default_factory=ApplicationSettings,
-        title=trans._("Application"),
-        description=trans._("Main application settings."),
+        title=trans._('Application'),
+        description=trans._('Main application settings.'),
     )
     appearance: AppearanceSettings = Field(
         default_factory=AppearanceSettings,
-        title=trans._("Appearance"),
-        description=trans._("User interface appearance settings."),
+        title=trans._('Appearance'),
+        description=trans._('User interface appearance settings.'),
+        allow_mutation=False,
     )
     plugins: PluginsSettings = Field(
         default_factory=PluginsSettings,
-        title=trans._("Plugins"),
-        description=trans._("Plugins settings."),
+        title=trans._('Plugins'),
+        description=trans._('Plugins settings.'),
+        allow_mutation=False,
     )
     shortcuts: ShortcutsSettings = Field(
         default_factory=ShortcutsSettings,
-        title=trans._("Shortcuts"),
-        description=trans._("Shortcut settings."),
+        title=trans._('Shortcuts'),
+        description=trans._('Shortcut settings.'),
+        allow_mutation=False,
     )
     experimental: ExperimentalSettings = Field(
         default_factory=ExperimentalSettings,
-        title=trans._("Experimental"),
-        description=trans._("Experimental settings."),
+        title=trans._('Experimental'),
+        description=trans._('Experimental settings.'),
+        allow_mutation=False,
     )
 
     # private attributes and ClassVars will not appear in the schema
@@ -72,7 +75,6 @@ class NapariSettings(EventedConfigFileSettings):
         # all of these fields are evented models, so we don't want to break
         # connections by setting the top-level field itself
         # (you can still mutate attributes in the subfields)
-        allow_mutation = False
 
         @classmethod
         def _config_file_settings_source(cls, settings) -> dict:

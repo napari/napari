@@ -2,16 +2,24 @@
 # https://asv.readthedocs.io/en/latest/writing_benchmarks.html
 # or the napari documentation on benchmarking
 # https://github.com/napari/napari/blob/main/docs/BENCHMARKS.md
+import os
+
 import numpy as np
+from packaging.version import parse as parse_version
 from qtpy.QtWidgets import QApplication
 
 import napari
+
+NAPARI_0_4_19 = parse_version(napari.__version__) <= parse_version('0.4.19')
 
 
 class QtViewerViewImageSuite:
     """Benchmarks for viewing images in the viewer."""
 
     params = [2**i for i in range(4, 13)]
+
+    if 'PR' in os.environ:
+        skip_params = [(2**i,) for i in range(6, 13)]
 
     def setup(self, n):
         _ = QApplication.instance() or QApplication([])
@@ -32,6 +40,9 @@ class QtViewerAddImageSuite:
 
     params = [2**i for i in range(4, 13)]
 
+    if 'PR' in os.environ:
+        skip_params = [(2**i,) for i in range(6, 13)]
+
     def setup(self, n):
         _ = QApplication.instance() or QApplication([])
         np.random.seed(0)
@@ -51,6 +62,9 @@ class QtViewerImageSuite:
 
     params = [2**i for i in range(4, 13)]
 
+    if 'PR' in os.environ:
+        skip_params = [(2**i,) for i in range(6, 13)]
+
     def setup(self, n):
         _ = QApplication.instance() or QApplication([])
         np.random.seed(0)
@@ -62,8 +76,20 @@ class QtViewerImageSuite:
 
     def time_zoom(self, n):
         """Time to zoom in and zoom out."""
-        self.viewer.window._qt_viewer.view.camera.zoom(0.5, center=(0.5, 0.5))
-        self.viewer.window._qt_viewer.view.camera.zoom(2.0, center=(0.5, 0.5))
+        if NAPARI_0_4_19:
+            self.viewer.window._qt_viewer.view.camera.zoom(
+                0.5, center=(0.5, 0.5)
+            )
+            self.viewer.window._qt_viewer.view.camera.zoom(
+                2.0, center=(0.5, 0.5)
+            )
+        else:
+            self.viewer.window._qt_viewer.canvas.view.camera.zoom(
+                0.5, center=(0.5, 0.5)
+            )
+            self.viewer.window._qt_viewer.canvas.view.camera.zoom(
+                2.0, center=(0.5, 0.5)
+            )
 
     def time_refresh(self, n):
         """Time to refresh view."""
@@ -97,8 +123,20 @@ class QtViewerSingleImageSuite:
 
     def time_zoom(self):
         """Time to zoom in and zoom out."""
-        self.viewer.window._qt_viewer.view.camera.zoom(0.5, center=(0.5, 0.5))
-        self.viewer.window._qt_viewer.view.camera.zoom(2.0, center=(0.5, 0.5))
+        if NAPARI_0_4_19:
+            self.viewer.window._qt_viewer.view.camera.zoom(
+                0.5, center=(0.5, 0.5)
+            )
+            self.viewer.window._qt_viewer.view.camera.zoom(
+                2.0, center=(0.5, 0.5)
+            )
+        else:
+            self.viewer.window._qt_viewer.canvas.view.camera.zoom(
+                0.5, center=(0.5, 0.5)
+            )
+            self.viewer.window._qt_viewer.canvas.view.camera.zoom(
+                2.0, center=(0.5, 0.5)
+            )
 
     def time_set_data(self):
         """Time to set view slice."""
@@ -140,8 +178,20 @@ class QtViewerSingleInvisbleImageSuite:
 
     def time_zoom(self):
         """Time to zoom in and zoom out."""
-        self.viewer.window._qt_viewer.view.camera.zoom(0.5, center=(0.5, 0.5))
-        self.viewer.window._qt_viewer.view.camera.zoom(2.0, center=(0.5, 0.5))
+        if NAPARI_0_4_19:
+            self.viewer.window._qt_viewer.view.camera.zoom(
+                0.5, center=(0.5, 0.5)
+            )
+            self.viewer.window._qt_viewer.view.camera.zoom(
+                2.0, center=(0.5, 0.5)
+            )
+        else:
+            self.viewer.window._qt_viewer.canvas.view.camera.zoom(
+                0.5, center=(0.5, 0.5)
+            )
+            self.viewer.window._qt_viewer.canvas.view.camera.zoom(
+                2.0, center=(0.5, 0.5)
+            )
 
     def time_set_data(self):
         """Time to set view slice."""
@@ -173,6 +223,9 @@ class QtImageRenderingSuite:
 
     params = [2**i for i in range(4, 13)]
 
+    if 'PR' in os.environ:
+        skip_params = [(2**i,) for i in range(6, 13)]
+
     def setup(self, n):
         _ = QApplication.instance() or QApplication([])
         np.random.seed(0)
@@ -199,6 +252,9 @@ class QtVolumeRenderingSuite:
     """Benchmarks for a single image layer in the viewer."""
 
     params = [2**i for i in range(4, 10)]
+
+    if 'PR' in os.environ:
+        skip_params = [(2**i,) for i in range(6, 10)]
 
     def setup(self, n):
         _ = QApplication.instance() or QApplication([])

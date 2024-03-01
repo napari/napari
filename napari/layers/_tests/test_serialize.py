@@ -3,7 +3,11 @@ import inspect
 import numpy as np
 import pytest
 
-from napari._tests.utils import are_objects_equal, layer_test_data
+from napari._tests.utils import (
+    are_objects_equal,
+    count_warning_events,
+    layer_test_data,
+)
 
 
 @pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
@@ -20,7 +24,7 @@ def test_attrs_arrays(Layer, data, ndim):
     signature = inspect.signature(Layer)
 
     # Check every property is also a parameter.
-    for prop in properties.keys():
+    for prop in properties:
         assert prop in signature.parameters
 
     # Check number of properties is same as number in signature
@@ -31,7 +35,7 @@ def test_attrs_arrays(Layer, data, ndim):
     new_layer = Layer(**properties)
 
     # Check that new layer matches old on all properties:
-    for prop in properties.keys():
+    for prop in properties:
         assert are_objects_equal(
             getattr(layer, prop), getattr(new_layer, prop)
         )
@@ -47,4 +51,4 @@ def test_no_callbacks(Layer, data, ndim):
     # Check that no internal callbacks have been registered
     assert len(layer.events.callbacks) == 0
     for em in layer.events.emitters.values():
-        assert len(em.callbacks) == 0
+        assert len(em.callbacks) == count_warning_events(em.callbacks)

@@ -20,7 +20,7 @@ pure_py = ['int', 'float']
 
 
 @pytest.mark.parametrize(
-    'dtype_str', ['uint8'] + ints + floats + complex_types + bools
+    'dtype_str', ['uint8', *ints, *floats, *complex_types, *bools]
 )
 def test_normalize_dtype_torch(dtype_str):
     """torch doesn't have uint for >8bit, so it gets its own test."""
@@ -65,7 +65,7 @@ def test_pure_python_types(dtype_str):
 
 
 @pytest.mark.parametrize(
-    "dtype",
+    'dtype',
     [
         int,
         'uint8',

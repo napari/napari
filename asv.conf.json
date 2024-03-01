@@ -31,7 +31,7 @@
     "show_commit_url": "http://github.com/napari/napari/commit/",
 
     // The Pythons you'd like to test against.
-    "pythons": ["3.9"],
+    "pythons": ["3.11"],
 
     // The directory (relative to the current directory) to cache the Python
     // environments in.

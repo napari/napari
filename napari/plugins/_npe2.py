@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+from collections import defaultdict
+from functools import partial
 from typing import (
     TYPE_CHECKING,
+    Any,
     DefaultDict,
     Dict,
     Iterator,
@@ -10,25 +13,25 @@ from typing import (
     Sequence,
     Set,
     Tuple,
-    Union,
     cast,
 )
 
+from app_model import Action
 from app_model.types import SubmenuItem
-from npe2 import io_utils
-from npe2 import plugin_manager as pm
+from npe2 import io_utils, plugin_manager as pm
 from npe2.manifest import contributions
 
+from napari.errors.reader_errors import MultipleReaderError
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from app_model import Action
     from npe2.manifest import PluginManifest
     from npe2.manifest.contributions import WriterContribution
     from npe2.plugin_manager import PluginName
     from npe2.types import LayerData, SampleDataCreator, WidgetCreator
     from qtpy.QtWidgets import QMenu
 
+    from napari._qt.qt_viewer import QtViewer
     from napari.layers import Layer
     from napari.types import SampleDict
 
@@ -42,6 +45,15 @@ def read(
     paths: Sequence[str], plugin: Optional[str] = None, *, stack: bool
 ) -> Optional[Tuple[List[LayerData], _FakeHookimpl]]:
     """Try to return data for `path`, from reader plugins using a manifest."""
+
+    # do nothing if `plugin` is not an npe2 reader
+    if plugin:
+        # user might have passed 'plugin.reader_contrib' as the command
+        # so ensure we check vs. just the actual plugin name
+        plugin_name = plugin.partition('.')[0]
+        if plugin_name not in get_readers():
+            return None
+
     assert stack is not None
     # the goal here would be to make read_get_reader of npe2 aware of "stack",
     # and not have this conditional here.
@@ -55,10 +67,12 @@ def read(
         layer_data, reader = io_utils.read_get_reader(
             npe1_path, plugin_name=plugin
         )
-        return layer_data, _FakeHookimpl(reader.plugin_name)
     except ValueError as e:
+        # plugin wasn't passed and no reader was found
         if 'No readers returned data' not in str(e):
-            raise e from e
+            raise
+    else:
+        return layer_data, _FakeHookimpl(reader.plugin_name)
     return None
 
 
@@ -101,9 +115,10 @@ def write_layers(
             paths, writer = io_utils.write_get_writer(
                 path=path, layer_data=layer_data, plugin_name=plugin_name
             )
-            return (paths, writer.plugin_name)
         except ValueError:
-            return ([], '')
+            return [], ''
+        else:
+            return paths, writer.plugin_name
 
     n = sum(ltc.max() for ltc in writer.layer_type_constraints())
     args = (path, *layer_data[0][:2]) if n <= 1 else (path, layer_data)
@@ -111,8 +126,8 @@ def write_layers(
     if isinstance(
         res, str
     ):  # pragma: no cover # it shouldn't be... bad plugin.
-        return ([res], writer.plugin_name)
-    return (res or [], writer.plugin_name)
+        return [res], writer.plugin_name
+    return res or [], writer.plugin_name
 
 
 def get_widget_contribution(
@@ -150,10 +165,12 @@ def populate_qmenu(menu: QMenu, menu_key: str):
         if isinstance(item, contributions.Submenu):
             subm_contrib = pm.get_submenu(item.submenu)
             subm = menu.addMenu(subm_contrib.label)
+            assert subm is not None
             populate_qmenu(subm, subm_contrib.id)
         else:
             cmd = pm.get_command(item.command)
             action = menu.addAction(cmd.title)
+            assert action is not None
             action.triggered.connect(_wrap(cmd))
 
 
@@ -184,7 +201,7 @@ def file_extensions_string_for_layers(
         for writer in writers:
             name = pm.get_manifest(writer.command).display_name
             title = (
-                f"{name} {writer.display_name}"
+                f'{name} {writer.display_name}'
                 if writer.display_name
                 else name
             )
@@ -194,10 +211,10 @@ def file_extensions_string_for_layers(
     #   "<name> (*<ext1> *<ext2> *<ext3>);;+"
 
     def _fmt_exts(es):
-        return " ".join(f"*{e}" for e in es if e) if es else "*.*"
+        return ' '.join(f'*{e}' for e in es if e) if es else '*.*'
 
     return (
-        ";;".join(f"{name} ({_fmt_exts(exts)})" for name, exts in _items()),
+        ';;'.join(f'{name} ({_fmt_exts(exts)})' for name, exts in _items()),
         writers,
     )
 
@@ -240,7 +257,7 @@ def iter_manifests(
 
 def widget_iterator() -> Iterator[Tuple[str, Tuple[str, Sequence[str]]]]:
     # eg ('dock', ('my_plugin', ('My widget', MyWidget)))
-    wdgs: DefaultDict[str, List[str]] = DefaultDict(list)
+    wdgs: DefaultDict[str, List[str]] = defaultdict(list)
     for wdg_contrib in pm.iter_widgets():
         wdgs[wdg_contrib.plugin_name].append(wdg_contrib.display_name)
     return (('dock', x) for x in wdgs.items())
@@ -322,7 +339,6 @@ def on_plugin_enablement_change(enabled: Set[str], disabled: Set[str]):
     # list them explicitly)
     for v in Viewer._instances:
         v.window.plugins_menu._build()
-        v.window.file_menu._rebuild_samples_menu()
 
 
 def on_plugins_registered(manifests: Set[PluginManifest]):
@@ -335,7 +351,148 @@ def on_plugins_registered(manifests: Set[PluginManifest]):
             _register_manifest_actions(mf)
 
 
-def _register_manifest_actions(manifest: PluginManifest) -> None:
+# TODO: This is a separate function from `_get_samples_submenu_actions` so it
+# can be easily deleted once npe1 is no longer supported.
+def _rebuild_npe1_samples_menu() -> None:
+    """Register submenu and actions for all npe1 plugins, clearing all first."""
+    from napari._app_model import get_app
+    from napari._app_model.constants import MenuGroup, MenuId
+    from napari.plugins import menu_item_template, plugin_manager
+
+    app = get_app()
+    # Unregister all existing npe1 sample menu actions and submenus
+    if unreg := plugin_manager._unreg_sample_submenus:
+        unreg()
+    if unreg := plugin_manager._unreg_sample_actions:
+        unreg()
+
+    sample_actions: List[Action] = []
+    for plugin_name, samples in plugin_manager._sample_data.items():
+        multiprovider = len(samples) > 1
+        if multiprovider:
+            submenu_id = f'napari/file/samples/{plugin_name}'
+            submenu = [
+                (
+                    MenuId.FILE_SAMPLES,
+                    SubmenuItem(
+                        submenu=submenu_id, title=trans._(plugin_name)
+                    ),
+                ),
+            ]
+        else:
+            submenu_id = MenuId.FILE_SAMPLES
+            submenu = []
+
+        for sample_name, sample_dict in samples.items():
+
+            def _add_sample(
+                qt_viewer: QtViewer,
+                plugin=plugin_name,
+                sample=sample_name,
+            ):
+                from napari._qt.dialogs.qt_reader_dialog import (
+                    handle_gui_reading,
+                )
+
+                try:
+                    qt_viewer.viewer.open_sample(plugin, sample)
+                except MultipleReaderError as e:
+                    handle_gui_reading(
+                        [str(p) for p in e.paths],
+                        qt_viewer,
+                        stack=False,
+                    )
+
+            display_name = sample_dict['display_name'].replace('&', '&&')
+            if multiprovider:
+                title = display_name
+            else:
+                title = menu_item_template.format(plugin_name, display_name)
+
+            action: Action = Action(
+                id=f'{plugin_name}:{display_name}',
+                title=title,
+                menus=[{'id': submenu_id, 'group': MenuGroup.NAVIGATION}],
+                callback=_add_sample,
+            )
+            sample_actions.append(action)
+
+        unreg_sample_submenus = app.menus.append_menu_items(submenu)
+        plugin_manager._unreg_sample_submenus = unreg_sample_submenus
+        unreg_sample_actions = app.register_actions(sample_actions)
+        plugin_manager._unreg_sample_actions = unreg_sample_actions
+
+
+# Note `QtViewer` gets added to `injection_store.namespace` during
+# `init_qactions` so does not need to be imported for type annotation resolution
+def _add_sample(qt_viewer: QtViewer, plugin=str, sample=str) -> None:
+    from napari._qt.dialogs.qt_reader_dialog import handle_gui_reading
+
+    try:
+        qt_viewer.viewer.open_sample(plugin, sample)
+    except MultipleReaderError as e:
+        handle_gui_reading(
+            [str(p) for p in e.paths],
+            qt_viewer,
+            stack=False,
+        )
+
+
+def _get_samples_submenu_actions(
+    mf: PluginManifest,
+) -> Tuple[List[Any], List[Any]]:
+    """Get sample data submenu and actions for a single npe2 plugin manifest."""
+    from napari._app_model.constants import MenuGroup, MenuId
+    from napari.plugins import menu_item_template
+
+    # If no sample data, return
+    if not mf.contributions.sample_data:
+        return [], []
+
+    sample_data = mf.contributions.sample_data
+    multiprovider = len(sample_data) > 1
+    if multiprovider:
+        submenu_id = f'napari/file/samples/{mf.name}'
+        submenu = [
+            (
+                MenuId.FILE_SAMPLES,
+                SubmenuItem(
+                    submenu=submenu_id, title=trans._(mf.display_name)
+                ),
+            ),
+        ]
+    else:
+        submenu_id = MenuId.FILE_SAMPLES
+        submenu = []
+
+    sample_actions: List[Action] = []
+    for sample in sample_data:
+        _add_sample_partial = partial(
+            _add_sample,
+            plugin=mf.name,
+            sample=sample.key,
+        )
+
+        if multiprovider:
+            title = sample.display_name
+        else:
+            title = menu_item_template.format(
+                mf.display_name, sample.display_name
+            )
+        # To display '&' instead of creating a shortcut
+        title = title.replace('&', '&&')
+
+        action: Action = Action(
+            id=f'{mf.name}:{sample.key}',
+            title=title,
+            menus=[{'id': submenu_id, 'group': MenuGroup.NAVIGATION}],
+            callback=_add_sample_partial,
+        )
+        sample_actions.append(action)
+    return submenu, sample_actions
+
+
+def _register_manifest_actions(mf: PluginManifest) -> None:
     """Gather and register actions from a manifest.
 
     This is called when a plugin is registered or enabled and it adds the
@@ -344,12 +501,20 @@ def _register_manifest_actions(manifest: PluginManifest) -> None:
     from napari._app_model import get_app
 
     app = get_app()
-    actions, submenus = _npe2_manifest_to_actions(manifest)
-    context = pm.get_context(cast('PluginName', manifest.name))
+    actions, submenus = _npe2_manifest_to_actions(mf)
+    samples_submenu, sample_actions = _get_samples_submenu_actions(mf)
+    context = pm.get_context(cast('PluginName', mf.name))
+    # Connect 'unregister' callback to plugin deactivate ('unregistered') event
     if actions:
         context.register_disposable(app.register_actions(actions))
     if submenus:
         context.register_disposable(app.menus.append_menu_items(submenus))
+    if samples_submenu:
+        context.register_disposable(
+            app.menus.append_menu_items(samples_submenu)
+        )
+    if sample_actions:
+        context.register_disposable(app.register_actions(sample_actions))
 
 
 def _npe2_manifest_to_actions(
@@ -372,28 +537,39 @@ def _npe2_manifest_to_actions(
                     subitem = _npe2_submenu_to_app_model(item)
                     submenus.append((menu_id, subitem))
 
-    actions: List[Action] = [
-        Action(
-            id=cmd.id,
-            title=cmd.title,
-            category=cmd.category,
-            tooltip=cmd.short_title or cmd.title,
-            icon=cmd.icon,
-            enablement=cmd.enablement,
-            callback=cmd.python_name or '',
-            menus=cmds.get(cmd.id),
-            keybindings=[],
-        )
-        for cmd in mf.contributions.commands or ()
-    ]
+    # Filter sample data commands (not URIs) as they are registered via
+    # `_get_samples_submenu_actions`
+    sample_data_commands = {
+        contrib.command
+        for contrib in mf.contributions.sample_data or ()
+        if hasattr(contrib, 'command')
+    }
+
+    actions: List[Action] = []
+    for cmd in mf.contributions.commands or ():
+        if cmd.id not in sample_data_commands:
+            actions.append(
+                Action(
+                    id=cmd.id,
+                    title=cmd.title,
+                    category=cmd.category,
+                    tooltip=cmd.short_title or cmd.title,
+                    icon=cmd.icon,
+                    enablement=cmd.enablement,
+                    callback=cmd.python_name or '',
+                    menus=cmds.get(cmd.id),
+                    keybindings=[],
+                )
+            )
+
     return actions, submenus
 
 
 def _when_group_order(
     menu_item: contributions.MenuItem,
-) -> dict[str, Union[str, float, None]]:
+) -> dict:
     """Extract when/group/order from an npe2 Submenu or MenuCommand."""
-    group, _, _order = (menu_item.group or '').partition("@")
+    group, _, _order = (menu_item.group or '').partition('@')
     try:
         order: Optional[float] = float(_order)
     except ValueError:

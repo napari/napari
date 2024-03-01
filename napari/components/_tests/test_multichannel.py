@@ -18,8 +18,8 @@ two_colormaps = MAGENTA_GREEN
 green_cmap = SIMPLE_COLORMAPS['green']
 red_cmap = SIMPLE_COLORMAPS['red']
 blue_cmap = AVAILABLE_COLORMAPS['blue']
-cmap_tuple = ("my_colormap", Colormap(['g', 'm', 'y']))
-cmap_dict = {"your_colormap": Colormap(['g', 'r', 'y'])}
+cmap_tuple = ('my_colormap', Colormap(['g', 'm', 'y']))
+cmap_dict = {'your_colormap': Colormap(['g', 'r', 'y'])}
 
 MULTI_TUPLES = [[0.3, 0.7], [0.1, 0.9], [0.3, 0.9], [0.4, 0.9], [0.2, 0.9]]
 
@@ -61,7 +61,7 @@ multi_channel_test_data = [
     ((), {'translate': MULTI_TUPLES}),
     ((), {'blending': 'translucent'}),
     ((), {'metadata': {'hi': 'there'}}),
-    ((), {'metadata': {k: v for k, v in MULTI_TUPLES}}),
+    ((), {'metadata': dict(MULTI_TUPLES)}),
     ((), {'experimental_clipping_planes': []}),
 ]
 
@@ -109,7 +109,9 @@ def test_multichannel(shape, kwargs):
 
     for i in range(n_channels):
         # make sure that the data has been divided into layers
-        assert np.all(viewer.layers[i].data == data.take(i, axis=channel_axis))
+        np.testing.assert_array_equal(
+            viewer.layers[i].data, data.take(i, axis=channel_axis)
+        )
         # make sure colors have been assigned properly
         if 'colormap' not in kwargs:
             if n_channels == 1:
@@ -169,7 +171,7 @@ def test_multichannel_multiscale():
     for i in range(data[0].shape[-1]):
         assert np.all(
             [
-                np.all(l_d == d)
+                np.array_equal(l_d, d)
                 for l_d, d in zip(
                     viewer.layers[i].data,
                     [data[j].take(i, axis=-1) for j in range(len(data))],
@@ -191,7 +193,7 @@ def test_multichannel_implicit_multiscale():
     for i in range(data[0].shape[-1]):
         assert np.all(
             [
-                np.all(l_d == d)
+                np.array_equal(l_d, d)
                 for l_d, d in zip(
                     viewer.layers[i].data,
                     [data[j].take(i, axis=-1) for j in range(len(data))],

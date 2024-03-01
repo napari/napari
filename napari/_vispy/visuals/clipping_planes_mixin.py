@@ -10,9 +10,9 @@ class _PVisual(Protocol):
     """
 
     _subvisuals: Optional[List['_PVisual']]
+    _clip_filter: PlanesClipper
 
-    def attach(self, filt: Filter, view=None):
-        ...
+    def attach(self, filt: Filter, view=None): ...
 
 
 class ClippingPlanesMixin:
@@ -22,10 +22,11 @@ class ClippingPlanesMixin:
     """
 
     def __init__(self: _PVisual, *args, **kwargs) -> None:
-        self._clip_filter = PlanesClipper()
+        clip_filter = PlanesClipper()
+        self._clip_filter = clip_filter
         super().__init__(*args, **kwargs)
 
-        self.attach(self._clip_filter)
+        self.attach(clip_filter)
 
     @property
     def clipping_planes(self):

@@ -38,10 +38,20 @@ class MultiScaleData(Sequence[LayerDataProtocol]):
         self._data: List[LayerDataProtocol] = list(data)
         if not self._data:
             raise ValueError(
-                trans._("Multiscale data must be a (non-empty) sequence")
+                trans._('Multiscale data must be a (non-empty) sequence')
             )
         for d in self._data:
             assert_protocol(d)
+
+    @property
+    def size(self) -> int:
+        """Return size of the first scale.."""
+        return self._data[0].size
+
+    @property
+    def ndim(self) -> int:
+        """Return ndim of the first scale.."""
+        return self._data[0].ndim
 
     @property
     def dtype(self) -> np.dtype:

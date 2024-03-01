@@ -9,7 +9,7 @@ from qtpy.QtWidgets import QAbstractItemView
 from napari._qt.containers._base_item_model import ItemRole
 from napari._qt.containers._factory import create_model
 
-ItemType = TypeVar("ItemType")
+ItemType = TypeVar('ItemType')
 
 if TYPE_CHECKING:
     from qtpy.QtCore import QAbstractItemModel
@@ -55,7 +55,7 @@ class _BaseEventedItemView(Generic[ItemType]):
         """Delete items with delete key."""
         if e.key() in (Qt.Key.Key_Backspace, Qt.Key.Key_Delete):
             self._root.remove_selected()
-            return
+            return None
         return super().keyPressEvent(e)
 
     def currentChanged(

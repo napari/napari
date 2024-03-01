@@ -1,0 +1,28 @@
+# To enable this workflow on a fork, comment out:
+#
+# if: github.repository == 'napari/docs'
+
+name: CircleCI artifact redirector
+
+concurrency:
+  group: docs-preview-${{ github.ref }}
+  cancel-in-progress: true
+
+on: [status]
+jobs:
+  circleci_artifacts_redirector_job:
+    runs-on: ubuntu-latest
+    if: "github.event.context == 'ci/circleci: build-docs'"
+    permissions:
+      statuses: write
+    name: Run CircleCI artifacts redirector
+    # if: github.repository == 'napari/docs'
+    steps:
+      - name: GitHub Action step
+        uses: larsoner/circleci-artifacts-redirector-action@master
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          api-token: ${{ secrets.CIRCLECI_TOKEN }}
+          artifact-path: 0/docs/docs/_build/index.html
+          circleci-jobs: build-docs
+          job-title: Check the rendered docs here!

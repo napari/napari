@@ -1,8 +1,14 @@
+from typing import TYPE_CHECKING
+
 from vispy.visuals.transforms import MatrixTransform, STTransform
 
+from napari._vispy.utils.gl import BLENDING_MODES
 from napari.components._viewer_constants import CanvasPosition
 from napari.utils.events import disconnect_events
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from napari.layers import Layer
 
 
 class VispyBaseOverlay:
@@ -22,6 +28,7 @@ class VispyBaseOverlay:
 
         self.overlay.events.visible.connect(self._on_visible_change)
         self.overlay.events.opacity.connect(self._on_opacity_change)
+        self.overlay.events.blending.connect(self._on_blending_change)
 
         if parent is not None:
             self.node.parent = parent
@@ -32,9 +39,14 @@ class VispyBaseOverlay:
     def _on_opacity_change(self):
         self.node.opacity = self.overlay.opacity
 
+    def _on_blending_change(self):
+        self.node.set_gl_state(**BLENDING_MODES[self.overlay.blending])
+        self.node.update()
+
     def reset(self):
         self._on_visible_change()
         self._on_opacity_change()
+        self._on_blending_change()
 
     def close(self):
         disconnect_events(self.overlay.events, self)
@@ -136,7 +148,7 @@ class VispySceneOverlay(VispyBaseOverlay):
 
 
 class LayerOverlayMixin:
-    def __init__(self, *, layer, overlay, node, parent=None) -> None:
+    def __init__(self, *, layer: 'Layer', overlay, node, parent=None) -> None:
         super().__init__(
             node=node,
             overlay=overlay,

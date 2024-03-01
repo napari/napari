@@ -36,10 +36,10 @@ class ColorCycle:
         # turn a generic dict into object
         if isinstance(val, dict):
             return _coerce_colorcycle_from_dict(val)
-        elif isinstance(val, ColorCycle):
+        if isinstance(val, ColorCycle):
             return val
-        else:
-            return _coerce_colorcycle_from_colors(val)
+
+        return _coerce_colorcycle_from_colors(val)
 
     def _json_encode(self):
         return {'values': self.values.tolist()}
@@ -70,10 +70,12 @@ def _coerce_colorcycle_from_dict(
         transformed_color_cycle = transform_color_cycle(
             color_cycle=color_values,
             elem_name='color_cycle',
-            default="white",
+            default='white',
         )[0]
-    else:
+    elif isinstance(color_cycle, cycle):
         transformed_color_cycle = color_cycle
+    else:
+        raise TypeError(f'cycle entry must be type(cycle), got {type(cycle)}')
 
     return ColorCycle(
         values=transformed_color_values, cycle=transformed_color_cycle
@@ -91,7 +93,7 @@ def _coerce_colorcycle_from_colors(
     ) = transform_color_cycle(
         color_cycle=val,
         elem_name='color_cycle',
-        default="white",
+        default='white',
     )
     return ColorCycle(
         values=transformed_color_values, cycle=transformed_color_cycle

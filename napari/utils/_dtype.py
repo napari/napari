@@ -49,6 +49,7 @@ def _normalize_str_by_bit_depth(dtype_str, kind):
         return bit_dict[32]
     if '64' in dtype_str:
         return bit_dict[64]
+    return None
 
 
 def normalize_dtype(dtype_spec):
@@ -83,8 +84,8 @@ def normalize_dtype(dtype_spec):
     # If we don't find one of the named dtypes, return the dtype_spec
     # unchanged. This allows NumPy big endian types to work. See
     # https://github.com/napari/napari/issues/3421
-    else:
-        return dtype_spec
+
+    return dtype_spec
 
 
 def get_dtype_limits(dtype_spec) -> Tuple[float, float]:
@@ -110,3 +111,6 @@ def get_dtype_limits(dtype_spec) -> Tuple[float, float]:
     else:
         raise TypeError(f'Unrecognized or non-numeric dtype: {dtype_spec}')
     return info.min, info.max
+
+
+vispy_texture_dtype = np.float32

@@ -4,8 +4,8 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
-from pydantic import PositiveInt, validator
 
+from napari._pydantic_compat import PositiveInt, validator
 from napari.layers.base._base_constants import Blending
 from napari.layers.utils._text_constants import Anchor
 from napari.layers.utils._text_utils import get_text_anchors
@@ -109,7 +109,6 @@ class TextManager(EventedModel):
             _warn_about_deprecated_text_parameter()
             kwargs['string'] = text
         super().__init__(**kwargs)
-        self.events.add(values=Event)
         self.apply(features)
 
     @property
@@ -216,7 +215,7 @@ class TextManager(EventedModel):
         """Copies all encoded values at the given indices."""
         return {
             'string': _get_style_values(self.string, indices),
-            'color': _get_style_values(self.color, indices),
+            'color': _get_style_values(self.color, indices, value_ndim=1),
         }
 
     def _paste(self, *, string: StringArray, color: ColorArray):
@@ -365,7 +364,7 @@ class TextManager(EventedModel):
         # values if needed.
         self.apply(features)
 
-    @validator('blending', pre=True, always=True)
+    @validator('blending', pre=True, always=True, allow_reuse=True)
     def _check_blending_mode(cls, blending):
         blending_mode = Blending(blending)
 

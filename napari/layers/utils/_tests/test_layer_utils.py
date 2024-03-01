@@ -36,40 +36,40 @@ def test_calc_data_range():
     # all zeros should return [0, 1] by default
     data = np.zeros((10, 10))
     clim = calc_data_range(data)
-    assert np.all(clim == [0, 1])
+    np.testing.assert_array_equal(clim, (0, 1))
 
     # all ones should return [0, 1] by default
     data = np.ones((10, 10))
     clim = calc_data_range(data)
-    assert np.all(clim == [0, 1])
+    np.testing.assert_array_equal(clim, (0, 1))
 
     # return min and max
     data = np.random.random((10, 15))
     data[0, 0] = 0
     data[0, 1] = 2
     clim = calc_data_range(data)
-    assert np.all(clim == [0, 2])
+    np.testing.assert_array_equal(clim, (0, 2))
 
     # return min and max
     data = np.random.random((6, 10, 15))
     data[0, 0, 0] = 0
     data[0, 0, 1] = 2
     clim = calc_data_range(data)
-    assert np.all(clim == [0, 2])
+    np.testing.assert_array_equal(clim, (0, 2))
 
     # Try large data
     data = np.zeros((1000, 2000))
     data[0, 0] = 0
     data[0, 1] = 2
     clim = calc_data_range(data)
-    assert np.all(clim == [0, 2])
+    np.testing.assert_array_equal(clim, (0, 2))
 
     # Try large data mutlidimensional
     data = np.zeros((3, 1000, 1000))
     data[0, 0, 0] = 0
     data[0, 0, 1] = 2
     clim = calc_data_range(data)
-    assert np.all(clim == [0, 2])
+    np.testing.assert_array_equal(clim, (0, 2))
 
 
 @pytest.mark.parametrize(
@@ -81,7 +81,7 @@ def test_calc_data_range_fast(data):
     val = calc_data_range(data)
     assert len(val) > 0
     elapsed = time.monotonic() - now
-    assert elapsed < 5, "test took too long, computation was likely not lazy"
+    assert elapsed < 5, 'test took too long, computation was likely not lazy'
 
 
 def test_segment_normal_2d():
@@ -89,7 +89,7 @@ def test_segment_normal_2d():
     b = np.array([1, 10])
 
     unit_norm = segment_normal(a, b)
-    assert np.all(unit_norm == np.array([1, 0]))
+    np.testing.assert_array_equal(unit_norm, np.array([1, 0]))
 
 
 def test_segment_normal_3d():
@@ -98,7 +98,7 @@ def test_segment_normal_3d():
     p = np.array([1, 0, 0])
 
     unit_norm = segment_normal(a, b, p)
-    assert np.all(unit_norm == np.array([0, 0, -1]))
+    np.testing.assert_array_equal(unit_norm, np.array([0, 0, -1]))
 
 
 def test_dataframe_to_properties():
@@ -110,26 +110,26 @@ def test_dataframe_to_properties():
 
 def test_get_current_properties_with_properties_then_last_values():
     properties = {
-        "face_color": np.array(["cyan", "red", "red"]),
-        "angle": np.array([0.5, 1.5, 1.5]),
+        'face_color': np.array(['cyan', 'red', 'red']),
+        'angle': np.array([0.5, 1.5, 1.5]),
     }
 
     current_properties = get_current_properties(properties, {}, 3)
 
     assert current_properties == {
-        "face_color": "red",
-        "angle": 1.5,
+        'face_color': 'red',
+        'angle': 1.5,
     }
 
 
 def test_get_current_properties_with_property_choices_then_first_values():
     properties = {
-        "face_color": np.empty(0, dtype=str),
-        "angle": np.empty(0, dtype=float),
+        'face_color': np.empty(0, dtype=str),
+        'angle': np.empty(0, dtype=float),
     }
     property_choices = {
-        "face_color": np.array(["cyan", "red"]),
-        "angle": np.array([0.5, 1.5]),
+        'face_color': np.array(['cyan', 'red']),
+        'angle': np.array([0.5, 1.5]),
     }
 
     current_properties = get_current_properties(
@@ -138,8 +138,8 @@ def test_get_current_properties_with_property_choices_then_first_values():
     )
 
     assert current_properties == {
-        "face_color": "cyan",
-        "angle": 0.5,
+        'face_color': 'cyan',
+        'angle': 0.5,
     }
 
 
@@ -177,7 +177,7 @@ def test_coerce_current_properties_invalid_values():
 
 
 @pytest.mark.parametrize(
-    "dims_displayed,ndim_world,ndim_layer,expected",
+    'dims_displayed,ndim_world,ndim_layer,expected',
     [
         ([1, 2, 3], 4, 4, [1, 2, 3]),
         ([0, 1, 2], 4, 4, [0, 1, 2]),
@@ -209,24 +209,45 @@ def test_feature_table_from_layer_with_num_data_only():
     assert feature_table.defaults.shape == (1, 0)
 
 
+def test_feature_table_from_layer_with_empty_int_features():
+    feature_table = _FeatureTable.from_layer(
+        features={'a': np.empty(0, dtype=np.int64)}
+    )
+    assert feature_table.values['a'].dtype == np.int64
+    assert len(feature_table.values['a']) == 0
+    assert feature_table.defaults['a'].dtype == np.int64
+    assert feature_table.defaults['a'][0] == 0
+
+
 def test_feature_table_from_layer_with_properties_and_num_data():
     properties = {
         'class': np.array(['sky', 'person', 'building', 'person']),
         'confidence': np.array([0.2, 0.5, 1, 0.8]),
+        'varying_length_prop': np.array(
+            [[0], [0, 0, 0], [0, 0], [0]], dtype=object
+        ),
     }
 
     feature_table = _FeatureTable.from_layer(properties=properties, num_data=4)
 
     features = feature_table.values
-    assert features.shape == (4, 2)
+    assert features.shape == (4, 3)
     np.testing.assert_array_equal(features['class'], properties['class'])
     np.testing.assert_array_equal(
         features['confidence'], properties['confidence']
     )
+    np.testing.assert_array_equal(
+        features['varying_length_prop'], properties['varying_length_prop']
+    )
+
     defaults = feature_table.defaults
-    assert defaults.shape == (1, 2)
+    assert defaults.shape == (1, 3)
     assert defaults['class'][0] == properties['class'][-1]
     assert defaults['confidence'][0] == properties['confidence'][-1]
+    assert (
+        defaults['varying_length_prop'][0]
+        == properties['varying_length_prop'][-1]
+    )
 
 
 def test_feature_table_from_layer_with_properties_and_choices():
@@ -317,13 +338,12 @@ def test_feature_table_from_layer_with_properties_as_dataframe():
     pd.testing.assert_frame_equal(feature_table.values, TEST_FEATURES)
 
 
-def _make_feature_table():
+@pytest.fixture
+def feature_table():
     return _FeatureTable(TEST_FEATURES.copy(deep=True), num_data=4)
 
 
-def test_feature_table_resize_smaller():
-    feature_table = _make_feature_table()
-
+def test_feature_table_resize_smaller(feature_table: _FeatureTable):
     feature_table.resize(2)
 
     features = feature_table.values
@@ -332,8 +352,7 @@ def test_feature_table_resize_smaller():
     np.testing.assert_array_equal(features['confidence'], [0.2, 0.5])
 
 
-def test_feature_table_resize_larger():
-    feature_table = _make_feature_table()
+def test_feature_table_resize_larger(feature_table: _FeatureTable):
     expected_dtypes = feature_table.values.dtypes
 
     feature_table.resize(6)
@@ -351,8 +370,7 @@ def test_feature_table_resize_larger():
     np.testing.assert_array_equal(features.dtypes, expected_dtypes)
 
 
-def test_feature_table_append():
-    feature_table = _make_feature_table()
+def test_feature_table_append(feature_table: _FeatureTable):
     to_append = pd.DataFrame(
         {
             'class': ['sky', 'building'],
@@ -374,9 +392,7 @@ def test_feature_table_append():
     )
 
 
-def test_feature_table_remove():
-    feature_table = _make_feature_table()
-
+def test_feature_table_remove(feature_table: _FeatureTable):
     feature_table.remove([1, 3])
 
     features = feature_table.values
@@ -419,8 +435,33 @@ def test_feature_table_from_layer_with_unordered_pd_series_features():
     pd.testing.assert_frame_equal(feature_table.values, expected)
 
 
+def test_feature_table_set_defaults_with_same_columns(feature_table):
+    defaults = {'class': 'building', 'confidence': 1}
+    assert feature_table.defaults['class'][0] != defaults['class']
+    assert feature_table.defaults['confidence'][0] != defaults['confidence']
+
+    feature_table.set_defaults(defaults)
+
+    assert feature_table.defaults['class'][0] == defaults['class']
+    assert feature_table.defaults['confidence'][0] == defaults['confidence']
+
+
+def test_feature_table_set_defaults_with_extra_column(feature_table):
+    defaults = {'class': 'building', 'confidence': 0, 'cat': 'kermit'}
+    assert 'cat' not in feature_table.values.columns
+    with pytest.raises(ValueError):
+        feature_table.set_defaults(defaults)
+
+
+def test_feature_table_set_defaults_with_missing_column(feature_table):
+    defaults = {'class': 'building'}
+    assert len(feature_table.values.columns) > 1
+    with pytest.raises(ValueError):
+        feature_table.set_defaults(defaults)
+
+
 def test_register_label_attr_action(monkeypatch):
-    monkeypatch.setattr(time, "time", lambda: 1)
+    monkeypatch.setattr(time, 'time', lambda: 1)
 
     class Foo(KeymapProvider):
         def __init__(self) -> None:
@@ -432,18 +473,18 @@ def test_register_label_attr_action(monkeypatch):
     handler = KeymapHandler()
     handler.keymap_providers = [foo]
 
-    @register_layer_attr_action(Foo, "value desc", "value", "K")
+    @register_layer_attr_action(Foo, 'value desc', 'value', 'K')
     def set_value_1(x):
         x.value = 1
 
-    handler.press_key("K")
+    handler.press_key('K')
     assert foo.value == 1
-    handler.release_key("K")
+    handler.release_key('K')
     assert foo.value == 1
 
     foo.value = 0
-    handler.press_key("K")
+    handler.press_key('K')
     assert foo.value == 1
-    monkeypatch.setattr(time, "time", lambda: 2)
-    handler.release_key("K")
+    monkeypatch.setattr(time, 'time', lambda: 2)
+    handler.release_key('K')
     assert foo.value == 0

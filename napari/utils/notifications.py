@@ -7,7 +7,7 @@ import warnings
 from datetime import datetime
 from enum import auto
 from types import TracebackType
-from typing import Callable, List, Optional, Sequence, Tuple, Type, Union
+from typing import Callable, List, Optional, Sequence, Set, Tuple, Type, Union
 
 from napari.utils.events import Event, EventEmitter
 from napari.utils.misc import StringEnum
@@ -56,11 +56,11 @@ class NotificationSeverity(StringEnum):
 
     def as_icon(self):
         return {
-            self.ERROR: "ⓧ",
-            self.WARNING: "⚠️",
-            self.INFO: "ⓘ",
-            self.DEBUG: "🐛",
-            self.NONE: "",
+            self.ERROR: 'ⓧ',
+            self.WARNING: '⚠️',
+            self.INFO: 'ⓘ',
+            self.DEBUG: '🐛',
+            self.NONE: '',
         }[self]
 
     def __lt__(self, other):
@@ -172,7 +172,7 @@ class ErrorNotification(Notification):
             self.exception,
             self.exception.__traceback__,
         )
-        return fmt(exc_info, as_html=False, color="NoColor")
+        return fmt(exc_info, as_html=False, color='NoColor')
 
     def __str__(self):
         from napari.utils._tracebacks import get_tb_formatter
@@ -235,16 +235,17 @@ class NotificationManager:
     def __init__(self) -> None:
         self.records: List[Notification] = []
         self.exit_on_error = os.getenv('NAPARI_EXIT_ON_ERROR') in ('1', 'True')
-        self.catch_error = os.getenv("NAPARI_CATCH_ERRORS") not in (
+        self.catch_error = os.getenv('NAPARI_CATCH_ERRORS') not in (
             '0',
             'False',
         )
         self.notification_ready = self.changed = EventEmitter(
             source=self, event_class=Notification
         )
-        self._originals_except_hooks = []
-        self._original_showwarnings_hooks = []
-        self._originals_thread_except_hooks = []
+        self._originals_except_hooks: List[Callable] = []
+        self._original_showwarnings_hooks: List[Callable] = []
+        self._originals_thread_except_hooks: List[Callable] = []
+        self._seen_warnings: Set[Tuple[str, Type, str, int]] = set()
 
     def __enter__(self):
         self.install_hooks()
@@ -289,24 +290,32 @@ class NotificationManager:
         self.records.append(notification)
         self.notification_ready(notification)
 
-    def receive_thread_error(self, args: threading.ExceptHookArgs):
+    def receive_thread_error(
+        self,
+        args: Tuple[
+            Type[BaseException],
+            BaseException,
+            Optional[TracebackType],
+            Optional[threading.Thread],
+        ],
+    ):
         self.receive_error(*args)
 
     def receive_error(
         self,
-        exctype: Optional[Type[BaseException]] = None,
-        value: Optional[BaseException] = None,
+        exctype: Type[BaseException],
+        value: BaseException,
         traceback: Optional[TracebackType] = None,
         thread: Optional[threading.Thread] = None,
     ):
         if isinstance(value, KeyboardInterrupt):
-            sys.exit("Closed by KeyboardInterrupt")
+            sys.exit('Closed by KeyboardInterrupt')
 
         capture_exception(value)
 
         if self.exit_on_error:
             sys.__excepthook__(exctype, value, traceback)
-            sys.exit("Exit on error")
+            sys.exit('Exit on error')
         if not self.catch_error:
             sys.__excepthook__(exctype, value, traceback)
             return
@@ -321,6 +330,10 @@ class NotificationManager:
         file=None,
         line=None,
     ):
+        msg = message if isinstance(message, str) else message.args[0]
+        if (msg, category, filename, lineno) in self._seen_warnings:
+            return
+        self._seen_warnings.add((msg, category, filename, lineno))
         self.dispatch(
             Notification.from_warning(
                 message, filename=filename, lineno=lineno
@@ -386,9 +399,9 @@ def show_console_notification(notification: Notification):
         print(notification)
     except Exception:
         print(
-            "An error occurred while trying to format an error and show it in console.\n"
-            "You can try to uninstall IPython to disable rich traceback formatting\n"
-            "And/or report a bug to napari"
+            'An error occurred while trying to format an error and show it in console.\n'
+            'You can try to uninstall IPython to disable rich traceback formatting\n'
+            'And/or report a bug to napari'
         )
         # this will likely get silenced by QT.
         raise

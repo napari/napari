@@ -45,14 +45,14 @@ def append(delayed_image):
         image_dtype = layer.data.dtype
         image = da.from_delayed(
             delayed_image, shape=image_shape, dtype=image_dtype,
-        ).reshape((1,) + image_shape)
+        ).reshape((1, *image_shape))
         layer.data = da.concatenate((layer.data, image), axis=0)
     else:
         # first run, no layer added yet
         image = delayed_image.compute()
         image = da.from_delayed(
             delayed_image, shape=image.shape, dtype=image.dtype,
-        ).reshape((1,) + image.shape)
+        ).reshape((1, *image.shape))
         layer = viewer.add_image(image, rendering='attenuated_mip')
 
     # we want to show the last file added in the viewer to do so we want to

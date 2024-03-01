@@ -50,7 +50,7 @@ def move_rectangle_along_normal(layer, event):
     if shape_index is None:
         return
 
-    layer.interactive = False
+    layer.mouse_pan = False
 
     start_position = np.copy(event.position)
     yield
@@ -66,7 +66,7 @@ def move_rectangle_along_normal(layer, event):
         new_rectangle = layer.data[shape_index] + shift_data_coordinates
         layer.add(new_rectangle)
         yield
-    layer.interactive = True
+    layer.mouse_pan = True
 
 
 if __name__ == '__main__':
