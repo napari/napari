@@ -602,7 +602,7 @@ def test_after_in_add_mode_shape(mode, create_known_shapes_layer):
     ],
 )
 def test_clicking_the_same_point_is_not_crashing(
-    mode, create_known_shapes_layer, Event
+    mode, create_known_shapes_layer
 ):
     layer, n_shapes, _ = create_known_shapes_layer
 
@@ -624,9 +624,7 @@ def test_clicking_the_same_point_is_not_crashing(
         'add_path',
     ],
 )
-def test_is_creating_is_false_on_creation(
-    mode, create_known_shapes_layer, Event
-):
+def test_is_creating_is_false_on_creation(mode, create_known_shapes_layer):
     layer, n_shapes, _ = create_known_shapes_layer
 
     layer.mode = mode
