@@ -641,18 +641,12 @@ def test_is_creating_is_false_on_creation(
     assert not layer._is_creating
     layer.events.set_data.connect(is_creating_is_True)
 
-    event = read_only_mouse_event(
-        type='mouse_press',
-        position=position,
-    )
+    event = read_only_mouse_event(type='mouse_press', position=position)
     mouse_press_callbacks(layer, event)
 
     assert layer._is_creating
 
-    event = read_only_mouse_event(
-        type='mouse_release',
-        position=position,
-    )
+    event = read_only_mouse_event(type='mouse_release', position=position)
     mouse_release_callbacks(layer, event)
 
     assert layer._is_creating
