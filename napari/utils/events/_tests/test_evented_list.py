@@ -112,7 +112,7 @@ def test_move(test_list):
     test_list.events = Mock(wraps=test_list.events)
 
     def _fail():
-        raise AssertionError("unexpected event called")
+        raise AssertionError('unexpected event called')
 
     test_list.events.removing.connect(_fail)
     test_list.events.removed.connect(_fail)
@@ -170,7 +170,7 @@ def test_move_multiple(sources, dest, expectation):
     assert el == [0, 1, 2, 3, 4, 5, 6, 7]
 
     def _fail():
-        raise AssertionError("unexpected event called")
+        raise AssertionError('unexpected event called')
 
     el.events.removing.connect(_fail)
     el.events.removed.connect(_fail)
@@ -256,7 +256,7 @@ def test_nested_indexing():
     # 110 -> '110' -> (1, 1, 0)
     indices = [tuple(int(x) for x in str(n)) for n in flatten(NEST)]
     for index in indices:
-        assert ne_list[index] == int("".join(map(str, index)))
+        assert ne_list[index] == int(''.join(map(str, index)))
 
     assert ne_list.has_index(1)
     assert ne_list.has_index((1,))
@@ -390,7 +390,7 @@ def test_child_events():
     observed = []
     root.events.connect(lambda e: observed.append(e))
     root.append(e_obj)
-    e_obj.events.test(value="hi")
+    e_obj.events.test(value='hi')
     obs = [(e.type, e.index, getattr(e, 'value', None)) for e in observed]
     expected = [
         ('inserting', 0, None),  # before we inserted b into root
@@ -428,7 +428,7 @@ def test_nested_child_events():
     # and append the event-emitter object to the nested list
     b.append(e_obj)
     # then have the deeply nested event-emitter actually emit an event
-    e_obj.events.test(value="hi")
+    e_obj.events.test(value='hi')
 
     # look at the (type, index, and value) of all of the events emitted by root
     # and make sure they match expectations

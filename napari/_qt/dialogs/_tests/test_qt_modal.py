@@ -26,7 +26,7 @@ class TestQtPopup:
         with pytest.raises(ValueError):
             popup.move_to()
 
-    @pytest.mark.parametrize("pos", ["top", "bottom", "left", "right"])
+    @pytest.mark.parametrize('pos', ['top', 'bottom', 'left', 'right'])
     def test_move_to(self, pos, qtbot):
         window = QMainWindow()
         qtbot.addWidget(window)
@@ -42,12 +42,12 @@ class TestQtPopup:
         window.setCentralWidget(widget)
         popup = QtPopup(widget)
         with pytest.raises(ValueError):
-            popup.move_to("dummy_text")
+            popup.move_to('dummy_text')
 
         with pytest.raises(TypeError):
             popup.move_to({})
 
-    @pytest.mark.parametrize("pos", [[10, 10, 10, 10], (15, 10, 10, 10)])
+    @pytest.mark.parametrize('pos', [[10, 10, 10, 10], (15, 10, 10, 10)])
     def test_move_to_cords(self, pos, qtbot):
         window = QMainWindow()
         qtbot.addWidget(window)
@@ -58,7 +58,7 @@ class TestQtPopup:
 
     def test_click(self, qtbot, monkeypatch):
         popup = QtPopup(None)
-        monkeypatch.setattr(popup, "close", MagicMock())
+        monkeypatch.setattr(popup, 'close', MagicMock())
         qtbot.addWidget(popup)
         qtbot.keyClick(popup, Qt.Key_8)
         popup.close.assert_not_called()

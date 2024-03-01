@@ -2,11 +2,13 @@ import os
 import sys
 from collections import abc
 from contextlib import suppress
-from typing import Any, Dict
+from threading import RLock
+from typing import Any, Dict, Tuple, Union
 
 import numpy as np
 import pandas as pd
 import pytest
+from numpy.typing import DTypeLike
 
 from napari import Viewer
 from napari.layers import (
@@ -18,7 +20,9 @@ from napari.layers import (
     Tracks,
     Vectors,
 )
+from napari.layers._data_protocols import Index, LayerDataProtocol
 from napari.utils.color import ColorArray
+from napari.utils.events.event import WarningEmitter
 
 skip_on_win_ci = pytest.mark.skipif(
     sys.platform.startswith('win') and os.getenv('CI', '0') != '0',
@@ -102,7 +106,7 @@ layer2addmethod = {
 good_layer_data = [
     (np.random.random((10, 10)),),
     (np.random.random((10, 10, 3)), {'rgb': True}),
-    (np.random.randint(20, size=(10, 15)), {'seed': 0.3}, 'labels'),
+    (np.random.randint(20, size=(10, 15)), {'opacity': 0.9}, 'labels'),
     (np.random.random((10, 2)) * 20, {'face_color': 'blue'}, 'points'),
     (np.random.random((10, 2, 2)) * 20, {}, 'vectors'),
     (np.random.random((10, 4, 2)) * 20, {'opacity': 1}, 'shapes'),
@@ -116,6 +120,40 @@ good_layer_data = [
         'surface',
     ),
 ]
+
+
+class LockableData:
+    """A wrapper for napari layer data that blocks read-access with a lock.
+
+    This is useful when testing async slicing with real napari layers because
+    it allows us to control when slicing tasks complete.
+    """
+
+    def __init__(self, data: LayerDataProtocol) -> None:
+        self.data = data
+        self.lock = RLock()
+
+    @property
+    def dtype(self) -> DTypeLike:
+        return self.data.dtype
+
+    @property
+    def shape(self) -> Tuple[int, ...]:
+        return self.data.shape
+
+    @property
+    def ndim(self) -> int:
+        # LayerDataProtocol does not have ndim, but this should be equivalent.
+        return len(self.data.shape)
+
+    def __getitem__(
+        self, key: Union[Index, Tuple[Index, ...], LayerDataProtocol]
+    ) -> LayerDataProtocol:
+        with self.lock:
+            return self.data[key]
+
+    def __len__(self) -> int:
+        return len(self.data)
 
 
 def add_layer_by_type(viewer, layer_type, data, visible=True):
@@ -278,3 +316,13 @@ def assert_colors_equal(actual, expected):
     actual_array = ColorArray.validate(actual)
     expected_array = ColorArray.validate(expected)
     np.testing.assert_array_equal(actual_array, expected_array)
+
+
+def count_warning_events(callbacks) -> int:
+    """
+    Counts the number of WarningEmitter in the callback list.
+    Useful to filter out deprecated events' callbacks.
+    """
+    return len(
+        list(filter(lambda x: isinstance(x, WarningEmitter), callbacks))
+    )

@@ -8,7 +8,6 @@ from typing import (
     Dict,
     Iterable,
     List,
-    Literal,
     NewType,
     Optional,
     Sequence,
@@ -18,6 +17,9 @@ from typing import (
 )
 
 import numpy as np
+
+# TODO decide where types should be defined to have single place for them
+from npe2.types import LayerName as LayerTypeName
 from typing_extensions import TypedDict, get_args
 
 if TYPE_CHECKING:
@@ -27,8 +29,34 @@ if TYPE_CHECKING:
     import dask.array  # noqa: ICN001
     import zarr
     from magicgui.widgets import FunctionGui
-    from qtpy.QtWidgets import QWidget  # type: ignore [attr-defined]
+    from qtpy.QtWidgets import QWidget
 
+
+__all__ = [
+    'ArrayLike',
+    'LayerTypeName',
+    'FullLayerData',
+    'LayerData',
+    'PathLike',
+    'PathOrPaths',
+    'ReaderFunction',
+    'WriterFunction',
+    'ExcInfo',
+    'WidgetCallable',
+    'AugmentedWidget',
+    'SampleData',
+    'SampleDict',
+    'ArrayBase',
+    'ImageData',
+    'LabelsData',
+    'PointsData',
+    'ShapesData',
+    'SurfaceData',
+    'TracksData',
+    'VectorsData',
+    'LayerDataTuple',
+    'image_reader_to_layerdata_reader',
+]
 
 # This is a WOEFULLY inadequate stub for a duck-array type.
 # Mostly, just a placeholder for the concept of needing an ArrayLike type.
@@ -38,17 +66,13 @@ if TYPE_CHECKING:
 # since it includes all valid arguments for np.array() ( int, float, str...)
 ArrayLike = Union[np.ndarray, 'dask.array.Array', 'zarr.Array']
 
-LayerTypeName = Literal[
-    "image", "labels", "points", "shapes", "surface", "tracks", "vectors"
-]
-
 # layer data may be: (data,) (data, meta), or (data, meta, layer_type)
 # using "Any" for the data type until ArrayLike is more mature.
 FullLayerData = Tuple[Any, Dict, LayerTypeName]
 LayerData = Union[Tuple[Any], Tuple[Any, Dict], FullLayerData]
 
 PathLike = Union[str, Path]
-PathOrPaths = Union[str, Sequence[str]]
+PathOrPaths = Union[PathLike, Sequence[PathLike]]
 ReaderFunction = Callable[[PathOrPaths], List[LayerData]]
 WriterFunction = Callable[[str, List[FullLayerData]], List[str]]
 
@@ -83,13 +107,13 @@ class SampleDict(TypedDict):
 ArrayBase: Type[np.ndarray] = np.ndarray
 
 
-ImageData = NewType("ImageData", np.ndarray)
-LabelsData = NewType("LabelsData", np.ndarray)
-PointsData = NewType("PointsData", np.ndarray)
-ShapesData = NewType("ShapesData", List[np.ndarray])
-SurfaceData = NewType("SurfaceData", Tuple[np.ndarray, np.ndarray, np.ndarray])
-TracksData = NewType("TracksData", np.ndarray)
-VectorsData = NewType("VectorsData", np.ndarray)
+ImageData = NewType('ImageData', np.ndarray)
+LabelsData = NewType('LabelsData', np.ndarray)
+PointsData = NewType('PointsData', np.ndarray)
+ShapesData = NewType('ShapesData', List[np.ndarray])
+SurfaceData = NewType('SurfaceData', Tuple[np.ndarray, np.ndarray, np.ndarray])
+TracksData = NewType('TracksData', np.ndarray)
+VectorsData = NewType('VectorsData', np.ndarray)
 _LayerData = Union[
     ImageData,
     LabelsData,
@@ -100,7 +124,7 @@ _LayerData = Union[
     VectorsData,
 ]
 
-LayerDataTuple = NewType("LayerDataTuple", tuple)
+LayerDataTuple = NewType('LayerDataTuple', tuple)
 
 
 def image_reader_to_layerdata_reader(

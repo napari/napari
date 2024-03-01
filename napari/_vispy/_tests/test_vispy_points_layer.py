@@ -5,7 +5,7 @@ from napari._vispy.layers.points import VispyPointsLayer
 from napari.layers import Points
 
 
-@pytest.mark.parametrize("opacity", [0, 0.3, 0.7, 1])
+@pytest.mark.parametrize('opacity', [0, 0.3, 0.7, 1])
 def test_VispyPointsLayer(opacity):
     points = np.array([[100, 100], [200, 200], [300, 100]])
     layer = Points(points, size=30, opacity=opacity)

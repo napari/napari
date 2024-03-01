@@ -6,17 +6,17 @@ localization data.
 import gettext
 import os
 from pathlib import Path
-from typing import Optional, Union
+from typing import ClassVar, Dict, Optional, Union
 
 from yaml import safe_load
 
 from napari.utils._base import _DEFAULT_CONFIG_PATH, _DEFAULT_LOCALE
 
 # Entry points
-NAPARI_LANGUAGEPACK_ENTRY = "napari.languagepack"
+NAPARI_LANGUAGEPACK_ENTRY = 'napari.languagepack'
 
 # Constants
-LOCALE_DIR = "locale"
+LOCALE_DIR = 'locale'
 
 
 def _get_display_name(
@@ -42,7 +42,9 @@ def _get_display_name(
     try:
         # This is a dependency of the language packs to keep out of core
         import babel
-
+    except ModuleNotFoundError:
+        display_name = display_locale.capitalize()
+    else:
         locale = locale if _is_valid_locale(locale) else _DEFAULT_LOCALE
         display_locale = (
             display_locale
@@ -50,11 +52,12 @@ def _get_display_name(
             else _DEFAULT_LOCALE
         )
         loc = babel.Locale.parse(locale)
-        dislay_name = loc.get_display_name(display_locale).capitalize()
-    except ModuleNotFoundError:
-        dislay_name = display_locale.capitalize()
+        display_name_ = loc.get_display_name(display_locale)
+        if display_name_ is None:
+            raise RuntimeError(f'Could not find {display_locale}')
+        display_name = display_name_.capitalize()
 
-    return dislay_name
+    return display_name
 
 
 def _is_valid_locale(locale: str) -> bool:
@@ -144,14 +147,14 @@ def get_language_packs(display_locale: str = _DEFAULT_LOCALE) -> dict:
     )
     locales = {
         _DEFAULT_LOCALE: {
-            "displayName": _get_display_name(_DEFAULT_LOCALE, display_locale),
-            "nativeName": _get_display_name(_DEFAULT_LOCALE, _DEFAULT_LOCALE),
+            'displayName': _get_display_name(_DEFAULT_LOCALE, display_locale),
+            'nativeName': _get_display_name(_DEFAULT_LOCALE, _DEFAULT_LOCALE),
         }
     }
     for locale in valid_locales:
         locales[locale] = {
-            "displayName": _get_display_name(locale, display_locale),
-            "nativeName": _get_display_name(locale, locale),
+            'displayName': _get_display_name(locale, display_locale),
+            'nativeName': _get_display_name(locale, locale),
         }
 
     return locales
@@ -162,6 +165,9 @@ def get_language_packs(display_locale: str = _DEFAULT_LOCALE) -> dict:
 class TranslationString(str):
     """
     A class that allows to create a deferred translations.
+
+    See https://docs.python.org/3/library/gettext.html for documentation
+    of the arguments to __new__ and __init__ in this class.
     """
 
     def __deepcopy__(self, memo):
@@ -170,7 +176,7 @@ class TranslationString(str):
         kwargs = deepcopy(self._kwargs)
         # Remove `n` from `kwargs` added in the initializer
         # See https://github.com/napari/napari/issues/4736
-        kwargs.pop("n")
+        kwargs.pop('n')
         return TranslationString(
             domain=self._domain,
             msgctxt=self._msgctxt,
@@ -193,10 +199,10 @@ class TranslationString(str):
     ):
         if msgid is None:
             raise ValueError(
-                trans._("Must provide at least a `msgid` parameter!")
+                trans._('Must provide at least a `msgid` parameter!')
             )
 
-        kwargs["n"] = n
+        kwargs['n'] = n
 
         return str.__new__(
             cls,
@@ -210,19 +216,14 @@ class TranslationString(str):
 
     def __init__(
         self,
-        domain: Optional[str] = None,
+        domain: str,
+        msgid: str,
         msgctxt: Optional[str] = None,
-        msgid: Optional[str] = None,
         msgid_plural: Optional[str] = None,
-        n: Optional[str] = None,
+        n: Optional[int] = None,
         deferred: bool = False,
         **kwargs,
     ) -> None:
-        if msgid is None:
-            raise ValueError(
-                trans._("Must provide at least a `msgid` parameter!")
-            )
-
         self._domain = domain
         self._msgctxt = msgctxt
         self._msgid = msgid
@@ -274,32 +275,35 @@ class TranslationString(str):
         """
         Return the translated string with interpolated kwargs, if provided.
         """
-
-        if self._n is None and self._msgctxt is None:
-            translation = gettext.dgettext(
-                self._domain,
-                self._msgid,
-            )
-        elif self._n is None:
-            translation = gettext.dpgettext(
-                self._domain,
-                self._msgctxt,
-                self._msgid,
-            )
-        elif self._msgctxt is None:
-            translation = gettext.dngettext(
-                self._domain,
-                self._msgid,
-                self._msgid_plural,
-                self._n,
-            )
-        else:
+        if (
+            self._n is not None
+            and self._msgid_plural is not None
+            and self._msgctxt is not None
+        ):
             translation = gettext.dnpgettext(
                 self._domain,
                 self._msgctxt,
                 self._msgid,
                 self._msgid_plural,
                 self._n,
+            )
+        elif self._n is not None and self._msgid_plural is not None:
+            translation = gettext.dngettext(
+                self._domain,
+                self._msgid,
+                self._msgid_plural,
+                self._n,
+            )
+        elif self._msgctxt is not None:
+            translation = gettext.dpgettext(
+                self._domain,
+                self._msgctxt,
+                self._msgid,
+            )
+        else:
+            translation = gettext.dgettext(
+                self._domain,
+                self._msgid,
             )
 
         return translation.format(**self._kwargs)
@@ -337,7 +341,7 @@ class TranslationBundle:
         """
         self._locale = locale
         localedir = None
-        if locale.split("_")[0] != _DEFAULT_LOCALE:
+        if locale.split('_')[0] != _DEFAULT_LOCALE:
             from napari_plugin_engine.manager import iter_available_plugins
 
             lang_packs = iter_available_plugins(NAPARI_LANGUAGEPACK_ENTRY)
@@ -348,7 +352,7 @@ class TranslationBundle:
                 trans = self
                 warnings.warn(
                     trans._(
-                        "Requested locale not available: {locale}",
+                        'Requested locale not available: {locale}',
                         deferred=True,
                         locale=locale,
                     )
@@ -357,14 +361,18 @@ class TranslationBundle:
                 import importlib
 
                 mod = importlib.import_module(data[locale])
-                localedir = Path(mod.__file__).parent / LOCALE_DIR
+                if mod.__file__ is not None:
+                    localedir = Path(mod.__file__).parent / LOCALE_DIR
+                else:
+                    raise RuntimeError(f'Could not find __file__ for {mod}')
 
         gettext.bindtextdomain(self._domain, localedir=localedir)
 
     def _dnpgettext(
         self,
+        *,
+        msgid: str,
         msgctxt: Optional[str] = None,
-        msgid: Optional[str] = None,
         msgid_plural: Optional[str] = None,
         n: Optional[int] = None,
         **kwargs,
@@ -372,6 +380,12 @@ class TranslationBundle:
         """
         Helper to handle all trans methods and delegate to corresponding
         gettext methods.
+
+        Must provide one of the following sets of arguments:
+        - msgid
+        - msgid, msgctxt
+        - msgid, msgid_plural, n
+        - msgid, msgid_plural, n, msgctxt
 
         Parameters
         ----------
@@ -386,26 +400,7 @@ class TranslationBundle:
         **kwargs : dict, optional
             Any additional arguments to use when formating the string.
         """
-        if msgid is None:
-            trans = self
-            raise ValueError(
-                trans._(
-                    "Must provide at least a `msgid` parameter!", deferred=True
-                )
-            )
-
-        if n is None and msgctxt is None:
-            translation = gettext.dgettext(self._domain, msgid)
-        elif n is None:
-            translation = gettext.dpgettext(self._domain, msgctxt, msgid)
-        elif msgctxt is None:
-            translation = gettext.dngettext(
-                self._domain,
-                msgid,
-                msgid_plural,
-                n,
-            )
-        else:
+        if msgctxt is not None and n is not None and msgid_plural is not None:
             translation = gettext.dnpgettext(
                 self._domain,
                 msgctxt,
@@ -413,6 +408,17 @@ class TranslationBundle:
                 msgid_plural,
                 n,
             )
+        elif n is not None and msgid_plural is not None:
+            translation = gettext.dngettext(
+                self._domain,
+                msgid,
+                msgid_plural,
+                n,
+            )
+        elif msgctxt is not None:
+            translation = gettext.dpgettext(self._domain, msgctxt, msgid)
+        else:
+            translation = gettext.dgettext(self._domain, msgid)
 
         kwargs['n'] = n
         return translation.format(**kwargs)
@@ -538,7 +544,7 @@ class TranslationBundle:
         msgctxt: str,
         msgid: str,
         msgid_plural: str,
-        n: str,
+        n: int,
         deferred: Optional[bool] = False,
         **kwargs,
     ) -> Union[TranslationString, str]:
@@ -593,7 +599,7 @@ class _Translator:
     Translations manager.
     """
 
-    _TRANSLATORS = {}
+    _TRANSLATORS: ClassVar[Dict[str, TranslationBundle]] = {}
     _LOCALE = _DEFAULT_LOCALE
 
     @staticmethod
@@ -606,8 +612,8 @@ class _Translator:
         locale : str
             The language name to use.
         """
-        for key in ["LANGUAGE", "LANG"]:
-            os.environ[key] = f"{locale}.UTF-8"
+        for key in ['LANGUAGE', 'LANG']:
+            os.environ[key] = f'{locale}.UTF-8'
 
     @classmethod
     def _set_locale(cls, locale: str):
@@ -622,14 +628,14 @@ class _Translator:
         if _is_valid_locale(locale):
             cls._LOCALE = locale
 
-            if locale.split("_")[0] != _DEFAULT_LOCALE:
+            if locale.split('_')[0] != _DEFAULT_LOCALE:
                 _Translator._update_env(locale)
 
             for bundle in cls._TRANSLATORS.values():
                 bundle._update_locale(locale)
 
     @classmethod
-    def load(cls, domain: str = "napari") -> TranslationBundle:
+    def load(cls, domain: str = 'napari') -> TranslationBundle:
         """
         Load translation domain.
 
@@ -673,29 +679,28 @@ def _load_language(
     str
         The language locale set by napari.
     """
-    default_config_path = Path(default_config_path)
-    if default_config_path.exists():
-        with open(default_config_path) as fh:
+    if (config_path := Path(default_config_path)).exists():
+        with config_path.open() as fh:
             try:
                 data = safe_load(fh) or {}
             except Exception as err:  # noqa BLE001
                 import warnings
 
                 warnings.warn(
-                    "The `language` setting defined in the napari "
-                    "configuration file could not be read.\n\n"
-                    "The default language will be used.\n\n"
-                    f"Error:\n{err}"
+                    'The `language` setting defined in the napari '
+                    'configuration file could not be read.\n\n'
+                    'The default language will be used.\n\n'
+                    f'Error:\n{err}'
                 )
                 data = {}
 
-        locale = data.get("application", {}).get("language", locale)
+        locale = data.get('application', {}).get('language', locale)
 
-    return os.environ.get("NAPARI_LANGUAGE", locale)
+    return os.environ.get('NAPARI_LANGUAGE', locale)
 
 
 # Default translator
-trans = _Translator.load("napari")
+trans = _Translator.load('napari')
 
 # Update Translator locale before any other import uses it
 _Translator._set_locale(_load_language())

@@ -9,10 +9,13 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple, cast
 from warnings import warn
 
-from pydantic import BaseModel, BaseSettings, ValidationError
-from pydantic.env_settings import SettingsError
-from pydantic.error_wrappers import display_errors
-
+from napari._pydantic_compat import (
+    BaseModel,
+    BaseSettings,
+    SettingsError,
+    ValidationError,
+    display_errors,
+)
 from napari.settings._yaml import PydanticYamlMixin
 from napari.utils.events import EmitterGroup, EventedModel
 from napari.utils.misc import deep_update
@@ -23,8 +26,10 @@ _logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from typing import AbstractSet, Any, Union
 
-    from pydantic.env_settings import EnvSettingsSource, SettingsSourceCallable
-
+    from napari._pydantic_compat import (
+        EnvSettingsSource,
+        SettingsSourceCallable,
+    )
     from napari.utils.events import Event
 
     IntStr = Union[int, str]
@@ -33,7 +38,7 @@ if TYPE_CHECKING:
     MappingIntStrAny = Mapping[IntStr, Any]
 
 
-class EventedSettings(BaseSettings, EventedModel):  # type: ignore[misc]
+class EventedSettings(BaseSettings, EventedModel):
     """A variant of EventedModel designed for settings.
 
     Pydantic's BaseSettings model will attempt to determine the values of any
@@ -58,7 +63,7 @@ class EventedSettings(BaseSettings, EventedModel):  # type: ignore[misc]
                 def _warn_restart(*_):
                     warn(
                         trans._(
-                            "Restart required for this change to take effect.",
+                            'Restart required for this change to take effect.',
                             deferred=True,
                         )
                     )
@@ -66,7 +71,7 @@ class EventedSettings(BaseSettings, EventedModel):  # type: ignore[misc]
     def _on_sub_event(self, event: Event, field=None):
         """emit the field.attr name and new value"""
         if field:
-            field += "."
+            field += '.'
         value = getattr(event, 'value', None)
         self.events.changed(key=f'{field}{event._type}', value=value)
 
@@ -116,7 +121,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         """Return the path to/from which settings be saved/loaded."""
         return self._config_path
 
-    def dict(  # type: ignore [override]
+    def dict(
         self,
         *,
         include: Union[AbstractSetIntStr, MappingIntStrAny] = None,  # type: ignore
@@ -167,7 +172,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         if not path:
             raise ValueError(
                 trans._(
-                    "No path provided in config or save argument.",
+                    'No path provided in config or save argument.',
                     deferred=True,
                 )
             )
@@ -180,13 +185,13 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         """Encode and dump `data` to `path` using a path-appropriate encoder."""
         if str(path).endswith(('.yaml', '.yml')):
             _data = self._yaml_dump(data)
-        elif str(path).endswith(".json"):
+        elif str(path).endswith('.json'):
             json_dumps = self.__config__.json_dumps
             _data = json_dumps(data, default=self.__json_encoder__)
         else:
             raise NotImplementedError(
                 trans._(
-                    "Can only currently dump to `.json` or `.yaml`, not {path!r}",
+                    'Can only currently dump to `.json` or `.yaml`, not {path!r}',
                     deferred=True,
                     path=path,
                 )
@@ -241,7 +246,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
             the return list to change the priority of sources.
             """
             cls._env_settings = nested_env_settings(env_settings)
-            return (  # type: ignore [return-value]
+            return (
                 init_settings,
                 cls._env_settings,
                 cls._config_file_settings_source,
@@ -383,7 +388,7 @@ def config_file_settings_source(
             if path_ != default_cfg:
                 _logger.warning(
                     trans._(
-                        "Requested config path is not a file: {path}",
+                        'Requested config path is not a file: {path}',
                         path=path_,
                     )
                 )
@@ -392,12 +397,12 @@ def config_file_settings_source(
         # get loader for yaml/json
         if str(path).endswith(('.yaml', '.yml')):
             load = __import__('yaml').safe_load
-        elif str(path).endswith(".json"):
+        elif str(path).endswith('.json'):
             load = __import__('json').load
         else:
             warn(
                 trans._(
-                    "Unrecognized file extension for config_path: {path}",
+                    'Unrecognized file extension for config_path: {path}',
                     path=path,
                 )
             )
@@ -409,7 +414,7 @@ def config_file_settings_source(
         except Exception as err:  # noqa: BLE001
             _logger.warning(
                 trans._(
-                    "The content of the napari settings file could not be read\n\nThe default settings will be used and the content of the file will be replaced the next time settings are changed.\n\nError:\n{err}",
+                    'The content of the napari settings file could not be read\n\nThe default settings will be used and the content of the file will be replaced the next time settings are changed.\n\nError:\n{err}',
                     deferred=True,
                     err=err,
                 )
@@ -429,7 +434,7 @@ def config_file_settings_source(
         # if errors occur, we still want to boot, so we just remove bad keys
         errors = err.errors()
         msg = trans._(
-            "Validation errors in config file(s).\nThe following fields have been reset to the default value:\n\n{errors}\n",
+            'Validation errors in config file(s).\nThe following fields have been reset to the default value:\n\n{errors}\n',
             deferred=True,
             errors=display_errors(errors),
         )

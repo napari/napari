@@ -16,7 +16,6 @@ from napari.layers import (
     Tracks,
     Vectors,
 )
-from napari.utils import config
 from napari.utils.translations import trans
 
 layer_to_controls = {
@@ -28,13 +27,6 @@ layer_to_controls = {
     Vectors: QtVectorsControls,
     Tracks: QtTracksControls,
 }
-
-if config.async_loading:
-    from napari.layers.image.experimental.octree_image import _OctreeImageBase
-
-    # The user visible layer controls for OctreeImage layers are identical
-    # to the regular image layer controls, for now.
-    layer_to_controls[_OctreeImageBase] = QtImageControls
 
 
 def create_qt_layer_controls(layer):
@@ -96,12 +88,12 @@ class QtLayerControlsContainer(QStackedWidget):
 
     def __init__(self, viewer) -> None:
         super().__init__()
-        self.setProperty("emphasized", True)
+        self.setProperty('emphasized', True)
         self.viewer = viewer
 
         self.setMouseTracking(True)
         self.empty_widget = QFrame()
-        self.empty_widget.setObjectName("empty_controls_widget")
+        self.empty_widget.setObjectName('empty_controls_widget')
         self.widgets = {}
         self.addWidget(self.empty_widget)
         self.setCurrentWidget(self.empty_widget)

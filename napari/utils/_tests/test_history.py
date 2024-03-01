@@ -15,7 +15,7 @@ def test_open_history():
 
 
 def test_update_open_history(tmpdir):
-    new_folder = Path(tmpdir) / "some-file.svg"
+    new_folder = Path(tmpdir) / 'some-file.svg'
     update_open_history(new_folder)
     assert str(new_folder.parent) in get_open_history()
 
@@ -27,6 +27,6 @@ def test_save_history():
 
 
 def test_update_save_history(tmpdir):
-    new_folder = Path(tmpdir) / "some-file.svg"
+    new_folder = Path(tmpdir) / 'some-file.svg'
     update_save_history(new_folder)
     assert str(new_folder.parent) in get_save_history()

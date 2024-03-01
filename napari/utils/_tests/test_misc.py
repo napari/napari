@@ -1,12 +1,15 @@
 from enum import auto
+from importlib.metadata import version as package_version
 from os.path import abspath, expanduser, sep
 from pathlib import Path
 
 import pytest
+from packaging.version import parse as parse_version
 
 from napari.utils.misc import (
     StringEnum,
     _is_array_type,
+    _pandas_dataframe_equal,
     _quiet_array_equal,
     abspath_or_url,
     ensure_iterable,
@@ -138,9 +141,9 @@ def test_string_enum():
 
     # test direct comparison with a string
     assert TestEnum.THING == 'thing'
-    assert 'thing' == TestEnum.THING
+    assert TestEnum.THING == 'thing'
     assert TestEnum.THING != 'notathing'
-    assert 'notathing' != TestEnum.THING
+    assert TestEnum.THING != 'notathing'
 
     # test comparison with another enum with same value names
     class AnotherTestEnum(StringEnum):
@@ -160,7 +163,7 @@ def test_string_enum():
 
 
 def test_abspath_or_url():
-    relpath = "~" + sep + "something"
+    relpath = '~' + sep + 'something'
     assert abspath_or_url(relpath) == expanduser(relpath)
     assert abspath_or_url('something') == abspath('something')
     assert abspath_or_url(sep + 'something') == abspath(sep + 'something')
@@ -184,6 +187,7 @@ def test_equality_operator():
 
     import dask.array as da
     import numpy as np
+    import pandas as pd
     import xarray as xr
     import zarr
 
@@ -198,6 +202,18 @@ def test_equality_operator():
         pick_equality_operator(xr.DataArray(np.ones((1, 1))))
         == _quiet_array_equal
     )
+    assert pick_equality_operator(
+        pd.DataFrame({'A': [1]}) == _pandas_dataframe_equal
+    )
+
+
+@pytest.mark.skipif(
+    parse_version(package_version('numpy')) >= parse_version('1.25.0'),
+    reason='Numpy 1.25.0 return true for below comparison',
+)
+def test_equality_operator_silence():
+    import numpy as np
+
     eq = pick_equality_operator(np.asarray([]))
     # make sure this doesn't warn
     assert not eq(np.asarray([]), np.asarray([], '<U32'))
@@ -222,8 +238,8 @@ def test_is_array_type_with_xarray():
         ([([1, 10],)], [([1, 10],)]),
         ([([1, 10], {'name': 'hi'})], [([1, 10], {'name': 'hi'})]),
         (
-            [([1, 10], {'name': 'hi'}, "image")],
-            [([1, 10], {'name': 'hi'}, "image")],
+            [([1, 10], {'name': 'hi'}, 'image')],
+            [([1, 10], {'name': 'hi'}, 'image')],
         ),
         ([], []),
     ],

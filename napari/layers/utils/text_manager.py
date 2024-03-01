@@ -4,8 +4,8 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
-from pydantic import PositiveInt, validator
 
+from napari._pydantic_compat import PositiveInt, validator
 from napari.layers.base._base_constants import Blending
 from napari.layers.utils._text_constants import Anchor
 from napari.layers.utils._text_utils import get_text_anchors
