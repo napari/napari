@@ -37,5 +37,11 @@ class TracksSuite:
 
         self.data = data
 
+        # create layer for the update benchmark
+        self.layer = Tracks(self.data)
+
     def time_create_layer(self, *_) -> None:
         Tracks(self.data)
+
+    def time_update_layer(self, *_) -> None:
+        self.layer.data = self.data
