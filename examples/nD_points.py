@@ -36,7 +36,7 @@ points = np.array(
     ], dtype=float
 )
 viewer.add_points(
-    points, size=[0, 6, 10, 10], face_color='blue', out_of_slice_display=True
+    points, size=10, face_color='blue', out_of_slice_display=True
 )
 
 if __name__ == '__main__':

@@ -19,8 +19,8 @@ def test_qt_labeled_progress_bar_base(qtbot):
     assert progress.qt_progress_bar.value() == -1
     progress.setValue(5)
     assert progress.qt_progress_bar.value() == 5
-    progress.setDescription("text")
-    assert progress.description_label.text() == "text: "
+    progress.setDescription('text')
+    assert progress.description_label.text() == 'text: '
 
 
 def test_qt_labeled_progress_bar_event_handle(qtbot):
@@ -33,12 +33,12 @@ def test_qt_labeled_progress_bar_event_handle(qtbot):
     assert progress._get_value() == -1
     progress._set_value(Namespace(value=5))
     assert progress._get_value() == 5
-    assert progress.description_label.text() == ""
-    progress._set_description(Namespace(value="text"))
-    assert progress.description_label.text() == "text: "
-    assert progress.eta_label.text() == ""
-    progress._set_eta(Namespace(value="test"))
-    assert progress.eta_label.text() == "test"
+    assert progress.description_label.text() == ''
+    progress._set_description(Namespace(value='text'))
+    assert progress.description_label.text() == 'text: '
+    assert progress.eta_label.text() == ''
+    progress._set_eta(Namespace(value='test'))
+    assert progress.eta_label.text() == 'test'
     progress._make_indeterminate(None)
     assert progress.qt_progress_bar.maximum() == 0
 

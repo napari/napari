@@ -10,18 +10,20 @@ from napari.components.overlays.interaction_box import (
     SelectionBoxOverlay,
     TransformBoxOverlay,
 )
+from napari.components.overlays.labels_polygon import LabelsPolygonOverlay
 from napari.components.overlays.scale_bar import ScaleBarOverlay
 from napari.components.overlays.text import TextOverlay
 
 __all__ = [
-    "AxesOverlay",
-    "Overlay",
-    "CanvasOverlay",
-    "BoundingBoxOverlay",
-    "SelectionBoxOverlay",
-    "TransformBoxOverlay",
-    "ScaleBarOverlay",
-    "SceneOverlay",
-    "TextOverlay",
-    "BrushCircleOverlay",
+    'AxesOverlay',
+    'Overlay',
+    'CanvasOverlay',
+    'BoundingBoxOverlay',
+    'SelectionBoxOverlay',
+    'TransformBoxOverlay',
+    'LabelsPolygonOverlay',
+    'ScaleBarOverlay',
+    'SceneOverlay',
+    'TextOverlay',
+    'BrushCircleOverlay',
 ]

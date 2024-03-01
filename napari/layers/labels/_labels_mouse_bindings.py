@@ -22,9 +22,14 @@ def draw(layer, event):
     pixels will be changed to background and this tool functions like an
     eraser
     """
+
+    # Do not allow drawing while adjusting the brush size with the mouse
+    if layer.cursor == 'circle_frozen':
+        return
+
     coordinates = mouse_event_to_labels_coordinate(layer, event)
     if layer._mode == Mode.ERASE:
-        new_label = layer._background_label
+        new_label = layer.colormap.background_value
     else:
         new_label = layer.selected_label
 

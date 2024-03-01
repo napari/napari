@@ -1,7 +1,15 @@
+from typing import TYPE_CHECKING, Tuple
+
 import numpy as np
+import numpy.typing as npt
+
+if TYPE_CHECKING:
+    from vispy.color import Colormap
 
 
-def make_colorbar(cmap, size=(18, 28), horizontal=True):
+def make_colorbar(
+    cmap: 'Colormap', size: Tuple[int, int] = (18, 28), horizontal: bool = True
+) -> npt.NDArray[np.uint8]:
     """Make a colorbar from a colormap.
 
     Parameters

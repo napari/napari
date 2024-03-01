@@ -77,14 +77,7 @@ def generate_transform_box_from_layer(
     np.ndarray
         Vertices and handles of the interaction box in data coordinates.
     """
-    bounds = layer._display_bounding_box(dims_displayed)
-
-    # TODO: can we do this differently?
-    # avoid circular import
-    from napari.layers.image.image import _ImageBase
-
-    if isinstance(layer, _ImageBase):
-        bounds -= 0.5
+    bounds = layer._display_bounding_box_augmented(list(dims_displayed))
 
     # generates in vispy canvas pos, so invert x and y, and then go back
     top_left, bot_right = (tuple(point) for point in bounds.T[:, ::-1])
@@ -148,7 +141,7 @@ def get_nearby_handle(
     tolerance = dist.max() / 100
     close_to_vertex = np.isclose(dist, 0, atol=tolerance)
     if np.any(close_to_vertex):
-        idx = np.argmax(close_to_vertex)
+        idx = int(np.argmax(close_to_vertex))
         return InteractionBoxHandle(idx)
     if np.all((position >= top_left) & (position <= bot_right)):
         return InteractionBoxHandle.INSIDE

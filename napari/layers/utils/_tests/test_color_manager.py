@@ -3,8 +3,8 @@ from itertools import cycle, islice
 
 import numpy as np
 import pytest
-from pydantic import ValidationError
 
+from napari._pydantic_compat import ValidationError
 from napari.layers.utils.color_manager import ColorManager, ColorProperties
 from napari.utils.colormaps.categorical_colormap import CategoricalColormap
 from napari.utils.colormaps.standardize_color import transform_color
@@ -281,7 +281,7 @@ color_cycle_rgba = [[1, 0, 0, 1], [0, 0, 1, 1]]
 
 
 @pytest.mark.parametrize(
-    "color_cycle",
+    'color_cycle',
     [color_cycle_str, color_cycle_rgb, color_cycle_rgba],
 )
 def test_color_cycle(color_cycle):

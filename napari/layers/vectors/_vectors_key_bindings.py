@@ -22,7 +22,7 @@ def activate_vectors_transform_mode(layer):
 
 @register_vectors_mode_action(trans._('Pan/zoom'))
 def activate_vectors_pan_zoom_mode(layer: Vectors):
-    layer.mode = Mode.PAN_ZOOM
+    layer.mode = str(Mode.PAN_ZOOM)
 
 
 vectors_fun_to_mode = [

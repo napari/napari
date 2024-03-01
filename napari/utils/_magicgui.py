@@ -11,6 +11,7 @@ of those custom classes, magicgui will know what to do with it.
 Because of headless tests the tests for this module are
 in napari/_tests/test_magicgui.py
 """
+
 from __future__ import annotations
 
 import weakref
@@ -311,7 +312,7 @@ def get_layers_data(gui: CategoricalWidget) -> List[Tuple[str, Any]]:
     if not (viewer := find_viewer_ancestor(gui.native)):
         return ()
 
-    layer_type_name = gui.annotation.__name__.replace("Data", "").title()
+    layer_type_name = gui.annotation.__name__.replace('Data', '').title()
     layer_type = getattr(layers, layer_type_name)
     choices = []
     for layer in [x for x in viewer.layers if isinstance(x, layer_type)]:
@@ -367,7 +368,9 @@ def add_layer_to_viewer(gui, result: Any, return_type: Type[Layer]) -> None:
     add_layers_to_viewer(gui, [result], List[return_type])
 
 
-def add_layers_to_viewer(gui, result: Any, return_type: List[Layer]) -> None:
+def add_layers_to_viewer(
+    gui: FunctionGui[Any], result: Any, return_type: Type[List[Layer]]
+) -> None:
     """Show a magicgui result in the viewer.
 
     Parameters

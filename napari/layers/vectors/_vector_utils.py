@@ -5,7 +5,7 @@ import numpy as np
 from napari.utils.translations import trans
 
 
-def convert_image_to_coordinates(vectors):
+def convert_image_to_coordinates(vectors) -> np.ndarray:
     """To convert an image-like array with elements (y-proj, x-proj) into a
     position list of coordinates
     Every pixel position (n, m) results in two output coordinates of (N,2)
@@ -69,7 +69,7 @@ def fix_data_vectors(
         if ndim does not match with third dimensions of vectors
     """
     if vectors is None:
-        vectors = []
+        vectors = np.array([])
     vectors = np.asarray(vectors)
 
     if vectors.ndim == 3 and vectors.shape[1] == 2:
@@ -90,7 +90,7 @@ def fix_data_vectors(
         if vectors.ndim != 3 or vectors.shape[1] != 2:
             raise ValueError(
                 trans._(
-                    "could not reshape Vector data from {vectors_shape} to (N, 2, {dimensions})",
+                    'could not reshape Vector data from {vectors_shape} to (N, 2, {dimensions})',
                     deferred=True,
                     vectors_shape=vectors.shape,
                     dimensions=ndim or 'D',
@@ -101,7 +101,7 @@ def fix_data_vectors(
     if ndim is not None and ndim != data_ndim:
         raise ValueError(
             trans._(
-                "Vectors dimensions ({data_ndim}) must be equal to ndim ({ndim})",
+                'Vectors dimensions ({data_ndim}) must be equal to ndim ({ndim})',
                 deferred=True,
                 data_ndim=data_ndim,
                 ndim=ndim,

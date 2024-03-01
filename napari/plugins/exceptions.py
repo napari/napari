@@ -4,7 +4,7 @@ from napari.utils.translations import trans
 
 
 def format_exceptions(
-    plugin_name: str, as_html: bool = False, color="Neutral"
+    plugin_name: str, as_html: bool = False, color='Neutral'
 ):
     """Return formatted tracebacks for all exceptions raised by plugin.
 
@@ -59,9 +59,9 @@ def format_exceptions(
 
     for n, err in enumerate(_plugin_errors):
         _pad = _linewidth - len(str(err)) - 10
-        msg += ['', f'ERROR #{n + 1}:  {str(err)} {"-" * _pad}', '']
+        msg += ['', f'ERROR #{n + 1}:  {err!s} {"-" * _pad}', '']
         msg.append(format_exc_info(err.info(), as_html, color))
 
     msg.append('=' * _linewidth)
 
-    return ("<br>" if as_html else "\n").join(msg)
+    return ('<br>' if as_html else '\n').join(msg)

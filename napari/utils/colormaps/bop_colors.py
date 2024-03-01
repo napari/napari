@@ -784,7 +784,7 @@ bop_purple = [
 ]
 
 bopd = {
-    "bop blue": (trans._("bop blue"), bop_blue),
-    "bop orange": (trans._("bop orange"), bop_orange),
-    "bop purple": (trans._("bop purple"), bop_purple),
+    'bop blue': (trans._('bop blue'), bop_blue),
+    'bop orange': (trans._('bop orange'), bop_orange),
+    'bop purple': (trans._('bop purple'), bop_purple),
 }

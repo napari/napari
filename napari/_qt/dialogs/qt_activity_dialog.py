@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from qtpy.QtCore import QPoint, QSize, Qt
 from qtpy.QtGui import QMovie
 from qtpy.QtWidgets import (
@@ -16,11 +14,11 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-import napari.resources
 from napari._qt.widgets.qt_progress_bar import (
     QtLabeledProgressBar,
     QtProgressBarGroup,
 )
+from napari.resources import LOADING_GIF_PATH
 from napari.utils.progress import progress
 from napari.utils.translations import trans
 
@@ -37,7 +35,7 @@ class ActivityToggleItem(QWidget):
         self.setLayout(QHBoxLayout())
 
         self._activityBtn = QToolButton()
-        self._activityBtn.setObjectName("QtActivityButton")
+        self._activityBtn.setObjectName('QtActivityButton')
         self._activityBtn.setToolButtonStyle(
             Qt.ToolButtonStyle.ToolButtonTextBesideIcon
         )
@@ -46,12 +44,11 @@ class ActivityToggleItem(QWidget):
         self._activityBtn.setText(trans._('activity'))
         self._activityBtn.setCheckable(True)
 
-        self._inProgressIndicator = QLabel(trans._("in progress..."), self)
+        self._inProgressIndicator = QLabel(trans._('in progress...'), self)
         sp = self._inProgressIndicator.sizePolicy()
         sp.setRetainSizeWhenHidden(True)
         self._inProgressIndicator.setSizePolicy(sp)
-        load_gif = str(Path(napari.resources.__file__).parent / "loading.gif")
-        mov = QMovie(load_gif)
+        mov = QMovie(LOADING_GIF_PATH)
         mov.setScaledSize(QSize(18, 18))
         self._inProgressIndicator.setMovie(mov)
         self._inProgressIndicator.hide()
@@ -104,7 +101,7 @@ class QtActivityDialog(QDialog):
             QSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
         )
         line = QFrame(self)
-        line.setObjectName("QtCustomTitleBarLine")
+        line.setObjectName('QtCustomTitleBarLine')
         titleLayout = QHBoxLayout()
         titleLayout.setSpacing(4)
         titleLayout.setContentsMargins(8, 1, 8, 0)
@@ -290,7 +287,7 @@ def remove_separators(current_pbars):
         parent and new progress bar to remove separators from
     """
     for current_pbar in current_pbars:
-        if line_widg := current_pbar.findChild(QFrame, "QtCustomTitleBarLine"):
+        if line_widg := current_pbar.findChild(QFrame, 'QtCustomTitleBarLine'):
             current_pbar.layout().removeWidget(line_widg)
             line_widg.hide()
             line_widg.deleteLater()
