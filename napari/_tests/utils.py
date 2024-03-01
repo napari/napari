@@ -29,10 +29,21 @@ skip_on_win_ci = pytest.mark.skipif(
     reason='Screenshot tests are not supported on windows CI.',
 )
 
+skip_on_mac_ci = pytest.mark.skipif(
+    sys.platform.startswith('darwin') and os.getenv('CI', '0') != '0',
+    reason='Unsupported test on macOS CI.',
+)
+
 skip_local_popups = pytest.mark.skipif(
     not os.getenv('CI') and os.getenv('NAPARI_POPUP_TESTS', '0') == '0',
     reason='Tests requiring GUI windows are skipped locally by default.'
     ' Set NAPARI_POPUP_TESTS=1 environment variable to enable.',
+)
+
+skip_local_focus = pytest.mark.skipif(
+    not os.getenv('CI') and os.getenv('NAPARI_FOCUS_TESTS', '0') == '0',
+    reason='Tests requiring GUI windows focus are skipped locally by default.'
+    ' Set NAPARI_FOCUS_TESTS=1 environment variable to enable.',
 )
 
 """
