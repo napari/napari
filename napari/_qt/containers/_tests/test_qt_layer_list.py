@@ -216,13 +216,13 @@ def test_drag_and_drop_layers(qtbot):
             pyautogui.mouseUp(button='left')
 
     animation = QVariantAnimation(
-        startValue=start_pos, endValue=end_pos, duration=5000
+        startValue=start_pos, endValue=end_pos, duration=1000
     )
     animation.valueChanged.connect(on_animation_value_changed)
 
     pyautogui.moveTo(start_pos.x(), start_pos.y(), duration=0.25)
     pyautogui.mouseDown(button='left')
-    with qtbot.waitSignal(animation.finished, timeout=10000):
+    with qtbot.waitSignal(animation.finished):
         animation.start()
 
     # check layerlist first element corresponds with first layer in the GUI
