@@ -1,14 +1,20 @@
 import sys
 from unittest.mock import patch
 
+import pyautogui
 import pytest
 from qtpy.QtCore import QPoint, Qt
 from qtpy.QtWidgets import QApplication, QMessageBox
 
 from napari._qt.widgets.qt_keyboard_settings import ShortcutEditor, WarnPopup
+from napari._tests.utils import skip_local_focus, skip_on_mac_ci
 from napari.settings import get_settings
 from napari.utils.action_manager import action_manager
 from napari.utils.interactions import KEY_SYMBOLS
+
+META_CONTROL_KEY = Qt.KeyboardModifier.ControlModifier
+if sys.platform == 'darwin':
+    META_CONTROL_KEY = Qt.KeyboardModifier.MetaModifier
 
 
 @pytest.fixture
@@ -80,28 +86,38 @@ def test_restore_defaults(shortcut_editor_widget):
     assert shortcut == KEY_SYMBOLS['Ctrl']
 
 
+@skip_local_focus
 @pytest.mark.parametrize(
     'key, modifier, key_symbols',
     [
         (
-            'U',
-            (
-                Qt.KeyboardModifier.MetaModifier
-                if sys.platform == 'darwin'
-                else Qt.KeyboardModifier.ControlModifier
-            ),
+            Qt.Key.Key_U,
+            META_CONTROL_KEY,
             [KEY_SYMBOLS['Ctrl'], 'U'],
         ),
         (
-            'Y',
-            (
-                Qt.KeyboardModifier.MetaModifier
-                | Qt.KeyboardModifier.ShiftModifier
-                if sys.platform == 'darwin'
-                else Qt.KeyboardModifier.ControlModifier
-                | Qt.KeyboardModifier.ShiftModifier
-            ),
+            Qt.Key.Key_Y,
+            META_CONTROL_KEY | Qt.KeyboardModifier.ShiftModifier,
             [KEY_SYMBOLS['Ctrl'], KEY_SYMBOLS['Shift'], 'Y'],
+        ),
+        (
+            Qt.Key.Key_Backspace,
+            META_CONTROL_KEY,
+            [KEY_SYMBOLS['Ctrl'], KEY_SYMBOLS['Backspace']],
+        ),
+        (
+            Qt.Key.Key_Delete,
+            META_CONTROL_KEY | Qt.KeyboardModifier.ShiftModifier,
+            [KEY_SYMBOLS['Ctrl'], KEY_SYMBOLS['Shift'], KEY_SYMBOLS['Delete']],
+        ),
+        (
+            Qt.Key.Key_Backspace,
+            META_CONTROL_KEY | Qt.KeyboardModifier.ShiftModifier,
+            [
+                KEY_SYMBOLS['Ctrl'],
+                KEY_SYMBOLS['Shift'],
+                KEY_SYMBOLS['Backspace'],
+            ],
         ),
     ],
 )
@@ -122,7 +138,7 @@ def test_keybinding_with_modifiers(
         widget._table.viewport(), Qt.MouseButton.LeftButton, pos=item_pos
     )
     qtbot.waitUntil(lambda: QApplication.focusWidget() is not None)
-    qtbot.keyClicks(QApplication.focusWidget(), key, modifier=modifier)
+    qtbot.keyClick(QApplication.focusWidget(), key, modifier=modifier)
     assert len([warn for warn in recwarn if warn.category is UserWarning]) == 0
 
     shortcut = widget._table.item(0, widget._shortcut_col).text()
@@ -130,6 +146,7 @@ def test_keybinding_with_modifiers(
         assert key_symbol in shortcut
 
 
+@skip_local_focus
 @pytest.mark.parametrize(
     'modifiers, key_symbols, valid',
     [
@@ -176,3 +193,117 @@ def test_keybinding_with_only_modifiers(
     shortcut = widget._table.item(0, widget._shortcut_col).text()
     for key_symbol in key_symbols:
         assert key_symbol in shortcut
+
+
+@skip_local_focus
+@pytest.mark.parametrize(
+    'removal_trigger_key',
+    [
+        Qt.Key.Key_Delete,
+        Qt.Key.Key_Backspace,
+    ],
+)
+def test_remove_shortcut(shortcut_editor_widget, qtbot, removal_trigger_key):
+    widget = shortcut_editor_widget()
+    shortcut = widget._table.item(0, widget._shortcut_col).text()
+    assert shortcut == KEY_SYMBOLS['Ctrl']
+
+    x = widget._table.columnViewportPosition(widget._shortcut_col)
+    y = widget._table.rowViewportPosition(0)
+    item_pos = QPoint(x, y)
+    qtbot.mouseClick(
+        widget._table.viewport(), Qt.MouseButton.LeftButton, pos=item_pos
+    )
+    qtbot.mouseDClick(
+        widget._table.viewport(), Qt.MouseButton.LeftButton, pos=item_pos
+    )
+    qtbot.waitUntil(lambda: QApplication.focusWidget() is not None)
+    qtbot.keyClick(QApplication.focusWidget(), removal_trigger_key)
+    qtbot.keyClick(QApplication.focusWidget(), Qt.Key.Key_Enter)
+
+    shortcut = widget._table.item(0, widget._shortcut_col).text()
+    assert shortcut == ''
+
+
+@skip_local_focus
+@skip_on_mac_ci
+@pytest.mark.parametrize(
+    'modifier_key, modifiers, key_symbols',
+    [
+        (
+            'shift',
+            None,
+            [KEY_SYMBOLS['Shift']],
+        ),
+        (
+            'ctrl',
+            'shift',
+            [KEY_SYMBOLS['Ctrl'], KEY_SYMBOLS['Shift']],
+        ),
+    ],
+)
+def test_keybinding_editor_modifier_key_detection(
+    shortcut_editor_widget,
+    qtbot,
+    recwarn,
+    modifier_key,
+    modifiers,
+    key_symbols,
+):
+    """
+    Test modifier keys detection with pyautogui to trigger keyboard events
+    from the OS.
+
+    Notes:
+        * Skipped on macOS CI due to accessibility permissions not being
+          settable on macOS GitHub Actions runners.
+        * For this test to pass locally, you need to give the Terminal/iTerm
+          application accessibility permissions:
+              `System Settings > Privacy & Security > Accessibility`
+
+        See https://github.com/asweigart/pyautogui/issues/247 and
+        https://github.com/asweigart/pyautogui/issues/247#issuecomment-437668855
+    """
+    widget = shortcut_editor_widget()
+    shortcut = widget._table.item(0, widget._shortcut_col).text()
+    assert shortcut == KEY_SYMBOLS['Ctrl']
+
+    x = widget._table.columnViewportPosition(widget._shortcut_col)
+    y = widget._table.rowViewportPosition(0)
+    item_pos = QPoint(x, y)
+    qtbot.mouseClick(
+        widget._table.viewport(), Qt.MouseButton.LeftButton, pos=item_pos
+    )
+    qtbot.mouseDClick(
+        widget._table.viewport(), Qt.MouseButton.LeftButton, pos=item_pos
+    )
+    qtbot.waitUntil(lambda: QApplication.focusWidget() is not None)
+
+    line_edit = QApplication.focusWidget()
+    with pyautogui.hold(modifier_key):
+        if modifiers:
+            pyautogui.keyDown(modifiers)
+
+        def press_check():
+            line_edit.selectAll()
+            shortcut = line_edit.selectedText()
+            all_pressed = True
+            for key_symbol in key_symbols:
+                all_pressed &= key_symbol in shortcut
+            return all_pressed
+
+        qtbot.waitUntil(lambda: press_check())
+
+        if modifiers:
+            pyautogui.keyUp(modifiers)
+
+    def release_check():
+        line_edit.selectAll()
+        shortcut = line_edit.selectedText()
+        return shortcut == ''
+
+    qtbot.waitUntil(lambda: release_check())
+
+    qtbot.keyClick(line_edit, Qt.Key_Escape)
+    shortcut = widget._table.item(0, widget._shortcut_col).text()
+    assert shortcut == KEY_SYMBOLS['Ctrl']
