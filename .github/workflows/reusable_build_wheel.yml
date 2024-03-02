@@ -1,3 +1,4 @@
+name: Build wheel workflow
 on:
   workflow_call:
 

@@ -62,9 +62,10 @@ def test_plugin_display_name_use_for_multiple_samples(
     # trigger the action, opening the first sample: `Astronaut`
     assert 'napari:astronaut' in app.commands
     assert len(viewer.layers) == 0
-    app.commands.execute_command('napari:astronaut')
+    app.commands.execute_command('napari:astronaut').result()
     assert len(viewer.layers) == 1
     assert viewer.layers[0].name == 'astronaut'
+    del samples_menu
 
 
 def test_sample_menu_plugin_state_change(

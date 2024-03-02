@@ -1,7 +1,6 @@
 [build-system]
 requires = [
   "setuptools >= 56",
-  "wheel",
   "setuptools_scm[toml]>=3.4"
 ]
 build-backend = "setuptools.build_meta"
@@ -55,7 +54,6 @@ ignore = [
 
 [tool.ruff]
 line-length = 79
-
 exclude = [
     ".bzr",
     ".direnv",
@@ -119,7 +117,6 @@ ignore = [
     "PYI015", # it produces bad looking files (@jni opinion)
 ]
 
-
 [tool.ruff.lint.per-file-ignores]
 "napari/_vispy/__init__.py" = ["E402"]
 "**/_tests/*.py" = ["B011", "INP001", "TRY301", "B018", "RUF012"]
@@ -152,10 +149,12 @@ xarray = "xr"
 [tool.pytest.ini_options]
 # These follow standard library warnings filters syntax.  See more here:
 # https://docs.python.org/3/library/warnings.html#describing-warning-filters
-addopts = "--maxfail=5 --durations=10 -rXxs"
+addopts = ["--maxfail=5",  "--durations=10",  "-ra", "--strict-markers", "--strict-config"]
 console_output_style = "count"
-pystack_threshold=60
-pystack_args="--native-all"
+minversion = "7"
+log_cli_level = "INFO"
+xfail_strict = true
+testpaths = ["napari", "napari_builtins"]
 
 
 # NOTE: only put things that will never change in here.
@@ -196,7 +195,7 @@ files = "napari"
 exclude = "napari/utils/events/_tests/test_evented_model\\.py"
 plugins =  "numpy.typing.mypy_plugin, pydantic.mypy"
 ignore_missing_imports = true
-show_error_codes = true
+hide_error_codes = false
 warn_redundant_casts = true
 disallow_incomplete_defs = true
 disallow_untyped_calls = true
