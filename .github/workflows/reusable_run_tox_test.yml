@@ -81,6 +81,12 @@ jobs:
         run: |
           echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
 
+      # setup needed to use pyautogui
+      - name: create .Xauthority file
+        if: runner.os == 'Linux'
+        run: |
+          touch /home/runner/.Xauthority
+
       # tox and tox-gh-actions will take care of the "actual" installation
       # of python dependendencies into a virtualenv.  see tox.ini for more
       - name: Install dependencies
