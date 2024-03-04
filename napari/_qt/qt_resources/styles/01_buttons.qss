@@ -69,6 +69,10 @@ QtModeRadioButton::indicator:checked {
   border-radius: 3px;
   width: 28px;
   height: 28px;
+  min-width : 28px;
+  max-width : 28px;
+  min-height : 28px;
+  max-height : 28px;
   padding: 0;
 }
 

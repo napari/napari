@@ -293,6 +293,10 @@ QtLayerControls > QComboBox, QtLayerControls > QLabel, QtLayerControls, QtPlaneC
   color: {{ text }};
 }
 
+QScrollArea#controls {
+  min-height: 25px;
+}
+
 QtLayerControls > QElidingLineEdit#layer_name {
   background-color: {{ background }};
   font-size: {{ font_size }};

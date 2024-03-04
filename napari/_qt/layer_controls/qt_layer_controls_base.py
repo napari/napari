@@ -352,7 +352,7 @@ class NewQtLayerControls(
 
         # Setup layer name section
         name_layout = QHBoxLayout()
-        # Needed to put icon and text side by side with the same spacing in all platforms
+        # Needed to put icon and text side by side with the same spacing on all platforms
         name_layout.setContentsMargins(0, 0, 0, 0)
         name_layout.setSpacing(0)
 
@@ -372,15 +372,15 @@ class NewQtLayerControls(
 
         # Setup buttons section
         self._buttons_grid = QGridLayout()
-        self._buttons_grid.setContentsMargins(0, 0, 0, 0)
+        self._buttons_grid.setContentsMargins(0, 0, 5, 0)
         # Need to set spacing to have same spacing over all platforms
         self._buttons_grid.setVerticalSpacing(
-            10
+            5
         )  # +-6 win/linux def; +-15 macos def
-        self._buttons_grid.setHorizontalSpacing(9)
-        # Need to set strech for a last column to prevent the spacing between
+        self._buttons_grid.setHorizontalSpacing(5)
+        # Need to set strech for a first column to prevent the spacing between
         # buttons to change when the layer control width changes
-        self._buttons_grid.setColumnStretch(7, 1)
+        self._buttons_grid.setColumnStretch(0, 1)
         self._button_group = QButtonGroup(self)
 
         # Setup layer controls sections
@@ -391,12 +391,10 @@ class NewQtLayerControls(
             trans._('display')
         )
         controls_scrollarea = QScrollArea()
+        controls_scrollarea.setObjectName('controls')
         controls_scrollarea.setWidgetResizable(True)
         controls_scrollarea.setHorizontalScrollBarPolicy(
             Qt.ScrollBarPolicy.ScrollBarAlwaysOff
-        )
-        controls_scrollarea.setVerticalScrollBarPolicy(
-            Qt.ScrollBarPolicy.ScrollBarAlwaysOn
         )
         controls_widget = QWidget()
         controls_layout = QVBoxLayout()
