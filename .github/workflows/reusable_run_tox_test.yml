@@ -64,7 +64,7 @@ jobs:
         with:
           python-version: ${{ inputs.python_version }}
           cache: "pip"
-          cache-dependency-path: setup.cfg
+          cache-dependency-path: pyproject.toml
 
       - uses: tlambert03/setup-qt-libs@v1
 
@@ -81,12 +81,20 @@ jobs:
         run: |
           echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
 
+      # setup needed to use pyautogui
+      - name: create .Xauthority file
+        if: runner.os == 'Linux'
+        run: |
+          touch /home/runner/.Xauthority
+
       # tox and tox-gh-actions will take care of the "actual" installation
       # of python dependendencies into a virtualenv.  see tox.ini for more
       - name: Install dependencies
         run: |
           pip install --upgrade pip
           pip install setuptools tox tox-gh-actions tox-min-req
+        env:
+          PIP_CONSTRAINT: ""
 
       - name: create _version.py file
         # workaround for not using src layout

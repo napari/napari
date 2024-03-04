@@ -85,7 +85,7 @@ def _npe2_decode_selected_filter(
     # `[]`. This function will return None.
 
     for entry, writer in zip(
-        ext_str.split(";;"),
+        ext_str.split(';;'),
         writers,
     ):
         if entry.startswith(selected_filter):
@@ -118,24 +118,24 @@ def _extension_string_for_layers(
         if selected_layer._type_string == 'image':
             ext = imsave_extensions()
 
-            ext_list = [f"*{val}" for val in ext]
+            ext_list = [f'*{val}' for val in ext]
             ext_str = ';;'.join(ext_list)
 
             ext_str = trans._(
-                "All Files (*);; Image file types:;;{ext_str}",
+                'All Files (*);; Image file types:;;{ext_str}',
                 ext_str=ext_str,
             )
 
         elif selected_layer._type_string == 'points':
-            ext_str = trans._("All Files (*);; *.csv;;")
+            ext_str = trans._('All Files (*);; *.csv;;')
 
         else:
             # layer other than image or points
-            ext_str = trans._("All Files (*);;")
+            ext_str = trans._('All Files (*);;')
 
     else:
         # multiple layers.
-        ext_str = trans._("All Files (*);;")
+        ext_str = trans._('All Files (*);;')
     return ext_str, []
 
 
@@ -277,7 +277,7 @@ class QtViewer(QSplitter):
         """
         warnings.warn(
             trans._(
-                "Access to QtViewer.view is deprecated since 0.5.0 and will be removed in the napari 0.6.0. Change to QtViewer.canvas.view instead."
+                'Access to QtViewer.view is deprecated since 0.5.0 and will be removed in the napari 0.6.0. Change to QtViewer.canvas.view instead.'
             ),
             FutureWarning,
             stacklevel=2,
@@ -292,7 +292,7 @@ class QtViewer(QSplitter):
         """
         warnings.warn(
             trans._(
-                "Access to QtViewer.camera will become deprecated in the 0.6.0. Change to QtViewer.canvas.camera instead."
+                'Access to QtViewer.camera will become deprecated in the 0.6.0. Change to QtViewer.canvas.camera instead.'
             ),
             FutureWarning,
             stacklevel=2,
@@ -423,12 +423,12 @@ class QtViewer(QSplitter):
 
     def _leave_canvas(self):
         """disable status on canvas leave"""
-        self.viewer.status = ""
+        self.viewer.status = ''
         self.viewer.mouse_over_canvas = False
 
     def _enter_canvas(self):
         """enable status on canvas enter"""
-        self.viewer.status = "Ready"
+        self.viewer.status = 'Ready'
         self.viewer.mouse_over_canvas = True
 
     def _ensure_connect(self):
@@ -565,14 +565,14 @@ class QtViewer(QSplitter):
             import napari
 
             with warnings.catch_warnings():
-                warnings.filterwarnings("ignore")
+                warnings.filterwarnings('ignore')
                 console = QtConsole(self.viewer)
                 console.push(
                     {'napari': napari, 'action_manager': action_manager}
                 )
                 with CallerFrame(_in_napari) as c:
-                    if c.frame.f_globals.get("__name__", "") == "__main__":
-                        console.push({"np": np})
+                    if c.frame.f_globals.get('__name__', '') == '__main__':
+                        console.push({'np': np})
                 for i in self.console_backlog:
                     # recover weak refs
                     console.push(
@@ -695,14 +695,14 @@ class QtViewer(QSplitter):
         """
         msg = ''
         if not len(self.viewer.layers):
-            msg = trans._("There are no layers in the viewer to save")
+            msg = trans._('There are no layers in the viewer to save')
         elif selected and not len(self.viewer.layers.selection):
             msg = trans._(
                 'Please select one or more layers to save,'
                 '\nor use "Save all layers..."'
             )
         if msg:
-            raise OSError(trans._("Nothing to save"))
+            raise OSError(trans._('Nothing to save'))
 
         # prepare list of extensions for drop down menu.
         ext_str, writers = _extension_string_for_layers(
@@ -711,7 +711,7 @@ class QtViewer(QSplitter):
             else self.viewer.layers
         )
 
-        msg = trans._("selected") if selected else trans._("all")
+        msg = trans._('selected') if selected else trans._('all')
         dlg = QFileDialog()
         hist = get_save_history()
         dlg.setHistory(hist)
@@ -746,12 +746,12 @@ class QtViewer(QSplitter):
                     filename, selected=selected, _writer=writer
                 )
                 logging.debug('Saved %s', saved)
-                error_messages = "\n".join(str(x.message.args[0]) for x in wa)
+                error_messages = '\n'.join(str(x.message.args[0]) for x in wa)
 
             if not saved:
                 raise OSError(
                     trans._(
-                        "File {filename} save failed.\n{error_messages}",
+                        'File {filename} save failed.\n{error_messages}',
                         deferred=True,
                         filename=filename,
                         error_messages=error_messages,
@@ -837,17 +837,17 @@ class QtViewer(QSplitter):
         dlg.setHistory(hist)
 
         open_kwargs = {
-            "parent": self,
-            "caption": caption,
+            'parent': self,
+            'caption': caption,
         }
-        if "pyside" in QFileDialog.__module__.lower():
+        if 'pyside' in QFileDialog.__module__.lower():
             # PySide6
-            open_kwargs["dir"] = hist[0]
+            open_kwargs['dir'] = hist[0]
         else:
-            open_kwargs["directory"] = hist[0]
+            open_kwargs['directory'] = hist[0]
 
         if in_ipython():
-            open_kwargs["options"] = QFileDialog.DontUseNativeDialog
+            open_kwargs['options'] = QFileDialog.DontUseNativeDialog
 
         return dlg.getOpenFileNames(**open_kwargs)[0]
 
@@ -1041,17 +1041,17 @@ class QtViewer(QSplitter):
             self.viewer.add_image(arr)
             return
         if cb.mimeData().hasUrls():
-            show_info("No image in clipboard, trying to open link instead.")
+            show_info('No image in clipboard, trying to open link instead.')
             self._open_from_list_of_urls_data(
                 cb.mimeData().urls(), stack=False, choose_plugin=False
             )
             return
         if cb.mimeData().hasText():
             show_info(
-                "No image in clipboard, trying to parse text in clipboard as a link."
+                'No image in clipboard, trying to parse text in clipboard as a link.'
             )
             url_list = []
-            for line in cb.mimeData().text().split("\n"):
+            for line in cb.mimeData().text().split('\n'):
                 url = QUrl(line.strip())
                 if url.isEmpty():
                     continue
@@ -1065,7 +1065,7 @@ class QtViewer(QSplitter):
                     url_list, stack=False, choose_plugin=False
                 )
                 return
-        show_info("No image or link in clipboard.")
+        show_info('No image or link in clipboard.')
 
     def dropEvent(self, event):
         """Add local files and web URLS with drag and drop.
@@ -1218,7 +1218,7 @@ def _in_napari(n: int, frame: FrameType):
     if n < 2:
         return True
     # in-n-out is used in napari for dependency injection.
-    for pref in {"napari.", "in_n_out."}:
-        if frame.f_globals.get("__name__", "").startswith(pref):
+    for pref in {'napari.', 'in_n_out.'}:
+        if frame.f_globals.get('__name__', '').startswith(pref):
             return True
     return False

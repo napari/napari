@@ -25,7 +25,7 @@ class ModifiedScrollBar(QScrollBar):
         # https://doc-snapshots.qt.io/qt6-dev/qmouseevent-obsolete.html#pos
         point = (
             event.position().toPoint()
-            if hasattr(event, "position")
+            if hasattr(event, 'position')
             else event.pos()
         )
         control = self.style().hitTestComplexControl(

@@ -15,15 +15,15 @@ from napari.components.overlays.scale_bar import ScaleBarOverlay
 from napari.components.overlays.text import TextOverlay
 
 __all__ = [
-    "AxesOverlay",
-    "Overlay",
-    "CanvasOverlay",
-    "BoundingBoxOverlay",
-    "SelectionBoxOverlay",
-    "TransformBoxOverlay",
-    "LabelsPolygonOverlay",
-    "ScaleBarOverlay",
-    "SceneOverlay",
-    "TextOverlay",
-    "BrushCircleOverlay",
+    'AxesOverlay',
+    'Overlay',
+    'CanvasOverlay',
+    'BoundingBoxOverlay',
+    'SelectionBoxOverlay',
+    'TransformBoxOverlay',
+    'LabelsPolygonOverlay',
+    'ScaleBarOverlay',
+    'SceneOverlay',
+    'TextOverlay',
+    'BrushCircleOverlay',
 ]

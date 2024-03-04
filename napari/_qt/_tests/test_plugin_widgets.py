@@ -79,13 +79,13 @@ def test_plugin_widgets(monkeypatch, napari_plugin_manager):
     """A smattering of example registered dock widgets and function widgets."""
     tnpm = napari_plugin_manager
     dock_widgets = {
-        "TestP1": {"Widg1": (Widg1, {}), "Widg2": (Widg2, {})},
-        "TestP2": {"Widg3": (Widg3, {})},
+        'TestP1': {'Widg1': (Widg1, {}), 'Widg2': (Widg2, {})},
+        'TestP2': {'Widg3': (Widg3, {})},
     }
-    monkeypatch.setattr(tnpm, "_dock_widgets", dock_widgets)
+    monkeypatch.setattr(tnpm, '_dock_widgets', dock_widgets)
 
     function_widgets = {'TestP3': {'magic': magicfunc}}
-    monkeypatch.setattr(tnpm, "_function_widgets", function_widgets)
+    monkeypatch.setattr(tnpm, '_function_widgets', function_widgets)
     yield
 
 

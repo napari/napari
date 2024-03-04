@@ -11,7 +11,7 @@ BUILTINS_NAME = 'builtins'
 # That test (number 26) was split off to make debugging easier
 # See https://github.com/napari/napari/pull/5676
 @pytest.mark.parametrize(
-    "dtype",
+    'dtype',
     [
         'int8',
         'uint8',
@@ -50,7 +50,7 @@ def test_qt_viewer_data_integrity(make_napari_viewer, dtype):
 
 
 @pytest.mark.parametrize(
-    "dtype,expected",
+    'dtype,expected',
     [
         (np.bool_, np.uint8),
         (np.int8, np.float32),

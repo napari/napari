@@ -210,7 +210,7 @@ def bind_key(
     if func is not None and key_bind in keymap and not overwrite:
         raise ValueError(
             trans._(
-                'keybinding {key} already used! specify \'overwrite=True\' to bypass this check',
+                "keybinding {key} already used! specify 'overwrite=True' to bypass this check",
                 deferred=True,
                 key=str(key_bind),
             )
@@ -424,7 +424,7 @@ class KeymapHandler:
         if not callable(func):
             raise TypeError(
                 trans._(
-                    "expected {func} to be callable",
+                    'expected {func} to be callable',
                     deferred=True,
                     func=func,
                 )
@@ -492,10 +492,10 @@ class KeymapHandler:
 
         repeatables = {
             *action_manager._get_repeatable_shortcuts(self.keymap_chain),
-            "Up",
-            "Down",
-            "Left",
-            "Right",
+            'Up',
+            'Down',
+            'Left',
+            'Right',
         }
 
         if (
