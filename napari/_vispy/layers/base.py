@@ -200,7 +200,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
 
     def _on_matrix_change(self):
         # mypy: self.layer._transforms.simplified cannot be None
-        transform = self.layer._transforms.simplified.set_slice(  # type: ignore [union-attr]
+        transform = self.layer._transforms.simplified.set_slice(
             self.layer._slice_input.displayed
         )
         # convert NumPy axis ordering to VisPy axis ordering
@@ -213,6 +213,8 @@ class VispyBaseLayer(ABC, Generic[_L]):
         affine_matrix = np.eye(4)
         affine_matrix[: matrix.shape[0], : matrix.shape[1]] = matrix
         affine_matrix[-1, : len(translate)] = translate
+
+        offset = np.zeros(len(self.layer._slice_input.displayed))
 
         if self._array_like and self.layer._slice_input.ndisplay == 2:
             # Perform pixel offset to shift origin from top left corner
@@ -244,7 +246,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
         translate_child = (
             self.layer.translate[dims_displayed]
             + self.layer.affine.translate[dims_displayed]
-        )[::-1]
+        )[::-1] - offset[::-1]
         trans_rotate = simplified_transform.rotate[
             np.ix_(dims_displayed, dims_displayed)
         ]
