@@ -68,9 +68,12 @@ class QtLayerList(QtListView[Layer]):
         """Override Qt event to pass events to the viewer."""
         if e is None:
             return
-        # prevent Qt handling shift-up and shift-down, pass to Viewer
+        # capture arrows with modifiers so they are handled by Viewer keybindings
         if (e.key() == Qt.Key.Key_Up or e.key() == Qt.Key.Key_Down) and (
-            e.modifiers() & Qt.KeyboardModifier.ShiftModifier
+            e.modifiers() & Qt.KeyboardModifier.AltModifier
+            or e.modifiers() & Qt.KeyboardModifier.ControlModifier
+            or e.modifiers() & Qt.KeyboardModifier.MetaModifier
+            or e.modifiers() & Qt.KeyboardModifier.ShiftModifier
         ):
             e.ignore()
         elif e.key() != Qt.Key.Key_Space:
