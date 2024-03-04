@@ -64,7 +64,7 @@ jobs:
         with:
           python-version: ${{ inputs.python_version }}
           cache: "pip"
-          cache-dependency-path: setup.cfg
+          cache-dependency-path: pyproject.toml
 
       - uses: tlambert03/setup-qt-libs@v1
 
@@ -93,6 +93,8 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install setuptools tox tox-gh-actions tox-min-req
+        env:
+          PIP_CONSTRAINT: ""
 
       - name: create _version.py file
         # workaround for not using src layout

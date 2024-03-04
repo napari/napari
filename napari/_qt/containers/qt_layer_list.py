@@ -68,7 +68,14 @@ class QtLayerList(QtListView[Layer]):
         """Override Qt event to pass events to the viewer."""
         if e is None:
             return
-        if e.key() != Qt.Key.Key_Space:
+        # capture arrows with modifiers so they are handled by Viewer keybindings
+        if (e.key() == Qt.Key.Key_Up or e.key() == Qt.Key.Key_Down) and (
+            e.modifiers() & Qt.KeyboardModifier.AltModifier
+            or e.modifiers() & Qt.KeyboardModifier.ControlModifier
+            or e.modifiers() & Qt.KeyboardModifier.MetaModifier
+        ):
+            e.ignore()
+        elif e.key() != Qt.Key.Key_Space:
             super().keyPressEvent(e)
         if e.key() not in (Qt.Key.Key_Backspace, Qt.Key.Key_Delete):
             e.ignore()  # pass key events up to viewer
