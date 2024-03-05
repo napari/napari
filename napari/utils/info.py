@@ -160,6 +160,20 @@ def sys_info(as_html: bool = False) -> str:
     except Exception as e:  # noqa BLE001
         text += f'  - failed to load screen information {e}'
 
+    text += '<br><b>Optional:</b><br>'
+
+    optional_modules = (
+        ('numba', 'numba'),
+        ('triangle', 'triangle'),
+    )
+
+    for module, name in optional_modules:
+        try:
+            loaded[module] = __import__(module)
+            text += f'  - <b>{name}</b>: {loaded[module].__version__}<br>'
+        except Exception as e:  # noqa BLE001
+            text += f'  - {e}<br>'
+
     text += '<br><b>Settings path:</b><br>'
     try:
         from napari.settings import get_settings
