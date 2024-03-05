@@ -536,8 +536,15 @@ def triangulate_ellipse(
     return vertices, triangles
 
 
-def _generate_triangle_constraints(vertices):
-    """Get list of edges that must be in a triangulation for a given polygon.
+def _normalize_vertices_and_edges(vertices, close=False):
+    """Get list of edges that must be in a triangulation for a path or polygon.
+
+    This function ensures that:
+
+    - no nodes are repeated, as this can cause problems with triangulation
+      algorithms.
+    - edges that appear twice are discarded. This allows representation of
+      polygons with holes in them.
 
     Parameters
     ----------
@@ -551,6 +558,11 @@ def _generate_triangle_constraints(vertices):
         Holes are expected to be represented by a polygon embedded within the
         larger polygon but winding in the opposite direction.
 
+    close: bool
+        Whether to close the polygon or treat it as a path. Note: this argument
+        has no effect if the last vertex is equal to the first one — then the
+        closing is explicit.
+
     Returns
     -------
     new_vertices: np.ndarray[np.floating], shape (M, 2)
@@ -562,6 +574,7 @@ def _generate_triangle_constraints(vertices):
     """
     if tuple(vertices[0]) == tuple(vertices[-1]):  # closed polygon
         vertices = vertices[:-1]  # make closing implicit
+        close = True
     len_data = len(vertices)
 
     # First, we connect every vertex to its following neighbour,
@@ -569,8 +582,13 @@ def _generate_triangle_constraints(vertices):
     edges_raw = np.empty((len_data, 2), dtype=np.uint32)
     edges_raw[:, 0] = np.arange(len_data)
     edges_raw[:, 1] = np.arange(1, len_data + 1)
-    # connect last with first vertex
-    edges_raw[-1, 1] = 0
+
+    if close:
+        # connect last with first vertex
+        edges_raw[-1, 1] = 0
+    else:
+        # final vertex is not connected to anything
+        edges_raw = edges_raw[:-1]
 
     # Now, we make sure the vertices are unique (repeated vertices cause
     # problems in spatial algorithms, and those problems can manifest as
@@ -636,7 +654,7 @@ def triangulate_face(
         Px3 array of the indices of the vertices that will form the
         triangles of the triangulation
     """
-    raw_vertices, edges = _generate_triangle_constraints(polygon_vertices)
+    raw_vertices, edges = _normalize_vertices_and_edges(polygon_vertices)
     if triangulate is not None:
         # if the triangle library is installed, use it because it's faster.
         res = triangulate(
