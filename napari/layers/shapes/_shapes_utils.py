@@ -680,12 +680,13 @@ def triangulate_face(
 def triangulate_edge(
     path: npt.NDArray, closed: bool = False
 ) -> tuple[npt.NDArray, npt.NDArray, npt.NDArray]:
-    """Determines the triangulation of a path. The resulting `offsets` can
-    multiplied by a `width` scalar and be added to the resulting `centers`
-    to generate the vertices of the triangles for the triangulation, i.e.
-    `vertices = centers + width*offsets`. Using the `centers` and `offsets`
-    representation thus allows for the computed triangulation to be
-    independent of the line width.
+    """Determines the triangulation of a path.
+
+    The resulting `offsets` can multiplied by a `width` scalar and be added
+    to the resulting `centers` to generate the vertices of the triangles for
+    the triangulation, i.e. `vertices = centers + width*offsets`. Using the
+    `centers` and `offsets` representation thus allows for the computed
+    triangulation to be independent of the line width.
 
     Parameters
     ----------
@@ -752,12 +753,13 @@ def _sign_cross(x, y):
 
 
 def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
-    """Determines the triangulation of a path in 2D. The resulting `offsets`
-    can be multiplied by a `width` scalar and be added to the resulting
-    `centers` to generate the vertices of the triangles for the triangulation,
-    i.e. `vertices = centers + width*offsets`. Using the `centers` and
-    `offsets` representation thus allows for the computed triangulation to be
-    independent of the line width.
+    """Find the triangulation of a path in 2D.
+
+    The resulting `offsets` can be multiplied by a `width` scalar and be
+    added to the resulting `centers` to generate the vertices of the
+    triangles for the triangulation, i.e. `vertices = centers +
+    width*offsets`. Using the `centers` and `offsets` representation allows
+    for the computed triangulation to be independent of the line width.
 
     Parameters
     ----------
