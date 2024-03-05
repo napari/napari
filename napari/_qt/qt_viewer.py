@@ -723,9 +723,9 @@ class QtViewer(QSplitter):
             '\x7f',
         )
         invalid_characters = (
-            "".join(unprintable_ascii_chars)
-            + "/"
-            + "\\"  # invalid Windows filename character
+            ''.join(unprintable_ascii_chars)
+            + '/'
+            + '\\'  # invalid Windows filename character
             + ':*?"<>|\t\n\r\x0b\x0c'  # invalid Windows path characters
         )
         translation_table = dict.fromkeys(map(ord, invalid_characters), None)
