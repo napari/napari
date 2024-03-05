@@ -129,7 +129,7 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
 
     def select_next(self, step: int = 1, shift: bool = False) -> None:
         """Selects next item from list."""
-        if self.selection:
+        if self.selection and self.selection._current:
             idx = self.index(self.selection._current) + step
             if len(self) > idx >= 0:
                 next_layer = self[idx]
