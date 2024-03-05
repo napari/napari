@@ -684,6 +684,56 @@ class QtViewer(QSplitter):
 
         self.canvas.add_layer_visual_mapping(layer, vispy_layer)
 
+    def _sanitize_suggested_filename(self, selected_layer_name):
+        """Sanitize suggested save filename from selected layer name.
+
+        Parameters
+        ----------
+        selected_layer_name: str
+            The selected napari layer name.
+        """
+        unprintable_ascii_chars = (
+            '\x00',
+            '\x01',
+            '\x02',
+            '\x03',
+            '\x04',
+            '\x05',
+            '\x06',
+            '\x07',
+            '\x08',
+            '\x0e',
+            '\x0f',
+            '\x10',
+            '\x11',
+            '\x12',
+            '\x13',
+            '\x14',
+            '\x15',
+            '\x16',
+            '\x17',
+            '\x18',
+            '\x19',
+            '\x1a',
+            '\x1b',
+            '\x1c',
+            '\x1d',
+            '\x1e',
+            '\x1f',
+            '\x7f',
+        )
+        invalid_characters = (
+            "".join(unprintable_ascii_chars)
+            + "/"
+            + "\\"  # invalid Windows filename character
+            + ':*?"<>|\t\n\r\x0b\x0c'  # invalid Windows path characters
+        )
+        translation_table = dict.fromkeys(map(ord, invalid_characters), None)
+        selected_layer_name = selected_layer_name.translate(
+            translation_table
+        )  # remove invalid characters
+        return selected_layer_name
+
     def _save_layers_dialog(self, selected=False):
         """Save layers (all or selected) to disk, using ``LayerList.save()``.
 
@@ -719,6 +769,7 @@ class QtViewer(QSplitter):
         selected_layer_name = ''
         if self.viewer.layers.selection.active is not None:
             selected_layer_name = self.viewer.layers.selection.active.name
+            selected_layer_name = self.sanitize(selected_layer_name)
         filename, selected_filter = dlg.getSaveFileName(
             self,  # parent
             trans._('Save {msg} layers', msg=msg),  # caption
