@@ -4,6 +4,8 @@ import platform
 import subprocess
 import sys
 
+from importlib_metadata import version
+
 import napari
 
 OS_RELEASE_PATH = '/etc/os-release'
@@ -169,10 +171,9 @@ def sys_info(as_html: bool = False) -> str:
 
     for module, name in optional_modules:
         try:
-            loaded[module] = __import__(module)
-            text += f'  - <b>{name}</b>: {loaded[module].__version__}<br>'
+            text += f'  - <b>{name}</b>: {version(module)}<br>'
         except Exception as e:  # noqa BLE001
-            text += f'  - {e}<br>'
+            text += f'  - {name} not installed<br>'
 
     text += '<br><b>Settings path:</b><br>'
     try:
