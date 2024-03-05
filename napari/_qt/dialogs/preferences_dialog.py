@@ -27,7 +27,7 @@ class PreferencesDialog(QDialog):
 
     ui_schema: ClassVar[Dict[str, Dict[str, str]]] = {
         'call_order': {'ui:widget': 'plugins'},
-        'highlight_thickness': {'ui:widget': 'highlight'},
+        'highlight': {'ui:widget': 'highlight'},
         'shortcuts': {'ui:widget': 'shortcuts'},
         'extension2reader': {'ui:widget': 'extension2reader'},
         'dask': {'ui:widget': 'horizontal_object'},
