@@ -28,7 +28,7 @@ def test_image_dytpes(dtype):
     # add dtype image data
     data = np.random.randint(20, size=(30, 40)).astype(dtype)
     viewer.add_image(data)
-    assert np.all(viewer.layers[0].data == data)
+    np.testing.assert_array_equal(viewer.layers[0].data, data)
 
     # add dtype multiscale data
     data = [

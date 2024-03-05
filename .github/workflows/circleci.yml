@@ -4,6 +4,10 @@
 
 name: CircleCI artifact redirector
 
+concurrency:
+  group: docs-preview-${{ github.ref }}
+  cancel-in-progress: true
+
 on: [status]
 jobs:
   circleci_artifacts_redirector_job:
@@ -19,6 +23,6 @@ jobs:
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           api-token: ${{ secrets.CIRCLECI_TOKEN }}
-          artifact-path: 0/napari-docs/docs/_build/index.html
+          artifact-path: 0/docs/docs/_build/index.html
           circleci-jobs: build-docs
           job-title: Check the rendered docs here!

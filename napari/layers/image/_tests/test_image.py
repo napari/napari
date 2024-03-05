@@ -1,9 +1,11 @@
 import dask.array as da
 import numpy as np
+import numpy.testing as npt
 import pytest
 import xarray as xr
 
 from napari._tests.utils import check_layer_world_data_extent
+from napari.components.dims import Dims
 from napari.layers import Image
 from napari.layers.image._image_constants import ImageRendering
 from napari.layers.utils.plane import ClippingPlaneList, SlicingPlane
@@ -207,7 +209,7 @@ def test_non_rgb_image():
     assert layer._data_view.shape == shape[-2:]
 
 
-@pytest.mark.parametrize("shape", [(10, 15, 6), (10, 10)])
+@pytest.mark.parametrize('shape', [(10, 15, 6), (10, 10)])
 def test_error_non_rgb_image(shape):
     """Test error on trying non rgb as rgb."""
     # If rgb is set to be True in constructor but the last dim has a
@@ -571,7 +573,7 @@ def test_value_3d(position, view_direction, dims_displayed, world):
     np.random.seed(0)
     data = np.random.random((10, 15, 15))
     layer = Image(data)
-    layer._slice_dims([0, 0, 0], ndisplay=3)
+    layer._slice_dims(Dims(ndim=3, ndisplay=3))
     value = layer.get_value(
         position,
         view_direction=view_direction,
@@ -595,7 +597,7 @@ def test_message_3d():
     np.random.seed(0)
     data = np.random.random((10, 15, 15))
     layer = Image(data)
-    layer._slice_dims(ndisplay=3)
+    layer._slice_dims(Dims(ndim=3, ndisplay=3))
     msg = layer.get_status(
         (0, 0, 0), view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]
     )
@@ -642,7 +644,7 @@ def test_out_of_range_no_contrast(dtype):
 
 
 @pytest.mark.parametrize(
-    "scale",
+    'scale',
     [
         (None),
         ([1, 1]),
@@ -660,7 +662,7 @@ def test_image_scale(scale):
 
 
 @pytest.mark.parametrize(
-    "translate",
+    'translate',
     [
         (None),
         ([1, 1]),
@@ -837,7 +839,7 @@ def test_tensorstore_image():
 
 
 @pytest.mark.parametrize(
-    "start_position, end_position, view_direction, vector, expected_value",
+    'start_position, end_position, view_direction, vector, expected_value',
     [
         # drag vector parallel to view direction
         # projected onto perpendicular vector
@@ -857,7 +859,7 @@ def test_projected_distance_from_mouse_drag(
     start_position, end_position, view_direction, vector, expected_value
 ):
     image = Image(np.ones((32, 32, 32)))
-    image._slice_dims(point=[0, 0, 0], ndisplay=3)
+    image._slice_dims(Dims(ndim=3, ndisplay=3))
     result = image.projected_distance_from_mouse_drag(
         start_position,
         end_position,
@@ -874,3 +876,149 @@ def test_rendering_init():
     layer = Image(data, rendering='iso')
 
     assert layer.rendering == ImageRendering.ISO.value
+
+
+def test_thick_slice():
+    data = np.ones((5, 5, 5)) * np.arange(5).reshape(-1, 1, 1)
+    layer = Image(data)
+
+    layer._slice_dims(Dims(ndim=3, point=(0, 0, 0)))
+    np.testing.assert_array_equal(layer._slice.image.raw, data[0])
+
+    # round down if at 0.5 and no margins
+    layer._slice_dims(Dims(ndim=3, point=(0.5, 0, 0)))
+    np.testing.assert_array_equal(layer._slice.image.raw, data[0])
+
+    # no changes if projection mode is 'none'
+    layer._slice_dims(
+        Dims(
+            ndim=3,
+            point=(0, 0, 0),
+            margin_left=(1, 0, 0),
+            margin_right=(1, 0, 0),
+        )
+    )
+    np.testing.assert_array_equal(layer._slice.image.raw, data[0])
+
+    layer.projection_mode = 'mean'
+    np.testing.assert_array_equal(
+        layer._slice.image.raw, np.mean(data[:2], axis=0)
+    )
+
+    layer._slice_dims(
+        Dims(
+            ndim=3,
+            point=(1, 0, 0),
+            margin_left=(1, 0, 0),
+            margin_right=(1, 0, 0),
+        )
+    )
+    np.testing.assert_array_equal(
+        layer._slice.image.raw, np.mean(data[:3], axis=0)
+    )
+
+    layer._slice_dims(
+        Dims(
+            ndim=3,
+            range=((0, 3, 1), (0, 2, 1), (0, 2, 1)),
+            point=(2.3, 0, 0),
+            margin_left=(0, 0, 0),
+            margin_right=(1.7, 0, 0),
+        )
+    )
+    np.testing.assert_array_equal(
+        layer._slice.image.raw, np.mean(data[2:5], axis=0)
+    )
+
+    layer._slice_dims(
+        Dims(
+            ndim=3,
+            range=((0, 3, 1), (0, 2, 1), (0, 2, 1)),
+            point=(2.3, 0, 0),
+            margin_left=(0, 0, 0),
+            margin_right=(1.6, 0, 0),
+        )
+    )
+    np.testing.assert_array_equal(
+        layer._slice.image.raw, np.mean(data[2:4], axis=0)
+    )
+
+    layer.projection_mode = 'max'
+    np.testing.assert_array_equal(
+        layer._slice.image.raw, np.max(data[2:4], axis=0)
+    )
+
+
+def test_adjust_contrast_out_of_range():
+    arr = np.linspace(1, 9, 5 * 5, dtype=np.float64).reshape((5, 5))
+    img_lay = Image(arr)
+    npt.assert_array_equal(img_lay._slice.image.view, img_lay._slice.image.raw)
+    img_lay.contrast_limits = (0, float(np.finfo(np.float32).max) * 2)
+    assert not np.array_equal(
+        img_lay._slice.image.view, img_lay._slice.image.raw
+    )
+
+
+def test_adjust_contrast_limits_range_set_data():
+    arr = np.linspace(1, 9, 5 * 5, dtype=np.float64).reshape((5, 5))
+    img_lay = Image(arr)
+    img_lay._keep_auto_contrast = True
+    npt.assert_array_equal(img_lay._slice.image.view, img_lay._slice.image.raw)
+    img_lay.data = arr * 1e39
+    assert not np.array_equal(
+        img_lay._slice.image.view, img_lay._slice.image.raw
+    )
+
+
+def test_thick_slice_multiscale():
+    data = np.ones((5, 5, 5)) * np.arange(5).reshape(-1, 1, 1)
+    data_zoom = data.repeat(2, 0).repeat(2, 1).repeat(2, 2)
+    layer = Image([data_zoom, data])
+
+    # ensure we're slicing level 0. We also need to update corner_pixels
+    # to ensure the full image is in view
+    layer.corner_pixels = np.array([[0, 0, 0], [10, 10, 10]])
+    layer.data_level = 0
+
+    layer._slice_dims(Dims(ndim=3, point=(0, 0, 0)))
+    np.testing.assert_array_equal(layer._slice.image.raw, data_zoom[0])
+
+    layer.projection_mode = 'mean'
+    # NOTE that here we rescale slicing to twice the non-multiscale test
+    # in order to get the same results, becase the actual full scale image
+    # is doubled in size
+    layer._slice_dims(
+        Dims(
+            ndim=3,
+            range=((0, 5, 1), (0, 2, 1), (0, 2, 1)),
+            point=(4.6, 0, 0),
+            margin_left=(0, 0, 0),
+            margin_right=(3.4, 0, 0),
+        )
+    )
+    np.testing.assert_array_equal(
+        layer._slice.image.raw, np.mean(data_zoom[4:10], axis=0)
+    )
+
+    # check level 1
+    layer.corner_pixels = np.array([[0, 0, 0], [5, 5, 5]])
+    layer.data_level = 1
+
+    layer._slice_dims(Dims(ndim=3, point=(0, 0, 0)))
+    np.testing.assert_array_equal(layer._slice.image.raw, data[0])
+
+    layer.projection_mode = 'mean'
+    # here we slice in the same point as earlier, but to get the expected value
+    # we need to slice `data` with halved indices
+    layer._slice_dims(
+        Dims(
+            ndim=3,
+            range=((0, 5, 1), (0, 2, 1), (0, 2, 1)),
+            point=(4.6, 0, 0),
+            margin_left=(0, 0, 0),
+            margin_right=(3.4, 0, 0),
+        )
+    )
+    np.testing.assert_array_equal(
+        layer._slice.image.raw, np.mean(data[2:5], axis=0)
+    )

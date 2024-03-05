@@ -40,7 +40,7 @@ def create_view(
         return QtListView(obj, parent=parent)
     raise TypeError(
         trans._(
-            "Cannot create Qt view for obj: {obj}",
+            'Cannot create Qt view for obj: {obj}',
             deferred=True,
             obj=obj,
         )
@@ -78,7 +78,7 @@ def create_model(
         return QtListModel(obj, parent=parent)
     raise TypeError(
         trans._(
-            "Cannot create Qt model for obj: {obj}",
+            'Cannot create Qt model for obj: {obj}',
             deferred=True,
             obj=obj,
         )

@@ -3,10 +3,10 @@ import pytest
 
 from napari.utils.status_messages import status_format
 
-STRING = "hello world"
+STRING = 'hello world'
 STRING_FORMATTED = STRING
 MISSING = None
-MISSING_FORMATTED = ""
+MISSING_FORMATTED = ''
 NUMERIC = [
     1,
     10,
@@ -20,10 +20,10 @@ NUMERIC = [
     np.exp(1),
 ]
 NUMERIC_FORMATTED = (
-    "[1, 10, 100, 1000, 1e+06, -6.28, 124, 1.12e+03, 6.28, 2.72]"
+    '[1, 10, 100, 1000, 1e+06, -6.28, 124, 1.12e+03, 6.28, 2.72]'
 )
 COMBINED = [1e6, MISSING, STRING]
-COMBINED_FORMATTED = f"[1e+06, {MISSING_FORMATTED}, {STRING_FORMATTED}]"
+COMBINED_FORMATTED = f'[1e+06, {MISSING_FORMATTED}, {STRING_FORMATTED}]'
 
 
 @pytest.mark.parametrize(

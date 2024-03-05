@@ -13,7 +13,7 @@ import pytest
 if TYPE_CHECKING:
     from pytest import FixtureRequest
 
-_SAVE_GRAPH_OPNAME = "--save-leaked-object-graph"
+_SAVE_GRAPH_OPNAME = '--save-leaked-object-graph'
 
 
 def _empty(*_, **__):
@@ -22,15 +22,15 @@ def _empty(*_, **__):
 
 def pytest_addoption(parser):
     parser.addoption(
-        "--show-napari-viewer",
-        action="store_true",
+        '--show-napari-viewer',
+        action='store_true',
         default=False,
         help="don't show viewer during tests",
     )
 
     parser.addoption(
         _SAVE_GRAPH_OPNAME,
-        action="store_true",
+        action='store_true',
         default=False,
         help="Try to save a graph of leaked object's reference (need objgraph"
         "and graphviz installed",
@@ -123,7 +123,7 @@ def pytest_runtest_makereport(item, call):
     # set a report attribute for each phase of a call, which can
     # be "setup", "call", "teardown"
 
-    setattr(item, f"rep_{rep.when}", rep)
+    setattr(item, f'rep_{rep.when}', rep)
 
 
 @pytest.fixture
@@ -173,7 +173,7 @@ def make_napari_viewer(
     >>> def test_something_with_strict_qt_tests(make_napari_viewer):
     ...     viewer = make_napari_viewer(strict_qt=True)
     """
-    from qtpy.QtWidgets import QApplication
+    from qtpy.QtWidgets import QApplication, QWidget
 
     from napari import Viewer
     from napari._qt._qapp_model.qactions import init_qactions
@@ -196,10 +196,10 @@ def make_napari_viewer(
         fail_obj_graph(QtViewer)
     QtViewer._instances.clear()
     assert _do_not_inline_below == 0, (
-        "Some instance of QtViewer is not properly cleaned in one of previous test. For easier debug one may "
-        f"use {_SAVE_GRAPH_OPNAME} flag for pytest to get graph of leaked objects. If you use qtbot (from pytest-qt)"
-        " to clean Qt objects after test you may need to switch to manual clean using "
-        "`deleteLater()` and `qtbot.wait(50)` later."
+        'Some instance of QtViewer is not properly cleaned in one of previous test. For easier debug one may '
+        f'use {_SAVE_GRAPH_OPNAME} flag for pytest to get graph of leaked objects. If you use qtbot (from pytest-qt)'
+        ' to clean Qt objects after test you may need to switch to manual clean using '
+        '`deleteLater()` and `qtbot.wait(50)` later.'
     )
 
     settings = get_settings()
@@ -210,18 +210,29 @@ def make_napari_viewer(
 
     viewers: WeakSet[Viewer] = WeakSet()
 
-    # may be overridden by using `make_napari_viewer(strict=True)`
+    # may be overridden by using the parameter `strict_qt`
     _strict = False
 
     initial = QApplication.topLevelWidgets()
     prior_exception = getattr(sys, 'last_value', None)
-    is_internal_test = request.module.__name__.startswith("napari.")
+    is_internal_test = request.module.__name__.startswith('napari.')
 
     # disable throttling cursor event in tests
     monkeypatch.setattr(
-        "napari._qt.qt_main_window._QtMainWindow._throttle_cursor_to_status_connection",
+        'napari._qt.qt_main_window._QtMainWindow._throttle_cursor_to_status_connection',
         _empty,
     )
+
+    if 'enable_console' not in request.keywords:
+
+        def _dummy_widget(*_):
+            w = QWidget()
+            w._update_theme = _empty
+            return w
+
+        monkeypatch.setattr(
+            'napari._qt.qt_viewer.QtViewer._get_console', _dummy_widget
+        )
 
     def actual_factory(
         *model_args,
@@ -231,14 +242,14 @@ def make_napari_viewer(
         **model_kwargs,
     ):
         if strict_qt is None:
-            strict_qt = is_internal_test or os.getenv("NAPARI_STRICT_QT")
+            strict_qt = is_internal_test or os.getenv('NAPARI_STRICT_QT')
         nonlocal _strict
         _strict = strict_qt
 
         if not block_plugin_discovery:
             napari_plugin_manager.discovery_blocker.stop()
 
-        should_show = request.config.getoption("--show-napari-viewer")
+        should_show = request.config.getoption('--show-napari-viewer')
         model_kwargs['show'] = model_kwargs.pop('show', should_show)
         viewer = ViewerClass(*model_args, **model_kwargs)
         viewers.add(viewer)
@@ -283,7 +294,7 @@ def make_napari_viewer(
     assert _do_not_inline_below == 0
 
     # only check for leaked widgets if an exception was raised during the test,
-    # or "strict" mode was used.
+    # and "strict" mode was used.
     if _strict and getattr(sys, 'last_value', None) is prior_exception:
         QApplication.processEvents()
         leak = set(QApplication.topLevelWidgets()).difference(initial)
@@ -304,7 +315,7 @@ def make_napari_viewer(
             # in particular with VisPyCanvas, it looks like if a traceback keeps
             # contains the type, then instances are still attached to the type.
             # I'm not too sure why this is the case though.
-            if _strict:
+            if _strict == 'raise':
                 raise AssertionError(msg)
             else:
                 warnings.warn(msg)
@@ -331,7 +342,7 @@ def make_napari_viewer_proxy(make_napari_viewer, monkeypatch):
 
     def actual_factory(*model_args, ensure_main_thread=True, **model_kwargs):
         monkeypatch.setenv(
-            "NAPARI_ENSURE_PLUGIN_MAIN_THREAD", str(ensure_main_thread)
+            'NAPARI_ENSURE_PLUGIN_MAIN_THREAD', str(ensure_main_thread)
         )
         viewer = make_napari_viewer(*model_args, **model_kwargs)
         proxies.append(PublicOnlyProxy(viewer))

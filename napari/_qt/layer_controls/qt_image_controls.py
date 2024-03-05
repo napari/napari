@@ -160,7 +160,7 @@ class QtImageControls(QtBaseImageControls):
 
         colormap_layout = QHBoxLayout()
         if hasattr(self.layer, 'rgb') and self.layer.rgb:
-            colormap_layout.addWidget(QLabel("RGB"))
+            colormap_layout.addWidget(QLabel('RGB'))
             self.colormapComboBox.setVisible(False)
             self.colorbarLabel.setVisible(False)
         else:

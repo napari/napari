@@ -13,6 +13,7 @@ from napari._qt.layer_controls.qt_image_controls_base import (
     QtLayerControls,
     range_to_decimals,
 )
+from napari.components.dims import Dims
 from napari.layers import Image, Surface
 
 _IMAGE = np.arange(100).astype(np.uint16).reshape((10, 10))
@@ -45,7 +46,7 @@ def test_clim_right_click_shows_popup(mock_show, qtbot, layer):
     assert hasattr(qtctrl, 'clim_popup')
     # this mock doesn't seem to be working on cirrus windows
     # but it works on local windows tests...
-    if not (os.name == 'nt' and os.getenv("CI")):
+    if not (os.name == 'nt' and os.getenv('CI')):
         mock_show.assert_called_once()
 
 
@@ -65,6 +66,8 @@ def test_changing_model_updates_view(qtbot, layer):
 )
 def test_range_popup_clim_buttons(mock_show, qtbot, qapp, layer):
     """The buttons in the clim_popup should adjust the contrast limits value"""
+    # this test relies implicitly on ndisplay=3 which is now a broken assumption?
+    layer._slice_dims(Dims(ndim=3, ndisplay=3))
     qtctrl = QtBaseImageControls(layer)
     qtbot.addWidget(qtctrl)
     original_clims = tuple(layer.contrast_limits)
@@ -73,14 +76,14 @@ def test_range_popup_clim_buttons(mock_show, qtbot, qapp, layer):
 
     # pressing the reset button returns the clims to the default values
     reset_button = qtctrl.clim_popup.findChild(
-        QPushButton, "reset_clims_button"
+        QPushButton, 'reset_clims_button'
     )
     reset_button.click()
     qapp.processEvents()
     assert tuple(qtctrl.contrastLimitsSlider.value()) == original_clims
 
     rangebtn = qtctrl.clim_popup.findChild(
-        QPushButton, "full_clim_range_button"
+        QPushButton, 'full_clim_range_button'
     )
     # data in this test is uint16 or int32 for Image, and float for Surface.
     # Surface will not have a "full range button"

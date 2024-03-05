@@ -9,7 +9,7 @@ from npe2.manifest.contributions import SampleDataURI
 from qtpy.QtWidgets import QMenu
 
 from napari._app_model import get_app
-from napari._app_model.constants import CommandId
+from napari._app_model.constants import CommandId, MenuId
 from napari.layers import Image
 from napari.utils.action_manager import action_manager
 
@@ -22,12 +22,10 @@ def test_sample_data_triggers_reader_dialog(
     tmp2 = tmp_plugin.spawn(register=True)
 
     @tmp_plugin.contribute.reader(filename_patterns=['*.tif'])
-    def _(path):
-        ...
+    def _(path): ...
 
     @tmp2.contribute.reader(filename_patterns=['*.tif'])
-    def _(path):
-        ...
+    def _(path): ...
 
     # make a sample data reader for tif file
     my_sample = SampleDataURI(
@@ -58,7 +56,7 @@ def test_plugin_display_name_use_for_multiple_samples(
 
     # builtins provides more than one sample,
     # so the submenu should use the `display_name` from manifest
-    samples_menu = app.menus.get_menu('napari/file/samples')
+    samples_menu = app.menus.get_menu(MenuId.FILE_SAMPLES)
     assert samples_menu[0].title == 'napari builtins'
     # Now ensure that the actions are still correct
     # trigger the action, opening the first sample: `Astronaut`
@@ -79,7 +77,7 @@ def test_sample_menu_plugin_state_change(
     pm = tmp_plugin.plugin_manager
     # Check no samples menu before plugin registration
     with pytest.raises(KeyError):
-        app.menus.get_menu('napari/file/samples')
+        app.menus.get_menu(MenuId.FILE_SAMPLES)
 
     sample1 = SampleDataURI(
         key='tmp-sample-1',
@@ -96,11 +94,11 @@ def test_sample_menu_plugin_state_change(
     # Configures `app`, registers actions and initializes plugins
     make_napari_viewer()
 
-    samples_menu = app.menus.get_menu('napari/file/samples')
+    samples_menu = app.menus.get_menu(MenuId.FILE_SAMPLES)
     assert len(samples_menu) == 1
     assert isinstance(samples_menu[0], SubmenuItem)
     assert samples_menu[0].title == tmp_plugin.display_name
-    samples_sub_menu = app.menus.get_menu('napari/file/samples/tmp_plugin')
+    samples_sub_menu = app.menus.get_menu(MenuId.FILE_SAMPLES + '/tmp_plugin')
     assert len(samples_sub_menu) == 2
     assert isinstance(samples_sub_menu[0], MenuItem)
     assert samples_sub_menu[0].command.title == 'Temp Sample One'
@@ -109,12 +107,12 @@ def test_sample_menu_plugin_state_change(
     # Disable plugin
     pm.disable(tmp_plugin.name)
     with pytest.raises(KeyError):
-        app.menus.get_menu('napari/file/samples')
+        app.menus.get_menu(MenuId.FILE_SAMPLES)
     assert 'tmp_plugin:tmp-sample-1' not in app.commands
 
     # Enable plugin
     pm.enable(tmp_plugin.name)
-    samples_sub_menu = app.menus.get_menu('napari/file/samples/tmp_plugin')
+    samples_sub_menu = app.menus.get_menu(MenuId.FILE_SAMPLES + '/tmp_plugin')
     assert len(samples_sub_menu) == 2
     assert 'tmp_plugin:tmp-sample-1' in app.commands
 
@@ -134,7 +132,7 @@ def test_sample_menu_single_data(
     # Configures `app`, registers actions and initializes plugins
     make_napari_viewer()
 
-    samples_menu = app.menus.get_menu('napari/file/samples')
+    samples_menu = app.menus.get_menu(MenuId.FILE_SAMPLES)
     assert isinstance(samples_menu[0], MenuItem)
     assert len(samples_menu) == 1
     assert samples_menu[0].command.title == 'Temp Sample One (Temp Plugin)'
@@ -144,9 +142,9 @@ def test_sample_menu_single_data(
 def test_show_shortcuts_actions(make_napari_viewer):
     viewer = make_napari_viewer()
     assert viewer.window._pref_dialog is None
-    action_manager.trigger("napari:show_shortcuts")
+    action_manager.trigger('napari:show_shortcuts')
     assert viewer.window._pref_dialog is not None
-    assert viewer.window._pref_dialog._list.currentItem().text() == "Shortcuts"
+    assert viewer.window._pref_dialog._list.currentItem().text() == 'Shortcuts'
     viewer.window._pref_dialog.close()
 
 
@@ -174,7 +172,7 @@ def get_open_with_plugin_action(viewer, action_text):
 
 
 @pytest.mark.parametrize(
-    "menu_str,dialog_method,dialog_return,filename_call,stack",
+    'menu_str,dialog_method,dialog_return,filename_call,stack',
     [
         (
             'Open File(s)...',

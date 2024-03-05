@@ -1,5 +1,6 @@
 import numpy as np
 
+from napari.components.dims import Dims
 from napari.layers.labels import Labels
 from napari.layers.labels._labels_utils import (
     first_nonzero_coordinate,
@@ -107,7 +108,7 @@ def test_mouse_event_to_labels_coordinate_3d(MouseEvent):
     data = np.zeros((11, 11, 11), dtype=int)
     data[4:7, 4:7, 4:7] = 1
     layer = Labels(data, scale=(2, 2, 2))
-    layer._slice_dims(point=(0, 0, 0), ndisplay=3)
+    layer._slice_dims(Dims(ndim=3, ndisplay=3))
 
     # click straight down from the top
     # (note the scale on the layer!)

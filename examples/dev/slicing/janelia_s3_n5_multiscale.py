@@ -28,4 +28,3 @@ viewer = napari.view_image(data, contrast_limits=(18000, 40000), multiscale=True
 
 if __name__ == '__main__':
     napari.run()
-

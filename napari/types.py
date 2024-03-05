@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     import dask.array  # noqa: ICN001
     import zarr
     from magicgui.widgets import FunctionGui
-    from qtpy.QtWidgets import QWidget  # type: ignore [attr-defined]
+    from qtpy.QtWidgets import QWidget
 
 
 __all__ = [
@@ -72,7 +72,7 @@ FullLayerData = Tuple[Any, Dict, LayerTypeName]
 LayerData = Union[Tuple[Any], Tuple[Any, Dict], FullLayerData]
 
 PathLike = Union[str, Path]
-PathOrPaths = Union[str, Sequence[str]]
+PathOrPaths = Union[PathLike, Sequence[PathLike]]
 ReaderFunction = Callable[[PathOrPaths], List[LayerData]]
 WriterFunction = Callable[[str, List[FullLayerData]], List[str]]
 
@@ -107,13 +107,13 @@ class SampleDict(TypedDict):
 ArrayBase: Type[np.ndarray] = np.ndarray
 
 
-ImageData = NewType("ImageData", np.ndarray)
-LabelsData = NewType("LabelsData", np.ndarray)
-PointsData = NewType("PointsData", np.ndarray)
-ShapesData = NewType("ShapesData", List[np.ndarray])
-SurfaceData = NewType("SurfaceData", Tuple[np.ndarray, np.ndarray, np.ndarray])
-TracksData = NewType("TracksData", np.ndarray)
-VectorsData = NewType("VectorsData", np.ndarray)
+ImageData = NewType('ImageData', np.ndarray)
+LabelsData = NewType('LabelsData', np.ndarray)
+PointsData = NewType('PointsData', np.ndarray)
+ShapesData = NewType('ShapesData', List[np.ndarray])
+SurfaceData = NewType('SurfaceData', Tuple[np.ndarray, np.ndarray, np.ndarray])
+TracksData = NewType('TracksData', np.ndarray)
+VectorsData = NewType('VectorsData', np.ndarray)
 _LayerData = Union[
     ImageData,
     LabelsData,
@@ -124,7 +124,7 @@ _LayerData = Union[
     VectorsData,
 ]
 
-LayerDataTuple = NewType("LayerDataTuple", tuple)
+LayerDataTuple = NewType('LayerDataTuple', tuple)
 
 
 def image_reader_to_layerdata_reader(

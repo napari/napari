@@ -185,7 +185,7 @@ def stack_to_images(stack: Image, axis: int, **kwargs) -> List[Image]:
 
     data, meta, _ = stack.as_layer_data_tuple()
 
-    for key in ("contrast_limits", "colormap", "blending"):
+    for key in ('contrast_limits', 'colormap', 'blending'):
         del meta[key]
 
     name = stack.name
@@ -194,7 +194,7 @@ def stack_to_images(stack: Image, axis: int, **kwargs) -> List[Image]:
     if num_dim < 3:
         raise ValueError(
             trans._(
-                "The image needs more than 2 dimensions for splitting",
+                'The image needs more than 2 dimensions for splitting',
                 deferred=True,
             )
         )
@@ -209,7 +209,7 @@ def stack_to_images(stack: Image, axis: int, **kwargs) -> List[Image]:
             )
         )
 
-    if kwargs.get("colormap"):
+    if kwargs.get('colormap'):
         kwargs['colormap'] = itertools.cycle(kwargs['colormap'])
 
     if meta['rgb']:
@@ -275,12 +275,12 @@ def images_to_stack(images: List[Image], axis: int = 0, **kwargs) -> Image:
     """
 
     if not images:
-        raise IndexError(trans._("images list is empty", deferred=True))
+        raise IndexError(trans._('images list is empty', deferred=True))
 
     data, meta, _ = images[0].as_layer_data_tuple()
 
-    kwargs.setdefault("scale", np.insert(meta['scale'], axis, 1))
-    kwargs.setdefault("translate", np.insert(meta['translate'], axis, 0))
+    kwargs.setdefault('scale', np.insert(meta['scale'], axis, 1))
+    kwargs.setdefault('translate', np.insert(meta['translate'], axis, 0))
 
     meta.update(kwargs)
     new_data = np.stack([image.data for image in images], axis=axis)
@@ -291,6 +291,6 @@ def merge_rgb(images: List[Image]) -> Image:
     """Variant of images_to_stack that makes an RGB from 3 images."""
     if not (len(images) == 3 and all(isinstance(x, Image) for x in images)):
         raise ValueError(
-            trans._("merge_rgb requires 3 images layers", deferred=True)
+            trans._('merge_rgb requires 3 images layers', deferred=True)
         )
     return images_to_stack(images, axis=-1, rgb=True)
