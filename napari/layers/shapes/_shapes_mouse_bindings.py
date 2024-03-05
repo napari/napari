@@ -383,8 +383,9 @@ def add_vertex_to_path(
     # If there was no move event between two clicks value[1] is None
     # and needs to be taken care of.
     if value[1] is None:
-        value = layer._moving_value
-    layer._value = (value[0], value[1] + 1)
+        layer._value = (layer._moving_value[0], layer._moving_value[1] + 1)
+    else:
+        layer._value = (value[0], value[1] + 1)
     layer._moving_value = copy(layer._value)
     layer._data_view.edit(index, vertices, new_type=new_type)
     layer._selected_box = layer.interaction_box(layer.selected_data)

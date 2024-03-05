@@ -616,6 +616,9 @@ def test_clicking_the_same_point_is_not_crashing(
         event = read_only_mouse_event(type='mouse_release', position=position)
         mouse_release_callbacks(layer, event)
 
+    # If there was no move event between the two clicks, we expect value[1] must be None
+    assert layer.get_value(event.position, world=True)[1] is None
+
 
 @pytest.mark.parametrize(
     'mode',
