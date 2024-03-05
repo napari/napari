@@ -4,7 +4,7 @@ import platform
 import subprocess
 import sys
 
-from importlib_metadata import version
+from importlib.metadata import PackageNotFoundError, version
 
 import napari
 
@@ -172,7 +172,7 @@ def sys_info(as_html: bool = False) -> str:
     for module, name in optional_modules:
         try:
             text += f'  - <b>{name}</b>: {version(module)}<br>'
-        except Exception as e:  # noqa BLE001
+        except PackageNotFoundError as e:
             text += f'  - {name} not installed<br>'
 
     text += '<br><b>Settings path:</b><br>'
