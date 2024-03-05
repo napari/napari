@@ -46,6 +46,12 @@ jobs:
           powershell gl-ci-helpers/appveyor/install_opengl.ps1
           if (Test-Path -Path "C:\Windows\system32\opengl32.dll" -PathType Leaf) {Exit 0} else {Exit 1}
 
+      # setup needed to use pyautogui
+      - name: create .Xauthority file
+        if: runner.os == 'Linux'
+        run: |
+          touch /home/runner/.Xauthority
+
       - name: Install dependencies
         run: |
           pip install --upgrade pip
