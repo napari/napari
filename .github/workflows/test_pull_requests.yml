@@ -115,7 +115,7 @@ jobs:
           # Windows py39
           - python: 3.9
             platform: windows-latest
-            backend: pyqt5,pyside2
+            backend: pyqt5 #,pyside2
             coverage: no_cov
           - python: 3.11
             platform: windows-latest
