@@ -126,8 +126,8 @@ def sys_info(as_html: bool = False) -> str:
         try:
             loaded[module] = __import__(module)
             text += f'<b>{name}</b>: {version(module)}<br>'
-        except PackageNotFoundError as e:
-            text += f'<b>{name}</b>: Import failed ({e})<br>'
+        except PackageNotFoundError:
+            text += f'<b>{name}</b>: Import failed<br>'
 
     text += '<br><b>OpenGL:</b><br>'
 
