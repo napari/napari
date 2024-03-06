@@ -9,6 +9,9 @@ on:
       - "v*x"
     tags:
       - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
+  pull_request:
+    paths:
+      - '.github/workflows/test_comprehensive.yml'
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
