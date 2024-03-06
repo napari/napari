@@ -6,30 +6,35 @@ Because `_provide_viewer` needs `_QtMainWindow` (otherwise returns `None`)
 tests are in `napari/_tests/test_providers.py`, which are not run in headless mode.
 """
 
-from typing import Optional, Union
+from typing import Optional
 
 from napari import components, layers, viewer
 from napari.utils._proxies import PublicOnlyProxy
 from napari.utils.translations import trans
 
 
-def _provide_viewer(
-    public_proxy: bool = True,
-    raise_error: Union[bool, str] = False,
-) -> Optional[viewer.Viewer]:
+def _provide_viewer(public_proxy: bool = True) -> Optional[viewer.Viewer]:
     """Provide `PublicOnlyProxy` (allows internal napari access) of current viewer."""
     if current_viewer := viewer.current_viewer():
         if public_proxy:
             return PublicOnlyProxy(current_viewer)
         return current_viewer
-    if raise_error:
-        msg = ''
-        if isinstance(raise_error, str):
-            msg = ' ' + raise_error
-        raise RuntimeError(
-            trans._('No current `Viewer` found.{msg}', deferred=True, msg=msg)
-        )
     return None
+
+
+def _provide_viewer_or_raise(msg: str = '') -> viewer.Viewer:
+    viewer = _provide_viewer()
+    if viewer:
+        return viewer
+    if msg:
+        msg = ' ' + msg
+    raise RuntimeError(
+        trans._(
+            'No current `Viewer` found.{msg}',
+            deferred=True,
+            msg=msg,
+        )
+    )
 
 
 def _provide_active_layer() -> Optional[layers.Layer]:

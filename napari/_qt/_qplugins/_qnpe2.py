@@ -27,8 +27,11 @@ from qtpy.QtWidgets import QWidget
 
 from napari._app_model import get_app
 from napari._app_model.constants import MenuGroup, MenuId
-from napari._app_model.injection._providers import _provide_viewer
-from napari._qt._qapp_model.injection._qproviders import _provide_window
+from napari._app_model.injection._providers import _provide_viewer_or_raise
+from napari._qt._qapp_model.injection._qproviders import (
+    _provide_window,
+    _provide_window_or_raise,
+)
 from napari.errors.reader_errors import MultipleReaderError
 from napari.plugins import menu_item_template, plugin_manager
 from napari.plugins._npe2 import get_widget_contribution
@@ -120,11 +123,10 @@ def _toggle_or_get_widget_npe1(
     hook_type: str,
 ) -> None:
     """Toggle if widget already built otherwise return widget for npe1."""
-    viewer = _provide_viewer(
-        raise_error='Note that widgets cannot be opened in headless mode.'
+    window = _provide_window_or_raise(
+        msg='Note that widgets cannot be opened in headless mode.'
     )
 
-    window = viewer.window
     if window and (dock_widget := window._dock_widgets.get(name)):
         dock_widget.setVisible(not dock_widget.isVisible())
         return
@@ -345,8 +347,8 @@ def _toggle_or_get_widget(
     Note for magicgui type widget contributions, `Viewer` injection is done by
     `magicgui.register_type` instead of a provider via annnotation.
     """
-    viewer = _provide_viewer(
-        raise_error='Note that widgets cannot be opened in headless mode.'
+    viewer = _provide_viewer_or_raise(
+        msg='Note that widgets cannot be opened in headless mode.',
     )
 
     window = viewer.window
@@ -365,8 +367,8 @@ def _toggle_or_get_widget(
 
 
 def _get_current_dock_status(full_name: str) -> bool:
-    window = _provide_window(
-        raise_error='Note that widgets cannot be opened in headless mode.',
+    window = _provide_window_or_raise(
+        msg='Note that widgets cannot be opened in headless mode.',
     )
     if full_name in window._dock_widgets:
         return window._dock_widgets[full_name].isVisible()
