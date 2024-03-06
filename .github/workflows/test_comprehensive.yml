@@ -73,6 +73,8 @@ jobs:
         exclude:
           - python: "3.11"
             backend: pyside2
+          - platform: windows-latest
+            backend: pyside2
     with:
       python_version: ${{ matrix.python }}
       platform: ${{ matrix.platform }}
