@@ -1,9 +1,10 @@
 from collections.abc import Iterable
 from contextlib import contextmanager
 from functools import wraps
-from typing import List, Sequence, Union
+from typing import Generator, List, Literal, Sequence, Union
 
 import numpy as np
+import numpy.typing as npt
 
 from napari.layers.shapes._mesh import Mesh
 from napari.layers.shapes._shapes_constants import ShapeType, shape_classes
@@ -82,7 +83,7 @@ class ShapeList:
         be rendered.
     """
 
-    def __init__(self, data=(), ndisplay=2) -> None:
+    def __init__(self, data: Iterable[Shape] = (), ndisplay: int = 2) -> None:
         self._ndisplay = ndisplay
         self.shapes: List[Shape] = []
         self._displayed = np.array([])
@@ -110,7 +111,7 @@ class ShapeList:
             self.add(d)
 
     @contextmanager
-    def batched_updates(self):
+    def batched_updates(self) -> Generator[None, None, None]:
         """
         Reentrant context manager to batch the display update
 
@@ -146,17 +147,17 @@ class ShapeList:
         assert self.__batched_level >= 0
 
     @property
-    def data(self):
+    def data(self) -> List[npt.NDArray]:
         """list of (M, D) array: data arrays for each shape."""
         return [s.data for s in self.shapes]
 
     @property
-    def ndisplay(self):
+    def ndisplay(self) -> int:
         """int: Number of displayed dimensions."""
         return self._ndisplay
 
     @ndisplay.setter
-    def ndisplay(self, ndisplay):
+    def ndisplay(self, ndisplay: int) -> None:
         if self.ndisplay == ndisplay:
             return
 
@@ -172,35 +173,37 @@ class ShapeList:
         self._update_z_order()
 
     @property
-    def slice_keys(self):
+    def slice_keys(self) -> npt.NDArray:
         """(N, 2, P) array: slice key for each shape."""
         return np.array([s.slice_key for s in self.shapes])
 
     @property
-    def shape_types(self):
+    def shape_types(self) -> List[str]:
         """list of str: shape types for each shape."""
         return [s.name for s in self.shapes]
 
     @property
-    def edge_color(self):
+    def edge_color(self) -> npt.NDArray:
         """(N x 4) np.ndarray: Array of RGBA edge colors for each shape"""
         return self._edge_color
 
     @edge_color.setter
-    def edge_color(self, edge_color):
+    def edge_color(self, edge_color: npt.NDArray) -> None:
         self._set_color(edge_color, 'edge')
 
     @property
-    def face_color(self):
+    def face_color(self) -> npt.NDArray:
         """(N x 4) np.ndarray: Array of RGBA face colors for each shape"""
         return self._face_color
 
     @face_color.setter
-    def face_color(self, face_color):
+    def face_color(self, face_color: npt.NDArray) -> None:
         self._set_color(face_color, 'face')
 
     @_batch_dec
-    def _set_color(self, colors, attribute):
+    def _set_color(
+        self, colors: npt.NDArray, attribute: Literal['edge', 'face']
+    ) -> None:
         """Set the face_color or edge_color property
 
         Parameters
@@ -229,12 +232,12 @@ class ShapeList:
         self._update_displayed()
 
     @property
-    def edge_widths(self):
+    def edge_widths(self) -> List[float]:
         """list of float: edge width for each shape."""
         return [s.edge_width for s in self.shapes]
 
     @property
-    def z_indices(self):
+    def z_indices(self) -> List[int]:
         """list of int: z-index for each shape."""
         return [s.z_index for s in self.shapes]
 
@@ -251,7 +254,7 @@ class ShapeList:
             self._slice_key = slice_key
             self._update_displayed()
 
-    def _update_displayed(self):
+    def _update_displayed(self) -> None:
         """Update the displayed data based on the slice key.
 
         This method must be called from within the `batched_updates` context
