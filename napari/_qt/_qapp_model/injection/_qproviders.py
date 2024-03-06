@@ -41,7 +41,7 @@ def _provide_window(raise_error: Union[bool, str] = False) -> Optional[Window]:
         if isinstance(raise_error, str):
             msg = ' ' + raise_error
         raise RuntimeError(  # pragma: no cover
-            trans._('No current `Viewer` found.{msg}', deferred=True, msg=msg)
+            trans._('No current `Window` found.{msg}', deferred=True, msg=msg)
         )
     return None
 
