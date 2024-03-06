@@ -375,14 +375,9 @@ def _toggle_or_get_widget(
 
 
 def _get_current_dock_status(full_name: str) -> bool:
-    window = _provide_window()
-    if window is None:
-        raise RuntimeError(  # pragma: no cover
-            trans._(
-                'No current `Window` found. Note that widgets cannot be opened in headless mode.',
-                deferred=True,
-            )
-        )
+    window = _provide_window(
+        raise_error='Note that widgets cannot be opened in headless mode.'
+    )
     if full_name in window._dock_widgets:
         return window._dock_widgets[full_name].isVisible()
     return False
