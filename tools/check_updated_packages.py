@@ -6,9 +6,10 @@ import os
 import re
 import subprocess  # nosec
 import sys
-from configparser import ConfigParser
 from pathlib import Path
 from typing import Optional
+
+from tomllib import loads
 
 REPO_DIR = Path(__file__).parent.parent
 DEFAULT_NAME = 'auto-dependency-upgrades'
@@ -134,16 +135,17 @@ def calc_only_direct_updates(
 ) -> list[str]:
     name_re = re.compile(r'[\w-]+')
 
-    config = ConfigParser()
-    config.read(src_dir / 'setup.cfg')
+    metadata = loads((src_dir / 'pyproject.toml').read_text())['project']
+    optional_dependencies = metadata['optional-dependencies']
+
     packages = (
-        config['options']['install_requires'].split('\n')
-        + config['options.extras_require']['pyqt5'].split('\n')
-        + config['options.extras_require']['pyqt6_experimental'].split('\n')
-        + config['options.extras_require']['pyside2'].split('\n')
-        + config['options.extras_require']['pyside6_experimental'].split('\n')
-        + config['options.extras_require']['testing'].split('\n')
-        + config['options.extras_require']['all'].split('\n')
+        metadata['dependencies']
+        + optional_dependencies['pyqt5']
+        + optional_dependencies['pyqt6_experimental']
+        + optional_dependencies['pyside2']
+        + optional_dependencies['pyside6_experimental']
+        + optional_dependencies['testing']
+        + optional_dependencies['all']
     )
     packages = [
         name_re.match(package).group().lower()

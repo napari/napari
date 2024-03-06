@@ -20,6 +20,12 @@ jobs:
 
       - uses: tlambert03/setup-qt-libs@v1
 
+      # setup needed to use pyautogui
+      - name: create .Xauthority file
+        if: runner.os == 'Linux'
+        run: |
+          touch /home/runner/.Xauthority
+
       - name: Install this commit
         run: |
           pip install --upgrade pip
