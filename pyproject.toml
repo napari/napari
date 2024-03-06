@@ -177,7 +177,7 @@ dev = [
     "pytest",
     "tensorstore>=0.1.13",
     "virtualenv",
-    "xarray>=0.16.2",
+    "xarray>=2023.1.0",
     "zarr>=2.12.0",
     "IPython>=7.25.0",
     "qtconsole>=4.5.1",
