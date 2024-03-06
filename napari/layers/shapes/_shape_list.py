@@ -1,3 +1,4 @@
+import typing
 from collections.abc import Iterable
 from contextlib import contextmanager
 from functools import wraps
@@ -83,7 +84,9 @@ class ShapeList:
         be rendered.
     """
 
-    def __init__(self, data: Iterable[Shape] = (), ndisplay: int = 2) -> None:
+    def __init__(
+        self, data: typing.Iterable[Shape] = (), ndisplay: int = 2
+    ) -> None:
         self._ndisplay = ndisplay
         self.shapes: List[Shape] = []
         self._displayed = np.array([])
