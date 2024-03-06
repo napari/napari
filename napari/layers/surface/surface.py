@@ -311,7 +311,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         return calc_data_range(self.vertex_values)
 
     @property
-    def dtype(self):
+    def dtype(self) -> np.dtype:
         return self.vertex_values.dtype
 
     @property
@@ -360,7 +360,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         return self._vertex_values
 
     @vertex_values.setter
-    def vertex_values(self, vertex_values: np.ndarray):
+    def vertex_values(self, vertex_values: np.ndarray) -> None:
         """Array of values (n, 1) used to color vertices with a colormap."""
         if vertex_values is None:
             vertex_values = np.ones(len(self._vertices))
@@ -376,7 +376,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         return self._vertex_colors
 
     @vertex_colors.setter
-    def vertex_colors(self, vertex_colors: Optional[np.ndarray]):
+    def vertex_colors(self, vertex_colors: Optional[np.ndarray]) -> None:
         """Values used to directly color vertices.
 
         Note that dims sliders for this layer are based on vertex_values, so
@@ -402,7 +402,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         return self._faces
 
     @faces.setter
-    def faces(self, faces: np.ndarray):
+    def faces(self, faces: np.ndarray) -> None:
         """Array of indices of mesh triangles."""
 
         self.faces = faces
@@ -411,7 +411,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         self.events.data(value=self.data)
         self._reset_editable()
 
-    def _get_ndim(self):
+    def _get_ndim(self) -> int:
         """Determine number of dimensions of the layer."""
         return self.vertices.shape[1] + (self.vertex_values.ndim - 1)
 
@@ -441,7 +441,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         return extrema
 
     @property
-    def features(self):
+    def features(self) -> pd.DataFrame:
         """Dataframe-like features table.
 
         It is an implementation detail that this is a `pandas.DataFrame`. In the future,
@@ -467,7 +467,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         self.events.features()
 
     @property
-    def feature_defaults(self):
+    def feature_defaults(self) -> pd.DataFrame:
         """Dataframe-like with one row of feature default values.
 
         See `features` for more details on the type of this property.
@@ -482,11 +482,11 @@ class Surface(IntensityVisualizationMixin, Layer):
         self.events.feature_defaults()
 
     @property
-    def shading(self):
+    def shading(self) -> str:
         return str(self._shading)
 
     @shading.setter
-    def shading(self, shading):
+    def shading(self, shading: Union[str, Shading]) -> None:
         if isinstance(shading, Shading):
             self._shading = shading
         else:
@@ -498,7 +498,9 @@ class Surface(IntensityVisualizationMixin, Layer):
         return self._wireframe
 
     @wireframe.setter
-    def wireframe(self, wireframe: Union[dict, SurfaceWireframe, None]):
+    def wireframe(
+        self, wireframe: Union[dict, SurfaceWireframe, None]
+    ) -> None:
         if wireframe is None:
             self._wireframe.reset()
         elif isinstance(wireframe, (SurfaceWireframe, dict)):
@@ -514,7 +516,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         return self._normals
 
     @normals.setter
-    def normals(self, normals: Union[dict, SurfaceNormals, None]):
+    def normals(self, normals: Union[dict, SurfaceNormals, None]) -> None:
         if normals is None:
             self._normals.reset()
         elif not isinstance(normals, (SurfaceNormals, dict)):
@@ -535,7 +537,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         return self._texture
 
     @texture.setter
-    def texture(self, texture: np.ndarray):
+    def texture(self, texture: np.ndarray) -> None:
         if texture is not None and not isinstance(texture, np.ndarray):
             msg = f'texture should be None or ndarray; got {type(texture)}'
             raise ValueError(msg)
@@ -547,7 +549,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         return self._texcoords
 
     @texcoords.setter
-    def texcoords(self, texcoords: np.ndarray):
+    def texcoords(self, texcoords: np.ndarray) -> None:
         if texcoords is not None and not isinstance(texcoords, np.ndarray):
             msg = f'texcoords should be None or ndarray; got {type(texcoords)}'
             raise ValueError(msg)
@@ -563,7 +565,7 @@ class Surface(IntensityVisualizationMixin, Layer):
             and len(self.texcoords)
         )
 
-    def _get_state(self):
+    def _get_state(self) -> dict:
         """Get dictionary of layer state.
 
         Returns
@@ -683,10 +685,10 @@ class Surface(IntensityVisualizationMixin, Layer):
         if self._keep_auto_contrast:
             self.reset_contrast_limits()
 
-    def _update_thumbnail(self):
+    def _update_thumbnail(self) -> None:
         """Update thumbnail with current surface."""
 
-    def _get_value(self, position):
+    def _get_value(self, position) -> None:
         """Value of the data at a position in data coordinates.
 
         Parameters
