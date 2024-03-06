@@ -9,11 +9,15 @@ from napari.layers.utils.layer_utils import (
 from napari.utils.translations import trans
 
 
-def register_surface_action(description: str, repeatable: bool = False) -> Callable[[Callable], Callable]:
+def register_surface_action(
+    description: str, repeatable: bool = False
+) -> Callable[[Callable], Callable]:
     return register_layer_action(Surface, description, repeatable)
 
 
-def register_surface_mode_action(description: str) -> Callable[[Callable], Callable]:
+def register_surface_mode_action(
+    description: str,
+) -> Callable[[Callable], Callable]:
     return register_layer_attr_action(Surface, description, 'mode')
 
 
