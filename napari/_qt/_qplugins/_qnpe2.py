@@ -120,14 +120,9 @@ def _toggle_or_get_widget_npe1(
     hook_type: str,
 ) -> None:
     """Toggle if widget already built otherwise return widget for npe1."""
-    viewer = _provide_viewer()
-    if viewer is None:
-        raise RuntimeError(  # pragma: no cover
-            trans._(
-                'No current `Viewer` found. Note that widgets cannot be opened in headless mode.',
-                deferred=True,
-            )
-        )
+    viewer = _provide_viewer(
+        raise_error='Note that widgets cannot be opened in headless mode.'
+    )
 
     window = viewer.window
     if window and (dock_widget := window._dock_widgets.get(name)):
@@ -350,14 +345,9 @@ def _toggle_or_get_widget(
     Note for magicgui type widget contributions, `Viewer` injection is done by
     `magicgui.register_type` instead of a provider via annnotation.
     """
-    viewer = _provide_viewer()
-    if viewer is None:
-        raise RuntimeError(  # pragma: no cover
-            trans._(
-                'No current `Viewer` found. Note that widgets cannot be opened in headless mode.',
-                deferred=True,
-            )
-        )
+    viewer = _provide_viewer(
+        raise_error='Note that widgets cannot be opened in headless mode.'
+    )
 
     window = viewer.window
     if window and (dock_widget := window._dock_widgets.get(full_name)):
@@ -376,7 +366,7 @@ def _toggle_or_get_widget(
 
 def _get_current_dock_status(full_name: str) -> bool:
     window = _provide_window(
-        raise_error='Note that widgets cannot be opened in headless mode.'
+        raise_error='Note that widgets cannot be opened in headless mode.',
     )
     if full_name in window._dock_widgets:
         return window._dock_widgets[full_name].isVisible()

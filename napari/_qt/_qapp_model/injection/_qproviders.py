@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 
 def _provide_qt_viewer(
-    raise_error: Union[bool, str] = False
+    raise_error: Union[bool, str] = False,
 ) -> Optional[QtViewer]:
     from napari._qt.qt_main_window import _QtMainWindow
 
@@ -25,8 +25,10 @@ def _provide_qt_viewer(
         msg = ''
         if isinstance(raise_error, str):
             msg = ' ' + raise_error
-        raise RuntimeError(  # pragma: no cover
-            trans._('No current `Viewer` found.{msg}', deferred=True, msg=msg)
+        raise RuntimeError(
+            trans._(
+                'No current `QtViewer` found.{msg}', deferred=True, msg=msg
+            )
         )
     return None
 
@@ -40,7 +42,7 @@ def _provide_window(raise_error: Union[bool, str] = False) -> Optional[Window]:
         msg = ''
         if isinstance(raise_error, str):
             msg = ' ' + raise_error
-        raise RuntimeError(  # pragma: no cover
+        raise RuntimeError(
             trans._('No current `Window` found.{msg}', deferred=True, msg=msg)
         )
     return None
