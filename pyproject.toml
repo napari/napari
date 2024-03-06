@@ -141,7 +141,6 @@ testing = [
     "pytest>=8.0.0",
     "tensorstore>=0.1.13",
     "virtualenv>=20.17",
-    "xarray>=0.16.2",
     "zarr>=2.12.0",
     "IPython>=7.25.0",
     "qtconsole>=4.5.1",
