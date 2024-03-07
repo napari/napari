@@ -15,8 +15,7 @@ from magicgui.widgets import FunctionGui, Widget
 from qtpy.QtWidgets import QWidget
 
 from napari import viewer
-from napari._app_model.injection._providers import _provide_viewer
-from napari.utils.translations import trans
+from napari._app_model.injection._providers import _provide_viewer_or_raise
 
 
 def _add_plugin_dock_widget(
@@ -24,17 +23,12 @@ def _add_plugin_dock_widget(
     viewer: Optional[viewer.Viewer] = None,
 ) -> None:
     if viewer is None:
-        viewer = _provide_viewer()
-    if viewer:
-        widget, full_name = widget_name_tuple
-        viewer.window.add_dock_widget(widget, name=full_name)
-    else:
-        raise RuntimeError(
-            trans._(
-                'No current `Viewer` found. Widgets cannot be opened in headless mode.',
-                deferred=True,
-            )
+        viewer = _provide_viewer_or_raise(
+            msg='Widgets cannot be opened in headless mode.'
         )
+
+    widget, full_name = widget_name_tuple
+    viewer.window.add_dock_widget(widget, name=full_name)
 
 
 QPROCESSORS: Dict[object, Callable] = {

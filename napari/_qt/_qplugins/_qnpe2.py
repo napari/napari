@@ -49,7 +49,7 @@ if TYPE_CHECKING:
 
 # TODO: This is a separate function from `_build_samples_submenu_actions` so it
 # can be easily deleted once npe1 is no longer supported.
-def _rebuild_npe1_samples_menu() -> None:
+def _rebuild_npe1_samples_menu() -> None:  # pragma: no cover
     """Register submenu and actions for all npe1 plugins, clearing all first."""
     app = get_app()
     # Unregister all existing npe1 sample menu actions and submenus
@@ -121,7 +121,7 @@ def _toggle_or_get_widget_npe1(
     widget_name: str,
     name: str,
     hook_type: str,
-) -> None:
+) -> None:  # pragma: no cover
     """Toggle if widget already built otherwise return widget for npe1."""
     window = _provide_window_or_raise(
         msg='Note that widgets cannot be opened in headless mode.'
