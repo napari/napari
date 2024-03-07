@@ -773,7 +773,9 @@ class QtViewer(QSplitter):
         selected_layer_name = ''
         if self.viewer.layers.selection.active is not None:
             selected_layer_name = self.viewer.layers.selection.active.name
-            selected_layer_name = self._remove_invalid_chars(selected_layer_name)
+            selected_layer_name = self._remove_invalid_chars(
+                selected_layer_name
+            )
         filename, selected_filter = dlg.getSaveFileName(
             self,  # parent
             trans._('Save {msg} layers', msg=msg),  # caption
