@@ -3,12 +3,11 @@ from __future__ import annotations
 import types
 from abc import ABC
 from contextlib import nullcontext
-from typing import List, Sequence, Union
+from typing import TYPE_CHECKING, List, Sequence, Union
 
 import numpy as np
 from numpy import typing as npt
 
-from napari.components import Dims
 from napari.layers import Layer
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
@@ -28,6 +27,10 @@ from napari.utils.events.event import WarningEmitter
 from napari.utils.events.event_utils import connect_no_arg
 from napari.utils.naming import magic_name
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from napari.components import Dims
+
 
 __all__ = ('ScalarFieldBase',)
 
