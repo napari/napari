@@ -21,7 +21,7 @@ from skimage.draw import polygon2mask
 
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
-from napari.layers._scalar_field.scalar_field import _ScalarFieldBase
+from napari.layers._scalar_field.scalar_field import ScalarFieldBase
 from napari.layers.base import Layer, no_op
 from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
@@ -69,7 +69,7 @@ from napari.utils.translations import trans
 __all__ = ('Labels',)
 
 
-class Labels(_ScalarFieldBase):
+class Labels(ScalarFieldBase):
     """Labels (or segmentation) layer.
 
     An image-like layer where every pixel contains an integer ID

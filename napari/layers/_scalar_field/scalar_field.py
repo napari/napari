@@ -29,11 +29,13 @@ from napari.utils.events.event_utils import connect_no_arg
 from napari.utils.naming import magic_name
 from napari.utils.translations import trans
 
+__all__ = ('ScalarFieldBase',)
+
 
 # It is important to contain at least one abstractmethod to properly exclude this class
 # in creating NAMES set inside of napari.layers.__init__
 # Mixin must come before Layer
-class _ScalarFieldBase(Layer, ABC):
+class ScalarFieldBase(Layer, ABC):
     """Base class for volumetric layers.
 
     Parameters

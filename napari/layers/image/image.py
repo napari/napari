@@ -11,7 +11,7 @@ from scipy import ndimage as ndi
 
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
-from napari.layers._scalar_field.scalar_field import _ScalarFieldBase
+from napari.layers._scalar_field.scalar_field import ScalarFieldBase
 from napari.layers.image._image_constants import (
     ImageProjectionMode,
     ImageRendering,
@@ -31,7 +31,7 @@ from napari.utils.translations import trans
 __all__ = ('Image',)
 
 
-class Image(IntensityVisualizationMixin, _ScalarFieldBase):
+class Image(IntensityVisualizationMixin, ScalarFieldBase):
     """Image layer.
 
     Parameters

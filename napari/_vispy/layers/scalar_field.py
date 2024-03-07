@@ -11,7 +11,7 @@ from vispy.visuals import ImageVisual
 from napari._vispy.layers.base import VispyBaseLayer
 from napari._vispy.utils.gl import fix_data_dtype
 from napari._vispy.visuals.volume import Volume as VolumeNode
-from napari.layers._scalar_field.scalar_field import _ScalarFieldBase
+from napari.layers._scalar_field.scalar_field import ScalarFieldBase
 from napari.utils.translations import trans
 
 
@@ -30,10 +30,10 @@ class ScalarFieldLayerNode(ABC):
         raise NotImplementedError
 
 
-class VispyScalarFieldBaseLayer(VispyBaseLayer[_ScalarFieldBase]):
+class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
     def __init__(
         self,
-        layer: _ScalarFieldBase,
+        layer: ScalarFieldBase,
         node=None,
         texture_format='auto',
         layer_node_class=ScalarFieldLayerNode,
