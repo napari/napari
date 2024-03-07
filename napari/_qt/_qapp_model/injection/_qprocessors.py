@@ -24,7 +24,7 @@ def _add_plugin_dock_widget(
 ) -> None:
     if viewer is None:
         viewer = _provide_viewer_or_raise(
-            msg='Widgets cannot be opened in headless mode.'
+            msg='Widgets cannot be opened in headless mode.',
         )
 
     widget, full_name = widget_name_tuple
