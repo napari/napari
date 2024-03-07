@@ -140,8 +140,10 @@ def make_napari_viewer(
 
         viewer = make_napari_viewer()
 
-    It accepts all the same arguments as napari.Viewer, plus the following
-    test-related paramaters:
+    It accepts all the same arguments as `napari.Viewer`, notably `show`
+    which should be set to `True` for tests that require the `Viewer` to be visible
+    (e.g., tests that check aspects of the Qt window or layer rendering).
+    It also accepts the following test-related paramaters:
 
     ViewerClass : Type[napari.Viewer], optional
         Override the viewer class being used.  By default, will
