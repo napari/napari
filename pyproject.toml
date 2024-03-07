@@ -631,6 +631,7 @@ module = [
     "napari._qt._qapp_model.qactions._view",
     "napari._vispy.camera",
     "napari._vispy.layers.image",
+    "napari._vispy.layers.scalar_field",
     "napari._vispy.layers.tracks",
     "napari._vispy.layers.vectors",
     "napari._vispy.overlays.axes",
@@ -747,7 +748,8 @@ warn_unused_ignores = false
 module = [
     "napari.__main__",
     "napari.utils.colormaps.vendored.colors",
-    "napari.layers.image.image"
+    "napari.layers.image.image",
+    "napari.layers._scalar_field.scalar_field",
 ]
 check_untyped_defs = false
 disallow_untyped_calls = false
