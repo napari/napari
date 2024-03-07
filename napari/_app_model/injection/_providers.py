@@ -22,8 +22,10 @@ def _provide_viewer(public_proxy: bool = True) -> Optional[viewer.Viewer]:
     return None
 
 
-def _provide_viewer_or_raise(msg: str = '') -> viewer.Viewer:
-    viewer = _provide_viewer()
+def _provide_viewer_or_raise(
+    msg: str = '', public_proxy: bool = False
+) -> viewer.Viewer:
+    viewer = _provide_viewer(public_proxy)
     if viewer:
         return viewer
     if msg:

@@ -4,14 +4,19 @@ Because `_provide_viewer` needs `_QtMainWindow` (otherwise returns `None`)
 tests are here in `napari/_tests`, which are not run in headless mode.
 """
 
+import pytest
 from app_model.types import Action
 
 from napari._app_model._app import get_app
-from napari._app_model.injection._providers import _provide_viewer
+from napari._app_model.injection._providers import (
+    _provide_viewer,
+    _provide_viewer_or_raise,
+)
+from napari.utils._proxies import PublicOnlyProxy
 from napari.viewer import Viewer
 
 
-def test_publicproxy_viewer(capsys, make_napari_viewer):
+def test_publicproxy_provide_viewer(capsys, make_napari_viewer):
     """Test `_provide_viewer` outputs a `PublicOnlyProxy` when appropriate.
 
     Check manual (e.g., internal) `_provide_viewer` calls can disable
@@ -43,3 +48,18 @@ def test_publicproxy_viewer(capsys, make_napari_viewer):
     app.commands.execute_command('some.command.id')
     captured = capsys.readouterr()
     assert 'napari.utils._proxies.PublicOnlyProxy' in captured.out
+
+
+def test_provide_viewer_or_raise(make_napari_viewer):
+    """Check `_provide_viewer_or_raise` raises or returns correct `Viewer`."""
+    # raises when no viewer
+    with pytest.raises(RuntimeError, match='No current `Viewer` found. test'):
+        _provide_viewer_or_raise(msg='test')
+
+    # create viewer
+    make_napari_viewer()
+    viewer = _provide_viewer_or_raise()
+    assert isinstance(viewer, Viewer)
+
+    viewer = _provide_viewer_or_raise(public_proxy=True)
+    assert isinstance(viewer, PublicOnlyProxy)
