@@ -544,7 +544,7 @@ class QtViewer(QSplitter):
 
         Returns
         -------
-        console : Optional[QtConsole]
+        console : QtConsole or None
             The napari console.
 
         Notes
