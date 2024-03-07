@@ -35,7 +35,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-          cache-dependency-path: setup.cfg
+          cache-dependency-path: pyproject.toml
 
       - uses: tlambert03/setup-qt-libs@v1
 
@@ -45,6 +45,12 @@ jobs:
           git clone --depth 1 https://github.com/pyvista/gl-ci-helpers.git
           powershell gl-ci-helpers/appveyor/install_opengl.ps1
           if (Test-Path -Path "C:\Windows\system32\opengl32.dll" -PathType Leaf) {Exit 0} else {Exit 1}
+
+      # setup needed to use pyautogui
+      - name: create .Xauthority file
+        if: runner.os == 'Linux'
+        run: |
+          touch /home/runner/.Xauthority
 
       - name: Install dependencies
         run: |

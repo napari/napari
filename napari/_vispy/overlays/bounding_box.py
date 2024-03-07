@@ -29,11 +29,6 @@ class VispyBoundingBoxOverlay(LayerOverlayMixin, VispySceneOverlay):
         if len(bounds) == 2:
             # 2d layers are assumed to be at 0 in the 3rd dimension
             bounds = np.pad(bounds, ((1, 0), (0, 0)))
-        if self.layer._array_like and self.layer._slice_input.ndisplay == 2:
-            # array-like layers (images) are offset by 0.5 in 2d.
-            # This is not needed in 3D because vispy's VolumeVisual
-            # is already centered on voxels
-            bounds += 0.5
 
         self.node.set_bounds(bounds[::-1])  # invert for vispy
         self._on_lines_change()
