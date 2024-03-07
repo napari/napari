@@ -684,13 +684,18 @@ class QtViewer(QSplitter):
 
         self.canvas.add_layer_visual_mapping(layer, vispy_layer)
 
-    def _sanitize_suggested_filename(self, selected_layer_name):
-        """Sanitize suggested save filename from selected layer name.
+    def _remove_invalid_chars(self, selected_layer_name):
+        """Removes invalid characters from selected layer name to suggest a filename.
 
         Parameters
         ----------
-        selected_layer_name: str
+        selected_layer_name : str
             The selected napari layer name.
+
+        Returns
+        -------
+        suggested_name : str
+            Suggested name from input selected layer name, without invalid characters.
         """
         unprintable_ascii_chars = (
             '\x00',
@@ -729,10 +734,9 @@ class QtViewer(QSplitter):
             + ':*?"<>|\t\n\r\x0b\x0c'  # invalid Windows path characters
         )
         translation_table = dict.fromkeys(map(ord, invalid_characters), None)
-        selected_layer_name = selected_layer_name.translate(
-            translation_table
-        )  # remove invalid characters
-        return selected_layer_name
+        # Remove invalid characters
+        suggested_name = selected_layer_name.translate(translation_table)
+        return suggested_name
 
     def _save_layers_dialog(self, selected=False):
         """Save layers (all or selected) to disk, using ``LayerList.save()``.
@@ -769,7 +773,7 @@ class QtViewer(QSplitter):
         selected_layer_name = ''
         if self.viewer.layers.selection.active is not None:
             selected_layer_name = self.viewer.layers.selection.active.name
-            selected_layer_name = self.sanitize(selected_layer_name)
+            selected_layer_name = self._remove_invalid_chars(selected_layer_name)
         filename, selected_filter = dlg.getSaveFileName(
             self,  # parent
             trans._('Save {msg} layers', msg=msg),  # caption
