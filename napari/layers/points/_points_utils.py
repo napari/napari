@@ -1,4 +1,4 @@
-from typing import Iterable, List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -251,7 +251,43 @@ def fix_data_points(
     return points, ndim
 
 
-def coerce_symbols(array: Iterable) -> np.ndarray:
+def symbol_conversion(symbol: Union[str, Symbol]) -> Symbol:
+    """
+    Convert a string or Symbol to a Symbol instance.
+    """
+    if isinstance(symbol, str):
+        symbol = SYMBOL_ALIAS.get(symbol, symbol)
+    return Symbol(symbol)
+
+
+def create_symbol_dict(symbols: Union[np.ndarray, list]) -> dict:
+    """
+    Create a dictionary that maps raw symbols (keys) to their Symbol
+    instance counterpart (values).
+    """
+    unique_symbols = (
+        set(symbols) if isinstance(symbols, (list, np.ndarray)) else {symbols}
+    )
+    unique_symbols = [str(x).lower() for x in unique_symbols]
+
+    symbol_dict = {}
+
+    for symbol in unique_symbols:
+        symbol_dict[symbol] = symbol_conversion(symbol)
+
+    return symbol_dict
+
+
+def fast_dict_get(symbols: Union[np.ndarray, list], d: dict) -> np.ndarray:
+    """
+    Get the values from a dictionary using a list of keys.
+    """
+    # dtype has to be object, otherwise np.vectorize will cut it down to `U(N)`,
+    # where N is the biggest string currently in the array.
+    return np.vectorize(d.__getitem__, otypes=[object])(symbols)
+
+
+def coerce_symbols(symbol: Union[str, Symbol, np.ndarray, list]) -> np.ndarray:
     """
     Parse an array of symbols and convert it to the correct strings.
 
@@ -262,7 +298,8 @@ def coerce_symbols(array: Iterable) -> np.ndarray:
     array : np.ndarray
         Array of strings matching Symbol values.
     """
-    # dtype has to be object, otherwise np.vectorize will cut it down to `U(N)`,
-    # where N is the biggest string currently in the array.
-    array = [SYMBOL_ALIAS.get(k, k) for k in (str(x).lower() for x in array)]
-    return np.vectorize(Symbol, otypes=[object])(array)
+    if isinstance(symbol, (str, Symbol)):
+        return np.array(symbol_conversion(symbol), dtype=object)
+
+    symbol_dict = create_symbol_dict(symbol)
+    return fast_dict_get(symbol, symbol_dict)

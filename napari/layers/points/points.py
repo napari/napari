@@ -928,8 +928,12 @@ class Points(Layer):
 
     @symbol.setter
     def symbol(self, symbol: Union[str, np.ndarray, list]) -> None:
-        symbol = np.broadcast_to(symbol, self.data.shape[0])
-        self._symbol = coerce_symbols(symbol)
+        coerced_symbols = coerce_symbols(symbol)
+        if coerced_symbols.size == 1:
+            coerced_symbols = np.broadcast_to(
+                coerced_symbols, self.data.shape[0]
+            )
+        self._symbol = coerced_symbols
         self.events.symbol()
         self.events.highlight()
 
