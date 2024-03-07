@@ -929,6 +929,9 @@ class Points(Layer):
     @symbol.setter
     def symbol(self, symbol: Union[str, np.ndarray, list]) -> None:
         coerced_symbols = coerce_symbols(symbol)
+
+        # if a single symbol has been converted, broadcast it to the
+        # number of points in the data
         if coerced_symbols.size == 1:
             coerced_symbols = np.broadcast_to(
                 coerced_symbols, self.data.shape[0]

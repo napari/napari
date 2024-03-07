@@ -298,8 +298,14 @@ def coerce_symbols(symbol: Union[str, Symbol, np.ndarray, list]) -> np.ndarray:
     array : np.ndarray
         Array of strings matching Symbol values.
     """
+    # if symbol is a unique string or Symbol instance, convert it to a
+    # proper Symbol instance
     if isinstance(symbol, (str, Symbol)):
         return np.array(symbol_conversion(symbol), dtype=object)
 
+    # otherwise, create a dictionary to map raw symbols to their
+    # Symbol instance counterpart
     symbol_dict = create_symbol_dict(symbol)
+    # then use a vectorized "dict.get" to convert the raw symbols to
+    # their Symbol instance counterpart quickly
     return fast_dict_get(symbol, symbol_dict)
