@@ -516,7 +516,7 @@ class Labels(ScalarFieldBase):
         self.refresh()
 
     @property
-    def data(self) -> LayerDataProtocol:
+    def data(self) -> Union[LayerDataProtocol, MultiScaleData]:
         """array: Image data."""
         return self._data
 

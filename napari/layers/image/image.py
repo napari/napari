@@ -412,7 +412,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         self.events.attenuation()
 
     @property
-    def data(self) -> LayerDataProtocol:
+    def data(self) -> Union[LayerDataProtocol, MultiScaleData]:
         """Data, possibly in multiscale wrapper. Obeys LayerDataProtocol."""
         return self._data
 
@@ -624,7 +624,9 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
                     mode=mode,
                 )
             )
-        return calc_data_range(input_data, rgb=self.rgb)
+        return calc_data_range(
+            cast(LayerDataProtocol, input_data), rgb=self.rgb
+        )
 
     def _raw_to_displayed(self, raw: np.ndarray) -> np.ndarray:
         """Determine displayed image from raw image.
