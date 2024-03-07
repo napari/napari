@@ -549,7 +549,7 @@ class QtViewer(QSplitter):
 
         Notes
         _____
-        _get_console extracted to separated function for simplify testing
+        _get_console extracted to separate function to simplify testing.
 
         """
         try:
