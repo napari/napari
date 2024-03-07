@@ -1,8 +1,8 @@
+import threading
 from typing import List, Tuple
 
 import numpy as np
-import pyautogui
-from qtpy.QtCore import QModelIndex, QPoint, Qt, QVariantAnimation
+from qtpy.QtCore import QModelIndex, QPoint, Qt
 from qtpy.QtWidgets import QLineEdit, QStyleOptionViewItem
 
 from napari._qt.containers import QtLayerList
@@ -210,26 +210,26 @@ def test_drag_and_drop_layers(qtbot):
     start_pos = base_pos + QPoint(50, 10)
     end_pos = base_pos + QPoint(100, 100)
 
-    def on_animation_value_changed(value):
-        pyautogui.moveTo(value.x(), value.y(), duration=0.25)
-        if value == end_pos:
-            pyautogui.mouseUp(button='left')
+    def drag_and_drop():
+        # simulate drag and drop action with pyautogui
+        import pyautogui
 
-    animation = QVariantAnimation(
-        startValue=start_pos, endValue=end_pos, duration=1000
-    )
-    animation.valueChanged.connect(on_animation_value_changed)
+        pyautogui.moveTo(start_pos.x(), start_pos.y(), duration=0.5)
+        pyautogui.mouseDown()
+        pyautogui.moveTo(end_pos.x(), end_pos.y(), duration=0.5)
+        pyautogui.mouseUp()
 
-    pyautogui.moveTo(start_pos.x(), start_pos.y(), duration=0.25)
-    pyautogui.mouseDown(button='left')
-    with qtbot.waitSignal(animation.finished):
-        animation.start()
+    drag_drop = threading.Thread(target=drag_and_drop)
+    drag_drop.start()
 
-    # check layerlist first element corresponds with first layer in the GUI
-    name = view.model().data(
-        layer_to_model_index(view, 0), Qt.ItemDataRole.DisplayRole
-    )
-    assert name == images[0].name
+    def check_drag_and_drop():
+        # check layerlist first element corresponds with first layer in the GUI
+        name = view.model().data(
+            layer_to_model_index(view, 0), Qt.ItemDataRole.DisplayRole
+        )
+        return name == images[0].name
+
+    qtbot.waitUntil(check_drag_and_drop)
 
 
 def make_qt_layer_list_with_layer(qtbot) -> Tuple[QtLayerList, Image]:
