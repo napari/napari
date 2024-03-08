@@ -1,4 +1,15 @@
-from typing import TYPE_CHECKING, Generic, Iterable, Optional, TypeVar
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Generator,
+    Generic,
+    Iterable,
+    Optional,
+    Set,
+    TypeVar,
+    Union,
+)
 
 from napari.utils.events.containers._set import EventedSet
 from napari.utils.events.event import EmitterGroup
@@ -7,8 +18,8 @@ from napari.utils.translations import trans
 if TYPE_CHECKING:
     from napari._pydantic_compat import ModelField
 
-_T = TypeVar("_T")
-_S = TypeVar("_S")
+_T = TypeVar('_T')
+_S = TypeVar('_S')
 
 
 class Selection(EventedSet[_T]):
@@ -61,7 +72,11 @@ class Selection(EventedSet[_T]):
         super().__init__(data=data)
         self._update_active()
 
-    def _emit_change(self, added=None, removed=None):
+    def _emit_change(
+        self,
+        added: Optional[Set[_T]] = None,
+        removed: Optional[Set[_T]] = None,
+    ) -> None:
         if added is None:
             added = set()
         if removed is None:
@@ -70,7 +85,7 @@ class Selection(EventedSet[_T]):
         return super()._emit_change(added=added, removed=removed)
 
     def __repr__(self) -> str:
-        return f"{type(self).__name__}({self._set!r})"
+        return f'{type(self).__name__}({self._set!r})'
 
     def __hash__(self) -> int:
         """Make selection hashable."""
@@ -82,7 +97,7 @@ class Selection(EventedSet[_T]):
         return self._current_
 
     @_current.setter
-    def _current(self, index: Optional[_T]):
+    def _current(self, index: Optional[_T]) -> None:
         """Set current item."""
         if index == self._current_:
             return
@@ -95,7 +110,7 @@ class Selection(EventedSet[_T]):
         return self._active
 
     @active.setter
-    def active(self, value: Optional[_T]):
+    def active(self, value: Optional[_T]) -> None:
         """Set the active item.
 
         This make `value` the only selected item, and make it current.
@@ -107,7 +122,7 @@ class Selection(EventedSet[_T]):
         self._current = value
         self.events.active(value=value)
 
-    def _update_active(self):
+    def _update_active(self) -> None:
         """On a selection event, update the active item based on selection.
 
         (An active item is a single selected item).
@@ -124,27 +139,27 @@ class Selection(EventedSet[_T]):
             self._current = None
         super().clear()
 
-    def toggle(self, obj: _T):
+    def toggle(self, obj: _T) -> None:
         """Toggle selection state of obj."""
         self.symmetric_difference_update({obj})
 
-    def select_only(self, obj: _T):
+    def select_only(self, obj: _T) -> None:
         """Unselect everything but `obj`. Add to selection if not present."""
         self.intersection_update({obj})
         self.add(obj)
 
     @classmethod
-    def __get_validators__(cls):
+    def __get_validators__(cls) -> Generator:
         yield cls.validate
 
     @classmethod
-    def validate(cls, v, field: 'ModelField'):
+    def validate(cls, v: Union['Selection', Dict], field: 'ModelField') -> 'Selection':  # type: ignore[override]
         """Pydantic validator."""
         from napari._pydantic_compat import sequence_like
 
         if isinstance(v, dict):
-            data = v.get("selection", [])
-            current = v.get("_current", None)
+            data = v.get('selection', [])
+            current = v.get('_current', None)
         elif isinstance(v, Selection):
             data = v._set
             current = v._current
@@ -182,12 +197,12 @@ class Selection(EventedSet[_T]):
         if errors:
             from napari._pydantic_compat import ValidationError
 
-            raise ValidationError(errors, cls)  # type: ignore
+            raise ValidationError(errors, cls)
         obj = cls(data=data)
         obj._current_ = current
         return obj
 
-    def _json_encode(self):
+    def _json_encode(self) -> Dict:  # type: ignore[override]
         """Return an object that can be used by json.dumps."""
         # we don't serialize active, as it's gleaned from the selection.
         return {'selection': super()._json_encode(), '_current': self._current}
@@ -196,9 +211,9 @@ class Selection(EventedSet[_T]):
 class Selectable(Generic[_S]):
     """Mixin that adds a selection model to an object."""
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         self._selection: Selection[_S] = Selection()
-        super().__init__(*args, **kwargs)  # type: ignore
+        super().__init__(*args, **kwargs)
 
     @property
     def selection(self) -> Selection[_S]:

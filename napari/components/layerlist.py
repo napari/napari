@@ -480,9 +480,9 @@ class LayerList(SelectableEventedList[Layer]):
         )
 
         if selected:
-            msg = trans._("No layers selected", deferred=True)
+            msg = trans._('No layers selected', deferred=True)
         else:
-            msg = trans._("No layers to save", deferred=True)
+            msg = trans._('No layers to save', deferred=True)
 
         if not layers:
             warnings.warn(msg)

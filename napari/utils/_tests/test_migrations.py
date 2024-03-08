@@ -8,7 +8,7 @@ from napari.utils.migrations import (
 
 
 def test_simple():
-    @rename_argument("a", "b", "1", "0.5")
+    @rename_argument('a', 'b', '1', '0.5')
     def sample_fun(b):
         return b
 
@@ -22,7 +22,7 @@ def test_simple():
 
 def test_constructor():
     class Sample:
-        @rename_argument("a", "b", "1", "0.5")
+        @rename_argument('a', 'b', '1', '0.5')
         def __init__(self, b) -> None:
             self.b = b
 
@@ -48,14 +48,14 @@ def test_deprecated_property() -> None:
     instance = Dummy()
 
     add_deprecated_property(
-        Dummy, "old_property", "new_property", "0.1.0", "0.0.0"
+        Dummy, 'old_property', 'new_property', '0.1.0', '0.0.0'
     )
 
     assert instance.new_property == 0
 
     instance.new_property = 1
 
-    msg = "Dummy.old_property is deprecated since 0.0.0 and will be removed in 0.1.0. Please use new_property"
+    msg = 'Dummy.old_property is deprecated since 0.0.0 and will be removed in 0.1.0. Please use new_property'
 
     with pytest.warns(FutureWarning, match=msg):
         assert instance.old_property == 1

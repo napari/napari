@@ -13,7 +13,7 @@ def _test_migrator(monkeypatch):
     # but rather only using migrators that get declared IN the test
     _TEST_MIGRATORS = []
     with monkeypatch.context() as m:
-        m.setattr(_migrations, "_MIGRATORS", _TEST_MIGRATORS)
+        m.setattr(_migrations, '_MIGRATORS', _TEST_MIGRATORS)
         yield _migrations.migrator
 
 

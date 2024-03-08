@@ -16,7 +16,7 @@ def test_sample_hook(builtins, tmp_plugin: DynamicPlugin):
     viewer = ViewerModel()
     NAME = tmp_plugin.name
     KEY = 'random data'
-    with pytest.raises(KeyError, match=f"Plugin {NAME!r} does not provide"):
+    with pytest.raises(KeyError, match=f'Plugin {NAME!r} does not provide'):
         viewer.open_sample(NAME, KEY)
 
     @tmp_plugin.contribute.sample_data(key=KEY)
@@ -79,6 +79,6 @@ def test_sample_uses_reader_plugin(builtins, tmp_plugin, tmp_path):
     with pytest.raises(ValueError) as e:
         viewer.open_sample(NAME, 'fake sample', reader_plugin='napari')
     assert (
-        f"Chosen reader napari failed to open sample. Plugin {NAME} declares gibberish"
+        f'Chosen reader napari failed to open sample. Plugin {NAME} declares gibberish'
         in str(e)
     )
