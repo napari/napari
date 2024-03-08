@@ -4,7 +4,6 @@ from collections import OrderedDict
 from typing import Optional
 
 from app_model.backends.qt import (
-    qkey2modelkey,
     qkeysequence2modelkeybinding,
 )
 from qtpy.QtCore import QEvent, QPoint, Qt, Signal
@@ -410,11 +409,12 @@ class ShortcutEditor(QWidget):
             # get the current action name
             current_action = self._table.item(row, self._action_col).text()
 
-            # get the original shortcutS
+            # get the original shortcuts
             current_shortcuts = list(
                 action_manager._shortcuts.get(current_action, [])
             )
             for mod in {'Shift', 'Ctrl', 'Alt', 'Cmd', 'Super', 'Meta'}:
+                # we want to prevent multiple modifiers but still allow single modifiers.
                 if new_shortcut.endswith('-' + mod):
                     self._show_bind_shortcut_error(
                         current_action,
@@ -581,7 +581,18 @@ class EditorWidget(QLineEdit):
         if event.type() == QEvent.Type.ShortcutOverride:
             self.keyPressEvent(event)
             return True
-        if event.type() in [QEvent.Type.KeyPress, QEvent.Type.Shortcut]:
+        if event.type() == QEvent.Type.Shortcut:
+            return True
+        if event.type() == QEvent.Type.KeyPress and event.key() in (
+            Qt.Key.Key_Delete,
+            Qt.Key.Key_Backspace,
+        ):
+            # If there is a shortcut set already, two events are being emitted when
+            # pressing `Delete` or `Backspace`. First a `ShortcutOverride` event and
+            # then a `KeyPress` event. We need to mark the second event (`KeyPress`)
+            # as handled for those keys to not end up processing it multiple times.
+            # Without that, pressing `Backspace` or `Delete` will set those keys as shortcuts
+            # instead of just cleaning/removing the previous shortcut that was set.
             return True
 
         return super().event(event)
@@ -642,6 +653,7 @@ class EditorWidget(QLineEdit):
         if (
             event_key in {Qt.Key.Key_Delete, Qt.Key.Key_Backspace}
             and self.text() != ''
+            and self.hasSelectedText()
         ):
             # Allow user to delete shortcut.
             self.setText('')
@@ -655,8 +667,6 @@ class EditorWidget(QLineEdit):
         ):
             self._handleEditModifiersOnly(event)
             return
-        if event_key == Qt.Key.Key_Delete:
-            self.setText(Shortcut(qkey2modelkey(event_key)).platform)
 
         if event_key in {
             Qt.Key.Key_Return,

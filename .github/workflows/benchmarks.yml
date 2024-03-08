@@ -67,7 +67,7 @@ jobs:
         name: Install Python
         with:
           python-version: "3.11"
-          cache-dependency-path: setup.cfg
+          cache-dependency-path: pyproject.toml
 
       - uses: tlambert03/setup-qt-libs@v1
 
@@ -168,5 +168,5 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: asv-benchmark-results-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}
+          name: asv-benchmark-results-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}-${{ matrix.benchmark-name }}
           path: .asv/results

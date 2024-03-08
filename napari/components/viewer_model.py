@@ -437,7 +437,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             np.round(s / sc).astype('int') + 1
             for s, sc in zip(scene_size, scale)
         ]
-        empty_labels = np.zeros(shape, dtype=np.uint8)
+        dtype_str = get_settings().application.new_labels_dtype
+        empty_labels = np.zeros(shape, dtype=dtype_str)
         self.add_labels(empty_labels, translate=np.array(corner), scale=scale)
 
     def _on_layer_reload(self, event: Event) -> None:

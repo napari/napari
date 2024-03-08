@@ -1713,8 +1713,8 @@ class Shapes(Layer):
         ----------
         data : Array | List[Array]
             List of rectangle data where each element is a (4, D) array of 4 vertices
-            in D dimensions, or a (2, D) array of 2 vertices in D dimensions, where
-            the vertices are top-left and bottom-right corners.
+            in D dimensions, or in 2D a (2, 2) array of 2 vertices that are
+            the top-left and bottom-right corners.
             Can be a 3-dimensional array for multiple shapes, or list of 2 or 4
             vertices for a single shape.
         edge_width : float | list
@@ -1771,8 +1771,8 @@ class Shapes(Layer):
         ----------
         data : Array | List[Array]
             List of ellipse data where each element is a (4, D) array of 4 vertices
-            in D dimensions representing a bounding box, or a (2, D) array of
-            center position and radii magnitudes in D dimensions.
+            in D dimensions representing a bounding box, or in 2D a (2, 2) array of
+            center position and radii magnitudes.
             Can be a 3-dimensional array for multiple shapes, or list of 2 or 4
             vertices for a single shape.
         edge_width : float | list
