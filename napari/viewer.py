@@ -100,6 +100,7 @@ class Viewer(ViewerModel):
         scale=None,
         canvas_only=True,
         flash: bool = True,
+        fit_to_data: bool = True,
     ):
         """Take currently displayed screen and convert to an image array.
 
@@ -121,6 +122,8 @@ class Viewer(ViewerModel):
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
             By default, True.
+        fit_to_data : bool
+            Whether to fit a bounding box around the data to prevent margins of showing in the screenshot.
 
         Returns
         -------
@@ -134,6 +137,7 @@ class Viewer(ViewerModel):
             scale=scale,
             flash=flash,
             canvas_only=canvas_only,
+            fit_to_data=fit_to_data,
         )
 
     def show(self, *, block=False):
