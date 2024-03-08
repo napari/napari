@@ -103,22 +103,19 @@ pyqt6_experimental = [
     "PyQt6",
 ]
 pyside = [
-    "PySide2>=5.13.2,!=5.15.0 ; python_version != '3.8'",
-    "PySide2>=5.14.2,!=5.15.0 ; python_version == '3.8'",
+    "napari[pyside2]"
 ]
 pyqt5 = [
     "PyQt5>=5.12.3,!=5.15.0",
 ]
 pyqt = [
-    "PyQt5>=5.12.3,!=5.15.0",
+    "napari[pyqt5]"
 ]
 qt = [
-    "PyQt5>=5.12.3,!=5.15.0",
+    "napari[pyqt]"
 ]
 all = [
-    "PyQt5>=5.12.3,!=5.15.0",
-    "triangle ; platform_machine != 'arm64'",
-    "numba>=0.57.1",
+    "napari[pyqt,optional]",
     "napari-plugin-manager >=0.1.0a1, <0.2.0",
 ]
 optional = [
