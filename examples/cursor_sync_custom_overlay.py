@@ -38,7 +38,7 @@ class VispyCursorOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
     def __init__(self, *, viewer, overlay, parent=None):
 
-        cursor = Ellipse(center=(4, 4), color="red", radius=4)
+        cursor = Ellipse(center=(4, 4), color='red', radius=4)
 
         super().__init__(
             node=cursor,
@@ -95,10 +95,10 @@ def sync_cursor(parent: napari.Viewer, child: napari.Viewer):
 #   Run it
 #
 
-if __name__ == "__main__":
+if __name__ == '__main__':
 
-    parent = napari.Viewer(title="Parent")
-    child = napari.Viewer(title="Child")
+    parent = napari.Viewer(title='Parent')
+    child = napari.Viewer(title='Child')
 
     parent_layer = parent.add_labels(np.random.randint(0, 10, (500, 300)))
     child_layer = child.add_labels(np.random.randint(10, 20, (500, 300)))
