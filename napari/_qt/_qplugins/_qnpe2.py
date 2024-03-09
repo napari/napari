@@ -58,7 +58,7 @@ def _rebuild_npe1_samples_menu() -> None:  # pragma: no cover
     if unreg := plugin_manager._unreg_sample_actions:
         unreg()
 
-    sample_actions: List[Action] = []
+    # sample_actions: List[Action] = []
     for plugin_name, samples in plugin_manager._sample_data.items():
         multiprovider = len(samples) > 1
         if multiprovider:
@@ -74,7 +74,7 @@ def _rebuild_npe1_samples_menu() -> None:  # pragma: no cover
         else:
             submenu_id = MenuId.FILE_SAMPLES
             submenu = []
-
+        sample_actions: List[Action] = []
         for sample_name, sample_dict in samples.items():
 
             def _add_sample(

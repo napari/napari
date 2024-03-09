@@ -8,10 +8,61 @@ from qtpy.QtWidgets import QWidget
 from napari._app_model import get_app
 from napari._app_model.constants import CommandId, MenuId
 from napari._qt._qapp_model.qactions import _plugins, init_qactions
+from napari._qt._qplugins._qnpe2 import _toggle_or_get_widget
+from napari._tests.utils import skip_local_popups
 
 
 class DummyWidget(QWidget):
     pass
+
+
+@skip_local_popups
+def test_toggle_or_get_widget(
+    make_napari_viewer,
+    tmp_plugin: DynamicPlugin,
+    qtbot,
+):
+    """Check `_toggle_or_get_widget` changes visibility correctly."""
+    widget_name = 'Widget'
+    plugin_name = 'tmp_plugin'
+    full_name = 'Widget (Temp Plugin)'
+
+    @tmp_plugin.contribute.widget(display_name=widget_name)
+    def widget1():
+        return DummyWidget()
+
+    app = get_app()
+    # Viewer needs to be visible
+    viewer = make_napari_viewer(show=True)
+
+    # Trigger the action, opening the widget: `Widget 1`
+    app.commands.execute_command('tmp_plugin:Widget')
+    widget = viewer.window._dock_widgets[full_name]
+    # Widget takes some time to appear
+    qtbot.waitUntil(widget.isVisible)
+    assert widget.isVisible()
+
+    # Define not visible callable
+    def widget_not_visible():
+        return not widget.isVisible()
+
+    # Hide widget
+    _toggle_or_get_widget(
+        plugin=plugin_name,
+        widget_name=widget_name,
+        full_name=full_name,
+    )
+    qtbot.waitUntil(widget_not_visible)
+    assert not widget.isVisible()
+
+    # Make widget appear again
+    _toggle_or_get_widget(
+        plugin=plugin_name,
+        widget_name=widget_name,
+        full_name=full_name,
+    )
+    qtbot.waitUntil(widget.isVisible)
+    assert widget.isVisible()
 
 
 def test_plugin_single_widget_menu(
@@ -117,8 +168,10 @@ def test_plugin_menu_plugin_state_change(
     assert 'tmp_plugin:Widget 1' in app.commands
 
 
-def test_plugin_widget_checked(make_napari_viewer, tmp_plugin: DynamicPlugin):
-    """Check widget toggling updates check mark correctly."""
+def test_plugin_widget_checked(
+    make_napari_viewer, qtbot, tmp_plugin: DynamicPlugin
+):
+    """Check widget toggling/hiding updates check mark correctly."""
 
     @tmp_plugin.contribute.widget(display_name='Widget')
     def widget_contrib():
@@ -134,6 +187,26 @@ def test_plugin_widget_checked(make_napari_viewer, tmp_plugin: DynamicPlugin):
     widget_action.trigger()
     assert widget_action.isChecked()
     assert 'Widget (Temp Plugin)' in viewer.window._dock_widgets
+    widget = viewer.window._dock_widgets['Widget (Temp Plugin)']
+
+    # Hide widget
+    widget.title.hide_button.click()
+    # Run `_on_about_to_show`, which is called on `aboutToShow`` event,
+    # to update checked status
+    viewer.window.plugins_menu._on_about_to_show()
+    assert not widget_action.isChecked()
+
+    # Trigger the action again, opening widget and test item checked
+    widget_action.trigger()
+    assert widget_action.isChecked()
+    # print(widget.widget())
+    aa = widget.widget()
+    print(widget)
+    print(aa)
+    print(aa.parent())
+    widget.destroyOnClose()
+    print(aa.parent())
+    # assert 'tmp_plugin:Widget' not in app.commands
 
 
 def test_import_plugin_manager():
