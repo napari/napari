@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, TYPE_CHECKING, Tuple
 from qtpy import QtCore, QtGui, QtWidgets
 
 from ...._qt.widgets.qt_extension2reader import Extension2ReaderTable
-from ...._qt.widgets.qt_highlight_preview import QtHighlightSizePreviewWidget
+from ...._qt.widgets.qt_highlight_preview import QtHighlightPreviewWidget
 from ...._qt.widgets.qt_keyboard_settings import ShortcutEditor
 from ...._qt.widgets.qt_font_size import QtFontSizeWidget
 
@@ -585,18 +585,18 @@ class ArraySchemaWidget(SchemaWidgetMixin, QtWidgets.QWidget):
         self.on_changed.emit(self.state)
 
 
-class HighlightSizePreviewWidget(
-    SchemaWidgetMixin, QtHighlightSizePreviewWidget
+class HighlightPreviewWidget(
+    SchemaWidgetMixin, QtHighlightPreviewWidget
 ):
     @state_property
-    def state(self) -> int:
+    def state(self) -> dict:
         return self.value()
 
     def setDescription(self, description: str):
         self._description.setText(description)
 
     @state.setter
-    def state(self, state: int):
+    def state(self, state: dict):
         self.setValue(state)
 
     def configure(self):

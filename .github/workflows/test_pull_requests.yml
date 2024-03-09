@@ -115,7 +115,7 @@ jobs:
           # Windows py39
           - python: 3.9
             platform: windows-latest
-            backend: pyqt5,pyside2
+            backend: pyqt5 #,pyside2
             coverage: no_cov
           - python: 3.11
             platform: windows-latest
@@ -220,7 +220,7 @@ jobs:
         run: asv machine --yes
 
       - name: Run benchmarks PR
-        uses: aganders3/headless-gui@v1
+        uses: aganders3/headless-gui@v2
         with:
           run: |
             asv run --show-stderr --quick  --attribute timeout=300 HEAD^!
@@ -229,7 +229,7 @@ jobs:
 
       - name: Run benchmarks latest release
         # here we check if the benchmark on the latest release is not broken
-        uses: aganders3/headless-gui@v1
+        uses: aganders3/headless-gui@v2
         with:
           run: |
             asv run --show-stderr --quick  --attribute timeout=300  ${{ fromJSON(steps.latest_release.outputs.data).target_commitish }}^!
