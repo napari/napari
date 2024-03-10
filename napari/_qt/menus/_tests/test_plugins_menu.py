@@ -196,17 +196,9 @@ def test_plugin_widget_checked(
     viewer.window.plugins_menu._on_about_to_show()
     assert not widget_action.isChecked()
 
-    # Trigger the action again, opening widget and test item checked
+    # Trigger the action again to open widget and test item checked
     widget_action.trigger()
     assert widget_action.isChecked()
-    # print(widget.widget())
-    aa = widget.widget()
-    print(widget)
-    print(aa)
-    print(aa.parent())
-    widget.destroyOnClose()
-    print(aa.parent())
-    # assert 'tmp_plugin:Widget' not in app.commands
 
 
 def test_import_plugin_manager():

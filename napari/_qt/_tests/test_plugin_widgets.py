@@ -166,10 +166,11 @@ def test_widget_hide_destroy(make_napari_viewer):
     ww = widget.widget()
     widget.title.hide_button.click()
     assert ww
-    # Check that widget removed from `_dock_widgets` dict when closed
+    # Check that widget removed from `_dock_widgets` dict and parent
+    # `QtViewerDockWidget` is `None` when closed
     widget.destroyOnClose()
     assert 'test' not in viewer.window._dock_widgets
-    assert ww.parent is None
+    assert ww.parent() is None
 
 
 @pytest.mark.parametrize(
