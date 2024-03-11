@@ -295,7 +295,7 @@ class _ImageSliceRequest:
         """
         Slice the given data with the given data slice and project the extra dims.
 
-        This is also responsible for materializing the data in-case it is backed
+        This is also responsible for materializing the data if it is backed
         by a lazy store or compute graph (e.g. dask).
         """
 
