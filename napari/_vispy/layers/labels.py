@@ -6,10 +6,10 @@ from vispy.color import Colormap as VispyColormap
 from vispy.gloo import Texture2D
 from vispy.scene.node import Node
 
-from napari._vispy.layers.image import (
+from napari._vispy.layers.scalar_field import (
     _DTYPE_TO_VISPY_FORMAT,
     _VISPY_FORMAT_TO_DTYPE,
-    ImageLayerNode,
+    ScalarFieldLayerNode,
     VispyScalarFieldBaseLayer,
     get_dtype_from_vispy_texture_format,
 )
@@ -312,7 +312,7 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
         self._on_colormap_change()
 
 
-class LabelLayerNode(ImageLayerNode):
+class LabelLayerNode(ScalarFieldLayerNode):
     def __init__(self, custom_node: Node = None, texture_format=None):
         self._custom_node = custom_node
         self._setup_nodes(texture_format)
