@@ -254,7 +254,8 @@ class _ImageSliceRequest:
         )
 
         # slice displayed dimensions to get the right tile data
-        data = np.asarray(data[tuple(disp_slice)])
+        data = data[tuple(disp_slice)]
+
         # project the thick slice
         data_slice = self._thick_slice_at_level(level)
         data = self._project_thick_slice(data, data_slice)
@@ -290,7 +291,7 @@ class _ImageSliceRequest:
 
     def _project_thick_slice(
         self, data: ArrayLike, data_slice: _ThickNDSlice
-    ) -> ArrayLike:
+    ) -> np.ndarray:
         """
         Slice the given data with the given data slice and project the extra dims.
         """
