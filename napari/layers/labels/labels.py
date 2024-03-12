@@ -21,6 +21,7 @@ from skimage.draw import polygon2mask
 
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
+from napari.layers._scalar_field.scalar_field import ScalarFieldBase
 from napari.layers.base import Layer, no_op
 from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
@@ -28,7 +29,6 @@ from napari.layers.base._base_mouse_bindings import (
 )
 from napari.layers.image._image_utils import guess_multiscale
 from napari.layers.image._slice import _ImageSliceResponse
-from napari.layers.image.image import _ImageBase
 from napari.layers.labels._labels_constants import (
     LabelColorMode,
     LabelsRendering,
@@ -66,8 +66,10 @@ from napari.utils.naming import magic_name
 from napari.utils.status_messages import generate_layer_coords_status
 from napari.utils.translations import trans
 
+__all__ = ('Labels',)
 
-class Labels(_ImageBase):
+
+class Labels(ScalarFieldBase):
     """Labels (or segmentation) layer.
 
     An image-like layer where every pixel contains an integer ID
@@ -514,7 +516,7 @@ class Labels(_ImageBase):
         self.refresh()
 
     @property
-    def data(self) -> LayerDataProtocol:
+    def data(self) -> Union[LayerDataProtocol, MultiScaleData]:
         """array: Image data."""
         return self._data
 
