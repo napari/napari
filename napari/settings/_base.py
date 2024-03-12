@@ -38,6 +38,8 @@ if TYPE_CHECKING:
     DictStrAny = dict[str, Any]
     MappingIntStrAny = Mapping[IntStr, Any]
 
+Dict = dict  # rename, because EventedSettings has method dict
+
 
 class EventedSettings(BaseSettings, EventedModel):
     """A variant of EventedModel designed for settings.
@@ -182,7 +184,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         path.parent.mkdir(exist_ok=True, parents=True)
         self._dump(str(path), self._save_dict(**dict_kwargs))
 
-    def _dump(self, path: str, data: dict) -> None:
+    def _dump(self, path: str, data: Dict) -> None:
         """Encode and dump `data` to `path` using a path-appropriate encoder."""
         if str(path).endswith(('.yaml', '.yml')):
             _data = self._yaml_dump(data)
@@ -200,7 +202,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         with open(path, 'w') as target:
             target.write(_data)
 
-    def env_settings(self) -> dict[str, Any]:
+    def env_settings(self) -> Dict[str, Any]:
         """Get a dict of fields that were provided as environment vars."""
         env_settings = getattr(self.__config__, '_env_settings', {})
         if callable(env_settings):

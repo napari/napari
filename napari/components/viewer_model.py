@@ -106,7 +106,7 @@ EXCLUDE_DICT = {
     'mouse_wheel_callbacks',
 }
 EXCLUDE_JSON = EXCLUDE_DICT.union({'layers', 'active_layer'})
-
+Dict = dict  # rename, because ViewerModel has method dict
 
 __all__ = ['ViewerModel', 'valid_add_kwargs']
 
@@ -1187,7 +1187,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     def _open_or_raise_error(
         self,
         paths: list[Union[Path, str]],
-        kwargs: Optional[dict[str, Any]] = None,
+        kwargs: Optional[Dict[str, Any]] = None,
         layer_type: Optional[LayerTypeName] = None,
         stack: bool = False,
     ):
@@ -1315,7 +1315,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         paths: list[PathLike],
         *,
         stack: bool,
-        kwargs: Optional[dict] = None,
+        kwargs: Optional[Dict] = None,
         plugin: Optional[str] = None,
         layer_type: Optional[LayerTypeName] = None,
     ) -> list[Layer]:
@@ -1401,7 +1401,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     def _add_layer_from_data(
         self,
         data,
-        meta: Optional[dict[str, Any]] = None,
+        meta: Optional[Dict[str, Any]] = None,
         layer_type: Optional[str] = None,
     ) -> list[Layer]:
         """Add arbitrary layer data to the viewer.
