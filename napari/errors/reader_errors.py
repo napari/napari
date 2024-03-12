@@ -1,4 +1,3 @@
-
 from napari.types import PathLike
 
 

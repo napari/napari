@@ -1,4 +1,3 @@
-
 from app_model.types import KeyBinding, KeyCode, KeyMod
 
 _default_shortcuts = {

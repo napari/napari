@@ -10,8 +10,8 @@ from napari._pydantic_compat import BaseModel
 from napari.settings._fields import Version
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
-    from typing import AbstractSet, Any, Optional, TypeVar, Union
+    from collections.abc import Mapping, Set as AbstractSet
+    from typing import Any, Optional, TypeVar, Union
 
     IntStr = Union[int, str]
     AbstractSetIntStr = AbstractSet[IntStr]

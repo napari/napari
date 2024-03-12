@@ -1,4 +1,3 @@
-
 from typing_extensions import TypedDict
 
 from napari._pydantic_compat import Field

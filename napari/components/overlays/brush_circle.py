@@ -1,4 +1,3 @@
-
 from napari.components.overlays.base import CanvasOverlay
 
 

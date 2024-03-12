@@ -1,4 +1,3 @@
-
 import numpy as np
 from vispy.scene import ArcballCamera, BaseCamera, PanZoomCamera
 

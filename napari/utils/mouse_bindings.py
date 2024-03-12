@@ -1,5 +1,3 @@
-
-
 class MousemapProvider:
     """Mix-in to add mouse binding functionality.
 

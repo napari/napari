@@ -4,7 +4,6 @@ View actions that do require Qt should go in
 `napari/_qt/_qapp_model/qactions/_view.py`.
 """
 
-
 from app_model.types import Action, ToggleRule
 
 from napari._app_model.actions._toggle_action import ViewerToggleAction

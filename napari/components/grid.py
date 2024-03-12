@@ -1,4 +1,3 @@
-
 import numpy as np
 
 from napari.settings._application import GridHeight, GridStride, GridWidth

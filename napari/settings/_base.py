@@ -24,7 +24,8 @@ from napari.utils.translations import trans
 _logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from typing import AbstractSet, Any, Union
+    from collections.abc import Set as AbstractSet
+    from typing import Any, Union
 
     from napari._pydantic_compat import (
         EnvSettingsSource,

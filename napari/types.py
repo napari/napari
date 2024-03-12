@@ -174,9 +174,7 @@ def _register_types_with_magicgui():
         register_type(
             Future[data_type],  # type: ignore [valid-type]
             choices=_mgui.get_layers_data,
-            return_callback=partial(
-                _mgui.add_future_data, _from_tuple=False
-            ),
+            return_callback=partial(_mgui.add_future_data, _from_tuple=False),
         )
         register_type(
             Optional[data_type],  # type: ignore [call-overload]
@@ -186,9 +184,7 @@ def _register_types_with_magicgui():
         register_type(
             Future[Optional[data_type]],  # type: ignore [valid-type]
             choices=_mgui.get_layers_data,
-            return_callback=partial(
-                _mgui.add_future_data, _from_tuple=False
-            ),
+            return_callback=partial(_mgui.add_future_data, _from_tuple=False),
         )
 
 

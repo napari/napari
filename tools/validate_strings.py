@@ -30,7 +30,7 @@ import tty
 from contextlib import suppress
 from pathlib import Path
 from types import ModuleType
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Optional
 
 import pytest
 from strings_list import (

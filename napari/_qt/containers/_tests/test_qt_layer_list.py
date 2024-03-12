@@ -1,4 +1,3 @@
-
 import numpy as np
 from qtpy.QtCore import QModelIndex, QPoint, Qt
 from qtpy.QtWidgets import QLineEdit, QStyleOptionViewItem

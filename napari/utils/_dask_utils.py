@@ -4,7 +4,7 @@
 import collections.abc
 import contextlib
 from collections.abc import Iterator
-from typing import Any, Callable, ContextManager, Optional
+from typing import Any, Callable, Optional
 
 import dask
 import dask.array as da
@@ -17,7 +17,9 @@ from dask.cache import Cache
 _DASK_CACHE = Cache(1)
 _DEFAULT_MEM_FRACTION = 0.25
 
-DaskIndexer = Callable[[], ContextManager[Optional[tuple[dict, Cache]]]]
+DaskIndexer = Callable[
+    [], contextlib.AbstractContextManager[Optional[tuple[dict, Cache]]]
+]
 
 
 def resize_dask_cache(
