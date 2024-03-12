@@ -1,5 +1,6 @@
+from collections.abc import Sequence
 from string import Formatter
-from typing import Any, Literal, Protocol, Sequence, Union, runtime_checkable
+from typing import Any, Literal, Protocol, Union, runtime_checkable
 
 import numpy as np
 

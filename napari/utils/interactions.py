@@ -2,7 +2,6 @@ import contextlib
 import inspect
 import sys
 import warnings
-from typing import List
 
 from numpydoc.docscrape import FunctionDoc
 
@@ -247,7 +246,7 @@ elif sys.platform.startswith('linux'):
     KEY_SYMBOLS.update({'Meta': 'Super'})
 
 
-def _kb2mods(key_bind: KeyBinding) -> List[str]:
+def _kb2mods(key_bind: KeyBinding) -> list[str]:
     """Extract list of modifiers from a key binding.
 
     Parameters

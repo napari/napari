@@ -1,4 +1,3 @@
-from typing import Tuple
 
 import numpy as np
 import numpy.typing as npt
@@ -339,7 +338,7 @@ def embed_in_identity_matrix(matrix, ndim):
 
 def decompose_linear_matrix(
     matrix, upper_triangular=True
-) -> Tuple[npt.NDArray, npt.NDArray, npt.NDArray]:
+) -> tuple[npt.NDArray, npt.NDArray, npt.NDArray]:
     """Decompose linear transform matrix into rotate, scale, shear.
 
     Decomposition is based on code from https://github.com/matthew-brett/transforms3d.

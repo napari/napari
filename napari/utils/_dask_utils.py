@@ -3,7 +3,8 @@
 
 import collections.abc
 import contextlib
-from typing import Any, Callable, ContextManager, Iterator, Optional, Tuple
+from collections.abc import Iterator
+from typing import Any, Callable, ContextManager, Optional
 
 import dask
 import dask.array as da
@@ -16,7 +17,7 @@ from dask.cache import Cache
 _DASK_CACHE = Cache(1)
 _DEFAULT_MEM_FRACTION = 0.25
 
-DaskIndexer = Callable[[], ContextManager[Optional[Tuple[dict, Cache]]]]
+DaskIndexer = Callable[[], ContextManager[Optional[tuple[dict, Cache]]]]
 
 
 def resize_dask_cache(
@@ -140,7 +141,7 @@ def configure_dask(data: Any, cache: bool = True) -> DaskIndexer:
     @contextlib.contextmanager
     def dask_optimized_slicing(
         memfrac: float = 0.5,
-    ) -> Iterator[Tuple[Any, Any]]:
+    ) -> Iterator[tuple[Any, Any]]:
         opts = {'optimization.fuse.active': False}
         with dask.config.set(opts) as cfg, _cache as c:
             yield cfg, c

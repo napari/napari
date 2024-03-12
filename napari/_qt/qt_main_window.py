@@ -9,15 +9,12 @@ import os
 import sys
 import time
 import warnings
+from collections.abc import MutableMapping, Sequence
 from typing import (
     TYPE_CHECKING,
     Any,
     ClassVar,
-    List,
-    MutableMapping,
     Optional,
-    Sequence,
-    Tuple,
     Union,
     cast,
 )
@@ -111,7 +108,7 @@ class _QtMainWindow(QMainWindow):
     # We use this instead of QApplication.activeWindow for compatibility with
     # IPython usage. When you activate IPython, it will appear that there are
     # *no* active windows, so we want to track the most recently active windows
-    _instances: ClassVar[List['_QtMainWindow']] = []
+    _instances: ClassVar[list['_QtMainWindow']] = []
 
     # `window` is passed through on construction, so it's available to a window
     # provider for dependency injection
@@ -924,7 +921,7 @@ class Window:
         plugin_name: str,
         widget_name: Optional[str] = None,
         tabify: bool = False,
-    ) -> Tuple[QtViewerDockWidget, Any]:
+    ) -> tuple[QtViewerDockWidget, Any]:
         """Add plugin dock widget if not already added.
 
         Parameters
@@ -1325,7 +1322,7 @@ class Window:
         """
         self._qt_window.setGeometry(left, top, width, height)
 
-    def geometry(self) -> Tuple[int, int, int, int]:
+    def geometry(self) -> tuple[int, int, int, int]:
         """Get the geometry of the widget
 
         Returns

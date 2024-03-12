@@ -1,7 +1,7 @@
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from contextlib import contextmanager
 from functools import wraps
-from typing import List, Sequence, Union
+from typing import Union
 
 import numpy as np
 
@@ -84,7 +84,7 @@ class ShapeList:
 
     def __init__(self, data=(), ndisplay=2) -> None:
         self._ndisplay = ndisplay
-        self.shapes: List[Shape] = []
+        self.shapes: list[Shape] = []
         self._displayed = np.array([])
         self._slice_key = np.array([])
         self.displayed_vertices = np.array([])

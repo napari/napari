@@ -1,4 +1,3 @@
-from typing import Tuple
 
 import numpy as np
 from qtpy.QtCore import QModelIndex, QPoint, Qt
@@ -191,7 +190,7 @@ def make_qt_layer_list_with_delegate(qtbot):
     return image1, image2, image3, layers, view, delegate
 
 
-def make_qt_layer_list_with_layer(qtbot) -> Tuple[QtLayerList, Image]:
+def make_qt_layer_list_with_layer(qtbot) -> tuple[QtLayerList, Image]:
     image = Image(np.zeros((4, 3)))
     layers = LayerList([image])
     view = QtLayerList(layers)

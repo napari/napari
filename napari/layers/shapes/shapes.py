@@ -6,11 +6,7 @@ from typing import (
     Any,
     Callable,
     ClassVar,
-    Dict,
-    List,
     Optional,
-    Set,
-    Tuple,
     Union,
 )
 
@@ -348,7 +344,7 @@ class Shapes(Layer):
     # in the thumbnail
     _max_shapes_thumbnail = 100
 
-    _drag_modes: ClassVar[Dict[Mode, Callable[['Shapes', Event], Any]]] = {
+    _drag_modes: ClassVar[dict[Mode, Callable[['Shapes', Event], Any]]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
         Mode.SELECT: select,
@@ -363,7 +359,7 @@ class Shapes(Layer):
         Mode.ADD_POLYGON_LASSO: add_path_polygon_lasso,
     }
 
-    _move_modes: ClassVar[Dict[Mode, Callable[['Shapes', Event], Any]]] = {
+    _move_modes: ClassVar[dict[Mode, Callable[['Shapes', Event], Any]]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
         Mode.SELECT: highlight,
@@ -379,7 +375,7 @@ class Shapes(Layer):
     }
 
     _double_click_modes: ClassVar[
-        Dict[Mode, Callable[['Shapes', Event], Any]]
+        dict[Mode, Callable[['Shapes', Event], Any]]
     ] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: no_op,
@@ -395,7 +391,7 @@ class Shapes(Layer):
         Mode.ADD_POLYGON_LASSO: no_op,
     }
 
-    _cursor_modes: ClassVar[Dict[Mode, str]] = {
+    _cursor_modes: ClassVar[dict[Mode, str]] = {
         Mode.PAN_ZOOM: 'standard',
         Mode.TRANSFORM: 'standard',
         Mode.SELECT: 'pointing',
@@ -410,7 +406,7 @@ class Shapes(Layer):
         Mode.ADD_POLYGON_LASSO: 'cross',
     }
 
-    _interactive_modes: ClassVar[Set[Mode]] = {
+    _interactive_modes: ClassVar[set[Mode]] = {
         Mode.PAN_ZOOM,
     }
 
@@ -525,7 +521,7 @@ class Shapes(Layer):
 
         self._value = (None, None)
         self._value_stored = (None, None)
-        self._moving_value: Tuple[Optional[int], Optional[int]] = (None, None)
+        self._moving_value: tuple[Optional[int], Optional[int]] = (None, None)
         self._selected_data = set()
         self._selected_data_stored = set()
         self._selected_data_history = set()
@@ -549,7 +545,7 @@ class Shapes(Layer):
         self._drag_box = None
         self._drag_box_stored = None
         self._is_creating = False
-        self._clipboard: Dict[str, Shapes] = {}
+        self._clipboard: dict[str, Shapes] = {}
 
         self._status = self.mode
 
@@ -762,7 +758,7 @@ class Shapes(Layer):
     @features.setter
     def features(
         self,
-        features: Union[Dict[str, np.ndarray], pd.DataFrame],
+        features: Union[dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
         self._feature_table.set_values(features, num_data=self.nshapes)
         if self._face_color_property and (
@@ -804,23 +800,23 @@ class Shapes(Layer):
 
     @feature_defaults.setter
     def feature_defaults(
-        self, defaults: Union[Dict[str, Any], pd.DataFrame]
+        self, defaults: Union[dict[str, Any], pd.DataFrame]
     ) -> None:
         self._feature_table.set_defaults(defaults)
         self.events.current_properties()
         self.events.feature_defaults()
 
     @property
-    def properties(self) -> Dict[str, np.ndarray]:
+    def properties(self) -> dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each shape"""
         return self._feature_table.properties()
 
     @properties.setter
-    def properties(self, properties: Dict[str, Array]):
+    def properties(self, properties: dict[str, Array]):
         self.features = properties
 
     @property
-    def property_choices(self) -> Dict[str, np.ndarray]:
+    def property_choices(self) -> dict[str, np.ndarray]:
         return self._feature_table.choices()
 
     def _get_ndim(self):
@@ -895,7 +891,7 @@ class Shapes(Layer):
         self.events.current_face_color()
 
     @property
-    def current_properties(self) -> Dict[str, np.ndarray]:
+    def current_properties(self) -> dict[str, np.ndarray]:
         """dict{str: np.ndarray(1,)}: properties for the next added shape."""
         return self._feature_table.currents()
 
@@ -981,7 +977,7 @@ class Shapes(Layer):
         self._edge_colormap = ensure_colormap(colormap)
 
     @property
-    def edge_contrast_limits(self) -> Union[Tuple[float, float], None]:
+    def edge_contrast_limits(self) -> Union[tuple[float, float], None]:
         """None, (float, float): contrast limits for mapping
         the edge_color colormap property to 0 and 1
         """
@@ -989,7 +985,7 @@ class Shapes(Layer):
 
     @edge_contrast_limits.setter
     def edge_contrast_limits(
-        self, contrast_limits: Union[None, Tuple[float, float]]
+        self, contrast_limits: Union[None, tuple[float, float]]
     ):
         self._edge_contrast_limits = contrast_limits
 
@@ -1047,7 +1043,7 @@ class Shapes(Layer):
         self._face_colormap = ensure_colormap(colormap)
 
     @property
-    def face_contrast_limits(self) -> Union[None, Tuple[float, float]]:
+    def face_contrast_limits(self) -> Union[None, tuple[float, float]]:
         """None, (float, float) : clims for mapping the face_color
         colormap property to 0 and 1
         """
@@ -1055,7 +1051,7 @@ class Shapes(Layer):
 
     @face_contrast_limits.setter
     def face_contrast_limits(
-        self, contrast_limits: Union[None, Tuple[float, float]]
+        self, contrast_limits: Union[None, tuple[float, float]]
     ):
         self._face_contrast_limits = contrast_limits
 
@@ -1610,7 +1606,7 @@ class Shapes(Layer):
         return self.text.view_text(self._indices_view)
 
     @property
-    def _view_text_coords(self) -> Tuple[np.ndarray, str, str]:
+    def _view_text_coords(self) -> tuple[np.ndarray, str, str]:
         """Get the coordinates of the text elements in view
 
         Returns
@@ -2838,8 +2834,8 @@ class Shapes(Layer):
         self,
         start_point: np.ndarray,
         end_point: np.ndarray,
-        dims_displayed: List[int],
-    ) -> Tuple[Union[float, int, None], None]:
+        dims_displayed: list[int],
+    ) -> tuple[Union[float, int, None], None]:
         """Get the layer data value along a ray
 
         Parameters
@@ -2870,8 +2866,8 @@ class Shapes(Layer):
         self,
         start_point: np.ndarray,
         end_point: np.ndarray,
-        dims_displayed: List[int],
-    ) -> Tuple[Union[None, float, int], Union[None, np.ndarray]]:
+        dims_displayed: list[int],
+    ) -> tuple[Union[None, float, int], Union[None, np.ndarray]]:
         """Get the shape index and intersection point of the first shape
         (i.e., closest to start_point) along the specified 3D line segment.
 
@@ -2925,8 +2921,8 @@ class Shapes(Layer):
         self,
         position: np.ndarray,
         view_direction: np.ndarray,
-        dims_displayed: List[int],
-    ) -> Tuple[Union[float, int, None], Union[npt.NDArray, None]]:
+        dims_displayed: list[int],
+    ) -> tuple[Union[float, int, None], Union[npt.NDArray, None]]:
         """Get the shape index and intersection point of the first shape
         (i.e., closest to start_point) "under" a mouse click.
 

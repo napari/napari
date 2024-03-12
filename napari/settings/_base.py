@@ -3,10 +3,10 @@ from __future__ import annotations
 import contextlib
 import logging
 import os
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple, cast
+from typing import TYPE_CHECKING, Optional, cast
 from warnings import warn
 
 from napari._pydantic_compat import (
@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 
     IntStr = Union[int, str]
     AbstractSetIntStr = AbstractSet[IntStr]
-    DictStrAny = Dict[str, Any]
+    DictStrAny = dict[str, Any]
     MappingIntStrAny = Mapping[IntStr, Any]
 
 
@@ -181,7 +181,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         path.parent.mkdir(exist_ok=True, parents=True)
         self._dump(str(path), self._save_dict(**dict_kwargs))
 
-    def _dump(self, path: str, data: Dict) -> None:
+    def _dump(self, path: str, data: dict) -> None:
         """Encode and dump `data` to `path` using a path-appropriate encoder."""
         if str(path).endswith(('.yaml', '.yml')):
             _data = self._yaml_dump(data)
@@ -199,7 +199,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         with open(path, 'w') as target:
             target.write(_data)
 
-    def env_settings(self) -> Dict[str, Any]:
+    def env_settings(self) -> dict[str, Any]:
         """Get a dict of fields that were provided as environment vars."""
         env_settings = getattr(self.__config__, '_env_settings', {})
         if callable(env_settings):
@@ -232,7 +232,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
             init_settings: SettingsSourceCallable,
             env_settings: EnvSettingsSource,
             file_secret_settings: SettingsSourceCallable,
-        ) -> Tuple[SettingsSourceCallable, ...]:
+        ) -> tuple[SettingsSourceCallable, ...]:
             """customise the way data is loaded.
 
             This does 2 things:
@@ -256,7 +256,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         @classmethod
         def _config_file_settings_source(
             cls, settings: EventedConfigFileSettings
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             return config_file_settings_source(settings)
 
 
@@ -282,7 +282,7 @@ def nested_env_settings(
     nesting as well.
     """
 
-    def _inner(settings: BaseSettings) -> Dict[str, Any]:
+    def _inner(settings: BaseSettings) -> dict[str, Any]:
         # first call the original implementation
         d = super_eset(settings)
 
@@ -343,7 +343,7 @@ def nested_env_settings(
 
 def config_file_settings_source(
     settings: EventedConfigFileSettings,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Read config files during init of an EventedConfigFileSettings obj.
 
     The two important values are the `settings._config_path`
@@ -369,7 +369,7 @@ def config_file_settings_source(
     default_cfg = getattr(default_cfg, 'default', None)
 
     # if the config has a `sources` list, read those too and merge.
-    sources: List[str] = list(getattr(settings.__config__, 'sources', []))
+    sources: list[str] = list(getattr(settings.__config__, 'sources', []))
     if config_path:
         sources.append(config_path)
     if not sources:
@@ -458,7 +458,7 @@ def config_file_settings_source(
     return data
 
 
-def _remove_bad_keys(data: dict, keys: List[Tuple[Union[int, str], ...]]):
+def _remove_bad_keys(data: dict, keys: list[tuple[Union[int, str], ...]]):
     """Remove list of keys (as string tuples) from dict (in place).
 
     Parameters

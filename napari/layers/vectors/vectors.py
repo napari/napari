@@ -1,6 +1,6 @@
 import warnings
 from copy import copy
-from typing import Any, Dict, Tuple, Union
+from typing import Any, Union
 
 import numpy as np
 import pandas as pd
@@ -335,7 +335,7 @@ class Vectors(Layer):
     @features.setter
     def features(
         self,
-        features: Union[Dict[str, np.ndarray], pd.DataFrame],
+        features: Union[dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
         self._feature_table.set_values(features, num_data=len(self.data))
         if self._edge.color_properties is not None:
@@ -361,12 +361,12 @@ class Vectors(Layer):
         self.events.features()
 
     @property
-    def properties(self) -> Dict[str, np.ndarray]:
+    def properties(self) -> dict[str, np.ndarray]:
         """dict {str: array (N,)}, DataFrame: Annotations for each point"""
         return self._feature_table.properties()
 
     @properties.setter
-    def properties(self, properties: Dict[str, Array]):
+    def properties(self, properties: dict[str, Array]):
         self.features = properties
 
     @property
@@ -379,13 +379,13 @@ class Vectors(Layer):
 
     @feature_defaults.setter
     def feature_defaults(
-        self, defaults: Union[Dict[str, Any], pd.DataFrame]
+        self, defaults: Union[dict[str, Any], pd.DataFrame]
     ) -> None:
         self._feature_table.set_defaults(defaults)
         self.events.feature_defaults()
 
     @property
-    def property_choices(self) -> Dict[str, np.ndarray]:
+    def property_choices(self) -> dict[str, np.ndarray]:
         return self._feature_table.choices()
 
     def _get_state(self):
@@ -608,7 +608,7 @@ class Vectors(Layer):
         self._edge.categorical_colormap = edge_color_cycle
 
     @property
-    def edge_colormap(self) -> Tuple[str, Colormap]:
+    def edge_colormap(self) -> tuple[str, Colormap]:
         """Return the colormap to be applied to a property to get the edge color.
 
         Returns
@@ -623,7 +623,7 @@ class Vectors(Layer):
         self._edge.continuous_colormap = colormap
 
     @property
-    def edge_contrast_limits(self) -> Tuple[float, float]:
+    def edge_contrast_limits(self) -> tuple[float, float]:
         """None, (float, float): contrast limits for mapping
         the edge_color colormap property to 0 and 1
         """
@@ -631,7 +631,7 @@ class Vectors(Layer):
 
     @edge_contrast_limits.setter
     def edge_contrast_limits(
-        self, contrast_limits: Union[None, Tuple[float, float]]
+        self, contrast_limits: Union[None, tuple[float, float]]
     ):
         self._edge.contrast_limits = contrast_limits
 

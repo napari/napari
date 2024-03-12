@@ -1,4 +1,3 @@
-from typing import Dict, List
 
 import numpy as np
 import pytest
@@ -14,7 +13,7 @@ def null_data() -> np.ndarray:
 
 
 @pytest.fixture
-def properties() -> Dict[str, List]:
+def properties() -> dict[str, list]:
     return {
         'track_id': [0, 0],
         'time': [0, 0],

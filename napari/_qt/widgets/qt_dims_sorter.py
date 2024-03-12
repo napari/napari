@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Tuple, Union
+from typing import TYPE_CHECKING, Union
 
 import numpy as np
 from qtpy.QtWidgets import QGridLayout, QLabel, QWidget
@@ -36,7 +36,7 @@ class AxisModel:
         return repr(self) == other
 
 
-def set_dims_order(dims: Dims, order: Tuple[int, ...]):
+def set_dims_order(dims: Dims, order: tuple[int, ...]):
     if type(order[0]) == AxisModel:
         order = [a.axis for a in order]
     dims.order = order
@@ -46,7 +46,7 @@ def _array_in_range(arr: np.ndarray, low: int, high: int) -> bool:
     return (arr >= low) & (arr < high)
 
 
-def move_indices(axes_list: SelectableEventedList, order: Tuple[int, ...]):
+def move_indices(axes_list: SelectableEventedList, order: tuple[int, ...]):
     with axes_list.events.blocker_all():
         if tuple(axes_list) == tuple(order):
             return
