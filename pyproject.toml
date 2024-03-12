@@ -104,22 +104,19 @@ pyqt6_experimental = [
     "PyQt6",
 ]
 pyside = [
-    "PySide2>=5.13.2,!=5.15.0 ; python_version != '3.8'",
-    "PySide2>=5.14.2,!=5.15.0 ; python_version == '3.8'",
+    "napari[pyside2]"
 ]
 pyqt5 = [
     "PyQt5>=5.12.3,!=5.15.0",
 ]
 pyqt = [
-    "PyQt5>=5.12.3,!=5.15.0",
+    "napari[pyqt5]"
 ]
 qt = [
-    "PyQt5>=5.12.3,!=5.15.0",
+    "napari[pyqt]"
 ]
 all = [
-    "PyQt5>=5.12.3,!=5.15.0",
-    "triangle ; platform_machine != 'arm64'",
-    "numba>=0.57.1",
+    "napari[pyqt,optional]",
     "napari-plugin-manager >=0.1.0a1, <0.2.0",
 ]
 optional = [
@@ -632,6 +629,7 @@ module = [
     "napari._qt._qapp_model.qactions._view",
     "napari._vispy.camera",
     "napari._vispy.layers.image",
+    "napari._vispy.layers.scalar_field",
     "napari._vispy.layers.tracks",
     "napari._vispy.layers.vectors",
     "napari._vispy.overlays.axes",
@@ -748,7 +746,8 @@ warn_unused_ignores = false
 module = [
     "napari.__main__",
     "napari.utils.colormaps.vendored.colors",
-    "napari.layers.image.image"
+    "napari.layers.image.image",
+    "napari.layers._scalar_field.scalar_field",
 ]
 check_untyped_defs = false
 disallow_untyped_calls = false
