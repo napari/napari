@@ -408,7 +408,7 @@ class Vectors(Layer):
                     else [self._edge.current_color]
                 ),
                 'edge_color_cycle': self.edge_color_cycle,
-                'edge_colormap': self.edge_colormap[1].dict(),
+                'edge_colormap': self.edge_colormap.dict(),
                 'edge_contrast_limits': self.edge_contrast_limits,
                 'data': self.data,
                 'properties': self.properties,
@@ -608,7 +608,7 @@ class Vectors(Layer):
         self._edge.categorical_colormap = edge_color_cycle
 
     @property
-    def edge_colormap(self) -> Tuple[str, Colormap]:
+    def edge_colormap(self) -> Colormap:
         """Return the colormap to be applied to a property to get the edge color.
 
         Returns
