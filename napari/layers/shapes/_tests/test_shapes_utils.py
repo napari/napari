@@ -424,6 +424,3 @@ def test_perpendicular_distance(start, end, point):
     distance = perpendicular_distance(point, start, end)
 
     assert distance == 1
-
-
-_regen_testcases()
