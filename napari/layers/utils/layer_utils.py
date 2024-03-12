@@ -599,7 +599,7 @@ def compute_multiscale_level_and_corners(
 
 
 def coerce_affine(
-    affine: Union[npt.ArrayLike, Affine],
+    affine: Union[npt.ArrayLike, Affine, None],
     *,
     ndim: int,
     name: Optional[str] = None,
@@ -612,7 +612,7 @@ def coerce_affine(
 
     Parameters
     ----------
-    affine : array-like or napari.utils.transforms.Affine
+    affine : array-like or napari.utils.transforms.Affine, optional
         An existing affine transform object or an array-like that is its transform matrix.
     ndim : int
         The desired dimensionality of the transform. Ignored is affine is an Affine transform object.

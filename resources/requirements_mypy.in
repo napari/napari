@@ -5,6 +5,7 @@ npe2
 pydantic<2
 qtpy
 pyqt6
+unyt
 types-PyYAML
 types-setuptools
 types-requests
