@@ -117,16 +117,16 @@ jobs:
             platform: windows-latest
             backend: pyqt5 #,pyside2
             coverage: no_cov
-          - python: 3.12
+          - python: "3.12"
             platform: windows-latest
             backend: pyqt6
             coverage: no_cov
-          - python: 3.12
+          - python: "3.12"
             platform: macos-latest
             backend: pyqt5
             coverage: no_cov
           # minimum specified requirements
-          - python: 3.9
+          - python: "3.9"
             platform: ubuntu-20.04
             backend: pyqt5
             MIN_REQ: 1
@@ -138,11 +138,11 @@ jobs:
             pydantic: ""
             tox_extras: "optional"
           # test without any Qt backends
-          - python: 3.10
+          - python: "3.10"
             platform: ubuntu-20.04
             backend: headless
             coverage: no_cov
-          - python: 3.12
+          - python: "3.12"
             platform: ubuntu-latest
             backend: pyqt6,pyside6
             coverage: cov
