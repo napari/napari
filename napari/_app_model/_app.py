@@ -11,7 +11,6 @@ from napari._app_model.actions._help_actions import HELP_ACTIONS
 from napari._app_model.actions._layer_actions import LAYER_ACTIONS
 from napari._app_model.actions._view_actions import VIEW_ACTIONS
 from napari._app_model.injection._processors import PROCESSORS
-from napari._app_model.injection._providers import PROVIDERS
 
 APP_NAME = 'napari'
 
@@ -28,9 +27,7 @@ class NapariApplication(Application):
         super().__init__(app_name, raise_synchronous_exceptions=True)
 
         self.injection_store.namespace = _napari_names  # type: ignore [assignment]
-        self.injection_store.register(
-            providers=PROVIDERS, processors=PROCESSORS
-        )
+        self.injection_store.register(processors=PROCESSORS)
 
         for action in chain(HELP_ACTIONS, LAYER_ACTIONS, VIEW_ACTIONS):
             self.register_action(action)
