@@ -254,6 +254,8 @@ def make_napari_viewer(
         should_show = request.config.getoption('--show-napari-viewer')
         model_kwargs['show'] = model_kwargs.pop('show', should_show)
         viewer = ViewerClass(*model_args, **model_kwargs)
+        if hasattr(viewer.window, '_qt_window'):
+            viewer.window._qt_window._save_current_window_settings = _empty
         viewers.add(viewer)
 
         return viewer
@@ -267,13 +269,7 @@ def make_napari_viewer(
 
     # close viewers, but don't saving window settings while closing
     for viewer in viewers:
-        if hasattr(viewer.window, '_qt_window'):
-            with patch.object(
-                viewer.window._qt_window, '_save_current_window_settings'
-            ):
-                viewer.close()
-        else:
-            viewer.close()
+        viewer.close()
 
     if GCPASS % 50 == 0 or len(QtViewer._instances):
         gc.collect()
