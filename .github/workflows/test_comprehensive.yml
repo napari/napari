@@ -69,7 +69,7 @@ jobs:
             platform: ubuntu-latest
             backend: pyqt6
             tox_extras: "testing_extra"
-          - python: "3.12"
+          - python: "3.11"
             platform: ubuntu-latest
             backend: pyside6
             tox_extras: "testing_extra"

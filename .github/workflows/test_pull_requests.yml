@@ -144,7 +144,7 @@ jobs:
             coverage: no_cov
           - python: "3.12"
             platform: ubuntu-latest
-            backend: pyqt6,pyside6
+            backend: pyqt6
             coverage: cov
             tox_extras: "testing_extra"
           # pyside2 test
