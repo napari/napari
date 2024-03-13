@@ -15,7 +15,9 @@ from magicgui.widgets import FunctionGui, Widget
 from qtpy.QtWidgets import QWidget
 
 from napari import viewer
-from napari._app_model.injection._providers import _provide_viewer_or_raise
+from napari._qt._qapp_model.injection._qproviders import (
+    _provide_viewer_or_raise,
+)
 
 
 def _add_plugin_dock_widget(

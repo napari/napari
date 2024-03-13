@@ -19,7 +19,7 @@ from typing import (
 )
 
 from napari import layers, types, viewer
-from napari._app_model.injection._providers import _provide_viewer
+from napari._qt._qapp_model.injection._qproviders import _provide_viewer
 from napari.layers._source import layer_source
 
 
