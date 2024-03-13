@@ -52,6 +52,10 @@ from napari._app_model.context import get_context
 from napari._qt import menus
 from napari._qt._qapp_model import build_qmodel_menu
 from napari._qt._qapp_model.qactions import init_qactions
+from napari._qt._qplugins import (
+    _rebuild_npe1_plugins_menu,
+    _rebuild_npe1_samples_menu,
+)
 from napari._qt.dialogs.confirm_close_dialog import ConfirmCloseDialog
 from napari._qt.dialogs.preferences_dialog import PreferencesDialog
 from napari._qt.dialogs.qt_activity_dialog import QtActivityDialog
@@ -73,7 +77,7 @@ from napari.plugins import (
     menu_item_template as plugin_menu_item_template,
     plugin_manager,
 )
-from napari.plugins._npe2 import _rebuild_npe1_samples_menu
+from napari.plugins._npe2 import index_npe1_adapters
 from napari.settings import get_settings
 from napari.utils import perf
 from napari.utils._proxies import PublicOnlyProxy
@@ -656,6 +660,9 @@ class Window:
         plugin_manager.discover_themes()
         self._setup_existing_themes()
 
+        # import and index all discovered shimmed npe1 plugins
+        index_npe1_adapters()
+
         self._add_menus()
         self._update_theme()
         self._update_theme_font_size()
@@ -806,6 +813,10 @@ class Window:
         menu_model = getattr(self, menu)
         menu_model.update_from_context(get_context(layerlist))
 
+    def _update_plugin_menu_state(self):
+        self._update_menu_state('plugins_menu')
+
+    # TODO: Remove once npe1 deprecated
     def _setup_npe1_samples_menu(self):
         """Register npe1 sample data, build menu and connect to events."""
         plugin_manager.discover_sample_data()
@@ -814,6 +825,15 @@ class Window:
         plugin_manager.events.registered.connect(_rebuild_npe1_samples_menu)
         plugin_manager.events.unregistered.connect(_rebuild_npe1_samples_menu)
         _rebuild_npe1_samples_menu()
+
+    # TODO: Remove once npe1 deprecated
+    def _setup_npe1_plugins_menu(self):
+        """Register npe1 widgets, build menu and connect to events"""
+        plugin_manager.discover_widgets()
+        plugin_manager.events.registered.connect(_rebuild_npe1_plugins_menu)
+        plugin_manager.events.disabled.connect(_rebuild_npe1_plugins_menu)
+        plugin_manager.events.unregistered.connect(_rebuild_npe1_plugins_menu)
+        _rebuild_npe1_plugins_menu()
 
     def _add_menus(self):
         """Add menubar to napari app."""
@@ -850,7 +870,13 @@ class Window:
         )
         self.main_menu.addMenu(self.view_menu)
         # plugin menu
-        self.plugins_menu = menus.PluginsMenu(self)
+        self.plugins_menu = build_qmodel_menu(
+            MenuId.MENUBAR_PLUGINS,
+            title=trans._('&Plugins'),
+            parent=self._qt_window,
+        )
+        self._setup_npe1_plugins_menu()
+        self.plugins_menu.aboutToShow.connect(self._update_plugin_menu_state)
         self.main_menu.addMenu(self.plugins_menu)
         # window menu
         self.window_menu = menus.WindowMenu(self)
@@ -1142,7 +1168,7 @@ class Window:
         # see #3663, to fix #3624 more generally
         dock_widget.setFloating(False)
 
-    def _remove_dock_widget(self, event):
+    def _remove_dock_widget(self, event) -> None:
         names = list(self._dock_widgets.keys())
         for widget_name in names:
             if event.value in widget_name:
