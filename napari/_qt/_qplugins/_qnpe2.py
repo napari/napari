@@ -77,23 +77,11 @@ def _rebuild_npe1_samples_menu() -> None:  # pragma: no cover
         sample_actions: List[Action] = []
         for sample_name, sample_dict in samples.items():
 
-            def _add_sample(
-                qt_viewer: QtViewer,
-                plugin: str = plugin_name,
-                sample: str = sample_name,
-            ) -> None:
-                from napari._qt.dialogs.qt_reader_dialog import (
-                    handle_gui_reading,
-                )
-
-                try:
-                    qt_viewer.viewer.open_sample(plugin, sample)
-                except MultipleReaderError as e:
-                    handle_gui_reading(
-                        [str(p) for p in e.paths],
-                        qt_viewer,
-                        stack=False,
-                    )
+            _add_sample_partial = partial(
+                _add_sample,
+                plugin=plugin_name,
+                sample=sample_name,
+            )
 
             display_name = sample_dict['display_name'].replace('&', '&&')
             if multiprovider:
@@ -105,7 +93,7 @@ def _rebuild_npe1_samples_menu() -> None:  # pragma: no cover
                 id=f'{plugin_name}:{display_name}',
                 title=title,
                 menus=[{'id': submenu_id, 'group': MenuGroup.NAVIGATION}],
-                callback=_add_sample,
+                callback=_add_sample_partial,
             )
             sample_actions.append(action)
 
