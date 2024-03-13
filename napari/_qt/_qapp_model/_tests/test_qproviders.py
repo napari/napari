@@ -1,10 +1,13 @@
 """Test app-model Qt-related providers."""
 
+import numpy as np
 import pytest
 from app_model.types import Action
 
 from napari._app_model._app import get_app
 from napari._qt._qapp_model.injection._qproviders import (
+    _provide_active_layer,
+    _provide_active_layer_list,
     _provide_qt_viewer_or_raise,
     _provide_viewer,
     _provide_viewer_or_raise,
@@ -12,6 +15,8 @@ from napari._qt._qapp_model.injection._qproviders import (
 )
 from napari._qt.qt_main_window import Window
 from napari._qt.qt_viewer import QtViewer
+from napari.components import LayerList
+from napari.layers import Image
 from napari.utils._proxies import PublicOnlyProxy
 from napari.viewer import Viewer
 
@@ -89,3 +94,21 @@ def test_provide_window_or_raise(make_napari_viewer):
     make_napari_viewer()
     viewer = _provide_window_or_raise()
     assert isinstance(viewer, Window)
+
+
+def test_provide_active_layer_and_layer_list(make_napari_viewer):
+    """Check `_provide_active_layer/_list` returns correct object."""
+    shape = (10, 10)
+
+    viewer = make_napari_viewer()
+    layer_a = Image(np.random.random(shape))
+    viewer.layers.append(layer_a)
+
+    provided_layer = _provide_active_layer()
+    assert isinstance(provided_layer, Image)
+    assert provided_layer.data.shape == shape
+
+    provided_layers = _provide_active_layer_list()
+    assert isinstance(provided_layers, LayerList)
+    assert isinstance(provided_layers[0], Image)
+    assert provided_layers[0].data.shape == shape
