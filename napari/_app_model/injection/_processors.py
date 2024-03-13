@@ -19,7 +19,6 @@ from typing import (
 )
 
 from napari import layers, types, viewer
-from napari._qt._qapp_model.injection._qproviders import _provide_viewer
 from napari.layers._source import layer_source
 
 
@@ -29,6 +28,7 @@ def _add_layer_data_tuples_to_viewer(
     viewer=None,
     source: Optional[dict] = None,
 ):
+    from napari._qt._qapp_model.injection._qproviders import _provide_viewer
     from napari.utils.misc import ensure_list_of_layer_data_tuple
 
     if viewer is None:
@@ -81,6 +81,8 @@ def _add_layer_data_to_viewer(
     ...     return np.random.rand(256, 256)
 
     """
+    from napari._qt._qapp_model.injection._qproviders import _provide_viewer
+
     if data is not None and (viewer := viewer or _provide_viewer()):
         if layer_name:
             with suppress(KeyError):
@@ -106,6 +108,8 @@ def _add_layer_to_viewer(
     viewer: Optional[viewer.Viewer] = None,
     source: Optional[dict] = None,
 ):
+    from napari._qt._qapp_model.injection._qproviders import _provide_viewer
+
     if layer is not None and (viewer := viewer or _provide_viewer()):
         layer._source = layer.source.copy(update=source or {})
         viewer.add_layer(layer)
