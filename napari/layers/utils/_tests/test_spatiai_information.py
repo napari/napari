@@ -2,8 +2,8 @@ from unittest.mock import Mock
 
 import numpy as np
 import numpy.testing as npt
+import pint
 import pytest
-import unyt
 
 from napari.layers.utils.layer_utils import coerce_affine
 from napari.layers.utils.spatial_information import (
@@ -14,23 +14,28 @@ from napari.layers.utils.spatial_information import (
 )
 
 
+@pytest.fixture
+def reg() -> pint.ApplicationRegistry:
+    return pint.get_application_registry()
+
+
 class TestGetUnitsFromName:
-    def test_simple(self):
-        assert _get_units_from_name('m') == unyt.m
-        assert _get_units_from_name('meter') == unyt.m
-        assert _get_units_from_name(unyt.m) == unyt.m
+    def test_simple(self, reg):
+        assert _get_units_from_name('m') == reg.m
+        assert _get_units_from_name('meter') == reg.m
+        assert _get_units_from_name(reg.m) == reg.m
 
     def test_none(self):
         assert _get_units_from_name(None) is None
 
-    def test_dict(self):
+    def test_dict(self, reg):
         assert _get_units_from_name({'x': 'm', 'y': 'cm'}) == {
-            'x': unyt.m,
-            'y': unyt.cm,
+            'x': reg.m,
+            'y': reg.cm,
         }
-        assert _get_units_from_name({'x': unyt.m, 'y': 'cm'}) == {
-            'x': unyt.m,
-            'y': unyt.cm,
+        assert _get_units_from_name({'x': reg.m, 'y': 'cm'}) == {
+            'x': reg.m,
+            'y': reg.cm,
         }
 
     def test_exception(self):
@@ -39,14 +44,14 @@ class TestGetUnitsFromName:
 
 
 class TestCoerceUnitsAndAxes:
-    def test_simple(self):
-        assert _coerce_units_and_axes('m', None) == (unyt.m, None)
-        assert _coerce_units_and_axes('m', ['x', 'y']) == (unyt.m, ['x', 'y'])
+    def test_simple(self, reg):
+        assert _coerce_units_and_axes('m', None) == (reg.m, None)
+        assert _coerce_units_and_axes('m', ['x', 'y']) == (reg.m, ['x', 'y'])
 
-    def test_filter_units(self):
+    def test_filter_units(self, reg):
         assert _coerce_units_and_axes(
             {'x': 'm', 'y': 'cm', 'z': 'mm'}, ['x', 'y']
-        ) == ({'x': unyt.m, 'y': unyt.cm}, ['x', 'y'])
+        ) == ({'x': reg.m, 'y': reg.cm}, ['x', 'y'])
 
     def test_no_uint_exception(self):
         with pytest.raises(
@@ -77,7 +82,7 @@ class TestSpatialInformation:
             ('shear', [0.5]),
             ('scale', (1, 2)),
             ('translate', (1, 1)),
-            ('units', {'x': unyt.m, 'y': unyt.mm}),
+            ('units', {'x': pint.Unit('m'), 'y': pint.Unit('mm')}),
             ('axes_labels', ['x', 'y']),
         ],
     )
@@ -92,39 +97,39 @@ class TestSpatialInformation:
         npt.assert_array_equal(mock.call_args[0], (value,))
         npt.assert_array_equal(getattr(si, parameter), value)
 
-    def test_units(self):
+    def test_units(self, reg):
         si = SpatialInformation(ndim=2, units='m', axes_labels=['x', 'y'])
-        assert si.units == {'x': unyt.m, 'y': unyt.m}
+        assert si.units == {'x': reg.m, 'y': reg.m}
         assert si.axes_labels == ['x', 'y']
 
         si.units = 'cm'
-        assert si.units == {'x': unyt.cm, 'y': unyt.cm}
+        assert si.units == {'x': reg.cm, 'y': reg.cm}
 
-        si.units = {'x': unyt.m, 'y': unyt.cm, 'z': unyt.mm}
-        assert si.units == {'x': unyt.m, 'y': unyt.cm}
+        si.units = {'x': reg.m, 'y': reg.cm, 'z': reg.mm}
+        assert si.units == {'x': reg.m, 'y': reg.cm}
 
-    def test_units_exceptions(self):
+    def test_units_exceptions(self, reg):
         si = SpatialInformation(ndim=2, units='m', axes_labels=['x', 'y'])
         with pytest.raises(
             ValueError,
             match='If both axes_labels and units are provided.* Missing units for: y',
         ):
-            si.units = {'x': unyt.m}
+            si.units = {'x': reg.m}
 
         with pytest.raises(
             ValueError,
             match='If both axes_labels and units are provided.* Missing units for: y',
         ):
-            si.units = {'x': unyt.m, 'z': unyt.m}
+            si.units = {'x': reg.m, 'z': reg.m}
 
-    def test_axis_labels(self):
+    def test_axis_labels(self, reg):
         si = SpatialInformation(ndim=2, units='m', axes_labels=['x', 'y'])
-        assert si.units == {'x': unyt.m, 'y': unyt.m}
+        assert si.units == {'x': reg.m, 'y': reg.m}
         assert si.axes_labels == ['x', 'y']
 
         si.axes_labels = ['a', 'b']
         assert si.axes_labels == ['a', 'b']
-        assert si.units == {'a': unyt.m, 'b': unyt.m}
+        assert si.units == {'a': reg.m, 'b': reg.m}
 
     def test_axis_labels_exceptions(self):
         si = SpatialInformation(ndim=2, units='m', axes_labels=['x', 'y'])
@@ -145,7 +150,7 @@ class TestSpatialInformation:
         ):
             si.axes_labels = ['x', 'a']
 
-    def test_set_axis_and_units(self):
+    def test_set_axis_and_units(self, reg):
         si = SpatialInformation(ndim=2)
         mock1 = Mock()
         mock2 = Mock()
@@ -153,4 +158,4 @@ class TestSpatialInformation:
         si.events.units.connect(mock2)
         si.set_axis_and_units(['a', 'b'], 'm')
         mock1.assert_called_once_with(['a', 'b'])
-        mock2.assert_called_once_with({'a': unyt.m, 'b': unyt.m})
+        mock2.assert_called_once_with({'a': reg.m, 'b': reg.m})

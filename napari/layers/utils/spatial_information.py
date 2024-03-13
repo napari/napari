@@ -24,7 +24,7 @@ from typing import (
 )
 
 import numpy as np
-import unyt
+import pint
 from psygnal import Signal, SignalGroup
 
 from napari.layers.utils.layer_utils import coerce_affine
@@ -33,8 +33,8 @@ from napari.utils.transforms import Affine, CompositeAffine, TransformChain
 if TYPE_CHECKING:
     import numpy.typing as npt
 
-    UnitsLike = Union[None, str, unyt.Unit, dict[str, Union[str, unyt.Unit]]]
-    UnitsInfo = Union[None, unyt.Unit, dict[str, unyt.Unit]]
+    UnitsLike = Union[None, str, pint.Unit, dict[str, Union[str, pint.Unit]]]
+    UnitsInfo = Union[None, pint.Unit, dict[str, pint.Unit]]
 
 
 __all__ = ('SpatialInformation',)
@@ -257,7 +257,7 @@ class SpatialInformation:
         self.events.axes_labels.emit(self.axes_labels)
 
     @property
-    def units(self) -> Dict[str, unyt.Unit]:
+    def units(self) -> Dict[str, pint.Unit]:
         """Dict[str, unyt.Unit]: Units for each axis."""
         if isinstance(self._units, dict):
             return self._units
@@ -301,13 +301,13 @@ def _get_units_from_name(units: None) -> None: ...
 
 
 @overload
-def _get_units_from_name(units: Union[str, unyt.Unit]) -> unyt.Unit: ...
+def _get_units_from_name(units: Union[str, pint.Unit]) -> pint.Unit: ...
 
 
 @overload
 def _get_units_from_name(
-    units: dict[str, Union[str, unyt.Unit]]
-) -> dict[str, unyt.Unit]: ...
+    units: dict[str, Union[str, pint.Unit]]
+) -> dict[str, pint.Unit]: ...
 
 
 def _get_units_from_name(units: UnitsLike) -> UnitsInfo:
@@ -316,13 +316,13 @@ def _get_units_from_name(units: UnitsLike) -> UnitsInfo:
     """
     try:
         if isinstance(units, str):
-            return getattr(unyt, units)
+            return pint.get_application_registry()[units].units
         if isinstance(units, dict):
             return {
                 name: (
                     value
-                    if isinstance(value, unyt.Unit)
-                    else getattr(unyt, value)
+                    if isinstance(value, pint.Unit)
+                    else pint.get_application_registry()[value].units
                 )
                 for name, value in units.items()
             }
