@@ -58,23 +58,20 @@ def _rebuild_npe1_samples_menu() -> None:  # pragma: no cover
     if unreg := plugin_manager._unreg_sample_actions:
         unreg()
 
-    # sample_actions: List[Action] = []
+    sample_actions: List[Action] = []
+    sample_submenus: List[Any] = []
     for plugin_name, samples in plugin_manager._sample_data.items():
         multiprovider = len(samples) > 1
         if multiprovider:
             submenu_id = f'napari/file/samples/{plugin_name}'
-            submenu = [
-                (
-                    MenuId.FILE_SAMPLES,
-                    SubmenuItem(
-                        submenu=submenu_id, title=trans._(plugin_name)
-                    ),
-                ),
-            ]
+            submenu = (
+                MenuId.FILE_SAMPLES,
+                SubmenuItem(submenu=submenu_id, title=trans._(plugin_name)),
+            )
+            sample_submenus.append(submenu)
         else:
             submenu_id = MenuId.FILE_SAMPLES
-            submenu = []
-        sample_actions: List[Action] = []
+
         for sample_name, sample_dict in samples.items():
 
             _add_sample_partial = partial(
@@ -97,8 +94,10 @@ def _rebuild_npe1_samples_menu() -> None:  # pragma: no cover
             )
             sample_actions.append(action)
 
-        unreg_sample_submenus = app.menus.append_menu_items(submenu)
+    if sample_submenus:
+        unreg_sample_submenus = app.menus.append_menu_items(sample_submenus)
         plugin_manager._unreg_sample_submenus = unreg_sample_submenus
+    if sample_actions:
         unreg_sample_actions = app.register_actions(sample_actions)
         plugin_manager._unreg_sample_actions = unreg_sample_actions
 
