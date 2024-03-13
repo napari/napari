@@ -807,14 +807,21 @@ class Window:
         # TODO: remove from window
         return self._qt_window.statusBar()
 
-    def _update_menu_state(self, menu):
-        """Update enabled/visible state of menu item with context."""
+    def _update_file_menu_state(self):
         layerlist = self._qt_viewer._layers.model().sourceModel()._root
-        menu_model = getattr(self, menu)
-        menu_model.update_from_context(get_context(layerlist))
+        self.file_menu.update_from_context(get_context(layerlist))
 
-    def _update_plugin_menu_state(self):
-        self._update_menu_state('plugins_menu')
+    def _update_view_menu_state(self):
+        layerlist = self._qt_viewer._layers.model().sourceModel()._root
+        self.view_menu.update_from_context(get_context(layerlist))
+
+    def _update_plugins_menu_state(self):
+        layerlist = self._qt_viewer._layers.model().sourceModel()._root
+        self.plugins_menu.update_from_context(get_context(layerlist))
+
+    def _update_help_menu_state(self):
+        layerlist = self._qt_viewer._layers.model().sourceModel()._root
+        self.help_menu.update_from_context(get_context(layerlist))
 
     # TODO: Remove once npe1 deprecated
     def _setup_npe1_samples_menu(self):
@@ -840,10 +847,6 @@ class Window:
         # TODO: move this to _QMainWindow... but then all of the Menu()
         # items will not have easy access to the methods on this Window obj.
 
-        # Get `LayerList` `Context` object
-        layerlist = self._qt_viewer._layers.model().sourceModel()._root
-        layerlist_context = get_context(layerlist)
-
         self.main_menu = self._qt_window.menuBar()
         # Menubar shortcuts are only active when the menubar is visible.
         # Therefore, we set a global shortcut not associated with the menubar
@@ -862,7 +865,7 @@ class Window:
         )
         self._setup_npe1_samples_menu()
         self.file_menu.aboutToShow.connect(
-            self.file_menu.update_from_context(layerlist_context)
+            self._update_file_menu_state,
         )
         self.main_menu.addMenu(self.file_menu)
         # view menu
@@ -870,7 +873,7 @@ class Window:
             MenuId.MENUBAR_VIEW, title=trans._('&View'), parent=self._qt_window
         )
         self.view_menu.aboutToShow.connect(
-            self.view_menu.update_from_context(layerlist_context)
+            self._update_view_menu_state,
         )
         self.main_menu.addMenu(self.view_menu)
         # plugin menu
@@ -881,7 +884,7 @@ class Window:
         )
         self._setup_npe1_plugins_menu()
         self.plugins_menu.aboutToShow.connect(
-            self.plugins_menu.update_from_context(layerlist_context)
+            self._update_plugins_menu_state,
         )
         self.main_menu.addMenu(self.plugins_menu)
         # window menu
@@ -892,7 +895,7 @@ class Window:
             MenuId.MENUBAR_HELP, title=trans._('&Help'), parent=self._qt_window
         )
         self.help_menu.aboutToShow.connect(
-            self.help_menu.update_from_context(layerlist_context),
+            self._update_help_menu_state,
         )
         self.main_menu.addMenu(self.help_menu)
 
