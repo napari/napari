@@ -840,6 +840,10 @@ class Window:
         # TODO: move this to _QMainWindow... but then all of the Menu()
         # items will not have easy access to the methods on this Window obj.
 
+        # Get `LayerList` `Context` object
+        layerlist = self._qt_viewer._layers.model().sourceModel()._root
+        layerlist_context = get_context(layerlist)
+
         self.main_menu = self._qt_window.menuBar()
         # Menubar shortcuts are only active when the menubar is visible.
         # Therefore, we set a global shortcut not associated with the menubar
@@ -858,7 +862,7 @@ class Window:
         )
         self._setup_npe1_samples_menu()
         self.file_menu.aboutToShow.connect(
-            lambda: self._update_menu_state('file_menu')
+            self.file_menu.update_from_context(layerlist_context)
         )
         self.main_menu.addMenu(self.file_menu)
         # view menu
@@ -866,7 +870,7 @@ class Window:
             MenuId.MENUBAR_VIEW, title=trans._('&View'), parent=self._qt_window
         )
         self.view_menu.aboutToShow.connect(
-            lambda: self._update_menu_state('view_menu')
+            self.view_menu.update_from_context(layerlist_context)
         )
         self.main_menu.addMenu(self.view_menu)
         # plugin menu
@@ -876,7 +880,9 @@ class Window:
             parent=self._qt_window,
         )
         self._setup_npe1_plugins_menu()
-        self.plugins_menu.aboutToShow.connect(self._update_plugin_menu_state)
+        self.plugins_menu.aboutToShow.connect(
+            self.plugins_menu.update_from_context(layerlist_context)
+        )
         self.main_menu.addMenu(self.plugins_menu)
         # window menu
         self.window_menu = menus.WindowMenu(self)
@@ -886,7 +892,7 @@ class Window:
             MenuId.MENUBAR_HELP, title=trans._('&Help'), parent=self._qt_window
         )
         self.help_menu.aboutToShow.connect(
-            lambda: self._update_menu_state('help_menu')
+            self.help_menu.update_from_context(layerlist_context),
         )
         self.main_menu.addMenu(self.help_menu)
 
