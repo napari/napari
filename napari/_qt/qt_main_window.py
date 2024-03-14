@@ -1611,13 +1611,9 @@ class Window:
 
     def close(self):
         """Close the viewer window and cleanup sub-widgets."""
-        # Someone is closing us twice? Only try to delete self._qt_window
-        # if we still have one.
-        if hasattr(self, '_qt_window'):
-            self._teardown()
-            self._qt_viewer.close()
-            self._qt_window.close()
-            del self._qt_window
+        self._teardown()
+        self._qt_viewer.close()
+        self._qt_window.close()
 
     def _open_preferences_dialog(self) -> PreferencesDialog:
         """Edit preferences from the menubar."""
