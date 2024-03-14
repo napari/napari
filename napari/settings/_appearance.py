@@ -1,9 +1,15 @@
-from typing import List, Union, cast
+from typing import Any, List, Union, cast
+
+import numpy as np
 
 from napari._pydantic_compat import Field
 from napari.settings._fields import Theme
 from napari.utils.events.evented_model import ComparisonDelayer, EventedModel
-from napari.utils.theme import available_themes, get_theme
+from napari.utils.theme import (
+    available_themes,
+    get_theme,
+    parse_color_as_float_list,
+)
 from napari.utils.translations import trans
 
 
@@ -18,7 +24,7 @@ class HighlightSettings(EventedModel):
         le=10,
     )
     highlight_color: List[float] = Field(
-        [0.0, 0.6, 1.0, 1.0],
+        parse_color_as_float_list(get_theme('dark').current) + [1.0],
         title=trans._('Highlight color'),
         description=trans._(
             'Select the highlight color when hovering over shapes/points.'
@@ -27,6 +33,16 @@ class HighlightSettings(EventedModel):
 
 
 class AppearanceSettings(EventedModel):
+    # TODO: Is there a better way to do this/maybe something is missing in the
+    # `update` or `__setattr__` methods to trigger change events and update
+    # widgets properly?
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self.highlight.events.connect(self._highlight_changed)
+
+    def _highlight_changed(self) -> None:
+        self.events.highlight(value=dict(self.highlight))
+
     theme: Theme = Field(
         Theme('dark'),
         title=trans._('Theme'),
@@ -60,22 +76,36 @@ class AppearanceSettings(EventedModel):
             values = values.dict()
         values = cast(dict, values)
 
-        # Check if a font_size change is needed when changing theme:
-        # If the font_size setting doesn't correspond to the default value
+        # Check if a `font_size` or `highlight.highlight_color` change is needed when changing theme:
+        # If the `font_size` or `highlight.highlight_color` setting doesn't correspond to the default value
         # of the current theme no change is done, otherwise
-        # the font_size value is set to the new selected theme font size value
+        # the `font_size` or `highlight.highlight_color` value is set to the new selected theme corresponding value
         if 'theme' in values and values['theme'] != self.theme:
             current_theme = get_theme(self.theme)
             new_theme = get_theme(values['theme'])
+            current_highlight_color = parse_color_as_float_list(
+                current_theme.current
+            ) + [1.0]
+            new_highlight_color = parse_color_as_float_list(
+                new_theme.current
+            ) + [1.0]
+
             if values['font_size'] == int(current_theme.font_size[:-2]):
                 values['font_size'] = int(new_theme.font_size[:-2])
+            if np.array_equal(
+                np.array(
+                    values['highlight']['highlight_color'], dtype=np.float32
+                ),
+                np.array(current_highlight_color, dtype=np.float32),
+            ):
+                values['highlight']['highlight_color'] = new_highlight_color
         super().update(values, recurse)
 
     def __setattr__(self, key: str, value: Theme) -> None:
-        # Check if a font_size change is needed when changing theme:
-        # If the font_size setting doesn't correspond to the default value
+        # Check if a `font_size` or `highlight.highlight_color` change is needed when changing theme:
+        # If the `font_size` or `highlight.highlight_color` setting doesn't correspond to the default value
         # of the current theme no change is done, otherwise
-        # the font_size value is set to the new selected theme font size value
+        # the `font_size` or `highlight.highlight_color` value is set to the new selected theme corresponding value
         if key == 'theme' and value != self.theme:
             with ComparisonDelayer(self):
                 new_theme = None
@@ -90,6 +120,23 @@ class AppearanceSettings(EventedModel):
                     and self.font_size == int(current_theme.font_size[:-2])
                 ):
                     self.font_size = int(new_theme.font_size[:-2])
+                if (
+                    new_theme
+                    and current_theme
+                    and np.array_equal(
+                        np.array(
+                            self.highlight.highlight_color, dtype=np.float32
+                        ),
+                        np.array(
+                            parse_color_as_float_list(current_theme.current)
+                            + [1.0],
+                            dtype=np.float32,
+                        ),
+                    )
+                ):
+                    self.highlight.highlight_color = parse_color_as_float_list(
+                        new_theme.current
+                    ) + [1.0]
                 super().__setattr__(key, value)
         else:
             super().__setattr__(key, value)

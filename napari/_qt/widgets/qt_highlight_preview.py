@@ -8,12 +8,19 @@ from qtpy.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QPushButton,
     QSlider,
     QVBoxLayout,
     QWidget,
 )
 
 from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
+from napari.settings import get_settings
+from napari.utils.theme import (
+    get_system_theme,
+    get_theme,
+    parse_color_as_float_list,
+)
 from napari.utils.translations import translator
 
 trans = translator.load()
@@ -351,6 +358,7 @@ class QtHighlightPreviewWidget(QWidget):
         self._preview = QtStar(self)
         self._preview_label = QLabel(self)
         self._validator = QIntValidator(min_value, max_value, self)
+        self._reset_button = QPushButton(trans._('Reset highlight color'))
 
         # Widgets setup
         self._description.setText(description)
@@ -380,6 +388,7 @@ class QtHighlightPreviewWidget(QWidget):
         self._lineedit.textChanged.connect(self._update_thickness_value)
         self._triangle.valueChanged.connect(self._update_thickness_value)
         self._color_swatch_edit.color_changed.connect(self._update_color_value)
+        self._reset_button.clicked.connect(self._reset)
 
         # Layout
         triangle_layout = QHBoxLayout()
@@ -402,6 +411,7 @@ class QtHighlightPreviewWidget(QWidget):
         bottom_left_layout.addWidget(self._slider_min_label)
         bottom_left_layout.addLayout(triangle_slider_layout)
         bottom_left_layout.addWidget(self._slider_max_label)
+        bottom_left_layout.addWidget(self._reset_button)
         bottom_left_layout.setAlignment(Qt.AlignmentFlag.AlignBottom)
 
         left_layout = QVBoxLayout()
@@ -457,7 +467,10 @@ class QtHighlightPreviewWidget(QWidget):
         """
         if isinstance(color_value, np.ndarray):
             color_value = color_value.tolist()
-        if color_value == self._color_value:
+        if np.array_equal(
+            np.array(color_value, dtype=np.float32),
+            np.array(self._color_value, dtype=np.float32),
+        ):
             return
         self._color_value = color_value
         self._value['highlight_color'] = self._color_value
@@ -477,6 +490,27 @@ class QtHighlightPreviewWidget(QWidget):
         self._preview.setValue(self._thickness_value, color=color)
         self._color_swatch_edit.setColor(self._color_value)
         self.blockSignals(False)
+
+    def _reset(self) -> None:
+        """
+        Reset the widget value to the current selected theme `current` color.
+        """
+        current_theme_name = get_settings().appearance.theme
+        if current_theme_name == 'system':
+            # system isn't a theme, so get the name
+            current_theme_name = get_system_theme()
+        current_theme = get_theme(current_theme_name)
+        self.setValue(
+            {
+                'highlight_thickness': self._value[
+                    'highlight_thickness'
+                ],  # TODO: Should a value for thickness be available from the theme?
+                'highlight_color': parse_color_as_float_list(
+                    current_theme.current
+                )
+                + [1.0],  # TODO: Should a different attribute be created
+            }
+        )
 
     def value(self):
         """Return current value.

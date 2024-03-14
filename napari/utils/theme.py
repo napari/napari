@@ -136,6 +136,10 @@ def increase(font_size: str, pt: int) -> str:
     return f'{int(font_size[:-2]) + int(pt)}pt'
 
 
+def parse_color_as_float_list(color: Union[str, Color]) -> List[float]:
+    return [v / 255 for v in _parse_color_as_rgb(color)]
+
+
 def _parse_color_as_rgb(color: Union[str, Color]) -> Tuple[int, int, int]:
     if isinstance(color, str):
         if color.startswith('rgb('):
