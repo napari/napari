@@ -540,15 +540,16 @@ class QtViewer(QSplitter):
         return self._console_backlog
 
     def _get_console(self) -> Optional[QtConsole]:
-        """
-        Function for setup console.
+        """Function to setup console.
 
         Returns
         -------
+        console : QtConsole or None
+            The napari console.
 
         Notes
         _____
-        extracted to separated function for simplify testing
+        _get_console extracted to separate function to simplify testing.
 
         """
         try:
@@ -684,6 +685,60 @@ class QtViewer(QSplitter):
 
         self.canvas.add_layer_visual_mapping(layer, vispy_layer)
 
+    def _remove_invalid_chars(self, selected_layer_name):
+        """Removes invalid characters from selected layer name to suggest a filename.
+
+        Parameters
+        ----------
+        selected_layer_name : str
+            The selected napari layer name.
+
+        Returns
+        -------
+        suggested_name : str
+            Suggested name from input selected layer name, without invalid characters.
+        """
+        unprintable_ascii_chars = (
+            '\x00',
+            '\x01',
+            '\x02',
+            '\x03',
+            '\x04',
+            '\x05',
+            '\x06',
+            '\x07',
+            '\x08',
+            '\x0e',
+            '\x0f',
+            '\x10',
+            '\x11',
+            '\x12',
+            '\x13',
+            '\x14',
+            '\x15',
+            '\x16',
+            '\x17',
+            '\x18',
+            '\x19',
+            '\x1a',
+            '\x1b',
+            '\x1c',
+            '\x1d',
+            '\x1e',
+            '\x1f',
+            '\x7f',
+        )
+        invalid_characters = (
+            ''.join(unprintable_ascii_chars)
+            + '/'
+            + '\\'  # invalid Windows filename character
+            + ':*?"<>|\t\n\r\x0b\x0c'  # invalid Windows path characters
+        )
+        translation_table = dict.fromkeys(map(ord, invalid_characters), None)
+        # Remove invalid characters
+        suggested_name = selected_layer_name.translate(translation_table)
+        return suggested_name
+
     def _save_layers_dialog(self, selected=False):
         """Save layers (all or selected) to disk, using ``LayerList.save()``.
 
@@ -715,12 +770,20 @@ class QtViewer(QSplitter):
         dlg = QFileDialog()
         hist = get_save_history()
         dlg.setHistory(hist)
-
+        # get the layer's name to use for a default name if only one layer is selected
+        selected_layer_name = ''
+        if self.viewer.layers.selection.active is not None:
+            selected_layer_name = self.viewer.layers.selection.active.name
+            selected_layer_name = self._remove_invalid_chars(
+                selected_layer_name
+            )
         filename, selected_filter = dlg.getSaveFileName(
             self,  # parent
             trans._('Save {msg} layers', msg=msg),  # caption
-            # home dir by default
-            hist[0],  # directory in PyQt, dir in PySide
+            # home dir by default if selected all, home dir and file name if only 1 layer
+            str(
+                Path(hist[0]) / selected_layer_name
+            ),  # directory in PyQt, dir in PySide
             filter=ext_str,
             options=(
                 QFileDialog.DontUseNativeDialog

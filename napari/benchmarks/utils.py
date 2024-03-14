@@ -1,4 +1,5 @@
 import itertools
+import os
 from functools import lru_cache
 from typing import (
     Callable,
@@ -14,12 +15,27 @@ import numpy as np
 from skimage import morphology
 
 
-class Skiper:
-    def __init__(self, func):
-        self.func = func
+def always_false(*_):
+    return False
+
+
+class Skip:
+    def __init__(
+        self,
+        if_in_pr: Callable[..., bool] = always_false,
+        if_on_ci: Callable[..., bool] = always_false,
+        always: Callable[..., bool] = always_false,
+    ):
+        self.func_pr = if_in_pr if 'PR' in os.environ else always_false
+        self.func_ci = if_on_ci if 'CI' in os.environ else always_false
+        self.func_always = always
 
     def __contains__(self, item):
-        return self.func(item)
+        return (
+            self.func_pr(*item)
+            or self.func_ci(*item)
+            or self.func_always(*item)
+        )
 
 
 def _generate_ball(radius: int, ndim: int) -> np.ndarray:

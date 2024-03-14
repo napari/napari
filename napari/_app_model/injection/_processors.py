@@ -1,3 +1,8 @@
+"""Non-Qt processors.
+
+Qt processors can be found in `napari/_qt/_qapp_model/injection/_qprocessors.py`.
+"""
+
 import sys
 from concurrent.futures import Future
 from contextlib import nullcontext, suppress
@@ -167,12 +172,12 @@ def _add_future_data(
     _FUTURES.add(future)
 
 
-# Add future and LayerData processors for each layer type.
 PROCESSORS: Dict[object, Callable] = {
     types.LayerDataTuple: _add_layer_data_tuples_to_viewer,
     List[types.LayerDataTuple]: _add_layer_data_tuples_to_viewer,
     layers.Layer: _add_layer_to_viewer,
 }
+# Add future and LayerData processors for each layer type.
 for t in types._LayerData.__args__:  # type: ignore [attr-defined]
     PROCESSORS[t] = partial(_add_layer_data_to_viewer, return_type=t)
 

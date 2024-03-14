@@ -1,10 +1,29 @@
-from typing import Union, cast
+from typing import List, Union, cast
 
 from napari._pydantic_compat import Field
 from napari.settings._fields import Theme
 from napari.utils.events.evented_model import ComparisonDelayer, EventedModel
 from napari.utils.theme import available_themes, get_theme
 from napari.utils.translations import trans
+
+
+class HighlightSettings(EventedModel):
+    highlight_thickness: int = Field(
+        1,
+        title=trans._('Highlight thickness'),
+        description=trans._(
+            'Select the highlight thickness when hovering over shapes/points.'
+        ),
+        ge=1,
+        le=10,
+    )
+    highlight_color: List[float] = Field(
+        [0.0, 0.6, 1.0, 1.0],
+        title=trans._('Highlight color'),
+        description=trans._(
+            'Select the highlight color when hovering over shapes/points.'
+        ),
+    )
 
 
 class AppearanceSettings(EventedModel):
@@ -21,14 +40,12 @@ class AppearanceSettings(EventedModel):
         ge=5,
         le=20,
     )
-    highlight_thickness: int = Field(
-        1,
-        title=trans._('Highlight thickness'),
+    highlight: HighlightSettings = Field(
+        HighlightSettings(),
+        title=trans._('Highlight'),
         description=trans._(
-            'Select the highlight thickness when hovering over shapes/points.'
+            'Select the highlight color and thickness to use when hovering over shapes/points.'
         ),
-        ge=1,
-        le=10,
     )
     layer_tooltip_visibility: bool = Field(
         False,
@@ -54,7 +71,7 @@ class AppearanceSettings(EventedModel):
                 values['font_size'] = int(new_theme.font_size[:-2])
         super().update(values, recurse)
 
-    def __setattr__(self, key, value):
+    def __setattr__(self, key: str, value: Theme) -> None:
         # Check if a font_size change is needed when changing theme:
         # If the font_size setting doesn't correspond to the default value
         # of the current theme no change is done, otherwise
@@ -81,7 +98,7 @@ class AppearanceSettings(EventedModel):
         # Napari specific configuration
         preferences_exclude = ('schema_version',)
 
-    def refresh_themes(self):
+    def refresh_themes(self) -> None:
         """Updates theme data.
         This is not a fantastic solution but it works. Each time a new theme is
         added (either by a plugin or directly by the user) the enum is updated in

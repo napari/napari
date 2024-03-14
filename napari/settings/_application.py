@@ -1,11 +1,15 @@
 from __future__ import annotations
 
-from typing import List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 from psutil import virtual_memory
 
 from napari._pydantic_compat import Field, validator
-from napari.settings._constants import BrushSizeOnMouseModifiers, LoopMode
+from napari.settings._constants import (
+    BrushSizeOnMouseModifiers,
+    LabelDTypes,
+    LoopMode,
+)
 from napari.settings._fields import Language
 from napari.utils._base import _DEFAULT_LOCALE
 from napari.utils.events.custom_types import conint
@@ -32,11 +36,11 @@ class DaskSettings(EventedModel):
 
 
 class ApplicationSettings(EventedModel):
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.dask.events.connect(self._dask_changed)
 
-    def _dask_changed(self):
+    def _dask_changed(self) -> None:
         self.events.dask(value=self.dask)
 
     first_time: bool = Field(
@@ -208,8 +212,16 @@ class ApplicationSettings(EventedModel):
         ),
     )
 
+    new_labels_dtype: LabelDTypes = Field(
+        default=LabelDTypes.uint8,
+        title=trans._('New labels data type'),
+        description=trans._(
+            'data type for labels layers created with the "new labels" button.'
+        ),
+    )
+
     @validator('window_state', allow_reuse=True)
-    def _validate_qbtye(cls, v):
+    def _validate_qbtye(cls, v: str) -> str:
         if v and (not isinstance(v, str) or not v.startswith('!QBYTE_')):
             raise ValueError(
                 trans._("QByte strings must start with '!QBYTE_'")
