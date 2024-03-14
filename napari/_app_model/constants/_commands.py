@@ -19,57 +19,57 @@ from napari.utils.translations import trans
 class CommandId(StrEnum):
     """Id representing a napari command."""
     # File menubar
-    DLG_OPEN_FILES = 'napari:window:file:open_files_dialog'
-    DLG_OPEN_FILES_AS_STACK = 'napari:window:file:open_files_as_stack_dialog'
-    DLG_OPEN_FOLDER = 'napari:window:file:open_folder_dialog'
-    DLG_OPEN_FILES_WITH_PLUGIN = 'napari:window:file:_open_files_with_plugin'
-    DLG_OPEN_FILES_AS_STACK_WITH_PLUGIN = 'napari:window:file:_open_files_as_stack_with_plugin'
-    DLG_OPEN_FOLDER_WITH_PLUGIN = 'napari:window:file:_open_folder_with_plugin'
-    DLG_SHOW_PREFERENCES = 'napari:window:file:show_preferences_dialog'
-    DLG_SAVE_LAYERS = 'napari:window:file:save_layers_dialog'
+    DLG_OPEN_FILES = 'napari.window.file.open_files_dialog'
+    DLG_OPEN_FILES_AS_STACK = 'napari.window.file.open_files_as_stack_dialog'
+    DLG_OPEN_FOLDER = 'napari.window.file.open_folder_dialog'
+    DLG_OPEN_FILES_WITH_PLUGIN = 'napari.window.file._open_files_with_plugin'
+    DLG_OPEN_FILES_AS_STACK_WITH_PLUGIN = 'napari.window.file._open_files_as_stack_with_plugin'
+    DLG_OPEN_FOLDER_WITH_PLUGIN = 'napari.window.file._open_folder_with_plugin'
+    DLG_SHOW_PREFERENCES = 'napari.window.file.show_preferences_dialog'
+    DLG_SAVE_LAYERS = 'napari.window.file.save_layers_dialog'
     # `DLG_SAVE_SELECTED_LAYERS` uses the same callback as `DLG_SAVE_LAYERS`,
     # just with different kwarg
-    DLG_SAVE_SELECTED_LAYERS = 'napari:window:file:save_layers_dialog:selected'
-    DLG_SAVE_CANVAS_SCREENSHOT = 'napari:window:file:save_canvas_screenshot_dialog'
-    DLG_SAVE_VIEWER_SCREENSHOT = 'napari:window:file:save_viewer_screenshot_dialog'
-    COPY_CANVAS_SCREENSHOT = 'napari:window:file:copy_canvas_screenshot'
-    COPY_VIEWER_SCREENSHOT = 'napari:window:file:copy_viewer_screenshot'
-    DLG_CLOSE = 'napari:window:file:close_dialog'
-    DLG_QUIT = 'napari:window:file:quit_dialog'
-    RESTART = 'napari:window:file:restart'
-    IMAGE_FROM_CLIPBOARD = 'napari:window:file:_image_from_clipboard'
+    DLG_SAVE_SELECTED_LAYERS = 'napari.window.file.save_layers_dialog.selected'
+    DLG_SAVE_CANVAS_SCREENSHOT = 'napari.window.file.save_canvas_screenshot_dialog'
+    DLG_SAVE_VIEWER_SCREENSHOT = 'napari.window.file.save_viewer_screenshot_dialog'
+    COPY_CANVAS_SCREENSHOT = 'napari.window.file.copy_canvas_screenshot'
+    COPY_VIEWER_SCREENSHOT = 'napari.window.file.copy_viewer_screenshot'
+    DLG_CLOSE = 'napari.window.file.close_dialog'
+    DLG_QUIT = 'napari.window.file.quit_dialog'
+    RESTART = 'napari.window.file.restart'
+    IMAGE_FROM_CLIPBOARD = 'napari.window.file._image_from_clipboard'
 
     # View menubar
-    TOGGLE_FULLSCREEN = 'napari:window:view:toggle_fullscreen'
-    TOGGLE_MENUBAR = 'napari:window:view:toggle_menubar'
-    TOGGLE_PLAY = 'napari:window:view:toggle_play'
-    TOGGLE_LAYER_TOOLTIPS = 'napari:window:view:toggle_layer_tooltips'
-    TOGGLE_ACTIVITY_DOCK = 'napari:window:view:toggle_activity_dock'
+    TOGGLE_FULLSCREEN = 'napari.window.view.toggle_fullscreen'
+    TOGGLE_MENUBAR = 'napari.window.view.toggle_menubar'
+    TOGGLE_PLAY = 'napari.window.view.toggle_play'
+    TOGGLE_LAYER_TOOLTIPS = 'napari.window.view.toggle_layer_tooltips'
+    TOGGLE_ACTIVITY_DOCK = 'napari.window.view.toggle_activity_dock'
 
-    TOGGLE_VIEWER_AXES = 'napari:window:view:toggle_viewer_axes'
-    TOGGLE_VIEWER_AXES_COLORED = 'napari:window:view:toggle_viewer_axes_colored'
-    TOGGLE_VIEWER_AXES_LABELS = 'napari:window:view:toggle_viewer_axes_labels'
-    TOGGLE_VIEWER_AXES_DASHED = 'napari:window:view:toggle_viewer_axesdashed'
-    TOGGLE_VIEWER_AXES_ARROWS = 'napari:window:view:toggle_viewer_axes_arrows'
-    TOGGLE_VIEWER_SCALE_BAR = 'napari:window:view:toggle_viewer_scale_bar'
-    TOGGLE_VIEWER_SCALE_BAR_COLORED = 'napari:window:view:toggle_viewer_scale_bar_colored'
-    TOGGLE_VIEWER_SCALE_BAR_TICKS = 'napari:window:view:toggle_viewer_scale_bar_ticks'
+    TOGGLE_VIEWER_AXES = 'napari.window.view.toggle_viewer_axes'
+    TOGGLE_VIEWER_AXES_COLORED = 'napari.window.view.toggle_viewer_axes_colored'
+    TOGGLE_VIEWER_AXES_LABELS = 'napari.window.view.toggle_viewer_axes_labels'
+    TOGGLE_VIEWER_AXES_DASHED = 'napari.window.view.toggle_viewer_axesdashed'
+    TOGGLE_VIEWER_AXES_ARROWS = 'napari.window.view.toggle_viewer_axes_arrows'
+    TOGGLE_VIEWER_SCALE_BAR = 'napari.window.view.toggle_viewer_scale_bar'
+    TOGGLE_VIEWER_SCALE_BAR_COLORED = 'napari.window.view.toggle_viewer_scale_bar_colored'
+    TOGGLE_VIEWER_SCALE_BAR_TICKS = 'napari.window.view.toggle_viewer_scale_bar_ticks'
 
     # Plugins menubar
-    DLG_PLUGIN_INSTALL = 'napari:window:plugins:plugin_install_dialog'
-    DLG_PLUGIN_ERR = 'napari:window:plugins:plugin_err_reporter'
+    DLG_PLUGIN_INSTALL = 'napari.window.plugins.plugin_install_dialog'
+    DLG_PLUGIN_ERR = 'napari.window.plugins.plugin_err_reporter'
 
     # Help menubar
-    NAPARI_GETTING_STARTED = 'napari:window:help:getting_started'
-    NAPARI_TUTORIALS = 'napari:window:help:tutorials'
-    NAPARI_LAYERS_GUIDE = 'napari:window:help:layers_guide'
-    NAPARI_EXAMPLES = 'napari:window:help:examples'
-    NAPARI_RELEASE_NOTES = 'napari:window:help:release_notes'
-    NAPARI_HOMEPAGE = 'napari:window:help:homepage'
-    NAPARI_INFO = 'napari:window:help:info'
-    NAPARI_ABOUT_MACOS = 'napari:window:help:about_macos'
-    NAPARI_GITHUB_ISSUE = 'napari:window:help:github_issue'
-    TOGGLE_BUG_REPORT_OPT_IN = 'napari:window:help:bug_report_opt_in'
+    NAPARI_GETTING_STARTED = 'napari.window.help.getting_started'
+    NAPARI_TUTORIALS = 'napari.window.help.tutorials'
+    NAPARI_LAYERS_GUIDE = 'napari.window.help.layers_guide'
+    NAPARI_EXAMPLES = 'napari.window.help.examples'
+    NAPARI_RELEASE_NOTES = 'napari.window.help.release_notes'
+    NAPARI_HOMEPAGE = 'napari.window.help.homepage'
+    NAPARI_INFO = 'napari.window.help.info'
+    NAPARI_ABOUT_MACOS = 'napari.window.help.about_macos'
+    NAPARI_GITHUB_ISSUE = 'napari.window.help.github_issue'
+    TOGGLE_BUG_REPORT_OPT_IN = 'napari.window.help.bug_report_opt_in'
 
     # Layer menubar
     LAYER_DUPLICATE = 'napari:layer:duplicate'
@@ -148,6 +148,7 @@ _COMMAND_INFO = {
     CommandId.TOGGLE_PLAY: _i(trans._('Toggle Play')),
     CommandId.TOGGLE_LAYER_TOOLTIPS: _i(trans._('Toggle Layer Tooltips')),
     CommandId.TOGGLE_ACTIVITY_DOCK: _i(trans._('Toggle Activity Dock')),
+
     CommandId.TOGGLE_VIEWER_AXES: _i(trans._('Axes Visible')),
     CommandId.TOGGLE_VIEWER_AXES_COLORED: _i(trans._('Axes Colored')),
     CommandId.TOGGLE_VIEWER_AXES_LABELS: _i(trans._('Axes Labels')),

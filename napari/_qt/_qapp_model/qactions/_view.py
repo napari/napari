@@ -15,7 +15,7 @@ from app_model.types import (
     ToggleRule,
 )
 
-from napari._app_model.constants import CommandId, MenuGroup, MenuId
+from napari._app_model.constants import MenuGroup, MenuId
 from napari._qt.qt_main_window import Window
 from napari._qt.qt_viewer import QtViewer
 from napari.utils.translations import trans
@@ -43,8 +43,8 @@ def _get_current_activity_dock_status(window: Window):
 
 Q_VIEW_ACTIONS: List[Action] = [
     Action(
-        id=CommandId.TOGGLE_FULLSCREEN,
-        title=CommandId.TOGGLE_FULLSCREEN.command_title,
+        id='napari.window.view.toggle_fullscreen',
+        title=trans._('Toggle Full Screen'),
         menus=[
             {
                 'id': MenuId.MENUBAR_VIEW,
@@ -57,8 +57,8 @@ Q_VIEW_ACTIONS: List[Action] = [
         toggled=ToggleRule(get_current=_get_current_fullscreen_status),
     ),
     Action(
-        id=CommandId.TOGGLE_MENUBAR,
-        title=CommandId.TOGGLE_MENUBAR.command_title,
+        id='napari.window.view.toggle_menubar',
+        title=trans._('Toggle Menubar Visibility'),
         menus=[
             {
                 'id': MenuId.MENUBAR_VIEW,
@@ -80,8 +80,8 @@ Q_VIEW_ACTIONS: List[Action] = [
         toggled=ToggleRule(get_current=_get_current_menubar_status),
     ),
     Action(
-        id=CommandId.TOGGLE_PLAY,
-        title=CommandId.TOGGLE_PLAY.command_title,
+        id='napari.window.view.toggle_play',
+        title=trans._('Toggle Play'),
         menus=[
             {
                 'id': MenuId.MENUBAR_VIEW,
@@ -94,8 +94,8 @@ Q_VIEW_ACTIONS: List[Action] = [
         toggled=ToggleRule(get_current=_get_current_play_status),
     ),
     Action(
-        id=CommandId.TOGGLE_ACTIVITY_DOCK,
-        title=CommandId.TOGGLE_ACTIVITY_DOCK.command_title,
+        id='napari.window.view.toggle_activity_dock',
+        title=trans._('Toggle Activity Dock'),
         menus=[
             {'id': MenuId.MENUBAR_VIEW, 'group': MenuGroup.RENDER, 'order': 11}
         ],

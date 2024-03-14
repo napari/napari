@@ -4,7 +4,7 @@ from typing import List
 
 from app_model.types import Action, KeyCode, KeyMod, StandardKeyBinding
 
-from napari._app_model.constants import CommandId, MenuGroup, MenuId
+from napari._app_model.constants import MenuGroup, MenuId
 from napari._app_model.context import (
     LayerListContextKeys as LLCK,
     LayerListSelectionContextKeys as LLSCK,
@@ -44,28 +44,28 @@ def _close_app(window: Window):
 
 Q_FILE_ACTIONS: List[Action] = [
     Action(
-        id=CommandId.IMAGE_FROM_CLIPBOARD,
+        id='napari.window.file._image_from_clipboard',
         title=trans._('New Image from Clipboard'),
         callback=QtViewer._image_from_clipboard,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.NAVIGATION}],
         keybindings=[{'primary': KeyMod.CtrlCmd | KeyCode.KeyN}],
     ),
     Action(
-        id=CommandId.DLG_OPEN_FILES,
+        id='napari.window.file.open_files_dialog',
         title=trans._('Open File(s)...'),
         callback=QtViewer._open_files_dialog,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.NAVIGATION}],
         keybindings=[StandardKeyBinding.Open],
     ),
     Action(
-        id=CommandId.DLG_OPEN_FILES_AS_STACK,
+        id='napari.window.file.open_files_as_stack_dialog',
         title=trans._('Open Files as Stack...'),
         callback=QtViewer._open_files_dialog_as_stack_dialog,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.NAVIGATION}],
         keybindings=[{'primary': KeyMod.CtrlCmd | KeyMod.Alt | KeyCode.KeyO}],
     ),
     Action(
-        id=CommandId.DLG_OPEN_FOLDER,
+        id='napari.window.file.open_folder_dialog',
         title=trans._('Open Folder...'),
         callback=QtViewer._open_files_dialog,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.NAVIGATION}],
@@ -74,7 +74,7 @@ Q_FILE_ACTIONS: List[Action] = [
         ],
     ),
     Action(
-        id=CommandId.DLG_OPEN_FILES_WITH_PLUGIN,
+        id='napari.window.file._open_files_with_plugin',
         title=trans._('Open File(s)...'),
         callback=_open_files_with_plugin,
         menus=[
@@ -82,7 +82,7 @@ Q_FILE_ACTIONS: List[Action] = [
         ],
     ),
     Action(
-        id=CommandId.DLG_OPEN_FILES_AS_STACK_WITH_PLUGIN,
+        id='napari.window.file._open_files_as_stack_with_plugin',
         title=trans._('Open Files as Stack...'),
         callback=_open_files_as_stack_with_plugin,
         menus=[
@@ -90,7 +90,7 @@ Q_FILE_ACTIONS: List[Action] = [
         ],
     ),
     Action(
-        id=CommandId.DLG_OPEN_FOLDER_WITH_PLUGIN,
+        id='napari.window.file._open_folder_with_plugin',
         title=trans._('Open Folder...'),
         callback=_open_folder_with_plugin,
         menus=[
@@ -98,7 +98,7 @@ Q_FILE_ACTIONS: List[Action] = [
         ],
     ),
     Action(
-        id=CommandId.DLG_SHOW_PREFERENCES,
+        id='napari.window.file.show_preferences_dialog',
         title=trans._('Preferences'),
         callback=Window._open_preferences_dialog,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.PREFERENCES}],
@@ -111,7 +111,7 @@ Q_FILE_ACTIONS: List[Action] = [
     # it may allow registration of the same `id` when args are different and
     # we can re-use `DLG_SAVE_LAYERS` below.
     Action(
-        id=CommandId.DLG_SAVE_SELECTED_LAYERS,
+        id='napari.window.file.save_layers_dialog.selected',
         title=trans._('Save Selected Layers...'),
         callback=_save_selected_layers,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.SAVE}],
@@ -119,7 +119,7 @@ Q_FILE_ACTIONS: List[Action] = [
         enablement=(LLSCK.num_selected_layers > 0),
     ),
     Action(
-        id=CommandId.DLG_SAVE_LAYERS,
+        id='napari.window.file.save_layers_dialog',
         title=trans._('Save All Layers...'),
         callback=QtViewer._save_layers_dialog,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.SAVE}],
@@ -127,7 +127,7 @@ Q_FILE_ACTIONS: List[Action] = [
         enablement=(LLCK.num_layers > 0),
     ),
     Action(
-        id=CommandId.DLG_SAVE_CANVAS_SCREENSHOT,
+        id='napari.window.file.save_canvas_screenshot_dialog',
         title=trans._('Save Screenshot...'),
         callback=QtViewer._screenshot_dialog,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.SAVE}],
@@ -137,7 +137,7 @@ Q_FILE_ACTIONS: List[Action] = [
         ),
     ),
     Action(
-        id=CommandId.DLG_SAVE_VIEWER_SCREENSHOT,
+        id='napari.window.file.save_viewer_screenshot_dialog',
         title=trans._('Save Screenshot with Viewer...'),
         callback=Window._screenshot_dialog,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.SAVE}],
@@ -147,7 +147,7 @@ Q_FILE_ACTIONS: List[Action] = [
         ),
     ),
     Action(
-        id=CommandId.COPY_CANVAS_SCREENSHOT,
+        id='napari.window.file.copy_canvas_screenshot',
         title=trans._('Copy Screenshot to Clipboard'),
         callback=QtViewer.clipboard,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.SAVE}],
@@ -157,7 +157,7 @@ Q_FILE_ACTIONS: List[Action] = [
         ),
     ),
     Action(
-        id=CommandId.COPY_VIEWER_SCREENSHOT,
+        id='napari.window.file.copy_viewer_screenshot',
         title=trans._('Copy Screenshot with Viewer to Clipboard'),
         callback=Window.clipboard,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.SAVE}],
@@ -167,14 +167,14 @@ Q_FILE_ACTIONS: List[Action] = [
         ),
     ),
     Action(
-        id=CommandId.DLG_CLOSE,
+        id='napari.window.file.close_dialog',
         title=trans._('Close Window'),
         callback=_close_window,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.CLOSE}],
         keybindings=[StandardKeyBinding.Close],
     ),
     Action(
-        id=CommandId.RESTART,
+        id='napari.window.file.restart',
         title=trans._('Restart'),
         callback=_restart,
         menus=[
@@ -188,7 +188,7 @@ Q_FILE_ACTIONS: List[Action] = [
         ],
     ),
     Action(
-        id=CommandId.DLG_QUIT,
+        id='napari.window.file.quit_dialog',
         title=trans._('Exit'),
         callback=_close_app,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.CLOSE}],

@@ -9,26 +9,67 @@ from typing import List
 from app_model.types import Action, ToggleRule
 
 from napari._app_model.actions._toggle_action import ViewerToggleAction
-from napari._app_model.constants import CommandId, MenuGroup, MenuId
+from napari._app_model.constants import MenuGroup, MenuId
 from napari.settings import get_settings
+from napari.utils.translations import trans
 
 VIEW_ACTIONS: List[Action] = []
 MENUID_DICT = {'axes': MenuId.VIEW_AXES, 'scale_bar': MenuId.VIEW_SCALEBAR}
 
-for cmd, viewer_attr, sub_attr in (
-    (CommandId.TOGGLE_VIEWER_AXES, 'axes', 'visible'),
-    (CommandId.TOGGLE_VIEWER_AXES_COLORED, 'axes', 'colored'),
-    (CommandId.TOGGLE_VIEWER_AXES_LABELS, 'axes', 'labels'),
-    (CommandId.TOGGLE_VIEWER_AXES_DASHED, 'axes', 'dashed'),
-    (CommandId.TOGGLE_VIEWER_AXES_ARROWS, 'axes', 'arrows'),
-    (CommandId.TOGGLE_VIEWER_SCALE_BAR, 'scale_bar', 'visible'),
-    (CommandId.TOGGLE_VIEWER_SCALE_BAR_COLORED, 'scale_bar', 'colored'),
-    (CommandId.TOGGLE_VIEWER_SCALE_BAR_TICKS, 'scale_bar', 'ticks'),
+for cmd, cmd_title, viewer_attr, sub_attr in (
+    (
+        'napari.window.view.toggle_viewer_axes',
+        trans._('Axes Visible'),
+        'axes',
+        'visible',
+    ),
+    (
+        'napari.window.view.toggle_viewer_axes_colored',
+        trans._('Axes Colored'),
+        'axes',
+        'colored',
+    ),
+    (
+        'napari.window.view.toggle_viewer_axes_labels',
+        trans._('Axes Labels'),
+        'axes',
+        'labels',
+    ),
+    (
+        'napari.window.view.toggle_viewer_axesdashed',
+        trans._('Axes Dashed'),
+        'axes',
+        'dashed',
+    ),
+    (
+        'napari.window.view.toggle_viewer_axes_arrows',
+        trans._('Axes Arrows'),
+        'axes',
+        'arrows',
+    ),
+    (
+        'napari.window.view.toggle_viewer_scale_bar',
+        trans._('Scale Bar Visible'),
+        'scale_bar',
+        'visible',
+    ),
+    (
+        'napari.window.view.toggle_viewer_scale_bar_colored',
+        trans._('Scale Bar Colored'),
+        'scale_bar',
+        'colored',
+    ),
+    (
+        'napari.window.view.toggle_viewer_scale_bar_ticks',
+        trans._('Scale Bar Ticks'),
+        'scale_bar',
+        'ticks',
+    ),
 ):
     VIEW_ACTIONS.append(
         ViewerToggleAction(
             id=cmd,
-            title=cmd.command_title,
+            title=cmd_title,
             viewer_attribute=viewer_attr,
             sub_attribute=sub_attr,
             menus=[{'id': MENUID_DICT[viewer_attr]}],
@@ -50,8 +91,8 @@ VIEW_ACTIONS.extend(
         # TODO: this could be made into a toggle setting Action subclass
         # using a similar pattern to the above ViewerToggleAction classes
         Action(
-            id=CommandId.TOGGLE_LAYER_TOOLTIPS,
-            title=CommandId.TOGGLE_LAYER_TOOLTIPS.command_title,
+            id='napari.window.view.toggle_layer_tooltips',
+            title=trans._('Toggle Layer Tooltips'),
             menus=[
                 {
                     'id': MenuId.MENUBAR_VIEW,
