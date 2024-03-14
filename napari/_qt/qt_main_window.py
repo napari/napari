@@ -1440,11 +1440,12 @@ class Window:
                     {'font_size': f'{settings.appearance.font_size}pt'}
                 )
             # set the style sheet with the theme name and extra_variables
-            self._qt_window.setStyleSheet(
-                get_stylesheet(
-                    actual_theme_name, extra_variables=extra_variables
-                )
+            style_sheet = get_stylesheet(
+                actual_theme_name, extra_variables=extra_variables
             )
+            self._qt_window.setStyleSheet(style_sheet)
+            if self._qt_viewer._console:
+                self._qt_viewer._console.style_sheet = style_sheet
 
     def _status_changed(self, event):
         """Update status bar.
