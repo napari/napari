@@ -123,6 +123,7 @@ class _i(NamedTuple):
 
 _COMMAND_INFO = {
     # File menubar
+    CommandId.IMAGE_FROM_CLIPBOARD: _i(trans._('New Image from Clipboard')),
     CommandId.DLG_OPEN_FILES: _i(trans._('Open File(s)...')),
     CommandId.DLG_OPEN_FILES_AS_STACK: _i(trans._('Open Files as Stack...')),
     CommandId.DLG_OPEN_FOLDER: _i(trans._('Open Folder...')),
@@ -139,7 +140,7 @@ _COMMAND_INFO = {
     CommandId.DLG_CLOSE: _i(trans._('Close Window')),
     CommandId.DLG_QUIT: _i(trans._('Exit')),
     CommandId.RESTART: _i(trans._('Restart')),
-    CommandId.IMAGE_FROM_CLIPBOARD: _i(trans._('New Image from Clipboard')),
+
 
     # View menubar
     CommandId.TOGGLE_FULLSCREEN: _i(trans._('Toggle Full Screen')),
