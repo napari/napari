@@ -170,6 +170,9 @@ class QtDimSliderWidget(QWidget):
     def slider_focused_listener(self):
         self.dims.last_used = self.axis
 
+    def _set_mode_combo(self, mode: str):
+        self.loop_mode = LoopMode(mode.replace(' ', '_'))
+
     def _create_play_button_widget(self):
         """Creates the actual play button, which has the modal popup."""
         self.play_button = QtPlayButton(
@@ -179,9 +182,7 @@ class QtDimSliderWidget(QWidget):
             trans._('Right click on button for playback setting options.')
         )
         self.play_button.mode_combo.currentTextChanged.connect(
-            lambda x: self.__class__.loop_mode.fset(
-                self, LoopMode(x.replace(' ', '_'))
-            )
+            self._set_mode_combo
         )
 
         def fps_listener(*args):
