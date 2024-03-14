@@ -732,11 +732,7 @@ class Window:
         theme.events.current.connect(self._update_theme_no_event)
         theme.events.icon.connect(self._update_theme_no_event)
         theme.events.font_size.connect(self._update_theme_no_event)
-        theme.events.canvas.connect(
-            lambda _: self._qt_viewer.canvas._set_theme_change(
-                get_settings().appearance.theme
-            )
-        )
+        theme.events.canvas.connect(self._update_canvas_theme)
         # connect console-specific attributes only if QtConsole
         # is present. The `console` is called which might slow
         # things down a little.
@@ -745,6 +741,11 @@ class Window:
             theme.events.syntax_style.connect(
                 self._qt_viewer.console._update_theme
             )
+
+    def _update_canvas_theme(self, event):
+        self._qt_viewer.canvas._set_theme_change(
+            get_settings().appearance.theme
+        )
 
     def _disconnect_theme(self, theme):
         theme.events.background.disconnect(self._update_theme_no_event)
