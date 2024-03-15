@@ -44,6 +44,7 @@ from napari.components.layerlist import LayerList
 from napari.errors import MultipleReaderError, ReaderPluginError
 from napari.layers.base.base import Layer
 from napari.plugins import _npe2
+from napari.qt import get_stylesheet
 from napari.settings import get_settings
 from napari.settings._application import DaskSettings
 from napari.utils import config, perf, resize_dask_cache
@@ -609,6 +610,15 @@ class QtViewer(QSplitter):
         if self._console is None:
             self.console = self._get_console()
             self._console_backlog = []
+
+            # qtconsole unfortunately won't inherit the parent stylesheet
+            # so it needs to be directly set
+            settings = get_settings()
+            font_size = settings.appearance.font_size
+            extra_variables = {'font_size': f'{font_size}pt'}
+            self._console.style_sheet = get_stylesheet(
+                self.viewer.theme, extra_variables=extra_variables
+            )
         return self._console
 
     @console.setter
