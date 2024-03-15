@@ -1023,7 +1023,7 @@ def test_border_width_types(border_width):
 
 @pytest.mark.parametrize(
     'border_width',
-    [int(-1), float(-1), np.array([-1, 2, 3, 4, 5]), [-1, 2, 3, 4, 5]],
+    [-1, float(-1), np.array([-1, 2, 3, 4, 5]), [-1, 2, 3, 4, 5]],
 )
 def test_border_width_types_negative(border_width):
     """Test negative values in all border_width dtypes"""
