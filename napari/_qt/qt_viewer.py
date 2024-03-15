@@ -540,15 +540,16 @@ class QtViewer(QSplitter):
         return self._console_backlog
 
     def _get_console(self) -> Optional[QtConsole]:
-        """
-        Function for setup console.
+        """Function to setup console.
 
         Returns
         -------
+        console : QtConsole or None
+            The napari console.
 
         Notes
         _____
-        extracted to separated function for simplify testing
+        _get_console extracted to separate function to simplify testing.
 
         """
         try:
