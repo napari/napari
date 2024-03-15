@@ -1444,6 +1444,7 @@ class Window:
                 actual_theme_name, extra_variables=extra_variables
             )
             self._qt_window.setStyleSheet(style_sheet)
+            self._qt_viewer.setStyleSheet(style_sheet)
             if self._qt_viewer._console:
                 self._qt_viewer._console.style_sheet = style_sheet
 

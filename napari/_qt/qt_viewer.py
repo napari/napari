@@ -610,16 +610,9 @@ class QtViewer(QSplitter):
             self.console = self._get_console()
             self._console_backlog = []
 
-            from napari.qt import get_stylesheet
-
             # qtconsole unfortunately won't inherit the parent stylesheet
             # so it needs to be directly set
-            settings = get_settings()
-            font_size = settings.appearance.font_size
-            extra_variables = {'font_size': f'{font_size}pt'}
-            self._console.style_sheet = get_stylesheet(
-                self.viewer.theme, extra_variables=extra_variables
-            )
+            self._console.style_sheet = self.styleSheet()
         return self._console
 
     @console.setter
