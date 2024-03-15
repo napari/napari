@@ -83,6 +83,7 @@ class Theme(EventedModel):
     warning: Color
     error: Color
     current: Color
+    border_highlight: Color
     font_size: str = '12pt' if sys.platform == 'darwin' else '9pt'
 
     @validator('syntax_style', pre=True, allow_reuse=True)
@@ -398,6 +399,7 @@ DARK = Theme(
     warning='rgb(227, 182, 23)',
     error='rgb(153, 18, 31)',
     current='rgb(0, 122, 204)',
+    border_highlight='rgb(135, 206, 235)',
     syntax_style='native',
     console='rgb(18, 18, 18)',
     canvas='black',
@@ -416,6 +418,7 @@ LIGHT = Theme(
     warning='rgb(227, 182, 23)',
     error='rgb(255, 18, 31)',
     current='rgb(253, 240, 148)',
+    border_highlight='rgb(206, 196, 121)',
     syntax_style='default',
     console='rgb(255, 255, 255)',
     canvas='white',

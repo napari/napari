@@ -24,7 +24,7 @@ class HighlightSettings(EventedModel):
         le=10,
     )
     highlight_color: List[float] = Field(
-        parse_color_as_float_list(get_theme('dark').current) + [1.0],
+        parse_color_as_float_list(get_theme('dark').border_highlight) + [1.0],
         title=trans._('Highlight color'),
         description=trans._(
             'Select the highlight color when hovering over shapes/points.'
@@ -84,10 +84,10 @@ class AppearanceSettings(EventedModel):
             current_theme = get_theme(self.theme)
             new_theme = get_theme(values['theme'])
             current_highlight_color = parse_color_as_float_list(
-                current_theme.current
+                current_theme.border_highlight
             ) + [1.0]
             new_highlight_color = parse_color_as_float_list(
-                new_theme.current
+                new_theme.border_highlight
             ) + [1.0]
 
             if values['font_size'] == int(current_theme.font_size[:-2]):
@@ -128,14 +128,16 @@ class AppearanceSettings(EventedModel):
                             self.highlight.highlight_color, dtype=np.float32
                         ),
                         np.array(
-                            parse_color_as_float_list(current_theme.current)
+                            parse_color_as_float_list(
+                                current_theme.border_highlight
+                            )
                             + [1.0],
                             dtype=np.float32,
                         ),
                     )
                 ):
                     self.highlight.highlight_color = parse_color_as_float_list(
-                        new_theme.current
+                        new_theme.border_highlight
                     ) + [1.0]
                 super().__setattr__(key, value)
         else:

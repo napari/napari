@@ -493,7 +493,7 @@ class QtHighlightPreviewWidget(QWidget):
 
     def _reset(self) -> None:
         """
-        Reset the widget value to the current selected theme `current` color.
+        Reset the widget value to the current selected theme `border_highlight` color.
         """
         current_theme_name = get_settings().appearance.theme
         if current_theme_name == 'system':
@@ -502,13 +502,11 @@ class QtHighlightPreviewWidget(QWidget):
         current_theme = get_theme(current_theme_name)
         self.setValue(
             {
-                'highlight_thickness': self._value[
-                    'highlight_thickness'
-                ],  # TODO: Should a value for thickness be available from the theme?
+                'highlight_thickness': self._value['highlight_thickness'],
                 'highlight_color': parse_color_as_float_list(
-                    current_theme.current
+                    current_theme.border_highlight
                 )
-                + [1.0],  # TODO: Should a different attribute be created
+                + [1.0],
             }
         )
 
