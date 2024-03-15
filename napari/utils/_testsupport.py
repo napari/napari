@@ -270,8 +270,10 @@ def make_napari_viewer(
     # close viewers, but don't saving window settings while closing
     for viewer in viewers:
         viewer.close()
+        viewer._window._qt_window.deleteLater()
     del viewer
     viewers.clear()
+    QApplication.processEvents()
 
     if GCPASS % 50 == 0 or len(QtViewer._instances):
         gc.collect()
