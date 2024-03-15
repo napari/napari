@@ -112,9 +112,13 @@ class SpatialInformation:
         units: UnitsLike = None,
     ):
         locals_dict = locals()
-        self._unset_parameters = {
+        self._parameters_with_default_values = {
             x for x in _OPTIONAL_PARAMETERS if locals_dict[x] is None
         }
+        # `self._parameters_with_default_values` is used to store parameters that are not provided
+        # during initialization and not set during the lifetime of the object.
+        # this will allow checking which attributes have default values and
+        # could.should be set when adding a layer to the viewer.
         self.events = SpatialInformationEvents()
         self._ndim = ndim
         self._units, self._axes_labels = _coerce_units_and_axes(
@@ -154,7 +158,7 @@ class SpatialInformation:
         self._transforms[2] = coerce_affine(
             affine, ndim=self.ndim, name='physical2world'
         )
-        self._unset_parameters.discard('affine')
+        self._parameters_with_default_values.discard('affine')
         self.events.affine.emit(self.affine)
 
     @property
@@ -165,7 +169,7 @@ class SpatialInformation:
     @rotate.setter
     def rotate(self, rotate: npt.NDArray) -> None:
         self._transforms['data2physical'].rotate = rotate
-        self._unset_parameters.discard('rotate')
+        self._parameters_with_default_values.discard('rotate')
         self.events.rotate.emit(rotate)
 
     @property
@@ -178,7 +182,7 @@ class SpatialInformation:
         if scale is None:
             scale = np.array([1] * self.ndim)
         self._transforms['data2physical'].scale = np.array(scale)
-        self._unset_parameters.discard('scale')
+        self._parameters_with_default_values.discard('scale')
         self.events.scale.emit(self.scale)
 
     @property
@@ -189,7 +193,7 @@ class SpatialInformation:
     @shear.setter
     def shear(self, shear: npt.NDArray) -> None:
         self._transforms['data2physical'].shear = shear
-        self._unset_parameters.discard('shear')
+        self._parameters_with_default_values.discard('shear')
         self.events.shear.emit(self.shear)
 
     @property
@@ -200,7 +204,7 @@ class SpatialInformation:
     @translate.setter
     def translate(self, translate: npt.ArrayLike) -> None:
         self._transforms['data2physical'].translate = np.array(translate)
-        self._unset_parameters.discard('translate')
+        self._parameters_with_default_values.discard('translate')
         self.events.translate.emit(self.translate)
 
     @property
@@ -209,9 +213,11 @@ class SpatialInformation:
         return self._ndim
 
     @property
-    def unset_parameters(self) -> set[str]:
-        """set[str]: Parameters that have not been set."""
-        return set(self._unset_parameters)
+    def parameters_with_default_values(self) -> set[str]:
+        """set[str]: Parameters that have default values
+        (passed `None` to constructor and not set later).
+        """
+        return set(self._parameters_with_default_values)
 
     def set_axis_and_units(
         self, axes_labels: Sequence[str], units: UnitsLike
@@ -219,8 +225,8 @@ class SpatialInformation:
         self._units, self._axes_labels = _coerce_units_and_axes(
             units, axes_labels
         )
-        self._unset_parameters.discard('axes_labels')
-        self._unset_parameters.discard('units')
+        self._parameters_with_default_values.discard('axes_labels')
+        self._parameters_with_default_values.discard('units')
         self.events.axes_labels.emit(self.axes_labels)
         self.events.units.emit(self.units)
 
@@ -253,7 +259,7 @@ class SpatialInformation:
                 'Please use set_axis_and_units method.'
             )
         self._axes_labels = list(axes_labels)
-        self._unset_parameters.discard('axes_labels')
+        self._parameters_with_default_values.discard('axes_labels')
         self.events.axes_labels.emit(self.axes_labels)
 
     @property
@@ -268,7 +274,7 @@ class SpatialInformation:
         self._units, self._axes_labels = _coerce_units_and_axes(
             units, self._axes_labels
         )
-        self._unset_parameters.discard('units')
+        self._parameters_with_default_values.discard('units')
         self.events.units.emit(self.units)
 
 

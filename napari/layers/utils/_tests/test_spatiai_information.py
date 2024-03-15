@@ -72,7 +72,7 @@ class TestSpatialInformation:
         si = SpatialInformation(ndim=2)
         assert si.ndim == 2
         npt.assert_array_equal(si.scale, (1, 1))
-        assert si.unset_parameters == set(_OPTIONAL_PARAMETERS)
+        assert si.parameters_with_default_values == set(_OPTIONAL_PARAMETERS)
 
     @pytest.mark.parametrize(
         'parameter,value',
@@ -90,9 +90,9 @@ class TestSpatialInformation:
         mock = Mock()
         si = SpatialInformation(ndim=2)
         getattr(si.events, parameter).connect(mock)
-        assert parameter in si.unset_parameters
+        assert parameter in si.parameters_with_default_values
         setattr(si, parameter, value)
-        assert parameter not in si.unset_parameters
+        assert parameter not in si.parameters_with_default_values
         mock.assert_called_once()
         npt.assert_array_equal(mock.call_args[0], (value,))
         npt.assert_array_equal(getattr(si, parameter), value)
