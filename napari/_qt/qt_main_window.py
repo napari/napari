@@ -301,6 +301,7 @@ class _QtMainWindow(QMainWindow):
         # we are not in menubar toggled state
         if (
             QApplication.activePopupWidget() is None
+            and event.type() in (QEvent.Type.MouseMove, QEvent.Type.Leave)
             and self._toggle_menubar_visibility
         ):
             if event.type() == QEvent.Type.MouseMove:
