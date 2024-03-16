@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from napari.components.viewer_model import ViewerModel
+from napari.layers import Image, Labels
 from napari.utils.action_manager import action_manager
 from napari.utils.theme import available_themes, get_system_theme
 from napari.utils.transforms import Affine
@@ -130,20 +131,22 @@ def transpose_axes(viewer: Viewer):
 @register_viewer_action(trans._('Rotate layers 90 degrees counter-clockwise.'))
 def rotate_layers(viewer: Viewer):
     for layer in viewer.layers:
-        initial_affine = layer.affine.set_slice(list(viewer.dims.displayed))
-        center = (
-            np.array(layer.extent.data[1])[np.array(viewer.dims.displayed)]
-            // 2
-        )
+        if (type(layer) == Image or type(layer) == Labels) and len(
+            layer.data.shape
+        ) == 2:
+            visible_dims = np.asarray([0, 1])
+        else:
+            visible_dims = np.asarray(viewer.dims.displayed)
+
+        initial_affine = layer.affine.set_slice(visible_dims)
+        center = layer.extent.data[1][visible_dims] / 2
         new_affine = (
             Affine(translate=center)
             .compose(Affine(rotate=90))
             .compose(Affine(translate=-center))
             .compose(initial_affine)
         )
-        layer.affine = layer.affine.replace_slice(
-            list(viewer.dims.displayed), new_affine
-        )
+        layer.affine = layer.affine.replace_slice(visible_dims, new_affine)
 
 
 @register_viewer_action(trans._('Toggle grid mode.'))
