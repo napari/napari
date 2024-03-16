@@ -2,9 +2,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import numpy as np
+
 from napari.components.viewer_model import ViewerModel
 from napari.utils.action_manager import action_manager
 from napari.utils.theme import available_themes, get_system_theme
+from napari.utils.transforms import Affine
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -122,6 +125,25 @@ def roll_axes(viewer: Viewer):
 )
 def transpose_axes(viewer: Viewer):
     viewer.dims.transpose()
+
+
+@register_viewer_action(trans._('Rotate layers 90 degrees counter-clockwise.'))
+def rotate_layers(viewer: Viewer):
+    for layer in viewer.layers:
+        initial_affine = layer.affine.set_slice(list(viewer.dims.displayed))
+        center = (
+            np.array(layer.extent.data[1])[np.array(viewer.dims.displayed)]
+            // 2
+        )
+        new_affine = (
+            Affine(translate=center)
+            .compose(Affine(rotate=90))
+            .compose(Affine(translate=-center))
+            .compose(initial_affine)
+        )
+        layer.affine = layer.affine.replace_slice(
+            list(viewer.dims.displayed), new_affine
+        )
 
 
 @register_viewer_action(trans._('Toggle grid mode.'))
