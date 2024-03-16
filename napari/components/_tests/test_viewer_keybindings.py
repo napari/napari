@@ -1,7 +1,13 @@
+import numpy as np
 import pytest
 
+from napari._tests.utils import (
+    add_layer_by_type,
+    layer_test_data,
+)
 from napari.components._viewer_key_bindings import (
     hold_for_pan_zoom,
+    rotate_layers,
     show_only_layer_above,
     show_only_layer_below,
     toggle_selected_visibility,
@@ -141,6 +147,19 @@ def test_show_only_layer_below():
     assert not viewer.layers[2].visible
     assert not viewer.layers[1].visible
     assert viewer.layers[0].visible
+
+
+@pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
+def test_rotate_layers(make_napari_viewer, layer_class, data, ndim):
+    viewer = ViewerModel()
+    layer = add_layer_by_type(viewer, layer_class, data, visible=True)
+    np.testing.assert_array_equal(
+        layer.affine.rotate, np.eye(ndim, dtype=float)
+    )
+    rotate_layers(viewer)
+    np.testing.assert_array_equal(
+        layer.affine.rotate[-2:, -2:], np.array([[0, -1], [1, 0]], dtype=float)
+    )
 
 
 def make_viewer_with_three_layers():
