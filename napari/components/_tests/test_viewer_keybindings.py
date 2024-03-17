@@ -150,7 +150,7 @@ def test_show_only_layer_below():
 
 
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
-def test_rotate_layers(make_napari_viewer, layer_class, data, ndim):
+def test_rotate_layers(layer_class, data, ndim):
     """Test rotate layers works with all layer types/data"""
     viewer = ViewerModel()
     layer = add_layer_by_type(viewer, layer_class, data, visible=True)
