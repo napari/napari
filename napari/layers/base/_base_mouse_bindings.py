@@ -70,7 +70,7 @@ def _rotate_with_box(
     center_to_mouse = mouse_pos - initial_center
     center_to_mouse /= np.linalg.norm(center_to_mouse)
 
-    # if shift held, snap rotation to 45 degree steps
+    # if Shift held, snap rotation to 45 degree steps
     if 'Shift' in event.modifiers:
         angle = np.round(
             np.arctan2(center_to_mouse[1], center_to_mouse[0]) / np.deg2rad(45)
