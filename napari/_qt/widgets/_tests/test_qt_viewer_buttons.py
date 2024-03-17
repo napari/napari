@@ -137,14 +137,14 @@ def test_ndisplay_button_popup(qt_viewer_buttons, qtbot):
 
 def test_transpose_rotate_button(monkeypatch, qt_viewer_buttons, qtbot):
     """
-    Click should trigger slot _transpose_or_rotate_layers
+    Click should trigger `transpose_axes`. Alt/Option-click should trigger `rotate_layers.`
     """
     viewer, viewer_buttons = qt_viewer_buttons
     assert viewer_buttons.transposeDimsButton
 
     action_manager_mock = Mock(trigger=Mock())
 
-    # Monkeypatch the action_manager instance in your MainWindow class
+    # Monkeypatch the action_manager instance to prevent viewer error
     monkeypatch.setattr(
         'napari._qt.widgets.qt_viewer_buttons.action_manager',
         action_manager_mock,
