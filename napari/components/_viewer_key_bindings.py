@@ -141,11 +141,19 @@ def rotate_layers(viewer: Viewer):
 
         initial_affine = layer.affine.set_slice(visible_dims)
         center = (
-            np.asarray(viewer.dims.range)[:, 1][
+            np.asarray(viewer.dims.range)[:, 0][
                 np.asarray(viewer.dims.displayed)
             ]
-            + 1
-        ) / 2
+            + (
+                np.asarray(viewer.dims.range)[:, 1][
+                    np.asarray(viewer.dims.displayed)
+                ]
+                - np.asarray(viewer.dims.range)[:, 0][
+                    np.asarray(viewer.dims.displayed)
+                ]
+            )
+            / 2
+        )
         new_affine = (
             Affine(translate=center)
             .compose(Affine(rotate=90))
