@@ -137,7 +137,7 @@ def rotate_layers(viewer: Viewer):
         if layer.ndim == 2:
             visible_dims = np.asarray([0, 1])
         else:
-            visible_dims = np.asarray(viewer.dims.displayed)
+            visible_dims = list(viewer.dims.displayed)
 
         initial_affine = layer.affine.set_slice(visible_dims)
         # want to rotate around a fixed refernce for all layers
