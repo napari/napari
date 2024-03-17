@@ -135,7 +135,7 @@ def rotate_layers(viewer: Viewer):
         return
     for layer in viewer.layers:
         if layer.ndim == 2:
-            visible_dims = np.asarray([0, 1])
+            visible_dims = [0, 1]
         else:
             visible_dims = list(viewer.dims.displayed)
 
