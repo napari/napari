@@ -360,8 +360,6 @@ def test_generate_2D_edge_meshes(
 ):
     c, o, t = generate_2D_edge_meshes(path, closed, limit, bevel)
     expected_center, expected_offsets, expected_triangles = expected
-    print(o)
-    print(expected_offsets)
     assert np.allclose(c, expected_center)
     assert np.allclose(o, expected_offsets)
     assert (t == expected_triangles).all()
