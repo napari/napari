@@ -112,7 +112,7 @@ def guess_labels(data: Any) -> Literal['labels', 'image']:
 
 def project_slice(
     data: npt.NDArray, axis: Tuple[int, ...], mode: ImageProjectionMode
-) -> float:
+) -> npt.NDArray:
     """Project a thick slice along axis based on mode."""
     func: Callable
     if mode == ImageProjectionMode.SUM:
