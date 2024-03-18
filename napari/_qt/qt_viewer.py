@@ -609,7 +609,6 @@ class QtViewer(QSplitter):
         if self._console is None:
             self.console = self._get_console()
             self._console_backlog = []
-
         return self._console
 
     @console.setter
