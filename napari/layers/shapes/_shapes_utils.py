@@ -747,9 +747,9 @@ def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
         offsets[idx_bevel_outside] = (
             -0.5 * full_normals[:-1][idx_bevel] * sign_bevel
         )
-        # adjust offset of inner offset
-        offsets[idx_bevel_inside] = (
-            0.5 * full_normals[:-1][idx_bevel] * sign_bevel
+        # adjust/normalize length of inner offset
+        offsets[idx_bevel_inside] /= np.sqrt(
+            miter_lengths_squared[idx_bevel, np.newaxis]
         )
 
         # special cases for the last vertex
