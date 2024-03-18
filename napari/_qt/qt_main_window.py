@@ -1446,7 +1446,7 @@ class Window:
             self._qt_window.setStyleSheet(style_sheet)
             self._qt_viewer.setStyleSheet(style_sheet)
             if self._qt_viewer._console:
-                self._qt_viewer._console.style_sheet = style_sheet
+                self._qt_viewer._console._update_theme(style_sheet=style_sheet)
 
     def _status_changed(self, event):
         """Update status bar.

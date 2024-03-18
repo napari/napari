@@ -567,7 +567,7 @@ class QtViewer(QSplitter):
 
             with warnings.catch_warnings():
                 warnings.filterwarnings('ignore')
-                console = QtConsole(self.viewer)
+                console = QtConsole(self.viewer, style_sheet=self.styleSheet())
                 console.push(
                     {'napari': napari, 'action_manager': action_manager}
                 )
@@ -610,9 +610,6 @@ class QtViewer(QSplitter):
             self.console = self._get_console()
             self._console_backlog = []
 
-            # qtconsole unfortunately won't inherit the parent stylesheet
-            # so it needs to be directly set
-            self._console.style_sheet = self.styleSheet()
         return self._console
 
     @console.setter
