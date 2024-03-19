@@ -364,13 +364,13 @@ pyscreeze==0.1.30
     # via pyautogui
 pyside2==5.15.2.1 ; python_version != "3.8"
     # via napari (napari_repo/pyproject.toml)
-pyside6==6.6.2 ; python_version >= "3.10"
+pyside6==6.4.2 ; python_version >= "3.10"
     # via
     #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari (napari_repo/pyproject.toml)
-pyside6-addons==6.6.2
+pyside6-addons==6.4.2
     # via pyside6
-pyside6-essentials==6.6.2
+pyside6-essentials==6.4.2
     # via
     #   pyside6
     #   pyside6-addons
@@ -453,7 +453,7 @@ scipy==1.12.0 ; python_version >= "3.9"
     #   scikit-image
 shiboken2==5.15.2.1
     # via pyside2
-shiboken6==6.6.2
+shiboken6==6.4.2
     # via
     #   pyside6
     #   pyside6-addons
