@@ -1,8 +1,11 @@
 import time
+from unittest.mock import patch
 
 import numpy as np
 import pytest
+import zarr
 from npe2 import DynamicPlugin
+from pretend import stub
 
 from napari._tests.utils import (
     count_warning_events,
@@ -13,9 +16,24 @@ from napari.components import ViewerModel
 from napari.errors import MultipleReaderError, ReaderPluginError
 from napari.errors.reader_errors import NoAvailableReaderError
 from napari.layers import Image
+from napari.layers.utils.layer_utils import (
+    _get_zeros_for_labels_based_on_module,
+)
 from napari.settings import get_settings
+from napari.settings._constants import NewLabelsPolicy
 from napari.utils.colormaps import AVAILABLE_COLORMAPS, Colormap
 from napari.utils.events.event import WarningEmitter
+
+
+@pytest.fixture()
+def array_cls():
+    try:
+        import tensorstore
+    except ModuleNotFoundError:
+        return zarr.Array
+
+    else:
+        return tensorstore.TensorStore
 
 
 def test_viewer_model():
@@ -295,6 +313,114 @@ def test_new_labels_scaled_translated_image():
     np.testing.assert_almost_equal(viewer.layers[1].data.shape, (10, 15))
     np.testing.assert_almost_equal(viewer.layers[1].scale, (3, 3))
     np.testing.assert_almost_equal(viewer.layers[1].translate, (20, -5))
+
+
+@pytest.mark.parametrize('module_name', ['numpy', 'zarr', 'tensorstore'])
+def test_new_labels_follow_class(module_name):
+    module = pytest.importorskip(module_name)
+    viewer = ViewerModel()
+    get_settings().application.new_labels_policy = (
+        NewLabelsPolicy.follow_image_class
+    )
+    viewer.add_image(
+        _get_zeros_for_labels_based_on_module(module, None)(
+            shape=(10, 15), dtype='uint8'
+        ),
+        scale=(5, 5),
+    )
+    viewer._new_labels()
+    assert len(viewer.layers) == 2
+    assert np.max(viewer.layers[1].data) == 0
+    assert isinstance(viewer.layers[1].data, viewer.layers[0].data.__class__)
+    assert np.array_equal(viewer.layers[1].scale, (5, 5))
+    assert np.array_equal(viewer.layers[1].data.shape, (10, 15))
+
+
+def test_new_labels_follow_chunk():
+    viewer = ViewerModel()
+    get_settings().application.new_labels_policy = (
+        NewLabelsPolicy.follow_image_class
+    )
+    viewer.add_image(
+        zarr.zeros(shape=(100, 100), dtype='uint8', chunks=(10, 10)),
+        scale=(5, 5),
+    )
+    viewer._new_labels()
+    assert len(viewer.layers) == 2
+    assert viewer.layers[1].data.chunks == (10, 10)
+
+    viewer.add_image(
+        zarr.zeros(shape=(100, 100), dtype='uint8', chunks=(20, 20)),
+        scale=(5, 5),
+    )
+
+    # majority chunk vote
+    viewer._new_labels()
+    assert len(viewer.layers) == 4
+    assert viewer.layers[1].data.chunks == (10, 10)
+
+
+@pytest.mark.parametrize('module_name', ['numpy', 'zarr', 'tensorstore'])
+@patch(
+    'psutil.virtual_memory',
+    return_value=stub(total=1000000000, available=1000000000),
+)
+def test_new_labels_fit_in_ram(virtual_memory, module_name, array_cls):
+    module = pytest.importorskip(module_name)
+    viewer = ViewerModel()
+    get_settings().application.new_labels_policy = NewLabelsPolicy.fit_in_ram
+    get_settings().application.new_label_max_factor = 100
+    get_settings().application.new_labels_dtype = 'uint64'
+    viewer.add_image(
+        _get_zeros_for_labels_based_on_module(module, None)(
+            shape=(10, 15), dtype='uint8'
+        )
+    )
+    viewer._new_labels()
+    assert len(viewer.layers) == 2
+    assert isinstance(viewer.layers[1].data, np.ndarray)
+    virtual_memory.return_value = stub(total=1000000000, available=10)
+    viewer._new_labels()
+    assert len(viewer.layers) == 3
+    assert isinstance(viewer.layers[2].data, array_cls)
+    virtual_memory.return_value = stub(total=10000, available=10000)
+    viewer._new_labels()
+    assert len(viewer.layers) == 4
+    assert isinstance(viewer.layers[3].data, np.ndarray)
+
+    get_settings().application.new_label_max_factor = 10
+    viewer._new_labels()
+    assert len(viewer.layers) == 5
+    assert isinstance(viewer.layers[4].data, array_cls)
+
+
+@pytest.mark.parametrize('module_name', ['numpy', 'zarr', 'tensorstore'])
+@patch(
+    'psutil.virtual_memory',
+    return_value=stub(total=1000000000, available=1000000000),
+)
+def test_new_labels_follow_class_with_fit(
+    virtual_memory, module_name, array_cls
+):
+    module = pytest.importorskip(module_name)
+    viewer = ViewerModel()
+    get_settings().application.new_labels_policy = (
+        NewLabelsPolicy.follow_class_with_fit
+    )
+    viewer.add_image(
+        _get_zeros_for_labels_based_on_module(module, None)(
+            shape=(10, 15), dtype='uint8'
+        )
+    )
+    viewer._new_labels()
+    assert len(viewer.layers) == 2
+    assert np.max(viewer.layers[1].data) == 0
+    assert isinstance(viewer.layers[1].data, viewer.layers[0].data.__class__)
+
+    virtual_memory.return_value = stub(total=1000000000, available=10)
+    viewer._new_labels()
+    assert len(viewer.layers) == 3
+    assert isinstance(viewer.layers[2].data, array_cls)
 
 
 def test_new_points():

@@ -4,19 +4,6 @@ from napari.utils.compat import StrEnum
 from napari.utils.misc import StringEnum
 
 
-class LabelDTypes(StrEnum):
-    uint8 = 'uint8'
-    int8 = 'int8'
-    uint16 = 'uint16'
-    int16 = 'int16'
-    uint32 = 'uint32'
-    int32 = 'int32'
-    uint64 = 'uint64'
-    int64 = 'int64'
-    uint = 'uint'
-    int = 'int'
-
-
 class LoopMode(StringEnum):
     """Looping mode for animating an axis.
 
@@ -42,3 +29,24 @@ class BrushSizeOnMouseModifiers(StrEnum):
     CTRL_ALT = 'Control+Alt'
     CTRL_SHIFT = 'Control+Shift'
     DISABLED = 'Disabled'  # a non-existent modifier that is never activated
+
+
+class LabelDTypes(StrEnum):
+    uint8 = 'uint8'
+    int8 = 'int8'
+    uint16 = 'uint16'
+    int16 = 'int16'
+    uint32 = 'uint32'
+    int32 = 'int32'
+    uint64 = 'uint64'
+    int64 = 'int64'
+    uint = 'uint'
+    int = 'int'
+
+
+class NewLabelsPolicy(StrEnum):
+    follow_image_class = 'Follow image class'
+    fit_in_ram = 'Fit in RAM'
+    follow_class_with_fit = (
+        'Follow image class but fallback to fit in RAM if needed'
+    )
