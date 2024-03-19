@@ -168,6 +168,7 @@ class QtImageControls(QtBaseImageControls):
             colormap_layout.addWidget(self.colormapComboBox)
         colormap_layout.addStretch(1)
 
+        self.layout().addRow(self.button_grid)
         self.layout().addRow(self.opacityLabel, self.opacitySlider)
         self.layout().addRow(
             trans._('contrast limits:'), self.contrastLimitsSlider
