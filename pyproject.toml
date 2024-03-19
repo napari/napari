@@ -638,7 +638,6 @@ module = [
     "napari._vispy.overlays.scale_bar",
     "napari._vispy.overlays.text",
     "napari.layers.labels._labels_key_bindings",
-    "napari.layers.shapes._mesh",
     "napari.layers.surface._surface_key_bindings",
     "napari.layers.tracks._tracks_key_bindings",
     "napari.layers.utils._slice_input",
@@ -653,7 +652,6 @@ module = [
     "napari.utils.translations",
     "napari.utils.tree.node",
     "napari.viewer",
-    "napari.layers.shapes._shapes_key_bindings",
     "napari.layers.shapes._shape_list"
 ]
 disallow_incomplete_defs = false
