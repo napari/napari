@@ -195,6 +195,17 @@ def make_qt_layer_list_with_delegate(qtbot):
 
 @skip_local_focus
 def test_drag_and_drop_layers(qtbot):
+    """
+    Test drag and drop actions with pyautogui to change layer list order.
+
+    Notes:
+        * For this test to pass locally, you need to give the Terminal/iTerm
+          application accessibility permissions:
+              `System Settings > Privacy & Security > Accessibility`
+
+        See https://github.com/asweigart/pyautogui/issues/247 and
+        https://github.com/asweigart/pyautogui/issues/247#issuecomment-437668855.
+    """
     view, images = make_qt_layer_list_with_layers(qtbot)
     with qtbot.waitExposed(view):
         view.show()
