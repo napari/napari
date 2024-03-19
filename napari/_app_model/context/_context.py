@@ -13,7 +13,7 @@ from napari.utils.translations import trans
 if TYPE_CHECKING:
     from napari.utils.events import Event
 
-__all__ = ["create_context", "get_context", "Context", "SettingsAwareContext"]
+__all__ = ['create_context', 'get_context', 'Context', 'SettingsAwareContext']
 
 
 class SettingsAwareContext(Context):
@@ -39,7 +39,7 @@ class SettingsAwareContext(Context):
 
     def __missing__(self, key: str) -> Any:
         if key.startswith(self._PREFIX):
-            splits = [k for k in key.split(".")[1:] if k]
+            splits = [k for k in key.split('.')[1:] if k]
             val: Any = self._settings
             if splits:
                 while splits:
@@ -61,7 +61,7 @@ class SettingsAwareContext(Context):
         if k.startswith(self._PREFIX):
             raise ValueError(
                 trans._(
-                    "Cannot set key starting with {prefix!r}",
+                    'Cannot set key starting with {prefix!r}',
                     deferred=True,
                     prefix=self._PREFIX,
                 )
@@ -79,7 +79,7 @@ def create_context(
     max_depth: int = 20,
     start: int = 2,
     root: Optional[Context] = None,
-) -> Optional[Context]:
+) -> Context:
     return _create_context(
         obj=obj,
         max_depth=max_depth,

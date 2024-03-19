@@ -69,7 +69,7 @@ CONDITIONS = [
 ]
 
 
-@pytest.mark.parametrize("nframes,fps,mode,rng,result", CONDITIONS)
+@pytest.mark.parametrize('nframes,fps,mode,rng,result', CONDITIONS)
 def test_animation_thread_variants(qtbot, nframes, fps, mode, rng, result):
     """This is mostly testing that AnimationWorker.advance works as expected"""
     with make_worker(

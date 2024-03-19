@@ -1,4 +1,4 @@
-/* 
+/*
 Styles in this file should only refer to built-in QtWidgets
 It will be imported first, and styles declared in other files
 may override these styles, but should only do so on
@@ -10,7 +10,7 @@ might be possible to convert px to em by 1px = 0.0625em
 
 
 /* ----------------- QWidget ------------------ */
-/* 
+/*
 
 mappings between property and QPalette.ColorRole:
 these colors can be looked up dynamically in widgets using, e.g
@@ -49,7 +49,7 @@ QWidget[emphasized="true"] > QFrame {
 
 /* ------------ QAbstractScrollArea ------------- */
 
-/* QAbstractScrollArea is the superclass */ 
+/* QAbstractScrollArea is the superclass */
 
 QTextEdit {
   background-color: {{ console }};
@@ -57,6 +57,7 @@ QTextEdit {
   color: {{ text }};
   selection-background-color: {{ foreground }};
   padding: 4px 2px 4px 4px;
+  font-size: {{ increase(font_size, 1) }};
 }
 
 /* the area behind the scrollbar */
@@ -71,6 +72,7 @@ QPushButton {
   border-radius: 2px;
   padding: 4px;
   border: 0px;
+  font-size: {{ increase(font_size, 1) }};
 }
 
 QPushButton:hover {
@@ -119,6 +121,7 @@ QComboBox {
   border-radius: 2px;
   background-color: {{ foreground }};
   padding: 3px 10px 3px 8px; /* top right bottom left */
+  font-size: {{ increase(font_size, 1) }};
 }
 
 QComboBox:disabled {
@@ -154,10 +157,11 @@ QComboBox:on {
 }
 
 QListView {
-  /* controls the color of the open dropdown menu */ 
+  /* controls the color of the open dropdown menu */
   background-color: {{ foreground }};
   color: {{ text }};
   border-radius: 2px;
+  font-size: {{ font_size }};
 }
 
 QListView:item:selected {
@@ -176,6 +180,7 @@ QLineEdit {
   min-height: 20px;
   padding: 2px;
   border-radius: 2px;
+  font-size: {{ decrease(font_size, 1) }};
 }
 
 QWidget[emphasized="true"] QLineEdit {
@@ -191,10 +196,17 @@ QAbstractSpinBox {
   min-width: 70px;
   min-height: 18px;
   border-radius: 2px;
+  font-size: {{ font_size }};
 }
 
 QLabeledSlider > QAbstractSpinBox {
   min-width: 10px;
+  padding: 0px;
+  font-size: {{ decrease(font_size, 1) }};
+}
+
+QLabeledRangeSlider > QAbstractSpinBox {
+  min-width: 5px;
   padding: 0px;
 }
 
@@ -258,16 +270,13 @@ QAbstractSpinBox::down-arrow {
    image: url("theme_{{ id }}:/minus_50.svg");
 }
 
-QLabeledRangeSlider > QAbstractSpinBox {
-  min-width: 5px;
-}
-
 /* ----------------- QCheckBox ------------------ */
 
 QCheckBox {
   spacing: 5px;
   color: {{ text }};
   background-color: none;
+  font-size: {{ increase(font_size, 1) }};
 }
 
 QCheckBox::indicator {
@@ -317,6 +326,7 @@ QWidget[emphasized="true"] QCheckBox::indicator:unchecked:hover {
 
 QRadioButton {
   background: none;
+  font-size: {{ increase(font_size, 1) }};
 }
 
 QRadioButton::indicator{
@@ -472,7 +482,7 @@ QScrollBar::add-line, QScrollBar::sub-line {
     subcontrol-origin: margin;
 }
 
-QWidget[emphasized="true"] QScrollBar::add-line, 
+QWidget[emphasized="true"] QScrollBar::add-line,
 QWidget[emphasized="true"] QScrollBar::sub-line {
     background: {{ primary }};
 }
@@ -497,12 +507,12 @@ QScrollBar::sub-line:vertical {
     subcontrol-position: top;
 }
 
-QScrollBar::add-line:horizontal:pressed, 
+QScrollBar::add-line:horizontal:pressed,
 QScrollBar::sub-line:horizontal:pressed {
     background: {{ highlight }};
 }
 
-QWidget[emphasized="true"] QScrollBar::add-line:horizontal:pressed, 
+QWidget[emphasized="true"] QScrollBar::add-line:horizontal:pressed,
 QWidget[emphasized="true"] QScrollBar::sub-line:horizontal:pressed {
     background: {{ secondary }};
 }
@@ -565,6 +575,7 @@ QProgressBar {
     border-radius: 2px;
     text-align: center;
     padding: 0px;
+    font-size: {{ font_size }};
 }
 
 QProgressBar::horizontal {
@@ -597,6 +608,7 @@ QGroupBox {
     border: 1px solid {{ foreground }};
     border-radius: 5px;
     margin-top: 1ex; /* leave space at the top for the title */
+    font-size: {{ increase(font_size, 1) }};
 }
 
 QGroupBox::title {
@@ -605,6 +617,7 @@ QGroupBox::title {
     left: 10px;
     padding: 0 3px;
     background-color: {{ background }};
+    font-size: {{ increase(font_size, 1) }};
 }
 
 QGroupBox::indicator {
@@ -662,7 +675,7 @@ QWidget[emphasized="true"] QTabWidget::pane {
   border: 1px solid {{ darken(primary, 10) }};
 }
 
-QTabBar::tab {
+QTabBar, QTabBar::tab {
   background-color: {{ foreground }};
   border: 1px solid {{ background }};
   border-bottom: 0px;
@@ -670,6 +683,7 @@ QTabBar::tab {
   border-top-right-radius: 4px;
   padding: 3px 6px;
   background: vgradient({{ lighten(foreground, 15) }} - {{ foreground }});
+  font-size: {{ font_size }};
 }
 
 
@@ -691,6 +705,7 @@ QWidget[emphasized="true"] QTabBar::tab:selected {
 
 QLabel {
   background-color: none;
+  font-size: {{ increase(font_size, 1) }};
 }
 
 /* ----------------- QMenuBar ------------------ */
@@ -702,6 +717,19 @@ QMenuBar::item:selected {
 QLCDNumber {
   background: none;
 }
+
+/* ----------------- QMenu ------------------
+
+QMenu::item {
+    font-size: {{ font_size }};
+    padding: 3px;
+}
+
+QMenu::item:selected {
+    font-size: {{ font_size }};
+    background-color: {{ secondary }};
+}
+*/
 
 /* ----------------- QStatusBar ------------------ */
 

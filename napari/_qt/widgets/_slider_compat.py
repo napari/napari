@@ -3,9 +3,9 @@ from qtpy.QtWidgets import QSlider
 from superqt import QDoubleSlider
 
 # here until we can debug why labeled sliders render differently on 5.12
-if tuple(int(x) for x in QT_VERSION.split(".")) >= (5, 14):
+if tuple(int(x) for x in QT_VERSION.split('.')) >= (5, 14):
     from superqt import QLabeledDoubleSlider as QDoubleSlider  # noqa
-    from superqt import QLabeledSlider as QSlider  # noqa
+    from superqt import QLabeledSlider as QSlider
 
 
-__all__ = ["QSlider", "QDoubleSlider"]
+__all__ = ['QSlider', 'QDoubleSlider']

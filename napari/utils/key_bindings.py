@@ -32,7 +32,6 @@ into two statements with the yield keyword::
 To create a keymap that will block others, ``bind_key(..., ...)```.
 """
 
-
 import contextlib
 import inspect
 import sys
@@ -211,7 +210,7 @@ def bind_key(
     if func is not None and key_bind in keymap and not overwrite:
         raise ValueError(
             trans._(
-                'keybinding {key} already used! specify \'overwrite=True\' to bypass this check',
+                "keybinding {key} already used! specify 'overwrite=True' to bypass this check",
                 deferred=True,
                 key=str(key_bind),
             )
@@ -309,7 +308,15 @@ class KeymapProvider:
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self.keymap = {}
+        self._keymap = {}
+
+    @property
+    def keymap(self):
+        return self._keymap
+
+    @keymap.setter
+    def keymap(self, value):
+        self._keymap = {coerce_keybinding(k): v for k, v in value.items()}
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -417,7 +424,7 @@ class KeymapHandler:
         if not callable(func):
             raise TypeError(
                 trans._(
-                    "expected {func} to be callable",
+                    'expected {func} to be callable',
                     deferred=True,
                     func=func,
                 )
@@ -485,10 +492,10 @@ class KeymapHandler:
 
         repeatables = {
             *action_manager._get_repeatable_shortcuts(self.keymap_chain),
-            "Up",
-            "Down",
-            "Left",
-            "Right",
+            'Up',
+            'Down',
+            'Left',
+            'Right',
         }
 
         if (

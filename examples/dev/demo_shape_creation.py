@@ -30,39 +30,39 @@ def time_me(label, func):
     t = default_timer()
     res = func()
     t = default_timer() - t
-    print(f"{label}: {t:.4f} s")
+    print(f'{label}: {t:.4f} s')
     return res
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description="")
+    parser = argparse.ArgumentParser(description='')
 
     parser.add_argument(
-        "-n",
-        "--n_polys",
+        '-n',
+        '--n_polys',
         type=int,
         default=5000,
         help='number of polygons to show',
     )
     parser.add_argument(
-        "-t",
-        "--type",
+        '-t',
+        '--type',
         type=str,
-        default="path",
+        default='path',
         choices=['path', 'path_concat', 'polygon', 'rectangle', 'ellipse'],
     )
     parser.add_argument(
-        "-c",
-        "--concat",
-        action="store_true",
+        '-c',
+        '--concat',
+        action='store_true',
         help='concatenate all coordinates to a single mesh',
     )
     parser.add_argument(
-        "-v", "--view", action="store_true", help='show napari viewer'
+        '-v', '--view', action='store_true', help='show napari viewer'
     )
     parser.add_argument(
-        "--properties", action="store_true", help='add dummy shape properties'
+        '--properties', action='store_true', help='add dummy shape properties'
     )
 
     args = parser.parse_args()
@@ -90,16 +90,16 @@ if __name__ == "__main__":
     color_cycle = ['blue', 'magenta', 'green']
 
     kwargs = {
-        "shape_type": args.type,
-        "properties": properties if args.properties else None,
-        "face_color": 'class' if args.properties else [1,1,1,1],
-        "face_color_cycle": color_cycle,
-        "edge_color": 'class' if args.properties else [1,1,1,1],
-        "edge_color_cycle": color_cycle,
+        'shape_type': args.type,
+        'properties': properties if args.properties else None,
+        'face_color': 'class' if args.properties else [1,1,1,1],
+        'face_color_cycle': color_cycle,
+        'edge_color': 'class' if args.properties else [1,1,1,1],
+        'edge_color_cycle': color_cycle,
     }
 
     layer = time_me(
-        "time to create layer",
+        'time to create layer',
         lambda: napari.layers.Shapes(coords, **kwargs),
     )
 

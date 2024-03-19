@@ -14,6 +14,7 @@ from typing import (
     cast,
 )
 
+from app_model import Action
 from app_model.types import SubmenuItem
 from npe2 import io_utils, plugin_manager as pm
 from npe2.manifest import contributions
@@ -21,12 +22,11 @@ from npe2.manifest import contributions
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from app_model import Action
     from npe2.manifest import PluginManifest
     from npe2.manifest.contributions import WriterContribution
     from npe2.plugin_manager import PluginName
     from npe2.types import LayerData, SampleDataCreator, WidgetCreator
-    from qtpy.QtWidgets import QMenu  # type: ignore [attr-defined]
+    from qtpy.QtWidgets import QMenu
 
     from napari.layers import Layer
     from napari.types import SampleDict
@@ -43,8 +43,12 @@ def read(
     """Try to return data for `path`, from reader plugins using a manifest."""
 
     # do nothing if `plugin` is not an npe2 reader
-    if plugin and plugin not in get_readers():
-        return None
+    if plugin:
+        # user might have passed 'plugin.reader_contrib' as the command
+        # so ensure we check vs. just the actual plugin name
+        plugin_name = plugin.partition('.')[0]
+        if plugin_name not in get_readers():
+            return None
 
     assert stack is not None
     # the goal here would be to make read_get_reader of npe2 aware of "stack",
@@ -157,10 +161,12 @@ def populate_qmenu(menu: QMenu, menu_key: str):
         if isinstance(item, contributions.Submenu):
             subm_contrib = pm.get_submenu(item.submenu)
             subm = menu.addMenu(subm_contrib.label)
+            assert subm is not None
             populate_qmenu(subm, subm_contrib.id)
         else:
             cmd = pm.get_command(item.command)
             action = menu.addAction(cmd.title)
+            assert action is not None
             action.triggered.connect(_wrap(cmd))
 
 
@@ -191,7 +197,7 @@ def file_extensions_string_for_layers(
         for writer in writers:
             name = pm.get_manifest(writer.command).display_name
             title = (
-                f"{name} {writer.display_name}"
+                f'{name} {writer.display_name}'
                 if writer.display_name
                 else name
             )
@@ -201,10 +207,10 @@ def file_extensions_string_for_layers(
     #   "<name> (*<ext1> *<ext2> *<ext3>);;+"
 
     def _fmt_exts(es):
-        return " ".join(f"*{e}" for e in es if e) if es else "*.*"
+        return ' '.join(f'*{e}' for e in es if e) if es else '*.*'
 
     return (
-        ";;".join(f"{name} ({_fmt_exts(exts)})" for name, exts in _items()),
+        ';;'.join(f'{name} ({_fmt_exts(exts)})' for name, exts in _items()),
         writers,
     )
 
@@ -307,7 +313,6 @@ def on_plugin_enablement_change(enabled: Set[str], disabled: Set[str]):
     'Disabled' means the plugin remains installed, but it cannot be activated,
     and its contributions will not be indexed
     """
-    from napari import Viewer
     from napari.settings import get_settings
 
     plugin_settings = get_settings().plugins
@@ -322,14 +327,7 @@ def on_plugin_enablement_change(enabled: Set[str], disabled: Set[str]):
         # actually a registered plugin.
         if plugin_name in pm.instance():
             _register_manifest_actions(pm.get_manifest(plugin_name))
-
-    # TODO: after app-model, these QMenus will be evented and self-updating
-    # and we can remove this... but `_register_manifest_actions` will need to
-    # add the actions file and plugins menus (since we don't require plugins to
-    # list them explicitly)
-    for v in Viewer._instances:
-        v.window.plugins_menu._build()
-        v.window.file_menu._rebuild_samples_menu()
+            _safe_register_qt_actions(pm.get_manifest(plugin_name))
 
 
 def on_plugins_registered(manifests: Set[PluginManifest]):
@@ -340,9 +338,10 @@ def on_plugins_registered(manifests: Set[PluginManifest]):
     for mf in manifests:
         if not pm.is_disabled(mf.name):
             _register_manifest_actions(mf)
+            _safe_register_qt_actions(mf)
 
 
-def _register_manifest_actions(manifest: PluginManifest) -> None:
+def _register_manifest_actions(mf: PluginManifest) -> None:
     """Gather and register actions from a manifest.
 
     This is called when a plugin is registered or enabled and it adds the
@@ -351,12 +350,25 @@ def _register_manifest_actions(manifest: PluginManifest) -> None:
     from napari._app_model import get_app
 
     app = get_app()
-    actions, submenus = _npe2_manifest_to_actions(manifest)
-    context = pm.get_context(cast('PluginName', manifest.name))
+    actions, submenus = _npe2_manifest_to_actions(mf)
+
+    context = pm.get_context(cast('PluginName', mf.name))
+
+    # Register and connect dispose callback to plugin deactivate ('unregistered') event
     if actions:
         context.register_disposable(app.register_actions(actions))
     if submenus:
         context.register_disposable(app.menus.append_menu_items(submenus))
+
+
+def _safe_register_qt_actions(mf: PluginManifest) -> None:
+    """Register samples and widget `Actions` if Qt available."""
+    try:
+        from napari._qt._qplugins import _register_qt_actions
+    except ModuleNotFoundError:  # pragma: no cover
+        pass
+    else:
+        _register_qt_actions(mf)
 
 
 def _npe2_manifest_to_actions(
@@ -367,32 +379,46 @@ def _npe2_manifest_to_actions(
 
     from napari._app_model.constants._menus import is_menu_contributable
 
-    cmds: DefaultDict[str, List[MenuRule]] = DefaultDict(list)
+    menu_cmds: DefaultDict[str, List[MenuRule]] = DefaultDict(list)
     submenus: List[Tuple[str, SubmenuItem]] = []
     for menu_id, items in mf.contributions.menus.items():
         if is_menu_contributable(menu_id):
             for item in items:
                 if isinstance(item, contributions.MenuCommand):
                     rule = MenuRule(id=menu_id, **_when_group_order(item))
-                    cmds[item.command].append(rule)
+                    menu_cmds[item.command].append(rule)
                 else:
                     subitem = _npe2_submenu_to_app_model(item)
                     submenus.append((menu_id, subitem))
 
-    actions: List[Action] = [
-        Action(
-            id=cmd.id,
-            title=cmd.title,
-            category=cmd.category,
-            tooltip=cmd.short_title or cmd.title,
-            icon=cmd.icon,
-            enablement=cmd.enablement,
-            callback=cmd.python_name or '',
-            menus=cmds.get(cmd.id),
-            keybindings=[],
-        )
-        for cmd in mf.contributions.commands or ()
-    ]
+    # Filter sample data commands (not URIs) as they are registered via
+    # `_safe_register_qt_actions`
+    sample_data_ids = {
+        contrib.command
+        for contrib in mf.contributions.sample_data or ()
+        if hasattr(contrib, 'command')
+    }
+    # Filter widgets as are registered via `_safe_register_qt_actions`
+    widget_ids = {widget.command for widget in mf.contributions.widgets or ()}
+
+    # We want to register all `Actions` so they appear in the command pallete
+    actions: List[Action] = []
+    for cmd in mf.contributions.commands or ():
+        if cmd.id not in sample_data_ids | widget_ids:
+            actions.append(
+                Action(
+                    id=cmd.id,
+                    title=cmd.title,
+                    category=cmd.category,
+                    tooltip=cmd.short_title or cmd.title,
+                    icon=cmd.icon,
+                    enablement=cmd.enablement,
+                    callback=cmd.python_name or '',
+                    menus=menu_cmds.get(cmd.id),
+                    keybindings=[],
+                )
+            )
+
     return actions, submenus
 
 
@@ -400,7 +426,7 @@ def _when_group_order(
     menu_item: contributions.MenuItem,
 ) -> dict:
     """Extract when/group/order from an npe2 Submenu or MenuCommand."""
-    group, _, _order = (menu_item.group or '').partition("@")
+    group, _, _order = (menu_item.group or '').partition('@')
     try:
         order: Optional[float] = float(_order)
     except ValueError:

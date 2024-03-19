@@ -9,8 +9,8 @@ import numpy as np
 import pytest
 from dask import delayed
 from dask.delayed import Delayed
-from pydantic import Field
 
+from napari._pydantic_compat import Field
 from napari.utils.events import EmitterGroup, EventedModel
 from napari.utils.events.custom_types import Array
 from napari.utils.misc import StringEnum
@@ -261,8 +261,7 @@ def test_update_with_inner_model_union():
 def test_update_with_inner_model_protocol():
     @runtime_checkable
     class InnerProtocol(Protocol):
-        def string(self) -> str:
-            ...
+        def string(self) -> str: ...
 
         # Protocol fields are not successfully set without explicit validation.
         @classmethod
@@ -358,7 +357,7 @@ def test_nested_evented_model_serialization():
     class Model(EventedModel):
         nest: NestedModel
 
-    m = Model(nest={'obj': {"a": 1, "b": "hi"}})
+    m = Model(nest={'obj': {'a': 1, 'b': 'hi'}})
     raw = m.json()
     assert raw == r'{"nest": {"obj": {"a": 1, "b": "hi"}}}'
     deserialized = Model.parse_raw(raw)
@@ -563,7 +562,7 @@ def test_evented_model_with_provided_dependencies():
                 dependencies = {'x': ['a']}
 
     # should warn if field does not exist
-    with pytest.warns(match="Unrecognized field dependency"):
+    with pytest.warns(match='Unrecognized field dependency'):
 
         class T(EventedModel):
             a: int = 1
@@ -600,7 +599,7 @@ def test_property_str_annotation():
         a: int = 1
 
         @property
-        def b(self) -> "np.ndarray":  # pragma: no cover
+        def b(self) -> 'np.ndarray':  # pragma: no cover
             return np.ndarray([self.a, self.a])
 
         @property
@@ -624,7 +623,7 @@ def test_events_are_fired_only_if_necessary(monkeypatch):
 
     eq_op_get = Mock(return_value=operator.eq)
     monkeypatch.setattr(
-        "napari.utils.events.evented_model.pick_equality_operator", eq_op_get
+        'napari.utils.events.evented_model.pick_equality_operator', eq_op_get
     )
 
     t = Tt()
@@ -632,8 +631,8 @@ def test_events_are_fired_only_if_necessary(monkeypatch):
     a_eq = Mock(return_value=False)
     b_eq = Mock(return_value=False)
 
-    t.__eq_operators__["a"] = a_eq
-    t.__eq_operators__["b"] = b_eq
+    t.__eq_operators__['a'] = a_eq
+    t.__eq_operators__['b'] = b_eq
 
     t.a = 2
     a_eq.assert_not_called()
@@ -681,3 +680,66 @@ def test_events_are_fired_only_if_necessary(monkeypatch):
     a_eq.assert_called_once()
     b_eq.assert_called_once()
     eq_op_get.assert_called_once_with(9)
+
+
+def _reset_mocks(*args):
+    for el in args:
+        el.reset_mock()
+
+
+def test_single_emit():
+    class SampleClass(EventedModel):
+        a: int = 1
+        b: int = 2
+
+        @property
+        def c(self):
+            return self.a
+
+        @c.setter
+        def c(self, value):
+            self.a = value
+
+        @property
+        def d(self):
+            return self.a + self.b
+
+        @d.setter
+        def d(self, value):
+            self.a = value // 2
+            self.b = value - self.a
+
+        @property
+        def e(self):
+            return self.a - self.b
+
+    s = SampleClass()
+    a_m = Mock()
+    c_m = Mock()
+    d_m = Mock()
+    s.events.a.connect(a_m)
+    s.events.c.connect(c_m)
+    s.events.d.connect(d_m)
+
+    s.a = 4
+    a_m.assert_called_once()
+    c_m.assert_called_once()
+    d_m.assert_called_once()
+
+    _reset_mocks(a_m, c_m, d_m)
+
+    s.c = 6
+    a_m.assert_called_once()
+    c_m.assert_called_once()
+    d_m.assert_called_once()
+
+    _reset_mocks(a_m, c_m, d_m)
+
+    e_m = Mock()
+    s.events.e.connect(e_m)
+
+    s.d = 21
+    a_m.assert_called_once()
+    c_m.assert_called_once()
+    d_m.assert_called_once()
+    e_m.assert_called_once()

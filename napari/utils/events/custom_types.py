@@ -11,12 +11,13 @@ from typing import (
 )
 
 import numpy as np
-from pydantic import errors, types
+
+from napari._pydantic_compat import errors, types
 
 if TYPE_CHECKING:
     from decimal import Decimal
 
-    from pydantic.fields import ModelField
+    from napari._pydantic_compat import ModelField
 
     Number = Union[int, float, Decimal]
 
@@ -84,22 +85,22 @@ class ConstrainedInt(types.ConstrainedInt):
 def conint(
     *,
     strict: bool = False,
-    gt: int = None,
-    ge: int = None,
-    lt: int = None,
-    le: int = None,
-    multiple_of: int = None,
-    ne: int = None,
+    gt: Optional[int] = None,
+    ge: Optional[int] = None,
+    lt: Optional[int] = None,
+    le: Optional[int] = None,
+    multiple_of: Optional[int] = None,
+    ne: Optional[int] = None,
 ) -> Type[int]:
     """Extended version of `pydantic.types.conint` that includes not-equal."""
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = {
-        "strict": strict,
-        "gt": gt,
-        "ge": ge,
-        "lt": lt,
-        "le": le,
-        "multiple_of": multiple_of,
-        "ne": ne,
+        'strict': strict,
+        'gt': gt,
+        'ge': ge,
+        'lt': lt,
+        'le': le,
+        'multiple_of': multiple_of,
+        'ne': ne,
     }
     return type('ConstrainedIntValue', (ConstrainedInt,), namespace)
