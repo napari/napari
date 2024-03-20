@@ -199,7 +199,7 @@ def test_drag_and_drop_layers(qtbot):
     Test drag and drop actions with pyautogui to change layer list order.
 
     Notes:
-        * For this test to pass locally, you need to give the Terminal/iTerm
+        * For this test to pass locally on macOS, you need to give the Terminal/iTerm
           application accessibility permissions:
               `System Settings > Privacy & Security > Accessibility`
 
