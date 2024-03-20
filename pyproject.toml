@@ -101,6 +101,7 @@ pyside6_experimental = [
 ]
 pyqt6_experimental = [
     "PyQt6",
+    "PyQt6 != 6.6.1 ; platform_system == 'Darwin'"
 ]
 pyside = [
     "napari[pyside2]"
