@@ -166,9 +166,15 @@ class FormatStringEncoding(_DerivedStyleEncoding[StringValue, StringArray]):
 
     def __call__(self, features: Any) -> StringArray:
         feature_names = features.columns.to_list()
+        # Expose the dataframe index to the format string keys
+        # unless a column exists with the name "index", which takes precedence.
+        with_index = False
+        if 'index' not in feature_names:
+            feature_names = ['index'] + feature_names
+            with_index = True
         values = [
             self.format.format(**dict(zip(feature_names, row)))
-            for row in features.itertuples(index=False, name=None)
+            for row in features.itertuples(index=with_index, name=None)
         ]
         return np.array(values, dtype=str)
 
