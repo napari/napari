@@ -142,7 +142,7 @@ jobs:
             platform: ubuntu-20.04
             backend: headless
             coverage: no_cov
-          - python: 3.10
+          - python: "3.10"
             platform: ubuntu-latest
             backend: headless
             coverage: no_cov
