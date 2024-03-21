@@ -1,7 +1,7 @@
-from typing import Any
+from typing import Any, Iterable
 
-import numpy as np
 from qtpy.QtCore import QModelIndex, Qt
+from typing_extensions import Self
 
 from napari._qt.containers.qt_list_model import QtListModel
 from napari.components import Dims
@@ -70,36 +70,27 @@ class AxisModel:
 
 
 class AxisList(SelectableEventedList[AxisModel]):
-    def __init__(self, dims: Dims):
-        axis = [AxisModel(dims, d) for d in dims.order]
-        super().__init__(axis)
-        self.dims = dims
+    def __init__(self, axes: Iterable[AxisModel]):
+        super().__init__(axes)
 
-        self.dims.events.order.connect(self._dims_order_callback)
-        self.dims.events.ndim.connect(self._ndim_callback)
-        self.events.reordered.connect(self._reorder_callback)
+    @classmethod
+    def from_dims(cls, dims: Dims) -> Self:
+        """Create AxisList instance from Dims object.
 
-    def _dims_order_callback(self, event):
-        with self.events.blocker_all():
-            current_order = np.array([a.axis for a in self._list])
-            new_order = np.array(event.value)
-            if not np.array_equal(current_order, new_order):
-                if current_order.size != new_order.size:
-                    self._list = [
-                        AxisModel(self.dims, d) for d in self.dims.order
-                    ]
-                else:
-                    reorder_idx = new_order[current_order]
-                    self._list = [self._list[i] for i in reorder_idx]
+        The AxisList is filled with a number of AxisModels based
+        on the number of dimensions in the Dims object.
 
-    def _ndim_callback(self, event):
-        if event.value != len(self._list):
-            with self.events.blocker_all():
-                self._list = [AxisModel(self.dims, d) for d in self.dims.order]
+        Parameters
+        ----------
+        dims : napari.components.dims.Dims
+            Dims object to be used for creation.
 
-    def _reorder_callback(self, event):
-        new_order = tuple([a.axis for a in event.value])
-        self.dims.order = new_order
+        Returns
+        -------
+        AxisList
+            A selectable evented list of the viewer axes.
+        """
+        return cls(AxisModel(dims, d) for d in dims.order)
 
 
 class QtAxisListModel(QtListModel[AxisModel]):

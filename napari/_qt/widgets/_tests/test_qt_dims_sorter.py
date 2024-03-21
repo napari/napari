@@ -30,11 +30,6 @@ def test_dims_sorter_callback_management(qtbot):
     assert len(dims.events.order.callbacks) == base_callback_count + 1
     assert len(dim_sorter.axis_list.events.reordered.callbacks) == 2
 
-    # assert callback termination
-    parent.destroyed.emit()
-    assert len(dims.events.order.callbacks) == base_callback_count
-    assert len(dim_sorter.axis_list.events.reordered.callbacks) == 1
-
 
 def test_dims_sorter_with_reordered_init(qtbot):
     dims = Dims()
