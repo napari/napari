@@ -142,10 +142,6 @@ jobs:
             platform: ubuntu-20.04
             backend: headless
             coverage: no_cov
-          - python: "3.10"
-            platform: ubuntu-latest
-            backend: headless
-            coverage: no_cov
           - python: 3.11
             platform: ubuntu-latest
             backend: pyqt6,pyside6

@@ -365,8 +365,7 @@ def _safe_register_qt_actions(mf: PluginManifest) -> None:
     """Register samples and widget `Actions` if Qt available."""
     try:
         from napari._qt._qplugins import _register_qt_actions
-    # except (ImportError, ModuleNotFoundError):  # pragma: no cover
-    except ModuleNotFoundError:  # pragma: no cover
+    except ImportError:  # pragma: no cover
         pass
     else:
         _register_qt_actions(mf)
