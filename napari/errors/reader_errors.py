@@ -1,5 +1,7 @@
 from typing import List
 
+from napari.types import PathLike
+
 
 class MultipleReaderError(RuntimeError):
     """Multiple readers are available for paths and none explicitly chosen.
@@ -32,7 +34,7 @@ class MultipleReaderError(RuntimeError):
         self,
         message: str,
         available_readers: List[str],
-        paths: List[str],
+        paths: List[PathLike],
         *args: object,
     ) -> None:
         super().__init__(message, *args)
@@ -67,7 +69,11 @@ class ReaderPluginError(ValueError):
     """
 
     def __init__(
-        self, message: str, reader_plugin: str, paths: List[str], *args: object
+        self,
+        message: str,
+        reader_plugin: str,
+        paths: List[PathLike],
+        *args: object,
     ) -> None:
         super().__init__(message, *args)
         self.reader_plugin = reader_plugin
@@ -92,6 +98,8 @@ class NoAvailableReaderError(ValueError):
         file paths for reading
     """
 
-    def __init__(self, message: str, paths: List[str], *args: object) -> None:
+    def __init__(
+        self, message: str, paths: List[PathLike], *args: object
+    ) -> None:
         super().__init__(message, *args)
         self.paths = paths

@@ -38,7 +38,7 @@ def test_vispy_labels_polygon_overlay(make_napari_viewer):
     assert not vispy_labels_polygon._line.visible
     assert vispy_labels_polygon._polygon.visible
 
-    layer.selected_label = layer._background_label
+    layer.selected_label = layer.colormap.background_value
     assert vispy_labels_polygon._polygon.color.is_blank
 
 
@@ -74,7 +74,7 @@ def test_labels_drawing_with_polygons(MouseEvent, make_napari_viewer):
         )
         mouse_press_callbacks(layer, event)
 
-    assert np.alltrue(data[0, :] == 0)
+    assert np.array_equiv(data[0, :], 0)
 
     # Draw a rectangle (the latest two points will be cancelled)
     points = [
@@ -115,12 +115,12 @@ def test_labels_drawing_with_polygons(MouseEvent, make_napari_viewer):
     # Finish drawing
     complete_polygon(layer)
 
-    assert np.alltrue(data[[0, 2], :] == 0)
-    assert np.alltrue(data[1, 1:11, 1:11] == 1)
-    assert np.alltrue(data[1, 0, :] == 0)
-    assert np.alltrue(data[1, :, 0] == 0)
-    assert np.alltrue(data[1, 11:, :] == 0)
-    assert np.alltrue(data[1, :, 11:] == 0)
+    assert np.array_equiv(data[[0, 2], :], 0)
+    assert np.array_equiv(data[1, 1:11, 1:11], 1)
+    assert np.array_equiv(data[1, 0, :], 0)
+    assert np.array_equiv(data[1, :, 0], 0)
+    assert np.array_equiv(data[1, 11:, :], 0)
+    assert np.array_equiv(data[1, :, 11:], 0)
 
     # Try to finish with an incomplete polygon
     for position in [(0, 1, 1)]:
@@ -134,4 +134,4 @@ def test_labels_drawing_with_polygons(MouseEvent, make_napari_viewer):
 
     # Finish drawing
     complete_polygon(layer)
-    assert np.alltrue(data[0, :] == 0)
+    assert np.array_equiv(data[0, :], 0)

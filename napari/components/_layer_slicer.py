@@ -11,22 +11,24 @@ from concurrent.futures import Executor, Future, ThreadPoolExecutor, wait
 from contextlib import contextmanager
 from threading import RLock
 from typing import (
-    Callable,
+    TYPE_CHECKING,
+    Any,
     Dict,
     Iterable,
     Optional,
     Protocol,
     Tuple,
-    TypeVar,
     runtime_checkable,
 )
 
-from napari.components import Dims
 from napari.layers import Layer
 from napari.settings import get_settings
 from napari.utils.events.event import EmitterGroup, Event
 
-logger = logging.getLogger("napari.components._layer_slicer")
+if TYPE_CHECKING:
+    from napari.components import Dims
+
+logger = logging.getLogger('napari.components._layer_slicer')
 
 
 # Layers that can be asynchronously sliced must be able to make
@@ -35,19 +37,22 @@ logger = logging.getLogger("napari.components._layer_slicer")
 # vary per layer type, which means that the values of the dictionary
 # result of ``_slice_layers`` cannot be fixed to a single type.
 
-_SliceResponse = TypeVar('_SliceResponse')
-_SliceRequest = Callable[[], _SliceResponse]
+
+class _SliceRequest(Protocol):
+    id: int
+
+    def __call__(self) -> Any: ...
 
 
 @runtime_checkable
-class _AsyncSliceable(Protocol[_SliceResponse]):
+class _AsyncSliceable(Protocol):
     """The methods needed for async slicing to be supported on a layer.
 
     These methods are private to avoid inflating the public API of
     layers while async slicing is being developed.
     """
 
-    def _make_slice_request(self, dims: Dims) -> _SliceRequest[_SliceResponse]:
+    def _make_slice_request(self, dims: Dims) -> _SliceRequest:
         """Makes a callable slice request that returns a response.
 
         This method should run quickly, as it is expected to run on the main thread.
@@ -58,7 +63,7 @@ class _AsyncSliceable(Protocol[_SliceResponse]):
         other design choices, this allows us to avoid using locks while slicing.
         """
 
-    def _update_slice_response(self, response: _SliceResponse) -> None:
+    def _update_slice_response(self, response: Any) -> None:
         """Passes through a completed slice response.
 
         This method should run on the main thread and is mostly needed to update
@@ -175,11 +180,11 @@ class _LayerSlicer:
 
         Parameters
         ----------
-        layers: iterable of layers
+        layers : iterable of layers
             The layers to slice.
-        dims: Dims
+        dims : Dims
             The dimensions values associated with the view to be sliced.
-        force: bool
+        force : bool
             True if slicing should be forced to occur, even when some cache thinks
             it already has a valid slice ready. False otherwise.
 
@@ -203,7 +208,7 @@ class _LayerSlicer:
         # The following logic gives us a way to handle those in the short
         # term as we develop, and also in the long term if there are cases
         # when we want to perform sync slicing anyway.
-        requests = {}
+        requests: Dict[weakref.ref, _SliceRequest] = {}
         sync_layers = []
         visible_layers = (layer for layer in layers if layer.visible)
         for layer in visible_layers:
@@ -231,7 +236,8 @@ class _LayerSlicer:
         # Then execute sync slicing tasks to run concurrent with async ones.
         for layer in sync_layers:
             layer._slice_dims(
-                dims.point, dims.ndisplay, dims.order, force=force
+                dims=dims,
+                force=force,
             )
 
         return task

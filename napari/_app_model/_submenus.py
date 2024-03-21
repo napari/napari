@@ -26,6 +26,24 @@ SUBMENUS = [
         ),
     ),
     (
+        MenuId.MENUBAR_FILE,
+        SubmenuItem(
+            submenu=MenuId.FILE_OPEN_WITH_PLUGIN,
+            title=trans._('Open with Plugin'),
+            group=MenuGroup.NAVIGATION,
+            order=99,
+        ),
+    ),
+    (
+        MenuId.MENUBAR_FILE,
+        SubmenuItem(
+            submenu=MenuId.FILE_SAMPLES,
+            title=trans._('Open Sample'),
+            group=MenuGroup.NAVIGATION,
+            order=100,
+        ),
+    ),
+    (
         MenuId.MENUBAR_VIEW,
         SubmenuItem(submenu=MenuId.VIEW_AXES, title=trans._('Axes')),
     ),

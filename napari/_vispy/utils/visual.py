@@ -98,7 +98,7 @@ def create_vispy_layer(layer: Layer) -> VispyBaseLayer:
 
 def create_vispy_overlay(overlay: Overlay, **kwargs) -> VispyBaseOverlay:
     """
-    Create vispy visual for Overlay  based on its type.
+    Create vispy visual for Overlay based on its type.
 
     Parameters
     ----------
@@ -174,7 +174,7 @@ def get_view_direction_in_scene_coordinates(
     d2 = p1 - p0
 
     # in 3D world coordinates
-    d3 = d2[0:3]
+    d3 = d2[:3]
     d4 = d3 / np.linalg.norm(d3)
 
     # data are ordered xyz on vispy Volume

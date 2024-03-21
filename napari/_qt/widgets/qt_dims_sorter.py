@@ -72,12 +72,11 @@ class QtDimsSorter(QWidget):
 
     def __init__(self, dims: Dims, parent: QWidget) -> None:
         super().__init__(parent=parent)
-        self.dims = dims
-        self.axis_list = AxisList.from_dims(self.dims)
+        self.axis_list = AxisList(dims)
 
-        view = QtListView(self.axis_list)
+        self.view = QtListView(self.axis_list)
         if len(self.axis_list) <= 2:
-            view.setSizeAdjustPolicy(QtListView.AdjustToContents)
+            self.view.setSizeAdjustPolicy(QtListView.AdjustToContents)
 
         layout = QGridLayout()
         self.setLayout(layout)
@@ -94,23 +93,4 @@ class QtDimsSorter(QWidget):
 
         self.layout().addWidget(widget_title, 0, 0)
         self.layout().addWidget(widget_tooltip, 0, 1)
-        self.layout().addWidget(view, 1, 0, 1, 2)
-
-        # connect axis_list and dims
-        # terminate connections after parent widget is closed
-        # to allow closure of QtDimsSorter
-        self.axis_list.events.reordered.connect(
-            self._axis_list_reorder_callback,
-            until=self.parent().finished,
-        )
-        self.parent().destroyed.connect(lambda: print('parent dead'))
-        # self.dims.events.order.connect(
-        #    self._dims_order_callback,
-        #    until=self.parent().destroyed,
-        # )
-
-    def _axis_list_reorder_callback(self, event):
-        set_dims_order(self.dims, event.value)
-
-    def _dims_order_callback(self, event):
-        move_indices(self.axis_list, event.value)
+        self.layout().addWidget(self.view, 1, 0, 1, 2)

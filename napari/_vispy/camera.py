@@ -3,7 +3,7 @@ from typing import Type
 import numpy as np
 from vispy.scene import ArcballCamera, BaseCamera, PanZoomCamera
 
-from napari._vispy.utils.quaternion import quaternion2euler
+from napari._vispy.utils.quaternion import quaternion2euler_degrees
 
 
 class VispyCamera:
@@ -58,9 +58,7 @@ class VispyCamera:
 
         if self._view.camera == self._3D_camera:
             # Do conversion from quaternion representation to euler angles
-            angles = quaternion2euler(
-                self._view.camera._quaternion, degrees=True
-            )
+            angles = quaternion2euler_degrees(self._view.camera._quaternion)
         else:
             angles = (0, 0, 90)
         return angles
@@ -228,7 +226,7 @@ def add_mouse_pan_zoom_toggles(
 
     Returns
     -------
-        A decorated VisPy camera class.
+    A decorated VisPy camera class.
     """
 
     class _vispy_camera_cls(vispy_camera_cls):

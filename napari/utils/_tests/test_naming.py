@@ -116,7 +116,7 @@ def test_path_prefix():
 def test_empty_path_prefix():
     """Test an empty path prefix that matches the entire stack"""
     # Repeat tests with an empty path_prefix
-    mname = functools.partial(magic_name, path_prefix="")
+    mname = functools.partial(magic_name, path_prefix='')
 
     def foo(x):
         def bar(y):

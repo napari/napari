@@ -1,4 +1,5 @@
 """Status bar widget on the viewer MainWindow"""
+
 from typing import TYPE_CHECKING, Optional, cast
 
 from qtpy.QtCore import QEvent, Qt
@@ -70,11 +71,11 @@ class ViewerStatusBar(QStatusBar):
 
     def setStatusText(
         self,
-        text: str = "",
-        layer_base: str = "",
+        text: str = '',
+        layer_base: str = '',
         source_type=None,
-        plugin: str = "",
-        coordinates: str = "",
+        plugin: str = '',
+        coordinates: str = '',
     ) -> None:
         # The method used to set a single value as the status and not
         # all the layer information.

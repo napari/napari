@@ -28,7 +28,7 @@ from napari.utils.translations import trans
 # captures the numbers into groups.
 # this is used to allow users to enter colors as e.g.: "(1, 0.7, 0)"
 rgba_regex = re.compile(
-    r"\(?([\d.]+),\s*([\d.]+),\s*([\d.]+),?\s*([\d.]+)?\)?"
+    r'\(?([\d.]+),\s*([\d.]+),\s*([\d.]+),?\s*([\d.]+)?\)?'
 )
 
 TRANSPARENT = np.array([0, 0, 0, 0], np.float32)
@@ -215,7 +215,7 @@ class QColorLineEdit(QLineEdit):
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
-        self._compl = QCompleter([*get_color_dict(), "transparent"])
+        self._compl = QCompleter([*get_color_dict(), 'transparent'])
         self._compl.setCompletionMode(QCompleter.InlineCompletion)
         self.setCompleter(self._compl)
         self.setTextMargins(2, 2, 2, 2)

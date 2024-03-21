@@ -6,6 +6,7 @@ import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Dict,
     List,
     NamedTuple,
@@ -28,6 +29,8 @@ if TYPE_CHECKING:
     from typing import Mapping
 
     import numpy.typing as npt
+
+    from napari.layers._data_protocols import LayerDataProtocol
 
 
 class Extent(NamedTuple):
@@ -60,8 +63,8 @@ def register_layer_action(
     keymapprovider,
     description: str,
     repeatable: bool = False,
-    shortcuts: Optional[str] = None,
-):
+    shortcuts: Optional[Union[str, List[str]]] = None,
+) -> Callable[[Callable], Callable]:
     """
     Convenient decorator to register an action with the current Layers
 
@@ -90,7 +93,7 @@ def register_layer_action(
 
     """
 
-    def _inner(func):
+    def _inner(func: Callable) -> Callable:
         nonlocal shortcuts
         name = 'napari:' + func.__name__
 
@@ -117,7 +120,7 @@ def register_layer_attr_action(
     description: str,
     attribute_name: str,
     shortcuts=None,
-):
+) -> Callable[[Callable], Callable]:
     """
     Convenient decorator to register an action with the current Layers.
     This will get and restore attribute from function first argument.
@@ -146,14 +149,14 @@ def register_layer_attr_action(
 
     """
 
-    def _handle(func):
+    def _handle(func: Callable) -> Callable:
         sig = inspect.signature(func)
         try:
             first_variable_name = next(iter(sig.parameters))
         except StopIteration as e:
             raise RuntimeError(
                 trans._(
-                    "If actions has no arguments there is no way to know what to set the attribute to.",
+                    'If actions has no arguments there is no way to know what to set the attribute to.',
                     deferred=True,
                 ),
             ) from e
@@ -204,7 +207,9 @@ def _nanmax(array):
     return max_value
 
 
-def calc_data_range(data, rgb=False) -> Tuple[float, float]:
+def calc_data_range(
+    data: LayerDataProtocol, rgb: bool = False
+) -> Tuple[float, float]:
     """Calculate range of data values. If all values are equal return [0, 1].
 
     Parameters
@@ -228,7 +233,7 @@ def calc_data_range(data, rgb=False) -> Tuple[float, float]:
         return (0, 255)
 
     center: Union[int, List[int]]
-
+    reduced_data: Union[List, LayerDataProtocol]
     if data.size > 1e7 and (data.ndim == 1 or (rgb and data.ndim == 2)):
         # If data is very large take the average of start, middle and end.
         center = int(data.shape[0] // 2)
@@ -281,7 +286,7 @@ def calc_data_range(data, rgb=False) -> Tuple[float, float]:
     return (float(min_val), float(max_val))
 
 
-def segment_normal(a, b, p=(0, 0, 1)):
+def segment_normal(a, b, p=(0, 0, 1)) -> np.ndarray:
     """Determines the unit normal of the vector from a to b.
 
     Parameters
@@ -301,6 +306,8 @@ def segment_normal(a, b, p=(0, 0, 1)):
     """
     d = b - a
 
+    norm: Any  # float or array or float, mypy has some difficulities.
+
     if d.ndim == 1:
         normal = np.array([d[1], -d[0]]) if len(d) == 2 else np.cross(d, p)
         norm = np.linalg.norm(normal)
@@ -315,12 +322,10 @@ def segment_normal(a, b, p=(0, 0, 1)):
         norm = np.linalg.norm(normal, axis=1, keepdims=True)
         ind = norm == 0
         norm[ind] = 1
-    unit_norm = normal / norm
-
-    return unit_norm
+    return normal / norm
 
 
-def convert_to_uint8(data: np.ndarray) -> Optional[np.ndarray]:
+def convert_to_uint8(data: np.ndarray) -> np.ndarray:
     """
     Convert array content to uint8, always returning a copy.
 
@@ -342,17 +347,17 @@ def convert_to_uint8(data: np.ndarray) -> Optional[np.ndarray]:
     if data.dtype == out_dtype:
         return data
     in_kind = data.dtype.kind
-    if in_kind == "b":
+    if in_kind == 'b':
         return data.astype(out_dtype) * 255
-    if in_kind == "f":
+    if in_kind == 'f':
         image_out = np.multiply(data, out_max, dtype=data.dtype)
         np.rint(image_out, out=image_out)
         np.clip(image_out, 0, out_max, out=image_out)
         image_out = np.nan_to_num(image_out, copy=False)
         return image_out.astype(out_dtype)
 
-    if in_kind in "ui":
-        if in_kind == "u":
+    if in_kind in 'ui':
+        if in_kind == 'u':
             if data.max() < out_max:
                 return data.astype(out_dtype)
             return np.right_shift(data, (data.dtype.itemsize - 1) * 8).astype(
@@ -367,7 +372,7 @@ def convert_to_uint8(data: np.ndarray) -> Optional[np.ndarray]:
         return np.right_shift(data, (data.dtype.itemsize - 1) * 8 - 1).astype(
             out_dtype
         )
-    return None
+    raise NotImplementedError
 
 
 def get_current_properties(
@@ -449,7 +454,7 @@ def validate_properties(
     if any(v != expected_len for v in lens):
         raise ValueError(
             trans._(
-                "the number of items must be equal for all properties",
+                'the number of items must be equal for all properties',
                 deferred=True,
             )
         )
@@ -593,7 +598,12 @@ def compute_multiscale_level_and_corners(
     return level, corners
 
 
-def coerce_affine(affine, *, ndim, name=None):
+def coerce_affine(
+    affine: Union[npt.ArrayLike, Affine],
+    *,
+    ndim: int,
+    name: Optional[str] = None,
+) -> Affine:
     """Coerce a user input into an affine transform object.
 
     If the input is already an affine transform object, that same object is returned
@@ -678,7 +688,11 @@ def dims_displayed_world_to_layer(
     return dims_displayed
 
 
-def get_extent_world(data_extent, data_to_world, centered=None):
+def get_extent_world(
+    data_extent: npt.NDArray,
+    data_to_world: Affine,
+    centered: Optional[Any] = None,
+) -> npt.NDArray:
     """Range of layer in world coordinates base on provided data_extent
 
     Parameters
@@ -839,7 +853,7 @@ class _FeatureTable:
         self._defaults = _validate_features(currents, num_data=1)
         if update_indices is not None:
             for k in self._defaults:
-                self._values[k][update_indices] = self._defaults[k][0]
+                self._values.loc[update_indices, k] = self._defaults[k][0]
 
     def resize(
         self,
@@ -948,7 +962,7 @@ def _get_default_column(column: pd.Series) -> pd.Series:
         # store missing values, so passing None creates an np.float64 series
         # containing NaN. Therefore, use a default of 0 instead.
         value = 0
-    return pd.Series(data=value, dtype=column.dtype, index=range(1))
+    return pd.Series(data=[value], dtype=column.dtype, index=range(1))
 
 
 def _validate_features(

@@ -111,3 +111,6 @@ def get_dtype_limits(dtype_spec) -> Tuple[float, float]:
     else:
         raise TypeError(f'Unrecognized or non-numeric dtype: {dtype_spec}')
     return info.min, info.max
+
+
+vispy_texture_dtype = np.float32

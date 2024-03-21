@@ -4,7 +4,11 @@ import numpy as np
 import pytest
 from npe2 import DynamicPlugin
 
-from napari._tests.utils import good_layer_data, layer_test_data
+from napari._tests.utils import (
+    count_warning_events,
+    good_layer_data,
+    layer_test_data,
+)
 from napari.components import ViewerModel
 from napari.errors import MultipleReaderError, ReaderPluginError
 from napari.errors.reader_errors import NoAvailableReaderError
@@ -33,7 +37,7 @@ def test_add_image():
     data = np.random.random((10, 15))
     viewer.add_image(data)
     assert len(viewer.layers) == 1
-    assert np.all(viewer.layers[0].data == data)
+    assert np.array_equal(viewer.layers[0].data, data)
     assert viewer.dims.ndim == 2
 
 
@@ -57,11 +61,11 @@ def test_add_image_colormap_variants():
     assert viewer.add_image(data, colormap='fire')
 
     # as tuple
-    cmap_tuple = ("my_colormap", Colormap(['g', 'm', 'y']))
+    cmap_tuple = ('my_colormap', Colormap(['g', 'm', 'y']))
     assert viewer.add_image(data, colormap=cmap_tuple)
 
     # as dict
-    cmap_dict = {"your_colormap": Colormap(['g', 'r', 'y'])}
+    cmap_dict = {'your_colormap': Colormap(['g', 'r', 'y'])}
     assert viewer.add_image(data, colormap=cmap_dict)
 
     # as Colormap instance
@@ -88,7 +92,7 @@ def test_add_volume():
     data = np.random.random((10, 15, 20))
     viewer.add_image(data)
     assert len(viewer.layers) == 1
-    assert np.all(viewer.layers[0].data == data)
+    assert np.array_equal(viewer.layers[0].data, data)
     assert viewer.dims.ndim == 3
 
 
@@ -100,7 +104,9 @@ def test_add_multiscale():
     data = [np.random.random(s) for s in shapes]
     viewer.add_image(data, multiscale=True)
     assert len(viewer.layers) == 1
-    assert np.all(viewer.layers[0].data == data)
+    # this is not an nd array but a list of ndarray.
+    # I think that might be a edge case of MultiScaleData.
+    assert viewer.layers[0].data == data
     assert viewer.dims.ndim == 2
 
 
@@ -115,7 +121,9 @@ def test_add_multiscale_image_with_negative_floats():
     viewer.add_image(data, multiscale=True)
 
     assert len(viewer.layers) == 1
-    assert np.all(viewer.layers[0].data == data)
+    # this is not an nd array but a list of ndarray.
+    # I think that might be a edge case of MultiScaleData.
+    assert viewer.layers[0].data == data
     assert viewer.dims.ndim == 2
 
 
@@ -126,7 +134,7 @@ def test_add_labels():
     data = np.random.randint(20, size=(10, 15))
     viewer.add_labels(data)
     assert len(viewer.layers) == 1
-    assert np.all(viewer.layers[0].data == data)
+    assert np.array_equal(viewer.layers[0].data, data)
     assert viewer.dims.ndim == 2
 
 
@@ -137,7 +145,7 @@ def test_add_points():
     data = 20 * np.random.random((10, 2))
     viewer.add_points(data)
     assert len(viewer.layers) == 1
-    assert np.all(viewer.layers[0].data == data)
+    assert np.array_equal(viewer.layers[0].data, data)
     assert viewer.dims.ndim == 2
 
 
@@ -185,7 +193,7 @@ def test_add_vectors():
     data = 20 * np.random.random((10, 2, 2))
     viewer.add_vectors(data)
     assert len(viewer.layers) == 1
-    assert np.all(viewer.layers[0].data == data)
+    assert np.array_equal(viewer.layers[0].data, data)
     assert viewer.dims.ndim == 2
 
 
@@ -196,7 +204,7 @@ def test_add_shapes():
     data = 20 * np.random.random((10, 4, 2))
     viewer.add_shapes(data)
     assert len(viewer.layers) == 1
-    assert np.all(viewer.layers[0].data == data)
+    assert np.array_equal(viewer.layers[0].data, data)
     assert viewer.dims.ndim == 2
 
 
@@ -211,7 +219,7 @@ def test_add_surface():
     viewer.add_surface(data)
     assert len(viewer.layers) == 1
     assert np.all(
-        [np.all(vd == d) for vd, d in zip(viewer.layers[0].data, data)]
+        [np.array_equal(vd, d) for vd, d in zip(viewer.layers[0].data, data)]
     )
     assert viewer.dims.ndim == 3
 
@@ -223,13 +231,13 @@ def test_mix_dims():
     data = np.random.random((10, 15))
     viewer.add_image(data)
     assert len(viewer.layers) == 1
-    assert np.all(viewer.layers[0].data == data)
+    assert np.array_equal(viewer.layers[0].data, data)
     assert viewer.dims.ndim == 2
 
     data = np.random.random((6, 10, 15))
     viewer.add_image(data)
     assert len(viewer.layers) == 2
-    assert np.all(viewer.layers[1].data == data)
+    assert np.array_equal(viewer.layers[1].data, data)
     assert viewer.dims.ndim == 3
 
 
@@ -370,8 +378,8 @@ def test_swappable_dims():
     np.random.seed(0)
     image_data = np.random.random((7, 12, 10, 15))
     image_name = viewer.add_image(image_data).name
-    assert np.all(
-        viewer.layers[image_name]._data_view == image_data[3, 5, :, :]
+    assert np.array_equal(
+        viewer.layers[image_name]._data_view, image_data[3, 5, :, :]
     )
 
     points_data = np.random.randint(6, size=(10, 4))
@@ -384,18 +392,18 @@ def test_swappable_dims():
     labels_name = viewer.add_labels(labels_data).name
     # midpoints indices into the data below depend on the data range.
     # This depends on the values in vectors_data and thus the random seed.
-    assert np.all(
-        viewer.layers[labels_name]._slice.image.raw == labels_data[3, 5, :, :]
+    assert np.array_equal(
+        viewer.layers[labels_name]._slice.image.raw, labels_data[3, 5, :, :]
     )
 
     # Swap dims
     viewer.dims.order = [0, 2, 1, 3]
     assert viewer.dims.order == (0, 2, 1, 3)
-    assert np.all(
-        viewer.layers[image_name]._data_view == image_data[3, :, 4, :]
+    assert np.array_equal(
+        viewer.layers[image_name]._data_view, image_data[3, :, 4, :]
     )
-    assert np.all(
-        viewer.layers[labels_name]._slice.image.raw == labels_data[3, :, 4, :]
+    assert np.array_equal(
+        viewer.layers[labels_name]._slice.image.raw, labels_data[3, :, 4, :]
     )
 
 
@@ -470,7 +478,7 @@ def test_add_remove_layer_dims_change():
     data = np.random.random((10, 15, 20))
     layer = viewer.add_image(data)
     assert len(viewer.layers) == 1
-    assert np.all(viewer.layers[0].data == data)
+    assert np.array_equal(viewer.layers[0].data, data)
     assert viewer.dims.ndim == 3
 
     # Remove layer and check ndim returns to 2
@@ -697,7 +705,7 @@ def test_camera():
     data = np.random.random((10, 15, 20))
     viewer.add_image(data)
     assert len(viewer.layers) == 1
-    assert np.all(viewer.layers[0].data == data)
+    assert np.array_equal(viewer.layers[0].data, data)
     assert viewer.dims.ndim == 3
 
     assert viewer.dims.ndisplay == 2
@@ -741,7 +749,7 @@ def test_add_remove_layer_no_callbacks(Layer, data, ndim):
     # Check that no internal callbacks have been registered
     assert len(layer.events.callbacks) == 0
     for em in layer.events.emitters.values():
-        assert len(em.callbacks) == 0
+        assert len(em.callbacks) == count_warning_events(em.callbacks)
 
     viewer.layers.append(layer)
     # Check layer added correctly
@@ -757,7 +765,7 @@ def test_add_remove_layer_no_callbacks(Layer, data, ndim):
     # Check that all callbacks have been removed
     assert len(layer.events.callbacks) == 0
     for em in layer.events.emitters.values():
-        assert len(em.callbacks) == 0
+        assert len(em.callbacks) == count_warning_events(em.callbacks)
 
 
 @pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
@@ -779,14 +787,17 @@ def test_add_remove_layer_external_callbacks(Layer, data, ndim):
     assert len(layer.events.callbacks) == 1
     for em in layer.events.emitters.values():
         if not isinstance(em, WarningEmitter):
-            assert len(em.callbacks) == 1
+            assert len(em.callbacks) == count_warning_events(em.callbacks) + 1
 
     viewer.layers.append(layer)
     # Check layer added correctly
     assert len(viewer.layers) == 1
 
     # check that adding a layer created new callbacks
-    assert any(len(em.callbacks) > 0 for em in layer.events.emitters.values())
+    assert any(
+        len(em.callbacks) > count_warning_events(em.callbacks)
+        for em in layer.events.emitters.values()
+    )
 
     viewer.layers.remove(layer)
     # Check layer added correctly
@@ -796,7 +807,7 @@ def test_add_remove_layer_external_callbacks(Layer, data, ndim):
     assert len(layer.events.callbacks) == 1
     for em in layer.events.emitters.values():
         if not isinstance(em, WarningEmitter):
-            assert len(em.callbacks) == 1
+            assert len(em.callbacks) == count_warning_events(em.callbacks) + 1
 
 
 @pytest.mark.parametrize(
@@ -841,12 +852,10 @@ def test_open_or_get_error_multiple_readers(tmp_plugin: DynamicPlugin):
     tmp2 = tmp_plugin.spawn(register=True)
 
     @tmp_plugin.contribute.reader(filename_patterns=['*.fake'])
-    def _(path):
-        ...
+    def _(path): ...
 
     @tmp2.contribute.reader(filename_patterns=['*.fake'])
-    def _(path):
-        ...
+    def _(path): ...
 
     with pytest.raises(
         MultipleReaderError, match='Multiple plugins found capable'
@@ -889,8 +898,7 @@ def test_open_or_get_error_prefered_plugin(
     np.save(pth, np.random.random((10, 10)))
 
     @tmp_plugin.contribute.reader(filename_patterns=['*.npy'])
-    def _(path):
-        ...
+    def _(path): ...
 
     get_settings().plugins.extension2reader = {'*.npy': builtins.name}
 
@@ -921,12 +929,10 @@ def test_open_or_get_error_no_prefered_plugin_many_available(
     tmp2 = tmp_plugin.spawn(register=True)
 
     @tmp_plugin.contribute.reader(filename_patterns=['*.fake'])
-    def _(path):
-        ...
+    def _(path): ...
 
     @tmp2.contribute.reader(filename_patterns=['*.fake'])
-    def _(path):
-        ...
+    def _(path): ...
 
     get_settings().plugins.extension2reader = {'*.fake': 'not-a-plugin'}
 
