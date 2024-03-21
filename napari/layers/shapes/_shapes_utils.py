@@ -739,6 +739,8 @@ def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
         idx_offset = (miter_signs[idx_bevel] < 0).astype(int)
 
         # outside and inside offsets are treated differently (only outside offsets get beveled)
+        # See drawing at:
+        # https://github.com/napari/napari/pull/6706#discussion_r1528790407
         idx_bevel_outside = 2 * idx_bevel + idx_offset
         idx_bevel_inside = 2 * idx_bevel + (1 - idx_offset)
         sign_bevel = np.expand_dims(miter_signs[idx_bevel], -1)
