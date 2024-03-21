@@ -1,5 +1,6 @@
 import os
 import runpy
+import subprocess
 import sys
 from pathlib import Path
 
@@ -33,10 +34,16 @@ skip = [
 ]
 # To skip examples during docs build end name with `_.py`
 
-EXAMPLE_DIR = Path(napari.__file__).parent.parent / 'examples'
+# these are more informative than testing anything, so skip them
+skip_dev = ['leaking_check.py', 'plot_2d_edge_meshes.py']
+
+EXAMPLE_DIR = Path(napari.__file__).parent.parent / 'examples/'
+DEV_EXAMPLE_DIR = Path(napari.__file__).parent.parent / 'examples/dev'
 # using f.name here and re-joining at `run_path()` for test key presentation
 # (works even if the examples list is empty, as opposed to using an ids lambda)
 examples = [f.name for f in EXAMPLE_DIR.glob('*.py') if f.name not in skip]
+dev_examples = [f.name for f in DEV_EXAMPLE_DIR.glob('*.py') if f.name not in skip_dev]
+
 
 # still some CI segfaults, but only on windows with pyqt5
 if os.getenv('CI') and os.name == 'nt' and API_NAME == 'PyQt5':
@@ -70,6 +77,8 @@ def test_examples(builtins, fname, monkeypatch):
     monkeypatch.setattr(notification_manager, 'receive_error', raise_errors)
 
     # run the example!
+    # Note: runpy.run_path() does not test anything under
+    # if __name__ == "__main__":
     try:
         runpy.run_path(str(EXAMPLE_DIR / fname))
     except SystemExit as e:
@@ -78,3 +87,25 @@ def test_examples(builtins, fname, monkeypatch):
             raise
     finally:
         napari.Viewer.close_all()
+
+
+class ExampleError(Exception):
+    """Exception for when a dev example fails."""
+
+    def __init__(self, stderr):
+        self.stderr = stderr
+        super().__init__(f'Dev example failed with:\n{stderr}')
+
+@pytest.mark.filterwarnings('ignore')
+@pytest.mark.skipif(not dev_examples, reason='No examples were found.')
+@pytest.mark.parametrize('fname', dev_examples)
+def test_dev_examples(builtins, fname, monkeypatch):
+    """Test that dev examples are still working without warnings."""
+    script_path = str(DEV_EXAMPLE_DIR / fname)
+    # run the example!
+    # use subprocess.run to ensure code under
+    # if __name__ == "__main__":
+    # is tested
+    result = subprocess.run(['python', script_path], capture_output=True, text=True)
+    if result.returncode != 0:
+        raise ExampleError(result.stderr)

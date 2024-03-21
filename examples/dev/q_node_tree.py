@@ -14,6 +14,8 @@ This examples shows that :class:`napari._qt.containers.QtNodeTreeView`
 is capable of providing a basic GUI for any tree structure based on
 `napari.utils.tree.Group`.
 """
+import os
+
 import napari
 from napari._qt.containers import QtNodeTreeView
 from napari.qt import get_app
@@ -75,4 +77,5 @@ root.selection.events._current.connect(
     lambda e: print(f'current item changed to: {e.value}')
 )
 
-napari.run()
+if 'PYTEST_CURRENT_TEST' not in os.environ:
+    napari.run()
