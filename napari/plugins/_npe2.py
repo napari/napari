@@ -366,6 +366,8 @@ def _safe_register_qt_actions(mf: PluginManifest) -> None:
     try:
         from napari._qt._qplugins import _register_qt_actions
     except ImportError:  # pragma: no cover
+        # if no Qt bindings are installed (PyQt/PySide), then trying to import
+        # qtpy will raise an ImportError, *not* a ModuleNotFoundError
         pass
     else:
         _register_qt_actions(mf)
