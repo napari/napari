@@ -3,8 +3,8 @@ from unittest.mock import patch
 
 
 def test_multi_viewers_dont_clash(make_napari_viewer, qtbot):
-    v1 = make_napari_viewer(title='v1')
-    v2 = make_napari_viewer(title='v2')
+    v1 = make_napari_viewer(show=False, title='v1')
+    v2 = make_napari_viewer(show=False, title='v2')
     assert not v1.grid.enabled
     assert not v2.grid.enabled
 
