@@ -185,6 +185,7 @@ class _QtMainWindow(QMainWindow):
         self.status_throttler = QSignalThrottler(parent=self)
         self.status_throttler.setTimeout(50)
         self._throttle_cursor_to_status_connection(viewer)
+        self.setObjectName('NapariMainWindow')
 
     def _throttle_cursor_to_status_connection(self, viewer: 'Viewer'):
         # In the GUI we expect lots of changes to the cursor position, so

@@ -4,7 +4,7 @@ import sys
 import warnings
 from contextlib import suppress
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, List, Tuple
+from typing import TYPE_CHECKING, Iterable, List, Tuple, Union
 from unittest.mock import patch
 from weakref import WeakSet
 
@@ -12,6 +12,8 @@ import pytest
 
 if TYPE_CHECKING:
     from pytest import FixtureRequest
+
+    import napari
 
 _SAVE_GRAPH_OPNAME = '--save-leaked-object-graph'
 
@@ -126,6 +128,11 @@ def pytest_runtest_makereport(item, call):
     setattr(item, f'rep_{rep.when}', rep)
 
 
+def _close_viewers(viewers: Iterable['napari.Viewer']):
+    for viewer in viewers:
+        viewer.close()
+
+
 @pytest.fixture
 def make_napari_viewer(
     qtbot,
@@ -175,6 +182,7 @@ def make_napari_viewer(
     >>> def test_something_with_strict_qt_tests(make_napari_viewer):
     ...     viewer = make_napari_viewer(strict_qt=True)
     """
+    from qtpy.QtCore import QEvent
     from qtpy.QtWidgets import QApplication, QWidget
 
     from napari import Viewer
@@ -213,7 +221,7 @@ def make_napari_viewer(
     viewers: WeakSet[Viewer] = WeakSet()
 
     # may be overridden by using the parameter `strict_qt`
-    _strict = False
+    strict_: Union[str, bool] = False
 
     initial = QApplication.topLevelWidgets()
     prior_exception = getattr(sys, 'last_value', None)
@@ -245,8 +253,8 @@ def make_napari_viewer(
     ):
         if strict_qt is None:
             strict_qt = is_internal_test or os.getenv('NAPARI_STRICT_QT')
-        nonlocal _strict
-        _strict = strict_qt
+        nonlocal strict_
+        strict_ = strict_qt
 
         if not block_plugin_discovery:
             napari_plugin_manager.discovery_blocker.stop()
@@ -268,11 +276,12 @@ def make_napari_viewer(
         get_settings().reset()
 
     # close viewers, but don't saving window settings while closing
-    for viewer in viewers:
-        viewer.close()
-    del viewer
+
+    _close_viewers(viewers)
+
     viewers.clear()
     QApplication.processEvents()
+    QApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
 
     if GCPASS % 50 == 0 or len(QtViewer._instances):
         gc.collect()
@@ -296,8 +305,9 @@ def make_napari_viewer(
 
     # only check for leaked widgets if an exception was raised during the test,
     # and "strict" mode was used.
-    if _strict and getattr(sys, 'last_value', None) is prior_exception:
+    if strict_ and getattr(sys, 'last_value', None) is prior_exception:
         QApplication.processEvents()
+        gc.collect()
         leak = set(QApplication.topLevelWidgets()).difference(initial)
         # still not sure how to clean up some of the remaining vispy
         # vispy.app.backends._qt.CanvasBackendDesktop widgets...
@@ -316,7 +326,7 @@ def make_napari_viewer(
             # in particular with VisPyCanvas, it looks like if a traceback keeps
             # contains the type, then instances are still attached to the type.
             # I'm not too sure why this is the case though.
-            if _strict == 'raise':
+            if strict_ == 'raise':
                 raise AssertionError(msg)
             else:
                 warnings.warn(msg)
