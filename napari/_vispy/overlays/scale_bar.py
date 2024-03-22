@@ -29,6 +29,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.y_offset = 20
         self.y_size = 5
 
+        self.node.events.parent_change.connect(self._on_parent_change)
         self.overlay.events.box.connect(self._on_box_change)
         self.overlay.events.box_color.connect(self._on_data_change)
         self.overlay.events.color.connect(self._on_data_change)
@@ -41,6 +42,16 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.viewer.camera.events.zoom.connect(self._on_zoom_change)
 
         self.reset()
+
+    def _on_parent_change(self, event):
+        if event.new and self.node.canvas:
+            event.new.canvas.events.resize.connect(
+                self._scale_on_canvas_resize
+            )
+
+    def _scale_on_canvas_resize(self, event):
+        self._target_length = event.source.size[0] / 5
+        self._on_zoom_change(force=True)
 
     def _on_unit_change(self):
         self._unit = get_unit_registry()(self.overlay.unit)
