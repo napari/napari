@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict
+from typing import TYPE_CHECKING, Any
 
 from app_model.types import Action, ToggleRule
 
@@ -41,7 +41,7 @@ class ViewerToggleAction(Action):
         title: str,
         viewer_attribute: str,
         sub_attribute: str,
-        **kwargs: Dict[str, Any],
+        **kwargs: Any,
     ) -> None:
         def get_current(viewer: Viewer) -> bool:
             """return the current value of the viewer attribute"""
