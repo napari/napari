@@ -8,7 +8,6 @@ from napari._qt.widgets.qt_highlight_preview import (
 )
 from napari.settings import get_settings
 from napari.utils.theme import (
-    get_system_theme,
     get_theme,
     parse_color_as_float_list,
 )
@@ -298,8 +297,6 @@ def test_qt_highlight_preview_widget_color_reset(highlight_preview_widget):
     assert widget.value()['highlight_color'] == [1.0, 1.0, 1.0, 1.0]
 
     current_theme_name = get_settings().appearance.theme
-    if current_theme_name == 'system':
-        current_theme_name = get_system_theme()
     current_theme = get_theme(current_theme_name)
     highlight_color = parse_color_as_float_list(
         current_theme.border_highlight
