@@ -54,7 +54,8 @@ class PerfTimers:
         self.trace_file: Optional[PerfTraceFile] = None
 
     def add_event(self, event: PerfEvent) -> None:
-        """Add one performance event.
+        """Save an event to performance trace file and
+        update the timers if the event has phase 'X'.
 
         Parameters
         ----------
@@ -83,7 +84,7 @@ class PerfTimers:
         thread_id: Optional[int] = None,
         **kwargs: float,
     ) -> None:
-        """Add one instant event.
+        """Build and add one event of length 0.
 
         Parameters
         ----------
@@ -232,6 +233,11 @@ def block_timer(
 
 
 class DummyTimer:
+    """
+    An empty timer to use when perfmon is disabled.
+    It implements the same interface as PerfTimers.
+    """
+
     def add_instant_event(
         self, name: str, **kwargs: Union[str, float, None]
     ) -> None:
