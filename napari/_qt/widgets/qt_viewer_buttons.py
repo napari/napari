@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QPoint, Qt
 from qtpy.QtWidgets import (
+    QApplication,
     QFormLayout,
     QFrame,
     QHBoxLayout,
@@ -133,8 +134,13 @@ class QtViewerButtons(QFrame):
         rdb.customContextMenuRequested.connect(self._open_roll_popup)
 
         self.transposeDimsButton = QtViewerPushButton(
-            'transpose', action='napari:transpose_axes'
+            'transpose',
+            trans._(
+                'Transpose order of last two visible axes.\nAlt/option-click to rotate visible axes)'
+            ),
+            slot=self._transpose_or_rotate_layers,
         )
+
         self.resetViewButton = QtViewerPushButton(
             'home', action='napari:reset_view'
         )
@@ -174,6 +180,14 @@ class QtViewerButtons(QFrame):
         layout.addWidget(self.resetViewButton)
         layout.addStretch(0)
         self.setLayout(layout)
+
+    def _transpose_or_rotate_layers(self):
+        """Have Alt/Option key rotate layers, otherwise transpose axes"""
+        modifiers = QApplication.keyboardModifiers()
+        if modifiers == Qt.AltModifier:
+            action_manager.trigger('napari:rotate_layers')
+        else:
+            action_manager.trigger('napari:transpose_axes')
 
     def open_perspective_popup(self):
         """Show a slider to control the viewer `camera.perspective`."""
