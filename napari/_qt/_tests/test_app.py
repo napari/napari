@@ -33,9 +33,9 @@ def test_windows_grouping_overwrite(qapp):
 def test_run_outside_ipython(make_napari_viewer, qapp, monkeypatch):
     """Test that we don't incorrectly give ipython the event loop."""
     assert not _ipython_has_eventloop()
-    v1 = make_napari_viewer(show=False)
+    v1 = make_napari_viewer()
     assert not _ipython_has_eventloop()
-    v2 = make_napari_viewer(show=False)
+    v2 = make_napari_viewer()
     assert not _ipython_has_eventloop()
 
     with monkeypatch.context() as m:
