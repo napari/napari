@@ -5,9 +5,11 @@ import inspect
 import itertools
 import logging
 import os.path
+import uuid
 import warnings
 from abc import ABC, ABCMeta, abstractmethod
 from collections import defaultdict
+from collections.abc import Hashable
 from contextlib import contextmanager
 from functools import cached_property
 from typing import (
@@ -166,6 +168,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     ----------
     name : str
         Unique name of the layer.
+    unique_id : Hashable
+        Unique id of the layer. Guaranteed to be unique across the lifetime
+        of a viewer.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     visible : bool
@@ -334,6 +339,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         # Needs to be imported here to avoid circular import in _source
         from napari.layers._source import current_source
 
+        self._unique_id = None
         self._source = current_source()
         self.dask_optimized_slicing = configure_dask(data, cache)
         self._metadata = dict(metadata or {})
@@ -585,6 +591,17 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             self._projection_mode = mode
             self.events.projection_mode()
             self.refresh()
+
+    @property
+    def unique_id(self) -> Hashable:
+        """Unique ID of the layer.
+
+        This is guaranteed to be unique to this specific layer instance
+        over the lifetime of the program.
+        """
+        if self._unique_id is None:
+            self._unique_id = uuid.uuid4()
+        return self._unique_id
 
     @classmethod
     def _basename(cls) -> str:
