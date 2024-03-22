@@ -15,8 +15,8 @@ from app_model.types import (
     ToggleRule,
 )
 
-from napari._app_model.actions._toggle_action import ViewerToggleAction
 from napari._app_model.constants import CommandId, MenuGroup, MenuId
+from napari._qt._qapp_model.qactions._toggle_action import ViewerToggleAction
 from napari._qt.qt_main_window import Window
 from napari._qt.qt_viewer import QtViewer
 from napari.settings import get_settings
