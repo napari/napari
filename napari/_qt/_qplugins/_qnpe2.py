@@ -56,42 +56,27 @@ def _rebuild_npe1_samples_menu() -> None:  # pragma: no cover
     if unreg := plugin_manager._unreg_sample_actions:
         unreg()
 
-    # sample_actions: List[Action] = []
+    sample_actions: list[Action] = []
+    sample_submenus: list[Any] = []
     for plugin_name, samples in plugin_manager._sample_data.items():
         multiprovider = len(samples) > 1
         if multiprovider:
             submenu_id = f'napari/file/samples/{plugin_name}'
-            submenu = [
-                (
-                    MenuId.FILE_SAMPLES,
-                    SubmenuItem(
-                        submenu=submenu_id, title=trans._(plugin_name)
-                    ),
-                ),
-            ]
+            submenu = (
+                MenuId.FILE_SAMPLES,
+                SubmenuItem(submenu=submenu_id, title=trans._(plugin_name)),
+            )
+            sample_submenus.append(submenu)
         else:
             submenu_id = MenuId.FILE_SAMPLES
-            submenu = []
-        sample_actions: list[Action] = []
+
         for sample_name, sample_dict in samples.items():
 
-            def _add_sample(
-                qt_viewer: QtViewer,
-                plugin: str = plugin_name,
-                sample: str = sample_name,
-            ) -> None:
-                from napari._qt.dialogs.qt_reader_dialog import (
-                    handle_gui_reading,
-                )
-
-                try:
-                    qt_viewer.viewer.open_sample(plugin, sample)
-                except MultipleReaderError as e:
-                    handle_gui_reading(
-                        [str(p) for p in e.paths],
-                        qt_viewer,
-                        stack=False,
-                    )
+            _add_sample_partial = partial(
+                _add_sample,
+                plugin=plugin_name,
+                sample=sample_name,
+            )
 
             display_name = sample_dict['display_name'].replace('&', '&&')
             if multiprovider:
@@ -103,12 +88,14 @@ def _rebuild_npe1_samples_menu() -> None:  # pragma: no cover
                 id=f'{plugin_name}:{display_name}',
                 title=title,
                 menus=[{'id': submenu_id, 'group': MenuGroup.NAVIGATION}],
-                callback=_add_sample,
+                callback=_add_sample_partial,
             )
             sample_actions.append(action)
 
-        unreg_sample_submenus = app.menus.append_menu_items(submenu)
+    if sample_submenus:
+        unreg_sample_submenus = app.menus.append_menu_items(sample_submenus)
         plugin_manager._unreg_sample_submenus = unreg_sample_submenus
+    if sample_actions:
         unreg_sample_actions = app.register_actions(sample_actions)
         plugin_manager._unreg_sample_actions = unreg_sample_actions
 
