@@ -6,6 +6,12 @@ from napari._qt.widgets.qt_highlight_preview import (
     QtStar,
     QtTriangle,
 )
+from napari.settings import get_settings
+from napari.utils.theme import (
+    get_system_theme,
+    get_theme,
+    parse_color_as_float_list,
+)
 
 
 @pytest.fixture
@@ -277,3 +283,35 @@ def test_qt_highlight_preview_widget_signal(qtbot, highlight_preview_widget):
                 'highlight_color': [0.0, 0.6, 1.0, 1.0],
             }
         )
+
+
+def test_qt_highlight_preview_widget_color_reset(highlight_preview_widget):
+    widget = highlight_preview_widget(
+        value={
+            'highlight_thickness': 5,
+            'highlight_color': [1.0, 1.0, 1.0, 1.0],
+        }
+    )
+    assert widget._thickness_value <= 5
+    assert widget.value()['highlight_thickness'] <= 5
+    assert widget._color_value == [1.0, 1.0, 1.0, 1.0]
+    assert widget.value()['highlight_color'] == [1.0, 1.0, 1.0, 1.0]
+
+    current_theme_name = get_settings().appearance.theme
+    if current_theme_name == 'system':
+        current_theme_name = get_system_theme()
+    current_theme = get_theme(current_theme_name)
+    highlight_color = parse_color_as_float_list(
+        current_theme.border_highlight
+    ) + [1.0]
+    widget._reset()
+    assert widget._thickness_value == 5
+    assert widget.value()['highlight_thickness'] == 5
+    assert np.array_equal(
+        np.array(widget._color_value, dtype=np.float32),
+        np.array(highlight_color, dtype=np.float32),
+    )
+    assert np.array_equal(
+        np.array(widget.value()['highlight_color'], dtype=np.float32),
+        np.array(highlight_color, dtype=np.float32),
+    )
