@@ -101,6 +101,7 @@ pyside6_experimental = [
 ]
 pyqt6_experimental = [
     "PyQt6",
+    "PyQt6 != 6.6.1 ; platform_system == 'Darwin'"
 ]
 pyside = [
     "napari[pyside2]"
@@ -160,27 +161,7 @@ dev = [
     "check-manifest>=0.42",
     "pre-commit>=2.9.0",
     "pydantic[dotenv]",
-    "rich",
-    "babel>=2.9.0",
-    "fsspec",
-    "hypothesis>=6.8.0",
-    "lxml",
-    "matplotlib >= 3.6.1",
-    "numba>=0.57.1",
-    "pooch>=1.6.0",
-    "coverage",
-    "pretend",
-    "pytest-qt",
-    "pytest-pretty>=1.1.0",
-    "pytest",
-    "tensorstore>=0.1.13",
-    "virtualenv",
-    "xarray>=0.16.2",
-    "zarr>=2.12.0",
-    "IPython>=7.25.0",
-    "qtconsole>=4.5.1",
-    "rich>=12.0.0",
-    "napari-plugin-manager >=0.1.0a2, <0.2.0",
+    "napari[testing]",
 ]
 build = [
     "black",
@@ -644,7 +625,6 @@ module = [
     "napari._vispy.overlays.scale_bar",
     "napari._vispy.overlays.text",
     "napari.layers.labels._labels_key_bindings",
-    "napari.layers.shapes._mesh",
     "napari.layers.surface._surface_key_bindings",
     "napari.layers.tracks._tracks_key_bindings",
     "napari.layers.utils._slice_input",
@@ -659,7 +639,6 @@ module = [
     "napari.utils.translations",
     "napari.utils.tree.node",
     "napari.viewer",
-    "napari.layers.shapes._shapes_key_bindings",
     "napari.layers.shapes._shape_list"
 ]
 disallow_incomplete_defs = false
