@@ -1713,8 +1713,8 @@ class Shapes(Layer):
         ----------
         data : Array | List[Array]
             List of rectangle data where each element is a (4, D) array of 4 vertices
-            in D dimensions, or a (2, D) array of 2 vertices in D dimensions, where
-            the vertices are top-left and bottom-right corners.
+            in D dimensions, or in 2D a (2, 2) array of 2 vertices that are
+            the top-left and bottom-right corners.
             Can be a 3-dimensional array for multiple shapes, or list of 2 or 4
             vertices for a single shape.
         edge_width : float | list
@@ -1771,8 +1771,8 @@ class Shapes(Layer):
         ----------
         data : Array | List[Array]
             List of ellipse data where each element is a (4, D) array of 4 vertices
-            in D dimensions representing a bounding box, or a (2, D) array of
-            center position and radii magnitudes in D dimensions.
+            in D dimensions representing a bounding box, or in 2D a (2, 2) array of
+            center position and radii magnitudes.
             Can be a 3-dimensional array for multiple shapes, or list of 2 or 4
             vertices for a single shape.
         edge_width : float | list
@@ -2566,7 +2566,7 @@ class Shapes(Layer):
         self._drag_box_stored = copy(self._drag_box)
         self.events.highlight()
 
-    def _finish_drawing(self, event=None):
+    def _finish_drawing(self, event=None) -> None:
         """Reset properties used in shape drawing."""
         index = copy(self._moving_value[0])
         self._is_moving = False
@@ -2656,7 +2656,7 @@ class Shapes(Layer):
 
             self.thumbnail = colormapped
 
-    def remove_selected(self):
+    def remove_selected(self) -> None:
         """Remove any selected shapes."""
         index = list(self.selected_data)
         to_remove = sorted(index, reverse=True)
@@ -2966,7 +2966,7 @@ class Shapes(Layer):
             intersection_point = None
         return shape_index, intersection_point
 
-    def move_to_front(self):
+    def move_to_front(self) -> None:
         """Moves selected objects to be displayed in front of all others."""
         if len(self.selected_data) == 0:
             return
@@ -2975,7 +2975,7 @@ class Shapes(Layer):
             self._data_view.update_z_index(index, new_z_index)
         self.refresh()
 
-    def move_to_back(self):
+    def move_to_back(self) -> None:
         """Moves selected objects to be displayed behind all others."""
         if len(self.selected_data) == 0:
             return
@@ -2984,7 +2984,7 @@ class Shapes(Layer):
             self._data_view.update_z_index(index, new_z_index)
         self.refresh()
 
-    def _copy_data(self):
+    def _copy_data(self) -> None:
         """Copy selected shapes to clipboard."""
         if len(self.selected_data) > 0:
             index = list(self.selected_data)
@@ -3002,7 +3002,7 @@ class Shapes(Layer):
         else:
             self._clipboard = {}
 
-    def _paste_data(self):
+    def _paste_data(self) -> None:
         """Paste any shapes from clipboard and then selects them."""
         cur_shapes = self.nshapes
         if len(self._clipboard.keys()) > 0:
