@@ -1614,6 +1614,8 @@ class Window:
 
     def close(self):
         """Close the viewer window and cleanup sub-widgets."""
+        if self._qt_window is None:
+            return
         self._teardown()
         self._qt_viewer.close()
         self._qt_window.close()
