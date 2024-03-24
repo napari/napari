@@ -66,7 +66,7 @@ dependencies = [
     "scipy>=1.4.1 ; python_version < '3.9'",
     "scipy>=1.5.4 ; python_version >= '3.9'",
     "superqt>=0.5.0",
-    "tifffile>=2020.2.16",
+    "tifffile>=2022.4.8",
     "toolz>=0.10.0",
     "tqdm>=4.56.0",
     "typing_extensions>=4.2.0",
@@ -565,7 +565,6 @@ module = [
     "napari.layers.shapes._shapes_models.line",
     "napari.layers.shapes._shapes_models.rectangle",
     "napari.layers.shapes._shapes_models.shape",
-    "napari.layers.vectors._vector_utils",
     "napari.resources._icons",
     "napari.utils.color",
     "napari.utils.events.containers._dict",
@@ -622,7 +621,6 @@ module = [
     "napari.layers.surface._surface_key_bindings",
     "napari.layers.tracks._tracks_key_bindings",
     "napari.layers.utils._slice_input",
-    "napari.layers.vectors._vectors_key_bindings",
     "napari.utils._register",
     "napari.utils.colormaps.categorical_colormap",
     "napari.utils.colormaps.standardize_color",
@@ -633,7 +631,8 @@ module = [
     "napari.utils.translations",
     "napari.utils.tree.node",
     "napari.viewer",
-    "napari.layers.shapes._shape_list"
+    "napari.layers.shapes._shape_list",
+    "napari.layers.vectors.vectors",
 ]
 disallow_incomplete_defs = false
 disallow_untyped_calls = false
@@ -646,7 +645,6 @@ module = [
     "napari._vispy.visuals.axes",
     "napari.layers.labels._labels_mouse_bindings",
     "napari.layers.utils.color_manager_utils",
-    "napari.layers.vectors._slice",
     "napari.utils.colormaps.vendored._cm",
     "napari.utils.colormaps.vendored.cm",
     "napari.utils.status_messages",
@@ -686,7 +684,6 @@ module = [
     "napari.layers.surface.surface",
     "napari.layers.tracks.tracks",
     "napari.layers.utils.layer_utils",
-    "napari.layers.vectors.vectors",
     "napari.utils._dtype",
     "napari.utils.colormaps.colormap_utils",
     "napari.utils.misc",
