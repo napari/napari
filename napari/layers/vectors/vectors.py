@@ -608,7 +608,7 @@ class Vectors(Layer):
         self._edge.categorical_colormap = edge_color_cycle
 
     @property
-    def edge_colormap(self) -> Tuple[str, Colormap]:
+    def edge_colormap(self) -> Colormap:
         """Return the colormap to be applied to a property to get the edge color.
 
         Returns
@@ -717,7 +717,7 @@ class Vectors(Layer):
     def _update_thumbnail(self):
         """Update thumbnail with current vectors and colors."""
         # Set the default thumbnail to black, opacity 1
-        colormapped = np.zeros(self._thumbnail_shape)
+        colormapped = np.zeros(self._thumbnail_shape, dtype=np.uint8)
         colormapped[..., 3] = 1
         if len(self.data) == 0:
             self.thumbnail = colormapped
@@ -762,7 +762,9 @@ class Vectors(Layer):
                 y_vals = np.linspace(start[1], stop[1], step)
                 for x, y in zip(x_vals, y_vals):
                     colormapped[int(x), int(y), :] = ec
-            colormapped[..., 3] *= self.opacity
+            colormapped[..., 3] = (colormapped[..., 3] * self.opacity).astype(
+                np.uint8
+            )
             self.thumbnail = colormapped
 
     def _get_value(self, position):
