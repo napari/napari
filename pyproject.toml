@@ -66,7 +66,7 @@ dependencies = [
     "scipy>=1.4.1 ; python_version < '3.9'",
     "scipy>=1.5.4 ; python_version >= '3.9'",
     "superqt>=0.5.0",
-    "tifffile>=2020.2.16",
+    "tifffile>=2022.4.8",
     "toolz>=0.10.0",
     "tqdm>=4.56.0",
     "typing_extensions>=4.2.0",
@@ -101,6 +101,7 @@ pyside6_experimental = [
 ]
 pyqt6_experimental = [
     "PyQt6",
+    "PyQt6 != 6.6.1 ; platform_system == 'Darwin'"
 ]
 pyside = [
     "napari[pyside2]"
@@ -160,27 +161,7 @@ dev = [
     "check-manifest>=0.42",
     "pre-commit>=2.9.0",
     "pydantic[dotenv]",
-    "rich",
-    "babel>=2.9.0",
-    "fsspec",
-    "hypothesis>=6.8.0",
-    "lxml",
-    "matplotlib >= 3.6.1",
-    "numba>=0.57.1",
-    "pooch>=1.6.0",
-    "coverage",
-    "pretend",
-    "pytest-qt",
-    "pytest-pretty>=1.1.0",
-    "pytest",
-    "tensorstore>=0.1.13",
-    "virtualenv",
-    "xarray>=0.16.2",
-    "zarr>=2.12.0",
-    "IPython>=7.25.0",
-    "qtconsole>=4.5.1",
-    "rich>=12.0.0",
-    "napari-plugin-manager >=0.1.0a2, <0.2.0",
+    "napari[testing]",
 ]
 build = [
     "black",
