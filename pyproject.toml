@@ -66,7 +66,7 @@ dependencies = [
     "scipy>=1.4.1 ; python_version < '3.9'",
     "scipy>=1.5.4 ; python_version >= '3.9'",
     "superqt>=0.5.0",
-    "tifffile>=2020.2.16",
+    "tifffile>=2022.4.8",
     "toolz>=0.10.0",
     "tqdm>=4.56.0",
     "typing_extensions>=4.2.0",
@@ -101,29 +101,28 @@ pyside6_experimental = [
 ]
 pyqt6_experimental = [
     "PyQt6",
+    "PyQt6 != 6.6.1 ; platform_system == 'Darwin'"
 ]
 pyside = [
-    "PySide2>=5.13.2,!=5.15.0 ; python_version != '3.8'",
-    "PySide2>=5.14.2,!=5.15.0 ; python_version == '3.8'",
+    "napari[pyside2]"
 ]
 pyqt5 = [
     "PyQt5>=5.12.3,!=5.15.0",
 ]
 pyqt = [
-    "PyQt5>=5.12.3,!=5.15.0",
+    "napari[pyqt5]"
 ]
 qt = [
-    "PyQt5>=5.12.3,!=5.15.0",
+    "napari[pyqt]"
 ]
 all = [
-    "PyQt5>=5.12.3,!=5.15.0",
-    "triangle ; platform_machine != 'arm64'",
-    "numba>=0.57.1",
+    "napari[pyqt,optional]",
     "napari-plugin-manager >=0.1.0a1, <0.2.0",
 ]
 optional = [
     "triangle ; platform_machine != 'arm64'",
     "numba>=0.57.1",
+    "zarr>=2.12.0", # needed by `builtins` (dask.array.from_zarr) to open zarr
 ]
 testing = [
     "babel>=2.9.0",
@@ -162,27 +161,7 @@ dev = [
     "check-manifest>=0.42",
     "pre-commit>=2.9.0",
     "pydantic[dotenv]",
-    "rich",
-    "babel>=2.9.0",
-    "fsspec",
-    "hypothesis>=6.8.0",
-    "lxml",
-    "matplotlib >= 3.6.1",
-    "numba>=0.57.1",
-    "pooch>=1.6.0",
-    "coverage",
-    "pretend",
-    "pytest-qt",
-    "pytest-pretty>=1.1.0",
-    "pytest",
-    "tensorstore>=0.1.13",
-    "virtualenv",
-    "xarray>=0.16.2",
-    "zarr>=2.12.0",
-    "IPython>=7.25.0",
-    "qtconsole>=4.5.1",
-    "rich>=12.0.0",
-    "napari-plugin-manager >=0.1.0a2, <0.2.0",
+    "napari[testing]",
 ]
 build = [
     "black",
@@ -631,6 +610,7 @@ module = [
     "napari._qt._qapp_model.qactions._view",
     "napari._vispy.camera",
     "napari._vispy.layers.image",
+    "napari._vispy.layers.scalar_field",
     "napari._vispy.layers.tracks",
     "napari._vispy.layers.vectors",
     "napari._vispy.overlays.axes",
@@ -653,7 +633,6 @@ module = [
     "napari.utils.translations",
     "napari.utils.tree.node",
     "napari.viewer",
-    "napari.layers.shapes._shapes_key_bindings",
     "napari.layers.shapes._shape_list"
 ]
 disallow_incomplete_defs = false
@@ -746,7 +725,8 @@ warn_unused_ignores = false
 module = [
     "napari.__main__",
     "napari.utils.colormaps.vendored.colors",
-    "napari.layers.image.image"
+    "napari.layers.image.image",
+    "napari.layers._scalar_field.scalar_field",
 ]
 check_untyped_defs = false
 disallow_untyped_calls = false
@@ -826,14 +806,27 @@ name = "Forbid import PyQt and PySide"
 type = "forbidden"
 source_modules = "napari"
 forbidden_modules = ["PyQt5", "PySide2", "PyQt6", "PySide6"]
-ignore_imports = "napari._qt -> PySide2"
+ignore_imports = [
+    "napari._qt -> PySide2",
+    "napari.plugins._npe2 -> napari._qt._qplugins",
+]
 
 [[tool.importlinter.contracts]]
 name = "Block import from qt module in napari.layers"
 type = "layers"
 layers = ["napari.qt","napari.layers"]
+ignore_imports = [
+    "napari.plugins._npe2 -> napari._qt._qplugins",
+    # TODO: remove once npe1 deprecated
+    "napari._qt.qt_main_window -> napari._qt._qplugins",
+]
 
 [[tool.importlinter.contracts]]
 name = "Block import from qt module in napari.components"
 type = "layers"
 layers = ["napari.qt","napari.components"]
+ignore_imports = [
+    "napari.plugins._npe2 -> napari._qt._qplugins",
+    # TODO: remove once npe1 deprecated
+    "napari._qt.qt_main_window -> napari._qt._qplugins",
+]

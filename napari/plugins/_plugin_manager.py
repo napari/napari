@@ -95,10 +95,15 @@ class NapariPluginManager(PluginManager):
         self._function_widgets: Dict[str, Dict[str, Callable[..., Any]]] = {}
         self._theme_data: Dict[str, Dict[str, Theme]] = {}
 
+        # TODO: remove once npe1 deprecated
         # appmodel sample menu actions/submenu unregister functions used in
-        # `napari.plugins._npe2._build_npe1_samples_menu`
+        # `_rebuild_npe1_samples_menu`
         self._unreg_sample_submenus = None
         self._unreg_sample_actions = None
+        # appmodel plugins menu actions/submenu unregister functions used in
+        # `_rebuild_npe1_plugins_menu`
+        self._unreg_plugin_submenus = None
+        self._unreg_plugin_actions = None
 
     def _initialize(self) -> None:
         with self.discovery_blocked():
