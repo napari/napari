@@ -16,10 +16,12 @@ from typing import (
 )
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 from psygnal.containers import Selection
 from scipy.stats import gmean
 
+from napari.components.dims import Dims
 from napari.layers.base import Layer, no_op
 from napari.layers.base._base_constants import ActionType
 from napari.layers.base._base_mouse_bindings import (
@@ -626,7 +628,7 @@ class Points(Layer):
         return self._data
 
     @data.setter
-    def data(self, data: Optional[np.ndarray]):
+    def data(self, data: Optional[np.ndarray]) -> None:
         """Set the data array and emit a corresponding event."""
         prior_data = len(self.data) > 0
         data_not_empty = (
@@ -661,7 +663,7 @@ class Points(Layer):
             kwargs['action'] = ActionType.REMOVED
         self.events.data(**kwargs)
 
-    def _set_data(self, data: Optional[np.ndarray]):
+    def _set_data(self, data: Optional[np.ndarray]) -> None:
         """Set the .data array attribute, without emitting an event."""
         data, _ = fix_data_points(data, self.ndim)
         cur_npoints = len(self._data)
@@ -726,7 +728,7 @@ class Points(Layer):
         self._update_dims()
         self._reset_editable()
 
-    def _on_selection(self, selected):
+    def _on_selection(self, selected: bool) -> None:
         if selected:
             self._set_highlight()
         else:
@@ -735,7 +737,7 @@ class Points(Layer):
             self.events.highlight()
 
     @property
-    def features(self):
+    def features(self) -> pd.DataFrame:
         """Dataframe-like features table.
 
         It is an implementation detail that this is a `pandas.DataFrame`. In the future,
@@ -769,7 +771,7 @@ class Points(Layer):
         self.events.features()
 
     @property
-    def feature_defaults(self):
+    def feature_defaults(self) -> pd.DataFrame:
         """Dataframe-like with one row of feature default values.
 
         See `features` for more details on the type of this property.
@@ -821,7 +823,7 @@ class Points(Layer):
     @properties.setter
     def properties(
         self, properties: Union[Dict[str, Array], pd.DataFrame, None]
-    ):
+    ) -> None:
         self.features = properties
 
     @property
@@ -858,7 +860,7 @@ class Points(Layer):
             features=self.features,
         )
 
-    def refresh_text(self):
+    def refresh_text(self) -> None:
         """Refresh the text values.
 
         This is generally used if the features were updated without changing the data
@@ -886,7 +888,7 @@ class Points(Layer):
         return extrema.astype(float)
 
     @property
-    def _extent_data_augmented(self):
+    def _extent_data_augmented(self) -> npt.NDArray:
         # _extent_data is a property that returns a new/copied array, which
         # is safe to modify below
         extent = self._extent_data
@@ -1031,7 +1033,7 @@ class Points(Layer):
         return self._antialiasing
 
     @antialiasing.setter
-    def antialiasing(self, value: float):
+    def antialiasing(self, value: float) -> None:
         """Set the amount of antialiasing in canvas pixels.
 
         Values can only be positive.
@@ -1068,7 +1070,7 @@ class Points(Layer):
         self.events.canvas_size_limits()
 
     @property
-    def shown(self):
+    def shown(self) -> npt.NDArray:
         """
         Boolean array determining which points to show
         """
@@ -1169,7 +1171,9 @@ class Points(Layer):
         return self._border.categorical_colormap.fallback_color.values
 
     @border_color_cycle.setter
-    def border_color_cycle(self, border_color_cycle: Union[list, np.ndarray]):
+    def border_color_cycle(
+        self, border_color_cycle: Union[list, np.ndarray]
+    ) -> None:
         self._border.categorical_colormap = border_color_cycle
 
     @property
@@ -1184,7 +1188,7 @@ class Points(Layer):
         return self._border.continuous_colormap
 
     @border_colormap.setter
-    def border_colormap(self, colormap: ValidColormapArg):
+    def border_colormap(self, colormap: ValidColormapArg) -> None:
         self._border.continuous_colormap = colormap
 
     @property
@@ -1197,7 +1201,7 @@ class Points(Layer):
     @border_contrast_limits.setter
     def border_contrast_limits(
         self, contrast_limits: Union[None, Tuple[float, float]]
-    ):
+    ) -> None:
         self._border.contrast_limits = contrast_limits
 
     @property
@@ -1230,7 +1234,9 @@ class Points(Layer):
         return self._border.color_mode
 
     @border_color_mode.setter
-    def border_color_mode(self, border_color_mode: Union[str, ColorMode]):
+    def border_color_mode(
+        self, border_color_mode: Union[str, ColorMode]
+    ) -> None:
         self._set_color_mode(border_color_mode, 'border')
 
     @property
@@ -1256,7 +1262,9 @@ class Points(Layer):
         return self._face.categorical_colormap.fallback_color.values
 
     @face_color_cycle.setter
-    def face_color_cycle(self, face_color_cycle: Union[np.ndarray, cycle]):
+    def face_color_cycle(
+        self, face_color_cycle: Union[np.ndarray, cycle]
+    ) -> None:
         self._face.categorical_colormap = face_color_cycle
 
     @property
@@ -1271,7 +1279,7 @@ class Points(Layer):
         return self._face.continuous_colormap
 
     @face_colormap.setter
-    def face_colormap(self, colormap: ValidColormapArg):
+    def face_colormap(self, colormap: ValidColormapArg) -> None:
         self._face.continuous_colormap = colormap
 
     @property
@@ -1284,7 +1292,7 @@ class Points(Layer):
     @face_contrast_limits.setter
     def face_contrast_limits(
         self, contrast_limits: Union[None, Tuple[float, float]]
-    ):
+    ) -> None:
         self._face.contrast_limits = contrast_limits
 
     @property
@@ -1324,7 +1332,7 @@ class Points(Layer):
         self,
         color_mode: Union[ColorMode, str],
         attribute: Literal['border', 'face'],
-    ):
+    ) -> None:
         """Set the face_color_mode or border_color_mode property
 
         Parameters
@@ -1386,7 +1394,7 @@ class Points(Layer):
                 )
             color_manager.color_mode = color_mode
 
-    def refresh_colors(self, update_color_mapping: bool = False):
+    def refresh_colors(self, update_color_mapping: bool = False) -> None:
         """Calculate and update face and border colors if using a cycle or color map
 
         Parameters
@@ -1511,7 +1519,7 @@ class Points(Layer):
 
         self._set_highlight()
 
-    def interaction_box(self, index) -> Optional[np.ndarray]:
+    def interaction_box(self, index: List[int]) -> Optional[np.ndarray]:
         """Create the interaction box around a list of points in view.
 
         Parameters
@@ -1881,7 +1889,7 @@ class Points(Layer):
         )
         return start_point, end_point
 
-    def _set_view_slice(self):
+    def _set_view_slice(self) -> None:
         """Sets the view given the indices to slice with."""
 
         # The new slicing code makes a request from the existing state and
@@ -1893,7 +1901,7 @@ class Points(Layer):
         response = request()
         self._update_slice_response(response)
 
-    def _make_slice_request(self, dims) -> _PointSliceRequest:
+    def _make_slice_request(self, dims: Dims) -> _PointSliceRequest:
         """Make a Points slice request based on the given dims and these data."""
         slice_input = self._make_slice_input(dims)
         # See Image._make_slice_request to understand why we evaluate this here
@@ -1903,7 +1911,7 @@ class Points(Layer):
 
     def _make_slice_request_internal(
         self, slice_input: _SliceInput, data_slice: _ThickNDSlice
-    ):
+    ) -> _PointSliceRequest:
         return _PointSliceRequest(
             slice_input=slice_input,
             data=self.data,
@@ -1913,7 +1921,7 @@ class Points(Layer):
             size=self.size,
         )
 
-    def _update_slice_response(self, response: _PointSliceResponse):
+    def _update_slice_response(self, response: _PointSliceResponse) -> None:
         """Handle a slicing response."""
         self._slice_input = response.slice_input
         indices = response.indices
@@ -2007,7 +2015,7 @@ class Points(Layer):
         self._highlight_box = pos
         self.events.highlight()
 
-    def _update_thumbnail(self):
+    def _update_thumbnail(self) -> None:
         """Update thumbnail with current points and colors."""
         colormapped = np.zeros(self._thumbnail_shape)
         colormapped[..., 3] = 1
@@ -2260,7 +2268,7 @@ class Points(Layer):
         shape: tuple,
         data_to_world: Optional[Affine] = None,
         isotropic_output: bool = True,
-    ):
+    ) -> npt.NDArray:
         """Return a binary mask array of all the points as balls.
 
         Parameters
@@ -2400,7 +2408,7 @@ class Points(Layer):
         view_direction: Optional[np.ndarray] = None,
         dims_displayed: Optional[List[int]] = None,
         world: bool = False,
-    ):
+    ) -> str:
         """
         tooltip message of the data at a coordinate position.
 
