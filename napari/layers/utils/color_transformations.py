@@ -6,7 +6,6 @@ a numpy array with N rows, N being the number of data points, and a dtype of np.
 
 import warnings
 from itertools import cycle
-from typing import Tuple
 
 import numpy as np
 
@@ -67,7 +66,7 @@ def transform_color_with_defaults(
 
 def transform_color_cycle(
     color_cycle: ColorType, elem_name: str, default: str
-) -> Tuple['cycle[np.ndarray]', np.ndarray]:
+) -> tuple['cycle[np.ndarray]', np.ndarray]:
     """Helper method to return an Nx4 np.array from an arbitrary user input.
 
     Parameters

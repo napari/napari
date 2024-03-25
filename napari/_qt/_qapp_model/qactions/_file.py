@@ -1,6 +1,5 @@
 import sys
 from pathlib import Path
-from typing import List
 
 from app_model.types import Action, KeyCode, KeyMod, StandardKeyBinding
 
@@ -42,7 +41,7 @@ def _close_app(window: Window):
     window._qt_window.close(quit_app=True, confirm_need=True)
 
 
-Q_FILE_ACTIONS: List[Action] = [
+Q_FILE_ACTIONS: list[Action] = [
     Action(
         id=CommandId.IMAGE_FROM_CLIPBOARD,
         title=CommandId.IMAGE_FROM_CLIPBOARD.command_title,

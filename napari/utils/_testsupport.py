@@ -4,7 +4,7 @@ import sys
 import warnings
 from contextlib import suppress
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, List, Tuple
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 from weakref import WeakSet
 
@@ -369,12 +369,12 @@ def MouseEvent():
     @dataclass
     class Event:
         type: str
-        position: Tuple[float]
+        position: tuple[float]
         is_dragging: bool = False
-        dims_displayed: Tuple[int] = (0, 1)
-        dims_point: List[float] = None
-        view_direction: List[int] = None
-        pos: List[int] = (0, 0)
+        dims_displayed: tuple[int] = (0, 1)
+        dims_point: list[float] = None
+        view_direction: list[int] = None
+        pos: list[int] = (0, 0)
         button: int = None
         handled: bool = False
 

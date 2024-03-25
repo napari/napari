@@ -1,6 +1,7 @@
 import warnings
+from collections.abc import Sequence
 from copy import deepcopy
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -137,7 +138,7 @@ class TextManager(EventedModel):
         # Trigger the main event for vispy layers.
         self.events(Event(type_name='refresh'))
 
-    def refresh_text(self, properties: Dict[str, np.ndarray]):
+    def refresh_text(self, properties: dict[str, np.ndarray]):
         """Refresh all of the current text elements using updated properties values
 
         Parameters
@@ -211,7 +212,7 @@ class TextManager(EventedModel):
         self.events.values()
         self.color._apply(features)
 
-    def _copy(self, indices: List[int]) -> dict:
+    def _copy(self, indices: list[int]) -> dict:
         """Copies all encoded values at the given indices."""
         return {
             'string': _get_style_values(self.string, indices),
@@ -228,8 +229,8 @@ class TextManager(EventedModel):
         self,
         view_data: np.ndarray,
         ndisplay: int,
-        order: Optional[Tuple[int, ...]] = None,
-    ) -> Tuple[np.ndarray, str, str]:
+        order: Optional[tuple[int, ...]] = None,
+    ) -> tuple[np.ndarray, str, str]:
         """Calculate the coordinates for each text element in view
 
         Parameters
