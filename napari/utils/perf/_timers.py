@@ -5,8 +5,7 @@ import contextlib
 import os
 from collections.abc import Generator
 from time import perf_counter_ns
-from typing import Dict, Generator, Optional, Union
-from typing import Callable, Optional
+from typing import Optional, Union
 
 from napari.utils.perf._event import PerfEvent
 from napari.utils.perf._stat import Stat
