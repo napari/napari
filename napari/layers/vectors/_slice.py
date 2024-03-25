@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Any, List, Tuple, Union
+from typing import Any, Union
 
 import numpy as np
 import numpy.typing as npt
@@ -93,7 +93,7 @@ class _VectorSliceRequest:
             request_id=self.id,
         )
 
-    def _get_slice_data(self, not_disp: List[int]) -> Tuple[npt.NDArray, int]:
+    def _get_slice_data(self, not_disp: list[int]) -> tuple[npt.NDArray, int]:
         data = self.data[:, 0, not_disp]
         alphas = 1
 

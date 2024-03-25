@@ -1,7 +1,7 @@
 import os
 import random
 import sys
-from typing import NamedTuple, Optional, Type
+from typing import NamedTuple, Optional
 
 import numpy as np
 import pytest
@@ -45,11 +45,11 @@ from napari.utils.colormaps import DirectLabelColormap
 
 
 class LayerTypeWithData(NamedTuple):
-    type: Type[Layer]
+    type: type[Layer]
     data: np.ndarray
     colormap: Optional[DirectLabelColormap]
     properties: Optional[dict]
-    expected_isinstance: Type[QtLayerControlsContainer]
+    expected_isinstance: type[QtLayerControlsContainer]
 
 
 np.random.seed(0)

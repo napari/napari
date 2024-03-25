@@ -1,7 +1,7 @@
 [build-system]
 requires = [
-  "setuptools >= 61.2",
-  "setuptools_scm[toml]>=3.4"
+  "setuptools >= 69",
+  "setuptools_scm[toml]>=8"
 ]
 build-backend = "setuptools.build_meta"
 
@@ -20,10 +20,10 @@ classifiers = [
     "Programming Language :: C",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering",
     "Topic :: Scientific/Engineering :: Visualization",
     "Topic :: Scientific/Engineering :: Information Analysis",
@@ -34,7 +34,7 @@ classifiers = [
     "Operating System :: Unix",
     "Operating System :: MacOS",
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 dependencies = [
     "appdirs>=1.4.4",
     "app-model>=0.2.2,<0.3.0",
@@ -51,8 +51,7 @@ dependencies = [
     "npe2>=0.7.2",
     "numpy>=1.22.2,<2",
     "numpydoc>=0.9.2",
-    "pandas>=1.1.0 ; python_version < '3.9'",
-    "pandas>=1.3.0 ; python_version >= '3.9'",
+    "pandas>=1.3.0",
     "Pillow>=9.0",
     "pint>=0.17",
     "psutil>=5.0",
@@ -63,8 +62,7 @@ dependencies = [
     "PyYAML>=5.1",
     "qtpy>=1.10.0",
     "scikit-image[data]>=0.19.1",
-    "scipy>=1.4.1 ; python_version < '3.9'",
-    "scipy>=1.5.4 ; python_version >= '3.9'",
+    "scipy>=1.5.4",
     "superqt>=0.5.0",
     "tifffile>=2022.4.8",
     "toolz>=0.10.0",
@@ -93,11 +91,10 @@ Documentation = "https://napari.org"
 
 [project.optional-dependencies]
 pyside2 = [
-    "PySide2>=5.13.2,!=5.15.0 ; python_version != '3.8'",
-    "PySide2>=5.14.2,!=5.15.0 ; python_version == '3.8'",
+    "PySide2>=5.13.2,!=5.15.0 ; python_version < '3.12'",
 ]
 pyside6_experimental = [
-    "PySide6",
+    "PySide6 < 6.5 ; python_version < '3.12'"
 ]
 pyqt6_experimental = [
     "PyQt6",
@@ -201,7 +198,7 @@ napari_builtins = [
 write_to = "napari/_version.py"
 
 [tool.black]
-target-version = ['py38', 'py39', 'py310']
+target-version = ['py39', 'py310', 'py311', 'py312']
 skip-string-normalization = true
 line-length = 79
 exclude = '''
@@ -269,7 +266,7 @@ exclude = [
     "*_vendor*",
 ]
 
-target-version = "py38"
+target-version = "py39"
 fix = true
 
 [tool.ruff.lint]
@@ -299,7 +296,7 @@ select = [
     "RUF", # ruff specyfic rules
 ]
 ignore = [
-    "E501", "UP006", "UP007", "TCH001", "TCH002", "TCH003",
+    "E501", "TCH001", "TCH002", "TCH003",
     "A003", # flake8-builtins - we have class attributes violating these rule
     "COM812", # flake8-commas - we don't like adding comma on single line of arguments
     "SIM117", # flake8-simplify - we some of merged with statements are not looking great with black, reanble after drop python 3.9
@@ -320,6 +317,9 @@ ignore = [
 "examples/**" = ["ICN001", "INP001", "T20"]
 "**/vendored/**" = ["TID"]
 "napari/benchmarks/**" = ["RUF012", "TID252"]
+
+[tool.ruff.lint.pyupgrade]
+keep-runtime-typing = true
 
 [tool.ruff.lint.flake8-quotes]
 docstring-quotes = "double"

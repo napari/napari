@@ -1,5 +1,5 @@
 import os
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Optional, Union
 
 from qtpy.QtWidgets import (
     QButtonGroup,
@@ -25,7 +25,7 @@ class QtReaderDialog(QDialog):
         self,
         pth: str = '',
         parent: QWidget = None,
-        readers: Optional[Dict[str, str]] = None,
+        readers: Optional[dict[str, str]] = None,
         error_message: str = '',
         persist_checked: bool = True,
     ) -> None:
@@ -136,7 +136,7 @@ class QtReaderDialog(QDialog):
             and self.persist_checkbox.isChecked()
         )
 
-    def get_user_choices(self) -> Tuple[str, bool]:
+    def get_user_choices(self) -> tuple[str, bool]:
         """Execute dialog and get user choices"""
         display_name = ''
         persist_choice = False
@@ -152,9 +152,9 @@ class QtReaderDialog(QDialog):
 
 
 def handle_gui_reading(
-    paths: List[str],
+    paths: list[str],
     qt_viewer,
-    stack: Union[bool, List[List[str]]],
+    stack: Union[bool, list[list[str]]],
     plugin_name: Optional[str] = None,
     error: Optional[ReaderPluginError] = None,
     plugin_override: bool = False,
@@ -211,7 +211,7 @@ def handle_gui_reading(
 
 
 def prepare_remaining_readers(
-    paths: List[str],
+    paths: list[str],
     plugin_name: Optional[str] = None,
     error: Optional[ReaderPluginError] = None,
 ):
@@ -261,8 +261,8 @@ def open_with_dialog_choices(
     display_name: str,
     persist: bool,
     extension: str,
-    readers: Dict[str, str],
-    paths: List[str],
+    readers: dict[str, str],
+    paths: list[str],
     stack: bool,
     qt_viewer,
     **kwargs,
