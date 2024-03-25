@@ -5,7 +5,6 @@
 """
 
 import sys
-from typing import List
 
 from app_model.types import (
     Action,
@@ -52,7 +51,7 @@ def _get_current_tooltip_visibility() -> bool:
     return get_settings().appearance.layer_tooltip_visibility
 
 
-Q_VIEW_ACTIONS: List[Action] = [
+Q_VIEW_ACTIONS: list[Action] = [
     Action(
         id=CommandId.TOGGLE_FULLSCREEN,
         title=CommandId.TOGGLE_FULLSCREEN.command_title,

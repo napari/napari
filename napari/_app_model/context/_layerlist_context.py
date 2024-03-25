@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import contextlib
-from typing import TYPE_CHECKING, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 from app_model.expressions import ContextKey
 
@@ -117,7 +117,7 @@ def _active_ndim(s: LayerSel) -> Optional[int]:
     return getattr(s.active.data, 'ndim', None) if s.active else None
 
 
-def _active_shape(s: LayerSel) -> Optional[Tuple[int, ...]]:
+def _active_shape(s: LayerSel) -> Optional[tuple[int, ...]]:
     return getattr(s.active.data, 'shape', None) if s.active else None
 
 
@@ -246,7 +246,7 @@ class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
         ),
         _active_ndim,
     )
-    active_layer_shape = ContextKey['LayerSel', Optional[Tuple[int, ...]]](
+    active_layer_shape = ContextKey['LayerSel', Optional[tuple[int, ...]]](
         (),
         trans._('Shape of the active layer, or `None` if nothing is active.'),
         _active_shape,

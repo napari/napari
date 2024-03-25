@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from functools import lru_cache
 from itertools import chain
-from typing import Dict
 
 from app_model import Application
 
@@ -42,7 +41,7 @@ class NapariApplication(Application):
 
 
 @lru_cache(maxsize=1)
-def _napari_names() -> Dict[str, object]:
+def _napari_names() -> dict[str, object]:
     """Napari names to inject into local namespace when evaluating type hints."""
     import napari
     from napari import components, layers, viewer

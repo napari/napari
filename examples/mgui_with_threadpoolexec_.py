@@ -9,7 +9,6 @@ Note: this example requires python >= 3.9
 
 .. tags:: gui
 """
-import sys
 from concurrent.futures import Future, ThreadPoolExecutor
 
 from magicgui import magic_factory
@@ -18,10 +17,6 @@ from skimage.feature import blob_log
 
 import napari
 from napari.types import ImageData, LayerDataTuple
-
-if sys.version_info < (3, 9):
-    print('This example requires python >= 3.9')
-    sys.exit(0)
 
 pool = ThreadPoolExecutor()
 

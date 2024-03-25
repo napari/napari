@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Optional
 
 from napari.components._viewer_constants import CursorStyle
 from napari.utils.events import EventedModel
@@ -34,8 +34,8 @@ class Cursor(EventedModel):
     """
 
     # fields
-    position: Tuple[float, ...] = (1, 1)
+    position: tuple[float, ...] = (1, 1)
     scaled: bool = True
     size = 1.0
     style: CursorStyle = CursorStyle.STANDARD
-    _view_direction: Optional[Tuple[float, float, float]] = None
+    _view_direction: Optional[tuple[float, float, float]] = None
