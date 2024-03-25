@@ -58,15 +58,15 @@ class Symbol(StringEnum):
 
 # Mapping of symbol alias names to the deduplicated name
 SYMBOL_ALIAS = {
-    'o': Symbol.DISC,
-    '*': Symbol.STAR,
-    '+': Symbol.CROSS,
-    '-': Symbol.HBAR,
-    '->': Symbol.TAILED_ARROW,
     '>': Symbol.ARROW,
-    '^': Symbol.TRIANGLE_UP,
-    'v': Symbol.TRIANGLE_DOWN,
+    '+': Symbol.CROSS,
+    'o': Symbol.DISC,
+    '-': Symbol.HBAR,
     's': Symbol.SQUARE,
+    '*': Symbol.STAR,
+    '->': Symbol.TAILED_ARROW,
+    'v': Symbol.TRIANGLE_DOWN,
+    '^': Symbol.TRIANGLE_UP,
     '|': Symbol.VBAR,
 }
 
