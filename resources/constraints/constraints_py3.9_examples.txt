@@ -8,7 +8,7 @@ alabaster==0.7.16
     # via sphinx
 annotated-types==0.6.0
     # via pydantic
-app-model==0.2.5
+app-model==0.2.6
     # via napari (napari_repo/pyproject.toml)
 appdirs==1.4.4
     # via
@@ -92,7 +92,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.99.8
+hypothesis==6.99.13
     # via napari (napari_repo/pyproject.toml)
 idna==3.6
     # via requests
@@ -103,13 +103,13 @@ imageio==2.34.0
     #   scikit-image
 imagesize==1.4.1
     # via sphinx
-importlib-metadata==7.0.2
+importlib-metadata==7.1.0
     # via
     #   build
     #   dask
     #   jupyter-client
     #   sphinx
-importlib-resources==6.3.1
+importlib-resources==6.4.0
     # via matplotlib
 in-n-out==0.2.0
     # via app-model
@@ -204,11 +204,11 @@ nibabel==5.2.1
     # via nilearn
 nilearn==0.10.3
     # via -r resources/constraints/version_denylist_examples.txt
-npe2==0.7.4
+npe2==0.7.5
     # via
     #   napari (napari_repo/pyproject.toml)
     #   napari-plugin-manager
-numba==0.59.0
+numba==0.59.1
     # via napari (napari_repo/pyproject.toml)
 numcodecs==0.12.1
     # via zarr
@@ -409,7 +409,7 @@ pytest==8.1.1
     #   pytest-metadata
     #   pytest-pretty
     #   pytest-qt
-pytest-cov==4.1.0
+pytest-cov==5.0.0
     # via -r napari_repo/resources/constraints/version_denylist.txt
 pytest-json-report==1.5.0
     # via -r napari_repo/resources/constraints/version_denylist.txt
@@ -527,7 +527,7 @@ tensorstore==0.1.56
     # via
     #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari (napari_repo/pyproject.toml)
-threadpoolctl==3.3.0
+threadpoolctl==3.4.0
     # via scikit-learn
 tifffile==2024.2.12
     # via
@@ -569,7 +569,7 @@ triangle==20230923 ; platform_machine != "arm64"
     # via napari (napari_repo/pyproject.toml)
 triton==2.2.0
     # via torch
-typer==0.9.0
+typer==0.10.0
     # via npe2
 typing-extensions==4.10.0
     # via
