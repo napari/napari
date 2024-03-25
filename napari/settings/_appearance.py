@@ -92,7 +92,7 @@ class AppearanceSettings(EventedModel):
 
             if values['font_size'] == int(current_theme.font_size[:-2]):
                 values['font_size'] = int(new_theme.font_size[:-2])
-            if np.array_equal(
+            if np.allclose(
                 np.array(
                     values['highlight']['highlight_color'], dtype=np.float32
                 ),
