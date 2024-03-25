@@ -4,10 +4,11 @@ import os
 import sys
 import threading
 import warnings
+from collections.abc import Sequence
 from datetime import datetime
 from enum import auto
 from types import TracebackType
-from typing import Callable, List, Optional, Sequence, Set, Tuple, Type, Union
+from typing import Callable, Optional, Union
 
 from napari.utils.events import Event, EventEmitter
 from napari.utils.misc import StringEnum
@@ -82,7 +83,7 @@ class NotificationSeverity(StringEnum):
         return hash(self.value)
 
 
-ActionSequence = Sequence[Tuple[str, Callable[[], None]]]
+ActionSequence = Sequence[tuple[str, Callable[[], None]]]
 
 
 class Notification(Event):
@@ -229,11 +230,11 @@ class NotificationManager:
     re-entrency of the hooks themselves.
     """
 
-    records: List[Notification]
+    records: list[Notification]
     _instance: Optional[NotificationManager] = None
 
     def __init__(self) -> None:
-        self.records: List[Notification] = []
+        self.records: list[Notification] = []
         self.exit_on_error = os.getenv('NAPARI_EXIT_ON_ERROR') in ('1', 'True')
         self.catch_error = os.getenv('NAPARI_CATCH_ERRORS') not in (
             '0',
@@ -242,10 +243,10 @@ class NotificationManager:
         self.notification_ready = self.changed = EventEmitter(
             source=self, event_class=Notification
         )
-        self._originals_except_hooks: List[Callable] = []
-        self._original_showwarnings_hooks: List[Callable] = []
-        self._originals_thread_except_hooks: List[Callable] = []
-        self._seen_warnings: Set[Tuple[str, Type, str, int]] = set()
+        self._originals_except_hooks: list[Callable] = []
+        self._original_showwarnings_hooks: list[Callable] = []
+        self._originals_thread_except_hooks: list[Callable] = []
+        self._seen_warnings: set[tuple[str, type, str, int]] = set()
 
     def __enter__(self):
         self.install_hooks()
@@ -292,8 +293,8 @@ class NotificationManager:
 
     def receive_thread_error(
         self,
-        args: Tuple[
-            Type[BaseException],
+        args: tuple[
+            type[BaseException],
             BaseException,
             Optional[TracebackType],
             Optional[threading.Thread],
@@ -303,7 +304,7 @@ class NotificationManager:
 
     def receive_error(
         self,
-        exctype: Type[BaseException],
+        exctype: type[BaseException],
         value: BaseException,
         traceback: Optional[TracebackType] = None,
         thread: Optional[threading.Thread] = None,
@@ -324,7 +325,7 @@ class NotificationManager:
     def receive_warning(
         self,
         message: Warning,
-        category: Type[Warning],
+        category: type[Warning],
         filename: str,
         lineno: int,
         file=None,

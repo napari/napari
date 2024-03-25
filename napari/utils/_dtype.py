@@ -1,4 +1,4 @@
-from typing import Tuple, Union
+from typing import Union
 
 import numpy as np
 
@@ -88,7 +88,7 @@ def normalize_dtype(dtype_spec):
     return dtype_spec
 
 
-def get_dtype_limits(dtype_spec) -> Tuple[float, float]:
+def get_dtype_limits(dtype_spec) -> tuple[float, float]:
     """Return machine limits for numeric types.
 
     Parameters

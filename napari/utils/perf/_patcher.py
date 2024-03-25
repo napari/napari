@@ -6,7 +6,7 @@ for any type of patching. See patch_callables() below as the main entrypoint.
 
 import types
 from importlib import import_module
-from typing import Callable, List, Set, Tuple, Union
+from typing import Callable, Union
 
 from napari.utils.translations import trans
 
@@ -93,7 +93,7 @@ def _patch_attribute(
 
 def _import_module(
     target_str: str,
-) -> Union[Tuple[types.ModuleType, str], Tuple[None, None]]:
+) -> Union[tuple[types.ModuleType, str], tuple[None, None]]:
     """Import the module portion of this target string.
 
     Try importing successively longer segments of the target_str. For example:
@@ -148,7 +148,7 @@ def _import_module(
     return None, None
 
 
-def patch_callables(callables: List[str], patch_func: PatchFunction) -> None:
+def patch_callables(callables: list[str], patch_func: PatchFunction) -> None:
     """Patch the given list of callables.
 
     Parameters
@@ -178,7 +178,7 @@ def patch_callables(callables: List[str], patch_func: PatchFunction) -> None:
                 print(f"Announce {label}")
                 return wrapped(*args, **kwargs)
     """
-    patched: Set[str] = set()
+    patched: set[str] = set()
 
     for target_str in callables:
         if target_str in patched:

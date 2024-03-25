@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Callable, Generator, Union
+from collections.abc import Generator
+from typing import Callable, Union
 
 from app_model.types import KeyCode
 

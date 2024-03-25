@@ -8,6 +8,7 @@ import os.path
 import warnings
 from abc import ABC, ABCMeta, abstractmethod
 from collections import defaultdict
+from collections.abc import Generator
 from contextlib import contextmanager
 from functools import cached_property
 from typing import (
@@ -15,12 +16,7 @@ from typing import (
     Any,
     Callable,
     ClassVar,
-    Dict,
-    Generator,
-    List,
     Optional,
-    Tuple,
-    Type,
     Union,
 )
 
@@ -273,23 +269,23 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     * `_basename()`: base/default name of the layer
     """
 
-    _modeclass: Type[StringEnum] = Mode
-    _projectionclass: Type[StringEnum] = BaseProjectionMode
+    _modeclass: type[StringEnum] = Mode
+    _projectionclass: type[StringEnum] = BaseProjectionMode
 
     ModeCallable = Callable[
         ['Layer', Event], Union[None, Generator[None, None, None]]
     ]
 
-    _drag_modes: ClassVar[Dict[StringEnum, ModeCallable]] = {
+    _drag_modes: ClassVar[dict[StringEnum, ModeCallable]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
     }
 
-    _move_modes: ClassVar[Dict[StringEnum, ModeCallable]] = {
+    _move_modes: ClassVar[dict[StringEnum, ModeCallable]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
     }
-    _cursor_modes: ClassVar[Dict[StringEnum, str]] = {
+    _cursor_modes: ClassVar[dict[StringEnum, str]] = {
         Mode.PAN_ZOOM: 'standard',
         Mode.TRANSFORM: 'standard',
     }
@@ -1156,7 +1152,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         value: Union[
             dict,
             ClippingPlane,
-            List[Union[ClippingPlane, dict]],
+            list[Union[ClippingPlane, dict]],
             ClippingPlaneList,
         ],
     ) -> None:
@@ -1266,9 +1262,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         position: npt.ArrayLike,
         *,
         view_direction: Optional[npt.ArrayLike] = None,
-        dims_displayed: Optional[List[int]] = None,
+        dims_displayed: Optional[list[int]] = None,
         world: bool = False,
-    ) -> Optional[Tuple]:
+    ) -> Optional[tuple]:
         """Value of the data at a position.
 
         If the layer is not visible, return None.
@@ -1339,9 +1335,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self,
         start_point: Optional[np.ndarray],
         end_point: Optional[np.ndarray],
-        dims_displayed: List[int],
+        dims_displayed: list[int],
     ) -> Union[
-        float, int, None, Tuple[Union[float, int, None], Optional[int]]
+        float, int, None, tuple[Union[float, int, None], Optional[int]]
     ]:
         """Get the layer data value along a ray
 
@@ -1366,7 +1362,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         end_position: npt.ArrayLike,
         view_direction: npt.ArrayLike,
         vector: np.ndarray,
-        dims_displayed: List[int],
+        dims_displayed: list[int],
     ) -> npt.NDArray:
         """Calculate the length of the projection of a line between two mouse
         clicks onto a vector (or array of vectors) in data coordinates.
@@ -1504,7 +1500,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         return tuple(self._transforms[1:].simplified(coords))
 
     def _world_to_displayed_data(
-        self, position: np.ndarray, dims_displayed: List[int]
+        self, position: np.ndarray, dims_displayed: list[int]
     ) -> npt.NDArray:
         """Convert world to data coordinates for displayed dimensions only.
 
@@ -1558,7 +1554,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         return normalized_vector
 
     def _world_to_displayed_data_ray(
-        self, vector_world: npt.ArrayLike, dims_displayed: List[int]
+        self, vector_world: npt.ArrayLike, dims_displayed: list[int]
     ) -> np.ndarray:
         """Convert an orientation from world to displayed data coordinates.
 
@@ -1659,12 +1655,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         order = order[order >= 0]
         return order - order.min()
 
-    def _display_bounding_box(self, dims_displayed: List[int]) -> npt.NDArray:
+    def _display_bounding_box(self, dims_displayed: list[int]) -> npt.NDArray:
         """An axis aligned (ndisplay, 2) bounding box around the data"""
         return self._extent_data[:, dims_displayed].T
 
     def _display_bounding_box_augmented(
-        self, dims_displayed: List[int]
+        self, dims_displayed: list[int]
     ) -> npt.NDArray:
         """An augmented, axis-aligned (ndisplay, 2) bounding box.
 
@@ -1673,7 +1669,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         return self._extent_data_augmented[:, dims_displayed].T
 
     def _display_bounding_box_augmented_data_level(
-        self, dims_displayed: List[int]
+        self, dims_displayed: list[int]
     ) -> npt.NDArray:
         """An augmented, axis-aligned (ndisplay, 2) bounding box.
 
@@ -1686,8 +1682,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self,
         click_position: npt.ArrayLike,
         view_direction: npt.ArrayLike,
-        dims_displayed: List[int],
-    ) -> Tuple[np.ndarray, np.ndarray]:
+        dims_displayed: list[int],
+    ) -> tuple[np.ndarray, np.ndarray]:
         """Calculate a (point, normal) plane parallel to the canvas in data
         coordinates, centered on the centre of rotation of the camera.
 
@@ -1715,9 +1711,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self,
         position: npt.ArrayLike,
         view_direction: npt.ArrayLike,
-        dims_displayed: List[int],
+        dims_displayed: list[int],
         world: bool = True,
-    ) -> Tuple[Optional[np.ndarray], Optional[np.ndarray]]:
+    ) -> tuple[Optional[np.ndarray], Optional[np.ndarray]]:
         """Get the start and end point for the ray extending
         from a point through the data bounding box.
 
@@ -1777,10 +1773,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self,
         position: npt.NDArray,
         view_direction: np.ndarray,
-        dims_displayed: List[int],
+        dims_displayed: list[int],
         bounding_box: npt.NDArray,
         world: bool = True,
-    ) -> Tuple[Optional[np.ndarray], Optional[np.ndarray]]:
+    ) -> tuple[Optional[np.ndarray], Optional[np.ndarray]]:
         """Get the start and end point for the ray extending
         from a point through the data bounding box.
 
@@ -2001,9 +1997,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         position: Optional[npt.ArrayLike] = None,
         *,
         view_direction: Optional[npt.ArrayLike] = None,
-        dims_displayed: Optional[List[int]] = None,
+        dims_displayed: Optional[list[int]] = None,
         world: bool = False,
-    ) -> Dict:
+    ) -> dict:
         """
         Status message information of the data at a coordinate position.
 
@@ -2053,7 +2049,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         position: npt.NDArray,
         *,
         view_direction: Optional[np.ndarray] = None,
-        dims_displayed: Optional[List[int]] = None,
+        dims_displayed: Optional[list[int]] = None,
         world: bool = False,
     ) -> str:
         """
@@ -2080,7 +2076,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         """
         return ''
 
-    def save(self, path: str, plugin: Optional[str] = None) -> List[str]:
+    def save(self, path: str, plugin: Optional[str] = None) -> list[str]:
         """Save this layer to ``path`` with default (or specified) plugin.
 
         Parameters
@@ -2211,4 +2207,4 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             ) from exc
 
 
-mgui.register_type(type_=List[Layer], return_callback=add_layers_to_viewer)
+mgui.register_type(type_=list[Layer], return_callback=add_layers_to_viewer)
