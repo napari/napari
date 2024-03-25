@@ -278,6 +278,7 @@ def make_napari_viewer(
 
     # close viewers, but don't saving window settings while closing
 
+    QApplication.processEvents()
     _close_viewers(viewers)
 
     viewers.clear()
