@@ -2,10 +2,10 @@ import gc
 import os
 import sys
 import warnings
+from collections.abc import Iterable
 from contextlib import suppress
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Iterable, List, Tuple, Union
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 from unittest.mock import patch
 from weakref import WeakSet
 
