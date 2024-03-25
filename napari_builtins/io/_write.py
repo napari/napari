@@ -2,7 +2,7 @@ import csv
 import os
 import shutil
 from tempfile import TemporaryDirectory
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import numpy as np
 
@@ -15,8 +15,8 @@ if TYPE_CHECKING:
 
 def write_csv(
     filename: str,
-    data: Union[List, np.ndarray],
-    column_names: Optional[List[str]] = None,
+    data: Union[list, np.ndarray],
+    column_names: Optional[list[str]] = None,
 ):
     """Write a csv file.
 
@@ -42,7 +42,7 @@ def write_csv(
             writer.writerow(row)
 
 
-def imsave_extensions() -> Tuple[str, ...]:
+def imsave_extensions() -> tuple[str, ...]:
     """Valid extensions of files that imsave can write to.
 
     Returns
@@ -268,8 +268,8 @@ def napari_write_shapes(path: str, data: Any, meta: dict) -> Optional[str]:
 
 
 def write_layer_data_with_plugins(
-    path: str, layer_data: List['FullLayerData']
-) -> List[str]:
+    path: str, layer_data: list['FullLayerData']
+) -> list[str]:
     """Write layer data out into a folder one layer at a time.
 
     Call ``napari_write_<layer>`` for each layer using the ``layer.name``
@@ -297,7 +297,7 @@ def write_layer_data_with_plugins(
     if not already_existed:
         os.makedirs(path)
 
-    written: List[str] = []  # the files that were actually written
+    written: list[str] = []  # the files that were actually written
     try:
         # build in a temporary directory and then move afterwards,
         # it makes cleanup easier if an exception is raised inside.

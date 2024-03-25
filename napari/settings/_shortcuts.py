@@ -1,5 +1,3 @@
-from typing import Dict, List
-
 from napari._pydantic_compat import Field, validator
 from napari.utils.events.evented_model import EventedModel
 from napari.utils.key_bindings import KeyBinding, coerce_keybinding
@@ -8,7 +6,7 @@ from napari.utils.translations import trans
 
 
 class ShortcutsSettings(EventedModel):
-    shortcuts: Dict[str, List[KeyBinding]] = Field(
+    shortcuts: dict[str, list[KeyBinding]] = Field(
         default_shortcuts,
         title=trans._('shortcuts'),
         description=trans._(
@@ -22,8 +20,8 @@ class ShortcutsSettings(EventedModel):
 
     @validator('shortcuts', allow_reuse=True)
     def shortcut_validate(
-        cls, v: Dict[str, List[KeyBinding]]
-    ) -> Dict[str, List[KeyBinding]]:
+        cls, v: dict[str, list[KeyBinding]]
+    ) -> dict[str, list[KeyBinding]]:
         for name, value in default_shortcuts.items():
             if name not in v:
                 v[name] = value
