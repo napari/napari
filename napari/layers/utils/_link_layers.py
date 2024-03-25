@@ -1,17 +1,13 @@
 from __future__ import annotations
 
+from collections.abc import Generator, Iterable
 from contextlib import contextmanager
 from functools import partial
 from itertools import combinations, permutations, product
 from typing import (
     TYPE_CHECKING,
     Callable,
-    DefaultDict,
-    Generator,
-    Iterable,
     Optional,
-    Set,
-    Tuple,
 )
 from weakref import ReferenceType, ref
 
@@ -21,17 +17,19 @@ if TYPE_CHECKING:
     from napari.layers import Layer
     from napari.utils.events import Event
 
+from collections import defaultdict
+
 from napari.utils.events.event import WarningEmitter
 from napari.utils.translations import trans
 
 #: Record of already linked layers... to avoid duplicating callbacks
 #  in the form of {(id(layer1), id(layer2), attribute_name) -> callback}
-LinkKey = Tuple['ReferenceType[Layer]', 'ReferenceType[Layer]', str]
+LinkKey = tuple['ReferenceType[Layer]', 'ReferenceType[Layer]', str]
 Unlinker = Callable[[], None]
 _UNLINKERS: dict[LinkKey, Unlinker] = {}
-_LINKED_LAYERS: DefaultDict[
-    ReferenceType[Layer], Set[ReferenceType[Layer]]
-] = DefaultDict(set)
+_LINKED_LAYERS: defaultdict[
+    ReferenceType[Layer], set[ReferenceType[Layer]]
+] = defaultdict(set)
 
 
 def layer_is_linked(layer: Layer) -> bool:
@@ -39,7 +37,7 @@ def layer_is_linked(layer: Layer) -> bool:
     return ref(layer) in _LINKED_LAYERS
 
 
-def get_linked_layers(*layers: Layer) -> Set[Layer]:
+def get_linked_layers(*layers: Layer) -> set[Layer]:
     """Return layers that are linked to any layer in `*layers`.
 
     Note, if multiple layers are provided, the returned set will represent any
@@ -299,9 +297,9 @@ def _unlink_keys(keys: Iterable[LinkKey]) -> None:
 
 
 def _rebuild_link_index() -> (
-    DefaultDict[ReferenceType[Layer], Set[ReferenceType[Layer]]]
+    defaultdict[ReferenceType[Layer], set[ReferenceType[Layer]]]
 ):
-    links = DefaultDict(set)
+    links = defaultdict(set)
     for l1, l2, _attr in _UNLINKERS:
         links[l1].add(l2)
     return links

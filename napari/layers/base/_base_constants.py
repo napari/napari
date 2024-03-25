@@ -1,6 +1,5 @@
 from collections import OrderedDict
 from enum import IntEnum, auto
-from typing import Tuple
 
 from napari.utils.misc import StringEnum
 from napari.utils.translations import trans
@@ -114,7 +113,7 @@ class InteractionBoxHandle(IntEnum):
     @classmethod
     def corners(
         cls,
-    ) -> Tuple[
+    ) -> tuple[
         'InteractionBoxHandle',
         'InteractionBoxHandle',
         'InteractionBoxHandle',
