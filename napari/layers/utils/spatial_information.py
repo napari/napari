@@ -12,12 +12,12 @@ This information is:
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import (
     TYPE_CHECKING,
     Dict,
     List,
     Optional,
-    Sequence,
     Tuple,
     Union,
     overload,
