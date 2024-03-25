@@ -1,14 +1,9 @@
 """Evented dictionary"""
 
+from collections.abc import Iterator, Mapping, MutableMapping, Sequence
 from typing import (
     Any,
-    Dict,
-    Iterator,
-    Mapping,
-    MutableMapping,
     Optional,
-    Sequence,
-    Type,
     TypeVar,
     Union,
 )
@@ -23,11 +18,11 @@ class TypedMutableMapping(MutableMapping[_K, _T]):
     def __init__(
         self,
         data: Optional[Mapping[_K, _T]] = None,
-        basetype: Union[Type[_T], Sequence[Type[_T]]] = (),
+        basetype: Union[type[_T], Sequence[type[_T]]] = (),
     ) -> None:
         if data is None:
             data = {}
-        self._dict: Dict[_K, _T] = {}
+        self._dict: dict[_K, _T] = {}
         self._basetypes = (
             basetype if isinstance(basetype, Sequence) else (basetype,)
         )

@@ -30,7 +30,7 @@ import tty
 from contextlib import suppress
 from pathlib import Path
 from types import ModuleType
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Optional
 
 import pytest
 from strings_list import (
@@ -44,9 +44,9 @@ REPO_ROOT = Path(__file__).resolve()
 NAPARI_MODULE = (REPO_ROOT / 'napari').relative_to(REPO_ROOT)
 
 # Types
-StringIssuesDict = Dict[str, List[Tuple[int, str]]]
-OutdatedStringsDict = Dict[str, List[str]]
-TranslationErrorsDict = Dict[str, List[Tuple[str, str]]]
+StringIssuesDict = dict[str, list[tuple[int, str]]]
+OutdatedStringsDict = dict[str, list[str]]
+TranslationErrorsDict = dict[str, list[tuple[str, str]]]
 
 
 class FindTransStrings(ast.NodeVisitor):
@@ -141,8 +141,8 @@ show_trans_strings = FindTransStrings()
 
 
 def _find_func_definitions(
-    node: ast.AST, defs: Optional[List[ast.FunctionDef]] = None
-) -> List[ast.FunctionDef]:
+    node: ast.AST, defs: Optional[list[ast.FunctionDef]] = None
+) -> list[ast.FunctionDef]:
     """Find all functions definition recrusively.
 
     This also find functions nested inside other functions.
@@ -180,7 +180,7 @@ def find_files(
     skip_folders: tuple,
     skip_files: tuple,
     extensions: tuple = ('.py',),
-) -> List[str]:
+) -> list[str]:
     """Find recursively all files in path.
 
     Parameters
@@ -216,7 +216,7 @@ def find_files(
     return sorted(found_files)
 
 
-def find_docstrings(fpath: str) -> Dict[str, str]:
+def find_docstrings(fpath: str) -> dict[str, str]:
     """Find all docstrings in file path.
 
     Parameters
@@ -339,7 +339,7 @@ def compress_str(gen):
         yield tokenize.STRING, nt, acc_line
 
 
-def find_strings(fpath: str) -> Dict[Tuple[int, str], Tuple[int, str]]:
+def find_strings(fpath: str) -> dict[tuple[int, str], tuple[int, str]]:
     """Find all strings (and f-strings) for the given file.
 
     Parameters
@@ -374,7 +374,7 @@ def find_strings(fpath: str) -> Dict[Tuple[int, str], Tuple[int, str]]:
 
 def find_trans_strings(
     fpath: str,
-) -> Tuple[Dict[str, str], List[Tuple[str, Set[str]]]]:
+) -> tuple[dict[str, str], list[tuple[str, set[str]]]]:
     """Find all translation strings for the given file.
 
     Parameters
@@ -431,8 +431,8 @@ def import_module_by_path(fpath: str) -> Optional[ModuleType]:
 
 
 def find_issues(
-    paths: List[str], skip_words: List[str]
-) -> Tuple[StringIssuesDict, OutdatedStringsDict, TranslationErrorsDict]:
+    paths: list[str], skip_words: list[str]
+) -> tuple[StringIssuesDict, OutdatedStringsDict, TranslationErrorsDict]:
     """Find strings that have not been translated, and errors in translations.
 
     This will not raise errors but return a list with found issues wo they

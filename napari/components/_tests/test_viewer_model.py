@@ -974,3 +974,18 @@ def test_slice_order_with_mixed_dims():
     assert image_2d._slice.image.view.shape == (4, 5)
     assert image_3d._slice.image.view.shape == (3, 5)
     assert image_4d._slice.image.view.shape == (2, 5)
+
+
+def test_make_layer_visible_after_slicing():
+    """See https://github.com/napari/napari/issues/6760"""
+    viewer = ViewerModel(ndisplay=2)
+    data = np.array([np.ones((2, 2)) * i for i in range(3)])
+    layer: Image = viewer.add_image(data)
+    layer.visible = False
+    assert viewer.dims.current_step[0] != 0
+    assert not np.array_equal(layer._slice.image.raw, data[0])
+
+    viewer.dims.current_step = (0, 0, 0)
+    layer.visible = True
+
+    np.testing.assert_array_equal(layer._slice.image.raw, data[0])
