@@ -210,9 +210,19 @@ class _LayerSlicer:
         # when we want to perform sync slicing anyway.
         requests: Dict[weakref.ref, _SliceRequest] = {}
         sync_layers = []
-        visible_layers = (layer for layer in layers if layer.visible)
-        for layer in visible_layers:
-            if isinstance(layer, _AsyncSliceable) and not self._force_sync:
+        for layer in layers:
+            # Slicing of non-visible layers is handled differently by sync
+            # and async slicing. For async, we do not make request since a
+            # later change to visibility triggers slicing. For sync, we want
+            # to set the slice input with `Layer._slice_dims` but don't want
+            # to fetch data yet (only if/when it becomes visible in the future).
+            # Further development should allow us to remove this special case
+            # by making the sync and async slicing code paths almost identical.
+            if (
+                isinstance(layer, _AsyncSliceable)
+                and not self._force_sync
+                and layer.visible
+            ):
                 logger.debug('Making async slice request for %s', layer)
                 request = layer._make_slice_request(dims)
                 weak_layer = weakref.ref(layer)
