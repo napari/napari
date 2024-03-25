@@ -1,8 +1,8 @@
 import typing
-from collections.abc import Iterable
+from collections.abc import Generator, Iterable, Sequence
 from contextlib import contextmanager
 from functools import wraps
-from typing import Generator, List, Literal, Sequence, Union
+from typing import Literal, Union
 
 import numpy as np
 import numpy.typing as npt
@@ -88,7 +88,7 @@ class ShapeList:
         self, data: typing.Iterable[Shape] = (), ndisplay: int = 2
     ) -> None:
         self._ndisplay = ndisplay
-        self.shapes: List[Shape] = []
+        self.shapes: list[Shape] = []
         self._displayed = np.array([])
         self._slice_key = np.array([])
         self.displayed_vertices = np.array([])
@@ -150,7 +150,7 @@ class ShapeList:
         assert self.__batched_level >= 0
 
     @property
-    def data(self) -> List[npt.NDArray]:
+    def data(self) -> list[npt.NDArray]:
         """list of (M, D) array: data arrays for each shape."""
         return [s.data for s in self.shapes]
 
@@ -181,7 +181,7 @@ class ShapeList:
         return np.array([s.slice_key for s in self.shapes])
 
     @property
-    def shape_types(self) -> List[str]:
+    def shape_types(self) -> list[str]:
         """list of str: shape types for each shape."""
         return [s.name for s in self.shapes]
 
@@ -235,12 +235,12 @@ class ShapeList:
         self._update_displayed()
 
     @property
-    def edge_widths(self) -> List[float]:
+    def edge_widths(self) -> list[float]:
         """list of float: edge width for each shape."""
         return [s.edge_width for s in self.shapes]
 
     @property
-    def z_indices(self) -> List[int]:
+    def z_indices(self) -> list[int]:
         """list of int: z-index for each shape."""
         return [s.z_index for s in self.shapes]
 

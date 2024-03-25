@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional, Tuple
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 
@@ -39,11 +39,11 @@ class IntensityVisualizationMixin:
         self._gamma = 1
         self._colormap_name = ''
         self._contrast_limits_msg = ''
-        self._contrast_limits: Tuple[Optional[float], Optional[float]] = (
+        self._contrast_limits: tuple[Optional[float], Optional[float]] = (
             None,
             None,
         )
-        self._contrast_limits_range: Tuple[
+        self._contrast_limits_range: tuple[
             Optional[float], Optional[float]
         ] = (None, None)
         self._auto_contrast_source = 'slice'

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, List, Optional, Tuple
+from typing import Any, Optional
 
 from psutil import virtual_memory
 
@@ -77,14 +77,14 @@ class ApplicationSettings(EventedModel):
         title=trans._('Save window state'),
         description=trans._('Toggle saving the main window state of widgets.'),
     )
-    window_position: Optional[Tuple[int, int]] = Field(
+    window_position: Optional[tuple[int, int]] = Field(
         None,
         title=trans._('Window position'),
         description=trans._(
             'Last saved x and y coordinates for the main window. This setting is managed by the application.'
         ),
     )
-    window_size: Optional[Tuple[int, int]] = Field(
+    window_size: Optional[tuple[int, int]] = Field(
         None,
         title=trans._('Window size'),
         description=trans._(
@@ -119,7 +119,7 @@ class ApplicationSettings(EventedModel):
             'Toggle diplaying the status bar for the main window.'
         ),
     )
-    preferences_size: Optional[Tuple[int, int]] = Field(
+    preferences_size: Optional[tuple[int, int]] = Field(
         None,
         title=trans._('Preferences size'),
         description=trans._(
@@ -138,14 +138,14 @@ class ApplicationSettings(EventedModel):
         title=trans._('Console notification level'),
         description=trans._('Select the notification level for the console.'),
     )
-    open_history: List[str] = Field(
+    open_history: list[str] = Field(
         [],
         title=trans._('Opened folders history'),
         description=trans._(
             'Last saved list of opened folders. This setting is managed by the application.'
         ),
     )
-    save_history: List[str] = Field(
+    save_history: list[str] = Field(
         [],
         title=trans._('Saved folders history'),
         description=trans._(

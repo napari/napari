@@ -1,6 +1,6 @@
 import json
 from enum import EnumMeta
-from typing import TYPE_CHECKING, ClassVar, Dict, Tuple, cast
+from typing import TYPE_CHECKING, ClassVar, cast
 
 from qtpy.QtCore import QSize, Qt, Signal
 from qtpy.QtWidgets import (
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 class PreferencesDialog(QDialog):
     """Preferences Dialog for Napari user settings."""
 
-    ui_schema: ClassVar[Dict[str, Dict[str, str]]] = {
+    ui_schema: ClassVar[dict[str, dict[str, str]]] = {
         'call_order': {'ui:widget': 'plugins'},
         'highlight': {'ui:widget': 'highlight'},
         'shortcuts': {'ui:widget': 'shortcuts'},
@@ -149,7 +149,7 @@ class PreferencesDialog(QDialog):
         self._list.addItem(field.field_info.title or field.name)
         self._stack.addWidget(page_scrollarea)
 
-    def _get_page_dict(self, field: 'ModelField') -> Tuple[dict, dict]:
+    def _get_page_dict(self, field: 'ModelField') -> tuple[dict, dict]:
         """Provides the schema, set of values for each setting, and the
         properties for each setting."""
         ftype = cast('BaseModel', field.type_)

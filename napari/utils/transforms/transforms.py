@@ -1,4 +1,5 @@
-from typing import Generic, Iterable, Optional, Sequence, TypeVar, overload
+from collections.abc import Iterable, Sequence
+from typing import Generic, Optional, TypeVar, overload
 
 import numpy as np
 import numpy.typing as npt

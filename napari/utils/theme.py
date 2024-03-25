@@ -6,7 +6,7 @@ import sys
 import warnings
 from ast import literal_eval
 from contextlib import suppress
-from typing import Any, Dict, List, Literal, Optional, Tuple, Union, overload
+from typing import Any, Literal, Optional, Union, overload
 
 import npe2
 
@@ -108,7 +108,7 @@ class Theme(EventedModel):
         )
         return value
 
-    def to_rgb_dict(self) -> Dict[str, Any]:
+    def to_rgb_dict(self) -> dict[str, Any]:
         """
         This differs from baseclass `dict()` by converting colors to rgb.
         """
@@ -137,11 +137,11 @@ def increase(font_size: str, pt: int) -> str:
     return f'{int(font_size[:-2]) + int(pt)}pt'
 
 
-def parse_color_as_float_list(color: Union[str, Color]) -> List[float]:
+def parse_color_as_float_list(color: Union[str, Color]) -> list[float]:
     return [v / 255 for v in _parse_color_as_rgb(color)]
 
 
-def _parse_color_as_rgb(color: Union[str, Color]) -> Tuple[int, int, int]:
+def _parse_color_as_rgb(color: Union[str, Color]) -> tuple[int, int, int]:
     if isinstance(color, str):
         if color.startswith('rgb('):
             return literal_eval(color.lstrip('rgb(').rstrip(')'))
@@ -245,7 +245,7 @@ def get_theme(theme_id: str, as_dict: Literal[False]) -> Theme: ...
 
 
 @overload
-def get_theme(theme_id: str, as_dict: Literal[True]) -> Dict[str, Any]: ...
+def get_theme(theme_id: str, as_dict: Literal[True]) -> dict[str, Any]: ...
 
 
 def get_theme(theme_id: str, as_dict: Optional[bool] = None):
@@ -336,7 +336,7 @@ def unregister_theme(theme_id):
     _themes.pop(theme_id, None)
 
 
-def available_themes() -> List[str]:
+def available_themes() -> list[str]:
     """List available themes.
 
     Returns

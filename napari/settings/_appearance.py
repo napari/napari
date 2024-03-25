@@ -1,4 +1,4 @@
-from typing import Any, List, Union, cast
+from typing import Any, Union, cast
 
 import numpy as np
 
@@ -23,7 +23,7 @@ class HighlightSettings(EventedModel):
         ge=1,
         le=10,
     )
-    highlight_color: List[float] = Field(
+    highlight_color: list[float] = Field(
         parse_color_as_float_list(get_theme('dark').border_highlight) + [1.0],
         title=trans._('Highlight color'),
         description=trans._(

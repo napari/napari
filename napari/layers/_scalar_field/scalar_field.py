@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import types
 from abc import ABC
+from collections.abc import Sequence
 from contextlib import nullcontext
-from typing import TYPE_CHECKING, List, Sequence, Union
+from typing import TYPE_CHECKING, Union
 
 import numpy as np
 from numpy import typing as npt
@@ -584,7 +585,7 @@ class ScalarFieldBase(Layer, ABC):
         return position + 0.5
 
     def _display_bounding_box_at_level(
-        self, dims_displayed: List[int], data_level: int
+        self, dims_displayed: list[int], data_level: int
     ) -> npt.NDArray:
         """An axis aligned (ndisplay, 2) bounding box around the data at a given level"""
         shape = self.level_shapes[data_level]
@@ -592,7 +593,7 @@ class ScalarFieldBase(Layer, ABC):
         return extent_at_level[:, dims_displayed].T
 
     def _display_bounding_box_augmented_data_level(
-        self, dims_displayed: List[int]
+        self, dims_displayed: list[int]
     ) -> npt.NDArray:
         """An augmented, axis-aligned (ndisplay, 2) bounding box.
         If the layer is multiscale layer, then returns the

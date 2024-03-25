@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Generic, TypeVar, cast
+from typing import Generic, TypeVar, cast
 
 import numpy as np
 from vispy.scene import VisualNode
@@ -53,7 +53,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
     """
 
     layer: _L
-    overlays: Dict[Overlay, VispyBaseOverlay]
+    overlays: dict[Overlay, VispyBaseOverlay]
 
     def __init__(self, layer: _L, node: VisualNode) -> None:
         super().__init__()
