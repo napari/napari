@@ -8,7 +8,7 @@ accessible-pygments==0.0.4
     # via pydata-sphinx-theme
 alabaster==0.7.16
     # via sphinx
-app-model==0.2.5
+app-model==0.2.6
     # via napari (napari_repo/pyproject.toml)
 appdirs==1.4.4
     # via

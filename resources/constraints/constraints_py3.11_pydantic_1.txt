@@ -2,7 +2,7 @@
 #    uv pip compile --extra=optional --extra=pyqt5 --extra=pyqt6_experimental --extra=pyside2 --extra=pyside6_experimental --extra=testing --extra=testing_extra --output-file=resources/constraints/constraints_py3.11_pydantic_1.txt resources/constraints/version_denylist.txt resources/constraints/pydantic_le_2.txt pyproject.toml
 alabaster==0.7.16
     # via sphinx
-app-model==0.2.4
+app-model==0.2.6
 appdirs==1.4.4
     # via npe2
 asciitree==0.3.3
