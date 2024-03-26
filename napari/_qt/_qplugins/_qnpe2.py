@@ -71,7 +71,6 @@ def _rebuild_npe1_samples_menu() -> None:  # pragma: no cover
             submenu_id = MenuId.FILE_SAMPLES
 
         for sample_name, sample_dict in samples.items():
-
             _add_sample_partial = partial(
                 _add_sample,
                 plugin=plugin_name,

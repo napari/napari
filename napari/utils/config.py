@@ -1,5 +1,4 @@
-"""Napari Configuration.
-"""
+"""Napari Configuration."""
 
 import os
 import warnings

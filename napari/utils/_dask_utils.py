@@ -1,5 +1,4 @@
-"""Dask cache utilities.
-"""
+"""Dask cache utilities."""
 
 import collections.abc
 import contextlib

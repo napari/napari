@@ -1,5 +1,4 @@
-"""RemoteManager class.
-"""
+"""RemoteManager class."""
 
 import logging
 

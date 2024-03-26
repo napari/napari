@@ -1,5 +1,4 @@
-"""PerfEvent class.
-"""
+"""PerfEvent class."""
 
 import os
 import threading
