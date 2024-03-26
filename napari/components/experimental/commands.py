@@ -1,5 +1,4 @@
-"""ExperimentalNamespace and CommandProcessor classes.
-"""
+"""ExperimentalNamespace and CommandProcessor classes."""
 
 HELP_STR = """
 Available Commands

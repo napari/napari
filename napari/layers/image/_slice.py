@@ -343,7 +343,7 @@ class _ImageSliceRequest:
 
     @staticmethod
     def _point_to_slices(
-        point: tuple[float, ...]
+        point: tuple[float, ...],
     ) -> tuple[Union[slice, int], ...]:
         # no need to check out of bounds here cause it's guaranteed
 

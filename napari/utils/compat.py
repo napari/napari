@@ -1,5 +1,4 @@
-"""compatibility between newer and older python versions
-"""
+"""compatibility between newer and older python versions"""
 
 import sys
 

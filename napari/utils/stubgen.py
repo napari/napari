@@ -46,16 +46,6 @@ from typing import List, Union, Mapping, Sequence, Tuple, Dict, Set, Any
 """
 
 
-def _format_module_str(text: str, is_pyi=False) -> str:
-    """Apply black and isort formatting to text."""
-    from black import FileMode, format_str
-    from isort.api import sort_code_string
-
-    text = sort_code_string(text, profile='black', float_to_top=True)
-    text = format_str(text, mode=FileMode(line_length=79, is_pyi=is_pyi))
-    return text.replace('NoneType', 'None')
-
-
 def _guess_exports(module, exclude=()) -> list[str]:
     """If __all__ wasn't provided, this function guesses what to stub."""
     return [
@@ -188,8 +178,7 @@ def generate_module_stub(module: Union[str, ModuleType], save=True) -> str:
     importstr = '\n'.join(f'import {n}' for n in imports)
     body = '\n'.join(stubs)
     pyi = PYI_TEMPLATE.format(imports=importstr, body=body)
-    # format with black and isort
-    # pyi = _format_module_str(pyi)
+    # format with ruff
     pyi = pyi.replace('NoneType', 'None')
 
     if save:
@@ -197,8 +186,8 @@ def generate_module_stub(module: Union[str, ModuleType], save=True) -> str:
         file_path = module.__file__.replace('.py', '.pyi')
         with open(file_path, 'w') as f:
             f.write(pyi)
-        subprocess.run(['ruff', file_path])
-        subprocess.run(['black', file_path])
+        subprocess.run(['ruff', 'format', file_path])
+        subprocess.run(['ruff', 'check', file_path])
 
     return pyi
 

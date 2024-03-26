@@ -74,7 +74,7 @@ def map_property(
 
 
 def _validate_colormap_mode(
-    values: dict[str, Any]
+    values: dict[str, Any],
 ) -> tuple[np.ndarray, dict[str, Any]]:
     """Validate the ColorManager field values specific for colormap mode
     This is called by the root_validator in ColorManager
@@ -118,7 +118,7 @@ def _validate_colormap_mode(
 
 
 def _validate_cycle_mode(
-    values: dict[str, Any]
+    values: dict[str, Any],
 ) -> tuple[np.ndarray, dict[str, Any]]:
     """Validate the ColorManager field values specific for color cycle mode
     This is called by the root_validator in ColorManager

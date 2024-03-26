@@ -31,6 +31,7 @@ For more general background on the plugin hook calling mechanism, see the
     ``napari_hook_specification`` and ``napari_hook_implementation``,
     respectively.
 """
+
 # These hook specifications also serve as the API reference for plugin
 # developers, so comprehensive documentation with complete type annotations is
 # imperative!

@@ -1,5 +1,4 @@
-"""OpenGL Utilities.
-"""
+"""OpenGL Utilities."""
 
 from collections.abc import Generator
 from contextlib import contextmanager

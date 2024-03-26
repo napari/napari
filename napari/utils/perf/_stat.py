@@ -1,5 +1,4 @@
-"""Stat class.
-"""
+"""Stat class."""
 
 
 class Stat:
