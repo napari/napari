@@ -16,6 +16,9 @@ RUN apt-get update && \
         python3-pip \
         git \
         mesa-utils \
+        x11-utils \
+        libegl1-mesa \
+        libopengl0 \
         libgl1-mesa-glx \
         libglib2.0-0 \
         libfontconfig1 \
