@@ -144,9 +144,9 @@ def make_napari_viewer(
 
     To use this fixture as a function in your tests:
 
-    def test_something_with_a_viewer(make_napari_viewer):
-        # `make_napari_viewer` takes any keyword arguments that napari.Viewer() takes
-        viewer = make_napari_viewer()
+        def test_something_with_a_viewer(make_napari_viewer):
+            # `make_napari_viewer` takes any keyword arguments that napari.Viewer() takes
+            viewer = make_napari_viewer()
 
     It accepts all the same arguments as `napari.Viewer`, notably `show`
     which should be set to `True` for tests that require the `Viewer` to be visible
