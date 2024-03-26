@@ -9,7 +9,7 @@ from qtpy.QtWidgets import QAbstractItemView
 from napari._qt.containers._base_item_model import ItemRole
 from napari._qt.containers._factory import create_model
 
-ItemType = TypeVar("ItemType")
+ItemType = TypeVar('ItemType')
 
 if TYPE_CHECKING:
     from qtpy.QtCore import QAbstractItemModel

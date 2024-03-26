@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 import npe2
 import numpy as np
@@ -55,7 +55,7 @@ def test_no_write_layer_bad_extension(some_layer: 'layers.Layer'):
 
 # test_plugin_manager fixture is provided by napari_plugin_engine._testsupport
 def test_get_writer_succeeds(
-    tmp_path: Path, layers_list: 'List[layers.Layer]'
+    tmp_path: Path, layers_list: 'list[layers.Layer]'
 ):
     """Test writing layers data."""
 

@@ -8,13 +8,10 @@ from __future__ import annotations
 import contextlib
 import logging
 from collections import defaultdict
+from collections.abc import Generator, Iterable, MutableSequence
 from typing import (
-    DefaultDict,
-    Generator,
-    Iterable,
-    MutableSequence,
     NewType,
-    Tuple,
+    Optional,
     TypeVar,
     Union,
     cast,
@@ -27,10 +24,10 @@ from napari.utils.translations import trans
 
 logger = logging.getLogger(__name__)
 
-NestedIndex = Tuple[Index, ...]
+NestedIndex = tuple[Index, ...]
 MaybeNestedIndex = Union[Index, NestedIndex]
-ParentIndex = NewType('ParentIndex', Tuple[int, ...])
-_T = TypeVar("_T")
+ParentIndex = NewType('ParentIndex', tuple[int, ...])
+_T = TypeVar('_T')
 
 
 def ensure_tuple_index(index: MaybeNestedIndex) -> NestedIndex:
@@ -58,7 +55,7 @@ def ensure_tuple_index(index: MaybeNestedIndex) -> NestedIndex:
 
     raise TypeError(
         trans._(
-            "Invalid nested index: {index}. Must be an int or tuple",
+            'Invalid nested index: {index}. Must be an int or tuple',
             deferred=True,
             index=index,
         )
@@ -198,14 +195,14 @@ class NestableEventedList(EventedList[_T]):
     @overload
     def __setitem__(
         self, key: Union[int, NestedIndex], value: _T
-    ): ...  # pragma: no cover
+    ) -> None: ...  # pragma: no cover
 
     @overload
     def __setitem__(
         self, key: slice, value: Iterable[_T]
-    ): ...  # pragma: no cover
+    ) -> None: ...  # pragma: no cover
 
-    def __setitem__(self, key: MaybeNestedIndex, value):
+    def __setitem__(self, key, value):
         # NOTE: if we check isinstance(..., MutableList), then we'll actually
         # clobber object of specialized classes being inserted into the list
         # (for instance, subclasses of NestableEventedList)
@@ -233,7 +230,7 @@ class NestableEventedList(EventedList[_T]):
             return [(self[parent_i], i) for i in indices]
         return super()._delitem_indices(key)
 
-    def insert(self, index: int, value: _T):
+    def insert(self, index: int, value: _T) -> None:
         """Insert object before index."""
         # this is delicate, we want to preserve the evented list when nesting
         # but there is a high risk here of clobbering attributes of a special
@@ -242,7 +239,7 @@ class NestableEventedList(EventedList[_T]):
             value = self.__newlike__(value)
         super().insert(index, value)
 
-    def _reemit_child_event(self, event: Event):
+    def _reemit_child_event(self, event: Event) -> None:
         """An item in the list emitted an event.  Re-emit with index"""
         if hasattr(event, 'index'):
             # This event is coming from a nested List...
@@ -318,7 +315,7 @@ class NestableEventedList(EventedList[_T]):
         if isinstance(dest_i, slice):
             raise TypeError(
                 trans._(
-                    "Destination index may not be a slice",
+                    'Destination index may not be a slice',
                     deferred=True,
                 )
             )
@@ -326,7 +323,7 @@ class NestableEventedList(EventedList[_T]):
 
         # need to update indices as we pop, so we keep track of the indices
         # we have previously popped
-        popped: DefaultDict[NestedIndex, list[int]] = defaultdict(list)
+        popped: defaultdict[NestedIndex, list[int]] = defaultdict(list)
         dumped: list[int] = []
 
         # we iterate indices from the end first, so pop() always works
@@ -336,7 +333,7 @@ class NestableEventedList(EventedList[_T]):
             if idx == ():
                 raise IndexError(
                     trans._(
-                        "Group cannot move itself",
+                        'Group cannot move itself',
                         deferred=True,
                     )
                 )
@@ -360,7 +357,7 @@ class NestableEventedList(EventedList[_T]):
             if isinstance(src_i, slice):
                 raise TypeError(
                     trans._(
-                        "Terminal source index may not be a slice",
+                        'Terminal source index may not be a slice',
                         deferred=True,
                     )
                 )
@@ -411,7 +408,7 @@ class NestableEventedList(EventedList[_T]):
             object
         """
         logger.debug(
-            "move(src_index=%s, dest_index=%s)",
+            'move(src_index=%s, dest_index=%s)',
             src_index,
             dest_index,
         )
@@ -423,7 +420,7 @@ class NestableEventedList(EventedList[_T]):
         if isinstance(src_i, slice):
             raise TypeError(
                 trans._(
-                    "Terminal source index may not be a slice",
+                    'Terminal source index may not be a slice',
                     deferred=True,
                 )
             )
@@ -431,7 +428,7 @@ class NestableEventedList(EventedList[_T]):
         if isinstance(dest_i, slice):
             raise TypeError(
                 trans._(
-                    "Destination index may not be a slice",
+                    'Destination index may not be a slice',
                     deferred=True,
                 )
             )
@@ -439,7 +436,7 @@ class NestableEventedList(EventedList[_T]):
         if src_i == ():
             raise ValueError(
                 trans._(
-                    "Group cannot move itself",
+                    'Group cannot move itself',
                     deferred=True,
                 )
             )
@@ -478,7 +475,12 @@ class NestableEventedList(EventedList[_T]):
                 )
         return e
 
-    def _iter_indices(self, start=0, stop=None, root=()):
+    def _iter_indices(
+        self,
+        start: int = 0,
+        stop: Optional[int] = None,
+        root: tuple[int, ...] = (),
+    ) -> Generator[Union[int, tuple[int]]]:
         """Iter indices from start to stop.
 
         Depth first traversal of the tree
@@ -488,7 +490,7 @@ class NestableEventedList(EventedList[_T]):
             if isinstance(item, NestableEventedList):
                 yield from item._iter_indices(root=(*root, i))
 
-    def has_index(self, index: Union[int, Tuple[int, ...]]) -> bool:
+    def has_index(self, index: Union[int, tuple[int, ...]]) -> bool:
         """Return true if `index` is valid for this nestable list."""
         if isinstance(index, int):
             return -len(self) <= index < len(self)
@@ -499,4 +501,4 @@ class NestableEventedList(EventedList[_T]):
                 return False
             else:
                 return True
-        raise TypeError(f"Not supported index type {type(index)}")
+        raise TypeError(f'Not supported index type {type(index)}')

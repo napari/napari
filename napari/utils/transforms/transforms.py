@@ -1,4 +1,5 @@
-from typing import Generic, Iterable, Optional, Sequence, TypeVar, overload
+from collections.abc import Iterable, Sequence
+from typing import Generic, Optional, TypeVar, overload
 
 import numpy as np
 import numpy.typing as npt
@@ -56,11 +57,11 @@ class Transform:
             raise ValueError(
                 trans._('Inverse function was not provided.', deferred=True)
             )
-        if "inverse" not in self._cache_dict:
-            self._cache_dict["inverse"] = Transform(
+        if 'inverse' not in self._cache_dict:
+            self._cache_dict['inverse'] = Transform(
                 self._inverse_func, self.func
             )
-        return self._cache_dict["inverse"]
+        return self._cache_dict['inverse']
 
     def compose(self, transform: 'Transform') -> 'Transform':
         """Return the composite of this transform and the provided one."""
@@ -135,7 +136,7 @@ class TransformChain(EventedList[_T], Transform, Generic[_T]):
         # in turn call super().__init__(). So we call it explicitly here.
         Transform.__init__(self)
         for tr in self:
-            if hasattr(tr, "changed"):
+            if hasattr(tr, 'changed'):
                 tr.changed.connect(self._clean_cache)
 
     def __call__(self, coords):
@@ -154,21 +155,21 @@ class TransformChain(EventedList[_T], Transform, Generic[_T]):
     def __getitem__(self, key: slice) -> 'TransformChain[_T]': ...
 
     def __getitem__(self, key):
-        if f"getitem_{key}" not in self._cache_dict:
-            self._cache_dict[f"getitem_{key}"] = super().__getitem__(key)
-        return self._cache_dict[f"getitem_{key}"]
+        if f'getitem_{key}' not in self._cache_dict:
+            self._cache_dict[f'getitem_{key}'] = super().__getitem__(key)
+        return self._cache_dict[f'getitem_{key}']
 
     def __setitem__(self, key, value):
-        if key in self:
+        if key in self and hasattr(self[key], 'changed'):
             self[key].changed.disconnect(self._clean_cache)
         super().__setitem__(key, value)
-        if hasattr(value, "changed"):
+        if hasattr(value, 'changed'):
             value.changed.connect(self._clean_cache)
         self._clean_cache()
 
     def __delitem__(self, key):
         val = self[key]
-        if hasattr(val, "changed"):
+        if hasattr(val, 'changed'):
             val.changed.disconnect(self._clean_cache)
         super().__delitem__(key)
         self._clean_cache()
@@ -176,11 +177,11 @@ class TransformChain(EventedList[_T], Transform, Generic[_T]):
     @property
     def inverse(self) -> 'TransformChain':
         """Return the inverse transform chain."""
-        if "inverse" not in self._cache_dict:
-            self._cache_dict["inverse"] = TransformChain(
+        if 'inverse' not in self._cache_dict:
+            self._cache_dict['inverse'] = TransformChain(
                 [tf.inverse for tf in self[::-1]]
             )
-        return self._cache_dict["inverse"]
+        return self._cache_dict['inverse']
 
     @property
     def _is_diagonal(self):
@@ -189,18 +190,28 @@ class TransformChain(EventedList[_T], Transform, Generic[_T]):
         return getattr(self.simplified, '_is_diagonal', False)
 
     @property
-    def simplified(self) -> Optional[_T]:
-        """Return the composite of the transforms inside the transform chain."""
+    def simplified(self) -> _T:
+        """
+        Return the composite of the transforms inside the transform chain.
+
+        Raises
+        ------
+        ValueError
+            If the transform chain is empty.
+        """
         if len(self) == 0:
-            return None
+            raise ValueError(
+                trans._('Cannot simplify an empty transform chain.')
+            )
+
         if len(self) == 1:
             return self[0]
 
-        if "simplified" not in self._cache_dict:
-            self._cache_dict["simplified"] = tz.pipe(
+        if 'simplified' not in self._cache_dict:
+            self._cache_dict['simplified'] = tz.pipe(
                 self[0], *[tf.compose for tf in self[1:]]
             )
-        return self._cache_dict["simplified"]
+        return self._cache_dict['simplified']
 
     def set_slice(self, axes: Sequence[int]) -> 'TransformChain':
         """Return a transform chain subset to the visible dimensions.
@@ -217,7 +228,7 @@ class TransformChain(EventedList[_T], Transform, Generic[_T]):
         """
         return TransformChain([tf.set_slice(axes) for tf in self])
 
-    def expand_dims(self, axes: Sequence[int]) -> 'Transform':
+    def expand_dims(self, axes: Sequence[int]) -> 'TransformChain':
         """Return a transform chain with added axes for non-visible dimensions.
 
         Parameters
@@ -486,7 +497,7 @@ class Affine(Transform):
         if self._is_diagonal:
             return np.diag(self._linear_matrix)
         self._setup_decompose_linear_matrix_cache()
-        return self._cache_dict["decompose_linear_matrix"][1]
+        return self._cache_dict['decompose_linear_matrix'][1]
 
     @scale.setter
     def scale(self, scale):
@@ -513,9 +524,9 @@ class Affine(Transform):
         self._clean_cache()
 
     def _setup_decompose_linear_matrix_cache(self):
-        if "decompose_linear_matrix" in self._cache_dict:
+        if 'decompose_linear_matrix' in self._cache_dict:
             return
-        self._cache_dict["decompose_linear_matrix"] = decompose_linear_matrix(
+        self._cache_dict['decompose_linear_matrix'] = decompose_linear_matrix(
             self.linear_matrix, upper_triangular=self._upper_triangular
         )
 
@@ -523,7 +534,7 @@ class Affine(Transform):
     def rotate(self) -> npt.NDArray:
         """Return the rotation of the transform."""
         self._setup_decompose_linear_matrix_cache()
-        return self._cache_dict["decompose_linear_matrix"][0]
+        return self._cache_dict['decompose_linear_matrix'][0]
 
     @rotate.setter
     def rotate(self, rotate):
@@ -539,12 +550,7 @@ class Affine(Transform):
         if self._is_diagonal:
             return np.zeros((self.ndim,))
         self._setup_decompose_linear_matrix_cache()
-        return self._cache_dict["decompose_linear_matrix"][2]
-
-    @property
-    def _shear_cache(self):
-        self._setup_decompose_linear_matrix_cache()
-        return self._cache_dict["decompose_linear_matrix"][2]
+        return self._cache_dict['decompose_linear_matrix'][2]
 
     @shear.setter
     def shear(self, shear):
@@ -567,6 +573,11 @@ class Affine(Transform):
             self.rotate, self.scale, shear
         )
         self._clean_cache()
+
+    @property
+    def _shear_cache(self):
+        self._setup_decompose_linear_matrix_cache()
+        return self._cache_dict['decompose_linear_matrix'][2]
 
     @property
     def linear_matrix(self) -> npt.NDArray:
@@ -603,13 +614,19 @@ class Affine(Transform):
     @property
     def inverse(self) -> 'Affine':
         """Return the inverse transform."""
-        if "inverse" not in self._cache_dict:
-            self._cache_dict["inverse"] = Affine(
+        if 'inverse' not in self._cache_dict:
+            self._cache_dict['inverse'] = Affine(
                 affine_matrix=np.linalg.inv(self.affine_matrix)
             )
-        return self._cache_dict["inverse"]
+        return self._cache_dict['inverse']
 
-    def compose(self, transform: 'Transform') -> 'Transform':
+    @overload
+    def compose(self, transform: 'Affine') -> 'Affine': ...
+
+    @overload
+    def compose(self, transform: 'Transform') -> 'Transform': ...
+
+    def compose(self, transform):
         """Return the composite of this transform and the provided one."""
         if not isinstance(transform, Affine):
             return super().compose(transform)
@@ -713,11 +730,11 @@ class Affine(Transform):
         Since only `self.linear_matrix` is checked, affines with a translation
         component can still be considered diagonal.
         """
-        if "_is_diagonal" not in self._cache_dict:
-            self._cache_dict["_is_diagonal"] = is_diagonal(
+        if '_is_diagonal' not in self._cache_dict:
+            self._cache_dict['_is_diagonal'] = is_diagonal(
                 self.linear_matrix, tol=1e-8
             )
-        return self._cache_dict["_is_diagonal"]
+        return self._cache_dict['_is_diagonal']
 
 
 class CompositeAffine(Affine):

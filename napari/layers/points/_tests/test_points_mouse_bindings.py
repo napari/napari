@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import List, Optional, Tuple, Union
+from typing import Optional, Union
 from unittest.mock import MagicMock
 
 import numpy as np
@@ -23,17 +23,17 @@ class Event:
 
     type: str
     is_dragging: bool = False
-    modifiers: List[str] = field(default_factory=list)
-    position: Union[Tuple[int, int], Tuple[int, int, int]] = (
+    modifiers: list[str] = field(default_factory=list)
+    position: Union[tuple[int, int], tuple[int, int, int]] = (
         0,
         0,
     )  # world coords
     pos: np.ndarray = field(
         default_factory=lambda: np.zeros(2)
     )  # canvas coords
-    view_direction: Optional[List[float]] = None
-    up_direction: Optional[List[float]] = None
-    dims_displayed: List[int] = field(default_factory=lambda: [0, 1])
+    view_direction: Optional[list[float]] = None
+    up_direction: Optional[list[float]] = None
+    dims_displayed: list[int] = field(default_factory=lambda: [0, 1])
 
 
 def read_only_event(*args, **kwargs):
@@ -771,7 +771,7 @@ def test_drag_start_selection(
                 layer.data[0], [offset_position[0], offset_position[1]]
             )
         else:
-            raise AssertionError("Unreachable code")  # pragma: no cover
+            raise AssertionError('Unreachable code')  # pragma: no cover
     else:
         np.testing.assert_array_equal(
             layer._drag_box, [initial_position, offset_position]
@@ -808,7 +808,7 @@ def test_drag_start_selection(
                 layer.data[0], [offset_position[0], offset_position[1]]
             )
         else:
-            raise AssertionError("Unreachable code")  # pragma: no cover
+            raise AssertionError('Unreachable code')  # pragma: no cover
     else:
         np.testing.assert_array_equal(
             layer._drag_box, [initial_position, offset_position]
@@ -866,14 +866,14 @@ def test_drag_point_with_mouse(create_known_points_layer_2d):
 
     # Required to assert before the changing event as otherwise layer.data for changing is updated in place.
     changing_event = {
-        "value": old_data,
-        "action": ActionType.CHANGING,
-        "data_indices": (1,),
-        "vertex_indices": ((),),
+        'value': old_data,
+        'action': ActionType.CHANGING,
+        'data_indices': (1,),
+        'vertex_indices': ((),),
     }
 
     def side_effect(*args, **kwargs):
-        if kwargs["action"] == ActionType.CHANGING:
+        if kwargs['action'] == ActionType.CHANGING:
             assert compare_dicts(kwargs, changing_event)
 
     layer.events.data.side_effect = side_effect
@@ -891,10 +891,10 @@ def test_drag_point_with_mouse(create_known_points_layer_2d):
     mouse_release_callbacks(layer, event)
 
     changed_event = {
-        "value": layer.data,
-        "action": ActionType.CHANGED,
-        "data_indices": (1,),
-        "vertex_indices": ((),),
+        'value': layer.data,
+        'action': ActionType.CHANGED,
+        'data_indices': (1,),
+        'vertex_indices': ((),),
     }
     assert not np.array_equal(layer.data, old_data)
     assert compare_dicts(layer.events.data.call_args[1], changed_event)

@@ -8,7 +8,7 @@ from napari.utils.events import EventEmitter
 
 def test_event_blocker_count_none():
     """Test event emitter block counter with no emission."""
-    e = EventEmitter(type_name="test")
+    e = EventEmitter(type_name='test')
     with e.blocker() as block:
         pass
     assert block.count == 0
@@ -16,7 +16,7 @@ def test_event_blocker_count_none():
 
 def test_event_blocker_count():
     """Test event emitter block counter with emission."""
-    e = EventEmitter(type_name="test")
+    e = EventEmitter(type_name='test')
     with e.blocker() as block:
         e()
         e()
@@ -106,11 +106,11 @@ def test_error_on_connect():
         def __init__(self) -> None:
             self.m1, self.m2, self.m4 = 0, 0, 0
 
-        @rename("nonexist")
+        @rename('nonexist')
         def meth1(self, _event):
             self.m1 += 1
 
-        @rename("meth1")
+        @rename('meth1')
         def meth2(self, _event):
             self.m2 += 1
 
@@ -122,7 +122,7 @@ def test_error_on_connect():
 
     t = Test()
 
-    e = EventEmitter(type_name="test")
+    e = EventEmitter(type_name='test')
 
     e.connect(t.meth1)
     e()
@@ -134,7 +134,7 @@ def test_error_on_connect():
 
     meth = t.meth3
 
-    t.meth3 = "aaaa"
+    t.meth3 = 'aaaa'
 
     with pytest.raises(RuntimeError):
         e.connect(meth)
@@ -144,7 +144,7 @@ def test_error_on_connect():
     e()
     assert t.m4 == 1
     t.meth4 = None
-    with pytest.warns(RuntimeWarning, match="Problem with function"):
+    with pytest.warns(RuntimeWarning, match='Problem with function'):
         e()
     assert t.m4 == 1
 
@@ -170,11 +170,11 @@ def test_event_order_func():
     def fun6(val):
         res_li.append(val)
 
-    fun1.__module__ = "napari.test.sample"
-    fun3.__module__ = "napari.test.sample"
-    fun5.__module__ = "napari.test.sample"
+    fun1.__module__ = 'napari.test.sample'
+    fun3.__module__ = 'napari.test.sample'
+    fun5.__module__ = 'napari.test.sample'
 
-    e = EventEmitter(type_name="test")
+    e = EventEmitter(type_name='test')
     e.connect(fun1)
     e.connect(partial(fun2, val=2))
     e()
@@ -188,11 +188,11 @@ def test_event_order_func():
     e()
     assert res_li == [3, 1, 4, 2]
     res_li = []
-    e.connect(partial(fun5, val=5), position="last")
+    e.connect(partial(fun5, val=5), position='last')
     e()
     assert res_li == [3, 1, 5, 4, 2]
     res_li = []
-    e.connect(partial(fun6, val=6), position="last")
+    e.connect(partial(fun6, val=6), position='last')
     e()
     assert res_li == [3, 1, 5, 4, 2, 6]
 
@@ -214,12 +214,12 @@ def test_event_order_methods():
         def fun4(self):
             res_li.append(4)
 
-    Test.__module__ = "napari.test.sample"
+    Test.__module__ = 'napari.test.sample'
 
     t1 = Test()
     t2 = Test2()
 
-    e = EventEmitter(type_name="test")
+    e = EventEmitter(type_name='test')
     e.connect(t1.fun1)
     e.connect(t2.fun3)
     e()
@@ -246,7 +246,7 @@ def test_no_event_arg():
 
     t = TestOb()
 
-    e = EventEmitter(type_name="test")
+    e = EventEmitter(type_name='test')
     e.connect(t.fun)
     e.connect(simple_fun)
     e()
@@ -264,7 +264,7 @@ def test_to_many_positional():
 
     t = TestOb()
 
-    e = EventEmitter(type_name="test")
+    e = EventEmitter(type_name='test')
     with pytest.raises(RuntimeError):
         e.connect(t.fun)
     with pytest.raises(RuntimeError):
@@ -289,7 +289,7 @@ def test_disconnect_object():
 
     t = TestOb()
 
-    e = EventEmitter(type_name="test")
+    e = EventEmitter(type_name='test')
     e.connect(t.fun1)
     e.connect(t.fun2)
     e.connect(fun1)
@@ -319,12 +319,12 @@ def test_weakref_disconnect():
 
     t = TestOb()
 
-    e = EventEmitter(type_name="test")
+    e = EventEmitter(type_name='test')
     e.connect(t.fun1)
     e()
 
     assert t.call_list_1 == [1]
-    e.disconnect((weakref.ref(t), "fun1"))
+    e.disconnect((weakref.ref(t), 'fun1'))
     e()
     assert t.call_list_1 == [1]
     e.connect(t.fun2)
@@ -341,7 +341,7 @@ def test_none_disconnect():
     def fun2(event):
         count_list.append(2)
 
-    e = EventEmitter(type_name="test")
+    e = EventEmitter(type_name='test')
     e.connect(fun1)
     e()
     assert count_list == [1]

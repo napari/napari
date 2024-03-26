@@ -102,7 +102,7 @@ class QtPointsControls(QtLayerControls):
         sld = QSlider(Qt.Orientation.Horizontal)
         sld.setToolTip(
             trans._(
-                "Change the size of currently selected points and any added afterwards."
+                'Change the size of currently selected points and any added afterwards.'
             )
         )
         sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -134,7 +134,7 @@ class QtPointsControls(QtLayerControls):
         sym_cb = QComboBox()
         sym_cb.setToolTip(
             trans._(
-                "Change the symbol of currently selected points and any added afterwards."
+                'Change the symbol of currently selected points and any added afterwards.'
             )
         )
         current_index = 0
@@ -247,7 +247,7 @@ class QtPointsControls(QtLayerControls):
         elif mode == Mode.PAN_ZOOM:
             self.panzoom_button.setChecked(True)
         elif mode != Mode.TRANSFORM:
-            raise ValueError(trans._("Mode not recognized {mode}", mode=mode))
+            raise ValueError(trans._('Mode not recognized {mode}', mode=mode))
 
     def changeCurrentSymbol(self, text):
         """Change marker symbol of the points on the layer model.

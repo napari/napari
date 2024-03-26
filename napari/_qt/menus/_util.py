@@ -1,5 +1,5 @@
 import contextlib
-from typing import TYPE_CHECKING, Callable, ClassVar, List, Union
+from typing import TYPE_CHECKING, Callable, ClassVar, Union
 
 from qtpy.QtWidgets import QAction, QMenu
 
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     class MenuDict(TypedDict):
         menu: str
         # these are optional
-        items: List[ActionDict]
+        items: list[ActionDict]
 
     # note: TypedDict still doesn't have the concept of "optional keys"
     # so we add in generic `dict` for type checking.
@@ -35,7 +35,7 @@ if TYPE_CHECKING:
     MenuItem = Union[MenuDict, ActionDict, dict]
 
 
-def populate_menu(menu: QMenu, actions: List['MenuItem']):
+def populate_menu(menu: QMenu, actions: list['MenuItem']):
     """Populate a QMenu from a declarative list of QAction dicts.
 
     Parameters
@@ -75,7 +75,7 @@ def populate_menu(menu: QMenu, actions: List['MenuItem']):
         if not ax:
             menu.addSeparator()
             continue
-        if not ax.get("when", True):
+        if not ax.get('when', True):
             continue
         if 'menu' in ax:
             sub = ax['menu']
@@ -84,11 +84,11 @@ def populate_menu(menu: QMenu, actions: List['MenuItem']):
                 sub.setParent(menu)
             else:
                 sub = menu.addMenu(sub)
-            populate_menu(sub, ax.get("items", []))
+            populate_menu(sub, ax.get('items', []))
             continue
         action: QAction = menu.addAction(ax['text'])
         if 'slot' in ax:
-            if ax.get("checkable"):
+            if ax.get('checkable'):
                 action.toggled.connect(ax['slot'])
             else:
                 action.triggered.connect(ax['slot'])
@@ -96,9 +96,9 @@ def populate_menu(menu: QMenu, actions: List['MenuItem']):
         action.setStatusTip(ax.get('statusTip', ''))
         if 'menuRole' in ax:
             action.setMenuRole(ax['menuRole'])
-        if ax.get("checkable"):
+        if ax.get('checkable'):
             action.setCheckable(True)
-            action.setChecked(ax.get("checked", False))
+            action.setChecked(ax.get('checked', False))
             if 'check_on' in ax:
                 emitter = ax['check_on']
 
@@ -115,7 +115,7 @@ class NapariMenu(QMenu):
     close.
     """
 
-    _INSTANCES: ClassVar[List['NapariMenu']] = []
+    _INSTANCES: ClassVar[list['NapariMenu']] = []
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)

@@ -61,11 +61,11 @@ def test_add_image_colormap_variants():
     assert viewer.add_image(data, colormap='fire')
 
     # as tuple
-    cmap_tuple = ("my_colormap", Colormap(['g', 'm', 'y']))
+    cmap_tuple = ('my_colormap', Colormap(['g', 'm', 'y']))
     assert viewer.add_image(data, colormap=cmap_tuple)
 
     # as dict
-    cmap_dict = {"your_colormap": Colormap(['g', 'r', 'y'])}
+    cmap_dict = {'your_colormap': Colormap(['g', 'r', 'y'])}
     assert viewer.add_image(data, colormap=cmap_dict)
 
     # as Colormap instance
@@ -136,16 +136,6 @@ def test_add_labels():
     assert len(viewer.layers) == 1
     assert np.array_equal(viewer.layers[0].data, data)
     assert viewer.dims.ndim == 2
-
-
-def test_add_labels_warnings():
-    """Test adding labels image."""
-    viewer = ViewerModel()
-    np.random.seed(0)
-    with pytest.warns(
-        FutureWarning, match="Setting Labels.num_colors is deprecated since"
-    ):
-        viewer.add_labels(np.zeros((10, 15), dtype=np.uint8), num_colors=20)
 
 
 def test_add_points():
@@ -984,3 +974,18 @@ def test_slice_order_with_mixed_dims():
     assert image_2d._slice.image.view.shape == (4, 5)
     assert image_3d._slice.image.view.shape == (3, 5)
     assert image_4d._slice.image.view.shape == (2, 5)
+
+
+def test_make_layer_visible_after_slicing():
+    """See https://github.com/napari/napari/issues/6760"""
+    viewer = ViewerModel(ndisplay=2)
+    data = np.array([np.ones((2, 2)) * i for i in range(3)])
+    layer: Image = viewer.add_image(data)
+    layer.visible = False
+    assert viewer.dims.current_step[0] != 0
+    assert not np.array_equal(layer._slice.image.raw, data[0])
+
+    viewer.dims.current_step = (0, 0, 0)
+    layer.visible = True
+
+    np.testing.assert_array_equal(layer._slice.image.raw, data[0])

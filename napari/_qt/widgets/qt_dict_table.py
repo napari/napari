@@ -1,5 +1,5 @@
 import re
-from typing import List, Optional
+from typing import Optional
 
 from qtpy.QtCore import QSize, Slot
 from qtpy.QtGui import QFont
@@ -7,10 +7,10 @@ from qtpy.QtWidgets import QTableWidget, QTableWidgetItem
 
 from napari.utils.translations import trans
 
-email_pattern = re.compile(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
+email_pattern = re.compile(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$')
 url_pattern = re.compile(
-    r"https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}"
-    r"\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)"
+    r'https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}'
+    r'\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)'
 )
 
 
@@ -47,9 +47,9 @@ class QtDictTable(QTableWidget):
     def __init__(
         self,
         parent=None,
-        source: Optional[List[dict]] = None,
+        source: Optional[list[dict]] = None,
         *,
-        headers: Optional[List[str]] = None,
+        headers: Optional[list[str]] = None,
         min_section_width: Optional[int] = None,
         max_section_width: int = 480,
     ) -> None:
@@ -63,7 +63,7 @@ class QtDictTable(QTableWidget):
         self.cellClicked.connect(self._go_to_links)
         self.setMouseTracking(True)
 
-    def set_data(self, data: List[dict], headers: Optional[List[str]] = None):
+    def set_data(self, data: list[dict], headers: Optional[list[str]] = None):
         """Set the data in the table, given a list of dicts.
 
         Parameters

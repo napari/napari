@@ -1,7 +1,7 @@
 import os
 import random
 import sys
-from typing import NamedTuple, Optional, Type
+from typing import NamedTuple, Optional
 
 import numpy as np
 import pytest
@@ -45,11 +45,11 @@ from napari.utils.colormaps import DirectLabelColormap
 
 
 class LayerTypeWithData(NamedTuple):
-    type: Type[Layer]
+    type: type[Layer]
     data: np.ndarray
     colormap: Optional[DirectLabelColormap]
     properties: Optional[dict]
-    expected_isinstance: Type[QtLayerControlsContainer]
+    expected_isinstance: type[QtLayerControlsContainer]
 
 
 np.random.seed(0)
@@ -72,7 +72,7 @@ _LABELS_WITH_DIRECT_COLORMAP = LayerTypeWithData(
             3: 'green',
             4: 'red',
             5: 'yellow',
-            None: "black",
+            None: 'black',
         }
     ),
     properties=None,
@@ -168,18 +168,18 @@ def create_layer_controls(qtbot):
         _VECTORS,
     ],
     ids=[
-        "labels_with_direct_colormap",
-        "labels_with_auto_colormap",
-        "image",
-        "points",
-        "shapes",
-        "surface",
-        "tracks",
-        "vectors",
+        'labels_with_direct_colormap',
+        'labels_with_auto_colormap',
+        'image',
+        'points',
+        'shapes',
+        'surface',
+        'tracks',
+        'vectors',
     ],
 )
 @pytest.mark.qt_no_exception_capture
-@pytest.mark.skipif(os.environ.get("MIN_REQ", "0") == "1", reason="min req")
+@pytest.mark.skipif(os.environ.get('MIN_REQ', '0') == '1', reason='min req')
 def test_create_layer_controls(
     qtbot, create_layer_controls, layer_type_with_data, capsys
 ):
@@ -241,7 +241,7 @@ skip_predicate = sys.version_info >= (3, 11) and (
     ],
 )
 @pytest.mark.qt_no_exception_capture
-@pytest.mark.skipif(os.environ.get("MIN_REQ", "0") == "1", reason="min req")
+@pytest.mark.skipif(os.environ.get('MIN_REQ', '0') == '1', reason='min req')
 def test_create_layer_controls_spin(
     qtbot, create_layer_controls, layer_type_with_data, capsys
 ):
@@ -288,16 +288,16 @@ def test_create_layer_controls_spin(
             if captured.err:
                 # since an error was found check if it is associated with a known issue still open
                 expected_errors = [
-                    "MemoryError: Unable to allocate",  # See https://github.com/napari/napari/issues/5798
-                    "ValueError: array is too big; `arr.size * arr.dtype.itemsize` is larger than the maximum possible size.",  # See https://github.com/napari/napari/issues/5798
-                    "ValueError: Maximum allowed dimension exceeded",  # See https://github.com/napari/napari/issues/5798
-                    "IndexError: index ",  # See https://github.com/napari/napari/issues/4864
-                    "RuntimeWarning: overflow encountered",  # See https://github.com/napari/napari/issues/4864
+                    'MemoryError: Unable to allocate',  # See https://github.com/napari/napari/issues/5798
+                    'ValueError: array is too big; `arr.size * arr.dtype.itemsize` is larger than the maximum possible size.',  # See https://github.com/napari/napari/issues/5798
+                    'ValueError: Maximum allowed dimension exceeded',  # See https://github.com/napari/napari/issues/5798
+                    'IndexError: index ',  # See https://github.com/napari/napari/issues/4864
+                    'RuntimeWarning: overflow encountered',  # See https://github.com/napari/napari/issues/4864
                 ]
                 assert any(
                     expected_error in captured.err
                     for expected_error in expected_errors
-                ), f"value: {value}, range {value_range}\nerr: {captured.err}"
+                ), f'value: {value}, range {value_range}\nerr: {captured.err}'
 
         assert qspinbox.value() in [qspinbox_max, qspinbox_max - 1]
         qspinbox.setValue(qspinbox_initial_value)
@@ -317,7 +317,7 @@ def test_create_layer_controls_spin(
     ],
 )
 @pytest.mark.qt_no_exception_capture
-@pytest.mark.skipif(os.environ.get("MIN_REQ", "0") == "1", reason="min req")
+@pytest.mark.skipif(os.environ.get('MIN_REQ', '0') == '1', reason='min req')
 def test_create_layer_controls_qslider(
     qtbot, create_layer_controls, layer_type_with_data, capsys
 ):
@@ -330,7 +330,7 @@ def test_create_layer_controls_qslider(
     # check QAbstractSlider by changing value with `setValue` from minimum value to maximum
     for qslider in ctrl.findChildren(QAbstractSlider):
         if isinstance(qslider.minimum(), float):
-            if getattr(qslider, "_valuesChanged", None):
+            if getattr(qslider, '_valuesChanged', None):
                 # create a list of tuples in the case the slider is ranged
                 # from (minimum, minimum) to (maximum, maximum) +
                 # from (minimum, maximum) to (minimum, minimum)
@@ -350,7 +350,7 @@ def test_create_layer_controls_qslider(
             else:
                 value_range = np.linspace(qslider.minimum(), qslider.maximum())
         else:
-            if getattr(qslider, "_valuesChanged", None):
+            if getattr(qslider, '_valuesChanged', None):
                 # create a list of tuples in the case the slider is ranged
                 # from (minimum, minimum) to (maximum, maximum) +
                 # from (minimum, maximum) to (minimum, minimum)
@@ -379,7 +379,7 @@ def test_create_layer_controls_qslider(
             captured = capsys.readouterr()
             assert not captured.out
             assert not captured.err
-        if getattr(qslider, "_valuesChanged", None):
+        if getattr(qslider, '_valuesChanged', None):
             assert qslider.value()[0] == qslider.minimum()
         else:
             assert qslider.value() == qslider.maximum()
@@ -399,7 +399,7 @@ def test_create_layer_controls_qslider(
     ],
 )
 @pytest.mark.qt_no_exception_capture
-@pytest.mark.skipif(os.environ.get("MIN_REQ", "0") == "1", reason="min req")
+@pytest.mark.skipif(os.environ.get('MIN_REQ', '0') == '1', reason='min req')
 def test_create_layer_controls_qcolorswatchedit(
     qtbot, create_layer_controls, layer_type_with_data, capsys
 ):
@@ -414,12 +414,12 @@ def test_create_layer_controls_qcolorswatchedit(
         lineedit = qcolorswatchedit.line_edit
         colorswatch = qcolorswatchedit.color_swatch
         colors = [
-            ("white", "white", np.array([1.0, 1.0, 1.0, 1.0])),
-            ("black", "black", np.array([0.0, 0.0, 0.0, 1.0])),
+            ('white', 'white', np.array([1.0, 1.0, 1.0, 1.0])),
+            ('black', 'black', np.array([0.0, 0.0, 0.0, 1.0])),
             # check autocompletion `bla` -> `black`
-            ("bla", "black", np.array([0.0, 0.0, 0.0, 1.0])),
+            ('bla', 'black', np.array([0.0, 0.0, 0.0, 1.0])),
             # check that setting an invalid color makes it fallback to the previous value
-            ("invalid_value", "black", np.array([0.0, 0.0, 0.0, 1.0])),
+            ('invalid_value', 'black', np.array([0.0, 0.0, 0.0, 1.0])),
         ]
         for color, expected_color, expected_array in colors:
             lineedit.clear()

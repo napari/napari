@@ -3,8 +3,9 @@ from __future__ import annotations
 import itertools
 import typing
 import warnings
+from collections.abc import Iterable
 from functools import cached_property
-from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 import numpy as np
 
@@ -358,7 +359,7 @@ class LayerList(SelectableEventedList[Layer]):
         return self.get_extent(list(self))
 
     @property
-    def _ranges(self) -> Tuple[RangeTuple, ...]:
+    def _ranges(self) -> tuple[RangeTuple, ...]:
         """Get ranges for Dims.range in world coordinates."""
         ext = self.extent
         return tuple(
@@ -416,7 +417,7 @@ class LayerList(SelectableEventedList[Layer]):
         selected: bool = False,
         plugin: Optional[str] = None,
         _writer: Optional[WriterContribution] = None,
-    ) -> List[str]:
+    ) -> list[str]:
         """Save all or only selected layers to a path using writer plugins.
 
         If ``plugin`` is not provided and only one layer is targeted, then we
@@ -480,9 +481,9 @@ class LayerList(SelectableEventedList[Layer]):
         )
 
         if selected:
-            msg = trans._("No layers selected", deferred=True)
+            msg = trans._('No layers selected', deferred=True)
         else:
-            msg = trans._("No layers to save", deferred=True)
+            msg = trans._('No layers to save', deferred=True)
 
         if not layers:
             warnings.warn(msg)

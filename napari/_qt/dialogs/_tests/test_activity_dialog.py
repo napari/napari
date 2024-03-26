@@ -10,7 +10,7 @@ from napari._qt.widgets.qt_progress_bar import (
 )
 from napari.utils import progress
 
-SHOW = bool(sys.platform == 'linux' or os.getenv("CI"))
+SHOW = bool(sys.platform == 'linux' or os.getenv('CI'))
 
 
 def qt_viewer_has_pbar(qt_viewer):
@@ -123,9 +123,9 @@ def test_progress_set_description(make_napari_viewer):
     viewer = make_napari_viewer(show=SHOW)
 
     prog = progress(total=5)
-    prog.set_description("Test")
+    prog.set_description('Test')
     pbar = get_qt_labeled_progress_bar(prog, viewer)
 
-    assert pbar.description_label.text() == "Test: "
+    assert pbar.description_label.text() == 'Test: '
 
     prog.close()

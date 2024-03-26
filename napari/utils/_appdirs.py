@@ -8,7 +8,7 @@ import appdirs
 
 PREFIX_PATH = os.path.realpath(sys.prefix)
 
-sha_short = f"{os.path.basename(PREFIX_PATH)}_{hashlib.sha1(PREFIX_PATH.encode()).hexdigest()}"
+sha_short = f'{os.path.basename(PREFIX_PATH)}_{hashlib.sha1(PREFIX_PATH.encode()).hexdigest()}'
 
 _appname = 'napari'
 _appauthor = False

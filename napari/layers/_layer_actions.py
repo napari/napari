@@ -5,7 +5,7 @@ on a layer in the LayerList.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List, cast
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 
@@ -24,7 +24,7 @@ def _duplicate_layer(ll: LayerList, *, name: str = ''):
 
     for lay in list(ll.selection):
         data, state, type_str = lay.as_layer_data_tuple()
-        state["name"] = trans._('{name} copy', name=lay.name)
+        state['name'] = trans._('{name} copy', name=lay.name)
         with layer_source(parent=lay):
             new = Layer.create(deepcopy(data), state, type_str)
         ll.insert(ll.index(lay) + 1, new)
@@ -81,7 +81,7 @@ def _convert_to_image(ll: LayerList):
 
 def _merge_stack(ll: LayerList, rgb=False):
     # force selection to follow LayerList ordering
-    imgs = cast(List[Image], [layer for layer in ll if layer in ll.selection])
+    imgs = cast(list[Image], [layer for layer in ll if layer in ll.selection])
     assert all(isinstance(layer, Image) for layer in imgs)
     merged = (
         stack_utils.merge_rgb(imgs)
@@ -147,7 +147,7 @@ def _convert_dtype(ll: LayerList, mode='int64'):
     if not isinstance(layer, Labels):
         raise NotImplementedError(
             trans._(
-                "Data type conversion only implemented for labels",
+                'Data type conversion only implemented for labels',
                 deferred=True,
             )
         )
@@ -159,7 +159,7 @@ def _convert_dtype(ll: LayerList, mode='int64'):
     ):
         raise AssertionError(
             trans._(
-                "Labeling contains values outside of the target data type range.",
+                'Labeling contains values outside of the target data type range.',
                 deferred=True,
             )
         )
@@ -174,7 +174,7 @@ def _project(ll: LayerList, axis: int = 0, mode='max'):
     if not isinstance(layer, Image):
         raise NotImplementedError(
             trans._(
-                "Projections are only implemented for images", deferred=True
+                'Projections are only implemented for images', deferred=True
             )
         )
 

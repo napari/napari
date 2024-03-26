@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Tuple
+from typing import Optional
 
 import numpy as np
 import numpy.typing as npt
@@ -6,18 +6,18 @@ import numpy.typing as npt
 # normal vectors for a 3D axis-aligned box
 # coordinates are ordered [z, y, x]
 FACE_NORMALS = {
-    "x_pos": np.array([0, 0, 1]),
-    "x_neg": np.array([0, 0, -1]),
-    "y_pos": np.array([0, 1, 0]),
-    "y_neg": np.array([0, -1, 0]),
-    "z_pos": np.array([1, 0, 0]),
-    "z_neg": np.array([-1, 0, 0]),
+    'x_pos': np.array([0, 0, 1]),
+    'x_neg': np.array([0, 0, -1]),
+    'y_pos': np.array([0, 1, 0]),
+    'y_neg': np.array([0, -1, 0]),
+    'z_pos': np.array([1, 0, 0]),
+    'z_neg': np.array([-1, 0, 0]),
 }
 
 
 def project_points_onto_plane(
     points: np.ndarray, plane_point: np.ndarray, plane_normal: np.ndarray
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """Project points on to a plane.
 
     Plane is defined by a point and a normal vector. This function
@@ -147,7 +147,7 @@ def rotate_points(
     points: np.ndarray,
     current_plane_normal: np.ndarray,
     new_plane_normal: np.ndarray,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """Rotate points using a rotation matrix defined by the rotation from
     current_plane to new_plane.
 
@@ -285,7 +285,7 @@ def intersect_line_with_axis_aligned_plane(
 
 def bounding_box_to_face_vertices(
     bounding_box: np.ndarray,
-) -> Dict[str, np.ndarray]:
+) -> dict[str, np.ndarray]:
     """From a layer bounding box (N, 2), N=ndim, return a dictionary containing
     the vertices of each face of the bounding_box.
 
@@ -310,7 +310,7 @@ def bounding_box_to_face_vertices(
     z_min, z_max = bounding_box[-3, :]
 
     face_coords = {
-        "x_pos": np.array(
+        'x_pos': np.array(
             [
                 [z_min, y_min, x_max],
                 [z_min, y_max, x_max],
@@ -318,7 +318,7 @@ def bounding_box_to_face_vertices(
                 [z_max, y_min, x_max],
             ]
         ),
-        "x_neg": np.array(
+        'x_neg': np.array(
             [
                 [z_min, y_min, x_min],
                 [z_min, y_max, x_min],
@@ -326,7 +326,7 @@ def bounding_box_to_face_vertices(
                 [z_max, y_min, x_min],
             ]
         ),
-        "y_pos": np.array(
+        'y_pos': np.array(
             [
                 [z_min, y_max, x_min],
                 [z_min, y_max, x_max],
@@ -334,7 +334,7 @@ def bounding_box_to_face_vertices(
                 [z_max, y_max, x_min],
             ]
         ),
-        "y_neg": np.array(
+        'y_neg': np.array(
             [
                 [z_min, y_min, x_min],
                 [z_min, y_min, x_max],
@@ -342,7 +342,7 @@ def bounding_box_to_face_vertices(
                 [z_max, y_min, x_min],
             ]
         ),
-        "z_pos": np.array(
+        'z_pos': np.array(
             [
                 [z_max, y_min, x_min],
                 [z_max, y_min, x_max],
@@ -350,7 +350,7 @@ def bounding_box_to_face_vertices(
                 [z_max, y_max, x_min],
             ]
         ),
-        "z_neg": np.array(
+        'z_neg': np.array(
             [
                 [z_min, y_min, x_min],
                 [z_min, y_min, x_max],
@@ -786,7 +786,7 @@ def distance_between_point_and_line_3d(
 
 def find_nearest_triangle_intersection(
     ray_position: np.ndarray, ray_direction: np.ndarray, triangles: np.ndarray
-) -> Tuple[Optional[int], Optional[np.ndarray]]:
+) -> tuple[Optional[int], Optional[np.ndarray]]:
     """Given an array of triangles, find the index and intersection location
     of a ray and the nearest triangle.
 

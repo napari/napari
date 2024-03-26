@@ -1,15 +1,15 @@
 import math
-from typing import TYPE_CHECKING, Dict, Tuple
+from typing import TYPE_CHECKING
 
 import numpy as np
 from vispy.color import Colormap as VispyColormap
 from vispy.gloo import Texture2D
 from vispy.scene.node import Node
 
-from napari._vispy.layers.image import (
+from napari._vispy.layers.scalar_field import (
     _DTYPE_TO_VISPY_FORMAT,
     _VISPY_FORMAT_TO_DTYPE,
-    ImageLayerNode,
+    ScalarFieldLayerNode,
     VispyScalarFieldBaseLayer,
     get_dtype_from_vispy_texture_format,
 )
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from napari.layers import Labels
 
 
-ColorTuple = Tuple[float, float, float, float]
+ColorTuple = tuple[float, float, float, float]
 
 
 auto_lookup_shader_uint8 = """
@@ -99,7 +99,7 @@ class LabelVispyColormap(VispyColormap):
         raw_dtype: np.dtype,
     ):
         super().__init__(
-            colors=["w", "w"], controls=None, interpolation='zero'
+            colors=['w', 'w'], controls=None, interpolation='zero'
         )
         if view_dtype.itemsize == 1:
             shader = auto_lookup_shader_uint8
@@ -113,7 +113,7 @@ class LabelVispyColormap(VispyColormap):
             # to 8-bit on the CPU before sending to the shader.
             # It should thus be impossible to reach this condition.
             raise ValueError(  # pragma: no cover
-                f"Cannot use dtype {view_dtype} with LabelVispyColormap"
+                f'Cannot use dtype {view_dtype} with LabelVispyColormap'
             )
 
         selection = colormap._selection_as_minimum_dtype(raw_dtype)
@@ -138,15 +138,15 @@ class DirectLabelVispyColormap(VispyColormap):
         super().__init__(colors, controls=None, interpolation='zero')
         shader = direct_lookup_shader_many if multi else direct_lookup_shader
         self.glsl_map = (
-            shader.replace("$use_selection", str(use_selection).lower())
-            .replace("$selection", str(selection))
-            .replace("$scale", str(scale))
-            .replace("$color_map_size", str(color_map_size))
+            shader.replace('$use_selection', str(use_selection).lower())
+            .replace('$selection', str(selection))
+            .replace('$scale', str(scale))
+            .replace('$color_map_size', str(color_map_size))
         )
 
 
 def build_textures_from_dict(
-    color_dict: Dict[int, ColorTuple], max_size: int
+    color_dict: dict[int, ColorTuple], max_size: int
 ) -> np.ndarray:
     """This code assumes that the keys in the color_dict are sequential from 0.
 
@@ -155,14 +155,14 @@ def build_textures_from_dict(
     """
     if len(color_dict) > 2**23:
         raise ValueError(  # pragma: no cover
-            "Cannot map more than 2**23 colors because of float32 precision. "
-            f"Got {len(color_dict)}"
+            'Cannot map more than 2**23 colors because of float32 precision. '
+            f'Got {len(color_dict)}'
         )
     if len(color_dict) > max_size**2:
         raise ValueError(
-            "Cannot create a 2D texture holding more than "
-            f"{max_size}**2={max_size ** 2} colors."
-            f"Got {len(color_dict)}"
+            'Cannot create a 2D texture holding more than '
+            f'{max_size}**2={max_size ** 2} colors.'
+            f'Got {len(color_dict)}'
         )
     data = np.zeros(
         (
@@ -187,7 +187,7 @@ def _select_colormap_texture(
 
     if color_texture is None:
         raise ValueError(  # pragma: no cover
-            f"Cannot build a texture for dtype {raw_dtype=} and {view_dtype=}"
+            f'Cannot build a texture for dtype {raw_dtype=} and {view_dtype=}'
         )
     return color_texture.reshape(256, -1, 4)
 
@@ -312,7 +312,7 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
         self._on_colormap_change()
 
 
-class LabelLayerNode(ImageLayerNode):
+class LabelLayerNode(ScalarFieldLayerNode):
     def __init__(self, custom_node: Node = None, texture_format=None):
         self._custom_node = custom_node
         self._setup_nodes(texture_format)
@@ -345,7 +345,7 @@ class LabelLayerNode(ImageLayerNode):
         res = self._image_node if ndisplay == 2 else self._volume_node
 
         if (
-            res.texture_format != "auto"
+            res.texture_format != 'auto'
             and dtype is not None
             and _VISPY_FORMAT_TO_DTYPE[res.texture_format] != dtype
         ):

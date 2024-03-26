@@ -6,11 +6,7 @@ from typing import (
     Any,
     Callable,
     ClassVar,
-    Dict,
-    List,
     Optional,
-    Set,
-    Tuple,
     Union,
 )
 
@@ -348,7 +344,7 @@ class Shapes(Layer):
     # in the thumbnail
     _max_shapes_thumbnail = 100
 
-    _drag_modes: ClassVar[Dict[Mode, Callable[["Shapes", Event], Any]]] = {
+    _drag_modes: ClassVar[dict[Mode, Callable[['Shapes', Event], Any]]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
         Mode.SELECT: select,
@@ -363,7 +359,7 @@ class Shapes(Layer):
         Mode.ADD_POLYGON_LASSO: add_path_polygon_lasso,
     }
 
-    _move_modes: ClassVar[Dict[Mode, Callable[["Shapes", Event], Any]]] = {
+    _move_modes: ClassVar[dict[Mode, Callable[['Shapes', Event], Any]]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
         Mode.SELECT: highlight,
@@ -379,7 +375,7 @@ class Shapes(Layer):
     }
 
     _double_click_modes: ClassVar[
-        Dict[Mode, Callable[["Shapes", Event], Any]]
+        dict[Mode, Callable[['Shapes', Event], Any]]
     ] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: no_op,
@@ -395,7 +391,7 @@ class Shapes(Layer):
         Mode.ADD_POLYGON_LASSO: no_op,
     }
 
-    _cursor_modes: ClassVar[Dict[Mode, str]] = {
+    _cursor_modes: ClassVar[dict[Mode, str]] = {
         Mode.PAN_ZOOM: 'standard',
         Mode.TRANSFORM: 'standard',
         Mode.SELECT: 'pointing',
@@ -410,7 +406,7 @@ class Shapes(Layer):
         Mode.ADD_POLYGON_LASSO: 'cross',
     }
 
-    _interactive_modes: ClassVar[Set[Mode]] = {
+    _interactive_modes: ClassVar[set[Mode]] = {
         Mode.PAN_ZOOM,
     }
 
@@ -459,7 +455,7 @@ class Shapes(Layer):
             if ndim is not None and ndim != data_ndim:
                 raise ValueError(
                     trans._(
-                        "Shape dimensions must be equal to ndim",
+                        'Shape dimensions must be equal to ndim',
                         deferred=True,
                     )
                 )
@@ -525,7 +521,7 @@ class Shapes(Layer):
 
         self._value = (None, None)
         self._value_stored = (None, None)
-        self._moving_value: Tuple[Optional[int], Optional[int]] = (None, None)
+        self._moving_value: tuple[Optional[int], Optional[int]] = (None, None)
         self._selected_data = set()
         self._selected_data_stored = set()
         self._selected_data_history = set()
@@ -549,7 +545,7 @@ class Shapes(Layer):
         self._drag_box = None
         self._drag_box_stored = None
         self._is_creating = False
-        self._clipboard: Dict[str, Shapes] = {}
+        self._clipboard: dict[str, Shapes] = {}
 
         self._status = self.mode
 
@@ -579,14 +575,14 @@ class Shapes(Layer):
             self._current_edge_color = transform_color_with_defaults(
                 num_entries=1,
                 colors=edge_color,
-                elem_name="edge_color",
-                default="black",
+                elem_name='edge_color',
+                default='black',
             )
             self._current_face_color = transform_color_with_defaults(
                 num_entries=1,
                 colors=face_color,
-                elem_name="face_color",
-                default="black",
+                elem_name='face_color',
+                default='black',
             )
 
         self._text = TextManager._from_layer(
@@ -616,7 +612,7 @@ class Shapes(Layer):
                 num_entries=1,
                 colors=color,
                 elem_name=f'{attribute}_color',
-                default="white",
+                default='white',
             )
 
         elif color_mode == ColorMode.CYCLE:
@@ -696,17 +692,17 @@ class Shapes(Layer):
             or (isinstance(data, list) and len(data) > 0)
         )
         kwargs = {
-            "value": self.data,
-            "vertex_indices": ((),),
-            "data_indices": tuple(i for i in range(len(self.data))),
+            'value': self.data,
+            'vertex_indices': ((),),
+            'data_indices': tuple(i for i in range(len(self.data))),
         }
         if prior_data and data_not_empty:
-            kwargs["action"] = ActionType.CHANGING
+            kwargs['action'] = ActionType.CHANGING
         elif data_not_empty:
-            kwargs["action"] = ActionType.ADDING
-            kwargs["data_indices"] = tuple(i for i in range(len(data)))
+            kwargs['action'] = ActionType.ADDING
+            kwargs['data_indices'] = tuple(i for i in range(len(data)))
         else:
-            kwargs["action"] = ActionType.REMOVING
+            kwargs['action'] = ActionType.REMOVING
 
         self.events.data(**kwargs)
         self._data_view = ShapeList(ndisplay=self._slice_input.ndisplay)
@@ -724,14 +720,14 @@ class Shapes(Layer):
         )
         self._update_dims()
 
-        kwargs["data_indices"] = tuple(i for i in range(len(data)))
-        kwargs["value"] = self.data
+        kwargs['data_indices'] = tuple(i for i in range(len(data)))
+        kwargs['value'] = self.data
         if prior_data and data_not_empty:
-            kwargs["action"] = ActionType.CHANGED
+            kwargs['action'] = ActionType.CHANGED
         elif data_not_empty:
-            kwargs["action"] = ActionType.ADDED
+            kwargs['action'] = ActionType.ADDED
         else:
-            kwargs["action"] = ActionType.REMOVED
+            kwargs['action'] = ActionType.REMOVED
         self.events.data(**kwargs)
 
         self._reset_editable()
@@ -762,7 +758,7 @@ class Shapes(Layer):
     @features.setter
     def features(
         self,
-        features: Union[Dict[str, np.ndarray], pd.DataFrame],
+        features: Union[dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
         self._feature_table.set_values(features, num_data=self.nshapes)
         if self._face_color_property and (
@@ -804,23 +800,23 @@ class Shapes(Layer):
 
     @feature_defaults.setter
     def feature_defaults(
-        self, defaults: Union[Dict[str, Any], pd.DataFrame]
+        self, defaults: Union[dict[str, Any], pd.DataFrame]
     ) -> None:
         self._feature_table.set_defaults(defaults)
         self.events.current_properties()
         self.events.feature_defaults()
 
     @property
-    def properties(self) -> Dict[str, np.ndarray]:
+    def properties(self) -> dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each shape"""
         return self._feature_table.properties()
 
     @properties.setter
-    def properties(self, properties: Dict[str, Array]):
+    def properties(self, properties: dict[str, Array]):
         self.features = properties
 
     @property
-    def property_choices(self) -> Dict[str, np.ndarray]:
+    def property_choices(self) -> dict[str, np.ndarray]:
         return self._feature_table.choices()
 
     def _get_ndim(self):
@@ -895,7 +891,7 @@ class Shapes(Layer):
         self.events.current_face_color()
 
     @property
-    def current_properties(self) -> Dict[str, np.ndarray]:
+    def current_properties(self) -> dict[str, np.ndarray]:
         """dict{str: np.ndarray(1,)}: properties for the next added shape."""
         return self._feature_table.currents()
 
@@ -981,7 +977,7 @@ class Shapes(Layer):
         self._edge_colormap = ensure_colormap(colormap)
 
     @property
-    def edge_contrast_limits(self) -> Union[Tuple[float, float], None]:
+    def edge_contrast_limits(self) -> Union[tuple[float, float], None]:
         """None, (float, float): contrast limits for mapping
         the edge_color colormap property to 0 and 1
         """
@@ -989,7 +985,7 @@ class Shapes(Layer):
 
     @edge_contrast_limits.setter
     def edge_contrast_limits(
-        self, contrast_limits: Union[None, Tuple[float, float]]
+        self, contrast_limits: Union[None, tuple[float, float]]
     ):
         self._edge_contrast_limits = contrast_limits
 
@@ -1047,7 +1043,7 @@ class Shapes(Layer):
         self._face_colormap = ensure_colormap(colormap)
 
     @property
-    def face_contrast_limits(self) -> Union[None, Tuple[float, float]]:
+    def face_contrast_limits(self) -> Union[None, tuple[float, float]]:
         """None, (float, float) : clims for mapping the face_color
         colormap property to 0 and 1
         """
@@ -1055,7 +1051,7 @@ class Shapes(Layer):
 
     @face_contrast_limits.setter
     def face_contrast_limits(
-        self, contrast_limits: Union[None, Tuple[float, float]]
+        self, contrast_limits: Union[None, tuple[float, float]]
     ):
         self._face_contrast_limits = contrast_limits
 
@@ -1150,7 +1146,7 @@ class Shapes(Layer):
         transformed_color_cycle, transformed_colors = transform_color_cycle(
             color_cycle=color_cycle,
             elem_name=f'{attribute}_color_cycle',
-            default="white",
+            default='white',
         )
         setattr(self, f'_{attribute}_color_cycle_values', transformed_colors)
         setattr(self, f'_{attribute}_color_cycle', transformed_color_cycle)
@@ -1295,8 +1291,8 @@ class Shapes(Layer):
                 transformed_color = transform_color_with_defaults(
                     num_entries=len(self.data),
                     colors=color,
-                    elem_name="face_color",
-                    default="white",
+                    elem_name='face_color',
+                    default='white',
                 )
                 colors = normalize_and_broadcast_colors(
                     len(self.data), transformed_color
@@ -1385,8 +1381,8 @@ class Shapes(Layer):
                 transformed_color = transform_color_with_defaults(
                     num_entries=n_shapes,
                     colors=color,
-                    elem_name="face_color",
-                    default="white",
+                    elem_name='face_color',
+                    default='white',
                 )
                 init_colors = normalize_and_broadcast_colors(
                     n_shapes, transformed_color
@@ -1610,7 +1606,7 @@ class Shapes(Layer):
         return self.text.view_text(self._indices_view)
 
     @property
-    def _view_text_coords(self) -> Tuple[np.ndarray, str, str]:
+    def _view_text_coords(self) -> tuple[np.ndarray, str, str]:
         """Get the coordinates of the text elements in view
 
         Returns
@@ -1713,8 +1709,8 @@ class Shapes(Layer):
         ----------
         data : Array | List[Array]
             List of rectangle data where each element is a (4, D) array of 4 vertices
-            in D dimensions, or a (2, D) array of 2 vertices in D dimensions, where
-            the vertices are top-left and bottom-right corners.
+            in D dimensions, or in 2D a (2, 2) array of 2 vertices that are
+            the top-left and bottom-right corners.
             Can be a 3-dimensional array for multiple shapes, or list of 2 or 4
             vertices for a single shape.
         edge_width : float | list
@@ -1771,8 +1767,8 @@ class Shapes(Layer):
         ----------
         data : Array | List[Array]
             List of ellipse data where each element is a (4, D) array of 4 vertices
-            in D dimensions representing a bounding box, or a (2, D) array of
-            center position and radii magnitudes in D dimensions.
+            in D dimensions representing a bounding box, or in 2D a (2, 2) array of
+            center position and radii magnitudes.
             Can be a 3-dimensional array for multiple shapes, or list of 2 or 4
             vertices for a single shape.
         edge_width : float | list
@@ -2212,7 +2208,7 @@ class Shapes(Layer):
         if n_new_shapes > 0:
             total_shapes = n_new_shapes + self.nshapes
             self._feature_table.resize(total_shapes)
-            if hasattr(self, "text"):
+            if hasattr(self, 'text'):
                 self.text.apply(self.features)
 
         if edge_color is None:
@@ -2244,8 +2240,8 @@ class Shapes(Layer):
             transformed_ec = transform_color_with_defaults(
                 num_entries=len(data),
                 colors=edge_color,
-                elem_name="edge_color",
-                default="white",
+                elem_name='edge_color',
+                default='white',
             )
             transformed_edge_color = normalize_and_broadcast_colors(
                 len(data), transformed_ec
@@ -2253,8 +2249,8 @@ class Shapes(Layer):
             transformed_fc = transform_color_with_defaults(
                 num_entries=len(data),
                 colors=face_color,
-                elem_name="face_color",
-                default="white",
+                elem_name='face_color',
+                default='white',
             )
             transformed_face_color = normalize_and_broadcast_colors(
                 len(data), transformed_fc
@@ -2566,7 +2562,7 @@ class Shapes(Layer):
         self._drag_box_stored = copy(self._drag_box)
         self.events.highlight()
 
-    def _finish_drawing(self, event=None):
+    def _finish_drawing(self, event=None) -> None:
         """Reset properties used in shape drawing."""
         index = copy(self._moving_value[0])
         self._is_moving = False
@@ -2656,7 +2652,7 @@ class Shapes(Layer):
 
             self.thumbnail = colormapped
 
-    def remove_selected(self):
+    def remove_selected(self) -> None:
         """Remove any selected shapes."""
         index = list(self.selected_data)
         to_remove = sorted(index, reverse=True)
@@ -2838,8 +2834,8 @@ class Shapes(Layer):
         self,
         start_point: np.ndarray,
         end_point: np.ndarray,
-        dims_displayed: List[int],
-    ) -> Tuple[Union[float, int, None], None]:
+        dims_displayed: list[int],
+    ) -> tuple[Union[float, int, None], None]:
         """Get the layer data value along a ray
 
         Parameters
@@ -2870,8 +2866,8 @@ class Shapes(Layer):
         self,
         start_point: np.ndarray,
         end_point: np.ndarray,
-        dims_displayed: List[int],
-    ) -> Tuple[Union[None, float, int], Union[None, np.ndarray]]:
+        dims_displayed: list[int],
+    ) -> tuple[Union[None, float, int], Union[None, np.ndarray]]:
         """Get the shape index and intersection point of the first shape
         (i.e., closest to start_point) along the specified 3D line segment.
 
@@ -2925,8 +2921,8 @@ class Shapes(Layer):
         self,
         position: np.ndarray,
         view_direction: np.ndarray,
-        dims_displayed: List[int],
-    ) -> Tuple[Union[float, int, None], Union[npt.NDArray, None]]:
+        dims_displayed: list[int],
+    ) -> tuple[Union[float, int, None], Union[npt.NDArray, None]]:
         """Get the shape index and intersection point of the first shape
         (i.e., closest to start_point) "under" a mouse click.
 
@@ -2966,7 +2962,7 @@ class Shapes(Layer):
             intersection_point = None
         return shape_index, intersection_point
 
-    def move_to_front(self):
+    def move_to_front(self) -> None:
         """Moves selected objects to be displayed in front of all others."""
         if len(self.selected_data) == 0:
             return
@@ -2975,7 +2971,7 @@ class Shapes(Layer):
             self._data_view.update_z_index(index, new_z_index)
         self.refresh()
 
-    def move_to_back(self):
+    def move_to_back(self) -> None:
         """Moves selected objects to be displayed behind all others."""
         if len(self.selected_data) == 0:
             return
@@ -2984,7 +2980,7 @@ class Shapes(Layer):
             self._data_view.update_z_index(index, new_z_index)
         self.refresh()
 
-    def _copy_data(self):
+    def _copy_data(self) -> None:
         """Copy selected shapes to clipboard."""
         if len(self.selected_data) > 0:
             index = list(self.selected_data)
@@ -3002,7 +2998,7 @@ class Shapes(Layer):
         else:
             self._clipboard = {}
 
-    def _paste_data(self):
+    def _paste_data(self) -> None:
         """Paste any shapes from clipboard and then selects them."""
         cur_shapes = self.nshapes
         if len(self._clipboard.keys()) > 0:

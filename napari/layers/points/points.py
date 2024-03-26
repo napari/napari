@@ -1,17 +1,15 @@
 import numbers
 import warnings
 from abc import abstractmethod
+from collections.abc import Sequence
 from copy import copy, deepcopy
 from itertools import cycle
 from typing import (
     Any,
     Callable,
     ClassVar,
-    Dict,
-    List,
+    Literal,
     Optional,
-    Sequence,
-    Tuple,
     Union,
 )
 
@@ -79,20 +77,20 @@ class _BasePoints(Layer):
     _modeclass = Mode
     _projectionclass = PointsProjectionMode
 
-    _drag_modes: ClassVar[Dict[Mode, Callable[["Points", Event], Any]]] = {
+    _drag_modes: ClassVar[dict[Mode, Callable[['Points', Event], Any]]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
         Mode.ADD: add,
         Mode.SELECT: select,
     }
 
-    _move_modes: ClassVar[Dict[Mode, Callable[["Points", Event], Any]]] = {
+    _move_modes: ClassVar[dict[Mode, Callable[['Points', Event], Any]]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
         Mode.ADD: no_op,
         Mode.SELECT: highlight,
     }
-    _cursor_modes: ClassVar[Dict[Mode, str]] = {
+    _cursor_modes: ClassVar[dict[Mode, str]] = {
         Mode.PAN_ZOOM: 'standard',
         Mode.TRANSFORM: 'standard',
         Mode.ADD: 'crosshair',
@@ -105,6 +103,36 @@ class _BasePoints(Layer):
     # If more points are present then they are randomly subsampled
     _max_points_thumbnail = 1024
 
+    @rename_argument(
+        'edge_width', 'border_width', since_version='0.5.0', version='0.6.0'
+    )
+    @rename_argument(
+        'edge_width_is_relative',
+        'border_width_is_relative',
+        since_version='0.5.0',
+        version='0.6.0',
+    )
+    @rename_argument(
+        'edge_color', 'border_color', since_version='0.5.0', version='0.6.0'
+    )
+    @rename_argument(
+        'edge_color_cycle',
+        'border_color_cycle',
+        since_version='0.5.0',
+        version='0.6.0',
+    )
+    @rename_argument(
+        'edge_colormap',
+        'border_colormap',
+        since_version='0.5.0',
+        version='0.6.0',
+    )
+    @rename_argument(
+        'edge_contrast_limits',
+        'border_contrast_limits',
+        since_version='0.5.0',
+        version='0.6.0',
+    )
     def __init__(
         self,
         data=None,
@@ -213,6 +241,31 @@ class _BasePoints(Layer):
             feature_defaults=Event,
         )
 
+        deprecated_events = {}
+        for attr in [
+            '{}_width',
+            'current_{}_width',
+            '{}_width_is_relative',
+            '{}_color',
+            'current_{}_color',
+        ]:
+            old_attr = attr.format('edge')
+            new_attr = attr.format('border')
+            old_emitter = deprecation_warning_event(
+                'layer.events',
+                old_attr,
+                new_attr,
+                since_version='0.5.0',
+                version='0.6.0',
+            )
+            getattr(self.events, new_attr).connect(old_emitter)
+            deprecated_events[old_attr] = old_emitter
+
+        self.events.add(**deprecated_events)
+
+        # Save the point coordinates
+        self._data = np.asarray(data)
+
         self._feature_table = _FeatureTable.from_layer(
             features=features,
             feature_defaults=feature_defaults,
@@ -295,6 +348,30 @@ class _BasePoints(Layer):
         # Trigger generation of view slice and thumbnail
         self.refresh()
 
+    @classmethod
+    def _add_deprecated_properties(cls) -> None:
+        """Adds deprecated properties to class."""
+        deprecated_properties = [
+            'edge_width',
+            'edge_width_is_relative',
+            'current_edge_width',
+            'edge_color',
+            'edge_color_cycle',
+            'edge_colormap',
+            'edge_contrast_limits',
+            'current_edge_color',
+            'edge_color_mode',
+        ]
+        for old_property in deprecated_properties:
+            new_property = old_property.replace('edge', 'border')
+            add_deprecated_property(
+                cls,
+                old_property,
+                new_property,
+                since_version='0.5.0',
+                version='0.6.0',
+            )
+
     @property
     def _points_data(self) -> np.ndarray:
         """Spatially distributed coordinates."""
@@ -306,42 +383,6 @@ class _BasePoints(Layer):
 
     def _set_data(self, data: Any) -> None:
         raise NotImplementedError
-
-    @data.setter
-    def data(self, data: Optional[np.ndarray]) -> None:
-        """Set the data array and emit a corresponding event."""
-        prior_data = len(self.data) > 0
-        data_not_empty = (
-            data is not None
-            and (isinstance(data, np.ndarray) and data.size > 0)
-            or (isinstance(data, list) and len(data) > 0)
-        )
-        kwargs = {
-            "value": self.data,
-            "vertex_indices": ((),),
-            "data_indices": tuple(i for i in range(len(self.data))),
-        }
-        if prior_data and data_not_empty:
-            kwargs["action"] = ActionType.CHANGING
-        elif data_not_empty:
-            kwargs["action"] = ActionType.ADDING
-            kwargs["data_indices"] = tuple(i for i in range(len(data)))
-        else:
-            kwargs["action"] = ActionType.REMOVING
-
-        self.events.data(**kwargs)
-        self._set_data(data)
-        kwargs["data_indices"] = tuple(i for i in range(len(self.data)))
-        kwargs["value"] = self.data
-
-        if prior_data and data_not_empty:
-            kwargs["action"] = ActionType.CHANGED
-        elif data_not_empty:
-            kwargs["data_indices"] = tuple(i for i in range(len(data)))
-            kwargs["action"] = ActionType.ADDED
-        else:
-            kwargs["action"] = ActionType.REMOVED
-        self.events.data(**kwargs)
 
     def _on_selection(self, selected):
         if selected:
@@ -372,16 +413,16 @@ class _BasePoints(Layer):
     @features.setter
     def features(
         self,
-        features: Union[Dict[str, np.ndarray], pd.DataFrame],
+        features: Union[dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
         self._feature_table.set_values(
             features, num_data=len(self._points_data)
         )
         self._update_color_manager(
-            self._face, self._feature_table, "face_color"
+            self._face, self._feature_table, 'face_color'
         )
         self._update_color_manager(
-            self._border, self._feature_table, "border_color"
+            self._border, self._feature_table, 'border_color'
         )
         self.text.refresh(self.features)
         self.events.properties()
@@ -397,7 +438,7 @@ class _BasePoints(Layer):
 
     @feature_defaults.setter
     def feature_defaults(
-        self, defaults: Union[Dict[str, Any], pd.DataFrame]
+        self, defaults: Union[dict[str, Any], pd.DataFrame]
     ) -> None:
         self._feature_table.set_defaults(defaults)
         current_properties = self.current_properties
@@ -407,11 +448,11 @@ class _BasePoints(Layer):
         self.events.feature_defaults()
 
     @property
-    def property_choices(self) -> Dict[str, np.ndarray]:
+    def property_choices(self) -> dict[str, np.ndarray]:
         return self._feature_table.choices()
 
     @property
-    def properties(self) -> Dict[str, np.ndarray]:
+    def properties(self) -> dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each point"""
         return self._feature_table.properties()
 
@@ -439,12 +480,12 @@ class _BasePoints(Layer):
 
     @properties.setter
     def properties(
-        self, properties: Union[Dict[str, Array], pd.DataFrame, None]
+        self, properties: Union[dict[str, Array], pd.DataFrame, None]
     ):
         self.features = properties
 
     @property
-    def current_properties(self) -> Dict[str, np.ndarray]:
+    def current_properties(self) -> dict[str, np.ndarray]:
         """dict{str: np.ndarray(1,)}: properties for the next added point."""
         return self._feature_table.currents()
 
@@ -586,8 +627,8 @@ class _BasePoints(Layer):
             except ValueError:
                 raise ValueError(
                     trans._(
-                        "Size of shape {size_shape} is not compatible for broadcasting "
-                        "with shape {points_shape}",
+                        'Size of shape {size_shape} is not compatible for broadcasting '
+                        'with shape {points_shape}',
                         size_shape=size.shape,
                         points_shape=self._points_data.shape,
                         deferred=True,
@@ -597,8 +638,8 @@ class _BasePoints(Layer):
                 self._size = np.mean(size, axis=1)
                 warnings.warn(
                     trans._(
-                        "Since 0.4.18 point sizes must be isotropic; the average from each dimension will be"
-                        " used instead. This will become an error in version 0.6.0.",
+                        'Since 0.4.18 point sizes must be isotropic; the average from each dimension will be'
+                        ' used instead. This will become an error in version 0.6.0.',
                         deferred=True,
                     ),
                     category=DeprecationWarning,
@@ -617,8 +658,8 @@ class _BasePoints(Layer):
         if isinstance(size, (list, tuple, np.ndarray)):
             warnings.warn(
                 trans._(
-                    "Since 0.4.18 point sizes must be isotropic; the average from each dimension will be used instead. "
-                    "This will become an error in version 0.6.0.",
+                    'Since 0.4.18 point sizes must be isotropic; the average from each dimension will be used instead. '
+                    'This will become an error in version 0.6.0.',
                     deferred=True,
                 ),
                 category=DeprecationWarning,
@@ -682,7 +723,7 @@ class _BasePoints(Layer):
         self.events.shading()
 
     @property
-    def canvas_size_limits(self) -> Tuple[float, float]:
+    def canvas_size_limits(self) -> tuple[float, float]:
         """Limit the canvas size of points"""
         return self._canvas_size_limits
 
@@ -737,6 +778,7 @@ class _BasePoints(Layer):
             )
 
         self._border_width: np.ndarray = border_width
+        self.events.border_width(value=border_width)
         self.refresh()
 
     @property
@@ -815,7 +857,7 @@ class _BasePoints(Layer):
         self._border.continuous_colormap = colormap
 
     @property
-    def border_contrast_limits(self) -> Tuple[float, float]:
+    def border_contrast_limits(self) -> tuple[float, float]:
         """None, (float, float): contrast limits for mapping
         the border_color colormap property to 0 and 1
         """
@@ -823,7 +865,7 @@ class _BasePoints(Layer):
 
     @border_contrast_limits.setter
     def border_contrast_limits(
-        self, contrast_limits: Union[None, Tuple[float, float]]
+        self, contrast_limits: Union[None, tuple[float, float]]
     ):
         self._border.contrast_limits = contrast_limits
 
@@ -902,7 +944,7 @@ class _BasePoints(Layer):
         self._face.continuous_colormap = colormap
 
     @property
-    def face_contrast_limits(self) -> Union[None, Tuple[float, float]]:
+    def face_contrast_limits(self) -> Union[None, tuple[float, float]]:
         """None, (float, float) : clims for mapping the face_color
         colormap property to 0 and 1
         """
@@ -910,7 +952,7 @@ class _BasePoints(Layer):
 
     @face_contrast_limits.setter
     def face_contrast_limits(
-        self, contrast_limits: Union[None, Tuple[float, float]]
+        self, contrast_limits: Union[None, tuple[float, float]]
     ):
         self._face.contrast_limits = contrast_limits
 
@@ -948,7 +990,9 @@ class _BasePoints(Layer):
         self._set_color_mode(face_color_mode, 'face')
 
     def _set_color_mode(
-        self, color_mode: Union[ColorMode, str], attribute: str
+        self,
+        color_mode: Union[ColorMode, str],
+        attribute: Literal['border', 'face'],
     ):
         """Set the face_color_mode or border_color_mode property
 
@@ -1233,7 +1277,7 @@ class _BasePoints(Layer):
         return self.text.view_text(self._indices_view)
 
     @property
-    def _view_text_coords(self) -> Tuple[np.ndarray, str, str]:
+    def _view_text_coords(self) -> tuple[np.ndarray, str, str]:
         """Get the coordinates of the text elements in view
 
         Returns
@@ -1386,7 +1430,7 @@ class _BasePoints(Layer):
         self,
         start_point: np.ndarray,
         end_point: np.ndarray,
-        dims_displayed: List[int],
+        dims_displayed: list[int],
     ) -> Optional[int]:
         """Get the layer data value along a ray
 
@@ -1449,11 +1493,11 @@ class _BasePoints(Layer):
 
     def get_ray_intersections(
         self,
-        position: List[float],
+        position: list[float],
         view_direction: np.ndarray,
-        dims_displayed: List[int],
+        dims_displayed: list[int],
         world: bool = True,
-    ) -> Union[Tuple[np.ndarray, np.ndarray], Tuple[None, None]]:
+    ) -> Union[tuple[np.ndarray, np.ndarray], tuple[None, None]]:
         """Get the start and end point for the ray extending
         from a point through the displayed bounding box.
 
@@ -1723,7 +1767,7 @@ class _BasePoints(Layer):
 
     @abstractmethod
     def _move_points(
-        self, ixgrid: Tuple[np.ndarray, np.ndarray], shift: np.ndarray
+        self, ixgrid: tuple[np.ndarray, np.ndarray], shift: np.ndarray
     ) -> None:
         """Move points along a set a coordinates given a shift.
 
@@ -1766,33 +1810,33 @@ class _BasePoints(Layer):
 
     def get_status(
         self,
-        position: Optional[Tuple] = None,
+        position: Optional[tuple] = None,
         *,
         view_direction: Optional[np.ndarray] = None,
-        dims_displayed: Optional[List[int]] = None,
+        dims_displayed: Optional[list[int]] = None,
         world: bool = False,
     ) -> dict:
         """Status message information of the data at a coordinate position.
 
-        Parameters
-        ----------
-        position : tuple
-            Position in either data or world coordinates.
-        view_direction : Optional[np.ndarray]
-            A unit vector giving the direction of the ray in nD world coordinates.
-            The default value is None.
-        dims_displayed : Optional[List[int]]
-            A list of the dimensions currently being displayed in the viewer.
-            The default value is None.
-        world : bool
-            If True the position is taken to be in world coordinates
-            and converted into data coordinates. False by default.
+        # Parameters
+        # ----------
+        # position : tuple
+        #     Position in either data or world coordinates.
+        # view_direction : Optional[np.ndarray]
+        #     A unit vector giving the direction of the ray in nD world coordinates.
+        #     The default value is None.
+        # dims_displayed : Optional[List[int]]
+        #     A list of the dimensions currently being displayed in the viewer.
+        #     The default value is None.
+        # world : bool
+        #     If True the position is taken to be in world coordinates
+        #     and converted into data coordinates. False by default.
 
-        Returns
-        -------
-        source_info : dict
-            Dict containing information that can be used in a status update.
-        """
+        # Returns
+        # -------
+        # source_info : dict
+        #     Dict containing information that can be used in a status update.
+        #"""
         if position is not None:
             value = self.get_value(
                 position,
@@ -1816,7 +1860,7 @@ class _BasePoints(Layer):
             world=world,
         )
         if properties:
-            source_info['coordinates'] += "; " + ", ".join(properties)
+            source_info['coordinates'] += '; ' + ', '.join(properties)
 
         return source_info
 
@@ -1825,10 +1869,11 @@ class _BasePoints(Layer):
         position,
         *,
         view_direction: Optional[np.ndarray] = None,
-        dims_displayed: Optional[List[int]] = None,
+        dims_displayed: Optional[list[int]] = None,
         world: bool = False,
     ):
-        """Tooltip message of the data at a coordinate position.
+        """
+        tooltip message of the data at a coordinate position.
 
         Parameters
         ----------
@@ -1849,7 +1894,7 @@ class _BasePoints(Layer):
         msg : string
             String containing a message that can be used as a tooltip.
         """
-        return "\n".join(
+        return '\n'.join(
             self._get_properties(
                 position,
                 view_direction=view_direction,
@@ -1863,7 +1908,7 @@ class _BasePoints(Layer):
         position,
         *,
         view_direction: Optional[np.ndarray] = None,
-        dims_displayed: Optional[List[int]] = None,
+        dims_displayed: Optional[list[int]] = None,
         world: bool = False,
     ) -> list:
         if self.features.shape[1] == 0:
@@ -1876,7 +1921,7 @@ class _BasePoints(Layer):
             world=world,
         )
         # if the cursor is not outside the image or on the background
-        if value is None or value > len(self._points_data):
+        if value is None or value > self.data.shape[0]:
             return []
 
         return [
@@ -2028,6 +2073,8 @@ class Points(_BasePoints):
     size : array (N,)
         Array of sizes for each point. Must have the same shape as the layer `data`.
     border_width : array (N,)
+        Width of the marker borders in pixels for all points
+    border_width : array (N,)
         Width of the marker borders for all points as a fraction of their size.
     border_color : Nx4 numpy array
         Array of border color RGBA values, one for each point.
@@ -2059,10 +2106,10 @@ class Points(_BasePoints):
         Size of the marker for the next point to be added or the currently
         selected point.
     current_border_width : float
-        border width of the marker for the next point to be added or the currently
+        Border width of the marker for the next point to be added or the currently
         selected point.
     current_border_color : str
-        border color of the marker border for the next point to be added or the currently
+        Border color of the marker border for the next point to be added or the currently
         selected point.
     current_face_color : str
         Face color of the marker border for the next point to be added or the currently
@@ -2090,7 +2137,7 @@ class Points(_BasePoints):
 
         COLORMAP allows color to be set via a color map over an attribute
     border_color_mode : str
-        border color setting mode.
+        Border color setting mode.
 
         DIRECT (default mode) allows each point to be set arbitrarily
 
@@ -2115,7 +2162,7 @@ class Points(_BasePoints):
     _view_symbol : array (M, )
         Symbols of the point markers in the currently viewed slice.
     _view_border_width : array (M, )
-        border width of the point markers in the currently viewed slice.
+        Border width of the point markers in the currently viewed slice.
     _indices_view : array (M, )
         Integer indices of the points in the currently viewed slice and are shown.
     _selected_view :
@@ -2131,34 +2178,34 @@ class Points(_BasePoints):
     """
 
     @rename_argument(
-        "edge_width", "border_width", since_version="0.5.0", version="0.6.0"
+        'edge_width', 'border_width', since_version='0.5.0', version='0.6.0'
     )
     @rename_argument(
-        "edge_width_is_relative",
-        "border_width_is_relative",
-        since_version="0.5.0",
-        version="0.6.0",
+        'edge_width_is_relative',
+        'border_width_is_relative',
+        since_version='0.5.0',
+        version='0.6.0',
     )
     @rename_argument(
-        "edge_color", "border_color", since_version="0.5.0", version="0.6.0"
+        'edge_color', 'border_color', since_version='0.5.0', version='0.6.0'
     )
     @rename_argument(
-        "edge_color_cycle",
-        "border_color_cycle",
-        since_version="0.5.0",
-        version="0.6.0",
+        'edge_color_cycle',
+        'border_color_cycle',
+        since_version='0.5.0',
+        version='0.6.0',
     )
     @rename_argument(
-        "edge_colormap",
-        "border_colormap",
-        since_version="0.5.0",
-        version="0.6.0",
+        'edge_colormap',
+        'border_colormap',
+        since_version='0.5.0',
+        version='0.6.0',
     )
     @rename_argument(
-        "edge_contrast_limits",
-        "border_contrast_limits",
-        since_version="0.5.0",
-        version="0.6.0",
+        'edge_contrast_limits',
+        'border_contrast_limits',
+        since_version='0.5.0',
+        version='0.6.0',
     )
     def __init__(
         self,
@@ -2260,20 +2307,20 @@ class Points(_BasePoints):
 
         deprecated_events = {}
         for attr in [
-            "{}_width",
-            "current_{}_width",
-            "{}_width_is_relative",
-            "{}_color",
-            "current_{}_color",
+            '{}_width',
+            'current_{}_width',
+            '{}_width_is_relative',
+            '{}_color',
+            'current_{}_color',
         ]:
-            old_attr = attr.format("edge")
-            new_attr = attr.format("border")
+            old_attr = attr.format('edge')
+            new_attr = attr.format('border')
             old_emitter = deprecation_warning_event(
-                "layer.events",
+                'layer.events',
                 old_attr,
                 new_attr,
-                since_version="0.5.0",
-                version="0.6.0",
+                since_version='0.5.0',
+                version='0.6.0',
             )
             getattr(self.events, new_attr).connect(old_emitter)
             deprecated_events[old_attr] = old_emitter
@@ -2284,24 +2331,24 @@ class Points(_BasePoints):
     def _add_deprecated_properties(cls) -> None:
         """Adds deprecated properties to class."""
         deprecated_properties = [
-            "edge_width",
-            "edge_width_is_relative",
-            "current_edge_width",
-            "edge_color",
-            "edge_color_cycle",
-            "edge_colormap",
-            "edge_contrast_limits",
-            "current_edge_color",
-            "edge_color_mode",
+            'edge_width',
+            'edge_width_is_relative',
+            'current_edge_width',
+            'edge_color',
+            'edge_color_cycle',
+            'edge_colormap',
+            'edge_contrast_limits',
+            'current_edge_color',
+            'edge_color_mode',
         ]
         for old_property in deprecated_properties:
-            new_property = old_property.replace("edge", "border")
+            new_property = old_property.replace('edge', 'border')
             add_deprecated_property(
                 cls,
                 old_property,
                 new_property,
-                since_version="0.5.0",
-                version="0.6.0",
+                since_version='0.5.0',
+                version='0.6.0',
             )
 
     @property
@@ -2327,7 +2374,11 @@ class Points(_BasePoints):
         self._data = data
 
         # Add/remove property and style values based on the number of new points.
-        with self.events.blocker_all(), self._border.events.blocker_all(), self._face.events.blocker_all():
+        with (
+            self.events.blocker_all(),
+            self._border.events.blocker_all(),
+            self._face.events.blocker_all(),
+        ):
             self._feature_table.resize(len(data))
             self.text.apply(self.features)
             if len(data) < cur_npoints:
@@ -2471,7 +2522,7 @@ class Points(_BasePoints):
             self.selected_data = set()
 
     def _move_points(
-        self, ixgrid: Tuple[np.ndarray, np.ndarray], shift: np.ndarray
+        self, ixgrid: tuple[np.ndarray, np.ndarray], shift: np.ndarray
     ) -> None:
         """Move points along a set a coordinates given a shift.
 

@@ -104,8 +104,8 @@ class Shading(StringEnum):
 
 
 SHADING_TRANSLATION = {
-    trans._("none"): Shading.NONE,
-    trans._("spherical"): Shading.SPHERICAL,
+    trans._('none'): Shading.NONE,
+    trans._('spherical'): Shading.SPHERICAL,
 }
 
 

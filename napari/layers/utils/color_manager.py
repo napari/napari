@@ -1,6 +1,6 @@
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Optional, Union
 
 import numpy as np
 
@@ -147,7 +147,7 @@ class ColorManager(EventedModel):
     color_mode: ColorMode = ColorMode.DIRECT
     color_properties: Optional[ColorProperties] = None
     continuous_colormap: Colormap = ensure_colormap('viridis')
-    contrast_limits: Optional[Tuple[float, float]] = None
+    contrast_limits: Optional[tuple[float, float]] = None
     categorical_colormap: CategoricalColormap = CategoricalColormap.from_array(
         [0, 0, 0, 1]
     )
@@ -188,7 +188,7 @@ class ColorManager(EventedModel):
 
         # set the current color to the last color/property value
         # if it wasn't already set
-        if values.get("current_color") is None and len(colors) > 0:
+        if values.get('current_color') is None and len(colors) > 0:
             values['current_color'] = colors[-1]
             if color_mode in [ColorMode.CYCLE, ColorMode.COLORMAP]:
                 property_values = values['color_properties']
@@ -202,8 +202,8 @@ class ColorManager(EventedModel):
         self,
         color: ColorType,
         n_colors: int,
-        properties: Dict[str, np.ndarray],
-        current_properties: Dict[str, np.ndarray],
+        properties: dict[str, np.ndarray],
+        current_properties: dict[str, np.ndarray],
     ):
         """Set a color property. This is convenience function
 
@@ -238,8 +238,8 @@ class ColorManager(EventedModel):
             transformed_color = transform_color_with_defaults(
                 num_entries=n_colors,
                 colors=color,
-                elem_name="color",
-                default="white",
+                elem_name='color',
+                default='white',
             )
             colors = normalize_and_broadcast_colors(
                 n_colors, transformed_color
@@ -249,7 +249,7 @@ class ColorManager(EventedModel):
 
     def _refresh_colors(
         self,
-        properties: Dict[str, np.ndarray],
+        properties: dict[str, np.ndarray],
         update_color_mapping: bool = False,
     ):
         """Calculate and update colors if using a cycle or color map
@@ -303,8 +303,8 @@ class ColorManager(EventedModel):
             transformed_color = transform_color_with_defaults(
                 num_entries=n_colors,
                 colors=new_color,
-                elem_name="color",
-                default="white",
+                elem_name='color',
+                default='white',
             )
             broadcasted_colors = normalize_and_broadcast_colors(
                 n_colors, transformed_color
@@ -353,7 +353,7 @@ class ColorManager(EventedModel):
                     current_value=current_value,
                 )
 
-    def _paste(self, colors: np.ndarray, properties: Dict[str, np.ndarray]):
+    def _paste(self, colors: np.ndarray, properties: dict[str, np.ndarray]):
         """Append colors to the ColorManager. Uses the color values if
         in direct mode and the properties in colormap or cycle mode.
 
@@ -390,7 +390,7 @@ class ColorManager(EventedModel):
             )
 
     def _update_current_properties(
-        self, current_properties: Dict[str, np.ndarray]
+        self, current_properties: dict[str, np.ndarray]
     ):
         """This is updates the current_value of the color_properties when the
         layer current_properties is updated.
@@ -451,10 +451,10 @@ class ColorManager(EventedModel):
     def _from_layer_kwargs(
         cls,
         colors: Union[dict, str, np.ndarray],
-        properties: Dict[str, np.ndarray],
+        properties: dict[str, np.ndarray],
         n_colors: Optional[int] = None,
         continuous_colormap: Optional[Union[str, Colormap]] = None,
-        contrast_limits: Optional[Tuple[float, float]] = None,
+        contrast_limits: Optional[tuple[float, float]] = None,
         categorical_colormap: Optional[
             Union[CategoricalColormap, list, np.ndarray]
         ] = None,
@@ -557,8 +557,8 @@ class ColorManager(EventedModel):
                     transformed_color = transform_color_with_defaults(
                         num_entries=n_colors,
                         colors=color_values,
-                        elem_name="colors",
-                        default="white",
+                        elem_name='colors',
+                        default='white',
                     )
                     colors = normalize_and_broadcast_colors(
                         n_colors, transformed_color

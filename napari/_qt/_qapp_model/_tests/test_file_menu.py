@@ -142,9 +142,9 @@ def test_sample_menu_single_data(
 def test_show_shortcuts_actions(make_napari_viewer):
     viewer = make_napari_viewer()
     assert viewer.window._pref_dialog is None
-    action_manager.trigger("napari:show_shortcuts")
+    action_manager.trigger('napari:show_shortcuts')
     assert viewer.window._pref_dialog is not None
-    assert viewer.window._pref_dialog._list.currentItem().text() == "Shortcuts"
+    assert viewer.window._pref_dialog._list.currentItem().text() == 'Shortcuts'
     viewer.window._pref_dialog.close()
 
 
@@ -172,7 +172,7 @@ def get_open_with_plugin_action(viewer, action_text):
 
 
 @pytest.mark.parametrize(
-    "menu_str,dialog_method,dialog_return,filename_call,stack",
+    'menu_str,dialog_method,dialog_return,filename_call,stack',
     [
         (
             'Open File(s)...',
@@ -207,11 +207,10 @@ def test_open_with_plugin(
 ):
     viewer = make_napari_viewer()
     action, _a = get_open_with_plugin_action(viewer, menu_str)
-    with mock.patch(
-        'napari._qt.qt_viewer.QFileDialog'
-    ) as mock_file, mock.patch(
-        'napari._qt.qt_viewer.QtViewer._qt_open'
-    ) as mock_read:
+    with (
+        mock.patch('napari._qt.qt_viewer.QFileDialog') as mock_file,
+        mock.patch('napari._qt.qt_viewer.QtViewer._qt_open') as mock_read,
+    ):
         mock_file_instance = mock_file.return_value
         getattr(mock_file_instance, dialog_method).return_value = dialog_return
         action.trigger()

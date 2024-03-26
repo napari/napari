@@ -3,12 +3,8 @@ from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Any,
-    DefaultDict,
-    Dict,
-    List,
     Literal,
     Optional,
-    Tuple,
     Union,
     cast,
     overload,
@@ -151,7 +147,7 @@ class Colormap(EventedModel):
             # One color per bin
             # Colors beyond max clipped to final bin
             indices = np.clip(
-                np.searchsorted(self.controls, values, side="right") - 1,
+                np.searchsorted(self.controls, values, side='right') - 1,
                 0,
                 len(self.colors) - 1,
             )
@@ -178,10 +174,10 @@ class LabelColormapBase(Colormap):
     interpolation: Literal[ColormapInterpolationMode.ZERO] = Field(
         ColormapInterpolationMode.ZERO, frozen=True
     )
-    _cache_mapping: Dict[Tuple[np.dtype, np.dtype], np.ndarray] = PrivateAttr(
+    _cache_mapping: dict[tuple[np.dtype, np.dtype], np.ndarray] = PrivateAttr(
         default={}
     )
-    _cache_other: Dict[str, Any] = PrivateAttr(default={})
+    _cache_other: dict[str, Any] = PrivateAttr(default={})
 
     class Config(Colormap.Config):
         # this config is to avoid deepcopy of cached_property
@@ -202,7 +198,7 @@ class LabelColormapBase(Colormap):
         """Map input values to values for send to GPU."""
         raise NotImplementedError
 
-    def _cmap_without_selection(self) -> "LabelColormapBase":
+    def _cmap_without_selection(self) -> 'LabelColormapBase':
         if self.use_selection:
             cmap = self.__class__(**self.dict())
             cmap.use_selection = False
@@ -285,7 +281,7 @@ class CyclicLabelColormap(LabelColormapBase):
     def _validate_color(cls, v):
         if len(v) > 2**16:
             raise ValueError(
-                "Only up to 2**16=65535 colors are supported for LabelColormap"
+                'Only up to 2**16=65535 colors are supported for LabelColormap'
             )
         return v
 
@@ -393,15 +389,15 @@ class DirectLabelColormap(LabelColormapBase):
         Exist because of implementation details. Please do not use it.
     """
 
-    color_dict: DefaultDict[Optional[int], np.ndarray] = Field(
+    color_dict: defaultdict[Optional[int], np.ndarray] = Field(
         default_factory=lambda: defaultdict(lambda: np.zeros(4))
     )
     use_selection: bool = False
     selection: int = 0
 
     def __init__(self, *args, **kwargs) -> None:
-        if "colors" not in kwargs and not args:
-            kwargs["colors"] = np.zeros(3)
+        if 'colors' not in kwargs and not args:
+            kwargs['colors'] = np.zeros(3)
         super().__init__(*args, **kwargs)
 
     def __len__(self):
@@ -412,7 +408,7 @@ class DirectLabelColormap(LabelColormapBase):
         """
         return self._num_unique_colors + 2
 
-    @validator("color_dict", pre=True, always=True, allow_reuse=True)
+    @validator('color_dict', pre=True, always=True, allow_reuse=True)
     def _validate_color_dict(cls, v, values):
         """Ensure colors are RGBA arrays, not strings.
 
@@ -436,7 +432,7 @@ class DirectLabelColormap(LabelColormapBase):
         """
         if not isinstance(v, defaultdict) and None not in v:
             raise ValueError(
-                "color_dict must contain None or be defaultdict instance"
+                'color_dict must contain None or be defaultdict instance'
             )
         res = {
             label: transform_color(color_str)[0]
@@ -492,7 +488,7 @@ class DirectLabelColormap(LabelColormapBase):
         if isinstance(values, (list, tuple)):
             values = np.array(values)
         if not isinstance(values, np.ndarray) or values.dtype.kind in 'fU':
-            raise TypeError("DirectLabelColormap can only be used with int")
+            raise TypeError('DirectLabelColormap can only be used with int')
         mapper = self._get_mapping_from_cache(values.dtype)
         if mapper is not None:
             mapped = mapper[values]
@@ -546,16 +542,16 @@ class DirectLabelColormap(LabelColormapBase):
 
     def _clear_cache(self):
         super()._clear_cache()
-        if "_num_unique_colors" in self.__dict__:
-            del self.__dict__["_num_unique_colors"]
-        if "_label_mapping_and_color_dict" in self.__dict__:
-            del self.__dict__["_label_mapping_and_color_dict"]
-        if "_array_map" in self.__dict__:
-            del self.__dict__["_array_map"]
+        if '_num_unique_colors' in self.__dict__:
+            del self.__dict__['_num_unique_colors']
+        if '_label_mapping_and_color_dict' in self.__dict__:
+            del self.__dict__['_label_mapping_and_color_dict']
+        if '_array_map' in self.__dict__:
+            del self.__dict__['_array_map']
 
     def _values_mapping_to_minimum_values_set(
         self, apply_selection=True
-    ) -> Tuple[Dict[Optional[int], int], Dict[int, np.ndarray]]:
+    ) -> tuple[dict[Optional[int], int], dict[int, np.ndarray]]:
         """Create mapping from original values to minimum values set.
         To use minimum possible dtype for labels.
 
@@ -581,12 +577,12 @@ class DirectLabelColormap(LabelColormapBase):
     @cached_property
     def _label_mapping_and_color_dict(
         self,
-    ) -> Tuple[Dict[Optional[int], int], Dict[int, np.ndarray]]:
-        color_to_labels: Dict[Tuple[int, ...], List[Optional[int]]] = {}
-        labels_to_new_labels: Dict[Optional[int], int] = {
+    ) -> tuple[dict[Optional[int], int], dict[int, np.ndarray]]:
+        color_to_labels: dict[tuple[int, ...], list[Optional[int]]] = {}
+        labels_to_new_labels: dict[Optional[int], int] = {
             None: MAPPING_OF_UNKNOWN_VALUE
         }
-        new_color_dict: Dict[int, np.ndarray] = {
+        new_color_dict: dict[int, np.ndarray] = {
             MAPPING_OF_UNKNOWN_VALUE: self.default_color,
         }
 
@@ -628,7 +624,7 @@ class DirectLabelColormap(LabelColormapBase):
 
         # we cache the result to avoid recomputing it on each slice;
         # check first if it's already in the cache.
-        key = f"_{data_dtype}_typed_dict"
+        key = f'_{data_dtype}_typed_dict'
         if key in self._cache_other:
             return self._cache_other[key]
 
@@ -661,8 +657,8 @@ class DirectLabelColormap(LabelColormapBase):
             max_value *= 2
         if max_value > 2**16:
             raise RuntimeError(  # pragma: no cover
-                "Cannot use numpy implementation for large values of labels "
-                "direct colormap. Please install numba."
+                'Cannot use numpy implementation for large values of labels '
+                'direct colormap. Please install numba.'
             )
         dtype = minimum_dtype_for_labels(self._num_unique_colors + 2)
         label_mapping = self._values_mapping_to_minimum_values_set()[0]

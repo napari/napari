@@ -5,7 +5,7 @@ from lazy_loader import attach as _attach
 try:
     from napari._version import version as __version__
 except ImportError:
-    __version__ = "not-installed"
+    __version__ = 'not-installed'
 
 # Allows us to use pydata/sparse arrays as layer data
 os.environ.setdefault('SPARSE_AUTO_DENSIFY', '1')

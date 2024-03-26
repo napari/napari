@@ -1,27 +1,27 @@
 from collections import OrderedDict
 from enum import auto
-from typing import Literal, Tuple
+from typing import Literal
 
 from napari.utils.misc import StringEnum
 from napari.utils.translations import trans
 
 InterpolationStr = Literal[
-    "bessel",
-    "cubic",
-    "linear",
-    "blackman",
-    "catrom",
-    "gaussian",
-    "hamming",
-    "hanning",
-    "hermite",
-    "kaiser",
-    "lanczos",
-    "mitchell",
-    "nearest",
-    "spline16",
-    "spline36",
-    "custom",
+    'bessel',
+    'cubic',
+    'linear',
+    'blackman',
+    'catrom',
+    'gaussian',
+    'hamming',
+    'hanning',
+    'hermite',
+    'kaiser',
+    'lanczos',
+    'mitchell',
+    'nearest',
+    'spline16',
+    'spline36',
+    'custom',
 ]
 
 
@@ -56,12 +56,12 @@ class Interpolation(StringEnum):
     @classmethod
     def view_subset(
         cls,
-    ) -> Tuple[
-        "Interpolation",
-        "Interpolation",
-        "Interpolation",
-        "Interpolation",
-        "Interpolation",
+    ) -> tuple[
+        'Interpolation',
+        'Interpolation',
+        'Interpolation',
+        'Interpolation',
+        'Interpolation',
     ]:
         return (
             cls.CUBIC,
@@ -109,13 +109,13 @@ class ImageRendering(StringEnum):
 
 
 ImageRenderingStr = Literal[
-    "translucent",
-    "additive",
-    "iso",
-    "mip",
-    "minip",
-    "attenuated_mip",
-    "average",
+    'translucent',
+    'additive',
+    'iso',
+    'mip',
+    'minip',
+    'attenuated_mip',
+    'average',
 ]
 
 

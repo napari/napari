@@ -3,7 +3,7 @@ import sys
 from collections import abc
 from contextlib import suppress
 from threading import RLock
-from typing import Any, Dict, Tuple, Union
+from typing import Any, Union
 
 import networkx as nx
 import numpy as np
@@ -32,10 +32,21 @@ skip_on_win_ci = pytest.mark.skipif(
     reason='Screenshot tests are not supported on windows CI.',
 )
 
+skip_on_mac_ci = pytest.mark.skipif(
+    sys.platform.startswith('darwin') and os.getenv('CI', '0') != '0',
+    reason='Unsupported test on macOS CI.',
+)
+
 skip_local_popups = pytest.mark.skipif(
     not os.getenv('CI') and os.getenv('NAPARI_POPUP_TESTS', '0') == '0',
     reason='Tests requiring GUI windows are skipped locally by default.'
     ' Set NAPARI_POPUP_TESTS=1 environment variable to enable.',
+)
+
+skip_local_focus = pytest.mark.skipif(
+    not os.getenv('CI') and os.getenv('NAPARI_FOCUS_TESTS', '0') == '0',
+    reason='Tests requiring GUI windows focus are skipped locally by default.'
+    ' Set NAPARI_FOCUS_TESTS=1 environment variable to enable.',
 )
 
 """
@@ -166,7 +177,7 @@ class LockableData:
         return self.data.dtype
 
     @property
-    def shape(self) -> Tuple[int, ...]:
+    def shape(self) -> tuple[int, ...]:
         return self.data.shape
 
     @property
@@ -175,7 +186,7 @@ class LockableData:
         return len(self.data.shape)
 
     def __getitem__(
-        self, key: Union[Index, Tuple[Index, ...], LayerDataProtocol]
+        self, key: Union[Index, tuple[Index, ...], LayerDataProtocol]
     ) -> LayerDataProtocol:
         with self.lock:
             return self.data[key]
@@ -309,7 +320,7 @@ def check_layer_world_data_extent(layer, extent, scale, translate):
 
 
 def assert_layer_state_equal(
-    actual: Dict[str, Any], expected: Dict[str, Any]
+    actual: dict[str, Any], expected: dict[str, Any]
 ) -> None:
     """Asserts that an layer state dictionary is equal to an expected one.
 

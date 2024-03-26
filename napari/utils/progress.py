@@ -1,5 +1,6 @@
+from collections.abc import Generator, Iterable, Iterator
 from itertools import takewhile
-from typing import Callable, Generator, Iterable, Iterator, Optional
+from typing import Callable, Optional
 
 from tqdm import tqdm
 
@@ -7,7 +8,7 @@ from napari.utils.events.containers import EventedSet
 from napari.utils.events.event import EmitterGroup, Event
 from napari.utils.translations import trans
 
-__all__ = ["progress", "progrange", "cancelable_progress"]
+__all__ = ['progress', 'progrange', 'cancelable_progress']
 
 
 class progress(tqdm):
@@ -90,9 +91,9 @@ class progress(tqdm):
         # if the progress bar is set to disable the 'desc' member is not set by the
         # tqdm super constructor, so we set it to a dummy value to avoid errors thrown below
         if self.disable:
-            self.desc = ""
+            self.desc = ''
         if not self.desc:
-            self.set_description(trans._("progress"))
+            self.set_description(trans._('progress'))
         progress._all_instances.add(self)
         self.is_init = False
 
@@ -117,7 +118,7 @@ class progress(tqdm):
             super().display(msg, pos)
             return
         # TODO: This could break if user is formatting their own terminal tqdm
-        etas = str(self).split('|')[-1] if self.total != 0 else ""
+        etas = str(self).split('|')[-1] if self.total != 0 else ''
         self.events.eta(value=etas)
 
     def update(self, n=1):
