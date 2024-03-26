@@ -15,7 +15,7 @@ from napari._qt.widgets._slider_compat import QDoubleSlider
 from napari._qt.widgets.qt_range_slider_popup import QRangeSliderPopup
 from napari.utils._dtype import normalize_dtype
 from napari.utils.colormaps import AVAILABLE_COLORMAPS
-from napari.utils.events.event_utils import connect_no_arg, connect_setattr
+from napari.utils.events.event_utils import connect_setattr
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -223,10 +223,10 @@ class AutoScaleButtons(QWidget):
         auto_btn = QPushButton(trans._('continuous'))
         auto_btn.setCheckable(True)
         auto_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        once_btn.clicked.connect(lambda: auto_btn.setChecked(False))
-        connect_no_arg(once_btn.clicked, layer, 'reset_contrast_limits')
-        connect_setattr(auto_btn.toggled, layer, '_keep_auto_contrast')
-        connect_no_arg(auto_btn.clicked, layer, 'reset_contrast_limits')
+        once_btn.clicked.connect(self._disable_auto_btn)
+        once_btn.clicked.connect(layer._reset_contrast_limits_no_arg)
+        auto_btn.toggled.connect(layer._set_keep_auto_contrast)
+        auto_btn.clicked.connect(layer._reset_contrast_limits_no_arg)
 
         self.layout().addWidget(once_btn)
         self.layout().addWidget(auto_btn)
@@ -234,6 +234,9 @@ class AutoScaleButtons(QWidget):
         # just for testing
         self._once_btn = once_btn
         self._auto_btn = auto_btn
+
+    def _disable_auto_btn(self):
+        self._auto_btn.setChecked(False)
 
 
 class QContrastLimitsPopup(QRangeSliderPopup):
