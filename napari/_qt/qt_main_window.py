@@ -1483,7 +1483,8 @@ class Window:
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        self._status_bar.setHelpText(event.value)
+        if self._qt_window is not None:
+            self._status_bar.setHelpText(event.value)
 
     def _restart(self):
         """Restart the napari application."""
