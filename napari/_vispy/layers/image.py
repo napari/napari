@@ -21,7 +21,6 @@ from napari.utils.translations import trans
 
 
 class ImageLayerNode(ScalarFieldLayerNode):
-
     def __init__(
         self, custom_node: Node = None, texture_format: Optional[str] = None
     ) -> None:
