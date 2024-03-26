@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 
 import napari
@@ -19,4 +21,5 @@ viewer.add_image(
         )
 
 if __name__ == '__main__':
-    napari.run()
+    if 'PYTEST_CURRENT_TEST' not in os.environ:
+        napari.run()

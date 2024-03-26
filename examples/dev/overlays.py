@@ -1,3 +1,4 @@
+import os
 import warnings
 
 from vispy.scene.visuals import Ellipse
@@ -107,3 +108,6 @@ if __name__ == '__main__':
 
     viewer.window.add_dock_widget(control_dot)
     control_dot()
+
+    if 'PYTEST_CURRENT_TEST' not in os.environ:
+        napari.run()

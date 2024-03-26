@@ -10,6 +10,8 @@ allows you to create an interactive GUI view onto a python model that stays
 up to date, and can modify the python object... while maintining the python
 object as the single "source of truth".
 """
+import os
+
 import napari
 from napari._qt.containers import QtListView
 from napari.qt import get_app
@@ -48,4 +50,5 @@ root.selection.events._current.connect(
 )
 
 
-napari.run()
+if 'PYTEST_CURRENT_TEST' not in os.environ:
+    napari.run()

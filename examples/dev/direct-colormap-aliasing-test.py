@@ -1,3 +1,5 @@
+import os
+
 import matplotlib
 import numpy as np
 import pandas as pd
@@ -77,4 +79,5 @@ labels_layer_ordered.color = colormap_ordered
 vlab = viewer.window._qt_viewer.layer_to_visual[viewer.layers[-1]]
 
 
-napari.run()
+if 'PYTEST_CURRENT_TEST' not in os.environ:
+    napari.run()
