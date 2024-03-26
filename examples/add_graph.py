@@ -34,6 +34,6 @@ viewer = napari.Viewer()
 layer = viewer.add_graph(graph, out_of_slice_display=True, size=5, projection_mode='all')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
 
     napari.run()

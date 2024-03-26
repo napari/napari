@@ -19,5 +19,5 @@ hex_grid_ints = nx.convert_node_labels_to_integers(hex_grid)
 viewer = napari.Viewer()
 layer = viewer.add_graph(hex_grid_ints, size=1)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     napari.run()

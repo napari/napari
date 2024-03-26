@@ -1,5 +1,6 @@
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Any, Sequence, Tuple
+from typing import Any, Tuple
 
 import numpy as np
 from napari_graph import BaseGraph

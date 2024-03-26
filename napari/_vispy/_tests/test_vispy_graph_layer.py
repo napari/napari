@@ -12,7 +12,7 @@ from napari._vispy.layers.graph import VispyGraphLayer
 from napari.layers import Graph
 
 
-@pytest.mark.parametrize("graph_class", [UndirectedGraph, DirectedGraph])
+@pytest.mark.parametrize('graph_class', [UndirectedGraph, DirectedGraph])
 def test_vispy_graph_layer(graph_class: Type[BaseGraph]) -> None:
     edges = np.asarray([[0, 1], [1, 2]])
     coords = np.asarray([[0, 0, 0, -1], [0, 0, 1, 2], [1, 0, 2, 3]])
@@ -25,7 +25,7 @@ def test_vispy_graph_layer(graph_class: Type[BaseGraph]) -> None:
     # checking nodes positions
     assert np.all(
         coords[:2, 1:]
-        == np.flip(visual.node._subvisuals[0]._data["a_position"], axis=-1)
+        == np.flip(visual.node._subvisuals[0]._data['a_position'], axis=-1)
     )
 
     # checking edges positions
@@ -34,7 +34,7 @@ def test_vispy_graph_layer(graph_class: Type[BaseGraph]) -> None:
     )
 
 
-@pytest.mark.parametrize("graph_class", [UndirectedGraph, DirectedGraph])
+@pytest.mark.parametrize('graph_class', [UndirectedGraph, DirectedGraph])
 def test_vispy_graph_layer_removal(graph_class: Type[BaseGraph]) -> None:
     edges = np.asarray([[0, 1], [1, 2]])
     coords = np.asarray([[0, 0, 0, -1], [0, 0, 1, 2], [0, 0, 2, 3]])
@@ -47,7 +47,7 @@ def test_vispy_graph_layer_removal(graph_class: Type[BaseGraph]) -> None:
     # checking nodes positions
     assert np.all(
         coords[:, 1:]
-        == np.flip(visual.node._subvisuals[0]._data["a_position"], axis=-1)
+        == np.flip(visual.node._subvisuals[0]._data['a_position'], axis=-1)
     )
 
     # checking first edge
@@ -66,7 +66,7 @@ def test_vispy_graph_layer_removal(graph_class: Type[BaseGraph]) -> None:
     # checking remaining nodes positions
     assert np.all(
         coords[1:, 1:]
-        == np.flip(visual.node._subvisuals[0]._data["a_position"], axis=-1)
+        == np.flip(visual.node._subvisuals[0]._data['a_position'], axis=-1)
     )
 
     # checking single edge

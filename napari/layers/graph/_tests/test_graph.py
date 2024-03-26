@@ -58,7 +58,7 @@ def test_networkx_graph() -> None:
 
     mapping = {}
     for i, j in graph.nodes:
-        graph.nodes[i, j]["pos"] = (i, j)
+        graph.nodes[i, j]['pos'] = (i, j)
         mapping[i, j] = i * m + j
 
     nx.relabel_nodes(graph, mapping, copy=False)
@@ -81,7 +81,7 @@ def test_networkx_nonspatial_graph() -> None:
         Graph(graph)
 
 
-@pytest.mark.parametrize("graph_class", [UndirectedGraph, DirectedGraph])
+@pytest.mark.parametrize('graph_class', [UndirectedGraph, DirectedGraph])
 def test_changing_graph(graph_class: Type[BaseGraph]) -> None:
     graph_a = graph_class(edges=[[0, 1]], coords=[[0, 0], [1, 1]])
     graph_b = graph_class(coords=[[0, 0, 0]])
@@ -93,7 +93,7 @@ def test_changing_graph(graph_class: Type[BaseGraph]) -> None:
     assert layer.ndim == graph_b.ndim
 
 
-@pytest.mark.parametrize("graph_class", [UndirectedGraph, DirectedGraph])
+@pytest.mark.parametrize('graph_class', [UndirectedGraph, DirectedGraph])
 def test_move(graph_class: Type[BaseGraph]) -> None:
     start_coords = np.asarray([[0, 0], [1, 1], [2, 2]])
     graph = graph_class(edges=[[0, 1], [1, 2]], coords=start_coords)
@@ -116,7 +116,7 @@ def test_move(graph_class: Type[BaseGraph]) -> None:
     assert np.all(layer._points_data[1:2] == start_coords[1:2] + [-3, 4])
 
 
-@pytest.mark.parametrize("graph_class", [UndirectedGraph, DirectedGraph])
+@pytest.mark.parametrize('graph_class', [UndirectedGraph, DirectedGraph])
 def test_add_nodes(graph_class: Type[BaseGraph]) -> None:
     # it also tests if original graph object is changed inplace.
     coords = np.asarray([[0, 0], [1, 1]])
@@ -146,7 +146,7 @@ def test_add_nodes(graph_class: Type[BaseGraph]) -> None:
     assert set(layer.selected_data) == {4, 5}
 
 
-@pytest.mark.parametrize("graph_class", [UndirectedGraph, DirectedGraph])
+@pytest.mark.parametrize('graph_class', [UndirectedGraph, DirectedGraph])
 def test_remove_selected_nodes(graph_class: Type[BaseGraph]) -> None:
     # it also tests if original graph object is changed inplace.
     coords = np.asarray([[0, 0], [1, 1], [2, 2]])
@@ -175,7 +175,7 @@ def test_remove_selected_nodes(graph_class: Type[BaseGraph]) -> None:
     assert graph.n_nodes == 0
 
 
-@pytest.mark.parametrize("graph_class", [UndirectedGraph, DirectedGraph])
+@pytest.mark.parametrize('graph_class', [UndirectedGraph, DirectedGraph])
 def test_remove_nodes(graph_class: Type[BaseGraph]) -> None:
     # it also tests if original graph object is changed inplace.
     coords = np.asarray([[0, 0], [1, 1], [2, 2]])
@@ -196,7 +196,7 @@ def test_remove_nodes(graph_class: Type[BaseGraph]) -> None:
     assert graph.n_nodes == 0
 
 
-@pytest.mark.parametrize("graph_class", [UndirectedGraph, DirectedGraph])
+@pytest.mark.parametrize('graph_class', [UndirectedGraph, DirectedGraph])
 def test_remove_nodes_non_sequential_indexing(
     graph_class: Type[BaseGraph],
 ) -> None:
@@ -221,7 +221,7 @@ def test_remove_nodes_non_sequential_indexing(
     assert graph.n_nodes == 0
 
 
-@pytest.mark.parametrize("graph_class", [UndirectedGraph, DirectedGraph])
+@pytest.mark.parametrize('graph_class', [UndirectedGraph, DirectedGraph])
 def test_graph_out_of_slice_display(graph_class: Type[BaseGraph]) -> None:
     coords = np.asarray([[0, 0, 0, 0], [1, 1, 1, 1], [2, 2, 2, 2]])
 
@@ -231,14 +231,14 @@ def test_graph_out_of_slice_display(graph_class: Type[BaseGraph]) -> None:
 
 
 def test_graph_from_data_tuple() -> None:
-    layer = Graph(name="graph")
+    layer = Graph(name='graph')
     new_layer = Graph.create(*layer.as_layer_data_tuple())
     assert layer.name == new_layer.name
     assert len(layer.data) == len(new_layer.data)
     assert layer.ndim == new_layer.ndim
 
 
-@pytest.mark.parametrize("graph_class", [UndirectedGraph, DirectedGraph])
+@pytest.mark.parametrize('graph_class', [UndirectedGraph, DirectedGraph])
 def test_graph_from_data_tuple_non_empty(graph_class: Type[BaseGraph]) -> None:
     indices = np.asarray([5, 3, 1])
     coords = np.asarray([[0, 0], [1, 1], [2, 2]])
@@ -253,7 +253,7 @@ def test_graph_from_data_tuple_non_empty(graph_class: Type[BaseGraph]) -> None:
     assert layer.ndim == new_layer.ndim
 
 
-@pytest.mark.parametrize("graph_class", [UndirectedGraph, DirectedGraph])
+@pytest.mark.parametrize('graph_class', [UndirectedGraph, DirectedGraph])
 def test_add_nodes_buffer_resize(graph_class):
     coords = np.asarray([(0, 0, 0)])
 
@@ -266,7 +266,7 @@ def test_add_nodes_buffer_resize(graph_class):
     assert graph.n_nodes == coords.shape[0] + 1
 
 
-@pytest.mark.parametrize("graph_class", [UndirectedGraph, DirectedGraph])
+@pytest.mark.parametrize('graph_class', [UndirectedGraph, DirectedGraph])
 def test_add_data_event(graph_class):
     coords = np.asarray([[0, 0], [1, 1]])
 
@@ -301,7 +301,7 @@ def test_add_data_event(graph_class):
     assert last_call[1]['data_indices'] == (8, 9)
 
 
-@pytest.mark.parametrize("graph_class", [UndirectedGraph, DirectedGraph])
+@pytest.mark.parametrize('graph_class', [UndirectedGraph, DirectedGraph])
 def test_remove_data_event(graph_class):
     coords = np.asarray([[0, 0], [1, 1], [2, 2], [3, 3]])
 
@@ -328,7 +328,7 @@ def test_remove_data_event(graph_class):
     assert last_call[1]['data_indices'] == (2, 3)
 
 
-@pytest.mark.parametrize("graph_class", [UndirectedGraph, DirectedGraph])
+@pytest.mark.parametrize('graph_class', [UndirectedGraph, DirectedGraph])
 def test_remove_selected_data_event(graph_class):
     coords = np.asarray([[0, 0], [1, 1], [2, 2], [3, 3]])
 
