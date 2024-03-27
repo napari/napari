@@ -61,7 +61,7 @@ def paste(layer: Points):
 
 
 @register_points_action(
-    trans._('Select all points in the current view slice.'),
+    trans._('Toggle selection of all points in the current view slice.'),
 )
 def select_all_in_slice(layer: Points):
     new_selected = set(layer._indices_view[: len(layer._view_data)])
@@ -92,7 +92,7 @@ def select_all_in_slice(layer: Points):
 
 
 @register_points_action(
-    trans._('Select all points in the layer.'),
+    trans._('Toggle selection of all points in the layer.'),
 )
 def select_all_data(layer: Points):
     # If all points are already selected, deselect all points
