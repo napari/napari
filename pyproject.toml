@@ -369,6 +369,7 @@ filterwarnings = [
   "ignore:Alternative shading modes are only available in 3D, defaulting to none",
   "ignore:distutils Version classes are deprecated::",
   "ignore:There is no current event loop:DeprecationWarning:",
+  "ignore:numba not installed, falling back to stubs. Install numba for better napari-graph performance.:UserWarning",
   "ignore:(?s).*Pyarrow will become a required dependency of pandas:DeprecationWarning",  # pandas pyarrow (pandas<3.0),
 ]
 markers = [
@@ -509,6 +510,7 @@ module = [
     'napari.layers._layer_actions',
     'napari.layers._multiscale_data',
     'napari.layers.intensity_mixin',
+    'napari.layers.graph.graph',
     'napari.layers.points._points_key_bindings',
     'napari.layers.points._points_utils',
     'napari.layers.points._slice',

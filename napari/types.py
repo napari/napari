@@ -12,6 +12,7 @@ from typing import (
 )
 
 import numpy as np
+from napari_graph import BaseGraph
 
 # TODO decide where types should be defined to have single place for them
 from npe2.types import LayerName as LayerTypeName
@@ -102,6 +103,7 @@ class SampleDict(TypedDict):
 ArrayBase: type[np.ndarray] = np.ndarray
 
 
+GraphData = NewType('GraphData', BaseGraph)  # type: ignore [valid-newtype]
 ImageData = NewType('ImageData', np.ndarray)
 LabelsData = NewType('LabelsData', np.ndarray)
 PointsData = NewType('PointsData', np.ndarray)
@@ -110,6 +112,7 @@ SurfaceData = NewType('SurfaceData', tuple[np.ndarray, np.ndarray, np.ndarray])
 TracksData = NewType('TracksData', np.ndarray)
 VectorsData = NewType('VectorsData', np.ndarray)
 _LayerData = Union[
+    GraphData,
     ImageData,
     LabelsData,
     PointsData,
