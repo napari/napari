@@ -51,7 +51,7 @@ def get_tb_formatter() -> Callable[[ExcInfo, bool, str], str]:
             else:
                 tb_text = vbtb.text(*info)
             # resets to default behavior
-            np.set_string_function(None)
+            np.set_printoptions()  # formatter gets reset
             return tb_text
 
     except ModuleNotFoundError:
@@ -125,7 +125,7 @@ def get_tb_formatter() -> Callable[[ExcInfo, bool, str], str]:
                     # if we don't need HTML, just use traceback
                     tb_text = ''.join(traceback.format_exception(*info))
                 # resets to default behavior
-                np.set_string_function(None)
+                np.set_printoptions()  # formatter gets reset
                 return tb_text
 
         else:
@@ -140,7 +140,7 @@ def get_tb_formatter() -> Callable[[ExcInfo, bool, str], str]:
                 tb_text = ''.join(traceback.format_exception(*info))
                 if as_html:
                     tb_text = '<pre>' + tb_text + '</pre>'
-                np.set_string_function(None)
+                np.set_printoptions()  # formatter gets reset
                 return tb_text
 
     return format_exc_info
