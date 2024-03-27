@@ -369,7 +369,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         locals_dict = locals()
         self._parameters_with_default_values = {
             x for x in _OPTIONAL_PARAMETERS if locals_dict[x] is None
-        }
+        }  # this is to store information which parameters were not set by the user
+        # it allow to detect which parameters could be overwritten when
+        # adding layer to the viewer
 
         self._source = current_source()
         self.dask_optimized_slicing = configure_dask(data, cache)
