@@ -44,14 +44,14 @@ def test_update_menu_state_context(make_napari_viewer):
     assert 'dummy_id' in app.commands
     assert len(viewer.layers) == 0
     # `dummy_action` should be disabled & not visible as num layers == 0
-    viewer.window._update_menu_state('file_menu')
+    viewer.window._update_file_menu_state()
     assert not dummy_action.isVisible()
     assert not dummy_action.isEnabled()
 
     layer_a = Image(np.random.random((10, 10)))
     viewer.layers.append(layer_a)
     assert len(viewer.layers) == 1
-    viewer.window._update_menu_state('file_menu')
+    viewer.window._update_file_menu_state()
     # `dummy_action` should be visible but not enabled after adding layer
     assert dummy_action.isVisible()
     assert not dummy_action.isEnabled()
@@ -60,6 +60,6 @@ def test_update_menu_state_context(make_napari_viewer):
     viewer.layers.append(layer_b)
     assert len(viewer.layers) == 2
     # `dummy_action` should be enabled and visible after adding second layer
-    viewer.window._update_menu_state('file_menu')
+    viewer.window._update_file_menu_state()
     assert dummy_action.isVisible()
     assert dummy_action.isEnabled()
