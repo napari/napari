@@ -14,6 +14,7 @@ from napari.layers.points import Points
 from napari.layers.shapes import Shapes
 from napari.layers.surface import Surface
 from napari.layers.tracks import Tracks
+from napari.layers.utils.spatial_information import SpatialInformation
 from napari.layers.vectors import Vectors
 from napari.utils.misc import all_subclasses as _all_subcls
 
@@ -30,6 +31,7 @@ __all__ = [
     'Layer',
     'Points',
     'Shapes',
+    'SpatialInformation',
     'Surface',
     'Tracks',
     'Vectors',
