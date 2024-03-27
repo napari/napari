@@ -15,7 +15,13 @@ def test_viewer_toggler():
     app = get_app()
     app.register_action(action)
 
-    with app.injection_store.register(providers={Viewer: lambda: viewer}):
+    # Injection required as there is no current viewer, use a high weight (100)
+    # so this provider is used over `_provide_viewer`, which would raise an error
+    with app.injection_store.register(
+        providers=[
+            (lambda: viewer, Viewer, 100),
+        ]
+    ):
         assert viewer.axes.visible is False
         app.commands.execute_command('some.command.id')
         assert viewer.axes.visible is True

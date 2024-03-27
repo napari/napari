@@ -11,7 +11,7 @@ effect.  Use `app.register_action` to register new actions at runtime.
 from __future__ import annotations
 
 from functools import partial
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 from app_model.types import Action
 
@@ -39,7 +39,7 @@ LAYERCTX_LINK: MenuRuleDict = {
 
 # Statically defined Layer actions.
 # modifying this list at runtime has no effect.
-LAYER_ACTIONS: List[Action] = [
+LAYER_ACTIONS: list[Action] = [
     Action(
         id=CommandId.LAYER_DUPLICATE,
         title=CommandId.LAYER_DUPLICATE.command_title,
@@ -129,8 +129,51 @@ LAYER_ACTIONS: List[Action] = [
         enablement=LLSCK.num_unselected_linked_layers,
         menus=[LAYERCTX_LINK],
     ),
+    Action(
+        id=CommandId.SHOW_SELECTED_LAYERS,
+        title=CommandId.SHOW_SELECTED_LAYERS.command_title,
+        callback=_layer_actions._show_selected,
+        menus=[
+            {
+                'id': MenuId.LAYERLIST_CONTEXT,
+                'group': MenuGroup.NAVIGATION,
+            }
+        ],
+    ),
+    Action(
+        id=CommandId.HIDE_SELECTED_LAYERS,
+        title=CommandId.HIDE_SELECTED_LAYERS.command_title,
+        callback=_layer_actions._hide_selected,
+        menus=[
+            {
+                'id': MenuId.LAYERLIST_CONTEXT,
+                'group': MenuGroup.NAVIGATION,
+            }
+        ],
+    ),
+    Action(
+        id=CommandId.SHOW_UNSELECTED_LAYERS,
+        title=CommandId.SHOW_UNSELECTED_LAYERS.command_title,
+        callback=_layer_actions._show_unselected,
+        menus=[
+            {
+                'id': MenuId.LAYERLIST_CONTEXT,
+                'group': MenuGroup.NAVIGATION,
+            }
+        ],
+    ),
+    Action(
+        id=CommandId.HIDE_UNSELECTED_LAYERS,
+        title=CommandId.HIDE_UNSELECTED_LAYERS.command_title,
+        callback=_layer_actions._hide_unselected,
+        menus=[
+            {
+                'id': MenuId.LAYERLIST_CONTEXT,
+                'group': MenuGroup.NAVIGATION,
+            }
+        ],
+    ),
 ]
-
 
 for _dtype in (
     'int8',

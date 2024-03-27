@@ -158,7 +158,7 @@ def test_range_one_images_and_points(make_napari_viewer):
 
 
 @pytest.mark.enable_console
-@pytest.mark.filterwarnings("ignore::DeprecationWarning:jupyter_client")
+@pytest.mark.filterwarnings('ignore::DeprecationWarning:jupyter_client')
 def test_update_console(make_napari_viewer):
     """Test updating the console with local variables."""
     viewer = make_napari_viewer()
@@ -182,7 +182,7 @@ def test_update_console(make_napari_viewer):
 
 
 @pytest.mark.enable_console
-@pytest.mark.filterwarnings("ignore::DeprecationWarning:jupyter_client")
+@pytest.mark.filterwarnings('ignore::DeprecationWarning:jupyter_client')
 def test_update_lazy_console(make_napari_viewer, capsys):
     """Test updating the console with local variables,
     before console is instantiated."""
@@ -191,12 +191,12 @@ def test_update_lazy_console(make_napari_viewer, capsys):
 
     a = 4
     b = 5
-    viewer.update_console(["a", "b"])
+    viewer.update_console(['a', 'b'])
 
     x = np.arange(5)
-    viewer.update_console("x")
+    viewer.update_console('x')
 
-    viewer.update_console("missing")
+    viewer.update_console('missing')
     captured = capsys.readouterr()
     assert 'Could not get' in captured.out
     with pytest.raises(TypeError):

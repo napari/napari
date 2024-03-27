@@ -1,7 +1,6 @@
 from enum import Enum, auto
 
-from pydantic import Field
-
+from napari._pydantic_compat import Field
 from napari.utils.color import ColorValue
 from napari.utils.events import EventedModel
 

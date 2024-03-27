@@ -1,5 +1,7 @@
 """MutableMapping that emits events when altered."""
-from typing import Mapping, Optional, Sequence, Type, Union
+
+from collections.abc import Mapping, Sequence
+from typing import Optional, Union
 
 from napari.utils.events.containers._dict import _K, _T, TypedMutableMapping
 from napari.utils.events.event import EmitterGroup, Event
@@ -46,19 +48,19 @@ class EventedDict(TypedMutableMapping[_K, _T]):
     def __init__(
         self,
         data: Optional[Mapping[_K, _T]] = None,
-        basetype: Union[Type[_T], Sequence[Type[_T]]] = (),
+        basetype: Union[type[_T], Sequence[type[_T]]] = (),
     ) -> None:
         _events = {
-            "changing": None,
-            "changed": None,
-            "adding": None,
-            "added": None,
-            "removing": None,
-            "removed": None,
-            "updated": None,
+            'changing': None,
+            'changed': None,
+            'adding': None,
+            'added': None,
+            'removing': None,
+            'removed': None,
+            'updated': None,
         }
         # For inheritance: If the mro already provides an EmitterGroup, add...
-        if hasattr(self, "events") and isinstance(self.events, EmitterGroup):
+        if hasattr(self, 'events') and isinstance(self.events, EmitterGroup):
             self.events.add(**_events)
         else:
             # otherwise create a new one
@@ -67,7 +69,7 @@ class EventedDict(TypedMutableMapping[_K, _T]):
             )
         super().__init__(data, basetype)
 
-    def __setitem__(self, key: _K, value: _T):
+    def __setitem__(self, key: _K, value: _T) -> None:
         old = self._dict.get(key)
         if value is old or value == old:
             return
@@ -81,26 +83,26 @@ class EventedDict(TypedMutableMapping[_K, _T]):
             super().__setitem__(key, value)
             self.events.changed(key=key, old_value=old, value=value)
 
-    def __delitem__(self, key: _K):
+    def __delitem__(self, key: _K) -> None:
         self.events.removing(key=key)
         self._disconnect_child_emitters(self[key])
         item = self._dict.pop(key)
         self.events.removed(key=key, value=item)
 
-    def _reemit_child_event(self, event: Event):
+    def _reemit_child_event(self, event: Event) -> None:
         """An item in the dict emitted an event.  Re-emit with key"""
-        if not hasattr(event, "key"):
+        if not hasattr(event, 'key'):
             event.key = self.key(event.source)
 
         # re-emit with this object's EventEmitter
         self.events(event)
 
-    def _disconnect_child_emitters(self, child: _T):
+    def _disconnect_child_emitters(self, child: _T) -> None:
         """Disconnect all events from the child from the re-emitter."""
         if isinstance(child, SupportsEvents):
             child.events.disconnect(self._reemit_child_event)
 
-    def _connect_child_emitters(self, child: _T):
+    def _connect_child_emitters(self, child: _T) -> None:
         """Connect all events from the child to be re-emitted."""
         if isinstance(child, SupportsEvents):
             # make sure the event source has been set on the child
@@ -108,7 +110,7 @@ class EventedDict(TypedMutableMapping[_K, _T]):
                 child.events.source = child
             child.events.connect(self._reemit_child_event)
 
-    def key(self, value: _T):
+    def key(self, value: _T) -> Optional[_K]:
         """Return first instance of value."""
         for k, v in self._dict.items():
             if v is value or v == value:

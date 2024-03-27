@@ -32,6 +32,8 @@ def _only_when_enabled(callback):
 
 
 class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
+    layer: Labels
+
     def __init__(
         self, *, layer: Labels, overlay: LabelsPolygonOverlay, parent=None
     ):
@@ -71,7 +73,6 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
 
         layer.events.selected_label.connect(self._update_color)
         layer.events.colormap.connect(self._update_color)
-        layer.events.color_mode.connect(self._update_color)
         layer.events.opacity.connect(self._update_color)
 
         self._first_point_pos = np.zeros(2)
@@ -124,7 +125,7 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
 
     def _update_color(self):
         layer = self.layer
-        if layer._selected_label == layer._background_label:
+        if layer._selected_label == layer.colormap.background_value:
             self._set_color((1, 0, 0, 0))
         else:
             self._set_color(

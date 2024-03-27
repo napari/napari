@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional, Tuple
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 
@@ -11,7 +11,7 @@ from napari.utils.validators import _validate_increasing, validate_n_seq
 validate_2_tuple = validate_n_seq(2)
 
 if TYPE_CHECKING:
-    from napari.layers.image.image import _ImageBase
+    from napari.layers._scalar_field.scalar_field import ScalarFieldBase
 
 
 class IntensityVisualizationMixin:
@@ -39,20 +39,23 @@ class IntensityVisualizationMixin:
         self._gamma = 1
         self._colormap_name = ''
         self._contrast_limits_msg = ''
-        self._contrast_limits: Tuple[Optional[float], Optional[float]] = (
+        self._contrast_limits: tuple[Optional[float], Optional[float]] = (
             None,
             None,
         )
-        self._contrast_limits_range: Tuple[
+        self._contrast_limits_range: tuple[
             Optional[float], Optional[float]
         ] = (None, None)
         self._auto_contrast_source = 'slice'
         self._keep_auto_contrast = False
 
-    def reset_contrast_limits(self: '_ImageBase', mode=None):
+    def reset_contrast_limits(self: 'ScalarFieldBase', mode=None):
         """Scale contrast limits to data range"""
         mode = mode or self._auto_contrast_source
         self.contrast_limits = self._calc_data_range(mode)
+
+    def _calc_data_range(self, mode):
+        raise NotImplementedError
 
     def reset_contrast_limits_range(self, mode=None):
         """Scale contrast limits range to data type if dtype is an integer,
@@ -152,6 +155,6 @@ class IntensityVisualizationMixin:
 
     @gamma.setter
     def gamma(self, value):
-        self._gamma = value
+        self._gamma = float(value)
         self._update_thumbnail()
         self.events.gamma()

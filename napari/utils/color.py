@@ -1,6 +1,7 @@
 """Contains napari color constants and utilities."""
 
-from typing import Union
+from collections.abc import Iterator
+from typing import Callable, Union
 
 import numpy as np
 
@@ -18,11 +19,13 @@ class ColorValue(np.ndarray):
     use the ``validate`` method to coerce a value to a single color.
     """
 
-    def __new__(cls, value: ColorValueParam):
+    def __new__(cls, value: ColorValueParam) -> 'ColorValue':
         return cls.validate(value)
 
     @classmethod
-    def __get_validators__(cls):
+    def __get_validators__(
+        cls,
+    ) -> Iterator[Callable[[ColorValueParam], 'ColorValue']]:
         yield cls.validate
 
     @classmethod
@@ -82,14 +85,16 @@ class ColorArray(np.ndarray):
     use the ``validate`` method to coerce a value to an array of colors.
     """
 
-    def __new__(cls, value: ColorArrayParam):
+    def __new__(cls, value: ColorArrayParam) -> 'ColorArray':
         return cls.validate(value)
 
     @classmethod
-    def __get_validators__(cls):
+    def __get_validators__(
+        cls,
+    ) -> Iterator[Callable[[ColorArrayParam], 'ColorArray']]:
         yield cls.validate
 
-    def __sizeof__(self):
+    def __sizeof__(self) -> int:
         return super().__sizeof__() + self.nbytes
 
     @classmethod

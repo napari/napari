@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional, Tuple
+from typing import TYPE_CHECKING, Optional
 from weakref import ref
 
 import numpy as np
@@ -79,14 +79,14 @@ class QtDimSliderWidget(QWidget):
         settings = get_settings()
         self._fps = settings.application.playback_fps
         connect_setattr_value(
-            settings.application.events.playback_fps, self, "fps"
+            settings.application.events.playback_fps, self, 'fps'
         )
 
         self._minframe = None
         self._maxframe = None
         self._loop_mode = settings.application.playback_mode
         connect_setattr_value(
-            settings.application.events.playback_mode, self, "loop_mode"
+            settings.application.events.playback_mode, self, 'loop_mode'
         )
 
         layout = QHBoxLayout()
@@ -258,6 +258,8 @@ class QtDimSliderWidget(QWidget):
         value : float
             Frames per second for animation.
         """
+        if self._fps == value:
+            return
         self._fps = value
         self.play_button.fpsspin.setValue(abs(value))
         self.play_button.reverse_check.setChecked(value < 0)
@@ -373,7 +375,7 @@ class QtDimSliderWidget(QWidget):
         self,
         fps: Optional[float] = None,
         loop_mode: Optional[str] = None,
-        frame_range: Optional[Tuple[int, int]] = None,
+        frame_range: Optional[tuple[int, int]] = None,
     ):
         """Animate (play) axis. Same API as QtDims.play()
 
@@ -514,7 +516,7 @@ class QtPlayButton(QPushButton):
         self.popup.frame.setLayout(form_layout)
 
         fpsspin = QtCustomDoubleSpinBox(self.popup)
-        fpsspin.setObjectName("fpsSpinBox")
+        fpsspin.setObjectName('fpsSpinBox')
         fpsspin.setAlignment(Qt.AlignmentFlag.AlignCenter)
         fpsspin.setValue(self.fps)
         if hasattr(fpsspin, 'setStepType'):
@@ -530,7 +532,7 @@ class QtPlayButton(QPushButton):
         self.fpsspin = fpsspin
 
         revcheck = QCheckBox(self.popup)
-        revcheck.setObjectName("playDirectionCheckBox")
+        revcheck.setObjectName('playDirectionCheckBox')
         form_layout.insertRow(
             1, QLabel(trans._('play direction:'), parent=self.popup), revcheck
         )
@@ -565,7 +567,7 @@ class QtPlayButton(QPushButton):
         qt_dims = self.qt_dims_ref()
         if not qt_dims:  # pragma: no cover
             return None
-        if self.property('playing') == "True":
+        if self.property('playing') == 'True':
             return qt_dims.stop()
         self.play_requested.emit(self.axis)
         return None
@@ -682,12 +684,12 @@ class AnimationWorker(QObject):
         if frame_range is not None:
             if frame_range[0] >= frame_range[1]:
                 raise ValueError(
-                    trans._("frame_range[0] must be <= frame_range[1]")
+                    trans._('frame_range[0] must be <= frame_range[1]')
                 )
             if frame_range[0] < self.dimsrange[0]:
-                raise IndexError(trans._("frame_range[0] out of range"))
+                raise IndexError(trans._('frame_range[0] out of range'))
             if frame_range[1] * self.dimsrange[2] >= self.dimsrange[1]:
-                raise IndexError(trans._("frame_range[1] out of range"))
+                raise IndexError(trans._('frame_range[1] out of range'))
         self.frame_range = frame_range
 
         if self.frame_range is not None:

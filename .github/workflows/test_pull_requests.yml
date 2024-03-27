@@ -15,6 +15,23 @@ env:
   COLUMNS: 120
 
 jobs:
+  import_lint:
+    name: Import lint
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install tox
+      - name: Run import lint
+        run: tox -e import-lint
+
   manifest:
     # make sure all necessary files will be bundled in the release
     name: Check Manifest
@@ -22,18 +39,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          cache-dependency-path: setup.cfg
+          cache-dependency-path: pyproject.toml
           cache: 'pip'
       - name: Install Dependencies
         run: pip install --upgrade pip
       - name: Install Napari dev
         run: pip install -e .[build]
-      - name: Check Manifest
+      - name: Make Typestubs
         run: |
           make typestubs
+      - name: Check Manifest
+        run: |
           make check-manifest
 
   localization_syntax:
@@ -43,7 +62,7 @@ jobs:
     timeout-minutes: 2
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.x"
       - name: Check localization formatting
@@ -55,26 +74,30 @@ jobs:
 
   build_wheel:
     name: Build wheel
-    uses: ./.github/workflows/resuable_build_wheel.yml
+    uses: ./.github/workflows/reusable_build_wheel.yml
 
   test_initial:
     name: Initial test
     uses: ./.github/workflows/reusable_run_tox_test.yml
     needs: build_wheel
     strategy:
+      fail-fast: false
       matrix:
         include:
-          - python: 3.8
+          - python: 3.9
             platform: ubuntu-latest
             backend: pyqt5
-          - python: 3.11
+            pydantic: "_pydantic_1"
+          - python: 3.12
             platform: ubuntu-latest
             backend: pyqt6
+            pydantic: ""
     with:
       python_version: ${{ matrix.python }}
       platform: ${{ matrix.platform }}
       qt_backend: ${{ matrix.backend }}
       coverage: no_cov
+      constraints_suffix: ${{ matrix.pydantic }}
 
   test:
     name: ${{ matrix.platform }}
@@ -84,39 +107,51 @@ jobs:
       fail-fast: false
       matrix:
         platform: [ ubuntu-latest ]
-        python: [ "3.9", "3.10" ]
-        backend: [ "pyqt5,pyside2" ]
+        python: [ "3.9", "3.11" ]
+        backend: [ "pyqt5,pyside6" ]
         coverage: [ cov ]
+        pydantic: ["_pydantic_1"]
         include:
-          # Windows py38
-          - python: 3.8
+          # Windows py310
+          - python: "3.10"
             platform: windows-latest
-            backend: pyqt5,pyside2
+            backend: pyqt5 #,pyside2
             coverage: no_cov
-          - python: 3.11
+          - python: "3.12"
             platform: windows-latest
             backend: pyqt6
             coverage: no_cov
-          - python: 3.11
+          - python: "3.12"
             platform: macos-latest
             backend: pyqt5
             coverage: no_cov
           # minimum specified requirements
-          - python: 3.8
+          - python: "3.9"
             platform: ubuntu-20.04
             backend: pyqt5
             MIN_REQ: 1
             coverage: cov
+          - python: "3.11"
+            platform: ubuntu-22.04
+            backend: pyqt5
+            coverage: cov
+            pydantic: ""
+            tox_extras: "optional"
           # test without any Qt backends
-          - python: 3.9
+          - python: "3.10"
             platform: ubuntu-20.04
             backend: headless
             coverage: no_cov
-          - python: 3.11
+          - python: "3.12"
             platform: ubuntu-latest
-            backend: pyqt6,pyside6
+            backend: pyqt6
             coverage: cov
             tox_extras: "testing_extra"
+          # pyside2 test
+          - python: "3.10"
+            platform: ubuntu-latest
+            backend: pyside2
+            coverage: no_cov
 
     with:
       python_version: ${{ matrix.python }}
@@ -126,6 +161,8 @@ jobs:
       coverage: ${{ matrix.coverage }}
       toxenv: ${{ matrix.toxenv }}
       tox_extras: ${{ matrix.tox_extras }}
+      constraints_suffix: ${{ matrix.pydantic }}
+
 
   test_pip_install:
     needs: test_initial
@@ -155,25 +192,51 @@ jobs:
     name: test benchmarks
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    env:
+      GIT_LFS_SKIP_SMUDGE: 1
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
         with:
           python-version: 3.11
-          cache-dependency-path: napari-from-github/setup.cfg
+          cache-dependency-path: pyproject.toml
 
       - uses: tlambert03/setup-qt-libs@v1
+
+      - uses: octokit/request-action@v2.x
+        # here we get hash of the latest release commit to compare with PR
+        id: latest_release
+        with:
+          route: GET /repos/{owner}/{repo}/releases/latest
+          owner: napari
+          repo: napari
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: install dependencies
         run: |
           pip install --upgrade pip
           pip install asv[virtualenv]
 
-      - name: Run benchmarks
-        uses: aganders3/headless-gui@v1
+      - name: asv machine
+        run: asv machine --yes
+
+      - name: Run benchmarks PR
+        uses: aganders3/headless-gui@v2
         with:
           run: |
-            asv machine --yes
             asv run --show-stderr --quick  --attribute timeout=300 HEAD^!
         env:
-          PR: 1
+          PR: 1 # prevents asv from running very compute-intensive benchmarks
+
+      - name: Run benchmarks latest release
+        # here we check if the benchmark on the latest release is not broken
+        uses: aganders3/headless-gui@v2
+        with:
+          run: |
+            asv run --show-stderr --quick  --attribute timeout=300  ${{ fromJSON(steps.latest_release.outputs.data).target_commitish }}^!
+        env:
+          PR: 1  # prevents asv from running very compute-intensive benchmarks

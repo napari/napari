@@ -1,9 +1,14 @@
+from typing import TYPE_CHECKING
+
 from vispy.visuals.transforms import MatrixTransform, STTransform
 
 from napari._vispy.utils.gl import BLENDING_MODES
 from napari.components._viewer_constants import CanvasPosition
 from napari.utils.events import disconnect_events
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from napari.layers import Layer
 
 
 class VispyBaseOverlay:
@@ -143,7 +148,7 @@ class VispySceneOverlay(VispyBaseOverlay):
 
 
 class LayerOverlayMixin:
-    def __init__(self, *, layer, overlay, node, parent=None) -> None:
+    def __init__(self, *, layer: 'Layer', overlay, node, parent=None) -> None:
         super().__init__(
             node=node,
             overlay=overlay,

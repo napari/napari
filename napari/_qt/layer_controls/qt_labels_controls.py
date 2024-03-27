@@ -23,10 +23,12 @@ from napari._qt.widgets.qt_mode_buttons import (
 )
 from napari.layers.labels._labels_constants import (
     LABEL_COLOR_MODE_TRANSLATIONS,
+    LabelColorMode,
     LabelsRendering,
     Mode,
 )
 from napari.layers.labels._labels_utils import get_dtype
+from napari.utils import CyclicLabelColormap
 from napari.utils._dtype import get_dtype_limits
 from napari.utils.action_manager import action_manager
 from napari.utils.events import disconnect_events
@@ -92,6 +94,7 @@ class QtLabelsControls(QtLayerControls):
 
         self.layer.events.mode.connect(self._on_mode_change)
         self.layer.events.rendering.connect(self._on_rendering_change)
+        self.layer.events.colormap.connect(self._on_colormap_change)
         self.layer.events.selected_label.connect(
             self._on_selected_label_change
         )
@@ -109,7 +112,7 @@ class QtLabelsControls(QtLayerControls):
         self.layer.events.show_selected_label.connect(
             self._on_show_selected_label_change
         )
-        self.layer.events.color_mode.connect(self._on_color_mode_change)
+        self.layer.events.data.connect(self._on_data_change)
 
         # selection spinbox
         self.selectionSpinBox = QLargeIntSpinBox()
@@ -128,6 +131,15 @@ class QtLabelsControls(QtLayerControls):
         sld.valueChanged.connect(self.changeSize)
         self.brushSizeSlider = sld
         self._on_brush_size_change()
+
+        color_mode_comboBox = QComboBox(self)
+        for data, text in LABEL_COLOR_MODE_TRANSLATIONS.items():
+            data = data.value
+            color_mode_comboBox.addItem(text, data)
+
+        self.colorModeComboBox = color_mode_comboBox
+        self._on_colormap_change()
+        color_mode_comboBox.activated.connect(self.change_color_mode)
 
         contig_cb = QCheckBox()
         contig_cb.setToolTip(trans._('contiguous editing'))
@@ -163,7 +175,7 @@ class QtLabelsControls(QtLayerControls):
 
         selectedColorCheckbox = QCheckBox()
         selectedColorCheckbox.setToolTip(
-            trans._("Display only selected label")
+            trans._('Display only selected label')
         )
         selectedColorCheckbox.stateChanged.connect(self.toggle_selected_mode)
         self.selectedColorCheckbox = selectedColorCheckbox
@@ -269,20 +281,6 @@ class QtLabelsControls(QtLayerControls):
 
         self._on_ndisplay_changed()
 
-        color_mode_comboBox = QComboBox(self)
-        for index, (data, text) in enumerate(
-            LABEL_COLOR_MODE_TRANSLATIONS.items()
-        ):
-            data = data.value
-            color_mode_comboBox.addItem(text, data)
-
-            if self.layer.color_mode == data:
-                color_mode_comboBox.setCurrentIndex(index)
-
-        color_mode_comboBox.activated.connect(self.change_color_mode)
-        self.colorModeComboBox = color_mode_comboBox
-        self._on_color_mode_change()
-
         color_layout = QHBoxLayout()
         self.colorBox = QtColorBox(layer)
         color_layout.addWidget(self.colorBox)
@@ -304,6 +302,37 @@ class QtLabelsControls(QtLayerControls):
         self.layout().addRow(
             trans._('show\nselected:'), self.selectedColorCheckbox
         )
+
+    def change_color_mode(self):
+        """Change color mode of label layer"""
+        if self.colorModeComboBox.currentData() == LabelColorMode.AUTO.value:
+            self.layer.colormap = self.layer._original_random_colormap
+        else:
+            self.layer.colormap = self.layer._direct_colormap
+
+    def _on_colormap_change(self):
+        enable_combobox = not self.layer._is_default_colors(
+            self.layer._direct_colormap.color_dict
+        )
+        self.colorModeComboBox.setEnabled(enable_combobox)
+        if not enable_combobox:
+            self.colorModeComboBox.setToolTip(
+                'Layer needs a user-set DirectLabelColormap to enable direct '
+                'mode.'
+            )
+        if isinstance(self.layer.colormap, CyclicLabelColormap):
+            self.colorModeComboBox.setCurrentIndex(
+                self.colorModeComboBox.findData(LabelColorMode.AUTO.value)
+            )
+        else:
+            self.colorModeComboBox.setCurrentIndex(
+                self.colorModeComboBox.findData(LabelColorMode.DIRECT.value)
+            )
+
+    def _on_data_change(self):
+        """Update label selection spinbox min/max when data changes."""
+        dtype_lims = get_dtype_limits(get_dtype(self.layer))
+        self.selectionSpinBox.setRange(*dtype_lims)
 
     def _on_mode_change(self, event):
         """Receive layer model mode change event and update checkbox ticks.
@@ -333,7 +362,7 @@ class QtLabelsControls(QtLayerControls):
         elif mode == Mode.ERASE:
             self.erase_button.setChecked(True)
         elif mode != Mode.TRANSFORM:
-            raise ValueError(trans._("Mode not recognized"))
+            raise ValueError(trans._('Mode not recognized'))
 
     def changeRendering(self, text):
         """Change rendering mode for image display.
@@ -437,10 +466,6 @@ class QtLabelsControls(QtLayerControls):
             Qt.CheckState(state) == Qt.CheckState.Checked
         )
 
-    def change_color_mode(self):
-        """Change color mode of label layer"""
-        self.layer.color_mode = self.colorModeComboBox.currentData()
-
     def _on_contour_change(self):
         """Receive layer model contour value change event and update spinbox."""
         with self.layer.events.contour.blocker():
@@ -487,13 +512,6 @@ class QtLabelsControls(QtLayerControls):
                 self.layer.show_selected_label
             )
 
-    def _on_color_mode_change(self):
-        """Receive layer model color."""
-        with self.layer.events.color_mode.blocker():
-            self.colorModeComboBox.setCurrentIndex(
-                self.colorModeComboBox.findData(self.layer.color_mode)
-            )
-
     def _on_editable_or_visible_change(self):
         """Receive layer model editable/visible change event & enable/disable buttons."""
         set_widgets_enabled_with_opacity(
@@ -535,7 +553,7 @@ class QtColorBox(QWidget):
 
     Parameters
     ----------
-    layer : napari.layers.Layer
+    layer : napari.layers.Labels
         An instance of a napari layer.
     """
 

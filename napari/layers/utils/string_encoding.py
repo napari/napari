@@ -1,9 +1,10 @@
+from collections.abc import Sequence
 from string import Formatter
-from typing import Any, Literal, Protocol, Sequence, Union, runtime_checkable
+from typing import Any, Literal, Protocol, Union, runtime_checkable
 
 import numpy as np
-from pydantic import parse_obj_as
 
+from napari._pydantic_compat import parse_obj_as
 from napari.layers.utils.style_encoding import (
     StyleEncoding,
     _ConstantStyleEncoding,
@@ -166,9 +167,15 @@ class FormatStringEncoding(_DerivedStyleEncoding[StringValue, StringArray]):
 
     def __call__(self, features: Any) -> StringArray:
         feature_names = features.columns.to_list()
+        # Expose the dataframe index to the format string keys
+        # unless a column exists with the name "index", which takes precedence.
+        with_index = False
+        if 'index' not in feature_names:
+            feature_names = ['index'] + feature_names
+            with_index = True
         values = [
             self.format.format(**dict(zip(feature_names, row)))
-            for row in features.itertuples(index=False, name=None)
+            for row in features.itertuples(index=with_index, name=None)
         ]
         return np.array(values, dtype=str)
 

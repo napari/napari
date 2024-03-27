@@ -12,7 +12,7 @@ def raise_():
 
 
 def warn_():
-    warnings.warn("warning!")
+    warnings.warn('warning!')
 
 
 viewer = napari.Viewer()

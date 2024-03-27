@@ -29,6 +29,7 @@ class WidgetBuilder:
             "plugins": widgets.PluginWidget,
             "shortcuts": widgets.ShortcutsWidget,
             "extension2reader": widgets.Extension2ReaderWidget,
+            "highlight": widgets.HighlightPreviewWidget,
         },
         "number": {
             "spin": widgets.SpinDoubleSchemaWidget,
@@ -48,7 +49,6 @@ class WidgetBuilder:
             "text": widgets.TextSchemaWidget,
             "range": widgets.IntegerRangeSchemaWidget,
             "enum": widgets.EnumSchemaWidget,
-            "highlight": widgets.HighlightSizePreviewWidget,
             "font_size": widgets.FontSizeSchemaWidget,
         },
         "array": {
