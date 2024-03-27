@@ -182,7 +182,7 @@ class QtDimSliderWidget(QWidget):
     def _create_thickness_slider_widget(self):
         """Creates a slice_thickness slider widget for a given axis."""
         slider = QDoubleSlider(Qt.Horizontal)
-        slider.setObjectName("thickness_slider")
+        slider.setObjectName('thickness_slider')
         slider.setFocusPolicy(Qt.NoFocus)
         slider.setMinimum(0)
         slider.setMaximum(self.dims.nsteps[self.axis] * 2)
