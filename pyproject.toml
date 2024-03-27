@@ -294,6 +294,7 @@ select = [
     "TRY", # tryceratops
     "ICN", # flake8-import-conventions
     "RUF", # ruff specyfic rules
+    "NPY201" # checks compatibility with numpy version 2.0
 ]
 ignore = [
     "E501", "TCH001", "TCH002", "TCH003",
