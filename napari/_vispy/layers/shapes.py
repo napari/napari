@@ -61,7 +61,12 @@ class VispyShapesLayer(VispyBaseLayer):
 
     def _on_highlight_change(self):
         settings = get_settings()
-        self.layer._highlight_width = settings.appearance.highlight_thickness
+        self.layer._highlight_width = (
+            settings.appearance.highlight.highlight_thickness
+        )
+        self.layer._highlight_color = (
+            settings.appearance.highlight.highlight_color
+        )
 
         # Compute the vertices and faces of any shape outlines
         vertices, faces = self.layer._outline_shapes()
@@ -86,7 +91,7 @@ class VispyShapesLayer(VispyBaseLayer):
             _,
         ) = self.layer._compute_vertices_and_box()
 
-        width = settings.appearance.highlight_thickness
+        width = settings.appearance.highlight.highlight_thickness
 
         if vertices is None or len(vertices) == 0:
             vertices = np.zeros((1, self.layer._slice_input.ndisplay))

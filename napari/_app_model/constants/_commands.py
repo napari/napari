@@ -55,6 +55,10 @@ class CommandId(StrEnum):
     TOGGLE_VIEWER_SCALE_BAR_COLORED = 'napari:window:view:toggle_viewer_scale_bar_colored'
     TOGGLE_VIEWER_SCALE_BAR_TICKS = 'napari:window:view:toggle_viewer_scale_bar_ticks'
 
+    # Plugins menubar
+    DLG_PLUGIN_INSTALL = 'napari:window:plugins:plugin_install_dialog'
+    DLG_PLUGIN_ERR = 'napari:window:plugins:plugin_err_reporter'
+
     # Help menubar
     NAPARI_GETTING_STARTED = 'napari:window:help:getting_started'
     NAPARI_TUTORIALS = 'napari:window:help:tutorials'
@@ -151,6 +155,10 @@ _COMMAND_INFO = {
     CommandId.TOGGLE_VIEWER_SCALE_BAR: _i(trans._('Scale Bar Visible')),
     CommandId.TOGGLE_VIEWER_SCALE_BAR_COLORED: _i(trans._('Scale Bar Colored')),
     CommandId.TOGGLE_VIEWER_SCALE_BAR_TICKS: _i(trans._('Scale Bar Ticks')),
+
+    # Plugins menubar
+    CommandId.DLG_PLUGIN_INSTALL: _i(trans._('Install/Uninstall Plugins...')),
+    CommandId.DLG_PLUGIN_ERR: _i(trans._('Plugin Errors...')),
 
     # Help menubar
     CommandId.NAPARI_GETTING_STARTED: _i(trans._('Getting started')),

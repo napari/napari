@@ -6,7 +6,6 @@ import os
 from dataclasses import dataclass
 from functools import lru_cache
 from itertools import cycle
-from typing import List
 
 import numpy as np
 from packaging.version import parse as parse_version
@@ -16,6 +15,7 @@ from skimage.morphology import diamond, octahedron
 import napari
 from napari.components.viewer_model import ViewerModel
 from napari.qt import QtViewer
+from napari.utils.colormaps import DirectLabelColormap
 
 from .utils import Skip
 
@@ -27,8 +27,8 @@ class MouseEvent:
     # mock mouse event class
     type: str
     is_dragging: bool
-    pos: List[int]
-    view_direction: List[int]
+    pos: list[int]
+    view_direction: list[int]
 
 
 class QtViewerSingleLabelsSuite:
@@ -150,7 +150,7 @@ class LabelRendering:
             )
             colors[None] = 'yellow'
             colors[0] = 'transparent'
-            self.layer.color = colors
+            self.layer.colormap = DirectLabelColormap(color_dict=colors)
         self.qt_viewr.show()
 
     @staticmethod

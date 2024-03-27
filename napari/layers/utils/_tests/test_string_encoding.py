@@ -142,6 +142,19 @@ def test_validate_from_format_string():
     assert actual == expected
 
 
+def test_format_with_index(features):
+    encoding = FormatStringEncoding(format='{index}: {confidence:.2f}')
+    values = encoding(features)
+    np.testing.assert_array_equal(values, ['0: 0.50', '1: 1.00', '2: 0.25'])
+
+
+def test_format_with_index_column(features):
+    features['index'] = features['class']
+    encoding = FormatStringEncoding(format='{index}: {confidence:.2f}')
+    values = encoding(features)
+    np.testing.assert_array_equal(values, ['a: 0.50', 'b: 1.00', 'c: 0.25'])
+
+
 def test_validate_from_non_format_string():
     argument = 'abc'
     expected = DirectStringEncoding(feature=argument)
