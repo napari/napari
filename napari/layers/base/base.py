@@ -22,6 +22,7 @@ from typing import (
 
 import magicgui as mgui
 import numpy as np
+import pint
 from npe2 import plugin_manager as pm
 
 from napari.layers.base._base_constants import (
@@ -33,6 +34,7 @@ from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
     transform_with_box,
 )
+from napari.layers.base._units import coerce_units_and_axes
 from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.layers.utils.interactivity_utils import (
     drag_data_to_projected_distance,
@@ -76,6 +78,20 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger('napari.layers.base.base')
+
+
+__all__ = ('Layer',)
+
+
+_OPTIONAL_PARAMETERS = {
+    'affine',
+    'axes_labels',
+    'rotate',
+    'scale',
+    'shear',
+    'translate',
+    'units',
+}
 
 
 def no_op(layer: Layer, event: Event) -> None:
@@ -129,6 +145,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         the final column is a length N translation vector and a 1 or a napari
         `Affine` transform object. Applied as an extra transform on top of the
         provided scale, rotate, and shear values.
+    axes_labels : list of str, optional
+        List of axis labels for the layer data.
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -168,6 +186,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         ones along the main diagonal.
     translate : tuple of float
         Translation values for the layer.
+    units : str or sequence of str or pint.Unit or sequence of pint.Unit
+        The physical units of the data. If a sequence, the length should match
+        the number of spatial dimensions.
     visible : bool
         Whether the layer visual is currently being displayed.
 
@@ -310,6 +331,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         ndim,
         *,
         affine=None,
+        axes_labels=None,
         blending='translucent',
         cache=True,  # this should move to future "data source" object.
         experimental_clipping_planes=None,
@@ -323,6 +345,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         scale=None,
         shear=None,
         translate=None,
+        units=None,
         visible=True,
     ):
         super().__init__()
@@ -342,6 +365,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         # Needs to be imported here to avoid circular import in _source
         from napari.layers._source import current_source
+
+        locals_dict = locals()
+        self._parameters_with_default_values = {
+            x for x in _OPTIONAL_PARAMETERS if locals_dict[x] is None
+        }
 
         self._source = current_source()
         self.dask_optimized_slicing = configure_dask(data, cache)
@@ -407,6 +435,14 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 coerce_affine(affine, ndim=ndim, name='physical2world'),
                 Affine(np.ones(ndim), np.zeros(ndim), name='world2grid'),
             ]
+        )
+        if units is None:
+            units = pint.get_application_registry().pixel
+        if axes_labels is None:
+            axes_labels = [f'dim_{i}' for i in range(ndim)][::-1]
+
+        self._units, self._axes_labels = coerce_units_and_axes(
+            units, axes_labels
         )
 
         self.corner_pixels = np.zeros((2, ndim), dtype=int)
