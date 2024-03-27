@@ -971,8 +971,14 @@ def test_selection_collision(qt_viewer: QtViewer, mode):
         )
 
     for dtype in [
-        np.int8, np.int16, np.int32, np.int64,
-        np.uint8, np.uint16, np.uint32, np.uint64
+        np.int8,
+        np.int16,
+        np.int32,
+        np.int64,
+        np.uint8,
+        np.uint16,
+        np.uint32,
+        np.uint64,
     ]:
         layer.data = data.astype(dtype)
         layer.show_selected_label = False
@@ -999,10 +1005,19 @@ def test_all_supported_dtypes(qt_viewer):
     data = np.zeros((10, 10), dtype=np.uint8)
     layer = qt_viewer.viewer.add_labels(data, opacity=1)
 
-    for i, dtype in enumerate([
-        np.int8, np.int16, np.int32, np.int64,
-        np.uint8, np.uint16, np.uint32, np.uint64,
-    ], start=1):
+    for i, dtype in enumerate(
+        [
+            np.int8,
+            np.int16,
+            np.int32,
+            np.int64,
+            np.uint8,
+            np.uint16,
+            np.uint32,
+            np.uint64,
+        ],
+        start=1,
+    ):
         data = np.full((10, 10), i, dtype=dtype)
         layer.data = data
         QApplication.processEvents()
@@ -1032,10 +1047,19 @@ def test_all_supported_dtypes(qt_viewer):
         }
     )
 
-    for i, dtype in enumerate([
-        np.int8, np.int16, np.int32, np.int64,
-        np.uint8, np.uint16, np.uint32, np.uint64,
-    ], start=1):
+    for i, dtype in enumerate(
+        [
+            np.int8,
+            np.int16,
+            np.int32,
+            np.int64,
+            np.uint8,
+            np.uint16,
+            np.uint32,
+            np.uint64,
+        ],
+        start=1,
+    ):
         data = np.full((10, 10), i, dtype=dtype)
         layer.data = data
         QApplication.processEvents()
