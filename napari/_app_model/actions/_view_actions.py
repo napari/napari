@@ -4,8 +4,6 @@ View actions that do require Qt should go in
 `napari/_qt/_qapp_model/qactions/_view.py`.
 """
 
-from typing import List
-
 from app_model.types import Action, ToggleRule
 
 from napari._app_model.actions._toggle_action import ViewerToggleAction
@@ -13,7 +11,7 @@ from napari._app_model.constants import MenuGroup, MenuId
 from napari.settings import get_settings
 from napari.utils.translations import trans
 
-VIEW_ACTIONS: List[Action] = []
+VIEW_ACTIONS: list[Action] = []
 MENUID_DICT = {'axes': MenuId.VIEW_AXES, 'scale_bar': MenuId.VIEW_SCALEBAR}
 
 for cmd, cmd_title, viewer_attr, sub_attr in (

@@ -5,7 +5,6 @@ View actions that do require Qt should go in
 """
 
 import webbrowser
-from typing import List
 
 from app_model.types import Action
 from packaging.version import parse
@@ -27,7 +26,7 @@ HELP_URLS = {
     'homepage': 'https://napari.org',
 }
 
-HELP_ACTIONS: List[Action] = [
+HELP_ACTIONS: list[Action] = [
     Action(
         id='napari.window.help.getting_started',
         title=trans._('Getting started'),

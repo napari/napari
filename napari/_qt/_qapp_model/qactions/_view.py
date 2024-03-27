@@ -5,7 +5,6 @@
 """
 
 import sys
-from typing import List
 
 from app_model.types import (
     Action,
@@ -41,7 +40,7 @@ def _get_current_activity_dock_status(window: Window):
     return window._qt_window._activity_dialog.isVisible()
 
 
-Q_VIEW_ACTIONS: List[Action] = [
+Q_VIEW_ACTIONS: list[Action] = [
     Action(
         id='napari.window.view.toggle_fullscreen',
         title=trans._('Toggle Full Screen'),

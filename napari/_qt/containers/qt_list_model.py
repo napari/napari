@@ -1,6 +1,7 @@
 import logging
 import pickle
-from typing import List, Optional, Sequence, TypeVar
+from collections.abc import Sequence
+from typing import Optional, TypeVar
 
 from qtpy.QtCore import QMimeData, QModelIndex, Qt
 
@@ -20,7 +21,7 @@ class QtListModel(_BaseEventedItemModel[ItemType]):
     :class:`~napari._qt.containers.QtListView` for additional background.
     """
 
-    def mimeTypes(self) -> List[str]:
+    def mimeTypes(self) -> list[str]:
         """Returns the list of allowed MIME types.
 
         When implementing drag and drop support in a custom model, if you will
@@ -29,7 +30,7 @@ class QtListModel(_BaseEventedItemModel[ItemType]):
         """
         return [ListIndexMIMEType, 'text/plain']
 
-    def mimeData(self, indices: List[QModelIndex]) -> Optional['QMimeData']:
+    def mimeData(self, indices: list[QModelIndex]) -> Optional['QMimeData']:
         """Return an object containing serialized data from `indices`.
 
         If the list of indexes is empty, or there are no supported MIME types,
@@ -93,5 +94,5 @@ class ItemMimeData(QMimeData):
             self.setData(ListIndexMIMEType, pickle.dumps(self.indices))
             self.setText(' '.join(str(item) for item in items))
 
-    def formats(self) -> List[str]:
+    def formats(self) -> list[str]:
         return [ListIndexMIMEType, 'text/plain']
