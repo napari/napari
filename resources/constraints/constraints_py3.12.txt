@@ -8,7 +8,7 @@ alabaster==0.7.16
     # via sphinx
 annotated-types==0.6.0
     # via pydantic
-app-model==0.2.5
+app-model==0.2.6
     # via napari (pyproject.toml)
 appdirs==1.4.4
     # via

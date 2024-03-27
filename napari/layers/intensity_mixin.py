@@ -49,10 +49,16 @@ class IntensityVisualizationMixin:
         self._auto_contrast_source = 'slice'
         self._keep_auto_contrast = False
 
+    def _set_keep_auto_contrast(self, value):
+        self._keep_auto_contrast = value
+
     def reset_contrast_limits(self: 'ScalarFieldBase', mode=None):
         """Scale contrast limits to data range"""
         mode = mode or self._auto_contrast_source
         self.contrast_limits = self._calc_data_range(mode)
+
+    def _reset_contrast_limits_no_arg(self):
+        self.reset_contrast_limits()
 
     def _calc_data_range(self, mode):
         raise NotImplementedError
