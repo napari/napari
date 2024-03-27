@@ -85,7 +85,7 @@ if __name__ == '__main__':
         viewer._overlays['dot'] = DotOverlay(visible=True)
         # there is currently no automation on adding a new overlay, so we also need to
         # manually trigger the generation of the visual
-        viewer.window._qt_viewer._add_overlay(viewer._overlays['dot'])
+        viewer.window._qt_viewer.canvas._add_overlay_to_visual(viewer._overlays['dot'])
 
     # let's make a simple widget to control the overlay
     from magicgui import magicgui
@@ -107,3 +107,5 @@ if __name__ == '__main__':
 
     viewer.window.add_dock_widget(control_dot)
     control_dot()
+
+    napari.run()
