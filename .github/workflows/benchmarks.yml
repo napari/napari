@@ -18,6 +18,9 @@ on:
       contender_ref:
         description: "Contender commit or git reference"
         required: true
+  push:
+    paths:
+      - '.github/workflows/benchmarks**'
 
 # This is the main configuration section that needs to be fine tuned to napari's needs
 # All the *_THREADS options is just to make the benchmarks more robust by not using parallelism
