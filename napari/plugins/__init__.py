@@ -8,7 +8,7 @@ from napari.plugins import _npe2
 from napari.plugins._plugin_manager import NapariPluginManager
 from napari.settings import get_settings
 
-__all__ = ("plugin_manager", "menu_item_template")
+__all__ = ('plugin_manager', 'menu_item_template')
 
 from napari.utils.theme import _install_npe2_themes
 
@@ -22,7 +22,7 @@ plugin_manager = NapariPluginManager()
 
 
 @lru_cache  # only call once
-def _initialize_plugins():
+def _initialize_plugins() -> None:
     _npe2pm = _PluginManager.instance()
 
     settings = get_settings()

@@ -1,7 +1,7 @@
 import sys
 import warnings
 from contextlib import contextmanager
-from typing import Any, Callable, ClassVar, Dict, Set, Tuple, Union
+from typing import Any, Callable, ClassVar, Union
 
 import numpy as np
 from app_model.types import KeyBinding
@@ -55,7 +55,7 @@ def no_class_attributes():
     - https://codereview.qt-project.org/c/pyside/pyside-setup/+/261411
     """
 
-    if "PySide2" not in sys.modules:
+    if 'PySide2' not in sys.modules:
         yield
         return
 
@@ -111,14 +111,14 @@ class EventedMetaclass(ModelMetaclass):
                 cls.__properties__[name] = attr
                 # determine compare operator
                 if (
-                    hasattr(attr.fget, "__annotations__")
-                    and "return" in attr.fget.__annotations__
+                    hasattr(attr.fget, '__annotations__')
+                    and 'return' in attr.fget.__annotations__
                     and not isinstance(
-                        attr.fget.__annotations__["return"], str
+                        attr.fget.__annotations__['return'], str
                     )
                 ):
                     cls.__eq_operators__[name] = pick_equality_operator(
-                        attr.fget.__annotations__["return"]
+                        attr.fget.__annotations__['return']
                     )
 
         cls.__field_dependents__ = _get_field_dependents(cls)
@@ -145,7 +145,7 @@ def _update_dependents_from_property_code(
             )
 
 
-def _get_field_dependents(cls: 'EventedModel') -> Dict[str, Set[str]]:
+def _get_field_dependents(cls: 'EventedModel') -> dict[str, set[str]]:
     """Return mapping of field name -> dependent set of property names.
 
     Dependencies will be guessed by inspecting the code of each property
@@ -188,7 +188,7 @@ def _get_field_dependents(cls: 'EventedModel') -> Dict[str, Set[str]]:
     if not cls.__properties__:
         return {}
 
-    deps: Dict[str, Set[str]] = {}
+    deps: dict[str, set[str]] = {}
 
     _deps = getattr(cls.__config__, 'dependencies', None)
     if _deps:
@@ -200,7 +200,7 @@ def _get_field_dependents(cls: 'EventedModel') -> Dict[str, Set[str]]:
                 )
             for field in fields:
                 if field not in cls.__fields__:
-                    warnings.warn(f"Unrecognized field dependency: {field}")
+                    warnings.warn(f'Unrecognized field dependency: {field}')
                 deps.setdefault(field, set()).add(prop_name)
     else:
         # if dependencies haven't been explicitly defined, we can glean
@@ -221,15 +221,15 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     _events: EmitterGroup = PrivateAttr(default_factory=EmitterGroup)
 
     # mapping of name -> property obj for methods that are properties
-    __properties__: ClassVar[Dict[str, property]]
+    __properties__: ClassVar[dict[str, property]]
     # mapping of field name -> dependent set of property names
     # when field is changed, an event for dependent properties will be emitted.
-    __field_dependents__: ClassVar[Dict[str, Set[str]]]
-    __eq_operators__: ClassVar[Dict[str, Callable[[Any, Any], bool]]]
-    _changes_queue: Dict[str, Any] = PrivateAttr(default_factory=dict)
-    _primary_changes: Set[str] = PrivateAttr(default_factory=set)
+    __field_dependents__: ClassVar[dict[str, set[str]]]
+    __eq_operators__: ClassVar[dict[str, Callable[[Any, Any], bool]]]
+    _changes_queue: dict[str, Any] = PrivateAttr(default_factory=dict)
+    _primary_changes: set[str] = PrivateAttr(default_factory=set)
     _delay_check_semaphore: int = PrivateAttr(0)
-    __slots__: ClassVar[Set[str]] = {"__weakref__"}  # type: ignore
+    __slots__: ClassVar[set[str]] = {'__weakref__'}  # type: ignore
 
     # pydantic BaseModel configuration.  see:
     # https://pydantic-docs.helpmanual.io/usage/model_config/
@@ -249,6 +249,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         # NOTE: json_encoders are also added EventedMetaclass.__new__ if the
         # field declares a _json_encode method.
         json_encoders = _BASE_JSON_ENCODERS
+        # extra = Extra.forbid
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -284,7 +285,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         else:
             super().__setattr__(name, value)
 
-    def _check_if_differ(self, name: str, old_value: Any) -> Tuple[bool, Any]:
+    def _check_if_differ(self, name: str, old_value: Any) -> tuple[bool, Any]:
         """
         Check new value of a field and emit event if it is different from the old one.
 
@@ -437,7 +438,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         if not isinstance(values, dict):
             raise TypeError(
                 trans._(
-                    "Unsupported update from {values}",
+                    'Unsupported update from {values}',
                     deferred=True,
                     values=type(values),
                 )

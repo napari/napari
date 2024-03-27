@@ -13,23 +13,23 @@ def dict_type(request):
 
 def test_type_enforcement(dict_type):
     """Test that TypedDicts enforce type during mutation events."""
-    a = dict_type({"A": 1, "B": 3, "C": 5}, basetype=int)
+    a = dict_type({'A': 1, 'B': 3, 'C': 5}, basetype=int)
     assert tuple(a.values()) == (1, 3, 5)
     with pytest.raises(TypeError):
-        a["D"] = "string"
+        a['D'] = 'string'
     with pytest.raises(TypeError):
-        a.update({"E": 3.5})
+        a.update({'E': 3.5})
 
     # also on instantiation
     with pytest.raises(TypeError):
-        dict_type({"A": 1, "B": 3.3, "C": "5"}, basetype=int)
+        dict_type({'A': 1, 'B': 3.3, 'C': '5'}, basetype=int)
 
 
 def test_multitype_enforcement(dict_type):
     """Test that basetype also accepts/enforces a sequence of types."""
-    a = dict_type({"A": 1, "B": 3, "C": 5.5}, basetype=(int, float))
+    a = dict_type({'A': 1, 'B': 3, 'C': 5.5}, basetype=(int, float))
     assert tuple(a.values()) == (1, 3, 5.5)
     with pytest.raises(TypeError):
-        a["D"] = "string"
-    a["D"] = 2.4
-    a.update({"E": 3.5})
+        a['D'] = 'string'
+    a['D'] = 2.4
+    a.update({'E': 3.5})

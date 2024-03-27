@@ -28,18 +28,18 @@ class QtShortcutLabel(QLabel):
 class QtWelcomeWidget(QWidget):
     """Welcome widget to display initial information and shortcuts to user."""
 
-    sig_dropped = Signal("QEvent")
+    sig_dropped = Signal('QEvent')
 
     def __init__(self, parent) -> None:
         super().__init__(parent)
 
         # Create colored icon using theme
         self._image = QLabel()
-        self._image.setObjectName("logo_silhouette")
+        self._image.setObjectName('logo_silhouette')
         self._image.setMinimumSize(300, 300)
         self._label = QtWelcomeLabel(
             trans._(
-                "Drag image(s) here to open\nor\nUse the menu shortcuts below:"
+                'Drag image(s) here to open\nor\nUse the menu shortcuts below:'
             )
         )
 
@@ -55,17 +55,24 @@ class QtWelcomeWidget(QWidget):
 
         # TODO: Use action manager for shortcut query and handling
         shortcut_layout = QFormLayout()
+        sc = QKeySequence('Ctrl+N', QKeySequence.PortableText).toString(
+            QKeySequence.NativeText
+        )
+        shortcut_layout.addRow(
+            QtShortcutLabel(sc),
+            QtShortcutLabel(trans._('New Image from Clipboard')),
+        )
         sc = QKeySequence('Ctrl+O', QKeySequence.PortableText).toString(
             QKeySequence.NativeText
         )
         shortcut_layout.addRow(
             QtShortcutLabel(sc),
-            QtShortcutLabel(trans._("open image(s)")),
+            QtShortcutLabel(trans._('open image(s)')),
         )
-        self._shortcut_label = QtShortcutLabel("")
+        self._shortcut_label = QtShortcutLabel('')
         shortcut_layout.addRow(
             self._shortcut_label,
-            QtShortcutLabel(trans._("show all key bindings")),
+            QtShortcutLabel(trans._('show all key bindings')),
         )
         shortcut_layout.setSpacing(0)
 
@@ -91,7 +98,7 @@ class QtWelcomeWidget(QWidget):
 
     def _show_shortcuts_updated(self):
         shortcut_list = list(
-            action_manager._shortcuts["napari:show_shortcuts"]
+            action_manager._shortcuts['napari:show_shortcuts']
         )
         if not shortcut_list:
             return
@@ -134,7 +141,7 @@ class QtWelcomeWidget(QWidget):
         event : qtpy.QtCore.QDragEnterEvent
             Event from the Qt context.
         """
-        self._update_property("drag", True)
+        self._update_property('drag', True)
         if event.mimeData().hasUrls():
             viewer = self.parentWidget().nativeParentWidget()._qt_viewer
             viewer._set_drag_status()
@@ -152,7 +159,7 @@ class QtWelcomeWidget(QWidget):
         event : qtpy.QtCore.QDragLeaveEvent
             Event from the Qt context.
         """
-        self._update_property("drag", False)
+        self._update_property('drag', False)
 
     def dropEvent(self, event):
         """Override Qt method.
@@ -164,7 +171,7 @@ class QtWelcomeWidget(QWidget):
         event : qtpy.QtCore.QDropEvent
             Event from the Qt context.
         """
-        self._update_property("drag", False)
+        self._update_property('drag', False)
         self.sig_dropped.emit(event)
 
 
@@ -173,7 +180,7 @@ class QtWidgetOverlay(QStackedWidget):
     Stacked widget providing switching between the widget and a welcome page.
     """
 
-    sig_dropped = Signal("QEvent")
+    sig_dropped = Signal('QEvent')
     resized = Signal()
     leave = Signal()
     enter = Signal()

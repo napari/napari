@@ -1,11 +1,12 @@
-from typing import Optional, Tuple
+from typing import Optional
 
 import numpy as np
+import numpy.typing as npt
 
 from napari.utils.translations import trans
 
 
-def convert_image_to_coordinates(vectors) -> np.ndarray:
+def convert_image_to_coordinates(vectors: npt.NDArray) -> npt.NDArray:
     """To convert an image-like array with elements (y-proj, x-proj) into a
     position list of coordinates
     Every pixel position (n, m) results in two output coordinates of (N,2)
@@ -40,7 +41,7 @@ def convert_image_to_coordinates(vectors) -> np.ndarray:
 
 def fix_data_vectors(
     vectors: Optional[np.ndarray], ndim: Optional[int]
-) -> Tuple[np.ndarray, int]:
+) -> tuple[np.ndarray, int]:
     """
     Ensure that vectors array is 3d and have second dimension of size 2
     and third dimension of size ndim (default 2 for empty arrays)
@@ -90,7 +91,7 @@ def fix_data_vectors(
         if vectors.ndim != 3 or vectors.shape[1] != 2:
             raise ValueError(
                 trans._(
-                    "could not reshape Vector data from {vectors_shape} to (N, 2, {dimensions})",
+                    'could not reshape Vector data from {vectors_shape} to (N, 2, {dimensions})',
                     deferred=True,
                     vectors_shape=vectors.shape,
                     dimensions=ndim or 'D',
@@ -101,7 +102,7 @@ def fix_data_vectors(
     if ndim is not None and ndim != data_ndim:
         raise ValueError(
             trans._(
-                "Vectors dimensions ({data_ndim}) must be equal to ndim ({ndim})",
+                'Vectors dimensions ({data_ndim}) must be equal to ndim ({ndim})',
                 deferred=True,
                 data_ndim=data_ndim,
                 ndim=ndim,

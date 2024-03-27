@@ -15,7 +15,7 @@ def make_warning(*_):
 @thread_worker(start_thread=True)
 def make_error(*_):
     time.sleep(0.05)
-    raise ValueError("Error in another thread")
+    raise ValueError('Error in another thread')
 
 
 viewer = napari.Viewer()

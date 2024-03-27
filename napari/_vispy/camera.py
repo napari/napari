@@ -1,9 +1,7 @@
-from typing import Type
-
 import numpy as np
 from vispy.scene import ArcballCamera, BaseCamera, PanZoomCamera
 
-from napari._vispy.utils.quaternion import quaternion2euler
+from napari._vispy.utils.quaternion import quaternion2euler_degrees
 
 
 class VispyCamera:
@@ -58,9 +56,7 @@ class VispyCamera:
 
         if self._view.camera == self._3D_camera:
             # Do conversion from quaternion representation to euler angles
-            angles = quaternion2euler(
-                self._view.camera._quaternion, degrees=True
-            )
+            angles = quaternion2euler_degrees(self._view.camera._quaternion)
         else:
             angles = (0, 0, 90)
         return angles
@@ -212,8 +208,8 @@ def viewbox_key_event(event):
 
 
 def add_mouse_pan_zoom_toggles(
-    vispy_camera_cls: Type[BaseCamera],
-) -> Type[BaseCamera]:
+    vispy_camera_cls: type[BaseCamera],
+) -> type[BaseCamera]:
     """Add separate mouse pan and mouse zoom toggles to VisPy.
 
     By default, VisPy uses an ``interactive`` toggle that turns *both*

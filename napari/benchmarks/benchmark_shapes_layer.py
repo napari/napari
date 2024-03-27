@@ -20,7 +20,7 @@ class Shapes2DSuite:
 
     params = [2**i for i in range(4, 9)]
 
-    if "PR" in os.environ:
+    if 'PR' in os.environ:
         skip_params = [(2**i,) for i in range(6, 9)]
 
     def setup(self, n):
@@ -61,7 +61,7 @@ class Shapes3DSuite:
     """Benchmarks for the Shapes layer with 3D data."""
 
     params = [2**i for i in range(4, 9)]
-    if "PR" in os.environ:
+    if 'PR' in os.environ:
         skip_params = [(2**i,) for i in range(6, 9)]
 
     def setup(self, n):

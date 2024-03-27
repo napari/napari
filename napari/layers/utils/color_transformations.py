@@ -3,9 +3,9 @@ normalize and broadcast the color inputs they receive into a more standardized f
 a numpy array with N rows, N being the number of data points, and a dtype of np.float32.
 
 """
+
 import warnings
 from itertools import cycle
-from typing import Tuple
 
 import numpy as np
 
@@ -41,7 +41,7 @@ def transform_color_with_defaults(
     except (AttributeError, ValueError, KeyError):
         warnings.warn(
             trans._(
-                "The provided {elem_name} parameter contained illegal values, resetting all {elem_name} values to {default}.",
+                'The provided {elem_name} parameter contained illegal values, resetting all {elem_name} values to {default}.',
                 deferred=True,
                 elem_name=elem_name,
                 default=default,
@@ -52,7 +52,7 @@ def transform_color_with_defaults(
         if (len(transformed) != 1) and (len(transformed) != num_entries):
             warnings.warn(
                 trans._(
-                    "The provided {elem_name} parameter has {length} entries, while the data contains {num_entries} entries. Setting {elem_name} to {default}.",
+                    'The provided {elem_name} parameter has {length} entries, while the data contains {num_entries} entries. Setting {elem_name} to {default}.',
                     deferred=True,
                     elem_name=elem_name,
                     length=len(colors),
@@ -66,7 +66,7 @@ def transform_color_with_defaults(
 
 def transform_color_cycle(
     color_cycle: ColorType, elem_name: str, default: str
-) -> Tuple["cycle[np.ndarray]", np.ndarray]:
+) -> tuple['cycle[np.ndarray]', np.ndarray]:
     """Helper method to return an Nx4 np.array from an arbitrary user input.
 
     Parameters
@@ -129,7 +129,7 @@ def normalize_and_broadcast_colors(
     if len(colors) != 1:
         warnings.warn(
             trans._(
-                "The number of supplied colors mismatch the number of given data points. Length of data is {num_entries}, while the number of colors is {length}. Color for all points is reset to white.",
+                'The number of supplied colors mismatch the number of given data points. Length of data is {num_entries}, while the number of colors is {length}. Color for all points is reset to white.',
                 deferred=True,
                 num_entries=num_entries,
                 length=len(colors),

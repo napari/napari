@@ -2,7 +2,11 @@ import pytest
 
 from napari.components._viewer_key_bindings import (
     hold_for_pan_zoom,
+    show_only_layer_above,
+    show_only_layer_below,
+    toggle_selected_visibility,
     toggle_theme,
+    toggle_unselected_visibility,
 )
 from napari.components.viewer_model import ViewerModel
 from napari.layers.points import Points
@@ -73,3 +77,79 @@ def test_hold_for_pan_zoom():
     with pytest.raises(StopIteration):
         next(gen)
     assert layer.mode == 'transform'
+
+
+def test_selected_visibility_toggle():
+    viewer = make_viewer_with_three_layers()
+    viewer.layers.selection.active = viewer.layers[0]
+    assert viewer.layers[0].visible
+    assert viewer.layers[1].visible
+    assert viewer.layers[2].visible
+    toggle_selected_visibility(viewer)
+    assert not viewer.layers[0].visible
+    assert viewer.layers[1].visible
+    assert viewer.layers[2].visible
+    toggle_selected_visibility(viewer)
+    assert viewer.layers[0].visible
+    assert viewer.layers[1].visible
+    assert viewer.layers[2].visible
+
+
+def test_unselected_visibility_toggle():
+    viewer = make_viewer_with_three_layers()
+    viewer.layers.selection.active = viewer.layers[0]
+    assert viewer.layers[0].visible
+    assert viewer.layers[1].visible
+    assert viewer.layers[2].visible
+    toggle_unselected_visibility(viewer)
+    assert viewer.layers[0].visible
+    assert not viewer.layers[1].visible
+    assert not viewer.layers[2].visible
+    toggle_unselected_visibility(viewer)
+    assert viewer.layers[0].visible
+    assert viewer.layers[1].visible
+    assert viewer.layers[2].visible
+
+
+def test_show_only_layer_above():
+    viewer = make_viewer_with_three_layers()
+    viewer.layers.selection.active = viewer.layers[0]
+    assert viewer.layers[0].visible
+    assert viewer.layers[1].visible
+    assert viewer.layers[2].visible
+    show_only_layer_above(viewer)
+    assert not viewer.layers[0].visible
+    assert viewer.layers[1].visible
+    assert not viewer.layers[2].visible
+    show_only_layer_above(viewer)
+    assert not viewer.layers[0].visible
+    assert not viewer.layers[1].visible
+    assert viewer.layers[2].visible
+
+
+def test_show_only_layer_below():
+    viewer = make_viewer_with_three_layers()
+    viewer.layers.selection.active = viewer.layers[2]
+    assert viewer.layers[0].visible
+    assert viewer.layers[1].visible
+    assert viewer.layers[2].visible
+    show_only_layer_below(viewer)
+    assert not viewer.layers[2].visible
+    assert viewer.layers[1].visible
+    assert not viewer.layers[0].visible
+    show_only_layer_below(viewer)
+    assert not viewer.layers[2].visible
+    assert not viewer.layers[1].visible
+    assert viewer.layers[0].visible
+
+
+def make_viewer_with_three_layers():
+    """Helper function to create a viewer with three layers"""
+    viewer = ViewerModel()
+    layer1 = Points()
+    layer2 = Points()
+    layer3 = Points()
+    viewer.layers.append(layer1)
+    viewer.layers.append(layer2)
+    viewer.layers.append(layer3)
+    return viewer

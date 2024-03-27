@@ -3,7 +3,6 @@ from typing import (
     Literal,
     Optional,
     Protocol,
-    Tuple,
     Union,
     runtime_checkable,
 )
@@ -187,12 +186,12 @@ class QuantitativeColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
         colors fails.
     """
 
-    encoding_type: Literal[
+    encoding_type: Literal['QuantitativeColorEncoding'] = (
         'QuantitativeColorEncoding'
-    ] = 'QuantitativeColorEncoding'
+    )
     feature: str
     colormap: Colormap
-    contrast_limits: Optional[Tuple[float, float]] = None
+    contrast_limits: Optional[tuple[float, float]] = None
     fallback: ColorValue = Field(default_factory=lambda: DEFAULT_COLOR)
 
     def __call__(self, features: Any) -> ColorArray:
@@ -211,7 +210,7 @@ class QuantitativeColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
     @validator('contrast_limits', pre=True, always=True, allow_reuse=True)
     def _check_contrast_limits(
         cls, contrast_limits
-    ) -> Optional[Tuple[float, float]]:
+    ) -> Optional[tuple[float, float]]:
         if (contrast_limits is not None) and (
             contrast_limits[0] >= contrast_limits[1]
         ):
@@ -226,7 +225,7 @@ class QuantitativeColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
 
 def _calculate_contrast_limits(
     values: np.ndarray,
-) -> Optional[Tuple[float, float]]:
+) -> Optional[tuple[float, float]]:
     contrast_limits = None
     if values.size > 0:
         min_value = np.min(values)

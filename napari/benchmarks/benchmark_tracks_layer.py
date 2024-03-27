@@ -1,28 +1,24 @@
-import os
-
 import numpy as np
 
 from napari.layers import Tracks
 
-from .utils import Skiper
+from .utils import Skip
 
 
 class TracksSuite:
     param_names = ['size', 'n_tracks']
     params = [(5 * np.power(10, np.arange(7))).tolist(), [1, 10, 100, 1000]]
 
-    if "PR" in os.environ:
-        skip_params = Skiper(lambda x: x[0] > 500 or x[1] > 10)
+    skip_params = Skip(
+        if_in_pr=lambda size, n_tracks: size > 500 or n_tracks > 10,
+        always=lambda size, n_tracks: n_tracks * 5 > size,
+    )
+    # we skip cases where the number of tracks times five is larger than the size as it is not useful
 
     def setup(self, size, n_tracks):
         """
         Create tracks data
         """
-
-        if 5 * n_tracks > size:
-            # not useful, tracks to short or larger than size
-            raise NotImplementedError
-
         rng = np.random.default_rng(0)
 
         track_ids = rng.integers(n_tracks, size=size)
@@ -41,5 +37,11 @@ class TracksSuite:
 
         self.data = data
 
-    def time_create_layer(self, *args) -> None:
+        # create layer for the update benchmark
+        self.layer = Tracks(self.data)
+
+    def time_create_layer(self, *_) -> None:
         Tracks(self.data)
+
+    def time_update_layer(self, *_) -> None:
+        self.layer.data = self.data
