@@ -654,7 +654,9 @@ def triangulate_face(
         Px3 array of the indices of the vertices that will form the
         triangles of the triangulation
     """
-    raw_vertices, edges = _normalize_vertices_and_edges(polygon_vertices)
+    raw_vertices, edges = _normalize_vertices_and_edges(
+        polygon_vertices, close=True
+    )
     if triangulate is not None:
         # if the triangle library is installed, use it because it's faster.
         res = triangulate(
