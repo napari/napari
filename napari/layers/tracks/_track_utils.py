@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -11,18 +11,6 @@ from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import numpy.typing as npt
-
-
-def connex(vertices: np.ndarray) -> list:
-    """Connection array to build vertex edges for vispy LineVisual.
-
-    Notes
-    -----
-    See
-    http://api.vispy.org/en/latest/visuals.html#vispy.visuals.LineVisual
-
-    """
-    return [True] * (vertices.shape[0] - 1) + [False]
 
 
 class TrackManager:
@@ -80,22 +68,22 @@ class TrackManager:
         self._feature_table = _FeatureTable()
 
         self._data: npt.NDArray
-        self._order: List[int]
+        self._order: list[int]
         self._kdtree: cKDTree
         self._points: npt.NDArray
         self._points_id: npt.NDArray
-        self._points_lookup: Dict[int, slice]
+        self._points_lookup: dict[int, slice]
         self._ordered_points_idx: npt.NDArray
 
         self._track_vertices = None
         self._track_connex = None
 
-        self._graph: Optional[Dict[int, List[int]]] = None
+        self._graph: Optional[dict[int, list[int]]] = None
         self._graph_vertices = None
         self._graph_connex = None
 
     @staticmethod
-    def _fast_points_lookup(sorted_time: np.ndarray) -> Dict[int, slice]:
+    def _fast_points_lookup(sorted_time: np.ndarray) -> dict[int, slice]:
         """Computes a fast lookup table from time to their respective points slicing."""
 
         # finds where t transitions to t + 1
@@ -175,7 +163,7 @@ class TrackManager:
     @features.setter
     def features(
         self,
-        features: Union[Dict[str, np.ndarray], pd.DataFrame],
+        features: Union[dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
         self._feature_table.set_values(features, num_data=len(self.data))
         self._feature_table.reorder(self._order)
@@ -183,22 +171,22 @@ class TrackManager:
             self._feature_table.values['track_id'] = self.track_ids
 
     @property
-    def properties(self) -> Dict[str, np.ndarray]:
+    def properties(self) -> dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}: Properties for each track."""
         return self._feature_table.properties()
 
     @properties.setter
-    def properties(self, properties: Dict[str, Array]):
+    def properties(self, properties: dict[str, Array]):
         """set track properties"""
         self.features = properties
 
     @property
-    def graph(self) -> Optional[Dict[int, List[int]]]:
+    def graph(self) -> Optional[dict[int, list[int]]]:
         """dict {int: list}: Graph representing associations between tracks."""
         return self._graph
 
     @graph.setter
-    def graph(self, graph: Dict[int, Union[int, List[int]]]):
+    def graph(self, graph: dict[int, Union[int, list[int]]]):
         """set the track graph"""
         self._graph = self._normalize_track_graph(graph)
 
@@ -253,10 +241,10 @@ class TrackManager:
         return data
 
     def _normalize_track_graph(
-        self, graph: Dict[int, Union[int, List[int]]]
-    ) -> Dict[int, List[int]]:
+        self, graph: dict[int, Union[int, list[int]]]
+    ) -> dict[int, list[int]]:
         """validate the track graph"""
-        new_graph: Dict[int, List[int]] = {}
+        new_graph: dict[int, list[int]] = {}
 
         # check that graph nodes are of correct format
         for node_idx, parents_idx in graph.items():
@@ -286,25 +274,24 @@ class TrackManager:
     def build_tracks(self):
         """build the tracks"""
 
-        points_id = []
-        track_vertices = []
-        track_connex = []
+        # Track ids associated to all vertices, sorted by time
+        points_id = self.data[:, 0][self._ordered_points_idx]
+        # Coordinates of all vertices
+        track_vertices = self.data[:, 1:]
 
-        # NOTE(arl): this takes some time when the number of tracks is large
-        for idx in self.unique_track_ids:
-            indices = self._vertex_indices_from_id(idx)
+        # Indices in the data array just before the track id changes
+        indices_new_id = np.where(np.diff(self.data[:, 0]))[0]
 
-            # grab the correct vertices and sort by time
-            vertices = self.data[indices, 1:]
+        # Define track_connex as an array full of 'True', then set to 'False'
+        # at the indices just before the track id changes
+        track_connex = np.ones(self.data.shape[0], dtype=bool)
+        track_connex[indices_new_id] = False
+        # Add 'False' for the last entry too (end of the last track)
+        track_connex[-1] = False
 
-            # coordinates of the text identifiers, vertices and connections
-            points_id += [idx] * vertices.shape[0]
-            track_vertices.append(vertices)
-            track_connex.append(connex(vertices))
-
-        self._points_id = np.array(points_id)[self._ordered_points_idx]
-        self._track_vertices = np.concatenate(track_vertices, axis=0)
-        self._track_connex = np.concatenate(track_connex, axis=0)
+        self._points_id = points_id
+        self._track_vertices = track_vertices
+        self._track_connex = track_connex
 
     def build_graph(self):
         """build the track graph"""
@@ -413,7 +400,7 @@ class TrackManager:
 
     def track_labels(
         self, current_time: int
-    ) -> Union[Tuple[None, None], Tuple[List[str], np.ndarray]]:
+    ) -> Union[tuple[None, None], tuple[list[str], np.ndarray]]:
         """return track labels at the current time"""
         if self._points_id is None:
             return None, None

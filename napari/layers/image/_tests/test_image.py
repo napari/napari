@@ -1,5 +1,6 @@
 import dask.array as da
 import numpy as np
+import numpy.testing as npt
 import pytest
 import xarray as xr
 
@@ -208,7 +209,7 @@ def test_non_rgb_image():
     assert layer._data_view.shape == shape[-2:]
 
 
-@pytest.mark.parametrize("shape", [(10, 15, 6), (10, 10)])
+@pytest.mark.parametrize('shape', [(10, 15, 6), (10, 10)])
 def test_error_non_rgb_image(shape):
     """Test error on trying non rgb as rgb."""
     # If rgb is set to be True in constructor but the last dim has a
@@ -643,7 +644,7 @@ def test_out_of_range_no_contrast(dtype):
 
 
 @pytest.mark.parametrize(
-    "scale",
+    'scale',
     [
         (None),
         ([1, 1]),
@@ -661,7 +662,7 @@ def test_image_scale(scale):
 
 
 @pytest.mark.parametrize(
-    "translate",
+    'translate',
     [
         (None),
         ([1, 1]),
@@ -838,7 +839,7 @@ def test_tensorstore_image():
 
 
 @pytest.mark.parametrize(
-    "start_position, end_position, view_direction, vector, expected_value",
+    'start_position, end_position, view_direction, vector, expected_value',
     [
         # drag vector parallel to view direction
         # projected onto perpendicular vector
@@ -945,6 +946,27 @@ def test_thick_slice():
     layer.projection_mode = 'max'
     np.testing.assert_array_equal(
         layer._slice.image.raw, np.max(data[2:4], axis=0)
+    )
+
+
+def test_adjust_contrast_out_of_range():
+    arr = np.linspace(1, 9, 5 * 5, dtype=np.float64).reshape((5, 5))
+    img_lay = Image(arr)
+    npt.assert_array_equal(img_lay._slice.image.view, img_lay._slice.image.raw)
+    img_lay.contrast_limits = (0, float(np.finfo(np.float32).max) * 2)
+    assert not np.array_equal(
+        img_lay._slice.image.view, img_lay._slice.image.raw
+    )
+
+
+def test_adjust_contrast_limits_range_set_data():
+    arr = np.linspace(1, 9, 5 * 5, dtype=np.float64).reshape((5, 5))
+    img_lay = Image(arr)
+    img_lay._keep_auto_contrast = True
+    npt.assert_array_equal(img_lay._slice.image.view, img_lay._slice.image.raw)
+    img_lay.data = arr * 1e39
+    assert not np.array_equal(
+        img_lay._slice.image.view, img_lay._slice.image.raw
     )
 
 

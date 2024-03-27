@@ -1,8 +1,18 @@
-import sys
+"""Non-Qt processors.
+
+Qt processors can be found in `napari/_qt/_qapp_model/injection/_qprocessors.py`.
+"""
+
 from concurrent.futures import Future
 from contextlib import nullcontext, suppress
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Set, Union, get_origin
+from typing import (
+    Any,
+    Callable,
+    Optional,
+    Union,
+    get_origin,
+)
 
 from napari import layers, types, viewer
 from napari._app_model.injection._providers import _provide_viewer
@@ -10,7 +20,7 @@ from napari.layers._source import layer_source
 
 
 def _add_layer_data_tuples_to_viewer(
-    data: Union[types.LayerDataTuple, List[types.LayerDataTuple]],
+    data: Union[types.LayerDataTuple, list[types.LayerDataTuple]],
     return_type=None,
     viewer=None,
     source: Optional[dict] = None,
@@ -23,7 +33,7 @@ def _add_layer_data_tuples_to_viewer(
         data = data if isinstance(data, list) else [data]
         for datum in ensure_list_of_layer_data_tuple(data):
             # then try to update a viewer layer with the same name.
-            if len(datum) > 1 and (name := datum[1].get("name")):
+            if len(datum) > 1 and (name := datum[1].get('name')):
                 with suppress(KeyError):
                     layer = viewer.layers[name]
                     layer.data = datum[0]
@@ -70,6 +80,7 @@ def _add_layer_data_to_viewer(
     if data is not None and (viewer := viewer or _provide_viewer()):
         if layer_name:
             with suppress(KeyError):
+                # layerlist also allow lookup by name
                 viewer.layers[layer_name].data = data
                 return
         if get_origin(return_type) is Union:
@@ -78,10 +89,10 @@ def _add_layer_data_to_viewer(
             ] is not type(None):
                 # this case should be impossible, but we'll check anyway.
                 raise TypeError(
-                    f"napari supports only Optional[<layer_data_type>], not {return_type}"
+                    f'napari supports only Optional[<layer_data_type>], not {return_type}'
                 )
             return_type = return_type.__args__[0]
-        layer_type = return_type.__name__.replace("Data", "").lower()
+        layer_type = return_type.__name__.replace('Data', '').lower()
         with layer_source(**source) if source else nullcontext():
             getattr(viewer, f'add_{layer_type}')(data=data, name=layer_name)
 
@@ -97,7 +108,7 @@ def _add_layer_to_viewer(
 
 
 # here to prevent garbace collection of the future object while processing.
-_FUTURES: Set[Future] = set()
+_FUTURES: set[Future] = set()
 
 
 def _add_future_data(
@@ -130,19 +141,18 @@ def _add_future_data(
 
     # when the future is done, add layer data to viewer, dispatching
     # to the appropriate method based on the Future data type.
-    adder = (
-        _add_layer_data_tuples_to_viewer
-        if _from_tuple
-        else _add_layer_data_to_viewer
-    )
+
+    add_kwargs = {
+        'return_type': return_type,
+        'viewer': viewer,
+        'source': source,
+    }
 
     def _on_future_ready(f: Future):
-        adder(
-            f.result(),
-            return_type=return_type,
-            viewer=viewer,
-            source=source,
-        )
+        if _from_tuple:
+            _add_layer_data_tuples_to_viewer(f.result(), **add_kwargs)
+        else:
+            _add_layer_data_to_viewer(f.result(), **add_kwargs)
         _FUTURES.discard(future)
 
     # We need the callback to happen in the main thread...
@@ -158,16 +168,15 @@ def _add_future_data(
     _FUTURES.add(future)
 
 
-# Add future and LayerData processors for each layer type.
-PROCESSORS: Dict[object, Callable] = {
+PROCESSORS: dict[object, Callable] = {
     types.LayerDataTuple: _add_layer_data_tuples_to_viewer,
-    List[types.LayerDataTuple]: _add_layer_data_tuples_to_viewer,
+    list[types.LayerDataTuple]: _add_layer_data_tuples_to_viewer,
     layers.Layer: _add_layer_to_viewer,
 }
+# Add future and LayerData processors for each layer type.
 for t in types._LayerData.__args__:  # type: ignore [attr-defined]
     PROCESSORS[t] = partial(_add_layer_data_to_viewer, return_type=t)
 
-    if sys.version_info >= (3, 9):
-        PROCESSORS[Future[t]] = partial(
-            _add_future_data, return_type=t, _from_tuple=False
-        )
+    PROCESSORS[Future[t]] = partial(  # type: ignore [valid-type]
+        _add_future_data, return_type=t, _from_tuple=False
+    )

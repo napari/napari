@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
     from napari.utils.events.containers import SelectableEventedList
 
-ItemType = TypeVar("ItemType")
+ItemType = TypeVar('ItemType')
 
 
 class QtListView(_BaseEventedItemView[ItemType], QListView):

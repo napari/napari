@@ -3,14 +3,14 @@ from __future__ import annotations
 import warnings
 from contextlib import contextmanager
 from importlib.metadata import distributions
-from typing import TYPE_CHECKING, Callable, List, NamedTuple
+from typing import TYPE_CHECKING, Callable, NamedTuple
 
 from napari.settings._fields import Version
 
 if TYPE_CHECKING:
     from napari.settings._napari_settings import NapariSettings
 
-_MIGRATORS: List[Migrator] = []
+_MIGRATORS: list[Migrator] = []
 MigratorF = Callable[['NapariSettings'], None]
 
 
@@ -33,8 +33,8 @@ def do_migrations(model: NapariSettings):
                     model.schema_version = migration.to_
                 except Exception as e:  # noqa BLE001
                     msg = (
-                        f"Failed to migrate settings from v{migration.from_} "
-                        f"to v{migration.to_}. Error: {e}. "
+                        f'Failed to migrate settings from v{migration.from_} '
+                        f'to v{migration.to_}. Error: {e}. '
                     )
                     try:
                         model.update(backup)
@@ -97,7 +97,7 @@ def v030_v040(model: NapariSettings):
     """
     for dist in distributions():
         for ep in dist.entry_points:
-            if ep.group == "napari.manifest":
+            if ep.group == 'napari.manifest':
                 model.plugins.disabled_plugins.discard(dist.metadata['Name'])
 
 

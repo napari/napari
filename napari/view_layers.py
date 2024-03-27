@@ -12,8 +12,9 @@ of the layer types, like "image", "points", etc...):
         add_method(*args, **kwargs)
         return viewer
 """
+
 import inspect
-from typing import Any, List, Optional, Tuple
+from typing import Any, Optional
 
 from numpydoc.docscrape import NumpyDocString as _NumpyDocString
 
@@ -44,7 +45,7 @@ viewer : :class:`napari.Viewer`
 """
 
 _VIEW_DOC = _NumpyDocString(Viewer.__doc__)
-_VIEW_PARAMS = "    " + "\n".join(_VIEW_DOC._str_param_list('Parameters')[2:])
+_VIEW_PARAMS = '    ' + '\n'.join(_VIEW_DOC._str_param_list('Parameters')[2:])
 
 
 def _merge_docstrings(add_method, layer_string):
@@ -56,8 +57,8 @@ def _merge_docstrings(add_method, layer_string):
     # this ugliness is because the indentation of the parsed numpydocstring
     # is different for the first parameter :(
     lines = add_method_doc._str_param_list('Parameters')
-    lines = lines[:3] + textwrap.dedent("\n".join(lines[3:])).splitlines()
-    params = "\n".join(lines) + "\n" + textwrap.dedent(_VIEW_PARAMS)
+    lines = lines[:3] + textwrap.dedent('\n'.join(lines[3:])).splitlines()
+    params = '\n'.join(lines) + '\n' + textwrap.dedent(_VIEW_PARAMS)
     n = 'n' if layer_string.startswith(tuple('aeiou')) else ''
     return _doc_template.format(n=n, layer_string=layer_string, params=params)
 
@@ -83,7 +84,7 @@ def _merge_layer_viewer_sigs_docs(func):
     from napari.utils.misc import _combine_signatures
 
     # get the `Viewer.add_*` method
-    layer_string = func.__name__.replace("view_", "")
+    layer_string = func.__name__.replace('view_', '')
     if layer_string == 'path':
         add_method = Viewer.open
     else:
@@ -120,7 +121,7 @@ def _make_viewer_then(
     *args,
     viewer: Optional[Viewer] = None,
     **kwargs,
-) -> Tuple[Viewer, Any]:
+) -> tuple[Viewer, Any]:
     """Create a viewer, call given add_* method, then return viewer and layer.
 
     This function will be deprecated soon (See #4693)
@@ -155,7 +156,7 @@ def _make_viewer_then(
     }
     if viewer is None:
         viewer = Viewer(**vkwargs)
-    kwargs.update(kwargs.pop("kwargs", {}))
+    kwargs.update(kwargs.pop('kwargs', {}))
     method = getattr(viewer, add_method)
     added = method(*args, **kwargs)
     if isinstance(added, list):
@@ -218,39 +219,39 @@ def imshow(
     data,
     *,
     channel_axis=None,
-    rgb=None,
+    affine=None,
+    attenuation=0.05,
+    blending=None,
+    cache=True,
     colormap=None,
     contrast_limits=None,
-    gamma=1,
+    custom_interpolation_kernel_2d=None,
+    depiction='volume',
+    experimental_clipping_planes=None,
+    gamma=1.0,
     interpolation2d='nearest',
     interpolation3d='linear',
-    rendering='mip',
-    depiction='volume',
     iso_threshold=None,
-    attenuation=0.05,
-    name=None,
     metadata=None,
-    scale=None,
-    translate=None,
-    rotate=None,
-    shear=None,
-    affine=None,
-    opacity=1,
-    blending=None,
-    visible=True,
     multiscale=None,
-    cache=True,
+    name=None,
+    opacity=1.0,
     plane=None,
-    experimental_clipping_planes=None,
-    custom_interpolation_kernel_2d=None,
     projection_mode='none',
+    rendering='mip',
+    rgb=None,
+    rotate=None,
+    scale=None,
+    shear=None,
+    translate=None,
+    visible=True,
     viewer=None,
     title='napari',
     ndisplay=2,
     order=(),
     axis_labels=(),
     show=True,
-) -> Tuple[Viewer, List["Image"]]:
+) -> tuple[Viewer, list['Image']]:
     """Load data into an Image layer and return the Viewer and Layer.
 
     Parameters
@@ -263,126 +264,108 @@ def imshow(
         supported in 2D. In 3D, only the lowest resolution scale is
         displayed.
     channel_axis : int, optional
-        Axis to expand image along.  If provided, each channel in the data
-        will be added as an individual image layer.  In channel_axis mode,
-        all other parameters MAY be provided as lists, and the Nth value
-        will be applied to the Nth channel in the data.  If a single value
+        Axis to expand image along. If provided, each channel in the data
+        will be added as an individual image layer. In channel_axis mode,
+        other parameters MAY be provided as lists. The Nth value of the list
+        will be applied to the Nth channel in the data. If a single value
         is provided, it will be broadcast to all Layers.
-    rgb : bool or list
-        Whether the image is rgb RGB or RGBA. If not specified by user and
-        the last dimension of the data has length 3 or 4 it will be set as
-        `True`. If `False` the image is interpreted as a luminance image.
-        If a list then must be same length as the axis that is being
-        expanded as channels.
-    colormap : str, napari.utils.Colormap, tuple, dict, list
-        Colormaps to use for luminance images. If a string must be the name
-        of a supported colormap from vispy or matplotlib. If a tuple the
-        first value must be a string to assign as a name to a colormap and
-        the second item must be a Colormap. If a dict the key must be a
-        string to assign as a name to a colormap and the value must be a
-        Colormap. If a list then must be same length as the axis that is
-        being expanded as channels, and each colormap is applied to each
-        new image layer.
-    contrast_limits : list (2,)
-        Color limits to be used for determining the colormap bounds for
-        luminance images. If not passed is calculated as the min and max of
-        the image. If list of lists then must be same length as the axis
-        that is being expanded and then each colormap is applied to each
-        image.
-    gamma : list, float
-        Gamma correction for determining colormap linearity. Defaults to 1.
-        If a list then must be same length as the axis that is being
-        expanded as channels.
-    interpolation : str or list
-        Deprecated, to be removed in 0.6.0
-    interpolation2d : str or list
-        Interpolation mode used by vispy in 2D. Must be one of our supported
-        modes. If a list then must be same length as the axis that is being
-        expanded as channels.
-    interpolation3d : str or list
-        Interpolation mode used by vispy in 3D. Must be one of our supported
-        modes. If a list then must be same length as the axis that is being
-        expanded as channels.
-    rendering : str or list
-        Rendering mode used by vispy. Must be one of our supported
-        modes. If a list then must be same length as the axis that is being
-        expanded as channels.
-    depiction : str
-        Selects a preset volume depiction mode in vispy
-
-        * volume: images are rendered as 3D volumes.
-        * plane: images are rendered as 2D planes embedded in 3D.
-    iso_threshold : float or list
-        Threshold for isosurface. If a list then must be same length as the
-        axis that is being expanded as channels.
-    attenuation : float or list
-        Attenuation rate for attenuated maximum intensity projection. If a
-        list then must be same length as the axis that is being expanded as
-        channels.
-    name : str or list of str
-        Name of the layer.  If a list then must be same length as the axis
-        that is being expanded as channels.
-    metadata : dict or list of dict
-        Layer metadata. If a list then must be a list of dicts with the
-        same length as the axis that is being expanded as channels.
-    scale : tuple of float or list
-        Scale factors for the layer. If a list then must be a list of
-        tuples of float with the same length as the axis that is being
-        expanded as channels.
-    translate : tuple of float or list
-        Translation values for the layer. If a list then must be a list of
-        tuples of float with the same length as the axis that is being
-        expanded as channels.
-    rotate : float, 3-tuple of float, n-D array or list.
-        If a float convert into a 2D rotation matrix using that value as an
-        angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
-        pitch, roll convention. Otherwise assume an nD rotation. Angles are
-        assumed to be in degrees. They can be converted from radians with
-        np.degrees if needed. If a list then must have same length as
+        All parameters except data, rgb, and multiscale can be provided as
+        list of values. If a list is provided, it must be the same length as
         the axis that is being expanded as channels.
-    shear : 1-D array or list.
-        A vector of shear values for an upper triangular n-D shear matrix.
-        If a list then must have same length as the axis that is being
-        expanded as channels.
     affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
         the final column is a length N translation vector and a 1 or a
         napari `Affine` transform object. Applied as an extra transform on
         top of the provided scale, rotate, and shear values.
-    opacity : float or list
-        Opacity of the layer visual, between 0.0 and 1.0.  If a list then
-        must be same length as the axis that is being expanded as channels.
-    blending : str or list
+    attenuation : float or list of float
+        Attenuation rate for attenuated maximum intensity projection.
+    blending : str or list of str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
-        {'opaque', 'translucent', and 'additive'}. If a list then
-        must be same length as the axis that is being expanded as channels.
-    visible : bool or list of bool
-        Whether the layer visual is currently being displayed.
-        If a list then must be same length as the axis that is
-        being expanded as channels.
-    multiscale : bool
-        Whether the data is a multiscale image or not. Multiscale data is
-        represented by a list of array like image data. If not specified by
-        the user and if the data is a list of arrays that decrease in shape
-        then it will be taken to be multiscale. The first image in the list
-        should be the largest. Please note multiscale rendering is only
-        supported in 2D. In 3D, only the lowest resolution scale is
-        displayed.
-    cache : bool
+        {'translucent', 'translucent_no_depth', 'additive', 'minimum', 'opaque'}.
+    cache : bool or list of bool
         Whether slices of out-of-core datasets should be cached upon
         retrieval. Currently, this only applies to dask arrays.
-    plane : dict or SlicingPlane
-        Properties defining plane rendering in 3D. Properties are defined in
-        data coordinates. Valid dictionary keys are
-        {'position', 'normal', 'thickness', and 'enabled'}.
+    colormap : str, napari.utils.Colormap, tuple, dict, list or list of these types
+        Colormaps to use for luminance images. If a string, it can be the name
+        of a supported colormap from vispy or matplotlib or the name of
+        a vispy color or a hexadecimal RGB color representation.
+        If a tuple, the first value must be a string to assign as a name to a
+        colormap and the second item must be a Colormap. If a dict, the key must
+        be a string to assign as a name to a colormap and the value must be a
+        Colormap.
+    contrast_limits : list (2,)
+        Intensity value limits to be used for determining the minimum and maximum colormap bounds for
+        luminance images. If not passed, they will be calculated as the min and max intensity value of
+        the image.
+    custom_interpolation_kernel_2d : np.ndarray
+        Convolution kernel used with the 'custom' interpolation mode in 2D rendering.
+    depiction : str or list of str
+        3D Depiction mode. Must be one of {'volume', 'plane'}.
+        The default value is 'volume'.
     experimental_clipping_planes : list of dicts, list of ClippingPlane, or ClippingPlaneList
         Each dict defines a clipping plane in 3D in data coordinates.
         Valid dictionary keys are {'position', 'normal', and 'enabled'}.
         Values on the negative side of the normal are discarded if the plane is enabled.
-    custom_interpolation_kernel_2d : np.ndarray
-        Convolution kernel used with the 'custom' interpolation mode in 2D rendering.
+    gamma : float or list of float
+        Gamma correction for determining colormap linearity; defaults to 1.
+    interpolation2d : str or list of str
+        Interpolation mode used by vispy for rendering 2d data.
+        Must be one of our supported modes.
+        (for list of supported modes see Interpolation enum)
+        'custom' is a special mode for 2D interpolation in which a regular grid
+        of samples is taken from the texture around a position using 'linear'
+        interpolation before being multiplied with a custom interpolation kernel
+        (provided with 'custom_interpolation_kernel_2d').
+    interpolation3d : str or list of str
+        Same as 'interpolation2d' but for 3D rendering.
+    iso_threshold : float or list of float
+        Threshold for isosurface.
+    metadata : dict or list of dict
+        Layer metadata.
+    multiscale : bool
+        Whether the data is a multiscale image or not. Multiscale data is
+        represented by a list of array-like image data. If not specified by
+        the user and if the data is a list of arrays that decrease in shape,
+        then it will be taken to be multiscale. The first image in the list
+        should be the largest. Please note multiscale rendering is only
+        supported in 2D. In 3D, only the lowest resolution scale is
+        displayed.
+    name : str or list of str
+        Name of the layer.
+    opacity : float or list
+        Opacity of the layer visual, between 0.0 and 1.0.
+    plane : dict or SlicingPlane
+        Properties defining plane rendering in 3D. Properties are defined in
+        data coordinates. Valid dictionary keys are
+        {'position', 'normal', 'thickness', and 'enabled'}.
+    projection_mode : str
+        How data outside the viewed dimensions, but inside the thick Dims slice will
+        be projected onto the viewed dimensions. Must fit to cls._projectionclass
+    rendering : str or list of str
+        Rendering mode used by vispy. Must be one of our supported
+        modes. If a list then must be same length as the axis that is being
+        expanded as channels.
+    rgb : bool, optional
+        Whether the image is RGB or RGBA if rgb. If not
+        specified by user, but the last dimension of the data has length 3 or 4,
+        it will be set as `True`. If `False`, the image is interpreted as a
+        luminance image.
+    rotate : float, 3-tuple of float, n-D array or list.
+        If a float, convert into a 2D rotation matrix using that value as an
+        angle. If 3-tuple, convert into a 3D rotation matrix, using a yaw,
+        pitch, roll convention. Otherwise, assume an nD rotation. Angles are
+        assumed to be in degrees. They can be converted from radians with
+        'np.degrees' if needed.
+    scale : tuple of float or list of tuple of float
+        Scale factors for the layer.
+    shear : 1-D array or list.
+        A vector of shear values for an upper triangular n-D shear matrix.
+    translate : tuple of float or list of tuple of float
+        Translation values for the layer.
+    visible : bool or list of bool
+        Whether the layer visual is currently being displayed.
     viewer : Viewer object, optional, by default None.
     title : string, optional
         The title of the viewer window. By default 'napari'.

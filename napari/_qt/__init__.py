@@ -12,7 +12,7 @@ except Exception as e:
         from inspect import cleandoc
 
         installed_with_conda = list(
-            Path(sys.prefix, "conda-meta").glob("napari-*.json")
+            Path(sys.prefix, 'conda-meta').glob('napari-*.json')
         )
 
         raise ImportError(
@@ -36,7 +36,7 @@ except Exception as e:
                 """
                 ),
                 deferred=True,
-                tool="conda" if installed_with_conda else "pip",
+                tool='conda' if installed_with_conda else 'pip',
             )
         ) from e
     raise
@@ -56,10 +56,10 @@ if API_NAME == 'PySide6' and sys.version_info[:2] < (3, 10):
 
     assert isinstance(QT_VERSION, str)
 
-    if version.parse(QT_VERSION) > version.parse("6.3.1"):
+    if version.parse(QT_VERSION) > version.parse('6.3.1'):
         raise RuntimeError(
             trans._(
-                "Napari is not expected to work with PySide6 >= 6.3.2 on Python < 3.10",
+                'Napari is not expected to work with PySide6 >= 6.3.2 on Python < 3.10',
                 deferred=True,
             )
         )
@@ -80,7 +80,7 @@ if tuple(int(x) for x in QtCore.__version__.split('.')[:3]) < (5, 12, 3):
             )
     except ModuleNotFoundError:
         warn_message = trans._(
-            "\n\nnapari was tested with QT library `>=5.12.3`.\nThe version installed is {version}. Please report any issues with\nthis specific QT version at https://github.com/Napari/napari/issues.",
+            '\n\nnapari was tested with QT library `>=5.12.3`.\nThe version installed is {version}. Please report any issues with\nthis specific QT version at https://github.com/Napari/napari/issues.',
             deferred=True,
             version=QtCore.__version__,
         )
@@ -90,4 +90,4 @@ if tuple(int(x) for x in QtCore.__version__.split('.')[:3]) < (5, 12, 3):
 from napari._qt.qt_event_loop import get_app, gui_qt, quit_app, run
 from napari._qt.qt_main_window import Window
 
-__all__ = ["get_app", "gui_qt", "quit_app", "run", "Window"]
+__all__ = ['get_app', 'gui_qt', 'quit_app', 'run', 'Window']

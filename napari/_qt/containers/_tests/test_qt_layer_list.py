@@ -1,13 +1,11 @@
-from typing import Tuple
-
 import numpy as np
-from qtpy.QtCore import QModelIndex, Qt
+from qtpy.QtCore import QModelIndex, QPoint, Qt
 from qtpy.QtWidgets import QLineEdit, QStyleOptionViewItem
 
 from napari._qt.containers import QtLayerList
 from napari._qt.containers._layer_delegate import LayerDelegate
 from napari.components import LayerList
-from napari.layers import Image
+from napari.layers import Image, Shapes
 
 
 def test_set_layer_invisible_makes_item_unchecked(qtbot):
@@ -145,6 +143,38 @@ def test_second_alt_click_to_restore_layer_state(qtbot):
     assert delegate._alt_click_layer() is None
 
 
+def test_contextual_menu_updates_selection_ctx_keys(monkeypatch, qtbot):
+    shapes_layer = Shapes()
+    layer_list = LayerList()
+    layer_list._create_contexts()
+    layer_list.append(shapes_layer)
+    view = QtLayerList(layer_list)
+    qtbot.addWidget(view)
+    delegate = view.itemDelegate()
+    assert not layer_list[0].data
+
+    layer_list.selection.add(shapes_layer)
+    index = layer_to_model_index(view, 0)
+    assert layer_list._selection_ctx_keys.num_selected_shapes_layers == 1
+    assert layer_list._selection_ctx_keys.selected_empty_shapes_layer
+
+    monkeypatch.setattr(
+        'app_model.backends.qt.QModelMenu.exec_', lambda self, x: x
+    )
+
+    delegate.show_context_menu(
+        index, view.model(), QPoint(10, 10), parent=view
+    )
+    assert layer_list._selection_ctx_keys.selected_empty_shapes_layer
+
+    layer_list[0].add(np.array(([0, 0], [0, 10], [10, 10], [10, 0])))
+    assert layer_list[0].data
+    delegate.show_context_menu(
+        index, view.model(), QPoint(10, 10), parent=view
+    )
+    assert not layer_list._selection_ctx_keys.selected_empty_shapes_layer
+
+
 def make_qt_layer_list_with_delegate(qtbot):
     image1 = Image(np.zeros((4, 3)))
     image2 = Image(np.zeros((4, 3)))
@@ -159,7 +189,7 @@ def make_qt_layer_list_with_delegate(qtbot):
     return image1, image2, image3, layers, view, delegate
 
 
-def make_qt_layer_list_with_layer(qtbot) -> Tuple[QtLayerList, Image]:
+def make_qt_layer_list_with_layer(qtbot) -> tuple[QtLayerList, Image]:
     image = Image(np.zeros((4, 3)))
     layers = LayerList([image])
     view = QtLayerList(layers)

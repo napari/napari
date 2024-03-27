@@ -89,18 +89,18 @@ jobs:
           # We build from the the tag name if triggered by tag, otherwise from the commit hash
           build-args: |
             NAPARI_COMMIT=${{ github.ref_type == 'tag' && github.ref_name || github.sha }}
-      
+
       - name: Test Docker image
         run: |
           docker run --rm --entrypoint=/bin/bash ${{ steps.docker_build.outputs.imageid }} -ec "python3 -m napari --version"
-    
+
 # ----
 
   build2:
     needs: build1
     runs-on: ubuntu-latest
     container:
-      image: quay.io/singularity/docker2singularity:v3.10.0
+      image: quay.io/singularity/docker2singularity:v3.11.5
       options: --privileged
     permissions:
       contents: read

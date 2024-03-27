@@ -2,7 +2,7 @@
 # from napari.utils.events import Event
 # from napari.utils.colormaps import AVAILABLE_COLORMAPS
 
-from typing import Dict, List, Optional, Union
+from typing import Optional, Union
 from warnings import warn
 
 import numpy as np
@@ -111,7 +111,7 @@ class Tracks(Layer):
         rotate=None,
         shear=None,
         affine=None,
-        opacity=1,
+        opacity=1.0,
         blending='additive',
         visible=True,
         colormap='turbo',
@@ -410,34 +410,34 @@ class Tracks(Layer):
     @features.setter
     def features(
         self,
-        features: Union[Dict[str, np.ndarray], pd.DataFrame],
+        features: Union[dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
         self._manager.features = features
         self._check_color_by_in_features()
         self.events.properties()
 
     @property
-    def properties(self) -> Dict[str, np.ndarray]:
+    def properties(self) -> dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}: Properties for each track."""
         return self._manager.properties
 
     @properties.setter
-    def properties(self, properties: Dict[str, np.ndarray]):
+    def properties(self, properties: dict[str, np.ndarray]):
         """set track properties"""
         self.features = properties
 
     @property
-    def properties_to_color_by(self) -> List[str]:
+    def properties_to_color_by(self) -> list[str]:
         """track properties that can be used for coloring etc..."""
         return list(self.properties.keys())
 
     @property
-    def graph(self) -> Optional[Dict[int, List[int]]]:
+    def graph(self) -> Optional[dict[int, list[int]]]:
         """dict {int: list}: Graph representing associations between tracks."""
         return self._manager.graph
 
     @graph.setter
-    def graph(self, graph: Dict[int, Union[int, List[int]]]):
+    def graph(self, graph: dict[int, Union[int, list[int]]]):
         """Set the track graph."""
         # Ignored type, because mypy can't handle different signatures
         # on getters and setters; see https://github.com/python/mypy/issues/3004
@@ -548,13 +548,13 @@ class Tracks(Layer):
         self.events.colormap()
 
     @property
-    def colormaps_dict(self) -> Dict[str, Colormap]:
+    def colormaps_dict(self) -> dict[str, Colormap]:
         return self._colormaps_dict
 
     # Ignored type because mypy doesn't recognise colormaps_dict as a property
     # TODO: investigate and fix this - not sure why this is the case?
     @colormaps_dict.setter  # type: ignore[attr-defined]
-    def colomaps_dict(self, colormaps_dict: Dict[str, Colormap]):
+    def colomaps_dict(self, colormaps_dict: dict[str, Colormap]):
         # validate the dictionary entries?
         self._colormaps_dict = colormaps_dict
 
@@ -627,7 +627,7 @@ class Tracks(Layer):
             warn(
                 (
                     trans._(
-                        "Previous color_by key {key!r} not present in features. Falling back to track_id",
+                        'Previous color_by key {key!r} not present in features. Falling back to track_id',
                         deferred=True,
                         key=self._color_by,
                     )

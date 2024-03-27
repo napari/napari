@@ -13,7 +13,7 @@ def _test_migrator(monkeypatch):
     # but rather only using migrators that get declared IN the test
     _TEST_MIGRATORS = []
     with monkeypatch.context() as m:
-        m.setattr(_migrations, "_MIGRATORS", _TEST_MIGRATORS)
+        m.setattr(_migrations, '_MIGRATORS', _TEST_MIGRATORS)
         yield _migrations.migrator
 
 
@@ -30,8 +30,7 @@ def test_backwards_migrator(_test_migrator):
     with pytest.raises(AssertionError):
 
         @_test_migrator('0.2.0', '0.1.0')
-        def _(model):
-            ...
+        def _(model): ...
 
 
 def test_migration_works(_test_migrator):
@@ -49,8 +48,7 @@ def test_migration_works(_test_migrator):
 
 def test_migration_saves(_test_migrator):
     @_test_migrator('0.1.0', '0.2.0')
-    def _(model: NapariSettings):
-        ...
+    def _(model: NapariSettings): ...
 
     with patch.object(NapariSettings, 'save') as mock:
         mock.assert_not_called()
