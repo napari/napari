@@ -73,6 +73,7 @@ class QtLayerList(QtListView[Layer]):
             e.modifiers() & Qt.KeyboardModifier.AltModifier
             or e.modifiers() & Qt.KeyboardModifier.ControlModifier
             or e.modifiers() & Qt.KeyboardModifier.MetaModifier
+            or e.modifiers() & Qt.KeyboardModifier.ShiftModifier
         ):
             e.ignore()
         elif e.key() != Qt.Key.Key_Space:
