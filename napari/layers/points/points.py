@@ -103,36 +103,6 @@ class _BasePoints(Layer):
     # If more points are present then they are randomly subsampled
     _max_points_thumbnail = 1024
 
-    @rename_argument(
-        'edge_width', 'border_width', since_version='0.5.0', version='0.6.0'
-    )
-    @rename_argument(
-        'edge_width_is_relative',
-        'border_width_is_relative',
-        since_version='0.5.0',
-        version='0.6.0',
-    )
-    @rename_argument(
-        'edge_color', 'border_color', since_version='0.5.0', version='0.6.0'
-    )
-    @rename_argument(
-        'edge_color_cycle',
-        'border_color_cycle',
-        since_version='0.5.0',
-        version='0.6.0',
-    )
-    @rename_argument(
-        'edge_colormap',
-        'border_colormap',
-        since_version='0.5.0',
-        version='0.6.0',
-    )
-    @rename_argument(
-        'edge_contrast_limits',
-        'border_contrast_limits',
-        since_version='0.5.0',
-        version='0.6.0',
-    )
     def __init__(
         self,
         data=None,
@@ -241,31 +211,6 @@ class _BasePoints(Layer):
             feature_defaults=Event,
         )
 
-        deprecated_events = {}
-        for attr in [
-            '{}_width',
-            'current_{}_width',
-            '{}_width_is_relative',
-            '{}_color',
-            'current_{}_color',
-        ]:
-            old_attr = attr.format('edge')
-            new_attr = attr.format('border')
-            old_emitter = deprecation_warning_event(
-                'layer.events',
-                old_attr,
-                new_attr,
-                since_version='0.5.0',
-                version='0.6.0',
-            )
-            getattr(self.events, new_attr).connect(old_emitter)
-            deprecated_events[old_attr] = old_emitter
-
-        self.events.add(**deprecated_events)
-
-        # Save the point coordinates
-        self._data = np.asarray(data)
-
         self._feature_table = _FeatureTable.from_layer(
             features=features,
             feature_defaults=feature_defaults,
@@ -312,6 +257,13 @@ class _BasePoints(Layer):
             if len(self._points_data)
             else self._feature_table.currents()
         )
+
+        if n_dimensional is not None:
+            self._out_of_slice_display = n_dimensional
+        else:
+            self._out_of_slice_display = out_of_slice_display
+
+        # Save the point style params
         self._border = ColorManager._from_layer_kwargs(
             n_colors=len(data),
             colors=border_color,
@@ -328,13 +280,6 @@ class _BasePoints(Layer):
             categorical_colormap=face_color_cycle,
             properties=color_properties,
         )
-
-        if n_dimensional is not None:
-            self._out_of_slice_display = n_dimensional
-        else:
-            self._out_of_slice_display = out_of_slice_display
-
-        # Save the point style params
         self.size = size
         self.shown = shown
         self.symbol = symbol
@@ -348,30 +293,6 @@ class _BasePoints(Layer):
         # Trigger generation of view slice and thumbnail
         self.refresh()
 
-    @classmethod
-    def _add_deprecated_properties(cls) -> None:
-        """Adds deprecated properties to class."""
-        deprecated_properties = [
-            'edge_width',
-            'edge_width_is_relative',
-            'current_edge_width',
-            'edge_color',
-            'edge_color_cycle',
-            'edge_colormap',
-            'edge_contrast_limits',
-            'current_edge_color',
-            'edge_color_mode',
-        ]
-        for old_property in deprecated_properties:
-            new_property = old_property.replace('edge', 'border')
-            add_deprecated_property(
-                cls,
-                old_property,
-                new_property,
-                since_version='0.5.0',
-                version='0.6.0',
-            )
-
     @property
     def _points_data(self) -> np.ndarray:
         """Spatially distributed coordinates."""
@@ -383,6 +304,42 @@ class _BasePoints(Layer):
 
     def _set_data(self, data: Any) -> None:
         raise NotImplementedError
+
+    @data.setter
+    def data(self, data: Optional[np.ndarray]) -> None:
+        """Set the data array and emit a corresponding event."""
+        prior_data = len(self.data) > 0
+        data_not_empty = (
+            data is not None
+            and (isinstance(data, np.ndarray) and data.size > 0)
+            or (isinstance(data, list) and len(data) > 0)
+        )
+        kwargs = {
+            'value': self.data,
+            'vertex_indices': ((),),
+            'data_indices': tuple(i for i in range(len(self.data))),
+        }
+        if prior_data and data_not_empty:
+            kwargs['action'] = ActionType.CHANGING
+        elif data_not_empty:
+            kwargs['action'] = ActionType.ADDING
+            kwargs['data_indices'] = tuple(i for i in range(len(data)))
+        else:
+            kwargs['action'] = ActionType.REMOVING
+
+        self.events.data(**kwargs)
+        self._set_data(data)
+        kwargs['data_indices'] = tuple(i for i in range(len(self.data)))
+        kwargs['value'] = self.data
+
+        if prior_data and data_not_empty:
+            kwargs['action'] = ActionType.CHANGED
+        elif data_not_empty:
+            kwargs['data_indices'] = tuple(i for i in range(len(data)))
+            kwargs['action'] = ActionType.ADDED
+        else:
+            kwargs['action'] = ActionType.REMOVED
+        self.events.data(**kwargs)
 
     def _on_selection(self, selected):
         if selected:
