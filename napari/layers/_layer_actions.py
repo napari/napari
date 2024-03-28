@@ -5,7 +5,7 @@ on a layer in the LayerList.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List, cast
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 
@@ -24,7 +24,7 @@ def _duplicate_layer(ll: LayerList, *, name: str = ''):
 
     for lay in list(ll.selection):
         data, state, type_str = lay.as_layer_data_tuple()
-        state["name"] = trans._('{name} copy', name=lay.name)
+        state['name'] = trans._('{name} copy', name=lay.name)
         with layer_source(parent=lay):
             new = Layer.create(deepcopy(data), state, type_str)
         ll.insert(ll.index(lay) + 1, new)
@@ -53,10 +53,15 @@ def _convert(ll: LayerList, type_: str):
     for lay in list(ll.selection):
         idx = ll.index(lay)
         ll.pop(idx)
+
         if isinstance(lay, Shapes) and type_ == 'labels':
             data = lay.to_labels()
+        elif (
+            not np.issubdtype(lay.data.dtype, np.integer) and type_ == 'labels'
+        ):
+            data = lay.data.astype(int)
         else:
-            data = lay.data.astype(int) if type_ == 'labels' else lay.data
+            data = lay.data
         new_layer = Layer.create(data, lay._get_base_state(), type_)
         ll.insert(idx, new_layer)
 
@@ -76,7 +81,7 @@ def _convert_to_image(ll: LayerList):
 
 def _merge_stack(ll: LayerList, rgb=False):
     # force selection to follow LayerList ordering
-    imgs = cast(List[Image], [layer for layer in ll if layer in ll.selection])
+    imgs = cast(list[Image], [layer for layer in ll if layer in ll.selection])
     assert all(isinstance(layer, Image) for layer in imgs)
     merged = (
         stack_utils.merge_rgb(imgs)
@@ -98,6 +103,28 @@ def _toggle_visibility(ll: LayerList):
             layer.visible = not visibility
 
 
+def _show_selected(ll: LayerList):
+    for lay in ll.selection:
+        lay.visible = True
+
+
+def _hide_selected(ll: LayerList):
+    for lay in ll.selection:
+        lay.visible = False
+
+
+def _show_unselected(ll: LayerList):
+    for lay in ll:
+        if lay not in ll.selection:
+            lay.visible = True
+
+
+def _hide_unselected(ll: LayerList):
+    for lay in ll:
+        if lay not in ll.selection:
+            lay.visible = False
+
+
 def _link_selected_layers(ll: LayerList):
     ll.link_layers(ll.selection)
 
@@ -107,7 +134,10 @@ def _unlink_selected_layers(ll: LayerList):
 
 
 def _select_linked_layers(ll: LayerList):
-    ll.selection.update(get_linked_layers(*ll.selection))
+    linked_layers_in_list = [
+        x for x in get_linked_layers(*ll.selection) if x in ll
+    ]
+    ll.selection.update(linked_layers_in_list)
 
 
 def _convert_dtype(ll: LayerList, mode='int64'):
@@ -117,7 +147,7 @@ def _convert_dtype(ll: LayerList, mode='int64'):
     if not isinstance(layer, Labels):
         raise NotImplementedError(
             trans._(
-                "Data type conversion only implemented for labels",
+                'Data type conversion only implemented for labels',
                 deferred=True,
             )
         )
@@ -129,7 +159,7 @@ def _convert_dtype(ll: LayerList, mode='int64'):
     ):
         raise AssertionError(
             trans._(
-                "Labeling contains values outside of the target data type range.",
+                'Labeling contains values outside of the target data type range.',
                 deferred=True,
             )
         )
@@ -144,7 +174,7 @@ def _project(ll: LayerList, axis: int = 0, mode='max'):
     if not isinstance(layer, Image):
         raise NotImplementedError(
             trans._(
-                "Projections are only implemented for images", deferred=True
+                'Projections are only implemented for images', deferred=True
             )
         )
 

@@ -1,7 +1,6 @@
 import bisect
 from decimal import Decimal
 from math import floor, log
-from typing import Tuple
 
 import numpy as np
 import pint
@@ -48,7 +47,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
     def _calculate_best_length(
         self, desired_length: float
-    ) -> Tuple[float, pint.Quantity]:
+    ) -> tuple[float, pint.Quantity]:
         """Calculate new quantity based on the pixel length of the bar.
 
         Parameters

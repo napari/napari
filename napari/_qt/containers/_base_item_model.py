@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import MutableSequence
-from typing import TYPE_CHECKING, Any, Generic, Tuple, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Generic, TypeVar, Union
 
 from qtpy.QtCore import QAbstractItemModel, QModelIndex, Qt
 
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from qtpy.QtWidgets import QWidget  # type: ignore[attr-defined]
 
 
-ItemType = TypeVar("ItemType")
+ItemType = TypeVar('ItemType')
 
 ItemRole = Qt.UserRole
 SortRole = Qt.UserRole + 1
@@ -201,12 +201,12 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         if not isinstance(root, SelectableEventedList):
             raise TypeError(
                 trans._(
-                    "root must be an instance of {class_name}",
+                    'root must be an instance of {class_name}',
                     deferred=True,
                     class_name=SelectableEventedList,
                 )
             )
-        current_root = getattr(self, "_root", None)
+        current_root = getattr(self, '_root', None)
         if root is current_root:
             return
 
@@ -224,8 +224,8 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         self._root.events.connect(self._process_event)
 
     def _split_nested_index(
-        self, nested_index: Union[int, Tuple[int, ...]]
-    ) -> Tuple[QModelIndex, int]:
+        self, nested_index: Union[int, tuple[int, ...]]
+    ) -> tuple[QModelIndex, int]:
         """Return (parent_index, row) for a given index."""
         if isinstance(nested_index, int):
             return QModelIndex(), nested_index

@@ -2,14 +2,13 @@
 # https://asv.readthedocs.io/en/latest/writing_benchmarks.html
 # or the napari documentation on benchmarking
 # https://napari.org/developers/benchmarks.html
-import os
 
 import numpy as np
 import pandas as pd
 
 from napari.layers.utils.text_manager import TextManager
 
-from .utils import Skiper
+from .utils import Skip
 
 
 class TextManagerSuite:
@@ -26,8 +25,7 @@ class TextManagerSuite:
         ],
     ]
 
-    if "PR" in os.environ:
-        skip_params = Skiper(lambda x: x[0] > 2**6)
+    skip_params = Skip(if_in_pr=lambda n, string: n > 2**6)
 
     def setup(self, n, string):
         np.random.seed(0)

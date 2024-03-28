@@ -1,5 +1,3 @@
-from typing import Dict, List
-
 from app_model.types import KeyBinding, KeyCode, KeyMod
 
 _default_shortcuts = {
@@ -21,6 +19,13 @@ _default_shortcuts = {
     'napari:transpose_axes': [KeyMod.CtrlCmd | KeyCode.KeyT],
     'napari:toggle_grid': [KeyMod.CtrlCmd | KeyCode.KeyG],
     'napari:toggle_selected_visibility': [KeyCode.KeyV],
+    'napari:toggle_unselected_visibility': [KeyMod.Shift | KeyCode.KeyV],
+    'napari:show_only_layer_above': [
+        KeyMod.Shift | KeyMod.Alt | KeyCode.UpArrow
+    ],
+    'napari:show_only_layer_below': [
+        KeyMod.Shift | KeyMod.Alt | KeyCode.DownArrow
+    ],
     'napari:hold_for_pan_zoom': [KeyCode.Space],
     # labels
     'napari:activate_labels_erase_mode': [KeyCode.Digit1, KeyCode.KeyE],
@@ -92,7 +97,7 @@ _default_shortcuts = {
     'napari:activate_surface_transform_mode': [KeyCode.Digit2],
 }
 
-default_shortcuts: Dict[str, List[KeyBinding]] = {
+default_shortcuts: dict[str, list[KeyBinding]] = {
     name: [KeyBinding.from_int(kb) for kb in value]
     for name, value in _default_shortcuts.items()
 }

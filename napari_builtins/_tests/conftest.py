@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import List
 from unittest.mock import patch
 
 import numpy as np
@@ -30,7 +29,7 @@ def _use_builtins(_mock_npe2_pm: PluginManager):
         yield plugin
 
 
-LAYERS: List[layers.Layer] = [
+LAYERS: list[layers.Layer] = [
     layers.Image(np.random.rand(10, 10)),
     layers.Labels(np.random.randint(0, 16000, (32, 32), 'uint64')),
     layers.Points(np.random.rand(20, 2)),
@@ -53,3 +52,8 @@ LAYERS: List[layers.Layer] = [
 @pytest.fixture(params=LAYERS)
 def some_layer(request):
     return request.param
+
+
+@pytest.fixture()
+def layers_list():
+    return LAYERS
