@@ -534,36 +534,34 @@ def checks():
 )
 def test_missing_translations(file_to_check):
     print(
-        '\nSome strings on the following files might need to be translated '
-        'or added to the skip list.\nSkip list is located at '
-        '`tools/strings_list.py` file.\n\n'
+        "\nSome strings on the following files might need to be translated "
+        "or added to the skip list.\nSkip list is located at "
+        "`tools/strings_list.py` file.\n\n"
     )
+    fpath, values = file_to_check
 
-    for fpath, values in issues.items():
-        print(f"{fpath}\n{'*' * len(fpath)}")
-        unique_values = set()
-        for line, value in values:
-            unique_values.add(value)
-            print(f'{line}:\t{value!r}')
+    print(f"./{fpath}\n{'*' * len(fpath)}")
+    unique_values = set()
+    for line, value in values:
+        unique_values.add(value)
+        print(f"{fpath}:{line} :\t{value!r}")
 
-        print('\n')
+    print("\n")
 
-        if fpath in SKIP_WORDS:
-            print(
-                f"List below can be copied directly to `tools/strings_list.py` file inside the '{fpath}' key:\n"
-            )
-            for value in sorted(unique_values):
-                print(f'        {value!r},')
-        else:
-            print(
-                'List below can be copied directly to `tools/strings_list.py` file:\n'
-            )
-            print(f'    {fpath!r}: [')
-            for value in sorted(unique_values):
-                print(f'        {value!r},')
-            print('    ],')
-
-        print('\n')
+    if fpath in SKIP_WORDS:
+        print(
+            f"List below can be copied directly to `tools/strings_list.py` file inside the '{fpath}' key:\n"
+        )
+        for value in sorted(unique_values):
+            print(f"        {value!r},")
+    else:
+        print(
+            "List below can be copied directly to `tools/strings_list.py` file:\n"
+        )
+        print(f"    {fpath!r}: [")
+        for value in sorted(unique_values):
+            print(f"        {value!r},")
+        print("    ],")
 
     print("\n")
 
