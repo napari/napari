@@ -1,14 +1,11 @@
 import inspect
 import warnings
+from collections.abc import Sequence
 from functools import partial, wraps
 from types import FunctionType, GeneratorType
 from typing import (
     Callable,
-    Dict,
-    List,
     Optional,
-    Sequence,
-    Type,
     TypeVar,
     Union,
 )
@@ -66,10 +63,10 @@ def create_worker(
     func: Union[FunctionType, GeneratorType],
     *args,
     _start_thread: Optional[bool] = None,
-    _connect: Optional[Dict[str, Union[Callable, Sequence[Callable]]]] = None,
-    _progress: Optional[Union[bool, Dict[str, Union[int, bool, str]]]] = None,
+    _connect: Optional[dict[str, Union[Callable, Sequence[Callable]]]] = None,
+    _progress: Optional[Union[bool, dict[str, Union[int, bool, str]]]] = None,
     _worker_class: Union[
-        Type[GeneratorWorker], Type[FunctionWorker], None
+        type[GeneratorWorker], type[FunctionWorker], None
     ] = None,
     _ignore_errors: bool = False,
     **kwargs,
@@ -200,10 +197,10 @@ def create_worker(
 def thread_worker(
     function: Optional[Callable] = None,
     start_thread: Optional[bool] = None,
-    connect: Optional[Dict[str, Union[Callable, Sequence[Callable]]]] = None,
-    progress: Optional[Union[bool, Dict[str, Union[int, bool, str]]]] = None,
+    connect: Optional[dict[str, Union[Callable, Sequence[Callable]]]] = None,
+    progress: Optional[Union[bool, dict[str, Union[int, bool, str]]]] = None,
     worker_class: Union[
-        Type[FunctionWorker], Type[GeneratorWorker], None
+        type[FunctionWorker], type[GeneratorWorker], None
     ] = None,
     ignore_errors: bool = False,
 ):
@@ -355,7 +352,7 @@ def register_threadworker_processors():
 
     app = get_app()
 
-    for _type in (LayerDataTuple, List[LayerDataTuple]):
+    for _type in (LayerDataTuple, list[LayerDataTuple]):
         t = FunctionWorker[_type]
         magicgui.register_type(t, return_callback=_mgui.add_worker_data)
         app.injection_store.register(

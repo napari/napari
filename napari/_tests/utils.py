@@ -3,7 +3,7 @@ import sys
 from collections import abc
 from contextlib import suppress
 from threading import RLock
-from typing import Any, Dict, Tuple, Union
+from typing import Any, Union
 
 import numpy as np
 import pandas as pd
@@ -149,7 +149,7 @@ class LockableData:
         return self.data.dtype
 
     @property
-    def shape(self) -> Tuple[int, ...]:
+    def shape(self) -> tuple[int, ...]:
         return self.data.shape
 
     @property
@@ -158,7 +158,7 @@ class LockableData:
         return len(self.data.shape)
 
     def __getitem__(
-        self, key: Union[Index, Tuple[Index, ...], LayerDataProtocol]
+        self, key: Union[Index, tuple[Index, ...], LayerDataProtocol]
     ) -> LayerDataProtocol:
         with self.lock:
             return self.data[key]
@@ -292,7 +292,7 @@ def check_layer_world_data_extent(layer, extent, scale, translate):
 
 
 def assert_layer_state_equal(
-    actual: Dict[str, Any], expected: Dict[str, Any]
+    actual: dict[str, Any], expected: dict[str, Any]
 ) -> None:
     """Asserts that an layer state dictionary is equal to an expected one.
 
