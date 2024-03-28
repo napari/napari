@@ -6,6 +6,7 @@ import pytest
 
 from napari.components import LayerList
 from napari.layers import Image
+from napari.layers.base._test_util_samlpe_layer import SampleLayer
 from napari.layers.utils._link_layers import get_linked_layers
 
 
@@ -570,3 +571,15 @@ def test_readd_layers():
     with pytest.raises(ValueError):
         layers[:3] = layers[:]
     assert set(layers) == set(imgs)
+
+
+def test_inheritance_units(unit_register):
+    layers = LayerList()
+    l1 = SampleLayer(np.random.random((10, 10)), 2, units='nm')
+    l2 = SampleLayer(np.random.random((10, 10)), 2)
+    assert l2.units == {f'dim_{i}': unit_register.pixel for i in range(2)}
+    layers.append(l1)
+    assert l2.units == {f'dim_{i}': unit_register.pixel for i in range(2)}
+    layers.append(l2)
+    # assert l2.units == {f'dim_{i}': unit_register.nanometer for i in range(2)}
+    # uncomment the above line to see the test fail
