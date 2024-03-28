@@ -1,4 +1,5 @@
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
 from qtpy.QtCore import QModelIndex, Qt
 from typing_extensions import Self
