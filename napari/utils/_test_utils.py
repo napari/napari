@@ -53,7 +53,7 @@ def validate_docstring_all_params_in(func):
     for sig, doc in zip(signature.parameters.values(), params):
         assert (
             sig.name == doc.arg_name
-        ), 'Parameters in signature and docstring do not in same order.'
+        ), 'Parameters in signature and docstring are not in the same order.'
         # assert sig.annotation == doc.type_name, f"Type of parameter {sig.name} in signature and docstring do not match"
 
 
