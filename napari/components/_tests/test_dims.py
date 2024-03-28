@@ -266,9 +266,9 @@ def test_roll():
     dims.set_range(2, (0, 10, 1))
     dims.set_range(3, (0, 10, 1))
     assert dims.order == (0, 1, 2, 3)
-    dims._roll()
+    dims.roll()
     assert dims.order == (3, 0, 1, 2)
-    dims._roll()
+    dims.roll()
     assert dims.order == (2, 3, 0, 1)
 
 
@@ -280,9 +280,9 @@ def test_roll_skip_dummy_axis_1():
     dims.set_range(2, (0, 10, 1))
     dims.set_range(3, (0, 10, 1))
     assert dims.order == (0, 1, 2, 3)
-    dims._roll()
+    dims.roll()
     assert dims.order == (0, 3, 1, 2)
-    dims._roll()
+    dims.roll()
     assert dims.order == (0, 2, 3, 1)
 
 
@@ -294,9 +294,9 @@ def test_roll_skip_dummy_axis_2():
     dims.set_range(2, (0, 10, 1))
     dims.set_range(3, (0, 10, 1))
     assert dims.order == (0, 1, 2, 3)
-    dims._roll()
+    dims.roll()
     assert dims.order == (3, 1, 0, 2)
-    dims._roll()
+    dims.roll()
     assert dims.order == (2, 1, 3, 0)
 
 
@@ -308,9 +308,9 @@ def test_roll_skip_dummy_axis_3():
     dims.set_range(2, (0, 10, 1))
     dims.set_range(3, (0, 0, 1))
     assert dims.order == (0, 1, 2, 3)
-    dims._roll()
+    dims.roll()
     assert dims.order == (2, 1, 0, 3)
-    dims._roll()
+    dims.roll()
     assert dims.order == (0, 1, 2, 3)
 
 
