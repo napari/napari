@@ -28,7 +28,7 @@ def rename_argument(
     """
 
     if not since_version:
-        since_version = 'unknown'
+        since_version = trans._("unknown")
         warnings.warn(
             trans._(
                 'The since_version argument was added in napari 0.4.18 and will be mandatory since 0.6.0 release.',
@@ -48,6 +48,7 @@ def rename_argument(
                             'Argument {to_name} already defined, please do not mix {from_name} and {to_name} in one call.',
                             from_name=from_name,
                             to_name=to_name,
+                            deferred=True,
                         )
                     )
                 warnings.warn(
@@ -57,6 +58,7 @@ def rename_argument(
                         to_name=to_name,
                         version=version,
                         since_version=since_version,
+                        deferred=True,
                     ),
                     category=DeprecationWarning,
                     stacklevel=2,

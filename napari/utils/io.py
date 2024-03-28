@@ -53,7 +53,7 @@ def imsave_png(filename, data):
     # Digital watermark, adds info about the napari version to the bytes of the PNG file
     pnginfo = PIL.PngImagePlugin.PngInfo()
     pnginfo.add_text(
-        'Software', f'napari version {__version__} https://napari.org/'
+        trans._("Software"), "napari " + trans._("version") + f" {__version__} https://napari.org/"
     )
     iio.imwrite(
         filename,
