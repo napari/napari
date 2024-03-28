@@ -39,7 +39,7 @@ def read_only_mouse_event(*args, **kwargs):
     )
 
 
-def validate_docstring_all_params_in(func):
+def validate_all_params_in_docstring(func):
     assert func.__doc__ is not None, f'Function {func} has no docstring'
 
     parsed = parse(func.__doc__)
