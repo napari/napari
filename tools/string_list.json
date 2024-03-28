@@ -2495,6 +2495,8 @@
     ],
     "napari/utils/_tracebacks.py": [
       "&nbsp;",
+      "<pre>",
+      "</pre>",
       "(<tr><td><small.*</tr>)",
       ";",
       "; ",
@@ -2536,9 +2538,11 @@
       "<p>A problem occurred in a Python script.  Here is the sequence of",
       "function calls leading up to the error, in the order they occurred.</p>"
     ],
+    "napari/utils/_units.py": ["pint.UnitRegistry"],
     "napari/utils/action_manager.py": [
       "bind_key",
       "bind_key",
+      "command",
       "<keysequence> or <keysequence>",
       "[{name}]",
       "destroyed",
@@ -2546,6 +2550,10 @@
       " ({shorts})",
       "{event.tooltip} {extra_tooltip_text}",
       "{self._build_tooltip(name)} {extra_tooltip_text}"
+    ],
+    "napari/utils/color.py": [
+      "ColorArray",
+      "ColorValue"
     ],
     "napari/utils/colormaps/__init__.py": [],
     "napari/utils/colormaps/bop_colors.py": [],
@@ -2572,9 +2580,11 @@
       "right"
     ],
     "napari/utils/colormaps/colormap_utils.py": [
+      "#",
       "[unnamed colormap",
       "[unnamed colormap {len(past_names)}]",
       "_controls",
+      "_display_name",
       "colors",
       "ij",
       "interpolation",
@@ -2583,6 +2593,7 @@
       "light_blues",
       "linear",
       "luv",
+      "right",
       "rgb",
       "single_hue",
       "vispy",
@@ -2604,7 +2615,8 @@
     ],
     "napari/utils/config.py": [
       "0",
-      "NAPARI_MON"
+      "NAPARI_MON",
+      "\nExperimental Features\n\nShared Memory Server\n--------------------\nExperimental shared memory service. Only enabled if NAPARI_MON is set to\nthe path of a config file. See this PR for more info:\nhttps://github.com/napari/napari/pull/1909.\n"
     ],
     "napari/utils/context/_context.py": [
       "__new__",
@@ -2680,6 +2692,7 @@
     "napari/utils/events/containers/__init__.py": [],
     "napari/utils/events/containers/_dict.py": [
       "Cannot add object with type {type(e)} to TypedDict expecting type {self._basetypes}",
+      "TypedMutableMapping[_K, _T]",
       "_K",
       "_T"
     ],
@@ -2697,6 +2710,7 @@
     "napari/utils/events/containers/_evented_list.py": [
       "EventedList[_T]",
       "changed",
+      "dest_index",
       "events",
       "index",
       "inserted",
@@ -2706,7 +2720,8 @@
       "moving",
       "removed",
       "removing",
-      "reordered"
+      "reordered",
+      "sources"
     ],
     "napari/utils/events/containers/_nested_list.py": [
       "ParentIndex",
@@ -2720,6 +2735,7 @@
     "napari/utils/events/containers/_selectable_list.py": ["_T"],
     "napari/utils/events/containers/_selection.py": [
       "ModelField",
+      "{type(self).__name__}({self._set!r})",
       "[{i}]",
       "_S",
       "_T",
@@ -2728,6 +2744,7 @@
       "selection"
     ],
     "napari/utils/events/containers/_set.py": [
+      "{type(self).__name__}({self._set!r})",
       "[{i}]",
       "_T",
       "events"
@@ -2746,8 +2763,15 @@
       "const",
       "ensure this value is not equal to {prohibited}",
       "enum",
+      "ge",
+      "gt",
+      "le",
+      "lt",
+      "multiple_of",
+      "ne",
       "not",
-      "number.not_eq"
+      "number.not_eq",
+      "strict"
     ],
     "napari/utils/events/debugging.py": [
       "  \"{fname}\", line {frame.lineno}, in {obj}{frame.function}",
@@ -2770,10 +2794,15 @@
     ],
     "napari/utils/events/event.py": [
       "<...>",
+      "{core}.",
       "EmitterGroup",
       "EventBlockerAll",
+      "<{self.__class__.__name__} {\" \".join(attrs)}>",
       "_",
+      "_T",
       "__name__",
+      "0.6.0",
+      "0.4.18",
       "always",
       "first",
       "last",
@@ -2781,6 +2810,7 @@
       "on_%s",
       "reminders",
       "type",
+      "type_name",
       "weakref.ReferenceType[Any]",
       "C++",
       "already deleted.",
@@ -2795,13 +2825,15 @@
     "napari/utils/events/event_utils.py": [],
     "napari/utils/events/evented_model.py": [
       "PySide2",
+      "__annotations__",
       "__weakref__",
       "_json_encode",
       "events",
       "use_enum_values",
       "EventedModel",
       "Unrecognized field dependency: {field}",
-      "dependencies"
+      "dependencies",
+      "return"
     ],
     "napari/utils/events/types.py": [],
     "napari/utils/geometry.py": [
@@ -2878,6 +2910,8 @@
     "napari/utils/interactions.py": [
       "\u2326",
       "+",
+      "++",
+      "+Plus",
       "-",
       "</table>",
       "<span style='color: {col}'><b>{k}</b></span>",
@@ -2892,6 +2926,7 @@
       "Escape",
       "Left",
       "Meta",
+      "Plus",
       "Return",
       "Right",
       "Shift",
@@ -2920,6 +2955,7 @@
       "<tr><td width='80' style='text-align: right; padding: 4px;'><span style='color: rgb(66, 72, 80)'>{keycodes}</span></td><td style='text-align: left; padding: 4px; color: #CCC;'>{keymap[key]}</td></tr>"
     ],
     "napari/utils/io.py": [
+      ".png",
       ".tif",
       ".tiff",
       "zlib",
@@ -2928,6 +2964,7 @@
       "imsave_extensions",
       "module {__name__} has no attribute {name}",
       "np.ndarray",
+      "pillow",
       "read_csv",
       "read_zarr_dataset",
       "write_csv"
@@ -2969,7 +3006,9 @@
       "ignore",
       "elementwise comparison",
       "NoneType",
-      "ps1"
+      "ps1",
+      " \\1",
+      "\\1_\\2"
     ],
     "napari/utils/mouse_bindings.py": [],
     "napari/utils/naming.py": [
@@ -3148,8 +3187,12 @@
       "stop: {n} {stop}",
       "syntax_style",
       "white",
+      "{int(font_size[:-2]) + int(pt)}pt",
+      "{int(font_size[:-2]) - int(pt)}pt",
       "{{ %s }}",
       "{{\\s?darken\\((\\w+),?\\s?([-\\d]+)?\\)\\s?}}",
+      "{{\\s?decrease\\((\\w+),?\\s?([-\\d]+)?\\)\\s?}}",
+      "{{\\s?increase\\((\\w+),?\\s?([-\\d]+)?\\)\\s?}}",
       "{{\\s?lighten\\((\\w+),?\\s?([-\\d]+)?\\)\\s?}}",
       "{{\\s?opacity\\((\\w+),?\\s?([-\\d]+)?\\)\\s?}}",
       " {', '.join(STYLE_MAP)}",
@@ -3169,7 +3212,9 @@
       "ScaleTranslate",
       "Transform",
       "TransformChain",
-      "_is_diagonal"
+      "TransformChain[_T]",
+      "_is_diagonal",
+      "_T"
     ],
     "napari/utils/translations.py": [
       "LANG",
@@ -3203,6 +3248,7 @@
       "add_{layer_string}",
       "aeiou",
       "n",
+      "none",
       "open",
       "path",
       "add_image",
