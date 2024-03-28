@@ -88,7 +88,10 @@ class FindTransStrings(ast.NodeVisitor):
         # determine which one is used.
         for idx, arg in enumerate(args):
             found_vars = set()
-            check_arg = arg[:]
+            if isinstance(arg, ast.Name):
+                check_arg = arg.id
+            else:
+                check_arg = arg[:]
             check_kwargs = {}
             while True:
                 try:
