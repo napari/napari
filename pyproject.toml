@@ -130,6 +130,7 @@ testing = [
     "numba>=0.57.1",
     "pooch>=1.6.0",
     "coverage>7",
+    "docstring_parser>=0.15",
     "pretend>=1.0.9",
     "pyautogui>=0.9.54",
     "pytest-qt>=4.3.1",

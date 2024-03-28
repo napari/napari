@@ -21,6 +21,10 @@ from napari.layers import Labels
 from napari.layers.labels._labels_constants import LabelsRendering
 from napari.layers.labels._labels_utils import get_contours
 from napari.utils import Colormap
+from napari.utils._test_utils import (
+    validate_all_params_in_docstring,
+    validate_kwargs_sorted,
+)
 from napari.utils.colormaps import (
     CyclicLabelColormap,
     DirectLabelColormap,
@@ -1720,3 +1724,8 @@ class TestLabels:
             obj,
             {'seed', 'num_colors', 'color', 'seed_rng'},
         )
+
+
+def test_docstring():
+    validate_all_params_in_docstring(Labels)
+    validate_kwargs_sorted(Labels)

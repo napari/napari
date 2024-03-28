@@ -10,6 +10,10 @@ from napari.layers import Image
 from napari.layers.image._image_constants import ImageRendering
 from napari.layers.utils.plane import ClippingPlaneList, SlicingPlane
 from napari.utils import Colormap
+from napari.utils._test_utils import (
+    validate_all_params_in_docstring,
+    validate_kwargs_sorted,
+)
 from napari.utils.transforms.transform_utils import rotate_to_matrix
 
 
@@ -1022,3 +1026,8 @@ def test_thick_slice_multiscale():
     np.testing.assert_array_equal(
         layer._slice.image.raw, np.mean(data[2:5], axis=0)
     )
+
+
+def test_docstring():
+    validate_all_params_in_docstring(Image)
+    validate_kwargs_sorted(Image)

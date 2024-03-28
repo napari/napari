@@ -122,13 +122,13 @@ class Labels(ScalarFieldBase):
         Properties defining plane rendering in 3D. Properties are defined in
         data coordinates. Valid dictionary keys are
         {'position', 'normal', 'thickness', and 'enabled'}.
+    projection_mode : str
+        How data outside the viewed dimensions but inside the thick Dims slice will
+        be projected onto the viewed dimensions
     properties : dict {str: array (N,)} or DataFrame
         Properties for each label. Each property should be an array of length
         N, where N is the number of labels, and the first property corresponds
         to background.
-    projection_mode : str
-        How data outside the viewed dimensions but inside the thick Dims slice will
-        be projected onto the viewed dimensions
     rendering : str
         3D Rendering mode used by vispy. Must be one {'translucent', 'iso_categorical'}.
         'translucent' renders without lighting. 'iso_categorical' uses isosurface
@@ -288,8 +288,8 @@ class Labels(ScalarFieldBase):
         name=None,
         opacity=0.7,
         plane=None,
-        properties=None,
         projection_mode='none',
+        properties=None,
         rendering='iso_categorical',
         rotate=None,
         scale=None,
