@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from typing import (
-    TYPE_CHECKING,
     Optional,
     Union,
     overload,
@@ -10,13 +9,16 @@ from typing import (
 
 import pint
 
-if TYPE_CHECKING:
-
-    UnitsLike = Union[None, str, pint.Unit, dict[str, Union[str, pint.Unit]]]
-    UnitsInfo = Union[None, pint.Unit, dict[str, pint.Unit]]
+UnitsLike = Union[None, str, pint.Unit, dict[str, Union[str, pint.Unit]]]
+UnitsInfo = Union[None, pint.Unit, dict[str, pint.Unit]]
 
 
-__all__ = ('coerce_units_and_axes', 'get_units_from_name')
+__all__ = (
+    'coerce_units_and_axes',
+    'get_units_from_name',
+    'UnitsLike',
+    'UnitsInfo',
+)
 
 
 def coerce_units_and_axes(

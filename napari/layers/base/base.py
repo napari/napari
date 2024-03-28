@@ -8,7 +8,7 @@ import os.path
 import warnings
 from abc import ABC, ABCMeta, abstractmethod
 from collections import defaultdict
-from collections.abc import Generator
+from collections.abc import Generator, Sequence
 from contextlib import contextmanager
 from functools import cached_property
 from typing import (
@@ -34,7 +34,7 @@ from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
     transform_with_box,
 )
-from napari.layers.base._units import coerce_units_and_axes
+from napari.layers.base._units import UnitsLike, coerce_units_and_axes
 from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.layers.utils.interactivity_utils import (
     drag_data_to_projected_distance,
@@ -441,7 +441,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         if units is None:
             units = pint.get_application_registry().pixel
         if axes_labels is None:
-            axes_labels = [f'dim_{i}' for i in range(ndim)][::-1]
+            if isinstance(units, dict):
+                axes_labels = list(units)
+            else:
+                axes_labels = [f'dim_{i}' for i in range(ndim)][::-1]
 
         self._units, self._axes_labels = coerce_units_and_axes(
             units, axes_labels
@@ -470,6 +473,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             source=self,
             data=Event,
             affine=Event,
+            axes_labels=Event,
             blending=Event,
             cursor=Event,
             cursor_size=Event,
@@ -492,6 +496,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             status=Event,
             thumbnail=Event,
             translate=Event,
+            units=Event,
             visible=Event,
             interactive=WarningEmitter(
                 trans._(
@@ -787,6 +792,67 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         """Executes side-effects on this layer related to changes of the editable state."""
 
     @property
+    def parameters_with_default_values(self) -> set[str]:
+        """set[str]: Parameters that have default values
+        (passed `None` to constructor and not set later).
+        """
+        return set(self._parameters_with_default_values)
+
+    def set_axis_and_units(
+        self, axes_labels: Sequence[str], units: UnitsLike
+    ) -> None:
+        self._units, self._axes_labels = coerce_units_and_axes(
+            units, axes_labels
+        )
+        self._parameters_with_default_values.discard('axes_labels')
+        self._parameters_with_default_values.discard('units')
+        self.events.axes_labels()
+        self.events.units()
+
+    @property
+    def axes_labels(self) -> list[str]:
+        """Sequence[str]: Labels for each axis."""
+        return self._axes_labels
+
+    @axes_labels.setter
+    def axes_labels(self, axes_labels: Sequence[str]) -> None:
+        axes_labels = list(axes_labels)
+        if len(axes_labels) != len(set(axes_labels)):
+            raise ValueError('Axes labels must be unique.')
+        if len(axes_labels) != self.ndim:
+            raise ValueError(
+                f'Length of axes_labels should be equal to ndim ({self.ndim})'
+            )
+        if isinstance(self._units, dict) and not set(axes_labels).issubset(
+            set(self._units)
+        ):
+            diff = ', '.join(set(axes_labels) - set(self._units))
+            raise ValueError(
+                'Units are set per axis and some of new '
+                'axes_labels do not have a corresponding unit. '
+                f'Missing units for: {diff}. '
+                'Please use set_axis_and_units method.'
+            )
+        self._axes_labels = list(axes_labels)
+        self._parameters_with_default_values.discard('axes_labels')
+        self.events.axes_labels()
+
+    @property
+    def units(self) -> dict[str, pint.Unit]:
+        """Dict[str, unyt.Unit]: Units for each axis."""
+        if isinstance(self._units, dict):
+            return self._units
+        return {label: self._units for label in self.axes_labels}
+
+    @units.setter
+    def units(self, units: UnitsLike) -> None:
+        self._units, self._axes_labels = coerce_units_and_axes(
+            units, self._axes_labels
+        )
+        self._parameters_with_default_values.discard('units')
+        self.events.units()
+
+    @property
     def scale(self) -> npt.NDArray:
         """array: Anisotropy factors to scale data into world coordinates."""
         return self._transforms['data2physical'].scale
@@ -794,7 +860,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @scale.setter
     def scale(self, scale: Optional[npt.NDArray]) -> None:
         if scale is None:
+            self._parameters_with_default_values.add('scale')
             scale = np.array([1] * self.ndim)
+        else:
+            self._parameters_with_default_values.discard('scale')
         self._transforms['data2physical'].scale = np.array(scale)
         self._clear_extents_and_refresh()
         self.events.scale()
@@ -806,6 +875,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
     @translate.setter
     def translate(self, translate: npt.ArrayLike) -> None:
+        self._parameters_with_default_values.discard('translate')
         self._transforms['data2physical'].translate = np.array(translate)
         self._clear_extents_and_refresh()
         self.events.translate()
@@ -817,6 +887,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
     @rotate.setter
     def rotate(self, rotate: npt.NDArray) -> None:
+        self._parameters_with_default_values.discard('rotate')
         self._transforms['data2physical'].rotate = rotate
         self._clear_extents_and_refresh()
         self.events.rotate()
@@ -828,6 +899,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
     @shear.setter
     def shear(self, shear: npt.NDArray) -> None:
+        self._parameters_with_default_values.discard('shear')
         self._transforms['data2physical'].shear = shear
         self._clear_extents_and_refresh()
         self.events.shear()
@@ -842,6 +914,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         # Assignment by transform name is not supported by TransformChain and
         # EventedList, so use the integer index instead. For more details, see:
         # https://github.com/napari/napari/issues/3058
+        self._parameters_with_default_values.discard('affine')
         self._transforms[2] = coerce_affine(
             affine, ndim=self.ndim, name='physical2world'
         )

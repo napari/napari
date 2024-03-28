@@ -42,6 +42,7 @@ from typing import TYPE_CHECKING, Optional
 from unittest.mock import patch
 from weakref import WeakKeyDictionary
 
+import pint
 from npe2 import PackageMetadata
 
 with suppress(ModuleNotFoundError):
@@ -99,6 +100,11 @@ def layer_data_and_types():
     layer_types = [layer._type_string for layer in layers]
     filenames = [layer.name + e for layer, e in zip(layers, extensions)]
     return layers, layer_data, layer_types, filenames
+
+
+@pytest.fixture
+def unit_register() -> pint.ApplicationRegistry:
+    return pint.get_application_registry()
 
 
 @pytest.fixture(
