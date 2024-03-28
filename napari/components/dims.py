@@ -446,7 +446,7 @@ class Dims(EventedModel):
         index = (sliders.index(self.last_used) - 1) % len(sliders)
         self.last_used = sliders[index]
 
-    def _roll(self):
+    def roll(self):
         """Roll order of dimensions for display."""
         order = np.array(self.order)
         # we combine "rollable" and "nsteps" into a mask for rolling
