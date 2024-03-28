@@ -91,7 +91,7 @@ def _add_layer_data_to_viewer(
                 # this case should be impossible, but we'll check anyway.
                 raise TypeError(
                     trans._(
-                        "napari supports only Optional[<layer_data_type>], not {return_type}",
+                        'napari supports only Optional[<layer_data_type>], not {return_type}',
                         return_type=return_type,
                         deferred=True,
                     )

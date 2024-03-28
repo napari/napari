@@ -66,7 +66,13 @@ def transform_color(colors: Any) -> np.ndarray:
     for typ, handler in _color_switch.items():
         if issubclass(colortype, typ):
             return handler(colors)
-    raise ValueError(trans._("cannot convert type '{colortype}' to a color array.", deferred=True, colortype=colortype))
+    raise ValueError(
+        trans._(
+            "cannot convert type '{colortype}' to a color array.",
+            deferred=True,
+            colortype=colortype,
+        )
+    )
 
 
 @functools.lru_cache(maxsize=1024)

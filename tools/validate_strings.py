@@ -495,7 +495,7 @@ def find_issues(
                 and string.strip() != ''
                 and value not in SKIP_WORDS_GLOBAL
                 and not value.startswith(
-                    "napari:"
+                    'napari:'
                 )  # not fail on napari app-model commands
             ):
                 issues[fpath].append((_lineno, value))
@@ -530,7 +530,7 @@ def checks():
 # --- Tests
 # ----------------------------------------------------------------------------
 @pytest.mark.parametrize(
-    "file_to_check", _checks()[0].items(), ids=_checks()[0].keys()
+    'file_to_check', _checks()[0].items(), ids=_checks()[0].keys()
 )
 def test_missing_translations(file_to_check):
     print(
@@ -565,7 +565,7 @@ def test_missing_translations(file_to_check):
 
         print('\n')
 
-    print("\n")
+    print('\n')
 
     no_issues = not values
     assert no_issues
