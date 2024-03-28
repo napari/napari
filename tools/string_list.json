@@ -1158,7 +1158,7 @@
       "fragment",
       "iso_categorical",
       "void main()",
-      "\n        if (discard_fragment)\n            discard;\n        ",
+      "\n        if (discard_fragment)\n            discard;\n        "
     ],
     "napari/_vispy/volume.py": [
       "\n        // Apply colormap on mean value\n        gl_FragColor = applyColormap(meanval);\n        ",
@@ -1242,9 +1242,12 @@
     ],
     "napari/components/_layer_slicer.py": [
         "Found existing task for %s",
+        "napari.components._layer_slicer",
         "Slicing {len(not_done_futures)} tasks did not complete within timeout ({timeout}s).",
-        "_SliceResponse",
-        "napari.components._layer_slicer"
+        "_LayerSlicer._on_slice_done: %s",
+        "_LayerSlicer._slice_layers: %s",
+        "_LayerSlicer.shutdown",
+        "_LayerSlicer.submit: layers=%s, dims=%s, force=%s"
     ],
     "napari/components/_viewer_constants.py": [
       "bottom_left",
@@ -1478,6 +1481,7 @@
       "unlink_layers",
       "extent",
       "_extent_world",
+      "_extent_world_augmented",
       "_step_size"
     ],
     "napari/components/overlays/bounding_box.py": [
@@ -1522,6 +1526,7 @@
       "napari.Viewer: {self.title}",
       "ndisplay",
       "nearest",
+      "none",
       "opacity",
       "order",
       "rendering",
@@ -1603,6 +1608,7 @@
       "data",
       "metadata",
       "name",
+      "none",
       "opacity",
       "rotate",
       "scale",
@@ -1613,6 +1619,7 @@
       "translucent",
       "visible",
       "world2grid",
+      "<{cls.__name__} layer {self.name!r} at {hex(id(self))}>",
       "{cls.__name__}",
       "_double_click_modes",
       "data2physical",
@@ -1647,7 +1654,10 @@
     "napari/layers/image/_image_utils.py": ["dtype", "image", "labels", "ndim"],
     "napari/layers/image/_image_view.py": [],
     "napari/layers/image/_slice.py": [
-        "tile2data"
+      "none",
+      "tile2data",
+      "_ImageSliceResponse",
+      "_ImageView"
     ],
     "napari/layers/image/experimental/__init__.py": [],
     "napari/layers/image/experimental/_chunk_set.py": [],
@@ -1757,7 +1767,8 @@
       "interpolation3d",
       "depiction",
       "bicubic",
-      "cubic"
+      "cubic",
+      "none"
     ],
     "napari/layers/intensity_mixin.py": ["_contrast_limits", "slice"],
     "napari/layers/labels/__init__.py": [],
@@ -2669,7 +2680,6 @@
     "napari/utils/events/containers/__init__.py": [],
     "napari/utils/events/containers/_dict.py": [
       "Cannot add object with type {type(e)} to TypedDict expecting type {self._basetypes}",
-      "TypedMutableMapping[_T]",
       "_K",
       "_T"
     ],
@@ -2720,7 +2730,6 @@
     "napari/utils/events/containers/_set.py": [
       "[{i}]",
       "_T",
-      "changed",
       "events"
     ],
     "napari/utils/events/containers/_typed.py": [
@@ -3014,13 +3023,7 @@
       "trace_qt_events",
       "{label}"
     ],
-    "napari/utils/perf/_event.py": [
-      "Origin",
-      "Span",
-      "X",
-      "process_id thread_id",
-      "start_ns end_ns"
-    ],
+    "napari/utils/perf/_event.py": ["X"],
     "napari/utils/perf/_patcher.py": [
       "Patcher: [ERROR] {exc}",
       "Patcher: [WARN] skipping duplicate {target_str}",
