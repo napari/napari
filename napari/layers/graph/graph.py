@@ -342,7 +342,7 @@ class Graph(_BasePoints):
             if not data.is_spatial():
                 raise ValueError(
                     trans._(
-                        "Graph layer must be a spatial graph, have the `coords` attribute (`pos` in NetworkX)."
+                        'Graph layer must be a spatial graph, have the `coords` attribute (`pos` in NetworkX).'
                     )
                 )
             return data
@@ -410,7 +410,7 @@ class Graph(_BasePoints):
         if indices.ndim > 1:
             raise ValueError(
                 trans._(
-                    "Indices for removal must be 1-dim. Found {ndim}",
+                    'Indices for removal must be 1-dim. Found {ndim}',
                     ndim=indices.ndim,
                 )
             )
@@ -463,7 +463,7 @@ class Graph(_BasePoints):
         if indices.ndim > 1:
             raise ValueError(
                 trans._(
-                    "Indices for removal must be 1-dim. Found {ndim}",
+                    'Indices for removal must be 1-dim. Found {ndim}',
                     ndim=indices.ndim,
                 )
             )
@@ -515,7 +515,11 @@ class Graph(_BasePoints):
 
     def _update_props_and_style(self, data_size: int, prev_size: int) -> None:
         # Add/remove property and style values based on the number of new points.
-        with self.events.blocker_all(), self._border.events.blocker_all(), self._face.events.blocker_all():
+        with (
+            self.events.blocker_all(),
+            self._border.events.blocker_all(),
+            self._face.events.blocker_all(),
+        ):
             self._feature_table.resize(data_size)
             self.text.apply(self.features)
             if data_size < prev_size:
@@ -546,20 +550,20 @@ class Graph(_BasePoints):
                 # ensure each attribute is updated before refreshing
                 with self._block_refresh():
                     for attribute in (
-                        "shown",
-                        "size",
-                        "symbol",
-                        "border_width",
+                        'shown',
+                        'size',
+                        'symbol',
+                        'border_width',
                     ):
-                        if attribute == "shown":
+                        if attribute == 'shown':
                             default_value = True
                         else:
                             default_value = getattr(
-                                self, f"current_{attribute}"
+                                self, f'current_{attribute}'
                             )
                         new_values = np.repeat([default_value], adding, axis=0)
                         values = np.concatenate(
-                            (getattr(self, f"_{attribute}"), new_values),
+                            (getattr(self, f'_{attribute}'), new_values),
                             axis=0,
                         )
                         setattr(self, attribute, values)
@@ -571,6 +575,6 @@ class Graph(_BasePoints):
     def _get_state(self) -> Dict[str, Any]:
         # FIXME: this method can be removed once 'properties' argument is deprecreated.
         state = super()._get_state()
-        state.pop("properties", None)
-        state.pop("property_choices", None)
+        state.pop('properties', None)
+        state.pop('property_choices', None)
         return state
