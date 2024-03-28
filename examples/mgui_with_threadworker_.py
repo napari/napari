@@ -7,10 +7,11 @@ Note: this example requires python >= 3.9
 
 .. tags:: gui
 """
+from typing import Annotated
+
 from magicgui import magic_factory, widgets
 from skimage import data
 from skimage.feature import blob_log
-from typing_extensions import Annotated
 
 import napari
 from napari.qt.threading import FunctionWorker, thread_worker

@@ -21,7 +21,8 @@ session due to mis-represented colors.
 import functools
 import types
 import warnings
-from typing import Any, Callable, Dict, Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import Any, Callable, Optional, Union
 
 import numpy as np
 from vispy.color import ColorArray, get_color_dict, get_color_names
@@ -379,7 +380,7 @@ def _normalize_color_array(colors: np.ndarray) -> np.ndarray:
     return colors.astype(np.float32)
 
 
-_color_switch: Dict[Any, Callable] = {
+_color_switch: dict[Any, Callable] = {
     str: _handle_str,
     np.str_: _handle_str,
     list: _handle_list_like,

@@ -8,14 +8,10 @@ from __future__ import annotations
 import contextlib
 import logging
 from collections import defaultdict
+from collections.abc import Generator, Iterable, MutableSequence
 from typing import (
-    DefaultDict,
-    Generator,
-    Iterable,
-    MutableSequence,
     NewType,
     Optional,
-    Tuple,
     TypeVar,
     Union,
     cast,
@@ -28,9 +24,9 @@ from napari.utils.translations import trans
 
 logger = logging.getLogger(__name__)
 
-NestedIndex = Tuple[Index, ...]
+NestedIndex = tuple[Index, ...]
 MaybeNestedIndex = Union[Index, NestedIndex]
-ParentIndex = NewType('ParentIndex', Tuple[int, ...])
+ParentIndex = NewType('ParentIndex', tuple[int, ...])
 _T = TypeVar('_T')
 
 
@@ -327,7 +323,7 @@ class NestableEventedList(EventedList[_T]):
 
         # need to update indices as we pop, so we keep track of the indices
         # we have previously popped
-        popped: DefaultDict[NestedIndex, list[int]] = defaultdict(list)
+        popped: defaultdict[NestedIndex, list[int]] = defaultdict(list)
         dumped: list[int] = []
 
         # we iterate indices from the end first, so pop() always works
@@ -483,8 +479,8 @@ class NestableEventedList(EventedList[_T]):
         self,
         start: int = 0,
         stop: Optional[int] = None,
-        root: Tuple[int, ...] = (),
-    ) -> Generator[Union[int, Tuple[int]]]:
+        root: tuple[int, ...] = (),
+    ) -> Generator[Union[int, tuple[int]]]:
         """Iter indices from start to stop.
 
         Depth first traversal of the tree
@@ -494,7 +490,7 @@ class NestableEventedList(EventedList[_T]):
             if isinstance(item, NestableEventedList):
                 yield from item._iter_indices(root=(*root, i))
 
-    def has_index(self, index: Union[int, Tuple[int, ...]]) -> bool:
+    def has_index(self, index: Union[int, tuple[int, ...]]) -> bool:
         """Return true if `index` is valid for this nestable list."""
         if isinstance(index, int):
             return -len(self) <= index < len(self)

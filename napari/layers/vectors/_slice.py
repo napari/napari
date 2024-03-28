@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from typing import Any, Union
 
 import numpy as np
+import numpy.typing as npt
 
 from napari.layers.base._slice import _next_request_id
 from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
@@ -92,23 +93,7 @@ class _VectorSliceRequest:
             request_id=self.id,
         )
 
-    def _get_out_of_display_slice_data(self, not_disp, not_disp_indices):
-        """This method slices in the out-of-display case."""
-        data = self.data[:, 0, not_disp]
-        distances = abs(data - not_disp_indices)
-        # get the scaled projected vectors
-        projected_lengths = abs(self.data[:, 1, not_disp] * self.length)
-        # find where the distance to plane is less than the scaled vector
-        matches = np.all(distances <= projected_lengths, axis=1)
-        alpha_match = projected_lengths[matches]
-        alpha_match[alpha_match == 0] = 1
-        alpha_per_dim = (alpha_match - distances[matches]) / alpha_match
-        alpha_per_dim[alpha_match == 0] = 1
-        alpha = np.prod(alpha_per_dim, axis=1).astype(float)
-        slice_indices = np.where(matches)[0].astype(int)
-        return slice_indices, alpha
-
-    def _get_slice_data(self, not_disp):
+    def _get_slice_data(self, not_disp: list[int]) -> tuple[npt.NDArray, int]:
         data = self.data[:, 0, not_disp]
         alphas = 1
 
