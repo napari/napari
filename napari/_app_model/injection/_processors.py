@@ -17,6 +17,7 @@ from typing import (
 from napari import layers, types, viewer
 from napari._app_model.injection._providers import _provide_viewer
 from napari.layers._source import layer_source
+from napari.utils.translations import trans
 
 
 def _add_layer_data_tuples_to_viewer(
@@ -89,7 +90,11 @@ def _add_layer_data_to_viewer(
             ] is not type(None):
                 # this case should be impossible, but we'll check anyway.
                 raise TypeError(
-                    f'napari supports only Optional[<layer_data_type>], not {return_type}'
+                    trans._(
+                        'napari supports only Optional[<layer_data_type>], not {return_type}',
+                        return_type=return_type,
+                        deferred=True,
+                    )
                 )
             return_type = return_type.__args__[0]
         layer_type = return_type.__name__.replace('Data', '').lower()

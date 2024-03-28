@@ -88,7 +88,10 @@ class FindTransStrings(ast.NodeVisitor):
         # determine which one is used.
         for idx, arg in enumerate(args):
             found_vars = set()
-            check_arg = arg[:]
+            if isinstance(arg, ast.Name):
+                check_arg = arg.id
+            else:
+                check_arg = arg[:]
             check_kwargs = {}
             while True:
                 try:
@@ -298,7 +301,7 @@ def compress_str(gen):
 
     """
     acc, acc_line = [], None
-    for toktype, tokstr, (lineno, _), _, _ in gen:
+    for toktype, tokstr, (lineno, _1), _2, _3 in gen:
         if toktype not in (tokenize.STRING, tokenize.NL):
             if acc:
                 nt = repr(''.join(acc))
@@ -396,6 +399,8 @@ def find_trans_strings(
     trans_strings = {}
     show_trans_strings.visit(module)
     for string in show_trans_strings._found:
+        if isinstance(string, ast.Name):
+            string = string.id
         key = ' '.join(list(string.split()))
         trans_strings[key] = string
 
@@ -489,6 +494,9 @@ def find_issues(
                 and string != ''
                 and string.strip() != ''
                 and value not in SKIP_WORDS_GLOBAL
+                and not value.startswith(
+                    'napari:'
+                )  # not fail on napari app-model commands
             ):
                 issues[fpath].append((_lineno, value))
             elif value in skip_words_for_file_check:
@@ -521,13 +529,16 @@ def checks():
 
 # --- Tests
 # ----------------------------------------------------------------------------
-def test_missing_translations(checks):
-    issues, _, _ = checks
+@pytest.mark.parametrize(
+    'file_to_check', _checks()[0].items(), ids=_checks()[0].keys()
+)
+def test_missing_translations(file_to_check):
     print(
         '\nSome strings on the following files might need to be translated '
         'or added to the skip list.\nSkip list is located at '
         '`tools/strings_list.py` file.\n\n'
     )
+
     for fpath, values in issues.items():
         print(f"{fpath}\n{'*' * len(fpath)}")
         unique_values = set()
@@ -554,7 +565,9 @@ def test_missing_translations(checks):
 
         print('\n')
 
-    no_issues = not issues
+    print('\n')
+
+    no_issues = not values
     assert no_issues
 
 
