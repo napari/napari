@@ -160,8 +160,6 @@ class QtAxisListModel(QtListModel[AxisModel]):
             | Qt.ItemFlag.ItemIsUserCheckable
             | Qt.ItemFlag.ItemIsEnabled
             | Qt.ItemFlag.ItemNeverHasChildren
+            | Qt.ItemFlag.ItemIsDragEnabled
         )
-        if self.getItem(index).rollable:
-            # we only allow dragging if the item is rollable
-            flags |= Qt.ItemFlag.ItemIsDragEnabled
         return flags
