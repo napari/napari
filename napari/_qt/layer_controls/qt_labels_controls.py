@@ -68,6 +68,8 @@ class QtLabelsControls(QtLayerControls):
         Button to select PAINT mode on Labels layer.
     panzoom_button : qtpy.QtWidgets.QtModeRadioButton
         Button to select PAN_ZOOM mode on Labels layer.
+    transform_button : qtpy.QtWidgets.QtModeRadioButton
+        Button to select TRANSFORM mode on Labels layer.
     pick_button : qtpy.QtWidgets.QtModeRadioButton
         Button to select PICKER mode on Labels layer.
     preserveLabelsCheckBox : qtpy.QtWidgets.QCheckBox
@@ -191,12 +193,21 @@ class QtLabelsControls(QtLayerControls):
 
         self.panzoom_button = QtModeRadioButton(
             layer,
-            'pan',
+            'pan_zoom',
             Mode.PAN_ZOOM,
             checked=True,
         )
         action_manager.bind_button(
             'napari:activate_labels_pan_zoom_mode', self.panzoom_button
+        )
+
+        self.transform_button = QtModeRadioButton(
+            layer,
+            'pan',
+            Mode.TRANSFORM,
+        )
+        action_manager.bind_button(
+            'napari:activate_labels_transform_mode', self.transform_button
         )
 
         self.pick_button = QtModeRadioButton(layer, 'picker', Mode.PICK)
@@ -249,6 +260,7 @@ class QtLabelsControls(QtLayerControls):
 
         self.button_group = QButtonGroup(self)
         self.button_group.addButton(self.panzoom_button)
+        self.button_group.addButton(self.transform_button)
         self.button_group.addButton(self.paint_button)
         self.button_group.addButton(self.polygon_button)
         self.button_group.addButton(self.pick_button)
@@ -265,6 +277,7 @@ class QtLabelsControls(QtLayerControls):
         button_row.addWidget(self.fill_button)
         button_row.addWidget(self.pick_button)
         button_row.addWidget(self.panzoom_button)
+        button_row.addWidget(self.transform_button)
         button_row.setSpacing(4)
         button_row.setContentsMargins(0, 0, 0, 5)
 
@@ -345,8 +358,8 @@ class QtLabelsControls(QtLayerControls):
         Raises
         ------
         ValueError
-            Raise error if event.mode is not PAN_ZOOM, PICK, PAINT, ERASE, or
-            FILL
+            Raise error if event.mode is not PAN_ZOOM, PICK, PAINT, ERASE, FILL
+            or TRANSFORM
         """
         mode = event.mode
         if mode == Mode.PAN_ZOOM:
@@ -361,7 +374,9 @@ class QtLabelsControls(QtLayerControls):
             self.fill_button.setChecked(True)
         elif mode == Mode.ERASE:
             self.erase_button.setChecked(True)
-        elif mode != Mode.TRANSFORM:
+        elif mode == Mode.TRANSFORM:
+            self.transform_button.setChecked(True)
+        else:
             raise ValueError(trans._('Mode not recognized'))
 
     def changeRendering(self, text):

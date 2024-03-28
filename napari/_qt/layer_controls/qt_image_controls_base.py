@@ -17,10 +17,16 @@ from superqt import QDoubleRangeSlider
 
 from napari._qt.layer_controls.qt_colormap_combobox import QtColormapComboBox
 from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
-from napari._qt.utils import qt_signals_blocked
+from napari._qt.utils import (
+    qt_signals_blocked,
+    set_widgets_enabled_with_opacity,
+)
 from napari._qt.widgets._slider_compat import QDoubleSlider
+from napari._qt.widgets.qt_mode_buttons import QtModeRadioButton
 from napari._qt.widgets.qt_range_slider_popup import QRangeSliderPopup
+from napari.layers.base._base_constants import Mode
 from napari.utils._dtype import normalize_dtype
+from napari.utils.action_manager import action_manager
 from napari.utils.colormaps import AVAILABLE_COLORMAPS
 from napari.utils.events.event_utils import connect_no_arg, connect_setattr
 from napari.utils.translations import trans
@@ -60,6 +66,18 @@ class QtBaseImageControls(QtLayerControls):
 
     Attributes
     ----------
+    PAN_ZOOM_ACTION_NAME : str
+        String id for the pan-zoom action to bind to the pan_zoom button.
+    TRANSFORM_ACTION_NAME : str
+        String id for the transform action to bind to the transform button.
+    button_group : qtpy.QtWidgets.QButtonGroup
+        Button group for image based layer modes (PAN_ZOOM TRANSFORM).
+    button_grid : qtpy.QtWidgets.QGridLayout
+        GridLayout for the layer mode buttons
+    panzoom_button : qtpy.QtWidgets.QtModeRadioButton
+        Button to pan/zoom shapes layer.
+    transform_button : qtpy.QtWidgets.QtModeRadioButton
+        Button to transform shapes layer.
     clim_popup : napari._qt.qt_range_slider_popup.QRangeSliderPopup
         Popup widget launching the contrast range slider.
     colorbarLabel : qtpy.QtWidgets.QLabel
@@ -75,10 +93,15 @@ class QtBaseImageControls(QtLayerControls):
 
     """
 
+    PAN_ZOOM_ACTION_NAME = 'activate_image_pan_zoom_mode'
+    TRANSFORM_ACTION_NAME = 'activate_image_transform_mode'
+
     def __init__(self, layer: Image) -> None:
         super().__init__(layer)
 
         self.layer.events.mode.connect(self._on_mode_change)
+        self.layer.events.editable.connect(self._on_editable_or_visible_change)
+        self.layer.events.visible.connect(self._on_editable_or_visible_change)
         self.layer.events.colormap.connect(self._on_colormap_change)
         self.layer.events.gamma.connect(self._on_gamma_change)
         self.layer.events.contrast_limits.connect(
@@ -87,12 +110,6 @@ class QtBaseImageControls(QtLayerControls):
         self.layer.events.contrast_limits_range.connect(
             self._on_contrast_limits_range_change
         )
-
-        from napari._qt.widgets.qt_mode_buttons import (
-            QtModeRadioButton,
-        )
-        from napari.layers.image._image_constants import Mode
-        from napari.utils.action_manager import action_manager
 
         def _radio_button(
             parent,
@@ -145,18 +162,20 @@ class QtBaseImageControls(QtLayerControls):
             layer,
             'pan_zoom',
             Mode.PAN_ZOOM,
-            'activate_image_pan_zoom_mode',
+            self.PAN_ZOOM_ACTION_NAME,
             extra_tooltip_text=trans._('(or hold Space)'),
             checked=True,
         )
         self.transform_button = _radio_button(
-            layer, 'pan', Mode.TRANSFORM, 'activate_image_transform_mode'
+            layer, 'pan', Mode.TRANSFORM, self.TRANSFORM_ACTION_NAME
         )
+
+        self._EDIT_BUTTONS = (self.transform_button,)
 
         self.button_group = QButtonGroup(self)
         self.button_group.addButton(self.panzoom_button)
         self.button_group.addButton(self.transform_button)
-        # self._on_editable_or_visible_change()
+        self._on_editable_or_visible_change()
 
         self.button_grid = QGridLayout()
         self.button_grid.addWidget(self.panzoom_button, 0, 6)
@@ -230,19 +249,11 @@ class QtBaseImageControls(QtLayerControls):
         self.layer.colormap = self.colormapComboBox.currentData()
 
     def _on_mode_change(self, event):
-        """Update ticks in checkbox widgets when shapes layer mode changed.
+        """Update ticks in checkbox widgets when image based layer mode changed.
 
-        Available modes for shapes layer are:
-        * SELECT
-        * DIRECT
+        Available modes for image based layer are:
         * PAN_ZOOM
-        * ADD_RECTANGLE
-        * ADD_ELLIPSE
-        * ADD_LINE
-        * ADD_PATH
-        * ADD_POLYGON
-        * VERTEX_INSERT
-        * VERTEX_REMOVE
+        * TRANSFORM
 
         Parameters
         ----------
@@ -252,10 +263,8 @@ class QtBaseImageControls(QtLayerControls):
         Raises
         ------
         ValueError
-            Raise error if event.mode is not ADD, PAN_ZOOM, or SELECT.
+            Raise error if event.mode is not PAN_ZOOM or TRANSFORM.
         """
-        from napari.layers.image._image_constants import Mode
-
         mode_buttons = {
             Mode.PAN_ZOOM: self.panzoom_button,
             Mode.TRANSFORM: self.transform_button,
@@ -263,10 +272,18 @@ class QtBaseImageControls(QtLayerControls):
 
         if event.mode in mode_buttons:
             mode_buttons[event.mode].setChecked(True)
-        elif event.mode != Mode.TRANSFORM:
+        else:
             raise ValueError(
                 trans._("Mode '{mode}'not recognized", mode=event.mode)
             )
+
+    def _on_editable_or_visible_change(self):
+        """Receive layer model editable/visible change event & enable/disable buttons."""
+        set_widgets_enabled_with_opacity(
+            self,
+            self._EDIT_BUTTONS,
+            self.layer.editable and self.layer.visible,
+        )
 
     def _on_contrast_limits_change(self):
         """Receive layer model contrast limits change event and update slider."""

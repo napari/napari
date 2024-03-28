@@ -21,7 +21,7 @@ def register_points_mode_action(description):
 
 
 @register_points_mode_action(trans._('Transform'))
-def activate_points_transform_mode(layer):
+def activate_points_transform_mode(layer: Points):
     layer.mode = Mode.TRANSFORM
 
 

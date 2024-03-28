@@ -16,7 +16,7 @@ def register_surface_mode_action(description):
 
 
 @register_surface_mode_action(trans._('Transform'))
-def activate_surface_transform_mode(layer):
+def activate_surface_transform_mode(layer: Surface):
     layer.mode = Mode.TRANSFORM
 
 

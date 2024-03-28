@@ -46,7 +46,7 @@ def register_shapes_mode_action(description):
 
 
 @register_shapes_mode_action(trans._('Transform'))
-def activate_shapes_transform_mode(layer):
+def activate_shapes_transform_mode(layer: Shapes):
     layer.mode = Mode.TRANSFORM
 
 

@@ -39,7 +39,7 @@ class QtShapesControls(QtLayerControls):
     button_group : qtpy.QtWidgets.QButtonGroup
         Button group for shapes layer modes
         (SELECT, DIRECT, PAN_ZOOM, ADD_RECTANGLE, ADD_ELLIPSE, ADD_LINE,
-        ADD_PATH, ADD_POLYGON, VERTEX_INSERT, VERTEX_REMOVE).
+        ADD_PATH, ADD_POLYGON, VERTEX_INSERT, VERTEX_REMOVE, TRANSFORM).
     delete_button : qtpy.QtWidgets.QtModePushButton
         Button to delete selected shapes
     direct_button : qtpy.QtWidgets.QtModeRadioButton
@@ -60,6 +60,8 @@ class QtShapesControls(QtLayerControls):
         Button to move shape(s) to the front.
     panzoom_button : qtpy.QtWidgets.QtModeRadioButton
         Button to pan/zoom shapes layer.
+    transform_button : qtpy.QtWidgets.QtModeRadioButton
+        Button to transform shapes layer.
     path_button : qtpy.QtWidgets.QtModeRadioButton
         Button to add paths to shapes layer.
     polygon_button : qtpy.QtWidgets.QtModeRadioButton
@@ -173,11 +175,18 @@ class QtShapesControls(QtLayerControls):
 
         self.panzoom_button = _radio_button(
             layer,
-            'pan',
+            'pan_zoom',
             Mode.PAN_ZOOM,
             'activate_shapes_pan_zoom_mode',
             extra_tooltip_text=trans._('(or hold Space)'),
             checked=True,
+        )
+
+        self.transform_button = _radio_button(
+            layer,
+            'pan',
+            Mode.TRANSFORM,
+            'activate_shapes_transform_mode',
         )
 
         self.rectangle_button = _radio_button(
@@ -269,12 +278,14 @@ class QtShapesControls(QtLayerControls):
             self.delete_button,
             self.move_back_button,
             self.move_front_button,
+            self.transform_button,
         )
 
         self.button_group = QButtonGroup(self)
         self.button_group.addButton(self.select_button)
         self.button_group.addButton(self.direct_button)
         self.button_group.addButton(self.panzoom_button)
+        self.button_group.addButton(self.transform_button)
         self.button_group.addButton(self.rectangle_button)
         self.button_group.addButton(self.ellipse_button)
         self.button_group.addButton(self.line_button)
@@ -286,12 +297,13 @@ class QtShapesControls(QtLayerControls):
         self._on_editable_or_visible_change()
 
         button_grid = QGridLayout()
-        button_grid.addWidget(self.vertex_remove_button, 0, 2)
-        button_grid.addWidget(self.vertex_insert_button, 0, 3)
-        button_grid.addWidget(self.delete_button, 0, 4)
-        button_grid.addWidget(self.direct_button, 0, 5)
-        button_grid.addWidget(self.select_button, 0, 6)
-        button_grid.addWidget(self.panzoom_button, 0, 7)
+        button_grid.addWidget(self.vertex_remove_button, 0, 1)
+        button_grid.addWidget(self.vertex_insert_button, 0, 2)
+        button_grid.addWidget(self.delete_button, 0, 3)
+        button_grid.addWidget(self.direct_button, 0, 4)
+        button_grid.addWidget(self.select_button, 0, 5)
+        button_grid.addWidget(self.panzoom_button, 0, 6)
+        button_grid.addWidget(self.transform_button, 0, 7)
         button_grid.addWidget(self.move_back_button, 1, 0)
         button_grid.addWidget(self.move_front_button, 1, 1)
         button_grid.addWidget(self.ellipse_button, 1, 2)
@@ -343,8 +355,10 @@ class QtShapesControls(QtLayerControls):
         * ADD_LINE
         * ADD_PATH
         * ADD_POLYGON
+        * ADD_POLYGON_LASSO
         * VERTEX_INSERT
         * VERTEX_REMOVE
+        * TRANSFORM
 
         Parameters
         ----------
@@ -354,7 +368,7 @@ class QtShapesControls(QtLayerControls):
         Raises
         ------
         ValueError
-            Raise error if event.mode is not ADD, PAN_ZOOM, or SELECT.
+            Raise error if event.mode is not one of the available modes.
         """
         mode_buttons = {
             Mode.SELECT: self.select_button,
@@ -368,13 +382,14 @@ class QtShapesControls(QtLayerControls):
             Mode.ADD_POLYGON_LASSO: self.polygon_lasso_button,
             Mode.VERTEX_INSERT: self.vertex_insert_button,
             Mode.VERTEX_REMOVE: self.vertex_remove_button,
+            Mode.TRANSFORM: self.transform_button,
         }
 
         if event.mode in mode_buttons:
             mode_buttons[event.mode].setChecked(True)
-        elif event.mode != Mode.TRANSFORM:
+        else:
             raise ValueError(
-                trans._("Mode '{mode}'not recognized", mode=event.mode)
+                trans._("Mode '{mode}' not recognized", mode=event.mode)
             )
 
     def changeFaceColor(self, color: np.ndarray):

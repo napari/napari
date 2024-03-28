@@ -55,6 +55,8 @@ class QtPointsControls(QtLayerControls):
         Checkbox to indicate whether to render out of slice.
     panzoom_button : qtpy.QtWidgets.QtModeRadioButton
         Button for pan/zoom mode.
+    transform_button : qtpy.QtWidgets.QtModeRadioButton
+        Button to select transform mode.
     select_button : qtpy.QtWidgets.QtModeRadioButton
         Button to select points from layer.
     sizeSlider : qtpy.QtWidgets.QSlider
@@ -170,12 +172,20 @@ class QtPointsControls(QtLayerControls):
         )
         self.panzoom_button = QtModeRadioButton(
             layer,
-            'pan',
+            'pan_zoom',
             Mode.PAN_ZOOM,
             checked=True,
         )
         action_manager.bind_button(
             'napari:activate_points_pan_zoom_mode', self.panzoom_button
+        )
+        self.transform_button = QtModeRadioButton(
+            layer,
+            'pan',
+            Mode.TRANSFORM,
+        )
+        action_manager.bind_button(
+            'napari:activate_points_transform_mode', self.transform_button
         )
         self.delete_button = QtModePushButton(
             layer,
@@ -200,6 +210,7 @@ class QtPointsControls(QtLayerControls):
         self.button_group.addButton(self.select_button)
         self.button_group.addButton(self.addition_button)
         self.button_group.addButton(self.panzoom_button)
+        self.button_group.addButton(self.transform_button)
         self._on_editable_or_visible_change()
 
         button_row = QHBoxLayout()
@@ -208,6 +219,7 @@ class QtPointsControls(QtLayerControls):
         button_row.addWidget(self.addition_button)
         button_row.addWidget(self.select_button)
         button_row.addWidget(self.panzoom_button)
+        button_row.addWidget(self.transform_button)
         button_row.setContentsMargins(0, 0, 0, 5)
         button_row.setSpacing(4)
 
@@ -246,7 +258,9 @@ class QtPointsControls(QtLayerControls):
             self.select_button.setChecked(True)
         elif mode == Mode.PAN_ZOOM:
             self.panzoom_button.setChecked(True)
-        elif mode != Mode.TRANSFORM:
+        elif mode == Mode.TRANSFORM:
+            self.transform_button.setChecked(True)
+        else:
             raise ValueError(trans._('Mode not recognized {mode}', mode=mode))
 
     def changeCurrentSymbol(self, text):

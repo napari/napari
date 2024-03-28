@@ -16,7 +16,7 @@ def register_tracks_mode_action(description):
 
 
 @register_tracks_mode_action(trans._('Transform'))
-def activate_tracks_transform_mode(layer):
+def activate_tracks_transform_mode(layer: Tracks):
     layer.mode = Mode.TRANSFORM
 
 

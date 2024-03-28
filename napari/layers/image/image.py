@@ -5,10 +5,6 @@ from __future__ import annotations
 
 import warnings
 from typing import (
-    Callable,
-    ClassVar,
-    Dict,
-    Generator,
     Literal,
     Tuple,
     Union,
@@ -21,17 +17,11 @@ from scipy import ndimage as ndi
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
 from napari.layers._scalar_field.scalar_field import ScalarFieldBase
-from napari.layers.base import Layer, no_op
-from napari.layers.base._base_mouse_bindings import (
-    highlight_box_handles,
-    transform_with_box,
-)
 from napari.layers.image._image_constants import (
     ImageProjectionMode,
     ImageRendering,
     Interpolation,
     InterpolationStr,
-    Mode,
 )
 from napari.layers.image._image_utils import guess_rgb
 from napari.layers.image._slice import _ImageSliceResponse
@@ -40,9 +30,7 @@ from napari.layers.utils.layer_utils import calc_data_range
 from napari.utils._dtype import get_dtype_limits, normalize_dtype
 from napari.utils.colormaps import ensure_colormap
 from napari.utils.colormaps.colormap_utils import _coerce_contrast_limits
-from napari.utils.events import Event
 from napari.utils.migrations import rename_argument
-from napari.utils.misc import StringEnum
 from napari.utils.translations import trans
 
 __all__ = ('Image',)
@@ -229,23 +217,6 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         `True`.
     """
 
-    _modeclass = Mode
-    ModeCallable = Callable[
-        ['Layer', Event], Union[None, Generator[None, None, None]]
-    ]
-    _drag_modes: ClassVar[Dict[StringEnum, ModeCallable]] = {
-        Mode.PAN_ZOOM: no_op,
-        Mode.TRANSFORM: transform_with_box,
-    }
-
-    _move_modes: ClassVar[Dict[StringEnum, ModeCallable]] = {
-        Mode.PAN_ZOOM: no_op,
-        Mode.TRANSFORM: highlight_box_handles,
-    }
-    _cursor_modes: ClassVar[Dict[StringEnum, str]] = {
-        Mode.PAN_ZOOM: 'standard',
-        Mode.TRANSFORM: 'standard',
-    }
     _projectionclass = ImageProjectionMode
 
     @rename_argument(

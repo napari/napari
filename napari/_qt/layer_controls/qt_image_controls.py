@@ -38,6 +38,18 @@ class QtImageControls(QtBaseImageControls):
 
     Attributes
     ----------
+    PAN_ZOOM_ACTION_NAME : str
+        String id for the pan-zoom action to bind to the pan_zoom button.
+    TRANSFORM_ACTION_NAME : str
+        String id for the transform action to bind to the transform button.
+    button_group : qtpy.QtWidgets.QButtonGroup
+        Button group for image based layer modes (PAN_ZOOM TRANSFORM).
+    button_grid : qtpy.QtWidgets.QGridLayout
+        GridLayout for the layer mode buttons
+    panzoom_button : qtpy.QtWidgets.QtModeRadioButton
+        Button to pan/zoom shapes layer.
+    transform_button : qtpy.QtWidgets.QtModeRadioButton
+        Button to transform shapes layer.
     attenuationSlider : qtpy.QtWidgets.QSlider
         Slider controlling attenuation rate for `attenuated_mip` mode.
     attenuationLabel : qtpy.QtWidgets.QLabel
