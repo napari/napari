@@ -5,7 +5,7 @@ from napari.layers import Layer
 
 class SampleLayer(Layer):
 
-    def __init__(
+    def __init__(  # type: ignore [no-untyped-def]
         self,
         data,
         ndim,
@@ -27,7 +27,7 @@ class SampleLayer(Layer):
         translate=None,
         units=None,
         visible=True,
-    ):
+    ) -> None:
         super().__init__(
             ndim=ndim,
             data=data,
@@ -48,34 +48,39 @@ class SampleLayer(Layer):
             translate=translate,
             units=units,
             visible=visible,
-        )
+        )  # type: ignore [no-untyped-call]
         self._data = data
         self.a = 2
 
     @property
-    def data(self):
+    def data(self) -> np.ndarray:
         return self._data
+
+    @data.setter
+    def data(self, data: np.ndarray) -> None:
+        self._data = data
+        self.events.data(value=data)
 
     @property
     def _extent_data(self) -> np.ndarray:
-        pass
+        return np.array([0] * self.ndim)
 
     def _get_ndim(self) -> int:
         return self.ndim
 
-    def _get_state(self):
+    def _get_state(self) -> dict:
         base_state = self._get_base_state()
         base_state['data'] = self.data
         return base_state
 
-    def _set_view_slice(self):
+    def _set_view_slice(self) -> None:
         pass
 
-    def _update_thumbnail(self):
+    def _update_thumbnail(self) -> None:
         pass
 
-    def _get_value(self, position):
+    def _get_value(self, position: tuple[int, ...]) -> np.ndarray:
         return self.data[position]
 
-    def _post_init(self):
+    def _post_init(self) -> None:
         self.a = 1
