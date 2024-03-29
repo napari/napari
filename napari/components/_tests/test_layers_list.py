@@ -613,3 +613,26 @@ def test_inheritance_units(unit_register):
     layers.append(l2)
     assert l2.units == {f'dim_{i}': unit_register.nanometer for i in range(2)}
     # uncomment the above line to see the test fail
+
+
+def test_set_units(unit_register):
+    """Test if default axes labels are overwritten after add to layer list."""
+    l1 = SampleLayer(
+        np.zeros((5, 10, 10)), axes_labels=['z', 'y', 'x'], units='nm'
+    )
+    l2 = SampleLayer(np.zeros((10, 10)), axes_labels=['y', 'x'])
+    layers = LayerList([l1, l2])
+    assert layers.units == {
+        'x': unit_register.nm,
+        'y': unit_register.nm,
+        'z': unit_register.nm,
+    }
+    assert l2.units == {'x': unit_register.nm, 'y': unit_register.nm}
+
+    layers.units = {'x': 'um', 'y': 'um', 'z': 's'}
+    assert layers.units == {
+        'x': unit_register.um,
+        'y': unit_register.um,
+        'z': unit_register.second,
+    }
+    assert l2.units == {'x': unit_register.um, 'y': unit_register.um}

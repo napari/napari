@@ -218,6 +218,11 @@ class LayerList(SelectableEventedList[Layer]):
                     res[axis_label] = unit
         return res
 
+    @units.setter
+    def units(self, units: dict[str, pint.Unit]):
+        for layer in self:
+            layer.units = {k: units[k] for k in layer.axes_labels}
+
     @property
     def parameters_with_default_values(self):
         res = OPTIONAL_PARAMETERS.copy()
