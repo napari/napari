@@ -1,22 +1,17 @@
+import os
 import sys
 from inspect import Parameter, getdoc, signature
 
 from napari.utils.misc import camel_to_snake
 from napari.utils.translations import trans
 
-template = """def {name}{signature}:
-    kwargs = locals()
-    kwargs.pop('self', None)
-    pos_kwargs = dict()
-    for name in getattr({cls_name}.__init__, "_deprecated_constructor_args", []):
-        pos_kwargs[name] = kwargs.pop(name, None)
-    layer = {cls_name}(**kwargs)
-    for name, value in pos_kwargs.items():
-        if value is not None:
-            setattr(layer, name, value)
-    self.layers.append(layer)
-    return layer
-"""
+tmpl_path = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), 'add_layer.py_tmpl'
+)
+
+
+with open(tmpl_path) as f:
+    template = f.read()
 
 
 def create_func(cls, name=None, doc=None, filename: str = '<string>'):
@@ -86,7 +81,7 @@ def create_func(cls, name=None, doc=None, filename: str = '<string>'):
     )
 
     execdict = {cls_name: cls, 'napari': sys.modules.get('napari')}
-    code = compile(src, filename=filename, mode='exec')
+    code = compile(src, filename=tmpl_path, mode='exec')
     exec(code, execdict)
     func = execdict[name]
 
