@@ -90,7 +90,7 @@ layer = viewer.add_shapes(a, shape_type=['polygon'])
 # these settings help to visualise the polygon data directly in the
 # shapes layer.
 layer.mode = 'direct'
-layer.edge_width = 0
+layer.edge_width = 0.1
 layer.selected_data = {0}
 
 napari.run()
