@@ -577,7 +577,7 @@ def test_axes_labels():
     layers = LayerList()
     l1 = SampleLayer(np.zeros((10, 10)))
     l2 = SampleLayer(np.zeros((5, 10, 10)))
-    assert layers.axes_labels == []
+    assert layers.axes_labels == ['dim_1', 'dim_0']
     layers.append(l1)
     assert layers.axes_labels == ['dim_1', 'dim_0']
     layers.append(l2)

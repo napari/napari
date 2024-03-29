@@ -198,6 +198,8 @@ class LayerList(SelectableEventedList[Layer]):
 
     @property
     def axes_labels(self) -> list[str]:
+        if not self:
+            return ['dim_1', 'dim_0']
         res = []
         seen = set()
         for layer in self:
