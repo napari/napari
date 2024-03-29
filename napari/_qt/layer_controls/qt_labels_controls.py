@@ -2,13 +2,14 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from qtpy.QtCore import Qt
-from qtpy.QtGui import QColor, QPainter
+from qtpy.QtGui import QColor, QMouseEvent, QPainter
 from qtpy.QtWidgets import (
     QButtonGroup,
     QCheckBox,
     QComboBox,
     QHBoxLayout,
     QLabel,
+    QMessageBox,
     QSpinBox,
     QWidget,
 )
@@ -207,8 +208,11 @@ class QtLabelsControls(QtLayerControls):
             Mode.TRANSFORM,
         )
         action_manager.bind_button(
-            'napari:activate_labels_transform_mode', self.transform_button
+            'napari:activate_labels_transform_mode',
+            self.transform_button,
+            extra_tooltip_text=trans._('(use Alt-Left mouse click to reset)'),
         )
+        self.transform_button.installEventFilter(self)
 
         self.pick_button = QtModeRadioButton(layer, 'picker', Mode.PICK)
         action_manager.bind_button(
@@ -256,6 +260,7 @@ class QtLabelsControls(QtLayerControls):
             self.pick_button,
             self.fill_button,
             self.erase_button,
+            self.transform_button,
         )
 
         self.button_group = QButtonGroup(self)
@@ -561,6 +566,24 @@ class QtLabelsControls(QtLayerControls):
     def deleteLater(self):
         disconnect_events(self.layer.events, self.colorBox)
         super().deleteLater()
+
+    def eventFilter(self, qobject, event):
+        if (
+            qobject == self.transform_button
+            and event.type() == QMouseEvent.MouseButtonRelease
+            and event.button() == Qt.MouseButton.LeftButton
+            and event.modifiers() == Qt.AltModifier
+        ):
+            result = QMessageBox.warning(
+                self,
+                trans._('Reset transform'),
+                trans._('Are you sure you want to reset transforms?'),
+                QMessageBox.Yes | QMessageBox.No,
+            )
+            if result == QMessageBox.Yes:
+                self.layer._reset_affine()
+                return True
+        return super().eventFilter(qobject, event)
 
 
 class QtColorBox(QWidget):

@@ -1,11 +1,13 @@
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import Qt
+from qtpy.QtGui import QMouseEvent
 from qtpy.QtWidgets import (
     QButtonGroup,
     QCheckBox,
     QComboBox,
     QGridLayout,
+    QMessageBox,
     QSlider,
 )
 
@@ -104,7 +106,7 @@ class QtTracksControls(QtLayerControls):
             action_manager.bind_button(
                 action_name,
                 btn,
-                extra_tooltip_text='',
+                extra_tooltip_text=extra_tooltip_text,
             )
             return btn
 
@@ -117,8 +119,14 @@ class QtTracksControls(QtLayerControls):
             checked=True,
         )
         self.transform_button = _radio_button(
-            layer, 'pan', Mode.TRANSFORM, 'activate_tracks_transform_mode'
+            layer,
+            'pan',
+            Mode.TRANSFORM,
+            'activate_tracks_transform_mode',
+            extra_tooltip_text=trans._('(use Alt-Left mouse click to reset)'),
         )
+        self.transform_button.installEventFilter(self)
+
         self._EDIT_BUTTONS = (self.transform_button,)
 
         self.button_group = QButtonGroup(self)
@@ -320,3 +328,21 @@ class QtTracksControls(QtLayerControls):
 
     def change_colormap(self, colormap: str):
         self.layer.colormap = self.colormap_combobox.currentData()
+
+    def eventFilter(self, qobject, event):
+        if (
+            qobject == self.transform_button
+            and event.type() == QMouseEvent.MouseButtonRelease
+            and event.button() == Qt.MouseButton.LeftButton
+            and event.modifiers() == Qt.AltModifier
+        ):
+            result = QMessageBox.warning(
+                self,
+                trans._('Reset transform'),
+                trans._('Are you sure you want to reset transforms?'),
+                QMessageBox.Yes | QMessageBox.No,
+            )
+            if result == QMessageBox.Yes:
+                self.layer._reset_affine()
+                return True
+        return super().eventFilter(qobject, event)

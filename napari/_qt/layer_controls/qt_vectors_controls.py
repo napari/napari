@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from qtpy.QtCore import Qt
+from qtpy.QtGui import QMouseEvent
 from qtpy.QtWidgets import (
     QButtonGroup,
     QCheckBox,
@@ -9,6 +10,7 @@ from qtpy.QtWidgets import (
     QDoubleSpinBox,
     QGridLayout,
     QLabel,
+    QMessageBox,
 )
 
 from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
@@ -130,8 +132,13 @@ class QtVectorsControls(QtLayerControls):
             checked=True,
         )
         self.transform_button = _radio_button(
-            layer, 'pan', Mode.TRANSFORM, 'activate_tracks_transform_mode'
+            layer,
+            'pan',
+            Mode.TRANSFORM,
+            'activate_tracks_transform_mode',
+            extra_tooltip_text=trans._('(use Alt-Left mouse click to reset)'),
         )
+        self.transform_button.installEventFilter(self)
         self._EDIT_BUTTONS = (self.transform_button,)
 
         self.button_group = QButtonGroup(self)
@@ -467,3 +474,21 @@ class QtVectorsControls(QtLayerControls):
                 prop = self.layer._edge.color_properties.name
                 index = self.color_prop_box.findText(prop, Qt.MatchFixedString)
                 self.color_prop_box.setCurrentIndex(index)
+
+    def eventFilter(self, qobject, event):
+        if (
+            qobject == self.transform_button
+            and event.type() == QMouseEvent.MouseButtonRelease
+            and event.button() == Qt.MouseButton.LeftButton
+            and event.modifiers() == Qt.AltModifier
+        ):
+            result = QMessageBox.warning(
+                self,
+                trans._('Reset transform'),
+                trans._('Are you sure you want to reset transforms?'),
+                QMessageBox.Yes | QMessageBox.No,
+            )
+            if result == QMessageBox.Yes:
+                self.layer._reset_affine()
+                return True
+        return super().eventFilter(qobject, event)

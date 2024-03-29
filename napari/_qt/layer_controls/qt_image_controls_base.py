@@ -4,12 +4,13 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from qtpy.QtCore import Qt
-from qtpy.QtGui import QImage, QPixmap
+from qtpy.QtGui import QImage, QMouseEvent, QPixmap
 from qtpy.QtWidgets import (
     QButtonGroup,
     QGridLayout,
     QHBoxLayout,
     QLabel,
+    QMessageBox,
     QPushButton,
     QWidget,
 )
@@ -167,8 +168,13 @@ class QtBaseImageControls(QtLayerControls):
             checked=True,
         )
         self.transform_button = _radio_button(
-            layer, 'pan', Mode.TRANSFORM, self.TRANSFORM_ACTION_NAME
+            layer,
+            'pan',
+            Mode.TRANSFORM,
+            self.TRANSFORM_ACTION_NAME,
+            extra_tooltip_text=trans._('(use Alt-Left mouse click to reset)'),
         )
+        self.transform_button.installEventFilter(self)
 
         self._EDIT_BUTTONS = (self.transform_button,)
 
@@ -343,6 +349,24 @@ class QtBaseImageControls(QtLayerControls):
         self.deleteLater()
         self.layer.events.disconnect(self)
         super().closeEvent(event)
+
+    def eventFilter(self, qobject, event):
+        if (
+            qobject == self.transform_button
+            and event.type() == QMouseEvent.MouseButtonRelease
+            and event.button() == Qt.MouseButton.LeftButton
+            and event.modifiers() == Qt.AltModifier
+        ):
+            result = QMessageBox.warning(
+                self,
+                trans._('Reset transform'),
+                trans._('Are you sure you want to reset transforms?'),
+                QMessageBox.Yes | QMessageBox.No,
+            )
+            if result == QMessageBox.Yes:
+                self.layer._reset_affine()
+                return True
+        return super().eventFilter(qobject, event)
 
     def show_clim_popupup(self):
         self.clim_popup = QContrastLimitsPopup(self.layer, self)

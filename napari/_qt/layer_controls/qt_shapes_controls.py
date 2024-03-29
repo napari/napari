@@ -3,7 +3,8 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QButtonGroup, QCheckBox, QGridLayout
+from qtpy.QtGui import QMouseEvent
+from qtpy.QtWidgets import QButtonGroup, QCheckBox, QGridLayout, QMessageBox
 
 from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
 from napari._qt.utils import (
@@ -161,7 +162,7 @@ class QtShapesControls(QtLayerControls):
             action_manager.bind_button(
                 action_name,
                 btn,
-                extra_tooltip_text='',
+                extra_tooltip_text=extra_tooltip_text,
             )
             return btn
 
@@ -187,7 +188,9 @@ class QtShapesControls(QtLayerControls):
             'pan',
             Mode.TRANSFORM,
             'activate_shapes_transform_mode',
+            extra_tooltip_text=trans._('(use Alt-Left mouse click to reset)'),
         )
+        self.transform_button.installEventFilter(self)
 
         self.rectangle_button = _radio_button(
             layer,
@@ -473,3 +476,21 @@ class QtShapesControls(QtLayerControls):
         """Disconnect events when widget is closing."""
         disconnect_events(self.layer.text.events, self)
         super().close()
+
+    def eventFilter(self, qobject, event):
+        if (
+            qobject == self.transform_button
+            and event.type() == QMouseEvent.MouseButtonRelease
+            and event.button() == Qt.MouseButton.LeftButton
+            and event.modifiers() == Qt.AltModifier
+        ):
+            result = QMessageBox.warning(
+                self,
+                trans._('Reset transform'),
+                trans._('Are you sure you want to reset transforms?'),
+                QMessageBox.Yes | QMessageBox.No,
+            )
+            if result == QMessageBox.Yes:
+                self.layer._reset_affine()
+                return True
+        return super().eventFilter(qobject, event)

@@ -380,6 +380,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             scale = [1] * ndim
         if translate is None:
             translate = [0] * ndim
+        self._initial_affine = coerce_affine(
+            affine, ndim=ndim, name='physical2world'
+        )
         self._transforms: TransformChain[Affine] = TransformChain(
             [
                 Affine(np.ones(ndim), np.zeros(ndim), name='tile2data'),
@@ -391,7 +394,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                     ndim=ndim,
                     name='data2physical',
                 ),
-                coerce_affine(affine, ndim=ndim, name='physical2world'),
+                self._initial_affine,
                 Affine(np.ones(ndim), np.zeros(ndim), name='world2grid'),
             ]
         )
@@ -796,6 +799,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         )
         self._clear_extents_and_refresh()
         self.events.affine()
+
+    def _reset_affine(self) -> None:
+        self.affine = self._initial_affine
 
     @property
     def _translate_grid(self) -> npt.NDArray:

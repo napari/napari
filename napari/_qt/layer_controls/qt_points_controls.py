@@ -3,7 +3,14 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from qtpy.QtCore import Qt, Slot
-from qtpy.QtWidgets import QButtonGroup, QCheckBox, QComboBox, QHBoxLayout
+from qtpy.QtGui import QMouseEvent
+from qtpy.QtWidgets import (
+    QButtonGroup,
+    QCheckBox,
+    QComboBox,
+    QHBoxLayout,
+    QMessageBox,
+)
 
 from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
 from napari._qt.utils import (
@@ -185,8 +192,11 @@ class QtPointsControls(QtLayerControls):
             Mode.TRANSFORM,
         )
         action_manager.bind_button(
-            'napari:activate_points_transform_mode', self.transform_button
+            'napari:activate_points_transform_mode',
+            self.transform_button,
+            extra_tooltip_text=trans._('(use Alt-Left mouse click to reset)'),
         )
+        self.transform_button.installEventFilter(self)
         self.delete_button = QtModePushButton(
             layer,
             'delete_shape',
@@ -204,6 +214,7 @@ class QtPointsControls(QtLayerControls):
             self.select_button,
             self.addition_button,
             self.delete_button,
+            self.transform_button,
         )
 
         self.button_group = QButtonGroup(self)
@@ -386,3 +397,21 @@ class QtPointsControls(QtLayerControls):
         """Disconnect events when widget is closing."""
         disconnect_events(self.layer.text.events, self)
         super().close()
+
+    def eventFilter(self, qobject, event):
+        if (
+            qobject == self.transform_button
+            and event.type() == QMouseEvent.MouseButtonRelease
+            and event.button() == Qt.MouseButton.LeftButton
+            and event.modifiers() == Qt.AltModifier
+        ):
+            result = QMessageBox.warning(
+                self,
+                trans._('Reset transform'),
+                trans._('Are you sure you want to reset transforms?'),
+                QMessageBox.Yes | QMessageBox.No,
+            )
+            if result == QMessageBox.Yes:
+                self.layer._reset_affine()
+                return True
+        return super().eventFilter(qobject, event)
