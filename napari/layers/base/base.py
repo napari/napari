@@ -846,9 +846,19 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
     @units.setter
     def units(self, units: UnitsLike) -> None:
-        self._units, self._axes_labels = coerce_units_and_axes(
-            units, self._axes_labels
-        )
+        if (
+            'axes_labels' in self._parameters_with_default_values
+            and isinstance(units, dict)
+        ):
+            self._units, self._axes_labels = coerce_units_and_axes(
+                units, list(units)
+            )
+            self._parameters_with_default_values.discard('axes_labels')
+            self.events.axes_labels()
+        else:
+            self._units, self._axes_labels = coerce_units_and_axes(
+                units, self._axes_labels
+            )
         self._parameters_with_default_values.discard('units')
         self.events.units()
 

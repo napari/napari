@@ -55,59 +55,67 @@ def test_set_parameter_simple(parameter, value):
 
 
 def test_units(unit_register):
-    si = SampleLayer(np.zeros((10, 10)), 2, units='m', axes_labels=['x', 'y'])
-    assert si.units == {'x': unit_register.m, 'y': unit_register.m}
-    assert si.axes_labels == ['x', 'y']
+    layer = SampleLayer(
+        np.zeros((10, 10)), 2, units='m', axes_labels=['x', 'y']
+    )
+    assert layer.units == {'x': unit_register.m, 'y': unit_register.m}
+    assert layer.axes_labels == ['x', 'y']
 
-    si.units = 'cm'
-    assert si.units == {'x': unit_register.cm, 'y': unit_register.cm}
+    layer.units = 'cm'
+    assert layer.units == {'x': unit_register.cm, 'y': unit_register.cm}
 
-    si.units = {
+    layer.units = {
         'x': unit_register.m,
         'y': unit_register.cm,
         'z': unit_register.mm,
     }
-    assert si.units == {'x': unit_register.m, 'y': unit_register.cm}
+    assert layer.units == {'x': unit_register.m, 'y': unit_register.cm}
 
 
 def test_units_exceptions(unit_register):
-    si = SampleLayer(np.zeros((10, 10)), 2, units='m', axes_labels=['x', 'y'])
+    layer = SampleLayer(
+        np.zeros((10, 10)), 2, units='m', axes_labels=['x', 'y']
+    )
     with pytest.raises(
         ValueError,
         match='If both axes_labels and units are provided.* Missing units for: y',
     ):
-        si.units = {'x': unit_register.m}
+        layer.units = {'x': unit_register.m}
 
     with pytest.raises(
         ValueError,
         match='If both axes_labels and units are provided.* Missing units for: y',
     ):
-        si.units = {'x': unit_register.m, 'z': unit_register.m}
+        layer.units = {'x': unit_register.m, 'z': unit_register.m}
 
 
 def test_axis_labels(unit_register):
-    si = SampleLayer(np.zeros((10, 10)), 2, units='m', axes_labels=['x', 'y'])
-    assert si.units == {'x': unit_register.m, 'y': unit_register.m}
-    assert si.axes_labels == ['x', 'y']
+    layer = SampleLayer(
+        np.zeros((10, 10)), 2, units='m', axes_labels=['x', 'y']
+    )
+    assert layer.units == {'x': unit_register.m, 'y': unit_register.m}
+    assert layer.axes_labels == ['x', 'y']
 
-    si.axes_labels = ['a', 'b']
-    assert si.axes_labels == ['a', 'b']
-    assert si.units == {'a': unit_register.m, 'b': unit_register.m}
+    layer.axes_labels = ['a', 'b']
+    assert layer.axes_labels == ['a', 'b']
+    assert layer.units == {'a': unit_register.m, 'b': unit_register.m}
 
 
 def test_axis_labels_exceptions():
-    si = SampleLayer(np.zeros((10, 10)), 2, units='m', axes_labels=['x', 'y'])
+    layer = SampleLayer(
+        np.zeros((10, 10)), 2, units='m', axes_labels=['x', 'y']
+    )
     with pytest.raises(ValueError, match='Axes labels must be unique'):
-        si.axes_labels = ['x', 'x']
+        layer.axes_labels = ['x', 'x']
     with pytest.raises(
         ValueError,
         match=r'Length of axes_labels should be equal to ndim \(2\)',
     ):
-        si.axes_labels = ['x']
+        layer.axes_labels = ['x']
 
 
 def test_axis_labels_exceptions_units_per_axis():
-    si = SampleLayer(
+    layer = SampleLayer(
         np.zeros((10, 10)),
         2,
         units={'x': 'm', 'y': 'cm'},
@@ -116,17 +124,32 @@ def test_axis_labels_exceptions_units_per_axis():
     with pytest.raises(
         ValueError, match='Units are set per axis and some of new'
     ):
-        si.axes_labels = ['x', 'a']
+        layer.axes_labels = ['x', 'a']
 
 
 def test_set_axis_and_units(unit_register):
-    si = SampleLayer(np.zeros((10, 10)), 2)
+    layer = SampleLayer(np.zeros((10, 10)), 2)
     mock1 = Mock()
     mock2 = Mock()
-    si.events.axes_labels.connect(mock1)
-    si.events.units.connect(mock2)
-    si.set_axis_and_units(['a', 'b'], 'm')
+    layer.events.axes_labels.connect(mock1)
+    layer.events.units.connect(mock2)
+    layer.set_axis_and_units(['a', 'b'], 'm')
     mock1.assert_called_once()
     mock2.assert_called_once()
-    assert si.axes_labels == ['a', 'b']
-    assert si.units == {'a': unit_register.m, 'b': unit_register.m}
+    assert layer.axes_labels == ['a', 'b']
+    assert layer.units == {'a': unit_register.m, 'b': unit_register.m}
+
+
+def test_axis_from_units(unit_register):
+    layer = SampleLayer(np.zeros((10, 10)), units={'a': 'm', 'b': 's'})
+    assert layer.axes_labels == ['a', 'b']
+    assert layer.units == {'a': unit_register.m, 'b': unit_register.s}
+
+
+def test_axis_from_units_setter(unit_register):
+    layer = SampleLayer(np.zeros((10, 10)))
+    layer.units = {'a': 'm', 'b': 's'}
+    assert layer.axes_labels == ['a', 'b']
+    assert layer.units == {'a': unit_register.m, 'b': unit_register.s}
+    with pytest.raises(ValueError, match='If both'):
+        layer.units = {'x': 'm', 'y': 's'}
