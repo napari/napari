@@ -13,6 +13,7 @@ from qtpy.QtWidgets import (
     QAbstractSpinBox,
     QCheckBox,
     QComboBox,
+    QMessageBox,
     QPushButton,
     QRadioButton,
 )
@@ -453,6 +454,49 @@ def test_create_layer_controls_qcolorswatchedit(
             captured = capsys.readouterr()
             assert not captured.out
             assert not captured.err
+
+
+@pytest.mark.parametrize(
+    'layer_type_with_data',
+    [
+        _LABELS_WITH_DIRECT_COLORMAP,
+        _LABELS,
+        _IMAGE,
+        _POINTS,
+        _SHAPES,
+        _SURFACE,
+        _TRACKS,
+        _VECTORS,
+    ],
+)
+@pytest.mark.skipif(os.environ.get('MIN_REQ', '0') == '1', reason='min req')
+def test_create_layer_controls_transform_mode_button(
+    qtbot, create_layer_controls, layer_type_with_data, monkeypatch
+):
+    # create layer controls widget
+    ctrl = create_layer_controls(layer_type_with_data)
+
+    # check create widget corresponds to the expected class for each type of layer
+    assert isinstance(ctrl, layer_type_with_data.expected_isinstance)
+
+    # check transform mode button existence
+    assert ctrl.transform_button
+
+    # check reset transform behavior
+    ctrl.layer.affine = None
+
+    def reset_transform_warning_dialog(*args):
+        return QMessageBox.Yes
+
+    monkeypatch.setattr(
+        'qtpy.QtWidgets.QMessageBox.warning', reset_transform_warning_dialog
+    )
+    qtbot.mouseClick(
+        ctrl.transform_button,
+        Qt.LeftButton,
+        modifier=Qt.KeyboardModifier.AltModifier,
+    )
+    assert ctrl.layer.affine == ctrl.layer._initial_affine
 
 
 def test_unknown_raises(qtbot):
