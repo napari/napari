@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Literal, Optional
 
 import numpy as np
 import numpy.typing as npt
@@ -40,7 +40,7 @@ class PolygonBase(Shape):
         edge_width: float = 1,
         z_index: int = 0,
         dims_order: Optional[list[int]] = None,
-        ndisplay: int = 2,
+        ndisplay: Literal[2] = 2,
         filled: bool = True,
         closed: bool = True,
         name: str = 'polygon',
