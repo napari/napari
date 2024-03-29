@@ -764,6 +764,36 @@ def _enclosing(
     )
 
 
+def _remove_holes(path):
+    v, e = _normalize_vertices_and_edges(path, close=True)
+    n_edge = len(e)
+    m = np.max(e)
+    csr = sparse.coo_matrix(
+        (np.ones(n_edge), tuple(e.T)), shape=(m + 1, m + 1)
+    ).tocsr()
+    n_comp, labels = sparse.csgraph.connected_components(csr, directed=False)
+    if n_comp > 1:
+        current_topleft = np.mean(v, axis=0)
+        current_bottomright = current_topleft
+        start = None
+        for comp in range(n_comp):
+            current_indices = np.flatnonzero(labels == comp)
+            current_coords = v[current_indices]  # todo: optimise to 1 pass
+            topleft = np.min(current_coords, axis=0)
+            bottomright = np.max(current_coords, axis=0)
+            if _enclosing(
+                topleft, bottomright, current_topleft, current_bottomright
+            ):
+                current_topleft = topleft
+                current_bottomright = bottomright
+                start = current_indices[0]
+        path_order = sparse.csgraph.depth_first_order(
+            csr, start, directed=False, return_predecessors=False
+        )
+        path = v[path_order]
+    return path
+
+
 def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
     """Find the triangulation of a path in 2D.
 
@@ -800,34 +830,7 @@ def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
     """
     if closed:
         # polygon — might include holes, we remove internal edges
-        v, e = _normalize_vertices_and_edges(path, close=closed)
-        n_edge = len(e)
-        m = np.max(e)
-        csr = sparse.coo_matrix(
-            (np.ones(n_edge), tuple(e.T)), shape=(m + 1, m + 1)
-        ).tocsr()
-        n_comp, labels = sparse.csgraph.connected_components(
-            csr, directed=False
-        )
-        if n_comp > 1:
-            current_topleft = np.mean(v, axis=0)
-            current_bottomright = current_topleft
-            start = None
-            for comp in range(n_comp):
-                current_indices = np.flatnonzero(labels == comp)
-                current_coords = v[current_indices]  # todo: optimise to 1 pass
-                topleft = np.min(current_coords, axis=0)
-                bottomright = np.max(current_coords, axis=0)
-                if _enclosing(
-                    topleft, bottomright, current_topleft, current_bottomright
-                ):
-                    current_topleft = topleft
-                    current_bottomright = bottomright
-                    start = current_indices[0]
-            path_order = sparse.csgraph.depth_first_order(
-                csr, start, directed=False, return_predecessors=False
-            )
-            path = v[path_order]
+        path = _remove_holes(path)
 
     path = np.asarray(path, dtype=float)
 
