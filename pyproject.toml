@@ -558,7 +558,6 @@ module = [
     "napari._vispy.visuals.markers",
     "napari._vispy.visuals.surface",
     "napari.layers._data_protocols",
-    "napari.layers.shapes._shapes_models.rectangle",
     "napari.layers.shapes._shapes_models.shape",
     "napari.resources._icons",
     "napari.utils.color",
