@@ -494,7 +494,7 @@ def test_create_layer_controls_transform_mode_button(
     qtbot.mouseClick(
         ctrl.transform_button,
         Qt.LeftButton,
-        modifier=Qt.KeyboardModifier.AltModifier,
+        Qt.KeyboardModifier.AltModifier,
     )
     assert ctrl.layer.affine == ctrl.layer._initial_affine
 
