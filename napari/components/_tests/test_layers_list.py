@@ -636,3 +636,12 @@ def test_set_units(unit_register):
         'z': unit_register.second,
     }
     assert l2.units == {'x': unit_register.um, 'y': unit_register.um}
+
+
+def test_different_dimensionality():
+    layers = LayerList()
+    layers.append(SampleLayer(np.zeros((10, 10)), units={'a': 'm', 'b': 's'}))
+    with pytest.raises(ValueError, match='Units for axis b'):
+        layers.append(
+            SampleLayer(np.zeros((10, 10)), units={'a': 'm', 'b': 'm'})
+        )

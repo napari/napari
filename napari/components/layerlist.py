@@ -241,12 +241,21 @@ class LayerList(SelectableEventedList[Layer]):
         ):
             layer.axes_labels = self.axes_labels[-layer.ndim :]
 
-        if (
-            'units' in layer.parameters_with_default_values
-            and 'units' not in not_update
-        ):
+        if 'units' not in not_update:
             units = self.units
-            layer.units = {k: units[k] for k in layer.axes_labels}
+            if 'units' in layer.parameters_with_default_values:
+                layer.units = {k: units[k] for k in layer.axes_labels}
+            else:
+                for axes_name, unit in layer.units.items():
+                    if (
+                        axes_name in units
+                        and units[axes_name].dimensionality
+                        != unit.dimensionality
+                    ):
+                        raise ValueError(
+                            f'Units for axis {axes_name} must have the same dimensionality.'
+                            f'Existing units: {units[axes_name]}, new units: {unit}'
+                        )
 
     def remove_selected(self):
         """Remove selected layers from LayerList, but first unlink them."""
