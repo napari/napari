@@ -1,5 +1,3 @@
-from typing import Tuple
-
 from qtpy.QtCore import QModelIndex, Qt
 
 from napari._qt.containers import (
@@ -104,7 +102,7 @@ def test_QtAxisListModel_flags(qtbot):
     assert flags == ref_flags
 
 
-def make_QtAxisListModel(qtbot) -> Tuple[Dims, AxisList, QtAxisListModel]:
+def make_QtAxisListModel(qtbot) -> tuple[Dims, AxisList, QtAxisListModel]:
     dims = Dims()
     dims.rollable = [True, False]
     axislist = AxisList.from_dims(dims)

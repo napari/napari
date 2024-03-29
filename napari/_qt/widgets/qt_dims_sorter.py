@@ -1,5 +1,3 @@
-from typing import Tuple
-
 from qtpy.QtWidgets import QGridLayout, QLabel, QWidget
 
 from napari._qt.containers import QtListView
@@ -9,7 +7,7 @@ from napari.components import Dims
 from napari.utils.translations import trans
 
 
-def set_dims_order(dims: Dims, order: Tuple[int, ...]):
+def set_dims_order(dims: Dims, order: tuple[int, ...]):
     """Set dimension order of Dims object to order.
 
     Parameters
