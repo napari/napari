@@ -80,10 +80,10 @@ if TYPE_CHECKING:
 logger = logging.getLogger('napari.layers.base.base')
 
 
-__all__ = ('Layer',)
+__all__ = ('Layer', 'OPTIONAL_PARAMETERS')
 
 
-_OPTIONAL_PARAMETERS = {
+OPTIONAL_PARAMETERS = {
     'affine',
     'axes_labels',
     'rotate',
@@ -368,7 +368,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         locals_dict = locals()
         self._parameters_with_default_values = {
-            x for x in _OPTIONAL_PARAMETERS if locals_dict[x] is None
+            x for x in OPTIONAL_PARAMETERS if locals_dict[x] is None
         }  # this is to store information which parameters were not set by the user
         # it allow to detect which parameters could be overwritten when
         # adding layer to the viewer

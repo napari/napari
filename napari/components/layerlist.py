@@ -8,6 +8,7 @@ from functools import cached_property
 from typing import TYPE_CHECKING, Optional, Union
 
 import numpy as np
+import pint
 
 from napari.components.dims import RangeTuple
 from napari.layers import Layer
@@ -189,9 +190,41 @@ class LayerList(SelectableEventedList[Layer]):
         new_layer = self._type_check(value)
         new_layer.name = self._coerce_name(new_layer.name)
         self._clean_cache()
+        self._inherit_properties(new_layer)
         new_layer.events.extent.connect(self._clean_cache)
         new_layer.events._extent_augmented.connect(self._clean_cache)
         super().insert(index, new_layer)
+
+    @property
+    def axes_labels(self) -> list[str]:
+        res = []
+        seen = set()
+        for layer in self:
+            for axis_label in layer.axes_labels[::-1]:
+                if axis_label not in seen:
+                    seen.add(axis_label)
+                    res.append(axis_label)
+        return res[::-1]
+
+    @property
+    def units(self) -> dict[str, pint.Unit]:
+        res = {}
+        for layer in self:
+            for axis_label, unit in layer.units.items():
+                if axis_label not in res:
+                    res[axis_label] = unit
+        return res
+
+    def _inherit_properties(self, layer: Layer):
+        """Inherit unset properties from layers in the list."""
+        if not self:
+            return
+        if 'axes_labels' in layer.parameters_with_default_values:
+            layer.axes_labels = self.axes_labels[-layer.ndim :]
+
+        if 'units' in layer.parameters_with_default_values:
+            units = self.units
+            layer.units = {k: units[k] for k in layer.axes_labels}
 
     def remove_selected(self):
         """Remove selected layers from LayerList, but first unlink them."""
@@ -376,7 +409,7 @@ class LayerList(SelectableEventedList[Layer]):
         -------
         ndim : int
         """
-        return max((layer.ndim for layer in self), default=2)
+        return len(self.axes_labels)
 
     def _link_layers(
         self,

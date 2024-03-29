@@ -573,13 +573,43 @@ def test_readd_layers():
     assert set(layers) == set(imgs)
 
 
+def test_axes_labels():
+    layers = LayerList()
+    l1 = SampleLayer(np.zeros((10, 10)))
+    l2 = SampleLayer(np.zeros((5, 10, 10)))
+    assert layers.axes_labels == []
+    layers.append(l1)
+    assert layers.axes_labels == ['dim_1', 'dim_0']
+    layers.append(l2)
+    assert layers.axes_labels == ['dim_2', 'dim_1', 'dim_0']
+
+
+def test_axes_labels_custom():
+    l1 = SampleLayer(np.zeros((5, 10, 10)), axes_labels=['z', 'y', 'x'])
+    l2 = SampleLayer(np.zeros((5, 10, 10)), axes_labels=['t', 'y', 'x'])
+    layers = LayerList([l1, l2])
+    assert layers.axes_labels == ['t', 'z', 'y', 'x']
+
+
+def test_inherit_axes_labels():
+    """Test if default axes labels are overwritten after add to layer list."""
+    layers = LayerList()
+    l1 = SampleLayer(np.zeros((5, 10, 10)), axes_labels=['z', 'y', 'x'])
+    l2 = SampleLayer(np.zeros((10, 10)))
+    assert l2.axes_labels == ['dim_1', 'dim_0']
+    layers.append(l1)
+    assert l2.axes_labels == ['dim_1', 'dim_0']
+    layers.append(l2)
+    assert l2.axes_labels == ['y', 'x']
+
+
 def test_inheritance_units(unit_register):
     layers = LayerList()
-    l1 = SampleLayer(np.random.random((10, 10)), 2, units='nm')
-    l2 = SampleLayer(np.random.random((10, 10)), 2)
+    l1 = SampleLayer(np.zeros((10, 10)), 2, units='nm')
+    l2 = SampleLayer(np.zeros((10, 10)), 2)
     assert l2.units == {f'dim_{i}': unit_register.pixel for i in range(2)}
     layers.append(l1)
     assert l2.units == {f'dim_{i}': unit_register.pixel for i in range(2)}
     layers.append(l2)
-    # assert l2.units == {f'dim_{i}': unit_register.nanometer for i in range(2)}
+    assert l2.units == {f'dim_{i}': unit_register.nanometer for i in range(2)}
     # uncomment the above line to see the test fail

@@ -8,7 +8,7 @@ class SampleLayer(Layer):
     def __init__(  # type: ignore [no-untyped-def]
         self,
         data,
-        ndim,
+        ndim=None,
         *,
         affine=None,
         axes_labels=None,
@@ -28,6 +28,8 @@ class SampleLayer(Layer):
         units=None,
         visible=True,
     ) -> None:
+        if ndim is None:
+            ndim = data.ndim
         super().__init__(
             ndim=ndim,
             data=data,
