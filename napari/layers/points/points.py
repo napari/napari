@@ -1,5 +1,6 @@
 import numbers
 import warnings
+from collections.abc import Sequence
 from copy import copy, deepcopy
 from itertools import cycle
 from typing import (
@@ -7,12 +8,8 @@ from typing import (
     Any,
     Callable,
     ClassVar,
-    Dict,
-    List,
     Literal,
     Optional,
-    Sequence,
-    Tuple,
     Union,
 )
 
@@ -318,20 +315,20 @@ class Points(Layer):
     _modeclass = Mode
     _projectionclass = PointsProjectionMode
 
-    _drag_modes: ClassVar[Dict[Mode, Callable[['Points', Event], Any]]] = {
+    _drag_modes: ClassVar[dict[Mode, Callable[['Points', Event], Any]]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
         Mode.ADD: add,
         Mode.SELECT: select,
     }
 
-    _move_modes: ClassVar[Dict[Mode, Callable[['Points', Event], Any]]] = {
+    _move_modes: ClassVar[dict[Mode, Callable[['Points', Event], Any]]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
         Mode.ADD: no_op,
         Mode.SELECT: highlight,
     }
-    _cursor_modes: ClassVar[Dict[Mode, str]] = {
+    _cursor_modes: ClassVar[dict[Mode, str]] = {
         Mode.PAN_ZOOM: 'standard',
         Mode.TRANSFORM: 'standard',
         Mode.ADD: 'crosshair',
@@ -673,7 +670,11 @@ class Points(Layer):
         self._data = data
 
         # Add/remove property and style values based on the number of new points.
-        with self.events.blocker_all(), self._border.events.blocker_all(), self._face.events.blocker_all():
+        with (
+            self.events.blocker_all(),
+            self._border.events.blocker_all(),
+            self._face.events.blocker_all(),
+        ):
             self._feature_table.resize(len(data))
             self.text.apply(self.features)
             if len(data) < cur_npoints:
@@ -760,7 +761,7 @@ class Points(Layer):
     @features.setter
     def features(
         self,
-        features: Union[Dict[str, np.ndarray], pd.DataFrame],
+        features: Union[dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
         self._feature_table.set_values(features, num_data=len(self.data))
         self._update_color_manager(
@@ -783,7 +784,7 @@ class Points(Layer):
 
     @feature_defaults.setter
     def feature_defaults(
-        self, defaults: Union[Dict[str, Any], pd.DataFrame]
+        self, defaults: Union[dict[str, Any], pd.DataFrame]
     ) -> None:
         self._feature_table.set_defaults(defaults)
         current_properties = self.current_properties
@@ -793,11 +794,11 @@ class Points(Layer):
         self.events.feature_defaults()
 
     @property
-    def property_choices(self) -> Dict[str, np.ndarray]:
+    def property_choices(self) -> dict[str, np.ndarray]:
         return self._feature_table.choices()
 
     @property
-    def properties(self) -> Dict[str, np.ndarray]:
+    def properties(self) -> dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each point"""
         return self._feature_table.properties()
 
@@ -825,12 +826,12 @@ class Points(Layer):
 
     @properties.setter
     def properties(
-        self, properties: Union[Dict[str, Array], pd.DataFrame, None]
+        self, properties: Union[dict[str, Array], pd.DataFrame, None]
     ) -> None:
         self.features = properties
 
     @property
-    def current_properties(self) -> Dict[str, np.ndarray]:
+    def current_properties(self) -> dict[str, np.ndarray]:
         """dict{str: np.ndarray(1,)}: properties for the next added point."""
         return self._feature_table.currents()
 
@@ -1063,7 +1064,7 @@ class Points(Layer):
         self.events.shading()
 
     @property
-    def canvas_size_limits(self) -> Tuple[float, float]:
+    def canvas_size_limits(self) -> tuple[float, float]:
         """Limit the canvas size of points"""
         return self._canvas_size_limits
 
@@ -1195,7 +1196,7 @@ class Points(Layer):
         self._border.continuous_colormap = colormap
 
     @property
-    def border_contrast_limits(self) -> Tuple[float, float]:
+    def border_contrast_limits(self) -> tuple[float, float]:
         """None, (float, float): contrast limits for mapping
         the border_color colormap property to 0 and 1
         """
@@ -1203,7 +1204,7 @@ class Points(Layer):
 
     @border_contrast_limits.setter
     def border_contrast_limits(
-        self, contrast_limits: Union[None, Tuple[float, float]]
+        self, contrast_limits: Union[None, tuple[float, float]]
     ) -> None:
         self._border.contrast_limits = contrast_limits
 
@@ -1286,7 +1287,7 @@ class Points(Layer):
         self._face.continuous_colormap = colormap
 
     @property
-    def face_contrast_limits(self) -> Union[None, Tuple[float, float]]:
+    def face_contrast_limits(self) -> Union[None, tuple[float, float]]:
         """None, (float, float) : clims for mapping the face_color
         colormap property to 0 and 1
         """
@@ -1294,7 +1295,7 @@ class Points(Layer):
 
     @face_contrast_limits.setter
     def face_contrast_limits(
-        self, contrast_limits: Union[None, Tuple[float, float]]
+        self, contrast_limits: Union[None, tuple[float, float]]
     ) -> None:
         self._face.contrast_limits = contrast_limits
 
@@ -1522,7 +1523,7 @@ class Points(Layer):
 
         self._set_highlight()
 
-    def interaction_box(self, index: List[int]) -> Optional[np.ndarray]:
+    def interaction_box(self, index: list[int]) -> Optional[np.ndarray]:
         """Create the interaction box around a list of points in view.
 
         Parameters
@@ -1617,7 +1618,7 @@ class Points(Layer):
         return self.text.view_text(self._indices_view)
 
     @property
-    def _view_text_coords(self) -> Tuple[np.ndarray, str, str]:
+    def _view_text_coords(self) -> tuple[np.ndarray, str, str]:
         """Get the coordinates of the text elements in view
 
         Returns
@@ -1770,7 +1771,7 @@ class Points(Layer):
         self,
         start_point: np.ndarray,
         end_point: np.ndarray,
-        dims_displayed: List[int],
+        dims_displayed: list[int],
     ) -> Optional[int]:
         """Get the layer data value along a ray
 
@@ -1833,11 +1834,11 @@ class Points(Layer):
 
     def get_ray_intersections(
         self,
-        position: List[float],
+        position: list[float],
         view_direction: np.ndarray,
-        dims_displayed: List[int],
+        dims_displayed: list[int],
         world: bool = True,
-    ) -> Union[Tuple[np.ndarray, np.ndarray], Tuple[None, None]]:
+    ) -> Union[tuple[np.ndarray, np.ndarray], tuple[None, None]]:
         """Get the start and end point for the ray extending
         from a point through the displayed bounding box.
 
@@ -2350,10 +2351,10 @@ class Points(Layer):
 
     def get_status(
         self,
-        position: Optional[Tuple] = None,
+        position: Optional[tuple] = None,
         *,
         view_direction: Optional[np.ndarray] = None,
-        dims_displayed: Optional[List[int]] = None,
+        dims_displayed: Optional[list[int]] = None,
         world: bool = False,
     ) -> dict:
         """Status message information of the data at a coordinate position.
@@ -2409,7 +2410,7 @@ class Points(Layer):
         position,
         *,
         view_direction: Optional[np.ndarray] = None,
-        dims_displayed: Optional[List[int]] = None,
+        dims_displayed: Optional[list[int]] = None,
         world: bool = False,
     ) -> str:
         """
@@ -2448,7 +2449,7 @@ class Points(Layer):
         position,
         *,
         view_direction: Optional[np.ndarray] = None,
-        dims_displayed: Optional[List[int]] = None,
+        dims_displayed: Optional[list[int]] = None,
         world: bool = False,
     ) -> list:
         if self.features.shape[1] == 0:

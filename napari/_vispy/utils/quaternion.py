@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Tuple, cast
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 
@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 def quaternion2euler_degrees(
     quaternion: Quaternion,
-) -> Tuple[float, float, float]:
+) -> tuple[float, float, float]:
     """Converts VisPy quaternion into euler angle representation.
 
     Euler angles have degeneracies, so the output might different
@@ -58,4 +58,4 @@ def quaternion2euler_degrees(
 
     angles = (theta_1, theta_2, theta_3)
 
-    return cast(Tuple[float, float, float], tuple(np.degrees(angles)))
+    return cast(tuple[float, float, float], tuple(np.degrees(angles)))

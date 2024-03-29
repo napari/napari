@@ -1,12 +1,9 @@
+from collections.abc import Generator, Iterable
 from typing import (
     TYPE_CHECKING,
     Any,
-    Dict,
-    Generator,
     Generic,
-    Iterable,
     Optional,
-    Set,
     TypeVar,
     Union,
 )
@@ -74,8 +71,8 @@ class Selection(EventedSet[_T]):
 
     def _emit_change(
         self,
-        added: Optional[Set[_T]] = None,
-        removed: Optional[Set[_T]] = None,
+        added: Optional[set[_T]] = None,
+        removed: Optional[set[_T]] = None,
     ) -> None:
         if added is None:
             added = set()
@@ -153,7 +150,7 @@ class Selection(EventedSet[_T]):
         yield cls.validate
 
     @classmethod
-    def validate(cls, v: Union['Selection', Dict], field: 'ModelField') -> 'Selection':  # type: ignore[override]
+    def validate(cls, v: Union['Selection', dict], field: 'ModelField') -> 'Selection':  # type: ignore[override]
         """Pydantic validator."""
         from napari._pydantic_compat import sequence_like
 
@@ -202,7 +199,7 @@ class Selection(EventedSet[_T]):
         obj._current_ = current
         return obj
 
-    def _json_encode(self) -> Dict:  # type: ignore[override]
+    def _json_encode(self) -> dict:  # type: ignore[override]
         """Return an object that can be used by json.dumps."""
         # we don't serialize active, as it's gleaned from the selection.
         return {'selection': super()._json_encode(), '_current': self._current}

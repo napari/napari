@@ -1,4 +1,5 @@
-from typing import Callable, Generator
+from collections.abc import Generator
+from typing import Callable
 
 import numpy as np
 from app_model.types import KeyCode
