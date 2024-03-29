@@ -14,7 +14,7 @@ with open(tmpl_path) as f:
     template = f.read()
 
 
-def create_func(cls, name=None, doc=None, filename: str = '<string>'):
+def create_func(cls, name=None, doc=None):
     """
     Creates a function (such as `add_<layer>`) to add a layer to the viewer
 
