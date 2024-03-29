@@ -3,6 +3,7 @@ import warnings
 from copy import copy, deepcopy
 from itertools import cycle
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     ClassVar,
@@ -21,7 +22,6 @@ import pandas as pd
 from psygnal.containers import Selection
 from scipy.stats import gmean
 
-from napari.components.dims import Dims
 from napari.layers.base import Layer, no_op
 from napari.layers.base._base_constants import ActionType
 from napari.layers.base._base_mouse_bindings import (
@@ -65,6 +65,9 @@ from napari.utils.migrations import add_deprecated_property, rename_argument
 from napari.utils.status_messages import generate_layer_coords_status
 from napari.utils.transforms import Affine
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from napari.components.dims import Dims
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
@@ -1901,7 +1904,7 @@ class Points(Layer):
         response = request()
         self._update_slice_response(response)
 
-    def _make_slice_request(self, dims: Dims) -> _PointSliceRequest:
+    def _make_slice_request(self, dims: 'Dims') -> _PointSliceRequest:
         """Make a Points slice request based on the given dims and these data."""
         slice_input = self._make_slice_input(dims)
         # See Image._make_slice_request to understand why we evaluate this here
