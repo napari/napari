@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Literal, Optional
 
 import numpy as np
 import numpy.typing as npt
@@ -92,11 +92,11 @@ class Shape(ABC):
     def __init__(
         self,
         *,
-        shape_type='rectangle',
-        edge_width=1,
-        z_index=0,
-        dims_order=None,
-        ndisplay=2,
+        shape_type: str = 'rectangle',
+        edge_width: float = 1,
+        z_index: int = 0,
+        dims_order: Optional[list[int]] = None,
+        ndisplay: Literal[2] = 2,
     ) -> None:
         self._dims_order = dims_order or list(range(2))
         self._ndisplay = ndisplay
