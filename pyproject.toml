@@ -560,7 +560,6 @@ module = [
     "napari.layers._data_protocols",
     "napari.layers.shapes._shapes_models.path",
     "napari.layers.shapes._shapes_models.polygon",
-    "napari.layers.shapes._shapes_models.line",
     "napari.layers.shapes._shapes_models.rectangle",
     "napari.layers.shapes._shapes_models.shape",
     "napari.resources._icons",
