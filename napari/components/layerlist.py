@@ -12,6 +12,7 @@ import pint
 
 from napari.components.dims import RangeTuple
 from napari.layers import Layer
+from napari.layers.base.base import OPTIONAL_PARAMETERS
 from napari.layers.utils.layer_utils import Extent
 from napari.utils.events.containers import SelectableEventedList
 from napari.utils.naming import inc_name_count
@@ -215,14 +216,28 @@ class LayerList(SelectableEventedList[Layer]):
                     res[axis_label] = unit
         return res
 
+    @property
+    def parameters_with_default_values(self):
+        res = OPTIONAL_PARAMETERS.copy()
+        for layer in self:
+            res &= layer.parameters_with_default_values
+        return res
+
     def _inherit_properties(self, layer: Layer):
         """Inherit unset properties from layers in the list."""
         if not self:
             return
-        if 'axes_labels' in layer.parameters_with_default_values:
+        not_update = self.parameters_with_default_values
+        if (
+            'axes_labels' in layer.parameters_with_default_values
+            and 'axes_labels' not in not_update
+        ):
             layer.axes_labels = self.axes_labels[-layer.ndim :]
 
-        if 'units' in layer.parameters_with_default_values:
+        if (
+            'units' in layer.parameters_with_default_values
+            and 'units' not in not_update
+        ):
             units = self.units
             layer.units = {k: units[k] for k in layer.axes_labels}
 
