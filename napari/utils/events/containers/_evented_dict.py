@@ -1,6 +1,7 @@
 """MutableMapping that emits events when altered."""
 
-from typing import Mapping, Optional, Sequence, Type, Union
+from collections.abc import Mapping, Sequence
+from typing import Optional, Union
 
 from napari.utils.events.containers._dict import _K, _T, TypedMutableMapping
 from napari.utils.events.event import EmitterGroup, Event
@@ -47,7 +48,7 @@ class EventedDict(TypedMutableMapping[_K, _T]):
     def __init__(
         self,
         data: Optional[Mapping[_K, _T]] = None,
-        basetype: Union[Type[_T], Sequence[Type[_T]]] = (),
+        basetype: Union[type[_T], Sequence[type[_T]]] = (),
     ) -> None:
         _events = {
             'changing': None,

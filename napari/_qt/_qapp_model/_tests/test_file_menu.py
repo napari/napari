@@ -208,11 +208,10 @@ def test_open_with_plugin(
 ):
     viewer = make_napari_viewer()
     action, _a = get_open_with_plugin_action(viewer, menu_str)
-    with mock.patch(
-        'napari._qt.qt_viewer.QFileDialog'
-    ) as mock_file, mock.patch(
-        'napari._qt.qt_viewer.QtViewer._qt_open'
-    ) as mock_read:
+    with (
+        mock.patch('napari._qt.qt_viewer.QFileDialog') as mock_file,
+        mock.patch('napari._qt.qt_viewer.QtViewer._qt_open') as mock_read,
+    ):
         mock_file_instance = mock_file.return_value
         getattr(mock_file_instance, dialog_method).return_value = dialog_return
         action.trigger()

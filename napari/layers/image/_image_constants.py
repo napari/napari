@@ -1,6 +1,6 @@
 from collections import OrderedDict
 from enum import auto
-from typing import Literal, Tuple
+from typing import Literal
 
 from napari.utils.misc import StringEnum
 from napari.utils.translations import trans
@@ -56,7 +56,7 @@ class Interpolation(StringEnum):
     @classmethod
     def view_subset(
         cls,
-    ) -> Tuple[
+    ) -> tuple[
         'Interpolation',
         'Interpolation',
         'Interpolation',

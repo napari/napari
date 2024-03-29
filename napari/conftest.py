@@ -65,6 +65,12 @@ from napari.utils.misc import ROOT_DIR
 if TYPE_CHECKING:
     from npe2._pytest_plugin import TestPluginManager
 
+# touch ~/.Xauthority for Xlib support, must happen before importing pyautogui
+if os.getenv('CI') and sys.platform.startswith('linux'):
+    xauth = Path('~/.Xauthority').expanduser()
+    if not xauth.exists():
+        xauth.touch()
+
 
 @pytest.fixture
 def layer_data_and_types():

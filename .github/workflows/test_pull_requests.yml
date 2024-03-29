@@ -42,7 +42,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          cache-dependency-path: setup.cfg
+          cache-dependency-path: pyproject.toml
           cache: 'pip'
       - name: Install Dependencies
         run: pip install --upgrade pip
@@ -84,17 +84,17 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - python: 3.8
+          - python: 3.9
             platform: ubuntu-latest
             backend: pyqt5
             pydantic: "_pydantic_1"
             coverage: no_cov
-          - python: 3.11
+          - python: 3.12
             platform: ubuntu-latest
             backend: pyqt6
             pydantic: ""
             coverage: no_cov
-          - python: 3.8
+          - python: 3.9
             platform: ubuntu-20.04
             backend: pyqt5
             MIN_REQ: 1
@@ -115,46 +115,51 @@ jobs:
       fail-fast: false
       matrix:
         platform: [ ubuntu-latest ]
-        python: [ "3.9", "3.10" ]
-        backend: [ "pyqt5,pyside2" ]
+        python: [ "3.9", "3.11" ]
+        backend: [ "pyqt5,pyside6" ]
         coverage: [ cov ]
         pydantic: ["_pydantic_1"]
         include:
-          # Windows py39
-          - python: 3.9
+          # Windows py310
+          - python: "3.10"
             platform: windows-latest
-            backend: pyqt5,pyside2
+            backend: pyqt5 #,pyside2
             coverage: no_cov
-          - python: 3.11
+          - python: "3.12"
             platform: windows-latest
             backend: pyqt6
             coverage: no_cov
-          - python: 3.11
+          - python: "3.12"
             platform: macos-latest
             backend: pyqt5
             coverage: no_cov
           # minimum specified requirements
-          - python: 3.8
+          - python: "3.9"
             platform: ubuntu-20.04
             backend: pyqt5
             MIN_REQ: 1
             coverage: cov
-          - python: "3.10"
+          - python: "3.11"
             platform: ubuntu-22.04
             backend: pyqt5
             coverage: cov
             pydantic: ""
             tox_extras: "optional"
           # test without any Qt backends
-          - python: 3.9
+          - python: "3.10"
             platform: ubuntu-20.04
             backend: headless
             coverage: no_cov
-          - python: 3.11
+          - python: "3.12"
             platform: ubuntu-latest
-            backend: pyqt6,pyside6
+            backend: pyqt6
             coverage: cov
             tox_extras: "testing_extra"
+          # pyside2 test
+          - python: "3.10"
+            platform: ubuntu-latest
+            backend: pyside2
+            coverage: no_cov
 
     with:
       python_version: ${{ matrix.python }}
@@ -205,7 +210,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: 3.11
-          cache-dependency-path: setup.cfg
+          cache-dependency-path: pyproject.toml
 
       - uses: tlambert03/setup-qt-libs@v1
 
@@ -228,7 +233,7 @@ jobs:
         run: asv machine --yes
 
       - name: Run benchmarks PR
-        uses: aganders3/headless-gui@v1
+        uses: aganders3/headless-gui@v2
         with:
           run: |
             asv run --show-stderr --quick  --attribute timeout=300 HEAD^!
@@ -237,7 +242,7 @@ jobs:
 
       - name: Run benchmarks latest release
         # here we check if the benchmark on the latest release is not broken
-        uses: aganders3/headless-gui@v1
+        uses: aganders3/headless-gui@v2
         with:
           run: |
             asv run --show-stderr --quick  --attribute timeout=300  ${{ fromJSON(steps.latest_release.outputs.data).target_commitish }}^!

@@ -18,7 +18,7 @@ jobs:
         with:
           python-version: 3.9
           cache: "pip"
-          cache-dependency-path: napari-from-github/setup.cfg
+          cache-dependency-path: napari-from-github/pyproject.toml
 
       - uses: tlambert03/setup-qt-libs@v1
 
