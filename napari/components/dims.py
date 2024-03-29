@@ -93,9 +93,9 @@ class Dims(EventedModel):
     ndim: int = 2
     ndisplay: Literal[2, 3] = 2
 
-    order: Tuple[int, ...] = ()
-    axis_labels: Tuple[str, ...] = ()
-    rollable: Tuple[bool, ...] = ()
+    order: tuple[int, ...] = ()
+    axis_labels: tuple[str, ...] = ()
+    rollable: tuple[bool, ...] = ()
 
     range: tuple[RangeTuple, ...] = ()
     margin_left: tuple[float, ...] = ()
