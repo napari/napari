@@ -1267,6 +1267,17 @@ class Shapes(Layer):
                 with self.block_update_properties():
                     self.current_properties = unique_properties
 
+    @property
+    def _is_moving(self) -> bool:
+        return self._private_is_moving
+
+    @_is_moving.setter
+    def _is_moving(self, value):
+        assert value in (True, False)
+        if value:
+            assert self._moving_coordinates is not None
+        self._private_is_moving = value
+
     def _set_color(self, color, attribute: str):
         """Set the face_color or edge_color property
 
