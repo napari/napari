@@ -62,7 +62,7 @@ def fail_obj_graph(Klass):
         ).absolute()
         objgraph.show_backrefs(
             list(Klass._instances),
-            max_depth=110,
+            max_depth=100,
             filename=str(file_path),
         )
 
