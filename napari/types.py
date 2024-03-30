@@ -6,6 +6,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    Literal,
     NewType,
     Optional,
     Union,
@@ -51,6 +52,11 @@ __all__ = [
     'VectorsData',
     'LayerDataTuple',
     'image_reader_to_layerdata_reader',
+    'BlendMode',
+]
+
+BlendMode = Literal[
+    'opaque', 'translucent', 'translucent_no_depth', 'additive', 'minimum'
 ]
 
 # This is a WOEFULLY inadequate stub for a duck-array type.

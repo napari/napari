@@ -596,7 +596,7 @@ def compute_multiscale_level_and_corners(
 
 
 def coerce_affine(
-    affine: Union[npt.ArrayLike, Affine],
+    affine: Optional[Union[npt.ArrayLike, Affine]],
     *,
     ndim: int,
     name: Optional[str] = None,

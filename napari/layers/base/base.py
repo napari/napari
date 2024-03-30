@@ -24,6 +24,7 @@ import magicgui as mgui
 import numpy as np
 from npe2 import plugin_manager as pm
 
+import napari.types
 from napari.layers.base._base_constants import (
     BaseProjectionMode,
     Blending,
@@ -306,25 +307,29 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
     def __init__(
         self,
-        data,
-        ndim,
+        data: Union[npt.NDArray, list[npt.NDArray]],
+        ndim: int,
         *,
-        affine=None,
-        blending='translucent',
-        cache=True,  # this should move to future "data source" object.
-        experimental_clipping_planes=None,
-        metadata=None,
-        mode='pan_zoom',
-        multiscale=False,
-        name=None,
-        opacity=1.0,
-        projection_mode='none',
-        rotate=None,
-        scale=None,
-        shear=None,
-        translate=None,
-        visible=True,
-    ):
+        affine: Optional[Union[npt.NDArray, Affine]] = None,
+        blending: napari.types.BlendMode = 'translucent',
+        cache: bool = True,  # this should move to future "data source" object.
+        experimental_clipping_planes: Optional[
+            Union[list[dict], list[ClippingPlane], ClippingPlaneList]
+        ] = None,
+        metadata: Optional[dict] = None,
+        mode: str = 'pan_zoom',
+        multiscale: bool = False,
+        name: Optional[str] = None,
+        opacity: float = 1.0,
+        projection_mode: str = 'none',
+        rotate: Optional[
+            Union[float, tuple[float, float, float], npt.NDArray]
+        ] = None,
+        scale: Optional[tuple[float, ...]] = None,
+        shear: Optional[npt.NDArray] = None,
+        translate: Optional[tuple[float, ...]] = None,
+        visible: bool = True,
+    ) -> None:
         super().__init__()
 
         if name is None and data is not None:
@@ -390,9 +395,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         # 4. `world2grid`: An additional transform mapping world-coordinates
         #   into a grid for looking at layers side-by-side.
         if scale is None:
-            scale = [1] * ndim
+            scale = tuple([1] * ndim)
         if translate is None:
-            translate = [0] * ndim
+            translate = tuple([0] * ndim)
         self._transforms: TransformChain[Affine] = TransformChain(
             [
                 Affine(np.ones(ndim), np.zeros(ndim), name='tile2data'),
@@ -417,7 +422,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
         self._update_properties = True
         self._name = ''
-        self.experimental_clipping_planes = experimental_clipping_planes
+        # Ignore assignment, because experimental_clipping_planes has a wider
+        # type than the proeprty self.experimental_clipping_planes
+        # See https://github.com/python/mypy/issues/3004 for mypy discussion
+        self.experimental_clipping_planes = experimental_clipping_planes  # type: ignore[assignment]
 
         # circular import
         from napari.components.overlays.bounding_box import BoundingBoxOverlay
@@ -465,7 +473,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             mode=Event,
             projection_mode=Event,
         )
-        self.name = name
+        if name is None:
+            self.name = self._basename()
+        else:
+            self.name = name
         self.mode = mode
         self._overlays.update(
             {
