@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Any, List, Tuple
+from typing import Any
 
 import numpy as np
 import numpy.typing as npt
@@ -95,7 +95,7 @@ class _PointSliceRequest:
             request_id=self.id,
         )
 
-    def _get_slice_data(self, not_disp: List[int]) -> Tuple[npt.NDArray, int]:
+    def _get_slice_data(self, not_disp: list[int]) -> tuple[npt.NDArray, int]:
         data = self.data[:, not_disp]
         scale = 1
 
