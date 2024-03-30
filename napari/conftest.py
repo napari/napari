@@ -760,7 +760,7 @@ def pytest_runtest_setup(item):
             item.fixturenames.append('qtbot')
         if (
             'builtins' in item.fixturenames
-            and 'make_napari_viewer' not in item.fixturenames
+            and 'make_napari_viewer' in item.fixturenames
         ):
             assert item.fixturenames.index(
                 'builtins'
