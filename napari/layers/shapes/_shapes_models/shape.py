@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Literal, Optional
+from typing import Literal, Optional, Union
 
 import numpy as np
 import numpy.typing as npt
@@ -291,7 +291,9 @@ class Shape(ABC):
         self._data[:, self.dims_displayed] = self.data_displayed + shift
 
     def scale(
-        self, scale: float | list[float], center: Optional[npt.NDArray] = None
+        self,
+        scale: Union[float, list[float]],
+        center: Optional[npt.NDArray] = None,
     ) -> None:
         """Performs a scaling on the shape
 
