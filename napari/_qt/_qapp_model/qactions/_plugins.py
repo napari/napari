@@ -2,7 +2,6 @@
 
 from importlib.util import find_spec
 from logging import getLogger
-from typing import List
 
 from app_model.types import Action
 
@@ -41,7 +40,7 @@ def _show_plugin_err_reporter(window: Window) -> None:
     QtPluginErrReporter(parent=window._qt_window).exec_()  # type: ignore [attr-defined]
 
 
-Q_PLUGINS_ACTIONS: List[Action] = [
+Q_PLUGINS_ACTIONS: list[Action] = [
     Action(
         id=CommandId.DLG_PLUGIN_INSTALL,
         title=CommandId.DLG_PLUGIN_INSTALL.command_title,
