@@ -29,8 +29,9 @@ import subprocess
 import textwrap
 import typing
 import warnings
+from collections.abc import Iterator
 from types import ModuleType
-from typing import Any, Iterator, List, Set, Tuple, Type, Union, get_type_hints
+from typing import Any, Union, get_type_hints
 
 from typing_extensions import get_args, get_origin
 
@@ -55,7 +56,7 @@ def _format_module_str(text: str, is_pyi=False) -> str:
     return text.replace('NoneType', 'None')
 
 
-def _guess_exports(module, exclude=()) -> List[str]:
+def _guess_exports(module, exclude=()) -> list[str]:
     """If __all__ wasn't provided, this function guesses what to stub."""
     return [
         k
@@ -81,7 +82,7 @@ def _iter_imports(hint) -> Iterator[str]:
         yield hint.__module__
 
 
-def generate_function_stub(func) -> Tuple[Set[str], str]:
+def generate_function_stub(func) -> tuple[set[str], str]:
     """Generate a stub and imports for a function."""
     sig = inspect.signature(func)
 
@@ -109,14 +110,14 @@ def generate_function_stub(func) -> Tuple[Set[str], str]:
     return imports, f'def {func.__name__}{sig}:\n    {doc}\n'
 
 
-def _get_subclass_methods(cls: Type[Any]) -> Set[str]:
+def _get_subclass_methods(cls: type[Any]) -> set[str]:
     """Return the set of method names defined (only) on a subclass."""
     all_methods = set(dir(cls))
     base_methods = (dir(base()) for base in cls.__bases__)
     return all_methods.difference(*base_methods)
 
 
-def generate_class_stubs(cls: Type) -> Tuple[Set[str], str]:
+def generate_class_stubs(cls: type) -> tuple[set[str], str]:
     """Generate a stub and imports for a class."""
     bases = ', '.join(f'{b.__module__}.{b.__name__}' for b in cls.__bases__)
 

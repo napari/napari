@@ -1,5 +1,5 @@
 import math
-from typing import TYPE_CHECKING, Dict, Tuple
+from typing import TYPE_CHECKING
 
 import numpy as np
 from vispy.color import Colormap as VispyColormap
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from napari.layers import Labels
 
 
-ColorTuple = Tuple[float, float, float, float]
+ColorTuple = tuple[float, float, float, float]
 
 
 auto_lookup_shader_uint8 = """
@@ -146,7 +146,7 @@ class DirectLabelVispyColormap(VispyColormap):
 
 
 def build_textures_from_dict(
-    color_dict: Dict[int, ColorTuple], max_size: int
+    color_dict: dict[int, ColorTuple], max_size: int
 ) -> np.ndarray:
     """This code assumes that the keys in the color_dict are sequential from 0.
 

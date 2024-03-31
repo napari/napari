@@ -5,7 +5,7 @@ on a layer in the LayerList.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List, cast
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 
@@ -81,7 +81,7 @@ def _convert_to_image(ll: LayerList):
 
 def _merge_stack(ll: LayerList, rgb=False):
     # force selection to follow LayerList ordering
-    imgs = cast(List[Image], [layer for layer in ll if layer in ll.selection])
+    imgs = cast(list[Image], [layer for layer in ll if layer in ll.selection])
     assert all(isinstance(layer, Image) for layer in imgs)
     merged = (
         stack_utils.merge_rgb(imgs)

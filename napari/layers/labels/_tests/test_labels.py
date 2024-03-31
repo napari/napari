@@ -4,7 +4,6 @@ import time
 from collections import defaultdict
 from dataclasses import dataclass
 from tempfile import TemporaryDirectory
-from typing import List
 
 import numpy as np
 import numpy.testing as npt
@@ -1172,11 +1171,11 @@ def test_3d_video_and_3d_scale_translate_then_scale_translate_padded():
 @dataclass
 class MouseEvent:
     # mock mouse event class
-    pos: List[int]
-    position: List[int]
-    dims_point: List[int]
-    dims_displayed: List[int]
-    view_direction: List[int]
+    pos: list[int]
+    position: list[int]
+    dims_point: list[int]
+    dims_displayed: list[int]
+    view_direction: list[int]
 
 
 def test_get_value_ray_3d():
