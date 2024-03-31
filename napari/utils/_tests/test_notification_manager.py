@@ -1,7 +1,6 @@
 import sys
 import threading
 import warnings
-from typing import List
 
 import pytest
 
@@ -46,7 +45,7 @@ def test_notification_manager_no_gui(monkeypatch):
     with notification_manager:
         notification_manager.records.clear()
         # save all of the events that get emitted
-        store: List[Notification] = []
+        store: list[Notification] = []
         notification_manager.notification_ready.connect(store.append)
 
         show_info('this is one way of showing an information message')
@@ -126,7 +125,7 @@ def test_notification_manager_no_gui_with_threading():
     with notification_manager:
         notification_manager.records.clear()
         # save all of the events that get emitted
-        store: List[Notification] = []
+        store: list[Notification] = []
         notification_manager.notification_ready.connect(store.append)
 
         # Test exception inside threads
@@ -173,7 +172,7 @@ def test_notification_manager_no_warning_duplication():
     with notification_manager:
         notification_manager.records.clear()
         # save all of the events that get emitted
-        store: List[Notification] = []
+        store: list[Notification] = []
         notification_manager.notification_ready.connect(store.append)
 
         fun()

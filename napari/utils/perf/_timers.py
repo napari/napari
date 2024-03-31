@@ -3,8 +3,9 @@
 
 import contextlib
 import os
+from collections.abc import Generator
 from time import perf_counter_ns
-from typing import Callable, Dict, Generator, Optional, Tuple
+from typing import Callable, Optional
 
 from napari.utils.perf._event import PerfEvent
 from napari.utils.perf._stat import Stat
@@ -48,7 +49,7 @@ class PerfTimers:
     def __init__(self) -> None:
         """Create PerfTimers."""
         # Maps a timer name to one Stat object.
-        self.timers: Dict[str, Stat] = {}
+        self.timers: dict[str, Stat] = {}
 
         # Menu item "Debug -> Record Trace File..." starts a trace.
         self.trace_file: Optional[PerfTraceFile] = None
@@ -225,7 +226,7 @@ def block_timer(
         print(f'{name} {event.duration_ms:.3f}ms')
 
 
-def _create_timer() -> Tuple[PerfTimers, Callable, Callable, Callable]:
+def _create_timer() -> tuple[PerfTimers, Callable, Callable, Callable]:
     # The one global instance
     timers = PerfTimers()
 
