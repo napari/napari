@@ -126,6 +126,7 @@ testing = [
     "fsspec>=2023.10.0",
     "hypothesis>=6.8.0",
     "lxml>5",
+    "lxml_html_clean",
     "matplotlib >= 3.6.1",
     "numba>=0.57.1",
     "pooch>=1.6.0",
