@@ -2,6 +2,7 @@ import os
 import random
 import sys
 from typing import NamedTuple, Optional
+from unittest.mock import Mock
 
 import numpy as np
 import pytest
@@ -457,22 +458,71 @@ def test_create_layer_controls_qcolorswatchedit(
 
 
 @pytest.mark.parametrize(
-    'layer_type_with_data',
-    [
-        _LABELS_WITH_DIRECT_COLORMAP,
-        _LABELS,
-        _IMAGE,
-        _POINTS,
-        _SHAPES,
-        _SURFACE,
-        _TRACKS,
-        _VECTORS,
-    ],
+    (
+        'layer_type_with_data',
+        'action_manager_patch_path',
+        'action_manager_trigger',
+    ),
+    (
+        (
+            _LABELS_WITH_DIRECT_COLORMAP,
+            'napari._qt.layer_controls.qt_labels_controls.action_manager',
+            'napari:activate_labels_transform_mode',
+        ),
+        (
+            _LABELS,
+            'napari._qt.layer_controls.qt_labels_controls.action_manager',
+            'napari:activate_labels_transform_mode',
+        ),
+        (
+            _IMAGE,
+            'napari._qt.layer_controls.qt_image_controls_base.action_manager',
+            'napari:activate_image_transform_mode',
+        ),
+        (
+            _POINTS,
+            'napari._qt.layer_controls.qt_points_controls.action_manager',
+            'napari:activate_points_transform_mode',
+        ),
+        (
+            _SHAPES,
+            'napari._qt.layer_controls.qt_shapes_controls.action_manager',
+            'napari:activate_shapes_transform_mode',
+        ),
+        (
+            _SURFACE,
+            'napari._qt.layer_controls.qt_image_controls_base.action_manager',
+            'napari:activate_surface_transform_mode',
+        ),
+        (
+            _TRACKS,
+            'napari._qt.layer_controls.qt_tracks_controls.action_manager',
+            'napari:activate_tracks_transform_mode',
+        ),
+        (
+            _VECTORS,
+            'napari._qt.layer_controls.qt_vectors_controls.action_manager',
+            'napari:activate_vectors_transform_mode',
+        ),
+    ),
 )
 @pytest.mark.skipif(os.environ.get('MIN_REQ', '0') == '1', reason='min req')
 def test_create_layer_controls_transform_mode_button(
-    qtbot, create_layer_controls, layer_type_with_data, monkeypatch
+    qtbot,
+    create_layer_controls,
+    layer_type_with_data,
+    action_manager_patch_path,
+    action_manager_trigger,
+    monkeypatch,
 ):
+    action_manager_mock = Mock(trigger=Mock())
+
+    # Monkeypatch the action_manager instance to prevent viewer error
+    monkeypatch.setattr(
+        action_manager_patch_path,
+        action_manager_mock,
+    )
+
     # create layer controls widget
     ctrl = create_layer_controls(layer_type_with_data)
 
@@ -482,8 +532,14 @@ def test_create_layer_controls_transform_mode_button(
     # check transform mode button existence
     assert ctrl.transform_button
 
+    # check layer mode change
+    assert ctrl.layer.mode == 'pan_zoom'
+    ctrl.transform_button.click()
+    assert ctrl.layer.mode == 'transform'
+
     # check reset transform behavior
     ctrl.layer.affine = None
+    assert ctrl.layer.affine != ctrl.layer._initial_affine
 
     def reset_transform_warning_dialog(*args):
         return QMessageBox.Yes
