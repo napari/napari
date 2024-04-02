@@ -47,8 +47,8 @@ def test_sample_data_triggers_reader_dialog(
 
 
 def test_plugin_display_name_use_for_multiple_samples(
-    make_napari_viewer,
     builtins,
+    make_napari_viewer,
 ):
     """Check 'display_name' used for submenu when plugin has >1 sample data."""
     app = get_app()
