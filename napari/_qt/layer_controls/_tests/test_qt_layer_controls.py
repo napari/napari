@@ -517,7 +517,8 @@ def test_create_layer_controls_transform_mode_button(
 ):
     action_manager_mock = Mock(trigger=Mock())
 
-    # Monkeypatch the action_manager instance to prevent viewer error
+    # Monkeypatch the action_manager instance to prevent `KeyError: 'layer'`
+    # over `napari.layers.utils.layer_utils.register_layer_attr_action._handle._wrapper`
     monkeypatch.setattr(
         action_manager_patch_path,
         action_manager_mock,
@@ -553,6 +554,43 @@ def test_create_layer_controls_transform_mode_button(
         Qt.KeyboardModifier.AltModifier,
     )
     assert ctrl.layer.affine == ctrl.layer._initial_affine
+
+
+@pytest.mark.parametrize(
+    'layer_type_with_data',
+    [
+        _LABELS_WITH_DIRECT_COLORMAP,
+        _LABELS,
+        _IMAGE,
+        _POINTS,
+        _SHAPES,
+        _SURFACE,
+        _TRACKS,
+        _VECTORS,
+    ],
+)
+@pytest.mark.skipif(os.environ.get('MIN_REQ', '0') == '1', reason='min req')
+def test_create_layer_controls_invalid_mode(
+    qtbot,
+    create_layer_controls,
+    layer_type_with_data,
+):
+    # create layer controls widget
+    ctrl = create_layer_controls(layer_type_with_data)
+
+    # check create widget corresponds to the expected class for each type of layer
+    assert isinstance(ctrl, layer_type_with_data.expected_isinstance)
+
+    # check layer mode and corresponding mode button
+    assert ctrl.layer.mode == 'pan_zoom'
+    assert ctrl.panzoom_button.isChecked()
+
+    # check setting invalid mode
+    with pytest.raises(ValueError):
+        ctrl.layer.mode = 'invalid_mode'
+
+    # check panzoom_button is still checked
+    assert ctrl.panzoom_button.isChecked()
 
 
 def test_unknown_raises(qtbot):
