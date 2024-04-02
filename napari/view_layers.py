@@ -14,7 +14,7 @@ of the layer types, like "image", "points", etc...):
 """
 
 import inspect
-from typing import Any, List, Optional, Tuple
+from typing import Any, Optional
 
 from numpydoc.docscrape import NumpyDocString as _NumpyDocString
 
@@ -121,7 +121,7 @@ def _make_viewer_then(
     *args,
     viewer: Optional[Viewer] = None,
     **kwargs,
-) -> Tuple[Viewer, Any]:
+) -> tuple[Viewer, Any]:
     """Create a viewer, call given add_* method, then return viewer and layer.
 
     This function will be deprecated soon (See #4693)
@@ -251,7 +251,7 @@ def imshow(
     order=(),
     axis_labels=(),
     show=True,
-) -> Tuple[Viewer, List['Image']]:
+) -> tuple[Viewer, list['Image']]:
     """Load data into an Image layer and return the Viewer and Layer.
 
     Parameters

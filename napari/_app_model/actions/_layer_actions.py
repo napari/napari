@@ -11,7 +11,7 @@ effect.  Use `app.register_action` to register new actions at runtime.
 from __future__ import annotations
 
 from functools import partial
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 from app_model.types import Action
 
@@ -39,7 +39,7 @@ LAYERCTX_LINK: MenuRuleDict = {
 
 # Statically defined Layer actions.
 # modifying this list at runtime has no effect.
-LAYER_ACTIONS: List[Action] = [
+LAYER_ACTIONS: list[Action] = [
     Action(
         id=CommandId.LAYER_DUPLICATE,
         title=CommandId.LAYER_DUPLICATE.command_title,

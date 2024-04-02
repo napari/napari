@@ -3,17 +3,13 @@
 Qt processors can be found in `napari/_qt/_qapp_model/injection/_qprocessors.py`.
 """
 
-import sys
 from concurrent.futures import Future
 from contextlib import nullcontext, suppress
 from functools import partial
 from typing import (
     Any,
     Callable,
-    Dict,
-    List,
     Optional,
-    Set,
     Union,
     get_origin,
 )
@@ -23,7 +19,7 @@ from napari.layers._source import layer_source
 
 
 def _add_layer_data_tuples_to_viewer(
-    data: Union[types.LayerDataTuple, List[types.LayerDataTuple]],
+    data: Union[types.LayerDataTuple, list[types.LayerDataTuple]],
     return_type=None,
     viewer=None,
     source: Optional[dict] = None,
@@ -116,7 +112,7 @@ def _add_layer_to_viewer(
 
 
 # here to prevent garbace collection of the future object while processing.
-_FUTURES: Set[Future] = set()
+_FUTURES: set[Future] = set()
 
 
 def _add_future_data(
@@ -176,16 +172,15 @@ def _add_future_data(
     _FUTURES.add(future)
 
 
-PROCESSORS: Dict[object, Callable] = {
+PROCESSORS: dict[object, Callable] = {
     types.LayerDataTuple: _add_layer_data_tuples_to_viewer,
-    List[types.LayerDataTuple]: _add_layer_data_tuples_to_viewer,
+    list[types.LayerDataTuple]: _add_layer_data_tuples_to_viewer,
     layers.Layer: _add_layer_to_viewer,
 }
 # Add future and LayerData processors for each layer type.
 for t in types._LayerData.__args__:  # type: ignore [attr-defined]
     PROCESSORS[t] = partial(_add_layer_data_to_viewer, return_type=t)
 
-    if sys.version_info >= (3, 9):
-        PROCESSORS[Future[t]] = partial(  # type: ignore [valid-type]
-            _add_future_data, return_type=t, _from_tuple=False
-        )
+    PROCESSORS[Future[t]] = partial(  # type: ignore [valid-type]
+        _add_future_data, return_type=t, _from_tuple=False
+    )

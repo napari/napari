@@ -1,4 +1,4 @@
-from typing import Any, Dict, Union
+from typing import Any, Union
 
 import numpy as np
 
@@ -28,7 +28,7 @@ class CategoricalColormap(EventedModel):
         The default value is a cycle of all white.
     """
 
-    colormap: Dict[Any, ColorValue] = Field(default_factory=dict)
+    colormap: dict[Any, ColorValue] = Field(default_factory=dict)
     fallback_color: ColorCycle = Field(
         default_factory=lambda: ColorCycle.validate_type('white')
     )
