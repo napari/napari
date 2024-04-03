@@ -1,4 +1,4 @@
-from typing import Set, TypeVar
+from typing import TypeVar
 
 import numpy as np
 
@@ -149,7 +149,7 @@ def highlight(layer, event):
 _T = TypeVar('_T')
 
 
-def _toggle_selected(selection: Set[_T], value: _T) -> Set[_T]:
+def _toggle_selected(selection: set[_T], value: _T) -> set[_T]:
     """Add or remove value from the selection set.
 
     This function returns a copy of the existing selection.

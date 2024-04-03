@@ -5,7 +5,7 @@ Sends messages to remote clients.
 
 import logging
 import time
-from typing import Dict, Optional
+from typing import Optional
 
 from napari.components.experimental.monitor import monitor
 from napari.components.layerlist import LayerList
@@ -49,7 +49,7 @@ class RemoteMessages:
         """
         self._frame_number += 1
 
-        layers: Dict[int, dict] = {}
+        layers: dict[int, dict] = {}
 
         monitor.add_data({'poll': {'layers': layers}})
         self._send_frame_time()
