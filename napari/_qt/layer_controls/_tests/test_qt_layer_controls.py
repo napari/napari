@@ -569,8 +569,7 @@ def test_create_layer_controls_transform_mode_button(
         _VECTORS,
     ],
 )
-@pytest.mark.skipif(os.environ.get('MIN_REQ', '0') == '1', reason='min req')
-def test_create_layer_controls_invalid_mode(
+def test_layer_controls_invalid_mode(
     qtbot,
     create_layer_controls,
     layer_type_with_data,
