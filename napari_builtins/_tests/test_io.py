@@ -2,7 +2,7 @@ import csv
 import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import NamedTuple, Tuple
+from typing import NamedTuple
 from uuid import uuid4
 
 import dask.array as da
@@ -24,7 +24,7 @@ from napari_builtins.io._write import write_csv
 
 
 class ImageSpec(NamedTuple):
-    shape: Tuple[int, ...]
+    shape: tuple[int, ...]
     dtype: str
     ext: str
     levels: int = 1

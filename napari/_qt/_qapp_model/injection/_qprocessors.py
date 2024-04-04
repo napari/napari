@@ -5,9 +5,7 @@ Non-Qt processors can be found in `napari/_app_model/injection/_processors.py`.
 
 from typing import (
     Callable,
-    Dict,
     Optional,
-    Tuple,
     Union,
 )
 
@@ -19,7 +17,7 @@ from napari._app_model.injection._providers import _provide_viewer_or_raise
 
 
 def _add_plugin_dock_widget(
-    widget_name_tuple: Tuple[Union[FunctionGui, QWidget, Widget], str],
+    widget_name_tuple: tuple[Union[FunctionGui, QWidget, Widget], str],
     viewer: Optional[viewer.Viewer] = None,
 ) -> None:
     if viewer is None:
@@ -30,8 +28,8 @@ def _add_plugin_dock_widget(
     viewer.window.add_dock_widget(widget, name=full_name)
 
 
-QPROCESSORS: Dict[object, Callable] = {
+QPROCESSORS: dict[object, Callable] = {
     Optional[
-        Tuple[Union[FunctionGui, QWidget, Widget], str]
+        tuple[Union[FunctionGui, QWidget, Widget], str]
     ]: _add_plugin_dock_widget,
 }

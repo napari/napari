@@ -1,6 +1,7 @@
 import re
 import sys
-from typing import Callable, Dict, Generator
+from collections.abc import Generator
+from typing import Callable
 
 import numpy as np
 
@@ -166,7 +167,7 @@ ANSI_STYLES = {
 
 
 def ansi2html(
-    ansi_string: str, styles: Dict[int, Dict[str, str]] = ANSI_STYLES
+    ansi_string: str, styles: dict[int, dict[str, str]] = ANSI_STYLES
 ) -> Generator[str, None, None]:
     """Convert ansi string to colored HTML
 
