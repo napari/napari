@@ -228,9 +228,9 @@ def test_drag_and_drop_layers(qtbot):
         # simulate drag and drop action with pyautogui
         import pyautogui
 
-        pyautogui.moveTo(start_x, start_y, duration=0.5)
+        pyautogui.moveTo(start_x, start_y, duration=0.2)
         pyautogui.mouseDown()
-        pyautogui.moveTo(end_x, end_y, duration=0.5)
+        pyautogui.moveTo(end_x, end_y, duration=0.2)
         pyautogui.mouseUp()
 
     drag_drop = threading.Thread(target=drag_and_drop)
