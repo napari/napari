@@ -224,16 +224,9 @@ def test_drag_and_drop_layers(qtbot):
     end_x = end_pos.x()
     end_y = end_pos.y()
 
-    def drag_and_drop():
-        # simulate drag and drop action with pyautogui
-        import pyautogui
-
-        pyautogui.moveTo(start_x, start_y, duration=0.2)
-        pyautogui.mouseDown()
-        pyautogui.moveTo(end_x, end_y, duration=0.2)
-        pyautogui.mouseUp()
-
-    drag_drop = threading.Thread(target=drag_and_drop)
+    drag_drop = threading.Thread(
+        target=drag_and_drop, args=(start_x, start_y, end_x, end_y)
+    )
     drag_drop.start()
 
     def check_drag_and_drop():
@@ -244,6 +237,16 @@ def test_drag_and_drop_layers(qtbot):
         return name == images[0].name
 
     qtbot.waitUntil(check_drag_and_drop)
+
+
+def drag_and_drop(start_x, start_y, end_x, end_y):
+    # simulate a drag and drop action with pyautogui
+    import pyautogui
+
+    pyautogui.moveTo(start_x, start_y, duration=0.2)
+    pyautogui.mouseDown()
+    pyautogui.moveTo(end_x, end_y, duration=0.2)
+    pyautogui.mouseUp()
 
 
 def make_qt_layer_list_with_layer(qtbot) -> tuple[QtLayerList, Image]:
