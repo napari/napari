@@ -44,6 +44,7 @@ from napari.layers import (
     Vectors,
 )
 from napari.utils.colormaps import DirectLabelColormap
+from napari.utils.events.event import Event
 
 
 class LayerTypeWithData(NamedTuple):
@@ -586,7 +587,7 @@ def test_layer_controls_invalid_mode(
 
     # check setting invalid mode
     with pytest.raises(ValueError):
-        ctrl.layer.mode = 'invalid_mode'
+        ctrl._on_mode_change(Event('mode', mode='invalid_mode'))
 
     # check panzoom_button is still checked
     assert ctrl.panzoom_button.isChecked()
