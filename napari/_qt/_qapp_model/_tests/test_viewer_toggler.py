@@ -1,6 +1,6 @@
 from napari import Viewer
 from napari._app_model._app import get_app
-from napari._app_model.actions._toggle_action import ViewerToggleAction
+from napari._qt._qapp_model.qactions._toggle_action import ViewerToggleAction
 from napari.components import ViewerModel
 
 
