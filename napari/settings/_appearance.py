@@ -1,4 +1,4 @@
-from typing import List, Union, cast
+from typing import Union, cast
 
 from napari._pydantic_compat import Field
 from napari.settings._fields import Theme
@@ -17,7 +17,7 @@ class HighlightSettings(EventedModel):
         ge=1,
         le=10,
     )
-    highlight_color: List[float] = Field(
+    highlight_color: list[float] = Field(
         [0.0, 0.6, 1.0, 1.0],
         title=trans._('Highlight color'),
         description=trans._(

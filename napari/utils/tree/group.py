@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Generator, Iterable, List, TypeVar, Union
+from collections.abc import Generator, Iterable
+from typing import TYPE_CHECKING, TypeVar, Union
 
 from napari.utils.events.containers._selectable_list import (
     SelectableNestableEventedList,
@@ -105,7 +106,7 @@ class Group(Node, SelectableNestableEventedList[NodeType]):
         for child in obj:
             yield from child.traverse(leaves_only)
 
-    def _render(self) -> List[str]:
+    def _render(self) -> list[str]:
         """Recursively return list of strings that can render ascii tree."""
         lines = [self._node_name()]
 

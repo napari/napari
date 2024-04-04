@@ -2,10 +2,12 @@
 File with things that are useful for testing, but not to be fixtures
 """
 
+import inspect
 from dataclasses import dataclass, field
-from typing import List, Optional, Tuple, Union
+from typing import Optional, Union
 
 import numpy as np
+from docstring_parser import parse
 
 from napari.utils._proxies import ReadOnlyWrapper
 
@@ -16,18 +18,18 @@ class MouseEvent:
 
     type: str
     is_dragging: bool = False
-    modifiers: List[str] = field(default_factory=list)
-    position: Union[Tuple[int, int], Tuple[int, int, int]] = (
+    modifiers: list[str] = field(default_factory=list)
+    position: Union[tuple[int, int], tuple[int, int, int]] = (
         0,
         0,
     )  # world coords
     pos: np.ndarray = field(
         default_factory=lambda: np.zeros(2)
     )  # canvas coords
-    view_direction: Optional[List[float]] = None
-    up_direction: Optional[List[float]] = None
-    dims_displayed: List[int] = field(default_factory=lambda: [0, 1])
-    delta: Optional[Tuple[float, float]] = None
+    view_direction: Optional[list[float]] = None
+    up_direction: Optional[list[float]] = None
+    dims_displayed: list[int] = field(default_factory=lambda: [0, 1])
+    delta: Optional[tuple[float, float]] = None
     native: Optional[bool] = None
 
 
@@ -35,3 +37,33 @@ def read_only_mouse_event(*args, **kwargs):
     return ReadOnlyWrapper(
         MouseEvent(*args, **kwargs), exceptions=('handled',)
     )
+
+
+def validate_all_params_in_docstring(func):
+    assert func.__doc__ is not None, f'Function {func} has no docstring'
+
+    parsed = parse(func.__doc__)
+    params = [x for x in parsed.params if x.args[0] == 'param']
+    # get only parameters from docstring
+
+    signature = inspect.signature(func)
+    assert set(signature.parameters.keys()) == {
+        x.arg_name for x in params
+    }, 'Parameters in signature and docstring do not match'
+    for sig, doc in zip(signature.parameters.values(), params):
+        assert (
+            sig.name == doc.arg_name
+        ), 'Parameters in signature and docstring are not in the same order.'
+        # assert sig.annotation == doc.type_name, f"Type of parameter {sig.name} in signature and docstring do not match"
+
+
+def validate_kwargs_sorted(func):
+    signature = inspect.signature(func)
+    kwargs_list = [
+        x.name
+        for x in signature.parameters.values()
+        if x.kind == inspect.Parameter.KEYWORD_ONLY
+    ]
+    assert kwargs_list == sorted(
+        kwargs_list
+    ), 'Keyword arguments are not sorted in function signature'
