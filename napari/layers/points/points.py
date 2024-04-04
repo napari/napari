@@ -143,11 +143,11 @@ class Points(Layer):
     projection_mode : str
         How data outside the viewed dimensions but inside the thick Dims slice will
         be projected onto the viewed dimenions.
-    property_choices : dict {str: array (N,)}
-        possible values for each property.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each point. Each property should be an array of length N,
         where N is the number of points.
+    property_choices : dict {str: array (N,)}
+        possible values for each property.
     rotate : float, 3-tuple of float, or n-D array.
         If a float convert into a 2D rotation matrix using that value as an
         angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
