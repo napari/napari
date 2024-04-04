@@ -1,5 +1,3 @@
-from typing import List, Tuple
-
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QCheckBox, QWidget
 
@@ -64,7 +62,7 @@ class QtTextVisibilityControl(QtWidgetControlsBase):
         with self._layer.text.events.visible.blocker():
             self.textDispCheckBox.setChecked(self._layer.text.visible)
 
-    def get_widget_controls(self) -> List[Tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [(self.textDispLabel, self.textDispCheckBox)]
 
     def disconnect_widget_controls(self) -> None:

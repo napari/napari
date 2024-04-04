@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple
+from typing import Optional
 
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
@@ -547,7 +547,7 @@ class NewQtLayerControls(
         self,
         section_att: str,
         wrapper: QtWidgetControlsBase,
-        controls: Optional[List[Tuple[QLabel, QWidget]]] = None,
+        controls: Optional[list[tuple[QLabel, QWidget]]] = None,
         add_wrapper: bool = True,
     ) -> None:
         """
@@ -563,7 +563,7 @@ class NewQtLayerControls(
         wrapper : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWidgetControlsBase
             An instance of a `QtWidgetControlsBase` subclass that setups
             widgets for a layer attribute.
-        controls : List[Tuple[QLabel, QWidget]]
+        controls : list[tuple[QLabel, QWidget]]
             A list of widget controls tuples. Each tuple has the label for the
             control and the respective control widget to show.
         add_wrapper : bool
@@ -661,7 +661,7 @@ class NewQtLayerControls(
     def add_annotation_widget_controls(
         self,
         wrapper: QtWidgetControlsBase,
-        controls: Optional[List[Tuple[QLabel, QWidget]]] = None,
+        controls: Optional[list[tuple[QLabel, QWidget]]] = None,
         add_wrapper: bool = True,
     ) -> None:
         """
@@ -672,7 +672,7 @@ class NewQtLayerControls(
         wrapper : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWidgetControlsBase
             An instance of a `QtWidgetControlsBase` subclass that setups
             widgets for a layer attribute.
-        controls : List[Tuple[QLabel, QWidget]]
+        controls : list[tuple[QLabel, QWidget]]
             A list of widget controls tuples. Each tuple has the label for the
             control and the respective control widget to show.
         add_wrapper : bool
@@ -691,7 +691,7 @@ class NewQtLayerControls(
     def add_display_widget_controls(
         self,
         wrapper: QtWidgetControlsBase,
-        controls: Optional[List[Tuple[QLabel, QWidget]]] = None,
+        controls: Optional[list[tuple[QLabel, QWidget]]] = None,
         add_wrapper: bool = True,
     ) -> None:
         """
@@ -702,7 +702,7 @@ class NewQtLayerControls(
         wrapper : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWidgetControlsBase
             An instance of a `QtWidgetControlsBase` subclass that setups
             widgets for a layer attribute.
-        controls : List[Tuple[QLabel, QWidget]]
+        controls : list[tuple[QLabel, QWidget]]
             A list of widget controls tuples. Each tuple has the label for the
             control and the respective control widget to show.
         add_wrapper : bool

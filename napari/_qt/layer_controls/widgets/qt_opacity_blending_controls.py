@@ -1,5 +1,3 @@
-from typing import List, Tuple
-
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QComboBox,
@@ -130,7 +128,7 @@ class QtOpacityBlendingControls(QtWidgetControlsBase):
                 self.blendComboBox.findData(self._layer.blending)
             )
 
-    def get_widget_controls(self) -> List[Tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [
             (self.opacityLabel, self.opacitySlider),
             (self.blendLabel, self.blendComboBox),

@@ -1,5 +1,4 @@
 from collections.abc import Iterable
-from typing import List, Tuple
 
 import numpy as np
 from qtpy.QtCore import Qt
@@ -72,5 +71,5 @@ class QtEdgeWidthSliderControl(QtWidgetControlsBase):
             value = np.clip(int(value), 0, 40)
             self.edgeWidthSlider.setValue(value)
 
-    def get_widget_controls(self) -> List[Tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [(self.edgeWidthLabel, self.edgeWidthSlider)]

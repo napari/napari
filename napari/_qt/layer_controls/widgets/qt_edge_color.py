@@ -1,5 +1,3 @@
-from typing import List, Tuple
-
 import numpy as np
 from qtpy.QtWidgets import QWidget
 
@@ -66,5 +64,5 @@ class QtEdgeColorControl(QtWidgetControlsBase):
         with qt_signals_blocked(self.edgeColorEdit):
             self.edgeColorEdit.setColor(self._layer.current_edge_color)
 
-    def get_widget_controls(self) -> List[Tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [(self.edgeColorLabel, self.edgeColorEdit)]
