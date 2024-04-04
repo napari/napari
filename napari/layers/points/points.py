@@ -107,7 +107,7 @@ class Points(Layer):
         Currently, this only applies to dask arrays.
     canvas_size_limits : tuple of float
         Lower and upper limits for the size of points in canvas pixels.
-        experimental_clipping_planes : list of dicts, list of ClippingPlane, or ClippingPlaneList
+    experimental_clipping_planes : list of dicts, list of ClippingPlane, or ClippingPlaneList
         Each dict defines a clipping plane in 3D in data coordinates.
         Valid dictionary keys are {'position', 'normal', and 'enabled'}.
         Values on the negative side of the normal are discarded if the plane is enabled.
