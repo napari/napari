@@ -1,7 +1,7 @@
 import contextlib
 import sys
 import time
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pytest
@@ -190,7 +190,7 @@ def test_magicgui_add_layer_list(make_napari_viewer):
     viewer = make_napari_viewer()
 
     @magicgui
-    def add_layer() -> List[Layer]:
+    def add_layer() -> list[Layer]:
         a = Image(data=np.random.randint(0, 10, size=(10, 10)))
         b = Labels(data=np.random.randint(0, 10, size=(10, 10)))
         return [a, b]
@@ -230,7 +230,7 @@ def test_magicgui_add_layer_data_tuple_list(make_napari_viewer):
     viewer = make_napari_viewer()
 
     @magicgui
-    def add_layer() -> List[types.LayerDataTuple]:
+    def add_layer() -> list[types.LayerDataTuple]:
         data1 = (np.random.rand(10, 10), {'name': 'hi'})
         data2 = (
             np.random.randint(0, 10, size=(10, 10)),

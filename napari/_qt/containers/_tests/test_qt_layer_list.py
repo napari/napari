@@ -1,5 +1,4 @@
 import threading
-from typing import List, Tuple
 
 import numpy as np
 from qtpy.QtCore import QModelIndex, QPoint, Qt
@@ -247,7 +246,7 @@ def test_drag_and_drop_layers(qtbot):
     qtbot.waitUntil(check_drag_and_drop)
 
 
-def make_qt_layer_list_with_layer(qtbot) -> Tuple[QtLayerList, Image]:
+def make_qt_layer_list_with_layer(qtbot) -> tuple[QtLayerList, Image]:
     image = Image(np.zeros((4, 3)))
     layers = LayerList([image])
     view = QtLayerList(layers)
@@ -255,7 +254,7 @@ def make_qt_layer_list_with_layer(qtbot) -> Tuple[QtLayerList, Image]:
     return view, image
 
 
-def make_qt_layer_list_with_layers(qtbot) -> Tuple[QtLayerList, List[Image]]:
+def make_qt_layer_list_with_layers(qtbot) -> tuple[QtLayerList, list[Image]]:
     image1 = Image(np.zeros((4, 3)), name='image1')
     image2 = Image(np.zeros((4, 3)), name='image2')
     layers = LayerList([image1, image2])

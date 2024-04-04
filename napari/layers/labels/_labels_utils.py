@@ -1,5 +1,4 @@
 from functools import lru_cache
-from typing import Tuple
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -239,8 +238,8 @@ def get_contours(labels: np.ndarray, thickness: int, background_label: int):
 
 
 def expand_slice(
-    axes_slice: Tuple[slice, ...], shape: tuple, offset: int
-) -> Tuple[slice, ...]:
+    axes_slice: tuple[slice, ...], shape: tuple, offset: int
+) -> tuple[slice, ...]:
     """Expands or shrinks a provided multi-axis slice by a given offset"""
     return tuple(
         slice(

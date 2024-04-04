@@ -1,12 +1,9 @@
+from collections.abc import Generator
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
-    Generator,
-    List,
     Optional,
-    Type,
     Union,
 )
 
@@ -59,10 +56,10 @@ class NumberNotEqError(errors.PydanticValueError):
 class ConstrainedInt(types.ConstrainedInt):
     """ConstrainedInt extension that adds not-equal"""
 
-    ne: Optional[Union[int, List[int]]] = None
+    ne: Optional[Union[int, list[int]]] = None
 
     @classmethod
-    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+    def __modify_schema__(cls, field_schema: dict[str, Any]) -> None:
         super().__modify_schema__(field_schema)
         if cls.ne is not None:
             f = 'const' if isinstance(cls.ne, int) else 'enum'
@@ -91,7 +88,7 @@ def conint(
     le: Optional[int] = None,
     multiple_of: Optional[int] = None,
     ne: Optional[int] = None,
-) -> Type[int]:
+) -> type[int]:
     """Extended version of `pydantic.types.conint` that includes not-equal."""
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = {

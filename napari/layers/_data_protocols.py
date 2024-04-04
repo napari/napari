@@ -7,7 +7,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Protocol,
-    Tuple,
     Union,
     runtime_checkable,
 )
@@ -74,11 +73,11 @@ class LayerDataProtocol(Protocol):
         """Data type of the array elements."""
 
     @property
-    def shape(self) -> Tuple[int, ...]:
+    def shape(self) -> tuple[int, ...]:
         """Array dimensions."""
 
     def __getitem__(
-        self, key: Union[Index, Tuple[Index, ...], LayerDataProtocol]
+        self, key: Union[Index, tuple[Index, ...], LayerDataProtocol]
     ) -> LayerDataProtocol:
         """Returns self[key]."""
 
