@@ -57,6 +57,8 @@ class ScalarFieldBase(Layer, ABC):
         the final column is a length N translation vector and a 1 or a napari
         `Affine` transform object. Applied as an extra transform on top of the
         provided scale, rotate, and shear values.
+    axes_labels : list of str, optional
+        List of axis labels for the layer data.
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -112,6 +114,9 @@ class ScalarFieldBase(Layer, ABC):
         ones along the main diagonal.
     translate : tuple of float
         Translation values for the layer.
+    units : str or sequence of str or pint.Unit or sequence of pint.Unit
+        The physical units of the data. If a sequence, the length should match
+        the number of spatial dimensions.
     visible : bool
         Whether the layer visual is currently being displayed.
 
@@ -168,6 +173,7 @@ class ScalarFieldBase(Layer, ABC):
         data,
         *,
         affine=None,
+        axes_labels=None,
         blending='translucent',
         cache=True,
         custom_interpolation_kernel_2d=None,
@@ -185,6 +191,7 @@ class ScalarFieldBase(Layer, ABC):
         scale=None,
         shear=None,
         translate=None,
+        units=None,
         visible=True,
     ):
         if name is None and data is not None:
@@ -213,6 +220,7 @@ class ScalarFieldBase(Layer, ABC):
             data,
             ndim,
             name=name,
+            axes_labels=axes_labels,
             metadata=metadata,
             scale=scale,
             translate=translate,
@@ -226,6 +234,7 @@ class ScalarFieldBase(Layer, ABC):
             cache=cache,
             experimental_clipping_planes=experimental_clipping_planes,
             projection_mode=projection_mode,
+            units=units,
         )
 
         self.events.add(
