@@ -107,7 +107,7 @@ def imsave_tiff(filename, data):
             tifffile.imwrite(filename, data)
         else:
             # boolean data needs special compression scheme
-            compression = 'zlw' if data.dtype == bool else ('zlib', 1)
+            compression = 'lzw' if data.dtype == bool else ('zlib', 1)
             tifffile.imwrite(filename, data, compression=compression)
     else:  # older version of tifffile since 2021.6.6  this is deprecated
         tifffile.imwrite(filename, data, compress=1)
