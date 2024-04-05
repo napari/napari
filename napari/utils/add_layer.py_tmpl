@@ -10,3 +10,7 @@ def {name}{signature}:
             setattr(layer, name, value)
     self.layers.append(layer)
     return layer
+
+# This file is created to improve user bug reports when
+# user use `viewer.add_xxxx` and some error occurs.
+# this allow to have more readable stacktrace.
