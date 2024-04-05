@@ -478,6 +478,7 @@ class Shapes(Layer):
         super().__init__(
             data,
             ndim=ndim,
+            axes_labels=axes_labels,
             name=name,
             metadata=metadata,
             scale=scale,
@@ -491,6 +492,7 @@ class Shapes(Layer):
             cache=cache,
             experimental_clipping_planes=experimental_clipping_planes,
             projection_mode=projection_mode,
+            units=units,
         )
 
         self.events.add(
