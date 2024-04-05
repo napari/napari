@@ -428,7 +428,7 @@ class Shapes(Layer):
         ndim=None,
         *,
         affine=None,
-        axis_labels=None,
+        axes_labels=None,
         blending='translucent',
         cache=True,
         edge_color='#777777',
