@@ -124,11 +124,11 @@ class Vectors(Layer):
         Determines how vectors are displayed.
 
         * ``VectorStyle.LINE``:
-        Vectors are displayed as lines.
+            Vectors are displayed as lines.
         * ``VectorStyle.TRIANGLE``:
-        Vectors are displayed as triangles.
+            Vectors are displayed as triangles.
         * ``VectorStyle.ARROW``:
-        Vectors are displayed as arrows.
+            Vectors are displayed as arrows.
     length : float
         Multiplicative factor on projections for length of all vectors.
     edge_color : str
@@ -472,11 +472,11 @@ class Vectors(Layer):
         """Vectors display mode: Determines how vectors are displayed.
 
         VectorStyle.LINE
-                Displays vectors as rectangular lines.
-            VectorStyle.TRIANGLE
-                Displays vectors as triangles.
-            VectorStyle.ARROW
-                Displays vectors as arrows.
+            Displays vectors as rectangular lines.
+        VectorStyle.TRIANGLE
+            Displays vectors as triangles.
+        VectorStyle.ARROW
+            Displays vectors as arrows.
         """
         return str(self._vector_style)
 
