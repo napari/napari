@@ -99,6 +99,8 @@ class Shapes(Layer):
         the final column is a length N translation vector and a 1 or a napari
         `Affine` transform object. Applied as an extra transform on top of the
         provided scale, rotate, and shear values.
+    axes_labels : list of str, optional
+        List of axis labels for the layer data.
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -192,6 +194,9 @@ class Shapes(Layer):
         For example usage, see /napari/examples/add_shapes_with_text.py.
     translate : tuple of float
         Translation values for the layer.
+    units : str or sequence of str or pint.Unit or sequence of pint.Unit
+        The physical units of the data. If a sequence, the length should match
+        the number of spatial dimensions.
     visible : bool
         Whether the layer visual is currently being displayed.
     z_index : int or list
@@ -423,6 +428,7 @@ class Shapes(Layer):
         ndim=None,
         *,
         affine=None,
+        axis_labels=None,
         blending='translucent',
         cache=True,
         edge_color='#777777',
@@ -449,6 +455,7 @@ class Shapes(Layer):
         shear=None,
         text=None,
         translate=None,
+        units=None,
         visible=True,
         z_index=0,
     ) -> None:
