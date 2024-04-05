@@ -89,7 +89,6 @@ def split_channels(
     iterable_kwargs = {
         'scale',
         'translate',
-        'affine',
         'contrast_limits',
         'metadata',
         'plane',
