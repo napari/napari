@@ -344,7 +344,7 @@ xarray = "xr"
 # https://docs.python.org/3/library/warnings.html#describing-warning-filters
 addopts = ["--maxfail=5",  "--durations=10",  "-ra", "--strict-markers", "--strict-config"]
 console_output_style = "count"
-minversion = "7"
+minversion = "8"
 log_cli_level = "INFO"
 xfail_strict = true
 testpaths = ["napari", "napari_builtins"]
