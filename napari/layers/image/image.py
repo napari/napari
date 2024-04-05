@@ -51,6 +51,8 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         provided scale, rotate, and shear values.
     attenuation : float
         Attenuation rate for attenuated maximum intensity projection.
+    axes_labels : list of str, optional
+        List of axis labels for the layer data.
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -135,6 +137,9 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         ones along the main diagonal.
     translate : tuple of float
         Translation values for the layer.
+    units : str or sequence of str or pint.Unit or sequence of pint.Unit
+        The physical units of the data. If a sequence, the length should match
+        the number of spatial dimensions.
     visible : bool
         Whether the layer visual is currently being displayed.
 
@@ -226,6 +231,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         *,
         affine=None,
         attenuation=0.05,
+        axes_labels=None,
         blending='translucent',
         cache=True,
         colormap='gray',
@@ -249,6 +255,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         scale=None,
         shear=None,
         translate=None,
+        units=None,
         visible=True,
     ):
         # Determine if rgb
@@ -267,6 +274,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         super().__init__(
             data,
             affine=affine,
+            axes_labels=axes_labels,
             blending=blending,
             cache=cache,
             custom_interpolation_kernel_2d=custom_interpolation_kernel_2d,
@@ -284,6 +292,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             scale=scale,
             shear=shear,
             translate=translate,
+            units=units,
             visible=visible,
         )
 
