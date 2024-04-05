@@ -149,8 +149,8 @@ def is_iterable(
     provided and the argument is a 1-D array of length 3 or 4 then the input
     is taken to not be iterable. If allow_none is True, `None` is considered iterable.
     """
-    if arg is None and not allow_none:
-        return False
+    if arg is None:
+        return allow_none
     if isinstance(arg, (str, Enum)):
         return False
     if np.isscalar(arg):
