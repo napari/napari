@@ -1125,6 +1125,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         """
         base_dict = {
             'name': self.name,
+            'axes_labels': self.axes_labels,
             'metadata': self.metadata,
             'scale': list(self.scale),
             'translate': list(self.translate),
@@ -1138,6 +1139,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 plane.dict() for plane in self.experimental_clipping_planes
             ],
             'projection_mode': self.projection_mode,
+            'units': self._units,
         }
         return base_dict
 
