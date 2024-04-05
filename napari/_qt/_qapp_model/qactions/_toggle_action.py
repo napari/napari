@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from app_model.types import Action, ToggleRule
 
@@ -41,14 +41,14 @@ class ViewerToggleAction(Action):
         title: str,
         viewer_attribute: str,
         sub_attribute: str,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
-        def get_current(viewer: Viewer):
+        def get_current(viewer: Viewer) -> bool:
             """return the current value of the viewer attribute"""
             attr = getattr(viewer, viewer_attribute)
             return getattr(attr, sub_attribute)
 
-        def toggle(viewer: Viewer):
+        def toggle(viewer: Viewer) -> None:
             """toggle the viewer attribute"""
             attr = getattr(viewer, viewer_attribute)
             setattr(attr, sub_attribute, not getattr(attr, sub_attribute))
