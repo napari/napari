@@ -15,6 +15,7 @@ from napari.utils.misc import (
     ensure_iterable,
     ensure_list_of_layer_data_tuple,
     ensure_sequence_of_iterables,
+    is_iterable,
     pick_equality_operator,
 )
 
@@ -251,3 +252,18 @@ def test_ensure_list_of_layer_data_tuple(input_data, expected):
     When an empty dataset is supplied no layer is created and no errors are produced.
     """
     assert ensure_list_of_layer_data_tuple(input_data) == expected
+
+
+@pytest.mark.parametrize(
+    'data,expected',
+    [
+        (1, False),
+        (1.0, False),
+        ([1], True),
+        ('aaa', False),
+        (object(), False),
+        (None, False),
+    ],
+)
+def test_is_iterable(data, expected):
+    assert is_iterable(data) == expected
