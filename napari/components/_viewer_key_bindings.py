@@ -116,7 +116,7 @@ def focus_axes_down(viewer: Viewer):
     ),
 )
 def roll_axes(viewer: Viewer):
-    viewer.dims._roll()
+    viewer.dims.roll()
 
 
 # Use non-breaking spaces and non-breaking hyphen for Preferences table
