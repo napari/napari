@@ -23,6 +23,10 @@ from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.layers.utils._text_constants import Anchor
 from napari.layers.utils.color_encoding import ConstantColorEncoding
 from napari.layers.utils.color_manager import ColorProperties
+from napari.utils._test_utils import (
+    validate_all_params_in_docstring,
+    validate_kwargs_sorted,
+)
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.transforms import CompositeAffine
 
@@ -1023,7 +1027,7 @@ def test_border_width_types(border_width):
 
 @pytest.mark.parametrize(
     'border_width',
-    [int(-1), float(-1), np.array([-1, 2, 3, 4, 5]), [-1, 2, 3, 4, 5]],
+    [-1, float(-1), np.array([-1, 2, 3, 4, 5]), [-1, 2, 3, 4, 5]],
 )
 def test_border_width_types_negative(border_width):
     """Test negative values in all border_width dtypes"""
@@ -2638,3 +2642,8 @@ def test_events_callback(old_name, new_name, value):
 
     new_name_callback.assert_called_once()
     old_name_callback.assert_called_once()
+
+
+def test_docstring():
+    validate_all_params_in_docstring(Points)
+    validate_kwargs_sorted(Points)

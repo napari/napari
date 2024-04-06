@@ -37,7 +37,7 @@ jobs:
         with:
           python-version: "3.10"
           cache-dependency-path: |
-            napari/setup.cfg
+            napari/pyproject.toml
             docs/requirements.txt
 
       - uses: tlambert03/setup-qt-libs@v1

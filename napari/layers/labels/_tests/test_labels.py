@@ -4,7 +4,6 @@ import time
 from collections import defaultdict
 from dataclasses import dataclass
 from tempfile import TemporaryDirectory
-from typing import List
 
 import numpy as np
 import numpy.testing as npt
@@ -22,6 +21,10 @@ from napari.layers import Labels
 from napari.layers.labels._labels_constants import LabelsRendering
 from napari.layers.labels._labels_utils import get_contours
 from napari.utils import Colormap
+from napari.utils._test_utils import (
+    validate_all_params_in_docstring,
+    validate_kwargs_sorted,
+)
 from napari.utils.colormaps import (
     CyclicLabelColormap,
     DirectLabelColormap,
@@ -1172,11 +1175,11 @@ def test_3d_video_and_3d_scale_translate_then_scale_translate_padded():
 @dataclass
 class MouseEvent:
     # mock mouse event class
-    pos: List[int]
-    position: List[int]
-    dims_point: List[int]
-    dims_displayed: List[int]
-    view_direction: List[int]
+    pos: list[int]
+    position: list[int]
+    dims_point: list[int]
+    dims_displayed: list[int]
+    view_direction: list[int]
 
 
 def test_get_value_ray_3d():
@@ -1721,3 +1724,8 @@ class TestLabels:
             obj,
             {'seed', 'num_colors', 'color', 'seed_rng'},
         )
+
+
+def test_docstring():
+    validate_all_params_in_docstring(Labels)
+    validate_kwargs_sorted(Labels)
