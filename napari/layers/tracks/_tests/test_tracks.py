@@ -4,6 +4,10 @@ import pytest
 
 from napari.layers import Tracks
 from napari.layers.tracks._track_utils import TrackManager
+from napari.utils._test_utils import (
+    validate_all_params_in_docstring,
+    validate_kwargs_sorted,
+)
 
 # def test_empty_tracks():
 #     """Test instantiating Tracks layer without data."""
@@ -290,3 +294,8 @@ def test_track_connex_validity() -> None:
 
     # the number of 'False' in the track_connex array should be equal to the number of tracks
     assert np.sum(~layer._manager.track_connex) == n_tracks
+
+
+def test_docstring():
+    validate_all_params_in_docstring(Tracks)
+    validate_kwargs_sorted(Tracks)
