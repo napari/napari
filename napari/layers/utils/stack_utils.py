@@ -121,6 +121,8 @@ def split_channels(
                     allow_none=True,
                 )
             )
+        elif key == 'affine' and isinstance(val, np.ndarray):
+            kwargs[key] = itertools.repeat(val, n_channels)
         else:
             kwargs[key] = iter(ensure_iterable(val))
 
