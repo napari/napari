@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List, Tuple, Union
+from typing import TYPE_CHECKING, Union
 
 import numpy as np
 import numpy.typing as npt
@@ -17,8 +17,8 @@ if TYPE_CHECKING:
 def displayed_plane_from_nd_line_segment(
     start_point: npt.NDArray,
     end_point: npt.NDArray,
-    dims_displayed: Union[List[int], npt.NDArray],
-) -> Tuple[npt.NDArray, npt.NDArray]:
+    dims_displayed: Union[list[int], npt.NDArray],
+) -> tuple[npt.NDArray, npt.NDArray]:
     """Get the plane defined by start_point and the normal vector that goes
     from start_point to end_point.
 
@@ -157,8 +157,8 @@ def orient_plane_normal_around_cursor(
 def nd_line_segment_to_displayed_data_ray(
     start_point: np.ndarray,
     end_point: np.ndarray,
-    dims_displayed: Union[List[int], np.ndarray],
-) -> Tuple[np.ndarray, np.ndarray]:
+    dims_displayed: Union[list[int], np.ndarray],
+) -> tuple[np.ndarray, np.ndarray]:
     """Convert the start and end point of the line segment of a mouse click ray
     intersecting a data cube to a ray (i.e., start position and direction) in
     displayed data coordinates

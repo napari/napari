@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import weakref
+from collections.abc import Generator
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Any, Generator, Optional, Tuple
+from typing import Any, Optional
 from weakref import ReferenceType
 
 from magicgui.widgets import FunctionGui
@@ -33,7 +34,7 @@ class Source(BaseModel):
 
     path: Optional[str] = None
     reader_plugin: Optional[str] = None
-    sample: Optional[Tuple[str, str]] = None
+    sample: Optional[tuple[str, str]] = None
     widget: Optional[FunctionGui] = None
     parent: Optional[Layer] = None
 
