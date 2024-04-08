@@ -77,7 +77,7 @@ def validate_kwargs_sorted(func):
 
 def validate_docstring_parent_class_consistency(klass, skip=('data', 'ndim')):
     """
-    Validate is the docstrings of the class parameters and type information
+    Validate if the docstrings of the class parameters and type information
     are consistent with the parent class.
 
     Parameters
