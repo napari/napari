@@ -266,7 +266,7 @@ def add_instant_event(
     name : str
         Add this event.
     category : str | None
-        Comma separated categories such has "render,update".
+        Comma separated categories such as "render,update".
     process_id : int | None
         The process id that produced the event.
     thread_id : int | None
