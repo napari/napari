@@ -51,7 +51,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         provided scale, rotate, and shear values.
     attenuation : float
         Attenuation rate for attenuated maximum intensity projection.
-    axes_labels : list of str, optional
+    axis_labels : list of str, optional
         List of axis labels for the layer data.
     blending : str
         One of a list of preset blending modes that determines how RGB and
@@ -231,7 +231,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         *,
         affine=None,
         attenuation=0.05,
-        axes_labels=None,
+        axis_labels=None,
         blending='translucent',
         cache=True,
         colormap='gray',
@@ -274,7 +274,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         super().__init__(
             data,
             affine=affine,
-            axes_labels=axes_labels,
+            axis_labels=axis_labels,
             blending=blending,
             cache=cache,
             custom_interpolation_kernel_2d=custom_interpolation_kernel_2d,

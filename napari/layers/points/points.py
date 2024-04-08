@@ -82,7 +82,7 @@ class Points(Layer):
         provided scale, rotate, and shear values.
     antialiasing: float
         Amount of antialiasing in canvas pixels.
-    axes_labels : list of str, optional
+    axis_labels : list of str, optional
         List of axis labels for the layer data.
     blending : str
         One of a list of preset blending modes that determines how RGB and
@@ -385,7 +385,7 @@ class Points(Layer):
         *,
         affine=None,
         antialiasing=1,
-        axes_labels=None,
+        axis_labels=None,
         blending='translucent',
         border_color='dimgray',
         border_color_cycle=None,
@@ -461,7 +461,7 @@ class Points(Layer):
         super().__init__(
             data,
             ndim,
-            axes_labels=axes_labels,
+            axis_labels=axis_labels,
             name=name,
             metadata=metadata,
             scale=scale,

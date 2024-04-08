@@ -57,7 +57,7 @@ class ScalarFieldBase(Layer, ABC):
         the final column is a length N translation vector and a 1 or a napari
         `Affine` transform object. Applied as an extra transform on top of the
         provided scale, rotate, and shear values.
-    axes_labels : list of str, optional
+    axis_labels : list of str, optional
         List of axis labels for the layer data.
     blending : str
         One of a list of preset blending modes that determines how RGB and
@@ -173,7 +173,7 @@ class ScalarFieldBase(Layer, ABC):
         data,
         *,
         affine=None,
-        axes_labels=None,
+        axis_labels=None,
         blending='translucent',
         cache=True,
         custom_interpolation_kernel_2d=None,
@@ -220,7 +220,7 @@ class ScalarFieldBase(Layer, ABC):
             data,
             ndim,
             name=name,
-            axes_labels=axes_labels,
+            axis_labels=axis_labels,
             metadata=metadata,
             scale=scale,
             translate=translate,

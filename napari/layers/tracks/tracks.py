@@ -30,7 +30,7 @@ class Tracks(Layer):
         the final column is a length N translation vector and a 1 or a napari
         `Affine` transform object. Applied as an extra transform on top of the
         provided scale, rotate, and shear values.
-    axes_labels : list of str, optional
+    axis_labels : list of str, optional
         List of axis labels for the layer data.
     blending : str
         One of a list of preset blending modes that determines how RGB and
@@ -110,7 +110,7 @@ class Tracks(Layer):
         data,
         *,
         affine=None,
-        axes_labels=None,
+        axis_labels=None,
         blending='additive',
         cache=True,
         color_by='track_id',
@@ -144,7 +144,7 @@ class Tracks(Layer):
         super().__init__(
             data,
             ndim,
-            axes_labels=axes_labels,
+            axis_labels=axis_labels,
             name=name,
             metadata=metadata,
             scale=scale,

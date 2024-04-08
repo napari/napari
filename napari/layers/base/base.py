@@ -85,7 +85,7 @@ __all__ = ('Layer', 'OPTIONAL_PARAMETERS')
 
 OPTIONAL_PARAMETERS = {
     'affine',
-    'axes_labels',
+    'axis_labels',
     'rotate',
     'scale',
     'shear',
@@ -145,7 +145,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         the final column is a length N translation vector and a 1 or a napari
         `Affine` transform object. Applied as an extra transform on top of the
         provided scale, rotate, and shear values.
-    axes_labels : list of str, optional
+    axis_labels : list of str, optional
         List of axis labels for the layer data.
     blending : str
         One of a list of preset blending modes that determines how RGB and
@@ -331,7 +331,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         ndim,
         *,
         affine=None,
-        axes_labels=None,
+        axis_labels=None,
         blending='translucent',
         cache=True,  # this should move to future "data source" object.
         experimental_clipping_planes=None,
@@ -440,14 +440,14 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         )
         if units is None:
             units = pint.get_application_registry().pixel
-        if axes_labels is None:
+        if axis_labels is None:
             if isinstance(units, dict):
-                axes_labels = list(units)
+                axis_labels = list(units)
             else:
-                axes_labels = [f'dim_{i}' for i in range(ndim)][::-1]
+                axis_labels = [f'dim_{i}' for i in range(ndim)][::-1]
 
-        self._units, self._axes_labels = coerce_units_and_axes(
-            units, axes_labels
+        self._units, self._axis_labels = coerce_units_and_axes(
+            units, axis_labels
         )
 
         self.corner_pixels = np.zeros((2, ndim), dtype=int)
@@ -473,7 +473,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             source=self,
             data=Event,
             affine=Event,
-            axes_labels=Event,
+            axis_labels=Event,
             blending=Event,
             cursor=Event,
             cursor_size=Event,
@@ -799,65 +799,65 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         return set(self._parameters_with_default_values)
 
     def set_axis_and_units(
-        self, axes_labels: Sequence[str], units: UnitsLike
+        self, axis_labels: Sequence[str], units: UnitsLike
     ) -> None:
-        self._units, self._axes_labels = coerce_units_and_axes(
-            units, axes_labels
+        self._units, self._axis_labels = coerce_units_and_axes(
+            units, axis_labels
         )
-        self._parameters_with_default_values.discard('axes_labels')
+        self._parameters_with_default_values.discard('axis_labels')
         self._parameters_with_default_values.discard('units')
-        self.events.axes_labels()
+        self.events.axis_labels()
         self.events.units()
 
     @property
-    def axes_labels(self) -> list[str]:
+    def axis_labels(self) -> list[str]:
         """Sequence[str]: Labels for each axis."""
-        return self._axes_labels
+        return self._axis_labels
 
-    @axes_labels.setter
-    def axes_labels(self, axes_labels: Sequence[str]) -> None:
-        axes_labels = list(axes_labels)
-        if len(axes_labels) != len(set(axes_labels)):
+    @axis_labels.setter
+    def axis_labels(self, axis_labels: Sequence[str]) -> None:
+        axis_labels = list(axis_labels)
+        if len(axis_labels) != len(set(axis_labels)):
             raise ValueError('Axes labels must be unique.')
-        if len(axes_labels) != self.ndim:
+        if len(axis_labels) != self.ndim:
             raise ValueError(
-                f'Length of axes_labels should be equal to ndim ({self.ndim})'
+                f'Length of axis_labels should be equal to ndim ({self.ndim})'
             )
-        if isinstance(self._units, dict) and not set(axes_labels).issubset(
+        if isinstance(self._units, dict) and not set(axis_labels).issubset(
             set(self._units)
         ):
-            diff = ', '.join(set(axes_labels) - set(self._units))
+            diff = ', '.join(set(axis_labels) - set(self._units))
             raise ValueError(
                 'Units are set per axis and some of new '
-                'axes_labels do not have a corresponding unit. '
+                'axis_labels do not have a corresponding unit. '
                 f'Missing units for: {diff}. '
                 'Please use set_axis_and_units method.'
             )
-        self._axes_labels = list(axes_labels)
-        self._parameters_with_default_values.discard('axes_labels')
-        self.events.axes_labels()
+        self._axis_labels = list(axis_labels)
+        self._parameters_with_default_values.discard('axis_labels')
+        self.events.axis_labels()
 
     @property
     def units(self) -> dict[str, pint.Unit]:
         """Dict[str, unyt.Unit]: Units for each axis."""
         if isinstance(self._units, dict):
             return self._units
-        return {label: self._units for label in self.axes_labels}
+        return {label: self._units for label in self.axis_labels}
 
     @units.setter
     def units(self, units: UnitsLike) -> None:
         if (
-            'axes_labels' in self._parameters_with_default_values
+            'axis_labels' in self._parameters_with_default_values
             and isinstance(units, dict)
         ):
-            self._units, self._axes_labels = coerce_units_and_axes(
+            self._units, self._axis_labels = coerce_units_and_axes(
                 units, list(units)
             )
-            self._parameters_with_default_values.discard('axes_labels')
-            self.events.axes_labels()
+            self._parameters_with_default_values.discard('axis_labels')
+            self.events.axis_labels()
         else:
-            self._units, self._axes_labels = coerce_units_and_axes(
-                units, self._axes_labels
+            self._units, self._axis_labels = coerce_units_and_axes(
+                units, self._axis_labels
             )
         self._parameters_with_default_values.discard('units')
         self.events.units()
@@ -1125,7 +1125,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         """
         base_dict = {
             'name': self.name,
-            'axes_labels': self.axes_labels,
+            'axis_labels': self.axis_labels,
             'metadata': self.metadata,
             'scale': list(self.scale),
             'translate': list(self.translate),

@@ -197,13 +197,13 @@ class LayerList(SelectableEventedList[Layer]):
         super().insert(index, new_layer)
 
     @property
-    def axes_labels(self) -> list[str]:
+    def axis_labels(self) -> list[str]:
         if not self:
             return ['dim_1', 'dim_0']
         res = []
         seen = set()
         for layer in self:
-            for axis_label in layer.axes_labels[::-1]:
+            for axis_label in layer.axis_labels[::-1]:
                 if axis_label not in seen:
                     seen.add(axis_label)
                     res.append(axis_label)
@@ -221,7 +221,7 @@ class LayerList(SelectableEventedList[Layer]):
     @units.setter
     def units(self, units: dict[str, pint.Unit]):
         for layer in self:
-            layer.units = {k: units[k] for k in layer.axes_labels}
+            layer.units = {k: units[k] for k in layer.axis_labels}
 
     @property
     def parameters_with_default_values(self):
@@ -236,15 +236,15 @@ class LayerList(SelectableEventedList[Layer]):
             return
         not_update = self.parameters_with_default_values
         if (
-            'axes_labels' in layer.parameters_with_default_values
-            and 'axes_labels' not in not_update
+            'axis_labels' in layer.parameters_with_default_values
+            and 'axis_labels' not in not_update
         ):
-            layer.axes_labels = self.axes_labels[-layer.ndim :]
+            layer.axis_labels = self.axis_labels[-layer.ndim :]
 
         if 'units' not in not_update:
             units = self.units
             if 'units' in layer.parameters_with_default_values:
-                layer.units = {k: units[k] for k in layer.axes_labels}
+                layer.units = {k: units[k] for k in layer.axis_labels}
             else:
                 for axes_name, unit in layer.units.items():
                     if (
@@ -440,7 +440,7 @@ class LayerList(SelectableEventedList[Layer]):
         -------
         ndim : int
         """
-        return len(self.axes_labels)
+        return len(self.axis_labels)
 
     def _link_layers(
         self,

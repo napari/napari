@@ -573,34 +573,34 @@ def test_readd_layers():
     assert set(layers) == set(imgs)
 
 
-def test_axes_labels():
+def test_axis_labels():
     layers = LayerList()
     l1 = SampleLayer(np.zeros((10, 10)))
     l2 = SampleLayer(np.zeros((5, 10, 10)))
-    assert layers.axes_labels == ['dim_1', 'dim_0']
+    assert layers.axis_labels == ['dim_1', 'dim_0']
     layers.append(l1)
-    assert layers.axes_labels == ['dim_1', 'dim_0']
+    assert layers.axis_labels == ['dim_1', 'dim_0']
     layers.append(l2)
-    assert layers.axes_labels == ['dim_2', 'dim_1', 'dim_0']
+    assert layers.axis_labels == ['dim_2', 'dim_1', 'dim_0']
 
 
-def test_axes_labels_custom():
-    l1 = SampleLayer(np.zeros((5, 10, 10)), axes_labels=['z', 'y', 'x'])
-    l2 = SampleLayer(np.zeros((5, 10, 10)), axes_labels=['t', 'y', 'x'])
+def test_axis_labels_custom():
+    l1 = SampleLayer(np.zeros((5, 10, 10)), axis_labels=['z', 'y', 'x'])
+    l2 = SampleLayer(np.zeros((5, 10, 10)), axis_labels=['t', 'y', 'x'])
     layers = LayerList([l1, l2])
-    assert layers.axes_labels == ['t', 'z', 'y', 'x']
+    assert layers.axis_labels == ['t', 'z', 'y', 'x']
 
 
-def test_inherit_axes_labels():
+def test_inherit_axis_labels():
     """Test if default axes labels are overwritten after add to layer list."""
     layers = LayerList()
-    l1 = SampleLayer(np.zeros((5, 10, 10)), axes_labels=['z', 'y', 'x'])
+    l1 = SampleLayer(np.zeros((5, 10, 10)), axis_labels=['z', 'y', 'x'])
     l2 = SampleLayer(np.zeros((10, 10)))
-    assert l2.axes_labels == ['dim_1', 'dim_0']
+    assert l2.axis_labels == ['dim_1', 'dim_0']
     layers.append(l1)
-    assert l2.axes_labels == ['dim_1', 'dim_0']
+    assert l2.axis_labels == ['dim_1', 'dim_0']
     layers.append(l2)
-    assert l2.axes_labels == ['y', 'x']
+    assert l2.axis_labels == ['y', 'x']
 
 
 def test_inheritance_units(unit_register):
@@ -618,9 +618,9 @@ def test_inheritance_units(unit_register):
 def test_set_units(unit_register):
     """Test if default axes labels are overwritten after add to layer list."""
     l1 = SampleLayer(
-        np.zeros((5, 10, 10)), axes_labels=['z', 'y', 'x'], units='nm'
+        np.zeros((5, 10, 10)), axis_labels=['z', 'y', 'x'], units='nm'
     )
-    l2 = SampleLayer(np.zeros((10, 10)), axes_labels=['y', 'x'])
+    l2 = SampleLayer(np.zeros((10, 10)), axis_labels=['y', 'x'])
     layers = LayerList([l1, l2])
     assert layers.units == {
         'x': unit_register.nm,

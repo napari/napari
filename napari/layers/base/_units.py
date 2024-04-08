@@ -22,27 +22,27 @@ __all__ = (
 
 
 def coerce_units_and_axes(
-    units: UnitsLike, axes_labels: Optional[Sequence[str]]
+    units: UnitsLike, axis_labels: Optional[Sequence[str]]
 ) -> tuple[UnitsInfo, Optional[list[str]]]:
     units_ = get_units_from_name(units)
-    if axes_labels is None:
+    if axis_labels is None:
         return units_, None
 
-    axes_labels = list(axes_labels)
-    if len(axes_labels) != len(set(axes_labels)):
-        raise ValueError('Axes labels must be unique.')
+    axis_labels = list(axis_labels)
+    if len(axis_labels) != len(set(axis_labels)):
+        raise ValueError('Axis labels must be unique.')
 
     if isinstance(units_, dict):
-        if set(axes_labels).issubset(set(units_)):
-            units_ = {name: units_[name] for name in axes_labels}
+        if set(axis_labels).issubset(set(units_)):
+            units_ = {name: units_[name] for name in axis_labels}
         else:
-            diff = ', '.join(set(axes_labels) - set(units_))
+            diff = ', '.join(set(axis_labels) - set(units_))
             raise ValueError(
-                'If both axes_labels and units are provided, '
-                'all axes_labels must have a corresponding unit. '
+                'If both axis_labels and units are provided, '
+                'all axis_labels must have a corresponding unit. '
                 f'Missing units for: {diff}'
             )
-    return units_, axes_labels
+    return units_, axis_labels
 
 
 @overload

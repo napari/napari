@@ -99,7 +99,7 @@ class Shapes(Layer):
         the final column is a length N translation vector and a 1 or a napari
         `Affine` transform object. Applied as an extra transform on top of the
         provided scale, rotate, and shear values.
-    axes_labels : list of str, optional
+    axis_labels : list of str, optional
         List of axis labels for the layer data.
     blending : str
         One of a list of preset blending modes that determines how RGB and
@@ -428,7 +428,7 @@ class Shapes(Layer):
         ndim=None,
         *,
         affine=None,
-        axes_labels=None,
+        axis_labels=None,
         blending='translucent',
         cache=True,
         edge_color='#777777',
@@ -478,7 +478,7 @@ class Shapes(Layer):
         super().__init__(
             data,
             ndim=ndim,
-            axes_labels=axes_labels,
+            axis_labels=axis_labels,
             name=name,
             metadata=metadata,
             scale=scale,
