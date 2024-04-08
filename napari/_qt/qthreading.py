@@ -212,10 +212,10 @@ def thread_worker(
 
     The returned worker will have these signals:
 
-        - *started*: emitted when the work is started
-        - *finished*: emitted when the work is finished
-        - *returned*: emitted with return value
-        - *errored*: emitted with error object on Exception
+    - *started*: emitted when the work is started
+    - *finished*: emitted when the work is finished
+    - *returned*: emitted with return value
+    - *errored*: emitted with error object on Exception
 
     It will also have a ``worker.start()`` method that can be used to start
     execution of the function in another thread. (useful if you need to connect
@@ -224,17 +224,17 @@ def thread_worker(
     If the decorated function is a generator, the returned worker will also
     provide these signals:
 
-        - *yielded*: emitted with yielded values
-        - *paused*: emitted when a running job has successfully paused
-        - *resumed*: emitted when a paused job has successfully resumed
-        - *aborted*: emitted when a running job is successfully aborted
+    - *yielded*: emitted with yielded values
+    - *paused*: emitted when a running job has successfully paused
+    - *resumed*: emitted when a paused job has successfully resumed
+    - *aborted*: emitted when a running job is successfully aborted
 
     And these methods:
 
-        - *quit*: ask the thread to quit
-        - *toggle_paused*: toggle the running state of the thread.
-        - *send*: send a value into the generator.  (This requires that your
-          decorator function uses the ``value = yield`` syntax)
+    - *quit*: ask the thread to quit
+    - *toggle_paused*: toggle the running state of the thread.
+    - *send*: send a value into the generator.  (This requires that your
+        decorator function uses the ``value = yield`` syntax)
 
     Parameters
     ----------
