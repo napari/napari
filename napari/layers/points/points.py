@@ -160,6 +160,7 @@ class Points(Layer):
         Scale factors for the layer.
     shading : str, Shading
         Render lighting and shading on points. Options are:
+
         * 'none'
           No shading is added to the points.
         * 'spherical'
