@@ -88,10 +88,7 @@ class FindTransStrings(ast.NodeVisitor):
         # determine which one is used.
         for idx, arg in enumerate(args):
             found_vars = set()
-            if isinstance(arg, ast.Name):
-                check_arg = arg.id
-            else:
-                check_arg = arg[:]
+            check_arg = arg.id if isinstance(arg, ast.Name) else arg[:]
             check_kwargs = {}
             while True:
                 try:
@@ -495,7 +492,7 @@ def find_issues(
                 and string.strip() != ''
                 and value not in SKIP_WORDS_GLOBAL
                 and not value.startswith(
-                    "napari:"
+                    'napari:'
                 )  # not fail on napari app-model commands
             ):
                 issues[fpath].append((_lineno, value))
@@ -530,13 +527,13 @@ def checks():
 # --- Tests
 # ----------------------------------------------------------------------------
 @pytest.mark.parametrize(
-    "file_to_check", _checks()[0].items(), ids=_checks()[0].keys()
+    'file_to_check', _checks()[0].items(), ids=_checks()[0].keys()
 )
 def test_missing_translations(file_to_check):
     print(
-        "\nSome strings on the following files might need to be translated "
-        "or added to the skip list.\nSkip list is located at "
-        "`tools/strings_list.py` file.\n\n"
+        '\nSome strings on the following files might need to be translated '
+        'or added to the skip list.\nSkip list is located at '
+        '`tools/strings_list.py` file.\n\n'
     )
     fpath, values = file_to_check
 
@@ -544,26 +541,26 @@ def test_missing_translations(file_to_check):
     unique_values = set()
     for line, value in values:
         unique_values.add(value)
-        print(f"{fpath}:{line} :\t{value!r}")
+        print(f'{fpath}:{line} :\t{value!r}')
 
-    print("\n")
+    print('\n')
 
     if fpath in SKIP_WORDS:
         print(
             f"List below can be copied directly to `tools/strings_list.py` file inside the '{fpath}' key:\n"
         )
         for value in sorted(unique_values):
-            print(f"        {value!r},")
+            print(f'        {value!r},')
     else:
         print(
-            "List below can be copied directly to `tools/strings_list.py` file:\n"
+            'List below can be copied directly to `tools/strings_list.py` file:\n'
         )
-        print(f"    {fpath!r}: [")
+        print(f'    {fpath!r}: [')
         for value in sorted(unique_values):
-            print(f"        {value!r},")
-        print("    ],")
+            print(f'        {value!r},')
+        print('    ],')
 
-    print("\n")
+    print('\n')
 
     no_issues = not values
     assert no_issues
