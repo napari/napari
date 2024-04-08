@@ -92,7 +92,7 @@ class PerfTimers:
         name : str
             Add this event.
         category : str | None
-            Comma separated categories such has "render,update".
+            Comma separated categories such as "render,update".
         process_id : int | None
             The process id that produced the event.
         thread_id : int | None
@@ -192,7 +192,7 @@ def block_timer(
     name : str
         The name of this timer.
     category : str
-        Comma separated categories such has "render,update".
+        Comma separated categories such as "render,update".
     print_time : bool
         Print the duration of the timer when it finishes.
     **kwargs : dict
