@@ -28,7 +28,7 @@ def rename_argument(
     """
 
     if not since_version:
-        since_version = trans._("unknown")
+        since_version = trans._('unknown')
         warnings.warn(
             trans._(
                 'The since_version argument was added in napari 0.4.18 and will be mandatory since 0.6.0 release.',

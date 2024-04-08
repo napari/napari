@@ -562,6 +562,8 @@ def test_missing_translations(file_to_check):
 
     print('\n')
 
+    print('\n')
+
     no_issues = not values
     assert no_issues
 
