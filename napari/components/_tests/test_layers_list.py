@@ -2,6 +2,7 @@ import os
 
 import npe2
 import numpy as np
+import numpy.testing as npt
 import pytest
 
 from napari.components import LayerList
@@ -613,6 +614,17 @@ def test_inheritance_units(unit_register):
     layers.append(l2)
     assert l2.units == {f'dim_{i}': unit_register.nanometer for i in range(2)}
     # uncomment the above line to see the test fail
+
+
+def test_inherit_scale():
+    layers = LayerList()
+    l1 = SampleLayer(np.zeros((5, 10, 10)), scale=(1, 2, 3))
+    l2 = SampleLayer(np.zeros((10, 10)))
+    layers.append(l1)
+    npt.assert_array_equal(l1.scale, (1, 2, 3))
+    npt.assert_array_equal(l2.scale, (1, 1))
+    layers.append(l2)
+    npt.assert_array_equal(l2.scale, (2, 3))
 
 
 def test_set_units(unit_register):

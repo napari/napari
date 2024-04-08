@@ -65,7 +65,8 @@ class SampleLayer(Layer):
 
     @property
     def _extent_data(self) -> np.ndarray:
-        return np.array([0] * self.ndim)
+        shape = np.array(self.data.shape)
+        return np.vstack([np.zeros(len(shape)), shape - 1])
 
     def _get_ndim(self) -> int:
         return self.ndim

@@ -256,6 +256,12 @@ class LayerList(SelectableEventedList[Layer]):
                             f'Units for axis {axes_name} must have the same dimensionality.'
                             f'Existing units: {units[axes_name]}, new units: {unit}'
                         )
+        if (
+            'scale' not in not_update
+            and 'scale' in layer.parameters_with_default_values
+            and layer.ndim <= len(self._step_size)
+        ):
+            layer.scale = self._step_size[-layer.ndim :]
 
     def remove_selected(self):
         """Remove selected layers from LayerList, but first unlink them."""
