@@ -730,7 +730,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         channel_axis=None,
         affine=None,
         attenuation=0.05,
-        axes_labels=None,
+        axis_labels=None,
         blending=None,
         cache=True,
         colormap=None,
@@ -785,7 +785,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             top of the provided scale, rotate, and shear values.
         attenuation : float or list of float
             Attenuation rate for attenuated maximum intensity projection.
-        axes_labels : list of str, optional
+        axis_labels : list of str, optional
             List of axis labels for the layer data.
         blending : str or list of str
             One of a list of preset blending modes that determines how RGB and
@@ -896,7 +896,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # doing this here for IDE/console autocompletion in add_image function.
         kwargs = {
             'rgb': rgb,
-            'axes_labels': axes_labels,
+            'axis_labels': axis_labels,
             'colormap': colormap,
             'contrast_limits': contrast_limits,
             'gamma': gamma,
