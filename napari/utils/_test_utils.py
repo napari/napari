@@ -67,3 +67,27 @@ def validate_kwargs_sorted(func):
     assert kwargs_list == sorted(
         kwargs_list
     ), 'Keyword arguments are not sorted in function signature'
+
+
+def validate_docstring_parent_class_consistency(klass, skip=('data', 'ndim')):
+    parsed = parse(klass.__doc__)
+    params = {
+        x.arg_name: x
+        for x in parsed.params
+        if x.args[0] == 'param' and x.arg_name not in skip
+    }
+    for base_klass in klass.__bases__:
+        base_parsed = {
+            x.arg_name: x
+            for x in parse(base_klass.__doc__).params
+            if x.args[0] == 'param'
+        }
+        for name, doc in params.items():
+            if name not in base_parsed:
+                continue
+            assert (
+                doc.description == base_parsed[name].description
+            ), f'Description of parameter {name} in {klass} and {base_klass} do not match'
+            assert (
+                doc.type_name == base_parsed[name].type_name
+            ), f'Type of parameter {name} in {klass} and {base_klass} do not match'

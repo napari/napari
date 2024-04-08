@@ -85,7 +85,7 @@ class Points(Layer):
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
-        {'opaque', 'translucent', and 'additive'}.
+        {'opaque', 'translucent', 'translucent_no_depth', 'additive', and 'minimum'}.
     border_color : str, array-like, dict
         Color of the point marker border. Numeric color values should be RGB(A).
     border_color_cycle : np.ndarray, list
@@ -134,7 +134,7 @@ class Points(Layer):
         This property will soon be deprecated in favor of 'out_of_slice_display'.
         Use that instead.
     name : str
-        Name of the layer.
+        Name of the layer. If not provided then will be guessed using heuristics
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     out_of_slice_display : bool
