@@ -8,7 +8,7 @@ class AxesOverlay(SceneOverlay):
     ----------
     labels : bool
         If axes labels are visible or not. Not the actual
-        axes labels are stored in `viewer.dims.axes_labels`.
+        axis labels are stored in `viewer.dims.axis_labels`.
     colored : bool
         If axes are colored or not. If colored then default
         coloring is x=cyan, y=yellow, z=magenta. If not
