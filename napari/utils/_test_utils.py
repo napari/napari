@@ -40,6 +40,9 @@ def read_only_mouse_event(*args, **kwargs):
 
 
 def validate_all_params_in_docstring(func):
+    """
+    Validate if all the parameters in the function signature are present in the docstring.
+    """
     assert func.__doc__ is not None, f'Function {func} has no docstring'
 
     parsed = parse(func.__doc__)
@@ -58,6 +61,9 @@ def validate_all_params_in_docstring(func):
 
 
 def validate_kwargs_sorted(func):
+    """
+    Validate if the keyword arguments in the function signature are sorted alphabetically.
+    """
     signature = inspect.signature(func)
     kwargs_list = [
         x.name
@@ -70,6 +76,23 @@ def validate_kwargs_sorted(func):
 
 
 def validate_docstring_parent_class_consistency(klass, skip=('data', 'ndim')):
+    """
+    Validate is the docstrings of the class parameters and type information
+    are consistent with the parent class.
+
+    Parameters
+    ----------
+    klass : type
+        The class to validate.
+    skip : tuple or set, optional
+        Name of parameters that we know are different from the parent class.
+        By default, ('data', 'ndim').
+
+    Raises
+    ------
+    AssertionError
+        If the docstrings of the parameters are not consistent with the parent class.
+    """
     parsed = parse(klass.__doc__)
     params = {
         x.arg_name: x
