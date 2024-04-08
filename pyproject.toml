@@ -125,11 +125,12 @@ testing = [
     "babel>=2.9.0",
     "fsspec>=2023.10.0",
     "hypothesis>=6.8.0",
-    "lxml>5",
+    "lxml[html_clean]>5",
     "matplotlib >= 3.6.1",
     "numba>=0.57.1",
     "pooch>=1.6.0",
     "coverage>7",
+    "docstring_parser>=0.15",
     "pretend>=1.0.9",
     "pyautogui>=0.9.54",
     "pytest-qt>=4.3.1",
@@ -432,6 +433,7 @@ module = [
     'napari._qt.containers._base_item_model',
     'napari._qt.containers._base_item_view',
     'napari._qt.containers._layer_delegate',
+    'napari._qt.containers.qt_axis_model',
     'napari._qt.containers.qt_layer_model',
     'napari._qt.containers.qt_list_model',
     'napari._qt.containers.qt_list_view',
@@ -618,7 +620,6 @@ module = [
     "napari._vispy.overlays.scale_bar",
     "napari._vispy.overlays.text",
     "napari.layers.labels._labels_key_bindings",
-    "napari.layers.surface._surface_key_bindings",
     "napari.layers.tracks._tracks_key_bindings",
     "napari.layers.utils._slice_input",
     "napari.utils._register",
@@ -774,6 +775,7 @@ omit = [
     "*/_version.py",
     "*/benchmarks/*",
     "napari/utils/indexing.py",
+    "**/add_layer.py_tmpl"
 ]
 source = [
     "napari",
