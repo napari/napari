@@ -44,6 +44,8 @@ class Vectors(Layer):
         the final column is a length N translation vector and a 1 or a napari
         `Affine` transform object. Applied as an extra transform on top of the
         provided scale, rotate, and shear values.
+    axes_labels : list of str, optional
+        List of axis labels for the layer data.
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -109,6 +111,9 @@ class Vectors(Layer):
         ones along the main diagonal.
     translate : tuple of float
         Translation values for the layer.
+    units : str or sequence of str or pint.Unit or sequence of pint.Unit
+        The physical units of the data. If a sequence, the length should match
+        the number of spatial dimensions.
     vector_style : str
         One of a list of preset display modes that determines how vectors are displayed.
         Allowed values are {'line', 'triangle', and 'arrow'}.
@@ -186,6 +191,7 @@ class Vectors(Layer):
         data=None,
         *,
         affine=None,
+        axes_labels=None,
         blending='translucent',
         cache=True,
         edge_color='red',
@@ -209,6 +215,7 @@ class Vectors(Layer):
         scale=None,
         shear=None,
         translate=None,
+        units=None,
         vector_style='triangle',
         visible=True,
     ) -> None:
@@ -220,6 +227,7 @@ class Vectors(Layer):
         super().__init__(
             data,
             ndim,
+            axes_labels=axes_labels,
             name=name,
             metadata=metadata,
             scale=scale,
@@ -233,6 +241,7 @@ class Vectors(Layer):
             cache=cache,
             experimental_clipping_planes=experimental_clipping_planes,
             projection_mode=projection_mode,
+            units=units,
         )
 
         # events for non-napari calculations
