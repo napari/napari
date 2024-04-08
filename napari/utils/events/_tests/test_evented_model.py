@@ -1,7 +1,8 @@
 import inspect
 import operator
+from collections.abc import Sequence
 from enum import auto
-from typing import ClassVar, List, Protocol, Sequence, Union, runtime_checkable
+from typing import ClassVar, Protocol, Union, runtime_checkable
 from unittest.mock import Mock
 
 import dask.array as da
@@ -438,7 +439,7 @@ class T(EventedModel):
     b: int = 1
 
     @property
-    def c(self) -> List[int]:
+    def c(self) -> list[int]:
         return [self.a, self.b]
 
     @c.setter

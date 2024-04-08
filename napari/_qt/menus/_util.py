@@ -1,5 +1,5 @@
 import contextlib
-from typing import TYPE_CHECKING, Callable, ClassVar, List, Union
+from typing import TYPE_CHECKING, Callable, ClassVar, Union
 
 from qtpy.QtWidgets import QAction, QMenu
 
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     class MenuDict(TypedDict):
         menu: str
         # these are optional
-        items: List[ActionDict]
+        items: list[ActionDict]
 
     # note: TypedDict still doesn't have the concept of "optional keys"
     # so we add in generic `dict` for type checking.
@@ -35,7 +35,7 @@ if TYPE_CHECKING:
     MenuItem = Union[MenuDict, ActionDict, dict]
 
 
-def populate_menu(menu: QMenu, actions: List['MenuItem']):
+def populate_menu(menu: QMenu, actions: list['MenuItem']):
     """Populate a QMenu from a declarative list of QAction dicts.
 
     Parameters
@@ -115,7 +115,7 @@ class NapariMenu(QMenu):
     close.
     """
 
-    _INSTANCES: ClassVar[List['NapariMenu']] = []
+    _INSTANCES: ClassVar[list['NapariMenu']] = []
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)

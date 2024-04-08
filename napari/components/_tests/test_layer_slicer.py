@@ -3,7 +3,7 @@ import weakref
 from concurrent.futures import Future, wait
 from dataclasses import dataclass
 from threading import RLock, current_thread, main_thread
-from typing import Any, Dict
+from typing import Any
 
 import numpy as np
 import pytest
@@ -409,8 +409,8 @@ def _wait_for_result(future: 'Future[Any]') -> Any:
 
 # remove quotes in types once we are python 3.9+ only.
 def _wait_for_response(
-    task: 'Future[Dict[weakref.ReferenceType[Any], Any]]',
-) -> Dict:
+    task: 'Future[dict[weakref.ReferenceType[Any], Any]]',
+) -> dict:
     """Waits until the given slice task is finished and returns its result."""
     weak_result = _wait_for_result(task)
     result = {}
