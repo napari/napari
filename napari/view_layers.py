@@ -157,6 +157,8 @@ def _make_viewer_then(
     dims_kwargs = {
         k: vkwargs.pop(k) for k in list(vkwargs) if k in _dims_params
     }
+    if 'axis_labels' in dims_kwargs and dims_kwargs['axis_labels'] is None:
+        dims_kwargs.pop('axis_labels')
     if viewer is None:
         viewer = Viewer(**vkwargs)
     kwargs.update(kwargs.pop('kwargs', {}))

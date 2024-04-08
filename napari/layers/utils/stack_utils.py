@@ -87,6 +87,7 @@ def split_channels(
     kwargs.setdefault('colormap', None)
     # these arguments are *already* iterables in the single-channel case.
     iterable_kwargs = {
+        'axis_labels',
         'scale',
         'translate',
         'affine',
