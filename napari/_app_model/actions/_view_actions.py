@@ -6,8 +6,8 @@ View actions that do require Qt should go in
 
 from app_model.types import Action, ToggleRule
 
-from napari._app_model.actions._toggle_action import ViewerToggleAction
 from napari._app_model.constants import CommandId, MenuGroup, MenuId
+from napari._qt._qapp_model.qactions._toggle_action import ViewerToggleAction
 from napari.settings import get_settings
 
 VIEW_ACTIONS: list[Action] = []
