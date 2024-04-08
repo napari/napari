@@ -247,12 +247,13 @@ def imshow(
     scale=None,
     shear=None,
     translate=None,
+    units=None,
     visible=True,
     viewer=None,
     title='napari',
     ndisplay=2,
     order=(),
-    axis_labels=(),
+    axis_labels=None,
     show=True,
 ) -> tuple[Viewer, list['Image']]:
     """Load data into an Image layer and return the Viewer and Layer.
@@ -423,6 +424,7 @@ def imshow(
         experimental_clipping_planes=experimental_clipping_planes,
         custom_interpolation_kernel_2d=custom_interpolation_kernel_2d,
         projection_mode=projection_mode,
+        units=units,
         title=title,
         ndisplay=ndisplay,
         order=order,

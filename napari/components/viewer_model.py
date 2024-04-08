@@ -219,7 +219,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         super().__init__(
             title=title,
             dims={
-                'axis_labels': axis_labels,
+                'axis_labels': axis_labels if axis_labels is not None else (),
                 'ndisplay': ndisplay,
                 'order': order,
             },
