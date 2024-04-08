@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import itertools
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -44,7 +44,7 @@ def split_channels(
     data: np.ndarray,
     channel_axis: int,
     **kwargs,
-) -> List[FullLayerData]:
+) -> list[FullLayerData]:
     """Split the data array into separate arrays along an axis.
 
     Keyword arguments will override any parameters altered or set in this
@@ -157,7 +157,7 @@ def split_channels(
     return layerdata_list
 
 
-def stack_to_images(stack: Image, axis: int, **kwargs) -> List[Image]:
+def stack_to_images(stack: Image, axis: int, **kwargs) -> list[Image]:
     """Splits a single Image layer into a list layers along axis.
 
     Some image layer properties will be changed unless specified as an item in
@@ -241,7 +241,7 @@ def stack_to_images(stack: Image, axis: int, **kwargs) -> List[Image]:
     return imagelist
 
 
-def split_rgb(stack: Image, with_alpha=False) -> List[Image]:
+def split_rgb(stack: Image, with_alpha=False) -> list[Image]:
     """Variant of stack_to_images that splits an RGB with predefined cmap."""
     if not stack.rgb:
         raise ValueError(
@@ -252,7 +252,7 @@ def split_rgb(stack: Image, with_alpha=False) -> List[Image]:
     return images if with_alpha else images[:3]
 
 
-def images_to_stack(images: List[Image], axis: int = 0, **kwargs) -> Image:
+def images_to_stack(images: list[Image], axis: int = 0, **kwargs) -> Image:
     """Combines a list of Image layers into one layer stacked along axis
 
     The new image layer will get the meta properties of the first
@@ -287,7 +287,7 @@ def images_to_stack(images: List[Image], axis: int = 0, **kwargs) -> Image:
     return Image(new_data, **meta)
 
 
-def merge_rgb(images: List[Image]) -> Image:
+def merge_rgb(images: list[Image]) -> Image:
     """Variant of images_to_stack that makes an RGB from 3 images."""
     if not (len(images) == 3 and all(isinstance(x, Image) for x in images)):
         raise ValueError(

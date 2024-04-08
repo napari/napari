@@ -1,4 +1,5 @@
-from typing import Generic, Iterable, Optional, Sequence, TypeVar, overload
+from collections.abc import Iterable, Sequence
+from typing import Generic, Optional, TypeVar, overload
 
 import numpy as np
 import numpy.typing as npt
@@ -159,7 +160,7 @@ class TransformChain(EventedList[_T], Transform, Generic[_T]):
         return self._cache_dict[f'getitem_{key}']
 
     def __setitem__(self, key, value):
-        if key in self:
+        if key in self and hasattr(self[key], 'changed'):
             self[key].changed.disconnect(self._clean_cache)
         super().__setitem__(key, value)
         if hasattr(value, 'changed'):
@@ -189,10 +190,20 @@ class TransformChain(EventedList[_T], Transform, Generic[_T]):
         return getattr(self.simplified, '_is_diagonal', False)
 
     @property
-    def simplified(self) -> Optional[_T]:
-        """Return the composite of the transforms inside the transform chain."""
+    def simplified(self) -> _T:
+        """
+        Return the composite of the transforms inside the transform chain.
+
+        Raises
+        ------
+        ValueError
+            If the transform chain is empty.
+        """
         if len(self) == 0:
-            return None
+            raise ValueError(
+                trans._('Cannot simplify an empty transform chain.')
+            )
+
         if len(self) == 1:
             return self[0]
 
@@ -404,7 +415,7 @@ class Affine(Transform):
 
     References
     ----------
-    [1] https://en.wikipedia.org/wiki/Homogeneous_coordinates.
+    .. [1] https://en.wikipedia.org/wiki/Homogeneous_coordinates.
     """
 
     def __init__(
@@ -609,7 +620,13 @@ class Affine(Transform):
             )
         return self._cache_dict['inverse']
 
-    def compose(self, transform: 'Transform') -> 'Transform':
+    @overload
+    def compose(self, transform: 'Affine') -> 'Affine': ...
+
+    @overload
+    def compose(self, transform: 'Transform') -> 'Transform': ...
+
+    def compose(self, transform):
         """Return the composite of this transform and the provided one."""
         if not isinstance(transform, Affine):
             return super().compose(transform)

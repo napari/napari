@@ -4,15 +4,13 @@ View actions that do require Qt should go in
 `napari/_qt/_qapp_model/qactions/_view.py`.
 """
 
-from typing import List
-
 from app_model.types import Action, ToggleRule
 
 from napari._app_model.actions._toggle_action import ViewerToggleAction
 from napari._app_model.constants import CommandId, MenuGroup, MenuId
 from napari.settings import get_settings
 
-VIEW_ACTIONS: List[Action] = []
+VIEW_ACTIONS: list[Action] = []
 MENUID_DICT = {'axes': MenuId.VIEW_AXES, 'scale_bar': MenuId.VIEW_SCALEBAR}
 
 for cmd, viewer_attr, sub_attr in (
@@ -36,12 +34,12 @@ for cmd, viewer_attr, sub_attr in (
     )
 
 
-def _tooltip_visibility_toggle():
+def _tooltip_visibility_toggle() -> None:
     settings = get_settings().appearance
     settings.layer_tooltip_visibility = not settings.layer_tooltip_visibility
 
 
-def _get_current_tooltip_visibility():
+def _get_current_tooltip_visibility() -> bool:
     return get_settings().appearance.layer_tooltip_visibility
 
 

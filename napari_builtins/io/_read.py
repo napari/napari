@@ -3,15 +3,18 @@ import os
 import re
 import tempfile
 import urllib.parse
+from collections.abc import Sequence
 from contextlib import contextmanager, suppress
 from glob import glob
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Optional, Union
 from urllib.error import HTTPError, URLError
 
 import dask.array as da
+import imageio.v3 as iio
 import numpy as np
 from dask import delayed
+from imageio import formats
 
 from napari.utils.misc import abspath_or_url
 from napari.utils.translations import trans
@@ -19,16 +22,12 @@ from napari.utils.translations import trans
 if TYPE_CHECKING:
     from napari.types import FullLayerData, LayerData, ReaderFunction
 
-try:
-    import imageio.v2 as imageio
-except ModuleNotFoundError:
-    import imageio  # type: ignore
 
-IMAGEIO_EXTENSIONS = {x for f in imageio.formats for x in f.extensions}
+IMAGEIO_EXTENSIONS = {x for f in formats for x in f.extensions}
 READER_EXTENSIONS = IMAGEIO_EXTENSIONS.union({'.zarr', '.lsm', '.npy'})
 
 
-def _alphanumeric_key(s: str) -> List[Union[str, int]]:
+def _alphanumeric_key(s: str) -> list[Union[str, int]]:
     """Convert string to list of strings and ints that gives intuitive sorting."""
     return [int(c) if c.isdigit() else c for c in re.split('([0-9]+)', s)]
 
@@ -91,7 +90,7 @@ def imread(filename: str) -> np.ndarray:
     if ext.lower() in ('.npy',):
         return np.load(filename)
     if ext.lower() not in ['.tif', '.tiff', '.lsm']:
-        return imageio.imread(filename)
+        return iio.imread(filename)
     import tifffile
 
     # Pre-download urls before loading them with tifffile
@@ -146,7 +145,7 @@ PathOrStr = Union[str, Path]
 
 
 def magic_imread(
-    filenames: Union[PathOrStr, List[PathOrStr]], *, use_dask=None, stack=True
+    filenames: Union[PathOrStr, list[PathOrStr]], *, use_dask=None, stack=True
 ):
     """Dispatch the appropriate reader given some files.
 
@@ -171,7 +170,7 @@ def magic_imread(
     image : array-like
         Array or list of images
     """
-    _filenames: List[str] = (
+    _filenames: list[str] = (
         [str(x) for x in filenames]
         if isinstance(filenames, (list, tuple))
         else [str(filenames)]
@@ -180,7 +179,7 @@ def magic_imread(
         raise ValueError('No files found')
 
     # replace folders with their contents
-    filenames_expanded: List[str] = []
+    filenames_expanded: list[str] = []
     for filename in _filenames:
         # zarr files are folders, but should be read as 1 file
         if (
@@ -260,7 +259,7 @@ def magic_imread(
 
 
 def _points_csv_to_layerdata(
-    table: np.ndarray, column_names: List[str]
+    table: np.ndarray, column_names: list[str]
 ) -> 'FullLayerData':
     """Convert table data and column names from a csv file to Points LayerData.
 
@@ -300,7 +299,7 @@ def _points_csv_to_layerdata(
 
 
 def _shapes_csv_to_layerdata(
-    table: np.ndarray, column_names: List[str]
+    table: np.ndarray, column_names: list[str]
 ) -> 'FullLayerData':
     """Convert table data and column names from a csv file to Shapes LayerData.
 
@@ -340,7 +339,7 @@ def _shapes_csv_to_layerdata(
 
 
 def _guess_layer_type_from_column_names(
-    column_names: List[str],
+    column_names: list[str],
 ) -> Optional[str]:
     """Guess layer type based on column names from a csv file.
 
@@ -366,7 +365,7 @@ def _guess_layer_type_from_column_names(
 
 def read_csv(
     filename: str, require_type: Optional[str] = None
-) -> Tuple[np.ndarray, List[str], Optional[str]]:
+) -> tuple[np.ndarray, list[str], Optional[str]]:
     """Return CSV data only if column names match format for ``require_type``.
 
     Reads only the first line of the CSV at first, then optionally raises an
@@ -476,7 +475,7 @@ def csv_to_layer_data(
     return None  # only reachable if it is a valid layer type without a reader
 
 
-def _csv_reader(path: Union[str, Sequence[str]]) -> List['LayerData']:
+def _csv_reader(path: Union[str, Sequence[str]]) -> list['LayerData']:
     if isinstance(path, str):
         layer_data = csv_to_layer_data(path, require_type=None)
         return [layer_data] if layer_data else []
@@ -487,12 +486,12 @@ def _csv_reader(path: Union[str, Sequence[str]]) -> List['LayerData']:
     ]
 
 
-def _magic_imreader(path: str) -> List['LayerData']:
+def _magic_imreader(path: str) -> list['LayerData']:
     return [(magic_imread(path),)]
 
 
 def napari_get_reader(
-    path: Union[str, List[str]]
+    path: Union[str, list[str]]
 ) -> Optional['ReaderFunction']:
     """Our internal fallback file reader at the end of the reader plugin chain.
 

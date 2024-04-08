@@ -1,14 +1,9 @@
 """Evented dictionary"""
 
+from collections.abc import Iterator, Mapping, MutableMapping, Sequence
 from typing import (
     Any,
-    Dict,
-    Iterator,
-    Mapping,
-    MutableMapping,
     Optional,
-    Sequence,
-    Type,
     TypeVar,
     Union,
 )
@@ -23,11 +18,11 @@ class TypedMutableMapping(MutableMapping[_K, _T]):
     def __init__(
         self,
         data: Optional[Mapping[_K, _T]] = None,
-        basetype: Union[Type[_T], Sequence[Type[_T]]] = (),
+        basetype: Union[type[_T], Sequence[type[_T]]] = (),
     ) -> None:
         if data is None:
             data = {}
-        self._dict: Dict[_K, _T] = {}
+        self._dict: dict[_K, _T] = {}
         self._basetypes = (
             basetype if isinstance(basetype, Sequence) else (basetype,)
         )
@@ -35,7 +30,7 @@ class TypedMutableMapping(MutableMapping[_K, _T]):
 
     # #### START Required Abstract Methods
 
-    def __setitem__(self, key: _K, value: _T):
+    def __setitem__(self, key: _K, value: _T) -> None:
         self._dict[key] = self._type_check(value)
 
     def __delitem__(self, key: _K) -> None:
@@ -50,7 +45,7 @@ class TypedMutableMapping(MutableMapping[_K, _T]):
     def __iter__(self) -> Iterator[_K]:
         return iter(self._dict)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(self._dict)
 
     def _type_check(self, e: Any) -> _T:
@@ -62,7 +57,9 @@ class TypedMutableMapping(MutableMapping[_K, _T]):
             )
         return e
 
-    def __newlike__(self, iterable: MutableMapping[_K, _T]):
+    def __newlike__(
+        self, iterable: MutableMapping[_K, _T]
+    ) -> 'TypedMutableMapping[_K, _T]':
         new = self.__class__()
         # separating this allows subclasses to omit these from their `__init__`
         new._basetypes = self._basetypes

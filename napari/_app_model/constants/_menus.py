@@ -25,6 +25,8 @@ class MenuId(StrEnum):
     VIEW_AXES = 'napari/view/axes'
     VIEW_SCALEBAR = 'napari/view/scalebar'
 
+    MENUBAR_PLUGINS = 'napari/plugins'
+
     MENUBAR_HELP = 'napari/help'
 
     LAYERLIST_CONTEXT = 'napari/layers/context'
@@ -39,6 +41,11 @@ class MenuId(StrEnum):
 class MenuGroup:
     NAVIGATION = 'navigation'  # always the first group in any menu
     RENDER = '1_render'
+    # Plugins menubar
+    PLUGINS = '1_plugins'
+    PLUGIN_MULTI_SUBMENU = '2_plugin_multi_submenu'
+    PLUGIN_SINGLE_CONTRIBUTIONS = '3_plugin_contributions'
+    # File menubar
     PREFERENCES = '2_preferences'
     SAVE = '3_save'
     CLOSE = '4_close'
