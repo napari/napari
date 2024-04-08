@@ -106,7 +106,7 @@ def _points_in_box_3d(
     sizes: np.ndarray,
     box_normal: np.ndarray,
     up_direction: np.ndarray,
-) -> List[int]:
+) -> list[int]:
     """Determine which points are inside of 2D bounding box.
 
     The 2D bounding box extends infinitely in both directions along its normal
@@ -179,7 +179,7 @@ def _points_in_box_3d(
 
 def points_in_box(
     corners: np.ndarray, points: np.ndarray, sizes: np.ndarray
-) -> List[int]:
+) -> list[int]:
     """Find which points are in an axis aligned box defined by its corners.
 
     Parameters
@@ -210,7 +210,7 @@ def points_in_box(
 
 def fix_data_points(
     points: Optional[np.ndarray], ndim: Optional[int]
-) -> Tuple[np.ndarray, int]:
+) -> tuple[np.ndarray, int]:
     """
     Ensure that points array is 2d and have second dimension of size ndim (default 2 for empty arrays)
 

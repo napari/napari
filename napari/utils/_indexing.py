@@ -1,11 +1,9 @@
-from typing import Dict, Tuple
-
 import numpy as np
 import numpy.typing as npt
 
 
 def elements_in_slice(
-    index: Tuple[npt.NDArray[np.int_], ...], position_in_axes: Dict[int, int]
+    index: tuple[npt.NDArray[np.int_], ...], position_in_axes: dict[int, int]
 ) -> npt.NDArray[np.bool_]:
     """Mask elements from a multi-dimensional index not in a given slice.
 
@@ -35,10 +33,10 @@ def elements_in_slice(
 
 
 def index_in_slice(
-    index: Tuple[npt.NDArray[np.int_], ...],
-    position_in_axes: Dict[int, int],
-    indices_order: Tuple[int, ...],
-) -> Tuple[npt.NDArray[np.int_], ...]:
+    index: tuple[npt.NDArray[np.int_], ...],
+    position_in_axes: dict[int, int],
+    indices_order: tuple[int, ...],
+) -> tuple[npt.NDArray[np.int_], ...]:
     """Convert a NumPy fancy indexing expression from data to sliced space.
 
     Parameters

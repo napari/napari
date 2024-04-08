@@ -81,12 +81,6 @@ jobs:
         run: |
           echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
 
-      # setup needed to use pyautogui
-      - name: create .Xauthority file
-        if: runner.os == 'Linux'
-        run: |
-          touch /home/runner/.Xauthority
-
       # tox and tox-gh-actions will take care of the "actual" installation
       # of python dependendencies into a virtualenv.  see tox.ini for more
       - name: Install dependencies
@@ -189,7 +183,7 @@ jobs:
       - name: Upload pytest timing reports as json ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }}
         uses: actions/upload-artifact@v4
         with:
-          name: upload pytest timing json ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }}
+          name: upload pytest timing json ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }} ${{ inputs.tox_extras }}
           path: |
             ./report-*.json
 

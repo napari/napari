@@ -24,16 +24,10 @@ cover this in test_evented_list.py)
 
 import contextlib
 import logging
+from collections.abc import Generator, Iterable, Sequence
 from typing import (
     Callable,
-    Dict,
-    Generator,
-    Iterable,
-    List,
     Optional,
-    Sequence,
-    Tuple,
-    Type,
     Union,
 )
 
@@ -95,8 +89,8 @@ class EventedList(TypedMutableSequence[_T]):
         self,
         data: Iterable[_T] = (),
         *,
-        basetype: Union[Type[_T], Sequence[Type[_T]]] = (),
-        lookup: Optional[Dict[Type[_L], Callable[[_T], Union[_T, _L]]]] = None,
+        basetype: Union[type[_T], Sequence[type[_T]]] = (),
+        lookup: Optional[dict[type[_L], Callable[[_T], Union[_T, _L]]]] = None,
     ) -> None:
         if lookup is None:
             lookup = {}
@@ -170,7 +164,7 @@ class EventedList(TypedMutableSequence[_T]):
 
     def _delitem_indices(
         self, key: Index
-    ) -> Iterable[Tuple['EventedList[_T]', int]]:
+    ) -> Iterable[tuple['EventedList[_T]', int]]:
         # returning List[(self, int)] allows subclasses to pass nested members
         if isinstance(key, int):
             return [(self, key if key >= 0 else key + len(self))]
@@ -307,7 +301,7 @@ class EventedList(TypedMutableSequence[_T]):
 
     def _move_plan(
         self, sources: Iterable[Index], dest_index: int
-    ) -> Generator[Tuple[int, int], None, None]:
+    ) -> Generator[tuple[int, int], None, None]:
         """Prepared indices for a multi-move.
 
         Given a set of ``sources`` from anywhere in the list,
@@ -334,7 +328,7 @@ class EventedList(TypedMutableSequence[_T]):
                 )
             )
 
-        to_move: List[int] = []
+        to_move: list[int] = []
         for idx in sources:
             if isinstance(idx, slice):
                 to_move.extend(list(range(*idx.indices(len(self)))))
@@ -355,7 +349,7 @@ class EventedList(TypedMutableSequence[_T]):
             dest_index += len(self) + 1
 
         d_inc = 0
-        popped: List[int] = []
+        popped: list[int] = []
         for i, src in enumerate(to_move):
             if src != dest_index:
                 # we need to decrement the src_i by 1 for each time we have
