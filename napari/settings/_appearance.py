@@ -7,6 +7,25 @@ from napari.utils.theme import available_themes, get_theme
 from napari.utils.translations import trans
 
 
+class HighlightSettings(EventedModel):
+    highlight_thickness: int = Field(
+        1,
+        title=trans._('Highlight thickness'),
+        description=trans._(
+            'Select the highlight thickness when hovering over shapes/points.'
+        ),
+        ge=1,
+        le=10,
+    )
+    highlight_color: list[float] = Field(
+        [0.0, 0.6, 1.0, 1.0],
+        title=trans._('Highlight color'),
+        description=trans._(
+            'Select the highlight color when hovering over shapes/points.'
+        ),
+    )
+
+
 class AppearanceSettings(EventedModel):
     theme: Theme = Field(
         Theme('dark'),
@@ -21,14 +40,12 @@ class AppearanceSettings(EventedModel):
         ge=5,
         le=20,
     )
-    highlight_thickness: int = Field(
-        1,
-        title=trans._('Highlight thickness'),
+    highlight: HighlightSettings = Field(
+        HighlightSettings(),
+        title=trans._('Highlight'),
         description=trans._(
-            'Select the highlight thickness when hovering over shapes/points.'
+            'Select the highlight color and thickness to use when hovering over shapes/points.'
         ),
-        ge=1,
-        le=10,
     )
     layer_tooltip_visibility: bool = Field(
         False,

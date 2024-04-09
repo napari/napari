@@ -4,7 +4,7 @@ import sys
 import warnings
 from contextlib import suppress
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, List, Tuple
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 from weakref import WeakSet
 
@@ -134,14 +134,24 @@ def make_napari_viewer(
     monkeypatch,
     clean_themes,
 ):
-    """A fixture function that creates a napari viewer for use in testing.
+    """A pytest fixture function that creates a napari viewer for use in testing.
 
-    Use this fixture as a function in your tests:
+    This fixture will take care of creating a viewer and cleaning up at the end of the
+    test. When using this function, it is **not** necessary to use a `qtbot` fixture,
+    nor should you do any additional cleanup (such as using `qtbot.addWidget` or
+    calling `viewer.close()`) at the end of the test. Duplicate cleanup may cause
+    an error.
 
-        viewer = make_napari_viewer()
+    To use this fixture as a function in your tests:
 
-    It accepts all the same arguments as napari.Viewer, plus the following
-    test-related paramaters:
+        def test_something_with_a_viewer(make_napari_viewer):
+            # `make_napari_viewer` takes any keyword arguments that napari.Viewer() takes
+            viewer = make_napari_viewer()
+
+    It accepts all the same arguments as `napari.Viewer`, notably `show`
+    which should be set to `True` for tests that require the `Viewer` to be visible
+    (e.g., tests that check aspects of the Qt window or layer rendering).
+    It also accepts the following test-related parameters:
 
     ViewerClass : Type[napari.Viewer], optional
         Override the viewer class being used.  By default, will
@@ -367,12 +377,12 @@ def MouseEvent():
     @dataclass
     class Event:
         type: str
-        position: Tuple[float]
+        position: tuple[float]
         is_dragging: bool = False
-        dims_displayed: Tuple[int] = (0, 1)
-        dims_point: List[float] = None
-        view_direction: List[int] = None
-        pos: List[int] = (0, 0)
+        dims_displayed: tuple[int] = (0, 1)
+        dims_point: list[float] = None
+        view_direction: list[int] = None
+        pos: list[int] = (0, 0)
         button: int = None
         handled: bool = False
 

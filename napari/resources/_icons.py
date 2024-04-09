@@ -1,8 +1,9 @@
 import re
+from collections.abc import Iterable, Iterator
 from functools import lru_cache
 from itertools import product
 from pathlib import Path
-from typing import Dict, Iterable, Iterator, Optional, Tuple, Union
+from typing import Optional, Union
 
 from napari.utils._appdirs import user_cache_dir
 from napari.utils.translations import trans
@@ -73,10 +74,10 @@ def get_colorized_svg(
 
 def generate_colorized_svgs(
     svg_paths: Iterable[Union[str, Path]],
-    colors: Iterable[Union[str, Tuple[str, str]]],
+    colors: Iterable[Union[str, tuple[str, str]]],
     opacities: Iterable[float] = (1.0,),
-    theme_override: Optional[Dict[str, str]] = None,
-) -> Iterator[Tuple[str, str]]:
+    theme_override: Optional[dict[str, str]] = None,
+) -> Iterator[tuple[str, str]]:
     """Helper function to generate colorized SVGs.
 
     This is a generator that yields tuples of ``(alias, icon_xml)`` for every
@@ -138,9 +139,9 @@ def generate_colorized_svgs(
 def write_colorized_svgs(
     dest: Union[str, Path],
     svg_paths: Iterable[Union[str, Path]],
-    colors: Iterable[Union[str, Tuple[str, str]]],
+    colors: Iterable[Union[str, tuple[str, str]]],
     opacities: Iterable[float] = (1.0,),
-    theme_override: Optional[Dict[str, str]] = None,
+    theme_override: Optional[dict[str, str]] = None,
 ):
     dest = Path(dest)
     dest.mkdir(parents=True, exist_ok=True)

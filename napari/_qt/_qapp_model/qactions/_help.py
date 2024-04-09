@@ -5,7 +5,6 @@ file within `napari/_app_model/actions/`.
 """
 
 import sys
-from typing import List
 
 from app_model.types import Action, KeyBindingRule, KeyCode, KeyMod
 
@@ -24,7 +23,7 @@ def _show_about(window: Window):
     QtAbout.showAbout(window._qt_window)
 
 
-Q_HELP_ACTIONS: List[Action] = [
+Q_HELP_ACTIONS: list[Action] = [
     Action(
         id=CommandId.NAPARI_INFO,
         title=CommandId.NAPARI_INFO.command_title,

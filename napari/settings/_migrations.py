@@ -3,14 +3,14 @@ from __future__ import annotations
 import warnings
 from contextlib import contextmanager
 from importlib.metadata import distributions
-from typing import TYPE_CHECKING, Callable, List, NamedTuple
+from typing import TYPE_CHECKING, Callable, NamedTuple
 
 from napari.settings._fields import Version
 
 if TYPE_CHECKING:
     from napari.settings._napari_settings import NapariSettings
 
-_MIGRATORS: List[Migrator] = []
+_MIGRATORS: list[Migrator] = []
 MigratorF = Callable[['NapariSettings'], None]
 
 

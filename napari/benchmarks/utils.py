@@ -1,11 +1,11 @@
 import itertools
+import os
+from collections.abc import Sequence
 from functools import lru_cache
 from typing import (
     Callable,
     Literal,
     Optional,
-    Sequence,
-    Tuple,
     Union,
     overload,
 )
@@ -14,12 +14,27 @@ import numpy as np
 from skimage import morphology
 
 
-class Skiper:
-    def __init__(self, func):
-        self.func = func
+def always_false(*_):
+    return False
+
+
+class Skip:
+    def __init__(
+        self,
+        if_in_pr: Callable[..., bool] = always_false,
+        if_on_ci: Callable[..., bool] = always_false,
+        always: Callable[..., bool] = always_false,
+    ):
+        self.func_pr = if_in_pr if 'PR' in os.environ else always_false
+        self.func_ci = if_on_ci if 'CI' in os.environ else always_false
+        self.func_always = always
 
     def __contains__(self, item):
-        return self.func(item)
+        return (
+            self.func_pr(*item)
+            or self.func_ci(*item)
+            or self.func_always(*item)
+        )
 
 
 def _generate_ball(radius: int, ndim: int) -> np.ndarray:
@@ -59,7 +74,7 @@ def _generate_density(radius: int, ndim: int) -> np.ndarray:
 
 
 def _structure_at_coordinates(
-    shape: Tuple[int],
+    shape: tuple[int],
     coordinates: np.ndarray,
     structure: np.ndarray,
     *,
@@ -152,7 +167,7 @@ def labeled_particles(
     n: int = 144,
     seed: Optional[int] = None,
     return_density: Literal[True] = True,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]: ...
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]: ...
 
 
 @lru_cache
@@ -162,7 +177,7 @@ def labeled_particles(
     n: int = 144,
     seed: Optional[int] = None,
     return_density: bool = False,
-) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray, np.ndarray]]:
+) -> Union[np.ndarray, tuple[np.ndarray, np.ndarray, np.ndarray]]:
     """Generate labeled blobs of given shape and dtype.
 
     Parameters

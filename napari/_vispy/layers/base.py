@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Generic, TypeVar, cast
+from typing import Generic, TypeVar, cast
 
 import numpy as np
 from vispy.scene import VisualNode
@@ -53,7 +53,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
     """
 
     layer: _L
-    overlays: Dict[Overlay, VispyBaseOverlay]
+    overlays: dict[Overlay, VispyBaseOverlay]
 
     def __init__(self, layer: _L, node: VisualNode) -> None:
         super().__init__()
@@ -214,6 +214,8 @@ class VispyBaseLayer(ABC, Generic[_L]):
         affine_matrix[: matrix.shape[0], : matrix.shape[1]] = matrix
         affine_matrix[-1, : len(translate)] = translate
 
+        offset = np.zeros(len(self.layer._slice_input.displayed))
+
         if self._array_like and self.layer._slice_input.ndisplay == 2:
             # Perform pixel offset to shift origin from top left corner
             # of pixel to center of pixel.
@@ -244,7 +246,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
         translate_child = (
             self.layer.translate[dims_displayed]
             + self.layer.affine.translate[dims_displayed]
-        )[::-1]
+        )[::-1] - offset[::-1]
         trans_rotate = simplified_transform.rotate[
             np.ix_(dims_displayed, dims_displayed)
         ]

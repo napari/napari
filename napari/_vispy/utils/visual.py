@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, Optional, Tuple, Type
+from typing import Optional
 
 import numpy as np
 from vispy.scene.widgets.viewbox import ViewBox
@@ -60,7 +60,7 @@ layer_to_visual = {
 }
 
 
-overlay_to_visual: Dict[Type[Overlay], Type[VispyBaseOverlay]] = {
+overlay_to_visual: dict[type[Overlay], type[VispyBaseOverlay]] = {
     ScaleBarOverlay: VispyScaleBarOverlay,
     SliceTextOverlay: VispySliceTextOverlay,
     TextOverlay: VispyTextOverlay,
@@ -129,7 +129,7 @@ def create_vispy_overlay(overlay: Overlay, **kwargs) -> VispyBaseOverlay:
 def get_view_direction_in_scene_coordinates(
     view: ViewBox,
     ndim: int,
-    dims_displayed: Tuple[int],
+    dims_displayed: tuple[int],
 ) -> Optional[np.ndarray]:
     """Calculate the unit vector pointing in the direction of the view.
 

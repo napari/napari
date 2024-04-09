@@ -1,8 +1,9 @@
 import warnings
 from collections import OrderedDict, defaultdict
+from collections.abc import Iterable
 from functools import lru_cache
 from threading import Lock
-from typing import Dict, Iterable, List, NamedTuple, Optional, Tuple, Union
+from typing import NamedTuple, Optional, Union
 
 import numpy as np
 import skimage.color as colorconv
@@ -29,7 +30,7 @@ from napari.utils.colormaps.vendored import cm
 from napari.utils.translations import trans
 
 # All parsable input color types that a user can provide
-ColorType = Union[List, Tuple, np.ndarray, str, Color, ColorArray]
+ColorType = Union[list, tuple, np.ndarray, str, Color, ColorArray]
 
 
 ValidColormapArg = Union[
@@ -37,11 +38,11 @@ ValidColormapArg = Union[
     ColorType,
     VispyColormap,
     Colormap,
-    Tuple[str, VispyColormap],
-    Tuple[str, Colormap],
-    Dict[str, VispyColormap],
-    Dict[str, Colormap],
-    Dict,
+    tuple[str, VispyColormap],
+    tuple[str, Colormap],
+    dict[str, VispyColormap],
+    dict[str, Colormap],
+    dict,
 ]
 
 
@@ -256,6 +257,7 @@ def low_discrepancy_image(image, seed=0.5, margin=1 / 256) -> np.ndarray:
         A set of labels or label image.
     seed : float
         The seed from which to start the quasirandom sequence.
+        Effective range is [0,1.0), as only the decimals are used.
     margin : float
         Values too close to 0 or 1 will get mapped to the edge of the colormap,
         so we need to offset to a margin slightly inside those values. Since
@@ -341,6 +343,7 @@ def _low_discrepancy(dim, n, seed=0.5):
         How many points to generate.
     seed : float or array of float, shape (dim,)
         The seed from which to start the quasirandom sequence.
+        Effective range is [0,1.0), as only the decimals are used.
 
     Returns
     -------
@@ -376,6 +379,7 @@ def _color_random(n, *, colorspace='lab', tolerance=0.0, seed=0.5):
         clipped to be in-range).
     seed : float or array of float, shape (3,)
         Value from which to start the quasirandom sequence.
+        Effective range is [0,1.0), as only the decimals are used.
 
     Returns
     -------
@@ -425,8 +429,9 @@ def label_colormap(
     num_colors : int, optional
         Number of unique colors to use. Default used if not given.
         Colors are in addition to a transparent color 0.
-    seed : float or array of float, length 3
+    seed : float, optional
         The seed for the random color generator.
+        Effective range is [0,1.0), as only the decimals are used.
 
     Returns
     -------
@@ -681,7 +686,7 @@ AVAILABLE_LABELS_COLORMAPS = {
 
 def _increment_unnamed_colormap(
     existing: Iterable[str], name: str = '[unnamed colormap]'
-) -> Tuple[str, str]:
+) -> tuple[str, str]:
     """Increment name for unnamed colormap.
 
     NOTE: this assumes colormaps are *never* deleted, and does not check
@@ -917,7 +922,7 @@ def display_name_to_name(display_name):
 
 
 class CoercedContrastLimits(NamedTuple):
-    contrast_limits: Tuple[float, float]
+    contrast_limits: tuple[float, float]
     offset: float
     scale: float
 
@@ -928,7 +933,7 @@ class CoercedContrastLimits(NamedTuple):
         return (data + self.offset / self.scale) * self.scale
 
 
-def _coerce_contrast_limits(contrast_limits: Tuple[float, float]):
+def _coerce_contrast_limits(contrast_limits: tuple[float, float]):
     """Coerce contrast limits to be in the float32 range."""
     if np.abs(contrast_limits).max() > _MAX_VISPY_SUPPORTED_VALUE:
         return scale_down(contrast_limits)
@@ -945,7 +950,7 @@ def _coerce_contrast_limits(contrast_limits: Tuple[float, float]):
     return CoercedContrastLimits(contrast_limits, 0, 1)
 
 
-def scale_down(contrast_limits: Tuple[float, float]):
+def scale_down(contrast_limits: tuple[float, float]):
     """Scale down contrast limits to be in the float32 range."""
     scale: float = min(
         1.0,
@@ -960,7 +965,7 @@ def scale_down(contrast_limits: Tuple[float, float]):
     return CoercedContrastLimits(ctrl_lim, offset, scale)
 
 
-def scale_up(contrast_limits: Tuple[float, float]):
+def scale_up(contrast_limits: tuple[float, float]):
     """Scale up contrast limits to be in the float32 precision."""
     scale = 1000 / (contrast_limits[1] - contrast_limits[0])
     shift = -contrast_limits[0] * scale

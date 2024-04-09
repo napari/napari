@@ -4,14 +4,11 @@ that match the plugin naming convention, and retrieving related metadata.
 """
 
 import json
+from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache
 from typing import (
-    Dict,
-    Iterator,
-    List,
     Optional,
-    Tuple,
     TypedDict,
     cast,
 )
@@ -64,12 +61,12 @@ class _ShortSummaryDict(TypedDict):
 
 class SummaryDict(_ShortSummaryDict):
     display_name: NotRequired[str]
-    pypi_versions: NotRequired[List[str]]
-    conda_versions: NotRequired[List[str]]
+    pypi_versions: NotRequired[list[str]]
+    conda_versions: NotRequired[list[str]]
 
 
 @lru_cache
-def plugin_summaries() -> List[SummaryDict]:
+def plugin_summaries() -> list[SummaryDict]:
     """Return PackageMetadata object for all known napari plugins."""
     url = 'https://npe2api.vercel.app/api/extended_summary'
     with urlopen(Request(url, headers={'User-Agent': _user_agent()})) as resp:
@@ -77,14 +74,14 @@ def plugin_summaries() -> List[SummaryDict]:
 
 
 @lru_cache
-def conda_map() -> Dict[PyPIname, Optional[str]]:
+def conda_map() -> dict[PyPIname, Optional[str]]:
     """Return map of PyPI package name to conda_channel/package_name ()."""
     url = 'https://npe2api.vercel.app/api/conda'
     with urlopen(Request(url, headers={'User-Agent': _user_agent()})) as resp:
         return json.load(resp)
 
 
-def iter_napari_plugin_info() -> Iterator[Tuple[PackageMetadata, bool, dict]]:
+def iter_napari_plugin_info() -> Iterator[tuple[PackageMetadata, bool, dict]]:
     """Iterator of tuples of ProjectInfo, Conda availability for all napari plugins."""
     with ThreadPoolExecutor() as executor:
         data = executor.submit(plugin_summaries)
