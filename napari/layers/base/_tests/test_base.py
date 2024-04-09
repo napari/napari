@@ -153,3 +153,15 @@ def test_axis_from_units_setter(unit_register):
     assert layer.units == {'a': unit_register.m, 'b': unit_register.s}
     with pytest.raises(ValueError, match='If both'):
         layer.units = {'x': 'm', 'y': 's'}
+
+
+def test_scale_per_axis(unit_register):
+    layer = SampleLayer(
+        np.zeros((10, 10)), 2, units={'x': 'm', 'y': 'cm'}, scale=(1, 2)
+    )
+    npt.assert_array_equal(layer.scale, [1, 2])
+    assert layer.scale_per_axis == {
+        'x': 1 * unit_register.m,
+        'y': 2 * unit_register.cm,
+    }
+    assert list(layer.scale_per_axis) == ['x', 'y']

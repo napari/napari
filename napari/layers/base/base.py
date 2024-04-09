@@ -883,6 +883,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self.events.scale()
 
     @property
+    def scale_per_axis(self) -> dict[str, pint.Quantity]:
+        """Dict[str, pint.Unit]: Scale factors for each axis."""
+        units = self.units
+        return {
+            label: units[label] * scale
+            for label, scale in zip(self.axis_labels, self.scale)
+        }
+
+    @property
     def translate(self) -> npt.NDArray:
         """array: Factors to shift the layer by in units of world coordinates."""
         return self._transforms['data2physical'].translate
