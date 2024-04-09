@@ -10,7 +10,6 @@ from napari._app_model.actions._toggle_action import ViewerToggleAction
 from napari._app_model.constants import CommandId, MenuGroup, MenuId
 from napari.settings import get_settings
 
-
 VIEW_ACTIONS: list[Action] = []
 MENUID_DICT = {
     'axes': MenuId.VIEW_AXES,
