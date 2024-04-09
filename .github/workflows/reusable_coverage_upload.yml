@@ -1,9 +1,5 @@
 on:
   workflow_call:
-    inputs:
-      codecov_token:
-        required: true
-        type: string
 
 
 jobs:
@@ -43,4 +39,4 @@ jobs:
         uses: codecov/codecov-action@v4
         with:
           fail_ci_if_error: true
-          token: ${{ inputs.codecov_token }}
+          token: ${{ secrets.CODECOV_TOKEN }}

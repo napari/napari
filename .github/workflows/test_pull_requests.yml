@@ -186,8 +186,8 @@ jobs:
       - test
       - test_examples
     uses: ./.github/workflows/reusable_coverage_upload.yml
-    with:
-      codecov_token: ${{ secrets.CODECOV_TOKEN }}
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
 
   test_benchmarks:
