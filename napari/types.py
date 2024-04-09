@@ -52,10 +52,10 @@ __all__ = [
     'VectorsData',
     'LayerDataTuple',
     'image_reader_to_layerdata_reader',
-    'BlendMode',
+    'BlendingMode',
 ]
 
-BlendMode = Literal[
+BlendingMode = Literal[
     'opaque', 'translucent', 'translucent_no_depth', 'additive', 'minimum'
 ]
 
