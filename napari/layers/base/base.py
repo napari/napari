@@ -395,9 +395,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         # 4. `world2grid`: An additional transform mapping world-coordinates
         #   into a grid for looking at layers side-by-side.
         if scale is None:
-            scale = tuple([1] * ndim)
+            scale = (1,) * ndim
         if translate is None:
-            translate = tuple([0] * ndim)
+            translate = (0,) * ndim
         self._transforms: TransformChain[Affine] = TransformChain(
             [
                 Affine(np.ones(ndim), np.zeros(ndim), name='tile2data'),
