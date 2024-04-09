@@ -16,6 +16,7 @@ from typing import (
     Any,
     Callable,
     ClassVar,
+    Literal,
     Optional,
     Union,
 )
@@ -80,10 +81,13 @@ if TYPE_CHECKING:
 logger = logging.getLogger('napari.layers.base.base')
 
 
-__all__ = ('Layer', 'OPTIONAL_PARAMETERS')
+__all__ = ('Layer', 'OPTIONAL_PARAMETERS', 'OPTIONAL_PARAM_TYPE')
 
+OPTIONAL_PARAM_TYPE = Literal[
+    'affine', 'axis_labels', 'rotate', 'scale', 'shear', 'translate', 'units'
+]
 
-OPTIONAL_PARAMETERS = {
+OPTIONAL_PARAMETERS: set[OPTIONAL_PARAM_TYPE] = {
     'affine',
     'axis_labels',
     'rotate',
@@ -792,7 +796,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         """Executes side-effects on this layer related to changes of the editable state."""
 
     @property
-    def parameters_with_default_values(self) -> set[str]:
+    def parameters_with_default_values(self) -> set[OPTIONAL_PARAM_TYPE]:
         """set[str]: Parameters that have default values
         (passed `None` to constructor and not set later).
         """

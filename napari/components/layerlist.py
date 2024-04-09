@@ -5,14 +5,14 @@ import typing
 import warnings
 from collections.abc import Iterable
 from functools import cached_property
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, NamedTuple, Optional, Union
 
 import numpy as np
 import pint
 
 from napari.components.dims import RangeTuple
 from napari.layers import Layer
-from napari.layers.base.base import OPTIONAL_PARAMETERS
+from napari.layers.base.base import OPTIONAL_PARAM_TYPE, OPTIONAL_PARAMETERS
 from napari.layers.utils.layer_utils import Extent
 from napari.utils.events.containers import SelectableEventedList
 from napari.utils.naming import inc_name_count
@@ -23,9 +23,19 @@ if TYPE_CHECKING:
     from typing_extensions import Self
 
 
+__all__ = ('LayerList',)
+
+
 def get_name(layer: Layer) -> str:
     """Return the name of a layer."""
     return layer.name
+
+
+class AxesInfo(NamedTuple):
+    layer_axes: list[str]
+    new_layer_axes: list[str]
+    all_axes: list[str]
+    new_all_axes: list[str]
 
 
 class LayerList(SelectableEventedList[Layer]):
@@ -230,32 +240,128 @@ class LayerList(SelectableEventedList[Layer]):
             res &= layer.parameters_with_default_values
         return res
 
+    def _calc_inherit_axis_labels(
+        self, layer: Layer, not_update: set[OPTIONAL_PARAM_TYPE]
+    ) -> tuple[callable, AxesInfo]:
+        if (
+            'axis_labels' in layer.parameters_with_default_values
+            and 'axis_labels' not in not_update
+        ):
+
+            if len(self.axis_labels) < layer.ndim:
+                raise ValueError(
+                    f'Already added layers have named axes, but not for all dimensions of new layer {layer}'
+                )
+            target_labels = self.axis_labels[-layer.ndim :]
+
+            def setter():
+                layer.axis_labels = target_labels
+
+            return setter, AxesInfo(
+                layer.axis_labels,
+                target_labels,
+                self.axis_labels,
+                self.axis_labels,
+            )
+
+        if (
+            'axis_labels' not in layer.parameters_with_default_values
+            and 'axis_labels' in not_update
+        ):
+            if len(layer.axis_labels) < self.ndim:
+                raise ValueError(
+                    f'New layer {layer} has named axes, but not for all dimensions of already added layers'
+                )
+
+            def setter():
+                for layer_ in self:
+                    layer_.axis_labels = layer.axis_labels[-layer_.ndim :]
+
+            return setter, AxesInfo(
+                layer.axis_labels,
+                layer.axis_labels,
+                self.axis_labels,
+                layer.axis_labels[-self.ndim :],
+            )
+
+        return lambda: None, AxesInfo(
+            layer.axis_labels,
+            layer.axis_labels,
+            self.axis_labels,
+            self.axis_labels,
+        )
+
+    def _calc_inherit_units(
+        self, layer, axes_info: AxesInfo, not_update: set[OPTIONAL_PARAM_TYPE]
+    ) -> callable:
+        if (
+            'units' in layer.parameters_with_default_values
+            and 'units' not in not_update
+        ):
+            if len(self.units) < layer.ndim:
+                raise ValueError(
+                    f'Already added layers have units, but not for all dimensions of new layer {layer}'
+                )
+            target_units = {k: self.units[k] for k in axes_info.new_layer_axes}
+
+            def setter():
+                layer.units = target_units
+
+            return setter
+
+        if (
+            'units' not in layer.parameters_with_default_values
+            and 'units' in not_update
+        ):
+            if len(layer.units) < self.ndim:
+                raise ValueError(
+                    f'New layer {layer} has units, but not for all dimensions of already added layers'
+                )
+
+            def setter():
+                for layer_ in self:
+                    layer_.units = {
+                        k: layer.units[k] for k in layer_.axis_labels
+                    }
+
+            return setter
+
+        units = self.units
+        for axes_name, unit in layer.units.items():
+            if (
+                axes_name in units
+                and units[axes_name].dimensionality != unit.dimensionality
+            ):
+                raise ValueError(
+                    f'Units for axis {axes_name} must have the same dimensionality.'
+                    f'Existing units: {units[axes_name]}, new units: {unit}'
+                )
+
+        return lambda: None
+
+    def _calc_inherit_scale(
+        self,
+        layer: Layer,
+        not_update: set[OPTIONAL_PARAM_TYPE],
+        axis_info: AxesInfo,
+    ) -> callable:
+        return lambda: None
+
     def _inherit_properties(self, layer: Layer):
         """Inherit unset properties from layers in the list."""
         if not self:
             return
         not_update = self.parameters_with_default_values
-        if (
-            'axis_labels' in layer.parameters_with_default_values
-            and 'axis_labels' not in not_update
-        ):
-            layer.axis_labels = self.axis_labels[-layer.ndim :]
+        axis_labels_setter, axis_info = self._calc_inherit_axis_labels(
+            layer, not_update
+        )
+        units_setter = self._calc_inherit_units(layer, axis_info, not_update)
+        scale_setter = self._calc_inherit_scale(layer, not_update, axis_info)
 
-        if 'units' not in not_update:
-            units = self.units
-            if 'units' in layer.parameters_with_default_values:
-                layer.units = {k: units[k] for k in layer.axis_labels}
-            else:
-                for axes_name, unit in layer.units.items():
-                    if (
-                        axes_name in units
-                        and units[axes_name].dimensionality
-                        != unit.dimensionality
-                    ):
-                        raise ValueError(
-                            f'Units for axis {axes_name} must have the same dimensionality.'
-                            f'Existing units: {units[axes_name]}, new units: {unit}'
-                        )
+        axis_labels_setter()
+        units_setter()
+        scale_setter()
+
         if (
             'scale' not in not_update
             and 'scale' in layer.parameters_with_default_values
