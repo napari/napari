@@ -125,11 +125,12 @@ testing = [
     "babel>=2.9.0",
     "fsspec>=2023.10.0",
     "hypothesis>=6.8.0",
-    "lxml>5",
+    "lxml[html_clean]>5",
     "matplotlib >= 3.6.1",
     "numba>=0.57.1",
     "pooch>=1.6.0",
     "coverage>7",
+    "docstring_parser>=0.15",
     "pretend>=1.0.9",
     "pyautogui>=0.9.54",
     "pytest-qt>=4.3.1",
@@ -512,7 +513,6 @@ module = [
     'napari.layers.intensity_mixin',
     'napari.layers.points._points_key_bindings',
     'napari.layers.points._points_utils',
-    'napari.layers.points._slice',
     'napari.layers.points.points',
     'napari.layers.shapes._shapes_mouse_bindings',
     'napari.layers.shapes.shapes',
@@ -773,6 +773,7 @@ omit = [
     "*/_version.py",
     "*/benchmarks/*",
     "napari/utils/indexing.py",
+    "**/add_layer.py_tmpl"
 ]
 source = [
     "napari",
