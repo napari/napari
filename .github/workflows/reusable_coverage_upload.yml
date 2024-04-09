@@ -1,9 +1,8 @@
 on:
   workflow_call:
-    inputs:
+    secrets:
       codecov_token:
         required: true
-        type: string
 
 
 jobs:
