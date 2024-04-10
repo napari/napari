@@ -126,14 +126,14 @@ def pytest_runtest_makereport(item, call):
     setattr(item, f'rep_{rep.when}', rep)
 
 
-# @pytest.fixture(autouse=True)
 @pytest.fixture()
 def _mock_app():
     """Mock clean 'test_app' `NapariApplication` instance.
 
-    This is used whenever `napari._app_model.get_app()` is called to return
+    This fixture must be used whenever `napari._app_model.get_app()` is called to return
     a 'test_app' `NapariApplication` instead of the 'napari'
-    `NapariApplication`.
+    `NapariApplication`. The `make_napari_viewer` fixture is already equipped with
+    a `_mock_app`.
 
     Note that `NapariApplication` registers app-model actions, providers and
     processors. If this is not desired, please create a clean
