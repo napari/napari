@@ -49,6 +49,8 @@ class TracksFilter(Filter):
             if ($a_vertex_time > $current_time + $head_length) {
                 // this is a hack to minimize the frag shader rendering ahead
                 // of the current time point due to interpolation
+                // track should cut off sharply at current_time when head length is 0
+                // see #6696 for details
                 if ($head_length == 0){
                     // this prevents a track from being rendered ahead of the
                     // current time point incorrectly due to the interpolation
