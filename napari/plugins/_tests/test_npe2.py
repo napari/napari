@@ -175,7 +175,7 @@ def test_widget_iterator(mock_pm):
     assert wdgs == [('dock', (PLUGIN_NAME, ['My Widget']))]
 
 
-def test_plugin_actions(mock_pm: 'TestPluginManager'):
+def test_plugin_actions(mock_pm: 'TestPluginManager', _mock_app):
     from napari._app_model import get_app
     from napari.plugins import _initialize_plugins
 
