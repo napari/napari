@@ -110,7 +110,7 @@ def validate_docstring_parent_class_consistency(klass, skip=('data', 'ndim')):
                 continue
             assert (
                 doc.description == base_parsed[name].description
-            ), f'Description of parameter {name} in {klass} and {base_klass} do not match'
+            ), f'Description of parameter "{name}" in {klass} and {base_klass} do not match'
             assert (
                 doc.type_name == base_parsed[name].type_name
-            ), f'Type of parameter {name} in {klass} and {base_klass} do not match'
+            ), f'Type annotation of parameter "{name}" in {klass} ({doc.type_name}) and {base_klass} ({base_parsed[name].type_name}) do not match'
