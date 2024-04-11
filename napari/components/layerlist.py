@@ -269,7 +269,7 @@ class LayerList(SelectableEventedList[Layer]):
                     : layer_.ndim, : layer_.ndim
                 ]
                 if not np.allclose(affine_matrix, affine_matrix_):
-                    layer.affine = (0,) * layer.ndim
+                    layer.affine = np.eye(layer.ndim)
                     break
             else:
                 layer.affine = affine_matrix[::-1, ::-1]
