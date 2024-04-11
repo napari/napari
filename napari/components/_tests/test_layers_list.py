@@ -582,6 +582,14 @@ def test_inherit_scale():
     npt.assert_array_equal(l2.scale, (10, 10))
 
 
+def test_inherit_scale_smaller_dim():
+    layers = LayerList([SampleLayer(np.zeros((2, 10, 10)), scale=(2, 5, 10))])
+    l2 = SampleLayer(np.zeros((10, 10)))
+    npt.assert_array_equal(l2.scale, (1, 1))
+    layers.append(l2)
+    npt.assert_array_equal(l2.scale, (5, 10))
+
+
 def test_update_scale():
     l1 = SampleLayer(np.zeros((10, 10)))
     layers = LayerList([l1])
@@ -608,3 +616,30 @@ def test_inherit_no_exception():
     """Do not expect an exception if any added layer has no scale"""
     layers = LayerList([SampleLayer(np.zeros((10, 10)))])
     layers.append(SampleLayer(np.zeros((2, 10, 10))))
+
+
+def test_inherit_translate():
+    layers = LayerList([SampleLayer(np.zeros((10, 10)), translate=(10, 10))])
+    l2 = SampleLayer(np.zeros((10, 10)))
+    npt.assert_array_equal(l2.translate, (0, 0))
+    layers.append(l2)
+    npt.assert_array_equal(l2.translate, (10, 10))
+
+
+def test_inherit_translate_smaller_dim():
+    layers = LayerList(
+        [SampleLayer(np.zeros((2, 10, 10)), translate=(2, 5, 10))]
+    )
+    l2 = SampleLayer(np.zeros((10, 10)))
+    npt.assert_array_equal(l2.translate, (0, 0))
+    layers.append(l2)
+    npt.assert_array_equal(l2.translate, (5, 10))
+
+
+def test_update_translate():
+    l1 = SampleLayer(np.zeros((10, 10)))
+    layers = LayerList([l1])
+    npt.assert_array_equal(l1.translate, (0, 0))
+    l2 = SampleLayer(np.zeros((10, 10)), translate=(10, 10))
+    layers.append(l2)
+    npt.assert_array_equal(l1.translate, (10, 10))

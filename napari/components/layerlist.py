@@ -195,18 +195,23 @@ class LayerList(SelectableEventedList[Layer]):
         new_layer.events._extent_augmented.connect(self._clean_cache)
         super().insert(index, new_layer)
 
-    def _inherit_scale(self, layer: Layer):
-        """Inherit scale from the layer list."""
+    def _need_inheritance(self, layer: Layer, param_name: str) -> bool:
         if (
-            'scale' in layer.parameters_with_default_values
-            and 'scale' in self.parameters_with_default_values
+            param_name in layer.parameters_with_default_values
+            and param_name in self.parameters_with_default_values
         ):
-            return
+            return False
 
         if (
-            'scale' not in layer.parameters_with_default_values
-            and 'scale' not in self.parameters_with_default_values
+            param_name not in layer.parameters_with_default_values
+            and param_name not in self.parameters_with_default_values
         ):
+            return False
+        return True
+
+    def _inherit_scale(self, layer: Layer):
+        """Inherit scale from the layer list."""
+        if not self._need_inheritance(layer, 'scale'):
             return
 
         if 'scale' in layer.parameters_with_default_values:
@@ -214,6 +219,23 @@ class LayerList(SelectableEventedList[Layer]):
         else:
             for layer_ in self:
                 layer_.scale = layer.scale[-layer_.ndim :]
+
+    def _inherit_translate(self, layer: Layer):
+        """Inherit scale from the layer list."""
+        if not self._need_inheritance(layer, 'translate'):
+            return
+
+        if 'translate' in layer.parameters_with_default_values:
+            translate_set = {
+                tuple(layer_.translate[-layer.ndim :]) for layer_ in self
+            }
+            if len(translate_set) > 1:
+                layer.translate = (0,) * layer.ndim
+            else:
+                layer.translate = next(iter(translate_set))
+        else:
+            for layer_ in self:
+                layer_.translate = layer.translate[-layer_.ndim :]
 
     def _inherit_properties(self, layer: Layer):
         """Inherit properties from the layer list."""
@@ -230,6 +252,7 @@ class LayerList(SelectableEventedList[Layer]):
                 'Cannot add layer with non default properties to layer list with lower dimensionality.'
             )
         self._inherit_scale(layer)
+        self._inherit_translate(layer)
 
     @cached_property
     def parameters_with_default_values(self):
