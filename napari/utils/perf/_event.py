@@ -66,7 +66,7 @@ class PerfEvent:
     span : Span
         The time span when the event happened.
     category : str
-        Comma separated categories such has "render,update".
+        Comma separated categories such as "render,update".
     origin : Origin
         The process and thread that produced the event.
     args : dict
