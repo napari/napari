@@ -147,7 +147,7 @@ class Points(Layer):
         according to specified point marker size.
     projection_mode : str
         How data outside the viewed dimensions but inside the thick Dims slice will
-        be projected onto the viewed dimenions.
+        be projected onto the viewed dimensions. Must fit to cls._projectionclass.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each point. Each property should be an array of length N,
         where N is the number of points.

@@ -60,7 +60,7 @@ class ScalarFieldBase(Layer, ABC):
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
-        {'opaque', 'translucent', and 'additive'}.
+        {'opaque', 'translucent', 'translucent_no_depth', 'additive', and 'minimum'}.
     cache : bool
         Whether slices of out-of-core datasets should be cached upon retrieval.
         Currently, this only applies to dask arrays.
@@ -84,7 +84,7 @@ class ScalarFieldBase(Layer, ABC):
         supported in 2D. In 3D, only the lowest resolution scale is
         displayed.
     name : str
-        Name of the layer.
+        Name of the layer. If not provided then will be guessed using heuristics
     ndim : int
         Number of dimensions in the data.
     opacity : float
@@ -95,7 +95,7 @@ class ScalarFieldBase(Layer, ABC):
         {'position', 'normal', 'thickness', and 'enabled'}.
     projection_mode : str
         How data outside the viewed dimensions but inside the thick Dims slice will
-        be projected onto the viewed dimensions. Must fit to cls._projectionclass
+        be projected onto the viewed dimensions. Must fit to cls._projectionclass.
     rendering : str
         Rendering mode used by vispy. Must be one of our supported
         modes.
