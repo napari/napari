@@ -307,7 +307,7 @@ def test_points_layer_display_correct_slice_on_scale(make_napari_viewer):
     viewer = make_napari_viewer()
     data = np.zeros((60, 60, 60))
     viewer.add_image(data, scale=[0.29, 0.26, 0.26])
-    pts = viewer.add_points(name='test', size=1, ndim=3)
+    pts = viewer.add_points(name='test', size=1, ndim=3, scale=(1, 1, 1))
     pts.add((8.7, 0, 0))
     viewer.dims.set_point(0, 30 * 0.29)  # middle plane
 
