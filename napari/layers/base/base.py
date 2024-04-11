@@ -149,7 +149,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         represented by a list of data objects and should go from largest to
         smallest.
     name : str, optional
-        Name of the layer. If not provided then will be guessed using heuristics
+        Name of the layer. If not provided then will be guessed using heuristics.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     projection_mode : str
