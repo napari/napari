@@ -2,10 +2,12 @@ import os
 
 import npe2
 import numpy as np
+import numpy.testing as npt
 import pytest
 
 from napari.components import LayerList
 from napari.layers import Image
+from napari.layers.base._test_util_sample_layer import SampleLayer
 from napari.layers.utils._link_layers import get_linked_layers
 
 
@@ -570,3 +572,39 @@ def test_readd_layers():
     with pytest.raises(ValueError):
         layers[:3] = layers[:]
     assert set(layers) == set(imgs)
+
+
+def test_inherit_scale():
+    layers = LayerList([SampleLayer(np.zeros((10, 10)), scale=(10, 10))])
+    l2 = SampleLayer(np.zeros((10, 10)))
+    npt.assert_array_equal(l2.scale, (1, 1))
+    layers.append(l2)
+    npt.assert_array_equal(l2.scale, (10, 10))
+
+
+def test_update_scale():
+    l1 = SampleLayer(np.zeros((10, 10)))
+    layers = LayerList([l1])
+    npt.assert_array_equal(l1.scale, (1, 1))
+    l2 = SampleLayer(np.zeros((10, 10)), scale=(10, 10))
+    layers.append(l2)
+    npt.assert_array_equal(l1.scale, (10, 10))
+
+
+def test_inherit_scale_constructor():
+    l1 = SampleLayer(np.zeros((10, 10)), scale=(10, 10))
+    l2 = SampleLayer(np.zeros((10, 10)))
+    _layers = LayerList([l1, l2])
+    npt.assert_array_equal(l2.scale, (10, 10))
+
+
+def test_inherit_exception():
+    layers = LayerList([SampleLayer(np.zeros((10, 10)), scale=(10, 10))])
+    with pytest.raises(ValueError, match='Cannot add layer'):
+        layers.append(SampleLayer(np.zeros((2, 10, 10))))
+
+
+def test_inherit_no_exception():
+    """Do not expect an exception if any added layer has no scale"""
+    layers = LayerList([SampleLayer(np.zeros((10, 10)))])
+    layers.append(SampleLayer(np.zeros((2, 10, 10))))

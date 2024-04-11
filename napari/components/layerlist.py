@@ -120,6 +120,7 @@ class LayerList(SelectableEventedList[Layer]):
             '_extent_world',
             '_extent_world_augmented',
             '_step_size',
+            'parameters_with_default_values',
         )
         [self.__dict__.pop(p, None) for p in cached_properties]
 
@@ -188,10 +189,54 @@ class LayerList(SelectableEventedList[Layer]):
         (value,) = self._ensure_unique((value,))
         new_layer = self._type_check(value)
         new_layer.name = self._coerce_name(new_layer.name)
+        self._inherit_properties(new_layer)
         self._clean_cache()
         new_layer.events.extent.connect(self._clean_cache)
         new_layer.events._extent_augmented.connect(self._clean_cache)
         super().insert(index, new_layer)
+
+    def _inherit_scale(self, layer: Layer):
+        """Inherit scale from the layer list."""
+        if (
+            'scale' in layer.parameters_with_default_values
+            and 'scale' in self.parameters_with_default_values
+        ):
+            return
+
+        if (
+            'scale' not in layer.parameters_with_default_values
+            and 'scale' not in self.parameters_with_default_values
+        ):
+            return
+
+        if 'scale' in layer.parameters_with_default_values:
+            layer.scale = self._step_size[-layer.ndim :]
+        else:
+            for layer_ in self:
+                layer_.scale = layer.scale[-layer_.ndim :]
+
+    def _inherit_properties(self, layer: Layer):
+        """Inherit properties from the layer list."""
+        if not self:
+            # empty layer list, nothing to inherit
+            return
+        if (
+            not layer.parameters_with_default_values.issubset(
+                self.parameters_with_default_values
+            )
+            and layer.ndim > self.ndim
+        ):
+            raise ValueError(
+                'Cannot add layer with non default properties to layer list with lower dimensionality.'
+            )
+        self._inherit_scale(layer)
+
+    @cached_property
+    def parameters_with_default_values(self):
+        res = set()
+        for layer in self:
+            res.update(layer.parameters_with_default_values)
+        return res
 
     def remove_selected(self):
         """Remove selected layers from LayerList, but first unlink them."""
