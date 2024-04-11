@@ -62,6 +62,7 @@ jobs:
         env:
           PLATFORM: ${{ matrix.platform }}
           BACKEND: ${{ matrix.backend }}
+          COVERAGE: "no_cov"
           PYVISTA_OFF_SCREEN: True  # required for opengl on windows
 
       # If something goes wrong, we can open an issue in the repo
