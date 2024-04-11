@@ -7,6 +7,8 @@ on:
 jobs:
   remove_label:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     steps:
       - name: Remove label
         uses: actions/github-script@v5
