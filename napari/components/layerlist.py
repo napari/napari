@@ -237,6 +237,24 @@ class LayerList(SelectableEventedList[Layer]):
             for layer_ in self:
                 layer_.translate = layer.translate[-layer_.ndim :]
 
+    def _inherit_rotate(self, layer: Layer):
+        """Inherit rotate from the layer list."""
+        if not self._need_inheritance(layer, 'rotate'):
+            return
+
+        if 'rotate' in layer.parameters_with_default_values:
+            rotate_matrix = self[0].rotate[-layer.ndim :, -layer.ndim :]
+            for layer_ in self[1:]:
+                rotate_matrix_ = layer_.rotate[-layer_.ndim :, -layer_.ndim :]
+                if not np.allclose(rotate_matrix, rotate_matrix_):
+                    layer.rotate = (0,) * layer.ndim
+                    break
+            else:
+                layer.rotate = rotate_matrix
+        else:
+            for layer_ in self:
+                layer_.rotate = layer.rotate[-layer_.ndim :, -layer_.ndim :]
+
     def _inherit_properties(self, layer: Layer):
         """Inherit properties from the layer list."""
         if not self:
@@ -253,6 +271,7 @@ class LayerList(SelectableEventedList[Layer]):
             )
         self._inherit_scale(layer)
         self._inherit_translate(layer)
+        self._inherit_rotate(layer)
 
     @cached_property
     def parameters_with_default_values(self):

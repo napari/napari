@@ -643,3 +643,28 @@ def test_update_translate():
     l2 = SampleLayer(np.zeros((10, 10)), translate=(10, 10))
     layers.append(l2)
     npt.assert_array_equal(l1.translate, (10, 10))
+
+
+def test_inherit_rotate():
+    layers = LayerList([SampleLayer(np.zeros((10, 10)), rotate=90)])
+    l2 = SampleLayer(np.zeros((10, 10)))
+    npt.assert_array_equal(l2.rotate, [[1, 0], [0, 1]])
+    layers.append(l2)
+    npt.assert_almost_equal(l2.rotate, [[0, -1], [1, 0]])
+
+
+def test_inherit_rotate_smaller_dim():
+    layers = LayerList([SampleLayer(np.zeros((2, 10, 10)), rotate=90)])
+    l2 = SampleLayer(np.zeros((10, 10)))
+    npt.assert_array_equal(l2.rotate, [[1, 0], [0, 1]])
+    layers.append(l2)
+    npt.assert_almost_equal(l2.rotate, [[0, -1], [1, 0]])
+
+
+def test_update_rotate():
+    l1 = SampleLayer(np.zeros((10, 10)))
+    layers = LayerList([l1])
+    npt.assert_array_equal(l1.rotate, [[1, 0], [0, 1]])
+    l2 = SampleLayer(np.zeros((10, 10)), rotate=90)
+    layers.append(l2)
+    npt.assert_almost_equal(l1.rotate, [[0, -1], [1, 0]])
