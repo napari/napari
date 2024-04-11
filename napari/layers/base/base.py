@@ -16,6 +16,7 @@ from typing import (
     Any,
     Callable,
     ClassVar,
+    Literal,
     Optional,
     Union,
 )
@@ -76,6 +77,25 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger('napari.layers.base.base')
+
+
+__all__ = ('Layer', 'OPTIONAL_PARAMETERS', 'OPTIONAL_PARAM_TYPE')
+
+OPTIONAL_PARAM_TYPE = Literal[
+    'affine',
+    'rotate',
+    'scale',
+    'shear',
+    'translate',
+]
+
+OPTIONAL_PARAMETERS: set[OPTIONAL_PARAM_TYPE] = {
+    'affine',
+    'rotate',
+    'scale',
+    'shear',
+    'translate',
+}
 
 
 def no_op(layer: Layer, event: Event) -> None:
@@ -343,6 +363,13 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         # Needs to be imported here to avoid circular import in _source
         from napari.layers._source import current_source
 
+        locals_dict = locals()
+        self._parameters_with_default_values = {
+            x for x in OPTIONAL_PARAMETERS if locals_dict[x] is None
+        }  # this is to store information which parameters were not set by the user
+        # it allow to detect which parameters could be overwritten when
+        # adding layer to the viewer
+
         self._source = current_source()
         self.dask_optimized_slicing = configure_dask(data, cache)
         self._metadata = dict(metadata or {})
@@ -430,21 +457,31 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         self.events = EmitterGroup(
             source=self,
-            refresh=Event,
-            set_data=Event,
-            blending=Event,
-            opacity=Event,
-            visible=Event,
-            scale=Event,
-            translate=Event,
-            rotate=Event,
-            shear=Event,
-            affine=Event,
             data=Event,
-            name=Event,
-            thumbnail=Event,
-            status=Event,
+            affine=Event,
+            blending=Event,
+            cursor=Event,
+            cursor_size=Event,
+            editable=Event,
+            extent=Event,
             help=Event,
+            loaded=Event,
+            mode=Event,
+            mouse_pan=Event,
+            mouse_zoom=Event,
+            name=Event,
+            opacity=Event,
+            projection_mode=Event,
+            refresh=Event,
+            reload=Event,
+            rotate=Event,
+            scale=Event,
+            set_data=Event,
+            shear=Event,
+            status=Event,
+            thumbnail=Event,
+            translate=Event,
+            visible=Event,
             interactive=WarningEmitter(
                 trans._(
                     'layer.events.interactive is deprecated since 0.4.18 and will be removed in 0.6.0. Please use layer.events.mouse_pan and layer.events.mouse_zoom',
@@ -452,18 +489,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 ),
                 type_name='interactive',
             ),
-            mouse_pan=Event,
-            mouse_zoom=Event,
-            cursor=Event,
-            cursor_size=Event,
-            editable=Event,
-            loaded=Event,
-            reload=Event,
-            extent=Event,
             _extent_augmented=Event,
             _overlays=Event,
-            mode=Event,
-            projection_mode=Event,
         )
         self.name = name
         self.mode = mode
@@ -749,15 +776,28 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         """Executes side-effects on this layer related to changes of the editable state."""
 
     @property
+    def parameters_with_default_values(self) -> set[OPTIONAL_PARAM_TYPE]:
+        """set[str]: Parameters that have default values
+        (passed `None` to constructor and not set later).
+        """
+        return set(self._parameters_with_default_values)
+
+    @property
     def scale(self) -> npt.NDArray:
         """array: Anisotropy factors to scale data into world coordinates."""
         return self._transforms['data2physical'].scale
 
     @scale.setter
     def scale(self, scale: Optional[npt.NDArray]) -> None:
+        drop = True
         if scale is None:
             scale = np.array([1] * self.ndim)
+            drop = False
         self._transforms['data2physical'].scale = np.array(scale)
+        if drop:
+            self._parameters_with_default_values.discard('scale')
+        else:
+            self._parameters_with_default_values.add('scale')
         self._clear_extents_and_refresh()
         self.events.scale()
 
@@ -769,6 +809,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @translate.setter
     def translate(self, translate: npt.ArrayLike) -> None:
         self._transforms['data2physical'].translate = np.array(translate)
+        self._parameters_with_default_values.discard('translate')
         self._clear_extents_and_refresh()
         self.events.translate()
 
@@ -780,6 +821,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @rotate.setter
     def rotate(self, rotate: npt.NDArray) -> None:
         self._transforms['data2physical'].rotate = rotate
+        self._parameters_with_default_values.discard('rotate')
         self._clear_extents_and_refresh()
         self.events.rotate()
 
@@ -791,6 +833,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @shear.setter
     def shear(self, shear: npt.NDArray) -> None:
         self._transforms['data2physical'].shear = shear
+        self._parameters_with_default_values.discard('shear')
         self._clear_extents_and_refresh()
         self.events.shear()
 
@@ -804,9 +847,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         # Assignment by transform name is not supported by TransformChain and
         # EventedList, so use the integer index instead. For more details, see:
         # https://github.com/napari/napari/issues/3058
-        self._transforms[2] = coerce_affine(
+        self._transforms['physical2world'] = coerce_affine(
             affine, ndim=self.ndim, name='physical2world'
         )
+        self._parameters_with_default_values.discard('affine')
         self._clear_extents_and_refresh()
         self.events.affine()
 
