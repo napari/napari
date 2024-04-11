@@ -350,7 +350,7 @@ pystack_threshold=60
 pystack_args="--native-all"
 minversion = "8"
 log_cli_level = "INFO"
-#xfail_strict = true
+xfail_strict = true
 testpaths = ["napari", "napari_builtins"]
 
 
