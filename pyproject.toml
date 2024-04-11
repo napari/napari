@@ -348,6 +348,10 @@ addopts = "--maxfail=5 --durations=10 -rXxs"
 console_output_style = "count"
 pystack_threshold=60
 pystack_args="--native-all"
+minversion = "8"
+log_cli_level = "INFO"
+xfail_strict = true
+testpaths = ["napari", "napari_builtins"]
 
 
 # NOTE: only put things that will never change in here.
@@ -388,7 +392,7 @@ files = "napari"
 exclude = "napari/utils/events/_tests/test_evented_model\\.py"
 plugins =  "numpy.typing.mypy_plugin, pydantic.mypy"
 ignore_missing_imports = true
-show_error_codes = true
+hide_error_codes = false
 warn_redundant_casts = true
 disallow_incomplete_defs = true
 disallow_untyped_calls = true

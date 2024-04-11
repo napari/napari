@@ -1,3 +1,4 @@
+name: Run test by tox
 on:
   workflow_call:
     inputs:
