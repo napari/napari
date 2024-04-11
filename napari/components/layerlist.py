@@ -275,7 +275,9 @@ class LayerList(SelectableEventedList[Layer]):
                 layer.affine = affine_matrix[::-1, ::-1]
         else:
             for layer_ in self:
-                layer_.affine = layer.affine[-layer_.ndim :, -layer_.ndim :]
+                layer_.affine = layer.affine.linear_matrix[
+                    : layer_.ndim, : layer_.ndim
+                ][::-1, ::-1]
 
     def _inherit_properties(self, layer: Layer):
         """Inherit properties from the layer list."""
