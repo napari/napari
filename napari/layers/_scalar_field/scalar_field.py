@@ -84,7 +84,7 @@ class ScalarFieldBase(Layer, ABC):
         supported in 2D. In 3D, only the lowest resolution scale is
         displayed.
     name : str
-        Name of the layer. If not provided then will be guessed using heuristics
+        Name of the layer. If not provided then will be guessed using heuristics.
     ndim : int
         Number of dimensions in the data.
     opacity : float
