@@ -668,3 +668,17 @@ def test_update_rotate():
     l2 = SampleLayer(np.zeros((10, 10)), rotate=90)
     layers.append(l2)
     npt.assert_almost_equal(l1.rotate, [[0, -1], [1, 0]])
+
+
+def test_inherit_affine_smaller_dim():
+    layers = LayerList(
+        [
+            SampleLayer(
+                np.zeros((2, 10, 10)), affine=[[2, 0, 0], [0, 2, 0], [0, 0, 1]]
+            )
+        ]
+    )
+    l2 = SampleLayer(np.zeros((10, 10)))
+    npt.assert_array_equal(l2.affine.linear_matrix, [[1, 0], [0, 1]])
+    layers.append(l2)
+    npt.assert_array_equal(l2.affine.linear_matrix, [[1, 0], [0, 2]])

@@ -255,6 +255,28 @@ class LayerList(SelectableEventedList[Layer]):
             for layer_ in self:
                 layer_.rotate = layer.rotate[-layer_.ndim :, -layer_.ndim :]
 
+    def _inherit_affine(self, layer: Layer):
+        if not self._need_inheritance(layer, 'affine'):
+            return
+
+        if 'affine' in layer.parameters_with_default_values:
+            # affine.linear_matrix stores the matrix in reversed order
+            affine_matrix = self[0].affine.linear_matrix[
+                : layer.ndim, : layer.ndim
+            ]
+            for layer_ in self[1:]:
+                affine_matrix_ = layer_.affine.linear_matrix[
+                    : layer_.ndim, : layer_.ndim
+                ]
+                if not np.allclose(affine_matrix, affine_matrix_):
+                    layer.affine = (0,) * layer.ndim
+                    break
+            else:
+                layer.affine = affine_matrix[::-1, ::-1]
+        else:
+            for layer_ in self:
+                layer_.affine = layer.affine[-layer_.ndim :, -layer_.ndim :]
+
     def _inherit_properties(self, layer: Layer):
         """Inherit properties from the layer list."""
         if not self:
@@ -272,6 +294,7 @@ class LayerList(SelectableEventedList[Layer]):
         self._inherit_scale(layer)
         self._inherit_translate(layer)
         self._inherit_rotate(layer)
+        self._inherit_affine(layer)
 
     @cached_property
     def parameters_with_default_values(self):
