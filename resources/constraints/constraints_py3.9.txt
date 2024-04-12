@@ -96,7 +96,7 @@ hsluv==5.0.4
     # via vispy
 hypothesis==6.100.0
     # via napari (napari_repo/pyproject.toml)
-idna==3.6
+idna==3.7
     # via requests
 imageio==2.34.0
     # via
