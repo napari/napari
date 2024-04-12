@@ -131,7 +131,7 @@ Q_VIEW_ACTIONS: list[Action] = [
 
 MENUID_DICT = {'axes': MenuId.VIEW_AXES, 'scale_bar': MenuId.VIEW_SCALEBAR}
 
-for cmd, cmd_title, viewer_attr, sub_attr in (
+toggle_action_details = [
     (
         'napari.window.view.toggle_viewer_axes',
         trans._('Axes Visible'),
@@ -180,7 +180,12 @@ for cmd, cmd_title, viewer_attr, sub_attr in (
         'scale_bar',
         'ticks',
     ),
-):
+]
+
+# Add `Action`s that toggle various viewer `axes` and `scale_bar` sub-attributes
+# E.g., `toggle_viewer_scale_bar_ticks` toggles the sub-attribute `ticks` of the
+# viewer attribute `scale_bar`
+for cmd, cmd_title, viewer_attr, sub_attr in toggle_action_details:
     Q_VIEW_ACTIONS.append(
         ViewerToggleAction(
             id=cmd,
