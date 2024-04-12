@@ -345,7 +345,7 @@ xarray = "xr"
 addopts = ["--maxfail=5",  "--durations=10",  "-ra", "--strict-markers", "--strict-config"]
 console_output_style = "count"
 minversion = "8"
-log_cli_level = "INFO"
+# log_cli_level = "INFO"
 xfail_strict = true
 testpaths = ["napari", "napari_builtins"]
 
