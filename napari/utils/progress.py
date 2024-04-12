@@ -1,5 +1,6 @@
+from collections.abc import Generator, Iterable, Iterator
 from itertools import takewhile
-from typing import Callable, Generator, Iterable, Iterator, Optional
+from typing import Callable, Optional
 
 from tqdm import tqdm
 

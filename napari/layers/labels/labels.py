@@ -1,14 +1,11 @@
 import warnings
 from collections import deque
+from collections.abc import Sequence
 from contextlib import contextmanager
 from typing import (
     Callable,
     ClassVar,
-    Dict,
-    List,
     Optional,
-    Sequence,
-    Tuple,
     Union,
     cast,
 )
@@ -125,13 +122,13 @@ class Labels(ScalarFieldBase):
         Properties defining plane rendering in 3D. Properties are defined in
         data coordinates. Valid dictionary keys are
         {'position', 'normal', 'thickness', and 'enabled'}.
+    projection_mode : str
+        How data outside the viewed dimensions but inside the thick Dims slice will
+        be projected onto the viewed dimensions
     properties : dict {str: array (N,)} or DataFrame
         Properties for each label. Each property should be an array of length
         N, where N is the number of labels, and the first property corresponds
         to background.
-    projection_mode : str
-        How data outside the viewed dimensions but inside the thick Dims slice will
-        be projected onto the viewed dimensions
     rendering : str
         3D Rendering mode used by vispy. Must be one {'translucent', 'iso_categorical'}.
         'translucent' renders without lighting. 'iso_categorical' uses isosurface
@@ -241,7 +238,7 @@ class Labels(ScalarFieldBase):
 
     _modeclass = Mode
 
-    _drag_modes: ClassVar[Dict[Mode, Callable[['Labels', Event], None]]] = {  # type: ignore[assignment]
+    _drag_modes: ClassVar[dict[Mode, Callable[['Labels', Event], None]]] = {  # type: ignore[assignment]
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
         Mode.PICK: pick,
@@ -253,7 +250,7 @@ class Labels(ScalarFieldBase):
 
     brush_size_on_mouse_move = BrushSizeOnMouseMove(min_brush_size=1)
 
-    _move_modes: ClassVar[Dict[StringEnum, Callable[['Labels', Event], None]]] = {  # type: ignore[assignment]
+    _move_modes: ClassVar[dict[StringEnum, Callable[['Labels', Event], None]]] = {  # type: ignore[assignment]
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
         Mode.PICK: no_op,
@@ -263,7 +260,7 @@ class Labels(ScalarFieldBase):
         Mode.POLYGON: no_op,  # the overlay handles mouse events in this mode
     }
 
-    _cursor_modes: ClassVar[Dict[Mode, str]] = {  # type: ignore[assignment]
+    _cursor_modes: ClassVar[dict[Mode, str]] = {  # type: ignore[assignment]
         Mode.PAN_ZOOM: 'standard',
         Mode.TRANSFORM: 'standard',
         Mode.PICK: 'cross',
@@ -291,8 +288,8 @@ class Labels(ScalarFieldBase):
         name=None,
         opacity=0.7,
         plane=None,
-        properties=None,
         projection_mode='none',
+        properties=None,
         rendering='iso_categorical',
         rotate=None,
         scale=None,
@@ -534,7 +531,7 @@ class Labels(ScalarFieldBase):
         """Dataframe-like features table.
 
         It is an implementation detail that this is a `pandas.DataFrame`. In the future,
-        we will target the currently-in-development Data API dataframe protocol [1].
+        we will target the currently-in-development Data API dataframe protocol [1]_.
         This will enable us to use alternate libraries such as xarray or cuDF for
         additional features without breaking existing usage of this.
 
@@ -543,14 +540,14 @@ class Labels(ScalarFieldBase):
 
         References
         ----------
-        .. [1]: https://data-apis.org/dataframe-protocol/latest/API.html
+        .. [1] https://data-apis.org/dataframe-protocol/latest/API.html
         """
         return self._feature_table.values
 
     @features.setter
     def features(
         self,
-        features: Union[Dict[str, np.ndarray], pd.DataFrame],
+        features: Union[dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
         self._feature_table.set_values(features)
         self._label_index = self._make_label_index()
@@ -558,15 +555,15 @@ class Labels(ScalarFieldBase):
         self.events.features()
 
     @property
-    def properties(self) -> Dict[str, np.ndarray]:
+    def properties(self) -> dict[str, np.ndarray]:
         """dict {str: array (N,)}, DataFrame: Properties for each label."""
         return self._feature_table.properties()
 
     @properties.setter
-    def properties(self, properties: Dict[str, Array]):
+    def properties(self, properties: dict[str, Array]):
         self.features = properties
 
-    def _make_label_index(self) -> Dict[int, int]:
+    def _make_label_index(self) -> dict[int, int]:
         features = self._feature_table.values
         label_index = {}
         if 'index' in features:
@@ -810,7 +807,7 @@ class Labels(ScalarFieldBase):
         self._updated_slice = None
 
     def _calculate_contour(
-        self, labels: np.ndarray, data_slice: Tuple[slice, ...]
+        self, labels: np.ndarray, data_slice: tuple[slice, ...]
     ) -> Optional[np.ndarray]:
         """Calculate the contour of a given label array within the specified data slice.
 
@@ -854,7 +851,7 @@ class Labels(ScalarFieldBase):
         return sliced_labels[delta_slice]
 
     def _raw_to_displayed(
-        self, raw, data_slice: Optional[Tuple[slice, ...]] = None
+        self, raw, data_slice: Optional[tuple[slice, ...]] = None
     ) -> np.ndarray:
         """Determine displayed image from a saved raw image and a saved seed.
 
@@ -941,7 +938,7 @@ class Labels(ScalarFieldBase):
         self,
         start_point: Optional[np.ndarray],
         end_point: Optional[np.ndarray],
-        dims_displayed: List[int],
+        dims_displayed: list[int],
     ) -> Optional[int]:
         """Get the first non-background value encountered along a ray.
 
@@ -1011,7 +1008,7 @@ class Labels(ScalarFieldBase):
         self,
         start_point: Optional[np.ndarray],
         end_point: Optional[np.ndarray],
-        dims_displayed: List[int],
+        dims_displayed: list[int],
     ) -> Optional[int]:
         """Get the first non-background value encountered along a ray.
 
@@ -1379,7 +1376,7 @@ class Labels(ScalarFieldBase):
 
         self.data_setitem(slice_coord, new_label, refresh)
 
-    def _get_shape_and_dims_to_paint(self) -> Tuple[list, list]:
+    def _get_shape_and_dims_to_paint(self) -> tuple[list, list]:
         dims_to_paint = sorted(self._get_dims_to_paint())
         shape = list(self.data.shape)
 
@@ -1391,7 +1388,7 @@ class Labels(ScalarFieldBase):
     def _get_dims_to_paint(self) -> list:
         return list(self._slice_input.order[-self.n_edit_dimensions :])
 
-    def _get_pt_not_disp(self) -> Dict[int, int]:
+    def _get_pt_not_disp(self) -> dict[int, int]:
         """
         Get indices of current visible slice.
         """
@@ -1408,7 +1405,7 @@ class Labels(ScalarFieldBase):
         ----------
         indices : tuple of arrays of int
             Indices in data to overwrite. Must be a tuple of arrays of length
-            equal to the number of data dimensions. (Fancy indexing in [1]_).
+            equal to the number of data dimensions. (Fancy indexing in [2]_).
         value : int or array of int
             New label value(s). If more than one value, must match or
             broadcast with the given indices.
@@ -1417,7 +1414,7 @@ class Labels(ScalarFieldBase):
 
         References
         ----------
-        ..[1] https://numpy.org/doc/stable/user/basics.indexing.html
+        .. [2] https://numpy.org/doc/stable/user/basics.indexing.html
         """
         changed_indices = self.data[indices] != value
         indices = tuple(x[changed_indices] for x in indices)
@@ -1506,7 +1503,7 @@ class Labels(ScalarFieldBase):
         position: Optional[npt.ArrayLike] = None,
         *,
         view_direction: Optional[npt.ArrayLike] = None,
-        dims_displayed: Optional[List[int]] = None,
+        dims_displayed: Optional[list[int]] = None,
         world: bool = False,
     ) -> dict:
         """Status message information of the data at a coordinate position.
@@ -1564,7 +1561,7 @@ class Labels(ScalarFieldBase):
         position,
         *,
         view_direction: Optional[np.ndarray] = None,
-        dims_displayed: Optional[List[int]] = None,
+        dims_displayed: Optional[list[int]] = None,
         world: bool = False,
     ):
         """
@@ -1603,7 +1600,7 @@ class Labels(ScalarFieldBase):
         position,
         *,
         view_direction: Optional[np.ndarray] = None,
-        dims_displayed: Optional[List[int]] = None,
+        dims_displayed: Optional[list[int]] = None,
         world: bool = False,
     ) -> list:
         if len(self._label_index) == 0 or self.features.shape[1] == 0:

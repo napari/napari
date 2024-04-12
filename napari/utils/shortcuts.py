@@ -1,5 +1,3 @@
-from typing import Dict, List
-
 from app_model.types import KeyBinding, KeyCode, KeyMod
 
 _default_shortcuts = {
@@ -99,7 +97,7 @@ _default_shortcuts = {
     'napari:activate_surface_transform_mode': [KeyCode.Digit2],
 }
 
-default_shortcuts: Dict[str, List[KeyBinding]] = {
+default_shortcuts: dict[str, list[KeyBinding]] = {
     name: [KeyBinding.from_int(kb) for kb in value]
     for name, value in _default_shortcuts.items()
 }

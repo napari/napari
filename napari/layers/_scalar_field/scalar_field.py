@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import types
 from abc import ABC
+from collections.abc import Sequence
 from contextlib import nullcontext
-from typing import TYPE_CHECKING, List, Sequence, Union
+from typing import TYPE_CHECKING, Union
 
 import numpy as np
 from numpy import typing as npt
@@ -59,7 +60,7 @@ class ScalarFieldBase(Layer, ABC):
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
-        {'opaque', 'translucent', and 'additive'}.
+        {'opaque', 'translucent', 'translucent_no_depth', 'additive', and 'minimum'}.
     cache : bool
         Whether slices of out-of-core datasets should be cached upon retrieval.
         Currently, this only applies to dask arrays.
@@ -83,7 +84,7 @@ class ScalarFieldBase(Layer, ABC):
         supported in 2D. In 3D, only the lowest resolution scale is
         displayed.
     name : str
-        Name of the layer.
+        Name of the layer. If not provided then will be guessed using heuristics.
     ndim : int
         Number of dimensions in the data.
     opacity : float
@@ -94,7 +95,7 @@ class ScalarFieldBase(Layer, ABC):
         {'position', 'normal', 'thickness', and 'enabled'}.
     projection_mode : str
         How data outside the viewed dimensions but inside the thick Dims slice will
-        be projected onto the viewed dimensions. Must fit to cls._projectionclass
+        be projected onto the viewed dimensions. Must fit to cls._projectionclass.
     rendering : str
         Rendering mode used by vispy. Must be one of our supported
         modes.
@@ -584,7 +585,7 @@ class ScalarFieldBase(Layer, ABC):
         return position + 0.5
 
     def _display_bounding_box_at_level(
-        self, dims_displayed: List[int], data_level: int
+        self, dims_displayed: list[int], data_level: int
     ) -> npt.NDArray:
         """An axis aligned (ndisplay, 2) bounding box around the data at a given level"""
         shape = self.level_shapes[data_level]
@@ -592,7 +593,7 @@ class ScalarFieldBase(Layer, ABC):
         return extent_at_level[:, dims_displayed].T
 
     def _display_bounding_box_augmented_data_level(
-        self, dims_displayed: List[int]
+        self, dims_displayed: list[int]
     ) -> npt.NDArray:
         """An augmented, axis-aligned (ndisplay, 2) bounding box.
         If the layer is multiscale layer, then returns the

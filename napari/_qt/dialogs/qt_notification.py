@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Callable, Optional, Sequence, Tuple, Union
+from collections.abc import Sequence
+from typing import Callable, Optional, Union
 
 from qtpy.QtCore import (
     QEasingCurve,
@@ -32,7 +33,7 @@ from napari.utils.notifications import Notification, NotificationSeverity
 from napari.utils.theme import get_theme
 from napari.utils.translations import trans
 
-ActionSequence = Sequence[Tuple[str, Callable[['NapariQtNotification'], None]]]
+ActionSequence = Sequence[tuple[str, Callable[['NapariQtNotification'], None]]]
 
 
 class NapariQtNotification(QDialog):

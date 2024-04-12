@@ -6,7 +6,6 @@ import os
 from dataclasses import dataclass
 from functools import lru_cache
 from itertools import cycle
-from typing import List
 
 import numpy as np
 from packaging.version import parse as parse_version
@@ -28,8 +27,8 @@ class MouseEvent:
     # mock mouse event class
     type: str
     is_dragging: bool
-    pos: List[int]
-    view_direction: List[int]
+    pos: list[int]
+    view_direction: list[int]
 
 
 class QtViewerSingleLabelsSuite:
