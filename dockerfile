@@ -16,6 +16,9 @@ RUN apt-get update && \
         python3-pip \
         git \
         mesa-utils \
+        x11-utils \
+        libegl1-mesa \
+        libopengl0 \
         libgl1-mesa-glx \
         libglib2.0-0 \
         libfontconfig1 \
@@ -36,7 +39,8 @@ RUN apt-get update && \
 
 # install napari from repo
 # see https://github.com/pypa/pip/issues/6548#issuecomment-498615461 for syntax
-RUN pip3 install "napari[all] @ git+https://github.com/napari/napari.git@${NAPARI_COMMIT}"
+RUN pip install --upgrade pip && \
+    pip install "napari[all] @ git+https://github.com/napari/napari.git@${NAPARI_COMMIT}"
 
 # copy examples
 COPY examples /tmp/examples
@@ -49,10 +53,14 @@ ENTRYPOINT ["python3", "-m", "napari"]
 
 FROM napari AS napari-xpra
 
+ARG DEBIAN_FRONTEND=noninteractive
+
 # Install Xpra and dependencies
-RUN apt-get install -y wget gnupg2 apt-transport-https && \
-    wget -O - https://xpra.org/gpg.asc | apt-key add - && \
-    echo "deb https://xpra.org/ jammy main" > /etc/apt/sources.list.d/xpra.list
+RUN apt-get update && apt-get install -y wget gnupg2 apt-transport-https \
+    software-properties-common ca-certificates && \
+    wget -O "/usr/share/keyrings/xpra.asc" https://xpra.org/xpra.asc && \
+    wget -O "/etc/apt/sources.list.d/xpra.sources" https://xpra.org/repos/jammy/xpra.sources
+
 
 RUN apt-get update && \
     apt-get install -yqq \
@@ -70,7 +78,7 @@ ENV XPRA_EXIT_WITH_CLIENT="yes"
 ENV XPRA_XVFB_SCREEN="1920x1080x24+32"
 EXPOSE 9876
 
-CMD echo "Launching napari on Xpra. Connect via http://localhost:$XPRA_PORT"; \
+CMD echo "Launching napari on Xpra. Connect via http://localhost:$XPRA_PORT or $(hostname -i):$XPRA_PORT"; \
     xpra start \
     --bind-tcp=0.0.0.0:$XPRA_PORT \
     --html=on \

@@ -2,7 +2,7 @@
 # from napari.utils.events import Event
 # from napari.utils.colormaps import AVAILABLE_COLORMAPS
 
-from typing import Dict, List, Optional, Union
+from typing import Optional, Union
 from warnings import warn
 
 import numpy as np
@@ -24,27 +24,21 @@ class Tracks(Layer):
         Coordinates for N points in D+1 dimensions. ID,T,(Z),Y,X. The first
         axis is the integer ID of the track. D is either 3 or 4 for planar
         or volumetric timeseries respectively.
-    features : Dataframe-like
-        Features table where each row corresponds to a point and each column
-        is a feature.
-    properties : dict {str: array (N,)}, DataFrame
-        Properties for each point. Each property should be an array of length N,
-        where N is the number of points.
-    graph : dict {int: list}
-        Graph representing associations between tracks. Dictionary defines the
-        mapping between a track ID and the parents of the track. This can be
-        one (the track has one parent, and the parent has >=1 child) in the
-        case of track splitting, or more than one (the track has multiple
-        parents, but only one child) in the case of track merging.
-        See examples/tracks_3d_with_graph.py
+    affine : n-D array or napari.utils.transforms.Affine
+        (N+1, N+1) affine transformation matrix in homogeneous coordinates.
+        The first (N, N) entries correspond to a linear transform and
+        the final column is a length N translation vector and a 1 or a napari
+        `Affine` transform object. Applied as an extra transform on top of the
+        provided scale, rotate, and shear values.
+    blending : str
+        One of a list of preset blending modes that determines how RGB and
+        alpha values of the layer visual get mixed. Allowed values are
+        {'opaque', 'translucent', and 'additive'}.
+    cache : bool
+        Whether slices of out-of-core datasets should be cached upon retrieval.
+        Currently, this only applies to dask arrays.
     color_by : str
         Track property (from property keys) by which to color vertices.
-    tail_width : float
-        Width of the track tails in pixels.
-    tail_length : float
-        Length of the positive (backward in time) tails in units of time.
-    head_length : float
-        Length of the positive (forward in time) tails in units of time.
     colormap : str
         Default colormap to use to set vertex colors. Specialized colormaps,
         relating to specified properties can be passed to the layer via
@@ -53,41 +47,53 @@ class Tracks(Layer):
         Optional dictionary mapping each property to a colormap for that
         property. This allows each property to be assigned a specific colormap,
         rather than having a global colormap for everything.
-    name : str
-        Name of the layer.
+    experimental_clipping_planes : list of dicts, list of ClippingPlane, or ClippingPlaneList
+        Each dict defines a clipping plane in 3D in data coordinates.
+        Valid dictionary keys are {'position', 'normal', and 'enabled'}.
+        Values on the negative side of the normal are discarded if the plane is enabled.
+    features : Dataframe-like
+        Features table where each row corresponds to a point and each column
+        is a feature.
+    graph : dict {int: list}
+        Graph representing associations between tracks. Dictionary defines the
+        mapping between a track ID and the parents of the track. This can be
+        one (the track has one parent, and the parent has >=1 child) in the
+        case of track splitting, or more than one (the track has multiple
+        parents, but only one child) in the case of track merging.
+        See examples/tracks_3d_with_graph.py
+    head_length : float
+        Length of the positive (forward in time) tails in units of time.
     metadata : dict
         Layer metadata.
-    scale : tuple of float
-        Scale factors for the layer.
-    translate : tuple of float
-        Translation values for the layer.
+    name : str
+        Name of the layer.
+    opacity : float
+        Opacity of the layer visual, between 0.0 and 1.0.
+    projection_mode : str
+        How data outside the viewed dimensions but inside the thick Dims slice will
+        be projected onto the viewed dimenions.
+    properties : dict {str: array (N,)}, DataFrame
+        Properties for each point. Each property should be an array of length N,
+        where N is the number of points.
     rotate : float, 3-tuple of float, or n-D array.
         If a float convert into a 2D rotation matrix using that value as an
         angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
         pitch, roll convention. Otherwise assume an nD rotation. Angles are
         assumed to be in degrees. They can be converted from radians with
         np.degrees if needed.
+    scale : tuple of float
+        Scale factors for the layer.
     shear : 1-D array or n-D array
         Either a vector of upper triangular values, or an nD shear matrix with
         ones along the main diagonal.
-    affine : n-D array or napari.utils.transforms.Affine
-        (N+1, N+1) affine transformation matrix in homogeneous coordinates.
-        The first (N, N) entries correspond to a linear transform and
-        the final column is a length N translation vector and a 1 or a napari
-        `Affine` transform object. Applied as an extra transform on top of the
-        provided scale, rotate, and shear values.
-    opacity : float
-        Opacity of the layer visual, between 0.0 and 1.0.
-    blending : str
-        One of a list of preset blending modes that determines how RGB and
-        alpha values of the layer visual get mixed. Allowed values are
-        {'opaque', 'translucent', and 'additive'}.
+    tail_length : float
+        Length of the positive (backward in time) tails in units of time.
+    tail_width : float
+        Width of the track tails in pixels.
+    translate : tuple of float
+        Translation values for the layer.
     visible : bool
         Whether the layer visual is currently being displayed.
-    cache : bool
-        Whether slices of out-of-core datasets should be cached upon retrieval.
-        Currently, this only applies to dask arrays.
-
     """
 
     # The max number of tracks that will ever be used to render the thumbnail
@@ -98,28 +104,28 @@ class Tracks(Layer):
         self,
         data,
         *,
-        features=None,
-        properties=None,
-        graph=None,
-        tail_width: int = 2,
-        tail_length: int = 30,
-        head_length: int = 0,
-        name=None,
-        metadata=None,
-        scale=None,
-        translate=None,
-        rotate=None,
-        shear=None,
         affine=None,
-        opacity=1,
         blending='additive',
-        visible=True,
-        colormap='turbo',
-        color_by='track_id',
-        colormaps_dict=None,
         cache=True,
+        color_by='track_id',
+        colormap='turbo',
+        colormaps_dict=None,
         experimental_clipping_planes=None,
+        features=None,
+        graph=None,
+        head_length: int = 0,
+        metadata=None,
+        name=None,
+        opacity=1.0,
         projection_mode='none',
+        properties=None,
+        rotate=None,
+        scale=None,
+        shear=None,
+        tail_length: int = 30,
+        tail_width: int = 2,
+        translate=None,
+        visible=True,
     ) -> None:
         # if not provided with any data, set up an empty layer in 2D+t
         # otherwise convert the data to an np.ndarray
@@ -410,34 +416,34 @@ class Tracks(Layer):
     @features.setter
     def features(
         self,
-        features: Union[Dict[str, np.ndarray], pd.DataFrame],
+        features: Union[dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
         self._manager.features = features
         self._check_color_by_in_features()
         self.events.properties()
 
     @property
-    def properties(self) -> Dict[str, np.ndarray]:
+    def properties(self) -> dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}: Properties for each track."""
         return self._manager.properties
 
     @properties.setter
-    def properties(self, properties: Dict[str, np.ndarray]):
+    def properties(self, properties: dict[str, np.ndarray]):
         """set track properties"""
         self.features = properties
 
     @property
-    def properties_to_color_by(self) -> List[str]:
+    def properties_to_color_by(self) -> list[str]:
         """track properties that can be used for coloring etc..."""
         return list(self.properties.keys())
 
     @property
-    def graph(self) -> Optional[Dict[int, List[int]]]:
+    def graph(self) -> Optional[dict[int, list[int]]]:
         """dict {int: list}: Graph representing associations between tracks."""
         return self._manager.graph
 
     @graph.setter
-    def graph(self, graph: Dict[int, Union[int, List[int]]]):
+    def graph(self, graph: dict[int, Union[int, list[int]]]):
         """Set the track graph."""
         # Ignored type, because mypy can't handle different signatures
         # on getters and setters; see https://github.com/python/mypy/issues/3004
@@ -548,13 +554,13 @@ class Tracks(Layer):
         self.events.colormap()
 
     @property
-    def colormaps_dict(self) -> Dict[str, Colormap]:
+    def colormaps_dict(self) -> dict[str, Colormap]:
         return self._colormaps_dict
 
     # Ignored type because mypy doesn't recognise colormaps_dict as a property
     # TODO: investigate and fix this - not sure why this is the case?
     @colormaps_dict.setter  # type: ignore[attr-defined]
-    def colomaps_dict(self, colormaps_dict: Dict[str, Colormap]):
+    def colomaps_dict(self, colormaps_dict: dict[str, Colormap]):
         # validate the dictionary entries?
         self._colormaps_dict = colormaps_dict
 
@@ -627,7 +633,7 @@ class Tracks(Layer):
             warn(
                 (
                     trans._(
-                        "Previous color_by key {key!r} not present in features. Falling back to track_id",
+                        'Previous color_by key {key!r} not present in features. Falling back to track_id',
                         deferred=True,
                         key=self._color_by,
                     )

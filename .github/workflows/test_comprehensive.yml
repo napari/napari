@@ -9,6 +9,9 @@ on:
       - "v*x"
     tags:
       - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
+  pull_request:
+    paths:
+      - '.github/workflows/test_comprehensive.yml'
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
@@ -25,7 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: "Set up Python 3.11"
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
       - name: Install dependencies
@@ -47,22 +50,22 @@ jobs:
       fail-fast: false
       matrix:
         platform: [ubuntu-latest, windows-latest]
-        python: ["3.8", "3.9", "3.10", "3.11"]
+        python: ["3.9", "3.10", "3.11", "3.12"]
         backend: [pyqt5, pyside2]
         include:
-          - python: "3.9"
+          - python: "3.10"
             platform: macos-latest
             backend: pyqt5
           # test with minimum specified requirements
-          - python: "3.8"
+          - python: "3.9"
             platform: ubuntu-20.04
             backend: pyqt5
             MIN_REQ: 1
           # test without any Qt backends
-          - python: "3.8"
+          - python: "3.9"
             platform: ubuntu-20.04
             backend: headless
-          - python: "3.11"
+          - python: "3.12"
             platform: ubuntu-latest
             backend: pyqt6
             tox_extras: "testing_extra"
@@ -72,6 +75,10 @@ jobs:
             tox_extras: "testing_extra"
         exclude:
           - python: "3.11"
+            backend: pyside2
+          - python: "3.12"
+            backend: pyside2
+          - platform: windows-latest
             backend: pyside2
     with:
       python_version: ${{ matrix.python }}
@@ -103,6 +110,8 @@ jobs:
       - test
       - test_examples
     uses: ./.github/workflows/reusable_coverage_upload.yml
+    secrets:
+      codecov_token: ${{ secrets.CODECOV_TOKEN }}
 
   synchronize_bot_repository:
     name: Synchronize bot repository

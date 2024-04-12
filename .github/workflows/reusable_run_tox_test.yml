@@ -54,17 +54,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: wheel
           path: dist
 
       - name: Set up Python ${{ inputs.python_version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ inputs.python_version }}
           cache: "pip"
-          cache-dependency-path: setup.cfg
+          cache-dependency-path: pyproject.toml
 
       - uses: tlambert03/setup-qt-libs@v1
 
@@ -87,6 +87,8 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install setuptools tox tox-gh-actions tox-min-req
+        env:
+          PIP_CONSTRAINT: ""
 
       - name: create _version.py file
         # workaround for not using src layout
@@ -121,12 +123,12 @@ jobs:
 
       - name: Test with tox main
         timeout-minutes: ${{ inputs.timeout }}
-        uses: aganders3/headless-gui@v1
+        uses: aganders3/headless-gui@v2
         with:
           shell: bash
           run: |
             echo ${{ env.MAIN }}
-            python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl
+            python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl -- --basetemp=.pytest_tmp
             rm -r .tox
         env:
           BACKEND: ${{ env.MAIN }}
@@ -134,12 +136,12 @@ jobs:
 
       - name: Test with tox second
         timeout-minutes: ${{ inputs.timeout }}
-        uses: aganders3/headless-gui@v1
+        uses: aganders3/headless-gui@v2
         if : ${{ env.SECOND != 'none' }}
         with:
           shell: bash
           run: |
-            python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl
+            python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl -- --basetemp=.pytest_tmp
             rm -r .tox
         env:
           BACKEND: ${{ env.SECOND }}
@@ -147,12 +149,12 @@ jobs:
 
       - name: Test with tox third
         timeout-minutes: ${{ inputs.timeout }}
-        uses: aganders3/headless-gui@v1
+        uses: aganders3/headless-gui@v2
         if : ${{ env.THIRD != 'none' }}
         with:
           shell: bash
           run: |
-            python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl
+            python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl -- --basetemp=.pytest_tmp
             rm -r .tox
         env:
           BACKEND: ${{ env.THIRD }}
@@ -160,28 +162,35 @@ jobs:
 
       - name: Test with tox fourth
         timeout-minutes: ${{ inputs.timeout }}
-        uses: aganders3/headless-gui@v1
+        uses: aganders3/headless-gui@v2
         if: ${{ env.FOURTH != 'none' }}
         with:
           shell: bash
           run: |
-            python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl
+            python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl -- --basetemp=.pytest_tmp
             rm -r .tox
         env:
           BACKEND: ${{ env.FOURTH }}
           NAPARI_TEST_SUBSET: qt
 
-      - name: Upload pytest timing reports as json
-        uses: actions/upload-artifact@v3
+      - name: Upload test artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
         with:
-          name: upload pytest timing reports as json
+          name: test artifacts ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }}
+          path: .pytest_tmp
+
+      - name: Upload pytest timing reports as json ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: upload pytest timing json ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }} ${{ inputs.tox_extras }}
           path: |
             ./report-*.json
 
       - name: Upload coverage data
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: ${{ inputs.coverage == 'cov' }}
         with:
-          name: coverage reports
+          name: coverage reports ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }}
           path: |
             ./.coverage.*

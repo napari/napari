@@ -239,14 +239,14 @@ def test_labels_order_when_changing_dims():
 
 
 @pytest.mark.parametrize(
-    "ndim, ax_input, expected", ((2, 1, 1), (2, -1, 1), (4, -3, 1))
+    'ndim, ax_input, expected', ((2, 1, 1), (2, -1, 1), (4, -3, 1))
 )
 def test_assert_axis_in_bounds(ndim, ax_input, expected):
     actual = ensure_axis_in_bounds(ax_input, ndim)
     assert actual == expected
 
 
-@pytest.mark.parametrize("ndim, ax_input", ((2, 2), (2, -3)))
+@pytest.mark.parametrize('ndim, ax_input', ((2, 2), (2, -3)))
 def test_assert_axis_out_of_bounds(ndim, ax_input):
     with pytest.raises(ValueError):
         ensure_axis_in_bounds(ax_input, ndim)
@@ -266,9 +266,9 @@ def test_roll():
     dims.set_range(2, (0, 10, 1))
     dims.set_range(3, (0, 10, 1))
     assert dims.order == (0, 1, 2, 3)
-    dims._roll()
+    dims.roll()
     assert dims.order == (3, 0, 1, 2)
-    dims._roll()
+    dims.roll()
     assert dims.order == (2, 3, 0, 1)
 
 
@@ -280,9 +280,9 @@ def test_roll_skip_dummy_axis_1():
     dims.set_range(2, (0, 10, 1))
     dims.set_range(3, (0, 10, 1))
     assert dims.order == (0, 1, 2, 3)
-    dims._roll()
+    dims.roll()
     assert dims.order == (0, 3, 1, 2)
-    dims._roll()
+    dims.roll()
     assert dims.order == (0, 2, 3, 1)
 
 
@@ -294,9 +294,9 @@ def test_roll_skip_dummy_axis_2():
     dims.set_range(2, (0, 10, 1))
     dims.set_range(3, (0, 10, 1))
     assert dims.order == (0, 1, 2, 3)
-    dims._roll()
+    dims.roll()
     assert dims.order == (3, 1, 0, 2)
-    dims._roll()
+    dims.roll()
     assert dims.order == (2, 1, 3, 0)
 
 
@@ -308,9 +308,9 @@ def test_roll_skip_dummy_axis_3():
     dims.set_range(2, (0, 10, 1))
     dims.set_range(3, (0, 0, 1))
     assert dims.order == (0, 1, 2, 3)
-    dims._roll()
+    dims.roll()
     assert dims.order == (2, 1, 0, 3)
-    dims._roll()
+    dims.roll()
     assert dims.order == (0, 1, 2, 3)
 
 

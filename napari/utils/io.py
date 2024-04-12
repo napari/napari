@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     import numpy as np
 
 
-def imsave(filename: str, data: "np.ndarray"):
+def imsave(filename: str, data: 'np.ndarray'):
     """Custom implementation of imsave to avoid skimage dependency.
 
     Parameters
@@ -21,12 +21,12 @@ def imsave(filename: str, data: "np.ndarray"):
     """
     ext = os.path.splitext(filename)[1].lower()
     # If no file extension was specified, choose .png by default
-    if ext == "":
-        ext = ".png"
+    if ext == '':
+        ext = '.png'
     # Save screenshot image data to output file
-    if ext in [".png"]:
+    if ext in ['.png']:
         imsave_png(filename, data)
-    elif ext in [".tif", ".tiff"]:
+    elif ext in ['.tif', '.tiff']:
         imsave_tiff(filename, data)
     else:
         import imageio.v3 as iio
@@ -53,7 +53,7 @@ def imsave_png(filename, data):
     # Digital watermark, adds info about the napari version to the bytes of the PNG file
     pnginfo = PIL.PngImagePlugin.PngInfo()
     pnginfo.add_text(
-        "Software", f"napari version {__version__} https://napari.org/"
+        'Software', f'napari version {__version__} https://napari.org/'
     )
     iio.imwrite(
         filename,
@@ -76,30 +76,13 @@ def imsave_tiff(filename, data):
     """
     import tifffile
 
-    compression_instead_of_compress = False
-    try:
-        current_version = tuple(
-            int(x) for x in tifffile.__version__.split('.')[:3]
-        )
-        compression_instead_of_compress = current_version >= (2021, 6, 6)
-    except Exception:  # noqa: BLE001
-        # Just in case anything goes wrong in parsing version number
-        # like repackaging on linux or anything else we fallback to
-        # using compress
-        warnings.warn(
-            trans._(
-                'Error parsing tiffile version number {version_number}',
-                deferred=True,
-                version_number=f"{tifffile.__version__:!r}",
-            )
-        )
-
-    if compression_instead_of_compress:
-        # 'compression' scheme is more complex. See:
+    if data.dtype == bool:
+        tifffile.imwrite(filename, data)
+    else:
+        # 'compression' kwarg since 2021.6.6; we depend on more recent versions
+        # now. See:
         # https://forum.image.sc/t/problem-saving-generated-labels-in-cellpose-napari/54892/8
         tifffile.imwrite(filename, data, compression=('zlib', 1))
-    else:  # older version of tifffile since 2021.6.6  this is deprecated
-        tifffile.imwrite(filename, data, compress=1)
 
 
 def __getattr__(name: str):
@@ -123,4 +106,4 @@ def __getattr__(name: str):
 
         return getattr(napari_builtins.io, name)
 
-    raise AttributeError(f"module {__name__} has no attribute {name}")
+    raise AttributeError(f'module {__name__} has no attribute {name}')

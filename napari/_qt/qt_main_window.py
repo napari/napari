@@ -9,15 +9,12 @@ import os
 import sys
 import time
 import warnings
+from collections.abc import MutableMapping, Sequence
 from typing import (
     TYPE_CHECKING,
     Any,
     ClassVar,
-    List,
-    MutableMapping,
     Optional,
-    Sequence,
-    Tuple,
     Union,
     cast,
 )
@@ -52,6 +49,10 @@ from napari._app_model.context import get_context
 from napari._qt import menus
 from napari._qt._qapp_model import build_qmodel_menu
 from napari._qt._qapp_model.qactions import init_qactions
+from napari._qt._qplugins import (
+    _rebuild_npe1_plugins_menu,
+    _rebuild_npe1_samples_menu,
+)
 from napari._qt.dialogs.confirm_close_dialog import ConfirmCloseDialog
 from napari._qt.dialogs.preferences_dialog import PreferencesDialog
 from napari._qt.dialogs.qt_activity_dialog import QtActivityDialog
@@ -73,7 +74,7 @@ from napari.plugins import (
     menu_item_template as plugin_menu_item_template,
     plugin_manager,
 )
-from napari.plugins._npe2 import _rebuild_npe1_samples_menu
+from napari.plugins._npe2 import index_npe1_adapters
 from napari.settings import get_settings
 from napari.utils import perf
 from napari.utils._proxies import PublicOnlyProxy
@@ -107,7 +108,7 @@ class _QtMainWindow(QMainWindow):
     # We use this instead of QApplication.activeWindow for compatibility with
     # IPython usage. When you activate IPython, it will appear that there are
     # *no* active windows, so we want to track the most recently active windows
-    _instances: ClassVar[List['_QtMainWindow']] = []
+    _instances: ClassVar[list['_QtMainWindow']] = []
 
     # `window` is passed through on construction, so it's available to a window
     # provider for dependency injection
@@ -215,21 +216,24 @@ class _QtMainWindow(QMainWindow):
             # https://doc-snapshots.qt.io/qt6-dev/qmouseevent-obsolete.html#globalPos
             pnt = (
                 e.globalPosition().toPoint()
-                if hasattr(e, "globalPosition")
+                if hasattr(e, 'globalPosition')
                 else e.globalPos()
             )
             QToolTip.showText(pnt, self._qt_viewer.viewer.tooltip.text, self)
-        if e.type() == QEvent.Type.Close:
-            # when we close the MainWindow, remove it from the instance list
-            with contextlib.suppress(ValueError):
-                _QtMainWindow._instances.remove(self)
         if e.type() in {QEvent.Type.WindowActivate, QEvent.Type.ZOrderChange}:
             # upon activation or raise_, put window at the end of _instances
             with contextlib.suppress(ValueError):
                 inst = _QtMainWindow._instances
                 inst.append(inst.pop(inst.index(self)))
 
-        return super().event(e)
+        res = super().event(e)
+
+        if e.type() == QEvent.Type.Close and e.isAccepted():
+            # when we close the MainWindow, remove it from the instance list
+            with contextlib.suppress(ValueError):
+                _QtMainWindow._instances.remove(self)
+
+        return res
 
     def isFullScreen(self):
         # Needed to prevent errors when going to fullscreen mode on Windows
@@ -426,7 +430,7 @@ class _QtMainWindow(QMainWindow):
 
     def close(self, quit_app=False, confirm_need=False):
         """Override to handle closing app or just the window."""
-        if hasattr(self.status_throttler, "_timer"):
+        if hasattr(self.status_throttler, '_timer'):
             self.status_throttler._timer.stop()
         if not quit_app and not self._qt_viewer.viewer.layers:
             return super().close()
@@ -463,7 +467,7 @@ class _QtMainWindow(QMainWindow):
             try:
                 parent = parent.parent()
             except AttributeError:
-                parent = getattr(parent, "_parent", None)
+                parent = getattr(parent, '_parent', None)
 
     def show(self, block=False):
         super().show()
@@ -480,7 +484,7 @@ class _QtMainWindow(QMainWindow):
             # of times which makes it hard to track the original size before
             # maximization.
             condition = (
-                self.isMaximized() if os.name == "nt" else self.isFullScreen()
+                self.isMaximized() if os.name == 'nt' else self.isFullScreen()
             )
             if condition and self._old_size is not None:
                 if self._positions and len(self._positions) > 1:
@@ -497,6 +501,32 @@ class _QtMainWindow(QMainWindow):
                 self._positions = []
 
         super().changeEvent(event)
+
+    def keyPressEvent(self, event):
+        """Called whenever a key is pressed.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
+        self._qt_viewer.canvas._scene_canvas._backend._keyEvent(
+            self._qt_viewer.canvas._scene_canvas.events.key_press, event
+        )
+        event.accept()
+
+    def keyReleaseEvent(self, event):
+        """Called whenever a key is released.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
+        self._qt_viewer.canvas._scene_canvas._backend._keyEvent(
+            self._qt_viewer.canvas._scene_canvas.events.key_release, event
+        )
+        event.accept()
 
     def resizeEvent(self, event):
         """Override to handle original size before maximizing."""
@@ -607,9 +637,9 @@ class Window:
         qapp = get_app()
 
         # Dictionary holding dock widgets
-        self._dock_widgets: MutableMapping[
-            str, QtViewerDockWidget
-        ] = WeakValueDictionary()
+        self._dock_widgets: MutableMapping[str, QtViewerDockWidget] = (
+            WeakValueDictionary()
+        )
         self._unnamed_dockwidget_count = 1
 
         self._pref_dialog = None
@@ -626,6 +656,9 @@ class Window:
         # discover any themes provided by plugins
         plugin_manager.discover_themes()
         self._setup_existing_themes()
+
+        # import and index all discovered shimmed npe1 plugins
+        index_npe1_adapters()
 
         self._add_menus()
         self._update_theme()
@@ -777,6 +810,10 @@ class Window:
         menu_model = getattr(self, menu)
         menu_model.update_from_context(get_context(layerlist))
 
+    def _update_plugin_menu_state(self):
+        self._update_menu_state('plugins_menu')
+
+    # TODO: Remove once npe1 deprecated
     def _setup_npe1_samples_menu(self):
         """Register npe1 sample data, build menu and connect to events."""
         plugin_manager.discover_sample_data()
@@ -785,6 +822,15 @@ class Window:
         plugin_manager.events.registered.connect(_rebuild_npe1_samples_menu)
         plugin_manager.events.unregistered.connect(_rebuild_npe1_samples_menu)
         _rebuild_npe1_samples_menu()
+
+    # TODO: Remove once npe1 deprecated
+    def _setup_npe1_plugins_menu(self):
+        """Register npe1 widgets, build menu and connect to events"""
+        plugin_manager.discover_widgets()
+        plugin_manager.events.registered.connect(_rebuild_npe1_plugins_menu)
+        plugin_manager.events.disabled.connect(_rebuild_npe1_plugins_menu)
+        plugin_manager.events.unregistered.connect(_rebuild_npe1_plugins_menu)
+        _rebuild_npe1_plugins_menu()
 
     def _add_menus(self):
         """Add menubar to napari app."""
@@ -821,7 +867,13 @@ class Window:
         )
         self.main_menu.addMenu(self.view_menu)
         # plugin menu
-        self.plugins_menu = menus.PluginsMenu(self)
+        self.plugins_menu = build_qmodel_menu(
+            MenuId.MENUBAR_PLUGINS,
+            title=trans._('&Plugins'),
+            parent=self._qt_window,
+        )
+        self._setup_npe1_plugins_menu()
+        self.plugins_menu.aboutToShow.connect(self._update_plugin_menu_state)
         self.main_menu.addMenu(self.plugins_menu)
         # window menu
         self.window_menu = menus.WindowMenu(self)
@@ -869,7 +921,7 @@ class Window:
         plugin_name: str,
         widget_name: Optional[str] = None,
         tabify: bool = False,
-    ) -> Tuple[QtViewerDockWidget, Any]:
+    ) -> tuple[QtViewerDockWidget, Any]:
         """Add plugin dock widget if not already added.
 
         Parameters
@@ -1005,7 +1057,7 @@ class Window:
             with contextlib.suppress(AttributeError):
                 name = widget.objectName()
             name = name or trans._(
-                "Dock widget {number}",
+                'Dock widget {number}',
                 number=self._unnamed_dockwidget_count,
             )
 
@@ -1102,7 +1154,7 @@ class Window:
             import warnings
 
             with warnings.catch_warnings():
-                warnings.simplefilter("ignore", FutureWarning)
+                warnings.simplefilter('ignore', FutureWarning)
                 # deprecating with 0.4.8, but let's try to keep compatibility.
                 shortcut = dock_widget.shortcut
             if shortcut is not None:
@@ -1113,7 +1165,7 @@ class Window:
         # see #3663, to fix #3624 more generally
         dock_widget.setFloating(False)
 
-    def _remove_dock_widget(self, event=None):
+    def _remove_dock_widget(self, event) -> None:
         names = list(self._dock_widgets.keys())
         for widget_name in names:
             if event.value in widget_name:
@@ -1150,7 +1202,7 @@ class Window:
             else:
                 raise LookupError(
                     trans._(
-                        "Could not find a dock widget containing: {widget}",
+                        'Could not find a dock widget containing: {widget}',
                         deferred=True,
                         widget=widget,
                     )
@@ -1216,7 +1268,7 @@ class Window:
         if magic_kwargs is None:
             magic_kwargs = {
                 'auto_call': False,
-                'call_button': "run",
+                'call_button': 'run',
                 'layout': 'vertical',
             }
 
@@ -1270,7 +1322,7 @@ class Window:
         """
         self._qt_window.setGeometry(left, top, width, height)
 
-    def geometry(self) -> Tuple[int, int, int, int]:
+    def geometry(self) -> tuple[int, int, int, int]:
         """Get the geometry of the widget
 
         Returns
@@ -1301,7 +1353,7 @@ class Window:
         except (AttributeError, RuntimeError) as e:
             raise RuntimeError(
                 trans._(
-                    "This viewer has already been closed and deleted. Please create a new one.",
+                    'This viewer has already been closed and deleted. Please create a new one.',
                     deferred=True,
                 )
             ) from e
@@ -1313,7 +1365,7 @@ class Window:
             except (AttributeError, RuntimeError) as e:
                 raise RuntimeError(
                     trans._(
-                        "This viewer has already been closed and deleted. Please create a new one.",
+                        'This viewer has already been closed and deleted. Please create a new one.',
                         deferred=True,
                     )
                 ) from e
@@ -1328,7 +1380,7 @@ class Window:
 
                 warnings.warn(
                     trans._(
-                        "The window geometry settings could not be loaded due to the following error: {err}",
+                        'The window geometry settings could not be loaded due to the following error: {err}',
                         deferred=True,
                         err=err,
                     ),
@@ -1364,7 +1416,7 @@ class Window:
     def _update_theme_font_size(self, event=None):
         settings = get_settings()
         font_size = event.value if event else settings.appearance.font_size
-        extra_variables = {"font_size": f"{font_size}pt"}
+        extra_variables = {'font_size': f'{font_size}pt'}
         self._update_theme(extra_variables=extra_variables)
 
     def _update_theme(self, event=None, extra_variables=None):
@@ -1376,13 +1428,13 @@ class Window:
             value = event.value if event else settings.appearance.theme
             self._qt_viewer.viewer.theme = value
             actual_theme_name = value
-            if value == "system":
+            if value == 'system':
                 # system isn't a theme, so get the name
                 actual_theme_name = get_system_theme()
             # check `font_size` value is always passed when updating style
-            if "font_size" not in extra_variables:
+            if 'font_size' not in extra_variables:
                 extra_variables.update(
-                    {"font_size": f"{settings.appearance.font_size}pt"}
+                    {'font_size': f'{settings.appearance.font_size}pt'}
                 )
             # set the style sheet with the theme name and extra_variables
             self._qt_window.setStyleSheet(

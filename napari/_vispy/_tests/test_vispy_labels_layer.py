@@ -19,10 +19,10 @@ def make_labels_layer(array_type, shape):
         spec = {
             'driver': 'zarr',
             'kvstore': {'driver': 'memory'},
-            "metadata": {"chunks": chunks},
+            'metadata': {'chunks': chunks},
         }
         labels = ts.open(
-            spec, create=True, dtype="uint32", shape=shape
+            spec, create=True, dtype='uint32', shape=shape
         ).result()
     else:
         pytest.fail("array_type must be 'numpy', 'zarr', or 'tensorstore'")
@@ -65,7 +65,7 @@ def test_labels_fill_slice(make_napari_viewer, array_type):
     QCoreApplication.instance().processEvents()
     layer.fill((1, 10, 10), 13, refresh=True)
     visual = viewer.window._qt_viewer.layer_to_visual[layer]
-    assert np.sum(visual.node._data) == 14
+    assert np.sum(visual.node._data) == 13
 
 
 @skip_local_popups

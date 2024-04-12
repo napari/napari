@@ -1,6 +1,6 @@
 import logging
 import pickle
-from typing import List, Optional, Tuple, TypeVar
+from typing import Optional, TypeVar
 
 from qtpy.QtCore import QMimeData, QModelIndex, Qt
 
@@ -9,8 +9,8 @@ from napari.utils.translations import trans
 from napari.utils.tree import Group, Node
 
 logger = logging.getLogger(__name__)
-NodeType = TypeVar("NodeType", bound=Node)
-NodeMIMEType = "application/x-tree-node"
+NodeType = TypeVar('NodeType', bound=Node)
+NodeMIMEType = 'application/x-tree-node'
 
 
 class QtNodeTreeModel(_BaseEventedItemModel[NodeType]):
@@ -97,7 +97,7 @@ class QtNodeTreeModel(_BaseEventedItemModel[NodeType]):
         row = parentItem.index_in_parent() or 0
         return self.createIndex(row, 0, parentItem)
 
-    def mimeTypes(self) -> List[str]:
+    def mimeTypes(self) -> list[str]:
         """Returns the list of allowed MIME types.
 
         By default, the built-in models and views use an internal MIME type:
@@ -116,9 +116,9 @@ class QtNodeTreeModel(_BaseEventedItemModel[NodeType]):
         list of str
             MIME types allowed for drag & drop support
         """
-        return [NodeMIMEType, "text/plain"]
+        return [NodeMIMEType, 'text/plain']
 
-    def mimeData(self, indices: List[QModelIndex]) -> Optional['NodeMimeData']:
+    def mimeData(self, indices: list[QModelIndex]) -> Optional['NodeMimeData']:
         """Return an object containing serialized data from `indices`.
 
         The format used to describe the encoded data is obtained from the
@@ -163,8 +163,8 @@ class QtNodeTreeModel(_BaseEventedItemModel[NodeType]):
             moving_indices = data.node_indices()
 
             logger.debug(
-                "dropMimeData: indices {ind} ➡ {idx}",
-                extra={"ind": moving_indices, "idx": dest_idx},
+                'dropMimeData: indices {ind} ➡ {idx}',
+                extra={'ind': moving_indices, 'idx': dest_idx},
             )
 
             if len(moving_indices) == 1:
@@ -180,14 +180,14 @@ class QtNodeTreeModel(_BaseEventedItemModel[NodeType]):
         if not isinstance(root, Group):
             raise TypeError(
                 trans._(
-                    "root node must be an instance of {Group}",
+                    'root node must be an instance of {Group}',
                     deferred=True,
                     Group=Group,
                 )
             )
         super().setRoot(root)
 
-    def nestedIndex(self, nested_index: Tuple[int, ...]) -> QModelIndex:
+    def nestedIndex(self, nested_index: tuple[int, ...]) -> QModelIndex:
         """Return a QModelIndex for a given ``nested_index``."""
         parent = QModelIndex()
         if isinstance(nested_index, tuple):
@@ -201,7 +201,7 @@ class QtNodeTreeModel(_BaseEventedItemModel[NodeType]):
         else:
             raise TypeError(
                 trans._(
-                    "nested_index must be an int or tuple of int.",
+                    'nested_index must be an int or tuple of int.',
                     deferred=True,
                 )
             )
@@ -211,18 +211,18 @@ class QtNodeTreeModel(_BaseEventedItemModel[NodeType]):
 class NodeMimeData(QMimeData):
     """An object to store Node data during a drag operation."""
 
-    def __init__(self, nodes: Optional[List[NodeType]] = None) -> None:
+    def __init__(self, nodes: Optional[list[NodeType]] = None) -> None:
         super().__init__()
-        self.nodes: List[NodeType] = nodes or []
+        self.nodes: list[NodeType] = nodes or []
         if nodes:
             self.setData(NodeMIMEType, pickle.dumps(self.node_indices()))
-            self.setText(" ".join(node._node_name() for node in nodes))
+            self.setText(' '.join(node._node_name() for node in nodes))
 
-    def formats(self) -> List[str]:
-        return [NodeMIMEType, "text/plain"]
+    def formats(self) -> list[str]:
+        return [NodeMIMEType, 'text/plain']
 
-    def node_indices(self) -> List[Tuple[int, ...]]:
+    def node_indices(self) -> list[tuple[int, ...]]:
         return [node.index_from_root() for node in self.nodes]
 
-    def node_names(self) -> List[str]:
+    def node_names(self) -> list[str]:
         return [node._node_name() for node in self.nodes]

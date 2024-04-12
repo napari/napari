@@ -71,3 +71,15 @@ def test_3d_slice_of_4d_image_with_order(order):
 
     scene_size = vispy_image_scene_size(vispy_image)
     np.testing.assert_array_equal((16, 16, 16), scene_size)
+
+
+def test_no_float32_texture_support(monkeypatch):
+    """Ensure Image node can be created if OpenGL driver lacks float textures.
+
+    See #3988, #3990, #6652.
+    """
+    monkeypatch.setattr(
+        'napari._vispy.layers.image.get_gl_extensions', lambda: ''
+    )
+    image = Image(np.zeros((16, 8, 4, 2), dtype='uint8'), scale=(1, 2, 4, 8))
+    VispyImageLayer(image)

@@ -121,7 +121,7 @@ def shift_plane_along_normal(viewer, event):
     # Get transform which maps from data (vispy) to canvas
     # note that we're using a private attribute here, which may not be present in future napari versions
     visual2canvas = viewer.window._qt_viewer.canvas.layer_to_visual[volume_layer].node.get_transform(
-        map_from="visual", map_to="canvas"
+        map_from='visual', map_to='canvas'
     )
 
     # Find start and end positions of plane normal in canvas coordinates
@@ -148,7 +148,7 @@ def shift_plane_along_normal(viewer, event):
     start_position_canv = event.pos
 
     yield
-    while event.type == "mouse_move":
+    while event.type == 'mouse_move':
         # Get end position in canvas coordinates
         end_position_canv = event.pos
 
@@ -190,9 +190,9 @@ viewer.axes.visible = True
 viewer.camera.angles = (45, 45, 45)
 viewer.camera.zoom = 5
 viewer.text_overlay.update({
-    "text": 'Drag the clipping plane surface to move it along its normal.',
-    "font_size": 20,
-    "visible": True,
+    'text': 'Drag the clipping plane surface to move it along its normal.',
+    'font_size': 20,
+    'visible': True,
 })
 
 if __name__ == '__main__':

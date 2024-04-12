@@ -76,7 +76,7 @@ class QtLayerButtons(QFrame):
         self.newLabelsButton = QtViewerPushButton(
             'new_labels',
             trans._('New labels layer'),
-            lambda: self.viewer._new_labels(),
+            self.viewer._new_labels,
         )
 
         layout = QHBoxLayout()
@@ -204,16 +204,19 @@ class QtViewerButtons(QFrame):
         if self.viewer.dims.ndisplay != 2:
             return
 
-        dim_sorter = QtDimsSorter(self.viewer, self)
+        # popup
+        pop = QtPopup(self)
+
+        # dims sorter widget
+        dim_sorter = QtDimsSorter(self.viewer.dims, pop)
         dim_sorter.setObjectName('dim_sorter')
 
         # make layout
         layout = QHBoxLayout()
         layout.addWidget(dim_sorter)
-
-        # popup and show
-        pop = QtPopup(self)
         pop.frame.setLayout(layout)
+
+        # show popup
         pop.show_above_mouse()
 
     def _open_grid_popup(self):
@@ -240,7 +243,7 @@ class QtViewerButtons(QFrame):
         stride_min = self.viewer.grid.__fields__['stride'].type_.ge
         stride_max = self.viewer.grid.__fields__['stride'].type_.le
         stride_not = self.viewer.grid.__fields__['stride'].type_.ne
-        grid_stride.setObjectName("gridStrideBox")
+        grid_stride.setObjectName('gridStrideBox')
         grid_stride.setAlignment(Qt.AlignmentFlag.AlignCenter)
         grid_stride.setRange(stride_min, stride_max)
         grid_stride.setProhibitValue(stride_not)
@@ -250,7 +253,7 @@ class QtViewerButtons(QFrame):
 
         width_min = self.viewer.grid.__fields__['shape'].sub_fields[1].type_.ge
         width_not = self.viewer.grid.__fields__['shape'].sub_fields[1].type_.ne
-        grid_width.setObjectName("gridWidthBox")
+        grid_width.setObjectName('gridWidthBox')
         grid_width.setAlignment(Qt.AlignmentFlag.AlignCenter)
         grid_width.setMinimum(width_min)
         grid_width.setProhibitValue(width_not)
@@ -264,7 +267,7 @@ class QtViewerButtons(QFrame):
         height_not = (
             self.viewer.grid.__fields__['shape'].sub_fields[0].type_.ne
         )
-        grid_height.setObjectName("gridStrideBox")
+        grid_height.setObjectName('gridStrideBox')
         grid_height.setAlignment(Qt.AlignmentFlag.AlignCenter)
         grid_height.setMinimum(height_min)
         grid_height.setProhibitValue(height_not)
@@ -272,10 +275,10 @@ class QtViewerButtons(QFrame):
         grid_height.valueChanged.connect(self._update_grid_height)
         self.grid_height_box = grid_height
 
-        shape_help_symbol.setObjectName("help_label")
+        shape_help_symbol.setObjectName('help_label')
         shape_help_symbol.setToolTip(shape_help_msg)
 
-        stride_help_symbol.setObjectName("help_label")
+        stride_help_symbol.setObjectName('help_label')
         stride_help_symbol.setToolTip(stride_help_msg)
 
         # layout
@@ -347,21 +350,21 @@ def _omit_viewer_args(constructor):
         if len(args) > 1 and not isinstance(args[1], str):
             warnings.warn(
                 trans._(
-                    "viewer argument is deprecated since 0.4.14 and should not be used"
+                    'viewer argument is deprecated since 0.4.14 and should not be used'
                 ),
                 category=FutureWarning,
                 stacklevel=2,
             )
             args = args[:1] + args[2:]
-        if "viewer" in kwargs:
+        if 'viewer' in kwargs:
             warnings.warn(
                 trans._(
-                    "viewer argument is deprecated since 0.4.14 and should not be used"
+                    'viewer argument is deprecated since 0.4.14 and should not be used'
                 ),
                 category=FutureWarning,
                 stacklevel=2,
             )
-            del kwargs["viewer"]
+            del kwargs['viewer']
         return constructor(*args, **kwargs)
 
     return _func

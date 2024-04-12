@@ -8,6 +8,7 @@ documentation.
 CommandId values should be namespaced, e.g. 'napari:layer:something' for a command
 that operates on layers.
 """
+
 from typing import NamedTuple, Optional
 
 from napari.utils.compat import StrEnum
@@ -36,6 +37,7 @@ class CommandId(StrEnum):
     DLG_CLOSE = 'napari:window:file:close_dialog'
     DLG_QUIT = 'napari:window:file:quit_dialog'
     RESTART = 'napari:window:file:restart'
+    IMAGE_FROM_CLIPBOARD = 'napari:window:file:_image_from_clipboard'
 
     # View menubar
     TOGGLE_FULLSCREEN = 'napari:window:view:toggle_fullscreen'
@@ -53,6 +55,10 @@ class CommandId(StrEnum):
     TOGGLE_VIEWER_SCALE_BAR_COLORED = 'napari:window:view:toggle_viewer_scale_bar_colored'
     TOGGLE_VIEWER_SCALE_BAR_TICKS = 'napari:window:view:toggle_viewer_scale_bar_ticks'
 
+    # Plugins menubar
+    DLG_PLUGIN_INSTALL = 'napari:window:plugins:plugin_install_dialog'
+    DLG_PLUGIN_ERR = 'napari:window:plugins:plugin_err_reporter'
+
     # Help menubar
     NAPARI_GETTING_STARTED = 'napari:window:help:getting_started'
     NAPARI_TUTORIALS = 'napari:window:help:tutorials'
@@ -61,6 +67,7 @@ class CommandId(StrEnum):
     NAPARI_RELEASE_NOTES = 'napari:window:help:release_notes'
     NAPARI_HOMEPAGE = 'napari:window:help:homepage'
     NAPARI_INFO = 'napari:window:help:info'
+    NAPARI_ABOUT_MACOS = 'napari:window:help:about_macos'
     NAPARI_GITHUB_ISSUE = 'napari:window:help:github_issue'
     TOGGLE_BUG_REPORT_OPT_IN = 'napari:window:help:bug_report_opt_in'
 
@@ -132,6 +139,7 @@ _COMMAND_INFO = {
     CommandId.DLG_CLOSE: _i(trans._('Close Window')),
     CommandId.DLG_QUIT: _i(trans._('Exit')),
     CommandId.RESTART: _i(trans._('Restart')),
+    CommandId.IMAGE_FROM_CLIPBOARD: _i(trans._('New Image from Clipboard')),
 
     # View menubar
     CommandId.TOGGLE_FULLSCREEN: _i(trans._('Toggle Full Screen')),
@@ -148,6 +156,10 @@ _COMMAND_INFO = {
     CommandId.TOGGLE_VIEWER_SCALE_BAR_COLORED: _i(trans._('Scale Bar Colored')),
     CommandId.TOGGLE_VIEWER_SCALE_BAR_TICKS: _i(trans._('Scale Bar Ticks')),
 
+    # Plugins menubar
+    CommandId.DLG_PLUGIN_INSTALL: _i(trans._('Install/Uninstall Plugins...')),
+    CommandId.DLG_PLUGIN_ERR: _i(trans._('Plugin Errors...')),
+
     # Help menubar
     CommandId.NAPARI_GETTING_STARTED: _i(trans._('Getting started')),
     CommandId.NAPARI_TUTORIALS: _i(trans._('Tutorials')),
@@ -155,7 +167,8 @@ _COMMAND_INFO = {
     CommandId.NAPARI_EXAMPLES: _i(trans._('Examples Gallery')),
     CommandId.NAPARI_RELEASE_NOTES: _i(trans._('Release Notes')),
     CommandId.NAPARI_HOMEPAGE: _i(trans._('napari homepage')),
-    CommandId.NAPARI_INFO: _i(trans._('napari Info')),
+    CommandId.NAPARI_INFO: _i(trans._('‎napari Info')),
+    CommandId.NAPARI_ABOUT_MACOS: _i(trans._('About napari')),
     CommandId.NAPARI_GITHUB_ISSUE: _i(trans._('Report an issue on GitHub')),
     CommandId.TOGGLE_BUG_REPORT_OPT_IN: _i(trans._('Bug Reporting Opt In/Out...')),
 

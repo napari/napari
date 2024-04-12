@@ -1,5 +1,3 @@
-from typing import Dict, List, Set
-
 from typing_extensions import TypedDict
 
 from napari._pydantic_compat import Field
@@ -14,13 +12,13 @@ class PluginHookOption(TypedDict):
     enabled: bool
 
 
-CallOrderDict = Dict[str, List[PluginHookOption]]
+CallOrderDict = dict[str, list[PluginHookOption]]
 
 
 class PluginsSettings(EventedSettings):
     use_npe2_adaptor: bool = Field(
         False,
-        title=trans._("Use npe2 adaptor"),
+        title=trans._('Use npe2 adaptor'),
         description=trans._(
             "Use npe2-adaptor for first generation plugins.\nWhen an npe1 plugin is found, this option will\nimport its contributions and create/cache\na 'shim' npe2 manifest that allows it to be treated\nlike an npe2 plugin (with delayed imports, etc...)",
         ),
@@ -29,26 +27,26 @@ class PluginsSettings(EventedSettings):
 
     call_order: CallOrderDict = Field(
         default_factory=dict,
-        title=trans._("Plugin sort order"),
+        title=trans._('Plugin sort order'),
         description=trans._(
-            "Sort plugins for each action in the order to be called.",
+            'Sort plugins for each action in the order to be called.',
         ),
     )
-    disabled_plugins: Set[str] = Field(
+    disabled_plugins: set[str] = Field(
         set(),
-        title=trans._("Disabled plugins"),
+        title=trans._('Disabled plugins'),
         description=trans._(
-            "Plugins to disable on application start.",
+            'Plugins to disable on application start.',
         ),
     )
-    extension2reader: Dict[str, str] = Field(
+    extension2reader: dict[str, str] = Field(
         default_factory=dict,
         title=trans._('File extension readers'),
         description=trans._(
             'Assign file extensions to specific reader plugins'
         ),
     )
-    extension2writer: Dict[str, str] = Field(
+    extension2writer: dict[str, str] = Field(
         default_factory=dict,
         title=trans._('Writer plugin extension association.'),
         description=trans._(

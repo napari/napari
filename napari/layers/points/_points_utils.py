@@ -1,6 +1,8 @@
-from typing import Iterable, List, Optional, Tuple
+from collections.abc import Iterable
+from typing import Optional
 
 import numpy as np
+import numpy.typing as npt
 
 from napari.layers.points._points_constants import SYMBOL_ALIAS, Symbol
 from napari.utils.geometry import project_points_onto_plane
@@ -50,7 +52,7 @@ def _create_box_from_corners_3d(
     return box
 
 
-def create_box(data):
+def create_box(data: npt.NDArray) -> npt.NDArray:
     """Create the axis aligned interaction box of a list of points
 
     Parameters
@@ -73,7 +75,7 @@ def create_box(data):
     return box
 
 
-def points_to_squares(points, sizes):
+def points_to_squares(points: npt.NDArray, sizes: npt.NDArray) -> npt.NDArray:
     """Expand points to squares defined by their size
 
     Parameters
@@ -106,7 +108,7 @@ def _points_in_box_3d(
     sizes: np.ndarray,
     box_normal: np.ndarray,
     up_direction: np.ndarray,
-) -> List[int]:
+) -> list[int]:
     """Determine which points are inside of 2D bounding box.
 
     The 2D bounding box extends infinitely in both directions along its normal
@@ -179,7 +181,7 @@ def _points_in_box_3d(
 
 def points_in_box(
     corners: np.ndarray, points: np.ndarray, sizes: np.ndarray
-) -> List[int]:
+) -> list[int]:
     """Find which points are in an axis aligned box defined by its corners.
 
     Parameters
@@ -210,7 +212,7 @@ def points_in_box(
 
 def fix_data_points(
     points: Optional[np.ndarray], ndim: Optional[int]
-) -> Tuple[np.ndarray, int]:
+) -> tuple[np.ndarray, int]:
     """
     Ensure that points array is 2d and have second dimension of size ndim (default 2 for empty arrays)
 
@@ -243,7 +245,7 @@ def fix_data_points(
         if ndim is not None and ndim != data_ndim:
             raise ValueError(
                 trans._(
-                    "Points dimensions must be equal to ndim",
+                    'Points dimensions must be equal to ndim',
                     deferred=True,
                 )
             )

@@ -1,5 +1,5 @@
 import os
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Optional, Union
 
 from qtpy.QtWidgets import (
     QButtonGroup,
@@ -25,7 +25,7 @@ class QtReaderDialog(QDialog):
         self,
         pth: str = '',
         parent: QWidget = None,
-        readers: Optional[Dict[str, str]] = None,
+        readers: Optional[dict[str, str]] = None,
         error_message: str = '',
         persist_checked: bool = True,
     ) -> None:
@@ -62,9 +62,9 @@ class QtReaderDialog(QDialog):
         # add instruction label
         layout = QVBoxLayout()
         if error_message:
-            error_message += "\n"
+            error_message += '\n'
         label = QLabel(
-            f"{error_message}Choose reader for {self._current_file}:"
+            f'{error_message}Choose reader for {self._current_file}:'
         )
         layout.addWidget(label)
 
@@ -118,7 +118,7 @@ class QtReaderDialog(QDialog):
     def add_reader_buttons(self, layout, readers):
         """Add radio button to layout for each reader in readers"""
         for display_name in sorted(readers.values()):
-            button = QRadioButton(f"{display_name}")
+            button = QRadioButton(f'{display_name}')
             self.reader_btn_group.addButton(button)
             layout.addWidget(button)
 
@@ -136,7 +136,7 @@ class QtReaderDialog(QDialog):
             and self.persist_checkbox.isChecked()
         )
 
-    def get_user_choices(self) -> Tuple[str, bool]:
+    def get_user_choices(self) -> tuple[str, bool]:
         """Execute dialog and get user choices"""
         display_name = ''
         persist_choice = False
@@ -152,9 +152,9 @@ class QtReaderDialog(QDialog):
 
 
 def handle_gui_reading(
-    paths: List[str],
+    paths: list[str],
     qt_viewer,
-    stack: Union[bool, List[List[str]]],
+    stack: Union[bool, list[list[str]]],
     plugin_name: Optional[str] = None,
     error: Optional[ReaderPluginError] = None,
     plugin_override: bool = False,
@@ -211,7 +211,7 @@ def handle_gui_reading(
 
 
 def prepare_remaining_readers(
-    paths: List[str],
+    paths: list[str],
     plugin_name: Optional[str] = None,
     error: Optional[ReaderPluginError] = None,
 ):
@@ -244,10 +244,10 @@ def prepare_remaining_readers(
     if not readers and error:
         raise ReaderPluginError(
             trans._(
-                "Tried to read {path_message} with plugin {plugin}, because it was associated with that file extension/because it is the only plugin capable of reading that path, but it gave an error. Try associating a different plugin or installing a different plugin for this kind of file.",
-                path_message=f"[{paths[0]}, ...]"
-                if len(paths) > 1
-                else paths[0],
+                'Tried to read {path_message} with plugin {plugin}, because it was associated with that file extension/because it is the only plugin capable of reading that path, but it gave an error. Try associating a different plugin or installing a different plugin for this kind of file.',
+                path_message=(
+                    f'[{paths[0]}, ...]' if len(paths) > 1 else paths[0]
+                ),
                 plugin=plugin_name,
             ),
             plugin_name,
@@ -261,8 +261,8 @@ def open_with_dialog_choices(
     display_name: str,
     persist: bool,
     extension: str,
-    readers: Dict[str, str],
-    paths: List[str],
+    readers: dict[str, str],
+    paths: list[str],
     stack: bool,
     qt_viewer,
     **kwargs,

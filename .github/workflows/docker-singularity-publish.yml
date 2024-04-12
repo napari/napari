@@ -44,7 +44,7 @@ jobs:
       # https://github.com/docker/login-action
       - name: Log into registry ${{ env.REGISTRY }}
         if: github.event_name != 'pull_request'
-        uses: docker/login-action@v3.0.0
+        uses: docker/login-action@v3.1.0
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -100,7 +100,7 @@ jobs:
     needs: build1
     runs-on: ubuntu-latest
     container:
-      image: quay.io/singularity/docker2singularity:v3.10.0
+      image: quay.io/singularity/docker2singularity:v3.11.5
       options: --privileged
     permissions:
       contents: read
