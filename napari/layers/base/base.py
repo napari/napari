@@ -149,12 +149,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         represented by a list of data objects and should go from largest to
         smallest.
     name : str, optional
-        Name of the layer. If not provided then will be guessed using heuristics
+        Name of the layer. If not provided then will be guessed using heuristics.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     projection_mode : str
         How data outside the viewed dimensions but inside the thick Dims slice will
-        be projected onto the viewed dimenions.
+        be projected onto the viewed dimensions. Must fit to cls._projectionclass.
     rotate : float, 3-tuple of float, or n-D array.
         If a float convert into a 2D rotation matrix using that value as an
         angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
@@ -821,17 +821,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             return
         self._transforms['world2grid'].translate = np.array(translate_grid)
         self.events.translate()
-
-    @property
-    def _is_moving(self) -> bool:
-        return self._private_is_moving
-
-    @_is_moving.setter
-    def _is_moving(self, value):
-        assert value in (True, False)
-        if value:
-            assert self._moving_coordinates is not None
-        self._private_is_moving = value
 
     def _update_dims(self) -> None:
         """Update the dimensionality of transforms and slices when data changes."""
