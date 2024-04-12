@@ -22,7 +22,7 @@ _S = TypeVar('_S')
 class Selection(EventedSet[_T]):
     """A model of selected items, with ``active`` and ``current`` item.
 
-    There can only be one ``active`` and one ``current` item, but there can be
+    There can only be one ``active`` and one ``current`` item, but there can be
     multiple selected items.  An "active" item is defined as a single selected
     item (if multiple items are selected, there is no active item).  The
     "current" item is mostly useful for (e.g.) keyboard actions: even with
@@ -54,8 +54,7 @@ class Selection(EventedSet[_T]):
     Events
     ------
     changed (added: Set[_T], removed: Set[_T])
-        Emitted when the set changes, includes item(s) that have been added
-        and/or removed from the set.
+        Emitted when the set changes, includes item(s) that have been added and/or removed from the set.
     active (value: _T)
         emitted when the current item has changed.
     _current (value: _T)

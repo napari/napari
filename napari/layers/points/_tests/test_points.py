@@ -25,6 +25,7 @@ from napari.layers.utils.color_encoding import ConstantColorEncoding
 from napari.layers.utils.color_manager import ColorProperties
 from napari.utils._test_utils import (
     validate_all_params_in_docstring,
+    validate_docstring_parent_class_consistency,
     validate_kwargs_sorted,
 )
 from napari.utils.colormaps.standardize_color import transform_color
@@ -2647,3 +2648,4 @@ def test_events_callback(old_name, new_name, value):
 def test_docstring():
     validate_all_params_in_docstring(Points)
     validate_kwargs_sorted(Points)
+    validate_docstring_parent_class_consistency(Points)

@@ -513,7 +513,6 @@ module = [
     'napari.layers.intensity_mixin',
     'napari.layers.points._points_key_bindings',
     'napari.layers.points._points_utils',
-    'napari.layers.points._slice',
     'napari.layers.points.points',
     'napari.layers.shapes._shapes_mouse_bindings',
     'napari.layers.shapes.shapes',
@@ -559,7 +558,6 @@ module = [
     "napari._vispy.visuals.clipping_planes_mixin",
     "napari._vispy.visuals.markers",
     "napari._vispy.visuals.surface",
-    "napari.layers._data_protocols",
     "napari.layers.shapes._shapes_models.path",
     "napari.layers.shapes._shapes_models.polygon",
     "napari.layers.shapes._shapes_models._polgyon_base",
@@ -775,6 +773,7 @@ omit = [
     "*/_version.py",
     "*/benchmarks/*",
     "napari/utils/indexing.py",
+    "**/add_layer.py_tmpl"
 ]
 source = [
     "napari",

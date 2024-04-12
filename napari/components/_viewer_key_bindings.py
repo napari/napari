@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from napari.viewer import Viewer
 
 
-def register_viewer_action(description):
+def register_viewer_action(description, repeatable=False):
     """
     Convenient decorator to register an action with the current ViewerModel
 
@@ -29,6 +29,7 @@ def register_viewer_action(description):
             command=func,
             description=description,
             keymapprovider=ViewerModel,
+            repeatable=repeatable,
         )
         return func
 
@@ -88,12 +89,16 @@ def delete_selected_layers(viewer: Viewer):
     viewer.layers.remove_selected()
 
 
-@register_viewer_action(trans._('Increment dimensions slider to the left.'))
+@register_viewer_action(
+    trans._('Increment dimensions slider to the left.'), repeatable=True
+)
 def increment_dims_left(viewer: Viewer):
     viewer.dims._increment_dims_left()
 
 
-@register_viewer_action(trans._('Increment dimensions slider to the right.'))
+@register_viewer_action(
+    trans._('Increment dimensions slider to the right.'), repeatable=True
+)
 def increment_dims_right(viewer: Viewer):
     viewer.dims._increment_dims_right()
 

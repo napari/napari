@@ -9,6 +9,10 @@ from napari._tests.utils import (
 )
 from napari.components.dims import Dims
 from napari.layers import Vectors
+from napari.utils._test_utils import (
+    validate_all_params_in_docstring,
+    validate_kwargs_sorted,
+)
 from napari.utils.colormaps.standardize_color import transform_color
 
 # Set random seed for testing
@@ -694,3 +698,8 @@ def test_empty_data_from_tuple():
     layer = Vectors(name='vector', ndim=3)
     layer2 = Vectors.create(*layer.as_layer_data_tuple())
     assert layer2.data.size == 0
+
+
+def test_docstring():
+    validate_all_params_in_docstring(Vectors)
+    validate_kwargs_sorted(Vectors)
