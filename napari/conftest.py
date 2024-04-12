@@ -758,13 +758,6 @@ def pytest_runtest_setup(item):
         if 'qtbot' not in item.fixturenames:
             # for proper waiting for threads to finish
             item.fixturenames.append('qtbot')
-        # if (
-        #     'builtins' in item.fixturenames
-        #     and 'make_napari_viewer' in item.fixturenames
-        # ):
-        #     assert item.fixturenames.index(
-        #         'builtins'
-        #     ) > item.fixturenames.index('make_napari_viewer')
 
         item.fixturenames.extend(
             [

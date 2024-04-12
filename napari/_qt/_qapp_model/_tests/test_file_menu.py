@@ -47,8 +47,8 @@ def test_sample_data_triggers_reader_dialog(
 
 
 def test_plugin_display_name_use_for_multiple_samples(
-    builtins,
     make_napari_viewer,
+    builtins,
 ):
     """Check 'display_name' used for submenu when plugin has >1 sample data."""
     app = get_app()
@@ -62,10 +62,9 @@ def test_plugin_display_name_use_for_multiple_samples(
     # trigger the action, opening the first sample: `Astronaut`
     assert 'napari:astronaut' in app.commands
     assert len(viewer.layers) == 0
-    app.commands.execute_command('napari:astronaut').result()
+    app.commands.execute_command('napari:astronaut')
     assert len(viewer.layers) == 1
     assert viewer.layers[0].name == 'astronaut'
-    del samples_menu
 
 
 def test_sample_menu_plugin_state_change(
