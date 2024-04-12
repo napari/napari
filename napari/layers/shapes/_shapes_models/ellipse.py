@@ -1,4 +1,7 @@
+from typing import Literal, Optional
+
 import numpy as np
+import numpy.typing as npt
 
 from napari.layers.shapes._shapes_models.shape import Shape
 from napari.layers.shapes._shapes_utils import (
@@ -32,13 +35,13 @@ class Ellipse(Shape):
 
     def __init__(
         self,
-        data,
+        data: npt.NDArray,
         *,
-        edge_width=1,
-        opacity=1.0,
-        z_index=0,
-        dims_order=None,
-        ndisplay=2,
+        edge_width: float = 1,
+        opacity: float = 1.0,
+        z_index: int = 0,
+        dims_order: Optional[list[int]] = None,
+        ndisplay: Literal[2] = 2,
     ) -> None:
         super().__init__(
             edge_width=edge_width,
@@ -53,12 +56,12 @@ class Ellipse(Shape):
         self.name = 'ellipse'
 
     @property
-    def data(self):
+    def data(self) -> npt.NDArray:
         """(4, D) array: ellipse vertices."""
         return self._data
 
     @data.setter
-    def data(self, data):
+    def data(self, data: npt.NDArray) -> None:
         data = np.array(data).astype(float)
 
         if len(self.dims_order) != data.shape[1]:
@@ -96,7 +99,7 @@ class Ellipse(Shape):
             ]
         ).astype('int')
 
-    def transform(self, transform):
+    def transform(self, transform: npt.NDArray) -> None:
         """Performs a linear transform on the shape
 
         Parameters

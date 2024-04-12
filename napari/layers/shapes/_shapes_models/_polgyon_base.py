@@ -1,4 +1,7 @@
+from typing import Literal, Optional
+
 import numpy as np
+import numpy.typing as npt
 from scipy.interpolate import splev, splprep
 
 from napari.layers.shapes._shapes_models.shape import Shape
@@ -32,17 +35,17 @@ class PolygonBase(Shape):
 
     def __init__(
         self,
-        data,
+        data: npt.NDArray,
         *,
-        edge_width=1,
-        z_index=0,
-        dims_order=None,
-        ndisplay=2,
-        filled=True,
-        closed=True,
-        name='polygon',
-        interpolation_order=1,
-        interpolation_sampling=50,
+        edge_width: float = 1,
+        z_index: int = 0,
+        dims_order: Optional[list[int]] = None,
+        ndisplay: Literal[2] = 2,
+        filled: bool = True,
+        closed: bool = True,
+        name: str = 'polygon',
+        interpolation_order: int = 1,
+        interpolation_sampling: int = 50,
     ) -> None:
         super().__init__(
             edge_width=edge_width,
@@ -59,12 +62,12 @@ class PolygonBase(Shape):
         self.data = data
 
     @property
-    def data(self):
+    def data(self) -> npt.NDArray:
         """np.ndarray: NxD array of vertices."""
         return self._data
 
     @data.setter
-    def data(self, data):
+    def data(self, data: npt.NDArray) -> None:
         data = np.array(data).astype(float)
 
         if len(self.dims_order) != data.shape[1]:
