@@ -822,17 +822,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._transforms['world2grid'].translate = np.array(translate_grid)
         self.events.translate()
 
-    @property
-    def _is_moving(self) -> bool:
-        return self._private_is_moving
-
-    @_is_moving.setter
-    def _is_moving(self, value):
-        assert value in (True, False)
-        if value:
-            assert self._moving_coordinates is not None
-        self._private_is_moving = value
-
     def _update_dims(self) -> None:
         """Update the dimensionality of transforms and slices when data changes."""
         ndim = self._get_ndim()
