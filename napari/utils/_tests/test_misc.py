@@ -3,6 +3,7 @@ from importlib.metadata import version as package_version
 from os.path import abspath, expanduser, sep
 from pathlib import Path
 
+import numpy as np
 import pytest
 from packaging.version import parse as parse_version
 
@@ -263,6 +264,8 @@ def test_ensure_list_of_layer_data_tuple(input_data, expected):
         ('aaa', False),
         (object(), False),
         (None, False),
+        (np.arange(5), True),
+        ({1, 2, 3}, True),
     ],
 )
 def test_is_iterable(data, expected):

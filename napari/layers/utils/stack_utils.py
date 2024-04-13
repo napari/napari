@@ -122,6 +122,9 @@ def split_channels(
                 )
             )
         elif key == 'affine' and isinstance(val, np.ndarray):
+            # affine may be Affine or np.ndarray object that is not
+            # iterable, but it is not now a problem as we use it only to warning
+            # if a provided object is a sequence and channel_axis is not provided
             kwargs[key] = itertools.repeat(val, n_channels)
         else:
             kwargs[key] = iter(ensure_iterable(val))

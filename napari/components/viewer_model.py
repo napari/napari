@@ -922,9 +922,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             'translate',
             'rotate',
             'shear',
-            'affine',  # affine may be Affine or np.ndarray object that is not
-            # iterable, but it is not now a problem as we use it only to warning
-            # if a provided object is sequence and channel_axis is not provided
+            'affine',
             'contrast_limits',
             'metadata',
             'experimental_clipping_planes',
