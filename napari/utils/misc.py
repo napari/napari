@@ -134,7 +134,16 @@ def ensure_iterable(
     can either be a single value or a list. If a color is passed then it
     will be treated specially to determine if it is iterable.
     """
-    if is_iterable(arg, color=color):
+    # deprecate color
+    if color:
+        warnings.warn(
+            trans._(
+                'Argument color is deprecated.',
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,  # not sure what level to use here
+        )
+    if is_iterable(arg):
         return arg
 
     return itertools.repeat(arg)
@@ -145,18 +154,33 @@ def is_iterable(
     color: bool = False,
     allow_none: bool = False,
 ) -> bool:
-    """Determine if a single argument is an iterable. If a color is being
-    provided and the argument is a 1-D array of length 3 or 4 then the input
-    is taken to not be iterable. If allow_none is True, `None` is considered iterable.
+    """Determine if a single argument is an iterable. 
+    Argument color is deprecated.
+    Argument allow_none is deprecated..
     """
-    if arg is None and not allow_none:
+    # deprecate color and allow_none
+    if color:
+        warnings.warn(
+            trans._(
+                'Argument color is deprecated.',
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,  # not sure what level to use here
+        )
+    if allow_none:
+        warnings.warn(
+            trans._(
+                'Argument allow_none is deprecated.',
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,  # not sure what level to use here
+        )
+    if arg is None:
         return False
     if isinstance(arg, (str, Enum)):
         return False
     if np.isscalar(arg):
         return False
-    if color and isinstance(arg, (list, np.ndarray)):
-        return np.array(arg).ndim != 1 or len(arg) not in [3, 4]
 
     return True
 
