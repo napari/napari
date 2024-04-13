@@ -1,3 +1,5 @@
+name: Test installed from pip
+
 on:
   workflow_call:
 
