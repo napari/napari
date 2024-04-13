@@ -131,8 +131,8 @@ def ensure_iterable(
     arg: Union[None, str, Enum, float, list, npt.NDArray], color: bool = False
 ):
     """Ensure an argument is an iterable. Useful when an input argument
-    can either be a single value or a list. If a color is passed then it
-    will be treated specially to determine if it is iterable.
+    can either be a single value or a list. 
+    Argument color is deprecated.
     """
     # deprecate color
     if color:
@@ -156,7 +156,7 @@ def is_iterable(
 ) -> bool:
     """Determine if a single argument is an iterable. 
     Argument color is deprecated.
-    Argument allow_none is deprecated..
+    Argument allow_none is deprecated.
     """
     # deprecate color and allow_none
     if color:
