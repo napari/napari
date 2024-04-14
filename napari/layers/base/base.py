@@ -149,12 +149,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         represented by a list of data objects and should go from largest to
         smallest.
     name : str, optional
-        Name of the layer. If not provided then will be guessed using heuristics
+        Name of the layer. If not provided then will be guessed using heuristics.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     projection_mode : str
         How data outside the viewed dimensions but inside the thick Dims slice will
-        be projected onto the viewed dimenions.
+        be projected onto the viewed dimensions. Must fit to cls._projectionclass.
     rotate : float, 3-tuple of float, or n-D array.
         If a float convert into a 2D rotation matrix using that value as an
         angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,

@@ -4,6 +4,7 @@ import sys
 import warnings
 from contextlib import suppress
 from dataclasses import dataclass
+from pathlib import Path
 from typing import TYPE_CHECKING
 from unittest.mock import patch
 from weakref import WeakSet
@@ -56,12 +57,18 @@ def fail_obj_graph(Klass):
         import gc
 
         gc.collect()
-
+        file_path = Path(
+            f'{Klass.__name__}-leak-backref-graph-{COUNTER}.pdf'
+        ).absolute()
         objgraph.show_backrefs(
             list(Klass._instances),
             max_depth=20,
-            filename=f'{Klass.__name__}-leak-backref-graph-{COUNTER}.pdf',
+            filename=str(file_path),
         )
+
+        Klass._instances.clear()
+
+        assert file_path.exists()
 
         # DO not remove len, this can break as C++ obj are gone, but python objects
         # still hang around and _repr_ would crash.
@@ -301,7 +308,9 @@ def make_napari_viewer(
 
     # do not inline to avoid pytest trying to compute repr of expression.
     # it fails if C++ object gone but not Python object.
-    assert _do_not_inline_below == 0
+    assert (
+        _do_not_inline_below == 0
+    ), f'{request.config.getoption(_SAVE_GRAPH_OPNAME)}, {_SAVE_GRAPH_OPNAME}'
 
     # only check for leaked widgets if an exception was raised during the test,
     # and "strict" mode was used.
