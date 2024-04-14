@@ -67,7 +67,7 @@ jobs:
 
       # If something goes wrong, we can open an issue in the repo
       - name: Report Failures
-        if: ${{ failure() }} && github.event_name == 'schedule'
+        if: ${{ failure() && github.event_name == 'schedule' }}
         uses: JasonEtco/create-an-issue@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
