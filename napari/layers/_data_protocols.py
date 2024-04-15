@@ -30,7 +30,7 @@ else:
     ellipsis = type(Ellipsis)
 
 
-def _raise_protocol_error(obj: Any, protocol: type):
+def _raise_protocol_error(obj: Any, protocol: type) -> None:
     """Raise a more helpful error when required protocol members are missing."""
     annotations = getattr(protocol, '__annotations__', {})
     needed = set(dir(protocol)).union(annotations) - _OBJ_NAMES
@@ -90,7 +90,7 @@ class LayerDataProtocol(Protocol):
         """The number of dimension of the underlying data"""
 
 
-def assert_protocol(obj: Any, protocol: type = LayerDataProtocol):
+def assert_protocol(obj: Any, protocol: type = LayerDataProtocol) -> None:
     """Assert `obj` is an instance of `protocol` or raise helpful error."""
     if not isinstance(obj, protocol):
         _raise_protocol_error(obj, protocol)

@@ -1,17 +1,18 @@
 name: Remove "ready to merge" label
 
 on:
-  pull_request:
+  pull_request_target:
     types: [closed]
+
+permissions:
+  pull-requests: write
 
 jobs:
   remove_label:
     runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
     steps:
       - name: Remove label
-        uses: actions/github-script@v5
+        uses: actions/github-script@v7
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |

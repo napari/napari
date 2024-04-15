@@ -392,6 +392,7 @@ class Dims(EventedModel):
         self.order = tuple(range(self.ndim))
         self.margin_left = (0,) * self.ndim
         self.margin_right = (0,) * self.ndim
+        self.rollable = (True,) * self.ndim
 
     def transpose(self):
         """Transpose displayed dimensions.
