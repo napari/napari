@@ -9,7 +9,7 @@ on:
       - reopened
       - edited
   workflow_call:
-  # see https://docs.github.com/en/actions/using-jobs/assigning-permissions-to-jobs
+# see https://docs.github.com/en/actions/using-jobs/assigning-permissions-to-jobs
 permissions:
   pull-requests: write
 
