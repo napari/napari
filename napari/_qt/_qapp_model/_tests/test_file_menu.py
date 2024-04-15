@@ -9,7 +9,7 @@ from npe2.manifest.contributions import SampleDataURI
 from qtpy.QtWidgets import QMenu
 
 from napari._app_model import get_app
-from napari._app_model.constants import CommandId, MenuId
+from napari._app_model.constants import MenuId
 from napari.layers import Image
 from napari.utils.action_manager import action_manager
 
@@ -225,10 +225,10 @@ def test_save_layers_enablement_updated_context(make_napari_viewer, builtins):
     viewer = make_napari_viewer()
 
     save_layers_action = viewer.window.file_menu.findAction(
-        CommandId.DLG_SAVE_LAYERS,
+        'napari.window.file.save_layers_dialog',
     )
     save_selected_layers_action = viewer.window.file_menu.findAction(
-        CommandId.DLG_SAVE_SELECTED_LAYERS,
+        'napari.window.file.save_layers_dialog.selected',
     )
     # Check both save actions are not enabled when no layers
     assert len(viewer.layers) == 0
