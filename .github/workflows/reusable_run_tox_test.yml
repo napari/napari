@@ -72,6 +72,7 @@ jobs:
 
       - name: Setup Graphviz
         uses: ts-graphviz/setup-graphviz@v2
+        continue-on-error: true
 
       # strategy borrowed from vispy for installing opengl libs on windows
       - name: Install Windows OpenGL

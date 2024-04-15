@@ -133,10 +133,43 @@ def pytest_runtest_makereport(item, call):
     setattr(item, f'rep_{rep.when}', rep)
 
 
+@pytest.fixture()
+def _mock_app():
+    """Mock clean 'test_app' `NapariApplication` instance.
+
+    This fixture must be used whenever `napari._app_model.get_app()` is called to return
+    a 'test_app' `NapariApplication` instead of the 'napari'
+    `NapariApplication`. The `make_napari_viewer` fixture is already equipped with
+    a `_mock_app`.
+
+    Note that `NapariApplication` registers app-model actions, providers and
+    processors. If this is not desired, please create a clean
+    `app_model.Application` in the test. It does not however, register Qt
+    related actions or providers or register plugins.
+    If these are required, the `make_napari_viewer` fixture can be used, which
+    will run both these function and automatically clear the lru cache.
+    Alternatively, you can specifically run `init_qactions()` or
+    `_initialize_plugins` within the test, ensuring that you `cache_clear()`
+    first.
+    """
+    from app_model import Application
+
+    from napari._app_model._app import NapariApplication, _napari_names
+
+    app = NapariApplication('test_app')
+    app.injection_store.namespace = _napari_names
+    with patch.object(NapariApplication, 'get_app', return_value=app):
+        try:
+            yield app
+        finally:
+            Application.destroy('test_app')
+
+
 @pytest.fixture
 def make_napari_viewer(
     qtbot,
     request: 'FixtureRequest',
+    _mock_app,
     napari_plugin_manager,
     monkeypatch,
     clean_themes,
