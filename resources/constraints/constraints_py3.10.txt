@@ -455,7 +455,7 @@ rpds-py==0.18.0
     # via
     #   jsonschema
     #   referencing
-scikit-image==0.23.1
+scikit-image==0.22.0
     # via napari (napari_repo/pyproject.toml)
 scipy==1.13.0
     # via
