@@ -1079,7 +1079,6 @@ class Points(Layer):
     def canvas_size_limits(self, value):
         self._canvas_size_limits = float(value[0]), float(value[1])
         self.events.canvas_size_limits()
-        self.refresh()
 
     @property
     def shown(self) -> npt.NDArray:

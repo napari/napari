@@ -193,6 +193,7 @@ class VispyPointsLayer(VispyBaseLayer):
 
     def _on_canvas_size_limits_change(self):
         self.node.canvas_size_limits = self.layer.canvas_size_limits
+        self.node.update()
 
     def reset(self):
         super().reset()
