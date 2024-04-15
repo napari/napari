@@ -14,7 +14,7 @@ from app_model.types import (
     ToggleRule,
 )
 
-from napari._app_model.constants import CommandId, MenuGroup, MenuId
+from napari._app_model.constants import MenuGroup, MenuId
 from napari._qt._qapp_model.qactions._toggle_action import ViewerToggleAction
 from napari._qt.qt_main_window import Window
 from napari._qt.qt_viewer import QtViewer
@@ -53,8 +53,8 @@ def _get_current_tooltip_visibility() -> bool:
 
 Q_VIEW_ACTIONS: list[Action] = [
     Action(
-        id=CommandId.TOGGLE_FULLSCREEN,
-        title=CommandId.TOGGLE_FULLSCREEN.command_title,
+        id='napari.window.view.toggle_fullscreen',
+        title=trans._('Toggle Full Screen'),
         menus=[
             {
                 'id': MenuId.MENUBAR_VIEW,
@@ -67,8 +67,8 @@ Q_VIEW_ACTIONS: list[Action] = [
         toggled=ToggleRule(get_current=_get_current_fullscreen_status),
     ),
     Action(
-        id=CommandId.TOGGLE_MENUBAR,
-        title=CommandId.TOGGLE_MENUBAR.command_title,
+        id='napari.window.view.toggle_menubar',
+        title=trans._('Toggle Menubar Visibility'),
         menus=[
             {
                 'id': MenuId.MENUBAR_VIEW,
@@ -90,8 +90,8 @@ Q_VIEW_ACTIONS: list[Action] = [
         toggled=ToggleRule(get_current=_get_current_menubar_status),
     ),
     Action(
-        id=CommandId.TOGGLE_PLAY,
-        title=CommandId.TOGGLE_PLAY.command_title,
+        id='napari.window.view.toggle_play',
+        title=trans._('Toggle Play'),
         menus=[
             {
                 'id': MenuId.MENUBAR_VIEW,
@@ -104,8 +104,8 @@ Q_VIEW_ACTIONS: list[Action] = [
         toggled=ToggleRule(get_current=_get_current_play_status),
     ),
     Action(
-        id=CommandId.TOGGLE_ACTIVITY_DOCK,
-        title=CommandId.TOGGLE_ACTIVITY_DOCK.command_title,
+        id='napari.window.view.toggle_activity_dock',
+        title=trans._('Toggle Activity Dock'),
         menus=[
             {'id': MenuId.MENUBAR_VIEW, 'group': MenuGroup.RENDER, 'order': 11}
         ],
@@ -115,8 +115,8 @@ Q_VIEW_ACTIONS: list[Action] = [
     # TODO: this could be made into a toggle setting Action subclass
     # using a similar pattern to the above ViewerToggleAction classes
     Action(
-        id=CommandId.TOGGLE_LAYER_TOOLTIPS,
-        title=CommandId.TOGGLE_LAYER_TOOLTIPS.command_title,
+        id='napari.window.view.toggle_layer_tooltips',
+        title=trans._('Toggle Layer Tooltips'),
         menus=[
             {
                 'id': MenuId.MENUBAR_VIEW,
@@ -131,20 +131,65 @@ Q_VIEW_ACTIONS: list[Action] = [
 
 MENUID_DICT = {'axes': MenuId.VIEW_AXES, 'scale_bar': MenuId.VIEW_SCALEBAR}
 
-for cmd, viewer_attr, sub_attr in (
-    (CommandId.TOGGLE_VIEWER_AXES, 'axes', 'visible'),
-    (CommandId.TOGGLE_VIEWER_AXES_COLORED, 'axes', 'colored'),
-    (CommandId.TOGGLE_VIEWER_AXES_LABELS, 'axes', 'labels'),
-    (CommandId.TOGGLE_VIEWER_AXES_DASHED, 'axes', 'dashed'),
-    (CommandId.TOGGLE_VIEWER_AXES_ARROWS, 'axes', 'arrows'),
-    (CommandId.TOGGLE_VIEWER_SCALE_BAR, 'scale_bar', 'visible'),
-    (CommandId.TOGGLE_VIEWER_SCALE_BAR_COLORED, 'scale_bar', 'colored'),
-    (CommandId.TOGGLE_VIEWER_SCALE_BAR_TICKS, 'scale_bar', 'ticks'),
-):
+toggle_action_details = [
+    (
+        'napari.window.view.toggle_viewer_axes',
+        trans._('Axes Visible'),
+        'axes',
+        'visible',
+    ),
+    (
+        'napari.window.view.toggle_viewer_axes_colored',
+        trans._('Axes Colored'),
+        'axes',
+        'colored',
+    ),
+    (
+        'napari.window.view.toggle_viewer_axes_labels',
+        trans._('Axes Labels'),
+        'axes',
+        'labels',
+    ),
+    (
+        'napari.window.view.toggle_viewer_axesdashed',
+        trans._('Axes Dashed'),
+        'axes',
+        'dashed',
+    ),
+    (
+        'napari.window.view.toggle_viewer_axes_arrows',
+        trans._('Axes Arrows'),
+        'axes',
+        'arrows',
+    ),
+    (
+        'napari.window.view.toggle_viewer_scale_bar',
+        trans._('Scale Bar Visible'),
+        'scale_bar',
+        'visible',
+    ),
+    (
+        'napari.window.view.toggle_viewer_scale_bar_colored',
+        trans._('Scale Bar Colored'),
+        'scale_bar',
+        'colored',
+    ),
+    (
+        'napari.window.view.toggle_viewer_scale_bar_ticks',
+        trans._('Scale Bar Ticks'),
+        'scale_bar',
+        'ticks',
+    ),
+]
+
+# Add `Action`s that toggle various viewer `axes` and `scale_bar` sub-attributes
+# E.g., `toggle_viewer_scale_bar_ticks` toggles the sub-attribute `ticks` of the
+# viewer attribute `scale_bar`
+for cmd, cmd_title, viewer_attr, sub_attr in toggle_action_details:
     Q_VIEW_ACTIONS.append(
         ViewerToggleAction(
             id=cmd,
-            title=cmd.command_title,
+            title=cmd_title,
             viewer_attribute=viewer_attr,
             sub_attribute=sub_attr,
             menus=[{'id': MENUID_DICT[viewer_attr]}],
