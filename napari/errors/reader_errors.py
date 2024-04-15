@@ -1,5 +1,3 @@
-from typing import List
-
 from napari.types import PathLike
 
 
@@ -33,8 +31,8 @@ class MultipleReaderError(RuntimeError):
     def __init__(
         self,
         message: str,
-        available_readers: List[str],
-        paths: List[PathLike],
+        available_readers: list[str],
+        paths: list[PathLike],
         *args: object,
     ) -> None:
         super().__init__(message, *args)
@@ -72,7 +70,7 @@ class ReaderPluginError(ValueError):
         self,
         message: str,
         reader_plugin: str,
-        paths: List[PathLike],
+        paths: list[PathLike],
         *args: object,
     ) -> None:
         super().__init__(message, *args)
@@ -99,7 +97,7 @@ class NoAvailableReaderError(ValueError):
     """
 
     def __init__(
-        self, message: str, paths: List[PathLike], *args: object
+        self, message: str, paths: list[PathLike], *args: object
     ) -> None:
         super().__init__(message, *args)
         self.paths = paths

@@ -94,7 +94,7 @@ def combine_and_set_data(wave_args):
         update_layer(f'wave {name}', data)
 
 
-@thread_worker(connect={"yielded": combine_and_set_data})
+@thread_worker(connect={'yielded': combine_and_set_data})
 def update_viewer():
     # keep track of each wave in a dictionary by id, this way we can modify/remove
     # existing waves or add new ones

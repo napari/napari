@@ -1,7 +1,6 @@
 import sys
 import threading
 import warnings
-from typing import List
 
 import pytest
 
@@ -31,7 +30,7 @@ class PurposefulException(Exception):
 
 def test_notification_repr_has_message():
     assert "='this is the message'" in repr(
-        Notification("this is the message")
+        Notification('this is the message')
     )
 
 
@@ -46,7 +45,7 @@ def test_notification_manager_no_gui(monkeypatch):
     with notification_manager:
         notification_manager.records.clear()
         # save all of the events that get emitted
-        store: List[Notification] = []
+        store: list[Notification] = []
         notification_manager.notification_ready.connect(store.append)
 
         show_info('this is one way of showing an information message')
@@ -65,12 +64,12 @@ def test_notification_manager_no_gui(monkeypatch):
         # test that exceptions that go through sys.excepthook are catalogued
 
         with pytest.raises(PurposefulException):
-            raise PurposefulException("this is an exception")
+            raise PurposefulException('this is an exception')
 
         # pytest intercepts the error, so we can manually call sys.excepthook
         assert sys.excepthook == notification_manager.receive_error
         try:
-            raise ValueError("a")
+            raise ValueError('a')
         except ValueError:
             sys.excepthook(*sys.exc_info())
         assert len(notification_manager.records) == 3
@@ -119,14 +118,14 @@ def test_notification_manager_no_gui_with_threading():
 
     def _raise():
         with pytest.raises(PurposefulException):
-            raise PurposefulException("this is an exception")
+            raise PurposefulException('this is an exception')
 
     previous_threading_exhook = threading.excepthook
 
     with notification_manager:
         notification_manager.records.clear()
         # save all of the events that get emitted
-        store: List[Notification] = []
+        store: list[Notification] = []
         notification_manager.notification_ready.connect(store.append)
 
         # Test exception inside threads
@@ -139,7 +138,7 @@ def test_notification_manager_no_gui_with_threading():
         exception_thread.join(timeout=DEFAULT_TIMEOUT_SECS)
 
         try:
-            raise ValueError("a")
+            raise ValueError('a')
         except ValueError:
             threading.excepthook(sys.exc_info())
 
@@ -173,7 +172,7 @@ def test_notification_manager_no_warning_duplication():
     with notification_manager:
         notification_manager.records.clear()
         # save all of the events that get emitted
-        store: List[Notification] = []
+        store: list[Notification] = []
         notification_manager.notification_ready.connect(store.append)
 
         fun()

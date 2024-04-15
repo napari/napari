@@ -114,7 +114,7 @@ def test_timing_multiscale_big():
     now = time.monotonic()
     assert not guess_multiscale(data_dask)[0]
     elapsed = time.monotonic() - now
-    assert elapsed < 2, "test was too slow, computation was likely not lazy"
+    assert elapsed < 2, 'test was too slow, computation was likely not lazy'
 
 
 def test_create_data_indexing():

@@ -4,11 +4,11 @@
 file within `napari/_app_model/actions/`.
 """
 
-from typing import List
+import sys
 
 from app_model.types import Action, KeyBindingRule, KeyCode, KeyMod
 
-from napari._app_model.constants import CommandId, MenuGroup, MenuId
+from napari._app_model.constants import MenuGroup, MenuId
 from napari._qt.dialogs.qt_about import QtAbout
 from napari._qt.qt_main_window import Window
 from napari.utils.translations import trans
@@ -23,23 +23,36 @@ def _show_about(window: Window):
     QtAbout.showAbout(window._qt_window)
 
 
-Q_HELP_ACTIONS: List[Action] = [
+Q_HELP_ACTIONS: list[Action] = [
     Action(
-        id=CommandId.NAPARI_INFO,
-        title=CommandId.NAPARI_INFO.command_title,
+        id='napari.window.help.info',
+        title=trans._('‎napari Info'),
         callback=_show_about,
-        menus=[{"id": MenuId.MENUBAR_HELP, 'group': MenuGroup.RENDER}],
+        menus=[{'id': MenuId.MENUBAR_HELP, 'group': MenuGroup.RENDER}],
         status_tip=trans._('About napari'),
         keybindings=[KeyBindingRule(primary=KeyMod.CtrlCmd | KeyCode.Slash)],
-    )
+    ),
+    Action(
+        id='napari.window.help.about_macos',
+        title=trans._('About napari'),
+        callback=_show_about,
+        menus=[
+            {
+                'id': MenuId.MENUBAR_HELP,
+                'group': MenuGroup.RENDER,
+                'when': sys.platform == 'darwin',
+            }
+        ],
+        status_tip=trans._('About napari'),
+    ),
 ]
 
 if ask_opt_in is not None:
     Q_HELP_ACTIONS.append(
         Action(
-            id=CommandId.TOGGLE_BUG_REPORT_OPT_IN,
-            title=CommandId.TOGGLE_BUG_REPORT_OPT_IN.command_title,
+            id='napari.window.help.bug_report_opt_in',
+            title=trans._('Bug Reporting Opt In/Out...'),
             callback=lambda: ask_opt_in(force=True),
-            menus=[{"id": MenuId.MENUBAR_HELP}],
+            menus=[{'id': MenuId.MENUBAR_HELP}],
         )
     )

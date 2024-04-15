@@ -2,14 +2,14 @@ import os
 import re
 import sys
 import warnings
-from typing import Any, Callable, Generic, List, Tuple, TypeVar, Union
+from typing import Any, Callable, Generic, TypeVar, Union
 
 import wrapt
 
 from napari.utils import misc
 from napari.utils.translations import trans
 
-_T = TypeVar("_T")
+_T = TypeVar('_T')
 
 
 class ReadOnlyWrapper(wrapt.ObjectProxy):
@@ -17,7 +17,7 @@ class ReadOnlyWrapper(wrapt.ObjectProxy):
     Disable item and attribute setting with the exception of  ``__wrapped__``.
     """
 
-    def __init__(self, wrapped: Any, exceptions: Tuple[str, ...] = ()):
+    def __init__(self, wrapped: Any, exceptions: tuple[str, ...] = ()):
         super().__init__(wrapped)
         self._self_exceptions = exceptions
 
@@ -54,7 +54,7 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
 
     @staticmethod
     def _is_private_attr(name: str) -> bool:
-        return name.startswith("_") and not (
+        return name.startswith('_') and not (
             name.startswith('__') and name.endswith('__')
         )
 
@@ -86,7 +86,7 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
         """
         Check if the getter or setter is called from inner napari.
         """
-        if hasattr(sys, "_getframe"):
+        if hasattr(sys, '_getframe'):
             frame = sys._getframe(2)
             return frame.f_code.co_filename.startswith(misc.ROOT_DIR)
         return False
@@ -109,11 +109,11 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
 
     def __setattr__(self, name: str, value: Any) -> None:
         if (
-            os.environ.get("NAPARI_ENSURE_PLUGIN_MAIN_THREAD", "0")
-            not in ("0", "False")
+            os.environ.get('NAPARI_ENSURE_PLUGIN_MAIN_THREAD', '0')
+            not in ('0', 'False')
         ) and not in_main_thread():
             raise RuntimeError(
-                "Setting attributes on a napari object is only allowed from the main Qt thread."
+                'Setting attributes on a napari object is only allowed from the main Qt thread.'
             )
 
         if self._is_private_attr(name):
@@ -150,7 +150,7 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
     def __repr__(self) -> str:
         return repr(self.__wrapped__)
 
-    def __dir__(self) -> List[str]:
+    def __dir__(self) -> list[str]:
         return [x for x in dir(self.__wrapped__) if not _SUNDER.match(x)]
 
     @classmethod
@@ -230,7 +230,7 @@ def _in_main_thread() -> bool:
         return in_main_thread_py()
     except AttributeError:
         warnings.warn(
-            "Qt libs are available but no QtApplication instance is created"
+            'Qt libs are available but no QtApplication instance is created'
         )
         return in_main_thread_py()
     return res

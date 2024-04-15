@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List, Tuple, Union
+from typing import TYPE_CHECKING, Union
 
 import numpy as np
+import numpy.typing as npt
 
 from napari.utils.geometry import (
     point_in_bounding_box,
@@ -14,10 +15,10 @@ if TYPE_CHECKING:
 
 
 def displayed_plane_from_nd_line_segment(
-    start_point: np.ndarray,
-    end_point: np.ndarray,
-    dims_displayed: Union[List[int], np.ndarray],
-) -> Tuple[np.ndarray, np.ndarray]:
+    start_point: npt.NDArray,
+    end_point: npt.NDArray,
+    dims_displayed: Union[list[int], npt.NDArray],
+) -> tuple[npt.NDArray, npt.NDArray]:
     """Get the plane defined by start_point and the normal vector that goes
     from start_point to end_point.
 
@@ -50,8 +51,11 @@ def displayed_plane_from_nd_line_segment(
 
 
 def drag_data_to_projected_distance(
-    start_position, end_position, view_direction, vector
-):
+    start_position: npt.NDArray,
+    end_position: npt.NDArray,
+    view_direction: npt.NDArray,
+    vector: npt.NDArray,
+) -> npt.NDArray:
     """Calculate the projected distance between two mouse events.
 
     Project the drag vector between two mouse events onto a 3D vector
@@ -98,7 +102,9 @@ def drag_data_to_projected_distance(
     return np.einsum('j, ij -> i', drag_vector_canvas, vector).squeeze()
 
 
-def orient_plane_normal_around_cursor(layer: Image, plane_normal: tuple):
+def orient_plane_normal_around_cursor(
+    layer: Image, plane_normal: tuple
+) -> None:
     """Orient a rendering plane by rotating it around the cursor.
 
     If the cursor ray does not intersect the plane, the position will remain
@@ -151,8 +157,8 @@ def orient_plane_normal_around_cursor(layer: Image, plane_normal: tuple):
 def nd_line_segment_to_displayed_data_ray(
     start_point: np.ndarray,
     end_point: np.ndarray,
-    dims_displayed: Union[List[int], np.ndarray],
-) -> Tuple[np.ndarray, np.ndarray]:
+    dims_displayed: Union[list[int], np.ndarray],
+) -> tuple[np.ndarray, np.ndarray]:
     """Convert the start and end point of the line segment of a mouse click ray
     intersecting a data cube to a ray (i.e., start position and direction) in
     displayed data coordinates

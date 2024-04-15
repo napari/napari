@@ -63,11 +63,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         name: Install Python
         with:
           python-version: "3.11"
-          cache-dependency-path: setup.cfg
+          cache-dependency-path: pyproject.toml
 
       - uses: tlambert03/setup-qt-libs@v1
 
@@ -165,8 +165,8 @@ jobs:
 
           fi
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: asv-benchmark-results-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}
+          name: asv-benchmark-results-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}-${{ matrix.benchmark-name }}
           path: .asv/results

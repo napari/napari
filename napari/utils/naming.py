@@ -1,16 +1,14 @@
 """Automatically generate names.
 """
+
 import inspect
 import re
-from collections import ChainMap
+from collections import ChainMap, ChainMap as ChainMapType
 from types import FrameType, TracebackType
 from typing import (
     Any,
     Callable,
-    ChainMap as ChainMapType,
     Optional,
-    Tuple,
-    Type,
 )
 
 from napari.utils.misc import ROOT_DIR, formatdoc
@@ -91,7 +89,7 @@ class CallerFrame:
 
     """
 
-    names: Tuple[str, ...]
+    names: tuple[str, ...]
     namespace: ChainMapType[str, Any]
     predicate: Callable[[int, FrameType], bool]
 
@@ -144,7 +142,7 @@ class CallerFrame:
 
     def __exit__(
         self,
-        exc_type: Optional[Type[BaseException]],
+        exc_type: Optional[type[BaseException]],
         exc_value: Optional[BaseException],
         traceback: Optional[TracebackType],
     ) -> None:

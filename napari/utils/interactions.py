@@ -2,7 +2,6 @@ import contextlib
 import inspect
 import sys
 import warnings
-from typing import List
 
 from numpydoc.docscrape import FunctionDoc
 
@@ -247,7 +246,7 @@ elif sys.platform.startswith('linux'):
     KEY_SYMBOLS.update({'Meta': 'Super'})
 
 
-def _kb2mods(key_bind: KeyBinding) -> List[str]:
+def _kb2mods(key_bind: KeyBinding) -> list[str]:
     """Extract list of modifiers from a key binding.
 
     Parameters
@@ -291,7 +290,7 @@ class Shortcut:
             shortcut to format
         """
         error_msg = trans._(
-            "`{shortcut}` does not seem to be a valid shortcut Key.",
+            '`{shortcut}` does not seem to be a valid shortcut Key.',
             shortcut=shortcut,
         )
         error = False
@@ -323,7 +322,7 @@ class Shortcut:
         # as you can't get two non-modifier keys,  or alone.
         if text == '+':
             return text
-        if JOINCHAR == "+":
+        if JOINCHAR == '+':
             text = text.replace('++', '+Plus')
             text = text.replace('+', '')
             text = text.replace('Plus', '+')
@@ -389,7 +388,7 @@ def get_key_bindings_summary(keymap, col='rgb(134, 142, 147)'):
     key_bindings_strs = ['<table border="0" width="100%">']
     for key in keymap:
         keycodes = [KEY_SYMBOLS.get(k, k) for k in key.split('-')]
-        keycodes = "+".join(
+        keycodes = '+'.join(
             [f"<span style='color: {col}'><b>{k}</b></span>" for k in keycodes]
         )
         key_bindings_strs.append(

@@ -1,12 +1,10 @@
+from collections.abc import Sequence
 from numbers import Integral
 from typing import (
     Any,
-    List,
     Literal,
     NamedTuple,
     Optional,
-    Sequence,
-    Tuple,
     Union,
 )
 
@@ -87,18 +85,22 @@ class Dims(EventedModel):
     displayed_order : tuple of int
         Order of only displayed dimensions. These are calculated from the
         ``displayed`` dimensions.
+    rollable :  tuple of bool
+        Tuple of axis roll state. If True the axis is rollable.
     """
 
     # fields
     ndim: int = 2
     ndisplay: Literal[2, 3] = 2
-    order: Tuple[int, ...] = ()
-    axis_labels: Tuple[str, ...] = ()
 
-    range: Tuple[RangeTuple, ...] = ()
-    margin_left: Tuple[float, ...] = ()
-    margin_right: Tuple[float, ...] = ()
-    point: Tuple[float, ...] = ()
+    order: tuple[int, ...] = ()
+    axis_labels: tuple[str, ...] = ()
+    rollable: tuple[bool, ...] = ()
+
+    range: tuple[RangeTuple, ...] = ()
+    margin_left: tuple[float, ...] = ()
+    margin_right: tuple[float, ...] = ()
+    point: tuple[float, ...] = ()
 
     last_used: int = 0
 
@@ -111,6 +113,7 @@ class Dims(EventedModel):
     @validator(
         'order',
         'axis_labels',
+        'rollable',
         'point',
         'margin_left',
         'margin_right',
@@ -152,7 +155,7 @@ class Dims(EventedModel):
 
     @root_validator(skip_on_failure=True, allow_reuse=True)
     def _check_dims(cls, values):
-        """Check the consitency of dimensionaity for all attributes
+        """Check the consistency of dimensionality for all attributes.
 
         Parameters
         ----------
@@ -198,7 +201,7 @@ class Dims(EventedModel):
         if set(updated['order']) != set(range(ndim)):
             raise ValueError(
                 trans._(
-                    "Invalid ordering {order} for {ndim} dimensions",
+                    'Invalid ordering {order} for {ndim} dimensions',
                     deferred=True,
                     order=updated['order'],
                     ndim=ndim,
@@ -219,6 +222,9 @@ class Dims(EventedModel):
         elif labels_ndim > ndim:
             updated['axis_labels'] = axis_labels[-ndim:]
 
+        # Check the rollable axes tuple has same number of elements as ndim
+        updated['rollable'] = ensure_len(values['rollable'], ndim, True)
+
         # If the last used slider is no longer visible, use the first.
         last_used = values['last_used']
         ndisplay = values['ndisplay']
@@ -233,7 +239,7 @@ class Dims(EventedModel):
         return {**values, **updated}
 
     @staticmethod
-    def _nsteps_from_range(dims_range) -> Tuple[float, ...]:
+    def _nsteps_from_range(dims_range) -> tuple[float, ...]:
         return tuple(
             # "or 1" ensures degenerate dimension works
             int((rng.stop - rng.start) / (rng.step or 1)) + 1
@@ -241,7 +247,7 @@ class Dims(EventedModel):
         )
 
     @property
-    def nsteps(self) -> Tuple[float, ...]:
+    def nsteps(self) -> tuple[float, ...]:
         return self._nsteps_from_range(self.range)
 
     @nsteps.setter
@@ -268,7 +274,7 @@ class Dims(EventedModel):
         )
 
     @property
-    def thickness(self) -> Tuple[float, ...]:
+    def thickness(self) -> tuple[float, ...]:
         return tuple(
             left + right
             for left, right in zip(self.margin_left, self.margin_right)
@@ -279,17 +285,17 @@ class Dims(EventedModel):
         self.margin_left = self.margin_right = tuple(val / 2 for val in value)
 
     @property
-    def displayed(self) -> Tuple[int, ...]:
+    def displayed(self) -> tuple[int, ...]:
         """Tuple: Dimensions that are displayed."""
         return self.order[-self.ndisplay :]
 
     @property
-    def not_displayed(self) -> Tuple[int, ...]:
+    def not_displayed(self) -> tuple[int, ...]:
         """Tuple: Dimensions that are not displayed."""
         return self.order[: -self.ndisplay]
 
     @property
-    def displayed_order(self) -> Tuple[int, ...]:
+    def displayed_order(self) -> tuple[int, ...]:
         return tuple(argsort(self.displayed))
 
     def set_range(
@@ -386,6 +392,7 @@ class Dims(EventedModel):
         self.order = tuple(range(self.ndim))
         self.margin_left = (0,) * self.ndim
         self.margin_right = (0,) * self.ndim
+        self.rollable = (True,) * self.ndim
 
     def transpose(self):
         """Transpose displayed dimensions.
@@ -439,19 +446,24 @@ class Dims(EventedModel):
         index = (sliders.index(self.last_used) - 1) % len(sliders)
         self.last_used = sliders[index]
 
-    def _roll(self):
+    def roll(self):
         """Roll order of dimensions for display."""
         order = np.array(self.order)
-        nsteps = np.array(self.nsteps)
-        order[nsteps > 1] = np.roll(order[nsteps > 1], 1)
-        self.order = order.tolist()
+        # we combine "rollable" and "nsteps" into a mask for rolling
+        # this mask has to be aligned to "order" as "rollable" and
+        # "nsteps" are static but order is dynamic, meaning "rollable"
+        # and "nsteps" encode the axes by position, whereas "order"
+        # encodes axis by number
+        valid = np.logical_and(self.rollable, np.array(self.nsteps) > 1)[order]
+        order[valid] = np.roll(order[valid], shift=1)
+        self.order = order
 
     def _go_to_center_step(self):
         self.current_step = [int((ns - 1) / 2) for ns in self.nsteps]
 
     def _sanitize_input(
         self, axis, value, value_is_sequence=False
-    ) -> Tuple[List[int], List]:
+    ) -> tuple[list[int], list]:
         """
         Ensure that axis and value are the same length, that axes are not
         out of bounds, and coerces to lists for easier processing.
@@ -473,7 +485,7 @@ class Dims(EventedModel):
 
         if len(axis) != len(value):
             raise ValueError(
-                trans._("axis and value sequences must have equal length")
+                trans._('axis and value sequences must have equal length')
             )
 
         for ax in axis:
@@ -481,7 +493,7 @@ class Dims(EventedModel):
         return axis, value
 
 
-def ensure_len(value: Tuple, length: int, pad_width: Any):
+def ensure_len(value: tuple, length: int, pad_width: Any):
     """
     Ensure that the value has the required number of elements.
 

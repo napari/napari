@@ -32,10 +32,10 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-          cache-dependency-path: setup.cfg
+          cache-dependency-path: pyproject.toml
 
       - uses: tlambert03/setup-qt-libs@v1
 
@@ -53,7 +53,7 @@ jobs:
 
       - name: Test with tox
         # run tests using pip install --pre
-        uses: aganders3/headless-gui@v1
+        uses: aganders3/headless-gui@v2
         with:
           run: python -m tox -v --pre
         env:

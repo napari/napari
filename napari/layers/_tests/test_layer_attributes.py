@@ -1,3 +1,5 @@
+from unittest.mock import MagicMock
+
 import numpy as np
 import pytest
 
@@ -138,3 +140,37 @@ def test_get_value_3d_view_of_2d_image(ImageClass):
 def test_zero_scale_layer():
     with pytest.raises(ValueError, match='scale values of 0'):
         Image(np.zeros((64, 64)), scale=(0, 1))
+
+
+@pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
+def test_sync_refresh_block(Layer, data, ndim):
+    my_layer = Layer(data)
+    my_layer.set_view_slice = MagicMock()
+
+    with my_layer._block_refresh():
+        my_layer.refresh()
+    my_layer.set_view_slice.assert_not_called
+
+    my_layer.refresh()
+    my_layer.set_view_slice.assert_called_once()
+
+
+@pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
+def test_async_refresh_block(Layer, data, ndim):
+    from napari import settings
+
+    settings.get_settings().experimental.async_ = True
+
+    my_layer = Layer(data)
+
+    mock = MagicMock()
+
+    my_layer.events.reload.connect(mock)
+
+    with my_layer._block_refresh():
+        my_layer.refresh()
+
+    mock.assert_not_called()
+
+    my_layer.refresh()
+    mock.assert_called_once()

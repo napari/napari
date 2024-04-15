@@ -32,11 +32,11 @@ def deprecation_warning_event(
     WarningEmitter
         Event emitter that prints a deprecation warning.
     """
-    previous_path = f"{prefix}.{previous_name}"
-    new_path = f"{prefix}.{new_name}"
+    previous_path = f'{prefix}.{previous_name}'
+    new_path = f'{prefix}.{new_name}'
     return WarningEmitter(
         trans._(
-            "{previous_path} is deprecated since {since_version} and will be removed in {version}. Please use {new_path}",
+            '{previous_path} is deprecated since {since_version} and will be removed in {version}. Please use {new_path}',
             deferred=True,
             previous_path=previous_path,
             since_version=since_version,

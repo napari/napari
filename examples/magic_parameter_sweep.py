@@ -11,10 +11,10 @@ It demonstrates:
 .. tags:: gui
 """
 import typing
+from typing import Annotated
 
 import skimage.data
 import skimage.filters
-from typing_extensions import Annotated
 
 import napari
 
@@ -32,8 +32,8 @@ import napari
 # https://napari.org/magicgui/api/widgets.html.
 def gaussian_blur(
     layer: 'napari.layers.Image',
-    sigma: Annotated[float, {"widget_type": "FloatSlider", "max": 6}] = 1.0,
-    mode: Annotated[str, {"choices": ["reflect", "constant", "nearest", "mirror", "wrap"]}]="nearest",
+    sigma: Annotated[float, {'widget_type': 'FloatSlider', 'max': 6}] = 1.0,
+    mode: Annotated[str, {'choices': ['reflect', 'constant', 'nearest', 'mirror', 'wrap']}]='nearest',
 ) -> 'typing.Optional[napari.types.ImageData]':
     """Apply a gaussian blur to ``layer``."""
     if layer:
@@ -43,8 +43,8 @@ def gaussian_blur(
 
 # create a viewer and add some images
 viewer = napari.Viewer()
-viewer.add_image(skimage.data.astronaut().mean(-1), name="astronaut")
-viewer.add_image(skimage.data.grass().astype("float"), name="grass")
+viewer.add_image(skimage.data.astronaut().mean(-1), name='astronaut')
+viewer.add_image(skimage.data.grass().astype('float'), name='grass')
 
 # Add our magic function to napari
 viewer.window.add_function_widget(gaussian_blur)

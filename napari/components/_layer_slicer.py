@@ -7,17 +7,15 @@ from __future__ import annotations
 
 import logging
 import weakref
+from collections.abc import Iterable
 from concurrent.futures import Executor, Future, ThreadPoolExecutor, wait
 from contextlib import contextmanager
 from threading import RLock
 from typing import (
     TYPE_CHECKING,
     Any,
-    Dict,
-    Iterable,
     Optional,
     Protocol,
-    Tuple,
     runtime_checkable,
 )
 
@@ -28,7 +26,7 @@ from napari.utils.events.event import EmitterGroup, Event
 if TYPE_CHECKING:
     from napari.components import Dims
 
-logger = logging.getLogger("napari.components._layer_slicer")
+logger = logging.getLogger('napari.components._layer_slicer')
 
 
 # Layers that can be asynchronously sliced must be able to make
@@ -41,8 +39,7 @@ logger = logging.getLogger("napari.components._layer_slicer")
 class _SliceRequest(Protocol):
     id: int
 
-    def __call__(self) -> Any:
-        ...
+    def __call__(self) -> Any: ...
 
 
 @runtime_checkable
@@ -114,8 +111,8 @@ class _LayerSlicer:
         self.events = EmitterGroup(source=self, ready=Event)
         self._executor: Executor = ThreadPoolExecutor(max_workers=1)
         self._force_sync = not get_settings().experimental.async_
-        self._layers_to_task: Dict[
-            Tuple[weakref.ReferenceType[Layer], ...], Future
+        self._layers_to_task: dict[
+            tuple[weakref.ReferenceType[Layer], ...], Future
         ] = {}
         self._lock_layers_to_task = RLock()
 
@@ -209,11 +206,21 @@ class _LayerSlicer:
         # The following logic gives us a way to handle those in the short
         # term as we develop, and also in the long term if there are cases
         # when we want to perform sync slicing anyway.
-        requests: Dict[weakref.ref, _SliceRequest] = {}
+        requests: dict[weakref.ref, _SliceRequest] = {}
         sync_layers = []
-        visible_layers = (layer for layer in layers if layer.visible)
-        for layer in visible_layers:
-            if isinstance(layer, _AsyncSliceable) and not self._force_sync:
+        for layer in layers:
+            # Slicing of non-visible layers is handled differently by sync
+            # and async slicing. For async, we do not make request since a
+            # later change to visibility triggers slicing. For sync, we want
+            # to set the slice input with `Layer._slice_dims` but don't want
+            # to fetch data yet (only if/when it becomes visible in the future).
+            # Further development should allow us to remove this special case
+            # by making the sync and async slicing code paths almost identical.
+            if (
+                isinstance(layer, _AsyncSliceable)
+                and not self._force_sync
+                and layer.visible
+            ):
                 logger.debug('Making async slice request for %s', layer)
                 request = layer._make_slice_request(dims)
                 weak_layer = weakref.ref(layer)
@@ -261,7 +268,7 @@ class _LayerSlicer:
         self.events.disconnect()
         self.events.ready.disconnect()
 
-    def _slice_layers(self, requests: Dict) -> Dict:
+    def _slice_layers(self, requests: dict) -> dict:
         """
         Iterates through a dictionary of request objects and call the slice
         on each individual layer. Can be called from the main or slicing thread.
@@ -280,7 +287,7 @@ class _LayerSlicer:
         self.events.ready(value=result)
         return result
 
-    def _on_slice_done(self, task: Future[Dict]) -> None:
+    def _on_slice_done(self, task: Future[dict]) -> None:
         """
         This is the "done_callback" which is added to each task.
         Can be called from the main or slicing thread.
@@ -293,7 +300,7 @@ class _LayerSlicer:
             logger.debug('Cancelled task: %s', id(task))
             return
 
-    def _try_to_remove_task(self, task: Future[Dict]) -> bool:
+    def _try_to_remove_task(self, task: Future[dict]) -> bool:
         """
         Attempt to remove task, return false if task not found, return true
         if task is found and removed from layers_to_task dict.
@@ -310,7 +317,7 @@ class _LayerSlicer:
 
     def _find_existing_task(
         self, layers: Iterable[Layer]
-    ) -> Optional[Future[Dict]]:
+    ) -> Optional[Future[dict]]:
         """Find the task associated with a list of layers. Returns the first
         task found for which the layers of the task are a subset of the input
         layers.

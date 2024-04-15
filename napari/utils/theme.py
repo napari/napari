@@ -6,7 +6,7 @@ import sys
 import warnings
 from ast import literal_eval
 from contextlib import suppress
-from typing import Any, Dict, List, Literal, Optional, Tuple, Union, overload
+from typing import Any, Literal, Optional, Union, overload
 
 import npe2
 
@@ -85,29 +85,29 @@ class Theme(EventedModel):
     current: Color
     font_size: str = '12pt' if sys.platform == 'darwin' else '9pt'
 
-    @validator("syntax_style", pre=True, allow_reuse=True)
+    @validator('syntax_style', pre=True, allow_reuse=True)
     def _ensure_syntax_style(cls, value: str) -> str:
         from pygments.styles import STYLE_MAP
 
         assert value in STYLE_MAP, trans._(
-            "Incorrect `syntax_style` value: {value} provided. Please use one of the following: {syntax_style}",
+            'Incorrect `syntax_style` value: {value} provided. Please use one of the following: {syntax_style}',
             deferred=True,
             syntax_style=f" {', '.join(STYLE_MAP)}",
             value=value,
         )
         return value
 
-    @validator("font_size", pre=True)
+    @validator('font_size', pre=True)
     def _ensure_font_size(cls, value: str) -> str:
         assert value.endswith('pt'), trans._(
-            "Font size must be in points (pt).", deferred=True
+            'Font size must be in points (pt).', deferred=True
         )
         assert int(value[:-2]) > 0, trans._(
-            "Font size must be greater than 0.", deferred=True
+            'Font size must be greater than 0.', deferred=True
         )
         return value
 
-    def to_rgb_dict(self) -> Dict[str, Any]:
+    def to_rgb_dict(self) -> dict[str, Any]:
         """
         This differs from baseclass `dict()` by converting colors to rgb.
         """
@@ -118,8 +118,8 @@ class Theme(EventedModel):
         }
 
 
-increase_pattern = re.compile(r"{{\s?increase\((\w+),?\s?([-\d]+)?\)\s?}}")
-decrease_pattern = re.compile(r"{{\s?decrease\((\w+),?\s?([-\d]+)?\)\s?}}")
+increase_pattern = re.compile(r'{{\s?increase\((\w+),?\s?([-\d]+)?\)\s?}}')
+decrease_pattern = re.compile(r'{{\s?decrease\((\w+),?\s?([-\d]+)?\)\s?}}')
 gradient_pattern = re.compile(r'([vh])gradient\((.+)\)')
 darken_pattern = re.compile(r'{{\s?darken\((\w+),?\s?([-\d]+)?\)\s?}}')
 lighten_pattern = re.compile(r'{{\s?lighten\((\w+),?\s?([-\d]+)?\)\s?}}')
@@ -128,15 +128,15 @@ opacity_pattern = re.compile(r'{{\s?opacity\((\w+),?\s?([-\d]+)?\)\s?}}')
 
 def decrease(font_size: str, pt: int) -> str:
     """Decrease fontsize."""
-    return f"{int(font_size[:-2]) - int(pt)}pt"
+    return f'{int(font_size[:-2]) - int(pt)}pt'
 
 
 def increase(font_size: str, pt: int) -> str:
     """Increase fontsize."""
-    return f"{int(font_size[:-2]) + int(pt)}pt"
+    return f'{int(font_size[:-2]) + int(pt)}pt'
 
 
-def _parse_color_as_rgb(color: Union[str, Color]) -> Tuple[int, int, int]:
+def _parse_color_as_rgb(color: Union[str, Color]) -> tuple[int, int, int]:
     if isinstance(color, str):
         if color.startswith('rgb('):
             return literal_eval(color.lstrip('rgb(').rstrip(')'))
@@ -177,7 +177,7 @@ def gradient(stops, horizontal: bool = True) -> str:
         grad = 'qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, '
 
     _stops = [f'stop: {n} {stop}' for n, stop in enumerate(stops)]
-    grad += ", ".join(_stops) + ")"
+    grad += ', '.join(_stops) + ')'
 
     return grad
 
@@ -226,24 +226,21 @@ def get_system_theme() -> str:
     try:
         id_ = darkdetect.theme().lower()
     except AttributeError:
-        id_ = "dark"
+        id_ = 'dark'
 
     return id_
 
 
 @overload
-def get_theme(theme_id: str) -> Theme:
-    ...
+def get_theme(theme_id: str) -> Theme: ...
 
 
 @overload
-def get_theme(theme_id: str, as_dict: Literal[False]) -> Theme:
-    ...
+def get_theme(theme_id: str, as_dict: Literal[False]) -> Theme: ...
 
 
 @overload
-def get_theme(theme_id: str, as_dict: Literal[True]) -> Dict[str, Any]:
-    ...
+def get_theme(theme_id: str, as_dict: Literal[True]) -> dict[str, Any]: ...
 
 
 def get_theme(theme_id: str, as_dict: Optional[bool] = None):
@@ -272,13 +269,13 @@ def get_theme(theme_id: str, as_dict: Optional[bool] = None):
         so that manipulating this theme can be done without
         side effects.
     """
-    if theme_id == "system":
+    if theme_id == 'system':
         theme_id = get_system_theme()
 
     if theme_id not in _themes:
         raise ValueError(
             trans._(
-                "Unrecognized theme {id}. Available themes are {themes}",
+                'Unrecognized theme {id}. Available themes are {themes}',
                 deferred=True,
                 id=theme_id,
                 themes=available_themes(),
@@ -288,8 +285,8 @@ def get_theme(theme_id: str, as_dict: Optional[bool] = None):
     if as_dict is not None:
         warnings.warn(
             trans._(
-                "The `as_dict` kwarg has been deprecated since Napari 0.5.0 and "
-                "will be removed in future version. You can use `get_theme(...).to_rgb_dict()`",
+                'The `as_dict` kwarg has been deprecated since Napari 0.5.0 and '
+                'will be removed in future version. You can use `get_theme(...).to_rgb_dict()`',
                 deferred=True,
             ),
             category=FutureWarning,
@@ -334,7 +331,7 @@ def unregister_theme(theme_id):
     _themes.pop(theme_id, None)
 
 
-def available_themes() -> List[str]:
+def available_themes() -> list[str]:
     """List available themes.
 
     Returns
@@ -358,7 +355,7 @@ def is_theme_available(theme_id):
     bool
         True if the theme is available, False otherwise.
     """
-    if theme_id == "system":
+    if theme_id == 'system':
         return True
     if theme_id not in _themes and _theme_path(theme_id).exists():
         plugin_name_file = _theme_path(theme_id) / PLUGIN_FILE_NAME
@@ -421,8 +418,8 @@ LIGHT = Theme(
     font_size='12pt' if sys.platform == 'darwin' else '9pt',
 )
 
-register_theme('dark', DARK, "builtin")
-register_theme('light', LIGHT, "builtin")
+register_theme('dark', DARK, 'builtin')
+register_theme('light', LIGHT, 'builtin')
 
 
 # this function here instead of plugins._npe2 to avoid circular import
@@ -445,7 +442,7 @@ def _install_npe2_themes(themes=None):
             try:
                 register_theme(theme.id, theme_dict, manifest.name)
             except ValueError:
-                logging.exception("Registration theme failed.")
+                logging.exception('Registration theme failed.')
 
 
 _install_npe2_themes(_themes)

@@ -2,7 +2,7 @@ import csv
 import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import NamedTuple, Tuple
+from typing import NamedTuple
 from uuid import uuid4
 
 import dask.array as da
@@ -24,7 +24,7 @@ from napari_builtins.io._write import write_csv
 
 
 class ImageSpec(NamedTuple):
-    shape: Tuple[int, ...]
+    shape: tuple[int, ...]
     dtype: str
     ext: str
     levels: int = 1
@@ -59,7 +59,7 @@ def _write_spec(tmp_path: Path):
 def test_no_files_raises(tmp_path):
     with pytest.raises(ValueError) as e:
         magic_imread(tmp_path)
-    assert "No files found in" in str(e.value)
+    assert 'No files found in' in str(e.value)
 
 
 def test_guess_zarr_path():
@@ -125,7 +125,7 @@ def test_write_csv(tmpdir):
         csv.reader(output_csv, delimiter=',')
         for row_index, row in enumerate(output_csv):
             if row_index == 0:
-                assert row == "column_1,column_2,column_3\n"
+                assert row == 'column_1,column_2,column_3\n'
             else:
                 output_row_data = [float(i) for i in row.split(',')]
                 np.testing.assert_allclose(

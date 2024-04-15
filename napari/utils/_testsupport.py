@@ -4,7 +4,8 @@ import sys
 import warnings
 from contextlib import suppress
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, List, Tuple
+from pathlib import Path
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 from weakref import WeakSet
 
@@ -13,7 +14,7 @@ import pytest
 if TYPE_CHECKING:
     from pytest import FixtureRequest
 
-_SAVE_GRAPH_OPNAME = "--save-leaked-object-graph"
+_SAVE_GRAPH_OPNAME = '--save-leaked-object-graph'
 
 
 def _empty(*_, **__):
@@ -22,15 +23,15 @@ def _empty(*_, **__):
 
 def pytest_addoption(parser):
     parser.addoption(
-        "--show-napari-viewer",
-        action="store_true",
+        '--show-napari-viewer',
+        action='store_true',
         default=False,
         help="don't show viewer during tests",
     )
 
     parser.addoption(
         _SAVE_GRAPH_OPNAME,
-        action="store_true",
+        action='store_true',
         default=False,
         help="Try to save a graph of leaked object's reference (need objgraph"
         "and graphviz installed",
@@ -56,12 +57,18 @@ def fail_obj_graph(Klass):
         import gc
 
         gc.collect()
-
+        file_path = Path(
+            f'{Klass.__name__}-leak-backref-graph-{COUNTER}.pdf'
+        ).absolute()
         objgraph.show_backrefs(
             list(Klass._instances),
             max_depth=20,
-            filename=f'{Klass.__name__}-leak-backref-graph-{COUNTER}.pdf',
+            filename=str(file_path),
         )
+
+        Klass._instances.clear()
+
+        assert file_path.exists()
 
         # DO not remove len, this can break as C++ obj are gone, but python objects
         # still hang around and _repr_ would crash.
@@ -123,25 +130,68 @@ def pytest_runtest_makereport(item, call):
     # set a report attribute for each phase of a call, which can
     # be "setup", "call", "teardown"
 
-    setattr(item, f"rep_{rep.when}", rep)
+    setattr(item, f'rep_{rep.when}', rep)
+
+
+@pytest.fixture()
+def _mock_app():
+    """Mock clean 'test_app' `NapariApplication` instance.
+
+    This fixture must be used whenever `napari._app_model.get_app()` is called to return
+    a 'test_app' `NapariApplication` instead of the 'napari'
+    `NapariApplication`. The `make_napari_viewer` fixture is already equipped with
+    a `_mock_app`.
+
+    Note that `NapariApplication` registers app-model actions, providers and
+    processors. If this is not desired, please create a clean
+    `app_model.Application` in the test. It does not however, register Qt
+    related actions or providers or register plugins.
+    If these are required, the `make_napari_viewer` fixture can be used, which
+    will run both these function and automatically clear the lru cache.
+    Alternatively, you can specifically run `init_qactions()` or
+    `_initialize_plugins` within the test, ensuring that you `cache_clear()`
+    first.
+    """
+    from app_model import Application
+
+    from napari._app_model._app import NapariApplication, _napari_names
+
+    app = NapariApplication('test_app')
+    app.injection_store.namespace = _napari_names
+    with patch.object(NapariApplication, 'get_app', return_value=app):
+        try:
+            yield app
+        finally:
+            Application.destroy('test_app')
 
 
 @pytest.fixture
 def make_napari_viewer(
     qtbot,
     request: 'FixtureRequest',
+    _mock_app,
     napari_plugin_manager,
     monkeypatch,
     clean_themes,
 ):
-    """A fixture function that creates a napari viewer for use in testing.
+    """A pytest fixture function that creates a napari viewer for use in testing.
 
-    Use this fixture as a function in your tests:
+    This fixture will take care of creating a viewer and cleaning up at the end of the
+    test. When using this function, it is **not** necessary to use a `qtbot` fixture,
+    nor should you do any additional cleanup (such as using `qtbot.addWidget` or
+    calling `viewer.close()`) at the end of the test. Duplicate cleanup may cause
+    an error.
 
-        viewer = make_napari_viewer()
+    To use this fixture as a function in your tests:
 
-    It accepts all the same arguments as napari.Viewer, plus the following
-    test-related paramaters:
+        def test_something_with_a_viewer(make_napari_viewer):
+            # `make_napari_viewer` takes any keyword arguments that napari.Viewer() takes
+            viewer = make_napari_viewer()
+
+    It accepts all the same arguments as `napari.Viewer`, notably `show`
+    which should be set to `True` for tests that require the `Viewer` to be visible
+    (e.g., tests that check aspects of the Qt window or layer rendering).
+    It also accepts the following test-related parameters:
 
     ViewerClass : Type[napari.Viewer], optional
         Override the viewer class being used.  By default, will
@@ -196,10 +246,10 @@ def make_napari_viewer(
         fail_obj_graph(QtViewer)
     QtViewer._instances.clear()
     assert _do_not_inline_below == 0, (
-        "Some instance of QtViewer is not properly cleaned in one of previous test. For easier debug one may "
-        f"use {_SAVE_GRAPH_OPNAME} flag for pytest to get graph of leaked objects. If you use qtbot (from pytest-qt)"
-        " to clean Qt objects after test you may need to switch to manual clean using "
-        "`deleteLater()` and `qtbot.wait(50)` later."
+        'Some instance of QtViewer is not properly cleaned in one of previous test. For easier debug one may '
+        f'use {_SAVE_GRAPH_OPNAME} flag for pytest to get graph of leaked objects. If you use qtbot (from pytest-qt)'
+        ' to clean Qt objects after test you may need to switch to manual clean using '
+        '`deleteLater()` and `qtbot.wait(50)` later.'
     )
 
     settings = get_settings()
@@ -215,15 +265,15 @@ def make_napari_viewer(
 
     initial = QApplication.topLevelWidgets()
     prior_exception = getattr(sys, 'last_value', None)
-    is_internal_test = request.module.__name__.startswith("napari.")
+    is_internal_test = request.module.__name__.startswith('napari.')
 
     # disable throttling cursor event in tests
     monkeypatch.setattr(
-        "napari._qt.qt_main_window._QtMainWindow._throttle_cursor_to_status_connection",
+        'napari._qt.qt_main_window._QtMainWindow._throttle_cursor_to_status_connection',
         _empty,
     )
 
-    if "enable_console" not in request.keywords:
+    if 'enable_console' not in request.keywords:
 
         def _dummy_widget(*_):
             w = QWidget()
@@ -231,7 +281,7 @@ def make_napari_viewer(
             return w
 
         monkeypatch.setattr(
-            "napari._qt.qt_viewer.QtViewer._get_console", _dummy_widget
+            'napari._qt.qt_viewer.QtViewer._get_console', _dummy_widget
         )
 
     def actual_factory(
@@ -242,14 +292,14 @@ def make_napari_viewer(
         **model_kwargs,
     ):
         if strict_qt is None:
-            strict_qt = is_internal_test or os.getenv("NAPARI_STRICT_QT")
+            strict_qt = is_internal_test or os.getenv('NAPARI_STRICT_QT')
         nonlocal _strict
         _strict = strict_qt
 
         if not block_plugin_discovery:
             napari_plugin_manager.discovery_blocker.stop()
 
-        should_show = request.config.getoption("--show-napari-viewer")
+        should_show = request.config.getoption('--show-napari-viewer')
         model_kwargs['show'] = model_kwargs.pop('show', should_show)
         viewer = ViewerClass(*model_args, **model_kwargs)
         viewers.add(viewer)
@@ -291,7 +341,9 @@ def make_napari_viewer(
 
     # do not inline to avoid pytest trying to compute repr of expression.
     # it fails if C++ object gone but not Python object.
-    assert _do_not_inline_below == 0
+    assert (
+        _do_not_inline_below == 0
+    ), f'{request.config.getoption(_SAVE_GRAPH_OPNAME)}, {_SAVE_GRAPH_OPNAME}'
 
     # only check for leaked widgets if an exception was raised during the test,
     # and "strict" mode was used.
@@ -342,7 +394,7 @@ def make_napari_viewer_proxy(make_napari_viewer, monkeypatch):
 
     def actual_factory(*model_args, ensure_main_thread=True, **model_kwargs):
         monkeypatch.setenv(
-            "NAPARI_ENSURE_PLUGIN_MAIN_THREAD", str(ensure_main_thread)
+            'NAPARI_ENSURE_PLUGIN_MAIN_THREAD', str(ensure_main_thread)
         )
         viewer = make_napari_viewer(*model_args, **model_kwargs)
         proxies.append(PublicOnlyProxy(viewer))
@@ -367,12 +419,12 @@ def MouseEvent():
     @dataclass
     class Event:
         type: str
-        position: Tuple[float]
+        position: tuple[float]
         is_dragging: bool = False
-        dims_displayed: Tuple[int] = (0, 1)
-        dims_point: List[float] = None
-        view_direction: List[int] = None
-        pos: List[int] = (0, 0)
+        dims_displayed: tuple[int] = (0, 1)
+        dims_point: list[float] = None
+        view_direction: list[int] = None
+        pos: list[int] = (0, 0)
         button: int = None
         handled: bool = False
 

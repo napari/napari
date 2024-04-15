@@ -9,7 +9,7 @@ from npe2.manifest.contributions import SampleDataURI
 from qtpy.QtWidgets import QMenu
 
 from napari._app_model import get_app
-from napari._app_model.constants import CommandId, MenuId
+from napari._app_model.constants import MenuId
 from napari.layers import Image
 from napari.utils.action_manager import action_manager
 
@@ -22,12 +22,10 @@ def test_sample_data_triggers_reader_dialog(
     tmp2 = tmp_plugin.spawn(register=True)
 
     @tmp_plugin.contribute.reader(filename_patterns=['*.tif'])
-    def _(path):
-        ...
+    def _(path): ...
 
     @tmp2.contribute.reader(filename_patterns=['*.tif'])
-    def _(path):
-        ...
+    def _(path): ...
 
     # make a sample data reader for tif file
     my_sample = SampleDataURI(
@@ -144,9 +142,9 @@ def test_sample_menu_single_data(
 def test_show_shortcuts_actions(make_napari_viewer):
     viewer = make_napari_viewer()
     assert viewer.window._pref_dialog is None
-    action_manager.trigger("napari:show_shortcuts")
+    action_manager.trigger('napari:show_shortcuts')
     assert viewer.window._pref_dialog is not None
-    assert viewer.window._pref_dialog._list.currentItem().text() == "Shortcuts"
+    assert viewer.window._pref_dialog._list.currentItem().text() == 'Shortcuts'
     viewer.window._pref_dialog.close()
 
 
@@ -174,7 +172,7 @@ def get_open_with_plugin_action(viewer, action_text):
 
 
 @pytest.mark.parametrize(
-    "menu_str,dialog_method,dialog_return,filename_call,stack",
+    'menu_str,dialog_method,dialog_return,filename_call,stack',
     [
         (
             'Open File(s)...',
@@ -209,11 +207,10 @@ def test_open_with_plugin(
 ):
     viewer = make_napari_viewer()
     action, _a = get_open_with_plugin_action(viewer, menu_str)
-    with mock.patch(
-        'napari._qt.qt_viewer.QFileDialog'
-    ) as mock_file, mock.patch(
-        'napari._qt.qt_viewer.QtViewer._qt_open'
-    ) as mock_read:
+    with (
+        mock.patch('napari._qt.qt_viewer.QFileDialog') as mock_file,
+        mock.patch('napari._qt.qt_viewer.QtViewer._qt_open') as mock_read,
+    ):
         mock_file_instance = mock_file.return_value
         getattr(mock_file_instance, dialog_method).return_value = dialog_return
         action.trigger()
@@ -228,10 +225,10 @@ def test_save_layers_enablement_updated_context(make_napari_viewer, builtins):
     viewer = make_napari_viewer()
 
     save_layers_action = viewer.window.file_menu.findAction(
-        CommandId.DLG_SAVE_LAYERS,
+        'napari.window.file.save_layers_dialog',
     )
     save_selected_layers_action = viewer.window.file_menu.findAction(
-        CommandId.DLG_SAVE_SELECTED_LAYERS,
+        'napari.window.file.save_layers_dialog.selected',
     )
     # Check both save actions are not enabled when no layers
     assert len(viewer.layers) == 0
