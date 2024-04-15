@@ -233,8 +233,8 @@ def calc_data_range(
         min_val = _nanmin(data)
         max_val = _nanmax(data)
         if min_val == max_val:
-            min_val = 0
-            max_val = 1
+            min_val = min_val - 0.5
+            max_val = max_val + 0.5
         return float(min_val), float(max_val)
 
     center: Union[int, list[int]]
@@ -286,8 +286,8 @@ def calc_data_range(
     max_val = _nanmax(reduced_data)
 
     if min_val == max_val:
-        min_val = 0
-        max_val = 1
+        min_val = min_val - 0.5
+        max_val = max_val + 0.5
     return (float(min_val), float(max_val))
 
 
