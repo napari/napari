@@ -516,11 +516,11 @@ class QtViewer(QSplitter):
             for name in vlist:
                 try:
                     vdict[name] = eval(name, cf.f_globals, cf.f_locals)
-                except:  # noqa: E722
-                    print(
+                except NameError as err:
+                    raise NameError(
                         f'Could not get variable {name} from '
                         f'{cf.f_code.co_name}'
-                    )
+                    ) from err
         elif isinstance(variables, dict):
             vdict = variables
         else:

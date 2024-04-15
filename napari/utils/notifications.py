@@ -397,9 +397,9 @@ def show_console_notification(notification: Notification):
         ):
             return
 
-        print(notification)
+        print(notification)  # noqa: T201
     except Exception:
-        print(
+        print(  # noqa: T201
             'An error occurred while trying to format an error and show it in console.\n'
             'You can try to uninstall IPython to disable rich traceback formatting\n'
             'And/or report a bug to napari'
