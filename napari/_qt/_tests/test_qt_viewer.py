@@ -800,7 +800,7 @@ def test_label_colors_matching_widget_direct(
         )
 
 
-def test_axes_labels(make_napari_viewer):
+def test_axis_labels(make_napari_viewer):
     viewer = make_napari_viewer(ndisplay=3)
     layer = viewer.add_image(np.zeros((2, 2, 2)), scale=(1, 2, 4))
 

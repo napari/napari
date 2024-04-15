@@ -4,7 +4,7 @@ from napari._qt._qapp_model.qactions._toggle_action import ViewerToggleAction
 from napari.components import ViewerModel
 
 
-def test_viewer_toggler():
+def test_viewer_toggler(_mock_app):
     viewer = ViewerModel()
     action = ViewerToggleAction(
         id='some.command.id',
