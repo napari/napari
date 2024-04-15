@@ -15,6 +15,7 @@ from napari.utils.interactions import (
 def test_z_order_adding_removing_images(make_napari_viewer):
     """Test z order is correct after adding/ removing images."""
     data = np.ones((11, 11))
+    data[0, 0] = 0
 
     viewer = make_napari_viewer(show=True)
     viewer.add_image(data, colormap='red', name='red')
@@ -59,6 +60,7 @@ def test_z_order_adding_removing_images(make_napari_viewer):
 def test_z_order_images(make_napari_viewer):
     """Test changing order of images changes z order in display."""
     data = np.ones((11, 11))
+    data[0, 0] = 0
 
     viewer = make_napari_viewer(show=True)
     viewer.add_image(data, colormap='red')
@@ -80,6 +82,7 @@ def test_z_order_images(make_napari_viewer):
 def test_z_order_image_points(make_napari_viewer):
     """Test changing order of image and points changes z order in display."""
     data = np.ones((11, 11))
+    data[0, 0] = 0
 
     viewer = make_napari_viewer(show=True)
     viewer.add_image(data, colormap='red')
@@ -101,6 +104,7 @@ def test_z_order_image_points(make_napari_viewer):
 def test_z_order_images_after_ndisplay(make_napari_viewer):
     """Test z order of images remanins constant after chaning ndisplay."""
     data = np.ones((11, 11))
+    data[0, 0] = 0
 
     viewer = make_napari_viewer(show=True)
     viewer.add_image(data, colormap='red')
@@ -223,6 +227,7 @@ def test_grid_mode(make_napari_viewer):
 
     # Add images
     data = np.ones((6, 15, 15))
+    data[:, 0, 0] = 0
     viewer.add_image(data, channel_axis=0, blending='translucent')
 
     assert not viewer.grid.enabled
@@ -486,6 +491,7 @@ def test_screenshot_has_no_border(make_napari_viewer):
     """See https://github.com/napari/napari/issues/3357"""
     viewer = make_napari_viewer(show=True)
     image_data = np.ones((60, 80))
+    image_data[0, 0] = 0
     viewer.add_image(image_data, colormap='red')
     # Zoom in dramatically to make the screenshot all red.
     viewer.camera.zoom = 1000
