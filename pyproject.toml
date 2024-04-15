@@ -295,6 +295,7 @@ select = [
     "ICN", # flake8-import-conventions
     "RUF", # ruff specyfic rules
     "ASYNC", # flake8-async
+    "EXE", # flake8-executable
 ]
 ignore = [
     "E501", "TCH001", "TCH002", "TCH003",
