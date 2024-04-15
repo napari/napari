@@ -294,6 +294,7 @@ select = [
     "TRY", # tryceratops
     "ICN", # flake8-import-conventions
     "RUF", # ruff specyfic rules
+    "PT", # flake8-pytest-style
 ]
 ignore = [
     "E501", "TCH001", "TCH002", "TCH003",
@@ -305,6 +306,7 @@ ignore = [
     "RUF005", # problem with numpy compatybility, see https://github.com/charliermarsh/ruff/issues/2142#issuecomment-1451038741
     "B028", # need to be fixed
     "PYI015", # it produces bad looking files (@jni opinion)
+    "PT011", # needs work, lots of these
 ]
 
 [tool.ruff.lint.per-file-ignores]
