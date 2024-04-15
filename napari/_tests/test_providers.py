@@ -36,7 +36,7 @@ def test_publicproxy_provide_viewer(capsys, make_napari_viewer):
     # Ensure we get a `PublicOnlyProxy` when used as a provider
     def my_viewer(viewer: Viewer) -> Viewer:
         # Allows us to check type when `Action` executed
-        print(type(viewer))
+        print(type(viewer))  # noqa: T201
 
     action = Action(
         id='some.command.id',

@@ -166,7 +166,7 @@ if __name__ == '__main__':
         try:
             w = SampleWidget(theme)
         except KeyError:
-            print(f'{theme} is not a recognized theme')
+            print(f'{theme} is not a recognized theme')  # noqa: T201
             continue
         w.setGeometry(10 + 430 * n, 0, 425, 600)
         w.show()
