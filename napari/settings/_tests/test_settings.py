@@ -12,7 +12,7 @@ from napari.settings import CURRENT_SCHEMA_VERSION, NapariSettings
 from napari.utils.theme import get_theme, register_theme
 
 
-@pytest.fixture
+@pytest.fixture()
 def test_settings(tmp_path):
     """A fixture that can be used to test and save settings"""
     from napari.settings import NapariSettings
@@ -115,7 +115,8 @@ def test_settings_load_invalid_section(tmp_path):
 
 def test_settings_to_dict(test_settings):
     data_dict = test_settings.dict()
-    assert isinstance(data_dict, dict) and data_dict.get('application')
+    assert isinstance(data_dict, dict)
+    assert data_dict.get('application')
 
     data_dict = test_settings.dict(exclude_defaults=True)
     assert not data_dict.get('application')
@@ -328,7 +329,7 @@ def test_no_save_path():
     assert s.config_path is None
 
     with pytest.raises(ValueError):
-        # the original `save()` method is patched in conftest.fresh_settings
+        # the original `save()` method is patched in conftest._fresh_settings
         # so we "unmock" it here to assert the failure
         NapariSettings.__original_save__(s)  # type: ignore
 

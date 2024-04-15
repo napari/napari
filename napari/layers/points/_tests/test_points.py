@@ -166,7 +166,7 @@ def test_empty_layer_with_border_colormap():
     np.testing.assert_allclose(layer._border.current_color, border_color)
 
 
-@pytest.mark.parametrize('feature_name', ('border', 'face'))
+@pytest.mark.parametrize('feature_name', ['border', 'face'])
 def test_set_current_properties_on_empty_layer_with_color_cycle(feature_name):
     """Test setting current_properties an empty layer where the face/border color
     is a color cycle.
@@ -974,9 +974,10 @@ def test_points_errors():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
 
+    annotations = {'point_type': np.array(['A', 'B'])}
+
     # try adding properties with the wrong number of properties
     with pytest.raises(ValueError):
-        annotations = {'point_type': np.array(['A', 'B'])}
         Points(data, properties=copy(annotations))
 
 
@@ -1635,7 +1636,14 @@ def test_value():
 
 
 @pytest.mark.parametrize(
-    'position,view_direction,dims_displayed,world,scale,expected',
+    (
+        'position',
+        'view_direction',
+        'dims_displayed',
+        'world',
+        'scale',
+        'expected',
+    ),
     [
         ((0, 5, 15, 15), [0, 1, 0, 0], [1, 2, 3], False, (1, 1, 1, 1), 2),
         ((0, 5, 15, 15), [0, -1, 0, 0], [1, 2, 3], False, (1, 1, 1, 1), 0),
@@ -2418,7 +2426,7 @@ def test_empty_data_from_tuple():
 
 
 @pytest.mark.parametrize(
-    'attribute, new_value',
+    ('attribute', 'new_value'),
     [
         ('size', 20),
         ('face_color', np.asarray([0.0, 0.0, 1.0, 1.0])),
@@ -2468,7 +2476,7 @@ def test_set_drag_start():
 
 
 @pytest.mark.parametrize(
-    'dims_indices,target_indices',
+    ('dims_indices', 'target_indices'),
     [
         ((8, np.nan, np.nan), [2]),
         ((10, np.nan, np.nan), [0, 1, 3, 4]),
@@ -2621,7 +2629,7 @@ def test_thick_slice():
 
 
 @pytest.mark.parametrize(
-    'old_name, new_name, value',
+    ('old_name', 'new_name', 'value'),
     [
         ('edge_width', 'border_width', 0.9),
         ('edge_width_is_relative', 'border_width_is_relative', False),

@@ -94,7 +94,7 @@ ids = [
 ]
 
 
-@pytest.mark.parametrize('shape, kwargs', multi_channel_test_data, ids=ids)
+@pytest.mark.parametrize(('shape', 'kwargs'), multi_channel_test_data, ids=ids)
 def test_multichannel(shape, kwargs):
     """Test adding multichannel image."""
     viewer = ViewerModel()

@@ -26,7 +26,7 @@ IM_ATTRS = {
 }
 
 
-@pytest.mark.parametrize('key, value', {**BASE_ATTRS, **IM_ATTRS}.items())
+@pytest.mark.parametrize(('key', 'value'), {**BASE_ATTRS, **IM_ATTRS}.items())
 def test_link_image_layers_all_attributes(key, value):
     """Test linking common attributes across layers of similar types."""
     l1 = layers.Image(np.random.rand(10, 10), contrast_limits=(0, 0.8))
@@ -41,7 +41,7 @@ def test_link_image_layers_all_attributes(key, value):
     assert getattr(l1, key) == getattr(l2, key) == value
 
 
-@pytest.mark.parametrize('key, value', BASE_ATTRS.items())
+@pytest.mark.parametrize(('key', 'value'), BASE_ATTRS.items())
 def test_link_different_type_layers_all_attributes(key, value):
     """Test linking common attributes across layers of different types."""
     l1 = layers.Image(np.random.rand(10, 10))

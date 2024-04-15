@@ -737,7 +737,7 @@ def test_update_scale():
     )
 
 
-@pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
+@pytest.mark.parametrize(('Layer', 'data', 'ndim'), layer_test_data)
 def test_add_remove_layer_no_callbacks(Layer, data, ndim):
     """Test all callbacks for layer emmitters removed."""
     viewer = ViewerModel()
@@ -768,7 +768,7 @@ def test_add_remove_layer_no_callbacks(Layer, data, ndim):
         assert len(em.callbacks) == count_warning_events(em.callbacks)
 
 
-@pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
+@pytest.mark.parametrize(('Layer', 'data', 'ndim'), layer_test_data)
 def test_add_remove_layer_external_callbacks(Layer, data, ndim):
     """Test external callbacks for layer emmitters preserved."""
     viewer = ViewerModel()
@@ -831,7 +831,7 @@ def test_not_mutable_fields(field):
     )
 
 
-@pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
+@pytest.mark.parametrize(('Layer', 'data', 'ndim'), layer_test_data)
 def test_status_tooltip(Layer, data, ndim):
     viewer = ViewerModel()
     viewer.tooltip.visible = True

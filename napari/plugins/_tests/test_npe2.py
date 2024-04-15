@@ -19,7 +19,7 @@ PLUGIN_DISPLAY_NAME = 'My Plugin'  # this matches the sample_manifest
 MANIFEST_PATH = Path(__file__).parent / '_sample_manifest.yaml'
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_pm(npe2pm: 'TestPluginManager'):
     from napari.plugins import _initialize_plugins
 
@@ -143,10 +143,12 @@ def test_get_sample_data(mock_pm):
     samples = mock_pm.get_manifest(PLUGIN_NAME).contributions.sample_data
 
     opener, _ = _npe2.get_sample_data(PLUGIN_NAME, 'random_data')
-    assert isinstance(opener, MethodType) and opener.__self__ is samples[0]
+    assert isinstance(opener, MethodType)
+    assert opener.__self__ is samples[0]
 
     opener, _ = _npe2.get_sample_data(PLUGIN_NAME, 'internet_image')
-    assert isinstance(opener, MethodType) and opener.__self__ is samples[1]
+    assert isinstance(opener, MethodType)
+    assert opener.__self__ is samples[1]
 
     opener, avail = _npe2.get_sample_data('not-a-plugin', 'nor-a-sample')
     assert opener is None
@@ -175,7 +177,7 @@ def test_widget_iterator(mock_pm):
     assert wdgs == [('dock', (PLUGIN_NAME, ['My Widget']))]
 
 
-def test_plugin_actions(_mock_app, mock_pm: 'TestPluginManager'):
+def test_plugin_actions(mock_pm: 'TestPluginManager', mock_app):
     from napari._app_model import get_app
     from napari.plugins import _initialize_plugins
 

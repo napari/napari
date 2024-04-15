@@ -239,14 +239,14 @@ def test_labels_order_when_changing_dims():
 
 
 @pytest.mark.parametrize(
-    'ndim, ax_input, expected', ((2, 1, 1), (2, -1, 1), (4, -3, 1))
+    ('ndim', 'ax_input', 'expected'), [(2, 1, 1), (2, -1, 1), (4, -3, 1)]
 )
 def test_assert_axis_in_bounds(ndim, ax_input, expected):
     actual = ensure_axis_in_bounds(ax_input, ndim)
     assert actual == expected
 
 
-@pytest.mark.parametrize('ndim, ax_input', ((2, 2), (2, -3)))
+@pytest.mark.parametrize(('ndim', 'ax_input'), [(2, 2), (2, -3)])
 def test_assert_axis_out_of_bounds(ndim, ax_input):
     with pytest.raises(ValueError):
         ensure_axis_in_bounds(ax_input, ndim)
@@ -358,7 +358,7 @@ def test_floating_point_edge_case():
 
 @pytest.mark.parametrize(
     ('order', 'expected'),
-    (
+    [
         ((0, 1), (0, 1)),  # 2D, increasing, default range
         ((3, 7), (0, 1)),  # 2D, increasing, non-default range
         ((1, 0), (1, 0)),  # 2D, decreasing, default range
@@ -369,7 +369,7 @@ def test_floating_point_edge_case():
         ((4, 2, 0), (2, 1, 0)),  # 3D, decreasing, non-default range
         ((2, 0, 1), (2, 0, 1)),  # 3D, non-monotonic, default range
         ((4, 0, 1), (2, 0, 1)),  # 3D, non-monotonic, non-default range
-    ),
+    ],
 )
 def test_reorder_after_dim_reduction(order, expected):
     actual = reorder_after_dim_reduction(order)

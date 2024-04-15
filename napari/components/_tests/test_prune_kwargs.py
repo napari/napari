@@ -77,7 +77,7 @@ EXPECTATIONS = [
 ids = [i[0] for i in EXPECTATIONS]
 
 
-@pytest.mark.parametrize('label_type, expectation', EXPECTATIONS, ids=ids)
+@pytest.mark.parametrize(('label_type', 'expectation'), EXPECTATIONS, ids=ids)
 def test_prune_kwargs(label_type, expectation):
     assert prune_kwargs(TEST_KWARGS, label_type) == expectation
 

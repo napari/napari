@@ -2118,7 +2118,14 @@ def test_value():
 
 
 @pytest.mark.parametrize(
-    'position,view_direction,dims_displayed,world,scale,expected',
+    (
+        'position',
+        'view_direction',
+        'dims_displayed',
+        'world',
+        'scale',
+        'expected',
+    ),
     [
         ((0, 5, 15, 15), [0, 1, 0, 0], [1, 2, 3], False, (1, 1, 1, 1), 2),
         ((0, 5, 15, 15), [0, -1, 0, 0], [1, 2, 3], False, (1, 1, 1, 1), 0),

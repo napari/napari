@@ -53,7 +53,7 @@ def test_all_viewer_actions_are_accessible_via_shortcut(make_napari_viewer):
     _assert_shortcuts_exist_for_each_action(Viewer)
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail()
 def test_non_existing_bindings():
     """
     Those are condition tested in next unittest; but do not exists; this is
@@ -96,7 +96,7 @@ def test_viewer(make_napari_viewer):
     assert viewer.dims.ndisplay == 2
 
 
-@pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
+@pytest.mark.parametrize(('layer_class', 'data', 'ndim'), layer_test_data)
 def test_add_layer(make_napari_viewer, layer_class, data, ndim):
     viewer = make_napari_viewer()
     layer = add_layer_by_type(viewer, layer_class, data, visible=True)
@@ -117,7 +117,7 @@ layer_types = (
 )
 
 
-@pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
+@pytest.mark.parametrize(('layer_class', 'data', 'ndim'), layer_test_data)
 def test_all_layer_actions_are_accessible_via_shortcut(
     layer_class, data, ndim
 ):
@@ -129,7 +129,9 @@ def test_all_layer_actions_are_accessible_via_shortcut(
     _assert_shortcuts_exist_for_each_action(layer_class)
 
 
-@pytest.mark.parametrize('layer_class, a_unique_name, ndim', layer_test_data)
+@pytest.mark.parametrize(
+    ('layer_class', 'a_unique_name', 'ndim'), layer_test_data
+)
 def test_add_layer_magic_name(
     make_napari_viewer, layer_class, a_unique_name, ndim
 ):
@@ -214,7 +216,7 @@ def test_changing_theme(make_napari_viewer):
         viewer.theme = 'nonexistent_theme'
 
 
-@pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
+@pytest.mark.parametrize(('layer_class', 'data', 'ndim'), layer_test_data)
 def test_roll_transpose_update(make_napari_viewer, layer_class, data, ndim):
     """Check that transpose and roll preserve correct transform sequence."""
     viewer = make_napari_viewer()
@@ -337,7 +339,7 @@ def test_emitting_data_doesnt_change_points_value(make_napari_viewer):
     assert layer._value == 1
 
 
-@pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
+@pytest.mark.parametrize(('layer_class', 'data', 'ndim'), layer_test_data)
 def test_emitting_data_doesnt_change_cursor_position(
     make_napari_viewer, layer_class, data, ndim
 ):

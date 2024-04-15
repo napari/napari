@@ -29,17 +29,16 @@ REPEATED_PARTLY_NESTED_ITERABLE = [PARTLY_NESTED_ITERABLE] * 3
 
 
 @pytest.mark.parametrize(
-    'input_data, expected',
+    ('input_data', 'expected'),
     [
-        [ITERABLE, NESTED_ITERABLE],
-        [NESTED_ITERABLE, NESTED_ITERABLE],
-        [(ITERABLE, (2,), (3, 1, 6)), (ITERABLE, (2,), (3, 1, 6))],
-        [DICT, LIST_OF_DICTS],
-        [LIST_OF_DICTS, LIST_OF_DICTS],
-        [(ITERABLE, (2,), (3, 1, 6)), (ITERABLE, (2,), (3, 1, 6))],
-        [None, (None, None, None)],
-        [PARTLY_NESTED_ITERABLE, REPEATED_PARTLY_NESTED_ITERABLE],
-        [[], ([], [], [])],
+        (ITERABLE, NESTED_ITERABLE),
+        (NESTED_ITERABLE, NESTED_ITERABLE),
+        ((ITERABLE, (2,), (3, 1, 6)), (ITERABLE, (2,), (3, 1, 6))),
+        (DICT, LIST_OF_DICTS),
+        (LIST_OF_DICTS, LIST_OF_DICTS),
+        (None, (None, None, None)),
+        (PARTLY_NESTED_ITERABLE, REPEATED_PARTLY_NESTED_ITERABLE),
+        ([], ([], [], [])),
     ],
 )
 def test_sequence_of_iterables(input_data, expected):
@@ -72,20 +71,20 @@ def test_sequence_of_iterables_raises():
         ensure_sequence_of_iterables(((0, 1),), length=4)
 
     # BEWARE: only the first element of a nested sequence is checked.
+    iterable = (None, (0, 1), (0, 2))
+    result = iter(ensure_sequence_of_iterables(iterable))
     with pytest.raises(AssertionError):
-        iterable = (None, (0, 1), (0, 2))
-        result = iter(ensure_sequence_of_iterables(iterable))
         assert next(result) is None
 
 
 @pytest.mark.parametrize(
-    'input_data, expected',
+    ('input_data', 'expected'),
     [
-        [ITERABLE, ITERABLE],
-        [DICT, DICT],
-        [1, [1, 1, 1]],
-        ['foo', ['foo', 'foo', 'foo']],
-        [None, [None, None, None]],
+        (ITERABLE, ITERABLE),
+        (DICT, DICT),
+        (1, [1, 1, 1]),
+        ('foo', ['foo', 'foo', 'foo']),
+        (None, [None, None, None]),
     ],
 )
 def test_ensure_iterable(input_data, expected):
@@ -235,7 +234,7 @@ def test_is_array_type_with_xarray():
 
 
 @pytest.mark.parametrize(
-    'input_data, expected',
+    ('input_data', 'expected'),
     [
         ([([1, 10],)], [([1, 10],)]),
         ([([1, 10], {'name': 'hi'})], [([1, 10], {'name': 'hi'})]),

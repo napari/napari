@@ -496,7 +496,7 @@ def mocked_object():
 
 
 @pytest.mark.parametrize(
-    'attribute,value,expected_event_values',
+    ('attribute', 'value', 'expected_event_values'),
     [
         ('a', 5, {'a': 5, 'b': None, 'c': [5, 1], 'd': 6, 'e': 50}),
         ('b', 5, {'a': None, 'b': 5, 'c': [1, 5], 'd': 6, 'e': None}),

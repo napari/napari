@@ -623,7 +623,7 @@ def test_value():
 
 
 @pytest.mark.parametrize(
-    'position,view_direction,dims_displayed,world',
+    ('position', 'view_direction', 'dims_displayed', 'world'),
     [
         ((0, 0, 0), [1, 0, 0], [0, 1, 2], False),
         ((0, 0, 0), [1, 0, 0], [0, 1, 2], True),

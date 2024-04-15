@@ -177,7 +177,7 @@ def test_coerce_current_properties_invalid_values():
 
 
 @pytest.mark.parametrize(
-    'dims_displayed,ndim_world,ndim_layer,expected',
+    ('dims_displayed', 'ndim_world', 'ndim_layer', 'expected'),
     [
         ([1, 2, 3], 4, 4, [1, 2, 3]),
         ([0, 1, 2], 4, 4, [0, 1, 2]),
@@ -338,7 +338,7 @@ def test_feature_table_from_layer_with_properties_as_dataframe():
     pd.testing.assert_frame_equal(feature_table.values, TEST_FEATURES)
 
 
-@pytest.fixture
+@pytest.fixture()
 def feature_table():
     return _FeatureTable(TEST_FEATURES.copy(deep=True), num_data=4)
 

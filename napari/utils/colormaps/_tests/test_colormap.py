@@ -125,14 +125,14 @@ def test_mapped_shape(ndim):
 
 
 @pytest.mark.parametrize(
-    'num,dtype', [(40, np.uint8), (1000, np.uint16), (80000, np.float32)]
+    ('num', 'dtype'), [(40, np.uint8), (1000, np.uint16), (80000, np.float32)]
 )
 def test_minimum_dtype_for_labels(num, dtype):
     assert colormap.minimum_dtype_for_labels(num) == dtype
 
 
 @pytest.fixture()
-def disable_jit(monkeypatch):
+def _disable_jit(monkeypatch):
     pytest.importorskip('numba')
     with patch('numba.core.config.DISABLE_JIT', True):
         importlib.reload(colormap)
@@ -140,8 +140,8 @@ def disable_jit(monkeypatch):
     importlib.reload(colormap)  # revert to original state
 
 
-@pytest.mark.parametrize('num,dtype', [(40, np.uint8), (1000, np.uint16)])
-@pytest.mark.usefixtures('disable_jit')
+@pytest.mark.parametrize(('num', 'dtype'), [(40, np.uint8), (1000, np.uint16)])
+@pytest.mark.usefixtures('_disable_jit')
 def test_cast_labels_to_minimum_type_auto(num: int, dtype, monkeypatch):
     cmap = label_colormap(num)
     data = np.zeros(3, dtype=np.uint32)
@@ -154,7 +154,7 @@ def test_cast_labels_to_minimum_type_auto(num: int, dtype, monkeypatch):
     assert cast_arr[2] == 10**6 % num + 5
 
 
-@pytest.fixture
+@pytest.fixture()
 def direct_label_colormap():
     return DirectLabelColormap(
         color_dict={
@@ -210,7 +210,7 @@ def test_direct_label_colormap_selection(direct_label_colormap):
     assert len(color_dict) == 2
 
 
-@pytest.mark.usefixtures('disable_jit')
+@pytest.mark.usefixtures('_disable_jit')
 def test_cast_direct_labels_to_minimum_type(direct_label_colormap):
     data = np.arange(15, dtype=np.uint32)
     cast = colormap._labels_raw_to_texture_direct(data, direct_label_colormap)
@@ -243,9 +243,9 @@ def test_cast_direct_labels_to_minimum_type(direct_label_colormap):
 
 
 @pytest.mark.parametrize(
-    'num,dtype', [(40, np.uint8), (1000, np.uint16), (80000, np.float32)]
+    ('num', 'dtype'), [(40, np.uint8), (1000, np.uint16), (80000, np.float32)]
 )
-@pytest.mark.usefixtures('disable_jit')
+@pytest.mark.usefixtures('_disable_jit')
 def test_test_cast_direct_labels_to_minimum_type_no_jit(num, dtype):
     cmap = DirectLabelColormap(
         color_dict={
