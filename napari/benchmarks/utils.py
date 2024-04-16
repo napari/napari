@@ -1,12 +1,11 @@
 import itertools
 import os
+from collections.abc import Sequence
 from functools import lru_cache
 from typing import (
     Callable,
     Literal,
     Optional,
-    Sequence,
-    Tuple,
     Union,
     overload,
 )
@@ -75,7 +74,7 @@ def _generate_density(radius: int, ndim: int) -> np.ndarray:
 
 
 def _structure_at_coordinates(
-    shape: Tuple[int],
+    shape: tuple[int],
     coordinates: np.ndarray,
     structure: np.ndarray,
     *,
@@ -168,7 +167,7 @@ def labeled_particles(
     n: int = 144,
     seed: Optional[int] = None,
     return_density: Literal[True] = True,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]: ...
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]: ...
 
 
 @lru_cache
@@ -178,7 +177,7 @@ def labeled_particles(
     n: int = 144,
     seed: Optional[int] = None,
     return_density: bool = False,
-) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray, np.ndarray]]:
+) -> Union[np.ndarray, tuple[np.ndarray, np.ndarray, np.ndarray]]:
     """Generate labeled blobs of given shape and dtype.
 
     Parameters

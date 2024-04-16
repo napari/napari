@@ -117,9 +117,9 @@ def test_get_widget_contribution(mock_pm: 'TestPluginManager'):
 
 def test_populate_qmenu(mock_pm: 'TestPluginManager'):
     menu = MagicMock()
-    _npe2.populate_qmenu(menu, '/napari/layer_context')
-    assert menu.addMenu.called_once_with('My SubMenu')
-    assert menu.addAction.called_once_with('Hello World')
+    _npe2.populate_qmenu(menu, 'napari/layers/context')
+    menu.addMenu.assert_called_once_with('My SubMenu')
+    menu.addAction.assert_called_once_with('Hello World')
 
 
 def test_file_extensions_string_for_layers(mock_pm: 'TestPluginManager'):
@@ -175,7 +175,7 @@ def test_widget_iterator(mock_pm):
     assert wdgs == [('dock', (PLUGIN_NAME, ['My Widget']))]
 
 
-def test_plugin_actions(mock_pm: 'TestPluginManager'):
+def test_plugin_actions(_mock_app, mock_pm: 'TestPluginManager'):
     from napari._app_model import get_app
     from napari.plugins import _initialize_plugins
 

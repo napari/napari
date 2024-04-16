@@ -11,6 +11,7 @@ import os
 import re
 import sys
 import warnings
+from collections.abc import Iterable, Iterator, Sequence
 from enum import Enum, EnumMeta
 from os import fspath, path as os_path
 from pathlib import Path
@@ -18,14 +19,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
     Optional,
-    Sequence,
-    Tuple,
-    Type,
     TypeVar,
     Union,
 )
@@ -125,7 +119,7 @@ def in_python_repl() -> bool:
     return False
 
 
-def str_to_rgb(arg: str) -> List[int]:
+def str_to_rgb(arg: str) -> list[int]:
     """Convert an rgb string 'rgb(x,y,z)' to a list of ints [x,y,z]."""
     match = re.match(r'rgb\((\d+),\s*(\d+),\s*(\d+)\)', arg)
     if match is None:
@@ -134,7 +128,7 @@ def str_to_rgb(arg: str) -> List[int]:
 
 
 def ensure_iterable(
-    arg: Union[None, str, Enum, float, List, npt.NDArray], color: bool = False
+    arg: Union[None, str, Enum, float, list, npt.NDArray], color: bool = False
 ):
     """Ensure an argument is an iterable. Useful when an input argument
     can either be a single value or a list. If a color is passed then it
@@ -147,7 +141,7 @@ def ensure_iterable(
 
 
 def is_iterable(
-    arg: Union[None, str, Enum, float, List, npt.NDArray],
+    arg: Union[None, str, Enum, float, list, npt.NDArray],
     color: bool = False,
     allow_none: bool = False,
 ) -> bool:
@@ -155,8 +149,8 @@ def is_iterable(
     provided and the argument is a 1-D array of length 3 or 4 then the input
     is taken to not be iterable. If allow_none is True, `None` is considered iterable.
     """
-    if arg is None and not allow_none:
-        return False
+    if arg is None:
+        return allow_none
     if isinstance(arg, (str, Enum)):
         return False
     if np.isscalar(arg):
@@ -164,7 +158,7 @@ def is_iterable(
     if color and isinstance(arg, (list, np.ndarray)):
         return np.array(arg).ndim != 1 or len(arg) not in [3, 4]
 
-    return True
+    return isinstance(arg, collections.abc.Iterable)
 
 
 def is_sequence(arg: Any) -> bool:
@@ -315,7 +309,7 @@ class StringEnumMeta(EnumMeta):
             start=start,
         )
 
-    def keys(self) -> List[str]:
+    def keys(self) -> list[str]:
         return list(map(str, self))
 
 
@@ -425,7 +419,7 @@ class CallDefault(inspect.Parameter):
         return formatted
 
 
-def all_subclasses(cls: Type) -> set:
+def all_subclasses(cls: type) -> set:
     """Recursively find all subclasses of class ``cls``.
 
     Parameters
@@ -443,7 +437,7 @@ def all_subclasses(cls: Type) -> set:
     )
 
 
-def ensure_n_tuple(val: Iterable, n: int, fill: int = 0) -> Tuple:
+def ensure_n_tuple(val: Iterable, n: int, fill: int = 0) -> tuple:
     """Ensure input is a length n tuple.
 
     Parameters
@@ -463,7 +457,7 @@ def ensure_n_tuple(val: Iterable, n: int, fill: int = 0) -> Tuple:
     return (fill,) * (n - len(tuple_value)) + tuple_value[-n:]
 
 
-def ensure_layer_data_tuple(val: Tuple) -> Tuple:
+def ensure_layer_data_tuple(val: tuple) -> tuple:
     msg = trans._(
         'Not a valid layer data tuple: {value!r}',
         deferred=True,
@@ -479,7 +473,7 @@ def ensure_layer_data_tuple(val: Tuple) -> Tuple:
     return val
 
 
-def ensure_list_of_layer_data_tuple(val: List[Tuple]) -> List[tuple]:
+def ensure_list_of_layer_data_tuple(val: list[tuple]) -> list[tuple]:
     # allow empty list to be returned but do nothing in that case
     if isinstance(val, list):
         with contextlib.suppress(TypeError):
@@ -531,7 +525,7 @@ def pick_equality_operator(obj: Any) -> Callable[[Any, Any], bool]:
 
     # yes, it's a little riskier, but we are checking namespaces instead of
     # actual `issubclass` here to avoid slow import times
-    _known_arrays: Dict[str, Callable[[Any, Any], bool]] = {
+    _known_arrays: dict[str, Callable[[Any, Any], bool]] = {
         'numpy.ndarray': _quiet_array_equal,  # numpy.ndarray
         'dask.Array': operator.is_,  # dask.array.core.Array
         'dask.Delayed': operator.is_,  # dask.delayed.Delayed
@@ -731,7 +725,7 @@ def install_certifi_opener() -> None:
     request.install_opener(opener)
 
 
-def reorder_after_dim_reduction(order: Sequence[int]) -> Tuple[int, ...]:
+def reorder_after_dim_reduction(order: Sequence[int]) -> tuple[int, ...]:
     """Ensure current dimension order is preserved after dims are dropped.
 
     This is similar to :func:`scipy.stats.rankdata`, but only deals with
@@ -763,7 +757,7 @@ def reorder_after_dim_reduction(order: Sequence[int]) -> Tuple[int, ...]:
     return tuple(argsort(argsort(order)))
 
 
-def argsort(values: Sequence[int]) -> List[int]:
+def argsort(values: Sequence[int]) -> list[int]:
     """Equivalent to :func:`numpy.argsort` but faster in some cases.
 
     Parameters

@@ -3,12 +3,8 @@ from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Any,
-    DefaultDict,
-    Dict,
-    List,
     Literal,
     Optional,
-    Tuple,
     Union,
     cast,
     overload,
@@ -178,10 +174,10 @@ class LabelColormapBase(Colormap):
     interpolation: Literal[ColormapInterpolationMode.ZERO] = Field(
         ColormapInterpolationMode.ZERO, frozen=True
     )
-    _cache_mapping: Dict[Tuple[np.dtype, np.dtype], np.ndarray] = PrivateAttr(
+    _cache_mapping: dict[tuple[np.dtype, np.dtype], np.ndarray] = PrivateAttr(
         default={}
     )
-    _cache_other: Dict[str, Any] = PrivateAttr(default={})
+    _cache_other: dict[str, Any] = PrivateAttr(default={})
 
     class Config(Colormap.Config):
         # this config is to avoid deepcopy of cached_property
@@ -393,7 +389,7 @@ class DirectLabelColormap(LabelColormapBase):
         Exist because of implementation details. Please do not use it.
     """
 
-    color_dict: DefaultDict[Optional[int], np.ndarray] = Field(
+    color_dict: defaultdict[Optional[int], np.ndarray] = Field(
         default_factory=lambda: defaultdict(lambda: np.zeros(4))
     )
     use_selection: bool = False
@@ -555,7 +551,7 @@ class DirectLabelColormap(LabelColormapBase):
 
     def _values_mapping_to_minimum_values_set(
         self, apply_selection=True
-    ) -> Tuple[Dict[Optional[int], int], Dict[int, np.ndarray]]:
+    ) -> tuple[dict[Optional[int], int], dict[int, np.ndarray]]:
         """Create mapping from original values to minimum values set.
         To use minimum possible dtype for labels.
 
@@ -581,12 +577,12 @@ class DirectLabelColormap(LabelColormapBase):
     @cached_property
     def _label_mapping_and_color_dict(
         self,
-    ) -> Tuple[Dict[Optional[int], int], Dict[int, np.ndarray]]:
-        color_to_labels: Dict[Tuple[int, ...], List[Optional[int]]] = {}
-        labels_to_new_labels: Dict[Optional[int], int] = {
+    ) -> tuple[dict[Optional[int], int], dict[int, np.ndarray]]:
+        color_to_labels: dict[tuple[int, ...], list[Optional[int]]] = {}
+        labels_to_new_labels: dict[Optional[int], int] = {
             None: MAPPING_OF_UNKNOWN_VALUE
         }
-        new_color_dict: Dict[int, np.ndarray] = {
+        new_color_dict: dict[int, np.ndarray] = {
             MAPPING_OF_UNKNOWN_VALUE: self.default_color,
         }
 

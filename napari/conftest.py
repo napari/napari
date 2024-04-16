@@ -65,6 +65,12 @@ from napari.utils.misc import ROOT_DIR
 if TYPE_CHECKING:
     from npe2._pytest_plugin import TestPluginManager
 
+# touch ~/.Xauthority for Xlib support, must happen before importing pyautogui
+if os.getenv('CI') and sys.platform.startswith('linux'):
+    xauth = Path('~/.Xauthority').expanduser()
+    if not xauth.exists():
+        xauth.touch()
+
 
 @pytest.fixture
 def layer_data_and_types():
@@ -401,37 +407,6 @@ def single_threaded_executor():
     executor = ThreadPoolExecutor(max_workers=1)
     yield executor
     executor.shutdown()
-
-
-@pytest.fixture(autouse=True)
-def _mock_app():
-    """Mock clean 'test_app' `NapariApplication` instance.
-
-    This is used whenever `napari._app_model.get_app()` is called to return
-    a 'test_app' `NapariApplication` instead of the 'napari'
-    `NapariApplication`.
-
-    Note that `NapariApplication` registers app-model actions, providers and
-    processors. If this is not desired, please create a clean
-    `app_model.Application` in the test. It does not however, register Qt
-    related actions or providers or register plugins.
-    If these are required, the `make_napari_viewer` fixture can be used, which
-    will run both these function and automatically clear the lru cache.
-    Alternatively, you can specifically run `init_qactions()` or
-    `_initialize_plugins` within the test, ensuring that you `cache_clear()`
-    first.
-    """
-    from app_model import Application
-
-    from napari._app_model._app import NapariApplication, _napari_names
-
-    app = NapariApplication('test_app')
-    app.injection_store.namespace = _napari_names
-    with patch.object(NapariApplication, 'get_app', return_value=app):
-        try:
-            yield app
-        finally:
-            Application.destroy('test_app')
 
 
 def _get_calling_stack():  # pragma: no cover

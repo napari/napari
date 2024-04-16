@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 import numpy as np
+import numpy.typing as npt
 
 from napari.layers.base._slice import _next_request_id
 from napari.layers.points._points_constants import PointsProjectionMode
@@ -68,7 +69,7 @@ class _PointSliceRequest:
         # Return early if no data
         if len(self.data) == 0:
             return _PointSliceResponse(
-                indices=[],
+                indices=np.array([]),
                 scale=np.empty(0),
                 slice_input=self.slice_input,
                 request_id=self.id,
@@ -94,7 +95,7 @@ class _PointSliceRequest:
             request_id=self.id,
         )
 
-    def _get_slice_data(self, not_disp):
+    def _get_slice_data(self, not_disp: list[int]) -> tuple[npt.NDArray, int]:
         data = self.data[:, not_disp]
         scale = 1
 

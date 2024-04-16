@@ -6,19 +6,13 @@ import os
 import sys
 import warnings
 from collections import Counter
+from collections.abc import Iterator, Sequence
 from functools import lru_cache
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
-    Dict,
-    Iterator,
-    List,
     Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Type,
     Union,
     cast,
 )
@@ -123,7 +117,7 @@ EXCLUDE_DICT = {
     'mouse_wheel_callbacks',
 }
 EXCLUDE_JSON = EXCLUDE_DICT.union({'layers', 'active_layer'})
-
+Dict = dict  # rename, because ViewerModel has method dict
 
 __all__ = ['ViewerModel', 'valid_add_kwargs']
 
@@ -203,7 +197,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         default_factory=LayerList, allow_mutation=False
     )  # Need to create custom JSON encoder for layer!
     help: str = ''
-    status: Union[str, Dict] = 'Ready'
+    status: Union[str, dict] = 'Ready'
     tooltip: Tooltip = Field(default_factory=Tooltip, allow_mutation=False)
     theme: str = Field(default_factory=_current_theme)
     title: str = 'napari'
@@ -212,7 +206,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         default_factory=EventedDict
     )
     # 2-tuple indicating height and width
-    _canvas_size: Tuple[int, int] = (800, 600)
+    _canvas_size: tuple[int, int] = (800, 600)
     _ctx: Context
     # To check if mouse is over canvas to avoid race conditions between
     # different events systems
@@ -408,7 +402,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             -self.dims.ndisplay :
         ]
         center = cast(
-            Union[Tuple[float, float, float], Tuple[float, float]],
+            Union[tuple[float, float, float], tuple[float, float]],
             tuple(
                 [0.0] * (self.dims.ndisplay - len(center_array))
                 + list(center_array)
@@ -702,7 +696,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         """
         Update layer help text base on layer mode.
         """
-        layer_to_func_and_mode: Dict[Type[Layer], List] = {
+        layer_to_func_and_mode: dict[type[Layer], list] = {
             Points: points_fun_to_mode,
             Labels: labels_fun_to_mode,
             Shapes: shapes_fun_to_mode,
@@ -820,7 +814,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         shear=None,
         translate=None,
         visible=True,
-    ) -> Union[Image, List[Image]]:
+    ) -> Union[Image, list[Image]]:
         """Add one or more Image layers to the layer list.
 
         Parameters
@@ -1029,7 +1023,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         sample: str,
         reader_plugin: Optional[str] = None,
         **kwargs,
-    ) -> List[Layer]:
+    ) -> list[Layer]:
         """Open `sample` from `plugin` and add it to the viewer.
 
         To see all available samples registered by plugins, use
@@ -1150,11 +1144,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self,
         path: PathOrPaths,
         *,
-        stack: Union[bool, List[List[PathLike]]] = False,
+        stack: Union[bool, list[list[PathLike]]] = False,
         plugin: Optional[str] = 'napari',
         layer_type: Optional[LayerTypeName] = None,
         **kwargs,
-    ) -> List[Layer]:
+    ) -> list[Layer]:
         """Open a path or list of paths with plugins, and add layers to viewer.
 
         A list of paths will be handed one-by-one to the napari_get_reader hook
@@ -1203,7 +1197,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             )
             plugin = 'napari'
 
-        paths_: List[PathLike] = (
+        paths_: list[PathLike] = (
             [os.fspath(path)]
             if isinstance(path, (Path, str))
             else [os.fspath(p) for p in path]
@@ -1218,7 +1212,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             paths = [paths_]
             paths.extend(stack)
 
-        added: List[Layer] = []  # for layers that get added
+        added: list[Layer] = []  # for layers that get added
         with progress(
             paths,
             desc=trans._('Opening Files'),
@@ -1252,7 +1246,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def _open_or_raise_error(
         self,
-        paths: List[Union[Path, str]],
+        paths: list[Union[Path, str]],
         kwargs: Optional[Dict[str, Any]] = None,
         layer_type: Optional[LayerTypeName] = None,
         stack: bool = False,
@@ -1378,13 +1372,13 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def _add_layers_with_plugins(
         self,
-        paths: List[PathLike],
+        paths: list[PathLike],
         *,
         stack: bool,
         kwargs: Optional[Dict] = None,
         plugin: Optional[str] = None,
         layer_type: Optional[LayerTypeName] = None,
-    ) -> List[Layer]:
+    ) -> list[Layer]:
         """Load a path or a list of paths into the viewer using plugins.
 
         This function is mostly called from self.open_path, where the ``stack``
@@ -1452,7 +1446,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             filenames = itertools.repeat(paths[0])
 
         # add each layer to the viewer
-        added: List[Layer] = []  # for layers that get added
+        added: list[Layer] = []  # for layers that get added
         plugin = hookimpl.plugin_name if hookimpl else None
         for data, filename in zip(layer_data, filenames):
             basename, _ext = os.path.splitext(os.path.basename(filename))
@@ -1469,7 +1463,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         data,
         meta: Optional[Dict[str, Any]] = None,
         layer_type: Optional[str] = None,
-    ) -> List[Layer]:
+    ) -> list[Layer]:
         """Add arbitrary layer data to the viewer.
 
         Primarily intended for usage by reader plugin hooks.
@@ -1664,7 +1658,7 @@ def _unify_data_and_user_kwargs(
     return (_data, _meta, _type)
 
 
-def prune_kwargs(kwargs: Dict[str, Any], layer_type: str) -> Dict[str, Any]:
+def prune_kwargs(kwargs: dict[str, Any], layer_type: str) -> dict[str, Any]:
     """Return copy of ``kwargs`` with only keys valid for ``add_<layer_type>``
 
     Parameters
@@ -1717,7 +1711,7 @@ def prune_kwargs(kwargs: Dict[str, Any], layer_type: str) -> Dict[str, Any]:
 
 
 @lru_cache(maxsize=1)
-def valid_add_kwargs() -> Dict[str, Set[str]]:
+def valid_add_kwargs() -> dict[str, set[str]]:
     """Return a dict where keys are layer types & values are valid kwargs."""
     valid = {}
     for meth in dir(ViewerModel):
@@ -1736,5 +1730,5 @@ for _layer in (
     layers.Tracks,
     layers.Vectors,
 ):
-    func = create_add_method(_layer, filename=__file__)
+    func = create_add_method(_layer)
     setattr(ViewerModel, func.__name__, func)
