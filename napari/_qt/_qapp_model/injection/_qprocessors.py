@@ -38,11 +38,11 @@ def _add_plugin_dock_widget(
 
 
 def _add_layer_data_tuples_to_viewer(
-    data: Union[types.LayerDataTuple, list[types.LayerDataTuple]],
-    return_type=None,
-    viewer=None,
+    data: list[tuple],
+    return_type: Optional[Any] = None,
+    viewer: Optional[viewer.Viewer] = None,
     source: Optional[dict] = None,
-):
+) -> None:
     from napari.utils.misc import ensure_list_of_layer_data_tuple
 
     if viewer is None:
@@ -69,7 +69,7 @@ def _add_layer_data_to_viewer(
     viewer: Optional[viewer.Viewer] = None,
     layer_name: Optional[str] = None,
     source: Optional[dict] = None,
-):
+) -> None:
     """Show a result in the viewer.
 
     Parameters
@@ -119,7 +119,7 @@ def _add_layer_to_viewer(
     layer: layers.Layer,
     viewer: Optional[viewer.Viewer] = None,
     source: Optional[dict] = None,
-):
+) -> None:
     if layer is not None and (viewer := viewer or _provide_viewer()):
         layer._source = layer.source.copy(update=source or {})
         viewer.add_layer(layer)
@@ -132,10 +132,10 @@ _FUTURES: set[Future] = set()
 def _add_future_data(
     future: Future,
     return_type: Any,
-    _from_tuple=True,
+    _from_tuple: bool = True,
     viewer: Optional[viewer.Viewer] = None,
     source: Optional[dict] = None,
-):
+) -> None:
     """Process a Future object.
 
     This function will be called to process function that has a
