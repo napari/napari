@@ -38,7 +38,7 @@ def _add_plugin_dock_widget(
 
 
 def _add_layer_data_tuples_to_viewer(
-    data: list[tuple],
+    data: Union[tuple, list[tuple]],
     return_type: Optional[Any] = None,
     viewer: Optional[viewer.Viewer] = None,
     source: Optional[dict] = None,
@@ -166,7 +166,7 @@ def _add_future_data(
         'source': source,
     }
 
-    def _on_future_ready(f: Future):
+    def _on_future_ready(f: Future) -> None:
         if _from_tuple:
             _add_layer_data_tuples_to_viewer(f.result(), **add_kwargs)
         else:
