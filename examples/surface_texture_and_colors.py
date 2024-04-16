@@ -42,6 +42,7 @@ flat_spot = napari.layers.Surface(
 np.random.seed(0)
 plasma_spot = napari.layers.Surface(
     (vertices, faces, np.random.random((3, 3, n))),
+    translate=(0, 0, 0),
     texture=texture,
     texcoords=texcoords,
     colormap='plasma',
