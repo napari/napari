@@ -1670,5 +1670,5 @@ for _layer in (
     layers.Tracks,
     layers.Vectors,
 ):
-    func = create_add_method(_layer, filename=__file__)
+    func = create_add_method(_layer)
     setattr(ViewerModel, func.__name__, func)
