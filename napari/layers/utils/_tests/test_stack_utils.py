@@ -176,7 +176,7 @@ def test_images_to_stack_none_scale():
     ids=['full-kwargs', 'partial-kwargs', 'empty-kwargs'],
 )
 def kwargs(request):
-    return request.param
+    return dict(request.param)
 
 
 def test_split_channels(kwargs):
