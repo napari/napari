@@ -1,6 +1,5 @@
 import os
 import runpy
-import subprocess
 import sys
 from pathlib import Path
 
@@ -52,10 +51,11 @@ if os.getenv('CI') and os.name == 'nt' and API_NAME == 'PyQt5':
 if os.getenv('CI') and os.name == 'nt' and 'to_screenshot.py' in examples:
     examples.remove('to_screenshot.py')
 
+all_examples = examples + dev_examples
 
 @pytest.mark.filterwarnings('ignore')
-@pytest.mark.skipif(not examples, reason='No examples were found.')
-@pytest.mark.parametrize('fname', examples)
+@pytest.mark.skipif(not all_examples, reason='No examples were found.')
+@pytest.mark.parametrize('fname', all_examples)
 def test_examples(builtins, fname, monkeypatch):
     """Test that all of our examples are still working without warnings."""
 
@@ -87,25 +87,3 @@ def test_examples(builtins, fname, monkeypatch):
             raise
     finally:
         napari.Viewer.close_all()
-
-
-class ExampleError(Exception):
-    """Exception for when a dev example fails."""
-
-    def __init__(self, stderr):
-        self.stderr = stderr
-        super().__init__(f'Dev example failed with:\n{stderr}')
-
-@pytest.mark.filterwarnings('ignore')
-@pytest.mark.skipif(not dev_examples, reason='No examples were found.')
-@pytest.mark.parametrize('fname', dev_examples)
-def test_dev_examples(builtins, fname, monkeypatch):
-    """Test that dev examples are still working without warnings."""
-    script_path = str(DEV_EXAMPLE_DIR / fname)
-    # run the example!
-    # use subprocess.run to ensure code under
-    # if __name__ == "__main__":
-    # is tested
-    result = subprocess.run(['python', script_path], capture_output=True, text=True)
-    if result.returncode != 0:
-        raise ExampleError(result.stderr)

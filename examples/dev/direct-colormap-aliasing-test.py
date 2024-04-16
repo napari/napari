@@ -1,4 +1,3 @@
-import os
 
 import matplotlib
 import numpy as np
@@ -78,6 +77,5 @@ labels_layer_ordered.color = colormap_ordered
 # TMP debugging stuff
 vlab = viewer.window._qt_viewer.layer_to_visual[viewer.layers[-1]]
 
-
-if 'PYTEST_CURRENT_TEST' not in os.environ:
+if __name__ == '__main__':
     napari.run()

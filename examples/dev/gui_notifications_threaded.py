@@ -1,4 +1,3 @@
-import os
 import time
 import warnings
 
@@ -26,6 +25,5 @@ warn_btn = QtViewerPushButton(None, 'warning', 'new Warn', make_warning)
 layer_buttons.layout().insertWidget(3, warn_btn)
 layer_buttons.layout().insertWidget(3, err_btn)
 
-
-if 'PYTEST_CURRENT_TEST' not in os.environ:
+if __name__ == '__main__':
     napari.run()
