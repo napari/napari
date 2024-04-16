@@ -11,6 +11,7 @@ from app_model.types import (
     KeyCode,
     KeyMod,
     StandardKeyBinding,
+    SubmenuItem,
     ToggleRule,
 )
 
@@ -195,3 +196,16 @@ for cmd, cmd_title, viewer_attr, sub_attr in toggle_action_details:
             menus=[{'id': MENUID_DICT[viewer_attr]}],
         )
     )
+
+
+# view submenus
+VIEW_SUBMENUS = [
+    (
+        MenuId.MENUBAR_VIEW,
+        SubmenuItem(submenu=MenuId.VIEW_AXES, title=trans._('Axes')),
+    ),
+    (
+        MenuId.MENUBAR_VIEW,
+        SubmenuItem(submenu=MenuId.VIEW_SCALEBAR, title=trans._('Scale Bar')),
+    ),
+]

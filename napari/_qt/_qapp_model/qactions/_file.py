@@ -1,7 +1,13 @@
 import sys
 from pathlib import Path
 
-from app_model.types import Action, KeyCode, KeyMod, StandardKeyBinding
+from app_model.types import (
+    Action,
+    KeyCode,
+    KeyMod,
+    StandardKeyBinding,
+    SubmenuItem,
+)
 
 from napari._app_model.constants import MenuGroup, MenuId
 from napari._app_model.context import (
@@ -192,5 +198,28 @@ Q_FILE_ACTIONS: list[Action] = [
         callback=_close_app,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.CLOSE}],
         keybindings=[StandardKeyBinding.Quit],
+    ),
+]
+
+
+# file submenus
+FILE_SUBMENUS = [
+    (
+        MenuId.MENUBAR_FILE,
+        SubmenuItem(
+            submenu=MenuId.FILE_OPEN_WITH_PLUGIN,
+            title=trans._('Open with Plugin'),
+            group=MenuGroup.NAVIGATION,
+            order=99,
+        ),
+    ),
+    (
+        MenuId.MENUBAR_FILE,
+        SubmenuItem(
+            submenu=MenuId.FILE_SAMPLES,
+            title=trans._('Open Sample'),
+            group=MenuGroup.NAVIGATION,
+            order=100,
+        ),
     ),
 ]

@@ -5,7 +5,6 @@ from itertools import chain
 
 from app_model import Application
 
-from napari._app_model._submenus import SUBMENUS
 from napari._app_model.actions._help_actions import HELP_ACTIONS
 from napari._app_model.actions._layer_actions import LAYER_ACTIONS
 from napari._app_model.injection._processors import PROCESSORS
@@ -30,10 +29,7 @@ class NapariApplication(Application):
             providers=PROVIDERS, processors=PROCESSORS
         )
 
-        for action in chain(HELP_ACTIONS, LAYER_ACTIONS):
-            self.register_action(action)
-
-        self.menus.append_menu_items(SUBMENUS)
+        self.register_actions(chain(HELP_ACTIONS, LAYER_ACTIONS))
 
     @classmethod
     def get_app(cls, app_name: str = APP_NAME) -> NapariApplication:
