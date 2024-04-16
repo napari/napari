@@ -23,6 +23,11 @@ from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.layers.utils._text_constants import Anchor
 from napari.layers.utils.color_encoding import ConstantColorEncoding
 from napari.layers.utils.color_manager import ColorProperties
+from napari.utils._test_utils import (
+    validate_all_params_in_docstring,
+    validate_docstring_parent_class_consistency,
+    validate_kwargs_sorted,
+)
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.transforms import CompositeAffine
 
@@ -2638,3 +2643,9 @@ def test_events_callback(old_name, new_name, value):
 
     new_name_callback.assert_called_once()
     old_name_callback.assert_called_once()
+
+
+def test_docstring():
+    validate_all_params_in_docstring(Points)
+    validate_kwargs_sorted(Points)
+    validate_docstring_parent_class_consistency(Points)
