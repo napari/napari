@@ -309,7 +309,6 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"napari/__main__.py" = ["T20"]
 "napari/_vispy/__init__.py" = ["E402"]
 "**/_tests/*.py" = ["B011", "INP001", "TRY301", "B018", "RUF012"]
 "napari/utils/_testsupport.py" = ["B011"]
