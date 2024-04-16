@@ -83,5 +83,5 @@ def test_prune_kwargs(label_type, expectation):
 
 
 def test_prune_kwargs_raises():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Invalid layer_type'):
         prune_kwargs({}, 'nonexistent_layer_type')

@@ -1,5 +1,6 @@
 import pytest
 
+from napari._pydantic_compat import ValidationError
 from napari.components import Dims
 from napari.components.dims import (
     ensure_axis_in_bounds,
@@ -57,7 +58,7 @@ def test_labels_with_init():
 
 def test_bad_order():
     dims = Dims(ndim=3)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         dims.order = (0, 0, 1)
 
 
@@ -76,11 +77,11 @@ def test_sanitize_input_setters():
     dims = Dims()
 
     # axis out of range
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='not defined for dimensionality'):
         dims._sanitize_input(axis=2, value=3)
 
     # one value
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='cannot set multiple values'):
         dims._sanitize_input(axis=0, value=(1, 2, 3))
     ax, val = dims._sanitize_input(
         axis=0, value=(1, 2, 3), value_is_sequence=True
@@ -139,10 +140,10 @@ def test_point_variable_step_size():
     assert dims.point == (0, 0, 6)
 
     # mismatched len(axis) vs. len(value)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must have equal length'):
         dims.set_point((0, 1), (0, 0, 0))
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must have equal length'):
         dims.set_current_step((0, 1), (0, 0, 0))
 
 
@@ -157,13 +158,13 @@ def test_range():
     assert dims.range == ((0, 2, 1),) * 3 + ((0, 4, 2),)
 
     # start must be lower than stop
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         dims.set_range(0, (1, 0, 1))
 
     # step must be positive
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         dims.set_range(0, (0, 2, 0))
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         dims.set_range(0, (0, 2, -1))
 
 
@@ -185,12 +186,12 @@ def test_range_set_multiple():
     dims.set_range(axis=(3, 0), _range=[(0, 4, 1), (0, 6, 1)])
     assert dims.range == ((0, 6, 1),) + ((0, 5, 1),) * 2 + ((0, 4, 1),)
 
-    # out of range axis raises a ValueError
-    with pytest.raises(ValueError):
+    # out of range axis raises a ValidationError
+    with pytest.raises(ValueError, match='not defined for dimensionality'):
         dims.set_range((dims.ndim, 0), [(0.0, 4.0, 1.0)] * 2)
 
     # sequence lengths for axis and _range do not match
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must have equal length'):
         dims.set_range((0, 1), [(0.0, 4.0, 1.0)] * 3)
 
 
@@ -205,7 +206,7 @@ def test_axis_labels():
     assert dims.axis_labels == ('t', 'c', '2', 'last')
 
     # mismatched len(axis) vs. len(value)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must have equal length'):
         dims.set_point((0, 1), ('x', 'y', 'z'))
 
 
@@ -248,7 +249,7 @@ def test_assert_axis_in_bounds(ndim, ax_input, expected):
 
 @pytest.mark.parametrize(('ndim', 'ax_input'), [(2, 2), (2, -3)])
 def test_assert_axis_out_of_bounds(ndim, ax_input):
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='not defined for dimensionality'):
         ensure_axis_in_bounds(ax_input, ndim)
 
 

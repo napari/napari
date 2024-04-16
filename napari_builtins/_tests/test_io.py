@@ -57,9 +57,8 @@ def write_spec(tmp_path: Path):
 
 
 def test_no_files_raises(tmp_path):
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(ValueError, match='No files found in'):
         magic_imread(tmp_path)
-    assert 'No files found in' in str(e.value)
 
 
 def test_guess_zarr_path():
@@ -177,7 +176,7 @@ def test_read_csv_raises(tmp_path):
     assert read_csv(temp, require_type=None)[2] == 'points'
     assert read_csv(temp, require_type='any')[2] == 'points'
     assert read_csv(temp, require_type='points')[2] == 'points'
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='not recognized as'):
         read_csv(temp, require_type='shapes')
 
     # test that unrecognized data is detected with require_type = None
@@ -187,11 +186,11 @@ def test_read_csv_raises(tmp_path):
     with open(temp, mode='w', newline='') as csvfile:
         csv.writer(csvfile).writerows(data)
     assert read_csv(temp, require_type=None)[2] is None
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='not recognized as'):
         assert read_csv(temp, require_type='any')
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='not recognized as'):
         assert read_csv(temp, require_type='points')
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='not recognized as'):
         read_csv(temp, require_type='shapes')
 
 
@@ -208,7 +207,7 @@ def test_csv_to_layer_data_raises(tmp_path):
     assert csv_to_layer_data(temp, require_type=None)[2] == 'points'
     assert csv_to_layer_data(temp, require_type='any')[2] == 'points'
     assert csv_to_layer_data(temp, require_type='points')[2] == 'points'
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='not recognized as'):
         csv_to_layer_data(temp, require_type='shapes')
 
     # test that unrecognized data simply returns None when require_type==None
@@ -218,11 +217,11 @@ def test_csv_to_layer_data_raises(tmp_path):
     with open(temp, mode='w', newline='') as csvfile:
         csv.writer(csvfile).writerows(data)
     assert csv_to_layer_data(temp, require_type=None) is None
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='not recognized as'):
         assert csv_to_layer_data(temp, require_type='any')
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='not recognized as'):
         assert csv_to_layer_data(temp, require_type='points')
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='not recognized as'):
         csv_to_layer_data(temp, require_type='shapes')
 
 

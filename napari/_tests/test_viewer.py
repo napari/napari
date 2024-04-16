@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 from napari import Viewer, layers
+from napari._pydantic_compat import ValidationError
 from napari._tests.utils import (
     add_layer_by_type,
     check_view_transform_consistency,
@@ -212,7 +213,7 @@ def test_changing_theme(make_napari_viewer):
     # more than 99.5% of the pixels have changed
     assert (np.count_nonzero(equal) / equal.size) < 0.05, 'Themes too similar'
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         viewer.theme = 'nonexistent_theme'
 
 

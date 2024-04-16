@@ -6,6 +6,7 @@ import numpy as np
 import numpy.testing as npt
 import pytest
 
+from napari._pydantic_compat import ValidationError
 from napari.utils.color import ColorArray
 from napari.utils.colormaps import Colormap, colormap
 from napari.utils.colormaps.colormap import (
@@ -45,7 +46,7 @@ def test_non_ascending_control_points():
     colors = np.array(
         [[0, 0, 0, 1], [0, 0.5, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]]
     )
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         Colormap(colors, name='testing', controls=[0, 0.75, 0.25, 1])
 
 
@@ -54,21 +55,21 @@ def test_wrong_number_control_points():
     colors = np.array(
         [[0, 0, 0, 1], [0, 0.5, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]]
     )
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         Colormap(colors, name='testing', controls=[0, 0.75, 1])
 
 
 def test_wrong_start_control_point():
     """Test wrong start of control points raises an error."""
     colors = np.array([[0, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]])
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         Colormap(colors, name='testing', controls=[0.1, 0.75, 1])
 
 
 def test_wrong_end_control_point():
     """Test wrong end of control points raises an error."""
     colors = np.array([[0, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]])
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         Colormap(colors, name='testing', controls=[0, 0.75, 0.9])
 
 

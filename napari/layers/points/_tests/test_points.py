@@ -595,7 +595,7 @@ def test_changing_modes():
     assert layer.mode == 'pan_zoom'
     assert layer.mouse_pan is True
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='not a valid Mode'):
         layer.mode = 'not_a_mode'
 
 
@@ -977,7 +977,7 @@ def test_points_errors():
     annotations = {'point_type': np.array(['A', 'B'])}
 
     # try adding properties with the wrong number of properties
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='does not match length'):
         Points(data, properties=copy(annotations))
 
 
@@ -993,7 +993,7 @@ def test_border_width():
     np.testing.assert_array_equal(layer.border_width, 0.5)
 
     # fail outside of range 0, 1 if relative is enabled (default)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must be between 0 and 1'):
         layer.border_width = 2
 
     layer.border_width_is_relative = False
@@ -1001,14 +1001,14 @@ def test_border_width():
     np.testing.assert_array_equal(layer.border_width, 2)
 
     # fail if we try to come back again
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='between 0 and 1'):
         layer.border_width_is_relative = True
 
     # all should work on instantiation too
     layer = Points(data, border_width=3, border_width_is_relative=False)
     np.testing.assert_array_equal(layer.border_width, 3)
     assert layer.border_width_is_relative is False
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must be > 0'):
         layer.border_width = -2
 
 
@@ -1036,7 +1036,7 @@ def test_border_width_types_negative(border_width):
     shape = (5, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must be > 0'):
         Points(data, border_width=border_width, border_width_is_relative=False)
 
 
@@ -1135,7 +1135,7 @@ def test_colormap_without_properties(attribute):
     data = 20 * np.random.random(shape)
     layer = Points(data)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must be a valid Points.properties'):
         setattr(layer, f'{attribute}_color_mode', 'colormap')
 
 
@@ -1539,7 +1539,7 @@ def test_size_with_arrays(ndim):
 
     # Un-broadcastable array should raise an exception
     sizes = [5, 5]
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='not compatible for broadcasting'):
         layer.size = sizes
 
     # Create new layer with new size array data
@@ -1863,7 +1863,7 @@ def test_scale_init():
     layer2 = Points([])
     assert layer2.ndim == 2
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='dimensions must be equal to ndim'):
         Points([[1, 1, 1]], scale=(1, 1, 1, 1))
 
 
@@ -2286,7 +2286,7 @@ def test_set_properties_with_invalid_shape_errors_safely():
     np.testing.assert_equal(points.properties, properties)
     np.testing.assert_array_equal(points.text.values, ['A', 'B', 'C'])
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='does not match length'):
         points.properties = {'class': np.array(['D', 'E'])}
 
     np.testing.assert_equal(points.properties, properties)

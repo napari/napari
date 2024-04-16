@@ -61,12 +61,12 @@ def test_sequence_of_iterables_allow_none():
 
 def test_sequence_of_iterables_no_repeat_empty():
     assert ensure_sequence_of_iterables([], repeat_empty=False) == []
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must equal'):
         ensure_sequence_of_iterables([], repeat_empty=False, length=3)
 
 
 def test_sequence_of_iterables_raises():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must equal'):
         # the length argument asserts a specific length
         ensure_sequence_of_iterables(((0, 1),), length=4)
 
@@ -116,7 +116,7 @@ def test_string_enum():
     assert TestEnum['tHiNg'] == TestEnum.THING
 
     # test setting by value with incorrect value
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='not a valid'):
         TestEnum('NotAThing')
 
     # test  setting by name with incorrect name
@@ -134,7 +134,7 @@ def test_string_enum():
         SOMETHING = auto()
 
     #  test setting by instance of a different StringEnum is an error
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='may only be called with'):
         TestEnum(OtherEnum.SOMETHING)
 
     # test string conversion
@@ -255,7 +255,7 @@ def test_ensure_list_of_layer_data_tuple(input_data, expected):
 
 
 @pytest.mark.parametrize(
-    'data,expected',
+    ('data', 'expected'),
     [
         (1, False),
         (1.0, False),

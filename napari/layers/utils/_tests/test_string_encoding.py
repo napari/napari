@@ -117,7 +117,7 @@ def test_format(features):
 
 def test_format_with_bad_string(features):
     encoding = FormatStringEncoding(format='{class}: {confidence:.2f')
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='unmatched'):
         encoding(features)
 
 

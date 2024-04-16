@@ -39,7 +39,7 @@ def test_read(mock_pm: 'TestPluginManager'):
     _, hookimpl = _npe2.read(['some.fzzy'], stack=True)
     mock_pm.commands.get.assert_called_once_with(f'{PLUGIN_NAME}.some_reader')
     mock_pm.commands.get.reset_mock()
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='No compatible readers'):
         _npe2.read(['some.randomext'], stack=False)
     mock_pm.commands.get.assert_not_called()
 
@@ -63,7 +63,7 @@ def test_read(mock_pm: 'TestPluginManager'):
     reason='Older versions of npe2 do not throw specific error.',
 )
 def test_read_with_plugin_failure(mock_pm: 'TestPluginManager'):
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='is not a compatible reader'):
         _npe2.read(['some.randomext'], stack=True, plugin=PLUGIN_NAME)
 
 

@@ -172,7 +172,7 @@ def test_coerce_current_properties_invalid_values():
         'model': np.array(['best', 'best_v2_final']),
     }
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='should have length 1'):
         _ = coerce_current_properties(current_properties)
 
 
@@ -449,14 +449,18 @@ def test_feature_table_set_defaults_with_same_columns(feature_table):
 def test_feature_table_set_defaults_with_extra_column(feature_table):
     defaults = {'class': 'building', 'confidence': 0, 'cat': 'kermit'}
     assert 'cat' not in feature_table.values.columns
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match='extra columns not in feature values'
+    ):
         feature_table.set_defaults(defaults)
 
 
 def test_feature_table_set_defaults_with_missing_column(feature_table):
     defaults = {'class': 'building'}
     assert len(feature_table.values.columns) > 1
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match='missing some columns in feature values'
+    ):
         feature_table.set_defaults(defaults)
 
 

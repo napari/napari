@@ -318,7 +318,7 @@ def test_nested_events(meth, group_index):
     if method_name == 'index' and group_index == (1, 1, 1):
         # the expected value of '110' (in the pytest parameters)
         # is not present in any child of ne_list[1, 1, 1]
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match='is not in list'):
             method(*args)
     else:
         # make sure we can call the method without error

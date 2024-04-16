@@ -304,10 +304,10 @@ def test_get_settings(tmp_path):
 def test_get_settings_fails(monkeypatch, tmp_path):
     p = f'{tmp_path}.yaml'
     settings.get_settings(p)
-    with pytest.raises(Exception) as e:
+    with pytest.raises(
+        RuntimeError, match='The path can only be set once per session'
+    ):
         settings.get_settings(p)
-
-    assert 'The path can only be set once per session' in str(e)
 
 
 def test_first_time():
@@ -328,7 +328,7 @@ def test_no_save_path():
     s = NapariSettings(config_path=None)
     assert s.config_path is None
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='No path provided'):
         # the original `save()` method is patched in conftest._fresh_settings
         # so we "unmock" it here to assert the failure
         NapariSettings.__original_save__(s)  # type: ignore

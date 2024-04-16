@@ -58,7 +58,7 @@ def test_no_data_vectors_with_ndim():
 def test_incompatible_ndim_vectors():
     """Test instantiating Vectors layer with ndim argument incompatible with data"""
     data = np.empty((0, 2, 2))
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must be equal to ndim'):
         Vectors(data, ndim=3)
 
 
@@ -273,7 +273,7 @@ def test_adding_properties():
 
     # adding properties with the wrong length should raise an exception
     bad_properties = {'vector_type': np.array(['A', 'B'])}
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='does not match length'):
         layer.properties = bad_properties
 
 
@@ -386,7 +386,7 @@ def test_invalid_edge_color():
     data[:, 0, :] = 20 * data[:, 0, :]
     layer = Vectors(data)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='should be the name of a color'):
         layer.edge_color = 5
 
 
@@ -563,10 +563,10 @@ def test_properties_color_mode_without_properties():
     layer = Vectors(data)
     assert layer.properties == {}
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must be a valid Points.properties'):
         layer.edge_color_mode = 'colormap'
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must be a valid Points.properties'):
         layer.edge_color_mode = 'cycle'
 
 
