@@ -51,14 +51,8 @@ if os.getenv('CI') and os.name == 'nt' and API_NAME == 'PyQt5':
 if os.getenv('CI') and os.name == 'nt' and 'to_screenshot.py' in examples:
     examples.remove('to_screenshot.py')
 
-all_examples = examples + dev_examples
-
-@pytest.mark.filterwarnings('ignore')
-@pytest.mark.skipif(not all_examples, reason='No examples were found.')
-@pytest.mark.parametrize('fname', all_examples)
-def test_examples(builtins, fname, monkeypatch):
-    """Test that all of our examples are still working without warnings."""
-
+@pytest.fixture()
+def _example_monkeypatch(monkeypatch):
     # hide viewer window
     monkeypatch.setattr(Window, 'show', lambda *a: None)
     # prevent running the event loop
@@ -76,14 +70,31 @@ def test_examples(builtins, fname, monkeypatch):
 
     monkeypatch.setattr(notification_manager, 'receive_error', raise_errors)
 
-    # run the example!
-    # Note: runpy.run_path() does not test anything under
-    # if __name__ == "__main__":
+
+def _run_example(example_path):
     try:
-        runpy.run_path(str(EXAMPLE_DIR / fname))
+        runpy.run_path(example_path)
     except SystemExit as e:
         # we use sys.exit(0) to gracefully exit from examples
         if e.code != 0:
             raise
     finally:
         napari.Viewer.close_all()
+
+
+@pytest.mark.usefixtures('_example_monkeypatch')
+@pytest.mark.filterwarnings('ignore')
+@pytest.mark.skipif(not examples, reason='No examples were found.')
+@pytest.mark.parametrize('fname', examples)
+def test_examples(builtins, fname, monkeypatch):
+    """Test that all of our examples are still working without warnings."""
+    _run_example(str(EXAMPLE_DIR / fname))
+
+
+@pytest.mark.usefixtures('_example_monkeypatch')
+@pytest.mark.filterwarnings('ignore')
+@pytest.mark.skipif(not dev_examples, reason='No dev examples were found.')
+@pytest.mark.parametrize('fname', dev_examples)
+def test_dev_examples(fname, monkeypatch):
+    """Test that all of our dev examples are still working without warnings."""
+    _run_example(str(DEV_EXAMPLE_DIR / fname))
