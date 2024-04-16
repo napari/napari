@@ -63,7 +63,6 @@ def test_disable_throttle(start_mock):
     mock.assert_called_once()
 
 
-@pytest.mark.usefixtures('_active_mock')
 @patch('qtpy.QtCore.QTimer.start')
 @patch('qtpy.QtCore.QTimer.isActive', return_value=True)
 def test_lack_disable_throttle(start_mock, monkeypatch):
