@@ -423,8 +423,8 @@ def test_contrast_limits_range():
     # contrast_limits defaults to [0, 1]
     data = np.zeros((10, 15))
     layer = Image(data)
-    assert layer.contrast_limits_range == [-1, 1]
-    assert layer.contrast_limits == [-1.0, 1.0]
+    assert layer.contrast_limits_range == [0, 1]
+    assert layer.contrast_limits == [0.0, 1.0]
 
 
 def test_set_contrast_limits_range():

@@ -36,12 +36,12 @@ def test_calc_data_range():
     # all zeros should return [0, 1] by default
     data = np.zeros((10, 10))
     clim = calc_data_range(data)
-    np.testing.assert_array_equal(clim, (-1, 1))
+    np.testing.assert_array_equal(clim, (0, 1))
 
     # all ones should return [0, 1] by default
     data = np.ones((10, 10))
     clim = calc_data_range(data)
-    np.testing.assert_array_equal(clim, (0, 2))
+    np.testing.assert_array_equal(clim, (0, 1))
 
     # return min and max
     data = np.random.random((10, 15))
