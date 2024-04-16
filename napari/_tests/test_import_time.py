@@ -19,8 +19,7 @@ def test_import_time(tmp_path):
     # # figure out how to use it
     # assert name == 'napari'
     # assert int(time) < 1_000_000, "napari import taking longer than 1 sec!"
-    # print(f'\nnapari took {int(time)/1e6:0.3f} seconds to import')
-    # TODO: can we move this to benchmarks?
+    print(f'\nnapari took {int(time)/1e6:0.3f} seconds to import')
 
     # common culprit of slow imports
     assert 'pkg_resources' not in log

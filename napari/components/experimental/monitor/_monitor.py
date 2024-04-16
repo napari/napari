@@ -104,14 +104,14 @@ def _get_monitor_config() -> Optional[dict]:
     """
 
     if not ENABLE_MONITOR:
-        print('Monitor: not starting, disabled')  # noqa: T201
+        print('Monitor: not starting, disabled')
         return None
 
     # The NAPARI_MON environment variable points to our config file.
     config = _load_monitor_config()
 
     if config is None:
-        print('Monitor: not starting, no usable config file')  # noqa: T201
+        print('Monitor: not starting, no usable config file')
         return None
 
     return config
