@@ -291,7 +291,7 @@ class LayerList(SelectableEventedList[Layer]):
             and layer.ndim > self.ndim
         ):
             raise ValueError(
-                'Cannot add layer with non default properties to layer list with lower dimensionality.'
+                f'Cannot add layer with non default properties to layer list with lower dimensionality ({layer.ndim} vs {self.ndim}).'
             )
         self._inherit_scale(layer)
         self._inherit_translate(layer)
