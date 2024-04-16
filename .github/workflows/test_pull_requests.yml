@@ -88,10 +88,12 @@ jobs:
             platform: ubuntu-latest
             backend: pyqt5
             pydantic: "_pydantic_1"
+            coverage: no_cov
           - python: 3.12
             platform: ubuntu-latest
             backend: pyqt6
             pydantic: ""
+            coverage: no_cov
           - python: 3.11
             platform: ubuntu-latest
             backend: pyside6
@@ -101,7 +103,8 @@ jobs:
       python_version: ${{ matrix.python }}
       platform: ${{ matrix.platform }}
       qt_backend: ${{ matrix.backend }}
-      coverage: no_cov
+      coverage: ${{ matrix.coverage }}
+      min_req: ${{ matrix.MIN_REQ }}
       constraints_suffix: ${{ matrix.pydantic }}
 
   test:
@@ -191,6 +194,8 @@ jobs:
       - test
       - test_examples
     uses: ./.github/workflows/reusable_coverage_upload.yml
+    secrets:
+      codecov_token: ${{ secrets.CODECOV_TOKEN }}
 
 
   test_benchmarks:

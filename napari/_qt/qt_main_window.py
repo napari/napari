@@ -14,6 +14,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     ClassVar,
+    Literal,
     Optional,
     Union,
     cast,
@@ -96,6 +97,11 @@ if TYPE_CHECKING:
     from qtpy.QtGui import QImage
 
     from napari.viewer import Viewer
+
+
+MenuStr = Literal[
+    'file_menu', 'view_menu', 'plugins_menu', 'window_menu', 'help_menu'
+]
 
 
 class _QtMainWindow(QMainWindow):
@@ -807,14 +813,23 @@ class Window:
         # TODO: remove from window
         return self._qt_window.statusBar()
 
-    def _update_menu_state(self, menu):
+    def _update_menu_state(self, menu: MenuStr):
         """Update enabled/visible state of menu item with context."""
         layerlist = self._qt_viewer._layers.model().sourceModel()._root
         menu_model = getattr(self, menu)
         menu_model.update_from_context(get_context(layerlist))
 
-    def _update_plugin_menu_state(self):
+    def _update_file_menu_state(self):
+        self._update_menu_state('file_menu')
+
+    def _update_view_menu_state(self):
+        self._update_menu_state('view_menu')
+
+    def _update_plugins_menu_state(self):
         self._update_menu_state('plugins_menu')
+
+    def _update_help_menu_state(self):
+        self._update_menu_state('help_menu')
 
     # TODO: Remove once npe1 deprecated
     def _setup_npe1_samples_menu(self):
@@ -858,7 +873,7 @@ class Window:
         )
         self._setup_npe1_samples_menu()
         self.file_menu.aboutToShow.connect(
-            lambda: self._update_menu_state('file_menu')
+            self._update_file_menu_state,
         )
         self.main_menu.addMenu(self.file_menu)
         # view menu
@@ -866,17 +881,19 @@ class Window:
             MenuId.MENUBAR_VIEW, title=trans._('&View'), parent=self._qt_window
         )
         self.view_menu.aboutToShow.connect(
-            lambda: self._update_menu_state('view_menu')
+            self._update_view_menu_state,
         )
         self.main_menu.addMenu(self.view_menu)
-        # plugin menu
+        # plugins menu
         self.plugins_menu = build_qmodel_menu(
             MenuId.MENUBAR_PLUGINS,
             title=trans._('&Plugins'),
             parent=self._qt_window,
         )
         self._setup_npe1_plugins_menu()
-        self.plugins_menu.aboutToShow.connect(self._update_plugin_menu_state)
+        self.plugins_menu.aboutToShow.connect(
+            self._update_plugins_menu_state,
+        )
         self.main_menu.addMenu(self.plugins_menu)
         # window menu
         self.window_menu = menus.WindowMenu(self)
@@ -886,7 +903,7 @@ class Window:
             MenuId.MENUBAR_HELP, title=trans._('&Help'), parent=self._qt_window
         )
         self.help_menu.aboutToShow.connect(
-            lambda: self._update_menu_state('help_menu')
+            self._update_help_menu_state,
         )
         self.main_menu.addMenu(self.help_menu)
 
