@@ -76,7 +76,7 @@ executing==2.0.1
     # via stack-data
 fasteners==0.19
     # via zarr
-filelock==3.13.3
+filelock==3.13.4
     # via
     #   torch
     #   triton
@@ -94,9 +94,9 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.100.0
+hypothesis==6.100.1
     # via napari (napari_repo/pyproject.toml)
-idna==3.6
+idna==3.7
     # via requests
 imageio==2.34.0
     # via
@@ -132,7 +132,7 @@ jinja2==3.1.3
     # via
     #   sphinx
     #   torch
-joblib==1.3.2
+joblib==1.4.0
     # via
     #   nilearn
     #   scikit-learn
@@ -206,7 +206,7 @@ networkx==3.2.1
     #   torch
 nibabel==5.2.1
     # via nilearn
-nilearn==0.10.3
+nilearn==0.10.4
     # via -r resources/constraints/version_denylist_examples.txt
 npe2==0.7.5
     # via
@@ -291,7 +291,7 @@ packaging==24.0
     #   sphinx
     #   vispy
     #   xarray
-pandas==2.2.1
+pandas==2.2.2
     # via
     #   napari (napari_repo/pyproject.toml)
     #   nilearn
@@ -346,7 +346,7 @@ pyautogui==0.9.54
     # via napari (napari_repo/pyproject.toml)
 pyconify==0.1.6
     # via superqt
-pydantic==2.6.4
+pydantic==2.7.0
     # via
     #   app-model
     #   napari (napari_repo/pyproject.toml)
@@ -354,7 +354,7 @@ pydantic==2.6.4
     #   pydantic-compat
 pydantic-compat==0.1.2
     # via app-model
-pydantic-core==2.16.3
+pydantic-core==2.18.1
     # via pydantic
 pygetwindow==0.0.9
     # via pyautogui
@@ -481,7 +481,7 @@ rpds-py==0.18.0
     #   referencing
 scikit-image==0.22.0
     # via napari (napari_repo/pyproject.toml)
-scikit-learn==1.4.1.post1
+scikit-learn==1.4.2
     # via nilearn
 scipy==1.13.0
     # via
@@ -577,7 +577,7 @@ triangle==20230923 ; platform_machine != "arm64"
     # via napari (napari_repo/pyproject.toml)
 triton==2.2.0
     # via torch
-typer==0.12.1
+typer==0.12.3
     # via npe2
 typing-extensions==4.11.0
     # via
