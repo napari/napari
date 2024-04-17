@@ -307,7 +307,7 @@ class QtViewer(QSplitter):
 
     @staticmethod
     def _update_dask_cache_settings(
-        dask_setting: Union[DaskSettings, Event] = None
+        dask_setting: Union[DaskSettings, Event] = None,
     ):
         """Update dask cache to match settings."""
         if not dask_setting:

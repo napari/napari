@@ -1,5 +1,4 @@
-"""Miscellaneous utility functions.
-"""
+"""Miscellaneous utility functions."""
 
 import builtins
 import collections.abc

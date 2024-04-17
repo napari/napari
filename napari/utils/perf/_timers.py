@@ -1,5 +1,4 @@
-"""PerfTimers class and global instance.
-"""
+"""PerfTimers class and global instance."""
 
 import contextlib
 import os

@@ -240,7 +240,7 @@ def _run() -> None:
         if not args.paths:
             sys.exit(
                 "error: The '--plugin' argument is only valid "
-                "when providing a file name"
+                'when providing a file name'
             )
         # I *think* that Qt is looking in sys.argv for a flag `--plugins`,
         # which emits "WARNING: No such plugin for spec 'builtins'"
