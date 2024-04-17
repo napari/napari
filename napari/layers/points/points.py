@@ -4,6 +4,7 @@ from collections.abc import Sequence
 from copy import copy, deepcopy
 from itertools import cycle
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     ClassVar,
@@ -13,6 +14,7 @@ from typing import (
 )
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 from psygnal.containers import Selection
 from scipy.stats import gmean
@@ -61,6 +63,9 @@ from napari.utils.status_messages import generate_layer_coords_status
 from napari.utils.transforms import Affine
 from napari.utils.translations import trans
 
+if TYPE_CHECKING:
+    from napari.components.dims import Dims
+
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
 
@@ -85,7 +90,7 @@ class Points(Layer):
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
-        {'opaque', 'translucent', and 'additive'}.
+        {'opaque', 'translucent', 'translucent_no_depth', 'additive', and 'minimum'}.
     border_color : str, array-like, dict
         Color of the point marker border. Numeric color values should be RGB(A).
     border_color_cycle : np.ndarray, list
@@ -134,7 +139,7 @@ class Points(Layer):
         This property will soon be deprecated in favor of 'out_of_slice_display'.
         Use that instead.
     name : str
-        Name of the layer.
+        Name of the layer. If not provided then will be guessed using heuristics.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     out_of_slice_display : bool
@@ -142,7 +147,7 @@ class Points(Layer):
         according to specified point marker size.
     projection_mode : str
         How data outside the viewed dimensions but inside the thick Dims slice will
-        be projected onto the viewed dimenions.
+        be projected onto the viewed dimensions. Must fit to cls._projectionclass.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each point. Each property should be an array of length N,
         where N is the number of points.
@@ -158,6 +163,7 @@ class Points(Layer):
         Scale factors for the layer.
     shading : str, Shading
         Render lighting and shading on points. Options are:
+
         * 'none'
           No shading is added to the points.
         * 'spherical'
@@ -629,7 +635,7 @@ class Points(Layer):
         return self._data
 
     @data.setter
-    def data(self, data: Optional[np.ndarray]):
+    def data(self, data: Optional[np.ndarray]) -> None:
         """Set the data array and emit a corresponding event."""
         prior_data = len(self.data) > 0
         data_not_empty = (
@@ -664,7 +670,7 @@ class Points(Layer):
             kwargs['action'] = ActionType.REMOVED
         self.events.data(**kwargs)
 
-    def _set_data(self, data: Optional[np.ndarray]):
+    def _set_data(self, data: Optional[np.ndarray]) -> None:
         """Set the .data array attribute, without emitting an event."""
         data, _ = fix_data_points(data, self.ndim)
         cur_npoints = len(self._data)
@@ -733,7 +739,7 @@ class Points(Layer):
         self._update_dims()
         self._reset_editable()
 
-    def _on_selection(self, selected):
+    def _on_selection(self, selected: bool) -> None:
         if selected:
             self._set_highlight()
         else:
@@ -742,7 +748,7 @@ class Points(Layer):
             self.events.highlight()
 
     @property
-    def features(self):
+    def features(self) -> pd.DataFrame:
         """Dataframe-like features table.
 
         It is an implementation detail that this is a `pandas.DataFrame`. In the future,
@@ -776,7 +782,7 @@ class Points(Layer):
         self.events.features()
 
     @property
-    def feature_defaults(self):
+    def feature_defaults(self) -> pd.DataFrame:
         """Dataframe-like with one row of feature default values.
 
         See `features` for more details on the type of this property.
@@ -828,7 +834,7 @@ class Points(Layer):
     @properties.setter
     def properties(
         self, properties: Union[dict[str, Array], pd.DataFrame, None]
-    ):
+    ) -> None:
         self.features = properties
 
     @property
@@ -865,7 +871,7 @@ class Points(Layer):
             features=self.features,
         )
 
-    def refresh_text(self):
+    def refresh_text(self) -> None:
         """Refresh the text values.
 
         This is generally used if the features were updated without changing the data
@@ -893,7 +899,7 @@ class Points(Layer):
         return extrema.astype(float)
 
     @property
-    def _extent_data_augmented(self):
+    def _extent_data_augmented(self) -> npt.NDArray:
         # _extent_data is a property that returns a new/copied array, which
         # is safe to modify below
         extent = self._extent_data
@@ -1038,7 +1044,7 @@ class Points(Layer):
         return self._antialiasing
 
     @antialiasing.setter
-    def antialiasing(self, value: float):
+    def antialiasing(self, value: float) -> None:
         """Set the amount of antialiasing in canvas pixels.
 
         Values can only be positive.
@@ -1075,7 +1081,7 @@ class Points(Layer):
         self.events.canvas_size_limits()
 
     @property
-    def shown(self):
+    def shown(self) -> npt.NDArray:
         """
         Boolean array determining which points to show
         """
@@ -1176,7 +1182,9 @@ class Points(Layer):
         return self._border.categorical_colormap.fallback_color.values
 
     @border_color_cycle.setter
-    def border_color_cycle(self, border_color_cycle: Union[list, np.ndarray]):
+    def border_color_cycle(
+        self, border_color_cycle: Union[list, np.ndarray]
+    ) -> None:
         self._border.categorical_colormap = border_color_cycle
 
     @property
@@ -1191,7 +1199,7 @@ class Points(Layer):
         return self._border.continuous_colormap
 
     @border_colormap.setter
-    def border_colormap(self, colormap: ValidColormapArg):
+    def border_colormap(self, colormap: ValidColormapArg) -> None:
         self._border.continuous_colormap = colormap
 
     @property
@@ -1204,7 +1212,7 @@ class Points(Layer):
     @border_contrast_limits.setter
     def border_contrast_limits(
         self, contrast_limits: Union[None, tuple[float, float]]
-    ):
+    ) -> None:
         self._border.contrast_limits = contrast_limits
 
     @property
@@ -1237,7 +1245,9 @@ class Points(Layer):
         return self._border.color_mode
 
     @border_color_mode.setter
-    def border_color_mode(self, border_color_mode: Union[str, ColorMode]):
+    def border_color_mode(
+        self, border_color_mode: Union[str, ColorMode]
+    ) -> None:
         self._set_color_mode(border_color_mode, 'border')
 
     @property
@@ -1263,7 +1273,9 @@ class Points(Layer):
         return self._face.categorical_colormap.fallback_color.values
 
     @face_color_cycle.setter
-    def face_color_cycle(self, face_color_cycle: Union[np.ndarray, cycle]):
+    def face_color_cycle(
+        self, face_color_cycle: Union[np.ndarray, cycle]
+    ) -> None:
         self._face.categorical_colormap = face_color_cycle
 
     @property
@@ -1278,7 +1290,7 @@ class Points(Layer):
         return self._face.continuous_colormap
 
     @face_colormap.setter
-    def face_colormap(self, colormap: ValidColormapArg):
+    def face_colormap(self, colormap: ValidColormapArg) -> None:
         self._face.continuous_colormap = colormap
 
     @property
@@ -1291,7 +1303,7 @@ class Points(Layer):
     @face_contrast_limits.setter
     def face_contrast_limits(
         self, contrast_limits: Union[None, tuple[float, float]]
-    ):
+    ) -> None:
         self._face.contrast_limits = contrast_limits
 
     @property
@@ -1331,7 +1343,7 @@ class Points(Layer):
         self,
         color_mode: Union[ColorMode, str],
         attribute: Literal['border', 'face'],
-    ):
+    ) -> None:
         """Set the face_color_mode or border_color_mode property
 
         Parameters
@@ -1393,7 +1405,7 @@ class Points(Layer):
                 )
             color_manager.color_mode = color_mode
 
-    def refresh_colors(self, update_color_mapping: bool = False):
+    def refresh_colors(self, update_color_mapping: bool = False) -> None:
         """Calculate and update face and border colors if using a cycle or color map
 
         Parameters
@@ -1518,7 +1530,7 @@ class Points(Layer):
 
         self._set_highlight()
 
-    def interaction_box(self, index) -> Optional[np.ndarray]:
+    def interaction_box(self, index: list[int]) -> Optional[np.ndarray]:
         """Create the interaction box around a list of points in view.
 
         Parameters
@@ -1888,7 +1900,7 @@ class Points(Layer):
         )
         return start_point, end_point
 
-    def _set_view_slice(self):
+    def _set_view_slice(self) -> None:
         """Sets the view given the indices to slice with."""
 
         # The new slicing code makes a request from the existing state and
@@ -1900,7 +1912,7 @@ class Points(Layer):
         response = request()
         self._update_slice_response(response)
 
-    def _make_slice_request(self, dims) -> _PointSliceRequest:
+    def _make_slice_request(self, dims: 'Dims') -> _PointSliceRequest:
         """Make a Points slice request based on the given dims and these data."""
         slice_input = self._make_slice_input(dims)
         # See Image._make_slice_request to understand why we evaluate this here
@@ -1910,7 +1922,7 @@ class Points(Layer):
 
     def _make_slice_request_internal(
         self, slice_input: _SliceInput, data_slice: _ThickNDSlice
-    ):
+    ) -> _PointSliceRequest:
         return _PointSliceRequest(
             slice_input=slice_input,
             data=self.data,
@@ -1920,7 +1932,7 @@ class Points(Layer):
             size=self.size,
         )
 
-    def _update_slice_response(self, response: _PointSliceResponse):
+    def _update_slice_response(self, response: _PointSliceResponse) -> None:
         """Handle a slicing response."""
         self._slice_input = response.slice_input
         indices = response.indices
@@ -1949,7 +1961,7 @@ class Points(Layer):
         with self.events.highlight.blocker():
             self._set_highlight(force=True)
 
-    def _set_highlight(self, force=False):
+    def _set_highlight(self, force: bool = False) -> None:
         """Render highlights of shapes including boundaries, vertices,
         interaction boxes, and the drag selection box when appropriate.
         Highlighting only occurs in Mode.SELECT.
@@ -2014,7 +2026,7 @@ class Points(Layer):
         self._highlight_box = pos
         self.events.highlight()
 
-    def _update_thumbnail(self):
+    def _update_thumbnail(self) -> None:
         """Update thumbnail with current points and colors."""
         colormapped = np.zeros(self._thumbnail_shape)
         colormapped[..., 3] = 1
@@ -2084,7 +2096,7 @@ class Points(Layer):
         )
         self.selected_data = set(np.arange(cur_points, len(self.data)))
 
-    def remove_selected(self):
+    def remove_selected(self) -> None:
         """Removes selected points if any."""
         index = list(self.selected_data)
         index.sort()
@@ -2188,7 +2200,7 @@ class Points(Layer):
                 ].mean(axis=0)
                 self._drag_start -= center
 
-    def _paste_data(self):
+    def _paste_data(self) -> None:
         """Paste any point from clipboard and select them."""
         npoints = len(self._view_data)
         totpoints = len(self.data)
@@ -2242,7 +2254,7 @@ class Points(Layer):
             )
             self.refresh()
 
-    def _copy_data(self):
+    def _copy_data(self) -> None:
         """Copy selected points to clipboard."""
         if len(self.selected_data) > 0:
             index = list(self.selected_data)
@@ -2267,7 +2279,7 @@ class Points(Layer):
         shape: tuple,
         data_to_world: Optional[Affine] = None,
         isotropic_output: bool = True,
-    ):
+    ) -> npt.NDArray:
         """Return a binary mask array of all the points as balls.
 
         Parameters
@@ -2407,7 +2419,7 @@ class Points(Layer):
         view_direction: Optional[np.ndarray] = None,
         dims_displayed: Optional[list[int]] = None,
         world: bool = False,
-    ):
+    ) -> str:
         """
         tooltip message of the data at a coordinate position.
 
