@@ -269,6 +269,7 @@ select = [
     "TRY", # tryceratops
     "ICN", # flake8-import-conventions
     "RUF", # ruff specyfic rules
+    "SLOT", # flake8-slots
 ]
 ignore = [
     "E501", "TCH001", "TCH002", "TCH003",
