@@ -33,8 +33,9 @@ skip = [
 ]
 # To skip examples during docs build end name with `_.py`
 
-# these are more informative than testing anything, so skip them
-skip_dev = ['leaking_check.py', 'plot_2d_edge_meshes.py']
+# these are more interactive tools than proper examples, so skip them
+# cause they are hard to adapt for testing
+skip_dev = ['leaking_check.py', 'demo_shape_creation.py']
 
 EXAMPLE_DIR = Path(napari.__file__).parent.parent / 'examples/'
 DEV_EXAMPLE_DIR = Path(napari.__file__).parent.parent / 'examples/dev'

@@ -1,5 +1,4 @@
 import argparse
-import os
 from timeit import default_timer
 
 import numpy as np
@@ -102,12 +101,10 @@ layer = time_me(
     lambda: napari.layers.Shapes(coords, **kwargs),
 )
 
+if args.view:
+    # add the image
+    viewer = napari.Viewer()
+    viewer.add_layer(layer)
 
 if __name__ == '__main__':
-    if args.view:
-        # add the image
-        viewer = napari.Viewer()
-        viewer.add_layer(layer)
-        if 'PYTEST_CURRENT_TEST' not in os.environ:
-            napari.run()
-
+    napari.run()
