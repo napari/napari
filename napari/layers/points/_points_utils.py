@@ -286,7 +286,7 @@ def fast_dict_get(symbols: Union[np.ndarray, list], d: dict) -> np.ndarray:
     return np.vectorize(d.__getitem__, otypes=[object])(symbols)
 
 
-def coerce_symbols(symbol: Union[str, Symbol, np.ndarray, list]) -> np.ndarray:
+def coerce_symbols(symbol: Union[str, Symbol, Sequence[Union[str, Symbol]]]) -> np.ndarray:
     """
     Parse an array of symbols and convert it to the correct strings.
 
