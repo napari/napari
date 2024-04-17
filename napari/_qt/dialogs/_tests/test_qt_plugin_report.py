@@ -54,7 +54,6 @@ def test_error_reporter(qtbot, monkeypatch):
     assert "Errors for plugin 'test_plugin'" in clipboard_text
 
     # plugins without errors raise an error
-    report_widget.set_plugin('non_existent')
     with pytest.raises(ValueError):  # noqa: PT011
         report_widget.set_plugin('non_existent')
 
