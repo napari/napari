@@ -1,6 +1,7 @@
 from typing import Optional, Union
 
 import numpy as np
+import numpy.typing as npt
 
 from napari.layers.points._points_constants import SYMBOL_ALIAS, Symbol
 from napari.utils.geometry import project_points_onto_plane
@@ -50,7 +51,7 @@ def _create_box_from_corners_3d(
     return box
 
 
-def create_box(data):
+def create_box(data: npt.NDArray) -> npt.NDArray:
     """Create the axis aligned interaction box of a list of points
 
     Parameters
@@ -73,7 +74,7 @@ def create_box(data):
     return box
 
 
-def points_to_squares(points, sizes):
+def points_to_squares(points: npt.NDArray, sizes: npt.NDArray) -> npt.NDArray:
     """Expand points to squares defined by their size
 
     Parameters
