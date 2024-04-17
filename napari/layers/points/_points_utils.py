@@ -261,7 +261,7 @@ def symbol_conversion(symbol: Union[str, Symbol]) -> Symbol:
     return Symbol(symbol)
 
 
-def create_symbol_dict(symbols: Union[np.ndarray, list]) -> dict:
+def create_symbol_dict(symbols: Sequence[Union[str, Symbol]]) -> dict:
     """
     Create a dictionary that maps raw symbols (keys) to their Symbol
     instance counterpart (values).
