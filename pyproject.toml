@@ -155,14 +155,13 @@ release = [
     "requests-cache>=0.9.2",
 ]
 dev = [
-    "black",
+    "ruff",
     "check-manifest>=0.42",
     "pre-commit>=2.9.0",
     "pydantic[dotenv]",
     "napari[testing]",
 ]
 build = [
-    "black",
     "ruff",
     "pyqt5",
 ]
@@ -197,32 +196,6 @@ napari_builtins = [
 
 [tool.setuptools_scm]
 write_to = "napari/_version.py"
-
-[tool.black]
-target-version = ['py39', 'py310', 'py311', 'py312']
-skip-string-normalization = true
-line-length = 79
-exclude = '''
-(
-  /(
-      \.eggs
-    | \.git
-    | \.hg
-    | \.mypy_cache
-    | \.tox
-    | \.venv
-    | _build
-    | buck-out
-    | build
-    | dist
-    | examples
-    | vendored
-    | _vendor
-  )/
-  | napari/resources/qt.py
-  | tools/minreq.py
-)
-'''
 
 [tool.check-manifest]
 ignore = [
@@ -266,8 +239,10 @@ exclude = [
     "*_vendor*",
 ]
 
-target-version = "py39"
 fix = true
+
+[tool.ruff.format]
+quote-style = "single"
 
 [tool.ruff.lint]
 select = [
@@ -298,17 +273,20 @@ select = [
     "EXE", # flake8-executable
     "FA", # flake8-future-annotations
     "LOG", # flake8-logging
+    "SLOT", # flake8-slots
 ]
 ignore = [
     "E501", "TCH001", "TCH002", "TCH003",
     "A003", # flake8-builtins - we have class attributes violating these rule
     "COM812", # flake8-commas - we don't like adding comma on single line of arguments
+    "COM819", # conflicts with ruff-format
     "SIM117", # flake8-simplify - we some of merged with statements are not looking great with black, reanble after drop python 3.9
     "RET504", # not fixed yet https://github.com/charliermarsh/ruff/issues/2950
     "TRY003", # require implement multiple exception class
     "RUF005", # problem with numpy compatybility, see https://github.com/charliermarsh/ruff/issues/2142#issuecomment-1451038741
     "B028", # need to be fixed
     "PYI015", # it produces bad looking files (@jni opinion)
+    "W191", "Q000", "Q001", "Q002", "Q003", "ISC001", # https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
 ]
 
 [tool.ruff.lint.per-file-ignores]

@@ -1,5 +1,4 @@
-"""MonitorApi class.
-"""
+"""MonitorApi class."""
 
 import logging
 from multiprocessing.managers import SharedMemoryManager
