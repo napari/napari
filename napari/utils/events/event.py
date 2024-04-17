@@ -48,6 +48,7 @@ to emit events. The EmitterGroup groups EventEmitter objects.
 For more information see http://github.com/vispy/vispy/wiki/API_Events
 
 """
+
 import contextlib
 import inspect
 import os
@@ -1041,7 +1042,9 @@ class EmitterGroup(EventEmitter):
 
             if inspect.isclass(emitter) and issubclass(emitter, Event):  # type: ignore
                 emitter = EventEmitter(
-                    source=self.source, type_name=name, event_class=emitter  # type: ignore
+                    source=self.source,
+                    type_name=name,
+                    event_class=emitter,  # type: ignore
                 )
             elif not isinstance(emitter, EventEmitter):
                 raise RuntimeError(

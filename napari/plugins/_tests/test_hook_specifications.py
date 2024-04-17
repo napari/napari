@@ -59,7 +59,7 @@ def test_annotation_on_hook_specification(name, func):
                 ), f'Must not name hook_specification argument "{forbidden}".'
             assert param.annotation is not param.empty, (
                 f"in hook specification '{name}', parameter '{param}' "
-                "has no type annotation"
+                'has no type annotation'
             )
     else:
         assert sig.return_annotation is not sig.empty, (
@@ -76,6 +76,6 @@ def test_docs_match_signature(name, func):
     doc_params = {p.name for p in docs.get('Parameters')}
     assert sig_params == doc_params, (
         f"Signature parameters for hook specification '{name}' do "
-        "not match the parameters listed in the docstring:\n"
-        f"{sig_params} != {doc_params}"
+        'not match the parameters listed in the docstring:\n'
+        f'{sig_params} != {doc_params}'
     )
