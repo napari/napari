@@ -8,7 +8,8 @@ on:
       - synchronize
       - reopened
       - edited
-  # see https://docs.github.com/en/actions/using-jobs/assigning-permissions-to-jobs
+  workflow_call:
+# see https://docs.github.com/en/actions/using-jobs/assigning-permissions-to-jobs
 permissions:
   pull-requests: write
 
@@ -18,6 +19,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          repository: napari/napari
       # install python and requests
       - name: Set up Python
         uses: actions/setup-python@v5
