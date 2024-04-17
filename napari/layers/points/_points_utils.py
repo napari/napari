@@ -266,9 +266,7 @@ def create_symbol_dict(symbols: Sequence[Union[str, Symbol]]) -> dict:
     Create a dictionary that maps raw symbols (keys) to their Symbol
     instance counterpart (values).
     """
-    unique_symbols = (
-        set(symbols) if isinstance(symbols, (list, np.ndarray)) else {symbols}
-    )
+    unique_symbols = set(symbols)
     unique_symbols = [str(x).lower() for x in unique_symbols]
 
     symbol_dict = {}
