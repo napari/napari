@@ -105,24 +105,6 @@ def test_dock_widget_registration(
             assert widgets['Plugin']['Widg2'][0] == Widg2
 
 
-@pytest.fixture()
-def _test_plugin_widgets(monkeypatch, napari_plugin_manager):
-    """A smattering of example registered dock widgets and function widgets."""
-    tnpm = napari_plugin_manager
-    dock_widgets = {
-        'TestP1': {
-            'QWidget_example': (QWidget_example, {}),
-            'Widg2': (Widg2, {}),
-        },
-        'TestP2': {'Widg3': (Widg3, {})},
-    }
-    monkeypatch.setattr(tnpm, '_dock_widgets', dock_widgets)
-
-    function_widgets = {'TestP3': {'magic': magicfunc}}
-    monkeypatch.setattr(tnpm, '_function_widgets', function_widgets)
-    return
-
-
 def test_inject_viewer_proxy(make_napari_viewer):
     """Test that the injected viewer is a public-only proxy"""
     viewer = make_napari_viewer()
