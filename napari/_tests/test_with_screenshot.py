@@ -572,6 +572,7 @@ def test_shapes_with_holes(make_napari_viewer):
     viewer.add_shapes(embedded, shape_type='polygon')
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     # center should have a hole
-    center = (screenshot.shape[0] // 2, screenshot.shape[1] // 2)
+    # use -1 because edge is exactly halfway down.
+    center = (screenshot.shape[0] // 2 - 1, screenshot.shape[1] // 2)
     # ignore alpha channel
     np.testing.assert_array_equal(screenshot[center][:3], 0)
