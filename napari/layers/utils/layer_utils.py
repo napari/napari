@@ -229,6 +229,14 @@ def calc_data_range(
     if data.dtype == np.uint8:
         return (0, 255)
 
+    if isinstance(data, np.ndarray) and data.ndim < 3:
+        min_val = _nanmin(data)
+        max_val = _nanmax(data)
+        if min_val == max_val:
+            min_val = min(min_val, 0)
+            max_val = max(max_val, 1)
+        return float(min_val), float(max_val)
+
     center: Union[int, list[int]]
     reduced_data: Union[list, LayerDataProtocol]
     if data.size > 1e7 and (data.ndim == 1 or (rgb and data.ndim == 2)):
@@ -278,8 +286,8 @@ def calc_data_range(
     max_val = _nanmax(reduced_data)
 
     if min_val == max_val:
-        min_val = 0
-        max_val = 1
+        min_val = min(min_val, 0)
+        max_val = max(max_val, 1)
     return (float(min_val), float(max_val))
 
 
