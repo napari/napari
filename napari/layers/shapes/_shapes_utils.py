@@ -765,6 +765,16 @@ def _enclosing(
 
 
 def _remove_holes(path):
+    """Remove holes from a path representing a polygon.
+
+    Holes are represented as vertices winding in the opposite direction to the
+    enclosing polygon. They depart and reenter the enclosing polygon from the
+    same vertex, so that the edge appears twice.
+
+    This function removes the edge connecting the perimiter to the hole, finds
+    the connected components among the remaining edges, and removes all
+    components except the one with the largest extent.
+    """
     v, e = _normalize_vertices_and_edges(path, close=True)
     n_edge = len(e)
     if n_edge == 0:
