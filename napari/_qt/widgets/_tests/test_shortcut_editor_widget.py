@@ -142,8 +142,8 @@ def test_keybinding_with_modifiers(
     widget._table.edit(index)
     qtbot.waitUntil(lambda: widget._table.focusWidget() is not None)
     editor = widget._table.focusWidget()
+    qtbot.waitUntil(lambda: editor.hasFocus())
     qtbot.keyClick(editor, key, modifier=modifier)
-    QApplication.processEvents()
     assert len([warn for warn in recwarn if warn.category is UserWarning]) == 0
 
     shortcut = widget._table.item(0, widget._shortcut_col).text()
