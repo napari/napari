@@ -126,7 +126,7 @@ LayerDataTuple = NewType('LayerDataTuple', tuple)
 
 
 def image_reader_to_layerdata_reader(
-    func: Callable[[PathOrPaths], ArrayLike]
+    func: Callable[[PathOrPaths], ArrayLike],
 ) -> ReaderFunction:
     """Convert a PathLike -> ArrayLike function to a PathLike -> LayerData.
 

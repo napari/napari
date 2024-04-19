@@ -85,13 +85,17 @@ class Dims(EventedModel):
     displayed_order : tuple of int
         Order of only displayed dimensions. These are calculated from the
         ``displayed`` dimensions.
+    rollable :  tuple of bool
+        Tuple of axis roll state. If True the axis is rollable.
     """
 
     # fields
     ndim: int = 2
     ndisplay: Literal[2, 3] = 2
+
     order: tuple[int, ...] = ()
     axis_labels: tuple[str, ...] = ()
+    rollable: tuple[bool, ...] = ()
 
     range: tuple[RangeTuple, ...] = ()
     margin_left: tuple[float, ...] = ()
@@ -109,6 +113,7 @@ class Dims(EventedModel):
     @validator(
         'order',
         'axis_labels',
+        'rollable',
         'point',
         'margin_left',
         'margin_right',
@@ -150,7 +155,7 @@ class Dims(EventedModel):
 
     @root_validator(skip_on_failure=True, allow_reuse=True)
     def _check_dims(cls, values):
-        """Check the consitency of dimensionaity for all attributes
+        """Check the consistency of dimensionality for all attributes.
 
         Parameters
         ----------
@@ -216,6 +221,9 @@ class Dims(EventedModel):
                 )
         elif labels_ndim > ndim:
             updated['axis_labels'] = axis_labels[-ndim:]
+
+        # Check the rollable axes tuple has same number of elements as ndim
+        updated['rollable'] = ensure_len(values['rollable'], ndim, True)
 
         # If the last used slider is no longer visible, use the first.
         last_used = values['last_used']
@@ -384,6 +392,7 @@ class Dims(EventedModel):
         self.order = tuple(range(self.ndim))
         self.margin_left = (0,) * self.ndim
         self.margin_right = (0,) * self.ndim
+        self.rollable = (True,) * self.ndim
 
     def transpose(self):
         """Transpose displayed dimensions.
@@ -437,12 +446,17 @@ class Dims(EventedModel):
         index = (sliders.index(self.last_used) - 1) % len(sliders)
         self.last_used = sliders[index]
 
-    def _roll(self):
+    def roll(self):
         """Roll order of dimensions for display."""
         order = np.array(self.order)
-        nsteps = np.array(self.nsteps)
-        order[nsteps > 1] = np.roll(order[nsteps > 1], 1)
-        self.order = order.tolist()
+        # we combine "rollable" and "nsteps" into a mask for rolling
+        # this mask has to be aligned to "order" as "rollable" and
+        # "nsteps" are static but order is dynamic, meaning "rollable"
+        # and "nsteps" encode the axes by position, whereas "order"
+        # encodes axis by number
+        valid = np.logical_and(self.rollable, np.array(self.nsteps) > 1)[order]
+        order[valid] = np.roll(order[valid], shift=1)
+        self.order = order
 
     def _go_to_center_step(self):
         self.current_step = [int((ns - 1) / 2) for ns in self.nsteps]
