@@ -134,7 +134,7 @@ def ensure_iterable(
 ):
     """Ensure an argument is an iterable. Useful when an input argument
     can either be a single value or a list. 
-    Argument color is deprecated since version 0.5.0.
+    Argument color is deprecated since version 0.5.0and will be removed in 0.6.0.
     """
     # deprecate color
     if color is not _sentinel:
