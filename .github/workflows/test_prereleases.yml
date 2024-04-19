@@ -27,13 +27,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [windows-latest, macos-latest, ubuntu-latest]
+        platform: [windows-latest, macos-14, ubuntu-latest]
         python: [3.12]
         backend: [pyqt5, pyqt6]
-        exclude:
-          - platform: macos-latest
-            python: 3.12
-            backend: pyqt6
 
     steps:
       - uses: actions/checkout@v4
