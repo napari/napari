@@ -178,7 +178,7 @@ def is_iterable(
             stacklevel=2,  # not sure what level to use here
         )
     if arg is None:
-        return False
+        return allow_none
     if isinstance(arg, (str, Enum)):
         return False
     if np.isscalar(arg):
