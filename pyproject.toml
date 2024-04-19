@@ -269,6 +269,10 @@ select = [
     "TRY", # tryceratops
     "ICN", # flake8-import-conventions
     "RUF", # ruff specyfic rules
+    "ASYNC", # flake8-async
+    "EXE", # flake8-executable
+    "FA", # flake8-future-annotations
+    "LOG", # flake8-logging
     "SLOT", # flake8-slots
     "PT", # flake8-pytest-style
 ]
