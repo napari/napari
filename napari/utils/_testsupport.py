@@ -37,7 +37,7 @@ def pytest_addoption(parser):
         action='store_true',
         default=False,
         help="Try to save a graph of leaked object's reference (need objgraph"
-        "and graphviz installed",
+        'and graphviz installed',
     )
 
 

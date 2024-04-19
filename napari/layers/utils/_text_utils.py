@@ -144,7 +144,7 @@ def _calculate_anchor_lower_right(
 
 
 def _calculate_bbox_extents(
-    view_data: Union[np.ndarray, list]
+    view_data: Union[np.ndarray, list],
 ) -> tuple[npt.NDArray, npt.NDArray]:
     """Calculate the extents of the bounding box"""
     if isinstance(view_data, np.ndarray):

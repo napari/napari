@@ -1,5 +1,4 @@
-"""Perf configuration flags.
-"""
+"""Perf configuration flags."""
 
 import json
 import os
