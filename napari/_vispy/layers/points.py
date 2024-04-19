@@ -201,7 +201,7 @@ class VispyPointsLayer(VispyBaseLayer):
         )
         low, high = self.layer.canvas_size_limits
         self.node.selection_markers.canvas_size_limits = (
-            low,
+            low + scaled_highlight,
             high + scaled_highlight,
         )
 
