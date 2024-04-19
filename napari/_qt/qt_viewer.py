@@ -3,20 +3,15 @@ from __future__ import annotations
 import logging
 import sys
 import traceback
-import typing
 import warnings
 import weakref
+from collections.abc import Sequence
 from pathlib import Path
 from types import FrameType
 from typing import (
     TYPE_CHECKING,
     Any,
-    Dict,
-    List,
     Optional,
-    Sequence,
-    Tuple,
-    Type,
     Union,
 )
 from weakref import WeakSet, ref
@@ -95,7 +90,7 @@ def _npe2_decode_selected_filter(
 
 def _extension_string_for_layers(
     layers: Sequence[Layer],
-) -> Tuple[str, List[WriterContribution]]:
+) -> tuple[str, list[WriterContribution]]:
     """Return an extension string and the list of corresponding writers.
 
     The extension string is a ";;" delimeted string of entries. Each entry
@@ -180,7 +175,7 @@ class QtViewer(QSplitter):
         self,
         viewer: ViewerModel,
         show_welcome_screen: bool = False,
-        canvas_class: Type[VispyCanvas] = VispyCanvas,
+        canvas_class: type[VispyCanvas] = VispyCanvas,
     ) -> None:
         super().__init__()
         self._instances.add(self)
@@ -312,7 +307,7 @@ class QtViewer(QSplitter):
 
     @staticmethod
     def _update_dask_cache_settings(
-        dask_setting: Union[DaskSettings, Event] = None
+        dask_setting: Union[DaskSettings, Event] = None,
     ):
         """Update dask cache to match settings."""
         if not dask_setting:
@@ -540,15 +535,16 @@ class QtViewer(QSplitter):
         return self._console_backlog
 
     def _get_console(self) -> Optional[QtConsole]:
-        """
-        Function for setup console.
+        """Function to setup console.
 
         Returns
         -------
+        console : QtConsole or None
+            The napari console.
 
         Notes
         _____
-        extracted to separated function for simplify testing
+        _get_console extracted to separate function to simplify testing.
 
         """
         try:
@@ -624,7 +620,7 @@ class QtViewer(QSplitter):
         Provides updates after slicing using the slice response data.
         This only gets triggered on the async slicing path.
         """
-        responses: Dict[weakref.ReferenceType[Layer], Any] = event.value
+        responses: dict[weakref.ReferenceType[Layer], Any] = event.value
         logging.debug('QtViewer._on_slice_ready: %s', responses)
         for weak_layer, response in responses.items():
             if layer := weak_layer():
@@ -684,6 +680,60 @@ class QtViewer(QSplitter):
 
         self.canvas.add_layer_visual_mapping(layer, vispy_layer)
 
+    def _remove_invalid_chars(self, selected_layer_name):
+        """Removes invalid characters from selected layer name to suggest a filename.
+
+        Parameters
+        ----------
+        selected_layer_name : str
+            The selected napari layer name.
+
+        Returns
+        -------
+        suggested_name : str
+            Suggested name from input selected layer name, without invalid characters.
+        """
+        unprintable_ascii_chars = (
+            '\x00',
+            '\x01',
+            '\x02',
+            '\x03',
+            '\x04',
+            '\x05',
+            '\x06',
+            '\x07',
+            '\x08',
+            '\x0e',
+            '\x0f',
+            '\x10',
+            '\x11',
+            '\x12',
+            '\x13',
+            '\x14',
+            '\x15',
+            '\x16',
+            '\x17',
+            '\x18',
+            '\x19',
+            '\x1a',
+            '\x1b',
+            '\x1c',
+            '\x1d',
+            '\x1e',
+            '\x1f',
+            '\x7f',
+        )
+        invalid_characters = (
+            ''.join(unprintable_ascii_chars)
+            + '/'
+            + '\\'  # invalid Windows filename character
+            + ':*?"<>|\t\n\r\x0b\x0c'  # invalid Windows path characters
+        )
+        translation_table = dict.fromkeys(map(ord, invalid_characters), None)
+        # Remove invalid characters
+        suggested_name = selected_layer_name.translate(translation_table)
+        return suggested_name
+
     def _save_layers_dialog(self, selected=False):
         """Save layers (all or selected) to disk, using ``LayerList.save()``.
 
@@ -715,12 +765,20 @@ class QtViewer(QSplitter):
         dlg = QFileDialog()
         hist = get_save_history()
         dlg.setHistory(hist)
-
+        # get the layer's name to use for a default name if only one layer is selected
+        selected_layer_name = ''
+        if self.viewer.layers.selection.active is not None:
+            selected_layer_name = self.viewer.layers.selection.active.name
+            selected_layer_name = self._remove_invalid_chars(
+                selected_layer_name
+            )
         filename, selected_filter = dlg.getSaveFileName(
             self,  # parent
             trans._('Save {msg} layers', msg=msg),  # caption
-            # home dir by default
-            hist[0],  # directory in PyQt, dir in PySide
+            # home dir by default if selected all, home dir and file name if only 1 layer
+            str(
+                Path(hist[0]) / selected_layer_name
+            ),  # directory in PyQt, dir in PySide
             filter=ext_str,
             options=(
                 QFileDialog.DontUseNativeDialog
@@ -828,7 +886,7 @@ class QtViewer(QSplitter):
         if dial.exec_():
             update_save_history(dial.selectedFiles()[0])
 
-    def _open_file_dialog_uni(self, caption: str) -> typing.List[str]:
+    def _open_file_dialog_uni(self, caption: str) -> list[str]:
         """
         Open dialog to get list of files from user
         """
@@ -891,8 +949,8 @@ class QtViewer(QSplitter):
 
     def _qt_open(
         self,
-        filenames: List[str],
-        stack: Union[bool, List[List[str]]],
+        filenames: list[str],
+        stack: Union[bool, list[list[str]]],
         choose_plugin: bool = False,
         plugin: Optional[str] = None,
         layer_type: Optional[str] = None,
@@ -1096,7 +1154,7 @@ class QtViewer(QSplitter):
         )
 
     def _open_from_list_of_urls_data(
-        self, urls_list: List[QUrl], stack: bool, choose_plugin: bool
+        self, urls_list: list[QUrl], stack: bool, choose_plugin: bool
     ):
         filenames = []
         for url in urls_list:

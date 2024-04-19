@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from napari.viewer import Viewer
 
 
-def register_viewer_action(description):
+def register_viewer_action(description, repeatable=False):
     """
     Convenient decorator to register an action with the current ViewerModel
 
@@ -25,6 +25,7 @@ def register_viewer_action(description):
             command=func,
             description=description,
             keymapprovider=ViewerModel,
+            repeatable=repeatable,
         )
         return func
 
@@ -84,12 +85,16 @@ def delete_selected_layers(viewer: Viewer):
     viewer.layers.remove_selected()
 
 
-@register_viewer_action(trans._('Increment dimensions slider to the left.'))
+@register_viewer_action(
+    trans._('Increment dimensions slider to the left.'), repeatable=True
+)
 def increment_dims_left(viewer: Viewer):
     viewer.dims._increment_dims_left()
 
 
-@register_viewer_action(trans._('Increment dimensions slider to the right.'))
+@register_viewer_action(
+    trans._('Increment dimensions slider to the right.'), repeatable=True
+)
 def increment_dims_right(viewer: Viewer):
     viewer.dims._increment_dims_right()
 
@@ -107,17 +112,17 @@ def focus_axes_down(viewer: Viewer):
 # Use non-breaking spaces and non-breaking hyphen for Preferences table
 @register_viewer_action(
     trans._(
-        'Change order of the visible axes, e.g.\u00A0[0,\u00A01,\u00A02]\u00A0\u2011>\u00A0[2,\u00A00,\u00A01].'
+        'Change order of the visible axes, e.g.\u00a0[0,\u00a01,\u00a02]\u00a0\u2011>\u00a0[2,\u00a00,\u00a01].'
     ),
 )
 def roll_axes(viewer: Viewer):
-    viewer.dims._roll()
+    viewer.dims.roll()
 
 
 # Use non-breaking spaces and non-breaking hyphen for Preferences table
 @register_viewer_action(
     trans._(
-        'Transpose order of the last two visible axes, e.g.\u00A0[0,\u00A01]\u00A0\u2011>\u00A0[1,\u00A00].'
+        'Transpose order of the last two visible axes, e.g.\u00a0[0,\u00a01]\u00a0\u2011>\u00a0[1,\u00a00].'
     ),
 )
 def transpose_axes(viewer: Viewer):
@@ -132,6 +137,25 @@ def toggle_grid(viewer: Viewer):
 @register_viewer_action(trans._('Toggle visibility of selected layers'))
 def toggle_selected_visibility(viewer: Viewer):
     viewer.layers.toggle_selected_visibility()
+
+
+@register_viewer_action(trans._('Toggle visibility of unselected layers'))
+def toggle_unselected_visibility(viewer: Viewer):
+    for layer in viewer.layers:
+        if layer not in viewer.layers.selection:
+            layer.visible = not layer.visible
+
+
+@register_viewer_action(trans._('Select and show only layer above.'))
+def show_only_layer_above(viewer):
+    viewer.layers.select_next()
+    _show_only_selected_layer(viewer)
+
+
+@register_viewer_action(trans._('Select and show only layer below.'))
+def show_only_layer_below(viewer):
+    viewer.layers.select_previous()
+    _show_only_selected_layer(viewer)
 
 
 @register_viewer_action(
@@ -168,3 +192,12 @@ def show_shortcuts(viewer: Viewer):
     for i in range(pref_list.count()):
         if (item := pref_list.item(i)) and item.text() == 'Shortcuts':
             pref_list.setCurrentRow(i)
+
+
+def _show_only_selected_layer(viewer):
+    """Helper function to show only selected layer"""
+    for layer in viewer.layers:
+        if layer not in viewer.layers.selection:
+            layer.visible = False
+        else:
+            layer.visible = True

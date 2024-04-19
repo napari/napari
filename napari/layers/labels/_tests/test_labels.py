@@ -1,9 +1,9 @@
 import copy
 import itertools
 import time
+from collections import defaultdict
 from dataclasses import dataclass
 from tempfile import TemporaryDirectory
-from typing import List
 
 import numpy as np
 import numpy.testing as npt
@@ -12,7 +12,6 @@ import pytest
 import xarray as xr
 import zarr
 from numpy.core.numerictypes import issubdtype
-from numpy.testing import assert_array_almost_equal, assert_raises
 from skimage import data as sk_data
 
 from napari._tests.utils import check_layer_world_data_extent
@@ -22,6 +21,10 @@ from napari.layers import Labels
 from napari.layers.labels._labels_constants import LabelsRendering
 from napari.layers.labels._labels_utils import get_contours
 from napari.utils import Colormap
+from napari.utils._test_utils import (
+    validate_all_params_in_docstring,
+    validate_kwargs_sorted,
+)
 from napari.utils.colormaps import (
     CyclicLabelColormap,
     DirectLabelColormap,
@@ -261,56 +264,6 @@ def test_blending():
 
 
 @pytest.mark.filterwarnings('ignore:.*seed is deprecated.*')
-def test_seed():
-    """Test setting seed."""
-    np.random.seed(0)
-    data = np.random.randint(20, size=(10, 15))
-    layer = Labels(data)
-    assert layer.seed == 0.5
-
-    layer.seed = 0.9
-    assert layer.seed == 0.9
-
-    layer = Labels(data, seed=0.7)
-    assert layer.seed == 0.7
-
-    # ensure setting seed updates the random colormap
-    mapped_07 = layer.colormap.map(layer.data)
-    layer.seed = 0.4
-    mapped_04 = layer.colormap.map(layer.data)
-    assert_raises(
-        AssertionError, assert_array_almost_equal, mapped_07, mapped_04
-    )
-
-
-def test_num_colors():
-    """Test setting number of colors in colormap with deprecated API."""
-    np.random.seed(0)
-    data = np.random.randint(20, size=(10, 15))
-    layer = Labels(data)
-
-    with pytest.warns(FutureWarning, match='num_colors is deprecated'):
-        assert layer.num_colors == 50
-
-    with pytest.warns(FutureWarning, match='num_colors is deprecated'):
-        layer.num_colors = 80
-
-    assert len(layer.colormap) == 80
-
-    with pytest.warns(FutureWarning, match='num_colors is deprecated'):
-        layer = Labels(data, num_colors=60)
-
-    assert len(layer.colormap) == 60
-
-    with pytest.raises(ValueError, match=r'.*Only up to 2\*\*16=65535 colors'):
-        with pytest.warns(FutureWarning, match='num_colors is deprecated'):
-            layer.num_colors = 2**17
-
-    with pytest.raises(ValueError, match=r'.*Only up to 2\*\*16=65535 colors'):
-        with pytest.warns(FutureWarning, match='num_colors is deprecated'):
-            Labels(data, num_colors=2**17)
-
-
 def test_properties():
     """Test adding labels with properties."""
     np.random.seed(0)
@@ -447,11 +400,13 @@ def test_custom_color_dict():
     """Test custom color dict."""
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
-    with pytest.warns(FutureWarning, match='Labels.color is deprecated'):
-        layer = Labels(
-            data,
-            color={2: 'white', 4: 'red', 8: 'blue', 16: 'red', 32: 'blue'},
+    cmap = DirectLabelColormap(
+        color_dict=defaultdict(
+            lambda: 'black',
+            {2: 'white', 4: 'red', 8: 'blue', 16: 'red', 32: 'blue'},
         )
+    )
+    layer = Labels(data, colormap=cmap)
 
     # test with custom color dict
     assert isinstance(layer.get_color(2), np.ndarray)
@@ -462,8 +417,6 @@ def test_custom_color_dict():
 
     # test disable custom color dict
     # should not initialize as white since we are using random.seed
-    with pytest.warns(FutureWarning, match='Labels.color_mode is deprecated'):
-        layer.color_mode = 'auto'
     assert not (layer.get_color(1) == np.array([1.0, 1.0, 1.0, 1.0])).all()
 
 
@@ -1123,9 +1076,6 @@ def test_cursor_size_with_negative_scale():
     assert layer.cursor_size > 0
 
 
-@pytest.mark.xfail(
-    reason='labels are converted to float32 before being mapped'
-)
 def test_large_label_values():
     label_array = 2**23 + np.arange(4, dtype=np.uint64).reshape((2, 2))
     layer = Labels(label_array)
@@ -1222,11 +1172,11 @@ def test_3d_video_and_3d_scale_translate_then_scale_translate_padded():
 @dataclass
 class MouseEvent:
     # mock mouse event class
-    pos: List[int]
-    position: List[int]
-    dims_point: List[int]
-    dims_displayed: List[int]
-    view_direction: List[int]
+    pos: list[int]
+    position: list[int]
+    dims_point: list[int]
+    dims_displayed: list[int]
+    view_direction: list[int]
 
 
 def test_get_value_ray_3d():
@@ -1511,8 +1461,6 @@ def test_is_default_color():
     # setting color to default colors doesn't update color mode
     layer.colormap = DirectLabelColormap(color_dict=current_color)
     assert isinstance(layer.colormap, CyclicLabelColormap)
-    with pytest.warns(FutureWarning, match='Labels.color_mode is deprecated'):
-        assert layer.color_mode == 'auto'
 
     # new colors are not default
     new_color = {0: 'white', 1: 'red', 3: 'green', None: 'blue'}
@@ -1520,8 +1468,6 @@ def test_is_default_color():
     # setting the color with non-default colors updates color mode
     layer.colormap = DirectLabelColormap(color_dict=new_color)
     assert isinstance(layer.colormap, DirectLabelColormap)
-    with pytest.warns(FutureWarning, match='Labels.color_mode is deprecated'):
-        assert layer.color_mode == 'direct'
 
 
 def test_large_labels_direct_color():
@@ -1529,12 +1475,12 @@ def test_large_labels_direct_color():
     pytest.importorskip('numba')
     data = np.array([[0, 1], [2**16, 2**20]], dtype=np.uint32)
     colors = {1: 'white', 2**16: 'green', 2**20: 'magenta'}
-    layer = Labels(data)
-    with pytest.warns(FutureWarning, match='Labels.color is deprecated'):
-        layer.color = colors
-
-    with pytest.warns(FutureWarning, match='Labels.color_mode is deprecated'):
-        assert layer.color_mode == 'direct'
+    layer = Labels(
+        data,
+        colormap=DirectLabelColormap(
+            color_dict=defaultdict(lambda: 'black', colors)
+        ),
+    )
     np.testing.assert_allclose(layer.get_color(2**20), [1.0, 0.0, 1.0, 1.0])
 
 
@@ -1775,3 +1721,8 @@ class TestLabels:
             obj,
             {'seed', 'num_colors', 'color', 'seed_rng'},
         )
+
+
+def test_docstring():
+    validate_all_params_in_docstring(Labels)
+    validate_kwargs_sorted(Labels)

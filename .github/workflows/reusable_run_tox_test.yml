@@ -1,3 +1,5 @@
+name: Run test by tox
+
 on:
   workflow_call:
     inputs:
@@ -64,9 +66,13 @@ jobs:
         with:
           python-version: ${{ inputs.python_version }}
           cache: "pip"
-          cache-dependency-path: setup.cfg
+          cache-dependency-path: pyproject.toml
 
       - uses: tlambert03/setup-qt-libs@v1
+
+      - name: Setup Graphviz
+        uses: ts-graphviz/setup-graphviz@v2
+        continue-on-error: true
 
       # strategy borrowed from vispy for installing opengl libs on windows
       - name: Install Windows OpenGL
@@ -87,6 +93,8 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install setuptools tox tox-gh-actions tox-min-req
+        env:
+          PIP_CONSTRAINT: ""
 
       - name: create _version.py file
         # workaround for not using src layout
@@ -178,10 +186,17 @@ jobs:
           name: test artifacts ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }}
           path: .pytest_tmp
 
+      - name: Upload leaked viewer graph
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: leaked ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }}
+          path: ./*leak-backref-graph*.pdf
+
       - name: Upload pytest timing reports as json ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }}
         uses: actions/upload-artifact@v4
         with:
-          name: upload pytest timing json ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }}
+          name: upload pytest timing json ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }} ${{ inputs.tox_extras }}
           path: |
             ./report-*.json
 

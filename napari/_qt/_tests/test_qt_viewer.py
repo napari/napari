@@ -3,7 +3,6 @@ import os
 import weakref
 from dataclasses import dataclass
 from itertools import product, takewhile
-from typing import List, Tuple
 from unittest import mock
 
 import numpy as np
@@ -289,9 +288,10 @@ def test_screenshot_dialog(make_napari_viewer, tmpdir):
     # Save screenshot
     input_filepath = os.path.join(tmpdir, 'test-save-screenshot')
     mock_return = (input_filepath, '')
-    with mock.patch('napari._qt._qt_viewer.QFileDialog') as mocker, mock.patch(
-        'napari._qt._qt_viewer.QMessageBox'
-    ) as mocker2:
+    with (
+        mock.patch('napari._qt._qt_viewer.QFileDialog') as mocker,
+        mock.patch('napari._qt._qt_viewer.QMessageBox') as mocker2,
+    ):
         mocker.getSaveFileName.return_value = mock_return
         mocker2.warning.return_value = QMessageBox.Yes
         viewer.window._qt_viewer._screenshot_dialog()
@@ -434,7 +434,7 @@ def test_active_keybindings(make_napari_viewer):
 @dataclass
 class MouseEvent:
     # mock mouse event class
-    pos: List[int]
+    pos: list[int]
 
 
 def test_process_mouse_event(make_napari_viewer):
@@ -676,7 +676,7 @@ def _update_data(
     qtbot: QtBot,
     qt_viewer: QtViewer,
     dtype: np.dtype = np.uint64,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """Change layer data and return color of label and middle pixel of screenshot."""
     layer.data = np.full((2, 2), label, dtype=dtype)
     layer.selected_label = label
@@ -800,7 +800,7 @@ def test_label_colors_matching_widget_direct(
         )
 
 
-def test_axes_labels(make_napari_viewer):
+def test_axis_labels(make_napari_viewer):
     viewer = make_napari_viewer(ndisplay=3)
     layer = viewer.add_image(np.zeros((2, 2, 2)), scale=(1, 2, 4))
 
@@ -826,7 +826,7 @@ def qt_viewer(qtbot):
     del qt_viewer
 
 
-def _find_margin(data: np.ndarray, additional_margin: int) -> Tuple[int, int]:
+def _find_margin(data: np.ndarray, additional_margin: int) -> tuple[int, int]:
     """
     helper function to determine margins in test_thumbnail_labels
     """

@@ -1,7 +1,7 @@
 import re
 from dataclasses import dataclass
 from functools import total_ordering
-from typing import Any, Dict, Optional, SupportsInt, Tuple, Union
+from typing import Any, Optional, SupportsInt, Union
 
 from napari.utils.theme import available_themes, is_theme_available
 from napari.utils.translations import _load_language, get_language_packs, trans
@@ -13,6 +13,8 @@ class Theme(str):
     """
 
     # https://pydantic-docs.helpmanual.io/usage/types/#custom-data-types
+
+    __slots__ = ()
 
     @classmethod
     def __get_validators__(cls):
@@ -49,6 +51,8 @@ class Language(str):
     """
 
     # https://pydantic-docs.helpmanual.io/usage/types/#custom-data-types
+
+    __slots__ = ()
 
     @classmethod
     def __get_validators__(cls):
@@ -130,7 +134,7 @@ class Version:
                     version=version,
                 )
             )
-        matched_version_parts: Dict[str, Any] = match.groupdict()
+        matched_version_parts: dict[str, Any] = match.groupdict()
         return cls(**matched_version_parts)
 
     # NOTE: we're only comparing the numeric parts for now.
@@ -166,7 +170,7 @@ class Version:
             )
         return other
 
-    def to_tuple(self) -> Tuple[int, int, int, Optional[str], Optional[str]]:
+    def to_tuple(self) -> tuple[int, int, int, Optional[str], Optional[str]]:
         """Return version as tuple (first three are int, last two Opt[str])."""
         return (
             int(self.major),

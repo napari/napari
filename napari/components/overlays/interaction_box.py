@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Optional
 
 from napari.components.overlays.base import SceneOverlay
 from napari.layers.utils.interaction_box import (
@@ -26,7 +26,7 @@ class SelectionBoxOverlay(SceneOverlay):
         The rendering order of the overlay: lower numbers get rendered first.
     """
 
-    bounds: Tuple[Tuple[float, float], Tuple[float, float]] = ((0, 0), (0, 0))
+    bounds: tuple[tuple[float, float], tuple[float, float]] = ((0, 0), (0, 0))
     handles: bool = False
     selected_handle: Optional[InteractionBoxHandle] = None
 

@@ -1,5 +1,9 @@
+name: Upload coverage
 on:
   workflow_call:
+    secrets:
+      codecov_token:
+        required: true
 
 
 jobs:
@@ -12,7 +16,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.x"
-          cache-dependency-path: setup.cfg
+          cache-dependency-path: pyproject.toml
           cache: 'pip'
 
       - name: Install Dependencies
@@ -36,7 +40,7 @@ jobs:
           python -Im coverage report --format=markdown --skip-empty --skip-covered >> $GITHUB_STEP_SUMMARY
 
       - name: Upload coverage data
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           fail_ci_if_error: true
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ secrets.codecov_token }}

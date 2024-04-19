@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Tuple
+from typing import TYPE_CHECKING
 
 import numpy as np
 import numpy.typing as npt
@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 
 
 def make_colorbar(
-    cmap: 'Colormap', size: Tuple[int, int] = (18, 28), horizontal: bool = True
+    cmap: 'Colormap', size: tuple[int, int] = (18, 28), horizontal: bool = True
 ) -> npt.NDArray[np.uint8]:
     """Make a colorbar from a colormap.
 

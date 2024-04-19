@@ -29,14 +29,8 @@ class VispyBoundingBoxOverlay(LayerOverlayMixin, VispySceneOverlay):
         if len(bounds) == 2:
             # 2d layers are assumed to be at 0 in the 3rd dimension
             bounds = np.pad(bounds, ((1, 0), (0, 0)))
-        if self.layer._array_like and self.layer._slice_input.ndisplay == 2:
-            # array-like layers (images) are offset by 0.5 in 2d.
-            # This is not needed in 3D because vispy's VolumeVisual
-            # is already centered on voxels
-            bounds += 0.5
 
         self.node.set_bounds(bounds[::-1])  # invert for vispy
-        self._on_lines_change()
 
     def _on_lines_change(self):
         self.node.lines.visible = self.overlay.lines
@@ -45,10 +39,12 @@ class VispyBoundingBoxOverlay(LayerOverlayMixin, VispySceneOverlay):
         self.node.markers.visible = self.overlay.points
 
     def _on_line_thickness_change(self):
-        self.node.lines.set_data(width=self.overlay.line_thickness)
+        self.node._line_thickness = self.overlay.line_thickness
+        self._on_bounds_change()
 
     def _on_line_color_change(self):
-        self.node.lines.set_data(color=self.overlay.line_color)
+        self.node._line_color = self.overlay.line_color
+        self._on_bounds_change()
 
     def _on_point_size_change(self):
         self.node._marker_size = self.overlay.point_size

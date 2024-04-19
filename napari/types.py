@@ -1,3 +1,4 @@
+from collections.abc import Iterable, Sequence
 from functools import partial, wraps
 from pathlib import Path
 from types import TracebackType
@@ -5,14 +6,8 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
-    Iterable,
-    List,
     NewType,
     Optional,
-    Sequence,
-    Tuple,
-    Type,
     Union,
 )
 
@@ -68,22 +63,22 @@ ArrayLike = Union[np.ndarray, 'dask.array.Array', 'zarr.Array']
 
 # layer data may be: (data,) (data, meta), or (data, meta, layer_type)
 # using "Any" for the data type until ArrayLike is more mature.
-FullLayerData = Tuple[Any, Dict, LayerTypeName]
-LayerData = Union[Tuple[Any], Tuple[Any, Dict], FullLayerData]
+FullLayerData = tuple[Any, dict, LayerTypeName]
+LayerData = Union[tuple[Any], tuple[Any, dict], FullLayerData]
 
 PathLike = Union[str, Path]
 PathOrPaths = Union[PathLike, Sequence[PathLike]]
-ReaderFunction = Callable[[PathOrPaths], List[LayerData]]
-WriterFunction = Callable[[str, List[FullLayerData]], List[str]]
+ReaderFunction = Callable[[PathOrPaths], list[LayerData]]
+WriterFunction = Callable[[str, list[FullLayerData]], list[str]]
 
 ExcInfo = Union[
-    Tuple[Type[BaseException], BaseException, TracebackType],
-    Tuple[None, None, None],
+    tuple[type[BaseException], BaseException, TracebackType],
+    tuple[None, None, None],
 ]
 
 # Types for GUI HookSpecs
 WidgetCallable = Callable[..., Union['FunctionGui', 'QWidget']]
-AugmentedWidget = Union[WidgetCallable, Tuple[WidgetCallable, dict]]
+AugmentedWidget = Union[WidgetCallable, tuple[WidgetCallable, dict]]
 
 
 # Sample Data for napari_provide_sample_data hookspec is either a string/path
@@ -104,14 +99,14 @@ class SampleDict(TypedDict):
 # while their names should not change (without deprecation), their typing
 # implementations may... or may be rolled over to napari/image-types
 
-ArrayBase: Type[np.ndarray] = np.ndarray
+ArrayBase: type[np.ndarray] = np.ndarray
 
 
 ImageData = NewType('ImageData', np.ndarray)
 LabelsData = NewType('LabelsData', np.ndarray)
 PointsData = NewType('PointsData', np.ndarray)
-ShapesData = NewType('ShapesData', List[np.ndarray])
-SurfaceData = NewType('SurfaceData', Tuple[np.ndarray, np.ndarray, np.ndarray])
+ShapesData = NewType('ShapesData', list[np.ndarray])
+SurfaceData = NewType('SurfaceData', tuple[np.ndarray, np.ndarray, np.ndarray])
 TracksData = NewType('TracksData', np.ndarray)
 VectorsData = NewType('VectorsData', np.ndarray)
 _LayerData = Union[
@@ -128,7 +123,7 @@ LayerDataTuple = NewType('LayerDataTuple', tuple)
 
 
 def image_reader_to_layerdata_reader(
-    func: Callable[[PathOrPaths], ArrayLike]
+    func: Callable[[PathOrPaths], ArrayLike],
 ) -> ReaderFunction:
     """Convert a PathLike -> ArrayLike function to a PathLike -> LayerData.
 
@@ -147,7 +142,7 @@ def image_reader_to_layerdata_reader(
     """
 
     @wraps(func)
-    def reader_function(*args, **kwargs) -> List[LayerData]:
+    def reader_function(*args, **kwargs) -> list[LayerData]:
         result = func(*args, **kwargs)
         return [(result,)]
 
@@ -156,21 +151,19 @@ def image_reader_to_layerdata_reader(
 
 def _register_types_with_magicgui():
     """Register ``napari.types`` objects with magicgui."""
-    import sys
     from concurrent.futures import Future
 
     from magicgui import register_type
 
     from napari.utils import _magicgui as _mgui
 
-    for type_ in (LayerDataTuple, List[LayerDataTuple]):
+    for type_ in (LayerDataTuple, list[LayerDataTuple]):
         register_type(
             type_,
             return_callback=_mgui.add_layer_data_tuples_to_viewer,
         )
-        if sys.version_info >= (3, 9):
-            future_type = Future[type_]  # type: ignore [valid-type]
-            register_type(future_type, return_callback=_mgui.add_future_data)
+        future_type = Future[type_]  # type: ignore [valid-type]
+        register_type(future_type, return_callback=_mgui.add_future_data)
 
     for data_type in get_args(_LayerData):
         register_type(
@@ -178,27 +171,21 @@ def _register_types_with_magicgui():
             choices=_mgui.get_layers_data,
             return_callback=_mgui.add_layer_data_to_viewer,
         )
-        if sys.version_info >= (3, 9):
-            register_type(
-                Future[data_type],  # type: ignore [valid-type]
-                choices=_mgui.get_layers_data,
-                return_callback=partial(
-                    _mgui.add_future_data, _from_tuple=False
-                ),
-            )
+        register_type(
+            Future[data_type],  # type: ignore [valid-type]
+            choices=_mgui.get_layers_data,
+            return_callback=partial(_mgui.add_future_data, _from_tuple=False),
+        )
         register_type(
             Optional[data_type],  # type: ignore [call-overload]
             choices=_mgui.get_layers_data,
             return_callback=_mgui.add_layer_data_to_viewer,
         )
-        if sys.version_info >= (3, 9):
-            register_type(
-                Future[Optional[data_type]],  # type: ignore [valid-type]
-                choices=_mgui.get_layers_data,
-                return_callback=partial(
-                    _mgui.add_future_data, _from_tuple=False
-                ),
-            )
+        register_type(
+            Future[Optional[data_type]],  # type: ignore [valid-type]
+            choices=_mgui.get_layers_data,
+            return_callback=partial(_mgui.add_future_data, _from_tuple=False),
+        )
 
 
 _register_types_with_magicgui()

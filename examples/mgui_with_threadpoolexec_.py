@@ -9,7 +9,6 @@ Note: this example requires python >= 3.9
 
 .. tags:: gui
 """
-import sys
 from concurrent.futures import Future, ThreadPoolExecutor
 
 from magicgui import magic_factory
@@ -18,10 +17,6 @@ from skimage.feature import blob_log
 
 import napari
 from napari.types import ImageData, LayerDataTuple
-
-if sys.version_info < (3, 9):
-    print('This example requires python >= 3.9')
-    sys.exit(0)
 
 pool = ThreadPoolExecutor()
 
@@ -53,9 +48,9 @@ def make_widget(
         data = blobs[:, : image.ndim]
         kwargs = {
             'size': blobs[:, -1],
-            'edge_color': 'red',
-            'edge_width': 2,
-            'edge_width_is_relative': False,
+            'border_color': 'red',
+            'border_width': 2,
+            'border_width_is_relative': False,
             'face_color': 'transparent',
         }
         return (data, kwargs, 'points')
