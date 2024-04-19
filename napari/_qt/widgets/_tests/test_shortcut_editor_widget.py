@@ -141,10 +141,9 @@ def test_keybinding_with_modifiers(
     widget._table.setCurrentIndex(index)
     widget._table.edit(index)
     qtbot.waitUntil(lambda: widget._table.focusWidget() is not None)
-    # editor = widget._table.focusWidget()
-    pyautogui.hotkey(['ctrl', 'u'], 0.2)
-    # qtbot.keyClick(editor, key, modifier=modifier)
-    QApplication.processEvents()
+    editor = widget._table.focusWidget()
+    with qtbot.waitSignal(editor.editingFinished):
+        qtbot.keyClick(editor, key, modifier=modifier)
     assert len([warn for warn in recwarn if warn.category is UserWarning]) == 0
 
     shortcut = widget._table.item(0, widget._shortcut_col).text()
