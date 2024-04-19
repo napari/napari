@@ -131,14 +131,18 @@ def test_keybinding_with_modifiers(
     x = widget._table.columnViewportPosition(widget._shortcut_col)
     y = widget._table.rowViewportPosition(0)
     item_pos = QPoint(x, y)
-    qtbot.mouseClick(
-        widget._table.viewport(), Qt.MouseButton.LeftButton, pos=item_pos
-    )
-    qtbot.mouseDClick(
-        widget._table.viewport(), Qt.MouseButton.LeftButton, pos=item_pos
-    )
-    qtbot.waitUntil(lambda: QApplication.focusWidget() is not None)
-    qtbot.keyClick(QApplication.focusWidget(), key, modifier=modifier)
+    # qtbot.mouseClick(
+    #     widget._table.viewport(), Qt.MouseButton.LeftButton, pos=item_pos
+    # )
+    # qtbot.mouseDClick(
+    #     widget._table.viewport(), Qt.MouseButton.LeftButton, pos=item_pos
+    # )
+    index = widget._table.indexAt(item_pos)
+    widget._table.setCurrentIndex(index)
+    widget._table.edit(index)
+    qtbot.waitUntil(lambda: widget._table.focusWidget() is not None)
+    editor = widget._table.focusWidget()
+    qtbot.keyClick(editor, key, modifier=modifier)
     assert len([warn for warn in recwarn if warn.category is UserWarning]) == 0
 
     shortcut = widget._table.item(0, widget._shortcut_col).text()
