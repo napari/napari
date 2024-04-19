@@ -204,7 +204,7 @@ class QtLabelsControls(QtLayerControls):
 
         self.transform_button = QtModeRadioButton(
             layer,
-            'pan',
+            'transform',
             Mode.TRANSFORM,
         )
         action_manager.bind_button(

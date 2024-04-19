@@ -96,6 +96,10 @@ QtModeRadioButton[mode="pan"]::indicator {
   image: url("theme_{{ id }}:/pan_arrows.svg");
 }
 
+QtModeRadioButton[mode="transform"]::indicator {
+  image: url("theme_{{ id }}:/transform.svg");
+}
+
 QtModeRadioButton[mode="select"]::indicator {
   image: url("theme_{{ id }}:/select.svg");
 }

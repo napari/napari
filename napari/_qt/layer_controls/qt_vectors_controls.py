@@ -133,7 +133,7 @@ class QtVectorsControls(QtLayerControls):
         )
         self.transform_button = _radio_button(
             layer,
-            'pan',
+            'transform',
             Mode.TRANSFORM,
             'activate_tracks_transform_mode',
             extra_tooltip_text=trans._('(use Alt-Left mouse click to reset)'),
