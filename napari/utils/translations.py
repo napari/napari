@@ -170,6 +170,16 @@ class TranslationString(str):
     of the arguments to __new__ and __init__ in this class.
     """
 
+    __slots__ = (
+        '_domain',
+        '_msgctxt',
+        '_msgid',
+        '_msgid_plural',
+        '_n',
+        '_deferred',
+        '_kwargs',
+    )
+
     def __deepcopy__(self, memo):
         from copy import deepcopy
 

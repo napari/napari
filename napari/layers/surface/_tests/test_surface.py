@@ -9,6 +9,10 @@ from napari.components.dims import Dims
 from napari.layers import Surface
 from napari.layers.surface.normals import SurfaceNormals
 from napari.layers.surface.wireframe import SurfaceWireframe
+from napari.utils._test_utils import (
+    validate_all_params_in_docstring,
+    validate_kwargs_sorted,
+)
 
 
 def test_random_surface():
@@ -487,3 +491,8 @@ def test_surface_copy():
     l1 = Surface((vertices, faces, values))
     l2 = copy.copy(l1)
     assert l1.data[0] is not l2.data[0]
+
+
+def test_docstring():
+    validate_all_params_in_docstring(Surface)
+    validate_kwargs_sorted(Surface)

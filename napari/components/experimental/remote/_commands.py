@@ -1,5 +1,4 @@
-"""RemoteCommands class.
-"""
+"""RemoteCommands class."""
 
 import json
 import logging

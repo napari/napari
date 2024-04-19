@@ -17,6 +17,10 @@ from napari.layers import Shapes
 from napari.layers.base._base_constants import ActionType
 from napari.layers.utils._text_constants import Anchor
 from napari.layers.utils.color_encoding import ConstantColorEncoding
+from napari.utils._test_utils import (
+    validate_all_params_in_docstring,
+    validate_kwargs_sorted,
+)
 from napari.utils.colormaps.standardize_color import transform_color
 
 
@@ -2371,3 +2375,8 @@ def test_shapes_add_delete_only_emit_two_events():
     layer.selected_data = {1}
     layer.remove_selected()
     assert emitted_events.call_count == 4
+
+
+def test_docstring():
+    validate_all_params_in_docstring(Shapes)
+    validate_kwargs_sorted(Shapes)
