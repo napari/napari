@@ -84,6 +84,12 @@ def test_calc_data_range():
     clim = calc_data_range(data)
     np.testing.assert_array_equal(clim, (0, 2))
 
+    data = np.zeros((10_000, 10_000))
+    data[0, 0] = -1
+    data[-1, -1] = 10
+    clim = calc_data_range(data)
+    np.testing.assert_array_equal(clim, (-1, 10))
+
 
 @pytest.mark.parametrize(
     'data',
