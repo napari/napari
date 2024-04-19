@@ -767,6 +767,13 @@ def _enclosing(
 def _remove_holes(path):
     v, e = _normalize_vertices_and_edges(path, close=True)
     n_edge = len(e)
+    if n_edge == 0:
+        # if there's not enough edges in the path, return fast.
+        # Note: this condition can probably be expanded: the smallest hole
+        # is 3 edges within 3 edges (a triangle within a triangle), so we
+        # should be able to use this exit with n_edge < 6. However, there may
+        # be some edge cases to consider when drawing partial polygons
+        return path
     m = np.max(e)
     csr = sparse.coo_matrix(
         (np.ones(n_edge), tuple(e.T)), shape=(m + 1, m + 1)
