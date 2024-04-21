@@ -216,8 +216,8 @@ def test_convert_layer(layer, type_):
     ll.append(layer)
     assert ll[0]._type_string != type_
     _convert(ll, type_)
-    assert ll[0]._type_string == type_
-    assert np.array_equal(ll[0].scale, original_scale)
+    assert ll[1]._type_string == type_
+    assert np.array_equal(ll[1].scale, original_scale)
 
     if (
         type_ == 'labels'
@@ -225,7 +225,7 @@ def test_convert_layer(layer, type_):
         and np.issubdtype(layer.data.dtype, np.integer)
     ):
         assert (
-            layer.data is ll[0].data
+            layer.data is ll[1].data
         )  # check array data not copied unnecessarily
 
 
