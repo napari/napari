@@ -95,6 +95,6 @@ class MultiScaleData(Sequence[LayerDataProtocol]):
 
     def __repr__(self) -> str:
         return (
-            f"<MultiScaleData at {hex(id(self))}. "
+            f'<MultiScaleData at {hex(id(self))}. '
             f"{len(self)} levels, '{self.dtype}', shapes: {self.shapes}>"
         )

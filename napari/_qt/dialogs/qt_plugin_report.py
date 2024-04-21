@@ -1,5 +1,4 @@
-"""Provides a QtPluginErrReporter that allows the user report plugin errors.
-"""
+"""Provides a QtPluginErrReporter that allows the user report plugin errors."""
 
 import contextlib
 from typing import Optional

@@ -233,6 +233,6 @@ def test_multichannel_index_error_hint():
     with pytest.raises(IndexError) as e:
         viewer.add_image(data, channel_axis=0, name=['a', 'b'])
     assert (
-        "Requested channel_axis (0) had length 5, but the "
+        'Requested channel_axis (0) had length 5, but the '
         "'name' argument only provided 2 values." in str(e)
     )

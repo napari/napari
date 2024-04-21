@@ -491,7 +491,7 @@ def _magic_imreader(path: str) -> list['LayerData']:
 
 
 def napari_get_reader(
-    path: Union[str, list[str]]
+    path: Union[str, list[str]],
 ) -> Optional['ReaderFunction']:
     """Our internal fallback file reader at the end of the reader plugin chain.
 
