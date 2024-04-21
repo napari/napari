@@ -53,7 +53,7 @@ def _convert(ll: LayerList, type_: str) -> None:
 
     for lay in list(ll.selection):
         idx = ll.index(lay)
-        ll.pop(idx)
+        # ll.pop(idx)
 
         if isinstance(lay, Shapes) and type_ == 'labels':
             data = lay.to_labels()
@@ -64,7 +64,7 @@ def _convert(ll: LayerList, type_: str) -> None:
         else:
             data = lay.data
         new_layer = Layer.create(data, lay._get_base_state(), type_)
-        ll.insert(idx, new_layer)
+        ll.insert(idx + 1, new_layer)
 
 
 # TODO: currently, we have to create a thin _convert_to_x wrapper around _convert
