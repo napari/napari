@@ -5,15 +5,16 @@ on a layer in the LayerList.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Optional, cast
 
 import numpy as np
 import numpy.typing as npt
 
-from napari.layers import Image, Labels, Layer
+from napari.layers import Image, Labels, Layer, SourceLayer
 from napari.layers._source import layer_source
 from napari.layers.utils import stack_utils
 from napari.layers.utils._link_layers import get_linked_layers
+from napari.utils.notifications import show_info, show_warning
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -204,3 +205,23 @@ def _project(ll: LayerList, axis: int = 0, mode: str = 'max') -> None:
     )
 
     ll.append(new)
+
+
+def _copy_spatial_information(
+    ll: LayerList, source_layer: Optional[SourceLayer] = None
+) -> None:
+    if source_layer is None:
+        show_info('No source layer selected')
+        return
+
+    for layer in ll.selection:
+        if layer == source_layer:
+            continue
+        if layer.ndim > source_layer.ndim:
+            show_warning(
+                'Source layer has fewer dimensions than target layer. Cannot copy spatial information.'
+            )
+            return
+
+        layer.scale = source_layer.scale[-layer.ndim :]
+        layer.translate = source_layer.translate[-layer.ndim :]

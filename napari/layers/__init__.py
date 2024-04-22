@@ -6,6 +6,7 @@ to the super constructor.
 """
 
 import inspect as _inspect
+from typing import TypeVar
 
 from napari.layers.base import Layer
 from napari.layers.image import Image
@@ -16,6 +17,8 @@ from napari.layers.surface import Surface
 from napari.layers.tracks import Tracks
 from napari.layers.vectors import Vectors
 from napari.utils.misc import all_subclasses as _all_subcls
+
+SourceLayer = TypeVar('SourceLayer', bound=Layer)
 
 # isabstact check is to exclude _ImageBase class
 NAMES: set[str] = {
@@ -29,6 +32,7 @@ __all__ = [
     'Labels',
     'Layer',
     'Points',
+    'SourceLayer',
     'Shapes',
     'Surface',
     'Tracks',

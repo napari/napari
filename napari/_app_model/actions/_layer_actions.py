@@ -108,6 +108,17 @@ LAYER_ACTIONS: list[Action] = [
         ],
     ),
     Action(
+        id='napari.layer.copy_spatial_information',
+        title=trans._('Copy Spatial Information'),
+        callback=_layer_actions._copy_spatial_information,
+        menus=[
+            {
+                'id': MenuId.LAYERLIST_CONTEXT,
+                'group': MenuGroup.NAVIGATION,
+            }
+        ],
+    ),
+    Action(
         id='napari.layer.link_selected_layers',
         title=trans._('Link Layers'),
         callback=_layer_actions._link_selected_layers,

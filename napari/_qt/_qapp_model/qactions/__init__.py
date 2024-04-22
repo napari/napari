@@ -32,6 +32,7 @@ def init_qactions() -> None:
     from napari._qt._qapp_model.qactions._view import Q_VIEW_ACTIONS
     from napari._qt.qt_main_window import Window
     from napari._qt.qt_viewer import QtViewer
+    from napari.layers import SourceLayer
 
     # update the namespace with the Qt-specific types/providers/processors
     app = get_app()
@@ -40,6 +41,7 @@ def init_qactions() -> None:
         **store.namespace,
         'Window': Window,
         'QtViewer': QtViewer,
+        'SourceLayer': SourceLayer,
     }
 
     # Qt-specific providers/processors
