@@ -107,7 +107,7 @@ def test_evented_model_with_array():
     )
 
     # try changing shape to something impossible to correctly reshape
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError, match='cannot reshape'):
         model.shaped2_values = [1]
 
 

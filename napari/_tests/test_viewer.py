@@ -213,7 +213,9 @@ def test_changing_theme(make_napari_viewer):
     # more than 99.5% of the pixels have changed
     assert (np.count_nonzero(equal) / equal.size) < 0.05, 'Themes too similar'
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(
+        ValidationError, match="Theme 'nonexistent_theme' not found"
+    ):
         viewer.theme = 'nonexistent_theme'
 
 

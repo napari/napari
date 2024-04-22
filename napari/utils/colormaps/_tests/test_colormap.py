@@ -46,7 +46,9 @@ def test_non_ascending_control_points():
     colors = np.array(
         [[0, 0, 0, 1], [0, 0.5, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]]
     )
-    with pytest.raises(ValidationError):
+    with pytest.raises(
+        ValidationError, match='need to be sorted in ascending order'
+    ):
         Colormap(colors, name='testing', controls=[0, 0.75, 0.25, 1])
 
 
@@ -55,21 +57,27 @@ def test_wrong_number_control_points():
     colors = np.array(
         [[0, 0, 0, 1], [0, 0.5, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]]
     )
-    with pytest.raises(ValidationError):
+    with pytest.raises(
+        ValidationError, match='Wrong number of control points'
+    ):
         Colormap(colors, name='testing', controls=[0, 0.75, 1])
 
 
 def test_wrong_start_control_point():
     """Test wrong start of control points raises an error."""
     colors = np.array([[0, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]])
-    with pytest.raises(ValidationError):
+    with pytest.raises(
+        ValidationError, match='must start with 0.0 and end with 1.0'
+    ):
         Colormap(colors, name='testing', controls=[0.1, 0.75, 1])
 
 
 def test_wrong_end_control_point():
     """Test wrong end of control points raises an error."""
     colors = np.array([[0, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]])
-    with pytest.raises(ValidationError):
+    with pytest.raises(
+        ValidationError, match='must start with 0.0 and end with 1.0'
+    ):
         Colormap(colors, name='testing', controls=[0, 0.75, 0.9])
 
 

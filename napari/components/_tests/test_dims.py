@@ -58,7 +58,7 @@ def test_labels_with_init():
 
 def test_bad_order():
     dims = Dims(ndim=3)
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError, match='Invalid ordering'):
         dims.order = (0, 0, 1)
 
 
@@ -158,13 +158,13 @@ def test_range():
     assert dims.range == ((0, 2, 1),) * 3 + ((0, 4, 2),)
 
     # start must be lower than stop
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError, match='must be strictly increasing'):
         dims.set_range(0, (1, 0, 1))
 
     # step must be positive
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError, match='must be strictly positive'):
         dims.set_range(0, (0, 2, 0))
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError, match='must be strictly positive'):
         dims.set_range(0, (0, 2, -1))
 
 
