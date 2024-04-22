@@ -46,7 +46,7 @@ jobs:
           # https://help.github.com/en/actions/reference/workflow-commands-for-github-actions
           echo "name=contents=${RELEASE_NOTES}" >> $GITHUB_ENV
       - name: Create Release
-        uses: "softprops/action-gh-release@v1"
+        uses: "softprops/action-gh-release@v2"
         with:
           tag_name: ${{ github.ref }}
           name: ${{ env.tag }}

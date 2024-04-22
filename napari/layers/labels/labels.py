@@ -250,7 +250,9 @@ class Labels(ScalarFieldBase):
 
     brush_size_on_mouse_move = BrushSizeOnMouseMove(min_brush_size=1)
 
-    _move_modes: ClassVar[dict[StringEnum, Callable[['Labels', Event], None]]] = {  # type: ignore[assignment]
+    _move_modes: ClassVar[
+        dict[StringEnum, Callable[['Labels', Event], None]]
+    ] = {  # type: ignore[assignment]
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
         Mode.PICK: no_op,
@@ -531,7 +533,7 @@ class Labels(ScalarFieldBase):
         """Dataframe-like features table.
 
         It is an implementation detail that this is a `pandas.DataFrame`. In the future,
-        we will target the currently-in-development Data API dataframe protocol [1].
+        we will target the currently-in-development Data API dataframe protocol [1]_.
         This will enable us to use alternate libraries such as xarray or cuDF for
         additional features without breaking existing usage of this.
 
@@ -540,7 +542,7 @@ class Labels(ScalarFieldBase):
 
         References
         ----------
-        .. [1]: https://data-apis.org/dataframe-protocol/latest/API.html
+        .. [1] https://data-apis.org/dataframe-protocol/latest/API.html
         """
         return self._feature_table.values
 
@@ -1405,7 +1407,7 @@ class Labels(ScalarFieldBase):
         ----------
         indices : tuple of arrays of int
             Indices in data to overwrite. Must be a tuple of arrays of length
-            equal to the number of data dimensions. (Fancy indexing in [1]_).
+            equal to the number of data dimensions. (Fancy indexing in [2]_).
         value : int or array of int
             New label value(s). If more than one value, must match or
             broadcast with the given indices.
@@ -1414,7 +1416,7 @@ class Labels(ScalarFieldBase):
 
         References
         ----------
-        ..[1] https://numpy.org/doc/stable/user/basics.indexing.html
+        .. [2] https://numpy.org/doc/stable/user/basics.indexing.html
         """
         changed_indices = self.data[indices] != value
         indices = tuple(x[changed_indices] for x in indices)

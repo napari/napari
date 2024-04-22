@@ -415,7 +415,7 @@ class Affine(Transform):
 
     References
     ----------
-    [1] https://en.wikipedia.org/wiki/Homogeneous_coordinates.
+    .. [1] https://en.wikipedia.org/wiki/Homogeneous_coordinates.
     """
 
     def __init__(
