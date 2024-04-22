@@ -464,7 +464,7 @@ def test_create_layer_controls_qcolorswatchedit(
         'action_manager_patch_path',
         'action_manager_trigger',
     ),
-    (
+    [
         (
             _LABELS_WITH_DIRECT_COLORMAP,
             'napari._qt.layer_controls.qt_labels_controls.action_manager',
@@ -505,7 +505,7 @@ def test_create_layer_controls_qcolorswatchedit(
             'napari._qt.layer_controls.qt_vectors_controls.action_manager',
             'napari:activate_vectors_transform_mode',
         ),
-    ),
+    ],
 )
 @pytest.mark.skipif(os.environ.get('MIN_REQ', '0') == '1', reason='min req')
 def test_create_layer_controls_transform_mode_button(
@@ -586,7 +586,7 @@ def test_layer_controls_invalid_mode(
     assert ctrl.panzoom_button.isChecked()
 
     # check setting invalid mode
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='not recognized'):
         ctrl._on_mode_change(Event('mode', mode='invalid_mode'))
 
     # check panzoom_button is still checked
