@@ -89,7 +89,9 @@ def _run_example(example_path):
 @pytest.mark.parametrize('fname', examples)
 def test_examples(builtins, fname, monkeypatch):
     """Test that all of our examples are still working without warnings."""
-    _run_example(str(EXAMPLE_DIR / fname))
+    example_path = str(EXAMPLE_DIR / fname)
+    monkeypatch.setattr(sys, 'argv', [fname])
+    _run_example(example_path)
 
 
 @pytest.mark.usefixtures('_example_monkeypatch')
@@ -98,4 +100,6 @@ def test_examples(builtins, fname, monkeypatch):
 @pytest.mark.parametrize('fname', dev_examples)
 def test_dev_examples(fname, monkeypatch):
     """Test that all of our dev examples are still working without warnings."""
-    _run_example(str(DEV_EXAMPLE_DIR / fname))
+    example_path = str(DEV_EXAMPLE_DIR / fname)
+    monkeypatch.setattr(sys, 'argv', [fname])
+    _run_example(example_path)
