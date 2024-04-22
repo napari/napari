@@ -81,8 +81,8 @@ class LayerPopup(QtPopup):
         self._layput.addWidget(self.select)
         self.frame.setLayout(self._layput)
 
-    def _accept(self):
-        self.selected_layer = self.select_combo.value
+    def _accept(self) -> None:
+        self.selected_layer = self.select_combo.value  # type: ignore[attr-defined]
         self.close()
 
 
@@ -92,7 +92,7 @@ def _provide_source_layer() -> Optional[SourceLayer]:
     if viewer is None:
         return None
     pop = LayerPopup(viewer)
-    pop.exec_()
+    pop.exec_()  # type: ignore[attr-defined]
     return pop.selected_layer
 
 
