@@ -143,9 +143,9 @@ def test_keybinding_with_modifiers(
     qtbot.waitUntil(lambda: widget._table.focusWidget() is not None)
     window = QApplication.focusWindow()
     # editor = widget._table.focusWidget()
-    # qtbot.wait(1000)
-    qtbot.keyClick(window, key, modifier=modifier, delay=10)
-    # qtbot.wait(1000)
+    qtbot.wait(1000)
+    qtbot.keyClick(window, key, modifier=modifier)
+    qtbot.wait(1000)
     # qtbot.stop()
 
     assert len([warn for warn in recwarn if warn.category is UserWarning]) == 0
