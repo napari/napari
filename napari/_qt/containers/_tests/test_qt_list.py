@@ -95,7 +95,7 @@ def test_list_view_keypress(qtbot):
     assert first not in root
 
 
-@pytest.mark.parametrize('sources, dest, expectation', BASIC_INDICES)
+@pytest.mark.parametrize(('sources', 'dest', 'expectation'), BASIC_INDICES)
 def test_move_multiple(sources, dest, expectation):
     """Test that models stay in sync with complicated moves.
 

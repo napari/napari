@@ -56,7 +56,7 @@ def test_current_size_display_in_range(qtbot):
     assert layer.current_size == 200
 
     # Size event needs to be triggered manually, because no points are selected.
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must be positive'):
         layer.current_size = -1000
     layer.events.size()
     assert slider.maximum() == 201

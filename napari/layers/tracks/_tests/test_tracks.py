@@ -116,7 +116,7 @@ def test_track_layer_colorby_nonexistent():
     data[:, 1] = np.arange(100)
     non_existant_property = 'not_a_valid_key'
     assert non_existant_property not in properties_dict
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='not a valid property'):
         Tracks(
             data, properties=properties_dict, color_by=non_existant_property
         )
@@ -165,7 +165,7 @@ def test_malformed_id():
     """Test for malformed track ID."""
     data = np.random.random((100, 4))
     data[:, 1] = np.arange(100)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must be an integer'):
         Tracks(data)
 
 
@@ -175,7 +175,7 @@ def test_malformed_graph():
     data[:, 1] = np.arange(100)
     data[50:, 0] = 1
     graph = {1: [0], 2: [33]}
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='node 2 not found'):
         Tracks(data, graph=graph)
 
 

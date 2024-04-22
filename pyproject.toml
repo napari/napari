@@ -274,6 +274,7 @@ select = [
     "FA", # flake8-future-annotations
     "LOG", # flake8-logging
     "SLOT", # flake8-slots
+    "PT", # flake8-pytest-style
 ]
 ignore = [
     "E501", "TCH001", "TCH002", "TCH003",
