@@ -40,7 +40,7 @@ coverage==7.4.1
     # via pytest-cov
 cycler==0.12.1
     # via matplotlib
-dask==2024.4.1
+dask==2024.4.2
     # via napari (napari_repo/pyproject.toml)
 debugpy==1.8.1
     # via ipykernel
@@ -52,7 +52,7 @@ docstring-parser==0.16
     # via
     #   magicgui
     #   napari (napari_repo/pyproject.toml)
-docutils==0.20.1
+docutils==0.21.1
     # via sphinx
 executing==2.0.1
     # via stack-data
@@ -79,7 +79,7 @@ hypothesis==6.100.1
     # via napari (napari_repo/pyproject.toml)
 idna==3.7
     # via requests
-imageio==2.34.0
+imageio==2.34.1
     # via
     #   napari-svg
     #   scikit-image
@@ -143,7 +143,7 @@ markupsafe==2.1.5
     # via jinja2
 matplotlib==3.8.4
     # via napari (napari_repo/pyproject.toml)
-matplotlib-inline==0.1.6
+matplotlib-inline==0.1.7
     # via
     #   ipykernel
     #   ipython
@@ -265,10 +265,14 @@ platformdirs==4.2.0
     #   jupyter-core
     #   pooch
     #   virtualenv
-pluggy==1.4.0
-    # via pytest
-pooch==1.8.0
-    # via scikit-image
+pluggy==1.5.0
+    # via
+    #   pytest
+    #   pytest-qt
+pooch==1.8.1
+    # via
+    #   napari (napari_repo/pyproject.toml)
+    #   scikit-image
 pretend==1.0.9
 prompt-toolkit==3.0.43
     # via ipython
@@ -373,7 +377,7 @@ pyyaml==6.0.1
     # via
     #   dask
     #   npe2
-pyzmq==25.1.2
+pyzmq==26.0.2
     # via
     #   ipykernel
     #   jupyter-client
@@ -405,7 +409,7 @@ rpds-py==0.18.0
     # via
     #   jsonschema
     #   referencing
-scikit-image==0.22.0
+scikit-image==0.23.2
     # via napari (napari_repo/pyproject.toml)
 scipy==1.13.0
     # via
@@ -428,7 +432,7 @@ snowballstemmer==2.2.0
     # via sphinx
 sortedcontainers==2.4.0
     # via hypothesis
-sphinx==7.2.6
+sphinx==7.3.7
     # via numpydoc
 sphinxcontrib-applehelp==1.0.8
     # via sphinx
@@ -452,9 +456,14 @@ sympy==1.12
     # via torch
 tabulate==0.9.0
     # via numpydoc
-tensorstore==0.1.53
-tifffile==2024.1.30
-    # via scikit-image
+tensorstore==0.1.56
+    # via
+    #   -r napari_repo/resources/constraints/version_denylist.txt
+    #   napari (napari_repo/pyproject.toml)
+tifffile==2024.4.18
+    # via
+    #   napari (napari_repo/pyproject.toml)
+    #   scikit-image
 tomli-w==1.0.0
     # via npe2
 toolz==0.12.1
@@ -467,8 +476,9 @@ tornado==6.4
     # via
     #   ipykernel
     #   jupyter-client
-tqdm==4.66.1
-traitlets==5.14.1
+tqdm==4.66.2
+    # via napari (napari_repo/pyproject.toml)
+traitlets==5.14.3
     # via
     #   comm
     #   ipykernel
@@ -496,9 +506,12 @@ tzdata==2024.1
     # via pandas
 urllib3==2.2.1
     # via requests
-virtualenv==20.25.0
-vispy==0.14.1
-    # via napari-svg
+virtualenv==20.25.3
+    # via napari (napari_repo/pyproject.toml)
+vispy==0.14.2
+    # via
+    #   napari (napari_repo/pyproject.toml)
+    #   napari-svg
 wcwidth==0.2.13
     # via prompt-toolkit
 wrapt==1.16.0
