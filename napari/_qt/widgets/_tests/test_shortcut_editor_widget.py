@@ -141,17 +141,26 @@ def test_keybinding_with_modifiers(
     widget._table.setCurrentIndex(index)
     widget._table.edit(index)
     qtbot.waitUntil(lambda: widget._table.focusWidget() is not None)
-    window = QApplication.focusWindow()
+    editor = widget._table.focusWidget()
+    # focus_object = focus_window.focusObject()
     # editor = widget._table.focusWidget()
-    qtbot.wait(1000)
-    qtbot.keyClick(window, key, modifier=modifier)
-    qtbot.wait(1000)
+    # qtbot.wait(1000)
+    qtbot.keyPress(editor, key, modifier=modifier)
+    from qtpy.QtWidgets import QAbstractItemDelegate
+
+    widget._table.commitData(editor)
+    widget._table.closeEditor(editor, QAbstractItemDelegate.NoHint)
+    # qtbot.wait(1000)
+    # qtbot.keyRelease(editor, Qt.Key.Key_Enter)
+    # qtbot.wait(1000)
+
     # qtbot.stop()
 
     assert len([warn for warn in recwarn if warn.category is UserWarning]) == 0
 
     shortcut = widget._table.item(0, widget._shortcut_col).text()
     for key_symbol in key_symbols:
+        print(shortcut)
         assert key_symbol in shortcut
 
 
