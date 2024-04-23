@@ -57,7 +57,7 @@ def _paste_spatial_from_clipboard(ll: LayerList) -> None:
             setattr(layer, key, loaded[key])
 
 
-def is_valid_json_in_clipboard():
+def is_valid_json_in_clipboard() -> bool:
     clip = QApplication.clipboard()
     if clip is None:
         return False
