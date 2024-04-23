@@ -1,5 +1,4 @@
-"""VispyCanvas class.
-"""
+"""VispyCanvas class."""
 
 from __future__ import annotations
 

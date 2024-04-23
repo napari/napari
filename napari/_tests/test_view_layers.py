@@ -128,7 +128,7 @@ def test_signature(layer):
 
 
 # plugin_manager fixture is added to prevent errors due to installed plugins
-@pytest.mark.parametrize('layer_type, data, ndim', layer_test_data)
+@pytest.mark.parametrize(('layer_type', 'data', 'ndim'), layer_test_data)
 def test_view(qtbot, napari_plugin_manager, layer_type, data, ndim):
     np.random.seed(0)
     viewer = getattr(napari, f'view_{layer_type.__name__.lower()}')(
