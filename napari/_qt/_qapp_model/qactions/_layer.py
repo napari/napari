@@ -7,6 +7,7 @@ from napari._app_model.constants import MenuGroup, MenuId
 from napari.components import LayerList
 from napari.layers import Layer
 from napari.utils._numpy_json import NumpyEncoder
+from napari.utils.notifications import show_warning
 from napari.utils.translations import trans
 
 
@@ -18,7 +19,12 @@ def _copy_spatial_to_clipboard(layer: Layer) -> None:
 
     d = json.dumps(json_data, cls=NumpyEncoder)
 
-    QApplication.clipboard().setText(d)
+    clip = QApplication.clipboard()
+    if clip is None:
+        show_warning('Cannot access clipboard')
+        return
+
+    clip.setText(d)
 
 
 def _copy_scale_to_clipboard(layer: Layer) -> None:
@@ -28,12 +34,21 @@ def _copy_scale_to_clipboard(layer: Layer) -> None:
 
     d = json.dumps(json_data, cls=NumpyEncoder)
 
-    QApplication.clipboard().setText(d)
+    clip = QApplication.clipboard()
+    if clip is None:
+        show_warning('Cannot access clipboard')
+        return
+
+    clip.setText(d)
 
 
 def _paste_spatial_from_clipboard(ll: LayerList) -> None:
-    QApplication.clipboard().text()
-    loaded = json.loads(QApplication.clipboard().text())
+    clip = QApplication.clipboard()
+    if clip is None:
+        show_warning('Cannot access clipboard')
+        return
+
+    loaded = json.loads(clip.text())
     for layer in ll.selection:
         for key in loaded:
             setattr(layer, key, loaded[key])
