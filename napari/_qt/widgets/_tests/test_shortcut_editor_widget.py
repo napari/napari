@@ -17,7 +17,7 @@ if sys.platform == 'darwin':
     META_CONTROL_KEY = Qt.KeyboardModifier.MetaModifier
 
 
-@pytest.fixture
+@pytest.fixture()
 def shortcut_editor_widget(qtbot):
     # Always reset shortcuts (settings and action manager)
     get_settings().shortcuts.reset()
@@ -88,7 +88,7 @@ def test_restore_defaults(shortcut_editor_widget):
 
 @skip_local_focus
 @pytest.mark.parametrize(
-    'key, modifier, key_symbols',
+    ('key', 'modifier', 'key_symbols'),
     [
         (
             Qt.Key.Key_U,
@@ -148,7 +148,7 @@ def test_keybinding_with_modifiers(
 
 @skip_local_focus
 @pytest.mark.parametrize(
-    'modifiers, key_symbols, valid',
+    ('modifiers', 'key_symbols', 'valid'),
     [
         (
             Qt.KeyboardModifier.ShiftModifier,
@@ -228,7 +228,7 @@ def test_remove_shortcut(shortcut_editor_widget, qtbot, removal_trigger_key):
 @skip_local_focus
 @skip_on_mac_ci
 @pytest.mark.parametrize(
-    'modifier_key, modifiers, key_symbols',
+    ('modifier_key', 'modifiers', 'key_symbols'),
     [
         (
             'shift',

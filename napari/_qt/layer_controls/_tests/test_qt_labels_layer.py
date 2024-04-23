@@ -19,7 +19,7 @@ _COLOR = DirectLabelColormap(
 )
 
 
-@pytest.fixture
+@pytest.fixture()
 def make_labels_controls(qtbot, colormap=None):
     def _make_labels_controls(colormap=colormap):
         layer = Labels(_LABELS, colormap=colormap)
