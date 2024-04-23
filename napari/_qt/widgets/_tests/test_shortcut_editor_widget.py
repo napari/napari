@@ -219,6 +219,8 @@ def test_remove_shortcut(shortcut_editor_widget, qtbot, removal_trigger_key):
     editor = widget._table.focusWidget()
     qtbot.keyClick(editor, removal_trigger_key)
     qtbot.keyClick(editor, Qt.Key.Key_Enter)
+    widget._table.commitData(editor)
+    widget._table.closeEditor(editor, QAbstractItemDelegate.NoHint)
 
     shortcut = widget._table.item(0, widget._shortcut_col).text()
     assert shortcut == ''
