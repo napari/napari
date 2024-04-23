@@ -1,5 +1,6 @@
 import json
 
+from app_model.expressions import parse_expression
 from app_model.types import Action
 from qtpy.QtWidgets import QApplication
 
@@ -9,6 +10,8 @@ from napari.layers import Layer
 from napari.utils._numpy_json import NumpyEncoder
 from napari.utils.notifications import show_warning
 from napari.utils.translations import trans
+
+__all__ = ('Q_LAYER_ACTIONS', 'is_valid_json_in_clipboard')
 
 
 def _copy_spatial_to_clipboard(layer: Layer) -> None:
@@ -54,6 +57,19 @@ def _paste_spatial_from_clipboard(ll: LayerList) -> None:
             setattr(layer, key, loaded[key])
 
 
+def is_valid_json_in_clipboard():
+    clip = QApplication.clipboard()
+    if clip is None:
+        return False
+
+    try:
+        data = json.loads(clip.text())
+    except json.JSONDecodeError:
+        return False
+
+    return set(data).issubset({'scale', 'translate'})
+
+
 Q_LAYER_ACTIONS = [
     Action(
         id='napari.layer.copy_spatial_to_clipboard',
@@ -77,5 +93,6 @@ Q_LAYER_ACTIONS = [
                 'group': MenuGroup.LAYERLIST_CONTEXT.COPY_SPATIAL,
             }
         ],
+        enablement=parse_expression('valid_spatial_json_clipboard'),
     ),
 ]
