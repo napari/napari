@@ -1,4 +1,5 @@
 import numpy as np
+from vispy import gloo
 
 from napari._vispy.layers.base import VispyBaseLayer
 from napari._vispy.utils.gl import BLENDING_MODES
@@ -135,6 +136,9 @@ class VispyPointsLayer(VispyBaseLayer):
         else:
             pos = self.layer._highlight_box
             width = scaled_highlight
+
+        # FIXME: vispy bug? LineVisual error when going from 2d to 3d (or the opposite)
+        self.node.highlight_lines._line_visual._pos_vbo = gloo.VertexBuffer()
 
         self.node.highlight_lines.set_data(
             pos=pos[:, ::-1],
