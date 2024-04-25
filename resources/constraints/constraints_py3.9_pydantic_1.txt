@@ -51,7 +51,7 @@ coverage==7.4.4
     #   pytest-cov
 cycler==0.12.1
     # via matplotlib
-dask==2024.4.1
+dask==2024.4.2
     # via napari (napari_repo/pyproject.toml)
 debugpy==1.8.1
     # via ipykernel
@@ -63,9 +63,9 @@ docstring-parser==0.16
     # via
     #   magicgui
     #   napari (napari_repo/pyproject.toml)
-docutils==0.20.1
+docutils==0.21.1
     # via sphinx
-exceptiongroup==1.2.0
+exceptiongroup==1.2.1
     # via
     #   hypothesis
     #   ipython
@@ -74,7 +74,7 @@ executing==2.0.1
     # via stack-data
 fasteners==0.19
     # via zarr
-filelock==3.13.3
+filelock==3.13.4
     # via
     #   torch
     #   triton
@@ -92,11 +92,11 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.100.0
+hypothesis==6.100.1
     # via napari (napari_repo/pyproject.toml)
-idna==3.6
+idna==3.7
     # via requests
-imageio==2.34.0
+imageio==2.34.1
     # via
     #   napari (napari_repo/pyproject.toml)
     #   napari-svg
@@ -169,7 +169,7 @@ markupsafe==2.1.5
     # via jinja2
 matplotlib==3.8.4
     # via napari (napari_repo/pyproject.toml)
-matplotlib-inline==0.1.6
+matplotlib-inline==0.1.7
     # via
     #   ipykernel
     #   ipython
@@ -273,7 +273,7 @@ packaging==24.0
     #   sphinx
     #   vispy
     #   xarray
-pandas==2.2.1
+pandas==2.2.2
     # via
     #   napari (napari_repo/pyproject.toml)
     #   xarray
@@ -297,7 +297,7 @@ platformdirs==4.2.0
     #   jupyter-core
     #   pooch
     #   virtualenv
-pluggy==1.4.0
+pluggy==1.5.0
     # via
     #   pytest
     #   pytest-qt
@@ -422,7 +422,7 @@ pyyaml==6.0.1
     #   dask
     #   napari (napari_repo/pyproject.toml)
     #   npe2
-pyzmq==25.1.2
+pyzmq==26.0.2
     # via
     #   ipykernel
     #   jupyter-client
@@ -481,7 +481,7 @@ snowballstemmer==2.2.0
     # via sphinx
 sortedcontainers==2.4.0
     # via hypothesis
-sphinx==7.2.6
+sphinx==7.3.7
     # via numpydoc
 sphinxcontrib-applehelp==1.0.8
     # via sphinx
@@ -510,7 +510,7 @@ tensorstore==0.1.56
     # via
     #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari (napari_repo/pyproject.toml)
-tifffile==2024.2.12
+tifffile==2024.4.18
     # via
     #   napari (napari_repo/pyproject.toml)
     #   scikit-image
@@ -522,6 +522,7 @@ tomli==2.0.1
     #   numpydoc
     #   pyproject-hooks
     #   pytest
+    #   sphinx
 tomli-w==1.0.0
     # via npe2
 toolz==0.12.1
@@ -537,7 +538,7 @@ tornado==6.4
     #   jupyter-client
 tqdm==4.66.2
     # via napari (napari_repo/pyproject.toml)
-traitlets==5.14.2
+traitlets==5.14.3
     # via
     #   comm
     #   ipykernel
@@ -550,7 +551,7 @@ triangle==20230923 ; platform_machine != "arm64"
     # via napari (napari_repo/pyproject.toml)
 triton==2.2.0
     # via torch
-typer==0.12.1
+typer==0.12.3
     # via npe2
 typing-extensions==4.11.0
     # via
@@ -567,7 +568,7 @@ tzdata==2024.1
     # via pandas
 urllib3==2.2.1
     # via requests
-virtualenv==20.25.1
+virtualenv==20.25.3
     # via napari (napari_repo/pyproject.toml)
 vispy==0.14.2
     # via

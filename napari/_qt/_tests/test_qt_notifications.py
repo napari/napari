@@ -42,8 +42,8 @@ def _raise():
     raise ValueError('error!')
 
 
-@pytest.fixture
-def clean_current(monkeypatch, qtbot):
+@pytest.fixture()
+def _clean_current(monkeypatch, qtbot):
     from napari._qt.qt_main_window import _QtMainWindow
 
     base_show = NapariQtNotification.show
@@ -75,7 +75,7 @@ class ShowStatus:
 
 
 @pytest.fixture(autouse=True)
-def raise_on_show(monkeypatch, qtbot):
+def _raise_on_show(monkeypatch, qtbot):
     def raise_prepare(text):
         def _raise_on_call(self, *args, **kwargs):
             raise RuntimeError(text)
@@ -95,7 +95,7 @@ def raise_on_show(monkeypatch, qtbot):
     )
 
 
-@pytest.fixture
+@pytest.fixture()
 def count_show(monkeypatch, qtbot):
     stat = ShowStatus()
 
@@ -112,7 +112,7 @@ def count_show(monkeypatch, qtbot):
 
 
 @pytest.fixture(autouse=True)
-def ensure_qtbot(monkeypatch, qtbot):
+def _ensure_qtbot(monkeypatch, qtbot):
     old_notif_init = NapariQtNotification.__init__
     old_traceback_init = TracebackDialog.__init__
 
@@ -135,12 +135,13 @@ def test_clean_current_path_exist(make_napari_viewer):
     )
 
 
+@pytest.mark.usefixtures('_clean_current')
 @pytest.mark.parametrize(
-    'raise_func,warn_func',
+    ('raise_func', 'warn_func'),
     [(_raise, _warn), (_threading_raise, _threading_warn)],
 )
 def test_notification_manager_via_gui(
-    count_show, qtbot, raise_func, warn_func, clean_current, monkeypatch
+    count_show, qtbot, raise_func, warn_func, monkeypatch
 ):
     """
     Test that the notification_manager intercepts `sys.excepthook`` and
@@ -167,9 +168,8 @@ def test_notification_manager_via_gui(
             notification_manager.records = []
 
 
-def test_show_notification_from_thread(
-    count_show, monkeypatch, qtbot, clean_current
-):
+@pytest.mark.usefixtures('_clean_current')
+def test_show_notification_from_thread(count_show, monkeypatch, qtbot):
     from napari.settings import get_settings
 
     settings = get_settings()
@@ -197,10 +197,9 @@ def test_show_notification_from_thread(
         thread.start()
 
 
+@pytest.mark.usefixtures('_clean_current')
 @pytest.mark.parametrize('severity', NotificationSeverity.__members__)
-def test_notification_display(
-    count_show, severity, monkeypatch, clean_current
-):
+def test_notification_display(count_show, severity, monkeypatch):
     """Test that NapariQtNotification can present a Notification event.
 
     NOTE: in napari.utils._tests.test_notification_manager, we already test
@@ -267,9 +266,8 @@ def test_notification_error(count_show, monkeypatch):
 
 
 @skip_on_win_ci
-def test_notifications_error_with_threading(
-    make_napari_viewer, clean_current, monkeypatch
-):
+@pytest.mark.usefixtures('_clean_current')
+def test_notifications_error_with_threading(make_napari_viewer, monkeypatch):
     """Test notifications of `threading` threads, using a dask example."""
     random_image = da.random.random((10, 10))
     monkeypatch.setattr(
