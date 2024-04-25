@@ -44,10 +44,25 @@ def _set_data_in_clipboard(data: dict) -> None:
 def _copy_spatial_to_clipboard(layer: Layer) -> None:
     _set_data_in_clipboard(
         {
+            'affine': layer.affine.linear_matrix,
+            'rotate': layer.rotate,
             'scale': layer.scale,
+            'shear': layer.shear,
             'translate': layer.translate,
         }
     )
+
+
+def _copy_affine_to_clipboard(layer: Layer) -> None:
+    _set_data_in_clipboard({'affine': layer.affine.linear_matrix})
+
+
+def _copy_rotate_to_clipboard(layer: Layer) -> None:
+    _set_data_in_clipboard({'rotate': layer.affine.linear_matrix})
+
+
+def _copy_shear_to_clipboard(layer: Layer) -> None:
+    _set_data_in_clipboard({'shear': layer.scale})
 
 
 def _copy_scale_to_clipboard(layer: Layer) -> None:
@@ -55,7 +70,7 @@ def _copy_scale_to_clipboard(layer: Layer) -> None:
 
 
 def _copy_translate_to_clipboard(layer: Layer) -> None:
-    _set_data_in_clipboard({'scale': layer.scale})
+    _set_data_in_clipboard({'translate': layer.scale})
 
 
 def _get_spatial_from_clipboard() -> dict | None:
@@ -93,7 +108,9 @@ def is_valid_spatial_in_clipboard() -> bool:
     if not isinstance(loaded, dict):
         return False
 
-    return set(loaded).issubset({'scale', 'translate'})
+    return set(loaded).issubset(
+        {'affine', 'rotate', 'scale', 'shear', 'translate'}
+    )
 
 
 Q_LAYER_ACTIONS = [
@@ -104,9 +121,27 @@ Q_LAYER_ACTIONS = [
         menus=[{'id': MenuId.LAYERS_COPY_SPATIAL}],
     ),
     Action(
+        id='napari.layer.copy_affine_to_clipboard',
+        title=trans._('Copy affine to clipboard'),
+        callback=_copy_affine_to_clipboard,
+        menus=[{'id': MenuId.LAYERS_COPY_SPATIAL}],
+    ),
+    Action(
+        id='napari.layer.copy_rotate_to_clipboard',
+        title=trans._('Copy rotate to clipboard'),
+        callback=_copy_rotate_to_clipboard,
+        menus=[{'id': MenuId.LAYERS_COPY_SPATIAL}],
+    ),
+    Action(
         id='napari.layer.copy_scale_to_clipboard',
         title=trans._('Copy scale to clipboard'),
         callback=_copy_scale_to_clipboard,
+        menus=[{'id': MenuId.LAYERS_COPY_SPATIAL}],
+    ),
+    Action(
+        id='napari.layer.copy_shear_to_clipboard',
+        title=trans._('Copy shear to clipboard'),
+        callback=_copy_shear_to_clipboard,
         menus=[{'id': MenuId.LAYERS_COPY_SPATIAL}],
     ),
     Action(
