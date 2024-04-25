@@ -175,7 +175,7 @@ jobs:
           pyproject_toml="${prefix}/pyproject.toml"
           constraints="${prefix}/resources/constraints"
 
-          for os in linux macos windows; do
+          for os in x86_64-manylinux_2_28 x86_64-apple-darwin aarch64-apple-darwin windows; do
             for pyv in 3.9 3.10 3.11 3.12; do
               uv pip compile --python-version ${pyv} --python-platform ${os} --upgrade --output-file $constraints/constraints_py${pyv}_${os}.txt  $pyproject_toml $constraints/version_denylist.txt ${flags}
               uv pip compile --python-version ${pyv} --python-platform ${os} --upgrade --output-file $constraints/constraints_py${pyv}_${os}_pydantic_1.txt  $pyproject_toml $constraints/version_denylist.txt $constraints/pydantic_le_2.txt ${flags}
