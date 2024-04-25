@@ -1,73 +1,99 @@
-import json
+from __future__ import annotations
 
+import json
+import pickle
+
+import numpy as np
 from app_model.expressions import parse_expression
 from app_model.types import Action
+from qtpy.QtCore import QMimeData
 from qtpy.QtWidgets import QApplication
 
 from napari._app_model.constants import MenuGroup, MenuId
 from napari.components import LayerList
 from napari.layers import Layer
-from napari.utils._numpy_json import NumpyEncoder
 from napari.utils.notifications import show_warning
 from napari.utils.translations import trans
 
-__all__ = ('Q_LAYER_ACTIONS', 'is_valid_json_in_clipboard')
+__all__ = ('Q_LAYER_ACTIONS', 'is_valid_spatial_in_clipboard')
+
+
+def _numpy_to_list(d: dict) -> dict:
+    for k, v in list(d.items()):
+        if isinstance(v, np.ndarray):
+            d[k] = v.tolist()
+    return d
+
+
+def _set_data_in_clipboard(data: dict) -> None:
+    data = _numpy_to_list(data)
+    clip = QApplication.clipboard()
+    if clip is None:
+        show_warning('Cannot access clipboard')
+        return
+
+    d = json.dumps(data)
+    p = pickle.dumps(data)
+    mime_data = QMimeData()
+    mime_data.setText(d)
+    mime_data.setData('application/octet-stream', p)
+
+    clip.setMimeData(mime_data)
 
 
 def _copy_spatial_to_clipboard(layer: Layer) -> None:
-    json_data = {
-        'scale': layer.scale,
-        'translate': layer.translate,
-    }
-
-    d = json.dumps(json_data, cls=NumpyEncoder)
-
-    clip = QApplication.clipboard()
-    if clip is None:
-        show_warning('Cannot access clipboard')
-        return
-
-    clip.setText(d)
+    _set_data_in_clipboard(
+        {
+            'scale': layer.scale,
+            'translate': layer.translate,
+        }
+    )
 
 
 def _copy_scale_to_clipboard(layer: Layer) -> None:
-    json_data = {
-        'scale': layer.scale,
-    }
+    _set_data_in_clipboard({'scale': layer.scale})
 
-    d = json.dumps(json_data, cls=NumpyEncoder)
 
+def _copy_translate_to_clipboard(layer: Layer) -> None:
+    _set_data_in_clipboard({'scale': layer.scale})
+
+
+def _get_spatial_from_clipboard() -> dict | None:
     clip = QApplication.clipboard()
     if clip is None:
-        show_warning('Cannot access clipboard')
-        return
+        return None
 
-    clip.setText(d)
+    mime_data = clip.mimeData()
+    if mime_data.data('application/octet-stream'):
+        return pickle.loads(mime_data.data('application/octet-stream'))
+
+    return json.loads(mime_data.text())
 
 
 def _paste_spatial_from_clipboard(ll: LayerList) -> None:
-    clip = QApplication.clipboard()
-    if clip is None:
+    try:
+        loaded = _get_spatial_from_clipboard()
+    except (json.JSONDecodeError, pickle.UnpicklingError):
+        show_warning('Cannot parse clipboard data')
+        return
+    if loaded is None:
         show_warning('Cannot access clipboard')
         return
 
-    loaded = json.loads(clip.text())
     for layer in ll.selection:
         for key in loaded:
             setattr(layer, key, loaded[key])
 
 
-def is_valid_json_in_clipboard() -> bool:
-    clip = QApplication.clipboard()
-    if clip is None:
-        return False
-
+def is_valid_spatial_in_clipboard() -> bool:
     try:
-        data = json.loads(clip.text())
-    except json.JSONDecodeError:
+        loaded = _get_spatial_from_clipboard()
+    except (json.JSONDecodeError, pickle.UnpicklingError):
+        return False
+    if not isinstance(loaded, dict):
         return False
 
-    return set(data).issubset({'scale', 'translate'})
+    return set(loaded).issubset({'scale', 'translate'})
 
 
 Q_LAYER_ACTIONS = [
@@ -81,6 +107,12 @@ Q_LAYER_ACTIONS = [
         id='napari.layer.copy_scale_to_clipboard',
         title=trans._('Copy scale to clipboard'),
         callback=_copy_scale_to_clipboard,
+        menus=[{'id': MenuId.LAYERS_COPY_SPATIAL}],
+    ),
+    Action(
+        id='napari.layer.copy_translate_to_clipboard',
+        title=trans._('Copy translate to clipboard'),
+        callback=_copy_translate_to_clipboard,
         menus=[{'id': MenuId.LAYERS_COPY_SPATIAL}],
     ),
     Action(
