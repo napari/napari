@@ -154,8 +154,9 @@ jobs:
       - name: Upgrade Python dependencies
         # ADD YOUR CUSTOM DEPENDENCY UPGRADE COMMANDS BELOW
         run: |
-          flags=""
+          set -x
           pip install -U uv
+          flags=""
           # Explanation of below commands
           # python3.9 -m piptools compile - call pip-compile but ensure proper interpreter
           # --upgrade upgrade to the latest possible version. Without this pip-compile will take a look to output files and reuse versions (so will ad something on when adding dependency.
