@@ -44,7 +44,7 @@ class QtPointsControls(QtLayerControls):
         String id for the pan-zoom action to bind to the pan_zoom button.
     TRANSFORM_ACTION_NAME : str
         String id for the transform action to bind to the transform button.
-    addition_button : qtpy.QtWidgets.QtModeRadioButton
+    addition_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to add points to layer.
     button_group : qtpy.QtWidgets.QButtonGroup
         Button group of points layer modes (ADD, PAN_ZOOM, SELECT).
@@ -56,11 +56,11 @@ class QtPointsControls(QtLayerControls):
         Widget to select display color for points faces.
     outOfSliceCheckBox : qtpy.QtWidgets.QCheckBox
         Checkbox to indicate whether to render out of slice.
-    panzoom_button : qtpy.QtWidgets.QtModeRadioButton
+    panzoom_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button for pan/zoom mode.
-    transform_button : qtpy.QtWidgets.QtModeRadioButton
+    transform_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to select transform mode.
-    select_button : qtpy.QtWidgets.QtModeRadioButton
+    select_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to select points from layer.
     sizeSlider : qtpy.QtWidgets.QSlider
         Slider controlling size of points.

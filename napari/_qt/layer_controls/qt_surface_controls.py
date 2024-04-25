@@ -34,9 +34,9 @@ class QtSurfaceControls(QtBaseImageControls):
         Button group for image based layer modes (PAN_ZOOM TRANSFORM).
     button_grid : qtpy.QtWidgets.QGridLayout
         GridLayout for the layer mode buttons
-    panzoom_button : qtpy.QtWidgets.QtModeRadioButton
+    panzoom_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to pan/zoom shapes layer.
-    transform_button : qtpy.QtWidgets.QtModeRadioButton
+    transform_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to transform shapes layer.
 
     """

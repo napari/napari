@@ -60,21 +60,21 @@ class QtLabelsControls(QtLayerControls):
         Button to update colormap of label layer.
     contigCheckBox : qtpy.QtWidgets.QCheckBox
         Checkbox to control if label layer is contiguous.
-    fill_button : qtpy.QtWidgets.QtModeRadioButton
+    fill_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to select FILL mode on Labels layer.
     ndimSpinBox : qtpy.QtWidgets.QSpinBox
         Spinbox to control the number of editable dimensions of label layer.
-    paint_button : qtpy.QtWidgets.QtModeRadioButton
+    paint_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to select PAINT mode on Labels layer.
-    panzoom_button : qtpy.QtWidgets.QtModeRadioButton
+    panzoom_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to select PAN_ZOOM mode on Labels layer.
-    transform_button : qtpy.QtWidgets.QtModeRadioButton
+    transform_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to select TRANSFORM mode on Labels layer.
-    pick_button : qtpy.QtWidgets.QtModeRadioButton
+    pick_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to select PICKER mode on Labels layer.
     preserveLabelsCheckBox : qtpy.QtWidgets.QCheckBox
         Checkbox to control if existing labels are preserved
-    erase_button : qtpy.QtWidgets.QtModeRadioButton
+    erase_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to select ERASE mode on Labels layer.
     selectionSpinBox : superqt.QLargeIntSpinBox
         Widget to select a specific label by its index.

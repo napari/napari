@@ -41,9 +41,9 @@ class QtVectorsControls(QtLayerControls):
         String id for the transform action to bind to the transform button.
     button_group : qtpy.QtWidgets.QButtonGroup
         Button group of points layer modes (ADD, PAN_ZOOM, SELECT).
-    panzoom_button : qtpy.QtWidgets.QtModeRadioButton
+    panzoom_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button for pan/zoom mode.
-    transform_button : qtpy.QtWidgets.QtModeRadioButton
+    transform_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to select transform mode.
     edge_color_label : qtpy.QtWidgets.QLabel
         Label for edgeColorSwatch

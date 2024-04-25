@@ -61,9 +61,9 @@ class QtLayerControls(QFrame):
         Button group for image based layer modes (PAN_ZOOM TRANSFORM).
     button_grid : qtpy.QtWidgets.QGridLayout
         GridLayout for the layer mode buttons
-    panzoom_button : qtpy.QtWidgets.QtModeRadioButton
+    panzoom_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to pan/zoom shapes layer.
-    transform_button : qtpy.QtWidgets.QtModeRadioButton
+    transform_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to transform shapes layer.
     blendComboBox : qtpy.QtWidgets.QComboBox
         Dropdown widget to select blending mode of layer.
@@ -120,7 +120,7 @@ class QtLayerControls(QFrame):
         self.transform_button.installEventFilter(self)
         self._on_editable_or_visible_change()
 
-        self.button_grid = QGridLayout()
+        self.button_grid = QGridLayout(self)
         self.button_grid.addWidget(self.panzoom_button, 0, 6)
         self.button_grid.addWidget(self.transform_button, 0, 7)
         self.button_grid.setContentsMargins(5, 0, 0, 5)
@@ -223,11 +223,11 @@ class QtLayerControls(QFrame):
             Text you want added after the automatic tooltip set by the
             action manager
         **kwargs:
-            Passed to QtModeRadioButton
+            Passed to napari._qt.widgets.qt_mode_button.QtModeRadioButton
 
         Returns
         -------
-        button: QtModeRadioButton
+        button: napari._qt.widgets.qt_mode_button.QtModeRadioButton
             button bound (or that will be bound to) to action `action_name`
 
         Notes
