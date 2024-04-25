@@ -195,7 +195,7 @@ class QtLayerControls(QFrame):
 
     def _radio_button(
         self,
-        parent,
+        layer,
         btn_name,
         mode,
         edit_button,
@@ -209,8 +209,8 @@ class QtLayerControls(QFrame):
 
         Parameters
         ----------
-        parent : Any
-            Parent of the generated QtModeRadioButton
+        layer : napari.layers.Layer
+            The layer instance that this button controls.n
         btn_name : str
             name fo the button
         mode : Enum
@@ -236,7 +236,7 @@ class QtLayerControls(QFrame):
         tooltip will be updated to reflect the new shortcut.
         """
         action_name = f'napari:{action_name}'
-        btn = QtModeRadioButton(parent, btn_name, mode, **kwargs)
+        btn = QtModeRadioButton(layer, btn_name, mode, **kwargs)
         action_manager.bind_button(
             action_name,
             btn,

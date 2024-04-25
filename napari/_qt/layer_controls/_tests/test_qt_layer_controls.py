@@ -461,48 +461,39 @@ def test_create_layer_controls_qcolorswatchedit(
 @pytest.mark.parametrize(
     (
         'layer_type_with_data',
-        'action_manager_patch_path',
         'action_manager_trigger',
     ),
     [
         (
             _LABELS_WITH_DIRECT_COLORMAP,
-            'napari._qt.layer_controls.qt_labels_controls.action_manager',
             'napari:activate_labels_transform_mode',
         ),
         (
             _LABELS,
-            'napari._qt.layer_controls.qt_labels_controls.action_manager',
             'napari:activate_labels_transform_mode',
         ),
         (
             _IMAGE,
-            'napari._qt.layer_controls.qt_image_controls_base.action_manager',
             'napari:activate_image_transform_mode',
         ),
         (
             _POINTS,
-            'napari._qt.layer_controls.qt_points_controls.action_manager',
             'napari:activate_points_transform_mode',
         ),
         (
             _SHAPES,
-            'napari._qt.layer_controls.qt_shapes_controls.action_manager',
             'napari:activate_shapes_transform_mode',
         ),
         (
             _SURFACE,
-            'napari._qt.layer_controls.qt_image_controls_base.action_manager',
             'napari:activate_surface_transform_mode',
         ),
         (
             _TRACKS,
-            'napari._qt.layer_controls.qt_tracks_controls.action_manager',
             'napari:activate_tracks_transform_mode',
         ),
         (
             _VECTORS,
-            'napari._qt.layer_controls.qt_vectors_controls.action_manager',
             'napari:activate_vectors_transform_mode',
         ),
     ],
@@ -512,7 +503,6 @@ def test_create_layer_controls_transform_mode_button(
     qtbot,
     create_layer_controls,
     layer_type_with_data,
-    action_manager_patch_path,
     action_manager_trigger,
     monkeypatch,
 ):
@@ -521,7 +511,7 @@ def test_create_layer_controls_transform_mode_button(
     # Monkeypatch the action_manager instance to prevent `KeyError: 'layer'`
     # over `napari.layers.utils.layer_utils.register_layer_attr_action._handle._wrapper`
     monkeypatch.setattr(
-        action_manager_patch_path,
+        'napari._qt.layer_controls.qt_layer_controls_base.action_manager',
         action_manager_mock,
     )
 
