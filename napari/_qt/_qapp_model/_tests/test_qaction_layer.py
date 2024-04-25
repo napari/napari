@@ -51,6 +51,31 @@ def layer_list():
     return ll
 
 
+@pytest.fixture()
+def layer_list_dim():
+    layer_1 = SampleLayer(
+        data=np.empty((5, 10, 10)),
+        scale=(2, 3, 4),
+        translate=(1, 1, 2),
+        rotate=90,
+        name='l1',
+        affine=Affine(scale=(0.1, 0.5, 0.5), translate=(4, 1, 2), rotate=45),
+        shear=[1, 0.5, 1],
+    )
+    layer_2 = SampleLayer(
+        data=np.empty((10, 10)),
+        scale=(1, 1),
+        translate=(0, 0),
+        rotate=0,
+        name='l2',
+        affine=Affine(),
+        shear=[0],
+    )
+    ll = LayerList([layer_1, layer_2])
+    ll.selection = {layer_2}
+    return ll
+
+
 @pytest.mark.usefixtures('qtbot')
 def test_copy_scale_to_clipboard(layer_list):
     _copy_scale_to_clipboard(layer_list['l1'])
@@ -117,7 +142,23 @@ def test_copy_spatial_to_clipboard(layer_list):
     npt.assert_array_equal(layer_list['l2'].translate, (1, 1))
     npt.assert_array_almost_equal(layer_list['l2'].rotate, ([0, -1], [1, 0]))
     npt.assert_array_almost_equal(
-        layer_list['l2'].affine.linear_matrix,
-        layer_list['l1'].affine.linear_matrix,
+        layer_list['l2'].affine.affine_matrix,
+        layer_list['l1'].affine.affine_matrix,
     )
     npt.assert_array_equal(layer_list['l3'].scale, (1, 1))
+
+
+@pytest.mark.usefixtures('qtbot')
+def test_copy_spatial_to_clipboard_different_dim(layer_list_dim):
+    _copy_spatial_to_clipboard(layer_list_dim['l1'])
+    npt.assert_array_equal(layer_list_dim['l2'].scale, (1, 1))
+    _paste_spatial_from_clipboard(layer_list_dim)
+    npt.assert_array_equal(layer_list_dim['l2'].scale, (3, 4))
+    npt.assert_array_equal(layer_list_dim['l2'].translate, (1, 2))
+    npt.assert_array_almost_equal(
+        layer_list_dim['l2'].rotate, ([0, -1], [1, 0])
+    )
+    npt.assert_array_almost_equal(
+        layer_list_dim['l2'].affine.affine_matrix,
+        layer_list_dim['l1'].affine.affine_matrix[-3:, -3:],
+    )

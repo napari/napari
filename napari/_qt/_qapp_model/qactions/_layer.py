@@ -97,7 +97,20 @@ def _paste_spatial_from_clipboard(ll: LayerList) -> None:
 
     for layer in ll.selection:
         for key in loaded:
-            setattr(layer, key, loaded[key])
+            data = loaded[key]
+            if isinstance(data, list):
+                data = np.array(data)
+            if key == 'shear':
+                data = data[-(layer.ndim * (layer.ndim - 1)) // 2 :]
+            elif key == 'affine':
+                data = data[-(layer.ndim + 1) :, -(layer.ndim + 1) :]
+            elif isinstance(data, np.ndarray):
+                if data.ndim == 1:
+                    data = data[-layer.ndim :]
+                elif data.ndim == 2:
+                    data = data[-layer.ndim :, -layer.ndim :]
+
+            setattr(layer, key, data)
 
 
 def is_valid_spatial_in_clipboard() -> bool:
