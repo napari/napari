@@ -79,8 +79,10 @@ def _get_spatial_from_clipboard() -> dict | None:
         return None
 
     mime_data = clip.mimeData()
+    if mime_data is None:
+        return None
     if mime_data.data('application/octet-stream'):
-        return pickle.loads(mime_data.data('application/octet-stream'))
+        return pickle.loads(mime_data.data('application/octet-stream'))  # type: ignore[arg-type]
 
     return json.loads(mime_data.text())
 
