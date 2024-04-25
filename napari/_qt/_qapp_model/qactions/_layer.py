@@ -44,7 +44,7 @@ def _set_data_in_clipboard(data: dict) -> None:
 def _copy_spatial_to_clipboard(layer: Layer) -> None:
     _set_data_in_clipboard(
         {
-            'affine': layer.affine.linear_matrix,
+            'affine': layer.affine.affine_matrix,
             'rotate': layer.rotate,
             'scale': layer.scale,
             'shear': layer.shear,
@@ -54,15 +54,15 @@ def _copy_spatial_to_clipboard(layer: Layer) -> None:
 
 
 def _copy_affine_to_clipboard(layer: Layer) -> None:
-    _set_data_in_clipboard({'affine': layer.affine.linear_matrix})
+    _set_data_in_clipboard({'affine': layer.affine.affine_matrix})
 
 
 def _copy_rotate_to_clipboard(layer: Layer) -> None:
-    _set_data_in_clipboard({'rotate': layer.affine.linear_matrix})
+    _set_data_in_clipboard({'rotate': layer.rotate})
 
 
 def _copy_shear_to_clipboard(layer: Layer) -> None:
-    _set_data_in_clipboard({'shear': layer.scale})
+    _set_data_in_clipboard({'shear': layer.shear})
 
 
 def _copy_scale_to_clipboard(layer: Layer) -> None:
@@ -70,7 +70,7 @@ def _copy_scale_to_clipboard(layer: Layer) -> None:
 
 
 def _copy_translate_to_clipboard(layer: Layer) -> None:
-    _set_data_in_clipboard({'translate': layer.scale})
+    _set_data_in_clipboard({'translate': layer.translate})
 
 
 def _get_spatial_from_clipboard() -> dict | None:
