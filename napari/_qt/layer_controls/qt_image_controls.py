@@ -38,6 +38,10 @@ class QtImageControls(QtBaseImageControls):
 
     Attributes
     ----------
+    layer : napari.layers.Image
+        An instance of a napari Image layer.
+    MODE : Enum
+        Available modes in the associated layer.
     PAN_ZOOM_ACTION_NAME : str
         String id for the pan-zoom action to bind to the pan_zoom button.
     TRANSFORM_ACTION_NAME : str
@@ -62,8 +66,6 @@ class QtImageControls(QtBaseImageControls):
         Slider controlling the isosurface threshold value for rendering.
     isoThresholdLabel : qtpy.QtWidgets.QLabel
         Label for the isosurface threshold slider widget.
-    layer : napari.layers.Image
-        An instance of a napari Image layer.
     renderComboBox : qtpy.QtWidgets.QComboBox
         Dropdown menu to select the rendering mode for image display.
     renderLabel : qtpy.QtWidgets.QLabel
@@ -71,6 +73,8 @@ class QtImageControls(QtBaseImageControls):
     """
 
     layer: 'napari.layers.Image'
+    PAN_ZOOM_ACTION_NAME = 'activate_image_pan_zoom_mode'
+    TRANSFORM_ACTION_NAME = 'activate_image_transform_mode'
 
     def __init__(self, layer) -> None:
         super().__init__(layer)
