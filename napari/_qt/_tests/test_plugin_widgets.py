@@ -105,24 +105,6 @@ def test_dock_widget_registration(
             assert widgets['Plugin']['Widg2'][0] == Widg2
 
 
-@pytest.fixture
-def test_plugin_widgets(monkeypatch, napari_plugin_manager):
-    """A smattering of example registered dock widgets and function widgets."""
-    tnpm = napari_plugin_manager
-    dock_widgets = {
-        'TestP1': {
-            'QWidget_example': (QWidget_example, {}),
-            'Widg2': (Widg2, {}),
-        },
-        'TestP2': {'Widg3': (Widg3, {})},
-    }
-    monkeypatch.setattr(tnpm, '_dock_widgets', dock_widgets)
-
-    function_widgets = {'TestP3': {'magic': magicfunc}}
-    monkeypatch.setattr(tnpm, '_function_widgets', function_widgets)
-    yield
-
-
 def test_inject_viewer_proxy(make_napari_viewer):
     """Test that the injected viewer is a public-only proxy"""
     viewer = make_napari_viewer()
@@ -136,7 +118,7 @@ def test_inject_viewer_proxy(make_napari_viewer):
 
 
 @pytest.mark.parametrize(
-    'widget_callable, param',
+    ('widget_callable', 'param'),
     [
         (QWidget_example, 'napari_viewer'),
         (QWidget_string_annnot, 'test'),
@@ -156,21 +138,24 @@ def test_get_widget_viewer_param_error():
     assert "'widget_name' must be `QtWidgets.QWidget`" in str(e)
 
 
-def test_widget_hide_destroy(make_napari_viewer):
+def test_widget_hide_destroy(make_napari_viewer, qtbot):
     """Test that widget hide and destroy works."""
     viewer = make_napari_viewer()
     viewer.window.add_dock_widget(QWidget_example(viewer), name='test')
-    widget = viewer.window._dock_widgets['test']
+    dock_widget = viewer.window._dock_widgets['test']
 
     # Check widget persists after hide
-    ww = widget.widget()
-    widget.title.hide_button.click()
-    assert ww
+    widget = dock_widget.widget()
+    dock_widget.title.hide_button.click()
+    assert widget
     # Check that widget removed from `_dock_widgets` dict and parent
     # `QtViewerDockWidget` is `None` when closed
-    widget.destroyOnClose()
+    dock_widget.destroyOnClose()
     assert 'test' not in viewer.window._dock_widgets
-    assert ww.parent() is None
+    assert widget.parent() is None
+    widget.deleteLater()
+    widget.close()
+    qtbot.wait(50)
 
 
 @pytest.mark.parametrize(

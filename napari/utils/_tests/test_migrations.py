@@ -16,7 +16,7 @@ def test_simple():
     assert sample_fun(b=1) == 1
     with pytest.deprecated_call():
         assert sample_fun(a=1) == 1
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='already defined'):
         sample_fun(b=1, a=1)
 
 

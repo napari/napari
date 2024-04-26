@@ -1,11 +1,4 @@
-from napari._app_model.constants import CommandId, MenuId
-
-
-def test_command_titles():
-    """make sure all command start with napari: and have a title"""
-    for command in CommandId:
-        assert command.value.startswith('napari:')
-        assert command.title is not None
+from napari._app_model.constants import MenuId
 
 
 def test_menus():

@@ -12,7 +12,7 @@ from napari.settings import CURRENT_SCHEMA_VERSION, NapariSettings
 from napari.utils.theme import get_theme, register_theme
 
 
-@pytest.fixture
+@pytest.fixture()
 def test_settings(tmp_path):
     """A fixture that can be used to test and save settings"""
     from napari.settings import NapariSettings
@@ -115,7 +115,8 @@ def test_settings_load_invalid_section(tmp_path):
 
 def test_settings_to_dict(test_settings):
     data_dict = test_settings.dict()
-    assert isinstance(data_dict, dict) and data_dict.get('application')
+    assert isinstance(data_dict, dict)
+    assert data_dict.get('application')
 
     data_dict = test_settings.dict(exclude_defaults=True)
     assert not data_dict.get('application')
@@ -303,10 +304,10 @@ def test_get_settings(tmp_path):
 def test_get_settings_fails(monkeypatch, tmp_path):
     p = f'{tmp_path}.yaml'
     settings.get_settings(p)
-    with pytest.raises(Exception) as e:
+    with pytest.raises(
+        RuntimeError, match='The path can only be set once per session'
+    ):
         settings.get_settings(p)
-
-    assert 'The path can only be set once per session' in str(e)
 
 
 def test_first_time():
@@ -327,8 +328,8 @@ def test_no_save_path():
     s = NapariSettings(config_path=None)
     assert s.config_path is None
 
-    with pytest.raises(ValueError):
-        # the original `save()` method is patched in conftest.fresh_settings
+    with pytest.raises(ValueError, match='No path provided'):
+        # the original `save()` method is patched in conftest._fresh_settings
         # so we "unmock" it here to assert the failure
         NapariSettings.__original_save__(s)  # type: ignore
 

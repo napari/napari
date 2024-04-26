@@ -17,7 +17,7 @@ from napari.errors.reader_errors import ReaderPluginError
 from napari.settings import get_settings
 
 
-@pytest.fixture
+@pytest.fixture()
 def reader_dialog(qtbot):
     def _reader_dialog(**kwargs):
         widget = QtReaderDialog(**kwargs)
@@ -189,7 +189,7 @@ def test_open_with_dialog_choices_raises(make_napari_viewer):
     viewer = make_napari_viewer()
 
     get_settings().plugins.extension2reader = {}
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='does not exist'):
         open_with_dialog_choices(
             display_name='Fake Plugin',
             persist=True,

@@ -50,7 +50,7 @@ def test_qt_viewer_data_integrity(make_napari_viewer, dtype):
 
 
 @pytest.mark.parametrize(
-    'dtype,expected',
+    ('dtype', 'expected'),
     [
         (np.bool_, np.uint8),
         (np.int8, np.float32),
