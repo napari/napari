@@ -156,7 +156,7 @@ jobs:
         run: |
           set -x
           pip install -U uv
-          flags=""
+          flags="--quiet"
           # Explanation of below commands
           # python3.9 -m piptools compile - call pip-compile but ensure proper interpreter
           # --upgrade upgrade to the latest possible version. Without this pip-compile will take a look to output files and reuse versions (so will ad something on when adding dependency.
