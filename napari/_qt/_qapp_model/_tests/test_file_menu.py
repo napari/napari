@@ -172,7 +172,7 @@ def get_open_with_plugin_action(viewer, action_text):
 
 
 @pytest.mark.parametrize(
-    'menu_str,dialog_method,dialog_return,filename_call,stack',
+    ('menu_str', 'dialog_method', 'dialog_return', 'filename_call', 'stack'),
     [
         (
             'Open File(s)...',
@@ -232,7 +232,7 @@ def test_save_layers_enablement_updated_context(make_napari_viewer, builtins):
     )
     # Check both save actions are not enabled when no layers
     assert len(viewer.layers) == 0
-    viewer.window._update_menu_state('file_menu')
+    viewer.window._update_file_menu_state()
     assert not save_layers_action.isEnabled()
     assert not save_selected_layers_action.isEnabled()
 
@@ -240,13 +240,13 @@ def test_save_layers_enablement_updated_context(make_napari_viewer, builtins):
     layer = Image(np.random.random((10, 10)))
     viewer.layers.append(layer)
     assert len(viewer.layers) == 1
-    viewer.window._update_menu_state('file_menu')
+    viewer.window._update_file_menu_state()
     assert save_layers_action.isEnabled()
     assert save_selected_layers_action.isEnabled()
 
     # Remove selection and check 'Save All Layers...' is enabled but
     # 'Save Selected Layers...' is not
     viewer.layers.selection.clear()
-    viewer.window._update_menu_state('file_menu')
+    viewer.window._update_file_menu_state()
     assert save_layers_action.isEnabled()
     assert not save_selected_layers_action.isEnabled()

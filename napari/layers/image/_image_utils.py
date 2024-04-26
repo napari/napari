@@ -1,5 +1,4 @@
-"""guess_rgb, guess_multiscale, guess_labels.
-"""
+"""guess_rgb, guess_multiscale, guess_labels."""
 
 from collections.abc import Sequence
 from typing import Any, Callable, Literal, Union
