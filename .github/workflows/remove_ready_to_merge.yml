@@ -1,0 +1,34 @@
+name: Remove "ready to merge" label
+
+on:
+  pull_request_target:
+    types: [closed]
+  workflow_call:
+
+
+permissions:
+  pull-requests: write
+
+jobs:
+  remove_label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove label
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            const { owner, repo, number: pull_number } = context.issue;
+            const { data: pullRequest } = await github.rest.pulls.get({ owner, repo, pull_number });
+            if (!pullRequest.merged) {
+              console.log("Pull request not merged, skipping.");
+              return;
+            }
+            const { data: labels } = await github.rest.issues.listLabelsOnIssue({ owner, repo, issue_number: pull_number });
+            const labelToRemove = labels.find(label => label.name === "ready to merge");
+            if (!labelToRemove) {
+              console.log("Label not found on pull request, skipping.");
+              return;
+            }
+            await github.rest.issues.removeLabel({ owner, repo, issue_number: pull_number, name: "ready to merge" });
+            console.log("Label removed.");

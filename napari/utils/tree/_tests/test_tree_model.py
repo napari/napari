@@ -5,7 +5,7 @@ import pytest
 from napari.utils.tree import Group, Node
 
 
-@pytest.fixture
+@pytest.fixture()
 def tree():
     return Group(
         [
@@ -123,10 +123,12 @@ def test_traverse(tree):
     assert tree.is_group()
     g1 = tree[1]
     assert g1.parent is tree
-    assert g1.name == 'g1' and g1.is_group()
+    assert g1.name == 'g1'
+    assert g1.is_group()
     g2 = g1[1]
     assert g2.parent is g1
-    assert g2.name == 'g2' and g2.is_group()
+    assert g2.name == 'g2'
+    assert g2.is_group()
 
 
 def test_slicing(tree):

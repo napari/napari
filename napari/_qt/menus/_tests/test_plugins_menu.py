@@ -6,7 +6,7 @@ from npe2 import DynamicPlugin
 from qtpy.QtWidgets import QWidget
 
 from napari._app_model import get_app
-from napari._app_model.constants import CommandId, MenuId
+from napari._app_model.constants import MenuId
 from napari._qt._qapp_model.qactions import _plugins, init_qactions
 from napari._qt._qplugins._qnpe2 import _toggle_or_get_widget
 from napari._tests.utils import skip_local_popups
@@ -214,7 +214,7 @@ def test_plugin_manager(make_napari_viewer):
 
     # Check plugin install action is visible
     plugin_install_action = viewer.window.plugins_menu.findAction(
-        CommandId.DLG_PLUGIN_INSTALL,
+        'napari.window.plugins.plugin_install_dialog',
     )
     assert plugin_install_action.isVisible()
 
@@ -233,6 +233,6 @@ def test_no_plugin_manager(monkeypatch, make_napari_viewer):
     # Check plugin install action is not visible
     viewer = make_napari_viewer()
     plugin_install_action = viewer.window.plugins_menu.findAction(
-        CommandId.DLG_PLUGIN_INSTALL
+        'napari.window.plugins.plugin_install_dialog',
     )
     assert not plugin_install_action.isVisible()

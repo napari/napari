@@ -1,5 +1,4 @@
-"""Image class.
-"""
+"""Image class."""
 
 from __future__ import annotations
 

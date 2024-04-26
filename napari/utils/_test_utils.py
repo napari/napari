@@ -40,6 +40,9 @@ def read_only_mouse_event(*args, **kwargs):
 
 
 def validate_all_params_in_docstring(func):
+    """
+    Validate if all the parameters in the function signature are present in the docstring.
+    """
     assert func.__doc__ is not None, f'Function {func} has no docstring'
 
     parsed = parse(func.__doc__)
@@ -58,6 +61,9 @@ def validate_all_params_in_docstring(func):
 
 
 def validate_kwargs_sorted(func):
+    """
+    Validate if the keyword arguments in the function signature are sorted alphabetically.
+    """
     signature = inspect.signature(func)
     kwargs_list = [
         x.name
@@ -67,3 +73,44 @@ def validate_kwargs_sorted(func):
     assert kwargs_list == sorted(
         kwargs_list
     ), 'Keyword arguments are not sorted in function signature'
+
+
+def validate_docstring_parent_class_consistency(klass, skip=('data', 'ndim')):
+    """
+    Validate if the docstrings of the class parameters and type information
+    are consistent with the parent class.
+
+    Parameters
+    ----------
+    klass : type
+        The class to validate.
+    skip : tuple or set, optional
+        Name of parameters that we know are different from the parent class.
+        By default, ('data', 'ndim').
+
+    Raises
+    ------
+    AssertionError
+        If the docstrings of the parameters are not consistent with the parent class.
+    """
+    parsed = parse(klass.__doc__)
+    params = {
+        x.arg_name: x
+        for x in parsed.params
+        if x.args[0] == 'param' and x.arg_name not in skip
+    }
+    for base_klass in klass.__bases__:
+        base_parsed = {
+            x.arg_name: x
+            for x in parse(base_klass.__doc__).params
+            if x.args[0] == 'param'
+        }
+        for name, doc in params.items():
+            if name not in base_parsed:
+                continue
+            assert (
+                doc.description == base_parsed[name].description
+            ), f'Description of parameter "{name}" in {klass} and {base_klass} do not match'
+            assert (
+                doc.type_name == base_parsed[name].type_name
+            ), f'Type annotation of parameter "{name}" in {klass} ({doc.type_name}) and {base_klass} ({base_parsed[name].type_name}) do not match'

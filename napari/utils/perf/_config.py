@@ -1,5 +1,4 @@
-"""Perf configuration flags.
-"""
+"""Perf configuration flags."""
 
 import json
 import os
@@ -18,9 +17,6 @@ PERFMON_ENV_VAR = 'NAPARI_PERFMON'
 
 class PerfmonConfigError(Exception):
     """Error parsing or interpreting config file."""
-
-    def __init__(self, message: str) -> None:
-        self.message = message
 
 
 def _patch_perf_timer(
