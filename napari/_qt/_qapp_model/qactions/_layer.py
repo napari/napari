@@ -136,8 +136,8 @@ def is_valid_spatial_in_clipboard() -> bool:
 
 Q_LAYER_ACTIONS = [
     Action(
-        id='napari.layer.copy_spatial_to_clipboard',
-        title=trans._('Copy spatial to clipboard'),
+        id='napari.layer.copy_all_to_clipboard',
+        title=trans._('Copy all to clipboard'),
         callback=_copy_spatial_to_clipboard,
         menus=[{'id': MenuId.LAYERS_COPY_SPATIAL}],
     ),
