@@ -4,12 +4,12 @@ from collections import defaultdict
 from pathlib import Path
 from typing import NamedTuple
 
+from packaging.requirements import Requirement
 from packaging.version import Version, parse as parse_version
 
 
 class PackageInfo(NamedTuple):
-    package_name: str
-    version: Version
+    version: Requirement
     comments: list[str]
     python_version: Version
     os_str: str
@@ -28,17 +28,15 @@ constraint_pydantic_2 = re.compile(
 def load_constraints(file_path: Path, python: str, os_str: str):
     python_version = parse_version(python)
     result_constraints = {}
-    current_package = None
     with open(file_path) as f:
         for line in f:
             if not line.strip():
                 continue
             if line.strip().startswith('#'):
                 continue
-            current_package, version = line.strip().split('==')
-            result_constraints[current_package] = PackageInfo(
-                current_package,
-                parse_version(version),
+            package_info = Requirement(line.strip())
+            result_constraints[package_info.name] = PackageInfo(
+                package_info,
                 [],
                 python_version,
                 os_str,
@@ -49,14 +47,13 @@ def load_constraints(file_path: Path, python: str, os_str: str):
             if not line.strip():
                 continue
             if line.strip().startswith('#'):
-                result_constraints[current_package].comments.append(
+                result_constraints[package_info.name].comments.append(
                     line.strip()
                 )
                 continue
-            current_package, version = line.strip().split('==')
-            result_constraints[current_package] = PackageInfo(
-                current_package,
-                parse_version(version),
+            package_info = Requirement(line.strip())
+            result_constraints[package_info.name] = PackageInfo(
+                package_info,
                 [],
                 python_version,
                 os_str,
