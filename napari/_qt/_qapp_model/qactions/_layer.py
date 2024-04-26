@@ -99,20 +99,26 @@ def _paste_spatial_from_clipboard(ll: LayerList) -> None:
 
     for layer in ll.selection:
         for key in loaded:
-            data = loaded[key]
-            if isinstance(data, list):
-                data = np.array(data)
+            loaded_attr_value = loaded[key]
+            if isinstance(loaded_attr_value, list):
+                loaded_attr_value = np.array(loaded_attr_value)
             if key == 'shear':
-                data = data[-(layer.ndim * (layer.ndim - 1)) // 2 :]
+                loaded_attr_value = loaded_attr_value[
+                    -(layer.ndim * (layer.ndim - 1)) // 2 :
+                ]
             elif key == 'affine':
-                data = data[-(layer.ndim + 1) :, -(layer.ndim + 1) :]
-            elif isinstance(data, np.ndarray):
-                if data.ndim == 1:
-                    data = data[-layer.ndim :]
-                elif data.ndim == 2:
-                    data = data[-layer.ndim :, -layer.ndim :]
+                loaded_attr_value = loaded_attr_value[
+                    -(layer.ndim + 1) :, -(layer.ndim + 1) :
+                ]
+            elif isinstance(loaded_attr_value, np.ndarray):
+                if loaded_attr_value.ndim == 1:
+                    loaded_attr_value = loaded_attr_value[-layer.ndim :]
+                elif loaded_attr_value.ndim == 2:
+                    loaded_attr_value = loaded_attr_value[
+                        -layer.ndim :, -layer.ndim :
+                    ]
 
-            setattr(layer, key, data)
+            setattr(layer, key, loaded_attr_value)
 
 
 def is_valid_spatial_in_clipboard() -> bool:
