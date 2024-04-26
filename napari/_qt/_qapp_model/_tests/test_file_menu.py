@@ -172,7 +172,7 @@ def get_open_with_plugin_action(viewer, action_text):
 
 
 @pytest.mark.parametrize(
-    'menu_str,dialog_method,dialog_return,filename_call,stack',
+    ('menu_str', 'dialog_method', 'dialog_return', 'filename_call', 'stack'),
     [
         (
             'Open File(s)...',

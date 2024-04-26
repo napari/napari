@@ -17,7 +17,7 @@ class T(Node):
 
 
 @pytest.mark.parametrize(
-    'cls, exView, exModel',
+    ('cls', 'exView', 'exModel'),
     [
         (SelectableEventedList, QtListView, QtListModel),
         (Group, QtNodeTreeView, QtNodeTreeModel),

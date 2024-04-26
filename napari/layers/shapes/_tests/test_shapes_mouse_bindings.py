@@ -16,7 +16,7 @@ from napari.utils.interactions import (
 )
 
 
-@pytest.fixture
+@pytest.fixture()
 def create_known_shapes_layer():
     """Create shapes layer with known coordinates
 
@@ -754,7 +754,7 @@ def test_selecting_no_shapes_with_drag(mode, create_known_shapes_layer):
 
 
 @pytest.mark.parametrize(
-    'attr', ('_move_modes', '_drag_modes', '_cursor_modes')
+    'attr', ['_move_modes', '_drag_modes', '_cursor_modes']
 )
 def test_all_modes_covered(attr):
     """
@@ -766,7 +766,7 @@ def test_all_modes_covered(attr):
 
 
 @pytest.mark.parametrize(
-    'pre_selection,on_point,modifier',
+    ('pre_selection', 'on_point', 'modifier'),
     [
         (set(), True, []),
         ({1}, True, []),
@@ -919,6 +919,6 @@ def test_drag_start_selection(
         assert 0 in layer.selected_data
         assert layer.selected_data == set(range(n_points))
     else:
-        assert False, 'Unreachable code'  # pragma: no cover
+        pytest.fail('Unreachable code')
     assert layer._drag_box is None
     assert layer._drag_start is None
