@@ -201,7 +201,10 @@ class VispySurfaceLayer(VispyBaseLayer):
             view = np.array(camera.view_direction)[::-1]
             # combine to get light behind the camera on the top right
             self._light_direction = view - up + np.cross(up, view)
-        if self.node.shading_filter is not None and self._meshdata._vertices is not None:
+        if (
+            self.node.shading_filter is not None
+            and self._meshdata._vertices is not None
+        ):
             self.node.shading_filter.light_dir = self._light_direction
 
     def reset(self, event=None):
