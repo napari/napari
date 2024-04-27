@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import re
 from argparse import ArgumentParser
 from collections import defaultdict
+from collections.abc import Iterable
 from pathlib import Path
 from typing import NamedTuple
 
@@ -15,7 +18,13 @@ class PackageInfo(NamedTuple):
     os_str: str
 
 
+class PlatformInfo(NamedTuple):
+    machine: None | str
+    system: None | str
+
+
 NAPARI_PATH = Path(__file__).absolute().parent.parent
+python_versions_set = set()
 
 constraint_pydantic_1 = re.compile(
     r'constraints_py(?P<python>3.\d{1,2})_(?P<os_str>.+)_pydantic_1.txt'
@@ -27,6 +36,7 @@ constraint_pydantic_2 = re.compile(
 
 def load_constraints(file_path: Path, python: str, os_str: str):
     python_version = parse_version(python)
+    python_versions_set.add(python_version)
     result_constraints = {}
     with open(file_path) as f:
         for line in f:
@@ -47,9 +57,14 @@ def load_constraints(file_path: Path, python: str, os_str: str):
             if not line.strip():
                 continue
             if line.strip().startswith('#'):
-                result_constraints[package_info.name].comments.append(
-                    line.strip()
-                )
+                if (
+                    str_info := line.replace('#', '')
+                    .replace('via', '')
+                    .strip()
+                ):
+                    result_constraints[package_info.name].comments.append(
+                        str_info
+                    )
                 continue
             package_info = Requirement(line.strip())
             result_constraints[package_info.name] = PackageInfo(
@@ -67,8 +82,17 @@ def combine_constraints(
     result = defaultdict(lambda: defaultdict(list))
     for constraints in list_of_constraints:
         for package, info in constraints.items():
-            result[package][info.version].append(info)
+            result[package][str(info.version.specifier)].append(info)
     return result
+
+
+def comments_to_str(comments: Iterable[str]) -> str:
+    comments_ = sorted(comments)
+    if len(comments_) == 1:
+        return f'\n    # via {next(iter(comments_))}'
+    if comments_:
+        return ''.join(f'\n    # {x}' for x in comments_)
+    return ''
 
 
 def combine_constraint_entry(
@@ -79,27 +103,41 @@ def combine_constraint_entry(
         comments = set()
         for package_info in next(iter(versions.values())):
             comments.update(package_info.comments)
-        if comments:
-            constraints_str += '\n   ' + '\n   '.join(comments)
+        constraints_str += comments_to_str(comments)
         return constraints_str
+
+    # result_str = ''
+    #
+    # for version, package_infos in versions.items():
+    #     if len(package_infos) == 1:
+    #         package_info = package_infos[0]
+    #         os_info = OS_MAPPING.get(package_info.os_str)
+    #         marker = f"platform_system == '{os_info.system}'"
+    #         if os_info.machine:
+    #             marker += f" and platform_machine == '{os_info.machine}'"
+    #         package_info.version.marker = Marker(marker)
+    #         result_str += str(package_info.version) + comments_to_str(
+    #             package_info.comments
+    #         )
+
     return f'# {name}=={next(iter(versions.keys()))}'
 
 
 def generate_constraints_file(
     constraints: dict[str, dict[Version, list[PackageInfo]]],
 ):
-    reuslt = []
+    result = []
     for package, versions in constraints.items():
-        reuslt.append(combine_constraint_entry(package, versions))
+        result.append(combine_constraint_entry(package, versions))
 
-    return '\n'.join(reuslt)
+    return '\n'.join(result)
 
 
 OS_MAPPING = {
-    'x86_64-apple-darwin': 1,
-    'aarch64-apple-darwin': 1,
-    'windows': 1,
-    'x86_64-manylinux_2_28': 1,
+    'x86_64-apple-darwin': PlatformInfo('x86_64', 'Darwin'),
+    'aarch64-apple-darwin': PlatformInfo('arm64', 'Darwin'),
+    'windows': PlatformInfo(None, 'Windows'),
+    'x86_64-manylinux_2_28': PlatformInfo(None, 'Linux'),
 }
 
 
