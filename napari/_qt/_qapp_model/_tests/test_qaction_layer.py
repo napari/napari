@@ -1,6 +1,9 @@
+from unittest.mock import Mock
+
 import numpy as np
 import numpy.testing as npt
 import pytest
+from qtpy.QtWidgets import QApplication
 
 from napari._qt._qapp_model.qactions._layer import (
     _copy_affine_to_clipboard,
@@ -10,6 +13,7 @@ from napari._qt._qapp_model.qactions._layer import (
     _copy_spatial_to_clipboard,
     _copy_translate_to_clipboard,
     _paste_spatial_from_clipboard,
+    is_valid_spatial_in_clipboard,
 )
 from napari.components import LayerList
 from napari.layers.base._test_util_sample_layer import SampleLayer
@@ -162,3 +166,68 @@ def test_copy_spatial_to_clipboard_different_dim(layer_list_dim):
         layer_list_dim['l2'].affine.affine_matrix,
         layer_list_dim['l1'].affine.affine_matrix[-3:, -3:],
     )
+
+
+def test_fail_copy_to_clipboard(monkeypatch):
+    mock_clipboard = Mock(return_value=None)
+    warning_mock = Mock()
+
+    monkeypatch.setattr(
+        'qtpy.QtWidgets.QApplication.clipboard', mock_clipboard
+    )
+    monkeypatch.setattr(
+        'napari._qt._qapp_model.qactions._layer.show_warning', warning_mock
+    )
+    layer = SampleLayer(data=np.empty((10, 10)))
+
+    _copy_scale_to_clipboard(layer)
+
+    mock_clipboard.assert_called_once()
+    warning_mock.assert_called_once_with('Cannot access clipboard')
+
+
+@pytest.mark.usefixtures('qtbot')
+def test_fail_decode_text(monkeypatch, layer_list):
+    warning_mock = Mock()
+    monkeypatch.setattr(
+        'napari._qt._qapp_model.qactions._layer.show_warning', warning_mock
+    )
+
+    clip = QApplication.clipboard()
+
+    clip.setText('aaaaa')
+    _paste_spatial_from_clipboard(layer_list)
+
+    warning_mock.assert_called_once_with('Cannot parse clipboard data')
+
+
+@pytest.mark.usefixtures('qtbot')
+def test_is_valid_spatial_in_clipboard_simple():
+    layer = SampleLayer(data=np.empty((10, 10)))
+
+    _copy_scale_to_clipboard(layer)
+    assert is_valid_spatial_in_clipboard()
+
+
+@pytest.mark.usefixtures('qtbot')
+def test_is_valid_spatial_in_clipboard_json():
+    QApplication.clipboard().setText('{"scale": [1, 1]}')
+    assert is_valid_spatial_in_clipboard()
+
+
+@pytest.mark.usefixtures('qtbot')
+def test_is_valid_spatial_in_clipboard_bad_json():
+    QApplication.clipboard().setText('[1, 1]')
+    assert not is_valid_spatial_in_clipboard()
+
+
+@pytest.mark.usefixtures('qtbot')
+def test_is_valid_spatial_in_clipboard_invalid_str():
+    QApplication.clipboard().setText('aaaa')
+    assert not is_valid_spatial_in_clipboard()
+
+
+@pytest.mark.usefixtures('qtbot')
+def test_is_valid_spatial_in_clipboard_invalid_key():
+    QApplication.clipboard().setText('{"scale": [1, 1], "invalid": 1}')
+    assert not is_valid_spatial_in_clipboard()

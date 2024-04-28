@@ -79,7 +79,8 @@ def _get_spatial_from_clipboard() -> dict | None:
         return None
 
     mime_data = clip.mimeData()
-    if mime_data is None:
+    if mime_data is None:  # pragma: no cover
+        # we should never get here, but just in case
         return None
     if mime_data.data('application/octet-stream'):
         return pickle.loads(mime_data.data('application/octet-stream'))  # type: ignore[arg-type]
