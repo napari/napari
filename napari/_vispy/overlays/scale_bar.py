@@ -8,6 +8,7 @@ import pint
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.scale_bar import ScaleBar
+from napari.settings import get_settings
 from napari.utils._units import PREFERRED_VALUES, get_unit_registry
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.theme import get_theme
@@ -49,11 +50,21 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         """Connect the canvas resize event to scale bar callback function(s)."""
         if event.new and self.node.canvas:
             event.new.canvas.events.resize.connect(
-                self._scale_on_canvas_resize
+                self._scale_scalebar_on_canvas_resize
             )
+            event.new.canvas.events.resize.connect(self._scale_font_size)
 
-    def _scale_on_canvas_resize(self, event):
-        self._target_length = event.source.size[0] / 5
+    def _scale_font_size(self, event):
+        """Scale the font size in response to a canvas resize"""
+        self.overlay.font_size = (
+            event.source.size[1]
+            / get_settings().experimental.scale_bar_font_size
+        )
+
+    def _scale_scalebar_on_canvas_resize(self, event):
+        self._target_length = (
+            event.source.size[0] / get_settings().experimental.scale_bar_length
+        )
         self._on_zoom_change(force=True)
 
     def _on_unit_change(self):
