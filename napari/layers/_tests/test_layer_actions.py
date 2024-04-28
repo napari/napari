@@ -197,7 +197,7 @@ def test_convert_dtype(mode):
 
 
 @pytest.mark.parametrize(
-    'layer, type_',
+    ('layer', 'type_'),
     [
         (Image(np.random.rand(10, 10)), 'labels'),
         (Image(np.array([[1, 2], [3, 4]], dtype=(int))), 'labels'),

@@ -8,7 +8,7 @@ from napari._qt.widgets.qt_highlight_preview import (
 )
 
 
-@pytest.fixture
+@pytest.fixture()
 def star_widget(qtbot):
     def _star_widget(**kwargs):
         widget = QtStar(**kwargs)
@@ -20,7 +20,7 @@ def star_widget(qtbot):
     return _star_widget
 
 
-@pytest.fixture
+@pytest.fixture()
 def triangle_widget(qtbot):
     def _triangle_widget(**kwargs):
         widget = QtTriangle(**kwargs)
@@ -32,7 +32,7 @@ def triangle_widget(qtbot):
     return _triangle_widget
 
 
-@pytest.fixture
+@pytest.fixture()
 def highlight_preview_widget(qtbot):
     def _highlight_preview_widget(**kwargs):
         widget = QtHighlightPreviewWidget(**kwargs)
@@ -168,7 +168,7 @@ def test_qt_highlight_preview_widget_minimum_invalid(
 ):
     widget = highlight_preview_widget()
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must be smaller than'):
         widget.setMinimum(60)
 
 
@@ -211,7 +211,7 @@ def test_qt_highlight_preview_widget_maximum_invalid(
 ):
     widget = highlight_preview_widget()
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must be larger than'):
         widget.setMaximum(-5)
 
 
