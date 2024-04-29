@@ -158,9 +158,9 @@ jobs:
           pip install -U uv
           flags="--quiet"
           # Explanation of below commands
-          # python3.9 -m piptools compile - call pip-compile but ensure proper interpreter
+          # uv pip compile --python-version 3.9 - call uv pip compile but ensure proper interpreter
           # --upgrade upgrade to the latest possible version. Without this pip-compile will take a look to output files and reuse versions (so will ad something on when adding dependency.
-          # -o resources/constraints/constraints_py3.8.txt - output file
+          # -o resources/constraints/constraints_py3.9.txt - output file
           # pyproject.toml resources/constraints/version_denylist.txt - source files. the resources/constraints/version_denylist.txt - contains our test specific constraints like pytes-cov`
           #
           # --extra pyqt5 etc - names of extra sections from pyproject.toml that should be checked for the dependencies list (maybe we could create a super extra section to collect them all in)
@@ -185,7 +185,7 @@ jobs:
 
           uv pip compile --python-version 3.9 --upgrade --output-file $constraints/constraints_py3.9_examples.txt $pyproject_toml $constraints/version_denylist.txt resources/constraints/version_denylist_examples.txt ${flags}
           uv pip compile --python-version 3.10 --upgrade --output-file $constraints/constraints_py3.10_docs.txt $pyproject_toml $constraints/version_denylist.txt resources/constraints/version_denylist_examples.txt docs/requirements.txt $constraints/pydantic_le_2.txt ${flags}
-          uv pip compile --python-version 3.11 --upgrade --output-file resources/requirements_mypy.txt resources/requirements_mypy.in --resolver=backtracking
+          uv pip compile --python-version 3.11 --upgrade --output-file resources/requirements_mypy.txt resources/requirements_mypy.in
 
       # END PYTHON DEPENDENCIES
 
