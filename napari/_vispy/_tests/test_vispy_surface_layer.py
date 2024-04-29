@@ -111,19 +111,21 @@ def test_vertex_colors(cube_layer):
     cube_layer.vertex_colors = None
     assert visual.node.mesh_data.get_vertex_colors() is None
 
+
 def check_surface_without_visible_faces():
     points = np.array(
-    [
-        [0, 0.0, 0.0, 0.0],
-        [0, 1., 0, 0],
-        [0, 1, 1, 0],
-        [2, 0.0, 0.0, 0.0],
-        [2, 1., 0, 0],
-        [2, 1, 1, 0]
-        ] );
+        [
+            [0, 0.0, 0.0, 0.0],
+            [0, 1.0, 0, 0],
+            [0, 1, 1, 0],
+            [2, 0.0, 0.0, 0.0],
+            [2, 1.0, 0, 0],
+            [2, 1, 1, 0],
+        ]
+    )
     faces = np.array([[0, 1, 2], [3, 4, 5]])
     layer = Surface((points, faces))
     viewer = napari.Viewer(ndisplay=3)
     viewer.add_layer(layer)
-    #The following with throw an exception.
+    # The following with throw an exception.
     viewer.reset()

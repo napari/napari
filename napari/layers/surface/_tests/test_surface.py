@@ -492,18 +492,17 @@ def test_surface_copy():
     l2 = copy.copy(l1)
     assert l1.data[0] is not l2.data[0]
 
+
 def test_surface_with_no_visible_faces():
-    points = np.array(
-        [
-            [0, 0.0, 0.0, 0.0],
-            [0, 1., 0, 0],
-            [0, 1, 1, 0]
-            ] );
+    points = np.array([[0, 0.0, 0.0, 0.0], [0, 1.0, 0, 0], [0, 1, 1, 0]])
     faces = np.array([[0, 1, 2]])
     layer = Surface((points, faces))
-    #the following with throw an exception when _view_faces
-    #is non-integer values.
-    layer._get_value_3d(np.array([1, 0, 0, 0]), np.array([1, 1, 0, 0]), [1, 2, 3])
+    # the following with throw an exception when _view_faces
+    # is non-integer values.
+    layer._get_value_3d(
+        np.array([1, 0, 0, 0]), np.array([1, 1, 0, 0]), [1, 2, 3]
+    )
+
 
 def test_docstring():
     validate_all_params_in_docstring(Surface)
