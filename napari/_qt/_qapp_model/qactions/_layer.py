@@ -174,7 +174,7 @@ Q_LAYER_ACTIONS = [
     ),
     Action(
         id='napari.layer.paste_spatial_from_clipboard',
-        title=trans._('Paste Spatial from Clipboard'),
+        title=trans._('Apply scale/transform from Clipboard'),
         callback=_paste_spatial_from_clipboard,
         menus=[
             {

@@ -29,7 +29,7 @@ SUBMENUS = [
         MenuId.LAYERLIST_CONTEXT,
         SubmenuItem(
             submenu=MenuId.LAYERS_COPY_SPATIAL,
-            title=trans._('Copy Spatial'),
+            title=trans._('Copy scale & transforms'),
             group=MenuGroup.LAYERLIST_CONTEXT.COPY_SPATIAL,
             order=None,
         ),
