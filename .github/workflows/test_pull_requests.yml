@@ -125,7 +125,7 @@ jobs:
             backend: pyqt6
             coverage: no_cov
           - python: "3.12"
-            platform: macos-latest
+            platform: macos-13
             backend: pyqt5
             coverage: no_cov
           # minimum specified requirements
