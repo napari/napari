@@ -172,15 +172,28 @@ def test_fail_copy_to_clipboard(monkeypatch):
     mock_clipboard = Mock(return_value=None)
     warning_mock = Mock()
 
-    monkeypatch.setattr(
-        'qtpy.QtWidgets.QApplication.clipboard', mock_clipboard
-    )
+    monkeypatch.setattr(QApplication, 'clipboard', mock_clipboard)
     monkeypatch.setattr(
         'napari._qt._qapp_model.qactions._layer.show_warning', warning_mock
     )
     layer = SampleLayer(data=np.empty((10, 10)))
 
     _copy_scale_to_clipboard(layer)
+
+    mock_clipboard.assert_called_once()
+    warning_mock.assert_called_once_with('Cannot access clipboard')
+
+
+def test_fail_copy_data_from_clipboard(monkeypatch, layer_list):
+    mock_clipboard = Mock(return_value=None)
+    warning_mock = Mock()
+
+    monkeypatch.setattr(QApplication, 'clipboard', mock_clipboard)
+    monkeypatch.setattr(
+        'napari._qt._qapp_model.qactions._layer.show_warning', warning_mock
+    )
+
+    _paste_spatial_from_clipboard(layer_list)
 
     mock_clipboard.assert_called_once()
     warning_mock.assert_called_once_with('Cannot access clipboard')
