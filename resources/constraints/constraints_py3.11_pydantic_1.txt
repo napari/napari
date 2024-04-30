@@ -312,7 +312,7 @@ pyside2==5.13.2
 pyside6==6.4.2
 pyside6-addons==6.4.2
     # via pyside6
-pyside6-essentials==6.4.2
+pyside6-essentials==6.4.3
     # via
     #   pyside6
     #   pyside6-addons
@@ -385,7 +385,7 @@ shellingham==1.5.4
     # via typer
 shiboken2==5.13.2
     # via pyside2
-shiboken6==6.4.2
+shiboken6==6.4.3
     # via
     #   pyside6
     #   pyside6-addons

@@ -94,6 +94,11 @@ jobs:
             backend: pyqt6
             pydantic: ""
             coverage: no_cov
+          - python: 3.11
+            platform: ubuntu-latest
+            backend: pyside6
+            coverage: cov
+            tox_extras: "testing_extra"
     with:
       python_version: ${{ matrix.python }}
       platform: ${{ matrix.platform }}

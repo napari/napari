@@ -188,6 +188,7 @@ class _QtMainWindow(QMainWindow):
         self.status_throttler = QSignalThrottler(parent=self)
         self.status_throttler.setTimeout(50)
         self._throttle_cursor_to_status_connection(viewer)
+        self.setObjectName('NapariMainWindow')
 
     def _throttle_cursor_to_status_connection(self, viewer: 'Viewer'):
         # In the GUI we expect lots of changes to the cursor position, so
@@ -304,6 +305,7 @@ class _QtMainWindow(QMainWindow):
         # we are not in menubar toggled state
         if (
             QApplication.activePopupWidget() is None
+            and event.type() in (QEvent.Type.MouseMove, QEvent.Type.Leave)
             and self._toggle_menubar_visibility
         ):
             if event.type() == QEvent.Type.MouseMove:
@@ -735,11 +737,7 @@ class Window:
         theme.events.current.connect(self._update_theme_no_event)
         theme.events.icon.connect(self._update_theme_no_event)
         theme.events.font_size.connect(self._update_theme_no_event)
-        theme.events.canvas.connect(
-            lambda _: self._qt_viewer.canvas._set_theme_change(
-                get_settings().appearance.theme
-            )
-        )
+        theme.events.canvas.connect(self._update_canvas_theme)
         # connect console-specific attributes only if QtConsole
         # is present. The `console` is called which might slow
         # things down a little.
@@ -748,6 +746,11 @@ class Window:
             theme.events.syntax_style.connect(
                 self._qt_viewer.console._update_theme
             )
+
+    def _update_canvas_theme(self, event):
+        self._qt_viewer.canvas._set_theme_change(
+            get_settings().appearance.theme
+        )
 
     def _disconnect_theme(self, theme):
         theme.events.background.disconnect(self._update_theme_no_event)
@@ -1497,7 +1500,8 @@ class Window:
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        self._status_bar.setHelpText(event.value)
+        if self._qt_window is not None:
+            self._status_bar.setHelpText(event.value)
 
     def _restart(self):
         """Restart the napari application."""
@@ -1625,13 +1629,13 @@ class Window:
 
     def close(self):
         """Close the viewer window and cleanup sub-widgets."""
-        # Someone is closing us twice? Only try to delete self._qt_window
-        # if we still have one.
-        if hasattr(self, '_qt_window'):
-            self._teardown()
-            self._qt_viewer.close()
-            self._qt_window.close()
-            del self._qt_window
+        if self._qt_window is None:
+            return
+        self._teardown()
+        self._qt_viewer.close()
+        self._qt_window.close()
+        self._qt_window.deleteLater()
+        self._qt_window = None
 
     def _open_preferences_dialog(self) -> PreferencesDialog:
         """Edit preferences from the menubar."""
