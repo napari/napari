@@ -499,9 +499,12 @@ def test_surface_with_no_visible_faces():
     layer = Surface((points, faces))
     # the following with throw an exception when _view_faces
     # is non-integer values.
-    layer._get_value_3d(
-        np.array([1, 0, 0, 0]), np.array([1, 1, 0, 0]), [1, 2, 3]
-    )
+    with pytest.raises(
+        ValueError, match='operands could not be broadcast together'
+    ):
+        layer._get_value_3d(
+            np.array([1, 0, 0, 0]), np.array([1, 1, 0, 0]), [1, 2, 3]
+        )
 
 
 def test_docstring():
