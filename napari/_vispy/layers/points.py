@@ -14,7 +14,7 @@ class VispyPointsLayer(VispyBaseLayer):
     node: PointsVisual
 
     def __init__(self, layer) -> None:
-        node = PointsVisual()
+        node = self.node()
         super().__init__(layer, node)
 
         self.layer.events.symbol.connect(self._on_data_change)
