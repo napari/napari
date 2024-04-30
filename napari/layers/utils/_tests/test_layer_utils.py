@@ -1,12 +1,25 @@
+import sys
 import time
+from functools import partial
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
 import pytest
+import xarray as xr
+import zarr
 from dask import array as da
+from pretend import stub
 
+from napari.layers import Image
 from napari.layers.utils.layer_utils import (
+    _determine_class_for_labels,
+    _determine_labels_class_based_on_ram,
     _FeatureTable,
+    _get_chunk_size,
+    _get_tensorstore_or_zarr,
+    _get_zeros_for_labels_based_on_module,
+    _layers_to_class_set,
     calc_data_range,
     coerce_current_properties,
     dataframe_to_properties,
@@ -498,3 +511,211 @@ def test_register_label_attr_action(monkeypatch):
     monkeypatch.setattr(time, 'time', lambda: 2)
     handler.release_key('K')
     assert foo.value == 0
+
+
+def test_numpy_chunk_size():
+    assert _get_chunk_size(np.zeros((100, 100))) is None
+    assert _get_chunk_size(list(range(10))) is None
+
+
+def test_zarr_get_chunk_size():
+    import zarr
+
+    data_shape = (100, 100)
+    chunk_shape = (10, 10)
+
+    data = zarr.zeros(data_shape, chunks=chunk_shape, dtype='u2')
+    chunk_size = _get_chunk_size(data)
+    assert np.array_equal(chunk_size, chunk_shape)
+
+
+def test_xarray_get_chunk_size():
+    import xarray as xr
+
+    data_shape = (100, 100)
+    chunk_shape = (10, 10)
+    chunk_shape_dict = {'x': 10, 'y': 10}
+
+    coords = list(range(100))
+    data = xr.DataArray(
+        np.zeros(data_shape),
+        dims=['y', 'x'],
+        coords={'y': coords, 'x': coords},
+    )
+    data = data.chunk(chunk_shape_dict)
+    chunk_size = _get_chunk_size(data)
+    assert np.array_equal(chunk_size, chunk_shape)
+
+
+def test_dask_get_chunk_size():
+    chunk_size = _get_chunk_size(data_dask_plane)
+    assert np.array_equal(chunk_size, (1000, 1000))
+
+
+def test_tensorstore_get_chunk_size():
+    ts = pytest.importorskip('tensorstore')
+
+    data_shape = (100, 100)
+    chunk_shape = (10, 10)
+
+    spec = {
+        'driver': 'zarr',
+        'kvstore': {'driver': 'memory'},
+        'metadata': {'chunks': chunk_shape},
+    }
+    labels = ts.open(
+        spec, create=True, dtype='uint32', shape=data_shape
+    ).result()
+
+    chunk_size = _get_chunk_size(labels)
+    assert np.array_equal(chunk_size, chunk_shape)
+
+
+def test_determine_class_for_labels(monkeypatch):
+    monkeypatch.delitem(sys.modules, 'tensorstore', raising=False)
+    assert _determine_class_for_labels(set()) == np.ndarray
+    assert _determine_class_for_labels({np.ndarray}) == np.ndarray
+    assert _determine_class_for_labels({np.ndarray, da.Array}) == zarr.Array
+    assert _determine_class_for_labels({da.Array}) == zarr.Array
+
+
+def test_determine_class_for_labels_tensorstore():
+    ts = pytest.importorskip('tensorstore')
+    assert (
+        _determine_class_for_labels({np.ndarray, da.Array}) == ts.TensorStore
+    )
+    assert _determine_class_for_labels({np.ndarray, zarr.Array}) == zarr.Array
+    assert (
+        _determine_class_for_labels({np.ndarray, zarr.Array, ts.TensorStore})
+        == ts.TensorStore
+    )
+
+
+def test_determine_class_for_labels_warning(monkeypatch):
+    monkeypatch.delitem(sys.modules, 'tensorstore', raising=False)
+    monkeypatch.delitem(sys.modules, 'zarr', raising=False)
+
+    with pytest.warns(RuntimeWarning, match='We cannot use dask.array'):
+        assert _determine_class_for_labels({da.Array}) == np.ndarray
+
+
+def test_get_zeros_for_labels_based_on_module(monkeypatch):
+    assert _get_zeros_for_labels_based_on_module(None, None) is np.zeros
+    assert _get_zeros_for_labels_based_on_module(np, None) is np.zeros
+    assert _get_zeros_for_labels_based_on_module(zarr, None) is zarr.zeros
+    res = _get_zeros_for_labels_based_on_module(zarr, (10, 10))
+    assert isinstance(res, partial)
+    assert res.keywords == {'chunks': (10, 10)}
+    assert res.func is zarr.zeros
+
+
+def test_get_zeros_for_labels_based_on_module_dask(monkeypatch):
+    def _get_zarr():
+        return zarr
+
+    monkeypatch.setattr(
+        'napari.layers.utils.layer_utils._get_tensorstore_or_zarr', _get_zarr
+    )
+    assert _get_zeros_for_labels_based_on_module(da, None) is zarr.zeros
+
+
+def test_get_zeros_for_labels_based_on_module_dask_warning(monkeypatch):
+    def _get_zarr():
+        return None
+
+    monkeypatch.setattr(
+        'napari.layers.utils.layer_utils._get_tensorstore_or_zarr', _get_zarr
+    )
+    with pytest.warns(RuntimeWarning, match='We cannot use dask.array'):
+        assert _get_zeros_for_labels_based_on_module(da, None) is np.zeros
+
+
+def test_get_zeros_for_labels_based_on_module_dask_tensorstore(monkeypatch):
+    ts = pytest.importorskip('tensorstore')
+
+    def _get_ts():
+        return ts
+
+    monkeypatch.setattr(
+        'napari.layers.utils.layer_utils._get_tensorstore_or_zarr', _get_ts
+    )
+    res = _get_zeros_for_labels_based_on_module(da, (10, 10))
+
+    arr = res(shape=(100, 100), dtype='u2')
+
+    assert isinstance(arr, ts.TensorStore)
+    assert arr.shape == (100, 100)
+    assert arr.chunk_layout.read_chunk.shape == (10, 10)
+
+
+def test_get_zeros_for_labels_based_on_module_unknown():
+    with pytest.warns(RuntimeWarning, match='Unknown data library'):
+        assert _get_zeros_for_labels_based_on_module(pytest, None) is np.zeros
+
+
+def test_get_zeros_for_labels_based_on_module_tensorstore():
+    ts = pytest.importorskip('tensorstore')
+
+    res = _get_zeros_for_labels_based_on_module(ts, (10, 10))
+
+    arr = res(shape=(100, 100), dtype='u2')
+
+    assert isinstance(arr, ts.TensorStore)
+    assert arr.shape == (100, 100)
+    assert arr.chunk_layout.read_chunk.shape == (10, 10)
+
+
+def test_layers_to_class_set():
+    d1 = Image(np.zeros((10, 10)))
+    d2 = Image(np.zeros((10, 10)))
+    d3 = Image(zarr.zeros((10, 10)))
+    d4 = Image(xr.DataArray(np.zeros((10, 10)), dims=['x', 'y']))
+    d5 = Image(d4.data.chunk({'x': 5, 'y': 5}))
+    assert _layers_to_class_set([d1, d2]) == {np.ndarray}
+    assert _layers_to_class_set([d1, d2, d3]) == {np.ndarray, zarr.Array}
+    assert _layers_to_class_set([d4]) == {np.ndarray}
+    assert _layers_to_class_set([d5]) == {da.Array}
+
+
+@pytest.mark.parametrize('module_name', ['numpy', 'zarr.core', 'tensorstore'])
+@patch(
+    'psutil.virtual_memory',
+    return_value=stub(total=1000000000, available=1000000000),
+)
+def test_determine_labels_class_based_on_ram(virtual_memory, module_name):
+    module = pytest.importorskip(module_name)
+
+    zeros = _get_zeros_for_labels_based_on_module(module, (10, 10))(
+        shape=(100, 100), dtype='uint8'
+    )
+
+    assert (
+        _determine_labels_class_based_on_ram(
+            zeros.__class__, zeros.shape, 'uint8'
+        )
+        == module
+    )
+
+    virtual_memory.return_value = stub(total=1000000000, available=10)
+
+    assert (
+        _determine_labels_class_based_on_ram(
+            zeros.__class__, zeros.shape, 'uint8'
+        )
+        == _get_tensorstore_or_zarr()
+    )
+
+
+@patch(
+    'psutil.virtual_memory',
+    return_value=stub(total=1000000000, available=1000000000),
+)
+def test_determine_labels_class_based_on_ram_dask(virtual_memory):
+    zeros = da.zeros((100, 100), chunks=(10, 10), dtype='uint8')
+
+    assert (
+        _determine_labels_class_based_on_ram(
+            zeros.__class__, zeros.shape, 'uint8'
+        )
+        == da.core
+    )

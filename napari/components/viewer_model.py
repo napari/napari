@@ -3,7 +3,9 @@ from __future__ import annotations
 import inspect
 import itertools
 import os
+import sys
 import warnings
+from collections import Counter
 from collections.abc import Iterator, Sequence
 from functools import lru_cache
 from pathlib import Path
@@ -61,10 +63,18 @@ from napari.layers.points._points_key_bindings import points_fun_to_mode
 from napari.layers.shapes._shapes_key_bindings import shapes_fun_to_mode
 from napari.layers.surface._surface_key_bindings import surface_fun_to_mode
 from napari.layers.tracks._tracks_key_bindings import tracks_fun_to_mode
+from napari.layers.utils.layer_utils import (
+    _determine_class_for_labels,
+    _determine_labels_class_based_on_ram,
+    _get_chunk_size,
+    _get_zeros_for_labels_based_on_module,
+    _layers_to_class_set,
+)
 from napari.layers.utils.stack_utils import split_channels
 from napari.layers.vectors._vectors_key_bindings import vectors_fun_to_mode
 from napari.plugins.utils import get_potential_readers, get_preferred_reader
 from napari.settings import get_settings
+from napari.settings._constants import NewLabelsPolicy
 from napari.types import (
     FullLayerData,
     LayerData,
@@ -87,6 +97,7 @@ from napari.utils.key_bindings import KeymapProvider
 from napari.utils.migrations import rename_argument
 from napari.utils.misc import is_sequence
 from napari.utils.mouse_bindings import MousemapProvider
+from napari.utils.notifications import show_error
 from napari.utils.progress import progress
 from napari.utils.theme import available_themes, is_theme_available
 from napari.utils.translations import trans
@@ -424,16 +435,65 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         """Create new labels layer filling full world coordinates space."""
         layers_extent = self.layers.extent
         extent = layers_extent.world
-        scale = layers_extent.step
+        scale = tuple(layers_extent.step)
         scene_size = extent[1] - extent[0]
-        corner = extent[0]
+        corner = tuple(extent[0])
         shape = [
             np.round(s / sc).astype('int') + 1
             for s, sc in zip(scene_size, scale)
         ]
         dtype_str = get_settings().application.new_labels_dtype
-        empty_labels = np.zeros(shape, dtype=dtype_str)
-        self.add_labels(empty_labels, translate=np.array(corner), scale=scale)
+        label_policy = get_settings().application.new_labels_policy
+        image_class = self._get_class_from_images()
+        if label_policy == NewLabelsPolicy.follow_image_class:
+            module = sys.modules[image_class.__module__]
+
+        elif label_policy == NewLabelsPolicy.fit_in_ram:
+            max_factor = get_settings().application.new_label_max_factor
+            module = _determine_labels_class_based_on_ram(
+                np.ndarray, shape, dtype_str, max_factor
+            )
+
+        else:  # label_policy == NewLabelsPolicy.follow_class_with_fit:
+            module = _determine_labels_class_based_on_ram(
+                image_class, shape, dtype_str
+            )
+
+        if module is None:
+            show_error(
+                'Not enough RAM to allocate labels array. Please install zarr or tensorstore and try again.'
+            )
+            return
+        chunk = self._get_chunk_size_from_layers()
+        empty_labels_func = _get_zeros_for_labels_based_on_module(
+            module, chunk
+        )
+        empty_labels = empty_labels_func(shape=shape, dtype=dtype_str)
+        self.add_labels(empty_labels, translate=corner, scale=scale)
+
+    def _get_chunk_size_from_layers(self):
+        sizes = []
+        for layer in self.layers:
+            if isinstance(layer, Image):
+                chunk_size = _get_chunk_size(layer.data)
+                if (
+                    chunk_size is not None
+                    and len(chunk_size) == self.dims.ndim
+                ):
+                    # chunk size is for all dimensions
+                    sizes.append(tuple(chunk_size))
+        if not sizes:
+            return None
+        if len(set(sizes)) == 1:
+            return sizes[0]
+
+        count = Counter(sizes)
+        # select most popular chunk size (with some randomization if there are multiple)
+        return sorted(count, key=count.__getitem__, reverse=True)[0]
+
+    def _get_class_from_images(self):
+        class_set = _layers_to_class_set(self.layers)
+        return _determine_class_for_labels(class_set)
 
     def _on_layer_reload(self, event: Event) -> None:
         self._layer_slicer.submit(
