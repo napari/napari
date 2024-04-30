@@ -112,7 +112,7 @@ def test_vertex_colors(cube_layer):
     assert visual.node.mesh_data.get_vertex_colors() is None
 
 
-def check_surface_without_visible_faces():
+def test_check_surface_without_visible_faces(make_napari_viewer):
     points = np.array(
         [
             [0, 0.0, 0.0, 0.0],
@@ -125,7 +125,8 @@ def check_surface_without_visible_faces():
     )
     faces = np.array([[0, 1, 2], [3, 4, 5]])
     layer = Surface((points, faces))
-    viewer = napari.Viewer(ndisplay=3)
+    viewer = make_napari_viewer(ndisplay=3)
+    viewer.show()
     viewer.add_layer(layer)
     # The following with throw an exception.
     viewer.reset()
