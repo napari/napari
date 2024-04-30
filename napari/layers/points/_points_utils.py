@@ -4,7 +4,11 @@ from typing import Optional, Union
 import numpy as np
 import numpy.typing as npt
 
-from napari.layers.points._points_constants import SYMBOL_ALIAS, Symbol
+from napari.layers.points._points_constants import (
+    SYMBOL_ALIAS,
+    SYMBOL_DICT,
+    Symbol,
+)
 from napari.utils.geometry import project_points_onto_plane
 from napari.utils.translations import trans
 
@@ -307,7 +311,7 @@ def coerce_symbols(
 
     # otherwise, create a dictionary to map raw symbols to their
     # Symbol instance counterpart
-    symbol_dict = create_symbol_dict(symbol)
+    # symbol_dict = create_symbol_dict(symbol)
     # then use a vectorized "dict.get" to convert the raw symbols to
     # their Symbol instance counterpart quickly
-    return fast_dict_get(symbol, symbol_dict)
+    return fast_dict_get(symbol, SYMBOL_DICT)
