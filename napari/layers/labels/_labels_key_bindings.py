@@ -1,4 +1,4 @@
-import typing
+from typing import cast
 
 import numpy as np
 from app_model.types import KeyCode, KeyMod
@@ -179,6 +179,6 @@ def complete_polygon(layer: Labels):
         LabelsPolygonOverlay,
     )
 
-    typing.cast(
+    cast(
         LabelsPolygonOverlay, layer._overlays['polygon']
     ).add_polygon_to_labels(layer)
