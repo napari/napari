@@ -153,13 +153,9 @@ class QtLayerControls(QFrame):
 
     def deleteLater(self):
         disconnect_events(self.layer.events, self)
-        super().deleteLater()
+        return super().deleteLater()
 
-    def close(self):
+    def closeEvent(self, event):
         """Disconnect events when widget is closing."""
-        disconnect_events(self.layer.events, self)
-        for child in self.children():
-            close_method = getattr(child, 'close', None)
-            if close_method is not None:
-                close_method()
-        return super().close()
+        self.deleteLater()
+        return super().closeEvent(event)

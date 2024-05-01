@@ -694,13 +694,13 @@ def _update_data(
 @pytest.fixture()
 def qt_viewer_with_controls(qtbot):
     qt_viewer = QtViewer(viewer=ViewerModel())
-    qt_viewer.show()
-    qt_viewer.controls.show()
+    with qtbot.waitExposed(qt_viewer):
+        qt_viewer.show()
+    with qtbot.waitExposed(qt_viewer.controls):
+        qt_viewer.controls.show()
+    qtbot.addWidget(qt_viewer.controls)
+    qtbot.addWidget(qt_viewer)
     yield qt_viewer
-    qt_viewer.controls.hide()
-    qt_viewer.controls.close()
-    qt_viewer.hide()
-    qt_viewer.close()
     qt_viewer._instances.clear()
     qtbot.wait(50)
 

@@ -159,14 +159,14 @@ class QtImageControls(QtBaseImageControls):
         self._on_ndisplay_changed()
 
         colormap_layout = QHBoxLayout()
+        colormap_layout.addWidget(self.colorbarLabel)
+        colormap_layout.addWidget(self.colormapComboBox)
         if hasattr(self.layer, 'rgb') and self.layer.rgb:
             colormap_layout.addWidget(QLabel('RGB'))
             self.colormapComboBox.setVisible(False)
             self.colorbarLabel.setVisible(False)
-        else:
-            colormap_layout.addWidget(self.colorbarLabel)
-            colormap_layout.addWidget(self.colormapComboBox)
         colormap_layout.addStretch(1)
+        self.colormap_layout = colormap_layout
 
         self.layout().addRow(self.opacityLabel, self.opacitySlider)
         self.layout().addRow(
@@ -174,7 +174,7 @@ class QtImageControls(QtBaseImageControls):
         )
         self.layout().addRow(trans._('auto-contrast:'), self.autoScaleBar)
         self.layout().addRow(trans._('gamma:'), self.gammaSlider)
-        self.layout().addRow(trans._('colormap:'), colormap_layout)
+        self.layout().addRow(trans._('colormap:'), self.colormap_layout)
         self.layout().addRow(trans._('blending:'), self.blendComboBox)
         self.layout().addRow(self.interpLabel, self.interpComboBox)
         self.layout().addRow(self.depictionLabel, self.depictionComboBox)
@@ -366,6 +366,10 @@ class QtImageControls(QtBaseImageControls):
             self._update_rendering_parameter_visibility()
             self.depictionComboBox.show()
             self.depictionLabel.show()
+
+    def closeEvent(self, event):
+        self.layer.plane.events.disconnect(self)
+        return super().closeEvent(event)
 
 
 class PlaneNormalButtons(QWidget):

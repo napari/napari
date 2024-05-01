@@ -199,9 +199,8 @@ class QtBaseImageControls(QtLayerControls):
             self.gammaSlider.setValue(self.layer.gamma)
 
     def closeEvent(self, event):
-        self.deleteLater()
-        self.layer.events.disconnect(self)
-        super().closeEvent(event)
+        self.autoScaleBar = None
+        return super().closeEvent(event)
 
     def show_clim_popupup(self):
         self.clim_popup = QContrastLimitsPopup(self.layer, self)

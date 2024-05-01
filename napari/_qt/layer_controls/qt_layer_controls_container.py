@@ -1,4 +1,4 @@
-from qtpy.QtWidgets import QFrame, QStackedWidget
+from qtpy.QtWidgets import QApplication, QFrame, QStackedWidget
 
 from napari._qt.layer_controls.qt_image_controls import QtImageControls
 from napari._qt.layer_controls.qt_labels_controls import QtLabelsControls
@@ -153,9 +153,8 @@ class QtLayerControlsContainer(QStackedWidget):
             Event with the target layer at `event.value`.
         """
         layer = event.value
-        controls = self.widgets[layer]
+        controls = self.widgets.pop(layer)
         self.removeWidget(controls)
-        controls.hide()
-        controls.deleteLater()
-        controls = None
-        del self.widgets[layer]
+        controls.setParent(None)
+        controls.close()
+        QApplication.processEvents()
