@@ -103,7 +103,7 @@ def _guess_zarr_path(path: str) -> bool:
     return any(part.endswith('.zarr') for part in Path(path).parts)
 
 
-def read_zarr_dataset(path):
+def read_zarr_dataset(path: str):
     """Read a zarr dataset, including an array or a group of arrays.
 
     Parameters
@@ -119,16 +119,17 @@ def read_zarr_dataset(path):
     shape : tuple
         Shape of array or first array in list
     """
-    if os.path.exists(os.path.join(path, '.zarray')):
+    path = Path(path)
+    if (path / '.zarray').exists():
         # load zarr array
         image = da.from_zarr(path)
         shape = image.shape
-    elif os.path.exists(os.path.join(path, '.zgroup')):
+    elif (path / '.zgroup').exists():
         # else load zarr all arrays inside file, useful for multiscale data
         image = [
-            read_zarr_dataset(os.path.join(path, subpath))[0]
-            for subpath in sorted(os.listdir(path))
-            if not subpath.startswith('.')
+            read_zarr_dataset(subpath)[0]
+            for subpath in sorted(path.iterdir())
+            if not subpath.name.startswith('.') and subpath.is_dir()
         ]
         assert image, 'No arrays found in zarr group'
         shape = image[0].shape

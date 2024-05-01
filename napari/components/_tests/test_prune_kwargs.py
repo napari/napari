@@ -77,11 +77,11 @@ EXPECTATIONS = [
 ids = [i[0] for i in EXPECTATIONS]
 
 
-@pytest.mark.parametrize('label_type, expectation', EXPECTATIONS, ids=ids)
+@pytest.mark.parametrize(('label_type', 'expectation'), EXPECTATIONS, ids=ids)
 def test_prune_kwargs(label_type, expectation):
     assert prune_kwargs(TEST_KWARGS, label_type) == expectation
 
 
 def test_prune_kwargs_raises():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Invalid layer_type'):
         prune_kwargs({}, 'nonexistent_layer_type')

@@ -504,16 +504,16 @@ def test_add_layer_from_data_raises():
     # make sure that adding invalid data or kwargs raises the right errors
     viewer = ViewerModel()
     # unrecognized layer type raises Value Error
-    with pytest.raises(ValueError):
-        # 'layer' is not a valid type
+    with pytest.raises(ValueError, match='Unrecognized layer_type'):
         # (even though there is an add_layer method)
         viewer._add_layer_from_data(
             np.random.random((10, 10)), layer_type='layer'
         )
 
     # even with the correct meta kwargs, the underlying add_* method may raise
-    with pytest.raises(ValueError):
-        # improper dims for rgb data
+    with pytest.raises(
+        ValueError, match='data does not have suitable dimensions'
+    ):
         viewer._add_layer_from_data(
             np.random.random((10, 10, 6)), {'rgb': True}
         )
@@ -737,7 +737,7 @@ def test_update_scale():
     )
 
 
-@pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
+@pytest.mark.parametrize(('Layer', 'data', 'ndim'), layer_test_data)
 def test_add_remove_layer_no_callbacks(Layer, data, ndim):
     """Test all callbacks for layer emmitters removed."""
     viewer = ViewerModel()
@@ -768,7 +768,7 @@ def test_add_remove_layer_no_callbacks(Layer, data, ndim):
         assert len(em.callbacks) == count_warning_events(em.callbacks)
 
 
-@pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
+@pytest.mark.parametrize(('Layer', 'data', 'ndim'), layer_test_data)
 def test_add_remove_layer_external_callbacks(Layer, data, ndim):
     """Test external callbacks for layer emmitters preserved."""
     viewer = ViewerModel()
@@ -831,7 +831,7 @@ def test_not_mutable_fields(field):
     )
 
 
-@pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
+@pytest.mark.parametrize(('Layer', 'data', 'ndim'), layer_test_data)
 def test_status_tooltip(Layer, data, ndim):
     viewer = ViewerModel()
     viewer.tooltip.visible = True

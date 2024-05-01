@@ -91,7 +91,7 @@ Documentation = "https://napari.org"
 
 [project.optional-dependencies]
 pyside2 = [
-    "PySide2>=5.13.2,!=5.15.0 ; python_version < '3.12'",
+    "PySide2>=5.13.2,!=5.15.0 ; python_version < '3.11' and platform_machine != 'arm64'",
 ]
 pyside6_experimental = [
     "PySide6 < 6.5 ; python_version < '3.12'"
@@ -274,6 +274,7 @@ select = [
     "FA", # flake8-future-annotations
     "LOG", # flake8-logging
     "SLOT", # flake8-slots
+    "PT", # flake8-pytest-style
 ]
 ignore = [
     "E501", "TCH001", "TCH002", "TCH003",
