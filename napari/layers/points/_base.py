@@ -1043,9 +1043,6 @@ class _BasePoints(Layer):
         state : dict
             Dictionary of layer state.
         """
-
-        # must be self.data and not self._points_data
-        # self._points_data includes invalid nodes from graph buffer.
         not_empty = len(self.data) > 0
         state = self._get_base_state()
         state.update(

@@ -461,38 +461,8 @@ class Points(_BasePoints):
     @data.setter
     def data(self, data: Optional[np.ndarray]):
         """Set the data array and emit a corresponding event."""
-        prior_data = len(self.data) > 0
-        data_not_empty = (
-            data is not None
-            and (isinstance(data, np.ndarray) and data.size > 0)
-            or (isinstance(data, list) and len(data) > 0)
-        )
-        kwargs = {
-            'value': self.data,
-            'vertex_indices': ((),),
-            'data_indices': tuple(i for i in range(len(self.data))),
-        }
-        if prior_data and data_not_empty:
-            kwargs['action'] = ActionType.CHANGING
-        elif data_not_empty:
-            kwargs['action'] = ActionType.ADDING
-            kwargs['data_indices'] = tuple(i for i in range(len(data)))
-        else:
-            kwargs['action'] = ActionType.REMOVING
-
-        self.events.data(**kwargs)
-        self._set_data(data)
-        kwargs['data_indices'] = tuple(i for i in range(len(self.data)))
-        kwargs['value'] = self.data
-
-        if prior_data and data_not_empty:
-            kwargs['action'] = ActionType.CHANGED
-        elif data_not_empty:
-            kwargs['data_indices'] = tuple(i for i in range(len(data)))
-            kwargs['action'] = ActionType.ADDED
-        else:
-            kwargs['action'] = ActionType.REMOVED
-        self.events.data(**kwargs)
+        # Inheriting _BasePoints data.setter
+        return _BasePoints.data.fset(self, data)
 
     def _set_data(self, data: Optional[np.ndarray]) -> None:
         """Set the .data array attribute, without emitting an event."""
