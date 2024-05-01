@@ -28,6 +28,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.x_size = 150  # will be updated on zoom anyways
         # need to change from defaults because the anchor is in the center
         self.y_offset = 20
+        # TODO: perhaps change name as y_size does not indicate bottom offset.
         self.y_size = 5
 
         # In the super().__init__ we see node is scale bar, need to connect its parent, canvas
@@ -65,6 +66,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self._target_length = (
             event.source.size[0] / get_settings().experimental.scale_bar_length
         )
+        self.y_size = event.source.size[1] / 40
         self._on_zoom_change(force=True)
 
     def _on_unit_change(self):
