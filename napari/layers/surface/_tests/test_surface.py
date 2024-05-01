@@ -326,7 +326,7 @@ def test_vertex_colors():
 
 
 @pytest.mark.parametrize(
-    'ray_start,ray_direction,expected_value,expected_index',
+    ('ray_start', 'ray_direction', 'expected_value', 'expected_index'),
     [
         ([0, 1, 1], [1, 0, 0], 2, 0),
         ([10, 1, 1], [-1, 0, 0], 2, 1),
@@ -364,7 +364,7 @@ def test_get_value_3d(
 
 
 @pytest.mark.parametrize(
-    'ray_start,ray_direction,expected_value,expected_index',
+    ('ray_start', 'ray_direction', 'expected_value', 'expected_index'),
     [
         ([0, 0, 1, 1], [0, 1, 0, 0], 2, 0),
         ([0, 10, 1, 1], [0, -1, 0, 0], 2, 1),

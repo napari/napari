@@ -26,18 +26,15 @@ def test_add_dock_widget(make_napari_viewer):
     assert dwidg2.widget() == widg2
     dwidg2._on_visibility_changed(True)  # smoke test
 
-    with pytest.raises(ValueError):
-        # 'under' is not a valid area
+    with pytest.raises(ValueError, match='area argument must be'):
         viewer.window.add_dock_widget(widg2, name='test2', area='under')
 
-    with pytest.raises(ValueError):
-        # 'under' is not a valid area
+    with pytest.raises(ValueError, match='all allowed_areas argument must be'):
         viewer.window.add_dock_widget(
             widg2, name='test2', allowed_areas=['under']
         )
 
-    with pytest.raises(TypeError):
-        # allowed_areas must be a list
+    with pytest.raises(TypeError, match='`allowed_areas` must be a list'):
         viewer.window.add_dock_widget(
             widg2, name='test2', allowed_areas='under'
         )

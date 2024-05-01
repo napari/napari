@@ -234,4 +234,13 @@ LAYER_SUBMENUS = [
             enablement=LLSCK.active_layer_is_image_3d,
         ),
     ),
+    (
+        MenuId.LAYERLIST_CONTEXT,
+        SubmenuItem(
+            submenu=MenuId.LAYERS_COPY_SPATIAL,
+            title=trans._('Copy scale and transforms'),
+            group=MenuGroup.LAYERLIST_CONTEXT.COPY_SPATIAL,
+            order=None,
+        ),
+    ),
 ]

@@ -6,7 +6,7 @@ initial = (100, 400)
 range_ = (0, 500)
 
 
-@pytest.fixture
+@pytest.fixture()
 def popup(qtbot):
     popup = QRangeSliderPopup()
     popup.slider.setRange(*range_)
