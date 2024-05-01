@@ -149,7 +149,7 @@ def test_show_only_layer_below():
     assert viewer.layers[0].visible
 
 
-@pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
+@pytest.mark.parametrize(('layer_class, data, ndim'), layer_test_data)
 def test_rotate_layers(layer_class, data, ndim):
     """Test rotate layers works with all layer types/data"""
     viewer = ViewerModel()
