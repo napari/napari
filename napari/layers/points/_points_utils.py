@@ -266,7 +266,9 @@ def symbol_conversion(symbol: Union[str, Symbol]) -> Symbol:
     return Symbol(symbol)
 
 
-def create_symbol_dict(symbols: Sequence[Union[str, Symbol]]) -> dict[Union[str, Symbol], Symbol]:
+def create_symbol_dict(
+    symbols: Sequence[Union[str, Symbol]],
+) -> dict[Union[str, Symbol], Symbol]:
     """
     Create a dictionary that maps raw symbols (keys) to their Symbol
     instance counterpart (values).
