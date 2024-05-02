@@ -41,7 +41,7 @@ def test_type_enforcement_with_slices(list_type):
     a[:] = list(range(10))
     with pytest.raises(TypeError):
         a[4:4] = ['hi']
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='attempt to assign sequence of size'):
         a[2:9:2] = [1, 2, 3]  # not the right length
     with pytest.raises(TypeError):  # right length, includes bad type
         a[2:9:2] = [1, 2, 3, 'a']
@@ -87,9 +87,9 @@ def test_custom_lookup(list_type):
     assert a[{'some': 'data'}] == dct
 
     # index still works with start/stop arguments
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='is not in list'):
         assert a.index((1, 2, 3), stop=2)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='is not in list'):
         assert a.index((1, 2, 3), start=-3, stop=-1)
 
     # contains works
