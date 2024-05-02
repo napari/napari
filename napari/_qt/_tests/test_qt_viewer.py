@@ -779,6 +779,7 @@ def test_label_colors_matching_widget_direct(
         data, opacity=1, colormap=colormap
     )
     layer.show_selected_label = use_selection
+    qtbot.wait(100)
 
     color_box_color, middle_pixel = _update_data(
         layer, 0, qtbot, qt_viewer_with_controls, dtype
