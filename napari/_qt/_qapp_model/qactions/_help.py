@@ -6,6 +6,7 @@ file within `napari/_app_model/actions/`.
 
 import sys
 from functools import partial
+from typing import Callable
 from webbrowser import open
 
 from app_model.types import Action, KeyBindingRule, KeyCode, KeyMod
@@ -30,7 +31,7 @@ def _show_about(window: Window):
 v = parse(__version__)
 VERSION = 'dev' if v.is_devrelease else str(v)
 
-HELP_FUNCS = {
+HELP_FUNCS: dict[str, Callable] = {
     'getting_started': partial(
         open, url=f'https://napari.org/{VERSION}/tutorials/start_index.html'
     ),
