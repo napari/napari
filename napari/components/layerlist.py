@@ -227,13 +227,20 @@ class LayerList(SelectableEventedList[Layer]):
             return
 
         if 'translate' in layer.parameters_with_default_values:
-            translate_set = {
-                tuple(layer_.translate[-layer.ndim :]) for layer_ in self
-            }
-            if len(translate_set) > 1:
-                layer.translate = (0,) * layer.ndim
+            translate = next(
+                x.translate for x in self if x.ndim >= layer.ndim
+            )[-layer.ndim :]
+
+            for layer_ in self:
+                translate_ = layer_.translate[-layer.ndim :]
+                min_len = min(len(translate), len(translate_))
+                if not np.allclose(
+                    translate[-min_len:], translate_[-min_len:]
+                ):
+                    layer.translate = (0,) * layer.ndim
+                    break
             else:
-                layer.translate = next(iter(translate_set))
+                layer.translate = translate
         else:
             for layer_ in self:
                 layer_.translate = layer.translate[-layer_.ndim :]
@@ -244,10 +251,16 @@ class LayerList(SelectableEventedList[Layer]):
             return
 
         if 'rotate' in layer.parameters_with_default_values:
-            rotate_matrix = self[0].rotate[-layer.ndim :, -layer.ndim :]
+            rotate_matrix = next(
+                x.rotate for x in self if x.ndim >= layer.ndim
+            )[-layer.ndim :, -layer.ndim :]
             for layer_ in self[1:]:
                 rotate_matrix_ = layer_.rotate[-layer_.ndim :, -layer_.ndim :]
-                if not np.allclose(rotate_matrix, rotate_matrix_):
+                min_dim = min(rotate_matrix.shape[0], rotate_matrix_.shape[0])
+                if not np.allclose(
+                    rotate_matrix[-min_dim:, -min_dim],
+                    rotate_matrix_[-min_dim:, -min_dim],
+                ):
                     layer.rotate = 0
                     break
             else:
@@ -262,15 +275,19 @@ class LayerList(SelectableEventedList[Layer]):
 
         if 'affine' in layer.parameters_with_default_values:
             # affine.linear_matrix stores the matrix in reversed order
-            affine_matrix = self[0].affine.affine_matrix[
-                -(layer.ndim + 1) :, -(layer.ndim + 1) :
-            ]
+            affine_matrix = next(
+                x.affine.affine_matrix for x in self if x.ndim >= layer.ndim
+            )[-(layer.ndim + 1) :, -(layer.ndim + 1) :]
             for layer_ in self[1:]:
                 affine_matrix_ = layer_.affine.affine_matrix[
                     -(layer_.ndim + 1) :, -(layer_.ndim + 1) :
                 ]
-                if not np.allclose(affine_matrix, affine_matrix_):
-                    layer.affine = Affine()
+                min_dim = min(affine_matrix.shape[0], affine_matrix_.shape[0])
+                if not np.allclose(
+                    affine_matrix[-min_dim:, -min_dim:],
+                    affine_matrix_[-min_dim:, -min_dim:],
+                ):
+                    layer.affine = Affine(ndim=layer.ndim)
                     break
             else:
                 layer.affine = affine_matrix

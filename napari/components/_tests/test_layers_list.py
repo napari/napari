@@ -691,6 +691,19 @@ def test_inherit_translate_smaller_dim():
     npt.assert_array_equal(l2.translate, (5, 10))
 
 
+def test_inherit_translate_smaller_layer_present():
+    layers = LayerList(
+        [
+            SampleLayer(np.empty((2, 10, 10)), translate=(2, 5, 10)),
+            SampleLayer(np.empty((10, 10)), translate=(5, 10)),
+        ]
+    )
+    l2 = SampleLayer(np.empty((3, 10, 10)))
+    layers.append(l2)
+    assert 'translate' not in l2.parameters_with_default_values
+    npt.assert_array_equal(l2.translate, (2, 5, 10))
+
+
 def test_update_translate():
     l1 = SampleLayer(np.empty((10, 10)))
     layers = LayerList([l1])
@@ -749,6 +762,19 @@ def test_inherit_rotate_consistency():
     layers.append(l2)
     assert 'rotate' not in l2.parameters_with_default_values
     npt.assert_almost_equal(l2.rotate, ([0, -1], [1, 0]))
+
+
+def test_inherit_rotate_smaller_layer_present():
+    layers = LayerList(
+        [
+            SampleLayer(np.empty((2, 10, 10)), rotate=90),
+            SampleLayer(np.empty((10, 10)), rotate=90),
+        ]
+    )
+    l2 = SampleLayer(np.empty((3, 10, 10)))
+    layers.append(l2)
+    assert 'rotate' not in l2.parameters_with_default_values
+    npt.assert_almost_equal(l2.rotate, ([1, 0, 0], [0, 0, -1], [0, 1, 0]))
 
 
 def test_inherit_affine():
@@ -819,3 +845,26 @@ def test_inherit_affine_consistency():
     layers.append(l2)
     assert 'affine' not in l2.parameters_with_default_values
     assert l2.affine == Affine(rotate=90)
+
+
+def test_inherit_affine_smaller_layer_present():
+    layers = LayerList(
+        [
+            SampleLayer(
+                np.empty((2, 10, 10)),
+                affine=Affine(
+                    rotate=90, scale=(1, 2, 2), translate=(5, 10, 10)
+                ),
+            ),
+            SampleLayer(
+                np.empty((10, 10)),
+                affine=Affine(rotate=90, scale=(2, 2), translate=(10, 10)),
+            ),
+        ]
+    )
+    l2 = SampleLayer(np.empty((3, 10, 10)))
+    layers.append(l2)
+    assert 'affine' not in l2.parameters_with_default_values
+    assert l2.affine == Affine(
+        rotate=90, scale=(1, 2, 2), translate=(5, 10, 10)
+    )
