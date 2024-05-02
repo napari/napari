@@ -4,7 +4,6 @@ from napari.layers import Layer
 
 
 class SampleLayer(Layer):
-
     def __init__(  # type: ignore [no-untyped-def]
         self,
         data: np.ndarray,

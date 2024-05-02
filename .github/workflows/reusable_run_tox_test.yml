@@ -49,7 +49,13 @@ jobs:
       PYVISTA_OFF_SCREEN: True
       MIN_REQ: ${{ inputs.min_req }}
       FORCE_COLOR: 1
-      PIP_CONSTRAINT: resources/constraints/constraints_py${{ inputs.python_version }}${{ inputs.min_req && '_min_req' }}${{ inputs.constraints_suffix }}.txt
+      PIP_CONSTRAINT: resources/constraints/constraints_py${{ inputs.python_version }}${{ (((inputs.platform == 'macos-latest') && '_macos_arm') || '') }}${{ inputs.min_req && '_min_req' }}${{ inputs.constraints_suffix }}.txt
+      # Above we calculate path to constraints file based on python version and platform
+      # Because there is no single PyQt5-Qt5 package version available for all platforms we was forced to use
+      # different constraints files for macOS arm and other platforms
+      # ${{ (((inputs.platform == 'macos-latest') && '_macos_arm') || '') }} - if platform is macOS-latest then add '_macos_arm' to constraints file name, else add nothing
+      # ${{ inputs.min_req && '_min_req' }} - if min_req is set then add '_min_req' to constraints file name, else add nothing
+      #  ${{ inputs.constraints_suffix }} - additional suffix for constraints file name (used for example testing).
       COVERAGE: ${{ inputs.coverage }}
       TOX_WORK_DIR: .tox
       TOX_EXTRAS: ${{ inputs.tox_extras }}

@@ -23,7 +23,7 @@ from napari.layers.utils.style_encoding import (
 from napari.utils.events.custom_types import Array
 
 
-@pytest.fixture
+@pytest.fixture()
 def features() -> pd.DataFrame:
     return pd.DataFrame(
         {

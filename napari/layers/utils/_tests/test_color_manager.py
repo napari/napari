@@ -42,7 +42,7 @@ categorical_map = CategoricalColormap(
 
 
 @pytest.mark.parametrize(
-    'cat_cmap,expected',
+    ('cat_cmap', 'expected'),
     [
         ({'colormap': color_mapping}, (color_mapping, default_fallback_color)),
         (
@@ -86,7 +86,7 @@ c_prop_obj = ColorProperties(**c_prop_dict)
 
 
 @pytest.mark.parametrize(
-    'c_props,expected',
+    ('c_props', 'expected'),
     [
         (None, None),
         ({}, None),
@@ -116,7 +116,7 @@ def test_invalid_color_properties(c_props):
 
 
 @pytest.mark.parametrize(
-    'curr_color,expected',
+    ('curr_color', 'expected'),
     [
         (None, np.array([0, 0, 0, 1])),
         ([], np.array([0, 0, 0, 1])),
