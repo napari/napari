@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from itertools import chain
 
 from app_model import Application
 
 from napari._app_model._submenus import SUBMENUS
-from napari._app_model.actions._help_actions import HELP_ACTIONS
 from napari._app_model.actions._layer_actions import LAYER_ACTIONS
 from napari._app_model.injection._processors import PROCESSORS
 from napari._app_model.injection._providers import PROVIDERS
@@ -30,8 +28,7 @@ class NapariApplication(Application):
             providers=PROVIDERS, processors=PROCESSORS
         )
 
-        for action in chain(HELP_ACTIONS, LAYER_ACTIONS):
-            self.register_action(action)
+        self.register_actions(LAYER_ACTIONS)
 
         self.menus.append_menu_items(SUBMENUS)
 

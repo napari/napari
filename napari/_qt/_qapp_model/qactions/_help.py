@@ -5,9 +5,13 @@ file within `napari/_app_model/actions/`.
 """
 
 import sys
+from functools import partial
+from webbrowser import open
 
 from app_model.types import Action, KeyBindingRule, KeyCode, KeyMod
+from packaging.version import parse
 
+from napari import __version__
 from napari._app_model.constants import MenuGroup, MenuId
 from napari._qt.dialogs.qt_about import QtAbout
 from napari._qt.qt_main_window import Window
@@ -22,6 +26,31 @@ except ModuleNotFoundError:
 def _show_about(window: Window):
     QtAbout.showAbout(window._qt_window)
 
+
+v = parse(__version__)
+VERSION = 'dev' if v.is_devrelease else str(v)
+
+HELP_URLS = {
+    'getting_started': partial(
+        open(f'https://napari.org/{VERSION}/tutorials/start_index.html')
+    ),
+    'tutorials': partial(
+        open(f'https://napari.org/{VERSION}/tutorials/index.html')
+    ),
+    'layers_guide': partial(
+        open(f'https://napari.org/{VERSION}/howtos/layers/index.html')
+    ),
+    'examples_gallery': partial(
+        open(f'https://napari.org/{VERSION}/gallery.html')
+    ),
+    'release_notes': partial(
+        open(
+            f'https://napari.org/{VERSION}/release/release_{VERSION.replace(".", "_")}.html'
+        )
+    ),
+    'github_issue': partial(open('https://github.com/napari/napari/issues')),
+    'homepage': partial(open('https://napari.org')),
+}
 
 Q_HELP_ACTIONS: list[Action] = [
     Action(
@@ -44,6 +73,60 @@ Q_HELP_ACTIONS: list[Action] = [
             }
         ],
         status_tip=trans._('About napari'),
+    ),
+    Action(
+        id='napari.window.help.getting_started',
+        title=trans._('Getting started'),
+        callback=HELP_URLS['getting_started'],
+        menus=[{'id': MenuId.MENUBAR_HELP}],
+    ),
+    Action(
+        id='napari.window.help.tutorials',
+        title=trans._('Tutorials'),
+        callback=HELP_URLS['tutorials'],
+        menus=[{'id': MenuId.MENUBAR_HELP}],
+    ),
+    Action(
+        id='napari.window.help.layers_guide',
+        title=trans._('Using Layers Guides'),
+        callback=HELP_URLS['layers_guide'],
+        menus=[{'id': MenuId.MENUBAR_HELP}],
+    ),
+    Action(
+        id='napari.window.help.examples',
+        title=trans._('Examples Gallery'),
+        callback=HELP_URLS['examples_gallery'],
+        menus=[{'id': MenuId.MENUBAR_HELP}],
+    ),
+    Action(
+        id='napari.window.help.release_notes',
+        title=trans._('Release Notes'),
+        callback=HELP_URLS['release_notes'],
+        menus=[
+            {
+                'id': MenuId.MENUBAR_HELP,
+                'when': VERSION != 'dev',
+                'group': MenuGroup.NAVIGATION,
+            }
+        ],
+    ),
+    Action(
+        id='napari.window.help.github_issue',
+        title=trans._('Report an issue on GitHub'),
+        callback=HELP_URLS['github_issue'],
+        menus=[
+            {
+                'id': MenuId.MENUBAR_HELP,
+                'when': VERSION == 'dev',
+                'group': MenuGroup.NAVIGATION,
+            }
+        ],
+    ),
+    Action(
+        id='napari.window.help.homepage',
+        title=trans._('napari homepage'),
+        callback=HELP_URLS['homepage'],
+        menus=[{'id': MenuId.MENUBAR_HELP, 'group': MenuGroup.NAVIGATION}],
     ),
 ]
 
