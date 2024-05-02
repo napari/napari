@@ -197,7 +197,8 @@ class EventedSet(MutableSet[_T]):
         if errors:
             from napari._pydantic_compat import ValidationError
 
-            raise ValidationError(errors, cls)
+            raise ValidationError(errors, cls)  # type: ignore [arg-type]
+            # need to be fixed when migrate to pydantic 2
         return cls(v)
 
     def _json_encode(self) -> list:

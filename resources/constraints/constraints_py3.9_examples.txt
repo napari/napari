@@ -59,7 +59,7 @@ executing==2.0.1
     # via stack-data
 fasteners==0.19
     # via zarr
-filelock==3.13.4
+filelock==3.14.0
     # via
     #   torch
     #   triton
@@ -76,7 +76,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.100.1
+hypothesis==6.100.2
 idna==3.7
     # via requests
 imageio==2.34.1
@@ -323,7 +323,7 @@ pyparsing==3.1.2
     # via matplotlib
 pyperclip==1.8.2
     # via mouseinfo
-pyproject-hooks==1.0.0
+pyproject-hooks==1.1.0
     # via build
 pyqt5==5.15.10
 pyqt5-qt5==5.15.2
@@ -347,7 +347,7 @@ pyside6-essentials==6.3.1
     # via
     #   pyside6
     #   pyside6-addons
-pytest==8.1.2
+pytest==8.2.0
     # via
     #   pytest-cov
     #   pytest-json-report
@@ -460,7 +460,7 @@ sympy==1.12
 tabulate==0.9.0
     # via numpydoc
 tensorstore==0.1.58
-threadpoolctl==3.4.0
+threadpoolctl==3.5.0
     # via scikit-learn
 tifffile==2024.4.24
     # via scikit-image
@@ -470,7 +470,6 @@ tomli==2.0.1
     #   coverage
     #   npe2
     #   numpydoc
-    #   pyproject-hooks
     #   pytest
     #   sphinx
 tomli-w==1.0.0
@@ -514,7 +513,7 @@ tzdata==2024.1
     # via pandas
 urllib3==2.2.1
     # via requests
-virtualenv==20.26.0
+virtualenv==20.26.1
 vispy==0.14.2
     # via napari-svg
 wcwidth==0.2.13
