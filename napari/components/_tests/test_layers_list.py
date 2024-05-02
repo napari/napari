@@ -576,57 +576,57 @@ def test_readd_layers():
 
 
 def test_inherit_scale():
-    layers = LayerList([SampleLayer(np.zeros((10, 10)), scale=(10, 10))])
-    l2 = SampleLayer(np.zeros((10, 10)))
+    layers = LayerList([SampleLayer(np.empty((10, 10)), scale=(10, 10))])
+    l2 = SampleLayer(np.empty((10, 10)))
     npt.assert_array_equal(l2.scale, (1, 1))
     layers.append(l2)
     npt.assert_array_equal(l2.scale, (10, 10))
 
 
 def test_inherit_scale_smaller_dim():
-    layers = LayerList([SampleLayer(np.zeros((2, 10, 10)), scale=(2, 5, 10))])
-    l2 = SampleLayer(np.zeros((10, 10)))
+    layers = LayerList([SampleLayer(np.empty((2, 10, 10)), scale=(2, 5, 10))])
+    l2 = SampleLayer(np.empty((10, 10)))
     npt.assert_array_equal(l2.scale, (1, 1))
     layers.append(l2)
     npt.assert_array_equal(l2.scale, (5, 10))
 
 
 def test_update_scale():
-    l1 = SampleLayer(np.zeros((10, 10)))
+    l1 = SampleLayer(np.empty((10, 10)))
     layers = LayerList([l1])
     npt.assert_array_equal(l1.scale, (1, 1))
-    l2 = SampleLayer(np.zeros((10, 10)), scale=(10, 10))
+    l2 = SampleLayer(np.empty((10, 10)), scale=(10, 10))
     layers.append(l2)
     npt.assert_array_equal(l1.scale, (10, 10))
 
 
 def test_inherit_scale_constructor():
-    l1 = SampleLayer(np.zeros((10, 10)), scale=(10, 10))
-    l2 = SampleLayer(np.zeros((10, 10)))
+    l1 = SampleLayer(np.empty((10, 10)), scale=(10, 10))
+    l2 = SampleLayer(np.empty((10, 10)))
     _layers = LayerList([l1, l2])
     npt.assert_array_equal(l2.scale, (10, 10))
 
 
 def test_inherit_exception():
-    layers = LayerList([SampleLayer(np.zeros((10, 10)), scale=(10, 10))])
+    layers = LayerList([SampleLayer(np.empty((10, 10)), scale=(10, 10))])
     with pytest.raises(ValueError, match='Cannot add layer'):
-        layers.append(SampleLayer(np.zeros((2, 10, 10))))
+        layers.append(SampleLayer(np.empty((2, 10, 10))))
 
 
 def test_inherit_no_exception():
     """Do not expect an exception if any added layer has no scale"""
-    layers = LayerList([SampleLayer(np.zeros((10, 10)))])
-    layers.append(SampleLayer(np.zeros((2, 10, 10))))
+    layers = LayerList([SampleLayer(np.empty((10, 10)))])
+    layers.append(SampleLayer(np.empty((2, 10, 10))))
 
 
 def test_inherit_scale_no_consistency():
     layers = LayerList(
         [
-            SampleLayer(np.zeros((10, 10)), scale=(10, 10)),
-            SampleLayer(np.zeros((10, 10)), scale=(3, 3)),
+            SampleLayer(np.empty((10, 10)), scale=(10, 10)),
+            SampleLayer(np.empty((10, 10)), scale=(3, 3)),
         ]
     )
-    l2 = SampleLayer(np.zeros((10, 10)))
+    l2 = SampleLayer(np.empty((10, 10)))
     layers.append(l2)
     assert 'scale' not in l2.parameters_with_default_values
     npt.assert_array_equal(l2.scale, (3, 3))
@@ -637,19 +637,19 @@ def test_inherit_scale_no_consistency():
 def test_inherit_scale_smaller_layer_present():
     layers = LayerList(
         [
-            SampleLayer(np.zeros((2, 10, 10)), scale=(2, 5, 10)),
-            SampleLayer(np.zeros((10, 10)), scale=(5, 10)),
+            SampleLayer(np.empty((2, 10, 10)), scale=(2, 5, 10)),
+            SampleLayer(np.empty((10, 10)), scale=(5, 10)),
         ]
     )
-    l2 = SampleLayer(np.zeros((3, 10, 10)))
+    l2 = SampleLayer(np.empty((3, 10, 10)))
     layers.append(l2)
     assert 'scale' not in l2.parameters_with_default_values
     npt.assert_array_equal(l2.scale, (2, 5, 10))
 
 
 def test_inherit_translate():
-    layers = LayerList([SampleLayer(np.zeros((10, 10)), translate=(10, 10))])
-    l2 = SampleLayer(np.zeros((10, 10)))
+    layers = LayerList([SampleLayer(np.empty((10, 10)), translate=(10, 10))])
+    l2 = SampleLayer(np.empty((10, 10)))
     npt.assert_array_equal(l2.translate, (0, 0))
     layers.append(l2)
     npt.assert_array_equal(l2.translate, (10, 10))
@@ -658,11 +658,11 @@ def test_inherit_translate():
 def test_inherit_translate_no_consistency():
     layers = LayerList(
         [
-            SampleLayer(np.zeros((10, 10)), translate=(10, 10)),
-            SampleLayer(np.zeros((10, 10)), translate=(3, 3)),
+            SampleLayer(np.empty((10, 10)), translate=(10, 10)),
+            SampleLayer(np.empty((10, 10)), translate=(3, 3)),
         ]
     )
-    l2 = SampleLayer(np.zeros((10, 10)))
+    l2 = SampleLayer(np.empty((10, 10)))
     layers.append(l2)
     assert 'translate' not in l2.parameters_with_default_values
     npt.assert_array_equal(l2.translate, (0, 0))
@@ -671,11 +671,11 @@ def test_inherit_translate_no_consistency():
 def test_inherit_translate_consistency():
     layers = LayerList(
         [
-            SampleLayer(np.zeros((3, 10, 10)), translate=(2, 10, 10)),
-            SampleLayer(np.zeros((10, 10)), translate=(10, 10)),
+            SampleLayer(np.empty((3, 10, 10)), translate=(2, 10, 10)),
+            SampleLayer(np.empty((10, 10)), translate=(10, 10)),
         ]
     )
-    l2 = SampleLayer(np.zeros((10, 10)))
+    l2 = SampleLayer(np.empty((10, 10)))
     layers.append(l2)
     assert 'translate' not in l2.parameters_with_default_values
     npt.assert_array_equal(l2.translate, (10, 10))
@@ -683,44 +683,44 @@ def test_inherit_translate_consistency():
 
 def test_inherit_translate_smaller_dim():
     layers = LayerList(
-        [SampleLayer(np.zeros((2, 10, 10)), translate=(2, 5, 10))]
+        [SampleLayer(np.empty((2, 10, 10)), translate=(2, 5, 10))]
     )
-    l2 = SampleLayer(np.zeros((10, 10)))
+    l2 = SampleLayer(np.empty((10, 10)))
     npt.assert_array_equal(l2.translate, (0, 0))
     layers.append(l2)
     npt.assert_array_equal(l2.translate, (5, 10))
 
 
 def test_update_translate():
-    l1 = SampleLayer(np.zeros((10, 10)))
+    l1 = SampleLayer(np.empty((10, 10)))
     layers = LayerList([l1])
     npt.assert_array_equal(l1.translate, (0, 0))
-    l2 = SampleLayer(np.zeros((10, 10)), translate=(10, 10))
+    l2 = SampleLayer(np.empty((10, 10)), translate=(10, 10))
     layers.append(l2)
     npt.assert_array_equal(l1.translate, (10, 10))
 
 
 def test_inherit_rotate():
-    layers = LayerList([SampleLayer(np.zeros((10, 10)), rotate=90)])
-    l2 = SampleLayer(np.zeros((10, 10)))
+    layers = LayerList([SampleLayer(np.empty((10, 10)), rotate=90)])
+    l2 = SampleLayer(np.empty((10, 10)))
     npt.assert_array_equal(l2.rotate, [[1, 0], [0, 1]])
     layers.append(l2)
     npt.assert_almost_equal(l2.rotate, [[0, -1], [1, 0]])
 
 
 def test_inherit_rotate_smaller_dim():
-    layers = LayerList([SampleLayer(np.zeros((2, 10, 10)), rotate=90)])
-    l2 = SampleLayer(np.zeros((10, 10)))
+    layers = LayerList([SampleLayer(np.empty((2, 10, 10)), rotate=90)])
+    l2 = SampleLayer(np.empty((10, 10)))
     npt.assert_array_equal(l2.rotate, ([1, 0], [0, 1]))
     layers.append(l2)
     npt.assert_almost_equal(l2.rotate, ([0, -1], [1, 0]))
 
 
 def test_update_rotate():
-    l1 = SampleLayer(np.zeros((10, 10)))
+    l1 = SampleLayer(np.empty((10, 10)))
     layers = LayerList([l1])
     npt.assert_array_equal(l1.rotate, ([1, 0], [0, 1]))
-    l2 = SampleLayer(np.zeros((10, 10)), rotate=90)
+    l2 = SampleLayer(np.empty((10, 10)), rotate=90)
     layers.append(l2)
     npt.assert_almost_equal(l1.rotate, ([0, -1], [1, 0]))
 
@@ -728,11 +728,11 @@ def test_update_rotate():
 def test_inherit_rotate_no_consistency():
     layers = LayerList(
         [
-            SampleLayer(np.zeros((10, 10)), rotate=90),
-            SampleLayer(np.zeros((10, 10)), rotate=45),
+            SampleLayer(np.empty((10, 10)), rotate=90),
+            SampleLayer(np.empty((10, 10)), rotate=45),
         ]
     )
-    l2 = SampleLayer(np.zeros((10, 10)))
+    l2 = SampleLayer(np.empty((10, 10)))
     layers.append(l2)
     assert 'rotate' not in l2.parameters_with_default_values
     npt.assert_almost_equal(l2.rotate, ([1, 0], [0, 1]))
@@ -741,11 +741,11 @@ def test_inherit_rotate_no_consistency():
 def test_inherit_rotate_consistency():
     layers = LayerList(
         [
-            SampleLayer(np.zeros((10, 10)), rotate=90),
-            SampleLayer(np.zeros((10, 10)), rotate=90),
+            SampleLayer(np.empty((10, 10)), rotate=90),
+            SampleLayer(np.empty((10, 10)), rotate=90),
         ]
     )
-    l2 = SampleLayer(np.zeros((10, 10)))
+    l2 = SampleLayer(np.empty((10, 10)))
     layers.append(l2)
     assert 'rotate' not in l2.parameters_with_default_values
     npt.assert_almost_equal(l2.rotate, ([0, -1], [1, 0]))
