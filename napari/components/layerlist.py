@@ -14,6 +14,7 @@ from napari.layers import Layer
 from napari.layers.utils.layer_utils import Extent
 from napari.utils.events.containers import SelectableEventedList
 from napari.utils.naming import inc_name_count
+from napari.utils.transforms import Affine
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -247,7 +248,7 @@ class LayerList(SelectableEventedList[Layer]):
             for layer_ in self[1:]:
                 rotate_matrix_ = layer_.rotate[-layer_.ndim :, -layer_.ndim :]
                 if not np.allclose(rotate_matrix, rotate_matrix_):
-                    layer.rotate = (0,) * layer.ndim
+                    layer.rotate = 0
                     break
             else:
                 layer.rotate = rotate_matrix
@@ -261,23 +262,36 @@ class LayerList(SelectableEventedList[Layer]):
 
         if 'affine' in layer.parameters_with_default_values:
             # affine.linear_matrix stores the matrix in reversed order
-            affine_matrix = self[0].affine.linear_matrix[
-                : layer.ndim, : layer.ndim
+            affine_matrix = self[0].affine.affine_matrix[
+                -(layer.ndim + 1) :, -(layer.ndim + 1) :
             ]
             for layer_ in self[1:]:
-                affine_matrix_ = layer_.affine.linear_matrix[
-                    : layer_.ndim, : layer_.ndim
+                affine_matrix_ = layer_.affine.affine_matrix[
+                    -(layer_.ndim + 1) :, -(layer_.ndim + 1) :
                 ]
                 if not np.allclose(affine_matrix, affine_matrix_):
-                    layer.affine = np.eye(layer.ndim)
+                    layer.affine = Affine()
                     break
             else:
-                layer.affine = affine_matrix[::-1, ::-1]
+                layer.affine = affine_matrix
         else:
             for layer_ in self:
-                layer_.affine = layer.affine.linear_matrix[
-                    : layer_.ndim, : layer_.ndim
-                ][::-1, ::-1]
+                layer_.affine = layer.affine.affine_matrix[
+                    -(layer_.ndim + 1) :, -(layer_.ndim + 1) :
+                ]
+
+    def _inherit_shear(self, layer: Layer):
+        if not self._need_inheritance(layer, 'shear'):
+            return
+
+        if 'shear' in layer.parameters_with_default_values:
+            shear = self[0].shear
+            for layer_ in self[1:]:
+                if not np.allclose(shear, layer_.shear):
+                    layer.shear = np.zeros(layer.ndim * (layer.ndim - 1) // 2)
+                    break
+            else:
+                layer.shear = shear
 
     def _inherit_properties(self, layer: Layer):
         """Inherit properties from the layer list."""
@@ -297,6 +311,7 @@ class LayerList(SelectableEventedList[Layer]):
         self._inherit_translate(layer)
         self._inherit_rotate(layer)
         self._inherit_affine(layer)
+        self._inherit_shear(layer)
 
     @cached_property
     def parameters_with_default_values(self):

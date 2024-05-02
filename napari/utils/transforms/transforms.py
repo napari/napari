@@ -736,6 +736,11 @@ class Affine(Transform):
             )
         return self._cache_dict['_is_diagonal']
 
+    def __eq__(self, other):
+        if not isinstance(other, Affine):
+            return False
+        return np.allclose(self.affine_matrix, other.affine_matrix)
+
 
 class CompositeAffine(Affine):
     """n-dimensional affine transformation composed from more basic components.
