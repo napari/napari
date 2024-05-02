@@ -661,12 +661,11 @@ def test_create_non_empty_viewer_model(qtbot):
 
     viewer = QtViewer(viewer=viewer_model)
 
-    viewer.close()
-    viewer.deleteLater()
+    qtbot.addWidget(viewer)
     # try to del local reference for gc.
     del viewer_model
     del viewer
-    qtbot.wait(50)
+    qtbot.wait(100)
     gc.collect()
 
 

@@ -64,9 +64,14 @@ class SchemaWidgetMixin:
     def _set_valid_state(self, error: Exception = None):
         palette = self.palette()
         colour = QtGui.QColor()
-        colour.fromString(
-            self.VALID_COLOUR if error is None else self.INVALID_COLOUR
-        )
+        if hasattr(colour, 'fromString'):
+            colour.fromString(
+                self.VALID_COLOUR if error is None else self.INVALID_COLOUR
+            )
+        else:
+            colour.setNamedColor(
+                self.VALID_COLOUR if error is None else self.INVALID_COLOUR
+            )
         palette.setColor(self.backgroundRole(), colour)
 
         self.setPalette(palette)
