@@ -1,12 +1,11 @@
 import os
 import warnings
-from typing import TYPE_CHECKING
+
+import numpy as np
 
 from napari._version import __version__
+from napari.utils.notifications import show_warning
 from napari.utils.translations import trans
-
-if TYPE_CHECKING:
-    import numpy as np
 
 
 def imsave(filename: str, data: 'np.ndarray'):
@@ -23,6 +22,14 @@ def imsave(filename: str, data: 'np.ndarray'):
     # If no file extension was specified, choose .png by default
     if ext == '':
         ext = '.png'
+    # only TIFF can handle float data
+    if ext not in ['.tif', '.tiff'] and np.issubdtype(data.dtype, np.floating):
+        show_warning(
+            trans._(
+                'Image was not saved, because image data is of dtype float.\nEither save as TIFF or convert dtype.'
+            )
+        )
+        return
     # Save screenshot image data to output file
     if ext in ['.png']:
         imsave_png(filename, data)
