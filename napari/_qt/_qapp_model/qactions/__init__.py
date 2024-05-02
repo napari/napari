@@ -28,6 +28,7 @@ def init_qactions() -> None:
     from napari._app_model import get_app
     from napari._qt._qapp_model.qactions._file import Q_FILE_ACTIONS
     from napari._qt._qapp_model.qactions._help import Q_HELP_ACTIONS
+    from napari._qt._qapp_model.qactions._layer import Q_LAYER_ACTIONS
     from napari._qt._qapp_model.qactions._plugins import Q_PLUGINS_ACTIONS
     from napari._qt._qapp_model.qactions._view import Q_VIEW_ACTIONS
     from napari._qt.qt_main_window import Window
@@ -55,5 +56,6 @@ def init_qactions() -> None:
             Q_HELP_ACTIONS,
             Q_PLUGINS_ACTIONS,
             Q_VIEW_ACTIONS,
+            Q_LAYER_ACTIONS,
         )
     )
