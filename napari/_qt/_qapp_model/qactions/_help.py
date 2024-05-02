@@ -32,24 +32,25 @@ VERSION = 'dev' if v.is_devrelease else str(v)
 
 HELP_FUNCS = {
     'getting_started': partial(
-        open(f'https://napari.org/{VERSION}/tutorials/start_index.html')
+        open, url=f'https://napari.org/{VERSION}/tutorials/start_index.html'
     ),
     'tutorials': partial(
-        open(f'https://napari.org/{VERSION}/tutorials/index.html')
+        open, url=f'https://napari.org/{VERSION}/tutorials/index.html'
     ),
     'layers_guide': partial(
-        open(f'https://napari.org/{VERSION}/howtos/layers/index.html')
+        open, url=f'https://napari.org/{VERSION}/howtos/layers/index.html'
     ),
     'examples_gallery': partial(
-        open(f'https://napari.org/{VERSION}/gallery.html')
+        open, url=f'https://napari.org/{VERSION}/gallery.html'
     ),
     'release_notes': partial(
-        open(
-            f'https://napari.org/{VERSION}/release/release_{VERSION.replace(".", "_")}.html'
-        )
+        open,
+        url=f'https://napari.org/{VERSION}/release/release_{VERSION.replace(".", "_")}.html',
     ),
-    'github_issue': partial(open('https://github.com/napari/napari/issues')),
-    'homepage': partial(open('https://napari.org')),
+    'github_issue': partial(
+        open, url='https://github.com/napari/napari/issues'
+    ),
+    'homepage': partial(open, url='https://napari.org'),
 }
 
 Q_HELP_ACTIONS: list[Action] = [
