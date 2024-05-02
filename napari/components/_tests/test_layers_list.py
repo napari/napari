@@ -868,3 +868,72 @@ def test_inherit_affine_smaller_layer_present():
     assert l2.affine == Affine(
         rotate=90, scale=(1, 2, 2), translate=(5, 10, 10)
     )
+
+
+def test_inherit_shear():
+    layers = LayerList(
+        [
+            SampleLayer(
+                np.empty((10, 10)),
+                shear=(1,),
+            )
+        ]
+    )
+    l2 = SampleLayer(np.empty((10, 10)))
+    npt.assert_array_equal(l2.shear, (0,))
+    layers.append(l2)
+    npt.assert_array_equal(l2.shear, (1,))
+
+
+def test_inherit_shear_smaller_dim():
+    layers = LayerList(
+        [
+            SampleLayer(
+                np.empty((2, 10, 10)),
+                shear=(1, 0.5, 0.3),
+            )
+        ]
+    )
+    l2 = SampleLayer(np.empty((10, 10)))
+    npt.assert_array_equal(l2.shear, (0,))
+    layers.append(l2)
+    npt.assert_array_equal(l2.shear, (0.3,))
+
+
+def test_inherit_shear_no_consistency():
+    layers = LayerList(
+        [
+            SampleLayer(np.empty((10, 10)), shear=(1,)),
+            SampleLayer(np.empty((10, 10)), shear=(0.5,)),
+        ]
+    )
+    l2 = SampleLayer(np.empty((10, 10)))
+    layers.append(l2)
+    assert 'shear' not in l2.parameters_with_default_values
+    npt.assert_array_equal(l2.shear, (0,))
+
+
+def test_inherit_shear_consistency():
+    layers = LayerList(
+        [
+            SampleLayer(np.empty((10, 10)), shear=(0.5,)),
+            SampleLayer(np.empty((10, 10)), shear=(0.5,)),
+        ]
+    )
+    l2 = SampleLayer(np.empty((10, 10)))
+    layers.append(l2)
+    assert 'shear' not in l2.parameters_with_default_values
+    npt.assert_array_equal(l2.shear, (0.5,))
+
+
+def test_inherit_shear_smaller_layer_present():
+    layers = LayerList(
+        [
+            SampleLayer(np.empty((2, 10, 10)), shear=(1, 0.3, 0.5)),
+            SampleLayer(np.empty((10, 10)), shear=(0.5,)),
+        ]
+    )
+    l2 = SampleLayer(np.empty((3, 10, 10)))
+    layers.append(l2)
+    assert 'shear' not in l2.parameters_with_default_values
+    npt.assert_array_equal(l2.shear, (1, 0.3, 0.5))

@@ -302,9 +302,14 @@ class LayerList(SelectableEventedList[Layer]):
             return
 
         if 'shear' in layer.parameters_with_default_values:
-            shear = self[0].shear
-            for layer_ in self[1:]:
-                if not np.allclose(shear, layer_.shear):
+            layer_shear_count = (layer.ndim * (layer.ndim - 1)) // 2
+            shear = next(x.shear for x in self if x.ndim >= layer.ndim)[
+                -layer_shear_count:
+            ]
+            for layer_ in self:
+                shear_ = layer_.shear[-layer_shear_count:]
+                min_len = min(len(shear), len(shear_))
+                if not np.allclose(shear[-min_len:], shear_[-min_len:]):
                     layer.shear = np.zeros(layer.ndim * (layer.ndim - 1) // 2)
                     break
             else:
