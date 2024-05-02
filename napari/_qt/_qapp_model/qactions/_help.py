@@ -30,7 +30,7 @@ def _show_about(window: Window):
 v = parse(__version__)
 VERSION = 'dev' if v.is_devrelease else str(v)
 
-HELP_URLS = {
+HELP_FUNCS = {
     'getting_started': partial(
         open(f'https://napari.org/{VERSION}/tutorials/start_index.html')
     ),
@@ -77,31 +77,31 @@ Q_HELP_ACTIONS: list[Action] = [
     Action(
         id='napari.window.help.getting_started',
         title=trans._('Getting started'),
-        callback=HELP_URLS['getting_started'],
+        callback=HELP_FUNCS['getting_started'],
         menus=[{'id': MenuId.MENUBAR_HELP}],
     ),
     Action(
         id='napari.window.help.tutorials',
         title=trans._('Tutorials'),
-        callback=HELP_URLS['tutorials'],
+        callback=HELP_FUNCS['tutorials'],
         menus=[{'id': MenuId.MENUBAR_HELP}],
     ),
     Action(
         id='napari.window.help.layers_guide',
         title=trans._('Using Layers Guides'),
-        callback=HELP_URLS['layers_guide'],
+        callback=HELP_FUNCS['layers_guide'],
         menus=[{'id': MenuId.MENUBAR_HELP}],
     ),
     Action(
         id='napari.window.help.examples',
         title=trans._('Examples Gallery'),
-        callback=HELP_URLS['examples_gallery'],
+        callback=HELP_FUNCS['examples_gallery'],
         menus=[{'id': MenuId.MENUBAR_HELP}],
     ),
     Action(
         id='napari.window.help.release_notes',
         title=trans._('Release Notes'),
-        callback=HELP_URLS['release_notes'],
+        callback=HELP_FUNCS['release_notes'],
         menus=[
             {
                 'id': MenuId.MENUBAR_HELP,
@@ -113,7 +113,7 @@ Q_HELP_ACTIONS: list[Action] = [
     Action(
         id='napari.window.help.github_issue',
         title=trans._('Report an issue on GitHub'),
-        callback=HELP_URLS['github_issue'],
+        callback=HELP_FUNCS['github_issue'],
         menus=[
             {
                 'id': MenuId.MENUBAR_HELP,
@@ -125,7 +125,7 @@ Q_HELP_ACTIONS: list[Action] = [
     Action(
         id='napari.window.help.homepage',
         title=trans._('napari homepage'),
-        callback=HELP_URLS['homepage'],
+        callback=HELP_FUNCS['homepage'],
         menus=[{'id': MenuId.MENUBAR_HELP, 'group': MenuGroup.NAVIGATION}],
     ),
 ]
