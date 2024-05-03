@@ -158,3 +158,14 @@ class QtLayerControlsContainer(QStackedWidget):
         controls.setParent(None)
         controls.close()
         QApplication.processEvents()
+
+    def deleteLater(self):
+        self.widgets.clear()
+        self.viewer.layers.events.disconnect(self)
+        self.viewer.layers.selection.events.disconnect(self)
+        self.viewer.dims.events.disconnect(self)
+        return super().deleteLater()
+
+    def closeEvent(self, event):
+        self.deleteLater()
+        return super().closeEvent(event)
