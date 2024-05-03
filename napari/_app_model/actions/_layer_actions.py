@@ -23,6 +23,39 @@ from napari.utils.translations import trans
 if TYPE_CHECKING:
     from app_model.types import MenuRuleDict
 
+# Layer submenus
+LAYER_SUBMENUS = [
+    (
+        MenuId.LAYERLIST_CONTEXT,
+        SubmenuItem(
+            submenu=MenuId.LAYERS_CONVERT_DTYPE,
+            title=trans._('Convert data type'),
+            group=MenuGroup.LAYERLIST_CONTEXT.CONVERSION,
+            order=None,
+            enablement=LLSCK.all_selected_layers_labels,
+        ),
+    ),
+    (
+        MenuId.LAYERLIST_CONTEXT,
+        SubmenuItem(
+            submenu=MenuId.LAYERS_PROJECT,
+            title=trans._('Projections'),
+            group=MenuGroup.LAYERLIST_CONTEXT.SPLIT_MERGE,
+            order=None,
+            enablement=LLSCK.active_layer_is_image_3d,
+        ),
+    ),
+    (
+        MenuId.LAYERLIST_CONTEXT,
+        SubmenuItem(
+            submenu=MenuId.LAYERS_COPY_SPATIAL,
+            title=trans._('Copy scale and transforms'),
+            group=MenuGroup.LAYERLIST_CONTEXT.COPY_SPATIAL,
+            order=None,
+        ),
+    ),
+]
+
 # The following dicts define groups to which menu items in the layer list context menu can belong
 # see https://app-model.readthedocs.io/en/latest/types/#app_model.types.MenuRule for details
 LAYERCTX_SPLITMERGE: MenuRuleDict = {
@@ -209,38 +242,3 @@ for mode in ('max', 'min', 'std', 'sum', 'mean', 'median'):
             menus=[{'id': MenuId.LAYERS_PROJECT}],
         )
     )
-
-
-# Layer submenus
-
-LAYER_SUBMENUS = [
-    (
-        MenuId.LAYERLIST_CONTEXT,
-        SubmenuItem(
-            submenu=MenuId.LAYERS_CONVERT_DTYPE,
-            title=trans._('Convert data type'),
-            group=MenuGroup.LAYERLIST_CONTEXT.CONVERSION,
-            order=None,
-            enablement=LLSCK.all_selected_layers_labels,
-        ),
-    ),
-    (
-        MenuId.LAYERLIST_CONTEXT,
-        SubmenuItem(
-            submenu=MenuId.LAYERS_PROJECT,
-            title=trans._('Projections'),
-            group=MenuGroup.LAYERLIST_CONTEXT.SPLIT_MERGE,
-            order=None,
-            enablement=LLSCK.active_layer_is_image_3d,
-        ),
-    ),
-    (
-        MenuId.LAYERLIST_CONTEXT,
-        SubmenuItem(
-            submenu=MenuId.LAYERS_COPY_SPATIAL,
-            title=trans._('Copy scale and transforms'),
-            group=MenuGroup.LAYERLIST_CONTEXT.COPY_SPATIAL,
-            order=None,
-        ),
-    ),
-]

@@ -18,7 +18,30 @@ from napari._qt.qt_main_window import Window
 from napari._qt.qt_viewer import QtViewer
 from napari.utils.translations import trans
 
+# File submenus
+FILE_SUBMENUS = [
+    (
+        MenuId.MENUBAR_FILE,
+        SubmenuItem(
+            submenu=MenuId.FILE_OPEN_WITH_PLUGIN,
+            title=trans._('Open with Plugin'),
+            group=MenuGroup.NAVIGATION,
+            order=99,
+        ),
+    ),
+    (
+        MenuId.MENUBAR_FILE,
+        SubmenuItem(
+            submenu=MenuId.FILE_SAMPLES,
+            title=trans._('Open Sample'),
+            group=MenuGroup.NAVIGATION,
+            order=100,
+        ),
+    ),
+]
 
+
+# File actions
 def _open_files_with_plugin(qt_viewer: QtViewer):
     qt_viewer._open_files_dialog(choose_plugin=True)
 
@@ -198,28 +221,5 @@ Q_FILE_ACTIONS: list[Action] = [
         callback=_close_app,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.CLOSE}],
         keybindings=[StandardKeyBinding.Quit],
-    ),
-]
-
-
-# file submenus
-FILE_SUBMENUS = [
-    (
-        MenuId.MENUBAR_FILE,
-        SubmenuItem(
-            submenu=MenuId.FILE_OPEN_WITH_PLUGIN,
-            title=trans._('Open with Plugin'),
-            group=MenuGroup.NAVIGATION,
-            order=99,
-        ),
-    ),
-    (
-        MenuId.MENUBAR_FILE,
-        SubmenuItem(
-            submenu=MenuId.FILE_SAMPLES,
-            title=trans._('Open Sample'),
-            group=MenuGroup.NAVIGATION,
-            order=100,
-        ),
     ),
 ]
