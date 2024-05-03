@@ -132,7 +132,7 @@ def ensure_iterable(
     arg: Union[None, str, Enum, float, list, npt.NDArray], color: bool = False
 ):
     """Ensure an argument is an iterable. Useful when an input argument
-    can either be a single value or a list. 
+    can either be a single value or a list.
     Argument color is deprecated since version 0.5.0and will be removed in 0.6.0.
     """
     # deprecate color
@@ -144,7 +144,9 @@ def ensure_iterable(
             category=DeprecationWarning,
             stacklevel=2,  # not sure what level to use here
         )
-    if is_iterable(arg, color=color):  # argumnet color is to be removed in 0.6.0
+    if is_iterable(
+        arg, color=color
+    ):  # argumnet color is to be removed in 0.6.0
         return arg
 
     return itertools.repeat(arg)
@@ -155,7 +157,7 @@ def is_iterable(
     color: bool = False,
     allow_none: bool = False,
 ) -> bool:
-    """Determine if a single argument is an iterable. 
+    """Determine if a single argument is an iterable.
     Argument color is deprecated since version 0.5.0 and will be removed in 0.6.0.
     Argument allow_none is deprecated since version 0.5.0 and will be removed in 0.6.0.
     """
@@ -182,7 +184,7 @@ def is_iterable(
         return False
     if np.isscalar(arg):
         return False
-    
+
     # this is to be removed in 0.6.0
     if color and isinstance(arg, (list, np.ndarray)):
         return np.array(arg).ndim != 1 or len(arg) not in [3, 4]
