@@ -66,5 +66,5 @@ def init_qactions() -> None:
         )
     )
 
-    # register menubar submenus (when )
+    # register menubar submenus
     app.menus.append_menu_items(chain(FILE_SUBMENUS, VIEW_SUBMENUS))
