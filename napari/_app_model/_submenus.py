@@ -53,11 +53,113 @@ SUBMENUS = [
         ),
     ),
     (
+        MenuId.MENUBAR_FILE,
+        SubmenuItem(
+            submenu=MenuId.FILE_IO_UTILITIES,
+            title=trans._('IO Utilities'),
+            group=MenuGroup.NAVIGATION,
+            order=101,
+        ),
+    ),
+    (
         MenuId.MENUBAR_VIEW,
         SubmenuItem(submenu=MenuId.VIEW_AXES, title=trans._('Axes')),
     ),
     (
         MenuId.MENUBAR_VIEW,
         SubmenuItem(submenu=MenuId.VIEW_SCALEBAR, title=trans._('Scale Bar')),
+    ),
+    (
+        MenuId.MENUBAR_LAYERS,
+        SubmenuItem(
+            submenu=MenuId.LAYERS_NEW,
+            title=trans._('New'),
+            group=MenuGroup.LAYERS.NEW,
+        ),
+    ),
+    (
+        MenuId.MENUBAR_LAYERS,
+        SubmenuItem(
+            submenu=MenuId.LAYERS_VISUALIZE,
+            title=trans._('Visualize'),
+            group=MenuGroup.LAYERS.EXISTING,
+        ),
+    ),
+    (
+        MenuId.MENUBAR_LAYERS,
+        SubmenuItem(
+            submenu=MenuId.LAYERS_EDIT,
+            title=trans._('Edit'),
+            group=MenuGroup.LAYERS.EXISTING,
+        ),
+    ),
+    (
+        MenuId.MENUBAR_LAYERS,
+        SubmenuItem(
+            submenu=MenuId.LAYERS_MEASURE,
+            title=trans._('Measure'),
+            group=MenuGroup.LAYERS.EXISTING,
+        ),
+    ),
+    (
+        MenuId.MENUBAR_LAYERS,
+        SubmenuItem(
+            submenu=MenuId.LAYERS_REGISTRATION,
+            title=trans._('Registration'),
+            group=MenuGroup.LAYERS.GENERATE,
+        ),
+    ),
+    (
+        MenuId.MENUBAR_LAYERS,
+        SubmenuItem(
+            submenu=MenuId.LAYERS_PROJECTION,
+            title=trans._('Projection'),
+            group=MenuGroup.LAYERS.GENERATE,
+        ),
+    ),
+    (
+        MenuId.MENUBAR_LAYERS,
+        SubmenuItem(
+            submenu=MenuId.LAYERS_SEGMENTATION,
+            title=trans._('Segmentation'),
+            group=MenuGroup.LAYERS.GENERATE,
+        ),
+    ),
+    (
+        MenuId.MENUBAR_LAYERS,
+        SubmenuItem(
+            submenu=MenuId.LAYERS_TRACKING,
+            title=trans._('Tracking'),
+            group=MenuGroup.LAYERS.GENERATE,
+        ),
+    ),
+    (
+        MenuId.MENUBAR_LAYERS,
+        SubmenuItem(
+            submenu=MenuId.LAYERS_CLASSIFICATION,
+            title=trans._('Classification'),
+            group=MenuGroup.LAYERS.GENERATE,
+        ),
+    ),
+    (
+        MenuId.LAYERS_EDIT,
+        SubmenuItem(
+            submenu=MenuId.LAYERS_EDIT_ANNOTATE,
+            title=trans._('Annotate'),
+        ),
+    ),
+    (
+        MenuId.LAYERS_EDIT,
+        SubmenuItem(
+            submenu=MenuId.LAYERS_EDIT_FILTER,
+            title=trans._('Filter'),
+        ),
+    ),
+    (
+        MenuId.LAYERS_EDIT,
+        SubmenuItem(
+            submenu=MenuId.LAYERS_EDIT_TRANSFORM,
+            title=trans._('Transform'),
+        ),
     ),
 ]
