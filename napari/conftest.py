@@ -296,7 +296,7 @@ def builtins(npe2pm_: TestPluginManager):
 @pytest.fixture()
 def tmp_plugin(npe2pm_: TestPluginManager):
     with npe2pm_.tmp_plugin() as plugin:
-        plugin.manifest.package_metadata = PackageMetadata(
+        plugin.manifest.package_metadata = PackageMetadata(  # type: ignore[call-arg]
             version='0.1.0', name='test'
         )
         plugin.manifest.display_name = 'Temp Plugin'
