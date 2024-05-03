@@ -55,7 +55,7 @@ def init_qactions() -> None:
         providers=QPROVIDERS,
     )
 
-    # register actions
+    # register menubar actions
     app.register_actions(
         chain(
             Q_FILE_ACTIONS,
