@@ -197,7 +197,8 @@ class Selection(EventedSet[_T]):
         if errors:
             from napari._pydantic_compat import ValidationError
 
-            raise ValidationError(errors, cls)
+            raise ValidationError(errors, cls)  # type: ignore [arg-type]
+            # need to be fixed when migrate to pydantic 2
         obj = cls(data=data)
         obj._current_ = current
         return obj
