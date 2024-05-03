@@ -11,6 +11,7 @@ from typing import (
 )
 
 import numpy as np
+from typing_extensions import Self
 
 from napari._pydantic_compat import Field, PrivateAttr, validator
 from napari.utils.color import ColorArray
@@ -198,7 +199,7 @@ class LabelColormapBase(Colormap):
         """Map input values to values for send to GPU."""
         raise NotImplementedError
 
-    def _cmap_without_selection(self) -> 'LabelColormapBase':
+    def _cmap_without_selection(self) -> Self:
         if self.use_selection:
             cmap = self.__class__(**self.dict())
             cmap.use_selection = False

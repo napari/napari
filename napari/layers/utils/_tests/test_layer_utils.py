@@ -71,6 +71,12 @@ def test_calc_data_range():
     clim = calc_data_range(data)
     np.testing.assert_array_equal(clim, (0, 2))
 
+    data = np.zeros((10_000, 10_000))
+    data[0, 0] = -1
+    data[-1, -1] = 10
+    clim = calc_data_range(data)
+    np.testing.assert_array_equal(clim, (-1, 10))
+
 
 @pytest.mark.parametrize(
     'data',
@@ -172,12 +178,12 @@ def test_coerce_current_properties_invalid_values():
         'model': np.array(['best', 'best_v2_final']),
     }
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='should have length 1'):
         _ = coerce_current_properties(current_properties)
 
 
 @pytest.mark.parametrize(
-    'dims_displayed,ndim_world,ndim_layer,expected',
+    ('dims_displayed', 'ndim_world', 'ndim_layer', 'expected'),
     [
         ([1, 2, 3], 4, 4, [1, 2, 3]),
         ([0, 1, 2], 4, 4, [0, 1, 2]),
@@ -338,7 +344,7 @@ def test_feature_table_from_layer_with_properties_as_dataframe():
     pd.testing.assert_frame_equal(feature_table.values, TEST_FEATURES)
 
 
-@pytest.fixture
+@pytest.fixture()
 def feature_table():
     return _FeatureTable(TEST_FEATURES.copy(deep=True), num_data=4)
 
@@ -449,14 +455,18 @@ def test_feature_table_set_defaults_with_same_columns(feature_table):
 def test_feature_table_set_defaults_with_extra_column(feature_table):
     defaults = {'class': 'building', 'confidence': 0, 'cat': 'kermit'}
     assert 'cat' not in feature_table.values.columns
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match='extra columns not in feature values'
+    ):
         feature_table.set_defaults(defaults)
 
 
 def test_feature_table_set_defaults_with_missing_column(feature_table):
     defaults = {'class': 'building'}
     assert len(feature_table.values.columns) > 1
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match='missing some columns in feature values'
+    ):
         feature_table.set_defaults(defaults)
 
 

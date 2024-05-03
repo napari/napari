@@ -15,6 +15,10 @@ on:
     types:
       - completed
 
+permissions:
+  pull-requests: write
+  issues: write
+
 jobs:
   download:
     runs-on: ubuntu-latest
@@ -29,9 +33,14 @@ jobs:
                run_id: context.payload.workflow_run.id,
             });
             let artifactName = `asv-benchmark-results-${context.payload.workflow_run.id}-${context.payload.workflow_run.run_number}-${context.payload.workflow_run.run_attempt}`
+            console.log(`Artifact name: ${artifactName}`);
+            console.log(`All artifacts: ${JSON.stringify(allArtifacts.data.artifacts)}`);
             let matchArtifact = allArtifacts.data.artifacts.filter((artifact) => {
               return artifact.name == artifactName
             })[0];
+            if (matchArtifact === undefined) {
+              throw TypeError('Build Artifact not found!');
+            }
             let download = await github.rest.actions.downloadArtifact({
                owner: context.repo.owner,
                repo: context.repo.repo,
