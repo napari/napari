@@ -3,6 +3,7 @@ from importlib.metadata import version as package_version
 from os.path import abspath, expanduser, sep
 from pathlib import Path
 
+import numpy as np
 import pytest
 from packaging.version import parse as parse_version
 
@@ -15,6 +16,7 @@ from napari.utils.misc import (
     ensure_iterable,
     ensure_list_of_layer_data_tuple,
     ensure_sequence_of_iterables,
+    is_iterable,
     pick_equality_operator,
 )
 
@@ -27,17 +29,16 @@ REPEATED_PARTLY_NESTED_ITERABLE = [PARTLY_NESTED_ITERABLE] * 3
 
 
 @pytest.mark.parametrize(
-    'input_data, expected',
+    ('input_data', 'expected'),
     [
-        [ITERABLE, NESTED_ITERABLE],
-        [NESTED_ITERABLE, NESTED_ITERABLE],
-        [(ITERABLE, (2,), (3, 1, 6)), (ITERABLE, (2,), (3, 1, 6))],
-        [DICT, LIST_OF_DICTS],
-        [LIST_OF_DICTS, LIST_OF_DICTS],
-        [(ITERABLE, (2,), (3, 1, 6)), (ITERABLE, (2,), (3, 1, 6))],
-        [None, (None, None, None)],
-        [PARTLY_NESTED_ITERABLE, REPEATED_PARTLY_NESTED_ITERABLE],
-        [[], ([], [], [])],
+        (ITERABLE, NESTED_ITERABLE),
+        (NESTED_ITERABLE, NESTED_ITERABLE),
+        ((ITERABLE, (2,), (3, 1, 6)), (ITERABLE, (2,), (3, 1, 6))),
+        (DICT, LIST_OF_DICTS),
+        (LIST_OF_DICTS, LIST_OF_DICTS),
+        (None, (None, None, None)),
+        (PARTLY_NESTED_ITERABLE, REPEATED_PARTLY_NESTED_ITERABLE),
+        ([], ([], [], [])),
     ],
 )
 def test_sequence_of_iterables(input_data, expected):
@@ -60,30 +61,30 @@ def test_sequence_of_iterables_allow_none():
 
 def test_sequence_of_iterables_no_repeat_empty():
     assert ensure_sequence_of_iterables([], repeat_empty=False) == []
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must equal'):
         ensure_sequence_of_iterables([], repeat_empty=False, length=3)
 
 
 def test_sequence_of_iterables_raises():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must equal'):
         # the length argument asserts a specific length
         ensure_sequence_of_iterables(((0, 1),), length=4)
 
     # BEWARE: only the first element of a nested sequence is checked.
+    iterable = (None, (0, 1), (0, 2))
+    result = iter(ensure_sequence_of_iterables(iterable))
     with pytest.raises(AssertionError):
-        iterable = (None, (0, 1), (0, 2))
-        result = iter(ensure_sequence_of_iterables(iterable))
         assert next(result) is None
 
 
 @pytest.mark.parametrize(
-    'input_data, expected',
+    ('input_data', 'expected'),
     [
-        [ITERABLE, ITERABLE],
-        [DICT, DICT],
-        [1, [1, 1, 1]],
-        ['foo', ['foo', 'foo', 'foo']],
-        [None, [None, None, None]],
+        (ITERABLE, ITERABLE),
+        (DICT, DICT),
+        (1, [1, 1, 1]),
+        ('foo', ['foo', 'foo', 'foo']),
+        (None, [None, None, None]),
     ],
 )
 def test_ensure_iterable(input_data, expected):
@@ -115,7 +116,7 @@ def test_string_enum():
     assert TestEnum['tHiNg'] == TestEnum.THING
 
     # test setting by value with incorrect value
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='not a valid'):
         TestEnum('NotAThing')
 
     # test  setting by name with incorrect name
@@ -133,7 +134,7 @@ def test_string_enum():
         SOMETHING = auto()
 
     #  test setting by instance of a different StringEnum is an error
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='may only be called with'):
         TestEnum(OtherEnum.SOMETHING)
 
     # test string conversion
@@ -233,7 +234,7 @@ def test_is_array_type_with_xarray():
 
 
 @pytest.mark.parametrize(
-    'input_data, expected',
+    ('input_data', 'expected'),
     [
         ([([1, 10],)], [([1, 10],)]),
         ([([1, 10], {'name': 'hi'})], [([1, 10], {'name': 'hi'})]),
@@ -251,3 +252,20 @@ def test_ensure_list_of_layer_data_tuple(input_data, expected):
     When an empty dataset is supplied no layer is created and no errors are produced.
     """
     assert ensure_list_of_layer_data_tuple(input_data) == expected
+
+
+@pytest.mark.parametrize(
+    ('data', 'expected'),
+    [
+        (1, False),
+        (1.0, False),
+        ([1], True),
+        ('aaa', False),
+        (object(), False),
+        (None, False),
+        (np.arange(5), True),
+        ({1, 2, 3}, True),
+    ],
+)
+def test_is_iterable(data, expected):
+    assert is_iterable(data) == expected

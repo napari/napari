@@ -6,7 +6,7 @@ from napari.utils.events import EmitterGroup
 from napari.utils.events.containers import EventedDict
 
 
-@pytest.fixture
+@pytest.fixture()
 def regular_dict():
     return {'A': 0, 'B': 1, 'C': 2, False: '3', 4: 5}
 

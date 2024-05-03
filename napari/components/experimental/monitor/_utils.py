@@ -1,5 +1,4 @@
-"""Monitor Utilities.
-"""
+"""Monitor Utilities."""
 
 import base64
 import json

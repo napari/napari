@@ -15,7 +15,7 @@ from napari._vendor.qt_json_builder.qt_jsonschema_form.widgets import (
 from napari.settings import NapariSettings, get_settings
 
 
-@pytest.fixture
+@pytest.fixture()
 def pref(qtbot):
     dlg = PreferencesDialog()
     qtbot.addWidget(dlg)
@@ -23,7 +23,7 @@ def pref(qtbot):
     assert settings.appearance.theme == 'dark'
     dlg._settings.appearance.theme = 'light'
     assert get_settings().appearance.theme == 'light'
-    yield dlg
+    return dlg
 
 
 def test_prefdialog_populated(pref):

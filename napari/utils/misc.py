@@ -1,5 +1,4 @@
-"""Miscellaneous utility functions.
-"""
+"""Miscellaneous utility functions."""
 
 import builtins
 import collections.abc
@@ -188,7 +187,7 @@ def is_iterable(
     if color and isinstance(arg, (list, np.ndarray)):
         return np.array(arg).ndim != 1 or len(arg) not in [3, 4]
 
-    return True
+    return isinstance(arg, collections.abc.Iterable)
 
 
 def is_sequence(arg: Any) -> bool:

@@ -720,17 +720,17 @@ def test_copy_paste_with_derived_color():
 
 @pytest.mark.parametrize(
     ('ndim', 'ndisplay', 'translation'),
-    (
+    [
         (2, 2, 0),  # 2D data and display, no translation
         (2, 3, 0),  # 2D data and 3D display, no translation
-        (2, 2, 0),  # 3D data and display, no translation
+        (3, 3, 0),  # 3D data and display, no translation
         (2, 2, 5.2),  # 2D data and display, constant translation
         (2, 3, 5.2),  # 2D data and 3D display, constant translation
-        (2, 2, 5.2),  # 3D data and display, constant translation
+        (3, 3, 5.2),  # 3D data and display, constant translation
         (2, 2, [5.2, -3.2]),  # 2D data, display, translation
         (2, 3, [5.2, -3.2]),  # 2D data, 3D display, 2D translation
         (3, 3, [5.2, -3.2, 0.1]),  # 3D data, display, translation
-    ),
+    ],
 )
 def test_compute_text_coords(ndim, ndisplay, translation):
     """See https://github.com/napari/napari/issues/5111"""

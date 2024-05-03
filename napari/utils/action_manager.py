@@ -347,9 +347,9 @@ class ActionManager:
                 action = self._actions.get(name, None)
                 if action and layer == action.keymapprovider:
                     for shortcut in shortcuts:
-                        layer_shortcuts[layer][
-                            str(shortcut)
-                        ] = action.description
+                        layer_shortcuts[layer][str(shortcut)] = (
+                            action.description
+                        )
 
         return layer_shortcuts
 
