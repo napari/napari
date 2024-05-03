@@ -21,7 +21,10 @@ def imsave(filename: str, data: 'np.ndarray'):
     ext = os.path.splitext(filename)[1].lower()
     # If no file extension was specified, choose .png by default
     if ext == '':
-        ext = '.png'
+        if (data.ndim == 2  or (data.ndim == 3) and (data.shape[-1] in {3,4}) and not np.issubdtype(data.dtype, np.floating)
+             ext = '.png'
+         else:
+             ext = '.tif'
     # only TIFF can handle float data
     if ext not in ['.tif', '.tiff'] and np.issubdtype(data.dtype, np.floating):
         show_warning(
