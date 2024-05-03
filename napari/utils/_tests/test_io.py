@@ -60,10 +60,10 @@ def test_imsave_float(tmp_path, image_file):
         img_to_array = imread(str(image_file_path))
         assert np.equal(data, img_to_array).all()
     # if no EXT provided, for float data should save as .tif
-    elif image_file == "image":
+    elif image_file == 'image':
         assert image_file_path.with_suffix('.tif').is_file()
         img_to_array = imread(str(image_file_path.with_suffix('.tif')))
         assert np.equal(data, img_to_array).all()
-    
+
     else:
         assert not image_file_path.is_file()
