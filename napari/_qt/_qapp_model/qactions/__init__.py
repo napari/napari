@@ -26,7 +26,6 @@ def init_qactions() -> None:
     - registering Qt-dependent actions with app-model (i.e. Q_*_ACTIONS actions).
     """
     from napari._app_model import get_app
-    from napari._app_model.actions._layer_actions import LAYER_SUBMENUS
     from napari._qt._qapp_model.qactions._file import (
         FILE_SUBMENUS,
         Q_FILE_ACTIONS,
@@ -67,7 +66,5 @@ def init_qactions() -> None:
         )
     )
 
-    # register submenus (when )
-    app.menus.append_menu_items(
-        chain(LAYER_SUBMENUS, FILE_SUBMENUS, VIEW_SUBMENUS)
-    )
+    # register menubar submenus (when )
+    app.menus.append_menu_items(chain(FILE_SUBMENUS, VIEW_SUBMENUS))
