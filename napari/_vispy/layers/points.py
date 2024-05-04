@@ -11,10 +11,11 @@ from napari.utils.events import disconnect_events
 
 
 class VispyPointsLayer(VispyBaseLayer):
-    node: PointsVisual
+    _visual = PointsVisual
+    node: PointVisual
 
     def __init__(self, layer) -> None:
-        node = PointsVisual()
+        node = self._visual()
         super().__init__(layer, node)
 
         self.layer.events.symbol.connect(self._on_data_change)

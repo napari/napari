@@ -6,6 +6,7 @@ from napari._vispy.visuals.graph import GraphVisual
 
 class VispyGraphLayer(VispyPointsLayer):
     _visual = GraphVisual
+    node: GraphVisual
 
     def _on_data_change(self) -> None:
         self._set_graph_edges_data()
