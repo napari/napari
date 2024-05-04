@@ -67,6 +67,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
             event.source.size[0] / get_settings().experimental.scale_bar_length
         )
         self.y_size = event.source.size[1] / 40
+        self.node.line._width = event.source.size[1] / 100
         self._on_zoom_change(force=True)
 
     def _on_unit_change(self):
