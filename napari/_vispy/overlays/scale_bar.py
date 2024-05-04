@@ -57,7 +57,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
     def _scale_font_size(self, event):
         """Scale the font size in response to a canvas resize"""
-        self.overlay.font_size = (
+        self.node.text.font_size = (
             event.source.size[1]
             / get_settings().experimental.scale_bar_font_size
         )
