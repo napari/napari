@@ -27,6 +27,7 @@ def imsave(filename: str, data: 'np.ndarray'):
             ext = '.png'
         else:
             ext = '.tif'
+            filename = filename + ext
     # not all file types can handle float data
     if ext not in [
         '.tif',
