@@ -53,16 +53,16 @@ class ExperimentalSettings(EventedSettings):
         ),
         type=int,
         ge=3,
-        le=15,
+        le=10,
     )
     scale_bar_font_size: int = Field(
-        30,
+        35,
         title=trans._('Scale bar font size'),
         description=trans._(
             'The scale bar font size as a fraction of the canvas height.'
         ),
         type=int,
-        ge=25,
+        ge=30,
         le=50,
     )
 
