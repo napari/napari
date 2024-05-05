@@ -1546,7 +1546,9 @@ class Window:
             old_center = camera.center
             old_zoom = camera.zoom
             if ndisplay > 2:
-                raise NotImplementedError
+                raise NotImplementedError(
+                    'Fit_to_data is not yet implemented for 3D. Please set fit_to_data to False'
+                )
 
             self._qt_viewer.viewer.reset_view()
             canvas.size = (

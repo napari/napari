@@ -254,7 +254,7 @@ def test_screenshot(make_napari_viewer):
 
     # Take screenshot
     with pytest.warns(FutureWarning):
-        screenshot = viewer.window.qt_viewer.screenshot(flash=False)
+        viewer.window.qt_viewer.screenshot(flash=False)
     screenshot = viewer.window.screenshot(flash=False, canvas_only=True)
     assert screenshot.ndim == 3
 

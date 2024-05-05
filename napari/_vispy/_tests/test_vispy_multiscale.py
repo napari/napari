@@ -71,7 +71,9 @@ def test_multiscale_screenshot(make_napari_viewer):
     # Set canvas size to target amount
     viewer.window._qt_viewer.canvas.view.canvas.size = (800, 600)
 
-    screenshot = viewer.screenshot(canvas_only=True, flash=False)
+    screenshot = viewer.screenshot(
+        canvas_only=True, flash=False, fit_to_data=False
+    )
     center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(int)
     target_center = np.array([255, 255, 255, 255], dtype='uint8')
     target_edge = np.array([0, 0, 0, 255], dtype='uint8')
