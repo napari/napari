@@ -259,7 +259,7 @@ def test_screenshot(make_napari_viewer):
     assert screenshot.ndim == 3
 
 
-def test_screenshot_fit_data(make_napari_viewer):
+def test_screenshot_without_margin(make_napari_viewer):
     viewer = make_napari_viewer()
 
     np.random.seed(0)
@@ -268,6 +268,10 @@ def test_screenshot_fit_data(make_napari_viewer):
     viewer.add_image(data)
     img = viewer.screenshot(flash=False)
     assert img.shape == (10, 15, 4)
+    assert np.all(img == 255)
+
+    img = viewer.screenshot(scale=8)
+    assert img.shape == (80, 120, 4)
     assert np.all(img == 255)
 
 
