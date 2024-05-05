@@ -1549,9 +1549,12 @@ class Window:
                 raise NotImplementedError
 
             self._qt_viewer.viewer.reset_view()
-            canvas.size = self._qt_viewer.viewer.layers.extent.world[1][
-                -ndisplay:
-            ].astype(int)
+            canvas.size = (
+                self._qt_viewer.viewer.layers.extent.world[1][
+                    -ndisplay:
+                ].astype(int)
+                + 1
+            )
             self._qt_viewer.viewer.reset_view(screenshot=True)
 
         if canvas_only:
