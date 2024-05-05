@@ -23,6 +23,11 @@ from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.layers.utils._text_constants import Anchor
 from napari.layers.utils.color_encoding import ConstantColorEncoding
 from napari.layers.utils.color_manager import ColorProperties
+from napari.utils._test_utils import (
+    validate_all_params_in_docstring,
+    validate_docstring_parent_class_consistency,
+    validate_kwargs_sorted,
+)
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.transforms import CompositeAffine
 
@@ -161,7 +166,7 @@ def test_empty_layer_with_border_colormap():
     np.testing.assert_allclose(layer._border.current_color, border_color)
 
 
-@pytest.mark.parametrize('feature_name', ('border', 'face'))
+@pytest.mark.parametrize('feature_name', ['border', 'face'])
 def test_set_current_properties_on_empty_layer_with_color_cycle(feature_name):
     """Test setting current_properties an empty layer where the face/border color
     is a color cycle.
@@ -590,7 +595,7 @@ def test_changing_modes():
     assert layer.mode == 'pan_zoom'
     assert layer.mouse_pan is True
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='not a valid Mode'):
         layer.mode = 'not_a_mode'
 
 
@@ -969,9 +974,12 @@ def test_points_errors():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
 
+    annotations = {'point_type': np.array(['A', 'B'])}
+
     # try adding properties with the wrong number of properties
-    with pytest.raises(ValueError):
-        annotations = {'point_type': np.array(['A', 'B'])}
+    with pytest.raises(
+        ValueError, match='(does not match length)|(indices imply)'
+    ):
         Points(data, properties=copy(annotations))
 
 
@@ -987,7 +995,7 @@ def test_border_width():
     np.testing.assert_array_equal(layer.border_width, 0.5)
 
     # fail outside of range 0, 1 if relative is enabled (default)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must be between 0 and 1'):
         layer.border_width = 2
 
     layer.border_width_is_relative = False
@@ -995,14 +1003,14 @@ def test_border_width():
     np.testing.assert_array_equal(layer.border_width, 2)
 
     # fail if we try to come back again
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='between 0 and 1'):
         layer.border_width_is_relative = True
 
     # all should work on instantiation too
     layer = Points(data, border_width=3, border_width_is_relative=False)
     np.testing.assert_array_equal(layer.border_width, 3)
     assert layer.border_width_is_relative is False
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must be > 0'):
         layer.border_width = -2
 
 
@@ -1023,14 +1031,14 @@ def test_border_width_types(border_width):
 
 @pytest.mark.parametrize(
     'border_width',
-    [int(-1), float(-1), np.array([-1, 2, 3, 4, 5]), [-1, 2, 3, 4, 5]],
+    [-1, float(-1), np.array([-1, 2, 3, 4, 5]), [-1, 2, 3, 4, 5]],
 )
 def test_border_width_types_negative(border_width):
     """Test negative values in all border_width dtypes"""
     shape = (5, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must be > 0'):
         Points(data, border_width=border_width, border_width_is_relative=False)
 
 
@@ -1129,7 +1137,7 @@ def test_colormap_without_properties(attribute):
     data = 20 * np.random.random(shape)
     layer = Points(data)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must be a valid Points.properties'):
         setattr(layer, f'{attribute}_color_mode', 'colormap')
 
 
@@ -1533,7 +1541,7 @@ def test_size_with_arrays(ndim):
 
     # Un-broadcastable array should raise an exception
     sizes = [5, 5]
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='not compatible for broadcasting'):
         layer.size = sizes
 
     # Create new layer with new size array data
@@ -1630,7 +1638,14 @@ def test_value():
 
 
 @pytest.mark.parametrize(
-    'position,view_direction,dims_displayed,world,scale,expected',
+    (
+        'position',
+        'view_direction',
+        'dims_displayed',
+        'world',
+        'scale',
+        'expected',
+    ),
     [
         ((0, 5, 15, 15), [0, 1, 0, 0], [1, 2, 3], False, (1, 1, 1, 1), 2),
         ((0, 5, 15, 15), [0, -1, 0, 0], [1, 2, 3], False, (1, 1, 1, 1), 0),
@@ -1850,7 +1865,7 @@ def test_scale_init():
     layer2 = Points([])
     assert layer2.ndim == 2
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='dimensions must be equal to ndim'):
         Points([[1, 1, 1]], scale=(1, 1, 1, 1))
 
 
@@ -2273,7 +2288,9 @@ def test_set_properties_with_invalid_shape_errors_safely():
     np.testing.assert_equal(points.properties, properties)
     np.testing.assert_array_equal(points.text.values, ['A', 'B', 'C'])
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match='(does not match length)|(indices imply)'
+    ):
         points.properties = {'class': np.array(['D', 'E'])}
 
     np.testing.assert_equal(points.properties, properties)
@@ -2413,7 +2430,7 @@ def test_empty_data_from_tuple():
 
 
 @pytest.mark.parametrize(
-    'attribute, new_value',
+    ('attribute', 'new_value'),
     [
         ('size', 20),
         ('face_color', np.asarray([0.0, 0.0, 1.0, 1.0])),
@@ -2463,7 +2480,7 @@ def test_set_drag_start():
 
 
 @pytest.mark.parametrize(
-    'dims_indices,target_indices',
+    ('dims_indices', 'target_indices'),
     [
         ((8, np.nan, np.nan), [2]),
         ((10, np.nan, np.nan), [0, 1, 3, 4]),
@@ -2616,7 +2633,7 @@ def test_thick_slice():
 
 
 @pytest.mark.parametrize(
-    'old_name, new_name, value',
+    ('old_name', 'new_name', 'value'),
     [
         ('edge_width', 'border_width', 0.9),
         ('edge_width_is_relative', 'border_width_is_relative', False),
@@ -2638,3 +2655,9 @@ def test_events_callback(old_name, new_name, value):
 
     new_name_callback.assert_called_once()
     old_name_callback.assert_called_once()
+
+
+def test_docstring():
+    validate_all_params_in_docstring(Points)
+    validate_kwargs_sorted(Points)
+    validate_docstring_parent_class_consistency(Points)

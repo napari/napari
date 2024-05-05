@@ -1,16 +1,10 @@
 from __future__ import annotations
 
+from collections.abc import Generator, Iterable, Iterator, MutableSet, Sequence
 from typing import (
     TYPE_CHECKING,
     Any,
-    Generator,
-    Iterable,
-    Iterator,
-    List,
-    MutableSet,
     Optional,
-    Sequence,
-    Set,
     TypeVar,
 )
 
@@ -69,8 +63,8 @@ class EventedSet(MutableSet[_T]):
 
     def _emit_change(
         self,
-        added: Optional[Set[_T]] = None,
-        removed: Optional[Set[_T]] = None,
+        added: Optional[set[_T]] = None,
+        removed: Optional[set[_T]] = None,
     ) -> None:
         # provides a hook for subclasses to update internal state before emit
         if added is None:
@@ -203,9 +197,10 @@ class EventedSet(MutableSet[_T]):
         if errors:
             from napari._pydantic_compat import ValidationError
 
-            raise ValidationError(errors, cls)
+            raise ValidationError(errors, cls)  # type: ignore [arg-type]
+            # need to be fixed when migrate to pydantic 2
         return cls(v)
 
-    def _json_encode(self) -> List:
+    def _json_encode(self) -> list:
         """Return an object that can be used by json.dumps."""
         return list(self)

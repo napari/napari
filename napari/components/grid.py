@@ -1,5 +1,3 @@
-from typing import Tuple
-
 import numpy as np
 
 from napari.settings._application import GridHeight, GridStride, GridWidth
@@ -33,10 +31,10 @@ class GridCanvas(EventedModel):
     # See https://github.com/pydantic/pydantic/issues/156 for why
     # these need a type: ignore comment
     stride: GridStride = 1  # type: ignore[valid-type]
-    shape: Tuple[GridHeight, GridWidth] = (-1, -1)  # type: ignore[valid-type]
+    shape: tuple[GridHeight, GridWidth] = (-1, -1)  # type: ignore[valid-type]
     enabled: bool = False
 
-    def actual_shape(self, nlayers: int = 1) -> Tuple[int, int]:
+    def actual_shape(self, nlayers: int = 1) -> tuple[int, int]:
         """Return the actual shape of the grid.
 
         This will return the shape parameter, unless one of the row
@@ -78,7 +76,7 @@ class GridCanvas(EventedModel):
 
         return (n_row, n_column)
 
-    def position(self, index: int, nlayers: int) -> Tuple[int, int]:
+    def position(self, index: int, nlayers: int) -> tuple[int, int]:
         """Return the position of a given linear index in grid.
 
         If the grid is not enabled, this will return (0, 0).

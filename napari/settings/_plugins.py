@@ -1,5 +1,3 @@
-from typing import Dict, List, Set
-
 from typing_extensions import TypedDict
 
 from napari._pydantic_compat import Field
@@ -14,7 +12,7 @@ class PluginHookOption(TypedDict):
     enabled: bool
 
 
-CallOrderDict = Dict[str, List[PluginHookOption]]
+CallOrderDict = dict[str, list[PluginHookOption]]
 
 
 class PluginsSettings(EventedSettings):
@@ -34,21 +32,21 @@ class PluginsSettings(EventedSettings):
             'Sort plugins for each action in the order to be called.',
         ),
     )
-    disabled_plugins: Set[str] = Field(
+    disabled_plugins: set[str] = Field(
         set(),
         title=trans._('Disabled plugins'),
         description=trans._(
             'Plugins to disable on application start.',
         ),
     )
-    extension2reader: Dict[str, str] = Field(
+    extension2reader: dict[str, str] = Field(
         default_factory=dict,
         title=trans._('File extension readers'),
         description=trans._(
             'Assign file extensions to specific reader plugins'
         ),
     )
-    extension2writer: Dict[str, str] = Field(
+    extension2writer: dict[str, str] = Field(
         default_factory=dict,
         title=trans._('Writer plugin extension association.'),
         description=trans._(

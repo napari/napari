@@ -1,9 +1,8 @@
-"""PerfTraceFile class to write the chrome://tracing file format (JSON)
-"""
+"""PerfTraceFile class to write the chrome://tracing file format (JSON)"""
 
 import json
 from time import perf_counter_ns
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from napari.utils.perf._event import PerfEvent
@@ -45,7 +44,7 @@ class PerfTraceFile:
 
         # Accumulate events in a list and only write at the end so the cost
         # of writing to a file does not bloat our timings.
-        self.events: List[PerfEvent] = []
+        self.events: list[PerfEvent] = []
 
     def add_event(self, event: 'PerfEvent') -> None:
         """Add one perf event to our in-memory list.

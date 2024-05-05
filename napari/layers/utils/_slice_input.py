@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import warnings
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Generic, List, Tuple, TypeVar, Union
+from typing import TYPE_CHECKING, Generic, TypeVar, Union
 
 import numpy as np
 
@@ -22,9 +22,9 @@ _T = TypeVar('_T')
 class _ThickNDSlice(Generic[_T]):
     """Holds the point and the left and right margins of a thick nD slice."""
 
-    point: Tuple[_T, ...]
-    margin_left: Tuple[_T, ...]
-    margin_right: Tuple[_T, ...]
+    point: tuple[_T, ...]
+    margin_left: tuple[_T, ...]
+    margin_right: tuple[_T, ...]
 
     @property
     def ndim(self):
@@ -142,7 +142,7 @@ class _SliceInput:
     # The layer dimension indices in the order they are displayed.
     # A permutation of the ``range(self.ndim)``.
     # The last ``self.ndisplay`` dimensions are displayed in the canvas.
-    order: Tuple[int, ...]
+    order: tuple[int, ...]
 
     @property
     def ndim(self) -> int:
@@ -150,12 +150,12 @@ class _SliceInput:
         return len(self.order)
 
     @property
-    def displayed(self) -> List[int]:
+    def displayed(self) -> list[int]:
         """The layer dimension indices displayed in this slice."""
         return list(self.order[-self.ndisplay :])
 
     @property
-    def not_displayed(self) -> List[int]:
+    def not_displayed(self) -> list[int]:
         """The layer dimension indices not displayed in this slice."""
         return list(self.order[: -self.ndisplay])
 

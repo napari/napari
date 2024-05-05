@@ -1,9 +1,8 @@
-import contextlib
 import warnings
 from functools import reduce
 from itertools import count
 from operator import ior
-from typing import TYPE_CHECKING, List, Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 from weakref import ReferenceType, ref
 
 from qtpy.QtCore import Qt
@@ -73,7 +72,7 @@ class QtViewerDockWidget(QDockWidget):
         *,
         name: str = '',
         area: str = 'right',
-        allowed_areas: Optional[List[str]] = None,
+        allowed_areas: Optional[list[str]] = None,
         shortcut=_sentinel,
         object_name: str = '',
         add_vertical_stretch=True,
@@ -265,22 +264,6 @@ class QtViewerDockWidget(QDockWidget):
         return self.size().height() > self.size().width()
 
     def _on_visibility_changed(self, visible):
-        from napari.viewer import Viewer
-
-        with contextlib.suppress(AttributeError, ValueError):
-            viewer = self._ref_qt_viewer().viewer
-            if isinstance(viewer, Viewer):
-                actions = [
-                    action.text()
-                    for action in viewer.window.plugins_menu.actions()
-                ]
-                idx = actions.index(self.name)
-
-                viewer.window.plugins_menu.actions()[idx].setChecked(visible)
-
-            # AttributeError: This error happens when the plugins menu is not yet built.
-            # ValueError: This error is when the action is from the windows menu.
-
         if not visible:
             return
         with qt_signals_blocked(self):
