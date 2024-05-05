@@ -88,10 +88,12 @@ def test_reading_folder_with_multiple_layer_types(tmp_path):
     )
 
     layer_data = npe2.read([dest], stack=False)
-    assert len(layer_data) == 2
-    assert np.allclose(layer_data[0][0], points_data)
-    assert layer_data[0][1]['name'] == 'Points'
-    assert layer_data[0][2] == 'points'
-    assert np.allclose(layer_data[1][0], img_data)
-    assert layer_data[1][1]['name'] == 'Image'
-    assert layer_data[1][2] == 'image'
+    # sort by layer type for consistent testing
+    layer_data_sorted = sorted(layer_data, key=lambda x: x[2])
+    assert len(layer_data_sorted) == 2
+    assert np.allclose(layer_data_sorted[0][0], img_data)
+    assert layer_data_sorted[0][1]['name'] == 'Image'
+    assert layer_data_sorted[0][2] == 'image'
+    assert np.allclose(layer_data_sorted[1][0], points_data)
+    assert layer_data_sorted[1][1]['name'] == 'Points'
+    assert layer_data_sorted[1][2] == 'points'
