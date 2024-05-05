@@ -259,6 +259,18 @@ def test_screenshot(make_napari_viewer):
     assert screenshot.ndim == 3
 
 
+def test_screenshot_fit_data(make_napari_viewer):
+    viewer = make_napari_viewer()
+
+    np.random.seed(0)
+    # Add image
+    data = np.ones((10, 15))
+    viewer.add_image(data)
+    img = viewer.screenshot(flash=False)
+    assert img.shape == (10, 15, 4)
+    assert np.all(img == 255)
+
+
 @pytest.mark.skip('new approach')
 def test_screenshot_dialog(make_napari_viewer, tmpdir):
     """Test save screenshot functionality."""
