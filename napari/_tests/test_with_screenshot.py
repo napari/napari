@@ -113,7 +113,7 @@ def test_z_order_images_after_ndisplay(make_napari_viewer):
     # Switch to 3D rendering
     viewer.dims.ndisplay = 3
     screenshot = viewer.screenshot(
-        canvas_only=True, flash=False, fit_to_data=False
+        canvas_only=True, flash=False, margins=False
     )
     center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
     # Check that blue is still visible
