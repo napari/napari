@@ -89,7 +89,8 @@ def test_reading_folder_with_multiple_layer_types(tmp_path):
     )
 
     # add a unreadable file
-    (Path(dest) / 'unreadable.xyz').touch()
+    unreadable_file = Path(dest) / 'unreadable.xyz'
+    unreadable_file.touch()
     # setup notification manager to check for show_info
     with notification_manager:
         notification_manager.records.clear()
@@ -110,5 +111,5 @@ def test_reading_folder_with_multiple_layer_types(tmp_path):
         assert len(notification_manager.records) == 1
         assert (
             notification_manager.records[0].message
-            == f'Unable to read {dest}/unreadable.xyz, skipping.'
+            == f'Unable to read {unreadable_file!s}, skipping.'
         )
