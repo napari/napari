@@ -409,7 +409,7 @@ def _debug_tb(tb):
             "Entering debugger. Type 'q' to return to napari.\n"
         )
         pdb.post_mortem(tb)
-        print('\nDebugging finished.  Napari active again.')  # noqa: T201
+        print('\nDebugging finished. Napari active again.')  # noqa: T201
 
 
 class TracebackDialog(QDialog):
