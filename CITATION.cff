@@ -1,12 +1,14 @@
 cff-version: 1.2.0
 message: If you use this software, please cite it using these metadata.
 title: 'napari: a multi-dimensional image viewer for Python'
-doi: 10.5281/zenodo.3555620
+identifiers:
+- type: doi
+  value: 10.5281/zenodo.3555620
 authors:
 - given-names: Jannis
   family-names: Ahlers
   affiliation: Monash University
-  orcid: orcid.org/0000-0003-0630-1819
+  orcid: https://orcid.org/0000-0003-0630-1819
   alias: jnahlers
 - given-names: Daniel
   family-names: Althviz Moré
@@ -16,7 +18,7 @@ authors:
 - given-names: Oren
   family-names: Amsalem
   affiliation: Harvard Medical School, BIDMC
-  orcid: orcid.org/0000-0002-8070-0378
+  orcid: https://orcid.org/0000-0002-8070-0378
   alias: orena1
 - given-names: Ashley
   family-names: Anderson
@@ -47,7 +49,7 @@ authors:
 - given-names: Matthias
   family-names: Bussonnier
   affiliation: Quansight Labs
-  orcid: http://orcid.org/0000-0002-7636-8632
+  orcid: https://orcid.org/0000-0002-7636-8632
   alias: Carreau
 - given-names: Ahmet
   family-names: Can Solak
@@ -113,7 +115,7 @@ authors:
 - given-names: Jessy
   family-names: Lauer
   affiliation: Swiss Federal Institute of Technology (EPFL), Lausanne, Switzerland
-  orcid: orcid.org/0000-0002-3656-2449
+  orcid: https://orcid.org/0000-0002-3656-2449
   alias: jeylau
 - given-names: Gregor
   family-names: Lichtner
@@ -163,7 +165,7 @@ authors:
 - given-names: Jan-Hendrik
   family-names: Müller
   affiliation: Georg-August-Universität Göttingen
-  orcid: orcid.org/0009-0007-3670-9969
+  orcid: https://orcid.org/0009-0007-3670-9969
   alias: kolibril13
 - given-names: Christopher
   family-names: Nauroth-Kreß
@@ -199,7 +201,7 @@ authors:
 - given-names: David
   family-names: Ross
   affiliation: NanoString Technologies, Inc.
-  orcid: orcid.org/0000-0001-9998-3817
+  orcid: https://orcid.org/0000-0001-9998-3817
   alias: davidpross
 - given-names: Loic
   family-names: Royer
@@ -208,17 +210,17 @@ authors:
 - given-names: Craig T.
   family-names: Russell
   affiliation: European Bioinformatics Institute - European Molecular Biology Laboratory
-  orcid: orcid.org/0000-0002-2447-5911
+  orcid: https://orcid.org/0000-0002-2447-5911
   alias: ctr26
 - given-names: Gabriel
   family-names: Selzer
   affiliation: University of Wisconsin-Madison
-  orcid: orcid.org/0009-0002-2400-1940
+  orcid: https://orcid.org/0009-0002-2400-1940
   alias: gselzer
 - given-names: Paul
   family-names: Smith
   affiliation: University College London
-  orcid: orcid.org/0000-0002-3676-5318
+  orcid: https://orcid.org/0000-0002-3676-5318
   alias: p-j-smith
 - given-names: Peter
   family-names: Sobolewski
@@ -236,7 +238,7 @@ authors:
 - given-names: David
   family-names: Stansby
   affiliation: University College London
-  orcid: orcid.org/0000-0002-1365-1908
+  orcid: https://orcid.org/0000-0002-1365-1908
   alias: dstansby
 - given-names: Andrew
   family-names: Sweet
@@ -255,7 +257,7 @@ authors:
 - given-names: Melissa
   family-names: Weber Mendonça
   affiliation: Quansight
-  orcid: orcid.org/0000-0002-3212-402X
+  orcid: https://orcid.org/0000-0002-3212-402X
   alias: melissawm
 - given-names: Jonas
   family-names: Windhager

@@ -303,7 +303,7 @@ cases = [
 ]
 
 
-@pytest.fixture
+@pytest.fixture()
 def create_complex_shape():
     shape = np.array(
         [
@@ -348,7 +348,7 @@ def create_complex_shape():
 
 
 @pytest.mark.parametrize(
-    'path, closed, limit, bevel, expected',
+    ('path', 'closed', 'limit', 'bevel', 'expected'),
     cases,
 )
 def test_generate_2D_edge_meshes(
@@ -416,7 +416,7 @@ def test_rdp(create_complex_shape):
     assert len(rdp_shape_lt) < len(rdp_shape)
 
 
-@pytest.mark.parametrize('start, end, point', line_points)
+@pytest.mark.parametrize(('start', 'end', 'point'), line_points)
 def test_perpendicular_distance(start, end, point):
     # check whether math is correct and works higher than 2D / 3d
     distance = perpendicular_distance(point, start, end)

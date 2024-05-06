@@ -192,7 +192,19 @@ class VispyPointsLayer(VispyBaseLayer):
         self.node.spherical = shading == 'spherical'
 
     def _on_canvas_size_limits_change(self):
-        self.node.canvas_size_limits = self.layer.canvas_size_limits
+        self.node.points_markers.canvas_size_limits = (
+            self.layer.canvas_size_limits
+        )
+        scaled_highlight = (
+            get_settings().appearance.highlight.highlight_thickness
+            * self.layer.scale_factor
+        )
+        low, high = self.layer.canvas_size_limits
+        self.node.selection_markers.canvas_size_limits = (
+            low + scaled_highlight,
+            high + scaled_highlight,
+        )
+        self.node.update()
 
     def reset(self):
         super().reset()

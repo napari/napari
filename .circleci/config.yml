@@ -44,11 +44,11 @@ jobs:
           environment:
             PIP_CONSTRAINT: ../napari/resources/constraints/constraints_py3.10_docs.txt
       - store_artifacts:
-          path: docs/docs/_build/
+          path: docs/docs/_build/html/
       - persist_to_workspace:
           root: .
           paths:
-            - docs/docs/_build/
+            - docs/docs/_build/html/
 workflows:
   build-docs:
     jobs:

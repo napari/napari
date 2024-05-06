@@ -6,7 +6,7 @@ from napari.layers.base import Layer
 
 
 @pytest.mark.parametrize(
-    'dims,nworld,nshape,expected',
+    ('dims', 'nworld', 'nshape', 'expected'),
     [
         ([1, 2, 3], 4, 4, [1, 2, 3]),
         ([2, 1, 0, 3], 4, 2, [0, 1]),

@@ -26,7 +26,7 @@ IM_ATTRS = {
 }
 
 
-@pytest.mark.parametrize('key, value', {**BASE_ATTRS, **IM_ATTRS}.items())
+@pytest.mark.parametrize(('key', 'value'), {**BASE_ATTRS, **IM_ATTRS}.items())
 def test_link_image_layers_all_attributes(key, value):
     """Test linking common attributes across layers of similar types."""
     l1 = layers.Image(np.random.rand(10, 10), contrast_limits=(0, 0.8))
@@ -41,7 +41,7 @@ def test_link_image_layers_all_attributes(key, value):
     assert getattr(l1, key) == getattr(l2, key) == value
 
 
-@pytest.mark.parametrize('key, value', BASE_ATTRS.items())
+@pytest.mark.parametrize(('key', 'value'), BASE_ATTRS.items())
 def test_link_different_type_layers_all_attributes(key, value):
     """Test linking common attributes across layers of different types."""
     l1 = layers.Image(np.random.rand(10, 10))
@@ -58,9 +58,8 @@ def test_link_invalid_param():
     """Test that linking non-shared attributes raises."""
     l1 = layers.Image(np.random.rand(10, 10))
     l2 = layers.Points(None)
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(ValueError, match='not shared by all layers'):
         link_layers([l1, l2], ('rendering',))
-    assert 'Cannot link attributes that are not shared by all layers' in str(e)
 
 
 def test_adding_points_to_linked_layer():
