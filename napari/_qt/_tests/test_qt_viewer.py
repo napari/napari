@@ -266,11 +266,11 @@ def test_screenshot_without_margin(make_napari_viewer):
     # Add image
     data = np.ones((10, 15))
     viewer.add_image(data)
-    img = viewer.screenshot(flash=False)
+    img = viewer.screenshot(flash=False, margins=False)
     assert img.shape == (10, 15, 4)
     assert np.all(img == 255)
 
-    img = viewer.screenshot(scale=8)
+    img = viewer.screenshot(margins=False, scale=8)
     assert img.shape == (80, 120, 4)
     assert np.all(img == 255)
 

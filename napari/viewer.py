@@ -96,7 +96,7 @@ class Viewer(ViewerModel):
         scale=None,
         canvas_only=True,
         flash: bool = True,
-        no_margins: bool = True,
+        margins: bool = True,
     ):
         """Take currently displayed screen and convert to an image array.
 
@@ -118,8 +118,9 @@ class Viewer(ViewerModel):
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
             By default, True.
-        no_margins : bool
+        margins : bool
             Whether to fit a bounding box around the data to prevent margins of showing in the screenshot.
+            Currently, if this is False it means a screenshot of the whole data will be generated.
 
         Returns
         -------
@@ -133,7 +134,7 @@ class Viewer(ViewerModel):
             scale=scale,
             flash=flash,
             canvas_only=canvas_only,
-            no_margins=no_margins,
+            margins=margins,
         )
 
     def show(self, *, block=False):

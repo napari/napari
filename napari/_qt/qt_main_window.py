@@ -1509,7 +1509,7 @@ class Window:
         scale=None,
         flash=True,
         canvas_only=False,
-        no_margins: bool = True,
+        margins: bool = True,
     ) -> 'QImage':
         """Capture screenshot of the currently displayed viewer.
 
@@ -1529,8 +1529,9 @@ class Window:
             If True, screenshot shows only the image display canvas, and
             if False include the napari viewer frame in the screenshot,
             By default, True.
-        no_margins: bool
+        margins: bool
             Whether to fit a bounding box around the data to prevent margins of showing in the screenshot.
+            Currently, if this is False it means a screenshot of the whole data will be generated.
 
         Returns
         -------
@@ -1540,14 +1541,14 @@ class Window:
 
         canvas = self._qt_viewer.canvas
         prev_size = canvas.size
-        if no_margins:
+        if not margins:
             ndisplay = self._qt_viewer.viewer.dims.ndisplay
             camera = self._qt_viewer.viewer.camera
             old_center = camera.center
             old_zoom = camera.zoom
             if ndisplay > 2:
                 raise NotImplementedError(
-                    'no_margins is not yet implemented for 3D. Please set no_margins to False'
+                    'margins equal to False is not yet implemented for 3D. Please set margins to True.'
                 )
 
             self._qt_viewer.viewer.reset_view()
@@ -1583,9 +1584,9 @@ class Window:
                     add_flash_animation(self._qt_viewer._welcome_widget)
             finally:
                 # make sure we always go back to the right canvas size
-                if size is not None or scale is not None or no_margins:
+                if size is not None or scale is not None or not margins:
                     canvas.size = prev_size
-                if no_margins:
+                if not margins:
                     camera.center = old_center
                     camera.zoom = old_zoom
         else:
@@ -1601,7 +1602,7 @@ class Window:
         scale=None,
         flash=True,
         canvas_only=False,
-        no_margins: bool = True,
+        margins: bool = True,
     ):
         """Take currently displayed viewer and convert to an image array.
 
@@ -1634,7 +1635,7 @@ class Window:
         """
 
         img = QImg2array(
-            self._screenshot(size, scale, flash, canvas_only, no_margins)
+            self._screenshot(size, scale, flash, canvas_only, margins)
         )
         if path is not None:
             imsave(path, img)
