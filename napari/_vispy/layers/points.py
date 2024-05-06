@@ -204,6 +204,7 @@ class VispyPointsLayer(VispyBaseLayer):
             low + scaled_highlight,
             high + scaled_highlight,
         )
+        self.node.update()
 
     def reset(self):
         super().reset()
