@@ -7,6 +7,7 @@ import numpy as np
 import pytest
 import tifffile
 
+from napari.utils.notifications import notification_manager
 from napari_builtins.io._write import write_csv, write_layer_data_with_plugins
 
 
@@ -87,6 +88,9 @@ def test_reading_folder_with_multiple_layer_types(tmp_path):
         path=dest, layer_data=[image_layer, points_layer]
     )
 
+    # add a unreadable file
+    (Path(dest) / 'unreadable.xyz').touch()
+
     layer_data = npe2.read([dest], stack=False)
     # sort by layer type for consistent testing
     layer_data_sorted = sorted(layer_data, key=lambda x: x[2])
@@ -97,3 +101,10 @@ def test_reading_folder_with_multiple_layer_types(tmp_path):
     assert np.allclose(layer_data_sorted[1][0], points_data)
     assert layer_data_sorted[1][1]['name'] == 'Points'
     assert layer_data_sorted[1][2] == 'points'
+
+    with notification_manager:
+        assert len(notification_manager.records) == 1
+        assert (
+            notification_manager.records[0].message
+            == f'Unable to read {dest}/unreadable.xyz, skipping.'
+        )
