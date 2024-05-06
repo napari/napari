@@ -90,6 +90,10 @@ def test_reading_folder_with_multiple_layer_types(tmp_path):
 
     # add a unreadable file
     (Path(dest) / 'unreadable.xyz').touch()
+    # setup notification manager to check for show_info
+    with notification_manager:
+        notification_manager.records.clear()
+        assert len(notification_manager.records) == 0
 
     layer_data = npe2.read([dest], stack=False)
     # sort by layer type for consistent testing
