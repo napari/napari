@@ -108,7 +108,7 @@ class GridCanvas(EventedModel):
         return (i_row, i_column)
 
 
-class _MultiChannelGridCanvas(EventedModel):
+class MultiChannelGridCanvas(EventedModel):
     """Multichannel gridcanvas.
 
     Grid mode with multiple cameras
