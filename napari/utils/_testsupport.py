@@ -41,7 +41,7 @@ def pytest_addoption(parser):
 COUNTER = 0
 
 
-def fail_obj_graph(Klass):
+def fail_obj_graph(Klass):  # pragma: no cover
     """
     Fail is a given class _instances weakset is non empty and print the object graph.
     """
