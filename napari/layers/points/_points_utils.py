@@ -266,24 +266,6 @@ def symbol_conversion(symbol: Union[str, Symbol]) -> Symbol:
     return Symbol(symbol)
 
 
-def create_symbol_dict(
-    symbols: Sequence[Union[str, Symbol]],
-) -> dict[Union[str, Symbol], Symbol]:
-    """
-    Create a dictionary that maps raw symbols (keys) to their Symbol
-    instance counterpart (values).
-    """
-    unique_symbols = set(symbols)
-    unique_symbols = [str(x).lower() for x in unique_symbols]
-
-    symbol_dict = {}
-
-    for symbol in unique_symbols:
-        symbol_dict[symbol] = symbol_conversion(symbol)
-
-    return symbol_dict
-
-
 def fast_dict_get(symbols: Union[np.ndarray, list], d: dict) -> np.ndarray:
     """
     Get the values from a dictionary using a list of keys.
@@ -298,22 +280,26 @@ def coerce_symbols(
 ) -> np.ndarray:
     """
     Parse an array of symbols and convert it to the correct strings.
+    If single value is given, it is converted to single element array.
 
-    Ensures that all strings are valid symbols and converts aliases.
+    Ensures that all strings are valid symbols and convert aliases.
 
     Parameters
     ----------
-    array : np.ndarray
-        Array of strings matching Symbol values.
+    symbol : str or Symbol or Sequence of str or Symbol
+        data to be convert to array of Symbols.
+
+    Returns
+    -------
+    symbols : np.ndarray
+        array of Symbols
     """
-    # if symbol is a unique string or Symbol instance, convert it to a
+    # if a symbol is a unique string or Symbol instance, convert it to a
     # proper Symbol instance
     if isinstance(symbol, (str, Symbol)):
         return np.array(symbol_conversion(symbol), dtype=object)
 
-    # otherwise, create a dictionary to map raw symbols to their
-    # Symbol instance counterpart
-    # symbol_dict = create_symbol_dict(symbol)
-    # then use a vectorized "dict.get" to convert the raw symbols to
-    # their Symbol instance counterpart quickly
+    if not isinstance(symbol, np.ndarray):
+        symbol = np.array(symbol)
+
     return fast_dict_get(symbol, SYMBOL_DICT)
