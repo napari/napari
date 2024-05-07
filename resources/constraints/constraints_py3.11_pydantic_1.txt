@@ -52,7 +52,7 @@ executing==2.0.1
     # via stack-data
 fasteners==0.19
     # via zarr
-filelock==3.13.4
+filelock==3.14.0
     # via
     #   torch
     #   triton
@@ -69,7 +69,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.100.1
+hypothesis==6.100.2
 idna==3.7
     # via requests
 imageio==2.34.1
@@ -292,7 +292,7 @@ pyparsing==3.1.2
     # via matplotlib
 pyperclip==1.8.2
     # via mouseinfo
-pyproject-hooks==1.0.0
+pyproject-hooks==1.1.0
     # via build
 pyqt5==5.15.10
 pyqt5-qt5==5.15.2
@@ -308,7 +308,6 @@ pyrect==0.2.0
     # via pygetwindow
 pyscreeze==0.1.30
     # via pyautogui
-pyside2==5.13.2
 pyside6==6.4.2
 pyside6-addons==6.4.2
     # via pyside6
@@ -316,7 +315,7 @@ pyside6-essentials==6.4.2
     # via
     #   pyside6
     #   pyside6-addons
-pytest==8.1.2
+pytest==8.2.0
     # via
     #   pytest-cov
     #   pytest-json-report
@@ -383,8 +382,6 @@ scipy==1.13.0
     # via scikit-image
 shellingham==1.5.4
     # via typer
-shiboken2==5.13.2
-    # via pyside2
 shiboken6==6.4.2
     # via
     #   pyside6
@@ -465,7 +462,7 @@ tzdata==2024.1
     # via pandas
 urllib3==2.2.1
     # via requests
-virtualenv==20.26.0
+virtualenv==20.26.1
 vispy==0.14.2
     # via napari-svg
 wcwidth==0.2.13

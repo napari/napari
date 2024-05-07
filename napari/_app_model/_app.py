@@ -10,8 +10,6 @@ from napari._app_model.actions._layer_actions import (
     LAYER_ACTIONS,
     LAYER_SUBMENUS,
 )
-from napari._app_model.injection._processors import PROCESSORS
-from napari._app_model.injection._providers import PROVIDERS
 
 APP_NAME = 'napari'
 
@@ -28,9 +26,6 @@ class NapariApplication(Application):
         super().__init__(app_name, raise_synchronous_exceptions=True)
 
         self.injection_store.namespace = _napari_names  # type: ignore [assignment]
-        self.injection_store.register(
-            providers=PROVIDERS, processors=PROCESSORS
-        )
 
         self.register_actions(chain(HELP_ACTIONS, LAYER_ACTIONS))
         self.menus.append_menu_items(LAYER_SUBMENUS)
