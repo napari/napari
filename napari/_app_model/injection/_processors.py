@@ -82,6 +82,8 @@ def _add_layer_data_to_viewer(
             with suppress(KeyError):
                 # layerlist also allow lookup by name
                 viewer.layers[layer_name].data = data
+                viewer.layers[layer_name].reset_contrast_limits_range()
+                viewer.layers[layer_name].reset_contrast_limits()
                 return
         if get_origin(return_type) is Union:
             if len(return_type.__args__) != 2 or return_type.__args__[
