@@ -56,6 +56,8 @@ def fail_obj_graph(Klass):
         COUNTER += 1
         import gc
 
+        leaked_objects_count = len(Klass._instances)
+
         gc.collect()
         file_path = Path(
             f'{Klass.__name__}-leak-backref-graph-{COUNTER}.pdf'
@@ -72,7 +74,11 @@ def fail_obj_graph(Klass):
 
         # DO not remove len, this can break as C++ obj are gone, but python objects
         # still hang around and _repr_ would crash.
-        pytest.fail(len(Klass._instances))
+        pytest.fail(
+            f'Test run fail with leaked {leaked_objects_count} instances of {Klass}.'
+            f'The object graph is saved in {file_path}.'
+            f'After cleanup left {len(Klass._instances)} objects'
+        )
 
 
 @pytest.fixture()
