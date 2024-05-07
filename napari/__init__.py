@@ -2,6 +2,8 @@ import os
 
 from lazy_loader import attach as _attach
 
+from napari.utils._logging import _get_custom_log_stream
+
 try:
     from napari._version import version as __version__
 except ImportError:
@@ -41,6 +43,8 @@ _submod_attrs = {
     ],
     'viewer': ['Viewer', 'current_viewer'],
 }
+
+_LOG_STREAM = _get_custom_log_stream()
 
 # All imports in __init__ are hidden inside of `__getattr__` to prevent
 # importing the full chain of packages required when calling `import napari`.
