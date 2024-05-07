@@ -165,6 +165,12 @@ class VispyCanvas:
         self.viewer.camera.events.zoom.connect(self._on_cursor)
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
         self.viewer.layers.events.removed.connect(self._remove_layer)
+        self.viewer.multi_channel_gridcanvas.events.enabled.connect(
+            self._on_grid_change
+        )
+        self.viewer.multi_channel_gridcanvas.events.stride.connect(
+            self._on_grid_change
+        )
         self.destroyed.connect(self._disconnect_theme)
 
     @property
@@ -638,9 +644,11 @@ class VispyCanvas:
 
     def _on_grid_change(self):
         """Change grid view"""
-        if self.viewer.canvases.grid_enabled:
-            grid_shape, n_gridboxes = self.viewer.canvases.actual_shape(
-                len(self.layer_to_visual)
+        if self.viewer.multi_channel_gridcanvas.enabled:
+            grid_shape, n_gridboxes = (
+                self.viewer.multi_channel_gridcanvas.actual_shape(
+                    len(self.layer_to_visual)
+                )
             )
 
             self.grid = self.central_widget.add_grid()
@@ -654,7 +662,7 @@ class VispyCanvas:
                 if x * y < n_gridboxes
             ]
             self.camera._view = self.grid_views[0]
-            self.central_widget.remove_widget(self.view)
+            # self.central_widget.remove_widget(self.view)
             # del self.view
             self.grid_cameras = [
                 VispyCamera(
