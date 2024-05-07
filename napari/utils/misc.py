@@ -398,6 +398,11 @@ def abspath_or_url(relpath: T, *, must_exist: bool = False) -> T:
 
 
 class CallDefault(inspect.Parameter):
+    warnings.warn(
+        '`CallDefault` is deprecated since 0.4.6 and will be removed in the future',
+        category=DeprecationWarning,
+    )
+
     def __str__(self) -> str:
         """wrap defaults"""
         kind = self.kind
