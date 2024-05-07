@@ -72,7 +72,7 @@ def fail_obj_graph(Klass):
 
         # DO not remove len, this can break as C++ obj are gone, but python objects
         # still hang around and _repr_ would crash.
-        pytest.fail(len(Klass._instances))
+        pytest.fail(str(len(Klass._instances)))
 
 
 @pytest.fixture()
