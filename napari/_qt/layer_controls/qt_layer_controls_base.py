@@ -115,9 +115,7 @@ class QtLayerControls(QFrame):
             self.MODE.TRANSFORM,
             True,
             self.TRANSFORM_ACTION_NAME,
-            extra_tooltip_text=trans._(
-                '\n(use Alt-Left mouse click to reset)'
-            ),
+            extra_tooltip_text=trans._('\nAlt-Left mouse click to reset'),
         )
         self.transform_button.installEventFilter(self)
         self._on_editable_or_visible_change()
