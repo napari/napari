@@ -309,6 +309,15 @@ class QtLayerControls(QFrame):
         This is needed because some layer controls may have options that are specific
         to 2D or 3D visualization only.
         """
+        self._set_transform_tool_state()
+
+    def _set_transform_tool_state(self):
+        """
+        Enable/disable transform button using number of dimensions being displayed.
+        """
+        set_widgets_enabled_with_opacity(
+            self, [self.transform_button], self.ndisplay == 2
+        )
 
     def eventFilter(self, qobject, event):
         if (

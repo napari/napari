@@ -364,6 +364,10 @@ class QtImageControls(QtBaseImageControls):
             self.interpComboBox.addItems(interp_names)
             self.interpComboBox.setCurrentText(interp)
 
+    def _on_editable_or_visible_change(self):
+        super()._on_editable_or_visible_change()
+        self._set_transform_tool_state()
+
     def _on_ndisplay_changed(self):
         """Update widget visibility based on 2D and 3D visualization modes."""
         self._update_interpolation_combo()
@@ -383,6 +387,7 @@ class QtImageControls(QtBaseImageControls):
             self._update_rendering_parameter_visibility()
             self.depictionComboBox.show()
             self.depictionLabel.show()
+        super()._on_ndisplay_changed()
 
 
 class PlaneNormalButtons(QWidget):

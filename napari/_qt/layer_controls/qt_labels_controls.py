@@ -14,6 +14,7 @@ from qtpy.QtWidgets import (
 from superqt import QLargeIntSpinBox
 
 from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
+from napari._qt.utils import set_widgets_enabled_with_opacity
 from napari._qt.widgets._slider_compat import QSlider
 from napari._qt.widgets.qt_mode_buttons import QtModePushButton
 from napari.layers.labels._labels_constants import (
@@ -446,8 +447,7 @@ class QtLabelsControls(QtLayerControls):
         with self.layer.events.n_edit_dimensions.blocker():
             value = self.layer.n_edit_dimensions
             self.ndimSpinBox.setValue(int(value))
-            if hasattr(self, 'polygon_button'):
-                self.polygon_button.setEnabled(self._is_polygon_tool_enabled())
+            self._set_polygon_tool_state()
 
     def _on_contiguous_change(self):
         """Receive layer model contiguous change event and update the checkbox."""
@@ -474,12 +474,24 @@ class QtLabelsControls(QtLayerControls):
             )
             self.renderComboBox.setCurrentIndex(index)
 
+    def _on_editable_or_visible_change(self):
+        super()._on_editable_or_visible_change()
+        self._set_polygon_tool_state()
+        self._set_transform_tool_state()
+
     def _on_ndisplay_changed(self):
         render_visible = self.ndisplay == 3
         self.renderComboBox.setVisible(render_visible)
         self.renderLabel.setVisible(render_visible)
         self._on_editable_or_visible_change()
-        self.polygon_button.setEnabled(self._is_polygon_tool_enabled())
+        self._set_polygon_tool_state()
+        super()._on_ndisplay_changed()
+
+    def _set_polygon_tool_state(self):
+        if hasattr(self, 'polygon_button'):
+            set_widgets_enabled_with_opacity(
+                self, [self.polygon_button], self._is_polygon_tool_enabled()
+            )
 
     def _is_polygon_tool_enabled(self):
         return (
