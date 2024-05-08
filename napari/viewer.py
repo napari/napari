@@ -100,7 +100,7 @@ class Viewer(ViewerModel):
         scale=None,
         canvas_only=True,
         flash: bool = True,
-        fit_to_data: bool = True,
+        fit_to_data: bool = False,
     ):
         """Take currently displayed screen and convert to an image array.
 

@@ -1469,7 +1469,7 @@ class Window:
         scale=None,
         flash=True,
         canvas_only=False,
-        fit_to_data: bool = True,
+        fit_to_data: bool = False,
     ) -> 'QImage':
         """Capture screenshot of the currently displayed viewer.
 
@@ -1556,7 +1556,7 @@ class Window:
         scale=None,
         flash=True,
         canvas_only=False,
-        fit_to_data: bool = True,
+        fit_to_data: bool = False,
     ):
         """Take currently displayed viewer and convert to an image array.
 
