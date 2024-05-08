@@ -52,6 +52,7 @@ def test_sequence_of_iterables(input_data, expected):
         assert result == expectation
 
 
+# TODO: remove test once problems with shapes are fixed, for now this is expected to fail.
 def test_sequence_of_iterables_allow_none():
     input_data = [(1, 2), None]
     assert (

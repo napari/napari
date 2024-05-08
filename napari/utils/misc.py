@@ -1,5 +1,7 @@
 """Miscellaneous utility functions."""
 
+from __future__ import annotations
+
 import builtins
 import collections.abc
 import contextlib
@@ -37,7 +39,7 @@ if TYPE_CHECKING:
 ROOT_DIR = os_path.dirname(os_path.dirname(__file__))
 
 
-def parse_version(v: str) -> 'packaging.version._BaseVersion':
+def parse_version(v: str) -> packaging.version._BaseVersion:
     """Parse a version string and return a packaging.version.Version obj."""
     import packaging.version
 
@@ -129,7 +131,8 @@ def str_to_rgb(arg: str) -> list[int]:
 
 
 def ensure_iterable(
-    arg: Union[None, str, Enum, float, list, npt.NDArray], color: bool = False
+    arg: Union[None, str, Enum, float, list, npt.NDArray],
+    color: object | bool = _sentinel,
 ):
     """Ensure an argument is an iterable. Useful when an input argument
     can either be a single value or a list.
@@ -154,8 +157,8 @@ def ensure_iterable(
 
 def is_iterable(
     arg: Union[None, str, Enum, float, list, npt.NDArray],
-    color: bool = False,
-    allow_none: bool = False,
+    color: object | bool = _sentinel,
+    allow_none: object | bool = _sentinel,
 ) -> bool:
     """Determine if a single argument is an iterable.
     Argument color is deprecated since version 0.5.0 and will be removed in 0.6.0.
@@ -178,11 +181,8 @@ def is_iterable(
             category=DeprecationWarning,
             stacklevel=2,  # not sure what level to use here
         )
-    if arg is None:
-        return allow_none
-    if isinstance(arg, (str, Enum)):
-        return False
-    if np.isscalar(arg):
+    # Here if arg is None it used to return allow_none
+    if arg is None or isinstance(arg, (str, Enum)) or np.isscalar(arg):
         return False
 
     # this is to be removed in 0.6.0
@@ -213,7 +213,7 @@ def ensure_sequence_of_iterables(
     obj: Any,
     length: Optional[int] = None,
     repeat_empty: bool = False,
-    allow_none: bool = False,
+    allow_none: object | bool = _sentinel,
 ):
     """Ensure that ``obj`` behaves like a (nested) sequence of iterables.
 
