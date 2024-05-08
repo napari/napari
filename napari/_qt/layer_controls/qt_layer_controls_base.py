@@ -316,7 +316,9 @@ class QtLayerControls(QFrame):
         Enable/disable transform button using number of dimensions being displayed.
         """
         set_widgets_enabled_with_opacity(
-            self, [self.transform_button], self.ndisplay == 2
+            self,
+            [self.transform_button],
+            self.layer.editable and self.layer.visible and self.ndisplay == 2,
         )
 
     def eventFilter(self, qobject, event):

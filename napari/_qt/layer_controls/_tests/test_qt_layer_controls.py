@@ -678,6 +678,57 @@ def test_set_3d_display_with_shapes(qtbot):
     assert not layer.editable
 
 
+def test_set_3d_display_with_labels(qtbot):
+    """Some modes only work for labels layers rendered in 2D and not
+    in 3D. Verify that the related mode buttons are disabled upon switching to
+    3D rendering mode while the layer is still editable.
+    """
+    viewer = ViewerModel()
+    container = QtLayerControlsContainer(viewer)
+    qtbot.addWidget(container)
+    layer = viewer.add_labels(np.zeros((3, 4), dtype=int))
+    assert viewer.dims.ndisplay == 2
+    assert container.currentWidget().polygon_button.isEnabled()
+    assert container.currentWidget().transform_button.isEnabled()
+    assert layer.editable
+
+    viewer.dims.ndisplay = 3
+
+    assert not container.currentWidget().polygon_button.isEnabled()
+    assert not container.currentWidget().transform_button.isEnabled()
+    assert layer.editable
+
+
+def test_set_3d_display_and_visibility_with_labels(qtbot):
+    """Some modes only work for labels layers rendered in 2D and not
+    in 3D. Verify that the related mode buttons are disabled upon switching to
+    3D rendering mode and the disable state is kept even when changing layer
+    visibility.
+    """
+    viewer = ViewerModel()
+    container = QtLayerControlsContainer(viewer)
+    qtbot.addWidget(container)
+    layer = viewer.add_labels(np.zeros((3, 4), dtype=int))
+    assert viewer.dims.ndisplay == 2
+    assert container.currentWidget().polygon_button.isEnabled()
+    assert container.currentWidget().transform_button.isEnabled()
+
+    viewer.dims.ndisplay = 3
+
+    assert not container.currentWidget().polygon_button.isEnabled()
+    assert not container.currentWidget().transform_button.isEnabled()
+
+    layer.visible = False
+
+    assert not container.currentWidget().polygon_button.isEnabled()
+    assert not container.currentWidget().transform_button.isEnabled()
+
+    layer.visible = True
+
+    assert not container.currentWidget().polygon_button.isEnabled()
+    assert not container.currentWidget().transform_button.isEnabled()
+
+
 # The following tests handle changes to the layer's visible and
 # editable state for layer control types that have controls to edit
 # the layer. For more context see:
