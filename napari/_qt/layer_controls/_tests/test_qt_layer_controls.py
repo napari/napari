@@ -709,22 +709,34 @@ def test_set_3d_display_and_visibility_with_labels(qtbot):
     container = QtLayerControlsContainer(viewer)
     qtbot.addWidget(container)
     layer = viewer.add_labels(np.zeros((3, 4), dtype=int))
+
+    # 2D mode
     assert viewer.dims.ndisplay == 2
     assert container.currentWidget().polygon_button.isEnabled()
     assert container.currentWidget().transform_button.isEnabled()
 
-    viewer.dims.ndisplay = 3
-
-    assert not container.currentWidget().polygon_button.isEnabled()
-    assert not container.currentWidget().transform_button.isEnabled()
-
+    # 2D mode + layer not visible
     layer.visible = False
-
     assert not container.currentWidget().polygon_button.isEnabled()
     assert not container.currentWidget().transform_button.isEnabled()
 
+    # 2D mode + layer visible
     layer.visible = True
+    assert container.currentWidget().polygon_button.isEnabled()
+    assert container.currentWidget().transform_button.isEnabled()
 
+    # 3D mode
+    viewer.dims.ndisplay = 3
+    assert not container.currentWidget().polygon_button.isEnabled()
+    assert not container.currentWidget().transform_button.isEnabled()
+
+    # 3D mode + layer not visible
+    layer.visible = False
+    assert not container.currentWidget().polygon_button.isEnabled()
+    assert not container.currentWidget().transform_button.isEnabled()
+
+    # 3D mode + layer visible
+    layer.visible = True
     assert not container.currentWidget().polygon_button.isEnabled()
     assert not container.currentWidget().transform_button.isEnabled()
 
@@ -733,6 +745,9 @@ def test_set_3d_display_and_visibility_with_labels(qtbot):
 # editable state for layer control types that have controls to edit
 # the layer. For more context see:
 # https://github.com/napari/napari/issues/1346
+# Updated due to the addition of a transform mode button for all the layers,
+# For more context see:
+# https://github.com/napari/napari/pull/6794
 
 
 @pytest.fixture(
@@ -740,6 +755,17 @@ def test_set_3d_display_and_visibility_with_labels(qtbot):
         (Labels, np.zeros((3, 4), dtype=int)),
         (Points, np.empty((0, 2))),
         (Shapes, np.empty((0, 2, 4))),
+        (Image, np.random.rand(8, 8)),
+        (
+            Surface,
+            (
+                np.random.random((10, 2)),
+                np.random.randint(10, size=(6, 3)),
+                np.random.random(10),
+            ),
+        ),
+        (Tracks, np.zeros((2, 4))),
+        (Vectors, np.zeros((2, 2, 2))),
     )
 )
 def editable_layer(request):
