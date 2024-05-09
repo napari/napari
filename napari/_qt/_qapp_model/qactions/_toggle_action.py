@@ -91,7 +91,7 @@ class DockWidgetToggleAction(Action):
         id: str,  # noqa: A002
         title: str,
         dock_widget: str,
-        **kwargs,
+        **kwargs: dict[str, Any],
     ) -> None:
         def toggle_dock_widget(window: Window) -> None:
             dock_widget_prop = getattr(window._qt_viewer, dock_widget)
