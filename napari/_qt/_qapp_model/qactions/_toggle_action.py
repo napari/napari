@@ -92,12 +92,12 @@ class DockWidgetToggleAction(Action):
         title: str,
         dock_widget: str,
         **kwargs,
-    ):
-        def toggle_dock_widget(window: Window):
+    ) -> None:
+        def toggle_dock_widget(window: Window) -> None:
             dock_widget_prop = getattr(window._qt_viewer, dock_widget)
             dock_widget_prop.setVisible(not dock_widget_prop.isVisible())
 
-        def get_current(window: Window):
+        def get_current(window: Window) -> bool:
             dock_widget_prop = getattr(window._qt_viewer, dock_widget)
             return dock_widget_prop.isVisible()
 
