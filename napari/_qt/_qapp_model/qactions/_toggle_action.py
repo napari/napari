@@ -64,7 +64,7 @@ class ViewerToggleAction(Action):
         )
 
 
-class ToggleDockWidgetAction(Action):
+class DockWidgetToggleAction(Action):
     """`Action` subclass that toggles visibility of a `QtViewerDockWidget`.
     Parameters
     ----------
@@ -78,7 +78,7 @@ class ToggleDockWidgetAction(Action):
         Additional keyword arguments to pass to the `Action` constructor.
     Examples
     --------
-    >>> action = ToggleDockWidgetAction(
+    >>> action = DockWidgetToggleAction(
     ...     id='some.command.id',
     ...     title='Toggle Layer List',
     ...     dock_widget='dockConsole',
