@@ -77,7 +77,7 @@ def fail_obj_graph(Klass):  # pragma: no cover
         pytest.fail(
             f'Test run fail with leaked {leaked_objects_count} instances of {Klass}.'
             f'The object graph is saved in {file_path}.'
-            f'After cleanup left {len(Klass._instances)} objects'
+            f'{len(Klass._instances)} objects left after cleanup'
         )
 
 
