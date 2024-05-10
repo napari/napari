@@ -699,45 +699,75 @@ def test_set_3d_display_with_labels(qtbot):
     assert layer.editable
 
 
-def test_set_3d_display_and_visibility_with_labels(qtbot):
-    """Some modes only work for labels layers rendered in 2D and not
+@pytest.mark.parametrize(
+    'add_layer_with_data',
+    [
+        ('add_labels', np.zeros((3, 4), dtype=int)),
+        ('add_points', np.empty((0, 2))),
+        ('add_shapes', np.empty((0, 2, 4))),
+        ('add_image', np.random.rand(8, 8)),
+        (
+            'add_surface',
+            (
+                np.random.random((10, 2)),
+                np.random.randint(10, size=(6, 3)),
+                np.random.random(10),
+            ),
+        ),
+        ('add_tracks', np.zeros((2, 4))),
+        ('add_vectors', np.zeros((2, 2, 2))),
+    ],
+)
+def test_set_3d_display_and_layer_visibility(qtbot, add_layer_with_data):
+    """Some modes only work for layers rendered in 2D and not
     in 3D. Verify that the related mode buttons are disabled upon switching to
     3D rendering mode and the disable state is kept even when changing layer
     visibility.
+
+    For the labels layer the specific polygon mode button should be disable in
+    3D regarless of the layer being visible or not. For all the layers the same
+    applies for the transform mode button.
     """
     viewer = ViewerModel()
     container = QtLayerControlsContainer(viewer)
     qtbot.addWidget(container)
-    layer = viewer.add_labels(np.zeros((3, 4), dtype=int))
+    add_layer_method, data = add_layer_with_data
+    layer = getattr(viewer, add_layer_method)(data)
 
     # 2D mode
     assert viewer.dims.ndisplay == 2
-    assert container.currentWidget().polygon_button.isEnabled()
+    if add_layer_method == 'add_labels':
+        assert container.currentWidget().polygon_button.isEnabled()
     assert container.currentWidget().transform_button.isEnabled()
 
     # 2D mode + layer not visible
     layer.visible = False
-    assert not container.currentWidget().polygon_button.isEnabled()
+    if add_layer_method == 'add_labels':
+        assert not container.currentWidget().polygon_button.isEnabled()
     assert not container.currentWidget().transform_button.isEnabled()
 
     # 2D mode + layer visible
     layer.visible = True
-    assert container.currentWidget().polygon_button.isEnabled()
+    if add_layer_method == 'add_labels':
+        assert container.currentWidget().polygon_button.isEnabled()
     assert container.currentWidget().transform_button.isEnabled()
 
     # 3D mode
     viewer.dims.ndisplay = 3
-    assert not container.currentWidget().polygon_button.isEnabled()
+    if add_layer_method == 'add_labels':
+        assert not container.currentWidget().polygon_button.isEnabled()
     assert not container.currentWidget().transform_button.isEnabled()
 
     # 3D mode + layer not visible
     layer.visible = False
-    assert not container.currentWidget().polygon_button.isEnabled()
+    if add_layer_method == 'add_labels':
+        assert not container.currentWidget().polygon_button.isEnabled()
     assert not container.currentWidget().transform_button.isEnabled()
 
     # 3D mode + layer visible
     layer.visible = True
-    assert not container.currentWidget().polygon_button.isEnabled()
+    if add_layer_method == 'add_labels':
+        assert not container.currentWidget().polygon_button.isEnabled()
     assert not container.currentWidget().transform_button.isEnabled()
 
 

@@ -336,6 +336,7 @@ class QtPointsControls(QtLayerControls):
 
     def _on_ndisplay_changed(self):
         self.layer.editable = not (self.layer.ndim == 2 and self.ndisplay == 3)
+        super()._on_ndisplay_changed()
 
     def close(self):
         """Disconnect events when widget is closing."""

@@ -477,7 +477,6 @@ class QtLabelsControls(QtLayerControls):
     def _on_editable_or_visible_change(self):
         super()._on_editable_or_visible_change()
         self._set_polygon_tool_state()
-        self._set_transform_tool_state()
 
     def _on_ndisplay_changed(self):
         render_visible = self.ndisplay == 3

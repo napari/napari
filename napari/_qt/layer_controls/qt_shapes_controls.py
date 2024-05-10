@@ -348,6 +348,7 @@ class QtShapesControls(QtLayerControls):
 
     def _on_ndisplay_changed(self):
         self.layer.editable = self.ndisplay == 2
+        super()._on_ndisplay_changed()
 
     def close(self):
         """Disconnect events when widget is closing."""

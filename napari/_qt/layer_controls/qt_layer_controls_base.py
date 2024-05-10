@@ -280,6 +280,7 @@ class QtLayerControls(QFrame):
             self._EDIT_BUTTONS,
             self.layer.editable and self.layer.visible,
         )
+        self._set_transform_tool_state()
 
     def _on_opacity_change(self):
         """Receive layer model opacity change event and update opacity slider."""
@@ -307,13 +308,16 @@ class QtLayerControls(QFrame):
         """Respond to a change to the number of dimensions displayed in the viewer.
 
         This is needed because some layer controls may have options that are specific
-        to 2D or 3D visualization only.
+        to 2D or 3D visualization only like the transform mode button.
         """
         self._set_transform_tool_state()
 
     def _set_transform_tool_state(self):
         """
-        Enable/disable transform button using number of dimensions being displayed.
+        Enable/disable transform button taking into account:
+            * Layer visibility.
+            * Layer editability.
+            * Number of dimensions being displayed.
         """
         set_widgets_enabled_with_opacity(
             self,
