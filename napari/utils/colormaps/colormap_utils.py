@@ -655,6 +655,11 @@ def vispy_or_mpl_colormap(name) -> Colormap:
 
     return colormap
 
+# HiLo colormap
+hilo_colormap = vispy_or_mpl_colormap('gray')
+hilo_colormap.name = 'hilo'
+hilo_colormap.colors[0] = [0, 0, 1, 1]   # blue (lowest pixel values)
+hilo_colormap.colors[-1] = [1, 0, 0, 1]  # red  (highest pixel values)
 
 # A dictionary mapping names to VisPy colormap objects
 ALL_COLORMAPS = {
@@ -663,6 +668,7 @@ ALL_COLORMAPS = {
 ALL_COLORMAPS.update(SIMPLE_COLORMAPS)
 ALL_COLORMAPS.update(BOP_COLORMAPS)
 ALL_COLORMAPS.update(INVERSE_COLORMAPS)
+ALL_COLORMAPS.update({'hilo': hilo_colormap})
 
 # ... sorted alphabetically by name
 AVAILABLE_COLORMAPS = dict(
