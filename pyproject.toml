@@ -269,7 +269,7 @@ select = [
     "TRY", # tryceratops
     "ICN", # flake8-import-conventions
     "RUF", # ruff specyfic rules
-    "NPY201" # checks compatibility with numpy version 2.0
+    "NPY201", # checks compatibility with numpy version 2.0
     "ASYNC", # flake8-async
     "EXE", # flake8-executable
     "FA", # flake8-future-annotations
