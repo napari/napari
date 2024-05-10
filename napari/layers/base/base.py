@@ -311,7 +311,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         ndim: int,
         *,
         affine: Optional[Union[npt.NDArray, Affine]] = None,
-        blending: napari.types.BlendMode = 'translucent',
+        blending: napari.types.BlendingMode = 'translucent',
         cache: bool = True,  # this should move to future "data source" object.
         experimental_clipping_planes: Optional[
             Union[list[dict], list[ClippingPlane], ClippingPlaneList]
