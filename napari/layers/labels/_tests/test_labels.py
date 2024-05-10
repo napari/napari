@@ -21,6 +21,10 @@ from napari.layers import Labels
 from napari.layers.labels._labels_constants import LabelsRendering
 from napari.layers.labels._labels_utils import get_contours
 from napari.utils import Colormap
+from napari.utils._test_utils import (
+    validate_all_params_in_docstring,
+    validate_kwargs_sorted,
+)
 from napari.utils.colormaps import (
     CyclicLabelColormap,
     DirectLabelColormap,
@@ -28,7 +32,7 @@ from napari.utils.colormaps import (
 )
 
 
-@pytest.fixture
+@pytest.fixture()
 def direct_colormap():
     """Return a DirectLabelColormap."""
     return DirectLabelColormap(
@@ -41,7 +45,7 @@ def direct_colormap():
     )
 
 
-@pytest.fixture
+@pytest.fixture()
 def random_colormap():
     """Return a LabelColormap."""
     return label_colormap(50)
@@ -459,7 +463,7 @@ def test_n_edit_dimensions():
 
 
 @pytest.mark.parametrize(
-    'input_data, expected_data_view',
+    ('input_data', 'expected_data_view'),
     [
         (
             np.array(
@@ -913,7 +917,7 @@ def test_value():
 
 
 @pytest.mark.parametrize(
-    'position,view_direction,dims_displayed,world',
+    ('position', 'view_direction', 'dims_displayed', 'world'),
     [
         ([10, 5, 5], [1, 0, 0], [0, 1, 2], False),
         ([10, 5, 5], [1, 0, 0], [0, 1, 2], True),
@@ -975,7 +979,13 @@ def test_world_data_extent():
 
 
 @pytest.mark.parametrize(
-    'brush_size, mode, selected_label, preserve_labels, n_dimensional',
+    (
+        'brush_size',
+        'mode',
+        'selected_label',
+        'preserve_labels',
+        'n_dimensional',
+    ),
     list(
         itertools.product(
             list(range(1, 22, 5)),
@@ -1046,7 +1056,8 @@ def test_ndim_paint():
     layer.paint((1, 1, 1, 1), 1)
 
     assert np.sum(layer.data) == 19  # 18 + center
-    assert not np.any(layer.data[0]) and not np.any(layer.data[2:])
+    assert not np.any(layer.data[0])
+    assert not np.any(layer.data[2:])
 
     layer.n_edit_dimensions = 2  # 3x3 square
     layer._slice_dims(Dims(ndim=4, order=(1, 2, 0, 3)))
@@ -1072,9 +1083,6 @@ def test_cursor_size_with_negative_scale():
     assert layer.cursor_size > 0
 
 
-@pytest.mark.xfail(
-    reason='labels are converted to float32 before being mapped'
-)
 def test_large_label_values():
     label_array = 2**23 + np.arange(4, dtype=np.uint64).reshape((2, 2))
     layer = Labels(label_array)
@@ -1682,7 +1690,7 @@ def test_copy():
 
 
 @pytest.mark.parametrize(
-    'colormap,expected',
+    ('colormap', 'expected'),
     [
         (label_colormap(49, 0.5), [0, 1]),
         (
@@ -1720,3 +1728,8 @@ class TestLabels:
             obj,
             {'seed', 'num_colors', 'color', 'seed_rng'},
         )
+
+
+def test_docstring():
+    validate_all_params_in_docstring(Labels)
+    validate_kwargs_sorted(Labels)

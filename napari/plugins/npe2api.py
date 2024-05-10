@@ -104,10 +104,11 @@ def iter_napari_plugin_info() -> Iterator[tuple[PackageMetadata, bool, dict]]:
         # to all the metadata includes the conda and pypi versions.
         extra_info = {
             'home_page': info_.get('home_page', ''),
+            'display_name': info.get('display_name', ''),
             'pypi_versions': pypi_versions,
             'conda_versions': conda_versions,
         }
         info_['name'] = normalized_name(info_['name'])
-        meta = PackageMetadata(**info_)
+        meta = PackageMetadata(**info_)  # type:ignore[call-arg]
 
         yield meta, (info_['name'] in conda_set), extra_info

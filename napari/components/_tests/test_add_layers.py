@@ -86,7 +86,7 @@ plugin_returns = [
 ]
 
 
-@pytest.mark.parametrize('layer_data, kwargs', plugin_returns)
+@pytest.mark.parametrize(('layer_data', 'kwargs'), plugin_returns)
 def test_add_layers_with_plugins_and_kwargs(layer_data, kwargs):
     """Test that _add_layers_with_plugins kwargs override plugin kwargs.
 

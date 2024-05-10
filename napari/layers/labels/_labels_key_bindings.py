@@ -1,3 +1,5 @@
+from typing import cast
+
 import numpy as np
 from app_model.types import KeyCode, KeyMod
 
@@ -173,4 +175,10 @@ def complete_polygon(layer: Labels):
     # Because layer._overlays has type Overlay, mypy doesn't know that
     # ._overlays["polygon"] has type LabelsPolygonOverlay, so type ignore for now
     # TODO: Improve typing of layer._overlays to fix this
-    layer._overlays['polygon'].add_polygon_to_labels(layer)
+    from napari.components.overlays.labels_polygon import (
+        LabelsPolygonOverlay,
+    )
+
+    cast(
+        LabelsPolygonOverlay, layer._overlays['polygon']
+    ).add_polygon_to_labels(layer)

@@ -33,6 +33,8 @@ class BoundingBox(Compound):
     )
 
     def __init__(self, *args, **kwargs):
+        self._line_color = 'red'
+        self._line_thickness = 2
         self._marker_color = (1, 1, 1, 1)
         self._marker_size = 1
 
@@ -54,7 +56,10 @@ class BoundingBox(Compound):
         vertices = np.array(list(product(*bounds)))
 
         self.lines.set_data(
-            pos=vertices, connect=self._edges.copy(), color='red', width=2
+            pos=vertices,
+            connect=self._edges.copy(),
+            color=self._line_color,
+            width=self._line_thickness,
         )
         self.lines.visible = True
 

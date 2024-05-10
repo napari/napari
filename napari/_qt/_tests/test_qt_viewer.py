@@ -88,7 +88,7 @@ def test_qt_viewer_console_focus(qtbot, make_napari_viewer):
     qtbot.waitUntil(console_has_focus)
 
 
-@pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
+@pytest.mark.parametrize(('layer_class', 'data', 'ndim'), layer_test_data)
 def test_add_layer(make_napari_viewer, layer_class, data, ndim):
     viewer = make_napari_viewer(ndisplay=int(np.clip(ndim, 2, 3)))
     view = viewer.window._qt_viewer
@@ -800,7 +800,7 @@ def test_label_colors_matching_widget_direct(
         )
 
 
-def test_axes_labels(make_napari_viewer):
+def test_axis_labels(make_napari_viewer):
     viewer = make_napari_viewer(ndisplay=3)
     layer = viewer.add_image(np.zeros((2, 2, 2)), scale=(1, 2, 4))
 

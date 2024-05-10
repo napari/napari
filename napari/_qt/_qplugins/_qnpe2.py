@@ -25,8 +25,8 @@ from qtpy.QtWidgets import QWidget
 
 from napari._app_model import get_app
 from napari._app_model.constants import MenuGroup, MenuId
-from napari._app_model.injection._providers import _provide_viewer_or_raise
 from napari._qt._qapp_model.injection._qproviders import (
+    _provide_viewer_or_raise,
     _provide_window,
     _provide_window_or_raise,
 )
@@ -71,7 +71,6 @@ def _rebuild_npe1_samples_menu() -> None:  # pragma: no cover
             submenu_id = MenuId.FILE_SAMPLES
 
         for sample_name, sample_dict in samples.items():
-
             _add_sample_partial = partial(
                 _add_sample,
                 plugin=plugin_name,

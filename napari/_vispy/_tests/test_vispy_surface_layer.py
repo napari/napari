@@ -7,7 +7,7 @@ from napari.components.dims import Dims
 from napari.layers import Surface
 
 
-@pytest.fixture
+@pytest.fixture()
 def cube_layer():
     vertices, faces, _ = create_cube()
     return Surface((vertices['position'] * 100, faces))
@@ -32,12 +32,12 @@ def test_shading(cube_layer):
 
 @pytest.mark.parametrize(
     'texture_shape',
-    (
+    [
         (32, 32),
         (32, 32, 1),
         (32, 32, 3),
         (32, 32, 4),
-    ),
+    ],
     ids=('2D', '1Ch', 'RGB', 'RGBA'),
 )
 def test_add_texture(cube_layer, texture_shape):

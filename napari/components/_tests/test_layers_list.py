@@ -549,14 +549,14 @@ def test_readd_layers():
 
     assert layers == imgs
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='already present'):
         layers.append(imgs[1])
     assert layers == imgs
 
     layers[1] = layers[1]
     assert layers == imgs
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='already present'):
         layers[1] = layers[2]
     assert layers == imgs
 
@@ -567,6 +567,6 @@ def test_readd_layers():
     layers[:3] = layers[2::-1]
     assert set(layers) == set(imgs)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='already present'):
         layers[:3] = layers[:]
     assert set(layers) == set(imgs)
