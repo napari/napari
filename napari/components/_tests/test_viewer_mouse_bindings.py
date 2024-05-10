@@ -15,7 +15,7 @@ class WheelEvent:
 
 
 @pytest.mark.parametrize(
-    'modifiers, native, expected_dim',
+    ('modifiers', 'native', 'expected_dim'),
     [
         ([], WheelEvent(True), [[5, 5, 5], [5, 5, 5], [5, 5, 5], [5, 5, 5]]),
         (

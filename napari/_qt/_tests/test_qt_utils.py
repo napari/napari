@@ -46,23 +46,19 @@ def test_is_qbyte_valid():
 
 
 def test_str_to_qbytearray_valid():
-    with pytest.raises(ValueError):
-        str_to_qbytearray('')
-
-    with pytest.raises(ValueError):
-        str_to_qbytearray('FOOBAR')
-
-    with pytest.raises(ValueError):
-        str_to_qbytearray(
-            '_AAAA/wAAAAD9AAAAAgAAAAAAAAECAAACePwCAAAAAvsAAAAcAGwAYQB5AGUAcgAgAGMAbwBuAHQAcgBvAGwAcwEAAAAAAAABFwAAARcAAAEX+wAAABQAbABhAHkAZQByACAAbABpAHMAdAEAAAEXAAABYQAAALcA////AAAAAwAAAAAAAAAA/AEAAAAB+wAAAA4AYwBvAG4AcwBvAGwAZQAAAAAA/////wAAADIA////AAADPAAAAngAAAAEAAAABAAAAAgAAAAI/AAAAAA='
-        )
+    str_to_qbytearray(
+        '!QBYTE_AAAA/wAAAAD9AAAAAgAAAAAAAAECAAACePwCAAAAAvsAAAAcAGwAYQB5AGUAcgAgAGMAbwBuAHQAcgBvAGwAcwEAAAAAAAABFwAAARcAAAEX+wAAABQAbABhAHkAZQByACAAbABpAHMAdAEAAAEXAAABYQAAALcA////AAAAAwAAAAAAAAAA/AEAAAAB+wAAAA4AYwBvAG4AcwBvAGwAZQAAAAAA/////wAAADIA////AAADPAAAAngAAAAEAAAABAAAAAgAAAAI/AAAAAA='
+    )
 
 
 def test_str_to_qbytearray_invalid():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Invalid QByte string.'):
         str_to_qbytearray('')
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Invalid QByte string.'):
+        str_to_qbytearray('FOOBAR')
+
+    with pytest.raises(ValueError, match='Invalid QByte string.'):
         str_to_qbytearray(
             '_AAAA/wAAAAD9AAAAAgAAAAAAAAECAAACePwCAAAAAvsAAAAcAGwAYQB5AGUAcgAgAGMAbwBuAHQAcgBvAGwAcwEAAAAAAAABFwAAARcAAAEX+wAAABQAbABhAHkAZQByACAAbABpAHMAdAEAAAEXAAABYQAAALcA////AAAAAwAAAAAAAAAA/AEAAAAB+wAAAA4AYwBvAG4AcwBvAGwAZQAAAAAA/////wAAADIA////AAADPAAAAngAAAAEAAAABAAAAAgAAAAI/AAAAAA='
         )

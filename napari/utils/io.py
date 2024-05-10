@@ -77,10 +77,13 @@ def imsave_tiff(filename, data):
     """
     import tifffile
 
-    # 'compression' kwarg since 2021.6.6; we depend on more recent versions
-    # now. See:
-    # https://forum.image.sc/t/problem-saving-generated-labels-in-cellpose-napari/54892/8
-    tifffile.imwrite(filename, data, compression=('zlib', 1))
+    if data.dtype == bool:
+        tifffile.imwrite(filename, data)
+    else:
+        # 'compression' kwarg since 2021.6.6; we depend on more recent versions
+        # now. See:
+        # https://forum.image.sc/t/problem-saving-generated-labels-in-cellpose-napari/54892/8
+        tifffile.imwrite(filename, data, compression=('zlib', 1))
 
 
 def __getattr__(name: str):

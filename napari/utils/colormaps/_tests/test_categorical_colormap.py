@@ -96,7 +96,7 @@ default_fallback_color = np.array([[1, 1, 1, 1]])
 
 
 @pytest.mark.parametrize(
-    'params,expected',
+    ('params', 'expected'),
     [
         ({'colormap': color_mapping}, (color_mapping, default_fallback_color)),
         (
