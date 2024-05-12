@@ -1509,7 +1509,7 @@ class Window:
         scale=None,
         flash=True,
         canvas_only=False,
-        margins: bool = True,
+        fit_to_data: bool = False,
     ) -> 'QImage':
         """Capture screenshot of the currently displayed viewer.
 
@@ -1529,9 +1529,10 @@ class Window:
             If True, screenshot shows only the image display canvas, and
             if False include the napari viewer frame in the screenshot,
             By default, True.
-        margins: bool
+        fit_to_data: bool
             Whether to fit a bounding box around the data to prevent margins of showing in the screenshot.
-            Currently, if this is False it means a screenshot of the whole data will be generated.
+            Currently, if this is False it means a screenshot of the current canvas will be generated with
+            black margins if visible.
 
         Returns
         -------
@@ -1541,7 +1542,7 @@ class Window:
 
         canvas = self._qt_viewer.canvas
         prev_size = canvas.size
-        if not margins:
+        if fit_to_data:
             ndisplay = self._qt_viewer.viewer.dims.ndisplay
             camera = self._qt_viewer.viewer.camera
             old_center = camera.center
@@ -1584,9 +1585,9 @@ class Window:
                     add_flash_animation(self._qt_viewer._welcome_widget)
             finally:
                 # make sure we always go back to the right canvas size
-                if size is not None or scale is not None or not margins:
+                if size is not None or scale is not None or fit_to_data:
                     canvas.size = prev_size
-                if not margins:
+                if fit_to_data:
                     camera.center = old_center
                     camera.zoom = old_zoom
         else:
@@ -1602,7 +1603,7 @@ class Window:
         scale=None,
         flash=True,
         canvas_only=False,
-        margins: bool = True,
+        fit_to_data: bool = False,
     ):
         """Take currently displayed viewer and convert to an image array.
 
@@ -1624,8 +1625,9 @@ class Window:
             If True, screenshot shows only the image display canvas, and
             if False includes the napari viewer frame in the screenshot,
             By default, True.
-        no_margins : bool
-            Whether to fit a bounding box around the data to prevent margins of showing in the screenshot.
+        fit_to_data : bool
+            Whether to fit a bounding box around the data to prevent margins of showing in the screenshot. This fits a
+            bounding box around all data currently being displayed in the viewer (resets the view).
 
         Returns
         -------
@@ -1635,7 +1637,7 @@ class Window:
         """
 
         img = QImg2array(
-            self._screenshot(size, scale, flash, canvas_only, margins)
+            self._screenshot(size, scale, flash, canvas_only, fit_to_data)
         )
         if path is not None:
             imsave(path, img)

@@ -259,20 +259,21 @@ def test_screenshot(make_napari_viewer):
     assert screenshot.ndim == 3
 
 
-def test_screenshot_without_margin(make_napari_viewer):
+def test_screenshot_fit_to_data(make_napari_viewer):
     viewer = make_napari_viewer()
 
     np.random.seed(0)
     # Add image
-    data = np.ones((10, 15))
+    data = np.random.randint(150, 250, size=(250, 250))
     viewer.add_image(data)
-    img = viewer.screenshot(flash=False, margins=False)
-    assert img.shape == (10, 15, 4)
-    assert np.all(img == 255)
+    img = viewer.screenshot(flash=False, fit_to_data=True)
+    assert img.shape == (250, 250, 4)
+    assert np.all(img != np.array([0, 0, 0, 1]))
 
-    img = viewer.screenshot(margins=False, scale=8)
-    assert img.shape == (80, 120, 4)
-    assert np.all(img == 255)
+    # TODO: check why this fails in the testing suite but not when testing with scratch script with same example.
+    img = viewer.screenshot(fit_to_data=True, scale=8)
+    assert img.shape == (250 * 8, 250 * 8, 4)
+    assert np.all(img != np.array([0, 0, 0, 1]))
 
 
 @pytest.mark.skip('new approach')
