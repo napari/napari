@@ -438,12 +438,17 @@ def add_path_polygon(layer: Shapes, event: MouseEvent) -> None:
     coordinates = layer.world_to_data(event.position)
     if layer._is_creating is False:
         # Start drawing a path
+        # Set last cursor position to initial position of the mouse when starting to draw the shape
+        layer._last_cursor_position = np.array(event.pos)
         initiate_polygon_draw(layer, coordinates)
     else:
         # Add to an existing path or polygon
         index = layer._moving_value[0]
         new_type = Polygon if layer._mode == Mode.ADD_POLYGON else None
-        add_vertex_to_path(layer, event, index, coordinates, new_type)
+        position_diff = np.linalg.norm(event.pos - layer._last_cursor_position)
+        if position_diff:
+            # Ensure the new position is actually a new position
+            add_vertex_to_path(layer, event, index, coordinates, new_type)
 
 
 def move_active_vertex_under_cursor(

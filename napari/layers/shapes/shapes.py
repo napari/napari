@@ -2595,12 +2595,14 @@ class Shapes(Layer):
                 vertices = self._data_view.shapes[index].data
                 if len(vertices) <= 2:
                     self._data_view.remove(index)
+                    self.selected_data.clear()
                 else:
                     self._data_view.edit(index, vertices[:-1])
             if self._mode in {Mode.ADD_POLYGON, Mode.ADD_POLYGON_LASSO}:
                 vertices = self._data_view.shapes[index].data
                 if len(vertices) <= 3:
                     self._data_view.remove(index)
+                    self.selected_data.clear()
                 elif self._mode == Mode.ADD_POLYGON:
                     self._data_view.edit(index, vertices[:-1])
                 else:
