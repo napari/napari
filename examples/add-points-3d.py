@@ -19,9 +19,9 @@ blobs = data.binary_blobs(
 labeled = ndi.label(blobs)[0]
 
 viewer = napari.Viewer(ndisplay=3)
-viewer.add_image(blobs, name='blobs', scale=(2, 1, 1))
-viewer.add_labels(labeled, name='blob ID', scale=(2, 1, 1))
-pts = viewer.add_points()
+# viewer.add_image(blobs, name='blobs', scale=(2, 1, 1))
+viewer.add_labels(labeled[:6], name='blob ID', scale=(2, 1, 1))
+pts = viewer.add_points(ndim=3)
 
 viewer.camera.angles = (0, -65, 85)
 pts.mode = 'add'

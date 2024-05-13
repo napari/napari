@@ -7,6 +7,7 @@ import numpy.typing as npt
 from napari.layers.base._slice import _next_request_id
 from napari.layers.points._points_constants import PointsProjectionMode
 from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
+from napari.types import ArrayLike
 
 
 @dataclass(frozen=True)
@@ -26,7 +27,7 @@ class _PointSliceResponse:
         The identifier of the request from which this was generated.
     """
 
-    indices: np.ndarray = field(repr=False)
+    indices: ArrayLike = field(repr=False)
     scale: Any = field(repr=False)
     slice_input: _SliceInput
     request_id: int
