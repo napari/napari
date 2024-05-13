@@ -47,5 +47,5 @@ root.selection.events._current.connect(
     lambda e: print(f'current item changed to: {e.value}')
 )
 
-
-napari.run()
+if __name__ == '__main__':
+    napari.run()

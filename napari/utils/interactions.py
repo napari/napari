@@ -2,7 +2,6 @@ import contextlib
 import inspect
 import sys
 import warnings
-from typing import List
 
 from numpydoc.docscrape import FunctionDoc
 
@@ -247,7 +246,7 @@ elif sys.platform.startswith('linux'):
     KEY_SYMBOLS.update({'Meta': 'Super'})
 
 
-def _kb2mods(key_bind: KeyBinding) -> List[str]:
+def _kb2mods(key_bind: KeyBinding) -> list[str]:
     """Extract list of modifiers from a key binding.
 
     Parameters
@@ -396,7 +395,7 @@ def get_key_bindings_summary(keymap, col='rgb(134, 142, 147)'):
             "<tr><td width='80' style='text-align: right; padding: 4px;'>"
             f"<span style='color: rgb(66, 72, 80)'>{keycodes}</span></td>"
             "<td style='text-align: left; padding: 4px; color: #CCC;'>"
-            f"{keymap[key]}</td></tr>"
+            f'{keymap[key]}</td></tr>'
         )
     key_bindings_strs.append('</table>')
     return ''.join(key_bindings_strs)

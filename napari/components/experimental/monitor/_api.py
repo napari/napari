@@ -1,11 +1,10 @@
-"""MonitorApi class.
-"""
+"""MonitorApi class."""
 
 import logging
 from multiprocessing.managers import SharedMemoryManager
 from queue import Empty, Queue
 from threading import Event
-from typing import ClassVar, Dict, NamedTuple
+from typing import ClassVar, NamedTuple
 
 from napari.utils.events import EmitterGroup
 
@@ -82,11 +81,11 @@ class MonitorApi:
     # BaseManager.register() is a bit weird. Not sure now to best deal with
     # it. Most ways I tried led to pickling errors, because this class is being run
     # in the shared memory server process? Feel free to find a better approach.
-    _napari_data_dict: ClassVar[Dict] = {}
+    _napari_data_dict: ClassVar[dict] = {}
     _napari_messages_queue: ClassVar[Queue] = Queue()
     _napari_shutdown_event: ClassVar[Event] = Event()
 
-    _client_data_dict: ClassVar[Dict] = {}
+    _client_data_dict: ClassVar[dict] = {}
     _client_messages_queue: ClassVar[Queue] = Queue()
 
     @staticmethod

@@ -3,10 +3,10 @@ from __future__ import annotations
 import contextlib
 import logging
 import os
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple, cast
+from typing import TYPE_CHECKING, Optional, cast
 from warnings import warn
 
 from napari._pydantic_compat import (
@@ -24,7 +24,8 @@ from napari.utils.translations import trans
 _logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from typing import AbstractSet, Any, Union
+    from collections.abc import Set as AbstractSet
+    from typing import Any, Union
 
     from napari._pydantic_compat import (
         EnvSettingsSource,
@@ -34,8 +35,10 @@ if TYPE_CHECKING:
 
     IntStr = Union[int, str]
     AbstractSetIntStr = AbstractSet[IntStr]
-    DictStrAny = Dict[str, Any]
+    DictStrAny = dict[str, Any]
     MappingIntStrAny = Mapping[IntStr, Any]
+
+Dict = dict  # rename, because EventedSettings has method dict
 
 
 class EventedSettings(BaseSettings, EventedModel):
@@ -46,6 +49,10 @@ class EventedSettings(BaseSettings, EventedModel):
     """
 
     # provide config_path=None to prevent reading from disk.
+
+    class Config(EventedModel.Config):
+        pass
+
     def __init__(self, **values: Any) -> None:
         super().__init__(**values)
         self.events.add(changed=None)
@@ -127,7 +134,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         include: Union[AbstractSetIntStr, MappingIntStrAny] = None,  # type: ignore
         exclude: Union[AbstractSetIntStr, MappingIntStrAny] = None,  # type: ignore
         by_alias: bool = False,
-        exclude_unset: bool = False,
+        exclude_unset: bool = False,  # type: ignore [override]  # deprecated parameter
         exclude_defaults: bool = False,
         exclude_none: bool = False,
         exclude_env: bool = False,
@@ -232,7 +239,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
             init_settings: SettingsSourceCallable,
             env_settings: EnvSettingsSource,
             file_secret_settings: SettingsSourceCallable,
-        ) -> Tuple[SettingsSourceCallable, ...]:
+        ) -> tuple[SettingsSourceCallable, ...]:
             """customise the way data is loaded.
 
             This does 2 things:
@@ -246,17 +253,19 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
             the return list to change the priority of sources.
             """
             cls._env_settings = nested_env_settings(env_settings)
-            return (
+            return (  # type: ignore[return-value]
                 init_settings,
                 cls._env_settings,
                 cls._config_file_settings_source,
                 file_secret_settings,
             )
+            # Even when EventedConfigFileSettings is a subclass of BaseSettings,
+            # mypy do not see this
 
         @classmethod
         def _config_file_settings_source(
             cls, settings: EventedConfigFileSettings
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             return config_file_settings_source(settings)
 
 
@@ -282,7 +291,7 @@ def nested_env_settings(
     nesting as well.
     """
 
-    def _inner(settings: BaseSettings) -> Dict[str, Any]:
+    def _inner(settings: BaseSettings) -> dict[str, Any]:
         # first call the original implementation
         d = super_eset(settings)
 
@@ -343,7 +352,7 @@ def nested_env_settings(
 
 def config_file_settings_source(
     settings: EventedConfigFileSettings,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Read config files during init of an EventedConfigFileSettings obj.
 
     The two important values are the `settings._config_path`
@@ -369,7 +378,7 @@ def config_file_settings_source(
     default_cfg = getattr(default_cfg, 'default', None)
 
     # if the config has a `sources` list, read those too and merge.
-    sources: List[str] = list(getattr(settings.__config__, 'sources', []))
+    sources: list[str] = list(getattr(settings.__config__, 'sources', []))
     if config_path:
         sources.append(config_path)
     if not sources:
@@ -458,7 +467,7 @@ def config_file_settings_source(
     return data
 
 
-def _remove_bad_keys(data: dict, keys: List[Tuple[Union[int, str], ...]]):
+def _remove_bad_keys(data: dict, keys: list[tuple[Union[int, str], ...]]):
     """Remove list of keys (as string tuples) from dict (in place).
 
     Parameters

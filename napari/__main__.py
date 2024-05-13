@@ -13,7 +13,7 @@ from ast import literal_eval
 from itertools import chain, repeat
 from pathlib import Path
 from textwrap import wrap
-from typing import Any, Dict, List
+from typing import Any
 
 from napari.utils.translations import trans
 
@@ -56,7 +56,7 @@ class CitationAction(argparse.Action):
         sys.exit()
 
 
-def validate_unknown_args(unknown: List[str]) -> Dict[str, Any]:
+def validate_unknown_args(unknown: list[str]) -> dict[str, Any]:
     """Convert a list of strings into a dict of valid kwargs for add_* methods.
 
     Will exit program if any of the arguments are unrecognized, or are
@@ -76,7 +76,7 @@ def validate_unknown_args(unknown: List[str]) -> Dict[str, Any]:
 
     from napari.components.viewer_model import valid_add_kwargs
 
-    out: Dict[str, Any] = {}
+    out: dict[str, Any] = {}
     valid = set.union(*valid_add_kwargs().values())
     for i, raw_arg in enumerate(unknown):
         if not raw_arg.startswith('--'):
@@ -240,7 +240,7 @@ def _run() -> None:
         if not args.paths:
             sys.exit(
                 "error: The '--plugin' argument is only valid "
-                "when providing a file name"
+                'when providing a file name'
             )
         # I *think* that Qt is looking in sys.argv for a flag `--plugins`,
         # which emits "WARNING: No such plugin for spec 'builtins'"
