@@ -107,4 +107,10 @@ Q_HELP_ACTIONS: list[Action] = [
         callback=partial(open, url=HELP_URLS['homepage']),
         menus=[{'id': MenuId.MENUBAR_HELP, 'group': MenuGroup.NAVIGATION}],
     ),
+    Action(
+        id='napari.window.help.log',
+        title=trans._('Show log'),
+        callback=Window._open_log_dialog,
+        menus=[{'id': MenuId.MENUBAR_HELP, 'group': MenuGroup.RENDER}],
+    ),
 ]
