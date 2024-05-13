@@ -23,7 +23,7 @@ jobs:
     permissions:
       contents: read
       issues: write
-    if: github.repository == 'napari/napari'
+    if: github.repository == 'GenevieveBuckley/napari'
     strategy:
       fail-fast: false
       matrix:
