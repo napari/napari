@@ -69,7 +69,7 @@ def sync_cursor(parent: napari.Viewer, child: napari.Viewer):
 
     cursor_overlay = CursorOverlay(visible=True)  # create a new "cursor" overlay
     child._overlays['t_cursor'] = cursor_overlay  # add to the child
-    child.window._qt_viewer._add_overlay(cursor_overlay)  # trigger overlay generation
+    child.window._qt_viewer.canvas._add_overlay_to_visual(cursor_overlay)  # trigger overlay generation
 
     @parent.cursor.events.position.connect
     def sync_cursor_parent_callback(e: Event):
@@ -77,7 +77,7 @@ def sync_cursor(parent: napari.Viewer, child: napari.Viewer):
             warnings.simplefilter('ignore')
 
             t_cursor: CursorOverlay = child._overlays['t_cursor']
-            cursor: VispyCursorOverlay = child.window._qt_viewer.overlay_to_visual[t_cursor]
+            cursor: VispyCursorOverlay = child.window._qt_viewer.canvas._overlay_to_visual[t_cursor]
 
             # Get position of real cursor relative to the parent's canvas
             parent_global_pos = parent.window._qt_viewer.cursor().pos()
