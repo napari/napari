@@ -94,15 +94,13 @@ def sync_cursor(parent: napari.Viewer, child: napari.Viewer):
 #
 #   Run it
 #
+parent = napari.Viewer(title='Parent')
+child = napari.Viewer(title='Child')
+
+parent_layer = parent.add_labels(np.random.randint(0, 10, (500, 300)))
+child_layer = child.add_labels(np.random.randint(10, 20, (500, 300)))
+
+sync_cursor(parent, child)
 
 if __name__ == '__main__':
-
-    parent = napari.Viewer(title='Parent')
-    child = napari.Viewer(title='Child')
-
-    parent_layer = parent.add_labels(np.random.randint(0, 10, (500, 300)))
-    child_layer = child.add_labels(np.random.randint(10, 20, (500, 300)))
-
-    sync_cursor(parent, child)
-
     napari.run()
