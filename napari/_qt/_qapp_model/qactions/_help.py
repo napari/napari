@@ -45,6 +45,12 @@ Q_HELP_ACTIONS: list[Action] = [
         ],
         status_tip=trans._('About napari'),
     ),
+    Action(
+        id='napari.window.help.log',
+        title=trans._('Show log'),
+        callback=Window._open_log_dialog,
+        menus=[{'id': MenuId.MENUBAR_HELP, 'group': MenuGroup.RENDER}],
+    ),
 ]
 
 if ask_opt_in is not None:
