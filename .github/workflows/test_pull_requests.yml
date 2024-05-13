@@ -94,10 +94,6 @@ jobs:
             backend: pyqt6
             pydantic: ""
             coverage: no_cov
-          - python: "3.10"
-            platform: macos-latest
-            backend: pyqt5
-            coverage: cov
     with:
       python_version: ${{ matrix.python }}
       platform: ${{ matrix.platform }}
