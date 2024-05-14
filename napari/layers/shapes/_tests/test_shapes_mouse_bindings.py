@@ -269,13 +269,20 @@ def test_add_complex_shape(shape_type, create_known_shapes_layer):
     assert layer.selected_data == {n_shapes}
 
 
-def test_add_invalid_polygon_shape(create_known_shapes_layer):
+@pytest.mark.parametrize(
+    'shape_type_vertices',
+    [
+        ('path', [[20, 30], [20, 30]]),
+        ('polygon', [[20, 30], [10, 50], [10, 50]]),
+    ],
+)
+def test_add_invalid_shape(shape_type_vertices, create_known_shapes_layer):
     """Check invalid shape clicking behavior in add polygon mode."""
     layer, n_shapes, known_non_shape = create_known_shapes_layer
 
     # Add shape at location where non exists
-    shape_vertices = [[20, 30], [10, 50], [10, 50]]
-    layer.mode = 'add_polygon'
+    shape_type, shape_vertices = shape_type_vertices
+    layer.mode = f'add_{shape_type}'
 
     for coord in shape_vertices:
         # Simulate move, click, and release
