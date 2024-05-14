@@ -5,7 +5,7 @@ Cursor sync via custom overlay
 Create 2 seperate viewers and mirror the position of the cursor between the
 parent and the child via a vispy overlay.
 
-Read up on the view model here: https://napari.org/stable/guides/napari_models.html
+Read up on the view model here: :ref:`napari-model-event`
 
 .. tags:: visualization-basic, gui
 """
@@ -21,13 +21,11 @@ from napari._vispy.utils.visual import overlay_to_visual
 from napari.components.overlays import CanvasOverlay
 from napari.utils.events import Event
 
-#
-#   Create a cursor overlay
-#
-
-#   NOTE:
-#   Read up on the view model to understand the reasons for this:
-#   https://napari.org/stable/guides/napari_models.html
+###############################################################################
+# Create a cursor overlay
+# -----------------------
+# Read up on the view model to understand the reasons for this:
+# :ref:`napari-model-event`
 
 
 class CursorOverlay(CanvasOverlay):
@@ -53,16 +51,19 @@ class VispyCursorOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         super().reset()
 
 
-#
-#   Register the new "cursor" in the global `overlay_to_visual`
-#
+###############################################################################
+# Register the new "cursor" overlay
+# ---------------------------------
+# The final step is to register the new overlay in the global `overlay_to_visual`
 
 overlay_to_visual[CursorOverlay] = VispyCursorOverlay  # type: ignore
 
 
-#
-#   Wire it up
-#
+###############################################################################
+# Wire it up
+# ----------
+# Here we write a function that will utilize everything that was set up above.
+# This way we can call it to sync the cursor between a pair of viewers.
 
 def sync_cursor(parent: napari.Viewer, child: napari.Viewer):
     """Syncs a 'cursor' onto the child, relative to the parent's canvas"""
@@ -91,9 +92,12 @@ def sync_cursor(parent: napari.Viewer, child: napari.Viewer):
             cursor.node.transform.translate = transform
 
 
-#
-#   Run it
-#
+###############################################################################
+# Run it
+# ------
+# Create the two viewers, Parent and Child, and add a layer to each. Then,
+# call `sync_cursor` to have the red dot follow the cursor in the Parent viewer.
+
 parent = napari.Viewer(title='Parent')
 child = napari.Viewer(title='Child')
 
