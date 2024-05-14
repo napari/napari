@@ -2,6 +2,7 @@ import napari.utils.notifications
 from napari._qt.qt_event_loop import gui_qt, run
 from napari.plugins.io import save_layers
 from napari.view_layers import (
+    view_graph,
     view_image,
     view_labels,
     view_path,
@@ -20,6 +21,7 @@ notification_manager: napari.utils.notifications.NotificationManager
 __all__ = (
     'Viewer',
     'current_viewer',
+    'view_graph',
     'view_image',
     'view_labels',
     'view_path',

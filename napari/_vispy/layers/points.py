@@ -1,4 +1,5 @@
 import numpy as np
+from vispy import gloo
 
 from napari._vispy.layers.base import VispyBaseLayer
 from napari._vispy.utils.gl import BLENDING_MODES
@@ -10,10 +11,11 @@ from napari.utils.events import disconnect_events
 
 
 class VispyPointsLayer(VispyBaseLayer):
-    node: PointsVisual
+    _visual = PointsVisual
+    node: PointVisual
 
     def __init__(self, layer) -> None:
-        node = PointsVisual()
+        node = self._visual()
         super().__init__(layer, node)
 
         self.layer.events.symbol.connect(self._on_data_change)
@@ -132,6 +134,9 @@ class VispyPointsLayer(VispyBaseLayer):
             pos = np.zeros((1, self.layer._slice_input.ndisplay))
         else:
             pos = self.layer._highlight_box
+
+        # FIXME: vispy bug? LineVisual error when going from 2d to 3d (or the opposite)
+        self.node.highlight_lines._line_visual._pos_vbo = gloo.VertexBuffer()
 
         self.node.highlight_lines.set_data(
             pos=pos[:, ::-1],

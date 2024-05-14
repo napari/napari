@@ -5,13 +5,16 @@ from contextlib import suppress
 from threading import RLock
 from typing import Any, Union
 
+import networkx as nx
 import numpy as np
 import pandas as pd
 import pytest
+from napari_graph import to_napari_graph
 from numpy.typing import DTypeLike
 
 from napari import Viewer
 from napari.layers import (
+    Graph,
     Image,
     Labels,
     Points,
@@ -97,7 +100,27 @@ layer_test_data = [
         ),
         4,
     ),
+    (
+        Graph,
+        to_napari_graph(20 * np.random.random((10, 2))),
+        2,
+    ),  # only nodes, no edges
+    (
+        Graph,
+        to_napari_graph(20 * np.random.random((10, 3))),
+        3,
+    ),  # only nodes, no edges
+    (
+        Graph,
+        to_napari_graph(
+            nx.convert_node_labels_to_integers(
+                nx.hexagonal_lattice_graph(5, 5, with_positions=True)
+            ),
+        ),
+        2,
+    ),
 ]
+
 
 with suppress(ModuleNotFoundError):
     import tensorstore as ts
@@ -106,7 +129,7 @@ with suppress(ModuleNotFoundError):
     p = [ts.array(np.random.random(s)) for s in [(40, 20), (20, 10), (10, 5)]]
     layer_test_data.extend([(Image, m, 2), (Image, p, 2)])
 
-classes = [Labels, Points, Vectors, Shapes, Surface, Tracks, Image]
+classes = [Graph, Labels, Points, Vectors, Shapes, Surface, Tracks, Image]
 names = [cls.__name__.lower() for cls in classes]
 layer2addmethod = {
     cls: getattr(Viewer, 'add_' + name) for cls, name in zip(classes, names)
@@ -129,6 +152,11 @@ good_layer_data = [
         ),
         {'name': 'some surface'},
         'surface',
+    ),
+    (
+        to_napari_graph(np.random.random((10, 2))),
+        {'border_color': 'blue'},
+        'graph',
     ),
 ]
 

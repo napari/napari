@@ -479,6 +479,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         #       until we figure out nested evented objects
         self._overlays.events.connect(self.events._overlays)
 
+        self._refresh_blocked = False
+
     def _post_init(self):
         """Post init hook for subclasses to use."""
 

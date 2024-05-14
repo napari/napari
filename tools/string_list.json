@@ -1826,6 +1826,13 @@
     "napari/layers/points/_points_utils.py": [],
     "napari/layers/points/points.py": [
       "_{attribute}",
+      "border",
+      "border_color",
+      "border_color_cycle",
+      "border_colormap",
+      "border_contrast_limits",
+      "border_width",
+      "border_width_is_relative",
       "current_value",
       "data",
       "border",
