@@ -437,9 +437,9 @@ def add_path_polygon(layer: Shapes, event: MouseEvent) -> None:
     # on press
     coordinates = layer.world_to_data(event.position)
     if layer._is_creating is False:
-        # Start drawing a path
         # Set last cursor position to initial position of the mouse when starting to draw the shape
         layer._last_cursor_position = np.array(event.pos)
+        # Start drawing a path
         initiate_polygon_draw(layer, coordinates)
     else:
         # Add to an existing path or polygon
