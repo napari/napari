@@ -23,7 +23,7 @@ jobs:
     permissions:
       contents: read
       issues: write
-    if: github.repository == 'napari/napari'
+    if: ${{ github.repository == 'napari/napari' || github.event_name == 'workflow_dispatch' }}
     strategy:
       fail-fast: false
       matrix:

@@ -26,6 +26,16 @@ SUBMENUS = [
         ),
     ),
     (
+        MenuId.LAYERLIST_CONTEXT,
+        SubmenuItem(
+            submenu=MenuId.LAYERS_COPY_SPATIAL,
+            title=trans._('Copy scale and transforms'),
+            group=MenuGroup.LAYERLIST_CONTEXT.COPY_SPATIAL,
+            order=None,
+            enablement=(LLSCK.num_selected_layers == 1),
+        ),
+    ),
+    (
         MenuId.MENUBAR_FILE,
         SubmenuItem(
             submenu=MenuId.FILE_OPEN_WITH_PLUGIN,

@@ -91,7 +91,7 @@ class Plane(EventedModel):
         a = np.array(a)
         b = np.array(b)
         c = np.array(c)
-        abc = np.row_stack((a, b, c))
+        abc = np.vstack((a, b, c))
         ab = b - a
         ac = c - a
 
