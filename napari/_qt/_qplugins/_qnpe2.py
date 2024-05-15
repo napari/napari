@@ -32,7 +32,7 @@ from napari._qt._qapp_model.injection._qproviders import (
 )
 from napari.errors.reader_errors import MultipleReaderError
 from napari.plugins import menu_item_template, plugin_manager
-from napari.plugins._npe2 import get_widget_contribution
+from napari.plugins._npe2 import _when_group_order, get_widget_contribution
 from napari.utils.events import Event
 from napari.utils.translations import trans
 from napari.viewer import Viewer
@@ -368,8 +368,15 @@ def _build_widgets_submenu_actions(
         return [], []
 
     widgets = mf.contributions.widgets
-    multiprovider = len(widgets) > 1
-    submenu_id, submenu = _get_contrib_parent_menu(
+    widgets_without_menu = [
+        widget
+        for widget in widgets
+        if not len(
+            pm.instance()._plugin_command_map[mf.name][widget.command]['menus']
+        )
+    ]
+    multiprovider = len(widgets_without_menu) > 1
+    default_submenu_id, default_submenu = _get_contrib_parent_menu(
         multiprovider,
         MenuId.MENUBAR_PLUGINS,
         mf,
@@ -394,6 +401,20 @@ def _build_widgets_submenu_actions(
             full_name=full_name,
         )
 
+        action_menus = [
+            dict({'id': menu_key}, **_when_group_order(menu_item))
+            for menu_key, menu_items in pm.instance()
+            ._plugin_command_map[mf.name][widget.command]['menus']
+            .items()
+            for menu_item in menu_items
+        ]
+        if not len(action_menus):
+            action_menus = [
+                {
+                    'id': default_submenu_id,
+                    'group': MenuGroup.PLUGIN_SINGLE_CONTRIBUTIONS,
+                }
+            ]
         title = widget.display_name if multiprovider else full_name
         # To display '&' instead of creating a shortcut
         title = title.replace('&', '&&')
@@ -403,18 +424,13 @@ def _build_widgets_submenu_actions(
                 id=f'{mf.name}:{widget.display_name}',
                 title=title,
                 callback=_widget_callback,
-                menus=[
-                    {
-                        'id': submenu_id,
-                        'group': MenuGroup.PLUGIN_SINGLE_CONTRIBUTIONS,
-                    }
-                ],
+                menus=action_menus,
                 toggled=ToggleRule(
                     get_current=_get_current_dock_status_partial
                 ),
             )
         )
-    return submenu, widget_actions
+    return default_submenu, widget_actions
 
 
 def _register_qt_actions(mf: PluginManifest) -> None:
