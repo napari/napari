@@ -32,6 +32,7 @@ SUBMENUS = [
             title=trans._('Copy scale and transforms'),
             group=MenuGroup.LAYERLIST_CONTEXT.COPY_SPATIAL,
             order=None,
+            enablement=(LLSCK.num_selected_layers == 1),
         ),
     ),
     (
