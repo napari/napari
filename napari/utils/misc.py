@@ -400,7 +400,7 @@ def abspath_or_url(relpath: T, *, must_exist: bool = False) -> T:
 class CallDefault(inspect.Parameter):
     warnings.warn(
         trans._(
-            '`CallDefault` is deprecated since 0.4.6 and will be removed in the future',
+            '`CallDefault` in napari v0.5.0 and will be removed in v0.6.0.',
         ),
         category=DeprecationWarning,
     )
