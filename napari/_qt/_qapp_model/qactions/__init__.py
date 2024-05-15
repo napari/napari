@@ -26,6 +26,7 @@ def init_qactions() -> None:
     - registering Qt-dependent actions with app-model (i.e. Q_*_ACTIONS actions).
     """
     from napari._app_model import get_app
+    from napari._qt._qapp_model.qactions._debug import Q_DEBUG_ACTIONS
     from napari._qt._qapp_model.qactions._file import Q_FILE_ACTIONS
     from napari._qt._qapp_model.qactions._help import Q_HELP_ACTIONS
     from napari._qt._qapp_model.qactions._layer import Q_LAYER_ACTIONS
@@ -52,6 +53,7 @@ def init_qactions() -> None:
     # register actions
     app.register_actions(
         chain(
+            Q_DEBUG_ACTIONS,
             Q_FILE_ACTIONS,
             Q_HELP_ACTIONS,
             Q_PLUGINS_ACTIONS,

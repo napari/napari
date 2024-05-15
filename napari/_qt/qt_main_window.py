@@ -847,6 +847,19 @@ class Window:
         plugin_manager.events.unregistered.connect(_rebuild_npe1_plugins_menu)
         _rebuild_npe1_plugins_menu()
 
+    def _handle_trace_file_on_start():
+        """Start trace of `trace_file_on_start` conig set."""
+        from napari._qt._qapp_model.qactions._debug import _start_trace
+
+        if perf.perf_config:
+            path = perf.perf_config.trace_file_on_start
+            if path is not None:
+                # Config option "trace_file_on_start" means immediately
+                # start tracing to that file. This is very useful if you
+                # want to create a trace every time you start napari,
+                # without having to start it from the debug menu.
+                _start_trace(path)
+
     def _add_menus(self):
         """Add menubar to napari app."""
         # TODO: move this to _QMainWindow... but then all of the Menu()
@@ -905,7 +918,12 @@ class Window:
         self.main_menu.addMenu(self.help_menu)
 
         if perf.USE_PERFMON:
-            self._debug_menu = menus.DebugMenu(self)
+            self._debug_menu = build_qmodel_menu(
+                MenuId.MENUBAR_DEBUG,
+                title=trans._('&Debug'),
+                parent=self._qt_window,
+            )
+            self._handle_trace_file_on_start()
             self.main_menu.addMenu(self._debug_menu)
 
     def _toggle_menubar_visible(self):
