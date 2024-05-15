@@ -3,9 +3,7 @@ Cursor sync via custom overlay
 ==============================
 
 Create 2 seperate viewers and mirror the position of the cursor between the
-parent and the child via a vispy overlay.
-
-Read up on the view model here: :ref:`napari-model-event`
+parent viewer and the child viewer using a vispy overlay.
 
 .. tags:: visualization-basic, gui
 """
@@ -24,8 +22,11 @@ from napari.utils.events import Event
 ###############################################################################
 # Create a cursor overlay
 # -----------------------
-# Read up on the view model to understand the reasons for this:
-# :ref:`napari-model-event`
+#
+# First, we make a ``CursorOverlay`` class and a corresponding
+# ``VispyCursorOverlay`` class. To understand why we need two separate classes,
+# it might be useful to read our documentation about napari models and events:
+# :ref:`napari-model-event`.
 
 
 class CursorOverlay(CanvasOverlay):
