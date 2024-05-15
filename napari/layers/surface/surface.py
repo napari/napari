@@ -299,7 +299,7 @@ class Surface(IntensityVisualizationMixin, Layer):
 
         # Data containing vectors in the currently viewed slice
         self._data_view = np.zeros((0, self._slice_input.ndisplay))
-        self._view_faces = np.zeros((0, 3))
+        self._view_faces = np.zeros((0, 3), dtype=int)
         self._view_vertex_values: Union[list[Any], np.ndarray] = []
         self._view_vertex_colors: Union[list[Any], np.ndarray] = []
 
@@ -658,7 +658,7 @@ class Surface(IntensityVisualizationMixin, Layer):
 
         if len(self._view_vertex_values) == 0:
             self._data_view = np.zeros((0, self._slice_input.ndisplay))
-            self._view_faces = np.zeros((0, 3))
+            self._view_faces = np.zeros((0, 3), dtype=int)
             return
 
         if values_ndim > 0:
@@ -682,14 +682,14 @@ class Surface(IntensityVisualizationMixin, Layer):
 
         self._data_view = self.vertices[:, disp]
         if len(self.vertices) == 0:
-            self._view_faces = np.zeros((0, 3))
+            self._view_faces = np.zeros((0, 3), dtype=int)
         elif vertex_ndim > self._slice_input.ndisplay:
             vertices = self.vertices[:, not_disp].astype('int')
             triangles = vertices[self.faces]
             matches = np.all(triangles == indices[not_disp], axis=(1, 2))
             matches = np.where(matches)[0]
             if len(matches) == 0:
-                self._view_faces = np.zeros((0, 3))
+                self._view_faces = np.zeros((0, 3), dtype=int)
             else:
                 self._view_faces = self.faces[matches]
         else:

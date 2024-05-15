@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 from vispy.geometry import create_cube
 
+from napari._tests.utils import skip_local_popups
 from napari._vispy.layers.surface import VispySurfaceLayer
 from napari.components.dims import Dims
 from napari.layers import Surface
@@ -110,3 +111,24 @@ def test_vertex_colors(cube_layer):
 
     cube_layer.vertex_colors = None
     assert visual.node.mesh_data.get_vertex_colors() is None
+
+
+@skip_local_popups
+def test_check_surface_without_visible_faces(make_napari_viewer):
+    points = np.array(
+        [
+            [0, 0.0, 0.0, 0.0],
+            [0, 1.0, 0, 0],
+            [0, 1, 1, 0],
+            [2, 0.0, 0.0, 0.0],
+            [2, 1.0, 0, 0],
+            [2, 1, 1, 0],
+        ]
+    )
+    faces = np.array([[0, 1, 2], [3, 4, 5]])
+    layer = Surface((points, faces))
+    viewer = make_napari_viewer(ndisplay=3)
+    viewer.show()
+    viewer.add_layer(layer)
+    # The following with throw an exception.
+    viewer.reset()
