@@ -196,6 +196,8 @@ def patch_callables(callables: list[str], patch_func: PatchFunction) -> None:
             # We don't stop on error because if you switch around branches
             # but keep the same config file, it's easy for your config
             # file to contain targets that aren't in the code.
+
+            # logging.exception magically logs the stack trace too!
             logging.exception('Something went wrong while patching')
 
         patched.add(target_str)
