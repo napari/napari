@@ -30,6 +30,7 @@ class MenuId(StrEnum):
     MENUBAR_HELP = 'napari/help'
 
     MENUBAR_DEBUG = 'napari/debug'
+    DEBUG_PERFORMANCE = 'napari/debug/performance_trace'
 
     LAYERLIST_CONTEXT = 'napari/layers/context'
     LAYERS_CONVERT_DTYPE = 'napari/layers/convert_dtype'

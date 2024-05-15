@@ -847,8 +847,8 @@ class Window:
         plugin_manager.events.unregistered.connect(_rebuild_npe1_plugins_menu)
         _rebuild_npe1_plugins_menu()
 
-    def _handle_trace_file_on_start():
-        """Start trace of `trace_file_on_start` conig set."""
+    def _handle_trace_file_on_start(self):
+        """Start trace of `trace_file_on_start` config set."""
         from napari._qt._qapp_model.qactions._debug import _start_trace
 
         if perf.perf_config:
