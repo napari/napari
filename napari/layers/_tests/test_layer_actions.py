@@ -200,21 +200,7 @@ def test_convert_dtype(mode):
     ('layer', 'type_'),
     [
         (Image(np.random.rand(10, 10)), 'labels'),
-        (
-            Image(
-                np.array(
-                    [
-                        [1.5, 2.5],
-                        [
-                            3.5,
-                            4.5,
-                        ],
-                    ],
-                    dtype=(float),
-                )
-            ),
-            'labels',
-        ),
+        (Image(np.array([[1.5, 2.5], [3.5, 4.5]])), 'labels'),
         (Image(np.array([[1, 2], [3, 4]], dtype=(int))), 'labels'),
         (
             Image(zarr.array([[1, 2], [3, 4]], dtype=(int), chunks=(1, 2))),
