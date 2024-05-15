@@ -41,7 +41,7 @@ def pytest_addoption(parser):
 COUNTER = 0
 
 
-def fail_obj_graph(Klass):
+def fail_obj_graph(Klass):  # pragma: no cover
     """
     Fail is a given class _instances weakset is non empty and print the object graph.
     """
@@ -55,6 +55,8 @@ def fail_obj_graph(Klass):
         global COUNTER
         COUNTER += 1
         import gc
+
+        leaked_objects_count = len(Klass._instances)
 
         gc.collect()
         file_path = Path(
@@ -72,7 +74,11 @@ def fail_obj_graph(Klass):
 
         # DO not remove len, this can break as C++ obj are gone, but python objects
         # still hang around and _repr_ would crash.
-        pytest.fail(len(Klass._instances))
+        pytest.fail(
+            f'Test run fail with leaked {leaked_objects_count} instances of {Klass}.'
+            f'The object graph is saved in {file_path}.'
+            f'{len(Klass._instances)} objects left after cleanup'
+        )
 
 
 @pytest.fixture()
