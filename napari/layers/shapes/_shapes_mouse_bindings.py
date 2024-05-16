@@ -445,9 +445,11 @@ def add_path_polygon(layer: Shapes, event: MouseEvent) -> None:
         # Add to an existing path or polygon
         index = layer._moving_value[0]
         new_type = Polygon if layer._mode == Mode.ADD_POLYGON else None
-        position_diff = np.linalg.norm(event.pos - layer._last_cursor_position)
-        if position_diff:
-            # Ensure the new position is actually a new position
+        # Ensure the position of the new vertex is different from the previous
+        # one before adding it. See napari/napari#6597
+        if not np.array_equal(
+            np.array(event.pos), layer._last_cursor_position
+        ):
             add_vertex_to_path(layer, event, index, coordinates, new_type)
 
 
