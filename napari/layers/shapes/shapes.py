@@ -2595,6 +2595,8 @@ class Shapes(Layer):
                 vertices = self._data_view.shapes[index].data
                 if len(vertices) <= 2:
                     self._data_view.remove(index)
+                    # Clear selected data to prevent issues.
+                    # See https://github.com/napari/napari/pull/6912#discussion_r1601169680
                     self.selected_data.clear()
                 else:
                     self._data_view.edit(index, vertices[:-1])
@@ -2602,6 +2604,8 @@ class Shapes(Layer):
                 vertices = self._data_view.shapes[index].data
                 if len(vertices) <= 3:
                     self._data_view.remove(index)
+                    # Clear selected data to prevent issues.
+                    # See https://github.com/napari/napari/pull/6912#discussion_r1601169680
                     self.selected_data.clear()
                 elif self._mode == Mode.ADD_POLYGON:
                     self._data_view.edit(index, vertices[:-1])
