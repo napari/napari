@@ -67,6 +67,7 @@ def _stop_trace() -> None:
 def _is_set_trace_active() -> bool:
     """Whether we are currently recording a set trace."""
     trace_file = getattr(perf.timers, 'trace_file', None)
+    print(f'XXXXX {trace_file}')
     return trace_file is not None
 
 
@@ -90,7 +91,7 @@ Q_DEBUG_ACTIONS: list[Action] = [
             {'id': MenuId.DEBUG_PERFORMANCE, 'group': MenuGroup.NAVIGATION}
         ],
         keybindings=[{'primary': KeyMod.Alt | KeyMod.Shift | KeyCode.KeyT}],
-        enablement=_is_set_trace_active(),
+        enablement=(_is_set_trace_active()),
         status_tip=trans._('Stop recording a trace file'),
     ),
 ]

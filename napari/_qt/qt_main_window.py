@@ -828,6 +828,9 @@ class Window:
     def _update_help_menu_state(self):
         self._update_menu_state('help_menu')
 
+    def _update_debug_menu_state(self):
+        self._update_menu_state('_debug_menu')
+
     # TODO: Remove once npe1 deprecated
     def _setup_npe1_samples_menu(self):
         """Register npe1 sample data, build menu and connect to events."""
@@ -924,6 +927,9 @@ class Window:
                 parent=self._qt_window,
             )
             self._handle_trace_file_on_start()
+            self._debug_menu.aboutToShow.connect(
+                self._update_debug_menu_state,
+            )
             self.main_menu.addMenu(self._debug_menu)
 
     def _toggle_menubar_visible(self):
