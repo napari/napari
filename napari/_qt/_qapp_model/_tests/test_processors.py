@@ -4,7 +4,9 @@ from unittest.mock import MagicMock
 import numpy as np
 import pytest
 
-from napari._app_model.injection._processors import _add_layer_data_to_viewer
+from napari._qt._qapp_model.injection._qprocessors import (
+    _add_layer_data_to_viewer,
+)
 from napari.types import ImageData, LabelsData
 
 

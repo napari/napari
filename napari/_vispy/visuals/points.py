@@ -21,8 +21,8 @@ class PointsVisual(ClippingPlanesMixin, Compound):
     def __init__(self) -> None:
         super().__init__(
             [
-                Markers(scaling='visual'),
-                Markers(scaling='visual'),
+                Markers(),
+                Markers(),
                 Line(),
                 Text(),
             ]
@@ -87,3 +87,4 @@ class PointsVisual(ClippingPlanesMixin, Compound):
     @canvas_size_limits.setter
     def canvas_size_limits(self, value: tuple[int, int]) -> None:
         self.points_markers.canvas_size_limits = value
+        self.selection_markers.canvas_size_limits = value
