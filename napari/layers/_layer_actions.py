@@ -53,16 +53,19 @@ def _convert(ll: LayerList, type_: str) -> None:
 
     for lay in list(ll.selection):
         idx = ll.index(lay)
-        ll.pop(idx)
 
         if isinstance(lay, Shapes) and type_ == 'labels':
             data = lay.to_labels()
+            idx += 1
         elif (
             not np.issubdtype(lay.data.dtype, np.integer) and type_ == 'labels'
         ):
             data = lay.data.astype(int)
+            idx += 1
         else:
             data = lay.data
+            # int image layer to labels is fully reversible
+            ll.pop(idx)
         new_layer = Layer.create(data, lay._get_base_state(), type_)
         ll.insert(idx, new_layer)
 
