@@ -2590,6 +2590,7 @@ class Shapes(Layer):
         self._fixed_vertex = None
         self._value = (None, None)
         self._moving_value = (None, None)
+        self._last_cursor_position = None
         if self._is_creating is True:
             if self._mode == Mode.ADD_PATH:
                 vertices = self._data_view.shapes[index].data

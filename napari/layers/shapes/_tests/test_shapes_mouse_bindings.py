@@ -318,9 +318,11 @@ def test_add_invalid_shape(shape_type_vertices, create_known_shapes_layer):
     assert layer.mouse_double_click_callbacks
     mouse_double_click_callbacks(layer, end_click)
 
-    # Ensure no data is selected and number of shapes is the initial one
+    # Ensure no data is selected, number of shapes is the initial one and
+    # last cursor position variable was reset
     assert len(layer.selected_data) == 0
     assert len(layer.data) == n_shapes
+    assert layer._last_cursor_position is None
 
 
 def test_vertex_insert(create_known_shapes_layer):
