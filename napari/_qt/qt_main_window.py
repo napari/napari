@@ -1543,6 +1543,10 @@ class Window:
         canvas = self._qt_viewer.canvas
         prev_size = canvas.size
         if fit_to_data:
+            if not canvas_only:
+                raise ValueError(
+                    "'fit_to_data' can't be set to True if 'canvas_only' is set to False"
+                )
             ndisplay = self._qt_viewer.viewer.dims.ndisplay
             camera = self._qt_viewer.viewer.camera
             old_center = camera.center
