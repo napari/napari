@@ -236,3 +236,6 @@ class ClippingPlaneList(SelectableEventedList):
                     )
                 )
         return cls(planes)
+
+    def add_plane(self, *args, **kwargs) -> None:
+        self.append(ClippingPlane(*args, **kwargs))
