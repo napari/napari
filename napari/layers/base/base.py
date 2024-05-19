@@ -420,8 +420,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self.experimental_clipping_planes = experimental_clipping_planes
 
         if experimental_clipping_planes is None:
-            clipping_plane = ClippingPlane(enabled=False)
-            self.experimental_clipping_planes.append(clipping_plane)
+            self.experimental_clipping_planes.append(
+                ClippingPlane(enabled=False)
+            )
 
         # circular import
         from napari.components.overlays.bounding_box import BoundingBoxOverlay
