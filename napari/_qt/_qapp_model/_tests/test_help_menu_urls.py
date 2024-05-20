@@ -3,7 +3,7 @@
 import pytest
 import requests
 
-from napari._app_model.actions._help_actions import HELP_URLS
+from napari._qt._qapp_model.qactions._help import HELP_URLS
 
 
 @pytest.mark.parametrize('url', HELP_URLS.keys())
