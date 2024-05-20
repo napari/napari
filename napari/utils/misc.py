@@ -136,7 +136,7 @@ def ensure_iterable(
 ):
     """Ensure an argument is an iterable. Useful when an input argument
     can either be a single value or a list.
-    Argument color is deprecated since version 0.5.0and will be removed in 0.6.0.
+    Argument color is deprecated since version 0.5.0 and will be removed in 0.6.0.
     """
     # deprecate color
     if color is not _sentinel:
@@ -158,13 +158,12 @@ def ensure_iterable(
 def is_iterable(
     arg: Union[None, str, Enum, float, list, npt.NDArray],
     color: object | bool = _sentinel,
-    allow_none: object | bool = _sentinel,
+    allow_none: bool = False,
 ) -> bool:
     """Determine if a single argument is an iterable.
     Argument color is deprecated since version 0.5.0 and will be removed in 0.6.0.
-    Argument allow_none is deprecated since version 0.5.0 and will be removed in 0.6.0.
     """
-    # deprecate color and allow_none
+    # deprecate color
     if color is not _sentinel:
         warnings.warn(
             trans._(
@@ -173,20 +172,16 @@ def is_iterable(
             category=DeprecationWarning,
             stacklevel=2,  # not sure what level to use here
         )
-    if allow_none is not _sentinel:
-        warnings.warn(
-            trans._(
-                'Argument allow_none is deprecated since version 0.5.0 and will be removed in 0.6.0.',
-            ),
-            category=DeprecationWarning,
-            stacklevel=2,  # not sure what level to use here
-        )
+
+    if arg is None:
+        return allow_none
+
     # Here if arg is None it used to return allow_none
-    if arg is None or isinstance(arg, (str, Enum)) or np.isscalar(arg):
+    if isinstance(arg, (str, Enum)) or np.isscalar(arg):
         return False
 
-    # this is to be removed in 0.6.0
-    if color and isinstance(arg, (list, np.ndarray)):
+    # this is to be removed in 0.6.0, coloer is never set True
+    if color is True and isinstance(arg, (list, np.ndarray)):
         return np.array(arg).ndim != 1 or len(arg) not in [3, 4]
 
     return isinstance(arg, collections.abc.Iterable)
@@ -213,7 +208,7 @@ def ensure_sequence_of_iterables(
     obj: Any,
     length: Optional[int] = None,
     repeat_empty: bool = False,
-    allow_none: object | bool = _sentinel,
+    allow_none: bool = False,
 ):
     """Ensure that ``obj`` behaves like a (nested) sequence of iterables.
 
