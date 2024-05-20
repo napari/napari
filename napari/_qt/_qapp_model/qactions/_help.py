@@ -17,11 +17,6 @@ from napari._qt.dialogs.qt_about import QtAbout
 from napari._qt.qt_main_window import Window
 from napari.utils.translations import trans
 
-try:
-    from napari_error_reporter import ask_opt_in
-except ModuleNotFoundError:
-    ask_opt_in = None
-
 
 def _show_about(window: Window):
     QtAbout.showAbout(window._qt_window)
@@ -118,12 +113,3 @@ Q_HELP_ACTIONS: list[Action] = [
     ),
 ]
 
-if ask_opt_in is not None:
-    Q_HELP_ACTIONS.append(
-        Action(
-            id='napari.window.help.bug_report_opt_in',
-            title=trans._('Bug Reporting Opt In/Out...'),
-            callback=lambda: ask_opt_in(force=True),
-            menus=[{'id': MenuId.MENUBAR_HELP}],
-        )
-    )

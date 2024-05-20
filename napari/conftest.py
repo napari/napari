@@ -266,18 +266,6 @@ def napari_svg_name():
     return 'napari-svg'
 
 
-@pytest.fixture(autouse=True, scope='session')
-def _no_error_reports():
-    """Turn off napari_error_reporter if it's installed."""
-    try:
-        p1 = patch('napari_error_reporter.capture_exception')
-        p2 = patch('napari_error_reporter.install_error_reporter')
-        with p1, p2:
-            yield
-    except (ModuleNotFoundError, AttributeError):
-        yield
-
-
 @pytest.fixture(autouse=True)
 def npe2pm_(npe2pm, monkeypatch):
     """Autouse npe2 & npe1 mock plugin managers with no registered plugins."""
