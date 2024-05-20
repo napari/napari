@@ -39,7 +39,6 @@ from itertools import chain
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
-from unittest.mock import patch
 from weakref import WeakKeyDictionary
 
 from npe2 import PackageMetadata

@@ -112,4 +112,3 @@ Q_HELP_ACTIONS: list[Action] = [
         menus=[{'id': MenuId.MENUBAR_HELP, 'group': MenuGroup.NAVIGATION}],
     ),
 ]
-
