@@ -12,7 +12,7 @@ from napari.utils.events import disconnect_events
 
 class VispyPointsLayer(VispyBaseLayer):
     _visual = PointsVisual
-    node: PointVisual
+    node: PointsVisual
 
     def __init__(self, layer) -> None:
         node = self._visual()
