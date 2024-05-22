@@ -26,8 +26,8 @@ class InfoAction(argparse.Action):
         from napari.utils import sys_info
 
         logging.basicConfig(level=logging.WARNING)
-        print(sys_info())
-        print('Plugins:')
+        print(sys_info())  # noqa: T201
+        print('Plugins:')  # noqa: T201
         cli.list(fields='', sort='0', format='compact')
         sys.exit()
 
@@ -52,7 +52,7 @@ class CitationAction(argparse.Action):
         from napari.utils import citation_text
 
         logging.basicConfig(level=logging.WARNING)
-        print(citation_text)
+        print(citation_text)  # noqa: T201
         sys.exit()
 
 
@@ -297,12 +297,14 @@ def _run() -> None:
                         if '__all__' in wnames:
                             # Plugin_manager iter_widgets return wnames as dict keys
                             wnames = list(wnames_dict)
-                        print(
+                        warnings.warn(
                             trans._(
                                 'Non-npe2 plugin {pname} detected. Disable tabify for this plugin.',
                                 deferred=True,
                                 pname=pname,
-                            )
+                            ),
+                            RuntimeWarning,
+                            stacklevel=3,
                         )
                         break
 
