@@ -7,8 +7,13 @@ from napari.layers import Image
 
 
 @pytest.fixture()
-def im_layer():
+def im_layer() -> Image:
     return Image(np.zeros((10, 10)))
+
+
+@pytest.fixture()
+def pyramid_layer() -> Image:
+    return Image([np.zeros((20, 20)), np.zeros((10, 10))])
 
 
 def test_base_create(im_layer):
@@ -90,3 +95,27 @@ def test_transforming_child_node(
             np.dot(np.linalg.inv(exp_rotate), (-0.5, -0.5)) + exp_translate,
             # np.dot(np.linalg.inv(im_layer.affine.rotate), exp_translate)
         )
+
+
+def test_transforming_child_node_pyramid(pyramid_layer):
+    layer = VispyImageLayer(pyramid_layer)
+    corner_pixels_world = np.array([[0, 0], [20, 20]])
+    npt.assert_array_almost_equal(
+        layer.node.transform.matrix[-1][:2], (-0.5, -0.5)
+    )
+    npt.assert_array_almost_equal(
+        layer.node.children[0].transform.matrix[-1][:2], (0.5, 0.5)
+    )
+    pyramid_layer.translate = (-10, -10)
+    pyramid_layer._update_draw(
+        scale_factor=1,
+        corner_pixels_displayed=corner_pixels_world,
+        shape_threshold=(10, 10),
+    )
+
+    npt.assert_array_almost_equal(
+        layer.node.transform.matrix[-1][:2], (-0.5, -0.5)
+    )
+    npt.assert_array_almost_equal(
+        layer.node.children[0].transform.matrix[-1][:2], (-9.5, -9.5)
+    )
