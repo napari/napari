@@ -1,10 +1,10 @@
 import warnings
-from typing import Optional, Tuple
+from typing import Optional, Union
 
 import numpy as np
-from pydantic import validator
 from scipy.spatial.transform import Rotation as R
 
+from napari._pydantic_compat import validator
 from napari.utils.events import EventedModel
 from napari.utils.misc import ensure_n_tuple
 from napari.utils.translations import trans
@@ -38,9 +38,13 @@ class Camera(EventedModel):
     """
 
     # fields
-    center: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    center: Union[tuple[float, float, float], tuple[float, float]] = (
+        0.0,
+        0.0,
+        0.0,
+    )
     zoom: float = 1.0
-    angles: Tuple[float, float, float] = (0.0, 0.0, 90.0)
+    angles: tuple[float, float, float] = (0.0, 0.0, 90.0)
     perspective: float = 0
     mouse_pan: bool = True
     mouse_zoom: bool = True
@@ -51,7 +55,7 @@ class Camera(EventedModel):
         return ensure_n_tuple(v, n=3)
 
     @property
-    def view_direction(self) -> Tuple[float, float, float]:
+    def view_direction(self) -> tuple[float, float, float]:
         """3D view direction vector of the camera.
 
         View direction is calculated from the Euler angles and returned as a
@@ -67,7 +71,7 @@ class Camera(EventedModel):
         return view_direction
 
     @property
-    def up_direction(self) -> Tuple[float, float, float]:
+    def up_direction(self) -> tuple[float, float, float]:
         """3D direction vector pointing up on the canvas.
 
         Up direction is calculated from the Euler angles and returned as a
@@ -77,12 +81,16 @@ class Camera(EventedModel):
         rotation_matrix = R.from_euler(
             seq='yzx', angles=self.angles, degrees=True
         ).as_matrix()
-        return tuple(rotation_matrix[:, 2][::-1])
+        return (
+            rotation_matrix[2, 2],
+            rotation_matrix[1, 2],
+            rotation_matrix[0, 2],
+        )
 
     def set_view_direction(
         self,
-        view_direction: Tuple[float, float, float],
-        up_direction: Tuple[float, float, float] = (0, -1, 0),
+        view_direction: tuple[float, float, float],
+        up_direction: tuple[float, float, float] = (0, -1, 0),
     ):
         """Set camera angles from direction vectors.
 
@@ -118,37 +126,35 @@ class Camera(EventedModel):
             up_direction = (-1, 0, 0)  # align up direction along z axis
 
         # xyz ordering for vispy, normalise vectors for rotation matrix
-        view_direction = np.asarray(view_direction, dtype=float)[::-1]
-        view_direction /= np.linalg.norm(view_direction)
+        view_vector = np.asarray(view_direction, dtype=float)[::-1]
+        view_vector /= np.linalg.norm(view_vector)
 
-        up_direction = np.asarray(up_direction, dtype=float)[::-1]
-        up_direction = np.cross(view_direction, up_direction)
-        up_direction /= np.linalg.norm(up_direction)
+        up_vector = np.asarray(up_direction, dtype=float)[::-1]
+        up_vector = np.cross(view_vector, up_vector)
+        up_vector /= np.linalg.norm(up_vector)
 
         # explicit check for parallel view direction and up direction
-        if np.allclose(np.cross(view_direction, up_direction), 0):
+        if np.allclose(np.cross(view_vector, up_vector), 0):
             raise ValueError(
                 trans._(
-                    "view direction and up direction are parallel",
+                    'view direction and up direction are parallel',
                     deferred=True,
                 )
             )
 
-        x_direction = np.cross(up_direction, view_direction)
-        x_direction /= np.linalg.norm(x_direction)
+        x_vector = np.cross(up_vector, view_vector)
+        x_vector /= np.linalg.norm(x_vector)
 
         # construct rotation matrix, convert to euler angles
-        rotation_matrix = np.column_stack(
-            (up_direction, view_direction, x_direction)
-        )
+        rotation_matrix = np.column_stack((up_vector, view_vector, x_vector))
         euler_angles = R.from_matrix(rotation_matrix).as_euler(
             seq='yzx', degrees=True
         )
         self.angles = euler_angles
 
     def calculate_nd_view_direction(
-        self, ndim: int, dims_displayed: Tuple[int]
-    ) -> np.ndarray:
+        self, ndim: int, dims_displayed: tuple[int, ...]
+    ) -> Optional[np.ndarray]:
         """Calculate the nD view direction vector of the camera.
 
         Parameters
@@ -170,7 +176,7 @@ class Camera(EventedModel):
         return view_direction_nd
 
     def calculate_nd_up_direction(
-        self, ndim: int, dims_displayed: Tuple[int]
+        self, ndim: int, dims_displayed: tuple[int, ...]
     ) -> Optional[np.ndarray]:
         """Calculate the nD up direction vector of the camera.
 

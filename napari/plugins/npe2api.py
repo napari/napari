@@ -2,15 +2,13 @@
 These convenience functions will be useful for searching pypi for packages
 that match the plugin naming convention, and retrieving related metadata.
 """
+
 import json
+from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache
 from typing import (
-    Dict,
-    Iterator,
-    List,
     Optional,
-    Tuple,
     TypedDict,
     cast,
 )
@@ -50,59 +48,67 @@ def _user_agent() -> str:
     return ' '.join(f'{k}/{v}' for k, v in parts)
 
 
-class SummaryDict(TypedDict):
+class _ShortSummaryDict(TypedDict):
     """Objects returned at https://npe2api.vercel.app/api/extended_summary ."""
 
     name: NotRequired[PyPIname]
     version: str
-    display_name: NotRequired[str]
     summary: str
     author: str
     license: str
     home_page: str
-    pypi_versions: NotRequired[List[str]]
-    conda_versions: NotRequired[List[str]]
+
+
+class SummaryDict(_ShortSummaryDict):
+    display_name: NotRequired[str]
+    pypi_versions: NotRequired[list[str]]
+    conda_versions: NotRequired[list[str]]
 
 
 @lru_cache
-def plugin_summaries() -> List[SummaryDict]:
+def plugin_summaries() -> list[SummaryDict]:
     """Return PackageMetadata object for all known napari plugins."""
-    url = "https://npe2api.vercel.app/api/extended_summary"
+    url = 'https://npe2api.vercel.app/api/extended_summary'
     with urlopen(Request(url, headers={'User-Agent': _user_agent()})) as resp:
         return json.load(resp)
 
 
 @lru_cache
-def conda_map() -> Dict[PyPIname, Optional[str]]:
+def conda_map() -> dict[PyPIname, Optional[str]]:
     """Return map of PyPI package name to conda_channel/package_name ()."""
-    url = "https://npe2api.vercel.app/api/conda"
+    url = 'https://npe2api.vercel.app/api/conda'
     with urlopen(Request(url, headers={'User-Agent': _user_agent()})) as resp:
         return json.load(resp)
 
 
-def iter_napari_plugin_info() -> Iterator[Tuple[PackageMetadata, bool, dict]]:
+def iter_napari_plugin_info() -> Iterator[tuple[PackageMetadata, bool, dict]]:
     """Iterator of tuples of ProjectInfo, Conda availability for all napari plugins."""
     with ThreadPoolExecutor() as executor:
         data = executor.submit(plugin_summaries)
         _conda = executor.submit(conda_map)
 
     conda = _conda.result()
+    conda_set = {normalized_name(x) for x in conda}
     for info in data.result():
-        info_ = cast(SummaryDict, dict(info))
+        info_copy = dict(info)
+        info_copy.pop('display_name', None)
+        pypi_versions = info_copy.pop('pypi_versions')
+        conda_versions = info_copy.pop('conda_versions')
+        info_ = cast(_ShortSummaryDict, info_copy)
 
         # TODO: use this better.
         # this would require changing the api that qt_plugin_dialog expects to
         # receive
-        info_.pop("display_name", None)
 
         # TODO: once the new version of npe2 is out, this can be refactored
         # to all the metadata includes the conda and pypi versions.
         extra_info = {
-            'home_page': info_.get("home_page", ""),
-            'pypi_versions': info_.pop("pypi_versions"),
-            'conda_versions': info_.pop("conda_versions"),
+            'home_page': info_.get('home_page', ''),
+            'display_name': info.get('display_name', ''),
+            'pypi_versions': pypi_versions,
+            'conda_versions': conda_versions,
         }
-        info_["name"] = normalized_name(info_["name"])
-        meta = PackageMetadata(**info_)
+        info_['name'] = normalized_name(info_['name'])
+        meta = PackageMetadata(**info_)  # type:ignore[call-arg]
 
-        yield meta, (info_["name"] in conda), extra_info
+        yield meta, (info_['name'] in conda_set), extra_info

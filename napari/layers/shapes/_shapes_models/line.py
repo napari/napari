@@ -55,7 +55,7 @@ class Line(Shape):
         if len(data) != 2:
             raise ValueError(
                 trans._(
-                    "Data shape does not match a line. A line expects two end vertices, {number} provided.",
+                    'Data shape does not match a line. A line expects two end vertices, {number} provided.',
                     deferred=True,
                     number=len(data),
                 )
@@ -64,7 +64,7 @@ class Line(Shape):
         self._data = data
         self._update_displayed_data()
 
-    def _update_displayed_data(self):
+    def _update_displayed_data(self) -> None:
         """Update the data that is to be displayed."""
         # For path connect every all data
         self._set_meshes(self.data_displayed, face=False, closed=False)

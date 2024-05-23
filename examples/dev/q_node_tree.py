@@ -28,18 +28,18 @@ root = Group(
         Group(
             [
                 Node(name='1'),
-                Group([Node(name='2'), Node(name='3')], name="g2"),
+                Group([Node(name='2'), Node(name='3')], name='g2'),
                 Node(name='4'),
                 Node(name='5'),
                 Node(name='tip'),
             ],
-            name="g1",
+            name='g1',
         ),
         Node(name='7'),
         Node(name='8'),
         Node(name='9'),
     ],
-    name="root",
+    name='root',
 )
 # create Qt view onto the Group
 view = QtNodeTreeView(root)
@@ -65,14 +65,15 @@ print(root)
 
 
 # spy on events
-root.events.reordered.connect(lambda e: print("reordered to: ", e.value))
+root.events.reordered.connect(lambda e: print('reordered to: ', e.value))
 root.selection.events.changed.connect(
     lambda e: print(
-        f"selection changed.  added: {e.added}, removed: {e.removed}"
+        f'selection changed.  added: {e.added}, removed: {e.removed}'
     )
 )
 root.selection.events._current.connect(
-    lambda e: print(f"current item changed to: {e.value}")
+    lambda e: print(f'current item changed to: {e.value}')
 )
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

@@ -13,8 +13,8 @@ from typing import Any, Union
 import numpy as np
 import pandas as pd
 import pytest
-from pydantic import Field
 
+from napari._pydantic_compat import Field
 from napari.layers.utils.style_encoding import (
     _ConstantStyleEncoding,
     _DerivedStyleEncoding,
@@ -23,7 +23,7 @@ from napari.layers.utils.style_encoding import (
 from napari.utils.events.custom_types import Array
 
 
-@pytest.fixture
+@pytest.fixture()
 def features() -> pd.DataFrame:
     return pd.DataFrame(
         {

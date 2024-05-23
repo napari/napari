@@ -14,7 +14,7 @@ except ModuleNotFoundError:
 
 from napari.utils.io import imsave_png
 
-__all__ = ['nbscreenshot']
+__all__ = ['nbscreenshot', 'NotebookScreenshot']
 
 
 class NotebookScreenshot:
@@ -35,17 +35,16 @@ class NotebookScreenshot:
 
     Examples
     --------
-    ```
-    import napari
-    from napari.utils import nbscreenshot
-    from skimage.data import chelsea
 
-    viewer = napari.view_image(chelsea(), name='chelsea-the-cat')
-    nbscreenshot(viewer)
+    >>> import napari
+    >>> from napari.utils import nbscreenshot
+    >>> from skimage.data import chelsea
 
+    >>> viewer = napari.view_image(chelsea(), name='chelsea-the-cat')
+    >>> nbscreenshot(viewer)
     # screenshot just the canvas with the napari viewer framing it
-    nbscreenshot(viewer, canvas_only=False)
-    ```
+    >>> nbscreenshot(viewer, canvas_only=False)
+
     """
 
     def __init__(
@@ -97,8 +96,8 @@ class NotebookScreenshot:
                     'The provided alt text does not constitute valid html, so it was discarded.',
                     stacklevel=3,
                 )
-                alt_text = ""
-            if alt_text == "":
+                alt_text = ''
+            if alt_text == '':
                 alt_text = None
         return alt_text
 

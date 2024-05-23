@@ -10,6 +10,8 @@ from hypothesis.extra.numpy import array_shapes
 from skimage.transform import pyramid_gaussian
 
 from napari.layers.image._image_utils import guess_multiscale, guess_rgb
+from napari.layers.image._slice import _ImageSliceRequest
+from napari.layers.utils._slice_input import _ThickNDSlice
 
 data_dask = da.random.random(
     size=(100_000, 1000, 1000), chunks=(1, 1000, 1000)
@@ -98,13 +100,13 @@ def test_guess_multiscale_strip_single_scale():
 def test_guess_multiscale_non_array_list():
     """Check that non-decreasing list input raises ValueError"""
     data = [np.empty((10, 15, 6))] * 2
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='decreasing size'):
         _, _ = guess_multiscale(data)
 
 
 def test_guess_multiscale_incorrect_order():
     data = [np.empty((10, 15)), np.empty((5, 6)), np.empty((20, 15))]
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='decreasing size'):
         _, _ = guess_multiscale(data)
 
 
@@ -112,4 +114,30 @@ def test_timing_multiscale_big():
     now = time.monotonic()
     assert not guess_multiscale(data_dask)[0]
     elapsed = time.monotonic() - now
-    assert elapsed < 2, "test was too slow, computation was likely not lazy"
+    assert elapsed < 2, 'test was too slow, computation was likely not lazy'
+
+
+def test_create_data_indexing():
+    point = (np.nan, 10.1, 2.6, 4)
+    idx = _ImageSliceRequest._point_to_slices(point)
+    expected = (slice(None), 10, 3, 4)
+    assert idx == expected
+
+    # note that testing entirely out of bounds slices is wrong because these methods
+    # assume the bounds check already happened
+    data_slice = _ThickNDSlice(
+        point=(np.nan, 10.1, 2.6, 4, -1),
+        margin_left=(np.nan, 0, 1.6, 0.3, 1),
+        margin_right=(np.nan, 0.1, 0.3, 0.5, 0.6),
+    )
+    idx = _ImageSliceRequest._data_slice_to_slices(
+        data_slice, dims_displayed=(0,)
+    )
+    expected = (
+        slice(None),
+        slice(10, 11),
+        slice(1, 3),
+        slice(4, 5),
+        slice(0, 1),
+    )
+    assert idx == expected

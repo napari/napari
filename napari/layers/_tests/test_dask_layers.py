@@ -10,7 +10,6 @@ from napari.components import ViewerModel
 from napari.utils import _dask_utils, resize_dask_cache
 
 
-@pytest.mark.sync_only
 @pytest.mark.parametrize('dtype', ['float64', 'uint8'])
 def test_dask_not_greedy(dtype):
     """Make sure that we don't immediately calculate dask arrays."""
@@ -45,10 +44,10 @@ def test_dask_array_creates_cache():
     resize_dask_cache(1)
     assert _dask_utils._DASK_CACHE.cache.available_bytes == 1
     # by default we have no dask_cache and task fusion is active
-    original = dask.config.get("optimization.fuse.active", None)
+    original = dask.config.get('optimization.fuse.active', None)
 
     def mock_set_view_slice():
-        assert dask.config.get("optimization.fuse.active") is False
+        assert dask.config.get('optimization.fuse.active') is False
 
     layer = layers.Image(da.ones((100, 100)))
     layer._set_view_slice = mock_set_view_slice
@@ -58,7 +57,7 @@ def test_dask_array_creates_cache():
     # *but only* during slicing (see "mock_set_view_slice" above)
     assert _dask_utils._DASK_CACHE.cache.available_bytes > 100
     assert not _dask_utils._DASK_CACHE.active
-    assert dask.config.get("optimization.fuse.active", None) == original
+    assert dask.config.get('optimization.fuse.active', None) == original
 
     # make sure we can resize the cache
     resize_dask_cache(10000)
@@ -66,7 +65,7 @@ def test_dask_array_creates_cache():
 
     # This should only affect dask arrays, and not numpy data
     def mock_set_view_slice2():
-        assert dask.config.get("optimization.fuse.active", None) == original
+        assert dask.config.get('optimization.fuse.active', None) == original
 
     layer2 = layers.Image(np.ones((100, 100)))
     layer2._set_view_slice = mock_set_view_slice2
@@ -77,14 +76,14 @@ def test_list_of_dask_arrays_doesnt_create_cache():
     """Test that adding a list of dask array also creates a dask cache."""
     resize_dask_cache(1)  # in case other tests created it
     assert _dask_utils._DASK_CACHE.cache.available_bytes == 1
-    original = dask.config.get("optimization.fuse.active", None)
+    original = dask.config.get('optimization.fuse.active', None)
     _ = layers.Image([da.ones((100, 100)), da.ones((20, 20))])
     assert _dask_utils._DASK_CACHE.cache.available_bytes > 100
     assert not _dask_utils._DASK_CACHE.active
-    assert dask.config.get("optimization.fuse.active", None) == original
+    assert dask.config.get('optimization.fuse.active', None) == original
 
 
-@pytest.fixture
+@pytest.fixture()
 def delayed_dask_stack():
     """A 4D (20, 10, 10, 10) delayed dask array, simulates disk io."""
     # we will return a dict with a 'calls' variable that tracks call count
@@ -108,7 +107,6 @@ def delayed_dask_stack():
     return output
 
 
-@pytest.mark.sync_only
 def test_dask_global_optimized_slicing(delayed_dask_stack, monkeypatch):
     """Test that dask_configure reduces compute with dask stacks."""
 
@@ -150,7 +148,6 @@ def test_dask_global_optimized_slicing(delayed_dask_stack, monkeypatch):
     assert delayed_dask_stack['calls'] == 5
 
 
-@pytest.mark.sync_only
 def test_dask_unoptimized_slicing(delayed_dask_stack, monkeypatch):
     """Prove that the dask_configure function works with a counterexample."""
     # we start with a cache...but then intentionally turn it off per-layer.
@@ -191,7 +188,6 @@ def test_dask_unoptimized_slicing(delayed_dask_stack, monkeypatch):
     assert delayed_dask_stack['calls'] >= 9
 
 
-@pytest.mark.sync_only
 def test_dask_local_unoptimized_slicing(delayed_dask_stack, monkeypatch):
     """Prove that the dask_configure function works with a counterexample."""
     # make sure we are not caching for this test, which also tests that we
@@ -232,7 +228,6 @@ def test_dask_local_unoptimized_slicing(delayed_dask_stack, monkeypatch):
     assert delayed_dask_stack['calls'] >= 10
 
 
-@pytest.mark.sync_only
 def test_dask_cache_resizing(delayed_dask_stack):
     """Test that we can spin up, resize, and spin down the cache."""
 
@@ -289,7 +284,6 @@ def test_prevent_dask_cache(delayed_dask_stack):
     assert len(_dask_utils._DASK_CACHE.cache.heap.heap) == 0
 
 
-@pytest.mark.sync_only
 def test_dask_contrast_limits_range_init():
     np_arr = np.array([[0.000001, -0.0002], [0, 0.0000004]])
     da_arr = da.array(np_arr)

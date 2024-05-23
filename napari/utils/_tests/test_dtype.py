@@ -41,7 +41,7 @@ def test_normalize_dtype_tensorstore(dtype_str):
 
 
 @pytest.mark.parametrize(
-    'module, dtype_str',
+    ('module', 'dtype_str'),
     itertools.product(
         (np, da, zarr), uints + ints + floats + complex_types + bools
     ),
@@ -65,7 +65,7 @@ def test_pure_python_types(dtype_str):
 
 
 @pytest.mark.parametrize(
-    "dtype",
+    'dtype',
     [
         int,
         'uint8',
@@ -85,4 +85,5 @@ def test_pure_python_types(dtype_str):
 )
 def test_dtype_lims(dtype):
     lims = get_dtype_limits(dtype)
-    assert isinstance(lims, tuple) and len(lims) == 2
+    assert isinstance(lims, tuple)
+    assert len(lims) == 2

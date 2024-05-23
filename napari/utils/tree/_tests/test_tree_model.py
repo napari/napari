@@ -5,25 +5,25 @@ import pytest
 from napari.utils.tree import Group, Node
 
 
-@pytest.fixture
+@pytest.fixture()
 def tree():
     return Group(
         [
-            Node(name="1"),
+            Node(name='1'),
             Group(
                 [
-                    Node(name="2"),
-                    Group([Node(name="3"), Node(name="4")], name="g2"),
-                    Node(name="5"),
-                    Node(name="6"),
-                    Node(name="7"),
+                    Node(name='2'),
+                    Group([Node(name='3'), Node(name='4')], name='g2'),
+                    Node(name='5'),
+                    Node(name='6'),
+                    Node(name='7'),
                 ],
-                name="g1",
+                name='g1',
             ),
-            Node(name="8"),
-            Node(name="9"),
+            Node(name='8'),
+            Node(name='9'),
         ],
-        name="root",
+        name='root',
     )
 
 
@@ -102,7 +102,7 @@ def test_relative_node_indexing(tree):
 
     with pytest.raises(IndexError) as e:
         g1_1_0.unparent()
-    assert "Cannot unparent orphaned Node" in str(e)
+    assert 'Cannot unparent orphaned Node' in str(e)
 
 
 def test_traverse(tree):
@@ -123,10 +123,12 @@ def test_traverse(tree):
     assert tree.is_group()
     g1 = tree[1]
     assert g1.parent is tree
-    assert g1.name == 'g1' and g1.is_group()
+    assert g1.name == 'g1'
+    assert g1.is_group()
     g2 = g1[1]
     assert g2.parent is g1
-    assert g2.name == 'g2' and g2.is_group()
+    assert g2.name == 'g2'
+    assert g2.is_group()
 
 
 def test_slicing(tree):
@@ -226,7 +228,7 @@ def test_nested_custom_lookup(tree: Group):
     # first level
     g1 = tree[1]
     assert g1.name == 'g1'  # index with integer as usual
-    assert tree.index("g1") == 1
+    assert tree.index('g1') == 1
     assert tree['g1'] == g1  # index with string also works
 
     # second level

@@ -69,7 +69,9 @@ CONDITIONS = [
 ]
 
 
-@pytest.mark.parametrize("nframes,fps,mode,rng,result", CONDITIONS)
+@pytest.mark.parametrize(
+    ('nframes', 'fps', 'mode', 'rng', 'result'), CONDITIONS
+)
 def test_animation_thread_variants(qtbot, nframes, fps, mode, rng, result):
     """This is mostly testing that AnimationWorker.advance works as expected"""
     with make_worker(
@@ -130,12 +132,10 @@ def test_play_raises_index_errors(qtbot, ref_view):
 
 def test_play_raises_value_errors(qtbot, ref_view):
     view = ref_view()
-    # frame_range[1] not > frame_range[0]
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must be <='):
         view.dims.play(0, 20, frame_range=[2, 2])
 
-    # that's not a valid loop_mode
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='loop_mode must be one of'):
         view.dims.play(0, 20, loop_mode=5)
 
 

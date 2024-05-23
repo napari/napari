@@ -8,5 +8,11 @@ except (ImportError, RuntimeError) as e:
     def gui_qt(**kwargs):
         raise exc
 
-    def run(**kwargs):
+    def run(
+        *,
+        force=False,
+        gui_exceptions=False,
+        max_loop_level=1,
+        _func_name='run',
+    ):
         raise exc

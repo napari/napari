@@ -29,27 +29,31 @@ skip = [
     'embed_ipython_.py',  # fails without monkeypatch
     'new_theme.py',  # testing theme is extremely slow on CI
     'dynamic-projections-dask.py',  # extremely slow / does not finish
+    'surface_multi_texture_.py',  # resource not available
 ]
+# To skip examples during docs build end name with `_.py`
 
-EXAMPLE_DIR = Path(napari.__file__).parent.parent / 'examples'
+# these are more interactive tools than proper examples, so skip them
+# cause they are hard to adapt for testing
+skip_dev = ['leaking_check.py', 'demo_shape_creation.py']
+
+EXAMPLE_DIR = Path(napari.__file__).parent.parent / 'examples/'
+DEV_EXAMPLE_DIR = Path(napari.__file__).parent.parent / 'examples/dev'
 # using f.name here and re-joining at `run_path()` for test key presentation
 # (works even if the examples list is empty, as opposed to using an ids lambda)
-examples = [f.name for f in EXAMPLE_DIR.glob("*.py") if f.name not in skip]
+examples = [f.name for f in EXAMPLE_DIR.glob('*.py') if f.name not in skip]
+dev_examples = [f.name for f in DEV_EXAMPLE_DIR.glob('*.py') if f.name not in skip_dev]
+
 
 # still some CI segfaults, but only on windows with pyqt5
-if os.getenv("CI") and os.name == 'nt' and API_NAME == 'PyQt5':
+if os.getenv('CI') and os.name == 'nt' and API_NAME == 'PyQt5':
     examples = []
 
-if os.getenv("CI") and os.name == 'nt' and 'to_screenshot.py' in examples:
+if os.getenv('CI') and os.name == 'nt' and 'to_screenshot.py' in examples:
     examples.remove('to_screenshot.py')
 
-
-@pytest.mark.filterwarnings("ignore")
-@pytest.mark.skipif(not examples, reason="No examples were found.")
-@pytest.mark.parametrize("fname", examples)
-def test_examples(builtins, fname, monkeypatch):
-    """Test that all of our examples are still working without warnings."""
-
+@pytest.fixture()
+def _example_monkeypatch(monkeypatch):
     # hide viewer window
     monkeypatch.setattr(Window, 'show', lambda *a: None)
     # prevent running the event loop
@@ -67,12 +71,35 @@ def test_examples(builtins, fname, monkeypatch):
 
     monkeypatch.setattr(notification_manager, 'receive_error', raise_errors)
 
-    # run the example!
+
+def _run_example(example_path):
     try:
-        runpy.run_path(str(EXAMPLE_DIR / fname))
+        runpy.run_path(example_path)
     except SystemExit as e:
         # we use sys.exit(0) to gracefully exit from examples
         if e.code != 0:
             raise
     finally:
         napari.Viewer.close_all()
+
+
+@pytest.mark.usefixtures('_example_monkeypatch')
+@pytest.mark.filterwarnings('ignore')
+@pytest.mark.skipif(not examples, reason='No examples were found.')
+@pytest.mark.parametrize('fname', examples)
+def test_examples(builtins, fname, monkeypatch):
+    """Test that all of our examples are still working without warnings."""
+    example_path = str(EXAMPLE_DIR / fname)
+    monkeypatch.setattr(sys, 'argv', [fname])
+    _run_example(example_path)
+
+
+@pytest.mark.usefixtures('_example_monkeypatch')
+@pytest.mark.filterwarnings('ignore')
+@pytest.mark.skipif(not dev_examples, reason='No dev examples were found.')
+@pytest.mark.parametrize('fname', dev_examples)
+def test_dev_examples(fname, monkeypatch):
+    """Test that all of our dev examples are still working without warnings."""
+    example_path = str(DEV_EXAMPLE_DIR / fname)
+    monkeypatch.setattr(sys, 'argv', [fname])
+    _run_example(example_path)

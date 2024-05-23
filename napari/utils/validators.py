@@ -1,6 +1,5 @@
-from collections.abc import Collection, Generator
+from collections.abc import Collection, Generator, Iterable
 from itertools import tee
-from typing import Iterable
 
 from napari.utils.translations import trans
 
@@ -64,7 +63,7 @@ def validate_n_seq(n: int, dtype=None):
         if len(obj) != n:
             raise ValueError(
                 trans._(
-                    "object must have length {number}, got {obj_len}",
+                    'object must have length {number}, got {obj_len}',
                     deferred=True,
                     number=n,
                     obj_len=len(obj),
@@ -75,7 +74,7 @@ def validate_n_seq(n: int, dtype=None):
                 if not isinstance(item, dtype):
                     raise TypeError(
                         trans._(
-                            "Every item in the sequence must be of type {dtype}, but {item} is of type {item_type}",
+                            'Every item in the sequence must be of type {dtype}, but {item} is of type {item_type}',
                             deferred=True,
                             dtype=dtype,
                             item=item,
@@ -126,7 +125,7 @@ def _validate_increasing(values: Iterable) -> None:
     if any(a >= b for a, b in _pairwise(values)):
         raise ValueError(
             trans._(
-                "Sequence {sequence} must be monotonically increasing.",
+                'Sequence {sequence} must be monotonically increasing.',
                 deferred=True,
                 sequence=values,
             )

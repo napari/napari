@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import Optional, Union
 
 import numpy as np
 from vispy.gloo import VertexBuffer
@@ -49,8 +49,12 @@ class TracksFilter(Filter):
             if ($a_vertex_time > $current_time + $head_length) {
                 // this is a hack to minimize the frag shader rendering ahead
                 // of the current time point due to interpolation
-                if ($a_vertex_time <= $current_time + 1){
-                    alpha = -100.;
+                // track should cut off sharply at current_time when head length is 0
+                // see #6696 for details
+                if ($head_length == 0){
+                    // this prevents a track from being rendered ahead of the
+                    // current time point incorrectly due to the interpolation
+                    alpha = -1000.;
                 } else {
                     alpha = 0.;
                 }
@@ -87,11 +91,11 @@ class TracksFilter(Filter):
 
     def __init__(
         self,
-        current_time: Union[int, float] = 0,
-        tail_length: Union[int, float] = 30,
-        head_length: Union[int, float] = 0,
+        current_time: float = 0,
+        tail_length: float = 30,
+        head_length: float = 0,
         use_fade: bool = True,
-        vertex_time: Union[List, np.ndarray] = None,
+        vertex_time: Optional[Union[list, np.ndarray]] = None,
     ) -> None:
         super().__init__(
             vcode=self.VERT_SHADER, vpos=3, fcode=self.FRAG_SHADER, fpos=9
@@ -104,11 +108,11 @@ class TracksFilter(Filter):
         self.vertex_time = vertex_time
 
     @property
-    def current_time(self) -> Union[int, float]:
+    def current_time(self) -> float:
         return self._current_time
 
     @current_time.setter
-    def current_time(self, n: Union[int, float]):
+    def current_time(self, n: float):
         self._current_time = n
         if isinstance(n, slice):
             n = np.max(self._vertex_time)
@@ -124,20 +128,20 @@ class TracksFilter(Filter):
         self.vshader['use_fade'] = float(self._use_fade)
 
     @property
-    def tail_length(self) -> Union[int, float]:
+    def tail_length(self) -> float:
         return self._tail_length
 
     @tail_length.setter
-    def tail_length(self, tail_length: Union[int, float]):
+    def tail_length(self, tail_length: float):
         self._tail_length = tail_length
         self.vshader['tail_length'] = float(self._tail_length)
 
     @property
-    def head_length(self) -> Union[int, float]:
+    def head_length(self) -> float:
         return self._tail_length
 
     @head_length.setter
-    def head_length(self, head_length: Union[int, float]):
+    def head_length(self, head_length: float):
         self._head_length = head_length
         self.vshader['head_length'] = float(self._head_length)
 

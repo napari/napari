@@ -348,5 +348,21 @@ def test_replace_slice_independence():
 
 
 def test_replace_slice_num_dimensions():
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match='provided axes list and transform differ'
+    ):
         Affine().replace_slice([0], Affine())
+
+
+def test_affine_rotate_3d():
+    a = Affine(rotate=90, ndim=3)
+    npt.assert_array_almost_equal(
+        np.array(
+            [
+                [1, 0, 0],
+                [0, 0, -1],
+                [0, 1, 0],
+            ]
+        ),
+        a.rotate,
+    )

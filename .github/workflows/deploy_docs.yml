@@ -22,6 +22,6 @@ jobs:
           owner: napari
           repo: docs
           github_token: ${{ secrets.ACTIONS_DEPLOY_DOCS }}
-          workflow_file_name: deploy_docs.yml
+          workflow_file_name: build_and_deploy.yml
           trigger_workflow: true
           wait_workflow: true

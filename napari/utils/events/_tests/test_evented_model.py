@@ -1,6 +1,8 @@
 import inspect
+import operator
+from collections.abc import Sequence
 from enum import auto
-from typing import ClassVar, List, Protocol, Sequence, Union, runtime_checkable
+from typing import ClassVar, Protocol, Union, runtime_checkable
 from unittest.mock import Mock
 
 import dask.array as da
@@ -8,8 +10,8 @@ import numpy as np
 import pytest
 from dask import delayed
 from dask.delayed import Delayed
-from pydantic import Field
 
+from napari._pydantic_compat import Field, ValidationError
 from napari.utils.events import EmitterGroup, EventedModel
 from napari.utils.events.custom_types import Array
 from napari.utils.misc import StringEnum
@@ -105,7 +107,7 @@ def test_evented_model_with_array():
     )
 
     # try changing shape to something impossible to correctly reshape
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError, match='cannot reshape'):
         model.shaped2_values = [1]
 
 
@@ -260,8 +262,7 @@ def test_update_with_inner_model_union():
 def test_update_with_inner_model_protocol():
     @runtime_checkable
     class InnerProtocol(Protocol):
-        def string(self) -> str:
-            ...
+        def string(self) -> str: ...
 
         # Protocol fields are not successfully set without explicit validation.
         @classmethod
@@ -357,7 +358,7 @@ def test_nested_evented_model_serialization():
     class Model(EventedModel):
         nest: NestedModel
 
-    m = Model(nest={'obj': {"a": 1, "b": "hi"}})
+    m = Model(nest={'obj': {'a': 1, 'b': 'hi'}})
     raw = m.json()
     assert raw == r'{"nest": {"obj": {"a": 1, "b": "hi"}}}'
     deserialized = Model.parse_raw(raw)
@@ -438,7 +439,7 @@ class T(EventedModel):
     b: int = 1
 
     @property
-    def c(self) -> List[int]:
+    def c(self) -> list[int]:
         return [self.a, self.b]
 
     @c.setter
@@ -495,7 +496,7 @@ def mocked_object():
 
 
 @pytest.mark.parametrize(
-    'attribute,value,expected_event_values',
+    ('attribute', 'value', 'expected_event_values'),
     [
         ('a', 5, {'a': 5, 'b': None, 'c': [5, 1], 'd': 6, 'e': 50}),
         ('b', 5, {'a': None, 'b': 5, 'c': [1, 5], 'd': 6, 'e': None}),
@@ -549,7 +550,9 @@ def test_evented_model_with_provided_dependencies():
     t.events.b.assert_called_with(value=4)
 
     # should fail if property does not exist
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match='Fields with dependencies must be properties'
+    ):
 
         class T(EventedModel):
             a: int = 1
@@ -562,7 +565,7 @@ def test_evented_model_with_provided_dependencies():
                 dependencies = {'x': ['a']}
 
     # should warn if field does not exist
-    with pytest.warns(match="Unrecognized field dependency"):
+    with pytest.warns(match='Unrecognized field dependency'):
 
         class T(EventedModel):
             a: int = 1
@@ -573,3 +576,173 @@ def test_evented_model_with_provided_dependencies():
 
             class Config:
                 dependencies = {'b': ['x']}
+
+
+def test_property_get_eq_operator():
+    """Test if the __eq_operators__ for properties are properly recognized"""
+
+    class Tt(EventedModel):
+        a: int = 1
+
+        @property
+        def b(self) -> float:  # pragma: no cover
+            return self.a * 2
+
+        @property
+        def c(self):  # pragma: no cover
+            return self.a * 3
+
+    assert Tt.__eq_operators__ == {'a': operator.eq, 'b': operator.eq}
+
+
+def test_property_str_annotation():
+    """Test if the __str_annotations__ for properties are properly recognized"""
+
+    class Tt(EventedModel):
+        a: int = 1
+
+        @property
+        def b(self) -> 'np.ndarray':  # pragma: no cover
+            return np.ndarray([self.a, self.a])
+
+        @property
+        def c(self):  # pragma: no cover
+            return self.a * 3
+
+    assert Tt.__eq_operators__ == {'a': operator.eq}
+
+
+def test_events_are_fired_only_if_necessary(monkeypatch):
+    class Tt(EventedModel):
+        a: int = 1
+
+        @property
+        def b(self) -> float:
+            return self.a * 2
+
+        @property
+        def c(self):
+            return self.a * 3
+
+    eq_op_get = Mock(return_value=operator.eq)
+    monkeypatch.setattr(
+        'napari.utils.events.evented_model.pick_equality_operator', eq_op_get
+    )
+
+    t = Tt()
+
+    a_eq = Mock(return_value=False)
+    b_eq = Mock(return_value=False)
+
+    t.__eq_operators__['a'] = a_eq
+    t.__eq_operators__['b'] = b_eq
+
+    t.a = 2
+    a_eq.assert_not_called()
+    b_eq.assert_not_called()
+
+    call1 = Mock()
+    t.events.a.connect(call1)
+
+    t.a = 3
+
+    call1.assert_called_once()
+    assert call1.call_args.args[0].value == 3
+    a_eq.assert_called_once()
+    b_eq.assert_not_called()
+    eq_op_get.assert_not_called()
+
+    call2 = Mock()
+    t.events.b.connect(call2)
+    call1.reset_mock()
+    a_eq.reset_mock()
+
+    t.a = 4
+    call1.assert_called_once()
+    call2.assert_called_once()
+    assert call1.call_args.args[0].value == 4
+    assert call2.call_args.args[0].value == 8
+    a_eq.assert_called_once()
+    b_eq.assert_called_once()
+    eq_op_get.assert_not_called()
+
+    call3 = Mock()
+    t.events.c.connect(call3)
+    call1.reset_mock()
+    call2.reset_mock()
+    a_eq.reset_mock()
+    b_eq.reset_mock()
+
+    t.a = 3
+    call1.assert_called_once()
+    call2.assert_called_once()
+    call3.assert_called_once()
+    assert call1.call_args.args[0].value == 3
+    assert call2.call_args.args[0].value == 6
+    assert call3.call_args.args[0].value == 9
+    a_eq.assert_called_once()
+    b_eq.assert_called_once()
+    eq_op_get.assert_called_once_with(9)
+
+
+def _reset_mocks(*args):
+    for el in args:
+        el.reset_mock()
+
+
+def test_single_emit():
+    class SampleClass(EventedModel):
+        a: int = 1
+        b: int = 2
+
+        @property
+        def c(self):
+            return self.a
+
+        @c.setter
+        def c(self, value):
+            self.a = value
+
+        @property
+        def d(self):
+            return self.a + self.b
+
+        @d.setter
+        def d(self, value):
+            self.a = value // 2
+            self.b = value - self.a
+
+        @property
+        def e(self):
+            return self.a - self.b
+
+    s = SampleClass()
+    a_m = Mock()
+    c_m = Mock()
+    d_m = Mock()
+    s.events.a.connect(a_m)
+    s.events.c.connect(c_m)
+    s.events.d.connect(d_m)
+
+    s.a = 4
+    a_m.assert_called_once()
+    c_m.assert_called_once()
+    d_m.assert_called_once()
+
+    _reset_mocks(a_m, c_m, d_m)
+
+    s.c = 6
+    a_m.assert_called_once()
+    c_m.assert_called_once()
+    d_m.assert_called_once()
+
+    _reset_mocks(a_m, c_m, d_m)
+
+    e_m = Mock()
+    s.events.e.connect(e_m)
+
+    s.d = 21
+    a_m.assert_called_once()
+    c_m.assert_called_once()
+    d_m.assert_called_once()
+    e_m.assert_called_once()

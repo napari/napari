@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Tuple
+from typing import Optional
 
 import numpy as np
 from vispy.scene.widgets.viewbox import ViewBox
@@ -21,12 +21,14 @@ from napari._vispy.overlays.interaction_box import (
     VispySelectionBoxOverlay,
     VispyTransformBoxOverlay,
 )
+from napari._vispy.overlays.labels_polygon import VispyLabelsPolygonOverlay
 from napari._vispy.overlays.scale_bar import VispyScaleBarOverlay
 from napari._vispy.overlays.text import VispyTextOverlay
 from napari.components.overlays import (
     AxesOverlay,
     BoundingBoxOverlay,
     BrushCircleOverlay,
+    LabelsPolygonOverlay,
     Overlay,
     ScaleBarOverlay,
     SelectionBoxOverlay,
@@ -43,7 +45,6 @@ from napari.layers import (
     Tracks,
     Vectors,
 )
-from napari.utils.config import async_octree
 from napari.utils.translations import trans
 
 layer_to_visual = {
@@ -57,7 +58,7 @@ layer_to_visual = {
 }
 
 
-overlay_to_visual = {
+overlay_to_visual: dict[type[Overlay], type[VispyBaseOverlay]] = {
     ScaleBarOverlay: VispyScaleBarOverlay,
     TextOverlay: VispyTextOverlay,
     AxesOverlay: VispyAxesOverlay,
@@ -65,18 +66,8 @@ overlay_to_visual = {
     TransformBoxOverlay: VispyTransformBoxOverlay,
     SelectionBoxOverlay: VispySelectionBoxOverlay,
     BrushCircleOverlay: VispyBrushCircleOverlay,
+    LabelsPolygonOverlay: VispyLabelsPolygonOverlay,
 }
-
-if async_octree:
-    from napari._vispy.experimental.vispy_tiled_image_layer import (
-        VispyTiledImageLayer,
-    )
-    from napari.layers.image.experimental.octree_image import _OctreeImageBase
-
-    # Insert _OctreeImageBase in front so it gets picked over plain Image.
-    new_mapping = {_OctreeImageBase: VispyTiledImageLayer}
-    new_mapping.update(layer_to_visual)
-    layer_to_visual = new_mapping
 
 
 def create_vispy_layer(layer: Layer) -> VispyBaseLayer:
@@ -107,7 +98,7 @@ def create_vispy_layer(layer: Layer) -> VispyBaseLayer:
 
 def create_vispy_overlay(overlay: Overlay, **kwargs) -> VispyBaseOverlay:
     """
-    Create vispy visual for Overlay  based on its type.
+    Create vispy visual for Overlay based on its type.
 
     Parameters
     ----------
@@ -135,8 +126,8 @@ def create_vispy_overlay(overlay: Overlay, **kwargs) -> VispyBaseOverlay:
 def get_view_direction_in_scene_coordinates(
     view: ViewBox,
     ndim: int,
-    dims_displayed: Tuple[int],
-) -> np.ndarray:
+    dims_displayed: tuple[int],
+) -> Optional[np.ndarray]:
     """Calculate the unit vector pointing in the direction of the view.
 
     This is only for 3D viewing, so it returns None when
@@ -183,7 +174,7 @@ def get_view_direction_in_scene_coordinates(
     d2 = p1 - p0
 
     # in 3D world coordinates
-    d3 = d2[0:3]
+    d3 = d2[:3]
     d4 = d3 / np.linalg.norm(d3)
 
     # data are ordered xyz on vispy Volume

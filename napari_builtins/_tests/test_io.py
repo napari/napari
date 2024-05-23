@@ -2,7 +2,7 @@ import csv
 import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import NamedTuple, Tuple
+from typing import NamedTuple
 from uuid import uuid4
 
 import dask.array as da
@@ -24,7 +24,7 @@ from napari_builtins.io._write import write_csv
 
 
 class ImageSpec(NamedTuple):
-    shape: Tuple[int, ...]
+    shape: tuple[int, ...]
     dtype: str
     ext: str
     levels: int = 1
@@ -38,8 +38,8 @@ TIFF_3D = ImageSpec((2, 15, 10), 'uint8', '.tif')
 ZARR1 = ImageSpec((10, 20, 20), 'uint8', '.zarr')
 
 
-@pytest.fixture
-def _write_spec(tmp_path: Path):
+@pytest.fixture()
+def write_spec(tmp_path: Path):
     def writer(spec: ImageSpec):
         image = np.random.random(spec.shape).astype(spec.dtype)
         fname = tmp_path / f'{uuid4()}{spec.ext}'
@@ -57,9 +57,8 @@ def _write_spec(tmp_path: Path):
 
 
 def test_no_files_raises(tmp_path):
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(ValueError, match='No files found in'):
         magic_imread(tmp_path)
-    assert "No files found in" in str(e.value)
 
 
 def test_guess_zarr_path():
@@ -89,6 +88,20 @@ def test_zarr_nested(tmp_path):
 
     image_in = magic_imread([str(root_path / image_name)])
     np.testing.assert_array_equal(image, image_in)
+
+
+def test_zarr_with_unrelated_file(tmp_path):
+    image = np.random.random((10, 20, 20))
+    image_name = 'my_image'
+    root_path = tmp_path / 'dataset.zarr'
+    grp = zarr.open(str(root_path), mode='a')
+    grp.create_dataset(image_name, data=image)
+
+    txt_file_path = root_path / 'unrelated.txt'
+    txt_file_path.touch()
+
+    image_in = magic_imread([str(root_path)])
+    np.testing.assert_array_equal(image, image_in[0])
 
 
 def test_zarr_multiscale():
@@ -125,7 +138,7 @@ def test_write_csv(tmpdir):
         csv.reader(output_csv, delimiter=',')
         for row_index, row in enumerate(output_csv):
             if row_index == 0:
-                assert row == "column_1,column_2,column_3\n"
+                assert row == 'column_1,column_2,column_3\n'
             else:
                 output_row_data = [float(i) for i in row.split(',')]
                 np.testing.assert_allclose(
@@ -177,7 +190,7 @@ def test_read_csv_raises(tmp_path):
     assert read_csv(temp, require_type=None)[2] == 'points'
     assert read_csv(temp, require_type='any')[2] == 'points'
     assert read_csv(temp, require_type='points')[2] == 'points'
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='not recognized as'):
         read_csv(temp, require_type='shapes')
 
     # test that unrecognized data is detected with require_type = None
@@ -187,11 +200,11 @@ def test_read_csv_raises(tmp_path):
     with open(temp, mode='w', newline='') as csvfile:
         csv.writer(csvfile).writerows(data)
     assert read_csv(temp, require_type=None)[2] is None
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='not recognized as'):
         assert read_csv(temp, require_type='any')
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='not recognized as'):
         assert read_csv(temp, require_type='points')
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='not recognized as'):
         read_csv(temp, require_type='shapes')
 
 
@@ -208,7 +221,7 @@ def test_csv_to_layer_data_raises(tmp_path):
     assert csv_to_layer_data(temp, require_type=None)[2] == 'points'
     assert csv_to_layer_data(temp, require_type='any')[2] == 'points'
     assert csv_to_layer_data(temp, require_type='points')[2] == 'points'
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='not recognized as'):
         csv_to_layer_data(temp, require_type='shapes')
 
     # test that unrecognized data simply returns None when require_type==None
@@ -218,18 +231,18 @@ def test_csv_to_layer_data_raises(tmp_path):
     with open(temp, mode='w', newline='') as csvfile:
         csv.writer(csvfile).writerows(data)
     assert csv_to_layer_data(temp, require_type=None) is None
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='not recognized as'):
         assert csv_to_layer_data(temp, require_type='any')
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='not recognized as'):
         assert csv_to_layer_data(temp, require_type='points')
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='not recognized as'):
         csv_to_layer_data(temp, require_type='shapes')
 
 
 @pytest.mark.parametrize('spec', [PNG, PNG_RGB, TIFF_3D, TIFF_2D])
 @pytest.mark.parametrize('stacks', [1, 3])
-def test_single_file(spec: ImageSpec, _write_spec, stacks: int):
-    fnames = [str(_write_spec(spec)) for _ in range(stacks)]
+def test_single_file(spec: ImageSpec, write_spec, stacks: int):
+    fnames = [str(write_spec(spec)) for _ in range(stacks)]
     [(layer_data,)] = npe2.read(fnames, stack=stacks > 1)
     assert isinstance(layer_data, np.ndarray if stacks == 1 else da.Array)
     assert layer_data.shape == tuple(i for i in (stacks, *spec.shape) if i > 1)
@@ -241,11 +254,11 @@ def test_single_file(spec: ImageSpec, _write_spec, stacks: int):
 )
 @pytest.mark.parametrize('stack', [True, False])
 @pytest.mark.parametrize('use_dask', [True, False, None])
-def test_magic_imread(_write_spec, spec: ImageSpec, stack, use_dask):
+def test_magic_imread(write_spec, spec: ImageSpec, stack, use_dask):
     fnames = (
-        [_write_spec(s) for s in spec]
+        [write_spec(s) for s in spec]
         if isinstance(spec, list)
-        else _write_spec(spec)
+        else write_spec(spec)
     )
     images = magic_imread(fnames, stack=stack, use_dask=use_dask)
     if isinstance(spec, ImageSpec):
@@ -272,9 +285,9 @@ def test_magic_imread(_write_spec, spec: ImageSpec, stack, use_dask):
 
 
 @pytest.mark.parametrize('stack', [True, False])
-def test_irregular_images(_write_spec, stack):
+def test_irregular_images(write_spec, stack):
     specs = [PNG, PNG_RECT]
-    fnames = [str(_write_spec(spec)) for spec in specs]
+    fnames = [str(write_spec(spec)) for spec in specs]
 
     # Ideally, this would work "magically" with dask and irregular images,
     # but there is no foolproof way to do this without reading in all the
@@ -294,8 +307,8 @@ def test_irregular_images(_write_spec, stack):
     assert all(img.shape == spec.shape for img, spec in zip(images, specs))
 
 
-def test_add_zarr(_write_spec):
-    [out] = npe2.read([str(_write_spec(ZARR1))], stack=False)
+def test_add_zarr(write_spec):
+    [out] = npe2.read([str(write_spec(ZARR1))], stack=False)
     assert out[0].shape == ZARR1.shape  # type: ignore
 
 

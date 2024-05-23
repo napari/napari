@@ -46,7 +46,7 @@ class VispyAxesOverlay(ViewerOverlayMixin, VispySceneOverlay):
             axes=axes,
             reversed_axes=reversed_axes,
             colored=self.overlay.colored,
-            bg_color=get_theme(self.viewer.theme, False).canvas,
+            bg_color=get_theme(self.viewer.theme).canvas,
             dashed=self.overlay.dashed,
             arrows=self.overlay.arrows,
         )
@@ -58,8 +58,8 @@ class VispyAxesOverlay(ViewerOverlayMixin, VispySceneOverlay):
 
     def _on_labels_text_change(self):
         axes = self.viewer.dims.displayed[::-1]
-        axes_labels = [self.viewer.dims.axis_labels[a] for a in axes]
-        self.node.text.text = axes_labels
+        axis_labels = [self.viewer.dims.axis_labels[a] for a in axes]
+        self.node.text.text = axis_labels
 
     def _on_zoom_change(self):
         scale = 1 / self.viewer.camera.zoom

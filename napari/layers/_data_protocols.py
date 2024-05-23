@@ -1,12 +1,11 @@
-"""This module holds Protocols that layer.data objects are expected to provide.
-"""
+"""This module holds Protocols that layer.data objects are expected to provide."""
+
 from __future__ import annotations
 
 from typing import (
     TYPE_CHECKING,
     Any,
     Protocol,
-    Tuple,
     Union,
     runtime_checkable,
 )
@@ -23,20 +22,20 @@ if TYPE_CHECKING:
 
     # https://github.com/python/typing/issues/684#issuecomment-548203158
     class ellipsis(Enum):
-        Ellipsis = "..."
+        Ellipsis = '...'
 
     Ellipsis = ellipsis.Ellipsis  # noqa: A001
 else:
     ellipsis = type(Ellipsis)
 
 
-def _raise_protocol_error(obj: Any, protocol: type):
+def _raise_protocol_error(obj: Any, protocol: type) -> None:
     """Raise a more helpful error when required protocol members are missing."""
     annotations = getattr(protocol, '__annotations__', {})
     needed = set(dir(protocol)).union(annotations) - _OBJ_NAMES
     missing = needed - set(dir(obj))
     message = trans._(
-        "Object of type {type_name} does not implement {protocol_name} Protocol.\nMissing methods: {missing_methods}",
+        'Object of type {type_name} does not implement {protocol_name} Protocol.\nMissing methods: {missing_methods}',
         deferred=True,
         type_name=repr(type(obj).__name__),
         protocol_name=repr(protocol.__name__),
@@ -73,16 +72,24 @@ class LayerDataProtocol(Protocol):
         """Data type of the array elements."""
 
     @property
-    def shape(self) -> Tuple[int, ...]:
+    def shape(self) -> tuple[int, ...]:
         """Array dimensions."""
 
     def __getitem__(
-        self, key: Union[Index, Tuple[Index, ...], LayerDataProtocol]
+        self, key: Union[Index, tuple[Index, ...], LayerDataProtocol]
     ) -> LayerDataProtocol:
         """Returns self[key]."""
 
+    @property
+    def size(self) -> int:
+        """The size is necessary to calculate the data range"""
 
-def assert_protocol(obj: Any, protocol: type = LayerDataProtocol):
+    @property
+    def ndim(self) -> int:
+        """The number of dimension of the underlying data"""
+
+
+def assert_protocol(obj: Any, protocol: type = LayerDataProtocol) -> None:
     """Assert `obj` is an instance of `protocol` or raise helpful error."""
     if not isinstance(obj, protocol):
         _raise_protocol_error(obj, protocol)

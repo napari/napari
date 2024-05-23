@@ -7,7 +7,12 @@ from napari._tests.utils import (
     assert_colors_equal,
     check_layer_world_data_extent,
 )
+from napari.components.dims import Dims
 from napari.layers import Vectors
+from napari.utils._test_utils import (
+    validate_all_params_in_docstring,
+    validate_kwargs_sorted,
+)
 from napari.utils.colormaps.standardize_color import transform_color
 
 # Set random seed for testing
@@ -21,7 +26,7 @@ def test_random_vectors():
     data = np.random.random(shape)
     data[:, 0, :] = 20 * data[:, 0, :]
     layer = Vectors(data)
-    assert np.all(layer.data == data)
+    np.testing.assert_array_equal(layer.data, data)
     assert layer.data.shape == shape
     assert layer.ndim == shape[2]
     assert layer._view_data.shape[2] == 2
@@ -53,7 +58,7 @@ def test_no_data_vectors_with_ndim():
 def test_incompatible_ndim_vectors():
     """Test instantiating Vectors layer with ndim argument incompatible with data"""
     data = np.empty((0, 2, 2))
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must be equal to ndim'):
         Vectors(data, ndim=3)
 
 
@@ -62,7 +67,7 @@ def test_empty_vectors():
     shape = (0, 2, 2)
     data = np.empty(shape)
     layer = Vectors(data)
-    assert np.all(layer.data == data)
+    np.testing.assert_array_equal(layer.data, data)
     assert layer.data.shape == shape
     assert layer.ndim == shape[2]
     assert layer._view_data.shape[2] == 2
@@ -95,7 +100,7 @@ def test_empty_vectors_with_property_choices():
     data = np.empty(shape)
     property_choices = {'angle': np.array([0.5], dtype=float)}
     layer = Vectors(data, property_choices=property_choices)
-    assert np.all(layer.data == data)
+    np.testing.assert_array_equal(layer.data, data)
     assert layer.data.shape == shape
     assert layer.ndim == shape[2]
     assert layer._view_data.shape[2] == 2
@@ -146,7 +151,7 @@ def test_random_3D_vectors():
     data = np.random.random(shape)
     data[:, 0, :] = 20 * data[:, 0, :]
     layer = Vectors(data)
-    assert np.all(layer.data == data)
+    np.testing.assert_array_equal(layer.data, data)
     assert layer.data.shape == shape
     assert layer.ndim == shape[2]
     assert layer._view_data.shape[2] == 2
@@ -169,13 +174,13 @@ def test_no_data_3D_vectors_with_ndim():
     assert layer.data.shape[-1] == 3
 
 
-@pytest.mark.filterwarnings("ignore:Passing `np.nan`:DeprecationWarning:numpy")
+@pytest.mark.filterwarnings('ignore:Passing `np.nan`:DeprecationWarning:numpy')
 def test_empty_3D_vectors():
     """Test instantiating Vectors layer with empty coordinate-like 3D data."""
     shape = (0, 2, 3)
     data = np.empty(shape)
     layer = Vectors(data)
-    assert np.all(layer.data == data)
+    np.testing.assert_array_equal(layer.data, data)
     assert layer.data.shape == shape
     assert layer.ndim == shape[2]
     assert layer._view_data.shape[2] == 2
@@ -268,7 +273,9 @@ def test_adding_properties():
 
     # adding properties with the wrong length should raise an exception
     bad_properties = {'vector_type': np.array(['A', 'B'])}
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match='(does not match length)|(indices imply)'
+    ):
         layer.properties = bad_properties
 
 
@@ -283,7 +290,7 @@ def test_changing_data():
     data_b[:, 0, :] = 20 * data_b[:, 0, :]
     layer = Vectors(data_b)
     layer.data = data_b
-    assert np.all(layer.data == data_b)
+    np.testing.assert_array_equal(layer.data, data_b)
     assert layer.data.shape == shape_b
     assert layer.ndim == shape_b[2]
     assert layer._view_data.shape[2] == 2
@@ -381,7 +388,7 @@ def test_invalid_edge_color():
     data[:, 0, :] = 20 * data[:, 0, :]
     layer = Vectors(data)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='should be the name of a color'):
         layer.edge_color = 5
 
 
@@ -429,7 +436,7 @@ def test_edge_color_cycle():
     )
     np.testing.assert_equal(layer.properties, properties)
     edge_color_array = transform_color(color_cycle * int(shape[0] / 2))
-    assert np.all(layer.edge_color == edge_color_array)
+    np.testing.assert_array_equal(layer.edge_color, edge_color_array)
 
 
 def test_edge_color_colormap():
@@ -448,11 +455,11 @@ def test_edge_color_colormap():
     np.testing.assert_equal(layer.properties, properties)
     assert layer.edge_color_mode == 'colormap'
     edge_color_array = transform_color(['black', 'white'] * int(shape[0] / 2))
-    assert np.all(layer.edge_color == edge_color_array)
+    np.testing.assert_array_equal(layer.edge_color, edge_color_array)
 
     # change the color cycle - edge_color should not change
     layer.edge_color_cycle = ['red', 'blue']
-    assert np.all(layer.edge_color == edge_color_array)
+    np.testing.assert_array_equal(layer.edge_color, edge_color_array)
 
     # adjust the clims
     layer.edge_contrast_limits = (0, 3)
@@ -558,10 +565,10 @@ def test_properties_color_mode_without_properties():
     layer = Vectors(data)
     assert layer.properties == {}
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must be a valid Points.properties'):
         layer.edge_color_mode = 'colormap'
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must be a valid Points.properties'):
         layer.edge_color_mode = 'cycle'
 
 
@@ -618,7 +625,7 @@ def test_value():
 
 
 @pytest.mark.parametrize(
-    'position,view_direction,dims_displayed,world',
+    ('position', 'view_direction', 'dims_displayed', 'world'),
     [
         ((0, 0, 0), [1, 0, 0], [0, 1, 2], False),
         ((0, 0, 0), [1, 0, 0], [0, 1, 2], True),
@@ -631,7 +638,7 @@ def test_value_3d(position, view_direction, dims_displayed, world):
     data = np.random.random((10, 2, 3))
     data[:, 0, :] = 20 * data[:, 0, :]
     layer = Vectors(data)
-    layer._slice_dims([0, 0, 0], ndisplay=3)
+    layer._slice_dims(Dims(ndim=3, ndisplay=3))
     value = layer.get_value(
         position,
         view_direction=view_direction,
@@ -648,7 +655,7 @@ def test_message():
     data[:, 0, :] = 20 * data[:, 0, :]
     layer = Vectors(data)
     msg = layer.get_status((0,) * 2)
-    assert type(msg) == dict
+    assert isinstance(msg, dict)
 
 
 def test_world_data_extent():
@@ -690,6 +697,11 @@ def test_out_of_slice_display():
 
 def test_empty_data_from_tuple():
     """Test that empty data raises an error."""
-    layer = Vectors(name="vector", ndim=3)
+    layer = Vectors(name='vector', ndim=3)
     layer2 = Vectors.create(*layer.as_layer_data_tuple())
     assert layer2.data.size == 0
+
+
+def test_docstring():
+    validate_all_params_in_docstring(Vectors)
+    validate_kwargs_sorted(Vectors)

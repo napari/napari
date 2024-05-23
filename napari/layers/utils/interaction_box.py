@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import TYPE_CHECKING, Optional, Tuple
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 
@@ -13,8 +13,8 @@ if TYPE_CHECKING:
 
 @lru_cache
 def generate_interaction_box_vertices(
-    top_left: Tuple[float, float],
-    bot_right: Tuple[float, float],
+    top_left: tuple[float, float],
+    bot_right: tuple[float, float],
     handles: bool = True,
 ) -> np.ndarray:
     """
@@ -61,7 +61,7 @@ def generate_interaction_box_vertices(
 
 
 def generate_transform_box_from_layer(
-    layer: Layer, dims_displayed: Tuple[int, int]
+    layer: Layer, dims_displayed: tuple[int, int]
 ) -> np.ndarray:
     """
     Generate coordinates for the handles of a layer's transform box.
@@ -77,7 +77,7 @@ def generate_transform_box_from_layer(
     np.ndarray
         Vertices and handles of the interaction box in data coordinates.
     """
-    bounds = layer._display_bounding_box_augmented(dims_displayed)
+    bounds = layer._display_bounding_box_augmented(list(dims_displayed))
 
     # generates in vispy canvas pos, so invert x and y, and then go back
     top_left, bot_right = (tuple(point) for point in bounds.T[:, ::-1])
@@ -88,7 +88,7 @@ def generate_transform_box_from_layer(
 
 def calculate_bounds_from_contained_points(
     points: np.ndarray,
-) -> Tuple[Tuple[float, float], Tuple[float, float]]:
+) -> tuple[tuple[float, float], tuple[float, float]]:
     """
     Calculate the top-left and bottom-right corners of an axis-aligned bounding box.
 
@@ -141,7 +141,7 @@ def get_nearby_handle(
     tolerance = dist.max() / 100
     close_to_vertex = np.isclose(dist, 0, atol=tolerance)
     if np.any(close_to_vertex):
-        idx = np.argmax(close_to_vertex)
+        idx = int(np.argmax(close_to_vertex))
         return InteractionBoxHandle(idx)
     if np.all((position >= top_left) & (position <= bot_right)):
         return InteractionBoxHandle.INSIDE

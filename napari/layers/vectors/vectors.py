@@ -1,16 +1,25 @@
 import warnings
 from copy import copy
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Union
 
 import numpy as np
 import pandas as pd
 
 from napari.layers.base import Layer
 from napari.layers.utils._color_manager_constants import ColorMode
+from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.layers.utils.color_manager import ColorManager
 from napari.layers.utils.color_transformations import ColorType
 from napari.layers.utils.layer_utils import _FeatureTable
+from napari.layers.vectors._slice import (
+    _VectorSliceRequest,
+    _VectorSliceResponse,
+)
 from napari.layers.vectors._vector_utils import fix_data_vectors
+from napari.layers.vectors._vectors_constants import (
+    VectorsProjectionMode,
+    VectorStyle,
+)
 from napari.utils.colormaps import Colormap, ValidColormapArg
 from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
@@ -29,21 +38,19 @@ class Vectors(Layer):
         D dimensions. An (N1, N2, ..., ND, D) array is interpreted as
         "image-like" data where there is a length D vector of the
         projections at each pixel.
-    ndim : int
-        Number of dimensions for vectors. When data is not None, ndim must be D.
-        An empty vectors layer can be instantiated with arbitrary ndim.
-    features : dict[str, array-like] or DataFrame
-        Features table where each row corresponds to a vector and each column
-        is a feature.
-    properties : dict {str: array (N,)}, DataFrame
-        Properties for each vector. Each property should be an array of length N,
-        where N is the number of vectors.
-    property_choices : dict {str: array (N,)}
-        possible values for each property.
-    edge_width : float
-        Width for all vectors in pixels.
-    length : float
-        Multiplicative factor on projections for length of all vectors.
+    affine : n-D array or napari.utils.transforms.Affine
+        (N+1, N+1) affine transformation matrix in homogeneous coordinates.
+        The first (N, N) entries correspond to a linear transform and
+        the final column is a length N translation vector and a 1 or a napari
+        `Affine` transform object. Applied as an extra transform on top of the
+        provided scale, rotate, and shear values.
+    blending : str
+        One of a list of preset blending modes that determines how RGB and
+        alpha values of the layer visual get mixed. Allowed values are
+        {'opaque', 'translucent', and 'additive'}.
+    cache : bool
+        Whether slices of out-of-core datasets should be cached upon retrieval.
+        Currently, this only applies to dask arrays.
     edge_color : str
         Color of all of the vectors.
     edge_color_cycle : np.ndarray, list
@@ -56,43 +63,57 @@ class Vectors(Layer):
         of the specified property that are mapped to 0 and 1, respectively.
         The default value is None. If set the none, the clims will be set to
         (property.min(), property.max())
+    edge_width : float
+        Width for all vectors in pixels.
+    experimental_clipping_planes : list of dicts, list of ClippingPlane, or ClippingPlaneList
+        Each dict defines a clipping plane in 3D in data coordinates.
+        Valid dictionary keys are {'position', 'normal', and 'enabled'}.
+        Values on the negative side of the normal are discarded if the plane is enabled.
+    feature_defaults : dict[str, Any] or DataFrame
+        The default value of each feature in a table with one row.
+    features : dict[str, array-like] or DataFrame
+        Features table where each row corresponds to a vector and each column
+        is a feature.
+    length : float
+        Multiplicative factor on projections for length of all vectors.
+    metadata : dict
+        Layer metadata.
+    name : str
+        Name of the layer.
+    ndim : int
+        Number of dimensions for vectors. When data is not None, ndim must be D.
+        An empty vectors layer can be instantiated with arbitrary ndim.
+    opacity : float
+        Opacity of the layer visual, between 0.0 and 1.0.
     out_of_slice_display : bool
         If True, renders vectors not just in central plane but also slightly out of slice
         according to specified point marker size.
-    name : str
-        Name of the layer.
-    metadata : dict
-        Layer metadata.
-    scale : tuple of float
-        Scale factors for the layer.
-    translate : tuple of float
-        Translation values for the layer.
+    projection_mode : str
+        How data outside the viewed dimensions but inside the thick Dims slice will
+        be projected onto the viewed dimenions.
+    properties : dict {str: array (N,)}, DataFrame
+        Properties for each vector. Each property should be an array of length N,
+        where N is the number of vectors.
+    property_choices : dict {str: array (N,)}
+        possible values for each property.
     rotate : float, 3-tuple of float, or n-D array.
         If a float convert into a 2D rotation matrix using that value as an
         angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
         pitch, roll convention. Otherwise assume an nD rotation. Angles are
         assumed to be in degrees. They can be converted from radians with
         np.degrees if needed.
+    scale : tuple of float
+        Scale factors for the layer.
     shear : 1-D array or n-D array
         Either a vector of upper triangular values, or an nD shear matrix with
         ones along the main diagonal.
-    affine : n-D array or napari.utils.transforms.Affine
-        (N+1, N+1) affine transformation matrix in homogeneous coordinates.
-        The first (N, N) entries correspond to a linear transform and
-        the final column is a length N translation vector and a 1 or a napari
-        `Affine` transform object. Applied as an extra transform on top of the
-        provided scale, rotate, and shear values.
-    opacity : float
-        Opacity of the layer visual, between 0.0 and 1.0.
-    blending : str
-        One of a list of preset blending modes that determines how RGB and
-        alpha values of the layer visual get mixed. Allowed values are
-        {'opaque', 'translucent', and 'additive'}.
+    translate : tuple of float
+        Translation values for the layer.
+    vector_style : str
+        One of a list of preset display modes that determines how vectors are displayed.
+        Allowed values are {'line', 'triangle', and 'arrow'}.
     visible : bool
         Whether the layer visual is currently being displayed.
-    cache : bool
-        Whether slices of out-of-core datasets should be cached upon retrieval.
-        Currently, this only applies to dask arrays.
 
     Attributes
     ----------
@@ -108,6 +129,15 @@ class Vectors(Layer):
         where N is the number of vectors.
     edge_width : float
         Width for all vectors in pixels.
+    vector_style : VectorStyle
+        Determines how vectors are displayed.
+
+        * ``VectorStyle.LINE``:
+            Vectors are displayed as lines.
+        * ``VectorStyle.TRIANGLE``:
+            Vectors are displayed as triangles.
+        * ``VectorStyle.ARROW``:
+            Vectors are displayed as arrows.
     length : float
         Multiplicative factor on projections for length of all vectors.
     edge_color : str
@@ -145,6 +175,8 @@ class Vectors(Layer):
         subsampled.
     """
 
+    _projectionclass = VectorsProjectionMode
+
     # The max number of vectors that will ever be used to render the thumbnail
     # If more vectors are present then they are randomly subsampled
     _max_vectors_thumbnail = 1024
@@ -153,30 +185,32 @@ class Vectors(Layer):
         self,
         data=None,
         *,
-        ndim=None,
-        features=None,
-        feature_defaults=None,
-        properties=None,
-        property_choices=None,
-        edge_width=1,
+        affine=None,
+        blending='translucent',
+        cache=True,
         edge_color='red',
         edge_color_cycle=None,
         edge_colormap='viridis',
         edge_contrast_limits=None,
-        out_of_slice_display=False,
-        length=1,
-        name=None,
-        metadata=None,
-        scale=None,
-        translate=None,
-        rotate=None,
-        shear=None,
-        affine=None,
-        opacity=0.7,
-        blending='translucent',
-        visible=True,
-        cache=True,
+        edge_width=1,
         experimental_clipping_planes=None,
+        feature_defaults=None,
+        features=None,
+        length=1,
+        metadata=None,
+        name=None,
+        ndim=None,
+        opacity=0.7,
+        out_of_slice_display=False,
+        projection_mode='none',
+        properties=None,
+        property_choices=None,
+        rotate=None,
+        scale=None,
+        shear=None,
+        translate=None,
+        vector_style='triangle',
+        visible=True,
     ) -> None:
         if ndim is None and scale is not None:
             ndim = len(scale)
@@ -198,6 +232,7 @@ class Vectors(Layer):
             visible=visible,
             cache=cache,
             experimental_clipping_planes=experimental_clipping_planes,
+            projection_mode=projection_mode,
         )
 
         # events for non-napari calculations
@@ -205,6 +240,7 @@ class Vectors(Layer):
             length=Event,
             edge_width=Event,
             edge_color=Event,
+            vector_style=Event,
             edge_color_mode=Event,
             properties=Event,
             out_of_slice_display=Event,
@@ -213,13 +249,13 @@ class Vectors(Layer):
         )
 
         # Save the vector style params
+        self._vector_style = VectorStyle(vector_style)
         self._edge_width = edge_width
         self._out_of_slice_display = out_of_slice_display
 
         self._length = float(length)
 
         self._data = data
-        self._displayed_stored = None
 
         self._feature_table = _FeatureTable.from_layer(
             features=features,
@@ -235,16 +271,17 @@ class Vectors(Layer):
             continuous_colormap=edge_colormap,
             contrast_limits=edge_contrast_limits,
             categorical_colormap=edge_color_cycle,
-            properties=self.properties
-            if self._data.size > 0
-            else self._feature_table.currents(),
+            properties=(
+                self.properties
+                if self._data.size > 0
+                else self._feature_table.currents()
+            ),
         )
 
         # Data containing vectors in the currently viewed slice
         self._view_data = np.empty((0, 2, 2))
-        self._displayed_stored = []
-        self._view_indices = []
-        self._view_alphas = []
+        self._view_indices = np.array([], dtype=int)
+        self._view_alphas: Union[float, np.ndarray] = 1.0
 
         # now that everything is set up, make the layer visible (if set to visible)
         self.refresh()
@@ -307,7 +344,7 @@ class Vectors(Layer):
     @features.setter
     def features(
         self,
-        features: Union[Dict[str, np.ndarray], pd.DataFrame],
+        features: Union[dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
         self._feature_table.set_values(features, num_data=len(self.data))
         if self._edge.color_properties is not None:
@@ -333,12 +370,12 @@ class Vectors(Layer):
         self.events.features()
 
     @property
-    def properties(self) -> Dict[str, np.ndarray]:
+    def properties(self) -> dict[str, np.ndarray]:
         """dict {str: array (N,)}, DataFrame: Annotations for each point"""
         return self._feature_table.properties()
 
     @properties.setter
-    def properties(self, properties: Dict[str, Array]):
+    def properties(self, properties: dict[str, Array]):
         self.features = properties
 
     @property
@@ -351,13 +388,13 @@ class Vectors(Layer):
 
     @feature_defaults.setter
     def feature_defaults(
-        self, defaults: Union[Dict[str, Any], pd.DataFrame]
+        self, defaults: Union[dict[str, Any], pd.DataFrame]
     ) -> None:
         self._feature_table.set_defaults(defaults)
         self.events.feature_defaults()
 
     @property
-    def property_choices(self) -> Dict[str, np.ndarray]:
+    def property_choices(self) -> dict[str, np.ndarray]:
         return self._feature_table.choices()
 
     def _get_state(self):
@@ -373,11 +410,14 @@ class Vectors(Layer):
             {
                 'length': self.length,
                 'edge_width': self.edge_width,
-                'edge_color': self.edge_color
-                if self.data.size
-                else [self._edge.current_color],
+                'vector_style': self.vector_style,
+                'edge_color': (
+                    self.edge_color
+                    if self.data.size
+                    else [self._edge.current_color]
+                ),
                 'edge_color_cycle': self.edge_color_cycle,
-                'edge_colormap': self.edge_colormap.name,
+                'edge_colormap': self.edge_colormap.dict(),
                 'edge_contrast_limits': self.edge_contrast_limits,
                 'data': self.data,
                 'properties': self.properties,
@@ -425,24 +465,45 @@ class Vectors(Layer):
         self.refresh()
 
     @property
-    def edge_width(self) -> Union[int, float]:
+    def edge_width(self) -> float:
         """float: Width for all vectors in pixels."""
         return self._edge_width
 
     @edge_width.setter
-    def edge_width(self, edge_width: Union[int, float]):
+    def edge_width(self, edge_width: float):
         self._edge_width = edge_width
 
         self.events.edge_width()
         self.refresh()
 
     @property
-    def length(self) -> Union[int, float]:
+    def vector_style(self) -> str:
+        """Vectors display mode: Determines how vectors are displayed.
+
+        VectorStyle.LINE
+            Displays vectors as rectangular lines.
+        VectorStyle.TRIANGLE
+            Displays vectors as triangles.
+        VectorStyle.ARROW
+            Displays vectors as arrows.
+        """
+        return str(self._vector_style)
+
+    @vector_style.setter
+    def vector_style(self, vector_style: str):
+        old_vector_style = self._vector_style
+        self._vector_style = VectorStyle(vector_style)
+        if self._vector_style != old_vector_style:
+            self.events.vector_style()
+            self.refresh()
+
+    @property
+    def length(self) -> float:
         """float: Multiplicative factor for length of all vectors."""
         return self._length
 
     @length.setter
-    def length(self, length: Union[int, float]):
+    def length(self, length: float):
         self._length = float(length)
 
         self.events.length()
@@ -556,7 +617,7 @@ class Vectors(Layer):
         self._edge.categorical_colormap = edge_color_cycle
 
     @property
-    def edge_colormap(self) -> Tuple[str, Colormap]:
+    def edge_colormap(self) -> Colormap:
         """Return the colormap to be applied to a property to get the edge color.
 
         Returns
@@ -571,7 +632,7 @@ class Vectors(Layer):
         self._edge.continuous_colormap = colormap
 
     @property
-    def edge_contrast_limits(self) -> Tuple[float, float]:
+    def edge_contrast_limits(self) -> tuple[float, float]:
         """None, (float, float): contrast limits for mapping
         the edge_color colormap property to 0 and 1
         """
@@ -579,104 +640,93 @@ class Vectors(Layer):
 
     @edge_contrast_limits.setter
     def edge_contrast_limits(
-        self, contrast_limits: Union[None, Tuple[float, float]]
+        self, contrast_limits: Union[None, tuple[float, float]]
     ):
         self._edge.contrast_limits = contrast_limits
 
     @property
     def _view_face_color(self) -> np.ndarray:
-        """(Mx4) np.ndarray : colors for the M in view vectors"""
+        """(Mx4) np.ndarray : colors for the M in view triangles"""
+
+        # Create as many colors as there are visible vectors.
+        # Using fancy array indexing implicitly creates a new
+        # array rather than creating a view of the original one
+        # in ColorManager
         face_color = self.edge_color[self._view_indices]
         face_color[:, -1] *= self._view_alphas
-        face_color = np.repeat(face_color, 2, axis=0)
+
+        # Generally, several triangles are drawn for each vector,
+        # so we need to duplicate the colors accordingly
+        if self.vector_style == 'line':
+            # Line vectors are drawn with 2 triangles
+            face_color = np.repeat(face_color, 2, axis=0)
+
+        elif self.vector_style == 'triangle':
+            # Triangle vectors are drawn with 1 triangle
+            pass  # No need to duplicate colors
+
+        elif self.vector_style == 'arrow':
+            # Arrow vectors are drawn with 3 triangles
+            face_color = np.repeat(face_color, 3, axis=0)
 
         if self._slice_input.ndisplay == 3 and self.ndim > 2:
             face_color = np.vstack([face_color, face_color])
 
         return face_color
 
-    def _slice_data(
-        self, dims_indices
-    ) -> Tuple[List[int], Union[float, np.ndarray]]:
-        """Determines the slice of vectors given the indices.
-
-        Parameters
-        ----------
-        dims_indices : sequence of int, float or slice objects
-            Indices of the slicing plane
-
-        Returns
-        -------
-        slice_indices : list
-            Indices of vectors in the currently viewed slice.
-        alpha : float, (N, ) array
-            The computed, relative opacity of vectors in the current slice.
-            If `out_of_slice_display` is mode is off, this is always 1.
-            Otherwise, vectors originating in the current slice are assigned a value of 1,
-            while vectors passing through the current slice are assigned progressively lower
-            values, based on how far from the current slice they originate.
-        """
-
-        if len(self.data) == 0:
-            return [], np.empty(0)
-
-        dims_not_displayed = self._slice_input.not_displayed
-
-        # We want a numpy array so we can use fancy indexing with the non-displayed
-        # indices, but as dims_indices can (and often/always does) contain slice
-        # objects, the array has dtype=object which is then very slow for the
-        # arithmetic below.
-        # promote slicing plane to array so we can index into it, project as type float
-        not_disp_indices = np.array(dims_indices)[dims_not_displayed].astype(
-            float
-        )
-        # get the anchor points (starting positions) of the vector layers in not displayed dims
-        data = self.data[:, 0, dims_not_displayed]
-        # calculate distances from anchor points to the slicing plane
-        distances = abs(data - not_disp_indices)
-        # if we need to include vectors that are out of this slice
-        if self.out_of_slice_display is True:
-            # get the scaled projected vectors
-            projected_lengths = abs(
-                self.data[:, 1, dims_not_displayed] * self.length
-            )
-            # find where the distance to plane is less than the scaled vector
-            matches = np.all(distances <= projected_lengths, axis=1)
-            alpha_match = projected_lengths[matches]
-            alpha_match[alpha_match == 0] = 1
-            alpha_per_dim = (alpha_match - distances[matches]) / alpha_match
-            alpha_per_dim[alpha_match == 0] = 1
-            alpha = np.prod(alpha_per_dim, axis=1).astype(float)
-        else:
-            matches = np.all(distances <= 0.5, axis=1)
-            alpha = 1.0
-        slice_indices = np.where(matches)[0].astype(int)
-        return slice_indices, alpha
-
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
 
-        indices, alphas = self._slice_data(self._slice_indices)
+        # The new slicing code makes a request from the existing state and
+        # executes the request on the calling thread directly.
+        # For async slicing, the calling thread will not be the main thread.
+        request = self._make_slice_request_internal(
+            self._slice_input, self._data_slice
+        )
+        response = request()
+        self._update_slice_response(response)
+
+    def _make_slice_request(self, dims) -> _VectorSliceRequest:
+        """Make a Vectors slice request based on the given dims and these data."""
+        slice_input = self._make_slice_input(dims)
+        # TODO: [see Image]
+        #   For the existing sync slicing, slice_indices is passed through
+        # to avoid some performance issues related to the evaluation of the
+        # data-to-world transform and its inverse. Async slicing currently
+        # absorbs these performance issues here, but we can likely improve
+        # things either by caching the world-to-data transform on the layer
+        # or by lazily evaluating it in the slice task itself.
+        slice_indices = slice_input.data_slice(self._data_to_world.inverse)
+        return self._make_slice_request_internal(slice_input, slice_indices)
+
+    def _make_slice_request_internal(
+        self, slice_input: _SliceInput, data_slice: _ThickNDSlice
+    ):
+        return _VectorSliceRequest(
+            slice_input=slice_input,
+            data=self.data,
+            data_slice=data_slice,
+            projection_mode=self.projection_mode,
+            out_of_slice_display=self.out_of_slice_display,
+            length=self.length,
+        )
+
+    def _update_slice_response(self, response: _VectorSliceResponse):
+        """Handle a slicing response."""
+        self._slice_input = response.slice_input
+        indices = response.indices
+        alphas = response.alphas
 
         disp = self._slice_input.displayed
 
-        if len(self.data) == 0:
-            self._view_data = np.empty((0, 2, 2))
-            self._view_indices = []
-        elif self.ndim > 2:
-            indices, alphas = self._slice_data(self._slice_indices)
-            self._view_indices = indices
-            self._view_alphas = alphas
-            self._view_data = self.data[np.ix_(indices, [0, 1], disp)]
-        else:
-            self._view_data = self.data[:, :, disp]
-            self._view_indices = np.arange(self.data.shape[0])
-            self._view_alphas = 1.0
+        self._view_indices = indices
+        self._view_alphas = alphas
+        self._view_data = self.data[np.ix_(list(indices), [0, 1], disp)]
 
     def _update_thumbnail(self):
         """Update thumbnail with current vectors and colors."""
         # Set the default thumbnail to black, opacity 1
-        colormapped = np.zeros(self._thumbnail_shape)
+        colormapped = np.zeros(self._thumbnail_shape, dtype=np.uint8)
         colormapped[..., 3] = 1
         if len(self.data) == 0:
             self.thumbnail = colormapped
@@ -721,7 +771,9 @@ class Vectors(Layer):
                 y_vals = np.linspace(start[1], stop[1], step)
                 for x, y in zip(x_vals, y_vals):
                     colormapped[int(x), int(y), :] = ec
-            colormapped[..., 3] *= self.opacity
+            colormapped[..., 3] = (colormapped[..., 3] * self.opacity).astype(
+                np.uint8
+            )
             self.thumbnail = colormapped
 
     def _get_value(self, position):

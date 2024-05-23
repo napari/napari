@@ -11,7 +11,7 @@ class WarnPopup(QDialog):
     def __init__(
         self,
         parent=None,
-        text: str = "",
+        text: str = '',
     ) -> None:
         super().__init__(parent)
 
@@ -26,7 +26,7 @@ class WarnPopup(QDialog):
         self._message.setText(text)
         self._message.setWordWrap(True)
         self._xbutton.clicked.connect(self._close)
-        self._xbutton.setStyleSheet("background-color: rgba(0, 0, 0, 0);")
+        self._xbutton.setStyleSheet('background-color: rgba(0, 0, 0, 0);')
 
         # Layout
         main_layout = QVBoxLayout()

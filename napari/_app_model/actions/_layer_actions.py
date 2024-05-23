@@ -11,13 +11,14 @@ effect.  Use `app.register_action` to register new actions at runtime.
 from __future__ import annotations
 
 from functools import partial
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 from app_model.types import Action
 
-from napari._app_model.constants import CommandId, MenuGroup, MenuId
-from napari._app_model.context import LayerListContextKeys as LLCK
+from napari._app_model.constants import MenuGroup, MenuId
+from napari._app_model.context import LayerListSelectionContextKeys as LLSCK
 from napari.layers import _layer_actions
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from app_model.types import MenuRuleDict
@@ -39,65 +40,65 @@ LAYERCTX_LINK: MenuRuleDict = {
 
 # Statically defined Layer actions.
 # modifying this list at runtime has no effect.
-LAYER_ACTIONS: List[Action] = [
+LAYER_ACTIONS: list[Action] = [
     Action(
-        id=CommandId.LAYER_DUPLICATE,
-        title=CommandId.LAYER_DUPLICATE.title,
+        id='napari.layer.duplicate',
+        title=trans._('Duplicate Layer'),
         callback=_layer_actions._duplicate_layer,
         menus=[LAYERCTX_SPLITMERGE],
     ),
     Action(
-        id=CommandId.LAYER_SPLIT_STACK,
-        title=CommandId.LAYER_SPLIT_STACK.title,
+        id='napari.layer.split_stack',
+        title=trans._('Split Stack'),
         callback=_layer_actions._split_stack,
-        menus=[{**LAYERCTX_SPLITMERGE, 'when': ~LLCK.active_layer_is_rgb}],
-        enablement=LLCK.active_layer_is_image_3d,
+        menus=[{**LAYERCTX_SPLITMERGE, 'when': ~LLSCK.active_layer_is_rgb}],
+        enablement=LLSCK.active_layer_is_image_3d,
     ),
     Action(
-        id=CommandId.LAYER_SPLIT_RGB,
-        title=CommandId.LAYER_SPLIT_RGB.title,
+        id='napari.layer.split_rgb',
+        title=trans._('Split RGB'),
         callback=_layer_actions._split_rgb,
-        menus=[{**LAYERCTX_SPLITMERGE, 'when': LLCK.active_layer_is_rgb}],
-        enablement=LLCK.active_layer_is_rgb,
+        menus=[{**LAYERCTX_SPLITMERGE, 'when': LLSCK.active_layer_is_rgb}],
+        enablement=LLSCK.active_layer_is_rgb,
     ),
     Action(
-        id=CommandId.LAYER_CONVERT_TO_LABELS,
-        title=CommandId.LAYER_CONVERT_TO_LABELS.title,
+        id='napari.layer.convert_to_labels',
+        title=trans._('Convert to Labels'),
         callback=_layer_actions._convert_to_labels,
         enablement=(
             (
-                (LLCK.num_selected_image_layers >= 1)
-                | (LLCK.num_selected_shapes_layers >= 1)
+                (LLSCK.num_selected_image_layers >= 1)
+                | (LLSCK.num_selected_shapes_layers >= 1)
             )
-            & LLCK.all_selected_layers_same_type
-            & ~LLCK.selected_empty_shapes_layer
+            & LLSCK.all_selected_layers_same_type
+            & ~LLSCK.selected_empty_shapes_layer
         ),
         menus=[LAYERCTX_CONVERSION],
     ),
     Action(
-        id=CommandId.LAYER_CONVERT_TO_IMAGE,
-        title=CommandId.LAYER_CONVERT_TO_IMAGE.title,
+        id='napari.layer.convert_to_image',
+        title=trans._('Convert to Image'),
         callback=_layer_actions._convert_to_image,
         enablement=(
-            (LLCK.num_selected_labels_layers >= 1)
-            & LLCK.all_selected_layers_same_type
+            (LLSCK.num_selected_labels_layers >= 1)
+            & LLSCK.all_selected_layers_same_type
         ),
         menus=[LAYERCTX_CONVERSION],
     ),
     Action(
-        id=CommandId.LAYER_MERGE_STACK,
-        title=CommandId.LAYER_MERGE_STACK.title,
+        id='napari.layer.merge_stack',
+        title=trans._('Merge to Stack'),
         callback=_layer_actions._merge_stack,
         enablement=(
-            (LLCK.num_selected_layers > 1)
-            & (LLCK.num_selected_image_layers == LLCK.num_selected_layers)
-            & LLCK.all_selected_layers_same_shape
+            (LLSCK.num_selected_layers > 1)
+            & (LLSCK.num_selected_image_layers == LLSCK.num_selected_layers)
+            & LLSCK.all_selected_layers_same_shape
         ),
         menus=[LAYERCTX_SPLITMERGE],
     ),
     Action(
-        id=CommandId.LAYER_TOGGLE_VISIBILITY,
-        title=CommandId.LAYER_TOGGLE_VISIBILITY.title,
+        id='napari.layer.toggle_visibility',
+        title=trans._('Toggle visibility'),
         callback=_layer_actions._toggle_visibility,
         menus=[
             {
@@ -107,30 +108,73 @@ LAYER_ACTIONS: List[Action] = [
         ],
     ),
     Action(
-        id=CommandId.LAYER_LINK_SELECTED,
-        title=CommandId.LAYER_LINK_SELECTED.title,
+        id='napari.layer.link_selected_layers',
+        title=trans._('Link Layers'),
         callback=_layer_actions._link_selected_layers,
         enablement=(
-            (LLCK.num_selected_layers > 1) & ~LLCK.num_selected_layers_linked
+            (LLSCK.num_selected_layers > 1) & ~LLSCK.num_selected_layers_linked
         ),
-        menus=[{**LAYERCTX_LINK, 'when': ~LLCK.num_selected_layers_linked}],
+        menus=[{**LAYERCTX_LINK, 'when': ~LLSCK.num_selected_layers_linked}],
     ),
     Action(
-        id=CommandId.LAYER_UNLINK_SELECTED,
-        title=CommandId.LAYER_UNLINK_SELECTED.title,
+        id='napari.layer.unlink_selected_layers',
+        title=trans._('Unlink Layers'),
         callback=_layer_actions._unlink_selected_layers,
-        enablement=LLCK.num_selected_layers_linked,
-        menus=[{**LAYERCTX_LINK, 'when': LLCK.num_selected_layers_linked}],
+        enablement=LLSCK.num_selected_layers_linked,
+        menus=[{**LAYERCTX_LINK, 'when': LLSCK.num_selected_layers_linked}],
     ),
     Action(
-        id=CommandId.LAYER_SELECT_LINKED,
-        title=CommandId.LAYER_SELECT_LINKED.title,
+        id='napari.layer.select_linked_layers',
+        title=trans._('Select Linked Layers'),
         callback=_layer_actions._select_linked_layers,
-        enablement=LLCK.num_unselected_linked_layers,
+        enablement=LLSCK.num_unselected_linked_layers,
         menus=[LAYERCTX_LINK],
     ),
+    Action(
+        id='napari.layer.show_selected',
+        title=trans._('Show All Selected Layers'),
+        callback=_layer_actions._show_selected,
+        menus=[
+            {
+                'id': MenuId.LAYERLIST_CONTEXT,
+                'group': MenuGroup.NAVIGATION,
+            }
+        ],
+    ),
+    Action(
+        id='napari.layer.hide_selected',
+        title=trans._('Hide All Selected Layers'),
+        callback=_layer_actions._hide_selected,
+        menus=[
+            {
+                'id': MenuId.LAYERLIST_CONTEXT,
+                'group': MenuGroup.NAVIGATION,
+            }
+        ],
+    ),
+    Action(
+        id='napari.layer.show_unselected',
+        title=trans._('Show All Unselected Layers'),
+        callback=_layer_actions._show_unselected,
+        menus=[
+            {
+                'id': MenuId.LAYERLIST_CONTEXT,
+                'group': MenuGroup.NAVIGATION,
+            }
+        ],
+    ),
+    Action(
+        id='napari.layer.hide_unselected',
+        title=trans._('Hide All Unselected Layers'),
+        callback=_layer_actions._hide_unselected,
+        menus=[
+            {
+                'id': MenuId.LAYERLIST_CONTEXT,
+                'group': MenuGroup.NAVIGATION,
+            }
+        ],
+    ),
 ]
-
 
 for _dtype in (
     'int8',
@@ -142,28 +186,26 @@ for _dtype in (
     'uint32',
     'uint64',
 ):
-    cmd: CommandId = getattr(CommandId, f'LAYER_CONVERT_TO_{_dtype.upper()}')
     LAYER_ACTIONS.append(
         Action(
-            id=cmd,
-            title=cmd.title,
+            id=f'napari.layer.convert_to_{_dtype}',
+            title=trans._('Convert to {dtype}', dtype=_dtype),
             callback=partial(_layer_actions._convert_dtype, mode=_dtype),
             enablement=(
-                LLCK.all_selected_layers_labels
-                & (LLCK.active_layer_dtype != _dtype)
+                LLSCK.all_selected_layers_labels
+                & (LLSCK.active_layer_dtype != _dtype)
             ),
             menus=[{'id': MenuId.LAYERS_CONVERT_DTYPE}],
         )
     )
 
 for mode in ('max', 'min', 'std', 'sum', 'mean', 'median'):
-    cmd: CommandId = getattr(CommandId, f'LAYER_PROJECT_{mode.upper()}')
     LAYER_ACTIONS.append(
         Action(
-            id=cmd,
-            title=cmd.title,
+            id=f'napari.layer.project_{mode}',
+            title=trans._('{mode} projection', mode=mode),
             callback=partial(_layer_actions._project, mode=mode),
-            enablement=LLCK.active_layer_is_image_3d,
+            enablement=LLSCK.active_layer_is_image_3d,
             menus=[{'id': MenuId.LAYERS_PROJECT}],
         )
     )

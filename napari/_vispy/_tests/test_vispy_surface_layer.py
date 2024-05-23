@@ -2,17 +2,19 @@ import numpy as np
 import pytest
 from vispy.geometry import create_cube
 
+from napari._tests.utils import skip_local_popups
 from napari._vispy.layers.surface import VispySurfaceLayer
+from napari.components.dims import Dims
 from napari.layers import Surface
 
 
-@pytest.fixture
+@pytest.fixture()
 def cube_layer():
     vertices, faces, _ = create_cube()
     return Surface((vertices['position'] * 100, faces))
 
 
-@pytest.mark.parametrize("opacity", [0, 0.3, 0.7, 1])
+@pytest.mark.parametrize('opacity', [0, 0.3, 0.7, 1])
 def test_VispySurfaceLayer(cube_layer, opacity):
     cube_layer.opacity = opacity
     visual = VispySurfaceLayer(cube_layer)
@@ -20,24 +22,24 @@ def test_VispySurfaceLayer(cube_layer, opacity):
 
 
 def test_shading(cube_layer):
-    cube_layer._slice_dims(ndisplay=3)
-    cube_layer.shading = "flat"
+    cube_layer._slice_dims(Dims(ndim=3, ndisplay=3))
+    cube_layer.shading = 'flat'
     visual = VispySurfaceLayer(cube_layer)
     assert visual.node.shading_filter.attached
-    assert visual.node.shading_filter.shading == "flat"
-    cube_layer.shading = "smooth"
-    assert visual.node.shading_filter.shading == "smooth"
+    assert visual.node.shading_filter.shading == 'flat'
+    cube_layer.shading = 'smooth'
+    assert visual.node.shading_filter.shading == 'smooth'
 
 
 @pytest.mark.parametrize(
-    "texture_shape",
-    (
+    'texture_shape',
+    [
         (32, 32),
         (32, 32, 1),
         (32, 32, 3),
         (32, 32, 4),
-    ),
-    ids=("2D", "1Ch", "RGB", "RGBA"),
+    ],
+    ids=('2D', '1Ch', 'RGB', 'RGBA'),
 )
 def test_add_texture(cube_layer, texture_shape):
     np.random.seed(0)
@@ -50,7 +52,7 @@ def test_add_texture(cube_layer, texture_shape):
     assert visual._texture_filter is None
 
     # the texture filter is created when texture + texcoords are added
-    texcoords = create_cube()[0]["texcoord"]
+    texcoords = create_cube()[0]['texcoord']
     cube_layer.texcoords = texcoords
     assert visual._texture_filter.attached
     assert visual._texture_filter.enabled
@@ -69,7 +71,7 @@ def test_add_texture(cube_layer, texture_shape):
 def test_change_texture(cube_layer):
     np.random.seed(0)
     visual = VispySurfaceLayer(cube_layer)
-    texcoords = create_cube()[0]["texcoord"]
+    texcoords = create_cube()[0]['texcoord']
     cube_layer.texcoords = texcoords
 
     texture0 = np.random.random((32, 32, 3)).astype(np.float32)
@@ -89,7 +91,7 @@ def test_change_texture(cube_layer):
 
 def test_vertex_colors(cube_layer):
     np.random.seed(0)
-    cube_layer._slice_dims(ndisplay=3)
+    cube_layer._slice_dims(Dims(ndim=3, ndisplay=3))
     visual = VispySurfaceLayer(cube_layer)
     n = len(cube_layer.vertices)
 
@@ -109,3 +111,24 @@ def test_vertex_colors(cube_layer):
 
     cube_layer.vertex_colors = None
     assert visual.node.mesh_data.get_vertex_colors() is None
+
+
+@skip_local_popups
+def test_check_surface_without_visible_faces(make_napari_viewer):
+    points = np.array(
+        [
+            [0, 0.0, 0.0, 0.0],
+            [0, 1.0, 0, 0],
+            [0, 1, 1, 0],
+            [2, 0.0, 0.0, 0.0],
+            [2, 1.0, 0, 0],
+            [2, 1, 1, 0],
+        ]
+    )
+    faces = np.array([[0, 1, 2], [3, 4, 5]])
+    layer = Surface((points, faces))
+    viewer = make_napari_viewer(ndisplay=3)
+    viewer.show()
+    viewer.add_layer(layer)
+    # The following with throw an exception.
+    viewer.reset()

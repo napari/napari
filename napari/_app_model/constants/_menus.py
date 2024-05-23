@@ -11,21 +11,28 @@ SOME of these (but definitely not all) will be exposed as "contributable"
 menus for plugins to contribute commands and submenu items to.
 """
 
-from enum import Enum
+from napari.utils.compat import StrEnum
 
 
-class MenuId(str, Enum):
+class MenuId(StrEnum):
     """Id representing a menu somewhere in napari."""
+
+    MENUBAR_FILE = 'napari/file'
+    FILE_OPEN_WITH_PLUGIN = 'napari/file/open_with_plugin'
+    FILE_SAMPLES = 'napari/file/samples'
 
     MENUBAR_VIEW = 'napari/view'
     VIEW_AXES = 'napari/view/axes'
     VIEW_SCALEBAR = 'napari/view/scalebar'
+
+    MENUBAR_PLUGINS = 'napari/plugins'
 
     MENUBAR_HELP = 'napari/help'
 
     LAYERLIST_CONTEXT = 'napari/layers/context'
     LAYERS_CONVERT_DTYPE = 'napari/layers/convert_dtype'
     LAYERS_PROJECT = 'napari/layers/project'
+    LAYERS_COPY_SPATIAL = 'napari/layers/copy_spatial'
 
     def __str__(self) -> str:
         return self.value
@@ -35,9 +42,18 @@ class MenuId(str, Enum):
 class MenuGroup:
     NAVIGATION = 'navigation'  # always the first group in any menu
     RENDER = '1_render'
+    # Plugins menubar
+    PLUGINS = '1_plugins'
+    PLUGIN_MULTI_SUBMENU = '2_plugin_multi_submenu'
+    PLUGIN_SINGLE_CONTRIBUTIONS = '3_plugin_contributions'
+    # File menubar
+    PREFERENCES = '2_preferences'
+    SAVE = '3_save'
+    CLOSE = '4_close'
 
     class LAYERLIST_CONTEXT:
         CONVERSION = '1_conversion'
+        COPY_SPATIAL = '4_copy_spatial'
         SPLIT_MERGE = '5_split_merge'
         LINK = '9_link'
 
@@ -50,5 +66,5 @@ _CONTRIBUTABLES = {MenuId.LAYERLIST_CONTEXT.value}
 def is_menu_contributable(menu_id: str) -> bool:
     """Return True if the given menu_id is a menu that plugins can contribute to."""
     return (
-        menu_id in _CONTRIBUTABLES if menu_id.startswith("napari/") else True
+        menu_id in _CONTRIBUTABLES if menu_id.startswith('napari/') else True
     )

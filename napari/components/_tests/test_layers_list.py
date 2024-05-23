@@ -6,6 +6,7 @@ import pytest
 
 from napari.components import LayerList
 from napari.layers import Image
+from napari.layers.utils._link_layers import get_linked_layers
 
 
 def test_empty_layers_list():
@@ -150,6 +151,24 @@ def test_remove_selected():
     layers.select_all()
     layers.remove_selected()
     assert len(layers) == 0
+
+
+def test_remove_linked_layer():
+    """Test removing a layer that is linked to other layers"""
+    layers = LayerList()
+    layer_a = Image(np.random.random((10, 10)))
+    layer_b = Image(np.random.random((15, 15)))
+    layer_c = Image(np.random.random((15, 15)))
+    layers.extend([layer_a, layer_b, layer_c])
+
+    # link layer_c with layer_b
+    layers.link_layers([layer_c, layer_b])
+    assert len(get_linked_layers(layer_c)) == 1
+    assert len(get_linked_layers(layer_b)) == 1
+
+    layers.selection.add(layer_b)
+    layers.remove_selected()
+    assert len(get_linked_layers(layer_c)) == 0
 
 
 @pytest.mark.filterwarnings('ignore::FutureWarning')
@@ -428,7 +447,6 @@ def test_layers_save_svg(tmpdir, layers, napari_svg_name):
 
 def test_world_extent():
     """Test world extent after adding layers."""
-    np.random.seed(0)
     layers = LayerList()
 
     # Empty data is taken to be 512 x 512
@@ -461,7 +479,6 @@ def test_world_extent():
 
 def test_world_extent_mixed_ndim():
     """Test world extent after adding layers of different dimensionality."""
-    np.random.seed(0)
     layers = LayerList()
 
     # Add 3D layer
@@ -483,20 +500,18 @@ def test_world_extent_mixed_flipped():
     # Flipped data results in a negative scale value which should be
     # made positive when taking into consideration for the step size
     # calculation
-    np.random.seed(0)
     layers = LayerList()
 
     layer = Image(
         np.random.random((15, 15)), affine=[[0, 1, 0], [1, 0, 0], [0, 0, 1]]
     )
     layers.append(layer)
-    np.testing.assert_allclose(layer._data_to_world.scale, (1, -1))
+    np.testing.assert_allclose(layer._data_to_world.scale, (1, 1))
     np.testing.assert_allclose(layers.extent.step, (1, 1))
 
 
 def test_ndim():
     """Test world extent after adding layers."""
-    np.random.seed(0)
     layers = LayerList()
 
     assert layers.ndim == 2
@@ -518,9 +533,9 @@ def test_ndim():
 
 def test_name_uniqueness():
     layers = LayerList()
-    layers.append(Image(np.random.random((10, 15)), name="Image [1]"))
-    layers.append(Image(np.random.random((10, 15)), name="Image"))
-    layers.append(Image(np.random.random((10, 15)), name="Image"))
+    layers.append(Image(np.random.random((10, 15)), name='Image [1]'))
+    layers.append(Image(np.random.random((10, 15)), name='Image'))
+    layers.append(Image(np.random.random((10, 15)), name='Image'))
     assert [x.name for x in layers] == ['Image [1]', 'Image', 'Image [2]']
 
 
@@ -528,20 +543,20 @@ def test_readd_layers():
     layers = LayerList()
     imgs = []
     for _i in range(5):
-        img = Image(np.random.rand(10, 10, 10))
+        img = Image(np.random.random((10, 10, 10)))
         layers.append(img)
         imgs.append(img)
 
     assert layers == imgs
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='already present'):
         layers.append(imgs[1])
     assert layers == imgs
 
     layers[1] = layers[1]
     assert layers == imgs
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='already present'):
         layers[1] = layers[2]
     assert layers == imgs
 
@@ -552,6 +567,6 @@ def test_readd_layers():
     layers[:3] = layers[2::-1]
     assert set(layers) == set(imgs)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='already present'):
         layers[:3] = layers[:]
     assert set(layers) == set(imgs)

@@ -1,0 +1,31 @@
+name: Label and milestone checker
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - labeled
+      - unlabeled
+      - milestoned
+      - demilestoned
+  merge_group: # to be prepared on merge queue
+    types: [checks_requested]
+
+jobs:
+  check_labels_and_milestone:
+    if: (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ready to merge'))
+    name: Check labels and milestone
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check labels
+        uses: docker://agilepathway/pull-request-label-checker:latest
+        with:
+          any_of: bugfix,feature,documentation,performance,enhancement,maintenance
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check milestone
+        if: github.event.pull_request.milestone == null
+        run: |
+          echo "Please add a milestone to this PR"
+          exit 1

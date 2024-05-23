@@ -1,4 +1,3 @@
-import sys
 import typing
 from typing import TYPE_CHECKING, Optional
 from weakref import WeakSet
@@ -6,7 +5,7 @@ from weakref import WeakSet
 import magicgui as mgui
 
 from napari.components.viewer_model import ViewerModel
-from napari.utils import _magicgui, config
+from napari.utils import _magicgui
 
 if TYPE_CHECKING:
     # helpful for IDE support
@@ -34,10 +33,7 @@ class Viewer(ViewerModel):
     """
 
     _window: 'Window' = None  # type: ignore
-    if sys.version_info < (3, 9):
-        _instances: typing.ClassVar[WeakSet] = WeakSet()
-    else:
-        _instances: typing.ClassVar[WeakSet['Viewer']] = WeakSet()
+    _instances: typing.ClassVar[WeakSet['Viewer']] = WeakSet()
 
     def __init__(
         self,
@@ -47,12 +43,14 @@ class Viewer(ViewerModel):
         order=(),
         axis_labels=(),
         show=True,
+        **kwargs,
     ) -> None:
         super().__init__(
             title=title,
             ndisplay=ndisplay,
             order=order,
             axis_labels=axis_labels,
+            **kwargs,
         )
         # we delay initialization of plugin system to the first instantiation
         # of a viewer... rather than just on import of plugins module
@@ -86,6 +84,7 @@ class Viewer(ViewerModel):
             callers frame.
         """
         if self.window._qt_viewer._console is None:
+            self.window._qt_viewer.add_to_console_backlog(variables)
             return
         self.window._qt_viewer.console.push(variables)
 
@@ -146,15 +145,6 @@ class Viewer(ViewerModel):
         # Close the main window
         self.window.close()
 
-        if config.async_loading:
-            from napari.components.experimental.chunk import chunk_loader
-
-            # TODO_ASYNC: Find a cleaner way to do this? This fixes some
-            # tests. We are telling the ChunkLoader that this layer is
-            # going away:
-            # https://github.com/napari/napari/issues/1500
-            for layer in self.layers:
-                chunk_loader.on_layer_deleted(layer)
         self._instances.discard(self)
 
     @classmethod
