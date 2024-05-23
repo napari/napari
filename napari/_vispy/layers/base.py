@@ -244,9 +244,10 @@ class VispyBaseLayer(ABC, Generic[_L]):
                 'simplified transform is None'
             )  # pragma: no cover
         translate_child = (
-            self.layer.translate[dims_displayed]
-            + self.layer.affine.translate[dims_displayed]
-        )[::-1] - offset[::-1]
+            (simplified_transform.translate[dims_displayed])[::-1]
+            - offset[::-1]
+        )
+        # simplified_transform.translate[dims_displayed]
         trans_rotate = simplified_transform.rotate[
             np.ix_(dims_displayed, dims_displayed)
         ]
