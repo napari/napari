@@ -215,7 +215,9 @@ class VispyImageLayer(VispyScalarFieldBaseLayer):
         self.node.relative_step_size = new_step_size
 
         # update the minimum step size based on current performance
-        self.min_step_size = max(new_step_size / 4, 0.1)
+        # we don't go below 1 because we want to be able to render accurately
+        # to the level of a single data pixel
+        self.min_step_size = np.clip(new_step_size / 4, 0.05, 1)
 
     def reset(self, event=None) -> None:
         super().reset()
