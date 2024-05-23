@@ -669,7 +669,7 @@ class VispyCanvas:
                 if x * y < n_gridboxes
             ]
             self.camera._view = self.grid_views[0]
-            # self.central_widget.remove_widget(self.view)
+            self.central_widget.remove_widget(self.view)
             # del self.view
             self.grid_cameras = [
                 VispyCamera(
@@ -688,6 +688,16 @@ class VispyCanvas:
         else:
             for layer in self.layer_to_visual.values():
                 layer.node.parent = self.view.scene
-            self.camera._view = self.view
             self.central_widget.remove_widget(self.grid)
+            self.central_widget.add_widget(self.view)
+            self.camera._view = self.view
+
+            # TODO properly disconnect events of grid and delete all viewboxes
             del self.grid
+
+            for camera in self.grid_cameras:
+                camera.disconnect()
+                del camera
+
+            # TODO respect 3d camera if enabled
+            self.camera._view.camera = self.camera._2D_camera
