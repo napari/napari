@@ -332,7 +332,14 @@ class VispyCanvas:
             of the viewer.
         """
         nd = self.viewer.dims.ndisplay
-        transform = self.view.scene.transform
+
+        # TODO: figure out how to extent this to all grid boxes, main thing is to see which viewbox the mouse is hovering over
+        # and to get the transform solely of that viewbox. This would allow compatibility with current code returning one
+        # position world.
+        if self.viewer.multi_channel_gridcanvas.enabled:
+            transform = self.grid_views[0].scene.transform
+        else:
+            transform = self.view.scene.transform
         mapped_position = transform.imap(list(position))[:nd]
         position_world_slice = mapped_position[::-1]
 
