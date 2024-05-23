@@ -2129,8 +2129,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         Parameters
         ----------
-            render_quality : RenderQualityChange
-                How much to increase or decrease the rendering quality of the layer.
+        render_quality : RenderQualityChange
+            How much to increase or decrease the rendering quality of the layer.
         """
         # call back to update the layer based on render quality
         self._change_render_quality(render_quality)
