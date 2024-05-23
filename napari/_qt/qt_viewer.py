@@ -1066,10 +1066,10 @@ class QtViewer(QSplitter):
         if not self._camera_monitor.camera_moving:
             return
         fps = event.fps
-        if fps < 30:
+        if fps < self.viewer.target_fps[0]:
             for layer in self.viewer.layers:
                 layer.change_render_quality(RenderQualityChange.DECREASE)
-        if fps > 45:
+        if fps > self.viewer.target_fps[1]:
             for layer in self.viewer.layers:
                 layer.change_render_quality(RenderQualityChange.INCREASE)
 
