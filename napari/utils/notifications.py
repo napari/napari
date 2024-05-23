@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 import sys
 import threading
@@ -397,9 +398,9 @@ def show_console_notification(notification: Notification):
         ):
             return
 
-        print(notification)
+        print(notification)  # noqa: T201
     except Exception:
-        print(
+        logging.exception(
             'An error occurred while trying to format an error and show it in console.\n'
             'You can try to uninstall IPython to disable rich traceback formatting\n'
             'And/or report a bug to napari'
