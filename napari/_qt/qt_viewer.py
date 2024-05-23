@@ -1067,14 +1067,17 @@ class QtViewer(QSplitter):
             return
         fps = event.fps
         if fps < self.viewer.target_fps[0]:
+            logging.info('decrease render quality')
             for layer in self.viewer.layers:
                 layer.change_render_quality(RenderQualityChange.DECREASE)
         if fps > self.viewer.target_fps[1]:
+            logging.info('increase render quality')
             for layer in self.viewer.layers:
                 layer.change_render_quality(RenderQualityChange.INCREASE)
 
     @qdebounced(timeout=1500, leading=False)
     def redraw_at_higher_resolution(self, event=None):
+        logging.info('redraw at higher res')
         for v_layer in self.viewer.layers:
             v_layer.change_render_quality(RenderQualityChange.MAX)
         self._fps_monitor._final_redraw = True
