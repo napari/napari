@@ -276,6 +276,7 @@ select = [
     "LOG", # flake8-logging
     "SLOT", # flake8-slots
     "PT", # flake8-pytest-style
+    "T20", # flake8-print
 ]
 ignore = [
     "E501", "TCH001", "TCH002", "TCH003",
