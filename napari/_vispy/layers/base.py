@@ -274,7 +274,9 @@ class VispyBaseLayer(ABC, Generic[_L]):
                 self.layer.experimental_clipping_planes.as_array()[..., ::-1]
             )
 
-    def change_render_quality(self, quality_change: RenderQualityChange):
+    def change_render_quality(
+        self, quality_change: RenderQualityChange
+    ) -> None:
         """
         Change the render quality of the vispy nodes
 
