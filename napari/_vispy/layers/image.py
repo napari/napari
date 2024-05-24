@@ -14,7 +14,7 @@ from napari._vispy.layers.scalar_field import (
 from napari._vispy.utils.gl import get_gl_extensions
 from napari._vispy.visuals.image import Image as ImageNode
 from napari._vispy.visuals.volume import Volume as VolumeNode
-from napari.layers.base._base_constants import Blending, RenderQualityChange
+from napari.layers.base._base_constants import Blending
 from napari.layers.image.image import Image
 from napari.utils.colormaps.colormap_utils import _coerce_contrast_limits
 from napari.utils.translations import trans
@@ -93,14 +93,6 @@ class VispyImageLayer(VispyScalarFieldBaseLayer):
             layer_node_class=layer_node_class,
         )
 
-        self._array_like = True
-
-        # set the 3D shader step size bounds
-        self.min_step_size = 0.1
-        self.max_step_size = 80
-
-        self.layer.events.rendering.connect(self._on_rendering_change)
-        self.layer.events.depiction.connect(self._on_depiction_change)
         self.layer.events.interpolation2d.connect(
             self._on_interpolation_change
         )
@@ -113,14 +105,6 @@ class VispyImageLayer(VispyScalarFieldBaseLayer):
         self.layer.events.gamma.connect(self._on_gamma_change)
         self.layer.events.iso_threshold.connect(self._on_iso_threshold_change)
         self.layer.events.attenuation.connect(self._on_attenuation_change)
-
-        # display_change is special (like data_change) because it requires a
-        # self.reset(). This means that we have to call it manually. Also,
-        # it must be called before reset in order to set the appropriate node
-        # first
-        self._on_display_change()
-        self.reset()
-        self._on_data_change()
 
     def _on_interpolation_change(self) -> None:
         self.node.interpolation = (
@@ -181,39 +165,6 @@ class VispyImageLayer(VispyScalarFieldBaseLayer):
     def _on_attenuation_change(self) -> None:
         if isinstance(self.node, VolumeNode):
             self.node.attenuation = self.layer.attenuation
-
-    def change_render_quality(self, quality_change: RenderQualityChange):
-        """
-        Change the render quality of the vispy nodes.
-
-        This changes the step size in the shader when in 3D rendering mode.
-        In 2D rendering mode, this just returns.
-
-        Parameters
-        ----------
-        quality_change: RenderQualityChange
-            how much to increase or decrease the rendering quality of the layer.
-        """
-        if not isinstance(self.node, VolumeNode):
-            return
-        if quality_change == RenderQualityChange.DECREASE:
-            new_step_size = min(
-                self.node.relative_step_size * 4, self.max_step_size
-            )
-        elif quality_change == RenderQualityChange.INCREASE:
-            new_step_size = max(
-                self.node.relative_step_size / 2, self.min_step_size
-            )
-        elif quality_change == RenderQualityChange.MIN:
-            new_step_size = self.max_step_size
-        elif quality_change == RenderQualityChange.MAX:
-            new_step_size = self.min_step_size
-        self.node.relative_step_size = new_step_size
-
-        # update the minimum step size based on current performance
-        # we don't go below 1 because we want to be able to render accurately
-        # to the level of a single data pixel
-        self.min_step_size = np.clip(new_step_size / 4, 0.05, 1)
 
     def reset(self, event=None) -> None:
         super().reset()
