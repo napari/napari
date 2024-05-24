@@ -1,4 +1,5 @@
 from collections.abc import Generator
+from packaging.version import Version
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -8,6 +9,7 @@ from typing import (
 )
 
 import numpy as np
+
 
 from napari._pydantic_compat import errors, types
 
@@ -35,7 +37,14 @@ class Array(np.ndarray):
         else:
             shape = ()
 
-        result = np.array(val, dtype=dtype, copy=False, ndmin=len(shape))
+
+        # In numpy 1, copy=False means that copy is only made if needed.
+        # In numpy 2, copy=False errors if a copy is needed, and instead
+        # the equivalent is copy=None.
+        copy = None
+        if Version(np.__version__) < Version("2.0.0rc1"):
+            copy = False
+        result = np.array(val, dtype=dtype, copy=copy, ndmin=len(shape))
 
         if any(
             (shape[i] != -1 and shape[i] != result.shape[i])
