@@ -279,6 +279,7 @@ def test_screenshot_fit_to_data(make_napari_viewer):
     assert np.all(img != np.array([0, 0, 0, 0]))
 
     viewer.camera.center = [100, 100]
+    camera_center = viewer.camera.center
     camera_zoom = viewer.camera.zoom
     img = viewer.screenshot(canvas_only=True, fit_to_data=True)
 
