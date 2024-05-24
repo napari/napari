@@ -96,7 +96,7 @@ class VispyImageLayer(VispyScalarFieldBaseLayer):
         self._array_like = True
 
         # set the 3D shader step size bounds
-        self.min_step_size = 0.05
+        self.min_step_size = 0.1
         self.max_step_size = 80
 
         # set the initial guess for a good step size
