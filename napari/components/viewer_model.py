@@ -188,6 +188,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     help: str = ''
     status: Union[str, dict] = 'Ready'
     tooltip: Tooltip = Field(default_factory=Tooltip, allow_mutation=False)
+    auto_quality: bool = True
     target_fps: tuple[int, int] = (30, 60)
     theme: str = Field(default_factory=_current_theme)
     title: str = 'napari'

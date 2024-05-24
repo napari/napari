@@ -1063,7 +1063,10 @@ class QtViewer(QSplitter):
         )
 
     def on_fps_update(self, event):
-        if not self._camera_monitor.camera_moving:
+        if (
+            not self.viewer.auto_quality
+            or not self._camera_monitor.camera_moving
+        ):
             return
         fps = event.fps
         if fps < self.viewer.target_fps[0]:
