@@ -99,10 +99,6 @@ class VispyImageLayer(VispyScalarFieldBaseLayer):
         self.min_step_size = 0.1
         self.max_step_size = 80
 
-        # set the initial guess for a good step size
-        # while the camera is moving
-        self.initial_moving_step_size = 5
-
         self.layer.events.rendering.connect(self._on_rendering_change)
         self.layer.events.depiction.connect(self._on_depiction_change)
         self.layer.events.interpolation2d.connect(
