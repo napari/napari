@@ -78,9 +78,9 @@ _default_shortcuts = {
     'napari:move_shapes_selection_to_back': [KeyCode.KeyB],
     'napari:select_all_shapes': [KeyCode.KeyA],
     'napari:delete_selected_shapes': [
-        KeyCode.Backspace,
-        KeyCode.Delete,
         KeyCode.Digit3,
+        KeyCode.Delete,
+        KeyCode.Backspace,
     ],
     'napari:finish_drawing_shape': [KeyCode.Escape],
     # image
