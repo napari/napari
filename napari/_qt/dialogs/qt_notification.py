@@ -405,9 +405,11 @@ def _debug_tb(tb):
     QApplication.processEvents()
     QApplication.processEvents()
     with event_hook_removed():
-        print("Entering debugger. Type 'q' to return to napari.\n")
+        print(  # noqa: T201
+            "Entering debugger. Type 'q' to return to napari.\n"
+        )
         pdb.post_mortem(tb)
-        print('\nDebugging finished.  Napari active again.')
+        print('\nDebugging finished. Napari active again.')  # noqa: T201
 
 
 class TracebackDialog(QDialog):
