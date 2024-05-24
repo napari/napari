@@ -55,9 +55,9 @@ _default_shortcuts = {
     ],
     'napari:select_all_data': [KeyMod.Shift | KeyCode.KeyA],
     'napari:delete_selected_points': [
-        KeyCode.Backspace,
-        KeyCode.Delete,
         KeyCode.Digit1,
+        KeyCode.Delete,
+        KeyCode.Backspace,
     ],
     # shapes
     'napari:activate_add_rectangle_mode': [KeyCode.KeyR],
