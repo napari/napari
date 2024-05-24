@@ -84,8 +84,6 @@ def conda_map() -> dict[PyPIname, Optional[str]]:
 
 def iter_napari_plugin_info() -> Iterator[tuple[PackageMetadata, bool, dict]]:
     """Iterator of tuples of ProjectInfo, Conda availability for all napari plugins."""
-    conda_set = {}
-    data_set = {}
     try:
         with ThreadPoolExecutor() as executor:
             data = executor.submit(plugin_summaries)
@@ -98,6 +96,7 @@ def iter_napari_plugin_info() -> Iterator[tuple[PackageMetadata, bool, dict]]:
             'There seems to be an issue with network connectivity. '
             'Remote plugins cannot be installed, only local ones.\n'
         )
+        return
 
     conda_set = {normalized_name(x) for x in conda}
     for info in data_set:
