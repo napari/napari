@@ -35,7 +35,6 @@ class Array(np.ndarray):
         else:
             shape = ()
 
-
         # In numpy 1, copy=False means that copy is only made if needed.
         # In numpy 2, copy=False errors if a copy is needed, and instead
         # the equivalent is copy=None.
@@ -43,7 +42,7 @@ class Array(np.ndarray):
         # behavior associated with ndmin.
         # https://numpy.org/devdocs/numpy_2_0_migration_guide.html#adapting-to-changes-in-the-copy-keyword
         copy = None
-        if np.lib.NumpyVersion(np.__version__) < "2.0.0b1":
+        if np.lib.NumpyVersion(np.__version__) < '2.0.0b1':
             copy = False
         result = np.array(val, dtype=dtype, copy=copy, ndmin=len(shape))
 
