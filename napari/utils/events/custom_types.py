@@ -9,7 +9,6 @@ from typing import (
 
 import numpy as np
 
-
 from napari._pydantic_compat import errors, types
 
 if TYPE_CHECKING:
