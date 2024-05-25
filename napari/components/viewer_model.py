@@ -143,6 +143,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     Attributes
     ----------
+    auto_quality : bool
+        Whether the viewer should automatically adjust the rendering quality
+        based on framerate/interactivity. See also `target_fps`
     camera: napari.components.camera.Camera
         The camera object modeling the position and view.
     cursor: napari.components.cursor.Cursor
@@ -157,6 +160,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         List of contained layers.
     mouse_over_canvas: bool
         Indicating whether the mouse cursor is on the viewer canvas.
+    target_fps : tuple[int, int]
+        When `auto_quality` is true, try to maintain framerate (frames per
+        second) within this range.
     theme: str
         Name of the Napari theme of the viewer
     title: str
