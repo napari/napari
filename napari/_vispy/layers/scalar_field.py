@@ -254,12 +254,8 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
             new_step_size = self.max_step_size
         elif quality_change == RenderQualityChange.MAX:
             new_step_size = self.min_step_size
-        self.node.relative_step_size = new_step_size
 
-        # update the minimum step size based on current performance
-        # we don't go below 1 because we want to be able to render accurately
-        # to the level of a single data pixel
-        self.min_step_size = np.clip(new_step_size / 4, 0.1, 1)
+        self.node.relative_step_size = new_step_size
 
 
 _VISPY_FORMAT_TO_DTYPE: dict[Optional[str], np.dtype] = {
