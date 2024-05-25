@@ -50,7 +50,7 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
         self._array_like = True
 
         # set the 3D shader step size bounds
-        self.min_step_size = 0.1
+        self.min_step_size = 0.8
         self.max_step_size = 80
 
         self.layer.events.rendering.connect(self._on_rendering_change)
