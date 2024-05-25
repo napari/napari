@@ -261,10 +261,10 @@ class QtViewer(QSplitter):
         )
         self._fps_monitor.events.fps.connect(self.on_fps_update)
 
-        # connect the redraw event
-        self._camera_monitor.events.moving_finished.connect(
-            self.redraw_at_higher_resolution
-        )
+        # if we are on auto-render-quality mode, connect the high-res redraw
+        # event
+        self.viewer.events.auto_quality.connect(self._on_auto_render_quality)
+        self._on_auto_render_quality()
 
         # Create the experimental QtPool for the monitor.
         self._qt_poll = _create_qt_poll(self, self.viewer.camera)
@@ -1078,7 +1078,26 @@ class QtViewer(QSplitter):
             for layer in self.viewer.layers:
                 layer.change_render_quality(RenderQualityChange.INCREASE)
 
-    @qdebounced(timeout=1500, leading=False)
+    def _on_auto_render_quality(self, event=None):
+        """When the viewer changes auto render quality, update events."""
+        if self.viewer.auto_quality:
+            self._redraw_high_res_callback = (
+                self._camera_monitor.events.moving_finished.connect(
+                    qdebounced(
+                        self.redraw_at_higher_resolution,
+                        timeout=1500,
+                        leading=False,
+                    )
+                )
+            )
+        else:
+            self._camera_monitor.events.moving_finished.disconnect(
+                self._redraw_high_res_callback
+            )
+            for layer in self.viewer.layers:
+                layer.change_render_quality(RenderQualityChange.MAX)
+            self.canvas._scene_canvas.update()
+
     def redraw_at_higher_resolution(self, event=None):
         logging.info('redraw at higher res')
         for v_layer in self.viewer.layers:
