@@ -1,3 +1,5 @@
+"""Qt 'File' menu Actions."""
+
 import sys
 from pathlib import Path
 
