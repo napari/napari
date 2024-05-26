@@ -39,7 +39,6 @@ from itertools import chain
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
-from unittest.mock import patch
 from weakref import WeakKeyDictionary
 
 from npe2 import PackageMetadata
@@ -264,18 +263,6 @@ def napari_svg_name():
         return 'svg'
 
     return 'napari-svg'
-
-
-@pytest.fixture(autouse=True, scope='session')
-def _no_error_reports():
-    """Turn off napari_error_reporter if it's installed."""
-    try:
-        p1 = patch('napari_error_reporter.capture_exception')
-        p2 = patch('napari_error_reporter.install_error_reporter')
-        with p1, p2:
-            yield
-    except (ModuleNotFoundError, AttributeError):
-        yield
 
 
 @pytest.fixture(autouse=True)

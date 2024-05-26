@@ -1,8 +1,4 @@
-"""Actions related to the 'View' menu that require Qt.
-
-'View' actions that do not require Qt should be placed under
-`napari/_app_model/actions/` in a `_view_actions.py` file.
-"""
+"""Qt 'View' menu Actions."""
 
 import sys
 
