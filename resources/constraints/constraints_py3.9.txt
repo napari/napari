@@ -43,7 +43,7 @@ comm==0.2.2
     # via ipykernel
 contourpy==1.2.1
     # via matplotlib
-coverage==7.5.1
+coverage==7.5.2
     # via
     #   napari (napari_repo/pyproject.toml)
     #   pytest-cov
@@ -77,7 +77,7 @@ filelock==3.14.0
     #   torch
     #   triton
     #   virtualenv
-fonttools==4.51.0
+fonttools==4.52.1
     # via matplotlib
 freetype-py==2.4.0
     # via vispy
@@ -90,7 +90,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.102.4
+hypothesis==6.102.6
     # via napari (napari_repo/pyproject.toml)
 idna==3.7
     # via requests
@@ -132,7 +132,7 @@ jsonschema==4.22.0
     # via napari (napari_repo/pyproject.toml)
 jsonschema-specifications==2023.12.1
     # via jsonschema
-jupyter-client==8.6.1
+jupyter-client==8.6.2
     # via
     #   ipykernel
     #   qtconsole
@@ -250,7 +250,7 @@ nvidia-cusparse-cu12==12.1.0.106
     #   torch
 nvidia-nccl-cu12==2.20.5
     # via torch
-nvidia-nvjitlink-cu12==12.4.127
+nvidia-nvjitlink-cu12==12.5.40
     # via
     #   nvidia-cusolver-cu12
     #   nvidia-cusparse-cu12
@@ -377,13 +377,11 @@ pyscreeze==0.1.30
     # via pyautogui
 pyside2==5.15.2.1
     # via napari (napari_repo/pyproject.toml)
-pyside6==6.3.1
-    # via
-    #   -r napari_repo/resources/constraints/version_denylist.txt
-    #   napari (napari_repo/pyproject.toml)
-pyside6-addons==6.3.1
+pyside6==6.7.1
+    # via napari (napari_repo/pyproject.toml)
+pyside6-addons==6.7.1
     # via pyside6
-pyside6-essentials==6.3.1
+pyside6-essentials==6.7.1
     # via
     #   pyside6
     #   pyside6-addons
@@ -444,7 +442,7 @@ referencing==0.35.1
     # via
     #   jsonschema
     #   jsonschema-specifications
-requests==2.32.1
+requests==2.32.2
     # via
     #   pooch
     #   pyconify
@@ -461,7 +459,7 @@ rpds-py==0.18.1
     #   referencing
 scikit-image==0.22.0
     # via napari (napari_repo/pyproject.toml)
-scipy==1.13.0
+scipy==1.13.1
     # via
     #   napari (napari_repo/pyproject.toml)
     #   scikit-image
@@ -469,7 +467,7 @@ shellingham==1.5.4
     # via typer
 shiboken2==5.15.2.1
     # via pyside2
-shiboken6==6.3.1
+shiboken6==6.7.1
     # via
     #   pyside6
     #   pyside6-addons
@@ -511,7 +509,7 @@ tensorstore==0.1.59
     # via
     #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari (napari_repo/pyproject.toml)
-tifffile==2024.5.10
+tifffile==2024.5.22
     # via
     #   napari (napari_repo/pyproject.toml)
     #   scikit-image
@@ -553,7 +551,7 @@ triton==2.3.0
     # via torch
 typer==0.12.3
     # via npe2
-typing-extensions==4.11.0
+typing-extensions==4.12.0
     # via
     #   napari (napari_repo/pyproject.toml)
     #   app-model
@@ -581,9 +579,9 @@ wrapt==1.16.0
     # via napari (napari_repo/pyproject.toml)
 xarray==2024.5.0
     # via napari (napari_repo/pyproject.toml)
-zarr==2.18.1
+zarr==2.18.2
     # via napari (napari_repo/pyproject.toml)
-zipp==3.18.2
+zipp==3.19.0
     # via
     #   importlib-metadata
     #   importlib-resources
