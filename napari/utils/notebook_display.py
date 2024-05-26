@@ -52,6 +52,7 @@ class NotebookScreenshot:
         viewer,
         *,
         canvas_only=False,
+        fit_to_data=False,
         alt_text=None,
     ) -> None:
         """Initialize screenshot object.
@@ -64,6 +65,9 @@ class NotebookScreenshot:
             If False include the napari viewer frame in the screenshot,
             and if True then take screenshot of just the image display canvas.
             By default, False.
+        fit_to_data : bool, optional
+            Whether to fit a bounding box around the data to prevent margins of showing in the screenshot. This fits a
+            bounding box around all data currently being displayed in the viewer (resets the view).
         alt_text : str, optional
             Image description alternative text, for screenreader accessibility.
             Good alt-text describes the image and any text within the image
@@ -71,6 +75,7 @@ class NotebookScreenshot:
         """
         self.viewer = viewer
         self.canvas_only = canvas_only
+        self.fit_to_data = fit_to_data
         self.image = None
         self.alt_text = self._clean_alt_text(alt_text)
 
@@ -112,7 +117,9 @@ class NotebookScreenshot:
 
         get_app().processEvents()
         self.image = self.viewer.screenshot(
-            canvas_only=self.canvas_only, flash=False
+            canvas_only=self.canvas_only,
+            fit_to_data=self.fit_to_data,
+            flash=False,
         )
         with BytesIO() as file_obj:
             imsave_png(file_obj, self.image)
