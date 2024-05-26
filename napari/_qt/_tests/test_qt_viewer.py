@@ -287,6 +287,7 @@ def test_screenshot_fit_to_data(make_napari_viewer):
     assert viewer.camera.zoom == camera_zoom
     assert img.shape == (250, 250, 4)
     assert np.all(img != np.array([0, 0, 0, 0]))
+    viewer.close()
 
 
 @pytest.mark.skip('new approach')
