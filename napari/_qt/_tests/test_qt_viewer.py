@@ -267,7 +267,7 @@ def test_screenshot_fit_to_data(make_napari_viewer):
     data = np.random.randint(150, 250, size=(250, 250))
     viewer.add_image(data)
 
-    with pytest.raises(ValueError, match="can't be set to True"):
+    with pytest.raises(ValueError, match='cannot be set to True'):
         viewer.screenshot(canvas_only=False, fit_to_data=True)
     camera_center = viewer.camera.center
     camera_zoom = viewer.camera.zoom
