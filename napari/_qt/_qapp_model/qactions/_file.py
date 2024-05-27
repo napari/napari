@@ -1,3 +1,5 @@
+"""Qt 'File' menu Actions."""
+
 import sys
 from pathlib import Path
 
@@ -66,7 +68,7 @@ Q_FILE_ACTIONS: list[Action] = [
     Action(
         id='napari.window.file.open_folder_dialog',
         title=trans._('Open Folder...'),
-        callback=QtViewer._open_files_dialog,
+        callback=QtViewer._open_folder_dialog,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.NAVIGATION}],
         keybindings=[
             {'primary': KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyO}
