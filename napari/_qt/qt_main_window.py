@@ -1637,9 +1637,10 @@ class Window:
             If True, screenshot shows only the image display canvas, and
             if False includes the napari viewer frame in the screenshot,
             By default, True.
-        fit_to_data : bool
-            Tightly fit the canvas around the data to prevent margins of showing in the screenshot.
-            If False, a screenshot of the whole currently visible canvas will be generated.
+        fit_to_data: bool
+            Tightly fit the canvas around the data to prevent margins from
+            showing in the screenshot. If False, a screenshot of the whole
+            currently visible canvas will be generated.
 
         Returns
         -------
