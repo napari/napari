@@ -378,17 +378,13 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         return self.layers._extent_world_augmented[:, self.dims.displayed]
 
     def reset_view(self, *, margin=0.05) -> None:
-        """
-        Reset the camera view.
-
-        This reset has two modes, one for when viewing the data in the viewer and one for when taking a
-        screenshot with a canvas not showing margins around the data. The two differ in the scaling
-        factor of the zoom.
+        """Reset the camera view.
 
         Parameters
         ----------
-        screenshot: bool
-            Whether to reset the view in screenshot mode. Default is False.
+        margin : float in [0, 1)
+            Margin as fraction of the canvas, showing blank space around the
+            data.
         """
 
         extent = self._sliced_extent_world_augmented
