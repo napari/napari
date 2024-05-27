@@ -1563,7 +1563,7 @@ class Window:
                 ].astype(int)
                 + 1
             )
-            self._qt_viewer.viewer.reset_view(screenshot=True)
+            self._qt_viewer.viewer.reset_view(margin=0)
 
         if canvas_only:
             if size is not None:
