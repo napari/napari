@@ -259,7 +259,7 @@ def test_screenshot(make_napari_viewer):
     assert screenshot.ndim == 3
 
 
-def test_screenshot_fit_to_data(make_napari_viewer):
+def test_screenshot_fit_to_data_extent(make_napari_viewer):
     viewer = make_napari_viewer()
 
     np.random.seed(0)
@@ -268,10 +268,10 @@ def test_screenshot_fit_to_data(make_napari_viewer):
     viewer.add_image(data)
 
     with pytest.raises(ValueError, match='cannot be set to True'):
-        viewer.screenshot(canvas_only=False, fit_to_data=True)
+        viewer.screenshot(canvas_only=False, fit_to_data_extent=True)
     camera_center = viewer.camera.center
     camera_zoom = viewer.camera.zoom
-    img = viewer.screenshot(flash=False, fit_to_data=True)
+    img = viewer.screenshot(flash=False, fit_to_data_extent=True)
 
     assert viewer.camera.center == camera_center
     assert viewer.camera.zoom == camera_zoom
@@ -281,7 +281,7 @@ def test_screenshot_fit_to_data(make_napari_viewer):
     viewer.camera.center = [100, 100]
     camera_center = viewer.camera.center
     camera_zoom = viewer.camera.zoom
-    img = viewer.screenshot(canvas_only=True, fit_to_data=True)
+    img = viewer.screenshot(canvas_only=True, fit_to_data_extent=True)
 
     assert viewer.camera.center == camera_center
     assert viewer.camera.zoom == camera_zoom
