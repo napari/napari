@@ -21,8 +21,8 @@ class PointsVisual(ClippingPlanesMixin, Compound):
     def __init__(self) -> None:
         super().__init__(
             [
-                Markers(scaling='visual'),
-                Markers(scaling='visual'),
+                Markers(),
+                Markers(),
                 Line(),
                 Text(),
             ]

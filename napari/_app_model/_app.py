@@ -1,11 +1,9 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from itertools import chain
 
 from app_model import Application
 
-from napari._app_model.actions._help_actions import HELP_ACTIONS
 from napari._app_model.actions._layer_actions import (
     LAYER_ACTIONS,
     LAYER_SUBMENUS,
@@ -27,7 +25,7 @@ class NapariApplication(Application):
 
         self.injection_store.namespace = _napari_names  # type: ignore [assignment]
 
-        self.register_actions(chain(HELP_ACTIONS, LAYER_ACTIONS))
+        self.register_actions(LAYER_ACTIONS)
         self.menus.append_menu_items(LAYER_SUBMENUS)
 
     @classmethod
