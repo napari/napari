@@ -1530,9 +1530,8 @@ class Window:
             if False include the napari viewer frame in the screenshot,
             By default, True.
         fit_to_data: bool
-            Whether to fit a bounding box around the data to prevent margins of showing in the screenshot.
-            Currently, if this is False it means a screenshot of the current canvas will be generated with
-            black margins if visible.
+            Tightly fit the canvas around the data to prevent margins of showing in the screenshot.
+            If False, a screenshot of the whole currently visible canvas will be generated.
 
         Returns
         -------
