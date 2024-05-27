@@ -1546,7 +1546,8 @@ class Window:
             if not canvas_only:
                 raise ValueError(
                     trans._(
-                        "'fit_to_data' can't be set to True if 'canvas_only' is set to False",
+                        "'fit_to_data' cannot be set to True if 'canvas_only' is"
+                        ' set to False',
                         deferred=True,
                     )
                 )
@@ -1557,7 +1558,8 @@ class Window:
             if ndisplay > 2:
                 raise NotImplementedError(
                     trans._(
-                        'fit_to_data equal to True is not yet implemented for 3D. Please set fit_to_data to False.',
+                        'fit_to_data=True is not yet implemented for 3D. '
+                        'Please set fit_to_data to False in 3D view.',
                         deferred=True,
                     )
                 )
