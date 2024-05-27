@@ -414,7 +414,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # The default value used below will zoom such that the whole field
         # of view will occupy 95% of the canvas on the most filled axis
 
-        scale_factor = 0.95 if not screenshot else 1
+        scale_factor = 1 - margin
 
         if np.max(size) == 0:
             self.camera.zoom = scale_factor * np.min(self._canvas_size)
