@@ -119,9 +119,8 @@ class Viewer(ViewerModel):
             the screenshot was captured.
             By default, True.
         fit_to_data : bool
-            Whether to fit a bounding box around the data to prevent margins of showing in the screenshot.
-            Currently, if this is False it means a screenshot of the whole data will be generated without margins (a
-            temporary view reset is applied so the canvas has all data within the extent of the canvas).
+            Tightly fit the canvas around the data to prevent margins of showing in the screenshot.
+            If False, a screenshot of the whole currently visible canvas will be generated.
 
         Returns
         -------

@@ -66,8 +66,8 @@ class NotebookScreenshot:
             and if True then take screenshot of just the image display canvas.
             By default, False.
         fit_to_data : bool, optional
-            Whether to fit a bounding box around the data to prevent margins of showing in the screenshot. This fits a
-            bounding box around all data currently being displayed in the viewer (resets the view).
+            Tightly fit the canvas around the data to prevent margins of showing in the screenshot.
+            If False, a screenshot of the whole currently visible canvas will be generated.
         alt_text : str, optional
             Image description alternative text, for screenreader accessibility.
             Good alt-text describes the image and any text within the image
