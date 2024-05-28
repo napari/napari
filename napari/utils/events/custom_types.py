@@ -18,6 +18,28 @@ if TYPE_CHECKING:
 
     Number = Union[int, float, Decimal]
 
+# In numpy 2, the semantics of the copy argument in np.array changed:
+# https://numpy.org/devdocs/numpy_2_0_migration_guide.html#adapting-to-changes-in-the-copy-keyword
+#
+# We would normally use np.asarray instead, but sometimes we need
+# to use some of the unique arguments of np.array (e.g. ndmin).
+#
+# This solution is vendored from scipy:
+# https://github.com/scipy/scipy/blob/c1c3738f57940f2dd7e3453c428b20e031d7a02e/scipy/_lib/_util.py#L59
+copy_if_needed: Optional[bool]
+
+if np.lib.NumpyVersion(np.__version__) >= '2.0.0':
+    copy_if_needed = None
+elif np.lib.NumpyVersion(np.__version__) < '1.28.0':
+    copy_if_needed = False
+else:
+    # 2.0.0 dev versions, handle cases where copy may or may not exist
+    try:
+        np.array([1]).__array__(copy=None)  # type: ignore[call-overload]
+        copy_if_needed = None
+    except TypeError:
+        copy_if_needed = False
+
 
 class Array(np.ndarray):
     def __class_getitem__(cls, t):
@@ -35,16 +57,9 @@ class Array(np.ndarray):
         else:
             shape = ()
 
-        # In numpy 1, copy=False means that copy is only made if needed.
-        # In numpy 2, copy=False errors if a copy is needed, and instead
-        # the equivalent is copy=None.
-        # We would normally use np.asarray instead, but here we need the
-        # behavior associated with ndmin.
-        # https://numpy.org/devdocs/numpy_2_0_migration_guide.html#adapting-to-changes-in-the-copy-keyword
-        copy = None
-        if np.lib.NumpyVersion(np.__version__) < '2.0.0b1':
-            copy = False
-        result = np.array(val, dtype=dtype, copy=copy, ndmin=len(shape))
+        result = np.array(
+            val, dtype=dtype, copy=copy_if_needed, ndmin=len(shape)
+        )
 
         if any(
             (shape[i] != -1 and shape[i] != result.shape[i])
