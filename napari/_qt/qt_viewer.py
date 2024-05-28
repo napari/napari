@@ -1083,11 +1083,7 @@ class QtViewer(QSplitter):
         if self.viewer.auto_quality:
             self._redraw_high_res_callback = (
                 self._camera_monitor.events.moving_finished.connect(
-                    qdebounced(
-                        self.redraw_at_higher_resolution,
-                        timeout=1500,
-                        leading=False,
-                    )
+                    self.redraw_at_higher_resolution,
                 )
             )
         else:
