@@ -18,27 +18,21 @@ if TYPE_CHECKING:
 
     Number = Union[int, float, Decimal]
 
-# In numpy 2, the semantics of the copy argument in np.array changed:
+# In numpy 2, the semantics of the copy argument in np.array changed
+# so that copy=False errors if a copy is needed:
 # https://numpy.org/devdocs/numpy_2_0_migration_guide.html#adapting-to-changes-in-the-copy-keyword
 #
-# We would normally use np.asarray instead, but sometimes we need
+# In numpy 1, copy=False meant that a copy was avoided unless necessary,
+# but would not error.
+#
+# In most usage like this use np.asarray instead, but sometimes we need
 # to use some of the unique arguments of np.array (e.g. ndmin).
 #
-# This solution is vendored from scipy:
-# https://github.com/scipy/scipy/blob/c1c3738f57940f2dd7e3453c428b20e031d7a02e/scipy/_lib/_util.py#L59
-copy_if_needed: Optional[bool]
-
-if np.lib.NumpyVersion(np.__version__) >= '2.0.0':
+# This solution assumes numpy 1 by default, and switches to the numpy 2
+# value for any release of numpy 2 on PyPI (including betas and RCs).
+copy_if_needed: Optional[bool] = False
+if np.lib.NumpyVersion(np.__version__) >= '2.0.0b1':
     copy_if_needed = None
-elif np.lib.NumpyVersion(np.__version__) < '1.28.0':
-    copy_if_needed = False
-else:
-    # 2.0.0 dev versions, handle cases where copy may or may not exist
-    try:
-        np.array([1]).__array__(copy=None)  # type: ignore[call-overload]
-        copy_if_needed = None
-    except TypeError:
-        copy_if_needed = False
 
 
 class Array(np.ndarray):
