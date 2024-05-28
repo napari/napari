@@ -46,10 +46,11 @@ from qtpy.QtWidgets import (
 from superqt.utils import QSignalThrottler
 
 from napari._app_model.constants import MenuId
-from napari._app_model.context import get_context
+from napari._app_model.context import create_context, get_context
 from napari._qt import menus
 from napari._qt._qapp_model import build_qmodel_menu
 from napari._qt._qapp_model.qactions import init_qactions
+from napari._qt._qapp_model.qactions._debug import _is_set_trace_active
 from napari._qt._qplugins import (
     _rebuild_npe1_plugins_menu,
     _rebuild_npe1_samples_menu,
@@ -163,6 +164,10 @@ class _QtMainWindow(QMainWindow):
         # Prevent QLineEdit based widgets to keep focus even when clicks are
         # done outside the widget. See #1571
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+
+        # Ideally this would be in `NapariApplication` but that is outside of Qt
+        self._ctx = create_context(self)
+        self._ctx['is_set_trace_active'] = _is_set_trace_active
 
         settings = get_settings()
 
