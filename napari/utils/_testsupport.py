@@ -41,7 +41,7 @@ def pytest_addoption(parser):
 COUNTER = 0
 
 
-def fail_obj_graph(Klass):
+def fail_obj_graph(Klass):  # pragma: no cover
     """
     Fail is a given class _instances weakset is non empty and print the object graph.
     """
@@ -55,6 +55,8 @@ def fail_obj_graph(Klass):
         global COUNTER
         COUNTER += 1
         import gc
+
+        leaked_objects_count = len(Klass._instances)
 
         gc.collect()
         file_path = Path(
@@ -72,7 +74,11 @@ def fail_obj_graph(Klass):
 
         # DO not remove len, this can break as C++ obj are gone, but python objects
         # still hang around and _repr_ would crash.
-        pytest.fail(len(Klass._instances))
+        pytest.fail(
+            f'Test run fail with leaked {leaked_objects_count} instances of {Klass}.'
+            f'The object graph is saved in {file_path}.'
+            f'{len(Klass._instances)} objects left after cleanup'
+        )
 
 
 @pytest.fixture()
@@ -137,17 +143,21 @@ def pytest_runtest_makereport(item, call):
 def mock_app():
     """Mock clean 'test_app' `NapariApplication` instance.
 
-    This fixture must be used whenever `napari._app_model.get_app()` is called to return
-    a 'test_app' `NapariApplication` instead of the 'napari'
+    This fixture must be used whenever `napari._app_model.get_app()` is called to
+    return a 'test_app' `NapariApplication` instead of the 'napari'
     `NapariApplication`. The `make_napari_viewer` fixture is already equipped with
     a `mock_app`.
 
-    Note that `NapariApplication` registers app-model actions, providers and
-    processors. If this is not desired, please create a clean
-    `app_model.Application` in the test. It does not however, register Qt
-    related actions or providers or register plugins.
+    Note that `NapariApplication` registers app-model actions.
+    If this is not desired, please create a clean
+    `app_model.Application` in the test.
+
+    It does not register Qt related actions, providers or processors, which is done
+    via `init_qactions()`. Nor does it register plugins, done via `_initialize_plugins`.
     If these are required, the `make_napari_viewer` fixture can be used, which
-    will run both these function and automatically clear the lru cache.
+    will register ALL actions, providers and processors and register plugins.
+    It will also automatically clear the lru cache.
+
     Alternatively, you can specifically run `init_qactions()` or
     `_initialize_plugins` within the test, ensuring that you `cache_clear()`
     first.

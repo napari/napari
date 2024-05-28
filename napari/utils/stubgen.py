@@ -182,7 +182,9 @@ def generate_module_stub(module: Union[str, ModuleType], save=True) -> str:
     pyi = pyi.replace('NoneType', 'None')
 
     if save:
-        print('Writing stub:', module.__file__.replace('.py', '.pyi'))
+        print(  # noqa: T201
+            'Writing stub:', module.__file__.replace('.py', '.pyi')
+        )
         file_path = module.__file__.replace('.py', '.pyi')
         with open(file_path, 'w') as f:
             f.write(pyi)

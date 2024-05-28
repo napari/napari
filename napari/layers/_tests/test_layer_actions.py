@@ -200,6 +200,7 @@ def test_convert_dtype(mode):
     ('layer', 'type_'),
     [
         (Image(np.random.rand(10, 10)), 'labels'),
+        (Image(np.array([[1.5, 2.5], [3.5, 4.5]])), 'labels'),
         (Image(np.array([[1, 2], [3, 4]], dtype=(int))), 'labels'),
         (
             Image(zarr.array([[1, 2], [3, 4]], dtype=(int), chunks=(1, 2))),
@@ -216,14 +217,14 @@ def test_convert_layer(layer, type_):
     ll.append(layer)
     assert ll[0]._type_string != type_
     _convert(ll, type_)
-    assert ll[0]._type_string == type_
-    assert np.array_equal(ll[0].scale, original_scale)
-
-    if (
+    if isinstance(layer, Shapes) or (
         type_ == 'labels'
         and isinstance(layer, Image)
-        and np.issubdtype(layer.data.dtype, np.integer)
+        and np.issubdtype(layer.data.dtype, float)
     ):
+        assert ll[1]._type_string == type_
+        assert np.array_equal(ll[1].scale, original_scale)
+    else:
         assert (
             layer.data is ll[0].data
         )  # check array data not copied unnecessarily
