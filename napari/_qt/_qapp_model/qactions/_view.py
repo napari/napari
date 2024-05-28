@@ -7,6 +7,7 @@ from app_model.types import (
     KeyCode,
     KeyMod,
     StandardKeyBinding,
+    SubmenuItem,
     ToggleRule,
 )
 
@@ -17,7 +18,20 @@ from napari._qt.qt_viewer import QtViewer
 from napari.settings import get_settings
 from napari.utils.translations import trans
 
+# View submenus
+VIEW_SUBMENUS = [
+    (
+        MenuId.MENUBAR_VIEW,
+        SubmenuItem(submenu=MenuId.VIEW_AXES, title=trans._('Axes')),
+    ),
+    (
+        MenuId.MENUBAR_VIEW,
+        SubmenuItem(submenu=MenuId.VIEW_SCALEBAR, title=trans._('Scale Bar')),
+    ),
+]
 
+
+# View actions
 def _toggle_activity_dock(window: Window):
     window._status_bar._toggle_activity_dock()
 
