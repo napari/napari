@@ -52,6 +52,7 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
         # set the 3D shader step size bounds
         self.min_step_size = 0.8
         self.max_step_size = 80
+        self.max_observed_step_size = self.min_step_size
 
         self.layer.events.rendering.connect(self._on_rendering_change)
         self.layer.events.depiction.connect(self._on_depiction_change)
@@ -246,12 +247,14 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
             new_step_size = min(
                 self.node.relative_step_size * 4, self.max_step_size
             )
+            if self.max_observed_step_size < new_step_size:
+                self.max_observed_step_size = new_step_size
         elif quality_change == RenderQualityChange.INCREASE:
             new_step_size = max(
                 self.node.relative_step_size / 2, self.min_step_size
             )
         elif quality_change == RenderQualityChange.MIN:
-            new_step_size = self.max_step_size
+            new_step_size = self.max_observed_step_size
         elif quality_change == RenderQualityChange.MAX:
             new_step_size = self.min_step_size
 

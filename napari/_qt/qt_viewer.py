@@ -248,6 +248,9 @@ class QtViewer(QSplitter):
 
         # add the camera monitor
         self._camera_monitor = CameraMonitor(camera=self.viewer.camera)
+        self._camera_monitor.events.moving_started.connect(
+            self._on_camera_move
+        )
 
         # add the FPS monitor
         self._fps_window = 0.5
@@ -1061,6 +1064,12 @@ class QtViewer(QSplitter):
         self.viewerButtons.consoleButton.style().polish(
             self.viewerButtons.consoleButton
         )
+
+    def _on_camera_move(self, event):
+        if self.viewer.auto_quality:
+            logging.info('minimum render quality')
+            for layer in self.viewer.layers:
+                layer.change_render_quality(RenderQualityChange.MIN)
 
     def on_fps_update(self, event):
         if (
