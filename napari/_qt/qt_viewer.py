@@ -1336,6 +1336,18 @@ def _create_remote_manager(
 
 
 class CameraMonitor:
+    """Monitor when the camera is moving.
+
+    This class provides a way to detect when the camera has stopped moving
+    for a defined amount of time. It also notifies when the camera starts
+    moving.
+
+    Parameters
+    ----------
+    camera : napari.components.Camera
+        The camera we want to monitor.
+    """
+
     def __init__(self, camera: Camera):
         self.events = EmitterGroup(
             source=self, moving_started=Event, moving_finished=Event
