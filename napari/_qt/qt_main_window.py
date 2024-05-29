@@ -834,7 +834,7 @@ class Window:
         self._update_menu_state('help_menu')
 
     def _update_debug_menu_state(self):
-        self._update_menu_state('_debug_menu')
+        self._debug_menu.update_from_context(get_context(self._qt_window))
 
     # TODO: Remove once npe1 deprecated
     def _setup_npe1_samples_menu(self):
