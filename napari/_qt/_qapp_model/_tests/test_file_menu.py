@@ -158,13 +158,8 @@ def test_image_from_clipboard(make_napari_viewer):
     assert clipboard_image.isNull()
 
     # Check action via trigger
-    actions = viewer.window.file_menu.actions()
-    action = None
-    for from_clipboard_action in actions:
-        if from_clipboard_action.text() == 'New Image from Clipboard':
-            action = from_clipboard_action
-            break
-    assert action
+    action_id = 'napari.window.file._image_from_clipboard'
+    action = viewer.window.file_menu.findAction(action_id)
     with mock.patch('napari._qt.qt_viewer.show_info') as mock_show_info:
         action.trigger()
     mock_show_info.assert_called_once_with('No image or link in clipboard.')
@@ -174,9 +169,7 @@ def test_image_from_clipboard(make_napari_viewer):
     with mock.patch(
         'napari._qt.qt_viewer.show_info'
     ) as mock_show_info_command:
-        napari_app.commands.execute_command(
-            'napari.window.file._image_from_clipboard'
-        )
+        napari_app.commands.execute_command(action_id)
     mock_show_info_command.assert_called_once_with(
         'No image or link in clipboard.'
     )
