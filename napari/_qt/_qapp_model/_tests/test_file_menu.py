@@ -444,3 +444,90 @@ def test_save_layers(
         getattr(mock_file_instance, dialog_method).return_value = dialog_return
         napari_app.commands.execute_command(action_id)
     mock_file_command.assert_called_once()
+
+
+@pytest.mark.parametrize(
+    ('action_id', 'patch_class', 'dialog_method', 'dialog_return'),
+    [
+        (
+            # Save Screenshot with Viewer...
+            'napari.window.file.save_viewer_screenshot_dialog',
+            'napari._qt.dialogs.screenshot_dialog.ScreenshotDialog',
+            'exec_',
+            False,
+        ),
+    ],
+)
+def test_screenshot(
+    make_napari_viewer, action_id, patch_class, dialog_method, dialog_return
+):
+    """Test that save layer selected/all actions can be triggered via the action itself and its command."""
+    napari_app = get_app()
+    viewer = make_napari_viewer()
+    action = viewer.window.file_menu.findAction(action_id)
+
+    # Check action trigger
+    with mock.patch(patch_class) as mock_screenshot:
+        mock_screenshot_instance = mock_screenshot.return_value
+        getattr(
+            mock_screenshot_instance, dialog_method
+        ).return_value = dialog_return
+        action.trigger()
+    mock_screenshot.assert_called_once()
+
+    # Check action command
+    with mock.patch(patch_class) as mock_screenshot_command:
+        mock_screenshot_instance = mock_screenshot_command.return_value
+        getattr(
+            mock_screenshot_instance, dialog_method
+        ).return_value = dialog_return
+        napari_app.commands.execute_command(action_id)
+    mock_screenshot_command.assert_called_once()
+
+
+@pytest.mark.parametrize(
+    'action_id',
+    [
+        # Copy Screenshot with Viewer to Clipboard
+        'napari.window.file.copy_viewer_screenshot',
+    ],
+)
+def test_screenshot_to_clipboard(make_napari_viewer, qtbot, action_id):
+    """Test screenshot to clipboard actions can be triggered via the action itself and its command."""
+    napari_app = get_app()
+    viewer = make_napari_viewer()
+    action = viewer.window.file_menu.findAction(action_id)
+
+    # Add selected layer
+    layer = Image(np.random.random((10, 10)))
+    viewer.layers.append(layer)
+    assert len(viewer.layers) == 1
+    viewer.window._update_file_menu_state()
+
+    # Check action trigger
+    # Ensure clipboard is empty
+    QGuiApplication.clipboard().clear()
+    clipboard_image = QGuiApplication.clipboard().image()
+    assert clipboard_image.isNull()
+    # Call action
+    with mock.patch('napari._qt.utils.add_flash_animation') as mock_flash:
+        action.trigger()
+    mock_flash.assert_called_once()
+    # Ensure clipboard has image
+    clipboard_image = QGuiApplication.clipboard().image()
+    assert not clipboard_image.isNull()
+
+    # Check action command
+    # Ensure clipboard is empty
+    QGuiApplication.clipboard().clear()
+    clipboard_image = QGuiApplication.clipboard().image()
+    assert clipboard_image.isNull()
+    # Call command
+    with mock.patch(
+        'napari._qt.utils.add_flash_animation'
+    ) as mock_flash_command:
+        napari_app.commands.execute_command(action_id)
+    mock_flash_command.assert_called_once()
+    # Ensure clipboard has image
+    clipboard_image = QGuiApplication.clipboard().image()
+    assert not clipboard_image.isNull()
