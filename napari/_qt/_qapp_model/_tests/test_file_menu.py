@@ -420,7 +420,7 @@ def test_save_layers_enablement_updated_context(make_napari_viewer, builtins):
 def test_save_layers(
     make_napari_viewer, action_id, dialog_method, dialog_return
 ):
-    """Test that save layer selected/all actions can be triggered via the action itself and its command."""
+    """Test save layer selected/all actions can be triggered via the action itself and its command."""
     napari_app = get_app()
     viewer = make_napari_viewer()
     action = viewer.window.file_menu.findAction(action_id)
@@ -447,40 +447,34 @@ def test_save_layers(
 
 
 @pytest.mark.parametrize(
-    ('action_id', 'patch_class', 'dialog_method', 'dialog_return'),
+    ('action_id', 'patch_method', 'dialog_method', 'dialog_return'),
     [
         (
             # Save Screenshot with Viewer...
             'napari.window.file.save_viewer_screenshot_dialog',
-            'napari._qt.dialogs.screenshot_dialog.ScreenshotDialog',
+            'napari._qt.dialogs.screenshot_dialog.ScreenshotDialog.exec_',
             'exec_',
             False,
         ),
     ],
 )
 def test_screenshot(
-    make_napari_viewer, action_id, patch_class, dialog_method, dialog_return
+    make_napari_viewer, action_id, patch_method, dialog_method, dialog_return
 ):
-    """Test that save layer selected/all actions can be triggered via the action itself and its command."""
+    """Test screenshot actions can be triggered via the action itself and its command."""
     napari_app = get_app()
     viewer = make_napari_viewer()
     action = viewer.window.file_menu.findAction(action_id)
 
     # Check action trigger
-    with mock.patch(patch_class) as mock_screenshot:
-        mock_screenshot_instance = mock_screenshot.return_value
-        getattr(
-            mock_screenshot_instance, dialog_method
-        ).return_value = dialog_return
+    with mock.patch(patch_method) as mock_screenshot:
+        mock_screenshot.return_value = dialog_return
         action.trigger()
     mock_screenshot.assert_called_once()
 
     # Check action command
-    with mock.patch(patch_class) as mock_screenshot_command:
-        mock_screenshot_instance = mock_screenshot_command.return_value
-        getattr(
-            mock_screenshot_instance, dialog_method
-        ).return_value = dialog_return
+    with mock.patch(patch_method) as mock_screenshot_command:
+        mock_screenshot_command.return_value = dialog_return
         napari_app.commands.execute_command(action_id)
     mock_screenshot_command.assert_called_once()
 
