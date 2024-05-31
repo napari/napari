@@ -40,11 +40,11 @@ psygnal==0.11.1
     #   npe2
 pyconify==0.1.6
     # via superqt
-pydantic==2.7.1
+pydantic==2.7.2
     # via
     #   -r napari_repo/resources/requirements_mypy.in
     #   npe2
-pydantic-core==2.18.2
+pydantic-core==2.18.3
     # via pydantic
 pygments==2.18.0
     # via
@@ -65,7 +65,7 @@ qtpy==2.4.1
     #   -r napari_repo/resources/requirements_mypy.in
     #   magicgui
     #   superqt
-requests==2.32.1
+requests==2.32.3
     # via pyconify
 rich==13.7.1
     # via
@@ -81,11 +81,11 @@ typer==0.12.3
     # via npe2
 types-pyyaml==6.0.12.20240311
     # via -r napari_repo/resources/requirements_mypy.in
-types-requests==2.32.0.20240521
+types-requests==2.32.0.20240523
     # via -r napari_repo/resources/requirements_mypy.in
-types-setuptools==69.5.0.20240519
+types-setuptools==70.0.0.20240524
     # via -r napari_repo/resources/requirements_mypy.in
-typing-extensions==4.11.0
+typing-extensions==4.12.0
     # via
     #   magicgui
     #   mypy
