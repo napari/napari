@@ -150,7 +150,6 @@ def test_show_shortcuts_actions(make_napari_viewer):
 
 
 def test_image_from_clipboard(make_napari_viewer):
-    napari_app = get_app()
     viewer = make_napari_viewer()
 
     # Ensure clipboard is empty
@@ -158,21 +157,12 @@ def test_image_from_clipboard(make_napari_viewer):
     clipboard_image = QGuiApplication.clipboard().image()
     assert clipboard_image.isNull()
 
-    # Check Qt action trigger
+    # Check action trigger
     action_id = 'napari.window.file._image_from_clipboard'
     action = viewer.window.file_menu.findAction(action_id)
     with mock.patch('napari._qt.qt_viewer.show_info') as mock_show_info:
         action.trigger()
     mock_show_info.assert_called_once_with('No image or link in clipboard.')
-
-    # Check app-model registry action command
-    with mock.patch(
-        'napari._qt.qt_viewer.show_info'
-    ) as mock_show_info_command:
-        napari_app.commands.execute_command(action_id)
-    mock_show_info_command.assert_called_once_with(
-        'No image or link in clipboard.'
-    )
 
 
 @pytest.mark.parametrize(
@@ -212,11 +202,10 @@ def test_open(
     filename_call,
     stack,
 ):
-    """Test base `Open ...` actions can be triggered via action and command."""
-    napari_app = get_app()
+    """Test base `Open ...` actions can be triggered."""
     viewer = make_napari_viewer()
 
-    # Check Qt action trigger
+    # Check action trigger
     action = viewer.window.file_menu.findAction(action_id)
     with (
         mock.patch('napari._qt.qt_viewer.QFileDialog') as mock_file,
@@ -226,20 +215,6 @@ def test_open(
         getattr(mock_file_instance, dialog_method).return_value = dialog_return
         action.trigger()
     mock_read.assert_called_once_with(
-        filename_call, stack=stack, choose_plugin=False
-    )
-
-    # Check app-model registry action command
-    with (
-        mock.patch('napari._qt.qt_viewer.QFileDialog') as mock_file_command,
-        mock.patch(
-            'napari._qt.qt_viewer.QtViewer._qt_open'
-        ) as mock_read_command,
-    ):
-        mock_file_instance = mock_file_command.return_value
-        getattr(mock_file_instance, dialog_method).return_value = dialog_return
-        napari_app.commands.execute_command(action_id)
-    mock_read_command.assert_called_once_with(
         filename_call, stack=stack, choose_plugin=False
     )
 
@@ -270,7 +245,6 @@ def get_open_with_plugin_action(viewer, action_text):
 @pytest.mark.parametrize(
     (
         'menu_str',
-        'action_id',
         'dialog_method',
         'dialog_return',
         'filename_call',
@@ -279,7 +253,6 @@ def get_open_with_plugin_action(viewer, action_text):
     [
         (
             'Open File(s)...',
-            'napari.window.file._open_files_with_plugin',
             'getOpenFileNames',
             (['my-file.tif'], ''),
             ['my-file.tif'],
@@ -287,7 +260,6 @@ def get_open_with_plugin_action(viewer, action_text):
         ),
         (
             'Open Files as Stack...',
-            'napari.window.file._open_files_as_stack_with_plugin',
             'getOpenFileNames',
             (['my-file.tif'], ''),
             ['my-file.tif'],
@@ -295,7 +267,6 @@ def get_open_with_plugin_action(viewer, action_text):
         ),
         (
             'Open Folder...',
-            'napari.window.file._open_folder_with_plugin',
             'getExistingDirectory',
             'my-dir/',
             ['my-dir/'],
@@ -306,16 +277,12 @@ def get_open_with_plugin_action(viewer, action_text):
 def test_open_with_plugin(
     make_napari_viewer,
     menu_str,
-    action_id,
     dialog_method,
     dialog_return,
     filename_call,
     stack,
 ):
-    napari_app = get_app()
     viewer = make_napari_viewer()
-
-    # Check Qt action trigger
     action, _a = get_open_with_plugin_action(viewer, menu_str)
     with (
         mock.patch('napari._qt.qt_viewer.QFileDialog') as mock_file,
@@ -328,27 +295,12 @@ def test_open_with_plugin(
         filename_call, stack=stack, choose_plugin=True
     )
 
-    # Check app-model registry action command
-    with (
-        mock.patch('napari._qt.qt_viewer.QFileDialog') as mock_file_command,
-        mock.patch(
-            'napari._qt.qt_viewer.QtViewer._qt_open'
-        ) as mock_read_command,
-    ):
-        mock_file_instance = mock_file_command.return_value
-        getattr(mock_file_instance, dialog_method).return_value = dialog_return
-        napari_app.commands.execute_command(action_id)
-    mock_read_command.assert_called_once_with(
-        filename_call, stack=stack, choose_plugin=True
-    )
-
 
 def test_preference_dialog(make_napari_viewer):
-    """Test preferences action can be triggered via the action itself and its command."""
-    napari_app = get_app()
+    """Test preferences action can be triggered."""
     viewer = make_napari_viewer()
 
-    # Check Qt action trigger
+    # Check action trigger
     action_id = 'napari.window.file.show_preferences_dialog'
     action = viewer.window.file_menu.findAction(action_id)
     with (
@@ -358,13 +310,6 @@ def test_preference_dialog(make_napari_viewer):
     ):
         action.trigger()
     mock_pref_dialog_show.assert_called_once()
-
-    # Check app-model registry action command
-    with mock.patch(
-        'napari._qt.qt_main_window.PreferencesDialog.raise_'
-    ) as mock_pref_dialog_raise_:
-        napari_app.commands.execute_command(action_id)
-    mock_pref_dialog_raise_.assert_called_once()
 
 
 def test_save_layers_enablement_updated_context(make_napari_viewer, builtins):
@@ -420,8 +365,7 @@ def test_save_layers_enablement_updated_context(make_napari_viewer, builtins):
 def test_save_layers(
     make_napari_viewer, action_id, dialog_method, dialog_return
 ):
-    """Test save layer selected/all actions can be triggered via the action itself and its command."""
-    napari_app = get_app()
+    """Test save layer selected/all actions can be triggered."""
     viewer = make_napari_viewer()
     action = viewer.window.file_menu.findAction(action_id)
 
@@ -431,19 +375,12 @@ def test_save_layers(
     assert len(viewer.layers) == 1
     viewer.window._update_file_menu_state()
 
-    # Check Qt action trigger
+    # Check action trigger
     with mock.patch('napari._qt.qt_viewer.QFileDialog') as mock_file:
         mock_file_instance = mock_file.return_value
         getattr(mock_file_instance, dialog_method).return_value = dialog_return
         action.trigger()
     mock_file.assert_called_once()
-
-    # Check app-model registry action command
-    with mock.patch('napari._qt.qt_viewer.QFileDialog') as mock_file_command:
-        mock_file_instance = mock_file_command.return_value
-        getattr(mock_file_instance, dialog_method).return_value = dialog_return
-        napari_app.commands.execute_command(action_id)
-    mock_file_command.assert_called_once()
 
 
 @pytest.mark.parametrize(
@@ -460,22 +397,15 @@ def test_save_layers(
 def test_screenshot(
     make_napari_viewer, action_id, patch_method, dialog_return
 ):
-    """Test screenshot actions can be triggered via the action itself and its command."""
-    napari_app = get_app()
+    """Test screenshot actions can be triggered."""
     viewer = make_napari_viewer()
     action = viewer.window.file_menu.findAction(action_id)
 
-    # Check Qt action trigger
+    # Check action trigger
     with mock.patch(patch_method) as mock_screenshot:
         mock_screenshot.return_value = dialog_return
         action.trigger()
     mock_screenshot.assert_called_once()
-
-    # Check app-model registry action command
-    with mock.patch(patch_method) as mock_screenshot_command:
-        mock_screenshot_command.return_value = dialog_return
-        napari_app.commands.execute_command(action_id)
-    mock_screenshot_command.assert_called_once()
 
 
 @pytest.mark.parametrize(
@@ -486,8 +416,7 @@ def test_screenshot(
     ],
 )
 def test_screenshot_to_clipboard(make_napari_viewer, qtbot, action_id):
-    """Test screenshot to clipboard actions can be triggered via the action itself and its command."""
-    napari_app = get_app()
+    """Test screenshot to clipboard actions can be triggered."""
     viewer = make_napari_viewer()
     action = viewer.window.file_menu.findAction(action_id)
 
@@ -497,8 +426,8 @@ def test_screenshot_to_clipboard(make_napari_viewer, qtbot, action_id):
     assert len(viewer.layers) == 1
     viewer.window._update_file_menu_state()
 
-    # Check Qt action trigger
-    # Ensure clipboard is empty
+    # Check action trigger
+    # ---- Ensure clipboard is empty
     QGuiApplication.clipboard().clear()
     clipboard_image = QGuiApplication.clipboard().image()
     assert clipboard_image.isNull()
@@ -506,22 +435,7 @@ def test_screenshot_to_clipboard(make_napari_viewer, qtbot, action_id):
     with mock.patch('napari._qt.utils.add_flash_animation') as mock_flash:
         action.trigger()
     mock_flash.assert_called_once()
-    # Ensure clipboard has image
-    clipboard_image = QGuiApplication.clipboard().image()
-    assert not clipboard_image.isNull()
-
-    # Check app-model registry action command
-    # Ensure clipboard is empty
-    QGuiApplication.clipboard().clear()
-    clipboard_image = QGuiApplication.clipboard().image()
-    assert clipboard_image.isNull()
-    # Call command
-    with mock.patch(
-        'napari._qt.utils.add_flash_animation'
-    ) as mock_flash_command:
-        napari_app.commands.execute_command(action_id)
-    mock_flash_command.assert_called_once()
-    # Ensure clipboard has image
+    # ---- Ensure clipboard has image
     clipboard_image = QGuiApplication.clipboard().image()
     assert not clipboard_image.isNull()
 
@@ -540,20 +454,14 @@ def test_screenshot_to_clipboard(make_napari_viewer, qtbot, action_id):
     ],
 )
 def test_restart(make_napari_viewer, action_id, patch_method):
-    """Testrestart action can be triggered via the action itself and its command."""
-    napari_app = get_app()
+    """Testrestart action can be triggered."""
     viewer = make_napari_viewer()
     action = viewer.window.file_menu.findAction(action_id)
 
-    # Check Qt action trigger
+    # Check action trigger
     with mock.patch(patch_method) as mock_restart:
         action.trigger()
     mock_restart.assert_called_once()
-
-    # Check app-model registry action command
-    with mock.patch(patch_method) as mock_restart_command:
-        napari_app.commands.execute_command(action_id)
-    mock_restart_command.assert_called_once()
 
 
 @pytest.mark.parametrize(
@@ -574,22 +482,14 @@ def test_restart(make_napari_viewer, action_id, patch_method):
     ],
 )
 def test_close(make_napari_viewer, action_id, patch_method, method_params):
-    """Test close/exit actions can be triggered via the action itself and its command."""
-    napari_app = get_app()
+    """Test close/exit actions can be triggered."""
     viewer = make_napari_viewer()
     action = viewer.window.file_menu.findAction(action_id)
     quit_app, confirm_need = method_params
 
-    # Check Qt action trigger
+    # Check action trigger
     with mock.patch(patch_method) as mock_close:
         action.trigger()
     mock_close.assert_called_once_with(
-        quit_app=quit_app, confirm_need=confirm_need
-    )
-
-    # Check app-model registry action command
-    with mock.patch(patch_method) as mock_close_command:
-        napari_app.commands.execute_command(action_id)
-    mock_close_command.assert_called_once_with(
         quit_app=quit_app, confirm_need=confirm_need
     )
