@@ -15,7 +15,7 @@ def make_features_with_no_columns(*, num_rows) -> pd.DataFrame:
     return pd.DataFrame({}, index=range(num_rows))
 
 
-@pytest.fixture
+@pytest.fixture()
 def features() -> pd.DataFrame:
     return pd.DataFrame(
         {
@@ -25,7 +25,7 @@ def features() -> pd.DataFrame:
     )
 
 
-@pytest.fixture
+@pytest.fixture()
 def numeric_features() -> pd.DataFrame:
     return pd.DataFrame(
         {
@@ -117,7 +117,7 @@ def test_format(features):
 
 def test_format_with_bad_string(features):
     encoding = FormatStringEncoding(format='{class}: {confidence:.2f')
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='unmatched'):
         encoding(features)
 
 
@@ -140,6 +140,19 @@ def test_validate_from_format_string():
     actual = StringEncoding.validate(argument)
 
     assert actual == expected
+
+
+def test_format_with_index(features):
+    encoding = FormatStringEncoding(format='{index}: {confidence:.2f}')
+    values = encoding(features)
+    np.testing.assert_array_equal(values, ['0: 0.50', '1: 1.00', '2: 0.25'])
+
+
+def test_format_with_index_column(features):
+    features['index'] = features['class']
+    encoding = FormatStringEncoding(format='{index}: {confidence:.2f}')
+    values = encoding(features)
+    np.testing.assert_array_equal(values, ['a: 0.50', 'b: 1.00', 'c: 0.25'])
 
 
 def test_validate_from_non_format_string():

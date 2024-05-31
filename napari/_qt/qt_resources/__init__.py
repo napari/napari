@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Optional
 
 from napari._qt.qt_resources._svg import QColoredSVGIcon
 from napari.settings import get_settings
@@ -13,8 +13,8 @@ STYLES = {x.stem: str(x) for x in STYLE_PATH.iterdir() if x.suffix == '.qss'}
 
 def get_stylesheet(
     theme_id: Optional[str] = None,
-    extra: Optional[List[str]] = None,
-    extra_variables: Optional[Dict[str, str]] = None,
+    extra: Optional[list[str]] = None,
+    extra_variables: Optional[dict[str, str]] = None,
 ) -> str:
     """Combine all qss files into single, possibly pre-themed, style string.
 
@@ -58,7 +58,7 @@ def get_stylesheet(
     return stylesheet
 
 
-def get_current_stylesheet(extra: Optional[List[str]] = None) -> str:
+def get_current_stylesheet(extra: Optional[list[str]] = None) -> str:
     """
     Return the current stylesheet base on settings. This is wrapper around
     :py:func:`get_stylesheet` that takes the current theme base on settings.

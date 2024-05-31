@@ -4,6 +4,10 @@ import pytest
 
 from napari.layers import Tracks
 from napari.layers.tracks._track_utils import TrackManager
+from napari.utils._test_utils import (
+    validate_all_params_in_docstring,
+    validate_kwargs_sorted,
+)
 
 # def test_empty_tracks():
 #     """Test instantiating Tracks layer without data."""
@@ -112,7 +116,7 @@ def test_track_layer_colorby_nonexistent():
     data[:, 1] = np.arange(100)
     non_existant_property = 'not_a_valid_key'
     assert non_existant_property not in properties_dict
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='not a valid property'):
         Tracks(
             data, properties=properties_dict, color_by=non_existant_property
         )
@@ -161,7 +165,7 @@ def test_malformed_id():
     """Test for malformed track ID."""
     data = np.random.random((100, 4))
     data[:, 1] = np.arange(100)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must be an integer'):
         Tracks(data)
 
 
@@ -171,7 +175,7 @@ def test_malformed_graph():
     data[:, 1] = np.arange(100)
     data[50:, 0] = 1
     graph = {1: [0], 2: [33]}
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='node 2 not found'):
         Tracks(data, graph=graph)
 
 
@@ -290,3 +294,8 @@ def test_track_connex_validity() -> None:
 
     # the number of 'False' in the track_connex array should be equal to the number of tracks
     assert np.sum(~layer._manager.track_connex) == n_tracks
+
+
+def test_docstring():
+    validate_all_params_in_docstring(Tracks)
+    validate_kwargs_sorted(Tracks)

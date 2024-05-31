@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Callable, Generator, Union
+from collections.abc import Generator
+from typing import Callable, Union
 
 from app_model.types import KeyCode
 
@@ -49,7 +50,7 @@ def orient_plane_normal_along_view_direction(
         return None
 
     def sync_plane_normal_with_view_direction(
-        event: Union[None, Event] = None
+        event: Union[None, Event] = None,
     ) -> None:
         """Plane normal syncronisation mouse callback."""
         layer.plane.normal = layer._world_to_displayed_data_ray(

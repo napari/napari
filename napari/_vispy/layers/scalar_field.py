@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import warnings
 from abc import ABC, abstractmethod
-from typing import Dict, Optional
+from typing import Optional
 
 import numpy as np
 from vispy.scene import Node
@@ -224,7 +224,7 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
         return data
 
 
-_VISPY_FORMAT_TO_DTYPE: Dict[Optional[str], np.dtype] = {
+_VISPY_FORMAT_TO_DTYPE: dict[Optional[str], np.dtype] = {
     'r8': np.dtype(np.uint8),
     'r16': np.dtype(np.uint16),
     'r32f': np.dtype(np.float32),

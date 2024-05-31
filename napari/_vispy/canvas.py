@@ -1,5 +1,4 @@
-"""VispyCanvas class.
-"""
+"""VispyCanvas class."""
 
 from __future__ import annotations
 
@@ -27,7 +26,7 @@ from napari.utils.interactions import (
 from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
-    from typing import Callable, Dict, Optional, Tuple, Union
+    from typing import Callable, Optional, Union
 
     import numpy.typing as npt
     from qtpy.QtCore import Qt, pyqtBoundSignal
@@ -116,8 +115,8 @@ class VispyCanvas:
         self.camera = VispyCamera(
             self.view, self.viewer.camera, self.viewer.dims
         )
-        self.layer_to_visual: Dict[Layer, VispyBaseLayer] = {}
-        self._overlay_to_visual: Dict[Overlay, VispyBaseOverlay] = {}
+        self.layer_to_visual: dict[Layer, VispyBaseLayer] = {}
+        self._overlay_to_visual: dict[Overlay, VispyBaseOverlay] = {}
         self._key_map_handler = key_map_handler
         self._instances.add(self)
 
@@ -244,13 +243,13 @@ class VispyCanvas:
         return self._scene_canvas._central_widget
 
     @property
-    def size(self) -> Tuple[int, int]:
+    def size(self) -> tuple[int, int]:
         """Return canvas size as tuple (height, width) or accepts size as tuple (height, width)
         and sets Vispy SceneCanvas size as (width, height)."""
         return self._scene_canvas.size[::-1]
 
     @size.setter
-    def size(self, size: Tuple[int, int]):
+    def size(self, size: tuple[int, int]):
         self._scene_canvas.size = size[::-1]
 
     @property
@@ -311,8 +310,8 @@ class VispyCanvas:
         )
 
     def _map_canvas2world(
-        self, position: Tuple[int, ...]
-    ) -> Tuple[float, float]:
+        self, position: tuple[int, ...]
+    ) -> tuple[float, float]:
         """Map position from canvas pixels into world coordinates.
 
         Parameters

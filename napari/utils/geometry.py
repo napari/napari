@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Tuple
+from typing import Optional
 
 import numpy as np
 import numpy.typing as npt
@@ -17,7 +17,7 @@ FACE_NORMALS = {
 
 def project_points_onto_plane(
     points: np.ndarray, plane_point: np.ndarray, plane_normal: np.ndarray
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """Project points on to a plane.
 
     Plane is defined by a point and a normal vector. This function
@@ -147,7 +147,7 @@ def rotate_points(
     points: np.ndarray,
     current_plane_normal: np.ndarray,
     new_plane_normal: np.ndarray,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """Rotate points using a rotation matrix defined by the rotation from
     current_plane to new_plane.
 
@@ -285,7 +285,7 @@ def intersect_line_with_axis_aligned_plane(
 
 def bounding_box_to_face_vertices(
     bounding_box: np.ndarray,
-) -> Dict[str, np.ndarray]:
+) -> dict[str, np.ndarray]:
     """From a layer bounding box (N, 2), N=ndim, return a dictionary containing
     the vertices of each face of the bounding_box.
 
@@ -786,7 +786,7 @@ def distance_between_point_and_line_3d(
 
 def find_nearest_triangle_intersection(
     ray_position: np.ndarray, ray_direction: np.ndarray, triangles: np.ndarray
-) -> Tuple[Optional[int], Optional[np.ndarray]]:
+) -> tuple[Optional[int], Optional[np.ndarray]]:
     """Given an array of triangles, find the index and intersection location
     of a ray and the nearest triangle.
 

@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import List, Optional, Tuple, Union
+from typing import Optional, Union
 from unittest.mock import MagicMock
 
 import numpy as np
@@ -23,24 +23,24 @@ class Event:
 
     type: str
     is_dragging: bool = False
-    modifiers: List[str] = field(default_factory=list)
-    position: Union[Tuple[int, int], Tuple[int, int, int]] = (
+    modifiers: list[str] = field(default_factory=list)
+    position: Union[tuple[int, int], tuple[int, int, int]] = (
         0,
         0,
     )  # world coords
     pos: np.ndarray = field(
         default_factory=lambda: np.zeros(2)
     )  # canvas coords
-    view_direction: Optional[List[float]] = None
-    up_direction: Optional[List[float]] = None
-    dims_displayed: List[int] = field(default_factory=lambda: [0, 1])
+    view_direction: Optional[list[float]] = None
+    up_direction: Optional[list[float]] = None
+    dims_displayed: list[int] = field(default_factory=lambda: [0, 1])
 
 
 def read_only_event(*args, **kwargs):
     return ReadOnlyWrapper(Event(*args, **kwargs), exceptions=('handled',))
 
 
-@pytest.fixture
+@pytest.fixture()
 def create_known_points_layer_2d():
     """Create points layer with known coordinates
 
@@ -67,7 +67,7 @@ def create_known_points_layer_2d():
     return layer, n_points, known_non_point
 
 
-@pytest.fixture
+@pytest.fixture()
 def create_known_points_layer_3d():
     """Create 3D points layer with known coordinates displayed in 3D.
 
@@ -664,7 +664,7 @@ def test_selecting_no_points_with_drag_3d(create_known_points_layer_3d):
 
 
 @pytest.mark.parametrize(
-    'pre_selection,on_point,modifier',
+    ('pre_selection', 'on_point', 'modifier'),
     [
         (set(), True, []),
         ({0}, True, []),
@@ -841,7 +841,7 @@ def test_drag_start_selection(
         assert 0 in layer.selected_data
         assert layer.selected_data == set(range(n_points))
     else:
-        assert False, 'Unreachable code'  # pragma: no cover
+        pytest.fail('Unreachable code')
     assert layer._drag_box is None
     assert layer._drag_start is None
 
