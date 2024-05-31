@@ -1096,9 +1096,11 @@ class QtViewer(QSplitter):
                 )
             )
         else:
-            self._camera_monitor.events.moving_finished.disconnect(
-                self._redraw_high_res_callback
-            )
+            if hasattr(self, '_redraw_high_res_callback'):
+                self._camera_monitor.events.moving_finished.disconnect(
+                    self._redraw_high_res_callback
+                )
+                self._redraw_high_res_callback = None
             for layer in self.viewer.layers:
                 layer.change_render_quality(RenderQualityChange.MAX)
             self.canvas._scene_canvas.update()
@@ -1378,6 +1380,9 @@ class CameraMonitor:
     @property
     def camera_moving(self) -> bool:
         return self._camera_moving
+
+    def __del__(self) -> None:
+        self._reset_camera_moving.cancel()
 
 
 def _in_napari(n: int, frame: FrameType):

@@ -214,7 +214,12 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     _layer_slicer: _LayerSlicer = PrivateAttr(default_factory=_LayerSlicer)
 
     def __init__(
-        self, title='napari', ndisplay=2, order=(), axis_labels=()
+        self,
+        title='napari',
+        ndisplay=2,
+        order=(),
+        axis_labels=(),
+        auto_quality=True,
     ) -> None:
         # max_depth=0 means don't look for parent contexts.
         from napari._app_model.context import create_context
@@ -231,6 +236,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 'ndisplay': ndisplay,
                 'order': order,
             },
+            auto_quality=auto_quality,
         )
         self.__config__.extra = Extra.ignore
 
