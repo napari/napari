@@ -241,7 +241,7 @@ napari-plugin-engine==0.2.0
     #   napari-svg
 napari-plugin-manager==0.1.0a2
     # via napari (napari_repo/pyproject.toml)
-napari-sphinx-theme==0.3.2
+napari-sphinx-theme==0.4.0
     # via -r docs/requirements.txt
 napari-svg==0.1.10
     # via napari (napari_repo/pyproject.toml)
@@ -416,7 +416,7 @@ pydantic==1.10.15
     #   pydantic-compat
 pydantic-compat==0.1.2
     # via app-model
-pydata-sphinx-theme==0.14.4
+pydata-sphinx-theme==0.15.3
     # via napari-sphinx-theme
 pygetwindow==0.0.9
     # via pyautogui
