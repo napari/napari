@@ -1608,6 +1608,44 @@ class Window:
                 add_flash_animation(self._qt_window)
         return img
 
+    def export_view(
+        self,
+        path=None,
+        scale=None,
+        flash=True,
+    ):
+        """Take currently displayed canvas, resets the view and create a screenshot without margins around the data.
+
+        Parameters
+        ----------
+        path : str
+            Filename for saving screenshot image.
+        scale : float
+            Scale factor used to increase resolution of canvas for the screenshot. By default, the currently displayed resolution.
+            Only used if `canvas_only` is True.
+        flash : bool
+            Flag to indicate whether flash animation should be shown after
+            the screenshot was captured.
+            By default, True.
+
+        Returns
+        -------
+        image : array
+            Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
+            upper-left corner of the rendered region.
+        """
+        img = QImg2array(
+            self._screenshot(
+                scale=scale,
+                flash=flash,
+                canvas_only=True,
+                fit_to_data_extent=True,
+            )
+        )
+        if path is not None:
+            imsave(path, img)
+        return img
+
     def screenshot(
         self,
         path=None,
@@ -1615,7 +1653,6 @@ class Window:
         scale=None,
         flash=True,
         canvas_only=False,
-        fit_to_data_extent: bool = False,
     ):
         """Take currently displayed viewer and convert to an image array.
 
@@ -1637,10 +1674,6 @@ class Window:
             If True, screenshot shows only the image display canvas, and
             if False includes the napari viewer frame in the screenshot,
             By default, True.
-        fit_to_data_extent: bool
-            Tightly fit the canvas around the data to prevent margins from
-            showing in the screenshot. If False, a screenshot of the whole
-            currently visible canvas will be generated.
 
         Returns
         -------
@@ -1649,11 +1682,7 @@ class Window:
             upper-left corner of the rendered region.
         """
 
-        img = QImg2array(
-            self._screenshot(
-                size, scale, flash, canvas_only, fit_to_data_extent
-            )
-        )
+        img = QImg2array(self._screenshot(size, scale, flash, canvas_only))
         if path is not None:
             imsave(path, img)
         return img
