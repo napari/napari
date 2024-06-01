@@ -59,8 +59,10 @@ class MenuGroup:
 
 
 # TODO: add these to docs, with a lookup for what each menu is/does.
-_CONTRIBUTABLES = {MenuId.LAYERLIST_CONTEXT.value}
 """Set of all menu ids that can be contributed to by plugins."""
+_CONTRIBUTABLES = {MenuId.LAYERLIST_CONTEXT.value}
+# dummy action ID for empty contributable menus
+_EMPTY_MENU_DUMMY_ID = 'napari.window.empty'
 
 
 def is_menu_contributable(menu_id: str) -> bool:

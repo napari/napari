@@ -21,6 +21,7 @@ from typing import (
 )
 from weakref import WeakValueDictionary
 
+from app_model.types import SubmenuItem
 from qtpy.QtCore import (
     QEvent,
     QEventLoop,
@@ -45,8 +46,15 @@ from qtpy.QtWidgets import (
 )
 from superqt.utils import QSignalThrottler
 
-from napari._app_model.constants import MenuId
+from napari._app_model import get_app as get_app_model_app
+from napari._app_model.constants import MenuGroup, MenuId
+from napari._app_model.constants._menus import _CONTRIBUTABLES
 from napari._app_model.context import get_context
+from napari._app_model.utils import (
+    contains_dummy_action,
+    get_dummy_action,
+    is_empty_menu,
+)
 from napari._qt import menus
 from napari._qt._qapp_model import build_qmodel_menu
 from napari._qt._qapp_model.qactions import init_qactions
@@ -695,6 +703,26 @@ class Window:
         viewer.events.theme.connect(self._update_theme)
         viewer.events.status.connect(self._status_changed)
 
+        am_app = get_app_model_app()
+
+        ######################################
+        # add empty submenu to view menu, make it contributable
+        my_submenu_item = SubmenuItem(
+            submenu='napari/view/contributable_menu',
+            title='Contributable Submenu',
+        )
+        am_app.menus.append_menu_items([('napari/view', my_submenu_item)])
+        # make submenu 'contributable' (only works for this file)
+        _CONTRIBUTABLES.add('napari/view/contributable_menu')
+        ######################################
+
+        self.dummy_action_disposer = None
+        self._add_dummy_action_to_contributables()
+        self._toggle_empty_menu_dummy_actions(_CONTRIBUTABLES)
+        am_app.menus.menus_changed.connect(
+            self._toggle_empty_menu_dummy_actions
+        )
+
         if show:
             self.show()
             # Ensure the controls dock uses the minimum height
@@ -706,6 +734,67 @@ class Window:
                 [self._qt_viewer.dockLayerControls.minimumHeight(), 10000],
                 Qt.Orientation.Vertical,
             )
+
+    def _add_dummy_action_to_contributables(self):
+        am_app = get_app_model_app()
+        menus_list = [
+            {'id': menu_id, 'group': MenuGroup.NAVIGATION}
+            for menu_id in _CONTRIBUTABLES
+        ]
+        action = get_dummy_action(menus_list)
+        print('Registering dummy for all contributables.')
+        self.dummy_action_disposer = am_app.register_action(action)
+
+    def dummy_actions_need_updating(self):
+        am_app = get_app_model_app()
+        # contributable menus that are currently empty
+        currently_empty_menus = set()
+        # contributable menus that need the dummy item removed
+        dont_need_dummy = set()
+        for menu_id in _CONTRIBUTABLES:
+            if is_empty_menu(menu_id):
+                currently_empty_menus.add(menu_id)
+            elif len(
+                am_app.menus.get_menu(menu_id)
+            ) > 1 and contains_dummy_action(menu_id):
+                dont_need_dummy.add(menu_id)
+
+        print('Menus that need dummy added:', currently_empty_menus)
+        print('Menus that need dummy removed:', dont_need_dummy)
+        # if there's something in either set, we need to toggle the dummy actions
+        return currently_empty_menus or dont_need_dummy
+
+    def _toggle_empty_menu_dummy_actions(self, changed_menus):
+        if not self.dummy_actions_need_updating():
+            print("Dummy actions don't need updating.")
+            return
+
+        print('Deregistering dummy action.')
+        am_app = get_app_model_app()
+        with am_app.menus.menus_changed.blocked():
+            # deregister existing dummy action
+            if self.dummy_action_disposer is not None:
+                self.dummy_action_disposer()
+                self.dummy_action_disposer = None
+            print('Done deregistering.')
+
+            # which menus need the item back?
+            need_dummy_added = set()
+            for menu_id in _CONTRIBUTABLES:
+                if is_empty_menu(menu_id):
+                    need_dummy_added.add(menu_id)
+
+            if need_dummy_added:
+                menus_list = [
+                    {'id': menu_id, 'group': MenuGroup.NAVIGATION}
+                    for menu_id in need_dummy_added
+                ]
+                action = get_dummy_action(menus_list)
+                print(f'Re-registering dummy action for {need_dummy_added}.')
+                self.dummy_action_disposer = am_app.register_action(action)
+            else:
+                print('No dummies needed after deregistering.')
+        am_app.menus.menus_changed.emit(_CONTRIBUTABLES)
 
     def _setup_existing_themes(self, connect: bool = True):
         """This function is only executed once at the startup of napari
