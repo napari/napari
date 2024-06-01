@@ -1,7 +1,11 @@
-from app_model.types import Action, MenuOrSubmenu
+from typing import Union
+
+from app_model.types import Action, MenuItem, SubmenuItem
 
 from napari._app_model import get_app
 from napari._app_model.constants._menus import _EMPTY_MENU_DUMMY_ID
+
+MenuOrSubmenu = Union[MenuItem, SubmenuItem]
 
 
 def contains_dummy_action(menu_items: list[MenuOrSubmenu]) -> bool:

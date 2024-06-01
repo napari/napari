@@ -755,8 +755,8 @@ class Window:
             if is_empty_menu(menu_id):
                 currently_empty_menus.add(menu_id)
             elif len(
-                am_app.menus.get_menu(menu_id)
-            ) > 1 and contains_dummy_action(menu_id):
+                items := am_app.menus.get_menu(menu_id)
+            ) > 1 and contains_dummy_action(items):
                 dont_need_dummy.add(menu_id)
 
         print('Menus that need dummy added:', currently_empty_menus)
