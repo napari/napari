@@ -73,4 +73,5 @@ def get_dummy_action(menus_list: list[dict]) -> Action:
         title='Empty',
         callback=no_op,
         menus=menus_list,
+        enablement=False,
     )
