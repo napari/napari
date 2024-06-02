@@ -78,6 +78,11 @@ authors:
   family-names: Can Solak
   affiliation: Chan Zuckerberg Biohub
   alias: AhmetCanSolak
+- given-names: Kyle I. S.
+  family-names: Harrington
+  affiliation: Chan Zuckerberg Initiative
+  orcid: https://orcid.org/0000-0002-7237-1973
+  alias: kephale
 - given-names: Jannis
   family-names: Ahlers
   affiliation: Monash University
