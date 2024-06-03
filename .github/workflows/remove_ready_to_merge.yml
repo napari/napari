@@ -20,7 +20,7 @@ jobs:
           script: |
             const { owner, repo, number: pull_number } = context.issue;
             const { data: pullRequest } = await github.rest.pulls.get({ owner, repo, pull_number });
-            if (!pullRequest.merged) {
+            if (!(pullRequest.closed || pullRequest.merged)) {
               console.log("Pull request not merged, skipping.");
               return;
             }
