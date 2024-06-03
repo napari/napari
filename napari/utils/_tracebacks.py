@@ -211,7 +211,7 @@ def ansi2html(
             for k in ansi_codes
             if k in styles
         ]
-        yield '<span style="%s">' % '; '.join(style)
+        yield '<span style="{}">'.format('; '.join(style))
 
         in_span = True
 
