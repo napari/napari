@@ -30,15 +30,15 @@ HOOK_SPECIFICATIONS = [
 @pytest.mark.parametrize(('name', 'func'), HOOK_SPECIFICATIONS)
 def test_hook_specification_naming(name, func):
     """All hook specifications should begin with napari_."""
-    assert name.startswith('napari_'), (
-        "hook specification '%s' does not start with 'napari_'" % name
-    )
+    assert name.startswith(
+        'napari_'
+    ), f"hook specification '{name}' does not start with 'napari_'"
 
 
 @pytest.mark.parametrize(('name', 'func'), HOOK_SPECIFICATIONS)
 def test_docstring_on_hook_specification(name, func):
     """All hook specifications should have documentation."""
-    assert func.__doc__, "no docstring for '%s'" % name
+    assert func.__doc__, f"no docstring for '{name}'"
 
 
 @pytest.mark.parametrize(('name', 'func'), HOOK_SPECIFICATIONS)
