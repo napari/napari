@@ -1,5 +1,6 @@
 import sys
 
+import numpy as np
 import pytest
 from qtpy.QtCore import QPoint, Qt
 
@@ -80,15 +81,26 @@ def test_toggle_menubar(make_napari_viewer, qtbot):
 
 
 def test_toggle_play(make_napari_viewer, qtbot):
-    make_napari_viewer()
     action_id = 'napari.window.view.toggle_play'
     app = get_app()
+    viewer = make_napari_viewer()
 
     # Check action on empty viewer
     with pytest.warns(
         expected_warning=UserWarning, match='Refusing to play a hidden axis'
     ):
         app.commands.execute_command(action_id)
+
+    # Check action on viewer with layer
+    np.random.seed(0)
+    data = np.random.random((10, 10, 15))
+    viewer.add_image(data)
+    # Assert action triggers play
+    app.commands.execute_command(action_id)
+    qtbot.waitUntil(lambda: viewer.window._qt_viewer.dims.is_playing)
+    # Assert action stops play
+    app.commands.execute_command(action_id)
+    qtbot.waitUntil(lambda: not viewer.window._qt_viewer.dims.is_playing)
 
 
 @skip_local_popups
