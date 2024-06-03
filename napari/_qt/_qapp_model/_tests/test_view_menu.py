@@ -1,3 +1,5 @@
+import sys
+
 import pytest
 from qtpy.QtCore import QPoint, Qt
 
@@ -44,6 +46,10 @@ def test_toggle_fullscreen(make_napari_viewer):
 
 
 @skip_local_focus
+@pytest.mark.skipif(
+    sys.platform == 'darwin',
+    reason='Toggle menubar action not enabled on macOS',
+)
 def test_toggle_menubar(make_napari_viewer, qtbot):
     action_id = 'napari.window.view.toggle_menubar'
     app = get_app()
