@@ -150,18 +150,19 @@ def test_show_shortcuts_actions(make_napari_viewer):
 
 
 def test_image_from_clipboard(make_napari_viewer):
-    viewer = make_napari_viewer()
+    make_napari_viewer()
+    app = get_app()
 
     # Ensure clipboard is empty
     QGuiApplication.clipboard().clear()
     clipboard_image = QGuiApplication.clipboard().image()
     assert clipboard_image.isNull()
 
-    # Check action trigger
-    action_id = 'napari.window.file._image_from_clipboard'
-    action = viewer.window.file_menu.findAction(action_id)
+    # Check action command execution
     with mock.patch('napari._qt.qt_viewer.show_info') as mock_show_info:
-        action.trigger()
+        app.commands.execute_command(
+            'napari.window.file._image_from_clipboard'
+        )
     mock_show_info.assert_called_once_with('No image or link in clipboard.')
 
 
@@ -203,17 +204,17 @@ def test_open(
     stack,
 ):
     """Test base `Open ...` actions can be triggered."""
-    viewer = make_napari_viewer()
+    make_napari_viewer()
+    app = get_app()
 
-    # Check action trigger
-    action = viewer.window.file_menu.findAction(action_id)
+    # Check action command execution
     with (
         mock.patch('napari._qt.qt_viewer.QFileDialog') as mock_file,
         mock.patch('napari._qt.qt_viewer.QtViewer._qt_open') as mock_read,
     ):
         mock_file_instance = mock_file.return_value
         getattr(mock_file_instance, dialog_method).return_value = dialog_return
-        action.trigger()
+        app.commands.execute_command(action_id)
     mock_read.assert_called_once_with(
         filename_call, stack=stack, choose_plugin=False
     )
@@ -298,17 +299,18 @@ def test_open_with_plugin(
 
 def test_preference_dialog(make_napari_viewer):
     """Test preferences action can be triggered."""
-    viewer = make_napari_viewer()
+    make_napari_viewer()
+    app = get_app()
 
-    # Check action trigger
-    action_id = 'napari.window.file.show_preferences_dialog'
-    action = viewer.window.file_menu.findAction(action_id)
+    # Check action command execution
     with (
         mock.patch(
             'napari._qt.qt_main_window.PreferencesDialog.show'
         ) as mock_pref_dialog_show,
     ):
-        action.trigger()
+        app.commands.execute_command(
+            'napari.window.file.show_preferences_dialog'
+        )
     mock_pref_dialog_show.assert_called_once()
 
 
@@ -367,7 +369,7 @@ def test_save_layers(
 ):
     """Test save layer selected/all actions can be triggered."""
     viewer = make_napari_viewer()
-    action = viewer.window.file_menu.findAction(action_id)
+    app = get_app()
 
     # Add selected layer
     layer = Image(np.random.random((10, 10)))
@@ -375,11 +377,11 @@ def test_save_layers(
     assert len(viewer.layers) == 1
     viewer.window._update_file_menu_state()
 
-    # Check action trigger
+    # Check action command execution
     with mock.patch('napari._qt.qt_viewer.QFileDialog') as mock_file:
         mock_file_instance = mock_file.return_value
         getattr(mock_file_instance, dialog_method).return_value = dialog_return
-        action.trigger()
+        app.commands.execute_command(action_id)
     mock_file.assert_called_once()
 
 
@@ -398,13 +400,13 @@ def test_screenshot(
     make_napari_viewer, action_id, patch_method, dialog_return
 ):
     """Test screenshot actions can be triggered."""
-    viewer = make_napari_viewer()
-    action = viewer.window.file_menu.findAction(action_id)
+    make_napari_viewer()
+    app = get_app()
 
-    # Check action trigger
+    # Check action command execution
     with mock.patch(patch_method) as mock_screenshot:
         mock_screenshot.return_value = dialog_return
-        action.trigger()
+        app.commands.execute_command(action_id)
     mock_screenshot.assert_called_once()
 
 
@@ -418,7 +420,7 @@ def test_screenshot(
 def test_screenshot_to_clipboard(make_napari_viewer, qtbot, action_id):
     """Test screenshot to clipboard actions can be triggered."""
     viewer = make_napari_viewer()
-    action = viewer.window.file_menu.findAction(action_id)
+    app = get_app()
 
     # Add selected layer
     layer = Image(np.random.random((10, 10)))
@@ -426,14 +428,14 @@ def test_screenshot_to_clipboard(make_napari_viewer, qtbot, action_id):
     assert len(viewer.layers) == 1
     viewer.window._update_file_menu_state()
 
-    # Check action trigger
+    # Check action command execution
     # ---- Ensure clipboard is empty
     QGuiApplication.clipboard().clear()
     clipboard_image = QGuiApplication.clipboard().image()
     assert clipboard_image.isNull()
-    # Call action
+    # ---- Execute action
     with mock.patch('napari._qt.utils.add_flash_animation') as mock_flash:
-        action.trigger()
+        app.commands.execute_command(action_id)
     mock_flash.assert_called_once()
     # ---- Ensure clipboard has image
     clipboard_image = QGuiApplication.clipboard().image()
@@ -455,12 +457,12 @@ def test_screenshot_to_clipboard(make_napari_viewer, qtbot, action_id):
 )
 def test_restart(make_napari_viewer, action_id, patch_method):
     """Testrestart action can be triggered."""
-    viewer = make_napari_viewer()
-    action = viewer.window.file_menu.findAction(action_id)
+    make_napari_viewer()
+    app = get_app()
 
-    # Check action trigger
+    # Check action command execution
     with mock.patch(patch_method) as mock_restart:
-        action.trigger()
+        app.commands.execute_command(action_id)
     mock_restart.assert_called_once()
 
 
@@ -483,13 +485,13 @@ def test_restart(make_napari_viewer, action_id, patch_method):
 )
 def test_close(make_napari_viewer, action_id, patch_method, method_params):
     """Test close/exit actions can be triggered."""
-    viewer = make_napari_viewer()
-    action = viewer.window.file_menu.findAction(action_id)
+    make_napari_viewer()
+    app = get_app()
     quit_app, confirm_need = method_params
 
-    # Check action trigger
+    # Check action command execution
     with mock.patch(patch_method) as mock_close:
-        action.trigger()
+        app.commands.execute_command(action_id)
     mock_close.assert_called_once_with(
         quit_app=quit_app, confirm_need=confirm_need
     )
