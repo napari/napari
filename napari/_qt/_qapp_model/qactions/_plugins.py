@@ -1,4 +1,4 @@
-"""Defines plugins menu q actions."""
+"""Qt 'Plugins' menu Actions."""
 
 from importlib.util import find_spec
 from logging import getLogger

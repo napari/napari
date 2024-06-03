@@ -150,7 +150,7 @@ def read_data_with_plugins(
         try:
             layer_data = reader(npe1_path)  # try to read data
             hookimpl = result.implementation
-        except Exception as exc:  # noqa BLE001
+        except Exception as exc:  # BLE001
             raise PluginCallError(result.implementation, cause=exc) from exc
 
     if not layer_data:
@@ -406,7 +406,7 @@ def _write_multiple_layers_with_plugins(
             writer_function(abspath_or_url(path), layer_data),
             implementation.plugin_name,
         )
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         raise PluginCallError(implementation, cause=exc) from exc
 
 

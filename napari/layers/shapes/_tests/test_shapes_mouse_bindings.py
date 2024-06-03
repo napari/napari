@@ -234,16 +234,19 @@ def test_add_complex_shape(shape_type, create_known_shapes_layer):
         event = read_only_mouse_event(
             type='mouse_move',
             position=coord,
+            pos=np.array(coord, dtype=float),
         )
         mouse_move_callbacks(layer, event)
         event = read_only_mouse_event(
             type='mouse_press',
             position=coord,
+            pos=np.array(coord, dtype=float),
         )
         mouse_press_callbacks(layer, event)
         event = read_only_mouse_event(
             type='mouse_release',
             position=coord,
+            pos=np.array(coord, dtype=float),
         )
         mouse_release_callbacks(layer, event)
 
@@ -264,6 +267,62 @@ def test_add_complex_shape(shape_type, create_known_shapes_layer):
     # Ensure it's selected, accounting for zero-indexing
     assert len(layer.selected_data) == 1
     assert layer.selected_data == {n_shapes}
+
+
+@pytest.mark.parametrize(
+    'shape_type_vertices',
+    [
+        ('path', [[20, 30], [20, 30]]),
+        ('polygon', [[20, 30], [10, 50], [10, 50]]),
+    ],
+)
+def test_add_invalid_shape(shape_type_vertices, create_known_shapes_layer):
+    """Check invalid shape clicking behavior in add polygon mode."""
+    layer, n_shapes, known_non_shape = create_known_shapes_layer
+
+    # Add shape at location where non exists
+    shape_type, shape_vertices = shape_type_vertices
+    layer.mode = f'add_{shape_type}'
+
+    for coord in shape_vertices:
+        # Simulate move, click, and release
+        event = read_only_mouse_event(
+            type='mouse_move',
+            position=coord,
+            pos=np.array(coord, dtype=float),
+        )
+        mouse_move_callbacks(layer, event)
+        event = read_only_mouse_event(
+            type='mouse_press',
+            position=coord,
+            pos=np.array(coord, dtype=float),
+        )
+        mouse_press_callbacks(layer, event)
+        event = read_only_mouse_event(
+            type='mouse_release',
+            position=coord,
+            pos=np.array(coord, dtype=float),
+        )
+        mouse_release_callbacks(layer, event)
+
+    # Although the shape/polygon being created is invalid, three shapes should
+    # be available until it is marked as finished via mouse double click
+    assert len(layer.data) == n_shapes + 1
+
+    # finish drawing causing the removal of the in progress shape since is invalid
+    end_click = read_only_mouse_event(
+        type='mouse_double_click',
+        position=coord,
+        pos=np.array(coord, dtype=float),
+    )
+    assert layer.mouse_double_click_callbacks
+    mouse_double_click_callbacks(layer, end_click)
+
+    # Ensure no data is selected, number of shapes is the initial one and
+    # last cursor position variable was reset
+    assert len(layer.selected_data) == 0
+    assert len(layer.data) == n_shapes
+    assert layer._last_cursor_position is None
 
 
 def test_vertex_insert(create_known_shapes_layer):
