@@ -169,6 +169,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         ones along the main diagonal.
     translate : tuple of float
         Translation values for the layer.
+    units :
     visible : bool
         Whether the layer visual is currently being displayed.
 
@@ -180,6 +181,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         the final column is a length N translation vector and a 1 or a napari
         `Affine` transform object. Applied as an extra transform on top of the
         provided scale, rotate, and shear values.
+    axis_labels : tuple of str
+        Dimension names of the layer data.
     blending : Blending
         Determines how RGB and alpha values get mixed.
 
@@ -267,6 +270,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         Array of thumbnail data for the layer.
     visible : bool
         Whether the layer visual is currently being displayed.
+    unts: tuple of pint.Unit
+        Units of the layer data in world coordinates.
     z_index : int
         Depth of the layer visual relative to other visuals in the scenecanvas.
 
@@ -759,7 +764,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
     @property
     def axis_labels(self) -> tuple[str, ...]:
-        """List of axis labels for the layer."""
+        """tuple of axis labels for the layer."""
         return self._axis_labels
 
     @axis_labels.setter
