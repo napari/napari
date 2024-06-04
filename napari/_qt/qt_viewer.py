@@ -1083,7 +1083,9 @@ class QtViewer(QSplitter):
             # overcorrect
             average = (fps + self.viewer.target_fps) / 2
             update_factor = average / fps
-            logging.info('decrease render quality')
+            logging.info(
+                'fps=%.2f decrease render quality by %.2f', fps, update_factor
+            )
             for layer in self.viewer.layers:
                 layer.change_render_quality(update_factor)
 
