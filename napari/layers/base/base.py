@@ -372,10 +372,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._mode = self._modeclass('pan_zoom')
         self._projection_mode = self._projectionclass(str(projection_mode))
         self._refresh_blocked = False
+        self._ndim = ndim
+
         self._units = (pint.get_application_registry().pixel,) * self.ndim
         self._axis_labels = tuple(f'dim_{i}' for i in range(ndim))
-
-        self._ndim = ndim
 
         self._slice_input = _SliceInput(
             ndisplay=2,
