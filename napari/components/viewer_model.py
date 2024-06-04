@@ -195,7 +195,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     status: Union[str, dict] = 'Ready'
     tooltip: Tooltip = Field(default_factory=Tooltip, allow_mutation=False)
     auto_quality: bool = True
-    target_fps: tuple[int, int] = (30, 60)
+    target_fps: int = 30
     theme: str = Field(default_factory=_current_theme)
     title: str = 'napari'
     # private track of overlays, only expose the old ones for backward compatibility

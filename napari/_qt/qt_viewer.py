@@ -1078,14 +1078,14 @@ class QtViewer(QSplitter):
         ):
             return
         fps = event.fps
-        if fps < self.viewer.target_fps[0]:
+        if fps < self.viewer.target_fps:
+            # We update *halfway* to the target fps, to avoid having to
+            # overcorrect
+            average = (fps + self.viewer.target_fps) / 2
+            update_factor = average / fps
             logging.info('decrease render quality')
             for layer in self.viewer.layers:
-                layer.change_render_quality(RenderQualityChange.DECREASE)
-        if fps > self.viewer.target_fps[1]:
-            logging.info('increase render quality')
-            for layer in self.viewer.layers:
-                layer.change_render_quality(RenderQualityChange.INCREASE)
+                layer.change_render_quality(update_factor)
 
     def _on_auto_render_quality(self, event=None):
         """When the viewer changes auto render quality, update events."""

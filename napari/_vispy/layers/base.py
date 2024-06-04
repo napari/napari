@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from typing import Generic, TypeVar, cast
 
@@ -275,14 +277,14 @@ class VispyBaseLayer(ABC, Generic[_L]):
             )
 
     def change_render_quality(
-        self, quality_change: RenderQualityChange
+        self, quality_change: RenderQualityChange | float
     ) -> None:
         """
         Change the render quality of the vispy nodes
 
         Parameters
         ----------
-        quality_change: RenderQualityChange
+        quality_change: RenderQualityChange | float
             how much to increase or decrease the rendering quality of the layer.
         """
         return

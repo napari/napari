@@ -229,7 +229,9 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
             data = data[slices]
         return data
 
-    def change_render_quality(self, quality_change: RenderQualityChange):
+    def change_render_quality(
+        self, quality_change: RenderQualityChange | float
+    ):
         """
         Change the render quality of the vispy nodes.
 
@@ -238,17 +240,18 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
 
         Parameters
         ----------
-        quality_change: RenderQualityChange
+        quality_change: RenderQualityChange | float
             how much to increase or decrease the rendering quality of the layer.
         """
         if not isinstance(self.node, VolumeNode):
             return
-        if quality_change == RenderQualityChange.DECREASE:
+        if isinstance(quality_change, float):
+            current_step_size = self.node.relative_step_size
+            new_step_size = current_step_size * quality_change
+        elif quality_change == RenderQualityChange.DECREASE:
             new_step_size = min(
-                self.node.relative_step_size * 4, self.max_step_size
+                self.node.relative_step_size * 2, self.max_step_size
             )
-            if self.max_observed_step_size < new_step_size:
-                self.max_observed_step_size = new_step_size
         elif quality_change == RenderQualityChange.INCREASE:
             new_step_size = max(
                 self.node.relative_step_size / 2, self.min_step_size
@@ -258,6 +261,8 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
         elif quality_change == RenderQualityChange.MAX:
             new_step_size = self.min_step_size
 
+        if self.max_observed_step_size < new_step_size:
+            self.max_observed_step_size = new_step_size
         self.node.relative_step_size = new_step_size
 
 
