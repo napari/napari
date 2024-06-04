@@ -8,7 +8,7 @@ import os.path
 import warnings
 from abc import ABC, ABCMeta, abstractmethod
 from collections import defaultdict
-from collections.abc import Generator
+from collections.abc import Generator, Sequence
 from contextlib import contextmanager
 from functools import cached_property
 from typing import (
@@ -22,6 +22,7 @@ from typing import (
 
 import magicgui as mgui
 import numpy as np
+import pint
 from npe2 import plugin_manager as pm
 
 from napari.layers.base._base_constants import (
@@ -310,6 +311,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         ndim,
         *,
         affine=None,
+        axis_labels=None,
         blending='translucent',
         cache=True,  # this should move to future "data source" object.
         experimental_clipping_planes=None,
@@ -323,6 +325,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         scale=None,
         shear=None,
         translate=None,
+        units=None,
         visible=True,
     ):
         super().__init__()
@@ -363,6 +366,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._mode = self._modeclass('pan_zoom')
         self._projection_mode = self._projectionclass(str(projection_mode))
         self._refresh_blocked = False
+        self._units = (pint.get_application_registry().pixel,) * self.ndim
+        self._axis_labels = tuple(f'dim_{i}' for i in range(ndim))
 
         self._ndim = ndim
 
@@ -430,6 +435,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         self.events = EmitterGroup(
             source=self,
+            axis_labels=Event,
             data=Event,
             affine=Event,
             blending=Event,
@@ -454,6 +460,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             status=Event,
             thumbnail=Event,
             translate=Event,
+            units=Event,
             visible=Event,
             interactive=WarningEmitter(
                 trans._(
@@ -467,6 +474,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         )
         self.name = name
         self.mode = mode
+        self.axis_labels = axis_labels
+        self.units = units
         self._overlays.update(
             {
                 'transform_box': TransformBoxOverlay(),
@@ -747,6 +756,44 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
     def _on_editable_changed(self) -> None:
         """Executes side-effects on this layer related to changes of the editable state."""
+
+    @property
+    def axis_labels(self) -> tuple[str, ...]:
+        """List of axis labels for the layer."""
+        return self._axis_labels
+
+    @axis_labels.setter
+    def axis_labels(self, axis_labels: Optional[Sequence[str]]) -> None:
+        if axis_labels is None:
+            axis_labels = tuple(f'dim_{i}' for i in range(self.ndim))
+        if len(axis_labels) != self.ndim:
+            raise ValueError(
+                f'Number of axis labels ({len(axis_labels)}) must match the number of dimensions ({self.ndim}).'
+            )
+        axis_labels = tuple(axis_labels)
+        if self._axis_labels == axis_labels:
+            return
+        self._axis_labels = axis_labels
+        self.events.axis_labels()
+
+    @property
+    def units(self) -> tuple[pint.Unit, ...]:
+        """List of units for the layer."""
+        return self._units
+
+    @units.setter
+    def units(self, units: Optional[Sequence[pint.Unit]]) -> None:
+        if units is None:
+            units = (pint.get_application_registry().pixel,) * self.ndim
+        if len(units) != self.ndim:
+            raise ValueError(
+                f'Number of units ({len(units)}) must match the number of dimensions ({self.ndim}).'
+            )
+        units = tuple(units)
+        if self._units == units:
+            return
+        self._units = units
+        self.events.units()
 
     @property
     def scale(self) -> npt.NDArray:
