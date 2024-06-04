@@ -247,7 +247,9 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
             return
         if isinstance(quality_change, float):
             current_step_size = self.node.relative_step_size
-            new_step_size = current_step_size * quality_change
+            new_step_size = min(
+                current_step_size * quality_change, self.max_step_size
+            )
         elif quality_change == RenderQualityChange.DECREASE:
             new_step_size = min(
                 self.node.relative_step_size * 2, self.max_step_size
