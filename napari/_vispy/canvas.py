@@ -647,6 +647,7 @@ class FramerateMonitor:
         stale_threshold: float = 0.6,
         debounce_threshold: int = 2,
         event_period: float = 0.5,
+        decay: float = 0.9,
     ):
         self.events = EmitterGroup(source=self, fps=Event)
         self._event_period = event_period
@@ -657,6 +658,7 @@ class FramerateMonitor:
         self._last_update = time.time()
         self._last_event = time.time()
         self._stale_threshold = stale_threshold
+        self._decay = decay
 
         self._fps = 0
 
@@ -717,7 +719,8 @@ class FramerateMonitor:
         self._debounce_counter += 1
         current_time = time.time()
         if self._debounce_counter > self._debounce_threshold:
-            self._fps = fps
+            # use an exponential filter to avoid jitters in fps estimate
+            self._fps = self._fps * self._decay + fps * (1 - self._decay)
 
             # update states
             self._last_measurement_valid = True
