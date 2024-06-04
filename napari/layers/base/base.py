@@ -34,6 +34,7 @@ from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
     transform_with_box,
 )
+from napari.layers.base._units import get_units_from_name
 from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.layers.utils.interactivity_utils import (
     drag_data_to_projected_distance,
@@ -788,13 +789,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
     @units.setter
     def units(self, units: Optional[Sequence[pint.Unit]]) -> None:
+        units = get_units_from_name(units)
         if units is None:
             units = (pint.get_application_registry().pixel,) * self.ndim
+        if isinstance(units, pint.Unit):
+            units = (units,) * self.ndim
         if len(units) != self.ndim:
             raise ValueError(
                 f'Number of units ({len(units)}) must match the number of dimensions ({self.ndim}).'
             )
-        units = tuple(units)
         if self._units == units:
             return
         self._units = units
