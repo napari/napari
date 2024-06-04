@@ -260,6 +260,11 @@ authors:
   affiliation: University College London
   orcid: https://orcid.org/0000-0002-1365-1908
   alias: dstansby
+- given-names: Jules
+  family-names: Vanaret
+  affiliation: Aix Marseille University, CNRS, Fresnel, I2M, IBDM, Turing Centre for Living systems
+  orcid: https://orcid.org/0009-0004-6070-2263
+  alias: jules-vanaret
 - given-names: Pam
   family-names: Wadhwa
   affiliation: Quansight Labs
