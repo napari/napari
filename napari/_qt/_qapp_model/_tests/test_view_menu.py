@@ -19,10 +19,30 @@ from napari._tests.utils import skip_local_focus, skip_local_popups
 def test_toggle_axes_scale_bar_attr(
     make_napari_viewer, action_id, action_title, viewer_attr, sub_attr
 ):
+    """
+    Test toggle actions related with viewer axes and scale bar attributes.
+
+    * Viewer `axes` attributes:
+        * `visible`
+        * `colored`
+        * `labels`
+        * `dashed`
+        * `arrows`
+    * Viewer `scale_bar` attributes:
+        * `visible`
+        * `colored`
+        * `ticks`
+    """
     app = get_app()
     viewer = make_napari_viewer()
+
+    # Get viewer attribute to check (`axes` or `scale_bar`)
     axes_scale_bar = getattr(viewer, viewer_attr)
+
+    # Get initial sub-attribute value (for example `axes.visible`)
     initial_value = getattr(axes_scale_bar, sub_attr)
+
+    # Change sub-attribute via action command execution and check value
     app.commands.execute_command(action_id)
     changed_value = getattr(axes_scale_bar, sub_attr)
     assert initial_value is not changed_value
@@ -30,6 +50,7 @@ def test_toggle_axes_scale_bar_attr(
 
 @skip_local_popups
 def test_toggle_fullscreen(make_napari_viewer):
+    """Test toggle fullscreen action."""
     action_id = 'napari.window.view.toggle_fullscreen'
     app = get_app()
     viewer = make_napari_viewer(show=True)
@@ -52,6 +73,12 @@ def test_toggle_fullscreen(make_napari_viewer):
     reason='Toggle menubar action not enabled on macOS',
 )
 def test_toggle_menubar(make_napari_viewer, qtbot):
+    """
+    Test menubar toggle funtionality.
+
+    Skipped on macOS since there the menubar is the system one so the menubar
+    toggle action doesn't exists/isn't enable there.
+    """
     action_id = 'napari.window.view.toggle_menubar'
     app = get_app()
     viewer = make_napari_viewer(show=True)
@@ -81,6 +108,7 @@ def test_toggle_menubar(make_napari_viewer, qtbot):
 
 
 def test_toggle_play(make_napari_viewer, qtbot):
+    """Test toggle play action."""
     action_id = 'napari.window.view.toggle_play'
     app = get_app()
     viewer = make_napari_viewer()
