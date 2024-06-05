@@ -371,9 +371,7 @@ def _build_widgets_submenu_actions(
     widgets_without_menu = [
         widget
         for widget in widgets
-        if not len(
-            pm.instance()._plugin_command_map[mf.name][widget.command]['menus']
-        )
+        if not len(pm.instance()._command_menu_map[mf.name][widget.command])
     ]
     multiprovider = len(widgets_without_menu) > 1
     default_submenu_id, default_submenu = _get_contrib_parent_menu(
@@ -404,7 +402,7 @@ def _build_widgets_submenu_actions(
         action_menus = [
             dict({'id': menu_key}, **_when_group_order(menu_item))
             for menu_key, menu_items in pm.instance()
-            ._plugin_command_map[mf.name][widget.command]['menus']
+            ._command_menu_map[mf.name][widget.command]
             .items()
             for menu_item in menu_items
         ]
