@@ -305,6 +305,11 @@ authors:
   family-names: Wadhwa
   affiliation: Quansight Labs
   alias: ppwadhwa
+- given-names: Martin
+  family-names: Weigert
+  affiliation: TU-Dresden / EPFL
+  orcid: https://orcid.org/0000-0002-7780-9057
+  alias: maweigert
 - given-names: Jonas
   family-names: Windhager
   affiliation: ETH Zurich / University of Zurich
