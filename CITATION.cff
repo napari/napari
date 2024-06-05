@@ -270,6 +270,9 @@ authors:
   affiliation: European Bioinformatics Institute - European Molecular Biology Laboratory
   orcid: https://orcid.org/0000-0002-2447-5911
   alias: ctr26
+- given-names: James
+  family-names: Ryan
+  alias: jamesyan-git
 - given-names: Gabriel
   family-names: Selzer
   affiliation: University of Wisconsin-Madison
