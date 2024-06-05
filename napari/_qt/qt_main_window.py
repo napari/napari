@@ -166,7 +166,7 @@ class _QtMainWindow(QMainWindow):
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
         # Ideally this would be in `NapariApplication` but that is outside of Qt
-        self._ctx = create_context(self)
+        self._viewer_context = create_context(self)
 
         settings = get_settings()
 
@@ -834,9 +834,9 @@ class Window:
         self._update_menu_state('help_menu')
 
     def _update_debug_menu_state(self):
-        ctx = get_context(self._qt_window)
-        ctx['is_set_trace_active'] = _is_set_trace_active()
-        self._debug_menu.update_from_context(ctx)
+        viewer_ctx = get_context(self._qt_window)
+        viewer_ctx['is_set_trace_active'] = _is_set_trace_active()
+        self._debug_menu.update_from_context(viewer_ctx)
 
     # TODO: Remove once npe1 deprecated
     def _setup_npe1_samples_menu(self):
