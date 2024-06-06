@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import collections.abc
 from typing import TYPE_CHECKING, Any, Final, Optional
 
 from app_model.expressions import (
     Context,
     create_context as _create_context,
-    get_context,
+    get_context as _get_context,
 )
 
 from napari.utils.translations import trans
@@ -14,6 +15,32 @@ if TYPE_CHECKING:
     from napari.utils.events import Event
 
 __all__ = ['create_context', 'get_context', 'Context', 'SettingsAwareContext']
+
+
+class ContextMapping(collections.abc.Mapping):
+    def __init__(self, initial_values: collections.abc.Mapping):
+        self._base_store = initial_values
+        self._store = {}
+
+    def __getitem__(self, key):
+        if key in self._store:
+            return self._store[key]
+        if key not in self._base_store:
+            raise KeyError(f'Key {key!r} not found')
+        value = self._base_store[key]
+        if callable(value):
+            value = value()
+        self._store[key] = value
+        return value
+
+    def __contains__(self, item):
+        return item in self._base_store
+
+    def __len__(self):
+        return len(self._base_store)
+
+    def __iter__(self):
+        return iter(self._base_store)
 
 
 class SettingsAwareContext(Context):
@@ -87,3 +114,7 @@ def create_context(
         root=root,
         root_class=SettingsAwareContext,
     )
+
+
+def get_context(obj: object) -> ContextMapping:
+    return ContextMapping(_get_context(obj))
