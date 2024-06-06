@@ -102,7 +102,7 @@ class QtLayerControls(QFrame):
         self.button_group = QButtonGroup(self)
         self.panzoom_button = self._radio_button(
             layer,
-            'pan_zoom',
+            'pan',
             self.MODE.PAN_ZOOM,
             False,
             self.PAN_ZOOM_ACTION_NAME,
