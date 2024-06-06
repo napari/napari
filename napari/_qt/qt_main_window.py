@@ -915,18 +915,7 @@ class Window:
             self._update_plugins_menu_state,
         )
         self.main_menu.addMenu(self.plugins_menu)
-        # window menu
-        self.window_menu = menus.WindowMenu(self)
-        self.main_menu.addMenu(self.window_menu)
-        # help menu
-        self.help_menu = build_qmodel_menu(
-            MenuId.MENUBAR_HELP, title=trans._('&Help'), parent=self._qt_window
-        )
-        self.help_menu.aboutToShow.connect(
-            self._update_help_menu_state,
-        )
-        self.main_menu.addMenu(self.help_menu)
-
+        # debug menu (optional)
         if perf.USE_PERFMON is not None:
             self._debug_menu = build_qmodel_menu(
                 MenuId.MENUBAR_DEBUG,
@@ -938,6 +927,17 @@ class Window:
                 self._update_debug_menu_state,
             )
             self.main_menu.addMenu(self._debug_menu)
+        # window menu
+        self.window_menu = menus.WindowMenu(self)
+        self.main_menu.addMenu(self.window_menu)
+        # help menu
+        self.help_menu = build_qmodel_menu(
+            MenuId.MENUBAR_HELP, title=trans._('&Help'), parent=self._qt_window
+        )
+        self.help_menu.aboutToShow.connect(
+            self._update_help_menu_state,
+        )
+        self.main_menu.addMenu(self.help_menu)
 
     def _toggle_menubar_visible(self):
         """Toggle visibility of app menubar.
