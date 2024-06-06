@@ -74,10 +74,10 @@ def test_toggle_fullscreen(make_napari_viewer):
 )
 def test_toggle_menubar(make_napari_viewer, qtbot):
     """
-    Test menubar toggle funtionality.
+    Test menubar toggle functionality.
 
-    Skipped on macOS since there the menubar is the system one so the menubar
-    toggle action doesn't exists/isn't enable there.
+    Skipped on macOS since the menubar is the system one so the menubar
+    toggle action doesn't exists/isn't enabled there.
     """
     action_id = 'napari.window.view.toggle_menubar'
     app = get_app()
@@ -133,6 +133,7 @@ def test_toggle_play(make_napari_viewer, qtbot):
 
 @skip_local_popups
 def test_toggle_activity_dock(make_napari_viewer):
+    """Test toggle activity dock"""
     action_id = 'napari.window.view.toggle_activity_dock'
     app = get_app()
     viewer = make_napari_viewer(show=True)
@@ -162,6 +163,7 @@ def test_toggle_activity_dock(make_napari_viewer):
 
 
 def test_toggle_layer_tooltips(make_napari_viewer, qtbot):
+    """Test toggle layer tooltips"""
     make_napari_viewer()
     action_id = 'napari.window.view.toggle_layer_tooltips'
     app = get_app()
