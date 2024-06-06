@@ -314,11 +314,6 @@ class LayerDelegate(QStyledItemDelegate):
             )
 
         layer_list: LayerList = model.sourceModel()._root
-        # update context keys of selected layers
-        for key, get in layer_list._selection_ctx_keys._getters.items():
-            setattr(
-                layer_list._selection_ctx_keys, key, get(layer_list.selection)
-            )
         ctx = get_context(layer_list)
         self._context_menu.update_from_context(ctx)
         self._context_menu.exec_(pos)
