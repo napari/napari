@@ -164,7 +164,7 @@ def _active_is_image_3d(s: LayerSel) -> bool:
 
 
 def _empty_shapes_layer_selected(s: LayerSel) -> Callable[[], bool]:
-    def fun():
+    def fun() -> bool:
         return any(x._type_string == 'shapes' and not len(x.data) for x in s)
 
     return fun

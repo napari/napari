@@ -20,7 +20,7 @@ __all__ = ['create_context', 'get_context', 'Context', 'SettingsAwareContext']
 class ContextMapping(collections.abc.Mapping):
     def __init__(self, initial_values: collections.abc.Mapping):
         self._base_store = initial_values
-        self._store = {}
+        self._store: dict[str, Any] = {}
 
     def __getitem__(self, key):
         if key in self._store:
