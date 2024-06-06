@@ -93,13 +93,6 @@ class LayerList(SelectableEventedList[Layer]):
 
         self._ctx = create_context(self)
         if self._ctx is not None:  # happens during Viewer type creation
-            from napari._qt._qapp_model.qactions._layer import (
-                is_valid_spatial_in_clipboard,
-            )
-
-            self._ctx['valid_spatial_json_clipboard'] = (
-                is_valid_spatial_in_clipboard
-            )
             self._ctx_keys = LayerListContextKeys(self._ctx)
             self.events.inserted.connect(self._ctx_keys.update)
             self.events.removed.connect(self._ctx_keys.update)
