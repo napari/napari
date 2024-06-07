@@ -1030,6 +1030,134 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         translate=None,
         visible=True,
     ) -> Points:
+        """Add a points layer to the viewer.
+
+        Parameters
+        ----------
+        data : array (N, D)
+            Coordinates for N points in D dimensions.
+        ndim : int
+            Number of dimensions for shapes. When data is not None, ndim must be D.
+            An empty points layer can be instantiated with arbitrary ndim.
+        affine : n-D array or napari.utils.transforms.Affine
+            (N+1, N+1) affine transformation matrix in homogeneous coordinates.
+            The first (N, N) entries correspond to a linear transform and
+            the final column is a length N translation vector and a 1 or a napari
+            `Affine` transform object. Applied as an extra transform on top of the
+            provided scale, rotate, and shear values.
+        antialiasing: float
+            Amount of antialiasing in canvas pixels.
+        blending : str
+            One of a list of preset blending modes that determines how RGB and
+            alpha values of the layer visual get mixed. Allowed values are
+            {'opaque', 'translucent', 'translucent_no_depth', 'additive', and 'minimum'}.
+        border_color : str, array-like, dict
+            Color of the point marker border. Numeric color values should be RGB(A).
+        border_color_cycle : np.ndarray, list
+            Cycle of colors (provided as string name, RGB, or RGBA) to map to border_color if a
+            categorical attribute is used color the vectors.
+        border_colormap : str, napari.utils.Colormap
+            Colormap to set border_color if a continuous attribute is used to set face_color.
+        border_contrast_limits : None, (float, float)
+            clims for mapping the property to a color map. These are the min and max value
+            of the specified property that are mapped to 0 and 1, respectively.
+            The default value is None. If set the none, the clims will be set to
+            (property.min(), property.max())
+        border_width : float, array
+            Width of the symbol border in pixels.
+        border_width_is_relative : bool
+            If enabled, border_width is interpreted as a fraction of the point size.
+        cache : bool
+            Whether slices of out-of-core datasets should be cached upon retrieval.
+            Currently, this only applies to dask arrays.
+        canvas_size_limits : tuple of float
+            Lower and upper limits for the size of points in canvas pixels.
+        experimental_clipping_planes : list of dicts, list of ClippingPlane, or ClippingPlaneList
+            Each dict defines a clipping plane in 3D in data coordinates.
+            Valid dictionary keys are {'position', 'normal', and 'enabled'}.
+            Values on the negative side of the normal are discarded if the plane is enabled.
+        face_color : str, array-like, dict
+            Color of the point marker body. Numeric color values should be RGB(A).
+        face_color_cycle : np.ndarray, list
+            Cycle of colors (provided as string name, RGB, or RGBA) to map to face_color if a
+            categorical attribute is used color the vectors.
+        face_colormap : str, napari.utils.Colormap
+            Colormap to set face_color if a continuous attribute is used to set face_color.
+        face_contrast_limits : None, (float, float)
+            clims for mapping the property to a color map. These are the min and max value
+            of the specified property that are mapped to 0 and 1, respectively.
+            The default value is None. If set the none, the clims will be set to
+            (property.min(), property.max())
+        feature_defaults : dict[str, Any] or DataFrame
+            The default value of each feature in a table with one row.
+        features : dict[str, array-like] or DataFrame
+            Features table where each row corresponds to a point and each column
+            is a feature.
+        metadata : dict
+            Layer metadata.
+        n_dimensional : bool
+            This property will soon be deprecated in favor of 'out_of_slice_display'.
+            Use that instead.
+        name : str
+            Name of the layer. If not provided then will be guessed using heuristics.
+        opacity : float
+            Opacity of the layer visual, between 0.0 and 1.0.
+        out_of_slice_display : bool
+            If True, renders points not just in central plane but also slightly out of slice
+            according to specified point marker size.
+        projection_mode : str
+            How data outside the viewed dimensions but inside the thick Dims slice will
+            be projected onto the viewed dimensions. Must fit to cls._projectionclass.
+        properties : dict {str: array (N,)}, DataFrame
+            Properties for each point. Each property should be an array of length N,
+            where N is the number of points.
+        property_choices : dict {str: array (N,)}
+            possible values for each property.
+        rotate : float, 3-tuple of float, or n-D array.
+            If a float convert into a 2D rotation matrix using that value as an
+            angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
+            pitch, roll convention. Otherwise assume an nD rotation. Angles are
+            assumed to be in degrees. They can be converted from radians with
+            np.degrees if needed.
+        scale : tuple of float
+            Scale factors for the layer.
+        shading : str, Shading
+            Render lighting and shading on points. Options are:
+
+            * 'none'
+              No shading is added to the points.
+            * 'spherical'
+              Shading and depth buffer are changed to give a 3D spherical look to the points
+        shear : 1-D array or n-D array
+            Either a vector of upper triangular values, or an nD shear matrix with
+            ones along the main diagonal.
+        shown : 1-D array of bool
+            Whether to show each point.
+        size : float, array
+            Size of the point marker in data pixels. If given as a scalar, all points are made
+            the same size. If given as an array, size must be the same or broadcastable
+            to the same shape as the data.
+        symbol : str, array
+            Symbols to be used for the point markers. Must be one of the
+            following: arrow, clobber, cross, diamond, disc, hbar, ring,
+            square, star, tailed_arrow, triangle_down, triangle_up, vbar, x.
+        text : str, dict
+            Text to be displayed with the points. If text is set to a key in properties,
+            the value of that property will be displayed. Multiple properties can be
+            composed using f-string-like syntax (e.g., '{property_1}, {float_property:.2f}).
+            A dictionary can be provided with keyword arguments to set the text values
+            and display properties. See TextManager.__init__() for the valid keyword arguments.
+            For example usage, see /napari/examples/add_points_with_text.py.
+        translate : tuple of float
+            Translation values for the layer.
+        visible : bool
+            Whether the layer visual is currently being displayed.
+
+        Returns
+        -------
+        layer : Points
+            A napari Points layer
+        """
         if border_width > 1:
             border_width_is_relative = False
 
