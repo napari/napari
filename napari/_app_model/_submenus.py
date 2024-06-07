@@ -104,40 +104,40 @@ SUBMENUS = [
     (
         MenuId.MENUBAR_LAYERS,
         SubmenuItem(
-            submenu=MenuId.LAYERS_REGISTRATION,
-            title=trans._('Registration'),
+            submenu=MenuId.LAYERS_REGISTER,
+            title=trans._('Register'),
             group=MenuGroup.LAYERS.GENERATE,
         ),
     ),
     (
         MenuId.MENUBAR_LAYERS,
         SubmenuItem(
-            submenu=MenuId.LAYERS_PROJECTION,
-            title=trans._('Projection'),
+            submenu=MenuId.LAYERS_PROJECT,
+            title=trans._('Project'),
             group=MenuGroup.LAYERS.GENERATE,
         ),
     ),
     (
         MenuId.MENUBAR_LAYERS,
         SubmenuItem(
-            submenu=MenuId.LAYERS_SEGMENTATION,
-            title=trans._('Segmentation'),
+            submenu=MenuId.LAYERS_SEGMENT,
+            title=trans._('Segment'),
             group=MenuGroup.LAYERS.GENERATE,
         ),
     ),
     (
         MenuId.MENUBAR_LAYERS,
         SubmenuItem(
-            submenu=MenuId.LAYERS_TRACKING,
-            title=trans._('Tracking'),
+            submenu=MenuId.LAYERS_TRACK,
+            title=trans._('Track'),
             group=MenuGroup.LAYERS.GENERATE,
         ),
     ),
     (
         MenuId.MENUBAR_LAYERS,
         SubmenuItem(
-            submenu=MenuId.LAYERS_CLASSIFICATION,
-            title=trans._('Classification'),
+            submenu=MenuId.LAYERS_CLASSIFY,
+            title=trans._('Classify'),
             group=MenuGroup.LAYERS.GENERATE,
         ),
     ),

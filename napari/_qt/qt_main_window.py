@@ -103,7 +103,7 @@ MenuStr = Literal[
     'file_menu',
     'view_menu',
     'layers_menu',
-    'acquisition_menu',
+    'acquire_menu',
     'plugins_menu',
     'window_menu',
     'help_menu',
@@ -831,7 +831,7 @@ class Window:
     def _update_layers_menu_state(self):
         self._update_menu_state('layers_menu')
 
-    def _update_acquisition_menu_state(self):
+    def _update_acquire_menu_state(self):
         self._update_menu_state('acquisition_menu')
 
     def _update_plugins_menu_state(self):
@@ -910,15 +910,15 @@ class Window:
             parent=self._qt_window,
         )
         # acquisition menu
-        self.acquisition_menu = build_qmodel_menu(
-            MenuId.MENUBAR_ACQUISITION,
-            title=trans._('&Acquisition'),
+        self.acquire_menu = build_qmodel_menu(
+            MenuId.MENUBAR_ACQUIRE,
+            title=trans._('&Acquire'),
             parent=self._qt_window,
         )
-        self.acquisition_menu.aboutToShow.connect(
-            self._update_acquisition_menu_state,
+        self.acquire_menu.aboutToShow.connect(
+            self._update_acquire_menu_state,
         )
-        self.main_menu.addMenu(self.acquisition_menu)
+        self.main_menu.addMenu(self.acquire_menu)
         self._setup_npe1_plugins_menu()
         self.plugins_menu.aboutToShow.connect(
             self._update_plugins_menu_state,

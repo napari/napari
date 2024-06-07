@@ -36,13 +36,13 @@ class MenuId(StrEnum):
 
     LAYERS_MEASURE = 'napari/layers/measure'
 
-    LAYERS_REGISTRATION = 'napari/layers/registration'
-    LAYERS_PROJECTION = 'napari/layers/projection'
-    LAYERS_SEGMENTATION = 'napari/layers/segmentation'
-    LAYERS_TRACKING = 'napari/layers/tracking'
-    LAYERS_CLASSIFICATION = 'napari/layers/classification'
+    LAYERS_REGISTER = 'napari/layers/register'
+    LAYERS_PROJECT = 'napari/layers/project'
+    LAYERS_SEGMENT = 'napari/layers/segment'
+    LAYERS_TRACK = 'napari/layers/track'
+    LAYERS_CLASSIFY = 'napari/layers/classify'
 
-    MENUBAR_ACQUISITION = 'napari/acquisition'
+    MENUBAR_ACQUIRE = 'napari/acquire'
 
     MENUBAR_PLUGINS = 'napari/plugins'
 
@@ -66,7 +66,7 @@ class MenuId(StrEnum):
             cls.LAYERLIST_CONTEXT,
             cls.LAYERS_CONTEXT_CONVERT_DTYPE,
             cls.LAYERS_CONTEXT_PROJECT,
-            cls.MENUBAR_ACQUISITION,
+            cls.MENUBAR_ACQUIRE,
             cls.MENUBAR_LAYERS,
             cls.LAYERS_VISUALIZE,
             cls.LAYERS_NEW,
@@ -75,11 +75,11 @@ class MenuId(StrEnum):
             cls.LAYERS_EDIT_FILTER,
             cls.LAYERS_EDIT_TRANSFORM,
             cls.LAYERS_MEASURE,
-            cls.LAYERS_REGISTRATION,
-            cls.LAYERS_PROJECTION,
-            cls.LAYERS_SEGMENTATION,
-            cls.LAYERS_TRACKING,
-            cls.LAYERS_CLASSIFICATION,
+            cls.LAYERS_REGISTER,
+            cls.LAYERS_PROJECT,
+            cls.LAYERS_SEGMENT,
+            cls.LAYERS_TRACK,
+            cls.LAYERS_CLASSIFY,
         }
         return _contributables
 
