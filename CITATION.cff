@@ -5,6 +5,84 @@ identifiers:
 - type: doi
   value: 10.5281/zenodo.3555620
 authors:
+- given-names: Nicholas
+  family-names: Sofroniew
+  affiliation: Chan Zuckerberg Initiative
+  orcid: https://orcid.org/0000-0002-3426-0914
+  alias: sofroniewn
+- given-names: Talley
+  family-names: Lambert
+  affiliation: Harvard Medical School
+  orcid: https://orcid.org/0000-0002-2409-0181
+  alias: tlambert03
+- given-names: Grzegorz
+  family-names: Bokota
+  affiliation: University of Warsaw, Faculty of Mathematics, Informatics, and Mechanics
+  orcid: https://orcid.org/0000-0002-5470-1676
+  alias: Czaki
+- given-names: Juan
+  family-names: Nunez-Iglesias
+  affiliation: Monash eResearch Centre, Monash University
+  alias: jni
+- given-names: Peter
+  family-names: Sobolewski
+  affiliation: The Jackson Laboratory
+  orcid: https://orcid.org/0000-0002-2097-0990
+  alias: psobolewskiPhD
+- given-names: Andrew
+  family-names: Sweet
+  affiliation: Chan Zuckerberg Initiative
+  alias: andy-sweet
+- given-names: Lorenzo
+  family-names: Gaifas
+  affiliation: Gutsche Lab - University of Grenoble
+  orcid: https://orcid.org/0000-0003-4875-9422
+  alias: brisvag
+- given-names: Kira
+  family-names: Evans
+  affiliation: Chan Zuckerberg Initiative
+  alias: kne42
+- given-names: Alister
+  family-names: Burt
+  affiliation: MRC-LMB
+  alias: alisterburt
+- given-names: Draga
+  family-names: Doncila Pop
+  affiliation: Monash University
+  alias: DragaDoncila
+- given-names: Kevin
+  family-names: Yamauchi
+  affiliation: Iber Lab - ETH Zürich
+  alias: kevinyamauchi
+- given-names: Melissa
+  family-names: Weber Mendonça
+  affiliation: Quansight
+  orcid: https://orcid.org/0000-0002-3212-402X
+  alias: melissawm
+- given-names: Genevieve
+  family-names: Buckley
+  affiliation: Monash University
+  orcid: https://orcid.org/0000-0003-2763-492X
+  alias: GenevieveBuckley
+- given-names: Wouter-Michiel
+  family-names: Vierdag
+  affiliation: European Molecular Biology Laboratory, Genome Biology Unit, Heidelberg,
+    Germany
+  orcid: https://orcid.org/0000-0003-1666-5421
+  alias: melonora
+- given-names: Loic
+  family-names: Royer
+  affiliation: Chan Zuckerberg Biohub
+  alias: royerloic
+- given-names: Ahmet
+  family-names: Can Solak
+  affiliation: Chan Zuckerberg Biohub
+  alias: AhmetCanSolak
+- given-names: Kyle I. S.
+  family-names: Harrington
+  affiliation: Chan Zuckerberg Initiative
+  orcid: https://orcid.org/0000-0002-7237-1973
+  alias: kephale
 - given-names: Jannis
   family-names: Ahlers
   affiliation: Monash University
@@ -25,11 +103,6 @@ authors:
   affiliation: Chan Zuckerberg Initiative
   orcid: https://orcid.org/0000-0002-3841-8344
   alias: aganders3
-- given-names: Grzegorz
-  family-names: Bokota
-  affiliation: University of Warsaw, Faculty of Mathematics, Informatics, and Mechanics
-  orcid: https://orcid.org/0000-0002-5470-1676
-  alias: Czaki
 - given-names: Peter
   family-names: Boone
   alias: boonepeter
@@ -37,46 +110,21 @@ authors:
   family-names: Bragantini
   affiliation: Chan Zuckerberg Biohub
   alias: JoOkuma
-- given-names: Genevieve
-  family-names: Buckley
-  affiliation: Monash University
-  orcid: https://orcid.org/0000-0003-2763-492X
-  alias: GenevieveBuckley
-- given-names: Alister
-  family-names: Burt
-  affiliation: MRC-LMB
-  alias: alisterburt
 - given-names: Matthias
   family-names: Bussonnier
   affiliation: Quansight Labs
   orcid: https://orcid.org/0000-0002-7636-8632
   alias: Carreau
-- given-names: Ahmet
-  family-names: Can Solak
-  affiliation: Chan Zuckerberg Biohub
-  alias: AhmetCanSolak
 - given-names: Clément
   family-names: Caporal
   affiliation: Laboratory for Optics and Biosciences, Ecole Polytechnique, INSERM,
     CNRS, Palaiseau, France
   orcid: https://orcid.org/0000-0002-9441-9173
   alias: ClementCaporal
-- given-names: Draga
-  family-names: Doncila Pop
-  alias: DragaDoncila
-- given-names: Kira
-  family-names: Evans
-  affiliation: Chan Zuckerberg Initiative
-  alias: kne42
 - given-names: Jeremy
   family-names: Freeman
   affiliation: Chan Zuckerberg Initiative
   alias: freeman-lab
-- given-names: Lorenzo
-  family-names: Gaifas
-  affiliation: Gutsche Lab - University of Grenoble
-  orcid: https://orcid.org/0000-0003-4875-9422
-  alias: brisvag
 - given-names: Christoph
   family-names: Gohlke
   affiliation: University of California, Irvine
@@ -93,11 +141,6 @@ authors:
   affiliation: Ramona Optics Inc, Durham, North Carolina, USA
   orcid: https://orcid.org/0000-0002-4657-4603
   alias: hmaarrfk
-- given-names: Kyle I. S.
-  family-names: Harrington
-  affiliation: Chan Zuckerberg Initiative
-  orcid: https://orcid.org/0000-0002-7237-1973
-  alias: kephale
 - given-names: Volker
   family-names: Hilsenstein
   affiliation: EMBL Heidelberg, Germany
@@ -107,11 +150,6 @@ authors:
   family-names: Hutchings
   affiliation: University College London
   alias: katherine-hutchings
-- given-names: Talley
-  family-names: Lambert
-  affiliation: Harvard Medical School
-  orcid: https://orcid.org/0000-0002-2409-0181
-  alias: tlambert03
 - given-names: Jessy
   family-names: Lauer
   affiliation: Swiss Federal Institute of Technology (EPFL), Lausanne, Switzerland
@@ -171,10 +209,6 @@ authors:
   family-names: Nauroth-Kreß
   affiliation: University Hospital Würzburg - Institute of Neuroradiology
   alias: Chris-N-K
-- given-names: Juan
-  family-names: Nunez-Iglesias
-  affiliation: Biomedicine Discovery Institute, Monash University
-  alias: jni
 - given-names: Constantin
   family-names: Pape
   affiliation: Georg-August-Universität Göttingen
@@ -203,10 +237,6 @@ authors:
   affiliation: NanoString Technologies, Inc.
   orcid: https://orcid.org/0000-0001-9998-3817
   alias: davidpross
-- given-names: Loic
-  family-names: Royer
-  affiliation: Chan Zuckerberg Biohub
-  alias: royerloic
 - given-names: Craig T.
   family-names: Russell
   affiliation: European Bioinformatics Institute - European Molecular Biology Laboratory
@@ -222,43 +252,23 @@ authors:
   affiliation: University College London
   orcid: https://orcid.org/0000-0002-3676-5318
   alias: p-j-smith
-- given-names: Peter
-  family-names: Sobolewski
-  affiliation: West Pomeranian University of Technology, Szczecin
-  orcid: https://orcid.org/0000-0002-2097-0990
-  alias: psobolewskiPhD
 - given-names: Konstantin
   family-names: Sofiiuk
   alias: ksofiyuk
-- given-names: Nicholas
-  family-names: Sofroniew
-  affiliation: Chan Zuckerberg Initiative
-  orcid: https://orcid.org/0000-0002-3426-0914
-  alias: sofroniewn
 - given-names: David
   family-names: Stansby
   affiliation: University College London
   orcid: https://orcid.org/0000-0002-1365-1908
   alias: dstansby
-- given-names: Andrew
-  family-names: Sweet
-  affiliation: Chan Zuckerberg Initiative
-  alias: andy-sweet
-- given-names: Wouter-Michiel
-  family-names: Vierdag
-  affiliation: European Molecular Biology Laboratory, Genome Biology Unit, Heidelberg,
-    Germany
-  orcid: https://orcid.org/0000-0003-1666-5421
-  alias: melonora
+- given-names: Jules
+  family-names: Vanaret
+  affiliation: Aix Marseille University, CNRS, Fresnel, I2M, IBDM, Turing Centre for Living systems
+  orcid: https://orcid.org/0009-0004-6070-2263
+  alias: jules-vanaret
 - given-names: Pam
   family-names: Wadhwa
   affiliation: Quansight Labs
   alias: ppwadhwa
-- given-names: Melissa
-  family-names: Weber Mendonça
-  affiliation: Quansight
-  orcid: https://orcid.org/0000-0002-3212-402X
-  alias: melissawm
 - given-names: Jonas
   family-names: Windhager
   affiliation: ETH Zurich / University of Zurich
@@ -268,9 +278,5 @@ authors:
   family-names: Winston
   affiliation: Tobeva Software
   alias: pwinston
-- given-names: Kevin
-  family-names: Yamauchi
-  affiliation: Iber Lab - ETH Zürich
-  alias: kevinyamauchi
 repository-code: https://github.com/napari/napari
 license: BSD-3-Clause
