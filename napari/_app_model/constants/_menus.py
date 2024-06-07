@@ -25,6 +25,8 @@ class MenuId(StrEnum):
     VIEW_AXES = 'napari/view/axes'
     VIEW_SCALEBAR = 'napari/view/scalebar'
 
+    MENUBAR_WINDOW = 'napari/window'
+
     MENUBAR_PLUGINS = 'napari/plugins'
 
     MENUBAR_HELP = 'napari/help'

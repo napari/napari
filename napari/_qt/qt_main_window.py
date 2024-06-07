@@ -679,16 +679,13 @@ class Window:
             self._update_theme_font_size
         )
 
-        self._add_viewer_dock_widget(
-            self._qt_viewer.dockConsole, tabify=False, menu=self.window_menu
-        )
+        self._add_viewer_dock_widget(self._qt_viewer.dockConsole, tabify=False)
         self._add_viewer_dock_widget(
             self._qt_viewer.dockLayerControls,
             tabify=False,
-            menu=self.window_menu,
         )
         self._add_viewer_dock_widget(
-            self._qt_viewer.dockLayerList, tabify=False, menu=self.window_menu
+            self._qt_viewer.dockLayerList, tabify=False
         )
         if perf.USE_PERFMON:
             self._add_viewer_dock_widget(
@@ -827,6 +824,9 @@ class Window:
     def _update_view_menu_state(self):
         self._update_menu_state('view_menu')
 
+    def _update_window_menu_state(self):
+        self._update_menu_state('window_menu')
+
     def _update_plugins_menu_state(self):
         self._update_menu_state('plugins_menu')
 
@@ -928,7 +928,14 @@ class Window:
             )
             self.main_menu.addMenu(self._debug_menu)
         # window menu
-        self.window_menu = menus.WindowMenu(self)
+        self.window_menu = build_qmodel_menu(
+            MenuId.MENUBAR_WINDOW,
+            title=trans._('&Window'),
+            parent=self._qt_window,
+        )
+        self.plugins_menu.aboutToShow.connect(
+            self._update_window_menu_state,
+        )
         self.main_menu.addMenu(self.window_menu)
         # help menu
         self.help_menu = build_qmodel_menu(
