@@ -958,6 +958,125 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         return layer_list
 
+    @rename_argument(
+        'edge_width', 'border_width', since_version='0.5.0', version='0.6.0'
+    )
+    @rename_argument(
+        'edge_width_is_relative',
+        'border_width_is_relative',
+        since_version='0.5.0',
+        version='0.6.0',
+    )
+    @rename_argument(
+        'edge_color', 'border_color', since_version='0.5.0', version='0.6.0'
+    )
+    @rename_argument(
+        'edge_color_cycle',
+        'border_color_cycle',
+        since_version='0.5.0',
+        version='0.6.0',
+    )
+    @rename_argument(
+        'edge_colormap',
+        'border_colormap',
+        since_version='0.5.0',
+        version='0.6.0',
+    )
+    @rename_argument(
+        'edge_contrast_limits',
+        'border_contrast_limits',
+        since_version='0.5.0',
+        version='0.6.0',
+    )
+    def add_points(
+        self,
+        data=None,
+        ndim=None,
+        *,
+        affine=None,
+        antialiasing=1,
+        blending='translucent',
+        border_color='dimgray',
+        border_color_cycle=None,
+        border_colormap='viridis',
+        border_contrast_limits=None,
+        border_width=0.05,
+        border_width_is_relative=True,
+        cache=True,
+        canvas_size_limits=(2, 10000),
+        experimental_clipping_planes=None,
+        face_color='white',
+        face_color_cycle=None,
+        face_colormap='viridis',
+        face_contrast_limits=None,
+        feature_defaults=None,
+        features=None,
+        metadata=None,
+        n_dimensional=None,
+        name=None,
+        opacity=1.0,
+        out_of_slice_display=False,
+        projection_mode='none',
+        properties=None,
+        property_choices=None,
+        rotate=None,
+        scale=None,
+        shading='none',
+        shear=None,
+        shown=True,
+        size=10,
+        symbol='o',
+        text=None,
+        translate=None,
+        visible=True,
+    ) -> Points:
+        if border_width > 1:
+            border_width_is_relative = False
+
+        kwargs = {
+            'affine': affine,
+            'antialiasing': antialiasing,
+            'blending': blending,
+            'border_color': border_color,
+            'border_color_cycle': border_color_cycle,
+            'border_colormap': border_colormap,
+            'border_contrast_limits': border_contrast_limits,
+            'border_width': border_width,
+            'border_width_is_relative': border_width_is_relative,
+            'cache': cache,
+            'canvas_size_limits': canvas_size_limits,
+            'experimental_clipping_planes': experimental_clipping_planes,
+            'face_color': face_color,
+            'face_color_cycle': face_color_cycle,
+            'face_colormap': face_colormap,
+            'face_contrast_limits': face_contrast_limits,
+            'feature_defaults': feature_defaults,
+            'features': features,
+            'metadata': metadata,
+            'n_dimensional': n_dimensional,
+            'name': name,
+            'opacity': opacity,
+            'out_of_slice_display': out_of_slice_display,
+            'projection_mode': projection_mode,
+            'properties': properties,
+            'property_choices': property_choices,
+            'rotate': rotate,
+            'scale': scale,
+            'shading': shading,
+            'shear': shear,
+            'shown': shown,
+            'size': size,
+            'symbol': symbol,
+            'text': text,
+            'translate': translate,
+            'visible': visible,
+        }
+
+        layer = layers.Points(data, ndim, **kwargs)
+        self.layers.append(layer)
+
+        return layer
+
     def open_sample(
         self,
         plugin: str,
@@ -1665,7 +1784,6 @@ def valid_add_kwargs() -> dict[str, set[str]]:
 
 for _layer in (
     layers.Labels,
-    layers.Points,
     layers.Shapes,
     layers.Surface,
     layers.Tracks,
