@@ -11,7 +11,7 @@ from napari.view_layers import (
     view_tracks,
     view_vectors,
 )
-from napari.viewer import Viewer, current_viewer
+from napari.viewer import Viewer, all_open_viewers, current_viewer
 
 __version__: str
 
@@ -20,6 +20,7 @@ notification_manager: napari.utils.notifications.NotificationManager
 __all__ = (
     'Viewer',
     'current_viewer',
+    'all_open_viewers',
     'view_image',
     'view_labels',
     'view_path',
