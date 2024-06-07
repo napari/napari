@@ -62,6 +62,15 @@ SUBMENUS = [
         ),
     ),
     (
+        MenuId.MENUBAR_FILE,
+        SubmenuItem(
+            submenu=MenuId.ACQUIRE,
+            title=trans._('Acquire'),
+            group=MenuGroup.NAVIGATION,
+            order=101,
+        ),
+    ),
+    (
         MenuId.MENUBAR_VIEW,
         SubmenuItem(submenu=MenuId.VIEW_AXES, title=trans._('Axes')),
     ),

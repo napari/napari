@@ -21,6 +21,7 @@ class MenuId(StrEnum):
     FILE_OPEN_WITH_PLUGIN = 'napari/file/open_with_plugin'
     FILE_SAMPLES = 'napari/file/samples'
     FILE_IO_UTILITIES = 'napari/file/io_utilities'
+    FILE_ACQUIRE = 'napari/file/acquire'
 
     MENUBAR_VIEW = 'napari/view'
     VIEW_AXES = 'napari/view/axes'
@@ -42,8 +43,6 @@ class MenuId(StrEnum):
     LAYERS_TRACK = 'napari/layers/track'
     LAYERS_CLASSIFY = 'napari/layers/classify'
 
-    MENUBAR_ACQUIRE = 'napari/acquire'
-
     MENUBAR_PLUGINS = 'napari/plugins'
 
     MENUBAR_HELP = 'napari/help'
@@ -63,10 +62,10 @@ class MenuId(StrEnum):
         # TODO: add these to docs, with a lookup for what each menu is/does.
         _contributables = {
             cls.FILE_IO_UTILITIES,
+            cls.FILE_ACQUIRE,
             cls.LAYERLIST_CONTEXT,
             cls.LAYERS_CONTEXT_CONVERT_DTYPE,
             cls.LAYERS_CONTEXT_PROJECT,
-            cls.MENUBAR_ACQUIRE,
             cls.MENUBAR_LAYERS,
             cls.LAYERS_VISUALIZE,
             cls.LAYERS_NEW,
