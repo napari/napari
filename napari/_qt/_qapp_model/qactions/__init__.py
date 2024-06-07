@@ -37,6 +37,7 @@ def init_qactions() -> None:
         Q_VIEW_ACTIONS,
         VIEW_SUBMENUS,
     )
+    from napari._qt._qapp_model.qactions._window import Q_WINDOW_ACTIONS
     from napari._qt.qt_main_window import Window
     from napari._qt.qt_viewer import QtViewer
 
@@ -63,6 +64,7 @@ def init_qactions() -> None:
             Q_PLUGINS_ACTIONS,
             Q_VIEW_ACTIONS,
             Q_LAYER_ACTIONS,
+            Q_WINDOW_ACTIONS,
         )
     )
 
