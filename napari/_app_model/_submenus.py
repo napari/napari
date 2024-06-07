@@ -8,7 +8,7 @@ SUBMENUS = [
     (
         MenuId.LAYERLIST_CONTEXT,
         SubmenuItem(
-            submenu=MenuId.LAYERS_CONVERT_DTYPE,
+            submenu=MenuId.LAYERS_CONTEXT_CONVERT_DTYPE,
             title=trans._('Convert data type'),
             group=MenuGroup.LAYERLIST_CONTEXT.CONVERSION,
             order=None,
@@ -18,7 +18,7 @@ SUBMENUS = [
     (
         MenuId.LAYERLIST_CONTEXT,
         SubmenuItem(
-            submenu=MenuId.LAYERS_PROJECT,
+            submenu=MenuId.LAYERS_CONTEXT_PROJECT,
             title=trans._('Projections'),
             group=MenuGroup.LAYERLIST_CONTEXT.SPLIT_MERGE,
             order=None,
@@ -28,7 +28,7 @@ SUBMENUS = [
     (
         MenuId.LAYERLIST_CONTEXT,
         SubmenuItem(
-            submenu=MenuId.LAYERS_COPY_SPATIAL,
+            submenu=MenuId.LAYERS_CONTEXT_COPY_SPATIAL,
             title=trans._('Copy scale and transforms'),
             group=MenuGroup.LAYERLIST_CONTEXT.COPY_SPATIAL,
             order=None,

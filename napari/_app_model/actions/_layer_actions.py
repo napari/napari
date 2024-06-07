@@ -195,7 +195,7 @@ for _dtype in (
                 LLSCK.all_selected_layers_labels
                 & (LLSCK.active_layer_dtype != _dtype)
             ),
-            menus=[{'id': MenuId.LAYERS_CONVERT_DTYPE}],
+            menus=[{'id': MenuId.LAYERS_CONTEXT_CONVERT_DTYPE}],
         )
     )
 
@@ -206,6 +206,6 @@ for mode in ('max', 'min', 'std', 'sum', 'mean', 'median'):
             title=trans._('{mode} projection', mode=mode),
             callback=partial(_layer_actions._project, mode=mode),
             enablement=LLSCK.active_layer_is_image_3d,
-            menus=[{'id': MenuId.LAYERS_PROJECT}],
+            menus=[{'id': MenuId.LAYERS_CONTEXT_PROJECT}],
         )
     )

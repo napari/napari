@@ -49,9 +49,9 @@ class MenuId(StrEnum):
     MENUBAR_HELP = 'napari/help'
 
     LAYERLIST_CONTEXT = 'napari/layers/context'
-    LAYERS_CONVERT_DTYPE = 'napari/layers/convert_dtype'
-    LAYERS_PROJECT = 'napari/layers/project'
-    LAYERS_COPY_SPATIAL = 'napari/layers/copy_spatial'
+    LAYERS_CONTEXT_CONVERT_DTYPE = 'napari/layers/context/convert_dtype'
+    LAYERS_CONTEXT_PROJECT = 'napari/layers/contxt/project'
+    LAYERS_CONTEXT_COPY_SPATIAL = 'napari/layers/context/copy_spatial'
 
     def __str__(self) -> str:
         return self.value
@@ -64,8 +64,8 @@ class MenuId(StrEnum):
         _contributables = {
             cls.FILE_IO_UTILITIES,
             cls.LAYERLIST_CONTEXT,
-            cls.LAYERS_CONVERT_DTYPE,
-            cls.LAYERS_PROJECT,
+            cls.LAYERS_CONTEXT_CONVERT_DTYPE,
+            cls.LAYERS_CONTEXT_PROJECT,
             cls.MENUBAR_ACQUISITION,
             cls.MENUBAR_LAYERS,
             cls.LAYERS_VISUALIZE,
