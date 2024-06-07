@@ -3,7 +3,13 @@
 import sys
 from pathlib import Path
 
-from app_model.types import Action, KeyCode, KeyMod, StandardKeyBinding
+from app_model.types import (
+    Action,
+    KeyCode,
+    KeyMod,
+    StandardKeyBinding,
+    SubmenuItem,
+)
 
 from napari._app_model.constants import MenuGroup, MenuId
 from napari._app_model.context import (
@@ -14,7 +20,30 @@ from napari._qt.qt_main_window import Window
 from napari._qt.qt_viewer import QtViewer
 from napari.utils.translations import trans
 
+# File submenus
+FILE_SUBMENUS = [
+    (
+        MenuId.MENUBAR_FILE,
+        SubmenuItem(
+            submenu=MenuId.FILE_OPEN_WITH_PLUGIN,
+            title=trans._('Open with Plugin'),
+            group=MenuGroup.NAVIGATION,
+            order=99,
+        ),
+    ),
+    (
+        MenuId.MENUBAR_FILE,
+        SubmenuItem(
+            submenu=MenuId.FILE_SAMPLES,
+            title=trans._('Open Sample'),
+            group=MenuGroup.NAVIGATION,
+            order=100,
+        ),
+    ),
+]
 
+
+# File actions
 def _open_files_with_plugin(qt_viewer: QtViewer):
     qt_viewer._open_files_dialog(choose_plugin=True)
 
@@ -68,7 +97,7 @@ Q_FILE_ACTIONS: list[Action] = [
     Action(
         id='napari.window.file.open_folder_dialog',
         title=trans._('Open Folder...'),
-        callback=QtViewer._open_files_dialog,
+        callback=QtViewer._open_folder_dialog,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.NAVIGATION}],
         keybindings=[
             {'primary': KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyO}
