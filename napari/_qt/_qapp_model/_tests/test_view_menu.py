@@ -77,7 +77,7 @@ def test_toggle_menubar(make_napari_viewer, qtbot):
     Test menubar toggle functionality.
 
     Skipped on macOS since the menubar is the system one so the menubar
-    toggle action doesn't exists/isn't enabled there.
+    toggle action doesn't exist/isn't enabled there.
     """
     action_id = 'napari.window.view.toggle_menubar'
     app = get_app()
