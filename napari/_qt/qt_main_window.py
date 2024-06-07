@@ -47,7 +47,6 @@ from superqt.utils import QSignalThrottler
 
 from napari._app_model.constants import MenuId
 from napari._app_model.context import create_context, get_context
-from napari._qt import menus
 from napari._qt._qapp_model import build_qmodel_menu
 from napari._qt._qapp_model.qactions import init_qactions
 from napari._qt._qapp_model.qactions._debug import _is_set_trace_active
