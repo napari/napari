@@ -32,7 +32,7 @@ class SimpleClassDeprecated:
         self.a = a
 
     @property
-    def b(self):
+    def b(self):  # pragma: no cover
         return self.a * 2
 
     @b.setter
@@ -40,7 +40,7 @@ class SimpleClassDeprecated:
         self.a = value // 2
 
     @property
-    def c(self):
+    def c(self):  # pragma: no cover
         return self.a * 2
 
     @c.setter
