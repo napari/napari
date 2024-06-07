@@ -39,6 +39,13 @@ def rename_argument(
         )
 
     def _wrapper(func):
+        if not hasattr(func, '_rename_argument'):
+            func._rename_argument = []
+
+        func._rename_argument.append(
+            (from_name, to_name, version, since_version)
+        )
+
         @wraps(func)
         def _update_from_dict(*args, **kwargs):
             if from_name in kwargs:
