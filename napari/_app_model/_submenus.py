@@ -37,6 +37,14 @@ SUBMENUS = [
     (
         MenuId.MENUBAR_FILE,
         SubmenuItem(
+            submenu=MenuId.FILE_NEW_LAYER,
+            title=trans._('New Layer'),
+            group=MenuGroup.NAVIGATION,
+        ),
+    ),
+    (
+        MenuId.MENUBAR_FILE,
+        SubmenuItem(
             submenu=MenuId.FILE_OPEN_WITH_PLUGIN,
             title=trans._('Open with Plugin'),
             group=MenuGroup.NAVIGATION,
@@ -64,7 +72,7 @@ SUBMENUS = [
     (
         MenuId.MENUBAR_FILE,
         SubmenuItem(
-            submenu=MenuId.ACQUIRE,
+            submenu=MenuId.FILE_ACQUIRE,
             title=trans._('Acquire'),
             group=MenuGroup.NAVIGATION,
             order=101,
@@ -77,14 +85,6 @@ SUBMENUS = [
     (
         MenuId.MENUBAR_VIEW,
         SubmenuItem(submenu=MenuId.VIEW_SCALEBAR, title=trans._('Scale Bar')),
-    ),
-    (
-        MenuId.MENUBAR_LAYERS,
-        SubmenuItem(
-            submenu=MenuId.LAYERS_NEW,
-            title=trans._('New'),
-            group=MenuGroup.LAYERS.NEW,
-        ),
     ),
     (
         MenuId.MENUBAR_LAYERS,

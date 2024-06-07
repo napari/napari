@@ -20,6 +20,7 @@ class MenuId(StrEnum):
     MENUBAR_FILE = 'napari/file'
     FILE_OPEN_WITH_PLUGIN = 'napari/file/open_with_plugin'
     FILE_SAMPLES = 'napari/file/samples'
+    FILE_NEW_LAYER = 'napari/file/new_layer'
     FILE_IO_UTILITIES = 'napari/file/io_utilities'
     FILE_ACQUIRE = 'napari/file/acquire'
 
@@ -29,7 +30,6 @@ class MenuId(StrEnum):
 
     MENUBAR_LAYERS = 'napari/layers'
     LAYERS_VISUALIZE = 'napari/layers/visualize'
-    LAYERS_NEW = 'napari/layers/new'
     LAYERS_EDIT = 'napari/layers/edit'
     LAYERS_EDIT_ANNOTATE = 'napari/layers/edit/annotate'
     LAYERS_EDIT_FILTER = 'napari/layers/edit/filter'
@@ -68,7 +68,7 @@ class MenuId(StrEnum):
             cls.LAYERS_CONTEXT_PROJECT,
             cls.MENUBAR_LAYERS,
             cls.LAYERS_VISUALIZE,
-            cls.LAYERS_NEW,
+            cls.FILE_NEW_LAYER,
             cls.LAYERS_EDIT,
             cls.LAYERS_EDIT_ANNOTATE,
             cls.LAYERS_EDIT_FILTER,
@@ -103,7 +103,6 @@ class MenuGroup:
         LINK = '9_link'
 
     class LAYERS:
-        NEW = '1_new'
         EXISTING = '2_existing'
         GENERATE = '3_generate'
         PLUGINS = '4_plugins'

@@ -15,6 +15,6 @@ LAYERS_ACTIONS: list[Action] = [
         id='napari.layers.new_labels',
         title=trans._('Labels'),
         callback=new_labels,
-        menus=[{'id': MenuId.LAYERS_NEW, 'group': MenuGroup.LAYERS.NEW}],
+        menus=[{'id': MenuId.FILE_NEW_LAYER, 'group': MenuGroup.NAVIGATION}],
     ),
 ]
