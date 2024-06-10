@@ -915,7 +915,7 @@ class Window:
         )
         self.main_menu.addMenu(self.plugins_menu)
         # debug menu (optional)
-        if perf.USE_PERFMON is not None:
+        if perf.USE_PERFMON:
             self._debug_menu = build_qmodel_menu(
                 MenuId.MENUBAR_DEBUG,
                 title=trans._('&Debug'),
