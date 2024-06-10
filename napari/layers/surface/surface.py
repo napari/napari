@@ -21,6 +21,7 @@ from napari.utils.colormaps import AVAILABLE_COLORMAPS
 from napari.utils.events import Event
 from napari.utils.events.event_utils import connect_no_arg
 from napari.utils.geometry import find_nearest_triangle_intersection
+from napari.utils.migrations import _DeprecatingDict
 from napari.utils.translations import trans
 
 
@@ -578,7 +579,7 @@ class Surface(IntensityVisualizationMixin, Layer):
             and len(self.texcoords)
         )
 
-    def _get_state(self) -> dict:
+    def _get_state(self) -> _DeprecatingDict:
         """Get dictionary of layer state.
 
         Returns
