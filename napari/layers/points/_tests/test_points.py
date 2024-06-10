@@ -2426,7 +2426,10 @@ def test_shown_view_size_and_view_data_have_the_same_dimension():
 def test_empty_data_from_tuple():
     """Test that empty data raises an error."""
     layer = Points(name='points')
-    layer2 = Points.create(*layer.as_layer_data_tuple())
+    data, attrs, layer_type = layer.as_layer_data_tuple()
+    for key in DEPRECATED_PROPERTIES:
+        attrs.pop(key, None)
+    layer2 = Points.create(data, attrs, layer_type)
     assert layer2.data.size == 0
 
 
@@ -2664,7 +2667,17 @@ def test_docstring():
     validate_docstring_parent_class_consistency(Points)
 
 
-@pytest.mark.parametrize('key', DEPRECATED_PROPERTIES)
+@pytest.mark.parametrize(
+    'key',
+    [
+        'edge_width',
+        'edge_width_is_relative',
+        'edge_color',
+        'edge_color_cycle',
+        'edge_colormap',
+        'edge_contrast_limits',
+    ],
+)
 def test_as_layer_data_tuple_read_deprecated_key(key: str):
     layer = Points()
     _, attrs, _ = layer.as_layer_data_tuple()
