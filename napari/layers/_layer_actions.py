@@ -27,6 +27,8 @@ def _duplicate_layer(ll: LayerList, *, name: str = '') -> None:
     for lay in list(ll.selection):
         data, state, type_str = lay.as_layer_data_tuple()
         state['name'] = trans._('{name} copy', name=lay.name)
+        # Cast is needed because we do not want to expose _DeprecatingDict
+        # as public of napari's public API, but need to use its details here.
         state = cast(_DeprecatingDict, state)
         for deprecated in state.deprecations:
             del state[deprecated]
