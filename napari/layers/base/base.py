@@ -1023,7 +1023,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     def _type_string(self) -> str:
         return self.__class__.__name__.lower()
 
-    def as_layer_data_tuple(self) -> tuple[Any, dict[str, Any], str]:
+    def as_layer_data_tuple(self):
         state = self._get_state()
         state.pop('data', None)
         return self.data, state, self._type_string
