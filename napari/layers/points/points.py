@@ -68,6 +68,18 @@ if TYPE_CHECKING:
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
+DEPRECATED_PROPERTIES = (
+    'edge_width',
+    'edge_width_is_relative',
+    'current_edge_width',
+    'edge_color',
+    'edge_color_cycle',
+    'edge_colormap',
+    'edge_contrast_limits',
+    'current_edge_color',
+    'edge_color_mode',
+)
+
 
 class Points(Layer):
     """Points layer.
@@ -608,18 +620,7 @@ class Points(Layer):
     @classmethod
     def _add_deprecated_properties(cls) -> None:
         """Adds deprecated properties to class."""
-        deprecated_properties = [
-            'edge_width',
-            'edge_width_is_relative',
-            'current_edge_width',
-            'edge_color',
-            'edge_color_cycle',
-            'edge_colormap',
-            'edge_contrast_limits',
-            'current_edge_color',
-            'edge_color_mode',
-        ]
-        for old_property in deprecated_properties:
+        for old_property in DEPRECATED_PROPERTIES:
             new_property = old_property.replace('edge', 'border')
             add_deprecated_property(
                 cls,
@@ -1474,6 +1475,14 @@ class Points(Layer):
                 'shown': self.shown,
             }
         )
+        for old_key in DEPRECATED_PROPERTIES:
+            new_key = old_key.replace('edge', 'border')
+            state.deprecate(
+                old_key,
+                new_key=new_key,
+                version='0.6.0',
+                since_version='0.5.0',
+            )
         return state
 
     @property

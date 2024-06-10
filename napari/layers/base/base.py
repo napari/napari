@@ -33,6 +33,7 @@ from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
     transform_with_box,
 )
+from napari.layers.utils._deprecating_dict import DeprecatingDict
 from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.layers.utils.interactivity_utils import (
     drag_data_to_projected_distance,
@@ -983,41 +984,46 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     def _get_ndim(self) -> int:
         raise NotImplementedError
 
-    def _get_base_state(self) -> dict:
+    def _get_base_state(self) -> DeprecatingDict:
         """Get dictionary of attributes on base layer.
+
+        This is useful for serialization and deserialization of the layer.
+        And similarly for plugins to pass state without direct dependencies on napari types.
+        The dictionary returned issues warning messages when deprecated keys are accessed.
 
         Returns
         -------
-        state : dict
+        LayerStateDict
             Dictionary of attributes on base layer.
         """
-        base_dict = {
-            'name': self.name,
-            'metadata': self.metadata,
-            'scale': list(self.scale),
-            'translate': list(self.translate),
-            'rotate': [list(r) for r in self.rotate],
-            'shear': list(self.shear),
-            'affine': self.affine.affine_matrix,
-            'opacity': self.opacity,
-            'blending': self.blending,
-            'visible': self.visible,
-            'experimental_clipping_planes': [
-                plane.dict() for plane in self.experimental_clipping_planes
-            ],
-            'projection_mode': self.projection_mode,
-        }
-        return base_dict
+        return DeprecatingDict(
+            {
+                'name': self.name,
+                'metadata': self.metadata,
+                'scale': list(self.scale),
+                'translate': list(self.translate),
+                'rotate': [list(r) for r in self.rotate],
+                'shear': list(self.shear),
+                'affine': self.affine.affine_matrix,
+                'opacity': self.opacity,
+                'blending': self.blending,
+                'visible': self.visible,
+                'experimental_clipping_planes': [
+                    plane.dict() for plane in self.experimental_clipping_planes
+                ],
+                'projection_mode': self.projection_mode,
+            }
+        )
 
     @abstractmethod
-    def _get_state(self):
+    def _get_state(self) -> dict[str, any]:
         raise NotImplementedError
 
     @property
     def _type_string(self) -> str:
         return self.__class__.__name__.lower()
 
-    def as_layer_data_tuple(self):
+    def as_layer_data_tuple(self) -> tuple[Any, dict[str, Any], str]:
         state = self._get_state()
         state.pop('data', None)
         return self.data, state, self._type_string

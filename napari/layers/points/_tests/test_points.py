@@ -19,6 +19,7 @@ from napari.layers import Points
 from napari.layers.base._base_constants import ActionType
 from napari.layers.points._points_constants import Mode
 from napari.layers.points._points_utils import points_to_squares
+from napari.layers.points.points import DEPRECATED_PROPERTIES
 from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.layers.utils._text_constants import Anchor
 from napari.layers.utils.color_encoding import ConstantColorEncoding
@@ -2661,3 +2662,11 @@ def test_docstring():
     validate_all_params_in_docstring(Points)
     validate_kwargs_sorted(Points)
     validate_docstring_parent_class_consistency(Points)
+
+
+@pytest.mark.parametrize('key', DEPRECATED_PROPERTIES)
+def test_as_layer_data_tuple_read_deprecated_key(key: str):
+    layer = Points()
+    _, attrs, _ = layer.as_layer_data_tuple()
+    with pytest.raises(DeprecationWarning):
+        attrs[key]
