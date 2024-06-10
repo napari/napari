@@ -8,26 +8,23 @@ from napari._tests.utils import (
     count_warning_events,
     layer_test_data,
 )
+from napari.layers import Layer
 
 
-@pytest.mark.parametrize(('Layer', 'data', 'ndim'), layer_test_data)
-def test_attrs_arrays(Layer, data, ndim):
+@pytest.mark.parametrize(('LayerType', 'data', 'ndim'), layer_test_data)
+def test_attrs_arrays(LayerType: type[Layer], data, ndim):
     """Test layer attributes and arrays."""
     np.random.seed(0)
-    layer = Layer(data)
+    layer = LayerType(data)
     # Check layer has been correctly created
     assert layer.ndim == ndim
 
-    # TODO: fix typing here
     properties = layer._get_state()
 
     # Check every property is in call signature
-    signature = inspect.signature(Layer)
+    signature = inspect.signature(LayerType)
 
-    # Remove deprecated properties for testing purposes because
-    # that's not the main goal here.
-    # TODO: actually, maybe we do want to verify deprecated state/parameters
-    # are consistent?
+    # Remove deprecated properties because that's not the main goal here.
     for deprecated in properties.deprecations:
         del properties[deprecated]
     signature = signature.replace(
@@ -47,7 +44,7 @@ def test_attrs_arrays(Layer, data, ndim):
     assert len(properties) == len(signature.parameters) - 1
 
     # Check new layer can be created
-    new_layer = Layer(**properties)
+    new_layer = LayerType(**properties)
 
     # Check that new layer matches old on all properties:
     for prop in properties:
@@ -56,10 +53,10 @@ def test_attrs_arrays(Layer, data, ndim):
         )
 
 
-@pytest.mark.parametrize(('Layer', 'data', 'ndim'), layer_test_data)
-def test_no_callbacks(Layer, data, ndim):
+@pytest.mark.parametrize(('LayerType', 'data', 'ndim'), layer_test_data)
+def test_no_callbacks(LayerType: type[Layer], data, ndim):
     """Test no internal callbacks for layer emitters."""
-    layer = Layer(data)
+    layer = LayerType(data)
     # Check layer has been correctly created
     assert layer.ndim == ndim
 
