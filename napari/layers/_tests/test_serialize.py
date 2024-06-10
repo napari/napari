@@ -18,10 +18,25 @@ def test_attrs_arrays(Layer, data, ndim):
     # Check layer has been correctly created
     assert layer.ndim == ndim
 
+    # TODO: fix typing here
     properties = layer._get_state()
 
     # Check every property is in call signature
     signature = inspect.signature(Layer)
+
+    # Remove deprecated properties for testing purposes because
+    # that's not the main goal here.
+    # TODO: actually, maybe we do want to verify deprecated state/parameters
+    # are consistent?
+    for deprecated in properties.deprecations:
+        del properties[deprecated]
+    signature = signature.replace(
+        parameters=tuple(
+            param
+            for param in signature.parameters.values()
+            if param.name not in properties.deprecations
+        )
+    )
 
     # Check every property is also a parameter.
     for prop in properties:

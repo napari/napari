@@ -1477,12 +1477,14 @@ class Points(Layer):
         )
         for old_key in DEPRECATED_PROPERTIES:
             new_key = old_key.replace('edge', 'border')
-            state.deprecate(
-                old_key,
-                new_key=new_key,
-                version='0.6.0',
-                since_version='0.5.0',
-            )
+            if new_key in state:
+                state[old_key] = state[new_key]
+                state.deprecate(
+                    old_key,
+                    new_key=new_key,
+                    version='0.6.0',
+                    since_version='0.5.0',
+                )
         return state
 
     @property
