@@ -540,6 +540,11 @@ class Affine(Transform):
         self._setup_decompose_linear_matrix_cache()
         return self._cache_dict['decompose_linear_matrix'][1]
 
+    @property
+    def voxel_size(self) -> tuple[pint.Quantity, ...]:
+        """Return the voxel size of the transform."""
+        return tuple(x * y for x, y in zip(self.scale, self.units))
+
     @scale.setter
     def scale(self, scale):
         """Set the scale of the transform."""
