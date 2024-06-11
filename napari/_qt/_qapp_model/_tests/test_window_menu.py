@@ -21,7 +21,6 @@ def test_toggle_dockwidget_actions(
     action_text,
     action_dockwidget_name,
     action_status_tooltip,
-    qtbot,
 ):
     app = get_app()
     viewer = make_napari_viewer(show=True)
