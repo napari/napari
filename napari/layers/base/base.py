@@ -34,7 +34,6 @@ from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
     transform_with_box,
 )
-from napari.layers.base._units import get_units_from_name
 from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.layers.utils.interactivity_utils import (
     drag_data_to_projected_distance,
@@ -374,9 +373,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._refresh_blocked = False
         self._ndim = ndim
 
-        self._units = (pint.get_application_registry().pixel,) * self.ndim
-        self._axis_labels = tuple(f'dim_{i}' for i in range(ndim))
-
         self._slice_input = _SliceInput(
             ndisplay=2,
             world_slice=_ThickNDSlice.make_full(ndim=ndim),
@@ -410,10 +406,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 CompositeAffine(
                     scale,
                     translate,
+                    axis_labels=axis_labels,
                     rotate=rotate,
                     shear=shear,
                     ndim=ndim,
                     name='data2physical',
+                    units=units,
                 ),
                 coerce_affine(affine, ndim=ndim, name='physical2world'),
                 Affine(np.ones(ndim), np.zeros(ndim), name='world2grid'),
@@ -480,8 +478,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         )
         self.name = name
         self.mode = mode
-        self.axis_labels = axis_labels
-        self.units = units
         self._overlays.update(
             {
                 'transform_box': TransformBoxOverlay(),
@@ -766,42 +762,27 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @property
     def axis_labels(self) -> tuple[str, ...]:
         """tuple of axis labels for the layer."""
-        return self._axis_labels
+        return self._transforms['data2physical'].axis_labels
 
     @axis_labels.setter
     def axis_labels(self, axis_labels: Optional[Sequence[str]]) -> None:
-        if axis_labels is None:
-            axis_labels = tuple(f'dim_{i}' for i in range(self.ndim))
-        if len(axis_labels) != self.ndim:
-            raise ValueError(
-                f'Number of axis labels ({len(axis_labels)}) must match the number of dimensions ({self.ndim}).'
-            )
-        axis_labels = tuple(axis_labels)
-        if self._axis_labels == axis_labels:
-            return
-        self._axis_labels = axis_labels
+        prev = self._axis_labels
+        self._transforms['data2physical'].axis_labels = axis_labels
+        if self._axis_labels != prev:
+            self.events.axis_labels()
         self.events.axis_labels()
 
     @property
     def units(self) -> tuple[pint.Unit, ...]:
         """List of units for the layer."""
-        return self._units
+        return self._transforms['data2physical'].units
 
     @units.setter
     def units(self, units: Optional[Sequence[pint.Unit]]) -> None:
-        units = get_units_from_name(units)
-        if units is None:
-            units = (pint.get_application_registry().pixel,) * self.ndim
-        if isinstance(units, pint.Unit):
-            units = (units,) * self.ndim
-        if len(units) != self.ndim:
-            raise ValueError(
-                f'Number of units ({len(units)}) must match the number of dimensions ({self.ndim}).'
-            )
-        if self._units == units:
-            return
-        self._units = units
-        self.events.units()
+        prev = self.units
+        self._transforms['data2physical'].units = units
+        if self.units != prev:
+            self.events.units()
 
     @property
     def scale(self) -> npt.NDArray:

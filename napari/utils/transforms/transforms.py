@@ -1,12 +1,14 @@
 from collections.abc import Iterable, Sequence
-from typing import Generic, Optional, TypeVar, overload
+from typing import Generic, Optional, TypeVar, Union, overload
 
 import numpy as np
 import numpy.typing as npt
+import pint
 import toolz as tz
 from psygnal import Signal
 
 from napari.utils.events import EventedList
+from napari.utils.transforms._units import get_units_from_name
 from napari.utils.transforms.transform_utils import (
     compose_linear_matrix,
     decompose_linear_matrix,
@@ -426,12 +428,14 @@ class Affine(Transform):
             0.0,
         ),
         *,
+        affine_matrix=None,
+        axis_labels: Optional[list[Union[str, pint.Unit]]] = None,
+        linear_matrix=None,
+        name=None,
+        ndim=None,
         rotate=None,
         shear=None,
-        linear_matrix=None,
-        affine_matrix=None,
-        ndim=None,
-        name=None,
+        units: Optional[str] = None,
     ) -> None:
         super().__init__(name=name)
         self._upper_triangular = True
@@ -469,6 +473,11 @@ class Affine(Transform):
         ndim = max(ndim, linear_matrix.shape[0])
         self._linear_matrix = embed_in_identity_matrix(linear_matrix, ndim)
         self._translate = translate_to_vector(translate, ndim=ndim)
+        self._axis_labels = tuple(f'axis {i}' for i in range(ndim))
+        self._units = (pint.get_application_registry().pixel,) * ndim
+
+        self.axis_labels = axis_labels
+        self.units = units
 
     def __call__(self, coords):
         coords = np.asarray(coords)
@@ -490,6 +499,38 @@ class Affine(Transform):
     def ndim(self) -> int:
         """Dimensionality of the transform."""
         return self._linear_matrix.shape[0]
+
+    @property
+    def axis_labels(self) -> tuple[str, ...]:
+        """tuple of axis labels for the layer."""
+        return self._axis_labels
+
+    @axis_labels.setter
+    def axis_labels(self, axis_labels: Optional[Sequence[str]]) -> None:
+        if axis_labels is None:
+            axis_labels = tuple(f'dim_{i}' for i in range(self.ndim))
+        if len(axis_labels) != self.ndim:
+            raise ValueError(
+                f'{axis_labels=} need to have length ({self.ndim}).'
+            )
+        axis_labels = tuple(axis_labels)
+        self._axis_labels = axis_labels
+
+    @property
+    def units(self) -> tuple[pint.Unit, ...]:
+        """List of units for the layer."""
+        return self._units
+
+    @units.setter
+    def units(self, units: Optional[Sequence[pint.Unit]]) -> None:
+        units = get_units_from_name(units)
+        if units is None:
+            units = (pint.get_application_registry().pixel,) * self.ndim
+        if isinstance(units, pint.Unit):
+            units = (units,) * self.ndim
+        if len(units) != self.ndim:
+            raise ValueError(f'{units=} need to have length ({self.ndim}).')
+        self._units = units
 
     @property
     def scale(self) -> npt.NDArray:
@@ -778,13 +819,22 @@ class CompositeAffine(Affine):
         scale=(1, 1),
         translate=(0, 0),
         *,
+        axis_labels=None,
         rotate=None,
         shear=None,
         ndim=None,
         name=None,
+        units=None,
     ) -> None:
         super().__init__(
-            scale, translate, rotate=rotate, shear=shear, ndim=ndim, name=name
+            scale,
+            translate,
+            axis_labels=axis_labels,
+            rotate=rotate,
+            shear=shear,
+            ndim=ndim,
+            name=name,
+            units=units,
         )
         if ndim is None:
             ndim = infer_ndim(
