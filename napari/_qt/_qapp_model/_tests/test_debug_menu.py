@@ -8,7 +8,7 @@ from napari._app_model import get_app
 @pytest.mark.parametrize('perfmon_value', [True, False])
 @pytest.mark.filterwarnings(
     'ignore:Using NAPARI_PERFMON with an already-running QtApp'
-)  # See napari/napari#6957
+)  # TODO: remove once napari/napari#6957 resolved
 def test_menu_visibility(monkeypatch, make_napari_viewer, perfmon_value):
     """Test debug menu visibility following performance monitor usage."""
     monkeypatch.setattr('napari.utils.perf.USE_PERFMON', perfmon_value)
@@ -25,7 +25,7 @@ def test_menu_visibility(monkeypatch, make_napari_viewer, perfmon_value):
 
 @pytest.mark.filterwarnings(
     'ignore:Using NAPARI_PERFMON with an already-running QtApp'
-)  # See napari/napari#6957
+)  # TODO: remove once napari/napari#6957 resolved
 def test_start_trace_actions(monkeypatch, make_napari_viewer):
     """Test triggering the start trace action shows dialog to select trace file"""
     monkeypatch.setattr('napari.utils.perf.USE_PERFMON', True)
