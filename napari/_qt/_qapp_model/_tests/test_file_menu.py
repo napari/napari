@@ -11,6 +11,7 @@ from qtpy.QtWidgets import QMenu
 
 from napari._app_model import get_app
 from napari._app_model.constants import MenuId
+from napari._qt._qapp_model._tests.utils import get_submenu_action
 from napari.layers import Image
 from napari.utils.action_manager import action_manager
 
@@ -284,7 +285,9 @@ def test_open_with_plugin(
     stack,
 ):
     viewer = make_napari_viewer()
-    action, _a = get_open_with_plugin_action(viewer, menu_str)
+    action, _a = get_submenu_action(
+        viewer.window.file_menu, 'Open with Plugin', menu_str
+    )
     with (
         mock.patch('napari._qt.qt_viewer.QFileDialog') as mock_file,
         mock.patch('napari._qt.qt_viewer.QtViewer._qt_open') as mock_read,
