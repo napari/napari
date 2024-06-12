@@ -1,11 +1,17 @@
 import numpy as np
 import numpy.testing as npt
+import pint
 import pytest
 from scipy.stats import special_ortho_group
 
 from napari.utils.transforms import Affine, CompositeAffine, ScaleTranslate
 
 transform_types = [Affine, CompositeAffine, ScaleTranslate]
+
+affine_type = [Affine, CompositeAffine]
+
+REG = pint.get_application_registry()
+PIXEL = REG.pixel
 
 
 @pytest.mark.parametrize('Transform', transform_types)
@@ -366,3 +372,22 @@ def test_affine_rotate_3d():
         ),
         a.rotate,
     )
+
+
+@pytest.mark.parametrize('AffineType', affine_type)
+def test_empty_units(AffineType):
+    assert AffineType(ndim=2).units == (PIXEL, PIXEL)
+    assert AffineType(ndim=3).units == (PIXEL, PIXEL, PIXEL)
+    assert AffineType(ndim=2).voxel_size == (1 * PIXEL, 1 * PIXEL)
+    assert AffineType(ndim=3).voxel_size == (1 * PIXEL, 1 * PIXEL, 1 * PIXEL)
+
+
+@pytest.mark.parametrize('AffineType', affine_type)
+def test_set_units(AffineType):
+    assert AffineType(ndim=2, units=('cm', 'mm')).units == (REG.cm, REG.mm)
+
+
+@pytest.mark.parametrize('AffineType', affine_type)
+def test_empty_axis_labels(AffineType):
+    assert AffineType().axis_labels == ('axis 1', 'axis 0')
+    assert AffineType(ndim=3).axis_labels == ('axis 2', 'axis 1', 'axis 0')
