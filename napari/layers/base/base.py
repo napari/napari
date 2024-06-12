@@ -766,9 +766,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
     @axis_labels.setter
     def axis_labels(self, axis_labels: Optional[Sequence[str]]) -> None:
-        prev = self._axis_labels
+        prev = self._transforms['data2physical'].axis_labels
         self._transforms['data2physical'].axis_labels = axis_labels
-        if self._axis_labels != prev:
+        if self._transforms['data2physical'].axis_labels != prev:
             self.events.axis_labels()
         self.events.axis_labels()
 
