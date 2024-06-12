@@ -34,7 +34,7 @@ def perfmon_activation(monkeypatch, request):
 
     yield request.param
 
-    # To teardown always try to remove env var and reload `perf` module
+    # On teardown always try to remove env var and reload `perf` module
     monkeypatch.delenv('NAPARI_PERFMON', raising=False)
     from napari.utils import perf
 
@@ -49,12 +49,12 @@ def perfmon_activation(monkeypatch, request):
 @pytest.mark.filterwarnings(
     'ignore:Using NAPARI_PERFMON with an already-running QtApp'
 )  # TODO: remove once napari/napari#6957 resolved
-def test_debug_menu_visibility(perfmon_activation, make_napari_viewer, qtbot):
-    """Test debug menu visibility following performance monitor usage."""
+def test_debug_menu_exists(perfmon_activation, make_napari_viewer, qtbot):
+    """Test debug menu existence following performance monitor usage."""
     use_perfmon = perfmon_activation
     viewer = make_napari_viewer()
 
-    # Check the menu is available or not following `NAPARI_PERFMON` value
+    # Check the menu exists following `NAPARI_PERFMON` value
     #   * `NAPARI_PERFMON=1` -> `perf.USE_PERFMON==True` -> Debug menu available
     #   * `NAPARI_PERFMON=` -> `perf.USE_PERFMON==False` -> Debug menu shouldn't exist
     assert bool(getattr(viewer.window, '_debug_menu', None)) == use_perfmon
@@ -70,7 +70,7 @@ def test_debug_menu_visibility(perfmon_activation, make_napari_viewer, qtbot):
 def test_start_stop_trace_actions(
     perfmon_activation, make_napari_viewer, tmp_path, qtbot
 ):
-    """Test triggering the start trace action shows dialog to select trace file"""
+    """Test start and stop recording trace actions."""
     use_perfmon = perfmon_activation
     if use_perfmon:
         trace_file = tmp_path / 'trace.json'
@@ -106,7 +106,6 @@ def test_start_stop_trace_actions(
             mock_dialog_instance = mock_dialog.return_value
             mock_save = mock_dialog_instance.getSaveFileName
             mock_save.return_value = (str(trace_file), None)
-            # start_action.trigger()
             app.commands.execute_command(
                 'napari.window.debug.start_trace_dialog'
             )
@@ -122,7 +121,6 @@ def test_start_stop_trace_actions(
             assert not stop_action.isEnabled()
             assert trace_file.exists()
 
-        # stop_action.trigger()
         app.commands.execute_command('napari.window.debug.stop_trace')
         qtbot.waitUntil(assert_stop_recording)
 
