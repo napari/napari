@@ -1,5 +1,5 @@
 def {name}{signature}:
-    kwargs = locals()
+    kwargs = dict(locals())
     kwargs.pop('self', None)
     pos_kwargs = dict()
     for name in getattr({cls_name}.__init__, "_deprecated_constructor_args", []):
