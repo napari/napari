@@ -14,10 +14,12 @@ def perfmon_activation(monkeypatch, request):
         monkeypatch.setenv('NAPARI_PERFMON', '1')
         from napari.utils import perf
 
+        importlib.reload(perf._config)
         importlib.reload(perf._timers)
         importlib.reload(perf)
 
         # Check `USE_PERFMON` values correspond to env var state
+        assert perf.perf_config is not None
         assert perf._timers.USE_PERFMON
         assert perf.USE_PERFMON
     else:
@@ -25,10 +27,12 @@ def perfmon_activation(monkeypatch, request):
         monkeypatch.delenv('NAPARI_PERFMON', raising=False)
         from napari.utils import perf
 
+        importlib.reload(perf._config)
         importlib.reload(perf._timers)
         importlib.reload(perf)
 
         # Check `USE_PERFMON` values correspond to env var state
+        assert perf.perf_config is None
         assert not perf._timers.USE_PERFMON
         assert not perf.USE_PERFMON
 
@@ -38,10 +42,12 @@ def perfmon_activation(monkeypatch, request):
     monkeypatch.delenv('NAPARI_PERFMON', raising=False)
     from napari.utils import perf
 
+    importlib.reload(perf._config)
     importlib.reload(perf._timers)
     importlib.reload(perf)
 
     # Check `USE_PERFMON` values correspond to env var state
+    assert perf.perf_config is None
     assert not perf._timers.USE_PERFMON
     assert not perf.USE_PERFMON
 
