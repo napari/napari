@@ -1034,20 +1034,22 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             Dictionary of attributes on base layer.
         """
         base_dict = {
-            'name': self.name,
-            'metadata': self.metadata,
-            'scale': list(self.scale),
-            'translate': list(self.translate),
-            'rotate': [list(r) for r in self.rotate],
-            'shear': list(self.shear),
             'affine': self.affine.affine_matrix,
-            'opacity': self.opacity,
+            'axis_labels': self.axis_labels,
             'blending': self.blending,
-            'visible': self.visible,
             'experimental_clipping_planes': [
                 plane.dict() for plane in self.experimental_clipping_planes
             ],
+            'metadata': self.metadata,
+            'name': self.name,
+            'opacity': self.opacity,
             'projection_mode': self.projection_mode,
+            'rotate': [list(r) for r in self.rotate],
+            'scale': list(self.scale),
+            'shear': list(self.shear),
+            'translate': list(self.translate),
+            'units': self.units,
+            'visible': self.visible,
         }
         return base_dict
 
