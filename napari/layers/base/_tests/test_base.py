@@ -30,6 +30,11 @@ def test_assign_units():
     layer.units = ('mm', 'mm')
     mock.assert_not_called()
 
+    layer.units = 'km'
+    mock.assert_called_once()
+    mock.reset_mock()
+    assert layer.units == (REG.km, REG.km)
+
     layer.units = None
     mock.assert_called_once()
     assert layer.units == (REG.pixel, REG.pixel)
