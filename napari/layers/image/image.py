@@ -550,6 +550,12 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
 
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap."""
+        # don't bother updating thumbnail if we don't have any data
+        # this also avoids possible dtype mismatch issues below
+        # for example np.clip may raise an OverflowError (in numpy 2.0)
+        if self._slice.empty:
+            return
+
         image = self._slice.thumbnail.raw
 
         if self._slice_input.ndisplay == 3 and self.ndim > 2:

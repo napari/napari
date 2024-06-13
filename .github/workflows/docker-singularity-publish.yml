@@ -8,6 +8,10 @@ name: Docker and Singularity build
 on:
   workflow_dispatch:
 
+  pull_request:
+    paths:
+      - '.github/workflows/docker-singularity-publish.yaml'
+
 #  schedule:
 #    - cron: '31 0 * * *'
   push:
@@ -100,7 +104,7 @@ jobs:
     needs: build1
     runs-on: ubuntu-latest
     container:
-      image: quay.io/singularity/docker2singularity:v3.11.5
+      image: quay.io/singularity/docker2singularity:v4.1.0
       options: --privileged
     permissions:
       contents: read
