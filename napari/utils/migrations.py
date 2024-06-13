@@ -1,7 +1,7 @@
 import inspect
 import warnings
 from functools import wraps
-from typing import Any, Callable
+from typing import Any, Callable, cast
 
 from napari.utils.translations import trans
 
@@ -262,6 +262,7 @@ class _DeprecatingDict(dict[str, Any]):
 
     def __contains__(self, key: object) -> bool:
         if key in self.deprecations:
+            key = cast(str, key)
             _, message = self.deprecations[key]
             warnings.warn(message, DeprecationWarning)
             return True
