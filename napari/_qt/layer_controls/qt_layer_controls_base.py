@@ -110,7 +110,7 @@ class QtLayerControls(QFrame):
             checked=True,
         )
         alt_mod_text = (
-            QKeySequence(Qt.AltModifier)
+            QKeySequence('Alt')
             .toString(QKeySequence.NativeText)
             .replace('+', '')
         )
