@@ -2,6 +2,7 @@ import os
 import sys
 from inspect import Parameter, getdoc, signature
 
+from napari.utils.migrations import rename_argument
 from napari.utils.misc import camel_to_snake
 from napari.utils.translations import trans
 
@@ -74,6 +75,7 @@ def create_func(cls, name=None, doc=None):
         ],
         return_annotation=cls,
     )
+
     src = template.format(
         name=name,
         signature=new_sig,
@@ -93,5 +95,16 @@ def create_func(cls, name=None, doc=None):
         ],
         return_annotation=cls,
     )
+
+    if hasattr(cls.__init__, '_rename_argument'):
+        for (
+            from_name,
+            to_name,
+            version,
+            since_version,
+        ) in cls.__init__._rename_argument:
+            func = rename_argument(from_name, to_name, version, since_version)(
+                func
+            )
 
     return func
