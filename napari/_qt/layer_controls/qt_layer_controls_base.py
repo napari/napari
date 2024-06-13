@@ -121,7 +121,8 @@ class QtLayerControls(QFrame):
             True,
             self.TRANSFORM_ACTION_NAME,
             extra_tooltip_text=trans._(
-                f'\n{alt_mod_text} + Left mouse click over this button to reset'
+                '\n{alt_mod_text} + Left mouse click over this button to reset',
+                alt_mod_text=alt_mod_text,
             ),
         )
         self.transform_button.installEventFilter(self)
