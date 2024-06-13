@@ -44,6 +44,9 @@ class Vectors(Layer):
         the final column is a length N translation vector and a 1 or a napari
         `Affine` transform object. Applied as an extra transform on top of the
         provided scale, rotate, and shear values.
+    axis_labels : tuple of str, optional
+        Dimension names of the layer data.
+        If not provided, axis_labels will be set to (..., 'axis -2', 'axis -1').
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -109,6 +112,10 @@ class Vectors(Layer):
         ones along the main diagonal.
     translate : tuple of float
         Translation values for the layer.
+    units : tuple of str or pint.Unit, optional
+        Units of the layer data in world coordinates.
+        If not provided, the default units are assumed to be pixels.
+
     vector_style : str
         One of a list of preset display modes that determines how vectors are displayed.
         Allowed values are {'line', 'triangle', and 'arrow'}.
@@ -186,6 +193,7 @@ class Vectors(Layer):
         data=None,
         *,
         affine=None,
+        axis_labels=None,
         blending='translucent',
         cache=True,
         edge_color='red',
@@ -209,6 +217,7 @@ class Vectors(Layer):
         scale=None,
         shear=None,
         translate=None,
+        units=None,
         vector_style='triangle',
         visible=True,
     ) -> None:
@@ -220,19 +229,21 @@ class Vectors(Layer):
         super().__init__(
             data,
             ndim,
-            name=name,
-            metadata=metadata,
-            scale=scale,
-            translate=translate,
-            rotate=rotate,
-            shear=shear,
             affine=affine,
-            opacity=opacity,
+            axis_labels=axis_labels,
             blending=blending,
-            visible=visible,
             cache=cache,
             experimental_clipping_planes=experimental_clipping_planes,
+            name=name,
+            metadata=metadata,
+            opacity=opacity,
             projection_mode=projection_mode,
+            rotate=rotate,
+            scale=scale,
+            shear=shear,
+            translate=translate,
+            units=units,
+            visible=visible,
         )
 
         # events for non-napari calculations

@@ -57,6 +57,9 @@ class ScalarFieldBase(Layer, ABC):
         the final column is a length N translation vector and a 1 or a napari
         `Affine` transform object. Applied as an extra transform on top of the
         provided scale, rotate, and shear values.
+    axis_labels : tuple of str, optional
+        Dimension names of the layer data.
+        If not provided, axis_labels will be set to (..., 'axis -2', 'axis -1').
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -112,6 +115,9 @@ class ScalarFieldBase(Layer, ABC):
         ones along the main diagonal.
     translate : tuple of float
         Translation values for the layer.
+    units : tuple of str or pint.Unit, optional
+        Units of the layer data in world coordinates.
+        If not provided, the default units are assumed to be pixels.
     visible : bool
         Whether the layer visual is currently being displayed.
 
@@ -168,6 +174,7 @@ class ScalarFieldBase(Layer, ABC):
         data,
         *,
         affine=None,
+        axis_labels=None,
         blending='translucent',
         cache=True,
         custom_interpolation_kernel_2d=None,
@@ -185,6 +192,7 @@ class ScalarFieldBase(Layer, ABC):
         scale=None,
         shear=None,
         translate=None,
+        units=None,
         visible=True,
     ):
         if name is None and data is not None:
@@ -212,20 +220,22 @@ class ScalarFieldBase(Layer, ABC):
         super().__init__(
             data,
             ndim,
-            name=name,
-            metadata=metadata,
-            scale=scale,
-            translate=translate,
-            rotate=rotate,
-            shear=shear,
             affine=affine,
-            opacity=opacity,
+            axis_labels=axis_labels,
             blending=blending,
-            visible=visible,
-            multiscale=multiscale,
             cache=cache,
             experimental_clipping_planes=experimental_clipping_planes,
+            metadata=metadata,
+            multiscale=multiscale,
+            name=name,
+            opacity=opacity,
             projection_mode=projection_mode,
+            scale=scale,
+            shear=shear,
+            rotate=rotate,
+            translate=translate,
+            units=units,
+            visible=visible,
         )
 
         self.events.add(
