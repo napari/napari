@@ -771,7 +771,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._transforms['data2physical'].axis_labels = axis_labels  # type: ignore[assignment]
         if self._transforms['data2physical'].axis_labels != prev:
             self.events.axis_labels()
-        self.events.axis_labels()
 
     @property
     def units(self) -> tuple[pint.Unit, ...]:

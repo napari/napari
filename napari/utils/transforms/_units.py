@@ -44,7 +44,7 @@ def get_units_from_name(units: UnitsLike) -> UnitsInfo:
             return tuple(
                 pint.get_application_registry()[unit].units
                 if isinstance(unit, str)
-                else unit.units
+                else unit
                 for unit in units
             )
     except AttributeError as e:
