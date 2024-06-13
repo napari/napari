@@ -50,24 +50,19 @@ def _start_trace_dialog(qt_viewer: QtViewer) -> None:
 
 def _start_trace(path: str) -> None:
     """Start recording a trace file."""
-    # `DummyTimer` has no `start_trace_file`
-    start_trace = getattr(perf.timers, 'start_trace_file', None)
-    if start_trace:
-        start_trace(path)
+    if start_trace := perf.timers.start_trace_file:
+        start_trace()
 
 
 def _stop_trace() -> None:
     """Stop recording a trace file."""
-    # `DummyTimer` has no `stop_trace_file`
-    stop_trace = getattr(perf.timers, 'stop_trace_file', None)
-    if stop_trace:
+    if stop_trace := perf.timers.stop_trace_file:
         stop_trace()
 
 
 def _is_set_trace_active() -> bool:
     """Whether we are currently recording a set trace."""
-    trace_file = getattr(perf.timers, 'trace_file', None)
-    return trace_file is not None
+    return perf.timers.trace_file is not None
 
 
 Q_DEBUG_ACTIONS: list[Action] = [
