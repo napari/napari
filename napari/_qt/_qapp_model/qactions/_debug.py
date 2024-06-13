@@ -50,12 +50,14 @@ def _start_trace_dialog(qt_viewer: QtViewer) -> None:
 
 def _start_trace(path: str) -> None:
     """Start recording a trace file."""
+    # `DummyTimer` has no `start_trace_file`
     if start_trace := perf.timers.start_trace_file:
         start_trace(path)
 
 
 def _stop_trace() -> None:
     """Stop recording a trace file."""
+    # `DummyTimer` has no `stop_trace_file`
     if stop_trace := perf.timers.stop_trace_file:
         stop_trace()
 
