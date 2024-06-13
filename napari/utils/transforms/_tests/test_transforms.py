@@ -387,11 +387,66 @@ def test_empty_units(AffineType):
 
 
 @pytest.mark.parametrize('AffineType', affine_type)
-def test_set_units(AffineType):
+def test_set_units_constructor(AffineType):
+    assert AffineType(ndim=2, units=('mm', 'mm')).units == (REG.mm, REG.mm)
+    assert AffineType(ndim=2, units=(REG.m, REG.m)).units == (REG.m, REG.m)
+
+    # TODO I think that we should normalize all units of same dimensionality
+    # to the same registry, but this is not currently the case.
     assert AffineType(ndim=2, units=('cm', 'mm')).units == (REG.cm, REG.mm)
 
 
 @pytest.mark.parametrize('AffineType', affine_type)
+def test_set_units_constructor_error(AffineType):
+    with pytest.raises(ValueError, match='must have length ndim'):
+        AffineType(ndim=2, units=('mm', 'mm', 'mm'))
+
+    with pytest.raises(ValueError, match='Could not find unit'):
+        AffineType(ndim=2, units=('ugh', 'ugh'))
+
+
+@pytest.mark.parametrize('AffineType', affine_type)
+def test_set_units_error(AffineType):
+    affine = AffineType(ndim=2)
+    with pytest.raises(ValueError, match='must have length ndim'):
+        affine.units = ('m', 'm', 'm')
+
+    with pytest.raises(ValueError, match='Could not find unit'):
+        affine.units = ('ugh', 'ugh')
+
+
+@pytest.mark.parametrize('AffineType', affine_type)
+def test_set_units(AffineType):
+    affine = AffineType(ndim=2)
+    affine.units = ('mm', 'mm')
+    assert affine.units == (REG.mm, REG.mm)
+
+    affine.units = (REG.m, REG.m)
+    assert affine.units == (REG.m, REG.m)
+
+
+@pytest.mark.parametrize('AffineType', affine_type)
 def test_empty_axis_labels(AffineType):
-    assert AffineType().axis_labels == ('axis -2', 'axis -1')
+    assert AffineType(ndim=2).axis_labels == ('axis -2', 'axis -1')
     assert AffineType(ndim=3).axis_labels == ('axis -3', 'axis -2', 'axis -1')
+
+
+@pytest.mark.parametrize('AffineType', affine_type)
+def test_set_axis_labels(AffineType):
+    affine = AffineType(ndim=2)
+    affine.axis_labels = ('x', 'y')
+    assert affine.axis_labels == ('x', 'y')
+
+
+@pytest.mark.parametrize('AffineType', affine_type)
+def test_set_axis_labels_error(AffineType):
+    affine = AffineType(ndim=2)
+    with pytest.raises(ValueError, match='must have length ndim'):
+        affine.axis_labels = ('x', 'y', 'z')
+
+
+@pytest.mark.parametrize('AffineType', affine_type)
+def test_set_axis_error(AffineType):
+    affine = AffineType(ndim=2)
+    with pytest.raises(ValueError, match='must have length ndim'):
+        affine.axis_labels = ('x', 'y', 'z')
