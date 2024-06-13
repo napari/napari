@@ -473,7 +473,7 @@ class Affine(Transform):
         ndim = max(ndim, linear_matrix.shape[0])
         self._linear_matrix = embed_in_identity_matrix(linear_matrix, ndim)
         self._translate = translate_to_vector(translate, ndim=ndim)
-        self._axis_labels = tuple(f'axis {i}' for i in range(ndim))
+        self._axis_labels = tuple(f'axis {i}' for i in range(-ndim, 0))
         self._units = (pint.get_application_registry().pixel,) * ndim
 
         self.axis_labels = axis_labels
@@ -508,7 +508,7 @@ class Affine(Transform):
     @axis_labels.setter
     def axis_labels(self, axis_labels: Optional[Sequence[str]]) -> None:
         if axis_labels is None:
-            axis_labels = tuple(f'axis {i}' for i in range(self.ndim))[::-1]
+            axis_labels = tuple(f'axis {i}' for i in range(-self.ndim, 0))
         if len(axis_labels) != self.ndim:
             raise ValueError(
                 f'{axis_labels=} must have length ndim={self.ndim}.'
@@ -529,7 +529,7 @@ class Affine(Transform):
         if isinstance(units, pint.Unit):
             units = (units,) * self.ndim
         if len(units) != self.ndim:
-            raise ValueError(f'{units=} need to have length ({self.ndim}).')
+            raise ValueError(f'{units=} must have length ndim={self.ndim}.')
         self._units = units
 
     @property
@@ -554,9 +554,9 @@ class Affine(Transform):
         self._clean_cache()
 
     @property
-    def voxel_size(self) -> tuple[pint.Quantity, ...]:
-        """Return the voxel size of the transform."""
-        return tuple(x * y for x, y in zip(self.scale, self.units))
+    def physical_scale(self) -> tuple[pint.Quantity, ...]:
+        """Return the scale of the transform, with units."""
+        return tuple(np.multiply(self.scale, self.units))
 
     @property
     def translate(self) -> npt.NDArray:

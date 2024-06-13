@@ -378,8 +378,12 @@ def test_affine_rotate_3d():
 def test_empty_units(AffineType):
     assert AffineType(ndim=2).units == (PIXEL, PIXEL)
     assert AffineType(ndim=3).units == (PIXEL, PIXEL, PIXEL)
-    assert AffineType(ndim=2).voxel_size == (1 * PIXEL, 1 * PIXEL)
-    assert AffineType(ndim=3).voxel_size == (1 * PIXEL, 1 * PIXEL, 1 * PIXEL)
+    assert AffineType(ndim=2).physical_scale == (1 * PIXEL, 1 * PIXEL)
+    assert AffineType(ndim=3).physical_scale == (
+        1 * PIXEL,
+        1 * PIXEL,
+        1 * PIXEL,
+    )
 
 
 @pytest.mark.parametrize('AffineType', affine_type)
@@ -389,5 +393,5 @@ def test_set_units(AffineType):
 
 @pytest.mark.parametrize('AffineType', affine_type)
 def test_empty_axis_labels(AffineType):
-    assert AffineType().axis_labels == ('axis 1', 'axis 0')
-    assert AffineType(ndim=3).axis_labels == ('axis 2', 'axis 1', 'axis 0')
+    assert AffineType().axis_labels == ('axis -2', 'axis -1')
+    assert AffineType(ndim=3).axis_labels == ('axis -3', 'axis -2', 'axis -1')
