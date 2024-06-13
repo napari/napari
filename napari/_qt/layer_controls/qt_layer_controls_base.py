@@ -1,5 +1,5 @@
 from qtpy.QtCore import Qt
-from qtpy.QtGui import QMouseEvent
+from qtpy.QtGui import QKeySequence, QMouseEvent
 from qtpy.QtWidgets import (
     QButtonGroup,
     QComboBox,
@@ -109,13 +109,20 @@ class QtLayerControls(QFrame):
             extra_tooltip_text=trans._('(or hold Space)'),
             checked=True,
         )
+        alt_mod_text = (
+            QKeySequence(Qt.AltModifier)
+            .toString(QKeySequence.NativeText)
+            .replace('+', '')
+        )
         self.transform_button = self._radio_button(
             layer,
             'transform',
             self.MODE.TRANSFORM,
             True,
             self.TRANSFORM_ACTION_NAME,
-            extra_tooltip_text=trans._('\nAlt-Left mouse click to reset'),
+            extra_tooltip_text=trans._(
+                f'\n{alt_mod_text} + Left mouse click over this button to reset'
+            ),
         )
         self.transform_button.installEventFilter(self)
         self._on_editable_or_visible_change()
