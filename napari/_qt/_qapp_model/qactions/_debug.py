@@ -51,7 +51,7 @@ def _start_trace_dialog(qt_viewer: QtViewer) -> None:
 def _start_trace(path: str) -> None:
     """Start recording a trace file."""
     if start_trace := perf.timers.start_trace_file:
-        start_trace()
+        start_trace(path)
 
 
 def _stop_trace() -> None:
