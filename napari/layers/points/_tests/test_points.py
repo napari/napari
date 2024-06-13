@@ -19,7 +19,6 @@ from napari.layers import Points
 from napari.layers.base._base_constants import ActionType
 from napari.layers.points._points_constants import Mode
 from napari.layers.points._points_utils import points_to_squares
-from napari.layers.points.points import DEPRECATED_PROPERTIES
 from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.layers.utils._text_constants import Anchor
 from napari.layers.utils.color_encoding import ConstantColorEncoding
@@ -2426,10 +2425,7 @@ def test_shown_view_size_and_view_data_have_the_same_dimension():
 def test_empty_data_from_tuple():
     """Test that empty data raises an error."""
     layer = Points(name='points')
-    data, attrs, layer_type = layer.as_layer_data_tuple()
-    for key in DEPRECATED_PROPERTIES:
-        attrs.pop(key, None)
-    layer2 = Points.create(data, attrs, layer_type)
+    layer2 = Points.create(*layer.as_layer_data_tuple())
     assert layer2.data.size == 0
 
 

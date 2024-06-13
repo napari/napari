@@ -216,24 +216,21 @@ def deprecated_class_name(
 class _DeprecatingDict(dict[str, Any]):
     """A dict that issues warning messages when deprecated keys are accessed."""
 
-    # Maps from deprecations keys to their deprecation messages.
-    deprecations: dict[str, str]
+    # Maps from a deprecated key to its value and deprecation message.
+    deprecations: dict[str, tuple[Any, str]]
 
     def __init__(self, *args, **kwargs) -> None:
-        self.deprecations = {}
         super().__init__(*args, **kwargs)
+        self.deprecations = {}
 
     def __getitem__(self, key: str) -> Any:
-        if message := self.deprecations.get(key):
+        if key in self.deprecations:
+            value, message = self.deprecations[key]
             warnings.warn(message, DeprecationWarning)
+            return value
         return super().__getitem__(key)
 
-    def __setitem__(self, key: str, value: Any) -> None:
-        if message := self.deprecations.get(key):
-            warnings.warn(message, DeprecationWarning)
-        return super().__setitem__(key, value)
-
-    def deprecate(
+    def deprecate_with_replacement(
         self,
         key: str,
         *,
@@ -250,4 +247,4 @@ class _DeprecatingDict(dict[str, Any]):
             version=version,
             new_key=new_key,
         )
-        self.deprecations[key] = message
+        self.deprecations[key] = self[new_key], message
