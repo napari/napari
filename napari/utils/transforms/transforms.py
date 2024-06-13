@@ -511,7 +511,7 @@ class Affine(Transform):
             axis_labels = tuple(f'axis {i}' for i in range(self.ndim))[::-1]
         if len(axis_labels) != self.ndim:
             raise ValueError(
-                f'{axis_labels=} need to have length ({self.ndim}).'
+                f'{axis_labels=} must have length ndim={self.ndim}.'
             )
         axis_labels = tuple(axis_labels)
         self._axis_labels = axis_labels
