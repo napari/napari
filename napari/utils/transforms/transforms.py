@@ -429,13 +429,13 @@ class Affine(Transform):
         ),
         *,
         affine_matrix=None,
-        axis_labels: Optional[list[Union[str, pint.Unit]]] = None,
+        axis_labels: Optional[Sequence[str]] = None,
         linear_matrix=None,
         name=None,
         ndim=None,
         rotate=None,
         shear=None,
-        units: Optional[str] = None,
+        units: Optional[Sequence[Union[str, pint.Unit]]] = None,
     ) -> None:
         super().__init__(name=name)
         self._upper_triangular = True
@@ -697,11 +697,15 @@ class Affine(Transform):
             linear_matrix = np.diag(self.scale[axes])
         else:
             linear_matrix = self.linear_matrix[np.ix_(axes, axes)]
+        units = [self.units[i] for i in axes]
+        axes_labels = [self.axis_labels[i] for i in axes]
         return Affine(
             linear_matrix=linear_matrix,
             translate=self.translate[axes],
             ndim=len(axes),
             name=self.name,
+            units=units,
+            axis_labels=axes_labels,
         )
 
     def replace_slice(
@@ -927,6 +931,8 @@ class CompositeAffine(Affine):
             shear=self._shear[np.ix_(axes, axes)],
             ndim=len(axes),
             name=self.name,
+            units=[self.units[i] for i in axes],
+            axis_labels=[self.axis_labels[i] for i in axes],
         )
 
     def expand_dims(self, axes: Sequence[int]) -> 'CompositeAffine':

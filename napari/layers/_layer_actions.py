@@ -191,7 +191,16 @@ def _project(ll: LayerList, axis: int = 0, mode: str = 'max') -> None:
     meta = {
         key: layer._get_base_state()[key]
         for key in layer._get_base_state()
-        if key not in ('scale', 'translate', 'rotate', 'shear', 'affine')
+        if key
+        not in (
+            'scale',
+            'translate',
+            'rotate',
+            'shear',
+            'affine',
+            'axis_labels',
+            'units',
+        )
     }
     meta.update(  # sourcery skip
         {
