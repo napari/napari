@@ -126,6 +126,8 @@ class Vectors(Layer):
     ----------
     data : (N, 2, D) array
         The start point and projections of N vectors in D dimensions.
+    axis_labels : tuple of str
+        Dimension names of the layer data.
     features : Dataframe-like
         Features table where each row corresponds to a vector and each column
         is a feature.
@@ -162,6 +164,8 @@ class Vectors(Layer):
     out_of_slice_display : bool
         If True, renders vectors not just in central plane but also slightly out of slice
         according to specified point marker size.
+    units: tuple of pint.Unit
+        Units of the layer data in world coordinates.
 
     Notes
     -----

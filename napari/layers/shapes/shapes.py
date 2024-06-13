@@ -212,6 +212,8 @@ class Shapes(Layer):
     data : (N, ) list of array
         List of shape data, where each element is an (N, D) array of the
         N vertices of a shape in D dimensions.
+    axis_labels : tuple of str
+        Dimension names of the layer data.
     features : Dataframe-like
         Features table where each row corresponds to a shape and each column
         is a feature.
@@ -264,6 +266,8 @@ class Shapes(Layer):
 
         The ADD_RECTANGLE, ADD_ELLIPSE, ADD_LINE, ADD_PATH, and ADD_POLYGON
         modes all allow for their corresponding shape type to be added.
+    units: tuple of pint.Unit
+        Units of the layer data in world coordinates.
 
     Notes
     -----

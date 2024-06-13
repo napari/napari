@@ -155,6 +155,8 @@ class Surface(IntensityVisualizationMixin, Layer):
         of the mesh triangles. The third element is the (K0, ..., KL, N)
         array of values used to color vertices where the additional L
         dimensions are used to color the same mesh with different values.
+    axis_labels : tuple of str
+        Dimension names of the layer data.
     vertices : (N, D) array
         Vertices of mesh triangles.
     faces : (M, 3) array of int
@@ -190,6 +192,8 @@ class Surface(IntensityVisualizationMixin, Layer):
         Whether and how to display the edges of the surface mesh with a wireframe.
     normals : SurfaceNormals
         Whether and how to display the face and vertex normals of the surface mesh.
+    units: tuple of pint.Unit
+        Units of the layer data in world coordinates.
 
 
     Notes

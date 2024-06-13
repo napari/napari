@@ -203,6 +203,8 @@ class Points(Layer):
     ----------
     data : array (N, D)
         Coordinates for N points in D dimensions.
+    axis_labels : tuple of str
+        Dimension names of the layer data.
     features : DataFrame-like
         Features table where each row corresponds to a point and each column
         is a feature.
@@ -300,6 +302,8 @@ class Points(Layer):
         Lower and upper limits for the size of points in canvas pixels.
     shown : 1-D array of bool
         Whether each point is shown.
+    units: tuple of pint.Unit
+        Units of the layer data in world coordinates.
 
     Notes
     -----

@@ -152,6 +152,8 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         multiscale image. Please note multiscale rendering is only
         supported in 2D. In 3D, only the lowest resolution scale is
         displayed.
+    axis_labels : tuple of str
+        Dimension names of the layer data.
     metadata : dict
         Image metadata.
     rgb : bool
@@ -208,7 +210,8 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         Clipping planes defined in data coordinates, used to clip the volume.
     custom_interpolation_kernel_2d : np.ndarray
         Convolution kernel used with the 'custom' interpolation mode in 2D rendering.
-
+    units: tuple of pint.Unit
+        Units of the layer data in world coordinates.
     Notes
     -----
     _data_view : array (N, M), (N, M, 3), or (N, M, 4)

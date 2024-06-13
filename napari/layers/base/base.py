@@ -275,7 +275,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         Array of thumbnail data for the layer.
     visible : bool
         Whether the layer visual is currently being displayed.
-    unts: tuple of pint.Unit
+    units: tuple of pint.Unit
         Units of the layer data in world coordinates.
     z_index : int
         Depth of the layer visual relative to other visuals in the scenecanvas.

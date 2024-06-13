@@ -131,31 +131,35 @@ class ScalarFieldBase(Layer, ABC):
         multiscale image. Please note multiscale rendering is only
         supported in 2D. In 3D, only the lowest resolution scale is
         displayed.
+    axis_labels : tuple of str
+        Dimension names of the layer data.
+    custom_interpolation_kernel_2d : np.ndarray
+        Convolution kernel used with the 'custom' interpolation mode in 2D rendering.
+    depiction : str
+        3D Depiction mode used by vispy. Must be one of our supported modes.
+    experimental_clipping_planes : ClippingPlaneList
+        Clipping planes defined in data coordinates, used to clip the volume.
     metadata : dict
         Image metadata.
+    mode : str
+        Interactive mode. The normal, default mode is PAN_ZOOM, which
+        allows for normal interactivity with the canvas.
+
+        In TRANSFORM mode the image can be transformed interactively.
     multiscale : bool
         Whether the data is a multiscale image or not. Multiscale data is
         represented by a list of array like image data. The first image in the
         list should be the largest. Please note multiscale rendering is only
         supported in 2D. In 3D, only the lowest resolution scale is
         displayed.
-    mode : str
-        Interactive mode. The normal, default mode is PAN_ZOOM, which
-        allows for normal interactivity with the canvas.
-
-        In TRANSFORM mode the image can be transformed interactively.
-    rendering : str
-        Rendering mode used by vispy. Must be one of our supported
-        modes.
-    depiction : str
-        3D Depiction mode used by vispy. Must be one of our supported modes.
     plane : SlicingPlane or dict
         Properties defining plane rendering in 3D. Valid dictionary keys are
         {'position', 'normal', 'thickness'}.
-    experimental_clipping_planes : ClippingPlaneList
-        Clipping planes defined in data coordinates, used to clip the volume.
-    custom_interpolation_kernel_2d : np.ndarray
-        Convolution kernel used with the 'custom' interpolation mode in 2D rendering.
+    rendering : str
+        Rendering mode used by vispy. Must be one of our supported
+        modes.
+    units: tuple of pint.Unit
+        Units of the layer data in world coordinates.
 
     Notes
     -----

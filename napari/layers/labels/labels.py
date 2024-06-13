@@ -164,6 +164,8 @@ class Labels(ScalarFieldBase):
         belongs to. The label 0 is rendered as transparent. Please note
         multiscale rendering is only supported in 2D. In 3D, only
         the lowest resolution scale is displayed.
+    axis_labels : tuple of str
+        Dimension names of the layer data.
     multiscale : bool
         Whether the data is a multiscale image or not. Multiscale data is
         represented by a list of array like image data. The first image in the
@@ -231,6 +233,8 @@ class Labels(ScalarFieldBase):
         Properties defining plane rendering in 3D.
     experimental_clipping_planes : ClippingPlaneList
         Clipping planes defined in data coordinates, used to clip the volume.
+    units: tuple of pint.Unit
+        Units of the layer data in world coordinates.
 
     Notes
     -----
