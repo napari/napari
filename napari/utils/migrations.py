@@ -214,7 +214,14 @@ def deprecated_class_name(
 
 
 class _DeprecatingDict(dict[str, Any]):
-    """A dict that issues warning messages when deprecated keys are accessed."""
+    """A dictionary that issues warning messages when deprecated keys are accessed.
+
+    Deprecated keys and values are not stored as part of the dictionary, so will not
+    appear when iterating over this or its items.
+
+    Instead deprecated items can only be accessed using `__getitem__`, `__setitem__`,
+    and `__delitem__`, or using `self.deprecations` directly.
+    """
 
     # Maps from a deprecated key to its value and deprecation message.
     deprecations: dict[str, tuple[Any, str]]
@@ -229,6 +236,29 @@ class _DeprecatingDict(dict[str, Any]):
             warnings.warn(message, DeprecationWarning)
             return value
         return super().__getitem__(key)
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        if key in self.deprecations:
+            _, message = self.deprecations[key]
+            warnings.warn(message, DeprecationWarning)
+            self.deprecations[key] = value, message
+            return None
+        return super().__setitem__(key, value)
+
+    def __delitem__(self, key: str) -> None:
+        if key in self.deprecations:
+            _, message = self.deprecations[key]
+            warnings.warn(message, DeprecationWarning)
+            del self.deprecations[key]
+            return None
+        return super().__delitem__(key)
+
+    def __contains__(self, key: object) -> bool:
+        if key in self.deprecations:
+            _, message = self.deprecations[key]
+            warnings.warn(message, DeprecationWarning)
+            return True
+        return super().__contains__(key)
 
     def deprecate_with_replacement(
         self,

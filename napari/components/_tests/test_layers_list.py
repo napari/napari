@@ -427,8 +427,10 @@ def test_layers_save_selected(builtins, tmpdir, layer_data_and_types):
 
 
 # the layers fixture is defined in napari/conftest.py
-# TODO: ignore the deprecated `edge_*` access more specifically
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
+# TODO: this warning filter can be removed when a new version
+# of napari-svg includes the following PR:
+# https://github.com/napari/napari-svg/pull/38
+@pytest.mark.filterwarnings('ignore:edge_:DeprecationWarning')
 def test_layers_save_svg(tmpdir, layers, napari_svg_name):
     """Test saving all layer data to an svg."""
     pm = npe2.PluginManager.instance()
