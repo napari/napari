@@ -430,7 +430,7 @@ def test_layers_save_selected(builtins, tmpdir, layer_data_and_types):
 # TODO: this warning filter can be removed when a new version
 # of napari-svg includes the following PR:
 # https://github.com/napari/napari-svg/pull/38
-@pytest.mark.filterwarnings('ignore:edge_:DeprecationWarning')
+@pytest.mark.filterwarnings('ignore:edge_:FutureWarning')
 def test_layers_save_svg(tmpdir, layers, napari_svg_name):
     """Test saving all layer data to an svg."""
     pm = npe2.PluginManager.instance()

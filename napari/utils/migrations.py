@@ -240,14 +240,14 @@ class _DeprecatingDict(dict[str, Any]):
     def __getitem__(self, key: str) -> Any:
         if key in self.deprecations:
             value, message = self.deprecations[key]
-            warnings.warn(message, DeprecationWarning)
+            warnings.warn(message, FutureWarning)
             return value
         return super().__getitem__(key)
 
     def __setitem__(self, key: str, value: Any) -> None:
         if key in self.deprecations:
             _, message = self.deprecations[key]
-            warnings.warn(message, DeprecationWarning)
+            warnings.warn(message, FutureWarning)
             self.deprecations[key] = value, message
             return None
         return super().__setitem__(key, value)
@@ -255,7 +255,7 @@ class _DeprecatingDict(dict[str, Any]):
     def __delitem__(self, key: str) -> None:
         if key in self.deprecations:
             _, message = self.deprecations[key]
-            warnings.warn(message, DeprecationWarning)
+            warnings.warn(message, FutureWarning)
             del self.deprecations[key]
             return None
         return super().__delitem__(key)
@@ -264,7 +264,7 @@ class _DeprecatingDict(dict[str, Any]):
         if key in self.deprecations:
             key = cast(str, key)
             _, message = self.deprecations[key]
-            warnings.warn(message, DeprecationWarning)
+            warnings.warn(message, FutureWarning)
             return True
         return super().__contains__(key)
 
