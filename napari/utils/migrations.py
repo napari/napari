@@ -65,7 +65,7 @@ def rename_argument(
                         version=version,
                         since_version=since_version,
                     ),
-                    category=DeprecationWarning,
+                    category=FutureWarning,
                     stacklevel=2,
                 )
                 kwargs = kwargs.copy()
