@@ -150,10 +150,6 @@ class Viewer(ViewerModel):
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
             By default, True.
-        fit_to_data_extent: bool, optional
-            Tightly fit the canvas around the data to prevent margins from
-            showing in the screenshot. If False, a screenshot of the whole
-            currently visible canvas will be generated.
 
         Returns
         -------
