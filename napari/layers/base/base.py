@@ -993,7 +993,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         Returns
         -------
-        DeprecatingDict
+        _DeprecatingDict
             Dictionary of attributes on base layer.
         """
         return _DeprecatingDict(
@@ -1016,7 +1016,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         )
 
     @abstractmethod
-    def _get_state(self) -> _DeprecatingDict:
+    def _get_state(self) -> dict[str, Any]:
         raise NotImplementedError
 
     @property
