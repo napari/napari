@@ -53,6 +53,8 @@ class LayerTypeWithData(NamedTuple):
 
 
 np.random.seed(0)
+
+
 _IMAGE = LayerTypeWithData(
     type=Image,
     data=np.random.rand(8, 8),
