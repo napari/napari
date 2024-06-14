@@ -10,6 +10,7 @@ appdirs==1.4.4
     # via
     #   napari (napari_repo/pyproject.toml)
     #   npe2
+    #   pint
 appnope==0.1.4
     # via ipykernel
 asciitree==0.3.3
@@ -29,7 +30,7 @@ build==1.2.1
     # via npe2
 cachey==0.2.1
     # via napari (napari_repo/pyproject.toml)
-certifi==2024.2.2
+certifi==2024.6.2
     # via
     #   napari (napari_repo/pyproject.toml)
     #   requests
@@ -51,7 +52,7 @@ coverage==7.5.3
     #   pytest-cov
 cycler==0.12.1
     # via matplotlib
-dask==2024.5.1
+dask==2024.5.2
     # via napari (napari_repo/pyproject.toml)
 debugpy==1.8.1
     # via ipykernel
@@ -78,11 +79,15 @@ filelock==3.14.0
     # via
     #   torch
     #   virtualenv
-fonttools==4.52.4
+flexcache==0.3
+    # via pint
+flexparser==0.3.1
+    # via pint
+fonttools==4.53.0
     # via matplotlib
 freetype-py==2.4.0
     # via vispy
-fsspec==2024.5.0
+fsspec==2024.6.0
     # via
     #   napari (napari_repo/pyproject.toml)
     #   dask
@@ -91,7 +96,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.103.0
+hypothesis==6.103.1
     # via napari (napari_repo/pyproject.toml)
 idna==3.7
     # via requests
@@ -114,7 +119,7 @@ ipykernel==6.29.4
     # via
     #   napari-console
     #   qtconsole
-ipython==8.24.0
+ipython==8.25.0
     # via
     #   napari (napari_repo/pyproject.toml)
     #   ipykernel
@@ -156,7 +161,7 @@ lxml==5.2.2
     #   lxml-html-clean
 lxml-html-clean==0.1.1
     # via lxml
-magicgui==0.8.2
+magicgui==0.8.3
     # via napari (napari_repo/pyproject.toml)
 markdown-it-py==3.0.0
     # via rich
@@ -221,7 +226,7 @@ numpy==1.26.4
     #   zarr
 numpydoc==1.7.0
     # via napari (napari_repo/pyproject.toml)
-packaging==24.0
+packaging==24.1
     # via
     #   build
     #   dask
@@ -253,7 +258,7 @@ pillow==10.3.0
     #   matplotlib
     #   pyscreeze
     #   scikit-image
-pint==0.23
+pint==0.24
     # via napari (napari_repo/pyproject.toml)
 pip==24.0
     # via napari-plugin-manager
@@ -266,13 +271,13 @@ pluggy==1.5.0
     # via
     #   pytest
     #   pytest-qt
-pooch==1.8.1
+pooch==1.8.2
     # via
     #   napari (napari_repo/pyproject.toml)
     #   scikit-image
 pretend==1.0.9
     # via napari (napari_repo/pyproject.toml)
-prompt-toolkit==3.0.45
+prompt-toolkit==3.0.46
     # via ipython
 psutil==5.9.8
     # via
@@ -292,7 +297,7 @@ pyautogui==0.9.54
     # via napari (napari_repo/pyproject.toml)
 pyconify==0.1.6
     # via superqt
-pydantic==2.7.2
+pydantic==2.7.3
     # via
     #   napari (napari_repo/pyproject.toml)
     #   app-model
@@ -300,7 +305,7 @@ pydantic==2.7.2
     #   pydantic-compat
 pydantic-compat==0.1.2
     # via app-model
-pydantic-core==2.18.3
+pydantic-core==2.18.4
     # via pydantic
 pygetwindow==0.0.9
     # via pyautogui
@@ -341,7 +346,7 @@ pyqt5-sip==12.13.0
     # via pyqt5
 pyqt6==6.7.0
     # via napari (napari_repo/pyproject.toml)
-pyqt6-qt6==6.7.0
+pyqt6-qt6==6.7.1
     # via pyqt6
 pyqt6-sip==13.6.0
     # via pyqt6
@@ -359,7 +364,7 @@ pyside6-essentials==6.4.2
     # via
     #   pyside6
     #   pyside6-addons
-pytest==8.2.1
+pytest==8.2.2
     # via
     #   napari (napari_repo/pyproject.toml)
     #   pytest-cov
@@ -466,7 +471,7 @@ sphinxcontrib-serializinghtml==1.1.10
     # via sphinx
 stack-data==0.6.3
     # via ipython
-superqt==0.6.6
+superqt==0.6.7
     # via
     #   napari (napari_repo/pyproject.toml)
     #   magicgui
@@ -498,9 +503,9 @@ toolz==0.12.1
     #   napari (napari_repo/pyproject.toml)
     #   dask
     #   partd
-torch==2.3.0
+torch==2.3.1
     # via napari (napari_repo/pyproject.toml)
-tornado==6.4
+tornado==6.4.1
     # via
     #   ipykernel
     #   jupyter-client
@@ -517,10 +522,12 @@ traitlets==5.14.3
     #   qtconsole
 typer==0.12.3
     # via npe2
-typing-extensions==4.12.0
+typing-extensions==4.12.2
     # via
     #   napari (napari_repo/pyproject.toml)
     #   app-model
+    #   flexcache
+    #   flexparser
     #   ipython
     #   magicgui
     #   pint
@@ -547,5 +554,5 @@ xarray==2024.5.0
     # via napari (napari_repo/pyproject.toml)
 zarr==2.18.2
     # via napari (napari_repo/pyproject.toml)
-zipp==3.19.0
+zipp==3.19.2
     # via importlib-metadata
