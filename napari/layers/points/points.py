@@ -1427,12 +1427,12 @@ class Points(Layer):
         self._border._refresh_colors(self.properties, update_color_mapping)
         self._face._refresh_colors(self.properties, update_color_mapping)
 
-    def _get_state(self):
+    def _get_state(self) -> dict[str, Any]:
         """Get dictionary of layer state.
 
         Returns
         -------
-        state : dict
+        state : dict[str, Any]
             Dictionary of layer state.
         """
         state = self._get_base_state()

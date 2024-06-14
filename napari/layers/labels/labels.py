@@ -3,6 +3,7 @@ from collections import deque
 from collections.abc import Sequence
 from contextlib import contextmanager
 from typing import (
+    Any,
     Callable,
     ClassVar,
     Optional,
@@ -627,12 +628,12 @@ class Labels(ScalarFieldBase):
             data = data[0]
         return data
 
-    def _get_state(self):
+    def _get_state(self) -> dict[str, Any]:
         """Get dictionary of layer state.
 
         Returns
         -------
-        state : dict
+        state : dict[str, Any]
             Dictionary of layer state.
         """
         state = self._get_base_state()
