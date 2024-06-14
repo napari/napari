@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Generator, List, Optional, Tuple
+from collections.abc import Generator
+from typing import TYPE_CHECKING, Optional
 
 from napari.utils.translations import trans
 
@@ -28,7 +29,7 @@ class Node:
         The parent of this Node.
     """
 
-    def __init__(self, name: str = "Node") -> None:
+    def __init__(self, name: str = 'Node') -> None:
         self.parent: Optional[Group] = None
         self._name = name
 
@@ -51,13 +52,13 @@ class Node:
         """Return index of this Node in its parent, or None if no parent."""
         return self.parent.index(self) if self.parent is not None else None
 
-    def index_from_root(self) -> Tuple[int, ...]:
+    def index_from_root(self) -> tuple[int, ...]:
         """Return index of this Node relative to root.
 
         Will return ``()`` if this object *is* the root.
         """
         item = self
-        indices: List[int] = []
+        indices: list[int] = []
         while item.parent is not None:
             indices.insert(0, item.index_in_parent())  # type: ignore
             item = item.parent
@@ -87,9 +88,9 @@ class Node:
 
     def __str__(self):
         """Render ascii tree string representation of this node"""
-        return "\n".join(self._render())
+        return '\n'.join(self._render())
 
-    def _render(self) -> List[str]:
+    def _render(self) -> list[str]:
         """Return list of strings that can render ascii tree.
 
         For ``Node``, we just return the name of this specific node.
@@ -111,7 +112,7 @@ class Node:
             return self
         raise IndexError(
             trans._(
-                "Cannot unparent orphaned Node: {node!r}",
+                'Cannot unparent orphaned Node: {node!r}',
                 deferred=True,
                 node=self,
             ),

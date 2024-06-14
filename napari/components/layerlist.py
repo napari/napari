@@ -1,10 +1,15 @@
+from __future__ import annotations
+
 import itertools
+import typing
 import warnings
+from collections.abc import Iterable
 from functools import cached_property
-from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 import numpy as np
 
+from napari.components.dims import RangeTuple
 from napari.layers import Layer
 from napari.layers.utils.layer_utils import Extent
 from napari.utils.events.containers import SelectableEventedList
@@ -13,6 +18,12 @@ from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from npe2.manifest.io import WriterContribution
+    from typing_extensions import Self
+
+
+def get_name(layer: Layer) -> str:
+    """Return the name of a layer."""
+    return layer.name
 
 
 class LayerList(SelectableEventedList[Layer]):
@@ -57,7 +68,7 @@ class LayerList(SelectableEventedList[Layer]):
         super().__init__(
             data=data,
             basetype=Layer,
-            lookup={str: lambda e: e.name},
+            lookup={str: get_name},
         )
         self._create_contexts()
 
@@ -86,13 +97,7 @@ class LayerList(SelectableEventedList[Layer]):
             self.events.inserted.connect(self._ctx_keys.update)
             self.events.removed.connect(self._ctx_keys.update)
 
-        self._selection_ctx = create_context(self)
-        if (
-            self._selection_ctx is not None
-        ):  # happens during Viewer type creation
-            self._selection_ctx_keys = LayerListSelectionContextKeys(
-                self._selection_ctx
-            )
+            self._selection_ctx_keys = LayerListSelectionContextKeys(self._ctx)
             self.selection.events.changed.connect(
                 self._selection_ctx_keys.update
             )
@@ -155,6 +160,15 @@ class LayerList(SelectableEventedList[Layer]):
                 )
         return values
 
+    @typing.overload
+    def __getitem__(self, item: Union[int, str]) -> Layer: ...
+
+    @typing.overload
+    def __getitem__(self, item: slice) -> Self: ...
+
+    def __getitem__(self, item):
+        return super().__getitem__(item)
+
     def __setitem__(self, key, value):
         old = self._list[key]
         if isinstance(key, slice):
@@ -172,6 +186,13 @@ class LayerList(SelectableEventedList[Layer]):
         new_layer.events.extent.connect(self._clean_cache)
         new_layer.events._extent_augmented.connect(self._clean_cache)
         super().insert(index, new_layer)
+
+    def remove_selected(self):
+        """Remove selected layers from LayerList, but first unlink them."""
+        if not self.selection:
+            return
+        self.unlink_layers(self.selection)
+        super().remove_selected()
 
     def toggle_selected_visibility(self):
         """Toggle visibility of selected layers"""
@@ -312,7 +333,7 @@ class LayerList(SelectableEventedList[Layer]):
         Returns
         -------
         extent : Extent
-             extent for selected layers
+            extent for selected layers
         """
         extent_list = [layer.extent for layer in layers]
         return Extent(
@@ -332,10 +353,12 @@ class LayerList(SelectableEventedList[Layer]):
         return self.get_extent(list(self))
 
     @property
-    def _ranges(self) -> Tuple[Tuple[float, float, float], ...]:
+    def _ranges(self) -> tuple[RangeTuple, ...]:
         """Get ranges for Dims.range in world coordinates."""
         ext = self.extent
-        return tuple(zip(ext.world[0], ext.world[1], ext.step))
+        return tuple(
+            RangeTuple(*x) for x in zip(ext.world[0], ext.world[1], ext.step)
+        )
 
     @property
     def ndim(self) -> int:
@@ -387,8 +410,8 @@ class LayerList(SelectableEventedList[Layer]):
         *,
         selected: bool = False,
         plugin: Optional[str] = None,
-        _writer: Optional['WriterContribution'] = None,
-    ) -> List[str]:
+        _writer: Optional[WriterContribution] = None,
+    ) -> list[str]:
         """Save all or only selected layers to a path using writer plugins.
 
         If ``plugin`` is not provided and only one layer is targeted, then we
@@ -452,9 +475,9 @@ class LayerList(SelectableEventedList[Layer]):
         )
 
         if selected:
-            msg = trans._("No layers selected", deferred=True)
+            msg = trans._('No layers selected', deferred=True)
         else:
-            msg = trans._("No layers to save", deferred=True)
+            msg = trans._('No layers to save', deferred=True)
 
         if not layers:
             warnings.warn(msg)

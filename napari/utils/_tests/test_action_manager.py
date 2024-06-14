@@ -1,6 +1,7 @@
 """
 This module test some of the behavior of action manager.
 """
+
 from unittest.mock import Mock
 
 import pytest
@@ -8,7 +9,7 @@ import pytest
 from napari.utils.action_manager import ActionManager
 
 
-@pytest.fixture
+@pytest.fixture()
 def action_manager():
     """
     Unlike normal napari we use a different instance we have complete control
@@ -57,11 +58,11 @@ def test_bind_key_generator(action_manager):
         yield 'X'
 
     action_manager.register_action(
-        "napari:test_action_1",
+        'napari:test_action_1',
         _sample_generator,
-        "this is a test action",
+        'this is a test action',
         None,
     )
 
-    with pytest.raises(ValueError, match="generator functions"):
+    with pytest.raises(ValueError, match='generator functions'):
         action_manager.bind_button('napari:test_action_1', Mock())

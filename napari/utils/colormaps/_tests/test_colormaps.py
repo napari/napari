@@ -18,11 +18,11 @@ from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.colormaps.vendored import cm
 
 
-@pytest.mark.parametrize("name", list(AVAILABLE_COLORMAPS.keys()))
+@pytest.mark.parametrize('name', list(AVAILABLE_COLORMAPS.keys()))
 def test_colormap(name):
-    if name == 'label_colormap':
+    if name in {'label_colormap', 'custom'}:
         pytest.skip(
-            'label_colormap is inadvertantly added to AVAILABLE_COLORMAPS but is not a normal colormap'
+            'label_colormap  and custom are inadvertantly added to AVAILABLE_COLORMAPS but is not a normal colormap'
         )
 
     np.random.seed(0)
@@ -110,7 +110,7 @@ def test_can_accept_named_mpl_colormap():
     assert cmap.name == cmap_name
 
 
-@pytest.mark.filterwarnings("ignore::UserWarning")
+@pytest.mark.filterwarnings('ignore::UserWarning')
 def test_can_accept_vispy_colormaps_in_dict():
     """Test that we can accept vispy colormaps in a dictionary."""
     colors_a = np.array([[0, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]])
@@ -123,7 +123,7 @@ def test_can_accept_vispy_colormaps_in_dict():
     assert cmap.name == 'a'
 
 
-@pytest.mark.filterwarnings("ignore::UserWarning")
+@pytest.mark.filterwarnings('ignore::UserWarning')
 def test_can_accept_napari_colormaps_in_dict():
     """Test that we can accept vispy colormaps in a dictionary"""
     colors_a = np.array([[0, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]])
@@ -168,7 +168,7 @@ def test_mpl_colormap_exists():
 
 
 @pytest.mark.parametrize(
-    "name,display_name",
+    ('name', 'display_name'),
     [
         ('twilight_shifted', 'twilight shifted'),  # MPL
         ('light_blues', 'light blues'),  # Vispy
@@ -179,7 +179,7 @@ def test_colormap_error_suggestion(name, display_name):
     Test that vispy/mpl errors, when using `display_name`, suggest `name`.
     """
     with pytest.raises(
-        KeyError, match=rf"{display_name}.*you might want to use.*{name}"
+        KeyError, match=rf'{display_name}.*you might want to use.*{name}'
     ):
         vispy_or_mpl_colormap(display_name)
 
@@ -189,7 +189,7 @@ def test_colormap_error_from_inexistent_name():
     Test that vispy/mpl errors when using a wrong name.
     """
     name = 'foobar'
-    with pytest.raises(KeyError, match=rf"{name}.*Recognized colormaps are"):
+    with pytest.raises(KeyError, match=rf'{name}.*Recognized colormaps are'):
         vispy_or_mpl_colormap(name)
 
 
@@ -262,7 +262,7 @@ def test_ensure_colormap_error_with_invalid_hex_color_string():
     Test that ensure_colormap errors when using an invalid hex color string
     """
     color = '#ff'
-    with pytest.raises(KeyError, match=rf"{color}.*Recognized colormaps are"):
+    with pytest.raises(KeyError, match=rf'{color}.*Recognized colormaps are'):
         ensure_colormap(color)
 
 

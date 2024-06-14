@@ -1,7 +1,7 @@
 import contextlib
 import sys
 import time
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pytest
@@ -37,7 +37,7 @@ for cls in all_subclasses(Layer):
 test_data.sort(key=lambda x: x[0].__name__)  # required for xdist to work
 
 
-@pytest.mark.parametrize('LayerType, data, ndim', test_data)
+@pytest.mark.parametrize(('LayerType', 'data', 'ndim'), test_data)
 def test_magicgui_add_data(make_napari_viewer, LayerType, data, ndim):
     """Test that annotating with napari.types.<layer_type>Data works.
 
@@ -84,7 +84,7 @@ def test_add_layer_data_to_viewer_optional(make_napari_viewer):
 @pytest.mark.skipif(
     sys.version_info < (3, 9), reason='Futures not subscriptable before py3.9'
 )
-@pytest.mark.parametrize('LayerType, data, ndim', test_data)
+@pytest.mark.parametrize(('LayerType', 'data', 'ndim'), test_data)
 def test_magicgui_add_future_data(
     qtbot, make_napari_viewer, LayerType, data, ndim
 ):
@@ -149,7 +149,7 @@ def test_magicgui_add_threadworker(qtbot, make_napari_viewer):
     assert np.array_equal(viewer.layers[0].data, DATA)
 
 
-@pytest.mark.parametrize('LayerType, data, ndim', test_data)
+@pytest.mark.parametrize(('LayerType', 'data', 'ndim'), test_data)
 def test_magicgui_get_data(make_napari_viewer, LayerType, data, ndim):
     """Test that annotating parameters with napari.types.<layer_type>Data.
 
@@ -171,7 +171,7 @@ def test_magicgui_get_data(make_napari_viewer, LayerType, data, ndim):
     viewer.add_layer(layer)
 
 
-@pytest.mark.parametrize('LayerType, data, ndim', test_data)
+@pytest.mark.parametrize(('LayerType', 'data', 'ndim'), test_data)
 def test_magicgui_add_layer(make_napari_viewer, LayerType, data, ndim):
     viewer = make_napari_viewer()
 
@@ -190,7 +190,7 @@ def test_magicgui_add_layer_list(make_napari_viewer):
     viewer = make_napari_viewer()
 
     @magicgui
-    def add_layer() -> List[Layer]:
+    def add_layer() -> list[Layer]:
         a = Image(data=np.random.randint(0, 10, size=(10, 10)))
         b = Labels(data=np.random.randint(0, 10, size=(10, 10)))
         return [a, b]
@@ -230,7 +230,7 @@ def test_magicgui_add_layer_data_tuple_list(make_napari_viewer):
     viewer = make_napari_viewer()
 
     @magicgui
-    def add_layer() -> List[types.LayerDataTuple]:
+    def add_layer() -> list[types.LayerDataTuple]:
         data1 = (np.random.rand(10, 10), {'name': 'hi'})
         data2 = (
             np.random.randint(0, 10, size=(10, 10)),
@@ -330,7 +330,8 @@ def test_mgui_forward_refs(name, monkeypatch):
 
     wdg, options = get_widget_class(annotation=name)
     if name == 'napari.Viewer':
-        assert wdg == magicgui.widgets.EmptyWidget and 'bind' in options
+        assert wdg == magicgui.widgets.EmptyWidget
+        assert 'bind' in options
     else:
         assert wdg == magicgui.widgets.Combobox
 
@@ -339,7 +340,7 @@ def test_layers_populate_immediately(make_napari_viewer):
     """make sure that the layers dropdown is populated upon adding to viewer"""
     from magicgui.widgets import create_widget
 
-    labels_layer = create_widget(annotation=Labels, label="ROI")
+    labels_layer = create_widget(annotation=Labels, label='ROI')
     viewer = make_napari_viewer()
     viewer.add_labels(np.zeros((10, 10), dtype=int))
     assert not len(labels_layer.choices)

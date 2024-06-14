@@ -157,8 +157,8 @@ def test_range_one_images_and_points(make_napari_viewer):
     assert np.sum(view.dims._displayed_sliders) == 3
 
 
-@pytest.mark.enable_console
-@pytest.mark.filterwarnings("ignore::DeprecationWarning:jupyter_client")
+@pytest.mark.enable_console()
+@pytest.mark.filterwarnings('ignore::DeprecationWarning:jupyter_client')
 def test_update_console(make_napari_viewer):
     """Test updating the console with local variables."""
     viewer = make_napari_viewer()
@@ -181,9 +181,9 @@ def test_update_console(make_napari_viewer):
         del viewer.window._qt_viewer.console.shell.user_ns[k]
 
 
-@pytest.mark.enable_console
-@pytest.mark.filterwarnings("ignore::DeprecationWarning:jupyter_client")
-def test_update_lazy_console(make_napari_viewer, capsys):
+@pytest.mark.enable_console()
+@pytest.mark.filterwarnings('ignore::DeprecationWarning:jupyter_client')
+def test_update_lazy_console(make_napari_viewer, caplog):
     """Test updating the console with local variables,
     before console is instantiated."""
     viewer = make_napari_viewer()
@@ -191,14 +191,14 @@ def test_update_lazy_console(make_napari_viewer, capsys):
 
     a = 4
     b = 5
-    viewer.update_console(["a", "b"])
+    viewer.update_console(['a', 'b'])
 
     x = np.arange(5)
-    viewer.update_console("x")
+    viewer.update_console('x')
 
-    viewer.update_console("missing")
-    captured = capsys.readouterr()
-    assert 'Could not get' in captured.out
+    viewer.update_console('missing')
+
+    assert 'Could not get' in caplog.text
     with pytest.raises(TypeError):
         viewer.update_console(x)
 

@@ -7,7 +7,7 @@ from napari.layers.surface._surface_utils import (
 
 
 @pytest.mark.parametrize(
-    "point,expected_barycentric_coordinates",
+    ('point', 'expected_barycentric_coordinates'),
     [
         ([5, 1, 1], [1 / 3, 1 / 3, 1 / 3]),
         ([5, 0, 0], [1, 0, 0]),

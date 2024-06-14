@@ -31,14 +31,15 @@ def test_ReadOnlyWrapper_setattr():
         tc_read_only.x = 5
 
 
-@pytest.fixture
-def patched_root_dir():
+@pytest.fixture()
+def _patched_root_dir():
     """Simulate a call from outside of napari"""
     with patch('napari.utils.misc.ROOT_DIR', new='/some/other/package'):
         yield
 
 
-def test_PublicOnlyProxy(patched_root_dir):
+@pytest.mark.usefixtures('_patched_root_dir')
+def test_PublicOnlyProxy():
     class X:
         a = 1
         _b = 'nope'
@@ -79,7 +80,7 @@ def test_PublicOnlyProxy(patched_root_dir):
     assert '_private' in dir(t)
 
 
-@pytest.mark.filterwarnings("ignore:Qt libs are available but")
+@pytest.mark.filterwarnings('ignore:Qt libs are available but')
 def test_thread_proxy_guard(monkeypatch, single_threaded_executor):
     class X:
         a = 1
@@ -99,7 +100,8 @@ def test_thread_proxy_guard(monkeypatch, single_threaded_executor):
     assert x.a == 2
 
 
-def test_public_proxy_limited_to_napari(patched_root_dir):
+@pytest.mark.usefixtures('_patched_root_dir')
+def test_public_proxy_limited_to_napari():
     """Test that the recursive public proxy goes no farther than napari."""
     viewer = ViewerModel()
     viewer.add_points(None)
@@ -107,7 +109,8 @@ def test_public_proxy_limited_to_napari(patched_root_dir):
     assert not isinstance(pv.layers[0].data, PublicOnlyProxy)
 
 
-def test_array_from_proxy_objects(patched_root_dir):
+@pytest.mark.usefixtures('_patched_root_dir')
+def test_array_from_proxy_objects():
     """Test that the recursive public proxy goes no farther than napari."""
     viewer = ViewerModel()
     viewer.add_points(None)
@@ -145,7 +148,7 @@ def test_unwrap_on_call():
     """
     evset = EventedSet()
     public_only_evset = PublicOnlyProxy(evset)
-    text = "aaa"
+    text = 'aaa'
     wrapped_text = PublicOnlyProxy(text)
     public_only_evset.add(wrapped_text)
     retrieved_text = next(iter(evset))
@@ -162,12 +165,12 @@ def test_unwrap_setattr():
 
     @dataclass
     class Sample:
-        attribute = "aaa"
+        attribute = 'aaa'
 
     sample = Sample()
     public_only_sample = PublicOnlyProxy(sample)
 
-    text = "bbb"
+    text = 'bbb'
     wrapped_text = PublicOnlyProxy(text)
 
     public_only_sample.attribute = wrapped_text

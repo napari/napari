@@ -1,4 +1,5 @@
 """Units utilities."""
+
 from functools import lru_cache
 from typing import TYPE_CHECKING
 

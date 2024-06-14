@@ -17,7 +17,7 @@ from napari.errors.reader_errors import ReaderPluginError
 from napari.settings import get_settings
 
 
-@pytest.fixture
+@pytest.fixture()
 def reader_dialog(qtbot):
     def _reader_dialog(**kwargs):
         widget = QtReaderDialog(**kwargs)
@@ -56,7 +56,7 @@ def test_reader_dir_with_extension(tmpdir, reader_dialog):
     assert hasattr(widg, 'persist_checkbox')
     assert (
         widg.persist_checkbox.text()
-        == "Remember this choice for files with a .zarr extension"
+        == 'Remember this choice for files with a .zarr extension'
     )
 
 
@@ -113,12 +113,10 @@ def test_prepare_dialog_options_removes_plugin(tmp_plugin: DynamicPlugin):
     tmp2 = tmp_plugin.spawn(register=True)
 
     @tmp_plugin.contribute.reader(filename_patterns=['*.fake'])
-    def _(path):
-        ...
+    def _(path): ...
 
     @tmp2.contribute.reader(filename_patterns=['*.fake'])
-    def _(path):
-        ...
+    def _(path): ...
 
     readers = prepare_remaining_readers(
         ['my-file.fake'],
@@ -138,12 +136,10 @@ def test_open_sample_data_shows_all_readers(
     tmp2 = tmp_plugin.spawn(register=True)
 
     @tmp_plugin.contribute.reader(filename_patterns=['*.fake'])
-    def _(path):
-        ...
+    def _(path): ...
 
     @tmp2.contribute.reader(filename_patterns=['*.fake'])
-    def _(path):
-        ...
+    def _(path): ...
 
     my_sample = SampleDataURI(
         key='tmp-sample',
@@ -159,7 +155,7 @@ def test_open_sample_data_shows_all_readers(
     with mock.patch(
         'napari._qt.dialogs.qt_reader_dialog.handle_gui_reading'
     ) as mock_read:
-        app.commands.execute_command('tmp_plugin.tmp-sample')
+        app.commands.execute_command('tmp_plugin:tmp-sample')
 
     mock_read.assert_called_once_with(
         ['some-path/some-file.fake'],
@@ -193,7 +189,7 @@ def test_open_with_dialog_choices_raises(make_napari_viewer):
     viewer = make_napari_viewer()
 
     get_settings().plugins.extension2reader = {}
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='does not exist'):
         open_with_dialog_choices(
             display_name='Fake Plugin',
             persist=True,

@@ -1,30 +1,26 @@
 import inspect
 import warnings
+from collections.abc import Sequence
 from functools import partial, wraps
 from types import FunctionType, GeneratorType
 from typing import (
     Callable,
-    Dict,
-    List,
     Optional,
-    Sequence,
-    Type,
     TypeVar,
     Union,
 )
 
 from superqt.utils import _qthreading
-from typing_extensions import ParamSpec
 
 from napari.utils.progress import progress
 from napari.utils.translations import trans
 
 __all__ = [
-    "FunctionWorker",
-    "GeneratorWorker",
-    "create_worker",
-    "thread_worker",
-    "register_threadworker_processors",
+    'FunctionWorker',
+    'GeneratorWorker',
+    'create_worker',
+    'thread_worker',
+    'register_threadworker_processors',
 ]
 
 wait_for_workers_to_quit = _qthreading.WorkerBase.await_workers
@@ -47,20 +43,17 @@ class _NotifyingMixin:
         notification_manager.receive_warning(*show_warn_args)
 
 
-_Y = TypeVar("_Y")
-_S = TypeVar("_S")
-_R = TypeVar("_R")
-_P = ParamSpec("_P")
+_Y = TypeVar('_Y')
+_S = TypeVar('_S')
+_R = TypeVar('_R')
 
 
-class FunctionWorker(_qthreading.FunctionWorker[_R], _NotifyingMixin):
-    ...
+class FunctionWorker(_qthreading.FunctionWorker[_R], _NotifyingMixin): ...
 
 
 class GeneratorWorker(
     _qthreading.GeneratorWorker[_Y, _S, _R], _NotifyingMixin
-):
-    ...
+): ...
 
 
 # these are re-implemented from superqt just to provide progress
@@ -70,10 +63,10 @@ def create_worker(
     func: Union[FunctionType, GeneratorType],
     *args,
     _start_thread: Optional[bool] = None,
-    _connect: Optional[Dict[str, Union[Callable, Sequence[Callable]]]] = None,
-    _progress: Optional[Union[bool, Dict[str, Union[int, bool, str]]]] = None,
+    _connect: Optional[dict[str, Union[Callable, Sequence[Callable]]]] = None,
+    _progress: Optional[Union[bool, dict[str, Union[int, bool, str]]]] = None,
     _worker_class: Union[
-        Type[GeneratorWorker], Type[FunctionWorker], None
+        type[GeneratorWorker], type[FunctionWorker], None
     ] = None,
     _ignore_errors: bool = False,
     **kwargs,
@@ -169,7 +162,7 @@ def create_worker(
         if isinstance(worker, FunctionWorker) and total != 0:
             warnings.warn(
                 trans._(
-                    "_progress total != 0 but worker is FunctionWorker and will not yield. Returning indeterminate progress bar...",
+                    '_progress total != 0 but worker is FunctionWorker and will not yield. Returning indeterminate progress bar...',
                     deferred=True,
                 ),
                 RuntimeWarning,
@@ -204,10 +197,10 @@ def create_worker(
 def thread_worker(
     function: Optional[Callable] = None,
     start_thread: Optional[bool] = None,
-    connect: Optional[Dict[str, Union[Callable, Sequence[Callable]]]] = None,
-    progress: Optional[Union[bool, Dict[str, Union[int, bool, str]]]] = None,
+    connect: Optional[dict[str, Union[Callable, Sequence[Callable]]]] = None,
+    progress: Optional[Union[bool, dict[str, Union[int, bool, str]]]] = None,
     worker_class: Union[
-        Type[FunctionWorker], Type[GeneratorWorker], None
+        type[FunctionWorker], type[GeneratorWorker], None
     ] = None,
     ignore_errors: bool = False,
 ):
@@ -219,10 +212,10 @@ def thread_worker(
 
     The returned worker will have these signals:
 
-        - *started*: emitted when the work is started
-        - *finished*: emitted when the work is finished
-        - *returned*: emitted with return value
-        - *errored*: emitted with error object on Exception
+    - *started*: emitted when the work is started
+    - *finished*: emitted when the work is finished
+    - *returned*: emitted with return value
+    - *errored*: emitted with error object on Exception
 
     It will also have a ``worker.start()`` method that can be used to start
     execution of the function in another thread. (useful if you need to connect
@@ -231,17 +224,17 @@ def thread_worker(
     If the decorated function is a generator, the returned worker will also
     provide these signals:
 
-        - *yielded*: emitted with yielded values
-        - *paused*: emitted when a running job has successfully paused
-        - *resumed*: emitted when a paused job has successfully resumed
-        - *aborted*: emitted when a running job is successfully aborted
+    - *yielded*: emitted with yielded values
+    - *paused*: emitted when a running job has successfully paused
+    - *resumed*: emitted when a paused job has successfully resumed
+    - *aborted*: emitted when a running job is successfully aborted
 
     And these methods:
 
-        - *quit*: ask the thread to quit
-        - *toggle_paused*: toggle the running state of the thread.
-        - *send*: send a value into the generator.  (This requires that your
-          decorator function uses the ``value = yield`` syntax)
+    - *quit*: ask the thread to quit
+    - *toggle_paused*: toggle the running state of the thread.
+    - *send*: send a value into the generator.  (This requires that your
+        decorator function uses the ``value = yield`` syntax)
 
     Parameters
     ----------
@@ -328,9 +321,11 @@ _new_worker_qthread = _qthreading.new_worker_qthread
 
 
 def _add_worker_data(worker: FunctionWorker, return_type, source=None):
-    from napari._app_model.injection import _processors
+    from napari._qt._qapp_model.injection._qprocessors import (
+        _add_layer_data_to_viewer,
+    )
 
-    cb = _processors._add_layer_data_to_viewer
+    cb = _add_layer_data_to_viewer
     worker.signals.returned.connect(
         partial(cb, return_type=return_type, source=source)
     )
@@ -339,9 +334,11 @@ def _add_worker_data(worker: FunctionWorker, return_type, source=None):
 def _add_worker_data_from_tuple(
     worker: FunctionWorker, return_type, source=None
 ):
-    from napari._app_model.injection import _processors
+    from napari._qt._qapp_model.injection._qprocessors import (
+        _add_layer_data_tuples_to_viewer,
+    )
 
-    cb = _processors._add_layer_data_tuples_to_viewer
+    cb = _add_layer_data_tuples_to_viewer
     worker.signals.returned.connect(
         partial(cb, return_type=return_type, source=source)
     )
@@ -359,7 +356,7 @@ def register_threadworker_processors():
 
     app = get_app()
 
-    for _type in (LayerDataTuple, List[LayerDataTuple]):
+    for _type in (LayerDataTuple, list[LayerDataTuple]):
         t = FunctionWorker[_type]
         magicgui.register_type(t, return_callback=_mgui.add_worker_data)
         app.injection_store.register(

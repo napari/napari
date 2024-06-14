@@ -1,5 +1,4 @@
 from functools import lru_cache
-from typing import Tuple
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -47,7 +46,7 @@ def sphere_indices(radius, scale):
     """Generate centered indices within circle or n-dim ellipsoid.
 
     Parameters
-    -------
+    ----------
     radius : float
         Radius of circle/sphere
     scale : tuple of float
@@ -205,7 +204,7 @@ def mouse_event_to_labels_coordinate(layer, event):
     return coordinates
 
 
-def get_contours(labels, thickness: int, background_label: int):
+def get_contours(labels: np.ndarray, thickness: int, background_label: int):
     """Computes the contours of a 2D label image.
 
     Parameters
@@ -220,7 +219,7 @@ def get_contours(labels, thickness: int, background_label: int):
 
     Returns
     -------
-        A new label image in which only the boundaries of the input image are kept.
+    A new label image in which only the boundaries of the input image are kept.
     """
     struct_elem = ndi.generate_binary_structure(labels.ndim, 1)
 
@@ -239,16 +238,14 @@ def get_contours(labels, thickness: int, background_label: int):
 
 
 def expand_slice(
-    axes_slice: Tuple[slice, ...], shape: tuple, offset: int
-) -> Tuple[slice, ...]:
+    axes_slice: tuple[slice, ...], shape: tuple, offset: int
+) -> tuple[slice, ...]:
     """Expands or shrinks a provided multi-axis slice by a given offset"""
     return tuple(
-        [
-            slice(
-                max(0, min(max_size, s.start - offset)),
-                max(0, min(max_size, s.stop + offset)),
-                s.step,
-            )
-            for s, max_size in zip(axes_slice, shape)
-        ]
+        slice(
+            max(0, min(max_size, s.start - offset)),
+            max(0, min(max_size, s.stop + offset)),
+            s.step,
+        )
+        for s, max_size in zip(axes_slice, shape)
     )

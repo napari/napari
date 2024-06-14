@@ -5,10 +5,11 @@ from napari.components.viewer_model import prune_kwargs
 TEST_KWARGS = {
     'scale': (0.75, 1),
     'blending': 'translucent',
-    'num_colors': 10,
     'edge_color': 'red',
+    'border_color': 'blue',
     'z_index': 20,
     'edge_width': 2,
+    'border_width': 1,
     'face_color': 'white',
     'multiscale': False,
     'name': 'name',
@@ -29,7 +30,6 @@ EXPECTATIONS = [
         'labels',
         {
             'scale': (0.75, 1),
-            'num_colors': 10,
             'multiscale': False,
             'name': 'name',
             'blending': 'translucent',
@@ -40,8 +40,8 @@ EXPECTATIONS = [
         {
             'scale': (0.75, 1),
             'blending': 'translucent',
-            'edge_color': 'red',
-            'edge_width': 2,
+            'border_color': 'blue',
+            'border_width': 1,
             'face_color': 'white',
             'name': 'name',
         },
@@ -77,11 +77,11 @@ EXPECTATIONS = [
 ids = [i[0] for i in EXPECTATIONS]
 
 
-@pytest.mark.parametrize('label_type, expectation', EXPECTATIONS, ids=ids)
+@pytest.mark.parametrize(('label_type', 'expectation'), EXPECTATIONS, ids=ids)
 def test_prune_kwargs(label_type, expectation):
     assert prune_kwargs(TEST_KWARGS, label_type) == expectation
 
 
 def test_prune_kwargs_raises():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Invalid layer_type'):
         prune_kwargs({}, 'nonexistent_layer_type')

@@ -1,9 +1,9 @@
-"""Provides a QtPluginSorter that allows the user to change plugin call order.
-"""
+"""Provides a QtPluginSorter that allows the user to change plugin call order."""
+
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, List, Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 from napari_plugin_engine import HookCaller, HookImplementation
 from qtpy.QtCore import QEvent, Qt, Signal, Slot
@@ -37,8 +37,8 @@ if TYPE_CHECKING:
 def rst2html(text):
     def ref(match):
         _text = match.groups()[0].split()[0]
-        if _text.startswith("~"):
-            _text = _text.split(".")[-1]
+        if _text.startswith('~'):
+            _text = _text.split('.')[-1]
         return f'``{_text}``'
 
     def link(match):
@@ -50,7 +50,7 @@ def rst2html(text):
     text = re.sub(r':[a-z]+:`([^`]+)`', ref, text, flags=re.DOTALL)
     text = re.sub(r'`([^`]+)`_', link, text, flags=re.DOTALL)
     text = re.sub(r'``([^`]+)``', '<code>\\1</code>', text)
-    return text.replace("\n", "<br>")
+    return text.replace('\n', '<br>')
 
 
 class ImplementationListItem(QFrame):
@@ -89,7 +89,7 @@ class ImplementationListItem(QFrame):
         self.position_label = QLabel()
         self.update_position_label()
 
-        self.setToolTip(trans._("Click and drag to change call order"))
+        self.setToolTip(trans._('Click and drag to change call order'))
         self.plugin_name_label = QElidingLabel()
         self.plugin_name_label.setObjectName('small_text')
         self.plugin_name_label.setText(item.hook_implementation.plugin_name)
@@ -105,7 +105,7 @@ class ImplementationListItem(QFrame):
 
         self.enabled_checkbox = QCheckBox(self)
         self.enabled_checkbox.setToolTip(
-            trans._("Uncheck to disable this plugin")
+            trans._('Uncheck to disable this plugin')
         )
         self.enabled_checkbox.stateChanged.connect(self._set_enabled)
         self.enabled_checkbox.setChecked(
@@ -235,7 +235,7 @@ class QtHookImplementationListWidget(QListWidget):
         drag.exec_(supported_actions, Qt.DropAction.MoveAction)
 
     @Slot(list)
-    def permute_hook(self, order: List[HookImplementation]):
+    def permute_hook(self, order: list[HookImplementation]):
         """Rearrage the call order of the hooks for the current hook impl.
 
         Parameters
@@ -315,14 +315,14 @@ class QtPluginSorter(QWidget):
             ):
                 continue
             self.hook_combo_box.addItem(
-                name.replace("napari_", ""), hook_caller
+                name.replace('napari_', ''), hook_caller
             )
 
         self.plugin_manager.events.disabled.connect(self._on_disabled)
         self.plugin_manager.events.registered.connect(self.refresh)
 
         self.hook_combo_box.setToolTip(
-            trans._("select the hook specification to reorder")
+            trans._('select the hook specification to reorder')
         )
         self.hook_combo_box.currentIndexChanged.connect(self._on_hook_change)
         self.hook_list = QtHookImplementationListWidget(parent=self)
@@ -338,7 +338,7 @@ class QtPluginSorter(QWidget):
 
         self.docstring = QLabel(self)
         self.info = QtToolTipLabel(self)
-        self.info.setObjectName("info_icon")
+        self.info.setObjectName('info_icon')
         doc_lay = QHBoxLayout()
         doc_lay.addWidget(self.docstring)
         doc_lay.setStretch(0, 1)
@@ -371,7 +371,7 @@ class QtPluginSorter(QWidget):
         hook : str
             Name of the new hook specification to show.
         """
-        self.hook_combo_box.setCurrentText(hook.replace("napari_", ''))
+        self.hook_combo_box.setCurrentText(hook.replace('napari_', ''))
 
     def _on_hook_change(self, index):
         hook_caller = self.hook_combo_box.currentData()
@@ -379,7 +379,7 @@ class QtPluginSorter(QWidget):
 
         if hook_caller:
             doc = hook_caller.spec.function.__doc__
-            html = rst2html(doc.split("Parameters")[0].strip())
+            html = rst2html(doc.split('Parameters')[0].strip())
             summary, fulldoc = html.split('<br>', 1)
             while fulldoc.startswith('<br>'):
                 fulldoc = fulldoc[4:]

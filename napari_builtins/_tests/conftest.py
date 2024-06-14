@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import List
 from unittest.mock import patch
 
 import numpy as np
@@ -11,7 +10,7 @@ from napari import layers
 
 
 @pytest.fixture(autouse=True)
-def _mock_npe2_pm():
+def mock_npe2_pm():
     """Mock plugin manager with no registered plugins."""
     with patch.object(PluginManager, 'discover'):
         _pm = PluginManager()
@@ -20,8 +19,8 @@ def _mock_npe2_pm():
 
 
 @pytest.fixture(autouse=True)
-def _use_builtins(_mock_npe2_pm: PluginManager):
-    plugin = DynamicPlugin('napari', plugin_manager=_mock_npe2_pm)
+def use_builtins(mock_npe2_pm: PluginManager):
+    plugin = DynamicPlugin('napari', plugin_manager=mock_npe2_pm)
     mf = PluginManifest.from_file(
         Path(napari_builtins.__file__).parent / 'builtins.yaml'
     )
@@ -30,7 +29,7 @@ def _use_builtins(_mock_npe2_pm: PluginManager):
         yield plugin
 
 
-LAYERS: List[layers.Layer] = [
+LAYERS: list[layers.Layer] = [
     layers.Image(np.random.rand(10, 10)),
     layers.Labels(np.random.randint(0, 16000, (32, 32), 'uint64')),
     layers.Points(np.random.rand(20, 2)),
@@ -53,3 +52,8 @@ LAYERS: List[layers.Layer] = [
 @pytest.fixture(params=LAYERS)
 def some_layer(request):
     return request.param
+
+
+@pytest.fixture()
+def layers_list():
+    return LAYERS

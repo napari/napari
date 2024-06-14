@@ -6,17 +6,17 @@ localization data.
 import gettext
 import os
 from pathlib import Path
-from typing import ClassVar, Dict, Optional, Union
+from typing import ClassVar, Optional, Union
 
 from yaml import safe_load
 
 from napari.utils._base import _DEFAULT_CONFIG_PATH, _DEFAULT_LOCALE
 
 # Entry points
-NAPARI_LANGUAGEPACK_ENTRY = "napari.languagepack"
+NAPARI_LANGUAGEPACK_ENTRY = 'napari.languagepack'
 
 # Constants
-LOCALE_DIR = "locale"
+LOCALE_DIR = 'locale'
 
 
 def _get_display_name(
@@ -54,7 +54,7 @@ def _get_display_name(
         loc = babel.Locale.parse(locale)
         display_name_ = loc.get_display_name(display_locale)
         if display_name_ is None:
-            raise RuntimeError(f"Could not find {display_locale}")
+            raise RuntimeError(f'Could not find {display_locale}')
         display_name = display_name_.capitalize()
 
     return display_name
@@ -147,14 +147,14 @@ def get_language_packs(display_locale: str = _DEFAULT_LOCALE) -> dict:
     )
     locales = {
         _DEFAULT_LOCALE: {
-            "displayName": _get_display_name(_DEFAULT_LOCALE, display_locale),
-            "nativeName": _get_display_name(_DEFAULT_LOCALE, _DEFAULT_LOCALE),
+            'displayName': _get_display_name(_DEFAULT_LOCALE, display_locale),
+            'nativeName': _get_display_name(_DEFAULT_LOCALE, _DEFAULT_LOCALE),
         }
     }
     for locale in valid_locales:
         locales[locale] = {
-            "displayName": _get_display_name(locale, display_locale),
-            "nativeName": _get_display_name(locale, locale),
+            'displayName': _get_display_name(locale, display_locale),
+            'nativeName': _get_display_name(locale, locale),
         }
 
     return locales
@@ -170,13 +170,23 @@ class TranslationString(str):
     of the arguments to __new__ and __init__ in this class.
     """
 
+    __slots__ = (
+        '_domain',
+        '_msgctxt',
+        '_msgid',
+        '_msgid_plural',
+        '_n',
+        '_deferred',
+        '_kwargs',
+    )
+
     def __deepcopy__(self, memo):
         from copy import deepcopy
 
         kwargs = deepcopy(self._kwargs)
         # Remove `n` from `kwargs` added in the initializer
         # See https://github.com/napari/napari/issues/4736
-        kwargs.pop("n")
+        kwargs.pop('n')
         return TranslationString(
             domain=self._domain,
             msgctxt=self._msgctxt,
@@ -199,10 +209,10 @@ class TranslationString(str):
     ):
         if msgid is None:
             raise ValueError(
-                trans._("Must provide at least a `msgid` parameter!")
+                trans._('Must provide at least a `msgid` parameter!')
             )
 
-        kwargs["n"] = n
+        kwargs['n'] = n
 
         return str.__new__(
             cls,
@@ -341,7 +351,7 @@ class TranslationBundle:
         """
         self._locale = locale
         localedir = None
-        if locale.split("_")[0] != _DEFAULT_LOCALE:
+        if locale.split('_')[0] != _DEFAULT_LOCALE:
             from napari_plugin_engine.manager import iter_available_plugins
 
             lang_packs = iter_available_plugins(NAPARI_LANGUAGEPACK_ENTRY)
@@ -352,7 +362,7 @@ class TranslationBundle:
                 trans = self
                 warnings.warn(
                     trans._(
-                        "Requested locale not available: {locale}",
+                        'Requested locale not available: {locale}',
                         deferred=True,
                         locale=locale,
                     )
@@ -364,7 +374,7 @@ class TranslationBundle:
                 if mod.__file__ is not None:
                     localedir = Path(mod.__file__).parent / LOCALE_DIR
                 else:
-                    raise RuntimeError(f"Could not find __file__ for {mod}")
+                    raise RuntimeError(f'Could not find __file__ for {mod}')
 
         gettext.bindtextdomain(self._domain, localedir=localedir)
 
@@ -599,7 +609,7 @@ class _Translator:
     Translations manager.
     """
 
-    _TRANSLATORS: ClassVar[Dict[str, TranslationBundle]] = {}
+    _TRANSLATORS: ClassVar[dict[str, TranslationBundle]] = {}
     _LOCALE = _DEFAULT_LOCALE
 
     @staticmethod
@@ -612,8 +622,8 @@ class _Translator:
         locale : str
             The language name to use.
         """
-        for key in ["LANGUAGE", "LANG"]:
-            os.environ[key] = f"{locale}.UTF-8"
+        for key in ['LANGUAGE', 'LANG']:
+            os.environ[key] = f'{locale}.UTF-8'
 
     @classmethod
     def _set_locale(cls, locale: str):
@@ -628,14 +638,14 @@ class _Translator:
         if _is_valid_locale(locale):
             cls._LOCALE = locale
 
-            if locale.split("_")[0] != _DEFAULT_LOCALE:
+            if locale.split('_')[0] != _DEFAULT_LOCALE:
                 _Translator._update_env(locale)
 
             for bundle in cls._TRANSLATORS.values():
                 bundle._update_locale(locale)
 
     @classmethod
-    def load(cls, domain: str = "napari") -> TranslationBundle:
+    def load(cls, domain: str = 'napari') -> TranslationBundle:
         """
         Load translation domain.
 
@@ -687,20 +697,20 @@ def _load_language(
                 import warnings
 
                 warnings.warn(
-                    "The `language` setting defined in the napari "
-                    "configuration file could not be read.\n\n"
-                    "The default language will be used.\n\n"
-                    f"Error:\n{err}"
+                    'The `language` setting defined in the napari '
+                    'configuration file could not be read.\n\n'
+                    'The default language will be used.\n\n'
+                    f'Error:\n{err}'
                 )
                 data = {}
 
-        locale = data.get("application", {}).get("language", locale)
+        locale = data.get('application', {}).get('language', locale)
 
-    return os.environ.get("NAPARI_LANGUAGE", locale)
+    return os.environ.get('NAPARI_LANGUAGE', locale)
 
 
 # Default translator
-trans = _Translator.load("napari")
+trans = _Translator.load('napari')
 
 # Update Translator locale before any other import uses it
 _Translator._set_locale(_load_language())

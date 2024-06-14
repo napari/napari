@@ -40,7 +40,7 @@ NAPARI_APP_ID = f'napari.napari.viewer.{__version__}'
 
 
 def set_app_id(app_id):
-    if os.name == "nt" and app_id and not getattr(sys, 'frozen', False):
+    if os.name == 'nt' and app_id and not getattr(sys, 'frozen', False):
         import ctypes
 
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(app_id)
@@ -58,7 +58,7 @@ _defaults = {
 
 # store reference to QApplication to prevent garbage collection
 _app_ref = None
-_IPYTHON_WAS_HERE_FIRST = "IPython" in sys.modules
+_IPYTHON_WAS_HERE_FIRST = 'IPython' in sys.modules
 
 
 def get_app(
@@ -118,7 +118,7 @@ def get_app(
 
     app = QApplication.instance()
     if app:
-        set_values.discard("ipy_interactive")
+        set_values.discard('ipy_interactive')
         if set_values:
             warn(
                 trans._(
@@ -131,7 +131,7 @@ def get_app(
         if perf_config and perf_config.trace_qt_events:
             warn(
                 trans._(
-                    "Using NAPARI_PERFMON with an already-running QtApp (--gui qt?) is not supported.",
+                    'Using NAPARI_PERFMON with an already-running QtApp (--gui qt?) is not supported.',
                     deferred=True,
                 ),
                 stacklevel=2,
@@ -153,11 +153,11 @@ def get_app(
             )
 
         argv = sys.argv.copy()
-        if sys.platform == "darwin" and not argv[0].endswith("napari"):
+        if sys.platform == 'darwin' and not argv[0].endswith('napari'):
             # Make sure the app name in the Application menu is `napari`
             # which is taken from the basename of sys.argv[0]; we use
             # a copy so the original value is still available at sys.argv
-            argv[0] = "napari"
+            argv[0] = 'napari'
 
         if perf_config and perf_config.trace_qt_events:
             from napari._qt.perf.qt_event_tracing import (
@@ -188,13 +188,10 @@ def get_app(
     if _IPYTHON_WAS_HERE_FIRST:
         _try_enable_ipython_gui('qt' if ipy_interactive else None)
 
-    if not _ipython_has_eventloop():
-        notification_manager.notification_ready.connect(
-            NapariQtNotification.show_notification
-        )
-        notification_manager.notification_ready.connect(
-            show_console_notification
-        )
+    notification_manager.notification_ready.connect(
+        NapariQtNotification.show_notification
+    )
+    notification_manager.notification_ready.connect(show_console_notification)
 
     if perf_config and not perf_config.patched:
         # Will patch based on config file.
@@ -313,7 +310,7 @@ def _ipython_has_eventloop() -> bool:
     at the prompt.  So it will likely "appear" like there is no event loop
     running, but we still don't need to start one.
     """
-    ipy_module = sys.modules.get("IPython")
+    ipy_module = sys.modules.get('IPython')
     if not ipy_module:
         return False
 
@@ -338,7 +335,7 @@ def _pycharm_has_eventloop(app: QApplication) -> bool:
 
 def _try_enable_ipython_gui(gui='qt'):
     """Start %gui qt the eventloop."""
-    ipy_module = sys.modules.get("IPython")
+    ipy_module = sys.modules.get('IPython')
     if not ipy_module:
         return
 
@@ -399,7 +396,7 @@ def run(
     if not app.topLevelWidgets() and not force:
         warn(
             trans._(
-                "Refusing to run a QApplication with no topLevelWidgets. To run the app anyway, use `{_func_name}(force=True)`",
+                'Refusing to run a QApplication with no topLevelWidgets. To run the app anyway, use `{_func_name}(force=True)`',
                 deferred=True,
                 _func_name=_func_name,
             ),
@@ -411,8 +408,8 @@ def run(
         loops = app.thread().loopLevel()
         warn(
             trans._n(
-                "A QApplication is already running with 1 event loop. To enter *another* event loop, use `{_func_name}(max_loop_level={max_loop_level})`",
-                "A QApplication is already running with {n} event loops. To enter *another* event loop, use `{_func_name}(max_loop_level={max_loop_level})`",
+                'A QApplication is already running with 1 event loop. To enter *another* event loop, use `{_func_name}(max_loop_level={max_loop_level})`',
+                'A QApplication is already running with {n} event loops. To enter *another* event loop, use `{_func_name}(max_loop_level={max_loop_level})`',
                 n=loops,
                 deferred=True,
                 _func_name=_func_name,

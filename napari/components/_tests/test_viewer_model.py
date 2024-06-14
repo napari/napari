@@ -4,7 +4,11 @@ import numpy as np
 import pytest
 from npe2 import DynamicPlugin
 
-from napari._tests.utils import good_layer_data, layer_test_data
+from napari._tests.utils import (
+    count_warning_events,
+    good_layer_data,
+    layer_test_data,
+)
 from napari.components import ViewerModel
 from napari.errors import MultipleReaderError, ReaderPluginError
 from napari.errors.reader_errors import NoAvailableReaderError
@@ -57,11 +61,11 @@ def test_add_image_colormap_variants():
     assert viewer.add_image(data, colormap='fire')
 
     # as tuple
-    cmap_tuple = ("my_colormap", Colormap(['g', 'm', 'y']))
+    cmap_tuple = ('my_colormap', Colormap(['g', 'm', 'y']))
     assert viewer.add_image(data, colormap=cmap_tuple)
 
     # as dict
-    cmap_dict = {"your_colormap": Colormap(['g', 'r', 'y'])}
+    cmap_dict = {'your_colormap': Colormap(['g', 'r', 'y'])}
     assert viewer.add_image(data, colormap=cmap_dict)
 
     # as Colormap instance
@@ -500,16 +504,16 @@ def test_add_layer_from_data_raises():
     # make sure that adding invalid data or kwargs raises the right errors
     viewer = ViewerModel()
     # unrecognized layer type raises Value Error
-    with pytest.raises(ValueError):
-        # 'layer' is not a valid type
+    with pytest.raises(ValueError, match='Unrecognized layer_type'):
         # (even though there is an add_layer method)
         viewer._add_layer_from_data(
             np.random.random((10, 10)), layer_type='layer'
         )
 
     # even with the correct meta kwargs, the underlying add_* method may raise
-    with pytest.raises(ValueError):
-        # improper dims for rgb data
+    with pytest.raises(
+        ValueError, match='data does not have suitable dimensions'
+    ):
         viewer._add_layer_from_data(
             np.random.random((10, 10, 6)), {'rgb': True}
         )
@@ -733,7 +737,7 @@ def test_update_scale():
     )
 
 
-@pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
+@pytest.mark.parametrize(('Layer', 'data', 'ndim'), layer_test_data)
 def test_add_remove_layer_no_callbacks(Layer, data, ndim):
     """Test all callbacks for layer emmitters removed."""
     viewer = ViewerModel()
@@ -745,7 +749,7 @@ def test_add_remove_layer_no_callbacks(Layer, data, ndim):
     # Check that no internal callbacks have been registered
     assert len(layer.events.callbacks) == 0
     for em in layer.events.emitters.values():
-        assert len(em.callbacks) == 0
+        assert len(em.callbacks) == count_warning_events(em.callbacks)
 
     viewer.layers.append(layer)
     # Check layer added correctly
@@ -761,10 +765,10 @@ def test_add_remove_layer_no_callbacks(Layer, data, ndim):
     # Check that all callbacks have been removed
     assert len(layer.events.callbacks) == 0
     for em in layer.events.emitters.values():
-        assert len(em.callbacks) == 0
+        assert len(em.callbacks) == count_warning_events(em.callbacks)
 
 
-@pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
+@pytest.mark.parametrize(('Layer', 'data', 'ndim'), layer_test_data)
 def test_add_remove_layer_external_callbacks(Layer, data, ndim):
     """Test external callbacks for layer emmitters preserved."""
     viewer = ViewerModel()
@@ -783,14 +787,17 @@ def test_add_remove_layer_external_callbacks(Layer, data, ndim):
     assert len(layer.events.callbacks) == 1
     for em in layer.events.emitters.values():
         if not isinstance(em, WarningEmitter):
-            assert len(em.callbacks) == 1
+            assert len(em.callbacks) == count_warning_events(em.callbacks) + 1
 
     viewer.layers.append(layer)
     # Check layer added correctly
     assert len(viewer.layers) == 1
 
     # check that adding a layer created new callbacks
-    assert any(len(em.callbacks) > 0 for em in layer.events.emitters.values())
+    assert any(
+        len(em.callbacks) > count_warning_events(em.callbacks)
+        for em in layer.events.emitters.values()
+    )
 
     viewer.layers.remove(layer)
     # Check layer added correctly
@@ -800,7 +807,7 @@ def test_add_remove_layer_external_callbacks(Layer, data, ndim):
     assert len(layer.events.callbacks) == 1
     for em in layer.events.emitters.values():
         if not isinstance(em, WarningEmitter):
-            assert len(em.callbacks) == 1
+            assert len(em.callbacks) == count_warning_events(em.callbacks) + 1
 
 
 @pytest.mark.parametrize(
@@ -824,7 +831,7 @@ def test_not_mutable_fields(field):
     )
 
 
-@pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
+@pytest.mark.parametrize(('Layer', 'data', 'ndim'), layer_test_data)
 def test_status_tooltip(Layer, data, ndim):
     viewer = ViewerModel()
     viewer.tooltip.visible = True
@@ -845,12 +852,10 @@ def test_open_or_get_error_multiple_readers(tmp_plugin: DynamicPlugin):
     tmp2 = tmp_plugin.spawn(register=True)
 
     @tmp_plugin.contribute.reader(filename_patterns=['*.fake'])
-    def _(path):
-        ...
+    def _(path): ...
 
     @tmp2.contribute.reader(filename_patterns=['*.fake'])
-    def _(path):
-        ...
+    def _(path): ...
 
     with pytest.raises(
         MultipleReaderError, match='Multiple plugins found capable'
@@ -893,8 +898,7 @@ def test_open_or_get_error_prefered_plugin(
     np.save(pth, np.random.random((10, 10)))
 
     @tmp_plugin.contribute.reader(filename_patterns=['*.npy'])
-    def _(path):
-        ...
+    def _(path): ...
 
     get_settings().plugins.extension2reader = {'*.npy': builtins.name}
 
@@ -925,12 +929,10 @@ def test_open_or_get_error_no_prefered_plugin_many_available(
     tmp2 = tmp_plugin.spawn(register=True)
 
     @tmp_plugin.contribute.reader(filename_patterns=['*.fake'])
-    def _(path):
-        ...
+    def _(path): ...
 
     @tmp2.contribute.reader(filename_patterns=['*.fake'])
-    def _(path):
-        ...
+    def _(path): ...
 
     get_settings().plugins.extension2reader = {'*.fake': 'not-a-plugin'}
 
@@ -972,3 +974,18 @@ def test_slice_order_with_mixed_dims():
     assert image_2d._slice.image.view.shape == (4, 5)
     assert image_3d._slice.image.view.shape == (3, 5)
     assert image_4d._slice.image.view.shape == (2, 5)
+
+
+def test_make_layer_visible_after_slicing():
+    """See https://github.com/napari/napari/issues/6760"""
+    viewer = ViewerModel(ndisplay=2)
+    data = np.array([np.ones((2, 2)) * i for i in range(3)])
+    layer: Image = viewer.add_image(data)
+    layer.visible = False
+    assert viewer.dims.current_step[0] != 0
+    assert not np.array_equal(layer._slice.image.raw, data[0])
+
+    viewer.dims.current_step = (0, 0, 0)
+    layer.visible = True
+
+    np.testing.assert_array_equal(layer._slice.image.raw, data[0])

@@ -25,7 +25,7 @@ QtLayerButtons, QtViewerButtons, QtLayerList {
 as long as they are docked (though they use the
 style of QDockWidget when undocked) */
 
-QStatusBar { 
+QStatusBar {
   background: {{ background }};
   color: {{ text }};
 }
@@ -855,7 +855,7 @@ QtLayerList::indicator {
 
 QtLayerList::indicator:unchecked {
   image: url("theme_{{ id }}:/visibility_off_50.svg");
-  
+
 }
 
 QtLayerList::indicator:checked {
@@ -881,6 +881,23 @@ QtLayerList::indicator:checked {
   image: url("theme_{{ id }}:/error.svg");
   min-height: 36px;
   min-width: 36px;
+}
+
+/* ------------- Set size for dims sorter --------- */
+
+QtDimsSorter > QtListView {
+  max-height: 100px;
+  max-width: 150px;
+}
+
+/* ------------- Lock check buttons for dims sorter --------- */
+
+QtDimsSorter > QtListView::indicator::unchecked {
+  image: url("theme_{{ id }}:/lock.svg");
+}
+
+QtDimsSorter > QtListView::indicator::checked {
+  image: url("theme_{{ id }}:/lock_open.svg");
 }
 
 /* --------------- Menus (application and context menus) ---------------- */

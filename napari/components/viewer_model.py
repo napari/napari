@@ -4,29 +4,29 @@ import inspect
 import itertools
 import os
 import warnings
+from collections.abc import Iterator, Sequence
 from functools import lru_cache
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
-    Dict,
-    List,
-    Mapping,
     Optional,
-    Sequence,
-    Set,
-    Tuple,
     Union,
+    cast,
 )
 
 import numpy as np
-from pydantic import Extra, Field, PrivateAttr, validator
+
+# This cannot be condition to TYPE_CHEKCKING or the stubgen fails
+# with underfined Context.
+from app_model.expressions import Context
 
 from napari import layers
+from napari._pydantic_compat import Extra, Field, PrivateAttr, validator
 from napari.components._layer_slicer import _LayerSlicer
 from napari.components._viewer_mouse_bindings import dims_scroll
 from napari.components.camera import Camera
-from napari.components.cursor import Cursor
+from napari.components.cursor import Cursor, CursorStyle
 from napari.components.dims import Dims
 from napari.components.grid import GridCanvas
 from napari.components.layerlist import LayerList
@@ -65,6 +65,14 @@ from napari.layers.utils.stack_utils import split_channels
 from napari.layers.vectors._vectors_key_bindings import vectors_fun_to_mode
 from napari.plugins.utils import get_potential_readers, get_preferred_reader
 from napari.settings import get_settings
+from napari.types import (
+    FullLayerData,
+    LayerData,
+    LayerTypeName,
+    PathLike,
+    PathOrPaths,
+    SampleData,
+)
 from napari.utils._register import create_func as create_add_method
 from napari.utils.action_manager import action_manager
 from napari.utils.colormaps import ensure_colormap
@@ -83,6 +91,10 @@ from napari.utils.progress import progress
 from napari.utils.theme import available_themes, is_theme_available
 from napari.utils.translations import trans
 
+if TYPE_CHECKING:
+    from npe2.types import SampleDataCreator
+
+
 DEFAULT_THEME = 'dark'
 EXCLUDE_DICT = {
     'keymap',
@@ -94,12 +106,7 @@ EXCLUDE_DICT = {
     'mouse_wheel_callbacks',
 }
 EXCLUDE_JSON = EXCLUDE_DICT.union({'layers', 'active_layer'})
-
-if TYPE_CHECKING:
-    from napari.types import FullLayerData, LayerData
-
-PathLike = Union[str, Path]
-PathOrPaths = Union[PathLike, Sequence[PathLike]]
+Dict = dict  # rename, because ViewerModel has method dict
 
 __all__ = ['ViewerModel', 'valid_add_kwargs']
 
@@ -179,7 +186,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         default_factory=LayerList, allow_mutation=False
     )  # Need to create custom JSON encoder for layer!
     help: str = ''
-    status: Union[str, Dict] = 'Ready'
+    status: Union[str, dict] = 'Ready'
     tooltip: Tooltip = Field(default_factory=Tooltip, allow_mutation=False)
     theme: str = Field(default_factory=_current_theme)
     title: str = 'napari'
@@ -188,8 +195,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         default_factory=EventedDict
     )
     # 2-tuple indicating height and width
-    _canvas_size: Tuple[int, int] = (800, 600)
-    _ctx: Mapping
+    _canvas_size: tuple[int, int] = (800, 600)
+    _ctx: Context
     # To check if mouse is over canvas to avoid race conditions between
     # different events systems
     mouse_over_canvas: bool = False
@@ -241,10 +248,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.events.add(
             layers_change=WarningEmitter(
                 trans._(
-                    "This event will be removed in 0.5.0. Please use viewer.layers.events instead",
+                    'This event will be removed in 0.5.0. Please use viewer.layers.events instead',
                     deferred=True,
                 ),
-                type_name="layers_change",
+                type_name='layers_change',
             ),
             reset_view=Event,
         )
@@ -256,7 +263,17 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.dims.events.ndisplay.connect(self.reset_view)
         self.dims.events.order.connect(self._update_layers)
         self.dims.events.order.connect(self.reset_view)
+        self.dims.events.point.connect(self._update_layers)
+        # FIXME: the next line is a temporary workaround. With #5522 and #5751 Dims.point became
+        #        the source of truth, and is now defined in world space. This exposed an existing
+        #        bug where if a field in Dims is modified by the root_validator, events won't
+        #        be fired for it. This won't happen for properties because we have dependency
+        #        checks. To fix this, we need dep checks for fileds (psygnal!) and then we
+        #        can remove the following line. Note that because of this we fire double events,
+        #        but this should be ok because we have early returns when slices are unchanged.
         self.dims.events.current_step.connect(self._update_layers)
+        self.dims.events.margin_left.connect(self._update_layers)
+        self.dims.events.margin_right.connect(self._update_layers)
         self.cursor.events.position.connect(
             self._update_status_bar_from_cursor
         )
@@ -310,7 +327,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     "Theme '{theme_name}' not found; options are {themes}.",
                     deferred=True,
                     theme_name=v,
-                    themes=", ".join(available_themes()),
+                    themes=', '.join(available_themes()),
                 )
             )
 
@@ -360,7 +377,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             )
         return self.layers._extent_world_augmented[:, self.dims.displayed]
 
-    def reset_view(self):
+    def reset_view(self) -> None:
         """Reset the camera view."""
 
         extent = self._sliced_extent_world_augmented
@@ -370,8 +387,17 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if len(scene_size) > len(grid_size):
             grid_size = [1] * (len(scene_size) - len(grid_size)) + grid_size
         size = np.multiply(scene_size, grid_size)
-        center = np.add(corner, np.divide(size, 2))[-self.dims.ndisplay :]
-        center = [0] * (self.dims.ndisplay - len(center)) + list(center)
+        center_array = np.add(corner, np.divide(size, 2))[
+            -self.dims.ndisplay :
+        ]
+        center = cast(
+            Union[tuple[float, float, float], tuple[float, float]],
+            tuple(
+                [0.0] * (self.dims.ndisplay - len(center_array))
+                + list(center_array)
+            ),
+        )
+        assert len(center) in (2, 3)
         self.camera.center = center
         # zoom is definied as the number of canvas pixels per world pixel
         # The default value used below will zoom such that the whole field
@@ -405,8 +431,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             np.round(s / sc).astype('int') + 1
             for s, sc in zip(scene_size, scale)
         ]
-        empty_labels = np.zeros(shape, dtype=int)
-        self.add_labels(empty_labels, translate=np.array(corner), scale=scale)
+        dtype_str = get_settings().application.new_labels_dtype
+        empty_labels = np.zeros(shape, dtype=dtype_str)
+        self.add_labels(empty_labels, translate=np.array(corner), scale=scale)  # type: ignore[attr-defined]
+        # We define `add_labels` dynamically, so mypy doesn't know about it.
 
     def _on_layer_reload(self, event: Event) -> None:
         self._layer_slicer.submit(
@@ -429,14 +457,14 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         position = list(self.cursor.position)
         for ind in self.dims.order[: -self.dims.ndisplay]:
             position[ind] = self.dims.point[ind]
-        self.cursor.position = position
+        self.cursor.position = tuple(position)
 
     def _on_active_layer(self, event):
         """Update viewer state for a new active layer."""
         active_layer = event.value
         if active_layer is None:
             self.help = ''
-            self.cursor.style = 'standard'
+            self.cursor.style = CursorStyle.STANDARD
         else:
             self.help = active_layer.help
             self.cursor.style = active_layer.cursor
@@ -518,8 +546,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.help = active.help
             if self.tooltip.visible:
                 self.tooltip.text = active._get_tooltip_text(
-                    self.cursor.position,
-                    view_direction=self.cursor._view_direction,
+                    np.asarray(self.cursor.position),
+                    view_direction=np.asarray(self.cursor._view_direction),
                     dims_displayed=list(self.dims.displayed),
                     world=True,
                 )
@@ -589,7 +617,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         layer.events.affine.connect(self._on_layers_change)
         layer.events.name.connect(self.layers._update_name)
         layer.events.reload.connect(self._on_layer_reload)
-        if hasattr(layer.events, "mode"):
+        if hasattr(layer.events, 'mode'):
             layer.events.mode.connect(self._on_layer_mode_change)
         self._layer_help_from_mode(layer)
 
@@ -609,7 +637,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         """
         Update layer help text base on layer mode.
         """
-        layer_to_func_and_mode = {
+        layer_to_func_and_mode: dict[type[Layer], list] = {
             Points: points_fun_to_mode,
             Labels: labels_fun_to_mode,
             Shapes: shapes_fun_to_mode,
@@ -625,19 +653,19 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         for fun, mode_ in layer_to_func_and_mode.get(layer.__class__, []):
             if mode_ == layer.mode:
                 continue
-            action_name = f"napari:{fun.__name__}"
+            action_name = f'napari:{fun.__name__}'
             desc = action_manager._actions[action_name].description.lower()
             if not shortcuts.get(action_name, []):
                 continue
             help_li.append(
                 trans._(
-                    "use <{shortcut}> for {desc}",
+                    'use <{shortcut}> for {desc}',
                     shortcut=shortcuts[action_name][0],
                     desc=desc,
                 )
             )
 
-        layer.help = ", ".join(help_li)
+        layer.help = ', '.join(help_li)
 
     def _on_layer_mode_change(self, event):
         self._layer_help_from_mode(event.source)
@@ -691,43 +719,44 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         return layer
 
     @rename_argument(
-        from_name="interpolation",
-        to_name="interpolation2d",
-        version="0.6.0",
-        since_version="0.4.17",
+        from_name='interpolation',
+        to_name='interpolation2d',
+        version='0.6.0',
+        since_version='0.4.17',
     )
     def add_image(
         self,
         data=None,
         *,
         channel_axis=None,
-        rgb=None,
+        affine=None,
+        attenuation=0.05,
+        blending=None,
+        cache=True,
         colormap=None,
         contrast_limits=None,
-        gamma=1,
+        custom_interpolation_kernel_2d=None,
+        depiction='volume',
+        experimental_clipping_planes=None,
+        gamma=1.0,
         interpolation2d='nearest',
         interpolation3d='linear',
-        rendering='mip',
-        depiction='volume',
         iso_threshold=None,
-        attenuation=0.05,
-        name=None,
         metadata=None,
-        scale=None,
-        translate=None,
-        rotate=None,
-        shear=None,
-        affine=None,
-        opacity=1,
-        blending=None,
-        visible=True,
         multiscale=None,
-        cache=True,
+        name=None,
+        opacity=1.0,
         plane=None,
-        experimental_clipping_planes=None,
-        custom_interpolation_kernel_2d=None,
-    ) -> Union[Image, List[Image]]:
-        """Add an image layer to the layer list.
+        projection_mode='none',
+        rendering='mip',
+        rgb=None,
+        rotate=None,
+        scale=None,
+        shear=None,
+        translate=None,
+        visible=True,
+    ) -> Union[Image, list[Image]]:
+        """Add one or more Image layers to the layer list.
 
         Parameters
         ----------
@@ -739,126 +768,108 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             supported in 2D. In 3D, only the lowest resolution scale is
             displayed.
         channel_axis : int, optional
-            Axis to expand image along.  If provided, each channel in the data
-            will be added as an individual image layer.  In channel_axis mode,
-            all other parameters MAY be provided as lists, and the Nth value
-            will be applied to the Nth channel in the data.  If a single value
+            Axis to expand image along. If provided, each channel in the data
+            will be added as an individual image layer. In channel_axis mode,
+            other parameters MAY be provided as lists. The Nth value of the list
+            will be applied to the Nth channel in the data. If a single value
             is provided, it will be broadcast to all Layers.
-        rgb : bool or list
-            Whether the image is rgb RGB or RGBA. If not specified by user and
-            the last dimension of the data has length 3 or 4 it will be set as
-            `True`. If `False` the image is interpreted as a luminance image.
-            If a list then must be same length as the axis that is being
-            expanded as channels.
-        colormap : str, napari.utils.Colormap, tuple, dict, list
-            Colormaps to use for luminance images. If a string must be the name
-            of a supported colormap from vispy or matplotlib. If a tuple the
-            first value must be a string to assign as a name to a colormap and
-            the second item must be a Colormap. If a dict the key must be a
-            string to assign as a name to a colormap and the value must be a
-            Colormap. If a list then must be same length as the axis that is
-            being expanded as channels, and each colormap is applied to each
-            new image layer.
-        contrast_limits : list (2,)
-            Color limits to be used for determining the colormap bounds for
-            luminance images. If not passed is calculated as the min and max of
-            the image. If list of lists then must be same length as the axis
-            that is being expanded and then each colormap is applied to each
-            image.
-        gamma : list, float
-            Gamma correction for determining colormap linearity. Defaults to 1.
-            If a list then must be same length as the axis that is being
-            expanded as channels.
-        interpolation : str or list
-            Deprecated, to be removed in 0.6.0
-        interpolation2d : str or list
-            Interpolation mode used by vispy in 2D. Must be one of our supported
-            modes. If a list then must be same length as the axis that is being
-            expanded as channels.
-        interpolation3d : str or list
-            Interpolation mode used by vispy in 3D. Must be one of our supported
-            modes. If a list then must be same length as the axis that is being
-            expanded as channels.
-        rendering : str or list
-            Rendering mode used by vispy. Must be one of our supported
-            modes. If a list then must be same length as the axis that is being
-            expanded as channels.
-        depiction : str
-            Selects a preset volume depiction mode in vispy
-
-            * volume: images are rendered as 3D volumes.
-            * plane: images are rendered as 2D planes embedded in 3D.
-        iso_threshold : float or list
-            Threshold for isosurface. If a list then must be same length as the
-            axis that is being expanded as channels.
-        attenuation : float or list
-            Attenuation rate for attenuated maximum intensity projection. If a
-            list then must be same length as the axis that is being expanded as
-            channels.
-        name : str or list of str
-            Name of the layer.  If a list then must be same length as the axis
-            that is being expanded as channels.
-        metadata : dict or list of dict
-            Layer metadata. If a list then must be a list of dicts with the
-            same length as the axis that is being expanded as channels.
-        scale : tuple of float or list
-            Scale factors for the layer. If a list then must be a list of
-            tuples of float with the same length as the axis that is being
-            expanded as channels.
-        translate : tuple of float or list
-            Translation values for the layer. If a list then must be a list of
-            tuples of float with the same length as the axis that is being
-            expanded as channels.
-        rotate : float, 3-tuple of float, n-D array or list.
-            If a float convert into a 2D rotation matrix using that value as an
-            angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
-            pitch, roll convention. Otherwise assume an nD rotation. Angles are
-            assumed to be in degrees. They can be converted from radians with
-            np.degrees if needed. If a list then must have same length as
+            All parameters except data, rgb, and multiscale can be provided as
+            list of values. If a list is provided, it must be the same length as
             the axis that is being expanded as channels.
-        shear : 1-D array or list.
-            A vector of shear values for an upper triangular n-D shear matrix.
-            If a list then must have same length as the axis that is being
-            expanded as channels.
         affine : n-D array or napari.utils.transforms.Affine
             (N+1, N+1) affine transformation matrix in homogeneous coordinates.
             The first (N, N) entries correspond to a linear transform and
             the final column is a length N translation vector and a 1 or a
             napari `Affine` transform object. Applied as an extra transform on
             top of the provided scale, rotate, and shear values.
-        opacity : float or list
-            Opacity of the layer visual, between 0.0 and 1.0.  If a list then
-            must be same length as the axis that is being expanded as channels.
-        blending : str or list
+        attenuation : float or list of float
+            Attenuation rate for attenuated maximum intensity projection.
+        blending : str or list of str
             One of a list of preset blending modes that determines how RGB and
             alpha values of the layer visual get mixed. Allowed values are
-            {'opaque', 'translucent', and 'additive'}. If a list then
-            must be same length as the axis that is being expanded as channels.
-        visible : bool or list of bool
-            Whether the layer visual is currently being displayed.
-            If a list then must be same length as the axis that is
-            being expanded as channels.
-        multiscale : bool
-            Whether the data is a multiscale image or not. Multiscale data is
-            represented by a list of array like image data. If not specified by
-            the user and if the data is a list of arrays that decrease in shape
-            then it will be taken to be multiscale. The first image in the list
-            should be the largest. Please note multiscale rendering is only
-            supported in 2D. In 3D, only the lowest resolution scale is
-            displayed.
-        cache : bool
+            {'translucent', 'translucent_no_depth', 'additive', 'minimum', 'opaque'}.
+        cache : bool or list of bool
             Whether slices of out-of-core datasets should be cached upon
             retrieval. Currently, this only applies to dask arrays.
-        plane : dict or SlicingPlane
-            Properties defining plane rendering in 3D. Properties are defined in
-            data coordinates. Valid dictionary keys are
-            {'position', 'normal', 'thickness', and 'enabled'}.
+        colormap : str, napari.utils.Colormap, tuple, dict, list or list of these types
+            Colormaps to use for luminance images. If a string, it can be the name
+            of a supported colormap from vispy or matplotlib or the name of
+            a vispy color or a hexadecimal RGB color representation.
+            If a tuple, the first value must be a string to assign as a name to a
+            colormap and the second item must be a Colormap. If a dict, the key must
+            be a string to assign as a name to a colormap and the value must be a
+            Colormap.
+        contrast_limits : list (2,)
+            Intensity value limits to be used for determining the minimum and maximum colormap bounds for
+            luminance images. If not passed, they will be calculated as the min and max intensity value of
+            the image.
+        custom_interpolation_kernel_2d : np.ndarray
+            Convolution kernel used with the 'custom' interpolation mode in 2D rendering.
+        depiction : str or list of str
+            3D Depiction mode. Must be one of {'volume', 'plane'}.
+            The default value is 'volume'.
         experimental_clipping_planes : list of dicts, list of ClippingPlane, or ClippingPlaneList
             Each dict defines a clipping plane in 3D in data coordinates.
             Valid dictionary keys are {'position', 'normal', and 'enabled'}.
             Values on the negative side of the normal are discarded if the plane is enabled.
-        custom_interpolation_kernel_2d : np.ndarray
-            Convolution kernel used with the 'custom' interpolation mode in 2D rendering.
+        gamma : float or list of float
+            Gamma correction for determining colormap linearity; defaults to 1.
+        interpolation2d : str or list of str
+            Interpolation mode used by vispy for rendering 2d data.
+            Must be one of our supported modes.
+            (for list of supported modes see Interpolation enum)
+            'custom' is a special mode for 2D interpolation in which a regular grid
+            of samples is taken from the texture around a position using 'linear'
+            interpolation before being multiplied with a custom interpolation kernel
+            (provided with 'custom_interpolation_kernel_2d').
+        interpolation3d : str or list of str
+            Same as 'interpolation2d' but for 3D rendering.
+        iso_threshold : float or list of float
+            Threshold for isosurface.
+        metadata : dict or list of dict
+            Layer metadata.
+        multiscale : bool
+            Whether the data is a multiscale image or not. Multiscale data is
+            represented by a list of array-like image data. If not specified by
+            the user and if the data is a list of arrays that decrease in shape,
+            then it will be taken to be multiscale. The first image in the list
+            should be the largest. Please note multiscale rendering is only
+            supported in 2D. In 3D, only the lowest resolution scale is
+            displayed.
+        name : str or list of str
+            Name of the layer.
+        opacity : float or list
+            Opacity of the layer visual, between 0.0 and 1.0.
+        plane : dict or SlicingPlane
+            Properties defining plane rendering in 3D. Properties are defined in
+            data coordinates. Valid dictionary keys are
+            {'position', 'normal', 'thickness', and 'enabled'}.
+        projection_mode : str
+            How data outside the viewed dimensions, but inside the thick Dims slice will
+            be projected onto the viewed dimensions. Must fit to cls._projectionclass
+        rendering : str or list of str
+            Rendering mode used by vispy. Must be one of our supported
+            modes. If a list then must be same length as the axis that is being
+            expanded as channels.
+        rgb : bool, optional
+            Whether the image is RGB or RGBA if rgb. If not
+            specified by user, but the last dimension of the data has length 3 or 4,
+            it will be set as `True`. If `False`, the image is interpreted as a
+            luminance image.
+        rotate : float, 3-tuple of float, n-D array or list.
+            If a float, convert into a 2D rotation matrix using that value as an
+            angle. If 3-tuple, convert into a 3D rotation matrix, using a yaw,
+            pitch, roll convention. Otherwise, assume an nD rotation. Angles are
+            assumed to be in degrees. They can be converted from radians with
+            'np.degrees' if needed.
+        scale : tuple of float or list of tuple of float
+            Scale factors for the layer.
+        shear : 1-D array or list.
+            A vector of shear values for an upper triangular n-D shear matrix.
+        translate : tuple of float or list of tuple of float
+            Translation values for the layer.
+        visible : bool or list of bool
+            Whether the layer visual is currently being displayed.
 
         Returns
         -------
@@ -903,6 +914,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             'plane': plane,
             'experimental_clipping_planes': experimental_clipping_planes,
             'custom_interpolation_kernel_2d': custom_interpolation_kernel_2d,
+            'projection_mode': projection_mode,
         }
 
         # these arguments are *already* iterables in the single-channel case.
@@ -952,7 +964,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         sample: str,
         reader_plugin: Optional[str] = None,
         **kwargs,
-    ) -> List[Layer]:
+    ) -> list[Layer]:
         """Open `sample` from `plugin` and add it to the viewer.
 
         To see all available samples registered by plugins, use
@@ -985,6 +997,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         from napari.plugins import _npe2, plugin_manager
 
         plugin_spec_reader = None
+        data: Union[None, SampleDataCreator, SampleData]
         # try with npe2
         data, available = _npe2.get_sample_data(plugin, sample)
 
@@ -995,7 +1008,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             except KeyError:
                 available += list(plugin_manager.available_samples())
         # npe2 uri sample data, extract the path so we can use viewer.open
-        elif hasattr(data.__self__, 'uri'):
+        elif hasattr(data, '__self__') and hasattr(data.__self__, 'uri'):
             if (
                 hasattr(data.__self__, 'reader_plugin')
                 and data.__self__.reader_plugin != reader_plugin
@@ -1008,14 +1021,14 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         if data is None:
             msg = trans._(
-                "Plugin {plugin!r} does not provide sample data named {sample!r}. ",
+                'Plugin {plugin!r} does not provide sample data named {sample!r}. ',
                 plugin=plugin,
                 sample=sample,
                 deferred=True,
             )
             if available:
                 msg = trans._(
-                    "Plugin {plugin!r} does not provide sample data named {sample!r}. Available samples include: {samples}.",
+                    'Plugin {plugin!r} does not provide sample data named {sample!r}. Available samples include: {samples}.',
                     deferred=True,
                     plugin=plugin,
                     sample=sample,
@@ -1023,7 +1036,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 )
             else:
                 msg = trans._(
-                    "Plugin {plugin!r} does not provide sample data named {sample!r}. No plugin samples have been registered.",
+                    'Plugin {plugin!r} does not provide sample data named {sample!r}. No plugin samples have been registered.',
                     deferred=True,
                     plugin=plugin,
                     sample=sample,
@@ -1049,7 +1062,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     ):
                         raise ValueError(
                             trans._(
-                                "Chosen reader {chosen_reader} failed to open sample. Plugin {plugin} declares {original_reader} as the reader for this sample - try calling `open_sample` with no `reader_plugin` or passing {original_reader} explicitly.",
+                                'Chosen reader {chosen_reader} failed to open sample. Plugin {plugin} declares {original_reader} as the reader for this sample - try calling `open_sample` with no `reader_plugin` or passing {original_reader} explicitly.',
                                 deferred=True,
                                 plugin=plugin,
                                 chosen_reader=reader_plugin,
@@ -1072,11 +1085,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self,
         path: PathOrPaths,
         *,
-        stack: Union[bool, List[List[str]]] = False,
+        stack: Union[bool, list[list[PathLike]]] = False,
         plugin: Optional[str] = 'napari',
-        layer_type: Optional[str] = None,
+        layer_type: Optional[LayerTypeName] = None,
         **kwargs,
-    ) -> List[Layer]:
+    ) -> list[Layer]:
         """Open a path or list of paths with plugins, and add layers to viewer.
 
         A list of paths will be handed one-by-one to the napari_get_reader hook
@@ -1125,27 +1138,28 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             )
             plugin = 'napari'
 
-        paths: List[str | Path | List[str | Path]] = (
+        paths_: list[PathLike] = (
             [os.fspath(path)]
             if isinstance(path, (Path, str))
             else [os.fspath(p) for p in path]
         )
 
+        paths: Sequence[PathOrPaths] = paths_
         # If stack is a bool and True, add an additional layer of nesting.
         if isinstance(stack, bool) and stack:
-            paths = [paths]
-
+            paths = [paths_]
         # If stack is a list and True, extend the paths with the inner lists.
         elif isinstance(stack, list) and stack:
+            paths = [paths_]
             paths.extend(stack)
 
-        added: List[Layer] = []  # for layers that get added
+        added: list[Layer] = []  # for layers that get added
         with progress(
             paths,
             desc=trans._('Opening Files'),
-            total=0
-            if len(paths) == 1
-            else None,  # indeterminate bar for 1 file
+            total=(
+                0 if len(paths) == 1 else None
+            ),  # indeterminate bar for 1 file
         ) as pbr:
             for _path in pbr:
                 # If _path is a list, set stack to True
@@ -1173,10 +1187,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def _open_or_raise_error(
         self,
-        paths: List[Union[Path, str]],
+        paths: list[Union[Path, str]],
         kwargs: Optional[Dict[str, Any]] = None,
-        layer_type: Optional[str] = None,
-        stack: Union[bool, List[List[str]]] = False,
+        layer_type: Optional[LayerTypeName] = None,
+        stack: bool = False,
     ):
         """Open paths if plugin choice is unambiguous, raising any errors.
 
@@ -1229,7 +1243,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         paths = [os.fspath(path) for path in paths]  # PathObjects -> str
         _path = paths[0]
         # we want to display the paths nicely so make a help string here
-        path_message = f"[{_path}], ...]" if len(paths) > 1 else _path
+        path_message = f'[{_path}], ...]' if len(paths) > 1 else _path
         readers = get_potential_readers(_path)
         if not readers:
             raise NoAvailableReaderError(
@@ -1254,7 +1268,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                         "This may be because you've switched environments, or have uninstalled the plugin without updating the reader preference. "
                     )
                     + trans._(
-                        "You can remove this preference in the preference dialog, or by editing `settings.plugins.extension2reader`."
+                        'You can remove this preference in the preference dialog, or by editing `settings.plugins.extension2reader`.'
                     )
                 )
             )
@@ -1272,7 +1286,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     layer_type=layer_type,
                 )
             # plugin failed
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:
                 raise ReaderPluginError(
                     trans._(
                         'Tried opening with {plugin}, but failed.',
@@ -1286,7 +1300,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         else:
             raise MultipleReaderError(
                 trans._(
-                    "Multiple plugins found capable of reading {path_message}. Select plugin from {plugins} and pass to reading function e.g. `viewer.open(..., plugin=...)`.",
+                    'Multiple plugins found capable of reading {path_message}. Select plugin from {plugins} and pass to reading function e.g. `viewer.open(..., plugin=...)`.',
                     path_message=path_message,
                     plugins=readers,
                     deferred=True,
@@ -1299,13 +1313,13 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def _add_layers_with_plugins(
         self,
-        paths: List[str],
+        paths: list[PathLike],
         *,
         stack: bool,
-        kwargs: Optional[dict] = None,
+        kwargs: Optional[Dict] = None,
         plugin: Optional[str] = None,
-        layer_type: Optional[str] = None,
-    ) -> List[Layer]:
+        layer_type: Optional[LayerTypeName] = None,
+    ) -> list[Layer]:
         """Load a path or a list of paths into the viewer using plugins.
 
         This function is mostly called from self.open_path, where the ``stack``
@@ -1358,9 +1372,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 paths, plugin=plugin, stack=stack
             )
 
+        if layer_data is None:
+            return []
         # glean layer names from filename. These will be used as *fallback*
         # names, if the plugin does not return a name kwarg in their meta dict.
-        filenames = []
+        filenames: Iterator[PathLike]
 
         if len(paths) == len(layer_data):
             filenames = iter(paths)
@@ -1371,7 +1387,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             filenames = itertools.repeat(paths[0])
 
         # add each layer to the viewer
-        added: List[Layer] = []  # for layers that get added
+        added: list[Layer] = []  # for layers that get added
         plugin = hookimpl.plugin_name if hookimpl else None
         for data, filename in zip(layer_data, filenames):
             basename, _ext = os.path.splitext(os.path.basename(filename))
@@ -1388,7 +1404,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         data,
         meta: Optional[Dict[str, Any]] = None,
         layer_type: Optional[str] = None,
-    ) -> List[Layer]:
+    ) -> list[Layer]:
         """Add arbitrary layer data to the viewer.
 
         Primarily intended for usage by reader plugin hooks.
@@ -1435,12 +1451,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         >>> viewer._add_layer_from_data(*data)
 
         """
-
-        layer_type = (layer_type or '').lower()
-
-        # assumes that big integer type arrays are likely labels.
-        if not layer_type:
+        if layer_type is None or layer_type == '':
+            # assumes that big integer type arrays are likely labels.
             layer_type = guess_labels(data)
+        else:
+            layer_type = layer_type.lower()
 
         if layer_type not in layers.NAMES:
             raise ValueError(
@@ -1461,7 +1476,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             bad_key = str(exc).split('keyword argument ')[-1]
             raise TypeError(
                 trans._(
-                    "_add_layer_from_data received an unexpected keyword argument ({bad_key}) for layer type {layer_type}",
+                    '_add_layer_from_data received an unexpected keyword argument ({bad_key}) for layer type {layer_type}',
                     deferred=True,
                     bad_key=bad_key,
                     layer_type=layer_type,
@@ -1492,7 +1507,7 @@ def _normalize_layer_data(data: LayerData) -> FullLayerData:
     if not isinstance(data, tuple) and 0 < len(data) < 4:
         raise ValueError(
             trans._(
-                "LayerData must be a 1-, 2-, or 3-tuple",
+                'LayerData must be a 1-, 2-, or 3-tuple',
                 deferred=True,
             )
         )
@@ -1502,7 +1517,7 @@ def _normalize_layer_data(data: LayerData) -> FullLayerData:
         if not isinstance(_data[1], dict):
             raise ValueError(
                 trans._(
-                    "The second item in a LayerData tuple must be a dict",
+                    'The second item in a LayerData tuple must be a dict',
                     deferred=True,
                 )
             )
@@ -1512,20 +1527,20 @@ def _normalize_layer_data(data: LayerData) -> FullLayerData:
         if _data[2] not in layers.NAMES:
             raise ValueError(
                 trans._(
-                    "The third item in a LayerData tuple must be one of: {layers!r}.",
+                    'The third item in a LayerData tuple must be one of: {layers!r}.',
                     deferred=True,
                     layers=layers.NAMES,
                 )
             )
     else:
         _data.append(guess_labels(_data[0]))
-    return tuple(_data)  # type: ignore
+    return tuple(_data)
 
 
 def _unify_data_and_user_kwargs(
     data: LayerData,
     kwargs: Optional[dict] = None,
-    layer_type: Optional[str] = None,
+    layer_type: Optional[LayerTypeName] = None,
     fallback_name: Optional[str] = None,
 ) -> FullLayerData:
     """Merge data returned from plugins with options specified by user.
@@ -1584,7 +1599,7 @@ def _unify_data_and_user_kwargs(
     return (_data, _meta, _type)
 
 
-def prune_kwargs(kwargs: Dict[str, Any], layer_type: str) -> Dict[str, Any]:
+def prune_kwargs(kwargs: dict[str, Any], layer_type: str) -> dict[str, Any]:
     """Return copy of ``kwargs`` with only keys valid for ``add_<layer_type>``
 
     Parameters
@@ -1612,20 +1627,20 @@ def prune_kwargs(kwargs: Dict[str, Any], layer_type: str) -> Dict[str, Any]:
     >>> test_kwargs = {
     ...     'scale': (0.75, 1),
     ...     'blending': 'additive',
-    ...     'num_colors': 10,
+    ...     'size': 10,
     ... }
     >>> prune_kwargs(test_kwargs, 'image')
     {'scale': (0.75, 1), 'blending': 'additive'}
 
     >>> # only labels has the ``num_colors`` argument
-    >>> prune_kwargs(test_kwargs, 'labels')
-    {'scale': (0.75, 1), 'blending': 'additive', 'num_colors': 10}
+    >>> prune_kwargs(test_kwargs, 'points')
+    {'scale': (0.75, 1), 'blending': 'additive', 'size': 10}
     """
     add_method = getattr(ViewerModel, 'add_' + layer_type, None)
     if not add_method or layer_type == 'layer':
         raise ValueError(
             trans._(
-                "Invalid layer_type: {layer_type}",
+                'Invalid layer_type: {layer_type}',
                 deferred=True,
                 layer_type=layer_type,
             )
@@ -1637,7 +1652,7 @@ def prune_kwargs(kwargs: Dict[str, Any], layer_type: str) -> Dict[str, Any]:
 
 
 @lru_cache(maxsize=1)
-def valid_add_kwargs() -> Dict[str, Set[str]]:
+def valid_add_kwargs() -> dict[str, set[str]]:
     """Return a dict where keys are layer types & values are valid kwargs."""
     valid = {}
     for meth in dir(ViewerModel):
@@ -1656,5 +1671,5 @@ for _layer in (
     layers.Tracks,
     layers.Vectors,
 ):
-    func = create_add_method(_layer, filename=__file__)
+    func = create_add_method(_layer)
     setattr(ViewerModel, func.__name__, func)

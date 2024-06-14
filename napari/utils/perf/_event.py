@@ -1,5 +1,5 @@
-"""PerfEvent class.
-"""
+"""PerfEvent class."""
+
 import os
 import threading
 from typing import NamedTuple, Optional
@@ -65,7 +65,7 @@ class PerfEvent:
     span : Span
         The time span when the event happened.
     category : str
-        Comma separated categories such has "render,update".
+        Comma separated categories such as "render,update".
     origin : Origin
         The process and thread that produced the event.
     args : dict
@@ -93,7 +93,7 @@ class PerfEvent:
         category: Optional[str] = None,
         process_id: Optional[int] = None,
         thread_id: Optional[int] = None,
-        phase: str = "X",  # "X" is a "complete event" in their spec.
+        phase: str = 'X',  # "X" is a "complete event" in their spec.
         **kwargs: float,
     ) -> None:
         if process_id is None:
@@ -119,26 +119,26 @@ class PerfEvent:
         self.span = Span(self.span.start_ns, end_ns)
 
     @property
-    def start_us(self):
+    def start_us(self) -> float:
         """Start time in microseconds."""
         return self.span.start_ns / 1e3
 
     @property
-    def start_ms(self):
+    def start_ms(self) -> float:
         """Start time in milliseconds."""
         return self.span.start_ns / 1e6
 
     @property
-    def duration_ns(self):
+    def duration_ns(self) -> int:
         """Duration in nanoseconds."""
         return self.span.end_ns - self.span.start_ns
 
     @property
-    def duration_us(self):
+    def duration_us(self) -> float:
         """Duration in microseconds."""
         return self.duration_ns / 1e3
 
     @property
-    def duration_ms(self):
+    def duration_ms(self) -> float:
         """Duration in milliseconds."""
         return self.duration_ns / 1e6

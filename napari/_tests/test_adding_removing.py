@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 
 from napari._tests.utils import (
+    count_warning_events,
     layer_test_data,
     skip_local_popups,
     skip_on_win_ci,
@@ -12,8 +13,8 @@ from napari.utils.events.event import WarningEmitter
 
 @skip_on_win_ci
 @skip_local_popups
-@pytest.mark.parametrize('Layer, data, _', layer_test_data)
-def test_add_all_layers(make_napari_viewer, Layer, data, _):
+@pytest.mark.parametrize(('Layer', 'data', 'ndim'), layer_test_data)
+def test_add_all_layers(make_napari_viewer, Layer, data, ndim):
     """Make sure that all layers can show in the viewer."""
     viewer = make_napari_viewer(show=True)
     viewer.layers.append(Layer(data))
@@ -75,7 +76,7 @@ def test_adding_removing_layer(make_napari_viewer):
 
     # Add layer
     viewer.layers.append(layer)
-    assert np.all(viewer.layers[0].data == data)
+    np.testing.assert_array_equal(viewer.layers[0].data, data)
     assert len(viewer.layers) == 1
     assert viewer.dims.ndim == 4
     # check that adding a layer created new callbacks
@@ -98,7 +99,7 @@ def test_adding_removing_layer(make_napari_viewer):
     assert viewer.dims.ndim == 4
 
 
-@pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
+@pytest.mark.parametrize(('Layer', 'data', 'ndim'), layer_test_data)
 def test_add_remove_layer_external_callbacks(
     make_napari_viewer, Layer, data, ndim
 ):
@@ -120,7 +121,7 @@ def test_add_remove_layer_external_callbacks(
     for em in layer.events.emitters.values():
         # warningEmitters are not connected when connecting to the emitterGroup
         if not isinstance(em, WarningEmitter):
-            assert len(em.callbacks) == 1
+            assert len(em.callbacks) == count_warning_events(em.callbacks) + 1
 
     viewer.layers.append(layer)
     # Check layer added correctly
@@ -137,4 +138,4 @@ def test_add_remove_layer_external_callbacks(
     for em in layer.events.emitters.values():
         # warningEmitters are not connected when connecting to the emitterGroup
         if not isinstance(em, WarningEmitter):
-            assert len(em.callbacks) == 1
+            assert len(em.callbacks) == count_warning_events(em.callbacks) + 1

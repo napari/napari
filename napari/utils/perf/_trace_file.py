@@ -1,8 +1,8 @@
-"""PerfTraceFile class to write the chrome://tracing file format (JSON)
-"""
+"""PerfTraceFile class to write the chrome://tracing file format (JSON)"""
+
 import json
 from time import perf_counter_ns
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from napari.utils.perf._event import PerfEvent
@@ -44,9 +44,9 @@ class PerfTraceFile:
 
         # Accumulate events in a list and only write at the end so the cost
         # of writing to a file does not bloat our timings.
-        self.events: List[PerfEvent] = []
+        self.events: list[PerfEvent] = []
 
-    def add_event(self, event: "PerfEvent") -> None:
+    def add_event(self, event: 'PerfEvent') -> None:
         """Add one perf event to our in-memory list.
 
         Parameters
@@ -56,13 +56,13 @@ class PerfTraceFile:
         """
         self.events.append(event)
 
-    def close(self):
+    def close(self) -> None:
         """Close the trace file, write all events to disk."""
         event_data = [self._get_event_data(x) for x in self.events]
-        with open(self.output_path, "w") as outf:
+        with open(self.output_path, 'w') as outf:
             json.dump(event_data, outf)
 
-    def _get_event_data(self, event: "PerfEvent") -> dict:
+    def _get_event_data(self, event: 'PerfEvent') -> dict:
         """Return the data for one perf event.
 
         Parameters
@@ -75,30 +75,30 @@ class PerfTraceFile:
         dict
             The data to be written to JSON.
         """
-        category = "none" if event.category is None else event.category
+        category = 'none' if event.category is None else event.category
 
         data = {
-            "pid": event.origin.process_id,
-            "tid": event.origin.thread_id,
-            "name": event.name,
-            "cat": category,
-            "ph": event.phase,
-            "ts": event.start_us,
-            "args": event.args,
+            'pid': event.origin.process_id,
+            'tid': event.origin.thread_id,
+            'name': event.name,
+            'cat': category,
+            'ph': event.phase,
+            'ts': event.start_us,
+            'args': event.args,
         }
 
         # The three phase types we support.
-        assert event.phase in ["X", "I", "C"]
+        assert event.phase in ['X', 'I', 'C']
 
-        if event.phase == "X":
+        if event.phase == 'X':
             # "X" is a Complete Event, it has a duration.
-            data["dur"] = event.duration_us
-        elif event.phase == "I":
+            data['dur'] = event.duration_us
+        elif event.phase == 'I':
             # "I is an Instant Event, it has a "scope" one of:
             #     "g" - global
             #     "p" - process
             #     "t" - thread
             # We hard code "process" right now because that's all we've needed.
-            data["s"] = "p"
+            data['s'] = 'p'
 
         return data

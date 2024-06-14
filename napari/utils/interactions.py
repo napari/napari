@@ -2,7 +2,6 @@ import contextlib
 import inspect
 import sys
 import warnings
-from typing import List
 
 from numpydoc.docscrape import FunctionDoc
 
@@ -239,15 +238,15 @@ KEY_SYMBOLS = {
 }
 
 
-joinchar = '+'
+JOINCHAR = '+'
 if sys.platform.startswith('darwin'):
     KEY_SYMBOLS.update({'Ctrl': '⌃', 'Alt': '⌥', 'Meta': '⌘'})
-    joinchar = ''
+    JOINCHAR = ''
 elif sys.platform.startswith('linux'):
     KEY_SYMBOLS.update({'Meta': 'Super'})
 
 
-def _kb2mods(key_bind: KeyBinding) -> List[str]:
+def _kb2mods(key_bind: KeyBinding) -> list[str]:
     """Extract list of modifiers from a key binding.
 
     Parameters
@@ -291,7 +290,7 @@ class Shortcut:
             shortcut to format
         """
         error_msg = trans._(
-            "`{shortcut}` does not seem to be a valid shortcut Key.",
+            '`{shortcut}` does not seem to be a valid shortcut Key.',
             shortcut=shortcut,
         )
         error = False
@@ -323,14 +322,13 @@ class Shortcut:
         # as you can't get two non-modifier keys,  or alone.
         if text == '+':
             return text
-        if joinchar == "+":
-            text.replace('++', '+Plus')
-            text.replace('+', '')
-            text.replace('Plus', '+')
+        if JOINCHAR == '+':
+            text = text.replace('++', '+Plus')
+            text = text.replace('+', '')
+            text = text.replace('Plus', '+')
         for k, v in KEY_SYMBOLS.items():
             if text.endswith(v):
                 text = text.replace(v, k)
-                assert v not in text
             else:
                 text = text.replace(v, k + '-')
 
@@ -360,7 +358,7 @@ class Shortcut:
             Shortcut formatted to be displayed on current paltform.
         """
         return ' '.join(
-            joinchar.join(
+            JOINCHAR.join(
                 KEY_SYMBOLS.get(x, x)
                 for x in ([*_kb2mods(part), str(part.key)])
             )
@@ -390,14 +388,14 @@ def get_key_bindings_summary(keymap, col='rgb(134, 142, 147)'):
     key_bindings_strs = ['<table border="0" width="100%">']
     for key in keymap:
         keycodes = [KEY_SYMBOLS.get(k, k) for k in key.split('-')]
-        keycodes = "+".join(
+        keycodes = '+'.join(
             [f"<span style='color: {col}'><b>{k}</b></span>" for k in keycodes]
         )
         key_bindings_strs.append(
             "<tr><td width='80' style='text-align: right; padding: 4px;'>"
             f"<span style='color: rgb(66, 72, 80)'>{keycodes}</span></td>"
             "<td style='text-align: left; padding: 4px; color: #CCC;'>"
-            f"{keymap[key]}</td></tr>"
+            f'{keymap[key]}</td></tr>'
         )
     key_bindings_strs.append('</table>')
     return ''.join(key_bindings_strs)

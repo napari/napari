@@ -4,9 +4,9 @@ from napari._qt.widgets.qt_plugin_sorter import QtPluginSorter, rst2html
 
 
 @pytest.mark.parametrize(
-    'text,expected_text',
+    ('text', 'expected_text'),
     [
-        ("", ""),
+        ('', ''),
         (
             """Return a function capable of loading ``path`` into napari, or ``None``.
 
@@ -102,7 +102,7 @@ def test_create_qt_plugin_sorter(qtbot):
 
 
 @pytest.mark.parametrize(
-    "hook_name,help_info",
+    ('hook_name', 'help_info'),
     [
         ('select hook... ', ''),
         (

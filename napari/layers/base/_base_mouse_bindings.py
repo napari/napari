@@ -1,17 +1,24 @@
 import warnings
+from collections.abc import Generator
+from typing import TYPE_CHECKING
 
 import numpy as np
+import numpy.typing as npt
 
 from napari.layers.utils.interaction_box import (
     InteractionBoxHandle,
     generate_transform_box_from_layer,
     get_nearby_handle,
 )
+from napari.utils.events import Event
 from napari.utils.transforms import Affine
 from napari.utils.translations import trans
 
+if TYPE_CHECKING:
+    from napari.layers.base import Layer
 
-def highlight_box_handles(layer, event):
+
+def highlight_box_handles(layer: 'Layer', event: Event) -> None:
     """
     Highlight the hovered handle of a TransformBox.
     """
@@ -36,22 +43,26 @@ def highlight_box_handles(layer, event):
 
 
 def _translate_with_box(
-    layer, initial_affine, initial_mouse_pos, mouse_pos, event
-):
+    layer: 'Layer',
+    initial_affine: Affine,
+    initial_mouse_pos: npt.NDArray,
+    mouse_pos: npt.NDArray,
+    event: Event,
+) -> None:
     offset = mouse_pos - initial_mouse_pos
     new_affine = Affine(translate=offset).compose(initial_affine)
     layer.affine = layer.affine.replace_slice(event.dims_displayed, new_affine)
 
 
 def _rotate_with_box(
-    layer,
-    initial_affine,
-    initial_mouse_pos,
-    initial_handle_coords,
-    initial_center,
-    mouse_pos,
-    event,
-):
+    layer: 'Layer',
+    initial_affine: Affine,
+    initial_mouse_pos: npt.NDArray,
+    initial_handle_coords: npt.NDArray,
+    initial_center: npt.NDArray,
+    mouse_pos: npt.NDArray,
+    event: Event,
+) -> None:
     # calculate the angle between the center-handle vector and the center-mouse vector
     center_to_handle = (
         initial_handle_coords[InteractionBoxHandle.ROTATION] - initial_center
@@ -59,9 +70,18 @@ def _rotate_with_box(
     center_to_handle /= np.linalg.norm(center_to_handle)
     center_to_mouse = mouse_pos - initial_center
     center_to_mouse /= np.linalg.norm(center_to_mouse)
-    angle = np.arctan2(center_to_mouse[1], center_to_mouse[0]) - np.arctan2(
-        center_to_handle[1], center_to_handle[0]
-    )
+
+    # if shift held, snap rotation to 45 degree steps
+    if 'Shift' in event.modifiers:
+        angle = np.round(
+            np.arctan2(center_to_mouse[1], center_to_mouse[0]) / np.deg2rad(45)
+        ) * np.deg2rad(45) - np.arctan2(
+            center_to_handle[1], center_to_handle[0]
+        )
+    else:
+        angle = np.arctan2(
+            center_to_mouse[1], center_to_mouse[0]
+        ) - np.arctan2(center_to_handle[1], center_to_handle[0])
 
     new_affine = (
         Affine(translate=initial_center)
@@ -73,16 +93,16 @@ def _rotate_with_box(
 
 
 def _scale_with_box(
-    layer,
-    initial_affine,
-    initial_world_to_data,
-    initial_data2physical,
-    nearby_handle,
-    initial_center,
-    initial_handle_coords_data,
-    mouse_pos,
-    event,
-):
+    layer: 'Layer',
+    initial_affine: Affine,
+    initial_world_to_data: Affine,
+    initial_data2physical: Affine,
+    nearby_handle: InteractionBoxHandle,
+    initial_center: npt.NDArray,
+    initial_handle_coords_data: npt.NDArray,
+    mouse_pos: npt.NDArray,
+    event: Event,
+) -> None:
     locked_aspect_ratio = False
     if 'Shift' in event.modifiers:
         if nearby_handle in InteractionBoxHandle.corners():
@@ -121,7 +141,7 @@ def _scale_with_box(
         # (i.e: dragging the central handle of the TransformBox).
         # That's intended, because we get inf or nan, which we can then replace with 1s
         # and thus maintain the size along that axis.
-        warnings.simplefilter("ignore", RuntimeWarning)
+        warnings.simplefilter('ignore', RuntimeWarning)
         scale = center_to_mouse / center_to_handle
         scale = np.nan_to_num(scale, posinf=1, neginf=1)
 
@@ -146,7 +166,9 @@ def _scale_with_box(
     layer.affine = layer.affine.replace_slice(event.dims_displayed, new_affine)
 
 
-def transform_with_box(layer, event):
+def transform_with_box(
+    layer: 'Layer', event: Event
+) -> Generator[None, None, None]:
     """
     Translate, rescale or rotate a layer by dragging a TransformBox handle.
     """
@@ -155,9 +177,8 @@ def transform_with_box(layer, event):
 
     # we work in data space so we're axis aligned which simplifies calculation
     # same as Layer.data_to_world
-    initial_data_to_world = layer._transforms[1:].simplified.set_slice(
-        event.dims_displayed
-    )
+    simplified = layer._transforms[1:].simplified
+    initial_data_to_world = simplified.set_slice(event.dims_displayed)
     initial_world_to_data = initial_data_to_world.inverse
     initial_mouse_pos = np.array(event.position)[event.dims_displayed]
     initial_mouse_pos_data = initial_world_to_data(initial_mouse_pos)

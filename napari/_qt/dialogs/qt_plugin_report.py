@@ -1,5 +1,4 @@
-"""Provides a QtPluginErrReporter that allows the user report plugin errors.
-"""
+"""Provides a QtPluginErrReporter that allows the user report plugin errors."""
 
 import contextlib
 from typing import Optional
@@ -77,7 +76,7 @@ class QtPluginErrReporter(QDialog):
         self.text_area = QTextEdit()
         theme = get_theme(get_settings().appearance.theme)
         self._highlight = Pylighter(
-            self.text_area.document(), "python", theme.syntax_style
+            self.text_area.document(), 'python', theme.syntax_style
         )
         self.text_area.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextSelectableByMouse
@@ -104,15 +103,15 @@ class QtPluginErrReporter(QDialog):
         # create copy to clipboard button
         self.clipboard_button = QPushButton()
         self.clipboard_button.hide()
-        self.clipboard_button.setObjectName("QtCopyToClipboardButton")
+        self.clipboard_button.setObjectName('QtCopyToClipboardButton')
         self.clipboard_button.setToolTip(
-            trans._("Copy error log to clipboard")
+            trans._('Copy error log to clipboard')
         )
         self.clipboard_button.clicked.connect(self.copyToClipboard)
 
         # plugin_meta contains a URL to the home page, (and/or other details)
         self.plugin_meta = QLabel('', parent=self)
-        self.plugin_meta.setObjectName("pluginInfo")
+        self.plugin_meta.setObjectName('pluginInfo')
         self.plugin_meta.setTextFormat(Qt.TextFormat.RichText)
         self.plugin_meta.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextBrowserInteraction
@@ -170,7 +169,7 @@ class QtPluginErrReporter(QDialog):
 
         self.plugin_combo.setCurrentText(plugin)
 
-        err_string = format_exceptions(plugin, as_html=False, color="NoColor")
+        err_string = format_exceptions(plugin, as_html=False, color='NoColor')
         self.text_area.setText(err_string)
         self.clipboard_button.show()
 
@@ -195,9 +194,9 @@ class QtPluginErrReporter(QDialog):
 
                     err = format_exceptions(plugin, as_html=False)
                     err = (
-                        "<!--Provide detail on the error here-->\n\n\n\n"
-                        "<details>\n<summary>Traceback from napari</summary>"
-                        f"\n\n```\n{err}\n```\n</details>"
+                        '<!--Provide detail on the error here-->\n\n\n\n'
+                        '<details>\n<summary>Traceback from napari</summary>'
+                        f'\n\n```\n{err}\n```\n</details>'
                     )
                     url = f'{meta.get("url")}/issues/new?&body={err}'
                     webbrowser.open(url, new=2)

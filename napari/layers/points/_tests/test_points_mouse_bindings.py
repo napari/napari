@@ -1,10 +1,14 @@
 from dataclasses import dataclass, field
-from typing import List, Optional, Tuple, Union
+from typing import Optional, Union
+from unittest.mock import MagicMock
 
 import numpy as np
 import pytest
 
+from napari.components.dims import Dims
 from napari.layers import Points
+from napari.layers._tests._utils import compare_dicts
+from napari.layers.base import ActionType
 from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.interactions import (
     mouse_move_callbacks,
@@ -19,24 +23,24 @@ class Event:
 
     type: str
     is_dragging: bool = False
-    modifiers: List[str] = field(default_factory=list)
-    position: Union[Tuple[int, int], Tuple[int, int, int]] = (
+    modifiers: list[str] = field(default_factory=list)
+    position: Union[tuple[int, int], tuple[int, int, int]] = (
         0,
         0,
     )  # world coords
     pos: np.ndarray = field(
         default_factory=lambda: np.zeros(2)
     )  # canvas coords
-    view_direction: Optional[List[float]] = None
-    up_direction: Optional[List[float]] = None
-    dims_displayed: List[int] = field(default_factory=lambda: [0, 1])
+    view_direction: Optional[list[float]] = None
+    up_direction: Optional[list[float]] = None
+    dims_displayed: list[int] = field(default_factory=lambda: [0, 1])
 
 
 def read_only_event(*args, **kwargs):
     return ReadOnlyWrapper(Event(*args, **kwargs), exceptions=('handled',))
 
 
-@pytest.fixture
+@pytest.fixture()
 def create_known_points_layer_2d():
     """Create points layer with known coordinates
 
@@ -55,7 +59,7 @@ def create_known_points_layer_2d():
     n_points = len(data)
 
     layer = Points(data, size=1)
-    assert np.all(layer.data == data)
+    np.testing.assert_array_equal(layer.data, data)
     assert layer.ndim == 2
     assert len(layer.data) == n_points
     assert len(layer.selected_data) == 0
@@ -63,7 +67,7 @@ def create_known_points_layer_2d():
     return layer, n_points, known_non_point
 
 
-@pytest.fixture
+@pytest.fixture()
 def create_known_points_layer_3d():
     """Create 3D points layer with known coordinates displayed in 3D.
 
@@ -82,9 +86,9 @@ def create_known_points_layer_3d():
     n_points = len(data)
 
     layer = Points(data, size=1)
-    layer._slice_dims(ndisplay=3)
+    layer._slice_dims(Dims(ndim=3, ndisplay=3))
 
-    assert np.all(layer.data == data)
+    np.testing.assert_array_equal(layer.data, data)
     assert layer.ndim == 3
     assert len(layer._slice_input.displayed) == 3
     assert len(layer.data) == n_points
@@ -660,7 +664,7 @@ def test_selecting_no_points_with_drag_3d(create_known_points_layer_3d):
 
 
 @pytest.mark.parametrize(
-    'pre_selection,on_point,modifier',
+    ('pre_selection', 'on_point', 'modifier'),
     [
         (set(), True, []),
         ({0}, True, []),
@@ -767,7 +771,7 @@ def test_drag_start_selection(
                 layer.data[0], [offset_position[0], offset_position[1]]
             )
         else:
-            raise AssertionError("Unreachable code")  # pragma: no cover
+            raise AssertionError('Unreachable code')  # pragma: no cover
     else:
         np.testing.assert_array_equal(
             layer._drag_box, [initial_position, offset_position]
@@ -804,7 +808,7 @@ def test_drag_start_selection(
                 layer.data[0], [offset_position[0], offset_position[1]]
             )
         else:
-            raise AssertionError("Unreachable code")  # pragma: no cover
+            raise AssertionError('Unreachable code')  # pragma: no cover
     else:
         np.testing.assert_array_equal(
             layer._drag_box, [initial_position, offset_position]
@@ -837,6 +841,60 @@ def test_drag_start_selection(
         assert 0 in layer.selected_data
         assert layer.selected_data == set(range(n_points))
     else:
-        assert False, 'Unreachable code'  # pragma: no cover
+        pytest.fail('Unreachable code')
     assert layer._drag_box is None
     assert layer._drag_start is None
+
+
+def test_drag_point_with_mouse(create_known_points_layer_2d):
+    layer, n_points, _ = create_known_points_layer_2d
+    layer.events.data = MagicMock()
+    layer.mode = 'select'
+    old_data = (
+        layer.data.copy()
+    )  # ensure you have old data, not updated in place
+    layer.selected_data = {1}
+    initial_position = tuple(layer.data[1])
+
+    new_position = [0, 0]
+    modifier = []
+
+    event = read_only_event(
+        type='mouse_press', position=initial_position, modifiers=modifier
+    )
+    mouse_press_callbacks(layer, event)
+
+    # Required to assert before the changing event as otherwise layer.data for changing is updated in place.
+    changing_event = {
+        'value': old_data,
+        'action': ActionType.CHANGING,
+        'data_indices': (1,),
+        'vertex_indices': ((),),
+    }
+
+    def side_effect(*args, **kwargs):
+        if kwargs['action'] == ActionType.CHANGING:
+            assert compare_dicts(kwargs, changing_event)
+
+    layer.events.data.side_effect = side_effect
+    event = read_only_event(
+        type='mouse_move',
+        is_dragging=True,
+        position=new_position,
+        modifiers=modifier,
+    )
+    mouse_move_callbacks(layer, event)
+
+    event = read_only_event(
+        type='mouse_release', is_dragging=False, modifiers=modifier
+    )
+    mouse_release_callbacks(layer, event)
+
+    changed_event = {
+        'value': layer.data,
+        'action': ActionType.CHANGED,
+        'data_indices': (1,),
+        'vertex_indices': ((),),
+    }
+    assert not np.array_equal(layer.data, old_data)
+    assert compare_dicts(layer.events.data.call_args[1], changed_event)

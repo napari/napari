@@ -160,7 +160,7 @@ class QtImageControls(QtBaseImageControls):
 
         colormap_layout = QHBoxLayout()
         if hasattr(self.layer, 'rgb') and self.layer.rgb:
-            colormap_layout.addWidget(QLabel("RGB"))
+            colormap_layout.addWidget(QLabel('RGB'))
             self.colormapComboBox.setVisible(False)
             self.colorbarLabel.setVisible(False)
         else:
@@ -285,7 +285,11 @@ class QtImageControls(QtBaseImageControls):
         """
         interp_string = event.value.value
 
-        with self.layer.events.interpolation.blocker(), self.layer.events.interpolation2d.blocker(), self.layer.events.interpolation3d.blocker():
+        with (
+            self.layer.events.interpolation.blocker(),
+            self.layer.events.interpolation2d.blocker(),
+            self.layer.events.interpolation3d.blocker(),
+        ):
             if self.interpComboBox.findText(interp_string) == -1:
                 self.interpComboBox.addItem(interp_string)
             self.interpComboBox.setCurrentText(interp_string)

@@ -16,7 +16,7 @@ from napari.utils.interactions import (
 )
 
 
-@pytest.fixture
+@pytest.fixture()
 def create_known_shapes_layer():
     """Create shapes layer with known coordinates
 
@@ -104,6 +104,10 @@ def test_add_simple_shape(shape_type, create_known_shapes_layer):
     np.testing.assert_allclose(new_shape_max, known_non_shape_end)
     assert layer.shape_type[-1] == shape_type
 
+    # Ensure it's selected, accounting for zero-indexing
+    assert len(layer.selected_data) == 1
+    assert layer.selected_data == {n_shapes}
+
 
 def test_polygon_lasso_tablet(create_known_shapes_layer):
     """Draw polygon with tablet simulated by mouse drag event."""
@@ -145,6 +149,10 @@ def test_polygon_lasso_tablet(create_known_shapes_layer):
     assert layer.shape_type[-1] == 'polygon'
     assert not layer._is_creating
 
+    # Ensure it's selected, accounting for zero-indexing
+    assert len(layer.selected_data) == 1
+    assert layer.selected_data == {n_shapes}
+
 
 def test_polygon_lasso_mouse(create_known_shapes_layer):
     """Draw polygon with mouse. Events in sequence are mouse press, release, move, press, release"""
@@ -181,6 +189,10 @@ def test_polygon_lasso_mouse(create_known_shapes_layer):
     assert np.array_equal(desired_shape, layer.data[-1])
     assert layer.shape_type[-1] == 'polygon'
     assert not layer._is_creating
+
+    # Ensure it's selected, accounting for zero-indexing
+    assert len(layer.selected_data) == 1
+    assert layer.selected_data == {n_shapes}
 
 
 def test_distance_polygon_creating(create_known_shapes_layer):
@@ -222,16 +234,19 @@ def test_add_complex_shape(shape_type, create_known_shapes_layer):
         event = read_only_mouse_event(
             type='mouse_move',
             position=coord,
+            pos=np.array(coord, dtype=float),
         )
         mouse_move_callbacks(layer, event)
         event = read_only_mouse_event(
             type='mouse_press',
             position=coord,
+            pos=np.array(coord, dtype=float),
         )
         mouse_press_callbacks(layer, event)
         event = read_only_mouse_event(
             type='mouse_release',
             position=coord,
+            pos=np.array(coord, dtype=float),
         )
         mouse_release_callbacks(layer, event)
 
@@ -248,6 +263,66 @@ def test_add_complex_shape(shape_type, create_known_shapes_layer):
     assert layer.data[-1].shape, desired_shape.shape
     np.testing.assert_allclose(layer.data[-1], desired_shape)
     assert layer.shape_type[-1] == shape_type
+
+    # Ensure it's selected, accounting for zero-indexing
+    assert len(layer.selected_data) == 1
+    assert layer.selected_data == {n_shapes}
+
+
+@pytest.mark.parametrize(
+    'shape_type_vertices',
+    [
+        ('path', [[20, 30], [20, 30]]),
+        ('polygon', [[20, 30], [10, 50], [10, 50]]),
+    ],
+)
+def test_add_invalid_shape(shape_type_vertices, create_known_shapes_layer):
+    """Check invalid shape clicking behavior in add polygon mode."""
+    layer, n_shapes, known_non_shape = create_known_shapes_layer
+
+    # Add shape at location where non exists
+    shape_type, shape_vertices = shape_type_vertices
+    layer.mode = f'add_{shape_type}'
+
+    for coord in shape_vertices:
+        # Simulate move, click, and release
+        event = read_only_mouse_event(
+            type='mouse_move',
+            position=coord,
+            pos=np.array(coord, dtype=float),
+        )
+        mouse_move_callbacks(layer, event)
+        event = read_only_mouse_event(
+            type='mouse_press',
+            position=coord,
+            pos=np.array(coord, dtype=float),
+        )
+        mouse_press_callbacks(layer, event)
+        event = read_only_mouse_event(
+            type='mouse_release',
+            position=coord,
+            pos=np.array(coord, dtype=float),
+        )
+        mouse_release_callbacks(layer, event)
+
+    # Although the shape/polygon being created is invalid, three shapes should
+    # be available until it is marked as finished via mouse double click
+    assert len(layer.data) == n_shapes + 1
+
+    # finish drawing causing the removal of the in progress shape since is invalid
+    end_click = read_only_mouse_event(
+        type='mouse_double_click',
+        position=coord,
+        pos=np.array(coord, dtype=float),
+    )
+    assert layer.mouse_double_click_callbacks
+    mouse_double_click_callbacks(layer, end_click)
+
+    # Ensure no data is selected, number of shapes is the initial one and
+    # last cursor position variable was reset
+    assert len(layer.selected_data) == 0
+    assert len(layer.data) == n_shapes
+    assert layer._last_cursor_position is None
 
 
 def test_vertex_insert(create_known_shapes_layer):
@@ -278,16 +353,16 @@ def test_vertex_insert(create_known_shapes_layer):
     assert len(layer.data) == n_shapes
     assert len(layer.data[0]) == n_coord + 1
     assert layer.events.data.call_args_list[0][1] == {
-        "value": old_data,
-        "action": ActionType.CHANGING,
-        "data_indices": tuple(layer.selected_data),
-        "vertex_indices": ((2,),),
+        'value': old_data,
+        'action': ActionType.CHANGING,
+        'data_indices': tuple(layer.selected_data),
+        'vertex_indices': ((2,),),
     }
     assert layer.events.data.call_args[1] == {
-        "value": layer.data,
-        "action": ActionType.CHANGED,
-        "data_indices": tuple(layer.selected_data),
-        "vertex_indices": ((2,),),
+        'value': layer.data,
+        'action': ActionType.CHANGED,
+        'data_indices': tuple(layer.selected_data),
+        'vertex_indices': ((2,),),
     }
     np.testing.assert_allclose(
         np.min(abs(layer.data[0] - known_non_shape), axis=0), [0, 0]
@@ -312,20 +387,20 @@ def test_vertex_remove(create_known_shapes_layer):
     )
     mouse_press_callbacks(layer, event)
     assert layer.events.data.call_args_list[0][1] == {
-        "value": old_data,
-        "action": ActionType.CHANGING,
-        "data_indices": tuple(
+        'value': old_data,
+        'action': ActionType.CHANGING,
+        'data_indices': tuple(
             select,
         ),
-        "vertex_indices": ((0,),),
+        'vertex_indices': ((0,),),
     }
     assert layer.events.data.call_args[1] == {
-        "value": layer.data,
-        "action": ActionType.CHANGED,
-        "data_indices": tuple(
+        'value': layer.data,
+        'action': ActionType.CHANGED,
+        'data_indices': tuple(
             select,
         ),
-        "vertex_indices": ((0,),),
+        'vertex_indices': ((0,),),
     }
     assert len(layer.data) == n_shapes
     assert len(layer.data[0]) == n_coord - 1
@@ -429,16 +504,16 @@ def test_drag_shape(create_known_shapes_layer):
     assert len(layer.selected_data) == 1
     assert layer.selected_data == {0}
     assert layer.events.data.call_args_list[0][1] == {
-        "value": old_data,
-        "action": ActionType.CHANGING,
-        "data_indices": (0,),
-        "vertex_indices": vertex_indices,
+        'value': old_data,
+        'action': ActionType.CHANGING,
+        'data_indices': (0,),
+        'vertex_indices': vertex_indices,
     }
     assert layer.events.data.call_args[1] == {
-        "value": layer.data,
-        "action": ActionType.CHANGED,
-        "data_indices": (0,),
-        "vertex_indices": vertex_indices,
+        'value': layer.data,
+        'action': ActionType.CHANGED,
+        'data_indices': (0,),
+        'vertex_indices': vertex_indices,
     }
     np.testing.assert_allclose(layer.data[0], orig_data + np.array([10, 5]))
 
@@ -529,10 +604,10 @@ def test_drag_vertex(create_known_shapes_layer):
     assert len(layer.selected_data) == 1
     assert layer.selected_data == {0}
     assert layer.events.data.call_args[1] == {
-        "value": layer.data,
-        "action": ActionType.CHANGED,
-        "data_indices": (0,),
-        "vertex_indices": vertex_indices,
+        'value': layer.data,
+        'action': ActionType.CHANGED,
+        'data_indices': (0,),
+        'vertex_indices': vertex_indices,
     }
     np.testing.assert_allclose(layer.data[0][0], [0, 0])
 
@@ -738,7 +813,7 @@ def test_selecting_no_shapes_with_drag(mode, create_known_shapes_layer):
 
 
 @pytest.mark.parametrize(
-    'attr', ('_move_modes', '_drag_modes', '_cursor_modes')
+    'attr', ['_move_modes', '_drag_modes', '_cursor_modes']
 )
 def test_all_modes_covered(attr):
     """
@@ -750,7 +825,7 @@ def test_all_modes_covered(attr):
 
 
 @pytest.mark.parametrize(
-    'pre_selection,on_point,modifier',
+    ('pre_selection', 'on_point', 'modifier'),
     [
         (set(), True, []),
         ({1}, True, []),
@@ -840,7 +915,7 @@ def test_drag_start_selection(
                 [offset_position[0], offset_position[1]],
             )
         else:
-            raise AssertionError("Unreachable code")  # pragma: no cover
+            raise AssertionError('Unreachable code')  # pragma: no cover
     else:
         np.testing.assert_array_equal(
             layer._drag_box, [initial_position, offset_position]
@@ -867,7 +942,7 @@ def test_drag_start_selection(
                 [offset_position[0], offset_position[1]],
             )
         else:
-            raise AssertionError("Unreachable code")  # pragma: no cover
+            raise AssertionError('Unreachable code')  # pragma: no cover
     else:
         np.testing.assert_array_equal(
             layer._drag_box, [initial_position, offset_position]
@@ -903,6 +978,6 @@ def test_drag_start_selection(
         assert 0 in layer.selected_data
         assert layer.selected_data == set(range(n_points))
     else:
-        assert False, 'Unreachable code'  # pragma: no cover
+        pytest.fail('Unreachable code')
     assert layer._drag_box is None
     assert layer._drag_start is None

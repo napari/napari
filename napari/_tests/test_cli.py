@@ -8,7 +8,7 @@ import napari
 from napari import __main__
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_run():
     """mock to prevent starting the event loop."""
     with mock.patch('napari._qt.widgets.qt_splash_screen.NapariSplashScreen'):
@@ -37,7 +37,7 @@ def test_cli_parses_unknowns(mock_run, monkeypatch, make_napari_viewer):
     v = make_napari_viewer()  # our mock view_path will return this object
 
     def assert_kwargs(*args, **kwargs):
-        assert ["file"] in args
+        assert ['file'] in args
         assert kwargs['contrast_limits'] == (0, 1)
 
     # testing all the variants of literal_evals
@@ -158,8 +158,8 @@ def test_cli_retains_viewer_ref(mock_run, monkeypatch, make_napari_viewer):
         gc.collect()
         if sys.getrefcount(v) <= ref_count:  # pragma: no cover
             raise AssertionError(
-                "Reference to napari.viewer has been lost by "
-                "the time the event loop started in napari.__main__"
+                'Reference to napari.viewer has been lost by '
+                'the time the event loop started in napari.__main__'
             )
 
     mock_run.side_effect = _check_refs

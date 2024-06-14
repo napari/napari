@@ -16,7 +16,7 @@ def test_sample_hook(builtins, tmp_plugin: DynamicPlugin):
     viewer = ViewerModel()
     NAME = tmp_plugin.name
     KEY = 'random data'
-    with pytest.raises(KeyError, match=f"Plugin {NAME!r} does not provide"):
+    with pytest.raises(KeyError, match=f'Plugin {NAME!r} does not provide'):
         viewer.open_sample(NAME, KEY)
 
     @tmp_plugin.contribute.sample_data(key=KEY)
@@ -57,9 +57,8 @@ def test_sample_uses_reader_plugin(builtins, tmp_plugin, tmp_path):
         )
     ]
     # if we don't pass a plugin, the declared reader_plugin is tried
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(ValueError, match='no registered plugin'):
         viewer.open_sample(NAME, 'napari logo')
-    assert "There is no registered plugin named 'gibberish'" in str(e)
 
     # if we pass a plugin, it overrides the declared one
     viewer.open_sample(NAME, 'napari logo', reader_plugin='napari')
@@ -76,9 +75,5 @@ def test_sample_uses_reader_plugin(builtins, tmp_plugin, tmp_path):
             reader_plugin='gibberish',
         )
     ]
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(ValueError, match='failed to open sample'):
         viewer.open_sample(NAME, 'fake sample', reader_plugin='napari')
-    assert (
-        f"Chosen reader napari failed to open sample. Plugin {NAME} declares gibberish"
-        in str(e)
-    )

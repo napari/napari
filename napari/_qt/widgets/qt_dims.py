@@ -1,5 +1,5 @@
 import warnings
-from typing import Optional, Tuple
+from typing import Optional
 
 import numpy as np
 from qtpy.QtCore import Slot
@@ -98,7 +98,6 @@ class QtDims(QWidget):
 
     def _update_display(self):
         """Updates display for all sliders."""
-        self.stop()
         widgets = reversed(list(enumerate(self.slider_widgets)))
         nsteps = self.dims.nsteps
         for axis, widget in widgets:
@@ -116,10 +115,10 @@ class QtDims(QWidget):
         self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
         self._resize_slice_labels()
         self._resize_axis_labels()
+        self.stop()
 
     def _update_nsliders(self):
         """Updates the number of sliders based on the number of dimensions."""
-        self.stop()
         self._trim_sliders(0)
         self._create_sliders(self.dims.ndim)
         self._update_display()
@@ -127,6 +126,7 @@ class QtDims(QWidget):
             self._update_range()
             if self._displayed_sliders[i]:
                 self._update_slider()
+        self.stop()
 
     def _resize_axis_labels(self):
         """When any of the labels get updated, this method updates all label
@@ -174,8 +174,8 @@ class QtDims(QWidget):
                 if length > width:
                     width = length
         # gui width of a string of length `width`
-        fm = QFontMetrics(QFont("", 0))
-        width = fm.boundingRect("8" * width).width()
+        fm = QFontMetrics(QFont('', 0))
+        width = fm.boundingRect('8' * width).width()
         for labl in self.findChildren(QWidget, 'slice_label'):
             labl.setFixedWidth(width + 6)
 
@@ -243,7 +243,7 @@ class QtDims(QWidget):
         axis: int = 0,
         fps: Optional[float] = None,
         loop_mode: Optional[str] = None,
-        frame_range: Optional[Tuple[int, int]] = None,
+        frame_range: Optional[tuple[int, int]] = None,
     ):
         """Animate (play) axis.
 
@@ -340,8 +340,8 @@ class QtDims(QWidget):
             )
         except RuntimeError as e:  # pragma: no cover
             if (
-                "wrapped C/C++ object of type" not in e.args[0]
-                and "Internal C++ object" not in e.args[0]
+                'wrapped C/C++ object of type' not in e.args[0]
+                and 'Internal C++ object' not in e.args[0]
             ):
                 # checking if threat is partially deleted. Otherwise
                 # reraise exception. For more details see:

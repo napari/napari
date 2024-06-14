@@ -39,11 +39,11 @@ def _threading_raise():
 
 
 def _raise():
-    raise ValueError("error!")
+    raise ValueError('error!')
 
 
-@pytest.fixture
-def clean_current(monkeypatch, qtbot):
+@pytest.fixture()
+def _clean_current(monkeypatch, qtbot):
     from napari._qt.qt_main_window import _QtMainWindow
 
     base_show = NapariQtNotification.show
@@ -64,8 +64,8 @@ def clean_current(monkeypatch, qtbot):
     def store_widget(self, *args, **kwargs):
         base_show(self, *args, **kwargs)
 
-    monkeypatch.setattr(NapariQtNotification, "show", store_widget)
-    monkeypatch.setattr(_QtMainWindow, "current", mock_current_main_window)
+    monkeypatch.setattr(NapariQtNotification, 'show', store_widget)
+    monkeypatch.setattr(_QtMainWindow, 'current', mock_current_main_window)
 
 
 @dataclass
@@ -75,7 +75,7 @@ class ShowStatus:
 
 
 @pytest.fixture(autouse=True)
-def raise_on_show(monkeypatch, qtbot):
+def _raise_on_show(monkeypatch, qtbot):
     def raise_prepare(text):
         def _raise_on_call(self, *args, **kwargs):
             raise RuntimeError(text)
@@ -83,19 +83,19 @@ def raise_on_show(monkeypatch, qtbot):
         return _raise_on_call
 
     monkeypatch.setattr(
-        NapariQtNotification, 'show', raise_prepare("notification show")
+        NapariQtNotification, 'show', raise_prepare('notification show')
     )
     monkeypatch.setattr(
-        TracebackDialog, 'show', raise_prepare("traceback show")
+        TracebackDialog, 'show', raise_prepare('traceback show')
     )
     monkeypatch.setattr(
         NapariQtNotification,
         'close_with_fade',
-        raise_prepare("close_with_fade"),
+        raise_prepare('close_with_fade'),
     )
 
 
-@pytest.fixture
+@pytest.fixture()
 def count_show(monkeypatch, qtbot):
     stat = ShowStatus()
 
@@ -105,14 +105,14 @@ def count_show(monkeypatch, qtbot):
     def mock_show_traceback(_):
         stat.show_traceback_count += 1
 
-    monkeypatch.setattr(NapariQtNotification, "show", mock_show_notif)
-    monkeypatch.setattr(TracebackDialog, "show", mock_show_traceback)
+    monkeypatch.setattr(NapariQtNotification, 'show', mock_show_notif)
+    monkeypatch.setattr(TracebackDialog, 'show', mock_show_traceback)
 
     return stat
 
 
 @pytest.fixture(autouse=True)
-def ensure_qtbot(monkeypatch, qtbot):
+def _ensure_qtbot(monkeypatch, qtbot):
     old_notif_init = NapariQtNotification.__init__
     old_traceback_init = TracebackDialog.__init__
 
@@ -124,8 +124,8 @@ def ensure_qtbot(monkeypatch, qtbot):
         old_traceback_init(self, *args, **kwargs)
         qtbot.add_widget(self)
 
-    monkeypatch.setattr(NapariQtNotification, "__init__", mock_notif_init)
-    monkeypatch.setattr(TracebackDialog, "__init__", mock_traceback_init)
+    monkeypatch.setattr(NapariQtNotification, '__init__', mock_notif_init)
+    monkeypatch.setattr(TracebackDialog, '__init__', mock_traceback_init)
 
 
 def test_clean_current_path_exist(make_napari_viewer):
@@ -135,12 +135,13 @@ def test_clean_current_path_exist(make_napari_viewer):
     )
 
 
+@pytest.mark.usefixtures('_clean_current')
 @pytest.mark.parametrize(
-    "raise_func,warn_func",
+    ('raise_func', 'warn_func'),
     [(_raise, _warn), (_threading_raise, _threading_warn)],
 )
 def test_notification_manager_via_gui(
-    count_show, qtbot, raise_func, warn_func, clean_current, monkeypatch
+    count_show, qtbot, raise_func, warn_func, monkeypatch
 ):
     """
     Test that the notification_manager intercepts `sys.excepthook`` and
@@ -153,7 +154,7 @@ def test_notification_manager_via_gui(
     qtbot.addWidget(errButton)
     qtbot.addWidget(warnButton)
     monkeypatch.setattr(
-        NapariQtNotification, "show_notification", lambda x: None
+        NapariQtNotification, 'show_notification', lambda x: None
     )
     with notification_manager:
         for btt, expected_message in [
@@ -167,9 +168,8 @@ def test_notification_manager_via_gui(
             notification_manager.records = []
 
 
-def test_show_notification_from_thread(
-    count_show, monkeypatch, qtbot, clean_current
-):
+@pytest.mark.usefixtures('_clean_current')
+def test_show_notification_from_thread(count_show, monkeypatch, qtbot):
     from napari.settings import get_settings
 
     settings = get_settings()
@@ -197,10 +197,9 @@ def test_show_notification_from_thread(
         thread.start()
 
 
+@pytest.mark.usefixtures('_clean_current')
 @pytest.mark.parametrize('severity', NotificationSeverity.__members__)
-def test_notification_display(
-    count_show, severity, monkeypatch, clean_current
-):
+def test_notification_display(count_show, severity, monkeypatch):
     """Test that NapariQtNotification can present a Notification event.
 
     NOTE: in napari.utils._tests.test_notification_manager, we already test
@@ -245,7 +244,7 @@ def test_notification_error(count_show, monkeypatch):
 
     monkeypatch.delenv('NAPARI_CATCH_ERRORS', raising=False)
     monkeypatch.setattr(
-        NapariQtNotification, "close_with_fade", lambda x, y: None
+        NapariQtNotification, 'close_with_fade', lambda x, y: None
     )
     monkeypatch.setattr(
         settings.application,
@@ -267,13 +266,12 @@ def test_notification_error(count_show, monkeypatch):
 
 
 @skip_on_win_ci
-def test_notifications_error_with_threading(
-    make_napari_viewer, clean_current, monkeypatch
-):
+@pytest.mark.usefixtures('_clean_current')
+def test_notifications_error_with_threading(make_napari_viewer, monkeypatch):
     """Test notifications of `threading` threads, using a dask example."""
     random_image = da.random.random((10, 10))
     monkeypatch.setattr(
-        NapariQtNotification, "show_notification", lambda x: None
+        NapariQtNotification, 'show_notification', lambda x: None
     )
     with notification_manager:
         viewer = make_napari_viewer(strict_qt=False)

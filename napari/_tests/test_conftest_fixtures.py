@@ -4,9 +4,6 @@ import pytest
 from qtpy.QtCore import QMutex, QThread, QTimer
 from superqt.utils import qdebounced
 
-from napari._qt.qt_viewer import QtViewer
-from napari.viewer import ViewerModel
-
 
 class _TestThread(QThread):
     def __init__(self) -> None:
@@ -17,7 +14,7 @@ class _TestThread(QThread):
         self.mutex.lock()
 
 
-@pytest.mark.disable_qthread_start
+@pytest.mark.disable_qthread_start()
 def test_disable_qthread(qapp):
     t = _TestThread()
     t.mutex.lock()
@@ -35,7 +32,7 @@ def test_qthread_running(qtbot):
     qtbot.waitUntil(t.isFinished, timeout=2000)
 
 
-@pytest.mark.disable_qtimer_start
+@pytest.mark.disable_qtimer_start()
 def test_disable_qtimer(qtbot):
     t = QTimer()
     t.setInterval(100)
@@ -52,13 +49,8 @@ def test_disable_qtimer(qtbot):
     assert not th.isRunning()
 
 
-def test_console_mock(qapp):
-    qt_viewer = QtViewer(ViewerModel())
-    assert qt_viewer.console.__class__.__name__ == "FakeQtConsole"
-
-
-@pytest.mark.usefixtures("disable_throttling")
-@patch("qtpy.QtCore.QTimer.start")
+@pytest.mark.usefixtures('_disable_throttling')
+@patch('qtpy.QtCore.QTimer.start')
 def test_disable_throttle(start_mock):
     mock = Mock()
 
@@ -71,11 +63,13 @@ def test_disable_throttle(start_mock):
     mock.assert_called_once()
 
 
-@patch("qtpy.QtCore.QTimer.start")
-@patch("qtpy.QtCore.QTimer.isActive", return_value=True)
-def test_lack_disable_throttle(_active_mock, start_mock, monkeypatch):
+def test_lack_disable_throttle(monkeypatch):
     """This is test showing that if we do not use disable_throttling then timer is started"""
     mock = Mock()
+    start_mock = Mock()
+    active_mock = Mock(return_value=True)
+    monkeypatch.setattr('qtpy.QtCore.QTimer.start', start_mock)
+    monkeypatch.setattr('qtpy.QtCore.QTimer.isActive', active_mock)
 
     @qdebounced(timeout=50)
     def f() -> str:

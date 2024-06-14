@@ -19,11 +19,11 @@ def _impl(path):
 _testimpl = HookImplementation(_impl, plugin_name='testimpl')
 
 
-@pytest.mark.parametrize("layer_datum", layer_data)
+@pytest.mark.parametrize('layer_datum', layer_data)
 def test_add_layers_with_plugins(layer_datum):
     """Test that add_layers_with_plugins adds the expected layer types."""
     with patch(
-        "napari.plugins.io.read_data_with_plugins",
+        'napari.plugins.io.read_data_with_plugins',
         MagicMock(return_value=([layer_datum], _testimpl)),
     ):
         v = ViewerModel()
@@ -36,7 +36,7 @@ def test_add_layers_with_plugins(layer_datum):
 
 
 @patch(
-    "napari.plugins.io.read_data_with_plugins",
+    'napari.plugins.io.read_data_with_plugins',
     MagicMock(return_value=([], _testimpl)),
 )
 def test_plugin_returns_nothing():
@@ -47,7 +47,7 @@ def test_plugin_returns_nothing():
 
 
 @patch(
-    "napari.plugins.io.read_data_with_plugins",
+    'napari.plugins.io.read_data_with_plugins',
     MagicMock(return_value=([(img,)], _testimpl)),
 )
 def test_viewer_open():
@@ -67,12 +67,15 @@ def test_viewer_open():
     expected_source = Source(path='mock_path.tif', reader_plugin='testimpl')
     assert all(lay.source == expected_source for lay in viewer.layers)
 
+    viewer.open([], stack=[], plugin=None)
+    assert len(viewer.layers) == 2
+
 
 def test_viewer_open_no_plugin(tmp_path):
     viewer = ViewerModel()
     fname = tmp_path / 'gibberish.gbrsh'
     fname.touch()
-    with pytest.raises(ValueError, match=".*gibberish.gbrsh.*"):
+    with pytest.raises(ValueError, match='.*gibberish.gbrsh.*'):
         # will default to builtins
         viewer.open(fname)
 
@@ -83,14 +86,14 @@ plugin_returns = [
 ]
 
 
-@pytest.mark.parametrize("layer_data, kwargs", plugin_returns)
+@pytest.mark.parametrize(('layer_data', 'kwargs'), plugin_returns)
 def test_add_layers_with_plugins_and_kwargs(layer_data, kwargs):
     """Test that _add_layers_with_plugins kwargs override plugin kwargs.
 
     see also: napari.components._test.test_prune_kwargs
     """
     with patch(
-        "napari.plugins.io.read_data_with_plugins",
+        'napari.plugins.io.read_data_with_plugins',
         MagicMock(return_value=(layer_data, _testimpl)),
     ):
         v = ViewerModel()
@@ -185,7 +188,7 @@ def test_add_points_layer_with_different_range_updates_all_slices():
     assert viewer.dims.point == (0, 0)
 
 
-@pytest.mark.xfail(reason="https://github.com/napari/napari/issues/6198")
+@pytest.mark.xfail(reason='https://github.com/napari/napari/issues/6198')
 def test_last_point_is_visible_in_viewport():
     viewer = ViewerModel()
 
@@ -215,7 +218,7 @@ def test_last_point_is_visible_in_viewport():
     np.testing.assert_array_equal(points._indices_view, [0])
 
 
-@pytest.mark.xfail(reason="https://github.com/napari/napari/issues/6199")
+@pytest.mark.xfail(reason='https://github.com/napari/napari/issues/6199')
 def test_dimension_change_is_visible_in_viewport():
     viewer = ViewerModel()
 

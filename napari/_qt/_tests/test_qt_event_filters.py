@@ -6,18 +6,18 @@ pytest.importorskip('qtpy', reason='Cannot test event filters without qtpy.')
 
 
 @pytest.mark.parametrize(
-    "tooltip,is_qt_tag_present",
+    ('tooltip', 'is_qt_tag_present'),
     [
         (
-            "<html>"
-            "<p>A widget to test that a rich text tooltip might be detected "
-            "and therefore not changed to include a qt tag</p>"
-            "</html>",
+            '<html>'
+            '<p>A widget to test that a rich text tooltip might be detected '
+            'and therefore not changed to include a qt tag</p>'
+            '</html>',
             False,
         ),
         (
-            "A widget to test that a non-rich text tooltip might "
-            "be detected and therefore changed",
+            'A widget to test that a non-rich text tooltip might '
+            'be detected and therefore changed',
             True,
         ),
     ],
@@ -38,4 +38,4 @@ def test_qt_tooltip_event_filter(qtbot, tooltip, is_qt_tag_present):
     qtbot.addWidget(widget)
     widget.setToolTip(tooltip)
     event_filter_handler.eventFilter(widget, qevent)
-    assert ("<qt>" in widget.toolTip()) == is_qt_tag_present
+    assert ('<qt>' in widget.toolTip()) == is_qt_tag_present

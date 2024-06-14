@@ -4,6 +4,10 @@ import pytest
 
 from napari.layers import Tracks
 from napari.layers.tracks._track_utils import TrackManager
+from napari.utils._test_utils import (
+    validate_all_params_in_docstring,
+    validate_kwargs_sorted,
+)
 
 data_array_2dt = np.zeros((1, 4))
 data_list_2dt = list(data_array_2dt)
@@ -13,7 +17,7 @@ dataframe_2dt = pd.DataFrame(
 
 
 @pytest.mark.parametrize(
-    "data", [data_array_2dt, data_list_2dt, dataframe_2dt]
+    'data', [data_array_2dt, data_list_2dt, dataframe_2dt]
 )
 def test_tracks_layer_2dt_ndim(data):
     """Test instantiating Tracks layer, check 2D+t dimensionality."""
@@ -29,7 +33,7 @@ dataframe_3dt = pd.DataFrame(
 
 
 @pytest.mark.parametrize(
-    "data", [data_array_3dt, data_list_3dt, dataframe_3dt]
+    'data', [data_array_3dt, data_list_3dt, dataframe_3dt]
 )
 def test_tracks_layer_3dt_ndim(data):
     """Test instantiating Tracks layer, check 3D+t dimensionality."""
@@ -49,18 +53,18 @@ def test_track_layer_data():
     data = np.zeros((100, 4))
     data[:, 1] = np.arange(100)
     layer = Tracks(data)
-    assert np.all(layer.data == data)
+    np.testing.assert_array_equal(layer.data, data)
 
 
 @pytest.mark.parametrize(
-    "timestamps", [np.arange(100, 200), np.arange(100, 300, 2)]
+    'timestamps', [np.arange(100, 200), np.arange(100, 300, 2)]
 )
 def test_track_layer_data_nonzero_starting_time(timestamps):
     """Test data with sparse timestamps or not starting at zero."""
     data = np.zeros((100, 4))
     data[:, 1] = timestamps
     layer = Tracks(data)
-    assert np.all(layer.data == data)
+    np.testing.assert_array_equal(layer.data, data)
 
 
 def test_track_layer_data_flipped():
@@ -70,14 +74,14 @@ def test_track_layer_data_flipped():
     data[:, 0] = np.arange(100)
     data = np.flip(data, axis=0)
     layer = Tracks(data)
-    assert np.all(layer.data == np.flip(data, axis=0))
+    np.testing.assert_array_equal(layer.data, np.flip(data, axis=0))
 
 
 properties_dict = {'time': np.arange(100)}
 properties_df = pd.DataFrame(properties_dict)
 
 
-@pytest.mark.parametrize("properties", [{}, properties_dict, properties_df])
+@pytest.mark.parametrize('properties', [{}, properties_dict, properties_df])
 def test_track_layer_properties(properties):
     data = np.zeros((100, 4))
     data[:, 1] = np.arange(100)
@@ -93,7 +97,7 @@ features_dict = {'time': np.arange(100)}
 features_df = pd.DataFrame(features_dict)
 
 
-@pytest.mark.parametrize("features", [{}, features_dict, features_df])
+@pytest.mark.parametrize('features', [{}, features_dict, features_df])
 def test_track_layer_features(features):
     data = np.zeros((100, 4))
     data[:, 1] = np.arange(100)
@@ -102,7 +106,7 @@ def test_track_layer_features(features):
         np.testing.assert_equal(layer.features[k].to_numpy(), v)
 
 
-@pytest.mark.parametrize("features", [{}, features_dict, features_df])
+@pytest.mark.parametrize('features', [{}, features_dict, features_df])
 def test_track_layer_features_flipped(features):
     data = np.zeros((100, 4))
     data[:, 1] = np.arange(100)
@@ -113,18 +117,18 @@ def test_track_layer_features_flipped(features):
         np.testing.assert_equal(layer.features[k].to_numpy(), np.flip(v))
 
 
-@pytest.mark.filterwarnings("ignore:.*track_id.*:UserWarning")
+@pytest.mark.filterwarnings('ignore:.*track_id.*:UserWarning')
 def test_track_layer_colorby_nonexistent():
     """Test error handling for non-existent features with color_by"""
     data = np.zeros((100, 4))
     data[:, 1] = np.arange(100)
     non_existent_feature = 'not_a_valid_key'
     assert non_existent_feature not in features_dict
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='not a valid feature'):
         Tracks(data, features=features_dict, color_by=non_existent_feature)
 
 
-@pytest.mark.filterwarnings("ignore:.*track_id.*:UserWarning")
+@pytest.mark.filterwarnings('ignore:.*track_id.*:UserWarning')
 def test_track_layer_features_changed_colorby():
     """Test behaviour when changes to features invalidate current color_by"""
     features_dict_1 = {'time': np.arange(100), 'prop1': np.arange(100)}
@@ -159,7 +163,7 @@ def test_track_layer_reset_data():
     layer = Tracks(data, graph=graph, features=features)
     cropped_data = data[:10, :]
     layer.data = cropped_data
-    assert np.all(layer.data == cropped_data)
+    np.testing.assert_array_equal(layer.data, cropped_data)
     assert layer.graph == {}
 
 
@@ -167,7 +171,7 @@ def test_malformed_id():
     """Test for malformed track ID."""
     data = np.random.random((100, 4))
     data[:, 1] = np.arange(100)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must be an integer'):
         Tracks(data)
 
 
@@ -177,7 +181,7 @@ def test_malformed_graph():
     data[:, 1] = np.arange(100)
     data[50:, 0] = 1
     graph = {1: [0], 2: [33]}
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='node 2 not found'):
         Tracks(data, graph=graph)
 
 
@@ -224,7 +228,7 @@ def test_fast_points_lookup() -> None:
         assert points_lookup[t].stop == e
         assert points_lookup[t].stop - points_lookup[t].start == r
         unique_time = sorted_time[points_lookup[t]]
-        assert np.all(unique_time[0] == unique_time)
+        np.testing.assert_array_equal(unique_time[0], unique_time)
         total_length += len(unique_time)
 
     assert total_length == len(sorted_time)
@@ -237,7 +241,7 @@ def test_single_time_tracks() -> None:
     tracks = [[0, 5, 2, 3], [1, 5, 3, 4], [2, 5, 4, 5]]
     layer = Tracks(tracks)
 
-    assert np.all(layer.data == tracks)
+    np.testing.assert_array_equal(layer.data, tracks)
 
 
 def test_track_ids_ordering() -> None:
@@ -249,4 +253,55 @@ def test_track_ids_ordering() -> None:
     sorted_track_ids = [0, 0, 1, 1, 2]  # track_ids after sorting
 
     layer = Tracks(unsorted_data)
-    assert np.all(sorted_track_ids == layer.features["track_id"])
+    np.testing.assert_array_equal(sorted_track_ids, layer.features['track_id'])
+
+
+def test_changing_data_inplace() -> None:
+    """Test if layer can be refreshed after changing data in place."""
+
+    data = np.ones((100, 4))
+    data[:, 1] = np.arange(100)
+
+    layer = Tracks(data)
+
+    # Change data in place
+    # coordinates
+    layer.data[50:, -1] = 2
+    layer.refresh()
+
+    # time
+    layer.data[50:, 1] = np.arange(100, 150)
+    layer.refresh()
+
+    # track_id
+    layer.data[50:, 0] = 2
+    layer.refresh()
+
+
+def test_track_connex_validity() -> None:
+    """Test if track_connex is valid (i.e if the value False appears as many
+    times as there are tracks."""
+
+    data = np.zeros((11, 4))
+
+    # Track ids
+    data[:-1, 0] = np.repeat(np.arange(1, 6), 2)
+    # create edge case where a track has length one
+    data[-1, 0] = 6
+
+    # Time
+    data[:-1, 1] = np.array([0, 1] * 5)
+    data[-1, 1] = 0
+
+    layer = Tracks(data)
+
+    # number of tracks
+    n_tracks = 6
+
+    # the number of 'False' in the track_connex array should be equal to the number of tracks
+    assert np.sum(~layer._manager.track_connex) == n_tracks
+
+
+def test_docstring():
+    validate_all_params_in_docstring(Tracks)
+    validate_kwargs_sorted(Tracks)

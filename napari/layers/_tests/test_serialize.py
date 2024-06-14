@@ -3,11 +3,14 @@ import inspect
 import numpy as np
 import pytest
 
-from napari._tests.utils import are_objects_equal, layer_test_data
-from napari.layers.utils._state_dict import LayerStateDict
+from napari._tests.utils import (
+    are_objects_equal,
+    count_warning_events,
+    layer_test_data,
+)
 
 
-@pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
+@pytest.mark.parametrize(('Layer', 'data', 'ndim'), layer_test_data)
 def test_attrs_arrays(Layer, data, ndim):
     """Test layer attributes and arrays."""
     np.random.seed(0)
@@ -15,7 +18,7 @@ def test_attrs_arrays(Layer, data, ndim):
     # Check layer has been correctly created
     assert layer.ndim == ndim
 
-    properties: LayerStateDict = layer._get_state()
+    properties = layer._get_state()
 
     # Check every property is in call signature
     signature = inspect.signature(Layer)
@@ -23,19 +26,6 @@ def test_attrs_arrays(Layer, data, ndim):
     # Check every property is also a parameter.
     for prop in properties:
         assert prop in signature.parameters
-
-    # TODO: actually, maybe we do want to verify deprecated state/parameters are consistent?
-    # Remove deprecated properties for testing purposes because
-    # that's not the main goal here.
-    for deprecated in properties.deprecations:
-        del properties[deprecated]
-    signature = signature.replace(
-        parameters=tuple(
-            param
-            for param in signature.parameters.values()
-            if param.name not in properties.deprecations
-        )
-    )
 
     # Check number of properties is same as number in signature
     # excluding `cache` which is not yet in `_get_state`
@@ -51,7 +41,7 @@ def test_attrs_arrays(Layer, data, ndim):
         )
 
 
-@pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
+@pytest.mark.parametrize(('Layer', 'data', 'ndim'), layer_test_data)
 def test_no_callbacks(Layer, data, ndim):
     """Test no internal callbacks for layer emitters."""
     layer = Layer(data)
@@ -61,4 +51,4 @@ def test_no_callbacks(Layer, data, ndim):
     # Check that no internal callbacks have been registered
     assert len(layer.events.callbacks) == 0
     for em in layer.events.emitters.values():
-        assert len(em.callbacks) == 0
+        assert len(em.callbacks) == count_warning_events(em.callbacks)

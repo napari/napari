@@ -1,7 +1,16 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, cast
+
 import numpy as np
 
+if TYPE_CHECKING:
+    from vispy.util.quaternion import Quaternion
 
-def quaternion2euler(quaternion, degrees=False):
+
+def quaternion2euler_degrees(
+    quaternion: Quaternion,
+) -> tuple[float, float, float]:
     """Converts VisPy quaternion into euler angle representation.
 
     Euler angles have degeneracies, so the output might different
@@ -16,13 +25,11 @@ def quaternion2euler(quaternion, degrees=False):
     ----------
     quaternion : vispy.util.Quaternion
         Quaternion for conversion.
-    degrees : bool
-        If output is returned in degrees or radians.
 
     Returns
     -------
     angles : 3-tuple
-        Euler angles in (rx, ry, rz) order.
+        Euler angles in (rx, ry, rz) order, in degrees.
     """
     epsilon = 1e-10
 
@@ -51,7 +58,4 @@ def quaternion2euler(quaternion, degrees=False):
 
     angles = (theta_1, theta_2, theta_3)
 
-    if degrees:
-        return tuple(np.degrees(angles))
-
-    return angles
+    return cast(tuple[float, float, float], tuple(np.degrees(angles)))

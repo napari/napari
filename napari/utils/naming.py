@@ -1,10 +1,14 @@
-"""Automatically generate names.
-"""
+"""Automatically generate names."""
+
 import inspect
 import re
-from collections import ChainMap
-from types import FrameType
-from typing import Any, Callable, Dict, Optional
+from collections import ChainMap, ChainMap as ChainMapType
+from types import FrameType, TracebackType
+from typing import (
+    Any,
+    Callable,
+    Optional,
+)
 
 from napari.utils.misc import ROOT_DIR, formatdoc
 
@@ -16,7 +20,7 @@ start = 1
 numbered_patt = re.compile(r'((?<=\A\[)|(?<=\s\[))(?:\d+|)(?=\]$)|$')
 
 
-def _inc_name_count_sub(match):
+def _inc_name_count_sub(match: re.Match) -> str:
     count = match.group(0)
 
     try:
@@ -84,21 +88,26 @@ class CallerFrame:
 
     """
 
+    names: tuple[str, ...]
+    namespace: ChainMapType[str, Any]
+    predicate: Callable[[int, FrameType], bool]
+
     def __init__(
         self, skip_predicate: Callable[[int, FrameType], bool]
     ) -> None:
         self.predicate = skip_predicate
-        self.namespace: ChainMap[Dict[str, Any], Dict[str, Any]] = ChainMap()
+        self.namespace = ChainMap()
         self.names = ()
 
-    def __enter__(self):
-        frame = inspect.currentframe().f_back
+    def __enter__(self) -> 'CallerFrame':
+        frame = inspect.currentframe()
         try:
             # See issue #1635 regarding potential AttributeError
             # since frame could be None.
             # https://github.com/napari/napari/pull/1635
-            if inspect.isframe(frame):
-                frame = frame.f_back
+            for _ in range(2):
+                if inspect.isframe(frame):
+                    frame = frame.f_back
 
             # Iterate frames while filename starts with path_prefix (part of Napari)
             n = 1
@@ -130,7 +139,12 @@ class CallerFrame:
 
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(
+        self,
+        exc_type: Optional[type[BaseException]],
+        exc_value: Optional[BaseException],
+        traceback: Optional[TracebackType],
+    ) -> None:
         del self.namespace
         del self.names
 

@@ -13,7 +13,7 @@ def test_big_2D_image(make_napari_viewer):
     assert visual.node is not None
     if visual.MAX_TEXTURE_SIZE_2D is not None:
         s = np.ceil(np.divide(shape, visual.MAX_TEXTURE_SIZE_2D)).astype(int)
-        assert np.all(layer._transforms['tile2data'].scale == s)
+        np.testing.assert_array_equal(layer._transforms['tile2data'].scale, s)
 
 
 def test_big_3D_image(make_napari_viewer):
@@ -27,11 +27,11 @@ def test_big_3D_image(make_napari_viewer):
     assert visual.node is not None
     if visual.MAX_TEXTURE_SIZE_3D is not None:
         s = np.ceil(np.divide(shape, visual.MAX_TEXTURE_SIZE_3D)).astype(int)
-        assert np.all(layer._transforms['tile2data'].scale == s)
+        np.testing.assert_array_equal(layer._transforms['tile2data'].scale, s)
 
 
 @pytest.mark.parametrize(
-    "shape",
+    'shape',
     [(2, 4), (256, 4048), (4, 20_000), (20_000, 4)],
 )
 def test_downsample_value(make_napari_viewer, shape):
