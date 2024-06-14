@@ -164,7 +164,7 @@ def test_empty_layer_with_border_colormap():
     np.testing.assert_allclose(layer._border.current_color, border_color)
 
 
-@pytest.mark.parametrize('feature_name', ['edge', 'face'])
+@pytest.mark.parametrize('feature_name', ['border', 'face'])
 def test_set_feature_defaults_on_empty_layer_with_color_cycle(feature_name):
     """Test setting feature_defaults on an empty layer where the face/border color
     is a color cycle.
@@ -842,7 +842,7 @@ def test_adding_properties(attribute):
     assert issubclass(record[1].category, RuntimeWarning)
 
 
-@pytest.mark.parametrize('attribute', ['edge', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_adding_features(attribute):
     """Test adding features to an existing layer"""
     shape = (10, 2)

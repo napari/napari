@@ -249,7 +249,6 @@ class Tracks(Layer):
         state.update(
             {
                 'data': self.data,
-                'properties': self._manager.properties,
                 'graph': self.graph,
                 'color_by': self.color_by,
                 'colormap': self.colormap,
@@ -260,9 +259,10 @@ class Tracks(Layer):
                 'features': self.features,
             }
         )
-        state.deprecations = {
-            'properties': _properties_deprecation_message(),
-        }
+        state.deprecations['properties'] = (
+            self._manager.properties,
+            _properties_deprecation_message(),
+        )
         return state
 
     def _set_view_slice(self):

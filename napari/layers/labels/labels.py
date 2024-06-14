@@ -660,7 +660,6 @@ class Labels(ScalarFieldBase):
         state.update(
             {
                 'multiscale': self.multiscale,
-                'properties': self._feature_table.properties(),
                 'rendering': self.rendering,
                 'depiction': self.depiction,
                 'plane': self.plane.dict(),
@@ -672,9 +671,10 @@ class Labels(ScalarFieldBase):
                 'colormap': self.colormap,
             }
         )
-        state.deprecations = {
-            'properties': _properties_deprecation_message(),
-        }
+        state.deprecations['properties'] = (
+            self._feature_table.properties(),
+            _properties_deprecation_message(),
+        )
         return state
 
     @property

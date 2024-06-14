@@ -165,17 +165,17 @@ class Points(Layer):
     projection_mode : str
         How data outside the viewed dimensions but inside the thick Dims slice will
         be projected onto the viewed dimensions. Must fit to cls._projectionclass.
-    property_choices : dict {str: array (N,)}
-        possible values for each property
-        .. deprecated:: 0.5.0
-            property_choices was deprecated in version 0.5.0 and will be removed in 0.6.
-            Please use features with categorical dtypes instead.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each point. Each property should be an array of length N,
         where N is the number of points.
         .. deprecated:: 0.5.0
             properties was deprecated in version 0.5.0 and will be removed in 0.6.
             Please use features instead.
+    property_choices : dict {str: array (N,)}
+        possible values for each property
+        .. deprecated:: 0.5.0
+            property_choices was deprecated in version 0.5.0 and will be removed in 0.6.
+            Please use features with categorical dtypes instead.
     rotate : float, 3-tuple of float, or n-D array.
         If a float convert into a 2D rotation matrix using that value as an
         angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
@@ -1521,16 +1521,16 @@ class Points(Layer):
                 'shown': self.shown,
             }
         )
-        state.deprecations = {
-            'properties': (
+        state.deprecations['properties'] = (
+            (
                 self._feature_table.properties(),
                 _properties_deprecation_message(),
             ),
-            'property_choices': (
-                self._feature_table.choices(),
-                _property_choices_deprecation_message(),
-            ),
-        }
+        )
+        state.deprecations['property_choices'] = (
+            self._feature_table.choices(),
+            _property_choices_deprecation_message(),
+        )
         for old_key in DEPRECATED_PROPERTIES:
             new_key = old_key.replace('edge', 'border')
             if new_key in state:

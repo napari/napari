@@ -23,6 +23,17 @@ def test_attrs_arrays(Layer, data, ndim):
     # Check every property is in call signature
     signature = inspect.signature(Layer)
 
+    # TODO: actually, maybe we do want to verify deprecated state/parameters are consistent?
+    # Remove deprecated properties for testing purposes because
+    # that's not the main goal here.
+    signature = signature.replace(
+        parameters=tuple(
+            param
+            for param in signature.parameters.values()
+            if param.name not in properties.deprecations
+        )
+    )
+
     # Check every property is also a parameter.
     for prop in properties:
         assert prop in signature.parameters

@@ -169,17 +169,17 @@ class Shapes(Layer):
     projection_mode : str
         How data outside the viewed dimensions but inside the thick Dims slice will
         be projected onto the viewed dimenions.
-    property_choices : dict {str: array (N,)}
-        possible values for each property.
-        .. deprecated:: 0.5.0
-            property_choices was deprecated in version 0.5.0 and will be removed in 0.6.
-            Please use features with categorical dtypes instead.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each shape. Each property should be an array of length N,
         where N is the number of shapes.
         .. deprecated:: 0.5.0
             properties was deprecated in version 0.5.0 and will be removed in 0.6.
             Please use features instead.
+    property_choices : dict {str: array (N,)}
+        possible values for each property.
+        .. deprecated:: 0.5.0
+            property_choices was deprecated in version 0.5.0 and will be removed in 0.6.
+            Please use features with categorical dtypes instead.
     rotate : float, 3-tuple of float, or n-D array.
         If a float convert into a 2D rotation matrix using that value as an
         angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
@@ -231,6 +231,11 @@ class Shapes(Layer):
         .. deprecated:: 0.5.0
             properties was deprecated in version 0.5.0 and will be removed in 0.6.
             Please use features instead.
+    property_choices : dict {str: array (N,)}
+        possible values for each property.
+        .. deprecated:: 0.5.0
+            property_choices was deprecated in version 0.5.0 and will be removed in 0.6.
+            Please use features with categorical dtypes instead.
     text : str, dict
         Text to be displayed with the shapes. If text is set to a key in properties,
         the value of that property will be displayed. Multiple properties can be
@@ -1635,8 +1640,6 @@ class Shapes(Layer):
         state.update(
             {
                 'ndim': self.ndim,
-                'properties': self._feature_table.properties(),
-                'property_choices': self._feature_table.choices(),
                 'text': self.text.dict(),
                 'shape_type': self.shape_type,
                 'opacity': self.opacity,
@@ -1655,10 +1658,14 @@ class Shapes(Layer):
                 'feature_defaults': self.feature_defaults,
             }
         )
-        state.deprecations = {
-            'properties': _properties_deprecation_message(),
-            'property_choices': _property_choices_deprecation_message(),
-        }
+        state.deprecations['properties'] = (
+            self._feature_table.properties(),
+            _properties_deprecation_message(),
+        )
+        state.deprecations['property_choices'] = (
+            self._feature_table.choices(),
+            _property_choices_deprecation_message(),
+        )
         return state
 
     @property

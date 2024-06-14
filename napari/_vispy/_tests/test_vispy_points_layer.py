@@ -79,7 +79,7 @@ def test_update_feature_value_then_refresh_text_updates_node_strings():
     text_node = vispy_layer._get_text_node()
     np.testing.assert_array_equal(text_node.text, ['A', 'B', 'C'])
 
-    layer.features['class'][1] = 'D'
+    layer.features.loc[1, 'class'] = 'D'
     layer.refresh_text()
 
     np.testing.assert_array_equal(text_node.text, ['A', 'D', 'C'])

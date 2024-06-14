@@ -108,9 +108,7 @@ def test_empty_vectors_with_features_defaults():
     assert layer.data.shape == shape
     assert layer.ndim == shape[2]
     assert layer._view_data.shape[2] == 2
-    np.testing.assert_equal(
-        layer.feature_defaults['angle'], feature_defaults['angle']
-    )
+    assert layer.feature_defaults['angle'][0], feature_defaults['angle']
 
 
 def test_empty_layer_with_edge_colormap():

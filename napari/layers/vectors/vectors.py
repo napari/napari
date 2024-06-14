@@ -97,17 +97,17 @@ class Vectors(Layer):
     projection_mode : str
         How data outside the viewed dimensions but inside the thick Dims slice will
         be projected onto the viewed dimenions.
-    property_choices : dict {str: array (N,)}
-        possible values for each property.
-        .. deprecated:: 0.5.0
-            property_choices was deprecated in version 0.5.0 and will be removed in 0.6.
-            Please use features with categorical dtypes instead.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each vector. Each property should be an array of length N,
         where N is the number of vectors.
         .. deprecated:: 0.5.0
             properties was deprecated in version 0.5.0 and will be removed in 0.6.
             Please use features instead.
+    property_choices : dict {str: array (N,)}
+        possible values for each property.
+        .. deprecated:: 0.5.0
+            property_choices was deprecated in version 0.5.0 and will be removed in 0.6.
+            Please use features with categorical dtypes instead.
     rotate : float, 3-tuple of float, or n-D array.
         If a float convert into a 2D rotation matrix using that value as an
         angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
@@ -442,18 +442,20 @@ class Vectors(Layer):
                 'edge_colormap': self.edge_colormap.dict(),
                 'edge_contrast_limits': self.edge_contrast_limits,
                 'data': self.data,
-                'properties': self._feature_table.properties(),
-                'property_choices': self._feature_table.choices(),
                 'ndim': self.ndim,
                 'features': self.features,
                 'feature_defaults': self.feature_defaults,
                 'out_of_slice_display': self.out_of_slice_display,
             }
         )
-        state.deprecations = {
-            'properties': _properties_deprecation_message(),
-            'property_choices': _property_choices_deprecation_message(),
-        }
+        state.deprecations['properties'] = (
+            self._feature_table.properties(),
+            _properties_deprecation_message(),
+        )
+        state.deprecations['property_choices'] = (
+            self._feature_table.choices(),
+            _property_choices_deprecation_message(),
+        )
         return state
 
     def _get_ndim(self) -> int:
