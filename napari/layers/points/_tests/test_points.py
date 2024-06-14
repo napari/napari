@@ -2677,5 +2677,5 @@ def test_docstring():
 def test_as_layer_data_tuple_read_deprecated_key(key: str):
     layer = Points()
     _, attrs, _ = layer.as_layer_data_tuple()
-    with pytest.raises(FutureWarning):
+    with pytest.warns(FutureWarning):
         attrs[key]
