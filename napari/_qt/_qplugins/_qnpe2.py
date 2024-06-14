@@ -367,19 +367,23 @@ def _build_widgets_submenu_actions(
     if not mf.contributions.widgets:
         return [], []
 
+    # if this plugin declares any menu items, its actions should have the
+    # plugin name.
+    # TODO: update once plugin has self menus - they should't exclude it
+    # from the shorter name
+    declares_menu_items = any(
+        len(pm.instance()._command_menu_map[mf.name][command.id])
+        for command in mf.contributions.commands
+    )
     widgets = mf.contributions.widgets
-    widgets_without_menu = [
-        widget
-        for widget in widgets
-        if not len(pm.instance()._command_menu_map[mf.name][widget.command])
-    ]
-    multiprovider = len(widgets_without_menu) > 1
+    multiprovider = len(widgets) > 1
     default_submenu_id, default_submenu = _get_contrib_parent_menu(
         multiprovider,
         MenuId.MENUBAR_PLUGINS,
         mf,
         MenuGroup.PLUGIN_MULTI_SUBMENU,
     )
+    needs_full_title = declares_menu_items or not multiprovider
 
     widget_actions: list[Action] = []
     for widget in widgets:
@@ -405,15 +409,13 @@ def _build_widgets_submenu_actions(
             ._command_menu_map[mf.name][widget.command]
             .items()
             for menu_item in menu_items
+        ] + [
+            {
+                'id': default_submenu_id,
+                'group': MenuGroup.PLUGIN_SINGLE_CONTRIBUTIONS,
+            }
         ]
-        if not len(action_menus):
-            action_menus = [
-                {
-                    'id': default_submenu_id,
-                    'group': MenuGroup.PLUGIN_SINGLE_CONTRIBUTIONS,
-                }
-            ]
-        title = widget.display_name if multiprovider else full_name
+        title = full_name if needs_full_title else widget.display_name
         # To display '&' instead of creating a shortcut
         title = title.replace('&', '&&')
 
