@@ -33,6 +33,16 @@ from napari.utils.theme import available_themes
 
 BUILTINS_DISP = 'napari'
 BUILTINS_NAME = 'builtins'
+NUMPY_INTEGER_TYPES = [
+    np.int8,
+    np.int16,
+    np.int32,
+    np.int64,
+    np.uint8,
+    np.uint16,
+    np.uint32,
+    np.uint64,
+]
 
 
 def test_qt_viewer(make_napari_viewer):
@@ -999,7 +1009,7 @@ def test_selection_collision(qt_viewer: QtViewer, mode):
             color_dict={10: 'red', 10 + 49: 'red', None: 'black'}
         )
 
-    for dtype in np.sctypes['int'] + np.sctypes['uint']:
+    for dtype in NUMPY_INTEGER_TYPES:
         layer.data = data.astype(dtype)
         layer.show_selected_label = False
         QApplication.processEvents()
@@ -1025,7 +1035,7 @@ def test_all_supported_dtypes(qt_viewer):
     data = np.zeros((10, 10), dtype=np.uint8)
     layer = qt_viewer.viewer.add_labels(data, opacity=1)
 
-    for i, dtype in enumerate(np.sctypes['int'] + np.sctypes['uint'], start=1):
+    for i, dtype in enumerate(NUMPY_INTEGER_TYPES, start=1):
         data = np.full((10, 10), i, dtype=dtype)
         layer.data = data
         QApplication.processEvents()
@@ -1055,7 +1065,7 @@ def test_all_supported_dtypes(qt_viewer):
         }
     )
 
-    for i, dtype in enumerate(np.sctypes['int'] + np.sctypes['uint'], start=1):
+    for i, dtype in enumerate(NUMPY_INTEGER_TYPES, start=1):
         data = np.full((10, 10), i, dtype=dtype)
         layer.data = data
         QApplication.processEvents()
