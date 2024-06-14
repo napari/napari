@@ -60,7 +60,7 @@ from napari.utils.geometry import (
     intersect_line_with_axis_aligned_bounding_box_3d,
 )
 from napari.utils.key_bindings import KeymapProvider
-from napari.utils.migrations import _DeprecatingDict
+from napari.utils.migrations import DeprecatingDict
 from napari.utils.misc import StringEnum
 from napari.utils.mouse_bindings import MousemapProvider
 from napari.utils.naming import magic_name
@@ -984,19 +984,19 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     def _get_ndim(self) -> int:
         raise NotImplementedError
 
-    def _get_base_state(self) -> _DeprecatingDict:
+    def _get_base_state(self) -> DeprecatingDict:
         """Get dictionary of attributes on base layer.
 
         This is useful for serialization and deserialization of the layer.
         And similarly for plugins to pass state without direct dependencies on napari types.
-        The returned dictionary issues warning messages when deprecated keys are accessed.
 
         Returns
         -------
-        _DeprecatingDict
-            Dictionary of attributes on base layer.
+        DeprecatingDict
+            Dictionary of attributes on base layer that issues warning messages when
+            deprecated keys are accessed directly.
         """
-        return _DeprecatingDict(
+        return DeprecatingDict(
             {
                 'name': self.name,
                 'metadata': self.metadata,

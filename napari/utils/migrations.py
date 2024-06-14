@@ -220,7 +220,7 @@ def deprecated_class_name(
     return _OldClass
 
 
-class _DeprecatingDict(dict[str, Any]):
+class DeprecatingDict(dict[str, Any]):
     """A dictionary that issues warning messages when deprecated keys are accessed.
 
     Deprecated keys and values are not stored as part of the dictionary, so will not
