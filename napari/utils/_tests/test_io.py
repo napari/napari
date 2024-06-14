@@ -39,3 +39,31 @@ def test_imsave_bool_tiff(tmp_path):
     # check image content
     img_to_array = imread(str(image_file_path))
     assert np.equal(data, img_to_array).all()
+
+
+@pytest.mark.parametrize(
+    'image_file', ['image', 'image.png', 'image.tif', 'image.bmp']
+)
+def test_imsave_float(tmp_path, image_file):
+    """Test saving float image data."""
+    # create image data
+    np.random.seed(0)
+    data = np.random.random((10, 15))
+    image_file_path = tmp_path / image_file
+    assert not image_file_path.is_file()
+
+    # create image
+    imsave(str(image_file_path), data)
+    # only TIF can store float
+    if image_file.endswith('.tif'):
+        assert image_file_path.is_file()
+        img_to_array = imread(str(image_file_path))
+        assert np.equal(data, img_to_array).all()
+    # if no EXT provided, for float data should save as .tif
+    elif image_file == 'image':
+        assert image_file_path.with_suffix('.tif').is_file()
+        img_to_array = imread(str(image_file_path.with_suffix('.tif')))
+        assert np.equal(data, img_to_array).all()
+
+    else:
+        assert not image_file_path.is_file()
