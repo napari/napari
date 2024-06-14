@@ -1647,12 +1647,7 @@ class Window:
         return img
 
     def screenshot(
-        self,
-        path=None,
-        size=None,
-        scale=None,
-        flash=True,
-        canvas_only=False,
+        self, path=None, size=None, scale=None, flash=True, canvas_only=False
     ):
         """Take currently displayed viewer and convert to an image array.
 

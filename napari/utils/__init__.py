@@ -6,9 +6,7 @@ from napari.utils.colormaps.colormap import (
 )
 from napari.utils.info import citation_text, sys_info
 from napari.utils.notebook_display import (
-    ExportView,
     NotebookScreenshot,
-    export_view,
     nbscreenshot,
 )
 from napari.utils.progress import cancelable_progress, progrange, progress
@@ -19,8 +17,6 @@ __all__ = (
     'CyclicLabelColormap',
     'cancelable_progress',
     'citation_text',
-    'export_view',
-    'ExportView',
     'nbscreenshot',
     'NotebookScreenshot',
     'progrange',
