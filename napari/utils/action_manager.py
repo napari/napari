@@ -5,7 +5,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from functools import cached_property
 from inspect import isgeneratorfunction
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from napari.utils.events import EmitterGroup
 from napari.utils.interactions import Shortcut
@@ -76,13 +76,13 @@ class ActionManager:
     in.
     """
 
-    _actions: Dict[str, Action]
+    _actions: dict[str, Action]
 
     def __init__(self) -> None:
         # map associating a name/id with a Comm
-        self._actions: Dict[str, Action] = {}
-        self._shortcuts: Dict[str, List[str]] = defaultdict(list)
-        self._stack: List[str] = []
+        self._actions: dict[str, Action] = {}
+        self._shortcuts: dict[str, list[str]] = defaultdict(list)
+        self._stack: list[str] = []
         self._tooltip_include_action_name = False
         self.events = EmitterGroup(source=self, shorcut_changed=None)
 
@@ -266,7 +266,7 @@ class ActionManager:
         self._update_shortcut_bindings(name)
         self._emit_shortcut_change(name, shortcut)
 
-    def unbind_shortcut(self, name: str) -> Optional[List[str]]:
+    def unbind_shortcut(self, name: str) -> Optional[list[str]]:
         """
         Unbind all shortcuts for a given action name.
 
@@ -347,9 +347,9 @@ class ActionManager:
                 action = self._actions.get(name, None)
                 if action and layer == action.keymapprovider:
                     for shortcut in shortcuts:
-                        layer_shortcuts[layer][
-                            str(shortcut)
-                        ] = action.description
+                        layer_shortcuts[layer][str(shortcut)] = (
+                            action.description
+                        )
 
         return layer_shortcuts
 

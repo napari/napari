@@ -348,7 +348,9 @@ def test_replace_slice_independence():
 
 
 def test_replace_slice_num_dimensions():
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match='provided axes list and transform differ'
+    ):
         Affine().replace_slice([0], Affine())
 
 

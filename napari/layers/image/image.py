@@ -1,10 +1,9 @@
-"""Image class.
-"""
+"""Image class."""
 
 from __future__ import annotations
 
 import warnings
-from typing import Literal, Tuple, Union, cast
+from typing import Literal, Union, cast
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -309,7 +308,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
                 self.contrast_limits_range = self._calc_data_range()
         else:
             self.contrast_limits_range = contrast_limits
-        self._contrast_limits: Tuple[float, float] = self.contrast_limits_range
+        self._contrast_limits: tuple[float, float] = self.contrast_limits_range
         self.contrast_limits = self._contrast_limits
 
         if iso_threshold is None:
@@ -551,6 +550,12 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
 
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap."""
+        # don't bother updating thumbnail if we don't have any data
+        # this also avoids possible dtype mismatch issues below
+        # for example np.clip may raise an OverflowError (in numpy 2.0)
+        if self._slice.empty:
+            return
+
         image = self._slice.thumbnail.raw
 
         if self._slice_input.ndisplay == 3 and self.ndim > 2:
@@ -606,7 +611,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
 
     def _calc_data_range(
         self, mode: Literal['data', 'slice'] = 'data'
-    ) -> Tuple[float, float]:
+    ) -> tuple[float, float]:
         """
         Calculate the range of the data values in the currently viewed slice
         or full data array

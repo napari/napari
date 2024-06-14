@@ -4,14 +4,15 @@ import sys
 import warnings
 from contextlib import suppress
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, List, Tuple
+from pathlib import Path
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 from weakref import WeakSet
 
 import pytest
 
 if TYPE_CHECKING:
-    from pytest import FixtureRequest
+    from pytest import FixtureRequest  # noqa: PT013
 
 _SAVE_GRAPH_OPNAME = '--save-leaked-object-graph'
 
@@ -33,14 +34,14 @@ def pytest_addoption(parser):
         action='store_true',
         default=False,
         help="Try to save a graph of leaked object's reference (need objgraph"
-        "and graphviz installed",
+        'and graphviz installed',
     )
 
 
 COUNTER = 0
 
 
-def fail_obj_graph(Klass):
+def fail_obj_graph(Klass):  # pragma: no cover
     """
     Fail is a given class _instances weakset is non empty and print the object graph.
     """
@@ -55,20 +56,32 @@ def fail_obj_graph(Klass):
         COUNTER += 1
         import gc
 
-        gc.collect()
+        leaked_objects_count = len(Klass._instances)
 
+        gc.collect()
+        file_path = Path(
+            f'{Klass.__name__}-leak-backref-graph-{COUNTER}.pdf'
+        ).absolute()
         objgraph.show_backrefs(
             list(Klass._instances),
             max_depth=20,
-            filename=f'{Klass.__name__}-leak-backref-graph-{COUNTER}.pdf',
+            filename=str(file_path),
         )
+
+        Klass._instances.clear()
+
+        assert file_path.exists()
 
         # DO not remove len, this can break as C++ obj are gone, but python objects
         # still hang around and _repr_ would crash.
-        assert False, len(Klass._instances)
+        pytest.fail(
+            f'Test run fail with leaked {leaked_objects_count} instances of {Klass}.'
+            f'The object graph is saved in {file_path}.'
+            f'{len(Klass._instances)} objects left after cleanup'
+        )
 
 
-@pytest.fixture
+@pytest.fixture()
 def napari_plugin_manager(monkeypatch):
     """A napari plugin manager that blocks discovery by default.
 
@@ -103,7 +116,7 @@ GCPASS = 0
 
 
 @pytest.fixture(autouse=True)
-def clean_themes():
+def _clean_themes():
     from napari.utils import theme
 
     themes = set(theme.available_themes())
@@ -126,24 +139,68 @@ def pytest_runtest_makereport(item, call):
     setattr(item, f'rep_{rep.when}', rep)
 
 
-@pytest.fixture
+@pytest.fixture()
+def mock_app():
+    """Mock clean 'test_app' `NapariApplication` instance.
+
+    This fixture must be used whenever `napari._app_model.get_app()` is called to
+    return a 'test_app' `NapariApplication` instead of the 'napari'
+    `NapariApplication`. The `make_napari_viewer` fixture is already equipped with
+    a `mock_app`.
+
+    Note that `NapariApplication` registers app-model actions.
+    If this is not desired, please create a clean
+    `app_model.Application` in the test.
+
+    It does not register Qt related actions, providers or processors, which is done
+    via `init_qactions()`. Nor does it register plugins, done via `_initialize_plugins`.
+    If these are required, the `make_napari_viewer` fixture can be used, which
+    will register ALL actions, providers and processors and register plugins.
+    It will also automatically clear the lru cache.
+
+    Alternatively, you can specifically run `init_qactions()` or
+    `_initialize_plugins` within the test, ensuring that you `cache_clear()`
+    first.
+    """
+    from app_model import Application
+
+    from napari._app_model._app import NapariApplication, _napari_names
+
+    app = NapariApplication('test_app')
+    app.injection_store.namespace = _napari_names
+    with patch.object(NapariApplication, 'get_app', return_value=app):
+        try:
+            yield app
+        finally:
+            Application.destroy('test_app')
+
+
+@pytest.fixture()
 def make_napari_viewer(
     qtbot,
     request: 'FixtureRequest',
+    mock_app,
     napari_plugin_manager,
     monkeypatch,
-    clean_themes,
 ):
-    """A fixture function that creates a napari viewer for use in testing.
+    """A pytest fixture function that creates a napari viewer for use in testing.
 
-    Use this fixture as a function in your tests:
+    This fixture will take care of creating a viewer and cleaning up at the end of the
+    test. When using this function, it is **not** necessary to use a `qtbot` fixture,
+    nor should you do any additional cleanup (such as using `qtbot.addWidget` or
+    calling `viewer.close()`) at the end of the test. Duplicate cleanup may cause
+    an error.
 
-        viewer = make_napari_viewer()
+    To use this fixture as a function in your tests:
+
+        def test_something_with_a_viewer(make_napari_viewer):
+            # `make_napari_viewer` takes any keyword arguments that napari.Viewer() takes
+            viewer = make_napari_viewer()
 
     It accepts all the same arguments as `napari.Viewer`, notably `show`
     which should be set to `True` for tests that require the `Viewer` to be visible
     (e.g., tests that check aspects of the Qt window or layer rendering).
-    It also accepts the following test-related paramaters:
+    It also accepts the following test-related parameters:
 
     ViewerClass : Type[napari.Viewer], optional
         Override the viewer class being used.  By default, will
@@ -293,7 +350,9 @@ def make_napari_viewer(
 
     # do not inline to avoid pytest trying to compute repr of expression.
     # it fails if C++ object gone but not Python object.
-    assert _do_not_inline_below == 0
+    assert (
+        _do_not_inline_below == 0
+    ), f'{request.config.getoption(_SAVE_GRAPH_OPNAME)}, {_SAVE_GRAPH_OPNAME}'
 
     # only check for leaked widgets if an exception was raised during the test,
     # and "strict" mode was used.
@@ -323,7 +382,7 @@ def make_napari_viewer(
                 warnings.warn(msg)
 
 
-@pytest.fixture
+@pytest.fixture()
 def make_napari_viewer_proxy(make_napari_viewer, monkeypatch):
     """Fixture that returns a function for creating a napari viewer wrapped in proxy.
     Use in the same way like `make_napari_viewer` fixture.
@@ -352,10 +411,10 @@ def make_napari_viewer_proxy(make_napari_viewer, monkeypatch):
 
     proxies.clear()
 
-    yield actual_factory
+    return actual_factory
 
 
-@pytest.fixture
+@pytest.fixture()
 def MouseEvent():
     """Create a subclass for simulating vispy mouse events.
 
@@ -369,12 +428,12 @@ def MouseEvent():
     @dataclass
     class Event:
         type: str
-        position: Tuple[float]
+        position: tuple[float]
         is_dragging: bool = False
-        dims_displayed: Tuple[int] = (0, 1)
-        dims_point: List[float] = None
-        view_direction: List[int] = None
-        pos: List[int] = (0, 0)
+        dims_displayed: tuple[int] = (0, 1)
+        dims_point: list[float] = None
+        view_direction: list[int] = None
+        pos: list[int] = (0, 0)
         button: int = None
         handled: bool = False
 

@@ -11,9 +11,7 @@ from itertools import chain
 from typing import (
     TYPE_CHECKING,
     Any,
-    List,
     Optional,
-    Tuple,
     Union,
     cast,
 )
@@ -27,8 +25,8 @@ from qtpy.QtWidgets import QWidget
 
 from napari._app_model import get_app
 from napari._app_model.constants import MenuGroup, MenuId
-from napari._app_model.injection._providers import _provide_viewer_or_raise
 from napari._qt._qapp_model.injection._qproviders import (
+    _provide_viewer_or_raise,
     _provide_window,
     _provide_window_or_raise,
 )
@@ -58,8 +56,8 @@ def _rebuild_npe1_samples_menu() -> None:  # pragma: no cover
     if unreg := plugin_manager._unreg_sample_actions:
         unreg()
 
-    sample_actions: List[Action] = []
-    sample_submenus: List[Any] = []
+    sample_actions: list[Action] = []
+    sample_submenus: list[Any] = []
     for plugin_name, samples in plugin_manager._sample_data.items():
         multiprovider = len(samples) > 1
         if multiprovider:
@@ -73,7 +71,6 @@ def _rebuild_npe1_samples_menu() -> None:  # pragma: no cover
             submenu_id = MenuId.FILE_SAMPLES
 
         for sample_name, sample_dict in samples.items():
-
             _add_sample_partial = partial(
                 _add_sample,
                 plugin=plugin_name,
@@ -134,8 +131,8 @@ def _rebuild_npe1_plugins_menu() -> None:
     if unreg := plugin_manager._unreg_plugin_actions:
         unreg()
 
-    widget_actions: List[Action] = []
-    widget_submenus: List[Any] = []
+    widget_actions: list[Action] = []
+    widget_submenus: list[Any] = []
     for hook_type, (plugin_name, widgets) in chain(
         plugin_manager.iter_widgets()
     ):
@@ -198,12 +195,12 @@ def _get_contrib_parent_menu(
     parent_menu: MenuId,
     mf: PluginManifest,
     group: Optional[str] = None,
-) -> Tuple[str, List[Tuple[str, SubmenuItem]]]:
+) -> tuple[str, list[tuple[str, SubmenuItem]]]:
     """Get parent menu of plugin contribution (samples/widgets).
 
     If plugin provides multiple contributions, create a new submenu item.
     """
-    submenu: List[Tuple[str, SubmenuItem]] = []
+    submenu: list[tuple[str, SubmenuItem]] = []
     if multiprovider:
         submenu_id = f'{parent_menu}/{mf.name}'
         submenu = [
@@ -238,7 +235,7 @@ def _add_sample(qt_viewer: QtViewer, plugin: str, sample: str) -> None:
 
 def _build_samples_submenu_actions(
     mf: PluginManifest,
-) -> Tuple[List[Tuple[str, SubmenuItem]], List[Action]]:
+) -> tuple[list[tuple[str, SubmenuItem]], list[Action]]:
     """Build sample data submenu and actions for a single npe2 plugin manifest."""
     from napari._app_model.constants import MenuGroup, MenuId
     from napari.plugins import menu_item_template
@@ -255,7 +252,7 @@ def _build_samples_submenu_actions(
         mf,
     )
 
-    sample_actions: List[Action] = []
+    sample_actions: list[Action] = []
     for sample in sample_data:
         _add_sample_partial = partial(
             _add_sample,
@@ -327,7 +324,7 @@ def _toggle_or_get_widget(
     plugin: str,
     widget_name: str,
     full_name: str,
-) -> Optional[Tuple[Union[FunctionGui, QWidget, Widget], str]]:
+) -> Optional[tuple[Union[FunctionGui, QWidget, Widget], str]]:
     """Toggle if widget already built otherwise return widget.
 
     Returned widget will be added to main window by a processor.
@@ -364,7 +361,7 @@ def _get_current_dock_status(full_name: str) -> bool:
 
 def _build_widgets_submenu_actions(
     mf: PluginManifest,
-) -> Tuple[List[Tuple[str, SubmenuItem]], List[Action]]:
+) -> tuple[list[tuple[str, SubmenuItem]], list[Action]]:
     """Build widget submenu and actions for a single npe2 plugin manifest."""
     # If no widgets, return
     if not mf.contributions.widgets:
@@ -379,7 +376,7 @@ def _build_widgets_submenu_actions(
         MenuGroup.PLUGIN_MULTI_SUBMENU,
     )
 
-    widget_actions: List[Action] = []
+    widget_actions: list[Action] = []
     for widget in widgets:
         full_name = menu_item_template.format(
             mf.display_name,

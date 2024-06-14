@@ -1,8 +1,7 @@
-"""QtPerformance widget to show performance information.
-"""
+"""QtPerformance widget to show performance information."""
 
 import time
-from typing import ClassVar, List
+from typing import ClassVar
 
 from qtpy.QtCore import Qt, QTimer
 from qtpy.QtGui import QTextCursor
@@ -76,7 +75,7 @@ class QtPerformance(QWidget):
 
     # We log events slower than some threshold (in milliseconds).
     THRESH_DEFAULT = 100
-    THRESH_OPTIONS: ClassVar[List[str]] = [
+    THRESH_OPTIONS: ClassVar[list[str]] = [
         '1',
         '5',
         '10',

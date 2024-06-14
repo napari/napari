@@ -1,27 +1,18 @@
 from __future__ import annotations
 
+import logging
 import os
 import sys
 import threading
 import warnings
+from collections.abc import Sequence
 from datetime import datetime
 from enum import auto
 from types import TracebackType
-from typing import Callable, List, Optional, Sequence, Set, Tuple, Type, Union
+from typing import Callable, Optional, Union
 
 from napari.utils.events import Event, EventEmitter
 from napari.utils.misc import StringEnum
-
-try:
-    from napari_error_reporter import capture_exception, install_error_reporter
-except ImportError:
-
-    def _noop(*_, **__):
-        pass
-
-    install_error_reporter = _noop
-    capture_exception = _noop
-
 
 name2num = {
     'error': 40,
@@ -82,7 +73,7 @@ class NotificationSeverity(StringEnum):
         return hash(self.value)
 
 
-ActionSequence = Sequence[Tuple[str, Callable[[], None]]]
+ActionSequence = Sequence[tuple[str, Callable[[], None]]]
 
 
 class Notification(Event):
@@ -229,11 +220,11 @@ class NotificationManager:
     re-entrency of the hooks themselves.
     """
 
-    records: List[Notification]
+    records: list[Notification]
     _instance: Optional[NotificationManager] = None
 
     def __init__(self) -> None:
-        self.records: List[Notification] = []
+        self.records: list[Notification] = []
         self.exit_on_error = os.getenv('NAPARI_EXIT_ON_ERROR') in ('1', 'True')
         self.catch_error = os.getenv('NAPARI_CATCH_ERRORS') not in (
             '0',
@@ -242,10 +233,10 @@ class NotificationManager:
         self.notification_ready = self.changed = EventEmitter(
             source=self, event_class=Notification
         )
-        self._originals_except_hooks: List[Callable] = []
-        self._original_showwarnings_hooks: List[Callable] = []
-        self._originals_thread_except_hooks: List[Callable] = []
-        self._seen_warnings: Set[Tuple[str, Type, str, int]] = set()
+        self._originals_except_hooks: list[Callable] = []
+        self._original_showwarnings_hooks: list[Callable] = []
+        self._originals_thread_except_hooks: list[Callable] = []
+        self._seen_warnings: set[tuple[str, type, str, int]] = set()
 
     def __enter__(self):
         self.install_hooks()
@@ -268,7 +259,6 @@ class NotificationManager:
             # Patch for Python < 3.8
             _setup_thread_excepthook()
 
-        install_error_reporter()
         self._originals_except_hooks.append(sys.excepthook)
         self._original_showwarnings_hooks.append(warnings.showwarning)
 
@@ -292,8 +282,8 @@ class NotificationManager:
 
     def receive_thread_error(
         self,
-        args: Tuple[
-            Type[BaseException],
+        args: tuple[
+            type[BaseException],
             BaseException,
             Optional[TracebackType],
             Optional[threading.Thread],
@@ -303,15 +293,13 @@ class NotificationManager:
 
     def receive_error(
         self,
-        exctype: Type[BaseException],
+        exctype: type[BaseException],
         value: BaseException,
         traceback: Optional[TracebackType] = None,
         thread: Optional[threading.Thread] = None,
     ):
         if isinstance(value, KeyboardInterrupt):
             sys.exit('Closed by KeyboardInterrupt')
-
-        capture_exception(value)
 
         if self.exit_on_error:
             sys.__excepthook__(exctype, value, traceback)
@@ -324,7 +312,7 @@ class NotificationManager:
     def receive_warning(
         self,
         message: Warning,
-        category: Type[Warning],
+        category: type[Warning],
         filename: str,
         lineno: int,
         file=None,
@@ -396,9 +384,9 @@ def show_console_notification(notification: Notification):
         ):
             return
 
-        print(notification)
+        print(notification)  # noqa: T201
     except Exception:
-        print(
+        logging.exception(
             'An error occurred while trying to format an error and show it in console.\n'
             'You can try to uninstall IPython to disable rich traceback formatting\n'
             'And/or report a bug to napari'
