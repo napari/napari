@@ -724,8 +724,8 @@ def test_set_3d_display_and_layer_visibility(qtbot, add_layer_with_data):
     3D rendering mode and the disable state is kept even when changing layer
     visibility.
 
-    For the labels layer the specific polygon mode button should be disable in
-    3D regarless of the layer being visible or not. For all the layers the same
+    For the labels layer the specific polygon mode button should be disabled in
+    3D regardless of the layer being visible or not. For all the layers the same
     applies for the transform mode button.
     """
     viewer = ViewerModel()
