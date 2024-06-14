@@ -63,9 +63,6 @@ class MenuId(StrEnum):
         _contributables = {
             cls.FILE_IO_UTILITIES,
             cls.FILE_ACQUIRE,
-            cls.LAYERLIST_CONTEXT,
-            cls.LAYERS_CONTEXT_CONVERT_DTYPE,
-            cls.LAYERS_CONTEXT_PROJECT,
             cls.MENUBAR_LAYERS,
             cls.LAYERS_VISUALIZE,
             cls.FILE_NEW_LAYER,
