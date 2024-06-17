@@ -718,7 +718,7 @@ typing-extensions==4.12.2
     #   uvicorn
 tzdata==2024.1
     # via pandas
-urllib3==2.2.1
+urllib3==2.2.2
     # via requests
 uvicorn==0.30.1
     # via sphinx-autobuild

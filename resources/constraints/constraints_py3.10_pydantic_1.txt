@@ -566,7 +566,7 @@ typing-extensions==4.12.2
     #   typer
 tzdata==2024.1
     # via pandas
-urllib3==2.2.1
+urllib3==2.2.2
     # via requests
 virtualenv==20.26.2
     # via napari (napari_repo/pyproject.toml)
