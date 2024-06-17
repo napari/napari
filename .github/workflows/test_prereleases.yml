@@ -43,6 +43,10 @@ jobs:
 
       - uses: tlambert03/setup-qt-libs@v1
 
+      - name: Setup Graphviz
+        uses: ts-graphviz/setup-graphviz@v2
+        continue-on-error: true
+
       - name: Install Windows OpenGL
         if: runner.os == 'Windows'
         run: |
