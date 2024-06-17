@@ -95,7 +95,7 @@ def test_qt_viewer_console_focus(qtbot, make_napari_viewer):
             view.console.hasFocus()
         ), 'console does not have focus when shown'
 
-    qtbot.waitUntil(console_has_focus)
+    qtbot.waitUntil(view.console.hasFocus)
 
 
 @pytest.mark.parametrize(('layer_class', 'data', 'ndim'), layer_test_data)
