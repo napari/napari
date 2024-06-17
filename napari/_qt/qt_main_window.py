@@ -77,6 +77,7 @@ from napari.plugins import (
     plugin_manager,
 )
 from napari.plugins._npe2 import index_npe1_adapters
+from napari.plugins.utils import PluginStatus
 from napari.settings import get_settings
 from napari.utils import perf
 from napari.utils._proxies import PublicOnlyProxy
@@ -131,6 +132,7 @@ class _QtMainWindow(QMainWindow):
         super().__init__(parent)
         self._ev = None
         self._window = window
+        self._plugin_manager_dialog = None
         self._qt_viewer = QtViewer(viewer, show_welcome_screen=True)
         self._quit_app = False
 
@@ -453,8 +455,9 @@ class _QtMainWindow(QMainWindow):
             return super().close()
         confirm_need_local = confirm_need and self._is_close_dialog[quit_app]
         self._is_close_dialog[quit_app] = False
+
         # here we save information that we could request confirmation on close
-        # So fi function `close` is called again, we don't ask again but just close
+        # So if function `close` is called again, we don't ask again but just close
         if (
             not confirm_need_local
             or not get_settings().application.confirm_close_window
@@ -564,11 +567,29 @@ class _QtMainWindow(QMainWindow):
 
         Regardless of whether cmd Q, cmd W, or the close button is used...
         """
+        try:
+            status = self._plugin_manager_dialog.query_status()
+            is_plugin_manager_busy = status['status'] == PluginStatus.BUSY
+            plugin_manager_description = status['description']
+        except AttributeError:
+            plugin_manager_description = ''
+            is_plugin_manager_busy = False
+
         if (
             event.spontaneous()
             and get_settings().application.confirm_close_window
             and self._qt_viewer.viewer.layers
-            and ConfirmCloseDialog(self, False).exec_() != QDialog.Accepted
+            and ConfirmCloseDialog(self, close_app=False).exec_()
+            != QDialog.Accepted
+        ) or (
+            is_plugin_manager_busy
+            and ConfirmCloseDialog(
+                self,
+                close_app=False,
+                extra_info=plugin_manager_description,
+                display_checkbox=False,
+            ).exec_()
+            != QDialog.Accepted
         ):
             event.ignore()
             return
@@ -663,6 +684,7 @@ class Window:
 
         # Connect the Viewer and create the Main Window
         self._qt_window = _QtMainWindow(viewer, self)
+
         qapp.installEventFilter(self._qt_window)
 
         # connect theme events before collecting plugin-provided themes
