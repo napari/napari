@@ -34,9 +34,7 @@ def get_units_from_name(
 
 
 def get_units_from_name(units: UnitsLike) -> UnitsInfo:
-    """
-    Convert a string or sequence of strings to pint units.
-    """
+    """Convert a string or sequence of strings to pint units."""
     try:
         if isinstance(units, str):
             return pint.get_application_registry()[units].units
