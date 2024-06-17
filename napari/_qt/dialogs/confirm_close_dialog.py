@@ -30,6 +30,7 @@ class ConfirmCloseDialog(QDialog):
 
         self.do_not_ask = QCheckBox(trans._('Do not ask in future'))
         self.do_not_ask.setVisible(display_checkbox)
+        self._display_checkbox = display_checkbox
 
         if close_app:
             self.setWindowTitle(trans._('Close Application?'))
@@ -80,6 +81,6 @@ class ConfirmCloseDialog(QDialog):
         self.cancel_btn = cancel_btn
 
     def accept(self):
-        if self.do_not_ask.isVisible() and self.do_not_ask.isChecked():
+        if self._display_checkbox and self.do_not_ask.isChecked():
             get_settings().application.confirm_close_window = False
         super().accept()
