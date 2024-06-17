@@ -51,7 +51,7 @@ coverage==7.5.3
     #   pytest-cov
 cycler==0.12.1
     # via matplotlib
-dask==2024.5.2
+dask==2024.6.0
     # via napari (napari_repo/pyproject.toml)
 debugpy==1.8.1
     # via ipykernel
@@ -74,7 +74,7 @@ executing==2.0.1
     # via stack-data
 fasteners==0.19
     # via zarr
-filelock==3.14.0
+filelock==3.15.1
     # via
     #   torch
     #   virtualenv
@@ -91,7 +91,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.103.1
+hypothesis==6.103.2
     # via napari (napari_repo/pyproject.toml)
 idna==3.7
     # via requests
@@ -150,7 +150,7 @@ lazy-loader==0.4
     # via
     #   napari (napari_repo/pyproject.toml)
     #   scikit-image
-llvmlite==0.42.0
+llvmlite==0.43.0
     # via numba
 locket==1.0.0
     # via partd
@@ -200,11 +200,11 @@ npe2==0.7.5
     # via
     #   napari (napari_repo/pyproject.toml)
     #   napari-plugin-manager
-numba==0.59.1
+numba==0.60.0
     # via napari (napari_repo/pyproject.toml)
 numcodecs==0.12.1
     # via zarr
-numpy==1.26.4
+numpy==2.0.0
     # via
     #   napari (napari_repo/pyproject.toml)
     #   contourpy
@@ -276,7 +276,7 @@ pooch==1.8.2
     #   scikit-image
 pretend==1.0.9
     # via napari (napari_repo/pyproject.toml)
-prompt-toolkit==3.0.46
+prompt-toolkit==3.0.47
     # via ipython
 psutil==5.9.8
     # via
@@ -296,7 +296,7 @@ pyautogui==0.9.54
     # via napari (napari_repo/pyproject.toml)
 pyconify==0.1.6
     # via superqt
-pydantic==2.7.3
+pydantic==2.7.4
     # via
     #   napari (napari_repo/pyproject.toml)
     #   app-model
@@ -318,14 +318,14 @@ pygments==2.18.0
     #   superqt
 pymsgbox==1.0.9
     # via pyautogui
-pyobjc-core==10.3
+pyobjc-core==10.3.1
     # via
     #   pyautogui
     #   pyobjc-framework-cocoa
     #   pyobjc-framework-quartz
-pyobjc-framework-cocoa==10.3
+pyobjc-framework-cocoa==10.3.1
     # via pyobjc-framework-quartz
-pyobjc-framework-quartz==10.3
+pyobjc-framework-quartz==10.3.1
     # via pyautogui
 pyopengl==3.1.6
     # via
@@ -479,7 +479,7 @@ sympy==1.12.1
     # via torch
 tabulate==0.9.0
     # via numpydoc
-tensorstore==0.1.60
+tensorstore==0.1.61
     # via
     #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari (napari_repo/pyproject.toml)
@@ -535,11 +535,11 @@ typing-extensions==4.12.2
     #   typer
 tzdata==2024.1
     # via pandas
-urllib3==2.2.1
+urllib3==2.2.2
     # via requests
 virtualenv==20.26.2
     # via napari (napari_repo/pyproject.toml)
-vispy==0.14.2
+vispy==0.14.3
     # via
     #   napari (napari_repo/pyproject.toml)
     #   napari-svg
@@ -547,7 +547,7 @@ wcwidth==0.2.13
     # via prompt-toolkit
 wrapt==1.16.0
     # via napari (napari_repo/pyproject.toml)
-xarray==2024.5.0
+xarray==2024.6.0
     # via napari (napari_repo/pyproject.toml)
 zarr==2.18.2
     # via napari (napari_repo/pyproject.toml)
