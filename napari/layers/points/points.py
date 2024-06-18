@@ -1475,15 +1475,6 @@ class Points(Layer):
                 'shown': self.shown,
             }
         )
-        for old_key in DEPRECATED_PROPERTIES:
-            new_key = old_key.replace('edge', 'border')
-            if new_key in state:
-                state.deprecate_with_replacement(
-                    old_key,
-                    new_key=new_key,
-                    version='0.6.0',
-                    since_version='0.5.0',
-                )
         return state
 
     @property

@@ -1,11 +1,20 @@
 import inspect
 import warnings
 from functools import wraps
-from typing import Any, Callable, cast
+from typing import Any, Callable, NamedTuple, cast
 
 from napari.utils.translations import trans
 
 _UNSET = object()
+
+
+class DeprecatedProperty(NamedTuple):
+    """NamedTuple to store information about deprecated property."""
+
+    previous_name: str
+    new_name: str
+    version: str
+    since_version: str
 
 
 def rename_argument(
@@ -136,6 +145,13 @@ def add_deprecated_property(
     def _setter(instance, value: Any) -> None:
         warnings.warn(msg, category=FutureWarning, stacklevel=3)
         setattr(instance, new_name, value)
+
+    if not hasattr(obj, '_deprecated_properties_list'):
+        obj._deprecated_properties_list = []
+
+    obj._deprecated_properties_list.append(
+        DeprecatedProperty(previous_name, new_name, version, since_version)
+    )
 
     setattr(obj, previous_name, property(_getter, _setter))
 

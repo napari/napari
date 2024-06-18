@@ -74,6 +74,7 @@ if TYPE_CHECKING:
     from napari.components.dims import Dims
     from napari.components.overlays.base import Overlay
     from napari.layers._source import Source
+    from napari.utils.migrations import DeprecatedProperty
 
 
 logger = logging.getLogger('napari.layers.base.base')
@@ -984,7 +985,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     def _get_ndim(self) -> int:
         raise NotImplementedError
 
-    def _get_base_state(self) -> DeprecatingDict:
+    def _get_base_state(self) -> dict[str, Any]:
         """Get dictionary of attributes on base layer.
 
         This is useful for serialization and deserialization of the layer.
@@ -996,24 +997,22 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             Dictionary of attributes on base layer that issues warning messages when
             deprecated keys are accessed directly.
         """
-        return DeprecatingDict(
-            {
-                'name': self.name,
-                'metadata': self.metadata,
-                'scale': list(self.scale),
-                'translate': list(self.translate),
-                'rotate': [list(r) for r in self.rotate],
-                'shear': list(self.shear),
-                'affine': self.affine.affine_matrix,
-                'opacity': self.opacity,
-                'blending': self.blending,
-                'visible': self.visible,
-                'experimental_clipping_planes': [
-                    plane.dict() for plane in self.experimental_clipping_planes
-                ],
-                'projection_mode': self.projection_mode,
-            }
-        )
+        return {
+            'name': self.name,
+            'metadata': self.metadata,
+            'scale': list(self.scale),
+            'translate': list(self.translate),
+            'rotate': [list(r) for r in self.rotate],
+            'shear': list(self.shear),
+            'affine': self.affine.affine_matrix,
+            'opacity': self.opacity,
+            'blending': self.blending,
+            'visible': self.visible,
+            'experimental_clipping_planes': [
+                plane.dict() for plane in self.experimental_clipping_planes
+            ],
+            'projection_mode': self.projection_mode,
+        }
 
     @abstractmethod
     def _get_state(self) -> dict[str, Any]:
@@ -1026,6 +1025,16 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     def as_layer_data_tuple(self):
         state = self._get_state()
         state.pop('data', None)
+        if hasattr(self, '_deprecated_properties_list'):
+            state = DeprecatingDict(state)
+            element: DeprecatedProperty
+            for element in self._deprecated_properties_list:
+                state.deprecate_with_replacement(
+                    element.previous_name,
+                    new_key=element.new_name,
+                    version=element.version,
+                    since_version=element.since_version,
+                )
         return self.data, state, self._type_string
 
     @property
