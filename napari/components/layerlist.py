@@ -14,6 +14,7 @@ from napari.layers import Layer
 from napari.layers.utils.layer_utils import Extent
 from napari.utils.events.containers import SelectableEventedList
 from napari.utils.naming import inc_name_count
+from napari.utils.transforms import Affine
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -114,6 +115,7 @@ class LayerList(SelectableEventedList[Layer]):
             '_extent_world',
             '_extent_world_augmented',
             '_step_size',
+            'parameters_with_default_values',
         )
         [self.__dict__.pop(p, None) for p in cached_properties]
 
@@ -182,10 +184,157 @@ class LayerList(SelectableEventedList[Layer]):
         (value,) = self._ensure_unique((value,))
         new_layer = self._type_check(value)
         new_layer.name = self._coerce_name(new_layer.name)
+        self._inherit_properties(new_layer)
         self._clean_cache()
         new_layer.events.extent.connect(self._clean_cache)
         new_layer.events._extent_augmented.connect(self._clean_cache)
         super().insert(index, new_layer)
+
+    def _need_inheritance(self, layer: Layer, param_name: str) -> bool:
+        if (
+            param_name in layer.parameters_with_default_values
+            and param_name in self.parameters_with_default_values
+        ):
+            return False
+
+        if (
+            param_name not in layer.parameters_with_default_values
+            and param_name not in self.parameters_with_default_values
+        ):
+            return False
+        return True
+
+    def _inherit_scale(self, layer: Layer):
+        """Inherit scale from the layer list."""
+        if not self._need_inheritance(layer, 'scale'):
+            return
+
+        if 'scale' in layer.parameters_with_default_values:
+            layer.scale = self._step_size[-layer.ndim :]
+        else:
+            for layer_ in self:
+                layer_.scale = layer.scale[-layer_.ndim :]
+
+    def _inherit_translate(self, layer: Layer):
+        """Inherit scale from the layer list."""
+        if not self._need_inheritance(layer, 'translate'):
+            return
+
+        if 'translate' in layer.parameters_with_default_values:
+            translate = next(
+                x.translate for x in self if x.ndim >= layer.ndim
+            )[-layer.ndim :]
+
+            for layer_ in self:
+                translate_ = layer_.translate[-layer.ndim :]
+                min_len = min(len(translate), len(translate_))
+                if not np.allclose(
+                    translate[-min_len:], translate_[-min_len:]
+                ):
+                    layer.translate = (0,) * layer.ndim
+                    break
+            else:
+                layer.translate = translate
+        else:
+            for layer_ in self:
+                layer_.translate = layer.translate[-layer_.ndim :]
+
+    def _inherit_rotate(self, layer: Layer):
+        """Inherit rotate from the layer list."""
+        if not self._need_inheritance(layer, 'rotate'):
+            return
+
+        if 'rotate' in layer.parameters_with_default_values:
+            rotate_matrix = next(
+                x.rotate for x in self if x.ndim >= layer.ndim
+            )[-layer.ndim :, -layer.ndim :]
+            for layer_ in self[1:]:
+                rotate_matrix_ = layer_.rotate[-layer_.ndim :, -layer_.ndim :]
+                min_dim = min(rotate_matrix.shape[0], rotate_matrix_.shape[0])
+                if not np.allclose(
+                    rotate_matrix[-min_dim:, -min_dim],
+                    rotate_matrix_[-min_dim:, -min_dim],
+                ):
+                    layer.rotate = 0
+                    break
+            else:
+                layer.rotate = rotate_matrix
+        else:
+            for layer_ in self:
+                layer_.rotate = layer.rotate[-layer_.ndim :, -layer_.ndim :]
+
+    def _inherit_affine(self, layer: Layer):
+        if not self._need_inheritance(layer, 'affine'):
+            return
+
+        if 'affine' in layer.parameters_with_default_values:
+            # affine.linear_matrix stores the matrix in reversed order
+            affine_matrix = next(
+                x.affine.affine_matrix for x in self if x.ndim >= layer.ndim
+            )[-(layer.ndim + 1) :, -(layer.ndim + 1) :]
+            for layer_ in self[1:]:
+                affine_matrix_ = layer_.affine.affine_matrix[
+                    -(layer_.ndim + 1) :, -(layer_.ndim + 1) :
+                ]
+                min_dim = min(affine_matrix.shape[0], affine_matrix_.shape[0])
+                if not np.allclose(
+                    affine_matrix[-min_dim:, -min_dim:],
+                    affine_matrix_[-min_dim:, -min_dim:],
+                ):
+                    layer.affine = Affine(ndim=layer.ndim)
+                    break
+            else:
+                layer.affine = affine_matrix
+        else:
+            for layer_ in self:
+                layer_.affine = layer.affine.affine_matrix[
+                    -(layer_.ndim + 1) :, -(layer_.ndim + 1) :
+                ]
+
+    def _inherit_shear(self, layer: Layer):
+        if not self._need_inheritance(layer, 'shear'):
+            return
+
+        if 'shear' in layer.parameters_with_default_values:
+            layer_shear_count = (layer.ndim * (layer.ndim - 1)) // 2
+            shear = next(x.shear for x in self if x.ndim >= layer.ndim)[
+                -layer_shear_count:
+            ]
+            for layer_ in self:
+                shear_ = layer_.shear[-layer_shear_count:]
+                min_len = min(len(shear), len(shear_))
+                if not np.allclose(shear[-min_len:], shear_[-min_len:]):
+                    layer.shear = np.zeros(layer.ndim * (layer.ndim - 1) // 2)
+                    break
+            else:
+                layer.shear = shear
+
+    def _inherit_properties(self, layer: Layer):
+        """Inherit properties from the layer list."""
+        if not self:
+            # empty layer list, nothing to inherit
+            return
+        if (
+            not layer.parameters_with_default_values.issubset(
+                self.parameters_with_default_values
+            )
+            and layer.ndim > self.ndim
+        ):
+            raise ValueError(
+                f'Cannot add layer with non default properties to layer list with lower dimensionality ({layer.ndim} vs {self.ndim}).'
+            )
+        self._inherit_scale(layer)
+        self._inherit_translate(layer)
+        self._inherit_rotate(layer)
+        self._inherit_affine(layer)
+        self._inherit_shear(layer)
+
+    @cached_property
+    def parameters_with_default_values(self):
+        res = set()
+        for layer in self:
+            res.update(layer.parameters_with_default_values)
+        return res
 
     def remove_selected(self):
         """Remove selected layers from LayerList, but first unlink them."""

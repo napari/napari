@@ -123,6 +123,9 @@ class EventedList(TypedMutableSequence[_T]):
     # def remove(self, value: T): ...
 
     def __setitem__(self, key, value: _T) -> None:
+        if type(key) in self._lookup:
+            key = self.index(key)
+
         old = self._list[key]  # https://github.com/napari/napari/pull/2120
         if isinstance(key, slice):
             if not isinstance(value, Iterable):
