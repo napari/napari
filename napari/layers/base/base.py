@@ -60,7 +60,6 @@ from napari.utils.geometry import (
     intersect_line_with_axis_aligned_bounding_box_3d,
 )
 from napari.utils.key_bindings import KeymapProvider
-from napari.utils.migrations import DeprecatingDict
 from napari.utils.misc import StringEnum
 from napari.utils.mouse_bindings import MousemapProvider
 from napari.utils.naming import magic_name
@@ -74,7 +73,6 @@ if TYPE_CHECKING:
     from napari.components.dims import Dims
     from napari.components.overlays.base import Overlay
     from napari.layers._source import Source
-    from napari.utils.migrations import DeprecatedProperty
 
 
 logger = logging.getLogger('napari.layers.base.base')
@@ -1025,16 +1023,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     def as_layer_data_tuple(self):
         state = self._get_state()
         state.pop('data', None)
-        if hasattr(self, '_deprecated_properties_list'):
-            state = DeprecatingDict(state)
-            element: DeprecatedProperty
-            for element in self._deprecated_properties_list:
-                state.deprecate_with_replacement(
-                    element.previous_name,
-                    new_key=element.new_name,
-                    version=element.version,
-                    since_version=element.since_version,
-                )
         return self.data, state, self._type_string
 
     @property

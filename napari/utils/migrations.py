@@ -9,12 +9,22 @@ _UNSET = object()
 
 
 class DeprecatedProperty(NamedTuple):
-    """NamedTuple to store information about deprecated property."""
+    """Information about deprecated property."""
 
     previous_name: str
     new_name: str
     version: str
     since_version: str
+
+    def message(self) -> str:
+        return trans._(
+            '{previous_name} is deprecated since {since_version} and will be removed in {version}. Please use {new_name}',
+            deferred=True,
+            previous_name=self.previous_name,
+            since_version=self.since_version,
+            version=self.version,
+            new_name=self.new_name,
+        )
 
 
 def rename_argument(
@@ -145,13 +155,6 @@ def add_deprecated_property(
     def _setter(instance, value: Any) -> None:
         warnings.warn(msg, category=FutureWarning, stacklevel=3)
         setattr(instance, new_name, value)
-
-    if not hasattr(obj, '_deprecated_properties_list'):
-        obj._deprecated_properties_list = []
-
-    obj._deprecated_properties_list.append(
-        DeprecatedProperty(previous_name, new_name, version, since_version)
-    )
 
     setattr(obj, previous_name, property(_getter, _setter))
 
@@ -284,21 +287,9 @@ class DeprecatingDict(dict[str, Any]):
             return True
         return super().__contains__(key)
 
-    def deprecate_with_replacement(
-        self,
-        key: str,
-        *,
-        new_key: str,
-        version: str,
-        since_version: str,
-    ) -> None:
+    def deprecate(self, prop: DeprecatedProperty) -> None:
         """Deprecates a key with a direct replacement using a corresponding message."""
-        message = trans._(
-            '{key} is deprecated since {since_version} and will be removed in {version}. Please use {new_key}',
-            deferred=True,
-            key=key,
-            since_version=since_version,
-            version=version,
-            new_key=new_key,
+        self.deprecations[prop.previous_name] = (
+            self[prop.new_name],
+            prop.message(),
         )
-        self.deprecations[key] = self[new_key], message
