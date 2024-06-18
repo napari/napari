@@ -1076,3 +1076,34 @@ def test_more_than_uint16_colors(qt_viewer):
         npt.assert_equal(
             midd_pixel, layer.colormap.map(i) * 255, err_msg=f'{i}'
         )
+
+
+@skip_local_popups
+def test_scale_bar_colored(qt_viewer, qtbot):
+    viewer = qt_viewer.viewer
+    scale_bar = viewer.scale_bar
+
+    # Add black image
+    data = np.zeros((10, 10))
+    viewer.add_image(data)
+
+    # Check scale bar is not visible (all the canvas is black)
+    screenshot = qt_viewer.screenshot(flash=False)
+    assert np.all(screenshot == (0, 0, 0, 255), axis=-1).all()
+
+    # Check scale bar is visible (canvas has white `(1, 1, 1, 255)` in it)
+    scale_bar.visible = True
+    screenshot = qt_viewer.screenshot(flash=False)
+    assert np.all(screenshot == (1, 1, 1, 255), axis=-1).any()
+
+    # Check scale bar is colored (canvas has fuchsia `(1, 0, 1, 255)` and not white in it)
+    scale_bar.colored = True
+    screenshot = qt_viewer.screenshot(flash=False)
+    assert not np.all(screenshot == (1, 1, 1, 255), axis=-1).any()
+    assert np.all(screenshot == (1, 0, 1, 255), axis=-1).any()
+
+    # Check scale bar is still visible but not colored (canvas has white again but not fuchsia in it)
+    scale_bar.colored = False
+    screenshot = qt_viewer.screenshot(flash=False)
+    assert np.all(screenshot == (1, 1, 1, 255), axis=-1).any()
+    assert not np.all(screenshot == (1, 0, 1, 255), axis=-1).any()
