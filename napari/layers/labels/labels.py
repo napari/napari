@@ -84,6 +84,8 @@ class Labels(ScalarFieldBase):
         the final column is a length N translation vector and a 1 or a napari
         `Affine` transform object. Applied as an extra transform on top of the
         provided scale, rotate, and shear values.
+    axis_labels : list of str, optional
+        List of axis labels for the layer data.
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -147,6 +149,9 @@ class Labels(ScalarFieldBase):
         ones along the main diagonal.
     translate : tuple of float
         Translation values for the layer.
+    units : str or sequence of str or pint.Unit or sequence of pint.Unit
+        The physical units of the data. If a sequence, the length should match
+        the number of spatial dimensions.
     visible : bool
         Whether the layer visual is currently being displayed.
 
@@ -279,6 +284,7 @@ class Labels(ScalarFieldBase):
         data,
         *,
         affine=None,
+        axis_labels=None,
         blending='translucent',
         cache=True,
         colormap=None,
@@ -297,6 +303,7 @@ class Labels(ScalarFieldBase):
         scale=None,
         shear=None,
         translate=None,
+        units=None,
         visible=True,
     ) -> None:
         if name is None and data is not None:
@@ -321,6 +328,7 @@ class Labels(ScalarFieldBase):
 
         super().__init__(
             data,
+            axis_labels=axis_labels,
             rendering=rendering,
             depiction=depiction,
             name=name,
@@ -338,6 +346,7 @@ class Labels(ScalarFieldBase):
             plane=plane,
             experimental_clipping_planes=experimental_clipping_planes,
             projection_mode=projection_mode,
+            units=units,
         )
 
         self.events.add(

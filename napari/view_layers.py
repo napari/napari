@@ -95,7 +95,10 @@ def _merge_layer_viewer_sigs_docs(func):
 
     # merge the signatures of Viewer and viewer.add_*
     func.__signature__ = _combine_signatures(
-        add_method, Viewer, return_annotation=Viewer, exclude=('self',)
+        add_method,
+        Viewer,
+        return_annotation=Viewer,
+        exclude=('self', 'axis_labels'),
     )
 
     # merge the __annotations__
@@ -154,6 +157,8 @@ def _make_viewer_then(
     dims_kwargs = {
         k: vkwargs.pop(k) for k in list(vkwargs) if k in _dims_params
     }
+    if 'axis_labels' in dims_kwargs and dims_kwargs['axis_labels'] is None:
+        dims_kwargs.pop('axis_labels')
     if viewer is None:
         viewer = Viewer(**vkwargs)
     kwargs.update(kwargs.pop('kwargs', {}))
@@ -244,12 +249,13 @@ def imshow(
     scale=None,
     shear=None,
     translate=None,
+    units=None,
     visible=True,
     viewer=None,
     title='napari',
     ndisplay=2,
     order=(),
-    axis_labels=(),
+    axis_labels=None,
     show=True,
 ) -> tuple[Viewer, list['Image']]:
     """Load data into an Image layer and return the Viewer and Layer.
@@ -420,6 +426,7 @@ def imshow(
         experimental_clipping_planes=experimental_clipping_planes,
         custom_interpolation_kernel_2d=custom_interpolation_kernel_2d,
         projection_mode=projection_mode,
+        units=units,
         title=title,
         ndisplay=ndisplay,
         order=order,

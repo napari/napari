@@ -219,7 +219,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         super().__init__(
             title=title,
             dims={
-                'axis_labels': axis_labels,
+                'axis_labels': axis_labels if axis_labels is not None else (),
                 'ndisplay': ndisplay,
                 'order': order,
             },
@@ -731,6 +731,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         channel_axis=None,
         affine=None,
         attenuation=0.05,
+        axis_labels=None,
         blending=None,
         cache=True,
         colormap=None,
@@ -754,6 +755,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         scale=None,
         shear=None,
         translate=None,
+        units=None,
         visible=True,
     ) -> Union[Image, list[Image]]:
         """Add one or more Image layers to the layer list.
@@ -784,6 +786,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             top of the provided scale, rotate, and shear values.
         attenuation : float or list of float
             Attenuation rate for attenuated maximum intensity projection.
+        axis_labels : list of str, optional
+            List of axis labels for the layer data.
         blending : str or list of str
             One of a list of preset blending modes that determines how RGB and
             alpha values of the layer visual get mixed. Allowed values are
@@ -868,6 +872,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             A vector of shear values for an upper triangular n-D shear matrix.
         translate : tuple of float or list of tuple of float
             Translation values for the layer.
+        units : str or sequence of str or pint.Unit or sequence of pint.Unit
+            The physical units of the data. If a sequence, the length should match
+            the number of spatial dimensions.
         visible : bool or list of bool
             Whether the layer visual is currently being displayed.
 
@@ -890,6 +897,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # doing this here for IDE/console autocompletion in add_image function.
         kwargs = {
             'rgb': rgb,
+            'axis_labels': axis_labels,
             'colormap': colormap,
             'contrast_limits': contrast_limits,
             'gamma': gamma,
@@ -915,6 +923,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             'experimental_clipping_planes': experimental_clipping_planes,
             'custom_interpolation_kernel_2d': custom_interpolation_kernel_2d,
             'projection_mode': projection_mode,
+            'units': units,
         }
 
         # these arguments are *already* iterables in the single-channel case.

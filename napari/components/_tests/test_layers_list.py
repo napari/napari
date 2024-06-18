@@ -2,10 +2,12 @@ import os
 
 import npe2
 import numpy as np
+import numpy.testing as npt
 import pytest
 
 from napari.components import LayerList
 from napari.layers import Image
+from napari.layers.base._test_util_samlpe_layer import SampleLayer
 from napari.layers.utils._link_layers import get_linked_layers
 
 
@@ -570,3 +572,88 @@ def test_readd_layers():
     with pytest.raises(ValueError, match='already present'):
         layers[:3] = layers[:]
     assert set(layers) == set(imgs)
+
+
+def test_axis_labels():
+    layers = LayerList()
+    l1 = SampleLayer(np.zeros((10, 10)))
+    l2 = SampleLayer(np.zeros((5, 10, 10)))
+    assert layers.axis_labels == ['dim_1', 'dim_0']
+    layers.append(l1)
+    assert layers.axis_labels == ['dim_1', 'dim_0']
+    layers.append(l2)
+    assert layers.axis_labels == ['dim_2', 'dim_1', 'dim_0']
+
+
+def test_axis_labels_custom():
+    l1 = SampleLayer(np.zeros((5, 10, 10)), axis_labels=['z', 'y', 'x'])
+    l2 = SampleLayer(np.zeros((5, 10, 10)), axis_labels=['t', 'y', 'x'])
+    layers = LayerList([l1, l2])
+    assert layers.axis_labels == ['t', 'z', 'y', 'x']
+
+
+def test_inherit_axis_labels():
+    """Test if default axes labels are overwritten after add to layer list."""
+    layers = LayerList()
+    l1 = SampleLayer(np.zeros((5, 10, 10)), axis_labels=['z', 'y', 'x'])
+    l2 = SampleLayer(np.zeros((10, 10)))
+    assert l2.axis_labels == ['dim_1', 'dim_0']
+    layers.append(l1)
+    assert l2.axis_labels == ['dim_1', 'dim_0']
+    layers.append(l2)
+    assert l2.axis_labels == ['y', 'x']
+
+
+def test_inheritance_units(unit_register):
+    layers = LayerList()
+    l1 = SampleLayer(np.zeros((10, 10)), 2, units='nm')
+    l2 = SampleLayer(np.zeros((10, 10)), 2)
+    assert l2.units == {f'dim_{i}': unit_register.pixel for i in range(2)}
+    layers.append(l1)
+    assert l2.units == {f'dim_{i}': unit_register.pixel for i in range(2)}
+    layers.append(l2)
+    assert l2.units == {f'dim_{i}': unit_register.nanometer for i in range(2)}
+    # uncomment the above line to see the test fail
+
+
+def test_inherit_scale():
+    layers = LayerList()
+    l1 = SampleLayer(np.zeros((5, 10, 10)), scale=(1, 2, 3))
+    l2 = SampleLayer(np.zeros((10, 10)))
+    layers.append(l1)
+    npt.assert_array_equal(l1.scale, (1, 2, 3))
+    npt.assert_array_equal(l2.scale, (1, 1))
+    layers.append(l2)
+    npt.assert_array_equal(l2.scale, (2, 3))
+
+
+def test_set_units(unit_register):
+    """Test if default axes labels are overwritten after add to layer list."""
+    l1 = SampleLayer(
+        np.zeros((5, 10, 10)), axis_labels=['z', 'y', 'x'], units='nm'
+    )
+    l2 = SampleLayer(np.zeros((10, 10)), axis_labels=['y', 'x'])
+    layers = LayerList([l1, l2])
+    assert layers.units == {
+        'x': unit_register.nm,
+        'y': unit_register.nm,
+        'z': unit_register.nm,
+    }
+    assert l2.units == {'x': unit_register.nm, 'y': unit_register.nm}
+
+    layers.units = {'x': 'um', 'y': 'um', 'z': 's'}
+    assert layers.units == {
+        'x': unit_register.um,
+        'y': unit_register.um,
+        'z': unit_register.second,
+    }
+    assert l2.units == {'x': unit_register.um, 'y': unit_register.um}
+
+
+def test_different_dimensionality():
+    layers = LayerList()
+    layers.append(SampleLayer(np.zeros((10, 10)), units={'a': 'm', 'b': 's'}))
+    with pytest.raises(ValueError, match='Units for axis b'):
+        layers.append(
+            SampleLayer(np.zeros((10, 10)), units={'a': 'm', 'b': 'm'})
+        )

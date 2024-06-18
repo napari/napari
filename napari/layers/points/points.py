@@ -87,6 +87,8 @@ class Points(Layer):
         provided scale, rotate, and shear values.
     antialiasing: float
         Amount of antialiasing in canvas pixels.
+    axis_labels : list of str, optional
+        List of axis labels for the layer data.
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -190,6 +192,9 @@ class Points(Layer):
         For example usage, see /napari/examples/add_points_with_text.py.
     translate : tuple of float
         Translation values for the layer.
+    units : str or sequence of str or pint.Unit or sequence of pint.Unit
+        The physical units of the data. If a sequence, the length should match
+        the number of spatial dimensions.
     visible : bool
         Whether the layer visual is currently being displayed.
 
@@ -385,6 +390,7 @@ class Points(Layer):
         *,
         affine=None,
         antialiasing=1,
+        axis_labels=None,
         blending='translucent',
         border_color='dimgray',
         border_color_cycle=None,
@@ -418,6 +424,7 @@ class Points(Layer):
         symbol='o',
         text=None,
         translate=None,
+        units=None,
         visible=True,
     ) -> None:
         if ndim is None:
@@ -459,6 +466,7 @@ class Points(Layer):
         super().__init__(
             data,
             ndim,
+            axis_labels=axis_labels,
             name=name,
             metadata=metadata,
             scale=scale,
@@ -472,6 +480,7 @@ class Points(Layer):
             cache=cache,
             experimental_clipping_planes=experimental_clipping_planes,
             projection_mode=projection_mode,
+            units=units,
         )
 
         self.events.add(

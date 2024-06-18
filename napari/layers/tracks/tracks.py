@@ -30,6 +30,8 @@ class Tracks(Layer):
         the final column is a length N translation vector and a 1 or a napari
         `Affine` transform object. Applied as an extra transform on top of the
         provided scale, rotate, and shear values.
+    axis_labels : list of str, optional
+        List of axis labels for the layer data.
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -92,6 +94,9 @@ class Tracks(Layer):
         Width of the track tails in pixels.
     translate : tuple of float
         Translation values for the layer.
+    units : str or sequence of str or pint.Unit or sequence of pint.Unit
+        The physical units of the data. If a sequence, the length should match
+        the number of spatial dimensions.
     visible : bool
         Whether the layer visual is currently being displayed.
     """
@@ -105,6 +110,7 @@ class Tracks(Layer):
         data,
         *,
         affine=None,
+        axis_labels=None,
         blending='additive',
         cache=True,
         color_by='track_id',
@@ -125,6 +131,7 @@ class Tracks(Layer):
         tail_length: int = 30,
         tail_width: int = 2,
         translate=None,
+        units=None,
         visible=True,
     ) -> None:
         # if not provided with any data, set up an empty layer in 2D+t
@@ -137,6 +144,7 @@ class Tracks(Layer):
         super().__init__(
             data,
             ndim,
+            axis_labels=axis_labels,
             name=name,
             metadata=metadata,
             scale=scale,
@@ -150,6 +158,7 @@ class Tracks(Layer):
             cache=cache,
             experimental_clipping_planes=experimental_clipping_planes,
             projection_mode=projection_mode,
+            units=units,
         )
 
         self.events.add(

@@ -8,7 +8,7 @@ import os.path
 import warnings
 from abc import ABC, ABCMeta, abstractmethod
 from collections import defaultdict
-from collections.abc import Generator
+from collections.abc import Generator, Sequence
 from contextlib import contextmanager
 from functools import cached_property
 from typing import (
@@ -16,12 +16,14 @@ from typing import (
     Any,
     Callable,
     ClassVar,
+    Literal,
     Optional,
     Union,
 )
 
 import magicgui as mgui
 import numpy as np
+import pint
 from npe2 import plugin_manager as pm
 
 from napari.layers.base._base_constants import (
@@ -33,6 +35,7 @@ from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
     transform_with_box,
 )
+from napari.layers.base._units import UnitsLike, coerce_units_and_axes
 from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.layers.utils.interactivity_utils import (
     drag_data_to_projected_distance,
@@ -76,6 +79,23 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger('napari.layers.base.base')
+
+
+__all__ = ('Layer', 'OPTIONAL_PARAMETERS', 'OPTIONAL_PARAM_TYPE')
+
+OPTIONAL_PARAM_TYPE = Literal[
+    'affine', 'axis_labels', 'rotate', 'scale', 'shear', 'translate', 'units'
+]
+
+OPTIONAL_PARAMETERS: set[OPTIONAL_PARAM_TYPE] = {
+    'affine',
+    'axis_labels',
+    'rotate',
+    'scale',
+    'shear',
+    'translate',
+    'units',
+}
 
 
 def no_op(layer: Layer, event: Event) -> None:
@@ -129,6 +149,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         the final column is a length N translation vector and a 1 or a napari
         `Affine` transform object. Applied as an extra transform on top of the
         provided scale, rotate, and shear values.
+    axis_labels : list of str, optional
+        List of axis labels for the layer data.
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -168,6 +190,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         ones along the main diagonal.
     translate : tuple of float
         Translation values for the layer.
+    units : str or sequence of str or pint.Unit or sequence of pint.Unit
+        The physical units of the data. If a sequence, the length should match
+        the number of spatial dimensions.
     visible : bool
         Whether the layer visual is currently being displayed.
 
@@ -310,6 +335,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         ndim,
         *,
         affine=None,
+        axis_labels=None,
         blending='translucent',
         cache=True,  # this should move to future "data source" object.
         experimental_clipping_planes=None,
@@ -323,6 +349,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         scale=None,
         shear=None,
         translate=None,
+        units=None,
         visible=True,
     ):
         super().__init__()
@@ -342,6 +369,13 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         # Needs to be imported here to avoid circular import in _source
         from napari.layers._source import current_source
+
+        locals_dict = locals()
+        self._parameters_with_default_values = {
+            x for x in OPTIONAL_PARAMETERS if locals_dict[x] is None
+        }  # this is to store information which parameters were not set by the user
+        # it allow to detect which parameters could be overwritten when
+        # adding layer to the viewer
 
         self._source = current_source()
         self.dask_optimized_slicing = configure_dask(data, cache)
@@ -408,6 +442,17 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 Affine(np.ones(ndim), np.zeros(ndim), name='world2grid'),
             ]
         )
+        if units is None:
+            units = pint.get_application_registry().pixel
+        if axis_labels is None:
+            if isinstance(units, dict):
+                axis_labels = list(units)
+            else:
+                axis_labels = [f'dim_{i}' for i in range(ndim)][::-1]
+
+        self._units, self._axis_labels = coerce_units_and_axes(
+            units, axis_labels
+        )
 
         self.corner_pixels = np.zeros((2, ndim), dtype=int)
         self._editable = True
@@ -430,21 +475,33 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         self.events = EmitterGroup(
             source=self,
-            refresh=Event,
-            set_data=Event,
-            blending=Event,
-            opacity=Event,
-            visible=Event,
-            scale=Event,
-            translate=Event,
-            rotate=Event,
-            shear=Event,
-            affine=Event,
             data=Event,
-            name=Event,
-            thumbnail=Event,
-            status=Event,
+            affine=Event,
+            axis_labels=Event,
+            blending=Event,
+            cursor=Event,
+            cursor_size=Event,
+            editable=Event,
+            extent=Event,
             help=Event,
+            loaded=Event,
+            mode=Event,
+            mouse_pan=Event,
+            mouse_zoom=Event,
+            name=Event,
+            opacity=Event,
+            projection_mode=Event,
+            refresh=Event,
+            reload=Event,
+            rotate=Event,
+            scale=Event,
+            set_data=Event,
+            shear=Event,
+            status=Event,
+            thumbnail=Event,
+            translate=Event,
+            units=Event,
+            visible=Event,
             interactive=WarningEmitter(
                 trans._(
                     'layer.events.interactive is deprecated since 0.4.18 and will be removed in 0.6.0. Please use layer.events.mouse_pan and layer.events.mouse_zoom',
@@ -452,18 +509,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 ),
                 type_name='interactive',
             ),
-            mouse_pan=Event,
-            mouse_zoom=Event,
-            cursor=Event,
-            cursor_size=Event,
-            editable=Event,
-            loaded=Event,
-            reload=Event,
-            extent=Event,
             _extent_augmented=Event,
             _overlays=Event,
-            mode=Event,
-            projection_mode=Event,
         )
         self.name = name
         self.mode = mode
@@ -749,6 +796,77 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         """Executes side-effects on this layer related to changes of the editable state."""
 
     @property
+    def parameters_with_default_values(self) -> set[OPTIONAL_PARAM_TYPE]:
+        """set[str]: Parameters that have default values
+        (passed `None` to constructor and not set later).
+        """
+        return set(self._parameters_with_default_values)
+
+    def set_axis_and_units(
+        self, axis_labels: Sequence[str], units: UnitsLike
+    ) -> None:
+        self._units, self._axis_labels = coerce_units_and_axes(
+            units, axis_labels
+        )
+        self._parameters_with_default_values.discard('axis_labels')
+        self._parameters_with_default_values.discard('units')
+        self.events.axis_labels()
+        self.events.units()
+
+    @property
+    def axis_labels(self) -> list[str]:
+        """Sequence[str]: Labels for each axis."""
+        return self._axis_labels
+
+    @axis_labels.setter
+    def axis_labels(self, axis_labels: Sequence[str]) -> None:
+        axis_labels = list(axis_labels)
+        if len(axis_labels) != len(set(axis_labels)):
+            raise ValueError('Axes labels must be unique.')
+        if len(axis_labels) != self.ndim:
+            raise ValueError(
+                f'Length of axis_labels should be equal to ndim ({self.ndim})'
+            )
+        if isinstance(self._units, dict) and not set(axis_labels).issubset(
+            set(self._units)
+        ):
+            diff = ', '.join(set(axis_labels) - set(self._units))
+            raise ValueError(
+                'Units are set per axis and some of new '
+                'axis_labels do not have a corresponding unit. '
+                f'Missing units for: {diff}. '
+                'Please use set_axis_and_units method.'
+            )
+        self._axis_labels = list(axis_labels)
+        self._parameters_with_default_values.discard('axis_labels')
+        self.events.axis_labels()
+
+    @property
+    def units(self) -> dict[str, pint.Unit]:
+        """Dict[str, unyt.Unit]: Units for each axis."""
+        if isinstance(self._units, dict):
+            return self._units
+        return {label: self._units for label in self.axis_labels}
+
+    @units.setter
+    def units(self, units: UnitsLike) -> None:
+        if (
+            'axis_labels' in self._parameters_with_default_values
+            and isinstance(units, dict)
+        ):
+            self._units, self._axis_labels = coerce_units_and_axes(
+                units, list(units)
+            )
+            self._parameters_with_default_values.discard('axis_labels')
+            self.events.axis_labels()
+        else:
+            self._units, self._axis_labels = coerce_units_and_axes(
+                units, self._axis_labels
+            )
+        self._parameters_with_default_values.discard('units')
+        self.events.units()
+
+    @property
     def scale(self) -> npt.NDArray:
         """array: Anisotropy factors to scale data into world coordinates."""
         return self._transforms['data2physical'].scale
@@ -756,10 +874,22 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @scale.setter
     def scale(self, scale: Optional[npt.NDArray]) -> None:
         if scale is None:
+            self._parameters_with_default_values.add('scale')
             scale = np.array([1] * self.ndim)
+        else:
+            self._parameters_with_default_values.discard('scale')
         self._transforms['data2physical'].scale = np.array(scale)
         self._clear_extents_and_refresh()
         self.events.scale()
+
+    @property
+    def scale_per_axis(self) -> dict[str, pint.Quantity]:
+        """Dict[str, pint.Unit]: Scale factors for each axis."""
+        units = self.units
+        return {
+            label: units[label] * scale
+            for label, scale in zip(self.axis_labels, self.scale)
+        }
 
     @property
     def translate(self) -> npt.NDArray:
@@ -768,6 +898,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
     @translate.setter
     def translate(self, translate: npt.ArrayLike) -> None:
+        self._parameters_with_default_values.discard('translate')
         self._transforms['data2physical'].translate = np.array(translate)
         self._clear_extents_and_refresh()
         self.events.translate()
@@ -779,6 +910,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
     @rotate.setter
     def rotate(self, rotate: npt.NDArray) -> None:
+        self._parameters_with_default_values.discard('rotate')
         self._transforms['data2physical'].rotate = rotate
         self._clear_extents_and_refresh()
         self.events.rotate()
@@ -790,6 +922,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
     @shear.setter
     def shear(self, shear: npt.NDArray) -> None:
+        self._parameters_with_default_values.discard('shear')
         self._transforms['data2physical'].shear = shear
         self._clear_extents_and_refresh()
         self.events.shear()
@@ -804,6 +937,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         # Assignment by transform name is not supported by TransformChain and
         # EventedList, so use the integer index instead. For more details, see:
         # https://github.com/napari/napari/issues/3058
+        self._parameters_with_default_values.discard('affine')
         self._transforms[2] = coerce_affine(
             affine, ndim=self.ndim, name='physical2world'
         )
@@ -993,6 +1127,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         """
         base_dict = {
             'name': self.name,
+            'axis_labels': self.axis_labels,
             'metadata': self.metadata,
             'scale': list(self.scale),
             'translate': list(self.translate),
@@ -1006,6 +1141,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 plane.dict() for plane in self.experimental_clipping_planes
             ],
             'projection_mode': self.projection_mode,
+            'units': self._units,
         }
         return base_dict
 

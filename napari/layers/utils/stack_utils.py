@@ -87,6 +87,7 @@ def split_channels(
     kwargs.setdefault('colormap', None)
     # these arguments are *already* iterables in the single-channel case.
     iterable_kwargs = {
+        'axis_labels',
         'scale',
         'translate',
         'contrast_limits',
@@ -94,6 +95,8 @@ def split_channels(
         'plane',
         'experimental_clipping_planes',
         'custom_interpolation_kernel_2d',
+        'units',
+        'axes_labels',
     }
 
     # turn the kwargs dict into a mapping of {key: iterator}
