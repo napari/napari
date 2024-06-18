@@ -648,7 +648,7 @@ tabulate==0.9.0
     # via
     #   jupyter-cache
     #   numpydoc
-tensorstore==0.1.61
+tensorstore==0.1.62
     # via
     #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari (napari_repo/pyproject.toml)
