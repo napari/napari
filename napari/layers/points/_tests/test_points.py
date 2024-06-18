@@ -698,14 +698,14 @@ def test_properties(properties):
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer = Points(data, properties=copy(properties))
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer_properties = layer.properties
     np.testing.assert_equal(layer_properties, properties)
 
     current_prop = {'point_type': np.array(['B'])}
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer_current_properties = layer.current_properties
     assert layer_current_properties == current_prop
 
@@ -713,14 +713,14 @@ def test_properties(properties):
     layer.selected_data = {0, 1}
     layer.remove_selected()
     remove_properties = properties['point_type'][2::]
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer_properties = layer.properties['point_type']
     assert len(layer_properties) == (shape[0] - 2)
     assert np.array_equal(layer_properties, remove_properties)
 
     # test selection of properties
     layer.selected_data = {0}
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         selected_annotation = layer.current_properties['point_type']
     assert len(selected_annotation) == 1
     assert selected_annotation[0] == 'A'
@@ -728,7 +728,7 @@ def test_properties(properties):
     # test adding points with properties
     layer.add([10, 10])
     add_annotations = np.concatenate((remove_properties, ['A']), axis=0)
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer_properties = layer.properties['point_type']
     assert np.array_equal(layer_properties, add_annotations)
 
@@ -741,7 +741,7 @@ def test_properties(properties):
 
     layer._paste_data()
     paste_annotations = np.concatenate((add_annotations, ['A', 'B']), axis=0)
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer_properties = layer.properties['point_type']
     assert np.array_equal(layer_properties, paste_annotations)
 
@@ -800,17 +800,17 @@ def test_adding_properties(attribute):
 
     # add properties
     properties = {'point_type': _make_cycled_properties(['A', 'B'], shape[0])}
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer.properties = properties
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer_properties = layer.properties
     np.testing.assert_equal(layer_properties, properties)
 
     # add properties as a dataframe
     properties_df = pd.DataFrame(properties)
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer.properties = properties_df
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer_properties = layer.properties
     np.testing.assert_equal(layer_properties, properties)
 
@@ -818,9 +818,9 @@ def test_adding_properties(attribute):
     properties_list = {
         'point_type': list(_make_cycled_properties(['A', 'B'], shape[0]))
     }
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer.properties = properties_list
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer_properties = layer.properties
     assert isinstance(layer_properties['point_type'], np.ndarray)
 
@@ -838,7 +838,7 @@ def test_adding_properties(attribute):
     with pytest.warns() as record:
         layer.properties = properties_2
     assert len(record) == 2
-    assert issubclass(record[0].category, DeprecationWarning)
+    assert issubclass(record[0].category, FutureWarning)
     assert issubclass(record[1].category, RuntimeWarning)
 
 
@@ -879,13 +879,13 @@ def test_add_points_with_properties_as_list():
     properties = {
         'point_type': list(_make_cycled_properties(['A', 'B'], shape[0]))
     }
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer = Points(data, properties=copy(properties))
 
     coord = [18, 18]
     layer.add(coord)
     new_prop = {'point_type': np.append(properties['point_type'], 'B')}
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         np.testing.assert_equal(layer.properties, new_prop)
 
 
@@ -895,17 +895,17 @@ def test_updating_points_properties():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     properties = {'point_type': _make_cycled_properties(['A', 'B'], shape[0])}
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer = Points(data, properties=copy(properties))
 
     layer.mode = 'select'
     layer.selected_data = [len(data) - 1]
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer.current_properties = {'point_type': np.array(['A'])}
 
     updated_properties = properties
     updated_properties['point_type'][-1] = 'A'
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         np.testing.assert_equal(layer.properties, updated_properties)
 
 
@@ -919,7 +919,7 @@ def test_setting_current_properties():
         'annotator': ['jane', 'ash'],
         'model': ['worst', 'best'],
     }
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer = Points(data, properties=copy(properties))
     current_properties = {
         'annotation': ['leg'],
@@ -927,7 +927,7 @@ def test_setting_current_properties():
         'annotator': 'ash',
         'model': np.array(['best']),
     }
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer.current_properties = current_properties
 
     expected_current_properties = {
@@ -937,7 +937,7 @@ def test_setting_current_properties():
         'model': np.array(['best']),
     }
 
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         coerced_current_properties = layer.current_properties
     for k in coerced_current_properties:
         value = coerced_current_properties[k]
@@ -1174,7 +1174,7 @@ def test_switch_color_mode(attribute):
         colormap_kwarg: 'gray',
         color_cycle_kwarg: color_cycle,
     }
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer = Points(data, properties=properties, **args)
 
     layer_color_mode = getattr(layer, f'{attribute}_color_mode')
@@ -1232,7 +1232,7 @@ def test_colormap_with_categorical_properties(attribute):
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     properties = {'point_type': _make_cycled_properties(['A', 'B'], shape[0])}
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer = Points(data, properties=properties)
 
     with pytest.raises(TypeError), pytest.warns(UserWarning):
@@ -1249,7 +1249,7 @@ def test_add_colormap(attribute):
     color_kwarg = f'{attribute}_color'
     colormap_kwarg = f'{attribute}_colormap'
     args = {color_kwarg: 'point_type', colormap_kwarg: 'viridis'}
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer = Points(data, properties=annotations, **args)
 
     setattr(layer, f'{attribute}_colormap', get_colormap('gray'))
@@ -1363,10 +1363,10 @@ def test_color_cycle(attribute, color_cycle):
         f'{attribute}_color': 'point_type',
         f'{attribute}_color_cycle': color_cycle,
     }
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer = Points(data, **points_kwargs)
 
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         np.testing.assert_equal(layer.properties, properties)
 
     color_array = transform_color(
@@ -1400,10 +1400,10 @@ def test_color_cycle(attribute, color_cycle):
 
     # test adding a point with a new property value
     layer.selected_data = {}
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         current_properties = layer.current_properties
     current_properties['point_type'] = np.array(['new'])
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer.current_properties = current_properties
     layer.add([10, 10])
     color_manager = getattr(layer, f'_{attribute}')
@@ -1425,7 +1425,7 @@ def test_color_cycle_dict(attribute):
         f'{attribute}_color': 'my_colors',
         f'{attribute}_color_cycle': {1: 'green', 2: 'red', 3: 'blue'},
     }
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer = Points(data, **points_kwargs)
 
     color_manager = getattr(layer, f'_{attribute}')
@@ -1448,7 +1448,7 @@ def test_add_color_cycle_to_empty_layer(attribute):
         f'{attribute}_color': 'point_type',
         f'{attribute}_color_cycle': color_cycle,
     }
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer = Points(**points_kwargs)
 
     # verify the current_border_color is correct
@@ -1461,14 +1461,14 @@ def test_add_color_cycle_to_empty_layer(attribute):
     layer.add([10, 10])
     props = {'point_type': np.array(['A'])}
     expected_color = np.array([[1, 0, 0, 1]])
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         np.testing.assert_equal(layer.properties, props)
     attribute_color = getattr(layer, f'{attribute}_color')
     np.testing.assert_allclose(attribute_color, expected_color)
 
     # add a point with a new property
     layer.selected_data = []
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer.current_properties = {'point_type': np.array(['B'])}
     layer.add([12, 12])
     new_color = np.array([0, 0, 1, 1])
@@ -1476,7 +1476,7 @@ def test_add_color_cycle_to_empty_layer(attribute):
     new_properties = {'point_type': np.array(['A', 'B'])}
     attribute_color = getattr(layer, f'{attribute}_color')
     np.testing.assert_allclose(attribute_color, expected_color)
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         np.testing.assert_equal(layer.properties, new_properties)
 
 
@@ -1498,16 +1498,16 @@ def test_adding_value_color_cycle(attribute):
         f'{attribute}_color': 'point_type',
         f'{attribute}_color_cycle': color_cycle,
     }
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer = Points(data, **points_kwargs)
 
     # make point 0 point_type C
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         props = layer.properties
     point_types = props['point_type']
     point_types[0] = 'C'
     props['point_type'] = point_types
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer.properties = props
 
     color_manager = getattr(layer, f'_{attribute}')
@@ -1529,10 +1529,10 @@ def test_color_colormap(attribute):
         f'{attribute}_color': 'point_type',
         f'{attribute}_colormap': 'gray',
     }
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer = Points(data, **points_kwargs)
 
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         np.testing.assert_equal(layer.properties, properties)
 
     color_mode = getattr(layer, f'{attribute}_color_mode')
@@ -1988,7 +1988,7 @@ def test_set_face_color_mode_after_set_properties():
     num_points = 3
     points = Points(np.random.random((num_points, 2)))
 
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         points.properties = {
             'cat': np.random.randint(low=0, high=num_points, size=num_points),
             'cont': np.random.random(num_points),
@@ -1999,7 +1999,7 @@ def test_set_face_color_mode_after_set_properties():
     with pytest.warns(UserWarning):
         points.face_color_mode = 'cycle'
 
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         first_property_key, first_property_values = next(
             iter(points.properties.items())
         )
@@ -2375,10 +2375,10 @@ def test_to_mask_3d_with_size_2():
 def test_set_properties_updates_text_values():
     points = np.random.rand(3, 2)
     properties = {'class': np.array(['A', 'B', 'C'])}
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer = Points(points, properties=properties, text='class')
 
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer.properties = {'class': np.array(['D', 'E', 'F'])}
 
     np.testing.assert_array_equal(layer.text.values, ['D', 'E', 'F'])
@@ -2388,11 +2388,11 @@ def test_set_properties_with_invalid_shape_errors_safely():
     properties = {
         'class': np.array(['A', 'B', 'C']),
     }
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         points = Points(
             np.random.rand(3, 2), text='class', properties=properties
         )
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         np.testing.assert_equal(points.properties, properties)
     np.testing.assert_array_equal(points.text.values, ['A', 'B', 'C'])
 
@@ -2400,11 +2400,11 @@ def test_set_properties_with_invalid_shape_errors_safely():
         pytest.raises(
             ValueError, match='(does not match length)|(indices imply)'
         ),
-        pytest.warns(DeprecationWarning),
+        pytest.warns(FutureWarning),
     ):
         points.properties = {'class': np.array(['D', 'E'])}
 
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         np.testing.assert_equal(points.properties, properties)
     np.testing.assert_array_equal(points.text.values, ['A', 'B', 'C'])
 
@@ -2413,11 +2413,11 @@ def test_set_properties_with_missing_text_property_text_becomes_constant_empty_a
     properties = {
         'class': np.array(['A', 'B', 'C']),
     }
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         points = Points(
             np.random.rand(3, 2), text='class', properties=properties
         )
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         np.testing.assert_equal(points.properties, properties)
     np.testing.assert_array_equal(points.text.values, ['A', 'B', 'C'])
 
@@ -2425,7 +2425,7 @@ def test_set_properties_with_missing_text_property_text_becomes_constant_empty_a
     with pytest.warns() as record:
         points.properties = {'not_class': np.array(['D', 'E', 'F'])}
     assert len(record) == 2
-    assert issubclass(record[0].category, DeprecationWarning)
+    assert issubclass(record[0].category, FutureWarning)
     assert issubclass(record[1].category, RuntimeWarning)
 
     values = points.text.values
@@ -2440,10 +2440,10 @@ def test_text_param_and_setter_are_consistent():
     }
     text = {'string': 'accepted', 'color': 'black'}
 
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         points_init = Points(data, properties=properties, text=text)
 
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         points_set = Points(data, properties=properties)
     points_set.text = text
 

@@ -1077,7 +1077,7 @@ def _features_to_properties(features: pd.DataFrame) -> dict[str, np.ndarray]:
 
 
 def _warn_deprecation(message: str) -> None:
-    warnings.warn(message, DeprecationWarning, stacklevel=2)
+    warnings.warn(message, FutureWarning, stacklevel=2)
 
 
 def _properties_deprecation_message() -> str:

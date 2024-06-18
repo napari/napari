@@ -269,7 +269,7 @@ def test_properties():
     data = np.random.randint(20, size=(10, 15))
 
     layer = Labels(data)
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer_properties = layer.properties
     assert isinstance(layer_properties, dict)
     assert len(layer_properties) == 0
@@ -278,17 +278,17 @@ def test_properties():
         'class': np.array(['Background'] + [f'Class {i}' for i in range(20)])
     }
     label_index = {i: i for i in range(len(properties['class']))}
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer = Labels(data, properties=properties)
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer_properties = layer.properties
     assert isinstance(layer_properties, dict)
     np.testing.assert_equal(layer_properties, properties)
     assert layer._label_index == label_index
     layer = Labels(data)
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer.properties = properties
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer_properties = layer.properties
     assert isinstance(layer_properties, dict)
     np.testing.assert_equal(layer_properties, properties)
@@ -299,28 +299,28 @@ def test_properties():
     assert layer_message['coordinates'].endswith(f'Class {current_label - 1}')
 
     properties = {'class': ['Background']}
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer = Labels(data, properties=properties)
     layer_message = layer.get_status((0, 0))
     assert layer_message['coordinates'].endswith('[No Properties]')
 
     properties = {'class': ['Background', 'Class 12'], 'index': [0, 12]}
     label_index = {0: 0, 12: 1}
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer = Labels(data, properties=properties)
     layer_message = layer.get_status((0, 0))
     assert layer._label_index == label_index
     assert layer_message['coordinates'].endswith('Class 12')
 
     layer = Labels(data)
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer.properties = properties
     layer_message = layer.get_status((0, 0))
     assert layer._label_index == label_index
     assert layer_message['coordinates'].endswith('Class 12')
 
     layer = Labels(data)
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer.properties = pd.DataFrame(properties)
     layer_message = layer.get_status((0, 0))
     assert layer._label_index == label_index
@@ -335,9 +335,9 @@ def test_default_properties_assignment():
     data = np.random.randint(20, size=(10, 15))
 
     layer = Labels(data)
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer.properties = {}
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer_properties = layer.properties
     assert layer_properties == {}
 
@@ -1516,7 +1516,7 @@ def test_labels_state_update():
     state = layer._get_state()
     for k, v in state.items():
         if k in state.deprecations:
-            with pytest.warns(DeprecationWarning):
+            with pytest.warns(FutureWarning):
                 setattr(layer, k, v)
         else:
             setattr(layer, k, v)

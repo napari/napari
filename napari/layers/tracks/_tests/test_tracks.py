@@ -85,9 +85,9 @@ properties_df = pd.DataFrame(properties_dict)
 def test_track_layer_properties(properties):
     data = np.zeros((100, 4))
     data[:, 1] = np.arange(100)
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer = Tracks(data, properties=properties)
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer_properties = layer.properties
     for k, v in properties.items():
         np.testing.assert_equal(layer_properties[k], v)

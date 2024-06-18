@@ -242,14 +242,14 @@ def test_properties_dataframe():
     properties = {'vector_type': np.array(['A', 'B'] * int(shape[0] / 2))}
     properties_df = pd.DataFrame(properties)
     properties_df = properties_df.astype(properties['vector_type'].dtype)
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer = Vectors(data, properties=properties_df)
         np.testing.assert_equal(layer.properties, properties)
 
     # test adding a dataframe via the properties setter
     properties_2 = {'vector_type2': np.array(['A', 'B'] * int(shape[0] / 2))}
     properties_df2 = pd.DataFrame(properties_2)
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer.properties = properties_df2
         np.testing.assert_equal(layer.properties, properties_2)
 
@@ -283,11 +283,11 @@ def test_adding_properties():
     layer = Vectors(data)
 
     # properties should start empty
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         assert layer.properties == {}
 
     # add properties
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer.properties = properties
         np.testing.assert_equal(layer.properties, properties)
 
@@ -296,7 +296,7 @@ def test_adding_properties():
     properties_2 = {
         'not_vector_type': np.array(['A', 'B'] * int(shape[0] / 2))
     }
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer.properties = properties_2
 
     # adding properties with the wrong length should raise an exception
@@ -305,7 +305,7 @@ def test_adding_properties():
         pytest.raises(
             ValueError, match='(does not match length)|(indices imply)'
         ),
-        pytest.warns(DeprecationWarning),
+        pytest.warns(FutureWarning),
     ):
         layer.properties = bad_properties
 

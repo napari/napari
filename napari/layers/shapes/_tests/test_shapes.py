@@ -86,19 +86,19 @@ def test_properties(properties):
     shape = (10, 4, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer = Shapes(data, properties=copy(properties))
         np.testing.assert_equal(layer.properties, properties)
 
     current_prop = {'shape_type': np.array(['B'])}
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         assert layer.current_properties == current_prop
 
     # test removing shapes
     layer.selected_data = {0, 1}
     layer.remove_selected()
     remove_properties = properties['shape_type'][2::]
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         assert len(layer.properties['shape_type']) == (shape[0] - 2)
         assert np.array_equal(
             layer.properties['shape_type'], remove_properties
@@ -106,7 +106,7 @@ def test_properties(properties):
 
     # test selection of properties
     layer.selected_data = {0}
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         selected_annotation = layer.current_properties['shape_type']
     assert len(selected_annotation) == 1
     assert selected_annotation[0] == 'A'
@@ -116,7 +116,7 @@ def test_properties(properties):
     new_shape_type = ['rectangle']
     layer.add(new_data, shape_type=new_shape_type)
     add_properties = np.concatenate((remove_properties, ['A']), axis=0)
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         assert np.array_equal(layer.properties['shape_type'], add_properties)
 
     # test copy/paste
@@ -128,14 +128,14 @@ def test_properties(properties):
 
     layer._paste_data()
     paste_properties = np.concatenate((add_properties, ['A', 'B']), axis=0)
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         assert np.array_equal(layer.properties['shape_type'], paste_properties)
 
     # test updating a property
     layer.mode = 'select'
     layer.selected_data = {0}
     new_property = {'shape_type': np.array(['B'])}
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer.current_properties = new_property
         updated_properties = layer.properties
     assert updated_properties['shape_type'][0] == 'B'

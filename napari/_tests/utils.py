@@ -298,7 +298,6 @@ def assert_layer_state_equal(
 
     This is useful because some members of state may array-like whereas others
     maybe dataframe-like, which need to be checked for equality differently.
-    This also checks for and handles warnings associated with accessing deprecated state.
     """
     assert actual.keys() == expected.keys()
     for name in actual:
