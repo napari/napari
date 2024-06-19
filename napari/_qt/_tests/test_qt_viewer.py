@@ -1004,21 +1004,21 @@ def test_selection_collision(qt_viewer: QtViewer, mode):
 
 def test_all_supported_dtypes(qt_viewer):
     data = np.zeros((10, 10), dtype=np.uint8)
-    layer = qt_viewer.viewer.add_labels(data, opacity=1)
+    layer_ = qt_viewer.viewer.add_labels(data, opacity=1)
 
     for i, dtype in enumerate(NUMPY_INTEGER_TYPES, start=1):
         data = np.full((10, 10), i, dtype=dtype)
-        layer.data = data
+        layer_.data = data
         QApplication.processEvents()
         canvas_screenshot = qt_viewer.screenshot(flash=False)
         midd_pixel = canvas_screenshot[
             tuple(np.array(canvas_screenshot.shape[:2]) // 2)
         ]
         npt.assert_equal(
-            midd_pixel, layer.colormap.map(i) * 255, err_msg=f'{dtype} {i}'
+            midd_pixel, layer_.colormap.map(i) * 255, err_msg=f'{dtype=} {i=}'
         )
 
-    layer.colormap = DirectLabelColormap(
+    layer_.colormap = DirectLabelColormap(
         color_dict={
             0: 'red',
             1: 'green',
@@ -1038,14 +1038,14 @@ def test_all_supported_dtypes(qt_viewer):
 
     for i, dtype in enumerate(NUMPY_INTEGER_TYPES, start=1):
         data = np.full((10, 10), i, dtype=dtype)
-        layer.data = data
+        layer_.data = data
         QApplication.processEvents()
         canvas_screenshot = qt_viewer.screenshot(flash=False)
         midd_pixel = canvas_screenshot[
             tuple(np.array(canvas_screenshot.shape[:2]) // 2)
         ]
         npt.assert_equal(
-            midd_pixel, layer.colormap.map(i) * 255, err_msg=f'{dtype} {i}'
+            midd_pixel, layer_.colormap.map(i) * 255, err_msg=f'{dtype} {i}'
         )
 
 
