@@ -18,29 +18,40 @@ __all__ = ['create_context', 'get_context', 'Context', 'SettingsAwareContext']
 
 
 class ContextMapping(collections.abc.Mapping):
+    """
+    This object wraps around app-model contexts and enables functional context-keys that are only evaluated
+    when they're first queried. `ContextMapping` objects are created from a context any time someone calls
+    `NapariApplication.get_context`. This usually happens just before a menu is about to be shown, when we
+    update the menu's actions' states based on the values of the context keys. The call to `get_context`
+    triggers the creation of the `ContextMapping` which stores (or, in the case of functional keys, evaluates
+    then stores) the value of each context key. Once keys are evaluated, they are cached within the object for
+    future accessing of the same keys. However, any new `get_context` calls will create a brand new
+    `ContextMapping` object.
+    """
+
     def __init__(self, initial_values: collections.abc.Mapping):
-        self._base_store = initial_values
-        self._store: dict[str, Any] = {}
+        self._initial_context_mapping = initial_values
+        self._evaluated_context_mapping: dict[str, Any] = {}
 
     def __getitem__(self, key):
-        if key in self._store:
-            return self._store[key]
-        if key not in self._base_store:
+        if key in self._evaluated_context_mapping:
+            return self._evaluated_context_mapping[key]
+        if key not in self._initial_context_mapping:
             raise KeyError(f'Key {key!r} not found')
-        value = self._base_store[key]
+        value = self._initial_context_mapping[key]
         if callable(value):
             value = value()
-        self._store[key] = value
+        self._evaluated_context_mapping[key] = value
         return value
 
     def __contains__(self, item):
-        return item in self._base_store
+        return item in self._initial_context_mapping
 
     def __len__(self):
-        return len(self._base_store)
+        return len(self._initial_context_mapping)
 
     def __iter__(self):
-        return iter(self._base_store)
+        return iter(self._initial_context_mapping)
 
 
 class SettingsAwareContext(Context):
