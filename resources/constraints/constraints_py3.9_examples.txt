@@ -326,7 +326,7 @@ pretend==1.0.9
     # via napari (napari_repo/pyproject.toml)
 prompt-toolkit==3.0.47
     # via ipython
-psutil==5.9.8
+psutil==6.0.0
     # via
     #   napari (napari_repo/pyproject.toml)
     #   ipykernel
@@ -372,7 +372,7 @@ pyopengl==3.1.6
     #   napari (napari_repo/pyproject.toml)
 pyparsing==3.1.2
     # via matplotlib
-pyperclip==1.8.2
+pyperclip==1.9.0
     # via mouseinfo
 pyproject-hooks==1.1.0
     # via build
@@ -475,7 +475,7 @@ rpds-py==0.18.1
     # via
     #   jsonschema
     #   referencing
-scikit-image==0.22.0
+scikit-image==0.24.0
     # via napari (napari_repo/pyproject.toml)
 scikit-learn==1.5.0
     # via nilearn
@@ -533,7 +533,7 @@ tensorstore==0.1.62
     #   napari (napari_repo/pyproject.toml)
 threadpoolctl==3.5.0
     # via scikit-learn
-tifffile==2024.5.22
+tifffile==2024.6.18
     # via
     #   napari (napari_repo/pyproject.toml)
     #   scikit-image
