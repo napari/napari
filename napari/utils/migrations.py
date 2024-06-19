@@ -1,7 +1,7 @@
 import inspect
 import warnings
 from functools import wraps
-from typing import Any, Callable
+from typing import Any, Callable, cast
 
 from napari.utils.translations import trans
 
@@ -218,3 +218,71 @@ def deprecated_class_name(
     _OldClass.__new__.__signature__ = prealloc_signature  # type: ignore [attr-defined]
 
     return _OldClass
+
+
+class DeprecatingDict(dict[str, Any]):
+    """A dictionary that issues warning messages when deprecated keys are accessed.
+
+    Deprecated keys and values are not stored as part of the dictionary, so will not
+    appear when iterating over this or its items.
+
+    Instead deprecated items can only be accessed using `__getitem__`, `__setitem__`,
+    and `__delitem__`, or using `self.deprecations` directly.
+    """
+
+    # Maps from a deprecated key to its value and deprecation message.
+    deprecations: dict[str, tuple[Any, str]]
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.deprecations = {}
+
+    def __getitem__(self, key: str) -> Any:
+        if key in self.deprecations:
+            value, message = self.deprecations[key]
+            warnings.warn(message, FutureWarning)
+            return value
+        return super().__getitem__(key)
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        if key in self.deprecations:
+            _, message = self.deprecations[key]
+            warnings.warn(message, FutureWarning)
+            self.deprecations[key] = value, message
+            return None
+        return super().__setitem__(key, value)
+
+    def __delitem__(self, key: str) -> None:
+        if key in self.deprecations:
+            _, message = self.deprecations[key]
+            warnings.warn(message, FutureWarning)
+            del self.deprecations[key]
+            return None
+        return super().__delitem__(key)
+
+    def __contains__(self, key: object) -> bool:
+        if key in self.deprecations:
+            key = cast(str, key)
+            _, message = self.deprecations[key]
+            warnings.warn(message, FutureWarning)
+            return True
+        return super().__contains__(key)
+
+    def deprecate_with_replacement(
+        self,
+        key: str,
+        *,
+        new_key: str,
+        version: str,
+        since_version: str,
+    ) -> None:
+        """Deprecates a key with a direct replacement using a corresponding message."""
+        message = trans._(
+            '{key} is deprecated since {since_version} and will be removed in {version}. Please use {new_key}',
+            deferred=True,
+            key=key,
+            since_version=since_version,
+            version=version,
+            new_key=new_key,
+        )
+        self.deprecations[key] = self[new_key], message

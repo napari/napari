@@ -34,7 +34,7 @@ class QtVectorsControls(QtLayerControls):
     color_mode_comboBox : qtpy.QtWidgets.QComboBox
         Dropdown widget to select edge_color_mode for the vectors.
     color_prop_box : qtpy.QtWidgets.QComboBox
-        Dropdown widget to select _edge_color_property for the vectors.
+        Dropdown widget to select edge_color feature for the vectors.
     edge_prop_label : qtpy.QtWidgets.QLabel
         Label for color_prop_box
     layer : napari.layers.Vectors
@@ -55,15 +55,14 @@ class QtVectorsControls(QtLayerControls):
     def __init__(self, layer) -> None:
         super().__init__(layer)
 
-        # dropdown to select the property for mapping edge_color
-        color_properties = self._get_property_values()
+        # dropdown to select the feature for mapping edge_color
         self.color_prop_box = QComboBox(self)
         self.color_prop_box.currentTextChanged.connect(
             self.change_edge_color_property
         )
-        self.color_prop_box.addItems(color_properties)
+        self.color_prop_box.addItems(self.layer.features.columns)
 
-        self.edge_prop_label = QLabel(trans._('edge property:'))
+        self.edge_prop_label = QLabel(trans._('edge feature:'))
 
         # vector direct color mode adjustment and widget
         self.edgeColorEdit = QColorSwatchEdit(
@@ -266,22 +265,6 @@ class QtVectorsControls(QtLayerControls):
             self.edge_color_label.setHidden(False)
             self.color_prop_box.setHidden(True)
             self.edge_prop_label.setHidden(True)
-
-    def _get_property_values(self):
-        """Get the current property values from the Vectors layer
-
-        Returns
-        -------
-        property_values : np.ndarray
-            array of all of the union of the property names (keys)
-            in Vectors.properties and Vectors.property_choices
-
-        """
-        property_choices = [*self.layer.property_choices]
-        properties = [*self.layer.properties]
-        property_values = np.union1d(property_choices, properties)
-
-        return property_values
 
     def _on_length_change(self):
         """Change length of vectors."""

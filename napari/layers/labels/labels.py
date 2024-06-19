@@ -3,6 +3,7 @@ from collections import deque
 from collections.abc import Sequence
 from contextlib import contextmanager
 from typing import (
+    Any,
     Callable,
     ClassVar,
     Optional,
@@ -43,7 +44,11 @@ from napari.layers.labels._labels_utils import (
     interpolate_coordinates,
     sphere_indices,
 )
-from napari.layers.utils.layer_utils import _FeatureTable
+from napari.layers.utils.layer_utils import (
+    _FeatureTable,
+    _properties_deprecation_message,
+    _warn_deprecation,
+)
 from napari.utils._dtype import normalize_dtype, vispy_texture_dtype
 from napari.utils._indexing import elements_in_slice, index_in_slice
 from napari.utils.colormaps import (
@@ -57,6 +62,7 @@ from napari.utils.colormaps.colormap import (
 from napari.utils.colormaps.colormap_utils import shuffle_and_extend_colormap
 from napari.utils.events import EmitterGroup, Event
 from napari.utils.events.custom_types import Array
+from napari.utils.events.event import WarningEmitter
 from napari.utils.geometry import clamp_point_to_bounding_box
 from napari.utils.misc import StringEnum, _is_array_type
 from napari.utils.naming import magic_name
@@ -129,6 +135,9 @@ class Labels(ScalarFieldBase):
         Properties for each label. Each property should be an array of length
         N, where N is the number of labels, and the first property corresponds
         to background.
+        .. deprecated:: 0.5.0
+            properties was deprecated in version 0.5.0 and will be removed in 0.6.
+            Please use features instead.
     rendering : str
         3D Rendering mode used by vispy. Must be one {'translucent', 'iso_categorical'}.
         'translucent' renders without lighting. 'iso_categorical' uses isosurface
@@ -351,7 +360,10 @@ class Labels(ScalarFieldBase):
             n_edit_dimensions=Event,
             paint=Event,
             preserve_labels=Event,
-            properties=Event,
+            properties=WarningEmitter(
+                _properties_deprecation_message(),
+                type_name='properties',
+            ),
             selected_label=Event,
             show_selected_label=Event,
         )
@@ -361,6 +373,9 @@ class Labels(ScalarFieldBase):
         )
 
         self._overlays.update({'polygon': LabelsPolygonOverlay()})
+
+        if properties is not None:
+            _warn_deprecation(_properties_deprecation_message())
 
         self._feature_table = _FeatureTable.from_layer(
             features=features, properties=properties
@@ -558,11 +573,18 @@ class Labels(ScalarFieldBase):
 
     @property
     def properties(self) -> dict[str, np.ndarray]:
-        """dict {str: array (N,)}, DataFrame: Properties for each label."""
+        """dict {str: array (N,)}, DataFrame: Properties for each label.
+
+        .. deprecated:: 0.5.0
+            properties was deprecated in version 0.5.0 and will be removed in 0.6.
+            Please use features instead.
+        """
+        _warn_deprecation(_properties_deprecation_message())
         return self._feature_table.properties()
 
     @properties.setter
     def properties(self, properties: dict[str, Array]):
+        _warn_deprecation(_properties_deprecation_message())
         self.features = properties
 
     def _make_label_index(self) -> dict[int, int]:
@@ -627,19 +649,18 @@ class Labels(ScalarFieldBase):
             data = data[0]
         return data
 
-    def _get_state(self):
+    def _get_state(self) -> dict[str, Any]:
         """Get dictionary of layer state.
 
         Returns
         -------
-        state : dict
+        state : dict[str, Any]
             Dictionary of layer state.
         """
         state = self._get_base_state()
         state.update(
             {
                 'multiscale': self.multiscale,
-                'properties': self.properties,
                 'rendering': self.rendering,
                 'depiction': self.depiction,
                 'plane': self.plane.dict(),
@@ -650,6 +671,10 @@ class Labels(ScalarFieldBase):
                 'features': self.features,
                 'colormap': self.colormap,
             }
+        )
+        state.deprecations['properties'] = (
+            self._feature_table.properties(),
+            _properties_deprecation_message(),
         )
         return state
 
