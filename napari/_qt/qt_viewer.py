@@ -21,6 +21,7 @@ from qtpy.QtCore import QCoreApplication, QObject, Qt, QUrl
 from qtpy.QtGui import QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 from superqt import ensure_main_thread
+from superqt.utils import qdebounced
 
 from napari._qt.containers import QtLayerList
 from napari._qt.dialogs.qt_reader_dialog import handle_gui_reading
@@ -43,6 +44,7 @@ from napari.settings import get_settings
 from napari.settings._application import DaskSettings
 from napari.utils import config, perf, resize_dask_cache
 from napari.utils.action_manager import action_manager
+from napari.utils.events import EmitterGroup, Event
 from napari.utils.history import (
     get_open_history,
     get_save_history,
@@ -58,6 +60,8 @@ from napari.utils.translations import trans
 from napari_builtins.io import imsave_extensions
 
 from napari._vispy import VispyCanvas, create_vispy_layer  # isort:skip
+from napari._vispy.canvas import FramerateMonitor
+from napari.layers.base._base_constants import RenderQualityChange
 
 if TYPE_CHECKING:
     from napari_console import QtConsole
@@ -65,7 +69,6 @@ if TYPE_CHECKING:
 
     from napari._qt.layer_controls import QtLayerControlsContainer
     from napari.components import ViewerModel
-    from napari.utils.events import Event
 
 
 def _npe2_decode_selected_filter(
@@ -243,8 +246,36 @@ class QtViewer(QSplitter):
 
         self.setAcceptDrops(True)
 
+        # add the camera monitor
+        self._camera_monitor = CameraMonitor(camera=self.viewer.camera)
+        self._camera_monitor.events.moving_started.connect(
+            self._on_camera_move
+        )
+
+        # add the FPS monitor
+        self._fps_window = 0.5
+        stale_threshold = self._fps_window + 0.1
+        self._fps_monitor = FramerateMonitor(
+            stale_threshold=stale_threshold, debounce_threshold=0
+        )
+        self.canvas._scene_canvas.measure_fps(
+            window=self._fps_monitor._fps_window,
+            callback=self._fps_monitor.update_fps,
+        )
+        self._fps_monitor.events.fps.connect(self.on_fps_update)
+
+        # if we are on auto-render-quality mode, connect the high-res redraw
+        # event
+        self.viewer.events.auto_quality.connect(self._on_auto_render_quality)
+        self._on_auto_render_quality()
+
         # Create the experimental QtPool for the monitor.
         self._qt_poll = _create_qt_poll(self, self.viewer.camera)
+
+        def test(event=None):
+            pass
+
+        self.viewer.camera.events.connect(test)
 
         # Create the experimental RemoteManager for the monitor.
         self._remote_manager = _create_remote_manager(
@@ -1034,6 +1065,55 @@ class QtViewer(QSplitter):
             self.viewerButtons.consoleButton
         )
 
+    def _on_camera_move(self, event):
+        if self.viewer.auto_quality:
+            logging.info('minimum render quality')
+            for layer in self.viewer.layers:
+                layer.change_render_quality(RenderQualityChange.MIN)
+
+    def on_fps_update(self, event):
+        if (
+            not self.viewer.auto_quality
+            or not self._camera_monitor.camera_moving
+        ):
+            return
+        fps = event.fps
+        if fps < self.viewer.target_fps:
+            # We update *halfway* to the target fps, to avoid having to
+            # overcorrect
+            average = (fps + self.viewer.target_fps) / 2
+            update_factor = average / fps
+            logging.info(
+                'fps=%.2f decrease render quality by %.2f', fps, update_factor
+            )
+            for layer in self.viewer.layers:
+                layer.change_render_quality(update_factor)
+
+    def _on_auto_render_quality(self, event=None):
+        """When the viewer changes auto render quality, update events."""
+        if self.viewer.auto_quality:
+            self._redraw_high_res_callback = (
+                self._camera_monitor.events.moving_finished.connect(
+                    self.redraw_at_higher_resolution,
+                )
+            )
+        else:
+            if hasattr(self, '_redraw_high_res_callback'):
+                self._camera_monitor.events.moving_finished.disconnect(
+                    self._redraw_high_res_callback
+                )
+                self._redraw_high_res_callback = None
+            for layer in self.viewer.layers:
+                layer.change_render_quality(RenderQualityChange.MAX)
+            self.canvas._scene_canvas.update()
+
+    def redraw_at_higher_resolution(self, event=None):
+        logging.info('redraw at higher res')
+        for v_layer in self.viewer.layers:
+            v_layer.change_render_quality(RenderQualityChange.MAX)
+        self._fps_monitor._final_redraw = True
+        self.canvas._scene_canvas.update()
+
     def set_welcome_visible(self, visible):
         """Show welcome screen widget."""
         self._show_welcome_screen = visible
@@ -1266,6 +1346,45 @@ def _create_remote_manager(
     qt_poll.events.poll.connect(monitor.on_poll)
 
     return manager
+
+
+class CameraMonitor:
+    """Monitor when the camera is moving.
+
+    This class provides a way to detect when the camera has stopped moving
+    for a defined amount of time. It also notifies when the camera starts
+    moving.
+
+    Parameters
+    ----------
+    camera : napari.components.Camera
+        The camera we want to monitor.
+    """
+
+    def __init__(self, camera: Camera):
+        self.events = EmitterGroup(
+            source=self, moving_started=Event, moving_finished=Event
+        )
+        self._camera_moving = False
+        camera.events.connect(self._on_camera_move)
+
+    def _on_camera_move(self, event=None) -> None:
+        if not self._camera_moving:
+            self._camera_moving = True
+            self.events.moving_started()
+        self._reset_camera_moving()
+
+    @qdebounced(timeout=500, leading=False)
+    def _reset_camera_moving(self) -> None:
+        self._camera_moving = False
+        self.events.moving_finished()
+
+    @property
+    def camera_moving(self) -> bool:
+        return self._camera_moving
+
+    def __del__(self) -> None:
+        self._reset_camera_moving.cancel()
 
 
 def _in_napari(n: int, frame: FrameType):

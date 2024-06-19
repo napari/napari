@@ -28,6 +28,7 @@ from napari.layers.base._base_constants import (
     BaseProjectionMode,
     Blending,
     Mode,
+    RenderQualityChange,
 )
 from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
@@ -463,6 +464,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             _extent_augmented=Event,
             _overlays=Event,
             mode=Event,
+            render_quality=Event,
             projection_mode=Event,
         )
         self.name = name
@@ -2100,6 +2102,41 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         from napari.plugins.io import save_layers
 
         return save_layers(path, [self], plugin=plugin)
+
+    def _change_render_quality(
+        self, render_quality: RenderQualityChange
+    ) -> None:
+        """
+        Callback function that modifies the layer when a change to the render
+        quality has been requested.
+
+        Parameters
+        ----------
+        render_quality : RenderQualityChange
+            How much to increase or decrease the rendering quality of the layer.
+        """
+        return
+
+    def change_render_quality(
+        self, render_quality: RenderQualityChange
+    ) -> None:
+        """
+        Change the render quality of the layer.
+
+        This first calls a callback on the layer and then emits an event that
+        triggers an update of the visual. Changes to the rendering are made
+        on the corresponding vispy layer visual.
+
+        Parameters
+        ----------
+        render_quality : RenderQualityChange
+            How much to increase or decrease the rendering quality of the layer.
+        """
+        # call back to update the layer based on render quality
+        self._change_render_quality(render_quality)
+
+        # event that triggers the vispy visual to change render quality
+        self.events.render_quality(render_quality=render_quality)
 
     def __copy__(self):
         """Create a copy of this layer.

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from typing import TYPE_CHECKING
 from weakref import WeakSet
 
@@ -16,6 +17,7 @@ from napari._vispy.utils.visual import create_vispy_overlay
 from napari.components.overlays import CanvasOverlay, SceneOverlay
 from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.colormaps.standardize_color import transform_color
+from napari.utils.events.event import EmitterGroup, Event
 from napari.utils.interactions import (
     mouse_double_click_callbacks,
     mouse_move_callbacks,
@@ -39,7 +41,6 @@ if TYPE_CHECKING:
     from napari.components import ViewerModel
     from napari.components.overlays import Overlay
     from napari.layers import Layer
-    from napari.utils.events.event import Event
     from napari.utils.key_bindings import KeymapHandler
 
 
@@ -635,3 +636,97 @@ class VispyCanvas:
     def enable_dims_play(self, *args) -> None:
         """Enable playing of animation. False if awaiting a draw event"""
         self.viewer.dims._play_ready = True
+
+
+class FramerateMonitor:
+    """Tracks and filters the framerate emitted from the canvas measure_fps() callback."""
+
+    def __init__(
+        self,
+        fps_window: float = 0.5,
+        stale_threshold: float = 0.6,
+        debounce_threshold: int = 2,
+        event_period: float = 0.5,
+        decay: float = 0.9,
+    ):
+        self.events = EmitterGroup(source=self, fps=Event)
+        self._event_period = event_period
+        self._fps_window = fps_window
+        self._debounce_counter = 0
+        self._debounce_threshold = debounce_threshold
+        self._final_redraw = False
+        self._last_update = time.time()
+        self._last_event = time.time()
+        self._stale_threshold = stale_threshold
+        self._decay = decay
+
+        self._fps = 0
+
+        self._last_measurement_valid = False
+
+    @property
+    def fps(self) -> float:
+        """The most recently measure framerate in frames per second."""
+        return self._fps
+
+    @property
+    def valid(self) -> bool:
+        """Flag set to True if the current fps measurement is valid."""
+        return self._last_measurement_valid and not self._fps_stale()
+
+    def _fps_stale(self):
+        """Check if the too much time has elapsed since the last fps update.
+
+        Returns
+        -------
+        fps_stale : bool
+            Flag set to True if the time since the last update is greater
+            than the _stale_threshold
+        """
+        return (time.time() - self._last_update) > self._stale_threshold
+
+    def update_fps(self, fps: float):
+        """Update with the most recently measured framerate.
+
+        This only stores the new framerate if the last draw was within
+        the specified stale_threshold and the debounce condition has
+        been met.
+
+        If the framerate update is valid, the fps event is emitted.
+
+        This is generally connected to the canvas.measure_fps() callback.
+
+        Parameters
+        ----------
+        fps : float
+            The newly measured framerate in frames per second.
+        """
+        if self._final_redraw:
+            # if the last redraw was due to the final
+            # high quality redraw, do not update framerate
+            self._final_redraw = False
+            return
+
+        if self._fps_stale():
+            # if the measurement is stale, restart measuring
+            self._last_measurement_valid = False
+            self._debounce_counter = 0
+
+        # debounce and update fps
+        # we need to debounce because the fps average is
+        # calculated over multiple calls, so the first ones
+        # are not very accurate
+        self._debounce_counter += 1
+        current_time = time.time()
+        if self._debounce_counter > self._debounce_threshold:
+            # use an exponential filter to avoid jitters in fps estimate
+            self._fps = self._fps * self._decay + fps * (1 - self._decay)
+
+            # update states
+            self._last_measurement_valid = True
+
+            # emit the event
+            if (current_time - self._last_event) > self._event_period:
+                self.events.fps(fps=self.fps)
+                self._last_event = current_time
+        self._last_update = current_time

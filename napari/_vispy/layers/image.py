@@ -106,14 +106,6 @@ class VispyImageLayer(VispyScalarFieldBaseLayer):
         self.layer.events.iso_threshold.connect(self._on_iso_threshold_change)
         self.layer.events.attenuation.connect(self._on_attenuation_change)
 
-        # display_change is special (like data_change) because it requires a
-        # self.reset(). This means that we have to call it manually. Also,
-        # it must be called before reset in order to set the appropriate node
-        # first
-        self._on_display_change()
-        self.reset()
-        self._on_data_change()
-
     def _on_interpolation_change(self) -> None:
         self.node.interpolation = (
             self.layer.interpolation2d

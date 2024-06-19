@@ -12,6 +12,7 @@ from napari._vispy.layers.base import VispyBaseLayer
 from napari._vispy.utils.gl import fix_data_dtype
 from napari._vispy.visuals.volume import Volume as VolumeNode
 from napari.layers._scalar_field.scalar_field import ScalarFieldBase
+from napari.layers.base._base_constants import RenderQualityChange
 from napari.utils.translations import trans
 
 
@@ -47,6 +48,11 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
         super().__init__(layer, self._layer_node.get_node(2))
 
         self._array_like = True
+
+        # set the 3D shader step size bounds
+        self.min_step_size = 0.8
+        self.max_step_size = 80
+        self.max_observed_step_size = self.min_step_size
 
         self.layer.events.rendering.connect(self._on_rendering_change)
         self.layer.events.depiction.connect(self._on_depiction_change)
@@ -222,6 +228,44 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
             slices = tuple(slice(None, None, ds) for ds in downsample)
             data = data[slices]
         return data
+
+    def change_render_quality(
+        self, quality_change: RenderQualityChange | float
+    ):
+        """
+        Change the render quality of the vispy nodes.
+
+        This changes the step size in the shader when in 3D rendering mode.
+        In 2D rendering mode, this just returns.
+
+        Parameters
+        ----------
+        quality_change: RenderQualityChange | float
+            how much to increase or decrease the rendering quality of the layer.
+        """
+        if not isinstance(self.node, VolumeNode):
+            return
+        if isinstance(quality_change, float):
+            current_step_size = self.node.relative_step_size
+            new_step_size = min(
+                current_step_size * quality_change, self.max_step_size
+            )
+        elif quality_change == RenderQualityChange.DECREASE:
+            new_step_size = min(
+                self.node.relative_step_size * 2, self.max_step_size
+            )
+        elif quality_change == RenderQualityChange.INCREASE:
+            new_step_size = max(
+                self.node.relative_step_size / 2, self.min_step_size
+            )
+        elif quality_change == RenderQualityChange.MIN:
+            new_step_size = self.max_observed_step_size
+        elif quality_change == RenderQualityChange.MAX:
+            new_step_size = self.min_step_size
+
+        if self.max_observed_step_size < new_step_size:
+            self.max_observed_step_size = new_step_size
+        self.node.relative_step_size = new_step_size
 
 
 _VISPY_FORMAT_TO_DTYPE: dict[Optional[str], np.dtype] = {

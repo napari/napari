@@ -127,6 +127,13 @@ class InteractionBoxHandle(IntEnum):
         )
 
 
+class RenderQualityChange(StringEnum):
+    INCREASE = auto()
+    DECREASE = auto()
+    MAX = auto()
+    MIN = auto()
+
+
 class ActionType(StringEnum):
     """
     Action types for layer.events.data of Shapes and Points layer.

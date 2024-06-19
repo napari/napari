@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from typing import Generic, TypeVar, cast
 
@@ -13,6 +15,7 @@ from napari.components.overlays.base import (
     SceneOverlay,
 )
 from napari.layers import Layer
+from napari.layers.base._base_constants import RenderQualityChange
 from napari.utils.events import disconnect_events
 
 _L = TypeVar('_L', bound=Layer)
@@ -62,6 +65,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
         self.layer = layer
         self._array_like = False
         self.node = node
+        self._rendering_quality = 1
         self.first_visible = False
         self.overlays = {}
 
@@ -84,6 +88,9 @@ class VispyBaseLayer(ABC, Generic[_L]):
             self._on_experimental_clipping_planes_change
         )
         self.layer.events._overlays.connect(self._on_overlays_change)
+        self.layer.events.render_quality.connect(
+            self._on_render_quality_change
+        )
 
     @property
     def _master_transform(self):
@@ -268,6 +275,25 @@ class VispyBaseLayer(ABC, Generic[_L]):
             self.node.clipping_planes = (
                 self.layer.experimental_clipping_planes.as_array()[..., ::-1]
             )
+
+    def change_render_quality(
+        self, quality_change: RenderQualityChange | float
+    ) -> None:
+        """
+        Change the render quality of the vispy nodes
+
+        Parameters
+        ----------
+        quality_change: RenderQualityChange | float
+            how much to increase or decrease the rendering quality of the layer.
+        """
+        return
+
+    def _on_render_quality_change(self, event=None):
+        """
+        Passthrough for the render quality change event.
+        """
+        self.change_render_quality(quality_change=event.render_quality)
 
     def _on_camera_move(self, event=None):
         return

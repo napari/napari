@@ -143,6 +143,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     Attributes
     ----------
+    auto_quality : bool
+        Whether the viewer should automatically adjust the rendering quality
+        based on framerate/interactivity. See also `target_fps`
     camera: napari.components.camera.Camera
         The camera object modeling the position and view.
     cursor: napari.components.cursor.Cursor
@@ -157,6 +160,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         List of contained layers.
     mouse_over_canvas: bool
         Indicating whether the mouse cursor is on the viewer canvas.
+    target_fps : tuple[int, int]
+        When `auto_quality` is true, try to maintain framerate (frames per
+        second) within this range.
     theme: str
         Name of the Napari theme of the viewer
     title: str
@@ -188,6 +194,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     help: str = ''
     status: Union[str, dict] = 'Ready'
     tooltip: Tooltip = Field(default_factory=Tooltip, allow_mutation=False)
+    auto_quality: bool = True
+    target_fps: int = 30
     theme: str = Field(default_factory=_current_theme)
     title: str = 'napari'
     # private track of overlays, only expose the old ones for backward compatibility
@@ -206,7 +214,12 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     _layer_slicer: _LayerSlicer = PrivateAttr(default_factory=_LayerSlicer)
 
     def __init__(
-        self, title='napari', ndisplay=2, order=(), axis_labels=()
+        self,
+        title='napari',
+        ndisplay=2,
+        order=(),
+        axis_labels=(),
+        auto_quality=True,
     ) -> None:
         # max_depth=0 means don't look for parent contexts.
         from napari._app_model.context import create_context
@@ -223,6 +236,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 'ndisplay': ndisplay,
                 'order': order,
             },
+            auto_quality=auto_quality,
         )
         self.__config__.extra = Extra.ignore
 
