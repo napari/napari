@@ -195,7 +195,7 @@ numba==0.60.0
     # via napari (napari_repo/pyproject.toml)
 numcodecs==0.12.1
     # via zarr
-numpy==2.0.0
+numpy==1.26.4
     # via
     #   napari (napari_repo/pyproject.toml)
     #   contourpy
@@ -301,7 +301,7 @@ pretend==1.0.9
     # via napari (napari_repo/pyproject.toml)
 prompt-toolkit==3.0.47
     # via ipython
-psutil==5.9.8
+psutil==6.0.0
     # via
     #   napari (napari_repo/pyproject.toml)
     #   ipykernel
@@ -346,7 +346,7 @@ pyopengl==3.1.6
     #   napari (napari_repo/pyproject.toml)
 pyparsing==3.1.2
     # via matplotlib
-pyperclip==1.8.2
+pyperclip==1.9.0
     # via mouseinfo
 pyproject-hooks==1.1.0
     # via build
@@ -446,7 +446,7 @@ rpds-py==0.18.1
     # via
     #   jsonschema
     #   referencing
-scikit-image==0.23.2
+scikit-image==0.24.0
     # via napari (napari_repo/pyproject.toml)
 scipy==1.13.1
     # via
@@ -496,7 +496,7 @@ tensorstore==0.1.62
     # via
     #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari (napari_repo/pyproject.toml)
-tifffile==2024.5.22
+tifffile==2024.6.18
     # via
     #   napari (napari_repo/pyproject.toml)
     #   scikit-image
