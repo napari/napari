@@ -354,7 +354,9 @@ def _run() -> None:
             )
         except ReaderPluginError:
             logging.exception(
-                'Loading %s with %s failed with errors', args.paths, args.plugin
+                'Loading %s with %s failed with errors',
+                args.paths,
+                args.plugin,
             )
 
         if args.with_:
