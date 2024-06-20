@@ -354,7 +354,7 @@ def _run() -> None:
             )
         except ReaderPluginError:
             logging.exception(
-                'Error happen during load file while starting napari'
+                'Loading %s with %s failed with errors', args.paths, args.plugin
             )
 
         if args.with_:
