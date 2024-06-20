@@ -88,7 +88,7 @@ class Viewer(ViewerModel):
             return
         self.window._qt_viewer.console.push(variables)
 
-    def export_view(
+    def export_figure(
         self,
         path=None,
         *,
@@ -115,7 +115,7 @@ class Viewer(ViewerModel):
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
         """
-        return self.window.export_view(
+        return self.window.export_figure(
             path=path,
             scale=scale,
             flash=flash,

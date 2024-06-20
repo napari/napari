@@ -1645,7 +1645,7 @@ class Window:
                 add_flash_animation(self._qt_window)
         return img
 
-    def export_view(
+    def export_figure(
         self,
         path=None,
         scale=None,

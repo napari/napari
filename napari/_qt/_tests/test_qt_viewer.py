@@ -279,7 +279,7 @@ def test_screenshot_fit_to_data_extent(make_napari_viewer):
 
     camera_center = viewer.camera.center
     camera_zoom = viewer.camera.zoom
-    img = viewer.export_view(flash=False)
+    img = viewer.export_figure(flash=False)
 
     assert viewer.camera.center == camera_center
     assert viewer.camera.zoom == camera_zoom
@@ -289,7 +289,7 @@ def test_screenshot_fit_to_data_extent(make_napari_viewer):
     viewer.camera.center = [100, 100]
     camera_center = viewer.camera.center
     camera_zoom = viewer.camera.zoom
-    img = viewer.export_view()
+    img = viewer.export_figure()
 
     assert viewer.camera.center == camera_center
     assert viewer.camera.zoom == camera_zoom
