@@ -377,18 +377,14 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             )
         return self.layers._extent_world_augmented[:, self.dims.displayed]
 
-    def reset_view(self, screenshot=False) -> None:
-        """
-        Reset the camera view.
-
-        This reset has two modes, one for when viewing the data in the viewer and one for when taking a
-        screenshot with a canvas not showing margins around the data. The two differ in the scaling
-        factor of the zoom.
+    def reset_view(self, *, margin=0.05) -> None:
+        """Reset the camera view.
 
         Parameters
         ----------
-        screenshot: bool
-            Whether to reset the view in screenshot mode. Default is False.
+        margin : float in [0, 1)
+            Margin as fraction of the canvas, showing blank space around the
+            data.
         """
 
         extent = self._sliced_extent_world_augmented
@@ -414,8 +410,15 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # The default value used below will zoom such that the whole field
         # of view will occupy 95% of the canvas on the most filled axis
 
-        scale_factor = 0.95 if not screenshot else 1
-
+        if 0 <= margin < 1:
+            scale_factor = 1 - margin
+        else:
+            raise ValueError(
+                trans._(
+                    f'margin must be between 0 and 1; got {margin} instead.',
+                    deferred=True,
+                )
+            )
         if np.max(size) == 0:
             self.camera.zoom = scale_factor * np.min(self._canvas_size)
         else:

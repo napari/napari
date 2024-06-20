@@ -1546,7 +1546,7 @@ class Window:
         scale=None,
         flash=True,
         canvas_only=False,
-        fit_to_data: bool = False,
+        fit_to_data_extent: bool = False,
     ) -> 'QImage':
         """Capture screenshot of the currently displayed viewer.
 
@@ -1566,8 +1566,10 @@ class Window:
             If True, screenshot shows only the image display canvas, and
             if False include the napari viewer frame in the screenshot,
             By default, True.
-        fit_to_data: bool
-            Whether to fit a bounding box around the data to prevent margins of showing in the screenshot.
+        fit_to_data_extent: bool
+            Tightly fit the canvas around the data to prevent margins from
+            showing in the screenshot. If False, a screenshot of the whole
+            currently visible canvas will be generated.
 
         Returns
         -------
@@ -1577,19 +1579,36 @@ class Window:
 
         canvas = self._qt_viewer.canvas
         prev_size = canvas.size
-        if fit_to_data:
+        if fit_to_data_extent:
+            if not canvas_only:
+                raise ValueError(
+                    trans._(
+                        "'fit_to_data_extent' cannot be set to True if 'canvas_only' is"
+                        ' set to False',
+                        deferred=True,
+                    )
+                )
             ndisplay = self._qt_viewer.viewer.dims.ndisplay
             camera = self._qt_viewer.viewer.camera
             old_center = camera.center
             old_zoom = camera.zoom
             if ndisplay > 2:
-                raise NotImplementedError
+                raise NotImplementedError(
+                    trans._(
+                        'fit_to_data_extent=True is not yet implemented for 3D. '
+                        'Please set fit_to_data_extent to False in 3D view.',
+                        deferred=True,
+                    )
+                )
 
             self._qt_viewer.viewer.reset_view()
-            canvas.size = self._qt_viewer.viewer.layers.extent.world[1][
-                -ndisplay:
-            ].astype(int)
-            self._qt_viewer.viewer.reset_view(screenshot=True)
+            canvas.size = (
+                self._qt_viewer.viewer.layers.extent.world[1][
+                    -ndisplay:
+                ].astype(int)
+                + 1
+            )
+            self._qt_viewer.viewer.reset_view(margin=0)
 
         if canvas_only:
             if size is not None:
@@ -1615,9 +1634,9 @@ class Window:
                     add_flash_animation(self._qt_viewer._welcome_widget)
             finally:
                 # make sure we always go back to the right canvas size
-                if size is not None or scale is not None or fit_to_data:
+                if size is not None or scale is not None or fit_to_data_extent:
                     canvas.size = prev_size
-                if fit_to_data:
+                if fit_to_data_extent:
                     camera.center = old_center
                     camera.zoom = old_zoom
         else:
@@ -1626,14 +1645,46 @@ class Window:
                 add_flash_animation(self._qt_window)
         return img
 
-    def screenshot(
+    def export_figure(
         self,
         path=None,
-        size=None,
         scale=None,
         flash=True,
-        canvas_only=False,
-        fit_to_data: bool = False,
+    ):
+        """Take currently displayed canvas, resets the view and create a screenshot without margins around the data.
+
+        Parameters
+        ----------
+        path : str
+            Filename for saving screenshot image.
+        scale : float
+            Scale factor used to increase resolution of canvas for the screenshot. By default, the currently displayed resolution.
+            Only used if `canvas_only` is True.
+        flash : bool
+            Flag to indicate whether flash animation should be shown after
+            the screenshot was captured.
+            By default, True.
+
+        Returns
+        -------
+        image : array
+            Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
+            upper-left corner of the rendered region.
+        """
+        img = QImg2array(
+            self._screenshot(
+                scale=scale,
+                flash=flash,
+                canvas_only=True,
+                fit_to_data_extent=True,
+            )
+        )
+        if path is not None:
+            imsave(path, img)
+        return img
+
+    def screenshot(
+        self, path=None, size=None, scale=None, flash=True, canvas_only=False
     ):
         """Take currently displayed viewer and convert to an image array.
 
@@ -1655,8 +1706,6 @@ class Window:
             If True, screenshot shows only the image display canvas, and
             if False includes the napari viewer frame in the screenshot,
             By default, True.
-        fit_to_data : bool
-            Whether to fit a bounding box around the data to prevent margins of showing in the screenshot.
 
         Returns
         -------
@@ -1665,9 +1714,7 @@ class Window:
             upper-left corner of the rendered region.
         """
 
-        img = QImg2array(
-            self._screenshot(size, scale, flash, canvas_only, fit_to_data)
-        )
+        img = QImg2array(self._screenshot(size, scale, flash, canvas_only))
         if path is not None:
             imsave(path, img)
         return img

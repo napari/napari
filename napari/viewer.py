@@ -88,6 +88,39 @@ class Viewer(ViewerModel):
             return
         self.window._qt_viewer.console.push(variables)
 
+    def export_figure(
+        self,
+        path=None,
+        *,
+        scale=None,
+        flash: bool = True,
+    ):
+        """Take currently displayed canvas, resets the view and create a screenshot without margins around the data.
+
+        Parameters
+        ----------
+        path : str
+            Filename for saving screenshot image.
+        scale : float
+            Scale factor used to increase resolution of canvas for the screenshot. By default, the currently displayed resolution.
+            Only used if `canvas_only` is True.
+        flash : bool
+            Flag to indicate whether flash animation should be shown after
+            the screenshot was captured.
+            By default, True.
+
+        Returns
+        -------
+        image : array
+            Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
+            upper-left corner of the rendered region.
+        """
+        return self.window.export_figure(
+            path=path,
+            scale=scale,
+            flash=flash,
+        )
+
     def screenshot(
         self,
         path=None,
@@ -96,7 +129,6 @@ class Viewer(ViewerModel):
         scale=None,
         canvas_only=True,
         flash: bool = True,
-        fit_to_data: bool = False,
     ):
         """Take currently displayed screen and convert to an image array.
 
@@ -118,8 +150,6 @@ class Viewer(ViewerModel):
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
             By default, True.
-        fit_to_data : bool
-            Whether to fit a bounding box around the data to prevent margins of showing in the screenshot.
 
         Returns
         -------
@@ -133,7 +163,6 @@ class Viewer(ViewerModel):
             scale=scale,
             flash=flash,
             canvas_only=canvas_only,
-            fit_to_data=fit_to_data,
         )
 
     def show(self, *, block=False):
