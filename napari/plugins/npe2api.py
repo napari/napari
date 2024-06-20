@@ -12,12 +12,14 @@ from typing import (
     TypedDict,
     cast,
 )
+from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from npe2 import PackageMetadata
 from typing_extensions import NotRequired
 
 from napari.plugins.utils import normalized_name
+from napari.utils.notifications import show_warning
 
 PyPIname = str
 
@@ -65,7 +67,6 @@ class SummaryDict(_ShortSummaryDict):
     conda_versions: NotRequired[list[str]]
 
 
-@lru_cache
 def plugin_summaries() -> list[SummaryDict]:
     """Return PackageMetadata object for all known napari plugins."""
     url = 'https://npe2api.vercel.app/api/extended_summary'
@@ -83,13 +84,22 @@ def conda_map() -> dict[PyPIname, Optional[str]]:
 
 def iter_napari_plugin_info() -> Iterator[tuple[PackageMetadata, bool, dict]]:
     """Iterator of tuples of ProjectInfo, Conda availability for all napari plugins."""
-    with ThreadPoolExecutor() as executor:
-        data = executor.submit(plugin_summaries)
-        _conda = executor.submit(conda_map)
+    try:
+        with ThreadPoolExecutor() as executor:
+            data = executor.submit(plugin_summaries)
+            _conda = executor.submit(conda_map)
 
-    conda = _conda.result()
+        conda = _conda.result()
+        data_set = data.result()
+    except (HTTPError, URLError):
+        show_warning(
+            'There seems to be an issue with network connectivity. '
+            'Remote plugins cannot be installed, only local ones.\n'
+        )
+        return
+
     conda_set = {normalized_name(x) for x in conda}
-    for info in data.result():
+    for info in data_set:
         info_copy = dict(info)
         info_copy.pop('display_name', None)
         pypi_versions = info_copy.pop('pypi_versions')

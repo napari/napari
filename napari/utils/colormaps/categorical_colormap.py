@@ -51,7 +51,7 @@ class CategoricalColormap(EventedModel):
 
         # add properties if they are not in the colormap
         color_cycle_keys = [*self.colormap]
-        props_in_map = np.in1d(color_properties, color_cycle_keys)
+        props_in_map = np.isin(color_properties, color_cycle_keys)
         if not np.all(props_in_map):
             new_prop_values = color_properties[np.logical_not(props_in_map)]
             indices_to_add = np.unique(new_prop_values, return_index=True)[1]

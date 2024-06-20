@@ -1,4 +1,4 @@
-"""This module defines actions (functions) that operate on layers.
+"""This module defines actions (functions) that operate on layers and its submenus.
 
 Among other potential uses, these will populate the menu when you right-click
 on a layer in the LayerList.
@@ -13,7 +13,7 @@ from __future__ import annotations
 from functools import partial
 from typing import TYPE_CHECKING
 
-from app_model.types import Action
+from app_model.types import Action, SubmenuItem
 
 from napari._app_model.constants import MenuGroup, MenuId
 from napari._app_model.context import LayerListSelectionContextKeys as LLSCK
@@ -22,6 +22,40 @@ from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from app_model.types import MenuRuleDict
+
+# Layer submenus
+LAYER_SUBMENUS = [
+    (
+        MenuId.LAYERLIST_CONTEXT,
+        SubmenuItem(
+            submenu=MenuId.LAYERS_CONVERT_DTYPE,
+            title=trans._('Convert data type'),
+            group=MenuGroup.LAYERLIST_CONTEXT.CONVERSION,
+            order=None,
+            enablement=LLSCK.all_selected_layers_labels,
+        ),
+    ),
+    (
+        MenuId.LAYERLIST_CONTEXT,
+        SubmenuItem(
+            submenu=MenuId.LAYERS_PROJECT,
+            title=trans._('Projections'),
+            group=MenuGroup.LAYERLIST_CONTEXT.SPLIT_MERGE,
+            order=None,
+            enablement=LLSCK.active_layer_is_image_3d,
+        ),
+    ),
+    (
+        MenuId.LAYERLIST_CONTEXT,
+        SubmenuItem(
+            submenu=MenuId.LAYERS_COPY_SPATIAL,
+            title=trans._('Copy scale and transforms'),
+            group=MenuGroup.LAYERLIST_CONTEXT.COPY_SPATIAL,
+            order=None,
+            enablement=(LLSCK.num_selected_layers == 1),
+        ),
+    ),
+]
 
 # The following dicts define groups to which menu items in the layer list context menu can belong
 # see https://app-model.readthedocs.io/en/latest/types/#app_model.types.MenuRule for details
