@@ -81,7 +81,7 @@ msgstr[1] "Tengo {n} naparis con {variable} y contexto"
 es_CO_mo = b'\xde\x12\x04\x95\x00\x00\x00\x00\t\x00\x00\x00\x1c\x00\x00\x00d\x00\x00\x00\r\x00\x00\x00\xac\x00\x00\x00\x00\x00\x00\x00\xe0\x00\x00\x00\x1c\x00\x00\x00\xe1\x00\x00\x00D\x00\x00\x00\xfe\x00\x00\x00\x11\x00\x00\x00C\x01\x00\x00!\x00\x00\x00U\x01\x00\x00E\x00\x00\x00w\x01\x00\x00u\x00\x00\x00\xbd\x01\x00\x00/\x00\x00\x003\x02\x00\x00H\x00\x00\x00c\x02\x00\x00\x0e\x01\x00\x00\xac\x02\x00\x00\x1a\x00\x00\x00\xbb\x03\x00\x00@\x00\x00\x00\xd6\x03\x00\x00\x11\x00\x00\x00\x17\x04\x00\x00 \x00\x00\x00)\x04\x00\x004\x00\x00\x00J\x04\x00\x00V\x00\x00\x00\x7f\x04\x00\x00\x1e\x00\x00\x00\xd6\x04\x00\x00+\x00\x00\x00\xf5\x04\x00\x00\x01\x00\x00\x00\t\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x03\x00\x00\x00\x08\x00\x00\x00\x06\x00\x00\x00\x05\x00\x00\x00\x00\x00\x00\x00\x07\x00\x00\x00\x02\x00\x00\x00\x00I have napari\x00I have naparis\x00I have {n} napari with {variable}\x00I have {n} naparis with {variable}\x00More about napari\x00More about napari with {variable}\x00plural-context\x04I have napari with context\x00I have naparis with context\x00plural-context-variables\x04I have {n} napari with {variable} and context\x00I have {n} naparis with {variable} and context\x00singular-context\x04More about napari with context\x00singular-context-variables\x04More about napari with context and {variable}\x00Project-Id-Version: \nPO-Revision-Date: 2021-04-08 08:14-0500\nLanguage-Team: \nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\nX-Generator: Poedit 2.4.2\nLast-Translator: \nPlural-Forms: nplurals=2; plural=(n != 1);\nLanguage: es_CO\n\x00Tengo napari\x00Tengo naparis\x00Tengo {n} napari con {variable}\x00Tengo {n} naparis con {variable}\x00M\xc3\xa1s sobre napari\x00M\xc3\xa1s sobre napari con {variable}\x00Tengo napari con contexto\x00Tengo naparis con contexto\x00Tengo {n} napari con {variable} y contexto\x00Tengo {n} naparis con {variable} y contexto\x00M\xc3\xa1s sobre napari con contexto\x00M\xc3\xa1s sobre napari con contexto y {variable}\x00'
 
 
-@pytest.fixture
+@pytest.fixture()
 def trans(tmp_path):
     """A good plugin that uses entry points."""
     distinfo = tmp_path / 'napari_language_pack_es_CO-0.1.0.dist-info'
@@ -361,7 +361,7 @@ def test_exception_string(trans):
     assert str(result) != expected_result
     assert str(result) == 'MORE ABOUT NAPARI'
 
-    with pytest.raises(ValueError) as err:
+    with pytest.raises(ValueError, match='MORE ABOUT NAPARI') as err:
         raise ValueError(result)
 
     assert isinstance(err.value.args[0], TranslationString)
@@ -370,7 +370,7 @@ def test_exception_string(trans):
 # Test TranslationString
 # ----------------------
 def test_translation_string_exceptions():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Must provide at least'):
         TranslationString()
 
 

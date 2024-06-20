@@ -1,8 +1,14 @@
-from typing import Iterable, List, Optional, Tuple
+from collections.abc import Sequence
+from typing import Optional, Union
 
 import numpy as np
+import numpy.typing as npt
 
-from napari.layers.points._points_constants import SYMBOL_ALIAS, Symbol
+from napari.layers.points._points_constants import (
+    SYMBOL_ALIAS,
+    SYMBOL_DICT,
+    Symbol,
+)
 from napari.utils.geometry import project_points_onto_plane
 from napari.utils.translations import trans
 
@@ -50,7 +56,7 @@ def _create_box_from_corners_3d(
     return box
 
 
-def create_box(data):
+def create_box(data: npt.NDArray) -> npt.NDArray:
     """Create the axis aligned interaction box of a list of points
 
     Parameters
@@ -73,7 +79,7 @@ def create_box(data):
     return box
 
 
-def points_to_squares(points, sizes):
+def points_to_squares(points: npt.NDArray, sizes: npt.NDArray) -> npt.NDArray:
     """Expand points to squares defined by their size
 
     Parameters
@@ -106,7 +112,7 @@ def _points_in_box_3d(
     sizes: np.ndarray,
     box_normal: np.ndarray,
     up_direction: np.ndarray,
-) -> List[int]:
+) -> list[int]:
     """Determine which points are inside of 2D bounding box.
 
     The 2D bounding box extends infinitely in both directions along its normal
@@ -179,7 +185,7 @@ def _points_in_box_3d(
 
 def points_in_box(
     corners: np.ndarray, points: np.ndarray, sizes: np.ndarray
-) -> List[int]:
+) -> list[int]:
     """Find which points are in an axis aligned box defined by its corners.
 
     Parameters
@@ -210,7 +216,7 @@ def points_in_box(
 
 def fix_data_points(
     points: Optional[np.ndarray], ndim: Optional[int]
-) -> Tuple[np.ndarray, int]:
+) -> tuple[np.ndarray, int]:
     """
     Ensure that points array is 2d and have second dimension of size ndim (default 2 for empty arrays)
 
@@ -251,18 +257,49 @@ def fix_data_points(
     return points, ndim
 
 
-def coerce_symbols(array: Iterable) -> np.ndarray:
+def symbol_conversion(symbol: Union[str, Symbol]) -> Symbol:
     """
-    Parse an array of symbols and convert it to the correct strings.
+    Convert a string or Symbol to a Symbol instance.
+    """
+    if isinstance(symbol, str):
+        symbol = SYMBOL_ALIAS.get(symbol, symbol)
+    return Symbol(symbol)
 
-    Ensures that all strings are valid symbols and converts aliases.
 
-    Parameters
-    ----------
-    array : np.ndarray
-        Array of strings matching Symbol values.
+def fast_dict_get(symbols: Union[np.ndarray, list], d: dict) -> np.ndarray:
+    """
+    Get the values from a dictionary using a list of keys.
     """
     # dtype has to be object, otherwise np.vectorize will cut it down to `U(N)`,
     # where N is the biggest string currently in the array.
-    array = [SYMBOL_ALIAS.get(k, k) for k in (str(x).lower() for x in array)]
-    return np.vectorize(Symbol, otypes=[object])(array)
+    return np.vectorize(d.__getitem__, otypes=[object])(symbols)
+
+
+def coerce_symbols(
+    symbol: Union[str, Symbol, Sequence[Union[str, Symbol]]],
+) -> np.ndarray:
+    """
+    Parse an array of symbols and convert it to the correct strings.
+    If single value is given, it is converted to single element array.
+
+    Ensures that all strings are valid symbols and convert aliases.
+
+    Parameters
+    ----------
+    symbol : str or Symbol or Sequence of str or Symbol
+        data to be convert to array of Symbols.
+
+    Returns
+    -------
+    symbols : np.ndarray
+        array of Symbols
+    """
+    # if a symbol is a unique string or Symbol instance, convert it to a
+    # proper Symbol instance
+    if isinstance(symbol, (str, Symbol)):
+        return np.array(symbol_conversion(symbol), dtype=object)
+
+    if not isinstance(symbol, np.ndarray):
+        symbol = np.array(symbol)
+
+    return fast_dict_get(symbol, SYMBOL_DICT)

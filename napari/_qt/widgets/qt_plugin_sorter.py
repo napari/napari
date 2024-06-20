@@ -1,10 +1,9 @@
-"""Provides a QtPluginSorter that allows the user to change plugin call order.
-"""
+"""Provides a QtPluginSorter that allows the user to change plugin call order."""
 
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, List, Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 from napari_plugin_engine import HookCaller, HookImplementation
 from qtpy.QtCore import QEvent, Qt, Signal, Slot
@@ -236,7 +235,7 @@ class QtHookImplementationListWidget(QListWidget):
         drag.exec_(supported_actions, Qt.DropAction.MoveAction)
 
     @Slot(list)
-    def permute_hook(self, order: List[HookImplementation]):
+    def permute_hook(self, order: list[HookImplementation]):
         """Rearrage the call order of the hooks for the current hook impl.
 
         Parameters

@@ -37,8 +37,9 @@ import inspect
 import sys
 import time
 from collections import ChainMap
+from collections.abc import Mapping
 from types import MethodType
-from typing import Callable, Mapping, Union
+from typing import Callable, Union
 
 from app_model.types import KeyBinding, KeyCode, KeyMod
 from vispy.util import keys
@@ -520,8 +521,7 @@ class KeymapHandler:
         """
         if event.key is None or (
             # on linux press down is treated as multiple press and release
-            event.native is not None
-            and event.native.isAutoRepeat()
+            event.native is not None and event.native.isAutoRepeat()
         ):
             return
         kb = _vispy2appmodel(event)

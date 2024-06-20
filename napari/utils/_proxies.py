@@ -2,7 +2,7 @@ import os
 import re
 import sys
 import warnings
-from typing import Any, Callable, Generic, List, Tuple, TypeVar, Union
+from typing import Any, Callable, Generic, TypeVar, Union
 
 import wrapt
 
@@ -17,7 +17,7 @@ class ReadOnlyWrapper(wrapt.ObjectProxy):
     Disable item and attribute setting with the exception of  ``__wrapped__``.
     """
 
-    def __init__(self, wrapped: Any, exceptions: Tuple[str, ...] = ()):
+    def __init__(self, wrapped: Any, exceptions: tuple[str, ...] = ()):
         super().__init__(wrapped)
         self._self_exceptions = exceptions
 
@@ -150,7 +150,7 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
     def __repr__(self) -> str:
         return repr(self.__wrapped__)
 
-    def __dir__(self) -> List[str]:
+    def __dir__(self) -> list[str]:
         return [x for x in dir(self.__wrapped__) if not _SUNDER.match(x)]
 
     @classmethod

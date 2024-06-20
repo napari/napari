@@ -1,14 +1,11 @@
 import warnings
 from collections import deque
+from collections.abc import Sequence
 from contextlib import contextmanager
 from typing import (
     Callable,
     ClassVar,
-    Dict,
-    List,
     Optional,
-    Sequence,
-    Tuple,
     Union,
     cast,
 )
@@ -21,6 +18,7 @@ from skimage.draw import polygon2mask
 
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
+from napari.layers._scalar_field.scalar_field import ScalarFieldBase
 from napari.layers.base import Layer, no_op
 from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
@@ -28,7 +26,6 @@ from napari.layers.base._base_mouse_bindings import (
 )
 from napari.layers.image._image_utils import guess_multiscale
 from napari.layers.image._slice import _ImageSliceResponse
-from napari.layers.image.image import _ImageBase
 from napari.layers.labels._labels_constants import (
     LabelColorMode,
     LabelsRendering,
@@ -66,8 +63,10 @@ from napari.utils.naming import magic_name
 from napari.utils.status_messages import generate_layer_coords_status
 from napari.utils.translations import trans
 
+__all__ = ('Labels',)
 
-class Labels(_ImageBase):
+
+class Labels(ScalarFieldBase):
     """Labels (or segmentation) layer.
 
     An image-like layer where every pixel contains an integer ID
@@ -85,6 +84,9 @@ class Labels(_ImageBase):
         the final column is a length N translation vector and a 1 or a napari
         `Affine` transform object. Applied as an extra transform on top of the
         provided scale, rotate, and shear values.
+    axis_labels : tuple of str, optional
+        Dimension names of the layer data.
+        If not provided, axis_labels will be set to (..., 'axis -2', 'axis -1').
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -123,13 +125,13 @@ class Labels(_ImageBase):
         Properties defining plane rendering in 3D. Properties are defined in
         data coordinates. Valid dictionary keys are
         {'position', 'normal', 'thickness', and 'enabled'}.
+    projection_mode : str
+        How data outside the viewed dimensions but inside the thick Dims slice will
+        be projected onto the viewed dimensions
     properties : dict {str: array (N,)} or DataFrame
         Properties for each label. Each property should be an array of length
         N, where N is the number of labels, and the first property corresponds
         to background.
-    projection_mode : str
-        How data outside the viewed dimensions but inside the thick Dims slice will
-        be projected onto the viewed dimensions
     rendering : str
         3D Rendering mode used by vispy. Must be one {'translucent', 'iso_categorical'}.
         'translucent' renders without lighting. 'iso_categorical' uses isosurface
@@ -148,6 +150,9 @@ class Labels(_ImageBase):
         ones along the main diagonal.
     translate : tuple of float
         Translation values for the layer.
+    units : tuple of str or pint.Unit, optional
+        Units of the layer data in world coordinates.
+        If not provided, the default units are assumed to be pixels.
     visible : bool
         Whether the layer visual is currently being displayed.
 
@@ -159,6 +164,8 @@ class Labels(_ImageBase):
         belongs to. The label 0 is rendered as transparent. Please note
         multiscale rendering is only supported in 2D. In 3D, only
         the lowest resolution scale is displayed.
+    axis_labels : tuple of str
+        Dimension names of the layer data.
     multiscale : bool
         Whether the data is a multiscale image or not. Multiscale data is
         represented by a list of array like image data. The first image in the
@@ -226,6 +233,8 @@ class Labels(_ImageBase):
         Properties defining plane rendering in 3D.
     experimental_clipping_planes : ClippingPlaneList
         Clipping planes defined in data coordinates, used to clip the volume.
+    units: tuple of pint.Unit
+        Units of the layer data in world coordinates.
 
     Notes
     -----
@@ -239,7 +248,7 @@ class Labels(_ImageBase):
 
     _modeclass = Mode
 
-    _drag_modes: ClassVar[Dict[Mode, Callable[['Labels', Event], None]]] = {  # type: ignore[assignment]
+    _drag_modes: ClassVar[dict[Mode, Callable[['Labels', Event], None]]] = {  # type: ignore[assignment]
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
         Mode.PICK: pick,
@@ -251,7 +260,9 @@ class Labels(_ImageBase):
 
     brush_size_on_mouse_move = BrushSizeOnMouseMove(min_brush_size=1)
 
-    _move_modes: ClassVar[Dict[StringEnum, Callable[['Labels', Event], None]]] = {  # type: ignore[assignment]
+    _move_modes: ClassVar[
+        dict[StringEnum, Callable[['Labels', Event], None]]
+    ] = {  # type: ignore[assignment]
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
         Mode.PICK: no_op,
@@ -261,7 +272,7 @@ class Labels(_ImageBase):
         Mode.POLYGON: no_op,  # the overlay handles mouse events in this mode
     }
 
-    _cursor_modes: ClassVar[Dict[Mode, str]] = {  # type: ignore[assignment]
+    _cursor_modes: ClassVar[dict[Mode, str]] = {  # type: ignore[assignment]
         Mode.PAN_ZOOM: 'standard',
         Mode.TRANSFORM: 'standard',
         Mode.PICK: 'cross',
@@ -278,6 +289,7 @@ class Labels(_ImageBase):
         data,
         *,
         affine=None,
+        axis_labels=None,
         blending='translucent',
         cache=True,
         colormap=None,
@@ -289,13 +301,14 @@ class Labels(_ImageBase):
         name=None,
         opacity=0.7,
         plane=None,
-        properties=None,
         projection_mode='none',
+        properties=None,
         rendering='iso_categorical',
         rotate=None,
         scale=None,
         shear=None,
         translate=None,
+        units=None,
         visible=True,
     ) -> None:
         if name is None and data is not None:
@@ -320,23 +333,25 @@ class Labels(_ImageBase):
 
         super().__init__(
             data,
-            rendering=rendering,
-            depiction=depiction,
-            name=name,
-            metadata=metadata,
-            scale=scale,
-            translate=translate,
-            rotate=rotate,
-            shear=shear,
             affine=affine,
-            opacity=opacity,
+            axis_labels=axis_labels,
             blending=blending,
-            visible=visible,
-            multiscale=multiscale,
             cache=cache,
-            plane=plane,
+            depiction=depiction,
             experimental_clipping_planes=experimental_clipping_planes,
+            rendering=rendering,
+            metadata=metadata,
+            multiscale=multiscale,
+            name=name,
+            scale=scale,
+            shear=shear,
+            plane=plane,
+            opacity=opacity,
             projection_mode=projection_mode,
+            rotate=rotate,
+            translate=translate,
+            units=units,
+            visible=visible,
         )
 
         self.events.add(
@@ -514,7 +529,7 @@ class Labels(_ImageBase):
         self.refresh()
 
     @property
-    def data(self) -> LayerDataProtocol:
+    def data(self) -> Union[LayerDataProtocol, MultiScaleData]:
         """array: Image data."""
         return self._data
 
@@ -532,7 +547,7 @@ class Labels(_ImageBase):
         """Dataframe-like features table.
 
         It is an implementation detail that this is a `pandas.DataFrame`. In the future,
-        we will target the currently-in-development Data API dataframe protocol [1].
+        we will target the currently-in-development Data API dataframe protocol [1]_.
         This will enable us to use alternate libraries such as xarray or cuDF for
         additional features without breaking existing usage of this.
 
@@ -541,14 +556,14 @@ class Labels(_ImageBase):
 
         References
         ----------
-        .. [1]: https://data-apis.org/dataframe-protocol/latest/API.html
+        .. [1] https://data-apis.org/dataframe-protocol/latest/API.html
         """
         return self._feature_table.values
 
     @features.setter
     def features(
         self,
-        features: Union[Dict[str, np.ndarray], pd.DataFrame],
+        features: Union[dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
         self._feature_table.set_values(features)
         self._label_index = self._make_label_index()
@@ -556,15 +571,15 @@ class Labels(_ImageBase):
         self.events.features()
 
     @property
-    def properties(self) -> Dict[str, np.ndarray]:
+    def properties(self) -> dict[str, np.ndarray]:
         """dict {str: array (N,)}, DataFrame: Properties for each label."""
         return self._feature_table.properties()
 
     @properties.setter
-    def properties(self, properties: Dict[str, Array]):
+    def properties(self, properties: dict[str, Array]):
         self.features = properties
 
-    def _make_label_index(self) -> Dict[int, int]:
+    def _make_label_index(self) -> dict[int, int]:
         features = self._feature_table.values
         label_index = {}
         if 'index' in features:
@@ -808,7 +823,7 @@ class Labels(_ImageBase):
         self._updated_slice = None
 
     def _calculate_contour(
-        self, labels: np.ndarray, data_slice: Tuple[slice, ...]
+        self, labels: np.ndarray, data_slice: tuple[slice, ...]
     ) -> Optional[np.ndarray]:
         """Calculate the contour of a given label array within the specified data slice.
 
@@ -852,7 +867,7 @@ class Labels(_ImageBase):
         return sliced_labels[delta_slice]
 
     def _raw_to_displayed(
-        self, raw, data_slice: Optional[Tuple[slice, ...]] = None
+        self, raw, data_slice: Optional[tuple[slice, ...]] = None
     ) -> np.ndarray:
         """Determine displayed image from a saved raw image and a saved seed.
 
@@ -939,7 +954,7 @@ class Labels(_ImageBase):
         self,
         start_point: Optional[np.ndarray],
         end_point: Optional[np.ndarray],
-        dims_displayed: List[int],
+        dims_displayed: list[int],
     ) -> Optional[int]:
         """Get the first non-background value encountered along a ray.
 
@@ -1009,7 +1024,7 @@ class Labels(_ImageBase):
         self,
         start_point: Optional[np.ndarray],
         end_point: Optional[np.ndarray],
-        dims_displayed: List[int],
+        dims_displayed: list[int],
     ) -> Optional[int]:
         """Get the first non-background value encountered along a ray.
 
@@ -1377,7 +1392,7 @@ class Labels(_ImageBase):
 
         self.data_setitem(slice_coord, new_label, refresh)
 
-    def _get_shape_and_dims_to_paint(self) -> Tuple[list, list]:
+    def _get_shape_and_dims_to_paint(self) -> tuple[list, list]:
         dims_to_paint = sorted(self._get_dims_to_paint())
         shape = list(self.data.shape)
 
@@ -1389,7 +1404,7 @@ class Labels(_ImageBase):
     def _get_dims_to_paint(self) -> list:
         return list(self._slice_input.order[-self.n_edit_dimensions :])
 
-    def _get_pt_not_disp(self) -> Dict[int, int]:
+    def _get_pt_not_disp(self) -> dict[int, int]:
         """
         Get indices of current visible slice.
         """
@@ -1406,7 +1421,7 @@ class Labels(_ImageBase):
         ----------
         indices : tuple of arrays of int
             Indices in data to overwrite. Must be a tuple of arrays of length
-            equal to the number of data dimensions. (Fancy indexing in [1]_).
+            equal to the number of data dimensions. (Fancy indexing in [2]_).
         value : int or array of int
             New label value(s). If more than one value, must match or
             broadcast with the given indices.
@@ -1415,7 +1430,7 @@ class Labels(_ImageBase):
 
         References
         ----------
-        ..[1] https://numpy.org/doc/stable/user/basics.indexing.html
+        .. [2] https://numpy.org/doc/stable/user/basics.indexing.html
         """
         changed_indices = self.data[indices] != value
         indices = tuple(x[changed_indices] for x in indices)
@@ -1504,7 +1519,7 @@ class Labels(_ImageBase):
         position: Optional[npt.ArrayLike] = None,
         *,
         view_direction: Optional[npt.ArrayLike] = None,
-        dims_displayed: Optional[List[int]] = None,
+        dims_displayed: Optional[list[int]] = None,
         world: bool = False,
     ) -> dict:
         """Status message information of the data at a coordinate position.
@@ -1562,7 +1577,7 @@ class Labels(_ImageBase):
         position,
         *,
         view_direction: Optional[np.ndarray] = None,
-        dims_displayed: Optional[List[int]] = None,
+        dims_displayed: Optional[list[int]] = None,
         world: bool = False,
     ):
         """
@@ -1601,7 +1616,7 @@ class Labels(_ImageBase):
         position,
         *,
         view_direction: Optional[np.ndarray] = None,
-        dims_displayed: Optional[List[int]] = None,
+        dims_displayed: Optional[list[int]] = None,
         world: bool = False,
     ) -> list:
         if len(self._label_index) == 0 or self.features.shape[1] == 0:

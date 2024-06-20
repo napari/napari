@@ -1,4 +1,4 @@
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 import numpy as np
 from vispy.gloo import VertexBuffer
@@ -49,8 +49,12 @@ class TracksFilter(Filter):
             if ($a_vertex_time > $current_time + $head_length) {
                 // this is a hack to minimize the frag shader rendering ahead
                 // of the current time point due to interpolation
-                if ($a_vertex_time <= $current_time + 1){
-                    alpha = -100.;
+                // track should cut off sharply at current_time when head length is 0
+                // see #6696 for details
+                if ($head_length == 0){
+                    // this prevents a track from being rendered ahead of the
+                    // current time point incorrectly due to the interpolation
+                    alpha = -1000.;
                 } else {
                     alpha = 0.;
                 }
@@ -91,7 +95,7 @@ class TracksFilter(Filter):
         tail_length: float = 30,
         head_length: float = 0,
         use_fade: bool = True,
-        vertex_time: Optional[Union[List, np.ndarray]] = None,
+        vertex_time: Optional[Union[list, np.ndarray]] = None,
     ) -> None:
         super().__init__(
             vcode=self.VERT_SHADER, vpos=3, fcode=self.FRAG_SHADER, fpos=9

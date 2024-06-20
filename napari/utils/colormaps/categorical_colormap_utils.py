@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from itertools import cycle
-from typing import Dict, Union
+from typing import Union
 
 import numpy as np
 
@@ -53,7 +53,7 @@ class ColorCycle:
 
 
 def _coerce_colorcycle_from_dict(
-    val: Dict[str, Union[str, list, np.ndarray, cycle]]
+    val: dict[str, Union[str, list, np.ndarray, cycle]],
 ) -> ColorCycle:
     # validate values
     color_values = val.get('values')
@@ -83,7 +83,7 @@ def _coerce_colorcycle_from_dict(
 
 
 def _coerce_colorcycle_from_colors(
-    val: Union[str, list, np.ndarray]
+    val: Union[str, list, np.ndarray],
 ) -> ColorCycle:
     if isinstance(val, str):
         val = [val]

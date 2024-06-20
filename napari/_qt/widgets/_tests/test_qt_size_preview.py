@@ -6,7 +6,7 @@ from napari._qt.widgets.qt_size_preview import (
 )
 
 
-@pytest.fixture
+@pytest.fixture()
 def preview_widget(qtbot):
     def _preview_widget(**kwargs):
         widget = QtFontSizePreview(**kwargs)
@@ -18,7 +18,7 @@ def preview_widget(qtbot):
     return _preview_widget
 
 
-@pytest.fixture
+@pytest.fixture()
 def font_size_preview_widget(qtbot):
     def _font_size_preview_widget(**kwargs):
         widget = QtSizeSliderPreviewWidget(**kwargs)
@@ -107,7 +107,7 @@ def test_qt_size_slider_preview_widget_minimum_invalid(
 ):
     widget = font_size_preview_widget()
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must be smaller than'):
         widget.setMinimum(60)
 
 
@@ -137,7 +137,7 @@ def test_qt_size_slider_preview_widget_maximum_invalid(
 ):
     widget = font_size_preview_widget()
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must be larger than'):
         widget.setMaximum(-5)
 
 

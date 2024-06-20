@@ -1,14 +1,10 @@
 exclude: _vendor|vendored
 repos:
-- repo: https://github.com/psf/black-pre-commit-mirror
-  rev: 24.2.0
-  hooks:
-  - id: black
-    pass_filenames: true
-    exclude: examples
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.2.2
+  rev: v0.4.8
   hooks:
+  - id: ruff-format
+    exclude: examples
   - id: ruff
 - repo: https://github.com/seddonym/import-linter
   rev: v2.0
@@ -16,11 +12,11 @@ repos:
   - id: import-linter
     stages: [manual]
 - repo: https://github.com/python-jsonschema/check-jsonschema
-  rev: 0.28.0
+  rev: 0.28.4
   hooks:
   - id: check-github-workflows
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v4.5.0
+  rev: v4.6.0
   # .py files are skipped cause already checked by other hooks
   hooks:
   - id: check-yaml

@@ -31,13 +31,14 @@ For more general background on the plugin hook calling mechanism, see the
     ``napari_hook_specification`` and ``napari_hook_implementation``,
     respectively.
 """
+
 # These hook specifications also serve as the API reference for plugin
 # developers, so comprehensive documentation with complete type annotations is
 # imperative!
 from __future__ import annotations
 
 from types import FunctionType
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Optional, Union
 
 from napari_plugin_engine import napari_hook_specification
 
@@ -55,7 +56,7 @@ from napari.types import (
 
 
 @napari_hook_specification(historic=True)
-def napari_provide_sample_data() -> Dict[str, Union[SampleData, SampleDict]]:
+def napari_provide_sample_data() -> dict[str, Union[SampleData, SampleDict]]:
     """Provide sample data.
 
     Plugins may implement this hook to provide sample data for use in napari.
@@ -110,7 +111,7 @@ def napari_provide_sample_data() -> Dict[str, Union[SampleData, SampleDict]]:
 
 
 @napari_hook_specification(firstresult=True)
-def napari_get_reader(path: Union[str, List[str]]) -> Optional[ReaderFunction]:
+def napari_get_reader(path: Union[str, list[str]]) -> Optional[ReaderFunction]:
     """Return a function capable of loading ``path`` into napari, or ``None``.
 
     This is the primary "**reader plugin**" function.  It accepts a path or
@@ -167,7 +168,7 @@ def napari_get_reader(path: Union[str, List[str]]) -> Optional[ReaderFunction]:
 
 @napari_hook_specification(firstresult=True)
 def napari_get_writer(
-    path: str, layer_types: List[str]
+    path: str, layer_types: list[str]
 ) -> Optional[WriterFunction]:
     """Return function capable of writing napari layer data to ``path``.
 
@@ -391,7 +392,7 @@ def napari_write_vectors(path: str, data: Any, meta: dict) -> Optional[str]:
 
 @napari_hook_specification(historic=True)
 def napari_experimental_provide_function() -> (
-    Union[FunctionType, List[FunctionType]]
+    Union[FunctionType, list[FunctionType]]
 ):
     """Provide function(s) that can be passed to magicgui.
 
@@ -427,7 +428,7 @@ def napari_experimental_provide_function() -> (
 
 @napari_hook_specification(historic=True)
 def napari_experimental_provide_dock_widget() -> (
-    Union[AugmentedWidget, List[AugmentedWidget]]
+    Union[AugmentedWidget, list[AugmentedWidget]]
 ):
     """Provide functions that return widgets to be docked in the viewer.
 
@@ -501,7 +502,7 @@ def napari_experimental_provide_dock_widget() -> (
 
 @napari_hook_specification(historic=True)
 def napari_experimental_provide_theme() -> (
-    Dict[str, Dict[str, Union[str, Tuple, List]]]
+    dict[str, dict[str, Union[str, tuple, list]]]
 ):
     """Provide GUI with a set of colors used through napari. This hook allows you to
     provide additional color schemes so you can accomplish your desired styling.

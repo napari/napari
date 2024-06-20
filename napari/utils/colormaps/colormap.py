@@ -3,18 +3,15 @@ from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Any,
-    DefaultDict,
-    Dict,
-    List,
     Literal,
     Optional,
-    Tuple,
     Union,
     cast,
     overload,
 )
 
 import numpy as np
+from typing_extensions import Self
 
 from napari._pydantic_compat import Field, PrivateAttr, validator
 from napari.utils.color import ColorArray
@@ -178,10 +175,10 @@ class LabelColormapBase(Colormap):
     interpolation: Literal[ColormapInterpolationMode.ZERO] = Field(
         ColormapInterpolationMode.ZERO, frozen=True
     )
-    _cache_mapping: Dict[Tuple[np.dtype, np.dtype], np.ndarray] = PrivateAttr(
+    _cache_mapping: dict[tuple[np.dtype, np.dtype], np.ndarray] = PrivateAttr(
         default={}
     )
-    _cache_other: Dict[str, Any] = PrivateAttr(default={})
+    _cache_other: dict[str, Any] = PrivateAttr(default={})
 
     class Config(Colormap.Config):
         # this config is to avoid deepcopy of cached_property
@@ -202,7 +199,7 @@ class LabelColormapBase(Colormap):
         """Map input values to values for send to GPU."""
         raise NotImplementedError
 
-    def _cmap_without_selection(self) -> 'LabelColormapBase':
+    def _cmap_without_selection(self) -> Self:
         if self.use_selection:
             cmap = self.__class__(**self.dict())
             cmap.use_selection = False
@@ -393,7 +390,7 @@ class DirectLabelColormap(LabelColormapBase):
         Exist because of implementation details. Please do not use it.
     """
 
-    color_dict: DefaultDict[Optional[int], np.ndarray] = Field(
+    color_dict: defaultdict[Optional[int], np.ndarray] = Field(
         default_factory=lambda: defaultdict(lambda: np.zeros(4))
     )
     use_selection: bool = False
@@ -555,7 +552,7 @@ class DirectLabelColormap(LabelColormapBase):
 
     def _values_mapping_to_minimum_values_set(
         self, apply_selection=True
-    ) -> Tuple[Dict[Optional[int], int], Dict[int, np.ndarray]]:
+    ) -> tuple[dict[Optional[int], int], dict[int, np.ndarray]]:
         """Create mapping from original values to minimum values set.
         To use minimum possible dtype for labels.
 
@@ -581,12 +578,12 @@ class DirectLabelColormap(LabelColormapBase):
     @cached_property
     def _label_mapping_and_color_dict(
         self,
-    ) -> Tuple[Dict[Optional[int], int], Dict[int, np.ndarray]]:
-        color_to_labels: Dict[Tuple[int, ...], List[Optional[int]]] = {}
-        labels_to_new_labels: Dict[Optional[int], int] = {
+    ) -> tuple[dict[Optional[int], int], dict[int, np.ndarray]]:
+        color_to_labels: dict[tuple[int, ...], list[Optional[int]]] = {}
+        labels_to_new_labels: dict[Optional[int], int] = {
             None: MAPPING_OF_UNKNOWN_VALUE
         }
-        new_color_dict: Dict[int, np.ndarray] = {
+        new_color_dict: dict[int, np.ndarray] = {
             MAPPING_OF_UNKNOWN_VALUE: self.default_color,
         }
 
@@ -641,10 +638,12 @@ class DirectLabelColormap(LabelColormapBase):
             key_type=getattr(types, data_dtype.name),
             value_type=getattr(types, target_type.name),
         )
+        iinfo = np.iinfo(data_dtype)
         for k, v in self._label_mapping_and_color_dict[0].items():
-            if k is None:
-                continue
-            dkt[data_dtype.type(k)] = target_type.type(v)
+            # ignore values outside the data dtype, since they will never need
+            # to be colormapped from that dtype.
+            if k is not None and iinfo.min <= k <= iinfo.max:
+                dkt[data_dtype.type(k)] = target_type.type(v)
 
         self._cache_other[key] = dkt
 

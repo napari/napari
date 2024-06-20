@@ -3,8 +3,9 @@ from __future__ import annotations
 import itertools
 import typing
 import warnings
+from collections.abc import Iterable
 from functools import cached_property
-from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 import numpy as np
 
@@ -96,13 +97,7 @@ class LayerList(SelectableEventedList[Layer]):
             self.events.inserted.connect(self._ctx_keys.update)
             self.events.removed.connect(self._ctx_keys.update)
 
-        self._selection_ctx = create_context(self)
-        if (
-            self._selection_ctx is not None
-        ):  # happens during Viewer type creation
-            self._selection_ctx_keys = LayerListSelectionContextKeys(
-                self._selection_ctx
-            )
+            self._selection_ctx_keys = LayerListSelectionContextKeys(self._ctx)
             self.selection.events.changed.connect(
                 self._selection_ctx_keys.update
             )
@@ -358,7 +353,7 @@ class LayerList(SelectableEventedList[Layer]):
         return self.get_extent(list(self))
 
     @property
-    def _ranges(self) -> Tuple[RangeTuple, ...]:
+    def _ranges(self) -> tuple[RangeTuple, ...]:
         """Get ranges for Dims.range in world coordinates."""
         ext = self.extent
         return tuple(
@@ -416,7 +411,7 @@ class LayerList(SelectableEventedList[Layer]):
         selected: bool = False,
         plugin: Optional[str] = None,
         _writer: Optional[WriterContribution] = None,
-    ) -> List[str]:
+    ) -> list[str]:
         """Save all or only selected layers to a path using writer plugins.
 
         If ``plugin`` is not provided and only one layer is targeted, then we

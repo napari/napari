@@ -301,8 +301,11 @@ def point_to_lines(point, lines):
     norm_lines[reject] = 1
     unit_lines = lines_vectors / norm_lines
 
-    # calculate distance to line
-    line_dist = abs(np.cross(unit_lines, point_vectors))
+    # calculate distance to line (2D cross-product)
+    line_dist = abs(
+        unit_lines[..., 0] * point_vectors[..., 1]
+        - unit_lines[..., 1] * point_vectors[..., 0]
+    )
 
     # calculate scale
     line_loc = (unit_lines * point_vectors).sum(axis=1) / norm_lines.squeeze()
@@ -736,22 +739,29 @@ def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
     )[0]
 
     if len(idx_bevel) > 0:
-        # only the 'outwards sticking' offsets should be changed
-        # TODO: This is not entirely true as in extreme cases both can go to infinity
         idx_offset = (miter_signs[idx_bevel] < 0).astype(int)
-        idx_bevel_full = 2 * idx_bevel + idx_offset
+
+        # outside and inside offsets are treated differently (only outside offsets get beveled)
+        # See drawing at:
+        # https://github.com/napari/napari/pull/6706#discussion_r1528790407
+        idx_bevel_outside = 2 * idx_bevel + idx_offset
+        idx_bevel_inside = 2 * idx_bevel + (1 - idx_offset)
         sign_bevel = np.expand_dims(miter_signs[idx_bevel], -1)
 
-        # adjust offset of outer "left" vertex
-        offsets[idx_bevel_full] = (
+        # adjust offset of outer offset
+        offsets[idx_bevel_outside] = (
             -0.5 * full_normals[:-1][idx_bevel] * sign_bevel
+        )
+        # adjust/normalize length of inner offset
+        offsets[idx_bevel_inside] /= np.sqrt(
+            miter_lengths_squared[idx_bevel, np.newaxis]
         )
 
         # special cases for the last vertex
         _nonspecial = idx_bevel != len(path) - 1
 
         idx_bevel = idx_bevel[_nonspecial]
-        idx_bevel_full = idx_bevel_full[_nonspecial]
+        idx_bevel_outside = idx_bevel_outside[_nonspecial]
         sign_bevel = sign_bevel[_nonspecial]
         idx_offset = idx_offset[_nonspecial]
 
@@ -768,9 +778,8 @@ def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
             n_centers + np.arange(len(idx_bevel))
         )
 
-        # add center triangle
+        # add a new center/bevel triangle
         triangles0 = np.tile(np.array([[0, 1, 2]]), (len(idx_bevel), 1))
-
         triangles_bevel = np.array(
             [
                 2 * idx_bevel + idx_offset,
@@ -778,7 +787,6 @@ def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
                 n_centers + np.arange(len(idx_bevel)),
             ]
         ).T
-
         # add all new centers, offsets, and triangles
         centers = np.concatenate([centers, centers_bevel])
         offsets = np.concatenate([offsets, offsets_bevel])

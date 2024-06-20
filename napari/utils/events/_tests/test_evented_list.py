@@ -7,7 +7,7 @@ import pytest
 from napari.utils.events import EmitterGroup, EventedList, NestableEventedList
 
 
-@pytest.fixture
+@pytest.fixture()
 def regular_list():
     return list(range(5))
 
@@ -162,7 +162,7 @@ OTHER_INDICES = [
 MOVING_INDICES = BASIC_INDICES + OTHER_INDICES
 
 
-@pytest.mark.parametrize('sources,dest,expectation', MOVING_INDICES)
+@pytest.mark.parametrize(('sources', 'dest', 'expectation'), MOVING_INDICES)
 def test_move_multiple(sources, dest, expectation):
     """Test the that we can move objects with the move method"""
     el = EventedList(range(8))
@@ -318,7 +318,7 @@ def test_nested_events(meth, group_index):
     if method_name == 'index' and group_index == (1, 1, 1):
         # the expected value of '110' (in the pytest parameters)
         # is not present in any child of ne_list[1, 1, 1]
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match='is not in list'):
             method(*args)
     else:
         # make sure we can call the method without error
@@ -367,7 +367,7 @@ NESTED_NEG_INDICES = [
 NESTED_INDICES = NESTED_POS_INDICES + NESTED_NEG_INDICES  # type: ignore
 
 
-@pytest.mark.parametrize('sources, dest, expectation', NESTED_INDICES)
+@pytest.mark.parametrize(('sources', 'dest', 'expectation'), NESTED_INDICES)
 def test_nested_move_multiple(sources, dest, expectation):
     """Test that moving multiple indices works and emits right events."""
     ne_list = NestableEventedList([0, 1, [20, [210, 211], 22], 3, 4])

@@ -1,6 +1,6 @@
 import warnings
 from copy import copy
-from typing import Any, Dict, Tuple, Union
+from typing import Any, Union
 
 import numpy as np
 import pandas as pd
@@ -38,24 +38,22 @@ class Vectors(Layer):
         D dimensions. An (N1, N2, ..., ND, D) array is interpreted as
         "image-like" data where there is a length D vector of the
         projections at each pixel.
-    ndim : int
-        Number of dimensions for vectors. When data is not None, ndim must be D.
-        An empty vectors layer can be instantiated with arbitrary ndim.
-    features : dict[str, array-like] or DataFrame
-        Features table where each row corresponds to a vector and each column
-        is a feature.
-    properties : dict {str: array (N,)}, DataFrame
-        Properties for each vector. Each property should be an array of length N,
-        where N is the number of vectors.
-    property_choices : dict {str: array (N,)}
-        possible values for each property.
-    edge_width : float
-        Width for all vectors in pixels.
-    vector_style : str
-        One of a list of preset display modes that determines how vectors are displayed.
-        Allowed values are {'line', 'triangle', and 'arrow'}.
-    length : float
-        Multiplicative factor on projections for length of all vectors.
+    affine : n-D array or napari.utils.transforms.Affine
+        (N+1, N+1) affine transformation matrix in homogeneous coordinates.
+        The first (N, N) entries correspond to a linear transform and
+        the final column is a length N translation vector and a 1 or a napari
+        `Affine` transform object. Applied as an extra transform on top of the
+        provided scale, rotate, and shear values.
+    axis_labels : tuple of str, optional
+        Dimension names of the layer data.
+        If not provided, axis_labels will be set to (..., 'axis -2', 'axis -1').
+    blending : str
+        One of a list of preset blending modes that determines how RGB and
+        alpha values of the layer visual get mixed. Allowed values are
+        {'opaque', 'translucent', and 'additive'}.
+    cache : bool
+        Whether slices of out-of-core datasets should be cached upon retrieval.
+        Currently, this only applies to dask arrays.
     edge_color : str
         Color of all of the vectors.
     edge_color_cycle : np.ndarray, list
@@ -68,48 +66,68 @@ class Vectors(Layer):
         of the specified property that are mapped to 0 and 1, respectively.
         The default value is None. If set the none, the clims will be set to
         (property.min(), property.max())
+    edge_width : float
+        Width for all vectors in pixels.
+    experimental_clipping_planes : list of dicts, list of ClippingPlane, or ClippingPlaneList
+        Each dict defines a clipping plane in 3D in data coordinates.
+        Valid dictionary keys are {'position', 'normal', and 'enabled'}.
+        Values on the negative side of the normal are discarded if the plane is enabled.
+    feature_defaults : dict[str, Any] or DataFrame
+        The default value of each feature in a table with one row.
+    features : dict[str, array-like] or DataFrame
+        Features table where each row corresponds to a vector and each column
+        is a feature.
+    length : float
+        Multiplicative factor on projections for length of all vectors.
+    metadata : dict
+        Layer metadata.
+    name : str
+        Name of the layer.
+    ndim : int
+        Number of dimensions for vectors. When data is not None, ndim must be D.
+        An empty vectors layer can be instantiated with arbitrary ndim.
+    opacity : float
+        Opacity of the layer visual, between 0.0 and 1.0.
     out_of_slice_display : bool
         If True, renders vectors not just in central plane but also slightly out of slice
         according to specified point marker size.
-    name : str
-        Name of the layer.
-    metadata : dict
-        Layer metadata.
-    scale : tuple of float
-        Scale factors for the layer.
-    translate : tuple of float
-        Translation values for the layer.
+    projection_mode : str
+        How data outside the viewed dimensions but inside the thick Dims slice will
+        be projected onto the viewed dimenions.
+    properties : dict {str: array (N,)}, DataFrame
+        Properties for each vector. Each property should be an array of length N,
+        where N is the number of vectors.
+    property_choices : dict {str: array (N,)}
+        possible values for each property.
     rotate : float, 3-tuple of float, or n-D array.
         If a float convert into a 2D rotation matrix using that value as an
         angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
         pitch, roll convention. Otherwise assume an nD rotation. Angles are
         assumed to be in degrees. They can be converted from radians with
         np.degrees if needed.
+    scale : tuple of float
+        Scale factors for the layer.
     shear : 1-D array or n-D array
         Either a vector of upper triangular values, or an nD shear matrix with
         ones along the main diagonal.
-    affine : n-D array or napari.utils.transforms.Affine
-        (N+1, N+1) affine transformation matrix in homogeneous coordinates.
-        The first (N, N) entries correspond to a linear transform and
-        the final column is a length N translation vector and a 1 or a napari
-        `Affine` transform object. Applied as an extra transform on top of the
-        provided scale, rotate, and shear values.
-    opacity : float
-        Opacity of the layer visual, between 0.0 and 1.0.
-    blending : str
-        One of a list of preset blending modes that determines how RGB and
-        alpha values of the layer visual get mixed. Allowed values are
-        {'opaque', 'translucent', and 'additive'}.
+    translate : tuple of float
+        Translation values for the layer.
+    units : tuple of str or pint.Unit, optional
+        Units of the layer data in world coordinates.
+        If not provided, the default units are assumed to be pixels.
+
+    vector_style : str
+        One of a list of preset display modes that determines how vectors are displayed.
+        Allowed values are {'line', 'triangle', and 'arrow'}.
     visible : bool
         Whether the layer visual is currently being displayed.
-    cache : bool
-        Whether slices of out-of-core datasets should be cached upon retrieval.
-        Currently, this only applies to dask arrays.
 
     Attributes
     ----------
     data : (N, 2, D) array
         The start point and projections of N vectors in D dimensions.
+    axis_labels : tuple of str
+        Dimension names of the layer data.
     features : Dataframe-like
         Features table where each row corresponds to a vector and each column
         is a feature.
@@ -124,11 +142,11 @@ class Vectors(Layer):
         Determines how vectors are displayed.
 
         * ``VectorStyle.LINE``:
-        Vectors are displayed as lines.
+            Vectors are displayed as lines.
         * ``VectorStyle.TRIANGLE``:
-        Vectors are displayed as triangles.
+            Vectors are displayed as triangles.
         * ``VectorStyle.ARROW``:
-        Vectors are displayed as arrows.
+            Vectors are displayed as arrows.
     length : float
         Multiplicative factor on projections for length of all vectors.
     edge_color : str
@@ -146,6 +164,8 @@ class Vectors(Layer):
     out_of_slice_display : bool
         If True, renders vectors not just in central plane but also slightly out of slice
         according to specified point marker size.
+    units: tuple of pint.Unit
+        Units of the layer data in world coordinates.
 
     Notes
     -----
@@ -176,32 +196,34 @@ class Vectors(Layer):
         self,
         data=None,
         *,
-        ndim=None,
-        features=None,
-        feature_defaults=None,
-        properties=None,
-        property_choices=None,
-        edge_width=1,
-        vector_style='triangle',
+        affine=None,
+        axis_labels=None,
+        blending='translucent',
+        cache=True,
         edge_color='red',
         edge_color_cycle=None,
         edge_colormap='viridis',
         edge_contrast_limits=None,
-        out_of_slice_display=False,
-        length=1,
-        name=None,
-        metadata=None,
-        scale=None,
-        translate=None,
-        rotate=None,
-        shear=None,
-        affine=None,
-        opacity=0.7,
-        blending='translucent',
-        visible=True,
-        cache=True,
+        edge_width=1,
         experimental_clipping_planes=None,
+        feature_defaults=None,
+        features=None,
+        length=1,
+        metadata=None,
+        name=None,
+        ndim=None,
+        opacity=0.7,
+        out_of_slice_display=False,
         projection_mode='none',
+        properties=None,
+        property_choices=None,
+        rotate=None,
+        scale=None,
+        shear=None,
+        translate=None,
+        units=None,
+        vector_style='triangle',
+        visible=True,
     ) -> None:
         if ndim is None and scale is not None:
             ndim = len(scale)
@@ -211,19 +233,21 @@ class Vectors(Layer):
         super().__init__(
             data,
             ndim,
-            name=name,
-            metadata=metadata,
-            scale=scale,
-            translate=translate,
-            rotate=rotate,
-            shear=shear,
             affine=affine,
-            opacity=opacity,
+            axis_labels=axis_labels,
             blending=blending,
-            visible=visible,
             cache=cache,
             experimental_clipping_planes=experimental_clipping_planes,
+            name=name,
+            metadata=metadata,
+            opacity=opacity,
             projection_mode=projection_mode,
+            rotate=rotate,
+            scale=scale,
+            shear=shear,
+            translate=translate,
+            units=units,
+            visible=visible,
         )
 
         # events for non-napari calculations
@@ -335,7 +359,7 @@ class Vectors(Layer):
     @features.setter
     def features(
         self,
-        features: Union[Dict[str, np.ndarray], pd.DataFrame],
+        features: Union[dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
         self._feature_table.set_values(features, num_data=len(self.data))
         if self._edge.color_properties is not None:
@@ -361,12 +385,12 @@ class Vectors(Layer):
         self.events.features()
 
     @property
-    def properties(self) -> Dict[str, np.ndarray]:
+    def properties(self) -> dict[str, np.ndarray]:
         """dict {str: array (N,)}, DataFrame: Annotations for each point"""
         return self._feature_table.properties()
 
     @properties.setter
-    def properties(self, properties: Dict[str, Array]):
+    def properties(self, properties: dict[str, Array]):
         self.features = properties
 
     @property
@@ -379,13 +403,13 @@ class Vectors(Layer):
 
     @feature_defaults.setter
     def feature_defaults(
-        self, defaults: Union[Dict[str, Any], pd.DataFrame]
+        self, defaults: Union[dict[str, Any], pd.DataFrame]
     ) -> None:
         self._feature_table.set_defaults(defaults)
         self.events.feature_defaults()
 
     @property
-    def property_choices(self) -> Dict[str, np.ndarray]:
+    def property_choices(self) -> dict[str, np.ndarray]:
         return self._feature_table.choices()
 
     def _get_state(self):
@@ -472,11 +496,11 @@ class Vectors(Layer):
         """Vectors display mode: Determines how vectors are displayed.
 
         VectorStyle.LINE
-                Displays vectors as rectangular lines.
-            VectorStyle.TRIANGLE
-                Displays vectors as triangles.
-            VectorStyle.ARROW
-                Displays vectors as arrows.
+            Displays vectors as rectangular lines.
+        VectorStyle.TRIANGLE
+            Displays vectors as triangles.
+        VectorStyle.ARROW
+            Displays vectors as arrows.
         """
         return str(self._vector_style)
 
@@ -608,7 +632,7 @@ class Vectors(Layer):
         self._edge.categorical_colormap = edge_color_cycle
 
     @property
-    def edge_colormap(self) -> Tuple[str, Colormap]:
+    def edge_colormap(self) -> Colormap:
         """Return the colormap to be applied to a property to get the edge color.
 
         Returns
@@ -623,7 +647,7 @@ class Vectors(Layer):
         self._edge.continuous_colormap = colormap
 
     @property
-    def edge_contrast_limits(self) -> Tuple[float, float]:
+    def edge_contrast_limits(self) -> tuple[float, float]:
         """None, (float, float): contrast limits for mapping
         the edge_color colormap property to 0 and 1
         """
@@ -631,7 +655,7 @@ class Vectors(Layer):
 
     @edge_contrast_limits.setter
     def edge_contrast_limits(
-        self, contrast_limits: Union[None, Tuple[float, float]]
+        self, contrast_limits: Union[None, tuple[float, float]]
     ):
         self._edge.contrast_limits = contrast_limits
 
@@ -717,7 +741,7 @@ class Vectors(Layer):
     def _update_thumbnail(self):
         """Update thumbnail with current vectors and colors."""
         # Set the default thumbnail to black, opacity 1
-        colormapped = np.zeros(self._thumbnail_shape)
+        colormapped = np.zeros(self._thumbnail_shape, dtype=np.uint8)
         colormapped[..., 3] = 1
         if len(self.data) == 0:
             self.thumbnail = colormapped
@@ -762,7 +786,9 @@ class Vectors(Layer):
                 y_vals = np.linspace(start[1], stop[1], step)
                 for x, y in zip(x_vals, y_vals):
                     colormapped[int(x), int(y), :] = ec
-            colormapped[..., 3] *= self.opacity
+            colormapped[..., 3] = (colormapped[..., 3] * self.opacity).astype(
+                np.uint8
+            )
             self.thumbnail = colormapped
 
     def _get_value(self, position):

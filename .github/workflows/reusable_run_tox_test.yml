@@ -1,3 +1,5 @@
+name: Run test by tox
+
 on:
   workflow_call:
     inputs:
@@ -47,7 +49,13 @@ jobs:
       PYVISTA_OFF_SCREEN: True
       MIN_REQ: ${{ inputs.min_req }}
       FORCE_COLOR: 1
-      PIP_CONSTRAINT: resources/constraints/constraints_py${{ inputs.python_version }}${{ inputs.min_req && '_min_req' }}${{ inputs.constraints_suffix }}.txt
+      PIP_CONSTRAINT: ${{ github.workspace }}/resources/constraints/constraints_py${{ inputs.python_version }}${{ (((inputs.platform == 'macos-latest') && '_macos_arm') || '') }}${{ inputs.min_req && '_min_req' }}${{ inputs.constraints_suffix }}.txt
+      # Above we calculate path to constraints file based on python version and platform
+      # Because there is no single PyQt5-Qt5 package version available for all platforms we was forced to use
+      # different constraints files for macOS arm and other platforms
+      # ${{ (((inputs.platform == 'macos-latest') && '_macos_arm') || '') }} - if platform is macOS-latest then add '_macos_arm' to constraints file name, else add nothing
+      # ${{ inputs.min_req && '_min_req' }} - if min_req is set then add '_min_req' to constraints file name, else add nothing
+      #  ${{ inputs.constraints_suffix }} - additional suffix for constraints file name (used for example testing).
       COVERAGE: ${{ inputs.coverage }}
       TOX_WORK_DIR: .tox
       TOX_EXTRAS: ${{ inputs.tox_extras }}
@@ -67,6 +75,10 @@ jobs:
           cache-dependency-path: pyproject.toml
 
       - uses: tlambert03/setup-qt-libs@v1
+
+      - name: Setup Graphviz
+        uses: ts-graphviz/setup-graphviz@v2
+        continue-on-error: true
 
       # strategy borrowed from vispy for installing opengl libs on windows
       - name: Install Windows OpenGL
@@ -180,10 +192,17 @@ jobs:
           name: test artifacts ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }}
           path: .pytest_tmp
 
+      - name: Upload leaked viewer graph
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: leaked ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }}
+          path: ./*leak-backref-graph*.pdf
+
       - name: Upload pytest timing reports as json ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }}
         uses: actions/upload-artifact@v4
         with:
-          name: upload pytest timing json ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }}
+          name: upload pytest timing json ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }} ${{ inputs.tox_extras }}
           path: |
             ./report-*.json
 
