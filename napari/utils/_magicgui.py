@@ -102,6 +102,11 @@ def _calc_affine_from_source_layers(data, source_layers: list[Layer]):
     dict
         Dictionary with affine information.
     """
+
+    source_layers = [
+        layer for layer in source_layers if layer.ndim >= data.ndim
+    ]
+
     if not source_layers:
         return {}
 
