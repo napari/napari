@@ -50,6 +50,7 @@ jobs:
       MIN_REQ: ${{ inputs.min_req }}
       FORCE_COLOR: 1
       PIP_CONSTRAINT: ${{ github.workspace }}/resources/constraints/constraints_py${{ inputs.python_version }}${{ (((inputs.platform == 'macos-latest') && '_macos_arm') || '') }}${{ inputs.min_req && '_min_req' }}${{ inputs.constraints_suffix }}.txt
+      UV_CONSTRAINT: ${{ github.workspace }}/resources/constraints/constraints_py${{ inputs.python_version }}${{ (((inputs.platform == 'macos-latest') && '_macos_arm') || '') }}${{ inputs.min_req && '_min_req' }}${{ inputs.constraints_suffix }}.txt
       # Above we calculate path to constraints file based on python version and platform
       # Because there is no single PyQt5-Qt5 package version available for all platforms we was forced to use
       # different constraints files for macOS arm and other platforms
@@ -98,7 +99,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install setuptools tox tox-gh-actions tox-min-req
+          pip install setuptools tox tox-gh-actions tox-min-req tox-uv
         env:
           PIP_CONSTRAINT: ""
 
