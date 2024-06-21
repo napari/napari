@@ -1,5 +1,5 @@
 import warnings
-from functools import wraps
+from functools import partial, wraps
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QPoint, Qt
@@ -23,6 +23,13 @@ from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from napari.viewer import ViewerModel
+
+
+def add_new_points(viewer):
+    viewer.add_points(
+        ndim=max(viewer.dims.ndim, 2),
+        scale=viewer.layers.extent.step,
+    )
 
 
 class QtLayerButtons(QFrame):
@@ -59,10 +66,7 @@ class QtLayerButtons(QFrame):
         self.newPointsButton = QtViewerPushButton(
             'new_points',
             trans._('New points layer'),
-            lambda: self.viewer.add_points(
-                ndim=max(self.viewer.dims.ndim, 2),
-                scale=self.viewer.layers.extent.step,
-            ),
+            partial(add_new_points, self.viewer),
         )
 
         self.newShapesButton = QtViewerPushButton(

@@ -95,6 +95,7 @@ class MenuGroup:
     PLUGIN_MULTI_SUBMENU = '2_plugin_multi_submenu'
     PLUGIN_SINGLE_CONTRIBUTIONS = '3_plugin_contributions'
     # File menubar
+    OPEN = '1_open'
     PREFERENCES = '2_preferences'
     SAVE = '3_save'
     CLOSE = '4_close'

@@ -18,6 +18,7 @@ from napari._app_model.context import (
 )
 from napari._qt.qt_main_window import Window
 from napari._qt.qt_viewer import QtViewer
+from napari._qt.widgets.qt_viewer_buttons import add_new_points
 from napari.utils.translations import trans
 
 # File submenus
@@ -28,6 +29,7 @@ FILE_SUBMENUS = [
             submenu=MenuId.FILE_NEW_LAYER,
             title=trans._('New Layer'),
             group=MenuGroup.NAVIGATION,
+            order=0,
         ),
     ),
     (
@@ -35,7 +37,7 @@ FILE_SUBMENUS = [
         SubmenuItem(
             submenu=MenuId.FILE_OPEN_WITH_PLUGIN,
             title=trans._('Open with Plugin'),
-            group=MenuGroup.NAVIGATION,
+            group=MenuGroup.OPEN,
             order=99,
         ),
     ),
@@ -44,7 +46,7 @@ FILE_SUBMENUS = [
         SubmenuItem(
             submenu=MenuId.FILE_SAMPLES,
             title=trans._('Open Sample'),
-            group=MenuGroup.NAVIGATION,
+            group=MenuGroup.OPEN,
             order=100,
         ),
     ),
@@ -53,7 +55,7 @@ FILE_SUBMENUS = [
         SubmenuItem(
             submenu=MenuId.FILE_IO_UTILITIES,
             title=trans._('IO Utilities'),
-            group=MenuGroup.NAVIGATION,
+            group=MenuGroup.OPEN,
             order=101,
         ),
     ),
@@ -62,7 +64,7 @@ FILE_SUBMENUS = [
         SubmenuItem(
             submenu=MenuId.FILE_ACQUIRE,
             title=trans._('Acquire'),
-            group=MenuGroup.NAVIGATION,
+            group=MenuGroup.OPEN,
             order=101,
         ),
     ),
@@ -75,6 +77,11 @@ FILE_SUBMENUS = [
 def new_labels(qt_viewer: QtViewer):
     viewer = qt_viewer.viewer
     viewer._new_labels()
+
+
+def new_points(qt_viewer: QtViewer):
+    viewer = qt_viewer.viewer
+    add_new_points(viewer)
 
 
 def _open_files_with_plugin(qt_viewer: QtViewer):
@@ -113,6 +120,12 @@ Q_FILE_ACTIONS: list[Action] = [
         menus=[{'id': MenuId.FILE_NEW_LAYER, 'group': MenuGroup.NAVIGATION}],
     ),
     Action(
+        id='napari.window.file.new_layer.new_points',
+        title=trans._('Points'),
+        callback=new_points,
+        menus=[{'id': MenuId.FILE_NEW_LAYER, 'group': MenuGroup.NAVIGATION}],
+    ),
+    Action(
         id='napari.window.file._image_from_clipboard',
         title=trans._('New Image from Clipboard'),
         callback=QtViewer._image_from_clipboard,
@@ -123,21 +136,21 @@ Q_FILE_ACTIONS: list[Action] = [
         id='napari.window.file.open_files_dialog',
         title=trans._('Open File(s)...'),
         callback=QtViewer._open_files_dialog,
-        menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.NAVIGATION}],
+        menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.OPEN}],
         keybindings=[StandardKeyBinding.Open],
     ),
     Action(
         id='napari.window.file.open_files_as_stack_dialog',
         title=trans._('Open Files as Stack...'),
         callback=QtViewer._open_files_dialog_as_stack_dialog,
-        menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.NAVIGATION}],
+        menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.OPEN}],
         keybindings=[{'primary': KeyMod.CtrlCmd | KeyMod.Alt | KeyCode.KeyO}],
     ),
     Action(
         id='napari.window.file.open_folder_dialog',
         title=trans._('Open Folder...'),
         callback=QtViewer._open_folder_dialog,
-        menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.NAVIGATION}],
+        menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.OPEN}],
         keybindings=[
             {'primary': KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyO}
         ],
@@ -146,25 +159,19 @@ Q_FILE_ACTIONS: list[Action] = [
         id='napari.window.file._open_files_with_plugin',
         title=trans._('Open File(s)...'),
         callback=_open_files_with_plugin,
-        menus=[
-            {'id': MenuId.FILE_OPEN_WITH_PLUGIN, 'group': MenuGroup.NAVIGATION}
-        ],
+        menus=[{'id': MenuId.FILE_OPEN_WITH_PLUGIN, 'group': MenuGroup.OPEN}],
     ),
     Action(
         id='napari.window.file._open_files_as_stack_with_plugin',
         title=trans._('Open Files as Stack...'),
         callback=_open_files_as_stack_with_plugin,
-        menus=[
-            {'id': MenuId.FILE_OPEN_WITH_PLUGIN, 'group': MenuGroup.NAVIGATION}
-        ],
+        menus=[{'id': MenuId.FILE_OPEN_WITH_PLUGIN, 'group': MenuGroup.OPEN}],
     ),
     Action(
         id='napari.window.file._open_folder_with_plugin',
         title=trans._('Open Folder...'),
         callback=_open_folder_with_plugin,
-        menus=[
-            {'id': MenuId.FILE_OPEN_WITH_PLUGIN, 'group': MenuGroup.NAVIGATION}
-        ],
+        menus=[{'id': MenuId.FILE_OPEN_WITH_PLUGIN, 'group': MenuGroup.OPEN}],
     ),
     Action(
         id='napari.window.file.show_preferences_dialog',
