@@ -18,7 +18,7 @@ from napari._app_model.context import (
 )
 from napari._qt.qt_main_window import Window
 from napari._qt.qt_viewer import QtViewer
-from napari._qt.widgets.qt_viewer_buttons import add_new_points
+from napari._qt.widgets.qt_viewer_buttons import add_new_points, add_new_shapes
 from napari.utils.translations import trans
 
 # File submenus
@@ -84,6 +84,11 @@ def new_points(qt_viewer: QtViewer):
     add_new_points(viewer)
 
 
+def new_shapes(qt_viewer: QtViewer):
+    viewer = qt_viewer.viewer
+    add_new_shapes(viewer)
+
+
 def _open_files_with_plugin(qt_viewer: QtViewer):
     qt_viewer._open_files_dialog(choose_plugin=True)
 
@@ -123,6 +128,12 @@ Q_FILE_ACTIONS: list[Action] = [
         id='napari.window.file.new_layer.new_points',
         title=trans._('Points'),
         callback=new_points,
+        menus=[{'id': MenuId.FILE_NEW_LAYER, 'group': MenuGroup.NAVIGATION}],
+    ),
+    Action(
+        id='napari.window.file.new_layer.new_shapes',
+        title=trans._('Shapes'),
+        callback=new_shapes,
         menus=[{'id': MenuId.FILE_NEW_LAYER, 'group': MenuGroup.NAVIGATION}],
     ),
     Action(

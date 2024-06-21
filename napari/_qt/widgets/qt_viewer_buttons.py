@@ -32,6 +32,13 @@ def add_new_points(viewer):
     )
 
 
+def add_new_shapes(viewer):
+    viewer.add_shapes(
+        ndim=max(viewer.dims.ndim, 2),
+        scale=viewer.layers.extent.step,
+    )
+
+
 class QtLayerButtons(QFrame):
     """Button controls for napari layers.
 
@@ -72,10 +79,7 @@ class QtLayerButtons(QFrame):
         self.newShapesButton = QtViewerPushButton(
             'new_shapes',
             trans._('New shapes layer'),
-            lambda: self.viewer.add_shapes(
-                ndim=max(self.viewer.dims.ndim, 2),
-                scale=self.viewer.layers.extent.step,
-            ),
+            partial(add_new_shapes, self.viewer),
         )
         self.newLabelsButton = QtViewerPushButton(
             'new_labels',
