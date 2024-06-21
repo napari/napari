@@ -87,9 +87,9 @@ def test_create_func_deprecated():
 def test_create_func_renamed():
     DummyClass.add_simple_class_renamed = create_func(SimpleClassRenamed)
     dc = DummyClass()
-    with pytest.warns(DeprecationWarning, match="Argument 'c' is deprecated"):
+    with pytest.warns(FutureWarning, match="Argument 'c' is deprecated"):
         dc.add_simple_class_renamed(c=4)
     assert dc.layers[0].a == 4
-    with pytest.warns(DeprecationWarning, match="Argument 'd' is deprecated"):
+    with pytest.warns(FutureWarning, match="Argument 'd' is deprecated"):
         dc.add_simple_class_renamed(d=8)
     assert dc.layers[1].b == 8

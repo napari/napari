@@ -238,6 +238,9 @@ class DummyTimer:
     It implements the same interface as PerfTimers.
     """
 
+    def __init__(self) -> None:
+        self.trace_file = None
+
     def add_instant_event(
         self, name: str, **kwargs: Union[str, float, None]
     ) -> None:
@@ -247,6 +250,12 @@ class DummyTimer:
         """empty timer to use when perfmon is disabled"""
 
     def add_event(self, event: PerfEvent) -> None:
+        """empty timer to use when perfmon is disabled"""
+
+    def start_trace_file(self, path: str) -> None:
+        """empty timer to use when perfmon is disabled"""
+
+    def stop_trace_file(self) -> None:
         """empty timer to use when perfmon is disabled"""
 
 

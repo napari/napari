@@ -2,15 +2,14 @@ from unittest import mock
 
 import numpy as np
 import pytest
-import qtpy
 from app_model.types import MenuItem, SubmenuItem
 from npe2 import DynamicPlugin
 from npe2.manifest.contributions import SampleDataURI
 from qtpy.QtGui import QGuiApplication
-from qtpy.QtWidgets import QMenu
 
 from napari._app_model import get_app
 from napari._app_model.constants import MenuId
+from napari._qt._qapp_model._tests.utils import get_submenu_action
 from napari.layers import Image
 from napari.utils.action_manager import action_manager
 
@@ -220,29 +219,6 @@ def test_open(
     )
 
 
-def get_open_with_plugin_action(viewer, action_text):
-    def _get_menu(act):
-        # this function may be removed when PyQt6 will release next version
-        # (after 6.3.1 - if we do not want to support this test on older PyQt6)
-        # https://www.riverbankcomputing.com/pipermail/pyqt/2022-July/044817.html
-        # because both PyQt6 and PySide6 will have working manu method of action
-        return (
-            QMenu.menuInAction(act)
-            if getattr(qtpy, 'PYQT6', False)
-            else act.menu()
-        )
-
-    actions = viewer.window.file_menu.actions()
-    for action1 in actions:
-        if action1.text() == 'Open with Plugin':
-            for action2 in _get_menu(action1).actions():
-                if action2.text() == action_text:
-                    return action2, action1
-    raise ValueError(
-        f'Could not find action "{action_text}"'
-    )  # pragma: no cover
-
-
 @pytest.mark.parametrize(
     (
         'menu_str',
@@ -284,7 +260,9 @@ def test_open_with_plugin(
     stack,
 ):
     viewer = make_napari_viewer()
-    action, _a = get_open_with_plugin_action(viewer, menu_str)
+    action, _a = get_submenu_action(
+        viewer.window.file_menu, 'Open with Plugin', menu_str
+    )
     with (
         mock.patch('napari._qt.qt_viewer.QFileDialog') as mock_file,
         mock.patch('napari._qt.qt_viewer.QtViewer._qt_open') as mock_read,
