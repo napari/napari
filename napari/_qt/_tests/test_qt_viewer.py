@@ -1095,17 +1095,17 @@ def test_scale_bar_colored(qt_viewer, qtbot):
     scale_bar = viewer.scale_bar
 
     # Add black image
-    data = np.zeros((2, 2))
+    data = np.zeros((10, 10))
     viewer.add_image(data)
 
-    # Check scale bar is not visible (all the canvas is black)
+    # Check scale bar is not visible (all the canvas is black - `[0, 0, 0, 255]`)
     def check_all_black():
         screenshot = qt_viewer.screenshot(flash=False)
         assert np.all(screenshot == [0, 0, 0, 255], axis=-1).all()
 
     qtbot.waitUntil(check_all_black)
 
-    # Check scale bar is visible (canvas has white `(1, 1, 1, 255)` in it)
+    # Check scale bar is visible (canvas has white `[1, 1, 1, 255]` in it)
     def check_white_scale_bar():
         screenshot = qt_viewer.screenshot(flash=False)
         assert not np.all(screenshot == [0, 0, 0, 255], axis=-1).all()
@@ -1114,7 +1114,7 @@ def test_scale_bar_colored(qt_viewer, qtbot):
     scale_bar.visible = True
     qtbot.waitUntil(check_white_scale_bar)
 
-    # Check scale bar is colored (canvas has fuchsia `(1, 0, 1, 255)` and not white in it)
+    # Check scale bar is colored (canvas has fuchsia `[1, 0, 1, 255]` and not white in it)
     def check_colored_scale_bar():
         screenshot = qt_viewer.screenshot(flash=False)
         assert not np.all(screenshot == [1, 1, 1, 255], axis=-1).any()
@@ -1131,3 +1131,51 @@ def test_scale_bar_colored(qt_viewer, qtbot):
 
     scale_bar.colored = False
     qtbot.waitUntil(check_only_white_scale_bar)
+
+
+@skip_local_popups
+def test_scale_bar_ticks(qt_viewer, qtbot):
+    viewer = qt_viewer.viewer
+    scale_bar = viewer.scale_bar
+
+    # Add black image
+    data = np.zeros((10, 10))
+    viewer.add_image(data)
+
+    # Check scale bar is not visible (all the canvas is black - `[0, 0, 0, 255]`)
+    def check_all_black():
+        screenshot = qt_viewer.screenshot(flash=False)
+        assert np.all(screenshot == [0, 0, 0, 255], axis=-1).all()
+
+    qtbot.waitUntil(check_all_black)
+
+    # Check scale bar is visible (canvas has white `[1, 1, 1, 255]` in it)
+    def check_white_scale_bar():
+        screenshot = qt_viewer.screenshot(flash=False)
+        assert not np.all(screenshot == [0, 0, 0, 255], axis=-1).all()
+        assert np.all(screenshot == [1, 1, 1, 255], axis=-1).any()
+
+    scale_bar.visible = True
+    qtbot.waitUntil(check_white_scale_bar)
+
+    # Check scale bar has ticks active and take screenshot for later comparison
+    assert scale_bar.ticks
+    screenshot_with_ticks = qt_viewer.screenshot(flash=False)
+
+    # Check scale bar without ticks (still white present but new screenshot differs from ticks one)
+    def check_no_ticks_scale_bar():
+        screenshot = qt_viewer.screenshot(flash=False)
+        assert np.all(screenshot == [1, 1, 1, 255], axis=-1).any()
+        assert not np.array_equal(screenshot, screenshot_with_ticks)
+
+    scale_bar.ticks = False
+    qtbot.waitUntil(check_no_ticks_scale_bar)
+
+    # Check scale bar again has ticks (still white present and new screenshot corresponds with ticks one)
+    def check_ticks_scale_bar():
+        screenshot = qt_viewer.screenshot(flash=False)
+        assert np.all(screenshot == [1, 1, 1, 255], axis=-1).any()
+        assert np.array_equal(screenshot, screenshot_with_ticks)
+
+    scale_bar.ticks = True
+    qtbot.waitUntil(check_ticks_scale_bar)
