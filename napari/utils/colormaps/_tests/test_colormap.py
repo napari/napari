@@ -414,6 +414,21 @@ def test_direct_colormap_with_invalid_values():
     npt.assert_array_equal(mapped, np.array([0, 0, 0, 0]))
 
 
+def test_direct_colormap_with_values_outside_data_dtype():
+    """https://github.com/napari/napari/pull/6998#issuecomment-2176070672"""
+    color_dict = {
+        1: np.array([1, 0, 1, 1]),
+        2: np.array([0, 1, 0, 1]),
+        257: np.array([1, 1, 1, 1]),
+        None: np.array([0, 0, 0, 0]),
+    }
+    cmap = DirectLabelColormap(color_dict=color_dict)
+
+    # Map an array with a dtype for which some dict values are out of range
+    mapped = cmap.map(np.array([1], dtype=np.uint8))
+    npt.assert_array_equal(mapped[0], color_dict[1].astype(mapped.dtype))
+
+
 def test_direct_colormap_with_empty_color_dict():
     # Create a DirectLabelColormap with an empty color_dict
     with pytest.raises(ValueError, match='color_dict must contain None'):

@@ -25,8 +25,8 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 from superqt import QElidingLabel, ensure_main_thread
+from superqt.utils import CodeSyntaxHighlight
 
-from napari._qt.code_syntax_highlight import Pylighter
 from napari._qt.qt_resources import QColoredSVGIcon
 from napari.settings import get_settings
 from napari.utils.notifications import Notification, NotificationSeverity
@@ -421,7 +421,9 @@ class TracebackDialog(QDialog):
         self.resize(650, 270)
         text = QTextEdit()
         theme = get_theme(get_settings().appearance.theme)
-        _highlight = Pylighter(text.document(), 'python', theme.syntax_style)
+        _highlight = CodeSyntaxHighlight(
+            text.document(), 'python', theme.syntax_style
+        )
         text.setText(exception.as_text())
         text.setReadOnly(True)
         self.btn = QPushButton(trans._('Enter Debugger'))

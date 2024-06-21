@@ -28,7 +28,7 @@ mypy-extensions==1.0.0
     # via mypy
 npe2==0.7.5
     # via -r napari_repo/resources/requirements_mypy.in
-numpy==1.26.4
+numpy==2.0.0
     # via -r napari_repo/resources/requirements_mypy.in
 packaging==24.1
     # via
@@ -40,7 +40,7 @@ psygnal==0.11.1
     #   npe2
 pyconify==0.1.6
     # via superqt
-pydantic==2.7.3
+pydantic==2.7.4
     # via
     #   -r napari_repo/resources/requirements_mypy.in
     #   npe2
@@ -93,7 +93,7 @@ typing-extensions==4.12.2
     #   pydantic-core
     #   superqt
     #   typer
-urllib3==2.2.1
+urllib3==2.2.2
     # via
     #   requests
     #   types-requests
