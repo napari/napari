@@ -18,7 +18,7 @@ from napari.layers import Layer
 from napari.utils.notifications import show_warning
 from napari.utils.translations import trans
 
-__all__ = ('Q_LAYER_ACTIONS', 'is_valid_spatial_in_clipboard')
+__all__ = ('Q_LAYERLIST_CONTEXT_ACTIONS', 'is_valid_spatial_in_clipboard')
 
 
 def _numpy_to_list(d: dict) -> dict:
@@ -138,7 +138,7 @@ def is_valid_spatial_in_clipboard() -> bool:
     )
 
 
-Q_LAYER_ACTIONS = [
+Q_LAYERLIST_CONTEXT_ACTIONS = [
     Action(
         id='napari.layer.copy_all_to_clipboard',
         title=trans._('Copy all to clipboard'),

@@ -35,7 +35,9 @@ def init_qactions() -> None:
         Q_FILE_ACTIONS,
     )
     from napari._qt._qapp_model.qactions._help import Q_HELP_ACTIONS
-    from napari._qt._qapp_model.qactions._layer import Q_LAYER_ACTIONS
+    from napari._qt._qapp_model.qactions._layerlist_context import (
+        Q_LAYERLIST_CONTEXT_ACTIONS,
+    )
     from napari._qt._qapp_model.qactions._layers_actions import (
         LAYERS_ACTIONS,
         LAYERS_SUBMENUS,
@@ -73,7 +75,7 @@ def init_qactions() -> None:
             Q_PLUGINS_ACTIONS,
             Q_VIEW_ACTIONS,
             LAYERS_ACTIONS,
-            Q_LAYER_ACTIONS,
+            Q_LAYERLIST_CONTEXT_ACTIONS,
             Q_WINDOW_ACTIONS,
         )
     )

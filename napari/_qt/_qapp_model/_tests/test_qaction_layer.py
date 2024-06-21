@@ -5,7 +5,7 @@ import numpy.testing as npt
 import pytest
 from qtpy.QtWidgets import QApplication
 
-from napari._qt._qapp_model.qactions._layer import (
+from napari._qt._qapp_model.qactions._layerlist_context import (
     _copy_affine_to_clipboard,
     _copy_rotate_to_clipboard,
     _copy_scale_to_clipboard,

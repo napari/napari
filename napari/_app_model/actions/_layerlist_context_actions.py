@@ -74,7 +74,7 @@ LAYERCTX_LINK: MenuRuleDict = {
 
 # Statically defined Layer actions.
 # modifying this list at runtime has no effect.
-LAYER_ACTIONS: list[Action] = [
+LAYERLIST_CONTEXT_ACTIONS: list[Action] = [
     Action(
         id='napari.layer.duplicate',
         title=trans._('Duplicate Layer'),
@@ -220,7 +220,7 @@ for _dtype in (
     'uint32',
     'uint64',
 ):
-    LAYER_ACTIONS.append(
+    LAYERLIST_CONTEXT_ACTIONS.append(
         Action(
             id=f'napari.layer.convert_to_{_dtype}',
             title=trans._('Convert to {dtype}', dtype=_dtype),
@@ -234,7 +234,7 @@ for _dtype in (
     )
 
 for mode in ('max', 'min', 'std', 'sum', 'mean', 'median'):
-    LAYER_ACTIONS.append(
+    LAYERLIST_CONTEXT_ACTIONS.append(
         Action(
             id=f'napari.layer.project_{mode}',
             title=trans._('{mode} projection', mode=mode),
