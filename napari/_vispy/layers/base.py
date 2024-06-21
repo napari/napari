@@ -235,7 +235,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
                 # Because of performance reason, for multiscale images
                 # we load only visible part of data to GPU.
                 # To place this part of data correctly we update transform,
-                # but this leads to incorrect placement of child layers.
+                # but this leads to incorrect placement of child nodes (e.g overlays).
                 # To fix this we need to update child layers transform.
                 child_offset = (
                     np.ones(offset_matrix.shape[1]) / 2
