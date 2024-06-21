@@ -70,6 +70,7 @@ jobs:
 
       - name: Set wheel path
         run: echo "WHEEL_PATH=$(ls dist/*.whl)" >> $GITHUB_ENV
+        shell: bash
 
       - name: Set up Python ${{ inputs.python_version }}
         uses: actions/setup-python@v5
