@@ -30,11 +30,10 @@ class MenuId(StrEnum):
 
     MENUBAR_LAYERS = 'napari/layers'
     LAYERS_VISUALIZE = 'napari/layers/visualize'
-    LAYERS_EDIT = 'napari/layers/edit'
-    LAYERS_EDIT_ANNOTATE = 'napari/layers/edit/annotate'
-    LAYERS_EDIT_FILTER = 'napari/layers/edit/filter'
-    LAYERS_EDIT_TRANSFORM = 'napari/layers/edit/transform'
+    LAYERS_ANNOTATE = 'napari/layers/annotate'
 
+    LAYERS_TRANSFORM = 'napari/layers/transform'
+    LAYERS_FILTER = 'napari/layers/filter'
     LAYERS_MEASURE = 'napari/layers/measure'
 
     LAYERS_REGISTER = 'napari/layers/register'
@@ -63,13 +62,11 @@ class MenuId(StrEnum):
         _contributables = {
             cls.FILE_IO_UTILITIES,
             cls.FILE_ACQUIRE,
-            cls.MENUBAR_LAYERS,
             cls.LAYERS_VISUALIZE,
             cls.FILE_NEW_LAYER,
-            cls.LAYERS_EDIT,
-            cls.LAYERS_EDIT_ANNOTATE,
-            cls.LAYERS_EDIT_FILTER,
-            cls.LAYERS_EDIT_TRANSFORM,
+            cls.LAYERS_ANNOTATE,
+            cls.LAYERS_FILTER,
+            cls.LAYERS_TRANSFORM,
             cls.LAYERS_MEASURE,
             cls.LAYERS_REGISTER,
             cls.LAYERS_PROJECT,
@@ -100,9 +97,8 @@ class MenuGroup:
         LINK = '9_link'
 
     class LAYERS:
-        EXISTING = '2_existing'
-        GENERATE = '3_generate'
-        PLUGINS = '4_plugins'
+        GEOMETRY = '1_geometry'
+        GENERATE = '2_generate'
 
 
 def is_menu_contributable(menu_id: str) -> bool:

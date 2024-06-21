@@ -91,15 +91,31 @@ SUBMENUS = [
         SubmenuItem(
             submenu=MenuId.LAYERS_VISUALIZE,
             title=trans._('Visualize'),
-            group=MenuGroup.LAYERS.EXISTING,
+            group=MenuGroup.NAVIGATION,
         ),
     ),
     (
         MenuId.MENUBAR_LAYERS,
         SubmenuItem(
-            submenu=MenuId.LAYERS_EDIT,
-            title=trans._('Edit'),
-            group=MenuGroup.LAYERS.EXISTING,
+            submenu=MenuId.LAYERS_ANNOTATE,
+            title=trans._('Annotate'),
+            group=MenuGroup.NAVIGATION,
+        ),
+    ),
+    (
+        MenuId.MENUBAR_LAYERS,
+        SubmenuItem(
+            submenu=MenuId.LAYERS_TRANSFORM,
+            title=trans._('Transform'),
+            group=MenuGroup.LAYERS.GEOMETRY,
+        ),
+    ),
+    (
+        MenuId.MENUBAR_LAYERS,
+        SubmenuItem(
+            submenu=MenuId.LAYERS_FILTER,
+            title=trans._('Filter'),
+            group=MenuGroup.LAYERS.GEOMETRY,
         ),
     ),
     (
@@ -107,7 +123,7 @@ SUBMENUS = [
         SubmenuItem(
             submenu=MenuId.LAYERS_MEASURE,
             title=trans._('Measure'),
-            group=MenuGroup.LAYERS.EXISTING,
+            group=MenuGroup.LAYERS.GEOMETRY,
         ),
     ),
     (
@@ -148,27 +164,6 @@ SUBMENUS = [
             submenu=MenuId.LAYERS_CLASSIFY,
             title=trans._('Classify'),
             group=MenuGroup.LAYERS.GENERATE,
-        ),
-    ),
-    (
-        MenuId.LAYERS_EDIT,
-        SubmenuItem(
-            submenu=MenuId.LAYERS_EDIT_ANNOTATE,
-            title=trans._('Annotate'),
-        ),
-    ),
-    (
-        MenuId.LAYERS_EDIT,
-        SubmenuItem(
-            submenu=MenuId.LAYERS_EDIT_FILTER,
-            title=trans._('Filter'),
-        ),
-    ),
-    (
-        MenuId.LAYERS_EDIT,
-        SubmenuItem(
-            submenu=MenuId.LAYERS_EDIT_TRANSFORM,
-            title=trans._('Transform'),
         ),
     ),
 ]
