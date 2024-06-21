@@ -144,7 +144,7 @@ jobs:
           shell: bash
           run: |
             echo ${{ env.MAIN }}
-            python -m tox run --installpkg dist/${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
+            python -m tox run --installpkg ${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
             rm -r .tox
         env:
           BACKEND: ${{ env.MAIN }}
@@ -157,7 +157,7 @@ jobs:
         with:
           shell: bash
           run: |
-            python -m tox run --installpkg dist/${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
+            python -m tox run --installpkg ${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
             rm -r .tox
         env:
           BACKEND: ${{ env.SECOND }}
@@ -170,7 +170,7 @@ jobs:
         with:
           shell: bash
           run: |
-            python -m tox run --installpkg dist/${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
+            python -m tox run --installpkg ${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
             rm -r .tox
         env:
           BACKEND: ${{ env.THIRD }}
@@ -183,7 +183,7 @@ jobs:
         with:
           shell: bash
           run: |
-            python -m tox run --installpkg dist/${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
+            python -m tox run --installpkg ${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
             rm -r .tox
         env:
           BACKEND: ${{ env.FOURTH }}
