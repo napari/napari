@@ -48,12 +48,25 @@ def _get_layer_from_widget(gui: ComboBox, viewer: Viewer) -> Optional[Layer]:
         layer passed as input to the function wrapped into magicgui.
 
     """
+    import napari.types
     from napari.layers import Layer
+
+    # this is workaround to work with python 3.9 as NewType do not contain
+    # information about mmodule
+    layer_types = {
+        napari.types.ImageData,
+        napari.types.LabelsData,
+        napari.types.PointsData,
+        napari.types.ShapesData,
+        napari.types.SurfaceData,
+        napari.types.TracksData,
+        napari.types.VectorsData,
+    }
 
     if isinstance(gui.value, Layer):
         return gui.value
 
-    if gui.annotation is None or gui.annotation.__module__ != 'napari.types':
+    if gui.annotation not in layer_types:
         return None
 
     layer_name = gui.current_choice[: -len(' (data)')]
