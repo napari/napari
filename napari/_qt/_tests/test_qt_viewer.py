@@ -1078,6 +1078,17 @@ def test_more_than_uint16_colors(qt_viewer):
         )
 
 
+def test_points_2d_to_3d(make_napari_viewer):
+    """See https://github.com/napari/napari/issues/6925"""
+    # this requires a full viewer cause some issues are caused only by
+    # qt processing events
+    viewer = make_napari_viewer(ndisplay=2, show=True)
+    viewer.add_points()
+    QApplication.processEvents()
+    viewer.dims.ndisplay = 3
+    QApplication.processEvents()
+
+
 @skip_local_popups
 def test_scale_bar_colored(qt_viewer, qtbot):
     viewer = qt_viewer.viewer
