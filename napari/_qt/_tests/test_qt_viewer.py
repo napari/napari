@@ -1095,7 +1095,7 @@ def test_scale_bar_colored(qt_viewer, qtbot):
     scale_bar = viewer.scale_bar
 
     # Add black image
-    data = np.zeros((5, 5))
+    data = np.zeros((2, 2))
     viewer.add_image(data)
 
     # Check scale bar is not visible (all the canvas is black - `[0, 0, 0, 255]`)
@@ -1139,7 +1139,7 @@ def test_scale_bar_ticks(qt_viewer, qtbot):
     scale_bar = viewer.scale_bar
 
     # Add black image
-    data = np.zeros((5, 5))
+    data = np.zeros((2, 2))
     viewer.add_image(data)
 
     # Check scale bar is not visible (all the canvas is black - `[0, 0, 0, 255]`)
