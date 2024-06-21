@@ -1166,7 +1166,12 @@ def test_scale_bar_ticks(qt_viewer, qtbot):
     def check_no_ticks_scale_bar():
         screenshot = qt_viewer.screenshot(flash=False)
         assert np.all(screenshot == [1, 1, 1, 255], axis=-1).any()
-        assert not np.array_equal(screenshot, screenshot_with_ticks)
+        npt.assert_raises(
+            AssertionError,
+            npt.assert_array_equal,
+            screenshot,
+            screenshot_with_ticks,
+        )
 
     scale_bar.ticks = False
     qtbot.waitUntil(check_no_ticks_scale_bar)
@@ -1175,7 +1180,7 @@ def test_scale_bar_ticks(qt_viewer, qtbot):
     def check_ticks_scale_bar():
         screenshot = qt_viewer.screenshot(flash=False)
         assert np.all(screenshot == [1, 1, 1, 255], axis=-1).any()
-        assert np.array_equal(screenshot, screenshot_with_ticks)
+        npt.assert_array_equal(screenshot, screenshot_with_ticks)
 
     scale_bar.ticks = True
     qtbot.waitUntil(check_ticks_scale_bar)
