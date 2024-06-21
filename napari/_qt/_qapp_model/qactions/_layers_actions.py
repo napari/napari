@@ -1,7 +1,6 @@
 from app_model.types import Action, SubmenuItem
 
 from napari._app_model.constants import MenuGroup, MenuId
-from napari._qt.qt_viewer import QtViewer
 from napari.utils.translations import trans
 
 LAYERS_SUBMENUS = [
@@ -19,6 +18,22 @@ LAYERS_SUBMENUS = [
             submenu=MenuId.LAYERS_ANNOTATE,
             title=trans._('Annotate'),
             group=MenuGroup.NAVIGATION,
+        ),
+    ),
+    (
+        MenuId.MENUBAR_LAYERS,
+        SubmenuItem(
+            submenu=MenuId.LAYERS_DATA,
+            title=trans._('Data'),
+            group=MenuGroup.LAYERS.CONVERT,
+        ),
+    ),
+    (
+        MenuId.MENUBAR_LAYERS,
+        SubmenuItem(
+            submenu=MenuId.LAYERS_LAYER_TYPE,
+            title=trans._('Layer Type'),
+            group=MenuGroup.LAYERS.CONVERT,
         ),
     ),
     (
@@ -87,17 +102,5 @@ LAYERS_SUBMENUS = [
     ),
 ]
 
-
-def new_labels(qt_viewer: QtViewer):
-    viewer = qt_viewer.viewer
-    viewer._new_labels()
-
-
-LAYERS_ACTIONS: list[Action] = [
-    Action(
-        id='napari.layers.new_labels',
-        title=trans._('Labels'),
-        callback=new_labels,
-        menus=[{'id': MenuId.FILE_NEW_LAYER, 'group': MenuGroup.NAVIGATION}],
-    ),
-]
+# placeholder, add actions here!
+LAYERS_ACTIONS: list[Action] = []

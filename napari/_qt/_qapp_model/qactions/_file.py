@@ -70,6 +70,13 @@ FILE_SUBMENUS = [
 
 
 # File actions
+
+
+def new_labels(qt_viewer: QtViewer):
+    viewer = qt_viewer.viewer
+    viewer._new_labels()
+
+
 def _open_files_with_plugin(qt_viewer: QtViewer):
     qt_viewer._open_files_dialog(choose_plugin=True)
 
@@ -99,6 +106,12 @@ def _close_app(window: Window):
 
 
 Q_FILE_ACTIONS: list[Action] = [
+    Action(
+        id='napari.window.file.new_layer.new_labels',
+        title=trans._('Labels'),
+        callback=new_labels,
+        menus=[{'id': MenuId.FILE_NEW_LAYER, 'group': MenuGroup.NAVIGATION}],
+    ),
     Action(
         id='napari.window.file._image_from_clipboard',
         title=trans._('New Image from Clipboard'),

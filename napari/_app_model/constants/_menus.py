@@ -32,6 +32,9 @@ class MenuId(StrEnum):
     LAYERS_VISUALIZE = 'napari/layers/visualize'
     LAYERS_ANNOTATE = 'napari/layers/annotate'
 
+    LAYERS_DATA = 'napari/layers/data'
+    LAYERS_LAYER_TYPE = 'napari/layers/layer_type'
+
     LAYERS_TRANSFORM = 'napari/layers/transform'
     LAYERS_FILTER = 'napari/layers/filter'
     LAYERS_MEASURE = 'napari/layers/measure'
@@ -66,9 +69,11 @@ class MenuId(StrEnum):
         _contributables = {
             cls.FILE_IO_UTILITIES,
             cls.FILE_ACQUIRE,
-            cls.LAYERS_VISUALIZE,
             cls.FILE_NEW_LAYER,
+            cls.LAYERS_VISUALIZE,
             cls.LAYERS_ANNOTATE,
+            cls.LAYERS_DATA,
+            cls.LAYERS_LAYER_TYPE,
             cls.LAYERS_FILTER,
             cls.LAYERS_TRANSFORM,
             cls.LAYERS_MEASURE,
@@ -101,8 +106,9 @@ class MenuGroup:
         LINK = '9_link'
 
     class LAYERS:
-        GEOMETRY = '1_geometry'
-        GENERATE = '2_generate'
+        CONVERT = '1_convert'
+        GEOMETRY = '2_geometry'
+        GENERATE = '3_generate'
 
 
 def is_menu_contributable(menu_id: str) -> bool:
