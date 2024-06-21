@@ -36,9 +36,9 @@ class MenuId(StrEnum):
     LAYERS_LAYER_TYPE = 'napari/layers/layer_type'
 
     LAYERS_TRANSFORM = 'napari/layers/transform'
-    LAYERS_FILTER = 'napari/layers/filter'
     LAYERS_MEASURE = 'napari/layers/measure'
 
+    LAYERS_FILTER = 'napari/layers/filter'
     LAYERS_REGISTER = 'napari/layers/register'
     LAYERS_PROJECT = 'napari/layers/project'
     LAYERS_SEGMENT = 'napari/layers/segment'

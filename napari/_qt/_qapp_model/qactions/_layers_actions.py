@@ -47,17 +47,17 @@ LAYERS_SUBMENUS = [
     (
         MenuId.MENUBAR_LAYERS,
         SubmenuItem(
-            submenu=MenuId.LAYERS_FILTER,
-            title=trans._('Filter'),
+            submenu=MenuId.LAYERS_MEASURE,
+            title=trans._('Measure'),
             group=MenuGroup.LAYERS.GEOMETRY,
         ),
     ),
     (
         MenuId.MENUBAR_LAYERS,
         SubmenuItem(
-            submenu=MenuId.LAYERS_MEASURE,
-            title=trans._('Measure'),
-            group=MenuGroup.LAYERS.GEOMETRY,
+            submenu=MenuId.LAYERS_FILTER,
+            title=trans._('Filter'),
+            group=MenuGroup.LAYERS.GENERATE,
         ),
     ),
     (
