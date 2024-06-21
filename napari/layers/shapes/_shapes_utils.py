@@ -301,8 +301,11 @@ def point_to_lines(point, lines):
     norm_lines[reject] = 1
     unit_lines = lines_vectors / norm_lines
 
-    # calculate distance to line
-    line_dist = abs(np.cross(unit_lines, point_vectors))
+    # calculate distance to line (2D cross-product)
+    line_dist = abs(
+        unit_lines[..., 0] * point_vectors[..., 1]
+        - unit_lines[..., 1] * point_vectors[..., 0]
+    )
 
     # calculate scale
     line_loc = (unit_lines * point_vectors).sum(axis=1) / norm_lines.squeeze()

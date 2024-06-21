@@ -41,10 +41,14 @@ class MenuId(StrEnum):
     LAYERS_SEGMENT = 'napari/layers/segment'
     LAYERS_TRACK = 'napari/layers/track'
     LAYERS_CLASSIFY = 'napari/layers/classify'
+    MENUBAR_WINDOW = 'napari/window'
 
     MENUBAR_PLUGINS = 'napari/plugins'
 
     MENUBAR_HELP = 'napari/help'
+
+    MENUBAR_DEBUG = 'napari/debug'
+    DEBUG_PERFORMANCE = 'napari/debug/performance_trace'
 
     LAYERLIST_CONTEXT = 'napari/layers/context'
     LAYERS_CONTEXT_CONVERT_DTYPE = 'napari/layers/context/convert_dtype'

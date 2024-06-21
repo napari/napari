@@ -11,6 +11,7 @@ from typing import (
 )
 
 import numpy as np
+from typing_extensions import Self
 
 from napari._pydantic_compat import Field, PrivateAttr, validator
 from napari.utils.color import ColorArray
@@ -198,7 +199,7 @@ class LabelColormapBase(Colormap):
         """Map input values to values for send to GPU."""
         raise NotImplementedError
 
-    def _cmap_without_selection(self) -> 'LabelColormapBase':
+    def _cmap_without_selection(self) -> Self:
         if self.use_selection:
             cmap = self.__class__(**self.dict())
             cmap.use_selection = False
@@ -637,10 +638,12 @@ class DirectLabelColormap(LabelColormapBase):
             key_type=getattr(types, data_dtype.name),
             value_type=getattr(types, target_type.name),
         )
+        iinfo = np.iinfo(data_dtype)
         for k, v in self._label_mapping_and_color_dict[0].items():
-            if k is None:
-                continue
-            dkt[data_dtype.type(k)] = target_type.type(v)
+            # ignore values outside the data dtype, since they will never need
+            # to be colormapped from that dtype.
+            if k is not None and iinfo.min <= k <= iinfo.max:
+                dkt[data_dtype.type(k)] = target_type.type(v)
 
         self._cache_other[key] = dkt
 

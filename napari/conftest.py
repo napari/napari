@@ -39,7 +39,6 @@ from itertools import chain
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
-from unittest.mock import patch
 from weakref import WeakKeyDictionary
 
 from npe2 import PackageMetadata
@@ -266,18 +265,6 @@ def napari_svg_name():
     return 'napari-svg'
 
 
-@pytest.fixture(autouse=True, scope='session')
-def _no_error_reports():
-    """Turn off napari_error_reporter if it's installed."""
-    try:
-        p1 = patch('napari_error_reporter.capture_exception')
-        p2 = patch('napari_error_reporter.install_error_reporter')
-        with p1, p2:
-            yield
-    except (ModuleNotFoundError, AttributeError):
-        yield
-
-
 @pytest.fixture(autouse=True)
 def npe2pm_(npe2pm, monkeypatch):
     """Autouse npe2 & npe1 mock plugin managers with no registered plugins."""
@@ -296,7 +283,7 @@ def builtins(npe2pm_: TestPluginManager):
 @pytest.fixture()
 def tmp_plugin(npe2pm_: TestPluginManager):
     with npe2pm_.tmp_plugin() as plugin:
-        plugin.manifest.package_metadata = PackageMetadata(
+        plugin.manifest.package_metadata = PackageMetadata(  # type: ignore[call-arg]
             version='0.1.0', name='test'
         )
         plugin.manifest.display_name = 'Temp Plugin'

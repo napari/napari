@@ -8,7 +8,7 @@ import os.path
 import warnings
 from abc import ABC, ABCMeta, abstractmethod
 from collections import defaultdict
-from collections.abc import Generator
+from collections.abc import Generator, Sequence
 from contextlib import contextmanager
 from functools import cached_property
 from typing import (
@@ -22,6 +22,7 @@ from typing import (
 
 import magicgui as mgui
 import numpy as np
+import pint
 from npe2 import plugin_manager as pm
 
 from napari.layers.base._base_constants import (
@@ -129,6 +130,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         the final column is a length N translation vector and a 1 or a napari
         `Affine` transform object. Applied as an extra transform on top of the
         provided scale, rotate, and shear values.
+    axis_labels : tuple of str, optional
+        Dimension names of the layer data.
+        If not provided, axis_labels will be set to (..., 'axis -2', 'axis -1').
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -168,6 +172,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         ones along the main diagonal.
     translate : tuple of float
         Translation values for the layer.
+    units : tuple of str or pint.Unit, optional
+        Units of the layer data in world coordinates.
+        If not provided, the default units are assumed to be pixels.
     visible : bool
         Whether the layer visual is currently being displayed.
 
@@ -179,6 +186,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         the final column is a length N translation vector and a 1 or a napari
         `Affine` transform object. Applied as an extra transform on top of the
         provided scale, rotate, and shear values.
+    axis_labels : tuple of str
+        Dimension names of the layer data.
     blending : Blending
         Determines how RGB and alpha values get mixed.
 
@@ -266,6 +275,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         Array of thumbnail data for the layer.
     visible : bool
         Whether the layer visual is currently being displayed.
+    units: tuple of pint.Unit
+        Units of the layer data in world coordinates.
     z_index : int
         Depth of the layer visual relative to other visuals in the scenecanvas.
 
@@ -310,6 +321,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         ndim,
         *,
         affine=None,
+        axis_labels=None,
         blending='translucent',
         cache=True,  # this should move to future "data source" object.
         experimental_clipping_planes=None,
@@ -323,6 +335,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         scale=None,
         shear=None,
         translate=None,
+        units=None,
         visible=True,
     ):
         super().__init__()
@@ -363,7 +376,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._mode = self._modeclass('pan_zoom')
         self._projection_mode = self._projectionclass(str(projection_mode))
         self._refresh_blocked = False
-
         self._ndim = ndim
 
         self._slice_input = _SliceInput(
@@ -399,10 +411,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 CompositeAffine(
                     scale,
                     translate,
+                    axis_labels=axis_labels,
                     rotate=rotate,
                     shear=shear,
                     ndim=ndim,
                     name='data2physical',
+                    units=units,
                 ),
                 coerce_affine(affine, ndim=ndim, name='physical2world'),
                 Affine(np.ones(ndim), np.zeros(ndim), name='world2grid'),
@@ -430,21 +444,33 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         self.events = EmitterGroup(
             source=self,
-            refresh=Event,
-            set_data=Event,
-            blending=Event,
-            opacity=Event,
-            visible=Event,
-            scale=Event,
-            translate=Event,
-            rotate=Event,
-            shear=Event,
-            affine=Event,
+            axis_labels=Event,
             data=Event,
-            name=Event,
-            thumbnail=Event,
-            status=Event,
+            affine=Event,
+            blending=Event,
+            cursor=Event,
+            cursor_size=Event,
+            editable=Event,
+            extent=Event,
             help=Event,
+            loaded=Event,
+            mode=Event,
+            mouse_pan=Event,
+            mouse_zoom=Event,
+            name=Event,
+            opacity=Event,
+            projection_mode=Event,
+            refresh=Event,
+            reload=Event,
+            rotate=Event,
+            scale=Event,
+            set_data=Event,
+            shear=Event,
+            status=Event,
+            thumbnail=Event,
+            translate=Event,
+            units=Event,
+            visible=Event,
             interactive=WarningEmitter(
                 trans._(
                     'layer.events.interactive is deprecated since 0.4.18 and will be removed in 0.6.0. Please use layer.events.mouse_pan and layer.events.mouse_zoom',
@@ -452,18 +478,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 ),
                 type_name='interactive',
             ),
-            mouse_pan=Event,
-            mouse_zoom=Event,
-            cursor=Event,
-            cursor_size=Event,
-            editable=Event,
-            loaded=Event,
-            reload=Event,
-            extent=Event,
             _extent_augmented=Event,
             _overlays=Event,
-            mode=Event,
-            projection_mode=Event,
         )
         self.name = name
         self.mode = mode
@@ -749,6 +765,32 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         """Executes side-effects on this layer related to changes of the editable state."""
 
     @property
+    def axis_labels(self) -> tuple[str, ...]:
+        """tuple of axis labels for the layer."""
+        return self._transforms['data2physical'].axis_labels
+
+    @axis_labels.setter
+    def axis_labels(self, axis_labels: Optional[Sequence[str]]) -> None:
+        prev = self._transforms['data2physical'].axis_labels
+        # mypy bug https://github.com/python/mypy/issues/3004
+        self._transforms['data2physical'].axis_labels = axis_labels  # type: ignore[assignment]
+        if self._transforms['data2physical'].axis_labels != prev:
+            self.events.axis_labels()
+
+    @property
+    def units(self) -> tuple[pint.Unit, ...]:
+        """List of units for the layer."""
+        return self._transforms['data2physical'].units
+
+    @units.setter
+    def units(self, units: Optional[Sequence[pint.Unit]]) -> None:
+        prev = self.units
+        # mypy bug https://github.com/python/mypy/issues/3004
+        self._transforms['data2physical'].units = units  # type: ignore[assignment]
+        if self.units != prev:
+            self.events.units()
+
+    @property
     def scale(self) -> npt.NDArray:
         """array: Anisotropy factors to scale data into world coordinates."""
         return self._transforms['data2physical'].scale
@@ -992,20 +1034,22 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             Dictionary of attributes on base layer.
         """
         base_dict = {
-            'name': self.name,
-            'metadata': self.metadata,
-            'scale': list(self.scale),
-            'translate': list(self.translate),
-            'rotate': [list(r) for r in self.rotate],
-            'shear': list(self.shear),
             'affine': self.affine.affine_matrix,
-            'opacity': self.opacity,
+            'axis_labels': self.axis_labels,
             'blending': self.blending,
-            'visible': self.visible,
             'experimental_clipping_planes': [
                 plane.dict() for plane in self.experimental_clipping_planes
             ],
+            'metadata': self.metadata,
+            'name': self.name,
+            'opacity': self.opacity,
             'projection_mode': self.projection_mode,
+            'rotate': [list(r) for r in self.rotate],
+            'scale': list(self.scale),
+            'shear': list(self.shear),
+            'translate': list(self.translate),
+            'units': self.units,
+            'visible': self.visible,
         }
         return base_dict
 
@@ -2194,7 +2238,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         try:
             return Cls(data, **(meta or {}))
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             if 'unexpected keyword argument' not in str(exc):
                 raise
 

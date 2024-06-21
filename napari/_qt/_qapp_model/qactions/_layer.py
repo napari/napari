@@ -1,3 +1,5 @@
+"""Qt 'Layer' menu Actions."""
+
 from __future__ import annotations
 
 import json
@@ -10,6 +12,7 @@ from qtpy.QtCore import QMimeData
 from qtpy.QtWidgets import QApplication
 
 from napari._app_model.constants import MenuGroup, MenuId
+from napari._app_model.context import LayerListSelectionContextKeys as LLSCK
 from napari.components import LayerList
 from napari.layers import Layer
 from napari.utils.notifications import show_warning
@@ -141,36 +144,42 @@ Q_LAYER_ACTIONS = [
         title=trans._('Copy all to clipboard'),
         callback=_copy_spatial_to_clipboard,
         menus=[{'id': MenuId.LAYERS_CONTEXT_COPY_SPATIAL}],
+        enablement=(LLSCK.num_selected_layers == 1),
     ),
     Action(
         id='napari.layer.copy_affine_to_clipboard',
         title=trans._('Copy affine to clipboard'),
         callback=_copy_affine_to_clipboard,
         menus=[{'id': MenuId.LAYERS_CONTEXT_COPY_SPATIAL}],
+        enablement=(LLSCK.num_selected_layers == 1),
     ),
     Action(
         id='napari.layer.copy_rotate_to_clipboard',
         title=trans._('Copy rotate to clipboard'),
         callback=_copy_rotate_to_clipboard,
         menus=[{'id': MenuId.LAYERS_CONTEXT_COPY_SPATIAL}],
+        enablement=(LLSCK.num_selected_layers == 1),
     ),
     Action(
         id='napari.layer.copy_scale_to_clipboard',
         title=trans._('Copy scale to clipboard'),
         callback=_copy_scale_to_clipboard,
         menus=[{'id': MenuId.LAYERS_CONTEXT_COPY_SPATIAL}],
+        enablement=(LLSCK.num_selected_layers == 1),
     ),
     Action(
         id='napari.layer.copy_shear_to_clipboard',
         title=trans._('Copy shear to clipboard'),
         callback=_copy_shear_to_clipboard,
         menus=[{'id': MenuId.LAYERS_CONTEXT_COPY_SPATIAL}],
+        enablement=(LLSCK.num_selected_layers == 1),
     ),
     Action(
         id='napari.layer.copy_translate_to_clipboard',
         title=trans._('Copy translate to clipboard'),
         callback=_copy_translate_to_clipboard,
         menus=[{'id': MenuId.LAYERS_CONTEXT_COPY_SPATIAL}],
+        enablement=(LLSCK.num_selected_layers == 1),
     ),
     Action(
         id='napari.layer.paste_spatial_from_clipboard',
