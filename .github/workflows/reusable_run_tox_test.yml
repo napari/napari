@@ -68,6 +68,9 @@ jobs:
           name: wheel
           path: dist
 
+      - name: Set wheel path
+        run: echo "WHEEL_PATH=$(ls dist/*.whl)" >> $GITHUB_ENV
+
       - name: Set up Python ${{ inputs.python_version }}
         uses: actions/setup-python@v5
         with:
@@ -141,7 +144,7 @@ jobs:
           shell: bash
           run: |
             echo ${{ env.MAIN }}
-            python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl -- --basetemp=.pytest_tmp
+            python -m tox run --installpkg dist/${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
             rm -r .tox
         env:
           BACKEND: ${{ env.MAIN }}
@@ -154,7 +157,7 @@ jobs:
         with:
           shell: bash
           run: |
-            python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl -- --basetemp=.pytest_tmp
+            python -m tox run --installpkg dist/${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
             rm -r .tox
         env:
           BACKEND: ${{ env.SECOND }}
@@ -167,7 +170,7 @@ jobs:
         with:
           shell: bash
           run: |
-            python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl -- --basetemp=.pytest_tmp
+            python -m tox run --installpkg dist/${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
             rm -r .tox
         env:
           BACKEND: ${{ env.THIRD }}
@@ -180,7 +183,7 @@ jobs:
         with:
           shell: bash
           run: |
-            python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl -- --basetemp=.pytest_tmp
+            python -m tox run --installpkg dist/${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
             rm -r .tox
         env:
           BACKEND: ${{ env.FOURTH }}
