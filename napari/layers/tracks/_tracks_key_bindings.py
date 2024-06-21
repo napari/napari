@@ -6,22 +6,24 @@ from napari.layers.utils.layer_utils import (
 )
 from napari.utils.translations import trans
 
+from typing import Callable
 
-def register_tracks_action(description: str, repeatable: bool = False):
+
+def register_tracks_action(description: str, repeatable: bool = False) -> Callable[[Callable], Callable]:
     return register_layer_action(Tracks, description, repeatable)
 
 
-def register_tracks_mode_action(description):
+def register_tracks_mode_action(description: str) -> Callable[[Callable], Callable]:
     return register_layer_attr_action(Tracks, description, 'mode')
 
 
 @register_tracks_mode_action(trans._('Transform'))
-def activate_tracks_transform_mode(layer):
-    layer.mode = Mode.TRANSFORM
+def activate_tracks_transform_mode(layer: Tracks) -> None:
+    layer.mode = str(Mode.TRANSFORM)
 
 
 @register_tracks_mode_action(trans._('Pan/zoom'))
-def activate_tracks_pan_zoom_mode(layer: Tracks):
+def activate_tracks_pan_zoom_mode(layer: Tracks) -> None:
     layer.mode = str(Mode.PAN_ZOOM)
 
 
