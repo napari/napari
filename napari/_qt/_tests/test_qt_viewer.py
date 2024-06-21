@@ -1095,20 +1095,21 @@ def test_scale_bar_colored(qt_viewer, qtbot):
     scale_bar = viewer.scale_bar
 
     # Add black image
-    data = np.zeros((10, 10))
+    data = np.zeros((2, 2))
     viewer.add_image(data)
 
     # Check scale bar is not visible (all the canvas is black)
     def check_all_black():
         screenshot = qt_viewer.screenshot(flash=False)
-        assert np.all(screenshot == (0, 0, 0, 255), axis=-1).all()
+        assert np.all(screenshot == [0, 0, 0, 255], axis=-1).all()
 
     qtbot.waitUntil(check_all_black)
 
     # Check scale bar is visible (canvas has white `(1, 1, 1, 255)` in it)
     def check_white_scale_bar():
         screenshot = qt_viewer.screenshot(flash=False)
-        assert np.all(screenshot == (1, 1, 1, 255), axis=-1).any()
+        assert not np.all(screenshot == [0, 0, 0, 255], axis=-1).all()
+        assert np.all(screenshot == [1, 1, 1, 255], axis=-1).any()
 
     scale_bar.visible = True
     qtbot.waitUntil(check_white_scale_bar)
@@ -1116,8 +1117,8 @@ def test_scale_bar_colored(qt_viewer, qtbot):
     # Check scale bar is colored (canvas has fuchsia `(1, 0, 1, 255)` and not white in it)
     def check_colored_scale_bar():
         screenshot = qt_viewer.screenshot(flash=False)
-        assert not np.all(screenshot == (1, 1, 1, 255), axis=-1).any()
-        assert np.all(screenshot == (1, 0, 1, 255), axis=-1).any()
+        assert not np.all(screenshot == [1, 1, 1, 255], axis=-1).any()
+        assert np.all(screenshot == [1, 0, 1, 255], axis=-1).any()
 
     scale_bar.colored = True
     qtbot.waitUntil(check_colored_scale_bar)
@@ -1125,8 +1126,8 @@ def test_scale_bar_colored(qt_viewer, qtbot):
     # Check scale bar is still visible but not colored (canvas has white again but not fuchsia in it)
     def check_only_white_scale_bar():
         screenshot = qt_viewer.screenshot(flash=False)
-        assert np.all(screenshot == (1, 1, 1, 255), axis=-1).any()
-        assert not np.all(screenshot == (1, 0, 1, 255), axis=-1).any()
+        assert np.all(screenshot == [1, 1, 1, 255], axis=-1).any()
+        assert not np.all(screenshot == [1, 0, 1, 255], axis=-1).any()
 
     scale_bar.colored = False
     qtbot.waitUntil(check_only_white_scale_bar)
