@@ -88,13 +88,13 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         position = self.overlay.position
 
         if position == CanvasPosition.TOP_LEFT:
-            transform = [self.x_offset, self.y_offset, 0, 0]
+            transform = [self.x_offset, 10 + self.y_offset, 0, 0]
         elif position == CanvasPosition.TOP_CENTER:
-            transform = [x_max / 2 - self.x_size / 2, self.y_offset, 0, 0]
+            transform = [x_max / 2 - self.x_size / 2, 10 + self.y_offset, 0, 0]
         elif position == CanvasPosition.TOP_RIGHT:
             transform = [
                 x_max - self.x_size - self.x_offset,
-                self.y_offset,
+                10 + self.y_offset,
                 0,
                 0,
             ]

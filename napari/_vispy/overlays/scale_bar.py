@@ -164,6 +164,10 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     def _on_text_change(self):
         """Update text information"""
         self.node.text.font_size = self.overlay.font_size
+        if 'top' in self.overlay.position:
+            # prevent the text from being cut off by shifting down
+            self.y_offset = 2 * self.overlay.font_size
+            self._on_position_change()
 
     def reset(self):
         super().reset()
