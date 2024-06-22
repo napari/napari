@@ -1,6 +1,7 @@
 import contextlib
 import sys
 import time
+from enum import Enum
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -81,8 +82,14 @@ def test_magicgui_add_layer_inheritance(make_napari_viewer):
     viewer = make_napari_viewer()
     viewer.add_image(np.random.rand(10, 10), scale=(2, 2), translate=(1, 1))
 
+    class SampleEnum(Enum):
+        A = 'A'
+        B = 'B'
+
     @magicgui
-    def add_data(data: Image, factor: float = 0.5) -> types.LabelsData:
+    def add_data(
+        data: Image, factor: float = 0.5, combo: SampleEnum = SampleEnum.A
+    ) -> types.LabelsData:
         return (data.data > factor).astype('uint8')
 
     viewer.window.add_dock_widget(add_data)
