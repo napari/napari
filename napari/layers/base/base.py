@@ -1478,7 +1478,16 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         finally:
             self._refresh_blocked = previous
 
-    def refresh(self, event: Optional[Event] = None) -> None:
+    def refresh(
+        self,
+        event: Optional[Event] = None,
+        *,
+        thumbnail=True,
+        slicing=True,
+        highlight=True,
+        extent=True,
+        force=False,
+    ):
         """Refresh all layer data based on current view slice."""
         if self._refresh_blocked:
             logger.debug('Layer.refresh blocked: %s', self)
@@ -1489,15 +1498,35 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             self.events.reload(layer=self)
         # Otherwise, slice immediately on the calling thread.
         else:
-            self._refresh_sync()
+            self._refresh_sync(
+                thumbnail=thumbnail,
+                slicing=slicing,
+                highlight=highlight,
+                extent=extent,
+                force=force,
+            )
 
-    def _refresh_sync(self, event: Optional[Event] = None) -> None:
+    def _refresh_sync(
+        self,
+        *,
+        thumbnail=False,
+        slicing=False,
+        highlight=False,
+        extent=False,
+        force=False,
+    ) -> None:
         logger.debug('Layer._refresh_sync: %s', self)
-        if self.visible:
-            self.set_view_slice()
-            self.events.set_data()
-            self._update_thumbnail()
-            self._set_highlight(force=True)
+        if self.visible or force:
+            if extent:
+                self._clear_extent()
+                self._clear_extent_augmented()
+            if slicing:
+                self.set_view_slice()
+                self.events.set_data()
+            if thumbnail:
+                self._update_thumbnail()
+            if highlight:
+                self._set_highlight(force=True)
 
     def world_to_data(self, position: npt.ArrayLike) -> npt.NDArray:
         """Convert from world coordinates to data coordinates.
