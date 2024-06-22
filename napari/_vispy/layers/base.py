@@ -232,11 +232,13 @@ class VispyBaseLayer(ABC, Generic[_L]):
             affine_offset[-1, : len(offset)] = offset[::-1]
             affine_matrix = affine_matrix @ affine_offset
             if self.layer.multiscale:
-                # Because of performance reason, for multiscale images
-                # we load only visible part of data to GPU.
-                # To place this part of data correctly we update transform,
-                # but this leads to incorrect placement of child nodes (e.g overlays).
-                # To fix this we need to update child layers transform.
+                # For performance reasons, when displaying multiscale images,
+                # only the part of the data that is visible on the canvas is
+                # sent as a texture to the GPU. This means that the texture
+                # gets an additional transform, to position the texture
+                # correctly offset from the origin of the full data. However,
+                # child nodes, which include overlays such as bounding boxes,
+                # should *not* receive this offset, so we undo it here:
                 child_offset = (
                     np.ones(offset_matrix.shape[1]) / 2
                     - self.layer.corner_pixels[0][dims_displayed][::-1]
