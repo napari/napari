@@ -730,6 +730,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         *,
         channel_axis=None,
         affine=None,
+        axis_labels=None,
         attenuation=0.05,
         blending=None,
         cache=True,
@@ -754,6 +755,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         scale=None,
         shear=None,
         translate=None,
+        units=None,
         visible=True,
     ) -> Union[Image, list[Image]]:
         """Add one or more Image layers to the layer list.
@@ -782,6 +784,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             the final column is a length N translation vector and a 1 or a
             napari `Affine` transform object. Applied as an extra transform on
             top of the provided scale, rotate, and shear values.
+        axis_labels : tuple of str
+            Dimension names of the layer data.
+            If not provided, axis_labels will be set to (..., 'axis -2', 'axis -1').
         attenuation : float or list of float
             Attenuation rate for attenuated maximum intensity projection.
         blending : str or list of str
@@ -868,6 +873,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             A vector of shear values for an upper triangular n-D shear matrix.
         translate : tuple of float or list of tuple of float
             Translation values for the layer.
+        units : tuple of str or pint.Unit, optional
+            Units of the layer data in world coordinates.
+            If not provided, the default units are assumed to be pixels.
         visible : bool or list of bool
             Whether the layer visual is currently being displayed.
 
@@ -890,6 +898,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # doing this here for IDE/console autocompletion in add_image function.
         kwargs = {
             'rgb': rgb,
+            'axis_labels': axis_labels,
             'colormap': colormap,
             'contrast_limits': contrast_limits,
             'gamma': gamma,
@@ -915,6 +924,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             'experimental_clipping_planes': experimental_clipping_planes,
             'custom_interpolation_kernel_2d': custom_interpolation_kernel_2d,
             'projection_mode': projection_mode,
+            'units': units,
         }
 
         # these arguments are *already* iterables in the single-channel case.
@@ -1286,7 +1296,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     layer_type=layer_type,
                 )
             # plugin failed
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:
                 raise ReaderPluginError(
                     trans._(
                         'Tried opening with {plugin}, but failed.',

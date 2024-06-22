@@ -11,7 +11,6 @@ import pandas as pd
 import pytest
 import xarray as xr
 import zarr
-from numpy.core.numerictypes import issubdtype
 from skimage import data as sk_data
 
 from napari._tests.utils import check_layer_world_data_extent
@@ -110,13 +109,13 @@ def test_bool_labels():
     """Test instantiating labels layer with bools"""
     data = np.zeros((10, 10), dtype=bool)
     layer = Labels(data)
-    assert issubdtype(layer.data.dtype, np.integer)
+    assert np.issubdtype(layer.data.dtype, np.integer)
 
     data0 = np.zeros((20, 20), dtype=bool)
     data1 = data0[::2, ::2].astype(np.int32)
     data = [data0, data1]
     layer = Labels(data)
-    assert all(issubdtype(d.dtype, np.integer) for d in layer.data)
+    assert all(np.issubdtype(d.dtype, np.integer) for d in layer.data)
 
 
 def test_changing_labels():
