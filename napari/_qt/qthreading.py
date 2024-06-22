@@ -321,9 +321,11 @@ _new_worker_qthread = _qthreading.new_worker_qthread
 
 
 def _add_worker_data(worker: FunctionWorker, return_type, source=None):
-    from napari._app_model.injection import _processors
+    from napari._qt._qapp_model.injection._qprocessors import (
+        _add_layer_data_to_viewer,
+    )
 
-    cb = _processors._add_layer_data_to_viewer
+    cb = _add_layer_data_to_viewer
     worker.signals.returned.connect(
         partial(cb, return_type=return_type, source=source)
     )
@@ -332,9 +334,11 @@ def _add_worker_data(worker: FunctionWorker, return_type, source=None):
 def _add_worker_data_from_tuple(
     worker: FunctionWorker, return_type, source=None
 ):
-    from napari._app_model.injection import _processors
+    from napari._qt._qapp_model.injection._qprocessors import (
+        _add_layer_data_tuples_to_viewer,
+    )
 
-    cb = _processors._add_layer_data_tuples_to_viewer
+    cb = _add_layer_data_tuples_to_viewer
     worker.signals.returned.connect(
         partial(cb, return_type=return_type, source=source)
     )
