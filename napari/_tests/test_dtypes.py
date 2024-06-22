@@ -12,7 +12,16 @@ dtypes = [
     np.dtype(np.int32),
     np.dtype(np.uint32),
     np.dtype(np.int64),
-    np.dtype(np.uint64),
+    pytest.param(
+        np.dtype(np.uint64),
+        # np.clip(np.array([0, 1]), 0, np.iinfo(np.uint64).max) fails because
+        # np.array([0, 1]) defaults to int64, and numpy 2.0.0 does not allow
+        # clip values outside the range of the dtype of the input array.
+        marks=pytest.mark.skipif(
+            not np.__version__.startswith('1'),
+            reason='Expected failure in numpy v2+',
+        ),
+    ),
     np.dtype(np.float16),
     np.dtype(np.float32),
     np.dtype(np.float64),
