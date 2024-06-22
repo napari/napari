@@ -82,8 +82,8 @@ def test_magicgui_add_layer_inheritance(make_napari_viewer):
     viewer.add_image(np.random.rand(10, 10), scale=(2, 2), translate=(1, 1))
 
     @magicgui
-    def add_data(data: Image) -> types.LabelsData:
-        return (data.data > 0.5).astype('uint8')
+    def add_data(data: Image, factor: float = 0.5) -> types.LabelsData:
+        return (data.data > factor).astype('uint8')
 
     viewer.window.add_dock_widget(add_data)
     add_data()

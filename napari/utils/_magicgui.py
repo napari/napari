@@ -73,7 +73,7 @@ def _get_layer_from_widget(gui: ComboBox, viewer: Viewer) -> Optional[Layer]:
     return viewer.layers[layer_name]
 
 
-def _get_layers_from_widget(gui: FunctionGui) -> list[Layer]:
+def _get_layers_from_widget(gui: FunctionGui, viewer: Viewer) -> list[Layer]:
     """Retrieve layers used as input to function wrapped into magicgui .
 
     Parameters
@@ -87,10 +87,6 @@ def _get_layers_from_widget(gui: FunctionGui) -> list[Layer]:
         list of layers passed as input to the function wrapped into magicgui.
 
     """
-    viewer = find_viewer_ancestor(gui.native)
-    if not viewer:
-        return []
-
     res = []
     for widg in gui:
         if isinstance(widg, ComboBox):
@@ -182,7 +178,7 @@ def add_layer_data_to_viewer(gui: FunctionGui, result: Any, return_type: type):
     if result is not None and (viewer := find_viewer_ancestor(gui)):
         meta = {}
         if isinstance(gui, FunctionGui):
-            layers = _get_layers_from_widget(gui)
+            layers = _get_layers_from_widget(gui, viewer)
             meta = _calc_affine_from_source_layers(result, layers)
 
         _add_layer_data_to_viewer(
