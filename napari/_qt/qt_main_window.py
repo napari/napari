@@ -1645,20 +1645,22 @@ class Window:
                 add_flash_animation(self._qt_window)
         return img
 
-    def export_figure(
-        self,
-        path=None,
-        scale=None,
-        flash=True,
-    ):
-        """Take currently displayed canvas, resets the view and create a screenshot without margins around the data.
+    def export_figure(self, path=None, scale=None, flash=True):
+        """Temporarily reset the view and create a screenshot without margins.
+
+        This function finds a tight boundary around the data, resets the view
+        around that boundary (and, when scale=1, such that 1 captured pixel is
+        equivalent to one data pixel), takes a screenshot, then restores the
+        previous zoom and canvas sizes.
 
         Parameters
         ----------
         path : str
             Filename for saving screenshot image.
         scale : float
-            Scale factor used to increase resolution of canvas for the screenshot. By default, the currently displayed resolution.
+            Scale factor used to increase resolution of canvas for the
+            screenshot. By default, the currently displayed resolution. A scale
+            of 1 corresponds to 1 data pixel per screenshot pixel.
             Only used if `canvas_only` is True.
         flash : bool
             Flag to indicate whether flash animation should be shown after
