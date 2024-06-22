@@ -187,11 +187,24 @@ def _project(ll: LayerList, axis: int = 0, mode: str = 'max') -> None:
     # before opening up to other layer types, this line should be updated.
     data = (getattr(np, mode)(layer.data, axis=axis, keepdims=False),)
 
-    # get the meta data of the layer, but without transforms
+    # Get the meta-data of the layer, but without transforms,
+    # the transforms are updated bellow as projection of transforms
+    # requires a bit more work than just copying them
+    # (e.g., the axis of the projection should be removed).
+    # It is done in `set_slice` method of `TransformChain`
     meta = {
         key: layer._get_base_state()[key]
         for key in layer._get_base_state()
-        if key not in ('scale', 'translate', 'rotate', 'shear', 'affine')
+        if key
+        not in (
+            'scale',
+            'translate',
+            'rotate',
+            'shear',
+            'affine',
+            'axis_labels',
+            'units',
+        )
     }
     meta.update(  # sourcery skip
         {
