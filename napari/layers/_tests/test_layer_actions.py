@@ -1,4 +1,5 @@
 import numpy as np
+import pint
 import pytest
 import zarr
 
@@ -16,6 +17,8 @@ from napari.layers._layer_actions import (
     _show_unselected,
     _toggle_visibility,
 )
+
+REG = pint.get_application_registry()
 
 
 def test_toggle_visibility():
@@ -162,13 +165,25 @@ def test_show_selected_layers():
 )
 def test_projections(mode):
     ll = LayerList()
-    ll.append(Image(np.random.rand(8, 8, 8)))
+    ll.append(
+        Image(
+            np.random.rand(7, 8, 8),
+            scale=(3, 2, 2),
+            translate=(10, 5, 5),
+            units=('nm', 'um', 'um'),
+            axis_labels=('z', 'y', 'x'),
+        )
+    )
     assert len(ll) == 1
     assert ll[-1].data.ndim == 3
     _project(ll, mode=mode)
     assert len(ll) == 2
     # because keepdims = False
     assert ll[-1].data.shape == (8, 8)
+    assert tuple(ll[-1].scale) == (2, 2)
+    assert tuple(ll[-1].translate) == (5, 5)
+    assert ll[-1].units == (REG.um, REG.um)
+    assert ll[-1].axis_labels == ('y', 'x')
 
 
 @pytest.mark.parametrize(

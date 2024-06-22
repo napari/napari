@@ -58,6 +58,9 @@ class Surface(IntensityVisualizationMixin, Layer):
         the final column is a length N translation vector and a 1 or a napari
         `Affine` transform object. Applied as an extra transform on top of the
         provided scale, rotate, and shear values.
+    axis_labels : tuple of str, optional
+        Dimension names of the layer data.
+        If not provided, axis_labels will be set to (..., 'axis -2', 'axis -1').
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -131,6 +134,9 @@ class Surface(IntensityVisualizationMixin, Layer):
         C may be 3 (RGB) or 4 (RGBA) channels for a color texture.
     translate : tuple of float
         Translation values for the layer
+    units : tuple of str or pint.Unit, optional
+        Units of the layer data in world coordinates.
+        If not provided, the default units are assumed to be pixels.
     vertex_colors: (N, C) or (K0, ..., KL, N, C) array of color values
         Take care that the (optional) L additional dimensions match those of
         vertex_values for proper slicing.
@@ -149,6 +155,8 @@ class Surface(IntensityVisualizationMixin, Layer):
         of the mesh triangles. The third element is the (K0, ..., KL, N)
         array of values used to color vertices where the additional L
         dimensions are used to color the same mesh with different values.
+    axis_labels : tuple of str
+        Dimension names of the layer data.
     vertices : (N, D) array
         Vertices of mesh triangles.
     faces : (M, 3) array of int
@@ -184,6 +192,8 @@ class Surface(IntensityVisualizationMixin, Layer):
         Whether and how to display the edges of the surface mesh with a wireframe.
     normals : SurfaceNormals
         Whether and how to display the face and vertex normals of the surface mesh.
+    units: tuple of pint.Unit
+        Units of the layer data in world coordinates.
 
 
     Notes
@@ -204,6 +214,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         data,
         *,
         affine=None,
+        axis_labels=None,
         blending='translucent',
         cache=True,
         colormap='gray',
@@ -224,6 +235,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         texcoords=None,
         texture=None,
         translate=None,
+        units=None,
         vertex_colors=None,
         visible=True,
         wireframe=None,
@@ -233,19 +245,21 @@ class Surface(IntensityVisualizationMixin, Layer):
         super().__init__(
             data,
             ndim,
-            name=name,
-            metadata=metadata,
-            scale=scale,
-            translate=translate,
-            rotate=rotate,
-            shear=shear,
             affine=affine,
-            opacity=opacity,
+            axis_labels=axis_labels,
             blending=blending,
-            visible=visible,
             cache=cache,
             experimental_clipping_planes=experimental_clipping_planes,
+            metadata=metadata,
+            name=name,
+            opacity=opacity,
             projection_mode=projection_mode,
+            rotate=rotate,
+            scale=scale,
+            shear=shear,
+            translate=translate,
+            units=units,
+            visible=visible,
         )
 
         self.events.add(

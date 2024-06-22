@@ -326,7 +326,7 @@ class _QtMainWindow(QMainWindow):
                         self.menuBar().hide()
             elif event.type() == QEvent.Type.Leave and source is self:
                 self.menuBar().hide()
-        return QMainWindow.eventFilter(self, source, event)
+        return super().eventFilter(source, event)
 
     def _load_window_settings(self):
         """
@@ -915,7 +915,7 @@ class Window:
         )
         self.main_menu.addMenu(self.plugins_menu)
         # debug menu (optional)
-        if perf.USE_PERFMON is not None:
+        if perf.perf_config is not None:
             self._debug_menu = build_qmodel_menu(
                 MenuId.MENUBAR_DEBUG,
                 title=trans._('&Debug'),

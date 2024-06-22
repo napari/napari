@@ -30,6 +30,9 @@ class Tracks(Layer):
         the final column is a length N translation vector and a 1 or a napari
         `Affine` transform object. Applied as an extra transform on top of the
         provided scale, rotate, and shear values.
+    axis_labels : tuple of str, optional
+        Dimension names of the layer data.
+        If not provided, axis_labels will be set to (..., 'axis -2', 'axis -1').
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -92,6 +95,9 @@ class Tracks(Layer):
         Width of the track tails in pixels.
     translate : tuple of float
         Translation values for the layer.
+    units : tuple of str or pint.Unit, optional
+        Units of the layer data in world coordinates.
+        If not provided, the default units are assumed to be pixels.
     visible : bool
         Whether the layer visual is currently being displayed.
     """
@@ -105,6 +111,7 @@ class Tracks(Layer):
         data,
         *,
         affine=None,
+        axis_labels=None,
         blending='additive',
         cache=True,
         color_by='track_id',
@@ -125,6 +132,7 @@ class Tracks(Layer):
         tail_length: int = 30,
         tail_width: int = 2,
         translate=None,
+        units=None,
         visible=True,
     ) -> None:
         # if not provided with any data, set up an empty layer in 2D+t
@@ -137,19 +145,21 @@ class Tracks(Layer):
         super().__init__(
             data,
             ndim,
-            name=name,
-            metadata=metadata,
-            scale=scale,
-            translate=translate,
-            rotate=rotate,
-            shear=shear,
             affine=affine,
-            opacity=opacity,
+            axis_labels=axis_labels,
             blending=blending,
-            visible=visible,
             cache=cache,
             experimental_clipping_planes=experimental_clipping_planes,
+            name=name,
+            metadata=metadata,
+            opacity=opacity,
             projection_mode=projection_mode,
+            rotate=rotate,
+            scale=scale,
+            shear=shear,
+            translate=translate,
+            units=units,
+            visible=visible,
         )
 
         self.events.add(
