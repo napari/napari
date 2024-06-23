@@ -1682,6 +1682,13 @@ class Window:
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
         """
+        if not isinstance(scale, float):
+            raise TypeError(
+                trans._(
+                    'Scale must be a float or an int.',
+                    deferred=True,
+                )
+            )
         img = QImg2array(
             self._screenshot(
                 scale=scale,
