@@ -1542,10 +1542,10 @@ class Window:
 
     def _screenshot(
         self,
-        size=None,
-        scale=None,
-        flash=True,
-        canvas_only=False,
+        size: Optional[tuple[int, int]] = None,
+        scale: Optional[float] = None,
+        flash: bool = True,
+        canvas_only: bool = False,
         fit_to_data_extent: bool = False,
     ) -> 'QImage':
         """Capture screenshot of the currently displayed viewer.
@@ -1555,10 +1555,10 @@ class Window:
         flash : bool
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
-        size : tuple (int, int)
+        size : Optional[int, int]
             Size (resolution height x width) of the screenshot. By default, the currently displayed size.
             Only used if `canvas_only` is True.
-        scale : float
+        scale : Optional[float]
             Scale factor used to increase resolution of canvas for the screenshot.
             By default, the currently displayed resolution.
             Only used if `canvas_only` is True.
@@ -1664,9 +1664,9 @@ class Window:
 
         Parameters
         ----------
-        path : str
+        path : Optional[str]
             Filename for saving screenshot image.
-        scale : float
+        scale : Optional[float]
             Scale factor used to increase resolution of canvas for the
             screenshot. By default, the currently displayed resolution. A scale
             of 1 corresponds to 1 data pixel per screenshot pixel if all displayed

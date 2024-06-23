@@ -108,9 +108,9 @@ class Viewer(ViewerModel):
 
         Parameters
         ----------
-        path : str
+        path : Optional[str]
             Filename for saving screenshot image.
-        scale : float
+        scale : Optional[float]
             Scale factor used to increase resolution of canvas for the
             screenshot. By default, the currently displayed resolution. A scale
             of 1 corresponds to 1 data pixel per screenshot pixel if all displayed
