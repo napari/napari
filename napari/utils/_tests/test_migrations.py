@@ -1,7 +1,7 @@
 import pytest
 
 from napari.utils.migrations import (
-    DeprecatedProperty,
+    DeprecatedParameter,
     DeprecatingDict,
     add_deprecated_property,
     deprecated_class_name,
@@ -90,7 +90,7 @@ def test_deprecated_class_name():
 def test_deprecating_dict_get_deprecated_key():
     d = DeprecatingDict({'a': 1, 'b': 2})
     d.deprecate(
-        DeprecatedProperty(
+        DeprecatedParameter(
             previous_name='c',
             new_name='a',
             version='v2.0',
@@ -105,7 +105,7 @@ def test_deprecating_dict_get_deprecated_key():
 def test_deprecating_dict_set_deprecated_key():
     d = DeprecatingDict({'a': 1, 'b': 2})
     d.deprecate(
-        DeprecatedProperty(
+        DeprecatedParameter(
             previous_name='c',
             new_name='a',
             version='v2.0',
@@ -120,7 +120,7 @@ def test_deprecating_dict_set_deprecated_key():
 def test_deprecating_dict_del_deprecated_key():
     d = DeprecatingDict({'a': 1, 'b': 2})
     d.deprecate(
-        DeprecatedProperty(
+        DeprecatedParameter(
             previous_name='c',
             new_name='a',
             version='v2.0',

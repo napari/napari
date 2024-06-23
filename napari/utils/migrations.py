@@ -8,8 +8,8 @@ from napari.utils.translations import trans
 _UNSET = object()
 
 
-class DeprecatedProperty(NamedTuple):
-    """Information about deprecated property."""
+class DeprecatedParameter(NamedTuple):
+    """Information about deprecated parameter."""
 
     previous_name: str
     new_name: str
@@ -62,7 +62,7 @@ def rename_argument(
             func._rename_argument = []
 
         func._rename_argument.append(
-            DeprecatedProperty(from_name, to_name, version, since_version)
+            DeprecatedParameter(from_name, to_name, version, since_version)
         )
 
         @wraps(func)
@@ -287,9 +287,9 @@ class DeprecatingDict(dict[str, Any]):
             return True
         return super().__contains__(key)
 
-    def deprecate(self, prop: DeprecatedProperty) -> None:
+    def deprecate(self, param: DeprecatedParameter) -> None:
         """Deprecates a key with a direct replacement using a corresponding message."""
-        self.deprecations[prop.previous_name] = (
-            self[prop.new_name],
-            prop.message(),
+        self.deprecations[param.previous_name] = (
+            self[param.new_name],
+            param.message(),
         )
