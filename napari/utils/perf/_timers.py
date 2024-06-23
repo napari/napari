@@ -1,16 +1,14 @@
 """PerfTimers class and global instance."""
 
 import contextlib
-import os
 from collections.abc import Generator
 from time import perf_counter_ns
 from typing import Optional, Union
 
+from napari.utils import perf
 from napari.utils.perf._event import PerfEvent
 from napari.utils.perf._stat import Stat
 from napari.utils.perf._trace_file import PerfTraceFile
-
-USE_PERFMON = os.getenv('NAPARI_PERFMON', '0') != '0'
 
 
 class PerfTimers:
@@ -310,7 +308,7 @@ def add_counter_event(name: str, **kwargs: float) -> None:
 
 timers: Union[DummyTimer, PerfTimers]
 
-if USE_PERFMON:
+if perf.perf_config is not None:
     timers = PerfTimers()
     perf_timer = block_timer
 
