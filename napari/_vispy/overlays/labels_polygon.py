@@ -199,9 +199,8 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
         ):
             return self._on_mouse_press(layer, event)
 
-        # Remove the latest 2 points as double click always follows a simple click
-        # and another point is reserved for the visualization purpose
-        self.overlay.points = self.overlay.points[:-2]
+        # Remove the last points from double click
+        self.overlay.points = self.overlay.points[:-1]
         self.overlay.add_polygon_to_labels(layer)
         return None
 
