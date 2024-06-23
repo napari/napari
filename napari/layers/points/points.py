@@ -60,7 +60,6 @@ from napari.utils.events.migrations import deprecation_warning_event
 from napari.utils.geometry import project_points_onto_plane, rotate_points
 from napari.utils.migrations import (
     DeprecatedProperty,
-    DeprecatingDict,
     add_deprecated_property,
     rename_argument,
 )
@@ -1513,10 +1512,6 @@ class Points(Layer):
                 'shown': self.shown,
             }
         )
-        state = DeprecatingDict(state)
-        for prop in self._deprecated_properties:
-            if prop.new_name in state:
-                state.deprecate(prop)
         return state
 
     @property

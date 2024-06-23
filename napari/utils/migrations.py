@@ -62,7 +62,7 @@ def rename_argument(
             func._rename_argument = []
 
         func._rename_argument.append(
-            (from_name, to_name, version, since_version)
+            DeprecatedProperty(from_name, to_name, version, since_version)
         )
 
         @wraps(func)

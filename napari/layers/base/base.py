@@ -61,6 +61,7 @@ from napari.utils.geometry import (
     intersect_line_with_axis_aligned_bounding_box_3d,
 )
 from napari.utils.key_bindings import KeymapProvider
+from napari.utils.migrations import DeprecatingDict
 from napari.utils.misc import StringEnum
 from napari.utils.mouse_bindings import MousemapProvider
 from napari.utils.naming import magic_name
@@ -1067,6 +1068,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     def as_layer_data_tuple(self):
         state = self._get_state()
         state.pop('data', None)
+        if hasattr(self.__init__, '_rename_argument'):
+            state = DeprecatingDict(state)
+            for element in self.__init__._rename_argument:
+                state.deprecate(element)
         return self.data, state, self._type_string
 
     @property
