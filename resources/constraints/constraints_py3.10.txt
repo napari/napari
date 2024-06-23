@@ -44,13 +44,13 @@ comm==0.2.2
     # via ipykernel
 contourpy==1.2.1
     # via matplotlib
-coverage==7.5.3
+coverage==7.5.4
     # via
     #   napari (napari_repo/pyproject.toml)
     #   pytest-cov
 cycler==0.12.1
     # via matplotlib
-dask==2024.6.0
+dask==2024.6.2
     # via napari (napari_repo/pyproject.toml)
 debugpy==1.8.1
     # via ipykernel
@@ -73,7 +73,7 @@ executing==2.0.1
     # via stack-data
 fasteners==0.19
     # via zarr
-filelock==3.15.1
+filelock==3.15.4
     # via
     #   torch
     #   triton
@@ -106,7 +106,7 @@ imageio==2.34.1
     #   scikit-image
 imagesize==1.4.1
     # via sphinx
-importlib-metadata==7.1.0
+importlib-metadata==7.2.0
     # via
     #   build
     #   dask
@@ -196,7 +196,7 @@ networkx==3.3
     # via
     #   scikit-image
     #   torch
-npe2==0.7.5
+npe2==0.7.6
     # via
     #   napari (napari_repo/pyproject.toml)
     #   napari-plugin-manager
@@ -291,7 +291,7 @@ pillow==10.3.0
     #   scikit-image
 pint==0.24
     # via napari (napari_repo/pyproject.toml)
-pip==24.0
+pip==24.1
     # via napari-plugin-manager
 platformdirs==4.2.2
     # via
@@ -310,7 +310,7 @@ pretend==1.0.9
     # via napari (napari_repo/pyproject.toml)
 prompt-toolkit==3.0.47
     # via ipython
-psutil==5.9.8
+psutil==6.0.0
     # via
     #   napari (napari_repo/pyproject.toml)
     #   ipykernel
@@ -356,7 +356,7 @@ pyopengl==3.1.6
     #   napari (napari_repo/pyproject.toml)
 pyparsing==3.1.2
     # via matplotlib
-pyperclip==1.8.2
+pyperclip==1.9.0
     # via mouseinfo
 pyproject-hooks==1.1.0
     # via build
@@ -460,7 +460,7 @@ rpds-py==0.18.1
     # via
     #   jsonschema
     #   referencing
-scikit-image==0.23.2
+scikit-image==0.24.0
     # via napari (napari_repo/pyproject.toml)
 scipy==1.13.1
     # via
@@ -508,11 +508,11 @@ sympy==1.12.1
     # via torch
 tabulate==0.9.0
     # via numpydoc
-tensorstore==0.1.62
+tensorstore==0.1.63
     # via
     #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari (napari_repo/pyproject.toml)
-tifffile==2024.5.22
+tifffile==2024.6.18
     # via
     #   napari (napari_repo/pyproject.toml)
     #   scikit-image
@@ -572,7 +572,7 @@ tzdata==2024.1
     # via pandas
 urllib3==2.2.2
     # via requests
-virtualenv==20.26.2
+virtualenv==20.26.3
     # via napari (napari_repo/pyproject.toml)
 vispy==0.14.3
     # via

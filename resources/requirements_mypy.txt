@@ -26,7 +26,7 @@ mypy==1.10.0
     # via -r napari_repo/resources/requirements_mypy.in
 mypy-extensions==1.0.0
     # via mypy
-npe2==0.7.5
+npe2==0.7.6
     # via -r napari_repo/resources/requirements_mypy.in
 numpy==2.0.0
     # via -r napari_repo/resources/requirements_mypy.in
@@ -81,7 +81,7 @@ typer==0.12.3
     # via npe2
 types-pyyaml==6.0.12.20240311
     # via -r napari_repo/resources/requirements_mypy.in
-types-requests==2.32.0.20240602
+types-requests==2.32.0.20240622
     # via -r napari_repo/resources/requirements_mypy.in
 types-setuptools==70.0.0.20240524
     # via -r napari_repo/resources/requirements_mypy.in
