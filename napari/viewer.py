@@ -90,9 +90,9 @@ class Viewer(ViewerModel):
 
     def export_figure(
         self,
-        path=None,
+        path: Optional[str] = None,
         *,
-        scale=None,
+        scale: Optional[float] = None,
         flash: bool = True,
     ):
         """Export an image of the full extent of the displayed layer data.
