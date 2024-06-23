@@ -269,7 +269,7 @@ def test_screenshot(make_napari_viewer):
     assert screenshot.ndim == 3
 
 
-def test_screenshot_fit_to_data_extent(make_napari_viewer):
+def test_export_figure(make_napari_viewer):
     viewer = make_napari_viewer()
 
     np.random.seed(0)
