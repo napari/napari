@@ -95,15 +95,26 @@ class Viewer(ViewerModel):
         scale=None,
         flash: bool = True,
     ):
-        """Take currently displayed canvas, resets the view and create a screenshot without margins around the data.
+        """Export an image of the full extent of the displayed layer data.
+
+        This function finds a tight boundary around the data, resets the view
+        around that boundary (and, when scale=1, such that 1 captured pixel is
+        equivalent to one data pixel), takes a screenshot, then restores the
+        previous zoom and canvas sizes. For example with one image layer with
+        an image of 256 x 256 pixels, with scale=1 the size of the resulting
+        figure will be 256 x 256 pixels. If the scale of the layer for both
+        dimensions is set to 0.5, it will be 128 x 128 pixels. Currently,
+        only works when 2 dimensions are displayed.
 
         Parameters
         ----------
         path : str
             Filename for saving screenshot image.
         scale : float
-            Scale factor used to increase resolution of canvas for the screenshot. By default, the currently displayed resolution.
-            Only used if `canvas_only` is True.
+            Scale factor used to increase resolution of canvas for the
+            screenshot. By default, the currently displayed resolution. A scale
+            of 1 corresponds to 1 data pixel per screenshot pixel if all displayed
+            layers have each displayed dimension set to a scale of 1.
         flash : bool
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
