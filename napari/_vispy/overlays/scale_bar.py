@@ -25,8 +25,8 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         )
         self.x_size = 150  # will be updated on zoom anyways
         # need to change from defaults because the anchor is in the center
-        self.y_offset = 30
-        self.y_size = -5
+        self.y_offset = 20
+        self.y_size = 5
 
         self.overlay.events.box.connect(self._on_box_change)
         self.overlay.events.box_color.connect(self._on_data_change)
@@ -125,7 +125,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.node.transform.scale = [scale, 1, 1, 1]
         self.node.text.text = f'{new_dim:~}'
         self.x_size = scale  # needed to offset properly
-        self._on_position_change()
+        super()._on_position_change()
 
     def _on_data_change(self):
         """Change color and data of scale bar and box."""
@@ -165,9 +165,15 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         """Update text information"""
         self.node.text.font_size = self.overlay.font_size
         if 'top' in self.overlay.position:
-            # prevent the text from being cut off by shifting down
-            self.y_offset = 10 + 2 * self.overlay.font_size
             self._on_position_change()
+
+    def _on_position_change(self, event=None):
+        # prevent the text from being cut off by shifting down
+        if 'top' in self.overlay.position:
+            self.y_offset = 10 + 2 * self.overlay.font_size
+        else:
+            self.y_offset = 20
+        super()._on_position_change()
 
     def reset(self):
         super().reset()
