@@ -134,23 +134,23 @@ class Viewer(ViewerModel):
 
     def screenshot(
         self,
-        path=None,
+        path: Optional[str] = None,
         *,
-        size=None,
-        scale=None,
-        canvas_only=True,
+        size: Optional[tuple[str, str]] = None,
+        scale: Optional[float] = None,
+        canvas_only: bool = True,
         flash: bool = True,
     ):
         """Take currently displayed screen and convert to an image array.
 
         Parameters
         ----------
-        path : str
+        path : Optional[str]
             Filename for saving screenshot image.
-        size : tuple (int, int)
+        size : Optional[tuple[str, str]]
             Size (resolution height x width) of the screenshot. By default, the currently displayed size.
             Only used if `canvas_only` is True.
-        scale : float
+        scale : Optional[float]
             Scale factor used to increase resolution of canvas for the screenshot. By default, the currently displayed resolution.
             Only used if `canvas_only` is True.
         canvas_only : bool
