@@ -377,7 +377,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             )
         return self.layers._extent_world_augmented[:, self.dims.displayed]
 
-    def reset_view(self, *, margin=0.05) -> None:
+    def reset_view(self, *, margin: float = 0.05) -> None:
         """Reset the camera view.
 
         Parameters
