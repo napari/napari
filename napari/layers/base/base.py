@@ -1034,11 +1034,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         Returns
         -------
-        DeprecatingDict
-            Dictionary of attributes on base layer that issues warning messages when
-            deprecated keys are accessed directly.
+        dict[str, Any]
+            Dictionary of attributes on base layer.
         """
-        return {
+        base_dict = {
             'affine': self.affine.affine_matrix,
             'axis_labels': self.axis_labels,
             'blending': self.blending,
@@ -1056,6 +1055,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             'units': self.units,
             'visible': self.visible,
         }
+        return base_dict
 
     @abstractmethod
     def _get_state(self) -> dict[str, Any]:

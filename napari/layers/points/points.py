@@ -58,11 +58,7 @@ from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
 from napari.utils.events.migrations import deprecation_warning_event
 from napari.utils.geometry import project_points_onto_plane, rotate_points
-from napari.utils.migrations import (
-    DeprecatedProperty,
-    add_deprecated_property,
-    rename_argument,
-)
+from napari.utils.migrations import add_deprecated_property, rename_argument
 from napari.utils.status_messages import generate_layer_coords_status
 from napari.utils.transforms import Affine
 from napari.utils.translations import trans
@@ -362,26 +358,6 @@ class Points(Layer):
     # If more points are present then they are randomly subsampled
     _max_points_thumbnail = 1024
 
-    _deprecated_properties: ClassVar[tuple[DeprecatedProperty, ...]] = tuple(
-        DeprecatedProperty(
-            previous_name=previous_name,
-            new_name=previous_name.replace('edge', 'border'),
-            since_version='0.5.0',
-            version='0.6.0',
-        )
-        for previous_name in (
-            'edge_width',
-            'edge_width_is_relative',
-            'current_edge_width',
-            'edge_color',
-            'edge_color_cycle',
-            'edge_colormap',
-            'edge_contrast_limits',
-            'current_edge_color',
-            'edge_color_mode',
-        )
-    )
-
     @rename_argument(
         'edge_width', 'border_width', since_version='0.5.0', version='0.6.0'
     )
@@ -646,11 +622,23 @@ class Points(Layer):
     @classmethod
     def _add_deprecated_properties(cls) -> None:
         """Adds deprecated properties to class."""
-        for prop in cls._deprecated_properties:
+        deprecated_properties = [
+            'edge_width',
+            'edge_width_is_relative',
+            'current_edge_width',
+            'edge_color',
+            'edge_color_cycle',
+            'edge_colormap',
+            'edge_contrast_limits',
+            'current_edge_color',
+            'edge_color_mode',
+        ]
+        for old_property in deprecated_properties:
+            new_property = old_property.replace('edge', 'border')
             add_deprecated_property(
                 cls,
-                prop.previous_name,
-                prop.new_name,
+                old_property,
+                new_property,
                 since_version='0.5.0',
                 version='0.6.0',
             )
