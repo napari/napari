@@ -44,3 +44,4 @@ jobs:
         with:
           fail_ci_if_error: true
           token: ${{ secrets.codecov_token }}
+          version: v0.6.0
