@@ -1645,7 +1645,12 @@ class Window:
                 add_flash_animation(self._qt_window)
         return img
 
-    def export_figure(self, path=None, scale=None, flash=True):
+    def export_figure(
+        self,
+        path: Optional[str] = None,
+        scale: Optional[float] = None,
+        flash=True,
+    ):
         """Export an image of the full extent of the displayed layer data.
 
         This function finds a tight boundary around the data, resets the view
