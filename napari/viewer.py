@@ -92,7 +92,7 @@ class Viewer(ViewerModel):
         self,
         path: Optional[str] = None,
         *,
-        scale: Optional[float] = None,
+        scale: float = 1,
         flash: bool = True,
     ):
         """Export an image of the full extent of the displayed layer data.
@@ -102,7 +102,7 @@ class Viewer(ViewerModel):
         equivalent to one data pixel), takes a screenshot, then restores the
         previous zoom and canvas sizes. For example with one image layer with
         an image of 256 x 256 pixels, with scale=1 the size of the resulting
-        figure will be 256 x 256 pixels. If the scale of the layer for both
+        figure will be 256 x 256 pixels. If layer.scale for both
         dimensions is set to 0.5, it will be 128 x 128 pixels. Currently,
         only works when 2 dimensions are displayed.
 
@@ -110,9 +110,9 @@ class Viewer(ViewerModel):
         ----------
         path : Optional[str]
             Filename for saving screenshot image.
-        scale : Optional[float]
+        scale : float
             Scale factor used to increase resolution of canvas for the
-            screenshot. By default, the currently displayed resolution. A scale
+            screenshot. By default, a scale of 1. A scale
             of 1 corresponds to 1 data pixel per screenshot pixel if all displayed
             layers have each displayed dimension set to a scale of 1.
         flash : bool
