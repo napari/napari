@@ -114,7 +114,7 @@ class Viewer(ViewerModel):
             Scale factor used to increase resolution of canvas for the
             screenshot. By default, a scale of 1. A scale
             of 1 corresponds to 1 data pixel per screenshot pixel if all displayed
-            layers have each displayed dimension set to a scale of 1.
+            layers have layer.scale for each displayed dimension set to 1.
         flash : bool
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.

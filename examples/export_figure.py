@@ -11,7 +11,6 @@ your shapes.
 
 import numpy as np
 from skimage import data
-from vispy.color import Colormap
 
 import napari
 
@@ -75,12 +74,6 @@ layer = viewer.add_shapes(
     name='shapes',
 )
 
-# change some attributes of the layer
-layer.selected_data = set(range(layer.nshapes))
-layer.current_edge_width = 5
-layer.opacity = 0.75
-layer.selected_data = set()
-
 # add an ellipse to the layer
 ellipse = np.array([[59, 222], [110, 289], [170, 243], [119, 176]])
 layer.add(
@@ -90,11 +83,6 @@ layer.add(
     edge_color='coral',
     face_color='purple',
 )
-
-masks = layer.to_masks([512, 512])
-masks_layer = viewer.add_image(masks.astype(float), name='masks')
-masks_layer.opacity = 0.7
-masks_layer.colormap = Colormap([[0.0, 0.0, 0.0, 0.0], [1.0, 0.0, 0.0, 1.0]])
 
 labels = layer.to_labels([512, 512])
 labels_layer = viewer.add_labels(labels, name='labels')
