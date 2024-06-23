@@ -278,6 +278,11 @@ authors:
   affiliation: University of Wisconsin-Madison
   orcid: https://orcid.org/0009-0002-2400-1940
   alias: gselzer
+- given-names: MB
+  family-names: Smith
+  affiliation: AI lab for Living Technologies, University Medical Centre Utrecht (The Netherlands)
+  orcid: https://orcid.org/0000-0002-1405-0100
+  alias: odinsbane
 - given-names: Paul
   family-names: Smith
   affiliation: University College London
