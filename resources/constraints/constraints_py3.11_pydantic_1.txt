@@ -8,6 +8,7 @@ appdirs==1.4.4
     # via
     #   napari (napari_repo/pyproject.toml)
     #   npe2
+    #   pint
 asciitree==0.3.3
     # via zarr
 asttokens==2.4.1
@@ -25,7 +26,7 @@ build==1.2.1
     # via npe2
 cachey==0.2.1
     # via napari (napari_repo/pyproject.toml)
-certifi==2024.2.2
+certifi==2024.6.2
     # via
     #   napari (napari_repo/pyproject.toml)
     #   requests
@@ -47,7 +48,7 @@ coverage==7.5.3
     #   pytest-cov
 cycler==0.12.1
     # via matplotlib
-dask==2024.5.1
+dask==2024.6.0
     # via napari (napari_repo/pyproject.toml)
 debugpy==1.8.1
     # via ipykernel
@@ -65,16 +66,20 @@ executing==2.0.1
     # via stack-data
 fasteners==0.19
     # via zarr
-filelock==3.14.0
+filelock==3.15.1
     # via
     #   torch
     #   triton
     #   virtualenv
-fonttools==4.52.4
+flexcache==0.3
+    # via pint
+flexparser==0.3.1
+    # via pint
+fonttools==4.53.0
     # via matplotlib
 freetype-py==2.4.0
     # via vispy
-fsspec==2024.5.0
+fsspec==2024.6.0
     # via
     #   napari (napari_repo/pyproject.toml)
     #   dask
@@ -83,7 +88,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.103.0
+hypothesis==6.103.2
     # via napari (napari_repo/pyproject.toml)
 idna==3.7
     # via requests
@@ -104,7 +109,7 @@ ipykernel==6.29.4
     # via
     #   napari-console
     #   qtconsole
-ipython==8.24.0
+ipython==8.25.0
     # via
     #   napari (napari_repo/pyproject.toml)
     #   ipykernel
@@ -136,7 +141,7 @@ lazy-loader==0.4
     # via
     #   napari (napari_repo/pyproject.toml)
     #   scikit-image
-llvmlite==0.42.0
+llvmlite==0.43.0
     # via numba
 locket==1.0.0
     # via partd
@@ -146,7 +151,7 @@ lxml==5.2.2
     #   lxml-html-clean
 lxml-html-clean==0.1.1
     # via lxml
-magicgui==0.8.2
+magicgui==0.8.3
     # via napari (napari_repo/pyproject.toml)
 markdown-it-py==3.0.0
     # via rich
@@ -186,11 +191,11 @@ npe2==0.7.5
     # via
     #   napari (napari_repo/pyproject.toml)
     #   napari-plugin-manager
-numba==0.59.1
+numba==0.60.0
     # via napari (napari_repo/pyproject.toml)
 numcodecs==0.12.1
     # via zarr
-numpy==1.26.4
+numpy==2.0.0
     # via
     #   napari (napari_repo/pyproject.toml)
     #   contourpy
@@ -243,7 +248,7 @@ nvidia-nvjitlink-cu12==12.5.40
     #   nvidia-cusparse-cu12
 nvidia-nvtx-cu12==12.1.105
     # via torch
-packaging==24.0
+packaging==24.1
     # via
     #   build
     #   dask
@@ -275,7 +280,7 @@ pillow==10.3.0
     #   matplotlib
     #   pyscreeze
     #   scikit-image
-pint==0.23
+pint==0.24
     # via napari (napari_repo/pyproject.toml)
 pip==24.0
     # via napari-plugin-manager
@@ -288,13 +293,13 @@ pluggy==1.5.0
     # via
     #   pytest
     #   pytest-qt
-pooch==1.8.1
+pooch==1.8.2
     # via
     #   napari (napari_repo/pyproject.toml)
     #   scikit-image
 pretend==1.0.9
     # via napari (napari_repo/pyproject.toml)
-prompt-toolkit==3.0.45
+prompt-toolkit==3.0.47
     # via ipython
 psutil==5.9.8
     # via
@@ -314,7 +319,7 @@ pyautogui==0.9.54
     # via napari (napari_repo/pyproject.toml)
 pyconify==0.1.6
     # via superqt
-pydantic==1.10.15
+pydantic==1.10.16
     # via
     #   -r napari_repo/resources/constraints/pydantic_le_2.txt
     #   napari (napari_repo/pyproject.toml)
@@ -353,7 +358,7 @@ pyqt5-sip==12.13.0
     # via pyqt5
 pyqt6==6.7.0
     # via napari (napari_repo/pyproject.toml)
-pyqt6-qt6==6.7.0
+pyqt6-qt6==6.7.1
     # via pyqt6
 pyqt6-sip==13.6.0
     # via pyqt6
@@ -371,7 +376,7 @@ pyside6-essentials==6.4.2
     # via
     #   pyside6
     #   pyside6-addons
-pytest==8.2.1
+pytest==8.2.2
     # via
     #   napari (napari_repo/pyproject.toml)
     #   pytest-cov
@@ -480,7 +485,7 @@ sphinxcontrib-serializinghtml==1.1.10
     # via sphinx
 stack-data==0.6.3
     # via ipython
-superqt==0.6.6
+superqt==0.6.7
     # via
     #   napari (napari_repo/pyproject.toml)
     #   magicgui
@@ -489,7 +494,7 @@ sympy==1.12.1
     # via torch
 tabulate==0.9.0
     # via numpydoc
-tensorstore==0.1.60
+tensorstore==0.1.62
     # via
     #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari (napari_repo/pyproject.toml)
@@ -504,9 +509,9 @@ toolz==0.12.1
     #   napari (napari_repo/pyproject.toml)
     #   dask
     #   partd
-torch==2.3.0
+torch==2.3.1
     # via napari (napari_repo/pyproject.toml)
-tornado==6.4
+tornado==6.4.1
     # via
     #   ipykernel
     #   jupyter-client
@@ -523,14 +528,16 @@ traitlets==5.14.3
     #   qtconsole
 triangle==20230923
     # via napari (napari_repo/pyproject.toml)
-triton==2.3.0
+triton==2.3.1
     # via torch
 typer==0.12.3
     # via npe2
-typing-extensions==4.12.0
+typing-extensions==4.12.2
     # via
     #   napari (napari_repo/pyproject.toml)
     #   app-model
+    #   flexcache
+    #   flexparser
     #   ipython
     #   magicgui
     #   pint
@@ -540,11 +547,11 @@ typing-extensions==4.12.0
     #   typer
 tzdata==2024.1
     # via pandas
-urllib3==2.2.1
+urllib3==2.2.2
     # via requests
 virtualenv==20.26.2
     # via napari (napari_repo/pyproject.toml)
-vispy==0.14.2
+vispy==0.14.3
     # via
     #   napari (napari_repo/pyproject.toml)
     #   napari-svg
@@ -552,9 +559,9 @@ wcwidth==0.2.13
     # via prompt-toolkit
 wrapt==1.16.0
     # via napari (napari_repo/pyproject.toml)
-xarray==2024.5.0
+xarray==2024.6.0
     # via napari (napari_repo/pyproject.toml)
 zarr==2.18.2
     # via napari (napari_repo/pyproject.toml)
-zipp==3.19.0
+zipp==3.19.2
     # via importlib-metadata

@@ -46,10 +46,10 @@ from qtpy.QtWidgets import (
 from superqt.utils import QSignalThrottler
 
 from napari._app_model.constants import MenuId
-from napari._app_model.context import get_context
-from napari._qt import menus
+from napari._app_model.context import create_context, get_context
 from napari._qt._qapp_model import build_qmodel_menu
 from napari._qt._qapp_model.qactions import init_qactions
+from napari._qt._qapp_model.qactions._debug import _is_set_trace_active
 from napari._qt._qplugins import (
     _rebuild_npe1_plugins_menu,
     _rebuild_npe1_samples_menu,
@@ -163,6 +163,9 @@ class _QtMainWindow(QMainWindow):
         # Prevent QLineEdit based widgets to keep focus even when clicks are
         # done outside the widget. See #1571
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+
+        # Ideally this would be in `NapariApplication` but that is outside of Qt
+        self._viewer_context = create_context(self)
 
         settings = get_settings()
 
@@ -304,6 +307,7 @@ class _QtMainWindow(QMainWindow):
         # we are not in menubar toggled state
         if (
             QApplication.activePopupWidget() is None
+            and hasattr(self, '_toggle_menubar_visibility')
             and self._toggle_menubar_visibility
         ):
             if event.type() == QEvent.Type.MouseMove:
@@ -322,7 +326,7 @@ class _QtMainWindow(QMainWindow):
                         self.menuBar().hide()
             elif event.type() == QEvent.Type.Leave and source is self:
                 self.menuBar().hide()
-        return QMainWindow.eventFilter(self, source, event)
+        return super().eventFilter(source, event)
 
     def _load_window_settings(self):
         """
@@ -674,16 +678,13 @@ class Window:
             self._update_theme_font_size
         )
 
-        self._add_viewer_dock_widget(
-            self._qt_viewer.dockConsole, tabify=False, menu=self.window_menu
-        )
+        self._add_viewer_dock_widget(self._qt_viewer.dockConsole, tabify=False)
         self._add_viewer_dock_widget(
             self._qt_viewer.dockLayerControls,
             tabify=False,
-            menu=self.window_menu,
         )
         self._add_viewer_dock_widget(
-            self._qt_viewer.dockLayerList, tabify=False, menu=self.window_menu
+            self._qt_viewer.dockLayerList, tabify=False
         )
         if perf.USE_PERFMON:
             self._add_viewer_dock_widget(
@@ -822,11 +823,19 @@ class Window:
     def _update_view_menu_state(self):
         self._update_menu_state('view_menu')
 
+    def _update_window_menu_state(self):
+        self._update_menu_state('window_menu')
+
     def _update_plugins_menu_state(self):
         self._update_menu_state('plugins_menu')
 
     def _update_help_menu_state(self):
         self._update_menu_state('help_menu')
+
+    def _update_debug_menu_state(self):
+        viewer_ctx = get_context(self._qt_window)
+        viewer_ctx['is_set_trace_active'] = _is_set_trace_active()
+        self._debug_menu.update_from_context(viewer_ctx)
 
     # TODO: Remove once npe1 deprecated
     def _setup_npe1_samples_menu(self):
@@ -846,6 +855,19 @@ class Window:
         plugin_manager.events.disabled.connect(_rebuild_npe1_plugins_menu)
         plugin_manager.events.unregistered.connect(_rebuild_npe1_plugins_menu)
         _rebuild_npe1_plugins_menu()
+
+    def _handle_trace_file_on_start(self):
+        """Start trace of `trace_file_on_start` config set."""
+        from napari._qt._qapp_model.qactions._debug import _start_trace
+
+        if perf.perf_config:
+            path = perf.perf_config.trace_file_on_start
+            if path is not None:
+                # Config option "trace_file_on_start" means immediately
+                # start tracing to that file. This is very useful if you
+                # want to create a trace every time you start napari,
+                # without having to start it from the debug menu.
+                _start_trace(path)
 
     def _add_menus(self):
         """Add menubar to napari app."""
@@ -892,8 +914,27 @@ class Window:
             self._update_plugins_menu_state,
         )
         self.main_menu.addMenu(self.plugins_menu)
+        # debug menu (optional)
+        if perf.perf_config is not None:
+            self._debug_menu = build_qmodel_menu(
+                MenuId.MENUBAR_DEBUG,
+                title=trans._('&Debug'),
+                parent=self._qt_window,
+            )
+            self._handle_trace_file_on_start()
+            self._debug_menu.aboutToShow.connect(
+                self._update_debug_menu_state,
+            )
+            self.main_menu.addMenu(self._debug_menu)
         # window menu
-        self.window_menu = menus.WindowMenu(self)
+        self.window_menu = build_qmodel_menu(
+            MenuId.MENUBAR_WINDOW,
+            title=trans._('&Window'),
+            parent=self._qt_window,
+        )
+        self.plugins_menu.aboutToShow.connect(
+            self._update_window_menu_state,
+        )
         self.main_menu.addMenu(self.window_menu)
         # help menu
         self.help_menu = build_qmodel_menu(
@@ -903,10 +944,6 @@ class Window:
             self._update_help_menu_state,
         )
         self.main_menu.addMenu(self.help_menu)
-
-        if perf.USE_PERFMON:
-            self._debug_menu = menus.DebugMenu(self)
-            self.main_menu.addMenu(self._debug_menu)
 
     def _toggle_menubar_visible(self):
         """Toggle visibility of app menubar.

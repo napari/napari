@@ -10,6 +10,7 @@ class SampleLayer(Layer):
         ndim=None,
         *,
         affine=None,
+        axis_labels=None,
         blending='translucent',
         cache=True,  # this should move to future "data source" object.
         experimental_clipping_planes=None,
@@ -23,6 +24,7 @@ class SampleLayer(Layer):
         scale=None,
         shear=None,
         translate=None,
+        units=None,
         visible=True,
     ) -> None:
         if ndim is None:
@@ -31,6 +33,7 @@ class SampleLayer(Layer):
             ndim=ndim,
             data=data,
             affine=affine,
+            axis_labels=axis_labels,
             blending=blending,
             cache=cache,
             experimental_clipping_planes=experimental_clipping_planes,
@@ -44,6 +47,7 @@ class SampleLayer(Layer):
             scale=scale,
             shear=shear,
             translate=translate,
+            units=units,
             visible=visible,
         )  # type: ignore [no-untyped-call]
         self._data = data

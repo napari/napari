@@ -99,6 +99,9 @@ class Shapes(Layer):
         the final column is a length N translation vector and a 1 or a napari
         `Affine` transform object. Applied as an extra transform on top of the
         provided scale, rotate, and shear values.
+    axis_labels : tuple of str, optional
+        Dimension names of the layer data.
+        If not provided, axis_labels will be set to (..., 'axis -2', 'axis -1').
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -192,6 +195,9 @@ class Shapes(Layer):
         For example usage, see /napari/examples/add_shapes_with_text.py.
     translate : tuple of float
         Translation values for the layer.
+    units : tuple of str or pint.Unit, optional
+        Units of the layer data in world coordinates.
+        If not provided, the default units are assumed to be pixels.
     visible : bool
         Whether the layer visual is currently being displayed.
     z_index : int or list
@@ -206,6 +212,8 @@ class Shapes(Layer):
     data : (N, ) list of array
         List of shape data, where each element is an (N, D) array of the
         N vertices of a shape in D dimensions.
+    axis_labels : tuple of str
+        Dimension names of the layer data.
     features : Dataframe-like
         Features table where each row corresponds to a shape and each column
         is a feature.
@@ -258,6 +266,8 @@ class Shapes(Layer):
 
         The ADD_RECTANGLE, ADD_ELLIPSE, ADD_LINE, ADD_PATH, and ADD_POLYGON
         modes all allow for their corresponding shape type to be added.
+    units: tuple of pint.Unit
+        Units of the layer data in world coordinates.
 
     Notes
     -----
@@ -423,6 +433,7 @@ class Shapes(Layer):
         ndim=None,
         *,
         affine=None,
+        axis_labels=None,
         blending='translucent',
         cache=True,
         edge_color='#777777',
@@ -449,6 +460,7 @@ class Shapes(Layer):
         shear=None,
         text=None,
         translate=None,
+        units=None,
         visible=True,
         z_index=0,
     ) -> None:
@@ -470,20 +482,22 @@ class Shapes(Layer):
 
         super().__init__(
             data,
-            ndim=ndim,
-            name=name,
-            metadata=metadata,
-            scale=scale,
-            translate=translate,
-            rotate=rotate,
-            shear=shear,
+            ndim,
             affine=affine,
-            opacity=opacity,
+            axis_labels=axis_labels,
             blending=blending,
-            visible=visible,
             cache=cache,
             experimental_clipping_planes=experimental_clipping_planes,
+            metadata=metadata,
+            name=name,
+            opacity=opacity,
             projection_mode=projection_mode,
+            rotate=rotate,
+            scale=scale,
+            shear=shear,
+            translate=translate,
+            units=units,
+            visible=visible,
         )
 
         self.events.add(
@@ -1451,7 +1465,7 @@ class Shapes(Layer):
                 # and update_color_mapping==False
                 color_cycle_map = getattr(self, f'{attribute}_color_cycle_map')
                 color_cycle_keys = [*color_cycle_map]
-                props_in_map = np.in1d(color_properties, color_cycle_keys)
+                props_in_map = np.isin(color_properties, color_cycle_keys)
                 if not np.all(props_in_map):
                     props_to_add = np.unique(
                         color_properties[np.logical_not(props_in_map)]

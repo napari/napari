@@ -87,6 +87,9 @@ class Points(Layer):
         provided scale, rotate, and shear values.
     antialiasing: float
         Amount of antialiasing in canvas pixels.
+    axis_labels : tuple of str, optional
+        Dimension names of the layer data.
+        If not provided, axis_labels will be set to (..., 'axis -2', 'axis -1').
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -190,6 +193,9 @@ class Points(Layer):
         For example usage, see /napari/examples/add_points_with_text.py.
     translate : tuple of float
         Translation values for the layer.
+    units : tuple of str or pint.Unit, optional
+        Units of the layer data in world coordinates.
+        If not provided, the default units are assumed to be pixels.
     visible : bool
         Whether the layer visual is currently being displayed.
 
@@ -197,6 +203,8 @@ class Points(Layer):
     ----------
     data : array (N, D)
         Coordinates for N points in D dimensions.
+    axis_labels : tuple of str
+        Dimension names of the layer data.
     features : DataFrame-like
         Features table where each row corresponds to a point and each column
         is a feature.
@@ -294,6 +302,8 @@ class Points(Layer):
         Lower and upper limits for the size of points in canvas pixels.
     shown : 1-D array of bool
         Whether each point is shown.
+    units: tuple of pint.Unit
+        Units of the layer data in world coordinates.
 
     Notes
     -----
@@ -385,6 +395,7 @@ class Points(Layer):
         *,
         affine=None,
         antialiasing=1,
+        axis_labels=None,
         blending='translucent',
         border_color='dimgray',
         border_color_cycle=None,
@@ -418,6 +429,7 @@ class Points(Layer):
         symbol='o',
         text=None,
         translate=None,
+        units=None,
         visible=True,
     ) -> None:
         if ndim is None:
@@ -459,19 +471,21 @@ class Points(Layer):
         super().__init__(
             data,
             ndim,
-            name=name,
-            metadata=metadata,
-            scale=scale,
-            translate=translate,
-            rotate=rotate,
-            shear=shear,
             affine=affine,
-            opacity=opacity,
+            axis_labels=axis_labels,
             blending=blending,
-            visible=visible,
             cache=cache,
             experimental_clipping_planes=experimental_clipping_planes,
+            metadata=metadata,
+            name=name,
+            opacity=opacity,
             projection_mode=projection_mode,
+            rotate=rotate,
+            scale=scale,
+            shear=shear,
+            translate=translate,
+            units=units,
+            visible=visible,
         )
 
         self.events.add(

@@ -6,7 +6,7 @@ appdirs==1.4.4
     # via npe2
 build==1.2.1
     # via npe2
-certifi==2024.2.2
+certifi==2024.6.2
     # via requests
 charset-normalizer==3.3.2
     # via requests
@@ -16,7 +16,7 @@ docstring-parser==0.16
     # via magicgui
 idna==3.7
     # via requests
-magicgui==0.8.2
+magicgui==0.8.3
     # via -r napari_repo/resources/requirements_mypy.in
 markdown-it-py==3.0.0
     # via rich
@@ -28,9 +28,9 @@ mypy-extensions==1.0.0
     # via mypy
 npe2==0.7.5
     # via -r napari_repo/resources/requirements_mypy.in
-numpy==1.26.4
+numpy==2.0.0
     # via -r napari_repo/resources/requirements_mypy.in
-packaging==24.0
+packaging==24.1
     # via
     #   build
     #   qtpy
@@ -40,11 +40,11 @@ psygnal==0.11.1
     #   npe2
 pyconify==0.1.6
     # via superqt
-pydantic==2.7.2
+pydantic==2.7.4
     # via
     #   -r napari_repo/resources/requirements_mypy.in
     #   npe2
-pydantic-core==2.18.3
+pydantic-core==2.18.4
     # via pydantic
 pygments==2.18.0
     # via
@@ -54,7 +54,7 @@ pyproject-hooks==1.1.0
     # via build
 pyqt6==6.7.0
     # via -r napari_repo/resources/requirements_mypy.in
-pyqt6-qt6==6.7.0
+pyqt6-qt6==6.7.1
     # via pyqt6
 pyqt6-sip==13.6.0
     # via pyqt6
@@ -73,7 +73,7 @@ rich==13.7.1
     #   typer
 shellingham==1.5.4
     # via typer
-superqt==0.6.6
+superqt==0.6.7
     # via magicgui
 tomli-w==1.0.0
     # via npe2
@@ -81,11 +81,11 @@ typer==0.12.3
     # via npe2
 types-pyyaml==6.0.12.20240311
     # via -r napari_repo/resources/requirements_mypy.in
-types-requests==2.32.0.20240523
+types-requests==2.32.0.20240602
     # via -r napari_repo/resources/requirements_mypy.in
 types-setuptools==70.0.0.20240524
     # via -r napari_repo/resources/requirements_mypy.in
-typing-extensions==4.12.0
+typing-extensions==4.12.2
     # via
     #   magicgui
     #   mypy
@@ -93,7 +93,7 @@ typing-extensions==4.12.0
     #   pydantic-core
     #   superqt
     #   typer
-urllib3==2.2.1
+urllib3==2.2.2
     # via
     #   requests
     #   types-requests
