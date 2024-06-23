@@ -1,3 +1,5 @@
+from typing import Union
+
 from napari._pydantic_compat import Field
 from napari.components.overlays.base import SceneOverlay
 from napari.layers import Labels
@@ -27,15 +29,16 @@ class LabelsPolygonOverlay(SceneOverlay):
         A list of (x, y) coordinates of the vertices of the polygon.
     double_click_completion : bool
         Whether drawing the polygon can be completed with a left mouse double-click.
-    completion_radius : int
+    completion_radius : int | float
         Defines the radius from the first polygon vertex within which
         the drawing process can be completed by a left double-click.
+        If inf, double-click always completes the shape.
     """
 
     enabled: bool = False
     points: list = Field(default_factory=list)
     double_click_completion: bool = True
-    completion_radius: int = 20
+    completion_radius: Union[int, float] = 20
 
     def add_polygon_to_labels(self, layer: Labels) -> None:
         if len(self.points) > 2:

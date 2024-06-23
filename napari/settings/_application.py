@@ -203,6 +203,16 @@ class ApplicationSettings(EventedModel):
         ),
     )
 
+    completion_radius: int = Field(
+        default=-1,
+        title=trans._(
+            'Double-click shape completion radius (-1 to always complete)'
+        ),
+        description=trans._(
+            'Max radius in pixels from first point for double-click to complete a shape; set -1 to always complete.'
+        ),
+    )
+
     # convert cache (and max cache) from bytes to mb for widget
     dask: DaskSettings = Field(
         default=DaskSettings(),

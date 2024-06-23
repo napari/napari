@@ -6,6 +6,7 @@ from napari.components.overlays import LabelsPolygonOverlay
 from napari.layers import Labels
 from napari.layers.labels._labels_constants import Mode
 from napari.layers.labels._labels_utils import mouse_event_to_labels_coordinate
+from napari.settings import get_settings
 
 
 def _only_when_enabled(callback):
@@ -77,10 +78,24 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
 
         self._first_point_pos = np.zeros(2)
 
+        # set completion radius based on settings
+        self._on_completion_radius_settings_change()
+        get_settings().application.events.completion_radius.connect(
+            self._on_completion_radius_settings_change
+        )
+
         self.reset()
         self._update_color()
         # If there are no points, it won't be visible
         self.overlay.visible = True
+
+    def _on_completion_radius_settings_change(self, event=None):
+        self.overlay.completion_radius = (
+            get_settings().application.completion_radius
+        )
+        # if setting is -1, then disable by setting to inf, so double click always works
+        if self.overlay.completion_radius < 0:
+            self.overlay.completion_radius = float('inf')
 
     def _on_enabled_change(self):
         if self.overlay.enabled:
