@@ -800,7 +800,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         if scale is None:
             scale = np.array([1] * self.ndim)
         self._transforms['data2physical'].scale = np.array(scale)
-        self._clear_extents_and_refresh()
+        self.refresh()
         self.events.scale()
 
     @property
@@ -811,7 +811,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @translate.setter
     def translate(self, translate: npt.ArrayLike) -> None:
         self._transforms['data2physical'].translate = np.array(translate)
-        self._clear_extents_and_refresh()
+        self.refresh()
         self.events.translate()
 
     @property
@@ -822,7 +822,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @rotate.setter
     def rotate(self, rotate: npt.NDArray) -> None:
         self._transforms['data2physical'].rotate = rotate
-        self._clear_extents_and_refresh()
+        self.refresh()
         self.events.rotate()
 
     @property
@@ -833,7 +833,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @shear.setter
     def shear(self, shear: npt.NDArray) -> None:
         self._transforms['data2physical'].shear = shear
-        self._clear_extents_and_refresh()
+        self.refresh()
         self.events.shear()
 
     @property
@@ -849,7 +849,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._transforms[2] = coerce_affine(
             affine, ndim=self.ndim, name='physical2world'
         )
-        self._clear_extents_and_refresh()
+        self.refresh()
         self.events.affine()
 
     @property
@@ -880,7 +880,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         self._ndim = ndim
 
-        self._clear_extents_and_refresh()
+        self.refresh()
 
     @property
     @abstractmethod
@@ -1005,8 +1005,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         changes, and should be called before any other related events
         are emitted so that they use the updated extent values.
         """
-        self._clear_extent()
-        self._clear_extent_augmented()
         self.refresh()
 
     @property
@@ -1251,7 +1249,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         slice_input = self._make_slice_input(dims)
         if force or (self._slice_input != slice_input):
             self._slice_input = slice_input
-            self._refresh_sync()
+            self._refresh_sync(
+                slicing=True, thumbnail=True, highlight=True, extent=True
+            )
 
     def _make_slice_input(
         self,
