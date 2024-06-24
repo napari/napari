@@ -313,7 +313,7 @@ class QtViewer(QSplitter):
         if not dask_setting:
             return
         if not isinstance(dask_setting, DaskSettings):
-            dask_setting = dask_setting.type
+            dask_setting = get_settings().application.dask
 
         enabled = dask_setting.enabled
         size = dask_setting.cache
