@@ -80,7 +80,7 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
 
         # set completion radius based on settings
         self._on_completion_radius_settings_change()
-        get_settings().application.events.completion_radius.connect(
+        get_settings().experimental.events.completion_radius.connect(
             self._on_completion_radius_settings_change
         )
 
@@ -90,12 +90,14 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
         self.overlay.visible = True
 
     def _on_completion_radius_settings_change(self, event=None):
-        self.overlay.completion_radius = (
-            get_settings().application.completion_radius
+        completion_radius_setting = (
+            get_settings().experimental.completion_radius
         )
-        # if setting is -1, then disable by setting to inf, so double click always works
-        if self.overlay.completion_radius < 0:
-            self.overlay.completion_radius = float('inf')
+        # if setting is -1, then the completion_radius is disabled
+        # so double click always works. If >0, use the radius
+        if completion_radius_setting > 0:
+            self.overlay.use_double_click_completion_radius = True
+            self.overlay.completion_radius = completion_radius_setting
 
     def _on_enabled_change(self):
         if self.overlay.enabled:
@@ -191,15 +193,14 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
         if event.button == 2:
             self._on_mouse_press(layer, event)
             return None
-
         first_point_dist = np.linalg.norm(event.pos - self._first_point_pos)
         if (
-            not self.overlay.double_click_completion
-            or first_point_dist > self.overlay.completion_radius
+            self.overlay.use_double_click_completion_radius
+            and first_point_dist > self.overlay.completion_radius
         ):
             return self._on_mouse_press(layer, event)
 
-        # Remove the last points from double click
+        # Remove the last point from double click
         self.overlay.points = self.overlay.points[:-1]
         self.overlay.add_polygon_to_labels(layer)
         return None
