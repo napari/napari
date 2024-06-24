@@ -9,13 +9,15 @@ import pytest
 
 from napari._pydantic_compat import ValidationError
 from napari.utils.color import ColorArray
-from napari.utils.colormaps import Colormap, colormap
-from napari.utils.colormaps.colormap import (
+from napari.utils.colormaps import Colormap, _colormap_numba, colormap
+from napari.utils.colormaps._colormap_numba import (
     MAPPING_OF_UNKNOWN_VALUE,
+    _labels_raw_to_texture_direct_numpy,
+)
+from napari.utils.colormaps.colormap import (
     CyclicLabelColormap,
     DirectLabelColormap,
     LabelColormapBase,
-    _labels_raw_to_texture_direct_numpy,
     _normalize_label_colormap,
 )
 from napari.utils.colormaps.colormap_utils import label_colormap
@@ -141,16 +143,16 @@ def test_mapped_shape(ndim):
     ('num', 'dtype'), [(40, np.uint8), (1000, np.uint16), (80000, np.float32)]
 )
 def test_minimum_dtype_for_labels(num, dtype):
-    assert colormap.minimum_dtype_for_labels(num) == dtype
+    assert _colormap_numba.minimum_dtype_for_labels(num) == dtype
 
 
 @pytest.fixture()
 def _disable_jit(monkeypatch):
     pytest.importorskip('numba')
     with patch('numba.core.config.DISABLE_JIT', True):
-        importlib.reload(colormap)
+        importlib.reload(_colormap_numba)
         yield
-    importlib.reload(colormap)  # revert to original state
+    importlib.reload(_colormap_numba)  # revert to original state
 
 
 @pytest.mark.parametrize(('num', 'dtype'), [(40, np.uint8), (1000, np.uint16)])
@@ -226,7 +228,9 @@ def test_direct_label_colormap_selection(direct_label_colormap):
 @pytest.mark.usefixtures('_disable_jit')
 def test_cast_direct_labels_to_minimum_type(direct_label_colormap):
     data = np.arange(15, dtype=np.uint32)
-    cast = colormap._labels_raw_to_texture_direct(data, direct_label_colormap)
+    cast = _colormap_numba.labels_raw_to_texture_direct(
+        data, direct_label_colormap
+    )
     label_mapping = (
         direct_label_colormap._values_mapping_to_minimum_values_set()[0]
     )
@@ -274,15 +278,15 @@ def test_test_cast_direct_labels_to_minimum_type_no_jit(num, dtype):
     cmap.color_dict[None] = np.array([1, 1, 1, 1])
     data = np.arange(10, dtype=np.uint32)
     data[2] = 80005
-    cast = colormap._labels_raw_to_texture_direct(data, cmap)
+    cast = _colormap_numba.labels_raw_to_texture_direct(data, cmap)
     assert cast.dtype == dtype
 
 
 def test_zero_preserving_modulo_naive():
     pytest.importorskip('numba')
     data = np.arange(1000, dtype=np.uint32)
-    res1 = colormap._zero_preserving_modulo_numpy(data, 49, np.uint8)
-    res2 = colormap._zero_preserving_modulo(data, 49, np.uint8)
+    res1 = _colormap_numba.zero_preserving_modulo_numpy(data, 49, np.uint8)
+    res2 = _colormap_numba.zero_preserving_modulo(data, 49, np.uint8)
     npt.assert_array_equal(res1, res2)
 
 
@@ -336,7 +340,7 @@ def test_label_colormap_using_cache(dtype, monkeypatch):
     expected = np.array([[0, 0, 0, 0], [1, 0, 0, 1], [0, 1, 0, 1]])
     map1 = cmap.map(values)
     npt.assert_array_equal(map1, expected)
-    monkeypatch.setattr(colormap, '_zero_preserving_modulo_numpy', None)
+    monkeypatch.setattr(_colormap_numba, 'zero_preserving_modulo_numpy', None)
     map2 = cmap.map(values)
     npt.assert_array_equal(map1, map2)
 
@@ -345,7 +349,7 @@ def test_label_colormap_using_cache(dtype, monkeypatch):
 def test_cast_direct_labels_to_minimum_type_naive(size):
     pytest.importorskip('numba')
     data = np.arange(size, dtype=np.uint32)
-    dtype = colormap.minimum_dtype_for_labels(size)
+    dtype = _colormap_numba.minimum_dtype_for_labels(size)
     cmap = DirectLabelColormap(
         color_dict={
             None: np.array([1, 1, 1, 1]),
@@ -359,8 +363,8 @@ def test_cast_direct_labels_to_minimum_type_naive(size):
         },
     )
     cmap.color_dict[None] = np.array([255, 255, 255, 255])
-    res1 = colormap._labels_raw_to_texture_direct(data, cmap)
-    res2 = colormap._labels_raw_to_texture_direct_numpy(data, cmap)
+    res1 = _colormap_numba.labels_raw_to_texture_direct(data, cmap)
+    res2 = _colormap_numba._labels_raw_to_texture_direct_numpy(data, cmap)
     npt.assert_array_equal(res1, res2)
     assert res1.dtype == dtype
     assert res2.dtype == dtype
