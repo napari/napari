@@ -257,7 +257,7 @@ class QtViewer(QSplitter):
         settings = get_settings()
         self._update_dask_cache_settings(settings.application.dask)
 
-        settings.application.events.dask.connect(
+        settings.application.dask.events.connect(
             self._update_dask_cache_settings
         )
 
@@ -313,7 +313,7 @@ class QtViewer(QSplitter):
         if not dask_setting:
             return
         if not isinstance(dask_setting, DaskSettings):
-            dask_setting = dask_setting.value
+            dask_setting = dask_setting.type
 
         enabled = dask_setting.enabled
         size = dask_setting.cache

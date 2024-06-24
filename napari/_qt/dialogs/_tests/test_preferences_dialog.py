@@ -35,10 +35,21 @@ def test_prefdialog_populated(pref):
 
 
 def test_dask_widget(qtbot, pref):
-    assert isinstance(
-        pref._stack.currentWidget().widget().widget.widgets['dask'],
-        HorizontalObjectSchemaWidget,
-    )
+    dask_widget = pref._stack.currentWidget().widget().widget.widgets['dask']
+    def_dask_enabled = True
+
+    # check custom widget definition and default value for enabled attribute
+    assert isinstance(dask_widget, HorizontalObjectSchemaWidget)
+    assert get_settings().application.dask.enabled == def_dask_enabled
+    assert dask_widget.state['enabled'] == def_dask_enabled
+
+    # check setting new value via widget
+    new_dask_enabled = False
+    dask_widget.state = {
+        'enabled': new_dask_enabled,
+        'cache': dask_widget.state['cache'],
+    }
+    assert get_settings().application.dask.enabled == new_dask_enabled
 
 
 def test_font_size_widget(qtbot, pref):
