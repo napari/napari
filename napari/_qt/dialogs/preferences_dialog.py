@@ -138,9 +138,20 @@ class PreferencesDialog(QDialog):
                 {},
             )
         )
+        nested_settings = ['dask', 'highlight']
         for name_, emitter in settings_category.events.emitters.items():
-            if name_ not in excluded:
+            if name_ not in excluded and name_ not in nested_settings:
                 emitter.connect(update_widget_state(name_, form.widget))
+            elif name_ in nested_settings:
+                # Needed to handle nested event model settings (i.e `DaskSettings` and `HighlightSettings`)
+                for subname_, subemitter in getattr(
+                    settings_category, name_
+                ).events.emitters.items():
+                    subemitter.connect(
+                        update_widget_state(
+                            subname_, form.widget.widgets[name_]
+                        )
+                    )
 
         page_scrollarea = QScrollArea()
         page_scrollarea.setWidgetResizable(True)
