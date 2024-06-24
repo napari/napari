@@ -1,30 +1,11 @@
 import inspect
 import warnings
 from functools import wraps
-from typing import Any, Callable, NamedTuple, cast
+from typing import Any, Callable, cast
 
 from napari.utils.translations import trans
 
 _UNSET = object()
-
-
-class DeprecatedParameter(NamedTuple):
-    """Information about deprecated parameter."""
-
-    previous_name: str
-    new_name: str
-    version: str
-    since_version: str
-
-    def message(self) -> str:
-        return trans._(
-            '{previous_name} is deprecated since {since_version} and will be removed in {version}. Please use {new_name}',
-            deferred=True,
-            previous_name=self.previous_name,
-            since_version=self.since_version,
-            version=self.version,
-            new_name=self.new_name,
-        )
 
 
 def rename_argument(
@@ -62,7 +43,7 @@ def rename_argument(
             func._rename_argument = []
 
         func._rename_argument.append(
-            DeprecatedParameter(from_name, to_name, version, since_version)
+            (from_name, to_name, version, since_version)
         )
 
         @wraps(func)
@@ -250,46 +231,64 @@ class DeprecatingDict(dict[str, Any]):
     """
 
     # Maps from a deprecated key to its value and deprecation message.
-    deprecations: dict[str, tuple[Any, str]]
+    _deprecations: dict[str, tuple[Any, str]]
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self.deprecations = {}
+        self._deprecations = {}
 
     def __getitem__(self, key: str) -> Any:
-        if key in self.deprecations:
-            value, message = self.deprecations[key]
+        if key in self._deprecations:
+            value, message = self._deprecations[key]
             warnings.warn(message, FutureWarning)
             return value
         return super().__getitem__(key)
 
     def __setitem__(self, key: str, value: Any) -> None:
-        if key in self.deprecations:
-            _, message = self.deprecations[key]
+        if key in self._deprecations:
+            _, message = self._deprecations[key]
             warnings.warn(message, FutureWarning)
-            self.deprecations[key] = value, message
+            self._deprecations[key] = value, message
             return None
         return super().__setitem__(key, value)
 
     def __delitem__(self, key: str) -> None:
-        if key in self.deprecations:
-            _, message = self.deprecations[key]
+        if key in self._deprecations:
+            _, message = self._deprecations[key]
             warnings.warn(message, FutureWarning)
-            del self.deprecations[key]
+            del self._deprecations[key]
             return None
         return super().__delitem__(key)
 
     def __contains__(self, key: object) -> bool:
-        if key in self.deprecations:
+        if key in self._deprecations:
             key = cast(str, key)
-            _, message = self.deprecations[key]
+            _, message = self._deprecations[key]
             warnings.warn(message, FutureWarning)
             return True
         return super().__contains__(key)
 
-    def deprecate(self, param: DeprecatedParameter) -> None:
-        """Deprecates a key with a direct replacement using a corresponding message."""
-        self.deprecations[param.previous_name] = (
-            self[param.new_name],
-            param.message(),
+    @property
+    def deprecated_keys(self) -> tuple[str, ...]:
+        return tuple(self._deprecations.keys())
+
+    def set_deprecated(self, key: str, value: Any, *, message: str) -> None:
+        """Sets a deprecated key with a value and warning message."""
+        self._deprecations[key] = value, message
+
+    def set_deprecated_from_rename(
+        self, from_name: str, to_name: str, version: str, since_version: str
+    ) -> None:
+        """Sets a deprecated key with a value that comes from another key.
+
+        A warning message is automatically generated using the version information.
+        """
+        message = trans._(
+            '{from_name} is deprecated since {since_version} and will be removed in {version}. Please use {to_name}',
+            deferred=True,
+            from_name=from_name,
+            since_version=since_version,
+            version=version,
+            to_name=to_name,
         )
+        self._deprecations[from_name] = self[to_name], message

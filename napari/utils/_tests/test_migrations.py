@@ -1,7 +1,6 @@
 import pytest
 
 from napari.utils.migrations import (
-    DeprecatedParameter,
     DeprecatingDict,
     add_deprecated_property,
     deprecated_class_name,
@@ -89,47 +88,41 @@ def test_deprecated_class_name():
 
 def test_deprecating_dict_get_deprecated_key():
     d = DeprecatingDict({'a': 1, 'b': 2})
-    d.deprecate(
-        DeprecatedParameter(
-            previous_name='c',
-            new_name='a',
-            version='v2.0',
-            since_version='v1.6',
-        )
-    )
-    with pytest.warns(FutureWarning):
-        value = d['c']
-    assert value == d['a']
+    message = 'c is deprecated. Use a instead.'
+    d.set_deprecated('c', 1, message=message)
+    assert 'c' in d.deprecated_keys
+    with pytest.warns(FutureWarning, match=message):
+        assert d['c'] == 1
 
 
 def test_deprecating_dict_set_deprecated_key():
     d = DeprecatingDict({'a': 1, 'b': 2})
-    d.deprecate(
-        DeprecatedParameter(
-            previous_name='c',
-            new_name='a',
-            version='v2.0',
-            since_version='v1.6',
-        )
-    )
-    with pytest.warns(FutureWarning):
+    message = 'c is deprecated. Use a instead.'
+    d.set_deprecated('c', 1, message=message)
+    assert 'c' in d.deprecated_keys
+    with pytest.warns(FutureWarning, match=message):
         d['c'] = 3
-    with pytest.warns(FutureWarning):
+    with pytest.warns(FutureWarning, match=message):
         assert d['c'] == 3
 
 
 def test_deprecating_dict_del_deprecated_key():
     d = DeprecatingDict({'a': 1, 'b': 2})
-    d.deprecate(
-        DeprecatedParameter(
-            previous_name='c',
-            new_name='a',
-            version='v2.0',
-            since_version='v1.6',
-        )
-    )
+    message = 'c is deprecated. Use a instead.'
+    d.set_deprecated('c', 1, message=message)
+    assert 'c' in d.deprecated_keys
     with pytest.warns(FutureWarning):
         assert 'c' in d
     with pytest.warns(FutureWarning):
         del d['c']
     assert 'c' not in d
+
+
+def test_deprecating_dict_set_deprecated_from_rename():
+    d = DeprecatingDict({'a': 1, 'b': 2})
+    d.set_deprecated_from_rename(
+        'c', 'a', version='v2.0', since_version='v1.6'
+    )
+    assert 'c' in d.deprecated_keys
+    with pytest.warns(FutureWarning):
+        assert d['c'] == 1
