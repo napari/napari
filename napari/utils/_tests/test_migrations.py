@@ -111,9 +111,9 @@ def test_deprecating_dict_del_deprecated_key():
     message = 'c is deprecated. Use a instead.'
     d.set_deprecated('c', 1, message=message)
     assert 'c' in d.deprecated_keys
-    with pytest.warns(FutureWarning):
+    with pytest.warns(FutureWarning, match=message):
         assert 'c' in d
-    with pytest.warns(FutureWarning):
+    with pytest.warns(FutureWarning, match=message):
         del d['c']
     assert 'c' not in d
 
@@ -124,5 +124,5 @@ def test_deprecating_dict_set_deprecated_from_rename():
         'c', 'a', version='v2.0', since_version='v1.6'
     )
     assert 'c' in d.deprecated_keys
-    with pytest.warns(FutureWarning):
+    with pytest.warns(FutureWarning, match='is deprecated since'):
         assert d['c'] == 1
