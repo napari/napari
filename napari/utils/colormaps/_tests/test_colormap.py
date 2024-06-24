@@ -524,6 +524,7 @@ def test_direct_colormap_negative_values_numpy():
         DirectLabelColormap(
             color_dict={None: 'transparent', 1: 'red', 2: 'blue'}
         ),
+        5,  # test ValueError
     ],
 )
 def test_normalize_label_colormap(colormap_like):
