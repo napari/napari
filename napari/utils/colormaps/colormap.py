@@ -1,4 +1,5 @@
 from collections import defaultdict
+from collections.abc import MutableMapping, Sequence
 from functools import cached_property
 from typing import (
     TYPE_CHECKING,
@@ -1085,3 +1086,40 @@ else:
     prange = numba.prange  # type: ignore [misc]
 
     del numba
+
+
+def _normalize_label_colormap(
+    any_colormap_like,
+) -> Union[CyclicLabelColormap, DirectLabelColormap]:
+    """Convenience function to convert color containers to LabelColormaps.
+
+    A list of colors or 2D nparray of colors is interpreted as a color cycle
+    (`CyclicLabelColormap`), and a mapping of colors is interpreted as a direct
+    color map (`DirectLabelColormap`).
+
+    Parameters
+    ----------
+    any_colormap_like : Sequence[color], MutableMapping[int, color], ...
+        An object that can be interpreted as a LabelColormap, including a
+        LabelColormap directly.
+
+    Returns
+    -------
+    CyclicLabelColormap | DirectLabelColormap
+        The computed LabelColormap object.
+    """
+    if isinstance(any_colormap_like, LabelColormapBase):
+        return any_colormap_like
+    if isinstance(any_colormap_like, Sequence):
+        return CyclicLabelColormap(any_colormap_like)
+    if isinstance(any_colormap_like, MutableMapping):
+        return DirectLabelColormap(color_dict=any_colormap_like)
+    if (
+        isinstance(any_colormap_like, np.ndarray)
+        and any_colormap_like.ndim == 2
+        and any_colormap_like.shape[1] in (3, 4)
+    ):
+        return CyclicLabelColormap(any_colormap_like)
+    raise ValueError(
+        f'Unable to interpret as labels colormap: {any_colormap_like}'
+    )

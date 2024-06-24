@@ -1,4 +1,5 @@
 import importlib
+from collections import defaultdict
 from itertools import product
 from unittest.mock import patch
 
@@ -11,8 +12,11 @@ from napari.utils.color import ColorArray
 from napari.utils.colormaps import Colormap, colormap
 from napari.utils.colormaps.colormap import (
     MAPPING_OF_UNKNOWN_VALUE,
+    CyclicLabelColormap,
     DirectLabelColormap,
+    LabelColormapBase,
     _labels_raw_to_texture_direct_numpy,
+    _normalize_label_colormap,
 )
 from napari.utils.colormaps.colormap_utils import label_colormap
 
@@ -506,3 +510,27 @@ def test_direct_colormap_negative_values_numpy():
         np.array([-1, -2, 5], dtype=np.int8), cmap
     )
     npt.assert_array_equal(res, [0, 1, 0])
+
+
+@pytest.mark.parametrize(
+    'colormap_like',
+    [
+        ['red', 'blue'],
+        [[1, 0, 0, 1], [0, 0, 1, 1]],
+        {None: 'transparent', 1: 'red', 2: 'blue'},
+        {None: [0, 0, 0, 0], 1: [1, 0, 0, 1], 2: [0, 0, 1, 1]},
+        defaultdict(lambda: 'transparent', {1: 'red', 2: 'blue'}),
+        CyclicLabelColormap(['red', 'blue']),
+        DirectLabelColormap(
+            color_dict={None: 'transparent', 1: 'red', 2: 'blue'}
+        ),
+    ],
+)
+def test_normalize_label_colormap(colormap_like):
+    if not isinstance(colormap_like, int):
+        assert isinstance(
+            _normalize_label_colormap(colormap_like), LabelColormapBase
+        )
+    else:
+        with pytest.raises(ValueError, match='Unable to interpret'):
+            _normalize_label_colormap(colormap_like)
