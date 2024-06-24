@@ -51,7 +51,7 @@ def is_empty_menu(menu_id: str) -> bool:
     return False
 
 
-def no_op():
+def no_op() -> None:
     """Fully qualified no-op to use for dummy actions."""
 
 

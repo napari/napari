@@ -743,7 +743,8 @@ class Window:
             for menu_id in _CONTRIBUTABLES
         ]
         action = get_dummy_action(menus_list)
-        self.dummy_action_disposer = am_app.register_action(action)
+        if action.id not in am_app.commands:
+            self.dummy_action_disposer = am_app.register_action(action)
 
     def dummy_actions_need_updating(self):
         am_app = get_app_model_app()
