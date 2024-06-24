@@ -174,7 +174,8 @@ def test_fail_copy_to_clipboard(monkeypatch):
 
     monkeypatch.setattr(QApplication, 'clipboard', mock_clipboard)
     monkeypatch.setattr(
-        'napari._qt._qapp_model.qactions._layer.show_warning', warning_mock
+        'napari._qt._qapp_model.qactions._layerlist_context.show_warning',
+        warning_mock,
     )
     layer = SampleLayer(data=np.empty((10, 10)))
 
@@ -190,7 +191,8 @@ def test_fail_copy_data_from_clipboard(monkeypatch, layer_list):
 
     monkeypatch.setattr(QApplication, 'clipboard', mock_clipboard)
     monkeypatch.setattr(
-        'napari._qt._qapp_model.qactions._layer.show_warning', warning_mock
+        'napari._qt._qapp_model.qactions._layerlist_context.show_warning',
+        warning_mock,
     )
 
     _paste_spatial_from_clipboard(layer_list)
@@ -203,7 +205,8 @@ def test_fail_copy_data_from_clipboard(monkeypatch, layer_list):
 def test_fail_decode_text(monkeypatch, layer_list):
     warning_mock = Mock()
     monkeypatch.setattr(
-        'napari._qt._qapp_model.qactions._layer.show_warning', warning_mock
+        'napari._qt._qapp_model.qactions._layerlist_context.show_warning',
+        warning_mock,
     )
 
     clip = QApplication.clipboard()
