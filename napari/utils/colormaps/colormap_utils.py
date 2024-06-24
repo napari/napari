@@ -16,7 +16,7 @@ from vispy.color import (
 )
 from vispy.color.colormap import LUT_len
 
-from napari.utils.colormaps._colormap_numba import minimum_dtype_for_labels
+from napari.utils.colormaps._accelerated_cmap import minimum_dtype_for_labels
 from napari.utils.colormaps.bop_colors import bopd
 from napari.utils.colormaps.colormap import (
     Colormap,
