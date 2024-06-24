@@ -148,6 +148,13 @@ def test_minimum_dtype_for_labels(num, dtype):
 
 @pytest.fixture()
 def _disable_jit(monkeypatch):
+    """Fixture to temporarily disable numba JIT during testing.
+
+    This helps to measure coverage and in debugging. *However*, reloading a
+    module can cause issues with object instance / class relationships, so
+    the `_colormap_numba` module should be as small as possible and contain
+    no class definitions, only functions.
+    """
     pytest.importorskip('numba')
     with patch('numba.core.config.DISABLE_JIT', True):
         importlib.reload(_colormap_numba)
