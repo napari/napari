@@ -114,6 +114,7 @@ def test_deprecating_dict_set_deprecated_key():
     )
     with pytest.warns(FutureWarning):
         d['c'] = 3
+    with pytest.warns(FutureWarning):
         assert d['c'] == 3
 
 
@@ -129,5 +130,6 @@ def test_deprecating_dict_del_deprecated_key():
     )
     with pytest.warns(FutureWarning):
         assert 'c' in d
+    with pytest.warns(FutureWarning):
         del d['c']
-        assert 'c' not in d
+    assert 'c' not in d
