@@ -1108,7 +1108,9 @@ def _normalize_label_colormap(
     CyclicLabelColormap | DirectLabelColormap
         The computed LabelColormap object.
     """
-    if isinstance(any_colormap_like, LabelColormapBase):
+    if isinstance(
+        any_colormap_like, (CyclicLabelColormap, DirectLabelColormap)
+    ):
         return any_colormap_like
     if isinstance(any_colormap_like, Sequence):
         return CyclicLabelColormap(any_colormap_like)
