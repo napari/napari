@@ -498,7 +498,6 @@ def test_create_layer_controls_qcolorswatchedit(
         ),
     ],
 )
-@pytest.mark.skipif(os.environ.get('MIN_REQ', '0') == '1', reason='min req')
 def test_create_layer_controls_transform_mode_button(
     qtbot,
     create_layer_controls,
