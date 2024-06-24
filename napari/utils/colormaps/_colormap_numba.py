@@ -1,5 +1,9 @@
 """
-Part of colormap code that could be speedup using numba
+Colormap utility functions to be sped-up by numba JIT.
+
+These should stay in a separate module because they need to be reloaded during
+testing, which can break instance/class relationships when done dynamically.
+See https://github.com/napari/napari/pull/7025#issuecomment-2186190719.
 """
 
 from typing import TYPE_CHECKING
