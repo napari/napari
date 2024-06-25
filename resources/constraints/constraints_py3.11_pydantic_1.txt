@@ -195,7 +195,7 @@ numba==0.60.0
     # via napari (napari_repo/pyproject.toml)
 numcodecs==0.12.1
     # via zarr
-numpy==1.26.4
+numpy==2.0.0
     # via
     #   napari (napari_repo/pyproject.toml)
     #   contourpy
