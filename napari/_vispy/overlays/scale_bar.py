@@ -170,7 +170,11 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     def _on_position_change(self, event=None):
         # prevent the text from being cut off by shifting down
         if 'top' in self.overlay.position:
-            self.y_offset = 10 + 2 * self.overlay.font_size
+            self.y_offset = (
+                10
+                + self.overlay.font_size
+                * self.viewer.window._qt_window.devicePixelRatio()
+            )
         else:
             self.y_offset = 20
         super()._on_position_change()
