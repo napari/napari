@@ -209,6 +209,13 @@ class VispyBaseLayer(ABC, Generic[_L]):
         translate = transform.translate[::-1]
         matrix = transform.linear_matrix[::-1, ::-1].T
 
+        # The following accounts for the offset between samples at different
+        # resolutions of 3D multi-scale array-like layers (e.g. images).
+        # The last downsample factor is used because we only ever show the
+        # last/lowest multi-scale level for 3D.
+        # The 2D case is handled differently because that has more complex support
+        # (multiple levels, partial field-of-view) that also interacts with how
+        # pixels are centered (see further below).
         if (
             self._array_like
             and self.layer._slice_input.ndisplay == 3
