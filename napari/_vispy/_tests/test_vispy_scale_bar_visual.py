@@ -1,5 +1,4 @@
 from napari._vispy.overlays.scale_bar import VispyScaleBarOverlay
-from napari.components import ViewerModel
 from napari.components.overlays import ScaleBarOverlay
 
 
@@ -9,8 +8,12 @@ def test_scale_bar_instantiation(make_napari_viewer):
     VispyScaleBarOverlay(overlay=model, viewer=viewer)
 
 
-def test_scale_bar_positioning():
-    viewer = ViewerModel()
+def test_scale_bar_positioning(make_napari_viewer, monkeypatch):
+    viewer = make_napari_viewer()
+    # set devicePixelRatio to 2 so testing works on CI and local
+    monkeypatch.setattr(
+        viewer.window._qt_window, 'devicePixelRatio', lambda: 2
+    )
     model = ScaleBarOverlay()
     scale_bar = VispyScaleBarOverlay(overlay=model, viewer=viewer)
 
