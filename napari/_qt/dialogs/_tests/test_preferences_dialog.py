@@ -39,12 +39,12 @@ def test_dask_widget(qtbot, pref):
     def_dask_enabled = True
     settings = pref._settings
 
-    # check custom widget definition and default value for enabled attribute
+    # check custom widget definition and default value for dask cache `enabled` setting
     assert isinstance(dask_widget, HorizontalObjectSchemaWidget)
     assert settings.application.dask.enabled == def_dask_enabled
     assert dask_widget.state['enabled'] == def_dask_enabled
 
-    # check setting new value via widget
+    # check changing dask cache `enabled` setting via widget
     new_dask_enabled = False
     dask_widget.state = {
         'enabled': new_dask_enabled,
@@ -54,10 +54,10 @@ def test_dask_widget(qtbot, pref):
     assert dask_widget.state['enabled'] == new_dask_enabled
     assert dask_widget.widgets['enabled'].state == new_dask_enabled
 
-    # check resetting to defaul value dask enabled via settings object
+    # check changing dask `enabled` setting via settings object (to default value)
     settings.application.dask.enabled = def_dask_enabled
-    assert dask_widget.state['enabled']
-    assert dask_widget.widgets['enabled'].state
+    assert dask_widget.state['enabled'] == def_dask_enabled
+    assert dask_widget.widgets['enabled'].state == def_dask_enabled
 
 
 def test_font_size_widget(qtbot, pref):

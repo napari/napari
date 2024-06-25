@@ -1190,7 +1190,7 @@ def test_scale_bar_ticks(qt_viewer, qtbot):
 def test_dask_cache(qt_viewer):
     initial_dask_cache = get_settings().application.dask.cache
 
-    # check disabling dask cache calls related logic
+    # check that disabling dask cache setting calls related logic
     with mock.patch(
         'napari._qt.qt_viewer.resize_dask_cache'
     ) as mock_resize_dask_cache:
@@ -1199,7 +1199,7 @@ def test_dask_cache(qt_viewer):
         int(int(False) * initial_dask_cache * 1e9)
     )
 
-    # check enabling dask cache calls related logic
+    # check that enabling dask cache setting calls related logic
     with mock.patch(
         'napari._qt.qt_viewer.resize_dask_cache'
     ) as mock_resize_dask_cache:
