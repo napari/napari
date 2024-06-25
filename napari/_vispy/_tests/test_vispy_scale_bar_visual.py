@@ -1,3 +1,5 @@
+from unittest.mock import MagicMock
+
 from napari._vispy.overlays.scale_bar import VispyScaleBarOverlay
 from napari.components.overlays import ScaleBarOverlay
 
@@ -8,12 +10,10 @@ def test_scale_bar_instantiation(make_napari_viewer):
     VispyScaleBarOverlay(overlay=model, viewer=viewer)
 
 
-def test_scale_bar_positioning(make_napari_viewer, monkeypatch):
+def test_scale_bar_positioning(make_napari_viewer):
     viewer = make_napari_viewer()
     # set devicePixelRatio to 2 so testing works on CI and local
-    monkeypatch.setattr(
-        viewer.window._qt_window, 'devicePixelRatio', lambda: 2
-    )
+    viewer.window._qt_window.devicePixelRatio = MagicMock(return_value=2)
     model = ScaleBarOverlay()
     scale_bar = VispyScaleBarOverlay(overlay=model, viewer=viewer)
 
