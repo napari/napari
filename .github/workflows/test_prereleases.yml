@@ -11,6 +11,7 @@ on:
   pull_request:
     paths:
       - '.github/workflows/test_prereleases.yml'
+      - 'resources/constraints/version_denylist.txt'
 
 env:
   COLUMNS: 120
@@ -42,6 +43,10 @@ jobs:
 
       - uses: tlambert03/setup-qt-libs@v1
 
+      - name: Setup Graphviz
+        uses: ts-graphviz/setup-graphviz@v2
+        continue-on-error: true
+
       - name: Install Windows OpenGL
         if: runner.os == 'Windows'
         run: |
@@ -64,6 +69,7 @@ jobs:
           BACKEND: ${{ matrix.backend }}
           COVERAGE: "no_cov"
           PYVISTA_OFF_SCREEN: True  # required for opengl on windows
+          PIP_CONSTRAINT: resources/constraints/version_denylist.txt
 
       # If something goes wrong, we can open an issue in the repo
       - name: Report Failures
