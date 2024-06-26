@@ -35,7 +35,13 @@ def init_qactions() -> None:
         Q_FILE_ACTIONS,
     )
     from napari._qt._qapp_model.qactions._help import Q_HELP_ACTIONS
-    from napari._qt._qapp_model.qactions._layer import Q_LAYER_ACTIONS
+    from napari._qt._qapp_model.qactions._layerlist_context import (
+        Q_LAYERLIST_CONTEXT_ACTIONS,
+    )
+    from napari._qt._qapp_model.qactions._layers_actions import (
+        LAYERS_ACTIONS,
+        LAYERS_SUBMENUS,
+    )
     from napari._qt._qapp_model.qactions._plugins import Q_PLUGINS_ACTIONS
     from napari._qt._qapp_model.qactions._view import (
         Q_VIEW_ACTIONS,
@@ -68,12 +74,13 @@ def init_qactions() -> None:
             Q_HELP_ACTIONS,
             Q_PLUGINS_ACTIONS,
             Q_VIEW_ACTIONS,
-            Q_LAYER_ACTIONS,
+            LAYERS_ACTIONS,
+            Q_LAYERLIST_CONTEXT_ACTIONS,
             Q_WINDOW_ACTIONS,
         )
     )
 
     # register menubar submenus
     app.menus.append_menu_items(
-        chain(FILE_SUBMENUS, VIEW_SUBMENUS, DEBUG_SUBMENUS)
+        chain(FILE_SUBMENUS, VIEW_SUBMENUS, DEBUG_SUBMENUS, LAYERS_SUBMENUS)
     )
