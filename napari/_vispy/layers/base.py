@@ -211,19 +211,18 @@ class VispyBaseLayer(ABC, Generic[_L]):
 
         # The following accounts for the offset between samples at different
         # resolutions of 3D multi-scale array-like layers (e.g. images).
-        # The last downsample factor is used because we only ever show the
-        # last/lowest multi-scale level for 3D.
         # The 2D case is handled differently because that has more complex support
-        # (multiple levels, partial field-of-view) that also interacts with how
-        # pixels are centered (see further below).
+        # (multiple levels, partial field-of-view) that also currently interacts
+        # with how pixels are centered (see further below).
         if (
             self._array_like
             and self.layer._slice_input.ndisplay == 3
             and self.layer.multiscale
+            and hasattr(self.layer, 'downsample_factors')
         ):
-            translate = (
-                translate + (self.layer.downsample_factors[-1][::-1] - 1) / 2
-            )
+            # The last downsample factor is used because we only ever show the
+            # last/lowest multi-scale level for 3D.
+            translate += (self.layer.downsample_factors[-1][::-1] - 1) / 2
 
         # Embed in the top left corner of a 4x4 affine matrix
         affine_matrix = np.eye(4)
