@@ -576,6 +576,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         return mode
 
+    def update_transform_box_visibility(self, visible):
+        TRANSFORM = self._modeclass.TRANSFORM  # type: ignore[attr-defined]
+        self._overlays['transform_box'].visible = (
+            self.mode == TRANSFORM and visible
+        )
+
     @property
     def mode(self) -> str:
         """str: Interactive mode
