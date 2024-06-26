@@ -14,6 +14,8 @@ class Theme(str):
 
     # https://pydantic-docs.helpmanual.io/usage/types/#custom-data-types
 
+    __slots__ = ()
+
     @classmethod
     def __get_validators__(cls):
         yield cls.validate
@@ -49,6 +51,8 @@ class Language(str):
     """
 
     # https://pydantic-docs.helpmanual.io/usage/types/#custom-data-types
+
+    __slots__ = ()
 
     @classmethod
     def __get_validators__(cls):

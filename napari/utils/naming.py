@@ -1,5 +1,4 @@
-"""Automatically generate names.
-"""
+"""Automatically generate names."""
 
 import inspect
 import re

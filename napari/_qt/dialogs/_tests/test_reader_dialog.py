@@ -17,7 +17,7 @@ from napari.errors.reader_errors import ReaderPluginError
 from napari.settings import get_settings
 
 
-@pytest.fixture
+@pytest.fixture()
 def reader_dialog(qtbot):
     def _reader_dialog(**kwargs):
         widget = QtReaderDialog(**kwargs)
@@ -42,7 +42,7 @@ def test_reader_defaults(reader_dialog, tmpdir):
 
     assert widg.findChild(QLabel).text().startswith('Choose reader')
     assert widg._get_plugin_choice() == 'p1'
-    assert widg.persist_checkbox.isChecked()
+    assert not widg.persist_checkbox.isChecked()
 
 
 def test_reader_with_error_message(reader_dialog):
@@ -84,10 +84,10 @@ def test_get_plugin_choice(tmpdir, reader_dialog):
 def test_get_persist_choice(tmpdir, reader_dialog):
     file_pth = tmpdir.join('my_file.tif')
     widg = reader_dialog(pth=file_pth, readers={'p1': 'p1', 'p2': 'p2'})
-    assert widg._get_persist_choice()
+    assert not widg._get_persist_choice()
 
     widg.persist_checkbox.toggle()
-    assert not widg._get_persist_choice()
+    assert widg._get_persist_choice()
 
 
 def test_prepare_dialog_options_no_readers():
@@ -189,7 +189,7 @@ def test_open_with_dialog_choices_raises(make_napari_viewer):
     viewer = make_napari_viewer()
 
     get_settings().plugins.extension2reader = {}
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='does not exist'):
         open_with_dialog_choices(
             display_name='Fake Plugin',
             persist=True,

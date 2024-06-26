@@ -455,13 +455,13 @@ def test_multiscale_data_protocol():
 
 @pytest.mark.parametrize(
     ('corner_pixels_world', 'exp_level', 'exp_corner_pixels_data'),
-    (
+    [
         ([[5, 5], [15, 15]], 0, [[5, 5], [15, 15]]),
         # Multiscale level selection uses > rather than >= so use -1 and 21
         # instead of 0 and 20 to ensure that the FOV is big enough.
         ([[-1, -1], [21, 21]], 1, [[0, 0], [9, 9]]),
         ([[-11, -11], [31, 31]], 2, [[0, 0], [4, 4]]),
-    ),
+    ],
 )
 def test_update_draw_variable_fov_fixed_canvas_size(
     corner_pixels_world, exp_level, exp_corner_pixels_data
@@ -483,11 +483,11 @@ def test_update_draw_variable_fov_fixed_canvas_size(
 
 @pytest.mark.parametrize(
     ('canvas_size_pixels', 'exp_level', 'exp_corner_pixels_data'),
-    (
+    [
         ([16, 16], 0, [[0, 0], [19, 19]]),
         ([8, 8], 1, [[0, 0], [9, 9]]),
         ([4, 4], 2, [[0, 0], [4, 4]]),
-    ),
+    ],
 )
 def test_update_draw_variable_canvas_size_fixed_fov(
     canvas_size_pixels, exp_level, exp_corner_pixels_data

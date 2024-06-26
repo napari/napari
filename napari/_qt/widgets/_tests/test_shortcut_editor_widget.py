@@ -4,7 +4,7 @@ from unittest.mock import patch
 import pyautogui
 import pytest
 from qtpy.QtCore import QPoint, Qt
-from qtpy.QtWidgets import QApplication, QMessageBox
+from qtpy.QtWidgets import QAbstractItemDelegate, QApplication, QMessageBox
 
 from napari._qt.widgets.qt_keyboard_settings import ShortcutEditor, WarnPopup
 from napari._tests.utils import skip_local_focus, skip_on_mac_ci
@@ -17,7 +17,7 @@ if sys.platform == 'darwin':
     META_CONTROL_KEY = Qt.KeyboardModifier.MetaModifier
 
 
-@pytest.fixture
+@pytest.fixture()
 def shortcut_editor_widget(qtbot):
     # Always reset shortcuts (settings and action manager)
     get_settings().shortcuts.reset()
@@ -88,7 +88,7 @@ def test_restore_defaults(shortcut_editor_widget):
 
 @skip_local_focus
 @pytest.mark.parametrize(
-    'key, modifier, key_symbols',
+    ('key', 'modifier', 'key_symbols'),
     [
         (
             Qt.Key.Key_U,
@@ -131,14 +131,15 @@ def test_keybinding_with_modifiers(
     x = widget._table.columnViewportPosition(widget._shortcut_col)
     y = widget._table.rowViewportPosition(0)
     item_pos = QPoint(x, y)
-    qtbot.mouseClick(
-        widget._table.viewport(), Qt.MouseButton.LeftButton, pos=item_pos
-    )
-    qtbot.mouseDClick(
-        widget._table.viewport(), Qt.MouseButton.LeftButton, pos=item_pos
-    )
-    qtbot.waitUntil(lambda: QApplication.focusWidget() is not None)
-    qtbot.keyClick(QApplication.focusWidget(), key, modifier=modifier)
+    index = widget._table.indexAt(item_pos)
+    widget._table.setCurrentIndex(index)
+    widget._table.edit(index)
+    qtbot.waitUntil(lambda: widget._table.focusWidget() is not None)
+    editor = widget._table.focusWidget()
+    qtbot.keyPress(editor, key, modifier=modifier)
+    widget._table.commitData(editor)
+    widget._table.closeEditor(editor, QAbstractItemDelegate.NoHint)
+
     assert len([warn for warn in recwarn if warn.category is UserWarning]) == 0
 
     shortcut = widget._table.item(0, widget._shortcut_col).text()
@@ -148,7 +149,7 @@ def test_keybinding_with_modifiers(
 
 @skip_local_focus
 @pytest.mark.parametrize(
-    'modifiers, key_symbols, valid',
+    ('modifiers', 'key_symbols', 'valid'),
     [
         (
             Qt.KeyboardModifier.ShiftModifier,
@@ -173,21 +174,21 @@ def test_keybinding_with_only_modifiers(
     x = widget._table.columnViewportPosition(widget._shortcut_col)
     y = widget._table.rowViewportPosition(0)
     item_pos = QPoint(x, y)
-    qtbot.mouseClick(
-        widget._table.viewport(), Qt.MouseButton.LeftButton, pos=item_pos
-    )
-    qtbot.mouseDClick(
-        widget._table.viewport(), Qt.MouseButton.LeftButton, pos=item_pos
-    )
-    qtbot.waitUntil(lambda: QApplication.focusWidget() is not None)
+    index = widget._table.indexAt(item_pos)
+    widget._table.setCurrentIndex(index)
+    widget._table.edit(index)
+    qtbot.waitUntil(lambda: widget._table.focusWidget() is not None)
+    editor = widget._table.focusWidget()
+
     with patch.object(WarnPopup, 'exec_') as mock:
-        qtbot.keyClick(
-            QApplication.focusWidget(), Qt.Key_Enter, modifier=modifiers
-        )
+        qtbot.keyPress(editor, Qt.Key_Enter, modifier=modifiers)
+        widget._table.commitData(editor)
+        widget._table.closeEditor(editor, QAbstractItemDelegate.NoHint)
         if valid:
             assert not mock.called
         else:
             assert mock.called
+
     assert len([warn for warn in recwarn if warn.category is UserWarning]) == 0
 
     shortcut = widget._table.item(0, widget._shortcut_col).text()
@@ -211,15 +212,15 @@ def test_remove_shortcut(shortcut_editor_widget, qtbot, removal_trigger_key):
     x = widget._table.columnViewportPosition(widget._shortcut_col)
     y = widget._table.rowViewportPosition(0)
     item_pos = QPoint(x, y)
-    qtbot.mouseClick(
-        widget._table.viewport(), Qt.MouseButton.LeftButton, pos=item_pos
-    )
-    qtbot.mouseDClick(
-        widget._table.viewport(), Qt.MouseButton.LeftButton, pos=item_pos
-    )
-    qtbot.waitUntil(lambda: QApplication.focusWidget() is not None)
-    qtbot.keyClick(QApplication.focusWidget(), removal_trigger_key)
-    qtbot.keyClick(QApplication.focusWidget(), Qt.Key.Key_Enter)
+    index = widget._table.indexAt(item_pos)
+    widget._table.setCurrentIndex(index)
+    widget._table.edit(index)
+    qtbot.waitUntil(lambda: widget._table.focusWidget() is not None)
+    editor = widget._table.focusWidget()
+    qtbot.keyClick(editor, removal_trigger_key)
+    qtbot.keyClick(editor, Qt.Key.Key_Enter)
+    widget._table.commitData(editor)
+    widget._table.closeEditor(editor, QAbstractItemDelegate.NoHint)
 
     shortcut = widget._table.item(0, widget._shortcut_col).text()
     assert shortcut == ''
@@ -228,7 +229,7 @@ def test_remove_shortcut(shortcut_editor_widget, qtbot, removal_trigger_key):
 @skip_local_focus
 @skip_on_mac_ci
 @pytest.mark.parametrize(
-    'modifier_key, modifiers, key_symbols',
+    ('modifier_key', 'modifiers', 'key_symbols'),
     [
         (
             'shift',

@@ -168,7 +168,7 @@ def test_mpl_colormap_exists():
 
 
 @pytest.mark.parametrize(
-    'name,display_name',
+    ('name', 'display_name'),
     [
         ('twilight_shifted', 'twilight shifted'),  # MPL
         ('light_blues', 'light blues'),  # Vispy

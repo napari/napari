@@ -1,4 +1,5 @@
 import importlib
+from unittest import mock
 
 import pytest
 from app_model.types import MenuItem, SubmenuItem
@@ -6,7 +7,7 @@ from npe2 import DynamicPlugin
 from qtpy.QtWidgets import QWidget
 
 from napari._app_model import get_app
-from napari._app_model.constants import CommandId, MenuId
+from napari._app_model.constants import MenuId
 from napari._qt._qapp_model.qactions import _plugins, init_qactions
 from napari._qt._qplugins._qnpe2 import _toggle_or_get_widget
 from napari._tests.utils import skip_local_popups
@@ -14,6 +15,42 @@ from napari._tests.utils import skip_local_popups
 
 class DummyWidget(QWidget):
     pass
+
+
+@pytest.mark.skipif(
+    not _plugins._plugin_manager_dialog_avail(),
+    reason='`napari_plugin_manager` not available',
+)
+def test_plugin_manager_action(make_napari_viewer):
+    """
+    Test manage plugins installation action.
+
+    The test is skipped in case `napari_plugin_manager` is not available
+    """
+    app = get_app()
+    viewer = make_napari_viewer()
+
+    with mock.patch(
+        'napari_plugin_manager.qt_plugin_dialog.QtPluginDialog'
+    ) as mock_plugin_dialog:
+        app.commands.execute_command(
+            'napari.window.plugins.plugin_install_dialog'
+        )
+    mock_plugin_dialog.assert_called_once_with(viewer.window._qt_window)
+
+
+def test_plugin_errors_action(make_napari_viewer):
+    """Test plugin errors action."""
+    make_napari_viewer()
+    app = get_app()
+
+    with mock.patch(
+        'napari._qt._qapp_model.qactions._plugins.QtPluginErrReporter.exec_'
+    ) as mock_plugin_dialog:
+        app.commands.execute_command(
+            'napari.window.plugins.plugin_err_reporter'
+        )
+    mock_plugin_dialog.assert_called_once()
 
 
 @skip_local_popups
@@ -214,7 +251,7 @@ def test_plugin_manager(make_napari_viewer):
 
     # Check plugin install action is visible
     plugin_install_action = viewer.window.plugins_menu.findAction(
-        CommandId.DLG_PLUGIN_INSTALL,
+        'napari.window.plugins.plugin_install_dialog',
     )
     assert plugin_install_action.isVisible()
 
@@ -233,6 +270,6 @@ def test_no_plugin_manager(monkeypatch, make_napari_viewer):
     # Check plugin install action is not visible
     viewer = make_napari_viewer()
     plugin_install_action = viewer.window.plugins_menu.findAction(
-        CommandId.DLG_PLUGIN_INSTALL
+        'napari.window.plugins.plugin_install_dialog',
     )
     assert not plugin_install_action.isVisible()
