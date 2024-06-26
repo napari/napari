@@ -54,7 +54,7 @@ pyproject-hooks==1.1.0
     # via build
 pyqt6==6.7.0
     # via -r napari_repo/resources/requirements_mypy.in
-pyqt6-qt6==6.7.1
+pyqt6-qt6==6.7.2
     # via pyqt6
 pyqt6-sip==13.6.0
     # via pyqt6

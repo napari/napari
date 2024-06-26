@@ -15,6 +15,7 @@ from pathlib import Path
 from textwrap import wrap
 from typing import Any
 
+from napari.errors import ReaderPluginError
 from napari.utils.translations import trans
 
 
@@ -343,13 +344,20 @@ def _run() -> None:
                 stacklevel=3,
             )
             args.stack = True
-        viewer._window._qt_viewer._qt_open(
-            args.paths,
-            stack=args.stack,
-            plugin=args.plugin,
-            layer_type=args.layer_type,
-            **kwargs,
-        )
+        try:
+            viewer._window._qt_viewer._qt_open(
+                args.paths,
+                stack=args.stack,
+                plugin=args.plugin,
+                layer_type=args.layer_type,
+                **kwargs,
+            )
+        except ReaderPluginError:
+            logging.exception(
+                'Loading %s with %s failed with errors',
+                args.paths,
+                args.plugin,
+            )
 
         if args.with_:
             # Non-npe2 plugins disappear on tabify or if tabified npe2 plugins are loaded after them.

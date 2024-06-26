@@ -93,7 +93,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.103.2
+hypothesis==6.103.4
     # via napari (napari_repo/pyproject.toml)
 idna==3.7
     # via requests
@@ -104,7 +104,7 @@ imageio==2.34.1
     #   scikit-image
 imagesize==1.4.1
     # via sphinx
-importlib-metadata==7.2.0
+importlib-metadata==7.2.1
     # via
     #   build
     #   dask
@@ -365,7 +365,7 @@ pyqt5-sip==12.13.0
     # via pyqt5
 pyqt6==6.7.0
     # via napari (napari_repo/pyproject.toml)
-pyqt6-qt6==6.7.1
+pyqt6-qt6==6.7.2
     # via pyqt6
 pyqt6-sip==13.6.0
     # via pyqt6
