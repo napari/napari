@@ -165,7 +165,7 @@ jobs:
           #
           # --extra pyqt5 etc - names of extra sections from pyproject.toml that should be checked for the dependencies list (maybe we could create a super extra section to collect them all in)
           flags+=" --extra pyqt5"
-          flags+=" --extra pyqt6_experimental"
+          flags+=" --extra pyqt6"
           flags+=" --extra pyside2"
           flags+=" --extra pyside6_experimental"
           flags+=" --extra testing"
