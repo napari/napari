@@ -21,7 +21,6 @@ from typing import (
 )
 from weakref import WeakValueDictionary
 
-from app_model.types import SubmenuItem
 from qtpy.QtCore import (
     QEvent,
     QEventLoop,
@@ -705,17 +704,6 @@ class Window:
         viewer.events.status.connect(self._status_changed)
 
         am_app = get_app_model_app()
-
-        ######################################
-        # add empty submenu to view menu, make it contributable
-        my_submenu_item = SubmenuItem(
-            submenu='napari/view/contributable_menu',
-            title='Contributable Submenu',
-        )
-        am_app.menus.append_menu_items([('napari/view', my_submenu_item)])
-        # make submenu 'contributable' (only works for this file)
-        _CONTRIBUTABLES.add('napari/view/contributable_menu')
-        ######################################
 
         self.dummy_action_disposer = None
         self._add_dummy_action_to_contributables()
