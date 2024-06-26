@@ -404,7 +404,7 @@ def _npe2_manifest_to_actions(
             actions.append(
                 Action(
                     id=cmd.id,
-                    title=cmd.title,
+                    title=f'{cmd.title} ({mf.display_name})',
                     category=cmd.category,
                     tooltip=cmd.short_title or cmd.title,
                     icon=cmd.icon,
