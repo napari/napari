@@ -47,7 +47,6 @@ from superqt.utils import QSignalThrottler
 
 from napari._app_model import get_app as get_app_model_app
 from napari._app_model.constants import MenuGroup, MenuId
-from napari._app_model.constants._menus import _CONTRIBUTABLES
 from napari._app_model.context import create_context, get_context
 from napari._app_model.utils import (
     contains_dummy_action,
@@ -107,7 +106,12 @@ if TYPE_CHECKING:
 
 
 MenuStr = Literal[
-    'file_menu', 'view_menu', 'plugins_menu', 'window_menu', 'help_menu'
+    'file_menu',
+    'view_menu',
+    'layers_menu',
+    'plugins_menu',
+    'window_menu',
+    'help_menu',
 ]
 
 
@@ -693,7 +697,7 @@ class Window:
         self._add_viewer_dock_widget(
             self._qt_viewer.dockLayerList, tabify=False
         )
-        if perf.USE_PERFMON:
+        if perf.perf_config is not None:
             self._add_viewer_dock_widget(
                 self._qt_viewer.dockPerformance, menu=self.window_menu
             )
@@ -707,7 +711,7 @@ class Window:
 
         self.dummy_action_disposer = None
         self._add_dummy_action_to_contributables()
-        self._toggle_empty_menu_dummy_actions(_CONTRIBUTABLES)
+        self._toggle_empty_menu_dummy_actions(MenuId.contributables())
         am_app.menus.menus_changed.connect(
             self._toggle_empty_menu_dummy_actions
         )
@@ -728,7 +732,7 @@ class Window:
         am_app = get_app_model_app()
         menus_list = [
             {'id': menu_id, 'group': MenuGroup.NAVIGATION}
-            for menu_id in _CONTRIBUTABLES
+            for menu_id in MenuId.contributables()
         ]
         action = get_dummy_action(menus_list)
         if action.id not in am_app.commands:
@@ -740,7 +744,7 @@ class Window:
         currently_empty_menus = set()
         # contributable menus that need the dummy item removed
         dont_need_dummy = set()
-        for menu_id in _CONTRIBUTABLES:
+        for menu_id in MenuId.contributables():
             if is_empty_menu(menu_id):
                 currently_empty_menus.add(menu_id)
             elif len(
@@ -764,7 +768,7 @@ class Window:
 
             # which menus need the item back?
             need_dummy_added = set()
-            for menu_id in _CONTRIBUTABLES:
+            for menu_id in MenuId.contributables():
                 if is_empty_menu(menu_id):
                     need_dummy_added.add(menu_id)
 
@@ -775,7 +779,7 @@ class Window:
                 ]
                 action = get_dummy_action(menus_list)
                 self.dummy_action_disposer = am_app.register_action(action)
-        am_app.menus.menus_changed.emit(_CONTRIBUTABLES)
+        am_app.menus.menus_changed.emit(MenuId.contributables())
 
     def _setup_existing_themes(self, connect: bool = True):
         """This function is only executed once at the startup of napari
@@ -892,6 +896,9 @@ class Window:
     def _update_view_menu_state(self):
         self._update_menu_state('view_menu')
 
+    def _update_layers_menu_state(self):
+        self._update_menu_state('layers_menu')
+
     def _update_window_menu_state(self):
         self._update_menu_state('window_menu')
 
@@ -972,6 +979,16 @@ class Window:
             self._update_view_menu_state,
         )
         self.main_menu.addMenu(self.view_menu)
+        # layers menu
+        self.layers_menu = build_qmodel_menu(
+            MenuId.MENUBAR_LAYERS,
+            title=trans._('&Layers'),
+            parent=self._qt_window,
+        )
+        self.layers_menu.aboutToShow.connect(
+            self._update_layers_menu_state,
+        )
+        self.main_menu.addMenu(self.layers_menu)
         # plugins menu
         self.plugins_menu = build_qmodel_menu(
             MenuId.MENUBAR_PLUGINS,
