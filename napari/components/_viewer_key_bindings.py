@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from app_model.types import KeyCode, KeyMod
+
 from napari.components.viewer_model import ViewerModel
 from napari.utils.action_manager import action_manager
 from napari.utils.theme import available_themes, get_system_theme
@@ -11,7 +13,7 @@ if TYPE_CHECKING:
     from napari.viewer import Viewer
 
 
-def register_viewer_action(description):
+def register_viewer_action(description, repeatable=False):
     """
     Convenient decorator to register an action with the current ViewerModel
 
@@ -25,10 +27,21 @@ def register_viewer_action(description):
             command=func,
             description=description,
             keymapprovider=ViewerModel,
+            repeatable=repeatable,
         )
         return func
 
     return _inner
+
+
+@ViewerModel.bind_key(KeyMod.Shift | KeyCode.UpArrow, overwrite=True)
+def extend_selection_to_layer_above(viewer: Viewer):
+    viewer.layers.select_next(shift=True)
+
+
+@ViewerModel.bind_key(KeyMod.Shift | KeyCode.DownArrow, overwrite=True)
+def extend_selection_to_layer_below(viewer: Viewer):
+    viewer.layers.select_previous(shift=True)
 
 
 @register_viewer_action(trans._('Reset scroll.'))
@@ -84,12 +97,16 @@ def delete_selected_layers(viewer: Viewer):
     viewer.layers.remove_selected()
 
 
-@register_viewer_action(trans._('Increment dimensions slider to the left.'))
+@register_viewer_action(
+    trans._('Increment dimensions slider to the left.'), repeatable=True
+)
 def increment_dims_left(viewer: Viewer):
     viewer.dims._increment_dims_left()
 
 
-@register_viewer_action(trans._('Increment dimensions slider to the right.'))
+@register_viewer_action(
+    trans._('Increment dimensions slider to the right.'), repeatable=True
+)
 def increment_dims_right(viewer: Viewer):
     viewer.dims._increment_dims_right()
 
@@ -107,17 +124,17 @@ def focus_axes_down(viewer: Viewer):
 # Use non-breaking spaces and non-breaking hyphen for Preferences table
 @register_viewer_action(
     trans._(
-        'Change order of the visible axes, e.g.\u00A0[0,\u00A01,\u00A02]\u00A0\u2011>\u00A0[2,\u00A00,\u00A01].'
+        'Change order of the visible axes, e.g.\u00a0[0,\u00a01,\u00a02]\u00a0\u2011>\u00a0[2,\u00a00,\u00a01].'
     ),
 )
 def roll_axes(viewer: Viewer):
-    viewer.dims._roll()
+    viewer.dims.roll()
 
 
 # Use non-breaking spaces and non-breaking hyphen for Preferences table
 @register_viewer_action(
     trans._(
-        'Transpose order of the last two visible axes, e.g.\u00A0[0,\u00A01]\u00A0\u2011>\u00A0[1,\u00A00].'
+        'Transpose order of the last two visible axes, e.g.\u00a0[0,\u00a01]\u00a0\u2011>\u00a0[1,\u00a00].'
     ),
 )
 def transpose_axes(viewer: Viewer):

@@ -217,7 +217,7 @@ def template(css: str, **theme):
         css = opacity_pattern.sub(opacity_match, css)
         if isinstance(v, Color):
             v = v.as_rgb()
-        css = css.replace('{{ %s }}' % k, v)
+        css = css.replace(f'{{{{ {k} }}}}', v)
     return css
 
 

@@ -95,5 +95,5 @@ def test_bad_color_array(attribute):
 
     # test setting color with a color array of the wrong shape
     bad_color_array = np.array([[0, 0, 0, 1], [1, 1, 1, 1]])
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must have shape'):
         setattr(shape_list, f'{attribute}_color', bad_color_array)

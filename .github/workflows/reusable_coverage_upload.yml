@@ -1,5 +1,9 @@
+name: Upload coverage
 on:
   workflow_call:
+    secrets:
+      codecov_token:
+        required: true
 
 
 jobs:
@@ -36,7 +40,8 @@ jobs:
           python -Im coverage report --format=markdown --skip-empty --skip-covered >> $GITHUB_STEP_SUMMARY
 
       - name: Upload coverage data
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           fail_ci_if_error: true
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ secrets.codecov_token }}
+          version: v0.6.0
