@@ -1,6 +1,7 @@
 import bisect
 from decimal import Decimal
 from math import floor, log
+from sys import platform
 
 import numpy as np
 import pint
@@ -170,9 +171,13 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     def _on_position_change(self, event=None):
         # prevent the text from being cut off by shifting down
         if 'top' in self.overlay.position:
+            # account for dpi difference on macOS
+            font_dpi_scale_factor = 96 if platform != 'darwin' else 72
             self.y_offset = (
                 10
                 + self.overlay.font_size
+                * font_dpi_scale_factor
+                / 72
                 * self.viewer.window._qt_window.devicePixelRatio()
             )
         else:
