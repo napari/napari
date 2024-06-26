@@ -439,7 +439,7 @@ class QtViewer(QSplitter):
 
     def _create_performance_dock_widget(self):
         """Create the dock widget that shows performance metrics."""
-        if perf.USE_PERFMON:
+        if perf.perf_config is not None:
             return QtViewerDockWidget(
                 self,
                 QtPerformance(),
