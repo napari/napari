@@ -9,10 +9,12 @@ from napari._qt.dialogs.preferences_dialog import (
     QMessageBox,
 )
 from napari._vendor.qt_json_builder.qt_jsonschema_form.widgets import (
+    EnumSchemaWidget,
     FontSizeSchemaWidget,
     HorizontalObjectSchemaWidget,
 )
 from napari.settings import NapariSettings, get_settings
+from napari.settings._constants import BrushSizeOnMouseModifiers, LabelDTypes
 
 
 @pytest.fixture()
@@ -87,6 +89,39 @@ def test_font_size_widget(qtbot, pref):
     font_size_widget._reset_button.click()
     assert get_settings().appearance.font_size == def_font_size
     assert font_size_widget.state == def_font_size
+
+
+@pytest.mark.parametrize(
+    ('enum_setting_name', 'enum_setting_class'),
+    [
+        ('new_labels_dtype', LabelDTypes),
+        ('brush_size_on_mouse_move_modifiers', BrushSizeOnMouseModifiers),
+    ],
+)
+def test_StrEnum_widgets(qtbot, pref, enum_setting_name, enum_setting_class):
+    enum_widget = (
+        pref._stack.currentWidget().widget().widget.widgets[enum_setting_name]
+    )
+    settings = pref._settings
+
+    # check custom widget definition and widget value follows setting
+    assert isinstance(enum_widget, EnumSchemaWidget)
+    assert enum_widget.state == getattr(
+        settings.application, enum_setting_name
+    )
+
+    # check changing setting via widget
+    for idx in range(enum_widget.count()):
+        item_text = enum_widget.itemText(idx)
+        item_data = enum_widget.itemData(idx)
+        enum_widget.setCurrentText(item_text)
+        assert getattr(settings.application, enum_setting_name) == item_data
+        assert enum_widget.state == item_data
+
+    # check changing setting updates widget
+    for enum_value in enum_setting_class:
+        setattr(settings.application, enum_setting_name, enum_value)
+        assert enum_widget.state == enum_value
 
 
 def test_preferences_dialog_accept(qtbot, pref):
