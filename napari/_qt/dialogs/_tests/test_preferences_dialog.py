@@ -1,5 +1,6 @@
 import sys
 
+import numpy.testing as npt
 import pytest
 from qtpy.QtCore import Qt
 
@@ -11,6 +12,7 @@ from napari._qt.dialogs.preferences_dialog import (
 from napari._vendor.qt_json_builder.qt_jsonschema_form.widgets import (
     EnumSchemaWidget,
     FontSizeSchemaWidget,
+    HighlightPreviewWidget,
     HorizontalObjectSchemaWidget,
 )
 from napari.settings import NapariSettings, get_settings
@@ -25,6 +27,8 @@ def pref(qtbot):
     assert settings.appearance.theme == 'dark'
     dlg._settings.appearance.theme = 'light'
     assert get_settings().appearance.theme == 'light'
+    dlg._settings.appearance.highlight.highlight_thickness = 5
+    assert get_settings().appearance.highlight.highlight_thickness == 5
     return dlg
 
 
@@ -124,6 +128,61 @@ def test_StrEnum_widgets(qtbot, pref, enum_setting_name, enum_setting_class):
         assert enum_widget.state == enum_value
 
 
+def test_highlight_widget(qtbot, pref):
+    highlight_widget = (
+        pref._stack.widget(1).widget().widget.widgets['highlight']
+    )
+    settings = pref._settings
+
+    # check custom widget definition and widget follows settings values
+    assert isinstance(highlight_widget, HighlightPreviewWidget)
+    assert (
+        highlight_widget.state['highlight_color']
+        == settings.appearance.highlight.highlight_color
+    )
+    assert (
+        highlight_widget.state['highlight_thickness']
+        == settings.appearance.highlight.highlight_thickness
+    )
+
+    # check changing setting via widget
+    new_widget_values = {
+        'highlight_thickness': 5,
+        'highlight_color': [0.6, 0.6, 1.0, 1.0],
+    }
+    highlight_widget.setValue(new_widget_values)
+    npt.assert_allclose(
+        settings.appearance.highlight.highlight_color,
+        new_widget_values['highlight_color'],
+    )
+    assert (
+        settings.appearance.highlight.highlight_thickness
+        == new_widget_values['highlight_thickness']
+    )
+
+    # check changing setting updates widget
+    new_setting_values = {
+        'highlight_thickness': 1,
+        'highlight_color': [0.5, 0.6, 1.0, 1.0],
+    }
+
+    settings.appearance.highlight.highlight_color = new_setting_values[
+        'highlight_color'
+    ]
+    npt.assert_allclose(
+        highlight_widget.state['highlight_color'],
+        new_setting_values['highlight_color'],
+    )
+
+    settings.appearance.highlight.highlight_thickness = new_setting_values[
+        'highlight_thickness'
+    ]
+    assert (
+        highlight_widget.state['highlight_thickness']
+        == new_setting_values['highlight_thickness']
+    )
+
+
 def test_preferences_dialog_accept(qtbot, pref):
     with qtbot.waitSignal(pref.finished):
         pref.accept()
@@ -155,9 +214,21 @@ def test_preferences_dialog_cancel(qtbot, pref):
 
 
 def test_preferences_dialog_restore(qtbot, pref, monkeypatch):
+    theme_widget = pref._stack.widget(1).widget().widget.widgets['theme']
+    highlight_widget = (
+        pref._stack.widget(1).widget().widget.widgets['highlight']
+    )
     assert get_settings().appearance.theme == 'light'
+    assert theme_widget.state == 'light'
+    assert get_settings().appearance.highlight.highlight_thickness == 5
+    assert highlight_widget.state['highlight_thickness'] == 5
+
     monkeypatch.setattr(
         QMessageBox, 'question', lambda *a: QMessageBox.RestoreDefaults
     )
     pref._restore_default_dialog()
+
     assert get_settings().appearance.theme == 'dark'
+    assert theme_widget.state == 'dark'
+    assert get_settings().appearance.highlight.highlight_thickness == 1
+    assert highlight_widget.state['highlight_thickness'] == 1
