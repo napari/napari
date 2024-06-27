@@ -274,7 +274,7 @@ def update_widget_state(name, widget):
     def _update_widget_state(event):
         value = event.value
         if isinstance(value, StrEnum):
-            value = f'{value}'
+            value = value.value
         widget.state = {name: value}
 
     return _update_widget_state
