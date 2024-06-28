@@ -27,10 +27,6 @@ jobs:
         run: |
           python -m build --wheel --outdir dist/
 
-      - name: Rename wheel
-        run: |
-          mv dist/*.whl dist/napari-0.0.1-py3-none-any.whl
-
       - name: Upload wheel
         uses: actions/upload-artifact@v4
         with:

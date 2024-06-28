@@ -27,7 +27,7 @@ class QtReaderDialog(QDialog):
         parent: QWidget = None,
         readers: Optional[dict[str, str]] = None,
         error_message: str = '',
-        persist_checked: bool = True,
+        persist_checked: bool = False,
     ) -> None:
         if readers is None:
             readers = {}
@@ -194,7 +194,7 @@ def handle_gui_reading(
         pth=_path,
         error_message=error_message,
         readers=readers,
-        persist_checked=not plugin_override,
+        persist_checked=plugin_override,
     )
     display_name, persist = readerDialog.get_user_choices()
     if display_name:
