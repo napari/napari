@@ -243,7 +243,7 @@ def quit_app():
     else:
         QApplication.setWindowIcon(QIcon())
 
-    if perf.USE_PERFMON:
+    if perf.perf_config is not None:
         # Write trace file before exit, if we were writing one.
         # Is there a better place to make sure this is done on exit?
         perf.timers.stop_trace_file()
