@@ -126,7 +126,7 @@ QtModeRadioButton[mode="polygon"]::indicator {
 }
 
 QtModeRadioButton[mode="labels_polygon"]::indicator {
-  image: url("theme_{{ id }}:/polygon_lasso.svg");
+  image: url("theme_{{ id }}:/polygon.svg");
 }
 
 QtModeRadioButton[mode="polygon_lasso"]::indicator {
