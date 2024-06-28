@@ -23,10 +23,7 @@ def contains_dummy_action(menu_items: list[MenuOrSubmenu]) -> bool:
         True if menu_items contains dummy item otherewise false
     """
     for item in menu_items:
-        if (
-            hasattr(item, 'command')
-            and item.command.id == _EMPTY_MENU_DUMMY_ID
-        ):
+        if hasattr(item, 'command') and 'empty_dummy' in item.command.id:
             return True
     return False
 
@@ -48,6 +45,10 @@ def is_empty_menu(menu_id: str) -> bool:
     if menu_id not in app.menus:
         return True
     if len(app.menus.get_menu(menu_id)) == 0:
+        return True
+    if len(app.menus.get_menu(menu_id)) == 1 and contains_dummy_action(
+        app.menus.get_menu(menu_id)
+    ):
         return True
     return False
 
@@ -77,7 +78,13 @@ def get_dummy_action(id_key: str, menu_id: MenuId) -> Action:
         id=f'napari.{id_key}.empty_dummy',
         title='Empty',
         callback=no_op,
-        menus=[{'id': menu_id, 'group': MenuGroup.NAVIGATION}],
+        menus=[
+            {
+                'id': menu_id,
+                'group': MenuGroup.NAVIGATION,
+                'when': parse_expression(f'{id_key}_empty'),
+            }
+        ],
         enablement=False,
-        when=parse_expression(f'{id_key}_empty'),
+        # when=,
     )

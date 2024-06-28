@@ -193,7 +193,6 @@ class _QtMainWindow(QMainWindow):
         # this is the line that initializes any Qt-based app-model Actions that
         # were defined somewhere in the `_qt` module and imported in init_qactions
         init_qactions()
-        add_dummy_actions()
 
         self.status_throttler = QSignalThrottler(parent=self)
         self.status_throttler.setTimeout(50)
@@ -678,6 +677,9 @@ class Window:
         index_npe1_adapters()
 
         self._add_menus()
+        add_dummy_actions(
+            self._qt_viewer._layers.model().sourceModel()._root._ctx
+        )
         self._update_theme()
         self._update_theme_font_size()
         get_settings().appearance.events.theme.connect(self._update_theme)
@@ -828,12 +830,16 @@ class Window:
     def _update_file_menu_state(self):
         self._update_menu_state('file_menu')
         # file menu could have empty submenus
+        # viewer_ctx = get_context(self._qt_window)
+        # self.file_menu.update_from_context(viewer_ctx)
 
     def _update_view_menu_state(self):
         self._update_menu_state('view_menu')
 
     def _update_layers_menu_state(self):
         self._update_menu_state('layers_menu')
+        # viewer_ctx = get_context(self._qt_window)
+        # self.layers_menu.update_from_context(viewer_ctx)
 
     def _update_window_menu_state(self):
         self._update_menu_state('window_menu')

@@ -86,10 +86,9 @@ def init_qactions() -> None:
     )
 
 
-def add_dummy_actions():
+def add_dummy_actions(context):
     from napari._app_model import get_app
     from napari._app_model.constants._menus import MenuId
-    from napari._app_model.context._context import create_context
     from napari._app_model.utils import get_dummy_action, is_empty_menu
 
     app = get_app()
@@ -100,5 +99,5 @@ def add_dummy_actions():
         id_key = menu_id.split('/')[-1]
         dummmy_action = get_dummy_action(id_key, menu_id)
         actions.append(dummmy_action)
-        app[f'{id_key}_empty'] = partial(is_empty_menu, menu_id)
+        context[f'{id_key}_empty'] = partial(is_empty_menu, menu_id)
     app.register_actions(actions)
