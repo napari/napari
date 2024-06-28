@@ -2,9 +2,13 @@ from __future__ import annotations
 
 from functools import lru_cache, partial
 from itertools import chain
+from typing import TYPE_CHECKING
 
 from napari._qt._qapp_model.injection._qprocessors import QPROCESSORS
 from napari._qt._qapp_model.injection._qproviders import QPROVIDERS
+
+if TYPE_CHECKING:
+    from app_model.types import Context
 
 # Submodules should be able to import from most modules, so to
 # avoid circular imports, don't import submodules at the top level here,
@@ -86,7 +90,7 @@ def init_qactions() -> None:
     )
 
 
-def add_dummy_actions(context):
+def add_dummy_actions(context: Context) -> None:
     from napari._app_model import get_app
     from napari._app_model.constants._menus import MenuId
     from napari._app_model.utils import get_dummy_action, is_empty_menu
@@ -98,6 +102,7 @@ def add_dummy_actions(context):
         # assumes leaves are unique!!
         id_key = menu_id.split('/')[-1]
         dummmy_action = get_dummy_action(id_key, menu_id)
-        actions.append(dummmy_action)
-        context[f'{id_key}_empty'] = partial(is_empty_menu, menu_id)
+        if dummmy_action.id not in app.commands:
+            actions.append(dummmy_action)
+            context[f'{id_key}_empty'] = partial(is_empty_menu, menu_id)
     app.register_actions(actions)
