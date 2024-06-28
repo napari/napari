@@ -48,7 +48,7 @@ from superqt.utils import QSignalThrottler
 from napari._app_model.constants import MenuId
 from napari._app_model.context import create_context, get_context
 from napari._qt._qapp_model import build_qmodel_menu
-from napari._qt._qapp_model.qactions import init_qactions
+from napari._qt._qapp_model.qactions import add_dummy_actions, init_qactions
 from napari._qt._qapp_model.qactions._debug import _is_set_trace_active
 from napari._qt._qplugins import (
     _rebuild_npe1_plugins_menu,
@@ -193,6 +193,7 @@ class _QtMainWindow(QMainWindow):
         # this is the line that initializes any Qt-based app-model Actions that
         # were defined somewhere in the `_qt` module and imported in init_qactions
         init_qactions()
+        add_dummy_actions()
 
         self.status_throttler = QSignalThrottler(parent=self)
         self.status_throttler.setTimeout(50)
@@ -819,12 +820,14 @@ class Window:
 
     def _update_menu_state(self, menu: MenuStr):
         """Update enabled/visible state of menu item with context."""
+
         layerlist = self._qt_viewer._layers.model().sourceModel()._root
         menu_model = getattr(self, menu)
         menu_model.update_from_context(get_context(layerlist))
 
     def _update_file_menu_state(self):
         self._update_menu_state('file_menu')
+        # file menu could have empty submenus
 
     def _update_view_menu_state(self):
         self._update_menu_state('view_menu')

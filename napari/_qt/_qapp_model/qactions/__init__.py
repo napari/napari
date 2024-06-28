@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from functools import lru_cache
+from functools import lru_cache, partial
 from itertools import chain
 
 from napari._qt._qapp_model.injection._qprocessors import QPROCESSORS
@@ -84,3 +84,21 @@ def init_qactions() -> None:
     app.menus.append_menu_items(
         chain(FILE_SUBMENUS, VIEW_SUBMENUS, DEBUG_SUBMENUS, LAYERS_SUBMENUS)
     )
+
+
+def add_dummy_actions():
+    from napari._app_model import get_app
+    from napari._app_model.constants._menus import MenuId
+    from napari._app_model.context._context import create_context
+    from napari._app_model.utils import get_dummy_action, is_empty_menu
+
+    app = get_app()
+
+    actions = []
+    for menu_id in MenuId.contributables():
+        # assumes leaves are unique!!
+        id_key = menu_id.split('/')[-1]
+        dummmy_action = get_dummy_action(id_key, menu_id)
+        actions.append(dummmy_action)
+        app[f'{id_key}_empty'] = partial(is_empty_menu, menu_id)
+    app.register_actions(actions)
