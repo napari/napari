@@ -1,11 +1,13 @@
 import pytest
 
 from napari._app_model import get_app
-from napari._app_model.actions._layer_actions import LAYER_ACTIONS
+from napari._app_model.actions._layerlist_context_actions import (
+    LAYERLIST_CONTEXT_ACTIONS,
+)
 from napari.components.layerlist import LayerList
 
 
-@pytest.mark.parametrize('layer_action', LAYER_ACTIONS)
+@pytest.mark.parametrize('layer_action', LAYERLIST_CONTEXT_ACTIONS)
 def test_layer_actions_ctx_menu_execute_command(layer_action):
     app = get_app()
     command_id = layer_action.id
