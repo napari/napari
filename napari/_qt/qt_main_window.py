@@ -677,9 +677,10 @@ class Window:
         index_npe1_adapters()
 
         self._add_menus()
-        add_dummy_actions(
-            self._qt_viewer._layers.model().sourceModel()._root._ctx
-        )
+        if self._qt_viewer._layers is not None:
+            add_dummy_actions(
+                self._qt_viewer._layers.model().sourceModel()._root._ctx
+            )
         self._update_theme()
         self._update_theme_font_size()
         get_settings().appearance.events.theme.connect(self._update_theme)
