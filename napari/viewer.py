@@ -1,5 +1,5 @@
 import typing
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Callable, Optional
 from weakref import WeakSet
 
 import magicgui as mgui
@@ -87,6 +87,11 @@ class Viewer(ViewerModel):
             self.window._qt_viewer.add_to_console_backlog(variables)
             return
         self.window._qt_viewer.console.push(variables)
+
+    def measure_fps(self, callback: Callable):
+        return self.window.qt_viewer.canvas._scene_canvas.measure_fps(
+            callback=callback
+        )
 
     def screenshot(
         self,
