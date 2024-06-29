@@ -2,3 +2,4 @@ pytest-cov
 pytest-json-report
 pyopengl!=3.1.7
 tensorstore!=0.1.38
+zarr!=3.0.0a0
