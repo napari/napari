@@ -88,8 +88,8 @@ class Viewer(ViewerModel):
             return
         self.window._qt_viewer.console.push(variables)
 
-    def measure_fps(self, callback: Callable):
-        return self.window.qt_viewer.canvas._scene_canvas.measure_fps(
+    def measure_fps(self, callback: Callable[[float], typing.Any]):
+        return self.window._qt_viewer.canvas._scene_canvas.measure_fps(
             callback=callback
         )
 
