@@ -279,14 +279,14 @@ def test_export_figure(make_napari_viewer, tmp_path):
 
     camera_center = viewer.camera.center
     camera_zoom = viewer.camera.zoom
-    img = viewer.export_figure(flash=False, path=str(tmp_path / "img.png"))
+    img = viewer.export_figure(flash=False, path=str(tmp_path / 'img.png'))
 
     assert viewer.camera.center == camera_center
     assert viewer.camera.zoom == camera_zoom
     assert img.shape == (250, 250, 4)
     assert np.all(img != np.array([0, 0, 0, 0]))
-    
-    assert (tmp_path / "img.png").exist()
+
+    assert (tmp_path / 'img.png').exist()
 
     viewer.camera.center = [100, 100]
     camera_center = viewer.camera.center
