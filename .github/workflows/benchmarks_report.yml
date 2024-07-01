@@ -63,7 +63,7 @@ jobs:
       - name: Collect PR number if available
         run: |
           if [[ -f pr_number ]]; then
-            echo "PR_NUMBER=$(cat pr_number)" >> $GITHUB_ENV
+            echo "PR_NUMBER=$(cat pr_number)" >> "$GITHUB_ENV"
           fi
 
       - name: "Comment on PR"

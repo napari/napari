@@ -72,7 +72,7 @@ jobs:
       - uses: tlambert03/setup-qt-libs@v1
 
       - name: Setup asv
-        run: python -m pip install asv[virtualenv]
+        run: python -m pip install "asv[virtualenv]"
         env:
           PIP_CONSTRAINT: resources/constraints/benchmark.txt
 
@@ -91,9 +91,11 @@ jobs:
           # asv will checkout commits, which might contain LFS artifacts; ignore those errors since
           # they are probably just documentation PNGs not needed here anyway
           GIT_LFS_SKIP_SMUDGE: 1
+          HEAD_LABEL: ${{ github.event.pull_request.head.label }}
           PIP_CONSTRAINT: ${{ github.workspace }}/resources/constraints/benchmark.txt
         run: |
           set -euxo pipefail
+          read -ra cmd_options <<< "$ASV_OPTIONS"
 
           # ID this runner
           asv machine --yes
@@ -103,7 +105,7 @@ jobs:
             BASE_REF=${{ github.event.pull_request.base.sha }}
             CONTENDER_REF=${GITHUB_SHA}
             echo "Baseline:  ${BASE_REF} (${{ github.event.pull_request.base.label }})"
-            echo "Contender: ${CONTENDER_REF} (${{ github.event.pull_request.head.label }})"
+            echo "Contender: ${CONTENDER_REF} ($HEAD_LABEL)"
           elif [[ $GITHUB_EVENT_NAME == schedule ]]; then
             EVENT_NAME="cronjob"
             BASE_REF="${{ fromJSON(steps.latest_release.outputs.data).target_commitish }}"
@@ -118,12 +120,12 @@ jobs:
             echo "Contender: ${CONTENDER_REF} (workflow input)"
           fi
 
-          echo "EVENT_NAME=$EVENT_NAME" >> $GITHUB_ENV
-          echo "BASE_REF=$BASE_REF" >> $GITHUB_ENV
-          echo "CONTENDER_REF=$CONTENDER_REF" >> $GITHUB_ENV
+          echo "EVENT_NAME=$EVENT_NAME" >> "$GITHUB_ENV"
+          echo "BASE_REF=$BASE_REF" >> "$GITHUB_ENV"
+          echo "CONTENDER_REF=$CONTENDER_REF" >> "$GITHUB_ENV"
 
           # Run benchmarks for current commit against base
-          asv continuous $ASV_OPTIONS -b '${{ matrix.selection-regex }}' ${BASE_REF} ${CONTENDER_REF} \
+          asv continuous "${cmd_options[@]}" -b "${{ matrix.selection-regex }}" "${BASE_REF}" "${CONTENDER_REF}" \
           | sed -E "/Traceback | failed$|PERFORMANCE DECREASED/ s/^/::error:: /" \
           | tee asv_continuous.log
 

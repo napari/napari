@@ -34,7 +34,7 @@ jobs:
           TAG="${GITHUB_REF/refs\/tags\/v/}"  # clean tag
           if [[ "$TAG" != *"rc"* && "$TAG" != *"a"* && "$TAG" != *"b"* ]]; then
             VER="${TAG/rc*/}"  # remove pre-release identifier
-            RELEASE_NOTES="$(cat docs/release/release_${VER//./_}.md)"
+            RELEASE_NOTES="$(cat "docs/release/release_${VER//./_}.md")"
             # https://github.community/t5/GitHub-Actions/set-output-Truncates-Multiline-Strings/m-p/38372/highlight/true#M3322
             RELEASE_NOTES="${RELEASE_NOTES//'%'/'%25'}"
             RELEASE_NOTES="${RELEASE_NOTES//$'\n'/'%0A'}"
@@ -42,9 +42,9 @@ jobs:
           else
             RELEASE_NOTES="pre-release $TAG"
           fi
-          echo "tag=${TAG}" >> $GITHUB_ENV
+          echo "tag=${TAG}" >> "$GITHUB_ENV"
           # https://help.github.com/en/actions/reference/workflow-commands-for-github-actions
-          echo "name=contents=${RELEASE_NOTES}" >> $GITHUB_ENV
+          echo "name=contents=${RELEASE_NOTES}" >> "$GITHUB_ENV"
       - name: Create Release
         uses: "softprops/action-gh-release@v2"
         with:

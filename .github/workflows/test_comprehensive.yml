@@ -86,7 +86,6 @@ jobs:
       qt_backend: ${{ matrix.backend }}
       min_req: ${{ matrix.MIN_REQ }}
       coverage: cov
-      toxenv: ${{ matrix.toxenv }}
       tox_extras: ${{ matrix.tox_extras }}
 
   test_pip_install:
