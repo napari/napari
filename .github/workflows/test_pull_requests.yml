@@ -243,7 +243,7 @@ jobs:
             asv run --show-stderr --quick  --attribute timeout=300 HEAD^!
         env:
           PR: 1 # prevents asv from running very compute-intensive benchmarks
-          PIP_CONSTRAINT: resources/constraints/pympler.txt
+          PIP_CONSTRAINT: ${{ github.workspace }}resources/constraints/pympler.txt
 
       - name: Run benchmarks latest release
         # here we check if the benchmark on the latest release is not broken
