@@ -89,6 +89,7 @@ jobs:
           # asv will checkout commits, which might contain LFS artifacts; ignore those errors since
           # they are probably just documentation PNGs not needed here anyway
           GIT_LFS_SKIP_SMUDGE: 1
+          HEAD_LABEL: ${{ github.event.pull_request.head.label }}
         run: |
           set -euxo pipefail
 
@@ -100,7 +101,7 @@ jobs:
             BASE_REF=${{ github.event.pull_request.base.sha }}
             CONTENDER_REF=${GITHUB_SHA}
             echo "Baseline:  ${BASE_REF} (${{ github.event.pull_request.base.label }})"
-            echo "Contender: ${CONTENDER_REF} (${{ github.event.pull_request.head.label }})"
+            echo "Contender: ${CONTENDER_REF} ($HEAD_LABEL)"
           elif [[ $GITHUB_EVENT_NAME == schedule ]]; then
             EVENT_NAME="cronjob"
             BASE_REF="${{ fromJSON(steps.latest_release.outputs.data).target_commitish }}"
