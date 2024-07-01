@@ -231,7 +231,7 @@ jobs:
           pip install --upgrade pip
           pip install asv[virtualenv]
         env:
-          PIP_CONSTRAINT: resources/constraints/pympler.txt
+          PIP_CONSTRAINT: resources/constraints/benchmark.txt
 
       - name: asv machine
         run: asv machine --yes
@@ -243,7 +243,7 @@ jobs:
             asv run --show-stderr --quick  --attribute timeout=300 HEAD^!
         env:
           PR: 1 # prevents asv from running very compute-intensive benchmarks
-          PIP_CONSTRAINT: ${{ github.workspace }}resources/constraints/pympler.txt
+          PIP_CONSTRAINT: ${{ github.workspace }}resources/constraints/benchmark.txt
 
       - name: Run benchmarks latest release
         # here we check if the benchmark on the latest release is not broken
@@ -253,4 +253,4 @@ jobs:
             asv run --show-stderr --quick  --attribute timeout=300  ${{ fromJSON(steps.latest_release.outputs.data).target_commitish }}^!
         env:
           PR: 1  # prevents asv from running very compute-intensive benchmarks
-          PIP_CONSTRAINT: ${{ github.workspace }}/resources/constraints/pympler.txt
+          PIP_CONSTRAINT: ${{ github.workspace }}/resources/constraints/benchmark.txt
