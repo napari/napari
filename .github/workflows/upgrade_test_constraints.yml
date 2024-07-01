@@ -156,7 +156,7 @@ jobs:
         run: |
           set -x
           pip install -U uv
-          flags=("--quiet" "--extra pyqt5" "--extra pyqt6" "--extra pyside2" "--extra pyside6_experimental" "--extra testing" "--extra testing_extra" "--extra optional")
+          flags=(--quiet --extra pyqt5 --extra pyqt6 --extra pyside2 --extra pyside6_experimental --extra testing --extra testing_extra --extra optional)
 
           # Explanation of below commands
           # uv pip compile --python-version 3.9 - call uv pip compile but ensure proper interpreter
