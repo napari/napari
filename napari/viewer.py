@@ -145,12 +145,12 @@ class Viewer(ViewerModel):
 
         Parameters
         ----------
-        path : Optional[str]
+        path : str, optional
             Filename for saving screenshot image.
-        size : Optional[tuple[str, str]]
+        size : tuple of two ints, optional
             Size (resolution height x width) of the screenshot. By default, the currently displayed size.
             Only used if `canvas_only` is True.
-        scale : Optional[float]
+        scale : float, optional
             Scale factor used to increase resolution of canvas for the screenshot. By default, the currently displayed resolution.
             Only used if `canvas_only` is True.
         canvas_only : bool

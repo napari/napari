@@ -1558,7 +1558,7 @@ class Window:
         size : tuple of two ints, optional
             Size (resolution height x width) of the screenshot. By default, the currently displayed size.
             Only used if `canvas_only` is True.
-        scale : Optional[float]
+        scale : float, optional
             Scale factor used to increase resolution of canvas for the screenshot.
             By default, the currently displayed resolution.
             Only used if `canvas_only` is True.
@@ -1579,6 +1579,9 @@ class Window:
 
         canvas = self._qt_viewer.canvas
         prev_size = canvas.size
+        camera = self._qt_viewer.viewer.camera
+        old_center = camera.center
+        old_zoom = camera.zoom
         if fit_to_data_extent:
             if not canvas_only:
                 raise ValueError(
@@ -1589,9 +1592,6 @@ class Window:
                     )
                 )
             ndisplay = self._qt_viewer.viewer.dims.ndisplay
-            camera = self._qt_viewer.viewer.camera
-            old_center = camera.center
-            old_zoom = camera.zoom
             if ndisplay > 2:
                 raise NotImplementedError(
                     trans._(
@@ -1636,9 +1636,8 @@ class Window:
                 # make sure we always go back to the right canvas size
                 if size is not None or scale is not None or fit_to_data_extent:
                     canvas.size = prev_size
-                if fit_to_data_extent:
-                    camera.center = old_center
-                    camera.zoom = old_zoom
+                camera.center = old_center
+                camera.zoom = old_zoom
         else:
             img = self._qt_window.grab().toImage()
             if flash:
@@ -1650,7 +1649,7 @@ class Window:
         path: Optional[str] = None,
         scale: float = 1,
         flash=True,
-    ):
+    ) -> np.ndarray:
         """Export an image of the full extent of the displayed layer data.
 
         This function finds a tight boundary around the data, resets the view
@@ -1664,7 +1663,7 @@ class Window:
 
         Parameters
         ----------
-        path : Optional[str]
+        path : str, optional
             Filename for saving screenshot image.
         scale : float
             Scale factor used to increase resolution of canvas for the
