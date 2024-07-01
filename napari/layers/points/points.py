@@ -2182,7 +2182,7 @@ class Points(Layer):
             self.data[np.ix_(selection_indices, disp)] = (
                 self.data[np.ix_(selection_indices, disp)] + shift
             )
-            self.refresh()
+            self._clear_extents_and_refresh()
             self.events.data(
                 value=self.data,
                 action=ActionType.CHANGED,
@@ -2270,7 +2270,7 @@ class Points(Layer):
             self._selected_data.update(
                 set(range(totpoints, totpoints + len(self._clipboard['data'])))
             )
-            self.refresh()
+            self._clear_extents_and_refresh()
 
     def _copy_data(self) -> None:
         """Copy selected points to clipboard."""
