@@ -112,6 +112,10 @@ class MenuGroup:
         GENERATE = '3_generate'
 
 
+# dummy action ID for empty contributable menus
+_EMPTY_MENU_DUMMY_ID = 'napari.window.empty'
+
+
 def is_menu_contributable(menu_id: str) -> bool:
     """Return True if the given menu_id is a menu that plugins can contribute to."""
     return (
