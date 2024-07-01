@@ -22,7 +22,7 @@ markdown-it-py==3.0.0
     # via rich
 mdurl==0.1.2
     # via markdown-it-py
-mypy==1.10.0
+mypy==1.10.1
     # via -r napari_repo/resources/requirements_mypy.in
 mypy-extensions==1.0.0
     # via mypy
@@ -83,7 +83,7 @@ types-pyyaml==6.0.12.20240311
     # via -r napari_repo/resources/requirements_mypy.in
 types-requests==2.32.0.20240622
     # via -r napari_repo/resources/requirements_mypy.in
-types-setuptools==70.0.0.20240524
+types-setuptools==70.1.0.20240627
     # via -r napari_repo/resources/requirements_mypy.in
 typing-extensions==4.12.2
     # via
