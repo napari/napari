@@ -1555,7 +1555,7 @@ class Window:
         flash : bool
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
-        size : Optional[int, int]
+        size : tuple of two ints, optional
             Size (resolution height x width) of the screenshot. By default, the currently displayed size.
             Only used if `canvas_only` is True.
         scale : Optional[float]
