@@ -21,6 +21,7 @@ from typing import (
 )
 from weakref import WeakValueDictionary
 
+import numpy as np
 from qtpy.QtCore import (
     QEvent,
     QEventLoop,
