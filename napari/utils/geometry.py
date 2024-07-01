@@ -187,9 +187,9 @@ def point_in_bounding_box(point: np.ndarray, bounding_box: np.ndarray) -> bool:
         (2, n) array containing the min and max of the nD bounding box.
         As returned by `Layer._extent_data`.
     """
-    if np.all(point >= bounding_box[0]) and np.all(point <= bounding_box[1]):
-        return True
-    return False
+    return bool(
+        np.all(point >= bounding_box[0]) and np.all(point <= bounding_box[1])
+    )
 
 
 def clamp_point_to_bounding_box(point: np.ndarray, bounding_box: np.ndarray):
