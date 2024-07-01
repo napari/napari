@@ -264,9 +264,38 @@ def test_screenshot(make_napari_viewer):
 
     # Take screenshot
     with pytest.warns(FutureWarning):
-        screenshot = viewer.window.qt_viewer.screenshot(flash=False)
+        viewer.window.qt_viewer.screenshot(flash=False)
     screenshot = viewer.window.screenshot(flash=False, canvas_only=True)
     assert screenshot.ndim == 3
+
+
+def test_screenshot_fit_to_data_extent(make_napari_viewer):
+    viewer = make_napari_viewer()
+
+    np.random.seed(0)
+    # Add image
+    data = np.random.randint(150, 250, size=(250, 250))
+    viewer.add_image(data)
+
+    camera_center = viewer.camera.center
+    camera_zoom = viewer.camera.zoom
+    img = viewer.export_figure(flash=False)
+
+    assert viewer.camera.center == camera_center
+    assert viewer.camera.zoom == camera_zoom
+    assert img.shape == (250, 250, 4)
+    assert np.all(img != np.array([0, 0, 0, 0]))
+
+    viewer.camera.center = [100, 100]
+    camera_center = viewer.camera.center
+    camera_zoom = viewer.camera.zoom
+    img = viewer.export_figure()
+
+    assert viewer.camera.center == camera_center
+    assert viewer.camera.zoom == camera_zoom
+    assert img.shape == (250, 250, 4)
+    assert np.all(img != np.array([0, 0, 0, 0]))
+    viewer.close()
 
 
 @pytest.mark.skip('new approach')

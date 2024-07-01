@@ -5,7 +5,10 @@ from napari.utils.colormaps.colormap import (
     DirectLabelColormap,
 )
 from napari.utils.info import citation_text, sys_info
-from napari.utils.notebook_display import NotebookScreenshot, nbscreenshot
+from napari.utils.notebook_display import (
+    NotebookScreenshot,
+    nbscreenshot,
+)
 from napari.utils.progress import cancelable_progress, progrange, progress
 
 __all__ = (
