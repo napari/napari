@@ -253,4 +253,4 @@ jobs:
             asv run --show-stderr --quick  --attribute timeout=300  ${{ fromJSON(steps.latest_release.outputs.data).target_commitish }}^!
         env:
           PR: 1  # prevents asv from running very compute-intensive benchmarks
-          PIP_CONSTRAINT: resources/constraints/pympler.txt
+          PIP_CONSTRAINT: ${{ github.workspace }}/resources/constraints/pympler.txt
