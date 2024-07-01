@@ -22,8 +22,8 @@ jobs:
           cache-dependency-path: pyproject.toml
       - name: Install napari
         run: |
-          pip install -e .[all]
-          pip install -e .[testing]
+          pip install -e ".[all]"
+          pip install -e ".[testing]"
       - name: Run check
         run: |
           python -m pytest -Wignore tools/ --tb=short

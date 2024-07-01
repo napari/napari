@@ -72,7 +72,7 @@ jobs:
       - uses: tlambert03/setup-qt-libs@v1
 
       - name: Setup asv
-        run: python -m pip install asv[virtualenv]
+        run: python -m pip install "asv[virtualenv]"
         env:
           PIP_CONSTRAINT: resources/constraints/benchmark.txt
 
@@ -95,6 +95,7 @@ jobs:
           PIP_CONSTRAINT: ${{ github.workspace }}/resources/constraints/benchmark.txt
         run: |
           set -euxo pipefail
+          read -ra cmd_options <<< "$ASV_OPTIONS"
 
           # ID this runner
           asv machine --yes
@@ -119,12 +120,12 @@ jobs:
             echo "Contender: ${CONTENDER_REF} (workflow input)"
           fi
 
-          echo "EVENT_NAME=$EVENT_NAME" >> $GITHUB_ENV
-          echo "BASE_REF=$BASE_REF" >> $GITHUB_ENV
-          echo "CONTENDER_REF=$CONTENDER_REF" >> $GITHUB_ENV
+          echo "EVENT_NAME=$EVENT_NAME" >> "$GITHUB_ENV"
+          echo "BASE_REF=$BASE_REF" >> "$GITHUB_ENV"
+          echo "CONTENDER_REF=$CONTENDER_REF" >> "$GITHUB_ENV"
 
           # Run benchmarks for current commit against base
-          asv continuous $ASV_OPTIONS -b '${{ matrix.selection-regex }}' ${BASE_REF} ${CONTENDER_REF} \
+          asv continuous "${cmd_options[@]}" -b "${{ matrix.selection-regex }}" "${BASE_REF}" "${CONTENDER_REF}" \
           | sed -E "/Traceback | failed$|PERFORMANCE DECREASED/ s/^/::error:: /" \
           | tee asv_continuous.log
 
