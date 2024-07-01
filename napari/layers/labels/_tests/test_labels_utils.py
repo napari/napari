@@ -57,9 +57,9 @@ def test_get_dtype():
     multiscale_layer = Labels(layer_data)
     assert get_dtype(multiscale_layer) == layer_data[0].dtype
 
-    data = data.astype(int)
+    data = data.astype(np.int64)
     int_layer = Labels(data)
-    assert get_dtype(int_layer) is int
+    assert get_dtype(int_layer) is np.dtype(np.int64)
 
 
 def test_first_nonzero_coordinate():
