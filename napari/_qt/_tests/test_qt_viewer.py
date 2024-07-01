@@ -286,7 +286,7 @@ def test_export_figure(make_napari_viewer, tmp_path):
     assert img.shape == (250, 250, 4)
     assert np.all(img != np.array([0, 0, 0, 0]))
 
-    assert (tmp_path / 'img.png').exist()
+    assert (tmp_path / 'img.png').exists()
 
     viewer.camera.center = [100, 100]
     camera_center = viewer.camera.center
