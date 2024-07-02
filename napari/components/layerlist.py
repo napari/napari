@@ -9,6 +9,9 @@ from typing import TYPE_CHECKING, Optional, Union
 
 import numpy as np
 
+from napari._app_model.context._layerlist_context import (
+    _empty_shapes_layer_selected,
+)
 from napari.components.dims import RangeTuple
 from napari.layers import Layer
 from napari.layers.utils.layer_utils import Extent
@@ -93,6 +96,9 @@ class LayerList(SelectableEventedList[Layer]):
 
         self._ctx = create_context(self)
         if self._ctx is not None:  # happens during Viewer type creation
+            self._ctx['selected_empty_shapes_layer'] = (
+                _empty_shapes_layer_selected
+            )
             self._ctx_keys = LayerListContextKeys(self._ctx)
             self.events.inserted.connect(self._ctx_keys.update)
             self.events.removed.connect(self._ctx_keys.update)

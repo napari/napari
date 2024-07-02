@@ -46,9 +46,6 @@ from qtpy.QtWidgets import QStyledItemDelegate
 from napari._app_model.constants import MenuId
 from napari._app_model.context import get_context
 from napari._qt._qapp_model import build_qmodel_menu
-from napari._qt._qapp_model.qactions._layerlist_context import (
-    is_valid_spatial_in_clipboard,
-)
 from napari._qt.containers._base_item_model import ItemRole
 from napari._qt.containers.qt_layer_model import LoadedRole, ThumbnailRole
 from napari._qt.qt_resources import QColoredSVGIcon
@@ -317,12 +314,6 @@ class LayerDelegate(QStyledItemDelegate):
             )
 
         layer_list: LayerList = model.sourceModel()._root
-        # update context keys of selected layers
-        for key, get in layer_list._selection_ctx_keys._getters.items():
-            setattr(
-                layer_list._selection_ctx_keys, key, get(layer_list.selection)
-            )
         ctx = get_context(layer_list)
-        ctx['valid_spatial_json_clipboard'] = is_valid_spatial_in_clipboard()
         self._context_menu.update_from_context(ctx)
         self._context_menu.exec_(pos)
