@@ -287,7 +287,7 @@ class _DeprecatingDict(UserDict[str, Any]):
     def __contains__(self, key: object) -> bool:
         if key in self._renamed:
             key = cast(str, key)
-        key = self._maybe_rename_key(key)
+            key = self._maybe_rename_key(key)
         return self.data.__contains__(key)
 
     def _maybe_rename_key(self, key: str) -> str:
