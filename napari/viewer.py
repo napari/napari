@@ -112,7 +112,7 @@ class Viewer(ViewerModel):
 
         Parameters
         ----------
-        path : Optional[str]
+        path : str, optional
             Filename for saving screenshot image.
         scale : float
             Scale factor used to increase resolution per pixel for the
