@@ -58,6 +58,7 @@ from napari.utils.colormaps import (
 from napari.utils.colormaps.colormap import (
     CyclicLabelColormap,
     LabelColormapBase,
+    _normalize_label_colormap,
 )
 from napari.utils.colormaps.colormap_utils import shuffle_and_extend_colormap
 from napari.utils.events import EmitterGroup, Event
@@ -90,6 +91,9 @@ class Labels(ScalarFieldBase):
         the final column is a length N translation vector and a 1 or a napari
         `Affine` transform object. Applied as an extra transform on top of the
         provided scale, rotate, and shear values.
+    axis_labels : tuple of str, optional
+        Dimension names of the layer data.
+        If not provided, axis_labels will be set to (..., 'axis -2', 'axis -1').
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -156,6 +160,9 @@ class Labels(ScalarFieldBase):
         ones along the main diagonal.
     translate : tuple of float
         Translation values for the layer.
+    units : tuple of str or pint.Unit, optional
+        Units of the layer data in world coordinates.
+        If not provided, the default units are assumed to be pixels.
     visible : bool
         Whether the layer visual is currently being displayed.
 
@@ -167,6 +174,8 @@ class Labels(ScalarFieldBase):
         belongs to. The label 0 is rendered as transparent. Please note
         multiscale rendering is only supported in 2D. In 3D, only
         the lowest resolution scale is displayed.
+    axis_labels : tuple of str
+        Dimension names of the layer data.
     multiscale : bool
         Whether the data is a multiscale image or not. Multiscale data is
         represented by a list of array like image data. The first image in the
@@ -234,6 +243,8 @@ class Labels(ScalarFieldBase):
         Properties defining plane rendering in 3D.
     experimental_clipping_planes : ClippingPlaneList
         Clipping planes defined in data coordinates, used to clip the volume.
+    units: tuple of pint.Unit
+        Units of the layer data in world coordinates.
 
     Notes
     -----
@@ -288,6 +299,7 @@ class Labels(ScalarFieldBase):
         data,
         *,
         affine=None,
+        axis_labels=None,
         blending='translucent',
         cache=True,
         colormap=None,
@@ -306,6 +318,7 @@ class Labels(ScalarFieldBase):
         scale=None,
         shear=None,
         translate=None,
+        units=None,
         visible=True,
     ) -> None:
         if name is None and data is not None:
@@ -330,23 +343,25 @@ class Labels(ScalarFieldBase):
 
         super().__init__(
             data,
-            rendering=rendering,
-            depiction=depiction,
-            name=name,
-            metadata=metadata,
-            scale=scale,
-            translate=translate,
-            rotate=rotate,
-            shear=shear,
             affine=affine,
-            opacity=opacity,
+            axis_labels=axis_labels,
             blending=blending,
-            visible=visible,
-            multiscale=multiscale,
             cache=cache,
-            plane=plane,
+            depiction=depiction,
             experimental_clipping_planes=experimental_clipping_planes,
+            rendering=rendering,
+            metadata=metadata,
+            multiscale=multiscale,
+            name=name,
+            scale=scale,
+            shear=shear,
+            plane=plane,
+            opacity=opacity,
             projection_mode=projection_mode,
+            rotate=rotate,
+            translate=translate,
+            units=units,
+            visible=visible,
         )
 
         self.events.add(
@@ -501,6 +516,7 @@ class Labels(ScalarFieldBase):
         self._set_colormap(colormap)
 
     def _set_colormap(self, colormap):
+        colormap = _normalize_label_colormap(colormap)
         if isinstance(colormap, CyclicLabelColormap):
             self._random_colormap = colormap
             self._original_random_colormap = colormap
@@ -654,7 +670,7 @@ class Labels(ScalarFieldBase):
 
         Returns
         -------
-        state : dict[str, Any]
+        state : dict of str to Any
             Dictionary of layer state.
         """
         state = self._get_base_state()

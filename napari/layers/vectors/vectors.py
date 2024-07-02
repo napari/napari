@@ -50,6 +50,9 @@ class Vectors(Layer):
         the final column is a length N translation vector and a 1 or a napari
         `Affine` transform object. Applied as an extra transform on top of the
         provided scale, rotate, and shear values.
+    axis_labels : tuple of str, optional
+        Dimension names of the layer data.
+        If not provided, axis_labels will be set to (..., 'axis -2', 'axis -1').
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -121,6 +124,10 @@ class Vectors(Layer):
         ones along the main diagonal.
     translate : tuple of float
         Translation values for the layer.
+    units : tuple of str or pint.Unit, optional
+        Units of the layer data in world coordinates.
+        If not provided, the default units are assumed to be pixels.
+
     vector_style : str
         One of a list of preset display modes that determines how vectors are displayed.
         Allowed values are {'line', 'triangle', and 'arrow'}.
@@ -131,6 +138,8 @@ class Vectors(Layer):
     ----------
     data : (N, 2, D) array
         The start point and projections of N vectors in D dimensions.
+    axis_labels : tuple of str
+        Dimension names of the layer data.
     features : Dataframe-like
         Features table where each row corresponds to a vector and each column
         is a feature.
@@ -167,6 +176,8 @@ class Vectors(Layer):
     out_of_slice_display : bool
         If True, renders vectors not just in central plane but also slightly out of slice
         according to specified point marker size.
+    units: tuple of pint.Unit
+        Units of the layer data in world coordinates.
 
     Notes
     -----
@@ -198,6 +209,7 @@ class Vectors(Layer):
         data=None,
         *,
         affine=None,
+        axis_labels=None,
         blending='translucent',
         cache=True,
         edge_color='red',
@@ -221,6 +233,7 @@ class Vectors(Layer):
         scale=None,
         shear=None,
         translate=None,
+        units=None,
         vector_style='triangle',
         visible=True,
     ) -> None:
@@ -232,19 +245,21 @@ class Vectors(Layer):
         super().__init__(
             data,
             ndim,
-            name=name,
-            metadata=metadata,
-            scale=scale,
-            translate=translate,
-            rotate=rotate,
-            shear=shear,
             affine=affine,
-            opacity=opacity,
+            axis_labels=axis_labels,
             blending=blending,
-            visible=visible,
             cache=cache,
             experimental_clipping_planes=experimental_clipping_planes,
+            name=name,
+            metadata=metadata,
+            opacity=opacity,
             projection_mode=projection_mode,
+            rotate=rotate,
+            scale=scale,
+            shear=shear,
+            translate=translate,
+            units=units,
+            visible=visible,
         )
 
         # events for non-napari calculations
@@ -424,7 +439,7 @@ class Vectors(Layer):
 
         Returns
         -------
-        state : dict[str, Any]
+        state : dict of str to Any
             Dictionary of layer state.
         """
         state = self._get_base_state()
@@ -448,11 +463,11 @@ class Vectors(Layer):
                 'out_of_slice_display': self.out_of_slice_display,
             }
         )
-        state.deprecations['properties'] = (
+        state._deprecated['properties'] = (
             self._feature_table.properties(),
             _properties_deprecation_message(),
         )
-        state.deprecations['property_choices'] = (
+        state._deprecated['property_choices'] = (
             self._feature_table.choices(),
             _property_choices_deprecation_message(),
         )

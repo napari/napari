@@ -73,18 +73,6 @@ if TYPE_CHECKING:
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
-DEPRECATED_PROPERTIES = (
-    'edge_width',
-    'edge_width_is_relative',
-    'current_edge_width',
-    'edge_color',
-    'edge_color_cycle',
-    'edge_colormap',
-    'edge_contrast_limits',
-    'current_edge_color',
-    'edge_color_mode',
-)
-
 
 class Points(Layer):
     """Points layer.
@@ -104,6 +92,9 @@ class Points(Layer):
         provided scale, rotate, and shear values.
     antialiasing: float
         Amount of antialiasing in canvas pixels.
+    axis_labels : tuple of str, optional
+        Dimension names of the layer data.
+        If not provided, axis_labels will be set to (..., 'axis -2', 'axis -1').
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -213,6 +204,9 @@ class Points(Layer):
         For example usage, see /napari/examples/add_points_with_text.py.
     translate : tuple of float
         Translation values for the layer.
+    units : tuple of str or pint.Unit, optional
+        Units of the layer data in world coordinates.
+        If not provided, the default units are assumed to be pixels.
     visible : bool
         Whether the layer visual is currently being displayed.
 
@@ -220,6 +214,8 @@ class Points(Layer):
     ----------
     data : array (N, D)
         Coordinates for N points in D dimensions.
+    axis_labels : tuple of str
+        Dimension names of the layer data.
     features : DataFrame-like
         Features table where each row corresponds to a point and each column
         is a feature.
@@ -320,6 +316,8 @@ class Points(Layer):
         Lower and upper limits for the size of points in canvas pixels.
     shown : 1-D array of bool
         Whether each point is shown.
+    units: tuple of pint.Unit
+        Units of the layer data in world coordinates.
 
     Notes
     -----
@@ -411,6 +409,7 @@ class Points(Layer):
         *,
         affine=None,
         antialiasing=1,
+        axis_labels=None,
         blending='translucent',
         border_color='dimgray',
         border_color_cycle=None,
@@ -444,6 +443,7 @@ class Points(Layer):
         symbol='o',
         text=None,
         translate=None,
+        units=None,
         visible=True,
     ) -> None:
         if ndim is None:
@@ -485,19 +485,21 @@ class Points(Layer):
         super().__init__(
             data,
             ndim,
-            name=name,
-            metadata=metadata,
-            scale=scale,
-            translate=translate,
-            rotate=rotate,
-            shear=shear,
             affine=affine,
-            opacity=opacity,
+            axis_labels=axis_labels,
             blending=blending,
-            visible=visible,
             cache=cache,
             experimental_clipping_planes=experimental_clipping_planes,
+            metadata=metadata,
+            name=name,
+            opacity=opacity,
             projection_mode=projection_mode,
+            rotate=rotate,
+            scale=scale,
+            shear=shear,
+            translate=translate,
+            units=units,
+            visible=visible,
         )
 
         self.events.add(
@@ -644,7 +646,18 @@ class Points(Layer):
     @classmethod
     def _add_deprecated_properties(cls) -> None:
         """Adds deprecated properties to class."""
-        for old_property in DEPRECATED_PROPERTIES:
+        deprecated_properties = [
+            'edge_width',
+            'edge_width_is_relative',
+            'current_edge_width',
+            'edge_color',
+            'edge_color_cycle',
+            'edge_colormap',
+            'edge_contrast_limits',
+            'current_edge_color',
+            'edge_color_mode',
+        ]
+        for old_property in deprecated_properties:
             new_property = old_property.replace('edge', 'border')
             add_deprecated_property(
                 cls,
@@ -1480,7 +1493,7 @@ class Points(Layer):
 
         Returns
         -------
-        state : dict[str, Any]
+        state : dict of str to Any
             Dictionary of layer state.
         """
         state = self._get_base_state()
@@ -1521,25 +1534,16 @@ class Points(Layer):
                 'shown': self.shown,
             }
         )
-        state.deprecations['properties'] = (
+        state._deprecated['properties'] = (
             (
                 self._feature_table.properties(),
                 _properties_deprecation_message(),
             ),
         )
-        state.deprecations['property_choices'] = (
+        state._deprecated['property_choices'] = (
             self._feature_table.choices(),
             _property_choices_deprecation_message(),
         )
-        for old_key in DEPRECATED_PROPERTIES:
-            new_key = old_key.replace('edge', 'border')
-            if new_key in state:
-                state.deprecate_with_replacement(
-                    old_key,
-                    new_key=new_key,
-                    version='0.6.0',
-                    since_version='0.5.0',
-                )
         return state
 
     @property

@@ -9,7 +9,7 @@ try:
     from lxml.html.clean import Cleaner
 
     lxml_unavailable = False
-except ModuleNotFoundError:
+except ImportError:
     lxml_unavailable = True
 
 from napari.utils.io import imsave_png
@@ -79,9 +79,9 @@ class NotebookScreenshot:
         if alt_text is not None:
             if lxml_unavailable:
                 warn(
-                    'The lxml library is not installed, and is required to '
-                    'sanitize alt text for napari screenshots. Alt-text '
-                    'will be stripped altogether without lxml.'
+                    'The lxml_html_clean library is not installed, and is '
+                    'required to sanitize alt text for napari screenshots. '
+                    'Alt Text will be stripped altogether.'
                 )
                 return None
             # cleaner won't recognize escaped script tags, so always unescape

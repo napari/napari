@@ -1,11 +1,34 @@
 import inspect
 import warnings
+from collections import UserDict
 from functools import wraps
-from typing import Any, Callable, cast
+from typing import Any, Callable, NamedTuple, cast
 
 from napari.utils.translations import trans
 
 _UNSET = object()
+
+
+class _RenamedAttribute(NamedTuple):
+    """Captures information about a renamed attribute, property, or argument.
+
+    Useful for storing internal state related to these types of deprecations.
+    """
+
+    from_name: str
+    to_name: str
+    version: str
+    since_version: str
+
+    def message(self) -> str:
+        return trans._(
+            '{from_name} is deprecated since {since_version} and will be removed in {version}. Please use {to_name}',
+            deferred=True,
+            from_name=self.from_name,
+            since_version=self.since_version,
+            version=self.version,
+            to_name=self.to_name,
+        )
 
 
 def rename_argument(
@@ -43,7 +66,12 @@ def rename_argument(
             func._rename_argument = []
 
         func._rename_argument.append(
-            (from_name, to_name, version, since_version)
+            _RenamedAttribute(
+                from_name=from_name,
+                to_name=to_name,
+                version=version,
+                since_version=since_version,
+            )
         )
 
         @wraps(func)
@@ -220,69 +248,87 @@ def deprecated_class_name(
     return _OldClass
 
 
-class DeprecatingDict(dict[str, Any]):
+class _DeprecatingDict(UserDict[str, Any]):
     """A dictionary that issues warning messages when deprecated keys are accessed.
+
+    This class is intended to be an implementation detail of napari and may change
+    in the future. As such, it should not be used outside of napari. Instead, treat
+    this like a plain dictionary.
 
     Deprecated keys and values are not stored as part of the dictionary, so will not
     appear when iterating over this or its items.
 
     Instead deprecated items can only be accessed using `__getitem__`, `__setitem__`,
-    and `__delitem__`, or using `self.deprecations` directly.
+    and `__delitem__`.
+
+    Deprecations from pure renames should keep the old and new corresponding items
+    consistent when mutating either the old or new item.
     """
 
+    # Maps from a deprecated key to its renamed key and deprecation information.
+    _renamed: dict[str, _RenamedAttribute]
+
     # Maps from a deprecated key to its value and deprecation message.
-    deprecations: dict[str, tuple[Any, str]]
+    _deprecated: dict[str, tuple[Any, str]]
 
     def __init__(self, *args, **kwargs) -> None:
+        self._renamed = {}
+        self._deprecated = {}
         super().__init__(*args, **kwargs)
-        self.deprecations = {}
 
     def __getitem__(self, key: str) -> Any:
-        if key in self.deprecations:
-            value, message = self.deprecations[key]
+        if key in self._deprecated:
+            value, message = self._deprecated[key]
             warnings.warn(message, FutureWarning)
             return value
-        return super().__getitem__(key)
+        key = self._maybe_rename_key(key)
+        return self.data.__getitem__(key)
 
     def __setitem__(self, key: str, value: Any) -> None:
-        if key in self.deprecations:
-            _, message = self.deprecations[key]
-            warnings.warn(message, FutureWarning)
-            self.deprecations[key] = value, message
-            return None
-        return super().__setitem__(key, value)
+        if key in self._deprecated:
+            _, message = self._deprecated[key]
+            raise KeyError(message, FutureWarning)
+        key = self._maybe_rename_key(key)
+        return self.data.__setitem__(key, value)
 
     def __delitem__(self, key: str) -> None:
-        if key in self.deprecations:
-            _, message = self.deprecations[key]
-            warnings.warn(message, FutureWarning)
-            del self.deprecations[key]
-            return None
-        return super().__delitem__(key)
+        if key in self._deprecated:
+            _, message = self._deprecated[key]
+            raise KeyError(message, FutureWarning)
+        key = self._maybe_rename_key(key)
+        return self.data.__delitem__(key)
 
     def __contains__(self, key: object) -> bool:
-        if key in self.deprecations:
-            key = cast(str, key)
-            _, message = self.deprecations[key]
+        if key in self._deprecated:
+            _, message = self._deprecated[key]
             warnings.warn(message, FutureWarning)
             return True
-        return super().__contains__(key)
+        if key in self._renamed:
+            key = cast(str, key)
+            key = self._maybe_rename_key(key)
+        return self.data.__contains__(key)
 
-    def deprecate_with_replacement(
-        self,
-        key: str,
-        *,
-        new_key: str,
-        version: str,
-        since_version: str,
+    def _maybe_rename_key(self, key: str) -> str:
+        if key in self._renamed:
+            renamed = self._renamed[key]
+            warnings.warn(renamed.message(), FutureWarning)
+            key = renamed.to_name
+        return key
+
+    @property
+    def deprecated_keys(self) -> tuple[str, ...]:
+        return tuple(self._renamed.keys())
+
+    def set_deprecated_from_rename(
+        self, *, from_name: str, to_name: str, version: str, since_version: str
     ) -> None:
-        """Deprecates a key with a direct replacement using a corresponding message."""
-        message = trans._(
-            '{key} is deprecated since {since_version} and will be removed in {version}. Please use {new_key}',
-            deferred=True,
-            key=key,
-            since_version=since_version,
+        """Sets a deprecated key with a value that comes from another key.
+
+        A warning message is automatically generated using the given version information.
+        """
+        self._renamed[from_name] = _RenamedAttribute(
+            from_name=from_name,
+            to_name=to_name,
             version=version,
-            new_key=new_key,
+            since_version=since_version,
         )
-        self.deprecations[key] = self[new_key], message

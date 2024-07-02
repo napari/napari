@@ -2783,3 +2783,20 @@ def test_docstring():
     validate_all_params_in_docstring(Points)
     validate_kwargs_sorted(Points)
     validate_docstring_parent_class_consistency(Points)
+
+
+@pytest.mark.parametrize(
+    'key',
+    [
+        'edge_width',
+        'edge_width_is_relative',
+        'edge_color',
+        'edge_color_cycle',
+        'edge_colormap',
+        'edge_contrast_limits',
+    ],
+)
+def test_as_layer_data_tuple_read_deprecated_attr(key: str):
+    _, attrs, _ = Points().as_layer_data_tuple()
+    with pytest.warns(FutureWarning, match='is deprecated since'):
+        attrs[key]

@@ -1,7 +1,7 @@
 import pytest
 
 from napari.utils.migrations import (
-    DeprecatingDict,
+    _DeprecatingDict,
     add_deprecated_property,
     deprecated_class_name,
     rename_argument,
@@ -86,32 +86,160 @@ def test_deprecated_class_name():
             pass
 
 
-def test_deprecating_dict_get_deprecated_key():
-    d = DeprecatingDict({'a': 1, 'b': 2})
-    d.deprecate_with_replacement(
-        'c', new_key='a', version='v2.0', since_version='v1.6'
+def test_deprecating_dict_with_renamed_in_deprecated_keys():
+    d = _DeprecatingDict({'a': 1, 'b': 2})
+    d.set_deprecated_from_rename(
+        from_name='c', to_name='a', version='v2.0', since_version='v1.6'
     )
-    with pytest.warns(FutureWarning):
-        value = d['c']
-    assert value == d['a']
+    assert 'c' in d.deprecated_keys
 
 
-def test_deprecating_dict_set_deprecated_key():
-    d = DeprecatingDict({'a': 1, 'b': 2})
-    d.deprecate_with_replacement(
-        'c', new_key='a', version='v2.0', since_version='v1.6'
+def test_deprecating_dict_with_renamed_get_deprecated():
+    d = _DeprecatingDict({'a': 1, 'b': 2})
+    d.set_deprecated_from_rename(
+        from_name='c', to_name='a', version='v2.0', since_version='v1.6'
     )
-    with pytest.warns(FutureWarning):
-        d['c'] = 3
+    with pytest.warns(FutureWarning, match='is deprecated since'):
+        assert d['c'] == 1
+
+
+def test_deprecating_dict_with_renamed_getalt_deprecated():
+    d = _DeprecatingDict({'a': 1, 'b': 2})
+    d.set_deprecated_from_rename(
+        from_name='c', to_name='a', version='v2.0', since_version='v1.6'
+    )
+    with pytest.warns(FutureWarning, match='is deprecated since'):
+        assert d.get('c') == 1
+
+
+def test_deprecating_dict_with_renamed_set_nondeprecated():
+    d = _DeprecatingDict({'a': 1, 'b': 2})
+    d.set_deprecated_from_rename(
+        from_name='c', to_name='a', version='v2.0', since_version='v1.6'
+    )
+
+    d['a'] = 3
+
+    with pytest.warns(FutureWarning, match='is deprecated since'):
         assert d['c'] == 3
 
 
-def test_deprecating_dict_del_deprecated_key():
-    d = DeprecatingDict({'a': 1, 'b': 2})
-    d.deprecate_with_replacement(
-        'c', new_key='a', version='v2.0', since_version='v1.6'
+def test_deprecating_dict_with_renamed_set_deprecated():
+    d = _DeprecatingDict({'a': 1, 'b': 2})
+    d.set_deprecated_from_rename(
+        from_name='c', to_name='a', version='v2.0', since_version='v1.6'
     )
-    with pytest.warns(FutureWarning):
+
+    with pytest.warns(FutureWarning, match='is deprecated since'):
+        d['c'] = 3
+
+    with pytest.warns(FutureWarning, match='is deprecated since'):
+        assert d['c'] == 3
+    assert d['a'] == 3
+
+
+def test_deprecating_dict_with_renamed_update_nondeprecated():
+    d = _DeprecatingDict({'a': 1, 'b': 2})
+    d.set_deprecated_from_rename(
+        from_name='c', to_name='a', version='v2.0', since_version='v1.6'
+    )
+
+    d.update({'a': 3})
+
+    with pytest.warns(FutureWarning, match='is deprecated since'):
+        assert d['c'] == 3
+
+
+def test_deprecating_dict_with_renamed_update_deprecated():
+    d = _DeprecatingDict({'a': 1, 'b': 2})
+    d.set_deprecated_from_rename(
+        from_name='c', to_name='a', version='v2.0', since_version='v1.6'
+    )
+
+    with pytest.warns(FutureWarning, match='is deprecated since'):
+        d.update({'c': 3})
+
+    with pytest.warns(FutureWarning, match='is deprecated since'):
+        assert d['c'] == 3
+    assert d['a'] == 3
+
+
+def test_deprecating_dict_with_renamed_del_nondeprecated():
+    d = _DeprecatingDict({'a': 1, 'b': 2})
+    d.set_deprecated_from_rename(
+        from_name='c', to_name='a', version='v2.0', since_version='v1.6'
+    )
+    assert 'a' in d
+    with pytest.warns(FutureWarning, match='is deprecated since'):
         assert 'c' in d
+
+    with pytest.warns(FutureWarning, match='is deprecated since'):
         del d['c']
+
+    assert 'a' not in d
+    with pytest.warns(FutureWarning, match='is deprecated since'):
         assert 'c' not in d
+
+
+def test_deprecating_dict_with_renamed_del_deprecated():
+    d = _DeprecatingDict({'a': 1, 'b': 2})
+    d.set_deprecated_from_rename(
+        from_name='c', to_name='a', version='v2.0', since_version='v1.6'
+    )
+    with pytest.warns(FutureWarning, match='is deprecated since'):
+        assert 'c' in d
+    assert 'a' in d
+
+    with pytest.warns(FutureWarning, match='is deprecated since'):
+        del d['c']
+
+    with pytest.warns(FutureWarning, match='is deprecated since'):
+        assert 'c' not in d
+    assert 'a' not in d
+
+
+def test_deprecating_dict_with_renamed_pop_nondeprecated():
+    d = _DeprecatingDict({'a': 1, 'b': 2})
+    d.set_deprecated_from_rename(
+        from_name='c', to_name='a', version='v2.0', since_version='v1.6'
+    )
+    assert 'a' in d
+    with pytest.warns(FutureWarning, match='is deprecated since'):
+        assert 'c' in d
+
+    with pytest.warns(FutureWarning, match='is deprecated since'):
+        d.pop('c')
+
+    assert 'a' not in d
+    with pytest.warns(FutureWarning, match='is deprecated since'):
+        assert 'c' not in d
+
+
+def test_deprecating_dict_with_renamed_pop_deprecated():
+    d = _DeprecatingDict({'a': 1, 'b': 2})
+    d.set_deprecated_from_rename(
+        from_name='c', to_name='a', version='v2.0', since_version='v1.6'
+    )
+    with pytest.warns(FutureWarning, match='is deprecated since'):
+        assert 'c' in d
+    assert 'a' in d
+
+    with pytest.warns(FutureWarning, match='is deprecated since'):
+        d.pop('c')
+
+    with pytest.warns(FutureWarning, match='is deprecated since'):
+        assert 'c' not in d
+    assert 'a' not in d
+
+
+def test_deprecating_dict_with_renamed_copy():
+    d = _DeprecatingDict({'a': 1, 'b': 2})
+    d.set_deprecated_from_rename(
+        from_name='c', to_name='a', version='v2.0', since_version='v1.6'
+    )
+
+    e = d.copy()
+
+    assert d is not e
+    assert e.data == d.data
+    assert e.deprecated_keys == d.deprecated_keys
