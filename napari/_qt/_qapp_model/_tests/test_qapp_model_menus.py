@@ -22,7 +22,9 @@ def test_build_qmodel_menu(builtins, make_napari_viewer, qtbot, menu_id):
     qtbot.addWidget(menu)
 
     # `>=` because separator bars count as actions
-    assert len(menu.actions()) >= len(app.menus.get_menu(menu_id))
+    # only check non-empty menus
+    if menu_id in app.menus:
+        assert len(menu.actions()) >= len(app.menus.get_menu(menu_id))
 
 
 def test_update_menu_state_context(make_napari_viewer):
