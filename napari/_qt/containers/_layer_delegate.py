@@ -46,6 +46,9 @@ from qtpy.QtWidgets import QStyledItemDelegate
 from napari._app_model.constants import MenuId
 from napari._app_model.context import get_context
 from napari._qt._qapp_model import build_qmodel_menu
+from napari._qt._qapp_model.qactions._layerlist_context import (
+    is_valid_spatial_in_clipboard,
+)
 from napari._qt.containers._base_item_model import ItemRole
 from napari._qt.containers.qt_layer_model import LoadedRole, ThumbnailRole
 from napari._qt.qt_resources import QColoredSVGIcon
