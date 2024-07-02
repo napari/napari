@@ -1,10 +1,15 @@
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QCheckBox, QComboBox, QSlider
+from qtpy.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QSlider,
+)
 
 from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
 from napari._qt.utils import qt_signals_blocked
+from napari.layers.base._base_constants import Mode
 from napari.utils.colormaps import AVAILABLE_COLORMAPS
 from napari.utils.translations import trans
 
@@ -24,21 +29,30 @@ class QtTracksControls(QtLayerControls):
     ----------
     layer : layers.Tracks
         An instance of a Tracks layer.
+    button_group : qtpy.QtWidgets.QButtonGroup
+        Button group of points layer modes (ADD, PAN_ZOOM, SELECT).
+    panzoom_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
+        Button for pan/zoom mode.
+    transform_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
+        Button to select transform mode.
 
     """
 
     layer: 'napari.layers.Tracks'
+    MODE = Mode
+    PAN_ZOOM_ACTION_NAME = 'activate_tracks_pan_zoom_mode'
+    TRANSFORM_ACTION_NAME = 'activate_tracks_transform_mode'
 
     def __init__(self, layer) -> None:
         super().__init__(layer)
 
         # NOTE(arl): there are no events fired for changing checkboxes
+        self.layer.events.color_by.connect(self._on_color_by_change)
         self.layer.events.tail_width.connect(self._on_tail_width_change)
         self.layer.events.tail_length.connect(self._on_tail_length_change)
         self.layer.events.head_length.connect(self._on_head_length_change)
         self.layer.events.properties.connect(self._on_properties_change)
         self.layer.events.colormap.connect(self._on_colormap_change)
-        self.layer.events.color_by.connect(self._on_color_by_change)
 
         # combo box for track coloring, we can get these from the properties
         # keys
@@ -87,6 +101,7 @@ class QtTracksControls(QtLayerControls):
         self.color_by_combobox.currentTextChanged.connect(self.change_color_by)
         self.colormap_combobox.currentTextChanged.connect(self.change_colormap)
 
+        self.layout().addRow(self.button_grid)
         self.layout().addRow(trans._('color by:'), self.color_by_combobox)
         self.layout().addRow(trans._('colormap:'), self.colormap_combobox)
         self.layout().addRow(trans._('blending:'), self.blendComboBox)
