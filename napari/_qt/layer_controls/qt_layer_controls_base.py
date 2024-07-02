@@ -328,6 +328,13 @@ class QtLayerControls(QFrame):
         )
 
     def eventFilter(self, qobject, event):
+        """
+        Event filter implementation to handle the Alt + Left mouse click interaction to
+        reset the layer transform.
+
+        For more info about Qt Event Filters you can check:
+            https://doc.qt.io/qt-6/eventsandfilters.html#event-filters
+        """
         if (
             qobject == self.transform_button
             and event.type() == QMouseEvent.MouseButtonRelease
