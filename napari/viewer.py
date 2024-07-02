@@ -88,31 +88,80 @@ class Viewer(ViewerModel):
             return
         self.window._qt_viewer.console.push(variables)
 
+    def export_figure(
+        self,
+        path: Optional[str] = None,
+        *,
+        scale_factor: float = 1,
+        flash: bool = True,
+    ):
+        """Export an image of the full extent of the displayed layer data.
+
+        This function finds a tight boundary around the data, resets the view around
+        that boundary, takes a screenshot for which each pixel is equal to the pixel
+        resolution of the data and then restores the previous zoom and canvas sizes.
+        The pixel resolution can be upscaled or downscaled by passing an integer value
+        to the scale parameter different from 1. For example with one image layer with
+        an image of 256 x 256 pixels and layer.scale=[15,15] (pixel resolution of for
+        x and y of 15), with scale=2 the size of the resulting figure will be
+        512 x 512 pixels (the interpolation mode of the layer will be used to upscale).
+        If scale is set to 0.5, it will be 128 x 128 pixels. If having layers with a
+        different layer.scale, the resolution of each screenshot pixel will be equal
+        to the largest value of layer.scale for each dimension across the layers.
+        Currently, only works when 2 dimensions are displayed.
+
+        Parameters
+        ----------
+        path : str, optional
+            Filename for saving screenshot image.
+        scale_factor : float
+            By default, the zoom will export approximately 1 pixel per smallest-scale
+            pixel on the viewer. For example, if a layer has scale 0.004nm/pixel and
+            another has scale 1µm/pixel, the exported figure will have 0.004nm/pixel.
+            Upscaling by 2 will produce a figure with 0.002nm/pixel through the
+            interpolation mode set on each layer.
+        flash : bool
+            Flag to indicate whether flash animation should be shown after
+            the screenshot was captured.
+            By default, True.
+
+        Returns
+        -------
+        image : array
+            Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
+            upper-left corner of the rendered region.
+        """
+        return self.window.export_figure(
+            path=path,
+            scale=scale_factor,
+            flash=flash,
+        )
+
     def screenshot(
         self,
-        path=None,
+        path: Optional[str] = None,
         *,
-        size=None,
-        scale=None,
-        canvas_only=True,
+        size: Optional[tuple[str, str]] = None,
+        scale: Optional[float] = None,
+        canvas_only: bool = True,
         flash: bool = True,
     ):
         """Take currently displayed screen and convert to an image array.
 
         Parameters
         ----------
-        path : str
+        path : str, optional
             Filename for saving screenshot image.
-        size : tuple (int, int)
-            Size (resolution height x width) of the screenshot. By default, the currently displayed size.
-            Only used if `canvas_only` is True.
-        scale : float
-            Scale factor used to increase resolution of canvas for the screenshot. By default, the currently displayed resolution.
-            Only used if `canvas_only` is True.
+        size : tuple of two ints, optional
+            Size (resolution height x width) of the screenshot. By default, the currently
+            displayed size. Only used if `canvas_only` is True.
+        scale : float, optional
+            Scale factor used to increase resolution of canvas for the screenshot.
+            By default, the currently displayed resolution.Only used if `canvas_only` is
+            True.
         canvas_only : bool
-            If True, screenshot shows only the image display canvas, and
-            if False include the napari viewer frame in the screenshot,
-            By default, True.
+            If True, screenshot shows only the image display canvas, and if False include
+            the napari viewer frame in the screenshot, By default, True.
         flash : bool
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
