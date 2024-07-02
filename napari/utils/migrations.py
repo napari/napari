@@ -268,33 +268,29 @@ class DeprecatingDict(dict[str, Any]):
         self._renamed = {}
 
     def __getitem__(self, key: str) -> Any:
-        if key in self._renamed:
-            renamed = self._renamed[key]
-            warnings.warn(renamed.message(), FutureWarning)
-            key = renamed.to_name
+        key = self._maybe_rename_key(key)
         return super().__getitem__(key)
 
     def __setitem__(self, key: str, value: Any) -> None:
-        if key in self._renamed:
-            renamed = self._renamed[key]
-            warnings.warn(renamed.message(), FutureWarning)
-            key = renamed.to_name
+        key = self._maybe_rename_key(key)
         return super().__setitem__(key, value)
 
     def __delitem__(self, key: str) -> None:
-        if key in self._renamed:
-            renamed = self._renamed[key]
-            warnings.warn(renamed.message(), FutureWarning)
-            key = renamed.to_name
+        key = self._maybe_rename_key(key)
         return super().__delitem__(key)
 
     def __contains__(self, key: object) -> bool:
         if key in self._renamed:
             key = cast(str, key)
+        key = self._maybe_rename_key(key)
+        return super().__contains__(key)
+
+    def _maybe_rename_key(self, key: str) -> str:
+        if key in self._renamed:
             renamed = self._renamed[key]
             warnings.warn(renamed.message(), FutureWarning)
             key = renamed.to_name
-        return super().__contains__(key)
+        return key
 
     @property
     def deprecated_keys(self) -> tuple[str, ...]:
