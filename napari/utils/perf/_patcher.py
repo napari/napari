@@ -4,9 +4,10 @@ Our perfmon system using this to patch in perf_timers, but this can be used
 for any type of patching. See patch_callables() below as the main entrypoint.
 """
 
+import logging
 import types
 from importlib import import_module
-from typing import Callable, List, Set, Tuple, Union
+from typing import Callable, Union
 
 from napari.utils.translations import trans
 
@@ -20,9 +21,6 @@ PatchFunction = Callable[[CallableParent, str, str], None]
 
 class PatchError(Exception):
     """Failed to patch target, config file error?"""
-
-    def __init__(self, message: str) -> None:
-        self.message = message
 
 
 def _patch_attribute(
@@ -90,13 +88,13 @@ def _patch_attribute(
     )
 
     # Patch it with the user-provided patch_func.
-    print(f'Patcher: patching {module.__name__}.{label}')
+    logging.info('patching %s.%s', module.__name__, label)
     patch_func(parent, callable_str, label)
 
 
 def _import_module(
     target_str: str,
-) -> Union[Tuple[types.ModuleType, str], Tuple[None, None]]:
+) -> Union[tuple[types.ModuleType, str], tuple[None, None]]:
     """Import the module portion of this target string.
 
     Try importing successively longer segments of the target_str. For example:
@@ -151,7 +149,7 @@ def _import_module(
     return None, None
 
 
-def patch_callables(callables: List[str], patch_func: PatchFunction) -> None:
+def patch_callables(callables: list[str], patch_func: PatchFunction) -> None:
     """Patch the given list of callables.
 
     Parameters
@@ -181,12 +179,12 @@ def patch_callables(callables: List[str], patch_func: PatchFunction) -> None:
                 print(f"Announce {label}")
                 return wrapped(*args, **kwargs)
     """
-    patched: Set[str] = set()
+    patched: set[str] = set()
 
     for target_str in callables:
         if target_str in patched:
             # Ignore duplicated targets in the config file.
-            print(f'Patcher: [WARN] skipping duplicate {target_str}')
+            logging.warning('skipping duplicate %s', target_str)
             continue
 
         # Patch the target and note that we did.
@@ -194,10 +192,12 @@ def patch_callables(callables: List[str], patch_func: PatchFunction) -> None:
             module, attribute_str = _import_module(target_str)
             if module is not None and attribute_str is not None:
                 _patch_attribute(module, attribute_str, patch_func)
-        except PatchError as exc:
+        except PatchError:
             # We don't stop on error because if you switch around branches
             # but keep the same config file, it's easy for your config
             # file to contain targets that aren't in the code.
-            print(f'Patcher: [ERROR] {exc}')
+
+            # logging.exception magically logs the stack trace too!
+            logging.exception('Something went wrong while patching')
 
         patched.add(target_str)

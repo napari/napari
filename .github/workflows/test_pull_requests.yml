@@ -84,19 +84,22 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - python: 3.8
+          - python: 3.9
             platform: ubuntu-latest
             backend: pyqt5
             pydantic: "_pydantic_1"
-          - python: 3.11
+            coverage: no_cov
+          - python: 3.12
             platform: ubuntu-latest
             backend: pyqt6
             pydantic: ""
+            coverage: no_cov
     with:
       python_version: ${{ matrix.python }}
       platform: ${{ matrix.platform }}
       qt_backend: ${{ matrix.backend }}
-      coverage: no_cov
+      coverage: ${{ matrix.coverage }}
+      min_req: ${{ matrix.MIN_REQ }}
       constraints_suffix: ${{ matrix.pydantic }}
 
   test:
@@ -107,46 +110,55 @@ jobs:
       fail-fast: false
       matrix:
         platform: [ ubuntu-latest ]
-        python: [ "3.9", "3.10" ]
-        backend: [ "pyqt5,pyside2" ]
+        python: [ "3.9", "3.11" ]
+        backend: [ "pyqt5,pyside6" ]
         coverage: [ cov ]
         pydantic: ["_pydantic_1"]
         include:
-          # Windows py39
-          - python: 3.9
+          # Windows py310
+          - python: "3.10"
             platform: windows-latest
             backend: pyqt5 #,pyside2
             coverage: no_cov
-          - python: 3.11
+          - python: "3.12"
             platform: windows-latest
             backend: pyqt6
             coverage: no_cov
-          - python: 3.11
+          - python: "3.12"
+            platform: macos-13
+            backend: pyqt5
+            coverage: no_cov
+          - python: "3.12"
             platform: macos-latest
             backend: pyqt5
             coverage: no_cov
           # minimum specified requirements
-          - python: 3.8
+          - python: "3.9"
             platform: ubuntu-20.04
             backend: pyqt5
             MIN_REQ: 1
             coverage: cov
-          - python: "3.10"
+          - python: "3.11"
             platform: ubuntu-22.04
             backend: pyqt5
             coverage: cov
             pydantic: ""
             tox_extras: "optional"
           # test without any Qt backends
-          - python: 3.9
+          - python: "3.10"
             platform: ubuntu-20.04
             backend: headless
             coverage: no_cov
-          - python: 3.11
+          - python: "3.12"
             platform: ubuntu-latest
-            backend: pyqt6,pyside6
+            backend: pyqt6
             coverage: cov
             tox_extras: "testing_extra"
+          # pyside2 test
+          - python: "3.10"
+            platform: ubuntu-latest
+            backend: pyside2
+            coverage: no_cov
 
     with:
       python_version: ${{ matrix.python }}
@@ -181,11 +193,14 @@ jobs:
       - test
       - test_examples
     uses: ./.github/workflows/reusable_coverage_upload.yml
+    secrets:
+      codecov_token: ${{ secrets.CODECOV_TOKEN }}
 
 
   test_benchmarks:
     name: test benchmarks
     runs-on: ubuntu-latest
+#    needs: test_initial
     timeout-minutes: 60
     env:
       GIT_LFS_SKIP_SMUDGE: 1
@@ -215,6 +230,8 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install asv[virtualenv]
+        env:
+          PIP_CONSTRAINT: resources/constraints/benchmark.txt
 
       - name: asv machine
         run: asv machine --yes
@@ -226,6 +243,7 @@ jobs:
             asv run --show-stderr --quick  --attribute timeout=300 HEAD^!
         env:
           PR: 1 # prevents asv from running very compute-intensive benchmarks
+          PIP_CONSTRAINT: ${{ github.workspace }}/resources/constraints/benchmark.txt
 
       - name: Run benchmarks latest release
         # here we check if the benchmark on the latest release is not broken
@@ -235,3 +253,4 @@ jobs:
             asv run --show-stderr --quick  --attribute timeout=300  ${{ fromJSON(steps.latest_release.outputs.data).target_commitish }}^!
         env:
           PR: 1  # prevents asv from running very compute-intensive benchmarks
+          PIP_CONSTRAINT: ${{ github.workspace }}/resources/constraints/benchmark.txt

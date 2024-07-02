@@ -3,20 +3,15 @@ from __future__ import annotations
 import logging
 import sys
 import traceback
-import typing
 import warnings
 import weakref
+from collections.abc import Sequence
 from pathlib import Path
 from types import FrameType
 from typing import (
     TYPE_CHECKING,
     Any,
-    Dict,
-    List,
     Optional,
-    Sequence,
-    Tuple,
-    Type,
     Union,
 )
 from weakref import WeakSet, ref
@@ -95,7 +90,7 @@ def _npe2_decode_selected_filter(
 
 def _extension_string_for_layers(
     layers: Sequence[Layer],
-) -> Tuple[str, List[WriterContribution]]:
+) -> tuple[str, list[WriterContribution]]:
     """Return an extension string and the list of corresponding writers.
 
     The extension string is a ";;" delimeted string of entries. Each entry
@@ -180,7 +175,7 @@ class QtViewer(QSplitter):
         self,
         viewer: ViewerModel,
         show_welcome_screen: bool = False,
-        canvas_class: Type[VispyCanvas] = VispyCanvas,
+        canvas_class: type[VispyCanvas] = VispyCanvas,
     ) -> None:
         super().__init__()
         self._instances.add(self)
@@ -312,7 +307,7 @@ class QtViewer(QSplitter):
 
     @staticmethod
     def _update_dask_cache_settings(
-        dask_setting: Union[DaskSettings, Event] = None
+        dask_setting: Union[DaskSettings, Event] = None,
     ):
         """Update dask cache to match settings."""
         if not dask_setting:
@@ -444,7 +439,7 @@ class QtViewer(QSplitter):
 
     def _create_performance_dock_widget(self):
         """Create the dock widget that shows performance metrics."""
-        if perf.USE_PERFMON:
+        if perf.perf_config is not None:
             return QtViewerDockWidget(
                 self,
                 QtPerformance(),
@@ -521,10 +516,11 @@ class QtViewer(QSplitter):
             for name in vlist:
                 try:
                     vdict[name] = eval(name, cf.f_globals, cf.f_locals)
-                except:  # noqa: E722
-                    print(
-                        f'Could not get variable {name} from '
-                        f'{cf.f_code.co_name}'
+                except NameError:
+                    logging.warning(
+                        'Could not get variable %s from %s',
+                        name,
+                        cf.f_code.co_name,
                     )
         elif isinstance(variables, dict):
             vdict = variables
@@ -625,7 +621,7 @@ class QtViewer(QSplitter):
         Provides updates after slicing using the slice response data.
         This only gets triggered on the async slicing path.
         """
-        responses: Dict[weakref.ReferenceType[Layer], Any] = event.value
+        responses: dict[weakref.ReferenceType[Layer], Any] = event.value
         logging.debug('QtViewer._on_slice_ready: %s', responses)
         for weak_layer, response in responses.items():
             if layer := weak_layer():
@@ -891,7 +887,7 @@ class QtViewer(QSplitter):
         if dial.exec_():
             update_save_history(dial.selectedFiles()[0])
 
-    def _open_file_dialog_uni(self, caption: str) -> typing.List[str]:
+    def _open_file_dialog_uni(self, caption: str) -> list[str]:
         """
         Open dialog to get list of files from user
         """
@@ -954,8 +950,8 @@ class QtViewer(QSplitter):
 
     def _qt_open(
         self,
-        filenames: List[str],
-        stack: Union[bool, List[List[str]]],
+        filenames: list[str],
+        stack: Union[bool, list[list[str]]],
         choose_plugin: bool = False,
         plugin: Optional[str] = None,
         layer_type: Optional[str] = None,
@@ -1159,7 +1155,7 @@ class QtViewer(QSplitter):
         )
 
     def _open_from_list_of_urls_data(
-        self, urls_list: List[QUrl], stack: bool, choose_plugin: bool
+        self, urls_list: list[QUrl], stack: bool, choose_plugin: bool
     ):
         filenames = []
         for url in urls_list:

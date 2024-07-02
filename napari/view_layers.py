@@ -14,7 +14,7 @@ of the layer types, like "image", "points", etc...):
 """
 
 import inspect
-from typing import Any, List, Optional, Tuple
+from typing import Any, Optional
 
 from numpydoc.docscrape import NumpyDocString as _NumpyDocString
 
@@ -95,7 +95,10 @@ def _merge_layer_viewer_sigs_docs(func):
 
     # merge the signatures of Viewer and viewer.add_*
     func.__signature__ = _combine_signatures(
-        add_method, Viewer, return_annotation=Viewer, exclude=('self',)
+        add_method,
+        Viewer,
+        return_annotation=Viewer,
+        exclude=('self', 'axis_labels'),
     )
 
     # merge the __annotations__
@@ -121,7 +124,7 @@ def _make_viewer_then(
     *args,
     viewer: Optional[Viewer] = None,
     **kwargs,
-) -> Tuple[Viewer, Any]:
+) -> tuple[Viewer, Any]:
     """Create a viewer, call given add_* method, then return viewer and layer.
 
     This function will be deprecated soon (See #4693)
@@ -149,7 +152,16 @@ def _make_viewer_then(
         ``add_image`` is called with a ``channel_axis=`` keyword
         argument.
     """
-    vkwargs = {k: kwargs.pop(k) for k in list(kwargs) if k in _viewer_params}
+    vkwargs = {
+        k: kwargs.pop(k)
+        for k in list(kwargs)
+        if k in _viewer_params
+        if k != 'axis_labels'
+    }
+    if 'axis_labels' in kwargs:
+        vkwargs['axis_labels'] = (
+            kwargs['axis_labels'] if kwargs['axis_labels'] is not None else ()
+        )
     # separate dims kwargs because we want to set those after adding data
     dims_kwargs = {
         k: vkwargs.pop(k) for k in list(vkwargs) if k in _dims_params
@@ -220,6 +232,7 @@ def imshow(
     *,
     channel_axis=None,
     affine=None,
+    axis_labels=None,
     attenuation=0.05,
     blending=None,
     cache=True,
@@ -244,14 +257,14 @@ def imshow(
     scale=None,
     shear=None,
     translate=None,
+    units=None,
     visible=True,
     viewer=None,
     title='napari',
     ndisplay=2,
     order=(),
-    axis_labels=(),
     show=True,
-) -> Tuple[Viewer, List['Image']]:
+) -> tuple[Viewer, list['Image']]:
     """Load data into an Image layer and return the Viewer and Layer.
 
     Parameters
@@ -394,6 +407,7 @@ def imshow(
         data,
         viewer=viewer,
         channel_axis=channel_axis,
+        axis_labels=axis_labels,
         rgb=rgb,
         colormap=colormap,
         contrast_limits=contrast_limits,
@@ -417,12 +431,12 @@ def imshow(
         multiscale=multiscale,
         cache=cache,
         plane=plane,
+        units=units,
         experimental_clipping_planes=experimental_clipping_planes,
         custom_interpolation_kernel_2d=custom_interpolation_kernel_2d,
         projection_mode=projection_mode,
         title=title,
         ndisplay=ndisplay,
         order=order,
-        axis_labels=axis_labels,
         show=show,
     )

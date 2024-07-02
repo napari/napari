@@ -1,4 +1,5 @@
 import importlib
+from collections import defaultdict
 from itertools import product
 from unittest.mock import patch
 
@@ -6,12 +7,18 @@ import numpy as np
 import numpy.testing as npt
 import pytest
 
+from napari._pydantic_compat import ValidationError
 from napari.utils.color import ColorArray
-from napari.utils.colormaps import Colormap, colormap
-from napari.utils.colormaps.colormap import (
+from napari.utils.colormaps import Colormap, _accelerated_cmap, colormap
+from napari.utils.colormaps._accelerated_cmap import (
     MAPPING_OF_UNKNOWN_VALUE,
-    DirectLabelColormap,
     _labels_raw_to_texture_direct_numpy,
+)
+from napari.utils.colormaps.colormap import (
+    CyclicLabelColormap,
+    DirectLabelColormap,
+    LabelColormapBase,
+    _normalize_label_colormap,
 )
 from napari.utils.colormaps.colormap_utils import label_colormap
 
@@ -45,7 +52,9 @@ def test_non_ascending_control_points():
     colors = np.array(
         [[0, 0, 0, 1], [0, 0.5, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]]
     )
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValidationError, match='need to be sorted in ascending order'
+    ):
         Colormap(colors, name='testing', controls=[0, 0.75, 0.25, 1])
 
 
@@ -54,21 +63,27 @@ def test_wrong_number_control_points():
     colors = np.array(
         [[0, 0, 0, 1], [0, 0.5, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]]
     )
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValidationError, match='Wrong number of control points'
+    ):
         Colormap(colors, name='testing', controls=[0, 0.75, 1])
 
 
 def test_wrong_start_control_point():
     """Test wrong start of control points raises an error."""
     colors = np.array([[0, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]])
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValidationError, match='must start with 0.0 and end with 1.0'
+    ):
         Colormap(colors, name='testing', controls=[0.1, 0.75, 1])
 
 
 def test_wrong_end_control_point():
     """Test wrong end of control points raises an error."""
     colors = np.array([[0, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]])
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValidationError, match='must start with 0.0 and end with 1.0'
+    ):
         Colormap(colors, name='testing', controls=[0, 0.75, 0.9])
 
 
@@ -125,23 +140,30 @@ def test_mapped_shape(ndim):
 
 
 @pytest.mark.parametrize(
-    'num,dtype', [(40, np.uint8), (1000, np.uint16), (80000, np.float32)]
+    ('num', 'dtype'), [(40, np.uint8), (1000, np.uint16), (80000, np.float32)]
 )
 def test_minimum_dtype_for_labels(num, dtype):
-    assert colormap.minimum_dtype_for_labels(num) == dtype
+    assert _accelerated_cmap.minimum_dtype_for_labels(num) == dtype
 
 
 @pytest.fixture()
-def disable_jit(monkeypatch):
+def _disable_jit(monkeypatch):
+    """Fixture to temporarily disable numba JIT during testing.
+
+    This helps to measure coverage and in debugging. *However*, reloading a
+    module can cause issues with object instance / class relationships, so
+    the `_accelerated_cmap` module should be as small as possible and contain
+    no class definitions, only functions.
+    """
     pytest.importorskip('numba')
     with patch('numba.core.config.DISABLE_JIT', True):
-        importlib.reload(colormap)
+        importlib.reload(_accelerated_cmap)
         yield
-    importlib.reload(colormap)  # revert to original state
+    importlib.reload(_accelerated_cmap)  # revert to original state
 
 
-@pytest.mark.parametrize('num,dtype', [(40, np.uint8), (1000, np.uint16)])
-@pytest.mark.usefixtures('disable_jit')
+@pytest.mark.parametrize(('num', 'dtype'), [(40, np.uint8), (1000, np.uint16)])
+@pytest.mark.usefixtures('_disable_jit')
 def test_cast_labels_to_minimum_type_auto(num: int, dtype, monkeypatch):
     cmap = label_colormap(num)
     data = np.zeros(3, dtype=np.uint32)
@@ -154,7 +176,7 @@ def test_cast_labels_to_minimum_type_auto(num: int, dtype, monkeypatch):
     assert cast_arr[2] == 10**6 % num + 5
 
 
-@pytest.fixture
+@pytest.fixture()
 def direct_label_colormap():
     return DirectLabelColormap(
         color_dict={
@@ -210,10 +232,12 @@ def test_direct_label_colormap_selection(direct_label_colormap):
     assert len(color_dict) == 2
 
 
-@pytest.mark.usefixtures('disable_jit')
+@pytest.mark.usefixtures('_disable_jit')
 def test_cast_direct_labels_to_minimum_type(direct_label_colormap):
     data = np.arange(15, dtype=np.uint32)
-    cast = colormap._labels_raw_to_texture_direct(data, direct_label_colormap)
+    cast = _accelerated_cmap.labels_raw_to_texture_direct(
+        data, direct_label_colormap
+    )
     label_mapping = (
         direct_label_colormap._values_mapping_to_minimum_values_set()[0]
     )
@@ -243,9 +267,9 @@ def test_cast_direct_labels_to_minimum_type(direct_label_colormap):
 
 
 @pytest.mark.parametrize(
-    'num,dtype', [(40, np.uint8), (1000, np.uint16), (80000, np.float32)]
+    ('num', 'dtype'), [(40, np.uint8), (1000, np.uint16), (80000, np.float32)]
 )
-@pytest.mark.usefixtures('disable_jit')
+@pytest.mark.usefixtures('_disable_jit')
 def test_test_cast_direct_labels_to_minimum_type_no_jit(num, dtype):
     cmap = DirectLabelColormap(
         color_dict={
@@ -261,15 +285,15 @@ def test_test_cast_direct_labels_to_minimum_type_no_jit(num, dtype):
     cmap.color_dict[None] = np.array([1, 1, 1, 1])
     data = np.arange(10, dtype=np.uint32)
     data[2] = 80005
-    cast = colormap._labels_raw_to_texture_direct(data, cmap)
+    cast = _accelerated_cmap.labels_raw_to_texture_direct(data, cmap)
     assert cast.dtype == dtype
 
 
 def test_zero_preserving_modulo_naive():
     pytest.importorskip('numba')
     data = np.arange(1000, dtype=np.uint32)
-    res1 = colormap._zero_preserving_modulo_numpy(data, 49, np.uint8)
-    res2 = colormap._zero_preserving_modulo(data, 49, np.uint8)
+    res1 = _accelerated_cmap.zero_preserving_modulo_numpy(data, 49, np.uint8)
+    res2 = _accelerated_cmap.zero_preserving_modulo(data, 49, np.uint8)
     npt.assert_array_equal(res1, res2)
 
 
@@ -323,7 +347,9 @@ def test_label_colormap_using_cache(dtype, monkeypatch):
     expected = np.array([[0, 0, 0, 0], [1, 0, 0, 1], [0, 1, 0, 1]])
     map1 = cmap.map(values)
     npt.assert_array_equal(map1, expected)
-    monkeypatch.setattr(colormap, '_zero_preserving_modulo_numpy', None)
+    monkeypatch.setattr(
+        _accelerated_cmap, 'zero_preserving_modulo_numpy', None
+    )
     map2 = cmap.map(values)
     npt.assert_array_equal(map1, map2)
 
@@ -332,7 +358,7 @@ def test_label_colormap_using_cache(dtype, monkeypatch):
 def test_cast_direct_labels_to_minimum_type_naive(size):
     pytest.importorskip('numba')
     data = np.arange(size, dtype=np.uint32)
-    dtype = colormap.minimum_dtype_for_labels(size)
+    dtype = _accelerated_cmap.minimum_dtype_for_labels(size)
     cmap = DirectLabelColormap(
         color_dict={
             None: np.array([1, 1, 1, 1]),
@@ -346,8 +372,8 @@ def test_cast_direct_labels_to_minimum_type_naive(size):
         },
     )
     cmap.color_dict[None] = np.array([255, 255, 255, 255])
-    res1 = colormap._labels_raw_to_texture_direct(data, cmap)
-    res2 = colormap._labels_raw_to_texture_direct_numpy(data, cmap)
+    res1 = _accelerated_cmap.labels_raw_to_texture_direct(data, cmap)
+    res2 = _accelerated_cmap._labels_raw_to_texture_direct_numpy(data, cmap)
     npt.assert_array_equal(res1, res2)
     assert res1.dtype == dtype
     assert res2.dtype == dtype
@@ -403,6 +429,21 @@ def test_direct_colormap_with_invalid_values():
     # Map a value that is not in the color_dict
     mapped = cmap.map(3)
     npt.assert_array_equal(mapped, np.array([0, 0, 0, 0]))
+
+
+def test_direct_colormap_with_values_outside_data_dtype():
+    """https://github.com/napari/napari/pull/6998#issuecomment-2176070672"""
+    color_dict = {
+        1: np.array([1, 0, 1, 1]),
+        2: np.array([0, 1, 0, 1]),
+        257: np.array([1, 1, 1, 1]),
+        None: np.array([0, 0, 0, 0]),
+    }
+    cmap = DirectLabelColormap(color_dict=color_dict)
+
+    # Map an array with a dtype for which some dict values are out of range
+    mapped = cmap.map(np.array([1], dtype=np.uint8))
+    npt.assert_array_equal(mapped[0], color_dict[1].astype(mapped.dtype))
 
 
 def test_direct_colormap_with_empty_color_dict():
@@ -482,3 +523,28 @@ def test_direct_colormap_negative_values_numpy():
         np.array([-1, -2, 5], dtype=np.int8), cmap
     )
     npt.assert_array_equal(res, [0, 1, 0])
+
+
+@pytest.mark.parametrize(
+    'colormap_like',
+    [
+        ['red', 'blue'],
+        [[1, 0, 0, 1], [0, 0, 1, 1]],
+        {None: 'transparent', 1: 'red', 2: 'blue'},
+        {None: [0, 0, 0, 0], 1: [1, 0, 0, 1], 2: [0, 0, 1, 1]},
+        defaultdict(lambda: 'transparent', {1: 'red', 2: 'blue'}),
+        CyclicLabelColormap(['red', 'blue']),
+        DirectLabelColormap(
+            color_dict={None: 'transparent', 1: 'red', 2: 'blue'}
+        ),
+        5,  # test ValueError
+    ],
+)
+def test_normalize_label_colormap(colormap_like):
+    if not isinstance(colormap_like, int):
+        assert isinstance(
+            _normalize_label_colormap(colormap_like), LabelColormapBase
+        )
+    else:
+        with pytest.raises(ValueError, match='Unable to interpret'):
+            _normalize_label_colormap(colormap_like)

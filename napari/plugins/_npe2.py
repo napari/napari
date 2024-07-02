@@ -1,16 +1,10 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Iterator, Sequence
 from typing import (
     TYPE_CHECKING,
-    DefaultDict,
-    Dict,
-    Iterator,
-    List,
     Optional,
-    Sequence,
-    Set,
-    Tuple,
     cast,
 )
 
@@ -39,7 +33,7 @@ class _FakeHookimpl:
 
 def read(
     paths: Sequence[str], plugin: Optional[str] = None, *, stack: bool
-) -> Optional[Tuple[List[LayerData], _FakeHookimpl]]:
+) -> Optional[tuple[list[LayerData], _FakeHookimpl]]:
     """Try to return data for `path`, from reader plugins using a manifest."""
 
     # do nothing if `plugin` is not an npe2 reader
@@ -74,10 +68,10 @@ def read(
 
 def write_layers(
     path: str,
-    layers: List[Layer],
+    layers: list[Layer],
     plugin_name: Optional[str] = None,
     writer: Optional[WriterContribution] = None,
-) -> Tuple[List[str], str]:
+) -> tuple[list[str], str]:
     """
     Write layers to a file using an NPE2 plugin.
 
@@ -128,7 +122,7 @@ def write_layers(
 
 def get_widget_contribution(
     plugin_name: str, widget_name: Optional[str] = None
-) -> Optional[Tuple[WidgetCreator, str]]:
+) -> Optional[tuple[WidgetCreator, str]]:
     widgets_seen = set()
     for contrib in pm.iter_widgets():
         if contrib.plugin_name == plugin_name:
@@ -172,7 +166,7 @@ def populate_qmenu(menu: QMenu, menu_key: str):
 
 def file_extensions_string_for_layers(
     layers: Sequence[Layer],
-) -> Tuple[Optional[str], List[WriterContribution]]:
+) -> tuple[Optional[str], list[WriterContribution]]:
     """Create extensions string using npe2.
 
     When npe2 can be imported, returns an extension string and the list
@@ -215,7 +209,7 @@ def file_extensions_string_for_layers(
     )
 
 
-def get_readers(path: Optional[str] = None) -> Dict[str, str]:
+def get_readers(path: Optional[str] = None) -> dict[str, str]:
     """Get valid reader plugin_name:display_name mapping given path.
 
     Iterate through compatible readers for the given path and return
@@ -251,15 +245,15 @@ def iter_manifests(
     yield from pm.iter_manifests(disabled=disabled)
 
 
-def widget_iterator() -> Iterator[Tuple[str, Tuple[str, Sequence[str]]]]:
+def widget_iterator() -> Iterator[tuple[str, tuple[str, Sequence[str]]]]:
     # eg ('dock', ('my_plugin', ('My widget', MyWidget)))
-    wdgs: DefaultDict[str, List[str]] = defaultdict(list)
+    wdgs: defaultdict[str, list[str]] = defaultdict(list)
     for wdg_contrib in pm.iter_widgets():
         wdgs[wdg_contrib.plugin_name].append(wdg_contrib.display_name)
     return (('dock', x) for x in wdgs.items())
 
 
-def sample_iterator() -> Iterator[Tuple[str, Dict[str, SampleDict]]]:
+def sample_iterator() -> Iterator[tuple[str, dict[str, SampleDict]]]:
     return (
         (
             # use display_name for user facing display
@@ -275,7 +269,7 @@ def sample_iterator() -> Iterator[Tuple[str, Dict[str, SampleDict]]]:
 
 def get_sample_data(
     plugin: str, sample: str
-) -> Tuple[Optional[SampleDataCreator], List[Tuple[str, str]]]:
+) -> tuple[Optional[SampleDataCreator], list[tuple[str, str]]]:
     """Get sample data opener from npe2.
 
     Parameters
@@ -293,7 +287,7 @@ def get_sample_data(
         - second item is a list of available samples (plugin_name, sample_name)
           if no data opener is found.
     """
-    avail: List[Tuple[str, str]] = []
+    avail: list[tuple[str, str]] = []
     for plugin_name, contribs in pm.iter_sample_data():
         for contrib in contribs:
             if plugin_name == plugin and contrib.key == sample:
@@ -307,7 +301,7 @@ def index_npe1_adapters():
     pm.index_npe1_adapters()
 
 
-def on_plugin_enablement_change(enabled: Set[str], disabled: Set[str]):
+def on_plugin_enablement_change(enabled: set[str], disabled: set[str]):
     """Callback when any npe2 plugins are enabled or disabled.
 
     'Disabled' means the plugin remains installed, but it cannot be activated,
@@ -330,7 +324,7 @@ def on_plugin_enablement_change(enabled: Set[str], disabled: Set[str]):
             _safe_register_qt_actions(pm.get_manifest(plugin_name))
 
 
-def on_plugins_registered(manifests: Set[PluginManifest]):
+def on_plugins_registered(manifests: set[PluginManifest]):
     """Callback when any npe2 plugins are registered.
 
     'Registered' means that a manifest has been provided or discovered.
@@ -365,7 +359,9 @@ def _safe_register_qt_actions(mf: PluginManifest) -> None:
     """Register samples and widget `Actions` if Qt available."""
     try:
         from napari._qt._qplugins import _register_qt_actions
-    except ModuleNotFoundError:  # pragma: no cover
+    except ImportError:  # pragma: no cover
+        # if no Qt bindings are installed (PyQt/PySide), then trying to import
+        # qtpy will raise an ImportError, *not* a ModuleNotFoundError
         pass
     else:
         _register_qt_actions(mf)
@@ -373,14 +369,14 @@ def _safe_register_qt_actions(mf: PluginManifest) -> None:
 
 def _npe2_manifest_to_actions(
     mf: PluginManifest,
-) -> Tuple[List[Action], List[Tuple[str, SubmenuItem]]]:
+) -> tuple[list[Action], list[tuple[str, SubmenuItem]]]:
     """Gather actions and submenus from a npe2 manifest, export app_model types."""
     from app_model.types import Action, MenuRule
 
     from napari._app_model.constants._menus import is_menu_contributable
 
-    menu_cmds: DefaultDict[str, List[MenuRule]] = DefaultDict(list)
-    submenus: List[Tuple[str, SubmenuItem]] = []
+    menu_cmds: defaultdict[str, list[MenuRule]] = defaultdict(list)
+    submenus: list[tuple[str, SubmenuItem]] = []
     for menu_id, items in mf.contributions.menus.items():
         if is_menu_contributable(menu_id):
             for item in items:
@@ -402,13 +398,13 @@ def _npe2_manifest_to_actions(
     widget_ids = {widget.command for widget in mf.contributions.widgets or ()}
 
     # We want to register all `Actions` so they appear in the command pallete
-    actions: List[Action] = []
+    actions: list[Action] = []
     for cmd in mf.contributions.commands or ():
         if cmd.id not in sample_data_ids | widget_ids:
             actions.append(
                 Action(
                     id=cmd.id,
-                    title=cmd.title,
+                    title=f'{cmd.title} ({mf.display_name})',
                     category=cmd.category,
                     tooltip=cmd.short_title or cmd.title,
                     icon=cmd.icon,

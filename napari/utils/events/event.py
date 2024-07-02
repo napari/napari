@@ -48,25 +48,20 @@ to emit events. The EmitterGroup groups EventEmitter objects.
 For more information see http://github.com/vispy/vispy/wiki/API_Events
 
 """
+
 import contextlib
 import inspect
 import os
 import warnings
 import weakref
-from collections.abc import Sequence
+from collections.abc import Iterable, Iterator, Sequence
 from functools import partial
 from typing import (
     Any,
     Callable,
-    Dict,
     Generic,
-    Iterable,
-    Iterator,
-    List,
     Literal,
     Optional,
-    Tuple,
-    Type,
     TypeVar,
     Union,
     cast,
@@ -112,7 +107,7 @@ class Event:
         self, type_name: str, native: Any = None, **kwargs: Any
     ) -> None:
         # stack of all sources this event has been emitted through
-        self._sources: List[Any] = []
+        self._sources: list[Any] = []
         self._handled: bool = False
         self._blocked: bool = False
         # Store args
@@ -128,7 +123,7 @@ class Event:
         return self._sources[-1] if self._sources else None
 
     @property
-    def sources(self) -> List[Any]:
+    def sources(self) -> list[Any]:
         """List of objects that the event applies to (i.e. are or have
         been a source of the event). Can contain multiple objects in case
         the event traverses a hierarchy of objects.
@@ -217,8 +212,8 @@ _event_repr_depth = 0
 
 
 Callback = Union[Callable[[Event], None], Callable[[], None]]
-CallbackRef = Tuple['weakref.ReferenceType[Any]', str]  # dereferenced method
-CallbackStr = Tuple[
+CallbackRef = tuple['weakref.ReferenceType[Any]', str]  # dereferenced method
+CallbackStr = tuple[
     Union['weakref.ReferenceType[Any]', object], str
 ]  # dereferenced method
 
@@ -294,16 +289,16 @@ class EventEmitter:
         self,
         source: Any = None,
         type_name: Optional[str] = None,
-        event_class: Type[Event] = Event,
+        event_class: type[Event] = Event,
     ) -> None:
         # connected callbacks
-        self._callbacks: List[Union[Callback, CallbackRef]] = []
+        self._callbacks: list[Union[Callback, CallbackRef]] = []
         # used when connecting new callbacks at specific positions
-        self._callback_refs: List[Optional[str]] = []
-        self._callback_pass_event: List[bool] = []
+        self._callback_refs: list[Optional[str]] = []
+        self._callback_pass_event: list[bool] = []
 
         # count number of times this emitter is blocked for each callback.
-        self._blocked: Dict[Optional[Callback], int] = {None: 0}
+        self._blocked: dict[Optional[Callback], int] = {None: 0}
         self._block_counter: _WeakCounter[Optional[Callback]] = _WeakCounter()
 
         # used to detect emitter loops
@@ -361,12 +356,12 @@ class EventEmitter:
         self._print_callback_errors = val
 
     @property
-    def callback_refs(self) -> Tuple[Optional[str], ...]:
+    def callback_refs(self) -> tuple[Optional[str], ...]:
         """The set of callback references"""
         return tuple(self._callback_refs)
 
     @property
-    def callbacks(self) -> Tuple[Union[Callback, CallbackRef], ...]:
+    def callbacks(self) -> tuple[Union[Callback, CallbackRef], ...]:
         """The set of callbacks"""
         return tuple(self._callbacks)
 
@@ -416,8 +411,8 @@ class EventEmitter:
         callback: Union[Callback, CallbackRef, CallbackStr, 'EventEmitter'],
         ref: Union[bool, str] = False,
         position: Literal['first', 'last'] = 'first',
-        before: Union[str, Callback, List[Union[str, Callback]], None] = None,
-        after: Union[str, Callback, List[Union[str, Callback]], None] = None,
+        before: Union[str, Callback, list[Union[str, Callback]], None] = None,
+        after: Union[str, Callback, list[Union[str, Callback]], None] = None,
         until: Optional['EventEmitter'] = None,
     ):
         """Connect this emitter to a new callback.
@@ -529,7 +524,7 @@ class EventEmitter:
             callback_bounds = (core_callbacks_count, len(callback_refs))
 
         # bounds: upper & lower bnds (inclusive) of possible cb locs
-        bounds: List[int] = []
+        bounds: list[int] = []
         for ri, criteria in enumerate((before, after)):
             if criteria is None or criteria == []:
                 bounds.append(
@@ -674,7 +669,7 @@ class EventEmitter:
 
     def _normalize_cb(
         self, callback
-    ) -> Tuple[Union[CallbackRef, Callback], bool]:
+    ) -> tuple[Union[CallbackRef, Callback], bool]:
         # dereference methods into a (self, method_name) pair so that we can
         # make the connection without making a strong reference to the
         # instance.
@@ -736,7 +731,7 @@ class EventEmitter:
 
             _log_event_stack(event)
 
-            rem: List[CallbackRef] = []
+            rem: list[CallbackRef] = []
             for cb, pass_event in zip(
                 self._callbacks[:], self._callback_pass_event[:]
             ):
@@ -892,7 +887,7 @@ class WarningEmitter(EventEmitter):
     def __init__(
         self,
         message: str,
-        category: Type[Warning] = FutureWarning,
+        category: type[Warning] = FutureWarning,
         stacklevel: int = 3,
         *args,
         **kwargs,
@@ -968,13 +963,13 @@ class EmitterGroup(EventEmitter):
         self,
         source: Any = None,
         auto_connect: bool = False,
-        **emitters: Union[Type[Event], EventEmitter, None],
+        **emitters: Union[type[Event], EventEmitter, None],
     ) -> None:
         EventEmitter.__init__(self, source)
 
         self.auto_connect = auto_connect
         self.auto_connect_format = 'on_%s'
-        self._emitters: Dict[str, EventEmitter] = {}
+        self._emitters: dict[str, EventEmitter] = {}
         # whether the sub-emitters have been connected to the group:
         self._emitters_connected: bool = False
         self.add(**emitters)  # type: ignore
@@ -991,7 +986,7 @@ class EmitterGroup(EventEmitter):
         return self._emitters[name]
 
     def __setitem__(
-        self, name: str, emitter: Union[Type[Event], EventEmitter, None]
+        self, name: str, emitter: Union[type[Event], EventEmitter, None]
     ):
         """
         Alias for EmitterGroup.add(name=emitter)
@@ -1001,7 +996,7 @@ class EmitterGroup(EventEmitter):
     def add(
         self,
         auto_connect: Optional[bool] = None,
-        **kwargs: Union[Type[Event], EventEmitter, None],
+        **kwargs: Union[type[Event], EventEmitter, None],
     ):
         """Add one or more EventEmitter instances to this emitter group.
         Each keyword argument may be specified as either an EventEmitter
@@ -1047,7 +1042,9 @@ class EmitterGroup(EventEmitter):
 
             if inspect.isclass(emitter) and issubclass(emitter, Event):  # type: ignore
                 emitter = EventEmitter(
-                    source=self.source, type_name=name, event_class=emitter  # type: ignore
+                    source=self.source,
+                    type_name=name,
+                    event_class=emitter,  # type: ignore
                 )
             elif not isinstance(emitter, EventEmitter):
                 raise RuntimeError(
@@ -1078,7 +1075,7 @@ class EmitterGroup(EventEmitter):
                 emitter.connect(self)
 
     @property
-    def emitters(self) -> Dict[str, EventEmitter]:
+    def emitters(self) -> dict[str, EventEmitter]:
         """List of current emitters in this group."""
         return self._emitters
 
@@ -1111,8 +1108,8 @@ class EmitterGroup(EventEmitter):
         callback: Union[Callback, CallbackRef, EventEmitter, 'EmitterGroup'],
         ref: Union[bool, str] = False,
         position: Literal['first', 'last'] = 'first',
-        before: Union[str, Callback, List[Union[str, Callback]], None] = None,
-        after: Union[str, Callback, List[Union[str, Callback]], None] = None,
+        before: Union[str, Callback, list[Union[str, Callback]], None] = None,
+        after: Union[str, Callback, list[Union[str, Callback]], None] = None,
     ):
         """Connect the callback to the event group. The callback will receive
         events from *all* of the emitters in the group.

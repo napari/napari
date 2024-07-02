@@ -9,7 +9,7 @@ import uuid
 import warnings
 from abc import ABC, ABCMeta, abstractmethod
 from collections import defaultdict
-from collections.abc import Hashable
+from collections.abc import Generator, Hashable, Sequence
 from contextlib import contextmanager
 from functools import cached_property
 from typing import (
@@ -17,17 +17,13 @@ from typing import (
     Any,
     Callable,
     ClassVar,
-    Dict,
-    Generator,
-    List,
     Optional,
-    Tuple,
-    Type,
     Union,
 )
 
 import magicgui as mgui
 import numpy as np
+import pint
 from npe2 import plugin_manager as pm
 
 from napari.layers.base._base_constants import (
@@ -125,56 +121,74 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
     Parameters
     ----------
-    name : str
-        Name of the layer.
-    metadata : dict
-        Layer metadata.
-    scale : tuple of float
-        Scale factors for the layer.
-    translate : tuple of float
-        Translation values for the layer.
-    rotate : float, 3-tuple of float, or n-D array.
-        If a float convert into a 2D rotation matrix using that value as an
-        angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
-        pitch, roll convention. Otherwise assume an nD rotation. Angles are
-        assumed to be in degrees. They can be converted from radians with
-        np.degrees if needed.
-    shear : 1-D array or n-D array
-        Either a vector of upper triangular values, or an nD shear matrix with
-        ones along the main diagonal.
+    data : array or list of array
+        Data that the layer is visualizing. Can be N-dimensional.
+    ndim : int
+        Number of spatial dimensions.
     affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
         the final column is a length N translation vector and a 1 or a napari
         `Affine` transform object. Applied as an extra transform on top of the
         provided scale, rotate, and shear values.
-    opacity : float
-        Opacity of the layer visual, between 0.0 and 1.0.
+    axis_labels : tuple of str, optional
+        Dimension names of the layer data.
+        If not provided, axis_labels will be set to (..., 'axis -2', 'axis -1').
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
         {'opaque', 'translucent', 'translucent_no_depth', 'additive', and 'minimum'}.
-    visible : bool
-        Whether the layer visual is currently being displayed.
+    cache : bool
+        Whether slices of out-of-core datasets should be cached upon retrieval.
+        Currently, this only applies to dask arrays.
+    experimental_clipping_planes : list of dicts, list of ClippingPlane, or ClippingPlaneList
+        Each dict defines a clipping plane in 3D in data coordinates.
+        Valid dictionary keys are {'position', 'normal', and 'enabled'}.
+        Values on the negative side of the normal are discarded if the plane is enabled.
+    metadata : dict
+        Layer metadata.
+    mode: str
+        The layer's interactive mode.
     multiscale : bool
         Whether the data is multiscale or not. Multiscale data is
         represented by a list of data objects and should go from largest to
         smallest.
+    name : str, optional
+        Name of the layer. If not provided then will be guessed using heuristics.
+    opacity : float
+        Opacity of the layer visual, between 0.0 and 1.0.
     projection_mode : str
         How data outside the viewed dimensions but inside the thick Dims slice will
-        be projected onto the viewed dimenions.
+        be projected onto the viewed dimensions. Must fit to cls._projectionclass.
+    rotate : float, 3-tuple of float, or n-D array.
+        If a float convert into a 2D rotation matrix using that value as an
+        angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
+        pitch, roll convention. Otherwise assume an nD rotation. Angles are
+        assumed to be in degrees. They can be converted from radians with
+        np.degrees if needed.
+    scale : tuple of float
+        Scale factors for the layer.
+    shear : 1-D array or n-D array
+        Either a vector of upper triangular values, or an nD shear matrix with
+        ones along the main diagonal.
+    translate : tuple of float
+        Translation values for the layer.
+    units : tuple of str or pint.Unit, optional
+        Units of the layer data in world coordinates.
+        If not provided, the default units are assumed to be pixels.
+    visible : bool
+        Whether the layer visual is currently being displayed.
 
     Attributes
     ----------
-    name : str
-        Unique name of the layer.
-    unique_id : Hashable
-        Unique id of the layer. Guaranteed to be unique across the lifetime
-        of a viewer.
-    opacity : float
-        Opacity of the layer visual, between 0.0 and 1.0.
-    visible : bool
-        Whether the layer visual is currently being displayed.
+    affine : n-D array or napari.utils.transforms.Affine
+        (N+1, N+1) affine transformation matrix in homogeneous coordinates.
+        The first (N, N) entries correspond to a linear transform and
+        the final column is a length N translation vector and a 1 or a napari
+        `Affine` transform object. Applied as an extra transform on top of the
+        provided scale, rotate, and shear values.
+    axis_labels : tuple of str
+        Dimension names of the layer data.
     blending : Blending
         Determines how RGB and alpha values get mixed.
 
@@ -203,45 +217,18 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             Useful for creating overlays with inverted colormaps. It
             corresponds to ``depth_test=False``, ``cull_face=False``, ``blend=True``,
             ``blend_equation=('min')``.
-    scale : tuple of float
-        Scale factors for the layer.
-    translate : tuple of float
-        Translation values for the layer.
-    rotate : float, 3-tuple of float, or n-D array.
-        If a float convert into a 2D rotation matrix using that value as an
-        angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
-        pitch, roll convention. Otherwise assume an nD rotation. Angles are
-        assumed to be in degrees. They can be converted from radians with
-        np.degrees if needed.
-    shear : 1-D array or n-D array
-        Either a vector of upper triangular values, or an nD shear matrix with
-        ones along the main diagonal.
-    affine : n-D array or napari.utils.transforms.Affine
-        (N+1, N+1) affine transformation matrix in homogeneous coordinates.
-        The first (N, N) entries correspond to a linear transform and
-        the final column is a length N translation vector and a 1 or a napari
-        `Affine` transform object. Applied as an extra transform on top of the
-        provided scale, rotate, and shear values.
-    multiscale : bool
-        Whether the data is multiscale or not. Multiscale data is
-        represented by a list of data objects and should go from largest to
-        smallest.
     cache : bool
         Whether slices of out-of-core datasets should be cached upon retrieval.
         Currently, this only applies to dask arrays.
-    z_index : int
-        Depth of the layer visual relative to other visuals in the scenecanvas.
     corner_pixels : array
         Coordinates of the top-left and bottom-right canvas pixels in the data
         coordinates of each layer. For multiscale data the coordinates are in
         the space of the currently viewed data level, not the highest resolution
         level.
-    ndim : int
-        Dimensionality of the layer.
-    thumbnail : (N, M, 4) array
-        Array of thumbnail data for the layer.
-    status : str
-        Displayed in status bar bottom left.
+    cursor : str
+        String identifying which cursor displayed over canvas.
+    cursor_size : int | None
+        Size of cursor if custom. None yields default size
     help : str
         Displayed in status bar bottom right.
     interactive : bool
@@ -252,18 +239,50 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         Determine if canvas interactive panning is enabled with the mouse.
     mouse_zoom : bool
         Determine if canvas interactive zooming is enabled with the mouse.
-    cursor : str
-        String identifying which cursor displayed over canvas.
-    cursor_size : int | None
-        Size of cursor if custom. None yields default size
-    scale_factor : float
-        Conversion factor from canvas coordinates to image coordinates, which
-        depends on the current zoom level.
-    source : Source
-        source of the layer (such as a plugin or widget)
+    multiscale : bool
+        Whether the data is multiscale or not. Multiscale data is
+        represented by a list of data objects and should go from largest to
+        smallest.
+    name : str
+        Unique name of the layer.
+    ndim : int
+        Dimensionality of the layer.
+    opacity : float
+        Opacity of the layer visual, between 0.0 and 1.0.
     projection_mode : str
         How data outside the viewed dimensions but inside the thick Dims slice will
         be projected onto the viewed dimenions.
+    rotate : float, 3-tuple of float, or n-D array.
+        If a float convert into a 2D rotation matrix using that value as an
+        angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
+        pitch, roll convention. Otherwise assume an nD rotation. Angles are
+        assumed to be in degrees. They can be converted from radians with
+        np.degrees if needed.
+    scale : tuple of float
+        Scale factors for the layer.
+    scale_factor : float
+        Conversion factor from canvas coordinates to image coordinates, which
+        depends on the current zoom level.
+    shear : 1-D array or n-D array
+        Either a vector of upper triangular values, or an nD shear matrix with
+        ones along the main diagonal.
+    source : Source
+        source of the layer (such as a plugin or widget)
+    status : str
+        Displayed in status bar bottom left.
+    translate : tuple of float
+        Translation values for the layer.
+    thumbnail : (N, M, 4) array
+        Array of thumbnail data for the layer.
+    unique_id : Hashable
+        Unique id of the layer. Guaranteed to be unique across the lifetime
+        of a viewer.
+    visible : bool
+        Whether the layer visual is currently being displayed.
+    units: tuple of pint.Unit
+        Units of the layer data in world coordinates.
+    z_index : int
+        Depth of the layer visual relative to other visuals in the scenecanvas.
 
     Notes
     -----
@@ -278,23 +297,23 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     * `_basename()`: base/default name of the layer
     """
 
-    _modeclass: Type[StringEnum] = Mode
-    _projectionclass: Type[StringEnum] = BaseProjectionMode
+    _modeclass: type[StringEnum] = Mode
+    _projectionclass: type[StringEnum] = BaseProjectionMode
 
     ModeCallable = Callable[
         ['Layer', Event], Union[None, Generator[None, None, None]]
     ]
 
-    _drag_modes: ClassVar[Dict[StringEnum, ModeCallable]] = {
+    _drag_modes: ClassVar[dict[StringEnum, ModeCallable]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
     }
 
-    _move_modes: ClassVar[Dict[StringEnum, ModeCallable]] = {
+    _move_modes: ClassVar[dict[StringEnum, ModeCallable]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
     }
-    _cursor_modes: ClassVar[Dict[StringEnum, str]] = {
+    _cursor_modes: ClassVar[dict[StringEnum, str]] = {
         Mode.PAN_ZOOM: 'standard',
         Mode.TRANSFORM: 'standard',
     }
@@ -305,21 +324,23 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         data,
         ndim,
         *,
-        name=None,
-        metadata=None,
-        scale=None,
-        translate=None,
-        rotate=None,
-        shear=None,
         affine=None,
-        opacity=1.0,
+        axis_labels=None,
         blending='translucent',
-        visible=True,
-        multiscale=False,
         cache=True,  # this should move to future "data source" object.
         experimental_clipping_planes=None,
+        metadata=None,
         mode='pan_zoom',
+        multiscale=False,
+        name=None,
+        opacity=1.0,
         projection_mode='none',
+        rotate=None,
+        scale=None,
+        shear=None,
+        translate=None,
+        units=None,
+        visible=True,
     ):
         super().__init__()
 
@@ -360,7 +381,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._mode = self._modeclass('pan_zoom')
         self._projection_mode = self._projectionclass(str(projection_mode))
         self._refresh_blocked = False
-
         self._ndim = ndim
 
         self._slice_input = _SliceInput(
@@ -396,10 +416,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 CompositeAffine(
                     scale,
                     translate,
+                    axis_labels=axis_labels,
                     rotate=rotate,
                     shear=shear,
                     ndim=ndim,
                     name='data2physical',
+                    units=units,
                 ),
                 coerce_affine(affine, ndim=ndim, name='physical2world'),
                 Affine(np.ones(ndim), np.zeros(ndim), name='world2grid'),
@@ -427,21 +449,33 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         self.events = EmitterGroup(
             source=self,
-            refresh=Event,
-            set_data=Event,
-            blending=Event,
-            opacity=Event,
-            visible=Event,
-            scale=Event,
-            translate=Event,
-            rotate=Event,
-            shear=Event,
-            affine=Event,
+            axis_labels=Event,
             data=Event,
-            name=Event,
-            thumbnail=Event,
-            status=Event,
+            affine=Event,
+            blending=Event,
+            cursor=Event,
+            cursor_size=Event,
+            editable=Event,
+            extent=Event,
             help=Event,
+            loaded=Event,
+            mode=Event,
+            mouse_pan=Event,
+            mouse_zoom=Event,
+            name=Event,
+            opacity=Event,
+            projection_mode=Event,
+            refresh=Event,
+            reload=Event,
+            rotate=Event,
+            scale=Event,
+            set_data=Event,
+            shear=Event,
+            status=Event,
+            thumbnail=Event,
+            translate=Event,
+            units=Event,
+            visible=Event,
             interactive=WarningEmitter(
                 trans._(
                     'layer.events.interactive is deprecated since 0.4.18 and will be removed in 0.6.0. Please use layer.events.mouse_pan and layer.events.mouse_zoom',
@@ -449,18 +483,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 ),
                 type_name='interactive',
             ),
-            mouse_pan=Event,
-            mouse_zoom=Event,
-            cursor=Event,
-            cursor_size=Event,
-            editable=Event,
-            loaded=Event,
-            reload=Event,
-            extent=Event,
             _extent_augmented=Event,
             _overlays=Event,
-            mode=Event,
-            projection_mode=Event,
         )
         self.name = name
         self.mode = mode
@@ -757,6 +781,32 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         """Executes side-effects on this layer related to changes of the editable state."""
 
     @property
+    def axis_labels(self) -> tuple[str, ...]:
+        """tuple of axis labels for the layer."""
+        return self._transforms['data2physical'].axis_labels
+
+    @axis_labels.setter
+    def axis_labels(self, axis_labels: Optional[Sequence[str]]) -> None:
+        prev = self._transforms['data2physical'].axis_labels
+        # mypy bug https://github.com/python/mypy/issues/3004
+        self._transforms['data2physical'].axis_labels = axis_labels  # type: ignore[assignment]
+        if self._transforms['data2physical'].axis_labels != prev:
+            self.events.axis_labels()
+
+    @property
+    def units(self) -> tuple[pint.Unit, ...]:
+        """List of units for the layer."""
+        return self._transforms['data2physical'].units
+
+    @units.setter
+    def units(self, units: Optional[Sequence[pint.Unit]]) -> None:
+        prev = self.units
+        # mypy bug https://github.com/python/mypy/issues/3004
+        self._transforms['data2physical'].units = units  # type: ignore[assignment]
+        if self.units != prev:
+            self.events.units()
+
+    @property
     def scale(self) -> npt.NDArray:
         """array: Anisotropy factors to scale data into world coordinates."""
         return self._transforms['data2physical'].scale
@@ -829,17 +879,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             return
         self._transforms['world2grid'].translate = np.array(translate_grid)
         self.events.translate()
-
-    @property
-    def _is_moving(self) -> bool:
-        return self._private_is_moving
-
-    @_is_moving.setter
-    def _is_moving(self, value):
-        assert value in (True, False)
-        if value:
-            assert self._moving_coordinates is not None
-        self._private_is_moving = value
 
     def _update_dims(self) -> None:
         """Update the dimensionality of transforms and slices when data changes."""
@@ -1011,20 +1050,22 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             Dictionary of attributes on base layer.
         """
         base_dict = {
-            'name': self.name,
-            'metadata': self.metadata,
-            'scale': list(self.scale),
-            'translate': list(self.translate),
-            'rotate': [list(r) for r in self.rotate],
-            'shear': list(self.shear),
             'affine': self.affine.affine_matrix,
-            'opacity': self.opacity,
+            'axis_labels': self.axis_labels,
             'blending': self.blending,
-            'visible': self.visible,
             'experimental_clipping_planes': [
                 plane.dict() for plane in self.experimental_clipping_planes
             ],
+            'metadata': self.metadata,
+            'name': self.name,
+            'opacity': self.opacity,
             'projection_mode': self.projection_mode,
+            'rotate': [list(r) for r in self.rotate],
+            'scale': list(self.scale),
+            'shear': list(self.shear),
+            'translate': list(self.translate),
+            'units': self.units,
+            'visible': self.visible,
         }
         return base_dict
 
@@ -1173,7 +1214,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         value: Union[
             dict,
             ClippingPlane,
-            List[Union[ClippingPlane, dict]],
+            list[Union[ClippingPlane, dict]],
             ClippingPlaneList,
         ],
     ) -> None:
@@ -1283,9 +1324,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         position: npt.ArrayLike,
         *,
         view_direction: Optional[npt.ArrayLike] = None,
-        dims_displayed: Optional[List[int]] = None,
+        dims_displayed: Optional[list[int]] = None,
         world: bool = False,
-    ) -> Optional[Tuple]:
+    ) -> Optional[tuple]:
         """Value of the data at a position.
 
         If the layer is not visible, return None.
@@ -1356,9 +1397,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self,
         start_point: Optional[np.ndarray],
         end_point: Optional[np.ndarray],
-        dims_displayed: List[int],
+        dims_displayed: list[int],
     ) -> Union[
-        float, int, None, Tuple[Union[float, int, None], Optional[int]]
+        float, int, None, tuple[Union[float, int, None], Optional[int]]
     ]:
         """Get the layer data value along a ray
 
@@ -1383,7 +1424,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         end_position: npt.ArrayLike,
         view_direction: npt.ArrayLike,
         vector: np.ndarray,
-        dims_displayed: List[int],
+        dims_displayed: list[int],
     ) -> npt.NDArray:
         """Calculate the length of the projection of a line between two mouse
         clicks onto a vector (or array of vectors) in data coordinates.
@@ -1521,7 +1562,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         return tuple(self._transforms[1:].simplified(coords))
 
     def _world_to_displayed_data(
-        self, position: np.ndarray, dims_displayed: List[int]
+        self, position: np.ndarray, dims_displayed: list[int]
     ) -> npt.NDArray:
         """Convert world to data coordinates for displayed dimensions only.
 
@@ -1575,7 +1616,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         return normalized_vector
 
     def _world_to_displayed_data_ray(
-        self, vector_world: npt.ArrayLike, dims_displayed: List[int]
+        self, vector_world: npt.ArrayLike, dims_displayed: list[int]
     ) -> np.ndarray:
         """Convert an orientation from world to displayed data coordinates.
 
@@ -1676,12 +1717,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         order = order[order >= 0]
         return order - order.min()
 
-    def _display_bounding_box(self, dims_displayed: List[int]) -> npt.NDArray:
+    def _display_bounding_box(self, dims_displayed: list[int]) -> npt.NDArray:
         """An axis aligned (ndisplay, 2) bounding box around the data"""
         return self._extent_data[:, dims_displayed].T
 
     def _display_bounding_box_augmented(
-        self, dims_displayed: List[int]
+        self, dims_displayed: list[int]
     ) -> npt.NDArray:
         """An augmented, axis-aligned (ndisplay, 2) bounding box.
 
@@ -1690,7 +1731,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         return self._extent_data_augmented[:, dims_displayed].T
 
     def _display_bounding_box_augmented_data_level(
-        self, dims_displayed: List[int]
+        self, dims_displayed: list[int]
     ) -> npt.NDArray:
         """An augmented, axis-aligned (ndisplay, 2) bounding box.
 
@@ -1703,8 +1744,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self,
         click_position: npt.ArrayLike,
         view_direction: npt.ArrayLike,
-        dims_displayed: List[int],
-    ) -> Tuple[np.ndarray, np.ndarray]:
+        dims_displayed: list[int],
+    ) -> tuple[np.ndarray, np.ndarray]:
         """Calculate a (point, normal) plane parallel to the canvas in data
         coordinates, centered on the centre of rotation of the camera.
 
@@ -1732,9 +1773,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self,
         position: npt.ArrayLike,
         view_direction: npt.ArrayLike,
-        dims_displayed: List[int],
+        dims_displayed: list[int],
         world: bool = True,
-    ) -> Tuple[Optional[np.ndarray], Optional[np.ndarray]]:
+    ) -> tuple[Optional[np.ndarray], Optional[np.ndarray]]:
         """Get the start and end point for the ray extending
         from a point through the data bounding box.
 
@@ -1794,10 +1835,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self,
         position: npt.NDArray,
         view_direction: np.ndarray,
-        dims_displayed: List[int],
+        dims_displayed: list[int],
         bounding_box: npt.NDArray,
         world: bool = True,
-    ) -> Tuple[Optional[np.ndarray], Optional[np.ndarray]]:
+    ) -> tuple[Optional[np.ndarray], Optional[np.ndarray]]:
         """Get the start and end point for the ray extending
         from a point through the data bounding box.
 
@@ -2018,9 +2059,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         position: Optional[npt.ArrayLike] = None,
         *,
         view_direction: Optional[npt.ArrayLike] = None,
-        dims_displayed: Optional[List[int]] = None,
+        dims_displayed: Optional[list[int]] = None,
         world: bool = False,
-    ) -> Dict:
+    ) -> dict:
         """
         Status message information of the data at a coordinate position.
 
@@ -2070,7 +2111,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         position: npt.NDArray,
         *,
         view_direction: Optional[np.ndarray] = None,
-        dims_displayed: Optional[List[int]] = None,
+        dims_displayed: Optional[list[int]] = None,
         world: bool = False,
     ) -> str:
         """
@@ -2097,7 +2138,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         """
         return ''
 
-    def save(self, path: str, plugin: Optional[str] = None) -> List[str]:
+    def save(self, path: str, plugin: Optional[str] = None) -> list[str]:
         """Save this layer to ``path`` with default (or specified) plugin.
 
         Parameters
@@ -2213,7 +2254,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         try:
             return Cls(data, **(meta or {}))
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             if 'unexpected keyword argument' not in str(exc):
                 raise
 
@@ -2228,4 +2269,4 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             ) from exc
 
 
-mgui.register_type(type_=List[Layer], return_callback=add_layers_to_viewer)
+mgui.register_type(type_=list[Layer], return_callback=add_layers_to_viewer)

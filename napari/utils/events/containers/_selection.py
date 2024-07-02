@@ -1,12 +1,9 @@
+from collections.abc import Generator, Iterable
 from typing import (
     TYPE_CHECKING,
     Any,
-    Dict,
-    Generator,
     Generic,
-    Iterable,
     Optional,
-    Set,
     TypeVar,
     Union,
 )
@@ -25,7 +22,7 @@ _S = TypeVar('_S')
 class Selection(EventedSet[_T]):
     """A model of selected items, with ``active`` and ``current`` item.
 
-    There can only be one ``active`` and one ``current` item, but there can be
+    There can only be one ``active`` and one ``current`` item, but there can be
     multiple selected items.  An "active" item is defined as a single selected
     item (if multiple items are selected, there is no active item).  The
     "current" item is mostly useful for (e.g.) keyboard actions: even with
@@ -57,8 +54,7 @@ class Selection(EventedSet[_T]):
     Events
     ------
     changed (added: Set[_T], removed: Set[_T])
-        Emitted when the set changes, includes item(s) that have been added
-        and/or removed from the set.
+        Emitted when the set changes, includes item(s) that have been added and/or removed from the set.
     active (value: _T)
         emitted when the current item has changed.
     _current (value: _T)
@@ -74,8 +70,8 @@ class Selection(EventedSet[_T]):
 
     def _emit_change(
         self,
-        added: Optional[Set[_T]] = None,
-        removed: Optional[Set[_T]] = None,
+        added: Optional[set[_T]] = None,
+        removed: Optional[set[_T]] = None,
     ) -> None:
         if added is None:
             added = set()
@@ -153,7 +149,11 @@ class Selection(EventedSet[_T]):
         yield cls.validate
 
     @classmethod
-    def validate(cls, v: Union['Selection', Dict], field: 'ModelField') -> 'Selection':  # type: ignore[override]
+    def validate(
+        cls,
+        v: Union['Selection', dict],  # type: ignore[override]
+        field: 'ModelField',
+    ) -> 'Selection':
         """Pydantic validator."""
         from napari._pydantic_compat import sequence_like
 
@@ -197,12 +197,13 @@ class Selection(EventedSet[_T]):
         if errors:
             from napari._pydantic_compat import ValidationError
 
-            raise ValidationError(errors, cls)
+            raise ValidationError(errors, cls)  # type: ignore [arg-type]
+            # need to be fixed when migrate to pydantic 2
         obj = cls(data=data)
         obj._current_ = current
         return obj
 
-    def _json_encode(self) -> Dict:  # type: ignore[override]
+    def _json_encode(self) -> dict:  # type: ignore[override]
         """Return an object that can be used by json.dumps."""
         # we don't serialize active, as it's gleaned from the selection.
         return {'selection': super()._json_encode(), '_current': self._current}

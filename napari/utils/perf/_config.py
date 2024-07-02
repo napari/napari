@@ -1,11 +1,10 @@
-"""Perf configuration flags.
-"""
+"""Perf configuration flags."""
 
 import json
 import os
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Union
 
 import wrapt
 
@@ -18,9 +17,6 @@ PERFMON_ENV_VAR = 'NAPARI_PERFMON'
 
 class PerfmonConfigError(Exception):
     """Error parsing or interpreting config file."""
-
-    def __init__(self, message: str) -> None:
-        self.message = message
 
 
 def _patch_perf_timer(
@@ -42,8 +38,8 @@ def _patch_perf_timer(
     def perf_time_callable(
         wrapped: Callable,
         instance: Any,
-        args: Tuple[Any],
-        kwargs: Dict[str, Any],
+        args: tuple[Any],
+        kwargs: dict[str, Any],
     ) -> Callable:
         with perf_timer(f'{label}'):
             return wrapped(*args, **kwargs)
@@ -106,7 +102,7 @@ class PerfmonConfig:
         self._patch_callables()
         self.patched = True
 
-    def _get_callables(self, list_name: str) -> List[str]:
+    def _get_callables(self, list_name: str) -> list[str]:
         """Get the list of callables from the config file.
 
         list_name : str

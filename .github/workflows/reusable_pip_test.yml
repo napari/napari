@@ -1,3 +1,5 @@
+name: Test installed from pip
+
 on:
   workflow_call:
 
@@ -16,7 +18,7 @@ jobs:
         with:
           python-version: 3.9
           cache: "pip"
-          cache-dependency-path: napari-from-github/setup.cfg
+          cache-dependency-path: napari-from-github/pyproject.toml
 
       - uses: tlambert03/setup-qt-libs@v1
 
@@ -40,7 +42,7 @@ jobs:
 
       - name: Upload test artifacts
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: test artifacts pip install
           path: .pytest_tmp

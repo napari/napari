@@ -1,7 +1,7 @@
 import os
 import random
 import sys
-from typing import NamedTuple, Optional, Type
+from typing import NamedTuple, Optional
 
 import numpy as np
 import pytest
@@ -45,11 +45,11 @@ from napari.utils.colormaps import DirectLabelColormap
 
 
 class LayerTypeWithData(NamedTuple):
-    type: Type[Layer]
+    type: type[Layer]
     data: np.ndarray
     colormap: Optional[DirectLabelColormap]
     properties: Optional[dict]
-    expected_isinstance: Type[QtLayerControlsContainer]
+    expected_isinstance: type[QtLayerControlsContainer]
 
 
 np.random.seed(0)
@@ -131,7 +131,7 @@ _VECTORS = LayerTypeWithData(
 _LINES_DATA = np.random.random((6, 2, 2))
 
 
-@pytest.fixture
+@pytest.fixture()
 def create_layer_controls(qtbot):
     def _create_layer_controls(layer_type_with_data):
         if layer_type_with_data.colormap:
@@ -178,7 +178,7 @@ def create_layer_controls(qtbot):
         'vectors',
     ],
 )
-@pytest.mark.qt_no_exception_capture
+@pytest.mark.qt_no_exception_capture()
 @pytest.mark.skipif(os.environ.get('MIN_REQ', '0') == '1', reason='min req')
 def test_create_layer_controls(
     qtbot, create_layer_controls, layer_type_with_data, capsys
@@ -240,7 +240,7 @@ skip_predicate = sys.version_info >= (3, 11) and (
         _VECTORS,
     ],
 )
-@pytest.mark.qt_no_exception_capture
+@pytest.mark.qt_no_exception_capture()
 @pytest.mark.skipif(os.environ.get('MIN_REQ', '0') == '1', reason='min req')
 def test_create_layer_controls_spin(
     qtbot, create_layer_controls, layer_type_with_data, capsys
@@ -316,7 +316,7 @@ def test_create_layer_controls_spin(
         _VECTORS,
     ],
 )
-@pytest.mark.qt_no_exception_capture
+@pytest.mark.qt_no_exception_capture()
 @pytest.mark.skipif(os.environ.get('MIN_REQ', '0') == '1', reason='min req')
 def test_create_layer_controls_qslider(
     qtbot, create_layer_controls, layer_type_with_data, capsys
@@ -398,7 +398,7 @@ def test_create_layer_controls_qslider(
         _VECTORS,
     ],
 )
-@pytest.mark.qt_no_exception_capture
+@pytest.mark.qt_no_exception_capture()
 @pytest.mark.skipif(os.environ.get('MIN_REQ', '0') == '1', reason='min req')
 def test_create_layer_controls_qcolorswatchedit(
     qtbot, create_layer_controls, layer_type_with_data, capsys
@@ -511,7 +511,7 @@ def test_set_text_then_set_visible_updates_checkbox(
     assert ctrl.textDispCheckBox.isChecked()
 
 
-@pytest.mark.parametrize(('ndim', 'editable_after'), ((2, False), (3, True)))
+@pytest.mark.parametrize(('ndim', 'editable_after'), [(2, False), (3, True)])
 def test_set_3d_display_with_points(qtbot, ndim, editable_after):
     """Interactivity only works for 2D points layers rendered in 2D and not
     in 3D. Verify that layer.editable is set appropriately upon switching to

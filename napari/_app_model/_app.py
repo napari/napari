@@ -1,17 +1,13 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from itertools import chain
-from typing import Dict
 
 from app_model import Application
 
-from napari._app_model._submenus import SUBMENUS
-from napari._app_model.actions._help_actions import HELP_ACTIONS
-from napari._app_model.actions._layer_actions import LAYER_ACTIONS
-from napari._app_model.actions._view_actions import VIEW_ACTIONS
-from napari._app_model.injection._processors import PROCESSORS
-from napari._app_model.injection._providers import PROVIDERS
+from napari._app_model.actions._layerlist_context_actions import (
+    LAYERLIST_CONTEXT_ACTIONS,
+    LAYERLIST_CONTEXT_SUBMENUS,
+)
 
 APP_NAME = 'napari'
 
@@ -28,14 +24,9 @@ class NapariApplication(Application):
         super().__init__(app_name, raise_synchronous_exceptions=True)
 
         self.injection_store.namespace = _napari_names  # type: ignore [assignment]
-        self.injection_store.register(
-            providers=PROVIDERS, processors=PROCESSORS
-        )
 
-        for action in chain(HELP_ACTIONS, LAYER_ACTIONS, VIEW_ACTIONS):
-            self.register_action(action)
-
-        self.menus.append_menu_items(SUBMENUS)
+        self.register_actions(LAYERLIST_CONTEXT_ACTIONS)
+        self.menus.append_menu_items(LAYERLIST_CONTEXT_SUBMENUS)
 
     @classmethod
     def get_app(cls, app_name: str = APP_NAME) -> NapariApplication:
@@ -43,7 +34,7 @@ class NapariApplication(Application):
 
 
 @lru_cache(maxsize=1)
-def _napari_names() -> Dict[str, object]:
+def _napari_names() -> dict[str, object]:
     """Napari names to inject into local namespace when evaluating type hints."""
     import napari
     from napari import components, layers, viewer
