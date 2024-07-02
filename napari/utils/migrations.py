@@ -247,8 +247,12 @@ def deprecated_class_name(
     return _OldClass
 
 
-class DeprecatingDict(dict[str, Any]):
+class _DeprecatingDict(dict[str, Any]):
     """A dictionary that issues warning messages when deprecated keys are accessed.
+
+    This class is intended to be an implementation detail of napari and may change
+    in the future. As such, it should not be used outside of napari. Instead, treat
+    this like a plain dictionary.
 
     Deprecated keys and values are not stored as part of the dictionary, so will not
     appear when iterating over this or its items.

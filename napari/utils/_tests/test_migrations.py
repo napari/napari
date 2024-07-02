@@ -1,7 +1,7 @@
 import pytest
 
 from napari.utils.migrations import (
-    DeprecatingDict,
+    _DeprecatingDict,
     add_deprecated_property,
     deprecated_class_name,
     rename_argument,
@@ -87,7 +87,7 @@ def test_deprecated_class_name():
 
 
 def test_deprecating_dict_with_renamed_in_deprecated_keys():
-    d = DeprecatingDict({'a': 1, 'b': 2})
+    d = _DeprecatingDict({'a': 1, 'b': 2})
     d.set_deprecated_from_rename(
         from_name='c', to_name='a', version='v2.0', since_version='v1.6'
     )
@@ -95,7 +95,7 @@ def test_deprecating_dict_with_renamed_in_deprecated_keys():
 
 
 def test_deprecating_dict_with_renamed_get_deprecated():
-    d = DeprecatingDict({'a': 1, 'b': 2})
+    d = _DeprecatingDict({'a': 1, 'b': 2})
     d.set_deprecated_from_rename(
         from_name='c', to_name='a', version='v2.0', since_version='v1.6'
     )
@@ -104,7 +104,7 @@ def test_deprecating_dict_with_renamed_get_deprecated():
 
 
 def test_deprecating_dict_with_renamed_set_nondeprecated():
-    d = DeprecatingDict({'a': 1, 'b': 2})
+    d = _DeprecatingDict({'a': 1, 'b': 2})
     d.set_deprecated_from_rename(
         from_name='c', to_name='a', version='v2.0', since_version='v1.6'
     )
@@ -116,7 +116,7 @@ def test_deprecating_dict_with_renamed_set_nondeprecated():
 
 
 def test_deprecating_dict_with_renamed_set_deprecated():
-    d = DeprecatingDict({'a': 1, 'b': 2})
+    d = _DeprecatingDict({'a': 1, 'b': 2})
     d.set_deprecated_from_rename(
         from_name='c', to_name='a', version='v2.0', since_version='v1.6'
     )
@@ -130,7 +130,7 @@ def test_deprecating_dict_with_renamed_set_deprecated():
 
 
 def test_deprecating_dict_with_renamed_del_nondeprecated():
-    d = DeprecatingDict({'a': 1, 'b': 2})
+    d = _DeprecatingDict({'a': 1, 'b': 2})
     d.set_deprecated_from_rename(
         from_name='c', to_name='a', version='v2.0', since_version='v1.6'
     )
@@ -147,7 +147,7 @@ def test_deprecating_dict_with_renamed_del_nondeprecated():
 
 
 def test_deprecating_dict_with_renamed_del_deprecated():
-    d = DeprecatingDict({'a': 1, 'b': 2})
+    d = _DeprecatingDict({'a': 1, 'b': 2})
     d.set_deprecated_from_rename(
         from_name='c', to_name='a', version='v2.0', since_version='v1.6'
     )
