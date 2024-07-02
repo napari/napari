@@ -1034,7 +1034,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         Returns
         -------
-        dict[str, Any]
+        dict of str to Any
             Dictionary of attributes on base layer.
         """
         base_dict = {

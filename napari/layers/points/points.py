@@ -1445,7 +1445,7 @@ class Points(Layer):
 
         Returns
         -------
-        state : dict[str, Any]
+        state : dict of str to Any
             Dictionary of layer state.
         """
         state = self._get_base_state()
