@@ -48,7 +48,7 @@ from superqt.utils import QSignalThrottler
 from napari._app_model.constants import MenuId
 from napari._app_model.context import create_context, get_context
 from napari._qt._qapp_model import build_qmodel_menu
-from napari._qt._qapp_model.qactions import init_qactions
+from napari._qt._qapp_model.qactions import add_dummy_actions, init_qactions
 from napari._qt._qapp_model.qactions._debug import _is_set_trace_active
 from napari._qt._qplugins import (
     _rebuild_npe1_plugins_menu,
@@ -171,6 +171,7 @@ class _QtMainWindow(QMainWindow):
 
         # Ideally this would be in `NapariApplication` but that is outside of Qt
         self._viewer_context = create_context(self)
+        self._viewer_context['is_set_trace_active'] = _is_set_trace_active
 
         settings = get_settings()
 
@@ -676,6 +677,10 @@ class Window:
         index_npe1_adapters()
 
         self._add_menus()
+        if self._qt_viewer._layers is not None:
+            add_dummy_actions(
+                self._qt_viewer._layers.model().sourceModel()._root._ctx
+            )
         self._update_theme()
         self._update_theme_font_size()
         get_settings().appearance.events.theme.connect(self._update_theme)
@@ -818,18 +823,24 @@ class Window:
 
     def _update_menu_state(self, menu: MenuStr):
         """Update enabled/visible state of menu item with context."""
+
         layerlist = self._qt_viewer._layers.model().sourceModel()._root
         menu_model = getattr(self, menu)
         menu_model.update_from_context(get_context(layerlist))
 
     def _update_file_menu_state(self):
         self._update_menu_state('file_menu')
+        # file menu could have empty submenus
+        # viewer_ctx = get_context(self._qt_window)
+        # self.file_menu.update_from_context(viewer_ctx)
 
     def _update_view_menu_state(self):
         self._update_menu_state('view_menu')
 
     def _update_layers_menu_state(self):
         self._update_menu_state('layers_menu')
+        # viewer_ctx = get_context(self._qt_window)
+        # self.layers_menu.update_from_context(viewer_ctx)
 
     def _update_window_menu_state(self):
         self._update_menu_state('window_menu')
@@ -842,7 +853,6 @@ class Window:
 
     def _update_debug_menu_state(self):
         viewer_ctx = get_context(self._qt_window)
-        viewer_ctx['is_set_trace_active'] = _is_set_trace_active()
         self._debug_menu.update_from_context(viewer_ctx)
 
     # TODO: Remove once npe1 deprecated
