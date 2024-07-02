@@ -1,5 +1,6 @@
 import inspect
 import warnings
+from collections import UserDict
 from functools import wraps
 from typing import Any, Callable, NamedTuple, cast
 
@@ -247,7 +248,7 @@ def deprecated_class_name(
     return _OldClass
 
 
-class _DeprecatingDict(dict[str, Any]):
+class _DeprecatingDict(UserDict[str, Any]):
     """A dictionary that issues warning messages when deprecated keys are accessed.
 
     This class is intended to be an implementation detail of napari and may change
@@ -268,26 +269,26 @@ class _DeprecatingDict(dict[str, Any]):
     _renamed: dict[str, _RenamedAttribute]
 
     def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
         self._renamed = {}
+        super().__init__(*args, **kwargs)
 
     def __getitem__(self, key: str) -> Any:
         key = self._maybe_rename_key(key)
-        return super().__getitem__(key)
+        return self.data.__getitem__(key)
 
     def __setitem__(self, key: str, value: Any) -> None:
         key = self._maybe_rename_key(key)
-        return super().__setitem__(key, value)
+        return self.data.__setitem__(key, value)
 
     def __delitem__(self, key: str) -> None:
         key = self._maybe_rename_key(key)
-        return super().__delitem__(key)
+        return self.data.__delitem__(key)
 
     def __contains__(self, key: object) -> bool:
         if key in self._renamed:
             key = cast(str, key)
         key = self._maybe_rename_key(key)
-        return super().__contains__(key)
+        return self.data.__contains__(key)
 
     def _maybe_rename_key(self, key: str) -> str:
         if key in self._renamed:
