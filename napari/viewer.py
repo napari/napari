@@ -97,24 +97,27 @@ class Viewer(ViewerModel):
     ):
         """Export an image of the full extent of the displayed layer data.
 
-        This function finds a tight boundary around the data, resets the view
-        around that boundary (and, when scale=1, such that 1 captured pixel is
-        equivalent to one data pixel), takes a screenshot, then restores the
-        previous zoom and canvas sizes. For example with one image layer with
-        an image of 256 x 256 pixels and layer.scale=[1,1], with scale=1 the
-        size of the resulting figure will be 256 x 256 pixels. If layer.scale
-        for both dimensions is set to 0.5, it will be 128 x 128 pixels. Currently,
-        only works when 2 dimensions are displayed.
+        This function finds a tight boundary around the data, resets the view around
+        that boundary, takes a screenshot for which each pixel is equal to the pixel
+        resolution of the data and then restores the previous zoom and canvas sizes.
+        The pixel resolution can be upscaled or downscaled by passing an integer value
+        to the scale parameter different from 1. For example with one image layer with
+        an image of 256 x 256 pixels and layer.scale=[15,15] (pixel resolution of for
+        x and y of 15), with scale=2 the size of the resulting figure will be
+        512 x 512 pixels. If scale is set to 0.5, it will be 128 x 128 pixels.
+        If having layers with a different layer.scale, the resolution of each
+        screenshot pixel will be equal to the largest value of layer.scale for each
+        dimension across the layers. Currently, only works when 2 dimensions are
+        displayed.
 
         Parameters
         ----------
         path : Optional[str]
             Filename for saving screenshot image.
         scale : float
-            Scale factor used to increase resolution of canvas for the
-            screenshot. By default, a scale of 1. A scale
-            of 1 corresponds to 1 data pixel per screenshot pixel if all displayed
-            layers have layer.scale for each displayed dimension set to 1.
+            Scale factor used to increase resolution per pixel for the
+            screenshot. By default, a scale of 1. A scale of 1 corresponds
+            to 1 pixel corresponding to the pixel resolution of the data.
         flash : bool
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
