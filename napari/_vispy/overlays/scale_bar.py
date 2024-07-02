@@ -1,6 +1,7 @@
 import bisect
 from decimal import Decimal
 from math import floor, log
+from sys import platform
 
 import numpy as np
 import pint
@@ -125,7 +126,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.node.transform.scale = [scale, 1, 1, 1]
         self.node.text.text = f'{new_dim:~}'
         self.x_size = scale  # needed to offset properly
-        self._on_position_change()
+        super()._on_position_change()
 
     def _on_data_change(self):
         """Change color and data of scale bar and box."""
@@ -164,6 +165,24 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     def _on_text_change(self):
         """Update text information"""
         self.node.text.font_size = self.overlay.font_size
+        if 'top' in self.overlay.position:
+            self._on_position_change()
+
+    def _on_position_change(self, event=None):
+        # prevent the text from being cut off by shifting down
+        if 'top' in self.overlay.position:
+            # account for dpi difference on macOS
+            font_dpi_scale_factor = 96 if platform != 'darwin' else 72
+            self.y_offset = (
+                10
+                + self.overlay.font_size
+                * font_dpi_scale_factor
+                / 72
+                * self.viewer.window._qt_window.devicePixelRatio()
+            )
+        else:
+            self.y_offset = 20
+        super()._on_position_change()
 
     def reset(self):
         super().reset()
