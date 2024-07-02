@@ -104,11 +104,11 @@ class Viewer(ViewerModel):
         to the scale parameter different from 1. For example with one image layer with
         an image of 256 x 256 pixels and layer.scale=[15,15] (pixel resolution of for
         x and y of 15), with scale=2 the size of the resulting figure will be
-        512 x 512 pixels. If scale is set to 0.5, it will be 128 x 128 pixels.
-        If having layers with a different layer.scale, the resolution of each
-        screenshot pixel will be equal to the largest value of layer.scale for each
-        dimension across the layers. Currently, only works when 2 dimensions are
-        displayed.
+        512 x 512 pixels (the interpolation mode of the layer will be used to upscale).
+        If scale is set to 0.5, it will be 128 x 128 pixels. If having layers with a
+        different layer.scale, the resolution of each screenshot pixel will be equal
+        to the largest value of layer.scale for each dimension across the layers.
+        Currently, only works when 2 dimensions are displayed.
 
         Parameters
         ----------
@@ -118,6 +118,8 @@ class Viewer(ViewerModel):
             Scale factor used to increase resolution per pixel for the
             screenshot. By default, a scale of 1. A scale of 1 corresponds
             to 1 pixel corresponding to the pixel resolution of the data.
+            If the scale is higher than 1 then the interpolation method of
+            the layers will be used to upscale.
         flash : bool
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
@@ -151,15 +153,15 @@ class Viewer(ViewerModel):
         path : str, optional
             Filename for saving screenshot image.
         size : tuple of two ints, optional
-            Size (resolution height x width) of the screenshot. By default, the currently displayed size.
-            Only used if `canvas_only` is True.
+            Size (resolution height x width) of the screenshot. By default, the currently
+            displayed size. Only used if `canvas_only` is True.
         scale : float, optional
-            Scale factor used to increase resolution of canvas for the screenshot. By default, the currently displayed resolution.
-            Only used if `canvas_only` is True.
+            Scale factor used to increase resolution of canvas for the screenshot.
+            By default, the currently displayed resolution.Only used if `canvas_only` is
+            True.
         canvas_only : bool
-            If True, screenshot shows only the image display canvas, and
-            if False include the napari viewer frame in the screenshot,
-            By default, True.
+            If True, screenshot shows only the image display canvas, and if False include
+            the napari viewer frame in the screenshot, By default, True.
         flash : bool
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
