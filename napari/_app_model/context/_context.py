@@ -18,14 +18,16 @@ __all__ = ['create_context', 'get_context', 'Context', 'SettingsAwareContext']
 
 
 class ContextMapping(collections.abc.Mapping):
-    """
-    This object wraps around app-model contexts and enables functional context-keys that are only evaluated
-    when they're first queried. `ContextMapping` objects are created from a context any time someone calls
-    `NapariApplication.get_context`. This usually happens just before a menu is about to be shown, when we
-    update the menu's actions' states based on the values of the context keys. The call to `get_context`
-    triggers the creation of the `ContextMapping` which stores (or, in the case of functional keys, evaluates
-    then stores) the value of each context key. Once keys are evaluated, they are cached within the object for
-    future accessing of the same keys. However, any new `get_context` calls will create a brand new
+    """Wrap app-model contexts, allowing keys to be evaluated at query time.
+
+    `ContextMapping` objects are created from a context any time someone calls
+    `NapariApplication.get_context`. This usually happens just before a menu is
+    about to be shown, when we update the menu's actions' states based on the
+    values of the context keys. The call to `get_context` triggers the creation
+    of the `ContextMapping` which stores (or, in the case of functional keys,
+    evaluates then stores) the value of each context key. Once keys are
+    evaluated, they are cached within the object for future accessing of the
+    same keys. However, any new `get_context` calls will create a brand new
     `ContextMapping` object.
     """
 
