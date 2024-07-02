@@ -92,7 +92,7 @@ class Viewer(ViewerModel):
         self,
         path: Optional[str] = None,
         *,
-        scale: float = 1,
+        scale_factor: float = 1,
         flash: bool = True,
     ):
         """Export an image of the full extent of the displayed layer data.
@@ -114,12 +114,12 @@ class Viewer(ViewerModel):
         ----------
         path : str, optional
             Filename for saving screenshot image.
-        scale : float
-            Scale factor used to increase resolution per pixel for the
-            screenshot. By default, a scale of 1. A scale of 1 corresponds
-            to 1 pixel corresponding to the pixel resolution of the data.
-            If the scale is higher than 1 then the interpolation method of
-            the layers will be used to upscale.
+        scale_factor : float
+            By default, the zoom will export approximately 1 pixel per smallest-scale
+            pixel on the viewer. For example, if a layer has scale 0.004nm/pixel and
+            another has scale 1µm/pixel, the exported figure will have 0.004nm/pixel.
+            Upscaling by 2 will produce a figure with 0.002nm/pixel through the
+            interpolation mode set on each layer.
         flash : bool
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
@@ -133,7 +133,7 @@ class Viewer(ViewerModel):
         """
         return self.window.export_figure(
             path=path,
-            scale=scale,
+            scale=scale_factor,
             flash=flash,
         )
 
