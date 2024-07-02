@@ -1071,7 +1071,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         if hasattr(self.__init__, '_rename_argument'):
             state = DeprecatingDict(state)
             for element in self.__init__._rename_argument:
-                state.set_deprecated_from_rename(*element)
+                state.set_deprecated_from_rename(**element._asdict())
         return self.data, state, self._type_string
 
     @property

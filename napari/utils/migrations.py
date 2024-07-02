@@ -1,11 +1,23 @@
 import inspect
 import warnings
 from functools import wraps
-from typing import Any, Callable, cast
+from typing import Any, Callable, NamedTuple, cast
 
 from napari.utils.translations import trans
 
 _UNSET = object()
+
+
+class _RenamedAttribute(NamedTuple):
+    """Captures information about a renamed attribute, property, or argument.
+
+    Useful for storing internal state related to these types of deprecations.
+    """
+
+    from_name: str
+    to_name: str
+    version: str
+    since_version: str
 
 
 def rename_argument(
@@ -43,7 +55,12 @@ def rename_argument(
             func._rename_argument = []
 
         func._rename_argument.append(
-            (from_name, to_name, version, since_version)
+            _RenamedAttribute(
+                from_name=from_name,
+                to_name=to_name,
+                version=version,
+                since_version=since_version,
+            )
         )
 
         @wraps(func)
@@ -277,7 +294,7 @@ class DeprecatingDict(dict[str, Any]):
         self._deprecations[key] = value, message
 
     def set_deprecated_from_rename(
-        self, from_name: str, to_name: str, version: str, since_version: str
+        self, *, from_name: str, to_name: str, version: str, since_version: str
     ) -> None:
         """Sets a deprecated key with a value that comes from another key.
 
