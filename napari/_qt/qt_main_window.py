@@ -1634,8 +1634,7 @@ class Window:
                     add_flash_animation(self._qt_viewer._welcome_widget)
             finally:
                 # make sure we always go back to the right canvas size
-                if size is not None or scale is not None or fit_to_data_extent:
-                    canvas.size = prev_size
+                canvas.size = prev_size
                 camera.center = old_center
                 camera.zoom = old_zoom
         else:
