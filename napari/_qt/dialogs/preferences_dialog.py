@@ -242,7 +242,6 @@ class PreferencesDialog(QDialog):
         )
         if response == QMessageBox.RestoreDefaults:
             self._settings.reset()
-            # self._rebuild_dialog()  # TODO: do we need this? -> Maybe not needed anymore due to the logic to sync setting changes to GUI?
 
     def _restart_required_dialog(self):
         """Displays the dialog informing user a restart is required."""
