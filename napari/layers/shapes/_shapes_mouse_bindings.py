@@ -311,12 +311,12 @@ def initiate_polygon_draw(
     coordinates : Tuple[float, ...]
         A tuple with the coordinates of the initial vertex in image data space.
     """
+    layer._is_creating = True
     data = np.array([coordinates, coordinates])
     layer.add(data, shape_type='path', gui=True)
     layer.selected_data = {layer.nshapes - 1}
     layer._value = (layer.nshapes - 1, 1)
     layer._moving_value = copy(layer._value)
-    layer._is_creating = True
     layer._set_highlight()
 
 
@@ -383,6 +383,10 @@ def add_vertex_to_path(
     vertices = layer._data_view.shapes[index].data
     vertices = np.concatenate((vertices, [coordinates]), axis=0)
     value = layer.get_value(event.position, world=True)
+    # If there was no move event between two clicks value[1] is None
+    # and needs to be taken care of.
+    if value[1] is None:
+        value = layer._moving_value
     layer._value = (value[0], value[1] + 1)
     layer._moving_value = copy(layer._value)
     layer._data_view.edit(index, vertices, new_type=new_type)
