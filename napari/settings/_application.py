@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Optional
 
 from psutil import virtual_memory
 
@@ -36,13 +36,6 @@ class DaskSettings(EventedModel):
 
 
 class ApplicationSettings(EventedModel):
-    def __init__(self, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
-        self.dask.events.connect(self._dask_changed)
-
-    def _dask_changed(self) -> None:
-        self.events.dask(value=self.dask)
-
     first_time: bool = Field(
         True,
         title=trans._('First time'),

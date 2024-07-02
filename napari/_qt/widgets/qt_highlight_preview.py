@@ -459,6 +459,8 @@ class QtHighlightPreviewWidget(QWidget):
             color_value = color_value.tolist()
         if color_value == self._color_value:
             return
+        if color_value == '':
+            return
         self._color_value = color_value
         self._value['highlight_color'] = self._color_value
         self.valueChanged.emit(self._value)
@@ -496,8 +498,8 @@ class QtHighlightPreviewWidget(QWidget):
         value : dict
             Highlight value (thickness and color).
         """
-        self._update_thickness_value(value['highlight_thickness'])
-        self._update_color_value(value['highlight_color'])
+        self._update_thickness_value(value.get('highlight_thickness', ''))
+        self._update_color_value(value.get('highlight_color', ''))
         self._refresh()
 
     def description(self):
