@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QSortFilterProxyModel, Qt  # type: ignore[attr-defined]
 
-from napari._qt._qapp_model.qactions._layer import (
+from napari._qt._qapp_model.qactions._layerlist_context import (
     is_valid_spatial_in_clipboard,
 )
 from napari._qt.containers._base_item_model import (
