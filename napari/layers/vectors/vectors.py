@@ -29,6 +29,7 @@ from napari.utils.colormaps import Colormap, ValidColormapArg
 from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
 from napari.utils.events.event import WarningEmitter
+from napari.utils.migrations import _DeprecatingDict
 from napari.utils.translations import trans
 
 
@@ -434,7 +435,7 @@ class Vectors(Layer):
         _warn_deprecation(_property_choices_deprecation_message())
         return self._feature_table.choices()
 
-    def _get_state(self) -> dict[str, Any]:
+    def _get_state(self) -> _DeprecatingDict:
         """Get dictionary of layer state.
 
         Returns

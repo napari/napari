@@ -63,7 +63,11 @@ from napari.utils.events.custom_types import Array
 from napari.utils.events.event import WarningEmitter
 from napari.utils.events.migrations import deprecation_warning_event
 from napari.utils.geometry import project_points_onto_plane, rotate_points
-from napari.utils.migrations import add_deprecated_property, rename_argument
+from napari.utils.migrations import (
+    _DeprecatingDict,
+    add_deprecated_property,
+    rename_argument,
+)
 from napari.utils.status_messages import generate_layer_coords_status
 from napari.utils.transforms import Affine
 from napari.utils.translations import trans
@@ -1488,7 +1492,7 @@ class Points(Layer):
         self._border._refresh_colors(self.properties, update_color_mapping)
         self._face._refresh_colors(self.properties, update_color_mapping)
 
-    def _get_state(self) -> dict[str, Any]:
+    def _get_state(self) -> _DeprecatingDict:
         """Get dictionary of layer state.
 
         Returns

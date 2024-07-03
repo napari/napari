@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, Literal, Union, cast
+from typing import Literal, Union, cast
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -24,7 +24,7 @@ from napari.layers.utils.layer_utils import calc_data_range
 from napari.utils._dtype import get_dtype_limits, normalize_dtype
 from napari.utils.colormaps import ensure_colormap
 from napari.utils.colormaps.colormap_utils import _coerce_contrast_limits
-from napari.utils.migrations import rename_argument
+from napari.utils.migrations import _DeprecatingDict, rename_argument
 from napari.utils.translations import trans
 
 __all__ = ('Image',)
@@ -367,7 +367,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         self._rendering = ImageRendering(rendering)
         self.events.rendering()
 
-    def _get_state(self) -> dict[str, Any]:
+    def _get_state(self) -> _DeprecatingDict:
         """Get dictionary of layer state.
 
         Returns

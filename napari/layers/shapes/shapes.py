@@ -83,6 +83,7 @@ from napari.utils.colormaps.standardize_color import (
 from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
 from napari.utils.events.event import WarningEmitter
+from napari.utils.migrations import _DeprecatingDict
 from napari.utils.misc import ensure_iterable
 from napari.utils.translations import trans
 
@@ -1636,7 +1637,7 @@ class Shapes(Layer):
             )
         )
 
-    def _get_state(self) -> dict[str, Any]:
+    def _get_state(self) -> _DeprecatingDict:
         """Get dictionary of layer state.
 
         Returns

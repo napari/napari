@@ -1,8 +1,7 @@
-from typing import Any
-
 import numpy as np
 
 from napari.layers import Layer
+from napari.utils.migrations import _DeprecatingDict
 
 
 class SampleLayer(Layer):
@@ -72,7 +71,7 @@ class SampleLayer(Layer):
     def _get_ndim(self) -> int:
         return self.ndim
 
-    def _get_state(self) -> dict[str, Any]:
+    def _get_state(self) -> _DeprecatingDict:
         base_state = self._get_base_state()
         base_state['data'] = self.data
         return base_state

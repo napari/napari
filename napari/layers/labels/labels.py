@@ -3,7 +3,6 @@ from collections import deque
 from collections.abc import Sequence
 from contextlib import contextmanager
 from typing import (
-    Any,
     Callable,
     ClassVar,
     Optional,
@@ -65,6 +64,7 @@ from napari.utils.events import EmitterGroup, Event
 from napari.utils.events.custom_types import Array
 from napari.utils.events.event import WarningEmitter
 from napari.utils.geometry import clamp_point_to_bounding_box
+from napari.utils.migrations import _DeprecatingDict
 from napari.utils.misc import StringEnum, _is_array_type
 from napari.utils.naming import magic_name
 from napari.utils.status_messages import generate_layer_coords_status
@@ -665,7 +665,7 @@ class Labels(ScalarFieldBase):
             data = data[0]
         return data
 
-    def _get_state(self) -> dict[str, Any]:
+    def _get_state(self) -> _DeprecatingDict:
         """Get dictionary of layer state.
 
         Returns

@@ -1075,7 +1075,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         )
 
     @abstractmethod
-    def _get_state(self) -> dict[str, Any]:
+    def _get_state(self) -> _DeprecatingDict:
         raise NotImplementedError
 
     @property

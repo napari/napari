@@ -2,7 +2,7 @@
 # from napari.utils.events import Event
 # from napari.utils.colormaps import AVAILABLE_COLORMAPS
 
-from typing import Any, Optional, Union
+from typing import Optional, Union
 from warnings import warn
 
 import numpy as np
@@ -17,6 +17,7 @@ from napari.layers.utils.layer_utils import (
 from napari.utils.colormaps import AVAILABLE_COLORMAPS, Colormap
 from napari.utils.events import Event
 from napari.utils.events.event import WarningEmitter
+from napari.utils.migrations import _DeprecatingDict
 from napari.utils.translations import trans
 
 
@@ -247,7 +248,7 @@ class Tracks(Layer):
         """Determine number of dimensions of the layer."""
         return self._manager.ndim
 
-    def _get_state(self) -> dict[str, Any]:
+    def _get_state(self) -> _DeprecatingDict:
         """Get dictionary of layer state.
 
         Returns
