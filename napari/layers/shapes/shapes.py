@@ -1519,7 +1519,7 @@ class Shapes(Layer):
                 # and update_color_mapping==False
                 color_cycle_map = getattr(self, f'{attribute}_color_cycle_map')
                 color_cycle_keys = [*color_cycle_map]
-                props_in_map = np.in1d(color_properties, color_cycle_keys)
+                props_in_map = np.isin(color_properties, color_cycle_keys)
                 if not np.all(props_in_map) or (len(color_properties) == 0):
                     props_to_add = np.unique(
                         color_properties[np.logical_not(props_in_map)]
