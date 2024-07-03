@@ -287,14 +287,14 @@ class _DeprecatingDict(UserDict[str, Any]):
     def __setitem__(self, key: str, value: Any) -> None:
         if key in self._deprecated:
             _, message = self._deprecated[key]
-            raise KeyError(message, FutureWarning)
+            raise KeyError(message)
         key = self._maybe_rename_key(key)
         return self.data.__setitem__(key, value)
 
     def __delitem__(self, key: str) -> None:
         if key in self._deprecated:
             _, message = self._deprecated[key]
-            raise KeyError(message, FutureWarning)
+            raise KeyError(message)
         key = self._maybe_rename_key(key)
         return self.data.__delitem__(key)
 
