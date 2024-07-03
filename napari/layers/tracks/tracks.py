@@ -481,7 +481,7 @@ class Tracks(Layer):
         """
         _warn_deprecation(
             trans._(
-                'properties_to_color_by was deprecated in version 0.5.0 and will be removed in 0.6. '
+                'properties_to_color_by is deprecated since version 0.5.0 and will be removed in 0.6. '
                 'Please use features_to_color_by instead.',
                 deferred=True,
             )

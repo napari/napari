@@ -234,7 +234,7 @@ class Points(Layer):
     text : str
         Text to be displayed with the points. If text is set to a key in features, the value of
         that property will be displayed. Multiple features can be composed using f-string-like
-        syntax (e.g., '{feature_1}, {float_float:.2f}).
+        syntax (e.g., '{feature_1}, {float_feature:.2f}).
         For example usage, see /napari/examples/add_points_with_text.py.
     symbol : array of str
         Array of symbols for each point.
