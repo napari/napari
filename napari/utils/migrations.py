@@ -2,7 +2,7 @@ import inspect
 import warnings
 from collections import UserDict
 from functools import wraps
-from typing import Any, Callable, NamedTuple, cast
+from typing import Any, Callable, NamedTuple
 
 from napari.utils.translations import trans
 
@@ -299,13 +299,13 @@ class _DeprecatingDict(UserDict[str, Any]):
         return self.data.__delitem__(key)
 
     def __contains__(self, key: object) -> bool:
+        if not isinstance(key, str):
+            return False
         if key in self._deprecated:
             _, message = self._deprecated[key]
             warnings.warn(message, FutureWarning)
             return True
-        if key in self._renamed:
-            key = cast(str, key)
-            key = self._maybe_rename_key(key)
+        key = self._maybe_rename_key(key)
         return self.data.__contains__(key)
 
     def _maybe_rename_key(self, key: str) -> str:

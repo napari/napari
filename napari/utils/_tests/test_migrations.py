@@ -94,7 +94,7 @@ def test_deprecating_dict_with_renamed_in_deprecated_keys():
     assert 'c' in d.deprecated_keys
 
 
-def test_deprecating_dict_with_renamed_get_deprecated():
+def test_deprecating_dict_with_renamed_getitem_deprecated():
     d = _DeprecatingDict({'a': 1, 'b': 2})
     d.set_deprecated_from_rename(
         from_name='c', to_name='a', version='v2.0', since_version='v1.6'
@@ -103,7 +103,7 @@ def test_deprecating_dict_with_renamed_get_deprecated():
         assert d['c'] == 1
 
 
-def test_deprecating_dict_with_renamed_getalt_deprecated():
+def test_deprecating_dict_with_renamed_get_deprecated():
     d = _DeprecatingDict({'a': 1, 'b': 2})
     d.set_deprecated_from_rename(
         from_name='c', to_name='a', version='v2.0', since_version='v1.6'
