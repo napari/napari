@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+from functools import partial
 from typing import TYPE_CHECKING, Callable, Optional, Union
 
 from app_model.expressions import ContextKey
@@ -163,11 +164,13 @@ def _active_is_image_3d(s: LayerSel) -> bool:
     )
 
 
-def _empty_shapes_layer_selected(s: LayerSel) -> Callable[[], bool]:
-    def fun() -> bool:
-        return any(x._type_string == 'shapes' and not len(x.data) for x in s)
+def _selection_check(s: LayerSel) -> bool:
+    return any(x._type_string == 'shapes' and not len(x.data) for x in s)
 
-    return fun
+
+def _empty_shapes_layer_selected(s: LayerSel) -> Callable[[], bool]:
+    check_fun = partial(_selection_check, s)
+    return check_fun
 
 
 class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
