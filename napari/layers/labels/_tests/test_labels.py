@@ -1535,11 +1535,7 @@ def test_labels_state_update():
     layer = Labels(data)
     state = layer._get_state()
     for k, v in state.items():
-        if k in state.deprecations:
-            with pytest.warns(FutureWarning):
-                setattr(layer, k, v)
-        else:
-            setattr(layer, k, v)
+        setattr(layer, k, v)
 
 
 def test_is_default_color():

@@ -104,12 +104,12 @@ class Vectors(Layer):
         Properties for each vector. Each property should be an array of length N,
         where N is the number of vectors.
         .. deprecated:: 0.5.0
-            properties was deprecated in version 0.5.0 and will be removed in 0.6.
+            properties is deprecated since version 0.5.0 and will be removed in 0.6.
             Please use features instead.
     property_choices : dict {str: array (N,)}
         possible values for each property.
         .. deprecated:: 0.5.0
-            property_choices was deprecated in version 0.5.0 and will be removed in 0.6.
+            property_choices is deprecated since version 0.5.0 and will be removed in 0.6.
             Please use features with categorical dtypes instead.
     rotate : float, 3-tuple of float, or n-D array.
         If a float convert into a 2D rotation matrix using that value as an

@@ -140,7 +140,7 @@ class Labels(ScalarFieldBase):
         N, where N is the number of labels, and the first property corresponds
         to background.
         .. deprecated:: 0.5.0
-            properties was deprecated in version 0.5.0 and will be removed in 0.6.
+            properties is deprecated since version 0.5.0 and will be removed in 0.6.
             Please use features instead.
     rendering : str
         3D Rendering mode used by vispy. Must be one {'translucent', 'iso_categorical'}.
@@ -592,7 +592,7 @@ class Labels(ScalarFieldBase):
         """dict {str: array (N,)}, DataFrame: Properties for each label.
 
         .. deprecated:: 0.5.0
-            properties was deprecated in version 0.5.0 and will be removed in 0.6.
+            properties is deprecated since version 0.5.0 and will be removed in 0.6.
             Please use features instead.
         """
         _warn_deprecation(_properties_deprecation_message())
@@ -688,7 +688,7 @@ class Labels(ScalarFieldBase):
                 'colormap': self.colormap,
             }
         )
-        state.deprecations['properties'] = (
+        state._deprecated['properties'] = (
             self._feature_table.properties(),
             _properties_deprecation_message(),
         )

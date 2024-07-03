@@ -84,7 +84,7 @@ class Tracks(Layer):
         Properties for each point. Each property should be an array of length N,
         where N is the number of points.
         .. deprecated:: 0.5.0
-            properties was deprecated in version 0.5.0 and will be removed in 0.6.
+            properties is deprecated since version 0.5.0 and will be removed in 0.6.
             Please use features instead.
     rotate : float, 3-tuple of float, or n-D array.
         If a float convert into a 2D rotation matrix using that value as an
@@ -269,7 +269,7 @@ class Tracks(Layer):
                 'features': self.features,
             }
         )
-        state.deprecations['properties'] = (
+        state._deprecated['properties'] = (
             self._manager.properties,
             _properties_deprecation_message(),
         )
@@ -458,7 +458,7 @@ class Tracks(Layer):
         """dict {str: np.ndarray (N,)}: Properties for each track.
 
         .. deprecated:: 0.5.0
-            properties was deprecated in version 0.5.0 and will be removed in 0.6.
+            properties is deprecated since version 0.5.0 and will be removed in 0.6.
             Please use features instead.
         """
         _warn_deprecation(_properties_deprecation_message())
@@ -475,7 +475,7 @@ class Tracks(Layer):
         """track properties that can be used for coloring etc...
 
         .. deprecated:: 0.5.0
-            properties_to_color_by was deprecated in version 0.5.0 and will be removed in 0.6.
+            properties_to_color_by is deprecated since version 0.5.0 and will be removed in 0.6.
             Please use features_to_color_by instead.
         """
         _warn_deprecation(

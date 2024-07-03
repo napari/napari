@@ -1082,7 +1082,7 @@ def _warn_deprecation(message: str) -> None:
 
 def _properties_deprecation_message() -> str:
     return trans._(
-        'properties was deprecated in version 0.5.0 and will be removed in 0.6. '
+        'properties is deprecated since version 0.5.0 and will be removed in 0.6. '
         'Please use features instead.',
         deferred=True,
     )
@@ -1090,7 +1090,7 @@ def _properties_deprecation_message() -> str:
 
 def _property_choices_deprecation_message() -> str:
     return trans._(
-        'property_choices was deprecated in version 0.5.0 and will be removed in 0.6. '
+        'property_choices is deprecated since version 0.5.0 and will be removed in 0.6. '
         'Please use features with categorical dtypes instead.',
         deferred=True,
     )
@@ -1098,7 +1098,7 @@ def _property_choices_deprecation_message() -> str:
 
 def _current_properties_deprecation_message() -> str:
     return trans._(
-        'current_properties was deprecated in version 0.5.0 and will be removed in 0.6. '
+        'current_properties is deprecated since version 0.5.0 and will be removed in 0.6. '
         'Please use feature_defaults instead.',
         deferred=True,
     )

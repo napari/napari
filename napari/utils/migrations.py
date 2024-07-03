@@ -317,7 +317,7 @@ class _DeprecatingDict(UserDict[str, Any]):
 
     @property
     def deprecated_keys(self) -> tuple[str, ...]:
-        return tuple(self._renamed.keys())
+        return tuple(self._renamed.keys()) + tuple(self._deprecated.keys())
 
     def set_deprecated_from_rename(
         self, *, from_name: str, to_name: str, version: str, since_version: str

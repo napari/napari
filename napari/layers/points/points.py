@@ -160,12 +160,12 @@ class Points(Layer):
         Properties for each point. Each property should be an array of length N,
         where N is the number of points.
         .. deprecated:: 0.5.0
-            properties was deprecated in version 0.5.0 and will be removed in 0.6.
+            properties is deprecated since version 0.5.0 and will be removed in 0.6.
             Please use features instead.
     property_choices : dict {str: array (N,)}
         possible values for each property
         .. deprecated:: 0.5.0
-            property_choices was deprecated in version 0.5.0 and will be removed in 0.6.
+            property_choices is deprecated since version 0.5.0 and will be removed in 0.6.
             Please use features with categorical dtypes instead.
     rotate : float, 3-tuple of float, or n-D array.
         If a float convert into a 2D rotation matrix using that value as an
@@ -225,7 +225,7 @@ class Points(Layer):
         Annotations for each point. Each property should be an array of length N,
         where N is the number of points.
         .. deprecated:: 0.5.0
-            properties was deprecated in version 0.5.0 and will be removed in 0.6.
+            properties is deprecated since version 0.5.0 and will be removed in 0.6.
             Please use features instead.
     text : str
         Text to be displayed with the points. If text is set to a key in features, the value of
@@ -843,7 +843,7 @@ class Points(Layer):
         """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each point
 
         .. deprecated:: 0.5.0
-            property_choices was deprecated in version 0.5.0 and will be removed in 0.6.
+            property_choices is deprecated since version 0.5.0 and will be removed in 0.6.
             Please use features with categorical dtypes instead.
         """
         _warn_deprecation(_property_choices_deprecation_message())
@@ -854,7 +854,7 @@ class Points(Layer):
         """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each point
 
         .. deprecated:: 0.5.0
-            properties was deprecated in version 0.5.0 and will be removed in 0.6.
+            properties is deprecated since version 0.5.0 and will be removed in 0.6.
             Please use features instead.
         """
         _warn_deprecation(_properties_deprecation_message())
@@ -894,7 +894,7 @@ class Points(Layer):
         """dict{str: np.ndarray(1,)}: properties for the next added point.
 
         .. deprecated:: 0.5.0
-            current_properties was deprecated in version 0.5.0 and will be removed in 0.6.
+            current_properties is deprecated since version 0.5.0 and will be removed in 0.6.
             Please use feature_defaults instead.
         """
         _warn_deprecation(_current_properties_deprecation_message())
@@ -1535,10 +1535,8 @@ class Points(Layer):
             }
         )
         state._deprecated['properties'] = (
-            (
-                self._feature_table.properties(),
-                _properties_deprecation_message(),
-            ),
+            self._feature_table.properties(),
+            _properties_deprecation_message(),
         )
         state._deprecated['property_choices'] = (
             self._feature_table.choices(),

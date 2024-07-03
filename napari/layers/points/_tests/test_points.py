@@ -2794,6 +2794,8 @@ def test_docstring():
         'edge_color_cycle',
         'edge_colormap',
         'edge_contrast_limits',
+        'properties',
+        'property_choices',
     ],
 )
 def test_as_layer_data_tuple_read_deprecated_attr(key: str):
