@@ -169,6 +169,8 @@ class VispyCanvas:
 
     @property
     def events(self):
+        # This is backwards compatible with the old events system
+        # https://github.com/napari/napari/issues/7054#issuecomment-2205548968
         return self._scene_canvas.events
 
     @property
