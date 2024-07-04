@@ -168,6 +168,10 @@ class VispyCanvas:
         self.destroyed.connect(self._disconnect_theme)
 
     @property
+    def events(self):
+        return self._scene_canvas.events
+
+    @property
     def destroyed(self) -> pyqtBoundSignal:
         return self._scene_canvas._backend.destroyed
 
