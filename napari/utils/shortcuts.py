@@ -82,7 +82,7 @@ _default_shortcuts = {
         KeyCode.Delete,
         KeyCode.Backspace,
     ],
-    'napari:finish_drawing_shape': [KeyCode.Escape],
+    'napari:finish_drawing_shape': [KeyCode.Enter, KeyCode.Escape],
     # image
     'napari:activate_image_pan_zoom_mode': [KeyCode.Digit1],
     'napari:activate_image_transform_mode': [KeyCode.Digit2],
