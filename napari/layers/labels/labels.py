@@ -687,7 +687,7 @@ class Labels(ScalarFieldBase):
         self.events.selected_label()
 
         if self.show_selected_label:
-            self.refresh(extent=False, data_displayed=False)
+            self.refresh(extent=False)
 
     def swap_selected_and_background_labels(self):
         """Swap between the selected label and the background label."""
