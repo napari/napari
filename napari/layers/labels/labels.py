@@ -526,7 +526,7 @@ class Labels(ScalarFieldBase):
         self._color_mode = color_mode
         self.events.colormap()  # Will update the LabelVispyColormap shader
         self.events.selected_label()
-        self.refresh(extent=False, slicing=False)
+        self.refresh(extent=False)
 
     @property
     def data(self) -> Union[LayerDataProtocol, MultiScaleData]:
@@ -685,7 +685,7 @@ class Labels(ScalarFieldBase):
         self.events.selected_label()
 
         if self.show_selected_label:
-            self.refresh(extent=False, slicing=False)
+            self.refresh(extent=False, data_displayed=False)
 
     def swap_selected_and_background_labels(self):
         """Swap between the selected label and the background label."""
@@ -705,7 +705,7 @@ class Labels(ScalarFieldBase):
         self.colormap.use_selection = show_selected
         self.colormap.selection = self.selected_label
         self.events.show_selected_label(show_selected_label=show_selected)
-        self.refresh(extent=False, slicing=False)
+        self.refresh(extent=False)
 
     # Only overriding to change the docstring
     @property

@@ -741,6 +741,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @visible.setter
     def visible(self, visible: bool) -> None:
         self._visible = visible
+        if visible:
+            # needed because things might have changed while invisible
+            # and refresh is noop while invisible
+            self.refresh(extent=False)
         self.events.visible()
 
     @property
@@ -1240,7 +1244,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         if force or (self._slice_input != slice_input):
             self._slice_input = slice_input
             self._refresh_sync(
-                slicing=True, thumbnail=True, highlight=True, extent=True
+                data_displayed=True,
+                thumbnail=True,
+                highlight=True,
+                extent=True,
             )
 
     def _make_slice_input(
@@ -1473,7 +1480,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         event: Optional[Event] = None,
         *,
         thumbnail=True,
-        slicing=True,
+        data_displayed=True,
         highlight=True,
         extent=True,
         force=False,
@@ -1490,7 +1497,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         else:
             self._refresh_sync(
                 thumbnail=thumbnail,
-                slicing=slicing,
+                data_displayed=data_displayed,
                 highlight=highlight,
                 extent=extent,
                 force=force,
@@ -1500,7 +1507,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self,
         *,
         thumbnail=False,
-        slicing=False,
+        data_displayed=False,
         highlight=False,
         extent=False,
         force=False,
@@ -1510,7 +1517,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             if extent:
                 self._clear_extent()
                 self._clear_extent_augmented()
-            if slicing:
+            if data_displayed:
                 self.set_view_slice()
                 self.events.set_data()
             if thumbnail:

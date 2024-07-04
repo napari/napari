@@ -683,6 +683,6 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             prev = self._keep_auto_contrast
             self._keep_auto_contrast = False
             try:
-                self.refresh(slicing=False, highlight=False, extent=False)
+                self.refresh(highlight=False, extent=False)
             finally:
                 self._keep_auto_contrast = prev

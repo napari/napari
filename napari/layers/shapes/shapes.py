@@ -1720,7 +1720,7 @@ class Shapes(Layer):
             with self.block_thumbnail_update():
                 self._finish_drawing()
         else:
-            self.refresh(slicing=False, extent=False, thumbnail=False)
+            self.refresh(data_displayed=False, extent=False, thumbnail=False)
 
     def _reset_editable(self) -> None:
         self.editable = self._slice_input.ndisplay == 2
