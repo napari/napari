@@ -1495,12 +1495,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self,
         event: Optional[Event] = None,
         *,
-        thumbnail=True,
-        data_displayed=True,
-        highlight=True,
-        extent=True,
-        force=False,
-    ):
+        thumbnail: bool = True,
+        data_displayed: bool = True,
+        highlight: bool = True,
+        extent: bool = True,
+        force: bool = False,
+    ) -> None:
         """Refresh all layer data based on current view slice."""
         if self._refresh_blocked:
             logger.debug('Layer.refresh blocked: %s', self)
@@ -1522,11 +1522,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     def _refresh_sync(
         self,
         *,
-        thumbnail=False,
-        data_displayed=False,
-        highlight=False,
-        extent=False,
-        force=False,
+        thumbnail: bool = False,
+        data_displayed: bool = False,
+        highlight: bool = False,
+        extent: bool = False,
+        force: bool = False,
     ) -> None:
         logger.debug('Layer._refresh_sync: %s', self)
         if self.visible or force:
