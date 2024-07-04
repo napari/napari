@@ -1,6 +1,7 @@
-from typing import TYPE_CHECKING, Optional, Union
+from typing import Optional, Union
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 from scipy.sparse import coo_matrix
 from scipy.spatial import cKDTree
@@ -8,9 +9,6 @@ from scipy.spatial import cKDTree
 from napari.layers.utils.layer_utils import _FeatureTable
 from napari.utils.events.custom_types import Array
 from napari.utils.translations import trans
-
-if TYPE_CHECKING:
-    import numpy.typing as npt
 
 
 class TrackManager:
@@ -75,12 +73,12 @@ class TrackManager:
         self._points_lookup: dict[int, slice]
         self._ordered_points_idx: npt.NDArray
 
-        self._track_vertices = None
-        self._track_connex = None
+        self._track_vertices: npt.NDArray | None = None
+        self._track_connex: npt.NDArray | None = None
 
         self._graph: Optional[dict[int, list[int]]] = None
         self._graph_vertices = None
-        self._graph_connex = None
+        self._graph_connex: npt.NDArray | None = None
 
     @staticmethod
     def _fast_points_lookup(sorted_time: np.ndarray) -> dict[int, slice]:
@@ -105,7 +103,7 @@ class TrackManager:
         return self._data
 
     @data.setter
-    def data(self, data: Union[list, np.ndarray]):
+    def data(self, data: Union[list, np.ndarray]) -> None:
         """set the vertex data and build the vispy arrays for display"""
 
         # convert data to a numpy array if it is not already one
@@ -143,7 +141,7 @@ class TrackManager:
         ).tocsr()
 
     @property
-    def features(self):
+    def features(self) -> pd.DataFrame:
         """Dataframe-like features table.
 
         It is an implementation detail that this is a `pandas.DataFrame`. In the future,
@@ -176,7 +174,7 @@ class TrackManager:
         return self._feature_table.properties()
 
     @properties.setter
-    def properties(self, properties: dict[str, Array]):
+    def properties(self, properties: dict[str, Array]) -> None:
         """set track properties"""
         self.features = properties
 
@@ -186,25 +184,25 @@ class TrackManager:
         return self._graph
 
     @graph.setter
-    def graph(self, graph: dict[int, Union[int, list[int]]]):
+    def graph(self, graph: dict[int, Union[int, list[int]]]) -> None:
         """set the track graph"""
         self._graph = self._normalize_track_graph(graph)
 
     @property
-    def track_ids(self):
+    def track_ids(self) -> npt.NDArray[np.uint32]:
         """return the track identifiers"""
         return self.data[:, 0].astype(np.uint32)
 
     @property
-    def unique_track_ids(self):
+    def unique_track_ids(self) -> npt.NDArray[np.uint32]:
         """return the unique track identifiers"""
         return np.unique(self.track_ids)
 
-    def __len__(self):
+    def __len__(self) -> int:
         """return the number of tracks"""
         return len(self.unique_track_ids) if self.data is not None else 0
 
-    def _vertex_indices_from_id(self, track_id: int):
+    def _vertex_indices_from_id(self, track_id: int) -> npt.NDArray:
         """return the vertices corresponding to a track id"""
         return self._id2idxs[track_id].nonzero()[1]
 
@@ -271,7 +269,7 @@ class TrackManager:
 
         return new_graph
 
-    def build_tracks(self):
+    def build_tracks(self) -> None:
         """build the tracks"""
 
         # Track ids associated to all vertices, sorted by time
@@ -293,12 +291,13 @@ class TrackManager:
         self._track_vertices = track_vertices
         self._track_connex = track_connex
 
-    def build_graph(self):
+    def build_graph(self) -> None:
         """build the track graph"""
 
         graph_vertices = []
         graph_connex = []
 
+        assert self.graph is not None
         for node_idx, parents_idx in self.graph.items():
             # we join from the first observation of the node, to the last
             # observation of the parent
@@ -335,7 +334,7 @@ class TrackManager:
 
         return self.properties[color_by]
 
-    def get_value(self, coords):
+    def get_value(self, coords: npt.NDArray) -> Optional[npt.NDArray]:
         """use a kd-tree to lookup the ID of the nearest tree"""
         if self._kdtree is None:
             return None
@@ -380,7 +379,7 @@ class TrackManager:
         return self._graph_vertices
 
     @property
-    def graph_connex(self):
+    def graph_connex(self) -> Optional[npt.NDArray]:
         """vertex connections for drawing the graph"""
         return self._graph_connex
 
