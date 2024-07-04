@@ -503,7 +503,9 @@ class Tracks(Layer):
     def display_id(self, value: bool):
         self._display_id = value
         self.events.display_id()
-        self.refresh()
+        # TODO: this refresh is only here to trigger setting the id text...
+        #       a bit overkill? But maybe for a future PR.
+        self.refresh(extent=False, thumbnail=False)
 
     @property
     def display_tail(self) -> bool:

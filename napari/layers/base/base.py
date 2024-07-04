@@ -609,7 +609,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         if self._projection_mode != mode:
             self._projection_mode = mode
             self.events.projection_mode()
-            self.refresh()
+            self.refresh(extent=False)
 
     @classmethod
     def _basename(cls) -> str:
@@ -741,7 +741,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @visible.setter
     def visible(self, visible: bool) -> None:
         self._visible = visible
-        self.refresh()
         self.events.visible()
 
     @property
@@ -997,15 +996,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         if '_extent_augmented' in self.__dict__:
             del self._extent_augmented
         self.events._extent_augmented()
-
-    def _clear_extents_and_refresh(self) -> None:
-        """Clears the cached extents, emits events and refreshes the layer.
-
-        This should be called whenever this data or transform information
-        changes, and should be called before any other related events
-        are emitted so that they use the updated extent values.
-        """
-        self.refresh()
 
     @property
     def _data_slice(self) -> _ThickNDSlice:
@@ -1994,7 +1984,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             ):
                 self._data_level = level
                 self.corner_pixels = corners
-                self.refresh()
+                self.refresh(extent=False, thumbnail=False)
         else:
             # set the data_level so that it is the lowest resolution in 3d view
             if self.multiscale is True:
