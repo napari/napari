@@ -16,6 +16,7 @@ from napari.layers._layer_actions import (
     _project,
     _show_selected,
     _show_unselected,
+    _split_rgb,
     _split_stack,
     _toggle_visibility,
 )
@@ -33,6 +34,20 @@ def test_split_stack():
     assert len(layer_list) == 8
 
     for idx in range(8):
+        assert layer_list[idx].data.shape == (8, 8)
+
+
+def test_split_rgb():
+    layer_list = LayerList()
+    layer_list.append(Image(np.random.random((8, 8, 3))))
+    assert len(layer_list) == 1
+    assert layer_list[0].rgb is True
+
+    layer_list.selection.active = layer_list[0]
+    _split_rgb(layer_list)
+    assert len(layer_list) == 3
+
+    for idx in range(3):
         assert layer_list[idx].data.shape == (8, 8)
 
 
