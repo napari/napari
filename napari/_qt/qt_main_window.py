@@ -100,7 +100,12 @@ if TYPE_CHECKING:
 
 
 MenuStr = Literal[
-    'file_menu', 'view_menu', 'plugins_menu', 'window_menu', 'help_menu'
+    'file_menu',
+    'view_menu',
+    'layers_menu',
+    'plugins_menu',
+    'window_menu',
+    'help_menu',
 ]
 
 
@@ -686,7 +691,7 @@ class Window:
         self._add_viewer_dock_widget(
             self._qt_viewer.dockLayerList, tabify=False
         )
-        if perf.USE_PERFMON:
+        if perf.perf_config is not None:
             self._add_viewer_dock_widget(
                 self._qt_viewer.dockPerformance, menu=self.window_menu
             )
@@ -823,6 +828,9 @@ class Window:
     def _update_view_menu_state(self):
         self._update_menu_state('view_menu')
 
+    def _update_layers_menu_state(self):
+        self._update_menu_state('layers_menu')
+
     def _update_window_menu_state(self):
         self._update_menu_state('window_menu')
 
@@ -903,6 +911,16 @@ class Window:
             self._update_view_menu_state,
         )
         self.main_menu.addMenu(self.view_menu)
+        # layers menu
+        self.layers_menu = build_qmodel_menu(
+            MenuId.MENUBAR_LAYERS,
+            title=trans._('&Layers'),
+            parent=self._qt_window,
+        )
+        self.layers_menu.aboutToShow.connect(
+            self._update_layers_menu_state,
+        )
+        self.main_menu.addMenu(self.layers_menu)
         # plugins menu
         self.plugins_menu = build_qmodel_menu(
             MenuId.MENUBAR_PLUGINS,

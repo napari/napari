@@ -137,6 +137,18 @@ def test_get_value_3d_view_of_2d_image(ImageClass):
     _check_subpixel_values(layer, val_dict)
 
 
+@pytest.mark.parametrize(('Layer', 'data', 'ndim'), layer_test_data)
+def test_layer_unique_id(Layer, data, ndim):
+    layer = Layer(data)
+    assert layer.unique_id is not None
+
+
+def test_layer_id_unique():
+    layer1 = Image(np.random.rand(10, 10))
+    layer2 = Labels(np.ones((10, 10)).astype(int))
+    assert layer1.unique_id != layer2.unique_id
+
+
 def test_zero_scale_layer():
     with pytest.raises(ValueError, match='scale values of 0'):
         Image(np.zeros((64, 64)), scale=(0, 1))

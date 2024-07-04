@@ -53,6 +53,7 @@ from napari.utils.colormaps import (
 from napari.utils.colormaps.colormap import (
     CyclicLabelColormap,
     LabelColormapBase,
+    _normalize_label_colormap,
 )
 from napari.utils.colormaps.colormap_utils import shuffle_and_extend_colormap
 from napari.utils.events import EmitterGroup, Event
@@ -500,6 +501,7 @@ class Labels(ScalarFieldBase):
         self._set_colormap(colormap)
 
     def _set_colormap(self, colormap):
+        colormap = _normalize_label_colormap(colormap)
         if isinstance(colormap, CyclicLabelColormap):
             self._random_colormap = colormap
             self._original_random_colormap = colormap
