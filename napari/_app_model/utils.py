@@ -10,7 +10,7 @@ MenuOrSubmenu = Union[MenuItem, SubmenuItem]
 
 
 def contains_dummy_action(menu_items: list[MenuOrSubmenu]) -> bool:
-    """Returns True if one of the menu_items is the dummy action, otherwise False.
+    """True if one of the menu_items is the dummy action, otherwise False.
 
     Parameters
     ----------
@@ -20,7 +20,7 @@ def contains_dummy_action(menu_items: list[MenuOrSubmenu]) -> bool:
     Returns
     -------
     bool
-        True if menu_items contains dummy item otherewise false
+        True if menu_items contains dummy item otherwise false
     """
     for item in menu_items:
         if hasattr(item, 'command') and 'empty_dummy' in item.command.id:
@@ -29,7 +29,7 @@ def contains_dummy_action(menu_items: list[MenuOrSubmenu]) -> bool:
 
 
 def is_empty_menu(menu_id: str) -> bool:
-    """Returns True if the given menu_id is empty, otherwise False
+    """Return True if the given menu_id is empty, otherwise False
 
     Parameters
     ----------
@@ -58,7 +58,7 @@ def no_op() -> None:
 
 
 def get_dummy_action(id_key: str, menu_id: MenuId) -> tuple[Action, str]:
-    """Returns a dummy action to be used for the given menu.
+    """Return a dummy action to be used for the given menu.
 
     id_key will be formatted into the action ID: 'napari.{id_key}.empty_dummy'.
 
