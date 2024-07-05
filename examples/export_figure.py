@@ -96,7 +96,7 @@ viewer.add_points(points, size=size)
 viewer.theme = "light"
 # Optionally for saving the exported figure: viewer.export_figure(path="export_figure.png")
 export_figure = viewer.export_figure()
-scaled_export_figure = viewer.export_figure(scale=5)
+scaled_export_figure = viewer.export_figure(scale_factor=5)
 viewer.theme = "dark"
 
 viewer.add_image(export_figure, rgb=True, name='exported_figure')
