@@ -10,7 +10,7 @@ MenuOrSubmenu = Union[MenuItem, SubmenuItem]
 
 
 def contains_dummy_action(menu_items: list[MenuOrSubmenu]) -> bool:
-    """Returns True if one of the menu_items is the dummy action, otherwise False.
+    """True if one of the menu_items is the dummy action, otherwise False.
 
     Parameters
     ----------
@@ -20,7 +20,7 @@ def contains_dummy_action(menu_items: list[MenuOrSubmenu]) -> bool:
     Returns
     -------
     bool
-        True if menu_items contains dummy item otherewise false
+        True if menu_items contains dummy item otherwise false
     """
     for item in menu_items:
         if hasattr(item, 'command') and 'empty_dummy' in item.command.id:
