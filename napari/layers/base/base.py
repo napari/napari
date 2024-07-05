@@ -1529,17 +1529,18 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         force: bool = False,
     ) -> None:
         logger.debug('Layer._refresh_sync: %s', self)
-        if self.visible or force:
-            if extent:
-                self._clear_extent()
-                self._clear_extent_augmented()
-            if data_displayed:
-                self.set_view_slice()
-                self.events.set_data()
-            if thumbnail:
-                self._update_thumbnail()
-            if highlight:
-                self._set_highlight(force=True)
+        if not (self.visible or force):
+            return
+        if extent:
+            self._clear_extent()
+            self._clear_extent_augmented()
+        if data_displayed:
+            self.set_view_slice()
+            self.events.set_data()
+        if thumbnail:
+            self._update_thumbnail()
+        if highlight:
+            self._set_highlight(force=True)
 
     def world_to_data(self, position: npt.ArrayLike) -> npt.NDArray:
         """Convert from world coordinates to data coordinates.
