@@ -91,6 +91,20 @@ def init_qactions() -> None:
 
 
 def add_dummy_actions(context: Context) -> None:
+    """Register dummy 'Empty' actions for all contributable menus.
+
+    Each action is registered with its own `when` condition, that
+    ensures the action is not visible once the menu is populated.
+    The context key used in the `when` condition is also added to
+    the given `context` and assigned to a partial function that
+    returns True if the menu is empty, and otherwise False.
+
+
+    Parameters
+    ----------
+    context : Context
+        context to store functional keys used in `when` conditions
+    """
     from napari._app_model import get_app
     from napari._app_model.constants._menus import MenuId
     from napari._app_model.utils import get_dummy_action, is_empty_menu
@@ -99,10 +113,13 @@ def add_dummy_actions(context: Context) -> None:
 
     actions = []
     for menu_id in MenuId.contributables():
-        # assumes leaves are unique!!
+        # NOTE: this assumes the final word of each contributable
+        # menu path is unique, otherwise, we will clash. Once we
+        # move to using short menu keys, the key itself will be used
+        # here and this will no longer be a concern.
         id_key = menu_id.split('/')[-1]
-        dummmy_action = get_dummy_action(id_key, menu_id)
+        dummmy_action, context_key = get_dummy_action(id_key, menu_id)
         if dummmy_action.id not in app.commands:
             actions.append(dummmy_action)
-            context[f'{id_key}_empty'] = partial(is_empty_menu, menu_id)
+            context[context_key] = partial(is_empty_menu, menu_id)
     app.register_actions(actions)

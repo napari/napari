@@ -677,6 +677,12 @@ class Window:
         index_npe1_adapters()
 
         self._add_menus()
+        # TODO: the dummy actions should **not** live on the layerlist context
+        # as they are unrelated. However, we do not currently have a suitable
+        # enclosing context where we could store these keys, such that they
+        # **and** the layerlist context key are available when we update
+        # menus. We need a single context to contain all keys required for
+        # menu update, so we add them to the layerlist context for now.
         if self._qt_viewer._layers is not None:
             add_dummy_actions(
                 self._qt_viewer._layers.model().sourceModel()._root._ctx

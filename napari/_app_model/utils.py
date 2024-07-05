@@ -57,7 +57,7 @@ def no_op() -> None:
     """Fully qualified no-op to use for dummy actions."""
 
 
-def get_dummy_action(id_key: str, menu_id: MenuId) -> Action:
+def get_dummy_action(id_key: str, menu_id: MenuId) -> tuple[Action, str]:
     """Returns a dummy action to be used for the given menu.
 
     id_key will be formatted into the action ID: 'napari.{id_key}.empty_dummy'.
@@ -71,10 +71,10 @@ def get_dummy_action(id_key: str, menu_id: MenuId) -> Action:
 
     Returns
     -------
-    Action
-        dummy action with the dummy action ID and a no-op callback
+    tuple[Action, str]
+        dummy action and the `when` expression context key
     """
-    return Action(
+    action = Action(
         id=f'napari.{id_key}.empty_dummy',
         title='Empty',
         callback=no_op,
@@ -82,9 +82,11 @@ def get_dummy_action(id_key: str, menu_id: MenuId) -> Action:
             {
                 'id': menu_id,
                 'group': MenuGroup.NAVIGATION,
-                'when': parse_expression(f'{id_key}_empty'),
+                # parse_expression can't take a variable name, so we
+                # walrus context_key here to be able to return it
+                'when': parse_expression(context_key := f'{id_key}_empty'),
             }
         ],
         enablement=False,
-        # when=,
     )
+    return action, context_key
