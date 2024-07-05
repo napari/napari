@@ -29,7 +29,7 @@ def contains_dummy_action(menu_items: list[MenuOrSubmenu]) -> bool:
 
 
 def is_empty_menu(menu_id: str) -> bool:
-    """Returns True if the given menu_id is empty, otherwise False
+    """Return True if the given menu_id is empty, otherwise False
 
     Parameters
     ----------
