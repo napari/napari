@@ -16,6 +16,9 @@ def test_guess_continuous():
     categorical_annotation_2 = np.array([1, 2, 3], dtype=int)
     assert not guess_continuous(categorical_annotation_2)
 
+    categorical_annotation_3 = np.arange(20, dtype=int)
+    assert guess_continuous(categorical_annotation_3)
+
 
 def test_is_colormapped_string():
     color = 'hello'
