@@ -1,5 +1,6 @@
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
+    QComboBox,
     QDialog,
     QHBoxLayout,
     QLabel,
@@ -15,7 +16,7 @@ from napari.utils.translations import trans
 class LogDialog(QDialog):
     def __init__(
         self,
-        parent=None,
+        parent,
     ) -> None:
         super().__init__(parent._qt_window)
 
@@ -28,27 +29,31 @@ class LogDialog(QDialog):
         )
         self.layout.addWidget(title_label)
 
-        # Add information
-        self.infoTextBox = QTextEdit()
-        self.infoTextBox.setTextInteractionFlags(
+        # level selection
+        self.level_selection = QComboBox()
+        self.level_selection.addItems(
+            ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
+        )
+        self.layout.addWidget(self.level_selection)
+        self.level_selection.currentTextChanged.connect(self._on_level_change)
+
+        # log text box
+        self.log_text_box = QTextEdit()
+        self.log_text_box.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextSelectableByMouse
         )
-        self.infoTextBox.setLineWrapMode(QTextEdit.NoWrap)
+        self.log_text_box.setLineWrapMode(QTextEdit.NoWrap)
         # Add text copy button
-        self.infoCopyButton = QtCopyToClipboardButton(self.infoTextBox)
+        self.infoCopyButton = QtCopyToClipboardButton(self.log_text_box)
         self.info_layout = QHBoxLayout()
-        self.info_layout.addWidget(self.infoTextBox, 1)
+        self.info_layout.addWidget(self.log_text_box, 1)
         self.info_layout.addWidget(
             self.infoCopyButton, 0, Qt.AlignmentFlag.AlignTop
         )
         self.info_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.layout.addLayout(self.info_layout)
 
-        self.infoTextBox.setText(str(_LOG_STREAM))
-        self.infoTextBox.setMinimumSize(
-            int(self.infoTextBox.document().size().width() + 19),
-            int(min(self.infoTextBox.document().size().height() + 10, 500)),
-        )
+        self._on_level_change(self.level_selection.currentText())
 
         self.setLayout(self.layout)
 
@@ -56,3 +61,6 @@ class LogDialog(QDialog):
         self.setWindowTitle(trans._('napari log'))
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.exec_()
+
+    def _on_level_change(self, level):
+        self.log_text_box.setText(_LOG_STREAM.formatted_at_level(level))

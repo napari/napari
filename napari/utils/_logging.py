@@ -13,15 +13,21 @@ class _LogHandler:
         levels = logging.getLevelNamesMapping()
         level_value = levels[level_name]
         self.logs.append((level_value, level_name, time, thread, msg))
+        # TODO: actually save log to a file somewhere so it can be retrieved?
 
     def flush(self):
         pass
 
     def __str__(self):
+        return self.formatted_at_level(logging.DEBUG)
+
+    def formatted_at_level(self, level=logging.DEBUG):
         return ''.join(
             [
                 f'[{time}] ({thread}) {level_name}: {msg}'
-                for _, level_name, time, thread, msg in self.logs
+                for _, level_name, time, thread, msg in self.logs_at_level(
+                    level
+                )
             ]
         )
 
@@ -43,7 +49,8 @@ def _get_custom_log_stream():
             f'%(levelname)s{_LOG_SEPARATOR}%(asctime)s{_LOG_SEPARATOR}%(threadName)s{_LOG_SEPARATOR}%(message)s'
         )
     )
+    handler.setLevel(logging.DEBUG)
     logger = logging.getLogger('napari')
-    logger.setLevel(logging.DEBUG)
     logger.addHandler(handler)
+    # TODO: can we add the handler to plugin loggers?
     return log_stream
