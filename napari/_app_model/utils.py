@@ -58,7 +58,7 @@ def no_op() -> None:
 
 
 def get_dummy_action(id_key: str, menu_id: MenuId) -> Action:
-    """Returns a dummy action to be used for the given menu.
+    """Return a dummy action to be used for the given menu.
 
     id_key will be formatted into the action ID: 'napari.{id_key}.empty_dummy'.
 
