@@ -823,24 +823,18 @@ class Window:
 
     def _update_menu_state(self, menu: MenuStr):
         """Update enabled/visible state of menu item with context."""
-
         layerlist = self._qt_viewer._layers.model().sourceModel()._root
         menu_model = getattr(self, menu)
         menu_model.update_from_context(get_context(layerlist))
 
     def _update_file_menu_state(self):
         self._update_menu_state('file_menu')
-        # file menu could have empty submenus
-        # viewer_ctx = get_context(self._qt_window)
-        # self.file_menu.update_from_context(viewer_ctx)
 
     def _update_view_menu_state(self):
         self._update_menu_state('view_menu')
 
     def _update_layers_menu_state(self):
         self._update_menu_state('layers_menu')
-        # viewer_ctx = get_context(self._qt_window)
-        # self.layers_menu.update_from_context(viewer_ctx)
 
     def _update_window_menu_state(self):
         self._update_menu_state('window_menu')
