@@ -48,7 +48,7 @@ from superqt.utils import QSignalThrottler
 from napari._app_model.constants import MenuId
 from napari._app_model.context import create_context, get_context
 from napari._qt._qapp_model import build_qmodel_menu
-from napari._qt._qapp_model.qactions import init_qactions
+from napari._qt._qapp_model.qactions import add_dummy_actions, init_qactions
 from napari._qt._qapp_model.qactions._debug import _is_set_trace_active
 from napari._qt._qplugins import (
     _rebuild_npe1_plugins_menu,
@@ -677,6 +677,16 @@ class Window:
         index_npe1_adapters()
 
         self._add_menus()
+        # TODO: the dummy actions should **not** live on the layerlist context
+        # as they are unrelated. However, we do not currently have a suitable
+        # enclosing context where we could store these keys, such that they
+        # **and** the layerlist context key are available when we update
+        # menus. We need a single context to contain all keys required for
+        # menu update, so we add them to the layerlist context for now.
+        if self._qt_viewer._layers is not None:
+            add_dummy_actions(
+                self._qt_viewer._layers.model().sourceModel()._root._ctx
+            )
         self._update_theme()
         self._update_theme_font_size()
         get_settings().appearance.events.theme.connect(self._update_theme)
