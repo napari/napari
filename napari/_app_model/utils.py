@@ -87,8 +87,6 @@ def get_dummy_action(menu_id: MenuId) -> tuple[Action, str]:
             {
                 'id': menu_id,
                 'group': MenuGroup.NAVIGATION,
-                # parse_expression can't take a variable name, so we
-                # walrus context_key here to be able to return it
                 'when': parse_expression(context_key := f'{id_key}_empty'),
             }
         ],
