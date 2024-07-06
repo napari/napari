@@ -291,7 +291,7 @@ def test_export_figure(make_napari_viewer, tmp_path):
     viewer.layers.scale = [0.12, 0.24]
     img = viewer.export_figure(flash=False)
     assert img.shape == (250, 500, 4)
-    
+
     viewer.layers.scale = [0.12, 0.12]
     img = viewer.export_figure(flash=False)
     assert img.shape == (250, 250, 4)
