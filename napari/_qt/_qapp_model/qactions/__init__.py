@@ -113,12 +113,7 @@ def add_dummy_actions(context: Context) -> None:
 
     actions = []
     for menu_id in MenuId.contributables():
-        # NOTE: this assumes the final word of each contributable
-        # menu path is unique, otherwise, we will clash. Once we
-        # move to using short menu keys, the key itself will be used
-        # here and this will no longer be a concern.
-        id_key = menu_id.split('/')[-1]
-        dummmy_action, context_key = get_dummy_action(id_key, menu_id)
+        dummmy_action, context_key = get_dummy_action(menu_id)
         if dummmy_action.id not in app.commands:
             actions.append(dummmy_action)
             context[context_key] = partial(is_empty_menu, menu_id)

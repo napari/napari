@@ -57,15 +57,15 @@ def no_op() -> None:
     """Fully qualified no-op to use for dummy actions."""
 
 
-def get_dummy_action(id_key: str, menu_id: MenuId) -> tuple[Action, str]:
+def get_dummy_action(menu_id: MenuId) -> tuple[Action, str]:
     """Return a dummy action to be used for the given menu.
 
-    id_key will be formatted into the action ID: 'napari.{id_key}.empty_dummy'.
+    The part of the menu_id after the final `/` will form
+    a unique id_key used for the action ID and the when
+    expression context key.
 
     Parameters
     ----------
-    id_key: str
-        key to be formatted into the action ID and when expression
     menu_id: MenuId
         id of the menu to add the dummy action to
 
@@ -74,6 +74,11 @@ def get_dummy_action(id_key: str, menu_id: MenuId) -> tuple[Action, str]:
     tuple[Action, str]
         dummy action and the `when` expression context key
     """
+    # NOTE: this assumes the final word of each contributable
+    # menu path is unique, otherwise, we will clash. Once we
+    # move to using short menu keys, the key itself will be used
+    # here and this will no longer be a concern.
+    id_key = menu_id.split('/')[-1]
     action = Action(
         id=f'napari.{id_key}.empty_dummy',
         title='Empty',
