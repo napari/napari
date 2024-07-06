@@ -12,13 +12,56 @@ from napari.layers._layer_actions import (
     _hide_selected,
     _hide_unselected,
     _link_selected_layers,
+    _merge_stack,
     _project,
     _show_selected,
     _show_unselected,
+    _split_rgb,
+    _split_stack,
     _toggle_visibility,
 )
 
 REG = pint.get_application_registry()
+
+
+def test_split_stack():
+    layer_list = LayerList()
+    layer_list.append(Image(np.random.rand(8, 8, 8)))
+    assert len(layer_list) == 1
+
+    layer_list.selection.active = layer_list[0]
+    _split_stack(layer_list)
+    assert len(layer_list) == 8
+
+    for idx in range(8):
+        assert layer_list[idx].data.shape == (8, 8)
+
+
+def test_split_rgb():
+    layer_list = LayerList()
+    layer_list.append(Image(np.random.random((8, 8, 3))))
+    assert len(layer_list) == 1
+    assert layer_list[0].rgb is True
+
+    layer_list.selection.active = layer_list[0]
+    _split_rgb(layer_list)
+    assert len(layer_list) == 3
+
+    for idx in range(3):
+        assert layer_list[idx].data.shape == (8, 8)
+
+
+def test_merge_stack():
+    layer_list = LayerList()
+    layer_list.append(Image(np.random.rand(8, 8)))
+    layer_list.append(Image(np.random.rand(8, 8)))
+    assert len(layer_list) == 2
+
+    layer_list.selection.active = layer_list[0]
+    layer_list.selection.add(layer_list[1])
+    _merge_stack(layer_list)
+    assert len(layer_list) == 1
+    assert layer_list[0].data.shape == (2, 8, 8)
 
 
 def test_toggle_visibility():
