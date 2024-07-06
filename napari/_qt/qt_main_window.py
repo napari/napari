@@ -1606,7 +1606,7 @@ class Window:
             extent_world = self._qt_viewer.viewer.layers.extent.world[1][
                 -ndisplay:
             ]
-            extent_step = self._qt_viewer.viewer.layers.extent.step[-ndisplay:]
+            extent_step = min(self._qt_viewer.viewer.layers.extent.step[-ndisplay:])
             canvas.size = (extent_world / extent_step).astype(int) + 1
             self._qt_viewer.viewer.reset_view(margin=0)
 
