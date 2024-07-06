@@ -415,8 +415,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         else:
             raise ValueError(
                 trans._(
-                    f'margin must be between 0 and 1; got {margin} instead.',
+                    'margin must be between 0 and 1; got {margin} instead.',
                     deferred=True,
+                    margin=margin,
                 )
             )
         if np.max(size) == 0:
