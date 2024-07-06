@@ -55,7 +55,7 @@ FILE_SUBMENUS = [
         SubmenuItem(
             submenu=MenuId.FILE_IO_UTILITIES,
             title=trans._('IO Utilities'),
-            group=MenuGroup.OPEN,
+            group=MenuGroup.UTIL,
             order=101,
         ),
     ),
@@ -64,7 +64,7 @@ FILE_SUBMENUS = [
         SubmenuItem(
             submenu=MenuId.FILE_ACQUIRE,
             title=trans._('Acquire'),
-            group=MenuGroup.OPEN,
+            group=MenuGroup.UTIL,
             order=101,
         ),
     ),
