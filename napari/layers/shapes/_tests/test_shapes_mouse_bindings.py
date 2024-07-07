@@ -109,6 +109,55 @@ def test_add_simple_shape(shape_type, create_known_shapes_layer):
     assert layer.selected_data == {n_shapes}
 
 
+def test_line_fixed_angles(create_known_shapes_layer):
+    """Draw line with fixed angles."""
+    layer, n_shapes, known_non_shape = create_known_shapes_layer
+
+    layer.mode = 'add_line'
+
+    # set _fixed_aspect, like Shift would
+    layer._fixed_aspect = True
+
+    # Simulate click with shift
+    event = read_only_mouse_event(
+        type='mouse_press',
+        position=known_non_shape,
+    )
+    mouse_press_callbacks(layer, event)
+
+    known_non_shape_end = [40, 60]
+    # Simulate drag with shift
+    event = read_only_mouse_event(
+        type='mouse_move',
+        is_dragging=True,
+        position=known_non_shape_end,
+    )
+    mouse_move_callbacks(layer, event)
+
+    # Simulate release with shift
+    event = read_only_mouse_event(
+        type='mouse_release',
+        position=known_non_shape_end,
+    )
+    mouse_release_callbacks(layer, event)
+
+    new_line = layer.data[-1][-1] - layer.data[-1][0]
+
+    # Check new shape added at coordinates
+    assert len(layer.data) == n_shapes + 1
+    # start should match mouse event
+    assert np.allclose(
+        layer.data[-1][0], np.asarray(known_non_shape).astype(float)
+    )
+    # With _fixed_aspect, the line end won't be at the end event
+    assert not np.allclose(
+        layer.data[-1][-1], np.asarray(known_non_shape_end).astype(float)
+    )
+    # with _fixed_aspect the angle of the line should be 45 degrees
+    theta = np.degrees(np.arctan2(new_line[1], new_line[0]))
+    assert np.allclose(theta, 45.0)
+
+
 def test_polygon_lasso_tablet(create_known_shapes_layer):
     """Draw polygon with tablet simulated by mouse drag event."""
     layer, n_shapes, known_non_shape = create_known_shapes_layer

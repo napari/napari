@@ -24,7 +24,7 @@ contributions:
     - command: my-plugin.some_widget
       display_name: My Widget
   menus:
-    napari/layers/context:
+    napari/file/new_layer:
       - submenu: mysubmenu
       - command: my-plugin.hello_world
     my-plugin/submenu:

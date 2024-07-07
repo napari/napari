@@ -168,6 +168,12 @@ class VispyCanvas:
         self.destroyed.connect(self._disconnect_theme)
 
     @property
+    def events(self):
+        # This is backwards compatible with the old events system
+        # https://github.com/napari/napari/issues/7054#issuecomment-2205548968
+        return self._scene_canvas.events
+
+    @property
     def destroyed(self) -> pyqtBoundSignal:
         return self._scene_canvas._backend.destroyed
 

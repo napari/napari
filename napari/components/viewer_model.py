@@ -481,9 +481,15 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         """Update viewer state for a new active layer."""
         active_layer = event.value
         if active_layer is None:
+            for layer in self.layers:
+                layer.update_transform_box_visibility(False)
             self.help = ''
             self.cursor.style = CursorStyle.STANDARD
         else:
+            active_layer.update_transform_box_visibility(True)
+            for layer in self.layers:
+                if layer != active_layer:
+                    layer.update_transform_box_visibility(False)
             self.help = active_layer.help
             self.cursor.style = active_layer.cursor
             self.cursor.size = active_layer.cursor_size
