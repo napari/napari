@@ -290,7 +290,9 @@ def test_export_figure(make_napari_viewer, tmp_path):
 
     layer.scale = [0.12, 0.24]
     img = viewer.export_figure(flash=False)
-    assert img.shape == (250, 500, 4)
+    # allclose accounts for rounding errors when computing size in hidpi aka
+    # retina displays
+    np.testing.assert_allclose(img.shape, (250, 499, 4), atol=1)
 
     layer.scale = [0.12, 0.12]
     img = viewer.export_figure(flash=False)
