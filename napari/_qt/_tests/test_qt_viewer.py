@@ -275,7 +275,7 @@ def test_export_figure(make_napari_viewer, tmp_path):
     np.random.seed(0)
     # Add image
     data = np.random.randint(150, 250, size=(250, 250))
-    viewer.add_image(data)
+    layer = viewer.add_image(data)
 
     camera_center = viewer.camera.center
     camera_zoom = viewer.camera.zoom
@@ -288,11 +288,11 @@ def test_export_figure(make_napari_viewer, tmp_path):
 
     assert (tmp_path / 'img.png').exists()
 
-    viewer.layers.scale = [0.12, 0.24]
+    layer.scale = [0.12, 0.24]
     img = viewer.export_figure(flash=False)
     assert img.shape == (250, 500, 4)
 
-    viewer.layers.scale = [0.12, 0.12]
+    layer.scale = [0.12, 0.12]
     img = viewer.export_figure(flash=False)
     assert img.shape == (250, 250, 4)
 
