@@ -1557,8 +1557,9 @@ class Window:
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
         size : tuple of two ints, optional
-            Size (resolution height x width) of the screenshot. By default, the currently displayed size.
-            Only used if `canvas_only` is True.
+            Size (resolution height x width) of the screenshot. By default, the
+            currently displayed size. Only used if `canvas_only` is True. This
+            argument is ignored if fit_to_data_extent is set to True.
         scale : float, optional
             Scale factor used to increase resolution of canvas for the screenshot.
             By default, the currently displayed resolution.
