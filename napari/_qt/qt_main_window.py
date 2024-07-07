@@ -1584,53 +1584,58 @@ class Window:
         camera = self._qt_viewer.viewer.camera
         old_center = camera.center
         old_zoom = camera.zoom
-        if fit_to_data_extent:
-            if not canvas_only:
-                raise ValueError(
-                    trans._(
-                        "'fit_to_data_extent' cannot be set to True if 'canvas_only' is"
-                        ' set to False',
-                        deferred=True,
-                    )
-                )
-            ndisplay = self._qt_viewer.viewer.dims.ndisplay
-            if ndisplay > 2:
-                raise NotImplementedError(
-                    trans._(
-                        'fit_to_data_extent=True is not yet implemented for 3D. '
-                        'Please set fit_to_data_extent to False in 3D view.',
-                        deferred=True,
-                    )
-                )
+        ndisplay = self._qt_viewer.viewer.dims.ndisplay
 
-            self._qt_viewer.viewer.reset_view()
+        # Part 1: validate incompatible parameters
+        if not canvas_only and (
+            fit_to_data_extent or size is not None or scale is not None
+        ):
+            raise ValueError(
+                trans._(
+                    'scale, size, and fit_to_data_extent can only be set for '
+                    'canvas_only screenshots.',
+                    deferred=True,
+                )
+            )
+        if fit_to_data_extent and ndisplay > 2:
+            raise NotImplementedError(
+                trans._(
+                    'fit_to_data_extent is not yet implemented for 3D view.',
+                    deferred=True,
+                )
+            )
+        if size is not None and len(size) != 2:
+            raise ValueError(
+                trans._(
+                    'screenshot size must be 2 values, got {len_size}',
+                    deferred=True,
+                    len_size=len(size),
+                )
+            )
+
+        # Part 2: compute canvas size and view based on parameters
+        if fit_to_data_extent:
             extent_world = self._qt_viewer.viewer.layers.extent.world[1][
                 -ndisplay:
             ]
             extent_step = min(
                 self._qt_viewer.viewer.layers.extent.step[-ndisplay:]
             )
-            canvas.size = (extent_world / extent_step).astype(int) + 1
-            self._qt_viewer.viewer.reset_view(margin=0)
+            size = extent_world / extent_step + 1
+        if size is not None:
+            size = np.asarray(size) / self._qt_window.devicePixelRatio()
+        else:
+            size = np.asarray(prev_size)
+        if scale is not None:
+            # multiply canvas dimensions by the scale factor to get new size
+            size *= scale
 
+        # Part 3: take the screenshot
         if canvas_only:
-            if size is not None:
-                if len(size) != 2:
-                    raise ValueError(
-                        trans._(
-                            'screenshot size must be 2 values, got {len_size}',
-                            len_size=len(size),
-                        )
-                    )
-                # Scale the requested size to account for HiDPI
-                size = tuple(
-                    int(dim / self._qt_window.devicePixelRatio())
-                    for dim in size
-                )
-                canvas.size = size
-            if scale is not None:
-                # multiply canvas dimensions by the scale factor to get new size
-                canvas.size = tuple(int(dim * scale) for dim in canvas.size)
+            canvas.size = tuple(size.astype(int))
+            if fit_to_data_extent:
+                # tight view around data
+                self._qt_viewer.viewer.reset_view(margin=0)
             try:
                 img = canvas.screenshot()
                 if flash:
