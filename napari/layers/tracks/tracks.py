@@ -172,6 +172,7 @@ class Tracks(Layer):
             color_by=Event,
             colormap=Event,
             properties=Event,
+            features=Event,
             rebuild_tracks=Event,
             rebuild_graph=Event,
         )
@@ -430,6 +431,7 @@ class Tracks(Layer):
     ) -> None:
         self._manager.features = features
         self._check_color_by_in_features()
+        self.events.features()
         self.events.properties()
 
     @property
@@ -446,6 +448,11 @@ class Tracks(Layer):
     def properties_to_color_by(self) -> list[str]:
         """track properties that can be used for coloring etc..."""
         return list(self.properties.keys())
+
+    @property
+    def features_to_color_by(self) -> list[str]:
+        """track features that can be used for coloring etc..."""
+        return list(self.features.columns)
 
     @property
     def graph(self) -> Optional[dict[int, list[int]]]:
