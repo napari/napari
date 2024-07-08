@@ -5,7 +5,7 @@ from enum import IntFlag
 from fnmatch import fnmatch
 from functools import lru_cache
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple, Union
+from typing import Optional, Union
 
 from npe2 import PluginManifest
 
@@ -22,7 +22,7 @@ class MatchFlag(IntFlag):
 
 
 @lru_cache
-def score_specificity(pattern: str) -> Tuple[bool, int, List[MatchFlag]]:
+def score_specificity(pattern: str) -> tuple[bool, int, list[MatchFlag]]:
     """Score an fnmatch pattern, with higher specificities having lower scores.
 
     Absolute paths have highest specificity,
@@ -46,7 +46,7 @@ def score_specificity(pattern: str) -> Tuple[bool, int, List[MatchFlag]]:
     pattern = osp.normpath(pattern)
 
     segments = pattern.split(osp.sep)
-    score: List[MatchFlag] = []
+    score: list[MatchFlag] = []
     ends_with_star = False
 
     def add(match_flag):
@@ -71,7 +71,7 @@ def score_specificity(pattern: str) -> Tuple[bool, int, List[MatchFlag]]:
     return not osp.isabs(pattern), 1 - len(score), score
 
 
-def _get_preferred_readers(path: PathLike) -> List[Tuple[str, str]]:
+def _get_preferred_readers(path: PathLike) -> list[tuple[str, str]]:
     """Given filepath, find matching readers from preferences.
 
     Parameters
@@ -91,7 +91,7 @@ def _get_preferred_readers(path: PathLike) -> List[Tuple[str, str]]:
 
     reader_settings = get_settings().plugins.extension2reader
 
-    def filter_fn(kv: Tuple[str, str]) -> bool:
+    def filter_fn(kv: tuple[str, str]) -> bool:
         return fnmatch(path, kv[0])
 
     ret = list(filter(filter_fn, reader_settings.items()))
@@ -122,7 +122,7 @@ def get_preferred_reader(path: PathLike) -> Optional[str]:
     return None
 
 
-def get_potential_readers(filename: PathLike) -> Dict[str, str]:
+def get_potential_readers(filename: PathLike) -> dict[str, str]:
     """Given filename, returns all readers that may read the file.
 
     Original plugin engine readers are checked based on returning
@@ -147,7 +147,7 @@ def get_potential_readers(filename: PathLike) -> Dict[str, str]:
     return readers
 
 
-def get_all_readers() -> Tuple[Dict[str, str], Dict[str, str]]:
+def get_all_readers() -> tuple[dict[str, str], dict[str, str]]:
     """
     Return a dict of all npe2 readers and one of all npe1 readers
 
@@ -190,7 +190,7 @@ def get_filename_patterns_for_reader(plugin_name: str):
     set
         set of filename patterns accepted by all plugin's reader contributions
     """
-    all_fn_patterns: Set[str] = set()
+    all_fn_patterns: set[str] = set()
     current_plugin: Union[PluginManifest, None] = None
     for manifest in _npe2.iter_manifests():
         if manifest.name == plugin_name:

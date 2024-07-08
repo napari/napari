@@ -1,8 +1,9 @@
 import warnings
 from collections import OrderedDict, defaultdict
+from collections.abc import Iterable
 from functools import lru_cache
 from threading import Lock
-from typing import Dict, Iterable, List, NamedTuple, Optional, Tuple, Union
+from typing import NamedTuple, Optional, Union
 
 import numpy as np
 import skimage.color as colorconv
@@ -15,13 +16,13 @@ from vispy.color import (
 )
 from vispy.color.colormap import LUT_len
 
+from napari.utils.colormaps._accelerated_cmap import minimum_dtype_for_labels
 from napari.utils.colormaps.bop_colors import bopd
 from napari.utils.colormaps.colormap import (
     Colormap,
     ColormapInterpolationMode,
     CyclicLabelColormap,
     DirectLabelColormap,
-    minimum_dtype_for_labels,
 )
 from napari.utils.colormaps.inverse_colormaps import inverse_cmaps
 from napari.utils.colormaps.standardize_color import transform_color
@@ -29,7 +30,7 @@ from napari.utils.colormaps.vendored import cm
 from napari.utils.translations import trans
 
 # All parsable input color types that a user can provide
-ColorType = Union[List, Tuple, np.ndarray, str, Color, ColorArray]
+ColorType = Union[list, tuple, np.ndarray, str, Color, ColorArray]
 
 
 ValidColormapArg = Union[
@@ -37,11 +38,11 @@ ValidColormapArg = Union[
     ColorType,
     VispyColormap,
     Colormap,
-    Tuple[str, VispyColormap],
-    Tuple[str, Colormap],
-    Dict[str, VispyColormap],
-    Dict[str, Colormap],
-    Dict,
+    tuple[str, VispyColormap],
+    tuple[str, Colormap],
+    dict[str, VispyColormap],
+    dict[str, Colormap],
+    dict,
 ]
 
 
@@ -685,7 +686,7 @@ AVAILABLE_LABELS_COLORMAPS = {
 
 def _increment_unnamed_colormap(
     existing: Iterable[str], name: str = '[unnamed colormap]'
-) -> Tuple[str, str]:
+) -> tuple[str, str]:
     """Increment name for unnamed colormap.
 
     NOTE: this assumes colormaps are *never* deleted, and does not check
@@ -921,7 +922,7 @@ def display_name_to_name(display_name):
 
 
 class CoercedContrastLimits(NamedTuple):
-    contrast_limits: Tuple[float, float]
+    contrast_limits: tuple[float, float]
     offset: float
     scale: float
 
@@ -932,7 +933,7 @@ class CoercedContrastLimits(NamedTuple):
         return (data + self.offset / self.scale) * self.scale
 
 
-def _coerce_contrast_limits(contrast_limits: Tuple[float, float]):
+def _coerce_contrast_limits(contrast_limits: tuple[float, float]):
     """Coerce contrast limits to be in the float32 range."""
     if np.abs(contrast_limits).max() > _MAX_VISPY_SUPPORTED_VALUE:
         return scale_down(contrast_limits)
@@ -949,7 +950,7 @@ def _coerce_contrast_limits(contrast_limits: Tuple[float, float]):
     return CoercedContrastLimits(contrast_limits, 0, 1)
 
 
-def scale_down(contrast_limits: Tuple[float, float]):
+def scale_down(contrast_limits: tuple[float, float]):
     """Scale down contrast limits to be in the float32 range."""
     scale: float = min(
         1.0,
@@ -964,7 +965,7 @@ def scale_down(contrast_limits: Tuple[float, float]):
     return CoercedContrastLimits(ctrl_lim, offset, scale)
 
 
-def scale_up(contrast_limits: Tuple[float, float]):
+def scale_up(contrast_limits: tuple[float, float]):
     """Scale up contrast limits to be in the float32 precision."""
     scale = 1000 / (contrast_limits[1] - contrast_limits[0])
     shift = -contrast_limits[0] * scale

@@ -9,15 +9,13 @@ import os
 import sys
 import time
 import warnings
+from collections.abc import MutableMapping, Sequence
 from typing import (
     TYPE_CHECKING,
     Any,
     ClassVar,
-    List,
-    MutableMapping,
+    Literal,
     Optional,
-    Sequence,
-    Tuple,
     Union,
     cast,
 )
@@ -48,10 +46,14 @@ from qtpy.QtWidgets import (
 from superqt.utils import QSignalThrottler
 
 from napari._app_model.constants import MenuId
-from napari._app_model.context import get_context
-from napari._qt import menus
+from napari._app_model.context import create_context, get_context
 from napari._qt._qapp_model import build_qmodel_menu
 from napari._qt._qapp_model.qactions import init_qactions
+from napari._qt._qapp_model.qactions._debug import _is_set_trace_active
+from napari._qt._qplugins import (
+    _rebuild_npe1_plugins_menu,
+    _rebuild_npe1_samples_menu,
+)
 from napari._qt.dialogs.confirm_close_dialog import ConfirmCloseDialog
 from napari._qt.dialogs.preferences_dialog import PreferencesDialog
 from napari._qt.dialogs.qt_activity_dialog import QtActivityDialog
@@ -73,7 +75,7 @@ from napari.plugins import (
     menu_item_template as plugin_menu_item_template,
     plugin_manager,
 )
-from napari.plugins._npe2 import _rebuild_npe1_samples_menu
+from napari.plugins._npe2 import index_npe1_adapters
 from napari.settings import get_settings
 from napari.utils import perf
 from napari.utils._proxies import PublicOnlyProxy
@@ -97,6 +99,16 @@ if TYPE_CHECKING:
     from napari.viewer import Viewer
 
 
+MenuStr = Literal[
+    'file_menu',
+    'view_menu',
+    'layers_menu',
+    'plugins_menu',
+    'window_menu',
+    'help_menu',
+]
+
+
 class _QtMainWindow(QMainWindow):
     # This was added so that someone can patch
     # `napari._qt.qt_main_window._QtMainWindow._window_icon`
@@ -107,7 +119,7 @@ class _QtMainWindow(QMainWindow):
     # We use this instead of QApplication.activeWindow for compatibility with
     # IPython usage. When you activate IPython, it will appear that there are
     # *no* active windows, so we want to track the most recently active windows
-    _instances: ClassVar[List['_QtMainWindow']] = []
+    _instances: ClassVar[list['_QtMainWindow']] = []
 
     # `window` is passed through on construction, so it's available to a window
     # provider for dependency injection
@@ -156,6 +168,10 @@ class _QtMainWindow(QMainWindow):
         # Prevent QLineEdit based widgets to keep focus even when clicks are
         # done outside the widget. See #1571
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+
+        # Ideally this would be in `NapariApplication` but that is outside of Qt
+        self._viewer_context = create_context(self)
+        self._viewer_context['is_set_trace_active'] = _is_set_trace_active
 
         settings = get_settings()
 
@@ -297,6 +313,7 @@ class _QtMainWindow(QMainWindow):
         # we are not in menubar toggled state
         if (
             QApplication.activePopupWidget() is None
+            and hasattr(self, '_toggle_menubar_visibility')
             and self._toggle_menubar_visibility
         ):
             if event.type() == QEvent.Type.MouseMove:
@@ -315,7 +332,7 @@ class _QtMainWindow(QMainWindow):
                         self.menuBar().hide()
             elif event.type() == QEvent.Type.Leave and source is self:
                 self.menuBar().hide()
-        return QMainWindow.eventFilter(self, source, event)
+        return super().eventFilter(source, event)
 
     def _load_window_settings(self):
         """
@@ -656,6 +673,9 @@ class Window:
         plugin_manager.discover_themes()
         self._setup_existing_themes()
 
+        # import and index all discovered shimmed npe1 plugins
+        index_npe1_adapters()
+
         self._add_menus()
         self._update_theme()
         self._update_theme_font_size()
@@ -664,18 +684,15 @@ class Window:
             self._update_theme_font_size
         )
 
-        self._add_viewer_dock_widget(
-            self._qt_viewer.dockConsole, tabify=False, menu=self.window_menu
-        )
+        self._add_viewer_dock_widget(self._qt_viewer.dockConsole, tabify=False)
         self._add_viewer_dock_widget(
             self._qt_viewer.dockLayerControls,
             tabify=False,
-            menu=self.window_menu,
         )
         self._add_viewer_dock_widget(
-            self._qt_viewer.dockLayerList, tabify=False, menu=self.window_menu
+            self._qt_viewer.dockLayerList, tabify=False
         )
-        if perf.USE_PERFMON:
+        if perf.perf_config is not None:
             self._add_viewer_dock_widget(
                 self._qt_viewer.dockPerformance, menu=self.window_menu
             )
@@ -800,12 +817,35 @@ class Window:
         # TODO: remove from window
         return self._qt_window.statusBar()
 
-    def _update_menu_state(self, menu):
+    def _update_menu_state(self, menu: MenuStr):
         """Update enabled/visible state of menu item with context."""
         layerlist = self._qt_viewer._layers.model().sourceModel()._root
         menu_model = getattr(self, menu)
         menu_model.update_from_context(get_context(layerlist))
 
+    def _update_file_menu_state(self):
+        self._update_menu_state('file_menu')
+
+    def _update_view_menu_state(self):
+        self._update_menu_state('view_menu')
+
+    def _update_layers_menu_state(self):
+        self._update_menu_state('layers_menu')
+
+    def _update_window_menu_state(self):
+        self._update_menu_state('window_menu')
+
+    def _update_plugins_menu_state(self):
+        self._update_menu_state('plugins_menu')
+
+    def _update_help_menu_state(self):
+        self._update_menu_state('help_menu')
+
+    def _update_debug_menu_state(self):
+        viewer_ctx = get_context(self._qt_window)
+        self._debug_menu.update_from_context(viewer_ctx)
+
+    # TODO: Remove once npe1 deprecated
     def _setup_npe1_samples_menu(self):
         """Register npe1 sample data, build menu and connect to events."""
         plugin_manager.discover_sample_data()
@@ -814,6 +854,28 @@ class Window:
         plugin_manager.events.registered.connect(_rebuild_npe1_samples_menu)
         plugin_manager.events.unregistered.connect(_rebuild_npe1_samples_menu)
         _rebuild_npe1_samples_menu()
+
+    # TODO: Remove once npe1 deprecated
+    def _setup_npe1_plugins_menu(self):
+        """Register npe1 widgets, build menu and connect to events"""
+        plugin_manager.discover_widgets()
+        plugin_manager.events.registered.connect(_rebuild_npe1_plugins_menu)
+        plugin_manager.events.disabled.connect(_rebuild_npe1_plugins_menu)
+        plugin_manager.events.unregistered.connect(_rebuild_npe1_plugins_menu)
+        _rebuild_npe1_plugins_menu()
+
+    def _handle_trace_file_on_start(self):
+        """Start trace of `trace_file_on_start` config set."""
+        from napari._qt._qapp_model.qactions._debug import _start_trace
+
+        if perf.perf_config:
+            path = perf.perf_config.trace_file_on_start
+            if path is not None:
+                # Config option "trace_file_on_start" means immediately
+                # start tracing to that file. This is very useful if you
+                # want to create a trace every time you start napari,
+                # without having to start it from the debug menu.
+                _start_trace(path)
 
     def _add_menus(self):
         """Add menubar to napari app."""
@@ -838,7 +900,7 @@ class Window:
         )
         self._setup_npe1_samples_menu()
         self.file_menu.aboutToShow.connect(
-            lambda: self._update_menu_state('file_menu')
+            self._update_file_menu_state,
         )
         self.main_menu.addMenu(self.file_menu)
         # view menu
@@ -846,27 +908,60 @@ class Window:
             MenuId.MENUBAR_VIEW, title=trans._('&View'), parent=self._qt_window
         )
         self.view_menu.aboutToShow.connect(
-            lambda: self._update_menu_state('view_menu')
+            self._update_view_menu_state,
         )
         self.main_menu.addMenu(self.view_menu)
-        # plugin menu
-        self.plugins_menu = menus.PluginsMenu(self)
+        # layers menu
+        self.layers_menu = build_qmodel_menu(
+            MenuId.MENUBAR_LAYERS,
+            title=trans._('&Layers'),
+            parent=self._qt_window,
+        )
+        self.layers_menu.aboutToShow.connect(
+            self._update_layers_menu_state,
+        )
+        self.main_menu.addMenu(self.layers_menu)
+        # plugins menu
+        self.plugins_menu = build_qmodel_menu(
+            MenuId.MENUBAR_PLUGINS,
+            title=trans._('&Plugins'),
+            parent=self._qt_window,
+        )
+        self._setup_npe1_plugins_menu()
+        self.plugins_menu.aboutToShow.connect(
+            self._update_plugins_menu_state,
+        )
         self.main_menu.addMenu(self.plugins_menu)
+        # debug menu (optional)
+        if perf.perf_config is not None:
+            self._debug_menu = build_qmodel_menu(
+                MenuId.MENUBAR_DEBUG,
+                title=trans._('&Debug'),
+                parent=self._qt_window,
+            )
+            self._handle_trace_file_on_start()
+            self._debug_menu.aboutToShow.connect(
+                self._update_debug_menu_state,
+            )
+            self.main_menu.addMenu(self._debug_menu)
         # window menu
-        self.window_menu = menus.WindowMenu(self)
+        self.window_menu = build_qmodel_menu(
+            MenuId.MENUBAR_WINDOW,
+            title=trans._('&Window'),
+            parent=self._qt_window,
+        )
+        self.plugins_menu.aboutToShow.connect(
+            self._update_window_menu_state,
+        )
         self.main_menu.addMenu(self.window_menu)
         # help menu
         self.help_menu = build_qmodel_menu(
             MenuId.MENUBAR_HELP, title=trans._('&Help'), parent=self._qt_window
         )
         self.help_menu.aboutToShow.connect(
-            lambda: self._update_menu_state('help_menu')
+            self._update_help_menu_state,
         )
         self.main_menu.addMenu(self.help_menu)
-
-        if perf.USE_PERFMON:
-            self._debug_menu = menus.DebugMenu(self)
-            self.main_menu.addMenu(self._debug_menu)
 
     def _toggle_menubar_visible(self):
         """Toggle visibility of app menubar.
@@ -898,7 +993,7 @@ class Window:
         plugin_name: str,
         widget_name: Optional[str] = None,
         tabify: bool = False,
-    ) -> Tuple[QtViewerDockWidget, Any]:
+    ) -> tuple[QtViewerDockWidget, Any]:
         """Add plugin dock widget if not already added.
 
         Parameters
@@ -1142,7 +1237,7 @@ class Window:
         # see #3663, to fix #3624 more generally
         dock_widget.setFloating(False)
 
-    def _remove_dock_widget(self, event):
+    def _remove_dock_widget(self, event) -> None:
         names = list(self._dock_widgets.keys())
         for widget_name in names:
             if event.value in widget_name:
@@ -1299,7 +1394,7 @@ class Window:
         """
         self._qt_window.setGeometry(left, top, width, height)
 
-    def geometry(self) -> Tuple[int, int, int, int]:
+    def geometry(self) -> tuple[int, int, int, int]:
         """Get the geometry of the widget
 
         Returns

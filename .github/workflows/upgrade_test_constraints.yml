@@ -147,66 +147,45 @@ jobs:
       # START PYTHON DEPENDENCIES
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.8"
-          cache: pip
-          cache-dependency-path: 'setup.cfg'
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.9"
-          cache: pip
-          cache-dependency-path: 'setup.cfg'
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-          cache: pip
-          cache-dependency-path: 'setup.cfg'
-      - uses: actions/setup-python@v5
-        with:
           python-version: "3.11"
           cache: pip
-          cache-dependency-path: 'setup.cfg'
+          cache-dependency-path: 'pyproject.toml'
 
       - name: Upgrade Python dependencies
         # ADD YOUR CUSTOM DEPENDENCY UPGRADE COMMANDS BELOW
         run: |
-          flags=""
+          set -x
+          pip install -U uv
+          flags="--quiet"
           # Explanation of below commands
-          # python3.8 -m piptools compile - call pip-compile but ensure proper interpreter
+          # uv pip compile --python-version 3.9 - call uv pip compile but ensure proper interpreter
           # --upgrade upgrade to the latest possible version. Without this pip-compile will take a look to output files and reuse versions (so will ad something on when adding dependency.
-          # -o resources/constraints/constraints_py3.8.txt - output file
-          # setup.cfg resources/constraints/version_denylist.txt - source files. the resources/constraints/version_denylist.txt - contains our test specific constraints like pytes-cov`
+          # -o resources/constraints/constraints_py3.9.txt - output file
+          # pyproject.toml resources/constraints/version_denylist.txt - source files. the resources/constraints/version_denylist.txt - contains our test specific constraints like pytes-cov`
           #
-          # --extra pyqt5 etc - names of extra sections from setup.cfg that should be checked for the dependencies list (maybe we could create a super extra section to collect them all in)
+          # --extra pyqt5 etc - names of extra sections from pyproject.toml that should be checked for the dependencies list (maybe we could create a super extra section to collect them all in)
           flags+=" --extra pyqt5"
-          flags+=" --extra pyqt6_experimental"
+          flags+=" --extra pyqt6"
           flags+=" --extra pyside2"
           flags+=" --extra pyside6_experimental"
           flags+=" --extra testing"
           flags+=" --extra testing_extra"
           flags+=" --extra optional"
           prefix="napari_repo"
-          setup_cfg="${prefix}/setup.cfg"
+          pyproject_toml="${prefix}/pyproject.toml"
           constraints="${prefix}/resources/constraints"
 
 
-          # allow to put in constraints things like setuptools (look at the end of one of the generated files). It will be the default behavior in the future.
-          flags+=" --allow-unsafe"
-
-          # pip constrains format does not allow to specify extras (like dask[array]) so we need to use this option
-          flags+=" --strip-extras"
-
-          # future default resolver. It is faster. Lower probability of long CI run.
-          flags+=" --resolver=backtracking"
-
-          for pyv in 3.8 3.9 3.10 3.11; do
-            python${pyv}  -m pip install -U pip pip-tools
-            python${pyv}  -m piptools compile --upgrade -o $constraints/constraints_py${pyv}.txt  $setup_cfg $constraints/version_denylist.txt ${flags}
-            python${pyv}  -m piptools compile --upgrade -o $constraints/constraints_py${pyv}_pydantic_1.txt  $setup_cfg $constraints/version_denylist.txt $constraints/pydantic_le_2.txt ${flags}
+          for pyv in 3.9 3.10 3.11 3.12; do
+            uv pip compile --python-version ${pyv} --upgrade --output-file $constraints/constraints_py${pyv}.txt  $pyproject_toml $constraints/version_denylist.txt ${flags}
+            uv pip compile --python-version ${pyv} --upgrade --output-file $constraints/constraints_py${pyv}_pydantic_1.txt  $pyproject_toml $constraints/version_denylist.txt $constraints/pydantic_le_2.txt ${flags}
+            uv pip compile --python-platform aarch64-apple-darwin  --python-version ${pyv} --upgrade --output-file $constraints/constraints_py${pyv}_macos_arm.txt  $pyproject_toml $constraints/version_denylist.txt ${flags}
           done
 
-          python3.9 -m piptools compile --upgrade -o $constraints/constraints_py3.9_examples.txt $setup_cfg $constraints/version_denylist.txt resources/constraints/version_denylist_examples.txt ${flags}
-          python3.10 -m piptools compile --upgrade -o $constraints/constraints_py3.10_docs.txt $setup_cfg $constraints/version_denylist.txt resources/constraints/version_denylist_examples.txt docs/requirements.txt $constraints/pydantic_le_2.txt ${flags}
-          python3.11 -m piptools compile --upgrade -o resources/requirements_mypy.txt resources/requirements_mypy.in --resolver=backtracking
+
+          uv pip compile --python-version 3.9 --upgrade --output-file $constraints/constraints_py3.9_examples.txt $pyproject_toml $constraints/version_denylist.txt resources/constraints/version_denylist_examples.txt ${flags}
+          uv pip compile --python-version 3.10 --upgrade --output-file $constraints/constraints_py3.10_docs.txt $pyproject_toml $constraints/version_denylist.txt resources/constraints/version_denylist_examples.txt docs/requirements.txt $constraints/pydantic_le_2.txt ${flags}
+          uv pip compile --python-version 3.11 --upgrade --output-file ${prefix}/resources/requirements_mypy.txt ${prefix}/resources/requirements_mypy.in
 
       # END PYTHON DEPENDENCIES
 

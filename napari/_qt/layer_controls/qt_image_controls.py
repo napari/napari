@@ -38,6 +38,22 @@ class QtImageControls(QtBaseImageControls):
 
     Attributes
     ----------
+    layer : napari.layers.Image
+        An instance of a napari Image layer.
+    MODE : Enum
+        Available modes in the associated layer.
+    PAN_ZOOM_ACTION_NAME : str
+        String id for the pan-zoom action to bind to the pan_zoom button.
+    TRANSFORM_ACTION_NAME : str
+        String id for the transform action to bind to the transform button.
+    button_group : qtpy.QtWidgets.QButtonGroup
+        Button group for image based layer modes (PAN_ZOOM TRANSFORM).
+    button_grid : qtpy.QtWidgets.QGridLayout
+        GridLayout for the layer mode buttons
+    panzoom_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
+        Button to pan/zoom shapes layer.
+    transform_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
+        Button to transform shapes layer.
     attenuationSlider : qtpy.QtWidgets.QSlider
         Slider controlling attenuation rate for `attenuated_mip` mode.
     attenuationLabel : qtpy.QtWidgets.QLabel
@@ -50,8 +66,6 @@ class QtImageControls(QtBaseImageControls):
         Slider controlling the isosurface threshold value for rendering.
     isoThresholdLabel : qtpy.QtWidgets.QLabel
         Label for the isosurface threshold slider widget.
-    layer : napari.layers.Image
-        An instance of a napari Image layer.
     renderComboBox : qtpy.QtWidgets.QComboBox
         Dropdown menu to select the rendering mode for image display.
     renderLabel : qtpy.QtWidgets.QLabel
@@ -59,6 +73,8 @@ class QtImageControls(QtBaseImageControls):
     """
 
     layer: 'napari.layers.Image'
+    PAN_ZOOM_ACTION_NAME = 'activate_image_pan_zoom_mode'
+    TRANSFORM_ACTION_NAME = 'activate_image_transform_mode'
 
     def __init__(self, layer) -> None:
         super().__init__(layer)
@@ -168,6 +184,7 @@ class QtImageControls(QtBaseImageControls):
             colormap_layout.addWidget(self.colormapComboBox)
         colormap_layout.addStretch(1)
 
+        self.layout().addRow(self.button_grid)
         self.layout().addRow(self.opacityLabel, self.opacitySlider)
         self.layout().addRow(
             trans._('contrast limits:'), self.contrastLimitsSlider
@@ -285,7 +302,11 @@ class QtImageControls(QtBaseImageControls):
         """
         interp_string = event.value.value
 
-        with self.layer.events.interpolation.blocker(), self.layer.events.interpolation2d.blocker(), self.layer.events.interpolation3d.blocker():
+        with (
+            self.layer.events.interpolation.blocker(),
+            self.layer.events.interpolation2d.blocker(),
+            self.layer.events.interpolation3d.blocker(),
+        ):
             if self.interpComboBox.findText(interp_string) == -1:
                 self.interpComboBox.addItem(interp_string)
             self.interpComboBox.setCurrentText(interp_string)
@@ -362,6 +383,7 @@ class QtImageControls(QtBaseImageControls):
             self._update_rendering_parameter_visibility()
             self.depictionComboBox.show()
             self.depictionLabel.show()
+        super()._on_ndisplay_changed()
 
 
 class PlaneNormalButtons(QWidget):

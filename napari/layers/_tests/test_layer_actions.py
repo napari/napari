@@ -1,4 +1,5 @@
 import numpy as np
+import pint
 import pytest
 import zarr
 
@@ -16,6 +17,8 @@ from napari.layers._layer_actions import (
     _show_unselected,
     _toggle_visibility,
 )
+
+REG = pint.get_application_registry()
 
 
 def test_toggle_visibility():
@@ -162,13 +165,25 @@ def test_show_selected_layers():
 )
 def test_projections(mode):
     ll = LayerList()
-    ll.append(Image(np.random.rand(8, 8, 8)))
+    ll.append(
+        Image(
+            np.random.rand(7, 8, 8),
+            scale=(3, 2, 2),
+            translate=(10, 5, 5),
+            units=('nm', 'um', 'um'),
+            axis_labels=('z', 'y', 'x'),
+        )
+    )
     assert len(ll) == 1
     assert ll[-1].data.ndim == 3
     _project(ll, mode=mode)
     assert len(ll) == 2
     # because keepdims = False
     assert ll[-1].data.shape == (8, 8)
+    assert tuple(ll[-1].scale) == (2, 2)
+    assert tuple(ll[-1].translate) == (5, 5)
+    assert ll[-1].units == (REG.um, REG.um)
+    assert ll[-1].axis_labels == ('y', 'x')
 
 
 @pytest.mark.parametrize(
@@ -197,9 +212,10 @@ def test_convert_dtype(mode):
 
 
 @pytest.mark.parametrize(
-    'layer, type_',
+    ('layer', 'type_'),
     [
         (Image(np.random.rand(10, 10)), 'labels'),
+        (Image(np.array([[1.5, 2.5], [3.5, 4.5]])), 'labels'),
         (Image(np.array([[1, 2], [3, 4]], dtype=(int))), 'labels'),
         (
             Image(zarr.array([[1, 2], [3, 4]], dtype=(int), chunks=(1, 2))),
@@ -216,14 +232,14 @@ def test_convert_layer(layer, type_):
     ll.append(layer)
     assert ll[0]._type_string != type_
     _convert(ll, type_)
-    assert ll[0]._type_string == type_
-    assert np.array_equal(ll[0].scale, original_scale)
-
-    if (
+    if isinstance(layer, Shapes) or (
         type_ == 'labels'
         and isinstance(layer, Image)
-        and np.issubdtype(layer.data.dtype, np.integer)
+        and np.issubdtype(layer.data.dtype, float)
     ):
+        assert ll[1]._type_string == type_
+        assert np.array_equal(ll[1].scale, original_scale)
+    else:
         assert (
             layer.data is ll[0].data
         )  # check array data not copied unnecessarily

@@ -3,8 +3,9 @@ from __future__ import annotations
 import os
 import pathlib
 import warnings
+from collections.abc import Sequence
 from logging import getLogger
-from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Any, Optional
 
 from napari_plugin_engine import HookImplementation, PluginCallError
 
@@ -23,7 +24,7 @@ def read_data_with_plugins(
     paths: Sequence[PathLike],
     plugin: Optional[str] = None,
     stack: bool = False,
-) -> Tuple[Optional[List[LayerData]], Optional[HookImplementation]]:
+) -> tuple[Optional[list[LayerData]], Optional[HookImplementation]]:
     """Iterate reader hooks and return first non-None LayerData or None.
 
     This function returns as soon as the path has been read successfully,
@@ -149,7 +150,7 @@ def read_data_with_plugins(
         try:
             layer_data = reader(npe1_path)  # try to read data
             hookimpl = result.implementation
-        except Exception as exc:  # noqa BLE001
+        except Exception as exc:  # BLE001
             raise PluginCallError(result.implementation, cause=exc) from exc
 
     if not layer_data:
@@ -180,11 +181,11 @@ def read_data_with_plugins(
 
 def save_layers(
     path: str,
-    layers: List[Layer],
+    layers: list[Layer],
     *,
     plugin: Optional[str] = None,
     _writer: Optional[WriterContribution] = None,
-) -> List[str]:
+) -> list[str]:
     """Write list of layers or individual layer to a path using writer plugins.
 
     If ``plugin`` is not provided and only one layer is passed, then we
@@ -297,11 +298,11 @@ def _is_null_layer_sentinel(layer_data: Any) -> bool:
 
 def _write_multiple_layers_with_plugins(
     path: str,
-    layers: List[Layer],
+    layers: list[Layer],
     *,
     plugin_name: Optional[str] = None,
     _writer: Optional[WriterContribution] = None,
-) -> Tuple[List[str], str]:
+) -> tuple[list[str], str]:
     """Write data from multiple layers data with a plugin.
 
     If a ``plugin_name`` is not provided we loop through plugins to find the
@@ -405,7 +406,7 @@ def _write_multiple_layers_with_plugins(
             writer_function(abspath_or_url(path), layer_data),
             implementation.plugin_name,
         )
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         raise PluginCallError(implementation, cause=exc) from exc
 
 
@@ -415,7 +416,7 @@ def _write_single_layer_with_plugins(
     *,
     plugin_name: Optional[str] = None,
     _writer: Optional[WriterContribution] = None,
-) -> Tuple[Optional[str], str]:
+) -> tuple[Optional[str], str]:
     """Write single layer data with a plugin.
 
     If ``plugin_name`` is not provided then we just directly call

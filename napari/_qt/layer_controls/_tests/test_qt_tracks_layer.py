@@ -1,5 +1,3 @@
-from typing import Dict, List
-
 import numpy as np
 import pytest
 from qtpy.QtCore import Qt
@@ -8,13 +6,13 @@ from napari._qt.layer_controls.qt_tracks_controls import QtTracksControls
 from napari.layers import Tracks
 
 
-@pytest.fixture
+@pytest.fixture()
 def null_data() -> np.ndarray:
     return np.zeros((2, 4))
 
 
-@pytest.fixture
-def properties() -> Dict[str, List]:
+@pytest.fixture()
+def properties() -> dict[str, list]:
     return {
         'track_id': [0, 0],
         'time': [0, 0],
@@ -53,7 +51,7 @@ def test_tracks_controls_color_by(null_data, properties, qtbot):
     assert qtctrl.color_by_combobox.currentText() == qt_update_color_by
 
 
-@pytest.mark.parametrize('color_by', ('track_id', 'speed'))
+@pytest.mark.parametrize('color_by', ['track_id', 'speed'])
 def test_color_by_same_after_properties_change(
     null_data, properties, color_by, qtbot
 ):

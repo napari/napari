@@ -13,8 +13,9 @@ from ast import literal_eval
 from itertools import chain, repeat
 from pathlib import Path
 from textwrap import wrap
-from typing import Any, Dict, List
+from typing import Any
 
+from napari.errors import ReaderPluginError
 from napari.utils.translations import trans
 
 
@@ -26,8 +27,8 @@ class InfoAction(argparse.Action):
         from napari.utils import sys_info
 
         logging.basicConfig(level=logging.WARNING)
-        print(sys_info())
-        print('Plugins:')
+        print(sys_info())  # noqa: T201
+        print('Plugins:')  # noqa: T201
         cli.list(fields='', sort='0', format='compact')
         sys.exit()
 
@@ -52,11 +53,11 @@ class CitationAction(argparse.Action):
         from napari.utils import citation_text
 
         logging.basicConfig(level=logging.WARNING)
-        print(citation_text)
+        print(citation_text)  # noqa: T201
         sys.exit()
 
 
-def validate_unknown_args(unknown: List[str]) -> Dict[str, Any]:
+def validate_unknown_args(unknown: list[str]) -> dict[str, Any]:
     """Convert a list of strings into a dict of valid kwargs for add_* methods.
 
     Will exit program if any of the arguments are unrecognized, or are
@@ -76,7 +77,7 @@ def validate_unknown_args(unknown: List[str]) -> Dict[str, Any]:
 
     from napari.components.viewer_model import valid_add_kwargs
 
-    out: Dict[str, Any] = {}
+    out: dict[str, Any] = {}
     valid = set.union(*valid_add_kwargs().values())
     for i, raw_arg in enumerate(unknown):
         if not raw_arg.startswith('--'):
@@ -240,7 +241,7 @@ def _run() -> None:
         if not args.paths:
             sys.exit(
                 "error: The '--plugin' argument is only valid "
-                "when providing a file name"
+                'when providing a file name'
             )
         # I *think* that Qt is looking in sys.argv for a flag `--plugins`,
         # which emits "WARNING: No such plugin for spec 'builtins'"
@@ -297,12 +298,14 @@ def _run() -> None:
                         if '__all__' in wnames:
                             # Plugin_manager iter_widgets return wnames as dict keys
                             wnames = list(wnames_dict)
-                        print(
+                        warnings.warn(
                             trans._(
                                 'Non-npe2 plugin {pname} detected. Disable tabify for this plugin.',
                                 deferred=True,
                                 pname=pname,
-                            )
+                            ),
+                            RuntimeWarning,
+                            stacklevel=3,
                         )
                         break
 
@@ -341,13 +344,20 @@ def _run() -> None:
                 stacklevel=3,
             )
             args.stack = True
-        viewer._window._qt_viewer._qt_open(
-            args.paths,
-            stack=args.stack,
-            plugin=args.plugin,
-            layer_type=args.layer_type,
-            **kwargs,
-        )
+        try:
+            viewer._window._qt_viewer._qt_open(
+                args.paths,
+                stack=args.stack,
+                plugin=args.plugin,
+                layer_type=args.layer_type,
+                **kwargs,
+            )
+        except ReaderPluginError:
+            logging.exception(
+                'Loading %s with %s failed with errors',
+                args.paths,
+                args.plugin,
+            )
 
         if args.with_:
             # Non-npe2 plugins disappear on tabify or if tabified npe2 plugins are loaded after them.

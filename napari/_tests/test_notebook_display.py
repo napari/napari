@@ -31,7 +31,7 @@ def test_nbscreenshot(make_napari_viewer):
 
 @skip_on_win_ci
 @pytest.mark.parametrize(
-    'alt_text_input, expected_alt_text',
+    ('alt_text_input', 'expected_alt_text'),
     [
         (None, None),
         ('Good alt text', 'Good alt text'),

@@ -6,7 +6,7 @@ localization data.
 import gettext
 import os
 from pathlib import Path
-from typing import ClassVar, Dict, Optional, Union
+from typing import ClassVar, Optional, Union
 
 from yaml import safe_load
 
@@ -169,6 +169,16 @@ class TranslationString(str):
     See https://docs.python.org/3/library/gettext.html for documentation
     of the arguments to __new__ and __init__ in this class.
     """
+
+    __slots__ = (
+        '_domain',
+        '_msgctxt',
+        '_msgid',
+        '_msgid_plural',
+        '_n',
+        '_deferred',
+        '_kwargs',
+    )
 
     def __deepcopy__(self, memo):
         from copy import deepcopy
@@ -599,7 +609,7 @@ class _Translator:
     Translations manager.
     """
 
-    _TRANSLATORS: ClassVar[Dict[str, TranslationBundle]] = {}
+    _TRANSLATORS: ClassVar[dict[str, TranslationBundle]] = {}
     _LOCALE = _DEFAULT_LOCALE
 
     @staticmethod

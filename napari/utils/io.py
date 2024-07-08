@@ -1,12 +1,11 @@
 import os
 import warnings
-from typing import TYPE_CHECKING
+
+import numpy as np
 
 from napari._version import __version__
+from napari.utils.notifications import show_warning
 from napari.utils.translations import trans
-
-if TYPE_CHECKING:
-    import numpy as np
 
 
 def imsave(filename: str, data: 'np.ndarray'):
@@ -22,7 +21,29 @@ def imsave(filename: str, data: 'np.ndarray'):
     ext = os.path.splitext(filename)[1].lower()
     # If no file extension was specified, choose .png by default
     if ext == '':
-        ext = '.png'
+        if (
+            data.ndim == 2 or (data.ndim == 3 and data.shape[-1] in {3, 4})
+        ) and not np.issubdtype(data.dtype, np.floating):
+            ext = '.png'
+        else:
+            ext = '.tif'
+            filename = filename + ext
+    # not all file types can handle float data
+    if ext not in [
+        '.tif',
+        '.tiff',
+        '.bsdf',
+        '.im',
+        '.lsm',
+        '.npz',
+        '.stk',
+    ] and np.issubdtype(data.dtype, np.floating):
+        show_warning(
+            trans._(
+                'Image was not saved, because image data is of dtype float.\nEither convert dtype or save as different file type (e.g. TIFF).'
+            )
+        )
+        return
     # Save screenshot image data to output file
     if ext in ['.png']:
         imsave_png(filename, data)
@@ -76,30 +97,13 @@ def imsave_tiff(filename, data):
     """
     import tifffile
 
-    compression_instead_of_compress = False
-    try:
-        current_version = tuple(
-            int(x) for x in tifffile.__version__.split('.')[:3]
-        )
-        compression_instead_of_compress = current_version >= (2021, 6, 6)
-    except Exception:  # noqa: BLE001
-        # Just in case anything goes wrong in parsing version number
-        # like repackaging on linux or anything else we fallback to
-        # using compress
-        warnings.warn(
-            trans._(
-                'Error parsing tiffile version number {version_number}',
-                deferred=True,
-                version_number=f'{tifffile.__version__:!r}',
-            )
-        )
-
-    if compression_instead_of_compress:
-        # 'compression' scheme is more complex. See:
+    if data.dtype == bool:
+        tifffile.imwrite(filename, data)
+    else:
+        # 'compression' kwarg since 2021.6.6; we depend on more recent versions
+        # now. See:
         # https://forum.image.sc/t/problem-saving-generated-labels-in-cellpose-napari/54892/8
         tifffile.imwrite(filename, data, compression=('zlib', 1))
-    else:  # older version of tifffile since 2021.6.6  this is deprecated
-        tifffile.imwrite(filename, data, compress=1)
 
 
 def __getattr__(name: str):

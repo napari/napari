@@ -1,11 +1,17 @@
 import numpy as np
 import numpy.testing as npt
+import pint
 import pytest
 from scipy.stats import special_ortho_group
 
 from napari.utils.transforms import Affine, CompositeAffine, ScaleTranslate
 
 transform_types = [Affine, CompositeAffine, ScaleTranslate]
+
+affine_type = [Affine, CompositeAffine]
+
+REG = pint.get_application_registry()
+PIXEL = REG.pixel
 
 
 @pytest.mark.parametrize('Transform', transform_types)
@@ -348,7 +354,9 @@ def test_replace_slice_independence():
 
 
 def test_replace_slice_num_dimensions():
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match='provided axes list and transform differ'
+    ):
         Affine().replace_slice([0], Affine())
 
 
@@ -364,3 +372,81 @@ def test_affine_rotate_3d():
         ),
         a.rotate,
     )
+
+
+@pytest.mark.parametrize('AffineType', affine_type)
+def test_empty_units(AffineType):
+    assert AffineType(ndim=2).units == (PIXEL, PIXEL)
+    assert AffineType(ndim=3).units == (PIXEL, PIXEL, PIXEL)
+    assert AffineType(ndim=2).physical_scale == (1 * PIXEL, 1 * PIXEL)
+    assert AffineType(ndim=3).physical_scale == (
+        1 * PIXEL,
+        1 * PIXEL,
+        1 * PIXEL,
+    )
+
+
+@pytest.mark.parametrize('AffineType', affine_type)
+def test_set_units_constructor(AffineType):
+    assert AffineType(ndim=2, units=('mm', 'mm')).units == (REG.mm, REG.mm)
+    assert AffineType(ndim=2, units=(REG.m, REG.m)).units == (REG.m, REG.m)
+
+    # TODO I think that we should normalize all units of same dimensionality
+    # to the same registry, but this is not currently the case.
+    assert AffineType(ndim=2, units=('cm', 'mm')).units == (REG.cm, REG.mm)
+
+
+@pytest.mark.parametrize('AffineType', affine_type)
+def test_set_units_constructor_error(AffineType):
+    with pytest.raises(ValueError, match='must have length ndim'):
+        AffineType(ndim=2, units=('mm', 'mm', 'mm'))
+
+    with pytest.raises(ValueError, match='Could not find unit'):
+        AffineType(ndim=2, units=('ugh', 'ugh'))
+
+
+@pytest.mark.parametrize('AffineType', affine_type)
+def test_set_units_error(AffineType):
+    affine = AffineType(ndim=2)
+    with pytest.raises(ValueError, match='must have length ndim'):
+        affine.units = ('m', 'm', 'm')
+
+    with pytest.raises(ValueError, match='Could not find unit'):
+        affine.units = ('ugh', 'ugh')
+
+
+@pytest.mark.parametrize('AffineType', affine_type)
+def test_set_units(AffineType):
+    affine = AffineType(ndim=2)
+    affine.units = ('mm', 'mm')
+    assert affine.units == (REG.mm, REG.mm)
+
+    affine.units = (REG.m, REG.m)
+    assert affine.units == (REG.m, REG.m)
+
+
+@pytest.mark.parametrize('AffineType', affine_type)
+def test_empty_axis_labels(AffineType):
+    assert AffineType(ndim=2).axis_labels == ('axis -2', 'axis -1')
+    assert AffineType(ndim=3).axis_labels == ('axis -3', 'axis -2', 'axis -1')
+
+
+@pytest.mark.parametrize('AffineType', affine_type)
+def test_set_axis_labels(AffineType):
+    affine = AffineType(ndim=2)
+    affine.axis_labels = ('x', 'y')
+    assert affine.axis_labels == ('x', 'y')
+
+
+@pytest.mark.parametrize('AffineType', affine_type)
+def test_set_axis_labels_error(AffineType):
+    affine = AffineType(ndim=2)
+    with pytest.raises(ValueError, match='must have length ndim'):
+        affine.axis_labels = ('x', 'y', 'z')
+
+
+@pytest.mark.parametrize('AffineType', affine_type)
+def test_set_axis_error(AffineType):
+    affine = AffineType(ndim=2)
+    with pytest.raises(ValueError, match='must have length ndim'):
+        affine.axis_labels = ('x', 'y', 'z')

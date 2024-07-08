@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Generic, TypeVar, cast
+from typing import Generic, TypeVar, cast
 
 import numpy as np
 from vispy.scene import VisualNode
@@ -53,7 +53,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
     """
 
     layer: _L
-    overlays: Dict[Overlay, VispyBaseOverlay]
+    overlays: dict[Overlay, VispyBaseOverlay]
 
     def __init__(self, layer: _L, node: VisualNode) -> None:
         super().__init__()
@@ -209,12 +209,28 @@ class VispyBaseLayer(ABC, Generic[_L]):
         translate = transform.translate[::-1]
         matrix = transform.linear_matrix[::-1, ::-1].T
 
+        # The following accounts for the offset between samples at different
+        # resolutions of 3D multi-scale array-like layers (e.g. images).
+        # The 2D case is handled differently because that has more complex support
+        # (multiple levels, partial field-of-view) that also currently interacts
+        # with how pixels are centered (see further below).
+        if (
+            self._array_like
+            and self.layer._slice_input.ndisplay == 3
+            and self.layer.multiscale
+            and hasattr(self.layer, 'downsample_factors')
+        ):
+            # The last downsample factor is used because we only ever show the
+            # last/lowest multi-scale level for 3D.
+            translate += (self.layer.downsample_factors[-1][::-1] - 1) / 2
+
         # Embed in the top left corner of a 4x4 affine matrix
         affine_matrix = np.eye(4)
         affine_matrix[: matrix.shape[0], : matrix.shape[1]] = matrix
         affine_matrix[-1, : len(translate)] = translate
 
-        offset = np.zeros(len(self.layer._slice_input.displayed))
+        child_offset = np.zeros(len(self.layer._slice_input.displayed))
+        dims_displayed = self.layer._slice_input.displayed
 
         if self._array_like and self.layer._slice_input.ndisplay == 2:
             # Perform pixel offset to shift origin from top left corner
@@ -230,33 +246,24 @@ class VispyBaseLayer(ABC, Generic[_L]):
             affine_offset = np.eye(4)
             affine_offset[-1, : len(offset)] = offset[::-1]
             affine_matrix = affine_matrix @ affine_offset
+            if self.layer.multiscale:
+                # For performance reasons, when displaying multiscale images,
+                # only the part of the data that is visible on the canvas is
+                # sent as a texture to the GPU. This means that the texture
+                # gets an additional transform, to position the texture
+                # correctly offset from the origin of the full data. However,
+                # child nodes, which include overlays such as bounding boxes,
+                # should *not* receive this offset, so we undo it here:
+                child_offset = (
+                    np.ones(offset_matrix.shape[1]) / 2
+                    - self.layer.corner_pixels[0][dims_displayed][::-1]
+                )
+            else:
+                child_offset = np.ones(offset_matrix.shape[1]) / 2
         self._master_transform.matrix = affine_matrix
 
-        # Because of performance reason, for multiscale images
-        # we load only visible part of data to GPU.
-        # To place this part of data correctly we update transform,
-        # but this leads to incorrect placement of child layers.
-        # To fix this we need to update child layers transform.
-        dims_displayed = self.layer._slice_input.displayed
-        simplified_transform = self.layer._transforms.simplified
-        if simplified_transform is None:
-            raise ValueError(
-                'simplified transform is None'
-            )  # pragma: no cover
-        translate_child = (
-            self.layer.translate[dims_displayed]
-            + self.layer.affine.translate[dims_displayed]
-        )[::-1] - offset[::-1]
-        trans_rotate = simplified_transform.rotate[
-            np.ix_(dims_displayed, dims_displayed)
-        ]
-        trans_scale = simplified_transform.scale[dims_displayed][::-1]
-        new_translate = (
-            trans_rotate @ (translate_child - translate) / trans_scale
-        )
-
         child_matrix = np.eye(4)
-        child_matrix[-1, : len(translate)] = new_translate
+        child_matrix[-1, : len(child_offset)] = child_offset
         for child in self.node.children:
             child.transform.matrix = child_matrix
 

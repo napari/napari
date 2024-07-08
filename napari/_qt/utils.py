@@ -4,9 +4,10 @@ import re
 import signal
 import socket
 import weakref
+from collections.abc import Iterable, Sequence
 from contextlib import contextmanager
 from functools import partial
-from typing import Iterable, Sequence, Union
+from typing import Union
 
 import numpy as np
 import qtpy

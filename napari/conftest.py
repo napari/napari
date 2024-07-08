@@ -2,7 +2,7 @@
 
 Notes for using the plugin-related fixtures here:
 
-1. The `_npe2pm` fixture is always used, and it mocks the global npe2 plugin
+1. The `npe2pm_` fixture is always used, and it mocks the global npe2 plugin
    manager instance with a discovery-deficient plugin manager.  No plugins should be
    discovered in tests without explicit registration.
 2. wherever the builtins need to be tested, the `builtins` fixture should be explicitly
@@ -39,7 +39,6 @@ from itertools import chain
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
-from unittest.mock import patch
 from weakref import WeakKeyDictionary
 
 from npe2 import PackageMetadata
@@ -72,7 +71,7 @@ if os.getenv('CI') and sys.platform.startswith('linux'):
         xauth.touch()
 
 
-@pytest.fixture
+@pytest.fixture()
 def layer_data_and_types():
     """Fixture that provides some layers and filenames
 
@@ -175,7 +174,7 @@ def layers():
 
 
 @pytest.fixture(autouse=True)
-def skip_examples(request):
+def _skip_examples(request):
     """Skip examples test if ."""
     if request.node.get_closest_marker(
         'examples'
@@ -198,7 +197,7 @@ if os.getenv('_PYTEST_RAISE', '0') != '0':
 
 
 @pytest.fixture(autouse=True)
-def fresh_settings(monkeypatch):
+def _fresh_settings(monkeypatch):
     """This fixture ensures that default settings are used for every test.
 
     and ensures that changes to settings in a test are reverted, and never
@@ -224,11 +223,11 @@ def fresh_settings(monkeypatch):
 
     # this makes sure that we start with fresh settings for every test.
     settings._SETTINGS = None
-    yield
+    return
 
 
 @pytest.fixture(autouse=True)
-def auto_shutdown_dask_threadworkers():
+def _auto_shutdown_dask_threadworkers():
     """
     This automatically shutdown dask thread workers.
 
@@ -255,7 +254,7 @@ def auto_shutdown_dask_threadworkers():
 HistoryManager.enabled = False
 
 
-@pytest.fixture
+@pytest.fixture()
 def napari_svg_name():
     """the plugin name changes with npe2 to `napari-svg` from `svg`."""
     from importlib.metadata import version
@@ -266,20 +265,8 @@ def napari_svg_name():
     return 'napari-svg'
 
 
-@pytest.fixture(autouse=True, scope='session')
-def _no_error_reports():
-    """Turn off napari_error_reporter if it's installed."""
-    try:
-        p1 = patch('napari_error_reporter.capture_exception')
-        p2 = patch('napari_error_reporter.install_error_reporter')
-        with p1, p2:
-            yield
-    except (ModuleNotFoundError, AttributeError):
-        yield
-
-
 @pytest.fixture(autouse=True)
-def _npe2pm(npe2pm, monkeypatch):
+def npe2pm_(npe2pm, monkeypatch):
     """Autouse npe2 & npe1 mock plugin managers with no registered plugins."""
     from napari.plugins import NapariPluginManager
 
@@ -287,16 +274,16 @@ def _npe2pm(npe2pm, monkeypatch):
     return npe2pm
 
 
-@pytest.fixture
-def builtins(_npe2pm: TestPluginManager):
-    with _npe2pm.tmp_plugin(package='napari') as plugin:
+@pytest.fixture()
+def builtins(npe2pm_: TestPluginManager):
+    with npe2pm_.tmp_plugin(package='napari') as plugin:
         yield plugin
 
 
-@pytest.fixture
-def tmp_plugin(_npe2pm: TestPluginManager):
-    with _npe2pm.tmp_plugin() as plugin:
-        plugin.manifest.package_metadata = PackageMetadata(
+@pytest.fixture()
+def tmp_plugin(npe2pm_: TestPluginManager):
+    with npe2pm_.tmp_plugin() as plugin:
+        plugin.manifest.package_metadata = PackageMetadata(  # type: ignore[call-arg]
             version='0.1.0', name='test'
         )
         plugin.manifest.display_name = 'Temp Plugin'
@@ -379,7 +366,7 @@ def pytest_collection_modifyitems(session, config, items):
 
 
 @pytest.fixture(autouse=True)
-def disable_notification_dismiss_timer(monkeypatch):
+def _disable_notification_dismiss_timer(monkeypatch):
     """
     This fixture disables starting timer for closing notification
     by setting the value of `NapariQtNotification.DISMISS_AFTER` to 0.
@@ -409,37 +396,6 @@ def single_threaded_executor():
     executor.shutdown()
 
 
-@pytest.fixture(autouse=True)
-def _mock_app():
-    """Mock clean 'test_app' `NapariApplication` instance.
-
-    This is used whenever `napari._app_model.get_app()` is called to return
-    a 'test_app' `NapariApplication` instead of the 'napari'
-    `NapariApplication`.
-
-    Note that `NapariApplication` registers app-model actions, providers and
-    processors. If this is not desired, please create a clean
-    `app_model.Application` in the test. It does not however, register Qt
-    related actions or providers or register plugins.
-    If these are required, the `make_napari_viewer` fixture can be used, which
-    will run both these function and automatically clear the lru cache.
-    Alternatively, you can specifically run `init_qactions()` or
-    `_initialize_plugins` within the test, ensuring that you `cache_clear()`
-    first.
-    """
-    from app_model import Application
-
-    from napari._app_model._app import NapariApplication, _napari_names
-
-    app = NapariApplication('test_app')
-    app.injection_store.namespace = _napari_names
-    with patch.object(NapariApplication, 'get_app', return_value=app):
-        try:
-            yield app
-        finally:
-            Application.destroy('test_app')
-
-
 def _get_calling_stack():  # pragma: no cover
     stack = []
     for i in range(2, sys.getrecursionlimit()):
@@ -467,8 +423,8 @@ def _get_calling_place(depth=1):  # pragma: no cover
     return result
 
 
-@pytest.fixture
-def dangling_qthreads(monkeypatch, qtbot, request):
+@pytest.fixture()
+def _dangling_qthreads(monkeypatch, qtbot, request):
     from qtpy.QtCore import QThread
 
     base_start = QThread.start
@@ -527,8 +483,8 @@ def dangling_qthreads(monkeypatch, qtbot, request):
     )
 
 
-@pytest.fixture
-def dangling_qthread_pool(monkeypatch, request):
+@pytest.fixture()
+def _dangling_qthread_pool(monkeypatch, request):
     from qtpy.QtCore import QThreadPool
 
     base_start = QThreadPool.start
@@ -583,8 +539,8 @@ def dangling_qthread_pool(monkeypatch, request):
     )
 
 
-@pytest.fixture
-def dangling_qtimers(monkeypatch, request):
+@pytest.fixture()
+def _dangling_qtimers(monkeypatch, request):
     from qtpy.QtCore import QTimer
 
     base_start = QTimer.start
@@ -671,8 +627,8 @@ def dangling_qtimers(monkeypatch, request):
             return (
                 path
                 + " it's possible that there was a problem with unfinished work by a "
-                "qthrottler; to solve this, you can either try to wait (such as with "
-                "`qtbot.wait`) or disable throttling with the disable_throttling fixture"
+                'qthrottler; to solve this, you can either try to wait (such as with '
+                '`qtbot.wait`) or disable throttling with the disable_throttling fixture'
             )
         return path
 
@@ -689,8 +645,8 @@ def _flush_mock(self):
     """There are no waiting events."""
 
 
-@pytest.fixture
-def disable_throttling(monkeypatch):
+@pytest.fixture()
+def _disable_throttling(monkeypatch):
     """Disable qthrottler from superqt.
 
     This is sometimes necessary to avoid flaky failures in tests
@@ -706,8 +662,8 @@ def disable_throttling(monkeypatch):
     )
 
 
-@pytest.fixture
-def dangling_qanimations(monkeypatch, request):
+@pytest.fixture()
+def _dangling_qanimations(monkeypatch, request):
     from qtpy.QtCore import QPropertyAnimation
 
     base_start = QPropertyAnimation.start
@@ -761,10 +717,10 @@ def pytest_runtest_setup(item):
 
         item.fixturenames.extend(
             [
-                'dangling_qthread_pool',
-                'dangling_qanimations',
-                'dangling_qthreads',
-                'dangling_qtimers',
+                '_dangling_qthread_pool',
+                '_dangling_qanimations',
+                '_dangling_qthreads',
+                '_dangling_qtimers',
             ]
         )
 

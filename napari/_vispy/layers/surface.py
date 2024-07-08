@@ -89,13 +89,11 @@ class VispySurfaceLayer(VispyBaseLayer):
             vertex_values=vertex_values,
             vertex_colors=vertex_colors,
         )
-
         # disable normals in 2D to avoid shape errors
         if self.layer._slice_input.ndisplay == 2:
             self._meshdata = MeshData()
         else:
             self._meshdata = self.node.mesh_data
-
         self._on_face_normals_change()
         self._on_vertex_normals_change()
 
@@ -203,8 +201,10 @@ class VispySurfaceLayer(VispyBaseLayer):
             view = np.array(camera.view_direction)[::-1]
             # combine to get light behind the camera on the top right
             self._light_direction = view - up + np.cross(up, view)
-
-        if self.node.shading_filter is not None:
+        if (
+            self.node.shading_filter is not None
+            and self._meshdata._vertices is not None
+        ):
             self.node.shading_filter.light_dir = self._light_direction
 
     def reset(self, event=None):

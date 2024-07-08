@@ -1,7 +1,8 @@
 import inspect
 import operator
+from collections.abc import Sequence
 from enum import auto
-from typing import ClassVar, List, Protocol, Sequence, Union, runtime_checkable
+from typing import ClassVar, Protocol, Union, runtime_checkable
 from unittest.mock import Mock
 
 import dask.array as da
@@ -10,7 +11,7 @@ import pytest
 from dask import delayed
 from dask.delayed import Delayed
 
-from napari._pydantic_compat import Field
+from napari._pydantic_compat import Field, ValidationError
 from napari.utils.events import EmitterGroup, EventedModel
 from napari.utils.events.custom_types import Array
 from napari.utils.misc import StringEnum
@@ -106,7 +107,7 @@ def test_evented_model_with_array():
     )
 
     # try changing shape to something impossible to correctly reshape
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError, match='cannot reshape'):
         model.shaped2_values = [1]
 
 
@@ -438,7 +439,7 @@ class T(EventedModel):
     b: int = 1
 
     @property
-    def c(self) -> List[int]:
+    def c(self) -> list[int]:
         return [self.a, self.b]
 
     @c.setter
@@ -495,7 +496,7 @@ def mocked_object():
 
 
 @pytest.mark.parametrize(
-    'attribute,value,expected_event_values',
+    ('attribute', 'value', 'expected_event_values'),
     [
         ('a', 5, {'a': 5, 'b': None, 'c': [5, 1], 'd': 6, 'e': 50}),
         ('b', 5, {'a': None, 'b': 5, 'c': [1, 5], 'd': 6, 'e': None}),
@@ -549,7 +550,9 @@ def test_evented_model_with_provided_dependencies():
     t.events.b.assert_called_with(value=4)
 
     # should fail if property does not exist
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match='Fields with dependencies must be properties'
+    ):
 
         class T(EventedModel):
             a: int = 1

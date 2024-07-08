@@ -1,7 +1,6 @@
 import bisect
 from decimal import Decimal
 from math import floor, log
-from typing import Tuple
 
 import numpy as np
 import pint
@@ -48,7 +47,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
     def _calculate_best_length(
         self, desired_length: float
-    ) -> Tuple[float, pint.Quantity]:
+    ) -> tuple[float, pint.Quantity]:
         """Calculate new quantity based on the pixel length of the bar.
 
         Parameters
@@ -143,8 +142,11 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
                 # set scale color negative of theme background.
                 # the reason for using the `as_hex` here is to avoid
                 # `UserWarning` which is emitted when RGB values are above 1
-                if self.node.parent is not None and self.node.parent.bgcolor:
-                    background_color = self.node.parent.bgcolor.rgba
+                if (
+                    self.node.parent is not None
+                    and self.node.parent.canvas.bgcolor
+                ):
+                    background_color = self.node.parent.canvas.bgcolor.rgba
                 else:
                     background_color = get_theme(
                         self.viewer.theme

@@ -15,8 +15,8 @@ in napari/_tests/test_magicgui.py
 from __future__ import annotations
 
 import weakref
-from functools import lru_cache, partial
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Type
+from functools import cache, partial
+from typing import TYPE_CHECKING, Any, Optional
 
 from typing_extensions import get_args
 
@@ -33,7 +33,7 @@ if TYPE_CHECKING:
     from napari.viewer import Viewer
 
 
-def add_layer_data_to_viewer(gui: FunctionGui, result: Any, return_type: Type):
+def add_layer_data_to_viewer(gui: FunctionGui, result: Any, return_type: type):
     """Show a magicgui result in the viewer.
 
     This function will be called when a magicgui-decorated function has a
@@ -61,7 +61,7 @@ def add_layer_data_to_viewer(gui: FunctionGui, result: Any, return_type: Type):
     ...     return np.random.rand(256, 256)
 
     """
-    from napari._app_model.injection._processors import (
+    from napari._qt._qapp_model.injection._qprocessors import (
         _add_layer_data_to_viewer,
     )
 
@@ -107,7 +107,7 @@ def add_layer_data_tuples_to_viewer(gui, result, return_type):
     ...     return [(np.ones((10,10)), {'name': 'hi'})]
 
     """
-    from napari._app_model.injection._processors import (
+    from napari._qt._qapp_model.injection._qprocessors import (
         _add_layer_data_tuples_to_viewer,
     )
 
@@ -193,7 +193,7 @@ def add_future_data(gui, future: Future, return_type, _from_tuple=True):
         (only for internal use). True if the future returns `LayerDataTuple`,
         False if it returns one of the `LayerData` types.
     """
-    from napari._app_model.injection._processors import _add_future_data
+    from napari._qt._qapp_model.injection._qprocessors import _add_future_data
 
     if viewer := find_viewer_ancestor(gui):
         _add_future_data(
@@ -250,7 +250,7 @@ def proxy_viewer_ancestor(widget) -> Optional[PublicOnlyProxy[Viewer]]:
     return None
 
 
-def get_layers(gui: CategoricalWidget) -> List[Layer]:
+def get_layers(gui: CategoricalWidget) -> list[Layer]:
     """Retrieve layers matching gui.annotation, from the Viewer the gui is in.
 
     Parameters
@@ -279,7 +279,7 @@ def get_layers(gui: CategoricalWidget) -> List[Layer]:
     return []
 
 
-def get_layers_data(gui: CategoricalWidget) -> List[Tuple[str, Any]]:
+def get_layers_data(gui: CategoricalWidget) -> list[tuple[str, Any]]:
     """Retrieve layers matching gui.annotation, from the Viewer the gui is in.
 
     As opposed to `get_layers`, this function returns just `layer.data` rather
@@ -323,7 +323,7 @@ def get_layers_data(gui: CategoricalWidget) -> List[Tuple[str, Any]]:
     return choices
 
 
-@lru_cache(maxsize=None)
+@cache
 def _make_choice_data_setter(gui: CategoricalWidget, choice_name: str):
     """Return a function that sets the ``data`` for ``choice_name`` in ``gui``.
 
@@ -343,7 +343,7 @@ def _make_choice_data_setter(gui: CategoricalWidget, choice_name: str):
     return setter
 
 
-def add_layer_to_viewer(gui, result: Any, return_type: Type[Layer]) -> None:
+def add_layer_to_viewer(gui, result: Any, return_type: type[Layer]) -> None:
     """Show a magicgui result in the viewer.
 
     Parameters
@@ -365,11 +365,11 @@ def add_layer_to_viewer(gui, result: Any, return_type: Type[Layer]) -> None:
     ...     return napari.layers.Image(np.random.rand(64, 64))
 
     """
-    add_layers_to_viewer(gui, [result], List[return_type])
+    add_layers_to_viewer(gui, [result], list[return_type])
 
 
 def add_layers_to_viewer(
-    gui: FunctionGui[Any], result: Any, return_type: Type[List[Layer]]
+    gui: FunctionGui[Any], result: Any, return_type: type[list[Layer]]
 ) -> None:
     """Show a magicgui result in the viewer.
 
@@ -392,7 +392,9 @@ def add_layers_to_viewer(
     ...     return napari.layers.Image(np.random.rand(64, 64))
 
     """
-    from napari._app_model.injection._processors import _add_layer_to_viewer
+    from napari._qt._qapp_model.injection._qprocessors import (
+        _add_layer_to_viewer,
+    )
 
     viewer = find_viewer_ancestor(gui)
     if not viewer:

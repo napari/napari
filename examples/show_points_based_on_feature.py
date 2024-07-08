@@ -4,7 +4,6 @@ Show points based on feature
 
 .. tags:: visualization-advanced
 """
-#!/usr/bin/env python3
 
 import numpy as np
 from magicgui import magicgui

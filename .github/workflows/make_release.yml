@@ -32,7 +32,7 @@ jobs:
         id: release_notes
         run: |
           TAG="${GITHUB_REF/refs\/tags\/v/}"  # clean tag
-          if [[ "$TAG" != *"rc"* ]]; then
+          if [[ "$TAG" != *"rc"* && "$TAG" != *"a"* && "$TAG" != *"b"* ]]; then
             VER="${TAG/rc*/}"  # remove pre-release identifier
             RELEASE_NOTES="$(cat docs/release/release_${VER//./_}.md)"
             # https://github.community/t5/GitHub-Actions/set-output-Truncates-Multiline-Strings/m-p/38372/highlight/true#M3322
@@ -44,15 +44,33 @@ jobs:
           fi
           echo "tag=${TAG}" >> $GITHUB_ENV
           # https://help.github.com/en/actions/reference/workflow-commands-for-github-actions
-          echo "name=contents=${RELEASE_NOTES}" >> $GITHUB_ENV
+          echo "contents=${RELEASE_NOTES}" >> "$GITHUB_OUTPUT"
+
+      - name: check if prerelease
+        id: prerelease
+        run: |
+          regex='^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+([ab][0-9]+|rc[0-9]+)$'
+
+          check_version() {
+              if [[ $1 =~ $regex ]]; then
+                  echo "true"
+              else
+                  echo "false"
+              fi
+          }
+          echo ${{ github.ref }}
+          check_version ${{ github.ref }}
+          echo "prerelease=$(check_version ${{ github.ref }})" >> "$GITHUB_OUTPUT"
+        shell: bash
+
       - name: Create Release
-        uses: "softprops/action-gh-release@v1"
+        uses: "softprops/action-gh-release@v2"
         with:
           tag_name: ${{ github.ref }}
           name: ${{ env.tag }}
           body: ${{ steps.release_notes.outputs.contents }}
           draft: false
-          prerelease: ${{ contains(github.ref, 'rc') }}
+          prerelease: ${{ steps.prerelease.outputs.prerelease  == 'true' }}
           files: |
             dist/*
       - name: Publish PyPI Package
