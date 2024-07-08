@@ -3,7 +3,6 @@ from collections import deque
 from collections.abc import Sequence
 from contextlib import contextmanager
 from typing import (
-    Any,
     Callable,
     ClassVar,
     Optional,

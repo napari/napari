@@ -2,7 +2,7 @@
 # from napari.utils.events import Event
 # from napari.utils.colormaps import AVAILABLE_COLORMAPS
 
-from typing import Any, Optional, Union
+from typing import Optional, Union
 from warnings import warn
 
 import numpy as np
