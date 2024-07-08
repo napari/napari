@@ -446,7 +446,7 @@ class Tracks(Layer):
     @property
     def properties_to_color_by(self) -> list[str]:
         """track properties that can be used for coloring etc..."""
-        return self.features_to_color_by()
+        return self.features_to_color_by
 
     @property
     def features_to_color_by(self) -> list[str]:
