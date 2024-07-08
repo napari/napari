@@ -203,9 +203,8 @@ class Tracks(Layer):
         # set the data, features, and graph
         self.data = data
         if properties is not None:
-            self.properties = properties
-        else:
-            self.features = features
+            features = properties
+        self.features = features
         self.graph = graph or {}
 
         self.color_by = color_by
@@ -391,7 +390,7 @@ class Tracks(Layer):
         self._manager.data = data
         self._manager.build_tracks()
 
-        # reset the properties and recolor the tracks
+        # reset the features and recolor the tracks
         self.features = {}
         self._recolor_tracks()
 
@@ -538,11 +537,11 @@ class Tracks(Layer):
 
     @color_by.setter
     def color_by(self, color_by: str):
-        """set the property to color vertices by"""
-        if color_by not in self.properties_to_color_by:
+        """set the feature to color vertices by"""
+        if color_by not in self.features_to_color_by:
             raise ValueError(
                 trans._(
-                    '{color_by} is not a valid property key',
+                    '{color_by} is not a valid feature key',
                     deferred=True,
                     color_by=color_by,
                 )
@@ -585,14 +584,14 @@ class Tracks(Layer):
         """recolor the tracks"""
 
         # this catch prevents a problem coloring the tracks if the data is
-        # updated before the properties are. properties should always contain
+        # updated before the features are. features should always contain
         # a track_id key
-        if self.color_by not in self.properties_to_color_by:
+        if self.color_by not in self.features_to_color_by:
             self._color_by = 'track_id'
             self.events.color_by()
 
         # if we change the coloring, rebuild the vertex colors array
-        vertex_properties = self._manager.vertex_properties(self.color_by)
+        vertex_features = self._manager.vertex_features(self.color_by)
 
         def _norm(p):
             return (p - np.min(p)) / np.max([1e-10, np.ptp(p)])
@@ -602,10 +601,10 @@ class Tracks(Layer):
         else:
             # if we don't have a colormap, get one and scale the properties
             colormap = AVAILABLE_COLORMAPS[self.colormap]
-            vertex_properties = _norm(vertex_properties)
+            vertex_features = _norm(vertex_features)
 
         # actually set the vertex colors
-        self._track_colors = colormap.map(vertex_properties)
+        self._track_colors = colormap.map(vertex_features)
 
     @property
     def track_connex(self) -> Optional[np.ndarray]:
