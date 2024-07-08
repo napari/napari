@@ -569,7 +569,28 @@ class NewQtLayerControls(
         # buttons to change when the layer control width changes
         self._buttons_grid.setColumnStretch(0, 1)
         self._button_group = QButtonGroup(self)
-
+        self.panzoom_button = self._add_radio_button_mode(
+            'pan',
+            self.MODE.PAN_ZOOM,
+            self.PAN_ZOOM_ACTION_NAME,
+            1,
+            7,
+            extra_tooltip_text=trans._('(or hold Space)'),
+            checked=True,
+        )
+        self.transform_button = self._add_radio_button_mode(
+            'transform',
+            self.MODE.TRANSFORM,
+            self.TRANSFORM_ACTION_NAME,
+            1,
+            8,
+            edit_button=True,
+            extra_tooltip_text=trans._(
+                '\nAlt + Left mouse click over this button to reset'
+            ),
+        )
+        self.transform_button.installEventFilter(self)
+        self._on_editable_or_visible_change()
         # Setup layer controls sections
         self._annotation_controls_section = QtCollapsibleLayerControlsSection(
             trans._('annotation')

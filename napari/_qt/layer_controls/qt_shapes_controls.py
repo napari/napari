@@ -138,33 +138,33 @@ class QtShapesControls(NewQtLayerControls):
         self._add_radio_button_mode(
             'rectangle',
             Mode.ADD_RECTANGLE,
-            True,
             'activate_add_rectangle_mode',
             2,
             4,
+            edit_button=True,
         )
         # ellipse_button
         self._add_radio_button_mode(
             'ellipse',
             Mode.ADD_ELLIPSE,
-            True,
             'activate_add_ellipse_mode',
             2,
             3,
+            edit_button=True,
         )
         # select_button
         self._add_radio_button_mode(
-            'select', Mode.SELECT, 'activate_select_mode', 1, 7
+            'select', Mode.SELECT, 'activate_select_mode', 1, 6
         )
         # direct_button
         self._add_radio_button_mode(
-            'direct', Mode.DIRECT, 'activate_direct_mode', 1, 6
+            'direct', Mode.DIRECT, 'activate_direct_mode', 1, 5
         )
         # delete_button
         self._add_push_button_action(
             'delete_shape',
             1,
-            5,
+            4,
             slot=self._layer.remove_selected,
             tooltip=trans._(
                 'Delete selected shapes ({shortcut})',
@@ -175,19 +175,19 @@ class QtShapesControls(NewQtLayerControls):
         self._add_radio_button_mode(
             'vertex_insert',
             Mode.VERTEX_INSERT,
-            True,
             'activate_vertex_insert_mode',
             1,
-            4,
+            3,
+            edit_button=True,
         )
         # vertex_remove_button
         self._add_radio_button_mode(
             'vertex_remove',
             Mode.VERTEX_REMOVE,
-            True,
             'activate_vertex_remove_mode',
             1,
-            3,
+            2,
+            edit_button=True,
         )
         # move_front_button
         self._add_push_button_action(
