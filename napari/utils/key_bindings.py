@@ -59,6 +59,15 @@ Keymap = Mapping[
 # global user keymap; to be made public later in refactoring process
 USER_KEYMAP: Mapping[str, Callable] = {}
 
+# napari 0.4.19 used Control to denote Control (Win/Linux) *or* Command (Mac)
+# from napari 0.5.0 onwards, the representation is OS-specific, so Control
+# (Ctrl) always means Control, and Meta means Command on Mac.
+# To convert 0.4.19 keybindings to 0.5.0 keybindings, *if* we are on a Mac,
+# we convert Meta to Ctrl, then Control to Meta.
+KEY_SUBS_TO_MAC = {
+    'Meta': 'Ctrl',
+    'Control': 'Meta',
+}
 KEY_SUBS = {
     'Control': 'Ctrl',
     'Option': 'Alt',
@@ -111,7 +120,9 @@ _VISPY_MODS = {
 KeyBinding.__hash__ = lambda self: hash(str(self))
 
 
-def coerce_keybinding(key_bind: KeyBindingLike) -> KeyBinding:
+def coerce_keybinding(
+    key_bind: KeyBindingLike, translate_os=False
+) -> KeyBinding:
     """Convert a keybinding-like object to a KeyBinding.
 
     Parameters
