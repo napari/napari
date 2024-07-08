@@ -29,3 +29,36 @@ jobs:
         run: |
           echo "Please add a milestone to this PR"
           exit 1
+
+  check_recent_mliestone:
+    name: Check recent milestone
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check milestone for closest due date
+        if: github.event.pull_request.milestone == null
+        run: |
+          # Install GitHub CLI if necessary
+          # sudo apt-get install -y gh
+
+          # Fetch the closest future milestone
+          CLOSEST_MILESTONE=$(gh api graphql -f query='
+            query($repoName: String!, $repoOwner: String!) {
+              repository(name: $repoName, owner: $repoOwner) {
+                milestones(states: OPEN, orderBy: {field: DUE_DATE, direction: ASC}, first: 100) {
+                  nodes {
+                    title
+                    number
+                    dueOn
+                  }
+                }
+              }
+            }' --jq '.data.repository.milestones.nodes | map(select(.dueOn >= now)) | .[0].number' -f repoName="${{ github.repository }}" -f repoOwner="${{ github.repository_owner }}")
+
+          # Extract the milestone number of the current PR
+          PR_MILESTONE_NUMBER=$(gh api /repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }} --jq '.milestone.number')
+
+          # Check if the PR's milestone is the closest future milestone
+          if [ "$CLOSEST_MILESTONE" != "$PR_MILESTONE_NUMBER" ]; then
+            echo "The milestone set for this PR is not the one with the closest due date."
+            exit 1
+          fi
