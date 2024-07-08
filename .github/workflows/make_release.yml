@@ -38,9 +38,9 @@ jobs:
         id: release_notes
         run: |
           TAG="${GITHUB_REF/refs\/tags\/v/}"  # clean tag
-          VER="${VER/a*/}"  # remove alpha identifier
+          VER="${TAG/a*/}"  # remove alpha identifier
           VER="${VER/b*/}"  # remove beta identifier
-          VER="${TAG/rc*/}"  # remove rc identifier
+          VER="${VER/rc*/}"  # remove rc identifier
           RELEASE_NOTES_PATH="docs/release/release_${VER//./_}.md"
 
           echo "tag=${TAG}" >> $GITHUB_ENV
