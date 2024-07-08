@@ -523,14 +523,19 @@ def test_create_layer_controls_transform_mode_button(
     # check transform mode button existence
     assert ctrl.transform_button
 
+    # TODO: Simplify after only new base layer class exists
+    layer = getattr(ctrl, 'layer', None)
+    if layer is None:
+        layer = ctrl._layer
+
     # check layer mode change
-    assert ctrl.layer.mode == 'pan_zoom'
+    assert layer.mode == 'pan_zoom'
     ctrl.transform_button.click()
-    assert ctrl.layer.mode == 'transform'
+    assert layer.mode == 'transform'
 
     # check reset transform behavior
-    ctrl.layer.affine = None
-    assert ctrl.layer.affine != ctrl.layer._initial_affine
+    layer.affine = None
+    assert layer.affine != layer._initial_affine
 
     def reset_transform_warning_dialog(*args):
         return QMessageBox.Yes
@@ -543,7 +548,7 @@ def test_create_layer_controls_transform_mode_button(
         Qt.LeftButton,
         Qt.KeyboardModifier.AltModifier,
     )
-    assert ctrl.layer.affine == ctrl.layer._initial_affine
+    assert layer.affine == layer._initial_affine
 
 
 @pytest.mark.parametrize(
@@ -570,8 +575,13 @@ def test_layer_controls_invalid_mode(
     # check create widget corresponds to the expected class for each type of layer
     assert isinstance(ctrl, layer_type_with_data.expected_isinstance)
 
+    # TODO: Simplify after only new base layer class exists
+    layer = getattr(ctrl, 'layer', None)
+    if layer is None:
+        layer = ctrl._layer
+
     # check layer mode and corresponding mode button
-    assert ctrl.layer.mode == 'pan_zoom'
+    assert layer.mode == 'pan_zoom'
     assert ctrl.panzoom_button.isChecked()
 
     # check setting invalid mode

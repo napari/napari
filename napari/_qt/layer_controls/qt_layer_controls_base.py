@@ -511,10 +511,11 @@ class NewQtLayerControls(
         Raise error if layer mode is not recognized.
     """
 
-    # Enable setting specific Mode enum type but also define as
-    # default one the base one with only PAN_ZOOM and TRANSFORM values
-    # to create base buttons
-    def __init__(self, layer: Layer, mode_options: StringEnum = Mode) -> None:
+    MODE = Mode
+    PAN_ZOOM_ACTION_NAME = ''
+    TRANSFORM_ACTION_NAME = ''
+
+    def __init__(self, layer: Layer) -> None:
         # TODO: Restore super call without args
         # super().__init__()
         super(QtLayerControls, self).__init__()
@@ -524,7 +525,6 @@ class NewQtLayerControls(
         self._ndisplay: int = 2
         self._widget_controls: list = []
         self._layer = layer
-        self._mode_options = mode_options
 
         # Layer base events connection
         self._layer.events.editable.connect(
@@ -591,6 +591,7 @@ class NewQtLayerControls(
         )
         self.transform_button.installEventFilter(self)
         self._on_editable_or_visible_change()
+
         # Setup layer controls sections
         self._annotation_controls_section = QtCollapsibleLayerControlsSection(
             trans._('annotation')
@@ -812,7 +813,7 @@ class NewQtLayerControls(
         """
         if event.mode in self._mode_buttons:
             self._mode_buttons[event.mode].setChecked(True)
-        elif event.mode != self._mode_options.TRANSFORM:
+        else:
             raise ValueError(
                 trans._("Mode '{mode}' not recognized", mode=event.mode)
             )
@@ -855,6 +856,22 @@ class NewQtLayerControls(
         This is needed because some layer controls may have options that are specific
         to 2D or 3D visualization only.
         """
+        self._set_transform_tool_state()
+
+    def _set_transform_tool_state(self):
+        """
+        Enable/disable transform button taking into account:
+            * Layer visibility.
+            * Layer editability.
+            * Number of dimensions being displayed.
+        """
+        set_widgets_enabled_with_opacity(
+            self,
+            [self.transform_button],
+            self._layer.editable
+            and self._layer.visible
+            and self.ndisplay == 2,
+        )
 
     @property
     def ndisplay(self) -> int:
@@ -939,6 +956,31 @@ class NewQtLayerControls(
         """
         self._annotation_controls_section.setThemedIcons(event)
         self._display_controls_section.setThemedIcons(event)
+
+    def eventFilter(self, qobject, event):
+        """
+        Event filter implementation to handle the Alt + Left mouse click interaction to
+        reset the layer transform.
+
+        For more info about Qt Event Filters you can check:
+            https://doc.qt.io/qt-6/eventsandfilters.html#event-filters
+        """
+        if (
+            qobject == self.transform_button
+            and event.type() == QMouseEvent.MouseButtonRelease
+            and event.button() == Qt.MouseButton.LeftButton
+            and event.modifiers() == Qt.AltModifier
+        ):
+            result = QMessageBox.warning(
+                self,
+                trans._('Reset transform'),
+                trans._('Are you sure you want to reset transforms?'),
+                QMessageBox.Yes | QMessageBox.No,
+            )
+            if result == QMessageBox.Yes:
+                self._layer._reset_affine()
+                return True
+        return super().eventFilter(qobject, event)
 
     def deleteLater(self) -> None:
         disconnect_events(self._layer.events, self)

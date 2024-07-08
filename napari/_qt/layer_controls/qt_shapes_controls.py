@@ -85,31 +85,17 @@ class QtShapesControls(NewQtLayerControls):
     """
 
     _layer: 'napari.layers.Shapes'
+    # Shapes Mode enum counts with the following modes:
+    #    SELECT, DIRECT, PAN_ZOOM, ADD_RECTANGLE, ADD_ELLIPSE, ADD_LINE,
+    #    ADD_PATH, ADD_POLYGON, VERTEX_INSERT, VERTEX_REMOVE
     MODE = Mode
     PAN_ZOOM_ACTION_NAME = 'activate_shapes_pan_zoom_mode'
     TRANSFORM_ACTION_NAME = 'activate_shapes_transform_mode'
 
     def __init__(self, layer: 'napari.layers.Shapes') -> None:
-        # Shapes Mode enum counts with the following modes:
-        #    SELECT, DIRECT, PAN_ZOOM, ADD_RECTANGLE, ADD_ELLIPSE, ADD_LINE,
-        #    ADD_PATH, ADD_POLYGON, VERTEX_INSERT, VERTEX_REMOVE
-        super().__init__(
-            layer, mode_options=Mode
-        )  # TODO: Change from kwarg to class attribute to handle `MODE`
+        super().__init__(layer)
 
         # Setup mode buttons
-        # TODO: Move to use class attribute value for action id for pan/zoom button
-        # panzoom_button
-        # self._add_radio_button_mode(
-        #    'pan_zoom',
-        #    Mode.PAN_ZOOM,
-        #    'activate_shapes_pan_zoom_mode',
-        #    1,
-        #    8,
-        #    extra_tooltip_text=trans._('(or hold Space)'),
-        #    edit_button=False,
-        #    checked=True,
-        # )
         # path_button
         self._add_radio_button_mode(
             'path', Mode.ADD_PATH, 'activate_add_path_mode', 2, 8
