@@ -43,8 +43,8 @@ jobs:
           VER="${TAG/rc*/}"  # remove rc identifier
           RELEASE_NOTES_PATH="docs/release/release_${VER//./_}.md"
 
-          echo "tag=${TAG}" >> $GITHUB_ENV
-          echo "release_notes_path=${RELEASE_NOTES_PATH}" >> $GITHUB_ENV
+          echo "tag=${TAG}" >> "$GITHUB_ENV"
+          echo "release_notes_path=${RELEASE_NOTES_PATH}" >> "$GITHUB_ENV"
 
       - name: Create Release
         uses: "softprops/action-gh-release@v2"
