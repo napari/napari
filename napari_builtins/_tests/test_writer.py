@@ -45,12 +45,8 @@ def test_layer_save(tmp_path: Path, some_layer: 'layers.Layer', use_ext: bool):
         assert type_string == some_layer._type_string
         for key, value in meta.items():  # type: ignore
             expected = getattr(some_layer, key)
-            if isinstance(value, pd.DataFrame) or isinstance(
-                expected, pd.DataFrame
-            ):
-                pd.testing.assert_frame_equal(
-                    pd.DataFrame(value), pd.DataFrame(expected)
-                )
+            if isinstance(expected, pd.DataFrame):
+                pd.testing.assert_frame_equal(pd.DataFrame(value), expected)
             else:
                 np.testing.assert_equal(value, expected)
 
