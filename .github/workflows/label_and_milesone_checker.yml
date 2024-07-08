@@ -35,7 +35,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check milestone for closest due date
-        if: github.event.pull_request.milestone == null
         run: |
           # Install GitHub CLI if necessary
           # sudo apt-get install -y gh
