@@ -48,6 +48,8 @@ jobs:
 
           echo "tag=${TAG}" >> $GITHUB_ENV
           echo "release_notes_path=${RELEASE_NOTES_PATH}" >> $GITHUB_ENV
+          echo tag: ${TAG}
+          echo release_notes_path: ${RELEASE_NOTES_PATH}
 
       - name: Debug print
         run: |
