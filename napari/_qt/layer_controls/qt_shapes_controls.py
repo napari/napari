@@ -1,11 +1,6 @@
 from typing import TYPE_CHECKING
 
-import numpy as np
-from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QCheckBox
-
 from napari._qt.layer_controls.qt_layer_controls_base import NewQtLayerControls
-from napari._qt.utils import qt_signals_blocked
 from napari._qt.layer_controls.widgets import (
     QtEdgeColorControl,
     QtEdgeWidthSliderControl,
@@ -98,7 +93,9 @@ class QtShapesControls(NewQtLayerControls):
         # Shapes Mode enum counts with the following modes:
         #    SELECT, DIRECT, PAN_ZOOM, ADD_RECTANGLE, ADD_ELLIPSE, ADD_LINE,
         #    ADD_PATH, ADD_POLYGON, VERTEX_INSERT, VERTEX_REMOVE
-        super().__init__(layer, mode_options=Mode)  # TODO: Change from kwarg to class attribute to handle `MODE`
+        super().__init__(
+            layer, mode_options=Mode
+        )  # TODO: Change from kwarg to class attribute to handle `MODE`
 
         # Setup mode buttons
         # TODO: Move to use class attribute value for action id for pan/zoom button
@@ -112,7 +109,7 @@ class QtShapesControls(NewQtLayerControls):
         #    extra_tooltip_text=trans._('(or hold Space)'),
         #    edit_button=False,
         #    checked=True,
-        #)
+        # )
         # path_button
         self._add_radio_button_mode(
             'path', Mode.ADD_PATH, 'activate_add_path_mode', 2, 8
