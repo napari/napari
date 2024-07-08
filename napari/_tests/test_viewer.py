@@ -385,6 +385,18 @@ def test_current_viewer(make_napari_viewer):
     assert current_viewer() is not viewer2
 
 
+@pytest.mark.parametrize('n_viewers', [1, 2, 3, 4])
+def test_close_all(n_viewers, make_napari_viewer):
+    """Test that close all closes multiple viewers"""
+
+    # Make several viewers
+    viewers = [make_napari_viewer() for _ in range(n_viewers)]
+    last_viewer = viewers[-1]
+
+    # Ensure the last viewer closes all
+    assert last_viewer.close_all() == n_viewers
+
+
 def test_reset_empty(make_napari_viewer):
     """
     Test that resetting an empty viewer doesn't crash

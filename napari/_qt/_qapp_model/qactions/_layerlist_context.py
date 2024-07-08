@@ -1,3 +1,5 @@
+"""Qt 'Layer' menu Actions."""
+
 from __future__ import annotations
 
 import json
@@ -16,7 +18,7 @@ from napari.layers import Layer
 from napari.utils.notifications import show_warning
 from napari.utils.translations import trans
 
-__all__ = ('Q_LAYER_ACTIONS', 'is_valid_spatial_in_clipboard')
+__all__ = ('Q_LAYERLIST_CONTEXT_ACTIONS', 'is_valid_spatial_in_clipboard')
 
 
 def _numpy_to_list(d: dict) -> dict:
@@ -136,47 +138,47 @@ def is_valid_spatial_in_clipboard() -> bool:
     )
 
 
-Q_LAYER_ACTIONS = [
+Q_LAYERLIST_CONTEXT_ACTIONS = [
     Action(
         id='napari.layer.copy_all_to_clipboard',
         title=trans._('Copy all to clipboard'),
         callback=_copy_spatial_to_clipboard,
-        menus=[{'id': MenuId.LAYERS_COPY_SPATIAL}],
+        menus=[{'id': MenuId.LAYERS_CONTEXT_COPY_SPATIAL}],
         enablement=(LLSCK.num_selected_layers == 1),
     ),
     Action(
         id='napari.layer.copy_affine_to_clipboard',
         title=trans._('Copy affine to clipboard'),
         callback=_copy_affine_to_clipboard,
-        menus=[{'id': MenuId.LAYERS_COPY_SPATIAL}],
+        menus=[{'id': MenuId.LAYERS_CONTEXT_COPY_SPATIAL}],
         enablement=(LLSCK.num_selected_layers == 1),
     ),
     Action(
         id='napari.layer.copy_rotate_to_clipboard',
         title=trans._('Copy rotate to clipboard'),
         callback=_copy_rotate_to_clipboard,
-        menus=[{'id': MenuId.LAYERS_COPY_SPATIAL}],
+        menus=[{'id': MenuId.LAYERS_CONTEXT_COPY_SPATIAL}],
         enablement=(LLSCK.num_selected_layers == 1),
     ),
     Action(
         id='napari.layer.copy_scale_to_clipboard',
         title=trans._('Copy scale to clipboard'),
         callback=_copy_scale_to_clipboard,
-        menus=[{'id': MenuId.LAYERS_COPY_SPATIAL}],
+        menus=[{'id': MenuId.LAYERS_CONTEXT_COPY_SPATIAL}],
         enablement=(LLSCK.num_selected_layers == 1),
     ),
     Action(
         id='napari.layer.copy_shear_to_clipboard',
         title=trans._('Copy shear to clipboard'),
         callback=_copy_shear_to_clipboard,
-        menus=[{'id': MenuId.LAYERS_COPY_SPATIAL}],
+        menus=[{'id': MenuId.LAYERS_CONTEXT_COPY_SPATIAL}],
         enablement=(LLSCK.num_selected_layers == 1),
     ),
     Action(
         id='napari.layer.copy_translate_to_clipboard',
         title=trans._('Copy translate to clipboard'),
         callback=_copy_translate_to_clipboard,
-        menus=[{'id': MenuId.LAYERS_COPY_SPATIAL}],
+        menus=[{'id': MenuId.LAYERS_CONTEXT_COPY_SPATIAL}],
         enablement=(LLSCK.num_selected_layers == 1),
     ),
     Action(

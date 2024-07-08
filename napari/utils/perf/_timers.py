@@ -229,7 +229,7 @@ def block_timer(
     if timers:
         timers.add_event(event)
     if print_time:
-        print(f'{name} {event.duration_ms:.3f}ms')
+        print(f'{name} {event.duration_ms:.3f}ms')  # noqa: T201
 
 
 class DummyTimer:
@@ -237,6 +237,9 @@ class DummyTimer:
     An empty timer to use when perfmon is disabled.
     It implements the same interface as PerfTimers.
     """
+
+    def __init__(self) -> None:
+        self.trace_file = None
 
     def add_instant_event(
         self, name: str, **kwargs: Union[str, float, None]
@@ -247,6 +250,12 @@ class DummyTimer:
         """empty timer to use when perfmon is disabled"""
 
     def add_event(self, event: PerfEvent) -> None:
+        """empty timer to use when perfmon is disabled"""
+
+    def start_trace_file(self, path: str) -> None:
+        """empty timer to use when perfmon is disabled"""
+
+    def stop_trace_file(self) -> None:
         """empty timer to use when perfmon is disabled"""
 
 

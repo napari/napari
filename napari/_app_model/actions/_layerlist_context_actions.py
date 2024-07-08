@@ -1,4 +1,4 @@
-"""This module defines actions (functions) that operate on layers.
+"""This module defines actions (functions) that operate on layers and its submenus.
 
 Among other potential uses, these will populate the menu when you right-click
 on a layer in the LayerList.
@@ -13,7 +13,7 @@ from __future__ import annotations
 from functools import partial
 from typing import TYPE_CHECKING
 
-from app_model.types import Action
+from app_model.types import Action, SubmenuItem
 
 from napari._app_model.constants import MenuGroup, MenuId
 from napari._app_model.context import LayerListSelectionContextKeys as LLSCK
@@ -22,6 +22,40 @@ from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from app_model.types import MenuRuleDict
+
+# Layer submenus
+LAYERLIST_CONTEXT_SUBMENUS = [
+    (
+        MenuId.LAYERLIST_CONTEXT,
+        SubmenuItem(
+            submenu=MenuId.LAYERS_CONTEXT_CONVERT_DTYPE,
+            title=trans._('Convert data type'),
+            group=MenuGroup.LAYERLIST_CONTEXT.CONVERSION,
+            order=None,
+            enablement=LLSCK.all_selected_layers_labels,
+        ),
+    ),
+    (
+        MenuId.LAYERLIST_CONTEXT,
+        SubmenuItem(
+            submenu=MenuId.LAYERS_CONTEXT_PROJECT,
+            title=trans._('Projections'),
+            group=MenuGroup.LAYERLIST_CONTEXT.SPLIT_MERGE,
+            order=None,
+            enablement=LLSCK.active_layer_is_image_3d,
+        ),
+    ),
+    (
+        MenuId.LAYERLIST_CONTEXT,
+        SubmenuItem(
+            submenu=MenuId.LAYERS_CONTEXT_COPY_SPATIAL,
+            title=trans._('Copy scale and transforms'),
+            group=MenuGroup.LAYERLIST_CONTEXT.COPY_SPATIAL,
+            order=None,
+            enablement=(LLSCK.num_selected_layers == 1),
+        ),
+    ),
+]
 
 # The following dicts define groups to which menu items in the layer list context menu can belong
 # see https://app-model.readthedocs.io/en/latest/types/#app_model.types.MenuRule for details
@@ -40,7 +74,7 @@ LAYERCTX_LINK: MenuRuleDict = {
 
 # Statically defined Layer actions.
 # modifying this list at runtime has no effect.
-LAYER_ACTIONS: list[Action] = [
+LAYERLIST_CONTEXT_ACTIONS: list[Action] = [
     Action(
         id='napari.layer.duplicate',
         title=trans._('Duplicate Layer'),
@@ -186,7 +220,7 @@ for _dtype in (
     'uint32',
     'uint64',
 ):
-    LAYER_ACTIONS.append(
+    LAYERLIST_CONTEXT_ACTIONS.append(
         Action(
             id=f'napari.layer.convert_to_{_dtype}',
             title=trans._('Convert to {dtype}', dtype=_dtype),
@@ -195,17 +229,17 @@ for _dtype in (
                 LLSCK.all_selected_layers_labels
                 & (LLSCK.active_layer_dtype != _dtype)
             ),
-            menus=[{'id': MenuId.LAYERS_CONVERT_DTYPE}],
+            menus=[{'id': MenuId.LAYERS_CONTEXT_CONVERT_DTYPE}],
         )
     )
 
 for mode in ('max', 'min', 'std', 'sum', 'mean', 'median'):
-    LAYER_ACTIONS.append(
+    LAYERLIST_CONTEXT_ACTIONS.append(
         Action(
             id=f'napari.layer.project_{mode}',
             title=trans._('{mode} projection', mode=mode),
             callback=partial(_layer_actions._project, mode=mode),
             enablement=LLSCK.active_layer_is_image_3d,
-            menus=[{'id': MenuId.LAYERS_PROJECT}],
+            menus=[{'id': MenuId.LAYERS_CONTEXT_PROJECT}],
         )
     )

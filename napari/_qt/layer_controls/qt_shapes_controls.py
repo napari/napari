@@ -1,6 +1,11 @@
 from typing import TYPE_CHECKING
 
+import numpy as np
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QCheckBox
+
 from napari._qt.layer_controls.qt_layer_controls_base import NewQtLayerControls
+from napari._qt.utils import qt_signals_blocked
 from napari._qt.layer_controls.widgets import (
     QtEdgeColorControl,
     QtEdgeWidthSliderControl,
@@ -24,35 +29,58 @@ class QtShapesControls(NewQtLayerControls):
     layer : napari.layers.Shapes
         An instance of a napari Shapes layer.
 
+    Attributes
+    ----------
+    layer : napari.layers.Shapes
+        An instance of a napari Shapes layer.
+    MODE : Enum
+        Available modes in the associated layer.
+    PAN_ZOOM_ACTION_NAME : str
+        String id for the pan-zoom action to bind to the pan_zoom button.
+    TRANSFORM_ACTION_NAME : str
+        String id for the transform action to bind to the transform button.
+    button_group : qtpy.QtWidgets.QButtonGroup
+        Button group for shapes layer modes
+        (SELECT, DIRECT, PAN_ZOOM, ADD_RECTANGLE, ADD_ELLIPSE, ADD_LINE,
+        ADD_PATH, ADD_POLYGON, VERTEX_INSERT, VERTEX_REMOVE, TRANSFORM).
+    edgeColorEdit : QColorSwatchEdit
+        Widget allowing user to set edge color of points.
+    faceColorEdit : QColorSwatchEdit
+        Widget allowing user to set face color of points.
+    textDispCheckBox : qtpy.QtWidgets.QCheckBox
+        Checkbox to control if text should be displayed
+
     Mode buttons
     ------------
     delete_button : napari._qt.widgets.qt_mode_buttons.QtModePushButton
         Button to delete selected shapes
-    direct_button : napari._qt.widgets.qt_mode_buttons.QtModeRadioButton
+    direct_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to select individual vertices in shapes.
-    ellipse_button : napari._qt.widgets.qt_mode_buttons.QtModeRadioButton
+    ellipse_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to add ellipses to shapes layer.
-    line_button : napari._qt.widgets.qt_mode_buttons.QtModeRadioButton
+    line_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to add lines to shapes layer.
     move_back_button : napari._qt.widgets.qt_mode_buttons.QtModePushButton
         Button to move selected shape(s) to the back.
     move_front_button : napari._qt.widgets.qt_mode_buttons.QtModePushButton
         Button to move shape(s) to the front.
-    panzoom_button : napari._qt.widgets.qt_mode_buttons.QtModeRadioButton
+    panzoom_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to pan/zoom shapes layer.
-    path_button : napari._qt.widgets.qt_mode_buttons.QtModeRadioButton
+    transform_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
+        Button to transform shapes layer.
+    path_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to add paths to shapes layer.
-    polygon_button : napari._qt.widgets.qt_mode_buttons.QtModeRadioButton
+    polygon_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to add polygons to shapes layer.
-    polygon_lasso_button : napari._qt.widgets.qt_mode_buttons.QtModeRadioButton
+    polygon_lasso_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to add polygons to shapes layer with a lasso tool.
-    rectangle_button : napari._qt.widgets.qt_mode_buttons.QtModeRadioButton
+    rectangle_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to add rectangles to shapes layer.
-    select_button : napari._qt.widgets.qt_mode_buttons.QtModeRadioButton
+    select_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to select shapes.
-    vertex_insert_button : napari._qt.widgets.qt_mode_buttons.QtModeRadioButton
+    vertex_insert_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to insert vertex into shape.
-    vertex_remove_button : napari._qt.widgets.qt_mode_buttons.QtModeRadioButton
+    vertex_remove_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to remove vertex from shapes.
 
     Raises
@@ -62,25 +90,29 @@ class QtShapesControls(NewQtLayerControls):
     """
 
     _layer: 'napari.layers.Shapes'
+    MODE = Mode
+    PAN_ZOOM_ACTION_NAME = 'activate_shapes_pan_zoom_mode'
+    TRANSFORM_ACTION_NAME = 'activate_shapes_transform_mode'
 
     def __init__(self, layer: 'napari.layers.Shapes') -> None:
         # Shapes Mode enum counts with the following modes:
         #    SELECT, DIRECT, PAN_ZOOM, ADD_RECTANGLE, ADD_ELLIPSE, ADD_LINE,
         #    ADD_PATH, ADD_POLYGON, VERTEX_INSERT, VERTEX_REMOVE
-        super().__init__(layer, mode_options=Mode)
+        super().__init__(layer, mode_options=Mode)  # TODO: Change from kwarg to class attribute to handle `MODE`
 
         # Setup mode buttons
+        # TODO: Move to use class attribute value for action id for pan/zoom button
         # panzoom_button
-        self._add_radio_button_mode(
-            'pan_zoom',
-            Mode.PAN_ZOOM,
-            'activate_shapes_pan_zoom_mode',
-            1,
-            8,
-            extra_tooltip_text=trans._('(or hold Space)'),
-            edit_button=False,
-            checked=True,
-        )
+        # self._add_radio_button_mode(
+        #    'pan_zoom',
+        #    Mode.PAN_ZOOM,
+        #    'activate_shapes_pan_zoom_mode',
+        #    1,
+        #    8,
+        #    extra_tooltip_text=trans._('(or hold Space)'),
+        #    edit_button=False,
+        #    checked=True,
+        #)
         # path_button
         self._add_radio_button_mode(
             'path', Mode.ADD_PATH, 'activate_add_path_mode', 2, 8
@@ -109,6 +141,7 @@ class QtShapesControls(NewQtLayerControls):
         self._add_radio_button_mode(
             'rectangle',
             Mode.ADD_RECTANGLE,
+            True,
             'activate_add_rectangle_mode',
             2,
             4,
@@ -117,6 +150,7 @@ class QtShapesControls(NewQtLayerControls):
         self._add_radio_button_mode(
             'ellipse',
             Mode.ADD_ELLIPSE,
+            True,
             'activate_add_ellipse_mode',
             2,
             3,
@@ -144,6 +178,7 @@ class QtShapesControls(NewQtLayerControls):
         self._add_radio_button_mode(
             'vertex_insert',
             Mode.VERTEX_INSERT,
+            True,
             'activate_vertex_insert_mode',
             1,
             4,
@@ -152,6 +187,7 @@ class QtShapesControls(NewQtLayerControls):
         self._add_radio_button_mode(
             'vertex_remove',
             Mode.VERTEX_REMOVE,
+            True,
             'activate_vertex_remove_mode',
             1,
             3,
@@ -189,5 +225,35 @@ class QtShapesControls(NewQtLayerControls):
         self.add_display_widget_controls(QtFaceColorControl(self, layer))
         self.add_display_widget_controls(QtTextVisibilityControl(self, layer))
 
+    def _on_mode_change(self, event):
+        """Update ticks in checkbox widgets when shapes layer mode changed.
+
+        Available modes for shapes layer are:
+        * SELECT
+        * DIRECT
+        * PAN_ZOOM
+        * ADD_RECTANGLE
+        * ADD_ELLIPSE
+        * ADD_LINE
+        * ADD_PATH
+        * ADD_POLYGON
+        * ADD_POLYGON_LASSO
+        * VERTEX_INSERT
+        * VERTEX_REMOVE
+        * TRANSFORM
+
+        Parameters
+        ----------
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
+
+        Raises
+        ------
+        ValueError
+            Raise error if event.mode is not one of the available modes.
+        """
+        super()._on_mode_change(event)
+
     def _on_ndisplay_changed(self) -> None:
         self._layer.editable = self.ndisplay == 2
+        super()._on_ndisplay_changed()

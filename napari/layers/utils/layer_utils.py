@@ -989,9 +989,7 @@ def _validate_features(
         # a pandas Series with mixed indices as input.
         # This way should handle all array-like objects correctly.
         # See https://github.com/napari/napari/pull/4755 for more details.
-        features = {
-            key: np.array(value, copy=False) for key, value in features.items()
-        }
+        features = {key: np.asarray(value) for key, value in features.items()}
     index = None if num_data is None else range(num_data)
     return pd.DataFrame(data=features, index=index)
 
