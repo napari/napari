@@ -607,9 +607,9 @@ class Vectors(Layer):
                         )
                     )
 
-            # ColorMode.COLORMAP can only be applied to numeric properties
+            # ColorMode.COLORMAP can only be applied to numeric features
             if (edge_color_mode == ColorMode.COLORMAP) and not issubclass(
-                self.properties[color_feature].dtype.type,
+                self.features[color_feature].dtype.type,
                 np.number,
             ):
                 raise TypeError(

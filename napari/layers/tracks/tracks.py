@@ -247,7 +247,7 @@ class Tracks(Layer):
         state.update(
             {
                 'data': self.data,
-                'properties': self.properties,
+                'properties': self._manager.properties,
                 'graph': self.graph,
                 'color_by': self.color_by,
                 'colormap': self.colormap,
@@ -446,7 +446,7 @@ class Tracks(Layer):
     @property
     def properties_to_color_by(self) -> list[str]:
         """track properties that can be used for coloring etc..."""
-        return list(self.properties.keys())
+        return self.features_to_color_by()
 
     @property
     def features_to_color_by(self) -> list[str]:
