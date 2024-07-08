@@ -51,12 +51,6 @@ jobs:
           echo tag: ${TAG}
           echo release_notes_path: ${RELEASE_NOTES_PATH}
 
-      - name: Debug print
-        run: |
-          echo "tag=${{ env.tag }}"
-          echo "release_notes_path=${{ env.release_notes_path }}"
-          ls -l docs/docs/release
-
       - name: Create Release
         uses: "softprops/action-gh-release@v2"
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
