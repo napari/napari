@@ -1548,8 +1548,6 @@ class Points(Layer):
                 unique_features[k] = _unique_element(v[index].to_numpy())
 
             if all(p is not None for p in unique_features.values()):
-                # TODO: check that this equivalent to previous code due to the
-                # block_update_properties above.
                 self.feature_defaults = unique_features
 
         self._set_highlight()
