@@ -72,17 +72,6 @@ jobs:
           semgrep --error --lang python --pattern 'trans._(f"...")' napari
           semgrep --error --lang python --pattern "trans._(\$X.format(...))" napari
 
-  actionlint:
-    name: Action lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Check workflow files
-        run: |
-          bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
-          ./actionlint -color -ignore SC2129
-        shell: bash
-
   build_wheel:
     name: Build wheel
     uses: ./.github/workflows/reusable_build_wheel.yml
