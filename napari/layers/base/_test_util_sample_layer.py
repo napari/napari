@@ -1,3 +1,5 @@
+from typing import Any
+
 import numpy as np
 
 from napari.layers import Layer

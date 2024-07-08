@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import contextlib
-from typing import TYPE_CHECKING, Optional, Union
+from functools import partial
+from typing import TYPE_CHECKING, Callable, Optional, Union
+from weakref import ref
 
 from app_model.expressions import ContextKey
 
@@ -10,6 +12,8 @@ from napari.utils._dtype import normalize_dtype
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    from weakref import ReferenceType
+
     from numpy.typing import DTypeLike
 
     from napari.components.layerlist import LayerList
@@ -163,8 +167,16 @@ def _active_is_image_3d(s: LayerSel) -> bool:
     )
 
 
-def _empty_shapes_layer_selected(s: LayerSel) -> bool:
-    return any(x._type_string == 'shapes' and not len(x.data) for x in s)
+def _shapes_selection_check(s: ReferenceType[LayerSel]) -> bool:
+    s_ = s()
+    if s_ is None:
+        return False
+    return any(x._type_string == 'shapes' and not len(x.data) for x in s_)
+
+
+def _empty_shapes_layer_selected(s: LayerSel) -> Callable[[], bool]:
+    check_fun = partial(_shapes_selection_check, ref(s))
+    return check_fun
 
 
 class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):

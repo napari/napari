@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Literal, Union, cast
+from typing import Any, Literal, Union, cast
 
 import numpy as np
 from scipy import ndimage as ndi

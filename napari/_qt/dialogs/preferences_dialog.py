@@ -16,6 +16,7 @@ from qtpy.QtWidgets import (
 )
 
 from napari._pydantic_compat import BaseModel, ModelField, ModelMetaclass
+from napari.utils.compat import StrEnum
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -138,9 +139,20 @@ class PreferencesDialog(QDialog):
                 {},
             )
         )
+        nested_settings = ['dask', 'highlight']
         for name_, emitter in settings_category.events.emitters.items():
-            if name_ not in excluded:
+            if name_ not in excluded and name_ not in nested_settings:
                 emitter.connect(update_widget_state(name_, form.widget))
+            elif name_ in nested_settings:
+                # Needed to handle nested event model settings (i.e `DaskSettings` and `HighlightSettings`)
+                for subname_, subemitter in getattr(
+                    settings_category, name_
+                ).events.emitters.items():
+                    subemitter.connect(
+                        update_widget_state(
+                            subname_, form.widget.widgets[name_]
+                        )
+                    )
 
         page_scrollarea = QScrollArea()
         page_scrollarea.setWidgetResizable(True)
@@ -230,7 +242,6 @@ class PreferencesDialog(QDialog):
         )
         if response == QMessageBox.RestoreDefaults:
             self._settings.reset()
-            self._rebuild_dialog()  # TODO: do we need this?
 
     def _restart_required_dialog(self):
         """Displays the dialog informing user a restart is required."""
@@ -260,6 +271,9 @@ class PreferencesDialog(QDialog):
 
 def update_widget_state(name, widget):
     def _update_widget_state(event):
-        widget.state = {name: event.value}
+        value = event.value
+        if isinstance(value, StrEnum):
+            value = value.value
+        widget.state = {name: value}
 
     return _update_widget_state
