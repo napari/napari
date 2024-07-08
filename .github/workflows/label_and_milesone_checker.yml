@@ -35,6 +35,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check milestone for closest due date
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           # Install GitHub CLI if necessary
           # sudo apt-get install -y gh
