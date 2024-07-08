@@ -21,6 +21,7 @@ from typing import (
 )
 from weakref import WeakValueDictionary
 
+import numpy as np
 from qtpy.QtCore import (
     QEvent,
     QEventLoop,
@@ -1569,7 +1570,12 @@ class Window:
         self._qt_window.restart()
 
     def _screenshot(
-        self, size=None, scale=None, flash=True, canvas_only=False
+        self,
+        size: Optional[tuple[int, int]] = None,
+        scale: Optional[float] = None,
+        flash: bool = True,
+        canvas_only: bool = False,
+        fit_to_data_extent: bool = False,
     ) -> 'QImage':
         """Capture screenshot of the currently displayed viewer.
 
@@ -1578,10 +1584,11 @@ class Window:
         flash : bool
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
-        size : tuple (int, int)
-            Size (resolution height x width) of the screenshot. By default, the currently displayed size.
-            Only used if `canvas_only` is True.
-        scale : float
+        size : tuple of two ints, optional
+            Size (resolution height x width) of the screenshot. By default, the
+            currently displayed size. Only used if `canvas_only` is True. This
+            argument is ignored if fit_to_data_extent is set to True.
+        scale : float, optional
             Scale factor used to increase resolution of canvas for the screenshot.
             By default, the currently displayed resolution.
             Only used if `canvas_only` is True.
@@ -1589,6 +1596,10 @@ class Window:
             If True, screenshot shows only the image display canvas, and
             if False include the napari viewer frame in the screenshot,
             By default, True.
+        fit_to_data_extent: bool
+            Tightly fit the canvas around the data to prevent margins from
+            showing in the screenshot. If False, a screenshot of the currently
+            visible canvas will be generated.
 
         Returns
         -------
@@ -1596,38 +1607,127 @@ class Window:
         """
         from napari._qt.utils import add_flash_animation
 
-        if canvas_only:
-            canvas = self._qt_viewer.canvas
-            prev_size = canvas.size
-            if size is not None:
-                if len(size) != 2:
-                    raise ValueError(
-                        trans._(
-                            'screenshot size must be 2 values, got {len_size}',
-                            len_size=len(size),
-                        )
-                    )
-                # Scale the requested size to account for HiDPI
-                size = tuple(
-                    int(dim / self._qt_window.devicePixelRatio())
-                    for dim in size
+        canvas = self._qt_viewer.canvas
+        prev_size = canvas.size
+        camera = self._qt_viewer.viewer.camera
+        old_center = camera.center
+        old_zoom = camera.zoom
+        ndisplay = self._qt_viewer.viewer.dims.ndisplay
+
+        # Part 1: validate incompatible parameters
+        if not canvas_only and (
+            fit_to_data_extent or size is not None or scale is not None
+        ):
+            raise ValueError(
+                trans._(
+                    'scale, size, and fit_to_data_extent can only be set for '
+                    'canvas_only screenshots.',
+                    deferred=True,
                 )
-                canvas.size = size
-            if scale is not None:
-                # multiply canvas dimensions by the scale factor to get new size
-                canvas.size = tuple(int(dim * scale) for dim in canvas.size)
+            )
+        if fit_to_data_extent and ndisplay > 2:
+            raise NotImplementedError(
+                trans._(
+                    'fit_to_data_extent is not yet implemented for 3D view.',
+                    deferred=True,
+                )
+            )
+        if size is not None and len(size) != 2:
+            raise ValueError(
+                trans._(
+                    'screenshot size must be 2 values, got {len_size}',
+                    deferred=True,
+                    len_size=len(size),
+                )
+            )
+
+        # Part 2: compute canvas size and view based on parameters
+        if fit_to_data_extent:
+            extent_world = self._qt_viewer.viewer.layers.extent.world[1][
+                -ndisplay:
+            ]
+            extent_step = min(
+                self._qt_viewer.viewer.layers.extent.step[-ndisplay:]
+            )
+            size = extent_world / extent_step + 1
+        if size is not None:
+            size = np.asarray(size) / self._qt_window.devicePixelRatio()
+        else:
+            size = np.asarray(prev_size)
+        if scale is not None:
+            # multiply canvas dimensions by the scale factor to get new size
+            size *= scale
+
+        # Part 3: take the screenshot
+        if canvas_only:
+            canvas.size = tuple(size.astype(int))
+            if fit_to_data_extent:
+                # tight view around data
+                self._qt_viewer.viewer.reset_view(margin=0)
             try:
                 img = canvas.screenshot()
                 if flash:
                     add_flash_animation(self._qt_viewer._welcome_widget)
             finally:
                 # make sure we always go back to the right canvas size
-                if size is not None or scale is not None:
-                    canvas.size = prev_size
+                canvas.size = prev_size
+                camera.center = old_center
+                camera.zoom = old_zoom
         else:
             img = self._qt_window.grab().toImage()
             if flash:
                 add_flash_animation(self._qt_window)
+        return img
+
+    def export_figure(
+        self,
+        path: Optional[str] = None,
+        scale: float = 1,
+        flash=True,
+    ) -> np.ndarray:
+        """Export an image of the full extent of the displayed layer data.
+
+        This function finds a tight boundary around the data, resets the view
+        around that boundary (and, when scale=1, such that 1 captured pixel is
+        equivalent to one data pixel), takes a screenshot, then restores the
+        previous zoom and canvas sizes. Currently, only works when 2 dimensions
+        are displayed.
+
+        Parameters
+        ----------
+        path : str, optional
+            Filename for saving screenshot image.
+        scale : float
+            Scale factor used to increase resolution of canvas for the
+            screenshot. By default, a scale of 1.
+        flash : bool
+            Flag to indicate whether flash animation should be shown after
+            the screenshot was captured.
+            By default, True.
+
+        Returns
+        -------
+        image : array
+            Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
+            upper-left corner of the rendered region.
+        """
+        if not isinstance(scale, (float, int)):
+            raise TypeError(
+                trans._(
+                    'Scale must be a float or an int.',
+                    deferred=True,
+                )
+            )
+        img = QImg2array(
+            self._screenshot(
+                scale=scale,
+                flash=flash,
+                canvas_only=True,
+                fit_to_data_extent=True,
+            )
+        )
+        if path is not None:
+            imsave(path, img)
         return img
 
     def screenshot(

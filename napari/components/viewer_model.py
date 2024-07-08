@@ -377,8 +377,15 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             )
         return self.layers._extent_world_augmented[:, self.dims.displayed]
 
-    def reset_view(self) -> None:
-        """Reset the camera view."""
+    def reset_view(self, *, margin: float = 0.05) -> None:
+        """Reset the camera view.
+
+        Parameters
+        ----------
+        margin : float in [0, 1)
+            Margin as fraction of the canvas, showing blank space around the
+            data.
+        """
 
         extent = self._sliced_extent_world_augmented
         scene_size = extent[1] - extent[0]
@@ -402,12 +409,23 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # zoom is definied as the number of canvas pixels per world pixel
         # The default value used below will zoom such that the whole field
         # of view will occupy 95% of the canvas on the most filled axis
+
+        if 0 <= margin < 1:
+            scale_factor = 1 - margin
+        else:
+            raise ValueError(
+                trans._(
+                    'margin must be between 0 and 1; got {margin} instead.',
+                    deferred=True,
+                    margin=margin,
+                )
+            )
         if np.max(size) == 0:
-            self.camera.zoom = 0.95 * np.min(self._canvas_size)
+            self.camera.zoom = scale_factor * np.min(self._canvas_size)
         else:
             scale = np.array(size[-2:])
             scale[np.isclose(scale, 0)] = 1
-            self.camera.zoom = 0.95 * np.min(
+            self.camera.zoom = scale_factor * np.min(
                 np.array(self._canvas_size) / scale
             )
         self.camera.angles = (0, 0, 90)
