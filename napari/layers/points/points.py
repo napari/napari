@@ -1389,13 +1389,13 @@ class Points(Layer):
                     color_manager.color_properties = {
                         'name': new_color_feature,
                         'values': self.features[new_color_feature].to_numpy(),
-                        'current_value': self.feature_defaults.loc[
+                        'current_value': self.feature_defaults[
                             new_color_feature
                         ][0],
                     }
                     warnings.warn(
                         trans._(
-                            '_{attribute}_color_property was not set, setting to: {new_color_feature}',
+                            '_{attribute}_color feature was not set, setting to: {new_color_feature}',
                             deferred=True,
                             attribute=attribute,
                             new_color_feature=new_color_feature,
