@@ -448,7 +448,7 @@ def test_direct_colormap_with_values_outside_data_dtype():
 
 def test_direct_colormap_with_empty_color_dict():
     # Create a DirectLabelColormap with an empty color_dict
-    with pytest.raises(ValueError, match='color_dict must contain None'):
+    with pytest.warns(Warning, match='color_dict did not provide'):
         DirectLabelColormap(color_dict={})
 
 
