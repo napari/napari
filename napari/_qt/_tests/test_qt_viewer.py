@@ -1225,3 +1225,26 @@ def test_scale_bar_ticks(qt_viewer, qtbot):
 
     scale_bar.ticks = True
     qtbot.waitUntil(check_ticks_scale_bar)
+
+
+@skip_local_popups
+def test_dask_cache(qt_viewer):
+    initial_dask_cache = get_settings().application.dask.cache
+
+    # check that disabling dask cache setting calls related logic
+    with mock.patch(
+        'napari._qt.qt_viewer.resize_dask_cache'
+    ) as mock_resize_dask_cache:
+        get_settings().application.dask.enabled = False
+    mock_resize_dask_cache.assert_called_once_with(
+        int(int(False) * initial_dask_cache * 1e9)
+    )
+
+    # check that enabling dask cache setting calls related logic
+    with mock.patch(
+        'napari._qt.qt_viewer.resize_dask_cache'
+    ) as mock_resize_dask_cache:
+        get_settings().application.dask.enabled = True
+    mock_resize_dask_cache.assert_called_once_with(
+        int(int(True) * initial_dask_cache * 1e9)
+    )
