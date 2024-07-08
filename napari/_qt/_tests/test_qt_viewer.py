@@ -264,9 +264,50 @@ def test_screenshot(make_napari_viewer):
 
     # Take screenshot
     with pytest.warns(FutureWarning):
-        screenshot = viewer.window.qt_viewer.screenshot(flash=False)
+        viewer.window.qt_viewer.screenshot(flash=False)
     screenshot = viewer.window.screenshot(flash=False, canvas_only=True)
     assert screenshot.ndim == 3
+
+
+def test_export_figure(make_napari_viewer, tmp_path):
+    viewer = make_napari_viewer()
+
+    np.random.seed(0)
+    # Add image
+    data = np.random.randint(150, 250, size=(250, 250))
+    layer = viewer.add_image(data)
+
+    camera_center = viewer.camera.center
+    camera_zoom = viewer.camera.zoom
+    img = viewer.export_figure(flash=False, path=str(tmp_path / 'img.png'))
+
+    assert viewer.camera.center == camera_center
+    assert viewer.camera.zoom == camera_zoom
+    assert img.shape == (250, 250, 4)
+    assert np.all(img != np.array([0, 0, 0, 0]))
+
+    assert (tmp_path / 'img.png').exists()
+
+    layer.scale = [0.12, 0.24]
+    img = viewer.export_figure(flash=False)
+    # allclose accounts for rounding errors when computing size in hidpi aka
+    # retina displays
+    np.testing.assert_allclose(img.shape, (250, 499, 4), atol=1)
+
+    layer.scale = [0.12, 0.12]
+    img = viewer.export_figure(flash=False)
+    assert img.shape == (250, 250, 4)
+
+    viewer.camera.center = [100, 100]
+    camera_center = viewer.camera.center
+    camera_zoom = viewer.camera.zoom
+    img = viewer.export_figure()
+
+    assert viewer.camera.center == camera_center
+    assert viewer.camera.zoom == camera_zoom
+    assert img.shape == (250, 250, 4)
+    assert np.all(img != np.array([0, 0, 0, 0]))
+    viewer.close()
 
 
 @pytest.mark.skip('new approach')
