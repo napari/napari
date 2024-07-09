@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 import warnings
 from contextlib import contextmanager
 from importlib.metadata import distributions
@@ -115,3 +116,51 @@ def v040_050(model: NapariSettings):
     current_settings = model.plugins.extension2reader
     new_settings = _coerce_extensions_to_globs(current_settings)
     model.plugins.extension2reader = new_settings
+
+
+def _swap_ctrl_cmd(keybinding):
+    """Swap the Control and Command/Super/Meta modifiers in a keybinding.
+
+    See `v050_060` for motivation.
+    """
+    from napari.utils.key_bindings import KeyBinding
+
+    kb = KeyBinding.from_str(
+        str(keybinding)
+        .replace('Ctrl', 'Temp')
+        .replace('Meta', 'Ctrl')
+        .replace('Temp', 'Meta')
+    )
+    return kb
+
+
+@migrator('0.5.0', '0.6.0')
+def v050_060(model: NapariSettings):
+    """Migrate from v0.5.0 to v0.6.0.
+
+    In #5103 we went from using our own keybinding model to using app-model's.
+    Several consequences of this are:
+    - Control is written out as Ctrl (and that is the only valid input)
+    - Option is written out as Alt (and that is the only valid input)
+    - Super/Command/Cmd are written out as Meta (and that is the only valid
+      input)
+    - modifiers with keys are written as Mod+Key rather than Mod-Key. However,
+      both versions are valid inputs.
+    - macOS shortcuts using command keys are written out as Meta, where they
+      used to be written out as Control.
+
+    The alias problem is solved in `napari.utils.keybindings.coerce_keybinding`
+    by substituting all variants with the canonical versions in app-model.
+
+    The separator problem (-/+) can be ignored.
+
+    This migrator solves the final problem, by detecting whether the current
+    OS is macOS, and swapping Control and Meta in all key bindings if so.
+    """
+    current_keybinds = model.shortcuts.shortcuts
+    if sys.platform == 'darwin':
+        new_keybinds = {}
+        for action_str, keybind_list in current_keybinds.items():
+            new_keybind_list = [_swap_ctrl_cmd(kb) for kb in keybind_list]
+            new_keybinds[action_str] = new_keybind_list
+        model.shortcuts.shortcuts = new_keybinds
