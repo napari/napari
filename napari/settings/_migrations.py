@@ -157,8 +157,8 @@ def v050_060(model: NapariSettings):
     This migrator solves the final problem, by detecting whether the current
     OS is macOS, and swapping Control and Meta in all key bindings if so.
     """
-    current_keybinds = model.shortcuts.shortcuts
     if sys.platform == 'darwin':
+        current_keybinds = model.shortcuts.shortcuts
         new_keybinds = {}
         for action_str, keybind_list in current_keybinds.items():
             new_keybind_list = [_swap_ctrl_cmd(kb) for kb in keybind_list]
