@@ -142,8 +142,8 @@ def v050_060(model: NapariSettings):
     Several consequences of this are:
     - Control is written out as Ctrl (and that is the only valid input)
     - Option is written out as Alt (and that is the only valid input)
-    - Super/Command/Cmd are written out as Meta (and that is the only valid
-      input)
+    - Super/Command/Cmd are written out as Meta (both Meta and Cmd are valid
+      inputs)
     - modifiers with keys are written as Mod+Key rather than Mod-Key. However,
       both versions are valid inputs.
     - macOS shortcuts using command keys are written out as Meta, where they
