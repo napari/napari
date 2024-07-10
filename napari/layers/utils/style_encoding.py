@@ -201,7 +201,9 @@ class StyleCollection(EventedModel):
         for encoding in self._encodings:
             encoding._delete(indices)
 
-    def _copy(self, indices) -> dict[str, Union[StyleValue, StyleArray]]:
+    def _copy(
+        self, indices: IndicesType
+    ) -> dict[str, Union[StyleValue, StyleArray]]:
         return {
             channel: _get_style_values(encoding, indices)
             for channel, encoding in zip(self._channels, self._encodings)
