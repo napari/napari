@@ -142,3 +142,23 @@ def test_050_to_060_migration_mac():
         },
     )
     assert settings050 == settings060
+
+
+@pytest.mark.skipif(
+    sys.platform == 'darwin', reason='migration should not be no-op on macs'
+)
+def test_050_to_060_migration_linux_win():
+    """Check that shortcuts are unchanged on non-macOS when migrating."""
+    shortcuts_dict = {
+        'napari:focus_axes_up': ['Alt-Up'],
+        'napari:roll_axes': ['Control-E'],
+        'napari:transpose_axes': ['Control-Meta-T'],
+        'napari:paste_shape': ['V', 'Meta-T'],
+    }
+    settings050 = NapariSettings(
+        schema_version='0.5.0', shortcuts={'shortcuts': shortcuts_dict}
+    )
+    settings060 = NapariSettings(
+        schema_version='0.6.0', shortcuts={'shortcuts': shortcuts_dict}
+    )
+    assert settings050 == settings060
