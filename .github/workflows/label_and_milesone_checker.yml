@@ -70,7 +70,7 @@ jobs:
             echo "If this PR can be merged in time for the earlier milestone,"
             echo "changing the milestone to $CLOSEST_MILESTONE_NAME will make the check pass."
             echo "If this PR must wait until $PR_MILESTONE_NAME,"
-            echo "eremove the ready-to-merge tag to skip this check,"
+            echo "remove the ready-to-merge tag to skip this check,"
             echo "and re-add it when all earlier milestones are completed."
             exit 1
           fi
