@@ -296,6 +296,16 @@ class Style(StyleCollection):
     direct: ScalarDirectEncoding = ScalarDirectEncoding(feature='scalar')
 
 
+def test_style_collection_call(features: pd.DataFrame):
+    style = Style()
+
+    values = style(features)
+
+    np.testing.assert_equal(values['constant'], 2)
+    np.testing.assert_equal(values['manual'], [2, 4, 6])
+    np.testing.assert_equal(values['direct'], features['scalar'])
+
+
 def test_style_collection_apply(features: pd.DataFrame):
     style = Style()
 

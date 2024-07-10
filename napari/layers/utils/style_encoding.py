@@ -114,23 +114,72 @@ class StyleCollection(EventedModel):
 
     Examples
     --------
-    class Style(StyleCollection):
-        edge_color: ColorEncoding = QuantitativeColorEncoding(feature='confidence', colormap='gray', contrast_limits=(0, 1))
-        face_color: ColorEncoding = NominalColorEncoding(feature='class', colormap={'cat': 'red', 'dog': 'blue'})
-    features = pd.DataFrame
+    >>> import pandas as pd
+    >>> class Style(StyleCollection):
+    >>>     edge_color: ColorEncoding
+    >>>     face_color: ColorEncoding
+    >>> style = Style(
+    >>>     edge_color={
+    >>>         'feature': 'confidence',
+    >>>         'colormap': 'gray',
+    >>>         'contrast_limits': (0, 1),
+    >>>     },
+    >>>     face_color={
+    >>>         'feature': 'good_point',
+    >>>         'colormap': {False: 'green', True: 'blue'},
+    >>>     },
+    >>> )
+    >>> features = pd.DataFrame({
+    >>>     'confidence': [1, 0.5, 0],
+    >>>     'good_point': [True, False, False],
+    >>> })
+    >>> style(features)
+    {
+        'edge_color': array([[1, 1, 1, 1], [0.5, 0.5, 0.5, 1], [0, 0, 0, 1]]),
+        'face_color': array([[0, 1, 0, 1], [0, 0, 1, 1]]),
+    }
     """
+
+    def __call__(
+        self, features: Any
+    ) -> dict[str, Union[StyleValue, StyleArray]]:
+        """Apply all encodings with the given features to generate style values.
+
+        Parameters
+        ----------
+        features : Dataframe-like
+            The layer features table from which to derive the output values.
+
+        Returns
+        -------
+        dict[str, Union[StyleValue, StyleArray]]
+            Maps from channel/field name to either a single style value
+            (e.g. from a constant encoding) or an array of encoded values the
+            same length as the given features.
+
+        Raises
+        ------
+        KeyError, ValueError
+            If generating values from the given features fails.
+        """
+        return {
+            channel: encoding(features)
+            for channel, encoding in zip(self._channels, self._encodings)
+        }
 
     @property
     def _channels(self) -> tuple[str, ...]:
-        """List of channel names implemented in the Style.
+        """Channel names in this style collection.
+
         Example: ['face_color', 'edge_color', 'size'].
         """
         return tuple(self.__fields__)
 
     @property
     def _encodings(self) -> tuple[StyleEncoding, ...]:
-        """List of StyleEncodings, one per visual channel.
-        The order must match the order of `_channels`.
+        """Encodings in this style collection, one per visual channel.
+
+        The order matches the order of `_channels`.
         """
         return tuple(
             getattr(self, channel_name) for channel_name in self._channels
