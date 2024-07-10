@@ -83,7 +83,8 @@ def test_settings_load_invalid_key(tmp_path, monkeypatch):
     # The invalid key will be removed
 
     fake_path = tmp_path / 'fake_path.yml'
-    data = """
+    data = f"""
+    schema_version: {CURRENT_SCHEMA_VERSION}
     application:
        non_existing_key: [1, 2]
        first_time: false
@@ -280,7 +281,7 @@ def test_settings_only_saves_non_default_values(monkeypatch, tmp_path):
     monkeypatch.setattr(os, 'environ', {})
 
     # manually get all default data and write to yaml file
-    all_data = NapariSettings(None).yaml()
+    all_data = NapariSettings(schema_version=CURRENT_SCHEMA_VERSION).yaml()
     fake_path = tmp_path / 'fake_path.yml'
     assert 'appearance' in all_data
     assert 'application' in all_data
