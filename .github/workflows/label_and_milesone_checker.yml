@@ -63,6 +63,10 @@ jobs:
 
           # Check if the PR's milestone is the closest future milestone
           if [ "$CLOSEST_MILESTONE" != "$PR_MILESTONE_NUMBER" ]; then
-            echo "The milestone set for this PR is not the one with the closest due date."
+            echo "If this PR can be merged in time for the earlier milestone,"
+            echo "changing the milestone to $CLOSEST_MILESTONE will make the check pass."
+            echo "If this PR must wait until $PR_MILESTONE_NUMBER,"
+            echo "eremove the ready-to-merge tag to skip this check,"
+            echo "and re-add it when all earlier milestones are completed."
             exit 1
           fi
