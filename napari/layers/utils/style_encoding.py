@@ -106,6 +106,63 @@ class StyleEncoding(Protocol[StyleValue, StyleArray]):
         """
 
 
+class StyleCollection(EventedModel):
+    """Base class for mapping channels to encodings.
+
+    Extend this class with an attribute named after each visual channel
+    containing the encoding for that channel.
+
+    Examples
+    --------
+    class Style(StyleCollection):
+        edge_color: ColorEncoding = QuantitativeColorEncoding(feature='confidence', colormap='gray', contrast_limits=(0, 1))
+        face_color: ColorEncoding = NominalColorEncoding(feature='class', colormap={'cat': 'red', 'dog': 'blue'})
+    features = pd.DataFrame
+    """
+
+    @property
+    def _channels(self) -> tuple[str, ...]:
+        """List of channel names implemented in the Style.
+        Example: ['face_color', 'edge_color', 'size'].
+        """
+        return tuple(self.__fields__)
+
+    @property
+    def _encodings(self) -> tuple[StyleEncoding, ...]:
+        """List of StyleEncodings, one per visual channel.
+        The order must match the order of `_channels`.
+        """
+        return tuple(
+            getattr(self, channel_name) for channel_name in self._channels
+        )
+
+    def _apply(self, features: Any) -> None:
+        for encoding in self._encodings:
+            encoding._apply(features)
+
+    def _clear(self) -> None:
+        for encoding in self._encodings:
+            encoding._clear()
+
+    def _refresh(self, features: Any) -> None:
+        self._clear()
+        self._apply(features)
+
+    def _delete(self, indices: IndicesType) -> None:
+        for encoding in self._encodings:
+            encoding._delete(indices)
+
+    def _copy(self, indices) -> dict:
+        return {
+            ch: _get_style_values(prop, indices)
+            for ch, prop in zip(self._channels, self._encodings)
+        }
+
+    def _paste(self, **elements):
+        for channel, styled_values in elements.items():
+            getattr(self, channel)._append(styled_values)
+
+
 class _StyleEncodingModel(EventedModel):
     class Config:
         # Forbid extra initialization parameters instead of ignoring
