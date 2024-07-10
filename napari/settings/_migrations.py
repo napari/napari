@@ -7,6 +7,7 @@ from importlib.metadata import distributions
 from typing import TYPE_CHECKING, Callable, NamedTuple
 
 from napari.settings._fields import Version
+from napari.settings._shortcuts import ShortcutsSettings
 
 if TYPE_CHECKING:
     from napari.settings._napari_settings import NapariSettings
@@ -159,8 +160,14 @@ def v050_060(model: NapariSettings):
     """
     if sys.platform == 'darwin':
         current_keybinds = model.shortcuts.shortcuts
+        default_shortcuts = ShortcutsSettings().shortcuts
         new_keybinds = {}
         for action_str, keybind_list in current_keybinds.items():
-            new_keybind_list = [_swap_ctrl_cmd(kb) for kb in keybind_list]
+            new_keybind_list = []
+            for kb in keybind_list:
+                if kb not in default_shortcuts[action_str]:
+                    new_keybind_list.append(_swap_ctrl_cmd(kb))
+                else:
+                    new_keybind_list.append(kb)
             new_keybinds[action_str] = new_keybind_list
         model.shortcuts.shortcuts = new_keybinds
