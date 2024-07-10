@@ -171,7 +171,7 @@ class StyleCollection(EventedModel):
     def _channels(self) -> tuple[str, ...]:
         """Channel names in this style collection.
 
-        Example: ['face_color', 'edge_color', 'size'].
+        Example: ('face_color', 'edge_color', 'size').
         """
         return tuple(self.__fields__)
 
@@ -201,15 +201,15 @@ class StyleCollection(EventedModel):
         for encoding in self._encodings:
             encoding._delete(indices)
 
-    def _copy(self, indices) -> dict:
+    def _copy(self, indices) -> dict[str, Union[StyleValue, StyleArray]]:
         return {
-            ch: _get_style_values(prop, indices)
-            for ch, prop in zip(self._channels, self._encodings)
+            channel: _get_style_values(encoding, indices)
+            for channel, encoding in zip(self._channels, self._encodings)
         }
 
-    def _paste(self, **elements):
-        for channel, styled_values in elements.items():
-            getattr(self, channel)._append(styled_values)
+    def _paste(self, **elements) -> None:
+        for channel, values in elements.items():
+            getattr(self, channel)._append(values)
 
 
 class _StyleEncodingModel(EventedModel):
