@@ -1,4 +1,5 @@
 import os
+import sys
 from importlib.metadata import PackageNotFoundError, distribution
 from unittest.mock import patch
 
@@ -113,3 +114,51 @@ def test_040_to_050_migration():
     )
     assert '.tif' not in settings.plugins.extension2reader
     assert '*.tif' in settings.plugins.extension2reader
+
+
+@pytest.mark.skipif(sys.platform != 'darwin', reason='tests migration on macs')
+def test_050_to_060_migration_mac():
+    """Check that Ctrl and Meta are swapped on macOS when migrating."""
+    settings050 = NapariSettings(
+        schema_version='0.5.0',
+        shortcuts={
+            'shortcuts': {
+                'napari:focus_axes_up': ['Alt-Up'],
+                'napari:roll_axes': ['Control-E'],
+                'napari:transpose_axes': ['Control-Meta-T'],
+                'napari:paste_shape': ['V', 'Meta-T'],
+            }
+        },
+    )
+    settings060 = NapariSettings(
+        schema_version='0.6.0',
+        shortcuts={
+            'shortcuts': {
+                'napari:focus_axes_up': ['Alt-Up'],
+                'napari:roll_axes': ['Meta-E'],
+                'napari:transpose_axes': ['Ctrl-Meta-T'],
+                'napari:paste_shape': ['V', 'Ctrl-T'],
+            }
+        },
+    )
+    assert settings050 == settings060
+
+
+@pytest.mark.skipif(
+    sys.platform == 'darwin', reason='migration should not be no-op on macs'
+)
+def test_050_to_060_migration_linux_win():
+    """Check that shortcuts are unchanged on non-macOS when migrating."""
+    shortcuts_dict = {
+        'napari:focus_axes_up': ['Alt-Up'],
+        'napari:roll_axes': ['Control-E'],
+        'napari:transpose_axes': ['Control-Meta-T'],
+        'napari:paste_shape': ['V', 'Meta-T'],
+    }
+    settings050 = NapariSettings(
+        schema_version='0.5.0', shortcuts={'shortcuts': shortcuts_dict}
+    )
+    settings060 = NapariSettings(
+        schema_version='0.6.0', shortcuts={'shortcuts': shortcuts_dict}
+    )
+    assert settings050 == settings060
