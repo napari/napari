@@ -360,3 +360,32 @@ def test_full_serialize(test_settings: NapariSettings, tmp_path, ext):
     Should work with both json and yaml.
     """
     test_settings.save(tmp_path / f't.{ext}', exclude_defaults=False)
+
+
+def test_shortcut_aliases():
+    """Check that Command, Option, Super, Cmd are all valid modifiers."""
+    settings_original = NapariSettings(
+        schema_version='0.6.0',
+        shortcuts={
+            'shortcuts': {
+                'napari:focus_axes_up': ['Option-Up'],
+                'napari:roll_axes': ['Super-E'],
+                'napari:transpose_axes': ['Control-Alt-T'],
+                'napari:paste_shape': ['V', 'Command-T'],
+                'napari:reset_view': ['Cmd-R'],
+            }
+        },
+    )
+    settings_canonical = NapariSettings(
+        schema_version='0.6.0',
+        shortcuts={
+            'shortcuts': {
+                'napari:focus_axes_up': ['Alt+Up'],
+                'napari:roll_axes': ['Meta+E'],
+                'napari:transpose_axes': ['Ctrl+Alt+T'],
+                'napari:paste_shape': ['V', 'Meta+T'],
+                'napari:reset_view': ['Meta+R'],
+            }
+        },
+    )
+    assert settings_original == settings_canonical
