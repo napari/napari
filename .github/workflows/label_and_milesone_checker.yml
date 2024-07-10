@@ -37,6 +37,7 @@ jobs:
       - name: Check milestone for closest due date
         env:
           GH_TOKEN: ${{ github.token }}
+          PR_MILESTONE_NAME: ${{ github.event.pull_request.milestone.title }}
         run: |
           # Install GitHub CLI if necessary
           # sudo apt-get install -y gh
@@ -60,12 +61,14 @@ jobs:
 
           # Extract the milestone number of the current PR
           PR_MILESTONE_NUMBER=$(gh api /repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }} --jq '.milestone.number')
+          CLOSEST_MILESTONE_NAME=$(gh api /repos/${{ github.repository }}/milestones/$CLOSEST_MILESTONE --jq '.title')
+
 
           # Check if the PR's milestone is the closest future milestone
           if [ "$CLOSEST_MILESTONE" != "$PR_MILESTONE_NUMBER" ]; then
             echo "If this PR can be merged in time for the earlier milestone,"
-            echo "changing the milestone to $CLOSEST_MILESTONE will make the check pass."
-            echo "If this PR must wait until $PR_MILESTONE_NUMBER,"
+            echo "changing the milestone to CLOSEST_MILESTONE_NAME will make the check pass."
+            echo "If this PR must wait until $PR_MILESTONE_NAME,"
             echo "eremove the ready-to-merge tag to skip this check,"
             echo "and re-add it when all earlier milestones are completed."
             exit 1
