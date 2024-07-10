@@ -32,6 +32,7 @@ jobs:
 
   check_recent_mliestone:
     name: Check recent milestone
+    if: (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ready to merge') && github.event.pull_request.milestone != null)
     runs-on: ubuntu-latest
     steps:
       - name: Check milestone for closest due date
