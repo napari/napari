@@ -38,6 +38,15 @@ class QtShapesControls(NewQtLayerControls):
         Button group for shapes layer modes
         (SELECT, DIRECT, PAN_ZOOM, ADD_RECTANGLE, ADD_ELLIPSE, ADD_LINE,
         ADD_PATH, ADD_POLYGON, VERTEX_INSERT, VERTEX_REMOVE, TRANSFORM).
+
+    Controls attributes
+    -------------------
+    blendComboBox : qtpy.QtWidgets.QComboBox
+        Dropdown widget to select blending mode of layer.
+    opacitySlider : qtpy.QtWidgets.QSlider
+        Slider controlling opacity of the layer.
+    edgeWidthSlider : qtpy.QtWidgets.QSlider
+        Slider controlling line edge width of shapes.
     edgeColorEdit : QColorSwatchEdit
         Widget allowing user to set edge color of points.
     faceColorEdit : QColorSwatchEdit
