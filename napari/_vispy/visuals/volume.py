@@ -34,6 +34,51 @@ int detectAdjacentBackground(float val_neg, float val_pos)
     return adjacent_bg;
 }
 
+vec3 calculateGradient(vec3 loc, vec3 step, inout vec4 maxColor) {
+    // calculate gradient within the volume by finite differences
+    // overwrite maxColor with the maximum encountered color
+    // this is just overloading the above function, but it also
+    // keeps track of maxColor for the isosurface shader
+
+    vec3 offsets[4];
+    float samples[8];
+
+    offsets[0] = vec3(step.x, -step.y, -step.z);
+    offsets[1] = vec3(-step.x, step.y, -step.z);
+    offsets[2] = vec3(-step.x, -step.y, step.z);
+    offsets[3] = vec3(step.x, step.y, step.z);
+
+    samples[0] = colorToVal($get_data(loc + offsets[0]));
+    samples[1] = colorToVal($get_data(loc + offsets[1]));
+    samples[2] = colorToVal($get_data(loc + offsets[2]));
+    samples[3] = colorToVal($get_data(loc + offsets[3]));
+
+    samples[4] = colorToVal($get_data(loc + 2 * offsets[0]));
+    samples[5] = colorToVal($get_data(loc + 2 * offsets[1]));
+    samples[6] = colorToVal($get_data(loc + 2 * offsets[2]));
+    samples[7] = colorToVal($get_data(loc + 2 * offsets[3]));
+
+    // find the maximum color
+    for(int i=0; i<8; i++) {
+        if (samples[i] > maxColor.r) {
+            maxColor = vec4(samples[i], 0, 0, 1.0);
+        }
+    }
+
+    // calculate gradient
+    vec3 G = vec3(0.0);
+    G += 8.0 * (offsets[0] * samples[0] +
+                offsets[1] * samples[1] +
+                offsets[2] * samples[2] +
+                offsets[3] * samples[3]);
+    G += (offsets[0] * samples[4] +
+          offsets[1] * samples[5] +
+          offsets[2] * samples[6] +
+          offsets[3] * samples[7]);
+
+    return G / 12.0 / step;
+}
+
 vec4 calculateShadedCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)
 {
     // Calculate color by incorporating ambient and diffuse lighting
@@ -43,33 +88,15 @@ vec4 calculateShadedCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)
     float val0 = colorToVal(color0);
     float val1 = 0;
     float val2 = 0;
-    int n_bg_borders = 0;
+    int n_bg_borders = 0;  // TODO: unused
 
     // View direction
     vec3 V = normalize(view_ray);
 
-    // calculate normal vector from gradient
-    vec3 N; // normal
-    color1 = $get_data(loc+vec3(-step[0],0.0,0.0));
-    color2 = $get_data(loc+vec3(step[0],0.0,0.0));
-    val1 = colorToVal(color1);
-    val2 = colorToVal(color2);
-    N[0] = val1 - val2;
-    n_bg_borders += detectAdjacentBackground(val1, val2);
-
-    color1 = $get_data(loc+vec3(0.0,-step[1],0.0));
-    color2 = $get_data(loc+vec3(0.0,step[1],0.0));
-    val1 = colorToVal(color1);
-    val2 = colorToVal(color2);
-    N[1] = val1 - val2;
-    n_bg_borders += detectAdjacentBackground(val1, val2);
-
-    color1 = $get_data(loc+vec3(0.0,0.0,-step[2]));
-    color2 = $get_data(loc+vec3(0.0,0.0,step[2]));
-    val1 = colorToVal(color1);
-    val2 = colorToVal(color2);
-    N[2] = val1 - val2;
-    n_bg_borders += detectAdjacentBackground(val1, val2);
+    // Calculate normal vector from gradient, updating color based on local max
+    // this function modifies betterColor
+    vec3 N = calculateGradient(loc, step, betterColor);
+    N = normalize(N);
 
     // Normalize and flip normal so it points towards viewer
     N = normalize(N);
