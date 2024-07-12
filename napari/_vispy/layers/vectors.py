@@ -10,6 +10,10 @@ class VispyVectorsLayer(VispyBaseLayer):
         node = VectorsVisual()
         super().__init__(layer, node)
 
+        # Only need to connect to style's top-level event because
+        # a layer's style collection instance is not reassigned,
+        # only updated in place.
+        # TODO: decide how to handle mutation of encoding fields.
         self.layer.style.events.connect(self._on_data_change)
 
         self.reset()

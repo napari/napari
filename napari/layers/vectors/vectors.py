@@ -408,6 +408,7 @@ class Vectors(Layer):
     def style(self, style: Union[Style, dict[str, Any]]) -> None:
         self._style.update(style, recurse=False)
         self._style._apply(self.features)
+        self.events.style()
 
     @property
     def properties(self) -> dict[str, np.ndarray]:
