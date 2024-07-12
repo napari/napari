@@ -62,6 +62,7 @@ jobs:
           body_path: ${{ env.release_notes_path }}
           draft: false
           prerelease: ${{ contains(env.tag, 'rc') || contains(env.tag, 'a') || contains(env.tag, 'b') }}
+          target_commitish: ${{ github.sha }}
           files: |
             dist/*
       - name: Publish PyPI Package
