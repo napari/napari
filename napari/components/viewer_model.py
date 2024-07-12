@@ -962,6 +962,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             'metadata',
             'experimental_clipping_planes',
             'custom_interpolation_kernel_2d',
+            'axis_labels',
+            'units',
         }
 
         if channel_axis is None:
