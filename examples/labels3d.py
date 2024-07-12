@@ -8,6 +8,7 @@ View 3D labels.
 """
 
 
+import magicgui
 import numpy as np
 from scipy import ndimage as ndi
 from skimage import data, filters, morphology
@@ -39,6 +40,18 @@ segmented = ndi.label(cleaned)[0]
 # )
 
 labels_layer = viewer.add_labels(segmented)
+
+
+@magicgui.magicgui
+def toggle_smooth_labels(viewer: napari.viewer.Viewer, layer: napari.layers.Labels):
+    if viewer.dims.ndisplay != 3:
+        return
+    node = viewer.window.qt_viewer.layer_to_visual[layer].node
+    node.iso_gradient = not node.iso_gradient
+
+
+viewer.window.add_dock_widget(toggle_smooth_labels)
+viewer.dims.ndisplay = 3
 
 if __name__ == '__main__':
     napari.run()

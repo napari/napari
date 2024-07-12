@@ -3,6 +3,8 @@ from vispy.scene.visuals import Volume as BaseVolume
 from napari._vispy.visuals.util import TextureMixin
 
 FUNCTION_DEFINITIONS = """
+uniform bool u_iso_gradient;
+
 // the tolerance for testing equality of floats with floatEqual and floatNotEqual
 const float equality_tolerance = 1e-8;
 
@@ -34,49 +36,54 @@ int detectAdjacentBackground(float val_neg, float val_pos)
     return adjacent_bg;
 }
 
-vec3 calculateGradient(vec3 loc, vec3 step, inout vec4 maxColor) {
+vec3 calculateGradient(vec3 loc, vec3 step, out int n_bg_borders) {
     // calculate gradient within the volume by finite differences
-    // overwrite maxColor with the maximum encountered color
-    // this is just overloading the above function, but it also
-    // keeps track of maxColor for the isosurface shader
 
-    vec3 offsets[4];
-    float samples[8];
+    n_bg_borders = 0;
+    vec3 G = vec3(0.0);
 
-    offsets[0] = vec3(step.x, -step.y, -step.z);
-    offsets[1] = vec3(-step.x, step.y, -step.z);
-    offsets[2] = vec3(-step.x, -step.y, step.z);
-    offsets[3] = vec3(step.x, step.y, step.z);
+    float prev;
+    float next;
 
-    samples[0] = colorToVal($get_data(loc + offsets[0]));
-    samples[1] = colorToVal($get_data(loc + offsets[1]));
-    samples[2] = colorToVal($get_data(loc + offsets[2]));
-    samples[3] = colorToVal($get_data(loc + offsets[3]));
+    prev = colorToVal($get_data(loc - vec3(step.x, 0, 0)));
+    next = colorToVal($get_data(loc + vec3(step.x, 0, 0)));
+    n_bg_borders += detectAdjacentBackground(prev, next);
+    G.x = next - prev;
 
-    samples[4] = colorToVal($get_data(loc + 2 * offsets[0]));
-    samples[5] = colorToVal($get_data(loc + 2 * offsets[1]));
-    samples[6] = colorToVal($get_data(loc + 2 * offsets[2]));
-    samples[7] = colorToVal($get_data(loc + 2 * offsets[3]));
+    prev = colorToVal($get_data(loc - vec3(0, step.y, 0)));
+    next = colorToVal($get_data(loc + vec3(0, step.y, 0)));
+    n_bg_borders += detectAdjacentBackground(prev, next);
+    G.y = next - prev;
 
-    // find the maximum color
-    for(int i=0; i<8; i++) {
-        if (samples[i] > maxColor.r) {
-            maxColor = vec4(samples[i], 0, 0, 1.0);
+    prev = colorToVal($get_data(loc - vec3(0, 0, step.z)));
+    next = colorToVal($get_data(loc + vec3(0, 0, step.z)));
+    n_bg_borders += detectAdjacentBackground(prev, next);
+    G.z = next - prev;
+
+    return G;
+}
+
+vec3 calculateIsotropicGradient(vec3 loc, vec3 step) {
+    // calculate gradient within the volume by finite differences
+    // using a 3D sobel-feldman kernel
+
+    vec3 G = vec3(0.0);
+
+    for (int i=-1; i <= 1; i++) {
+        for (int j=-1; j <= 1; j++) {
+            for (int k=-1; k <= 1; k++) {
+                float val = colorToVal($get_data(loc + vec3(i, j, k) * step));
+                G.x += val * -float(i) *
+                    (1 + float(j == 0 || k == 0) + 2 * float(j == 0 && k == 0));
+                G.y += val * -float(j) *
+                    (1 + float(i == 0 || k == 0) + 2 * float(i == 0 && k == 0));
+                G.z += val * -float(k) *
+                    (1 + float(i == 0 || j == 0) + 2 * float(i == 0 && j == 0));
+            }
         }
     }
 
-    // calculate gradient
-    vec3 G = vec3(0.0);
-    G += 8.0 * (offsets[0] * samples[0] +
-                offsets[1] * samples[1] +
-                offsets[2] * samples[2] +
-                offsets[3] * samples[3]);
-    G += (offsets[0] * samples[4] +
-          offsets[1] * samples[5] +
-          offsets[2] * samples[6] +
-          offsets[3] * samples[7]);
-
-    return G / 12.0 / step;
+    return G;
 }
 
 vec4 calculateShadedCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)
@@ -88,14 +95,19 @@ vec4 calculateShadedCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)
     float val0 = colorToVal(color0);
     float val1 = 0;
     float val2 = 0;
-    int n_bg_borders = 0;  // TODO: unused
+    int n_bg_borders = 0;
 
     // View direction
     vec3 V = normalize(view_ray);
 
-    // Calculate normal vector from gradient, updating color based on local max
-    // this function modifies betterColor
-    vec3 N = calculateGradient(loc, step, betterColor);
+    // Calculate normal vector from gradient
+    vec3 N;
+    if (u_iso_gradient) {
+        N = calculateIsotropicGradient(loc, step);
+    } else {
+        N = calculateGradient(loc, step, n_bg_borders);
+    }
+
     N = normalize(N);
 
     // Normalize and flip normal so it points towards viewer
@@ -233,3 +245,19 @@ class Volume(TextureMixin, BaseVolume):
     # add the new rendering method to the snippets dict
     _shaders = shaders
     _rendering_methods = rendering_methods
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.unfreeze()
+        self.iso_gradient = False
+        self.freeze()
+
+    @property
+    def iso_gradient(self):
+        return self._iso_gradient
+
+    @iso_gradient.setter
+    def iso_gradient(self, value):
+        self._iso_gradient = value
+        self.shared_program['u_iso_gradient'] = self._iso_gradient
+        self.update()
