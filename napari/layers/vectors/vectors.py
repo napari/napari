@@ -884,4 +884,5 @@ def _warn_edge_color_deprecation() -> None:
     warnings.warn(
         'edge_color properties and parameters are deprecated since v0.6.0 and will be removed in v0.7.0. Please use style.edge_color instead.',
         FutureWarning,
+        stacklevel=3,
     )

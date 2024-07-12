@@ -44,18 +44,19 @@ features = {
     'pos_angle': pos_angle,
 }
 
+# define the visualization style
+style = {
+    'edge_color': {'feature': 'angle', 'colormap': 'husl'}
+}
+
 # add the vectors
 layer = viewer.add_vectors(
     pos,
     edge_width=3,
     features=features,
-    edge_color='angle',
-    edge_colormap='husl',
+    style=style,
     name='vectors'
 )
-
-# set the edge color mode to colormap
-layer.edge_color_mode = 'colormap'
 
 if __name__ == '__main__':
     napari.run()

@@ -10,7 +10,7 @@ class VispyVectorsLayer(VispyBaseLayer):
         node = VectorsVisual()
         super().__init__(layer, node)
 
-        self.layer.events.edge_color.connect(self._on_data_change)
+        self.layer.style.events.connect(self._on_data_change)
 
         self.reset()
         self._on_data_change()
