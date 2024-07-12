@@ -334,7 +334,9 @@ class VispyCanvas:
         nd = self.viewer.dims.ndisplay
         transform = self.view.camera._scene_transform
         mapped_position = transform.imap(list(position))
-        mapped_position = mapped_position[0:nd]/mapped_position[nd] # cartesian to homogeneous coordinates
+        mapped_position = (
+            mapped_position[0:nd] / mapped_position[nd]
+        )  # cartesian to homogeneous coordinates
 
         position_world_slice = mapped_position[::-1]
 
@@ -644,21 +646,25 @@ class VispyCanvas:
         nd = self.viewer.dims.ndisplay
 
         transform = self.view.camera._scene_transform
-        p0 = transform.imap([x,y,0,1]) # map click pos to scene coordinates
-        p1 = [w/2,h/2,-1e10,1] # canvas center at infinite far z- (eye position in canvas coordinates)
-        p1 = transform.imap(p1) # map eye pos to scene coordinates
-        p0 = p0[0:nd]/p0[nd] # homogeneous coordinate to cartesian
-        p1 = p1[0:nd]/p1[nd] # homogeneous coordinate to cartesian
+        p0 = transform.imap([x, y, 0, 1])  # map click pos to scene coordinates
+        p1 = [
+            w / 2,
+            h / 2,
+            -1e10,
+            1,
+        ]  # canvas center at infinite far z- (eye position in canvas coordinates)
+        p1 = transform.imap(p1)  # map eye pos to scene coordinates
+        p0 = p0[0:nd] / p0[nd]  # homogeneous coordinate to cartesian
+        p1 = p1[0:nd] / p1[nd]  # homogeneous coordinate to cartesian
 
         # calculate direction of the ray
         d = p1 - p0
         d = d[0:nd]
         d = d / np.linalg.norm(d)
 
-        p0 = list(p0[::-1]) # xyz to zyx
-        d = list(d[::-1]) # xyz to zyx
+        p0 = list(p0[::-1])  # xyz to zyx
+        d = list(d[::-1])  # xyz to zyx
         return d
-
 
     def screenshot(self) -> QImage:
         """Return a QImage based on what is shown in the viewer."""
