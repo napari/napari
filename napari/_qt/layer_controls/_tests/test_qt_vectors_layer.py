@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from napari._qt.layer_controls.qt_vectors_controls import QtVectorsControls
 from napari.layers import Vectors
@@ -6,6 +7,7 @@ from napari.layers import Vectors
 _VECTORS = np.zeros((2, 2, 2))
 
 
+@pytest.mark.filterwarnings('ignore::FutureWarning')
 def test_out_of_slice_display_checkbox(qtbot):
     layer = Vectors(_VECTORS)
     qtctrl = QtVectorsControls(layer)

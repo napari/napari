@@ -1,6 +1,7 @@
 from unittest.mock import patch
 
 import numpy as np
+import pytest
 
 
 def test_data_change_ndisplay_image(make_napari_viewer):
@@ -61,6 +62,7 @@ def test_data_change_ndisplay_points(make_napari_viewer):
     test_ndisplay_change(ndisplay=2)
 
 
+@pytest.mark.filterwarnings('ignore::FutureWarning')
 def test_data_change_ndisplay_vectors(make_napari_viewer):
     """Test change data calls for vectors layer with ndisplay change."""
     viewer = make_napari_viewer()
