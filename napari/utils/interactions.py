@@ -6,7 +6,6 @@ import warnings
 from numpydoc.docscrape import FunctionDoc
 
 from napari.utils.key_bindings import (
-    KeyBinding,
     KeyBindingLike,
     coerce_keybinding,
 )
@@ -246,31 +245,6 @@ elif sys.platform.startswith('linux'):
     KEY_SYMBOLS.update({'Meta': 'Super'})
 
 
-def _kb2mods(key_bind: KeyBinding) -> list[str]:
-    """Extract list of modifiers from a key binding.
-
-    Parameters
-    ----------
-    key_bind : KeyBinding
-        The key binding whose mods are to be extracted.
-
-    Returns
-    -------
-    list of str
-        The key modifiers used by the key binding.
-    """
-    mods = []
-    if key_bind.ctrl:
-        mods.append('Ctrl')
-    if key_bind.shift:
-        mods.append('Shift')
-    if key_bind.alt:
-        mods.append('Alt')
-    if key_bind.meta:
-        mods.append('Meta')
-    return mods
-
-
 class Shortcut:
     """
     Wrapper object around shortcuts,
@@ -357,13 +331,7 @@ class Shortcut:
         string
             Shortcut formatted to be displayed on current paltform.
         """
-        return ' '.join(
-            JOINCHAR.join(
-                KEY_SYMBOLS.get(x, x)
-                for x in ([*_kb2mods(part), str(part.key)])
-            )
-            for part in self._kb.parts
-        )
+        return self._kb.to_text(use_symbols=True, joinchar=JOINCHAR)
 
     def __str__(self):
         return self.platform
