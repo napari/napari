@@ -316,7 +316,7 @@ class VispyCanvas:
         )
 
     def _map_canvas2world(
-        self, position: tuple[int, ...]
+        self, position: tuple[int, ...],
     ) -> tuple[float, float]:
         """Map position from canvas pixels into world coordinates.
 
@@ -333,11 +333,13 @@ class VispyCanvas:
         """
         nd = self.viewer.dims.ndisplay
         transform = self.view.camera._scene_transform
+        # cartesian to homogeneous coordinates
         mapped_position = transform.imap(list(position))
-        mapped_position = mapped_position[0:nd]/mapped_position[nd] # cartesian to homogeneous coordinates
-
-        position_world_slice = mapped_position[::-1]
-
+        if nd == 3:
+            mapped_position = mapped_position[0:nd] / mapped_position[nd] 
+        else:
+            mapped_position = mapped_position[0:nd]
+        position_world_slice = np.array(mapped_position[::-1])
         # handle position for 3D views of 2D data
         nd_point = len(self.viewer.dims.point)
         if nd_point < nd:
@@ -384,9 +386,6 @@ class VispyCanvas:
             return
 
         # Add the view ray to the event
-        # event.view_direction = self.viewer.camera.calculate_nd_view_direction(
-        #     self.viewer.dims.ndim, self.viewer.dims.displayed
-        # )
         event.view_direction = self._calculate_view_direction(event.pos)
         event.up_direction = self.viewer.camera.calculate_nd_up_direction(
             self.viewer.dims.ndim, self.viewer.dims.displayed
@@ -397,7 +396,8 @@ class VispyCanvas:
 
         # Update the cursor position
         self.viewer.cursor._view_direction = event.view_direction
-        self.viewer.cursor.position = self._map_canvas2world(event.pos)
+        cursor_on_near_plane = self._map_canvas2world(event.pos)
+        self.viewer.cursor.position = self._adjust_event_position(cursor_on_near_plane,event.view_direction)
 
         # Add the cursor position to the event
         event.position = self.viewer.cursor.position
@@ -637,32 +637,58 @@ class VispyCanvas:
             vispy_overlay.node.parent = self.view.scene
         self._overlay_to_visual[overlay] = vispy_overlay
 
-    def _calculate_view_direction(self, event_pos) -> List[float]:
+
+    def _calculate_view_direction(self, event_pos: List[float]) -> List[float]:
         """calculate view direction by ray shot from the camera"""
+        # this method is only implemented for 3 dimension
+        if self.viewer.dims.ndisplay == 2:
+            return self.viewer.camera.calculate_nd_view_direction(
+                self.viewer.dims.ndim, self.viewer.dims.displayed
+            )
         x, y = event_pos
         w, h = self.size
         nd = self.viewer.dims.ndisplay
 
         transform = self.view.camera._scene_transform
-        p0 = transform.imap([x,y,0,1]) # map click pos to scene coordinates
-        p1 = [w/2,h/2,-1e10,1] # canvas center at infinite far z- (eye position in canvas coordinates)
-        p1 = transform.imap(p1) # map eye pos to scene coordinates
-        p0 = p0[0:nd]/p0[nd] # homogeneous coordinate to cartesian
-        p1 = p1[0:nd]/p1[nd] # homogeneous coordinate to cartesian
+        # map click pos to scene coordinates
+        click_scene = transform.imap([x,y,0,1])
+        # canvas center at infinite far z- (eye position in canvas coordinates)
+        eye_canvas = [w/2, h/2, -1e10, 1] 
+        # map eye pos to scene coordinates
+        eye_scene = transform.imap(eye_canvas) 
+        # homogeneous coordinate to cartesian
+        click_scene = click_scene[0:nd]/click_scene[nd] 
+        # homogeneous coordinate to cartesian
+        eye_scene = eye_scene[0:nd]/eye_scene[nd] 
 
         # calculate direction of the ray
-        d = p1 - p0
+        d = eye_scene - click_scene
         d = d[0:nd]
         d = d / np.linalg.norm(d)
+        # xyz to zyx
+        d = list(d[::-1]) 
 
-        p0 = list(p0[::-1]) # xyz to zyx
-        d = list(d[::-1]) # xyz to zyx
         return d
+
+
+    def _adjust_event_position(self, event_pos: List[float], view_direction: List[float]) -> List[float]:
+        """move event position from near plane to camera center's projection on the ray"""
+        if self.viewer.dims.ndisplay == 2:
+            return event_pos
+        event_pos = np.array(event_pos)
+        view_direction = np.array(view_direction)
+        camera_center = np.array(self.view.camera.center)
+        
+        # Compute the projection of camera center onto the ray
+        t = np.dot(camera_center - event_pos, camera_center) / self.viewer.camera.zoom
+        projected_pos = event_pos + t * view_direction
+        return list(projected_pos)
 
 
     def screenshot(self) -> QImage:
         """Return a QImage based on what is shown in the viewer."""
         return self.native.grabFramebuffer()
+
 
     def enable_dims_play(self, *args) -> None:
         """Enable playing of animation. False if awaiting a draw event"""
