@@ -10,6 +10,7 @@ from typing import (
     cast,
     overload,
 )
+from warnings import warn
 
 import numpy as np
 from typing_extensions import Self
@@ -418,7 +419,8 @@ class DirectLabelColormap(LabelColormapBase):
         v : MutableMapping
             A mapping from integers to colors. It *may* have None as a key,
             which indicates the color to map items not in the dictionary.
-            Alternatively, it could be a defaultdict.
+            Alternatively, it could be a defaultdict. If neither is provided,
+            missing colors are not rendered (rendered as fully transparent).
         values : dict[str, Any]
             A dictionary mapping previously-validated attributes to their
             validated values. Attributes are validated in the order in which
@@ -430,9 +432,13 @@ class DirectLabelColormap(LabelColormapBase):
             A properly-formatted dictionary mapping labels to RGBA arrays.
         """
         if not isinstance(v, defaultdict) and None not in v:
-            raise ValueError(
-                'color_dict must contain None or be defaultdict instance'
+            warn(
+                'color_dict did not provide a default color. '
+                'Missing keys will be transparent. '
+                'To provide a default color, use the key `None`, '
+                'or provide a defaultdict instance.'
             )
+            v = {**v, None: 'transparent'}
         res = {
             label: transform_color(color_str)[0]
             for label, color_str in v.items()
