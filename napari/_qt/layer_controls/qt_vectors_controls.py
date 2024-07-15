@@ -54,7 +54,7 @@ class ColorModeWidget(QWidget):
         self.attr = attr
 
         # TODO: disconnect this?
-        # self.layer.events.features.connect(self._onLayerFeaturesChanged)
+        self.layer.events.features.connect(self._onLayerFeaturesChanged)
         # getattr(self.layer.style.events, attr).connect(self._onLayerEncodingChanged)
 
         self.mode = QComboBox(self)
@@ -71,6 +71,11 @@ class ColorModeWidget(QWidget):
             ColorMode.QUANTITATIVE: self._quantitative,
         }
 
+        # TODO: need to ensure that the layer's current model instance is used.
+        # Probably better to create, connect/disconnect specific encoding
+        # widgets as the layer encoding and mode changes.
+        # That way handling the instances and fields of specific encoding types
+        # can be done much more directly.
         layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(4)
@@ -125,7 +130,7 @@ class ConstantColorEncodingWidget(ColorEncodingWidget):
         self._layout.addRow('constant', self.constant)
 
     @property
-    def model(self) -> ColorEncoding:
+    def model(self) -> ConstantColorEncoding:
         return self._model
 
     def _onConstantChanged(self, constant: np.ndarray) -> None:
@@ -141,7 +146,7 @@ class ManualColorEncodingWidget(ColorEncodingWidget):
         self._layout.addRow('default', self.default)
 
     @property
-    def model(self) -> ColorEncoding:
+    def model(self) -> ManualColorEncoding:
         return self._model
 
     def _onDefaultChanged(self, default: np.ndarray) -> None:
@@ -168,7 +173,7 @@ class QuantitativeColorEncodingWidget(ColorEncodingWidget):
         self._layout.addRow('colormap', self.colormap)
 
     @property
-    def model(self) -> ColorEncoding:
+    def model(self) -> QuantitativeColorEncoding:
         return self._model
 
     def setFeatures(self, features: Iterable[str]):
