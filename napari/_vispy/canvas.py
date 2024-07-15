@@ -667,7 +667,6 @@ class VispyCanvas:
         d = d / np.linalg.norm(d)
         # xyz to zyx
         d = list(d[::-1]) 
-
         return d
 
 
