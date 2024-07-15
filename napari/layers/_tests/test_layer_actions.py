@@ -288,6 +288,12 @@ def test_convert_layer(layer, type_):
         )  # check array data not copied unnecessarily
 
 
+def test_convert_warns_with_projecton_mode():
+    ll = LayerList([Image(np.random.rand(10, 10), projection_mode='mean')])
+    with pytest.warns(UserWarning, match='projection mode'):
+        _convert(ll, 'labels')
+
+
 def make_three_layer_layerlist():
     layer_list = LayerList()
     layer_list.append(Points([[0, 0]], name='test'))
