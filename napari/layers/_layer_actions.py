@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, cast
 import numpy as np
 import numpy.typing as npt
 
+from napari import layers
 from napari.layers import Image, Labels, Layer
 from napari.layers._source import layer_source
 from napari.layers.utils import stack_utils
@@ -53,7 +54,6 @@ def _convert(ll: LayerList, type_: str) -> None:
 
     for lay in list(ll.selection):
         idx = ll.index(lay)
-
         if isinstance(lay, Shapes) and type_ == 'labels':
             data = lay.to_labels()
             idx += 1
@@ -66,7 +66,15 @@ def _convert(ll: LayerList, type_: str) -> None:
             data = lay.data
             # int image layer to labels is fully reversible
             ll.pop(idx)
-        new_layer = Layer.create(data, lay._get_base_state(), type_)
+        # projection mode may not be compatible with new type,
+        # we're ok with dropping it in that case
+        layer_type = getattr(layers, type_.title())
+        state = lay._get_base_state()
+        try:
+            layer_type._projectionclass(state['projection_mode'])
+        except ValueError:
+            state['projection_mode'] = 'none'
+        new_layer = Layer.create(data, state, type_)
         ll.insert(idx, new_layer)
 
 
