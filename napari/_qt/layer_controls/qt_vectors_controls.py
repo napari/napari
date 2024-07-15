@@ -6,6 +6,7 @@ from collections.abc import Iterable
 from typing import TYPE_CHECKING, Any, Optional
 
 import numpy as np
+from psygnal import Signal
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QCheckBox,
@@ -55,10 +56,14 @@ class ColorModeWidget(QWidget):
 
         # TODO: disconnect this?
         self.layer.events.features.connect(self._onLayerFeaturesChanged)
-        # getattr(self.layer.style.events, attr).connect(self._onLayerEncodingChanged)
+
+        getattr(self.layer.style.events, attr).connect(
+            self._onLayerEncodingChanged
+        )
 
         self.mode = QComboBox(self)
         self.mode.addItems(tuple(ColorMode))
+        self.mode.setCurrentText('')
         self.mode.currentTextChanged.connect(self._onModeChanged)
 
         self._constant = ConstantColorEncodingWidget()
@@ -70,6 +75,9 @@ class ColorModeWidget(QWidget):
             ColorMode.MANUAL: self._manual,
             ColorMode.QUANTITATIVE: self._quantitative,
         }
+
+        for encoding in self.encodings.values():
+            encoding.modelChanged.connect(self._updateLayerModel)
 
         # TODO: need to ensure that the layer's current model instance is used.
         # Probably better to create, connect/disconnect specific encoding
@@ -84,30 +92,35 @@ class ColorModeWidget(QWidget):
             layout.addWidget(encoding)
         self.setLayout(layout)
 
-        self._onModeChanged(self.mode.currentText())
         self._onLayerFeaturesChanged(layer.features)
-        # self._onLayerEncodingChanged(getattr(layer.style, attr))
+        self._onLayerEncodingChanged(getattr(layer.style, attr))
+        self._onModeChanged(self.mode.currentText())
 
-    # def _onLayerEncodingChanged(self, currentEncoding: ColorEncoding) -> None:
-    #     for mode, encoding in self.encodings.items():
-    #         if type(currentEncoding) == type(encoding):
-    #             self.encodings[mode]._model = currentEncoding
+    def _onLayerEncodingChanged(self, currentEncoding: ColorEncoding) -> None:
+        logging.warning('_onLayerEncodingChanged: %s', currentEncoding)
+        for mode, encoding in self.encodings.items():
+            if isinstance(currentEncoding, type(encoding.model)):
+                self.encodings[mode]._model = currentEncoding
+                self.mode.setCurrentText(str(mode))
 
     def _onLayerFeaturesChanged(self, features: Any) -> None:
-        logging.warning(
-            'ColorModeWidget._onLayerFeaturesChanged: %s', features.columns
-        )
         self._quantitative.setFeatures(features.columns)
 
     def _onModeChanged(self, mode: str) -> None:
+        logging.warning('_onModeChanged: %s', mode)
         selected = self.encodings[ColorMode(mode)]
         for encoding in self.encodings.values():
             encoding.setVisible(encoding is selected)
-            # if encoding is selected:
-            #     setattr(self.layer.style, self.attr, encoding.model)
+            if encoding is selected:
+                self._updateLayerModel(encoding.model)
+
+    def _updateLayerModel(self, model: ColorEncoding) -> None:
+        setattr(self.layer.style, self.attr, model)
 
 
 class ColorEncodingWidget(QWidget):
+    modelChanged = Signal(ColorEncoding)
+
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._layout = QFormLayout()
@@ -120,6 +133,10 @@ class ColorEncodingWidget(QWidget):
     @abstractmethod
     def model(self) -> ColorEncoding: ...
 
+    def setModel(self, model: ColorEncoding) -> None:
+        self._model = model
+        self.modelChanged(self._model)
+
 
 class ConstantColorEncodingWidget(ColorEncodingWidget):
     def __init__(self, parent: QWidget | None = None) -> None:
@@ -127,14 +144,14 @@ class ConstantColorEncodingWidget(ColorEncodingWidget):
         self._model = ConstantColorEncoding(constant='red')
         self.constant = QColorSwatchEdit(initial_color=self._model.constant)
         self.constant.color_changed.connect(self._onConstantChanged)
-        self._layout.addRow('constant', self.constant)
+        self._layout.addRow(None, self.constant)
 
     @property
-    def model(self) -> ConstantColorEncoding:
+    def model(self) -> ColorEncoding:
         return self._model
 
     def _onConstantChanged(self, constant: np.ndarray) -> None:
-        self._model = ConstantColorEncoding(constant=constant)
+        self.setModel(ConstantColorEncoding(constant=constant))
 
 
 class ManualColorEncodingWidget(ColorEncodingWidget):
@@ -150,9 +167,11 @@ class ManualColorEncodingWidget(ColorEncodingWidget):
         return self._model
 
     def _onDefaultChanged(self, default: np.ndarray) -> None:
-        self._model = ManualColorEncoding(
-            array=self._model.array,
-            default=default,
+        self.setModel(
+            ManualColorEncoding(
+                array=self._model.array,
+                default=default,
+            )
         )
 
 
@@ -168,6 +187,7 @@ class QuantitativeColorEncodingWidget(ColorEncodingWidget):
         for name, cm in AVAILABLE_COLORMAPS.items():
             self.colormap.addItem(cm._display_name, name)
         self.colormap.currentTextChanged.connect(self._onColormapChanged)
+        self.feature.currentTextChanged.connect(self._onFeatureChanged)
 
         self._layout.addRow('feature', self.feature)
         self._layout.addRow('colormap', self.colormap)
@@ -182,15 +202,19 @@ class QuantitativeColorEncodingWidget(ColorEncodingWidget):
         self.feature.addItems(features)
 
     def _onFeatureChanged(self, feature: str) -> None:
-        self._model = QuantitativeColorEncoding(
-            feature=feature,
-            colormap=self._model.colormap,
+        self.setModel(
+            QuantitativeColorEncoding(
+                feature=feature,
+                colormap=self._model.colormap,
+            )
         )
 
     def _onColormapChanged(self, name: str):
-        self._model = QuantitativeColorEncoding(
-            feature=self._model.feature,
-            colormap=name,
+        self.setModel(
+            QuantitativeColorEncoding(
+                feature=self._model.feature,
+                colormap=name,
+            )
         )
 
 

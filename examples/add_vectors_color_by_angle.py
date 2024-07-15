@@ -38,7 +38,7 @@ angle = np.mod(phi_space, 2 * np.pi)
 # create a feature that is true for all angles  > pi
 pos_angle = angle > np.pi
 
-# create the features dictionary.
+# create the features dictionary
 features = {
     'angle': angle,
     'pos_angle': pos_angle,

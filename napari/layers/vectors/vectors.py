@@ -732,9 +732,16 @@ class Vectors(Layer):
     def _view_face_color(self) -> np.ndarray:
         """(Mx4) np.ndarray : colors for the M in view triangles"""
 
+        # TODO: consider whether we should rely on lazy evaluation
+        # that is always called here (but may do nothing).
+        # Currently needed to support controls.
+        self.style.edge_color._apply(self.features)
+
         # Create as many colors as there are visible vectors.
         edge_color_values = _get_style_values(
-            self.style.edge_color, self._view_indices
+            encoding=self.style.edge_color,
+            indices=self._view_indices,
+            value_ndim=1,
         )
         face_color = np.broadcast_to(
             edge_color_values, (len(self._view_indices), 4)
@@ -848,10 +855,16 @@ class Vectors(Layer):
             downsampled = np.clip(
                 downsampled, 0, np.subtract(self._thumbnail_shape[:2], 1)
             )
-            # TODO: support constant color.
-            edge_colors = self.style.edge_color._values[
-                thumbnail_color_indices
-            ]
+
+            edge_colors = _get_style_values(
+                encoding=self.style.edge_color,
+                indices=thumbnail_color_indices,
+                value_ndim=1,
+            )
+            edge_colors = np.broadcast_to(
+                edge_colors, (len(thumbnail_color_indices), 4)
+            ).copy()
+
             for v, ec in zip(downsampled, edge_colors):
                 start = v[0]
                 stop = v[1]
