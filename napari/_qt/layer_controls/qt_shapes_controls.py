@@ -54,6 +54,8 @@ class QtShapesControls(QtLayerControls):
         Widget allowing user to set face color of points.
     line_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to add lines to shapes layer.
+    polyline_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
+        Button to add polylines to shapes layer.
     move_back_button : qtpy.QtWidgets.QtModePushButton
         Button to move selected shape(s) to the back.
     move_front_button : qtpy.QtWidgets.QtModePushButton
@@ -142,7 +144,11 @@ class QtShapesControls(QtLayerControls):
             layer, 'line', Mode.ADD_LINE, True, 'activate_add_line_mode'
         )
         self.polyline_button = self._radio_button(
-            layer, 'polyline', Mode.ADD_POLYLINE, True, 'activate_add_polyline'
+            layer,
+            'polyline',
+            Mode.ADD_POLYLINE,
+            True,
+            'activate_add_polyline_mode',
         )
         self.path_button = self._radio_button(
             layer, 'path', Mode.ADD_PATH, True, 'activate_add_path_mode'
