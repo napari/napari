@@ -28,6 +28,7 @@ from napari.layers.base._base_mouse_bindings import (
 from napari.layers.image._image_utils import guess_multiscale
 from napari.layers.image._slice import _ImageSliceResponse
 from napari.layers.labels._labels_constants import (
+    IsoCategoricalGradientMode,
     LabelColorMode,
     LabelsRendering,
     Mode,
@@ -298,6 +299,7 @@ class Labels(ScalarFieldBase):
         depiction='volume',
         experimental_clipping_planes=None,
         features=None,
+        iso_gradient_mode='normal',
         metadata=None,
         multiscale=None,
         name=None,
@@ -363,6 +365,7 @@ class Labels(ScalarFieldBase):
             contiguous=Event,
             contour=Event,
             features=Event,
+            iso_gradient_mode=Event,
             labels_update=Event,
             n_edit_dimensions=Event,
             paint=Event,
@@ -386,6 +389,8 @@ class Labels(ScalarFieldBase):
         self._n_edit_dimensions = 2
         self._contiguous = True
         self._brush_size = 10
+
+        self._iso_gradient_mode = IsoCategoricalGradientMode.NORMAL
 
         self._selected_label = 1
         self.colormap.selection = self._selected_label
@@ -430,6 +435,27 @@ class Labels(ScalarFieldBase):
     def rendering(self, rendering):
         self._rendering = LabelsRendering(rendering)
         self.events.rendering()
+
+    @property
+    def iso_gradient_mode(self):
+        """Return current gradient mode for isosurface rendering.
+
+        Selects the finite-difference gradient method for the isosurface shader. Options include:
+            * ``normal``: use a simple finite difference gradient
+            * ``isotropic``: use an isotropic Sobel gradient, smoother but more
+              computationally expensive
+
+        Returns
+        -------
+        str
+            The current gradient mode
+        """
+        return str(self._iso_gradient_mode)
+
+    @iso_gradient_mode.setter
+    def iso_gradient_mode(self, value):
+        self._iso_gradient_mode = IsoCategoricalGradientMode(value)
+        self.events.iso_gradient_mode()
 
     @property
     def contiguous(self):

@@ -86,3 +86,15 @@ class LabelsRendering(StringEnum):
 
     TRANSLUCENT = auto()
     ISO_CATEGORICAL = auto()
+
+
+class IsoCategoricalGradientMode(StringEnum):
+    """IsoCategoricalGradientMode: Gradient mode for the IsoCategorical rendering mode.
+
+    Selects the finite-difference gradient method for the isosurface shader:
+        * normal: use a simple finite difference gradient
+        * isotropic: use an isotropic Sobel gradient, smoother but more computationally expensive
+    """
+
+    NORMAL = auto()
+    ISOTROPIC = auto()

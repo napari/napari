@@ -1,6 +1,7 @@
 from vispy.scene.visuals import Volume as BaseVolume
 
 from napari._vispy.visuals.util import TextureMixin
+from napari.layers.labels._labels_constants import IsoCategoricalGradientMode
 
 FUNCTION_DEFINITIONS = """
 uniform bool u_iso_gradient;
@@ -249,15 +250,20 @@ class Volume(TextureMixin, BaseVolume):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.unfreeze()
-        self.iso_gradient = False
+        self.iso_gradient_mode = False
         self.freeze()
 
     @property
-    def iso_gradient(self):
-        return self._iso_gradient
+    def iso_gradient_mode(self):
+        """Whether to use an isotropic Sobel gradient (true) or a simple finite difference
+        gradient (false) for the isosurface rendering method.
+        """
+        return self._iso_gradient_mode
 
-    @iso_gradient.setter
-    def iso_gradient(self, value):
-        self._iso_gradient = value
-        self.shared_program['u_iso_gradient'] = self._iso_gradient
+    @iso_gradient_mode.setter
+    def iso_gradient_mode(self, value):
+        self._iso_gradient_mode = value
+        self.shared_program['u_iso_gradient'] = (
+            self._iso_gradient_mode == IsoCategoricalGradientMode.ISOTROPIC
+        )
         self.update()
