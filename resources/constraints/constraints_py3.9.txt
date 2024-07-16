@@ -27,7 +27,7 @@ build==1.2.1
     # via npe2
 cachey==0.2.1
     # via napari (napari_repo/pyproject.toml)
-certifi==2024.6.2
+certifi==2024.7.4
     # via
     #   napari (napari_repo/pyproject.toml)
     #   requests
