@@ -2527,6 +2527,7 @@ class Shapes(Layer):
                     Mode.ADD_RECTANGLE,
                     Mode.ADD_ELLIPSE,
                     Mode.ADD_LINE,
+                    Mode.ADD_POLYLINE,
                     Mode.VERTEX_INSERT,
                     Mode.VERTEX_REMOVE,
                 ]
@@ -2610,7 +2611,7 @@ class Shapes(Layer):
         self._moving_value = (None, None)
         self._last_cursor_position = None
         if self._is_creating is True:
-            if self._mode == Mode.ADD_PATH:
+            if self._mode in {Mode.ADD_PATH, Mode.ADD_POLYLINE}:
                 vertices = self._data_view.shapes[index].data
                 if len(vertices) <= 2:
                     self._data_view.remove(index)
