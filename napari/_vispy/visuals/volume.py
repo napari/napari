@@ -243,25 +243,29 @@ rendering_methods['translucent_categorical'] = TRANSLUCENT_CATEGORICAL_SNIPPETS
 
 
 class Volume(TextureMixin, BaseVolume):
+    """This class extends the vispy Volume visual to add categorical isosurface rendering."""
+
     # add the new rendering method to the snippets dict
     _shaders = shaders
     _rendering_methods = rendering_methods
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:  # type: ignore [no-untyped-def]
         super().__init__(*args, **kwargs)
         self.unfreeze()
-        self.iso_gradient_mode = False
+        self.iso_gradient_mode = IsoCategoricalGradientMode.NORMAL
         self.freeze()
 
     @property
-    def iso_gradient_mode(self):
+    def iso_gradient_mode(self) -> IsoCategoricalGradientMode:
         """Whether to use an isotropic Sobel gradient (true) or a simple finite difference
         gradient (false) for the isosurface rendering method.
         """
-        return self._iso_gradient_mode
+        if self._iso_gradient_mode:
+            return IsoCategoricalGradientMode.ISOTROPIC
+        return IsoCategoricalGradientMode.NORMAL
 
     @iso_gradient_mode.setter
-    def iso_gradient_mode(self, value):
+    def iso_gradient_mode(self, value: IsoCategoricalGradientMode) -> None:
         self._iso_gradient_mode = value
         self.shared_program['u_iso_gradient'] = (
             self._iso_gradient_mode == IsoCategoricalGradientMode.ISOTROPIC

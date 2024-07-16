@@ -266,7 +266,7 @@ class QtLabelsControls(QtLayerControls):
             self.layer.rendering == LabelsRendering.ISO_CATEGORICAL
         )
         self.isoGradientComboBox = isoGradientComboBox
-        self.isoGradientLabel = QLabel(trans._('gradient mode:'))
+        self.isoGradientLabel = QLabel(trans._('gradient\nmode:'))
 
         self._on_ndisplay_changed()
 

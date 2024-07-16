@@ -16,6 +16,7 @@ from napari._vispy.layers.scalar_field import (
 from napari._vispy.utils.gl import get_max_texture_sizes
 from napari._vispy.visuals.labels import LabelNode
 from napari._vispy.visuals.volume import Volume as VolumeNode
+from napari.layers.labels._labels_constants import IsoCategoricalGradientMode
 from napari.utils.colormaps.colormap import (
     CyclicLabelColormap,
     _texture_dtype,
@@ -207,7 +208,7 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
         self.layer.events.selected_label.connect(self._on_colormap_change)
         self.layer.events.show_selected_label.connect(self._on_colormap_change)
         self.layer.events.iso_gradient_mode.connect(
-            self._on_iso_gradient_change
+            self._on_iso_gradient_mode_change
         )
         self.layer.events.data.connect(self._on_colormap_change)
         # as we generate colormap texture based on the data type, we need to
@@ -294,7 +295,7 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
         else:
             self.node.cmap = VispyColormap(*colormap)
 
-    def _on_iso_gradient_change(self):
+    def _on_iso_gradient_mode_change(self):
         self.node.iso_gradient_mode = self.layer.iso_gradient_mode
 
     def _on_partial_labels_update(self, event):
@@ -358,3 +359,11 @@ class LabelLayerNode(ScalarFieldLayerNode):
             self._setup_nodes(_DTYPE_TO_VISPY_FORMAT[dtype])
             return self.get_node(ndisplay, dtype)
         return res
+
+    @property
+    def iso_gradient_mode(self) -> IsoCategoricalGradientMode:
+        return self._volume_node.iso_gradient_mode
+
+    @iso_gradient_mode.setter
+    def iso_gradient_mode(self, value: IsoCategoricalGradientMode) -> None:
+        self._volume_node.iso_gradient_mode = value
