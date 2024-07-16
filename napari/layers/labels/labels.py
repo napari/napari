@@ -140,6 +140,9 @@ class Labels(ScalarFieldBase):
         'translucent' renders without lighting. 'iso_categorical' uses isosurface
         rendering to calculate lighting effects on labeled surfaces.
         The default value is 'iso_categorical'.
+    iso_gradient_mode : str
+        Method for calulating the gradient (used to get the surface normal) in the
+        'iso_categorical' rendering mode. Must be one of {'normal', 'isotropic'}.
     rotate : float, 3-tuple of float, or n-D array.
         If a float convert into a 2D rotation matrix using that value as an
         angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
@@ -684,6 +687,7 @@ class Labels(ScalarFieldBase):
                 'multiscale': self.multiscale,
                 'properties': self.properties,
                 'rendering': self.rendering,
+                'iso_gradient_mode': self.iso_gradient_mode,
                 'depiction': self.depiction,
                 'plane': self.plane.dict(),
                 'experimental_clipping_planes': [
