@@ -252,21 +252,16 @@ class Volume(TextureMixin, BaseVolume):
     def __init__(self, *args, **kwargs) -> None:  # type: ignore [no-untyped-def]
         super().__init__(*args, **kwargs)
         self.unfreeze()
-        self.iso_gradient_mode = IsoCategoricalGradientMode.NORMAL
+        self.iso_gradient_mode = IsoCategoricalGradientMode.NORMAL.value
         self.freeze()
 
     @property
-    def iso_gradient_mode(self) -> IsoCategoricalGradientMode:
-        """Whether to use an isotropic Sobel gradient (true) or a simple finite difference
-        gradient (false) for the isosurface rendering method.
-        """
-        if self._iso_gradient_mode:
-            return IsoCategoricalGradientMode.ISOTROPIC
-        return IsoCategoricalGradientMode.NORMAL
+    def iso_gradient_mode(self) -> str:
+        return str(self._iso_gradient_mode)
 
     @iso_gradient_mode.setter
-    def iso_gradient_mode(self, value: IsoCategoricalGradientMode) -> None:
-        self._iso_gradient_mode = value
+    def iso_gradient_mode(self, value: str) -> None:
+        self._iso_gradient_mode = IsoCategoricalGradientMode(value)
         self.shared_program['u_iso_gradient'] = (
             self._iso_gradient_mode == IsoCategoricalGradientMode.ISOTROPIC
         )
