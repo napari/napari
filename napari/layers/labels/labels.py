@@ -110,6 +110,12 @@ class Labels(ScalarFieldBase):
     features : dict[str, array-like] or DataFrame
         Features table where each row corresponds to a label and each column
         is a feature. The first row corresponds to the background label.
+    iso_gradient_mode : str
+        Method for calulating the gradient (used to get the surface normal) in the
+        'iso_categorical' rendering mode. Must be one of {'normal', 'isotropic'}.
+        'normal' uses a simple finite difference gradient. 'isotropic' uses an isotropic
+        Sobel gradient, which is smoother but more computationally expensive.
+        The default value is 'normal'.
     metadata : dict
         Layer metadata.
     multiscale : bool
@@ -140,9 +146,6 @@ class Labels(ScalarFieldBase):
         'translucent' renders without lighting. 'iso_categorical' uses isosurface
         rendering to calculate lighting effects on labeled surfaces.
         The default value is 'iso_categorical'.
-    iso_gradient_mode : str
-        Method for calulating the gradient (used to get the surface normal) in the
-        'iso_categorical' rendering mode. Must be one of {'normal', 'isotropic'}.
     rotate : float, 3-tuple of float, or n-D array.
         If a float convert into a 2D rotation matrix using that value as an
         angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
