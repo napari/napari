@@ -3,6 +3,10 @@ import pytest
 
 from napari._qt.layer_controls.qt_labels_controls import QtLabelsControls
 from napari.layers import Labels
+from napari.layers.labels._labels_constants import (
+    IsoCategoricalGradientMode,
+    LabelsRendering,
+)
 from napari.utils.colormaps import DirectLabelColormap, colormap_utils
 
 np.random.seed(0)
@@ -136,3 +140,31 @@ def test_change_label_selector_range(make_labels_controls):
 
     assert qtctrl.selectionSpinBox.minimum() == -128
     assert qtctrl.selectionSpinBox.maximum() == 127
+
+
+def test_iso_gradient_mode_hidden_for_2d(make_labels_controls):
+    """Test that the iso gradient mode control is hidden with 2D view."""
+    layer, qtctrl = make_labels_controls()
+    assert qtctrl.isoGradientComboBox.isHidden()
+    layer.data = np.random.randint(5, size=(10, 15), dtype=np.uint8)
+    assert qtctrl.isoGradientComboBox.isHidden()
+    qtctrl.ndisplay = 3
+    assert not qtctrl.isoGradientComboBox.isHidden()
+    qtctrl.ndisplay = 2
+    assert qtctrl.isoGradientComboBox.isHidden()
+
+
+def test_iso_gradient_mode_with_rendering(make_labels_controls):
+    """Test the iso gradeint mode control is enabled for iso_categorical rendering."""
+    layer, qtctrl = make_labels_controls()
+    qtctrl.ndisplay = 3
+    assert layer.rendering == LabelsRendering.ISO_CATEGORICAL
+    assert (
+        qtctrl.isoGradientComboBox.currentText()
+        == IsoCategoricalGradientMode.SIMPLE
+    )
+    assert qtctrl.isoGradientComboBox.isEnabled()
+    layer.rendering = LabelsRendering.TRANSLUCENT
+    assert not qtctrl.isoGradientComboBox.isEnabled()
+    layer.rendering = LabelsRendering.ISO_CATEGORICAL
+    assert qtctrl.isoGradientComboBox.isEnabled()
