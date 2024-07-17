@@ -612,6 +612,9 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
                 image, zoom_factor, prefilter=False, order=0
             )
             low, high = self.contrast_limits
+            if np.issubdtype(downsampled.dtype, np.integer):
+                low = max(low, np.iinfo(downsampled.dtype).min)
+                high = min(high, np.iinfo(downsampled.dtype).max)
             downsampled = np.clip(downsampled, low, high)
             color_range = high - low
             if color_range != 0:
