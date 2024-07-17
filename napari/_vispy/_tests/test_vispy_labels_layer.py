@@ -103,7 +103,9 @@ def test_labels_iso_gradient_modes(make_napari_viewer):
     """Check that we can set `iso_gradient_mode` with `iso_categorical` rendering (test shader)."""
     viewer = make_napari_viewer(ndisplay=3, show=True)
     labels = make_labels_layer('numpy', shape=(20, 20))
+
     layer = viewer.add_labels(labels)
+    QCoreApplication.instance().processEvents()
 
     assert layer.rendering == 'iso_categorical'
     layer.iso_gradient_mode = IsoCategoricalGradientMode.ISOTROPIC
