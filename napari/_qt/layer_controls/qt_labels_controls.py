@@ -11,7 +11,7 @@ from qtpy.QtWidgets import (
     QSpinBox,
     QWidget,
 )
-from superqt import QLargeIntSpinBox
+from superqt import QEnumComboBox, QLargeIntSpinBox
 
 from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
 from napari._qt.utils import set_widgets_enabled_with_opacity
@@ -241,9 +241,7 @@ class QtLabelsControls(QtLayerControls):
         self.button_grid.addWidget(self.fill_button, 0, 4)
         self.button_grid.addWidget(self.pick_button, 0, 5)
 
-        renderComboBox = QComboBox(self)
-        rendering_options = [i.value for i in LabelsRendering]
-        renderComboBox.addItems(rendering_options)
+        renderComboBox = QEnumComboBox(enum_class=LabelsRendering)
         index = renderComboBox.findText(
             self.layer.rendering, Qt.MatchFlag.MatchFixedString
         )
@@ -252,9 +250,9 @@ class QtLabelsControls(QtLayerControls):
         self.renderComboBox = renderComboBox
         self.renderLabel = QLabel(trans._('rendering:'))
 
-        isoGradientComboBox = QComboBox(self)
-        grad_options = [i.value for i in IsoCategoricalGradientMode]
-        isoGradientComboBox.addItems(grad_options)
+        isoGradientComboBox = QEnumComboBox(
+            enum_class=IsoCategoricalGradientMode
+        )
         index = isoGradientComboBox.findText(
             self.layer.iso_gradient_mode, Qt.MatchFlag.MatchFixedString
         )
