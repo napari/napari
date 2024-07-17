@@ -222,7 +222,12 @@ class VispyBaseLayer(ABC, Generic[_L]):
         ):
             # The last downsample factor is used because we only ever show the
             # last/lowest multi-scale level for 3D.
-            translate += (self.layer.downsample_factors[-1][::-1] - 1) / 2
+            translate += (
+                self.layer.downsample_factors[-1][
+                    self.layer._slice_input.displayed
+                ][::-1]  # displayed dimensions, invert to match VisPy order
+                - 1
+            ) / 2
 
         # Embed in the top left corner of a 4x4 affine matrix
         affine_matrix = np.eye(4)
