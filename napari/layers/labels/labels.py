@@ -112,10 +112,10 @@ class Labels(ScalarFieldBase):
         is a feature. The first row corresponds to the background label.
     iso_gradient_mode : str
         Method for calulating the gradient (used to get the surface normal) in the
-        'iso_categorical' rendering mode. Must be one of {'normal', 'isotropic'}.
-        'normal' uses a simple finite difference gradient. 'isotropic' uses an isotropic
-        Sobel gradient, which is smoother but more computationally expensive.
-        The default value is 'normal'.
+        'iso_categorical' rendering mode. Must be one of {'simple', 'isotropic'}.
+        'siomple' uses a simple finite difference gradient in x, y, and z. 'isotropic' uses an
+        isotropic Sobel gradient, which is smoother but more computationally expensive.
+        The default value is 'simple'.
     metadata : dict
         Layer metadata.
     multiscale : bool
@@ -305,7 +305,7 @@ class Labels(ScalarFieldBase):
         depiction='volume',
         experimental_clipping_planes=None,
         features=None,
-        iso_gradient_mode='normal',
+        iso_gradient_mode=IsoCategoricalGradientMode.SIMPLE.value,
         metadata=None,
         multiscale=None,
         name=None,
@@ -396,7 +396,7 @@ class Labels(ScalarFieldBase):
         self._contiguous = True
         self._brush_size = 10
 
-        self._iso_gradient_mode = IsoCategoricalGradientMode.NORMAL
+        self._iso_gradient_mode = IsoCategoricalGradientMode.SIMPLE
 
         self._selected_label = 1
         self.colormap.selection = self._selected_label
@@ -447,7 +447,7 @@ class Labels(ScalarFieldBase):
         """Return current gradient mode for isosurface rendering.
 
         Selects the finite-difference gradient method for the isosurface shader. Options include:
-            * ``normal``: use a simple finite difference gradient
+            * ``simple``: use a simple finite difference gradient
             * ``isotropic``: use an isotropic Sobel gradient, smoother but more
               computationally expensive
 

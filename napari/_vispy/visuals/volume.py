@@ -252,7 +252,7 @@ class Volume(TextureMixin, BaseVolume):
     def __init__(self, *args, **kwargs) -> None:  # type: ignore [no-untyped-def]
         super().__init__(*args, **kwargs)
         self.unfreeze()
-        self.iso_gradient_mode = IsoCategoricalGradientMode.NORMAL.value
+        self.iso_gradient_mode = IsoCategoricalGradientMode.SIMPLE.value
         self.freeze()
 
     @property
