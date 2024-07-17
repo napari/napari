@@ -6,7 +6,6 @@ from collections.abc import Iterable
 from typing import TYPE_CHECKING, Any, Optional
 
 import numpy as np
-from psygnal import Signal
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QCheckBox,
@@ -30,6 +29,7 @@ from napari.layers.utils.color_encoding import (
 from napari.layers.vectors._vectors_constants import VECTORSTYLE_TRANSLATIONS
 from napari.utils.colormaps.colormap_utils import AVAILABLE_COLORMAPS
 from napari.utils.compat import StrEnum
+from napari.utils.events.event import Event
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -54,9 +54,9 @@ class ColorModeWidget(QWidget):
         self.layer = layer
         self.attr = attr
 
-        # TODO: disconnect this?
+        # TODO: disconnect?
+        # Or will be there be one widget instance per layer instance?
         self.layer.events.features.connect(self._onLayerFeaturesChanged)
-
         getattr(self.layer.style.events, attr).connect(
             self._onLayerEncodingChanged
         )
@@ -76,9 +76,6 @@ class ColorModeWidget(QWidget):
             ColorMode.QUANTITATIVE: self._quantitative,
         }
 
-        for encoding in self.encodings.values():
-            encoding.modelChanged.connect(self._updateLayerModel)
-
         # TODO: need to ensure that the layer's current model instance is used.
         # Probably better to create, connect/disconnect specific encoding
         # widgets as the layer encoding and mode changes.
@@ -92,35 +89,44 @@ class ColorModeWidget(QWidget):
             layout.addWidget(encoding)
         self.setLayout(layout)
 
-        self._onLayerFeaturesChanged(layer.features)
-        self._onLayerEncodingChanged(getattr(layer.style, attr))
-        self._onModeChanged(self.mode.currentText())
+        self._setFeatures(layer.features)
+        self._setCurrentEncoding(getattr(layer.style, attr))
 
-    def _onLayerEncodingChanged(self, currentEncoding: ColorEncoding) -> None:
-        logging.warning('_onLayerEncodingChanged: %s', currentEncoding)
-        for mode, encoding in self.encodings.items():
-            if isinstance(currentEncoding, type(encoding.model)):
-                self.encodings[mode]._model = currentEncoding
-                self.mode.setCurrentText(str(mode))
+    def _onLayerFeaturesChanged(self, event: Event) -> None:
+        self._setFeatures(event.value)
 
-    def _onLayerFeaturesChanged(self, features: Any) -> None:
+    def _setFeatures(self, features: Any) -> None:
         self._quantitative.setFeatures(features.columns)
+
+    def _onLayerEncodingChanged(self, event: Event) -> None:
+        self._setCurrentEncoding(event.value)
+
+    def _setCurrentEncoding(self, currentEncoding: ColorEncoding) -> None:
+        logging.warning('_onLayerEncodingChanged: %s', currentEncoding)
+        if isinstance(currentEncoding, ConstantColorEncoding):
+            self._constant.setModel(currentEncoding)
+            self.mode.setCurrentText('constant')
+        elif isinstance(currentEncoding, ManualColorEncoding):
+            self._manual.setModel(currentEncoding)
+            self.mode.setCurrentText('manual')
+        elif isinstance(currentEncoding, QuantitativeColorEncoding):
+            self._quantitative.setModel(currentEncoding)
+            self.mode.setCurrentText('quantitative')
+        else:
+            logging.error('Unsupported color encoding: %s', currentEncoding)
 
     def _onModeChanged(self, mode: str) -> None:
         logging.warning('_onModeChanged: %s', mode)
         selected = self.encodings[ColorMode(mode)]
         for encoding in self.encodings.values():
             encoding.setVisible(encoding is selected)
-            if encoding is selected:
-                self._updateLayerModel(encoding.model)
+        self._updateLayerModel(selected.model)
 
     def _updateLayerModel(self, model: ColorEncoding) -> None:
         setattr(self.layer.style, self.attr, model)
 
 
 class ColorEncodingWidget(QWidget):
-    modelChanged = Signal(ColorEncoding)
-
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._layout = QFormLayout()
@@ -133,25 +139,34 @@ class ColorEncodingWidget(QWidget):
     @abstractmethod
     def model(self) -> ColorEncoding: ...
 
-    def setModel(self, model: ColorEncoding) -> None:
-        self._model = model
-        self.modelChanged(self._model)
-
 
 class ConstantColorEncodingWidget(ColorEncodingWidget):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._model = ConstantColorEncoding(constant='red')
         self.constant = QColorSwatchEdit(initial_color=self._model.constant)
-        self.constant.color_changed.connect(self._onConstantChanged)
+        self.constant.color_changed.connect(self._onWidgetConstantChanged)
         self._layout.addRow(None, self.constant)
 
     @property
     def model(self) -> ColorEncoding:
         return self._model
 
-    def _onConstantChanged(self, constant: np.ndarray) -> None:
-        self.setModel(ConstantColorEncoding(constant=constant))
+    def setModel(self, model: ConstantColorEncoding) -> None:
+        # TODO: disconnect old model?
+        self._model = model
+        self._model.events.constant.connect(self._onModelConstantChanged)
+        self._setConstant(self._model.constant)
+
+    def _onModelConstantChanged(self, event: Event) -> None:
+        self._setConstant(event.value)
+
+    def _setConstant(self, constant: np.ndarray) -> None:
+        self.constant.setColor(constant)
+
+    def _onWidgetConstantChanged(self, constant: np.ndarray) -> None:
+        # TODO: need a blocker? or no change in value is enough?
+        self._model.constant = constant
 
 
 class ManualColorEncodingWidget(ColorEncodingWidget):
@@ -159,20 +174,27 @@ class ManualColorEncodingWidget(ColorEncodingWidget):
         super().__init__(parent)
         self._model = ManualColorEncoding(array=[])
         self.default = QColorSwatchEdit(initial_color=self._model.default)
-        self.default.color_changed.connect(self._onDefaultChanged)
+        self.default.color_changed.connect(self._onWidgetDefaultChanged)
         self._layout.addRow('default', self.default)
 
     @property
     def model(self) -> ManualColorEncoding:
         return self._model
 
-    def _onDefaultChanged(self, default: np.ndarray) -> None:
-        self.setModel(
-            ManualColorEncoding(
-                array=self._model.array,
-                default=default,
-            )
-        )
+    def setModel(self, model: ManualColorEncoding) -> None:
+        # TODO: disconnect old model?
+        self._model = model
+        self._model.events.default.connect(self._onModelDefaultChanged)
+        self._setModelDefault(self._model.default)
+
+    def _onModelDefaultChanged(self, event: Event) -> None:
+        self._setModelDefault(event.value)
+
+    def _setModelDefault(self, default: np.ndarray) -> None:
+        self.default.setColor(default)
+
+    def _onWidgetDefaultChanged(self, default: np.ndarray) -> None:
+        self._model.default = default
 
 
 class QuantitativeColorEncodingWidget(ColorEncodingWidget):
@@ -186,9 +208,8 @@ class QuantitativeColorEncodingWidget(ColorEncodingWidget):
         self.colormap = QtColormapComboBox(self)
         for name, cm in AVAILABLE_COLORMAPS.items():
             self.colormap.addItem(cm._display_name, name)
-        self.colormap.currentTextChanged.connect(self._onColormapChanged)
-        self.feature.currentTextChanged.connect(self._onFeatureChanged)
-
+        self.colormap.currentTextChanged.connect(self._onWidgetColormapChanged)
+        self.feature.currentTextChanged.connect(self._onWidgetFeatureChanged)
         self._layout.addRow('feature', self.feature)
         self._layout.addRow('colormap', self.colormap)
 
@@ -196,26 +217,33 @@ class QuantitativeColorEncodingWidget(ColorEncodingWidget):
     def model(self) -> QuantitativeColorEncoding:
         return self._model
 
+    def setModel(self, model: QuantitativeColorEncoding) -> None:
+        # TODO: disconnect old model?
+        self._model = model
+        self._model.events.feature.connect(self._onModelFeatureChanged)
+        self._model.events.colormap.connect(self._onModelColormapChanged)
+        self.feature.setCurrentText(self._model.feature)
+        self.colormap.setCurrentText(self._model.colormap.name)
+
     def setFeatures(self, features: Iterable[str]):
         # TODO: may need to block event.
         self.feature.clear()
         self.feature.addItems(features)
 
-    def _onFeatureChanged(self, feature: str) -> None:
-        self.setModel(
-            QuantitativeColorEncoding(
-                feature=feature,
-                colormap=self._model.colormap,
-            )
-        )
+    def _onModelFeatureChanged(self, event: Event) -> None:
+        feature = event.value
+        self.feature.setCurrentText(feature)
 
-    def _onColormapChanged(self, name: str):
-        self.setModel(
-            QuantitativeColorEncoding(
-                feature=self._model.feature,
-                colormap=name,
-            )
-        )
+    def _onModelColormapChanged(self, event: Event) -> None:
+        # TODO: check what happens when specifying a custom colormap.
+        colormap = event.value
+        self.colormap.setCurrentText(colormap.name)
+
+    def _onWidgetFeatureChanged(self, feature: str) -> None:
+        self._model.feature = feature
+
+    def _onWidgetColormapChanged(self, name: str):
+        self._model.colormap = name
 
 
 class QtVectorsControls(QtLayerControls):

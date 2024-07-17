@@ -1,3 +1,4 @@
+import logging
 import warnings
 from abc import ABC, abstractmethod
 from typing import (
@@ -12,6 +13,7 @@ from typing import (
 import numpy as np
 
 from napari.utils.events import EventedModel
+from napari.utils.events.event import Event
 from napari.utils.translations import trans
 
 IndicesType = Union[range, list[int], np.ndarray]
@@ -139,6 +141,14 @@ class StyleCollection(EventedModel):
         'face_color': array([[0, 1, 0, 1], [0, 0, 1, 1]]),
     }
     """
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        is_channel = name in self._channels
+        if is_channel:
+            getattr(self, name).events.disconnect(self.events)
+        super().__setattr__(name, value)
+        if is_channel:
+            getattr(self, name).events.connect(self.events)
 
     def __call__(
         self, features: Any
@@ -339,10 +349,16 @@ class _DerivedStyleEncoding(
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self._cached = _empty_array_like(self.fallback)
+        self.events.connect(self._maybe_clear)
 
     @abstractmethod
     def __call__(self, features: Any) -> Union[StyleValue, StyleArray]:
         pass
+
+    def _maybe_clear(self, event: Event) -> None:
+        logging.warning('_maybe_clear: %s', event)
+        if event.type not in ('fallback', '_cached'):
+            self._clear()
 
     @property
     def _values(self) -> Union[StyleValue, StyleArray]:
