@@ -66,7 +66,25 @@ vec3 calculateGradient(vec3 loc, vec3 step, out int n_bg_borders) {
 
 vec3 calculateIsotropicGradient(vec3 loc, vec3 step) {
     // calculate gradient within the volume by finite differences
-    // using a 3D sobel-feldman kernel
+    // using a 3D sobel-feldman convolution kernel
+
+    // the kernel here is a 3x3 cube, centered on the sample at `loc`
+    // the kernel for G.z looks like this:
+
+    // [ +1 +2 +1 ]
+    // [ +2 +4 +2 ]    <-- "loc - step.z" is in the center
+    // [ +1 +2 +1 ]
+
+    // [  0  0  0 ]
+    // [  0  0  0 ]    <-- "loc" is in the center
+    // [  0  0  0 ]
+
+    // [ -1 -2 -1 ]
+    // [ -2 -4 -2 ]    <-- "loc + step.z" is in the center
+    // [ -1 -2 -1 ]
+
+    // kernels for G.x and G.y similar, but transposed
+    // see https://en.wikipedia.org/wiki/Sobel_operator#Extension_to_other_dimensions
 
     vec3 G = vec3(0.0);
 

@@ -296,7 +296,8 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
             self.node.cmap = VispyColormap(*colormap)
 
     def _on_iso_gradient_mode_change(self):
-        self.node.iso_gradient_mode = self.layer.iso_gradient_mode
+        if isinstance(self.node, VolumeNode):
+            self.node.iso_gradient_mode = self.layer.iso_gradient_mode
 
     def _on_partial_labels_update(self, event):
         if not self.layer.loaded:
@@ -359,11 +360,3 @@ class LabelLayerNode(ScalarFieldLayerNode):
             self._setup_nodes(_DTYPE_TO_VISPY_FORMAT[dtype])
             return self.get_node(ndisplay, dtype)
         return res
-
-    @property
-    def iso_gradient_mode(self) -> IsoCategoricalGradientMode:
-        return self._volume_node.iso_gradient_mode
-
-    @iso_gradient_mode.setter
-    def iso_gradient_mode(self, value: IsoCategoricalGradientMode) -> None:
-        self._volume_node.iso_gradient_mode = value
