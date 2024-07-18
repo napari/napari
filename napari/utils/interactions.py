@@ -6,6 +6,7 @@ import warnings
 from numpydoc.docscrape import FunctionDoc
 
 from napari.utils.key_bindings import (
+    KeyBinding,
     KeyBindingLike,
     coerce_keybinding,
 )
@@ -282,13 +283,39 @@ class Shortcut:
         if error:
             warnings.warn(error_msg, UserWarning, stacklevel=2)
 
-    @staticmethod
-    def parse_platform(text: str) -> str:
-        """
-        Parse a current_platform_specific shortcut, and return a canonical
-        version separated with dashes.
+    # @staticmethod
+    # def parse_platform(text: str) -> str:
+    #     """
+    #     Parse a current_platform_specific shortcut, and return a canonical
+    #     version separated with dashes.
 
-        This replace platform specific symbols, like ↵ by Enter,  ⌘ by Command on MacOS....
+    #     This replace platform specific symbols, like ↵ by Enter,  ⌘ by Command on MacOS....
+    #     """
+    #     # TODO: Change to parse shotcur KeyBinding normalizaed str representation to use dashes instead of plus
+
+    #     # edge case, shortcut combinaison where `+` is a key.
+    #     # this should be rare as on english keyboard + is Shift-Minus.
+    #     # but not unheard of. In those case `+` is always at the end with `++`
+    #     # as you can't get two non-modifier keys,  or alone.
+    #     if text == '+':
+    #         return text
+    #     if JOINCHAR == '+':
+    #         text = text.replace('++', '+Plus')
+    #         text = text.replace('+', '')
+    #         text = text.replace('Plus', '+')
+    #     for k, v in KEY_SYMBOLS.items():
+    #         if text.endswith(v):
+    #             text = text.replace(v, k)
+    #         else:
+    #             text = text.replace(v, k + '-')
+
+    #     return text
+
+    @staticmethod
+    def to_dashes_separator(text: str) -> str:
+        """
+        Parse a shortcut str separated with `+` and return a version separated
+        with dashes (`-`).
         """
         # edge case, shortcut combinaison where `+` is a key.
         # this should be rare as on english keyboard + is Shift-Minus.
@@ -296,17 +323,15 @@ class Shortcut:
         # as you can't get two non-modifier keys,  or alone.
         if text == '+':
             return text
-        if JOINCHAR == '+':
-            text = text.replace('++', '+Plus')
-            text = text.replace('+', '')
-            text = text.replace('Plus', '+')
-        for k, v in KEY_SYMBOLS.items():
-            if text.endswith(v):
-                text = text.replace(v, k)
-            else:
-                text = text.replace(v, k + '-')
+        text = text.replace('++', '+Plus')
+        text = text.replace('+', '-')
+        text = text.replace('Plus', '+')
 
         return text
+
+    @property
+    def keybinding(self) -> KeyBinding:
+        return self._kb
 
     @property
     def qt(self) -> str:

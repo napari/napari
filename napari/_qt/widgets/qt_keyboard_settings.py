@@ -256,10 +256,17 @@ class ShortcutEditor(QWidget):
                 self._table.setItem(row, self._icon_col, item)
 
                 # Set the shortcuts in table.
+                # TODO: set as item data keybinding
                 item_shortcut = QTableWidgetItem(
                     Shortcut(next(iter(shortcuts))).platform
                     if shortcuts
                     else ''
+                )
+                item_shortcut.setData(
+                    Qt.ItemDataRole.UserRole,
+                    Shortcut(next(iter(shortcuts))).keybinding
+                    if shortcuts
+                    else '',
                 )
                 self._table.setItem(row, self._shortcut_col, item_shortcut)
 
@@ -267,6 +274,12 @@ class ShortcutEditor(QWidget):
                     Shortcut(list(shortcuts)[1]).platform
                     if len(shortcuts) > 1
                     else ''
+                )
+                item_shortcut2.setData(
+                    Qt.ItemDataRole.UserRole,
+                    Shortcut(list(shortcuts)[1]).keybinding
+                    if len(shortcuts) > 1
+                    else '',
                 )
                 self._table.setItem(row, self._shortcut_col2, item_shortcut2)
 
@@ -302,13 +315,26 @@ class ShortcutEditor(QWidget):
         action_name = self._table.item(row, self._action_col).text()
         shortcuts = action_manager._shortcuts.get(action_name, [])
         with lock_keybind_update(self):
+            # TODO: set as item data keybinding shortcut representation
             self._table.item(row, self._shortcut_col).setText(
                 Shortcut(next(iter(shortcuts))).platform if shortcuts else ''
+            )
+            self._table.item(row, self._shortcut_col).setData(
+                Qt.ItemDataRole.UserRole,
+                Shortcut(next(iter(shortcuts))).keybinding
+                if shortcuts
+                else '',
             )
             self._table.item(row, self._shortcut_col2).setText(
                 Shortcut(list(shortcuts)[1]).platform
                 if len(shortcuts) > 1
                 else ''
+            )
+            self._table.item(row, self._shortcut_col2).setData(
+                Qt.ItemDataRole.UserRole,
+                Shortcut(list(shortcuts)[1]).keybinding
+                if len(shortcuts) > 1
+                else '',
             )
 
     def _mark_conflicts(self, new_shortcut, row) -> bool:
@@ -318,7 +344,6 @@ class ShortcutEditor(QWidget):
         current_item = self._table.currentItem()
         for row1, (action_name, action) in enumerate(actions_all.items()):
             shortcuts = action_manager._shortcuts.get(action_name, [])
-
             if new_shortcut not in shortcuts:
                 continue
             # Shortcut is here (either same action or not), don't replace in settings.
@@ -329,6 +354,7 @@ class ShortcutEditor(QWidget):
                 self._show_warning_icons([row, row1])
 
                 # show warning message
+                # TODO: Show over the conflict warning message the per platform shortcut representation?
                 message = trans._(
                     'The keybinding <b>{new_shortcut}</b>  is already assigned to <b>{action_description}</b>; change or clear that shortcut before assigning <b>{new_shortcut}</b> to this one.',
                     new_shortcut=new_shortcut,
@@ -343,9 +369,17 @@ class ShortcutEditor(QWidget):
                 return False
 
             # This shortcut was here.  Reformat and reset text.
-            format_shortcut = Shortcut(new_shortcut).platform
+            short = Shortcut(new_shortcut)
+            format_shortcut = short.platform
+            keybinding_shortcut = short.keybinding
             with lock_keybind_update(self):
+                # TODO: reset item data with keybinding.
+                # Check if this logic is correct when the second column is trying to set the
+                # same shortcut that appears over the first column of the same row/action
                 current_item.setText(format_shortcut)
+                current_item.setData(
+                    Qt.ItemDataRole.UserRole, keybinding_shortcut
+                )
 
         return True
 
@@ -402,7 +436,10 @@ class ShortcutEditor(QWidget):
 
             # get the current item from shortcuts column
             current_item = self._table.currentItem()
-            new_shortcut = Shortcut.parse_platform(current_item.text())
+            # TODO: Use current_item.data instead of text with symbols
+            new_keybinding = current_item.data(Qt.ItemDataRole.UserRole)
+            new_shortcut = Shortcut.to_dashes_separator(str(new_keybinding))
+            # new_shortcut = Shortcut.parse_platform(current_item.text())
             if new_shortcut:
                 new_shortcut = new_shortcut[0].upper() + new_shortcut[1:]
 
@@ -425,7 +462,7 @@ class ShortcutEditor(QWidget):
                     return
 
             # Flag to indicate whether to set the new shortcut.
-            replace = self._mark_conflicts(new_shortcut, row)
+            replace = self._mark_conflicts(new_keybinding, row)
 
             if replace is True:
                 # This shortcut is not taken.
@@ -558,15 +595,26 @@ class ShortcutDelegate(QItemDelegate):
 
     def setEditorData(self, widget, model_index):
         text = model_index.model().data(model_index, Qt.ItemDataRole.EditRole)
-        widget.setText(str(text) if text else '')
+        # TODO: set keybinding normalized representation
+        text = str(text) if text else ''
+        keybinding = model_index.model().data(
+            model_index, Qt.ItemDataRole.UserRole
+        )
+        widget.setTextKeyBinding(text, keybinding)
 
     def updateEditorGeometry(self, widget, style_option, model_index):
         widget.setGeometry(style_option.rect)
 
     def setModelData(self, widget, abstract_item_model, model_index):
+        # TODO: Use widget custom attribute to get KeyBinding instead of text with symbols
+        # and use that when setting/storing shortcuts
         text = widget.text()
+        keybinding = widget.keybinding
         abstract_item_model.setData(
             model_index, text, Qt.ItemDataRole.EditRole
+        )
+        abstract_item_model.setData(
+            model_index, keybinding, Qt.ItemDataRole.UserRole
         )
 
 
@@ -575,6 +623,11 @@ class EditorWidget(QLineEdit):
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
+        self._keybinding = None
+
+    @property
+    def keybinding(self) -> str:
+        return self._keybinding
 
     def event(self, event):
         """Qt method override."""
@@ -638,7 +691,9 @@ class EditorWidget(QLineEdit):
 
         # in current pyappkit this will have weird effects on the order of modifiers
         # see https://github.com/pyapp-kit/app-model/issues/110
-        self.setText(Shortcut(seq).platform)
+        # self.setText(Shortcut(seq).platform)
+        short = Shortcut(seq)
+        self.setTextKeyBinding(short.platform, short.keybinding)
 
     def keyReleaseEvent(self, event) -> None:
         self._handleEditModifiersOnly(event)
@@ -656,7 +711,8 @@ class EditorWidget(QLineEdit):
             and self.hasSelectedText()
         ):
             # Allow user to delete shortcut.
-            self.setText('')
+            # self.setText('')
+            self.setTextKeyBinding('', None)
             return
 
         if event_key in (
@@ -684,8 +740,13 @@ class EditorWidget(QLineEdit):
         event_keyseq = translator.keyevent_to_keyseq(event)
         kb = qkeysequence2modelkeybinding(event_keyseq)
         short = Shortcut(kb)
-        self.setText(short.platform)
+        # self.setText(short.platform)
+        self.setTextKeyBinding(short.platform, short.keybinding)
         self.clearFocus()
+
+    def setTextKeyBinding(self, text, keybinding):
+        self._keybinding = keybinding
+        self.setText(text)
 
 
 class ShortcutTranslator(QKeySequenceEdit):
