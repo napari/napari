@@ -522,11 +522,11 @@ class QtLabelsControls(QtLayerControls):
         self._set_polygon_tool_state()
 
     def _on_ndisplay_changed(self):
-        render_visible = self.ndisplay == 3
-        self.renderComboBox.setVisible(render_visible)
-        self.renderLabel.setVisible(render_visible)
-        self.isoGradientComboBox.setVisible(render_visible)
-        self.isoGradientLabel.setVisible(render_visible)
+        show_3d_widgets = self.ndisplay == 3
+        self.renderComboBox.setVisible(show_3d_widgets)
+        self.renderLabel.setVisible(show_3d_widgets)
+        self.isoGradientComboBox.setVisible(show_3d_widgets)
+        self.isoGradientLabel.setVisible(show_3d_widgets)
         self._on_editable_or_visible_change()
         self._set_polygon_tool_state()
         super()._on_ndisplay_changed()
