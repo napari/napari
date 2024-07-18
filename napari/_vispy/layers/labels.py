@@ -16,7 +16,6 @@ from napari._vispy.layers.scalar_field import (
 from napari._vispy.utils.gl import get_max_texture_sizes
 from napari._vispy.visuals.labels import LabelNode
 from napari._vispy.visuals.volume import Volume as VolumeNode
-from napari.layers.labels._labels_constants import IsoCategoricalGradientMode
 from napari.utils.colormaps.colormap import (
     CyclicLabelColormap,
     _texture_dtype,
