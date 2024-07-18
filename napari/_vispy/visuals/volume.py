@@ -109,8 +109,6 @@ vec4 calculateShadedCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)
         N = calculateGradient(loc, step, n_bg_borders);
     }
 
-    N = normalize(N);
-
     // Normalize and flip normal so it points towards viewer
     N = normalize(N);
     float Nselect = float(dot(N,V) > 0.0);
