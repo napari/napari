@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Literal, Union, cast
+from typing import Any, Literal, Union, cast
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -367,12 +367,12 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         self._rendering = ImageRendering(rendering)
         self.events.rendering()
 
-    def _get_state(self):
+    def _get_state(self) -> dict[str, Any]:
         """Get dictionary of layer state.
 
         Returns
         -------
-        state : dict
+        state : dict of str to Any
             Dictionary of layer state.
         """
         state = self._get_base_state()

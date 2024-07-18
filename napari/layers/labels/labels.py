@@ -3,6 +3,7 @@ from collections import deque
 from collections.abc import Sequence
 from contextlib import contextmanager
 from typing import (
+    Any,
     Callable,
     ClassVar,
     Optional,
@@ -53,6 +54,7 @@ from napari.utils.colormaps import (
 from napari.utils.colormaps.colormap import (
     CyclicLabelColormap,
     LabelColormapBase,
+    _normalize_label_colormap,
 )
 from napari.utils.colormaps.colormap_utils import shuffle_and_extend_colormap
 from napari.utils.events import EmitterGroup, Event
@@ -500,6 +502,7 @@ class Labels(ScalarFieldBase):
         self._set_colormap(colormap)
 
     def _set_colormap(self, colormap):
+        colormap = _normalize_label_colormap(colormap)
         if isinstance(colormap, CyclicLabelColormap):
             self._random_colormap = colormap
             self._original_random_colormap = colormap
@@ -641,12 +644,12 @@ class Labels(ScalarFieldBase):
             data = data[0]
         return data
 
-    def _get_state(self):
+    def _get_state(self) -> dict[str, Any]:
         """Get dictionary of layer state.
 
         Returns
         -------
-        state : dict
+        state : dict of str to Any
             Dictionary of layer state.
         """
         state = self._get_base_state()

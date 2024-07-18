@@ -109,6 +109,55 @@ def test_add_simple_shape(shape_type, create_known_shapes_layer):
     assert layer.selected_data == {n_shapes}
 
 
+def test_line_fixed_angles(create_known_shapes_layer):
+    """Draw line with fixed angles."""
+    layer, n_shapes, known_non_shape = create_known_shapes_layer
+
+    layer.mode = 'add_line'
+
+    # set _fixed_aspect, like Shift would
+    layer._fixed_aspect = True
+
+    # Simulate click with shift
+    event = read_only_mouse_event(
+        type='mouse_press',
+        position=known_non_shape,
+    )
+    mouse_press_callbacks(layer, event)
+
+    known_non_shape_end = [40, 60]
+    # Simulate drag with shift
+    event = read_only_mouse_event(
+        type='mouse_move',
+        is_dragging=True,
+        position=known_non_shape_end,
+    )
+    mouse_move_callbacks(layer, event)
+
+    # Simulate release with shift
+    event = read_only_mouse_event(
+        type='mouse_release',
+        position=known_non_shape_end,
+    )
+    mouse_release_callbacks(layer, event)
+
+    new_line = layer.data[-1][-1] - layer.data[-1][0]
+
+    # Check new shape added at coordinates
+    assert len(layer.data) == n_shapes + 1
+    # start should match mouse event
+    assert np.allclose(
+        layer.data[-1][0], np.asarray(known_non_shape).astype(float)
+    )
+    # With _fixed_aspect, the line end won't be at the end event
+    assert not np.allclose(
+        layer.data[-1][-1], np.asarray(known_non_shape_end).astype(float)
+    )
+    # with _fixed_aspect the angle of the line should be 45 degrees
+    theta = np.degrees(np.arctan2(new_line[1], new_line[0]))
+    assert np.allclose(theta, 45.0)
+
+
 def test_polygon_lasso_tablet(create_known_shapes_layer):
     """Draw polygon with tablet simulated by mouse drag event."""
     layer, n_shapes, known_non_shape = create_known_shapes_layer
@@ -651,6 +700,75 @@ def test_after_in_add_mode_shape(mode, create_known_shapes_layer):
     # Check no new shape added and non selected
     assert len(layer.data) == n_shapes
     assert len(layer.selected_data) == 0
+
+
+@pytest.mark.parametrize(
+    'mode',
+    [
+        'add_polygon',
+        'add_path',
+    ],
+)
+def test_clicking_the_same_point_is_not_crashing(
+    mode, create_known_shapes_layer
+):
+    layer, n_shapes, _ = create_known_shapes_layer
+
+    layer.mode = mode
+    position = tuple(layer.data[0][0])
+
+    for _ in range(2):
+        event = read_only_mouse_event(type='mouse_press', position=position)
+        mouse_press_callbacks(layer, event)
+
+        event = read_only_mouse_event(type='mouse_release', position=position)
+        mouse_release_callbacks(layer, event)
+
+    # If there was no move event between the two clicks, we expect value[1] must be None
+    assert layer.get_value(event.position, world=True)[1] is None
+
+
+@pytest.mark.parametrize(
+    'mode',
+    [
+        'add_polygon',
+        'add_path',
+    ],
+)
+def test_is_creating_is_false_on_creation(mode, create_known_shapes_layer):
+    layer, n_shapes, _ = create_known_shapes_layer
+
+    layer.mode = mode
+    position = tuple(layer.data[0][0])
+
+    def is_creating_is_True(event):
+        assert event.source._is_creating
+
+    def is_creating_is_False(event):
+        assert not event.source._is_creating
+
+    assert not layer._is_creating
+    layer.events.set_data.connect(is_creating_is_True)
+
+    event = read_only_mouse_event(type='mouse_press', position=position)
+    mouse_press_callbacks(layer, event)
+
+    assert layer._is_creating
+
+    event = read_only_mouse_event(type='mouse_release', position=position)
+    mouse_release_callbacks(layer, event)
+
+    assert layer._is_creating
+
+    layer.events.set_data.disconnect(is_creating_is_True)
+    layer.events.set_data.connect(is_creating_is_False)
+    end_click = read_only_mouse_event(
+        type='mouse_double_click',
+        position=position,
+    )
+    mouse_double_click_callbacks(layer, end_click)
+
+    assert not layer._is_creating
 
 
 @pytest.mark.parametrize('mode', ['select', 'direct'])
