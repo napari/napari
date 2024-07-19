@@ -256,7 +256,9 @@ class ShortcutEditor(QWidget):
                 self._table.setItem(row, self._icon_col, item)
 
                 # Set the shortcuts in table.
-                # TODO: set as item data keybinding
+                # Set both visual representation (`Shortcut.platform`) and actual
+                # keybinding (`Shortcut.keybinding`) as item actual data using
+                # `Qt.ItemDataRole.UserRole`
                 item_shortcut = QTableWidgetItem(
                     Shortcut(next(iter(shortcuts))).platform
                     if shortcuts
@@ -266,7 +268,7 @@ class ShortcutEditor(QWidget):
                     Qt.ItemDataRole.UserRole,
                     Shortcut(next(iter(shortcuts))).keybinding
                     if shortcuts
-                    else '',
+                    else None,
                 )
                 self._table.setItem(row, self._shortcut_col, item_shortcut)
 
@@ -279,7 +281,7 @@ class ShortcutEditor(QWidget):
                     Qt.ItemDataRole.UserRole,
                     Shortcut(list(shortcuts)[1]).keybinding
                     if len(shortcuts) > 1
-                    else '',
+                    else None,
                 )
                 self._table.setItem(row, self._shortcut_col2, item_shortcut2)
 
@@ -315,7 +317,6 @@ class ShortcutEditor(QWidget):
         action_name = self._table.item(row, self._action_col).text()
         shortcuts = action_manager._shortcuts.get(action_name, [])
         with lock_keybind_update(self):
-            # TODO: set as item data keybinding shortcut representation
             self._table.item(row, self._shortcut_col).setText(
                 Shortcut(next(iter(shortcuts))).platform if shortcuts else ''
             )
@@ -323,7 +324,7 @@ class ShortcutEditor(QWidget):
                 Qt.ItemDataRole.UserRole,
                 Shortcut(next(iter(shortcuts))).keybinding
                 if shortcuts
-                else '',
+                else None,
             )
             self._table.item(row, self._shortcut_col2).setText(
                 Shortcut(list(shortcuts)[1]).platform
@@ -334,7 +335,7 @@ class ShortcutEditor(QWidget):
                 Qt.ItemDataRole.UserRole,
                 Shortcut(list(shortcuts)[1]).keybinding
                 if len(shortcuts) > 1
-                else '',
+                else None,
             )
 
     def _mark_conflicts(self, new_shortcut, row) -> bool:
@@ -344,7 +345,9 @@ class ShortcutEditor(QWidget):
         current_item = self._table.currentItem()
         for row1, (action_name, action) in enumerate(actions_all.items()):
             shortcuts = action_manager._shortcuts.get(action_name, [])
-            if new_shortcut not in shortcuts:
+            if new_shortcut not in [
+                Shortcut(short).keybinding for short in shortcuts
+            ]:
                 continue
             # Shortcut is here (either same action or not), don't replace in settings.
             if action_name != current_action:
@@ -369,14 +372,14 @@ class ShortcutEditor(QWidget):
                 return False
 
             # This shortcut was here.  Reformat and reset text.
-            short = Shortcut(new_shortcut)
-            format_shortcut = short.platform
-            keybinding_shortcut = short.keybinding
+            shortcut = Shortcut(new_shortcut)
+            platform_shortcut = shortcut.platform
+            keybinding_shortcut = shortcut.keybinding
             with lock_keybind_update(self):
-                # TODO: reset item data with keybinding.
-                # Check if this logic is correct when the second column is trying to set the
-                # same shortcut that appears over the first column of the same row/action
-                current_item.setText(format_shortcut)
+                # TODO: Check if this logic is correct when the second column is trying
+                # to set the same shortcut that appears over the first column of the
+                # same row/action
+                current_item.setText(platform_shortcut)
                 current_item.setData(
                     Qt.ItemDataRole.UserRole, keybinding_shortcut
                 )
@@ -436,10 +439,18 @@ class ShortcutEditor(QWidget):
 
             # get the current item from shortcuts column
             current_item = self._table.currentItem()
-            # TODO: Use current_item.data instead of text with symbols
             new_keybinding = current_item.data(Qt.ItemDataRole.UserRole)
-            new_shortcut = Shortcut.to_dashes_separator(str(new_keybinding))
-            # new_shortcut = Shortcut.parse_platform(current_item.text())
+            # TODO: Is really necessary to use dashes (previously done via `parse_platform`)?
+            # Seems like the shortcuts lists per action are `KeyBinding` instances when loaded from settings.
+            # While the widget is modifing the shortcuts new shorcuts assignations are done with a string
+            # representation and over the settings they are stored like strings using the `+` sign
+            # So, for the moment, seems like the shortcuts are being handled like:
+            #    * Settings: String representation using `+` as separator (basically `str(<app-model KeyBinding instance>)` representation)
+            #    * Settings load: `action_manager` has as base shortcuts lists of app-model `KeyBinding` instances
+            #    * Runtime: `action_manager` ends up with a mix of `KeyBinding` instances and string representation using dashes (`-`) when users save/change shortcuts
+            new_shortcut = Shortcut.to_dashes_separator(
+                str(new_keybinding) if new_keybinding else ''
+            )
             if new_shortcut:
                 new_shortcut = new_shortcut[0].upper() + new_shortcut[1:]
 
@@ -595,7 +606,6 @@ class ShortcutDelegate(QItemDelegate):
 
     def setEditorData(self, widget, model_index):
         text = model_index.model().data(model_index, Qt.ItemDataRole.EditRole)
-        # TODO: set keybinding normalized representation
         text = str(text) if text else ''
         keybinding = model_index.model().data(
             model_index, Qt.ItemDataRole.UserRole
@@ -606,8 +616,6 @@ class ShortcutDelegate(QItemDelegate):
         widget.setGeometry(style_option.rect)
 
     def setModelData(self, widget, abstract_item_model, model_index):
-        # TODO: Use widget custom attribute to get KeyBinding instead of text with symbols
-        # and use that when setting/storing shortcuts
         text = widget.text()
         keybinding = widget.keybinding
         abstract_item_model.setData(
@@ -691,9 +699,8 @@ class EditorWidget(QLineEdit):
 
         # in current pyappkit this will have weird effects on the order of modifiers
         # see https://github.com/pyapp-kit/app-model/issues/110
-        # self.setText(Shortcut(seq).platform)
-        short = Shortcut(seq)
-        self.setTextKeyBinding(short.platform, short.keybinding)
+        shortcut = Shortcut(seq)
+        self.setTextKeyBinding(shortcut.platform, shortcut.keybinding)
 
     def keyReleaseEvent(self, event) -> None:
         self._handleEditModifiersOnly(event)
@@ -711,7 +718,6 @@ class EditorWidget(QLineEdit):
             and self.hasSelectedText()
         ):
             # Allow user to delete shortcut.
-            # self.setText('')
             self.setTextKeyBinding('', None)
             return
 
@@ -738,13 +744,11 @@ class EditorWidget(QLineEdit):
         # Translate key value to key string.
         translator = ShortcutTranslator()
         event_keyseq = translator.keyevent_to_keyseq(event)
-        kb = qkeysequence2modelkeybinding(event_keyseq)
-        short = Shortcut(kb)
-        # self.setText(short.platform)
-        self.setTextKeyBinding(short.platform, short.keybinding)
+        shortcut = Shortcut(qkeysequence2modelkeybinding(event_keyseq))
+        self.setTextKeyBinding(shortcut.platform, shortcut.keybinding)
         self.clearFocus()
 
-    def setTextKeyBinding(self, text, keybinding):
+    def setTextKeyBinding(self, text, keybinding) -> None:
         self._keybinding = keybinding
         self.setText(text)
 

@@ -219,31 +219,9 @@ def mouse_release_callbacks(obj, event):
         del obj._persisted_mouse_event[gen]
 
 
-KEY_SYMBOLS = {
-    'Ctrl': 'Ctrl',
-    'Shift': '⇧',
-    'Alt': 'Alt',
-    'Meta': '⊞',
-    'Left': '←',
-    'Right': '→',
-    'Up': '↑',
-    'Down': '↓',
-    'Backspace': '⌫',
-    'Delete': '⌦',
-    'Tab': '↹',
-    'Escape': 'Esc',
-    'Return': '⏎',
-    'Enter': '↵',
-    'Space': '␣',
-}
-
-
 JOINCHAR = '+'
 if sys.platform.startswith('darwin'):
-    KEY_SYMBOLS.update({'Ctrl': '⌃', 'Alt': '⌥', 'Meta': '⌘'})
     JOINCHAR = ''
-elif sys.platform.startswith('linux'):
-    KEY_SYMBOLS.update({'Meta': 'Super'})
 
 
 class Shortcut:
@@ -264,52 +242,14 @@ class Shortcut:
         shortcut : keybinding-like
             shortcut to format
         """
-        error_msg = trans._(
-            '`{shortcut}` does not seem to be a valid shortcut Key.',
-            shortcut=shortcut,
-        )
-        error = False
-
         try:
             self._kb = coerce_keybinding(shortcut)
         except ValueError:
-            error = True
-        else:
-            for part in self._kb.parts:
-                shortcut_key = str(part.key)
-                if len(shortcut_key) > 1 and shortcut_key not in KEY_SYMBOLS:
-                    error = True
-
-        if error:
+            error_msg = trans._(
+                '`{shortcut}` does not seem to be a valid shortcut Key.',
+                shortcut=shortcut,
+            )
             warnings.warn(error_msg, UserWarning, stacklevel=2)
-
-    # @staticmethod
-    # def parse_platform(text: str) -> str:
-    #     """
-    #     Parse a current_platform_specific shortcut, and return a canonical
-    #     version separated with dashes.
-
-    #     This replace platform specific symbols, like ↵ by Enter,  ⌘ by Command on MacOS....
-    #     """
-    #     # TODO: Change to parse shotcur KeyBinding normalizaed str representation to use dashes instead of plus
-
-    #     # edge case, shortcut combinaison where `+` is a key.
-    #     # this should be rare as on english keyboard + is Shift-Minus.
-    #     # but not unheard of. In those case `+` is always at the end with `++`
-    #     # as you can't get two non-modifier keys,  or alone.
-    #     if text == '+':
-    #         return text
-    #     if JOINCHAR == '+':
-    #         text = text.replace('++', '+Plus')
-    #         text = text.replace('+', '')
-    #         text = text.replace('Plus', '+')
-    #     for k, v in KEY_SYMBOLS.items():
-    #         if text.endswith(v):
-    #             text = text.replace(v, k)
-    #         else:
-    #             text = text.replace(v, k + '-')
-
-    #     return text
 
     @staticmethod
     def to_dashes_separator(text: str) -> str:
@@ -362,36 +302,36 @@ class Shortcut:
         return self.platform
 
 
-def get_key_bindings_summary(keymap, col='rgb(134, 142, 147)'):
-    """Get summary of key bindings in keymap.
+# def get_key_bindings_summary(keymap, col='rgb(134, 142, 147)'):
+#     """Get summary of key bindings in keymap.
 
-    Parameters
-    ----------
-    keymap : dict
-        Dictionary of key bindings.
-    col : str
-        Color string in format rgb(int, int, int) used for highlighting
-        keypress combination.
+#     Parameters
+#     ----------
+#     keymap : dict
+#         Dictionary of key bindings.
+#     col : str
+#         Color string in format rgb(int, int, int) used for highlighting
+#         keypress combination.
 
-    Returns
-    -------
-    str
-        String with summary of all key_bindings and their functions.
-    """
-    key_bindings_strs = ['<table border="0" width="100%">']
-    for key in keymap:
-        keycodes = [KEY_SYMBOLS.get(k, k) for k in key.split('-')]
-        keycodes = '+'.join(
-            [f"<span style='color: {col}'><b>{k}</b></span>" for k in keycodes]
-        )
-        key_bindings_strs.append(
-            "<tr><td width='80' style='text-align: right; padding: 4px;'>"
-            f"<span style='color: rgb(66, 72, 80)'>{keycodes}</span></td>"
-            "<td style='text-align: left; padding: 4px; color: #CCC;'>"
-            f'{keymap[key]}</td></tr>'
-        )
-    key_bindings_strs.append('</table>')
-    return ''.join(key_bindings_strs)
+#     Returns
+#     -------
+#     str
+#         String with summary of all key_bindings and their functions.
+#     """
+#     key_bindings_strs = ['<table border="0" width="100%">']
+#     for key in keymap:
+#         keycodes = [KEY_SYMBOLS.get(k, k) for k in key.split('-')]
+#         keycodes = '+'.join(
+#             [f"<span style='color: {col}'><b>{k}</b></span>" for k in keycodes]
+#         )
+#         key_bindings_strs.append(
+#             "<tr><td width='80' style='text-align: right; padding: 4px;'>"
+#             f"<span style='color: rgb(66, 72, 80)'>{keycodes}</span></td>"
+#             "<td style='text-align: left; padding: 4px; color: #CCC;'>"
+#             f'{keymap[key]}</td></tr>'
+#         )
+#     key_bindings_strs.append('</table>')
+#     return ''.join(key_bindings_strs)
 
 
 def get_function_summary(func):
