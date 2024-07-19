@@ -101,12 +101,11 @@ def test_labels_painting_with_mouse(
 @skip_local_popups
 def test_labels_iso_gradient_modes(make_napari_viewer):
     """Check that we can set `iso_gradient_mode` with `iso_categorical` rendering (test shader)."""
-    viewer = make_napari_viewer(ndisplay=3)
+    viewer = make_napari_viewer(show=True)
     labels = make_labels_layer('numpy', shape=(32, 32, 32))
     labels[14:18, 14:18, 14:18] = 1
     layer = viewer.add_labels(labels)
-
-    viewer.show()
+    viewer.dims.ndisplay = 3
     QCoreApplication.instance().processEvents()
     assert layer.rendering == 'iso_categorical'
 
