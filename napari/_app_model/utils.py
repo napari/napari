@@ -9,6 +9,10 @@ from napari._app_model.constants import MenuGroup, MenuId
 MenuOrSubmenu = Union[MenuItem, SubmenuItem]
 
 
+def to_id_key(menu_path):
+    return menu_path.split('/')[-1]
+
+
 def contains_dummy_action(menu_items: list[MenuOrSubmenu]) -> bool:
     """True if one of the menu_items is the dummy action, otherwise False.
 
@@ -78,7 +82,7 @@ def get_dummy_action(menu_id: MenuId) -> tuple[Action, str]:
     # menu path is unique, otherwise, we will clash. Once we
     # move to using short menu keys, the key itself will be used
     # here and this will no longer be a concern.
-    id_key = menu_id.split('/')[-1]
+    id_key = to_id_key(menu_id)
     action = Action(
         id=f'napari.{id_key}.empty_dummy',
         title='Empty',
