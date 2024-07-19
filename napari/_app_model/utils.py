@@ -10,6 +10,18 @@ MenuOrSubmenu = Union[MenuItem, SubmenuItem]
 
 
 def to_id_key(menu_path):
+    """Return final part of the menu path.
+
+    Parameters
+    ----------
+    menu_path : str
+        full string delineating the menu path
+
+    Returns
+    -------
+    str
+        final part of the menu path
+    """
     return menu_path.split('/')[-1]
 
 
