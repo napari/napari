@@ -344,6 +344,14 @@ pyrect==0.2.0
     # via pygetwindow
 pyscreeze==0.1.30
     # via pyautogui
+pyside6==6.7.2
+    # via napari (napari_repo/pyproject.toml)
+pyside6-addons==6.7.2
+    # via pyside6
+pyside6-essentials==6.7.2
+    # via
+    #   pyside6
+    #   pyside6-addons
 pytest==8.2.2
     # via
     #   napari (napari_repo/pyproject.toml)
@@ -422,6 +430,11 @@ scipy==1.13.1
     #   scikit-image
 shellingham==1.5.4
     # via typer
+shiboken6==6.7.2
+    # via
+    #   pyside6
+    #   pyside6-addons
+    #   pyside6-essentials
 six==1.16.0
     # via
     #   asttokens
