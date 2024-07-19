@@ -684,10 +684,7 @@ class Window:
         # **and** the layerlist context key are available when we update
         # menus. We need a single context to contain all keys required for
         # menu update, so we add them to the layerlist context for now.
-        if self._qt_viewer._layers is not None:
-            add_dummy_actions(
-                self._qt_viewer._layers.model().sourceModel()._root._ctx
-            )
+        add_dummy_actions(self._qt_viewer.viewer.layers._ctx)
         self._update_theme()
         self._update_theme_font_size()
         get_settings().appearance.events.theme.connect(self._update_theme)
@@ -830,7 +827,7 @@ class Window:
 
     def _update_menu_state(self, menu: MenuStr):
         """Update enabled/visible state of menu item with context."""
-        layerlist = self._qt_viewer._layers.model().sourceModel()._root
+        layerlist = self._qt_viewer.viewer.layers
         menu_model = getattr(self, menu)
         menu_model.update_from_context(get_context(layerlist))
 
