@@ -16,7 +16,7 @@ def test_menu_viewer_relaunch(make_napari_viewer):
 
     viewer2 = make_napari_viewer()
     # prior to #7106, this would fail
-    assert_empty_keys_in_context(viewer)
+    assert_empty_keys_in_context(viewer2)
     viewer2.close()
 
     # prior to #7106, creating this viewer would error
