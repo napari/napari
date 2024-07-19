@@ -242,13 +242,20 @@ class Shortcut:
         shortcut : keybinding-like
             shortcut to format
         """
+        error_msg = trans._(
+            '`{shortcut}` does not seem to be a valid shortcut Key.',
+            shortcut=shortcut,
+        )
+        error = False
         try:
             self._kb = coerce_keybinding(shortcut)
         except ValueError:
-            error_msg = trans._(
-                '`{shortcut}` does not seem to be a valid shortcut Key.',
-                shortcut=shortcut,
-            )
+            error = True
+        else:
+            kb_str = str(self._kb)
+            error = kb_str == '' or kb_str.endswith('+')
+
+        if error:
             warnings.warn(error_msg, UserWarning, stacklevel=2)
 
     @staticmethod
