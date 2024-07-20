@@ -94,6 +94,10 @@ class ShortcutEditor(QWidget):
                     all_actions.pop(name)
             self.key_bindings_strs[f'{layer.__name__} layer'] = actions
 
+        # Don't include actions without keymapproviders
+        for action_name in all_actions.copy():
+            if all_actions[action_name].keymapprovider is None:
+                all_actions.pop(action_name)
         # Left over actions can go here.
         self.key_bindings_strs[self.VIEWER_KEYBINDINGS] = all_actions
 
