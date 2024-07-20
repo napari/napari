@@ -45,7 +45,11 @@ def orient_plane_normal_along_x(layer: Image) -> None:
     orient_plane_normal_around_cursor(layer, plane_normal=(0, 0, 1))
 
 
-@register_image_action(trans._('Orient plane normal along view direction'))
+@register_image_action(
+    trans._(
+        'Orient plane normal along view direction\nHold down to have plane follow camera'
+    )
+)
 def orient_plane_normal_along_view_direction(
     layer: Image,
 ) -> Union[None, Generator[None, None, None]]:
