@@ -201,27 +201,36 @@ def test_transforming_child_node_pyramid(pyramid_layer):
     )
 
 
-@pytest.mark.parametrize('scale', [(1, 1, 1), (2, 2, 2)])
+@pytest.mark.parametrize('scale', [1, 2])
+@pytest.mark.parametrize('ndim', [3, 4])
 @pytest.mark.parametrize('ndisplay', [2, 3])
-def test_node_origin_is_consistent_with_multiscale(scale, ndisplay):
+def test_node_origin_is_consistent_with_multiscale(
+    scale: int, ndim: int, ndisplay: int
+):
     """See https://github.com/napari/napari/issues/6320"""
+    scales = (scale,) * ndim
+
     # Define multi-scale image data with two levels where the
     # higher resolution is twice as high as the lower resolution.
-    image = Image(data=[np.zeros((8, 8, 8)), np.zeros((4, 4, 4))], scale=scale)
+    image = Image(
+        data=[np.zeros((8,) * ndim), np.zeros((4,) * ndim)], scale=scales
+    )
     vispy_image = VispyImageLayer(image)
 
     # Take a full slice at the highest resolution.
-    image.corner_pixels = np.array([[0, 0, 0], [8, 8, 8]])
+    image.corner_pixels = np.array([[0] * ndim, [8] * ndim])
     image._data_level = 0
-    image._slice_dims(Dims(ndim=3, ndisplay=ndisplay, point=(1, 0, 0)))
+    # Use a slice point of (1, 0, 0, ...) to have some non-zero slice coordinates.
+    point = (1,) + (0,) * (ndim - 1)
+    image._slice_dims(Dims(ndim=ndim, ndisplay=ndisplay, point=point))
     # Map the node's data origin to a vispy scene coordinate.
-    high_res_origin = vispy_image.node.transform.map((0, 0))
+    high_res_origin = vispy_image.node.transform.map((0,) * ndisplay)
 
     # Take a full slice at the lowest resolution and map the origin again.
-    image.corner_pixels = np.array([[0, 0, 0], [4, 4, 4]])
+    image.corner_pixels = np.array([[0] * ndim, [4] * ndim])
     image._data_level = 1
-    image._slice_dims(Dims(ndim=3, ndisplay=ndisplay, point=(1, 0, 0)))
-    low_res_origin = vispy_image.node.transform.map((0, 0))
+    image._slice_dims(Dims(ndim=ndim, ndisplay=ndisplay, point=point))
+    low_res_origin = vispy_image.node.transform.map((0,) * ndisplay)
 
     # The exact origin may depend on certain parameter values, but the
     # full high and low resolution slices should always map to the same
