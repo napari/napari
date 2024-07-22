@@ -1,0 +1,20 @@
+# anything with no explicit code owners will be tagged to @core-devs
+*                       @napari/core-devs
+
+# submodules
+napari/_vispy/          @brisvag @melonora
+napari/_qt/             @Czaki @lucyleeow @DragaDoncila
+napari/_app_model/      @lucyleeow
+napari/benchmarks/      @Czaki
+napari/plugins/         @Czaki @DragaDoncila
+napari/qt/              @Czaki
+napari/settings/        @Czaki @jni
+
+# specific layers
+napari/layers/image/    @Czaki @brisvag @andy-sweet
+napari/layers/labels/   @jni @Czaki @brisvag
+napari/layers/points/   @brisvag @kevinyamauchi @andy-sweet
+napari/layers/shapes/   @kevinyamauchi @DragaDoncila
+napari/layers/surface/  @brisvag @kevinyamauchi @Czaki
+napari/layers/tracks/   @Czaki @andy-sweet
+napari/layers/vectors/  @brisvag @kevinyamauchi @andy-sweet
