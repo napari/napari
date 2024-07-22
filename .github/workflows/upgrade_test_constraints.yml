@@ -173,7 +173,7 @@ jobs:
           for pyv in 3.9 3.10 3.11 3.12; do
             uv pip compile --python-version ${pyv} --upgrade --output-file $constraints/constraints_py${pyv}.txt  $pyproject_toml $constraints/version_denylist.txt "${flags[@]}"
             uv pip compile --python-version ${pyv} --upgrade --output-file $constraints/constraints_py${pyv}_pydantic_1.txt  $pyproject_toml $constraints/version_denylist.txt $constraints/pydantic_le_2.txt "${flags[@]}"
-            uv pip compile --python-platform aarch64-apple-darwin  --python-version ${pyv} --upgrade --output-file $constraints/constraints_py${pyv}_macos_arm.txt  $pyproject_toml $constraints/version_denylist.txt "${flags[@]}"
+            uv pip compile --python-platform windows  --python-version ${pyv} --upgrade --output-file $constraints/constraints_py${pyv}_windows.txt  $pyproject_toml $constraints/version_denylist.txt "${flags[@]}"
           done
 
 
