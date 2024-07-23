@@ -1,56 +1,70 @@
 import logging
 
-# keep track of all the logging info in a stream
 _LOG_SEPARATOR = '<NAPARI_LOG_SEPARATOR>'
 
 
-class _LogHandler:
+class _LogStream:
     def __init__(self):
         self.logs = []
 
     def write(self, log_msg):
-        level_name, time, thread, msg = log_msg.split(_LOG_SEPARATOR)
+        logger, level_name, time, thread, msg = log_msg.split(_LOG_SEPARATOR)
         levels = logging.getLevelNamesMapping()
         level_value = levels[level_name]
-        self.logs.append((level_value, level_name, time, thread, msg))
+        self.logs.append((logger, level_value, level_name, time, thread, msg))
         # TODO: actually save log to a file somewhere so it can be retrieved?
 
     def flush(self):
         pass
 
-    def __str__(self):
-        return self.formatted_at_level(logging.DEBUG)
 
-    def formatted_at_level(self, level=logging.DEBUG):
-        return ''.join(
-            [
-                f'[{time}] ({thread}) {level_name}: {msg}'
-                for _, level_name, time, thread, msg in self.logs_at_level(
-                    level
-                )
-            ]
-        )
-
-    def logs_at_level(self, level=logging.DEBUG):
-        if isinstance(level, str):
-            level = logging.getLevelName(level)
-        return [
-            (level_value, *others)
-            for level_value, *others in self.logs
-            if level_value >= level
-        ]
-
-
-def _get_custom_log_stream():
-    log_stream = _LogHandler()
-    handler = logging.StreamHandler(log_stream)
-    handler.setFormatter(
-        logging.Formatter(
-            f'%(levelname)s{_LOG_SEPARATOR}%(asctime)s{_LOG_SEPARATOR}%(threadName)s{_LOG_SEPARATOR}%(message)s'
-        )
+LOG_STREAM = _LogStream()
+LOG_HANDLER = logging.StreamHandler(LOG_STREAM)
+LOG_HANDLER.setFormatter(
+    logging.Formatter(
+        f'%(name)s{_LOG_SEPARATOR}%(levelname)s{_LOG_SEPARATOR}%(asctime)s{_LOG_SEPARATOR}%(threadName)s{_LOG_SEPARATOR}%(message)s'
     )
-    handler.setLevel(logging.DEBUG)
-    logger = logging.getLogger('napari')
-    logger.addHandler(handler)
-    # TODO: can we add the handler to plugin loggers?
-    return log_stream
+)
+LOG_HANDLER.setLevel(logging.DEBUG)
+
+
+def register_logger(module):
+    logger = logging.getLogger(module)
+    logger.addHandler(LOG_HANDLER)
+
+
+def _color_from_level(level):
+    if isinstance(level, str):
+        level = logging.getLevelName(level)
+    color = {
+        logging.DEBUG: 'blue',
+        logging.INFO: 'blue',
+        logging.WARNING: 'orange',
+        logging.ERROR: 'red',
+        logging.CRITICAL: 'red',
+    }
+    return color[level]
+
+
+def get_filtered_logs_html(level=logging.DEBUG, text_filter=''):
+    if isinstance(level, str):
+        level = logging.getLevelName(level)
+    selected = [
+        (logger_name, level_value, *others)
+        for logger_name, level_value, *others in LOG_STREAM.logs
+        if level_value >= level
+    ]
+
+    # TODO: fuzzy search?
+    text_filter = text_filter.lower()
+    filtered = [
+        log
+        for log in selected
+        if any(text_filter in str(field).lower() for field in log)
+    ]
+
+    return ''.join(
+        f'<font style="color:{_color_from_level(level_name)}">{level_name}</font> '
+        f'<b>{name}</b> <font style="color:gray"><i>[{time}] ({thread})</i></font>: {msg}<br>'
+        for name, _, level_name, time, thread, msg in filtered
+    )
