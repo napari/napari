@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from collections import deque
 from typing import TYPE_CHECKING
 
 _LOG_SEPARATOR = '<NAPARI_LOG_SEPARATOR>'
@@ -12,7 +13,7 @@ if TYPE_CHECKING:
 
 class _LogStream:
     def __init__(self) -> None:
-        self.logs: list[tuple[Any, ...]] = []
+        self.logs: deque[tuple[Any, ...]] = deque(maxlen=100_000)
 
     def write(self, log_msg: str) -> None:
         logger, level_name, time, thread, msg = log_msg.split(_LOG_SEPARATOR)
@@ -37,20 +38,26 @@ LOG_HANDLER.setLevel(logging.DEBUG)
 
 def register_logger(module: str) -> None:
     logger = logging.getLogger(module)
+    # ensure the default "last resort" logging to console remains
+    if not logger.handlers and logging.lastResort:
+        logger.addHandler(logging.lastResort)
     logger.addHandler(LOG_HANDLER)
 
 
-def _color_from_level(level: str | int) -> str:
-    if isinstance(level, str):
-        level = logging.getLevelNamesMapping().get(level, logging.NOTSET)
-    color = {
-        logging.DEBUG: 'blue',
-        logging.INFO: 'blue',
+def _html_level(level_name: str, level_value: int) -> str:
+    colors = {
+        logging.INFO: 'cyan',
         logging.WARNING: 'orange',
         logging.ERROR: 'red',
-        logging.CRITICAL: 'red',
+        logging.CRITICAL: 'magenta',
     }
-    return color[level]
+    color = 'blue'
+    for level, level_color in colors.items():
+        if level_value >= level:
+            color = level_color
+    # this is ugly AF but html is weird and I don't get it
+    padding = '&nbsp;' * (10 - len(level_name))
+    return f'<font style="color:{color}">{level_name}{padding}</font>'
 
 
 def get_filtered_logs_html(
@@ -72,8 +79,15 @@ def get_filtered_logs_html(
         if any(text_filter in str(field).lower() for field in log)
     ]
 
-    return ''.join(
-        f'<font style="color:{_color_from_level(level_name)}">{level_name}</font> '
-        f'<b>{name}</b> <font style="color:gray"><i>[{time}] ({thread})</i></font>: {msg}<br>'
-        for name, _, level_name, time, thread, msg in filtered
+    # <pre> tag makes it monospace
+    return (
+        '<pre>'
+        + ''.join(
+            f'{_html_level(level_name, level_value)} '
+            f'<b>{name}</b> '
+            f'<font style="color:gray"><i>[{time}] ({thread})</i></font>: '
+            f'{msg}'
+            for name, level_value, level_name, time, thread, msg in filtered
+        )
+        + '</pre>'
     )
