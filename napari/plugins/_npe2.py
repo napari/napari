@@ -13,7 +13,6 @@ from app_model.types import SubmenuItem
 from npe2 import io_utils, plugin_manager as pm
 from npe2.manifest import contributions
 
-from napari.utils._logging import register_logger
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -334,7 +333,6 @@ def on_plugins_registered(manifests: set[PluginManifest]):
         if not pm.is_disabled(mf.name):
             _register_manifest_actions(mf)
             _safe_register_qt_actions(mf)
-            register_logger(mf.package_metadata.name)
 
 
 def _register_manifest_actions(mf: PluginManifest) -> None:

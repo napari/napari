@@ -44,7 +44,7 @@ _submod_attrs = {
     'viewer': ['Viewer', 'current_viewer'],
 }
 
-register_logger(__name__)
+register_logger('')  # root logger
 
 # All imports in __init__ are hidden inside of `__getattr__` to prevent
 # importing the full chain of packages required when calling `import napari`.

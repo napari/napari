@@ -1,20 +1,27 @@
+from __future__ import annotations
+
 import logging
+from typing import TYPE_CHECKING
 
 _LOG_SEPARATOR = '<NAPARI_LOG_SEPARATOR>'
 
 
-class _LogStream:
-    def __init__(self):
-        self.logs = []
+if TYPE_CHECKING:
+    from typing import Any
 
-    def write(self, log_msg):
+
+class _LogStream:
+    def __init__(self) -> None:
+        self.logs: list[tuple[Any, ...]] = []
+
+    def write(self, log_msg: str) -> None:
         logger, level_name, time, thread, msg = log_msg.split(_LOG_SEPARATOR)
         levels = logging.getLevelNamesMapping()
         level_value = levels[level_name]
         self.logs.append((logger, level_value, level_name, time, thread, msg))
         # TODO: actually save log to a file somewhere so it can be retrieved?
 
-    def flush(self):
+    def flush(self) -> None:
         pass
 
 
@@ -28,14 +35,14 @@ LOG_HANDLER.setFormatter(
 LOG_HANDLER.setLevel(logging.DEBUG)
 
 
-def register_logger(module):
+def register_logger(module: str) -> None:
     logger = logging.getLogger(module)
     logger.addHandler(LOG_HANDLER)
 
 
-def _color_from_level(level):
+def _color_from_level(level: str | int) -> str:
     if isinstance(level, str):
-        level = logging.getLevelName(level)
+        level = logging.getLevelNamesMapping().get(level, logging.NOTSET)
     color = {
         logging.DEBUG: 'blue',
         logging.INFO: 'blue',
@@ -46,9 +53,11 @@ def _color_from_level(level):
     return color[level]
 
 
-def get_filtered_logs_html(level=logging.DEBUG, text_filter=''):
+def get_filtered_logs_html(
+    level: int = logging.DEBUG, text_filter: str = ''
+) -> str:
     if isinstance(level, str):
-        level = logging.getLevelName(level)
+        level = logging.getLevelNamesMapping().get(level, logging.NOTSET)
     selected = [
         (logger_name, level_value, *others)
         for logger_name, level_value, *others in LOG_STREAM.logs
