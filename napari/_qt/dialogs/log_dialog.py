@@ -17,9 +17,9 @@ from napari.utils.translations import trans
 class LogDialog(QDialog):
     def __init__(
         self,
-        parent,
+        parent=None,
     ) -> None:
-        super().__init__(parent._qt_window)
+        super().__init__(parent)
 
         self.layout = QVBoxLayout()
 
@@ -64,10 +64,13 @@ class LogDialog(QDialog):
 
         self.setLayout(self.layout)
 
-        self.setObjectName('LogDialog')
-        self.setWindowTitle(trans._('napari log'))
-        self.setWindowModality(Qt.WindowModality.ApplicationModal)
-        self.exec_()
+    @staticmethod
+    def showLog(parent=None):
+        d = LogDialog(parent)
+        d.setObjectName('LogDialog')
+        d.setWindowTitle(trans._('napari Log'))
+        d.setWindowModality(Qt.WindowModality.ApplicationModal)
+        d.exec_()
 
     def _on_level_change(self, level):
         logs = get_filtered_logs_html(level, self.text_filter.text())

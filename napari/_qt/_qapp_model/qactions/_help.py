@@ -9,6 +9,7 @@ from packaging.version import parse
 
 from napari import __version__
 from napari._app_model.constants import MenuGroup, MenuId
+from napari._qt.dialogs.log_dialog import LogDialog
 from napari._qt.dialogs.qt_about import QtAbout
 from napari._qt.qt_main_window import Window
 from napari.utils.translations import trans
@@ -16,6 +17,10 @@ from napari.utils.translations import trans
 
 def _show_about(window: Window):
     QtAbout.showAbout(window._qt_window)
+
+
+def _show_log(window: Window):
+    LogDialog.showLog(window._qt_window)
 
 
 v = parse(__version__)
@@ -110,7 +115,8 @@ Q_HELP_ACTIONS: list[Action] = [
     Action(
         id='napari.window.help.log',
         title=trans._('Show log'),
-        callback=Window._open_log_dialog,
+        callback=_show_log,
         menus=[{'id': MenuId.MENUBAR_HELP, 'group': MenuGroup.RENDER}],
+        status_tip=trans._('View and filter logs'),
     ),
 ]

@@ -1831,11 +1831,6 @@ class Window:
         if dial.exec_():
             update_save_history(dial.selectedFiles()[0])
 
-    def _open_log_dialog(self):
-        from napari._qt.dialogs.log_dialog import LogDialog
-
-        LogDialog(parent=self)
-
 
 def _instantiate_dock_widget(wdg_cls, viewer: 'Viewer'):
     # if the signature is looking a for a napari viewer, pass it.
