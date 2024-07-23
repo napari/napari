@@ -6,7 +6,7 @@ napari/_vispy/          @brisvag @melonora
 napari/_qt/             @Czaki @lucyleeow @DragaDoncila
 napari/_app_model/      @lucyleeow
 napari/benchmarks/      @Czaki
-napari/plugins/         @Czaki @DragaDoncila
+napari/plugins/         @Czaki @DragaDoncila @lucyleeow
 napari/qt/              @Czaki
 napari/settings/        @Czaki @jni
 
@@ -14,7 +14,7 @@ napari/settings/        @Czaki @jni
 napari/layers/image/    @Czaki @brisvag @andy-sweet
 napari/layers/labels/   @jni @Czaki @brisvag
 napari/layers/points/   @brisvag @kevinyamauchi @andy-sweet
-napari/layers/shapes/   @kevinyamauchi @DragaDoncila
+napari/layers/shapes/   @kevinyamauchi @DragaDoncila @melonora 
 napari/layers/surface/  @brisvag @kevinyamauchi @Czaki
 napari/layers/tracks/   @Czaki @andy-sweet
 napari/layers/vectors/  @brisvag @kevinyamauchi @andy-sweet
