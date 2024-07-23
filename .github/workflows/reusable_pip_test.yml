@@ -25,7 +25,7 @@ jobs:
       - name: Install this commit
         run: |
           pip install --upgrade pip
-          pip install ./napari-from-github[pyqt,testing]
+          pip install "./napari-from-github[pyqt,testing]"
         env:
           PIP_CONSTRAINT: napari-from-github/resources/constraints/constraints_py3.9.txt
 

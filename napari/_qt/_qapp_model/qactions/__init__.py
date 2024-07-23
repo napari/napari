@@ -116,5 +116,8 @@ def add_dummy_actions(context: Context) -> None:
         dummmy_action, context_key = get_dummy_action(menu_id)
         if dummmy_action.id not in app.commands:
             actions.append(dummmy_action)
-            context[context_key] = partial(is_empty_menu, menu_id)
+        # NOTE: even if action is already registered, the `context` instance
+        # may be new e.g. when closing and relaunching a viewer
+        # in a notebook. Context key should be assigned regardless
+        context[context_key] = partial(is_empty_menu, menu_id)
     app.register_actions(actions)
