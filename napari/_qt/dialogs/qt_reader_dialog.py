@@ -295,7 +295,9 @@ def open_with_dialog_choices(
 
     if persist:
         if not os.path.isabs(extension):
-            extension = '*' + extension
+            extension = f'*{extension}'
+        elif os.path.isdir(extension) and not extension.endswith(os.sep):
+            extension += os.sep
         get_settings().plugins.extension2reader = {
             **get_settings().plugins.extension2reader,
             extension: plugin_name,
