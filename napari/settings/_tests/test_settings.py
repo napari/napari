@@ -83,7 +83,8 @@ def test_settings_load_invalid_key(tmp_path, monkeypatch):
     # The invalid key will be removed
 
     fake_path = tmp_path / 'fake_path.yml'
-    data = """
+    data = f"""
+    schema_version: {CURRENT_SCHEMA_VERSION}
     application:
        non_existing_key: [1, 2]
        first_time: false
@@ -280,7 +281,7 @@ def test_settings_only_saves_non_default_values(monkeypatch, tmp_path):
     monkeypatch.setattr(os, 'environ', {})
 
     # manually get all default data and write to yaml file
-    all_data = NapariSettings(None).yaml()
+    all_data = NapariSettings(schema_version=CURRENT_SCHEMA_VERSION).yaml()
     fake_path = tmp_path / 'fake_path.yml'
     assert 'appearance' in all_data
     assert 'application' in all_data
@@ -359,3 +360,32 @@ def test_full_serialize(test_settings: NapariSettings, tmp_path, ext):
     Should work with both json and yaml.
     """
     test_settings.save(tmp_path / f't.{ext}', exclude_defaults=False)
+
+
+def test_shortcut_aliases():
+    """Check that Command, Option, Super, Cmd are all valid modifiers."""
+    settings_original = NapariSettings(
+        schema_version='0.6.0',
+        shortcuts={
+            'shortcuts': {
+                'napari:focus_axes_up': ['Option-Up'],
+                'napari:roll_axes': ['Super-E'],
+                'napari:transpose_axes': ['Control-Alt-T'],
+                'napari:paste_shape': ['V', 'Command-T'],
+                'napari:reset_view': ['Cmd-R'],
+            }
+        },
+    )
+    settings_canonical = NapariSettings(
+        schema_version='0.6.0',
+        shortcuts={
+            'shortcuts': {
+                'napari:focus_axes_up': ['Alt+Up'],
+                'napari:roll_axes': ['Meta+E'],
+                'napari:transpose_axes': ['Ctrl+Alt+T'],
+                'napari:paste_shape': ['V', 'Meta+T'],
+                'napari:reset_view': ['Meta+R'],
+            }
+        },
+    )
+    assert settings_original == settings_canonical

@@ -96,9 +96,10 @@ class MenuGroup:
     PLUGIN_SINGLE_CONTRIBUTIONS = '3_plugin_contributions'
     # File menubar
     OPEN = '1_open'
-    PREFERENCES = '2_preferences'
-    SAVE = '3_save'
-    CLOSE = '4_close'
+    UTIL = '2_util'
+    PREFERENCES = '3_preferences'
+    SAVE = '4_save'
+    CLOSE = '5_close'
 
     class LAYERLIST_CONTEXT:
         CONVERSION = '1_conversion'

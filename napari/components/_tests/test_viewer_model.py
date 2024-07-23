@@ -85,6 +85,13 @@ def test_add_image_colormap_variants():
     assert "did you mean to specify a 'channel_axis'" in str(err.value)
 
 
+def test_add_image_accepts_all_arguments_as_sequence():
+    """See https://github.com/napari/napari/pull/7089."""
+    viewer = ViewerModel(ndisplay=3)
+    img = viewer.add_image(np.random.rand(2, 2))
+    viewer.add_image(**img._get_state())
+
+
 def test_add_volume():
     """Test adding volume."""
     viewer = ViewerModel(ndisplay=3)
