@@ -84,6 +84,10 @@ _default_shortcuts = {
     ],
     'napari:finish_drawing_shape': [KeyCode.Escape],
     # image
+    'napari:orient_plane_normal_along_x': [KeyCode.KeyX],
+    'napari:orient_plane_normal_along_y': [KeyCode.KeyY],
+    'napari:orient_plane_normal_along_z': [KeyCode.KeyZ],
+    'napari:orient_plane_normal_along_view_direction': [KeyCode.KeyO],
     'napari:activate_image_pan_zoom_mode': [KeyCode.Digit1],
     'napari:activate_image_transform_mode': [KeyCode.Digit2],
     # vectors
