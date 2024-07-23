@@ -14,7 +14,7 @@ napari/settings/        @Czaki @jni
 napari/layers/image/    @Czaki @brisvag @andy-sweet
 napari/layers/labels/   @jni @Czaki @brisvag
 napari/layers/points/   @brisvag @kevinyamauchi @andy-sweet
-napari/layers/shapes/   @kevinyamauchi @DragaDoncila @melonora 
+napari/layers/shapes/   @kevinyamauchi @DragaDoncila @melonora
 napari/layers/surface/  @brisvag @kevinyamauchi @Czaki
 napari/layers/tracks/   @Czaki @andy-sweet
 napari/layers/vectors/  @brisvag @kevinyamauchi @andy-sweet
