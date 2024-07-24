@@ -610,8 +610,9 @@ class ScalarFieldBase(Layer, ABC):
         Returns
         -------
         value : Optional[int]
-            The first non-zero value encountered along the ray. If none
-            was encountered or the viewer is in 2D mode, None is returned.
+            The first non-background value encountered along the ray. If none
+            was encountered or the viewer is in 2D mode, returns the background
+            value.
         """
         if start_point is None or end_point is None:
             return None
@@ -682,7 +683,7 @@ class ScalarFieldBase(Layer, ABC):
         -------
         value : int
             The first non-zero value encountered along the ray. If a
-            non-zero value is not encountered, returns 0 (the background value).
+            non-zero value is not encountered, returns the background value.
         """
         return self._get_value_ray(
             start_point=start_point,
