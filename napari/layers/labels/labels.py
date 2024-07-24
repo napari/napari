@@ -951,38 +951,6 @@ class Labels(ScalarFieldBase):
             col = self.colormap.map(label)
         return col
 
-    def _get_value_3d(
-        self,
-        start_point: Optional[np.ndarray],
-        end_point: Optional[np.ndarray],
-        dims_displayed: list[int],
-    ) -> Optional[int]:
-        """Get the first non-background value encountered along a ray.
-
-        Parameters
-        ----------
-        start_point : np.ndarray
-            (n,) array containing the start point of the ray in data coordinates.
-        end_point : np.ndarray
-            (n,) array containing the end point of the ray in data coordinates.
-        dims_displayed : List[int]
-            The indices of the dimensions currently displayed in the viewer.
-
-        Returns
-        -------
-        value : int
-            The first non-zero value encountered along the ray. If a
-            non-zero value is not encountered, returns the background value.
-        """
-        return (
-            super()._get_value_ray(
-                start_point=start_point,
-                end_point=end_point,
-                dims_displayed=dims_displayed,
-            )
-            or self.colormap.background_value
-        )
-
     def _reset_history(self, event=None):
         self._undo_history = deque(maxlen=self._history_limit)
         self._redo_history = deque(maxlen=self._history_limit)
