@@ -581,14 +581,7 @@ def test_value():
         ((2, 2, 2), [1, 0, 0], [0, 1, 2], False, 'average', 1 / 5),
         ((2, 2, 2), [1, 0, 0], [0, 1, 2], False, 'translucent', 0),
         # not quite as expected for additive
-        (
-            (2, 2, 2),
-            [1, 0, 0],
-            [0, 1, 2],
-            False,
-            'additive',
-            2,
-        ),
+        ((2, 2, 2), [1, 0, 0], [0, 1, 2], False, 'additive', 2),
         ((2, 2, 2), [1, 0, 0], [0, 1, 2], False, 'iso', None),
         ((2, 2, 2), [1, 0, 0], [0, 1, 2], False, 'attenuated_mip', None),
         ((0, 2, 2, 2), [0, 1, 0, 0], [1, 2, 3], False, 'mip', 1),
