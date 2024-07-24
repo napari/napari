@@ -210,8 +210,11 @@ def test_open_with_dialog_choices_persist_dir(builtins, tmp_path, qtbot):
         qt_viewer=qt_viewer,
     )
     assert len(viewer.layers) == 1
-    # make sure extension was saved with *
-    assert get_settings().plugins.extension2reader[f'{pth}/'] == builtins.name
+    # make sure extension was saved without * and with trailing slash
+    assert (
+        get_settings().plugins.extension2reader[f'{pth}{os.sep}']
+        == builtins.name
+    )
 
 
 def test_open_with_dialog_choices_raises(make_napari_viewer):
