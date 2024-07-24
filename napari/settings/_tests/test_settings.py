@@ -219,6 +219,20 @@ def test_settings_env_variables(monkeypatch):
     monkeypatch.setenv('NAPARI_PLUGINS_EXTENSION2READER', '{"*.zarr": "hi"}')
     assert NapariSettings(None).plugins.extension2reader == {'*.zarr': 'hi'}
 
+    # can also use short `env` name for EventedSettings class
+    assert NapariSettings(None).experimental.async_ is False
+    monkeypatch.setenv('NAPARI_ASYNC', '1')
+    assert NapariSettings(None).experimental.async_ is True
+
+
+def test_two_env_variable_settings(monkeypatch):
+    assert NapariSettings(None).experimental.async_ is False
+    assert NapariSettings(None).experimental.autoswap_buffers is False
+    monkeypatch.setenv('NAPARI_EXPERIMENTAL_ASYNC_', '1')
+    monkeypatch.setenv('NAPARI_EXPERIMENTAL_AUTOSWAP_BUFFERS', '1')
+    assert NapariSettings(None).experimental.async_ is True
+    assert NapariSettings(None).experimental.autoswap_buffers is True
+
 
 def test_settings_env_variables_fails(monkeypatch):
     monkeypatch.setenv('NAPARI_APPEARANCE_THEME', 'FOOBAR')
@@ -272,6 +286,29 @@ def test_settings_env_variables_do_not_write_to_disk(tmp_path, monkeypatch):
     # and it's back if we reread without the env var override
     monkeypatch.delenv('NAPARI_APPEARANCE_THEME')
     assert NapariSettings(fake_path).appearance.theme == 'light'
+
+
+def test_settings_env_variables_override_file(tmp_path, monkeypatch):
+    # create a settings file with async_ = true
+    data = 'experimental:\n   async_: true\n   autoswap_buffers: true'
+    fake_path = tmp_path / 'fake_path.yml'
+    fake_path.write_text(data)
+
+    # make sure they wrote correctly
+    disk_settings = fake_path.read_text()
+    assert 'async_: true' in disk_settings
+    assert 'autoswap_buffers: true' in disk_settings
+    # make sure they load correctly
+    assert NapariSettings(fake_path).experimental.async_ is True
+    assert NapariSettings(fake_path).experimental.autoswap_buffers is True
+
+    # now load settings again with an Env-var override
+    monkeypatch.setenv('NAPARI_ASYNC', '0')
+    monkeypatch.setenv('NAPARI_AUTOSWAP', '0')
+    settings = NapariSettings(fake_path)
+    # make sure the override worked, and save again
+    assert settings.experimental.async_ is False
+    assert settings.experimental.autoswap_buffers is False
 
 
 def test_settings_only_saves_non_default_values(monkeypatch, tmp_path):
