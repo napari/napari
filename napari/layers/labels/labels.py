@@ -1445,6 +1445,12 @@ class Labels(ScalarFieldBase):
         if refresh is True:
             self._partial_labels_refresh()
 
+    def _calculate_value_from_ray(self, values):
+        nonzero = np.flatnonzero(values)
+        if len(nonzero):
+            return values[nonzero[0]]
+        return None
+
     def get_status(
         self,
         position: Optional[npt.ArrayLike] = None,

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import types
-from abc import ABC
+from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from contextlib import nullcontext
 from typing import TYPE_CHECKING, Optional, Union, cast
@@ -459,6 +459,7 @@ class ScalarFieldBase(Layer, ABC):
         self._custom_interpolation_kernel_2d = np.array(value, np.float32)
         self.events.custom_interpolation_kernel_2d()
 
+    @abstractmethod
     def _raw_to_displayed(self, raw: np.ndarray) -> np.ndarray:
         """Determine displayed image from raw image.
 
@@ -652,15 +653,13 @@ class ScalarFieldBase(Layer, ABC):
                 bounding_box,
             ).astype(int)
             values = im_slice[tuple(clamped.T)]
-            nonzero_indices = self._get_first_valid_indices(values)
-            if len(nonzero_indices > 0):
-                # if a nonzer0 value was found, return the first one
-                return values[nonzero_indices[0]]
+            return self._calculate_value_from_ray(values)
 
         return None
 
-    def _get_first_valid_indices(values):
-        return np.flatnonzero(values)
+    @abstractmethod
+    def _calculate_value_from_ray(self, values):
+        raise NotImplementedError
 
     def _get_value_3d(
         self,

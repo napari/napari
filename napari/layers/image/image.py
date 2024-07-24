@@ -690,7 +690,29 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             finally:
                 self._keep_auto_contrast = prev
 
-    def _get_first_valid_indices(self, values):
-        return np.flatnonzero(
-            np.where(values > self.contrast_limits[0], values, 0)
+    def _calculate_value_from_ray(self, values):
+        values_within_clim = (values >= self.contrast_limits[0]) & (
+            values <= self.contrast_limits[1]
         )
+        values_masked = np.where(values_within_clim, values, np.nan)
+        if np.all(np.isnan(values_masked)):
+            return None  # out of clims everywhere
+        if self.rendering == ImageRendering.TRANSLUCENT:
+            first_val = np.ravel(values_masked)[0]
+            return first_val if not np.isnan(first_val) else None
+        # these are probably not the same as how the gpu does it...
+        if self.rendering == ImageRendering.AVERAGE:
+            return np.nanmean(values_masked)
+        if self.rendering == ImageRendering.ADDITIVE:
+            return np.nansum(values_masked)
+        if self.rendering == ImageRendering.MIP:
+            return np.nanmax(values_masked)
+        if self.rendering == ImageRendering.MINIP:
+            return np.nanmin(values_masked)
+        if self.rendering == ImageRendering.ATTENUATED_MIP:
+            # TODO
+            return None
+        if self.rendering == ImageRendering.ISO:
+            # TODO
+            return None
+        return None
