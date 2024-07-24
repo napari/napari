@@ -715,7 +715,8 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         if self.rendering == ImageRendering.ATTENUATED_MIP:
             # TODO
             return None
-        if self.rendering == ImageRendering.ISO:
-            # TODO
-            return None
+        if self.rendering == ImageRendering.ISO and np.any(
+            values_masked >= self.iso_threshold
+        ):
+            return self.iso_threshold
         return None
