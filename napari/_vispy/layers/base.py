@@ -199,10 +199,9 @@ class VispyBaseLayer(ABC, Generic[_L]):
                 overlay_visual.close()
 
     def _on_matrix_change(self):
+        dims_displayed = self.layer._slice_input.displayed
         # mypy: self.layer._transforms.simplified cannot be None
-        transform = self.layer._transforms.simplified.set_slice(
-            self.layer._slice_input.displayed
-        )
+        transform = self.layer._transforms.simplified.set_slice(dims_displayed)
         # convert NumPy axis ordering to VisPy axis ordering
         # by reversing the axes order and flipping the linear
         # matrix
@@ -222,15 +221,18 @@ class VispyBaseLayer(ABC, Generic[_L]):
         ):
             # The last downsample factor is used because we only ever show the
             # last/lowest multi-scale level for 3D.
-            translate += (self.layer.downsample_factors[-1][::-1] - 1) / 2
+            translate += (
+                # displayed dimensions, order inverted to match VisPy, then
+                # adjust by half a pixel per downscale level
+                self.layer.downsample_factors[-1][dims_displayed][::-1] - 1
+            ) / 2
 
         # Embed in the top left corner of a 4x4 affine matrix
         affine_matrix = np.eye(4)
         affine_matrix[: matrix.shape[0], : matrix.shape[1]] = matrix
         affine_matrix[-1, : len(translate)] = translate
 
-        child_offset = np.zeros(len(self.layer._slice_input.displayed))
-        dims_displayed = self.layer._slice_input.displayed
+        child_offset = np.zeros(len(dims_displayed))
 
         if self._array_like and self.layer._slice_input.ndisplay == 2:
             # Perform pixel offset to shift origin from top left corner
@@ -238,7 +240,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
             # Note this offset is only required for array like data in
             # 2D.
             offset_matrix = self.layer._data_to_world.set_slice(
-                self.layer._slice_input.displayed
+                dims_displayed
             ).linear_matrix
             offset = -offset_matrix @ np.ones(offset_matrix.shape[1]) / 2
             # Convert NumPy axis ordering to VisPy axis ordering

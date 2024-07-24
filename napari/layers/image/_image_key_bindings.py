@@ -3,15 +3,17 @@ from __future__ import annotations
 from collections.abc import Generator
 from typing import Callable, Union
 
-from app_model.types import KeyCode
-
 import napari
 from napari.layers.base._base_constants import Mode
 from napari.layers.image.image import Image
 from napari.layers.utils.interactivity_utils import (
     orient_plane_normal_around_cursor,
 )
-from napari.layers.utils.layer_utils import register_layer_action
+from napari.layers.utils.layer_utils import (
+    register_layer_action,
+    register_layer_attr_action,
+)
+from napari.utils.action_manager import action_manager
 from napari.utils.events import Event
 from napari.utils.translations import trans
 
@@ -22,26 +24,32 @@ def register_image_action(
     return register_layer_action(Image, description, repeatable)
 
 
-@Image.bind_key(KeyCode.KeyZ, overwrite=True)
+def register_image_mode_action(
+    description: str,
+) -> Callable[[Callable], Callable]:
+    return register_layer_attr_action(Image, description, 'mode')
+
+
 @register_image_action(trans._('Orient plane normal along z-axis'))
 def orient_plane_normal_along_z(layer: Image) -> None:
     orient_plane_normal_around_cursor(layer, plane_normal=(1, 0, 0))
 
 
-@Image.bind_key(KeyCode.KeyY, overwrite=True)
-@register_image_action(trans._('orient plane normal along y-axis'))
+@register_image_action(trans._('Orient plane normal along y-axis'))
 def orient_plane_normal_along_y(layer: Image) -> None:
     orient_plane_normal_around_cursor(layer, plane_normal=(0, 1, 0))
 
 
-@Image.bind_key(KeyCode.KeyX, overwrite=True)
-@register_image_action(trans._('orient plane normal along x-axis'))
+@register_image_action(trans._('Orient plane normal along x-axis'))
 def orient_plane_normal_along_x(layer: Image) -> None:
     orient_plane_normal_around_cursor(layer, plane_normal=(0, 0, 1))
 
 
-@Image.bind_key(KeyCode.KeyO, overwrite=True)
-@register_image_action(trans._('orient plane normal along view direction'))
+@register_image_action(
+    trans._(
+        'Orient plane normal along view direction\nHold down to have plane follow camera'
+    )
+)
 def orient_plane_normal_along_view_direction(
     layer: Image,
 ) -> Union[None, Generator[None, None, None]]:
@@ -68,7 +76,8 @@ def orient_plane_normal_along_view_direction(
     return None
 
 
-@register_image_action(trans._('orient plane normal along view direction'))
+# The generator function above can't be bound to a button, so here
+# is a non-generator version of the function
 def orient_plane_normal_along_view_direction_no_gen(layer: Image) -> None:
     viewer = napari.viewer.current_viewer()
     if viewer is None or viewer.dims.ndisplay != 3:
@@ -78,12 +87,22 @@ def orient_plane_normal_along_view_direction_no_gen(layer: Image) -> None:
     )
 
 
-@register_image_action(trans._('Transform'))
+# register the non-generator without a keybinding
+# this way the generator version owns the keybinding
+action_manager.register_action(
+    name='napari:orient_plane_normal_along_view_direction_no_gen',
+    command=orient_plane_normal_along_view_direction_no_gen,
+    description=trans._('Orient plane normal along view direction button'),
+    keymapprovider=None,
+)
+
+
+@register_image_mode_action(trans._('Transform'))
 def activate_image_transform_mode(layer: Image) -> None:
     layer.mode = str(Mode.TRANSFORM)
 
 
-@register_image_action(trans._('Pan/zoom'))
+@register_image_mode_action(trans._('Pan/zoom'))
 def activate_image_pan_zoom_mode(layer: Image) -> None:
     layer.mode = str(Mode.PAN_ZOOM)
 

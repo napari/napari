@@ -121,7 +121,7 @@ jobs:
       - name: Continue if Singularity Recipe Exists
         run: |
           if [[ -f "${{ matrix.recipe }}" ]]; then
-            echo "keepgoing=true" >> $GITHUB_ENV
+            echo "keepgoing=true" >> "$GITHUB_ENV"
           fi
 
       - name: Build Container
@@ -136,7 +136,7 @@ jobs:
           fi
           # Build the container and name by tag
           echo "Tag is $tag."
-          echo "tag=$tag" >> $GITHUB_ENV
+          echo "tag=$tag" >> "$GITHUB_ENV"
 
       - name: Login and Deploy Container
         if: (github.event_name != 'pull_request')
@@ -145,5 +145,5 @@ jobs:
         run: |
           if [[ "${keepgoing}" == "true" ]]; then
               echo ${{ secrets.GITHUB_TOKEN }} | singularity remote login -u ${{ secrets.GHCR_USERNAME }} --password-stdin oras://ghcr.io
-              singularity push container.sif oras://ghcr.io/${GITHUB_REPOSITORY}:${tag}
+              singularity push container.sif "oras://ghcr.io/${GITHUB_REPOSITORY}:${tag}"
           fi
