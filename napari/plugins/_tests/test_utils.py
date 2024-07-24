@@ -1,3 +1,5 @@
+import os.path
+
 from npe2 import DynamicPlugin
 
 from napari.plugins.utils import (
@@ -79,7 +81,7 @@ def test_get_preferred_reader_more_nested():
 def test_get_preferred_reader_abs_path():
     get_settings().plugins.extension2reader = {
         # abs path so highest specificity
-        '/asdf/*.tif': 'most-specific-plugin',
+        os.path.realpath('/asdf/*.tif'): 'most-specific-plugin',
         # less nested so less specificity
         '*.tif': 'generic-tif-plugin',
         # more nested so higher specificity
