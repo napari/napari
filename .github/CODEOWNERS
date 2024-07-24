@@ -4,7 +4,7 @@
 # submodules
 napari/_vispy/          @brisvag @melonora
 napari/_qt/             @Czaki @lucyleeow @DragaDoncila
-napari/_app_model/      @lucyleeow @DragaDoncila 
+napari/_app_model/      @lucyleeow @DragaDoncila
 napari/benchmarks/      @Czaki @jni
 napari/plugins/         @Czaki @DragaDoncila @lucyleeow
 napari/qt/              @Czaki @jni
@@ -13,7 +13,7 @@ napari/settings/        @Czaki @jni
 # specific layers
 napari/layers/image/    @Czaki @brisvag @andy-sweet
 napari/layers/labels/   @jni @Czaki @brisvag
-napari/layers/points/   @brisvag @kevinyamauchi @andy-sweet @DragaDoncila 
+napari/layers/points/   @brisvag @kevinyamauchi @andy-sweet @DragaDoncila
 napari/layers/shapes/   @kevinyamauchi @DragaDoncila @melonora
 napari/layers/surface/  @brisvag @kevinyamauchi @Czaki
 napari/layers/tracks/   @Czaki @andy-sweet
