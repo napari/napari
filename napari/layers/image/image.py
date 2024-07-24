@@ -704,6 +704,9 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         if self.rendering == ImageRendering.AVERAGE:
             return np.nanmean(values_masked)
         if self.rendering == ImageRendering.ADDITIVE:
+            # TODO: this is "broken" cause same pixel gets multisampled...
+            #       but it looks like it's also overdoing it in vispy vis too?
+            #       I don't know if there's a way to *not* do it...
             return np.nansum(values_masked)
         if self.rendering == ImageRendering.MIP:
             return np.nanmax(values_masked)

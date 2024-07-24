@@ -684,13 +684,10 @@ class ScalarFieldBase(Layer, ABC):
             The first non-zero value encountered along the ray. If a
             non-zero value is not encountered, returns 0 (the background value).
         """
-        return (
-            self._get_value_ray(
-                start_point=start_point,
-                end_point=end_point,
-                dims_displayed=dims_displayed,
-            )
-            or None
+        return self._get_value_ray(
+            start_point=start_point,
+            end_point=end_point,
+            dims_displayed=dims_displayed,
         )
 
     def _get_offset_data_position(self, position: npt.NDArray) -> npt.NDArray:

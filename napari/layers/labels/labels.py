@@ -972,7 +972,7 @@ class Labels(ScalarFieldBase):
         -------
         value : int
             The first non-zero value encountered along the ray. If a
-            non-zero value is not encountered, returns 0 (the background value).
+            non-zero value is not encountered, returns the background value.
         """
         return (
             super()._get_value_ray(
@@ -980,7 +980,7 @@ class Labels(ScalarFieldBase):
                 end_point=end_point,
                 dims_displayed=dims_displayed,
             )
-            or 0
+            or self.colormap.background_value
         )
 
     def _reset_history(self, event=None):
@@ -1446,10 +1446,10 @@ class Labels(ScalarFieldBase):
             self._partial_labels_refresh()
 
     def _calculate_value_from_ray(self, values):
-        nonzero = np.flatnonzero(values)
-        if len(nonzero):
-            return values[nonzero[0]]
-        return None
+        non_bg = values != self.colormap.background_value
+        if not np.any(non_bg):
+            return self.colormap.background_value
+        return values[np.argmax(np.ravel(non_bg))]
 
     def get_status(
         self,
