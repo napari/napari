@@ -134,7 +134,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         include: Union[AbstractSetIntStr, MappingIntStrAny] = None,  # type: ignore
         exclude: Union[AbstractSetIntStr, MappingIntStrAny] = None,  # type: ignore
         by_alias: bool = False,
-        exclude_unset: bool = False,  # type: ignore [override]  # deprecated parameter
+        exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
         exclude_env: bool = False,
