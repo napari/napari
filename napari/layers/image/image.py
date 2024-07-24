@@ -689,3 +689,8 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
                 self.refresh()
             finally:
                 self._keep_auto_contrast = prev
+
+    def _get_first_valid_indices(self, values):
+        return np.flatnonzero(
+            np.where(values > self.contrast_limits[0], values, 0)
+        )

@@ -4,7 +4,7 @@ import types
 from abc import ABC
 from collections.abc import Sequence
 from contextlib import nullcontext
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Optional, Union, cast
 
 import numpy as np
 from numpy import typing as npt
@@ -26,6 +26,7 @@ from napari.utils.colormaps import AVAILABLE_COLORMAPS
 from napari.utils.events import Event
 from napari.utils.events.event import WarningEmitter
 from napari.utils.events.event_utils import connect_no_arg
+from napari.utils.geometry import clamp_point_to_bounding_box
 from napari.utils.naming import magic_name
 from napari.utils.translations import trans
 
@@ -587,6 +588,111 @@ class ScalarFieldBase(Layer, ABC):
             value = (self.data_level, value)
 
         return value
+
+    def _get_value_ray(
+        self,
+        start_point: Optional[np.ndarray],
+        end_point: Optional[np.ndarray],
+        dims_displayed: list[int],
+    ) -> Optional[int]:
+        """Get the first non-background value encountered along a ray.
+
+        Parameters
+        ----------
+        start_point : np.ndarray
+            (n,) array containing the start point of the ray in data coordinates.
+        end_point : np.ndarray
+            (n,) array containing the end point of the ray in data coordinates.
+        dims_displayed : List[int]
+            The indices of the dimensions currently displayed in the viewer.
+
+        Returns
+        -------
+        value : Optional[int]
+            The first non-zero value encountered along the ray. If none
+            was encountered or the viewer is in 2D mode, None is returned.
+        """
+        if start_point is None or end_point is None:
+            return None
+        if len(dims_displayed) == 3:
+            # only use get_value_ray on 3D for now
+            # we use dims_displayed because the image slice
+            # has its dimensions  in th same order as the vispy
+            # Volume
+            # Account for downsampling in the case of multiscale
+            # -1 means lowest resolution here.
+            start_point = (
+                start_point[dims_displayed]
+                / self.downsample_factors[-1][dims_displayed]
+            )
+            end_point = (
+                end_point[dims_displayed]
+                / self.downsample_factors[-1][dims_displayed]
+            )
+            start_point = cast(np.ndarray, start_point)
+            end_point = cast(np.ndarray, end_point)
+            sample_ray = end_point - start_point
+            length_sample_vector = np.linalg.norm(sample_ray)
+            n_points = int(2 * length_sample_vector)
+            sample_points = np.linspace(
+                start_point, end_point, n_points, endpoint=True
+            )
+            im_slice = self._slice.image.raw
+            # ensure the bounding box is for the proper multiscale level
+            bounding_box = self._display_bounding_box_at_level(
+                dims_displayed, self.data_level
+            )
+            # the display bounding box is returned as a closed interval
+            # (i.e. the endpoint is included) by the method, but we need
+            # open intervals in the code that follows, so we add 1.
+            bounding_box[:, 1] += 1
+
+            clamped = clamp_point_to_bounding_box(
+                sample_points,
+                bounding_box,
+            ).astype(int)
+            values = im_slice[tuple(clamped.T)]
+            nonzero_indices = self._get_first_valid_indices(values)
+            if len(nonzero_indices > 0):
+                # if a nonzer0 value was found, return the first one
+                return values[nonzero_indices[0]]
+
+        return None
+
+    def _get_first_valid_indices(values):
+        return np.flatnonzero(values)
+
+    def _get_value_3d(
+        self,
+        start_point: Optional[np.ndarray],
+        end_point: Optional[np.ndarray],
+        dims_displayed: list[int],
+    ) -> Optional[int]:
+        """Get the first non-background value encountered along a ray.
+
+        Parameters
+        ----------
+        start_point : np.ndarray
+            (n,) array containing the start point of the ray in data coordinates.
+        end_point : np.ndarray
+            (n,) array containing the end point of the ray in data coordinates.
+        dims_displayed : List[int]
+            The indices of the dimensions currently displayed in the viewer.
+
+        Returns
+        -------
+        value : int
+            The first non-zero value encountered along the ray. If a
+            non-zero value is not encountered, returns 0 (the background value).
+        """
+        return (
+            self._get_value_ray(
+                start_point=start_point,
+                end_point=end_point,
+                dims_displayed=dims_displayed,
+            )
+            or None
+        )
 
     def _get_offset_data_position(self, position: npt.NDArray) -> npt.NDArray:
         """Adjust position for offset between viewer and data coordinates.
