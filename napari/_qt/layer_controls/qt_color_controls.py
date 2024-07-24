@@ -60,7 +60,7 @@ class ColorModeWidget(QWidget):
 
     layer: StyledLayer
     attr: str
-    custom_label: QLabel
+    customLabel: QLabel
     mode: QComboBox
     encodings: dict[ColorMode, ColorEncodingWidget]
 
@@ -83,7 +83,7 @@ class ColorModeWidget(QWidget):
         )
 
         # Shown when encoding type is not supported.
-        self.custom_label = QLabel('Custom')
+        self.customLabel = QLabel('Custom')
 
         self.mode = QComboBox(self)
         self.mode.addItems(tuple(ColorMode))
@@ -141,7 +141,7 @@ class ColorModeWidget(QWidget):
         else:
             logging.warning('Unsupported color encoding: %s', currentEncoding)
             self._onModeChanged('')
-            self.custom_label.show()
+            self.customLabel.show()
 
     def _onModeChanged(self, mode: str) -> None:
         logging.warning('_onModeChanged: %s', mode)
