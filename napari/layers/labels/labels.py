@@ -1416,7 +1416,7 @@ class Labels(ScalarFieldBase):
     def _calculate_value_from_ray(self, values):
         non_bg = values != self.colormap.background_value
         if not np.any(non_bg):
-            return self.colormap.background_value
+            return None
         return values[np.argmax(np.ravel(non_bg))]
 
     def get_status(
