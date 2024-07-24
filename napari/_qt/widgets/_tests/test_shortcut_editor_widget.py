@@ -70,7 +70,7 @@ def test_mark_conflicts(shortcut_editor_widget, qtbot):
     assert action_manager._shortcuts[act][1] == str(u_keybinding)
 
     # Check conflicts detection using `KeyBindingLike` params
-    # (`KeyBindings`, `str` and `int` representations)
+    # (`KeyBinding`, `str` and `int` representations of a shortcut)
     with patch.object(WarnPopup, 'exec_') as mock:
         assert not widget._mark_conflicts(ctrl_keybinding, 1)
         assert mock.called
@@ -89,7 +89,7 @@ def test_mark_conflicts(shortcut_editor_widget, qtbot):
         assert mock.called
 
     # Check no conflicts are found using `KeyBindingLike` params
-    # (`KeyBindings`, `str` and `int` representations)
+    # (`KeyBinding`, `str` and `int` representations of a shortcut)
     # "Y" is arbitrary chosen and on conflict with existing shortcut should be changed
     y_keybinding = KeyBinding.from_str('Y')
     assert widget._mark_conflicts(y_keybinding, 1)
