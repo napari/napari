@@ -143,6 +143,11 @@ class StyleCollection(EventedModel):
     """
 
     def __setattr__(self, name: str, value: Any) -> None:
+        # If a channel is being mutated, then connect its main event
+        # to this collection's main event to simulate event bubbling.
+        # This allows external observers to just listen to the collection's
+        # main event to respond to any changes (e.g. like re-rendering).
+        # Also remove the connection associated with the old value.
         is_channel = name in self._channels
         if is_channel:
             getattr(self, name).events.disconnect(self.events)
@@ -196,6 +201,13 @@ class StyleCollection(EventedModel):
         )
 
     def _apply(self, features: Any) -> None:
+        # TODO: what if instead of storing the cached values in the encodings,
+        # we stored them in the collection. This would allow us to simplify
+        # the style encoding and also potentially store features in the collection
+        # to more easily respond to the necessary changes.
+        # This may also allow an easy separation of encoding and value store,
+        # which was desired but was difficult to implement prior to introducing
+        # the collection.
         for encoding in self._encodings:
             encoding._apply(features)
 
