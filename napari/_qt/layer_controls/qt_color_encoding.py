@@ -178,6 +178,7 @@ class QuantitativeColorEncodingWidget(ColorEncodingWidget):
         self._model.events.colormap.connect(self._onModelColormapChanged)
         self.feature.setCurrentText(self._model.feature)
         self.colormap.setCurrentText(self._model.colormap.name)
+        self._setModelFallback(self._model.fallback)
 
     def setFeatures(self, features: Iterable[str]):
         # TODO: may need to block event.
