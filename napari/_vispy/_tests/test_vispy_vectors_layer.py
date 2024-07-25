@@ -96,7 +96,6 @@ def test_generate_vector_meshes_2D(edge_width, length, style, p):
     assert faces_dims == 3
 
 
-@pytest.mark.filterwarnings('ignore::FutureWarning')
 @pytest.mark.parametrize(
     ('initial_vector_style', 'new_vector_style'),
     [
