@@ -137,8 +137,27 @@ def test_quantitative_color_encoding_widget_set_model_colormap(qtbot: QtBot):
     # TODO: consider asserting more than the name.
     assert widget.colormap.currentText() == 'hsv'
 
-    # expected_values = encoding(features)
-    # assert_colors_equal(encoding._values, expected_values)
+    # This cannot work unless the encoding keeps a reference to features,
+    # because it needs that to generate new values.
+    expected_values = encoding(features)
+    # We need to explicitly call apply instead.
+    # This makes me think that create a new encoding instance every time
+    # the widget changes might be the better approach.
+    # Though in this case, it is the encoding itself that is being mutated.
+    # To fix that, it either needs to be immutable (to mirror what the widget
+    # does), or it needs to store a weak reference to features and update
+    # appropriately.
+    # Alternatively, the widget could store a weak reference to features
+    # (especially since it needs the update features for the combobox)
+    # but that feels a little weird because the encoding will behave
+    # differently based on whether its connected to the widget (which is
+    # true right now). Or we could recreate the encoding instance on the
+    # widget and mutate it on the layer, though that might be surprising
+    # for the user (since they may have some original instance).
+    # TODO: maybe it's enough to have the widget listen to features
+    # and encoding and regenerate the cached values as needed.
+    encoding._apply(features)
+    assert_colors_equal(encoding._values, expected_values)
 
 
 def test_quantitative_color_encoding_widget_set_widget_colormap(qtbot: QtBot):

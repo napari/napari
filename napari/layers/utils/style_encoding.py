@@ -367,9 +367,11 @@ class _DerivedStyleEncoding(
     def __call__(self, features: Any) -> Union[StyleValue, StyleArray]:
         pass
 
+    # This is a crude way to clear cached values when any of the fields
+    # that affect those values change.
     def _maybe_clear(self, event: Event) -> None:
         logging.warning('_maybe_clear: %s', event)
-        if event.type not in ('fallback', '_cached'):
+        if event.type != 'fallback':
             self._clear()
 
     @property
