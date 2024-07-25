@@ -175,3 +175,6 @@ napari/resources/icons/_themes/
 tools/perfmon/*/traces-*.json
 
 github_cache.sqlite
+
+.gitignore
+/tests

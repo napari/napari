@@ -398,7 +398,7 @@ class VispyCanvas:
         # Update the cursor position
         self.viewer.cursor._view_direction = event.view_direction
         cursor_on_near_plane = self._map_canvas2world(event.pos)
-        self.viewer.cursor.position = self._adjust_event_position(
+        self.viewer.cursor.position = self._move_event_to_camera_center_plane(
             cursor_on_near_plane, event.view_direction
         )
 
@@ -651,7 +651,7 @@ class VispyCanvas:
         w, h = self.size
         nd = self.viewer.dims.ndisplay
 
-        transform = self.view.camera._scene_transform
+        transform = self.view.scene.transform
         # map click pos to scene coordinates
         click_scene = transform.imap([x, y, 0, 1])
         # canvas center at infinite far z- (eye position in canvas coordinates)
@@ -669,25 +669,34 @@ class VispyCanvas:
         d = d / np.linalg.norm(d)
         # xyz to zyx
         d = list(d[::-1])
-        return d
+        # convert to nd view direction
+        view_direction_nd = np.zeros(self.viewer.dims.ndim)
+        view_direction_nd[list(self.viewer.dims.displayed)] = d
+        return view_direction_nd
 
     def _move_event_to_camera_center_plane(
         self, event_pos: List[float], view_direction: List[float]
-    ) -> List[float]:
+    ) -> tuple[float,...]:
         """move event position from near plane to camera center's projection on the ray"""
-        if self.viewer.dims.ndisplay == 2:
+        if self.viewer.dims.ndisplay != 3:
             return event_pos
         event_pos = np.array(event_pos)
+        event_pos_3d = event_pos[list(self.viewer.dims.displayed)]
         view_direction = np.array(view_direction)
+        view_direction_3d = view_direction[list(self.viewer.dims.displayed)]
         camera_center = np.array(self.view.camera.center)
 
         # Compute the projection of camera center onto the ray
         t = (
-            np.dot(camera_center - event_pos, camera_center)
+            np.dot(camera_center - event_pos_3d, camera_center)
             / self.viewer.camera.zoom
         )
-        projected_pos = event_pos + t * view_direction
-        return list(projected_pos)
+        projected_pos = event_pos_3d + t * view_direction_3d
+
+        position_world = list(self.viewer.dims.point)
+        for i, d in enumerate(self.viewer.dims.displayed):
+            position_world[d] = projected_pos[i]
+        return tuple(position_world)
 
     def screenshot(self) -> QImage:
         """Return a QImage based on what is shown in the viewer."""
