@@ -147,6 +147,7 @@ class DirectColorEncodingWidget(ColorEncodingWidget):
 class QuantitativeColorEncodingWidget(ColorEncodingWidget):
     feature: QComboBox
     colormap: QtColormapComboBox
+    fallback: QColorSwatchEdit
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -158,10 +159,13 @@ class QuantitativeColorEncodingWidget(ColorEncodingWidget):
         self.colormap = QtColormapComboBox(self)
         for name, cm in AVAILABLE_COLORMAPS.items():
             self.colormap.addItem(cm._display_name, name)
+        self.fallback = QColorSwatchEdit(initial_color=self._model.fallback)
         self.colormap.currentTextChanged.connect(self._onWidgetColormapChanged)
         self.feature.currentTextChanged.connect(self._onWidgetFeatureChanged)
+        self.fallback.color_changed.connect(self._onWidgetFallbackChanged)
         self._layout.addRow('feature', self.feature)
         self._layout.addRow('colormap', self.colormap)
+        self._layout.addRow('fallback', self.fallback)
 
     @property
     def model(self) -> QuantitativeColorEncoding:
@@ -184,6 +188,12 @@ class QuantitativeColorEncodingWidget(ColorEncodingWidget):
         feature = event.value
         self.feature.setCurrentText(feature)
 
+    def _onModelFallbackChanged(self, event: Event) -> None:
+        self._setModelFallback(event.value)
+
+    def _setModelFallback(self, fallback: np.ndarray) -> None:
+        self.fallback.setColor(fallback)
+
     def _onModelColormapChanged(self, event: Event) -> None:
         # TODO: check what happens when specifying a custom colormap.
         colormap = event.value
@@ -191,6 +201,9 @@ class QuantitativeColorEncodingWidget(ColorEncodingWidget):
 
     def _onWidgetFeatureChanged(self, feature: str) -> None:
         self._model.feature = feature
+
+    def _onWidgetFallbackChanged(self, fallback: np.ndarray) -> None:
+        self._model.fallback = fallback
 
     def _onWidgetColormapChanged(self, name: str):
         self._model.colormap = name
