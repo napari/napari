@@ -676,7 +676,7 @@ class VispyCanvas:
 
     def _move_event_to_camera_center_plane(
         self, event_pos: List[float], view_direction: List[float]
-    ) -> tuple[float,...]:
+    ) -> tuple[float, ...]:
         """move event position from near plane to camera center's projection on the ray"""
         if self.viewer.dims.ndisplay != 3:
             return event_pos
