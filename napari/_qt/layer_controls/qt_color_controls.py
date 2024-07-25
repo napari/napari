@@ -137,16 +137,16 @@ class ColorControlsWidget(QWidget):
         logging.warning('_onLayerEncodingChanged: %s', currentEncoding)
         if isinstance(currentEncoding, ConstantColorEncoding):
             self._constant.setModel(currentEncoding)
-            self.mode.setCurrentText('constant')
+            self.mode.setCurrentText(ColorMode.CONSTANT)
         elif isinstance(currentEncoding, DirectColorEncoding):
             self._direct.setModel(currentEncoding)
-            self.mode.setCurrentText('direct')
+            self.mode.setCurrentText(ColorMode.DIRECT)
         elif isinstance(currentEncoding, ManualColorEncoding):
             self._manual.setModel(currentEncoding)
-            self.mode.setCurrentText('manual')
+            self.mode.setCurrentText(ColorMode.MANUAL)
         elif isinstance(currentEncoding, QuantitativeColorEncoding):
             self._quantitative.setModel(currentEncoding)
-            self.mode.setCurrentText('quantitative')
+            self.mode.setCurrentText(ColorMode.QUANTITATIVE)
         else:
             logging.warning('Unsupported color encoding: %s', currentEncoding)
             self._onModeChanged('')
