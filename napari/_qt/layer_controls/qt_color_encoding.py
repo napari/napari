@@ -98,13 +98,17 @@ class ManualColorEncodingWidget(ColorEncodingWidget):
 
 class DirectColorEncodingWidget(ColorEncodingWidget):
     feature: QComboBox
+    fallback: QColorSwatchEdit
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._model = DirectColorEncoding(feature='')
         self.feature = QComboBox()
+        self.fallback = QColorSwatchEdit(initial_color=self._model.fallback)
         self.feature.currentTextChanged.connect(self._onWidgetFeatureChanged)
+        self.fallback.color_changed.connect(self._onWidgetFallbackChanged)
         self._layout.addRow('feature', self.feature)
+        self._layout.addRow('fallback', self.fallback)
 
     @property
     def model(self) -> DirectColorEncoding:
@@ -114,12 +118,20 @@ class DirectColorEncodingWidget(ColorEncodingWidget):
         # TODO: disconnect old model?
         self._model = model
         self._model.events.feature.connect(self._onModelFeatureChanged)
+        self._model.events.fallback.connect(self._onModelFallbackChanged)
         self.feature.setCurrentText(self._model.feature)
+        self._setModelFallback(self._model.fallback)
 
     def setFeatures(self, features: Iterable[str]):
         # TODO: may need to block event.
         self.feature.clear()
         self.feature.addItems(features)
+
+    def _onModelFallbackChanged(self, event: Event) -> None:
+        self._setModelFallback(event.value)
+
+    def _setModelFallback(self, fallback: np.ndarray) -> None:
+        self.fallback.setColor(fallback)
 
     def _onModelFeatureChanged(self, event: Event) -> None:
         feature = event.value
@@ -127,6 +139,9 @@ class DirectColorEncodingWidget(ColorEncodingWidget):
 
     def _onWidgetFeatureChanged(self, feature: str) -> None:
         self._model.feature = feature
+
+    def _onWidgetFallbackChanged(self, fallback: np.ndarray) -> None:
+        self._model.fallback = fallback
 
 
 class QuantitativeColorEncodingWidget(ColorEncodingWidget):
