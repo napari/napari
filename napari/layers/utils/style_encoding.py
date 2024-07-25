@@ -13,7 +13,6 @@ from typing import (
 import numpy as np
 
 from napari.utils.events import EventedModel
-from napari.utils.events.event import Event
 from napari.utils.translations import trans
 
 IndicesType = Union[range, list[int], np.ndarray]
@@ -152,6 +151,9 @@ class StyleCollection(EventedModel):
     def __setattr__(self, name: str, value: Any) -> None:
         # Maintain event bubbling from new instance of encoding.
         is_channel = name in self._channels
+        logging.warning(
+            'StyleCollection.__setattr__: %s, %s, %s', name, value, is_channel
+        )
         if is_channel:
             getattr(self, name).events.disconnect(self.events)
         super().__setattr__(name, value)
@@ -364,7 +366,6 @@ class _DerivedStyleEncoding(
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self._cached = _empty_array_like(self.fallback)
-        self.events.connect(self._maybe_clear)
 
     @abstractmethod
     def __call__(self, features: Any) -> Union[StyleValue, StyleArray]:
@@ -372,10 +373,10 @@ class _DerivedStyleEncoding(
 
     # This is a crude way to clear cached values when any of the fields
     # that affect those values change.
-    def _maybe_clear(self, event: Event) -> None:
-        logging.warning('_maybe_clear: %s', event)
-        if event.type != 'fallback':
+    def __setattr__(self, name: str, value: Any) -> None:
+        if name[0] != '_' and name != 'fallback':
             self._clear()
+        super().__setattr__(name, value)
 
     @property
     def _values(self) -> Union[StyleValue, StyleArray]:

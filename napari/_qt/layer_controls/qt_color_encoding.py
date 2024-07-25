@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from abc import abstractmethod
 from collections.abc import Iterable
 
@@ -207,4 +208,7 @@ class QuantitativeColorEncodingWidget(ColorEncodingWidget):
         self._model.fallback = fallback
 
     def _onWidgetColormapChanged(self, name: str):
+        logging.warning(
+            'QuantitativeColorEncoding._onWidgetColormapChanged: %s', name
+        )
         self._model.colormap = name

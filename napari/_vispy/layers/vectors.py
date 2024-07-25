@@ -1,3 +1,5 @@
+import logging
+
 import numpy as np
 
 from napari._vispy.layers.base import VispyBaseLayer
@@ -20,6 +22,7 @@ class VispyVectorsLayer(VispyBaseLayer):
         self._on_data_change()
 
     def _on_data_change(self):
+        logging.warning('VispyVectorsLayer._on_data_change')
         # Make meshes
         vertices, faces = generate_vector_meshes(
             self.layer._view_data,
