@@ -4,6 +4,8 @@ import logging
 from collections import deque
 from typing import TYPE_CHECKING
 
+from psygnal import Signal
+
 _LOG_SEPARATOR = '<NAPARI_LOG_SEPARATOR>'
 
 
@@ -12,6 +14,8 @@ if TYPE_CHECKING:
 
 
 class _LogStream:
+    changed = Signal()
+
     def __init__(self) -> None:
         self.logs: deque[tuple[Any, ...]] = deque(maxlen=100_000)
 
@@ -21,9 +25,43 @@ class _LogStream:
         level_value = levels[level_name]
         self.logs.append((logger, level_value, level_name, time, thread, msg))
         # TODO: actually save log to a file somewhere so it can be retrieved?
+        self.changed()
 
     def flush(self) -> None:
         pass
+
+    def get_filtered_logs_html(
+        self,
+        level: int = logging.DEBUG,
+        text_filter: str = '',
+        last_only=False,
+    ) -> list[str]:
+        if isinstance(level, str):
+            level = logging.getLevelNamesMapping().get(level, logging.NOTSET)
+
+        logs = [LOG_STREAM.logs[-1]] if last_only else LOG_STREAM.logs
+
+        selected = [
+            (logger_name, level_value, *others)
+            for logger_name, level_value, *others in logs
+            if level_value >= level
+        ]
+
+        # TODO: fuzzy search?
+        text_filter = text_filter.lower()
+        filtered = [
+            log
+            for log in selected
+            if any(text_filter in str(field).lower() for field in log)
+        ]
+
+        return [
+            f'{_html_level(level_name, level_value)} '
+            f'<b>{name}</b> '
+            f'<font style="color:gray"><i>[{time}] ({thread})</i></font>: '
+            f'{msg}'
+            for name, level_value, level_name, time, thread, msg in filtered
+        ]
 
 
 LOG_STREAM = _LogStream()
@@ -56,38 +94,5 @@ def _html_level(level_name: str, level_value: int) -> str:
         if level_value >= level:
             color = level_color
     # this is ugly AF but html is weird and I don't get it
-    padding = '&nbsp;' * (10 - len(level_name))
+    padding = '&nbsp;' * (8 - len(level_name))
     return f'<font style="color:{color}">{level_name}{padding}</font>'
-
-
-def get_filtered_logs_html(
-    level: int = logging.DEBUG, text_filter: str = ''
-) -> str:
-    if isinstance(level, str):
-        level = logging.getLevelNamesMapping().get(level, logging.NOTSET)
-    selected = [
-        (logger_name, level_value, *others)
-        for logger_name, level_value, *others in LOG_STREAM.logs
-        if level_value >= level
-    ]
-
-    # TODO: fuzzy search?
-    text_filter = text_filter.lower()
-    filtered = [
-        log
-        for log in selected
-        if any(text_filter in str(field).lower() for field in log)
-    ]
-
-    # <pre> tag makes it monospace
-    return (
-        '<pre>'
-        + ''.join(
-            f'{_html_level(level_name, level_value)} '
-            f'<b>{name}</b> '
-            f'<font style="color:gray"><i>[{time}] ({thread})</i></font>: '
-            f'{msg}'
-            for name, level_value, level_name, time, thread, msg in filtered
-        )
-        + '</pre>'
-    )
