@@ -671,7 +671,7 @@ class VispyCanvas:
         d = list(d[::-1])
         return d
 
-    def _adjust_event_position(
+    def _move_event_to_camera_center_plane(
         self, event_pos: List[float], view_direction: List[float]
     ) -> List[float]:
         """move event position from near plane to camera center's projection on the ray"""
