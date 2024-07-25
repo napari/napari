@@ -333,7 +333,7 @@ class VispyCanvas:
             of the viewer.
         """
         nd = self.viewer.dims.ndisplay
-        transform = self.view.camera._scene_transform
+        transform = self.view.scene.transform
         # cartesian to homogeneous coordinates
         mapped_position = transform.imap(list(position))
         if nd == 3:
