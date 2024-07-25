@@ -125,7 +125,6 @@ class QtVectorsControls(QtLayerControls):
             self._on_out_of_slice_display_change
         )
         self.layer.events.vector_style.connect(self._on_vector_style_change)
-        # self.layer.events.edge_color.connect(self._on_edge_color_change)
 
     def change_vector_style(self, vector_style: str):
         """Change vector style of vectors on the layer model.
