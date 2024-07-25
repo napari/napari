@@ -142,12 +142,15 @@ class StyleCollection(EventedModel):
     }
     """
 
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        # Implement event bubbling from style encoding instances by connecting
+        # each encoding's main event to this collection's main event.
+        for encoding in self._encodings:
+            encoding.events.connect(self.events)
+
     def __setattr__(self, name: str, value: Any) -> None:
-        # If a channel is being mutated, then connect its main event
-        # to this collection's main event to simulate event bubbling.
-        # This allows external observers to just listen to the collection's
-        # main event to respond to any changes (e.g. like re-rendering).
-        # Also remove the connection associated with the old value.
+        # Maintain event bubbling from new instance of encoding.
         is_channel = name in self._channels
         if is_channel:
             getattr(self, name).events.disconnect(self.events)

@@ -13,12 +13,14 @@ from qtpy.QtWidgets import (
 from napari._qt.layer_controls.qt_color_encoding import (
     ColorEncodingWidget,
     ConstantColorEncodingWidget,
+    DirectColorEncodingWidget,
     ManualColorEncodingWidget,
     QuantitativeColorEncodingWidget,
 )
 from napari.layers.utils.color_encoding import (
     ColorEncoding,
     ConstantColorEncoding,
+    DirectColorEncoding,
     ManualColorEncoding,
     QuantitativeColorEncoding,
 )
@@ -29,6 +31,7 @@ from napari.utils.events.event import Event, EventEmitter
 
 class ColorMode(StrEnum):
     CONSTANT = 'constant'
+    DIRECT = 'direct'
     MANUAL = 'manual'
     QUANTITATIVE = 'quantitative'
 
@@ -46,7 +49,7 @@ class StyledLayer(Protocol):
     events: StyledLayerEvents
 
 
-class ColorModeWidget(QWidget):
+class ColorControlsWidget(QWidget):
     """Controls color encoding associated with a layer style property.
 
     This provides an abstraction on top of the color encoding widgets
@@ -93,11 +96,13 @@ class ColorModeWidget(QWidget):
         # Always create every type of widget so that we have strong typing.
         # TODO: or create each encoding on demand.
         self._constant = ConstantColorEncodingWidget()
+        self._direct = DirectColorEncodingWidget()
         self._manual = ManualColorEncodingWidget()
         self._quantitative = QuantitativeColorEncodingWidget()
 
         self.encodings: dict[ColorMode, ColorEncodingWidget] = {
             ColorMode.CONSTANT: self._constant,
+            ColorMode.DIRECT: self._direct,
             ColorMode.MANUAL: self._manual,
             ColorMode.QUANTITATIVE: self._quantitative,
         }
@@ -122,6 +127,7 @@ class ColorModeWidget(QWidget):
         self._setFeatures(event.value)
 
     def _setFeatures(self, features: Any) -> None:
+        self._direct.setFeatures(features.columns)
         self._quantitative.setFeatures(features.columns)
 
     def _onLayerEncodingChanged(self, event: Event) -> None:
@@ -132,6 +138,9 @@ class ColorModeWidget(QWidget):
         if isinstance(currentEncoding, ConstantColorEncoding):
             self._constant.setModel(currentEncoding)
             self.mode.setCurrentText('constant')
+        elif isinstance(currentEncoding, DirectColorEncoding):
+            self._direct.setModel(currentEncoding)
+            self.mode.setCurrentText('direct')
         elif isinstance(currentEncoding, ManualColorEncoding):
             self._manual.setModel(currentEncoding)
             self.mode.setCurrentText('manual')

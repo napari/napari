@@ -10,7 +10,7 @@ from qtpy.QtWidgets import (
     QDoubleSpinBox,
 )
 
-from napari._qt.layer_controls.qt_color_controls import ColorModeWidget
+from napari._qt.layer_controls.qt_color_controls import ColorControlsWidget
 from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
 from napari.layers.base._base_constants import Mode
 from napari.layers.vectors._vectors_constants import VECTORSTYLE_TRANSLATIONS
@@ -69,7 +69,7 @@ class QtVectorsControls(QtLayerControls):
     def __init__(self, layer) -> None:
         super().__init__(layer)
 
-        self.edgeColor = ColorModeWidget(layer, attr='edge_color')
+        self.edgeColor = ColorControlsWidget(layer, attr='edge_color')
 
         # dropdown to select the edge display vector_style
         vector_style_comboBox = QComboBox(self)

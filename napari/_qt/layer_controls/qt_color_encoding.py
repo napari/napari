@@ -15,6 +15,7 @@ from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
 from napari.layers.utils.color_encoding import (
     ColorEncoding,
     ConstantColorEncoding,
+    DirectColorEncoding,
     ManualColorEncoding,
     QuantitativeColorEncoding,
 )
@@ -93,6 +94,39 @@ class ManualColorEncodingWidget(ColorEncodingWidget):
 
     def _onWidgetDefaultChanged(self, default: np.ndarray) -> None:
         self._model.default = default
+
+
+class DirectColorEncodingWidget(ColorEncodingWidget):
+    feature: QComboBox
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._model = DirectColorEncoding(feature='')
+        self.feature = QComboBox()
+        self.feature.currentTextChanged.connect(self._onWidgetFeatureChanged)
+        self._layout.addRow('feature', self.feature)
+
+    @property
+    def model(self) -> DirectColorEncoding:
+        return self._model
+
+    def setModel(self, model: DirectColorEncoding) -> None:
+        # TODO: disconnect old model?
+        self._model = model
+        self._model.events.feature.connect(self._onModelFeatureChanged)
+        self.feature.setCurrentText(self._model.feature)
+
+    def setFeatures(self, features: Iterable[str]):
+        # TODO: may need to block event.
+        self.feature.clear()
+        self.feature.addItems(features)
+
+    def _onModelFeatureChanged(self, event: Event) -> None:
+        feature = event.value
+        self.feature.setCurrentText(feature)
+
+    def _onWidgetFeatureChanged(self, feature: str) -> None:
+        self._model.feature = feature
 
 
 class QuantitativeColorEncodingWidget(ColorEncodingWidget):
