@@ -152,12 +152,13 @@ def image_reader_to_layerdata_reader(
 def _register_types_with_magicgui():
     """Register ``napari.types`` objects with magicgui."""
     from concurrent.futures import Future
+    from typing import List  # noqa: UP035
 
     from magicgui import register_type
 
     from napari.utils import _magicgui as _mgui
 
-    for type_ in (LayerDataTuple, list[LayerDataTuple]):
+    for type_ in (LayerDataTuple, list[LayerDataTuple], List[LayerDataTuple]):  # noqa: UP006
         register_type(
             type_,
             return_callback=_mgui.add_layer_data_tuples_to_viewer,
