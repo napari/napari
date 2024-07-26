@@ -664,7 +664,7 @@ class VispyCanvas:
         eye_scene = eye_scene[0:nd] / eye_scene[nd]
 
         # calculate direction of the ray
-        d = eye_scene - click_scene
+        d = click_scene - eye_scene
         d = d[0:nd]
         d = d / np.linalg.norm(d)
         # xyz to zyx
