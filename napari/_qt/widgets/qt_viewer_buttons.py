@@ -13,6 +13,9 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
 )
 
+from napari._app_model.constants._menus import MenuId
+from napari._qt._qapp_model._menus import build_qmodel_menu
+from napari._qt._qapp_model._toolbars import build_qmodel_toolbar
 from napari._qt.dialogs.qt_modal import QtPopup
 from napari._qt.widgets.qt_dims_sorter import QtDimsSorter
 from napari._qt.widgets.qt_spinbox import QtSpinBox
@@ -128,6 +131,27 @@ class QtViewerButtons(QFrame):
 
         self.viewer = viewer
 
+        # Toolbar
+        # TODO: Should a `Viewer` menu by added to the mainwindow menubar?
+        self._menu = build_qmodel_menu(MenuId.VIEWER_CONTROLS)
+        self.toolbar = build_qmodel_toolbar(
+            MenuId.VIEWER_CONTROLS, title='Controls', parent=self
+        )
+        # TODO:
+        #   * Access tool buttons via widgetForAction
+        #   * Give `mode` property for icon via qss and other properties being used
+        #   * Enable menus/widget to popup when right-clicked
+        #   * Callables to update checked state should be added over the action definition?
+        console_action = self._menu.findAction(
+            'napari.viewer.toggle_console_visibility'
+        )
+        console_tool = self.toolbar.widgetForAction(console_action)
+        console_tool.setProperty('mode', 'console')
+        console_tool.setProperty('expanded', False)
+        # TODO: Things like this should go over the action definition (`enablement`)?
+        if in_ipython() or in_jupyter() or in_python_repl():
+            console_tool.setEnabled(False)
+
         self.consoleButton = QtViewerPushButton(
             'console', action='napari:toggle_console_visibility'
         )
@@ -181,7 +205,12 @@ class QtViewerButtons(QFrame):
         layout.addWidget(self.gridViewButton)
         layout.addWidget(self.resetViewButton)
         layout.addStretch(0)
-        self.setLayout(layout)
+
+        base_layout = QVBoxLayout()
+        base_layout.setContentsMargins(0, 0, 0, 0)
+        base_layout.addWidget(self.toolbar)
+        base_layout.addLayout(layout)
+        self.setLayout(base_layout)
 
     def open_perspective_popup(self):
         """Show a slider to control the viewer `camera.perspective`."""

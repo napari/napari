@@ -62,6 +62,16 @@ QtViewerPushButton[mode="grid_view_button"] {
   image: url("theme_{{ id }}:/grid.svg");
 }
 
+QToolButton[mode="console"] {
+  min-width : 28px;
+  max-width : 28px;
+  min-height : 28px;
+  max-height : 28px;
+  padding: 0px;
+  image: url("theme_{{ id }}:/console.svg");
+  border: none;
+}
+
 QtModeRadioButton {
   min-height : 28px;
   padding: 0px;
@@ -192,7 +202,6 @@ QtModePushButton[mode="delete_shape"] {
 QWidget[emphasized="true"] QtModePushButton[mode="delete_shape"]:pressed {
   background-color: {{ error }};
 }
-
 
 QtCopyToClipboardButton {
    background-color: {{ background }};
