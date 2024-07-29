@@ -9,6 +9,11 @@ from napari.components.viewer_model import ViewerModel
 
 @pytest.fixture()
 def qt_viewer_buttons(qtbot):
+    # initialize app-model actions (actions and menus app registries)
+    from napari._qt._qapp_model.qactions import init_qactions
+
+    init_qactions()
+
     # create viewer model and buttons
     viewer = ViewerModel()
     viewer_buttons = QtViewerButtons(viewer)
