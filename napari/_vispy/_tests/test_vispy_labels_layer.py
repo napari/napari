@@ -1,3 +1,6 @@
+import os
+import sys
+
 import numpy as np
 import pytest
 import zarr
@@ -99,6 +102,10 @@ def test_labels_painting_with_mouse(
 
 
 @skip_local_popups
+@pytest.mark.xfail(
+    os.environ.get('CI') and sys.platform == 'win32',
+    reason='Fails on Windows CI, but confirmed working locally',
+)
 def test_labels_iso_gradient_modes(make_napari_viewer):
     """Check that we can set `iso_gradient_mode` with `iso_categorical` rendering (test shader)."""
     viewer = make_napari_viewer(show=True)
