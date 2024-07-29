@@ -116,10 +116,10 @@ def test_labels_iso_gradient_modes(make_napari_viewer):
     QCoreApplication.instance().processEvents()
     assert layer.rendering == 'iso_categorical'
 
-    layer.iso_gradient_mode = IsoCategoricalGradientMode.ISOTROPIC
+    layer.iso_gradient_mode = IsoCategoricalGradientMode.SMOOTH
     QCoreApplication.instance().processEvents()
-    assert layer.iso_gradient_mode == 'isotropic'
+    assert layer.iso_gradient_mode == 'smooth'
 
-    layer.iso_gradient_mode = IsoCategoricalGradientMode.SIMPLE
+    layer.iso_gradient_mode = IsoCategoricalGradientMode.FAST
     QCoreApplication.instance().processEvents()
-    assert layer.iso_gradient_mode == 'simple'
+    assert layer.iso_gradient_mode == 'fast'

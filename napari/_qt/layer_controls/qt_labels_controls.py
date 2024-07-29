@@ -367,8 +367,8 @@ class QtLabelsControls(QtLayerControls):
         text : str
             Gradient mode for the isosurface rendering method.
             Selects the finite-difference gradient method for the isosurface shader:
-            * simple: simple finite difference gradient
-            * isotropic: isotropic Sobel gradient, smoother but more computationally expensive
+            * fast: simple finite difference gradient along each axis
+            * smooth: isotropic Sobel gradient, smoother but more computationally expensive
         """
         self.layer.iso_gradient_mode = text
 

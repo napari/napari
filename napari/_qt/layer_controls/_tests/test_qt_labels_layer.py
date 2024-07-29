@@ -161,7 +161,7 @@ def test_iso_gradient_mode_with_rendering(make_labels_controls):
     assert layer.rendering == LabelsRendering.ISO_CATEGORICAL
     assert (
         qtctrl.isoGradientComboBox.currentText()
-        == IsoCategoricalGradientMode.SIMPLE
+        == IsoCategoricalGradientMode.FAST
     )
     assert qtctrl.isoGradientComboBox.isEnabled()
     layer.rendering = LabelsRendering.TRANSLUCENT

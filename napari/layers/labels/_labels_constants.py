@@ -92,9 +92,9 @@ class IsoCategoricalGradientMode(StringEnum):
     """IsoCategoricalGradientMode: Gradient mode for the IsoCategorical rendering mode.
 
     Selects the finite-difference gradient method for the isosurface shader:
-        * simple: use a simple finite difference gradient
-        * isotropic: use an isotropic Sobel gradient, smoother but more computationally expensive
+        * fast: use a simple finite difference gradient along each axis
+        * smooth: use an isotropic Sobel gradient, smoother but more computationally expensive
     """
 
-    SIMPLE = auto()
-    ISOTROPIC = auto()
+    FAST = auto()
+    SMOOTH = auto()
