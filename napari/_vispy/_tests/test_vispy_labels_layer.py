@@ -1,12 +1,9 @@
-import os
-import sys
-
 import numpy as np
 import pytest
 import zarr
 from qtpy.QtCore import QCoreApplication
 
-from napari._tests.utils import skip_local_popups
+from napari._tests.utils import skip_local_popups, skip_on_win_ci
 from napari.layers.labels._labels_constants import IsoCategoricalGradientMode
 from napari.utils.interactions import mouse_press_callbacks
 
@@ -102,12 +99,11 @@ def test_labels_painting_with_mouse(
 
 
 @skip_local_popups
-@pytest.mark.xfail(
-    os.environ.get('CI') and sys.platform == 'win32',
-    reason='Fails on Windows CI, but confirmed working locally',
-)
+@skip_on_win_ci
 def test_labels_iso_gradient_modes(make_napari_viewer):
     """Check that we can set `iso_gradient_mode` with `iso_categorical` rendering (test shader)."""
+    # NOTE: this test currently segfaults on Windows CI, but confirmed working locally
+    # because it's a segfault, we have to skip instead of xfail
     viewer = make_napari_viewer(show=True)
     labels = make_labels_layer('numpy', shape=(32, 32, 32))
     labels[14:18, 14:18, 14:18] = 1
