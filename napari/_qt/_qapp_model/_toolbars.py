@@ -28,8 +28,9 @@ def build_qmodel_toolbar(
 
     Returns
     -------
-    QModelMenu
-        QMenu subclass populated with all items in `menu_id` menu.
+    QModelToolBar
+        QToolbar subclass populated with all items in `menu_id` menu except for
+        the ones that should be `excluded`.
     """
     from napari._app_model import get_app
 

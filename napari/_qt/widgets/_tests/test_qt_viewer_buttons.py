@@ -8,10 +8,11 @@ from napari.components.viewer_model import ViewerModel
 
 
 @pytest.fixture()
-def qt_viewer_buttons(qtbot):
+def qt_viewer_buttons(qtbot, mock_app):
     # initialize app-model actions (actions and menus app registries)
     from napari._qt._qapp_model.qactions import init_qactions
 
+    init_qactions.cache_clear()
     init_qactions()
 
     # create viewer model and buttons
