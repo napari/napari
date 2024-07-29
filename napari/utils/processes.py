@@ -1,6 +1,7 @@
 import datetime
 import uuid
 from enum import auto
+from typing import Optional
 
 from napari.utils.misc import StringEnum
 
@@ -11,13 +12,19 @@ class ProcessStatus(StringEnum):
 
 
 class ProcessStatusItem:
-    def __init__(self, status, description, id_=None, timestamp=None):
+    def __init__(
+        self,
+        status: ProcessStatus,
+        description: str,
+        id_: Optional[uuid.UUID] = None,
+        timestamp: Optional[str] = None,
+    ):
         self.id = id_ or uuid.uuid4()
         self.timestamp = timestamp or datetime.datetime.now().isoformat()
         self.status = status
         self.description = description
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f'ProcessStatusItem({self.status}, {self.description}, {self.id}, {self.timestamp})'
 
 
@@ -32,7 +39,7 @@ class ProcessStatusManager:
     """
 
     _processes: list[ProcessStatusItem]
-    _process_map: dict[uuid.UUID : ProcessStatusItem]
+    _process_map: dict[uuid.UUID, ProcessStatusItem]
 
     def __init__(self) -> None:
         self._processes: list = []
@@ -46,17 +53,17 @@ class ProcessStatusManager:
         self._process_map[item.id] = item
         return item.id
 
-    def unregister_process_status(self, process_status_id) -> bool:
+    def unregister_process_status(self, process_status_id: uuid.UUID) -> bool:
         if process_status_id in self._process_map:
             self._process_map.pop(process_status_id)
             return True
 
         return False
 
-    def is_busy(self):
+    def is_busy(self) -> bool:
         return len(self._process_map) > 0
 
-    def get_status(self):
+    def get_status(self) -> list[str]:
         messages = []
         for _, item in self._process_map.items():
             if item.status == ProcessStatus.BUSY:
@@ -68,7 +75,9 @@ class ProcessStatusManager:
 process_status_manager = ProcessStatusManager()
 
 
-def register_process_status(process_status: ProcessStatus, description: str):
+def register_process_status(
+    process_status: ProcessStatus, description: str
+) -> uuid.UUID:
     """
     Register a long running process.
     """
@@ -77,7 +86,7 @@ def register_process_status(process_status: ProcessStatus, description: str):
     )
 
 
-def unregister_process_status(process_status_id: uuid.UUID):
+def unregister_process_status(process_status_id: uuid.UUID) -> bool:
     """
     Unregister a long running process.
     """
