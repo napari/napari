@@ -20,6 +20,7 @@ from napari.layers.utils.color_encoding import (
     ManualColorEncoding,
     QuantitativeColorEncoding,
 )
+from napari.utils.color import ColorValue
 from napari.utils.colormaps.colormap_utils import AVAILABLE_COLORMAPS
 from napari.utils.events.event import Event
 
@@ -64,7 +65,7 @@ class ConstantColorEncodingWidget(ColorEncodingWidget):
     def _setConstant(self, constant: np.ndarray) -> None:
         self.constant.setColor(constant)
 
-    def _onWidgetConstantChanged(self, constant: np.ndarray) -> None:
+    def _onWidgetConstantChanged(self, constant: ColorValue) -> None:
         # TODO: need a blocker? or no change in value is enough?
         self._model.constant = constant
 
@@ -93,7 +94,7 @@ class ManualColorEncodingWidget(ColorEncodingWidget):
     def _setModelDefault(self, default: np.ndarray) -> None:
         self.default.setColor(default)
 
-    def _onWidgetDefaultChanged(self, default: np.ndarray) -> None:
+    def _onWidgetDefaultChanged(self, default: ColorValue) -> None:
         self._model.default = default
 
 
@@ -123,7 +124,7 @@ class DirectColorEncodingWidget(ColorEncodingWidget):
         self.feature.setCurrentText(self._model.feature)
         self._setModelFallback(self._model.fallback)
 
-    def setFeatures(self, features: Iterable[str]):
+    def setFeatures(self, features: Iterable[str]) -> None:
         # TODO: may need to block event.
         self.feature.clear()
         self.feature.addItems(features)
@@ -141,7 +142,7 @@ class DirectColorEncodingWidget(ColorEncodingWidget):
     def _onWidgetFeatureChanged(self, feature: str) -> None:
         self._model.feature = feature
 
-    def _onWidgetFallbackChanged(self, fallback: np.ndarray) -> None:
+    def _onWidgetFallbackChanged(self, fallback: ColorValue) -> None:
         self._model.fallback = fallback
 
 
@@ -181,7 +182,7 @@ class QuantitativeColorEncodingWidget(ColorEncodingWidget):
         self.colormap.setCurrentText(self._model.colormap.name)
         self._setModelFallback(self._model.fallback)
 
-    def setFeatures(self, features: Iterable[str]):
+    def setFeatures(self, features: Iterable[str]) -> None:
         # TODO: may need to block event.
         self.feature.clear()
         self.feature.addItems(features)
@@ -204,11 +205,12 @@ class QuantitativeColorEncodingWidget(ColorEncodingWidget):
     def _onWidgetFeatureChanged(self, feature: str) -> None:
         self._model.feature = feature
 
-    def _onWidgetFallbackChanged(self, fallback: np.ndarray) -> None:
+    def _onWidgetFallbackChanged(self, fallback: ColorValue) -> None:
         self._model.fallback = fallback
 
-    def _onWidgetColormapChanged(self, name: str):
+    def _onWidgetColormapChanged(self, name: str) -> None:
         logging.warning(
             'QuantitativeColorEncoding._onWidgetColormapChanged: %s', name
         )
-        self._model.colormap = name
+        # mypy does not take into account pydantic field validation.
+        self._model.colormap = name  # type: ignore[assignment]
