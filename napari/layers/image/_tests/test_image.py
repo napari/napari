@@ -1031,6 +1031,12 @@ def test_thick_slice_multiscale():
     )
 
 
+def test_contrast_outside_range():
+    data = np.zeros((64, 64), dtype=np.uint8)
+
+    Image(data, contrast_limits=(0, 1000))
+
+
 def test_docstring():
     validate_all_params_in_docstring(Image)
     validate_kwargs_sorted(Image)
