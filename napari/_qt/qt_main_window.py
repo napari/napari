@@ -77,7 +77,6 @@ from napari.plugins import (
     plugin_manager,
 )
 from napari.plugins._npe2 import index_npe1_adapters
-from napari.plugins.utils import PluginStatus
 from napari.settings import get_settings
 from napari.utils import perf
 from napari.utils._proxies import PublicOnlyProxy
@@ -89,6 +88,7 @@ from napari.utils.misc import (
     running_as_constructor_app,
 )
 from napari.utils.notifications import Notification
+from napari.utils.processes import process_status_manager
 from napari.utils.theme import _themes, get_system_theme
 from napari.utils.translations import trans
 
@@ -567,28 +567,21 @@ class _QtMainWindow(QMainWindow):
 
         Regardless of whether cmd Q, cmd W, or the close button is used...
         """
-        try:
-            status = self._plugin_manager_dialog.query_status()
-            is_plugin_manager_busy = status['status'] == PluginStatus.BUSY
-            plugin_manager_description = status['description']
-        except AttributeError:
-            plugin_manager_description = ''
-            is_plugin_manager_busy = False
-
+        process_status_manager_messages = process_status_manager.get_status()
         if (
+            process_status_manager.is_busy()
+            and ConfirmCloseDialog(
+                self,
+                close_app=False,
+                extra_info='\n'.join(process_status_manager_messages),
+                display_checkbox=False,
+            ).exec_()
+            != QDialog.Accepted
+        ) or (
             event.spontaneous()
             and get_settings().application.confirm_close_window
             and self._qt_viewer.viewer.layers
             and ConfirmCloseDialog(self, close_app=False).exec_()
-            != QDialog.Accepted
-        ) or (
-            is_plugin_manager_busy
-            and ConfirmCloseDialog(
-                self,
-                close_app=False,
-                extra_info=plugin_manager_description,
-                display_checkbox=False,
-            ).exec_()
             != QDialog.Accepted
         ):
             event.ignore()

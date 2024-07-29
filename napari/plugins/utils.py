@@ -1,7 +1,7 @@
 import os
 import os.path as osp
 import re
-from enum import Enum, IntFlag, auto
+from enum import IntFlag
 from fnmatch import fnmatch
 from functools import lru_cache
 from pathlib import Path
@@ -19,11 +19,6 @@ class MatchFlag(IntFlag):
     SET = 1
     ANY = 2
     STAR = 4
-
-
-class PluginStatus(Enum):
-    BUSY = auto()
-    IDLE = auto()
 
 
 @lru_cache
