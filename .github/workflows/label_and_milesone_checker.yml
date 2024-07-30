@@ -45,8 +45,8 @@ jobs:
 
           IFS='/' read -r repoOwner repoName <<< "${{ github.repository }}"
 
-
           # Fetch the closest future milestone
+          # shellcheck disable=SC2016
           CLOSEST_MILESTONE=$(gh api graphql -f query='
             query($repoName: String!, $repoOwner: String!) {
               repository(name: $repoName, owner: $repoOwner) {
@@ -61,8 +61,8 @@ jobs:
           }' --jq '.data.repository.milestones.nodes | map(select(.dueOn >= now)) | .[0].number' -f repoName="$repoName" -f repoOwner="$repoOwner")
 
           # Extract the milestone number of the current PR
-          PR_MILESTONE_NUMBER=$(gh api /repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }} --jq '.milestone.number')
-          CLOSEST_MILESTONE_NAME=$(gh api /repos/${{ github.repository }}/milestones/$CLOSEST_MILESTONE --jq '.title')
+          PR_MILESTONE_NUMBER=$(gh api "/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}" --jq '.milestone.number')
+          CLOSEST_MILESTONE_NAME=$(gh api "/repos/${{ github.repository }}/milestones/$CLOSEST_MILESTONE" --jq '.title')
 
 
           # Check if the PR's milestone is the closest future milestone
