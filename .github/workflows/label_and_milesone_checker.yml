@@ -13,9 +13,9 @@ on:
     types: [checks_requested]
 
 jobs:
-  check_labels_and_milestone:
+  check_labels:
     if: (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ready to merge'))
-    name: Check labels and milestone
+    name: Check PR has type label
     runs-on: ubuntu-latest
     steps:
       - name: Check labels
@@ -23,12 +23,6 @@ jobs:
         with:
           any_of: bugfix,feature,documentation,performance,enhancement,maintenance
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Check milestone
-        if: github.event.pull_request.milestone == null
-        run: |
-          echo "Please add a milestone to this PR"
-          exit 1
 
   check_next_milestone:
     name: Check milestone is next release
