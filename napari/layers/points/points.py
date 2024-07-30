@@ -961,6 +961,7 @@ class Points(Layer):
         # this will check that it is the correct length.
         coerced_symbols = np.broadcast_to(coerced_symbols, self.data.shape[0])
         self._symbol = coerced_symbols
+        self._symbol.flags.writeable = True
         self.events.symbol()
         self.events.highlight()
 
