@@ -86,11 +86,11 @@ jobs:
               "https://api.github.com/repos/${{ github.repository }}/pulls/$PR_number" \
           )
 
-          FULL_NAME=$(echo $PR_data  | jq -r .head.repo.full_name)
-          echo "FULL_NAME=$FULL_NAME" >> $GITHUB_ENV
+          FULL_NAME=$(echo "${PR_data}"  | jq -r .head.repo.full_name)
+          echo "FULL_NAME=$FULL_NAME" >> "$GITHUB_ENV"
 
-          BRANCH=$(echo $PR_data  | jq -r .head.ref)
-          echo "BRANCH=$BRANCH" >> $GITHUB_ENV
+          BRANCH=$(echo "${PR_data}"  | jq -r .head.ref)
+          echo "BRANCH=$BRANCH" >> "$GITHUB_ENV"
 
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -99,8 +99,8 @@ jobs:
         # when schedule or workflow_dispatch triggers workflow, then we need to get info about which branch to use
         if: github.event_name != 'issue_comment' && github.event_name != 'pull_request'
         run: |
-          echo "FULL_NAME=${{ github.repository }}" >> $GITHUB_ENV
-          echo "BRANCH=${{ github.ref_name }}" >> $GITHUB_ENV
+          echo "FULL_NAME=${{ github.repository }}" >> "$GITHUB_ENV"
+          echo "BRANCH=${{ github.ref_name }}" >> "$GITHUB_ENV"
 
       - uses: actions/checkout@v4
         with:
@@ -156,7 +156,8 @@ jobs:
         run: |
           set -x
           pip install -U uv
-          flags="--quiet"
+          flags=(--quiet --extra pyqt5 --extra pyqt6 --extra pyside2 --extra pyside6_experimental --extra testing --extra testing_extra --extra optional)
+
           # Explanation of below commands
           # uv pip compile --python-version 3.9 - call uv pip compile but ensure proper interpreter
           # --upgrade upgrade to the latest possible version. Without this pip-compile will take a look to output files and reuse versions (so will ad something on when adding dependency.
@@ -164,27 +165,20 @@ jobs:
           # pyproject.toml resources/constraints/version_denylist.txt - source files. the resources/constraints/version_denylist.txt - contains our test specific constraints like pytes-cov`
           #
           # --extra pyqt5 etc - names of extra sections from pyproject.toml that should be checked for the dependencies list (maybe we could create a super extra section to collect them all in)
-          flags+=" --extra pyqt5"
-          flags+=" --extra pyqt6"
-          flags+=" --extra pyside2"
-          flags+=" --extra pyside6_experimental"
-          flags+=" --extra testing"
-          flags+=" --extra testing_extra"
-          flags+=" --extra optional"
           prefix="napari_repo"
           pyproject_toml="${prefix}/pyproject.toml"
           constraints="${prefix}/resources/constraints"
 
 
           for pyv in 3.9 3.10 3.11 3.12; do
-            uv pip compile --python-version ${pyv} --upgrade --output-file $constraints/constraints_py${pyv}.txt  $pyproject_toml $constraints/version_denylist.txt ${flags}
-            uv pip compile --python-version ${pyv} --upgrade --output-file $constraints/constraints_py${pyv}_pydantic_1.txt  $pyproject_toml $constraints/version_denylist.txt $constraints/pydantic_le_2.txt ${flags}
-            uv pip compile --python-platform aarch64-apple-darwin  --python-version ${pyv} --upgrade --output-file $constraints/constraints_py${pyv}_macos_arm.txt  $pyproject_toml $constraints/version_denylist.txt ${flags}
+            uv pip compile --python-version ${pyv} --upgrade --output-file $constraints/constraints_py${pyv}.txt  $pyproject_toml $constraints/version_denylist.txt "${flags[@]}"
+            uv pip compile --python-version ${pyv} --upgrade --output-file $constraints/constraints_py${pyv}_pydantic_1.txt  $pyproject_toml $constraints/version_denylist.txt $constraints/pydantic_le_2.txt "${flags[@]}"
+            uv pip compile --python-platform windows  --python-version ${pyv} --upgrade --output-file $constraints/constraints_py${pyv}_windows.txt  $pyproject_toml $constraints/version_denylist.txt "${flags[@]}"
           done
 
 
-          uv pip compile --python-version 3.9 --upgrade --output-file $constraints/constraints_py3.9_examples.txt $pyproject_toml $constraints/version_denylist.txt resources/constraints/version_denylist_examples.txt ${flags}
-          uv pip compile --python-version 3.10 --upgrade --output-file $constraints/constraints_py3.10_docs.txt $pyproject_toml $constraints/version_denylist.txt resources/constraints/version_denylist_examples.txt docs/requirements.txt $constraints/pydantic_le_2.txt ${flags}
+          uv pip compile --python-version 3.9 --upgrade --output-file $constraints/constraints_py3.9_examples.txt $pyproject_toml $constraints/version_denylist.txt resources/constraints/version_denylist_examples.txt "${flags[@]}"
+          uv pip compile --python-version 3.10 --upgrade --output-file $constraints/constraints_py3.10_docs.txt $pyproject_toml $constraints/version_denylist.txt resources/constraints/version_denylist_examples.txt docs/requirements.txt $constraints/pydantic_le_2.txt "${flags[@]}"
           uv pip compile --python-version 3.11 --upgrade --output-file ${prefix}/resources/requirements_mypy.txt ${prefix}/resources/requirements_mypy.in
 
       # END PYTHON DEPENDENCIES
