@@ -1,7 +1,7 @@
 import typing
 from collections.abc import Generator, Iterable, Sequence
 from contextlib import contextmanager
-from functools import wraps
+from functools import cached_property, wraps
 from typing import Literal, Union
 
 import numpy as np
@@ -495,6 +495,7 @@ class ShapeList:
         if z_refresh:
             # Set z_order
             self._update_z_order()
+        del self.__dict__['_bounding_boxes']
 
     def _add_multiple_shapes(
         self,
@@ -658,6 +659,7 @@ class ShapeList:
         if z_refresh:
             # Set z_order
             self._update_z_order()
+        del self.__dict__['_bounding_boxes']
 
     @_batch_dec
     def remove_all(self):
@@ -1110,6 +1112,10 @@ class ShapeList:
 
         return shapes
 
+    @cached_property
+    def _bounding_boxes(self):
+        return np.array([s.bounding_box for s in self.shapes])
+
     def inside(self, coord):
         """Determines if any shape at given coord by looking inside triangle
         meshes. Looks only at displayed shapes
@@ -1125,17 +1131,26 @@ class ShapeList:
             Index of shape if any that is at the coordinates. Returns `None`
             if no shape is found.
         """
-        triangles = self._mesh.vertices[self._mesh.displayed_triangles]
-        indices = inside_triangles(triangles - coord)
-        shapes = self._mesh.displayed_triangles_index[indices, 0]
-
-        if len(shapes) == 0:
+        bounding_boxes = self._bounding_boxes
+        inside = np.all(bounding_boxes[:, 0] <= coord, axis=1) & np.all(
+            bounding_boxes[:, 1] >= coord, axis=1
+        )
+        inside_indices = np.where(inside)[0]
+        try:
+            return next(
+                i
+                for i in inside_indices
+                if np.any(
+                    inside_triangles(
+                        self.shapes[i]._face_vertices[
+                            self.shapes[i]._face_triangles
+                        ]
+                        - coord
+                    )
+                )
+            )
+        except StopIteration:
             return None
-
-        z_list = self._z_order.tolist()
-        order_indices = np.array([z_list.index(m) for m in shapes])
-        ordered_shapes = shapes[np.argsort(order_indices)]
-        return ordered_shapes[0]
 
     def _inside_3d(self, ray_position: np.ndarray, ray_direction: np.ndarray):
         """Determines if any shape is intersected by a ray by looking inside triangle

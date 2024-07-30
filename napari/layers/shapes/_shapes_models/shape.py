@@ -119,6 +119,7 @@ class Shape(ABC):
         self.name = ''
 
         self._data: npt.NDArray
+        self.bounding_box: np.ndarray
 
     @property
     @abstractmethod
