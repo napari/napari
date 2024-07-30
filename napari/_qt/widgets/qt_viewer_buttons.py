@@ -132,16 +132,10 @@ class QtViewerButtons(QFrame):
         self.viewer = viewer
 
         # Toolbar
-        # TODO: Should a `Viewer` menu by added to the mainwindow menubar?
         self._menu = build_qmodel_menu(MenuId.VIEWER_CONTROLS)
         self.toolbar = build_qmodel_toolbar(
             MenuId.VIEWER_CONTROLS, title='Controls', parent=self
         )
-        # TODO:
-        #   * Access tool buttons via widgetForAction
-        #   * Give `mode` property for icon via qss and other properties being used
-        #   * Enable menus/widget to popup when right-clicked
-        #   * Callables to update checked state should be added over the action definition?
         console_action = self._menu.findAction(
             'napari.viewer.toggle_console_visibility'
         )
@@ -151,42 +145,26 @@ class QtViewerButtons(QFrame):
         # TODO: Things like this should go over the action definition (`enablement`)?
         if in_ipython() or in_jupyter() or in_python_repl():
             console_tool.setEnabled(False)
-
-        self.consoleButton = QtViewerPushButton(
-            'console', action='napari:toggle_console_visibility'
-        )
-        self.consoleButton.setProperty('expanded', False)
-        if in_ipython() or in_jupyter() or in_python_repl():
-            self.consoleButton.setEnabled(False)
+        self.consoleButton = console_tool
 
         roll_action = self._menu.findAction('napari.viewer.roll_axes')
         roll_tool = self.toolbar.widgetForAction(roll_action)
         roll_tool.setProperty('mode', 'roll')
         roll_tool.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         roll_tool.customContextMenuRequested.connect(self._open_roll_popup)
-
-        rdb = QtViewerPushButton('roll', action='napari:roll_axes')
-        self.rollDimsButton = rdb
-        rdb.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        rdb.customContextMenuRequested.connect(self._open_roll_popup)
+        self.rollDimsButton = roll_tool
 
         transpose_action = self._menu.findAction(
             'napari.viewer.transpose_axes'
         )
         transpose_tool = self.toolbar.widgetForAction(transpose_action)
         transpose_tool.setProperty('mode', 'transpose')
-
-        self.transposeDimsButton = QtViewerPushButton(
-            'transpose', action='napari:transpose_axes'
-        )
+        self.transposeDimsButton = transpose_tool
 
         reset_view_action = self._menu.findAction('napari.viewer.reset_view')
         reset_view_tool = self.toolbar.widgetForAction(reset_view_action)
         reset_view_tool.setProperty('mode', 'home')
-
-        self.resetViewButton = QtViewerPushButton(
-            'home', action='napari:reset_view'
-        )
+        self.resetViewButton = reset_view_tool
 
         grid_view_action = self._menu.findAction('napari.viewer.toggle_grid')
         grid_view_tool = self.toolbar.widgetForAction(grid_view_action)
@@ -199,20 +177,11 @@ class QtViewerButtons(QFrame):
         grid_view_tool.customContextMenuRequested.connect(
             self._open_grid_popup
         )
-
-        gvb = QtViewerPushButton(
-            'grid_view_button', action='napari:toggle_grid'
-        )
-        self.gridViewButton = gvb
-        gvb.setCheckable(True)
-        gvb.setChecked(viewer.grid.enabled)
-        gvb.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        gvb.customContextMenuRequested.connect(self._open_grid_popup)
+        self.gridViewButton = grid_view_tool
 
         @self.viewer.grid.events.enabled.connect
         def _set_grid_mode_checkstate(event):
             grid_view_tool.setChecked(event.value)
-            gvb.setChecked(event.value)
 
         ndisplay_action = self._menu.findAction(
             'napari.viewer.toggle_ndisplay'
@@ -226,36 +195,16 @@ class QtViewerButtons(QFrame):
         ndisplay_tool.customContextMenuRequested.connect(
             self.open_perspective_popup
         )
-
-        ndb = QtViewerPushButton(
-            'ndisplay_button', action='napari:toggle_ndisplay'
-        )
-        self.ndisplayButton = ndb
-        ndb.setCheckable(True)
-        ndb.setChecked(self.viewer.dims.ndisplay == 3)
-        ndb.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        ndb.customContextMenuRequested.connect(self.open_perspective_popup)
+        self.ndisplayButton = ndisplay_tool
 
         @self.viewer.dims.events.ndisplay.connect
         def _set_ndisplay_mode_checkstate(event):
             ndisplay_tool.setChecked(event.value == 3)
-            ndb.setChecked(event.value == 3)
 
-        layout = QHBoxLayout()
+        layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self.consoleButton)
-        layout.addWidget(self.ndisplayButton)
-        layout.addWidget(self.rollDimsButton)
-        layout.addWidget(self.transposeDimsButton)
-        layout.addWidget(self.gridViewButton)
-        layout.addWidget(self.resetViewButton)
-        layout.addStretch(0)
-
-        base_layout = QVBoxLayout()
-        base_layout.setContentsMargins(0, 0, 0, 0)
-        base_layout.addWidget(self.toolbar)
-        base_layout.addLayout(layout)
-        self.setLayout(base_layout)
+        layout.addWidget(self.toolbar)
+        self.setLayout(layout)
 
     def open_perspective_popup(self):
         """Show a slider to control the viewer `camera.perspective`."""

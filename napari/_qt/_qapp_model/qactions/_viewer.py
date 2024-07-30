@@ -2,6 +2,7 @@
 
 from logging import getLogger
 
+from app_model.expressions import parse_expression
 from app_model.types import Action
 
 from napari._app_model.constants import MenuId
@@ -13,10 +14,20 @@ from napari.components._viewer_key_bindings import (
     toggle_ndisplay,
     transpose_axes,
 )
+from napari.utils.misc import in_ipython, in_jupyter, in_python_repl
 from napari.utils.translations import trans
 
 logger = getLogger(__name__)
 
+
+__all__ = 'is_console_available'
+
+
+def is_console_available():
+    return not (in_ipython() or in_jupyter() or in_python_repl())
+
+
+# TODO: Add keybindings
 Q_VIEWER_ACTIONS: list[Action] = [
     Action(
         id='napari.viewer.toggle_console_visibility',
@@ -30,6 +41,7 @@ Q_VIEWER_ACTIONS: list[Action] = [
         tooltip=trans._(
             'Show/Hide IPython console (only available when napari started as standalone application)'
         ),
+        enablement=parse_expression('console_available'),
     ),
     Action(
         id='napari.viewer.toggle_ndisplay',
