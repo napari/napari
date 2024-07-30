@@ -17,7 +17,7 @@ def set_dims_order(dims: Dims, order: tuple[int, ...]):
     order : tuple of int
         New dimension order.
     """
-    if type(order[0]) == AxisModel:
+    if type(order[0]) is AxisModel:
         order = [a.axis for a in order]
     dims.order = order
 
