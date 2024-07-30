@@ -34,7 +34,7 @@ class _LogStream:
         self,
         level: int = logging.DEBUG,
         text_filter: str = '',
-        last_only=False,
+        last_only: bool = False,
     ) -> list[str]:
         if isinstance(level, str):
             level = logging.getLevelNamesMapping().get(level, logging.NOTSET)
