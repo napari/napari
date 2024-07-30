@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 Index = Union[int, slice]
 
 _T = TypeVar('_T')
-_L = TypeVar('_L')
+_L = TypeVar('_L', bound=Any)
 
 
 class TypedMutableSequence(MutableSequence[_T]):
