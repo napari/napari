@@ -713,8 +713,15 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         if self.rendering == ImageRendering.MINIP:
             return np.nanmin(values_masked)
         if self.rendering == ImageRendering.ATTENUATED_MIP:
-            # TODO
-            return None
+            # normalize values so attenuation applies from 0 to 1
+            values = (values - self.contrast_limits[0]) / self.contrast_limits[
+                1
+            ]
+            # approx, step size is actually calculated with int(lenght(ray) * 2)
+            step_size = 0.5
+            sumval = step_size * np.cumsum(np.clip(values, 0, 1)) * len(values)
+            scale = np.exp(-self.attenuation * (sumval - 1))
+            return np.nanmax(values_masked * scale)
         if self.rendering == ImageRendering.ISO and np.any(
             values_masked >= self.iso_threshold
         ):
