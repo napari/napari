@@ -30,8 +30,8 @@ jobs:
           echo "Please add a milestone to this PR"
           exit 1
 
-  check_recent_mliestone:
-    name: Check recent milestone
+  check_next_milestone:
+    name: Check milestone is next release
     if: (github.event_name == 'pull_request' && github.event.pull_request.milestone != null)
     runs-on: ubuntu-latest
     steps:
