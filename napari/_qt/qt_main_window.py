@@ -88,7 +88,7 @@ from napari.utils.misc import (
     running_as_constructor_app,
 )
 from napari.utils.notifications import Notification
-from napari.utils.processes import process_status_manager
+from napari.utils.task_status import task_status_manager
 from napari.utils.theme import _themes, get_system_theme
 from napari.utils.translations import trans
 
@@ -567,13 +567,13 @@ class _QtMainWindow(QMainWindow):
 
         Regardless of whether cmd Q, cmd W, or the close button is used...
         """
-        process_status_manager_messages = process_status_manager.get_status()
+        task_status = task_status_manager.get_status()
         if (
-            process_status_manager.is_busy()
+            task_status
             and ConfirmCloseDialog(
                 self,
                 close_app=False,
-                extra_info='\n'.join(process_status_manager_messages),
+                extra_info='\n'.join(task_status),
                 display_checkbox=False,
             ).exec_()
             != QDialog.Accepted
