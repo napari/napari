@@ -159,6 +159,22 @@ def update_own_pr(pr_number: int, access_token: str, base_branch: str, repo):
     response = requests.post(url, headers=headers, json=payload)
     response.raise_for_status()
 
+    url_labels = f'{BASE_URL}/repos/{repo}/issues/{pr_number}/labels'
+    response = requests.get(url_labels, headers=headers)
+    response.raise_for_status()
+
+    remove_label_url = (
+        f'{BASE_URL}/repos/{repo}/issues/{pr_number}/labels/ready%20to%20merge'
+    )
+
+    # following lines is to check if "ready to merge" label is added to PR,
+    # if it is present, then remove it to point that PR was changed
+    for label in response.json():
+        if label['name'] == 'ready to merge':
+            response = requests.get(remove_label_url, headers=headers)
+            response.raise_for_status()
+            break
+
 
 def list_pr_for_branch(branch_name: str, access_token: str, repo=''):
     """

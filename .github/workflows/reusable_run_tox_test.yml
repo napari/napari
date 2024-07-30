@@ -49,11 +49,11 @@ jobs:
       PYVISTA_OFF_SCREEN: True
       MIN_REQ: ${{ inputs.min_req }}
       FORCE_COLOR: 1
-      PIP_CONSTRAINT: ${{ github.workspace }}/resources/constraints/constraints_py${{ inputs.python_version }}${{ (((inputs.platform == 'macos-latest') && '_macos_arm') || '') }}${{ inputs.min_req && '_min_req' }}${{ inputs.constraints_suffix }}.txt
-      UV_CONSTRAINT: ${{ github.workspace }}/resources/constraints/constraints_py${{ inputs.python_version }}${{ (((inputs.platform == 'macos-latest') && '_macos_arm') || '') }}${{ inputs.min_req && '_min_req' }}${{ inputs.constraints_suffix }}.txt
+      PIP_CONSTRAINT: ${{ github.workspace }}/resources/constraints/constraints_py${{ inputs.python_version }}${{ ((startsWith(inputs.platform, 'windows') && '_windows') || '') }}${{ inputs.min_req && '_min_req' }}${{ inputs.constraints_suffix }}.txt
+      UV_CONSTRAINT: ${{ github.workspace }}/resources/constraints/constraints_py${{ inputs.python_version }}${{ ((startsWith(inputs.platform, 'windows') && '_windows') || '') }}${{ inputs.min_req && '_min_req' }}${{ inputs.constraints_suffix }}.txt
       # Above we calculate path to constraints file based on python version and platform
       # Because there is no single PyQt5-Qt5 package version available for all platforms we was forced to use
-      # different constraints files for macOS arm and other platforms
+      # different constraints files for Windows. An example with macOS arm64:
       # ${{ (((inputs.platform == 'macos-latest') && '_macos_arm') || '') }} - if platform is macOS-latest then add '_macos_arm' to constraints file name, else add nothing
       # ${{ inputs.min_req && '_min_req' }} - if min_req is set then add '_min_req' to constraints file name, else add nothing
       #  ${{ inputs.constraints_suffix }} - additional suffix for constraints file name (used for example testing).
@@ -69,7 +69,7 @@ jobs:
           path: dist
 
       - name: Set wheel path
-        run: echo "WHEEL_PATH=$(ls dist/*.whl)" >> $GITHUB_ENV
+        run: echo "WHEEL_PATH=$(ls dist/*.whl)" >> "$GITHUB_ENV"
         shell: bash
 
       - name: Set up Python ${{ inputs.python_version }}
@@ -92,6 +92,7 @@ jobs:
           git clone --depth 1 https://github.com/pyvista/gl-ci-helpers.git
           powershell gl-ci-helpers/appveyor/install_opengl.ps1
           if (Test-Path -Path "C:\Windows\system32\opengl32.dll" -PathType Leaf) {Exit 0} else {Exit 1}
+        shell: powershell
 
       - name: Disable ptrace security restrictions
         if: runner.os == 'Linux'
@@ -133,10 +134,10 @@ jobs:
         # FOURTH=none
         shell: bash
         run: |
-          python tools/split_qt_backend.py 0 ${{ inputs.qt_backend }} >> $GITHUB_ENV
-          python tools/split_qt_backend.py 1 ${{ inputs.qt_backend }} >> $GITHUB_ENV
-          python tools/split_qt_backend.py 2 ${{ inputs.qt_backend }} >> $GITHUB_ENV
-          python tools/split_qt_backend.py 3 ${{ inputs.qt_backend }} >> $GITHUB_ENV
+          python tools/split_qt_backend.py 0 ${{ inputs.qt_backend }} >> "$GITHUB_ENV"
+          python tools/split_qt_backend.py 1 ${{ inputs.qt_backend }} >> "$GITHUB_ENV"
+          python tools/split_qt_backend.py 2 ${{ inputs.qt_backend }} >> "$GITHUB_ENV"
+          python tools/split_qt_backend.py 3 ${{ inputs.qt_backend }} >> "$GITHUB_ENV"
 
       - name: Test with tox main
         timeout-minutes: ${{ inputs.timeout }}

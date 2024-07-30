@@ -106,3 +106,18 @@ def test_clipping_plane_list_from_bounding_box():
     assert isinstance(plane_list, ClippingPlaneList)
     assert len(plane_list) == 6
     assert plane_list.as_array().sum() == 0  # everything is mirrored around 0
+
+
+def test_clipping_plane_list_add_plane():
+    plane_list = ClippingPlaneList()
+    plane_list.add_plane()
+    assert len(plane_list) == 1
+    assert plane_list[0].enabled
+
+    pos = (0, 0, 0)
+    norm = (0, 0, 1)
+    plane_list.add_plane(position=pos, normal=norm, enabled=False)
+    assert len(plane_list) == 2
+    assert not plane_list[1].enabled
+    assert plane_list[1].position == pos
+    assert plane_list[1].normal == norm
