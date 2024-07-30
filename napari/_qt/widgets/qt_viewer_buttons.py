@@ -159,17 +159,47 @@ class QtViewerButtons(QFrame):
         if in_ipython() or in_jupyter() or in_python_repl():
             self.consoleButton.setEnabled(False)
 
+        roll_action = self._menu.findAction('napari.viewer.roll_axes')
+        roll_tool = self.toolbar.widgetForAction(roll_action)
+        roll_tool.setProperty('mode', 'roll')
+        roll_tool.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        roll_tool.customContextMenuRequested.connect(self._open_roll_popup)
+
         rdb = QtViewerPushButton('roll', action='napari:roll_axes')
         self.rollDimsButton = rdb
         rdb.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         rdb.customContextMenuRequested.connect(self._open_roll_popup)
 
+        transpose_action = self._menu.findAction(
+            'napari.viewer.transpose_axes'
+        )
+        transpose_tool = self.toolbar.widgetForAction(transpose_action)
+        transpose_tool.setProperty('mode', 'transpose')
+
         self.transposeDimsButton = QtViewerPushButton(
             'transpose', action='napari:transpose_axes'
         )
+
+        reset_view_action = self._menu.findAction('napari.viewer.reset_view')
+        reset_view_tool = self.toolbar.widgetForAction(reset_view_action)
+        reset_view_tool.setProperty('mode', 'home')
+
         self.resetViewButton = QtViewerPushButton(
             'home', action='napari:reset_view'
         )
+
+        grid_view_action = self._menu.findAction('napari.viewer.toggle_grid')
+        grid_view_tool = self.toolbar.widgetForAction(grid_view_action)
+        grid_view_tool.setProperty('mode', 'grid_view_button')
+        grid_view_tool.setCheckable(True)
+        grid_view_tool.setChecked(viewer.grid.enabled)
+        grid_view_tool.setContextMenuPolicy(
+            Qt.ContextMenuPolicy.CustomContextMenu
+        )
+        grid_view_tool.customContextMenuRequested.connect(
+            self._open_grid_popup
+        )
+
         gvb = QtViewerPushButton(
             'grid_view_button', action='napari:toggle_grid'
         )
@@ -181,7 +211,21 @@ class QtViewerButtons(QFrame):
 
         @self.viewer.grid.events.enabled.connect
         def _set_grid_mode_checkstate(event):
+            grid_view_tool.setChecked(event.value)
             gvb.setChecked(event.value)
+
+        ndisplay_action = self._menu.findAction(
+            'napari.viewer.toggle_ndisplay'
+        )
+        ndisplay_tool = self.toolbar.widgetForAction(ndisplay_action)
+        ndisplay_tool.setProperty('mode', 'ndisplay_button')
+        ndisplay_tool.setChecked(self.viewer.dims.ndisplay == 3)
+        ndisplay_tool.setContextMenuPolicy(
+            Qt.ContextMenuPolicy.CustomContextMenu
+        )
+        ndisplay_tool.customContextMenuRequested.connect(
+            self.open_perspective_popup
+        )
 
         ndb = QtViewerPushButton(
             'ndisplay_button', action='napari:toggle_ndisplay'
@@ -194,6 +238,7 @@ class QtViewerButtons(QFrame):
 
         @self.viewer.dims.events.ndisplay.connect
         def _set_ndisplay_mode_checkstate(event):
+            ndisplay_tool.setChecked(event.value == 3)
             ndb.setChecked(event.value == 3)
 
         layout = QHBoxLayout()

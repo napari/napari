@@ -51,6 +51,10 @@ QWidget[emphasized="true"] QToolBar {
     background: {{ foreground }};
 }
 
+QToolBar {
+    spacing: 6px;
+}
+
 /* ------------ QAbstractScrollArea ------------- */
 
 /* QAbstractScrollArea is the superclass */
