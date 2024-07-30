@@ -495,7 +495,8 @@ class ShapeList:
         if z_refresh:
             # Set z_order
             self._update_z_order()
-        del self.__dict__['_bounding_boxes']
+        if '_bounding_boxes' in self.__dict__:
+            del self.__dict__['_bounding_boxes']
 
     def _add_multiple_shapes(
         self,
@@ -659,7 +660,8 @@ class ShapeList:
         if z_refresh:
             # Set z_order
             self._update_z_order()
-        del self.__dict__['_bounding_boxes']
+        if '_bounding_boxes' in self.__dict__:
+            del self.__dict__['_bounding_boxes']
 
     @_batch_dec
     def remove_all(self):
