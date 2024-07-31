@@ -209,3 +209,9 @@ class ShapesInteractionSuite:
         mouse_release_callbacks(self.layer, release_event)
 
     time_select_shape.param_names = ['n_shapes']
+
+
+if __name__ == '__main__':
+    from utils import run_benchmark
+
+    run_benchmark()
