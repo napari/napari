@@ -31,7 +31,9 @@ class ColorEncodingWidget(QWidget):
         self._layout = QFormLayout()
         self._layout.setContentsMargins(0, 0, 0, 0)
         self._layout.setSpacing(4)
-        self._layout.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
+        self._layout.setFieldGrowthPolicy(
+            QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow
+        )
         self.setLayout(self._layout)
 
     @property
