@@ -142,6 +142,27 @@ def test_change_label_selector_range(make_labels_controls):
     assert qtctrl.selectionSpinBox.maximum() == 127
 
 
+def test_change_iso_gradient_mode(make_labels_controls):
+    """Changing the iso gradient mode should update the layer and vice versa."""
+    layer, qtctrl = make_labels_controls()
+    qtctrl.ndisplay = 3
+    assert layer.rendering == LabelsRendering.ISO_CATEGORICAL
+    assert layer.iso_gradient_mode == IsoCategoricalGradientMode.FAST
+
+    # Change the iso gradient mode via the control, check the layer
+    qtctrl.isoGradientComboBox.setCurrentEnum(
+        IsoCategoricalGradientMode.SMOOTH
+    )
+    assert layer.iso_gradient_mode == IsoCategoricalGradientMode.SMOOTH
+
+    # Change the iso gradient mode via the layer, check the control
+    layer.iso_gradient_mode = IsoCategoricalGradientMode.FAST
+    assert (
+        qtctrl.isoGradientComboBox.currentEnum()
+        == IsoCategoricalGradientMode.FAST
+    )
+
+
 def test_iso_gradient_mode_hidden_for_2d(make_labels_controls):
     """Test that the iso gradient mode control is hidden with 2D view."""
     layer, qtctrl = make_labels_controls()
