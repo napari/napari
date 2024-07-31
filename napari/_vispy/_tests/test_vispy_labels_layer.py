@@ -3,7 +3,7 @@ import pytest
 import zarr
 from qtpy.QtCore import QCoreApplication
 
-from napari._tests.utils import skip_local_popups, skip_on_win_ci
+from napari._tests.utils import skip_local_popups
 from napari._vispy.visuals.volume import Volume as VolumeNode
 from napari.components import ViewerModel
 from napari.layers.labels._labels_constants import IsoCategoricalGradientMode
@@ -102,11 +102,8 @@ def test_labels_painting_with_mouse(
 
 
 @skip_local_popups
-@skip_on_win_ci
 def test_labels_iso_gradient_modes(qtbot):
     """Check that we can set `iso_gradient_mode` with `iso_categorical` rendering (test shader)."""
-    # NOTE: this test currently segfaults on Windows CI, but confirmed working locally
-    # because it's a segfault, we have to skip instead of xfail
     viewer = ViewerModel()
     qt_viewer = QtViewer(viewer)
     qt_viewer.show()
