@@ -1143,12 +1143,7 @@ class ShapeList:
                 i
                 for i in inside_indices
                 if np.any(
-                    inside_triangles(
-                        self.shapes[i]._face_vertices[
-                            self.shapes[i]._face_triangles
-                        ]
-                        - coord
-                    )
+                    inside_triangles(self.shapes[i]._all_triangles() - coord)
                 )
             )
         except StopIteration:

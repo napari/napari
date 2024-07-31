@@ -255,6 +255,23 @@ class Shape(ABC):
             self._face_vertices = np.empty((0, self.ndisplay))
             self._face_triangles = np.empty((0, 3), dtype=np.uint32)
 
+    def _all_triangles(self):
+        """Return all triangles for the shape
+
+        Returns
+        -------
+        np.ndarray
+            Nx3 array of vertex indices that form the triangles for the shape
+        """
+        return np.vstack(
+            [
+                self._face_vertices[self._face_triangles],
+                (self._edge_vertices + self.edge_width * self._edge_offsets)[
+                    self._edge_triangles
+                ],
+            ]
+        )
+
     def transform(self, transform: npt.NDArray) -> None:
         """Performs a linear transform on the shape
 
