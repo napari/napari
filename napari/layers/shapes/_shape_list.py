@@ -495,8 +495,7 @@ class ShapeList:
         if z_refresh:
             # Set z_order
             self._update_z_order()
-        if '_bounding_boxes' in self.__dict__:
-            del self.__dict__['_bounding_boxes']
+        self.__dict__.pop('_bounding_boxes', None)
 
     def _add_multiple_shapes(
         self,
@@ -660,8 +659,7 @@ class ShapeList:
         if z_refresh:
             # Set z_order
             self._update_z_order()
-        if '_bounding_boxes' in self.__dict__:
-            del self.__dict__['_bounding_boxes']
+        self.__dict__.pop('_bounding_boxes', None)
 
     @_batch_dec
     def remove_all(self):
@@ -1022,6 +1020,7 @@ class ShapeList:
         self.remove(index, renumber=False)
         self.add(shape, shape_index=index)
         self._update_z_order()
+        self.__dict__.pop('_bounding_boxes', None)
 
     def outline(self, indices: Union[int, Sequence[int]]):
         """Finds outlines of shapes listed in indices

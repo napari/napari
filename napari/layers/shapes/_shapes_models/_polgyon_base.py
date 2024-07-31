@@ -80,7 +80,7 @@ class PolygonBase(Shape):
             )
 
         self._data = data
-        self.bounding_box = np.round(
+        self._bounding_box = np.round(
             [
                 np.min(data, axis=0),
                 np.max(data, axis=0),

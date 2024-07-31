@@ -77,7 +77,7 @@ class Ellipse(Shape):
             )
 
         self._data = data
-        self.bounding_box = np.round(
+        self._bounding_box = np.round(
             [
                 np.min(data, axis=0),
                 np.max(data, axis=0),
@@ -94,7 +94,7 @@ class Ellipse(Shape):
         self._face_triangles = triangles
         self._box = rectangle_to_box(self.data_displayed)
 
-        self.slice_key = self.bounding_box[:, self.dims_not_displayed].astype(
+        self.slice_key = self._bounding_box[:, self.dims_not_displayed].astype(
             'int'
         )
 

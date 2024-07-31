@@ -68,7 +68,7 @@ class Rectangle(Shape):
             )
 
         self._data = data
-        self.bounding_box = np.round(
+        self._bounding_box = np.round(
             [
                 np.min(data, axis=0),
                 np.max(data, axis=0),
@@ -83,6 +83,6 @@ class Rectangle(Shape):
         self._face_vertices = self.data_displayed
         self._face_triangles = np.array([[0, 1, 2], [0, 2, 3]])
         self._box = rectangle_to_box(self.data_displayed)
-        self.slice_key = self.bounding_box[:, self.dims_not_displayed].astype(
+        self.slice_key = self._bounding_box[:, self.dims_not_displayed].astype(
             'int'
         )

@@ -119,7 +119,7 @@ class Shape(ABC):
         self.name = ''
 
         self._data: npt.NDArray
-        self.bounding_box: np.ndarray
+        self._bounding_box: np.ndarray
 
     @property
     @abstractmethod
@@ -164,6 +164,11 @@ class Shape(ABC):
     def dims_displayed(self):
         """tuple: Dimensions that are displayed."""
         return self.dims_order[-self.ndisplay :]
+
+    @property
+    def bounding_box(self) -> np.ndarray:
+        """np.ndarray: 9x2 array of vertices of the interaction box."""
+        return self._bounding_box[:, self.dims_displayed]
 
     @property
     def dims_not_displayed(self):
@@ -294,6 +299,7 @@ class Shape(ABC):
         self._edge_vertices = centers
         self._edge_offsets = offsets
         self._edge_triangles = triangles
+        # self.bounding_box
 
     def shift(self, shift: npt.NDArray) -> None:
         """Performs a 2D shift on the shape
