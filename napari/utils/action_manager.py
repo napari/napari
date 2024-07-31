@@ -104,7 +104,7 @@ class ActionManager:
         name: str,
         command: Callable,
         description: str,
-        keymapprovider: KeymapProvider,
+        keymapprovider: Optional[KeymapProvider],
         repeatable: bool = False,
     ):
         """
@@ -161,7 +161,8 @@ class ActionManager:
         self._actions[name] = Action(
             command, description, keymapprovider, repeatable
         )
-        self._update_shortcut_bindings(name)
+        if keymapprovider:
+            self._update_shortcut_bindings(name)
 
     def _update_shortcut_bindings(self, name: str):
         """
@@ -173,7 +174,7 @@ class ActionManager:
         if name not in self._shortcuts:
             return
         action = self._actions[name]
-        km_provider: KeymapProvider = action.keymapprovider
+        km_provider = action.keymapprovider
         if hasattr(km_provider, 'bind_key'):
             for shortcut in self._shortcuts[name]:
                 # NOTE: it would be better if we could bind `self.trigger` here
