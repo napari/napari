@@ -2,6 +2,7 @@ import pytest
 from qtpy.QtCore import QPoint
 from qtpy.QtWidgets import QApplication
 
+from napari._app_model import get_app
 from napari._qt.dialogs.qt_modal import QtPopup
 from napari._qt.widgets.qt_viewer_buttons import QtViewerButtons
 from napari.components.viewer_model import ViewerModel
@@ -15,10 +16,16 @@ def qt_viewer_buttons(qtbot, mock_app):
     init_qactions.cache_clear()
     init_qactions()
 
-    # create viewer model and buttons
+    # create viewer model, setup provider and buttons
+    app = get_app()
     viewer = ViewerModel()
-    viewer_buttons = QtViewerButtons(viewer)
-    qtbot.addWidget(viewer_buttons)
+
+    def _provide_viewer_model() -> ViewerModel:
+        return viewer
+
+    with app.injection_store.register(providers=[(_provide_viewer_model,)]):
+        viewer_buttons = QtViewerButtons(viewer)
+        qtbot.addWidget(viewer_buttons)
 
     yield viewer, viewer_buttons
 

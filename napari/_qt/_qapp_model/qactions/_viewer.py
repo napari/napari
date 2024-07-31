@@ -1,7 +1,7 @@
 """Qt 'Plugins' menu Actions."""
 
 from logging import getLogger
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 
 from app_model.types import Action, ToggleRule
 
@@ -11,18 +11,20 @@ from napari.utils.misc import in_ipython, in_jupyter, in_python_repl
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from napari._qt.qt_viewer import QtViewer
+    from napari.viewer import Viewer, ViewerModel
 
 
 logger = getLogger(__name__)
 
 
-def _get_viewer_ndisplay_status(qt_viewer: 'QtViewer') -> bool:
-    return qt_viewer.viewer.dims.ndisplay == 3
+def _get_viewer_ndisplay_status(
+    viewer: Union['ViewerModel', 'Viewer'],
+) -> bool:
+    return viewer.dims.ndisplay == 3
 
 
-def _get_viewer_grid_status(qt_viewer: 'QtViewer') -> bool:
-    return qt_viewer.viewer.grid.enabled
+def _get_viewer_grid_status(viewer: Union['ViewerModel', 'Viewer']) -> bool:
+    return viewer.grid.enabled
 
 
 # TODO: Add keybindings
