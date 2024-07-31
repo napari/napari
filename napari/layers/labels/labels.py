@@ -607,12 +607,13 @@ class Labels(ScalarFieldBase):
         bool
             True if color contains only default colors, otherwise False.
         """
-        if {None, self.colormap.background_value} != set(color.keys()):
-            return False
-
-        if not np.allclose(color[None], [0, 0, 0, 1]):
-            return False
-        return np.allclose(color[self.colormap.background_value], [0, 0, 0, 0])
+        return (
+            {None, self.colormap.background_value} == set(color.keys())
+            and np.allclose(color[None], [0, 0, 0, 1])
+            and np.allclose(
+                color[self.colormap.background_value], [0, 0, 0, 0]
+            )
+        )
 
     def _ensure_int_labels(self, data):
         """Ensure data is integer by converting from bool if required, raising an error otherwise."""
