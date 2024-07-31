@@ -212,7 +212,6 @@ def _get_common_evented_attributes(
             'mode',
             'data',
             'features',
-            'properties',
             'size',
             'symbol',
             'edge_width',

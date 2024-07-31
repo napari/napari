@@ -268,25 +268,43 @@ class _DeprecatingDict(UserDict[str, Any]):
     # Maps from a deprecated key to its renamed key and deprecation information.
     _renamed: dict[str, _RenamedAttribute]
 
+    # Maps from a deprecated key to its value and deprecation message.
+    _deprecated: dict[str, tuple[Any, str]]
+
     def __init__(self, *args, **kwargs) -> None:
         self._renamed = {}
+        self._deprecated = {}
         super().__init__(*args, **kwargs)
 
     def __getitem__(self, key: str) -> Any:
+        if key in self._deprecated:
+            value, message = self._deprecated[key]
+            warnings.warn(message, FutureWarning)
+            return value
         key = self._maybe_rename_key(key)
         return self.data.__getitem__(key)
 
     def __setitem__(self, key: str, value: Any) -> None:
+        if key in self._deprecated:
+            _, message = self._deprecated[key]
+            raise KeyError(message)
         key = self._maybe_rename_key(key)
         return self.data.__setitem__(key, value)
 
     def __delitem__(self, key: str) -> None:
+        if key in self._deprecated:
+            _, message = self._deprecated[key]
+            raise KeyError(message)
         key = self._maybe_rename_key(key)
         return self.data.__delitem__(key)
 
     def __contains__(self, key: object) -> bool:
         if not isinstance(key, str):
             return False
+        if key in self._deprecated:
+            _, message = self._deprecated[key]
+            warnings.warn(message, FutureWarning)
+            return True
         key = self._maybe_rename_key(key)
         return self.data.__contains__(key)
 
@@ -299,7 +317,7 @@ class _DeprecatingDict(UserDict[str, Any]):
 
     @property
     def deprecated_keys(self) -> tuple[str, ...]:
-        return tuple(self._renamed.keys())
+        return tuple(self._renamed.keys()) + tuple(self._deprecated.keys())
 
     def set_deprecated_from_rename(
         self, *, from_name: str, to_name: str, version: str, since_version: str

@@ -243,3 +243,22 @@ def test_deprecating_dict_with_renamed_copy():
     assert d is not e
     assert e.data == d.data
     assert e.deprecated_keys == d.deprecated_keys
+
+
+def test_deprecating_dict_with_deprecated():
+    d = _DeprecatingDict({'a': 1, 'b': 2})
+    message = 'This item is deprecated'
+    d._deprecated['d'] = (3, message)
+    assert 'd' in d.deprecated_keys
+    with pytest.warns(FutureWarning, match=message):
+        assert d['d'] == 3
+    with pytest.warns(FutureWarning, match=message):
+        assert d.get('d') == 3
+    with pytest.raises(KeyError, match=message):
+        d['d'] = 4
+    with pytest.warns(FutureWarning, match=message):
+        assert d['d'] == 3
+    with pytest.raises(KeyError, match=message):
+        del d['d']
+    with pytest.warns(FutureWarning, match=message):
+        assert 'd' in d
