@@ -120,3 +120,6 @@ class Ellipse(Shape):
         self._edge_vertices = centers
         self._edge_offsets = offsets
         self._edge_triangles = triangles
+        self._bounding_box[:, self.dims_displayed] = (
+            self._bounding_box[:, self.dims_displayed] @ transform.T
+        )

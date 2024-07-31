@@ -119,7 +119,7 @@ class Shape(ABC):
         self.name = ''
 
         self._data: npt.NDArray
-        self._bounding_box: np.ndarray
+        self._bounding_box = np.empty((0, self.ndisplay))
 
     @property
     @abstractmethod
@@ -299,7 +299,9 @@ class Shape(ABC):
         self._edge_vertices = centers
         self._edge_offsets = offsets
         self._edge_triangles = triangles
-        # self.bounding_box
+        self._bounding_box[:, self.dims_displayed] = (
+            self._bounding_box[:, self.dims_displayed] @ transform.T
+        )
 
     def shift(self, shift: npt.NDArray) -> None:
         """Performs a 2D shift on the shape
@@ -315,6 +317,9 @@ class Shape(ABC):
         self._edge_vertices = self._edge_vertices + shift
         self._box = self._box + shift
         self._data[:, self.dims_displayed] = self.data_displayed + shift
+        self._bounding_box[:, self.dims_displayed] = (
+            self._bounding_box[:, self.dims_displayed] + shift
+        )
 
     def scale(self, scale, center=None):
         """Performs a scaling on the shape

@@ -1132,6 +1132,8 @@ class ShapeList:
             Index of shape if any that is at the coordinates. Returns `None`
             if no shape is found.
         """
+        if not self.shapes:
+            return None
         bounding_boxes = self._bounding_boxes
         inside = np.all(bounding_boxes[:, 0] <= coord, axis=1) & np.all(
             bounding_boxes[:, 1] >= coord, axis=1
