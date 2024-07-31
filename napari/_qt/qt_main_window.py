@@ -21,6 +21,7 @@ from typing import (
 )
 from weakref import WeakValueDictionary
 
+import numpy as np
 from qtpy.QtCore import (
     QEvent,
     QEventLoop,
@@ -46,10 +47,10 @@ from qtpy.QtWidgets import (
 from superqt.utils import QSignalThrottler
 
 from napari._app_model.constants import MenuId
-from napari._app_model.context import get_context
-from napari._qt import menus
+from napari._app_model.context import create_context, get_context
 from napari._qt._qapp_model import build_qmodel_menu
-from napari._qt._qapp_model.qactions import init_qactions
+from napari._qt._qapp_model.qactions import add_dummy_actions, init_qactions
+from napari._qt._qapp_model.qactions._debug import _is_set_trace_active
 from napari._qt._qplugins import (
     _rebuild_npe1_plugins_menu,
     _rebuild_npe1_samples_menu,
@@ -100,7 +101,12 @@ if TYPE_CHECKING:
 
 
 MenuStr = Literal[
-    'file_menu', 'view_menu', 'plugins_menu', 'window_menu', 'help_menu'
+    'file_menu',
+    'view_menu',
+    'layers_menu',
+    'plugins_menu',
+    'window_menu',
+    'help_menu',
 ]
 
 
@@ -163,6 +169,10 @@ class _QtMainWindow(QMainWindow):
         # Prevent QLineEdit based widgets to keep focus even when clicks are
         # done outside the widget. See #1571
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+
+        # Ideally this would be in `NapariApplication` but that is outside of Qt
+        self._viewer_context = create_context(self)
+        self._viewer_context['is_set_trace_active'] = _is_set_trace_active
 
         settings = get_settings()
 
@@ -304,6 +314,7 @@ class _QtMainWindow(QMainWindow):
         # we are not in menubar toggled state
         if (
             QApplication.activePopupWidget() is None
+            and hasattr(self, '_toggle_menubar_visibility')
             and self._toggle_menubar_visibility
         ):
             if event.type() == QEvent.Type.MouseMove:
@@ -322,7 +333,7 @@ class _QtMainWindow(QMainWindow):
                         self.menuBar().hide()
             elif event.type() == QEvent.Type.Leave and source is self:
                 self.menuBar().hide()
-        return QMainWindow.eventFilter(self, source, event)
+        return super().eventFilter(source, event)
 
     def _load_window_settings(self):
         """
@@ -667,6 +678,13 @@ class Window:
         index_npe1_adapters()
 
         self._add_menus()
+        # TODO: the dummy actions should **not** live on the layerlist context
+        # as they are unrelated. However, we do not currently have a suitable
+        # enclosing context where we could store these keys, such that they
+        # **and** the layerlist context key are available when we update
+        # menus. We need a single context to contain all keys required for
+        # menu update, so we add them to the layerlist context for now.
+        add_dummy_actions(self._qt_viewer.viewer.layers._ctx)
         self._update_theme()
         self._update_theme_font_size()
         get_settings().appearance.events.theme.connect(self._update_theme)
@@ -674,18 +692,15 @@ class Window:
             self._update_theme_font_size
         )
 
-        self._add_viewer_dock_widget(
-            self._qt_viewer.dockConsole, tabify=False, menu=self.window_menu
-        )
+        self._add_viewer_dock_widget(self._qt_viewer.dockConsole, tabify=False)
         self._add_viewer_dock_widget(
             self._qt_viewer.dockLayerControls,
             tabify=False,
-            menu=self.window_menu,
         )
         self._add_viewer_dock_widget(
-            self._qt_viewer.dockLayerList, tabify=False, menu=self.window_menu
+            self._qt_viewer.dockLayerList, tabify=False
         )
-        if perf.USE_PERFMON:
+        if perf.perf_config is not None:
             self._add_viewer_dock_widget(
                 self._qt_viewer.dockPerformance, menu=self.window_menu
             )
@@ -812,7 +827,7 @@ class Window:
 
     def _update_menu_state(self, menu: MenuStr):
         """Update enabled/visible state of menu item with context."""
-        layerlist = self._qt_viewer._layers.model().sourceModel()._root
+        layerlist = self._qt_viewer.viewer.layers
         menu_model = getattr(self, menu)
         menu_model.update_from_context(get_context(layerlist))
 
@@ -822,11 +837,21 @@ class Window:
     def _update_view_menu_state(self):
         self._update_menu_state('view_menu')
 
+    def _update_layers_menu_state(self):
+        self._update_menu_state('layers_menu')
+
+    def _update_window_menu_state(self):
+        self._update_menu_state('window_menu')
+
     def _update_plugins_menu_state(self):
         self._update_menu_state('plugins_menu')
 
     def _update_help_menu_state(self):
         self._update_menu_state('help_menu')
+
+    def _update_debug_menu_state(self):
+        viewer_ctx = get_context(self._qt_window)
+        self._debug_menu.update_from_context(viewer_ctx)
 
     # TODO: Remove once npe1 deprecated
     def _setup_npe1_samples_menu(self):
@@ -846,6 +871,19 @@ class Window:
         plugin_manager.events.disabled.connect(_rebuild_npe1_plugins_menu)
         plugin_manager.events.unregistered.connect(_rebuild_npe1_plugins_menu)
         _rebuild_npe1_plugins_menu()
+
+    def _handle_trace_file_on_start(self):
+        """Start trace of `trace_file_on_start` config set."""
+        from napari._qt._qapp_model.qactions._debug import _start_trace
+
+        if perf.perf_config:
+            path = perf.perf_config.trace_file_on_start
+            if path is not None:
+                # Config option "trace_file_on_start" means immediately
+                # start tracing to that file. This is very useful if you
+                # want to create a trace every time you start napari,
+                # without having to start it from the debug menu.
+                _start_trace(path)
 
     def _add_menus(self):
         """Add menubar to napari app."""
@@ -881,6 +919,16 @@ class Window:
             self._update_view_menu_state,
         )
         self.main_menu.addMenu(self.view_menu)
+        # layers menu
+        self.layers_menu = build_qmodel_menu(
+            MenuId.MENUBAR_LAYERS,
+            title=trans._('&Layers'),
+            parent=self._qt_window,
+        )
+        self.layers_menu.aboutToShow.connect(
+            self._update_layers_menu_state,
+        )
+        self.main_menu.addMenu(self.layers_menu)
         # plugins menu
         self.plugins_menu = build_qmodel_menu(
             MenuId.MENUBAR_PLUGINS,
@@ -892,8 +940,27 @@ class Window:
             self._update_plugins_menu_state,
         )
         self.main_menu.addMenu(self.plugins_menu)
+        # debug menu (optional)
+        if perf.perf_config is not None:
+            self._debug_menu = build_qmodel_menu(
+                MenuId.MENUBAR_DEBUG,
+                title=trans._('&Debug'),
+                parent=self._qt_window,
+            )
+            self._handle_trace_file_on_start()
+            self._debug_menu.aboutToShow.connect(
+                self._update_debug_menu_state,
+            )
+            self.main_menu.addMenu(self._debug_menu)
         # window menu
-        self.window_menu = menus.WindowMenu(self)
+        self.window_menu = build_qmodel_menu(
+            MenuId.MENUBAR_WINDOW,
+            title=trans._('&Window'),
+            parent=self._qt_window,
+        )
+        self.plugins_menu.aboutToShow.connect(
+            self._update_window_menu_state,
+        )
         self.main_menu.addMenu(self.window_menu)
         # help menu
         self.help_menu = build_qmodel_menu(
@@ -903,10 +970,6 @@ class Window:
             self._update_help_menu_state,
         )
         self.main_menu.addMenu(self.help_menu)
-
-        if perf.USE_PERFMON:
-            self._debug_menu = menus.DebugMenu(self)
-            self.main_menu.addMenu(self._debug_menu)
 
     def _toggle_menubar_visible(self):
         """Toggle visibility of app menubar.
@@ -1504,7 +1567,12 @@ class Window:
         self._qt_window.restart()
 
     def _screenshot(
-        self, size=None, scale=None, flash=True, canvas_only=False
+        self,
+        size: Optional[tuple[int, int]] = None,
+        scale: Optional[float] = None,
+        flash: bool = True,
+        canvas_only: bool = False,
+        fit_to_data_extent: bool = False,
     ) -> 'QImage':
         """Capture screenshot of the currently displayed viewer.
 
@@ -1513,10 +1581,11 @@ class Window:
         flash : bool
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
-        size : tuple (int, int)
-            Size (resolution height x width) of the screenshot. By default, the currently displayed size.
-            Only used if `canvas_only` is True.
-        scale : float
+        size : tuple of two ints, optional
+            Size (resolution height x width) of the screenshot. By default, the
+            currently displayed size. Only used if `canvas_only` is True. This
+            argument is ignored if fit_to_data_extent is set to True.
+        scale : float, optional
             Scale factor used to increase resolution of canvas for the screenshot.
             By default, the currently displayed resolution.
             Only used if `canvas_only` is True.
@@ -1524,6 +1593,10 @@ class Window:
             If True, screenshot shows only the image display canvas, and
             if False include the napari viewer frame in the screenshot,
             By default, True.
+        fit_to_data_extent: bool
+            Tightly fit the canvas around the data to prevent margins from
+            showing in the screenshot. If False, a screenshot of the currently
+            visible canvas will be generated.
 
         Returns
         -------
@@ -1531,38 +1604,127 @@ class Window:
         """
         from napari._qt.utils import add_flash_animation
 
-        if canvas_only:
-            canvas = self._qt_viewer.canvas
-            prev_size = canvas.size
-            if size is not None:
-                if len(size) != 2:
-                    raise ValueError(
-                        trans._(
-                            'screenshot size must be 2 values, got {len_size}',
-                            len_size=len(size),
-                        )
-                    )
-                # Scale the requested size to account for HiDPI
-                size = tuple(
-                    int(dim / self._qt_window.devicePixelRatio())
-                    for dim in size
+        canvas = self._qt_viewer.canvas
+        prev_size = canvas.size
+        camera = self._qt_viewer.viewer.camera
+        old_center = camera.center
+        old_zoom = camera.zoom
+        ndisplay = self._qt_viewer.viewer.dims.ndisplay
+
+        # Part 1: validate incompatible parameters
+        if not canvas_only and (
+            fit_to_data_extent or size is not None or scale is not None
+        ):
+            raise ValueError(
+                trans._(
+                    'scale, size, and fit_to_data_extent can only be set for '
+                    'canvas_only screenshots.',
+                    deferred=True,
                 )
-                canvas.size = size
-            if scale is not None:
-                # multiply canvas dimensions by the scale factor to get new size
-                canvas.size = tuple(int(dim * scale) for dim in canvas.size)
+            )
+        if fit_to_data_extent and ndisplay > 2:
+            raise NotImplementedError(
+                trans._(
+                    'fit_to_data_extent is not yet implemented for 3D view.',
+                    deferred=True,
+                )
+            )
+        if size is not None and len(size) != 2:
+            raise ValueError(
+                trans._(
+                    'screenshot size must be 2 values, got {len_size}',
+                    deferred=True,
+                    len_size=len(size),
+                )
+            )
+
+        # Part 2: compute canvas size and view based on parameters
+        if fit_to_data_extent:
+            extent_world = self._qt_viewer.viewer.layers.extent.world[1][
+                -ndisplay:
+            ]
+            extent_step = min(
+                self._qt_viewer.viewer.layers.extent.step[-ndisplay:]
+            )
+            size = extent_world / extent_step + 1
+        if size is not None:
+            size = np.asarray(size) / self._qt_window.devicePixelRatio()
+        else:
+            size = np.asarray(prev_size)
+        if scale is not None:
+            # multiply canvas dimensions by the scale factor to get new size
+            size *= scale
+
+        # Part 3: take the screenshot
+        if canvas_only:
+            canvas.size = tuple(size.astype(int))
+            if fit_to_data_extent:
+                # tight view around data
+                self._qt_viewer.viewer.reset_view(margin=0)
             try:
                 img = canvas.screenshot()
                 if flash:
                     add_flash_animation(self._qt_viewer._welcome_widget)
             finally:
                 # make sure we always go back to the right canvas size
-                if size is not None or scale is not None:
-                    canvas.size = prev_size
+                canvas.size = prev_size
+                camera.center = old_center
+                camera.zoom = old_zoom
         else:
             img = self._qt_window.grab().toImage()
             if flash:
                 add_flash_animation(self._qt_window)
+        return img
+
+    def export_figure(
+        self,
+        path: Optional[str] = None,
+        scale: float = 1,
+        flash=True,
+    ) -> np.ndarray:
+        """Export an image of the full extent of the displayed layer data.
+
+        This function finds a tight boundary around the data, resets the view
+        around that boundary (and, when scale=1, such that 1 captured pixel is
+        equivalent to one data pixel), takes a screenshot, then restores the
+        previous zoom and canvas sizes. Currently, only works when 2 dimensions
+        are displayed.
+
+        Parameters
+        ----------
+        path : str, optional
+            Filename for saving screenshot image.
+        scale : float
+            Scale factor used to increase resolution of canvas for the
+            screenshot. By default, a scale of 1.
+        flash : bool
+            Flag to indicate whether flash animation should be shown after
+            the screenshot was captured.
+            By default, True.
+
+        Returns
+        -------
+        image : array
+            Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
+            upper-left corner of the rendered region.
+        """
+        if not isinstance(scale, (float, int)):
+            raise TypeError(
+                trans._(
+                    'Scale must be a float or an int.',
+                    deferred=True,
+                )
+            )
+        img = QImg2array(
+            self._screenshot(
+                scale=scale,
+                flash=flash,
+                canvas_only=True,
+                fit_to_data_extent=True,
+            )
+        )
+        if path is not None:
+            imsave(path, img)
         return img
 
     def screenshot(

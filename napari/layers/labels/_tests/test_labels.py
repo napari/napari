@@ -11,7 +11,6 @@ import pandas as pd
 import pytest
 import xarray as xr
 import zarr
-from numpy.core.numerictypes import issubdtype
 from skimage import data as sk_data
 
 from napari._tests.utils import check_layer_world_data_extent
@@ -110,13 +109,13 @@ def test_bool_labels():
     """Test instantiating labels layer with bools"""
     data = np.zeros((10, 10), dtype=bool)
     layer = Labels(data)
-    assert issubdtype(layer.data.dtype, np.integer)
+    assert np.issubdtype(layer.data.dtype, np.integer)
 
     data0 = np.zeros((20, 20), dtype=bool)
     data1 = data0[::2, ::2].astype(np.int32)
     data = [data0, data1]
     layer = Labels(data)
-    assert all(issubdtype(d.dtype, np.integer) for d in layer.data)
+    assert all(np.issubdtype(d.dtype, np.integer) for d in layer.data)
 
 
 def test_changing_labels():
@@ -418,6 +417,26 @@ def test_custom_color_dict():
     # test disable custom color dict
     # should not initialize as white since we are using random.seed
     assert not (layer.get_color(1) == np.array([1.0, 1.0, 1.0, 1.0])).all()
+
+
+@pytest.mark.parametrize(
+    'colormap_like',
+    [
+        ['red', 'blue'],
+        [[1, 0, 0, 1], [0, 0, 1, 1]],
+        {None: 'transparent', 1: 'red', 2: 'blue'},
+        {None: [0, 0, 0, 0], 1: [1, 0, 0, 1], 2: [0, 0, 1, 1]},
+        defaultdict(lambda: 'transparent', {1: 'red', 2: 'blue'}),
+    ],
+)
+def test_colormap_simple_data_types(colormap_like):
+    """Test that setting colormap with list or dict of colors works."""
+    data = np.random.randint(20, size=(10, 15))
+    # test in constructor
+    _ = Labels(data, colormap=colormap_like)
+    # test assignment
+    layer = Labels(data)
+    layer.colormap = colormap_like
 
 
 def test_metadata():

@@ -3,7 +3,13 @@
 import sys
 from pathlib import Path
 
-from app_model.types import Action, KeyCode, KeyMod, StandardKeyBinding
+from app_model.types import (
+    Action,
+    KeyCode,
+    KeyMod,
+    StandardKeyBinding,
+    SubmenuItem,
+)
 
 from napari._app_model.constants import MenuGroup, MenuId
 from napari._app_model.context import (
@@ -12,7 +18,75 @@ from napari._app_model.context import (
 )
 from napari._qt.qt_main_window import Window
 from napari._qt.qt_viewer import QtViewer
+from napari._qt.widgets.qt_viewer_buttons import add_new_points, add_new_shapes
 from napari.utils.translations import trans
+
+# File submenus
+FILE_SUBMENUS = [
+    (
+        MenuId.MENUBAR_FILE,
+        SubmenuItem(
+            submenu=MenuId.FILE_NEW_LAYER,
+            title=trans._('New Layer'),
+            group=MenuGroup.NAVIGATION,
+            order=0,
+        ),
+    ),
+    (
+        MenuId.MENUBAR_FILE,
+        SubmenuItem(
+            submenu=MenuId.FILE_OPEN_WITH_PLUGIN,
+            title=trans._('Open with Plugin'),
+            group=MenuGroup.OPEN,
+            order=99,
+        ),
+    ),
+    (
+        MenuId.MENUBAR_FILE,
+        SubmenuItem(
+            submenu=MenuId.FILE_SAMPLES,
+            title=trans._('Open Sample'),
+            group=MenuGroup.OPEN,
+            order=100,
+        ),
+    ),
+    (
+        MenuId.MENUBAR_FILE,
+        SubmenuItem(
+            submenu=MenuId.FILE_IO_UTILITIES,
+            title=trans._('IO Utilities'),
+            group=MenuGroup.UTIL,
+            order=101,
+        ),
+    ),
+    (
+        MenuId.MENUBAR_FILE,
+        SubmenuItem(
+            submenu=MenuId.FILE_ACQUIRE,
+            title=trans._('Acquire'),
+            group=MenuGroup.UTIL,
+            order=101,
+        ),
+    ),
+]
+
+
+# File actions
+
+
+def new_labels(qt_viewer: QtViewer):
+    viewer = qt_viewer.viewer
+    viewer._new_labels()
+
+
+def new_points(qt_viewer: QtViewer):
+    viewer = qt_viewer.viewer
+    add_new_points(viewer)
+
+
+def new_shapes(qt_viewer: QtViewer):
+    viewer = qt_viewer.viewer
+    add_new_shapes(viewer)
 
 
 def _open_files_with_plugin(qt_viewer: QtViewer):
@@ -45,6 +119,24 @@ def _close_app(window: Window):
 
 Q_FILE_ACTIONS: list[Action] = [
     Action(
+        id='napari.window.file.new_layer.new_labels',
+        title=trans._('Labels'),
+        callback=new_labels,
+        menus=[{'id': MenuId.FILE_NEW_LAYER, 'group': MenuGroup.NAVIGATION}],
+    ),
+    Action(
+        id='napari.window.file.new_layer.new_points',
+        title=trans._('Points'),
+        callback=new_points,
+        menus=[{'id': MenuId.FILE_NEW_LAYER, 'group': MenuGroup.NAVIGATION}],
+    ),
+    Action(
+        id='napari.window.file.new_layer.new_shapes',
+        title=trans._('Shapes'),
+        callback=new_shapes,
+        menus=[{'id': MenuId.FILE_NEW_LAYER, 'group': MenuGroup.NAVIGATION}],
+    ),
+    Action(
         id='napari.window.file._image_from_clipboard',
         title=trans._('New Image from Clipboard'),
         callback=QtViewer._image_from_clipboard,
@@ -55,21 +147,21 @@ Q_FILE_ACTIONS: list[Action] = [
         id='napari.window.file.open_files_dialog',
         title=trans._('Open File(s)...'),
         callback=QtViewer._open_files_dialog,
-        menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.NAVIGATION}],
+        menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.OPEN}],
         keybindings=[StandardKeyBinding.Open],
     ),
     Action(
         id='napari.window.file.open_files_as_stack_dialog',
         title=trans._('Open Files as Stack...'),
         callback=QtViewer._open_files_dialog_as_stack_dialog,
-        menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.NAVIGATION}],
+        menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.OPEN}],
         keybindings=[{'primary': KeyMod.CtrlCmd | KeyMod.Alt | KeyCode.KeyO}],
     ),
     Action(
         id='napari.window.file.open_folder_dialog',
         title=trans._('Open Folder...'),
         callback=QtViewer._open_folder_dialog,
-        menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.NAVIGATION}],
+        menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.OPEN}],
         keybindings=[
             {'primary': KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyO}
         ],
@@ -78,25 +170,19 @@ Q_FILE_ACTIONS: list[Action] = [
         id='napari.window.file._open_files_with_plugin',
         title=trans._('Open File(s)...'),
         callback=_open_files_with_plugin,
-        menus=[
-            {'id': MenuId.FILE_OPEN_WITH_PLUGIN, 'group': MenuGroup.NAVIGATION}
-        ],
+        menus=[{'id': MenuId.FILE_OPEN_WITH_PLUGIN, 'group': MenuGroup.OPEN}],
     ),
     Action(
         id='napari.window.file._open_files_as_stack_with_plugin',
         title=trans._('Open Files as Stack...'),
         callback=_open_files_as_stack_with_plugin,
-        menus=[
-            {'id': MenuId.FILE_OPEN_WITH_PLUGIN, 'group': MenuGroup.NAVIGATION}
-        ],
+        menus=[{'id': MenuId.FILE_OPEN_WITH_PLUGIN, 'group': MenuGroup.OPEN}],
     ),
     Action(
         id='napari.window.file._open_folder_with_plugin',
         title=trans._('Open Folder...'),
         callback=_open_folder_with_plugin,
-        menus=[
-            {'id': MenuId.FILE_OPEN_WITH_PLUGIN, 'group': MenuGroup.NAVIGATION}
-        ],
+        menus=[{'id': MenuId.FILE_OPEN_WITH_PLUGIN, 'group': MenuGroup.OPEN}],
     ),
     Action(
         id='napari.window.file.show_preferences_dialog',
