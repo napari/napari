@@ -583,7 +583,7 @@ def test_value():
         # not quite as expected for additive
         ((2, 2, 2), [1, 0, 0], [0, 1, 2], False, 'additive', 2),
         ((2, 2, 2), [1, 0, 0], [0, 1, 2], False, 'iso', 0.5),
-        ((2, 2, 2), [1, 0, 0], [0, 1, 2], False, 'attenuated_mip', None),
+        ((2, 2, 2), [1, 0, 0], [0, 1, 2], False, 'attenuated_mip', 0.81873075),
         ((0, 2, 2, 2), [0, 1, 0, 0], [1, 2, 3], False, 'mip', 1),
     ],
 )
@@ -600,7 +600,7 @@ def test_value_3d(
         dims_displayed=dims_displayed,
         world=world,
     )
-    assert value == result
+    npt.assert_allclose(value, result)
 
 
 def test_message():
