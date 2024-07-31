@@ -123,6 +123,6 @@ class PolygonBase(Shape):
         self._set_meshes(data, face=self._filled, closed=self._closed)
         self._box = create_box(self.data_displayed)
 
-        self.slice_key = self.bounding_box[:, self.dims_not_displayed].astype(
+        self.slice_key = self._bounding_box[:, self.dims_not_displayed].astype(
             'int'
         )
