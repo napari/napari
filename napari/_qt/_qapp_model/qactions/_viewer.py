@@ -23,7 +23,7 @@ logger = getLogger(__name__)
 __all__ = 'is_console_available'
 
 
-def is_console_available():
+def is_console_available() -> bool:
     return not (in_ipython() or in_jupyter() or in_python_repl())
 
 
