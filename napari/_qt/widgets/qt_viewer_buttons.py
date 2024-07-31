@@ -21,7 +21,6 @@ from napari._qt.widgets.qt_dims_sorter import QtDimsSorter
 from napari._qt.widgets.qt_spinbox import QtSpinBox
 from napari._qt.widgets.qt_tooltip import QtToolTipLabel
 from napari.utils.action_manager import action_manager
-from napari.utils.misc import in_ipython, in_jupyter, in_python_repl
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -110,17 +109,17 @@ class QtViewerButtons(QFrame):
 
     Attributes
     ----------
-    consoleButton : QtViewerPushButton
-        Button to open iPython console within napari.
-    rollDimsButton : QtViewerPushButton
+    consoleButton : qtpy.QtWidgets.QToolButton
+        Button to open IPython console within napari.
+    rollDimsButton : qtpy.QtWidgets.QToolButton
         Button to roll orientation of spatial dimensions in the napari viewer.
-    transposeDimsButton : QtViewerPushButton
+    transposeDimsButton : qtpy.QtWidgets.QToolButton
         Button to transpose dimensions in the napari viewer.
-    resetViewButton : QtViewerPushButton
+    resetViewButton : qtpy.QtWidgets.QToolButton
         Button resetting the view of the rendered scene.
-    gridViewButton : QtViewerPushButton
+    gridViewButton : qtpy.QtWidgets.QToolButton
         Button to toggle grid view mode of layers on and off.
-    ndisplayButton : QtViewerPushButton
+    ndisplayButton : qtpy.QtWidgets.QToolButton
         Button to toggle number of displayed dimensions.
     viewer : napari.components.ViewerModel
         Napari viewer containing the rendered scene, layers, and controls.
@@ -129,22 +128,22 @@ class QtViewerButtons(QFrame):
     def __init__(self, viewer: 'ViewerModel') -> None:
         super().__init__()
 
+        # General attributes
         self.viewer = viewer
 
-        # Toolbar
+        # Toolbar attributes
         self._menu = build_qmodel_menu(MenuId.VIEWER_CONTROLS)
         self.toolbar = build_qmodel_toolbar(
-            MenuId.VIEWER_CONTROLS, title='Controls', parent=self
+            MenuId.VIEWER_CONTROLS, title='Viewer controls', parent=self
         )
+
+        # Setup controls/buttons
         console_action = self._menu.findAction(
             'napari.viewer.toggle_console_visibility'
         )
         console_tool = self.toolbar.widgetForAction(console_action)
         console_tool.setProperty('mode', 'console')
         console_tool.setProperty('expanded', False)
-        # TODO: Things like this should go over the action definition (`enablement`)?
-        if in_ipython() or in_jupyter() or in_python_repl():
-            console_tool.setEnabled(False)
         self.consoleButton = console_tool
 
         roll_action = self._menu.findAction('napari.viewer.roll_axes')
@@ -169,38 +168,40 @@ class QtViewerButtons(QFrame):
         grid_view_action = self._menu.findAction('napari.viewer.toggle_grid')
         grid_view_tool = self.toolbar.widgetForAction(grid_view_action)
         grid_view_tool.setProperty('mode', 'grid_view_button')
-        grid_view_tool.setCheckable(True)
-        grid_view_tool.setChecked(viewer.grid.enabled)
         grid_view_tool.setContextMenuPolicy(
             Qt.ContextMenuPolicy.CustomContextMenu
         )
         grid_view_tool.customContextMenuRequested.connect(
             self._open_grid_popup
         )
-        self.gridViewButton = grid_view_tool
 
+        # TODO: Should this be done via `ToggleRule.condition`?
         @self.viewer.grid.events.enabled.connect
         def _set_grid_mode_checkstate(event):
             grid_view_tool.setChecked(event.value)
+
+        self.gridViewButton = grid_view_tool
 
         ndisplay_action = self._menu.findAction(
             'napari.viewer.toggle_ndisplay'
         )
         ndisplay_tool = self.toolbar.widgetForAction(ndisplay_action)
         ndisplay_tool.setProperty('mode', 'ndisplay_button')
-        ndisplay_tool.setChecked(self.viewer.dims.ndisplay == 3)
         ndisplay_tool.setContextMenuPolicy(
             Qt.ContextMenuPolicy.CustomContextMenu
         )
         ndisplay_tool.customContextMenuRequested.connect(
             self.open_perspective_popup
         )
-        self.ndisplayButton = ndisplay_tool
 
+        # TODO: Should this be done via `ToggleRule.condition`?
         @self.viewer.dims.events.ndisplay.connect
         def _set_ndisplay_mode_checkstate(event):
             ndisplay_tool.setChecked(event.value == 3)
 
+        self.ndisplayButton = ndisplay_tool
+
+        # Setup layout
         layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.toolbar)

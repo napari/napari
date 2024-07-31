@@ -1,30 +1,28 @@
 """Qt 'Plugins' menu Actions."""
 
 from logging import getLogger
+from typing import TYPE_CHECKING
 
-from app_model.expressions import parse_expression
-from app_model.types import Action
+from app_model.types import Action, ToggleRule
 
 from napari._app_model.constants import MenuId
-from napari.components._viewer_key_bindings import (
-    reset_view,
-    roll_axes,
-    toggle_console_visibility,
-    toggle_grid,
-    toggle_ndisplay,
-    transpose_axes,
-)
+from napari.components import _viewer_key_bindings
 from napari.utils.misc import in_ipython, in_jupyter, in_python_repl
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from napari._qt.qt_viewer import QtViewer
+
 
 logger = getLogger(__name__)
 
 
-__all__ = 'is_console_available'
+def _get_viewer_ndisplay_status(qt_viewer: 'QtViewer') -> bool:
+    return qt_viewer.viewer.dims.ndisplay == 3
 
 
-def is_console_available() -> bool:
-    return not (in_ipython() or in_jupyter() or in_python_repl())
+def _get_viewer_grid_status(qt_viewer: 'QtViewer') -> bool:
+    return qt_viewer.viewer.grid.enabled
 
 
 # TODO: Add keybindings
@@ -37,11 +35,11 @@ Q_VIEWER_ACTIONS: list[Action] = [
                 'id': MenuId.VIEWER_CONTROLS,
             }
         ],
-        callback=toggle_console_visibility,
+        callback=_viewer_key_bindings.toggle_console_visibility,
         tooltip=trans._(
             'Show/Hide IPython console (only available when napari started as standalone application)'
         ),
-        enablement=parse_expression('console_available'),
+        enablement=not (in_ipython() or in_jupyter() or in_python_repl()),
     ),
     Action(
         id='napari.viewer.toggle_ndisplay',
@@ -51,9 +49,10 @@ Q_VIEWER_ACTIONS: list[Action] = [
                 'id': MenuId.VIEWER_CONTROLS,
             }
         ],
-        callback=toggle_ndisplay,
+        callback=_viewer_key_bindings.toggle_ndisplay,
         tooltip=trans._('Toggle 2D/3D view.'),
-        toggled=False,
+        # TODO: Need of viewer ctx to write condition?
+        toggled=ToggleRule(get_current=_get_viewer_ndisplay_status),
     ),
     Action(
         id='napari.viewer.roll_axes',
@@ -63,7 +62,7 @@ Q_VIEWER_ACTIONS: list[Action] = [
                 'id': MenuId.VIEWER_CONTROLS,
             }
         ],
-        callback=roll_axes,
+        callback=_viewer_key_bindings.roll_axes,
         tooltip=trans._(
             'Change order of the visible axes, e.g.\u00a0[0,\u00a01,\u00a02]\u00a0\u2011>\u00a0[2,\u00a00,\u00a01].'
         ),
@@ -76,7 +75,7 @@ Q_VIEWER_ACTIONS: list[Action] = [
                 'id': MenuId.VIEWER_CONTROLS,
             }
         ],
-        callback=transpose_axes,
+        callback=_viewer_key_bindings.transpose_axes,
         tooltip=trans._(
             'Transpose order of the last two visible axes, e.g.\u00a0[0,\u00a01]\u00a0\u2011>\u00a0[1,\u00a00].'
         ),
@@ -89,8 +88,10 @@ Q_VIEWER_ACTIONS: list[Action] = [
                 'id': MenuId.VIEWER_CONTROLS,
             }
         ],
-        callback=toggle_grid,
+        callback=_viewer_key_bindings.toggle_grid,
         tooltip=trans._('Toggle grid mode.'),
+        # TODO: Need of viewer ctx to write condition?
+        toggled=ToggleRule(get_current=_get_viewer_grid_status),
     ),
     Action(
         id='napari.viewer.reset_view',
@@ -100,7 +101,7 @@ Q_VIEWER_ACTIONS: list[Action] = [
                 'id': MenuId.VIEWER_CONTROLS,
             }
         ],
-        callback=reset_view,
+        callback=_viewer_key_bindings.reset_view,
         tooltip=trans._('Reset view to original state.'),
     ),
 ]
