@@ -211,18 +211,11 @@ class _QtMainWindow(QMainWindow):
             return
         self._qt_viewer.viewer.status = status_and_tooltip[0]
         self._qt_viewer.viewer.tooltip.text = status_and_tooltip[1]
-
-    # def _throttle_cursor_to_status_connection(self, viewer: 'Viewer'):
-    #     # In the GUI we expect lots of changes to the cursor position, so
-    #     # replace the direct connection with a throttled one.
-    #     with contextlib.suppress(IndexError):
-    #         viewer.cursor.events.position.disconnect(
-    #             viewer._update_status_bar_from_cursor
-    #         )
-    #     viewer.cursor.events.position.connect(self.status_throttler.throttle)
-    #     self.status_throttler.triggered.connect(
-    #         viewer._update_status_bar_from_cursor
-    #     )
+        if (
+            active := self._qt_viewer.viewer.layers.selection.active
+            is not None
+        ):
+            self._qt_viewer.viewer.help = active.help
 
     def statusBar(self) -> 'ViewerStatusBar':
         return super().statusBar()
