@@ -21,12 +21,12 @@ class StatusChecker(QThread):
         self._lock = Lock()
         self._need_status_update = False
 
-    def trigger_status_update(self):
+    def trigger_status_update(self) -> None:
         self._need_status_update = True
         if self._lock.locked():
             self._lock.release()
 
-    def run(self):
+    def run(self) -> None:
         self._lock.acquire()
         while True:
             if self._need_status_update:
@@ -35,7 +35,7 @@ class StatusChecker(QThread):
             else:
                 self._lock.acquire()
 
-    def calculate_status(self):
+    def calculate_status(self) -> None:
         viewer = self.viewer_ref()
         if viewer is None:
             return
@@ -45,4 +45,4 @@ class StatusChecker(QThread):
                 viewer._calc_status_from_cursor()
             )
         except Exception as e:  # pragma: no cover # noqa: BLE001
-            notification_manager.self.dispatch(Notification.from_exception(e))
+            notification_manager.dispatch(Notification.from_exception(e))

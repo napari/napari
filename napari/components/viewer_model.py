@@ -552,7 +552,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def _calc_status_from_cursor(
         self,
-    ) -> Optional[tuple[Union[str, dict], str]]:
+    ) -> Optional[tuple[Union[str, Dict], str]]:
         if not self.mouse_over_canvas:
             return None
         active = self.layers.selection.active
