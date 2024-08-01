@@ -1,4 +1,4 @@
-"""Qt 'Plugins' menu Actions."""
+"""Qt Viewer Actions."""
 
 from logging import getLogger
 from typing import TYPE_CHECKING, Union

@@ -123,6 +123,8 @@ class QtViewerButtons(QFrame):
         Button to toggle number of displayed dimensions.
     viewer : napari.components.ViewerModel
         Napari viewer containing the rendered scene, layers, and controls.
+    toolbar : app_model.backends.qt import QModelToolBar
+        app-model toolbar that gets populated with viewer menu actions.
     """
 
     def __init__(self, viewer: 'ViewerModel') -> None:
