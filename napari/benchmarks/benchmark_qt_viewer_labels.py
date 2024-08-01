@@ -52,7 +52,7 @@ class QtViewerSingleLabelsSuite:
             is_dragging=True,
             pos=[500, 500],
             view_direction=None,
-            buttons=None,
+            button=None,
             delta=(0, 0),
         )
 
