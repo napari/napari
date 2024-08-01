@@ -486,6 +486,8 @@ def test_active_keybindings(make_napari_viewer):
 class MouseEvent:
     # mock mouse event class
     pos: list[int]
+    button: None = None
+    delta: tuple[int, int] = (0, 0)
 
 
 def test_process_mouse_event(make_napari_viewer):
