@@ -213,8 +213,7 @@ class _QtMainWindow(QMainWindow):
         self._qt_viewer.viewer.tooltip.text = status_and_tooltip[1]
         if (
             active := self._qt_viewer.viewer.layers.selection.active
-            is not None
-        ):
+        ) is not None:
             self._qt_viewer.viewer.help = active.help
 
     def statusBar(self) -> 'ViewerStatusBar':

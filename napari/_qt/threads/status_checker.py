@@ -29,7 +29,6 @@ class StatusChecker(QThread):
     def terminate(self) -> None:
         self._terminate = True
         self._event.set()
-        super().terminate()
 
     def run(self) -> None:
         self._event.clear()
