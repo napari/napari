@@ -6,6 +6,8 @@ from weakref import ref
 
 from qtpy.QtCore import QObject, QThread, Signal
 
+from napari.utils.notifications import Notification, notification_manager
+
 if TYPE_CHECKING:
     from napari.components import ViewerModel
 
@@ -38,4 +40,9 @@ class StatusChecker(QThread):
         if viewer is None:
             return
 
-        self.status_and_tooltip_changed.emit(viewer._calc_status_from_cursor())
+        try:
+            self.status_and_tooltip_changed.emit(
+                viewer._calc_status_from_cursor()
+            )
+        except Exception as e:  # pragma: no cover # noqa: BLE001
+            notification_manager.self.dispatch(Notification.from_exception(e))
