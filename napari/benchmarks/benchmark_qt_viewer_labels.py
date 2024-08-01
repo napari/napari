@@ -6,6 +6,7 @@ import os
 from dataclasses import dataclass
 from functools import lru_cache
 from itertools import cycle
+from typing import Optional
 
 import numpy as np
 from packaging.version import parse as parse_version
@@ -29,6 +30,8 @@ class MouseEvent:
     is_dragging: bool
     pos: list[int]
     view_direction: list[int]
+    buttons: Optional[int]
+    delta: tuple[int, int]
 
 
 class QtViewerSingleLabelsSuite:
@@ -49,6 +52,8 @@ class QtViewerSingleLabelsSuite:
             is_dragging=True,
             pos=[500, 500],
             view_direction=None,
+            buttons=None,
+            delta=(0, 0),
         )
 
     def teardown(self):
