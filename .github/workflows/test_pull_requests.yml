@@ -70,7 +70,7 @@ jobs:
           pip install --upgrade pip semgrep
           # f"..." and f'...' are the same for semgrep
           semgrep --error --lang python --pattern 'trans._(f"...")' napari
-          semgrep --error --lang python --pattern 'trans._($X.format(...))' napari
+          semgrep --error --lang python --pattern "trans._(\$X.format(...))" napari
 
   build_wheel:
     name: Build wheel
@@ -89,11 +89,13 @@ jobs:
             backend: pyqt5
             pydantic: "_pydantic_1"
             coverage: no_cov
+            min_req: ""
           - python: 3.12
             platform: ubuntu-latest
             backend: pyqt6
             pydantic: ""
             coverage: no_cov
+            min_req: ""
     with:
       python_version: ${{ matrix.python }}
       platform: ${{ matrix.platform }}
@@ -166,7 +168,6 @@ jobs:
       qt_backend: ${{ matrix.backend }}
       min_req: ${{ matrix.MIN_REQ }}
       coverage: ${{ matrix.coverage }}
-      toxenv: ${{ matrix.toxenv }}
       tox_extras: ${{ matrix.tox_extras }}
       constraints_suffix: ${{ matrix.pydantic }}
 
@@ -200,7 +201,7 @@ jobs:
   test_benchmarks:
     name: test benchmarks
     runs-on: ubuntu-latest
-#    needs: test_initial
+    needs: test_initial
     timeout-minutes: 60
     env:
       GIT_LFS_SKIP_SMUDGE: 1
@@ -229,7 +230,7 @@ jobs:
       - name: install dependencies
         run: |
           pip install --upgrade pip
-          pip install asv[virtualenv]
+          pip install "asv[virtualenv]"
         env:
           PIP_CONSTRAINT: resources/constraints/benchmark.txt
 

@@ -107,13 +107,10 @@ class CategoricalColormap(EventedModel):
         )
 
     def __eq__(self, other):
-        if isinstance(other, CategoricalColormap):
-            if not compare_colormap_dicts(self.colormap, other.colormap):
-                return False
-            if not np.allclose(
+        return (
+            isinstance(other, CategoricalColormap)
+            and compare_colormap_dicts(self.colormap, other.colormap)
+            and np.allclose(
                 self.fallback_color.values, other.fallback_color.values
-            ):
-                return False
-            return True
-
-        return False
+            )
+        )
