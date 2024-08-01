@@ -87,6 +87,7 @@ class QtPointsControls(QtLayerControls):
         )
         self.layer.events.symbol.connect(self._on_current_symbol_change)
         self.layer.events.size.connect(self._on_current_size_change)
+        self.layer.events.current_size.connect(self._on_current_size_change)
         self.layer.events.current_border_color.connect(
             self._on_current_border_color_change
         )

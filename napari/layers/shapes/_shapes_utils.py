@@ -186,7 +186,7 @@ def lines_intersect(p1, q1, p2, q2):
         return True
 
     # p2, q2 and q1 are collinear and q1 lies on segment p2q2
-    if o4 == 0 and on_segment(p2, q1, q2):
+    if o4 == 0 and on_segment(p2, q1, q2):  # noqa: SIM103
         return True
 
     # Doesn't fall into any special cases
