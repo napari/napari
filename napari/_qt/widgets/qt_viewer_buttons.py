@@ -2,6 +2,7 @@ import warnings
 from functools import partial, wraps
 from typing import TYPE_CHECKING
 
+from app_model.expressions import get_context
 from qtpy.QtCore import QPoint, Qt
 from qtpy.QtWidgets import (
     QFormLayout,
@@ -139,6 +140,11 @@ class QtViewerButtons(QFrame):
             MenuId.VIEWER_CONTROLS, title='Viewer controls', parent=self
         )
 
+        @self.viewer.events.update_ctx.connect
+        def _update_toolbar_from_context(event):
+            ctx = get_context(event.source)
+            self.toolbar.update_from_context(ctx)
+
         # Setup controls/buttons
         console_action = self._menu.findAction(
             'napari.viewer.toggle_console_visibility'
@@ -176,12 +182,6 @@ class QtViewerButtons(QFrame):
         grid_view_tool.customContextMenuRequested.connect(
             self._open_grid_popup
         )
-
-        # TODO: Should this be done via `ToggleRule.condition`?
-        @self.viewer.grid.events.enabled.connect
-        def _set_grid_mode_checkstate(event):
-            grid_view_tool.setChecked(event.value)
-
         self.gridViewButton = grid_view_tool
 
         ndisplay_action = self._menu.findAction(
@@ -195,12 +195,6 @@ class QtViewerButtons(QFrame):
         ndisplay_tool.customContextMenuRequested.connect(
             self.open_perspective_popup
         )
-
-        # TODO: Should this be done via `ToggleRule.condition`?
-        @self.viewer.dims.events.ndisplay.connect
-        def _set_ndisplay_mode_checkstate(event):
-            ndisplay_tool.setChecked(event.value == 3)
-
         self.ndisplayButton = ndisplay_tool
 
         # Setup layout

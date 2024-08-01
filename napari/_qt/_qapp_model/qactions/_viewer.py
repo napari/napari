@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Union
 from app_model.types import Action, ToggleRule
 
 from napari._app_model.constants import MenuId
+from napari._app_model.context import ViewerContextKeys as VCK
 from napari.components import _viewer_key_bindings
 from napari.utils.misc import in_ipython, in_jupyter, in_python_repl
 from napari.utils.translations import trans
@@ -53,8 +54,9 @@ Q_VIEWER_ACTIONS: list[Action] = [
         ],
         callback=_viewer_key_bindings.toggle_ndisplay,
         tooltip=trans._('Toggle 2D/3D view.'),
-        # TODO: Need of viewer ctx to write condition?
-        toggled=ToggleRule(get_current=_get_viewer_ndisplay_status),
+        toggled=ToggleRule(
+            condition=VCK.is_viewer_3d, get_current=_get_viewer_ndisplay_status
+        ),
     ),
     Action(
         id='napari.viewer.roll_axes',
@@ -92,8 +94,10 @@ Q_VIEWER_ACTIONS: list[Action] = [
         ],
         callback=_viewer_key_bindings.toggle_grid,
         tooltip=trans._('Toggle grid mode.'),
-        # TODO: Need of viewer ctx to write condition?
-        toggled=ToggleRule(get_current=_get_viewer_grid_status),
+        toggled=ToggleRule(
+            condition=VCK.is_viewer_grid_enabled,
+            get_current=_get_viewer_grid_status,
+        ),
     ),
     Action(
         id='napari.viewer.reset_view',
