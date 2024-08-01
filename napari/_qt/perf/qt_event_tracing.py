@@ -59,7 +59,7 @@ class EventTypes:
         self.string_name = {}
         for name in vars(QEvent):
             attribute = getattr(QEvent, name)
-            if type(attribute) == QEvent.Type:
+            if type(attribute) is QEvent.Type:
                 self.string_name[attribute] = name
 
     def as_string(self, event: QEvent.Type) -> str:
