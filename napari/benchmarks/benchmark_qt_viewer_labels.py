@@ -30,7 +30,7 @@ class MouseEvent:
     is_dragging: bool
     pos: list[int]
     view_direction: list[int]
-    buttons: Optional[int]
+    button: Optional[int]
     delta: tuple[int, int]
 
 
