@@ -558,6 +558,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # Update status and help bar based on active layer
         if not self.mouse_over_canvas:
             return
+        if self.cursor.button is not None or self.cursor.scroll:
+            return
         active = self.layers.selection.active
         if active is not None:
             self.status = active.get_status(
