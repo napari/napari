@@ -460,8 +460,6 @@ class _QtMainWindow(QMainWindow):
 
     def close(self, quit_app=False, confirm_need=False):
         """Override to handle closing app or just the window."""
-        self.status_thread.terminate()
-        self.status_thread.wait()
         if not quit_app and not self._qt_viewer.viewer.layers:
             return super().close()
         confirm_need_local = confirm_need and self._is_close_dialog[quit_app]
@@ -585,6 +583,9 @@ class _QtMainWindow(QMainWindow):
         ):
             event.ignore()
             return
+
+        self.status_thread.terminate()
+        self.status_thread.wait()
 
         if self._ev and self._ev.isRunning():
             self._ev.quit()

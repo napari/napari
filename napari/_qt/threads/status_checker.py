@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from threading import Lock
+from threading import Event
 from typing import TYPE_CHECKING
 from weakref import ref
 
@@ -18,22 +18,28 @@ class StatusChecker(QThread):
     def __init__(self, viewer: ViewerModel, parent: QObject | None = None):
         super().__init__(parent=parent)
         self.viewer_ref = ref(viewer)
-        self._lock = Lock()
+        self._event = Event()
         self._need_status_update = False
+        self._terminate = False
 
     def trigger_status_update(self) -> None:
         self._need_status_update = True
-        if self._lock.locked():
-            self._lock.release()
+        self._event.set()
+
+    def terminate(self) -> None:
+        self._terminate = True
+        self._event.set()
+        super().terminate()
 
     def run(self) -> None:
-        self._lock.acquire()
-        while True:
+        self._event.clear()
+        while not self._terminate:
             if self._need_status_update:
                 self._need_status_update = False
+                self._event.clear()
                 self.calculate_status()
             else:
-                self._lock.acquire()
+                self._event.wait()
 
     def calculate_status(self) -> None:
         viewer = self.viewer_ref()
