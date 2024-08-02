@@ -1,4 +1,4 @@
-name: Docker and Singularity build
+name: Docker build
 
 # This workflow uses actions that are not certified by GitHub.
 # They are provided by a third-party and are governed by
@@ -10,7 +10,7 @@ on:
 
   pull_request:
     paths:
-      - '.github/workflows/docker-singularity-publish.yaml'
+      - '.github/workflows/docker-publish.yaml'
 
 #  schedule:
 #    - cron: '31 0 * * *'
@@ -97,53 +97,3 @@ jobs:
       - name: Test Docker image
         run: |
           docker run --rm --entrypoint=/bin/bash ${{ steps.docker_build.outputs.imageid }} -ec "python3 -m napari --version"
-
-# ----
-
-  build2:
-    needs: build1
-    runs-on: ubuntu-latest
-    container:
-      image: quay.io/singularity/docker2singularity:v4.1.0
-      options: --privileged
-    permissions:
-      contents: read
-      packages: write
-    strategy:
-      fail-fast: false
-      matrix:
-        recipe: ["Singularity"]
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Continue if Singularity Recipe Exists
-        run: |
-          if [[ -f "${{ matrix.recipe }}" ]]; then
-            echo "keepgoing=true" >> "$GITHUB_ENV"
-          fi
-
-      - name: Build Container
-        if: ${{ env.keepgoing == 'true' }}
-        env:
-          recipe: ${{ matrix.recipe }}
-        run: |
-          ls
-          if [ -f "${{ matrix.recipe }}" ]; then
-             singularity build container.sif ${{ matrix.recipe }}
-             tag=latest
-          fi
-          # Build the container and name by tag
-          echo "Tag is $tag."
-          echo "tag=$tag" >> "$GITHUB_ENV"
-
-      - name: Login and Deploy Container
-        if: (github.event_name != 'pull_request')
-        env:
-          keepgoing: ${{ env.keepgoing }}
-        run: |
-          if [[ "${keepgoing}" == "true" ]]; then
-              echo ${{ secrets.GITHUB_TOKEN }} | singularity remote login -u ${{ secrets.GHCR_USERNAME }} --password-stdin oras://ghcr.io
-              singularity push container.sif "oras://ghcr.io/${GITHUB_REPOSITORY}:${tag}"
-          fi
