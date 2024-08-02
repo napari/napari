@@ -1115,7 +1115,8 @@ class ShapeList:
 
     @cached_property
     def _bounding_boxes(self):
-        return np.array([s.bounding_box for s in self.shapes])
+        data = np.array([s.bounding_box for s in self.shapes])
+        return data[:, 0], data[:, 1]
 
     def inside(self, coord):
         """Determines if any shape at given coord by looking inside triangle
@@ -1135,10 +1136,13 @@ class ShapeList:
         if not self.shapes:
             return None
         bounding_boxes = self._bounding_boxes
-        inside = np.all(bounding_boxes[:, 0] <= coord, axis=1) & np.all(
-            bounding_boxes[:, 1] >= coord, axis=1
+        inside = np.all(
+            (bounding_boxes[0] <= coord) * (bounding_boxes[1] >= coord),
+            axis=1,
         )
-        inside_indices = np.where(inside)[0]
+        inside_indices = np.nonzero(inside)[0]
+        if not inside_indices.size:
+            return None
         try:
             return next(
                 i
