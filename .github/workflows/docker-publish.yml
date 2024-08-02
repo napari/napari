@@ -10,7 +10,7 @@ on:
 
   pull_request:
     paths:
-      - '.github/workflows/docker-publish.yaml'
+      - '.github/workflows/docker-publish.yml'
 
 #  schedule:
 #    - cron: '31 0 * * *'
