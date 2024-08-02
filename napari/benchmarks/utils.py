@@ -2,6 +2,7 @@ import itertools
 import os
 from collections.abc import Sequence
 from functools import lru_cache
+from types import ModuleType
 from typing import (
     Callable,
     Literal,
@@ -224,6 +225,27 @@ def labeled_particles(
         return labels
 
 
+def run_benchmark_from_module(
+    module: ModuleType, klass_name: str, method_name: str
+):
+    klass = getattr(module, klass_name)
+    if getattr(klass, 'params', None):
+        skip_if = getattr(klass, 'skip_params', {})
+        if isinstance(klass.params[0], Sequence):
+            params = itertools.product(*klass.params)
+        else:
+            params = ((i,) for i in klass.params)
+        for param in params:
+            if param in skip_if:
+                continue
+            obj = klass()
+            try:
+                obj.setup(*param)
+            except NotImplementedError:
+                continue
+            getattr(obj, method_name)(*param)
+
+
 def run_benchmark():
     import argparse
     import inspect
@@ -239,19 +261,4 @@ def run_benchmark():
 
     # get module of parent frame
     call_module = inspect.getmodule(inspect.currentframe().f_back)
-    klass = getattr(call_module, benchmark_selection[0])
-    if getattr(klass, 'params', None):
-        skip_if = getattr(klass, 'skip_params', {})
-        if isinstance(klass.params[0], Sequence):
-            params = itertools.product(*klass.params)
-        else:
-            params = ((i,) for i in klass.params)
-        for param in params:
-            if param in skip_if:
-                continue
-            obj = klass()
-            try:
-                obj.setup(*param)
-            except NotImplementedError:
-                continue
-            getattr(obj, benchmark_selection[1])(*param)
+    run_benchmark_from_module(call_module, *benchmark_selection)

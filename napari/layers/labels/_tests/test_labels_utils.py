@@ -59,7 +59,7 @@ def test_get_dtype():
 
     data = data.astype(int)
     int_layer = Labels(data)
-    assert get_dtype(int_layer) == int
+    assert get_dtype(int_layer) is np.dtype(int)
 
 
 def test_first_nonzero_coordinate():
