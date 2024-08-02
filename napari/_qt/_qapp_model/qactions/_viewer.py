@@ -3,7 +3,7 @@
 from logging import getLogger
 from typing import TYPE_CHECKING, Union
 
-from app_model.types import Action, ToggleRule
+from app_model.types import Action, KeyCode, KeyMod, ToggleRule
 
 from napari._app_model.constants import MenuId
 from napari._app_model.context import ViewerContextKeys as VCK
@@ -28,7 +28,6 @@ def _get_viewer_grid_status(viewer: Union['ViewerModel', 'Viewer']) -> bool:
     return viewer.grid.enabled
 
 
-# TODO: Add keybindings
 Q_VIEWER_ACTIONS: list[Action] = [
     Action(
         id='napari.viewer.toggle_console_visibility',
@@ -39,6 +38,9 @@ Q_VIEWER_ACTIONS: list[Action] = [
             }
         ],
         callback=_viewer_key_bindings.toggle_console_visibility,
+        keybindings=[
+            {'primary': KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyC}
+        ],
         tooltip=trans._(
             'Show/Hide IPython console (only available when napari started as standalone application)'
         ),
@@ -54,6 +56,7 @@ Q_VIEWER_ACTIONS: list[Action] = [
         ],
         callback=_viewer_key_bindings.toggle_ndisplay,
         tooltip=trans._('Toggle 2D/3D view.'),
+        keybindings=[{'primary': KeyMod.CtrlCmd | KeyCode.KeyY}],
         toggled=ToggleRule(
             condition=VCK.is_viewer_3d, get_current=_get_viewer_ndisplay_status
         ),
@@ -67,6 +70,7 @@ Q_VIEWER_ACTIONS: list[Action] = [
             }
         ],
         callback=_viewer_key_bindings.roll_axes,
+        keybindings=[{'primary': KeyMod.CtrlCmd | KeyCode.KeyE}],
         tooltip=trans._(
             'Change order of the visible axes, e.g.\u00a0[0,\u00a01,\u00a02]\u00a0\u2011>\u00a0[2,\u00a00,\u00a01].'
         ),
@@ -80,6 +84,7 @@ Q_VIEWER_ACTIONS: list[Action] = [
             }
         ],
         callback=_viewer_key_bindings.transpose_axes,
+        keybindings=[{'primary': KeyMod.CtrlCmd | KeyCode.KeyT}],
         tooltip=trans._(
             'Transpose order of the last two visible axes, e.g.\u00a0[0,\u00a01]\u00a0\u2011>\u00a0[1,\u00a00].'
         ),
@@ -93,6 +98,7 @@ Q_VIEWER_ACTIONS: list[Action] = [
             }
         ],
         callback=_viewer_key_bindings.toggle_grid,
+        keybindings=[{'primary': KeyMod.CtrlCmd | KeyCode.KeyG}],
         tooltip=trans._('Toggle grid mode.'),
         toggled=ToggleRule(
             condition=VCK.is_viewer_grid_enabled,
@@ -108,6 +114,7 @@ Q_VIEWER_ACTIONS: list[Action] = [
             }
         ],
         callback=_viewer_key_bindings.reset_view,
+        keybindings=[{'primary': KeyMod.CtrlCmd | KeyCode.KeyR}],
         tooltip=trans._('Reset view to original state.'),
     ),
 ]
