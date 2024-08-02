@@ -40,5 +40,7 @@ segmented = ndi.label(cleaned)[0]
 
 labels_layer = viewer.add_labels(segmented)
 
+viewer.dims.ndisplay = 3
+
 if __name__ == '__main__':
     napari.run()
