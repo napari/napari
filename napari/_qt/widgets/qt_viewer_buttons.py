@@ -135,7 +135,7 @@ class QtViewerButtons(QFrame):
         self.viewer = viewer
 
         # Toolbar attributes
-        self._menu = build_qmodel_menu(MenuId.VIEWER_CONTROLS)
+        self._menu = build_qmodel_menu(MenuId.VIEWER_CONTROLS, parent=self)
         self.toolbar = build_qmodel_toolbar(
             MenuId.VIEWER_CONTROLS, title='Viewer controls', parent=self
         )
