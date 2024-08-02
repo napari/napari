@@ -15,8 +15,7 @@ from qtpy.QtWidgets import (
 )
 
 from napari._app_model.constants._menus import MenuId
-from napari._qt._qapp_model._menus import build_qmodel_menu
-from napari._qt._qapp_model._toolbars import build_qmodel_toolbar
+from napari._qt._qapp_model import build_qmodel_menu, build_qmodel_toolbar
 from napari._qt.dialogs.qt_modal import QtPopup
 from napari._qt.widgets.qt_dims_sorter import QtDimsSorter
 from napari._qt.widgets.qt_spinbox import QtSpinBox

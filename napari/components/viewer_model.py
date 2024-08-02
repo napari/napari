@@ -262,8 +262,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # Connect events
         self.grid.events.connect(self.reset_view)
         self.grid.events.connect(self._on_grid_change)
+        self.grid.events.connect(self._update_ctx)
         self.dims.events.ndisplay.connect(self._update_layers)
         self.dims.events.ndisplay.connect(self.reset_view)
+        self.dims.events.ndisplay.connect(self._update_ctx)
         self.dims.events.order.connect(self._update_layers)
         self.dims.events.order.connect(self.reset_view)
         self.dims.events.point.connect(self._update_layers)
@@ -432,8 +434,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 np.array(self._canvas_size) / scale
             )
         self.camera.angles = (0, 0, 90)
-
-        self._update_ctx()
 
         # Emit a reset view event, which is no longer used internally, but
         # which maybe useful for building on napari.

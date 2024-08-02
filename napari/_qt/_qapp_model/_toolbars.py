@@ -35,5 +35,9 @@ def build_qmodel_toolbar(
     from napari._app_model import get_app
 
     return QModelToolBar(
-        menu_id=menu_id, app=get_app(), title=title, parent=parent
+        menu_id=menu_id,
+        app=get_app(),
+        exclude=exclude,
+        title=title,
+        parent=parent,
     )
