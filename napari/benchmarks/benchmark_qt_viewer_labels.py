@@ -219,3 +219,9 @@ class LabelRenderingSuite3D(LabelRendering):
 
     def time_zoom_change(self, *args):
         self._time_zoom_change(*args)
+
+
+if __name__ == '__main__':
+    from utils import run_benchmark
+
+    run_benchmark()
