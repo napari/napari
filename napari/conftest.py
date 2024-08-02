@@ -33,8 +33,10 @@ from __future__ import annotations
 
 import os
 import sys
+import threading
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
+from functools import partial
 from itertools import chain
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
@@ -429,6 +431,19 @@ def _dangling_qthreads(monkeypatch, qtbot, request):
 
     base_start = QThread.start
     thread_dict = WeakKeyDictionary()
+    base_constructor = QThread.__init__
+
+    def my_run(self):
+        if 'coverage' in sys.modules:
+            # https://github.com/nedbat/coveragepy/issues/686#issuecomment-634932753
+            sys.settrace(threading._trace_hook)
+        self._base_run()
+
+    def my_constructor(self, *args, **kwargs):
+        base_constructor(self, *args, **kwargs)
+        self._base_run = self.run
+        self.run = partial(my_run, self)
+
     # dict of threads that have been started but not yet terminated
 
     if 'disable_qthread_start' in request.keywords:
@@ -443,6 +458,8 @@ def _dangling_qthreads(monkeypatch, qtbot, request):
             base_start(self, priority)
 
     monkeypatch.setattr(QThread, 'start', my_start)
+    monkeypatch.setattr(QThread, '__init__', my_constructor)
+
     yield
 
     dangling_threads_li = []

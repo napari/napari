@@ -361,6 +361,8 @@ filterwarnings = [
   # https://github.com/pydata/xarray/blame/b1f3fea467f9387ed35c221205a70524f4caa18b/pyproject.toml#L333-L334
   # https://github.com/pydata/xarray/pull/8939
   "ignore:__array__ implementation doesn't accept a copy keyword, so passing copy=False failed.",
+  "ignore:pkg_resources is deprecated",
+  "ignore:Deprecated call to `pkg_resources.declare_namespace"
 ]
 markers = [
     "examples: Test of examples",
@@ -762,7 +764,6 @@ exclude_lines = [
 ]
 
 [tool.coverage.run]
-parallel = true
 omit = [
     "*/_vendor/*",
     "*/_version.py",
