@@ -1858,3 +1858,4 @@ def _instantiate_dock_widget(wdg_cls, viewer: 'Viewer'):
 
     # instantiate the widget
     return wdg_cls(**kwargs)
+
