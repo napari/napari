@@ -233,3 +233,63 @@ def current_viewer() -> Optional[Viewer]:
         return None
     else:
         return _QtMainWindow.current_viewer()
+
+import napari
+
+viewer = napari.Viewer()
+
+
+def get_center_bbox(shape):
+
+       """Get the center coordinate, height, width of the shape roi
+
+       Parameters
+       ----------
+       shapes : napari.layers.shape
+              A napari shapes layer
+       
+       Returns
+       -------
+       center coords, height and width of shape: float
+              The center coordinates, height and widht of shape roi
+       """
+       height, width = shape.max(axis=0) - shape.min(axis=0)
+       min_y, min_x = shape.min(axis=0)
+       center_coords = [min_y + height / 2, min_x + width / 2]
+       
+       return center_coords, height, width 
+
+def export_rois(shapes_data, paths: list[str] | None = None):
+       """Export the shapes rois with storage file paths
+
+       Parameters
+       ----------
+       shapes_data: napari.layers.shape
+              A napari shapes layer
+       paths: list
+              The list to store file path for shapes roi
+       
+       Returns
+       -------
+       roi_dict: dictionary
+              The dictionary with index and file paths for each shapes roi
+       
+       """
+       roi_dict = {}
+       start_camera_center = viewer.camera.center
+       start_camera_zoom = viewer.camera.zoom
+       prev_size = viewer.window.qt_viewer.canvas.size
+       for index, shape in enumerate(shapes_data):
+              center_coord, height, width = get_center_bbox(shape)
+              viewer.camera.center = center_coord             
+              viewer.window.qt_viewer.canvas.size = (int(height), int(width))
+
+              viewer.camera.zoom = 1.0
+              path = paths[index] if paths is not None else None
+              roi_dict[index] = viewer.screenshot(path=path)
+
+       viewer.window.qt_viewer.canvas.size = prev_size
+       viewer.camera.center = start_camera_center
+       viewer.camera.zoom = start_camera_zoom
+
+       return roi_dict
