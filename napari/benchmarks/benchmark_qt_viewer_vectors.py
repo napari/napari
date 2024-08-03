@@ -48,3 +48,9 @@ class QtViewerViewVectorSuite:
         self.viewer.layers[0].refresh()
         self.viewer.layers[0].refresh()
         self.viewer.layers[0].refresh()
+
+
+if __name__ == '__main__':
+    from utils import run_benchmark
+
+    run_benchmark()

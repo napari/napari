@@ -78,11 +78,10 @@ def is_empty_menu(menu_id: str) -> bool:
         return True
     if len(app.menus.get_menu(menu_id)) == 0:
         return True
-    if len(app.menus.get_menu(menu_id)) == 1 and contains_dummy_action(
-        app.menus.get_menu(menu_id)
-    ):
-        return True
-    return False
+    return bool(
+        len(app.menus.get_menu(menu_id)) == 1
+        and contains_dummy_action(app.menus.get_menu(menu_id))
+    )
 
 
 def no_op() -> None:
