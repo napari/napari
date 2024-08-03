@@ -11,7 +11,7 @@ from qtpy.QtWidgets import (
     QSpinBox,
     QWidget,
 )
-from superqt import QLargeIntSpinBox
+from superqt import QEnumComboBox, QLargeIntSpinBox
 
 from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
 from napari._qt.utils import set_widgets_enabled_with_opacity
@@ -19,6 +19,7 @@ from napari._qt.widgets._slider_compat import QSlider
 from napari._qt.widgets.qt_mode_buttons import QtModePushButton
 from napari.layers.labels._labels_constants import (
     LABEL_COLOR_MODE_TRANSLATIONS,
+    IsoCategoricalGradientMode,
     LabelColorMode,
     LabelsRendering,
     Mode,
@@ -99,6 +100,9 @@ class QtLabelsControls(QtLayerControls):
         super().__init__(layer)
 
         self.layer.events.rendering.connect(self._on_rendering_change)
+        self.layer.events.iso_gradient_mode.connect(
+            self._on_iso_gradient_mode_change
+        )
         self.layer.events.colormap.connect(self._on_colormap_change)
         self.layer.events.selected_label.connect(
             self._on_selected_label_change
@@ -237,16 +241,26 @@ class QtLabelsControls(QtLayerControls):
         self.button_grid.addWidget(self.fill_button, 0, 4)
         self.button_grid.addWidget(self.pick_button, 0, 5)
 
-        renderComboBox = QComboBox(self)
-        rendering_options = [i.value for i in LabelsRendering]
-        renderComboBox.addItems(rendering_options)
-        index = renderComboBox.findText(
-            self.layer.rendering, Qt.MatchFlag.MatchFixedString
-        )
-        renderComboBox.setCurrentIndex(index)
-        renderComboBox.currentTextChanged.connect(self.changeRendering)
+        renderComboBox = QEnumComboBox(enum_class=LabelsRendering)
+        renderComboBox.setCurrentEnum(LabelsRendering(self.layer.rendering))
+        renderComboBox.currentEnumChanged.connect(self.changeRendering)
         self.renderComboBox = renderComboBox
         self.renderLabel = QLabel(trans._('rendering:'))
+
+        isoGradientComboBox = QEnumComboBox(
+            enum_class=IsoCategoricalGradientMode
+        )
+        isoGradientComboBox.setCurrentEnum(
+            IsoCategoricalGradientMode(self.layer.iso_gradient_mode)
+        )
+        isoGradientComboBox.currentEnumChanged.connect(
+            self.changeIsoGradientMode
+        )
+        isoGradientComboBox.setEnabled(
+            self.layer.rendering == LabelsRendering.ISO_CATEGORICAL
+        )
+        self.isoGradientComboBox = isoGradientComboBox
+        self.isoGradientLabel = QLabel(trans._('gradient\nmode:'))
 
         self._on_ndisplay_changed()
 
@@ -261,6 +275,7 @@ class QtLabelsControls(QtLayerControls):
         self.layout().addRow(trans._('brush size:'), self.brushSizeSlider)
         self.layout().addRow(trans._('blending:'), self.blendComboBox)
         self.layout().addRow(self.renderLabel, self.renderComboBox)
+        self.layout().addRow(self.isoGradientLabel, self.isoGradientComboBox)
         self.layout().addRow(trans._('color mode:'), self.colorModeComboBox)
         self.layout().addRow(trans._('contour:'), self.contourSpinBox)
         self.layout().addRow(trans._('n edit dim:'), self.ndimSpinBox)
@@ -319,12 +334,12 @@ class QtLabelsControls(QtLayerControls):
         dtype_lims = get_dtype_limits(get_dtype(self.layer))
         self.selectionSpinBox.setRange(*dtype_lims)
 
-    def changeRendering(self, text):
+    def changeRendering(self, rendering_mode: LabelsRendering):
         """Change rendering mode for image display.
 
         Parameters
         ----------
-        text : str
+        rendering_mode : LabelsRendering
             Rendering mode used by vispy.
             Selects a preset rendering mode in vispy that determines how
             volume is displayed:
@@ -335,7 +350,23 @@ class QtLabelsControls(QtLayerControls):
               location, lighning calculations are performed to give the visual
               appearance of a surface.
         """
-        self.layer.rendering = text
+        self.isoGradientComboBox.setEnabled(
+            rendering_mode == LabelsRendering.ISO_CATEGORICAL
+        )
+        self.layer.rendering = rendering_mode
+
+    def changeIsoGradientMode(self, gradient_mode: IsoCategoricalGradientMode):
+        """Change gradient mode for isosurface rendering.
+
+        Parameters
+        ----------
+        gradient_mode : IsoCategoricalGradientMode
+            Gradient mode for the isosurface rendering method.
+            Selects the finite-difference gradient method for the isosurface shader:
+            * fast: simple finite difference gradient along each axis
+            * smooth: isotropic Sobel gradient, smoother but more computationally expensive
+        """
+        self.layer.iso_gradient_mode = gradient_mode
 
     def changeColor(self):
         """Change colormap of the label layer."""
@@ -469,19 +500,27 @@ class QtLabelsControls(QtLayerControls):
     def _on_rendering_change(self):
         """Receive layer model rendering change event and update dropdown menu."""
         with self.layer.events.rendering.blocker():
-            index = self.renderComboBox.findText(
-                self.layer.rendering, Qt.MatchFlag.MatchFixedString
+            self.renderComboBox.setCurrentEnum(
+                LabelsRendering(self.layer.rendering)
             )
-            self.renderComboBox.setCurrentIndex(index)
+
+    def _on_iso_gradient_mode_change(self):
+        """Receive layer model iso_gradient_mode change event and update dropdown menu."""
+        with self.layer.events.iso_gradient_mode.blocker():
+            self.isoGradientComboBox.setCurrentEnum(
+                IsoCategoricalGradientMode(self.layer.iso_gradient_mode)
+            )
 
     def _on_editable_or_visible_change(self):
         super()._on_editable_or_visible_change()
         self._set_polygon_tool_state()
 
     def _on_ndisplay_changed(self):
-        render_visible = self.ndisplay == 3
-        self.renderComboBox.setVisible(render_visible)
-        self.renderLabel.setVisible(render_visible)
+        show_3d_widgets = self.ndisplay == 3
+        self.renderComboBox.setVisible(show_3d_widgets)
+        self.renderLabel.setVisible(show_3d_widgets)
+        self.isoGradientComboBox.setVisible(show_3d_widgets)
+        self.isoGradientLabel.setVisible(show_3d_widgets)
         self._on_editable_or_visible_change()
         self._set_polygon_tool_state()
         super()._on_ndisplay_changed()

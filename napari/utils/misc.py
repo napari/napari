@@ -199,9 +199,9 @@ def is_sequence(arg: Any) -> bool:
         dict
         set
     """
-    if isinstance(arg, collections.abc.Sequence) and not isinstance(arg, str):
-        return True
-    return False
+    return bool(
+        isinstance(arg, collections.abc.Sequence) and not isinstance(arg, str)
+    )
 
 
 def ensure_sequence_of_iterables(

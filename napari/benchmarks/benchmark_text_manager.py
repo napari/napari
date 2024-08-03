@@ -68,3 +68,9 @@ class TextManagerSuite:
     time_remove_as_batch.warmup_time = 0
     # See https://asv.readthedocs.io/en/stable/benchmarks.html#timing-benchmarks
     # for more details
+
+
+if __name__ == '__main__':
+    from utils import run_benchmark
+
+    run_benchmark()

@@ -323,7 +323,9 @@ class ShortcutEditor(QWidget):
         for row1, (action_name, action) in enumerate(actions_all.items()):
             shortcuts = action_manager._shortcuts.get(action_name, [])
 
-            if new_shortcut not in shortcuts:
+            if Shortcut(new_shortcut).qt not in [
+                Shortcut(shortcut).qt for shortcut in shortcuts
+            ]:
                 continue
             # Shortcut is here (either same action or not), don't replace in settings.
             if action_name != current_action:
