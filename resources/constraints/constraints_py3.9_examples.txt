@@ -15,7 +15,7 @@ asciitree==0.3.3
     # via zarr
 asttokens==2.4.1
     # via stack-data
-attrs==24.1.0
+attrs==23.2.0
     # via
     #   hypothesis
     #   jsonschema
@@ -52,7 +52,7 @@ cycler==0.12.1
     # via matplotlib
 dask==2024.7.1
     # via napari (napari_repo/pyproject.toml)
-debugpy==1.8.3
+debugpy==1.8.2
     # via ipykernel
 decorator==5.1.1
     # via ipython
@@ -95,7 +95,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.108.5
+hypothesis==6.108.4
     # via napari (napari_repo/pyproject.toml)
 idna==3.7
     # via requests
@@ -106,7 +106,7 @@ imageio==2.34.2
     #   scikit-image
 imagesize==1.4.1
     # via sphinx
-importlib-metadata==8.2.0
+importlib-metadata==8.1.0
     # via
     #   build
     #   dask
@@ -167,7 +167,7 @@ lxml==5.2.2
     #   napari (napari_repo/pyproject.toml)
     #   lxml-html-clean
     #   nilearn
-lxml-html-clean==0.2.0
+lxml-html-clean==0.1.1
     # via lxml
 magicgui==0.8.3
     # via napari (napari_repo/pyproject.toml)
@@ -193,7 +193,7 @@ napari-console==0.0.9
     # via napari (napari_repo/pyproject.toml)
 napari-plugin-engine==0.2.0
     # via napari (napari_repo/pyproject.toml)
-napari-plugin-manager==0.1.0
+napari-plugin-manager==0.1.0a2
     # via napari (napari_repo/pyproject.toml)
 napari-svg==0.2.0
     # via napari (napari_repo/pyproject.toml)
@@ -207,7 +207,7 @@ nibabel==5.2.1
     # via nilearn
 nilearn==0.10.4
     # via -r resources/constraints/version_denylist_examples.txt
-npe2==0.7.7
+npe2==0.7.6
     # via
     #   napari (napari_repo/pyproject.toml)
     #   napari-plugin-manager
@@ -252,7 +252,7 @@ nvidia-cuda-nvrtc-cu12==12.1.105
     # via torch
 nvidia-cuda-runtime-cu12==12.1.105
     # via torch
-nvidia-cudnn-cu12==9.1.0.70
+nvidia-cudnn-cu12==8.9.2.26
     # via torch
 nvidia-cufft-cu12==11.0.2.54
     # via torch
@@ -266,7 +266,7 @@ nvidia-cusparse-cu12==12.1.0.106
     #   torch
 nvidia-nccl-cu12==2.20.5
     # via torch
-nvidia-nvjitlink-cu12==12.6.20
+nvidia-nvjitlink-cu12==12.5.82
     # via
     #   nvidia-cusolver-cu12
     #   nvidia-cusparse-cu12
@@ -310,7 +310,7 @@ pillow==10.4.0
     #   scikit-image
 pint==0.24.3
     # via napari (napari_repo/pyproject.toml)
-pip==24.2
+pip==24.1.2
     # via napari-plugin-manager
 platformdirs==4.2.2
     # via
@@ -407,7 +407,7 @@ pyside6-essentials==6.3.1
     # via
     #   pyside6
     #   pyside6-addons
-pytest==8.3.2
+pytest==8.3.1
     # via
     #   napari (napari_repo/pyproject.toml)
     #   pytest-cov
@@ -476,7 +476,7 @@ rich==13.7.1
     #   npe2
     #   pytest-pretty
     #   typer
-rpds-py==0.19.1
+rpds-py==0.19.0
     # via
     #   jsonschema
     #   referencing
@@ -509,17 +509,17 @@ sortedcontainers==2.4.0
     # via hypothesis
 sphinx==7.4.7
     # via numpydoc
-sphinxcontrib-applehelp==2.0.0
+sphinxcontrib-applehelp==1.0.8
     # via sphinx
-sphinxcontrib-devhelp==2.0.0
+sphinxcontrib-devhelp==1.0.6
     # via sphinx
-sphinxcontrib-htmlhelp==2.1.0
+sphinxcontrib-htmlhelp==2.0.6
     # via sphinx
 sphinxcontrib-jsmath==1.0.1
     # via sphinx
-sphinxcontrib-qthelp==2.0.0
+sphinxcontrib-qthelp==1.0.8
     # via sphinx
-sphinxcontrib-serializinghtml==2.0.0
+sphinxcontrib-serializinghtml==1.1.10
     # via sphinx
 stack-data==0.6.3
     # via ipython
@@ -532,13 +532,13 @@ sympy==1.13.1
     # via torch
 tabulate==0.9.0
     # via numpydoc
-tensorstore==0.1.64
+tensorstore==0.1.63
     # via
     #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari (napari_repo/pyproject.toml)
 threadpoolctl==3.5.0
     # via scikit-learn
-tifffile==2024.7.24
+tifffile==2024.7.21
     # via
     #   napari (napari_repo/pyproject.toml)
     #   scikit-image
@@ -557,13 +557,13 @@ toolz==0.12.1
     #   napari (napari_repo/pyproject.toml)
     #   dask
     #   partd
-torch==2.4.0
+torch==2.3.1
     # via napari (napari_repo/pyproject.toml)
 tornado==6.4.1
     # via
     #   ipykernel
     #   jupyter-client
-tqdm==4.66.5
+tqdm==4.66.4
     # via napari (napari_repo/pyproject.toml)
 traitlets==5.14.3
     # via
@@ -576,7 +576,7 @@ traitlets==5.14.3
     #   qtconsole
 triangle==20230923
     # via napari (napari_repo/pyproject.toml)
-triton==3.0.0
+triton==2.3.1
     # via torch
 typer==0.12.3
     # via npe2
@@ -608,7 +608,7 @@ wcwidth==0.2.13
     # via prompt-toolkit
 wrapt==1.16.0
     # via napari (napari_repo/pyproject.toml)
-xarray==2024.7.0
+xarray==2024.6.0
     # via napari (napari_repo/pyproject.toml)
 zarr==2.18.2
     # via
