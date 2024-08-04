@@ -195,7 +195,7 @@ napari-console==0.0.9
     # via napari (napari_repo/pyproject.toml)
 napari-plugin-engine==0.2.0
     # via napari (napari_repo/pyproject.toml)
-napari-plugin-manager==0.1.0a2
+napari-plugin-manager==0.1.0
     # via napari (napari_repo/pyproject.toml)
 napari-svg==0.2.0
     # via napari (napari_repo/pyproject.toml)
