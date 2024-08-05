@@ -295,14 +295,11 @@ class QtDims(QWidget):
         if axis >= self.dims.ndim:
             raise IndexError(trans._('axis argument out of range'))
 
-        if self.is_playing:
-            if self._animation_thread.axis == axis:
-                self.slider_widgets[axis]._update_play_settings(
-                    fps, loop_mode, frame_range
-                )
-                return
-
-            self.stop()
+        if self.is_playing and self._animation_thread.axis == axis:
+            self.slider_widgets[axis]._update_play_settings(
+                fps, loop_mode, frame_range
+            )
+            return
 
         # we want to avoid playing a dimension that does not have a slider
         # (like X or Y, or a third dimension in volume view.)
