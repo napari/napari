@@ -80,6 +80,7 @@ from napari.plugins._npe2 import index_npe1_adapters
 from napari.settings import get_settings
 from napari.utils import perf
 from napari.utils._proxies import PublicOnlyProxy
+from napari.utils.events import Event
 from napari.utils.io import imsave
 from napari.utils.misc import (
     in_ipython,
@@ -199,10 +200,20 @@ class _QtMainWindow(QMainWindow):
         self.status_thread.status_and_tooltip_changed.connect(
             self.set_status_and_tooltip
         )
-        self.status_thread.start()
+        if settings.appearance.update_status_based_on_layer:
+            self.status_thread.start()
         viewer.cursor.events.position.connect(
             self.status_thread.trigger_status_update
         )
+        settings.appearance.events.update_status_based_on_layer.connect(
+            self._toggle_status_thread
+        )
+
+    def _toggle_status_thread(self, value: Event):
+        if value.value:
+            self.status_thread.start()
+        else:
+            self.status_thread.terminate()
 
     def set_status_and_tooltip(
         self, status_and_tooltip: Optional[tuple[Union[str, dict], str]]

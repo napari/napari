@@ -1032,3 +1032,12 @@ def test_get_status_text():
         },
         'a: 1',
     )
+    viewer.update_status_from_cursor()
+    assert viewer.status == {
+        'coordinates': ' [1 2]: 0; a: 1',
+        'layer_base': 'Labels',
+        'layer_name': 'Labels',
+        'plugin': '',
+        'source_type': '',
+    }
+    assert viewer.tooltip.text == 'a: 1'

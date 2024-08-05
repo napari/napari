@@ -574,6 +574,14 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         return 'Ready', ''
 
+    def update_status_from_cursor(self):
+        """Update the status and tooltip from the cursor position."""
+        status = self._calc_status_from_cursor()
+        if status is not None:
+            self.status, self.tooltip.text = status
+        if (active := self.layers.selection.active) is not None:
+            self.help = active.help
+
     def _on_grid_change(self):
         """Arrange the current layers is a 2D grid."""
         extent = self._sliced_extent_world_augmented
