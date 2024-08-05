@@ -170,6 +170,7 @@ def test_change_play_axis(ref_view, qtbot):
     assert view.dims.is_playing
     with qtbot.waitSignal(view.dims._animation_thread.finished):
         view.dims.stop()
+    qtbot.waitUntiul(view.dims._animation_thread.isFinished)
 
 
 def test_change_play_fps(ref_view, qtbot):
@@ -184,3 +185,4 @@ def test_change_play_fps(ref_view, qtbot):
     assert view.dims.is_playing
     with qtbot.waitSignal(view.dims._animation_thread.finished):
         view.dims.stop()
+    qtbot.waitUntiul(view.dims._animation_thread.isFinished)
