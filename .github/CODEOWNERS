@@ -11,10 +11,16 @@ napari/qt/          @Czaki @jni
 napari/settings/    @Czaki @jni
 
 # specific layers
-napari/layers/image/    @Czaki @brisvag @andy-sweet
+napari/layers/image/    @Czaki @brisvag @andy-sweet @kephale
 napari/layers/labels/   @jni @Czaki @brisvag
-napari/layers/points/   @brisvag @kevinyamauchi @andy-sweet @DragaDoncila
+napari/layers/points/   @brisvag @kevinyamauchi @andy-sweet @DragaDoncila @kephale
 napari/layers/shapes/   @kevinyamauchi @DragaDoncila @melonora
 napari/layers/surface/  @brisvag @kevinyamauchi @Czaki
 napari/layers/tracks/   @jni @andy-sweet
 napari/layers/vectors/  @brisvag @kevinyamauchi @andy-sweet
+
+# docs
+examples/                            @melissawm @psobolewskiPhD
+.github/workflows/build_docs.yml     @melissawm @psobolewskiPhD
+.github/workflows/deploy_docs.yml    @melissawm @psobolewskiPhD
+.github/workflows/circleci.yml       @melissawm @psobolewskiPhD
