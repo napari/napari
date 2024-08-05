@@ -309,6 +309,9 @@ class QtDims(QWidget):
         if self._displayed_sliders[axis]:
             if self._animation_thread.isRunning():
                 self._animation_thread.slider.play_button._handle_stop()
+            self.slider_widgets[axis]._update_play_settings(
+                fps, loop_mode, frame_range
+            )
             self._animation_thread.set_slider(self.slider_widgets[axis])
             self._animation_thread.frame_requested.connect(self._set_frame)
             if not self._animation_thread.isRunning():

@@ -26,7 +26,8 @@ def make_worker(
     slider_widget.fps = fps
     slider_widget.frame_range = frame_range
 
-    worker = AnimationThread(slider_widget)
+    worker = AnimationThread()
+    worker.set_slider(slider_widget)
     worker._count = 0
     worker.nz = nz
 
@@ -95,7 +96,7 @@ def test_animation_thread_once(qtbot):
         qtbot, nframes=nframes, loop_mode=LoopMode.ONCE
     ) as worker:
         with qtbot.waitSignal(worker.finished, timeout=8000):
-            worker.work()
+            worker.start()
     assert worker.current == worker.nz
 
 
