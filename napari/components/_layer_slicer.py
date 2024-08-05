@@ -258,13 +258,7 @@ class _LayerSlicer:
         This should only be called from the main thread.
         """
         logger.debug('_LayerSlicer.shutdown')
-        # Replace with cancel_futures=True in shutdown when we drop support
-        # for Python 3.8
-        with self._lock_layers_to_task:
-            tasks = tuple(self._layers_to_task.values())
-        for task in tasks:
-            task.cancel()
-        self._executor.shutdown(wait=True)
+        self._executor.shutdown(wait=True, cancel_futures=True)
         self.events.disconnect()
         self.events.ready.disconnect()
 

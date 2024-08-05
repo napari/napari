@@ -69,7 +69,7 @@ class _PointSliceRequest:
         # Return early if no data
         if len(self.data) == 0:
             return _PointSliceResponse(
-                indices=np.array([]),
+                indices=np.array([], dtype=int),
                 scale=np.empty(0),
                 slice_input=self.slice_input,
                 request_id=self.id,
