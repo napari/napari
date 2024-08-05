@@ -1,8 +1,9 @@
+import threading
 from typing import TYPE_CHECKING, Optional
 from weakref import ref
 
 import numpy as np
-from qtpy.QtCore import QObject, Qt, QThread, QTimer, Signal, Slot
+from qtpy.QtCore import Qt, QThread, Signal, Slot
 from qtpy.QtGui import QIntValidator
 from qtpy.QtWidgets import (
     QApplication,
@@ -17,10 +18,9 @@ from qtpy.QtWidgets import (
     QPushButton,
     QWidget,
 )
-from superqt import QElidingLineEdit, ensure_object_thread
+from superqt import QElidingLineEdit
 
 from napari._qt.dialogs.qt_modal import QtPopup
-from napari._qt.qthreading import _new_worker_qthread
 from napari._qt.widgets.qt_scrollbar import ModifiedScrollBar
 from napari.settings import get_settings
 from napari.settings._constants import LoopMode
@@ -412,16 +412,22 @@ class QtDimSliderWidget(QWidget):
         if fps == 0:
             return None
 
-        worker, thread = _new_worker_qthread(
-            AnimationWorker,
-            self,
-            _start_thread=True,
-            _connect={'frame_requested': self.qt_dims._set_frame},
-        )
-        thread.finished.connect(self.qt_dims.cleaned_worker)
+        thread = AnimationWorker(self)
         thread.finished.connect(self.play_stopped)
+        thread.finished.connect(thread.deleteLater)
+        thread.frame_requested.connect(self.qt_dims._set_frame)
+        thread.start()
+
+        # worker, thread = _new_worker_qthread(
+        #     AnimationWorker,
+        #     self,
+        #     _start_thread=True,
+        #     _connect={'frame_requested': self.qt_dims._set_frame},
+        # )
+        # thread.finished.connect(self.qt_dims.cleaned_worker)
+        # thread.finished.connect(self.play_stopped)
         self.play_started.emit()
-        return worker, thread
+        return thread
 
     def resizeEvent(self, event):
         """Emit a signal to inform about a size change."""
@@ -585,7 +591,7 @@ class QtPlayButton(QPushButton):
         self.style().polish(self)
 
 
-class AnimationWorker(QObject):
+class AnimationWorker(QThread):
     """A thread to keep the animation timer independent of the main event loop.
 
     This prevents mouseovers and other events from causing animation lag. See
@@ -593,8 +599,6 @@ class AnimationWorker(QObject):
     """
 
     frame_requested = Signal(int, int)  # axis, point
-    finished = Signal()
-    started = Signal()
 
     def __init__(self, slider) -> None:
         # FIXME there are attributes defined outsid of __init__.
@@ -604,8 +608,7 @@ class AnimationWorker(QObject):
         self.dims = slider.dims
         self.axis = slider.axis
         self.loop_mode = slider.loop_mode
-
-        self.timer = QTimer()
+        self._waiter = threading.Event()
 
         slider.fps_changed.connect(self.set_fps)
         slider.mode_changed.connect(self.set_loop_mode)
@@ -620,8 +623,9 @@ class AnimationWorker(QObject):
         self.current = max(self.dims.current_step[self.axis], self.min_point)
         self.current = min(self.current, self.max_point)
 
-        self.timer.setSingleShot(True)
-        self.timer.timeout.connect(self.advance)
+    def run(self):
+        self.work()
+        self.exit(0)
 
     @property
     def interval(self):
@@ -630,7 +634,6 @@ class AnimationWorker(QObject):
     @interval.setter
     def interval(self, value):
         self._interval = value
-        self.timer.setInterval(int(self._interval))
 
     @Slot()
     def work(self):
@@ -642,18 +645,24 @@ class AnimationWorker(QObject):
                 self.frame_requested.emit(self.axis, self.min_point)
             elif self.step < 0 and self.current <= self.min_point + 1:
                 self.frame_requested.emit(self.axis, self.max_point)
-            self.timer.start()
+            # self.timer.start()
         else:
             # immediately advance one frame
             self.advance()
-        self.started.emit()
+        # next_time = time.time() + steep
+        self._waiter.clear()
+        self._waiter.wait(self.interval / 1000)
+        while not self._waiter.is_set():
+            self.advance()
+            self._waiter.wait(self.interval / 1000)
 
-    @ensure_object_thread
+    # @ensure_object_thread
     def _stop(self):
         """Stop the animation."""
-        if self.timer.isActive():
-            self.timer.stop()
-            self.finish()
+        self._waiter.set()
+        # if self.timer.isActive():
+        #     self.timer.stop()
+        #     self.finish()
 
     @Slot(float)
     def set_fps(self, fps):
@@ -755,25 +764,15 @@ class AnimationWorker(QObject):
                 return self.finish()
         with self.dims.events.current_step.blocker(self._on_axis_changed):
             self.frame_requested.emit(self.axis, self.current)
-        self.timer.start()
+        # self.timer.start()
         return None
 
     def finish(self):
         """Emit the finished event signal."""
-        self.finished.emit()
+        self._stop()
+        # self.finished.emit()
 
     def _on_axis_changed(self):
         """Update the current frame if the axis has changed."""
         # slot for external events to update the current frame
         self.current = self.dims.current_step[self.axis]
-
-    def moveToThread(self, thread: QThread):
-        """Move the animation to a given thread.
-
-        Parameters
-        ----------
-        thread : QThread
-            The thread to move the animation to.
-        """
-        super().moveToThread(thread)
-        self.timer.moveToThread(thread)

@@ -45,7 +45,6 @@ class QtDims(QWidget):
         self._displayed_sliders = []
 
         self._animation_thread = None
-        self._animation_worker = None
 
         # Initialises the layout:
         layout = QVBoxLayout()
@@ -294,7 +293,7 @@ class QtDims(QWidget):
             raise IndexError(trans._('axis argument out of range'))
 
         if self.is_playing:
-            if self._animation_worker.axis == axis:
+            if self._animation_thread.axis == axis:
                 self.slider_widgets[axis]._update_play_settings(
                     fps, loop_mode, frame_range
                 )
@@ -305,11 +304,9 @@ class QtDims(QWidget):
         # we want to avoid playing a dimension that does not have a slider
         # (like X or Y, or a third dimension in volume view.)
         if self._displayed_sliders[axis]:
-            work = self.slider_widgets[axis]._play(fps, loop_mode, frame_range)
-            if work:
-                self._animation_worker, self._animation_thread = work
-            else:
-                self._animation_worker, self._animation_thread = None, None
+            self._animation_thread = self.slider_widgets[axis]._play(
+                fps, loop_mode, frame_range
+            )
         else:
             warnings.warn(
                 trans._(
@@ -321,14 +318,13 @@ class QtDims(QWidget):
     @Slot()
     def stop(self):
         """Stop axis animation"""
-        if self._animation_worker is not None:
+        if self._animation_thread is not None:
             # Thread will be stop by the worker
-            self._animation_worker._stop()
+            self._animation_thread._stop()
 
     @Slot()
     def cleaned_worker(self):
         self._animation_thread = None
-        self._animation_worker = None
         self.dims._play_ready = True
 
     @property

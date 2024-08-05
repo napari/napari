@@ -3,6 +3,7 @@ import sys
 import numpy as np
 import pytest
 from qtpy.QtCore import QPoint, Qt
+from qtpy.QtWidgets import QApplication
 
 from napari._app_model import get_app
 from napari._qt._qapp_model.qactions._view import (
@@ -132,8 +133,13 @@ def test_toggle_play(make_napari_viewer, qtbot):
     # Assert action triggers play
     app.commands.execute_command(action_id)
     qtbot.waitUntil(lambda: viewer.window._qt_viewer.dims.is_playing)
+    # assert viewer.window._qt_viewer.dims._animation_thread.interval < 5
     # Assert action stops play
-    app.commands.execute_command(action_id)
+    with qtbot.waitSignal(
+        viewer.window._qt_viewer.dims._animation_thread.finished
+    ):
+        app.commands.execute_command(action_id)
+        QApplication.processEvents()
     qtbot.waitUntil(lambda: not viewer.window._qt_viewer.dims.is_playing)
 
 
