@@ -105,7 +105,7 @@ pyside = [
     "napari[pyside2]"
 ]
 pyqt5 = [
-    "PyQt5>=5.12.3,!=5.15.0",
+    "PyQt5>=5.13.2,!=5.15.0",
 ]
 pyqt = [
     "napari[pyqt5]"
