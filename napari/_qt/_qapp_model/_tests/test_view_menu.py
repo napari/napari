@@ -133,7 +133,6 @@ def test_toggle_play(make_napari_viewer, qtbot):
     # Assert action triggers play
     app.commands.execute_command(action_id)
     qtbot.waitUntil(lambda: viewer.window._qt_viewer.dims.is_playing)
-    # assert viewer.window._qt_viewer.dims._animation_thread.interval < 5
     # Assert action stops play
     with qtbot.waitSignal(
         viewer.window._qt_viewer.dims._animation_thread.finished

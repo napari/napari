@@ -418,14 +418,6 @@ class QtDimSliderWidget(QWidget):
         thread.frame_requested.connect(self.qt_dims._set_frame)
         thread.start()
 
-        # worker, thread = _new_worker_qthread(
-        #     AnimationWorker,
-        #     self,
-        #     _start_thread=True,
-        #     _connect={'frame_requested': self.qt_dims._set_frame},
-        # )
-        # thread.finished.connect(self.qt_dims.cleaned_worker)
-        # thread.finished.connect(self.play_stopped)
         self.play_started.emit()
         return thread
 
@@ -656,13 +648,9 @@ class AnimationWorker(QThread):
             self.advance()
             self._waiter.wait(self.interval / 1000)
 
-    # @ensure_object_thread
     def _stop(self):
         """Stop the animation."""
         self._waiter.set()
-        # if self.timer.isActive():
-        #     self.timer.stop()
-        #     self.finish()
 
     @Slot(float)
     def set_fps(self, fps):
@@ -770,7 +758,6 @@ class AnimationWorker(QThread):
     def finish(self):
         """Emit the finished event signal."""
         self._stop()
-        # self.finished.emit()
 
     def _on_axis_changed(self):
         """Update the current frame if the axis has changed."""
