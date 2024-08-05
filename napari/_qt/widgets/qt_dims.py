@@ -313,6 +313,9 @@ class QtDims(QWidget):
             self._animation_thread.frame_requested.connect(self._set_frame)
             if not self._animation_thread.isRunning():
                 self._animation_thread.start()
+            else:
+                self._animation_thread.slider.play_button._handle_start()
+
         else:
             warnings.warn(
                 trans._(
