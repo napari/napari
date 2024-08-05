@@ -371,56 +371,6 @@ class QtDimSliderWidget(QWidget):
         if frame_range is not None:
             self.frame_range = frame_range
 
-    def _play(
-        self,
-        fps: Optional[float] = None,
-        loop_mode: Optional[str] = None,
-        frame_range: Optional[tuple[int, int]] = None,
-    ):
-        """Animate (play) axis. Same API as QtDims.play()
-
-        Putting the AnimationWorker logic here makes it easier to call
-        QtDims.play(axis), or hit the keybinding, and have each axis remember
-        it's own settings (fps, mode, etc...).
-
-        Parameters
-        ----------
-        fps : float
-            Frames per second for animation.
-        loop_mode : napari._qt._constants.LoopMode
-            Loop mode for animation.
-            Available options for the loop mode string enumeration are:
-            - LoopMode.ONCE
-                Animation will stop once movie reaches the max frame
-                (if fps > 0) or the first frame (if fps < 0).
-            - LoopMode.LOOP
-                Movie will return to the first frame after reaching
-                the last frame, looping continuously until stopped.
-            - LoopMode.BACK_AND_FORTH
-                Movie will loop continuously until stopped,
-                reversing direction when the maximum or minimum frame
-                has been reached.
-        frame_range : tuple(int, int)
-            Frame range as tuple/list with range (minimum_frame, maximum_frame)
-        """
-
-        # having this here makes sure that using the QtDims.play() API
-        # keeps the play preferences synchronized with the play_button.popup
-        self._update_play_settings(fps, loop_mode, frame_range)
-
-        # setting fps to 0 just stops the animation
-        if fps == 0:
-            return None
-
-        thread = AnimationThread(self)
-        thread.finished.connect(self.play_stopped)
-        thread.finished.connect(thread.deleteLater)
-        thread.frame_requested.connect(self.qt_dims._set_frame)
-        thread.start()
-
-        self.play_started.emit()
-        return thread
-
     def resizeEvent(self, event):
         """Emit a signal to inform about a size change."""
         self.size_changed.emit()
