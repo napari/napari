@@ -120,6 +120,9 @@ class Ellipse(Shape):
         self._edge_vertices = centers
         self._edge_offsets = offsets
         self._edge_triangles = triangles
-        self._bounding_box[:, self.dims_displayed] = (
-            self._bounding_box[:, self.dims_displayed] @ transform.T
+        self._bounding_box = np.array(
+            [
+                np.min(self._data, axis=0),
+                np.max(self._data, axis=0),
+            ]
         )

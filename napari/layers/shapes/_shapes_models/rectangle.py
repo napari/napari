@@ -68,7 +68,7 @@ class Rectangle(Shape):
             )
 
         self._data = data
-        self._bounding_box = np.round(
+        self._bounding_box = np.array(
             [
                 np.min(data, axis=0),
                 np.max(data, axis=0),
