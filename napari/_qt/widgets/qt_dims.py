@@ -6,7 +6,10 @@ from qtpy.QtCore import Slot
 from qtpy.QtGui import QFont, QFontMetrics
 from qtpy.QtWidgets import QSizePolicy, QVBoxLayout, QWidget
 
-from napari._qt.widgets.qt_dims_slider import QtDimSliderWidget
+from napari._qt.widgets.qt_dims_slider import (
+    AnimationThread,
+    QtDimSliderWidget,
+)
 from napari.components.dims import Dims
 from napari.settings._constants import LoopMode
 from napari.utils.translations import trans
@@ -44,7 +47,7 @@ class QtDims(QWidget):
         # True / False if slider is or is not displayed
         self._displayed_sliders = []
 
-        self._animation_thread = None
+        self._animation_thread = AnimationThread(self)
 
         # Initialises the layout:
         layout = QVBoxLayout()
@@ -304,9 +307,12 @@ class QtDims(QWidget):
         # we want to avoid playing a dimension that does not have a slider
         # (like X or Y, or a third dimension in volume view.)
         if self._displayed_sliders[axis]:
-            self._animation_thread = self.slider_widgets[axis]._play(
-                fps, loop_mode, frame_range
-            )
+            if self._animation_thread.isRunning():
+                self._animation_thread.slider.play_button._handle_stop()
+            self._animation_thread.set_slider(self.slider_widgets[axis])
+            self._animation_thread.frame_requested.connect(self._set_frame)
+            if not self._animation_thread.isRunning():
+                self._animation_thread.start()
         else:
             warnings.warn(
                 trans._(
@@ -318,22 +324,13 @@ class QtDims(QWidget):
     @Slot()
     def stop(self):
         """Stop axis animation"""
-        if self._animation_thread is not None:
-            # Thread will be stop by the worker
-            self._animation_thread._stop()
-
-    @Slot()
-    def cleaned_worker(self):
-        self._animation_thread = None
-        self.dims._play_ready = True
+        self._animation_thread._stop()
 
     @property
     def is_playing(self):
         """Return True if any axis is currently animated."""
         try:
-            return (
-                self._animation_thread and self._animation_thread.isRunning()
-            )
+            return not self._animation_thread._waiter.is_set()
         except RuntimeError as e:  # pragma: no cover
             if (
                 'wrapped C/C++ object of type' not in e.args[0]

@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Optional
 from weakref import ref
 
 import numpy as np
-from qtpy.QtCore import Qt, QThread, Signal, Slot
+from qtpy.QtCore import QObject, Qt, QThread, Signal, Slot
 from qtpy.QtGui import QIntValidator
 from qtpy.QtWidgets import (
     QApplication,
@@ -412,7 +412,7 @@ class QtDimSliderWidget(QWidget):
         if fps == 0:
             return None
 
-        thread = AnimationWorker(self)
+        thread = AnimationThread(self)
         thread.finished.connect(self.play_stopped)
         thread.finished.connect(thread.deleteLater)
         thread.frame_requested.connect(self.qt_dims._set_frame)
@@ -583,7 +583,7 @@ class QtPlayButton(QPushButton):
         self.style().polish(self)
 
 
-class AnimationWorker(QThread):
+class AnimationThread(QThread):
     """A thread to keep the animation timer independent of the main event loop.
 
     This prevents mouseovers and other events from causing animation lag. See
@@ -592,32 +592,45 @@ class AnimationWorker(QThread):
 
     frame_requested = Signal(int, int)  # axis, point
 
-    def __init__(self, slider) -> None:
+    def __init__(self, parent: Optional[QObject] = None) -> None:
         # FIXME there are attributes defined outsid of __init__.
-        super().__init__()
+        super().__init__(parent=parent)
         self._interval = 1
-        self.slider = slider
-        self.dims = slider.dims
-        self.axis = slider.axis
-        self.loop_mode = slider.loop_mode
+        self.slider = None
+        # self.dims = slider.dims
+        # self.axis = slider.axis
+        # self.loop_mode = slider.loop_mode
         self._waiter = threading.Event()
-
-        slider.fps_changed.connect(self.set_fps)
-        slider.mode_changed.connect(self.set_loop_mode)
-        slider.range_changed.connect(self.set_frame_range)
-        self.set_fps(self.slider.fps)
-        self.set_frame_range(slider.frame_range)
 
         # after dims.set_current_step is called, it will emit a dims.events.current_step()
         # we use this to update this threads current frame (in case it
         # was some other event that updated the axis)
-        self.dims.events.current_step.connect(self._on_axis_changed)
-        self.current = max(self.dims.current_step[self.axis], self.min_point)
-        self.current = min(self.current, self.max_point)
 
     def run(self):
         self.work()
-        self.exit(0)
+
+    def set_slider(self, slider):
+        prev_slider = self.slider
+        self.slider = slider
+        self.set_fps(self.slider.fps)
+        self.set_frame_range(slider.frame_range)
+        if prev_slider is not None:
+            prev_slider.fps_changed.disconnect(self.set_fps)
+            prev_slider.range_changed.disconnect(self.set_frame_range)
+            prev_slider.dims.events.current_step.disconnect(
+                self._on_axis_changed
+            )
+            self.finished.disconnect(prev_slider.play_button._handle_stop)
+            self.started.disconnect(prev_slider.play_button._handle_start)
+        slider.fps_changed.connect(self.set_fps)
+        slider.range_changed.connect(self.set_frame_range)
+        slider.dims.events.current_step.connect(self._on_axis_changed)
+        self.finished.connect(slider.play_button._handle_stop)
+        self.started.connect(slider.play_button._handle_start)
+        self.current = max(
+            slider.dims.current_step[slider.axis], self.min_point
+        )
+        self.current = min(self.current, self.max_point)
 
     @property
     def interval(self):
@@ -698,28 +711,6 @@ class AnimationWorker(QThread):
             )
         self.max_point += 1  # range is inclusive
 
-    @Slot(str)
-    def set_loop_mode(self, mode):
-        """Set the loop mode for the animation.
-
-        Parameters
-        ----------
-        mode : str
-            Loop mode for animation.
-            Available options for the loop mode string enumeration are:
-            - LoopMode.ONCE
-                Animation will stop once movie reaches the max frame
-                (if fps > 0) or the first frame (if fps < 0).
-            - LoopMode.LOOP
-                Movie will return to the first frame after reaching
-                the last frame, looping continuously until stopped.
-            - LoopMode.BACK_AND_FORTH
-                Movie will loop continuously until stopped,
-                reversing direction when the maximum or minimum frame
-                has been reached.
-        """
-        self.loop_mode = LoopMode(mode)
-
     @Slot()
     def advance(self):
         """Advance the current frame in the animation.
@@ -754,6 +745,18 @@ class AnimationWorker(QThread):
             self.frame_requested.emit(self.axis, self.current)
         # self.timer.start()
         return None
+
+    @property
+    def loop_mode(self):
+        return self.slider.loop_mode
+
+    @property
+    def axis(self):
+        return self.slider.axis
+
+    @property
+    def dims(self):
+        return self.slider.dims
 
     def finish(self):
         """Emit the finished event signal."""

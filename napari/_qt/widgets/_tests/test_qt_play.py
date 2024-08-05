@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 
 from napari._qt.widgets.qt_dims import QtDims
-from napari._qt.widgets.qt_dims_slider import AnimationWorker
+from napari._qt.widgets.qt_dims_slider import AnimationThread
 from napari.components import Dims
 from napari.settings._constants import LoopMode
 
@@ -26,7 +26,7 @@ def make_worker(
     slider_widget.fps = fps
     slider_widget.frame_range = frame_range
 
-    worker = AnimationWorker(slider_widget)
+    worker = AnimationThread(slider_widget)
     worker._count = 0
     worker.nz = nz
 
