@@ -163,14 +163,13 @@ def test_change_play_axis(ref_view, qtbot):
     view = ref_view()
     with qtbot.waitSignal(view.dims._animation_thread.started):
         view.dims.play(0, 20)
-    assert view.dims.is_playing
+    qtbot.waitUntil(lambda: view.dims.is_playing)
     assert view.dims._animation_thread.slider.axis == 0
     view.dims.play(1, 20)
     assert view.dims._animation_thread.slider.axis == 1
     assert view.dims.is_playing
     with qtbot.waitSignal(view.dims._animation_thread.finished):
         view.dims.stop()
-    qtbot.waitUntil(view.dims._animation_thread.isFinished)
 
 
 def test_change_play_fps(ref_view, qtbot):
@@ -178,11 +177,10 @@ def test_change_play_fps(ref_view, qtbot):
     view = ref_view()
     with qtbot.waitSignal(view.dims._animation_thread.started):
         view.dims.play(0, 20)
-    assert view.dims.is_playing
+    qtbot.waitUntil(lambda: view.dims.is_playing)
     assert view.dims._animation_thread.slider.fps == 20
     view.dims.play(0, 30)
     assert view.dims._animation_thread.slider.fps == 30
     assert view.dims.is_playing
     with qtbot.waitSignal(view.dims._animation_thread.finished):
         view.dims.stop()
-    qtbot.waitUntil(view.dims._animation_thread.isFinished)
