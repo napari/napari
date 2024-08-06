@@ -141,6 +141,29 @@ class Viewer(ViewerModel):
             scale=scale_factor,
             flash=flash,
         )
+    
+
+    def export_rois(self, shapes_data, paths: list[str] | None = None):
+        
+        """Export the shapes rois with storage file paths
+        
+        Parameters
+        ----------
+        shapes_data: napari.layers.shape
+            A napari shapes layer
+        paths: list
+            The list to store file path for shapes roi
+            
+        Returns
+        -------
+        roi_dict: dictionary
+            The dictionary with index and file paths for each shapes roi
+        """
+
+        roi_dict = self.window.export_rois(shapes_data, paths)
+        
+        return roi_dict
+
 
     def screenshot(
         self,
@@ -275,21 +298,24 @@ def export_rois(shapes_data, paths: list[str] | None = None):
               The dictionary with index and file paths for each shapes roi
        
        """
-       roi_dict = {}
-       start_camera_center = viewer.camera.center
-       start_camera_zoom = viewer.camera.zoom
-       prev_size = viewer.window.qt_viewer.canvas.size
-       for index, shape in enumerate(shapes_data):
-              center_coord, height, width = get_center_bbox(shape)
-              viewer.camera.center = center_coord             
-              viewer.window.qt_viewer.canvas.size = (int(height), int(width))
 
-              viewer.camera.zoom = 1.0
-              path = paths[index] if paths is not None else None
-              roi_dict[index] = viewer.screenshot(path=path)
 
-       viewer.window.qt_viewer.canvas.size = prev_size
-       viewer.camera.center = start_camera_center
-       viewer.camera.zoom = start_camera_zoom
+       
+       #roi_dict = {}
+       #start_camera_center = viewer.camera.center
+       #start_camera_zoom = viewer.camera.zoom
+       #prev_size = viewer.window.qt_viewer.canvas.size
+       #for index, shape in enumerate(shapes_data):
+        #      center_coord, height, width = get_center_bbox(shape)
+         #     viewer.camera.center = center_coord             
+          #    viewer.window.qt_viewer.canvas.size = (int(height), int(width))
 
-       return roi_dict
+           #   viewer.camera.zoom = 1.0
+            #  path = paths[index] if paths is not None else None
+             # roi_dict[index] = viewer.screenshot(path=path)
+
+       #viewer.window.qt_viewer.canvas.size = prev_size
+       #viewer.camera.center = start_camera_center
+       #viewer.camera.zoom = start_camera_zoom
+
+       #return roi_dict

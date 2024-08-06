@@ -90,6 +90,7 @@ from napari.utils.misc import (
 from napari.utils.notifications import Notification
 from napari.utils.theme import _themes, get_system_theme
 from napari.utils.translations import trans
+from napari.utils.geometry import get_center_bbox
 
 _sentinel = object()
 
@@ -1730,6 +1731,46 @@ class Window:
             imsave(path, img)
         return img
 
+
+    def export_rois(self, shapes_data, paths: list[str] | None = None):
+        
+        """Export the shapes rois with storage file paths
+
+       Parameters
+       ----------
+       shapes_data: napari.layers.shape
+              A napari shapes layer
+       paths: list
+              The list to store file path for shapes roi
+       
+       Returns
+       -------
+       roi_dict: dictionary
+              The dictionary with index and file paths for each shapes roi
+       
+       """
+        roi_dict = {}
+        camera = self._qt_viewer.viewer.camera
+        start_camera_center = camera.center
+        start_camera_zoom = camera.zoom
+        canvas = self._qt_viewer.canvas
+        prev_size = canvas.size
+        
+        for index, shape in enumerate(shapes_data):
+              center_coord, height, width = get_center_bbox(shape)
+              camera.center = center_coord             
+              canvas.size = (int(height), int(width))
+
+              camera.zoom = 1.0
+              path = paths[index] if paths is not None else None
+              roi_dict[index] = self.screenshot(path=path, canvas_only=True)
+
+              canvas.size = prev_size
+              camera.center = start_camera_center
+              camera.zoom = start_camera_zoom
+
+        return roi_dict 
+
     def screenshot(
         self, path=None, size=None, scale=None, flash=True, canvas_only=False
     ):
@@ -1858,4 +1899,5 @@ def _instantiate_dock_widget(wdg_cls, viewer: 'Viewer'):
 
     # instantiate the widget
     return wdg_cls(**kwargs)
+
 
