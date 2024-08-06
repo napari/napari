@@ -166,7 +166,7 @@ markdown-it-py==3.0.0
     # via rich
 markupsafe==2.1.5
     # via jinja2
-matplotlib==3.9.1
+matplotlib==3.9.0
     # via napari (napari_repo/pyproject.toml)
 matplotlib-inline==0.1.7
     # via
