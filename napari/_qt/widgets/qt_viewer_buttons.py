@@ -1,10 +1,11 @@
 import warnings
 from functools import wraps
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from app_model.expressions import get_context
 from qtpy.QtCore import QPoint, Qt
 from qtpy.QtWidgets import (
+    QAction,
     QFormLayout,
     QFrame,
     QHBoxLayout,
@@ -100,16 +101,43 @@ class QtLayerButtons(QFrame):
         empty_widget.setSizePolicy(
             QSizePolicy.Expanding, QSizePolicy.Preferred
         )
-        self.insertWidget(delete_action, empty_widget)
+        self.empty_action = self.insert_toolbar_widget(
+            empty_widget, before='napari.viewer.delete_selected_layers'
+        )
 
         # Setup layout
-        layout = QVBoxLayout()
+        layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.toolbar)
         self.setLayout(layout)
 
-    def insertWidget(self, before, widget):
-        return self.toolbar.insertWidget(before, widget)
+    def insert_toolbar_widget(
+        self, widget: QWidget, before: Optional[str] = 'empty'
+    ) -> QAction:
+        """
+        Insert a widget before the widget representing the action with `before` id.
+
+        To add a widget over the left side of the empty space use `empty` as `before` param.
+
+        Parameters
+        ----------
+        widget : QWidget
+            The QWidget instance to add to the toolbar.
+        before : Optional[str], optional
+            The id of the action. The default is 'empty' which represents the empty space widget.
+
+        Returns
+        -------
+        QAction
+            The QAction instance related with the added widget.
+
+        """
+        before_action = (
+            self._menu.findAction(before)
+            if before != 'empty'
+            else self.empty_action
+        )
+        return self.toolbar.insertWidget(before_action, widget)
 
 
 class QtViewerButtons(QFrame):
@@ -210,7 +238,7 @@ class QtViewerButtons(QFrame):
         self.ndisplayButton = ndisplay_tool
 
         # Setup layout
-        layout = QVBoxLayout()
+        layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.toolbar)
         self.setLayout(layout)
@@ -429,6 +457,7 @@ class QtViewerPushButton(QPushButton):
     def __init__(
         self, button_name: str, tooltip: str = '', slot=None, action: str = ''
     ) -> None:
+        # TODO: Should the class be marked as deprecated or be changed to use the app-model command registry (`execute_command`)?
         super().__init__()
 
         self.setToolTip(tooltip or button_name)
