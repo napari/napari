@@ -28,6 +28,24 @@ def _get_viewer_grid_status(viewer: Union['ViewerModel', 'Viewer']) -> bool:
     return viewer.grid.enabled
 
 
+def add_new_points(viewer: Union['ViewerModel', 'Viewer']) -> None:
+    viewer.add_points(
+        ndim=max(viewer.dims.ndim, 2),
+        scale=viewer.layers.extent.step,
+    )
+
+
+def add_new_shapes(viewer: Union['ViewerModel', 'Viewer']) -> None:
+    viewer.add_shapes(
+        ndim=max(viewer.dims.ndim, 2),
+        scale=viewer.layers.extent.step,
+    )
+
+
+def add_new_labels(viewer: Union['ViewerModel', 'Viewer']) -> None:
+    viewer._new_labels()
+
+
 Q_VIEWER_ACTIONS: list[Action] = [
     Action(
         id='napari.viewer.toggle_console_visibility',
@@ -42,7 +60,7 @@ Q_VIEWER_ACTIONS: list[Action] = [
             {'primary': KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyC}
         ],
         tooltip=trans._(
-            'Show/Hide IPython console (only available when napari started as standalone application)'
+            'Show/Hide IPython console (only available when napari started as standalone application).'
         ),
         enablement=not (in_ipython() or in_jupyter() or in_python_repl()),
     ),
@@ -116,5 +134,37 @@ Q_VIEWER_ACTIONS: list[Action] = [
         callback=_viewer_key_bindings.reset_view,
         keybindings=[{'primary': KeyMod.CtrlCmd | KeyCode.KeyR}],
         tooltip=trans._('Reset view to original state.'),
+    ),
+]
+
+Q_VIEWER_NEW_DELETE_ACTIONS: list[Action] = [
+    Action(
+        id='napari.viewer.new_layer.new_points',
+        title=trans._(''),
+        menus=[{'id': MenuId.VIEWER_NEW_DELETE_LAYER}],
+        callback=add_new_points,
+        tooltip=trans._('New points layer.'),
+    ),
+    Action(
+        id='napari.viewer.new_layer.new_shapes',
+        title=trans._(''),
+        menus=[{'id': MenuId.VIEWER_NEW_DELETE_LAYER}],
+        callback=add_new_shapes,
+        tooltip=trans._('New shapes layer.'),
+    ),
+    Action(
+        id='napari.viewer.new_layer.new_labels',
+        title=trans._(''),
+        menus=[{'id': MenuId.VIEWER_NEW_DELETE_LAYER}],
+        callback=add_new_labels,
+        tooltip=trans._('New labels layer.'),
+    ),
+    Action(
+        id='napari.viewer.delete_selected_layers',
+        title=trans._(''),
+        menus=[{'id': MenuId.VIEWER_NEW_DELETE_LAYER}],
+        callback=_viewer_key_bindings.delete_selected_layers,
+        keybindings=[{'primary': KeyMod.CtrlCmd | KeyCode.Delete}],
+        tooltip=trans._('Delete selected layers.'),
     ),
 ]

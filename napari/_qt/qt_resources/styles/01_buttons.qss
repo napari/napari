@@ -10,15 +10,15 @@ QToolBar > QToolButton, QtViewerPushButton{
 
 }
 
-QtViewerPushButton[mode="delete_button"] {
+QToolButton[mode="delete_button"], QtViewerPushButton[mode="delete_button"] {
    image: url("theme_{{ id }}:/delete.svg");
 }
 
-QtViewerPushButton[mode="new_points"] {
+QToolButton[mode="new_points"], QtViewerPushButton[mode="new_points"] {
   image: url("theme_{{ id }}:/new_points.svg");
 }
 
-QtViewerPushButton[mode="new_shapes"] {
+QToolButton[mode="new_shapes"], QtViewerPushButton[mode="new_shapes"] {
   image: url("theme_{{ id }}:/new_shapes.svg");
 }
 
@@ -26,7 +26,7 @@ QtViewerPushButton[mode="warning"] {
   image: url("theme_{{ id }}:/warning.svg");
 }
 
-QtViewerPushButton[mode="new_labels"] {
+QToolButton[mode="new_labels"], QtViewerPushButton[mode="new_labels"] {
   image: url("theme_{{ id }}:/new_labels.svg");
 }
 

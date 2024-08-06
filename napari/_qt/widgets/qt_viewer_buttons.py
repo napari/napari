@@ -1,5 +1,5 @@
 import warnings
-from functools import partial, wraps
+from functools import wraps
 from typing import TYPE_CHECKING
 
 from app_model.expressions import get_context
@@ -10,8 +10,10 @@ from qtpy.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QPushButton,
+    QSizePolicy,
     QSlider,
     QVBoxLayout,
+    QWidget,
 )
 
 from napari._app_model.constants._menus import MenuId
@@ -51,13 +53,13 @@ class QtLayerButtons(QFrame):
 
     Attributes
     ----------
-    deleteButton : QtDeleteButton
+    deleteButton : qtpy.QtWidgets.QToolButton
         Button to delete selected layers.
-    newLabelsButton : QtViewerPushButton
+    newLabelsButton : qtpy.QtWidgets.QToolButton
         Button to add new Label layer.
-    newPointsButton : QtViewerPushButton
+    newPointsButton : qtpy.QtWidgets.QToolButton
         Button to add new Points layer.
-    newShapesButton : QtViewerPushButton
+    newShapesButton : qtpy.QtWidgets.QToolButton
         Button to add new Shapes layer.
     viewer : napari.components.ViewerModel
         Napari viewer containing the rendered scene, layers, and controls.
@@ -68,35 +70,60 @@ class QtLayerButtons(QFrame):
 
         self.viewer = viewer
 
-        self.deleteButton = QtViewerPushButton(
-            'delete_button', action='napari:delete_selected_layers'
+        # Setup toolbar
+        self._menu = build_qmodel_menu(
+            MenuId.VIEWER_NEW_DELETE_LAYER, parent=self
+        )
+        self.toolbar = build_qmodel_toolbar(
+            MenuId.VIEWER_NEW_DELETE_LAYER,
+            title='Layer creation controls',
+            parent=self,
         )
 
-        self.newPointsButton = QtViewerPushButton(
-            'new_points',
-            trans._('New points layer'),
-            partial(add_new_points, self.viewer),
+        # TODO: Insert empty widget/spacer after new labels button/before delete button
+        # Setup controls/buttons
+        new_points_action = self._menu.findAction(
+            'napari.viewer.new_layer.new_points'
         )
+        new_points_tool = self.toolbar.widgetForAction(new_points_action)
+        new_points_tool.setProperty('mode', 'new_points')
+        self.newPointsButton = new_points_tool
 
-        self.newShapesButton = QtViewerPushButton(
-            'new_shapes',
-            trans._('New shapes layer'),
-            partial(add_new_shapes, self.viewer),
+        new_shapes_action = self._menu.findAction(
+            'napari.viewer.new_layer.new_shapes'
         )
-        self.newLabelsButton = QtViewerPushButton(
-            'new_labels',
-            trans._('New labels layer'),
-            self.viewer._new_labels,
-        )
+        new_shapes_tool = self.toolbar.widgetForAction(new_shapes_action)
+        new_shapes_tool.setProperty('mode', 'new_shapes')
+        self.newShapesButton = new_shapes_tool
 
-        layout = QHBoxLayout()
+        new_labels_action = self._menu.findAction(
+            'napari.viewer.new_layer.new_labels'
+        )
+        new_labels_tool = self.toolbar.widgetForAction(new_labels_action)
+        new_labels_tool.setProperty('mode', 'new_labels')
+        self.newLabelsButton = new_labels_tool
+
+        delete_action = self._menu.findAction(
+            'napari.viewer.delete_selected_layers'
+        )
+        delete_tool = self.toolbar.widgetForAction(delete_action)
+        delete_tool.setProperty('mode', 'delete_button')
+        self.deleteButton = delete_tool
+
+        empty_widget = QWidget(self)
+        empty_widget.setSizePolicy(
+            QSizePolicy.Expanding, QSizePolicy.Preferred
+        )
+        self.insertWidget(delete_action, empty_widget)
+
+        # Setup layout
+        layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self.newPointsButton)
-        layout.addWidget(self.newShapesButton)
-        layout.addWidget(self.newLabelsButton)
-        layout.addStretch(0)
-        layout.addWidget(self.deleteButton)
+        layout.addWidget(self.toolbar)
         self.setLayout(layout)
+
+    def insertWidget(self, before, widget):
+        return self.toolbar.insertWidget(before, widget)
 
 
 class QtViewerButtons(QFrame):
