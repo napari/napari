@@ -20,7 +20,7 @@ napari/layers/tracks/   @jni @andy-sweet
 napari/layers/vectors/  @brisvag @kevinyamauchi @andy-sweet
 
 # docs
-examples/                            @melissawm @psobolewskiPhD
-.github/workflows/build_docs.yml     @melissawm @psobolewskiPhD
+examples/                            @melissawm @psobolewskiPhD @lucyleeow
+.github/workflows/build_docs.yml     @melissawm @psobolewskiPhD @lucyleeow
 .github/workflows/deploy_docs.yml    @melissawm @psobolewskiPhD
 .github/workflows/circleci.yml       @melissawm @psobolewskiPhD
