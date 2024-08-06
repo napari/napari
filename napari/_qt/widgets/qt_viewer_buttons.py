@@ -29,20 +29,6 @@ if TYPE_CHECKING:
     from napari.viewer import ViewerModel
 
 
-def add_new_points(viewer):
-    viewer.add_points(
-        ndim=max(viewer.dims.ndim, 2),
-        scale=viewer.layers.extent.step,
-    )
-
-
-def add_new_shapes(viewer):
-    viewer.add_shapes(
-        ndim=max(viewer.dims.ndim, 2),
-        scale=viewer.layers.extent.step,
-    )
-
-
 class QtLayerButtons(QFrame):
     """Button controls for napari layers.
 

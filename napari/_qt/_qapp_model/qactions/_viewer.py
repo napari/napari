@@ -29,14 +29,14 @@ def _get_viewer_grid_status(viewer: Union['ViewerModel', 'Viewer']) -> bool:
 
 
 def add_new_points(viewer: Union['ViewerModel', 'Viewer']) -> None:
-    viewer.add_points(
+    viewer.add_points(  # type: ignore[union-attr]
         ndim=max(viewer.dims.ndim, 2),
         scale=viewer.layers.extent.step,
     )
 
 
 def add_new_shapes(viewer: Union['ViewerModel', 'Viewer']) -> None:
-    viewer.add_shapes(
+    viewer.add_shapes(  # type: ignore[union-attr]
         ndim=max(viewer.dims.ndim, 2),
         scale=viewer.layers.extent.step,
     )
