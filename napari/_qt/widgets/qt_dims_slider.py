@@ -547,14 +547,7 @@ class AnimationThread(QThread):
         super().__init__(parent=parent)
         self._interval = 1
         self.slider = None
-        # self.dims = slider.dims
-        # self.axis = slider.axis
-        # self.loop_mode = slider.loop_mode
         self._waiter = threading.Event()
-
-        # after dims.set_current_step is called, it will emit a dims.events.current_step()
-        # we use this to update this threads current frame (in case it
-        # was some other event that updated the axis)
 
     def run(self):
         self.work()
@@ -600,11 +593,9 @@ class AnimationThread(QThread):
                 self.frame_requested.emit(self.axis, self.min_point)
             elif self.step < 0 and self.current <= self.min_point + 1:
                 self.frame_requested.emit(self.axis, self.max_point)
-            # self.timer.start()
         else:
             # immediately advance one frame
             self.advance()
-        # next_time = time.time() + steep
         self._waiter.clear()
         self._waiter.wait(self.interval / 1000)
         while not self._waiter.is_set():
