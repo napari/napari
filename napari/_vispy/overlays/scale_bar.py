@@ -116,6 +116,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         # convert desired length to world size
         target_world_pixels = scale_canvas2world * target_canvas_pixels
 
+        # If fixed_width is set, use that value to calculate the scale bar width
         if self.overlay.fixed_width is not None:
             target_canvas_pixels_rounded = (
                 self.overlay.fixed_width / scale_canvas2world
