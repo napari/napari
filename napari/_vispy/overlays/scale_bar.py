@@ -35,6 +35,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.overlay.events.font_size.connect(self._on_text_change)
         self.overlay.events.ticks.connect(self._on_data_change)
         self.overlay.events.unit.connect(self._on_unit_change)
+        self.overlay.events.fixed_width.connect(self._on_fixed_width_change)
 
         self.viewer.events.theme.connect(self._on_data_change)
         self.viewer.camera.events.zoom.connect(self._on_zoom_change)
@@ -43,6 +44,9 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
     def _on_unit_change(self):
         self._unit = get_unit_registry()(self.overlay.unit)
+        self._on_zoom_change(force=True)
+
+    def _on_fixed_width_change(self):
         self._on_zoom_change(force=True)
 
     def _calculate_best_length(
@@ -112,6 +116,9 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         # convert desired length to world size
         target_world_pixels = scale_canvas2world * target_canvas_pixels
 
+        if self.overlay.fixed_width is not None:
+            target_world_pixels = self.overlay.fixed_width
+
         # calculate the desired length as well as update the value and units
         target_world_pixels_rounded, new_dim = self._calculate_best_length(
             target_world_pixels
@@ -171,3 +178,4 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self._on_data_change()
         self._on_box_change()
         self._on_text_change()
+        self._on_fixed_width_change()
