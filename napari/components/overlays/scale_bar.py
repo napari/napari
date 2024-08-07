@@ -35,7 +35,7 @@ class ScaleBarOverlay(CanvasOverlay):
     unit : Optional[str]
         Unit to be used by the scale bar. The value can be set
         to `None` to display no units.
-    fixed_width : Optional[float]
+    fixed_width : Optional[int]
         Fixed width of the scale bar in physical units. If set to `None`,
         the width is determined automatically.
     position : CanvasPosition
@@ -57,4 +57,4 @@ class ScaleBarOverlay(CanvasOverlay):
         default_factory=lambda: ColorValue([0, 0, 0, 0.6])
     )
     unit: Optional[str] = None
-    fixed_width: Optional[float] = None
+    fixed_width: Optional[int] = None
