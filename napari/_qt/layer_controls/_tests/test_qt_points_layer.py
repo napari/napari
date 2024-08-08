@@ -99,3 +99,22 @@ def test_current_size_slider_properly_initialized(qtbot):
     assert slider.minimum() == 1
     assert slider.value() == 10
     assert layer.current_size == 10
+
+
+def test_size_slider_represents_current_size(qtbot):
+    """Changing the current_size attribute should update the slider"""
+    layer = Points(np.random.rand(10, 2))
+    qtctrl = QtPointsControls(layer)
+    qtbot.addWidget(qtctrl)
+    slider = qtctrl.sizeSlider
+    slider.setValue(10)
+
+    # Initial value
+    assert slider.value() == 10
+    assert layer.current_size == 10
+
+    # Size event needs to be triggered manually, because no points are selected.
+    layer.current_size = 5
+    layer.events.current_size()
+    assert slider.value() == 5
+    assert layer.current_size == 5

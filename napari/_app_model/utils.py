@@ -9,6 +9,38 @@ from napari._app_model.constants import MenuGroup, MenuId
 MenuOrSubmenu = Union[MenuItem, SubmenuItem]
 
 
+def to_id_key(menu_path: str) -> str:
+    """Return final part of the menu path.
+
+    Parameters
+    ----------
+    menu_path : str
+        full string delineating the menu path
+
+    Returns
+    -------
+    str
+        final part of the menu path
+    """
+    return menu_path.split('/')[-1]
+
+
+def to_action_id(id_key: str) -> str:
+    """Return dummy action ID for the given id_key.
+
+    Parameters
+    ----------
+    id_key : str
+        key to use in action ID
+
+    Returns
+    -------
+    str
+        dummy action ID
+    """
+    return f'napari.{id_key}.empty_dummy'
+
+
 def contains_dummy_action(menu_items: list[MenuOrSubmenu]) -> bool:
     """True if one of the menu_items is the dummy action, otherwise False.
 
@@ -46,11 +78,10 @@ def is_empty_menu(menu_id: str) -> bool:
         return True
     if len(app.menus.get_menu(menu_id)) == 0:
         return True
-    if len(app.menus.get_menu(menu_id)) == 1 and contains_dummy_action(
-        app.menus.get_menu(menu_id)
-    ):
-        return True
-    return False
+    return bool(
+        len(app.menus.get_menu(menu_id)) == 1
+        and contains_dummy_action(app.menus.get_menu(menu_id))
+    )
 
 
 def no_op() -> None:
@@ -78,9 +109,9 @@ def get_dummy_action(menu_id: MenuId) -> tuple[Action, str]:
     # menu path is unique, otherwise, we will clash. Once we
     # move to using short menu keys, the key itself will be used
     # here and this will no longer be a concern.
-    id_key = menu_id.split('/')[-1]
+    id_key = to_id_key(menu_id)
     action = Action(
-        id=f'napari.{id_key}.empty_dummy',
+        id=to_action_id(id_key),
         title='Empty',
         callback=no_op,
         menus=[
