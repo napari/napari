@@ -118,9 +118,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
         # If length is set, use that value to calculate the scale bar length
         if self.overlay.length is not None:
-            target_canvas_pixels  = (
-                self.overlay.length / scale_canvas2world
-            )
+            target_canvas_pixels = self.overlay.length / scale_canvas2world
             new_dim = self.overlay.length * self._unit.units
         else:
             # calculate the desired length as well as update the value and units
