@@ -10,4 +10,4 @@ def test_scale_bar():
 def test_scale_bar_fixed_width():
     """Test creating scale bar object with fixed width"""
     scale_bar = ScaleBarOverlay(fixed_width=50)
-    assert scale_bar.fixed_width == 50
+    assert scale_bar.length == 50
