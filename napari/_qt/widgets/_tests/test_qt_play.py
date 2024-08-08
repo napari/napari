@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 
 from napari._qt.widgets.qt_dims import QtDims
-from napari._qt.widgets.qt_dims_slider import AnimationWorker
+from napari._qt.widgets.qt_dims_slider import AnimationThread
 from napari.components import Dims
 from napari.settings._constants import LoopMode
 
@@ -26,7 +26,8 @@ def make_worker(
     slider_widget.fps = fps
     slider_widget.frame_range = frame_range
 
-    worker = AnimationWorker(slider_widget)
+    worker = AnimationThread()
+    worker.set_slider(slider_widget)
     worker._count = 0
     worker.nz = nz
 
@@ -95,7 +96,7 @@ def test_animation_thread_once(qtbot):
         qtbot, nframes=nframes, loop_mode=LoopMode.ONCE
     ) as worker:
         with qtbot.waitSignal(worker.finished, timeout=8000):
-            worker.work()
+            worker.start()
     assert worker.current == worker.nz
 
 
@@ -113,7 +114,7 @@ def ref_view(make_napari_viewer):
     viewer = make_napari_viewer()
 
     np.random.seed(0)
-    data = np.random.random((10, 10, 15))
+    data = np.random.random((2, 10, 10, 15))
     viewer.add_image(data)
     yield ref(viewer.window._qt_viewer)
     viewer.close()
@@ -123,7 +124,7 @@ def test_play_raises_index_errors(qtbot, ref_view):
     view = ref_view()
     # play axis is out of range
     with pytest.raises(IndexError):
-        view.dims.play(4, 20)
+        view.dims.play(5, 20)
 
     # data doesn't have 20 frames
     with pytest.raises(IndexError):
@@ -155,3 +156,40 @@ def test_playing_hidden_slider_does_nothing(ref_view):
         view.dims.play(2, 20)
     view.dims.dims.events.current_step.disconnect(increment)
     assert not view.dims.is_playing
+
+
+def test_change_play_axis(ref_view, qtbot):
+    """Make sure changing the play axis stops the current animation.
+
+    Prior to https://github.com/napari/napari/pull/7158, starting a new play
+    animation resulted in QThread warnings and could crash Python in
+    some environments. In the future, we may want to allow multiple
+    multiple simultaneous play axes [1]_, so this test should be changed
+    or removed when we do that.
+
+    ..[1] https://github.com/napari/napari/pull/6300#issuecomment-1757696072
+    """
+    view = ref_view()
+    with qtbot.waitSignal(view.dims._animation_thread.started):
+        view.dims.play(0, 20)
+    qtbot.waitUntil(lambda: view.dims.is_playing)
+    assert view.dims._animation_thread.slider.axis == 0
+    view.dims.play(1, 20)
+    assert view.dims._animation_thread.slider.axis == 1
+    assert view.dims.is_playing
+    with qtbot.waitSignal(view.dims._animation_thread.finished):
+        view.dims.stop()
+
+
+def test_change_play_fps(ref_view, qtbot):
+    """Make sure changing the play fps stops the current animation"""
+    view = ref_view()
+    with qtbot.waitSignal(view.dims._animation_thread.started):
+        view.dims.play(0, 20)
+    qtbot.waitUntil(lambda: view.dims.is_playing)
+    assert view.dims._animation_thread.slider.fps == 20
+    view.dims.play(0, 30)
+    assert view.dims._animation_thread.slider.fps == 30
+    assert view.dims.is_playing
+    with qtbot.waitSignal(view.dims._animation_thread.finished):
+        view.dims.stop()
