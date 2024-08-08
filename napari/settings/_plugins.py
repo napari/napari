@@ -53,6 +53,13 @@ class PluginsSettings(EventedSettings):
             'Assign file extensions to specific writer plugins'
         ),
     )
+    manager_disclaimer: bool = Field(
+        True,
+        title=trans._('Plugin manager 3rd party plugins disclaimer'),
+        description=trans._(
+            'Show disclaimer message over plugin manager dialog about 3rd party nature of the plugins available for installation'
+        ),
+    )
 
     class Config:
         use_enum_values = False
@@ -63,4 +70,5 @@ class PluginsSettings(EventedSettings):
             'schema_version',
             'disabled_plugins',
             'extension2writer',
+            # 'manager_disclaimer',
         )

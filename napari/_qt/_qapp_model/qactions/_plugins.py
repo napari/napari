@@ -8,6 +8,7 @@ from app_model.types import Action
 from napari._app_model.constants import MenuGroup, MenuId
 from napari._qt.dialogs.qt_plugin_report import QtPluginErrReporter
 from napari._qt.qt_main_window import Window
+from napari.settings import get_settings
 from napari.utils.translations import trans
 
 logger = getLogger(__name__)
@@ -32,7 +33,9 @@ def _show_plugin_install_dialog(window: Window) -> None:
     # This callback is only used when this package is available, thus we do not check
     from napari_plugin_manager.qt_plugin_dialog import QtPluginDialog
 
-    QtPluginDialog(window._qt_window).exec_()
+    show_disclaimer = get_settings().plugins.manager_disclaimer
+    QtPluginDialog(window._qt_window, show_disclaimer=show_disclaimer).exec_()
+    get_settings().plugins.manager_disclaimer = False
 
 
 def _show_plugin_err_reporter(window: Window) -> None:
