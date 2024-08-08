@@ -1,4 +1,4 @@
-from napari.layers.shapes._shapes_models._polgyon_base import PolygonBase
+from napari.layers.shapes._shapes_models._polygon_base import PolygonBase
 
 
 class Polygon(PolygonBase):
