@@ -1885,7 +1885,7 @@
     ],
     "napari/layers/shapes/_shapes_key_bindings.py": ["mode"],
     "napari/layers/shapes/_shapes_models/__init__.py": [],
-    "napari/layers/shapes/_shapes_models/_polgyon_base.py": ["int", "polygon"],
+    "napari/layers/shapes/_shapes_models/_polygon_base.py": ["int", "polygon"],
     "napari/layers/shapes/_shapes_models/ellipse.py": ["ellipse", "int"],
     "napari/layers/shapes/_shapes_models/line.py": ["int", "line"],
     "napari/layers/shapes/_shapes_models/path.py": ["path"],
