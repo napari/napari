@@ -15,7 +15,7 @@ asciitree==0.3.3
     # via zarr
 asttokens==2.4.1
     # via stack-data
-attrs==24.1.0
+attrs==24.2.0
     # via
     #   hypothesis
     #   jsonschema
@@ -50,9 +50,9 @@ coverage==7.6.1
     #   pytest-cov
 cycler==0.12.1
     # via matplotlib
-dask==2024.7.1
+dask==2024.8.0
     # via napari (napari_repo/pyproject.toml)
-debugpy==1.8.3
+debugpy==1.8.5
     # via ipykernel
 decorator==5.1.1
     # via ipython
@@ -95,7 +95,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.108.8
+hypothesis==6.110.0
     # via napari (napari_repo/pyproject.toml)
 idna==3.7
     # via requests
@@ -169,13 +169,13 @@ lxml==5.2.2
     #   nilearn
 lxml-html-clean==0.2.0
     # via lxml
-magicgui==0.9.0
+magicgui==0.9.1
     # via napari (napari_repo/pyproject.toml)
 markdown-it-py==3.0.0
     # via rich
 markupsafe==2.1.5
     # via jinja2
-matplotlib==3.9.0
+matplotlib==3.9.1.post1
     # via napari (napari_repo/pyproject.toml)
 matplotlib-inline==0.1.7
     # via
@@ -438,7 +438,7 @@ pytweening==1.2.0
     # via pyautogui
 pytz==2024.1
     # via pandas
-pyyaml==6.0.1
+pyyaml==6.0.2
     # via
     #   napari (napari_repo/pyproject.toml)
     #   dask
@@ -476,7 +476,7 @@ rich==13.7.1
     #   npe2
     #   pytest-pretty
     #   typer
-rpds-py==0.19.1
+rpds-py==0.20.0
     # via
     #   jsonschema
     #   referencing
