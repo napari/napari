@@ -37,7 +37,7 @@ classifiers = [
 requires-python = ">=3.9"
 dependencies = [
     "appdirs>=1.4.4",
-    "app-model>=0.2.5,<0.3.0",
+    "app-model>=0.2.8,<0.3.0",
     "cachey>=0.2.1",
     "certifi>=2018.1.18",
     "dask[array]>=2021.10.0",
@@ -550,7 +550,7 @@ module = [
     "napari._vispy.visuals.surface",
     "napari.layers.shapes._shapes_models.path",
     "napari.layers.shapes._shapes_models.polygon",
-    "napari.layers.shapes._shapes_models._polgyon_base",
+    "napari.layers.shapes._shapes_models._polygon_base",
     "napari.layers.shapes._shapes_models.ellipse",
     "napari.layers.shapes._shapes_models.line",
     "napari.layers.shapes._shapes_models.rectangle",

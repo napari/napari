@@ -75,9 +75,7 @@ vectors_layer = viewer.add_vectors(
 
 
 def point_in_bounding_box(point, bounding_box):
-    if np.all(point > bounding_box[0]) and np.all(point < bounding_box[1]):
-        return True
-    return False
+    return bool(np.all(point > bounding_box[0]) and np.all(point < bounding_box[1]))
 
 
 @viewer.mouse_drag_callbacks.append
