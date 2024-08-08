@@ -23,7 +23,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         super().__init__(
             node=ScaleBar(), viewer=viewer, overlay=overlay, parent=parent
         )
-        self.x_size = 150  # will be updated on zoom anyways
+        self.x_size = 150.0  # will be updated on zoom anyways
         # need to change from defaults because the anchor is in the center
         self.y_offset = 20
         self.y_size = 5
