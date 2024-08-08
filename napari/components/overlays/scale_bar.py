@@ -37,7 +37,7 @@ class ScaleBarOverlay(CanvasOverlay):
         to `None` to display no units.
     length : Optional[int]
         Fixed length of the scale bar in physical units. If set to `None`,
-        it is determined automatically.
+        it is determined automatically based on zoom level.
     position : CanvasPosition
         The position of the overlay in the canvas.
     visible : bool
