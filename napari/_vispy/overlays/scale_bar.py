@@ -16,14 +16,14 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     """Scale bar in world coordinates."""
 
     def __init__(self, *, viewer, overlay, parent=None) -> None:
-        self._target_length = 150
+        self._target_length = 150.0
         self._scale = 1
         self._unit: pint.Unit
 
         super().__init__(
             node=ScaleBar(), viewer=viewer, overlay=overlay, parent=parent
         )
-        self.x_size = 150.0  # will be updated on zoom anyways
+        self.x_size = 150  # will be updated on zoom anyways
         # need to change from defaults because the anchor is in the center
         self.y_offset = 20
         self.y_size = 5
