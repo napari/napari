@@ -21,7 +21,7 @@ def test_stack_to_images_basic():
     assert len(images) == 2
 
     for i in images:
-        assert type(stack) == type(i)
+        assert type(stack) is type(i)
         assert i.data.shape == (10, 128, 128)
 
 
@@ -53,7 +53,7 @@ def test_stack_to_images_rgb():
     assert len(images) == 3
 
     for i in images:
-        assert type(stack) == type(i)
+        assert type(stack) is type(i)
         assert i.data.shape == (10, 128, 128)
         assert i.scale.shape == (3,)
         assert i.rgb is False
@@ -69,7 +69,7 @@ def test_stack_to_images_4_channels():
     assert len(images) == 4
     assert images[-2].colormap.name == 'red'
     for i in images:
-        assert type(stack) == type(i)
+        assert type(stack) is type(i)
         assert i.data.shape == (128, 128)
 
 
@@ -83,7 +83,7 @@ def test_stack_to_images_0_rgb():
     assert len(images) == 10
     for i in images:
         assert i.rgb
-        assert type(stack) == type(i)
+        assert type(stack) is type(i)
         assert i.data.shape == (128, 128, 3)
 
 
@@ -97,7 +97,7 @@ def test_stack_to_images_1_channel():
     assert len(images) == 1
     for i in images:
         assert i.rgb is False
-        assert type(stack) == type(i)
+        assert type(stack) is type(i)
         assert i.data.shape == (10, 128, 128)
 
 
