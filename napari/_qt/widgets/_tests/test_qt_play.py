@@ -160,13 +160,13 @@ def test_playing_hidden_slider_does_nothing(ref_view):
 
 def test_change_play_axis(ref_view, qtbot):
     """Make sure changing the play axis stops the current animation.
-    
+
     Prior to https://github.com/napari/napari/pull/7158, starting a new play
     animation resulted in QThread warnings and could crash Python in
     some environments. In the future, we may want to allow multiple
     multiple simultaneous play axes [1]_, so this test should be changed
     or removed when we do that.
-    
+
     ..[1] https://github.com/napari/napari/pull/6300#issuecomment-1757696072
     """
     view = ref_view()
