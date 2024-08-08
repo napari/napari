@@ -118,7 +118,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
         # If fixed_width is set, use that value to calculate the scale bar width
         if self.overlay.fixed_width is not None:
-            target_canvas_pixels_rounded = (
+            target_canvas_pixels  = (
                 self.overlay.fixed_width / scale_canvas2world
             )
             new_dim = self.overlay.fixed_width * self._unit.units
@@ -127,11 +127,11 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
             target_world_pixels_rounded, new_dim = self._calculate_best_length(
                 target_world_pixels
             )
-            target_canvas_pixels_rounded = (
+            target_canvas_pixels  = (
                 target_world_pixels_rounded / scale_canvas2world
             )
 
-        scale = target_canvas_pixels_rounded
+        scale = target_canvas_pixels 
 
         # Update scalebar and text
         self.node.transform.scale = [scale, 1, 1, 1]
