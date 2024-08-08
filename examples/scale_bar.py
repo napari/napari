@@ -22,7 +22,6 @@ viewer.add_image(
 )
 viewer.scale_bar.visible = True
 viewer.scale_bar.unit = 'um'
-viewer.scale_bar.fixed_width = 50  # Set fixed width in physical units
 
 if __name__ == '__main__':
     napari.run()
