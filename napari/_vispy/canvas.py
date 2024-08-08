@@ -394,6 +394,8 @@ class VispyCanvas:
 
         # Update the cursor position
         self.viewer.cursor._view_direction = event.view_direction
+        self.viewer.cursor.button = event.button
+        self.viewer.cursor.scroll = any(event.delta)
         self.viewer.cursor.position = self._map_canvas2world(event.pos)
 
         # Add the cursor position to the event

@@ -1,6 +1,7 @@
 import sys
 
 import numpy as np
+import numpy.testing as npt
 import pytest
 from vispy.geometry import PolygonData
 
@@ -30,6 +31,29 @@ def test_rectangle():
     assert len(shape.data) == 4
     assert shape.data_displayed.shape == (4, 2)
     assert shape.slice_key.shape == (2, 0)
+
+
+def test_rectangle_shift():
+    shape = Rectangle(np.array([[0, 0], [1, 0], [1, 1], [0, 1]]))
+    npt.assert_array_equal(shape.bounding_box, np.array([[0, 0], [1, 1]]))
+
+    shape.shift((1, 1))
+    npt.assert_array_equal(
+        shape.data, np.array([[1, 1], [2, 1], [2, 2], [1, 2]])
+    )
+    npt.assert_array_equal(shape.bounding_box, np.array([[1, 1], [2, 2]]))
+
+
+def test_rectangle_rotate():
+    shape = Rectangle(np.array([[1, 2], [-1, 2], [-1, -2], [1, -2]]))
+    npt.assert_array_equal(shape.bounding_box, np.array([[-1, -2], [1, 2]]))
+    shape.rotate(-90)
+    npt.assert_array_almost_equal(
+        shape.data, np.array([[-2, 1], [-2, -1], [2, -1], [2, 1]])
+    )
+    npt.assert_array_almost_equal(
+        shape.bounding_box, np.array([[-2, -1], [2, 1]])
+    )
 
 
 def test_nD_rectangle():
@@ -219,3 +243,26 @@ def test_nD_ellipse():
 
     shape.ndisplay = 3
     assert shape.data_displayed.shape == (4, 3)
+
+
+def test_ellipse_shift():
+    shape = Ellipse(np.array([[0, 0], [1, 0], [1, 1], [0, 1]]))
+    npt.assert_array_equal(shape.bounding_box, np.array([[0, 0], [1, 1]]))
+
+    shape.shift((1, 1))
+    npt.assert_array_equal(
+        shape.data, np.array([[1, 1], [2, 1], [2, 2], [1, 2]])
+    )
+    npt.assert_array_equal(shape.bounding_box, np.array([[1, 1], [2, 2]]))
+
+
+def test_ellipse_rotate():
+    shape = Ellipse(np.array([[1, 2], [-1, 2], [-1, -2], [1, -2]]))
+    npt.assert_array_equal(shape.bounding_box, np.array([[-1, -2], [1, 2]]))
+    shape.rotate(-90)
+    npt.assert_array_almost_equal(
+        shape.data, np.array([[-2, 1], [-2, -1], [2, -1], [2, 1]])
+    )
+    npt.assert_array_almost_equal(
+        shape.bounding_box, np.array([[-2, -1], [2, 1]])
+    )

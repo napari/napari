@@ -46,7 +46,8 @@ class Shapes2DSuite:
 
     def time_get_value(self, n):
         """Time to get current value."""
-        self.layer.get_value((0,) * 2)
+        for i in range(100):
+            self.layer.get_value((i,) * 2)
 
     def mem_layer(self, n):
         """Memory used by layer."""

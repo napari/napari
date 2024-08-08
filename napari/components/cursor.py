@@ -28,6 +28,10 @@ class Cursor(EventedModel):
             * pointing: A finger for pointing
             * standard: The standard cursor
             # crosshair: A crosshair
+    button : int or None
+        Button that is pressed. None if no button is pressed.
+    scroll : bool
+        Flag to indicate whether the cursor is in scroll mode.
     _view_direction : Optional[Tuple[float, float, float]]
         The vector describing the direction of the camera in the scene.
         This is None when viewing in 2D.
@@ -37,5 +41,7 @@ class Cursor(EventedModel):
     position: tuple[float, ...] = (1, 1)
     scaled: bool = True
     size = 1.0
+    button: Optional[int] = None
+    scroll: bool = False
     style: CursorStyle = CursorStyle.STANDARD
     _view_direction: Optional[tuple[float, float, float]] = None
