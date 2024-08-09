@@ -58,6 +58,9 @@ class MenuId(StrEnum):
     LAYERS_CONTEXT_PROJECT = 'napari/layers/contxt/project'
     LAYERS_CONTEXT_COPY_SPATIAL = 'napari/layers/context/copy_spatial'
 
+    VIEWER_CONTROLS = 'napari/viewer/controls'
+    VIEWER_NEW_DELETE_LAYER = 'napari/viewer/new_delete_layer'
+
     def __str__(self) -> str:
         return self.value
 

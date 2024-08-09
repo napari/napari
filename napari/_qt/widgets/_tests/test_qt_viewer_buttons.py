@@ -2,17 +2,30 @@ import pytest
 from qtpy.QtCore import QPoint
 from qtpy.QtWidgets import QApplication
 
+from napari._app_model import get_app
 from napari._qt.dialogs.qt_modal import QtPopup
 from napari._qt.widgets.qt_viewer_buttons import QtViewerButtons
 from napari.components.viewer_model import ViewerModel
 
 
 @pytest.fixture()
-def qt_viewer_buttons(qtbot):
-    # create viewer model and buttons
+def qt_viewer_buttons(qtbot, mock_app):
+    # initialize app-model actions (actions and menus app registries)
+    from napari._qt._qapp_model.qactions import init_qactions
+
+    init_qactions.cache_clear()
+    init_qactions()
+
+    # create viewer model, setup provider and buttons
+    app = get_app()
     viewer = ViewerModel()
-    viewer_buttons = QtViewerButtons(viewer)
-    qtbot.addWidget(viewer_buttons)
+
+    def _provide_viewer_model() -> ViewerModel:
+        return viewer
+
+    with app.injection_store.register(providers=[(_provide_viewer_model,)]):
+        viewer_buttons = QtViewerButtons(viewer)
+        qtbot.addWidget(viewer_buttons)
 
     yield viewer, viewer_buttons
 

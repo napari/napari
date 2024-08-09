@@ -47,6 +47,14 @@ QWidget[emphasized="true"] > QFrame {
     background-color: {{ foreground }};
 }
 
+QWidget[emphasized="true"] QToolBar {
+    background: {{ foreground }};
+}
+
+QToolBar {
+    spacing: 6px;
+}
+
 /* ------------ QAbstractScrollArea ------------- */
 
 /* QAbstractScrollArea is the superclass */
@@ -67,7 +75,7 @@ QTextEdit > QWidget {
 
 /* ----------------- QPushButton ------------------ */
 
-QPushButton {
+QToolBar > QToolButton, QPushButton {
   background-color: {{ foreground }};
   border-radius: 2px;
   padding: 4px;
@@ -75,43 +83,43 @@ QPushButton {
   font-size: {{ increase(font_size, 1) }};
 }
 
-QPushButton:hover {
+QToolBar > QToolButton:hover, QPushButton:hover {
   background-color: {{ primary }};
 }
 
-QPushButton:pressed {
+QToolBar > QToolButton:pressed, QPushButton:pressed {
   background-color: {{ highlight }};
 }
 
-QPushButton:checked {
+QToolBar > QToolButton:checked, QPushButton:checked {
   background-color: {{ highlight }};
 }
 
-QPushButton:disabled {
+QToolBar > QToolButton:disabled, QPushButton:disabled {
   background-color: {{ opacity(foreground, 75) }};
   border: 1px solid;
   border-color: {{ foreground }};
   color: {{ opacity(text, 90) }};
 }
 
-QWidget[emphasized="true"] QPushButton {
+QWidget[emphasized="true"] QToolBar > QToolButton, QWidget[emphasized="true"] QPushButton {
    background-color: {{ primary }};
 }
 
-QWidget[emphasized="true"] QPushButton:disabled {
+QWidget[emphasized="true"] QToolBar > QToolButton:disabled, QWidget[emphasized="true"] QPushButton:disabled {
   background-color: {{ darken(foreground, 20) }};
 }
 
-QWidget[emphasized="true"] QPushButton:hover {
+QWidget[emphasized="true"] QToolBar > QToolButton:hover, QWidget[emphasized="true"] QPushButton:hover {
     background-color: {{ highlight }};
 }
 
-QWidget[emphasized="true"] QPushButton:pressed {
+QWidget[emphasized="true"] QToolBar > QToolButton:pressed, QWidget[emphasized="true"] QPushButton:pressed {
   background-color: {{ secondary }};
 }
 
 
-QWidget[emphasized="true"] QPushButton:checked {
+QWidget[emphasized="true"] QToolBar > QToolButton:checked, QWidget[emphasized="true"] QPushButton:checked {
   background-color: {{ current }};
 }
 

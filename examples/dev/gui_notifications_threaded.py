@@ -22,8 +22,8 @@ viewer = napari.Viewer()
 layer_buttons = viewer.window.qt_viewer.layerButtons
 err_btn = QtViewerPushButton(None, 'warning', 'new Error', make_error)
 warn_btn = QtViewerPushButton(None, 'warning', 'new Warn', make_warning)
-layer_buttons.layout().insertWidget(3, warn_btn)
-layer_buttons.layout().insertWidget(3, err_btn)
+layer_buttons.insert_toolbar_widget(warn_btn)
+layer_buttons.insert_toolbar_widget(err_btn)
 
 if __name__ == '__main__':
     napari.run()

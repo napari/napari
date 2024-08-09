@@ -29,6 +29,15 @@ for name in dir(module):
         layers.append(obj)
 
 
+@pytest.fixture()
+def _init_app_model_qactions(qtbot, mock_app):
+    # initialize app-model actions (actions and menus app registries)
+    from napari._qt._qapp_model.qactions import init_qactions
+
+    init_qactions.cache_clear()
+    init_qactions()
+
+
 @pytest.mark.parametrize('layer', layers, ids=lambda layer: layer.__name__)
 def test_docstring(layer):
     name = layer.__name__
@@ -128,8 +137,15 @@ def test_signature(layer):
 
 
 # plugin_manager fixture is added to prevent errors due to installed plugins
+@pytest.mark.usefixtures('_init_app_model_qactions')
 @pytest.mark.parametrize(('layer_type', 'data', 'ndim'), layer_test_data)
-def test_view(qtbot, napari_plugin_manager, layer_type, data, ndim):
+def test_view(
+    qtbot,
+    napari_plugin_manager,
+    layer_type,
+    data,
+    ndim,
+):
     np.random.seed(0)
     viewer = getattr(napari, f'view_{layer_type.__name__.lower()}')(
         data, show=False
@@ -140,6 +156,7 @@ def test_view(qtbot, napari_plugin_manager, layer_type, data, ndim):
 
 
 # plugin_manager fixture is added to prevent errors due to installed plugins
+@pytest.mark.usefixtures('_init_app_model_qactions')
 def test_view_multichannel(qtbot, napari_plugin_manager):
     """Test adding image."""
     np.random.seed(0)
@@ -172,6 +189,7 @@ def test_kwargs_passed(monkeypatch):
 
 
 # plugin_manager fixture is added to prevent errors due to installed plugins
+@pytest.mark.usefixtures('_init_app_model_qactions')
 def test_imshow(qtbot, napari_plugin_manager):
     shape = (10, 15)
     ndim = len(shape)
@@ -185,6 +203,7 @@ def test_imshow(qtbot, napari_plugin_manager):
 
 
 # plugin_manager fixture is added to prevent errors due to installed plugins
+@pytest.mark.usefixtures('_init_app_model_qactions')
 def test_imshow_multichannel(qtbot, napari_plugin_manager):
     """Test adding image."""
     np.random.seed(0)

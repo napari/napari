@@ -7,6 +7,7 @@ from napari._app_model.context._layerlist_context import (
     LayerListContextKeys,
     LayerListSelectionContextKeys,
 )
+from napari._app_model.context._viewer_context import ViewerContextKeys
 
 __all__ = [
     'Context',
@@ -14,4 +15,5 @@ __all__ = [
     'get_context',
     'LayerListContextKeys',
     'LayerListSelectionContextKeys',
+    'ViewerContextKeys',
 ]

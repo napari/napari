@@ -165,6 +165,19 @@ def test_image_from_clipboard(make_napari_viewer):
     mock_show_info.assert_called_once_with('No image or link in clipboard.')
 
 
+@pytest.mark.parametrize('new_layer_menu_str', ['Labels', 'Points', 'Shapes'])
+def test_new_layer(make_napari_viewer, new_layer_menu_str):
+    viewer = make_napari_viewer()
+
+    assert len(viewer.layers) == 0
+    action, _a = get_submenu_action(
+        viewer.window.file_menu, 'New Layer', new_layer_menu_str
+    )
+    action.trigger()
+    assert len(viewer.layers) == 1
+    assert viewer.layers[0].name == new_layer_menu_str
+
+
 @pytest.mark.parametrize(
     ('action_id', 'dialog_method', 'dialog_return', 'filename_call', 'stack'),
     [

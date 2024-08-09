@@ -1,7 +1,7 @@
 
 /* ----------------- Buttons -------------------- */
 
-QtViewerPushButton{
+QToolBar > QToolButton, QtViewerPushButton{
    min-width : 28px;
    max-width : 28px;
    min-height : 28px;
@@ -10,15 +10,15 @@ QtViewerPushButton{
 
 }
 
-QtViewerPushButton[mode="delete_button"] {
+QToolButton[mode="delete_button"], QtViewerPushButton[mode="delete_button"] {
    image: url("theme_{{ id }}:/delete.svg");
 }
 
-QtViewerPushButton[mode="new_points"] {
+QToolButton[mode="new_points"], QtViewerPushButton[mode="new_points"] {
   image: url("theme_{{ id }}:/new_points.svg");
 }
 
-QtViewerPushButton[mode="new_shapes"] {
+QToolButton[mode="new_shapes"], QtViewerPushButton[mode="new_shapes"] {
   image: url("theme_{{ id }}:/new_shapes.svg");
 }
 
@@ -26,39 +26,39 @@ QtViewerPushButton[mode="warning"] {
   image: url("theme_{{ id }}:/warning.svg");
 }
 
-QtViewerPushButton[mode="new_labels"] {
+QToolButton[mode="new_labels"], QtViewerPushButton[mode="new_labels"] {
   image: url("theme_{{ id }}:/new_labels.svg");
 }
 
-QtViewerPushButton[mode="console"] {
+QToolButton[mode="console"], QtViewerPushButton[mode="console"] {
   image: url("theme_{{ id }}:/console.svg");
 }
 
-QtViewerPushButton[mode="roll"] {
+QToolButton[mode="roll"], QtViewerPushButton[mode="roll"] {
   image: url("theme_{{ id }}:/roll.svg");
 }
 
-QtViewerPushButton[mode="transpose"] {
+QToolButton[mode="transpose"], QtViewerPushButton[mode="transpose"] {
   image: url("theme_{{ id }}:/transpose.svg");
 }
 
-QtViewerPushButton[mode="home"] {
+QToolButton[mode="home"], QtViewerPushButton[mode="home"] {
   image: url("theme_{{ id }}:/home.svg");
 }
 
-QtViewerPushButton[mode="ndisplay_button"]:checked {
+QToolButton[mode="ndisplay_button"]:checked, QtViewerPushButton[mode="ndisplay_button"]:checked {
   image: url("theme_{{ id }}:/3D.svg");
 }
 
-QtViewerPushButton[mode="ndisplay_button"] {
+QToolButton[mode="ndisplay_button"], QtViewerPushButton[mode="ndisplay_button"] {
   image: url("theme_{{ id }}:/2D.svg");
 }
 
-QtViewerPushButton[mode="grid_view_button"]:checked {
+QToolButton[mode="grid_view_button"]:checked, QtViewerPushButton[mode="grid_view_button"]:checked {
   image: url("theme_{{ id }}:/square.svg");
 }
 
-QtViewerPushButton[mode="grid_view_button"] {
+QToolButton[mode="grid_view_button"], QtViewerPushButton[mode="grid_view_button"] {
   image: url("theme_{{ id }}:/grid.svg");
 }
 
@@ -192,7 +192,6 @@ QtModePushButton[mode="delete_shape"] {
 QWidget[emphasized="true"] QtModePushButton[mode="delete_shape"]:pressed {
   background-color: {{ error }};
 }
-
 
 QtCopyToClipboardButton {
    background-color: {{ background }};

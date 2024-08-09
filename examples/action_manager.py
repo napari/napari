@@ -46,7 +46,7 @@ layer_buttons = viewer.window.qt_viewer.layerButtons
 # binding and (un) binding will be done with the action manager, idem for
 # setting the tooltip.
 rot_button = QtViewerPushButton('warning')
-layer_buttons.layout().insertWidget(3, rot_button)
+layer_buttons.insert_toolbar_widget(rot_button)
 
 
 def register_action():

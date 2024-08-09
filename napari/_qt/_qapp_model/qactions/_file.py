@@ -16,9 +16,13 @@ from napari._app_model.context import (
     LayerListContextKeys as LLCK,
     LayerListSelectionContextKeys as LLSCK,
 )
+from napari._qt._qapp_model.qactions._viewer import (
+    add_new_labels,
+    add_new_points,
+    add_new_shapes,
+)
 from napari._qt.qt_main_window import Window
 from napari._qt.qt_viewer import QtViewer
-from napari._qt.widgets.qt_viewer_buttons import add_new_points, add_new_shapes
 from napari.utils.translations import trans
 
 # File submenus
@@ -76,7 +80,7 @@ FILE_SUBMENUS = [
 
 def new_labels(qt_viewer: QtViewer):
     viewer = qt_viewer.viewer
-    viewer._new_labels()
+    add_new_labels(viewer)
 
 
 def new_points(qt_viewer: QtViewer):
