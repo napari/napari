@@ -1,3 +1,5 @@
+name: Test installed from pip
+
 on:
   workflow_call:
 
@@ -23,7 +25,7 @@ jobs:
       - name: Install this commit
         run: |
           pip install --upgrade pip
-          pip install ./napari-from-github[pyqt,testing]
+          pip install "./napari-from-github[pyqt,testing]"
         env:
           PIP_CONSTRAINT: napari-from-github/resources/constraints/constraints_py3.9.txt
 
@@ -40,7 +42,7 @@ jobs:
 
       - name: Upload test artifacts
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: test artifacts pip install
           path: .pytest_tmp

@@ -257,7 +257,7 @@ class QtViewer(QSplitter):
         settings = get_settings()
         self._update_dask_cache_settings(settings.application.dask)
 
-        settings.application.events.dask.connect(
+        settings.application.dask.events.connect(
             self._update_dask_cache_settings
         )
 
@@ -307,13 +307,13 @@ class QtViewer(QSplitter):
 
     @staticmethod
     def _update_dask_cache_settings(
-        dask_setting: Union[DaskSettings, Event] = None
+        dask_setting: Union[DaskSettings, Event] = None,
     ):
         """Update dask cache to match settings."""
         if not dask_setting:
             return
         if not isinstance(dask_setting, DaskSettings):
-            dask_setting = dask_setting.value
+            dask_setting = get_settings().application.dask
 
         enabled = dask_setting.enabled
         size = dask_setting.cache
@@ -439,7 +439,7 @@ class QtViewer(QSplitter):
 
     def _create_performance_dock_widget(self):
         """Create the dock widget that shows performance metrics."""
-        if perf.USE_PERFMON:
+        if perf.perf_config is not None:
             return QtViewerDockWidget(
                 self,
                 QtPerformance(),
@@ -516,10 +516,11 @@ class QtViewer(QSplitter):
             for name in vlist:
                 try:
                     vdict[name] = eval(name, cf.f_globals, cf.f_locals)
-                except:  # noqa: E722
-                    print(
-                        f'Could not get variable {name} from '
-                        f'{cf.f_code.co_name}'
+                except NameError:
+                    logging.warning(
+                        'Could not get variable %s from %s',
+                        name,
+                        cf.f_code.co_name,
                     )
         elif isinstance(variables, dict):
             vdict = variables
@@ -913,13 +914,8 @@ class QtViewer(QSplitter):
         """Add files from the menubar."""
         filenames = self._open_file_dialog_uni(trans._('Select file(s)...'))
 
-        if (filenames != []) and (filenames is not None):
-            for filename in filenames:
-                self._qt_open(
-                    [filename],
-                    choose_plugin=choose_plugin,
-                    stack=stack,
-                )
+        if filenames:
+            self._qt_open(filenames, choose_plugin=choose_plugin, stack=stack)
             update_open_history(filenames[0])
 
     def _open_files_dialog_as_stack_dialog(self, choose_plugin=False):

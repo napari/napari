@@ -1,5 +1,4 @@
-"""VispyCanvas class.
-"""
+"""VispyCanvas class."""
 
 from __future__ import annotations
 
@@ -167,6 +166,12 @@ class VispyCanvas:
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
         self.viewer.layers.events.removed.connect(self._remove_layer)
         self.destroyed.connect(self._disconnect_theme)
+
+    @property
+    def events(self):
+        # This is backwards compatible with the old events system
+        # https://github.com/napari/napari/issues/7054#issuecomment-2205548968
+        return self._scene_canvas.events
 
     @property
     def destroyed(self) -> pyqtBoundSignal:

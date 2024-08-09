@@ -7,7 +7,7 @@ from napari._qt.widgets.qt_viewer_buttons import QtViewerButtons
 from napari.components.viewer_model import ViewerModel
 
 
-@pytest.fixture
+@pytest.fixture()
 def qt_viewer_buttons(qtbot):
     # create viewer model and buttons
     viewer = ViewerModel()

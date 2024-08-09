@@ -49,6 +49,10 @@ class EventedSettings(BaseSettings, EventedModel):
     """
 
     # provide config_path=None to prevent reading from disk.
+
+    class Config(EventedModel.Config):
+        pass
+
     def __init__(self, **values: Any) -> None:
         super().__init__(**values)
         self.events.add(changed=None)
@@ -249,12 +253,14 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
             the return list to change the priority of sources.
             """
             cls._env_settings = nested_env_settings(env_settings)
-            return (
+            return (  # type: ignore[return-value]
                 init_settings,
                 cls._env_settings,
                 cls._config_file_settings_source,
                 file_secret_settings,
             )
+            # Even when EventedConfigFileSettings is a subclass of BaseSettings,
+            # mypy do not see this
 
         @classmethod
         def _config_file_settings_source(
@@ -314,31 +320,33 @@ def nested_env_settings(
                     # otherwise, look for the standard nested env var
                     else:
                         env_val = env_vars.get(f'{env_name}_{subf.name}')
-                        if env_val is not None:
-                            break
 
-                is_complex, all_json_fail = super_eset.field_is_complex(subf)
-                if env_val is not None and is_complex:
-                    try:
-                        env_val = settings.__config__.json_loads(env_val)
-                    except ValueError as e:
-                        if not all_json_fail:
-                            msg = trans._(
-                                'error parsing JSON for "{env_name}"',
-                                deferred=True,
-                                env_name=env_name,
+                    is_complex, all_json_fail = super_eset.field_is_complex(
+                        subf
+                    )
+                    if env_val is not None and is_complex:
+                        try:
+                            env_val = settings.__config__.json_loads(env_val)
+                        except ValueError as e:
+                            if not all_json_fail:
+                                msg = trans._(
+                                    'error parsing JSON for "{env_name}"',
+                                    deferred=True,
+                                    env_name=env_name,
+                                )
+                                raise SettingsError(msg) from e
+
+                        if isinstance(env_val, dict):
+                            explode = super_eset.explode_env_vars(
+                                field, env_vars
                             )
-                            raise SettingsError(msg) from e
+                            env_val = deep_update(env_val, explode)
 
-                    if isinstance(env_val, dict):
-                        explode = super_eset.explode_env_vars(field, env_vars)
-                        env_val = deep_update(env_val, explode)
-
-                # if we found an env var, store it and return it
-                if env_val is not None:
-                    if field.alias not in d:
-                        d[field.alias] = {}
-                    d[field.alias][subf.name] = env_val
+                    # if we found an env var, store it and return it
+                    if env_val is not None:
+                        if field.alias not in d:
+                            d[field.alias] = {}
+                        d[field.alias][subf.name] = env_val
         return d
 
     return _inner

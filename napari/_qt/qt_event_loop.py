@@ -188,13 +188,10 @@ def get_app(
     if _IPYTHON_WAS_HERE_FIRST:
         _try_enable_ipython_gui('qt' if ipy_interactive else None)
 
-    if not _ipython_has_eventloop():
-        notification_manager.notification_ready.connect(
-            NapariQtNotification.show_notification
-        )
-        notification_manager.notification_ready.connect(
-            show_console_notification
-        )
+    notification_manager.notification_ready.connect(
+        NapariQtNotification.show_notification
+    )
+    notification_manager.notification_ready.connect(show_console_notification)
 
     if perf_config and not perf_config.patched:
         # Will patch based on config file.
@@ -246,7 +243,7 @@ def quit_app():
     else:
         QApplication.setWindowIcon(QIcon())
 
-    if perf.USE_PERFMON:
+    if perf.perf_config is not None:
         # Write trace file before exit, if we were writing one.
         # Is there a better place to make sure this is done on exit?
         perf.timers.stop_trace_file()

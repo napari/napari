@@ -1,5 +1,4 @@
-"""Provides a QtPluginErrReporter that allows the user report plugin errors.
-"""
+"""Provides a QtPluginErrReporter that allows the user report plugin errors."""
 
 import contextlib
 from typing import Optional
@@ -17,8 +16,8 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from superqt.utils import CodeSyntaxHighlight
 
-from napari._qt.code_syntax_highlight import Pylighter
 from napari.plugins.exceptions import format_exceptions
 from napari.settings import get_settings
 from napari.utils.theme import get_theme
@@ -76,7 +75,7 @@ class QtPluginErrReporter(QDialog):
 
         self.text_area = QTextEdit()
         theme = get_theme(get_settings().appearance.theme)
-        self._highlight = Pylighter(
+        self._highlight = CodeSyntaxHighlight(
             self.text_area.document(), 'python', theme.syntax_style
         )
         self.text_area.setTextInteractionFlags(

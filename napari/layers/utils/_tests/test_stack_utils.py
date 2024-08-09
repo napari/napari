@@ -21,17 +21,17 @@ def test_stack_to_images_basic():
     assert len(images) == 2
 
     for i in images:
-        assert type(stack) == type(i)
+        assert type(stack) is type(i)
         assert i.data.shape == (10, 128, 128)
 
 
 def test_stack_to_images_multiscale():
     """Test that a 3 channel multiscale image returns 3 multiscale images."""
     data = []
-    data.append(np.random.randint(0, 200, (3, 128, 128)))
-    data.append(np.random.randint(0, 200, (3, 64, 64)))
-    data.append(np.random.randint(0, 200, (3, 32, 32)))
-    data.append(np.random.randint(0, 200, (3, 16, 16)))
+    data.append(np.zeros((3, 128, 128)))
+    data.append(np.zeros((3, 64, 64)))
+    data.append(np.zeros((3, 32, 32)))
+    data.append(np.zeros((3, 16, 16)))
 
     stack = Image(data)
     images = stack_to_images(stack, 0)
@@ -53,7 +53,7 @@ def test_stack_to_images_rgb():
     assert len(images) == 3
 
     for i in images:
-        assert type(stack) == type(i)
+        assert type(stack) is type(i)
         assert i.data.shape == (10, 128, 128)
         assert i.scale.shape == (3,)
         assert i.rgb is False
@@ -69,7 +69,7 @@ def test_stack_to_images_4_channels():
     assert len(images) == 4
     assert images[-2].colormap.name == 'red'
     for i in images:
-        assert type(stack) == type(i)
+        assert type(stack) is type(i)
         assert i.data.shape == (128, 128)
 
 
@@ -83,7 +83,7 @@ def test_stack_to_images_0_rgb():
     assert len(images) == 10
     for i in images:
         assert i.rgb
-        assert type(stack) == type(i)
+        assert type(stack) is type(i)
         assert i.data.shape == (128, 128, 3)
 
 
@@ -97,7 +97,7 @@ def test_stack_to_images_1_channel():
     assert len(images) == 1
     for i in images:
         assert i.rgb is False
-        assert type(stack) == type(i)
+        assert type(stack) is type(i)
         assert i.data.shape == (10, 128, 128)
 
 
@@ -176,12 +176,12 @@ def test_images_to_stack_none_scale():
     ids=['full-kwargs', 'partial-kwargs', 'empty-kwargs'],
 )
 def kwargs(request):
-    return request.param
+    return dict(request.param)
 
 
 def test_split_channels(kwargs):
     """Test split_channels with shape (3,128,128) expecting 3 (128,128)"""
-    data = np.random.randint(0, 200, (3, 128, 128))
+    data = np.zeros((3, 128, 128))
     result_list = split_channels(data, 0, **kwargs)
 
     assert len(result_list) == 3
@@ -192,10 +192,10 @@ def test_split_channels(kwargs):
 def test_split_channels_multiscale(kwargs):
     """Test split_channels with multiscale expecting List[LayerData]"""
     data = []
-    data.append(np.random.randint(0, 200, (3, 128, 128)))
-    data.append(np.random.randint(0, 200, (3, 64, 64)))
-    data.append(np.random.randint(0, 200, (3, 32, 32)))
-    data.append(np.random.randint(0, 200, (3, 16, 16)))
+    data.append(np.zeros((3, 128, 128)))
+    data.append(np.zeros((3, 64, 64)))
+    data.append(np.zeros((3, 32, 32)))
+    data.append(np.zeros((3, 16, 16)))
     result_list = split_channels(data, 0, **kwargs)
 
     assert len(result_list) == 3
@@ -210,7 +210,7 @@ def test_split_channels_multiscale(kwargs):
 def test_split_channels_blending(kwargs):
     """Test split_channels with shape (3,128,128) expecting 3 (128,128)"""
     kwargs['blending'] = 'translucent'
-    data = np.random.randint(0, 200, (3, 128, 128))
+    data = np.zeros((3, 128, 128))
     result_list = split_channels(data, 0, **kwargs)
 
     assert len(result_list) == 3
@@ -220,7 +220,7 @@ def test_split_channels_blending(kwargs):
 
 
 def test_split_channels_missing_keywords():
-    data = np.random.randint(0, 200, (3, 128, 128))
+    data = np.zeros((3, 128, 128))
     result_list = split_channels(data, 0)
 
     assert len(result_list) == 3
@@ -235,7 +235,7 @@ def test_split_channels_missing_keywords():
 
 def test_split_channels_affine_nparray(kwargs):
     kwargs['affine'] = np.eye(3)
-    data = np.random.randint(0, 200, (3, 128, 128))
+    data = np.zeros((3, 128, 128))
     result_list = split_channels(data, 0, **kwargs)
 
     assert len(result_list) == 3
@@ -246,7 +246,7 @@ def test_split_channels_affine_nparray(kwargs):
 
 def test_split_channels_affine_napari(kwargs):
     kwargs['affine'] = Affine(affine_matrix=np.eye(3))
-    data = np.random.randint(0, 200, (3, 128, 128))
+    data = np.zeros((3, 128, 128))
     result_list = split_channels(data, 0, **kwargs)
 
     assert len(result_list) == 3
@@ -262,7 +262,7 @@ def test_split_channels_multi_affine_napari(kwargs):
         Affine(scale=[3, 3]),
     ]
 
-    data = np.random.randint(0, 200, (3, 128, 128))
+    data = np.zeros((3, 128, 128))
     result_list = split_channels(data, 0, **kwargs)
 
     assert len(result_list) == 3

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 import sys
 import threading
@@ -12,17 +13,6 @@ from typing import Callable, Optional, Union
 
 from napari.utils.events import Event, EventEmitter
 from napari.utils.misc import StringEnum
-
-try:
-    from napari_error_reporter import capture_exception, install_error_reporter
-except ImportError:
-
-    def _noop(*_, **__):
-        pass
-
-    install_error_reporter = _noop
-    capture_exception = _noop
-
 
 name2num = {
     'error': 40,
@@ -269,7 +259,6 @@ class NotificationManager:
             # Patch for Python < 3.8
             _setup_thread_excepthook()
 
-        install_error_reporter()
         self._originals_except_hooks.append(sys.excepthook)
         self._original_showwarnings_hooks.append(warnings.showwarning)
 
@@ -311,8 +300,6 @@ class NotificationManager:
     ):
         if isinstance(value, KeyboardInterrupt):
             sys.exit('Closed by KeyboardInterrupt')
-
-        capture_exception(value)
 
         if self.exit_on_error:
             sys.__excepthook__(exctype, value, traceback)
@@ -397,9 +384,9 @@ def show_console_notification(notification: Notification):
         ):
             return
 
-        print(notification)
+        print(notification)  # noqa: T201
     except Exception:
-        print(
+        logging.exception(
             'An error occurred while trying to format an error and show it in console.\n'
             'You can try to uninstall IPython to disable rich traceback formatting\n'
             'And/or report a bug to napari'

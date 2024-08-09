@@ -25,14 +25,14 @@ from qtpy.QtWidgets import QWidget
 
 from napari._app_model import get_app
 from napari._app_model.constants import MenuGroup, MenuId
-from napari._app_model.injection._providers import _provide_viewer_or_raise
 from napari._qt._qapp_model.injection._qproviders import (
+    _provide_viewer_or_raise,
     _provide_window,
     _provide_window_or_raise,
 )
 from napari.errors.reader_errors import MultipleReaderError
 from napari.plugins import menu_item_template, plugin_manager
-from napari.plugins._npe2 import get_widget_contribution
+from napari.plugins._npe2 import _when_group_order, get_widget_contribution
 from napari.utils.events import Event
 from napari.utils.translations import trans
 from napari.viewer import Viewer
@@ -71,7 +71,6 @@ def _rebuild_npe1_samples_menu() -> None:  # pragma: no cover
             submenu_id = MenuId.FILE_SAMPLES
 
         for sample_name, sample_dict in samples.items():
-
             _add_sample_partial = partial(
                 _add_sample,
                 plugin=plugin_name,
@@ -368,14 +367,23 @@ def _build_widgets_submenu_actions(
     if not mf.contributions.widgets:
         return [], []
 
+    # if this plugin declares any menu items, its actions should have the
+    # plugin name.
+    # TODO: update once plugin has self menus - they should't exclude it
+    # from the shorter name
+    declares_menu_items = any(
+        len(pm.instance()._command_menu_map[mf.name][command.id])
+        for command in mf.contributions.commands or []
+    )
     widgets = mf.contributions.widgets
     multiprovider = len(widgets) > 1
-    submenu_id, submenu = _get_contrib_parent_menu(
+    default_submenu_id, default_submenu = _get_contrib_parent_menu(
         multiprovider,
         MenuId.MENUBAR_PLUGINS,
         mf,
         MenuGroup.PLUGIN_MULTI_SUBMENU,
     )
+    needs_full_title = declares_menu_items or not multiprovider
 
     widget_actions: list[Action] = []
     for widget in widgets:
@@ -395,7 +403,19 @@ def _build_widgets_submenu_actions(
             full_name=full_name,
         )
 
-        title = widget.display_name if multiprovider else full_name
+        action_menus = [
+            dict({'id': menu_key}, **_when_group_order(menu_item))
+            for menu_key, menu_items in pm.instance()
+            ._command_menu_map[mf.name][widget.command]
+            .items()
+            for menu_item in menu_items
+        ] + [
+            {
+                'id': default_submenu_id,
+                'group': MenuGroup.PLUGIN_SINGLE_CONTRIBUTIONS,
+            }
+        ]
+        title = full_name if needs_full_title else widget.display_name
         # To display '&' instead of creating a shortcut
         title = title.replace('&', '&&')
 
@@ -404,18 +424,13 @@ def _build_widgets_submenu_actions(
                 id=f'{mf.name}:{widget.display_name}',
                 title=title,
                 callback=_widget_callback,
-                menus=[
-                    {
-                        'id': submenu_id,
-                        'group': MenuGroup.PLUGIN_SINGLE_CONTRIBUTIONS,
-                    }
-                ],
+                menus=action_menus,
                 toggled=ToggleRule(
                     get_current=_get_current_dock_status_partial
                 ),
             )
         )
-    return submenu, widget_actions
+    return default_submenu, widget_actions
 
 
 def _register_qt_actions(mf: PluginManifest) -> None:

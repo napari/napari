@@ -268,7 +268,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         #        the source of truth, and is now defined in world space. This exposed an existing
         #        bug where if a field in Dims is modified by the root_validator, events won't
         #        be fired for it. This won't happen for properties because we have dependency
-        #        checks. To fix this, we need dep checks for fileds (psygnal!) and then we
+        #        checks. To fix this, we need dep checks for fields (psygnal!) and then we
         #        can remove the following line. Note that because of this we fire double events,
         #        but this should be ok because we have early returns when slices are unchanged.
         self.dims.events.current_step.connect(self._update_layers)
@@ -377,8 +377,15 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             )
         return self.layers._extent_world_augmented[:, self.dims.displayed]
 
-    def reset_view(self) -> None:
-        """Reset the camera view."""
+    def reset_view(self, *, margin: float = 0.05) -> None:
+        """Reset the camera view.
+
+        Parameters
+        ----------
+        margin : float in [0, 1)
+            Margin as fraction of the canvas, showing blank space around the
+            data.
+        """
 
         extent = self._sliced_extent_world_augmented
         scene_size = extent[1] - extent[0]
@@ -402,12 +409,23 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # zoom is definied as the number of canvas pixels per world pixel
         # The default value used below will zoom such that the whole field
         # of view will occupy 95% of the canvas on the most filled axis
+
+        if 0 <= margin < 1:
+            scale_factor = 1 - margin
+        else:
+            raise ValueError(
+                trans._(
+                    'margin must be between 0 and 1; got {margin} instead.',
+                    deferred=True,
+                    margin=margin,
+                )
+            )
         if np.max(size) == 0:
-            self.camera.zoom = 0.95 * np.min(self._canvas_size)
+            self.camera.zoom = scale_factor * np.min(self._canvas_size)
         else:
             scale = np.array(size[-2:])
             scale[np.isclose(scale, 0)] = 1
-            self.camera.zoom = 0.95 * np.min(
+            self.camera.zoom = scale_factor * np.min(
                 np.array(self._canvas_size) / scale
             )
         self.camera.angles = (0, 0, 90)
@@ -433,7 +451,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         ]
         dtype_str = get_settings().application.new_labels_dtype
         empty_labels = np.zeros(shape, dtype=dtype_str)
-        self.add_labels(empty_labels, translate=np.array(corner), scale=scale)
+        self.add_labels(empty_labels, translate=np.array(corner), scale=scale)  # type: ignore[attr-defined]
+        # We define `add_labels` dynamically, so mypy doesn't know about it.
 
     def _on_layer_reload(self, event: Event) -> None:
         self._layer_slicer.submit(
@@ -462,9 +481,15 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         """Update viewer state for a new active layer."""
         active_layer = event.value
         if active_layer is None:
+            for layer in self.layers:
+                layer.update_transform_box_visibility(False)
             self.help = ''
             self.cursor.style = CursorStyle.STANDARD
         else:
+            active_layer.update_transform_box_visibility(True)
+            for layer in self.layers:
+                if layer != active_layer:
+                    layer.update_transform_box_visibility(False)
             self.help = active_layer.help
             self.cursor.style = active_layer.cursor
             self.cursor.size = active_layer.cursor_size
@@ -729,6 +754,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         *,
         channel_axis=None,
         affine=None,
+        axis_labels=None,
         attenuation=0.05,
         blending=None,
         cache=True,
@@ -753,6 +779,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         scale=None,
         shear=None,
         translate=None,
+        units=None,
         visible=True,
     ) -> Union[Image, list[Image]]:
         """Add one or more Image layers to the layer list.
@@ -781,6 +808,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             the final column is a length N translation vector and a 1 or a
             napari `Affine` transform object. Applied as an extra transform on
             top of the provided scale, rotate, and shear values.
+        axis_labels : tuple of str
+            Dimension names of the layer data.
+            If not provided, axis_labels will be set to (..., 'axis -2', 'axis -1').
         attenuation : float or list of float
             Attenuation rate for attenuated maximum intensity projection.
         blending : str or list of str
@@ -867,6 +897,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             A vector of shear values for an upper triangular n-D shear matrix.
         translate : tuple of float or list of tuple of float
             Translation values for the layer.
+        units : tuple of str or pint.Unit, optional
+            Units of the layer data in world coordinates.
+            If not provided, the default units are assumed to be pixels.
         visible : bool or list of bool
             Whether the layer visual is currently being displayed.
 
@@ -889,6 +922,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # doing this here for IDE/console autocompletion in add_image function.
         kwargs = {
             'rgb': rgb,
+            'axis_labels': axis_labels,
             'colormap': colormap,
             'contrast_limits': contrast_limits,
             'gamma': gamma,
@@ -914,6 +948,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             'experimental_clipping_planes': experimental_clipping_planes,
             'custom_interpolation_kernel_2d': custom_interpolation_kernel_2d,
             'projection_mode': projection_mode,
+            'units': units,
         }
 
         # these arguments are *already* iterables in the single-channel case.
@@ -927,6 +962,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             'metadata',
             'experimental_clipping_planes',
             'custom_interpolation_kernel_2d',
+            'axis_labels',
+            'units',
         }
 
         if channel_axis is None:
@@ -1285,7 +1322,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     layer_type=layer_type,
                 )
             # plugin failed
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:
                 raise ReaderPluginError(
                     trans._(
                         'Tried opening with {plugin}, but failed.',
@@ -1670,5 +1707,5 @@ for _layer in (
     layers.Tracks,
     layers.Vectors,
 ):
-    func = create_add_method(_layer, filename=__file__)
+    func = create_add_method(_layer)
     setattr(ViewerModel, func.__name__, func)

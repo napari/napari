@@ -1,10 +1,9 @@
-"""Image class.
-"""
+"""Image class."""
 
 from __future__ import annotations
 
 import warnings
-from typing import Literal, Union, cast
+from typing import Any, Literal, Union, cast
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -51,6 +50,9 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         provided scale, rotate, and shear values.
     attenuation : float
         Attenuation rate for attenuated maximum intensity projection.
+    axis_labels : tuple of str
+        Dimension names of the layer data.
+        If not provided, axis_labels will be set to (..., 'axis -2', 'axis -1').
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -135,6 +137,9 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         ones along the main diagonal.
     translate : tuple of float
         Translation values for the layer.
+    units : tuple of str or pint.Unit, optional
+        Units of the layer data in world coordinates.
+        If not provided, the default units are assumed to be pixels.
     visible : bool
         Whether the layer visual is currently being displayed.
 
@@ -147,6 +152,8 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         multiscale image. Please note multiscale rendering is only
         supported in 2D. In 3D, only the lowest resolution scale is
         displayed.
+    axis_labels : tuple of str
+        Dimension names of the layer data.
     metadata : dict
         Image metadata.
     rgb : bool
@@ -203,7 +210,8 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         Clipping planes defined in data coordinates, used to clip the volume.
     custom_interpolation_kernel_2d : np.ndarray
         Convolution kernel used with the 'custom' interpolation mode in 2D rendering.
-
+    units: tuple of pint.Unit
+        Units of the layer data in world coordinates.
     Notes
     -----
     _data_view : array (N, M), (N, M, 3), or (N, M, 4)
@@ -226,6 +234,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         *,
         affine=None,
         attenuation=0.05,
+        axis_labels=None,
         blending='translucent',
         cache=True,
         colormap='gray',
@@ -249,6 +258,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         scale=None,
         shear=None,
         translate=None,
+        units=None,
         visible=True,
     ):
         # Determine if rgb
@@ -267,6 +277,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         super().__init__(
             data,
             affine=affine,
+            axis_labels=axis_labels,
             blending=blending,
             cache=cache,
             custom_interpolation_kernel_2d=custom_interpolation_kernel_2d,
@@ -284,6 +295,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             scale=scale,
             shear=shear,
             translate=translate,
+            units=units,
             visible=visible,
         )
 
@@ -355,12 +367,12 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         self._rendering = ImageRendering(rendering)
         self.events.rendering()
 
-    def _get_state(self):
+    def _get_state(self) -> dict[str, Any]:
         """Get dictionary of layer state.
 
         Returns
         -------
-        state : dict
+        state : dict of str to Any
             Dictionary of layer state.
         """
         state = self._get_base_state()
@@ -551,6 +563,12 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
 
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap."""
+        # don't bother updating thumbnail if we don't have any data
+        # this also avoids possible dtype mismatch issues below
+        # for example np.clip may raise an OverflowError (in numpy 2.0)
+        if self._slice.empty:
+            return
+
         image = self._slice.thumbnail.raw
 
         if self._slice_input.ndisplay == 3 and self.ndim > 2:
@@ -594,6 +612,9 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
                 image, zoom_factor, prefilter=False, order=0
             )
             low, high = self.contrast_limits
+            if np.issubdtype(downsampled.dtype, np.integer):
+                low = max(low, np.iinfo(downsampled.dtype).min)
+                high = min(high, np.iinfo(downsampled.dtype).max)
             downsampled = np.clip(downsampled, low, high)
             color_range = high - low
             if color_range != 0:

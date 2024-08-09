@@ -16,7 +16,7 @@ from napari.utils.interactions import (
 )
 
 
-@pytest.fixture
+@pytest.fixture()
 def create_known_shapes_layer():
     """Create shapes layer with known coordinates
 
@@ -107,6 +107,55 @@ def test_add_simple_shape(shape_type, create_known_shapes_layer):
     # Ensure it's selected, accounting for zero-indexing
     assert len(layer.selected_data) == 1
     assert layer.selected_data == {n_shapes}
+
+
+def test_line_fixed_angles(create_known_shapes_layer):
+    """Draw line with fixed angles."""
+    layer, n_shapes, known_non_shape = create_known_shapes_layer
+
+    layer.mode = 'add_line'
+
+    # set _fixed_aspect, like Shift would
+    layer._fixed_aspect = True
+
+    # Simulate click with shift
+    event = read_only_mouse_event(
+        type='mouse_press',
+        position=known_non_shape,
+    )
+    mouse_press_callbacks(layer, event)
+
+    known_non_shape_end = [40, 60]
+    # Simulate drag with shift
+    event = read_only_mouse_event(
+        type='mouse_move',
+        is_dragging=True,
+        position=known_non_shape_end,
+    )
+    mouse_move_callbacks(layer, event)
+
+    # Simulate release with shift
+    event = read_only_mouse_event(
+        type='mouse_release',
+        position=known_non_shape_end,
+    )
+    mouse_release_callbacks(layer, event)
+
+    new_line = layer.data[-1][-1] - layer.data[-1][0]
+
+    # Check new shape added at coordinates
+    assert len(layer.data) == n_shapes + 1
+    # start should match mouse event
+    assert np.allclose(
+        layer.data[-1][0], np.asarray(known_non_shape).astype(float)
+    )
+    # With _fixed_aspect, the line end won't be at the end event
+    assert not np.allclose(
+        layer.data[-1][-1], np.asarray(known_non_shape_end).astype(float)
+    )
+    # with _fixed_aspect the angle of the line should be 45 degrees
+    theta = np.degrees(np.arctan2(new_line[1], new_line[0]))
+    assert np.allclose(theta, 45.0)
 
 
 def test_polygon_lasso_tablet(create_known_shapes_layer):
@@ -234,16 +283,19 @@ def test_add_complex_shape(shape_type, create_known_shapes_layer):
         event = read_only_mouse_event(
             type='mouse_move',
             position=coord,
+            pos=np.array(coord, dtype=float),
         )
         mouse_move_callbacks(layer, event)
         event = read_only_mouse_event(
             type='mouse_press',
             position=coord,
+            pos=np.array(coord, dtype=float),
         )
         mouse_press_callbacks(layer, event)
         event = read_only_mouse_event(
             type='mouse_release',
             position=coord,
+            pos=np.array(coord, dtype=float),
         )
         mouse_release_callbacks(layer, event)
 
@@ -264,6 +316,62 @@ def test_add_complex_shape(shape_type, create_known_shapes_layer):
     # Ensure it's selected, accounting for zero-indexing
     assert len(layer.selected_data) == 1
     assert layer.selected_data == {n_shapes}
+
+
+@pytest.mark.parametrize(
+    'shape_type_vertices',
+    [
+        ('path', [[20, 30], [20, 30]]),
+        ('polygon', [[20, 30], [10, 50], [10, 50]]),
+    ],
+)
+def test_add_invalid_shape(shape_type_vertices, create_known_shapes_layer):
+    """Check invalid shape clicking behavior in add polygon mode."""
+    layer, n_shapes, known_non_shape = create_known_shapes_layer
+
+    # Add shape at location where non exists
+    shape_type, shape_vertices = shape_type_vertices
+    layer.mode = f'add_{shape_type}'
+
+    for coord in shape_vertices:
+        # Simulate move, click, and release
+        event = read_only_mouse_event(
+            type='mouse_move',
+            position=coord,
+            pos=np.array(coord, dtype=float),
+        )
+        mouse_move_callbacks(layer, event)
+        event = read_only_mouse_event(
+            type='mouse_press',
+            position=coord,
+            pos=np.array(coord, dtype=float),
+        )
+        mouse_press_callbacks(layer, event)
+        event = read_only_mouse_event(
+            type='mouse_release',
+            position=coord,
+            pos=np.array(coord, dtype=float),
+        )
+        mouse_release_callbacks(layer, event)
+
+    # Although the shape/polygon being created is invalid, three shapes should
+    # be available until it is marked as finished via mouse double click
+    assert len(layer.data) == n_shapes + 1
+
+    # finish drawing causing the removal of the in progress shape since is invalid
+    end_click = read_only_mouse_event(
+        type='mouse_double_click',
+        position=coord,
+        pos=np.array(coord, dtype=float),
+    )
+    assert layer.mouse_double_click_callbacks
+    mouse_double_click_callbacks(layer, end_click)
+
+    # Ensure no data is selected, number of shapes is the initial one and
+    # last cursor position variable was reset
+    assert len(layer.selected_data) == 0
+    assert len(layer.data) == n_shapes
+    assert layer._last_cursor_position is None
 
 
 def test_vertex_insert(create_known_shapes_layer):
@@ -594,6 +702,75 @@ def test_after_in_add_mode_shape(mode, create_known_shapes_layer):
     assert len(layer.selected_data) == 0
 
 
+@pytest.mark.parametrize(
+    'mode',
+    [
+        'add_polygon',
+        'add_path',
+    ],
+)
+def test_clicking_the_same_point_is_not_crashing(
+    mode, create_known_shapes_layer
+):
+    layer, n_shapes, _ = create_known_shapes_layer
+
+    layer.mode = mode
+    position = tuple(layer.data[0][0])
+
+    for _ in range(2):
+        event = read_only_mouse_event(type='mouse_press', position=position)
+        mouse_press_callbacks(layer, event)
+
+        event = read_only_mouse_event(type='mouse_release', position=position)
+        mouse_release_callbacks(layer, event)
+
+    # If there was no move event between the two clicks, we expect value[1] must be None
+    assert layer.get_value(event.position, world=True)[1] is None
+
+
+@pytest.mark.parametrize(
+    'mode',
+    [
+        'add_polygon',
+        'add_path',
+    ],
+)
+def test_is_creating_is_false_on_creation(mode, create_known_shapes_layer):
+    layer, n_shapes, _ = create_known_shapes_layer
+
+    layer.mode = mode
+    position = tuple(layer.data[0][0])
+
+    def is_creating_is_True(event):
+        assert event.source._is_creating
+
+    def is_creating_is_False(event):
+        assert not event.source._is_creating
+
+    assert not layer._is_creating
+    layer.events.set_data.connect(is_creating_is_True)
+
+    event = read_only_mouse_event(type='mouse_press', position=position)
+    mouse_press_callbacks(layer, event)
+
+    assert layer._is_creating
+
+    event = read_only_mouse_event(type='mouse_release', position=position)
+    mouse_release_callbacks(layer, event)
+
+    assert layer._is_creating
+
+    layer.events.set_data.disconnect(is_creating_is_True)
+    layer.events.set_data.connect(is_creating_is_False)
+    end_click = read_only_mouse_event(
+        type='mouse_double_click',
+        position=position,
+    )
+    mouse_double_click_callbacks(layer, end_click)
+
+    assert not layer._is_creating
+
+
 @pytest.mark.parametrize('mode', ['select', 'direct'])
 def test_unselect_select_shape(mode, create_known_shapes_layer):
     """Select a shape by clicking on one in select mode."""
@@ -754,7 +931,7 @@ def test_selecting_no_shapes_with_drag(mode, create_known_shapes_layer):
 
 
 @pytest.mark.parametrize(
-    'attr', ('_move_modes', '_drag_modes', '_cursor_modes')
+    'attr', ['_move_modes', '_drag_modes', '_cursor_modes']
 )
 def test_all_modes_covered(attr):
     """
@@ -766,7 +943,7 @@ def test_all_modes_covered(attr):
 
 
 @pytest.mark.parametrize(
-    'pre_selection,on_point,modifier',
+    ('pre_selection', 'on_point', 'modifier'),
     [
         (set(), True, []),
         ({1}, True, []),
@@ -919,6 +1096,6 @@ def test_drag_start_selection(
         assert 0 in layer.selected_data
         assert layer.selected_data == set(range(n_points))
     else:
-        assert False, 'Unreachable code'  # pragma: no cover
+        pytest.fail('Unreachable code')
     assert layer._drag_box is None
     assert layer._drag_start is None
