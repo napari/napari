@@ -144,3 +144,13 @@ def test_screenshot_to_file(make_napari_viewer, tmp_path):
     )
     screenshot_array_from_file = QImg2array(QImage(screenshot_file_path))
     assert np.array_equal(screenshot_array, screenshot_array_from_file)
+
+
+def test_play_dim_and_stop_dim(qtbot, make_napari_viewer):
+    viewer = make_napari_viewer()
+    data = np.zeros((10, 10, 10))
+    viewer.add_image(data)
+    viewer.window.play_dim(axis=0, fps=10, loop_mode="loop", frame_range=None)
+    assert viewer.window._qt_viewer.dims.is_playing
+    viewer.window.stop_dim()
+    qtbot.waitUntil(lambda: not viewer.window._qt_viewer.dims.is_playing)
