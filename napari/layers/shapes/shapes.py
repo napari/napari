@@ -589,10 +589,10 @@ class Shapes(Layer):
         if len(data) > 0:
             self._current_edge_color = self.edge_color[-1]
             self._current_face_color = self.face_color[-1]
-        elif len(data) == 0 and len(self.properties) > 0:
+        elif len(data) == 0 and len(self.features.columns) > 0:
             self._initialize_current_color_for_empty_layer(edge_color, 'edge')
             self._initialize_current_color_for_empty_layer(face_color, 'face')
-        elif len(data) == 0 and len(self.properties) == 0:
+        elif len(data) == 0 and len(self.features.columns) == 0:
             self._current_edge_color = transform_color_with_defaults(
                 num_entries=1,
                 colors=edge_color,
@@ -1113,34 +1113,34 @@ class Shapes(Layer):
         elif color_mode in (ColorMode.CYCLE, ColorMode.COLORMAP):
             color_property = getattr(self, f'_{attribute}_color_property')
             if color_property == '':
-                if self.properties:
-                    new_color_property = next(iter(self.properties))
+                if len(self.features.columns) > 0:
+                    new_color_feature = self.features.columns[0]
                     setattr(
                         self,
                         f'_{attribute}_color_property',
-                        new_color_property,
+                        new_color_feature,
                     )
                     warnings.warn(
                         trans._(
-                            '_{attribute}_color_property was not set, setting to: {new_color_property}',
+                            '_{attribute}_color_property was not set, setting to: {new_color_feature}',
                             deferred=True,
                             attribute=attribute,
-                            new_color_property=new_color_property,
+                            new_color_feature=new_color_feature,
                         )
                     )
                 else:
                     raise ValueError(
                         trans._(
-                            'There must be a valid Shapes.properties to use {color_mode}',
+                            'There must be a valid Shapes.features to use {color_mode}',
                             deferred=True,
                             color_mode=color_mode,
                         )
                     )
 
-            # ColorMode.COLORMAP can only be applied to numeric properties
+            # ColorMode.COLORMAP can only be applied to numeric features
             color_property = getattr(self, f'_{attribute}_color_property')
             if (color_mode == ColorMode.COLORMAP) and not issubclass(
-                self.properties[color_property].dtype.type, np.number
+                self.features[color_property].dtype.type, np.number
             ):
                 raise TypeError(
                     trans._(
@@ -1278,15 +1278,14 @@ class Shapes(Layer):
                 with self.block_update_properties():
                     self.current_edge_width = unique_edge_width
 
-            unique_properties = {}
-            for k, v in self.properties.items():
-                unique_properties[k] = _unique_element(
-                    v[selected_data_indices]
+            unique_features = {}
+            for k, v in self.features.items():
+                unique_features[k] = _unique_element(
+                    v[selected_data_indices].to_numpy()
                 )
 
-            if all(p is not None for p in unique_properties.values()):
-                with self.block_update_properties():
-                    self.current_properties = unique_properties
+            if all(p is not None for p in unique_features.values()):
+                self.feature_defaults = unique_features
 
     @property
     def _is_moving(self) -> bool:
@@ -1311,7 +1310,7 @@ class Shapes(Layer):
             Should be 'edge' for edge_color or 'face' for face_color.
         """
         if self._is_color_mapped(color):
-            if guess_continuous(self.properties[color]):
+            if guess_continuous(self.features[color]):
                 setattr(self, f'_{attribute}_color_mode', ColorMode.COLORMAP)
             else:
                 setattr(self, f'_{attribute}_color_mode', ColorMode.CYCLE)
@@ -1399,7 +1398,7 @@ class Shapes(Layer):
             The calculated values for setting edge or face_color
         """
         if self._is_color_mapped(color):
-            if guess_continuous(self.properties[color]):
+            if guess_continuous(self.features[color]):
                 setattr(self, f'_{attribute}_color_mode', ColorMode.COLORMAP)
             else:
                 setattr(self, f'_{attribute}_color_mode', ColorMode.CYCLE)
@@ -1451,7 +1450,7 @@ class Shapes(Layer):
         color_mode = getattr(self, f'_{attribute}_color_mode')
         if color_mode == ColorMode.CYCLE:
             color_property = getattr(self, f'_{attribute}_color_property')
-            color_properties = self.properties[color_property]
+            color_properties = self.features[color_property]
             if update_color_mapping:
                 color_cycle = getattr(self, f'_{attribute}_color_cycle')
                 color_cycle_map = {
@@ -1486,7 +1485,7 @@ class Shapes(Layer):
 
         elif color_mode == ColorMode.COLORMAP:
             color_property = getattr(self, f'_{attribute}_color_property')
-            color_properties = self.properties[color_property]
+            color_properties = self.features[color_property]
             if len(color_properties) > 0:
                 contrast_limits = getattr(self, f'{attribute}_contrast_limits')
                 colormap = getattr(self, f'{attribute}_colormap')
@@ -1533,7 +1532,7 @@ class Shapes(Layer):
             new_colors = np.tile(current_face_color, (adding, 1))
         elif color_mode == ColorMode.CYCLE:
             property_name = getattr(self, f'_{attribute}_color_property')
-            color_property_value = self.current_properties[property_name][0]
+            color_property_value = self.feature_defaults[property_name][0]
 
             # check if the new color property is in the cycle map
             # and add it if it is not
@@ -1552,7 +1551,7 @@ class Shapes(Layer):
             )
         elif color_mode == ColorMode.COLORMAP:
             property_name = getattr(self, f'_{attribute}_color_property')
-            color_property_value = self.current_properties[property_name][0]
+            color_property_value = self.feature_defaults[property_name][0]
             colormap = getattr(self, f'{attribute}_colormap')
             contrast_limits = getattr(self, f'_{attribute}_contrast_limits')
 
@@ -1568,7 +1567,7 @@ class Shapes(Layer):
     def _is_color_mapped(self, color):
         """determines if the new color argument is for directly setting or cycle/colormap"""
         if isinstance(color, str):
-            return color in self.properties
+            return color in self.features
         if isinstance(color, (list, np.ndarray)):
             return False
 
@@ -1597,8 +1596,8 @@ class Shapes(Layer):
         state.update(
             {
                 'ndim': self.ndim,
-                'properties': self.properties,
-                'property_choices': self.property_choices,
+                'properties': self._feature_table.properties(),
+                'property_choices': self._feature_table.choices(),
                 'text': self.text.dict(),
                 'shape_type': self.shape_type,
                 'opacity': self.opacity,

@@ -6,7 +6,6 @@ from scipy.sparse import coo_matrix
 from scipy.spatial import cKDTree
 
 from napari.layers.utils.layer_utils import _FeatureTable
-from napari.utils.events.custom_types import Array
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -175,11 +174,6 @@ class TrackManager:
         """dict {str: np.ndarray (N,)}: Properties for each track."""
         return self._feature_table.properties()
 
-    @properties.setter
-    def properties(self, properties: dict[str, Array]):
-        """set track properties"""
-        self.features = properties
-
     @property
     def graph(self) -> Optional[dict[int, list[int]]]:
         """dict {int: list}: Graph representing associations between tracks."""
@@ -321,19 +315,19 @@ class TrackManager:
             self._graph_vertices = None
             self._graph_connex = None
 
-    def vertex_properties(self, color_by: str) -> np.ndarray:
-        """return the properties of tracks by vertex"""
+    def vertex_features(self, color_by: str) -> np.ndarray:
+        """return the features of tracks by vertex"""
 
-        if color_by not in self.properties:
+        if color_by not in self.features:
             raise ValueError(
                 trans._(
-                    'Property {color_by} not found',
+                    'Feature {color_by} not found',
                     deferred=True,
                     color_by=color_by,
                 )
             )
 
-        return self.properties[color_by]
+        return self.features[color_by].to_numpy()
 
     def get_value(self, coords):
         """use a kd-tree to lookup the ID of the nearest tree"""

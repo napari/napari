@@ -53,10 +53,10 @@ class QtVectorsControls(QtLayerControls):
         Dropdown widget to select vector_style for the vectors.
     color_mode_comboBox : qtpy.QtWidgets.QComboBox
         Dropdown widget to select edge_color_mode for the vectors.
-    color_prop_box : qtpy.QtWidgets.QComboBox
-        Dropdown widget to select _edge_color_property for the vectors.
-    edge_prop_label : qtpy.QtWidgets.QLabel
-        Label for color_prop_box
+    color_feature_box : qtpy.QtWidgets.QComboBox
+        Dropdown widget to select the edge_color feature for the vectors.
+    edge_feature_label : qtpy.QtWidgets.QLabel
+        Label for color_feature_box
     layer : napari.layers.Vectors
         An instance of a napari Vectors layer.
     outOfSliceCheckBox : qtpy.QtWidgets.QCheckBox
@@ -78,15 +78,14 @@ class QtVectorsControls(QtLayerControls):
     def __init__(self, layer) -> None:
         super().__init__(layer)
 
-        # dropdown to select the property for mapping edge_color
-        color_properties = self._get_property_values()
-        self.color_prop_box = QComboBox(self)
-        self.color_prop_box.currentTextChanged.connect(
-            self.change_edge_color_property
+        # dropdown to select the feature for mapping edge_color
+        self.color_feature_box = QComboBox(self)
+        self.color_feature_box.currentTextChanged.connect(
+            self.change_edge_color_feature
         )
-        self.color_prop_box.addItems(color_properties)
+        self.color_feature_box.addItems(self.layer.features.columns)
 
-        self.edge_prop_label = QLabel(trans._('edge property:'))
+        self.edge_feature_label = QLabel(trans._('edge feature:'))
 
         # vector direct color mode adjustment and widget
         self.edgeColorEdit = QColorSwatchEdit(
@@ -157,7 +156,7 @@ class QtVectorsControls(QtLayerControls):
             trans._('edge color mode:'), self.color_mode_comboBox
         )
         self.layout().addRow(self.edge_color_label, self.edgeColorEdit)
-        self.layout().addRow(self.edge_prop_label, self.color_prop_box)
+        self.layout().addRow(self.edge_feature_label, self.color_feature_box)
         self.layout().addRow(trans._('out of slice:'), self.outOfSliceCheckBox)
 
         self.layer.events.edge_width.connect(self._on_edge_width_change)
@@ -171,21 +170,20 @@ class QtVectorsControls(QtLayerControls):
         )
         self.layer.events.edge_color.connect(self._on_edge_color_change)
 
-    def change_edge_color_property(self, property_name: str):
-        """Change edge_color_property of vectors on the layer model.
-        This property is the property the edge color is mapped to.
+    def change_edge_color_feature(self, feature: str):
+        """Change edge_color feature of vectors on the layer model.
 
         Parameters
         ----------
-        property_name : str
-            property to map the edge color to
+        feature : str
+            feature to map the edge color to
         """
         mode = self.layer.edge_color_mode
         try:
-            self.layer.edge_color = property_name
+            self.layer.edge_color = feature
             self.layer.edge_color_mode = mode
         except TypeError:
-            # if the selected property is the wrong type for the current color mode
+            # if the selected feature is the wrong type for the current color mode
             # the color mode will be changed to the appropriate type, so we must update
             self._on_edge_color_mode_change()
             raise
@@ -282,30 +280,14 @@ class QtVectorsControls(QtLayerControls):
         if mode in {'cycle', 'colormap'}:
             self.edgeColorEdit.setHidden(True)
             self.edge_color_label.setHidden(True)
-            self.color_prop_box.setHidden(False)
-            self.edge_prop_label.setHidden(False)
+            self.color_feature_box.setHidden(False)
+            self.edge_feature_label.setHidden(False)
 
         elif mode == 'direct':
             self.edgeColorEdit.setHidden(False)
             self.edge_color_label.setHidden(False)
-            self.color_prop_box.setHidden(True)
-            self.edge_prop_label.setHidden(True)
-
-    def _get_property_values(self):
-        """Get the current property values from the Vectors layer
-
-        Returns
-        -------
-        property_values : np.ndarray
-            array of all of the union of the property names (keys)
-            in Vectors.properties and Vectors.property_choices
-
-        """
-        property_choices = [*self.layer.property_choices]
-        properties = [*self.layer.properties]
-        property_values = np.union1d(property_choices, properties)
-
-        return property_values
+            self.color_feature_box.setHidden(True)
+            self.edge_feature_label.setHidden(True)
 
     def _on_length_change(self):
         """Change length of vectors."""
@@ -354,7 +336,9 @@ class QtVectorsControls(QtLayerControls):
             ColorMode.CYCLE,
             ColorMode.COLORMAP,
         ):
-            with qt_signals_blocked(self.color_prop_box):
+            with qt_signals_blocked(self.color_feature_box):
                 prop = self.layer._edge.color_properties.name
-                index = self.color_prop_box.findText(prop, Qt.MatchFixedString)
-                self.color_prop_box.setCurrentIndex(index)
+                index = self.color_feature_box.findText(
+                    prop, Qt.MatchFixedString
+                )
+                self.color_feature_box.setCurrentIndex(index)
