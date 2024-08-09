@@ -1749,7 +1749,14 @@ class Window:
               The dictionary with index and file paths for each shapes roi
        
        """
-        roi_dict = {}
+        if len(path) != len(screenshot_list):
+            raise ValueError(
+                trans._(
+                    'The number of file paths does not match the number of ROI shapes',
+                        deferred=True)
+            )
+        
+        screenshot_list = []
         camera = self._qt_viewer.viewer.camera
         start_camera_center = camera.center
         start_camera_zoom = camera.zoom
@@ -1763,13 +1770,15 @@ class Window:
 
               camera.zoom = 1.0
               path = paths[index] if paths is not None else None
-              roi_dict[index] = self.screenshot(path=path, canvas_only=True)
+              screenshot_list.append(self.screenshot(path=path, canvas_only=True, scale=scale))
 
               canvas.size = prev_size
               camera.center = start_camera_center
               camera.zoom = start_camera_zoom
 
-        return roi_dict 
+        
+
+        return screenshot_list 
 
     def screenshot(
         self, path=None, size=None, scale=None, flash=True, canvas_only=False
