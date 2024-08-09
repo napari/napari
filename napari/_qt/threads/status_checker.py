@@ -13,32 +13,59 @@ if TYPE_CHECKING:
 
 
 class StatusChecker(QThread):
+    """Separate thread dedicated to updating the status bar.
+    
+    Prior to https://github.com/napari/napari/pull/7146, status bar updates
+    happened on the main thread in the viewer model, which could be
+    expensive in some layers and resulted in bad performance when some
+    layers were selected.
+    
+    This class puts the job of computing the status into a separate thread,
+    which then uses Qt Signals to update the main viewer with the status
+    string.
+    
+    Because the thread runs a single infinite while loop, the updates are
+    naturally throttled to as fast as they can be computed, but no faster.
+    
+    Attributes
+    ----------
+    _need_status_update : threading.Event
+        An Event (fancy thread-safe bool) for keeping track of when the
+        status needs updating (because the cursor has moved).
+    _terminate : bool
+        Whether the thread needs to be terminated. Set by the QtViewer
+        when it is being closed. No more status updates will take place if
+        _terminate is set.
+    viewer_ref : weakref.ref[napari.viewer.ViewerModel]
+        A weak reference to the viewer providing the status updates. We
+        don't want this thread to prevent the viewer from being garbage
+        collected, so we keep only a weak reference, and check it when
+        we need to compute a new status update.
+    """
+
     status_and_tooltip_changed = Signal(object)
 
     def __init__(self, viewer: ViewerModel, parent: QObject | None = None):
         super().__init__(parent=parent)
         self.viewer_ref = ref(viewer)
-        self._event = Event()
-        self._need_status_update = False
+        self._need_status_update = Event()
+        self._need_status_update.clear()
         self._terminate = False
 
     def trigger_status_update(self) -> None:
-        self._need_status_update = True
-        self._event.set()
+        self._need_status_update.set()
 
     def terminate(self) -> None:
         self._terminate = True
-        self._event.set()
+        self._need_status_update.set()
 
     def run(self) -> None:
-        self._event.clear()
         while not self._terminate:
-            if self._need_status_update:
-                self._need_status_update = False
-                self._event.clear()
+            if self._need_status_update.is_set():
+                self._need_status_update.clear()
                 self.calculate_status()
             else:
-                self._event.wait()
+                self._need_status_update.wait()
 
     def calculate_status(self) -> None:
         viewer = self.viewer_ref()
