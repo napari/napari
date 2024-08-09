@@ -214,8 +214,8 @@ class _QtMainWindow(QMainWindow):
             self._toggle_status_thread
         )
 
-    def _toggle_status_thread(self, value: Event):
-        if value.value:
+    def _toggle_status_thread(self, event: Event):
+        if event.value:
             self.status_thread.start()
         else:
             self.status_thread.terminate()
