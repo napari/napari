@@ -99,6 +99,10 @@ export_figure = viewer.export_figure()
 scaled_export_figure = viewer.export_figure(scale_factor=5)
 viewer.theme = "dark"
 
+# Add scale bar of a defined length to the exported figure
+viewer.scale_bar.visible = True
+viewer.scale_bar.length = 250
+
 viewer.add_image(export_figure, rgb=True, name='exported_figure')
 viewer.add_image(scaled_export_figure, rgb=True, name='scaled_exported_figure')
 viewer.reset_view()
