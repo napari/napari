@@ -37,6 +37,7 @@ class Mode(StringEnum):
     ADD_RECTANGLE = auto()
     ADD_ELLIPSE = auto()
     ADD_LINE = auto()
+    ADD_POLYLINE = auto()
     ADD_PATH = auto()
     ADD_POLYGON = auto()
     ADD_POLYGON_LASSO = auto()
