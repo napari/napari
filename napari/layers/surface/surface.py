@@ -434,7 +434,7 @@ class Surface(IntensityVisualizationMixin, Layer):
 
         self.faces = faces
 
-        self.refresh()
+        self.refresh(extent=False)
         self.events.data(value=self.data)
         self._reset_editable()
 

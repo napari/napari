@@ -306,6 +306,7 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
         ndims = len(event.offset)
 
         if self.node._texture.shape[:ndims] != raw_displayed.shape[:ndims]:
+            # TODO: I'm confused by this whole process; should this refresh be changed?
             self.layer.refresh()
             return
 
