@@ -1,10 +1,10 @@
 # https://github.com/marketplace/actions/labeler
-name: "Pull Request Labeler"
+name: Add labels
 on:
 - pull_request_target
 
 jobs:
-  triage:
+  labeler:
     permissions:
       contents: read
       pull-requests: write

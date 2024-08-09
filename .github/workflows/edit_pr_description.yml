@@ -1,4 +1,4 @@
-name: Remove html In PR description
+name: Clean up PR description
 # see https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#pull_request_target
 on:
   # see https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#pull_request_target
@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   check_labels:
-    name: Remove html comments.
+    name: Remove html comments
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
