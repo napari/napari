@@ -40,7 +40,8 @@ def __getattr__(name: str) -> Optional[bool]:
                 'octree_config is deprecated in version 0.5 and will be removed in a later version.'
                 'More generally, the experimental octree feature was removed in napari version 0.5 so this value is always None. '
                 'If you need to use that experimental feature, continue to use the latest 0.4 release. '
-                'Also look out for announcements regarding similar efforts.'
+                'Also look out for announcements regarding similar efforts.',
+                deferred=True,
             ),
             DeprecationWarning,
         )
@@ -51,7 +52,8 @@ def __getattr__(name: str) -> Optional[bool]:
                 'async_octree is deprecated in version 0.5 and will be removed in a later version.'
                 'More generally, the experimental octree feature was removed in version 0.5 so this value is always False. '
                 'If you need to use that experimental feature, continue to use the latest 0.4 release. '
-                'Also look out for announcements regarding similar future efforts.'
+                'Also look out for announcements regarding similar future efforts.',
+                deferred=True,
             ),
             DeprecationWarning,
         )
@@ -70,7 +72,8 @@ def __getattr__(name: str) -> Optional[bool]:
                 'async_loading is deprecated in version 0.5 and will be removed in a later version. '
                 'The old approach to async loading was removed in version 0.5 so this value is always False. '
                 'Instead, please use napari.settings.get_settings().experimental.async_ to use a new approach. '
-                'If you need to specifically use the old approach, continue to use the latest 0.4 release.'
+                'If you need to specifically use the old approach, continue to use the latest 0.4 release.',
+                deferred=True,
             ),
             DeprecationWarning,
         )
