@@ -914,13 +914,8 @@ class QtViewer(QSplitter):
         """Add files from the menubar."""
         filenames = self._open_file_dialog_uni(trans._('Select file(s)...'))
 
-        if (filenames != []) and (filenames is not None):
-            for filename in filenames:
-                self._qt_open(
-                    [filename],
-                    choose_plugin=choose_plugin,
-                    stack=stack,
-                )
+        if filenames:
+            self._qt_open(filenames, choose_plugin=choose_plugin, stack=stack)
             update_open_history(filenames[0])
 
     def _open_files_dialog_as_stack_dialog(self, choose_plugin=False):
