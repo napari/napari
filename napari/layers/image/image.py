@@ -689,3 +689,41 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
                 self.refresh()
             finally:
                 self._keep_auto_contrast = prev
+
+    def _calculate_value_from_ray(self, values):
+        values_within_clim = (values >= self.contrast_limits[0]) & (
+            values <= self.contrast_limits[1]
+        )
+        values_masked = np.where(values_within_clim, values, np.nan)
+        if np.all(np.isnan(values_masked)):
+            return None  # out of clims everywhere
+        if self.rendering == ImageRendering.TRANSLUCENT:
+            first_val = np.ravel(values_masked)[0]
+            return first_val if not np.isnan(first_val) else None
+        # these are probably not the same as how the gpu does it...
+        if self.rendering == ImageRendering.AVERAGE:
+            return np.nanmean(values_masked)
+        if self.rendering == ImageRendering.ADDITIVE:
+            # TODO: this is "broken" cause same pixel gets multisampled...
+            #       but it looks like it's also overdoing it in vispy vis too?
+            #       I don't know if there's a way to *not* do it...
+            return np.nansum(values_masked)
+        if self.rendering == ImageRendering.MIP:
+            return np.nanmax(values_masked)
+        if self.rendering == ImageRendering.MINIP:
+            return np.nanmin(values_masked)
+        if self.rendering == ImageRendering.ATTENUATED_MIP:
+            # normalize values so attenuation applies from 0 to 1
+            values = (values - self.contrast_limits[0]) / self.contrast_limits[
+                1
+            ]
+            # approx, step size is actually calculated with int(lenght(ray) * 2)
+            step_size = 0.5
+            sumval = step_size * np.cumsum(np.clip(values, 0, 1)) * len(values)
+            scale = np.exp(-self.attenuation * (sumval - 1))
+            return np.nanmax(values_masked * scale)
+        if self.rendering == ImageRendering.ISO and np.any(
+            values_masked >= self.iso_threshold
+        ):
+            return self.iso_threshold
+        return None
