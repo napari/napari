@@ -14,19 +14,19 @@ if TYPE_CHECKING:
 
 class StatusChecker(QThread):
     """Separate thread dedicated to updating the status bar.
-    
+
     Prior to https://github.com/napari/napari/pull/7146, status bar updates
     happened on the main thread in the viewer model, which could be
     expensive in some layers and resulted in bad performance when some
     layers were selected.
-    
+
     This class puts the job of computing the status into a separate thread,
     which then uses Qt Signals to update the main viewer with the status
     string.
-    
+
     Because the thread runs a single infinite while loop, the updates are
     naturally throttled to as fast as they can be computed, but no faster.
-    
+
     Attributes
     ----------
     _need_status_update : threading.Event
