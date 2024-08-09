@@ -762,7 +762,6 @@ exclude_lines = [
 ]
 
 [tool.coverage.run]
-parallel = true
 omit = [
     "*/_vendor/*",
     "*/_version.py",
