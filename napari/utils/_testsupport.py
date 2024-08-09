@@ -276,9 +276,9 @@ def make_napari_viewer(
     prior_exception = getattr(sys, 'last_value', None)
     is_internal_test = request.module.__name__.startswith('napari.')
 
-    # disable throttling cursor event in tests
+    # disable thread for status checker
     monkeypatch.setattr(
-        'napari._qt.qt_main_window._QtMainWindow._throttle_cursor_to_status_connection',
+        'napari._qt.threads.status_checker.StatusChecker.start',
         _empty,
     )
 

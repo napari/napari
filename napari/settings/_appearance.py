@@ -52,6 +52,13 @@ class AppearanceSettings(EventedModel):
         title=trans._('Show layer tooltips'),
         description=trans._('Toggle to display a tooltip on mouse hover.'),
     )
+    update_status_based_on_layer: bool = Field(
+        True,
+        title=trans._('Update status based on layer'),
+        description=trans._(
+            'Calculate status bar based on current active layer and mose position.'
+        ),
+    )
 
     def update(
         self, values: Union['EventedModel', dict], recurse: bool = True

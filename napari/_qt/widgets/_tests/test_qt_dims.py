@@ -335,3 +335,4 @@ def test_play_button(qtbot):
     assert slider.fps == -button.fpsspin.value() == -11
     button.mode_combo.setCurrentText('once')
     assert slider.loop_mode == button.mode_combo.currentText() == 'once'
+    qtbot.waitUntil(view._animation_thread.isFinished)
