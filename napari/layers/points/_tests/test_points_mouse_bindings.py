@@ -475,7 +475,7 @@ def test_unselecting_points(create_known_points_layer_2d):
     assert len(layer.selected_data) == 0
 
     # check that this also works with scaled data and position near a point (see #5737)
-    # we are taking the first point and shiftling *slightly* more than the point size
+    # we are taking the first point and shifting *slightly* more than the point size
     layer.scale = 100, 100
     pos = np.array(layer.data[0])
     pos[1] += layer.size[0] * 2
