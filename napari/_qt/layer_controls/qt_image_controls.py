@@ -97,6 +97,11 @@ class QtImageControls(QtBaseImageControls):
         self.interpComboBox.currentTextChanged.connect(
             self.changeInterpolation
         )
+        self.interpComboBox.setToolTip(
+            trans._(
+                'Texture interpolation for display.\nnearest and linear are most performant.'
+            )
+        )
         self.interpLabel = QLabel(trans._('interpolation:'))
 
         renderComboBox = QComboBox(self)

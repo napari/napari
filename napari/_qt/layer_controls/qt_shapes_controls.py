@@ -117,6 +117,11 @@ class QtShapesControls(QtLayerControls):
         sld.setValue(int(value))
         sld.valueChanged.connect(self.changeWidth)
         self.widthSlider = sld
+        self.widthSlider.setToolTip(
+            trans._(
+                'Set the edge width of currently selected shapes and any added afterwards.'
+            )
+        )
 
         self.select_button = self._radio_button(
             layer, 'select', Mode.SELECT, True, 'activate_select_mode'
@@ -226,19 +231,23 @@ class QtShapesControls(QtLayerControls):
 
         self.faceColorEdit = QColorSwatchEdit(
             initial_color=self.layer.current_face_color,
-            tooltip=trans._('click to set current face color'),
+            tooltip=trans._(
+                'Click to set the face color of currently selected shapes and any added afterwards.'
+            ),
         )
         self._on_current_face_color_change()
         self.edgeColorEdit = QColorSwatchEdit(
             initial_color=self.layer.current_edge_color,
-            tooltip=trans._('click to set current edge color'),
+            tooltip=trans._(
+                'Click to set the edge color of currently selected shapes and any added afterwards'
+            ),
         )
         self._on_current_edge_color_change()
         self.faceColorEdit.color_changed.connect(self.changeFaceColor)
         self.edgeColorEdit.color_changed.connect(self.changeEdgeColor)
 
         text_disp_cb = QCheckBox()
-        text_disp_cb.setToolTip(trans._('toggle text visibility'))
+        text_disp_cb.setToolTip(trans._('Toggle text visibility'))
         text_disp_cb.setChecked(self.layer.text.visible)
         text_disp_cb.stateChanged.connect(self.change_text_visibility)
         self.textDispCheckBox = text_disp_cb
