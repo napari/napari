@@ -1,3 +1,5 @@
+import logging
+
 import numpy as np
 
 from napari._vispy.layers.base import VispyBaseLayer
@@ -10,12 +12,17 @@ class VispyVectorsLayer(VispyBaseLayer):
         node = VectorsVisual()
         super().__init__(layer, node)
 
-        self.layer.events.edge_color.connect(self._on_data_change)
+        # Only need to connect to style's top-level event because
+        # a layer's style collection instance is not reassigned,
+        # only updated in place. Events from sub-fields are expected
+        # to bubble up to this event.
+        self.layer.style.events.connect(self._on_data_change)
 
         self.reset()
         self._on_data_change()
 
     def _on_data_change(self):
+        logging.warning('VispyVectorsLayer._on_data_change')
         # Make meshes
         vertices, faces = generate_vector_meshes(
             self.layer._view_data,

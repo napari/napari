@@ -100,7 +100,7 @@ class QColorSwatchEdit(QWidget):
         layout.addWidget(self.line_edit)
 
     @property
-    def color(self):
+    def color(self) -> np.ndarray:
         """Return the current color."""
         return self.color_swatch.color
 

@@ -10,6 +10,8 @@ from typing import (
 import numpy as np
 
 from napari._pydantic_compat import Field, parse_obj_as, validator
+from napari.layers.utils._color_manager_constants import ColorMode
+from napari.layers.utils.color_manager import ColorManager as _ColorManager
 from napari.layers.utils.color_transformations import ColorType
 from napari.layers.utils.style_encoding import (
     StyleEncoding,
@@ -87,6 +89,25 @@ class ColorEncoding(StyleEncoding[ColorValue, ColorArray], Protocol):
         if color_array.shape[0] == 1:
             return ConstantColorEncoding(constant=value)
         return ManualColorEncoding(array=color_array, default=DEFAULT_COLOR)
+
+
+def _color_encoding_from_color_manager(
+    color_manager: _ColorManager,
+) -> 'ColorEncoding':
+    if color_manager.color_mode == ColorMode.COLORMAP:
+        return QuantitativeColorEncoding(
+            feature=color_manager.color_properties.name,
+            colormap=color_manager.continuous_colormap,
+            contrast_limits=color_manager.contrast_limits,
+        )
+    if color_manager.color_mode == ColorMode.CYCLE:
+        return NominalColorEncoding(
+            feature=color_manager.color_properties.name,
+            colormap=color_manager.categorical_colormap,
+        )
+    return ManualColorEncoding(
+        array=color_manager.colors, default=color_manager.current_color
+    )
 
 
 class ConstantColorEncoding(_ConstantStyleEncoding[ColorValue, ColorArray]):
