@@ -30,8 +30,9 @@ class StatusChecker(QThread):
     Attributes
     ----------
     _need_status_update : threading.Event
-        An Event (fancy thread-safe bool) for keeping track of when the
-        status needs updating (because the cursor has moved).
+        An Event (fancy thread-safe bool like mechanism for synchronize threads)
+        for keeping track of when the status needs updating
+        (because the cursor has moved).
     _terminate : bool
         Whether the thread needs to be terminated. Set by the QtViewer
         when it is being closed. No more status updates will take place if
