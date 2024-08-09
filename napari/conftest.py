@@ -433,7 +433,7 @@ def _dangling_qthreads(monkeypatch, qtbot, request):
     thread_dict = WeakKeyDictionary()
     base_constructor = QThread.__init__
 
-    def my_run(self):
+    def my_run(self):  # pragma: no cover
         if 'coverage' in sys.modules:
             # https://github.com/nedbat/coveragepy/issues/686#issuecomment-634932753
             sys.settrace(threading._trace_hook)

@@ -196,6 +196,11 @@ class _QtMainWindow(QMainWindow):
         # were defined somewhere in the `_qt` module and imported in init_qactions
         init_qactions()
 
+        with contextlib.suppress(IndexError):
+            viewer.cursor.events.position.disconnect(
+                viewer.update_status_from_cursor
+            )
+
         self.status_thread = StatusChecker(viewer, parent=self)
         self.status_thread.status_and_tooltip_changed.connect(
             self.set_status_and_tooltip
