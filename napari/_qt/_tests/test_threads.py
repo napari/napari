@@ -13,6 +13,9 @@ def test_create():
 
 @pytest.mark.usefixtures('qapp')
 def test_no_emmit_no_ref(monkeypatch):
+    """Test that calling calculate_status does not emit
+    when the viewer is garbage collected.
+    """
     model = ViewerModel()
     status_checker = StatusChecker(model)
     monkeypatch.setattr(
@@ -25,6 +28,7 @@ def test_no_emmit_no_ref(monkeypatch):
 
 
 def test_terminate_no_ref(monkeypatch):
+    """Test that the thread terminates when the viewer is garbage collected."""
     model = ViewerModel()
     status_checker = StatusChecker(model)
     del model

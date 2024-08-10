@@ -61,6 +61,10 @@ class StatusChecker(QThread):
         self._need_status_update.set()
 
     def terminate(self) -> None:
+        """
+        Terminate the thread.
+        The order of operations is important here.
+        """
         self._terminate = True
         self._need_status_update.set()
 
@@ -76,6 +80,10 @@ class StatusChecker(QThread):
                 self._need_status_update.wait()
 
     def calculate_status(self) -> None:
+        """
+        Calculate the status and emit the signal.
+        iF the viewer is not available, do nothing.
+        """
         viewer = self.viewer_ref()
         if viewer is None:
             return
@@ -85,4 +93,11 @@ class StatusChecker(QThread):
                 viewer._calc_status_from_cursor()
             )
         except Exception as e:  # pragma: no cover # noqa: BLE001
+            # oOur codebase is not threadsafe. It is possible that an
+            # ViewerModel or Layer state is changed while we are trying to
+            # calculate the status, that may lead to an exception.
+            # We catch all exceptions here to prevent the thread from
+            # crashing. The error is logged and a notification is shown.
+            #
+            # We do not want to crash the thread to keep the status updates.
             notification_manager.dispatch(Notification.from_exception(e))
