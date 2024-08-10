@@ -463,14 +463,15 @@ def _dangling_qthreads(monkeypatch, qtbot, request):
     if 'disable_qthread_start' in request.keywords:
 
         def start_with_save_reference(self, priority=QThread.InheritPriority):
-            """dummy function to prevent thread start"""
+            """Dummy function to prevent thread starts."""
 
     else:
 
         def start_with_save_reference(self, priority=QThread.InheritPriority):
-            """Thread start function that saves the weka reference
-            to thread and detect hanging threads,
-            and from where they were started.
+            """Thread start function with logs to detect hanging threads.
+
+            Saves a weak reference to the thread and detects hanging threads,
+            as well as where the threads were started.
             """
             thread_dict[self] = _get_calling_place()
             base_start(self, priority)
