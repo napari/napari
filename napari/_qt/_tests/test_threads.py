@@ -24,6 +24,14 @@ def test_no_emmit_no_ref(monkeypatch):
     status_checker.calculate_status()
 
 
+def test_terminate_no_ref(monkeypatch):
+    model = ViewerModel()
+    status_checker = StatusChecker(model)
+    del model
+    status_checker.run()
+    assert not status_checker._terminate
+
+
 def test_waiting_on_no_request(monkeypatch, qtbot):
     def _check_status(value):
         return value == ('Ready', '')

@@ -54,6 +54,10 @@ class StatusChecker(QThread):
         self._terminate = False
 
     def trigger_status_update(self) -> None:
+        """
+        Trigger a status update.
+        The viewer should call this when the cursor moves.
+        """
         self._need_status_update.set()
 
     def terminate(self) -> None:
@@ -62,6 +66,9 @@ class StatusChecker(QThread):
 
     def run(self) -> None:
         while not self._terminate:
+            if self.viewer_ref() is None:
+                # Stop thread when viewer is closed
+                return
             if self._need_status_update.is_set():
                 self._need_status_update.clear()
                 self.calculate_status()
