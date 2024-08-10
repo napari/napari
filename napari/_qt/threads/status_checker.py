@@ -93,7 +93,7 @@ class StatusChecker(QThread):
                 viewer._calc_status_from_cursor()
             )
         except Exception as e:  # pragma: no cover # noqa: BLE001
-            # oOur codebase is not threadsafe. It is possible that an
+            # Our codebase is not threadsafe. It is possible that an
             # ViewerModel or Layer state is changed while we are trying to
             # calculate the status, that may lead to an exception.
             # We catch all exceptions here to prevent the thread from
