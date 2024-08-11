@@ -15,7 +15,7 @@ on:
 jobs:
   check_labels:
     if: (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ready to merge'))
-    name: Check PR is marked ready-to-merge
+    name: Check ready-to-merge PR has at least one type label
     runs-on: ubuntu-latest
     steps:
       - name: Check labels
