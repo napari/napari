@@ -12,6 +12,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from napari.utils._check_numpy_version import PROBLEMATIC_NUMPY_MACOS
 from napari.utils.action_manager import action_manager
 from napari.utils.interactions import Shortcut
 from napari.utils.translations import trans
@@ -58,6 +59,14 @@ class QtWelcomeWidget(QWidget):
         sc = QKeySequence('Ctrl+N', QKeySequence.PortableText).toString(
             QKeySequence.NativeText
         )
+        if PROBLEMATIC_NUMPY_MACOS:
+            shortcut_layout.addRow(
+                QtShortcutLabel(
+                    'We have detected that you are using numpy<2 on macOS arm64 '
+                    'from pypi wheels.\n'
+                    'See https://napari.org/stable/tutorials/fundamentals/installation.html#numpy-problem'
+                )
+            )
         shortcut_layout.addRow(
             QtShortcutLabel(sc),
             QtShortcutLabel(trans._('New Image from Clipboard')),
