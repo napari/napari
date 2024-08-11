@@ -13,7 +13,7 @@ if (
 ):  # pragma: no cover
     try:
         PROBLEMATIC_NUMPY_MACOS = (
-            'cibw-run' in np.show_config('dicts')['Python Information']['path']
+            'cibw-run' in np.show_config('dicts')['Python Information']['path']  # type: ignore
         )
     except (KeyError, TypeError):
         PROBLEMATIC_NUMPY_MACOS = False
