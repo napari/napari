@@ -64,7 +64,7 @@ def test_calc_data_range():
     clim = calc_data_range(data)
     np.testing.assert_array_equal(clim, (0, 2))
 
-    # Try large data mutlidimensional
+    # Try large data multidimensional
     data = np.zeros((3, 1000, 1000))
     data[0, 0, 0] = 0
     data[0, 0, 1] = 2

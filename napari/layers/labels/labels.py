@@ -3,6 +3,7 @@ from collections import deque
 from collections.abc import Sequence
 from contextlib import contextmanager
 from typing import (
+    Any,
     Callable,
     ClassVar,
     Optional,
@@ -27,6 +28,7 @@ from napari.layers.base._base_mouse_bindings import (
 from napari.layers.image._image_utils import guess_multiscale
 from napari.layers.image._slice import _ImageSliceResponse
 from napari.layers.labels._labels_constants import (
+    IsoCategoricalGradientMode,
     LabelColorMode,
     LabelsRendering,
     Mode,
@@ -53,6 +55,7 @@ from napari.utils.colormaps import (
 from napari.utils.colormaps.colormap import (
     CyclicLabelColormap,
     LabelColormapBase,
+    _normalize_label_colormap,
 )
 from napari.utils.colormaps.colormap_utils import shuffle_and_extend_colormap
 from napari.utils.events import EmitterGroup, Event
@@ -84,6 +87,9 @@ class Labels(ScalarFieldBase):
         the final column is a length N translation vector and a 1 or a napari
         `Affine` transform object. Applied as an extra transform on top of the
         provided scale, rotate, and shear values.
+    axis_labels : tuple of str, optional
+        Dimension names of the layer data.
+        If not provided, axis_labels will be set to (..., 'axis -2', 'axis -1').
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -104,6 +110,12 @@ class Labels(ScalarFieldBase):
     features : dict[str, array-like] or DataFrame
         Features table where each row corresponds to a label and each column
         is a feature. The first row corresponds to the background label.
+    iso_gradient_mode : str
+        Method for calulating the gradient (used to get the surface normal) in the
+        'iso_categorical' rendering mode. Must be one of {'fast', 'smooth'}.
+        'fast' uses a simple finite difference gradient in x, y, and z. 'smooth' uses an
+        isotropic Sobel gradient, which is smoother but more computationally expensive.
+        The default value is 'fast'.
     metadata : dict
         Layer metadata.
     multiscale : bool
@@ -147,6 +159,9 @@ class Labels(ScalarFieldBase):
         ones along the main diagonal.
     translate : tuple of float
         Translation values for the layer.
+    units : tuple of str or pint.Unit, optional
+        Units of the layer data in world coordinates.
+        If not provided, the default units are assumed to be pixels.
     visible : bool
         Whether the layer visual is currently being displayed.
 
@@ -158,6 +173,8 @@ class Labels(ScalarFieldBase):
         belongs to. The label 0 is rendered as transparent. Please note
         multiscale rendering is only supported in 2D. In 3D, only
         the lowest resolution scale is displayed.
+    axis_labels : tuple of str
+        Dimension names of the layer data.
     multiscale : bool
         Whether the data is a multiscale image or not. Multiscale data is
         represented by a list of array like image data. The first image in the
@@ -225,6 +242,8 @@ class Labels(ScalarFieldBase):
         Properties defining plane rendering in 3D.
     experimental_clipping_planes : ClippingPlaneList
         Clipping planes defined in data coordinates, used to clip the volume.
+    units: tuple of pint.Unit
+        Units of the layer data in world coordinates.
 
     Notes
     -----
@@ -279,12 +298,14 @@ class Labels(ScalarFieldBase):
         data,
         *,
         affine=None,
+        axis_labels=None,
         blending='translucent',
         cache=True,
         colormap=None,
         depiction='volume',
         experimental_clipping_planes=None,
         features=None,
+        iso_gradient_mode=IsoCategoricalGradientMode.FAST.value,
         metadata=None,
         multiscale=None,
         name=None,
@@ -297,6 +318,7 @@ class Labels(ScalarFieldBase):
         scale=None,
         shear=None,
         translate=None,
+        units=None,
         visible=True,
     ) -> None:
         if name is None and data is not None:
@@ -321,23 +343,25 @@ class Labels(ScalarFieldBase):
 
         super().__init__(
             data,
-            rendering=rendering,
-            depiction=depiction,
-            name=name,
-            metadata=metadata,
-            scale=scale,
-            translate=translate,
-            rotate=rotate,
-            shear=shear,
             affine=affine,
-            opacity=opacity,
+            axis_labels=axis_labels,
             blending=blending,
-            visible=visible,
-            multiscale=multiscale,
             cache=cache,
-            plane=plane,
+            depiction=depiction,
             experimental_clipping_planes=experimental_clipping_planes,
+            rendering=rendering,
+            metadata=metadata,
+            multiscale=multiscale,
+            name=name,
+            scale=scale,
+            shear=shear,
+            plane=plane,
+            opacity=opacity,
             projection_mode=projection_mode,
+            rotate=rotate,
+            translate=translate,
+            units=units,
+            visible=visible,
         )
 
         self.events.add(
@@ -347,6 +371,7 @@ class Labels(ScalarFieldBase):
             contiguous=Event,
             contour=Event,
             features=Event,
+            iso_gradient_mode=Event,
             labels_update=Event,
             n_edit_dimensions=Event,
             paint=Event,
@@ -370,6 +395,8 @@ class Labels(ScalarFieldBase):
         self._n_edit_dimensions = 2
         self._contiguous = True
         self._brush_size = 10
+
+        self._iso_gradient_mode = IsoCategoricalGradientMode.FAST
 
         self._selected_label = 1
         self.colormap.selection = self._selected_label
@@ -414,6 +441,27 @@ class Labels(ScalarFieldBase):
     def rendering(self, rendering):
         self._rendering = LabelsRendering(rendering)
         self.events.rendering()
+
+    @property
+    def iso_gradient_mode(self):
+        """Return current gradient mode for isosurface rendering.
+
+        Selects the finite-difference gradient method for the isosurface shader. Options include:
+            * ``fast``: use a simple finite difference gradient along each axis
+            * ``smooth``: use an isotropic Sobel gradient, smoother but more
+              computationally expensive
+
+        Returns
+        -------
+        str
+            The current gradient mode
+        """
+        return str(self._iso_gradient_mode)
+
+    @iso_gradient_mode.setter
+    def iso_gradient_mode(self, value):
+        self._iso_gradient_mode = IsoCategoricalGradientMode(value)
+        self.events.iso_gradient_mode()
 
     @property
     def contiguous(self):
@@ -486,6 +534,7 @@ class Labels(ScalarFieldBase):
         self._set_colormap(colormap)
 
     def _set_colormap(self, colormap):
+        colormap = _normalize_label_colormap(colormap)
         if isinstance(colormap, CyclicLabelColormap):
             self._random_colormap = colormap
             self._original_random_colormap = colormap
@@ -590,17 +639,13 @@ class Labels(ScalarFieldBase):
         bool
             True if color contains only default colors, otherwise False.
         """
-        if {None, self.colormap.background_value} != set(color.keys()):
-            return False
-
-        if not np.allclose(color[None], [0, 0, 0, 1]):
-            return False
-        if not np.allclose(
-            color[self.colormap.background_value], [0, 0, 0, 0]
-        ):
-            return False
-
-        return True
+        return (
+            {None, self.colormap.background_value} == set(color.keys())
+            and np.allclose(color[None], [0, 0, 0, 1])
+            and np.allclose(
+                color[self.colormap.background_value], [0, 0, 0, 0]
+            )
+        )
 
     def _ensure_int_labels(self, data):
         """Ensure data is integer by converting from bool if required, raising an error otherwise."""
@@ -627,12 +672,12 @@ class Labels(ScalarFieldBase):
             data = data[0]
         return data
 
-    def _get_state(self):
+    def _get_state(self) -> dict[str, Any]:
         """Get dictionary of layer state.
 
         Returns
         -------
-        state : dict
+        state : dict of str to Any
             Dictionary of layer state.
         """
         state = self._get_base_state()
@@ -641,6 +686,7 @@ class Labels(ScalarFieldBase):
                 'multiscale': self.multiscale,
                 'properties': self.properties,
                 'rendering': self.rendering,
+                'iso_gradient_mode': self.iso_gradient_mode,
                 'depiction': self.depiction,
                 'plane': self.plane.dict(),
                 'experimental_clipping_planes': [
@@ -1001,7 +1047,7 @@ class Labels(ScalarFieldBase):
             values = im_slice[tuple(clamped.T)]
             nonzero_indices = np.flatnonzero(values)
             if len(nonzero_indices > 0):
-                # if a nonzer0 value was found, return the first one
+                # if a nonzero value was found, return the first one
                 return values[nonzero_indices[0]]
 
         return None
@@ -1479,7 +1525,7 @@ class Labels(ScalarFieldBase):
         if self.contour > 0:
             # Expand the slice by 1 pixel as the changes can go beyond
             # the original slice because of the morphological dilation
-            # (1 pixel because get_countours always applies 1 pixel dilation)
+            # (1 pixel because get_contours always applies 1 pixel dilation)
             updated_slice = expand_slice(updated_slice, self.data.shape, 1)
         else:
             # update data view

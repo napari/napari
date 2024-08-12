@@ -186,7 +186,7 @@ def lines_intersect(p1, q1, p2, q2):
         return True
 
     # p2, q2 and q1 are collinear and q1 lies on segment p2q2
-    if o4 == 0 and on_segment(p2, q1, q2):
+    if o4 == 0 and on_segment(p2, q1, q2):  # noqa: SIM103
         return True
 
     # Doesn't fall into any special cases
@@ -301,8 +301,11 @@ def point_to_lines(point, lines):
     norm_lines[reject] = 1
     unit_lines = lines_vectors / norm_lines
 
-    # calculate distance to line
-    line_dist = abs(np.cross(unit_lines, point_vectors))
+    # calculate distance to line (2D cross-product)
+    line_dist = abs(
+        unit_lines[..., 0] * point_vectors[..., 1]
+        - unit_lines[..., 1] * point_vectors[..., 0]
+    )
 
     # calculate scale
     line_loc = (unit_lines * point_vectors).sum(axis=1) / norm_lines.squeeze()
@@ -507,7 +510,7 @@ def triangulate_ellipse(
     # Compute the transformation matrix from the unit circle
     # to our current ellipse.
     # ... it's easy just the 1/2 minor/major axes for the two column
-    # note that our transform shape will depends on wether we are 2D-> 2D (matrix, 2 by 2),
+    # note that our transform shape will depends on whether we are 2D-> 2D (matrix, 2 by 2),
     # or 2D -> 3D (matrix 2 by 3).
     transform = np.stack((ax1, ax2))
     if corners.shape == (4, 2):

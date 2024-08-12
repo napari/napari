@@ -74,7 +74,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         # validate if quantity is dimensionless and lower than 1 to prevent
         # the scale bar to extend beyond the canvas when zooming.
         # If the value falls in those conditions, we use the corresponding
-        # prefered value but scaled to take into account the actual value
+        # preferred value but scaled to take into account the actual value
         # magnitude. See https://github.com/napari/napari/issues/5914
         magnitude_1000 = floor(log(new_quantity.magnitude, 1000))
         scaled_magnitude = new_quantity.magnitude * 1000 ** (-magnitude_1000)
@@ -142,8 +142,11 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
                 # set scale color negative of theme background.
                 # the reason for using the `as_hex` here is to avoid
                 # `UserWarning` which is emitted when RGB values are above 1
-                if self.node.parent is not None and self.node.parent.bgcolor:
-                    background_color = self.node.parent.bgcolor.rgba
+                if (
+                    self.node.parent is not None
+                    and self.node.parent.canvas.bgcolor
+                ):
+                    background_color = self.node.parent.canvas.bgcolor.rgba
                 else:
                     background_color = get_theme(
                         self.viewer.theme

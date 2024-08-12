@@ -276,3 +276,9 @@ class QtVolumeRenderingSuite:
         self.viewer.layers[0].gamma = 0.5
         self.viewer.layers[0].gamma = 0.8
         self.viewer.layers[0].gamma = 1.3
+
+
+if __name__ == '__main__':
+    from utils import run_benchmark
+
+    run_benchmark()

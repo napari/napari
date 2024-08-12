@@ -11,6 +11,7 @@ from napari._tests.utils import skip_local_focus, skip_on_mac_ci
 from napari.settings import get_settings
 from napari.utils.action_manager import action_manager
 from napari.utils.interactions import KEY_SYMBOLS
+from napari.utils.key_bindings import KeyBinding
 
 META_CONTROL_KEY = Qt.KeyboardModifier.ControlModifier
 if sys.platform == 'darwin':
@@ -58,14 +59,42 @@ def test_layer_actions(shortcut_editor_widget):
 
 def test_mark_conflicts(shortcut_editor_widget, qtbot):
     widget = shortcut_editor_widget()
-    widget._table.item(0, widget._shortcut_col).setText('U')
+    ctrl_keybinding = KeyBinding.from_str('Ctrl')
+    u_keybinding = KeyBinding.from_str('U')
     act = widget._table.item(0, widget._action_col).text()
-    assert action_manager._shortcuts[act][0] == 'U'
+
+    # Add check for initial/default keybinding (first shortcuts column) and
+    # added one (second shortcuts column)
+    assert action_manager._shortcuts[act][0] == ctrl_keybinding
+    widget._table.item(0, widget._shortcut_col2).setText(str(u_keybinding))
+    assert action_manager._shortcuts[act][1] == str(u_keybinding)
+
+    # Check conflicts detection using `KeyBindingLike` params
+    # (`KeyBinding`, `str` and `int` representations of a shortcut)
     with patch.object(WarnPopup, 'exec_') as mock:
-        assert not widget._mark_conflicts(action_manager._shortcuts[act][0], 1)
+        assert not widget._mark_conflicts(ctrl_keybinding, 1)
         assert mock.called
-    assert widget._mark_conflicts('Y', 1)
+    with patch.object(WarnPopup, 'exec_') as mock:
+        assert not widget._mark_conflicts(str(ctrl_keybinding), 1)
+        assert mock.called
+    with patch.object(WarnPopup, 'exec_') as mock:
+        assert not widget._mark_conflicts(int(ctrl_keybinding), 1)
+        assert mock.called
+
+    with patch.object(WarnPopup, 'exec_') as mock:
+        assert not widget._mark_conflicts(u_keybinding, 1)
+        assert mock.called
+    with patch.object(WarnPopup, 'exec_') as mock:
+        assert not widget._mark_conflicts(str(u_keybinding), 1)
+        assert mock.called
+
+    # Check no conflicts are found using `KeyBindingLike` params
+    # (`KeyBinding`, `str` and `int` representations of a shortcut)
     # "Y" is arbitrary chosen and on conflict with existing shortcut should be changed
+    y_keybinding = KeyBinding.from_str('Y')
+    assert widget._mark_conflicts(y_keybinding, 1)
+    assert widget._mark_conflicts(str(y_keybinding), 1)
+    assert widget._mark_conflicts(int(y_keybinding), 1)
     qtbot.add_widget(widget._warn_dialog)
 
 
