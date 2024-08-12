@@ -154,7 +154,7 @@ def shift_plane_along_normal(viewer, event):
         drag_vector_canv = end_position_canv - start_position_canv
 
         # Project the drag vector onto the plane normal vector
-        # (in canvas coorinates)
+        # (in canvas coordinates)
         drag_projection_on_plane_normal = np.dot(
             drag_vector_canv, plane_normal_canv_normalised
         )

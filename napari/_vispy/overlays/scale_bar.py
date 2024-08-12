@@ -74,7 +74,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         # validate if quantity is dimensionless and lower than 1 to prevent
         # the scale bar to extend beyond the canvas when zooming.
         # If the value falls in those conditions, we use the corresponding
-        # prefered value but scaled to take into account the actual value
+        # preferred value but scaled to take into account the actual value
         # magnitude. See https://github.com/napari/napari/issues/5914
         magnitude_1000 = floor(log(new_quantity.magnitude, 1000))
         scaled_magnitude = new_quantity.magnitude * 1000 ** (-magnitude_1000)
