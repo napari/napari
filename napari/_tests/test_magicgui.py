@@ -321,6 +321,9 @@ def test_mgui_forward_refs(name, monkeypatch):
     monkeypatch.delitem(sys.modules, 'napari')
     monkeypatch.delitem(sys.modules, 'napari.viewer')
     monkeypatch.delitem(sys.modules, 'napari.types')
+    monkeypatch.setattr(
+        'napari.utils.action_manager.action_manager._actions', {}
+    )
     # need to clear all of these submodules too, otherise the layers are oddly not
     # subclasses of napari.layers.Layer, and napari.layers.NAMES
     # oddly ends up as an empty set

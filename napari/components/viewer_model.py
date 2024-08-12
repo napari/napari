@@ -268,7 +268,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         #        the source of truth, and is now defined in world space. This exposed an existing
         #        bug where if a field in Dims is modified by the root_validator, events won't
         #        be fired for it. This won't happen for properties because we have dependency
-        #        checks. To fix this, we need dep checks for fileds (psygnal!) and then we
+        #        checks. To fix this, we need dep checks for fields (psygnal!) and then we
         #        can remove the following line. Note that because of this we fire double events,
         #        but this should be ok because we have early returns when slices are unchanged.
         self.dims.events.current_step.connect(self._update_layers)

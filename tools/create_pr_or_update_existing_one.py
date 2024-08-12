@@ -171,7 +171,7 @@ def update_own_pr(pr_number: int, access_token: str, base_branch: str, repo):
     # if it is present, then remove it to point that PR was changed
     for label in response.json():
         if label['name'] == 'ready to merge':
-            response = requests.get(remove_label_url, headers=headers)
+            response = requests.delete(remove_label_url, headers=headers)
             response.raise_for_status()
             break
 

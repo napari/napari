@@ -410,7 +410,7 @@ class EventEmitter:
         self,
         callback: Union[Callback, CallbackRef, CallbackStr, 'EventEmitter'],
         ref: Union[bool, str] = False,
-        position: Literal['first', 'last'] = 'first',
+        position: Literal['first', 'last'] = 'last',
         before: Union[str, Callback, list[Union[str, Callback]], None] = None,
         after: Union[str, Callback, list[Union[str, Callback]], None] = None,
         until: Optional['EventEmitter'] = None,

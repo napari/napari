@@ -44,6 +44,7 @@ jobs:
           VER="${TAG/a*/}"  # remove alpha identifier
           VER="${VER/b*/}"  # remove beta identifier
           VER="${VER/rc*/}"  # remove rc identifier
+          VER="${VER/post*/}"  # remove post identifier
           RELEASE_NOTES_PATH="docs/docs/release/release_${VER//./_}.md"
 
           echo "tag=${TAG}" >> "$GITHUB_ENV"
