@@ -17,6 +17,7 @@ from napari._vendor.qt_json_builder.qt_jsonschema_form.widgets import (
 )
 from napari.settings import NapariSettings, get_settings
 from napari.settings._constants import BrushSizeOnMouseModifiers, LabelDTypes
+from napari.utils.key_bindings import KeyBinding
 
 
 @pytest.fixture()
@@ -29,6 +30,12 @@ def pref(qtbot):
     assert get_settings().appearance.theme == 'light'
     dlg._settings.appearance.highlight.highlight_thickness = 5
     assert get_settings().appearance.highlight.highlight_thickness == 5
+    shortcuts = dlg._settings.shortcuts.shortcuts.copy()
+    shortcuts['napari:reset_scroll_progress'] = [KeyBinding.from_str('U')]
+    dlg._settings.shortcuts.shortcuts = shortcuts
+    assert dlg._settings.shortcuts.shortcuts[
+        'napari:reset_scroll_progress'
+    ] == [KeyBinding.from_str('U')]
     return dlg
 
 
@@ -211,6 +218,9 @@ def test_preferences_dialog_cancel(qtbot, pref):
     with qtbot.waitSignal(pref.finished):
         pref._button_cancel.click()
     assert get_settings().appearance.theme == 'dark'
+    assert get_settings().shortcuts.shortcuts[
+        'napari:reset_scroll_progress'
+    ] == [KeyBinding.from_str('Ctrl')]
 
 
 def test_preferences_dialog_restore(qtbot, pref, monkeypatch):
@@ -218,10 +228,20 @@ def test_preferences_dialog_restore(qtbot, pref, monkeypatch):
     highlight_widget = (
         pref._stack.widget(1).widget().widget.widgets['highlight']
     )
+    shortcut_widget = (
+        pref._stack.widget(3).widget().widget.widgets['shortcuts']
+    )
+
     assert get_settings().appearance.theme == 'light'
     assert theme_widget.state == 'light'
     assert get_settings().appearance.highlight.highlight_thickness == 5
     assert highlight_widget.state['highlight_thickness'] == 5
+    assert get_settings().shortcuts.shortcuts[
+        'napari:reset_scroll_progress'
+    ] == [KeyBinding.from_str('U')]
+    assert KeyBinding.from_str(
+        shortcut_widget._table.item(0, shortcut_widget._shortcut_col).text()
+    ) == KeyBinding.from_str('U')
 
     monkeypatch.setattr(
         QMessageBox, 'question', lambda *a: QMessageBox.RestoreDefaults
@@ -232,3 +252,9 @@ def test_preferences_dialog_restore(qtbot, pref, monkeypatch):
     assert theme_widget.state == 'dark'
     assert get_settings().appearance.highlight.highlight_thickness == 1
     assert highlight_widget.state['highlight_thickness'] == 1
+    assert get_settings().shortcuts.shortcuts[
+        'napari:reset_scroll_progress'
+    ] == [KeyBinding.from_str('Ctrl')]
+    assert KeyBinding.from_str(
+        shortcut_widget._table.item(0, shortcut_widget._shortcut_col).text()
+    ) == KeyBinding.from_str('Ctrl')
