@@ -50,7 +50,7 @@ class QtDimsSorter(QWidget):
 
         self.view = QtListView(self.axis_list)
         if len(self.axis_list) <= 2:
-            # prevent exess space in popup
+            # prevent excess space in popup
             self.view.setSizeAdjustPolicy(QtListView.AdjustToContents)
 
         layout = QGridLayout()

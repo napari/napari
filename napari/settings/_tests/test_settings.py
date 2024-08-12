@@ -278,7 +278,7 @@ def test_settings_env_variables_do_not_write_to_disk(tmp_path, monkeypatch):
     assert settings.env_settings()['appearance']['theme'] == 'dark'
 
     # when we save it shouldn't use environment variables and it shouldn't
-    # have overriden our non-default value of `theme: light`
+    # have overridden our non-default value of `theme: light`
     settings.save()
     disk_settings = fake_path.read_text()
     assert 'theme: light' in disk_settings

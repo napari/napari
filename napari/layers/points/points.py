@@ -957,7 +957,7 @@ class Points(Layer):
     def symbol(self, symbol: Union[str, np.ndarray, list]) -> None:
         coerced_symbols = coerce_symbols(symbol)
         # If a single symbol has been converted, this will broadcast it to
-        # the number of points in the data. If symbols is alread an array,
+        # the number of points in the data. If symbols is already an array,
         # this will check that it is the correct length.
         coerced_symbols = np.broadcast_to(coerced_symbols, self.data.shape[0])
         self._symbol = coerced_symbols
