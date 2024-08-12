@@ -2396,7 +2396,7 @@ class Shapes(Layer):
 
     def interaction_box(self, index):
         """Create the interaction box around a shape or list of shapes.
-        If a single index is passed then the boudning box will be inherited
+        If a single index is passed then the bounding box will be inherited
         from that shapes interaction box. If list of indices is passed it will
         be computed directly.
 
@@ -2501,7 +2501,7 @@ class Shapes(Layer):
         """
         if len(self.selected_data) > 0:
             if self._mode == Mode.SELECT:
-                # If in select mode just show the interaction boudning box
+                # If in select mode just show the interaction bounding box
                 # including its vertices and the rotation handle
                 box = self._selected_box[Box.WITH_HANDLE]
                 if self._value[0] is None or self._value[1] is None:
@@ -2589,10 +2589,12 @@ class Shapes(Layer):
             and np.array_equal(self._drag_box, self._drag_box_stored)
         ) and not force:
             return
+        prev_selected = self._selected_data_stored
         self._selected_data_stored = copy(self.selected_data)
         self._value_stored = copy(self._value)
         self._drag_box_stored = copy(self._drag_box)
-        self.events.highlight()
+        if prev_selected != self._selected_data_stored:
+            self.events.highlight()
 
     def _finish_drawing(self, event=None) -> None:
         """Reset properties used in shape drawing."""

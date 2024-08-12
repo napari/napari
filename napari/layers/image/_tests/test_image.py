@@ -992,7 +992,7 @@ def test_thick_slice_multiscale():
 
     layer.projection_mode = 'mean'
     # NOTE that here we rescale slicing to twice the non-multiscale test
-    # in order to get the same results, becase the actual full scale image
+    # in order to get the same results, because the actual full scale image
     # is doubled in size
     layer._slice_dims(
         Dims(

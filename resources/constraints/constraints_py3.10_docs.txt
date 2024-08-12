@@ -19,13 +19,13 @@ asciitree==0.3.3
     # via zarr
 asttokens==2.4.1
     # via stack-data
-attrs==23.2.0
+attrs==24.2.0
     # via
     #   hypothesis
     #   jsonschema
     #   jupyter-cache
     #   referencing
-babel==2.15.0
+babel==2.16.0
     # via
     #   napari (napari_repo/pyproject.toml)
     #   pydata-sphinx-theme
@@ -57,15 +57,15 @@ comm==0.2.2
     # via ipykernel
 contourpy==1.2.1
     # via matplotlib
-coverage==7.6.0
+coverage==7.6.1
     # via
     #   napari (napari_repo/pyproject.toml)
     #   pytest-cov
 cycler==0.12.1
     # via matplotlib
-dask==2024.7.1
+dask==2024.8.0
     # via napari (napari_repo/pyproject.toml)
-debugpy==1.8.2
+debugpy==1.8.5
     # via ipykernel
 decorator==5.1.1
     # via ipython
@@ -119,7 +119,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.108.4
+hypothesis==6.111.0
     # via napari (napari_repo/pyproject.toml)
 idna==3.7
     # via
@@ -134,7 +134,7 @@ imageio-ffmpeg==0.5.1
     # via -r docs/requirements.txt
 imagesize==1.4.1
     # via sphinx
-importlib-metadata==8.1.0
+importlib-metadata==8.2.0
     # via
     #   build
     #   dask
@@ -198,16 +198,16 @@ llvmlite==0.43.0
     # via numba
 locket==1.0.0
     # via partd
-lxml==5.2.2
+lxml==5.3.0
     # via
     #   napari (napari_repo/pyproject.toml)
     #   lxml-html-clean
     #   nilearn
-lxml-html-clean==0.1.1
+lxml-html-clean==0.2.0
     # via
     #   -r docs/requirements.txt
     #   lxml
-magicgui==0.8.3
+magicgui==0.9.1
     # via napari (napari_repo/pyproject.toml)
 markdown-it-py==3.0.0
     # via
@@ -216,7 +216,7 @@ markdown-it-py==3.0.0
     #   rich
 markupsafe==2.1.5
     # via jinja2
-matplotlib==3.9.1
+matplotlib==3.9.1.post1
     # via
     #   -r docs/requirements.txt
     #   napari (napari_repo/pyproject.toml)
@@ -236,13 +236,13 @@ mpmath==1.3.0
     # via sympy
 myst-nb==1.1.1
     # via -r docs/requirements.txt
-myst-parser==3.0.1
+myst-parser==4.0.0
     # via myst-nb
 napari-console==0.0.9
     # via napari (napari_repo/pyproject.toml)
 napari-plugin-engine==0.2.0
     # via napari (napari_repo/pyproject.toml)
-napari-plugin-manager==0.1.0a2
+napari-plugin-manager==0.1.0
     # via napari (napari_repo/pyproject.toml)
 napari-sphinx-theme==0.5.0
     # via -r docs/requirements.txt
@@ -267,7 +267,7 @@ nibabel==5.2.1
     # via nilearn
 nilearn==0.10.4
     # via -r resources/constraints/version_denylist_examples.txt
-npe2==0.7.6
+npe2==0.7.7
     # via
     #   napari (napari_repo/pyproject.toml)
     #   napari-plugin-manager
@@ -299,7 +299,7 @@ numpy==1.23.5
     #   vispy
     #   xarray
     #   zarr
-numpydoc==1.7.0
+numpydoc==1.8.0
     # via napari (napari_repo/pyproject.toml)
 nvidia-cublas-cu12==12.1.3.1
     # via
@@ -312,7 +312,7 @@ nvidia-cuda-nvrtc-cu12==12.1.105
     # via torch
 nvidia-cuda-runtime-cu12==12.1.105
     # via torch
-nvidia-cudnn-cu12==8.9.2.26
+nvidia-cudnn-cu12==9.1.0.70
     # via torch
 nvidia-cufft-cu12==11.0.2.54
     # via torch
@@ -326,7 +326,7 @@ nvidia-cusparse-cu12==12.1.0.106
     #   torch
 nvidia-nccl-cu12==2.20.5
     # via torch
-nvidia-nvjitlink-cu12==12.5.82
+nvidia-nvjitlink-cu12==12.6.20
     # via
     #   nvidia-cusolver-cu12
     #   nvidia-cusparse-cu12
@@ -373,7 +373,7 @@ pillow==10.4.0
     #   sphinx-gallery
 pint==0.24.3
     # via napari (napari_repo/pyproject.toml)
-pip==24.1.2
+pip==24.2
     # via napari-plugin-manager
 platformdirs==4.2.2
     # via
@@ -474,8 +474,9 @@ pyside6-essentials==6.4.2
     # via
     #   pyside6
     #   pyside6-addons
-pytest==8.3.1
+pytest==8.3.2
     # via
+    #   -r docs/requirements.txt
     #   napari (napari_repo/pyproject.toml)
     #   pytest-cov
     #   pytest-json-report
@@ -505,7 +506,7 @@ pytweening==1.2.0
     # via pyautogui
 pytz==2024.1
     # via pandas
-pyyaml==6.0.1
+pyyaml==6.0.2
     # via
     #   napari (napari_repo/pyproject.toml)
     #   dask
@@ -514,7 +515,7 @@ pyyaml==6.0.1
     #   myst-parser
     #   npe2
     #   sphinx-external-toc
-pyzmq==26.0.3
+pyzmq==26.1.0
     # via
     #   ipykernel
     #   jupyter-client
@@ -547,7 +548,7 @@ rich==13.7.1
     #   npe2
     #   pytest-pretty
     #   typer
-rpds-py==0.19.0
+rpds-py==0.20.0
     # via
     #   jsonschema
     #   referencing
@@ -561,7 +562,7 @@ scipy==1.14.0
     #   nilearn
     #   scikit-image
     #   scikit-learn
-setuptools==71.1.0
+setuptools==72.1.0
     # via imageio-ffmpeg
 shellingham==1.5.4
     # via typer
@@ -586,6 +587,7 @@ soupsieve==2.5
     # via beautifulsoup4
 sphinx==7.4.7
     # via
+    #   -r docs/requirements.txt
     #   myst-nb
     #   myst-parser
     #   numpydoc
@@ -605,54 +607,54 @@ sphinx-autodoc-typehints==1.12.0
     # via -r docs/requirements.txt
 sphinx-copybutton==0.5.2
     # via -r docs/requirements.txt
-sphinx-design==0.6.0
+sphinx-design==0.6.1
     # via -r docs/requirements.txt
 sphinx-external-toc==1.0.1
     # via -r docs/requirements.txt
 sphinx-favicon==1.0.1
     # via -r docs/requirements.txt
-sphinx-gallery==0.17.0
+sphinx-gallery==0.17.1
     # via -r docs/requirements.txt
 sphinx-tabs==3.4.5
     # via -r docs/requirements.txt
 sphinx-tags==0.4
     # via -r docs/requirements.txt
-sphinxcontrib-applehelp==1.0.8
+sphinxcontrib-applehelp==2.0.0
     # via sphinx
-sphinxcontrib-devhelp==1.0.6
+sphinxcontrib-devhelp==2.0.0
     # via sphinx
-sphinxcontrib-htmlhelp==2.0.6
+sphinxcontrib-htmlhelp==2.1.0
     # via sphinx
 sphinxcontrib-jsmath==1.0.1
     # via sphinx
-sphinxcontrib-qthelp==1.0.8
+sphinxcontrib-qthelp==2.0.0
     # via sphinx
-sphinxcontrib-serializinghtml==1.1.10
+sphinxcontrib-serializinghtml==2.0.0
     # via sphinx
-sqlalchemy==2.0.31
+sqlalchemy==2.0.32
     # via jupyter-cache
 stack-data==0.6.3
     # via ipython
-starlette==0.38.1
+starlette==0.38.2
     # via sphinx-autobuild
 superqt==0.6.7
     # via
     #   napari (napari_repo/pyproject.toml)
     #   magicgui
     #   napari-plugin-manager
-sympy==1.13.1
+sympy==1.13.2
     # via torch
 tabulate==0.9.0
     # via
     #   jupyter-cache
     #   numpydoc
-tensorstore==0.1.63
+tensorstore==0.1.64
     # via
     #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari (napari_repo/pyproject.toml)
 threadpoolctl==3.5.0
     # via scikit-learn
-tifffile==2024.7.21
+tifffile==2024.8.10
     # via
     #   napari (napari_repo/pyproject.toml)
     #   scikit-image
@@ -671,13 +673,13 @@ toolz==0.12.1
     #   napari (napari_repo/pyproject.toml)
     #   dask
     #   partd
-torch==2.3.1
+torch==2.4.0
     # via napari (napari_repo/pyproject.toml)
 tornado==6.4.1
     # via
     #   ipykernel
     #   jupyter-client
-tqdm==4.66.4
+tqdm==4.66.5
     # via napari (napari_repo/pyproject.toml)
 traitlets==5.14.3
     # via
@@ -692,7 +694,7 @@ traitlets==5.14.3
     #   qtconsole
 triangle==20230923
     # via napari (napari_repo/pyproject.toml)
-triton==2.3.1
+triton==3.0.0
     # via torch
 typer==0.12.3
     # via npe2
@@ -718,7 +720,7 @@ tzdata==2024.1
     # via pandas
 urllib3==2.2.2
     # via requests
-uvicorn==0.30.3
+uvicorn==0.30.5
     # via sphinx-autobuild
 virtualenv==20.26.3
     # via napari (napari_repo/pyproject.toml)
@@ -726,7 +728,7 @@ vispy==0.14.3
     # via
     #   napari (napari_repo/pyproject.toml)
     #   napari-svg
-watchfiles==0.22.0
+watchfiles==0.23.0
     # via sphinx-autobuild
 wcwidth==0.2.13
     # via prompt-toolkit
@@ -734,11 +736,11 @@ websockets==12.0
     # via sphinx-autobuild
 wrapt==1.16.0
     # via napari (napari_repo/pyproject.toml)
-xarray==2024.6.0
+xarray==2024.7.0
     # via napari (napari_repo/pyproject.toml)
 zarr==2.18.2
     # via
     #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari (napari_repo/pyproject.toml)
-zipp==3.19.2
+zipp==3.20.0
     # via importlib-metadata

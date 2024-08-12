@@ -549,7 +549,7 @@ module = [
     "napari._vispy.visuals.surface",
     "napari.layers.shapes._shapes_models.path",
     "napari.layers.shapes._shapes_models.polygon",
-    "napari.layers.shapes._shapes_models._polgyon_base",
+    "napari.layers.shapes._shapes_models._polygon_base",
     "napari.layers.shapes._shapes_models.ellipse",
     "napari.layers.shapes._shapes_models.line",
     "napari.layers.shapes._shapes_models.rectangle",
@@ -762,7 +762,6 @@ exclude_lines = [
 ]
 
 [tool.coverage.run]
-parallel = true
 omit = [
     "*/_vendor/*",
     "*/_version.py",

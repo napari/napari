@@ -48,7 +48,7 @@ def test_add_texture(cube_layer, texture_shape):
 
     texture = np.random.random(texture_shape).astype(np.float32)
     cube_layer.texture = texture
-    # no texture filter initally
+    # no texture filter initially
     assert visual._texture_filter is None
 
     # the texture filter is created when texture + texcoords are added
