@@ -93,4 +93,5 @@ layer.mode = 'direct'
 layer.edge_width = 0.1
 layer.selected_data = {0}
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()
