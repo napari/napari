@@ -82,7 +82,7 @@ _default_shortcuts = {
         KeyCode.Delete,
         KeyCode.Backspace,
     ],
-    'napari:finish_drawing_shape': [KeyCode.Escape],
+    'napari:finish_drawing_shape': [KeyCode.Enter, KeyCode.Escape],
     # image
     'napari:orient_plane_normal_along_x': [KeyCode.KeyX],
     'napari:orient_plane_normal_along_y': [KeyCode.KeyY],
