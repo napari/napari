@@ -142,7 +142,7 @@ def _import_module(
             # We successfully imported part of the target_str but then
             # we got a failure. Usually this is because we tried
             # importing a class or function. Return the inner-most
-            # module we did successfuly import. And return the rest of
+            # module we did successfully import. And return the rest of
             # the module_path we didn't use.
             attribute_str = '.'.join(parts[i - 1 :])
             return module, attribute_str

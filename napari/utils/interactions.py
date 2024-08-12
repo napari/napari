@@ -49,7 +49,7 @@ def mouse_wheel_callbacks(obj, event):
         if inspect.isgenerator(gen):
             try:
                 next(gen)
-                # now store iterated genenerator
+                # now store iterated generator
                 obj._mouse_wheel_gen[mouse_wheel_func] = gen
                 # and now store event that initially triggered the press
                 obj._persisted_mouse_event[gen] = event
@@ -127,7 +127,7 @@ def mouse_press_callbacks(obj, event):
         if inspect.isgenerator(gen):
             try:
                 next(gen)
-                # now store iterated genenerator
+                # now store iterated generator
                 obj._mouse_drag_gen[mouse_drag_func] = gen
                 # and now store event that initially triggered the press
                 obj._persisted_mouse_event[gen] = event
@@ -288,7 +288,7 @@ class Shortcut:
 
         This replace platform specific symbols, like ↵ by Enter,  ⌘ by Command on MacOS....
         """
-        # edge case, shortcut combinaison where `+` is a key.
+        # edge case, shortcut combination where `+` is a key.
         # this should be rare as on english keyboard + is Shift-Minus.
         # but not unheard of. In those case `+` is always at the end with `++`
         # as you can't get two non-modifier keys,  or alone.

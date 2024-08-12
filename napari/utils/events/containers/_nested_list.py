@@ -249,7 +249,7 @@ class NestableEventedList(EventedList[_T]):
                 if hasattr(event, attr):
                     setattr(event, attr, ei)
 
-        # if the starting event was from a nestable envented list, we can
+        # if the starting event was from a nestable evented list, we can
         # use the same event type here (e.g: removed, inserted)
         if isinstance(event.source, NestableEventedList):
             emitter = getattr(self.events, event.type, self.events)

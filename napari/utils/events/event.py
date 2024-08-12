@@ -138,12 +138,12 @@ class Event:
 
     @property
     def type(self) -> str:
-        # No docstring; documeted in class docstring
+        # No docstring; documented in class docstring
         return self._type
 
     @property
     def native(self) -> Any:
-        # No docstring; documeted in class docstring
+        # No docstring; documented in class docstring
         return self._native
 
     @property
