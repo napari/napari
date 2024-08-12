@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 from threading import Event
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 from weakref import ref
 
 from qtpy.QtCore import QObject, QThread, Signal
-from superqt import ensure_main_thread
 
-from napari._check_numpy_version import PROBLEMATIC_NUMPY_MACOS
 from napari.utils.notifications import Notification, notification_manager
 
 if TYPE_CHECKING:
@@ -92,13 +90,7 @@ class StatusChecker(QThread):
             return
 
         try:
-            if PROBLEMATIC_NUMPY_MACOS:
-                # On macOS with numpy<2, we need to calculate the status in
-                # the main thread to avoid a bus error.
-                res = calc_status_in_main_thread(viewer)
-            else:
-                res = viewer._calc_status_from_cursor()
-            self.status_and_tooltip_changed.emit(res)
+            res = viewer._calc_status_from_cursor()
         except Exception as e:  # pragma: no cover # noqa: BLE001
             # Our codebase is not threadsafe. It is possible that an
             # ViewerModel or Layer state is changed while we are trying to
@@ -108,22 +100,4 @@ class StatusChecker(QThread):
             #
             # We do not want to crash the thread to keep the status updates.
             notification_manager.dispatch(Notification.from_exception(e))
-
-
-@ensure_main_thread(await_return=True)
-def calc_status_in_main_thread(
-    viewer: ViewerModel,
-) -> Optional[tuple[Union[str, dict], str]]:
-    """Calculate the status in the main thread.
-
-    This function is used to calculate the status in the main thread
-    when the status checker thread is not running. This is useful when
-    the status checker thread is not running, for example, when the
-    viewer is not yet fully initialized.
-
-    Parameters
-    ----------
-    viewer : napari.components.ViewerModel
-        The viewer for which to calculate the status.
-    """
-    return viewer._calc_status_from_cursor()
+        self.status_and_tooltip_changed.emit(res)
