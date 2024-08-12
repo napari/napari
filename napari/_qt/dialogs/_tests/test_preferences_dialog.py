@@ -17,6 +17,7 @@ from napari._vendor.qt_json_builder.qt_jsonschema_form.widgets import (
 )
 from napari.settings import NapariSettings, get_settings
 from napari.settings._constants import BrushSizeOnMouseModifiers, LabelDTypes
+from napari.utils.interactions import Shortcut
 from napari.utils.key_bindings import KeyBinding
 
 
@@ -240,7 +241,11 @@ def test_preferences_dialog_restore(qtbot, pref, monkeypatch):
         'napari:reset_scroll_progress'
     ] == [KeyBinding.from_str('U')]
     assert KeyBinding.from_str(
-        shortcut_widget._table.item(0, shortcut_widget._shortcut_col).text()
+        Shortcut.parse_platform(
+            shortcut_widget._table.item(
+                0, shortcut_widget._shortcut_col
+            ).text()
+        )
     ) == KeyBinding.from_str('U')
 
     monkeypatch.setattr(
@@ -256,5 +261,9 @@ def test_preferences_dialog_restore(qtbot, pref, monkeypatch):
         'napari:reset_scroll_progress'
     ] == [KeyBinding.from_str('Ctrl')]
     assert KeyBinding.from_str(
-        shortcut_widget._table.item(0, shortcut_widget._shortcut_col).text()
+        Shortcut.parse_platform(
+            shortcut_widget._table.item(
+                0, shortcut_widget._shortcut_col
+            ).text()
+        )
     ) == KeyBinding.from_str('Ctrl')
