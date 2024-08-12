@@ -2,6 +2,8 @@ import os
 
 from lazy_loader import attach as _attach
 
+from napari._check_numpy_version import prevent_numpy_arm_problem
+
 try:
     from napari._version import version as __version__
 except ImportError:
@@ -9,6 +11,9 @@ except ImportError:
 
 # Allows us to use pydata/sparse arrays as layer data
 os.environ.setdefault('SPARSE_AUTO_DENSIFY', '1')
+prevent_numpy_arm_problem()
+
+del prevent_numpy_arm_problem
 del os
 
 # Add everything that needs to be accessible from the napari namespace here.

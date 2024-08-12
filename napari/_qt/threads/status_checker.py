@@ -7,7 +7,7 @@ from weakref import ref
 from qtpy.QtCore import QObject, QThread, Signal
 from superqt import ensure_main_thread
 
-from napari.utils._check_numpy_version import PROBLEMATIC_NUMPY_MACOS
+from napari._check_numpy_version import PROBLEMATIC_NUMPY_MACOS
 from napari.utils.notifications import Notification, notification_manager
 
 if TYPE_CHECKING:
