@@ -369,7 +369,7 @@ def _build_widgets_submenu_actions(
 
     # if this plugin declares any menu items, its actions should have the
     # plugin name.
-    # TODO: update once plugin has self menus - they should't exclude it
+    # TODO: update once plugin has self menus - they shouldn't exclude it
     # from the shorter name
     declares_menu_items = any(
         len(pm.instance()._command_menu_map[mf.name][command.id])

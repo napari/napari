@@ -103,8 +103,8 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
             ndisplay, getattr(data, 'dtype', None)
         )
 
-        if ndisplay == 3 and self.layer.ndim == 2:
-            data = np.expand_dims(data, axis=0)
+        if ndisplay > data.ndim:
+            data = data.reshape((1,) * (ndisplay - data.ndim) + data.shape)
 
         # Check if data exceeds MAX_TEXTURE_SIZE and downsample
         if self.MAX_TEXTURE_SIZE_2D is not None and ndisplay == 2:

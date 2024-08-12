@@ -172,7 +172,7 @@ def _points_in_box_3d(
     plane_basis = np.column_stack([up_direction, horz_direction, box_normal])
 
     # transform the points and bounding box into a new basis
-    # such that tha boudning box is axis aligned
+    # such that the bounding box is axis aligned
     bbox_corners_axis_aligned = bbox_corners @ plane_basis
     bbox_corners_axis_aligned = bbox_corners_axis_aligned[:, :2]
     points_axis_aligned = projected_points @ plane_basis
