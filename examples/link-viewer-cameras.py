@@ -9,6 +9,8 @@ them. [1]_
 
 .. tags:: gui, layers, visualization-advanced, multicanvas
 """
+from functools import partial
+
 from skimage import data, filters
 
 import napari
@@ -29,24 +31,25 @@ viewer1.add_labels(binary)
 # viewer0.camera.events.emitters
 
 # reusable functions to set camera zoom and center
-def set_zoom(camera, value):
-    camera.zoom = value
+def set_zoom(camera, event):
+    camera.zoom = event.value
 
-def set_center(camera, value):
-    camera.center = value
+def set_center(camera, event):
+    camera.center = event.value
 
-# hook everything up
+# hook everything up — viewer0's camera's zoom and center to viewer1's, and
+# vice-versa
 viewer0.camera.events.zoom.connect(
-    lambda ev: set_zoom(viewer1.camera, ev.value)
+    partial(set_zoom, viewer1.camera)
 )
 viewer1.camera.events.zoom.connect(
-    lambda ev: set_zoom(viewer0.camera, ev.value)
+    partial(set_zoom, viewer0.camera)
 )
 viewer0.camera.events.center.connect(
-    lambda ev: set_center(viewer1.camera, ev.value)
+    partial(set_center, viewer1.camera)
 )
 viewer1.camera.events.center.connect(
-    lambda ev: set_center(viewer0.camera, ev.value)
+    partial(set_center, viewer0.camera)
 )
 
 if __name__ == '__main__':
