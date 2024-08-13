@@ -113,7 +113,7 @@ Q_HELP_ACTIONS: list[Action] = [
         menus=[{'id': MenuId.MENUBAR_HELP, 'group': MenuGroup.NAVIGATION}],
     ),
     Action(
-        id='napari.window.help.log',
+        id='napari.window.help.show_log',
         title=trans._('Show log'),
         callback=_show_log,
         menus=[{'id': MenuId.MENUBAR_HELP, 'group': MenuGroup.RENDER}],
