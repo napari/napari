@@ -320,7 +320,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             return
         to_emit = []
         for name in self._primary_changes:
-            # primary changes should contains only fields that are changed directly by assigment
+            # primary changes should contains only fields that are changed directly by assignment
             if name not in self._changes_queue:
                 continue
             old_value = self._changes_queue[name]
@@ -381,7 +381,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         # set value using original setter
         self._super_setattr_(name, value)
 
-    # expose the private EmitterGroup publically
+    # expose the private EmitterGroup publicly
     @property
     def events(self) -> EmitterGroup:
         return self._events

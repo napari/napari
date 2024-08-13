@@ -53,7 +53,7 @@ def test_dask_array_creates_cache():
     layer._set_view_slice = mock_set_view_slice
     layer.set_view_slice()
 
-    # adding a dask array will reate cache and turn off task fusion,
+    # adding a dask array will create cache and turn off task fusion,
     # *but only* during slicing (see "mock_set_view_slice" above)
     assert _dask_utils._DASK_CACHE.cache.available_bytes > 100
     assert not _dask_utils._DASK_CACHE.active

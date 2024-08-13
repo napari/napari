@@ -1047,7 +1047,7 @@ class Labels(ScalarFieldBase):
             values = im_slice[tuple(clamped.T)]
             nonzero_indices = np.flatnonzero(values)
             if len(nonzero_indices > 0):
-                # if a nonzer0 value was found, return the first one
+                # if a nonzero value was found, return the first one
                 return values[nonzero_indices[0]]
 
         return None
@@ -1525,7 +1525,7 @@ class Labels(ScalarFieldBase):
         if self.contour > 0:
             # Expand the slice by 1 pixel as the changes can go beyond
             # the original slice because of the morphological dilation
-            # (1 pixel because get_countours always applies 1 pixel dilation)
+            # (1 pixel because get_contours always applies 1 pixel dilation)
             updated_slice = expand_slice(updated_slice, self.data.shape, 1)
         else:
             # update data view

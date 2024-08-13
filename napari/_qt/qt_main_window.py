@@ -1203,7 +1203,7 @@ class Window:
         menu : QMenu, optional
             Menu bar to add toggle action to. If `None` nothing added to menu.
         """
-        # Find if any othe dock widgets are currently in area
+        # Find if any other dock widgets are currently in area
         current_dws_in_area = [
             dw
             for dw in self._qt_window.findChildren(QDockWidget)
