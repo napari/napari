@@ -67,7 +67,7 @@ class Viewer(ViewerModel):
         self._window = Window(self, show=show)
         self._instances.add(self)
 
-    # Expose private window publically. This is needed to keep window off pydantic model
+    # Expose private window publicly. This is needed to keep window off pydantic model
     @property
     def window(self) -> 'Window':
         return self._window

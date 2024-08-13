@@ -2,7 +2,7 @@
 #    uv pip compile --python-version 3.10 --output-file napari_repo/resources/constraints/constraints_py3.10_docs.txt napari_repo/pyproject.toml napari_repo/resources/constraints/version_denylist.txt resources/constraints/version_denylist_examples.txt docs/requirements.txt napari_repo/resources/constraints/pydantic_le_2.txt --extra pyqt5 --extra pyqt6 --extra pyside2 --extra pyside6_experimental --extra testing --extra testing_extra --extra optional
 accessible-pygments==0.0.5
     # via pydata-sphinx-theme
-alabaster==1.0.0
+alabaster==0.7.16
     # via sphinx
 anyio==4.4.0
     # via
@@ -25,7 +25,7 @@ attrs==24.2.0
     #   jsonschema
     #   jupyter-cache
     #   referencing
-babel==2.15.0
+babel==2.16.0
     # via
     #   napari (napari_repo/pyproject.toml)
     #   pydata-sphinx-theme
@@ -119,7 +119,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.110.0
+hypothesis==6.111.0
     # via napari (napari_repo/pyproject.toml)
 idna==3.7
     # via
@@ -198,7 +198,7 @@ llvmlite==0.43.0
     # via numba
 locket==1.0.0
     # via partd
-lxml==5.2.2
+lxml==5.3.0
     # via
     #   napari (napari_repo/pyproject.toml)
     #   lxml-html-clean
@@ -299,7 +299,7 @@ numpy==1.23.5
     #   vispy
     #   xarray
     #   zarr
-numpydoc==1.7.0
+numpydoc==1.8.0
     # via napari (napari_repo/pyproject.toml)
 nvidia-cublas-cu12==12.1.3.1
     # via
@@ -585,8 +585,9 @@ sortedcontainers==2.4.0
     # via hypothesis
 soupsieve==2.5
     # via beautifulsoup4
-sphinx==8.0.2
+sphinx==7.4.7
     # via
+    #   -r docs/requirements.txt
     #   myst-nb
     #   myst-parser
     #   numpydoc
@@ -641,7 +642,7 @@ superqt==0.6.7
     #   napari (napari_repo/pyproject.toml)
     #   magicgui
     #   napari-plugin-manager
-sympy==1.13.1
+sympy==1.13.2
     # via torch
 tabulate==0.9.0
     # via
@@ -653,7 +654,7 @@ tensorstore==0.1.64
     #   napari (napari_repo/pyproject.toml)
 threadpoolctl==3.5.0
     # via scikit-learn
-tifffile==2024.7.24
+tifffile==2024.8.10
     # via
     #   napari (napari_repo/pyproject.toml)
     #   scikit-image
@@ -741,5 +742,5 @@ zarr==2.18.2
     # via
     #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari (napari_repo/pyproject.toml)
-zipp==3.19.2
+zipp==3.20.0
     # via importlib-metadata

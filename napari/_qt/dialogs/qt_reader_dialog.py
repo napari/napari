@@ -237,7 +237,7 @@ def prepare_remaining_readers(
         raises previous error if no readers are left to try
     """
     readers = get_potential_readers(paths[0])
-    # remove plugin we already tried e.g. prefered plugin
+    # remove plugin we already tried e.g. preferred plugin
     if plugin_name in readers:
         del readers[plugin_name]
     # if there's no other readers left, raise the exception

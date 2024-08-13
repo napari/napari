@@ -543,7 +543,7 @@ class AnimationThread(QThread):
     frame_requested = Signal(int, int)  # axis, point
 
     def __init__(self, parent: Optional[QObject] = None) -> None:
-        # FIXME there are attributes defined outsid of __init__.
+        # FIXME there are attributes defined outside of __init__.
         super().__init__(parent=parent)
         self._interval = 1
         self.slider = None

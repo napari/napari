@@ -17,8 +17,8 @@ from typing import (
 
 import numpy as np
 
-# This cannot be condition to TYPE_CHEKCKING or the stubgen fails
-# with underfined Context.
+# This cannot be condition to TYPE_CHECKING or the stubgen fails
+# with undefined Context.
 from app_model.expressions import Context
 
 from napari import layers
@@ -406,7 +406,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         )
         assert len(center) in (2, 3)
         self.camera.center = center
-        # zoom is definied as the number of canvas pixels per world pixel
+        # zoom is defined as the number of canvas pixels per world pixel
         # The default value used below will zoom such that the whole field
         # of view will occupy 95% of the canvas on the most filled axis
 
