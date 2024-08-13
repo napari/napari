@@ -38,6 +38,7 @@ def prevent_numpy_arm_problem() -> None:
     """Set openblas to use only one thread to prevent numpy crash on macOS arm64
 
     This function is loading openblas library from numpy and set number of threads to 1.
+    See: https://github.com/OpenMathLib/OpenBLAS/wiki/faq#how-can-i-use-openblas-in-multi-threaded-applications
     We observe that it is enough to prevent numpy crash on macOS arm64 architecture.
     """
     if not PROBLEMATIC_NUMPY_MACOS:
