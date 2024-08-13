@@ -2671,6 +2671,7 @@ def test_changing_symbol():
     # add a point and check that it has the new symbol
     layer.add([1, 1])
     assert layer.symbol[2].value == 'square'
+    assert layer.symbol[0].value == 'disc'
 
 
 def test_docstring():
