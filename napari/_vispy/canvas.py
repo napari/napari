@@ -399,7 +399,7 @@ class VispyCanvas:
         self.viewer.cursor._view_direction = event.view_direction
         self.viewer.cursor.position = self._map_canvas2world(event.pos)
         # self.viewer.cursor.position = self._move_event_to_camera_center_plane(
-            # cursor_on_near_plane, event.view_direction
+        # cursor_on_near_plane, event.view_direction
         # )
 
         # Add the cursor position to the event
