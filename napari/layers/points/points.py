@@ -959,7 +959,16 @@ class Points(Layer):
         # If a single symbol has been converted, this will broadcast it to
         # the number of points in the data. If symbols is already an array,
         # this will check that it is the correct length.
-        coerced_symbols = np.broadcast_to(coerced_symbols, self.data.shape[0])
+        if coerced_symbols.size == 1:
+            coerced_symbols = np.full(
+                self.data.shape[0], coerced_symbols[0], dtype=object
+            )
+        else:
+            coerced_symbols = np.array(coerced_symbols)
+            if coerced_symbols.size != self.data.shape[0]:
+                raise ValueError(
+                    'Symbol array must be the same length as data.'
+                )
         self._symbol = coerced_symbols
         self.events.symbol()
         self.events.highlight()
