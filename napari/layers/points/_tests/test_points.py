@@ -680,6 +680,11 @@ def test_symbol():
     layer.symbol = symbol
     assert np.array_equal(layer.symbol, expected)
 
+    with pytest.raises(
+        ValueError, match='Symbol array must be the same length as data'
+    ):
+        layer.symbol = symbol[1:5]
+
     layer = Points(data, symbol='star')
     assert np.array_equiv(layer.symbol, 'star')
 
