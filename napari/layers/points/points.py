@@ -2043,7 +2043,7 @@ class Points(Layer):
             pos = None
 
         self._highlight_box = pos
-        if prev_stored != self._selected_data_stored:
+        if prev_stored != self._selected_data_stored or self._is_selecting:
             self.events.highlight()
 
     def _update_thumbnail(self) -> None:
