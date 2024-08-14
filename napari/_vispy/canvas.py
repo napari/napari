@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 from weakref import WeakSet
 
 import numpy as np
@@ -398,9 +398,6 @@ class VispyCanvas:
         # Update the cursor position
         self.viewer.cursor._view_direction = event.view_direction
         self.viewer.cursor.position = self._map_canvas2world(event.pos)
-        # self.viewer.cursor.position = self._move_event_to_camera_center_plane(
-            # cursor_on_near_plane, event.view_direction
-        # )
 
         # Add the cursor position to the event
         event.position = self.viewer.cursor.position
@@ -640,7 +637,7 @@ class VispyCanvas:
             vispy_overlay.node.parent = self.view.scene
         self._overlay_to_visual[overlay] = vispy_overlay
 
-    def _calculate_view_direction(self, event_pos: List[float]) -> List[float]:
+    def _calculate_view_direction(self, event_pos: list[float]) -> list[float]:
         """calculate view direction by ray shot from the camera"""
         # this method is only implemented for 3 dimension
         if self.viewer.dims.ndisplay == 2:
@@ -675,7 +672,7 @@ class VispyCanvas:
         return view_direction_nd
 
     def _move_event_to_camera_center_plane(
-        self, event_pos: List[float], view_direction: List[float]
+        self, event_pos: list[float], view_direction: list[float]
     ) -> tuple[float, ...]:
         """move event position from near plane to camera center's projection on the ray"""
         if self.viewer.dims.ndisplay != 3:
