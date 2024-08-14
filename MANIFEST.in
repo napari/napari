@@ -13,7 +13,6 @@ recursive-include napari *.py_tmpl
 # these things are not being included unless we ask
 recursive-exclude tools *
 recursive-exclude napari *.pyc
-exclude napari/benchmarks/*
 recursive-exclude resources *
 recursive-exclude binder *
 recursive-exclude examples *
