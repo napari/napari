@@ -412,12 +412,12 @@ class Vectors(Layer):
     def property_choices(self) -> dict[str, np.ndarray]:
         return self._feature_table.choices()
 
-    def _get_state(self):
+    def _get_state(self) -> dict[str, Any]:
         """Get dictionary of layer state.
 
         Returns
         -------
-        state : dict
+        state : dict of str to Any
             Dictionary of layer state.
         """
         state = self._get_base_state()

@@ -3,7 +3,9 @@ Annotate segmentation with text
 ===============================
 
 Perform a segmentation and annotate the results with
-bounding boxes and text
+bounding boxes and text.
+This example is fully explained in the following tutorial:
+https://napari.org/stable/tutorials/segmentation/annotate_segmentation.html
 
 .. tags:: analysis
 """

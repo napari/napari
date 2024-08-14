@@ -50,7 +50,7 @@ import napari
 viewer = napari.view_image(data.cells3d(), channel_axis=1, ndisplay=3)
 ```
 
-![napari viewer with a multichannel image of cells displayed as two image layers: nuclei and membrane.](https://github.com/napari/docs/blob/main/docs/images/multichannel_cells.png)
+![napari viewer with a multichannel image of cells displayed as two image layers: nuclei and membrane.](./napari/resources/multichannel_cells.png)
 
 
 To use napari from inside a script, use `napari.run()`:
@@ -86,7 +86,7 @@ You can see details of [the project roadmap here](https://napari.org/stable/road
 
 ## contributing
 
-Contributions are encouraged! Please read our [contributing guide](https://napari.org/dev/developers/contributing.html) to get started. Given that we're in an early stage, you may want to reach out on our [Github Issues](https://github.com/napari/napari/issues) before jumping in. 
+Contributions are encouraged! Please read our [contributing guide](https://napari.org/dev/developers/contributing/index.html) to get started. Given that we're in an early stage, you may want to reach out on our [Github Issues](https://github.com/napari/napari/issues) before jumping in. 
 
 If you want to contribute or edit to our documentation, please go to [napari/docs](https://github.com/napari/docs). 
 
@@ -116,7 +116,9 @@ the bug report template. If you think something isn't working, don't hesitate to
 
 ## institutional and funding partners
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://chanzuckerberg.com/wp-content/themes/czi/img/logo-white.svg">
-  <img alt="CZI logo" src="https://chanzuckerberg.com/wp-content/themes/czi/img/logo.svg">
-</picture>
+<a href="https://chanzuckerberg.com/">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://chanzuckerberg.com/wp-content/themes/czi/img/logo-white.svg">
+    <img alt="CZI logo" src="https://chanzuckerberg.com/wp-content/themes/czi/img/logo.svg">
+  </picture>
+</a>

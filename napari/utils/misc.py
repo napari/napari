@@ -149,7 +149,7 @@ def ensure_iterable(
         )
     if is_iterable(
         arg, color=color
-    ):  # argumnet color is to be removed in 0.6.0
+    ):  # argument color is to be removed in 0.6.0
         return arg
 
     return itertools.repeat(arg)
@@ -180,7 +180,7 @@ def is_iterable(
     if isinstance(arg, (str, Enum)) or np.isscalar(arg):
         return False
 
-    # this is to be removed in 0.6.0, coloer is never set True
+    # this is to be removed in 0.6.0, color is never set True
     if color is True and isinstance(arg, (list, np.ndarray)):
         return np.array(arg).ndim != 1 or len(arg) not in [3, 4]
 
@@ -199,9 +199,9 @@ def is_sequence(arg: Any) -> bool:
         dict
         set
     """
-    if isinstance(arg, collections.abc.Sequence) and not isinstance(arg, str):
-        return True
-    return False
+    return bool(
+        isinstance(arg, collections.abc.Sequence) and not isinstance(arg, str)
+    )
 
 
 def ensure_sequence_of_iterables(

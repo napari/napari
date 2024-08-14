@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 Index = Union[int, slice]
 
 _T = TypeVar('_T')
-_L = TypeVar('_L')
+_L = TypeVar('_L', bound=Any)
 
 
 class TypedMutableSequence(MutableSequence[_T]):
@@ -170,7 +170,7 @@ class TypedMutableSequence(MutableSequence[_T]):
         self, iterable: Iterable[_T]
     ) -> 'TypedMutableSequence[_T]':
         new = self.__class__()
-        # seperating this allows subclasses to omit these from their `__init__`
+        # separating this allows subclasses to omit these from their `__init__`
         new._basetypes = self._basetypes
         new._lookup = self._lookup.copy()
         new.extend(iterable)

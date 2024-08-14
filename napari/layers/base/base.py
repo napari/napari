@@ -62,6 +62,7 @@ from napari.utils.geometry import (
     intersect_line_with_axis_aligned_bounding_box_3d,
 )
 from napari.utils.key_bindings import KeymapProvider
+from napari.utils.migrations import _DeprecatingDict
 from napari.utils.misc import StringEnum
 from napari.utils.mouse_bindings import MousemapProvider
 from napari.utils.naming import magic_name
@@ -410,6 +411,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             scale = [1] * ndim
         if translate is None:
             translate = [0] * ndim
+        self._initial_affine = coerce_affine(
+            affine, ndim=ndim, name='physical2world'
+        )
         self._transforms: TransformChain[Affine] = TransformChain(
             [
                 Affine(np.ones(ndim), np.zeros(ndim), name='tile2data'),
@@ -423,7 +427,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                     name='data2physical',
                     units=units,
                 ),
-                coerce_affine(affine, ndim=ndim, name='physical2world'),
+                self._initial_affine,
                 Affine(np.ones(ndim), np.zeros(ndim), name='world2grid'),
             ]
         )
@@ -577,6 +581,13 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             self.help = ''
 
         return mode
+
+    def update_transform_box_visibility(self, visible):
+        if 'transform_box' in self._overlays:
+            TRANSFORM = self._modeclass.TRANSFORM  # type: ignore[attr-defined]
+            self._overlays['transform_box'].visible = (
+                self.mode == TRANSFORM and visible
+            )
 
     @property
     def mode(self) -> str:
@@ -871,6 +882,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self.refresh()
         self.events.affine()
 
+    def _reset_affine(self) -> None:
+        self.affine = self._initial_affine
+
     @property
     def _translate_grid(self) -> npt.NDArray:
         """array: Factors to shift the layer by."""
@@ -1033,12 +1047,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     def _get_ndim(self) -> int:
         raise NotImplementedError
 
-    def _get_base_state(self) -> dict:
+    def _get_base_state(self) -> dict[str, Any]:
         """Get dictionary of attributes on base layer.
+
+        This is useful for serialization and deserialization of the layer.
+        And similarly for plugins to pass state without direct dependencies on napari types.
 
         Returns
         -------
-        state : dict
+        dict of str to Any
             Dictionary of attributes on base layer.
         """
         base_dict = {
@@ -1062,7 +1079,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         return base_dict
 
     @abstractmethod
-    def _get_state(self):
+    def _get_state(self) -> dict[str, Any]:
         raise NotImplementedError
 
     @property
@@ -1072,6 +1089,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     def as_layer_data_tuple(self):
         state = self._get_state()
         state.pop('data', None)
+        if hasattr(self.__init__, '_rename_argument'):
+            state = _DeprecatingDict(state)
+            for element in self.__init__._rename_argument:
+                state.set_deprecated_from_rename(**element._asdict())
         return self.data, state, self._type_string
 
     @property

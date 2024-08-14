@@ -206,6 +206,9 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
         self.layer.events.labels_update.connect(self._on_partial_labels_update)
         self.layer.events.selected_label.connect(self._on_colormap_change)
         self.layer.events.show_selected_label.connect(self._on_colormap_change)
+        self.layer.events.iso_gradient_mode.connect(
+            self._on_iso_gradient_mode_change
+        )
         self.layer.events.data.connect(self._on_colormap_change)
         # as we generate colormap texture based on the data type, we need to
         # update it when the data type changes
@@ -290,6 +293,10 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
             self.node.shared_program['LUT_shape'] = val_texture.shape[:2]
         else:
             self.node.cmap = VispyColormap(*colormap)
+
+    def _on_iso_gradient_mode_change(self):
+        if isinstance(self.node, VolumeNode):
+            self.node.iso_gradient_mode = self.layer.iso_gradient_mode
 
     def _on_partial_labels_update(self, event):
         if not self.layer.loaded:

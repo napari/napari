@@ -4,7 +4,6 @@ import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QColor, QPainter
 from qtpy.QtWidgets import (
-    QButtonGroup,
     QCheckBox,
     QComboBox,
     QHBoxLayout,
@@ -12,17 +11,15 @@ from qtpy.QtWidgets import (
     QSpinBox,
     QWidget,
 )
-from superqt import QLargeIntSpinBox
+from superqt import QEnumComboBox, QLargeIntSpinBox
 
 from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
 from napari._qt.utils import set_widgets_enabled_with_opacity
 from napari._qt.widgets._slider_compat import QSlider
-from napari._qt.widgets.qt_mode_buttons import (
-    QtModePushButton,
-    QtModeRadioButton,
-)
+from napari._qt.widgets.qt_mode_buttons import QtModePushButton
 from napari.layers.labels._labels_constants import (
     LABEL_COLOR_MODE_TRANSLATIONS,
+    IsoCategoricalGradientMode,
     LabelColorMode,
     LabelsRendering,
     Mode,
@@ -30,7 +27,6 @@ from napari.layers.labels._labels_constants import (
 from napari.layers.labels._labels_utils import get_dtype
 from napari.utils import CyclicLabelColormap
 from napari.utils._dtype import get_dtype_limits
-from napari.utils.action_manager import action_manager
 from napari.utils.events import disconnect_events
 from napari.utils.translations import trans
 
@@ -51,6 +47,14 @@ class QtLabelsControls(QtLayerControls):
 
     Attributes
     ----------
+    layer : napari.layers.Labels
+        An instance of a napari Labels layer.
+    MODE : Enum
+        Available modes in the associated layer.
+    PAN_ZOOM_ACTION_NAME : str
+        String id for the pan-zoom action to bind to the pan_zoom button.
+    TRANSFORM_ACTION_NAME : str
+        String id for the transform action to bind to the transform button.
     button_group : qtpy.QtWidgets.QButtonGroup
         Button group of labels layer modes: PAN_ZOOM, PICKER, PAINT, ERASE, or
         FILL.
@@ -58,21 +62,21 @@ class QtLabelsControls(QtLayerControls):
         Button to update colormap of label layer.
     contigCheckBox : qtpy.QtWidgets.QCheckBox
         Checkbox to control if label layer is contiguous.
-    fill_button : qtpy.QtWidgets.QtModeRadioButton
+    fill_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to select FILL mode on Labels layer.
-    layer : napari.layers.Labels
-        An instance of a napari Labels layer.
     ndimSpinBox : qtpy.QtWidgets.QSpinBox
         Spinbox to control the number of editable dimensions of label layer.
-    paint_button : qtpy.QtWidgets.QtModeRadioButton
+    paint_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to select PAINT mode on Labels layer.
-    panzoom_button : qtpy.QtWidgets.QtModeRadioButton
+    panzoom_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to select PAN_ZOOM mode on Labels layer.
-    pick_button : qtpy.QtWidgets.QtModeRadioButton
+    transform_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
+        Button to select TRANSFORM mode on Labels layer.
+    pick_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to select PICKER mode on Labels layer.
     preserveLabelsCheckBox : qtpy.QtWidgets.QCheckBox
         Checkbox to control if existing labels are preserved
-    erase_button : qtpy.QtWidgets.QtModeRadioButton
+    erase_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to select ERASE mode on Labels layer.
     selectionSpinBox : superqt.QLargeIntSpinBox
         Widget to select a specific label by its index.
@@ -88,12 +92,17 @@ class QtLabelsControls(QtLayerControls):
     """
 
     layer: 'napari.layers.Labels'
+    MODE = Mode
+    PAN_ZOOM_ACTION_NAME = 'activate_labels_pan_zoom_mode'
+    TRANSFORM_ACTION_NAME = 'activate_labels_transform_mode'
 
     def __init__(self, layer) -> None:
         super().__init__(layer)
 
-        self.layer.events.mode.connect(self._on_mode_change)
         self.layer.events.rendering.connect(self._on_rendering_change)
+        self.layer.events.iso_gradient_mode.connect(
+            self._on_iso_gradient_mode_change
+        )
         self.layer.events.colormap.connect(self._on_colormap_change)
         self.layer.events.selected_label.connect(
             self._on_selected_label_change
@@ -104,8 +113,6 @@ class QtLabelsControls(QtLayerControls):
             self._on_n_edit_dimensions_change
         )
         self.layer.events.contour.connect(self._on_contour_change)
-        self.layer.events.editable.connect(self._on_editable_or_visible_change)
-        self.layer.events.visible.connect(self._on_editable_or_visible_change)
         self.layer.events.preserve_labels.connect(
             self._on_preserve_labels_change
         )
@@ -189,95 +196,71 @@ class QtLabelsControls(QtLayerControls):
             tooltip=trans._('shuffle colors'),
         )
 
-        self.panzoom_button = QtModeRadioButton(
+        self.pick_button = self._radio_button(
             layer,
-            'pan',
-            Mode.PAN_ZOOM,
-            checked=True,
+            'picker',
+            Mode.PICK,
+            True,
+            'activate_labels_picker_mode',
         )
-        action_manager.bind_button(
-            'napari:activate_labels_pan_zoom_mode', self.panzoom_button
+        self.paint_button = self._radio_button(
+            layer,
+            'paint',
+            Mode.PAINT,
+            True,
+            'activate_labels_paint_mode',
         )
-
-        self.pick_button = QtModeRadioButton(layer, 'picker', Mode.PICK)
-        action_manager.bind_button(
-            'napari:activate_labels_picker_mode', self.pick_button
+        self.polygon_button = self._radio_button(
+            layer,
+            'labels_polygon',
+            Mode.POLYGON,
+            True,
+            'activate_labels_polygon_mode',
         )
-
-        self.paint_button = QtModeRadioButton(layer, 'paint', Mode.PAINT)
-        action_manager.bind_button(
-            'napari:activate_labels_paint_mode', self.paint_button
-        )
-
-        self.polygon_button = QtModeRadioButton(
-            layer, 'labels_polygon', Mode.POLYGON
-        )
-        action_manager.bind_button(
-            'napari:activate_labels_polygon_mode',
-            self.polygon_button,
-        )
-
-        self.fill_button = QtModeRadioButton(
+        self.fill_button = self._radio_button(
             layer,
             'fill',
             Mode.FILL,
+            True,
+            'activate_labels_fill_mode',
         )
-        action_manager.bind_button(
-            'napari:activate_labels_fill_mode',
-            self.fill_button,
-        )
-
-        self.erase_button = QtModeRadioButton(
+        self.erase_button = self._radio_button(
             layer,
             'erase',
             Mode.ERASE,
+            True,
+            'activate_labels_erase_mode',
         )
-        action_manager.bind_button(
-            'napari:activate_labels_erase_mode',
-            self.erase_button,
-        )
-
         # don't bind with action manager as this would remove "Toggle with {shortcut}"
-
-        self._EDIT_BUTTONS = (
-            self.paint_button,
-            self.polygon_button,
-            self.pick_button,
-            self.fill_button,
-            self.erase_button,
-        )
-
-        self.button_group = QButtonGroup(self)
-        self.button_group.addButton(self.panzoom_button)
-        self.button_group.addButton(self.paint_button)
-        self.button_group.addButton(self.polygon_button)
-        self.button_group.addButton(self.pick_button)
-        self.button_group.addButton(self.fill_button)
-        self.button_group.addButton(self.erase_button)
         self._on_editable_or_visible_change()
 
-        button_row = QHBoxLayout()
-        button_row.addStretch(1)
-        button_row.addWidget(self.colormapUpdate)
-        button_row.addWidget(self.erase_button)
-        button_row.addWidget(self.paint_button)
-        button_row.addWidget(self.polygon_button)
-        button_row.addWidget(self.fill_button)
-        button_row.addWidget(self.pick_button)
-        button_row.addWidget(self.panzoom_button)
-        button_row.setSpacing(4)
-        button_row.setContentsMargins(0, 0, 0, 5)
+        self.button_grid.addWidget(self.colormapUpdate, 0, 0)
+        self.button_grid.addWidget(self.erase_button, 0, 1)
+        self.button_grid.addWidget(self.paint_button, 0, 2)
+        self.button_grid.addWidget(self.polygon_button, 0, 3)
+        self.button_grid.addWidget(self.fill_button, 0, 4)
+        self.button_grid.addWidget(self.pick_button, 0, 5)
 
-        renderComboBox = QComboBox(self)
-        rendering_options = [i.value for i in LabelsRendering]
-        renderComboBox.addItems(rendering_options)
-        index = renderComboBox.findText(
-            self.layer.rendering, Qt.MatchFlag.MatchFixedString
-        )
-        renderComboBox.setCurrentIndex(index)
-        renderComboBox.currentTextChanged.connect(self.changeRendering)
+        renderComboBox = QEnumComboBox(enum_class=LabelsRendering)
+        renderComboBox.setCurrentEnum(LabelsRendering(self.layer.rendering))
+        renderComboBox.currentEnumChanged.connect(self.changeRendering)
         self.renderComboBox = renderComboBox
         self.renderLabel = QLabel(trans._('rendering:'))
+
+        isoGradientComboBox = QEnumComboBox(
+            enum_class=IsoCategoricalGradientMode
+        )
+        isoGradientComboBox.setCurrentEnum(
+            IsoCategoricalGradientMode(self.layer.iso_gradient_mode)
+        )
+        isoGradientComboBox.currentEnumChanged.connect(
+            self.changeIsoGradientMode
+        )
+        isoGradientComboBox.setEnabled(
+            self.layer.rendering == LabelsRendering.ISO_CATEGORICAL
+        )
+        self.isoGradientComboBox = isoGradientComboBox
+        self.isoGradientLabel = QLabel(trans._('gradient\nmode:'))
 
         self._on_ndisplay_changed()
 
@@ -286,12 +269,13 @@ class QtLabelsControls(QtLayerControls):
         color_layout.addWidget(self.colorBox)
         color_layout.addWidget(self.selectionSpinBox)
 
-        self.layout().addRow(button_row)
+        self.layout().addRow(self.button_grid)
         self.layout().addRow(trans._('label:'), color_layout)
         self.layout().addRow(self.opacityLabel, self.opacitySlider)
         self.layout().addRow(trans._('brush size:'), self.brushSizeSlider)
         self.layout().addRow(trans._('blending:'), self.blendComboBox)
         self.layout().addRow(self.renderLabel, self.renderComboBox)
+        self.layout().addRow(self.isoGradientLabel, self.isoGradientComboBox)
         self.layout().addRow(trans._('color mode:'), self.colorModeComboBox)
         self.layout().addRow(trans._('contour:'), self.contourSpinBox)
         self.layout().addRow(trans._('n edit dim:'), self.ndimSpinBox)
@@ -309,6 +293,22 @@ class QtLabelsControls(QtLayerControls):
             self.layer.colormap = self.layer._original_random_colormap
         else:
             self.layer.colormap = self.layer._direct_colormap
+
+    def _on_mode_change(self, event):
+        """Receive layer model mode change event and update checkbox ticks.
+
+        Parameters
+        ----------
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
+
+        Raises
+        ------
+        ValueError
+            Raise error if event.mode is not PAN_ZOOM, PICK, PAINT, ERASE, FILL
+            or TRANSFORM
+        """
+        super()._on_mode_change(event)
 
     def _on_colormap_change(self):
         enable_combobox = not self.layer._is_default_colors(
@@ -334,42 +334,12 @@ class QtLabelsControls(QtLayerControls):
         dtype_lims = get_dtype_limits(get_dtype(self.layer))
         self.selectionSpinBox.setRange(*dtype_lims)
 
-    def _on_mode_change(self, event):
-        """Receive layer model mode change event and update checkbox ticks.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
-
-        Raises
-        ------
-        ValueError
-            Raise error if event.mode is not PAN_ZOOM, PICK, PAINT, ERASE, or
-            FILL
-        """
-        mode = event.mode
-        if mode == Mode.PAN_ZOOM:
-            self.panzoom_button.setChecked(True)
-        elif mode == Mode.PICK:
-            self.pick_button.setChecked(True)
-        elif mode == Mode.PAINT:
-            self.paint_button.setChecked(True)
-        elif mode == Mode.POLYGON:
-            self.polygon_button.setChecked(True)
-        elif mode == Mode.FILL:
-            self.fill_button.setChecked(True)
-        elif mode == Mode.ERASE:
-            self.erase_button.setChecked(True)
-        elif mode != Mode.TRANSFORM:
-            raise ValueError(trans._('Mode not recognized'))
-
-    def changeRendering(self, text):
+    def changeRendering(self, rendering_mode: LabelsRendering):
         """Change rendering mode for image display.
 
         Parameters
         ----------
-        text : str
+        rendering_mode : LabelsRendering
             Rendering mode used by vispy.
             Selects a preset rendering mode in vispy that determines how
             volume is displayed:
@@ -380,7 +350,23 @@ class QtLabelsControls(QtLayerControls):
               location, lighning calculations are performed to give the visual
               appearance of a surface.
         """
-        self.layer.rendering = text
+        self.isoGradientComboBox.setEnabled(
+            rendering_mode == LabelsRendering.ISO_CATEGORICAL
+        )
+        self.layer.rendering = rendering_mode
+
+    def changeIsoGradientMode(self, gradient_mode: IsoCategoricalGradientMode):
+        """Change gradient mode for isosurface rendering.
+
+        Parameters
+        ----------
+        gradient_mode : IsoCategoricalGradientMode
+            Gradient mode for the isosurface rendering method.
+            Selects the finite-difference gradient method for the isosurface shader:
+            * fast: simple finite difference gradient along each axis
+            * smooth: isotropic Sobel gradient, smoother but more computationally expensive
+        """
+        self.layer.iso_gradient_mode = gradient_mode
 
     def changeColor(self):
         """Change colormap of the label layer."""
@@ -492,8 +478,7 @@ class QtLabelsControls(QtLayerControls):
         with self.layer.events.n_edit_dimensions.blocker():
             value = self.layer.n_edit_dimensions
             self.ndimSpinBox.setValue(int(value))
-            if hasattr(self, 'polygon_button'):
-                self.polygon_button.setEnabled(self._is_polygon_tool_enabled())
+            self._set_polygon_tool_state()
 
     def _on_contiguous_change(self):
         """Receive layer model contiguous change event and update the checkbox."""
@@ -512,28 +497,39 @@ class QtLabelsControls(QtLayerControls):
                 self.layer.show_selected_label
             )
 
-    def _on_editable_or_visible_change(self):
-        """Receive layer model editable/visible change event & enable/disable buttons."""
-        set_widgets_enabled_with_opacity(
-            self,
-            self._EDIT_BUTTONS,
-            self.layer.editable and self.layer.visible,
-        )
-
     def _on_rendering_change(self):
         """Receive layer model rendering change event and update dropdown menu."""
         with self.layer.events.rendering.blocker():
-            index = self.renderComboBox.findText(
-                self.layer.rendering, Qt.MatchFlag.MatchFixedString
+            self.renderComboBox.setCurrentEnum(
+                LabelsRendering(self.layer.rendering)
             )
-            self.renderComboBox.setCurrentIndex(index)
+
+    def _on_iso_gradient_mode_change(self):
+        """Receive layer model iso_gradient_mode change event and update dropdown menu."""
+        with self.layer.events.iso_gradient_mode.blocker():
+            self.isoGradientComboBox.setCurrentEnum(
+                IsoCategoricalGradientMode(self.layer.iso_gradient_mode)
+            )
+
+    def _on_editable_or_visible_change(self):
+        super()._on_editable_or_visible_change()
+        self._set_polygon_tool_state()
 
     def _on_ndisplay_changed(self):
-        render_visible = self.ndisplay == 3
-        self.renderComboBox.setVisible(render_visible)
-        self.renderLabel.setVisible(render_visible)
+        show_3d_widgets = self.ndisplay == 3
+        self.renderComboBox.setVisible(show_3d_widgets)
+        self.renderLabel.setVisible(show_3d_widgets)
+        self.isoGradientComboBox.setVisible(show_3d_widgets)
+        self.isoGradientLabel.setVisible(show_3d_widgets)
         self._on_editable_or_visible_change()
-        self.polygon_button.setEnabled(self._is_polygon_tool_enabled())
+        self._set_polygon_tool_state()
+        super()._on_ndisplay_changed()
+
+    def _set_polygon_tool_state(self):
+        if hasattr(self, 'polygon_button'):
+            set_widgets_enabled_with_opacity(
+                self, [self.polygon_button], self._is_polygon_tool_enabled()
+            )
 
     def _is_polygon_tool_enabled(self):
         return (

@@ -16,7 +16,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     """Scale bar in world coordinates."""
 
     def __init__(self, *, viewer, overlay, parent=None) -> None:
-        self._target_length = 150
+        self._target_length = 150.0
         self._scale = 1
         self._unit: pint.Unit
 
@@ -35,6 +35,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.overlay.events.font_size.connect(self._on_text_change)
         self.overlay.events.ticks.connect(self._on_data_change)
         self.overlay.events.unit.connect(self._on_unit_change)
+        self.overlay.events.length.connect(self._on_length_change)
 
         self.viewer.events.theme.connect(self._on_data_change)
         self.viewer.camera.events.zoom.connect(self._on_zoom_change)
@@ -43,6 +44,9 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
     def _on_unit_change(self):
         self._unit = get_unit_registry()(self.overlay.unit)
+        self._on_zoom_change(force=True)
+
+    def _on_length_change(self):
         self._on_zoom_change(force=True)
 
     def _calculate_best_length(
@@ -74,7 +78,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         # validate if quantity is dimensionless and lower than 1 to prevent
         # the scale bar to extend beyond the canvas when zooming.
         # If the value falls in those conditions, we use the corresponding
-        # prefered value but scaled to take into account the actual value
+        # preferred value but scaled to take into account the actual value
         # magnitude. See https://github.com/napari/napari/issues/5914
         magnitude_1000 = floor(log(new_quantity.magnitude, 1000))
         scaled_magnitude = new_quantity.magnitude * 1000 ** (-magnitude_1000)
@@ -112,18 +116,24 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         # convert desired length to world size
         target_world_pixels = scale_canvas2world * target_canvas_pixels
 
-        # calculate the desired length as well as update the value and units
-        target_world_pixels_rounded, new_dim = self._calculate_best_length(
-            target_world_pixels
-        )
-        target_canvas_pixels_rounded = (
-            target_world_pixels_rounded / scale_canvas2world
-        )
-        scale = target_canvas_pixels_rounded
+        # If length is set, use that value to calculate the scale bar length
+        if self.overlay.length is not None:
+            target_canvas_pixels = self.overlay.length / scale_canvas2world
+            new_dim = self.overlay.length * self._unit.units
+        else:
+            # calculate the desired length as well as update the value and units
+            target_world_pixels_rounded, new_dim = self._calculate_best_length(
+                target_world_pixels
+            )
+            target_canvas_pixels = (
+                target_world_pixels_rounded / scale_canvas2world
+            )
+
+        scale = target_canvas_pixels
 
         # Update scalebar and text
         self.node.transform.scale = [scale, 1, 1, 1]
-        self.node.text.text = f'{new_dim:~}'
+        self.node.text.text = f'{new_dim:g~#P}'
         self.x_size = scale  # needed to offset properly
         self._on_position_change()
 
@@ -171,3 +181,4 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self._on_data_change()
         self._on_box_change()
         self._on_text_change()
+        self._on_length_change()

@@ -1,5 +1,6 @@
 # The tests in this module for the new style of async slicing in napari:
 # https://napari.org/dev/naps/4-async-slicing.html
+from functools import partial
 
 import numpy as np
 import pytest
@@ -47,6 +48,26 @@ def test_async_slice_image_on_current_step_change(
     viewer.dims.current_step = (2, 0, 0)
 
     wait_until_vispy_image_data_equal(qtbot, vispy_image, data[2, :, :])
+
+
+@pytest.mark.usefixtures('_enable_async')
+def test_async_out_of_bounds_layer_loaded(make_napari_viewer, qtbot):
+    """Check that images that are out of bounds when slicing appear loaded.
+
+    See https://github.com/napari/napari/issues/7070.
+    """
+    viewer = make_napari_viewer()
+    l0 = viewer.add_image(np.random.random((5, 5, 5)))
+    l1 = viewer.add_image(np.random.random((5, 5, 5)), translate=(5, 0, 0))
+    assert viewer.dims.nsteps == (10, 5, 5)
+
+    def layer_loaded(ly):
+        return ly.loaded
+
+    for i in range(viewer.dims.nsteps[0]):
+        viewer.dims.current_step = (i, 0, 0)
+        qtbot.waitUntil(partial(layer_loaded, l0), timeout=500)
+        qtbot.waitUntil(partial(layer_loaded, l1), timeout=500)
 
 
 @pytest.mark.usefixtures('_enable_async')
@@ -203,6 +224,19 @@ def test_async_slice_vectors_on_current_step_change(make_napari_viewer, qtbot):
     wait_until_vispy_vectors_data_equal(
         qtbot, vispy_vectors, np.array([[[2, 4, 5], [0, -3, 3]]])
     )
+
+
+@pytest.mark.usefixtures('_enable_async')
+def test_async_slice_two_layers_shutdown(make_napari_viewer):
+    """See https://github.com/napari/napari/issues/6685"""
+    viewer = make_napari_viewer()
+    # To reproduce the issue, we need two points layers where the second has
+    # some non-zero coordinates.
+    viewer.add_points()
+    points = viewer.add_points()
+    points.add([[1, 2]])
+
+    viewer.close()
 
 
 def setup_viewer_for_async_slicing(
