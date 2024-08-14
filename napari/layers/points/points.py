@@ -617,7 +617,7 @@ class Points(Layer):
         self.antialiasing = antialiasing
 
         # Trigger generation of view slice and thumbnail
-        self.refresh()
+        self.refresh(extent=False)
 
     @classmethod
     def _add_deprecated_properties(cls) -> None:
@@ -935,7 +935,7 @@ class Points(Layer):
         self._out_of_slice_display = bool(out_of_slice_display)
         self.events.out_of_slice_display()
         self.events.n_dimensional()
-        self.refresh()
+        self.refresh(extent=False)
 
     @property
     def n_dimensional(self) -> bool:
@@ -1011,8 +1011,8 @@ class Points(Layer):
                     category=DeprecationWarning,
                     stacklevel=2,
                 )
-        self._clear_extent_augmented()
-        self.refresh()
+        # TODO: technically not needed to cleat the non-augmented extent... maybe it's fine like this to avoid complexity
+        self.refresh(highlight=False)
 
     @property
     def current_size(self) -> Union[int, float]:
@@ -1051,8 +1051,8 @@ class Points(Layer):
         if self._update_properties and len(self.selected_data) > 0:
             idx = np.fromiter(self.selected_data, dtype=int)
             self.size[idx] = size
-            self._clear_extent_augmented()
-            self.refresh()
+            # TODO: also here technically no need to clear base extent
+            self.refresh(highlight=False)
             self.events.size()
         self.events.current_size()
 
@@ -1108,7 +1108,7 @@ class Points(Layer):
     @shown.setter
     def shown(self, shown):
         self._shown = np.broadcast_to(shown, self.data.shape[0]).astype(bool)
-        self.refresh()
+        self.refresh(extent=False, highlight=False)
 
     @property
     def border_width(self) -> np.ndarray:
@@ -1141,7 +1141,7 @@ class Points(Layer):
 
         self._border_width = border_width
         self.events.border_width(value=border_width)
-        self.refresh()
+        self.refresh(extent=False)
 
     @property
     def border_width_is_relative(self) -> bool:
@@ -1173,7 +1173,7 @@ class Points(Layer):
         if self._update_properties and len(self.selected_data) > 0:
             idx = np.fromiter(self.selected_data, dtype=int)
             self.border_width[idx] = border_width
-            self.refresh()
+            self.refresh(highlight=False)
             self.events.border_width()
         self.events.current_border_width()
 
