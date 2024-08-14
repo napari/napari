@@ -8,6 +8,7 @@ recursive-include napari *.pyi
 recursive-include napari *.png *.svg *.qss *.gif *.ico *.icns
 recursive-include napari *.yaml
 recursive-include napari *.py_tmpl
+recursive-include napari *.md
 
 # explicit excludes to keep check-manifest happy and remind us that
 # these things are not being included unless we ask
