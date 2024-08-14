@@ -957,7 +957,7 @@ class Points(Layer):
     def symbol(self, symbol: Union[str, np.ndarray, list]) -> None:
         coerced_symbols = coerce_symbols(symbol)
         # If a single symbol has been converted, this will broadcast it to
-        # the number of points in the data. If symbols is alread an array,
+        # the number of points in the data. If symbols is already an array,
         # this will check that it is the correct length.
         coerced_symbols = np.broadcast_to(coerced_symbols, self.data.shape[0])
         self._symbol = coerced_symbols
@@ -1996,6 +1996,7 @@ class Points(Layer):
             and np.array_equal(self._drag_box, self._drag_box_stored)
         ) and not force:
             return
+        prev_stored = self._selected_data_stored
         self._selected_data_stored = Selection(self.selected_data)
         self._value_stored = copy(self._value)
         self._drag_box_stored = copy(self._drag_box)
@@ -2042,7 +2043,8 @@ class Points(Layer):
             pos = None
 
         self._highlight_box = pos
-        self.events.highlight()
+        if prev_stored != self._selected_data_stored:
+            self.events.highlight()
 
     def _update_thumbnail(self) -> None:
         """Update thumbnail with current points and colors."""

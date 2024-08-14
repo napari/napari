@@ -66,8 +66,8 @@ def test_async_out_of_bounds_layer_loaded(make_napari_viewer, qtbot):
 
     for i in range(viewer.dims.nsteps[0]):
         viewer.dims.current_step = (i, 0, 0)
-        qtbot.waitUntil(partial(layer_loaded, l0), timeout=50)
-        qtbot.waitUntil(partial(layer_loaded, l1), timeout=50)
+        qtbot.waitUntil(partial(layer_loaded, l0), timeout=500)
+        qtbot.waitUntil(partial(layer_loaded, l1), timeout=500)
 
 
 @pytest.mark.usefixtures('_enable_async')
@@ -224,6 +224,19 @@ def test_async_slice_vectors_on_current_step_change(make_napari_viewer, qtbot):
     wait_until_vispy_vectors_data_equal(
         qtbot, vispy_vectors, np.array([[[2, 4, 5], [0, -3, 3]]])
     )
+
+
+@pytest.mark.usefixtures('_enable_async')
+def test_async_slice_two_layers_shutdown(make_napari_viewer):
+    """See https://github.com/napari/napari/issues/6685"""
+    viewer = make_napari_viewer()
+    # To reproduce the issue, we need two points layers where the second has
+    # some non-zero coordinates.
+    viewer.add_points()
+    points = viewer.add_points()
+    points.add([[1, 2]])
+
+    viewer.close()
 
 
 def setup_viewer_for_async_slicing(

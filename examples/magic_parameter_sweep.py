@@ -28,7 +28,7 @@ import napari
 # napari object type without actually importing or depending on napari.
 # We also use the `Annotated` type to pass an additional dictionary that can be used
 # to aid widget generation. The keys of the dictionary are keyword arguments to
-# the corresponding magicgui widget type. For more informaiton see
+# the corresponding magicgui widget type. For more information see
 # https://napari.org/magicgui/api/widgets.html.
 def gaussian_blur(
     layer: 'napari.layers.Image',
