@@ -25,7 +25,7 @@ jobs:
 
       - name: Build wheel
         run: |
-          python -m build --wheel --outdir dist/
+          python -m build --outdir dist/
 
       - name: Upload wheel
         uses: actions/upload-artifact@v4
