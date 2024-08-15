@@ -80,6 +80,7 @@ from napari.plugins._npe2 import index_npe1_adapters
 from napari.settings import get_settings
 from napari.utils import perf
 from napari.utils._proxies import PublicOnlyProxy
+from napari.utils.geometry import get_center_bbox
 from napari.utils.io import imsave
 from napari.utils.misc import (
     in_ipython,
@@ -90,7 +91,6 @@ from napari.utils.misc import (
 from napari.utils.notifications import Notification
 from napari.utils.theme import _themes, get_system_theme
 from napari.utils.translations import trans
-from napari.utils.geometry import get_center_bbox
 
 _sentinel = object()
 
@@ -1731,54 +1731,58 @@ class Window:
             imsave(path, img)
         return img
 
-
-    def export_rois(self, shapes_data, paths: list[str] | None = None):
-        
+    def export_rois(
+        self,
+        shapes_data,
+        paths: list[str] | None = None,
+        scale: float | None = None,
+    ):
         """Export the shapes rois with storage file paths
 
-       Parameters
-       ----------
-       shapes_data: napari.layers.shape
-              A napari shapes layer
-       paths: list
-              The list to store file path for shapes roi
-       
-       Returns
-       -------
-       roi_dict: dictionary
-              The dictionary with index and file paths for each shapes roi
-       
-       """
-        if len(path) != len(screenshot_list):
+        Parameters
+        ----------
+        shapes_data: napari.layers.shape
+               A napari shapes layer
+        paths: list
+               The list to store file path for shapes roi
+
+        Returns
+        -------
+        roi_dict: dictionary
+               The dictionary with index and file paths for each shapes roi
+
+        """
+        if paths is not None and len(paths) != len(shapes_data):
             raise ValueError(
                 trans._(
                     'The number of file paths does not match the number of ROI shapes',
-                        deferred=True)
+                    deferred=True,
+                )
             )
-        
+
         screenshot_list = []
         camera = self._qt_viewer.viewer.camera
         start_camera_center = camera.center
         start_camera_zoom = camera.zoom
         canvas = self._qt_viewer.canvas
         prev_size = canvas.size
-        
+
         for index, shape in enumerate(shapes_data):
-              center_coord, height, width = get_center_bbox(shape)
-              camera.center = center_coord             
-              canvas.size = (int(height), int(width))
+            center_coord, height, width = get_center_bbox(shape)
+            camera.center = center_coord
+            canvas.size = (int(height), int(width))
 
-              camera.zoom = 1.0
-              path = paths[index] if paths is not None else None
-              screenshot_list.append(self.screenshot(path=path, canvas_only=True, scale=scale))
+            camera.zoom = 1.0
+            path = paths[index] if paths is not None else None
+            screenshot_list.append(
+                self.screenshot(path=path, canvas_only=True, scale=scale)
+            )
 
-              canvas.size = prev_size
-              camera.center = start_camera_center
-              camera.zoom = start_camera_zoom
+            canvas.size = prev_size
+            camera.center = start_camera_center
+            camera.zoom = start_camera_zoom
 
-        
-
-        return screenshot_list 
+        return screenshot_list
 
     def screenshot(
         self, path=None, size=None, scale=None, flash=True, canvas_only=False
@@ -1908,5 +1912,3 @@ def _instantiate_dock_widget(wdg_cls, viewer: 'Viewer'):
 
     # instantiate the widget
     return wdg_cls(**kwargs)
-
-
