@@ -1712,12 +1712,15 @@ class Shapes(Layer):
         }
 
         # don't update thumbnail on mode changes
-        with self.block_thumbnail_update():
-            if not (mode in draw_modes and self._mode in draw_modes):
-                # Shapes._finish_drawing() calls Shapes.refresh()
+        if not (mode in draw_modes and self._mode in draw_modes):
+            # Shapes._finish_drawing() calls Shapes.refresh() via Shapes._update_dims()
+            # so we need to block thumbnail update from here
+            # TODO: this is not great... ideally we should no longer need this blocking system
+            #       but maybe follow up PR
+            with self.block_thumbnail_update():
                 self._finish_drawing()
-            else:
-                self.refresh()
+        else:
+            self.refresh(data_displayed=False, extent=False, thumbnail=False)
 
     def _reset_editable(self) -> None:
         self.editable = self._slice_input.ndisplay == 2
@@ -3010,7 +3013,7 @@ class Shapes(Layer):
         new_z_index = max(self._data_view._z_index) + 1
         for index in self.selected_data:
             self._data_view.update_z_index(index, new_z_index)
-        self.refresh()
+        self.refresh(extent=False, highlight=False)
 
     def move_to_back(self) -> None:
         """Moves selected objects to be displayed behind all others."""
@@ -3019,7 +3022,7 @@ class Shapes(Layer):
         new_z_index = min(self._data_view._z_index) - 1
         for index in self.selected_data:
             self._data_view.update_z_index(index, new_z_index)
-        self.refresh()
+        self.refresh(extent=False, highlight=False)
 
     def _copy_data(self) -> None:
         """Copy selected shapes to clipboard."""

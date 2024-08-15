@@ -477,7 +477,7 @@ class Vectors(Layer):
     def out_of_slice_display(self, out_of_slice_display: bool) -> None:
         self._out_of_slice_display = out_of_slice_display
         self.events.out_of_slice_display()
-        self.refresh()
+        self.refresh(extent=False)
 
     @property
     def edge_width(self) -> float:
@@ -489,7 +489,7 @@ class Vectors(Layer):
         self._edge_width = edge_width
 
         self.events.edge_width()
-        self.refresh()
+        self.refresh(extent=False)
 
     @property
     def vector_style(self) -> str:
@@ -510,7 +510,7 @@ class Vectors(Layer):
         self._vector_style = VectorStyle(vector_style)
         if self._vector_style != old_vector_style:
             self.events.vector_style()
-            self.refresh()
+            self.refresh(extent=False, thumbnail=False)
 
     @property
     def length(self) -> float:
