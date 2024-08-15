@@ -148,8 +148,4 @@ def test_combine_widgets_error():
     with pytest.raises(
         TypeError, match='"widgets" must be a QWidget, a magicgui'
     ):
-        combine_widgets(
-            [
-                'string',
-            ]
-        )
+        combine_widgets(['string'])
