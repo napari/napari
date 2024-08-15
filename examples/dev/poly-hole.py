@@ -80,7 +80,7 @@ in_poly = measure.points_in_poly(centers, a)
 
 fig, ax = plt.subplots()
 pltri(res['vertices'], res['triangles'], mask=in_poly, ax=ax)
-plt.show()
+fig.show()
 
 
 # next, draw the shape in napari
