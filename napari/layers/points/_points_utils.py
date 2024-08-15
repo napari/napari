@@ -297,7 +297,7 @@ def coerce_symbols(
     # if a symbol is a unique string or Symbol instance, convert it to a
     # proper Symbol instance
     if isinstance(symbol, (str, Symbol)):
-        return np.array(symbol_conversion(symbol), dtype=object)
+        return np.array([symbol_conversion(symbol)], dtype=object)
 
     if not isinstance(symbol, np.ndarray):
         symbol = np.array(symbol)

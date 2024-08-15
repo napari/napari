@@ -680,6 +680,11 @@ def test_symbol():
     layer.symbol = symbol
     assert np.array_equal(layer.symbol, expected)
 
+    with pytest.raises(
+        ValueError, match='Symbol array must be the same length as data'
+    ):
+        layer.symbol = symbol[1:5]
+
     layer = Points(data, symbol='star')
     assert np.array_equiv(layer.symbol, 'star')
 
@@ -2655,6 +2660,23 @@ def test_events_callback(old_name, new_name, value):
 
     new_name_callback.assert_called_once()
     old_name_callback.assert_called_once()
+
+
+def test_changing_symbol():
+    """Changing the symbol should update the UI"""
+    layer = Points(np.random.rand(2, 2))
+
+    assert layer.symbol[1].value == 'disc'
+    assert layer.current_symbol.value == 'disc'
+
+    # select a point and change its symbol
+    layer.selected_data = {1}
+    layer.current_symbol = 'square'
+    assert layer.symbol[1].value == 'square'
+    # add a point and check that it has the new symbol
+    layer.add([1, 1])
+    assert layer.symbol[2].value == 'square'
+    assert layer.symbol[0].value == 'disc'
 
 
 def test_docstring():
