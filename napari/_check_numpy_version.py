@@ -68,7 +68,7 @@ def limit_numpy1x_threads_on_macos_arm() -> (
             'numpy .dylibs directory not found during try to prevent numpy crash'
         )
     # Recent numpy versions are built with cibuildwheel.
-    # Internally, it uses delocate, which stores the path to the openblas
+    # Internally, it uses delocate, which stores the openblas
     # library in the .dylibs directory.
     # Since we only patch numpy<2, we can just search for the libopenblas
     # dynamic library at this location.
