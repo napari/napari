@@ -39,7 +39,7 @@ else:
     NUMPY_VERSION_IS_THREADSAFE = True
 
 
-def prevent_numpy_arm_problem() -> None:  # pragma: no cover (macos only code)
+def limit_numpy1x_threads_on_macos_arm() -> None:  # pragma: no cover (macos only code)
     """Set openblas to use single thread on macOS arm64 to prevent numpy crash.
 
     On NumPy version<2 wheels on macOS ARM64 architectures, a BusError is
