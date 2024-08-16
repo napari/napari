@@ -1,6 +1,3 @@
-from typing import List
-
-
 class MousemapProvider:
     """Mix-in to add mouse binding functionality.
 
@@ -16,12 +13,12 @@ class MousemapProvider:
         Callbacks from when mouse wheel is scrolled.
     """
 
-    mouse_move_callbacks: List[callable]
-    mouse_wheel_callbacks: List[callable]
-    mouse_drag_callbacks: List[callable]
-    mouse_double_click_callbacks: List[callable]
+    mouse_move_callbacks: list[callable]
+    mouse_wheel_callbacks: list[callable]
+    mouse_drag_callbacks: list[callable]
+    mouse_double_click_callbacks: list[callable]
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         # Hold callbacks for when mouse moves with nothing pressed
         self.mouse_move_callbacks = []

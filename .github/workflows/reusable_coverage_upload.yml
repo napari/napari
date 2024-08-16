@@ -1,0 +1,47 @@
+name: Upload coverage
+on:
+  workflow_call:
+    secrets:
+      codecov_token:
+        required: true
+
+
+jobs:
+  upload_coverage:
+    name: Upload coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+          cache-dependency-path: pyproject.toml
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          pip install --upgrade pip
+          pip install codecov
+
+      - name: Download coverage data
+        uses: actions/download-artifact@v4
+        with:
+          pattern: coverage reports*
+          path: coverage
+          merge-multiple: true
+
+      - name: combine coverage data
+        run: |
+          python -Im coverage combine coverage
+          python -Im coverage xml -o coverage.xml
+
+          # Report and write to summary.
+          python -Im coverage report --format=markdown --skip-empty --skip-covered >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload coverage data
+        uses: codecov/codecov-action@v4
+        with:
+          fail_ci_if_error: true
+          token: ${{ secrets.codecov_token }}
+          version: v0.6.0

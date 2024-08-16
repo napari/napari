@@ -2,17 +2,20 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Union
 
+from napari._qt.containers.qt_axis_model import AxisList, QtAxisListModel
 from napari.components.layerlist import LayerList
 from napari.utils.events import SelectableEventedList
 from napari.utils.translations import trans
 from napari.utils.tree import Group
 
 if TYPE_CHECKING:
-    from qtpy.QtWidgets import QWidget
+    from typing import Optional
+
+    from qtpy.QtWidgets import QWidget  # type: ignore[attr-defined]
 
 
 def create_view(
-    obj: Union[SelectableEventedList, Group], parent: QWidget = None
+    obj: Union[SelectableEventedList, Group], parent: Optional[QWidget] = None
 ):
     """Create a `QtListView`, or `QtNodeTreeView` for `obj`.
 
@@ -38,7 +41,7 @@ def create_view(
         return QtListView(obj, parent=parent)
     raise TypeError(
         trans._(
-            "Cannot create Qt view for obj: {obj}",
+            'Cannot create Qt view for obj: {obj}',
             deferred=True,
             obj=obj,
         )
@@ -46,7 +49,7 @@ def create_view(
 
 
 def create_model(
-    obj: Union[SelectableEventedList, Group], parent: QWidget = None
+    obj: Union[SelectableEventedList, Group], parent: Optional[QWidget] = None
 ):
     """Create a `QtListModel`, or `QtNodeTreeModel` for `obj`.
 
@@ -72,11 +75,13 @@ def create_model(
         return QtLayerListModel(obj, parent=parent)
     if isinstance(obj, Group):
         return QtNodeTreeModel(obj, parent=parent)
+    if isinstance(obj, AxisList):
+        return QtAxisListModel(obj, parent=parent)
     if isinstance(obj, SelectableEventedList):
         return QtListModel(obj, parent=parent)
     raise TypeError(
         trans._(
-            "Cannot create Qt model for obj: {obj}",
+            'Cannot create Qt model for obj: {obj}',
             deferred=True,
             obj=obj,
         )

@@ -9,8 +9,8 @@ Display a 4-D image and points layer and swap the displayed dimensions
 
 import numpy as np
 from skimage import data
-import napari
 
+import napari
 
 blobs = np.stack(
     [
@@ -34,7 +34,7 @@ points = np.array(
     ]
 )
 viewer.add_points(
-    points, size=[0, 6, 10, 10], face_color='blue', out_of_slice_display=True
+    points, size=10, face_color='blue', out_of_slice_display=True
 )
 
 viewer.dims.order = (0, 2, 1, 3)

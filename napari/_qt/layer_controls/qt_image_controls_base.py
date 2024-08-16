@@ -5,7 +5,12 @@ from typing import TYPE_CHECKING
 import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QImage, QPixmap
-from qtpy.QtWidgets import QHBoxLayout, QLabel, QPushButton, QWidget
+from qtpy.QtWidgets import (
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QWidget,
+)
 from superqt import QDoubleRangeSlider
 
 from napari._qt.layer_controls.qt_colormap_combobox import QtColormapComboBox
@@ -53,6 +58,22 @@ class QtBaseImageControls(QtLayerControls):
 
     Attributes
     ----------
+    layer : napari.layers.Layer
+        An instance of a napari layer.
+    MODE : Enum
+        Available modes in the associated layer.
+    PAN_ZOOM_ACTION_NAME : str
+        String id for the pan-zoom action to bind to the pan_zoom button.
+    TRANSFORM_ACTION_NAME : str
+        String id for the transform action to bind to the transform button.
+    button_group : qtpy.QtWidgets.QButtonGroup
+        Button group for image based layer modes (PAN_ZOOM TRANSFORM).
+    button_grid : qtpy.QtWidgets.QGridLayout
+        GridLayout for the layer mode buttons
+    panzoom_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
+        Button to pan/zoom shapes layer.
+    transform_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
+        Button to transform shapes layer.
     clim_popup : napari._qt.qt_range_slider_popup.QRangeSliderPopup
         Popup widget launching the contrast range slider.
     colorbarLabel : qtpy.QtWidgets.QLabel
@@ -63,12 +84,10 @@ class QtBaseImageControls(QtLayerControls):
         Contrast range slider widget.
     gammaSlider : qtpy.QtWidgets.QSlider
         Gamma adjustment slider widget.
-    layer : napari.layers.Layer
-        An instance of a napari layer.
 
     """
 
-    def __init__(self, layer: Image):
+    def __init__(self, layer: Image) -> None:
         super().__init__(layer)
 
         self.layer.events.colormap.connect(self._on_colormap_change)
@@ -81,7 +100,7 @@ class QtBaseImageControls(QtLayerControls):
         )
 
         comboBox = QtColormapComboBox(self)
-        comboBox.setObjectName("colormapComboBox")
+        comboBox.setObjectName('colormapComboBox')
         comboBox._allitems = set(self.layer.colormaps)
 
         for name, cm in AVAILABLE_COLORMAPS.items():
@@ -110,7 +129,7 @@ class QtBaseImageControls(QtLayerControls):
         connect_setattr(
             self.contrastLimitsSlider.valueChanged,
             self.layer,
-            "contrast_limits",
+            'contrast_limits',
         )
         connect_setattr(
             self.contrastLimitsSlider.rangeChanged,
@@ -173,10 +192,11 @@ class QtBaseImageControls(QtLayerControls):
     def _on_colormap_change(self):
         """Receive layer model colormap change event and update dropdown menu."""
         name = self.layer.colormap.name
-        if name not in self.colormapComboBox._allitems:
-            if cm := AVAILABLE_COLORMAPS.get(name):
-                self.colormapComboBox._allitems.add(name)
-                self.colormapComboBox.addItem(cm._display_name, name)
+        if name not in self.colormapComboBox._allitems and (
+            cm := AVAILABLE_COLORMAPS.get(name)
+        ):
+            self.colormapComboBox._allitems.add(name)
+            self.colormapComboBox.addItem(cm._display_name, name)
 
         if name != self.colormapComboBox.currentData():
             index = self.colormapComboBox.findData(name)
@@ -223,9 +243,9 @@ class AutoScaleButtons(QWidget):
         auto_btn.setCheckable(True)
         auto_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         once_btn.clicked.connect(lambda: auto_btn.setChecked(False))
-        connect_no_arg(once_btn.clicked, layer, "reset_contrast_limits")
-        connect_setattr(auto_btn.toggled, layer, "_keep_auto_contrast")
-        connect_no_arg(auto_btn.clicked, layer, "reset_contrast_limits")
+        connect_no_arg(once_btn.clicked, layer, 'reset_contrast_limits')
+        connect_setattr(auto_btn.toggled, layer, '_keep_auto_contrast')
+        connect_no_arg(auto_btn.clicked, layer, 'reset_contrast_limits')
 
         self.layout().addWidget(once_btn)
         self.layout().addWidget(auto_btn)
@@ -236,7 +256,7 @@ class AutoScaleButtons(QWidget):
 
 
 class QContrastLimitsPopup(QRangeSliderPopup):
-    def __init__(self, layer: Image, parent=None):
+    def __init__(self, layer: Image, parent=None) -> None:
         super().__init__(parent)
 
         decimals = range_to_decimals(layer.contrast_limits_range, layer.dtype)
@@ -245,18 +265,23 @@ class QContrastLimitsPopup(QRangeSliderPopup):
         self.slider.setSingleStep(10**-decimals)
         self.slider.setValue(layer.contrast_limits)
 
-        connect_setattr(self.slider.valueChanged, layer, "contrast_limits")
+        connect_setattr(self.slider.valueChanged, layer, 'contrast_limits')
         connect_setattr(
-            self.slider.rangeChanged, layer, "contrast_limits_range"
+            self.slider.rangeChanged, layer, 'contrast_limits_range'
         )
 
         def reset():
             layer.reset_contrast_limits()
             layer.contrast_limits_range = layer.contrast_limits
+            decimals_ = range_to_decimals(
+                layer.contrast_limits_range, layer.dtype
+            )
+            self.slider.setDecimals(decimals_)
+            self.slider.setSingleStep(10**-decimals_)
 
-        reset_btn = QPushButton("reset")
-        reset_btn.setObjectName("reset_clims_button")
-        reset_btn.setToolTip(trans._("autoscale contrast to data range"))
+        reset_btn = QPushButton('reset')
+        reset_btn.setObjectName('reset_clims_button')
+        reset_btn.setToolTip(trans._('autoscale contrast to data range'))
         reset_btn.setFixedWidth(45)
         reset_btn.clicked.connect(reset)
         self._layout.addWidget(
@@ -267,10 +292,10 @@ class QContrastLimitsPopup(QRangeSliderPopup):
         # unsigned integer type (it's unclear what range should be set)
         # so we don't show create it at all.
         if np.issubdtype(normalize_dtype(layer.dtype), np.integer):
-            range_btn = QPushButton("full range")
-            range_btn.setObjectName("full_clim_range_button")
+            range_btn = QPushButton('full range')
+            range_btn.setObjectName('full_clim_range_button')
             range_btn.setToolTip(
-                trans._("set contrast range to full bit-depth")
+                trans._('set contrast range to full bit-depth')
             )
             range_btn.setFixedWidth(75)
             range_btn.clicked.connect(layer.reset_contrast_limits_range)
@@ -295,19 +320,16 @@ def range_to_decimals(range_, dtype):
     int
         Decimals of precision.
     """
-
-    if hasattr(dtype, 'numpy_dtype'):
-        # retrieve the corresponding numpy.dtype from a tensorstore.dtype
-        dtype = dtype.numpy_dtype
+    dtype = normalize_dtype(dtype)
 
     if np.issubdtype(dtype, np.integer):
         return 0
-    else:
-        # scale precision with the log of the data range order of magnitude
-        # eg.   0 - 1   (0 order of mag)  -> 3 decimal places
-        #       0 - 10  (1 order of mag)  -> 2 decimals
-        #       0 - 100 (2 orders of mag) -> 1 decimal
-        #       ≥ 3 orders of mag -> no decimals
-        # no more than 64 decimals
-        d_range = np.subtract(*range_[::-1])
-        return min(64, max(int(3 - np.log10(d_range)), 0))
+
+    # scale precision with the log of the data range order of magnitude
+    # eg.   0 - 1   (0 order of mag)  -> 3 decimal places
+    #       0 - 10  (1 order of mag)  -> 2 decimals
+    #       0 - 100 (2 orders of mag) -> 1 decimal
+    #       ≥ 3 orders of mag -> no decimals
+    # no more than 64 decimals
+    d_range = np.subtract(*range_[::-1])
+    return min(64, max(int(3 - np.log10(d_range)), 0))

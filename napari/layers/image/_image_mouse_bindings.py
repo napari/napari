@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from collections.abc import Generator
+from typing import TYPE_CHECKING, Union
 
 import numpy as np
 
@@ -14,16 +15,18 @@ if TYPE_CHECKING:
     from napari.utils.events import Event
 
 
-def move_plane_along_normal(layer: Image, event: Event):
+def move_plane_along_normal(
+    layer: Image, event: Event
+) -> Union[None, Generator[None, None, None]]:
     """Move a layers slicing plane along its normal vector on click and drag."""
     # early exit clauses
     if (
         'Shift' not in event.modifiers
         or layer.visible is False
-        or layer.interactive is False
+        or layer.mouse_pan is False
         or len(event.dims_displayed) < 3
     ):
-        return
+        return None
 
     # Store mouse position at start of drag
     initial_position_world = np.asarray(event.position)
@@ -46,15 +49,15 @@ def move_plane_along_normal(layer: Image, event: Event):
     if not point_in_bounding_box(
         intersection, layer.extent.data[:, event.dims_displayed]
     ):
-        return
+        return None
 
     layer.plane.position = intersection
 
     # Store original plane position and disable interactivity during plane drag
     original_plane_position = np.copy(layer.plane.position)
-    layer.interactive = False
+    layer.mouse_pan = False
 
-    yield
+    yield None
 
     while event.type == 'mouse_move':
         # Project mouse drag onto plane normal
@@ -72,22 +75,24 @@ def move_plane_along_normal(layer: Image, event: Event):
         )
 
         clamped_plane_position = clamp_point_to_bounding_box(
-            updated_position, layer._display_bounding_box(event.dims_displayed)
+            updated_position,
+            layer._display_bounding_box_augmented(event.dims_displayed),
         )
 
         layer.plane.position = clamped_plane_position
-        yield
+        yield None
 
     # Re-enable volume_layer interactivity after the drag
-    layer.interactive = True
+    layer.mouse_pan = True
+    return None
 
 
-def set_plane_position(layer: Image, event: Event):
+def set_plane_position(layer: Image, event: Event) -> None:
     """Set plane position on double click."""
     # early exit clauses
     if (
         layer.visible is False
-        or layer.interactive is False
+        or layer.mouse_pan is False
         or len(event.dims_displayed) < 3
     ):
         return

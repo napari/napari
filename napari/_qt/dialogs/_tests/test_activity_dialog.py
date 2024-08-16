@@ -10,7 +10,7 @@ from napari._qt.widgets.qt_progress_bar import (
 )
 from napari.utils import progress
 
-SHOW = bool(sys.platform == 'linux' or os.getenv("CI"))
+SHOW = bool(sys.platform == 'linux' or os.getenv('CI'))
 
 
 def qt_viewer_has_pbar(qt_viewer):
@@ -68,10 +68,9 @@ def test_progress_with_context(make_napari_viewer):
     """Test adding/removing of progress bar with context manager"""
     viewer = make_napari_viewer(show=SHOW)
 
-    with assert_pbar_added_to(viewer):
-        with progress(range(100)) as prog:
-            pbar = get_qt_labeled_progress_bar(prog, viewer)
-            assert pbar.qt_progress_bar.maximum() == prog.total == 100
+    with assert_pbar_added_to(viewer), progress(range(100)) as prog:
+        pbar = get_qt_labeled_progress_bar(prog, viewer)
+        assert pbar.qt_progress_bar.maximum() == prog.total == 100
 
 
 def test_closing_viewer_no_error(make_napari_viewer):
@@ -124,9 +123,9 @@ def test_progress_set_description(make_napari_viewer):
     viewer = make_napari_viewer(show=SHOW)
 
     prog = progress(total=5)
-    prog.set_description("Test")
+    prog.set_description('Test')
     pbar = get_qt_labeled_progress_bar(prog, viewer)
 
-    assert pbar.description_label.text() == "Test: "
+    assert pbar.description_label.text() == 'Test: '
 
     prog.close()

@@ -10,10 +10,14 @@ It demonstrates:
 
 .. tags:: gui
 """
+import typing
+from typing import Annotated
+
 import skimage.data
 import skimage.filters
+
 import napari
-from typing_extensions import Annotated
+
 
 # Define our gaussian_blur function.
 # Note that we can use forward references for the napari type annotations.
@@ -24,22 +28,23 @@ from typing_extensions import Annotated
 # napari object type without actually importing or depending on napari.
 # We also use the `Annotated` type to pass an additional dictionary that can be used
 # to aid widget generation. The keys of the dictionary are keyword arguments to
-# the corresponding magicgui widget type. For more informaiton see
+# the corresponding magicgui widget type. For more information see
 # https://napari.org/magicgui/api/widgets.html.
 def gaussian_blur(
     layer: 'napari.layers.Image',
-    sigma: Annotated[float, {"widget_type": "FloatSlider", "max": 6}] = 1.0,
-    mode: Annotated[str, {"choices": ["reflect", "constant", "nearest", "mirror", "wrap"]}]="nearest",
-) -> 'napari.types.ImageData':
+    sigma: Annotated[float, {'widget_type': 'FloatSlider', 'max': 6}] = 1.0,
+    mode: Annotated[str, {'choices': ['reflect', 'constant', 'nearest', 'mirror', 'wrap']}]='nearest',
+) -> 'typing.Optional[napari.types.ImageData]':
     """Apply a gaussian blur to ``layer``."""
     if layer:
         return skimage.filters.gaussian(layer.data, sigma=sigma, mode=mode)
+    return None
 
 
 # create a viewer and add some images
 viewer = napari.Viewer()
-viewer.add_image(skimage.data.astronaut().mean(-1), name="astronaut")
-viewer.add_image(skimage.data.grass().astype("float"), name="grass")
+viewer.add_image(skimage.data.astronaut().mean(-1), name='astronaut')
+viewer.add_image(skimage.data.grass().astype('float'), name='grass')
 
 # Add our magic function to napari
 viewer.window.add_function_widget(gaussian_blur)

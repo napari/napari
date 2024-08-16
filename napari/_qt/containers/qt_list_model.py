@@ -1,14 +1,15 @@
 import logging
 import pickle
-from typing import List, Optional, Sequence, TypeVar
+from collections.abc import Sequence
+from typing import Optional, TypeVar
 
 from qtpy.QtCore import QMimeData, QModelIndex, Qt
 
 from napari._qt.containers._base_item_model import _BaseEventedItemModel
 
 logger = logging.getLogger(__name__)
-ListIndexMIMEType = "application/x-list-index"
-ItemType = TypeVar("ItemType")
+ListIndexMIMEType = 'application/x-list-index'
+ItemType = TypeVar('ItemType')
 
 
 class QtListModel(_BaseEventedItemModel[ItemType]):
@@ -20,16 +21,16 @@ class QtListModel(_BaseEventedItemModel[ItemType]):
     :class:`~napari._qt.containers.QtListView` for additional background.
     """
 
-    def mimeTypes(self) -> List[str]:
+    def mimeTypes(self) -> list[str]:
         """Returns the list of allowed MIME types.
 
         When implementing drag and drop support in a custom model, if you will
         return data in formats other than the default internal MIME type,
         reimplement this function to return your list of MIME types.
         """
-        return [ListIndexMIMEType, "text/plain"]
+        return [ListIndexMIMEType, 'text/plain']
 
-    def mimeData(self, indices: List[QModelIndex]) -> Optional['QMimeData']:
+    def mimeData(self, indices: list[QModelIndex]) -> Optional['QMimeData']:
         """Return an object containing serialized data from `indices`.
 
         If the list of indexes is empty, or there are no supported MIME types,
@@ -67,25 +68,31 @@ class QtListModel(_BaseEventedItemModel[ItemType]):
         if isinstance(data, ItemMimeData):
             moving_indices = data.indices
 
-            logger.debug(f"dropMimeData: indices {moving_indices} ➡ {destRow}")
+            logger.debug(
+                'dropMimeData: indices %s ➡ %s',
+                moving_indices,
+                destRow,
+            )
 
             if len(moving_indices) == 1:
                 return self._root.move(moving_indices[0], destRow)
-            else:
-                return bool(self._root.move_multiple(moving_indices, destRow))
+
+            return bool(self._root.move_multiple(moving_indices, destRow))
         return False
 
 
 class ItemMimeData(QMimeData):
     """An object to store list indices data during a drag operation."""
 
-    def __init__(self, items: Sequence[ItemType], indices: Sequence[int]):
+    def __init__(
+        self, items: Sequence[ItemType], indices: Sequence[int]
+    ) -> None:
         super().__init__()
         self.items = items
         self.indices = tuple(sorted(indices))
         if items:
             self.setData(ListIndexMIMEType, pickle.dumps(self.indices))
-            self.setText(" ".join(str(item) for item in items))
+            self.setText(' '.join(str(item) for item in items))
 
-    def formats(self) -> List[str]:
-        return [ListIndexMIMEType, "text/plain"]
+    def formats(self) -> list[str]:
+        return [ListIndexMIMEType, 'text/plain']

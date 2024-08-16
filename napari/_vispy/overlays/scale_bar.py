@@ -1,23 +1,28 @@
 import bisect
+from decimal import Decimal
+from math import floor, log
 
 import numpy as np
+import pint
 
-from napari._vispy.overlays.base import VispyCanvasOverlay
+from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.scale_bar import ScaleBar
 from napari.utils._units import PREFERRED_VALUES, get_unit_registry
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.theme import get_theme
 
 
-class VispyScaleBarOverlay(VispyCanvasOverlay):
+class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     """Scale bar in world coordinates."""
 
-    def __init__(self, **kwargs):
-        self._target_length = 150
+    def __init__(self, *, viewer, overlay, parent=None) -> None:
+        self._target_length = 150.0
         self._scale = 1
-        self._unit = None
+        self._unit: pint.Unit
 
-        super().__init__(node=ScaleBar(), **kwargs)
+        super().__init__(
+            node=ScaleBar(), viewer=viewer, overlay=overlay, parent=parent
+        )
         self.x_size = 150  # will be updated on zoom anyways
         # need to change from defaults because the anchor is in the center
         self.y_offset = 20
@@ -30,6 +35,7 @@ class VispyScaleBarOverlay(VispyCanvasOverlay):
         self.overlay.events.font_size.connect(self._on_text_change)
         self.overlay.events.ticks.connect(self._on_data_change)
         self.overlay.events.unit.connect(self._on_unit_change)
+        self.overlay.events.length.connect(self._on_length_change)
 
         self.viewer.events.theme.connect(self._on_data_change)
         self.viewer.camera.events.zoom.connect(self._on_zoom_change)
@@ -40,7 +46,12 @@ class VispyScaleBarOverlay(VispyCanvasOverlay):
         self._unit = get_unit_registry()(self.overlay.unit)
         self._on_zoom_change(force=True)
 
-    def _calculate_best_length(self, desired_length: float):
+    def _on_length_change(self):
+        self._on_zoom_change(force=True)
+
+    def _calculate_best_length(
+        self, desired_length: float
+    ) -> tuple[float, pint.Quantity]:
         """Calculate new quantity based on the pixel length of the bar.
 
         Parameters
@@ -63,16 +74,31 @@ class VispyScaleBarOverlay(VispyCanvasOverlay):
         # that might have occurred (e.g. um -> cm)
         factor = current_quantity / new_quantity
 
-        # select value closest to one of our preferred values
-        index = bisect.bisect_left(PREFERRED_VALUES, new_quantity.magnitude)
+        # select value closest to one of our preferred values and also
+        # validate if quantity is dimensionless and lower than 1 to prevent
+        # the scale bar to extend beyond the canvas when zooming.
+        # If the value falls in those conditions, we use the corresponding
+        # preferred value but scaled to take into account the actual value
+        # magnitude. See https://github.com/napari/napari/issues/5914
+        magnitude_1000 = floor(log(new_quantity.magnitude, 1000))
+        scaled_magnitude = new_quantity.magnitude * 1000 ** (-magnitude_1000)
+        index = bisect.bisect_left(PREFERRED_VALUES, scaled_magnitude)
         if index > 0:
             # When we get the lowest index of the list, removing -1 will
             # return the last index.
             index -= 1
-        new_value = PREFERRED_VALUES[index]
+        new_value: float = PREFERRED_VALUES[index]
+        if new_quantity.dimensionless and new_quantity.magnitude < 1:
+            # using Decimal is necessary to avoid `4.999999e-6`
+            # at really small scale.
+            new_value = float(
+                Decimal(new_value) * Decimal(1000) ** magnitude_1000
+            )
 
         # get the new pixel length utilizing the user-specified units
-        new_length = ((new_value * factor) / self._unit.magnitude).magnitude
+        new_length = (
+            (new_value * factor) / (1 * self._unit).magnitude
+        ).magnitude
         new_quantity = new_value * new_quantity.units
         return new_length, new_quantity
 
@@ -90,18 +116,24 @@ class VispyScaleBarOverlay(VispyCanvasOverlay):
         # convert desired length to world size
         target_world_pixels = scale_canvas2world * target_canvas_pixels
 
-        # calculate the desired length as well as update the value and units
-        target_world_pixels_rounded, new_dim = self._calculate_best_length(
-            target_world_pixels
-        )
-        target_canvas_pixels_rounded = (
-            target_world_pixels_rounded / scale_canvas2world
-        )
-        scale = target_canvas_pixels_rounded
+        # If length is set, use that value to calculate the scale bar length
+        if self.overlay.length is not None:
+            target_canvas_pixels = self.overlay.length / scale_canvas2world
+            new_dim = self.overlay.length * self._unit.units
+        else:
+            # calculate the desired length as well as update the value and units
+            target_world_pixels_rounded, new_dim = self._calculate_best_length(
+                target_world_pixels
+            )
+            target_canvas_pixels = (
+                target_world_pixels_rounded / scale_canvas2world
+            )
+
+        scale = target_canvas_pixels
 
         # Update scalebar and text
         self.node.transform.scale = [scale, 1, 1, 1]
-        self.node.text.text = f'{new_dim:~}'
+        self.node.text.text = f'{new_dim:g~#P}'
         self.x_size = scale  # needed to offset properly
         self._on_position_change()
 
@@ -120,13 +152,14 @@ class VispyScaleBarOverlay(VispyCanvasOverlay):
                 # set scale color negative of theme background.
                 # the reason for using the `as_hex` here is to avoid
                 # `UserWarning` which is emitted when RGB values are above 1
-                if self.node.parent.parent.canvas.background_color_override:
-                    background_color = transform_color(
-                        self.node.parent.parent.canvas.background_color_override
-                    )[0]
+                if (
+                    self.node.parent is not None
+                    and self.node.parent.canvas.bgcolor
+                ):
+                    background_color = self.node.parent.canvas.bgcolor.rgba
                 else:
                     background_color = get_theme(
-                        self.viewer.theme, False
+                        self.viewer.theme
                     ).canvas.as_hex()
                     background_color = transform_color(background_color)[0]
                 color = np.subtract(1, background_color)
@@ -148,3 +181,4 @@ class VispyScaleBarOverlay(VispyCanvasOverlay):
         self._on_data_change()
         self._on_box_change()
         self._on_text_change()
+        self._on_length_change()

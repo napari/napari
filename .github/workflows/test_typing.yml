@@ -1,23 +1,26 @@
-name: Test typing
+name: Type-check
 
 on:
   pull_request:
     branches:
       - main
 
+concurrency:
+  group: typing-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  typing:
+  mypy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: 3.9
-          cache-dependency-path: setup.cfg
-      - name: Install napari
+          python-version: "3.11"
+          cache-dependency-path: pyproject.toml
+      - name: Install tox
         run: |
-          pip install -r resources/requirements_mypy.txt
-          SETUPTOOLS_ENABLE_FEATURES="legacy-editable" pip install -e .[all]
+          pip install tox
 
       - name: Run mypy on typed modules
-        run: make typecheck
+        run: tox -e mypy

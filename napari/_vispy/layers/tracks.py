@@ -9,7 +9,7 @@ class VispyTracksLayer(VispyBaseLayer):
 
     """
 
-    def __init__(self, layer):
+    def __init__(self, layer) -> None:
         node = TracksVisual()
         super().__init__(layer, node)
 

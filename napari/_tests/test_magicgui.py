@@ -1,7 +1,7 @@
 import contextlib
 import sys
 import time
-from typing import List
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pytest
@@ -13,8 +13,13 @@ from napari.layers import Image, Labels, Layer
 from napari.utils._proxies import PublicOnlyProxy
 from napari.utils.misc import all_subclasses
 
+if TYPE_CHECKING:
+    import typing
+
+    import napari.types
+
 try:
-    import qtpy  # noqa
+    import qtpy  # noqa: F401 need to be ignored as qtpy may be available but Qt bindings may not be
 except ModuleNotFoundError:
     pytest.skip('Cannot test magicgui without qtpy.', allow_module_level=True)
 except RuntimeError:
@@ -32,7 +37,7 @@ for cls in all_subclasses(Layer):
 test_data.sort(key=lambda x: x[0].__name__)  # required for xdist to work
 
 
-@pytest.mark.parametrize('LayerType, data, ndim', test_data)
+@pytest.mark.parametrize(('LayerType', 'data', 'ndim'), test_data)
 def test_magicgui_add_data(make_napari_viewer, LayerType, data, ndim):
     """Test that annotating with napari.types.<layer_type>Data works.
 
@@ -55,10 +60,31 @@ def test_magicgui_add_data(make_napari_viewer, LayerType, data, ndim):
     assert viewer.layers[0].source.widget == add_data
 
 
+def test_add_layer_data_to_viewer_optional(make_napari_viewer):
+    viewer = make_napari_viewer()
+
+    @magicgui
+    def func_optional(a: bool) -> 'typing.Optional[napari.types.ImageData]':
+        if a:
+            return np.zeros((10, 10))
+        return None
+
+    viewer.window.add_dock_widget(func_optional)
+    assert not viewer.layers
+
+    func_optional(a=True)
+
+    assert len(viewer.layers) == 1
+
+    func_optional(a=False)
+
+    assert len(viewer.layers) == 1
+
+
 @pytest.mark.skipif(
     sys.version_info < (3, 9), reason='Futures not subscriptable before py3.9'
 )
-@pytest.mark.parametrize('LayerType, data, ndim', test_data)
+@pytest.mark.parametrize(('LayerType', 'data', 'ndim'), test_data)
 def test_magicgui_add_future_data(
     qtbot, make_napari_viewer, LayerType, data, ndim
 ):
@@ -92,7 +118,6 @@ def test_magicgui_add_future_data(
     _assert_stuff()
 
 
-@pytest.mark.sync_only
 def test_magicgui_add_threadworker(qtbot, make_napari_viewer):
     """Test that annotating with FunctionWorker works."""
     from napari.qt.threading import FunctionWorker, thread_worker
@@ -124,7 +149,7 @@ def test_magicgui_add_threadworker(qtbot, make_napari_viewer):
     assert np.array_equal(viewer.layers[0].data, DATA)
 
 
-@pytest.mark.parametrize('LayerType, data, ndim', test_data)
+@pytest.mark.parametrize(('LayerType', 'data', 'ndim'), test_data)
 def test_magicgui_get_data(make_napari_viewer, LayerType, data, ndim):
     """Test that annotating parameters with napari.types.<layer_type>Data.
 
@@ -146,7 +171,7 @@ def test_magicgui_get_data(make_napari_viewer, LayerType, data, ndim):
     viewer.add_layer(layer)
 
 
-@pytest.mark.parametrize('LayerType, data, ndim', test_data)
+@pytest.mark.parametrize(('LayerType', 'data', 'ndim'), test_data)
 def test_magicgui_add_layer(make_napari_viewer, LayerType, data, ndim):
     viewer = make_napari_viewer()
 
@@ -165,7 +190,7 @@ def test_magicgui_add_layer_list(make_napari_viewer):
     viewer = make_napari_viewer()
 
     @magicgui
-    def add_layer() -> List[Layer]:
+    def add_layer() -> list[Layer]:
         a = Image(data=np.random.randint(0, 10, size=(10, 10)))
         b = Labels(data=np.random.randint(0, 10, size=(10, 10)))
         return [a, b]
@@ -205,7 +230,7 @@ def test_magicgui_add_layer_data_tuple_list(make_napari_viewer):
     viewer = make_napari_viewer()
 
     @magicgui
-    def add_layer() -> List[types.LayerDataTuple]:
+    def add_layer() -> list[types.LayerDataTuple]:
         data1 = (np.random.rand(10, 10), {'name': 'hi'})
         data2 = (
             np.random.randint(0, 10, size=(10, 10)),
@@ -296,7 +321,10 @@ def test_mgui_forward_refs(name, monkeypatch):
     monkeypatch.delitem(sys.modules, 'napari')
     monkeypatch.delitem(sys.modules, 'napari.viewer')
     monkeypatch.delitem(sys.modules, 'napari.types')
-    # need to clear all of these submodules too, otherise the layers are oddly not
+    monkeypatch.setattr(
+        'napari.utils.action_manager.action_manager._actions', {}
+    )
+    # need to clear all of these submodules too, otherwise the layers are oddly not
     # subclasses of napari.layers.Layer, and napari.layers.NAMES
     # oddly ends up as an empty set
     for m in list(sys.modules):
@@ -305,7 +333,8 @@ def test_mgui_forward_refs(name, monkeypatch):
 
     wdg, options = get_widget_class(annotation=name)
     if name == 'napari.Viewer':
-        assert wdg == magicgui.widgets.EmptyWidget and 'bind' in options
+        assert wdg == magicgui.widgets.EmptyWidget
+        assert 'bind' in options
     else:
         assert wdg == magicgui.widgets.Combobox
 
@@ -314,7 +343,7 @@ def test_layers_populate_immediately(make_napari_viewer):
     """make sure that the layers dropdown is populated upon adding to viewer"""
     from magicgui.widgets import create_widget
 
-    labels_layer = create_widget(annotation=Labels, label="ROI")
+    labels_layer = create_widget(annotation=Labels, label='ROI')
     viewer = make_napari_viewer()
     viewer.add_labels(np.zeros((10, 10), dtype=int))
     assert not len(labels_layer.choices)

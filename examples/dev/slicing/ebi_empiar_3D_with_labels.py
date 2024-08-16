@@ -1,6 +1,7 @@
-import napari
 import pooch
 from tifffile import imread
+
+import napari
 
 """
 This data comes from the MitoNet Benchmarks.

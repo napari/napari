@@ -1,6 +1,7 @@
 import warnings
-from napari._qt.widgets.qt_viewer_buttons import QtViewerPushButton
+
 import napari
+from napari._qt.widgets.qt_viewer_buttons import QtViewerPushButton
 
 
 def raise_():
@@ -11,7 +12,7 @@ def raise_():
 
 
 def warn_():
-    warnings.warn("warning!")
+    warnings.warn('warning!')
 
 
 viewer = napari.Viewer()
@@ -21,4 +22,5 @@ warn_btn = QtViewerPushButton('warning', 'new Warn', warn_)
 layer_buttons.layout().insertWidget(3, warn_btn)
 layer_buttons.layout().insertWidget(3, err_btn)
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

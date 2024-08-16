@@ -5,8 +5,9 @@ Tracks 3D with graph
 .. tags:: visualization-advanced
 """
 
-import napari
 import numpy as np
+
+import napari
 
 
 def _circle(r, theta):

@@ -1,21 +1,21 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import TYPE_CHECKING, Type
+from typing import TYPE_CHECKING
 
 from app_model.types import KeyBinding
-from pydantic import BaseModel
 from yaml import SafeDumper, dump_all
 
+from napari._pydantic_compat import BaseModel
 from napari.settings._fields import Version
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
-    from typing import AbstractSet, Any, Dict, Optional, TypeVar, Union
+    from collections.abc import Mapping, Set as AbstractSet
+    from typing import Any, Optional, TypeVar, Union
 
     IntStr = Union[int, str]
     AbstractSetIntStr = AbstractSet[IntStr]
-    DictStrAny = Dict[str, Any]
+    DictStrAny = dict[str, Any]
     MappingIntStrAny = Mapping[IntStr, Any]
     Model = TypeVar('Model', bound=BaseModel)
 
@@ -68,7 +68,7 @@ class PydanticYamlMixin(BaseModel):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
-        dumper: Optional[Type[SafeDumper]] = None,
+        dumper: Optional[type[SafeDumper]] = None,
         **dumps_kwargs: Any,
     ) -> str:
         """Serialize model to yaml."""
@@ -81,13 +81,13 @@ class PydanticYamlMixin(BaseModel):
             exclude_none=exclude_none,
         )
         if self.__custom_root_type__:
-            from pydantic.utils import ROOT_KEY
+            from napari._pydantic_compat import ROOT_KEY
 
             data = data[ROOT_KEY]
         return self._yaml_dump(data, dumper, **dumps_kwargs)
 
     def _yaml_dump(
-        self, data, dumper: Optional[Type[SafeDumper]] = None, **kw
+        self, data, dumper: Optional[type[SafeDumper]] = None, **kw
     ) -> str:
         kw.setdefault('sort_keys', False)
         dumper = dumper or getattr(self.__config__, 'yaml_dumper', YamlDumper)

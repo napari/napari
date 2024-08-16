@@ -8,10 +8,11 @@ View 3D labels.
 """
 
 
-import napari
 import numpy as np
-from skimage import data, filters, morphology
 from scipy import ndimage as ndi
+from skimage import data, filters, morphology
+
+import napari
 
 cells3d = data.cells3d()
 
@@ -38,6 +39,8 @@ segmented = ndi.label(cleaned)[0]
 # )
 
 labels_layer = viewer.add_labels(segmented)
+
+viewer.dims.ndisplay = 3
 
 if __name__ == '__main__':
     napari.run()

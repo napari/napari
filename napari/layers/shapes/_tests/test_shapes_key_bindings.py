@@ -35,14 +35,6 @@ def test_lock_aspect_ratio_selected_box_zeros():
     _ = list(key_bindings.hold_to_lock_aspect_ratio(layer))
 
 
-def test_hold_to_pan_zoom():
-    # Test a single four corner rectangle
-    layer = Shapes(20 * np.random.random((1, 4, 2)))
-    layer.mode = 'direct'
-    # need to go through the generator
-    _ = list(key_bindings.hold_to_pan_zoom(layer))
-
-
 def test_activate_modes():
     # Test a single four corner rectangle
     layer = Shapes(20 * np.random.random((1, 4, 2)))
@@ -61,7 +53,7 @@ def test_activate_modes():
     assert layer.mode == 'direct'
     key_bindings.activate_select_mode(layer)
     assert layer.mode == 'select'
-    key_bindings.activate_shape_pan_zoom_mode(layer)
+    key_bindings.activate_shapes_pan_zoom_mode(layer)
     assert layer.mode == 'pan_zoom'
     key_bindings.activate_vertex_insert_mode(layer)
     assert layer.mode == 'vertex_insert'

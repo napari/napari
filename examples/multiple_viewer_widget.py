@@ -13,8 +13,10 @@ current dims point (`viewer.dims.point`).
 """
 
 from copy import deepcopy
+from typing import Optional
 
 import numpy as np
+from packaging.version import parse as parse_version
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QCheckBox,
@@ -26,7 +28,6 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 from superqt.utils import qthrottled
-from packaging.version import parse as parse_version
 
 import napari
 from napari.components.layerlist import Extent
@@ -37,16 +38,16 @@ from napari.utils.action_manager import action_manager
 from napari.utils.events.event import WarningEmitter
 from napari.utils.notifications import show_info
 
-NAPARI_GE_4_16 = parse_version(napari.__version__) > parse_version("0.4.16")
+NAPARI_GE_4_16 = parse_version(napari.__version__) > parse_version('0.4.16')
 
 
-def copy_layer_le_4_16(layer: Layer, name: str = ""):
+def copy_layer_le_4_16(layer: Layer, name: str = ''):
     res_layer = deepcopy(layer)
     # this deepcopy is not optimal for labels and images layers
     if isinstance(layer, (Image, Labels)):
         res_layer.data = layer.data
 
-    res_layer.metadata["viewer_name"] = name
+    res_layer.metadata['viewer_name'] = name
 
     res_layer.events.disconnect()
     res_layer.events.source = res_layer
@@ -56,12 +57,12 @@ def copy_layer_le_4_16(layer: Layer, name: str = ""):
     return res_layer
 
 
-def copy_layer(layer: Layer, name: str = ""):
-    if NAPARI_GE_4_16:
+def copy_layer(layer: Layer, name: str = ''):
+    if not NAPARI_GE_4_16:
         return copy_layer_le_4_16(layer, name)
 
     res_layer = Layer.create(*layer.as_layer_data_tuple())
-    res_layer.metadata["viewer_name"] = name
+    res_layer.metadata['viewer_name'] = name
     return res_layer
 
 
@@ -71,7 +72,7 @@ def get_property_names(layer: Layer):
     for event_name, event_emitter in layer.events.emitters.items():
         if isinstance(event_emitter, WarningEmitter):
             continue
-        if event_name in ("thumbnail", "name"):
+        if event_name in ('thumbnail', 'name'):
             continue
         if (
             isinstance(getattr(klass, event_name, None), property)
@@ -86,10 +87,10 @@ def center_cross_on_mouse(
 ):
     """move the cross to the mouse position"""
 
-    if not getattr(viewer_model, "mouse_over_canvas", True):
+    if not getattr(viewer_model, 'mouse_over_canvas', True):
         # There is no way for napari 0.4.15 to check if mouse is over sending canvas.
         show_info(
-            "Mouse is not over the canvas. You may need to click on the canvas."
+            'Mouse is not over the canvas. You may need to click on the canvas.'
         )
         return
 
@@ -121,7 +122,7 @@ class own_partial:
     (Qt widgets are not serializable)
     """
 
-    def __init__(self, func, *args, **kwargs):
+    def __init__(self, func, *args, **kwargs) -> None:
         self.func = func
         self.args = args
         self.kwargs = kwargs
@@ -129,7 +130,9 @@ class own_partial:
     def __call__(self, *args, **kwargs):
         return self.func(*(self.args + args), **{**self.kwargs, **kwargs})
 
-    def __deepcopy__(self, memodict={}):
+    def __deepcopy__(self, memodict=None):
+        if memodict is None:
+            memodict = {}
         return own_partial(
             self.func,
             *deepcopy(self.args, memodict),
@@ -138,7 +141,7 @@ class own_partial:
 
 
 class QtViewerWrap(QtViewer):
-    def __init__(self, main_viewer, *args, **kwargs):
+    def __init__(self, main_viewer, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.main_viewer = main_viewer
 
@@ -146,8 +149,8 @@ class QtViewerWrap(QtViewer):
         self,
         filenames: list,
         stack: bool,
-        plugin: str = None,
-        layer_type: str = None,
+        plugin: Optional[str] = None,
+        layer_type: Optional[str] = None,
         **kwargs,
     ):
         """for drag and drop open files"""
@@ -162,8 +165,8 @@ class CrossWidget(QCheckBox):
     the cross update is throttled
     """
 
-    def __init__(self, viewer: napari.Viewer):
-        super().__init__("Add cross layer")
+    def __init__(self, viewer: napari.Viewer) -> None:
+        super().__init__('Add cross layer')
         self.viewer = viewer
         self.setChecked(False)
         self.stateChanged.connect(self._update_cross_visibility)
@@ -180,7 +183,7 @@ class CrossWidget(QCheckBox):
     def _update_extent(self):
         """
         Calculate the extent of the data.
-        
+
         Ignores the the cross layer itself in calculating the extent.
         """
         if NAPARI_GE_4_16:
@@ -206,7 +209,7 @@ class CrossWidget(QCheckBox):
     def _update_ndim(self, event):
         if self.layer in self.viewer.layers:
             self.viewer.layers.remove(self.layer)
-        self.layer = Vectors(name=".cross", ndim=event.value)
+        self.layer = Vectors(name='.cross', ndim=event.value)
         self.layer.edge_width = 1.5
         self.update_cross()
 
@@ -244,9 +247,9 @@ class ExampleWidget(QWidget):
     of the additional viewers.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
-        self.btn = QPushButton("Perform action")
+        self.btn = QPushButton('Perform action')
         self.spin = QDoubleSpinBox()
         layout = QVBoxLayout()
         layout.addWidget(self.spin)
@@ -258,19 +261,19 @@ class ExampleWidget(QWidget):
 class MultipleViewerWidget(QSplitter):
     """The main widget of the example."""
 
-    def __init__(self, viewer: napari.Viewer):
+    def __init__(self, viewer: napari.Viewer) -> None:
         super().__init__()
         self.viewer = viewer
-        self.viewer_model1 = ViewerModel(title="model1")
-        self.viewer_model2 = ViewerModel(title="model2")
+        self.viewer_model1 = ViewerModel(title='model1')
+        self.viewer_model2 = ViewerModel(title='model2')
         self._block = False
         self.qt_viewer1 = QtViewerWrap(viewer, self.viewer_model1)
         self.qt_viewer2 = QtViewerWrap(viewer, self.viewer_model2)
         self.tab_widget = QTabWidget()
         w1 = ExampleWidget()
         w2 = ExampleWidget()
-        self.tab_widget.addTab(w1, "Sample 1")
-        self.tab_widget.addTab(w2, "Sample 2")
+        self.tab_widget.addTab(w1, 'Sample 1')
+        self.tab_widget.addTab(w2, 'Sample 2')
         viewer_splitter = QSplitter()
         viewer_splitter.setOrientation(Qt.Vertical)
         viewer_splitter.addWidget(self.qt_viewer1)
@@ -324,6 +327,8 @@ class MultipleViewerWidget(QSplitter):
         for model in [self.viewer, self.viewer_model1, self.viewer_model2]:
             if model.dims is event.source:
                 continue
+            if len(self.viewer.layers) != len(model.layers):
+                continue
             model.dims.current_step = event.value
 
     def _order_update(self):
@@ -342,10 +347,10 @@ class MultipleViewerWidget(QSplitter):
     def _layer_added(self, event):
         """add layer to additional viewers and connect all required events"""
         self.viewer_model1.layers.insert(
-            event.index, copy_layer(event.value, "model1")
+            event.index, copy_layer(event.value, 'model1')
         )
         self.viewer_model2.layers.insert(
-            event.index, copy_layer(event.value, "model2")
+            event.index, copy_layer(event.value, 'model2')
         )
         for name in get_property_names(event.value):
             getattr(event.value.events, name).connect(
@@ -360,7 +365,7 @@ class MultipleViewerWidget(QSplitter):
             self.viewer_model2.layers[
                 event.value.name
             ].events.set_data.connect(self._set_data_refresh)
-        if event.value.name != ".cross":
+        if event.value.name != '.cross':
             self.viewer_model1.layers[event.value.name].events.data.connect(
                 self._sync_data
             )
@@ -443,8 +448,8 @@ class MultipleViewerWidget(QSplitter):
             self._block = False
 
 
-if __name__ == "__main__":
-    from qtpy import QtWidgets, QtCore
+if __name__ == '__main__':
+    from qtpy import QtCore, QtWidgets
     QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_ShareOpenGLContexts)
     # above two lines are needed to allow to undock the widget with
     # additional viewers
@@ -452,7 +457,9 @@ if __name__ == "__main__":
     dock_widget = MultipleViewerWidget(view)
     cross = CrossWidget(view)
 
-    view.window.add_dock_widget(dock_widget, name="Sample")
-    view.window.add_dock_widget(cross, name="Cross", area="left")
+    view.window.add_dock_widget(dock_widget, name='Sample')
+    view.window.add_dock_widget(cross, name='Cross', area='left')
+
+    view.open_sample('napari', 'cells3d')
 
     napari.run()

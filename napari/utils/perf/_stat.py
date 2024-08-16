@@ -1,5 +1,4 @@
-"""Stat class.
-"""
+"""Stat class."""
 
 
 class Stat:
@@ -22,7 +21,7 @@ class Stat:
         How many values we've seen.
     """
 
-    def __init__(self, value: int):
+    def __init__(self, value: int) -> None:
         """Create Stat with an initial value.
 
         Parameters
@@ -57,5 +56,5 @@ class Stat:
         average value : int.
         """
         if self.count > 0:
-            return self.sum / self.count
-        raise ValueError("no values")  # impossible for us
+            return self.sum // self.count
+        raise ValueError('no values')  # impossible for us

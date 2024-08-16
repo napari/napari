@@ -1,0 +1,212 @@
+# This is a workflow for upgrading test constraints. It is triggered by:
+# - On-demand workflow_dispatch
+# - weekly schedule (every Monday at 8:00 UTC)
+# - issue_comment with text "@napari-bot update constraints"
+# - pull_request with changed .github/workflows/upgrade_test_constraints.yml
+#
+# The GitHub workflows have the following limitations:
+# - There is no pull request comment trigger for workflows.
+#   The `issue_comment` trigger is used instead, because it is used for pull requests too.
+# - If a workflow is triggered by pull_requests from forked repository,
+#   then it does not have access to secrets.
+#   So it is not possible to create PR from forked repository.
+# - If workflow is triggered by issue comment, then it is triggered on the main branch
+#   and not on the branch where the comment was created.
+# - In workflow triggers it is only possible to depend on created event, without any conditions.
+#   So it is not possible to trigger workflow only when the comment contains specific text.
+#   So we need to check it in the workflow.
+#   It will produce multiple empty runs that will create multiple empty entries in actions
+#   making it harder to find the right one.
+# - It is not possible to update pull request from forked repository using Fine grained personal token.
+# - It is not possible to create pull request to forked repository using Fine grained personal token.
+# - There is no interface indicator that the workflow triggered by issue comment is running.
+#
+# Also, for safety reason, it is better to store automatically generated changes outside the main repository.
+#
+# Because of the above limitations, the following approach is used:
+# - We use `napari-bot/napari` repository to store automatically generated changes.
+# - We don't push changes to `napari-bot/napari` repository if PR contains changes in workflows.
+# - We use two checkouts of repository:
+#   * First into `.` directory from which we run the workflow.
+#   * Second into `napari_repo` directory from which we create pull request.
+#     If comment triggers the workflow, then this will contain the branch from which the PR was created.
+#     Changes will be pushed to `napari-bot/napari` repository.
+#     If schedule or workflow_dispatch triggers workflow, then this will contain the main branch.
+#     Changes will not be pushed to `napari/napari` repository.
+#     If pull_request triggers workflow, then this will contain PR branch.
+#     Changes will be only accessible as artifacts.
+# - If workflow is triggered by issue comment,
+#   then we add eyes reaction to the comment to show that workflow has started.
+#   After finishing calculation of new constraints, we add rocket reaction to the comment.
+#   Then pushing changes to `napari-bot/napari` repository and adding comment to the PR is
+#   done by `tools/create_pr_or_update_existing_one.py`.
+name: Upgrade test constraints
+
+on:
+  workflow_dispatch: # Allow running on-demand
+  schedule:
+    # Runs every Monday at 8:00 UTC (4:00 Eastern)
+    - cron: '0 8 * * 1'
+
+  issue_comment:
+    types: [ created ]
+
+  pull_request:
+    paths:
+      - '.github/workflows/upgrade_test_constraints.yml'
+
+jobs:
+  upgrade:
+    permissions:
+      pull-requests: write
+      issues: write
+    name: Upgrade & Open Pull Request
+    if: (github.event.issue.pull_request != '' && contains(github.event.comment.body, '@napari-bot update constraints')) || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add eyes reaction
+        # show that workflow has started
+        if: github.event_name == 'issue_comment'
+        run: |
+          COMMENT_ID=${{ github.event.comment.id }}
+          curl \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/issues/comments/$COMMENT_ID/reactions" \
+            -d '{"content": "eyes"}'
+
+      - name: Get PR details
+        # extract PR number and branch name from issue_comment event
+        if: github.event_name == 'issue_comment'
+        run: |
+          PR_number=${{ github.event.issue.number }}
+          PR_data=$(curl \
+              -H "Accept: application/vnd.github.v3+json" \
+              "https://api.github.com/repos/${{ github.repository }}/pulls/$PR_number" \
+          )
+
+          FULL_NAME=$(echo "${PR_data}"  | jq -r .head.repo.full_name)
+          echo "FULL_NAME=$FULL_NAME" >> "$GITHUB_ENV"
+
+          BRANCH=$(echo "${PR_data}"  | jq -r .head.ref)
+          echo "BRANCH=$BRANCH" >> "$GITHUB_ENV"
+
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get repo info
+        # when schedule or workflow_dispatch triggers workflow, then we need to get info about which branch to use
+        if: github.event_name != 'issue_comment' && github.event_name != 'pull_request'
+        run: |
+          echo "FULL_NAME=${{ github.repository }}" >> "$GITHUB_ENV"
+          echo "BRANCH=${{ github.ref_name }}" >> "$GITHUB_ENV"
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Clone docs repo
+        uses: actions/checkout@v4
+        with:
+          path: docs  # place in a named directory
+          repository: napari/docs
+
+      - name: Clone target repo (remote)
+        uses: actions/checkout@v4
+        if: github.event_name == 'issue_comment'
+        with:
+          path: napari_repo  # place in a named directory
+          repository: ${{ env.FULL_NAME }}
+          ref: ${{ env.BRANCH }}
+          token: ${{ secrets.GHA_TOKEN_BOT_REPO }}
+
+      - name: Clone target repo (pull request)
+        # we need separate step as passing empty token to actions/checkout@v4 will not work
+        uses: actions/checkout@v4
+        if: github.event_name == 'pull_request'
+        with:
+          path: napari_repo  # place in a named directory
+
+      - name: Clone target repo (main)
+        uses: actions/checkout@v4
+        if: github.event_name != 'issue_comment' && github.event_name != 'pull_request'
+        with:
+          path: napari_repo  # place in a named directory
+          repository: ${{ env.FULL_NAME }}
+          ref: ${{ env.BRANCH }}
+          token: ${{ secrets.GHA_TOKEN_NAPARI_BOT_MAIN_REPO }}
+
+      - name: Add napari-bot/napari to napari_repo upstreams
+        run: |
+          cd napari_repo
+          git remote -v
+          git remote add napari-bot https://github.com/napari-bot/napari.git
+          git remote -v
+
+      # START PYTHON DEPENDENCIES
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: 'pyproject.toml'
+
+      - name: Upgrade Python dependencies
+        # ADD YOUR CUSTOM DEPENDENCY UPGRADE COMMANDS BELOW
+        run: |
+          set -x
+          pip install -U uv
+          flags=(--quiet --extra pyqt5 --extra pyqt6 --extra pyside2 --extra pyside6_experimental --extra testing --extra testing_extra --extra optional)
+
+          # Explanation of below commands
+          # uv pip compile --python-version 3.9 - call uv pip compile but ensure proper interpreter
+          # --upgrade upgrade to the latest possible version. Without this pip-compile will take a look to output files and reuse versions (so will ad something on when adding dependency.
+          # -o resources/constraints/constraints_py3.9.txt - output file
+          # pyproject.toml resources/constraints/version_denylist.txt - source files. the resources/constraints/version_denylist.txt - contains our test specific constraints like pytes-cov`
+          #
+          # --extra pyqt5 etc - names of extra sections from pyproject.toml that should be checked for the dependencies list (maybe we could create a super extra section to collect them all in)
+          prefix="napari_repo"
+          pyproject_toml="${prefix}/pyproject.toml"
+          constraints="${prefix}/resources/constraints"
+
+
+          for pyv in 3.9 3.10 3.11 3.12; do
+            uv pip compile --python-version ${pyv} --upgrade --output-file $constraints/constraints_py${pyv}.txt  $pyproject_toml $constraints/version_denylist.txt "${flags[@]}"
+            uv pip compile --python-version ${pyv} --upgrade --output-file $constraints/constraints_py${pyv}_pydantic_1.txt  $pyproject_toml $constraints/version_denylist.txt $constraints/pydantic_le_2.txt "${flags[@]}"
+            uv pip compile --python-platform windows  --python-version ${pyv} --upgrade --output-file $constraints/constraints_py${pyv}_windows.txt  $pyproject_toml $constraints/version_denylist.txt "${flags[@]}"
+          done
+
+
+          uv pip compile --python-version 3.9 --upgrade --output-file $constraints/constraints_py3.9_examples.txt $pyproject_toml $constraints/version_denylist.txt resources/constraints/version_denylist_examples.txt "${flags[@]}"
+          uv pip compile --python-version 3.10 --upgrade --output-file $constraints/constraints_py3.10_docs.txt $pyproject_toml $constraints/version_denylist.txt resources/constraints/version_denylist_examples.txt docs/requirements.txt $constraints/pydantic_le_2.txt "${flags[@]}"
+          uv pip compile --python-version 3.11 --upgrade --output-file ${prefix}/resources/requirements_mypy.txt ${prefix}/resources/requirements_mypy.in
+
+      # END PYTHON DEPENDENCIES
+
+      - name: Upload constraints
+        uses: actions/upload-artifact@v4
+        with:
+          name: constraints
+          path: |
+            napari_repo/resources/constraints/constraints*.txt
+
+      - name: Add rocket reaction
+        # inform that new constraints are available in artifacts
+        if: github.event_name == 'issue_comment'
+        run: |
+          COMMENT_ID=${{ github.event.comment.id }}
+          curl \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/issues/comments/$COMMENT_ID/reactions" \
+            -d '{"content": "rocket"}'
+
+      - name: Create commit
+        run: |
+          pip install requests
+          python tools/create_pr_or_update_existing_one.py
+        env:
+            GHA_TOKEN_MAIN_REPO: ${{ secrets.GHA_TOKEN_NAPARI_BOT_MAIN_REPO }}
+            PR_NUMBER: ${{ github.event.issue.number }}
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -12,8 +12,8 @@ apprearing on each slice.
 
 import numpy as np
 from skimage import data
-import napari
 
+import napari
 
 blobs = np.stack(
     [

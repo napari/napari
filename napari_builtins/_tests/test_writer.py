@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 import npe2
 import numpy as np
 import pytest
-from conftest import LAYERS
 
 from napari_builtins.io import napari_get_reader
 
@@ -55,16 +54,18 @@ def test_no_write_layer_bad_extension(some_layer: 'layers.Layer'):
 
 
 # test_plugin_manager fixture is provided by napari_plugin_engine._testsupport
-def test_get_writer_succeeds(tmp_path: Path):
+def test_get_writer_succeeds(
+    tmp_path: Path, layers_list: 'list[layers.Layer]'
+):
     """Test writing layers data."""
 
     path = tmp_path / 'layers_folder'
-    written = npe2.write(path=str(path), layer_data=LAYERS)  # type: ignore
+    written = npe2.write(path=str(path), layer_data=layers_list)  # type: ignore
 
     # check expected files were written
     expected = {
         str(path / f'{layer.name}{_EXTENSION_MAP[layer._type_string]}')
-        for layer in LAYERS
+        for layer in layers_list
     }
     assert path.is_dir()
     assert set(written) == expected

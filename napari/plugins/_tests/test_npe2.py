@@ -3,6 +3,7 @@ from types import MethodType
 from typing import TYPE_CHECKING
 from unittest.mock import MagicMock
 
+import npe2
 import numpy as np
 import pytest
 from npe2 import PluginManifest
@@ -18,7 +19,7 @@ PLUGIN_DISPLAY_NAME = 'My Plugin'  # this matches the sample_manifest
 MANIFEST_PATH = Path(__file__).parent / '_sample_manifest.yaml'
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_pm(npe2pm: 'TestPluginManager'):
     from napari.plugins import _initialize_plugins
 
@@ -30,17 +31,40 @@ def mock_pm(npe2pm: 'TestPluginManager'):
 
 
 def test_read(mock_pm: 'TestPluginManager'):
-    _, hookimpl = _npe2.read(["some.fzzy"], stack=False)
+    _, hookimpl = _npe2.read(['some.fzzy'], stack=False)
     mock_pm.commands.get.assert_called_once_with(f'{PLUGIN_NAME}.some_reader')
     assert hookimpl.plugin_name == PLUGIN_NAME
 
     mock_pm.commands.get.reset_mock()
-    _, hookimpl = _npe2.read(["some.fzzy"], stack=True)
+    _, hookimpl = _npe2.read(['some.fzzy'], stack=True)
     mock_pm.commands.get.assert_called_once_with(f'{PLUGIN_NAME}.some_reader')
+    mock_pm.commands.get.reset_mock()
+    with pytest.raises(ValueError, match='No compatible readers'):
+        _npe2.read(['some.randomext'], stack=False)
+    mock_pm.commands.get.assert_not_called()
 
     mock_pm.commands.get.reset_mock()
-    assert _npe2.read(["some.randomext"], stack=True) is None
+    assert (
+        _npe2.read(['some.randomext'], stack=True, plugin='not-npe2-plugin')
+        is None
+    )
     mock_pm.commands.get.assert_not_called()
+
+    mock_pm.commands.get.reset_mock()
+    _, hookimpl = _npe2.read(
+        ['some.fzzy'], stack=False, plugin='my-plugin.some_reader'
+    )
+    mock_pm.commands.get.assert_called_once_with(f'{PLUGIN_NAME}.some_reader')
+    assert hookimpl.plugin_name == PLUGIN_NAME
+
+
+@pytest.mark.skipif(
+    npe2.__version__ < '0.7.0',
+    reason='Older versions of npe2 do not throw specific error.',
+)
+def test_read_with_plugin_failure(mock_pm: 'TestPluginManager'):
+    with pytest.raises(ValueError, match='is not a compatible reader'):
+        _npe2.read(['some.randomext'], stack=True, plugin=PLUGIN_NAME)
 
 
 def test_write(mock_pm: 'TestPluginManager'):
@@ -93,9 +117,9 @@ def test_get_widget_contribution(mock_pm: 'TestPluginManager'):
 
 def test_populate_qmenu(mock_pm: 'TestPluginManager'):
     menu = MagicMock()
-    _npe2.populate_qmenu(menu, '/napari/layer_context')
-    assert menu.addMenu.called_once_with('My SubMenu')
-    assert menu.addAction.called_once_with('Hello World')
+    _npe2.populate_qmenu(menu, 'napari/file/new_layer')
+    menu.addMenu.assert_called_once_with('My SubMenu')
+    menu.addAction.assert_called_once_with('Hello World')
 
 
 def test_file_extensions_string_for_layers(mock_pm: 'TestPluginManager'):
@@ -107,7 +131,7 @@ def test_file_extensions_string_for_layers(mock_pm: 'TestPluginManager'):
 
 
 def test_get_readers(mock_pm):
-    assert _npe2.get_readers("some.fzzy") == {PLUGIN_NAME: 'My Plugin'}
+    assert _npe2.get_readers('some.fzzy') == {PLUGIN_NAME: 'My Plugin'}
 
 
 def test_iter_manifest(mock_pm):
@@ -119,10 +143,12 @@ def test_get_sample_data(mock_pm):
     samples = mock_pm.get_manifest(PLUGIN_NAME).contributions.sample_data
 
     opener, _ = _npe2.get_sample_data(PLUGIN_NAME, 'random_data')
-    assert isinstance(opener, MethodType) and opener.__self__ is samples[0]
+    assert isinstance(opener, MethodType)
+    assert opener.__self__ is samples[0]
 
     opener, _ = _npe2.get_sample_data(PLUGIN_NAME, 'internet_image')
-    assert isinstance(opener, MethodType) and opener.__self__ is samples[1]
+    assert isinstance(opener, MethodType)
+    assert opener.__self__ is samples[1]
 
     opener, avail = _npe2.get_sample_data('not-a-plugin', 'nor-a-sample')
     assert opener is None
@@ -151,32 +177,33 @@ def test_widget_iterator(mock_pm):
     assert wdgs == [('dock', (PLUGIN_NAME, ['My Widget']))]
 
 
-def test_plugin_actions(mock_pm: 'TestPluginManager'):
+def test_plugin_actions(mock_pm: 'TestPluginManager', mock_app):
     from napari._app_model import get_app
     from napari.plugins import _initialize_plugins
 
     app = get_app()
-    menus_items1 = list(app.menus.get_menu('napari/layers/context'))
-    assert 'my-plugin.hello_world' not in app.commands
+    # nothing yet registered with this menu
+    assert 'napari/file/new_layer' not in app.menus
+    # menus_items1 = list(app.menus.get_menu('napari/file/new_layer'))
+    # assert 'my-plugin.hello_world' not in app.commands
 
     _initialize_plugins()  # connect registration callbacks and populate registries
     # the _sample_manifest should have added two items to menus
 
-    menus_items2 = list(app.menus.get_menu('napari/layers/context'))
+    # now we have command registered
+    menus_items2 = list(app.menus.get_menu('napari/file/new_layer'))
     assert 'my-plugin.hello_world' in app.commands
 
-    assert len(menus_items2) == len(menus_items1) + 2
+    assert len(menus_items2) == 2
 
     # then disable and re-enable the plugin
 
     mock_pm.disable(PLUGIN_NAME)
 
-    menus_items3 = list(app.menus.get_menu('napari/layers/context'))
-    assert len(menus_items3) == len(menus_items1)
-    assert 'my-plugin.hello_world' not in app.commands
+    assert 'napari/file/new_layer' not in app.menus
 
     mock_pm.enable(PLUGIN_NAME)
 
-    menus_items4 = list(app.menus.get_menu('napari/layers/context'))
-    assert len(menus_items4) == len(menus_items2)
+    menus_items4 = list(app.menus.get_menu('napari/file/new_layer'))
+    assert len(menus_items4) == 2
     assert 'my-plugin.hello_world' in app.commands

@@ -24,10 +24,12 @@ class WidgetBuilder:
         },
         "object": {
             "object": widgets.ObjectSchemaWidget,
+            "horizontal_object": widgets.HorizontalObjectSchemaWidget,
             "enum": widgets.EnumSchemaWidget,
             "plugins": widgets.PluginWidget,
             "shortcuts": widgets.ShortcutsWidget,
             "extension2reader": widgets.Extension2ReaderWidget,
+            "highlight": widgets.HighlightPreviewWidget,
         },
         "number": {
             "spin": widgets.SpinDoubleSchemaWidget,
@@ -47,7 +49,7 @@ class WidgetBuilder:
             "text": widgets.TextSchemaWidget,
             "range": widgets.IntegerRangeSchemaWidget,
             "enum": widgets.EnumSchemaWidget,
-            "highlight": widgets.HighlightSizePreviewWidget,
+            "font_size": widgets.FontSizeSchemaWidget,
         },
         "array": {
             "array": widgets.ArraySchemaWidget,
@@ -118,6 +120,9 @@ class WidgetBuilder:
 
         if "enum" in schema:
             default_variant = "enum"
+
+        if schema.get("description"):
+            description = schema["description"]
 
         widget_variant = ui_schema.get('ui:widget', default_variant)
         widget_cls = self.widget_map[schema_type][widget_variant]

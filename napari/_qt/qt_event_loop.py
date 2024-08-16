@@ -3,10 +3,10 @@ from __future__ import annotations
 import os
 import sys
 from contextlib import contextmanager
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from warnings import warn
 
-from qtpy import PYQT5
+from qtpy import PYQT5, PYSIDE2
 from qtpy.QtCore import QDir, Qt
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import QApplication
@@ -40,7 +40,7 @@ NAPARI_APP_ID = f'napari.napari.viewer.{__version__}'
 
 
 def set_app_id(app_id):
-    if os.name == "nt" and app_id and not getattr(sys, 'frozen', False):
+    if os.name == 'nt' and app_id and not getattr(sys, 'frozen', False):
         import ctypes
 
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(app_id)
@@ -58,18 +58,18 @@ _defaults = {
 
 # store reference to QApplication to prevent garbage collection
 _app_ref = None
-_IPYTHON_WAS_HERE_FIRST = "IPython" in sys.modules
+_IPYTHON_WAS_HERE_FIRST = 'IPython' in sys.modules
 
 
 def get_app(
     *,
-    app_name: str = None,
-    app_version: str = None,
-    icon: str = None,
-    org_name: str = None,
-    org_domain: str = None,
-    app_id: str = None,
-    ipy_interactive: bool = None,
+    app_name: Optional[str] = None,
+    app_version: Optional[str] = None,
+    icon: Optional[str] = None,
+    org_name: Optional[str] = None,
+    org_domain: Optional[str] = None,
+    app_id: Optional[str] = None,
+    ipy_interactive: Optional[bool] = None,
 ) -> QApplication:
     """Get or create the Qt QApplication.
 
@@ -118,28 +118,33 @@ def get_app(
 
     app = QApplication.instance()
     if app:
-        set_values.discard("ipy_interactive")
+        set_values.discard('ipy_interactive')
         if set_values:
-
             warn(
                 trans._(
                     "QApplication already existed, these arguments to to 'get_app' were ignored: {args}",
                     deferred=True,
                     args=set_values,
-                )
+                ),
+                stacklevel=2,
             )
         if perf_config and perf_config.trace_qt_events:
             warn(
                 trans._(
-                    "Using NAPARI_PERFMON with an already-running QtApp (--gui qt?) is not supported.",
+                    'Using NAPARI_PERFMON with an already-running QtApp (--gui qt?) is not supported.',
                     deferred=True,
-                )
+                ),
+                stacklevel=2,
             )
 
     else:
         # automatically determine monitor DPI.
-        # Note: this MUST be set before the QApplication is instantiated
-        if PYQT5:
+        # Note: this MUST be set before the QApplication is instantiated. Also, this
+        # attributes need to be applied only to Qt5 bindings (PyQt5 and PySide2)
+        # since the High DPI scaling attributes are deactivated by default while on Qt6
+        # they are deprecated and activated by default. For more info see:
+        # https://doc.qt.io/qtforpython-6/gettingstarted/porting_from2.html#class-function-deprecations
+        if PYQT5 or PYSIDE2:
             QApplication.setAttribute(
                 Qt.ApplicationAttribute.AA_EnableHighDpiScaling
             )
@@ -148,11 +153,11 @@ def get_app(
             )
 
         argv = sys.argv.copy()
-        if sys.platform == "darwin" and not argv[0].endswith("napari"):
+        if sys.platform == 'darwin' and not argv[0].endswith('napari'):
             # Make sure the app name in the Application menu is `napari`
             # which is taken from the basename of sys.argv[0]; we use
             # a copy so the original value is still available at sys.argv
-            argv[0] = "napari"
+            argv[0] = 'napari'
 
         if perf_config and perf_config.trace_qt_events:
             from napari._qt.perf.qt_event_tracing import (
@@ -183,13 +188,10 @@ def get_app(
     if _IPYTHON_WAS_HERE_FIRST:
         _try_enable_ipython_gui('qt' if ipy_interactive else None)
 
-    if not _ipython_has_eventloop():
-        notification_manager.notification_ready.connect(
-            NapariQtNotification.show_notification
-        )
-        notification_manager.notification_ready.connect(
-            show_console_notification
-        )
+    notification_manager.notification_ready.connect(
+        NapariQtNotification.show_notification
+    )
+    notification_manager.notification_ready.connect(show_console_notification)
 
     if perf_config and not perf_config.patched:
         # Will patch based on config file.
@@ -241,7 +243,7 @@ def quit_app():
     else:
         QApplication.setWindowIcon(QIcon())
 
-    if perf.USE_PERFMON:
+    if perf.perf_config is not None:
         # Write trace file before exit, if we were writing one.
         # Is there a better place to make sure this is done on exit?
         perf.timers.stop_trace_file()
@@ -251,12 +253,6 @@ def quit_app():
         from napari.components.experimental.monitor import monitor
 
         monitor.stop()
-
-    if config.async_loading:
-        # Shutdown the chunkloader
-        from napari.components.experimental.chunk import chunk_loader
-
-        chunk_loader.shutdown()
 
 
 @contextmanager
@@ -289,6 +285,7 @@ def gui_qt(*, startup_logo=False, gui_exceptions=False, force=False):
             deferred=True,
         ),
         FutureWarning,
+        stacklevel=2,
     )
 
     app = get_app()
@@ -300,7 +297,7 @@ def gui_qt(*, startup_logo=False, gui_exceptions=False, force=False):
         splash.close()
     try:
         yield app
-    except Exception:
+    except Exception:  # noqa: BLE001
         notification_manager.receive_error(*sys.exc_info())
     run(force=force, gui_exceptions=gui_exceptions, _func_name='gui_qt')
 
@@ -313,7 +310,7 @@ def _ipython_has_eventloop() -> bool:
     at the prompt.  So it will likely "appear" like there is no event loop
     running, but we still don't need to start one.
     """
-    ipy_module = sys.modules.get("IPython")
+    ipy_module = sys.modules.get('IPython')
     if not ipy_module:
         return False
 
@@ -338,7 +335,7 @@ def _pycharm_has_eventloop(app: QApplication) -> bool:
 
 def _try_enable_ipython_gui(gui='qt'):
     """Start %gui qt the eventloop."""
-    ipy_module = sys.modules.get("IPython")
+    ipy_module = sys.modules.get('IPython')
     if not ipy_module:
         return
 
@@ -399,10 +396,11 @@ def run(
     if not app.topLevelWidgets() and not force:
         warn(
             trans._(
-                "Refusing to run a QApplication with no topLevelWidgets. To run the app anyway, use `{_func_name}(force=True)`",
+                'Refusing to run a QApplication with no topLevelWidgets. To run the app anyway, use `{_func_name}(force=True)`',
                 deferred=True,
                 _func_name=_func_name,
-            )
+            ),
+            stacklevel=2,
         )
         return
 
@@ -410,13 +408,14 @@ def run(
         loops = app.thread().loopLevel()
         warn(
             trans._n(
-                "A QApplication is already running with 1 event loop. To enter *another* event loop, use `{_func_name}(max_loop_level={max_loop_level})`",
-                "A QApplication is already running with {n} event loops. To enter *another* event loop, use `{_func_name}(max_loop_level={max_loop_level})`",
+                'A QApplication is already running with 1 event loop. To enter *another* event loop, use `{_func_name}(max_loop_level={max_loop_level})`',
+                'A QApplication is already running with {n} event loops. To enter *another* event loop, use `{_func_name}(max_loop_level={max_loop_level})`',
                 n=loops,
                 deferred=True,
                 _func_name=_func_name,
                 max_loop_level=loops + 1,
-            )
+            ),
+            stacklevel=2,
         )
         return
     with notification_manager, _maybe_allow_interrupt(app):

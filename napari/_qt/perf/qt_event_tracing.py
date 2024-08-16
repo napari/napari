@@ -6,6 +6,7 @@ enabled to time Qt Events.
 When using perfmon there is a debug menu "Start Tracing" command as well as a
 dockable QtPerformance widget.
 """
+
 from qtpy.QtCore import QEvent
 from qtpy.QtWidgets import QApplication, QWidget
 
@@ -34,7 +35,7 @@ class QApplicationWithTracing(QApplication):
         timer_name = _get_event_label(receiver, event)
 
         # Time the event while we handle it.
-        with perf.perf_timer(timer_name, "qt_event"):
+        with perf.perf_timer(timer_name, 'qt_event'):
             return QApplication.notify(self, receiver, event)
 
 
@@ -53,12 +54,12 @@ class EventTypes:
     We use this class for PyQt5 and PySide2 to be consistent.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Create mapping for all known event types."""
         self.string_name = {}
         for name in vars(QEvent):
             attribute = getattr(QEvent, name)
-            if type(attribute) == QEvent.Type:
+            if type(attribute) is QEvent.Type:
                 self.string_name[attribute] = name
 
     def as_string(self, event: QEvent.Type) -> str:
@@ -70,7 +71,7 @@ class EventTypes:
         try:
             return self.string_name[event]
         except KeyError:
-            return trans._("UnknownEvent:{event}", event=event)
+            return trans._('UnknownEvent:{event}', event=event)
 
 
 EVENT_TYPES = EventTypes()
@@ -108,8 +109,16 @@ def _get_event_label(receiver: QWidget, event: QEvent) -> str:
         # Ignore "missing objectName attribute" during shutdown.
         object_name = None
 
+    if not object_name:
+        # use class for object without set name.
+        try:
+            object_name = str(receiver.__class__.__name__)
+        except AttributeError:
+            # do not crash in using some strange class.
+            object_name = None
+
     if object_name:
-        return f"{event_str}:{object_name}"
+        return f'{event_str}:{object_name}'
 
     # There was no object (pretty common).
     return event_str

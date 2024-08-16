@@ -5,12 +5,12 @@ import pytest
 from napari.utils.events import EventedSet
 
 
-@pytest.fixture
+@pytest.fixture()
 def regular_set():
     return set(range(5))
 
 
-@pytest.fixture
+@pytest.fixture()
 def test_set(request, regular_set):
     test_set = EventedSet(regular_set)
     test_set.events = Mock(wraps=test_set.events)
@@ -23,21 +23,21 @@ def test_set(request, regular_set):
         # METHOD, ARGS, EXPECTED EVENTS
         # primary interface
         ('add', 2, []),
-        ('add', 10, [call.changed(added={10}, removed={})]),
-        ('discard', 2, [call.changed(added={}, removed={2})]),
-        ('remove', 2, [call.changed(added={}, removed={2})]),
+        ('add', 10, [call.changed(added={10}, removed=set())]),
+        ('discard', 2, [call.changed(added=set(), removed={2})]),
+        ('remove', 2, [call.changed(added=set(), removed={2})]),
         ('discard', 10, []),
         # parity with set
-        ('update', {3, 4, 5, 6}, [call.changed(added={5, 6}, removed={})]),
+        ('update', {3, 4, 5, 6}, [call.changed(added={5, 6}, removed=set())]),
         (
             'difference_update',
             {3, 4, 5, 6},
-            [call.changed(added={}, removed={3, 4})],
+            [call.changed(added=set(), removed={3, 4})],
         ),
         (
             'intersection_update',
             {3, 4, 5, 6},
-            [call.changed(added={}, removed={0, 1, 2})],
+            [call.changed(added=set(), removed={0, 1, 2})],
         ),
         (
             'symmetric_difference_update',
@@ -78,7 +78,7 @@ def test_set_clear(test_set):
     assert test_set.events.mock_calls == []
     test_set.clear()
     assert test_set.events.mock_calls == [
-        call.changed(added={}, removed={0, 1, 2, 3, 4})
+        call.changed(added=set(), removed={0, 1, 2, 3, 4})
     ]
 
 

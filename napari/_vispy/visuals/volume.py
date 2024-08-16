@@ -1,6 +1,11 @@
 from vispy.scene.visuals import Volume as BaseVolume
 
+from napari._vispy.visuals.util import TextureMixin
+from napari.layers.labels._labels_constants import IsoCategoricalGradientMode
+
 FUNCTION_DEFINITIONS = """
+uniform bool u_iso_gradient;
+
 // the tolerance for testing equality of floats with floatEqual and floatNotEqual
 const float equality_tolerance = 1e-8;
 
@@ -32,7 +37,75 @@ int detectAdjacentBackground(float val_neg, float val_pos)
     return adjacent_bg;
 }
 
-vec4 calculateCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)
+vec3 calculateGradient(vec3 loc, vec3 step, out int n_bg_borders) {
+    // calculate gradient within the volume by finite differences
+
+    n_bg_borders = 0;
+    vec3 G = vec3(0.0);
+
+    float prev;
+    float next;
+
+    prev = colorToVal($get_data(loc - vec3(step.x, 0, 0)));
+    next = colorToVal($get_data(loc + vec3(step.x, 0, 0)));
+    n_bg_borders += detectAdjacentBackground(prev, next);
+    G.x = next - prev;
+
+    prev = colorToVal($get_data(loc - vec3(0, step.y, 0)));
+    next = colorToVal($get_data(loc + vec3(0, step.y, 0)));
+    n_bg_borders += detectAdjacentBackground(prev, next);
+    G.y = next - prev;
+
+    prev = colorToVal($get_data(loc - vec3(0, 0, step.z)));
+    next = colorToVal($get_data(loc + vec3(0, 0, step.z)));
+    n_bg_borders += detectAdjacentBackground(prev, next);
+    G.z = next - prev;
+
+    return G;
+}
+
+vec3 calculateIsotropicGradient(vec3 loc, vec3 step) {
+    // calculate gradient within the volume by finite differences
+    // using a 3D sobel-feldman convolution kernel
+
+    // the kernel here is a 3x3 cube, centered on the sample at `loc`
+    // the kernel for G.z looks like this:
+
+    // [ +1 +2 +1 ]
+    // [ +2 +4 +2 ]    <-- "loc - step.z" is in the center
+    // [ +1 +2 +1 ]
+
+    // [  0  0  0 ]
+    // [  0  0  0 ]    <-- "loc" is in the center
+    // [  0  0  0 ]
+
+    // [ -1 -2 -1 ]
+    // [ -2 -4 -2 ]    <-- "loc + step.z" is in the center
+    // [ -1 -2 -1 ]
+
+    // kernels for G.x and G.y similar, but transposed
+    // see https://en.wikipedia.org/wiki/Sobel_operator#Extension_to_other_dimensions
+
+    vec3 G = vec3(0.0);
+
+    for (int i=-1; i <= 1; i++) {
+        for (int j=-1; j <= 1; j++) {
+            for (int k=-1; k <= 1; k++) {
+                float val = colorToVal($get_data(loc + vec3(i, j, k) * step));
+                G.x += val * -float(i) *
+                    (1 + float(j == 0 || k == 0) + 2 * float(j == 0 && k == 0));
+                G.y += val * -float(j) *
+                    (1 + float(i == 0 || k == 0) + 2 * float(i == 0 && k == 0));
+                G.z += val * -float(k) *
+                    (1 + float(i == 0 || j == 0) + 2 * float(i == 0 && j == 0));
+            }
+        }
+    }
+
+    return G;
+}
+
+vec4 calculateShadedCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)
 {
     // Calculate color by incorporating ambient and diffuse lighting
     vec4 color0 = $get_data(loc);
@@ -46,28 +119,13 @@ vec4 calculateCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)
     // View direction
     vec3 V = normalize(view_ray);
 
-    // calculate normal vector from gradient
-    vec3 N; // normal
-    color1 = $get_data(loc+vec3(-step[0],0.0,0.0));
-    color2 = $get_data(loc+vec3(step[0],0.0,0.0));
-    val1 = colorToVal(color1);
-    val2 = colorToVal(color2);
-    N[0] = val1 - val2;
-    n_bg_borders += detectAdjacentBackground(val1, val2);
-
-    color1 = $get_data(loc+vec3(0.0,-step[1],0.0));
-    color2 = $get_data(loc+vec3(0.0,step[1],0.0));
-    val1 = colorToVal(color1);
-    val2 = colorToVal(color2);
-    N[1] = val1 - val2;
-    n_bg_borders += detectAdjacentBackground(val1, val2);
-
-    color1 = $get_data(loc+vec3(0.0,0.0,-step[2]));
-    color2 = $get_data(loc+vec3(0.0,0.0,step[2]));
-    val1 = colorToVal(color1);
-    val2 = colorToVal(color2);
-    N[2] = val1 - val2;
-    n_bg_borders += detectAdjacentBackground(val1, val2);
+    // Calculate normal vector from gradient
+    vec3 N;
+    if (u_iso_gradient) {
+        N = calculateIsotropicGradient(loc, step);
+    } else {
+        N = calculateGradient(loc, step, n_bg_borders);
+    }
 
     // Normalize and flip normal so it points towards viewer
     N = normalize(N);
@@ -113,25 +171,27 @@ vec4 calculateCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)
 }
 """
 
-ISO_CATEGORICAL_SNIPPETS = dict(
-    before_loop="""
+ISO_CATEGORICAL_SNIPPETS = {
+    'before_loop': """
         vec4 color3 = vec4(0.0);  // final color
         vec3 dstep = 1.5 / u_shape;  // step to sample derivative, set to match iso shader
         gl_FragColor = vec4(0.0);
         bool discard_fragment = true;
+        vec4 label_id = vec4(0.0);
         """,
-    in_loop="""
+    'in_loop': """
         // check if value is different from the background value
         if ( floatNotEqual(val, categorical_bg_value) ) {
             // Take the last interval in smaller steps
             vec3 iloc = loc - step;
             for (int i=0; i<10; i++) {
-                color = $get_data(iloc);
-                color = applyColormap(color.g);
+                label_id = $get_data(iloc);
+                color = sample_label_color(label_id.r);
                 if (floatNotEqual(color.a, 0) ) {
+                    // fully transparent color is considered as background, see napari/napari#5227
                     // when the value mapped to non-transparent color is reached
-                    // calculate the color (apply lighting effects)
-                    color = calculateCategoricalColor(color, iloc, dstep);
+                    // calculate the shaded color (apply lighting effects)
+                    color = calculateShadedCategoricalColor(color, iloc, dstep);
                     gl_FragColor = color;
 
                     // set the variables for the depth buffer
@@ -145,11 +205,49 @@ ISO_CATEGORICAL_SNIPPETS = dict(
             }
         }
         """,
-    after_loop="""
+    'after_loop': """
         if (discard_fragment)
             discard;
         """,
-)
+}
+
+TRANSLUCENT_CATEGORICAL_SNIPPETS = {
+    'before_loop': """
+        vec4 color3 = vec4(0.0);  // final color
+        gl_FragColor = vec4(0.0);
+        bool discard_fragment = true;
+        vec4 label_id = vec4(0.0);
+        """,
+    'in_loop': """
+        // check if value is different from the background value
+        if ( floatNotEqual(val, categorical_bg_value) ) {
+            // Take the last interval in smaller steps
+            vec3 iloc = loc - step;
+            for (int i=0; i<10; i++) {
+                label_id = $get_data(iloc);
+                color = sample_label_color(label_id.r);
+                if (floatNotEqual(color.a, 0) ) {
+                    // fully transparent color is considered as background, see napari/napari#5227
+                    // when the value mapped to non-transparent color is reached
+                    // calculate the color (apply lighting effects)
+                    gl_FragColor = color;
+
+                    // set the variables for the depth buffer
+                    frag_depth_point = iloc * u_shape;
+                    discard_fragment = false;
+
+                    iter = nsteps;
+                    break;
+                }
+                iloc += step * 0.1;
+            }
+        }
+        """,
+    'after_loop': """
+        if (discard_fragment)
+            discard;
+        """,
+}
 
 shaders = BaseVolume._shaders.copy()
 before, after = shaders['fragment'].split('void main()')
@@ -157,9 +255,30 @@ shaders['fragment'] = before + FUNCTION_DEFINITIONS + 'void main()' + after
 
 rendering_methods = BaseVolume._rendering_methods.copy()
 rendering_methods['iso_categorical'] = ISO_CATEGORICAL_SNIPPETS
+rendering_methods['translucent_categorical'] = TRANSLUCENT_CATEGORICAL_SNIPPETS
 
 
-class Volume(BaseVolume):
+class Volume(TextureMixin, BaseVolume):
+    """This class extends the vispy Volume visual to add categorical isosurface rendering."""
+
     # add the new rendering method to the snippets dict
     _shaders = shaders
     _rendering_methods = rendering_methods
+
+    def __init__(self, *args, **kwargs) -> None:  # type: ignore [no-untyped-def]
+        super().__init__(*args, **kwargs)
+        self.unfreeze()
+        self.iso_gradient_mode = IsoCategoricalGradientMode.FAST.value
+        self.freeze()
+
+    @property
+    def iso_gradient_mode(self) -> str:
+        return str(self._iso_gradient_mode)
+
+    @iso_gradient_mode.setter
+    def iso_gradient_mode(self, value: str) -> None:
+        self._iso_gradient_mode = IsoCategoricalGradientMode(value)
+        self.shared_program['u_iso_gradient'] = (
+            self._iso_gradient_mode == IsoCategoricalGradientMode.SMOOTH
+        )
+        self.update()

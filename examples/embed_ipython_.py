@@ -13,13 +13,14 @@ ipython console which can outlive the viewer.
 .. tags:: gui
 """
 
-import napari
 from IPython.terminal.embed import InteractiveShellEmbed
+
+import napari
 
 # any code
 text = 'some text'
 
-# initalize viewer
+# initialize viewer
 viewer = napari.Viewer()
 
 # embed ipython and run the magic command to use the qt event loop

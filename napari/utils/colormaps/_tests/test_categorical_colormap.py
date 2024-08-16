@@ -84,7 +84,6 @@ fallback_colors = np.array([[1, 0, 0, 1], [0, 1, 0, 1]])
 
 
 def test_categorical_colormap_from_array():
-
     cmap = CategoricalColormap.from_array(fallback_colors)
     np.testing.assert_almost_equal(cmap.fallback_color.values, fallback_colors)
 
@@ -97,7 +96,7 @@ default_fallback_color = np.array([[1, 1, 1, 1]])
 
 
 @pytest.mark.parametrize(
-    'params,expected',
+    ('params', 'expected'),
     [
         ({'colormap': color_mapping}, (color_mapping, default_fallback_color)),
         (

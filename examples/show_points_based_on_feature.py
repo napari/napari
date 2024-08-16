@@ -4,12 +4,11 @@ Show points based on feature
 
 .. tags:: visualization-advanced
 """
-#!/usr/bin/env python3
 
-import napari
 import numpy as np
 from magicgui import magicgui
 
+import napari
 
 # create points with a randomized "confidence" feature
 points = np.random.rand(100, 3) * 100
@@ -22,7 +21,7 @@ points = viewer.add_points(
         )
 
 
-# create a simple widget with magicgui which provides a slider that controls the visilibility
+# create a simple widget with magicgui which provides a slider that controls the visibility
 # of individual points based on their "confidence" value
 @magicgui(
     auto_call=True,

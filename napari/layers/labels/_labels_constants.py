@@ -28,14 +28,22 @@ class Mode(StringEnum):
 
     In ERASE mode the cursor functions similarly to PAINT mode, but to paint
     with background label, which effectively removes the label.
+
+    In POLYGON mode, the mouse is used to draw a polygon by clicking
+    the left mouse button to place its vertices. Right mouse click removes
+    the latest polygon vertex. Left double-click finishes the polygon drawing
+    and updates the labels pixels. If the background label `0` is selected,
+    any pixels will be changed to background and this tool functions like an eraser.
+    This mode is valid only for 2D images.
     """
 
     PAN_ZOOM = auto()
+    TRANSFORM = auto()
     PICK = auto()
     PAINT = auto()
     FILL = auto()
     ERASE = auto()
-    TRANSFORM = auto()
+    POLYGON = auto()
 
 
 class LabelColorMode(StringEnum):
@@ -55,10 +63,11 @@ class LabelColorMode(StringEnum):
 
 BACKSPACE = 'delete' if sys.platform == 'darwin' else 'backspace'
 
+
 LABEL_COLOR_MODE_TRANSLATIONS = OrderedDict(
     [
-        (LabelColorMode.AUTO, trans._("auto")),
-        (LabelColorMode.DIRECT, trans._("direct")),
+        (LabelColorMode.AUTO, trans._('auto')),
+        (LabelColorMode.DIRECT, trans._('direct')),
     ]
 )
 
@@ -77,3 +86,15 @@ class LabelsRendering(StringEnum):
 
     TRANSLUCENT = auto()
     ISO_CATEGORICAL = auto()
+
+
+class IsoCategoricalGradientMode(StringEnum):
+    """IsoCategoricalGradientMode: Gradient mode for the IsoCategorical rendering mode.
+
+    Selects the finite-difference gradient method for the isosurface shader:
+        * fast: use a simple finite difference gradient along each axis
+        * smooth: use an isotropic Sobel gradient, smoother but more computationally expensive
+    """
+
+    FAST = auto()
+    SMOOTH = auto()

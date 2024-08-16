@@ -51,12 +51,12 @@ layer_buttons.layout().insertWidget(3, rot_button)
 
 def register_action():
     # Here we pass ViewerModel as the KeymapProvider as we want it to handle the shortcuts.
-    # we could also pass none and bind the shortcuts at the window level – though we
+    # we could also pass none and bind the shortcuts at the window level - though we
     # are trying to not change the KeymapProvider API too much for now.
     # we give an action name to the action for configuration purposes as we need
     # it to be storable in json.
 
-    # By convention (may be enforce later), we do give an action name which is iprefixed
+    # By convention (may be enforced later), we do give an action name which is prefixed
     # by the name of the package it is defined in, here napari,
     action_manager.register_action(
         name='napari:rotate45',

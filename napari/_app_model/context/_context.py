@@ -1,17 +1,59 @@
 from __future__ import annotations
 
+import collections.abc
 from typing import TYPE_CHECKING, Any, Final, Optional
 
-from app_model.expressions import Context
-from app_model.expressions import create_context as _create_context
-from app_model.expressions import get_context
+from app_model.expressions import (
+    Context,
+    create_context as _create_context,
+    get_context as _get_context,
+)
 
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from napari.utils.events import Event
 
-__all__ = ["create_context", "get_context", "Context", "SettingsAwareContext"]
+__all__ = ['create_context', 'get_context', 'Context', 'SettingsAwareContext']
+
+
+class ContextMapping(collections.abc.Mapping):
+    """Wrap app-model contexts, allowing keys to be evaluated at query time.
+
+    `ContextMapping` objects are created from a context any time someone calls
+    `NapariApplication.get_context`. This usually happens just before a menu is
+    about to be shown, when we update the menu's actions' states based on the
+    values of the context keys. The call to `get_context` triggers the creation
+    of the `ContextMapping` which stores (or, in the case of functional keys,
+    evaluates then stores) the value of each context key. Once keys are
+    evaluated, they are cached within the object for future accessing of the
+    same keys. However, any new `get_context` calls will create a brand new
+    `ContextMapping` object.
+    """
+
+    def __init__(self, initial_values: collections.abc.Mapping):
+        self._initial_context_mapping = initial_values
+        self._evaluated_context_mapping: dict[str, Any] = {}
+
+    def __getitem__(self, key):
+        if key in self._evaluated_context_mapping:
+            return self._evaluated_context_mapping[key]
+        if key not in self._initial_context_mapping:
+            raise KeyError(f'Key {key!r} not found')
+        value = self._initial_context_mapping[key]
+        if callable(value):
+            value = value()
+        self._evaluated_context_mapping[key] = value
+        return value
+
+    def __contains__(self, item):
+        return item in self._initial_context_mapping
+
+    def __len__(self):
+        return len(self._initial_context_mapping)
+
+    def __iter__(self):
+        return iter(self._initial_context_mapping)
 
 
 class SettingsAwareContext(Context):
@@ -22,7 +64,7 @@ class SettingsAwareContext(Context):
 
     _PREFIX: Final[str] = 'settings.'
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         from napari.settings import get_settings
 
@@ -37,7 +79,7 @@ class SettingsAwareContext(Context):
 
     def __missing__(self, key: str) -> Any:
         if key.startswith(self._PREFIX):
-            splits = [k for k in key.split(".")[1:] if k]
+            splits = [k for k in key.split('.')[1:] if k]
             val: Any = self._settings
             if splits:
                 while splits:
@@ -59,7 +101,7 @@ class SettingsAwareContext(Context):
         if k.startswith(self._PREFIX):
             raise ValueError(
                 trans._(
-                    "Cannot set key starting with {prefix!r}",
+                    'Cannot set key starting with {prefix!r}',
                     deferred=True,
                     prefix=self._PREFIX,
                 )
@@ -77,7 +119,7 @@ def create_context(
     max_depth: int = 20,
     start: int = 2,
     root: Optional[Context] = None,
-) -> Optional[Context]:
+) -> Context:
     return _create_context(
         obj=obj,
         max_depth=max_depth,
@@ -85,3 +127,7 @@ def create_context(
         root=root,
         root_class=SettingsAwareContext,
     )
+
+
+def get_context(obj: object) -> ContextMapping:
+    return ContextMapping(_get_context(obj))

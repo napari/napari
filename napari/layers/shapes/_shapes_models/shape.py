@@ -1,6 +1,10 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
+from typing import Optional
 
 import numpy as np
+import numpy.typing as npt
 
 from napari.layers.shapes._shapes_utils import (
     is_collinear,
@@ -95,11 +99,10 @@ class Shape(ABC):
         z_index=0,
         dims_order=None,
         ndisplay=2,
-    ):
-
+    ) -> None:
         self._dims_order = dims_order or list(range(2))
         self._ndisplay = ndisplay
-        self.slice_key = None
+        self.slice_key: Optional[npt.NDArray] = None
 
         self._face_vertices = np.empty((0, self.ndisplay))
         self._face_triangles = np.empty((0, 3), dtype=np.uint32)
@@ -115,20 +118,22 @@ class Shape(ABC):
         self.z_index = z_index
         self.name = ''
 
+        self._data: npt.NDArray
+
     @property
     @abstractmethod
     def data(self):
         # user writes own docstring
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @data.setter
     @abstractmethod
     def data(self, data):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abstractmethod
-    def _update_displayed_data(self):
-        raise NotImplementedError()
+    def _update_displayed_data(self) -> None:
+        raise NotImplementedError
 
     @property
     def ndisplay(self):
@@ -189,7 +194,13 @@ class Shape(ABC):
     def z_index(self, z_index):
         self._z_index = z_index
 
-    def _set_meshes(self, data, closed=True, face=True, edge=True):
+    def _set_meshes(
+        self,
+        data: npt.NDArray,
+        closed: bool = True,
+        face: bool = True,
+        edge: bool = True,
+    ) -> None:
         """Sets the face and edge meshes from a set of points.
 
         Parameters
@@ -228,8 +239,8 @@ class Shape(ABC):
                     exp = np.expand_dims(np.repeat(val, len(vertices)), axis=1)
                     vertices = np.concatenate([exp, vertices], axis=1)
                 else:
-                    triangles = []
-                    vertices = []
+                    triangles = np.array([])
+                    vertices = np.array([])
                 if len(triangles) > 0:
                     self._face_vertices = vertices
                     self._face_triangles = triangles
@@ -243,7 +254,7 @@ class Shape(ABC):
             self._face_vertices = np.empty((0, self.ndisplay))
             self._face_triangles = np.empty((0, 3), dtype=np.uint32)
 
-    def transform(self, transform):
+    def transform(self, transform: npt.NDArray) -> None:
         """Performs a linear transform on the shape
 
         Parameters
@@ -266,7 +277,7 @@ class Shape(ABC):
         self._edge_offsets = offsets
         self._edge_triangles = triangles
 
-    def shift(self, shift):
+    def shift(self, shift: npt.NDArray) -> None:
         """Performs a 2D shift on the shape
 
         Parameters
@@ -352,7 +363,7 @@ class Shape(ABC):
             self.transform(transform)
             self.shift(-center)
 
-    def to_mask(self, mask_shape=None, zoom_factor=1, offset=[0, 0]):
+    def to_mask(self, mask_shape=None, zoom_factor=1, offset=(0, 0)):
         """Convert the shape vertices to a boolean mask.
 
         Set points to `True` if they are lying inside the shape if the shape is
@@ -391,7 +402,7 @@ class Shape(ABC):
         else:
             raise ValueError(
                 trans._(
-                    "mask shape length must either be 2 or the same as the dimensionality of the shape, expected {expected} got {received}.",
+                    'mask shape length must either be 2 or the same as the dimensionality of the shape, expected {expected} got {received}.',
                     deferred=True,
                     expected=self.data.shape[1],
                     received=len(mask_shape),
@@ -414,16 +425,18 @@ class Shape(ABC):
         # and embed as a slice.
         if embedded:
             mask = np.zeros(mask_shape, dtype=bool)
-            slice_key = [0] * len(mask_shape)
-            j = 0
+            slice_key: list[int | slice] = [0] * len(mask_shape)
             for i in range(len(mask_shape)):
                 if i in self.dims_displayed:
                     slice_key[i] = slice(None)
-                else:
+                elif self.slice_key is not None:
                     slice_key[i] = slice(
-                        self.slice_key[0, j], self.slice_key[1, j] + 1
+                        self.slice_key[0, i], self.slice_key[1, i] + 1
                     )
-                j += 1
+                else:
+                    raise RuntimeError(
+                        'Internal error: self.slice_key is None'
+                    )
             displayed_order = argsort(self.dims_displayed)
             mask[tuple(slice_key)] = mask_p.transpose(displayed_order)
         else:

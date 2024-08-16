@@ -14,11 +14,10 @@ try:
     from napari._qt import Window
 
 except ImportError as e:
-
     err = e
 
     class Window:  # type: ignore
-        def __init__(self, *args, **kwargs):
+        def __init__(self, *args, **kwargs) -> None:
             pass
 
         def close(self):
@@ -27,6 +26,6 @@ except ImportError as e:
         def __getattr__(self, name):
             raise type(err)(
                 trans._(
-                    "An error occured when importing Qt dependencies.  Cannot show napari window.  See cause above",
+                    'An error occured when importing Qt dependencies.  Cannot show napari window.  See cause above',
                 )
             ) from err

@@ -2,10 +2,9 @@ import inspect
 import os
 import site
 from textwrap import indent
-from typing import TYPE_CHECKING, ClassVar, Set
+from typing import TYPE_CHECKING, ClassVar
 
-from pydantic import BaseSettings, Field, PrivateAttr
-
+from napari._pydantic_compat import BaseSettings, Field, PrivateAttr
 from napari.utils.misc import ROOT_DIR
 from napari.utils.translations import trans
 
@@ -14,7 +13,7 @@ try:
 except ModuleNotFoundError:
     print(
         trans._(
-            "TIP: run `pip install rich` for much nicer event debug printout."
+            'TIP: run `pip install rich` for much nicer event debug printout.'
         )
     )
 try:
@@ -37,10 +36,14 @@ class EventDebugSettings(BaseSettings):
 
     # event emitters (e.g. 'Shapes') and event names (e.g. 'set_data')
     # to include/exclude when printing events.
-    include_emitters: Set[str] = Field(default_factory=set)
-    include_events: Set[str] = Field(default_factory=set)
-    exclude_emitters: Set[str] = {'TransformChain', 'Context'}
-    exclude_events: Set[str] = {'status', 'position'}
+    include_emitters: set[str] = Field(default_factory=set)
+    include_events: set[str] = Field(default_factory=set)
+    exclude_emitters: set[str] = Field(
+        default_factory=lambda: {'TransformChain', 'Context'}
+    )
+    exclude_events: set[str] = Field(
+        default_factory=lambda: {'status', 'position'}
+    )
     # stack depth to show
     stack_depth: int = 20
     # how many sub-emit nesting levels to show
@@ -63,7 +66,7 @@ def _shorten_fname(fname: str) -> str:
     """Reduce extraneous stuff from filenames"""
     fname = fname.replace(_SP, '.../site-packages')
     fname = fname.replace(_STD_LIB, '.../python')
-    return fname.replace(ROOT_DIR, "napari")
+    return fname.replace(ROOT_DIR, 'napari')
 
 
 def log_event_stack(event: 'Event', cfg: EventDebugSettings = _SETTINGS):
@@ -83,7 +86,7 @@ def log_event_stack(event: 'Event', cfg: EventDebugSettings = _SETTINGS):
         return
 
     # get values being emitted
-    vals = ",".join(f"{k}={v}" for k, v in event._kwargs.items())
+    vals = ','.join(f'{k}={v}' for k, v in event._kwargs.items())
     # show event type and source
     lines = [f'{source}.events.{event.type}({vals})']
     # climb stack and show what caused it.
@@ -98,26 +101,26 @@ def log_event_stack(event: 'Event', cfg: EventDebugSettings = _SETTINGS):
             obj = type(frame.frame.f_locals['self']).__name__ + '.'
         ln = f'  "{fname}", line {frame.lineno}, in {obj}{frame.function}'
         lines.append(ln)
-    lines.append("")
+    lines.append('')
 
     # find the first caller in the call stack
     for f in reversed(call_stack):
         if 'self' in f.frame.f_locals:
             obj_type = type(f.frame.f_locals['self'])
-            module = getattr(obj_type, '__module__') or ''
-            if module.startswith("napari"):
+            module = obj_type.__module__ or ''
+            if module.startswith('napari'):
                 trigger = f'{obj_type.__name__}.{f.function}()'
                 lines.insert(1, f'  was triggered by {trigger}, via:')
                 break
 
-    # seperate groups of events
+    # separate groups of events
     if not cfg._cur_depth:
-        lines = ["─" * 79, ''] + lines
+        lines = ['─' * 79, '', *lines]
     elif not cfg.nesting_allowance:
         return
 
     # log it
-    print(indent("\n".join(lines), '  ' * cfg._cur_depth))
+    print(indent('\n'.join(lines), '  ' * cfg._cur_depth))
 
     # spy on nested events...
     # (i.e. events that were emitted while another was being emitted)

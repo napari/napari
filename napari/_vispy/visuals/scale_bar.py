@@ -3,7 +3,7 @@ from vispy.scene.visuals import Compound, Line, Rectangle, Text
 
 
 class ScaleBar(Compound):
-    def __init__(self):
+    def __init__(self) -> None:
         self._data = np.array(
             [
                 [0, 0],
@@ -22,8 +22,8 @@ class ScaleBar(Compound):
                 Text(
                     text='1px',
                     pos=[0.5, 0.5],
-                    anchor_x="center",
-                    anchor_y="top",
+                    anchor_x='center',
+                    anchor_y='top',
                     font_size=10,
                 ),
                 Line(connect='segments', method='gl', width=3),

@@ -27,7 +27,7 @@ class Shading(StringEnum):
 
 
 SHADING_TRANSLATION = {
-    trans._("none"): Shading.NONE,
-    trans._("flat"): Shading.FLAT,
-    trans._("smooth"): Shading.SMOOTH,
+    trans._('none'): Shading.NONE,
+    trans._('flat'): Shading.FLAT,
+    trans._('smooth'): Shading.SMOOTH,
 }

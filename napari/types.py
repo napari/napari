@@ -1,3 +1,4 @@
+from collections.abc import Iterable, Sequence
 from functools import partial, wraps
 from pathlib import Path
 from types import TracebackType
@@ -5,48 +6,52 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
-    Iterable,
-    List,
     NewType,
-    Sequence,
-    Tuple,
-    Type,
+    Optional,
     Union,
 )
 
 import numpy as np
+
+# TODO decide where types should be defined to have single place for them
+from npe2.types import LayerName as LayerTypeName
 from typing_extensions import TypedDict, get_args
 
 if TYPE_CHECKING:
-    import dask.array
+    # dask zarr should be imported as `import dask.array as da` But here it is used only in type annotation to
+    # register it as a valid type fom magicgui so is passed as string and requires full qualified name to allow
+    # magicgui properly register it.
+    import dask.array  # noqa: ICN001
     import zarr
     from magicgui.widgets import FunctionGui
     from qtpy.QtWidgets import QWidget
 
-try:
-    from numpy.typing import DTypeLike  # requires numpy 1.20
-except ImportError:
-    # Anything that can be coerced into numpy.dtype.
-    # Reference: https://docs.scipy.org/doc/numpy/reference/arrays.dtypes.html
-    from typing import Protocol, TypeVar
 
-    _DType_co = TypeVar("_DType_co", covariant=True, bound=np.dtype)
-
-    # A protocol for anything with the dtype attribute
-    class _SupportsDType(Protocol[_DType_co]):
-        @property
-        def dtype(self) -> _DType_co:
-            ...
-
-    DTypeLike = Union[  # type: ignore
-        np.dtype,  # default data type (float64)
-        None,
-        type,  # array-scalar types and generic types
-        _SupportsDType[np.dtype],  # anything with a dtype attribute
-        str,  # character codes, type strings, e.g. 'float64'
-    ]
-
+__all__ = [
+    'ArrayLike',
+    'LayerTypeName',
+    'FullLayerData',
+    'LayerData',
+    'PathLike',
+    'PathOrPaths',
+    'ReaderFunction',
+    'WriterFunction',
+    'ExcInfo',
+    'WidgetCallable',
+    'AugmentedWidget',
+    'SampleData',
+    'SampleDict',
+    'ArrayBase',
+    'ImageData',
+    'LabelsData',
+    'PointsData',
+    'ShapesData',
+    'SurfaceData',
+    'TracksData',
+    'VectorsData',
+    'LayerDataTuple',
+    'image_reader_to_layerdata_reader',
+]
 
 # This is a WOEFULLY inadequate stub for a duck-array type.
 # Mostly, just a placeholder for the concept of needing an ArrayLike type.
@@ -56,25 +61,24 @@ except ImportError:
 # since it includes all valid arguments for np.array() ( int, float, str...)
 ArrayLike = Union[np.ndarray, 'dask.array.Array', 'zarr.Array']
 
-
 # layer data may be: (data,) (data, meta), or (data, meta, layer_type)
 # using "Any" for the data type until ArrayLike is more mature.
-FullLayerData = Tuple[Any, Dict, str]
-LayerData = Union[Tuple[Any], Tuple[Any, Dict], FullLayerData]
+FullLayerData = tuple[Any, dict, LayerTypeName]
+LayerData = Union[tuple[Any], tuple[Any, dict], FullLayerData]
 
 PathLike = Union[str, Path]
-PathOrPaths = Union[str, Sequence[str]]
-ReaderFunction = Callable[[PathOrPaths], List[LayerData]]
-WriterFunction = Callable[[str, List[FullLayerData]], List[str]]
+PathOrPaths = Union[PathLike, Sequence[PathLike]]
+ReaderFunction = Callable[[PathOrPaths], list[LayerData]]
+WriterFunction = Callable[[str, list[FullLayerData]], list[str]]
 
 ExcInfo = Union[
-    Tuple[Type[BaseException], BaseException, TracebackType],
-    Tuple[None, None, None],
+    tuple[type[BaseException], BaseException, TracebackType],
+    tuple[None, None, None],
 ]
 
 # Types for GUI HookSpecs
 WidgetCallable = Callable[..., Union['FunctionGui', 'QWidget']]
-AugmentedWidget = Union[WidgetCallable, Tuple[WidgetCallable, dict]]
+AugmentedWidget = Union[WidgetCallable, tuple[WidgetCallable, dict]]
 
 
 # Sample Data for napari_provide_sample_data hookspec is either a string/path
@@ -95,25 +99,16 @@ class SampleDict(TypedDict):
 # while their names should not change (without deprecation), their typing
 # implementations may... or may be rolled over to napari/image-types
 
-if tuple(np.__version__.split('.')) < ('1', '20'):
-    # this hack is because NewType doesn't allow `Any` as a base type
-    # and numpy <=1.20 didn't provide type stubs for np.ndarray
-    # https://github.com/python/mypy/issues/6701#issuecomment-609638202
-    class ArrayBase(np.ndarray):
-        def __getattr__(self, name: str) -> Any:
-            return object.__getattribute__(self, name)
-
-else:
-    ArrayBase = np.ndarray  # type: ignore
+ArrayBase: type[np.ndarray] = np.ndarray
 
 
-ImageData = NewType("ImageData", ArrayBase)
-LabelsData = NewType("LabelsData", ArrayBase)
-PointsData = NewType("PointsData", ArrayBase)
-ShapesData = NewType("ShapesData", List[ArrayBase])
-SurfaceData = NewType("SurfaceData", Tuple[ArrayBase, ArrayBase, ArrayBase])
-TracksData = NewType("TracksData", ArrayBase)
-VectorsData = NewType("VectorsData", ArrayBase)
+ImageData = NewType('ImageData', np.ndarray)
+LabelsData = NewType('LabelsData', np.ndarray)
+PointsData = NewType('PointsData', np.ndarray)
+ShapesData = NewType('ShapesData', list[np.ndarray])
+SurfaceData = NewType('SurfaceData', tuple[np.ndarray, np.ndarray, np.ndarray])
+TracksData = NewType('TracksData', np.ndarray)
+VectorsData = NewType('VectorsData', np.ndarray)
 _LayerData = Union[
     ImageData,
     LabelsData,
@@ -124,11 +119,11 @@ _LayerData = Union[
     VectorsData,
 ]
 
-LayerDataTuple = NewType("LayerDataTuple", tuple)
+LayerDataTuple = NewType('LayerDataTuple', tuple)
 
 
 def image_reader_to_layerdata_reader(
-    func: Callable[[PathOrPaths], ArrayLike]
+    func: Callable[[PathOrPaths], ArrayLike],
 ) -> ReaderFunction:
     """Convert a PathLike -> ArrayLike function to a PathLike -> LayerData.
 
@@ -147,7 +142,7 @@ def image_reader_to_layerdata_reader(
     """
 
     @wraps(func)
-    def reader_function(*args, **kwargs) -> List[LayerData]:
+    def reader_function(*args, **kwargs) -> list[LayerData]:
         result = func(*args, **kwargs)
         return [(result,)]
 
@@ -156,21 +151,19 @@ def image_reader_to_layerdata_reader(
 
 def _register_types_with_magicgui():
     """Register ``napari.types`` objects with magicgui."""
-    import sys
     from concurrent.futures import Future
 
     from magicgui import register_type
 
     from napari.utils import _magicgui as _mgui
 
-    for _type in (LayerDataTuple, List[LayerDataTuple]):
+    for type_ in (LayerDataTuple, list[LayerDataTuple]):
         register_type(
-            _type,
+            type_,
             return_callback=_mgui.add_layer_data_tuples_to_viewer,
         )
-        if sys.version_info >= (3, 9):
-            future_type = Future[_type]  # type: ignore
-            register_type(future_type, return_callback=_mgui.add_future_data)
+        future_type = Future[type_]  # type: ignore [valid-type]
+        register_type(future_type, return_callback=_mgui.add_future_data)
 
     for data_type in get_args(_LayerData):
         register_type(
@@ -178,14 +171,21 @@ def _register_types_with_magicgui():
             choices=_mgui.get_layers_data,
             return_callback=_mgui.add_layer_data_to_viewer,
         )
-        if sys.version_info >= (3, 9):
-            register_type(
-                Future[data_type],  # type: ignore
-                choices=_mgui.get_layers_data,
-                return_callback=partial(
-                    _mgui.add_future_data, _from_tuple=False
-                ),
-            )
+        register_type(
+            Future[data_type],  # type: ignore [valid-type]
+            choices=_mgui.get_layers_data,
+            return_callback=partial(_mgui.add_future_data, _from_tuple=False),
+        )
+        register_type(
+            Optional[data_type],  # type: ignore [call-overload]
+            choices=_mgui.get_layers_data,
+            return_callback=_mgui.add_layer_data_to_viewer,
+        )
+        register_type(
+            Future[Optional[data_type]],  # type: ignore [valid-type]
+            choices=_mgui.get_layers_data,
+            return_callback=partial(_mgui.add_future_data, _from_tuple=False),
+        )
 
 
 _register_types_with_magicgui()

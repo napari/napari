@@ -17,11 +17,3 @@ def test_colored_svg_from_theme(qtbot):
     assert isinstance(icon, QIcon)
     assert isinstance(icon.colored(theme='light'), QColoredSVGIcon)
     assert icon.pixmap(250, 250)
-
-
-def test_colored_svg_cache(qtbot):
-    """Make sure we're not recreating icons."""
-    icon1 = QColoredSVGIcon.from_resources('new_points')
-    icon2 = QColoredSVGIcon.from_resources('new_points')
-    assert icon1 is icon2
-    assert icon1.colored('red') is icon2.colored('red')

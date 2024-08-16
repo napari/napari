@@ -9,10 +9,12 @@ try:
     from lxml.html.clean import Cleaner
 
     lxml_unavailable = False
-except ModuleNotFoundError:
+except ImportError:
     lxml_unavailable = True
 
-__all__ = ['nbscreenshot']
+from napari.utils.io import imsave_png
+
+__all__ = ['nbscreenshot', 'NotebookScreenshot']
 
 
 class NotebookScreenshot:
@@ -33,17 +35,16 @@ class NotebookScreenshot:
 
     Examples
     --------
-    ```
-    import napari
-    from napari.utils import nbscreenshot
-    from skimage.data import chelsea
 
-    viewer = napari.view_image(chelsea(), name='chelsea-the-cat')
-    nbscreenshot(viewer)
+    >>> import napari
+    >>> from napari.utils import nbscreenshot
+    >>> from skimage.data import chelsea
 
+    >>> viewer = napari.view_image(chelsea(), name='chelsea-the-cat')
+    >>> nbscreenshot(viewer)
     # screenshot just the canvas with the napari viewer framing it
-    nbscreenshot(viewer, canvas_only=False)
-    ```
+    >>> nbscreenshot(viewer, canvas_only=False)
+
     """
 
     def __init__(
@@ -52,7 +53,7 @@ class NotebookScreenshot:
         *,
         canvas_only=False,
         alt_text=None,
-    ):
+    ) -> None:
         """Initialize screenshot object.
 
         Parameters
@@ -78,9 +79,9 @@ class NotebookScreenshot:
         if alt_text is not None:
             if lxml_unavailable:
                 warn(
-                    'The lxml library is not installed, and is required to '
-                    'sanitize alt text for napari screenshots. Alt-text '
-                    'will be stripped altogether without lxml.'
+                    'The lxml_html_clean library is not installed, and is '
+                    'required to sanitize alt text for napari screenshots. '
+                    'Alt Text will be stripped altogether.'
                 )
                 return None
             # cleaner won't recognize escaped script tags, so always unescape
@@ -95,8 +96,8 @@ class NotebookScreenshot:
                     'The provided alt text does not constitute valid html, so it was discarded.',
                     stacklevel=3,
                 )
-                alt_text = ""
-            if alt_text == "":
+                alt_text = ''
+            if alt_text == '':
                 alt_text = None
         return alt_text
 
@@ -107,8 +108,6 @@ class NotebookScreenshot:
         -------
         In memory binary stream containing PNG screenshot image.
         """
-        from imageio import imsave
-
         from napari._qt.qt_event_loop import get_app
 
         get_app().processEvents()
@@ -116,7 +115,7 @@ class NotebookScreenshot:
             canvas_only=self.canvas_only, flash=False
         )
         with BytesIO() as file_obj:
-            imsave(file_obj, self.image, format='png')
+            imsave_png(file_obj, self.image)
             file_obj.seek(0)
             png = file_obj.read()
         return png

@@ -1,7 +1,11 @@
-from collections.abc import Iterable
-from typing import Sequence, Union
+import typing
+from collections.abc import Generator, Iterable, Sequence
+from contextlib import contextmanager
+from functools import wraps
+from typing import Literal, Union
 
 import numpy as np
+import numpy.typing as npt
 
 from napari.layers.shapes._mesh import Mesh
 from napari.layers.shapes._shapes_constants import ShapeType, shape_classes
@@ -13,6 +17,19 @@ from napari.utils.geometry import (
     line_in_triangles_3d,
 )
 from napari.utils.translations import trans
+
+
+def _batch_dec(meth):
+    """
+    Decorator to apply `self.batched_updates` to the current method.
+    """
+
+    @wraps(meth)
+    def _wrapped(self, *args, **kwargs):
+        with self.batched_updates():
+            return meth(self, *args, **kwargs)
+
+    return _wrapped
 
 
 class ShapeList:
@@ -67,14 +84,15 @@ class ShapeList:
         be rendered.
     """
 
-    def __init__(self, data=[], ndisplay=2):
-
+    def __init__(
+        self, data: typing.Iterable[Shape] = (), ndisplay: int = 2
+    ) -> None:
         self._ndisplay = ndisplay
-        self.shapes = []
-        self._displayed = []
-        self._slice_key = []
-        self.displayed_vertices = []
-        self.displayed_index = []
+        self.shapes: list[Shape] = []
+        self._displayed = np.array([])
+        self._slice_key = np.array([])
+        self.displayed_vertices = np.array([])
+        self.displayed_index = np.array([])
         self._vertices = np.empty((0, self.ndisplay))
         self._index = np.empty((0), dtype=int)
         self._z_index = np.empty((0), dtype=int)
@@ -85,21 +103,64 @@ class ShapeList:
         self._edge_color = np.empty((0, 4))
         self._face_color = np.empty((0, 4))
 
+        # counter for the depth of re entrance of the context manager.
+        self.__batched_level = 0
+        self.__batch_force_call = False
+
+        # Counter of number of time _update_displayed has been requested
+        self.__update_displayed_called = 0
+
         for d in data:
             self.add(d)
 
+    @contextmanager
+    def batched_updates(self) -> Generator[None, None, None]:
+        """
+        Reentrant context manager to batch the display update
+
+        `_update_displayed()` is called at _most_ once on exit of the context
+        manager.
+
+        There are two reason for this:
+
+         1. Some updates are triggered by events, but sometimes multiple pieces
+            of data that trigger events must be set before the data can be
+            recomputed. For example changing number of dimension cause broacast
+            error on partially update structures.
+         2. Performance. Ideally we want to update the display only once.
+
+        If no direct or indirect call to `_update_displayed()` are made inside
+        the context manager, no the update logic is not called on exit.
+
+
+
+        """
+        assert self.__batched_level >= 0
+        self.__batched_level += 1
+        try:
+            yield
+        finally:
+            if self.__batched_level == 1 and self.__update_displayed_called:
+                self.__batch_force_call = True
+                self._update_displayed()
+                self.__batch_force_call = False
+                self.__update_displayed_called = 0
+            self.__batched_level -= 1
+
+        assert self.__batched_level >= 0
+
     @property
-    def data(self):
+    def data(self) -> list[npt.NDArray]:
         """list of (M, D) array: data arrays for each shape."""
         return [s.data for s in self.shapes]
 
     @property
-    def ndisplay(self):
+    def ndisplay(self) -> int:
         """int: Number of displayed dimensions."""
         return self._ndisplay
 
     @ndisplay.setter
-    def ndisplay(self, ndisplay):
+    def ndisplay(self, ndisplay: int) -> None:
         if self.ndisplay == ndisplay:
             return
 
@@ -115,34 +176,37 @@ class ShapeList:
         self._update_z_order()
 
     @property
-    def slice_keys(self):
+    def slice_keys(self) -> npt.NDArray:
         """(N, 2, P) array: slice key for each shape."""
         return np.array([s.slice_key for s in self.shapes])
 
     @property
-    def shape_types(self):
+    def shape_types(self) -> list[str]:
         """list of str: shape types for each shape."""
         return [s.name for s in self.shapes]
 
     @property
-    def edge_color(self):
+    def edge_color(self) -> npt.NDArray:
         """(N x 4) np.ndarray: Array of RGBA edge colors for each shape"""
         return self._edge_color
 
     @edge_color.setter
-    def edge_color(self, edge_color):
+    def edge_color(self, edge_color: npt.NDArray) -> None:
         self._set_color(edge_color, 'edge')
 
     @property
-    def face_color(self):
+    def face_color(self) -> npt.NDArray:
         """(N x 4) np.ndarray: Array of RGBA face colors for each shape"""
         return self._face_color
 
     @face_color.setter
-    def face_color(self, face_color):
+    def face_color(self, face_color: npt.NDArray) -> None:
         self._set_color(face_color, 'face')
 
-    def _set_color(self, colors, attribute):
+    @_batch_dec
+    def _set_color(
+        self, colors: npt.NDArray, attribute: Literal['edge', 'face']
+    ) -> None:
         """Set the face_color or edge_color property
 
         Parameters
@@ -155,7 +219,7 @@ class ShapeList:
             Should be 'edge' for edge_color or 'face' for face_color.
         """
         n_shapes = len(self.data)
-        if not np.all(colors.shape == (n_shapes, 4)):
+        if not np.array_equal(colors.shape, (n_shapes, 4)):
             raise ValueError(
                 trans._(
                     '{attribute}_color must have shape ({n_shapes}, 4)',
@@ -171,12 +235,12 @@ class ShapeList:
         self._update_displayed()
 
     @property
-    def edge_widths(self):
+    def edge_widths(self) -> list[float]:
         """list of float: edge width for each shape."""
         return [s.edge_width for s in self.shapes]
 
     @property
-    def z_indices(self):
+    def z_indices(self) -> list[int]:
         """list of int: z-index for each shape."""
         return [s.z_index for s in self.shapes]
 
@@ -186,14 +250,26 @@ class ShapeList:
         return self._slice_key
 
     @slice_key.setter
+    @_batch_dec
     def slice_key(self, slice_key):
         slice_key = list(slice_key)
-        if not np.all(self._slice_key == slice_key):
+        if not np.array_equal(self._slice_key, slice_key):
             self._slice_key = slice_key
             self._update_displayed()
 
-    def _update_displayed(self):
-        """Update the displayed data based on the slice key."""
+    def _update_displayed(self) -> None:
+        """Update the displayed data based on the slice key.
+
+        This method must be called from within the `batched_updates` context
+        manager:
+        """
+        assert (
+            self.__batched_level >= 1
+        ), 'call _update_displayed from within self.batched_updates context manager'
+        if not self.__batch_force_call:
+            self.__update_displayed_called += 1
+            return
+
         # The list slice key is repeated to check against both the min and
         # max values stored in the shapes slice key.
         slice_key = np.array([self.slice_key, self.slice_key])
@@ -201,9 +277,11 @@ class ShapeList:
         # Slice key must exactly match mins and maxs of shape as then the
         # shape is entirely contained within the current slice.
         if len(self.shapes) > 0:
-            self._displayed = np.all(self.slice_keys == slice_key, axis=(1, 2))
+            self._displayed = np.all(
+                np.abs(self.slice_keys - slice_key) < 0.5, axis=(1, 2)
+            )
         else:
-            self._displayed = []
+            self._displayed = np.array([])
         disp_indices = np.where(self._displayed)[0]
 
         z_order = self._mesh.triangles_z_order
@@ -280,7 +358,7 @@ class ShapeList:
                 z_refresh=z_refresh,
             )
         else:
-            raise ValueError(
+            raise TypeError(
                 trans._(
                     'Cannot add single nor multiple shape',
                     deferred=True,
@@ -314,7 +392,7 @@ class ShapeList:
             ShapesList._update_z_order() once at the end.
         """
         if not issubclass(type(shape), Shape):
-            raise ValueError(
+            raise TypeError(
                 trans._(
                     'shape must be subclass of Shape',
                     deferred=True,
@@ -495,7 +573,6 @@ class ShapeList:
         for shape, face_color, edge_color in zip(
             shapes, face_colors, edge_colors
         ):
-
             shape_index = len(self.shapes)
             self.shapes.append(shape)
             all_z_index.append(shape.z_index)
@@ -582,6 +659,7 @@ class ShapeList:
             # Set z_order
             self._update_z_order()
 
+    @_batch_dec
     def remove_all(self):
         """Removes all shapes"""
         self.shapes = []
@@ -643,6 +721,7 @@ class ShapeList:
             )
             self._update_z_order()
 
+    @_batch_dec
     def _update_mesh_vertices(self, index, edge=False, face=False):
         """Updates the mesh vertex data and vertex data for a single shape
         located at index.
@@ -676,6 +755,7 @@ class ShapeList:
             self._vertices[indices] = shape.data_displayed
             self._update_displayed()
 
+    @_batch_dec
     def _update_z_order(self):
         """Updates the z order of the triangles given the z_index list"""
         self._z_order = np.argsort(self._z_index)
@@ -711,9 +791,9 @@ class ShapeList:
         """
         if new_type is not None:
             cur_shape = self.shapes[index]
-            if type(new_type) == str:
+            if isinstance(new_type, str):
                 shape_type = ShapeType(new_type)
-                if shape_type in shape_classes.keys():
+                if shape_type in shape_classes:
                     shape_cls = shape_classes[shape_type]
                 else:
                     raise ValueError(
@@ -758,6 +838,7 @@ class ShapeList:
         self.shapes[index].edge_width = edge_width
         self._update_mesh_vertices(index, edge=True)
 
+    @_batch_dec
     def update_edge_color(self, index, edge_color, update=True):
         """Updates the edge color of a single shape located at index.
 
@@ -779,6 +860,7 @@ class ShapeList:
         if update:
             self._update_displayed()
 
+    @_batch_dec
     def update_edge_colors(self, indices, edge_colors, update=True):
         """same as update_edge_color() but for multiple indices/edgecolors at once"""
         self._edge_color[indices] = edge_colors
@@ -792,6 +874,7 @@ class ShapeList:
         if update:
             self._update_displayed()
 
+    @_batch_dec
     def update_face_color(self, index, face_color, update=True):
         """Updates the face color of a single shape located at index.
 
@@ -813,6 +896,7 @@ class ShapeList:
         if update:
             self._update_displayed()
 
+    @_batch_dec
     def update_face_colors(self, indices, face_colors, update=True):
         """same as update_face_color() but for multiple indices/facecolors at once"""
         self._face_color[indices] = face_colors
@@ -835,7 +919,7 @@ class ShapeList:
             Order that the dimensions are rendered in.
         """
         for index in range(len(self.shapes)):
-            if not self.shapes[index].dims_order == dims_order:
+            if self.shapes[index].dims_order != dims_order:
                 shape = self.shapes[index]
                 shape.dims_order = dims_order
                 self.remove(index, renumber=False)
@@ -935,7 +1019,7 @@ class ShapeList:
         self.add(shape, shape_index=index)
         self._update_z_order()
 
-    def outline(self, indices):
+    def outline(self, indices: Union[int, Sequence[int]]):
         """Finds outlines of shapes listed in indices
 
         Parameters
@@ -953,43 +1037,52 @@ class ShapeList:
         triangles : np.ndarray
             Mx3 array of any indices of vertices for triangles of outline
         """
-        if type(indices) is list:
-            meshes = self._mesh.triangles_index
-            triangle_indices = [
-                i
-                for i, x in enumerate(meshes)
-                if x[0] in indices and x[1] == 1
-            ]
-            meshes = self._mesh.vertices_index
-            vertices_indices = [
-                i
-                for i, x in enumerate(meshes)
-                if x[0] in indices and x[1] == 1
-            ]
-        else:
-            triangle_indices = np.all(
-                self._mesh.triangles_index == [indices, 1], axis=1
-            )
-            triangle_indices = np.where(triangle_indices)[0]
-            vertices_indices = np.all(
-                self._mesh.vertices_index == [indices, 1], axis=1
-            )
-            vertices_indices = np.where(vertices_indices)[0]
+        if not isinstance(indices, Sequence):
+            indices = [indices]
+        return self.outlines(indices)
+
+    def outlines(self, indices: Sequence[int]):
+        """Finds outlines of shapes listed in indices
+
+        Parameters
+        ----------
+        indices : Sequence[int]
+            Location in list of the shapes to be outline.
+
+        Returns
+        -------
+        centers : np.ndarray
+            Nx2 array of centers of outline
+        offsets : np.ndarray
+            Nx2 array of offsets of outline
+        triangles : np.ndarray
+            Mx3 array of any indices of vertices for triangles of outline
+        """
+        indices_set = set(indices)
+        meshes = self._mesh.triangles_index
+        triangle_indices = [
+            i
+            for i, x in enumerate(meshes)
+            if x[0] in indices_set and x[1] == 1
+        ]
+        meshes = self._mesh.vertices_index
+        vertices_indices = [
+            i
+            for i, x in enumerate(meshes)
+            if x[0] in indices_set and x[1] == 1
+        ]
 
         offsets = self._mesh.vertices_offsets[vertices_indices]
         centers = self._mesh.vertices_centers[vertices_indices]
         triangles = self._mesh.triangles[triangle_indices]
 
-        if type(indices) is list:
-            t_ind = self._mesh.triangles_index[triangle_indices][:, 0]
-            inds = self._mesh.vertices_index[vertices_indices][:, 0]
-            starts = np.unique(inds, return_index=True)[1]
-            for i, ind in enumerate(indices):
-                inds = t_ind == ind
-                adjust_index = starts[i] - vertices_indices[starts[i]]
-                triangles[inds] = triangles[inds] + adjust_index
-        else:
-            triangles = triangles - vertices_indices[0]
+        t_ind = self._mesh.triangles_index[triangle_indices][:, 0]
+        inds = self._mesh.vertices_index[vertices_indices][:, 0]
+        starts = np.unique(inds, return_index=True)[1]
+        for i, ind in enumerate(indices):
+            inds = t_ind == ind
+            adjust_index = starts[i] - vertices_indices[starts[i]]
+            triangles[inds] = triangles[inds] + adjust_index
 
         return centers, offsets, triangles
 
@@ -1036,13 +1129,13 @@ class ShapeList:
         indices = inside_triangles(triangles - coord)
         shapes = self._mesh.displayed_triangles_index[indices, 0]
 
-        if len(shapes) > 0:
-            z_list = self._z_order.tolist()
-            order_indices = np.array([z_list.index(m) for m in shapes])
-            ordered_shapes = shapes[np.argsort(order_indices)]
-            return ordered_shapes[0]
-        else:
+        if len(shapes) == 0:
             return None
+
+        z_list = self._z_order.tolist()
+        order_indices = np.array([z_list.index(m) for m in shapes])
+        ordered_shapes = shapes[np.argsort(order_indices)]
+        return ordered_shapes[0]
 
     def _inside_3d(self, ray_position: np.ndarray, ray_direction: np.ndarray):
         """Determines if any shape is intersected by a ray by looking inside triangle
@@ -1074,20 +1167,20 @@ class ShapeList:
             triangles=triangles,
         )
         intersected_shapes = self._mesh.displayed_triangles_index[inside, 0]
-        if len(intersected_shapes) > 0:
-            intersection_points = self._triangle_intersection(
-                triangle_indices=inside,
-                ray_position=ray_position,
-                ray_direction=ray_direction,
-            )
-            start_to_intersection = intersection_points - ray_position
-            distances = np.linalg.norm(start_to_intersection, axis=1)
-            closest_shape_index = np.argmin(distances)
-            shape = intersected_shapes[closest_shape_index]
-            intersection = intersection_points[closest_shape_index]
-            return shape, intersection
-        else:
+        if len(intersected_shapes) == 0:
             return None, None
+
+        intersection_points = self._triangle_intersection(
+            triangle_indices=inside,
+            ray_position=ray_position,
+            ray_direction=ray_direction,
+        )
+        start_to_intersection = intersection_points - ray_position
+        distances = np.linalg.norm(start_to_intersection, axis=1)
+        closest_shape_index = np.argmin(distances)
+        shape = intersected_shapes[closest_shape_index]
+        intersection = intersection_points[closest_shape_index]
+        return shape, intersection
 
     def _triangle_intersection(
         self,
@@ -1124,7 +1217,7 @@ class ShapeList:
         )
         return intersection_points
 
-    def to_masks(self, mask_shape=None, zoom_factor=1, offset=[0, 0]):
+    def to_masks(self, mask_shape=None, zoom_factor=1, offset=(0, 0)):
         """Returns N binary masks, one for each shape, embedded in an array of
         shape `mask_shape`.
 
@@ -1158,7 +1251,7 @@ class ShapeList:
 
         return masks
 
-    def to_labels(self, labels_shape=None, zoom_factor=1, offset=[0, 0]):
+    def to_labels(self, labels_shape=None, zoom_factor=1, offset=(0, 0)):
         """Returns a integer labels image, where each shape is embedded in an
         array of shape labels_shape with the value of the index + 1
         corresponding to it, and 0 for background. For overlapping shapes
@@ -1183,7 +1276,7 @@ class ShapeList:
             integer up to N for points inside the corresponding shape.
         """
         if labels_shape is None:
-            labels_shape = self.displayed_vertices.max(axis=0).astype(np.int)
+            labels_shape = self.displayed_vertices.max(axis=0).astype(int)
 
         labels = np.zeros(labels_shape, dtype=int)
 
@@ -1196,7 +1289,7 @@ class ShapeList:
         return labels
 
     def to_colors(
-        self, colors_shape=None, zoom_factor=1, offset=[0, 0], max_shapes=None
+        self, colors_shape=None, zoom_factor=1, offset=(0, 0), max_shapes=None
     ):
         """Rasterize shapes to an RGBA image array.
 
@@ -1228,9 +1321,9 @@ class ShapeList:
             value of the shape for points inside the corresponding shape.
         """
         if colors_shape is None:
-            colors_shape = self.displayed_vertices.max(axis=0).astype(np.int)
+            colors_shape = self.displayed_vertices.max(axis=0).astype(int)
 
-        colors = np.zeros(tuple(colors_shape) + (4,), dtype=float)
+        colors = np.zeros((*colors_shape, 4), dtype=float)
         colors[..., 3] = 1
 
         z_order = self._z_order[::-1]

@@ -1,6 +1,20 @@
 from enum import auto
 
+from napari.utils.compat import StrEnum
 from napari.utils.misc import StringEnum
+
+
+class LabelDTypes(StrEnum):
+    uint8 = 'uint8'
+    int8 = 'int8'
+    uint16 = 'uint16'
+    int16 = 'int16'
+    uint32 = 'uint32'
+    int32 = 'int32'
+    uint64 = 'uint64'
+    int64 = 'int64'
+    uint = 'uint'
+    int = 'int'
 
 
 class LoopMode(StringEnum):
@@ -20,3 +34,11 @@ class LoopMode(StringEnum):
     ONCE = auto()
     LOOP = auto()
     BACK_AND_FORTH = auto()
+
+
+class BrushSizeOnMouseModifiers(StrEnum):
+    ALT = 'Alt'
+    CTRL = 'Control'
+    CTRL_ALT = 'Control+Alt'
+    CTRL_SHIFT = 'Control+Shift'
+    DISABLED = 'Disabled'  # a non-existent modifier that is never activated

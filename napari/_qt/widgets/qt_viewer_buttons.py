@@ -1,5 +1,5 @@
 import warnings
-from functools import wraps
+from functools import partial, wraps
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QPoint, Qt
@@ -18,12 +18,25 @@ from napari._qt.widgets.qt_dims_sorter import QtDimsSorter
 from napari._qt.widgets.qt_spinbox import QtSpinBox
 from napari._qt.widgets.qt_tooltip import QtToolTipLabel
 from napari.utils.action_manager import action_manager
-from napari.utils.interactions import Shortcut
 from napari.utils.misc import in_ipython, in_jupyter, in_python_repl
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from napari.viewer import ViewerModel
+
+
+def add_new_points(viewer):
+    viewer.add_points(
+        ndim=max(viewer.dims.ndim, 2),
+        scale=viewer.layers.extent.step,
+    )
+
+
+def add_new_shapes(viewer):
+    viewer.add_shapes(
+        ndim=max(viewer.dims.ndim, 2),
+        scale=viewer.layers.extent.step,
+    )
 
 
 class QtLayerButtons(QFrame):
@@ -48,32 +61,30 @@ class QtLayerButtons(QFrame):
         Napari viewer containing the rendered scene, layers, and controls.
     """
 
-    def __init__(self, viewer: 'ViewerModel'):
+    def __init__(self, viewer: 'ViewerModel') -> None:
         super().__init__()
 
         self.viewer = viewer
-        self.deleteButton = QtDeleteButton(self.viewer)
+
+        self.deleteButton = QtViewerPushButton(
+            'delete_button', action='napari:delete_selected_layers'
+        )
+
         self.newPointsButton = QtViewerPushButton(
             'new_points',
             trans._('New points layer'),
-            lambda: self.viewer.add_points(
-                ndim=max(self.viewer.dims.ndim, 2),
-                scale=self.viewer.layers.extent.step,
-            ),
+            partial(add_new_points, self.viewer),
         )
 
         self.newShapesButton = QtViewerPushButton(
             'new_shapes',
             trans._('New shapes layer'),
-            lambda: self.viewer.add_shapes(
-                ndim=max(self.viewer.dims.ndim, 2),
-                scale=self.viewer.layers.extent.step,
-            ),
+            partial(add_new_shapes, self.viewer),
         )
         self.newLabelsButton = QtViewerPushButton(
             'new_labels',
             trans._('New labels layer'),
-            lambda: self.viewer._new_labels(),
+            self.viewer._new_labels,
         )
 
         layout = QHBoxLayout()
@@ -112,7 +123,7 @@ class QtViewerButtons(QFrame):
         Napari viewer containing the rendered scene, layers, and controls.
     """
 
-    def __init__(self, viewer: 'ViewerModel'):
+    def __init__(self, viewer: 'ViewerModel') -> None:
         super().__init__()
 
         self.viewer = viewer
@@ -180,10 +191,11 @@ class QtViewerButtons(QFrame):
         # make slider connected to perspective parameter
         sld = QSlider(Qt.Orientation.Horizontal, self)
         sld.setRange(0, max(90, int(self.viewer.camera.perspective)))
-        sld.setValue(self.viewer.camera.perspective)
+        sld.setValue(int(self.viewer.camera.perspective))
         sld.valueChanged.connect(
             lambda v: setattr(self.viewer.camera, 'perspective', v)
         )
+        self.perspective_slider = sld
 
         # make layout
         layout = QHBoxLayout()
@@ -200,16 +212,19 @@ class QtViewerButtons(QFrame):
         if self.viewer.dims.ndisplay != 2:
             return
 
-        dim_sorter = QtDimsSorter(self.viewer, self)
+        # popup
+        pop = QtPopup(self)
+
+        # dims sorter widget
+        dim_sorter = QtDimsSorter(self.viewer.dims, pop)
         dim_sorter.setObjectName('dim_sorter')
 
         # make layout
         layout = QHBoxLayout()
         layout.addWidget(dim_sorter)
-
-        # popup and show
-        pop = QtPopup(self)
         pop.frame.setLayout(layout)
+
+        # show popup
         pop.show_above_mouse()
 
     def _open_grid_popup(self):
@@ -236,7 +251,7 @@ class QtViewerButtons(QFrame):
         stride_min = self.viewer.grid.__fields__['stride'].type_.ge
         stride_max = self.viewer.grid.__fields__['stride'].type_.le
         stride_not = self.viewer.grid.__fields__['stride'].type_.ne
-        grid_stride.setObjectName("gridStrideBox")
+        grid_stride.setObjectName('gridStrideBox')
         grid_stride.setAlignment(Qt.AlignmentFlag.AlignCenter)
         grid_stride.setRange(stride_min, stride_max)
         grid_stride.setProhibitValue(stride_not)
@@ -246,7 +261,7 @@ class QtViewerButtons(QFrame):
 
         width_min = self.viewer.grid.__fields__['shape'].sub_fields[1].type_.ge
         width_not = self.viewer.grid.__fields__['shape'].sub_fields[1].type_.ne
-        grid_width.setObjectName("gridWidthBox")
+        grid_width.setObjectName('gridWidthBox')
         grid_width.setAlignment(Qt.AlignmentFlag.AlignCenter)
         grid_width.setMinimum(width_min)
         grid_width.setProhibitValue(width_not)
@@ -260,7 +275,7 @@ class QtViewerButtons(QFrame):
         height_not = (
             self.viewer.grid.__fields__['shape'].sub_fields[0].type_.ne
         )
-        grid_height.setObjectName("gridStrideBox")
+        grid_height.setObjectName('gridStrideBox')
         grid_height.setAlignment(Qt.AlignmentFlag.AlignCenter)
         grid_height.setMinimum(height_min)
         grid_height.setProhibitValue(height_not)
@@ -268,10 +283,10 @@ class QtViewerButtons(QFrame):
         grid_height.valueChanged.connect(self._update_grid_height)
         self.grid_height_box = grid_height
 
-        shape_help_symbol.setObjectName("help_label")
+        shape_help_symbol.setObjectName('help_label')
         shape_help_symbol.setToolTip(shape_help_msg)
 
-        stride_help_symbol.setObjectName("help_label")
+        stride_help_symbol.setObjectName('help_label')
         stride_help_symbol.setToolTip(stride_help_msg)
 
         # layout
@@ -337,101 +352,27 @@ class QtViewerButtons(QFrame):
         self.viewer.grid.shape = (value, self.viewer.grid.shape[1])
 
 
-class QtDeleteButton(QPushButton):
-    """Delete button to remove selected layers.
-
-    Parameters
-    ----------
-    viewer : napari.components.ViewerModel
-        Napari viewer containing the rendered scene, layers, and controls.
-
-    Attributes
-    ----------
-    hover : bool
-        Hover is true while mouse cursor is on the button widget.
-    viewer : napari.components.ViewerModel
-        Napari viewer containing the rendered scene, layers, and controls.
-    """
-
-    def __init__(self, viewer):
-        super().__init__()
-
-        self.viewer = viewer
-        self.setToolTip(
-            trans._(
-                "Delete selected layers ({shortcut})",
-                shortcut=Shortcut("Control-Backspace"),
-            )
-        )
-        self.setAcceptDrops(True)
-        self.clicked.connect(lambda: self.viewer.layers.remove_selected())
-
-    def dragEnterEvent(self, event):
-        """The cursor enters the widget during a drag and drop operation.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
-        """
-        event.accept()
-        self.hover = True
-        self.update()
-
-    def dragLeaveEvent(self, event):
-        """The cursor leaves the widget during a drag and drop operation.
-
-        Using event.ignore() here allows the event to pass through the
-        parent widget to its child widget, otherwise the parent widget
-        would catch the event and not pass it on to the child widget.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
-        """
-        event.ignore()
-        self.hover = False
-        self.update()
-
-    def dropEvent(self, event):
-        """The drag and drop mouse event is completed.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QDropEvent
-            Event from the Qt context.
-        """
-        event.accept()
-        layer_name = event.mimeData().text()
-        layer = self.viewer.layers[layer_name]
-        if not layer.selected:
-            self.viewer.layers.remove(layer)
-        else:
-            self.viewer.layers.remove_selected()
-
-
 def _omit_viewer_args(constructor):
     @wraps(constructor)
     def _func(*args, **kwargs):
         if len(args) > 1 and not isinstance(args[1], str):
             warnings.warn(
                 trans._(
-                    "viewer argument is deprecated since 0.4.14 and should not be used"
+                    'viewer argument is deprecated since 0.4.14 and should not be used'
                 ),
                 category=FutureWarning,
                 stacklevel=2,
             )
             args = args[:1] + args[2:]
-        if "viewer" in kwargs:
+        if 'viewer' in kwargs:
             warnings.warn(
                 trans._(
-                    "viewer argument is deprecated since 0.4.14 and should not be used"
+                    'viewer argument is deprecated since 0.4.14 and should not be used'
                 ),
                 category=FutureWarning,
                 stacklevel=2,
             )
-            del kwargs["viewer"]
+            del kwargs['viewer']
         return constructor(*args, **kwargs)
 
     return _func
@@ -455,7 +396,7 @@ class QtViewerPushButton(QPushButton):
     @_omit_viewer_args
     def __init__(
         self, button_name: str, tooltip: str = '', slot=None, action: str = ''
-    ):
+    ) -> None:
         super().__init__()
 
         self.setToolTip(tooltip or button_name)
