@@ -30,8 +30,9 @@ if (
     and platform.machine() == 'arm64'
 ):  # pragma: no cover
     try:
-        NUMPY_VERSION_IS_THREADSAFE = not (
-            'cibw-run' in np.show_config('dicts')['Python Information']['path']  # type: ignore
+        NUMPY_VERSION_IS_THREADSAFE = (
+            'cibw-run'
+            not in np.show_config('dicts')['Python Information']['path']
         )
     except (KeyError, TypeError):
         NUMPY_VERSION_IS_THREADSAFE = True
@@ -39,7 +40,9 @@ else:
     NUMPY_VERSION_IS_THREADSAFE = True
 
 
-def limit_numpy1x_threads_on_macos_arm() -> None:  # pragma: no cover (macos only code)
+def limit_numpy1x_threads_on_macos_arm() -> (
+    None
+):  # pragma: no cover (macos only code)
     """Set openblas to use single thread on macOS arm64 to prevent numpy crash.
 
     On NumPy version<2 wheels on macOS ARM64 architectures, a BusError is
