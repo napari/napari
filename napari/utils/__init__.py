@@ -1,4 +1,4 @@
-from napari._check_numpy_version import PROBLEMATIC_NUMPY_MACOS
+from napari._check_numpy_version import NUMPY_VERSION_IS_THREADSAFE
 from napari.utils._dask_utils import resize_dask_cache
 from napari.utils.colormaps.colormap import (
     Colormap,
@@ -24,5 +24,5 @@ __all__ = (
     'progress',
     'resize_dask_cache',
     'sys_info',
-    'PROBLEMATIC_NUMPY_MACOS',
+    'NUMPY_VERSION_IS_THREADSAFE',
 )

@@ -25,13 +25,13 @@ if (
     and platform.machine() == 'arm64'
 ):  # pragma: no cover
     try:
-        PROBLEMATIC_NUMPY_MACOS = (
+        NUMPY_VERSION_IS_THREADSAFE = not (
             'cibw-run' in np.show_config('dicts')['Python Information']['path']  # type: ignore
         )
     except (KeyError, TypeError):
-        PROBLEMATIC_NUMPY_MACOS = False
+        NUMPY_VERSION_IS_THREADSAFE = True
 else:
-    PROBLEMATIC_NUMPY_MACOS = False
+    NUMPY_VERSION_IS_THREADSAFE = True
 
 
 def prevent_numpy_arm_problem() -> None:  # pragma: no cover (macos only code)
@@ -41,7 +41,7 @@ def prevent_numpy_arm_problem() -> None:  # pragma: no cover (macos only code)
     See: https://github.com/OpenMathLib/OpenBLAS/wiki/faq#how-can-i-use-openblas-in-multi-threaded-applications
     We observe that it is enough to prevent numpy crash on macOS arm64 architecture.
     """
-    if not PROBLEMATIC_NUMPY_MACOS:
+    if NUMPY_VERSION_IS_THREADSAFE:
         return
     # find openblas library
     numpy_dir = Path(np.__file__).parent
