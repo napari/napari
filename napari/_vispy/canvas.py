@@ -671,30 +671,6 @@ class VispyCanvas:
         view_direction_nd[list(self.viewer.dims.displayed)] = d
         return view_direction_nd
 
-    def _move_event_to_camera_center_plane(
-        self, event_pos: list[float], view_direction: list[float]
-    ) -> tuple[float, ...]:
-        """move event position from near plane to camera center's projection on the ray"""
-        if self.viewer.dims.ndisplay != 3:
-            return event_pos
-        event_pos = np.array(event_pos)
-        event_pos_3d = event_pos[list(self.viewer.dims.displayed)]
-        view_direction = np.array(view_direction)
-        view_direction_3d = view_direction[list(self.viewer.dims.displayed)]
-        camera_center = np.array(self.view.camera.center)
-
-        # Compute the projection of camera center onto the ray
-        t = (
-            np.dot(camera_center - event_pos_3d, camera_center)
-            / self.viewer.camera.zoom
-        )
-        projected_pos = event_pos_3d + t * view_direction_3d
-
-        position_world = list(self.viewer.dims.point)
-        for i, d in enumerate(self.viewer.dims.displayed):
-            position_world[d] = projected_pos[i]
-        return tuple(position_world)
-
     def screenshot(self) -> QImage:
         """Return a QImage based on what is shown in the viewer."""
         return self.native.grabFramebuffer()
