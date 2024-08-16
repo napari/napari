@@ -77,15 +77,10 @@ def limit_numpy1x_threads_on_macos_arm() -> None:  # pragma: no cover (macos onl
         return
     blas = ctypes.CDLL(str(blas_lib[0]), mode=os.RTLD_NOLOAD)
     for suffix in ('', '64_', '_64'):
-        if (
-            openblas_set_num_threads := getattr(
-                blas, f'openblas_set_num_threads{suffix}', None
-            )
-        ) is not None:
-            break
-    else:
-        logging.warning(
-            'openblas_set_num_threads not found during try to prevent numpy crash'
+        openblas_set_num_threads = getattr(
+            blas, f'openblas_set_num_threads{suffix}', None
         )
-        return
-    openblas_set_num_threads(1)
+        if openblas_set_num_threads is not None:
+            openblas_set_num_threads(1)
+    else:
+        logging.warning('openblas_set_num_threads not found')
