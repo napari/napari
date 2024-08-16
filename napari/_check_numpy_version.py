@@ -1,10 +1,15 @@
 """
 This module is used to prevent a known issue with numpy<2 on macOS arm64
-architecture installed from pypi wheels.
-Setting thread limits is inspired on threadpoolctl package to prevent adding
-the dependency to napari.
-However, if there is some problem in future it should be ok to
-add threadpoolctl as a dependency to napari and use it directly.
+architecture installed from pypi wheels
+(https://github.com/numpy/numpy/issues/21799).
+
+We use a method to set thread limits based on the threadpoolctl package, but
+reimplemented locally to prevent adding the dependency to napari.
+
+Note: if any issues surface with the method below, we could fall back on
+depending on threadpoolctl directly.
+
+TODO: This module can be removed once the minimum numpy version is 2+.
 """
 
 import ctypes
@@ -35,11 +40,21 @@ else:
 
 
 def prevent_numpy_arm_problem() -> None:  # pragma: no cover (macos only code)
-    """Set openblas to use only one thread to prevent numpy crash on macOS arm64
+    """Set openblas to use single thread on macOS arm64 to prevent numpy crash.
+
+    On NumPy version<2 wheels on macOS ARM64 architectures, a BusError is
+    raised, crashing Python, if NumPy is accessed from multiple threads.
+    (See https://github.com/numpy/numpy/issues/21799.) This function uses the
+    global check above (NUMPY_VERSION_IS_THREADSAFE), and, if False, it loads
+    the linked OpenBLAS library and sets the number of threads to 1. This has
+    performance implications but prevents nasty crashes, and anyway can be
+    avoided by using more recent versions of NumPy.
 
     This function is loading openblas library from numpy and set number of threads to 1.
-    See: https://github.com/OpenMathLib/OpenBLAS/wiki/faq#how-can-i-use-openblas-in-multi-threaded-applications
-    We observe that it is enough to prevent numpy crash on macOS arm64 architecture.
+    See also:
+        https://github.com/OpenMathLib/OpenBLAS/wiki/faq#how-can-i-use-openblas-in-multi-threaded-applications
+
+    These changes seem to be sufficient to prevent the crashes.
     """
     if NUMPY_VERSION_IS_THREADSAFE:
         return
@@ -49,9 +64,11 @@ def prevent_numpy_arm_problem() -> None:  # pragma: no cover (macos only code)
         logging.warning(
             'numpy .dylibs directory not found during try to prevent numpy crash'
         )
-    # As I have checked that recent numpy versions are build using cibuildwheel.
-    # It internally is using delocate, that stores openblas library in .dylibs directory.
-    # As we only patch numpy<2, we can assume that it is enough to search for libopenblas dynamic library
+    # Recent numpy versions are built with cibuildwheel.
+    # Internally, it uses delocate, which stores the path to the openblas
+    # library in the .dylibs directory.
+    # Since we only patch numpy<2, we can just search for the libopenblas
+    # dynamic library at this location.
     blas_lib = list((numpy_dir / '.dylibs').glob('libopenblas*.dylib'))
     if not blas_lib:
         logging.warning(
