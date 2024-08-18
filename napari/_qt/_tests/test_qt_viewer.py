@@ -513,7 +513,7 @@ def test_process_mouse_event(make_napari_viewer, fov):
         assert event.dims_point[0] == data.shape[0] // 2
 
         expected_position = view.canvas._map_canvas2world(new_pos)
-        np.testing.assert_almost_equal(expected_position, list(event.position))
+        np.testing.assert_almost_equal(event.position, expected_position)
 
     viewer.dims.ndisplay = 3
     view.canvas._process_mouse_event(mouse_press_callbacks, mouse_event)
