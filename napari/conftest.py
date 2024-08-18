@@ -33,8 +33,10 @@ from __future__ import annotations
 
 import os
 import sys
+import threading
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
+from functools import partial
 from itertools import chain
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
@@ -429,20 +431,54 @@ def _dangling_qthreads(monkeypatch, qtbot, request):
 
     base_start = QThread.start
     thread_dict = WeakKeyDictionary()
+    base_constructor = QThread.__init__
+
+    def run_with_trace(self):  # pragma: no cover
+        """
+        QThread.run but adding execution to sys.settrace when measuring coverage.
+
+        See https://github.com/nedbat/coveragepy/issues/686#issuecomment-634932753
+        and `init_with_trace`. When running QThreads during testing, we monkeypatch
+        the QThread constructor and run methods with traceable equivalents.
+        """
+        if 'coverage' in sys.modules:
+            # https://github.com/nedbat/coveragepy/issues/686#issuecomment-634932753
+            sys.settrace(threading._trace_hook)
+        self._base_run()
+
+    def init_with_trace(self, *args, **kwargs):
+        """Constructor for QThread adding tracing for coverage measurements.
+
+        Functions running in QThreads don't get measured by coverage.py, see
+        https://github.com/nedbat/coveragepy/issues/686. Therefore, we will
+        monkeypatch the constructor to add to the thread to `sys.settrace` when
+        we call `run` and `coverage` is in `sys.modules`.
+        """
+        base_constructor(self, *args, **kwargs)
+        self._base_run = self.run
+        self.run = partial(run_with_trace, self)
+
     # dict of threads that have been started but not yet terminated
 
     if 'disable_qthread_start' in request.keywords:
 
-        def my_start(self, priority=QThread.InheritPriority):
-            """dummy function to prevent thread start"""
+        def start_with_save_reference(self, priority=QThread.InheritPriority):
+            """Dummy function to prevent thread starts."""
 
     else:
 
-        def my_start(self, priority=QThread.InheritPriority):
+        def start_with_save_reference(self, priority=QThread.InheritPriority):
+            """Thread start function with logs to detect hanging threads.
+
+            Saves a weak reference to the thread and detects hanging threads,
+            as well as where the threads were started.
+            """
             thread_dict[self] = _get_calling_place()
             base_start(self, priority)
 
-    monkeypatch.setattr(QThread, 'start', my_start)
+    monkeypatch.setattr(QThread, 'start', start_with_save_reference)
+    monkeypatch.setattr(QThread, '__init__', init_with_trace)
+
     yield
 
     dangling_threads_li = []
