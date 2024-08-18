@@ -91,6 +91,10 @@ points = np.array([[100, 100], [200, 200], [333, 111]])
 size = np.array([10, 20, 20])
 viewer.add_points(points, size=size)
 
+# Add scale bar of a defined length to the exported figure
+viewer.scale_bar.visible = True
+viewer.scale_bar.length = 250
+
 # Export figure and change theme before and after exporting to show that the background canvas margins
 # are not in the exported figure.
 viewer.theme = "light"

@@ -24,7 +24,7 @@ def test_rectangle():
     assert shape.data_displayed.shape == (4, 2)
     assert shape.slice_key.shape == (2, 0)
 
-    # If given two corners, representation will be exapanded to four
+    # If given two corners, representation will be expanded to four
     data = 20 * np.random.random((2, 2))
     shape = Rectangle(data)
     assert len(shape.data) == 4
@@ -198,7 +198,7 @@ def test_ellipse():
     assert shape.data_displayed.shape == (4, 2)
     assert shape.slice_key.shape == (2, 0)
 
-    # If center radii, representation will be exapanded to four corners
+    # If center radii, representation will be expanded to four corners
     data = 20 * np.random.random((2, 2))
     shape = Ellipse(data)
     assert len(shape.data) == 4

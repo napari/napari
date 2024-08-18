@@ -7,6 +7,7 @@ import numpy as np
 
 from napari.components.viewer_model import ViewerModel
 from napari.utils import _magicgui
+from napari.utils.events.event_utils import disconnect_events
 
 if TYPE_CHECKING:
     # helpful for IDE support
@@ -66,7 +67,7 @@ class Viewer(ViewerModel):
         self._window = Window(self, show=show)
         self._instances.add(self)
 
-    # Expose private window publically. This is needed to keep window off pydantic model
+    # Expose private window publicly. This is needed to keep window off pydantic model
     @property
     def window(self) -> 'Window':
         return self._window
@@ -194,6 +195,9 @@ class Viewer(ViewerModel):
         """Close the viewer window."""
         # Shutdown the slicer first to avoid processing any more tasks.
         self._layer_slicer.shutdown()
+        # Disconnect changes to dims before removing layers one-by-one
+        # to avoid any unnecessary slicing.
+        disconnect_events(self.dims.events, self)
         # Remove all the layers from the viewer
         self.layers.clear()
         # Close the main window
@@ -204,7 +208,7 @@ class Viewer(ViewerModel):
     @classmethod
     def close_all(cls) -> int:
         """
-        Class metod, Close all existing viewer instances.
+        Class method, Close all existing viewer instances.
 
         This is mostly exposed to avoid leaking of viewers when running tests.
         As having many non-closed viewer can adversely affect performances.
