@@ -44,12 +44,13 @@ jobs:
           VER="${TAG/a*/}"  # remove alpha identifier
           VER="${VER/b*/}"  # remove beta identifier
           VER="${VER/rc*/}"  # remove rc identifier
+          VER="${VER/post*/}"  # remove post identifier
           RELEASE_NOTES_PATH="docs/docs/release/release_${VER//./_}.md"
 
-          echo "tag=${TAG}" >> $GITHUB_ENV
-          echo "release_notes_path=${RELEASE_NOTES_PATH}" >> $GITHUB_ENV
-          echo tag: ${TAG}
-          echo release_notes_path: ${RELEASE_NOTES_PATH}
+          echo "tag=${TAG}" >> "$GITHUB_ENV"
+          echo "release_notes_path=${RELEASE_NOTES_PATH}" >> "$GITHUB_ENV"
+          echo tag: "${TAG}"
+          echo release_notes_path: "${RELEASE_NOTES_PATH}"
           ls docs/docs/release
 
       - name: Create Release
@@ -62,6 +63,7 @@ jobs:
           body_path: ${{ env.release_notes_path }}
           draft: false
           prerelease: ${{ contains(env.tag, 'rc') || contains(env.tag, 'a') || contains(env.tag, 'b') }}
+          target_commitish: ${{ github.sha }}
           files: |
             dist/*
       - name: Publish PyPI Package

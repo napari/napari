@@ -45,7 +45,7 @@
     // should be written to.
     "html_dir": ".asv/html",
 
-    // The directory (relative to the current directory) where the benchamrks
+    // The directory (relative to the current directory) where the benchmarks
     // are stored
     "benchmark_dir": "napari/benchmarks",
 

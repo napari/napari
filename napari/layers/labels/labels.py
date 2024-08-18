@@ -28,6 +28,7 @@ from napari.layers.base._base_mouse_bindings import (
 from napari.layers.image._image_utils import guess_multiscale
 from napari.layers.image._slice import _ImageSliceResponse
 from napari.layers.labels._labels_constants import (
+    IsoCategoricalGradientMode,
     LabelColorMode,
     LabelsRendering,
     Mode,
@@ -109,6 +110,12 @@ class Labels(ScalarFieldBase):
     features : dict[str, array-like] or DataFrame
         Features table where each row corresponds to a label and each column
         is a feature. The first row corresponds to the background label.
+    iso_gradient_mode : str
+        Method for calulating the gradient (used to get the surface normal) in the
+        'iso_categorical' rendering mode. Must be one of {'fast', 'smooth'}.
+        'fast' uses a simple finite difference gradient in x, y, and z. 'smooth' uses an
+        isotropic Sobel gradient, which is smoother but more computationally expensive.
+        The default value is 'fast'.
     metadata : dict
         Layer metadata.
     multiscale : bool
@@ -298,6 +305,7 @@ class Labels(ScalarFieldBase):
         depiction='volume',
         experimental_clipping_planes=None,
         features=None,
+        iso_gradient_mode=IsoCategoricalGradientMode.FAST.value,
         metadata=None,
         multiscale=None,
         name=None,
@@ -363,6 +371,7 @@ class Labels(ScalarFieldBase):
             contiguous=Event,
             contour=Event,
             features=Event,
+            iso_gradient_mode=Event,
             labels_update=Event,
             n_edit_dimensions=Event,
             paint=Event,
@@ -386,6 +395,8 @@ class Labels(ScalarFieldBase):
         self._n_edit_dimensions = 2
         self._contiguous = True
         self._brush_size = 10
+
+        self._iso_gradient_mode = IsoCategoricalGradientMode.FAST
 
         self._selected_label = 1
         self.colormap.selection = self._selected_label
@@ -432,6 +443,27 @@ class Labels(ScalarFieldBase):
         self.events.rendering()
 
     @property
+    def iso_gradient_mode(self):
+        """Return current gradient mode for isosurface rendering.
+
+        Selects the finite-difference gradient method for the isosurface shader. Options include:
+            * ``fast``: use a simple finite difference gradient along each axis
+            * ``smooth``: use an isotropic Sobel gradient, smoother but more
+              computationally expensive
+
+        Returns
+        -------
+        str
+            The current gradient mode
+        """
+        return str(self._iso_gradient_mode)
+
+    @iso_gradient_mode.setter
+    def iso_gradient_mode(self, value):
+        self._iso_gradient_mode = IsoCategoricalGradientMode(value)
+        self.events.iso_gradient_mode()
+
+    @property
     def contiguous(self):
         """bool: fill bucket changes only connected pixels of same label."""
         return self._contiguous
@@ -461,7 +493,7 @@ class Labels(ScalarFieldBase):
             raise ValueError('contour value must be >= 0')
         self._contour = int(contour)
         self.events.contour()
-        self.refresh()
+        self.refresh(extent=False)
 
     @property
     def brush_size(self):
@@ -529,7 +561,7 @@ class Labels(ScalarFieldBase):
         self._color_mode = color_mode
         self.events.colormap()  # Will update the LabelVispyColormap shader
         self.events.selected_label()
-        self.refresh()
+        self.refresh(extent=False)
 
     @property
     def data(self) -> Union[LayerDataProtocol, MultiScaleData]:
@@ -607,17 +639,13 @@ class Labels(ScalarFieldBase):
         bool
             True if color contains only default colors, otherwise False.
         """
-        if {None, self.colormap.background_value} != set(color.keys()):
-            return False
-
-        if not np.allclose(color[None], [0, 0, 0, 1]):
-            return False
-        if not np.allclose(
-            color[self.colormap.background_value], [0, 0, 0, 0]
-        ):
-            return False
-
-        return True
+        return (
+            {None, self.colormap.background_value} == set(color.keys())
+            and np.allclose(color[None], [0, 0, 0, 1])
+            and np.allclose(
+                color[self.colormap.background_value], [0, 0, 0, 0]
+            )
+        )
 
     def _ensure_int_labels(self, data):
         """Ensure data is integer by converting from bool if required, raising an error otherwise."""
@@ -658,6 +686,7 @@ class Labels(ScalarFieldBase):
                 'multiscale': self.multiscale,
                 'properties': self.properties,
                 'rendering': self.rendering,
+                'iso_gradient_mode': self.iso_gradient_mode,
                 'depiction': self.depiction,
                 'plane': self.plane.dict(),
                 'experimental_clipping_planes': [
@@ -688,7 +717,7 @@ class Labels(ScalarFieldBase):
         self.events.selected_label()
 
         if self.show_selected_label:
-            self.refresh()
+            self.refresh(extent=False)
 
     def swap_selected_and_background_labels(self):
         """Swap between the selected label and the background label."""
@@ -708,7 +737,7 @@ class Labels(ScalarFieldBase):
         self.colormap.use_selection = show_selected
         self.colormap.selection = self.selected_label
         self.events.show_selected_label(show_selected_label=show_selected)
-        self.refresh()
+        self.refresh(extent=False)
 
     # Only overriding to change the docstring
     @property
@@ -1018,7 +1047,7 @@ class Labels(ScalarFieldBase):
             values = im_slice[tuple(clamped.T)]
             nonzero_indices = np.flatnonzero(values)
             if len(nonzero_indices > 0):
-                # if a nonzer0 value was found, return the first one
+                # if a nonzero value was found, return the first one
                 return values[nonzero_indices[0]]
 
         return None
@@ -1496,7 +1525,7 @@ class Labels(ScalarFieldBase):
         if self.contour > 0:
             # Expand the slice by 1 pixel as the changes can go beyond
             # the original slice because of the morphological dilation
-            # (1 pixel because get_countours always applies 1 pixel dilation)
+            # (1 pixel because get_contours always applies 1 pixel dilation)
             updated_slice = expand_slice(updated_slice, self.data.shape, 1)
         else:
             # update data view

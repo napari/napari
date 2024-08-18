@@ -37,7 +37,7 @@ def test_layers_removed_on_close(make_napari_viewer):
 def test_layer_multiple_viewers(make_napari_viewer):
     """Test layer on multiple viewers."""
     # Check that a layer can be added and removed from
-    # mutliple viewers. See https://github.com/napari/napari/issues/1503
+    # multiple viewers. See https://github.com/napari/napari/issues/1503
     # for more detail.
     viewer_a = make_napari_viewer()
     viewer_b = make_napari_viewer()

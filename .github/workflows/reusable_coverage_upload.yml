@@ -37,7 +37,7 @@ jobs:
           python -Im coverage xml -o coverage.xml
 
           # Report and write to summary.
-          python -Im coverage report --format=markdown --skip-empty --skip-covered >> $GITHUB_STEP_SUMMARY
+          python -Im coverage report --format=markdown --skip-empty --skip-covered >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload coverage data
         uses: codecov/codecov-action@v4

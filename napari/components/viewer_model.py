@@ -17,8 +17,8 @@ from typing import (
 
 import numpy as np
 
-# This cannot be condition to TYPE_CHEKCKING or the stubgen fails
-# with underfined Context.
+# This cannot be condition to TYPE_CHECKING or the stubgen fails
+# with undefined Context.
 from app_model.expressions import Context
 
 from napari import layers
@@ -268,7 +268,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         #        the source of truth, and is now defined in world space. This exposed an existing
         #        bug where if a field in Dims is modified by the root_validator, events won't
         #        be fired for it. This won't happen for properties because we have dependency
-        #        checks. To fix this, we need dep checks for fileds (psygnal!) and then we
+        #        checks. To fix this, we need dep checks for fields (psygnal!) and then we
         #        can remove the following line. Note that because of this we fire double events,
         #        but this should be ok because we have early returns when slices are unchanged.
         self.dims.events.current_step.connect(self._update_layers)
@@ -406,7 +406,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         )
         assert len(center) in (2, 3)
         self.camera.center = center
-        # zoom is definied as the number of canvas pixels per world pixel
+        # zoom is defined as the number of canvas pixels per world pixel
         # The default value used below will zoom such that the whole field
         # of view will occupy 95% of the canvas on the most filled axis
 
