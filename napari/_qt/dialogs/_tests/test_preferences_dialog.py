@@ -19,7 +19,7 @@ from napari.settings import NapariSettings, get_settings
 from napari.settings._constants import BrushSizeOnMouseModifiers, LabelDTypes
 
 
-@pytest.fixture()
+@pytest.fixture
 def pref(qtbot):
     dlg = PreferencesDialog()
     qtbot.addWidget(dlg)

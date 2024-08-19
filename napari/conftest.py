@@ -73,7 +73,7 @@ if os.getenv('CI') and sys.platform.startswith('linux'):
         xauth.touch()
 
 
-@pytest.fixture()
+@pytest.fixture
 def layer_data_and_types():
     """Fixture that provides some layers and filenames
 
@@ -155,7 +155,7 @@ def layer(request):
     return None
 
 
-@pytest.fixture()
+@pytest.fixture
 def layers():
     """Fixture that supplies a layers list for testing.
 
@@ -256,7 +256,7 @@ def _auto_shutdown_dask_threadworkers():
 HistoryManager.enabled = False
 
 
-@pytest.fixture()
+@pytest.fixture
 def napari_svg_name():
     """the plugin name changes with npe2 to `napari-svg` from `svg`."""
     from importlib.metadata import version
@@ -276,13 +276,13 @@ def npe2pm_(npe2pm, monkeypatch):
     return npe2pm
 
 
-@pytest.fixture()
+@pytest.fixture
 def builtins(npe2pm_: TestPluginManager):
     with npe2pm_.tmp_plugin(package='napari') as plugin:
         yield plugin
 
 
-@pytest.fixture()
+@pytest.fixture
 def tmp_plugin(npe2pm_: TestPluginManager):
     with npe2pm_.tmp_plugin() as plugin:
         plugin.manifest.package_metadata = PackageMetadata(  # type: ignore[call-arg]
@@ -391,7 +391,7 @@ def _disable_notification_dismiss_timer(monkeypatch):
         monkeypatch.setattr(NapariQtNotification, 'FADE_OUT_RATE', 0)
 
 
-@pytest.fixture()
+@pytest.fixture
 def single_threaded_executor():
     executor = ThreadPoolExecutor(max_workers=1)
     yield executor
@@ -425,7 +425,7 @@ def _get_calling_place(depth=1):  # pragma: no cover
     return result
 
 
-@pytest.fixture()
+@pytest.fixture
 def _dangling_qthreads(monkeypatch, qtbot, request):
     from qtpy.QtCore import QThread
 
@@ -519,7 +519,7 @@ def _dangling_qthreads(monkeypatch, qtbot, request):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def _dangling_qthread_pool(monkeypatch, request):
     from qtpy.QtCore import QThreadPool
 
@@ -575,7 +575,7 @@ def _dangling_qthread_pool(monkeypatch, request):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def _dangling_qtimers(monkeypatch, request):
     from qtpy.QtCore import QTimer
 
@@ -681,7 +681,7 @@ def _flush_mock(self):
     """There are no waiting events."""
 
 
-@pytest.fixture()
+@pytest.fixture
 def _disable_throttling(monkeypatch):
     """Disable qthrottler from superqt.
 
@@ -698,7 +698,7 @@ def _disable_throttling(monkeypatch):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def _dangling_qanimations(monkeypatch, request):
     from qtpy.QtCore import QPropertyAnimation
 
