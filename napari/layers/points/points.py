@@ -2005,7 +2005,6 @@ class Points(Layer):
             and np.array_equal(self._drag_box, self._drag_box_stored)
         ) and not force:
             return
-        prev_stored = self._selected_data_stored
         self._selected_data_stored = Selection(self.selected_data)
         self._value_stored = copy(self._value)
         self._drag_box_stored = copy(self._drag_box)
@@ -2052,8 +2051,7 @@ class Points(Layer):
             pos = None
 
         self._highlight_box = pos
-        if prev_stored != self._selected_data_stored:
-            self.events.highlight()
+        self.events.highlight()
 
     def _update_thumbnail(self) -> None:
         """Update thumbnail with current points and colors."""
