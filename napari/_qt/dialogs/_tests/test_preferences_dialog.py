@@ -38,7 +38,7 @@ def pref(qtbot):
     # change `napari:reset_scroll_progress` shortcut/keybinding (default keybinding `Ctrl`/`Control`)
     # a copy of the initial `shortcuts` dictionary needs to be done since, to trigger an
     # event update from the `ShortcutsSettings` model, the whole `shortcuts` dictionary
-    # needs to be reassinged.
+    # needs to be reassigned.
     assert dlg._settings.shortcuts.shortcuts[
         'napari:reset_scroll_progress'
     ] == [KeyBinding.from_str('Ctrl')]
