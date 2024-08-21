@@ -25,12 +25,23 @@ from napari.utils.key_bindings import KeyBinding
 def pref(qtbot):
     dlg = PreferencesDialog()
     qtbot.addWidget(dlg)
+    # check settings default values and change them for later checks
     settings = get_settings()
+    # change theme setting (default `dark`)
     assert settings.appearance.theme == 'dark'
     dlg._settings.appearance.theme = 'light'
     assert get_settings().appearance.theme == 'light'
+    # change highlight setting related value (default thickness `1`)
+    assert get_settings().appearance.highlight.highlight_thickness == 1
     dlg._settings.appearance.highlight.highlight_thickness = 5
     assert get_settings().appearance.highlight.highlight_thickness == 5
+    # change `napari:reset_scroll_progress` shortcut/keybinding (default keybinding `Ctrl`/`Control`)
+    # a copy of the initial `shortcuts` dictionary needs to be done since, to trigger an
+    # event update from the `ShortcutsSettings` model, the whole `shortcuts` dictionary
+    # needs to be reassinged.
+    assert dlg._settings.shortcuts.shortcuts[
+        'napari:reset_scroll_progress'
+    ] == [KeyBinding.from_str('Ctrl')]
     shortcuts = dlg._settings.shortcuts.shortcuts.copy()
     shortcuts['napari:reset_scroll_progress'] = [KeyBinding.from_str('U')]
     dlg._settings.shortcuts.shortcuts = shortcuts
