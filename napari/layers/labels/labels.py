@@ -684,7 +684,7 @@ class Labels(ScalarFieldBase):
         state.update(
             {
                 'multiscale': self.multiscale,
-                'properties': self.properties,
+                'properties': self._feature_table.properties(),
                 'rendering': self.rendering,
                 'iso_gradient_mode': self.iso_gradient_mode,
                 'depiction': self.depiction,

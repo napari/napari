@@ -565,10 +565,10 @@ def test_properties_color_mode_without_properties():
     layer = Vectors(data)
     assert layer.properties == {}
 
-    with pytest.raises(ValueError, match='must be a valid Points.properties'):
+    with pytest.raises(ValueError, match='must be a valid Points.features'):
         layer.edge_color_mode = 'colormap'
 
-    with pytest.raises(ValueError, match='must be a valid Points.properties'):
+    with pytest.raises(ValueError, match='must be a valid Points.features'):
         layer.edge_color_mode = 'cycle'
 
 

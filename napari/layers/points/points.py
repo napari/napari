@@ -185,9 +185,9 @@ class Points(Layer):
         following: arrow, clobber, cross, diamond, disc, hbar, ring,
         square, star, tailed_arrow, triangle_down, triangle_up, vbar, x.
     text : str, dict
-        Text to be displayed with the points. If text is set to a key in properties,
-        the value of that property will be displayed. Multiple properties can be
-        composed using f-string-like syntax (e.g., '{property_1}, {float_property:.2f}).
+        Text to be displayed with the points. If text is set to a key in features,
+        the value of that feature will be displayed. Multiple properties can be
+        composed using f-string-like syntax (e.g., '{feature_1}, {float_feature:.2f}).
         A dictionary can be provided with keyword arguments to set the text values
         and display properties. See TextManager.__init__() for the valid keyword arguments.
         For example usage, see /napari/examples/add_points_with_text.py.
@@ -214,9 +214,9 @@ class Points(Layer):
         Annotations for each point. Each property should be an array of length N,
         where N is the number of points.
     text : str
-        Text to be displayed with the points. If text is set to a key in properties, the value of
-        that property will be displayed. Multiple properties can be composed using f-string-like
-        syntax (e.g., '{property_1}, {float_property:.2f}).
+        Text to be displayed with the points. If text is set to a key in features, the value of
+        that feature will be displayed. Multiple features can be composed using f-string-like
+        syntax (e.g., '{feature_1}, {float_feature:.2f}).
         For example usage, see /napari/examples/add_points_with_text.py.
     symbol : array of str
         Array of symbols for each point.
@@ -808,7 +808,7 @@ class Points(Layer):
         self, defaults: Union[dict[str, Any], pd.DataFrame]
     ) -> None:
         self._feature_table.set_defaults(defaults)
-        current_properties = self.current_properties
+        current_properties = self._feature_table.currents()
         self._border._update_current_properties(current_properties)
         self._face._update_current_properties(current_properties)
         self.events.current_properties()
@@ -864,7 +864,7 @@ class Points(Layer):
         self._feature_table.set_currents(
             current_properties, update_indices=update_indices
         )
-        current_properties = self.current_properties
+        current_properties = self._feature_table.currents()
         self._border._update_current_properties(current_properties)
         self._face._update_current_properties(current_properties)
         self.events.current_properties()
@@ -1196,8 +1196,8 @@ class Points(Layer):
         self._border._set_color(
             color=border_color,
             n_colors=len(self.data),
-            properties=self.properties,
-            current_properties=self.current_properties,
+            properties=self._feature_table.properties(),
+            current_properties=self._feature_table.currents(),
         )
         self.events.border_color()
 
@@ -1287,8 +1287,8 @@ class Points(Layer):
         self._face._set_color(
             color=face_color,
             n_colors=len(self.data),
-            properties=self.properties,
-            current_properties=self.current_properties,
+            properties=self._feature_table.properties(),
+            current_properties=self._feature_table.currents(),
         )
         self.events.face_color()
 
@@ -1393,27 +1393,27 @@ class Points(Layer):
             else:
                 color_property = ''
             if color_property == '':
-                if self.features.shape[1] > 0:
-                    new_color_property = next(iter(self.features))
+                if len(self.features.columns) > 0:
+                    new_color_feature = self.features.columns[0]
                     color_manager.color_properties = {
-                        'name': new_color_property,
-                        'values': self.features[new_color_property].to_numpy(),
-                        'current_value': np.squeeze(
-                            self.current_properties[new_color_property]
-                        ),
+                        'name': new_color_feature,
+                        'values': self.features[new_color_feature].to_numpy(),
+                        'current_value': self.feature_defaults[
+                            new_color_feature
+                        ][0],
                     }
                     warnings.warn(
                         trans._(
-                            '_{attribute}_color_property was not set, setting to: {new_color_property}',
+                            '_{attribute}_color feature was not set, setting to: {new_color_feature}',
                             deferred=True,
                             attribute=attribute,
-                            new_color_property=new_color_property,
+                            new_color_feature=new_color_feature,
                         )
                     )
                 else:
                     raise ValueError(
                         trans._(
-                            'There must be a valid Points.properties to use {color_mode}',
+                            'There must be a valid Points.features to use {color_mode}',
                             deferred=True,
                             color_mode=color_mode,
                         )
@@ -1426,7 +1426,7 @@ class Points(Layer):
             ):
                 raise TypeError(
                     trans._(
-                        'selected property must be numeric to use ColorMode.COLORMAP',
+                        'selected feature must be numeric to use ColorMode.COLORMAP',
                         deferred=True,
                     )
                 )
@@ -1446,8 +1446,12 @@ class Points(Layer):
             the color cycle map or colormap), set ``update_color_mapping=False``.
             Default value is False.
         """
-        self._border._refresh_colors(self.properties, update_color_mapping)
-        self._face._refresh_colors(self.properties, update_color_mapping)
+        self._border._refresh_colors(
+            self._feature_table.properties(), update_color_mapping
+        )
+        self._face._refresh_colors(
+            self._feature_table.properties(), update_color_mapping
+        )
 
     def _get_state(self) -> dict[str, Any]:
         """Get dictionary of layer state.
@@ -1481,8 +1485,8 @@ class Points(Layer):
                 'border_color_cycle': self.border_color_cycle,
                 'border_colormap': self.border_colormap.dict(),
                 'border_contrast_limits': self.border_contrast_limits,
-                'properties': self.properties,
-                'property_choices': self.property_choices,
+                'properties': self._feature_table.properties(),
+                'property_choices': self._feature_table.choices(),
                 'text': self.text.dict(),
                 'out_of_slice_display': self.out_of_slice_display,
                 'n_dimensional': self.out_of_slice_display,
@@ -1548,12 +1552,12 @@ class Points(Layer):
             ) is not None:
                 self.current_symbol = unique_symbol
 
-            unique_properties = {}
-            for k, v in self.properties.items():
-                unique_properties[k] = _unique_element(v[index])
+            unique_features = {}
+            for k, v in self.features.items():
+                unique_features[k] = _unique_element(v[index].to_numpy())
 
-            if all(p is not None for p in unique_properties.values()):
-                self.current_properties = unique_properties
+            if all(p is not None for p in unique_features.values()):
+                self.feature_defaults = unique_features
 
         self._set_highlight()
 

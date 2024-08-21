@@ -1142,7 +1142,7 @@ def test_colormap_without_properties(attribute):
     data = 20 * np.random.random(shape)
     layer = Points(data)
 
-    with pytest.raises(ValueError, match='must be a valid Points.properties'):
+    with pytest.raises(ValueError, match='must be a valid Points.features'):
         setattr(layer, f'{attribute}_color_mode', 'colormap')
 
 
