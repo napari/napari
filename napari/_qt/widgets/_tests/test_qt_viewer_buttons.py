@@ -152,14 +152,14 @@ def test_transpose_rotate_button(monkeypatch, qt_viewer_buttons, qtbot):
         'napari._qt.widgets.qt_viewer_buttons.action_manager',
         action_manager_mock,
     )
-
+    dims_order = viewer.dims.order
     with app.injection_store.register(
         providers=[
             (lambda: viewer, Viewer, 100),
         ]
     ):
         qtbot.mouseClick(viewer_buttons.transposeDimsButton, Qt.LeftButton)
-        action_manager_mock.trigger.assert_called_with('napari:transpose_axes')
+        assert viewer.dims.order == (dims_order[-1], dims_order[-2])
 
         modifiers = Qt.AltModifier
         qtbot.mouseClick(
