@@ -105,7 +105,7 @@ pyside = [
     "napari[pyside2]"
 ]
 pyqt5 = [
-    "PyQt5>=5.12.3,!=5.15.0",
+    "PyQt5>=5.13.2,!=5.15.0",
 ]
 pyqt = [
     "napari[pyqt5]"
@@ -361,6 +361,8 @@ filterwarnings = [
   # https://github.com/pydata/xarray/blame/b1f3fea467f9387ed35c221205a70524f4caa18b/pyproject.toml#L333-L334
   # https://github.com/pydata/xarray/pull/8939
   "ignore:__array__ implementation doesn't accept a copy keyword, so passing copy=False failed.",
+  "ignore:pkg_resources is deprecated",
+  "ignore:Deprecated call to `pkg_resources.declare_namespace"
 ]
 markers = [
     "examples: Test of examples",
@@ -555,7 +557,7 @@ module = [
     "napari._vispy.visuals.surface",
     "napari.layers.shapes._shapes_models.path",
     "napari.layers.shapes._shapes_models.polygon",
-    "napari.layers.shapes._shapes_models._polgyon_base",
+    "napari.layers.shapes._shapes_models._polygon_base",
     "napari.layers.shapes._shapes_models.ellipse",
     "napari.layers.shapes._shapes_models.line",
     "napari.layers.shapes._shapes_models.rectangle",
@@ -768,7 +770,6 @@ exclude_lines = [
 ]
 
 [tool.coverage.run]
-parallel = true
 omit = [
     "*/_vendor/*",
     "*/_version.py",

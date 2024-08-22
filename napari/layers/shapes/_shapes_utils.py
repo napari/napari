@@ -510,7 +510,7 @@ def triangulate_ellipse(
     # Compute the transformation matrix from the unit circle
     # to our current ellipse.
     # ... it's easy just the 1/2 minor/major axes for the two column
-    # note that our transform shape will depends on wether we are 2D-> 2D (matrix, 2 by 2),
+    # note that our transform shape will depends on whether we are 2D-> 2D (matrix, 2 by 2),
     # or 2D -> 3D (matrix 2 by 3).
     transform = np.stack((ax1, ax2))
     if corners.shape == (4, 2):

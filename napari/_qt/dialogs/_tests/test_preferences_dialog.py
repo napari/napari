@@ -83,7 +83,7 @@ def test_font_size_widget(qtbot, pref):
     font_size_widget.state = new_font_size
     assert get_settings().appearance.font_size == new_font_size
 
-    # check a theme change keeps setted font size value
+    # verify that a theme change preserves the font size value
     assert get_settings().appearance.theme == 'light'
     get_settings().appearance.theme = 'dark'
     assert get_settings().appearance.font_size == new_font_size
