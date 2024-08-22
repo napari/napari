@@ -159,7 +159,10 @@ def test_transpose_rotate_button(monkeypatch, qt_viewer_buttons, qtbot):
         ]
     ):
         qtbot.mouseClick(viewer_buttons.transposeDimsButton, Qt.LeftButton)
-        assert viewer.dims.order == (dims_order[-1], dims_order[-2])
+        assert (viewer.dims.order[-2], viewer.dims.order[-1]) == (
+            dims_order[-1],
+            dims_order[-2],
+        )
 
         modifiers = Qt.AltModifier
         qtbot.mouseClick(
