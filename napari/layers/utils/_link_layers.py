@@ -100,7 +100,7 @@ def link_layers(
     valid_attrs = _get_common_evented_attributes(layers)
 
     # now, ensure that the attributes requested are valid
-    attr_set = set(attributes)
+    attr_set = set([attributes])
     if attributes:
         extra = attr_set - valid_attrs
         if extra:
