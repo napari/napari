@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from copy import copy
 from itertools import cycle, islice
 from unittest.mock import Mock
@@ -51,6 +52,24 @@ def _make_cycled_properties(values, length):
     return cycled_properties
 
 
+def _make_cycled_features(values: Iterable, length: int):
+    """Helper function to make feature values.
+
+    Parameters
+    ----------
+    values
+        The values to be cycled.
+    length : int
+        The length of the resulting feature array.
+
+    Returns
+    -------
+    np.ndarray
+        The feature array comprising the cycled values.
+    """
+    return np.array(list(islice(cycle(values), 0, length)))
+
+
 def test_empty_points():
     pts = Points()
     assert pts.data.shape == (0, 2)
@@ -62,7 +81,7 @@ def test_3d_empty_points():
     assert pts.ndim == 3
 
 
-def test_empty_points_with_features():
+def test_add_to_empty_points_with_features():
     """See the following for the issues this covers:
     https://github.com/napari/napari/issues/5632
     https://github.com/napari/napari/issues/5634
@@ -83,60 +102,39 @@ def test_empty_points_with_features():
     assert_colors_equal(points.face_color, list('rgb'))
 
 
-def test_empty_points_with_properties():
-    """Test instantiating an empty Points layer with properties
+def test_empty_points_with_features():
+    """Test instantiating an empty Points layer with features
 
     See: https://github.com/napari/napari/pull/1069
     """
-    properties = {
-        'label': np.array(['label1', 'label2']),
-        'cont_prop': np.array([0], dtype=float),
-    }
-    pts = Points(property_choices=properties)
-    current_props = {k: v[0] for k, v in properties.items()}
-    np.testing.assert_equal(pts.current_properties, current_props)
+    label_dtype = pd.CategoricalDtype(['label1', 'label2'])
+    features = pd.DataFrame(
+        {
+            'label': pd.Series([], dtype=label_dtype),
+            'cont_prop': pd.Series([], dtype=float),
+        }
+    )
+    pts = Points(features=features)
+    assert pts.feature_defaults['label'][0] == 'label1'
+    assert np.isnan(pts.feature_defaults['cont_prop'][0])
 
-    # verify the property datatype is correct
-    assert pts.properties['cont_prop'].dtype == float
+    # verify the feature datatype is correct
+    assert pts.features['cont_prop'].dtype == float
 
     # add two points and verify the default property was applied
     pts.add([10, 10])
     pts.add([20, 20])
-    props = {
-        'label': np.array(['label1', 'label1']),
-        'cont_prop': np.array([0, 0], dtype=float),
-    }
-    np.testing.assert_equal(pts.properties, props)
-
-
-def test_empty_points_with_properties_list():
-    """Test instantiating an empty Points layer with properties
-    stored in a list
-
-    See: https://github.com/napari/napari/pull/1069
-    """
-    properties = {'label': ['label1', 'label2'], 'cont_prop': [0]}
-    pts = Points(property_choices=properties)
-    current_props = {k: np.asarray(v[0]) for k, v in properties.items()}
-    np.testing.assert_equal(pts.current_properties, current_props)
-
-    # add two points and verify the default property was applied
-    pts.add([10, 10])
-    pts.add([20, 20])
-    props = {
-        'label': np.array(['label1', 'label1']),
-        'cont_prop': np.array([0, 0], dtype=float),
-    }
-    np.testing.assert_equal(pts.properties, props)
+    np.testing.assert_array_equal(pts.features['label'], ['label1', 'label1'])
+    np.testing.assert_array_equal(pts.features['cont_prop'], [np.nan, np.nan])
 
 
 def test_empty_layer_with_face_colormap():
     """Test creating an empty layer where the face color is a colormap
     See: https://github.com/napari/napari/pull/1069
     """
-    default_properties = {'point_type': np.array([1.5], dtype=float)}
     layer = Points(
-        property_choices=default_properties,
+        features={'point_type': []},
+        feature_defaults={'point_type': 1.5},
         face_color='point_type',
         face_colormap='gray',
     )
@@ -152,9 +150,9 @@ def test_empty_layer_with_border_colormap():
     """Test creating an empty layer where the face color is a colormap
     See: https://github.com/napari/napari/pull/1069
     """
-    default_properties = {'point_type': np.array([1.5], dtype=float)}
     layer = Points(
-        property_choices=default_properties,
+        features={'point_type': np.empty((0,), dtype=float)},
+        feature_defaults={'point_type': 1.5},
         border_color='point_type',
         border_colormap='gray',
     )
@@ -167,13 +165,15 @@ def test_empty_layer_with_border_colormap():
 
 
 @pytest.mark.parametrize('feature_name', ['border', 'face'])
-def test_set_current_properties_on_empty_layer_with_color_cycle(feature_name):
-    """Test setting current_properties an empty layer where the face/border color
+def test_set_feature_defaults_on_empty_layer_with_color_cycle(feature_name):
+    """Test setting feature_defaults on an empty layer where the face/border color
     is a color cycle.
 
-    See: https://github.com/napari/napari/pull/3110
-    """
-    default_properties = {'annotation': np.array(['tail', 'nose', 'paw'])}
+    See: https://github.com/napari/napari/pull/3110"""
+    annotation_dtype = pd.CategoricalDtype(['tail', 'nose', 'paw'])
+    features = pd.DataFrame(
+        {'annotation': pd.Series([], dtype=annotation_dtype)}
+    )
     color_cycle = [[0, 1, 0, 1], [1, 0, 1, 1]]
     color_parameters = {
         'colors': 'annotation',
@@ -182,14 +182,14 @@ def test_set_current_properties_on_empty_layer_with_color_cycle(feature_name):
     }
     color_name = f'{feature_name}_color'
     points_kwargs = {
-        'property_choices': default_properties,
+        'features': features,
         color_name: color_parameters,
     }
     layer = Points(**points_kwargs)
 
     color_mode = getattr(layer, f'{feature_name}_color_mode')
     assert color_mode == 'cycle'
-    layer.current_properties = {'annotation': np.array(['paw'])}
+    layer.feature_defaults = {'annotation': 'paw'}
 
     layer.add([10, 10])
     colors = getattr(layer, color_name)
@@ -199,13 +199,12 @@ def test_set_current_properties_on_empty_layer_with_color_cycle(feature_name):
     assert cm.color_properties.current_value == 'paw'
 
 
-def test_empty_layer_with_text_properties():
+def test_empty_layer_with_text_features():
     """Test initializing an empty layer with text defined"""
-    default_properties = {'point_type': np.array([1.5], dtype=float)}
-    text_kwargs = {'string': 'point_type', 'color': 'red'}
     layer = Points(
-        property_choices=default_properties,
-        text=text_kwargs,
+        features={'point_type': []},
+        feature_defaults={'point_type': 1.5},
+        text={'string': 'point_type', 'color': 'red'},
     )
     assert layer.text.values.size == 0
     np.testing.assert_allclose(layer.text.color.constant, [1, 0, 0, 1])
@@ -218,9 +217,9 @@ def test_empty_layer_with_text_properties():
 
 def test_empty_layer_with_text_formatted():
     """Test initializing an empty layer with text defined"""
-    default_properties = {'point_type': np.array([1.5], dtype=float)}
     layer = Points(
-        property_choices=default_properties,
+        features={'point_type': []},
+        feature_defaults={'point_type': 1.5},
         text='point_type: {point_type:.2f}',
     )
     assert layer.text.values.size == 0
@@ -689,38 +688,54 @@ def test_symbol():
     assert np.array_equiv(layer.symbol, 'star')
 
 
+@pytest.fixture()
+def features():
+    return pd.DataFrame({'point_type': _make_cycled_features(('A', 'B'), 10)})
+
+
 properties_array = {'point_type': _make_cycled_properties(['A', 'B'], 10)}
 properties_list = {'point_type': list(_make_cycled_properties(['A', 'B'], 10))}
 
 
 @pytest.mark.parametrize('properties', [properties_array, properties_list])
 def test_properties(properties):
+    """Ensure that properties is deprecated but still functional."""
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    layer = Points(data, properties=copy(properties))
-    np.testing.assert_equal(layer.properties, properties)
+    with pytest.warns(FutureWarning):
+        layer = Points(data, properties=copy(properties))
+    with pytest.warns(FutureWarning):
+        layer_properties = layer.properties
+    np.testing.assert_equal(layer_properties, properties)
 
     current_prop = {'point_type': np.array(['B'])}
-    assert layer.current_properties == current_prop
+    with pytest.warns(FutureWarning):
+        layer_current_properties = layer.current_properties
+    assert layer_current_properties == current_prop
 
     # test removing points
     layer.selected_data = {0, 1}
     layer.remove_selected()
     remove_properties = properties['point_type'][2::]
-    assert len(layer.properties['point_type']) == (shape[0] - 2)
-    assert np.array_equal(layer.properties['point_type'], remove_properties)
+    with pytest.warns(FutureWarning):
+        layer_properties = layer.properties['point_type']
+    assert len(layer_properties) == (shape[0] - 2)
+    assert np.array_equal(layer_properties, remove_properties)
 
     # test selection of properties
     layer.selected_data = {0}
-    selected_annotation = layer.current_properties['point_type']
+    with pytest.warns(FutureWarning):
+        selected_annotation = layer.current_properties['point_type']
     assert len(selected_annotation) == 1
     assert selected_annotation[0] == 'A'
 
     # test adding points with properties
     layer.add([10, 10])
     add_annotations = np.concatenate((remove_properties, ['A']), axis=0)
-    assert np.array_equal(layer.properties['point_type'], add_annotations)
+    with pytest.warns(FutureWarning):
+        layer_properties = layer.properties['point_type']
+    assert np.array_equal(layer_properties, add_annotations)
 
     # test copy/paste
     layer.selected_data = {0, 1}
@@ -731,7 +746,50 @@ def test_properties(properties):
 
     layer._paste_data()
     paste_annotations = np.concatenate((add_annotations, ['A', 'B']), axis=0)
-    assert np.array_equal(layer.properties['point_type'], paste_annotations)
+    with pytest.warns(FutureWarning):
+        layer_properties = layer.properties['point_type']
+    assert np.array_equal(layer_properties, paste_annotations)
+
+    assert layer.get_status(data[0])['coordinates'].endswith('point_type: B')
+    assert layer.get_status(data[1])['coordinates'].endswith('point_type: A')
+
+
+def test_features(features: pd.DataFrame):
+    point_type = features['point_type'].to_numpy()
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(data, features=features)
+    pd.testing.assert_frame_equal(layer.features, features)
+    assert layer.feature_defaults['point_type'][0] == 'B'
+
+    # test removing points
+    layer.selected_data = {0, 1}
+    layer.remove_selected()
+    np.testing.assert_equal(
+        layer.features['point_type'].to_numpy(),
+        point_type[2:],
+    )
+
+    # test adding points with features
+    layer.add([10, 10])
+    np.testing.assert_equal(
+        layer.features['point_type'].to_numpy(),
+        np.append(point_type[2:], ['B']),
+    )
+
+    # test copy/paste
+    layer.selected_data = {0, 1}
+    layer._copy_data()
+    np.testing.assert_equal(
+        layer._clipboard['features']['point_type'].to_numpy(), ['A', 'B']
+    )
+
+    layer._paste_data()
+    np.testing.assert_equal(
+        layer.features['point_type'].to_numpy(),
+        np.append(point_type[2:], ['B', 'A', 'B']),
+    )
 
     assert layer.get_status(data[0])['coordinates'].endswith('point_type: B')
     assert layer.get_status(data[1])['coordinates'].endswith('point_type: A')
@@ -739,7 +797,7 @@ def test_properties(properties):
 
 @pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_adding_properties(attribute):
-    """Test adding properties to an existing layer"""
+    """Test adding properties to an existing layer is deprecated but functional."""
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
@@ -747,20 +805,29 @@ def test_adding_properties(attribute):
 
     # add properties
     properties = {'point_type': _make_cycled_properties(['A', 'B'], shape[0])}
-    layer.properties = properties
-    np.testing.assert_equal(layer.properties, properties)
+    with pytest.warns(FutureWarning):
+        layer.properties = properties
+    with pytest.warns(FutureWarning):
+        layer_properties = layer.properties
+    np.testing.assert_equal(layer_properties, properties)
 
     # add properties as a dataframe
     properties_df = pd.DataFrame(properties)
-    layer.properties = properties_df
-    np.testing.assert_equal(layer.properties, properties)
+    with pytest.warns(FutureWarning):
+        layer.properties = properties_df
+    with pytest.warns(FutureWarning):
+        layer_properties = layer.properties
+    np.testing.assert_equal(layer_properties, properties)
 
     # add properties as a dictionary with list values
     properties_list = {
         'point_type': list(_make_cycled_properties(['A', 'B'], shape[0]))
     }
-    layer.properties = properties_list
-    assert isinstance(layer.properties['point_type'], np.ndarray)
+    with pytest.warns(FutureWarning):
+        layer.properties = properties_list
+    with pytest.warns(FutureWarning):
+        layer_properties = layer.properties
+    assert isinstance(layer_properties['point_type'], np.ndarray)
 
     # removing a property that was the _*_color_property should give a warning
     color_manager = getattr(layer, f'_{attribute}')
@@ -772,20 +839,41 @@ def test_adding_properties(attribute):
     properties_2 = {
         'not_point_type': _make_cycled_properties(['A', 'B'], shape[0])
     }
-    with pytest.warns(RuntimeWarning):
+    # Cannot use two separate `warns`, so assert the record instead.
+    with pytest.warns() as record:
         layer.properties = properties_2
+    assert len(record) == 2
+    assert issubclass(record[0].category, FutureWarning)
+    assert issubclass(record[1].category, RuntimeWarning)
 
 
-def test_properties_dataframe():
-    """Test if properties can be provided as a DataFrame"""
+@pytest.mark.parametrize('attribute', ['border', 'face'])
+def test_adding_features(attribute):
+    """Test adding features to an existing layer"""
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    properties = {'point_type': _make_cycled_properties(['A', 'B'], shape[0])}
-    properties_df = pd.DataFrame(properties)
-    properties_df = properties_df.astype(properties['point_type'].dtype)
-    layer = Points(data, properties=properties_df)
-    np.testing.assert_equal(layer.properties, properties)
+    layer = Points(data)
+
+    # add features
+    features = pd.DataFrame(
+        {'point_type': _make_cycled_features(('A', 'B'), shape[0])}
+    )
+    layer.features = features
+    pd.testing.assert_frame_equal(layer.features, features)
+
+    # removing a property that was the _*_color_property should give a warning
+    color_manager = getattr(layer, f'_{attribute}')
+    color_manager.color_properties = {
+        'name': 'point_type',
+        'values': np.empty(0),
+        'current_value': 'A',
+    }
+    other_features = pd.DataFrame(
+        {'not_point_type': _make_cycled_features(('A', 'B'), shape[0])}
+    )
+    with pytest.warns(RuntimeWarning):
+        layer.features = other_features
 
 
 def test_add_points_with_properties_as_list():
@@ -796,12 +884,14 @@ def test_add_points_with_properties_as_list():
     properties = {
         'point_type': list(_make_cycled_properties(['A', 'B'], shape[0]))
     }
-    layer = Points(data, properties=copy(properties))
+    with pytest.warns(FutureWarning):
+        layer = Points(data, properties=copy(properties))
 
     coord = [18, 18]
     layer.add(coord)
     new_prop = {'point_type': np.append(properties['point_type'], 'B')}
-    np.testing.assert_equal(layer.properties, new_prop)
+    with pytest.warns(FutureWarning):
+        np.testing.assert_equal(layer.properties, new_prop)
 
 
 def test_updating_points_properties():
@@ -810,15 +900,18 @@ def test_updating_points_properties():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     properties = {'point_type': _make_cycled_properties(['A', 'B'], shape[0])}
-    layer = Points(data, properties=copy(properties))
+    with pytest.warns(FutureWarning):
+        layer = Points(data, properties=copy(properties))
 
     layer.mode = 'select'
     layer.selected_data = [len(data) - 1]
-    layer.current_properties = {'point_type': np.array(['A'])}
+    with pytest.warns(FutureWarning):
+        layer.current_properties = {'point_type': np.array(['A'])}
 
     updated_properties = properties
     updated_properties['point_type'][-1] = 'A'
-    np.testing.assert_equal(layer.properties, updated_properties)
+    with pytest.warns(FutureWarning):
+        np.testing.assert_equal(layer.properties, updated_properties)
 
 
 def test_setting_current_properties():
@@ -831,14 +924,16 @@ def test_setting_current_properties():
         'annotator': ['jane', 'ash'],
         'model': ['worst', 'best'],
     }
-    layer = Points(data, properties=copy(properties))
+    with pytest.warns(FutureWarning):
+        layer = Points(data, properties=copy(properties))
     current_properties = {
         'annotation': ['leg'],
         'confidence': 1,
         'annotator': 'ash',
         'model': np.array(['best']),
     }
-    layer.current_properties = current_properties
+    with pytest.warns(FutureWarning):
+        layer.current_properties = current_properties
 
     expected_current_properties = {
         'annotation': np.array(['leg']),
@@ -847,44 +942,36 @@ def test_setting_current_properties():
         'model': np.array(['best']),
     }
 
-    coerced_current_properties = layer.current_properties
+    with pytest.warns(FutureWarning):
+        coerced_current_properties = layer.current_properties
     for k in coerced_current_properties:
         value = coerced_current_properties[k]
         assert isinstance(value, np.ndarray)
         np.testing.assert_equal(value, expected_current_properties[k])
 
 
-properties_array = {'point_type': _make_cycled_properties(['A', 'B'], 10)}
-properties_list = {'point_type': list(_make_cycled_properties(['A', 'B'], 10))}
-
-
-@pytest.mark.parametrize('properties', [properties_array, properties_list])
-def test_text_from_property_value(properties):
-    """Test setting text from a property value"""
+def test_text_from_feature_value(features):
+    """Test setting text from a feature value"""
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    layer = Points(data, properties=copy(properties), text='point_type')
+    layer = Points(data, features=features, text='point_type')
+    np.testing.assert_equal(layer.text.values, features['point_type'])
 
-    np.testing.assert_equal(layer.text.values, properties['point_type'])
 
-
-@pytest.mark.parametrize('properties', [properties_array, properties_list])
-def test_text_from_property_fstring(properties):
-    """Test setting text with an f-string from the property value"""
+def test_text_from_feature_fstring(features):
+    """Test setting text with an f-string from the feature value"""
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    layer = Points(
-        data, properties=copy(properties), text='type: {point_type}'
-    )
+    layer = Points(data, features=features, text='type: {point_type}')
 
-    expected_text = ['type: ' + v for v in properties['point_type']]
+    expected_text = ['type: ' + v for v in features['point_type']]
     np.testing.assert_equal(layer.text.values, expected_text)
 
     # test updating the text
     layer.text = 'type-ish: {point_type}'
-    expected_text_2 = ['type-ish: ' + v for v in properties['point_type']]
+    expected_text_2 = ['type-ish: ' + v for v in features['point_type']]
     np.testing.assert_equal(layer.text.values, expected_text_2)
 
     # copy/paste
@@ -902,8 +989,7 @@ def test_text_from_property_fstring(properties):
     np.testing.assert_equal(layer.text.values, expected_text_4)
 
 
-@pytest.mark.parametrize('properties', [properties_array, properties_list])
-def test_set_text_with_kwarg_dict(properties):
+def test_set_text_with_kwarg_dict(features):
     text_kwargs = {
         'string': 'type: {point_type}',
         'color': ConstantColorEncoding(constant=[0, 0, 0, 1]),
@@ -916,9 +1002,9 @@ def test_set_text_with_kwarg_dict(properties):
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    layer = Points(data, properties=copy(properties), text=text_kwargs)
+    layer = Points(data, features=features, text=text_kwargs)
 
-    expected_text = ['type: ' + v for v in properties['point_type']]
+    expected_text = ['type: ' + v for v in features['point_type']]
     np.testing.assert_equal(layer.text.values, expected_text)
 
     for property_, value in text_kwargs.items():
@@ -928,50 +1014,49 @@ def test_set_text_with_kwarg_dict(properties):
         np.testing.assert_equal(layer_value, value)
 
 
-@pytest.mark.parametrize('properties', [properties_array, properties_list])
-def test_text_error(properties):
+def test_text_error(features):
     """creating a layer with text as the wrong type should raise an error"""
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     # try adding text as the wrong type
     with pytest.raises(ValidationError):
-        Points(data, properties=copy(properties), text=123)
+        Points(data, features=features, text=123)
 
 
-def test_select_properties_object_dtype():
-    """selecting points when they have a property of object dtype should not fail"""
+def test_select_features_object_dtype():
+    """selecting points when they have a feature of object dtype should not fail"""
     # pandas uses object as dtype for strings by default
-    properties = pd.DataFrame({'color': ['red', 'green']})
-    pl = Points(np.ones((2, 2)), properties=properties)
+    features = pd.DataFrame({'color': ['red', 'green']})
+    pl = Points(np.ones((2, 2)), features=features)
     selection = {0, 1}
     pl.selected_data = selection
     assert pl.selected_data == selection
 
 
-def test_select_properties_unsortable():
+def test_select_features_unsortable():
     """selecting multiple points when they have properties that cannot be sorted should not fail
 
     see https://github.com/napari/napari/issues/5174
     """
-    properties = pd.DataFrame({'unsortable': [{}, {}]})
-    pl = Points(np.ones((2, 2)), properties=properties)
+    features = pd.DataFrame({'unsortable': [{}, {}]})
+    pl = Points(np.ones((2, 2)), features=features)
     selection = {0, 1}
     pl.selected_data = selection
     assert pl.selected_data == selection
 
 
 def test_refresh_text():
-    """Test refreshing the text after setting new properties"""
+    """Test refreshing the text after setting new features"""
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    properties = {'point_type': ['A'] * shape[0]}
-    layer = Points(data, properties=copy(properties), text='point_type')
+    features = {'point_type': ['A'] * shape[0]}
+    layer = Points(data, features=features, text='point_type')
 
-    new_properties = {'point_type': ['B'] * shape[0]}
-    layer.properties = new_properties
-    np.testing.assert_equal(layer.text.values, new_properties['point_type'])
+    new_features = {'point_type': ['B'] * shape[0]}
+    layer.features = new_features
+    np.testing.assert_equal(layer.text.values, new_features['point_type'])
 
 
 def test_points_errors():
@@ -979,13 +1064,11 @@ def test_points_errors():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
 
-    annotations = {'point_type': np.array(['A', 'B'])}
-
-    # try adding properties with the wrong number of properties
+    # try adding features with the wrong length
     with pytest.raises(
         ValueError, match='(does not match length)|(indices imply)'
     ):
-        Points(data, properties=copy(annotations))
+        Points(data, features={'point_type': ['A', 'B']})
 
 
 def test_border_width():
@@ -1096,7 +1179,8 @@ def test_switch_color_mode(attribute):
         colormap_kwarg: 'gray',
         color_cycle_kwarg: color_cycle,
     }
-    layer = Points(data, properties=properties, **args)
+    with pytest.warns(FutureWarning):
+        layer = Points(data, properties=properties, **args)
 
     layer_color_mode = getattr(layer, f'{attribute}_color_mode')
     layer_color = getattr(layer, f'{attribute}_color')
@@ -1153,7 +1237,8 @@ def test_colormap_with_categorical_properties(attribute):
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     properties = {'point_type': _make_cycled_properties(['A', 'B'], shape[0])}
-    layer = Points(data, properties=properties)
+    with pytest.warns(FutureWarning):
+        layer = Points(data, properties=properties)
 
     with pytest.raises(TypeError), pytest.warns(UserWarning):
         setattr(layer, f'{attribute}_color_mode', 'colormap')
@@ -1169,7 +1254,8 @@ def test_add_colormap(attribute):
     color_kwarg = f'{attribute}_color'
     colormap_kwarg = f'{attribute}_colormap'
     args = {color_kwarg: 'point_type', colormap_kwarg: 'viridis'}
-    layer = Points(data, properties=annotations, **args)
+    with pytest.warns(FutureWarning):
+        layer = Points(data, properties=annotations, **args)
 
     setattr(layer, f'{attribute}_colormap', get_colormap('gray'))
     layer_colormap = getattr(layer, f'{attribute}_colormap')
@@ -1282,9 +1368,11 @@ def test_color_cycle(attribute, color_cycle):
         f'{attribute}_color': 'point_type',
         f'{attribute}_color_cycle': color_cycle,
     }
-    layer = Points(data, **points_kwargs)
+    with pytest.warns(FutureWarning):
+        layer = Points(data, **points_kwargs)
 
-    np.testing.assert_equal(layer.properties, properties)
+    with pytest.warns(FutureWarning):
+        np.testing.assert_equal(layer.properties, properties)
 
     color_array = transform_color(
         list(islice(cycle(color_cycle), 0, shape[0]))
@@ -1317,9 +1405,11 @@ def test_color_cycle(attribute, color_cycle):
 
     # test adding a point with a new property value
     layer.selected_data = {}
-    current_properties = layer.current_properties
+    with pytest.warns(FutureWarning):
+        current_properties = layer.current_properties
     current_properties['point_type'] = np.array(['new'])
-    layer.current_properties = current_properties
+    with pytest.warns(FutureWarning):
+        layer.current_properties = current_properties
     layer.add([10, 10])
     color_manager = getattr(layer, f'_{attribute}')
     color_cycle_map = color_manager.categorical_colormap.colormap
@@ -1340,7 +1430,8 @@ def test_color_cycle_dict(attribute):
         f'{attribute}_color': 'my_colors',
         f'{attribute}_color_cycle': {1: 'green', 2: 'red', 3: 'blue'},
     }
-    layer = Points(data, **points_kwargs)
+    with pytest.warns(FutureWarning):
+        layer = Points(data, **points_kwargs)
 
     color_manager = getattr(layer, f'_{attribute}')
     color_cycle_map = color_manager.categorical_colormap.colormap
@@ -1362,7 +1453,8 @@ def test_add_color_cycle_to_empty_layer(attribute):
         f'{attribute}_color': 'point_type',
         f'{attribute}_color_cycle': color_cycle,
     }
-    layer = Points(**points_kwargs)
+    with pytest.warns(FutureWarning):
+        layer = Points(**points_kwargs)
 
     # verify the current_border_color is correct
     expected_color = transform_color(color_cycle[0])[0]
@@ -1374,20 +1466,23 @@ def test_add_color_cycle_to_empty_layer(attribute):
     layer.add([10, 10])
     props = {'point_type': np.array(['A'])}
     expected_color = np.array([[1, 0, 0, 1]])
-    np.testing.assert_equal(layer.properties, props)
+    with pytest.warns(FutureWarning):
+        np.testing.assert_equal(layer.properties, props)
     attribute_color = getattr(layer, f'{attribute}_color')
     np.testing.assert_allclose(attribute_color, expected_color)
 
     # add a point with a new property
     layer.selected_data = []
-    layer.current_properties = {'point_type': np.array(['B'])}
+    with pytest.warns(FutureWarning):
+        layer.current_properties = {'point_type': np.array(['B'])}
     layer.add([12, 12])
     new_color = np.array([0, 0, 1, 1])
     expected_color = np.vstack((expected_color, new_color))
     new_properties = {'point_type': np.array(['A', 'B'])}
     attribute_color = getattr(layer, f'{attribute}_color')
     np.testing.assert_allclose(attribute_color, expected_color)
-    np.testing.assert_equal(layer.properties, new_properties)
+    with pytest.warns(FutureWarning):
+        np.testing.assert_equal(layer.properties, new_properties)
 
 
 @pytest.mark.parametrize('attribute', ['border', 'face'])
@@ -1408,14 +1503,17 @@ def test_adding_value_color_cycle(attribute):
         f'{attribute}_color': 'point_type',
         f'{attribute}_color_cycle': color_cycle,
     }
-    layer = Points(data, **points_kwargs)
+    with pytest.warns(FutureWarning):
+        layer = Points(data, **points_kwargs)
 
     # make point 0 point_type C
-    props = layer.properties
+    with pytest.warns(FutureWarning):
+        props = layer.properties
     point_types = props['point_type']
     point_types[0] = 'C'
     props['point_type'] = point_types
-    layer.properties = props
+    with pytest.warns(FutureWarning):
+        layer.properties = props
 
     color_manager = getattr(layer, f'_{attribute}')
     color_cycle_map = color_manager.categorical_colormap.colormap
@@ -1436,9 +1534,11 @@ def test_color_colormap(attribute):
         f'{attribute}_color': 'point_type',
         f'{attribute}_colormap': 'gray',
     }
-    layer = Points(data, **points_kwargs)
+    with pytest.warns(FutureWarning):
+        layer = Points(data, **points_kwargs)
 
-    np.testing.assert_equal(layer.properties, properties)
+    with pytest.warns(FutureWarning):
+        np.testing.assert_equal(layer.properties, properties)
 
     color_mode = getattr(layer, f'{attribute}_color_mode')
     assert color_mode == 'colormap'
@@ -1893,19 +1993,21 @@ def test_set_face_color_mode_after_set_properties():
     num_points = 3
     points = Points(np.random.random((num_points, 2)))
 
-    points.properties = {
-        'cat': np.random.randint(low=0, high=num_points, size=num_points),
-        'cont': np.random.random(num_points),
-    }
+    with pytest.warns(FutureWarning):
+        points.properties = {
+            'cat': np.random.randint(low=0, high=num_points, size=num_points),
+            'cont': np.random.random(num_points),
+        }
 
     # Initially the color_mode is DIRECT, which means that the face ColorManager
     # has no color_properties, so the first property is used with a warning.
     with pytest.warns(UserWarning):
         points.face_color_mode = 'cycle'
 
-    first_property_key, first_property_values = next(
-        iter(points.properties.items())
-    )
+    with pytest.warns(FutureWarning):
+        first_property_key, first_property_values = next(
+            iter(points.properties.items())
+        )
     expected_properties = ColorProperties(
         name=first_property_key,
         values=first_property_values,
@@ -2278,9 +2380,11 @@ def test_to_mask_3d_with_size_2():
 def test_set_properties_updates_text_values():
     points = np.random.rand(3, 2)
     properties = {'class': np.array(['A', 'B', 'C'])}
-    layer = Points(points, properties=properties, text='class')
+    with pytest.warns(FutureWarning):
+        layer = Points(points, properties=properties, text='class')
 
-    layer.properties = {'class': np.array(['D', 'E', 'F'])}
+    with pytest.warns(FutureWarning):
+        layer.properties = {'class': np.array(['D', 'E', 'F'])}
 
     np.testing.assert_array_equal(layer.text.values, ['D', 'E', 'F'])
 
@@ -2289,16 +2393,24 @@ def test_set_properties_with_invalid_shape_errors_safely():
     properties = {
         'class': np.array(['A', 'B', 'C']),
     }
-    points = Points(np.random.rand(3, 2), text='class', properties=properties)
-    np.testing.assert_equal(points.properties, properties)
+    with pytest.warns(FutureWarning):
+        points = Points(
+            np.random.rand(3, 2), text='class', properties=properties
+        )
+    with pytest.warns(FutureWarning):
+        np.testing.assert_equal(points.properties, properties)
     np.testing.assert_array_equal(points.text.values, ['A', 'B', 'C'])
 
-    with pytest.raises(
-        ValueError, match='(does not match length)|(indices imply)'
+    with (
+        pytest.raises(
+            ValueError, match='(does not match length)|(indices imply)'
+        ),
+        pytest.warns(FutureWarning),
     ):
         points.properties = {'class': np.array(['D', 'E'])}
 
-    np.testing.assert_equal(points.properties, properties)
+    with pytest.warns(FutureWarning):
+        np.testing.assert_equal(points.properties, properties)
     np.testing.assert_array_equal(points.text.values, ['A', 'B', 'C'])
 
 
@@ -2306,12 +2418,20 @@ def test_set_properties_with_missing_text_property_text_becomes_constant_empty_a
     properties = {
         'class': np.array(['A', 'B', 'C']),
     }
-    points = Points(np.random.rand(3, 2), text='class', properties=properties)
-    np.testing.assert_equal(points.properties, properties)
+    with pytest.warns(FutureWarning):
+        points = Points(
+            np.random.rand(3, 2), text='class', properties=properties
+        )
+    with pytest.warns(FutureWarning):
+        np.testing.assert_equal(points.properties, properties)
     np.testing.assert_array_equal(points.text.values, ['A', 'B', 'C'])
 
-    with pytest.warns(RuntimeWarning):
+    # Cannot use two separate `warns`, so assert the record instead.
+    with pytest.warns() as record:
         points.properties = {'not_class': np.array(['D', 'E', 'F'])}
+    assert len(record) == 2
+    assert issubclass(record[0].category, FutureWarning)
+    assert issubclass(record[1].category, RuntimeWarning)
 
     values = points.text.values
     np.testing.assert_array_equal(values, ['', '', ''])
@@ -2325,9 +2445,11 @@ def test_text_param_and_setter_are_consistent():
     }
     text = {'string': 'accepted', 'color': 'black'}
 
-    points_init = Points(data, properties=properties, text=text)
+    with pytest.warns(FutureWarning):
+        points_init = Points(data, properties=properties, text=text)
 
-    points_set = Points(data, properties=properties)
+    with pytest.warns(FutureWarning):
+        points_set = Points(data, properties=properties)
     points_set.text = text
 
     np.testing.assert_array_equal(
@@ -2694,6 +2816,8 @@ def test_docstring():
         'edge_color_cycle',
         'edge_colormap',
         'edge_contrast_limits',
+        'properties',
+        'property_choices',
     ],
 )
 def test_as_layer_data_tuple_read_deprecated_attr(key: str):

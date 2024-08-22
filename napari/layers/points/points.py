@@ -47,18 +47,27 @@ from napari.layers.utils.interactivity_utils import (
     displayed_plane_from_nd_line_segment,
 )
 from napari.layers.utils.layer_utils import (
+    _current_properties_deprecation_message,
     _features_to_properties,
     _FeatureTable,
+    _properties_deprecation_message,
+    _property_choices_deprecation_message,
     _unique_element,
+    _warn_deprecation,
 )
 from napari.layers.utils.text_manager import TextManager
 from napari.utils.colormaps import Colormap, ValidColormapArg
 from napari.utils.colormaps.standardize_color import hex_to_name, rgb_to_hex
 from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
+from napari.utils.events.event import WarningEmitter
 from napari.utils.events.migrations import deprecation_warning_event
 from napari.utils.geometry import project_points_onto_plane, rotate_points
-from napari.utils.migrations import add_deprecated_property, rename_argument
+from napari.utils.migrations import (
+    _DeprecatingDict,
+    add_deprecated_property,
+    rename_argument,
+)
 from napari.utils.status_messages import generate_layer_coords_status
 from napari.utils.transforms import Affine
 from napari.utils.translations import trans
@@ -154,8 +163,14 @@ class Points(Layer):
     properties : dict {str: array (N,)}, DataFrame
         Properties for each point. Each property should be an array of length N,
         where N is the number of points.
+        .. deprecated:: 0.5.0
+            properties is deprecated since version 0.5.0 and will be removed in 0.6.
+            Please use features instead.
     property_choices : dict {str: array (N,)}
-        possible values for each property.
+        possible values for each property
+        .. deprecated:: 0.5.0
+            property_choices is deprecated since version 0.5.0 and will be removed in 0.6.
+            Please use features with categorical dtypes instead.
     rotate : float, 3-tuple of float, or n-D array.
         If a float convert into a 2D rotation matrix using that value as an
         angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
@@ -213,10 +228,13 @@ class Points(Layer):
     properties : dict {str: array (N,)} or DataFrame
         Annotations for each point. Each property should be an array of length N,
         where N is the number of points.
+        .. deprecated:: 0.5.0
+            properties is deprecated since version 0.5.0 and will be removed in 0.6.
+            Please use features instead.
     text : str
-        Text to be displayed with the points. If text is set to a key in properties, the value of
-        that property will be displayed. Multiple properties can be composed using f-string-like
-        syntax (e.g., '{property_1}, {float_property:.2f}).
+        Text to be displayed with the points. If text is set to a key in features, the value of
+        that property will be displayed. Multiple features can be composed using f-string-like
+        syntax (e.g., '{feature_1}, {float_feature:.2f}).
         For example usage, see /napari/examples/add_points_with_text.py.
     symbol : array of str
         Array of symbols for each point.
@@ -498,8 +516,14 @@ class Points(Layer):
             current_face_color=Event,
             border_color=Event,
             current_border_color=Event,
-            properties=Event,
-            current_properties=Event,
+            properties=WarningEmitter(
+                _properties_deprecation_message(),
+                type_name='properties',
+            ),
+            current_properties=WarningEmitter(
+                _current_properties_deprecation_message(),
+                type_name='current_properties',
+            ),
             symbol=Event,
             current_symbol=Event,
             out_of_slice_display=Event,
@@ -537,6 +561,10 @@ class Points(Layer):
         # Save the point coordinates
         self._data = np.asarray(data)
 
+        if properties is not None:
+            _warn_deprecation(_properties_deprecation_message())
+        if property_choices is not None:
+            _warn_deprecation(_property_choices_deprecation_message())
         self._feature_table = _FeatureTable.from_layer(
             features=features,
             feature_defaults=feature_defaults,
@@ -808,7 +836,7 @@ class Points(Layer):
         self, defaults: Union[dict[str, Any], pd.DataFrame]
     ) -> None:
         self._feature_table.set_defaults(defaults)
-        current_properties = self.current_properties
+        current_properties = self._feature_table.currents()
         self._border._update_current_properties(current_properties)
         self._face._update_current_properties(current_properties)
         self.events.current_properties()
@@ -816,11 +844,24 @@ class Points(Layer):
 
     @property
     def property_choices(self) -> dict[str, np.ndarray]:
+        """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each point
+
+        .. deprecated:: 0.5.0
+            property_choices is deprecated since version 0.5.0 and will be removed in 0.6.
+            Please use features with categorical dtypes instead.
+        """
+        _warn_deprecation(_property_choices_deprecation_message())
         return self._feature_table.choices()
 
     @property
     def properties(self) -> dict[str, np.ndarray]:
-        """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each point"""
+        """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each point
+
+        .. deprecated:: 0.5.0
+            properties is deprecated since version 0.5.0 and will be removed in 0.6.
+            Please use features instead.
+        """
+        _warn_deprecation(_properties_deprecation_message())
         return self._feature_table.properties()
 
     @staticmethod
@@ -848,23 +889,34 @@ class Points(Layer):
     @properties.setter
     def properties(
         self, properties: Union[dict[str, Array], pd.DataFrame, None]
-    ) -> None:
+    ):
+        _warn_deprecation(_properties_deprecation_message())
         self.features = properties
 
     @property
     def current_properties(self) -> dict[str, np.ndarray]:
-        """dict{str: np.ndarray(1,)}: properties for the next added point."""
+        """dict{str: np.ndarray(1,)}: properties for the next added point.
+
+        .. deprecated:: 0.5.0
+            current_properties is deprecated since version 0.5.0 and will be removed in 0.6.
+            Please use feature_defaults instead.
+        """
+        _warn_deprecation(_current_properties_deprecation_message())
         return self._feature_table.currents()
 
     @current_properties.setter
     def current_properties(self, current_properties):
+        _warn_deprecation(_current_properties_deprecation_message())
+        self._set_current_properties(current_properties)
+
+    def _set_current_properties(self, current_properties):
         update_indices = None
         if self._update_properties and len(self.selected_data) > 0:
             update_indices = list(self.selected_data)
         self._feature_table.set_currents(
             current_properties, update_indices=update_indices
         )
-        current_properties = self.current_properties
+        current_properties = self._feature_table.currents()
         self._border._update_current_properties(current_properties)
         self._face._update_current_properties(current_properties)
         self.events.current_properties()
@@ -1196,8 +1248,8 @@ class Points(Layer):
         self._border._set_color(
             color=border_color,
             n_colors=len(self.data),
-            properties=self.properties,
-            current_properties=self.current_properties,
+            properties=self._feature_table.properties(),
+            current_properties=self._feature_table.currents(),
         )
         self.events.border_color()
 
@@ -1287,8 +1339,8 @@ class Points(Layer):
         self._face._set_color(
             color=face_color,
             n_colors=len(self.data),
-            properties=self.properties,
-            current_properties=self.current_properties,
+            properties=self._feature_table.properties(),
+            current_properties=self._feature_table.currents(),
         )
         self.events.face_color()
 
@@ -1449,7 +1501,7 @@ class Points(Layer):
         self._border._refresh_colors(self.properties, update_color_mapping)
         self._face._refresh_colors(self.properties, update_color_mapping)
 
-    def _get_state(self) -> dict[str, Any]:
+    def _get_state(self) -> _DeprecatingDict:
         """Get dictionary of layer state.
 
         Returns
@@ -1481,8 +1533,6 @@ class Points(Layer):
                 'border_color_cycle': self.border_color_cycle,
                 'border_colormap': self.border_colormap.dict(),
                 'border_contrast_limits': self.border_contrast_limits,
-                'properties': self.properties,
-                'property_choices': self.property_choices,
                 'text': self.text.dict(),
                 'out_of_slice_display': self.out_of_slice_display,
                 'n_dimensional': self.out_of_slice_display,
@@ -1496,6 +1546,14 @@ class Points(Layer):
                 'canvas_size_limits': self.canvas_size_limits,
                 'shown': self.shown,
             }
+        )
+        state._deprecated['properties'] = (
+            self._feature_table.properties(),
+            _properties_deprecation_message(),
+        )
+        state._deprecated['property_choices'] = (
+            self._feature_table.choices(),
+            _property_choices_deprecation_message(),
         )
         return state
 
@@ -1549,11 +1607,11 @@ class Points(Layer):
                 self.current_symbol = unique_symbol
 
             unique_properties = {}
-            for k, v in self.properties.items():
+            for k, v in self._feature_table.properties().items():
                 unique_properties[k] = _unique_element(v[index])
 
             if all(p is not None for p in unique_properties.values()):
-                self.current_properties = unique_properties
+                self._feature_table.set_currents(unique_properties)
 
         self._set_highlight()
 

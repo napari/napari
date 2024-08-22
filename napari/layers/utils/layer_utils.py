@@ -1076,6 +1076,34 @@ def _features_to_properties(features: pd.DataFrame) -> dict[str, np.ndarray]:
     return {name: series.to_numpy() for name, series in features.items()}
 
 
+def _warn_deprecation(message: str) -> None:
+    warnings.warn(message, FutureWarning, stacklevel=2)
+
+
+def _properties_deprecation_message() -> str:
+    return trans._(
+        'properties is deprecated since version 0.5.0 and will be removed in 0.6. '
+        'Please use features instead.',
+        deferred=True,
+    )
+
+
+def _property_choices_deprecation_message() -> str:
+    return trans._(
+        'property_choices is deprecated since version 0.5.0 and will be removed in 0.6. '
+        'Please use features with categorical dtypes instead.',
+        deferred=True,
+    )
+
+
+def _current_properties_deprecation_message() -> str:
+    return trans._(
+        'current_properties is deprecated since version 0.5.0 and will be removed in 0.6. '
+        'Please use feature_defaults instead.',
+        deferred=True,
+    )
+
+
 def _unique_element(array: Array) -> Optional[Any]:
     """
     Returns the unique element along the 0th axis, if it exists; otherwise, returns None.

@@ -94,27 +94,32 @@ def test_empty_vectors_with_features():
     assert_colors_equal(vectors.edge_color, list('rgb'))
 
 
-def test_empty_vectors_with_property_choices():
+def test_empty_vectors_with_features_defaults():
     """Test instantiating Vectors layer with empty coordinate-like 2D data."""
     shape = (0, 2, 2)
     data = np.empty(shape)
-    property_choices = {'angle': np.array([0.5], dtype=float)}
-    layer = Vectors(data, property_choices=property_choices)
-    np.testing.assert_array_equal(layer.data, data)
+    feature_defaults = {'angle': 0.5}
+    layer = Vectors(
+        data,
+        features={'angle': []},
+        feature_defaults=feature_defaults,
+    )
+    assert np.all(layer.data == data)
     assert layer.data.shape == shape
     assert layer.ndim == shape[2]
     assert layer._view_data.shape[2] == 2
-    np.testing.assert_equal(layer.property_choices, property_choices)
+    assert layer.feature_defaults['angle'][0], feature_defaults['angle']
 
 
 def test_empty_layer_with_edge_colormap():
     """Test creating an empty layer where the edge color is a colormap"""
     shape = (0, 2, 2)
     data = np.empty(shape)
-    default_properties = {'angle': np.array([1.5], dtype=float)}
+    default_features = {'angle': np.array([1.5], dtype=float)}
     layer = Vectors(
         data=data,
-        property_choices=default_properties,
+        features={'angle': []},
+        feature_defaults=default_features,
         edge_color='angle',
         edge_colormap='grays',
     )
@@ -130,10 +135,11 @@ def test_empty_layer_with_edge_color_cycle():
     """Test creating an empty layer where the edge color is a color cycle"""
     shape = (0, 2, 2)
     data = np.empty(shape)
-    default_properties = {'vector_type': np.array(['A'])}
+    default_features = {'vector_type': np.array(['A'])}
     layer = Vectors(
         data=data,
-        property_choices=default_properties,
+        features={'vector_type': np.empty((0,), dtype=str)},
+        feature_defaults=default_features,
         edge_color='vector_type',
     )
 
@@ -192,16 +198,16 @@ def test_data_setter():
     np.random.seed(0)
     data = np.random.random(shape)
     data[:, 0, :] = 20 * data[:, 0, :]
-    properties = {
+    features = {
         'prop_0': np.random.random((n_vectors_0,)),
         'prop_1': np.random.random((n_vectors_0,)),
     }
-    layer = Vectors(data, properties=properties)
+    layer = Vectors(data, features=features)
 
     assert len(layer.data) == n_vectors_0
     assert len(layer.edge_color) == n_vectors_0
-    assert len(layer.properties['prop_0']) == n_vectors_0
-    assert len(layer.properties['prop_1']) == n_vectors_0
+    assert len(layer.features['prop_0']) == n_vectors_0
+    assert len(layer.features['prop_1']) == n_vectors_0
 
     # set the data with more vectors
     n_vectors_1 = 20
@@ -211,8 +217,8 @@ def test_data_setter():
 
     assert len(layer.data) == n_vectors_1
     assert len(layer.edge_color) == n_vectors_1
-    assert len(layer.properties['prop_0']) == n_vectors_1
-    assert len(layer.properties['prop_1']) == n_vectors_1
+    assert len(layer.features['prop_0']) == n_vectors_1
+    assert len(layer.features['prop_1']) == n_vectors_1
 
     # set the data with fewer vectors
     n_vectors_2 = 5
@@ -222,8 +228,8 @@ def test_data_setter():
 
     assert len(layer.data) == n_vectors_2
     assert len(layer.edge_color) == n_vectors_2
-    assert len(layer.properties['prop_0']) == n_vectors_2
-    assert len(layer.properties['prop_1']) == n_vectors_2
+    assert len(layer.features['prop_0']) == n_vectors_2
+    assert len(layer.features['prop_1']) == n_vectors_2
 
 
 def test_properties_dataframe():
@@ -236,19 +242,39 @@ def test_properties_dataframe():
     properties = {'vector_type': np.array(['A', 'B'] * int(shape[0] / 2))}
     properties_df = pd.DataFrame(properties)
     properties_df = properties_df.astype(properties['vector_type'].dtype)
-    layer = Vectors(data, properties=properties_df)
-    np.testing.assert_equal(layer.properties, properties)
+    with pytest.warns(FutureWarning):
+        layer = Vectors(data, properties=properties_df)
+        np.testing.assert_equal(layer.properties, properties)
 
     # test adding a dataframe via the properties setter
     properties_2 = {'vector_type2': np.array(['A', 'B'] * int(shape[0] / 2))}
     properties_df2 = pd.DataFrame(properties_2)
-    layer.properties = properties_df2
-    np.testing.assert_equal(layer.properties, properties_2)
+    with pytest.warns(FutureWarning):
+        layer.properties = properties_df2
+        np.testing.assert_equal(layer.properties, properties_2)
+
+
+def test_features_dataframe():
+    """test if properties can be provided as a DataFrame"""
+    np.random.seed(0)
+    shape = (10, 2, 2)
+    data = np.random.random(shape)
+    data[:, 0, :] = 20 * data[:, 0, :]
+    properties = {'vector_type': np.array(['A', 'B'] * int(shape[0] / 2))}
+    features_df = pd.DataFrame(properties)
+    features_df = features_df.astype(properties['vector_type'].dtype)
+    layer = Vectors(data, features=features_df)
+    pd.testing.assert_frame_equal(layer.features, features_df)
+
+    # test adding a dataframe via the properties setter
+    features_2 = {'vector_type2': np.array(['A', 'B'] * int(shape[0] / 2))}
+    features_df2 = pd.DataFrame(features_2)
+    layer.features = features_df2
+    pd.testing.assert_frame_equal(layer.features, features_df2)
 
 
 def test_adding_properties():
     """test adding properties to a Vectors layer"""
-    shape = (10, 2)
     np.random.seed(0)
     shape = (10, 2, 2)
     data = np.random.random(shape)
@@ -257,24 +283,29 @@ def test_adding_properties():
     layer = Vectors(data)
 
     # properties should start empty
-    assert layer.properties == {}
+    with pytest.warns(FutureWarning):
+        assert layer.properties == {}
 
     # add properties
-    layer.properties = properties
-    np.testing.assert_equal(layer.properties, properties)
+    with pytest.warns(FutureWarning):
+        layer.properties = properties
+        np.testing.assert_equal(layer.properties, properties)
 
     # removing a property that was the _edge_color_property should give a warning
     layer.edge_color = 'vector_type'
     properties_2 = {
         'not_vector_type': np.array(['A', 'B'] * int(shape[0] / 2))
     }
-    with pytest.warns(RuntimeWarning):
+    with pytest.warns(FutureWarning):
         layer.properties = properties_2
 
     # adding properties with the wrong length should raise an exception
     bad_properties = {'vector_type': np.array(['A', 'B'])}
-    with pytest.raises(
-        ValueError, match='(does not match length)|(indices imply)'
+    with (
+        pytest.raises(
+            ValueError, match='(does not match length)|(indices imply)'
+        ),
+        pytest.warns(FutureWarning),
     ):
         layer.properties = bad_properties
 
@@ -426,33 +457,32 @@ def test_edge_color_cycle():
     shape = (10, 2, 2)
     data = np.random.random(shape)
     data[:, 0, :] = 20 * data[:, 0, :]
-    properties = {'vector_type': np.array(['A', 'B'] * int(shape[0] / 2))}
+    features = {'vector_type': np.array(['A', 'B'] * int(shape[0] / 2))}
     color_cycle = ['red', 'blue']
     layer = Vectors(
         data,
-        properties=properties,
+        features=features,
         edge_color='vector_type',
         edge_color_cycle=color_cycle,
     )
-    np.testing.assert_equal(layer.properties, properties)
+    pd.testing.assert_frame_equal(layer.features, pd.DataFrame(features))
     edge_color_array = transform_color(color_cycle * int(shape[0] / 2))
     np.testing.assert_array_equal(layer.edge_color, edge_color_array)
 
 
 def test_edge_color_colormap():
     """Test creating Vectors where edge color is set by a colormap"""
-    shape = (10, 2)
     shape = (10, 2, 2)
     data = np.random.random(shape)
     data[:, 0, :] = 20 * data[:, 0, :]
-    properties = {'angle': np.array([0, 1.5] * int(shape[0] / 2))}
+    features = {'angle': np.array([0, 1.5] * int(shape[0] / 2))}
     layer = Vectors(
         data,
-        properties=properties,
+        features=features,
         edge_color='angle',
         edge_colormap='gray',
     )
-    np.testing.assert_equal(layer.properties, properties)
+    pd.testing.assert_frame_equal(layer.features, pd.DataFrame(features))
     assert layer.edge_color_mode == 'colormap'
     edge_color_array = transform_color(['black', 'white'] * int(shape[0] / 2))
     np.testing.assert_array_equal(layer.edge_color, edge_color_array)
@@ -478,18 +508,18 @@ def test_edge_color_colormap():
 
 def test_edge_color_map_non_numeric_property():
     """Test setting edge_color as a color map of a
-    non-numeric property raises an error
+    non-numeric features raises an error
     """
     np.random.seed(0)
     shape = (10, 2, 2)
     data = np.random.random(shape)
     data[:, 0, :] = 20 * data[:, 0, :]
-    properties = {'vector_type': np.array(['A', 'B'] * int(shape[0] / 2))}
+    features = {'vector_type': np.array(['A', 'B'] * int(shape[0] / 2))}
     color_cycle = ['red', 'blue']
     initial_color = [0, 1, 0, 1]
     layer = Vectors(
         data,
-        properties=properties,
+        features=features,
         edge_color=initial_color,
         edge_color_cycle=color_cycle,
         edge_colormap='gray',
@@ -512,7 +542,7 @@ def test_switching_edge_color_mode():
     shape = (10, 2, 2)
     data = np.random.random(shape)
     data[:, 0, :] = 20 * data[:, 0, :]
-    properties = {
+    features = {
         'magnitude': np.arange(shape[0]),
         'vector_type': np.array(['A', 'B'] * int(shape[0] / 2)),
     }
@@ -520,7 +550,7 @@ def test_switching_edge_color_mode():
     initial_color = [0, 1, 0, 1]
     layer = Vectors(
         data,
-        properties=properties,
+        features=features,
         edge_color=initial_color,
         edge_color_cycle=color_cycle,
         edge_colormap='gray',
@@ -539,7 +569,7 @@ def test_switching_edge_color_mode():
     # the first property in Vectors.properties is being automatically selected
     with pytest.warns(RuntimeWarning):
         layer.edge_color_mode = 'colormap'
-    assert layer._edge.color_properties.name == next(iter(properties))
+    assert layer._edge.color_properties.name == next(iter(features))
     np.testing.assert_allclose(layer.edge_color[-1], [1, 1, 1, 1])
 
     # switch to color cycle
@@ -554,16 +584,16 @@ def test_switching_edge_color_mode():
     np.testing.assert_allclose(layer.edge_color, edge_colors)
 
 
-def test_properties_color_mode_without_properties():
+def test_properties_color_mode_without_features():
     """Test that switching to a colormode requiring
-    properties without properties defined raises an exceptions
+    features without features defined raises an exceptions
     """
     np.random.seed(0)
     shape = (10, 2, 2)
     data = np.random.random(shape)
     data[:, 0, :] = 20 * data[:, 0, :]
     layer = Vectors(data)
-    assert layer.properties == {}
+    assert layer.features.empty
 
     with pytest.raises(ValueError, match='must be a valid Points.properties'):
         layer.edge_color_mode = 'colormap'

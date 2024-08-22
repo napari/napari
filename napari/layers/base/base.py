@@ -1047,7 +1047,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     def _get_ndim(self) -> int:
         raise NotImplementedError
 
-    def _get_base_state(self) -> dict[str, Any]:
+    def _get_base_state(self) -> _DeprecatingDict:
         """Get dictionary of attributes on base layer.
 
         This is useful for serialization and deserialization of the layer.
@@ -1058,28 +1058,29 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         dict of str to Any
             Dictionary of attributes on base layer.
         """
-        base_dict = {
-            'affine': self.affine.affine_matrix,
-            'axis_labels': self.axis_labels,
-            'blending': self.blending,
-            'experimental_clipping_planes': [
-                plane.dict() for plane in self.experimental_clipping_planes
-            ],
-            'metadata': self.metadata,
-            'name': self.name,
-            'opacity': self.opacity,
-            'projection_mode': self.projection_mode,
-            'rotate': [list(r) for r in self.rotate],
-            'scale': list(self.scale),
-            'shear': list(self.shear),
-            'translate': list(self.translate),
-            'units': self.units,
-            'visible': self.visible,
-        }
-        return base_dict
+        return _DeprecatingDict(
+            {
+                'affine': self.affine.affine_matrix,
+                'axis_labels': self.axis_labels,
+                'blending': self.blending,
+                'experimental_clipping_planes': [
+                    plane.dict() for plane in self.experimental_clipping_planes
+                ],
+                'metadata': self.metadata,
+                'name': self.name,
+                'opacity': self.opacity,
+                'projection_mode': self.projection_mode,
+                'rotate': [list(r) for r in self.rotate],
+                'scale': list(self.scale),
+                'shear': list(self.shear),
+                'translate': list(self.translate),
+                'units': self.units,
+                'visible': self.visible,
+            }
+        )
 
     @abstractmethod
-    def _get_state(self) -> dict[str, Any]:
+    def _get_state(self) -> _DeprecatingDict:
         raise NotImplementedError
 
     @property
@@ -1090,7 +1091,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         state = self._get_state()
         state.pop('data', None)
         if hasattr(self.__init__, '_rename_argument'):
-            state = _DeprecatingDict(state)
             for element in self.__init__._rename_argument:
                 state.set_deprecated_from_rename(**element._asdict())
         return self.data, state, self._type_string
