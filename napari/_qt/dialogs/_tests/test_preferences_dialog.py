@@ -21,7 +21,7 @@ from napari.utils.interactions import Shortcut
 from napari.utils.key_bindings import KeyBinding
 
 
-@pytest.fixture()
+@pytest.fixture
 def pref(qtbot):
     dlg = PreferencesDialog()
     qtbot.addWidget(dlg)

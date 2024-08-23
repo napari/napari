@@ -134,7 +134,7 @@ _VECTORS = LayerTypeWithData(
 _LINES_DATA = np.random.random((6, 2, 2))
 
 
-@pytest.fixture()
+@pytest.fixture
 def create_layer_controls(qtbot):
     def _create_layer_controls(layer_type_with_data):
         if layer_type_with_data.colormap:
@@ -181,7 +181,7 @@ def create_layer_controls(qtbot):
         'vectors',
     ],
 )
-@pytest.mark.qt_no_exception_capture()
+@pytest.mark.qt_no_exception_capture
 @pytest.mark.skipif(os.environ.get('MIN_REQ', '0') == '1', reason='min req')
 def test_create_layer_controls(
     qtbot, create_layer_controls, layer_type_with_data, capsys
@@ -243,7 +243,7 @@ skip_predicate = sys.version_info >= (3, 11) and (
         _VECTORS,
     ],
 )
-@pytest.mark.qt_no_exception_capture()
+@pytest.mark.qt_no_exception_capture
 @pytest.mark.skipif(os.environ.get('MIN_REQ', '0') == '1', reason='min req')
 def test_create_layer_controls_spin(
     qtbot, create_layer_controls, layer_type_with_data, capsys
@@ -319,7 +319,7 @@ def test_create_layer_controls_spin(
         _VECTORS,
     ],
 )
-@pytest.mark.qt_no_exception_capture()
+@pytest.mark.qt_no_exception_capture
 @pytest.mark.skipif(os.environ.get('MIN_REQ', '0') == '1', reason='min req')
 def test_create_layer_controls_qslider(
     qtbot, create_layer_controls, layer_type_with_data, capsys
@@ -401,7 +401,7 @@ def test_create_layer_controls_qslider(
         _VECTORS,
     ],
 )
-@pytest.mark.qt_no_exception_capture()
+@pytest.mark.qt_no_exception_capture
 @pytest.mark.skipif(os.environ.get('MIN_REQ', '0') == '1', reason='min req')
 def test_create_layer_controls_qcolorswatchedit(
     qtbot, create_layer_controls, layer_type_with_data, capsys

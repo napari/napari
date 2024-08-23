@@ -52,7 +52,7 @@ if os.getenv('CI') and os.name == 'nt' and API_NAME == 'PyQt5':
 if os.getenv('CI') and os.name == 'nt' and 'to_screenshot.py' in examples:
     examples.remove('to_screenshot.py')
 
-@pytest.fixture()
+@pytest.fixture
 def _example_monkeypatch(monkeypatch):
     # hide viewer window
     monkeypatch.setattr(Window, 'show', lambda *a: None)

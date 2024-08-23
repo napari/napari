@@ -100,7 +100,7 @@ def test_animation_thread_once(qtbot):
     assert worker.current == worker.nz
 
 
-@pytest.fixture()
+@pytest.fixture
 def ref_view(make_napari_viewer):
     """basic viewer with data that we will use a few times
 

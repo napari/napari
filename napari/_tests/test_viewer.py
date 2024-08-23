@@ -55,7 +55,7 @@ def test_all_viewer_actions_are_accessible_via_shortcut(make_napari_viewer):
     _assert_shortcuts_exist_for_each_action(Viewer)
 
 
-@pytest.mark.xfail()
+@pytest.mark.xfail
 def test_non_existing_bindings():
     """
     Those are condition tested in next unittest; but do not exists; this is
