@@ -37,7 +37,7 @@ classifiers = [
 requires-python = ">=3.9"
 dependencies = [
     "appdirs>=1.4.4",
-    "app-model>=0.2.5,<0.3.0",
+    "app-model>=0.2.8,<0.3.0",
     "cachey>=0.2.1",
     "certifi>=2018.1.18",
     "dask[array]>=2021.10.0",
@@ -48,7 +48,7 @@ dependencies = [
     "napari-console>=0.0.9",
     "napari-plugin-engine>=0.1.9",
     "napari-svg>=0.1.8",
-    "npe2>=0.7.4",
+    "npe2>=0.7.6",
     "numpy>=1.22.2 ; python_version >= '3.10'",
     "numpy >=1.22.2, <2 ; python_version < '3.10'",
     "numpydoc>=0.9.2",
@@ -97,15 +97,15 @@ pyside2 = [
 pyside6_experimental = [
     "PySide6 < 6.5 ; python_version < '3.12'"
 ]
-pyqt6_experimental = [
-    "PyQt6",
+pyqt6 = [
+    "PyQt6 > 6.5",
     "PyQt6 != 6.6.1 ; platform_system == 'Darwin'"
 ]
 pyside = [
     "napari[pyside2]"
 ]
 pyqt5 = [
-    "PyQt5>=5.12.3,!=5.15.0",
+    "PyQt5>=5.13.2,!=5.15.0",
 ]
 pyqt = [
     "napari[pyqt5]"
@@ -361,6 +361,8 @@ filterwarnings = [
   # https://github.com/pydata/xarray/blame/b1f3fea467f9387ed35c221205a70524f4caa18b/pyproject.toml#L333-L334
   # https://github.com/pydata/xarray/pull/8939
   "ignore:__array__ implementation doesn't accept a copy keyword, so passing copy=False failed.",
+  "ignore:pkg_resources is deprecated",
+  "ignore:Deprecated call to `pkg_resources.declare_namespace"
 ]
 markers = [
     "examples: Test of examples",
@@ -549,7 +551,7 @@ module = [
     "napari._vispy.visuals.surface",
     "napari.layers.shapes._shapes_models.path",
     "napari.layers.shapes._shapes_models.polygon",
-    "napari.layers.shapes._shapes_models._polgyon_base",
+    "napari.layers.shapes._shapes_models._polygon_base",
     "napari.layers.shapes._shapes_models.ellipse",
     "napari.layers.shapes._shapes_models.line",
     "napari.layers.shapes._shapes_models.rectangle",
@@ -760,7 +762,6 @@ exclude_lines = [
 ]
 
 [tool.coverage.run]
-parallel = true
 omit = [
     "*/_vendor/*",
     "*/_version.py",

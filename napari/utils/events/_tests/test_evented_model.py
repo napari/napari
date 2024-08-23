@@ -484,7 +484,7 @@ def test_evented_model_with_property_setters():
         t.e = 100
 
 
-@pytest.fixture()
+@pytest.fixture
 def mocked_object():
     t = T()
     t.events.a = Mock(t.events.a)

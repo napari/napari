@@ -3,6 +3,7 @@ import sys
 import numpy as np
 import pytest
 from qtpy.QtCore import QPoint, Qt
+from qtpy.QtWidgets import QApplication
 
 from napari._app_model import get_app
 from napari._qt._qapp_model.qactions._view import (
@@ -49,22 +50,28 @@ def test_toggle_axes_scale_bar_attr(
 
 
 @skip_local_popups
-def test_toggle_fullscreen(make_napari_viewer):
+def test_toggle_fullscreen(make_napari_viewer, qtbot):
     """Test toggle fullscreen action."""
     action_id = 'napari.window.view.toggle_fullscreen'
     app = get_app()
     viewer = make_napari_viewer(show=True)
 
     # Check initial default state (no fullscreen)
-    assert not viewer.window._qt_window._fullscreen_flag
+    assert not viewer.window._qt_window.isFullScreen()
 
     # Check fullscreen state change
     app.commands.execute_command(action_id)
-    assert viewer.window._qt_window._fullscreen_flag
+    if sys.platform == 'darwin':
+        # On macOS, wait for the animation to complete
+        qtbot.wait(250)
+    assert viewer.window._qt_window.isFullScreen()
 
     # Check return to non fullscreen state
     app.commands.execute_command(action_id)
-    assert not viewer.window._qt_window._fullscreen_flag
+    if sys.platform == 'darwin':
+        # On macOS, wait for the animation to complete
+        qtbot.wait(250)
+    assert not viewer.window._qt_window.isFullScreen()
 
 
 @skip_local_focus
@@ -127,7 +134,11 @@ def test_toggle_play(make_napari_viewer, qtbot):
     app.commands.execute_command(action_id)
     qtbot.waitUntil(lambda: viewer.window._qt_viewer.dims.is_playing)
     # Assert action stops play
-    app.commands.execute_command(action_id)
+    with qtbot.waitSignal(
+        viewer.window._qt_viewer.dims._animation_thread.finished
+    ):
+        app.commands.execute_command(action_id)
+        QApplication.processEvents()
     qtbot.waitUntil(lambda: not viewer.window._qt_viewer.dims.is_playing)
 
 

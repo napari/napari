@@ -397,14 +397,14 @@ def _npe2_manifest_to_actions(
     # Filter widgets as are registered via `_safe_register_qt_actions`
     widget_ids = {widget.command for widget in mf.contributions.widgets or ()}
 
-    # We want to register all `Actions` so they appear in the command pallete
+    # We want to register all `Actions` so they appear in the command palette
     actions: list[Action] = []
     for cmd in mf.contributions.commands or ():
         if cmd.id not in sample_data_ids | widget_ids:
             actions.append(
                 Action(
                     id=cmd.id,
-                    title=cmd.title,
+                    title=f'{cmd.title} ({mf.display_name})',
                     category=cmd.category,
                     tooltip=cmd.short_title or cmd.title,
                     icon=cmd.icon,

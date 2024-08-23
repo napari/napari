@@ -31,7 +31,7 @@ from napari.utils.colormaps import (
 )
 
 
-@pytest.fixture()
+@pytest.fixture
 def direct_colormap():
     """Return a DirectLabelColormap."""
     return DirectLabelColormap(
@@ -44,7 +44,7 @@ def direct_colormap():
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def random_colormap():
     """Return a LabelColormap."""
     return label_colormap(50)
@@ -417,6 +417,26 @@ def test_custom_color_dict():
     # test disable custom color dict
     # should not initialize as white since we are using random.seed
     assert not (layer.get_color(1) == np.array([1.0, 1.0, 1.0, 1.0])).all()
+
+
+@pytest.mark.parametrize(
+    'colormap_like',
+    [
+        ['red', 'blue'],
+        [[1, 0, 0, 1], [0, 0, 1, 1]],
+        {None: 'transparent', 1: 'red', 2: 'blue'},
+        {None: [0, 0, 0, 0], 1: [1, 0, 0, 1], 2: [0, 0, 1, 1]},
+        defaultdict(lambda: 'transparent', {1: 'red', 2: 'blue'}),
+    ],
+)
+def test_colormap_simple_data_types(colormap_like):
+    """Test that setting colormap with list or dict of colors works."""
+    data = np.random.randint(20, size=(10, 15))
+    # test in constructor
+    _ = Labels(data, colormap=colormap_like)
+    # test assignment
+    layer = Labels(data)
+    layer.colormap = colormap_like
 
 
 def test_metadata():

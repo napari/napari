@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Literal, Union, cast
+from typing import Any, Literal, Union, cast
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -367,12 +367,12 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         self._rendering = ImageRendering(rendering)
         self.events.rendering()
 
-    def _get_state(self):
+    def _get_state(self) -> dict[str, Any]:
         """Get dictionary of layer state.
 
         Returns
         -------
-        state : dict
+        state : dict of str to Any
             Dictionary of layer state.
         """
         state = self._get_base_state()
@@ -612,6 +612,9 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
                 image, zoom_factor, prefilter=False, order=0
             )
             low, high = self.contrast_limits
+            if np.issubdtype(downsampled.dtype, np.integer):
+                low = max(low, np.iinfo(downsampled.dtype).min)
+                high = min(high, np.iinfo(downsampled.dtype).max)
             downsampled = np.clip(downsampled, low, high)
             color_range = high - low
             if color_range != 0:
@@ -683,6 +686,6 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             prev = self._keep_auto_contrast
             self._keep_auto_contrast = False
             try:
-                self.refresh()
+                self.refresh(highlight=False, extent=False)
             finally:
                 self._keep_auto_contrast = prev

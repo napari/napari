@@ -85,6 +85,13 @@ def test_add_image_colormap_variants():
     assert "did you mean to specify a 'channel_axis'" in str(err.value)
 
 
+def test_add_image_accepts_all_arguments_as_sequence():
+    """See https://github.com/napari/napari/pull/7089."""
+    viewer = ViewerModel(ndisplay=3)
+    img = viewer.add_image(np.random.rand(2, 2))
+    viewer.add_image(**img._get_state())
+
+
 def test_add_volume():
     """Test adding volume."""
     viewer = ViewerModel(ndisplay=3)
@@ -618,7 +625,9 @@ def test_active_layer_status_update():
     time.sleep(1)
     viewer.mouse_over_canvas = True
     viewer.cursor.position = [1, 1, 1, 1, 1]
-    assert viewer.status == viewer.layers.selection.active.get_status(
+    assert viewer._calc_status_from_cursor()[
+        0
+    ] == viewer.layers.selection.active.get_status(
         viewer.cursor.position, world=True
     )
 
@@ -989,3 +998,46 @@ def test_make_layer_visible_after_slicing():
     layer.visible = True
 
     np.testing.assert_array_equal(layer._slice.image.raw, data[0])
+
+
+def test_get_status_text():
+    viewer = ViewerModel(ndisplay=2)
+    viewer.mouse_over_canvas = False
+    assert viewer._calc_status_from_cursor() is None
+    viewer.mouse_over_canvas = True
+    assert viewer._calc_status_from_cursor() == ('Ready', '')
+    viewer.cursor.position = (1, 2)
+    viewer.add_labels(
+        np.zeros((10, 10), dtype='uint8'), features={'a': [1, 2]}
+    )
+    viewer.tooltip.visible = False
+    assert viewer._calc_status_from_cursor() == (
+        {
+            'coordinates': ' [1 2]: 0; a: 1',
+            'layer_base': 'Labels',
+            'layer_name': 'Labels',
+            'plugin': '',
+            'source_type': '',
+        },
+        '',
+    )
+    viewer.tooltip.visible = True
+    assert viewer._calc_status_from_cursor() == (
+        {
+            'coordinates': ' [1 2]: 0; a: 1',
+            'layer_base': 'Labels',
+            'layer_name': 'Labels',
+            'plugin': '',
+            'source_type': '',
+        },
+        'a: 1',
+    )
+    viewer.update_status_from_cursor()
+    assert viewer.status == {
+        'coordinates': ' [1 2]: 0; a: 1',
+        'layer_base': 'Labels',
+        'layer_name': 'Labels',
+        'plugin': '',
+        'source_type': '',
+    }
+    assert viewer.tooltip.text == 'a: 1'

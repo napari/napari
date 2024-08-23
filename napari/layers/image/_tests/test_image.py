@@ -992,7 +992,7 @@ def test_thick_slice_multiscale():
 
     layer.projection_mode = 'mean'
     # NOTE that here we rescale slicing to twice the non-multiscale test
-    # in order to get the same results, becase the actual full scale image
+    # in order to get the same results, because the actual full scale image
     # is doubled in size
     layer._slice_dims(
         Dims(
@@ -1029,6 +1029,12 @@ def test_thick_slice_multiscale():
     np.testing.assert_array_equal(
         layer._slice.image.raw, np.mean(data[2:5], axis=0)
     )
+
+
+def test_contrast_outside_range():
+    data = np.zeros((64, 64), dtype=np.uint8)
+
+    Image(data, contrast_limits=(0, 1000))
 
 
 def test_docstring():

@@ -33,8 +33,10 @@ from __future__ import annotations
 
 import os
 import sys
+import threading
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
+from functools import partial
 from itertools import chain
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
@@ -71,7 +73,7 @@ if os.getenv('CI') and sys.platform.startswith('linux'):
         xauth.touch()
 
 
-@pytest.fixture()
+@pytest.fixture
 def layer_data_and_types():
     """Fixture that provides some layers and filenames
 
@@ -153,7 +155,7 @@ def layer(request):
     return None
 
 
-@pytest.fixture()
+@pytest.fixture
 def layers():
     """Fixture that supplies a layers list for testing.
 
@@ -254,7 +256,7 @@ def _auto_shutdown_dask_threadworkers():
 HistoryManager.enabled = False
 
 
-@pytest.fixture()
+@pytest.fixture
 def napari_svg_name():
     """the plugin name changes with npe2 to `napari-svg` from `svg`."""
     from importlib.metadata import version
@@ -274,13 +276,13 @@ def npe2pm_(npe2pm, monkeypatch):
     return npe2pm
 
 
-@pytest.fixture()
+@pytest.fixture
 def builtins(npe2pm_: TestPluginManager):
     with npe2pm_.tmp_plugin(package='napari') as plugin:
         yield plugin
 
 
-@pytest.fixture()
+@pytest.fixture
 def tmp_plugin(npe2pm_: TestPluginManager):
     with npe2pm_.tmp_plugin() as plugin:
         plugin.manifest.package_metadata = PackageMetadata(  # type: ignore[call-arg]
@@ -389,7 +391,7 @@ def _disable_notification_dismiss_timer(monkeypatch):
         monkeypatch.setattr(NapariQtNotification, 'FADE_OUT_RATE', 0)
 
 
-@pytest.fixture()
+@pytest.fixture
 def single_threaded_executor():
     executor = ThreadPoolExecutor(max_workers=1)
     yield executor
@@ -423,26 +425,60 @@ def _get_calling_place(depth=1):  # pragma: no cover
     return result
 
 
-@pytest.fixture()
+@pytest.fixture
 def _dangling_qthreads(monkeypatch, qtbot, request):
     from qtpy.QtCore import QThread
 
     base_start = QThread.start
     thread_dict = WeakKeyDictionary()
+    base_constructor = QThread.__init__
+
+    def run_with_trace(self):  # pragma: no cover
+        """
+        QThread.run but adding execution to sys.settrace when measuring coverage.
+
+        See https://github.com/nedbat/coveragepy/issues/686#issuecomment-634932753
+        and `init_with_trace`. When running QThreads during testing, we monkeypatch
+        the QThread constructor and run methods with traceable equivalents.
+        """
+        if 'coverage' in sys.modules:
+            # https://github.com/nedbat/coveragepy/issues/686#issuecomment-634932753
+            sys.settrace(threading._trace_hook)
+        self._base_run()
+
+    def init_with_trace(self, *args, **kwargs):
+        """Constructor for QThread adding tracing for coverage measurements.
+
+        Functions running in QThreads don't get measured by coverage.py, see
+        https://github.com/nedbat/coveragepy/issues/686. Therefore, we will
+        monkeypatch the constructor to add to the thread to `sys.settrace` when
+        we call `run` and `coverage` is in `sys.modules`.
+        """
+        base_constructor(self, *args, **kwargs)
+        self._base_run = self.run
+        self.run = partial(run_with_trace, self)
+
     # dict of threads that have been started but not yet terminated
 
     if 'disable_qthread_start' in request.keywords:
 
-        def my_start(self, priority=QThread.InheritPriority):
-            """dummy function to prevent thread start"""
+        def start_with_save_reference(self, priority=QThread.InheritPriority):
+            """Dummy function to prevent thread starts."""
 
     else:
 
-        def my_start(self, priority=QThread.InheritPriority):
+        def start_with_save_reference(self, priority=QThread.InheritPriority):
+            """Thread start function with logs to detect hanging threads.
+
+            Saves a weak reference to the thread and detects hanging threads,
+            as well as where the threads were started.
+            """
             thread_dict[self] = _get_calling_place()
             base_start(self, priority)
 
-    monkeypatch.setattr(QThread, 'start', my_start)
+    monkeypatch.setattr(QThread, 'start', start_with_save_reference)
+    monkeypatch.setattr(QThread, '__init__', init_with_trace)
+
     yield
 
     dangling_threads_li = []
@@ -483,7 +519,7 @@ def _dangling_qthreads(monkeypatch, qtbot, request):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def _dangling_qthread_pool(monkeypatch, request):
     from qtpy.QtCore import QThreadPool
 
@@ -539,7 +575,7 @@ def _dangling_qthread_pool(monkeypatch, request):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def _dangling_qtimers(monkeypatch, request):
     from qtpy.QtCore import QTimer
 
@@ -645,7 +681,7 @@ def _flush_mock(self):
     """There are no waiting events."""
 
 
-@pytest.fixture()
+@pytest.fixture
 def _disable_throttling(monkeypatch):
     """Disable qthrottler from superqt.
 
@@ -662,7 +698,7 @@ def _disable_throttling(monkeypatch):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def _dangling_qanimations(monkeypatch, request):
     from qtpy.QtCore import QPropertyAnimation
 

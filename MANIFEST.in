@@ -14,9 +14,9 @@ recursive-include napari *.py_tmpl
 recursive-exclude tools *
 recursive-exclude napari *.pyc
 exclude napari/benchmarks/*
+include napari/benchmarks/utils.py
 recursive-exclude resources *
 recursive-exclude binder *
 recursive-exclude examples *
 exclude dockerfile
 exclude EULA.md
-exclude Singularity

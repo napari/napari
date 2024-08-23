@@ -5,12 +5,12 @@ import pytest
 from napari.utils.events import EventedSet
 
 
-@pytest.fixture()
+@pytest.fixture
 def regular_set():
     return set(range(5))
 
 
-@pytest.fixture()
+@pytest.fixture
 def test_set(request, regular_set):
     test_set = EventedSet(regular_set)
     test_set.events = Mock(wraps=test_set.events)

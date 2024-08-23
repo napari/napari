@@ -94,6 +94,10 @@ class ShortcutEditor(QWidget):
                     all_actions.pop(name)
             self.key_bindings_strs[f'{layer.__name__} layer'] = actions
 
+        # Don't include actions without keymapproviders
+        for action_name in all_actions.copy():
+            if all_actions[action_name].keymapprovider is None:
+                all_actions.pop(action_name)
         # Left over actions can go here.
         self.key_bindings_strs[self.VIEWER_KEYBINDINGS] = all_actions
 
@@ -319,7 +323,9 @@ class ShortcutEditor(QWidget):
         for row1, (action_name, action) in enumerate(actions_all.items()):
             shortcuts = action_manager._shortcuts.get(action_name, [])
 
-            if new_shortcut not in shortcuts:
+            if Shortcut(new_shortcut).qt not in [
+                Shortcut(shortcut).qt for shortcut in shortcuts
+            ]:
                 continue
             # Shortcut is here (either same action or not), don't replace in settings.
             if action_name != current_action:
@@ -547,6 +553,14 @@ class ShortcutEditor(QWidget):
             value[action_name] = list(shortcuts)
 
         return value
+
+    def setValue(self, state):
+        for action, shortcuts in state.items():
+            action_manager.unbind_shortcut(action)
+            for shortcut in shortcuts:
+                action_manager.bind_shortcut(action, shortcut)
+
+        self._set_table(layer_str=self.layer_combo_box.currentText())
 
 
 class ShortcutDelegate(QItemDelegate):

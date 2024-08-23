@@ -434,7 +434,7 @@ class Surface(IntensityVisualizationMixin, Layer):
 
         self.faces = faces
 
-        self.refresh()
+        self.refresh(extent=False)
         self.events.data(value=self.data)
         self._reset_editable()
 
@@ -592,12 +592,12 @@ class Surface(IntensityVisualizationMixin, Layer):
             and len(self.texcoords)
         )
 
-    def _get_state(self) -> dict:
+    def _get_state(self) -> dict[str, Any]:
         """Get dictionary of layer state.
 
         Returns
         -------
-        state : dict
+        state : dict of str to Any
             Dictionary of layer state.
         """
         state = self._get_base_state()
