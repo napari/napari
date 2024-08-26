@@ -1,7 +1,6 @@
 import csv
 import os
 from pathlib import Path
-from tempfile import TemporaryDirectory
 from typing import NamedTuple
 from uuid import uuid4
 
@@ -47,7 +46,7 @@ def write_spec(tmp_path: Path):
             tifffile.imwrite(str(fname), image)
         elif spec.ext == '.zarr':
             fname.mkdir()
-            z = zarr.open(str(fname), 'a', shape=image.shape)
+            z = zarr.open(store=str(fname), mode='a', shape=image.shape)
             z[:] = image
         else:
             imageio.imwrite(str(fname), image)
@@ -68,15 +67,15 @@ def test_guess_zarr_path():
     assert not _guess_zarr_path('no_zarr_suffix/data.png')
 
 
-def test_zarr():
+def test_zarr(tmp_path):
     image = np.random.random((10, 20, 20))
-    with TemporaryDirectory(suffix='.zarr') as fout:
-        z = zarr.open(store=fout, mode='a', shape=image.shape)
-        z[:] = image
-        image_in = magic_imread([fout])
-        # Note: due to lazy loading, the next line needs to happen within
-        # the context manager. Alternatively, we could convert to NumPy here.
-        np.testing.assert_array_equal(image, image_in)
+    data_path = str(tmp_path / 'data.zarr')
+    z = zarr.open(store=data_path, mode='a', shape=image.shape)
+    z[:] = image
+    image_in = magic_imread([data_path])
+    # Note: due to lazy loading, the next line needs to happen within
+    # the context manager. Alternatively, we could convert to NumPy here.
+    np.testing.assert_array_equal(image, image_in)
 
 
 def test_zarr_nested(tmp_path):
@@ -104,24 +103,25 @@ def test_zarr_with_unrelated_file(tmp_path):
     np.testing.assert_array_equal(image, image_in[0])
 
 
-def test_zarr_multiscale():
+def test_zarr_multiscale(tmp_path):
     multiscale = [
         np.random.random((20, 20)),
         np.random.random((10, 10)),
         np.random.random((5, 5)),
     ]
-    with TemporaryDirectory(suffix='.zarr') as fout:
-        root = zarr.open_group(fout, 'a')
-        for i in range(len(multiscale)):
-            shape = 20 // 2**i
-            z = root.create_dataset(str(i), shape=(shape,) * 2)
-            z[:] = multiscale[i]
-        multiscale_in = magic_imread([fout])
-        assert len(multiscale) == len(multiscale_in)
-        # Note: due to lazy loading, the next line needs to happen within
-        # the context manager. Alternatively, we could convert to NumPy here.
-        for images, images_in in zip(multiscale, multiscale_in):
-            np.testing.assert_array_equal(images, images_in)
+    fout = str(tmp_path / 'multiscale.zarr')
+
+    root = zarr.open_group(fout, 'a')
+    for i in range(len(multiscale)):
+        shape = 20 // 2**i
+        z = root.create_dataset(str(i), shape=(shape,) * 2)
+        z[:] = multiscale[i]
+    multiscale_in = magic_imread([fout])
+    assert len(multiscale) == len(multiscale_in)
+    # Note: due to lazy loading, the next line needs to happen within
+    # the context manager. Alternatively, we could convert to NumPy here.
+    for images, images_in in zip(multiscale, multiscale_in):
+        np.testing.assert_array_equal(images, images_in)
 
 
 def test_write_csv(tmpdir):
@@ -312,28 +312,29 @@ def test_add_zarr(write_spec):
     assert out[0].shape == ZARR1.shape  # type: ignore
 
 
-def test_add_zarr_1d_array_is_ignored():
+def test_add_zarr_1d_array_is_ignored(tmp_path):
+    zarr_dir = str(tmp_path / 'data.zarr')
     # For more details: https://github.com/napari/napari/issues/1471
-    with TemporaryDirectory(suffix='.zarr') as zarr_dir:
-        z = zarr.open(zarr_dir, 'w')
-        z['1d'] = np.zeros(3)
 
-        image_path = os.path.join(zarr_dir, '1d')
-        assert npe2.read([image_path], stack=False) == [(None,)]
+    z = zarr.open(store=zarr_dir, mode='w')
+    z['1d'] = np.zeros(3)
+
+    image_path = os.path.join(zarr_dir, '1d')
+    assert npe2.read([image_path], stack=False) == [(None,)]
 
 
-def test_add_many_zarr_1d_array_is_ignored():
+def test_add_many_zarr_1d_array_is_ignored(tmp_path):
     # For more details: https://github.com/napari/napari/issues/1471
-    with TemporaryDirectory(suffix='.zarr') as zarr_dir:
-        z = zarr.open(zarr_dir, 'w')
-        z['1d'] = np.zeros(3)
-        z['2d'] = np.zeros((3, 4))
-        z['3d'] = np.zeros((3, 4, 5))
+    zarr_dir = tmp_path / 'data.zarr'
+    z = zarr.open(store=zarr_dir, mode='w')
+    z['1d'] = np.zeros(3)
+    z['2d'] = np.zeros((3, 4))
+    z['3d'] = np.zeros((3, 4, 5))
 
-        for name in z.array_keys():
-            [out] = npe2.read([os.path.join(zarr_dir, name)], stack=False)
-            if name == '1d':
-                assert out == (None,)
-            else:
-                assert isinstance(out[0], da.Array)
-                assert out[0].ndim == int(name[0])
+    for name in z.array_keys():
+        [out] = npe2.read([os.path.join(zarr_dir, name)], stack=False)
+        if name == '1d':
+            assert out == (None,)
+        else:
+            assert isinstance(out[0], da.Array)
+            assert out[0].ndim == int(name[0])
