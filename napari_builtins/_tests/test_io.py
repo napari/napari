@@ -71,7 +71,7 @@ def test_guess_zarr_path():
 def test_zarr():
     image = np.random.random((10, 20, 20))
     with TemporaryDirectory(suffix='.zarr') as fout:
-        z = zarr.open(fout, 'a', shape=image.shape)
+        z = zarr.open(store=fout, mode='a', shape=image.shape)
         z[:] = image
         image_in = magic_imread([fout])
         # Note: due to lazy loading, the next line needs to happen within
@@ -83,7 +83,7 @@ def test_zarr_nested(tmp_path):
     image = np.random.random((10, 20, 20))
     image_name = 'my_image'
     root_path = tmp_path / 'dataset.zarr'
-    grp = zarr.open(str(root_path), mode='a')
+    grp = zarr.open(store=str(root_path), mode='a')
     grp.create_dataset(image_name, data=image)
 
     image_in = magic_imread([str(root_path / image_name)])
@@ -94,7 +94,7 @@ def test_zarr_with_unrelated_file(tmp_path):
     image = np.random.random((10, 20, 20))
     image_name = 'my_image'
     root_path = tmp_path / 'dataset.zarr'
-    grp = zarr.open(str(root_path), mode='a')
+    grp = zarr.open(store=str(root_path), mode='a')
     grp.create_dataset(image_name, data=image)
 
     txt_file_path = root_path / 'unrelated.txt'

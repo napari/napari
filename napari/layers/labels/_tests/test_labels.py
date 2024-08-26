@@ -1119,7 +1119,7 @@ def test_fill_tensorstore():
     labels[2, 3:5, 5:7, 6:8] = 3
     with TemporaryDirectory(suffix='.zarr') as fout:
         labels_temp = zarr.open(
-            fout,
+            store=fout,
             mode='w',
             shape=labels.shape,
             dtype=np.uint32,
