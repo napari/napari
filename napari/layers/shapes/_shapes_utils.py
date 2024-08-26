@@ -567,7 +567,17 @@ def triangulate_face(data: npt.NDArray) -> tuple[npt.NDArray, npt.NDArray]:
         res = triangulate({'vertices': data, 'segments': edges}, 'p')
         vertices, triangles = res['vertices'], res['triangles']
     else:
-        vertices, triangles = PolygonData(vertices=data).triangulate()
+        fst = data
+        snd = np.roll(data, -1, axis=0)
+        thrd = np.roll(data, -2, axis=0)
+        is_convex = np.unique(orientation(fst, snd, thrd)).size == 1
+        if is_convex:
+            vertices = data
+            triangles = np.zeros((len(data) - 2, 3), dtype=np.uint32)
+            triangles[:, 1] = np.arange(1, len(data) - 1)
+            triangles[:, 2] = np.arange(2, len(data))
+        else:
+            vertices, triangles = PolygonData(vertices=data).triangulate()
 
     triangles = triangles.astype(np.uint32)
 
