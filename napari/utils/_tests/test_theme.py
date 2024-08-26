@@ -1,6 +1,3 @@
-import os
-import sys
-
 import pytest
 from npe2 import PluginManager, PluginManifest, __version__ as npe2_version
 from npe2.manifest.schema import ContributionPoints
@@ -111,11 +108,6 @@ def test_rebuild_theme_settings():
     settings.appearance.theme = 'another-theme'
 
 
-@pytest.mark.skipif(
-    os.getenv('CI') and sys.version_info < (3, 9),
-    reason='Testing theme on CI is extremely slow ~ 15s per test.'
-    'Skip for now until we find the reason',
-)
 @pytest.mark.parametrize(
     'color',
     [
@@ -132,11 +124,6 @@ def test_theme(color):
     theme.background = color
 
 
-@pytest.mark.skipif(
-    os.getenv('CI') and sys.version_info < (3, 9),
-    reason='Testing theme on CI is extremely slow ~ 15s per test.'
-    'Skip for now until we find the reason',
-)
 def test_theme_font_size():
     theme = get_theme('dark')
     theme.font_size = '15pt'

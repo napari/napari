@@ -64,7 +64,7 @@ def test_calc_data_range():
     clim = calc_data_range(data)
     np.testing.assert_array_equal(clim, (0, 2))
 
-    # Try large data mutlidimensional
+    # Try large data multidimensional
     data = np.zeros((3, 1000, 1000))
     data[0, 0, 0] = 0
     data[0, 0, 1] = 2
@@ -344,7 +344,7 @@ def test_feature_table_from_layer_with_properties_as_dataframe():
     pd.testing.assert_frame_equal(feature_table.values, TEST_FEATURES)
 
 
-@pytest.fixture()
+@pytest.fixture
 def feature_table():
     return _FeatureTable(TEST_FEATURES.copy(deep=True), num_data=4)
 

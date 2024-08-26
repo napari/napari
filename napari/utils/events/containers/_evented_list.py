@@ -362,7 +362,7 @@ class EventedList(TypedMutableSequence[_T]):
                 yield src, dest_index + d_inc
 
             popped.append(src)
-            # if the item moved up, icrement the destination index
+            # if the item moved up, increment the destination index
             if dest_index <= src:
                 d_inc += 1
 

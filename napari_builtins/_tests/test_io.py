@@ -38,7 +38,7 @@ TIFF_3D = ImageSpec((2, 15, 10), 'uint8', '.tif')
 ZARR1 = ImageSpec((10, 20, 20), 'uint8', '.zarr')
 
 
-@pytest.fixture()
+@pytest.fixture
 def write_spec(tmp_path: Path):
     def writer(spec: ImageSpec):
         image = np.random.random(spec.shape).astype(spec.dtype)

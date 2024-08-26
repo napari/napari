@@ -8,7 +8,7 @@ import pytest
 from napari.settings import NapariSettings, _migrations
 
 
-@pytest.fixture()
+@pytest.fixture
 def test_migrator(monkeypatch):
     # this fixture makes sure we're not using _migrations.MIGRATORS for tests
     # but rather only using migrators that get declared IN the test

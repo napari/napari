@@ -31,7 +31,7 @@ def test_ReadOnlyWrapper_setattr():
         tc_read_only.x = 5
 
 
-@pytest.fixture()
+@pytest.fixture
 def _patched_root_dir():
     """Simulate a call from outside of napari"""
     with patch('napari.utils.misc.ROOT_DIR', new='/some/other/package'):
