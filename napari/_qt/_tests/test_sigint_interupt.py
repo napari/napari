@@ -6,7 +6,7 @@ from qtpy.QtCore import QTimer
 from napari._qt.utils import _maybe_allow_interrupt
 
 
-@pytest.fixture()
+@pytest.fixture
 def platform_simulate_ctrl_c():
     import signal
     from functools import partial

@@ -44,7 +44,6 @@ from qtpy.QtWidgets import (
     QToolTip,
     QWidget,
 )
-from superqt.utils import QSignalThrottler
 
 from napari._app_model.constants import MenuId
 from napari._app_model.context import create_context, get_context
@@ -66,6 +65,7 @@ from napari._qt.qt_event_loop import (
 )
 from napari._qt.qt_resources import get_stylesheet
 from napari._qt.qt_viewer import QtViewer
+from napari._qt.threads.status_checker import StatusChecker
 from napari._qt.utils import QImg2array, qbytearray_to_str, str_to_qbytearray
 from napari._qt.widgets.qt_viewer_dock_widget import (
     _SHORTCUT_DEPRECATION_STRING,
@@ -80,6 +80,7 @@ from napari.plugins._npe2 import index_npe1_adapters
 from napari.settings import get_settings
 from napari.utils import perf
 from napari.utils._proxies import PublicOnlyProxy
+from napari.utils.events import Event
 from napari.utils.io import imsave
 from napari.utils.misc import (
     in_ipython,
@@ -195,21 +196,41 @@ class _QtMainWindow(QMainWindow):
         # were defined somewhere in the `_qt` module and imported in init_qactions
         init_qactions()
 
-        self.status_throttler = QSignalThrottler(parent=self)
-        self.status_throttler.setTimeout(50)
-        self._throttle_cursor_to_status_connection(viewer)
-
-    def _throttle_cursor_to_status_connection(self, viewer: 'Viewer'):
-        # In the GUI we expect lots of changes to the cursor position, so
-        # replace the direct connection with a throttled one.
         with contextlib.suppress(IndexError):
             viewer.cursor.events.position.disconnect(
-                viewer._update_status_bar_from_cursor
+                viewer.update_status_from_cursor
             )
-        viewer.cursor.events.position.connect(self.status_throttler.throttle)
-        self.status_throttler.triggered.connect(
-            viewer._update_status_bar_from_cursor
+
+        self.status_thread = StatusChecker(viewer, parent=self)
+        self.status_thread.status_and_tooltip_changed.connect(
+            self.set_status_and_tooltip
         )
+        if settings.appearance.update_status_based_on_layer:
+            self.status_thread.start()
+        viewer.cursor.events.position.connect(
+            self.status_thread.trigger_status_update
+        )
+        settings.appearance.events.update_status_based_on_layer.connect(
+            self._toggle_status_thread
+        )
+
+    def _toggle_status_thread(self, event: Event):
+        if event.value:
+            self.status_thread.start()
+        else:
+            self.status_thread.terminate()
+
+    def set_status_and_tooltip(
+        self, status_and_tooltip: Optional[tuple[Union[str, dict], str]]
+    ):
+        if status_and_tooltip is None:
+            return
+        self._qt_viewer.viewer.status = status_and_tooltip[0]
+        self._qt_viewer.viewer.tooltip.text = status_and_tooltip[1]
+        if (
+            active := self._qt_viewer.viewer.layers.selection.active
+        ) is not None:
+            self._qt_viewer.viewer.help = active.help
 
     def statusBar(self) -> 'ViewerStatusBar':
         return super().statusBar()
@@ -447,8 +468,6 @@ class _QtMainWindow(QMainWindow):
 
     def close(self, quit_app=False, confirm_need=False):
         """Override to handle closing app or just the window."""
-        if hasattr(self.status_throttler, '_timer'):
-            self.status_throttler._timer.stop()
         if not quit_app and not self._qt_viewer.viewer.layers:
             return super().close()
         confirm_need_local = confirm_need and self._is_close_dialog[quit_app]
@@ -572,6 +591,9 @@ class _QtMainWindow(QMainWindow):
         ):
             event.ignore()
             return
+
+        self.status_thread.terminate()
+        self.status_thread.wait()
 
         if self._ev and self._ev.isRunning():
             self._ev.quit()

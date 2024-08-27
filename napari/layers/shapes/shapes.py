@@ -2592,12 +2592,10 @@ class Shapes(Layer):
             and np.array_equal(self._drag_box, self._drag_box_stored)
         ) and not force:
             return
-        prev_selected = self._selected_data_stored
         self._selected_data_stored = copy(self.selected_data)
         self._value_stored = copy(self._value)
         self._drag_box_stored = copy(self._drag_box)
-        if prev_selected != self._selected_data_stored:
-            self.events.highlight()
+        self.events.highlight()
 
     def _finish_drawing(self, event=None) -> None:
         """Reset properties used in shape drawing."""

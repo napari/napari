@@ -16,7 +16,7 @@ from napari.utils.interactions import (
 )
 
 
-@pytest.fixture()
+@pytest.fixture
 def create_known_shapes_layer():
     """Create shapes layer with known coordinates
 
