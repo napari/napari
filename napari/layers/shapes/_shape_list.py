@@ -19,6 +19,18 @@ from napari.utils.geometry import (
 from napari.utils.translations import trans
 
 
+def _get_offsets(shape: Shape) -> tuple[np.ndarray, np.ndarray]:
+    return np.zeros(shape._face_vertices.shape), shape._edge_offsets
+
+
+def _get_centers(shape: Shape) -> tuple[np.ndarray, np.ndarray]:
+    return shape._face_vertices, shape._edge_vertices
+
+
+def _get_triangles(shape: Shape) -> tuple[np.ndarray, np.ndarray]:
+    return shape._face_triangles, shape._edge_triangles
+
+
 def _batch_dec(meth):
     """
     Decorator to apply `self.batched_updates` to the current method.
@@ -1019,7 +1031,9 @@ class ShapeList:
         self.add(shape, shape_index=index)
         self._update_z_order()
 
-    def outline(self, indices: Union[int, Sequence[int]]):
+    def outline(
+        self, indices: Union[int, Sequence[int]]
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Finds outlines of shapes listed in indices
 
         Parameters
@@ -1041,7 +1055,9 @@ class ShapeList:
             indices = [indices]
         return self.outlines(indices)
 
-    def outlines(self, indices: Sequence[int]):
+    def outlines(
+        self, indices: Sequence[int]
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Finds outlines of shapes listed in indices
 
         Parameters
@@ -1058,31 +1074,38 @@ class ShapeList:
         triangles : np.ndarray
             Mx3 array of any indices of vertices for triangles of outline
         """
-        indices_set = set(indices)
-        meshes = self._mesh.triangles_index
-        triangle_indices = [
-            i
-            for i, x in enumerate(meshes)
-            if x[0] in indices_set and x[1] == 1
-        ]
-        meshes = self._mesh.vertices_index
-        vertices_indices = [
-            i
-            for i, x in enumerate(meshes)
-            if x[0] in indices_set and x[1] == 1
-        ]
+        shapes_list = [self.shapes[i] for i in indices]
+        offsets = np.vstack([x for s in shapes_list for x in _get_offsets(s)])
+        centers = np.vstack([x for s in shapes_list for x in _get_centers(s)])
+        triangles = np.vstack(
+            [x for s in shapes_list for x in _get_triangles(s)]
+        )
 
-        offsets = self._mesh.vertices_offsets[vertices_indices]
-        centers = self._mesh.vertices_centers[vertices_indices]
-        triangles = self._mesh.triangles[triangle_indices]
+        # indices_set = set(indices)
+        # meshes = self._mesh.triangles_index
+        # triangle_indices = [
+        #     i
+        #     for i, x in enumerate(meshes)
+        #     if x[0] in indices_set and x[1] == 1
+        # ]
+        # meshes = self._mesh.vertices_index
+        # vertices_indices = [
+        #     i
+        #     for i, x in enumerate(meshes)
+        #     if x[0] in indices_set and x[1] == 1
+        # ]
 
-        t_ind = self._mesh.triangles_index[triangle_indices][:, 0]
-        inds = self._mesh.vertices_index[vertices_indices][:, 0]
-        starts = np.unique(inds, return_index=True)[1]
-        for i, ind in enumerate(indices):
-            inds = t_ind == ind
-            adjust_index = starts[i] - vertices_indices[starts[i]]
-            triangles[inds] = triangles[inds] + adjust_index
+        # offsets = self._mesh.vertices_offsets[vertices_indices]
+        # centers = self._mesh.vertices_centers[vertices_indices]
+        # triangles = self._mesh.triangles[triangle_indices]
+
+        # t_ind = self._mesh.triangles_index[triangle_indices][:, 0]
+        # inds = self._mesh.vertices_index[vertices_indices][:, 0]
+        # starts = np.unique(inds, return_index=True)[1]
+        # for i, ind in enumerate(indices):
+        #     inds = t_ind == ind
+        #     adjust_index = starts[i] - vertices_indices[starts[i]]
+        #     triangles[inds] = triangles[inds] + adjust_index
 
         return centers, offsets, triangles
 
