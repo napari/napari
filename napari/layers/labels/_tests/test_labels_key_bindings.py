@@ -8,7 +8,7 @@ from napari.layers.labels._labels_key_bindings import (
 )
 
 
-@pytest.fixture()
+@pytest.fixture
 def labels_data_4d():
     labels = np.zeros((5, 7, 8, 9), dtype=int)
     labels[1, 2:4, 4:6, 4:6] = 1

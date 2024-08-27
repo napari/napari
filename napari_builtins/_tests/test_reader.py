@@ -10,7 +10,7 @@ import tifffile
 from napari_builtins.io._write import write_csv
 
 
-@pytest.fixture()
+@pytest.fixture
 def save_image(tmp_path: Path):
     """Create a temporary file."""
 

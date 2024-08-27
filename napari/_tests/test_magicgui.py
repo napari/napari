@@ -81,9 +81,6 @@ def test_add_layer_data_to_viewer_optional(make_napari_viewer):
     assert len(viewer.layers) == 1
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 9), reason='Futures not subscriptable before py3.9'
-)
 @pytest.mark.parametrize(('LayerType', 'data', 'ndim'), test_data)
 def test_magicgui_add_future_data(
     qtbot, make_napari_viewer, LayerType, data, ndim

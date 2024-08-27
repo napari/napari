@@ -274,9 +274,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.dims.events.current_step.connect(self._update_layers)
         self.dims.events.margin_left.connect(self._update_layers)
         self.dims.events.margin_right.connect(self._update_layers)
-        self.cursor.events.position.connect(
-            self._update_status_bar_from_cursor
-        )
+        self.cursor.events.position.connect(self.update_status_from_cursor)
         self.layers.events.inserted.connect(self._on_add_layer)
         self.layers.events.removed.connect(self._on_remove_layer)
         self.layers.events.reordered.connect(self._on_grid_change)
@@ -495,7 +493,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.cursor.size = active_layer.cursor_size
             self.camera.mouse_pan = active_layer.mouse_pan
             self.camera.mouse_zoom = active_layer.mouse_zoom
-            self._update_status_bar_from_cursor()
+            self.update_status_from_cursor()
 
     @staticmethod
     def rounded_division(min_val, max_val, precision):
@@ -550,33 +548,41 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         """Set layer slicer to force synchronous if async is disabled."""
         self._layer_slicer._force_sync = not event.value
 
-    def _update_status_bar_from_cursor(self, event=None):
-        """Update the status bar based on the current cursor position.
-
-        This is generally used as a callback when cursor.position is updated.
-        """
-        # Update status and help bar based on active layer
+    def _calc_status_from_cursor(
+        self,
+    ) -> Optional[tuple[Union[str, Dict], str]]:
         if not self.mouse_over_canvas:
-            return
+            return None
         active = self.layers.selection.active
         if active is not None:
-            self.status = active.get_status(
+            status = active.get_status(
                 self.cursor.position,
                 view_direction=self.cursor._view_direction,
                 dims_displayed=list(self.dims.displayed),
                 world=True,
             )
 
-            self.help = active.help
             if self.tooltip.visible:
-                self.tooltip.text = active._get_tooltip_text(
+                tooltip_text = active._get_tooltip_text(
                     np.asarray(self.cursor.position),
                     view_direction=np.asarray(self.cursor._view_direction),
                     dims_displayed=list(self.dims.displayed),
                     world=True,
                 )
-        else:
-            self.status = 'Ready'
+            else:
+                tooltip_text = ''
+
+            return status, tooltip_text
+
+        return 'Ready', ''
+
+    def update_status_from_cursor(self):
+        """Update the status and tooltip from the cursor position."""
+        status = self._calc_status_from_cursor()
+        if status is not None:
+            self.status, self.tooltip.text = status
+        if (active := self.layers.selection.active) is not None:
+            self.help = active.help
 
     def _on_grid_change(self):
         """Arrange the current layers is a 2D grid."""

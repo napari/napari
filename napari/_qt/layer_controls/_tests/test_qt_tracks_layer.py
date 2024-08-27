@@ -6,12 +6,12 @@ from napari._qt.layer_controls.qt_tracks_controls import QtTracksControls
 from napari.layers import Tracks
 
 
-@pytest.fixture()
+@pytest.fixture
 def null_data() -> np.ndarray:
     return np.zeros((2, 4))
 
 
-@pytest.fixture()
+@pytest.fixture
 def properties() -> dict[str, list]:
     return {
         'track_id': [0, 0],

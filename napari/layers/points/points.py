@@ -617,7 +617,7 @@ class Points(Layer):
         self.antialiasing = antialiasing
 
         # Trigger generation of view slice and thumbnail
-        self.refresh()
+        self.refresh(extent=False)
 
     @classmethod
     def _add_deprecated_properties(cls) -> None:
@@ -935,7 +935,7 @@ class Points(Layer):
         self._out_of_slice_display = bool(out_of_slice_display)
         self.events.out_of_slice_display()
         self.events.n_dimensional()
-        self.refresh()
+        self.refresh(extent=False)
 
     @property
     def n_dimensional(self) -> bool:
@@ -959,7 +959,16 @@ class Points(Layer):
         # If a single symbol has been converted, this will broadcast it to
         # the number of points in the data. If symbols is already an array,
         # this will check that it is the correct length.
-        coerced_symbols = np.broadcast_to(coerced_symbols, self.data.shape[0])
+        if coerced_symbols.size == 1:
+            coerced_symbols = np.full(
+                self.data.shape[0], coerced_symbols[0], dtype=object
+            )
+        else:
+            coerced_symbols = np.array(coerced_symbols)
+            if coerced_symbols.size != self.data.shape[0]:
+                raise ValueError(
+                    'Symbol array must be the same length as data.'
+                )
         self._symbol = coerced_symbols
         self.events.symbol()
         self.events.highlight()
@@ -1011,8 +1020,8 @@ class Points(Layer):
                     category=DeprecationWarning,
                     stacklevel=2,
                 )
-        self._clear_extent_augmented()
-        self.refresh()
+        # TODO: technically not needed to cleat the non-augmented extent... maybe it's fine like this to avoid complexity
+        self.refresh(highlight=False)
 
     @property
     def current_size(self) -> Union[int, float]:
@@ -1051,8 +1060,8 @@ class Points(Layer):
         if self._update_properties and len(self.selected_data) > 0:
             idx = np.fromiter(self.selected_data, dtype=int)
             self.size[idx] = size
-            self._clear_extent_augmented()
-            self.refresh()
+            # TODO: also here technically no need to clear base extent
+            self.refresh(highlight=False)
             self.events.size()
         self.events.current_size()
 
@@ -1108,7 +1117,7 @@ class Points(Layer):
     @shown.setter
     def shown(self, shown):
         self._shown = np.broadcast_to(shown, self.data.shape[0]).astype(bool)
-        self.refresh()
+        self.refresh(extent=False, highlight=False)
 
     @property
     def border_width(self) -> np.ndarray:
@@ -1141,7 +1150,7 @@ class Points(Layer):
 
         self._border_width = border_width
         self.events.border_width(value=border_width)
-        self.refresh()
+        self.refresh(extent=False)
 
     @property
     def border_width_is_relative(self) -> bool:
@@ -1173,7 +1182,7 @@ class Points(Layer):
         if self._update_properties and len(self.selected_data) > 0:
             idx = np.fromiter(self.selected_data, dtype=int)
             self.border_width[idx] = border_width
-            self.refresh()
+            self.refresh(highlight=False)
             self.events.border_width()
         self.events.current_border_width()
 
@@ -1996,7 +2005,6 @@ class Points(Layer):
             and np.array_equal(self._drag_box, self._drag_box_stored)
         ) and not force:
             return
-        prev_stored = self._selected_data_stored
         self._selected_data_stored = Selection(self.selected_data)
         self._value_stored = copy(self._value)
         self._drag_box_stored = copy(self._drag_box)
@@ -2043,8 +2051,7 @@ class Points(Layer):
             pos = None
 
         self._highlight_box = pos
-        if prev_stored != self._selected_data_stored:
-            self.events.highlight()
+        self.events.highlight()
 
     def _update_thumbnail(self) -> None:
         """Update thumbnail with current points and colors."""
