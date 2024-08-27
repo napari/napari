@@ -7,7 +7,7 @@ multiple textures.
 
 Thanks to Emmanuel Reynaud and Luis Gutierrez for providing the gorgeous coral
 model for this demo. You can find the data on FigShare:
-https://doi.org/10.6084/m9.figshare.22348645
+https://zenodo.org/records/13380203
 
 More information on the methods used to generate this model can be found in *L.
 Gutierrez-Heredia, C. Keogh, E. G. Reynaud, Assessing the Capabilities of
