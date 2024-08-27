@@ -63,7 +63,7 @@ coverage==7.6.1
     #   pytest-cov
 cycler==0.12.1
     # via matplotlib
-dask==2024.8.0
+dask==2024.8.1
     # via napari (napari_repo/pyproject.toml)
 debugpy==1.8.5
     # via ipykernel
@@ -119,13 +119,13 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.111.0
+hypothesis==6.111.1
     # via napari (napari_repo/pyproject.toml)
 idna==3.7
     # via
     #   anyio
     #   requests
-imageio==2.34.2
+imageio==2.35.1
     # via
     #   napari (napari_repo/pyproject.toml)
     #   napari-svg
@@ -216,7 +216,7 @@ markdown-it-py==3.0.0
     #   rich
 markupsafe==2.1.5
     # via jinja2
-matplotlib==3.9.1.post1
+matplotlib==3.9.2
     # via
     #   -r docs/requirements.txt
     #   napari (napari_repo/pyproject.toml)
@@ -515,7 +515,7 @@ pyyaml==6.0.2
     #   myst-parser
     #   npe2
     #   sphinx-external-toc
-pyzmq==26.1.0
+pyzmq==26.1.1
     # via
     #   ipykernel
     #   jupyter-client
@@ -562,7 +562,7 @@ scipy==1.14.0
     #   nilearn
     #   scikit-image
     #   scikit-learn
-setuptools==72.1.0
+setuptools==72.2.0
     # via imageio-ffmpeg
 shellingham==1.5.4
     # via typer
@@ -583,7 +583,7 @@ snowballstemmer==2.2.0
     # via sphinx
 sortedcontainers==2.4.0
     # via hypothesis
-soupsieve==2.5
+soupsieve==2.6
     # via beautifulsoup4
 sphinx==7.4.7
     # via
@@ -696,7 +696,7 @@ triangle==20230923
     # via napari (napari_repo/pyproject.toml)
 triton==3.0.0
     # via torch
-typer==0.12.3
+typer==0.12.4
     # via npe2
 typing-extensions==4.12.2
     # via
@@ -720,7 +720,7 @@ tzdata==2024.1
     # via pandas
 urllib3==2.2.2
     # via requests
-uvicorn==0.30.5
+uvicorn==0.30.6
     # via sphinx-autobuild
 virtualenv==20.26.3
     # via napari (napari_repo/pyproject.toml)

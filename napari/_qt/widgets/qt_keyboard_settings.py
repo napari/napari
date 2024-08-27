@@ -554,6 +554,14 @@ class ShortcutEditor(QWidget):
 
         return value
 
+    def setValue(self, state):
+        for action, shortcuts in state.items():
+            action_manager.unbind_shortcut(action)
+            for shortcut in shortcuts:
+                action_manager.bind_shortcut(action, shortcut)
+
+        self._set_table(layer_str=self.layer_combo_box.currentText())
+
 
 class ShortcutDelegate(QItemDelegate):
     """Delegate that handles when user types in new shortcut."""
