@@ -81,7 +81,7 @@ def fail_obj_graph(Klass):  # pragma: no cover
         )
 
 
-@pytest.fixture()
+@pytest.fixture
 def napari_plugin_manager(monkeypatch):
     """A napari plugin manager that blocks discovery by default.
 
@@ -139,7 +139,7 @@ def pytest_runtest_makereport(item, call):
     setattr(item, f'rep_{rep.when}', rep)
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_app():
     """Mock clean 'test_app' `NapariApplication` instance.
 
@@ -175,7 +175,7 @@ def mock_app():
             Application.destroy('test_app')
 
 
-@pytest.fixture()
+@pytest.fixture
 def make_napari_viewer(
     qtbot,
     request: 'FixtureRequest',
@@ -276,9 +276,9 @@ def make_napari_viewer(
     prior_exception = getattr(sys, 'last_value', None)
     is_internal_test = request.module.__name__.startswith('napari.')
 
-    # disable throttling cursor event in tests
+    # disable thread for status checker
     monkeypatch.setattr(
-        'napari._qt.qt_main_window._QtMainWindow._throttle_cursor_to_status_connection',
+        'napari._qt.threads.status_checker.StatusChecker.start',
         _empty,
     )
 
@@ -382,7 +382,7 @@ def make_napari_viewer(
                 warnings.warn(msg)
 
 
-@pytest.fixture()
+@pytest.fixture
 def make_napari_viewer_proxy(make_napari_viewer, monkeypatch):
     """Fixture that returns a function for creating a napari viewer wrapped in proxy.
     Use in the same way like `make_napari_viewer` fixture.
@@ -414,7 +414,7 @@ def make_napari_viewer_proxy(make_napari_viewer, monkeypatch):
     return actual_factory
 
 
-@pytest.fixture()
+@pytest.fixture
 def MouseEvent():
     """Create a subclass for simulating vispy mouse events.
 

@@ -344,7 +344,7 @@ def test_feature_table_from_layer_with_properties_as_dataframe():
     pd.testing.assert_frame_equal(feature_table.values, TEST_FEATURES)
 
 
-@pytest.fixture()
+@pytest.fixture
 def feature_table():
     return _FeatureTable(TEST_FEATURES.copy(deep=True), num_data=4)
 
