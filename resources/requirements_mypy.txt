@@ -28,7 +28,7 @@ mypy-extensions==1.0.0
     # via mypy
 npe2==0.7.7
     # via -r napari_repo/resources/requirements_mypy.in
-numpy==2.0.1
+numpy==2.1.0
     # via -r napari_repo/resources/requirements_mypy.in
 packaging==24.1
     # via
@@ -77,13 +77,13 @@ superqt==0.6.7
     # via magicgui
 tomli-w==1.0.0
     # via npe2
-typer==0.12.3
+typer==0.12.4
     # via npe2
 types-pyyaml==6.0.12.20240808
     # via -r napari_repo/resources/requirements_mypy.in
 types-requests==2.32.0.20240712
     # via -r napari_repo/resources/requirements_mypy.in
-types-setuptools==71.1.0.20240806
+types-setuptools==71.1.0.20240818
     # via -r napari_repo/resources/requirements_mypy.in
 typing-extensions==4.12.2
     # via

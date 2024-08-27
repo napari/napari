@@ -8,7 +8,7 @@ from napari.components.dims import Dims
 from napari.layers import Surface
 
 
-@pytest.fixture()
+@pytest.fixture
 def cube_layer():
     vertices, faces, _ = create_cube()
     return Surface((vertices['position'] * 100, faces))

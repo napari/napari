@@ -19,12 +19,12 @@ from napari.layers import Image, Layer, Points, Vectors
 from napari.utils.events import Event
 
 
-@pytest.fixture()
+@pytest.fixture
 def rng() -> np.random.Generator:
     return np.random.default_rng(0)
 
 
-@pytest.fixture()
+@pytest.fixture
 def _enable_async(_fresh_settings, make_napari_viewer):
     """
     This fixture depends on _fresh_settings and make_napari_viewer

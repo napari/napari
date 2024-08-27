@@ -83,7 +83,7 @@ def test_list_of_dask_arrays_doesnt_create_cache():
     assert dask.config.get('optimization.fuse.active', None) == original
 
 
-@pytest.fixture()
+@pytest.fixture
 def delayed_dask_stack():
     """A 4D (20, 10, 10, 10) delayed dask array, simulates disk io."""
     # we will return a dict with a 'calls' variable that tracks call count

@@ -54,6 +54,6 @@ def some_layer(request):
     return request.param
 
 
-@pytest.fixture()
+@pytest.fixture
 def layers_list():
     return LAYERS

@@ -68,7 +68,7 @@ class FakeSyncLayer:
         self.slice_count += 1
 
 
-@pytest.fixture()
+@pytest.fixture
 def layer_slicer():
     layer_slicer = _LayerSlicer()
     layer_slicer._force_sync = False

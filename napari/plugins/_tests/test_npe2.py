@@ -19,7 +19,7 @@ PLUGIN_DISPLAY_NAME = 'My Plugin'  # this matches the sample_manifest
 MANIFEST_PATH = Path(__file__).parent / '_sample_manifest.yaml'
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_pm(npe2pm: 'TestPluginManager'):
     from napari.plugins import _initialize_plugins
 

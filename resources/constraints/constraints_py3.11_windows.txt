@@ -58,7 +58,7 @@ coverage==7.6.1
     #   pytest-cov
 cycler==0.12.1
     # via matplotlib
-dask==2024.8.0
+dask==2024.8.1
     # via napari (napari_repo/pyproject.toml)
 debugpy==1.8.5
     # via ipykernel
@@ -97,11 +97,11 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.111.0
+hypothesis==6.111.1
     # via napari (napari_repo/pyproject.toml)
 idna==3.7
     # via requests
-imageio==2.34.2
+imageio==2.35.1
     # via
     #   napari (napari_repo/pyproject.toml)
     #   napari-svg
@@ -166,7 +166,7 @@ markdown-it-py==3.0.0
     # via rich
 markupsafe==2.1.5
     # via jinja2
-matplotlib==3.9.1.post1
+matplotlib==3.9.2
     # via
     #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari (napari_repo/pyproject.toml)
@@ -385,7 +385,7 @@ pyyaml==6.0.2
     #   napari (napari_repo/pyproject.toml)
     #   dask
     #   npe2
-pyzmq==26.1.0
+pyzmq==26.1.1
     # via
     #   ipykernel
     #   jupyter-client
@@ -503,7 +503,7 @@ traitlets==5.14.3
     #   qtconsole
 triangle==20230923
     # via napari (napari_repo/pyproject.toml)
-typer==0.12.3
+typer==0.12.4
     # via npe2
 typing-extensions==4.12.2
     # via
