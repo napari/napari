@@ -303,7 +303,7 @@ cases = [
 ]
 
 
-@pytest.fixture()
+@pytest.fixture
 def create_complex_shape():
     shape = np.array(
         [

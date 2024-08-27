@@ -616,8 +616,7 @@ class ShortcutsWidget(SchemaWidgetMixin, ShortcutEditor):
 
     @state.setter
     def state(self, state: dict):
-        # self.setValue(state)
-        return None
+        self.setValue(state)
 
     def configure(self):
         self.valueChanged.connect(self.on_changed.emit)

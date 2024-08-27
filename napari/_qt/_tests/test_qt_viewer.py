@@ -742,7 +742,7 @@ def _update_data(
     return color_box_color, middle_pixel
 
 
-@pytest.fixture()
+@pytest.fixture
 def qt_viewer_with_controls(qtbot):
     qt_viewer = QtViewer(viewer=ViewerModel())
     qt_viewer.show()
@@ -865,7 +865,7 @@ def test_axis_labels(make_napari_viewer):
     assert tuple(axes_visual.node.text.text) == ('2', '1', '0')
 
 
-@pytest.fixture()
+@pytest.fixture
 def qt_viewer(qtbot):
     qt_viewer = QtViewer(ViewerModel())
     qt_viewer.show()
