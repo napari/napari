@@ -50,8 +50,8 @@ label_features = {
 colors = {1: 'white', 2: 'blue', 3: 'green', 4: 'red', 5: 'yellow',
           None: 'magenta'}
 # Here we provide a dict with color mappings for a subset of labels;
-# when passed to `add_labels`, using the colormap kwarg, it will be
-# internally converted to a napari.utils.colormaps.DirectLabelColormap
+# when passed to `add_labels`, using the `colormap` kwarg, it will be
+# internally converted to a `napari.utils.colormaps.DirectLabelColormap`
 # Note: we also provide a default color (`None` key) which will be used
 # by all other labels
 
