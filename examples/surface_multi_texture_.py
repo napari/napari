@@ -55,7 +55,7 @@ import napari
 # Download the model
 # ------------------
 download = pooch.DOIDownloader(progressbar=True)
-doi = '10.6084/m9.figshare.22348645.v1'
+doi = '10.5281/zenodo.13380203'
 tmp_dir = pooch.os_cache('napari-surface-texture-example')
 os.makedirs(tmp_dir, exist_ok=True)
 data_files = {
