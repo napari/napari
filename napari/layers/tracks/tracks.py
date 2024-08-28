@@ -338,6 +338,7 @@ class Tracks(Layer):
             colormapped[coords[:, 1], coords[:, 0]] = colors
 
         colormapped[..., 3] *= self.opacity
+        colormapped[np.isnan(colormapped)] = 0
         self.thumbnail = colormapped.astype(np.uint8)
 
     @property
