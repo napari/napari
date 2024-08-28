@@ -79,7 +79,7 @@ class QtColormapComboBox(QComboBox):
     Parameters
     ----------
     parent : QWidget
-        Parent widget of comboxbox.
+        Parent widget of combobox.
     """
 
     def __init__(self, parent) -> None:

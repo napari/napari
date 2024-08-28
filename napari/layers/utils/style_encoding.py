@@ -1,3 +1,4 @@
+import logging
 import warnings
 from abc import ABC, abstractmethod
 from typing import (
@@ -104,6 +105,140 @@ class StyleEncoding(Protocol[StyleValue, StyleArray]):
         dict
             The dictionary representation of this with JSON compatible keys and values.
         """
+
+
+class StyleCollection(EventedModel):
+    """Base class for mapping channels to encodings.
+
+    Extend this class with an attribute named after each visual channel
+    containing the encoding for that channel.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> class Style(StyleCollection):
+    >>>     edge_color: ColorEncoding
+    >>>     face_color: ColorEncoding
+    >>> style = Style(
+    >>>     edge_color={
+    >>>         'feature': 'confidence',
+    >>>         'colormap': 'gray',
+    >>>         'contrast_limits': (0, 1),
+    >>>     },
+    >>>     face_color={
+    >>>         'feature': 'good_point',
+    >>>         'colormap': {False: 'green', True: 'blue'},
+    >>>     },
+    >>> )
+    >>> features = pd.DataFrame({
+    >>>     'confidence': [1, 0.5, 0],
+    >>>     'good_point': [True, False, False],
+    >>> })
+    >>> style(features)
+    {
+        'edge_color': array([[1, 1, 1, 1], [0.5, 0.5, 0.5, 1], [0, 0, 0, 1]]),
+        'face_color': array([[0, 1, 0, 1], [0, 0, 1, 1]]),
+    }
+    """
+
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        # Implement event bubbling from style encoding instances by connecting
+        # each encoding's main event to this collection's main event.
+        for encoding in self._encodings:
+            encoding.events.connect(self.events)
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        # Maintain event bubbling from new instance of encoding.
+        is_channel = name in self._channels
+        logging.warning(
+            'StyleCollection.__setattr__: %s, %s, %s', name, value, is_channel
+        )
+        if is_channel:
+            getattr(self, name).events.disconnect(self.events)
+        super().__setattr__(name, value)
+        if is_channel:
+            getattr(self, name).events.connect(self.events)
+
+    def __call__(
+        self, features: Any
+    ) -> dict[str, Union[StyleValue, StyleArray]]:
+        """Apply all encodings with the given features to generate style values.
+
+        Parameters
+        ----------
+        features : Dataframe-like
+            The layer features table from which to derive the output values.
+
+        Returns
+        -------
+        dict[str, Union[StyleValue, StyleArray]]
+            Maps from channel/field name to either a single style value
+            (e.g. from a constant encoding) or an array of encoded values the
+            same length as the given features.
+
+        Raises
+        ------
+        KeyError, ValueError
+            If generating values from the given features fails.
+        """
+        return {
+            channel: encoding(features)
+            for channel, encoding in zip(self._channels, self._encodings)
+        }
+
+    @property
+    def _channels(self) -> tuple[str, ...]:
+        """Channel names in this style collection.
+
+        Example: ('face_color', 'edge_color', 'size').
+        """
+        return tuple(self.__fields__)
+
+    @property
+    def _encodings(self) -> tuple[StyleEncoding, ...]:
+        """Encodings in this style collection, one per visual channel.
+
+        The order matches the order of `_channels`.
+        """
+        return tuple(
+            getattr(self, channel_name) for channel_name in self._channels
+        )
+
+    def _apply(self, features: Any) -> None:
+        # TODO: what if instead of storing the cached values in the encodings,
+        # we stored them in the collection. This would allow us to simplify
+        # the style encoding and also potentially store features in the collection
+        # to more easily respond to the necessary changes.
+        # This may also allow an easy separation of encoding and value store,
+        # which was desired but was difficult to implement prior to introducing
+        # the collection.
+        for encoding in self._encodings:
+            encoding._apply(features)
+
+    def _clear(self) -> None:
+        for encoding in self._encodings:
+            encoding._clear()
+
+    def _refresh(self, features: Any) -> None:
+        self._clear()
+        self._apply(features)
+
+    def _delete(self, indices: IndicesType) -> None:
+        for encoding in self._encodings:
+            encoding._delete(indices)
+
+    def _copy(
+        self, indices: IndicesType
+    ) -> dict[str, Union[StyleValue, StyleArray]]:
+        return {
+            channel: _get_style_values(encoding, indices)
+            for channel, encoding in zip(self._channels, self._encodings)
+        }
+
+    def _paste(self, **elements) -> None:
+        for channel, values in elements.items():
+            getattr(self, channel)._append(values)
 
 
 class _StyleEncodingModel(EventedModel):
@@ -235,6 +370,13 @@ class _DerivedStyleEncoding(
     @abstractmethod
     def __call__(self, features: Any) -> Union[StyleValue, StyleArray]:
         pass
+
+    # This is a crude way to clear cached values when any of the fields
+    # that affect those values change.
+    def __setattr__(self, name: str, value: Any) -> None:
+        if name[0] != '_' and name != 'fallback':
+            self._clear()
+        super().__setattr__(name, value)
 
     @property
     def _values(self) -> Union[StyleValue, StyleArray]:
