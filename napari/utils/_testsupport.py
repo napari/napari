@@ -317,14 +317,6 @@ def make_napari_viewer(
 
     yield actual_factory
 
-    # Clear cached property `Action.injected`, see #7219 for details
-    # To be removed after ActionManager deprecation
-    from napari.utils.action_manager import action_manager
-
-    for action in action_manager._actions.values():
-        if 'injected' in action.__dict__:
-            del action.__dict__['injected']
-
     # Some tests might have the viewer closed, so this call will not be able
     # to access the window.
     with suppress(AttributeError):
