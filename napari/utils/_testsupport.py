@@ -317,6 +317,8 @@ def make_napari_viewer(
 
     yield actual_factory
 
+    # Clear cached property `Action.injected`, see #7219 for details
+    # To be removed after ActionManager deprecation
     from napari.utils.action_manager import action_manager
 
     for action in action_manager._actions.values():
