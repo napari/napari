@@ -295,11 +295,30 @@ class ShortcutEditor(QWidget):
     def _get_layer_actions(self):
         current_layer_text = self.layer_combo_box.currentText()
         layer_actions = self.key_bindings_strs[current_layer_text]
-        actions_all = layer_actions.copy()
-        if current_layer_text is not self.VIEWER_KEYBINDINGS:
+        actions_all = tuple(
+            zip(
+                (current_layer_text,) * len(layer_actions.items()),
+                layer_actions.items(),
+            )
+        )
+        if current_layer_text != self.VIEWER_KEYBINDINGS:
             viewer_actions = self.key_bindings_strs[self.VIEWER_KEYBINDINGS]
-
-            actions_all.update(viewer_actions)
+            actions_all += tuple(
+                zip(
+                    (self.VIEWER_KEYBINDINGS,) * len(viewer_actions.items()),
+                    viewer_actions.items(),
+                )
+            )
+        else:
+            for group, keybindings in self.key_bindings_strs.items():
+                if group != self.VIEWER_KEYBINDINGS:
+                    group_actions = tuple(
+                        zip(
+                            (group,) * len(keybindings.items()),
+                            keybindings.items(),
+                        )
+                    )
+                    actions_all += group_actions
         return actions_all
 
     def _restore_shortcuts(self, row):
@@ -320,7 +339,7 @@ class ShortcutEditor(QWidget):
         current_action = self._table.item(row, self._action_col).text()
         actions_all = self._get_layer_actions()
         current_item = self._table.currentItem()
-        for row1, (action_name, action) in enumerate(actions_all.items()):
+        for row1, (group, (action_name, action)) in enumerate(actions_all):
             shortcuts = action_manager._shortcuts.get(action_name, [])
 
             if Shortcut(new_shortcut).qt not in [
@@ -336,9 +355,10 @@ class ShortcutEditor(QWidget):
 
                 # show warning message
                 message = trans._(
-                    'The keybinding <b>{new_shortcut}</b>  is already assigned to <b>{action_description}</b>; change or clear that shortcut before assigning <b>{new_shortcut}</b> to this one.',
+                    'The keybinding <b>{new_shortcut}</b>  is already assigned to <b>{action_description}</b> for the <b>{group}</b> group; change or clear that shortcut before assigning <b>{new_shortcut}</b> to this one.',
                     new_shortcut=new_shortcut,
                     action_description=action.description,
+                    group=group,
                 )
                 self._show_warning(row, message)
 
