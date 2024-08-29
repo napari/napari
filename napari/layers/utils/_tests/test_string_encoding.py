@@ -15,7 +15,7 @@ def make_features_with_no_columns(*, num_rows) -> pd.DataFrame:
     return pd.DataFrame({}, index=range(num_rows))
 
 
-@pytest.fixture()
+@pytest.fixture
 def features() -> pd.DataFrame:
     return pd.DataFrame(
         {
@@ -25,7 +25,7 @@ def features() -> pd.DataFrame:
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def numeric_features() -> pd.DataFrame:
     return pd.DataFrame(
         {

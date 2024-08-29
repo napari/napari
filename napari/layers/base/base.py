@@ -625,7 +625,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         if self._projection_mode != mode:
             self._projection_mode = mode
             self.events.projection_mode()
-            self.refresh()
+            self.refresh(extent=False)
 
     @property
     def unique_id(self) -> Hashable:
@@ -768,7 +768,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @visible.setter
     def visible(self, visible: bool) -> None:
         self._visible = visible
-        self.refresh()
+        if visible:
+            # needed because things might have changed while invisible
+            # and refresh is noop while invisible
+            self.refresh(extent=False)
         self.events.visible()
 
     @property
@@ -827,7 +830,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         if scale is None:
             scale = np.array([1] * self.ndim)
         self._transforms['data2physical'].scale = np.array(scale)
-        self._clear_extents_and_refresh()
+        self.refresh()
         self.events.scale()
 
     @property
@@ -838,7 +841,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @translate.setter
     def translate(self, translate: npt.ArrayLike) -> None:
         self._transforms['data2physical'].translate = np.array(translate)
-        self._clear_extents_and_refresh()
+        self.refresh()
         self.events.translate()
 
     @property
@@ -849,7 +852,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @rotate.setter
     def rotate(self, rotate: npt.NDArray) -> None:
         self._transforms['data2physical'].rotate = rotate
-        self._clear_extents_and_refresh()
+        self.refresh()
         self.events.rotate()
 
     @property
@@ -860,7 +863,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @shear.setter
     def shear(self, shear: npt.NDArray) -> None:
         self._transforms['data2physical'].shear = shear
-        self._clear_extents_and_refresh()
+        self.refresh()
         self.events.shear()
 
     @property
@@ -876,7 +879,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._transforms[2] = coerce_affine(
             affine, ndim=self.ndim, name='physical2world'
         )
-        self._clear_extents_and_refresh()
+        self.refresh()
         self.events.affine()
 
     def _reset_affine(self) -> None:
@@ -910,7 +913,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         self._ndim = ndim
 
-        self._clear_extents_and_refresh()
+        self.refresh()
 
     @property
     @abstractmethod
@@ -1027,17 +1030,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         if '_extent_augmented' in self.__dict__:
             del self._extent_augmented
         self.events._extent_augmented()
-
-    def _clear_extents_and_refresh(self) -> None:
-        """Clears the cached extents, emits events and refreshes the layer.
-
-        This should be called whenever this data or transform information
-        changes, and should be called before any other related events
-        are emitted so that they use the updated extent values.
-        """
-        self._clear_extent()
-        self._clear_extent_augmented()
-        self.refresh()
 
     @property
     def _data_slice(self) -> _ThickNDSlice:
@@ -1288,7 +1280,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         slice_input = self._make_slice_input(dims)
         if force or (self._slice_input != slice_input):
             self._slice_input = slice_input
-            self._refresh_sync()
+            self._refresh_sync(
+                data_displayed=True,
+                thumbnail=True,
+                highlight=True,
+                extent=True,
+            )
 
     def _make_slice_input(
         self,
@@ -1515,7 +1512,16 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         finally:
             self._refresh_blocked = previous
 
-    def refresh(self, event: Optional[Event] = None) -> None:
+    def refresh(
+        self,
+        event: Optional[Event] = None,
+        *,
+        thumbnail: bool = True,
+        data_displayed: bool = True,
+        highlight: bool = True,
+        extent: bool = True,
+        force: bool = False,
+    ) -> None:
         """Refresh all layer data based on current view slice."""
         if self._refresh_blocked:
             logger.debug('Layer.refresh blocked: %s', self)
@@ -1526,14 +1532,35 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             self.events.reload(layer=self)
         # Otherwise, slice immediately on the calling thread.
         else:
-            self._refresh_sync()
+            self._refresh_sync(
+                thumbnail=thumbnail,
+                data_displayed=data_displayed,
+                highlight=highlight,
+                extent=extent,
+                force=force,
+            )
 
-    def _refresh_sync(self, event: Optional[Event] = None) -> None:
+    def _refresh_sync(
+        self,
+        *,
+        thumbnail: bool = False,
+        data_displayed: bool = False,
+        highlight: bool = False,
+        extent: bool = False,
+        force: bool = False,
+    ) -> None:
         logger.debug('Layer._refresh_sync: %s', self)
-        if self.visible:
+        if not (self.visible or force):
+            return
+        if extent:
+            self._clear_extent()
+            self._clear_extent_augmented()
+        if data_displayed:
             self.set_view_slice()
             self.events.set_data()
+        if thumbnail:
             self._update_thumbnail()
+        if highlight:
             self._set_highlight(force=True)
 
     def world_to_data(self, position: npt.ArrayLike) -> npt.NDArray:
@@ -2002,7 +2029,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             ):
                 self._data_level = level
                 self.corner_pixels = corners
-                self.refresh()
+                self.refresh(extent=False, thumbnail=False)
         else:
             # set the data_level so that it is the lowest resolution in 3d view
             if self.multiscale is True:

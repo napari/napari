@@ -8,7 +8,7 @@ from napari._qt.widgets.qt_highlight_preview import (
 )
 
 
-@pytest.fixture()
+@pytest.fixture
 def star_widget(qtbot):
     def _star_widget(**kwargs):
         widget = QtStar(**kwargs)
@@ -20,7 +20,7 @@ def star_widget(qtbot):
     return _star_widget
 
 
-@pytest.fixture()
+@pytest.fixture
 def triangle_widget(qtbot):
     def _triangle_widget(**kwargs):
         widget = QtTriangle(**kwargs)
@@ -32,7 +32,7 @@ def triangle_widget(qtbot):
     return _triangle_widget
 
 
-@pytest.fixture()
+@pytest.fixture
 def highlight_preview_widget(qtbot):
     def _highlight_preview_widget(**kwargs):
         widget = QtHighlightPreviewWidget(**kwargs)

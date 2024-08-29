@@ -20,7 +20,7 @@ from napari.errors.reader_errors import ReaderPluginError
 from napari.settings import get_settings
 
 
-@pytest.fixture()
+@pytest.fixture
 def reader_dialog(qtbot):
     def _reader_dialog(**kwargs):
         widget = QtReaderDialog(**kwargs)

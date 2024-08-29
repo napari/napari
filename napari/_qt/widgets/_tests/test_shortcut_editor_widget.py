@@ -18,7 +18,7 @@ if sys.platform == 'darwin':
     META_CONTROL_KEY = Qt.KeyboardModifier.MetaModifier
 
 
-@pytest.fixture()
+@pytest.fixture
 def shortcut_editor_widget(qtbot):
     # Always reset shortcuts (settings and action manager)
     get_settings().shortcuts.reset()
