@@ -57,7 +57,7 @@ def _fan_triangulation(poly: npt.NDArray) -> tuple[npt.NDArray, npt.NDArray]:
         The triangles of the triangulation, as triplets of indices into the
         vertices array.
     """
-    vertices = poly
+    vertices = np.copy(poly)
     triangles = np.zeros((len(poly) - 2, 3), dtype=np.uint32)
     triangles[:, 1] = np.arange(1, len(poly) - 1)
     triangles[:, 2] = np.arange(2, len(poly))
