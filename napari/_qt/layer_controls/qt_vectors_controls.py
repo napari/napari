@@ -92,7 +92,7 @@ class QtVectorsControls(QtLayerControls):
         self.edgeColorEdit = QColorSwatchEdit(
             initial_color=self.layer.edge_color,
             tooltip=trans._(
-                'click to set current edge color',
+                'Click to set current edge color',
             ),
         )
         self.edgeColorEdit.color_changed.connect(self.change_edge_color_direct)

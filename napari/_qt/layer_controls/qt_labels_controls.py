@@ -149,14 +149,14 @@ class QtLabelsControls(QtLayerControls):
         color_mode_comboBox.activated.connect(self.change_color_mode)
 
         contig_cb = QCheckBox()
-        contig_cb.setToolTip(trans._('contiguous editing'))
+        contig_cb.setToolTip(trans._('Contiguous editing'))
         contig_cb.stateChanged.connect(self.change_contig)
         self.contigCheckBox = contig_cb
         self._on_contiguous_change()
 
         ndim_sb = QSpinBox()
         self.ndimSpinBox = ndim_sb
-        ndim_sb.setToolTip(trans._('number of dimensions for label editing'))
+        ndim_sb.setToolTip(trans._('Number of dimensions for label editing'))
         ndim_sb.valueChanged.connect(self.change_n_edit_dim)
         ndim_sb.setMinimum(2)
         ndim_sb.setMaximum(self.layer.ndim)
@@ -166,7 +166,9 @@ class QtLabelsControls(QtLayerControls):
 
         self.contourSpinBox = QLargeIntSpinBox()
         self.contourSpinBox.setRange(0, dtype_lims[1])
-        self.contourSpinBox.setToolTip(trans._('display contours of labels'))
+        self.contourSpinBox.setToolTip(
+            trans._('Set width of displayed label contours')
+        )
         self.contourSpinBox.valueChanged.connect(self.change_contour)
         self.contourSpinBox.setKeyboardTracking(False)
         self.contourSpinBox.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -174,7 +176,7 @@ class QtLabelsControls(QtLayerControls):
 
         preserve_labels_cb = QCheckBox()
         preserve_labels_cb.setToolTip(
-            trans._('preserve existing labels while painting')
+            trans._('Preserve existing labels while painting')
         )
         preserve_labels_cb.stateChanged.connect(self.change_preserve_labels)
         self.preserveLabelsCheckBox = preserve_labels_cb
@@ -193,7 +195,7 @@ class QtLabelsControls(QtLayerControls):
             layer,
             'shuffle',
             slot=self.changeColor,
-            tooltip=trans._('shuffle colors'),
+            tooltip=trans._('Shuffle colors'),
         )
 
         self.pick_button = self._radio_button(
