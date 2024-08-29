@@ -20,7 +20,7 @@ except ModuleNotFoundError:
     triangulate = None
 
 
-def _is_convex(poly: npt.Array) -> bool:
+def _is_convex(poly: npt.NDArray) -> bool:
     """Check whether a polygon is convex.
 
     Parameters
@@ -39,7 +39,7 @@ def _is_convex(poly: npt.Array) -> bool:
     return np.unique(orientation(fst, snd, thrd)).size == 1
 
 
-def _fan_triangulation(poly: npt.Array) -> tuple[npt.Array, npt.Array]:
+def _fan_triangulation(poly: npt.NDArray) -> tuple[npt.NDArray, npt.NDArray]:
     """Return a fan triangulation of a given polygon.
 
     https://en.wikipedia.org/wiki/Fan_triangulation
