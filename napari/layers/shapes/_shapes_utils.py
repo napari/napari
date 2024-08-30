@@ -20,6 +20,50 @@ except ModuleNotFoundError:
     triangulate = None
 
 
+def _is_convex(poly: npt.NDArray) -> bool:
+    """Check whether a polygon is convex.
+
+    Parameters
+    ----------
+    poly: numpy array of floats, shape (N, 3)
+        Polygon vertices, in order.
+
+    Returns
+    -------
+    bool
+        True if the given polygon is convex.
+    """
+    fst = poly
+    snd = np.roll(poly, -1, axis=0)
+    thrd = np.roll(poly, -2, axis=0)
+    return np.unique(orientation(fst.T, snd.T, thrd.T)).size == 1
+
+
+def _fan_triangulation(poly: npt.NDArray) -> tuple[npt.NDArray, npt.NDArray]:
+    """Return a fan triangulation of a given polygon.
+
+    https://en.wikipedia.org/wiki/Fan_triangulation
+
+    Parameters
+    ----------
+    poly: numpy array of float, shape (N, 3)
+        Polygon vertices, in order.
+
+    Returns
+    -------
+    vertices : numpy array of float, shape (N, 3)
+        The vertices of the triangulation. In this case, the input array.
+    triangles : numpy array of int, shape (N, 3)
+        The triangles of the triangulation, as triplets of indices into the
+        vertices array.
+    """
+    vertices = np.copy(poly)
+    triangles = np.zeros((len(poly) - 2, 3), dtype=np.uint32)
+    triangles[:, 1] = np.arange(1, len(poly) - 1)
+    triangles[:, 2] = np.arange(2, len(poly))
+    return vertices, triangles
+
+
 def inside_boxes(boxes):
     """Checks which boxes contain the origin. Boxes need not be axis aligned
 
@@ -566,6 +610,8 @@ def triangulate_face(data: npt.NDArray) -> tuple[npt.NDArray, npt.NDArray]:
 
         res = triangulate({'vertices': data, 'segments': edges}, 'p')
         vertices, triangles = res['vertices'], res['triangles']
+    elif _is_convex(data):
+        vertices, triangles = _fan_triangulation(data)
     else:
         vertices, triangles = PolygonData(vertices=data).triangulate()
 
