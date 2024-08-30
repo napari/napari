@@ -1,3 +1,5 @@
+import sys
+
 import numpy as np
 import pytest
 from vispy.geometry import PolygonData
@@ -96,7 +98,7 @@ def test_polygon():
     assert shape.data_displayed.shape == (6, 2)
     assert shape.slice_key.shape == (2, 0)
     # should get few triangles
-    expected_face = (8, 2)
+    expected_face = (6, 2) if 'triangle' in sys.modules else (8, 2)
     assert shape._edge_vertices.shape == (16, 2)
     assert shape._face_vertices.shape == expected_face
 
