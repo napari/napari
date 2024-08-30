@@ -80,7 +80,7 @@ def test_polygon_data_triangle_module():
 
 def test_polygon():
     """Test creating Shape with a random polygon."""
-    # Test a single six vertex polygon
+    # Test a single non convex six vertex polygon
     data = np.array(
         [
             [10.97627008, 14.30378733],
@@ -96,7 +96,7 @@ def test_polygon():
     assert shape.data_displayed.shape == (6, 2)
     assert shape.slice_key.shape == (2, 0)
     # should get few triangles
-    expected_face = (6, 2)
+    expected_face = (8, 2)
     assert shape._edge_vertices.shape == (16, 2)
     assert shape._face_vertices.shape == expected_face
 
