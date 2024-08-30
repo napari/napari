@@ -7,7 +7,7 @@ from napari._qt.widgets.qt_extension2reader import Extension2ReaderTable
 from napari.settings import get_settings
 
 
-@pytest.fixture()
+@pytest.fixture
 def extension2reader_widget(qtbot):
     def _extension2reader_widget(**kwargs):
         widget = Extension2ReaderTable(**kwargs)
@@ -19,7 +19,7 @@ def extension2reader_widget(qtbot):
     return _extension2reader_widget
 
 
-@pytest.fixture()
+@pytest.fixture
 def tif_reader(tmp_plugin: DynamicPlugin):
     tmp2 = tmp_plugin.spawn(name='tif_reader', register=True)
 
@@ -29,7 +29,7 @@ def tif_reader(tmp_plugin: DynamicPlugin):
     return tmp2
 
 
-@pytest.fixture()
+@pytest.fixture
 def npy_reader(tmp_plugin: DynamicPlugin):
     tmp2 = tmp_plugin.spawn(name='npy_reader', register=True)
 

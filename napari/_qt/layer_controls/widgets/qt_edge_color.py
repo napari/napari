@@ -41,7 +41,9 @@ class QtEdgeColorControl(QtWidgetControlsBase):
         # Setup widgets
         self.edgeColorEdit = QColorSwatchEdit(
             initial_color=self._layer.current_edge_color,
-            tooltip=trans._('click to set current edge color'),
+            tooltip=trans._(
+                'Click to set the edge color of currently selected shapes and any added afterwards'
+            ),
         )
         self.edgeColorLabel = QtWrappedLabel(trans._('edge color:'))
         self._on_current_edge_color_change()

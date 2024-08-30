@@ -39,7 +39,7 @@ class QtTextVisibilityControl(QtWidgetControlsBase):
 
         # Setup widgets
         text_disp_cb = QCheckBox()
-        text_disp_cb.setToolTip(trans._('toggle text visibility'))
+        text_disp_cb.setToolTip(trans._('Toggle text visibility'))
         text_disp_cb.setChecked(self._layer.text.visible)
         text_disp_cb.stateChanged.connect(self.change_text_visibility)
         self.textDispCheckBox = text_disp_cb

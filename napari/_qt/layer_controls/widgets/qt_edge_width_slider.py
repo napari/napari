@@ -52,6 +52,11 @@ class QtEdgeWidthSliderControl(QtWidgetControlsBase):
         sld.setValue(int(value))
         sld.valueChanged.connect(self.changeWidth)
         self.edgeWidthSlider = sld
+        self.edgeWidthSlider.setToolTip(
+            trans._(
+                'Set the edge width of currently selected shapes and any added afterwards.'
+            )
+        )
         self.edgeWidthLabel = QtWrappedLabel(trans._('edge width:'))
 
     def changeWidth(self, value: float) -> None:

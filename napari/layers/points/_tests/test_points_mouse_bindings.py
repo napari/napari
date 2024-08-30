@@ -40,7 +40,7 @@ def read_only_event(*args, **kwargs):
     return ReadOnlyWrapper(Event(*args, **kwargs), exceptions=('handled',))
 
 
-@pytest.fixture()
+@pytest.fixture
 def create_known_points_layer_2d():
     """Create points layer with known coordinates
 
@@ -67,7 +67,7 @@ def create_known_points_layer_2d():
     return layer, n_points, known_non_point
 
 
-@pytest.fixture()
+@pytest.fixture
 def create_known_points_layer_3d():
     """Create 3D points layer with known coordinates displayed in 3D.
 

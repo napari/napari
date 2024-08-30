@@ -18,6 +18,22 @@ jobs:
     name: Build docs on napari/docs
     runs-on: ubuntu-latest
     steps:
+      - name: get directory name
+        # if this is a tag, use the tag name as the directory name else dev
+        env:
+          REF: ${{ github.ref }}
+        run: |
+          TAG="${GITHUB_REF/refs\/tags\/v/}"
+          VER="${TAG/a*/}"  # remove alpha identifier
+          VER="${VER/b*/}"  # remove beta identifier
+          VER="${VER/rc*/}"  # remove rc identifier
+          VER="${VER/post*/}"  # remove post identifier
+
+          if [[ "$REF" == "refs/tags/v"* ]]; then
+            echo "branch_name=$VER" >> "$GITHUB_ENV"
+          else
+            echo "branch_name=dev" >> "$GITHUB_ENV"
+          fi
       - name: Trigger workflow and wait
         uses: convictional/trigger-workflow-and-wait@v1.6.5
         with:
@@ -27,3 +43,4 @@ jobs:
           workflow_file_name: build_and_deploy.yml
           trigger_workflow: true
           wait_workflow: true
+          client_payload: '{"target_directory": "${{ env.branch_name }}"}'

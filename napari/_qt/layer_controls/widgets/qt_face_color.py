@@ -41,7 +41,9 @@ class QtFaceColorControl(QtWidgetControlsBase):
         # Setup widgets
         self.faceColorEdit = QColorSwatchEdit(
             initial_color=self._layer.current_face_color,
-            tooltip=trans._('click to set current face color'),
+            tooltip=trans._(
+                'Click to set the face color of currently selected shapes and any added afterwards.'
+            ),
         )
         self.faceColorLabel = QtWrappedLabel(trans._('face color:'))
         self._on_current_face_color_change()

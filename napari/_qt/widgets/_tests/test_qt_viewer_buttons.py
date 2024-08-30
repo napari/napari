@@ -1,5 +1,7 @@
+from unittest.mock import Mock
+
 import pytest
-from qtpy.QtCore import QPoint
+from qtpy.QtCore import QPoint, Qt
 from qtpy.QtWidgets import QApplication
 
 from napari._qt.dialogs.qt_modal import QtPopup
@@ -7,7 +9,7 @@ from napari._qt.widgets.qt_viewer_buttons import QtViewerButtons
 from napari.components.viewer_model import ViewerModel
 
 
-@pytest.fixture()
+@pytest.fixture
 def qt_viewer_buttons(qtbot):
     # create viewer model and buttons
     viewer = ViewerModel()
@@ -131,3 +133,31 @@ def test_ndisplay_button_popup(qt_viewer_buttons, qtbot):
         == viewer_buttons.perspective_slider.value()
         == 10
     )
+
+
+def test_transpose_rotate_button(monkeypatch, qt_viewer_buttons, qtbot):
+    """
+    Click should trigger `transpose_axes`. Alt/Option-click should trigger `rotate_layers.`
+    """
+    _, viewer_buttons = qt_viewer_buttons
+    assert viewer_buttons.transposeDimsButton
+
+    action_manager_mock = Mock(trigger=Mock())
+
+    # Monkeypatch the action_manager instance to prevent viewer error
+    monkeypatch.setattr(
+        'napari._qt.widgets.qt_viewer_buttons.action_manager',
+        action_manager_mock,
+    )
+    modifiers = Qt.AltModifier
+    qtbot.mouseClick(
+        viewer_buttons.transposeDimsButton, Qt.LeftButton, modifiers
+    )
+    action_manager_mock.trigger.assert_called_with('napari:rotate_layers')
+
+    trigger_mock = Mock()
+    monkeypatch.setattr(
+        'napari.utils.action_manager.ActionManager.trigger', trigger_mock
+    )
+    qtbot.mouseClick(viewer_buttons.transposeDimsButton, Qt.LeftButton)
+    trigger_mock.assert_called_with('napari:transpose_axes')

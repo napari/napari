@@ -42,7 +42,7 @@ def _raise():
     raise ValueError('error!')
 
 
-@pytest.fixture()
+@pytest.fixture
 def _clean_current(monkeypatch, qtbot):
     from napari._qt.qt_main_window import _QtMainWindow
 
@@ -95,7 +95,7 @@ def _raise_on_show(monkeypatch, qtbot):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def count_show(monkeypatch, qtbot):
     stat = ShowStatus()
 
