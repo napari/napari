@@ -2,11 +2,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import numpy as np
 from app_model.types import KeyCode, KeyMod
 
 from napari.components.viewer_model import ViewerModel
 from napari.utils.action_manager import action_manager
+from napari.utils.notifications import show_info
 from napari.utils.theme import available_themes, get_system_theme
+from napari.utils.transforms import Affine
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -139,6 +142,42 @@ def roll_axes(viewer: Viewer):
 )
 def transpose_axes(viewer: Viewer):
     viewer.dims.transpose()
+
+
+@register_viewer_action(trans._('Rotate layers 90 degrees counter-clockwise.'))
+def rotate_layers(viewer: Viewer):
+    if viewer.dims.ndisplay == 3:
+        show_info(trans._('Rotating layers only works in 2D.'))
+        return
+    for layer in viewer.layers:
+        if layer.ndim == 2:
+            visible_dims = [0, 1]
+        else:
+            visible_dims = list(viewer.dims.displayed)
+
+        initial_affine = layer.affine.set_slice(visible_dims)
+        # want to rotate around a fixed refernce for all layers
+        center = (
+            np.asarray(viewer.dims.range)[:, 0][
+                np.asarray(viewer.dims.displayed)
+            ]
+            + (
+                np.asarray(viewer.dims.range)[:, 1][
+                    np.asarray(viewer.dims.displayed)
+                ]
+                - np.asarray(viewer.dims.range)[:, 0][
+                    np.asarray(viewer.dims.displayed)
+                ]
+            )
+            / 2
+        )
+        new_affine = (
+            Affine(translate=center)
+            .compose(Affine(rotate=90))
+            .compose(Affine(translate=-center))
+            .compose(initial_affine)
+        )
+        layer.affine = layer.affine.replace_slice(visible_dims, new_affine)
 
 
 @register_viewer_action(trans._('Toggle grid mode.'))
