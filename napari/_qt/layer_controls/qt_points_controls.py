@@ -126,11 +126,15 @@ class QtPointsControls(QtLayerControls):
 
         self.faceColorEdit = QColorSwatchEdit(
             initial_color=self.layer.current_face_color,
-            tooltip=trans._('click to set current face color'),
+            tooltip=trans._(
+                'Click to set the face color of currently selected points and any added afterwards.'
+            ),
         )
         self.borderColorEdit = QColorSwatchEdit(
             initial_color=self.layer.current_border_color,
-            tooltip=trans._('click to set current border color'),
+            tooltip=trans._(
+                'Click to set the border color of currently selected points and any added afterwards.'
+            ),
         )
         self.faceColorEdit.color_changed.connect(self.changeCurrentFaceColor)
         self.borderColorEdit.color_changed.connect(
@@ -163,7 +167,7 @@ class QtPointsControls(QtLayerControls):
         self.outOfSliceCheckBox.stateChanged.connect(self.change_out_of_slice)
 
         self.textDispCheckBox = QCheckBox()
-        self.textDispCheckBox.setToolTip(trans._('toggle text visibility'))
+        self.textDispCheckBox.setToolTip(trans._('Toggle text visibility'))
         self.textDispCheckBox.setChecked(self.layer.text.visible)
         self.textDispCheckBox.stateChanged.connect(self.change_text_visibility)
 

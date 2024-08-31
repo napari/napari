@@ -243,7 +243,10 @@ def combine_widgets(
                 container.layout().addWidget(widget)
             return container
     raise TypeError(
-        trans._('"widget" must be a QWidget or a sequence of QWidgets')
+        trans._(
+            '"widgets" must be a QWidget, a magicgui Widget or a sequence of '
+            'such types'
+        )
     )
 
 
