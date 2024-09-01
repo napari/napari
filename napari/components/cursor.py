@@ -41,7 +41,5 @@ class Cursor(EventedModel):
     position: tuple[float, ...] = (1, 1)
     scaled: bool = True
     size = 1.0
-    button: Optional[int] = None
-    scroll: bool = False
     style: CursorStyle = CursorStyle.STANDARD
     _view_direction: Optional[tuple[float, float, float]] = None
