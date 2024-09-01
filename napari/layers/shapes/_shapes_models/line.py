@@ -62,12 +62,11 @@ class Line(Shape):
             )
 
         self._data = data
-        self._bounding_box = np.round(
-            [
-                np.min(data, axis=0),
-                np.max(data, axis=0),
-            ]
-        )
+        self._bounding_box = [
+            np.min(data, axis=0),
+            np.max(data, axis=0),
+        ]
+
         self._update_displayed_data()
 
     def _update_displayed_data(self) -> None:

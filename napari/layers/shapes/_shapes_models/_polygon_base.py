@@ -80,12 +80,10 @@ class PolygonBase(Shape):
             )
 
         self._data = data
-        self._bounding_box = np.round(
-            [
-                np.min(data, axis=0),
-                np.max(data, axis=0),
-            ]
-        )
+        self._bounding_box = [
+            np.min(data, axis=0),
+            np.max(data, axis=0),
+        ]
         self._update_displayed_data()
 
     def _update_displayed_data(self) -> None:
@@ -123,6 +121,6 @@ class PolygonBase(Shape):
         self._set_meshes(data, face=self._filled, closed=self._closed)
         self._box = create_box(self.data_displayed)
 
-        self.slice_key = self._bounding_box[:, self.dims_not_displayed].astype(
-            'int'
-        )
+        self.slice_key = np.round(
+            self._bounding_box[:, self.dims_not_displayed]
+        ).astype('int')
