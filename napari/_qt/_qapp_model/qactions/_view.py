@@ -63,26 +63,8 @@ def _get_current_tooltip_visibility() -> bool:
 
 Q_VIEW_ACTIONS: list[Action] = [
     Action(
-<<<<<<< HEAD
-        id=CommandId.TOGGLE_COMMAND_PALETTE,
-        title=CommandId.TOGGLE_COMMAND_PALETTE.title,
-        menus=[
-            {
-                'id': MenuId.MENUBAR_VIEW,
-                'group': MenuGroup.NAVIGATION,
-                'order': 1,
-            }
-        ],
-        callback=Window._toggle_command_palette,
-        keybindings=[{'primary': KeyCode.F1}],
-    ),
-    Action(
-        id=CommandId.TOGGLE_FULLSCREEN,
-        title=CommandId.TOGGLE_FULLSCREEN.title,
-=======
         id='napari.window.view.toggle_fullscreen',
         title=trans._('Toggle Full Screen'),
->>>>>>> main
         menus=[
             {
                 'id': MenuId.MENUBAR_VIEW,
@@ -95,13 +77,26 @@ Q_VIEW_ACTIONS: list[Action] = [
         toggled=ToggleRule(get_current=_get_current_fullscreen_status),
     ),
     Action(
+        id='napari.window.view.toggle_command_palette',
+        title=trans._('Command Palette'),
+        menus=[
+            {
+                'id': MenuId.MENUBAR_VIEW,
+                'group': MenuGroup.NAVIGATION,
+                'order': 2,
+            }
+        ],
+        callback=Window._toggle_command_palette,
+        keybindings=[{'primary': KeyMod.CtrlCmd | KeyCode.Shift | KeyCode.KeyP}],
+    ),
+    Action(
         id='napari.window.view.toggle_menubar',
         title=trans._('Toggle Menubar Visibility'),
         menus=[
             {
                 'id': MenuId.MENUBAR_VIEW,
                 'group': MenuGroup.NAVIGATION,
-                'order': 2,
+                'order': 3,
                 'when': sys.platform != 'darwin',
             }
         ],

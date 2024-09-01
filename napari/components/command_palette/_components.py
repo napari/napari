@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Callable, Generic, TypeVar
 
+from app_model.expressions import Expr, Constant
+
 _R = TypeVar("_R")
 
 
@@ -14,7 +16,7 @@ class Command(Generic[_R]):
     title: str
     desc: str
     tooltip: str = ""
-    when: Callable[..., bool] = field(default=lambda *_: True)
+    enablement: Expr = field(default=Constant(True))
 
     def __call__(self, *args, **kwargs) -> _R:
         out = self.function(*args, **kwargs)
@@ -32,6 +34,6 @@ class Command(Generic[_R]):
         words = input_text.lower().split(" ")
         return all(word in fmt for word in words)
 
-    def enabled(self, *args) -> bool:
+    def enabled(self, context) -> bool:
         """Return True if the command is enabled."""
-        return self.when(*args)
+        return self.enablement.eval(context)

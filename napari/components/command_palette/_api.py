@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import inspect
 import weakref
 from typing import TYPE_CHECKING, Callable, TypeVar, overload
-
+from app_model.expressions import Expr, Constant
 from napari.components.command_palette._components import Command
 
 if TYPE_CHECKING:
@@ -15,31 +14,6 @@ if TYPE_CHECKING:
     _WVDict = weakref.WeakValueDictionary[int, _QtMainWindow]
 
 _F = TypeVar("_F", bound=Callable)
-
-
-def _always_true(*_) -> bool:
-    return True
-
-
-@inspect.signature
-def register_with_func(
-    func: Callable,
-    title: str | None = None,
-    desc: str | None = None,
-    tooltip: str | None = None,
-    when: Callable[..., bool] | None = None,
-):
-    """Template function to provide signature to register() with 'func' argument."""
-
-
-@inspect.signature
-def register_without_func(
-    title: str | None = None,
-    desc: str | None = None,
-    tooltip: str | None = None,
-    when: Callable[..., bool] | None = None,
-):
-    """Template function to provide signature to register() without 'func' argument."""
 
 
 class CommandPalette:
@@ -56,46 +30,20 @@ class CommandPalette:
         """List of all the commands."""
         return self._commands.copy()
 
-    @overload
     def register(
         self,
         func: _F,
         title: str | None,
         desc: str | None = None,
         tooltip: str | None = None,
-        when: Callable[..., bool] = None,
+        enablement: Expr | None = None,
     ) -> _F:
-        ...
-
-    @overload
-    def register(
-        self,
-        title: str | None,
-        desc: str | None = None,
-        tooltip: str | None = None,
-        when: Callable[..., bool] = None,
-    ) -> Callable[[_F], _F]:
-        ...
-
-    def register(self, *args, **kwargs):
         """Register a function to the command palette."""
-        if len(args) > 0 and callable(args[0]):
-            bound = register_with_func.bind(*args, **kwargs)
-        else:
-            bound = register_without_func.bind(*args, **kwargs)
-
-        bound.apply_defaults()
-        bound_args = bound.arguments
-        func = bound_args.pop("func", None)
-
         # update defaults
-        title = bound_args["title"]
-        desc = bound_args["desc"]
-        tooltip = bound_args["tooltip"]
-        when = bound_args["when"] or _always_true
-
         if title is None:
             title = ""
+        if enablement is None:
+            enablement = Constant(True)
 
         def wrapper(func: _F) -> _F:
             nonlocal title, desc, tooltip
@@ -104,7 +52,7 @@ class CommandPalette:
             if tooltip is None:
                 tooltip = getattr(func, "__doc__", "") or ""
 
-            cmd = Command(func, title, desc, tooltip, when)
+            cmd = Command(func, title, desc, tooltip, enablement)
             self._commands.append(cmd)
             return func
 
@@ -128,8 +76,8 @@ class CommandPalette:
 
     def show_widget(self, parent: _QtMainWindow) -> None:
         """Show command palette widget."""
-        self.get_widget(parent).show()
-        return None
+        # update all the context
+        return self.get_widget(parent).show()
 
     def install(self, parent: QtW.QWidget) -> QCommandPalette:
         """
@@ -185,7 +133,7 @@ class CommandGroup:
         func: _F,
         desc: str | None = None,
         tooltip: str | None = None,
-        when: Callable[..., bool] | None = None,
+        enablement: Callable[..., bool] | None = None,
     ) -> _F:
         ...
 
@@ -194,7 +142,7 @@ class CommandGroup:
         self,
         desc: str | None = None,
         tooltip: str | None = None,
-        when: Callable[..., bool] | None = None,
+        enablement: Callable[..., bool] | None = None,
     ) -> Callable[[_F], _F]:
         ...
 

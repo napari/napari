@@ -7,6 +7,8 @@ from qtpy import QtCore, QtGui
 from qtpy import QtWidgets as QtW
 from qtpy.QtCore import Qt, Signal
 
+from napari._app_model.context._context import get_context
+
 if TYPE_CHECKING:
     from napari._qt.qt_main_window import _QtMainWindow
     from napari.components import ViewerModel
@@ -32,8 +34,9 @@ class QCommandPalette(QtW.QWidget):
         self._list.commandClicked.connect(self._on_command_clicked)
         self._line.editingFinished.connect(self.hide)
         font = self.font()
-        font.setPointSize(int(font.pointSize() * 1.2))
+        font.setPointSize(16)
         self.setFont(font)
+        self._line.setFont(font)
         self.hide()
 
     def sizeHint(self) -> QtCore.QSize:
@@ -75,8 +78,21 @@ class QCommandPalette(QtW.QWidget):
     def focusOutEvent(self, a0: QtGui.QFocusEvent) -> None:
         self.hide()
         return super().focusOutEvent(a0)
+    
+    def _qt_window(self) -> _QtMainWindow:
+        return self.parentWidget()
+
+    def update_context(self) -> None:
+        """Update the context of the palette."""
+        parent = self._qt_window()
+        context = {}
+        context.update(get_context(parent))
+        context.update(get_context(parent._qt_viewer.viewer.layers))
+        self._list._app_model_context = context
+        return None
 
     def show(self):
+        self.update_context()
         self._line.setText("")
         self._list.update_for_text("")
         super().show()
@@ -160,7 +176,7 @@ class QCommandMatchModel(QtCore.QAbstractListModel):
     def __init__(self, parent: QtW.QWidget = None):
         super().__init__(parent)
         self._commands: list[Command] = []
-        self._max_matches = 80
+        self._max_matches = 160
 
     def rowCount(self, parent: QtCore.QModelIndex = None) -> int:
         return self._max_matches
@@ -242,9 +258,10 @@ class QCommandList(QtW.QListView):
         self.setModel(QCommandMatchModel(self))
         self.setSelectionMode(QtW.QAbstractItemView.SelectionMode.NoSelection)
         self._selected_index = 0
-        self._index_offset = (
-            0  # NOTE: maybe useful for scrolling in the future
-        )
+        
+        # NOTE: maybe useful for fetch-and-scrolling in the future
+        self._index_offset = 0
+        
         self._label_widgets: list[QCommandLabel] = []
         self._current_max_index = 0
         for i in range(self.model()._max_matches):
@@ -256,6 +273,7 @@ class QCommandList(QtW.QListView):
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
         self._match_color = "#468cc6"
+        self._app_model_context = {}
 
     def match_color(self) -> str:
         return self._match_color
@@ -328,7 +346,7 @@ class QCommandList(QtW.QListView):
         """Return true if the command can be executed."""
         index = self._selected_index
         cmd = self.command_at(index)
-        return cmd.enabled()
+        return cmd.enabled(self._app_model_context)
 
     def update_for_text(self, input_text: str) -> None:
         """Update the list to match the input text."""
@@ -339,7 +357,7 @@ class QCommandList(QtW.QListView):
             self.setRowHidden(row, False)
             lw = self.indexWidget(self.model().index(row))
             lw.set_command(cmd)
-            if cmd.enabled():
+            if cmd.enabled(self._app_model_context):
                 lw.set_text_colors(input_text, color=self._match_color)
             else:
                 lw.set_disabled()
@@ -358,9 +376,19 @@ class QCommandList(QtW.QListView):
 
     def iter_top_hits(self, input_text: str) -> Iterator[Command]:
         """Iterate over the top hits for the input text"""
+        matched: list[tuple[int, Command]] = []
+        max_matches = self.model()._max_matches
         for cmd in self.all_commands:
             if cmd.matches(input_text):
-                yield cmd
+                if cmd.enabled(self._app_model_context):
+                    matched.append((0, cmd))
+                else:
+                    matched.append((-10, cmd))
+            if len(matched) >= max_matches:
+                break
+        matched.sort(key=lambda x: x[0], reverse=True)
+        for _, cmd in matched:
+            yield cmd
 
     if TYPE_CHECKING:
 

@@ -6,11 +6,9 @@ from napari.components.command_palette._api import CommandPalette, get_palette
 from napari.components.command_palette._components import Command
 
 if TYPE_CHECKING:
-    from app_model.expressions import Expr
     from app_model.types import CommandRule
 
     from napari._app_model._app import NapariApplication
-    from napari._app_model.context import Context
     from napari._qt.qt_main_window import _QtMainWindow
 
 
@@ -41,41 +39,21 @@ def create_napari_command_palette(parent: _QtMainWindow) -> CommandPalette:
     all_menus = app.menus.get_menu(app.menus.COMMAND_PALETTE_ID)
     for menu_or_submenu in all_menus:
         cmd = menu_or_submenu.command
-        *contexts, _ = cmd.id.split(":")
+        sep = ":" if ":" in cmd.id else "."
+        *contexts, _ = cmd.id.split(sep)
         title = " > ".join(contexts)
         if menu_or_submenu.when is not None:
-            when = _expr_to_callable(
-                expr=menu_or_submenu.when, id=cmd.id, parent=parent
-            )
+            enabled = menu_or_submenu.when
         else:
-            when = None
+            enabled = None
         palette.register(
             _get_callback(app, cmd),
             title=title,
             desc=cmd.title,
-            when=when,
+            enablement=enabled,
         )
-
     return palette
 
 
 def _get_callback(app: NapariApplication, cmd: CommandRule):
     return lambda: app.commands.execute_command(cmd.id).result()
-
-
-def _get_context(id: str, parent: _QtMainWindow) -> Context | None:
-    from napari._app_model.context import get_context
-
-    if id.startswith("napari:layer:"):
-        ll = parent._qt_viewer.viewer.layers
-        return get_context(ll)
-    return None
-
-
-def _expr_to_callable(expr: Expr, id: str, parent: _QtMainWindow):
-    context = _get_context(id, parent)
-
-    def _eval():
-        expr.eval(context)
-
-    return _eval
