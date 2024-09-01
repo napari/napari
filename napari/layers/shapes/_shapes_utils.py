@@ -38,7 +38,7 @@ def _is_convex(poly: npt.NDArray) -> bool:
     fst = poly
     snd = np.roll(poly, -1, axis=0)
     thrd = np.roll(poly, -2, axis=0)
-    return np.unique(orientation(fst, snd, thrd)).size == 1
+    return np.unique(orientation(fst.T, snd.T, thrd.T)).size == 1
 
 
 def _fan_triangulation(poly: npt.NDArray) -> tuple[npt.NDArray, npt.NDArray]:
