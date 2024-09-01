@@ -36,8 +36,6 @@ class Command(Generic[_R]):
         fmt = self.fmt().lower()
         if all(word in fmt for word in input_text.lower().split(' ')):
             return 1.0
-        if all(char in fmt for char in input_text.lower()):
-            return 0.5
         return 0.0
 
     def enabled(self, context) -> bool:

@@ -153,8 +153,14 @@ class QCommandLineEdit(QtW.QLineEdit):
             if key == Qt.Key.Key_Up:
                 self.commandPalette()._list.move_selection(-1)
                 return True
+            if key == Qt.Key.Key_PageUp:
+                self.commandPalette()._list.move_selection(-10)
+                return True
             if key == Qt.Key.Key_Down:
                 self.commandPalette()._list.move_selection(1)
+                return True
+            if key == Qt.Key.Key_PageDown:
+                self.commandPalette()._list.move_selection(10)
                 return True
         return super().event(e)
 
@@ -175,7 +181,7 @@ class QCommandMatchModel(QtCore.QAbstractListModel):
     def __init__(self, parent: QtW.QWidget = None):
         super().__init__(parent)
         self._commands: list[Command] = []
-        self._max_matches = 160
+        self._max_matches = 80
 
     def rowCount(self, parent: QtCore.QModelIndex = None) -> int:
         return self._max_matches
@@ -233,19 +239,10 @@ class QCommandLabel(QtW.QLabel):
             colored_word = bold_colored(word, color)
             output_texts.append(colored_word)
             last_end = match_obj.end()
-        if last_end == 0:
-            # no match found, try character match
-            # chars = set(input_text)
-            # for c in text:
-            #     if c in chars:
-            #         output_texts.append(colored(c, color))
-            #     else:
-            #         output_texts.append(c)
-            pass
-        else:
-            output_texts.append(text[last_end:])
 
-        self.setText(''.join(output_texts))
+        output_texts.append(text[last_end:])
+        output_text = ''.join(output_texts)
+        self.setText(output_text)
         return
 
     def set_disabled(self) -> None:
@@ -361,9 +358,13 @@ class QCommandList(QtW.QListView):
         """Update the list to match the input text."""
         self._selected_index = 0
         max_matches = self.model()._max_matches
+        row = 0
         for row, cmd in enumerate(self.iter_top_hits(input_text)):
             self.setRowHidden(row, False)
             lw = self.indexWidget(self.model().index(row))
+            if lw is None:
+                self._current_max_index = row
+                break
             lw.set_command(cmd)
             if cmd.enabled(self._app_model_context):
                 lw.set_text_colors(input_text, color=self._match_color)
@@ -386,9 +387,10 @@ class QCommandList(QtW.QListView):
         commands: list[tuple[float, Command]] = []
         for cmd in self.all_commands:
             score = cmd.match_score(input_text)
-            if not cmd.enabled(self._app_model_context):
-                score -= 5
-            commands.append((score, cmd))
+            if score > 0.0:
+                if cmd.enabled(self._app_model_context):
+                    score += 10.0
+                commands.append((score, cmd))
         commands.sort(key=lambda x: x[0], reverse=True)
         for _, cmd in commands:
             yield cmd
@@ -396,5 +398,6 @@ class QCommandList(QtW.QListView):
     if TYPE_CHECKING:
 
         def model(self) -> QCommandMatchModel: ...
-
-        def indexWidget(self, index: QtCore.QModelIndex) -> QCommandLabel: ...
+        def indexWidget(
+            self, index: QtCore.QModelIndex
+        ) -> QCommandLabel | None: ...
