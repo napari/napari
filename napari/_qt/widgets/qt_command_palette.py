@@ -233,7 +233,17 @@ class QCommandLabel(QtW.QLabel):
             colored_word = bold_colored(word, color)
             output_texts.append(colored_word)
             last_end = match_obj.end()
-        output_texts.append(text[last_end:])
+        if last_end == 0:
+            # no match found, try character match
+            # chars = set(input_text)
+            # for c in text:
+            #     if c in chars:
+            #         output_texts.append(colored(c, color))
+            #     else:
+            #         output_texts.append(c)
+            pass
+        else:
+            output_texts.append(text[last_end:])
 
         self.setText(''.join(output_texts))
         return
