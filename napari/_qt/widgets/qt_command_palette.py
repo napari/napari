@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, Any, Iterator
+from collections.abc import Iterator
+from typing import TYPE_CHECKING, Any
 
-from qtpy import QtCore, QtGui
-from qtpy import QtWidgets as QtW
+from qtpy import QtCore, QtGui, QtWidgets as QtW
 from qtpy.QtCore import Qt, Signal
 
 from napari._app_model.context._context import get_context
@@ -52,15 +52,15 @@ class QCommandPalette(QtW.QWidget):
 
     def add_command(self, cmd: Command):
         self._list.add_command(cmd)
-        return None
+        return
 
     def extend_command(self, list_of_commands: list[Command]):
         self._list.extend_command(list_of_commands)
-        return None
+        return
 
     def clear_commands(self):
         self._list.clear_commands()
-        return None
+        return
 
     def install_to(self, parent: QtW.QWidget):
         self.setParent(parent, Qt.WindowType.SubWindow)
@@ -68,17 +68,17 @@ class QCommandPalette(QtW.QWidget):
 
     def _on_text_changed(self, text: str):
         self._list.update_for_text(text)
-        return None
+        return
 
     def _on_command_clicked(self, index: int):
         self._list.execute(index)
         self.hide()
-        return None
+        return
 
     def focusOutEvent(self, a0: QtGui.QFocusEvent) -> None:
         self.hide()
         return super().focusOutEvent(a0)
-    
+
     def _qt_window(self) -> _QtMainWindow:
         return self.parentWidget()
 
@@ -89,12 +89,12 @@ class QCommandPalette(QtW.QWidget):
         context.update(get_context(parent))
         context.update(get_context(parent._qt_viewer.viewer.layers))
         self._list._app_model_context = context
-        return None
+        return
 
     def show(self):
         self.update_context()
-        self._line.setText("")
-        self._list.update_for_text("")
+        self._line.setText('')
+        self._list.update_for_text('')
         super().show()
         if parent := self.parentWidget():
             parent_rect = parent.rect()
@@ -108,7 +108,7 @@ class QCommandPalette(QtW.QWidget):
 
         self.raise_()
         self._line.setFocus()
-        return None
+        return
 
     def hide(self):
         self.hidden.emit()
@@ -121,7 +121,7 @@ class QCommandPalette(QtW.QWidget):
     def setText(self, text: str):
         """Set the text in the line edit."""
         self._line.setText(text)
-        return None
+        return
 
 
 class QCommandLineEdit(QtW.QLineEdit):
@@ -143,18 +143,17 @@ class QCommandLineEdit(QtW.QLineEdit):
             if key == Qt.Key.Key_Escape:
                 self.commandPalette().hide()
                 return True
-            elif key == Qt.Key.Key_Return:
+            if key == Qt.Key.Key_Return:
                 palette = self.commandPalette()
                 if palette._list.can_execute():
                     self.commandPalette().hide()
                     self.commandPalette()._list.execute()
                     return True
-                else:
-                    return False
-            elif key == Qt.Key.Key_Up:
+                return False
+            if key == Qt.Key.Key_Up:
                 self.commandPalette()._list.move_selection(-1)
                 return True
-            elif key == Qt.Key.Key_Down:
+            if key == Qt.Key.Key_Down:
                 self.commandPalette()._list.move_selection(1)
                 return True
         return super().event(e)
@@ -162,12 +161,12 @@ class QCommandLineEdit(QtW.QLineEdit):
 
 def bold_colored(text: str, color: str) -> str:
     """Return a bolded and colored HTML text."""
-    return f"<b><font color={color!r}>{text}</font></b>"
+    return f'<b><font color={color!r}>{text}</font></b>'
 
 
 def colored(text: str, color: str) -> str:
     """Return a colored HTML text."""
-    return f"<font color={color!r}>{text}</font>"
+    return f'<font color={color!r}>{text}</font>'
 
 
 class QCommandMatchModel(QtCore.QAbstractListModel):
@@ -192,7 +191,7 @@ class QCommandMatchModel(QtCore.QAbstractListModel):
 class QCommandLabel(QtW.QLabel):
     """The label widget to display a command in the palette."""
 
-    DISABLED_COLOR = "gray"
+    DISABLED_COLOR = 'gray'
 
     def __init__(self, cmd: Command | None = None):
         super().__init__()
@@ -200,7 +199,7 @@ class QCommandLabel(QtW.QLabel):
             self.set_command(cmd)
         else:
             self._command = None
-            self._command_text = ""
+            self._command_text = ''
 
     def command(self) -> Command:
         """Command bound to this label."""
@@ -220,11 +219,11 @@ class QCommandLabel(QtW.QLabel):
 
     def set_text_colors(self, input_text: str, color: str):
         """Set label text color based on the input text."""
-        if input_text == "":
-            return None
+        if input_text == '':
+            return
         text = self.command_text()
-        words = input_text.split(" ")
-        pattern = re.compile("|".join(words), re.IGNORECASE)
+        words = input_text.split(' ')
+        pattern = re.compile('|'.join(words), re.IGNORECASE)
 
         output_texts: list[str] = []
         last_end = 0
@@ -236,14 +235,14 @@ class QCommandLabel(QtW.QLabel):
             last_end = match_obj.end()
         output_texts.append(text[last_end:])
 
-        self.setText("".join(output_texts))
-        return None
+        self.setText(''.join(output_texts))
+        return
 
     def set_disabled(self) -> None:
         """Set the label to disabled."""
         text = self.command_text()
         self.setText(colored(text, self.DISABLED_COLOR))
-        return None
+        return
 
 
 class QCommandList(QtW.QListView):
@@ -258,10 +257,10 @@ class QCommandList(QtW.QListView):
         self.setModel(QCommandMatchModel(self))
         self.setSelectionMode(QtW.QAbstractItemView.SelectionMode.NoSelection)
         self._selected_index = 0
-        
+
         # NOTE: maybe useful for fetch-and-scrolling in the future
         self._index_offset = 0
-        
+
         self._label_widgets: list[QCommandLabel] = []
         self._current_max_index = 0
         for i in range(self.model()._max_matches):
@@ -272,7 +271,7 @@ class QCommandList(QtW.QListView):
 
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
-        self._match_color = "#468cc6"
+        self._match_color = '#468cc6'
         self._app_model_context = {}
 
     def match_color(self) -> str:
@@ -284,7 +283,7 @@ class QCommandList(QtW.QListView):
     def _on_clicked(self, index: QtCore.QModelIndex) -> None:
         if index.isValid():
             self.commandClicked.emit(index.row())
-            return None
+            return
 
     def move_selection(self, dx: int) -> None:
         """Move selection by dx, dx can be negative or positive."""
@@ -294,14 +293,14 @@ class QCommandList(QtW.QListView):
             self._current_max_index - 1, self._selected_index
         )
         self.update_selection()
-        return None
+        return
 
     def update_selection(self):
         index = self.model().index(self._selected_index - self._index_offset)
         self.selectionModel().setCurrentIndex(
             index, QtCore.QItemSelectionModel.SelectionFlag.ClearAndSelect
         )
-        return None
+        return
 
     @property
     def all_commands(self) -> list[Command]:
@@ -309,12 +308,12 @@ class QCommandList(QtW.QListView):
 
     def add_command(self, command: Command) -> None:
         self.all_commands.append(command)
-        return None
+        return
 
     def extend_command(self, commands: list[Command]) -> None:
         """Extend the list of commands."""
         self.all_commands.extend(commands)
-        return None
+        return
 
     def clear_commands(self) -> None:
         """Clear all the command"""
@@ -335,12 +334,12 @@ class QCommandList(QtW.QListView):
             index = self._selected_index
         cmd = self.command_at(index)
         if cmd is None:
-            return None
-        cmd()
+            return
+        cmd.exec()
         # move to the top
         self.all_commands.remove(cmd)
         self.all_commands.insert(0, cmd)
-        return None
+        return
 
     def can_execute(self) -> bool:
         """Return true if the command can be executed."""
@@ -352,8 +351,7 @@ class QCommandList(QtW.QListView):
         """Update the list to match the input text."""
         self._selected_index = 0
         max_matches = self.model()._max_matches
-        row = 0
-        for cmd in self.iter_top_hits(input_text):
+        for row, cmd in enumerate(self.iter_top_hits(input_text)):
             self.setRowHidden(row, False)
             lw = self.indexWidget(self.model().index(row))
             lw.set_command(cmd)
@@ -361,39 +359,32 @@ class QCommandList(QtW.QListView):
                 lw.set_text_colors(input_text, color=self._match_color)
             else:
                 lw.set_disabled()
-            row += 1
 
             if row >= max_matches:
                 self._current_max_index = max_matches
                 break
         else:
             self._current_max_index = row
-            for row in range(row, max_matches):
-                self.setRowHidden(row, True)
+            for r in range(row, max_matches):
+                self.setRowHidden(r, True)
         self.update_selection()
         self.update()
-        return None
+        return
 
     def iter_top_hits(self, input_text: str) -> Iterator[Command]:
         """Iterate over the top hits for the input text"""
-        matched: list[tuple[int, Command]] = []
-        max_matches = self.model()._max_matches
+        commands: list[tuple[float, Command]] = []
         for cmd in self.all_commands:
-            if cmd.matches(input_text):
-                if cmd.enabled(self._app_model_context):
-                    matched.append((0, cmd))
-                else:
-                    matched.append((-10, cmd))
-            if len(matched) >= max_matches:
-                break
-        matched.sort(key=lambda x: x[0], reverse=True)
-        for _, cmd in matched:
+            score = cmd.match_score(input_text)
+            if not cmd.enabled(self._app_model_context):
+                score -= 5
+            commands.append((score, cmd))
+        commands.sort(key=lambda x: x[0], reverse=True)
+        for _, cmd in commands:
             yield cmd
 
     if TYPE_CHECKING:
 
-        def model(self) -> QCommandMatchModel:
-            ...
+        def model(self) -> QCommandMatchModel: ...
 
-        def indexWidget(self, index: QtCore.QModelIndex) -> QCommandLabel:
-            ...
+        def indexWidget(self, index: QtCore.QModelIndex) -> QCommandLabel: ...

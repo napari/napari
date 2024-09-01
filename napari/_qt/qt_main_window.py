@@ -214,8 +214,8 @@ class _QtMainWindow(QMainWindow):
         settings.appearance.events.update_status_based_on_layer.connect(
             self._toggle_status_thread
         )
-        
-        palette = create_napari_command_palette(self)
+
+        palette = create_napari_command_palette()
         self._command_palette = palette.get_widget(self)
 
     def _toggle_status_thread(self, event: Event):

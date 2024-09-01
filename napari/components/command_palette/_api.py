@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import weakref
 from typing import TYPE_CHECKING, Callable, TypeVar, overload
-from app_model.expressions import Expr, Constant
+
+from app_model.expressions import Constant
+
 from napari.components.command_palette._components import Command
 
 if TYPE_CHECKING:
+    from app_model.types import CommandRule
     from qtpy import QtWidgets as QtW
 
     from napari._qt.qt_main_window import _QtMainWindow
@@ -13,7 +16,7 @@ if TYPE_CHECKING:
 
     _WVDict = weakref.WeakValueDictionary[int, _QtMainWindow]
 
-_F = TypeVar("_F", bound=Callable)
+_F = TypeVar('_F', bound=Callable)
 
 
 class CommandPalette:
@@ -30,33 +33,18 @@ class CommandPalette:
         """List of all the commands."""
         return self._commands.copy()
 
-    def register(
-        self,
-        func: _F,
-        title: str | None,
-        desc: str | None = None,
-        tooltip: str | None = None,
-        enablement: Expr | None = None,
-    ) -> _F:
-        """Register a function to the command palette."""
+    def register(self, cmd: CommandRule) -> None:
+        """Register a command to the palette."""
         # update defaults
-        if title is None:
-            title = ""
-        if enablement is None:
-            enablement = Constant(True)
-
-        def wrapper(func: _F) -> _F:
-            nonlocal title, desc, tooltip
-            if desc is None:
-                desc = getattr(func, "__name__", repr(func))
-            if tooltip is None:
-                tooltip = getattr(func, "__doc__", "") or ""
-
-            cmd = Command(func, title, desc, tooltip, enablement)
-            self._commands.append(cmd)
-            return func
-
-        return wrapper if func is None else wrapper(func)
+        sep = ':' if ':' in cmd.id else '.'
+        *contexts, _ = cmd.id.split(sep)
+        title = ' > '.join(contexts)
+        enablement = cmd.enablement or Constant(True)
+        desc = cmd.title
+        tooltip = cmd.status_tip or ''
+        cmd = Command(cmd, title, desc, tooltip, enablement)
+        self._commands.append(cmd)
+        return
 
     def add_group(self, title: str) -> CommandGroup:
         """Add a group to the command palette."""
@@ -99,12 +87,12 @@ class CommandPalette:
         if parent is None:
             for p in self._palette_to_parent_map.values():
                 self.update(p)
-            return None
+            return
         _id = id(parent)
         widget = self._parent_to_palette_map[_id]
         widget.clear_commands()
         widget.extend_command(self._commands)
-        return None
+        return
 
 
 class CommandGroup:
@@ -113,14 +101,14 @@ class CommandGroup:
         self._title = title
 
     def __repr__(self) -> str:
-        return f"CommandGroup<{self.title}>"
+        return f'CommandGroup<{self.title}>'
 
     @property
     def palette(self) -> CommandPalette:
         """The parent command palette object."""
         if palette := self._palette_ref():
             return palette
-        raise RuntimeError("CommandPalette is already destroyed.")
+        raise RuntimeError('CommandPalette is already destroyed.')
 
     @property
     def title(self) -> str:
@@ -134,8 +122,7 @@ class CommandGroup:
         desc: str | None = None,
         tooltip: str | None = None,
         enablement: Callable[..., bool] | None = None,
-    ) -> _F:
-        ...
+    ) -> _F: ...
 
     @overload
     def register(
@@ -143,11 +130,10 @@ class CommandGroup:
         desc: str | None = None,
         tooltip: str | None = None,
         enablement: Callable[..., bool] | None = None,
-    ) -> Callable[[_F], _F]:
-        ...
+    ) -> Callable[[_F], _F]: ...
 
     def register(self, *args, **kwargs):
-        if "title" in kwargs:
+        if 'title' in kwargs:
             raise TypeError(
                 "register() got an unexpected keyword argument 'title'"
             )
@@ -177,7 +163,7 @@ def get_palette(name) -> CommandPalette:
     global _GLOBAL_PALETTES
 
     if not isinstance(name, str):
-        raise TypeError(f"Expected str, got {type(name).__name__}")
-    if (palette := _GLOBAL_PALETTES.get(name, None)) is None:
+        raise TypeError(f'Expected str, got {type(name).__name__}')
+    if (palette := _GLOBAL_PALETTES.get(name)) is None:
         palette = _GLOBAL_PALETTES[name] = CommandPalette(name=name)
     return palette

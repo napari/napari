@@ -87,7 +87,9 @@ Q_VIEW_ACTIONS: list[Action] = [
             }
         ],
         callback=Window._toggle_command_palette,
-        keybindings=[{'primary': KeyMod.CtrlCmd | KeyCode.Shift | KeyCode.KeyP}],
+        keybindings=[
+            {'primary': KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyP}
+        ],
     ),
     Action(
         id='napari.window.view.toggle_menubar',
