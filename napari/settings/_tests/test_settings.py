@@ -12,7 +12,7 @@ from napari.settings import CURRENT_SCHEMA_VERSION, NapariSettings
 from napari.utils.theme import get_theme, register_theme
 
 
-@pytest.fixture()
+@pytest.fixture
 def test_settings(tmp_path):
     """A fixture that can be used to test and save settings"""
     from napari.settings import NapariSettings

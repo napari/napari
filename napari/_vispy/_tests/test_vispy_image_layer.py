@@ -86,12 +86,12 @@ def test_no_float32_texture_support(monkeypatch):
     VispyImageLayer(image)
 
 
-@pytest.fixture()
+@pytest.fixture
 def im_layer() -> Image:
     return Image(np.zeros((10, 10)))
 
 
-@pytest.fixture()
+@pytest.fixture
 def pyramid_layer() -> Image:
     return Image([np.zeros((20, 20)), np.zeros((10, 10))])
 

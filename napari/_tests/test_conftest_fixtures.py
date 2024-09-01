@@ -14,7 +14,7 @@ class _TestThread(QThread):
         self.mutex.lock()
 
 
-@pytest.mark.disable_qthread_start()
+@pytest.mark.disable_qthread_start
 def test_disable_qthread(qapp):
     t = _TestThread()
     t.mutex.lock()
@@ -32,7 +32,7 @@ def test_qthread_running(qtbot):
     qtbot.waitUntil(t.isFinished, timeout=2000)
 
 
-@pytest.mark.disable_qtimer_start()
+@pytest.mark.disable_qtimer_start
 def test_disable_qtimer(qtbot):
     t = QTimer()
     t.setInterval(100)
