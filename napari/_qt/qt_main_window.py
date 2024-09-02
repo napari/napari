@@ -22,6 +22,7 @@ from typing import (
 from weakref import WeakValueDictionary
 
 import numpy as np
+from PyQt5.QtGui import QHideEvent, QShowEvent
 from qtpy.QtCore import (
     QEvent,
     QEventLoop,
@@ -205,8 +206,6 @@ class _QtMainWindow(QMainWindow):
         self.status_thread.status_and_tooltip_changed.connect(
             self.set_status_and_tooltip
         )
-        if settings.appearance.update_status_based_on_layer:
-            self.status_thread.start()
         viewer.cursor.events.position.connect(
             self.status_thread.trigger_status_update
         )
@@ -219,6 +218,17 @@ class _QtMainWindow(QMainWindow):
             self.status_thread.start()
         else:
             self.status_thread.terminate()
+
+    def showEvent(self, event: QShowEvent):
+        """Override to handle window state changes."""
+        settings = get_settings()
+        if settings.appearance.update_status_based_on_layer:
+            self.status_thread.start()
+        super().showEvent(event)
+
+    def hideEvent(self, event: QHideEvent):
+        self.status_thread.terminate()
+        super().hideEvent(event)
 
     def set_status_and_tooltip(
         self, status_and_tooltip: Optional[tuple[Union[str, dict], str]]
