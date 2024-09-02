@@ -25,18 +25,19 @@ def qt_viewer_buttons(qtbot, mock_app):
     def _provide_viewer_model() -> ViewerModel:
         return viewer
 
+    app.injection_store.clear()
     with app.injection_store.register(providers=[(_provide_viewer_model,)]):
         # create viewer model and buttons
         viewer_buttons = QtViewerButtons(viewer)
         qtbot.addWidget(viewer_buttons)
 
-    yield viewer, viewer_buttons
+        yield viewer, viewer_buttons
 
-    # close still open popup widgets
-    for widget in QApplication.topLevelWidgets():
-        if isinstance(widget, QtPopup):
-            widget.close()
-    viewer_buttons.close()
+        # close still open popup widgets
+        for widget in QApplication.topLevelWidgets():
+            if isinstance(widget, QtPopup):
+                widget.close()
+        viewer_buttons.close()
 
 
 def test_roll_dims_button_popup(qt_viewer_buttons, qtbot):
@@ -169,9 +170,4 @@ def test_transpose_rotate_button(monkeypatch, qt_viewer_buttons, qtbot):
     )
     action_manager_mock.trigger.assert_called_with('napari:rotate_layers')
 
-    trigger_mock = Mock()
-    monkeypatch.setattr(
-        'napari.utils.action_manager.ActionManager.trigger', trigger_mock
-    )
     qtbot.mouseClick(viewer_buttons.transposeDimsButton, Qt.LeftButton)
-    trigger_mock.assert_called_with('napari:transpose_axes')

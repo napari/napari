@@ -48,10 +48,6 @@ def add_new_labels(viewer: Union['ViewerModel', 'Viewer']) -> None:
     viewer._new_labels()
 
 
-def _transpose_axes(viewer: Union['ViewerModel', 'Viewer']) -> None:
-    _viewer_key_bindings.transpose_axes(viewer)
-
-
 Q_VIEWER_ACTIONS: list[Action] = [
     Action(
         id='napari.viewer.toggle_console_visibility',
@@ -110,7 +106,7 @@ Q_VIEWER_ACTIONS: list[Action] = [
                 'id': MenuId.VIEWER_CONTROLS,
             }
         ],
-        callback=_transpose_axes,
+        callback=_viewer_key_bindings.transpose_axes,
         keybindings=[{'primary': KeyMod.CtrlCmd | KeyCode.KeyT}],
         tooltip=trans._(
             'Transpose order of the last two visible axes, e.g.\u00a0[0,\u00a01]\u00a0\u2011>\u00a0[1,\u00a00].\nAlt/option-click to rotate visible axes'
