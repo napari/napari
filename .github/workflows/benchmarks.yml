@@ -168,6 +168,9 @@ jobs:
           "[CI logs and artifacts](||BENCHMARK_CI_LOGS_URL||) for further details." \
           > .asv/results/message_${{ matrix.benchmark-name }}.txt
 
+          awk  '/Benchmark.*Parameter/,/SOME BENCHMARKS HAVE CHANGED SIGNIFICANTLY/' asv_continuous.log \
+          >> .asv/results/message_${{ matrix.benchmark-name }}.txt
+
           fi
 
       - uses: actions/upload-artifact@v4
