@@ -29,7 +29,7 @@ for name in dir(module):
         layers.append(obj)
 
 
-@pytest.fixture()
+@pytest.fixture
 def _init_app_model_qactions(qtbot, mock_app):
     # initialize app-model actions (actions and menus app registries)
     from napari._qt._qapp_model.qactions import init_qactions
