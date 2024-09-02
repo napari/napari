@@ -115,4 +115,4 @@ if os.environ.get('ASV') == 'true':
     # running when the benchmark is running. This is because the
     # StatusChecker thread may introduce some noise in the benchmark
     # results from waiting on its termination.
-    StatusChecker.start = lambda self: None
+    StatusChecker.start = lambda self, priority: None  # type: ignore[assignment,misc]
