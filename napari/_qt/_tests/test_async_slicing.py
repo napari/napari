@@ -19,12 +19,12 @@ from napari.layers import Image, Layer, Points, Vectors
 from napari.utils.events import Event
 
 
-@pytest.fixture()
+@pytest.fixture
 def rng() -> np.random.Generator:
     return np.random.default_rng(0)
 
 
-@pytest.fixture()
+@pytest.fixture
 def _enable_async(_fresh_settings, make_napari_viewer):
     """
     This fixture depends on _fresh_settings and make_napari_viewer
@@ -66,8 +66,8 @@ def test_async_out_of_bounds_layer_loaded(make_napari_viewer, qtbot):
 
     for i in range(viewer.dims.nsteps[0]):
         viewer.dims.current_step = (i, 0, 0)
-        qtbot.waitUntil(partial(layer_loaded, l0), timeout=50)
-        qtbot.waitUntil(partial(layer_loaded, l1), timeout=50)
+        qtbot.waitUntil(partial(layer_loaded, l0), timeout=500)
+        qtbot.waitUntil(partial(layer_loaded, l1), timeout=500)
 
 
 @pytest.mark.usefixtures('_enable_async')

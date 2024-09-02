@@ -81,9 +81,6 @@ def test_add_layer_data_to_viewer_optional(make_napari_viewer):
     assert len(viewer.layers) == 1
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 9), reason='Futures not subscriptable before py3.9'
-)
 @pytest.mark.parametrize(('LayerType', 'data', 'ndim'), test_data)
 def test_magicgui_add_future_data(
     qtbot, make_napari_viewer, LayerType, data, ndim
@@ -321,7 +318,10 @@ def test_mgui_forward_refs(name, monkeypatch):
     monkeypatch.delitem(sys.modules, 'napari')
     monkeypatch.delitem(sys.modules, 'napari.viewer')
     monkeypatch.delitem(sys.modules, 'napari.types')
-    # need to clear all of these submodules too, otherise the layers are oddly not
+    monkeypatch.setattr(
+        'napari.utils.action_manager.action_manager._actions', {}
+    )
+    # need to clear all of these submodules too, otherwise the layers are oddly not
     # subclasses of napari.layers.Layer, and napari.layers.NAMES
     # oddly ends up as an empty set
     for m in list(sys.modules):

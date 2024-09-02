@@ -208,7 +208,7 @@ class LayerDelegate(QStyledItemDelegate):
             self.show_context_menu(index, model, pnt, option.widget)
 
         # if the user clicks quickly on the visibility checkbox, we *don't*
-        # want it to be interpreted as a double-click.  We want the visibilty
+        # want it to be interpreted as a double-click.  We want the visibility
         # to simply be toggled.
         if event.type() == QMouseEvent.MouseButtonDblClick:
             self.initStyleOption(option, index)

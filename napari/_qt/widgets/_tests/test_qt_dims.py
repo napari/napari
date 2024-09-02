@@ -293,7 +293,7 @@ def test_slider_press_updates_last_used(qtbot):
             assert widg.isVisibleTo(view)
             assert view.dims.last_used == i
         else:
-            # sliders should not be visible for the follwing dims and the
+            # sliders should not be visible for the following dims and the
             # last_used should fallback to the first available dim with a
             # visible slider (dim 0)
             assert not widg.isVisibleTo(view)
@@ -335,3 +335,4 @@ def test_play_button(qtbot):
     assert slider.fps == -button.fpsspin.value() == -11
     button.mode_combo.setCurrentText('once')
     assert slider.loop_mode == button.mode_combo.currentText() == 'once'
+    qtbot.waitUntil(view._animation_thread.isFinished)

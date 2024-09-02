@@ -8,7 +8,7 @@ import napari
 from napari import __main__
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_run():
     """mock to prevent starting the event loop."""
     with mock.patch('napari._qt.widgets.qt_splash_screen.NapariSplashScreen'):

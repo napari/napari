@@ -112,7 +112,7 @@ SIMPLE_COLORMAPS = {
 }
 
 
-# dictionay for bop colormap objects
+# dictionary for bop colormap objects
 BOP_COLORMAPS = {
     name: Colormap(value, name=name, display_name=display_name)
     for name, (display_name, value) in bopd.items()

@@ -3,9 +3,10 @@ from functools import wraps
 from typing import TYPE_CHECKING, Optional
 
 from app_model.expressions import get_context
-from qtpy.QtCore import QPoint, Qt
+from qtpy.QtCore import QEvent, QPoint, Qt
 from qtpy.QtWidgets import (
     QAction,
+    QApplication,
     QFormLayout,
     QFrame,
     QHBoxLayout,
@@ -207,6 +208,7 @@ class QtViewerButtons(QFrame):
         transpose_tool = self.toolbar.widgetForAction(transpose_action)
         transpose_tool.setProperty('mode', 'transpose')
         self.transposeDimsButton = transpose_tool
+        self.transposeDimsButton.installEventFilter(self)
 
         reset_view_action = self._menu.findAction('napari.viewer.reset_view')
         reset_view_tool = self.toolbar.widgetForAction(reset_view_action)
@@ -242,6 +244,18 @@ class QtViewerButtons(QFrame):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.toolbar)
         self.setLayout(layout)
+
+    def eventFilter(self, qobject, event):
+        """Have Alt/Option key rotate layers with the transpose button."""
+        modifiers = QApplication.keyboardModifiers()
+        if (
+            modifiers == Qt.AltModifier
+            and qobject == self.transposeDimsButton
+            and event.type() == QEvent.MouseButtonPress
+        ):
+            action_manager.trigger('napari:rotate_layers')
+            return True
+        return False
 
     def open_perspective_popup(self):
         """Show a slider to control the viewer `camera.perspective`."""
@@ -455,7 +469,12 @@ class QtViewerPushButton(QPushButton):
 
     @_omit_viewer_args
     def __init__(
-        self, button_name: str, tooltip: str = '', slot=None, action: str = ''
+        self,
+        button_name: str,
+        tooltip: str = '',
+        slot=None,
+        action: str = '',
+        extra_tooltip_text: str = '',
     ) -> None:
         # TODO: Should the class be marked as deprecated or be changed to use the app-model command registry (`execute_command`)?
         super().__init__()
@@ -465,4 +484,6 @@ class QtViewerPushButton(QPushButton):
         if slot is not None:
             self.clicked.connect(slot)
         if action:
-            action_manager.bind_button(action, self)
+            action_manager.bind_button(
+                action, self, extra_tooltip_text=extra_tooltip_text
+            )
