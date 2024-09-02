@@ -22,7 +22,6 @@ from typing import (
 from weakref import WeakValueDictionary
 
 import numpy as np
-from PyQt5.QtGui import QHideEvent, QShowEvent
 from qtpy.QtCore import (
     QEvent,
     QEventLoop,
@@ -33,7 +32,7 @@ from qtpy.QtCore import (
     Qt,
     Slot,
 )
-from qtpy.QtGui import QIcon
+from qtpy.QtGui import QHideEvent, QIcon, QShowEvent
 from qtpy.QtWidgets import (
     QApplication,
     QDialog,
