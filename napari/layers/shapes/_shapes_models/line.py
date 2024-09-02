@@ -62,10 +62,12 @@ class Line(Shape):
             )
 
         self._data = data
-        self._bounding_box = [
-            np.min(data, axis=0),
-            np.max(data, axis=0),
-        ]
+        self._bounding_box = np.array(
+            [
+                np.min(data, axis=0),
+                np.max(data, axis=0),
+            ]
+        )
 
         self._update_displayed_data()
 
@@ -75,6 +77,6 @@ class Line(Shape):
         self._set_meshes(self.data_displayed, face=False, closed=False)
         self._box = create_box(self.data_displayed)
 
-        self.slice_key = self._bounding_box[:, self.dims_not_displayed].astype(
-            'int'
-        )
+        self.slice_key = np.round(
+            self._bounding_box[:, self.dims_not_displayed]
+        ).astype('int')
