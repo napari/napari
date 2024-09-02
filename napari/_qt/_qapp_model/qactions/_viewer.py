@@ -65,7 +65,7 @@ Q_VIEWER_ACTIONS: list[Action] = [
             'Show/Hide IPython console (only available when napari started as standalone application).'
         ),
         enablement=not (in_ipython() or in_jupyter() or in_python_repl()),
-        icon=EMPTY_SVG_PATH,
+        # icon=EMPTY_SVG_PATH,
     ),
     Action(
         id='napari.viewer.toggle_ndisplay',
@@ -81,7 +81,7 @@ Q_VIEWER_ACTIONS: list[Action] = [
         toggled=ToggleRule(
             condition=VCK.is_viewer_3d, get_current=_get_viewer_ndisplay_status
         ),
-        icon=EMPTY_SVG_PATH,
+        # icon=EMPTY_SVG_PATH,
     ),
     Action(
         id='napari.viewer.roll_axes',
@@ -96,7 +96,7 @@ Q_VIEWER_ACTIONS: list[Action] = [
         tooltip=trans._(
             'Change order of the visible axes, e.g.\u00a0[0,\u00a01,\u00a02]\u00a0\u2011>\u00a0[2,\u00a00,\u00a01].'
         ),
-        icon=EMPTY_SVG_PATH,
+        # icon=EMPTY_SVG_PATH,
     ),
     Action(
         id='napari.viewer.transpose_axes',
@@ -111,7 +111,7 @@ Q_VIEWER_ACTIONS: list[Action] = [
         tooltip=trans._(
             'Transpose order of the last two visible axes, e.g.\u00a0[0,\u00a01]\u00a0\u2011>\u00a0[1,\u00a00].\nAlt/option-click to rotate visible axes'
         ),
-        icon=EMPTY_SVG_PATH,
+        # icon=EMPTY_SVG_PATH,
     ),
     Action(
         id='napari.viewer.toggle_grid',
@@ -128,7 +128,7 @@ Q_VIEWER_ACTIONS: list[Action] = [
             condition=VCK.is_viewer_grid_enabled,
             get_current=_get_viewer_grid_status,
         ),
-        icon=EMPTY_SVG_PATH,
+        # icon=EMPTY_SVG_PATH,
     ),
     Action(
         id='napari.viewer.reset_view',
@@ -141,7 +141,7 @@ Q_VIEWER_ACTIONS: list[Action] = [
         callback=_viewer_key_bindings.reset_view,
         keybindings=[{'primary': KeyMod.CtrlCmd | KeyCode.KeyR}],
         tooltip=trans._('Reset view to original state.'),
-        icon=EMPTY_SVG_PATH,
+        # icon=EMPTY_SVG_PATH,
     ),
 ]
 
@@ -152,7 +152,7 @@ Q_VIEWER_NEW_DELETE_ACTIONS: list[Action] = [
         menus=[{'id': MenuId.VIEWER_NEW_DELETE_LAYER}],
         callback=add_new_points,
         tooltip=trans._('New points layer.'),
-        icon=EMPTY_SVG_PATH,
+        # icon=EMPTY_SVG_PATH,
     ),
     Action(
         id='napari.viewer.new_layer.new_shapes',
@@ -160,7 +160,7 @@ Q_VIEWER_NEW_DELETE_ACTIONS: list[Action] = [
         menus=[{'id': MenuId.VIEWER_NEW_DELETE_LAYER}],
         callback=add_new_shapes,
         tooltip=trans._('New shapes layer.'),
-        icon=EMPTY_SVG_PATH,
+        # icon=EMPTY_SVG_PATH,
     ),
     Action(
         id='napari.viewer.new_layer.new_labels',
@@ -168,7 +168,7 @@ Q_VIEWER_NEW_DELETE_ACTIONS: list[Action] = [
         menus=[{'id': MenuId.VIEWER_NEW_DELETE_LAYER}],
         callback=add_new_labels,
         tooltip=trans._('New labels layer.'),
-        icon=EMPTY_SVG_PATH,
+        # icon=EMPTY_SVG_PATH,
     ),
     Action(
         id='napari.viewer.delete_selected_layers',
@@ -177,6 +177,6 @@ Q_VIEWER_NEW_DELETE_ACTIONS: list[Action] = [
         callback=_viewer_key_bindings.delete_selected_layers,
         keybindings=[{'primary': KeyMod.CtrlCmd | KeyCode.Delete}],
         tooltip=trans._('Delete selected layers.'),
-        icon=EMPTY_SVG_PATH,
+        # icon=EMPTY_SVG_PATH,
     ),
 ]
