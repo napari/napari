@@ -59,3 +59,4 @@ jobs:
         with:
           name: test artifacts pip install
           path: .pytest_tmp
+          include-hidden-files: true
