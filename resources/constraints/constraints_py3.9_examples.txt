@@ -69,7 +69,7 @@ exceptiongroup==1.2.2
     #   hypothesis
     #   ipython
     #   pytest
-executing==2.0.1
+executing==2.1.0
     # via stack-data
 fasteners==0.19
     # via zarr
@@ -537,7 +537,7 @@ tensorstore==0.1.64
     #   napari (napari_repo/pyproject.toml)
 threadpoolctl==3.5.0
     # via scikit-learn
-tifffile==2024.8.28
+tifffile==2024.8.30
     # via
     #   napari (napari_repo/pyproject.toml)
     #   scikit-image
