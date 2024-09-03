@@ -103,7 +103,12 @@ def imsave_tiff(filename, data):
         # 'compression' kwarg since 2021.6.6; we depend on more recent versions
         # now. See:
         # https://forum.image.sc/t/problem-saving-generated-labels-in-cellpose-napari/54892/8
-        tifffile.imwrite(filename, data, compression=('zlib', 1), bigtiff=(data.nbytes >= 2**32))
+        tifffile.imwrite(
+            filename,
+            data,
+            compression=('zlib', 1),
+            bigtiff=(data.nbytes >= 2**32),
+        )
 
 
 def __getattr__(name: str):
