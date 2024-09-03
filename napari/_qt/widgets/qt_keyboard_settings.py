@@ -371,7 +371,7 @@ class ShortcutEditor(QWidget):
 
                 # show warning message
                 message = trans._(
-                    'The keybinding <b>{new_shortcut}</b>  is already assigned to <b>{action_description}</b> for the <b>{group}</b> group; change or clear that shortcut before assigning <b>{new_shortcut}</b> to this one.',
+                    'The keybinding <b>{new_shortcut}</b>  is already assigned to <b>{action_description}</b> in the <b>{group}</b> group; change or clear that shortcut before assigning <b>{new_shortcut}</b> to this one.',
                     new_shortcut=new_shortcut,
                     action_description=action.description,
                     group=group,
