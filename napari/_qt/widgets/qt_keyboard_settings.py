@@ -293,6 +293,22 @@ class ShortcutEditor(QWidget):
             self._table.setItem(0, 0, item)
 
     def _get_layer_actions(self):
+        """
+        Get all the actions that could potencially raise a keybinding conflict
+        taking into account the current selected keybinding group.
+
+        Returns
+        -------
+        actions_all: tuple
+            Tuple with tuples of actions that can potencially enter in conflict
+            when changing keybindings.The returned tuple is formated in the
+            following way:
+                (
+                    ('keybinding_group_1', ('action_name', action)),
+                    ...
+                    ('keybinding_group_n', ('action_name_n', action_n)),
+                )
+        """
         current_layer_text = self.layer_combo_box.currentText()
         layer_actions = self.key_bindings_strs[current_layer_text]
         actions_all = tuple(
@@ -413,19 +429,6 @@ class ShortcutEditor(QWidget):
         self._table.setCurrentItem(self._table.item(row, col))
 
         if col in {self._shortcut_col, self._shortcut_col2}:
-            # Get all layer actions and viewer actions in order to determine
-            # the new shortcut is not already set to an action.
-
-            current_layer_text = self.layer_combo_box.currentText()
-            layer_actions = self.key_bindings_strs[current_layer_text]
-            actions_all = layer_actions.copy()
-            if current_layer_text is not self.VIEWER_KEYBINDINGS:
-                viewer_actions = self.key_bindings_strs[
-                    self.VIEWER_KEYBINDINGS
-                ]
-
-                actions_all.update(viewer_actions)
-
             # get the current item from shortcuts column
             current_item = self._table.currentItem()
             new_shortcut = Shortcut.parse_platform(current_item.text())
