@@ -1,12 +1,15 @@
-from functools import cached_property
-from typing import Sequence
+from collections.abc import Iterable, Sequence
+from typing import Generic, Optional, TypeVar, Union, overload
 
 import numpy as np
+import numpy.typing as npt
+import pint
 import toolz as tz
+from psygnal import Signal
 
-from ...utils.translations import trans
-from ..events import EventedList
-from .transform_utils import (
+from napari.utils.events import EventedList
+from napari.utils.transforms._units import get_units_from_name
+from napari.utils.transforms.transform_utils import (
     compose_linear_matrix,
     decompose_linear_matrix,
     embed_in_identity_matrix,
@@ -19,6 +22,7 @@ from .transform_utils import (
     shear_to_matrix,
     translate_to_vector,
 )
+from napari.utils.translations import trans
 
 
 class Transform:
@@ -34,10 +38,13 @@ class Transform:
         A string name for the transform.
     """
 
-    def __init__(self, func=tz.identity, inverse=None, name=None):
+    changed = Signal()
+
+    def __init__(self, func=tz.identity, inverse=None, name=None) -> None:
         self.func = func
         self._inverse_func = inverse
         self.name = name
+        self._cache_dict = {}
 
         if func is tz.identity:
             self._inverse_func = tz.identity
@@ -48,12 +55,15 @@ class Transform:
 
     @property
     def inverse(self) -> 'Transform':
-        if self._inverse_func is not None:
-            return Transform(self._inverse_func, self.func)
-        else:
+        if self._inverse_func is None:
             raise ValueError(
                 trans._('Inverse function was not provided.', deferred=True)
             )
+        if 'inverse' not in self._cache_dict:
+            self._cache_dict['inverse'] = Transform(
+                self._inverse_func, self.func
+            )
+        return self._cache_dict['inverse']
 
     def compose(self, transform: 'Transform') -> 'Transform':
         """Return the composite of this transform and the provided one."""
@@ -99,18 +109,23 @@ class Transform:
     def _is_diagonal(self):
         """Indicate when a transform does not mix or permute dimensions.
 
-        Can be overriden in subclasses to enable performance optimizations
+        Can be overridden in subclasses to enable performance optimizations
         that are specific to this case.
         """
         return False
 
     def _clean_cache(self):
-        cached_properties = ('_is_diagonal',)
-        [self.__dict__.pop(p, None) for p in cached_properties]
+        self._cache_dict.clear()
+        self.changed.emit()
 
 
-class TransformChain(EventedList, Transform):
-    def __init__(self, transforms=None):
+_T = TypeVar('_T', bound=Transform)
+
+
+class TransformChain(EventedList[_T], Transform, Generic[_T]):
+    def __init__(
+        self, transforms: Optional[Iterable[Transform]] = None
+    ) -> None:
         if transforms is None:
             transforms = []
         super().__init__(
@@ -122,6 +137,9 @@ class TransformChain(EventedList, Transform):
         # For that to work every __init__() called using super() needs to
         # in turn call super().__init__(). So we call it explicitly here.
         Transform.__init__(self)
+        for tr in self:
+            if hasattr(tr, 'changed'):
+                tr.changed.connect(self._clean_cache)
 
     def __call__(self, coords):
         return tz.pipe(coords, *self)
@@ -129,10 +147,43 @@ class TransformChain(EventedList, Transform):
     def __newlike__(self, iterable):
         return TransformChain(iterable)
 
+    @overload
+    def __getitem__(self, key: int) -> _T: ...
+
+    @overload
+    def __getitem__(self, key: str) -> _T: ...
+
+    @overload
+    def __getitem__(self, key: slice) -> 'TransformChain[_T]': ...
+
+    def __getitem__(self, key):
+        if f'getitem_{key}' not in self._cache_dict:
+            self._cache_dict[f'getitem_{key}'] = super().__getitem__(key)
+        return self._cache_dict[f'getitem_{key}']
+
+    def __setitem__(self, key, value):
+        if key in self and hasattr(self[key], 'changed'):
+            self[key].changed.disconnect(self._clean_cache)
+        super().__setitem__(key, value)
+        if hasattr(value, 'changed'):
+            value.changed.connect(self._clean_cache)
+        self._clean_cache()
+
+    def __delitem__(self, key):
+        val = self[key]
+        if hasattr(val, 'changed'):
+            val.changed.disconnect(self._clean_cache)
+        super().__delitem__(key)
+        self._clean_cache()
+
     @property
     def inverse(self) -> 'TransformChain':
         """Return the inverse transform chain."""
-        return TransformChain([tf.inverse for tf in self[::-1]])
+        if 'inverse' not in self._cache_dict:
+            self._cache_dict['inverse'] = TransformChain(
+                [tf.inverse for tf in self[::-1]]
+            )
+        return self._cache_dict['inverse']
 
     @property
     def _is_diagonal(self):
@@ -141,14 +192,28 @@ class TransformChain(EventedList, Transform):
         return getattr(self.simplified, '_is_diagonal', False)
 
     @property
-    def simplified(self) -> 'Transform':
-        """Return the composite of the transforms inside the transform chain."""
+    def simplified(self) -> _T:
+        """
+        Return the composite of the transforms inside the transform chain.
+
+        Raises
+        ------
+        ValueError
+            If the transform chain is empty.
+        """
         if len(self) == 0:
-            return None
+            raise ValueError(
+                trans._('Cannot simplify an empty transform chain.')
+            )
+
         if len(self) == 1:
             return self[0]
-        else:
-            return tz.pipe(self[0], *[tf.compose for tf in self[1:]])
+
+        if 'simplified' not in self._cache_dict:
+            self._cache_dict['simplified'] = tz.pipe(
+                self[0], *[tf.compose for tf in self[1:]]
+            )
+        return self._cache_dict['simplified']
 
     def set_slice(self, axes: Sequence[int]) -> 'TransformChain':
         """Return a transform chain subset to the visible dimensions.
@@ -165,7 +230,7 @@ class TransformChain(EventedList, Transform):
         """
         return TransformChain([tf.set_slice(axes) for tf in self])
 
-    def expand_dims(self, axes: Sequence[int]) -> 'Transform':
+    def expand_dims(self, axes: Sequence[int]) -> 'TransformChain':
         """Return a transform chain with added axes for non-visible dimensions.
 
         Parameters
@@ -205,7 +270,7 @@ class ScaleTranslate(Transform):
         A string name for the transform.
     """
 
-    def __init__(self, scale=(1.0,), translate=(0.0,), *, name=None):
+    def __init__(self, scale=(1.0,), translate=(0.0,), *, name=None) -> None:
         super().__init__(name=name)
 
         if len(scale) > len(translate):
@@ -352,7 +417,7 @@ class Affine(Transform):
 
     References
     ----------
-    [1] https://en.wikipedia.org/wiki/Homogeneous_coordinates.
+    .. [1] https://en.wikipedia.org/wiki/Homogeneous_coordinates.
     """
 
     def __init__(
@@ -363,13 +428,15 @@ class Affine(Transform):
             0.0,
         ),
         *,
+        affine_matrix=None,
+        axis_labels: Optional[Sequence[str]] = None,
+        linear_matrix=None,
+        name=None,
+        ndim=None,
         rotate=None,
         shear=None,
-        linear_matrix=None,
-        affine_matrix=None,
-        ndim=None,
-        name=None,
-    ):
+        units: Optional[Sequence[Union[str, pint.Unit]]] = None,
+    ) -> None:
         super().__init__(name=name)
         self._upper_triangular = True
         if ndim is None:
@@ -406,6 +473,11 @@ class Affine(Transform):
         ndim = max(ndim, linear_matrix.shape[0])
         self._linear_matrix = embed_in_identity_matrix(linear_matrix, ndim)
         self._translate = translate_to_vector(translate, ndim=ndim)
+        self._axis_labels = tuple(f'axis {i}' for i in range(-ndim, 0))
+        self._units = (pint.get_application_registry().pixel,) * ndim
+
+        self.axis_labels = axis_labels
+        self.units = units
 
     def __call__(self, coords):
         coords = np.asarray(coords)
@@ -429,14 +501,44 @@ class Affine(Transform):
         return self._linear_matrix.shape[0]
 
     @property
-    def scale(self) -> np.array:
+    def axis_labels(self) -> tuple[str, ...]:
+        """tuple of axis labels for the layer."""
+        return self._axis_labels
+
+    @axis_labels.setter
+    def axis_labels(self, axis_labels: Optional[Sequence[str]]) -> None:
+        if axis_labels is None:
+            axis_labels = tuple(f'axis {i}' for i in range(-self.ndim, 0))
+        if len(axis_labels) != self.ndim:
+            raise ValueError(
+                f'{axis_labels=} must have length ndim={self.ndim}.'
+            )
+        axis_labels = tuple(axis_labels)
+        self._axis_labels = axis_labels
+
+    @property
+    def units(self) -> tuple[pint.Unit, ...]:
+        """List of units for the layer."""
+        return self._units
+
+    @units.setter
+    def units(self, units: Optional[Sequence[pint.Unit]]) -> None:
+        units = get_units_from_name(units)
+        if units is None:
+            units = (pint.get_application_registry().pixel,) * self.ndim
+        if isinstance(units, pint.Unit):
+            units = (units,) * self.ndim
+        if len(units) != self.ndim:
+            raise ValueError(f'{units=} must have length ndim={self.ndim}.')
+        self._units = units
+
+    @property
+    def scale(self) -> npt.NDArray:
         """Return the scale of the transform."""
         if self._is_diagonal:
             return np.diag(self._linear_matrix)
-        else:
-            return decompose_linear_matrix(
-                self._linear_matrix, upper_triangular=self._upper_triangular
-            )[1]
+        self._setup_decompose_linear_matrix_cache()
+        return self._cache_dict['decompose_linear_matrix'][1]
 
     @scale.setter
     def scale(self, scale):
@@ -446,13 +548,18 @@ class Affine(Transform):
             for i in range(len(scale)):
                 self._linear_matrix[i, i] = scale[i]
         else:
-            rotate, _, shear = decompose_linear_matrix(
-                self.linear_matrix, upper_triangular=self._upper_triangular
+            self._linear_matrix = compose_linear_matrix(
+                self.rotate, scale, self._shear_cache
             )
-            self._linear_matrix = compose_linear_matrix(rotate, scale, shear)
+        self._clean_cache()
 
     @property
-    def translate(self) -> np.array:
+    def physical_scale(self) -> tuple[pint.Quantity, ...]:
+        """Return the scale of the transform, with units."""
+        return tuple(np.multiply(self.scale, self.units))
+
+    @property
+    def translate(self) -> npt.NDArray:
         """Return the translation of the transform."""
         return self._translate
 
@@ -460,31 +567,36 @@ class Affine(Transform):
     def translate(self, translate):
         """Set the translation of the transform."""
         self._translate = translate_to_vector(translate, ndim=self.ndim)
+        self._clean_cache()
+
+    def _setup_decompose_linear_matrix_cache(self):
+        if 'decompose_linear_matrix' in self._cache_dict:
+            return
+        self._cache_dict['decompose_linear_matrix'] = decompose_linear_matrix(
+            self.linear_matrix, upper_triangular=self._upper_triangular
+        )
 
     @property
-    def rotate(self) -> np.array:
+    def rotate(self) -> npt.NDArray:
         """Return the rotation of the transform."""
-        return decompose_linear_matrix(
-            self.linear_matrix, upper_triangular=self._upper_triangular
-        )[0]
+        self._setup_decompose_linear_matrix_cache()
+        return self._cache_dict['decompose_linear_matrix'][0]
 
     @rotate.setter
     def rotate(self, rotate):
         """Set the rotation of the transform."""
-        _, scale, shear = decompose_linear_matrix(
-            self.linear_matrix, upper_triangular=self._upper_triangular
+        self._linear_matrix = compose_linear_matrix(
+            rotate, self.scale, self._shear_cache
         )
-        self._linear_matrix = compose_linear_matrix(rotate, scale, shear)
         self._clean_cache()
 
     @property
-    def shear(self) -> np.array:
+    def shear(self) -> npt.NDArray:
         """Return the shear of the transform."""
         if self._is_diagonal:
             return np.zeros((self.ndim,))
-        return decompose_linear_matrix(
-            self.linear_matrix, upper_triangular=self._upper_triangular
-        )[2]
+        self._setup_decompose_linear_matrix_cache()
+        return self._cache_dict['decompose_linear_matrix'][2]
 
     @shear.setter
     def shear(self, shear):
@@ -503,14 +615,18 @@ class Affine(Transform):
                 )
         else:
             self._upper_triangular = True
-        rotate, scale, _ = decompose_linear_matrix(
-            self.linear_matrix, upper_triangular=self._upper_triangular
+        self._linear_matrix = compose_linear_matrix(
+            self.rotate, self.scale, shear
         )
-        self._linear_matrix = compose_linear_matrix(rotate, scale, shear)
         self._clean_cache()
 
     @property
-    def linear_matrix(self) -> np.array:
+    def _shear_cache(self):
+        self._setup_decompose_linear_matrix_cache()
+        return self._cache_dict['decompose_linear_matrix'][2]
+
+    @property
+    def linear_matrix(self) -> npt.NDArray:
         """Return the linear matrix of the transform."""
         return self._linear_matrix
 
@@ -523,7 +639,7 @@ class Affine(Transform):
         self._clean_cache()
 
     @property
-    def affine_matrix(self) -> np.array:
+    def affine_matrix(self) -> npt.NDArray:
         """Return the affine matrix for the transform."""
         matrix = np.eye(self.ndim + 1, self.ndim + 1)
         matrix[:-1, :-1] = self._linear_matrix
@@ -544,9 +660,19 @@ class Affine(Transform):
     @property
     def inverse(self) -> 'Affine':
         """Return the inverse transform."""
-        return Affine(affine_matrix=np.linalg.inv(self.affine_matrix))
+        if 'inverse' not in self._cache_dict:
+            self._cache_dict['inverse'] = Affine(
+                affine_matrix=np.linalg.inv(self.affine_matrix)
+            )
+        return self._cache_dict['inverse']
 
-    def compose(self, transform: 'Transform') -> 'Transform':
+    @overload
+    def compose(self, transform: 'Affine') -> 'Affine': ...
+
+    @overload
+    def compose(self, transform: 'Transform') -> 'Transform': ...
+
+    def compose(self, transform):
         """Return the composite of this transform and the provided one."""
         if not isinstance(transform, Affine):
             return super().compose(transform)
@@ -571,11 +697,15 @@ class Affine(Transform):
             linear_matrix = np.diag(self.scale[axes])
         else:
             linear_matrix = self.linear_matrix[np.ix_(axes, axes)]
+        units = [self.units[i] for i in axes]
+        axes_labels = [self.axis_labels[i] for i in axes]
         return Affine(
             linear_matrix=linear_matrix,
             translate=self.translate[axes],
             ndim=len(axes),
             name=self.name,
+            units=units,
+            axis_labels=axes_labels,
         )
 
     def replace_slice(
@@ -643,14 +773,18 @@ class Affine(Transform):
             name=self.name,
         )
 
-    @cached_property
+    @property
     def _is_diagonal(self):
         """Determine whether linear_matrix is diagonal up to some tolerance.
 
         Since only `self.linear_matrix` is checked, affines with a translation
         component can still be considered diagonal.
         """
-        return is_diagonal(self.linear_matrix, tol=1e-8)
+        if '_is_diagonal' not in self._cache_dict:
+            self._cache_dict['_is_diagonal'] = is_diagonal(
+                self.linear_matrix, tol=1e-8
+            )
+        return self._cache_dict['_is_diagonal']
 
 
 class CompositeAffine(Affine):
@@ -694,13 +828,22 @@ class CompositeAffine(Affine):
         scale=(1, 1),
         translate=(0, 0),
         *,
+        axis_labels=None,
         rotate=None,
         shear=None,
         ndim=None,
         name=None,
-    ):
+        units=None,
+    ) -> None:
         super().__init__(
-            scale, translate, rotate=rotate, shear=shear, ndim=ndim, name=name
+            scale,
+            translate,
+            axis_labels=axis_labels,
+            rotate=rotate,
+            shear=shear,
+            ndim=ndim,
+            name=name,
+            units=units,
         )
         if ndim is None:
             ndim = infer_ndim(
@@ -713,7 +856,7 @@ class CompositeAffine(Affine):
         self._linear_matrix = self._make_linear_matrix()
 
     @property
-    def scale(self) -> np.array:
+    def scale(self) -> npt.NDArray:
         """Return the scale of the transform."""
         return self._scale
 
@@ -722,9 +865,10 @@ class CompositeAffine(Affine):
         """Set the scale of the transform."""
         self._scale = scale_to_vector(scale, ndim=self.ndim)
         self._linear_matrix = self._make_linear_matrix()
+        self._clean_cache()
 
     @property
-    def rotate(self) -> np.array:
+    def rotate(self) -> npt.NDArray:
         """Return the rotation of the transform."""
         return self._rotate
 
@@ -736,7 +880,7 @@ class CompositeAffine(Affine):
         self._clean_cache()
 
     @property
-    def shear(self) -> np.array:
+    def shear(self) -> npt.NDArray:
         """Return the shear of the transform."""
         return (
             self._shear[np.triu_indices(n=self.ndim, k=1)]
@@ -751,7 +895,11 @@ class CompositeAffine(Affine):
         self._linear_matrix = self._make_linear_matrix()
         self._clean_cache()
 
-    @Affine.linear_matrix.setter
+    @property
+    def linear_matrix(self):
+        return super().linear_matrix
+
+    @linear_matrix.setter
     def linear_matrix(self, linear_matrix):
         """Setting the linear matrix of a CompositeAffine transform is not supported."""
         raise NotImplementedError(
@@ -761,7 +909,11 @@ class CompositeAffine(Affine):
             )
         )
 
-    @Affine.affine_matrix.setter
+    @property
+    def affine_matrix(self):
+        return super().affine_matrix
+
+    @affine_matrix.setter
     def affine_matrix(self, affine_matrix):
         """Setting the affine matrix of a CompositeAffine transform is not supported."""
         raise NotImplementedError(
@@ -779,6 +931,8 @@ class CompositeAffine(Affine):
             shear=self._shear[np.ix_(axes, axes)],
             ndim=len(axes),
             name=self.name,
+            units=[self.units[i] for i in axes],
+            axis_labels=[self.axis_labels[i] for i in axes],
         )
 
     def expand_dims(self, axes: Sequence[int]) -> 'CompositeAffine':

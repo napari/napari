@@ -22,7 +22,7 @@ def update_text(
         A layer with text.
     """
 
-    ndisplay = layer._ndisplay
+    ndisplay = layer._slice_input.ndisplay
 
     # Vispy always needs non-empty values and coordinates, so if a layer
     # effectively has no visible text then return single dummy data.
@@ -71,6 +71,4 @@ def _has_visible_text(layer: Union[Points, Shapes]) -> bool:
         and text.string.constant == ''
     ):
         return False
-    if len(layer._indices_view) == 0:
-        return False
-    return True
+    return len(layer._indices_view) != 0

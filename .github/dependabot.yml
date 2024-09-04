@@ -8,3 +8,9 @@ updates:
       interval: "monthly"
     commit-message:
       prefix: "ci(dependabot):"
+    labels:
+      - "maintenance"
+    groups:
+      actions:
+        patterns:
+          - "*"

@@ -1,10 +1,10 @@
 from napari_plugin_engine import PluginError, standard_metadata
 
-from ..utils.translations import trans
+from napari.utils.translations import trans
 
 
 def format_exceptions(
-    plugin_name: str, as_html: bool = False, color="Neutral"
+    plugin_name: str, as_html: bool = False, color='Neutral'
 ):
     """Return formatted tracebacks for all exceptions raised by plugin.
 
@@ -27,8 +27,7 @@ def format_exceptions(
         return ''
 
     from napari import __version__
-
-    from ..utils._tracebacks import get_tb_formatter
+    from napari.utils._tracebacks import get_tb_formatter
 
     format_exc_info = get_tb_formatter()
 
@@ -60,9 +59,9 @@ def format_exceptions(
 
     for n, err in enumerate(_plugin_errors):
         _pad = _linewidth - len(str(err)) - 10
-        msg += ['', f'ERROR #{n + 1}:  {str(err)} {"-" * _pad}', '']
+        msg += ['', f'ERROR #{n + 1}:  {err!s} {"-" * _pad}', '']
         msg.append(format_exc_info(err.info(), as_html, color))
 
     msg.append('=' * _linewidth)
 
-    return ("<br>" if as_html else "\n").join(msg)
+    return ('<br>' if as_html else '\n').join(msg)

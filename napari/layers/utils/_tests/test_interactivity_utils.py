@@ -7,7 +7,13 @@ from napari.layers.utils.interactivity_utils import (
 
 
 @pytest.mark.parametrize(
-    "start_position, end_position, view_direction, vector, expected_value",
+    (
+        'start_position',
+        'end_position',
+        'view_direction',
+        'vector',
+        'expected_value',
+    ),
     [
         # drag vector parallel to view direction
         # projected onto perpendicular vector
@@ -15,9 +21,6 @@ from napari.layers.utils.interactivity_utils import (
         # same as above, projection onto multiple perpendicular vectors
         # should produce multiple results
         ([0, 0, 0], [0, 0, 1], [0, 0, 1], [[1, 0, 0], [0, 1, 0]], [0, 0]),
-        # drag vector perpendicular to view direction
-        # projected onto itself
-        ([0, 0, 0], [0, 1, 0], [0, 0, 1], [0, 1, 0], 1),
         # drag vector perpendicular to view direction
         # projected onto itself
         ([0, 0, 0], [0, 1, 0], [0, 0, 1], [0, 1, 0], 1),

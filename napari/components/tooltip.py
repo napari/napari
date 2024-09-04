@@ -1,4 +1,4 @@
-from ..utils.events import EventedModel
+from napari.utils.events import EventedModel
 
 
 class Tooltip(EventedModel):
@@ -14,4 +14,4 @@ class Tooltip(EventedModel):
 
     # fields
     visible: bool = False
-    text: str = ""
+    text: str = ''

@@ -1,3 +1,4 @@
+# closes commit to this file is matplotlib's e9cda7fbfb
 """
 Builtin colormaps, colormap handling utilities, and the `ScalarMappable` mixin.
 
@@ -38,7 +39,7 @@ cmap_d = {}
 def _reverser(f, x=None):
     """Helper such that ``_reverser(f)(x) == f(1 - x)``."""
     if x is None:
-        # Returning a partial object keeps it picklable.
+        # Returning a partial object keeps it pickleable.
         return functools.partial(_reverser, f)
     return f(1 - x)
 

@@ -1,10 +1,10 @@
 import re
 from dataclasses import dataclass
 from functools import total_ordering
-from typing import Any, Dict, Optional, SupportsInt, Tuple, Union
+from typing import Any, Optional, SupportsInt, Union
 
-from ..utils.theme import available_themes
-from ..utils.translations import _load_language, get_language_packs, trans
+from napari.utils.theme import available_themes, is_theme_available
+from napari.utils.translations import _load_language, get_language_packs, trans
 
 
 class Theme(str):
@@ -13,6 +13,8 @@ class Theme(str):
     """
 
     # https://pydantic-docs.helpmanual.io/usage/types/#custom-data-types
+
+    __slots__ = ()
 
     @classmethod
     def __get_validators__(cls):
@@ -27,17 +29,16 @@ class Theme(str):
     @classmethod
     def validate(cls, v):
         if not isinstance(v, str):
-            raise ValueError(trans._('must be a string', deferred=True))
+            raise TypeError(trans._('must be a string', deferred=True))
 
         value = v.lower()
-        themes = available_themes()
-        if value not in available_themes():
+        if not is_theme_available(value):
             raise ValueError(
                 trans._(
                     '"{value}" is not valid. It must be one of {themes}',
                     deferred=True,
                     value=value,
-                    themes=", ".join(themes),
+                    themes=', '.join(available_themes()),
                 )
             )
 
@@ -50,6 +51,8 @@ class Language(str):
     """
 
     # https://pydantic-docs.helpmanual.io/usage/types/#custom-data-types
+
+    __slots__ = ()
 
     @classmethod
     def __get_validators__(cls):
@@ -65,7 +68,7 @@ class Language(str):
     @classmethod
     def validate(cls, v):
         if not isinstance(v, str):
-            raise ValueError(trans._('must be a string', deferred=True))
+            raise TypeError(trans._('must be a string', deferred=True))
 
         language_packs = list(get_language_packs(_load_language()).keys())
         if v not in language_packs:
@@ -74,7 +77,7 @@ class Language(str):
                     '"{value}" is not valid. It must be one of {language_packs}.',
                     deferred=True,
                     value=v,
-                    language_packs=", ".join(language_packs),
+                    language_packs=', '.join(language_packs),
                 )
             )
 
@@ -121,7 +124,7 @@ class Version:
     def parse(cls, version: Union[bytes, str]) -> 'Version':
         """Convert string or bytes into Version object."""
         if isinstance(version, bytes):
-            version = version.decode("UTF-8")
+            version = version.decode('UTF-8')
         match = cls._SEMVER_PATTERN.match(version)
         if match is None:
             raise ValueError(
@@ -131,7 +134,7 @@ class Version:
                     version=version,
                 )
             )
-        matched_version_parts: Dict[str, Any] = match.groupdict()
+        matched_version_parts: dict[str, Any] = match.groupdict()
         return cls(**matched_version_parts)
 
     # NOTE: we're only comparing the numeric parts for now.
@@ -159,7 +162,7 @@ class Version:
         elif not isinstance(other, Version):
             raise TypeError(
                 trans._(
-                    "Expected str, bytes, dict, tuple, list, or {cls} instance, but got {other_type}",
+                    'Expected str, bytes, dict, tuple, list, or {cls} instance, but got {other_type}',
                     deferred=True,
                     cls=cls,
                     other_type=type(other),
@@ -167,7 +170,7 @@ class Version:
             )
         return other
 
-    def to_tuple(self) -> Tuple[int, int, int, Optional[str], Optional[str]]:
+    def to_tuple(self) -> tuple[int, int, int, Optional[str], Optional[str]]:
         """Return version as tuple (first three are int, last two Opt[str])."""
         return (
             int(self.major),
@@ -181,7 +184,7 @@ class Version:
         yield from self.to_tuple()
 
     def __str__(self) -> str:
-        v = f"{self.major}.{self.minor}.{self.patch}"
+        v = f'{self.major}.{self.minor}.{self.patch}'
         if self.prerelease:  # pragma: no cover
             v += str(self.prerelease)
         if self.build:  # pragma: no cover

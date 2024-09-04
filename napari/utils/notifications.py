@@ -1,27 +1,18 @@
 from __future__ import annotations
 
+import logging
 import os
 import sys
 import threading
 import warnings
+from collections.abc import Sequence
 from datetime import datetime
 from enum import auto
 from types import TracebackType
-from typing import Callable, List, Optional, Sequence, Tuple, Type, Union
+from typing import Callable, Optional, Union
 
-from .events import Event, EventEmitter
-from .misc import StringEnum
-
-try:
-    from napari_error_reporter import capture_exception, install_error_reporter
-except ImportError:
-
-    def _noop(*_, **__):
-        pass
-
-    install_error_reporter = _noop
-    capture_exception = _noop
-
+from napari.utils.events import Event, EventEmitter
+from napari.utils.misc import StringEnum
 
 name2num = {
     'error': 40,
@@ -37,7 +28,9 @@ __all__ = [
     'ErrorNotification',
     'WarningNotification',
     'NotificationManager',
+    'show_debug',
     'show_info',
+    'show_warning',
     'show_error',
     'show_console_notification',
 ]
@@ -54,11 +47,11 @@ class NotificationSeverity(StringEnum):
 
     def as_icon(self):
         return {
-            self.ERROR: "ⓧ",
-            self.WARNING: "⚠️",
-            self.INFO: "ⓘ",
-            self.DEBUG: "🐛",
-            self.NONE: "",
+            self.ERROR: 'ⓧ',
+            self.WARNING: '⚠️',
+            self.INFO: 'ⓘ',
+            self.DEBUG: '🐛',
+            self.NONE: '',
         }[self]
 
     def __lt__(self, other):
@@ -80,7 +73,7 @@ class NotificationSeverity(StringEnum):
         return hash(self.value)
 
 
-ActionSequence = Sequence[Tuple[str, Callable[[], None]]]
+ActionSequence = Sequence[tuple[str, Callable[[], None]]]
 
 
 class Notification(Event):
@@ -108,9 +101,9 @@ class Notification(Event):
         ] = NotificationSeverity.WARNING,
         actions: ActionSequence = (),
         **kwargs,
-    ):
+    ) -> None:
         self.severity = NotificationSeverity(severity)
-        super().__init__(type=str(self.severity).lower(), **kwargs)
+        super().__init__(type_name=str(self.severity).lower(), **kwargs)
         self._message = message
         self.actions = actions
 
@@ -144,14 +137,14 @@ class ErrorNotification(Notification):
 
     exception: BaseException
 
-    def __init__(self, exception: BaseException, *args, **kwargs):
+    def __init__(self, exception: BaseException, *args, **kwargs) -> None:
         msg = getattr(exception, 'message', str(exception))
         actions = getattr(exception, 'actions', ())
         super().__init__(msg, NotificationSeverity.ERROR, actions)
         self.exception = exception
 
     def as_html(self):
-        from ._tracebacks import get_tb_formatter
+        from napari.utils._tracebacks import get_tb_formatter
 
         fmt = get_tb_formatter()
         exc_info = (
@@ -162,7 +155,7 @@ class ErrorNotification(Notification):
         return fmt(exc_info, as_html=True)
 
     def as_text(self):
-        from ._tracebacks import get_tb_formatter
+        from napari.utils._tracebacks import get_tb_formatter
 
         fmt = get_tb_formatter()
         exc_info = (
@@ -170,10 +163,10 @@ class ErrorNotification(Notification):
             self.exception,
             self.exception.__traceback__,
         )
-        return fmt(exc_info, as_html=False, color="NoColor")
+        return fmt(exc_info, as_html=False, color='NoColor')
 
     def __str__(self):
-        from ._tracebacks import get_tb_formatter
+        from napari.utils._tracebacks import get_tb_formatter
 
         fmt = get_tb_formatter()
         exc_info = (
@@ -193,7 +186,7 @@ class WarningNotification(Notification):
 
     def __init__(
         self, warning: Warning, filename=None, lineno=None, *args, **kwargs
-    ):
+    ) -> None:
         msg = getattr(warning, 'message', str(warning))
         actions = getattr(warning, 'actions', ())
         super().__init__(msg, NotificationSeverity.WARNING, actions)
@@ -227,22 +220,23 @@ class NotificationManager:
     re-entrency of the hooks themselves.
     """
 
-    records: List[Notification]
+    records: list[Notification]
     _instance: Optional[NotificationManager] = None
 
     def __init__(self) -> None:
-        self.records: List[Notification] = []
+        self.records: list[Notification] = []
         self.exit_on_error = os.getenv('NAPARI_EXIT_ON_ERROR') in ('1', 'True')
-        self.catch_error = os.getenv("NAPARI_CATCH_ERRORS") not in (
+        self.catch_error = os.getenv('NAPARI_CATCH_ERRORS') not in (
             '0',
             'False',
         )
         self.notification_ready = self.changed = EventEmitter(
             source=self, event_class=Notification
         )
-        self._originals_except_hooks = []
-        self._original_showwarnings_hooks = []
-        self._originals_thread_except_hooks = []
+        self._originals_except_hooks: list[Callable] = []
+        self._original_showwarnings_hooks: list[Callable] = []
+        self._originals_thread_except_hooks: list[Callable] = []
+        self._seen_warnings: set[tuple[str, type, str, int]] = set()
 
     def __enter__(self):
         self.install_hooks()
@@ -265,7 +259,6 @@ class NotificationManager:
             # Patch for Python < 3.8
             _setup_thread_excepthook()
 
-        install_error_reporter()
         self._originals_except_hooks.append(sys.excepthook)
         self._original_showwarnings_hooks.append(warnings.showwarning)
 
@@ -287,42 +280,48 @@ class NotificationManager:
         self.records.append(notification)
         self.notification_ready(notification)
 
-    def receive_thread_error(self, args: threading.ExceptHookArgs):
+    def receive_thread_error(
+        self,
+        args: tuple[
+            type[BaseException],
+            BaseException,
+            Optional[TracebackType],
+            Optional[threading.Thread],
+        ],
+    ):
         self.receive_error(*args)
 
     def receive_error(
         self,
-        exctype: Optional[Type[BaseException]] = None,
-        value: Optional[BaseException] = None,
+        exctype: type[BaseException],
+        value: BaseException,
         traceback: Optional[TracebackType] = None,
         thread: Optional[threading.Thread] = None,
     ):
         if isinstance(value, KeyboardInterrupt):
-            sys.exit("Closed by KeyboardInterrupt")
-
-        capture_exception(value)
+            sys.exit('Closed by KeyboardInterrupt')
 
         if self.exit_on_error:
             sys.__excepthook__(exctype, value, traceback)
-            sys.exit("Exit on error")
+            sys.exit('Exit on error')
         if not self.catch_error:
             sys.__excepthook__(exctype, value, traceback)
             return
-
-        try:
-            self.dispatch(Notification.from_exception(value))
-        except Exception:
-            pass
+        self.dispatch(Notification.from_exception(value))
 
     def receive_warning(
         self,
         message: Warning,
-        category: Type[Warning],
+        category: type[Warning],
         filename: str,
         lineno: int,
         file=None,
         line=None,
     ):
+        msg = message if isinstance(message, str) else message.args[0]
+        if (msg, category, filename, lineno) in self._seen_warnings:
+            return
+        self._seen_warnings.add((msg, category, filename, lineno))
         self.dispatch(
             Notification.from_warning(
                 message, filename=filename, lineno=lineno
@@ -334,6 +333,15 @@ class NotificationManager:
 
 
 notification_manager = NotificationManager()
+
+
+def show_debug(message: str):
+    """
+    Show a debug message in the notification manager.
+    """
+    notification_manager.dispatch(
+        Notification(message, severity=NotificationSeverity.DEBUG)
+    )
 
 
 def show_info(message: str):
@@ -368,7 +376,7 @@ def show_console_notification(notification: Notification):
     Show a notification in the console.
     """
     try:
-        from ..settings import get_settings
+        from napari.settings import get_settings
 
         if (
             notification.severity
@@ -376,12 +384,12 @@ def show_console_notification(notification: Notification):
         ):
             return
 
-        print(notification)
+        print(notification)  # noqa: T201
     except Exception:
-        print(
-            "An error occurred while trying to format an error and show it in console.\n"
-            "You can try to uninstall IPython to disable rich traceback formatting\n"
-            "And/or report a bug to napari"
+        logging.exception(
+            'An error occurred while trying to format an error and show it in console.\n'
+            'You can try to uninstall IPython to disable rich traceback formatting\n'
+            'And/or report a bug to napari'
         )
         # this will likely get silenced by QT.
         raise
@@ -401,7 +409,7 @@ def _setup_thread_excepthook():
         def run_with_except_hook(*args2, **kwargs2):
             try:
                 _run(*args2, **kwargs2)
-            except Exception:
+            except Exception:  # noqa BLE001
                 sys.excepthook(*sys.exc_info())
 
         self.run = run_with_except_hook

@@ -11,8 +11,8 @@ your shapes.
 
 import numpy as np
 from skimage import data
-import napari
 
+import napari
 
 # add the image
 viewer = napari.view_image(data.camera(), name='photographer')

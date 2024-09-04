@@ -11,21 +11,21 @@ from napari.utils.tree import Group, Node
 def tree_model(qapp):
     root = Group(
         [
-            Node(name="1"),
+            Node(name='1'),
             Group(
                 [
-                    Node(name="2"),
-                    Group([Node(name="3"), Node(name="4")], name="g2"),
-                    Node(name="5"),
-                    Node(name="6"),
-                    Node(name="7"),
+                    Node(name='2'),
+                    Group([Node(name='3'), Node(name='4')], name='g2'),
+                    Node(name='5'),
+                    Node(name='6'),
+                    Node(name='7'),
                 ],
-                name="g1",
+                name='g1',
             ),
-            Node(name="8"),
-            Node(name="9"),
+            Node(name='8'),
+            Node(name='9'),
         ],
-        name="root",
+        name='root',
     )
     return QtNodeTreeModel(root)
 
@@ -59,7 +59,9 @@ def test_move_single_tree_item(tree_model):
     _assert_models_synced(root, tree_model)
 
 
-@pytest.mark.parametrize('sources, dest, expectation', NESTED_POS_INDICES)
+@pytest.mark.parametrize(
+    ('sources', 'dest', 'expectation'), NESTED_POS_INDICES
+)
 def test_nested_move_multiple(qapp, sources, dest, expectation):
     """Test that models stay in sync with complicated moves.
 
@@ -145,7 +147,7 @@ def test_node_tree_view(qtbot):
     assert qmodel.getItem(qsel.currentIndex()).index_from_root() == (2, 1, 0)
 
     # clear current in Qt
-    qsel.setCurrentIndex(QModelIndex(), qsel.Current)
+    qsel.setCurrentIndex(QModelIndex(), qsel.SelectionFlag.Current)
     # check current in python
     assert root.selection._current is None
 

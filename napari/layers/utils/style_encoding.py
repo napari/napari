@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 from typing import (
     Any,
     Generic,
-    List,
     Protocol,
     TypeVar,
     Union,
@@ -12,10 +11,10 @@ from typing import (
 
 import numpy as np
 
-from ...utils.events import EventedModel
-from ...utils.translations import trans
+from napari.utils.events import EventedModel
+from napari.utils.translations import trans
 
-IndicesType = Union[range, List[int], np.ndarray]
+IndicesType = Union[range, list[int], np.ndarray]
 
 """The variable type of a single style value."""
 StyleValue = TypeVar('StyleValue', bound=np.ndarray)
@@ -229,7 +228,7 @@ class _DerivedStyleEncoding(
     fallback: StyleValue
     _cached: StyleArray
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self._cached = _empty_array_like(self.fallback)
 
@@ -262,7 +261,7 @@ class _DerivedStyleEncoding(
                 ),
                 category=RuntimeWarning,
             )
-            shape = (features.shape[0],) + self.fallback.shape
+            shape = (features.shape[0], *self.fallback.shape)
             array = np.broadcast_to(self.fallback, shape)
         return array
 
@@ -291,5 +290,5 @@ def _get_style_values(
 
 def _empty_array_like(value: StyleValue) -> StyleArray:
     """Returns an empty array with the same type and remaining shape of the given value."""
-    shape = (0,) + value.shape
+    shape = (0, *value.shape)
     return np.empty_like(value, shape=shape)

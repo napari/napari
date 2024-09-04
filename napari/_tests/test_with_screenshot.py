@@ -1,10 +1,8 @@
-import collections
-
 import numpy as np
 import pytest
 
 from napari._tests.utils import skip_local_popups, skip_on_win_ci
-from napari.utils._proxies import ReadOnlyWrapper
+from napari.utils._test_utils import read_only_mouse_event
 from napari.utils.interactions import (
     mouse_move_callbacks,
     mouse_press_callbacks,
@@ -198,23 +196,23 @@ def test_changing_image_gamma(make_napari_viewer):
 
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
-    assert 127 <= screenshot[center + (0,)] <= 129
+    assert 127 <= screenshot[(*center, 0)] <= 129
 
     layer.gamma = 0.1
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    assert screenshot[center + (0,)] > 230
+    assert screenshot[(*center, 0)] > 230
 
     viewer.dims.ndisplay = 3
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    assert screenshot[center + (0,)] > 230
+    assert screenshot[(*center, 0)] > 230
 
     layer.gamma = 1.9
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    assert screenshot[center + (0,)] < 80
+    assert screenshot[(*center, 0)] < 80
 
     viewer.dims.ndisplay = 2
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    assert screenshot[center + (0,)] < 80
+    assert screenshot[(*center, 0)] < 80
 
 
 @skip_on_win_ci
@@ -370,48 +368,36 @@ def test_labels_painting(make_napari_viewer):
     layer.selected_label = 3
 
     # Simulate click
-    Event = collections.namedtuple(
-        'Event', field_names=['type', 'is_dragging', 'position']
-    )
-
-    # Simulate click
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_press',
-            is_dragging=False,
-            position=viewer.cursor.position,
-        )
+    event = read_only_mouse_event(
+        type='mouse_press',
+        is_dragging=False,
+        position=viewer.cursor.position,
     )
     mouse_press_callbacks(layer, event)
 
     viewer.cursor.position = (100, 100)
 
     # Simulate drag
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_move',
-            is_dragging=True,
-            position=viewer.cursor.position,
-        )
+    event = read_only_mouse_event(
+        type='mouse_move',
+        is_dragging=True,
+        position=viewer.cursor.position,
     )
     mouse_move_callbacks(layer, event)
 
     # Simulate release
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_release',
-            is_dragging=False,
-            position=viewer.cursor.position,
-        )
+    event = read_only_mouse_event(
+        type='mouse_release',
+        is_dragging=False,
+        position=viewer.cursor.position,
     )
+
     mouse_release_callbacks(layer, event)
 
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_press',
-            is_dragging=False,
-            position=viewer.cursor.position,
-        )
+    event = read_only_mouse_event(
+        type='mouse_press',
+        is_dragging=False,
+        position=viewer.cursor.position,
     )
     mouse_press_callbacks(layer, event)
 
@@ -421,7 +407,7 @@ def test_labels_painting(make_napari_viewer):
     assert screenshot[:, :, :2].max() > 0
 
 
-@pytest.mark.skip("Welcome visual temporarily disabled")
+@pytest.mark.skip('Welcome visual temporarily disabled')
 @skip_on_win_ci
 @skip_local_popups
 def test_welcome(make_napari_viewer):
@@ -508,3 +494,54 @@ def test_screenshot_has_no_border(make_napari_viewer):
 
     expected = np.broadcast_to([255, 0, 0, 255], screenshot.shape)
     np.testing.assert_array_equal(screenshot, expected)
+
+
+@skip_on_win_ci
+@skip_local_popups
+def test_blending_modes_with_canvas(make_napari_viewer):
+    shape = (60, 80)
+    viewer = make_napari_viewer(show=True)
+
+    # add two images with different values
+    img1 = np.full(shape, 20, np.uint8)
+    img2 = np.full(shape, 50, np.uint8)
+    img1_layer = viewer.add_image(img1)
+    img2_layer = viewer.add_image(img2)
+
+    viewer.window._qt_viewer.canvas.size = shape
+    viewer.camera.zoom = 1
+
+    # check that additive behaves correctly with black canvas
+    img1_layer.blending = 'additive'
+    img2_layer.blending = 'additive'
+    screenshot = viewer.screenshot(canvas_only=True, flash=False)
+    np.testing.assert_array_equal(screenshot[:, :, 0], img1 + img2)
+
+    # minimum should not result in black background if canvas is black
+    img1_layer.blending = 'minimum'
+    img2_layer.blending = 'minimum'
+    screenshot = viewer.screenshot(canvas_only=True, flash=False)
+    np.testing.assert_array_equal(screenshot[:, :, 0], np.minimum(img1, img2))
+    # toggle visibility of bottom layer
+    img1_layer.visible = False
+    screenshot = viewer.screenshot(canvas_only=True, flash=False)
+    np.testing.assert_array_equal(screenshot[:, :, 0], img2)
+    # and canvas should not affect the above results
+    viewer.window._qt_viewer.canvas.bgcolor = 'white'
+
+    # check that additive behaves correctly, despite white canvas
+    img1_layer.visible = True
+    img1_layer.blending = 'additive'
+    img2_layer.blending = 'additive'
+    screenshot = viewer.screenshot(canvas_only=True, flash=False)
+    np.testing.assert_array_equal(screenshot[:, :, 0], img1 + img2)
+    # toggle visibility of bottom layer
+    img1_layer.visible = False
+    screenshot = viewer.screenshot(canvas_only=True, flash=False)
+    np.testing.assert_array_equal(screenshot[:, :, 0], img2)
+    # minimum should always work with white canvas bgcolor
+    img1_layer.visible = True
+    img1_layer.blending = 'minimum'
+    img2_layer.blending = 'minimum'
+    screenshot = viewer.screenshot(canvas_only=True, flash=False)
+    np.testing.assert_array_equal(screenshot[:, :, 0], np.minimum(img1, img2))

@@ -1,12 +1,19 @@
 import os
 
+from lazy_loader import attach as _attach
+
+from napari._check_numpy_version import limit_numpy1x_threads_on_macos_arm
+
 try:
-    from ._version import version as __version__
+    from napari._version import version as __version__
 except ImportError:
-    __version__ = "not-installed"
+    __version__ = 'not-installed'
 
 # Allows us to use pydata/sparse arrays as layer data
 os.environ.setdefault('SPARSE_AUTO_DENSIFY', '1')
+limit_numpy1x_threads_on_macos_arm()
+
+del limit_numpy1x_threads_on_macos_arm
 del os
 
 # Add everything that needs to be accessible from the napari namespace here.
@@ -49,9 +56,8 @@ _submod_attrs = {
 # potential to take a second or more, so we definitely don't want to import it
 # just to access the CLI (which may not actually need any of the imports)
 
-from ._lazy import install_lazy
 
-__getattr__, __dir__, __all__ = install_lazy(
-    __name__, _proto_all_, _submod_attrs
+__getattr__, __dir__, __all__ = _attach(
+    __name__, submodules=_proto_all_, submod_attrs=_submod_attrs
 )
-del install_lazy
+del _attach

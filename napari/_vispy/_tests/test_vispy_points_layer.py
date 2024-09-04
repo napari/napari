@@ -5,7 +5,7 @@ from napari._vispy.layers.points import VispyPointsLayer
 from napari.layers import Points
 
 
-@pytest.mark.parametrize("opacity", [0, 0.3, 0.7, 1])
+@pytest.mark.parametrize('opacity', [0, 0.3, 0.7, 1])
 def test_VispyPointsLayer(opacity):
     points = np.array([[100, 100], [200, 200], [300, 100]])
     layer = Points(points, size=30, opacity=opacity)
@@ -107,6 +107,12 @@ def test_text_with_non_empty_constant_string():
     # automatically broadcasts, so explicitly check length.
     assert len(text_node.text) == 3
     np.testing.assert_array_equal(text_node.text, ['a', 'a', 'a'])
+
+    # Ensure we do position calculation for constants.
+    # See https://github.com/napari/napari/issues/5378
+    # We want row, column coordinates so drop 3rd dimension and flip.
+    actual_position = text_node.pos[:, 1::-1]
+    np.testing.assert_allclose(actual_position, points)
 
 
 def test_change_antialiasing():

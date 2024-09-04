@@ -1,13 +1,13 @@
-"""RemoteManager class.
-"""
+"""RemoteManager class."""
+
 import logging
 
-from ....utils.events import Event
-from ...layerlist import LayerList
-from ._commands import RemoteCommands
-from ._messages import RemoteMessages
+from napari.components.experimental.remote._commands import RemoteCommands
+from napari.components.experimental.remote._messages import RemoteMessages
+from napari.components.layerlist import LayerList
+from napari.utils.events import Event
 
-LOGGER = logging.getLogger("napari.monitor")
+LOGGER = logging.getLogger('napari.monitor')
 
 
 class RemoteManager:
@@ -27,7 +27,7 @@ class RemoteManager:
         The viewer's layers.
     """
 
-    def __init__(self, layers: LayerList):
+    def __init__(self, layers: LayerList) -> None:
         self._commands = RemoteCommands(layers)
         self._messages = RemoteMessages(layers)
 

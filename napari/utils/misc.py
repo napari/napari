@@ -1,5 +1,6 @@
-"""Miscellaneous utility functions.
-"""
+"""Miscellaneous utility functions."""
+
+from __future__ import annotations
 
 import builtins
 import collections.abc
@@ -11,26 +12,25 @@ import os
 import re
 import sys
 import warnings
+from collections.abc import Iterable, Iterator, Sequence
 from enum import Enum, EnumMeta
-from os import fspath
-from os import path as os_path
+from os import fspath, path as os_path
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Iterable,
-    Iterator,
-    List,
     Optional,
-    Type,
     TypeVar,
     Union,
 )
 
 import numpy as np
+import numpy.typing as npt
 
-from ..utils.translations import trans
+from napari.utils.translations import trans
+
+_sentinel = object()
 
 if TYPE_CHECKING:
     import packaging.version
@@ -39,28 +39,43 @@ if TYPE_CHECKING:
 ROOT_DIR = os_path.dirname(os_path.dirname(__file__))
 
 
-def parse_version(v) -> 'packaging.version._BaseVersion':
+def parse_version(v: str) -> packaging.version._BaseVersion:
     """Parse a version string and return a packaging.version.Version obj."""
     import packaging.version
 
     try:
         return packaging.version.Version(v)
     except packaging.version.InvalidVersion:
-        return packaging.version.LegacyVersion(v)
+        return packaging.version.LegacyVersion(v)  # type: ignore[attr-defined]
 
 
-def running_as_bundled_app() -> bool:
-    """Infer whether we are running as a briefcase bundle."""
+def running_as_bundled_app(*, check_conda: bool = True) -> bool:
+    """Infer whether we are running as a bundle."""
     # https://github.com/beeware/briefcase/issues/412
     # https://github.com/beeware/briefcase/pull/425
     # note that a module may not have a __package__ attribute
     # From 0.4.12 we add a sentinel file next to the bundled sys.executable
-    if (Path(sys.executable).parent / ".napari_is_bundled").exists():
+    warnings.warn(
+        trans._(
+            'Briefcase installations are no longer supported as of v0.4.18. '
+            'running_as_bundled_app() will be removed in a 0.6.0 release.',
+        ),
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    if (
+        check_conda
+        and (Path(sys.executable).parent / '.napari_is_bundled').exists()
+    ):
         return True
 
+    # TODO: Remove from here on?
     try:
         app_module = sys.modules['__main__'].__package__
     except AttributeError:
+        return False
+
+    if not app_module:
         return False
 
     try:
@@ -74,78 +89,105 @@ def running_as_bundled_app() -> bool:
 def running_as_constructor_app() -> bool:
     """Infer whether we are running as a constructor bundle."""
     return (
-        Path(sys.prefix).parent.parent / ".napari_is_bundled_constructor"
+        Path(sys.prefix).parent.parent / '.napari_is_bundled_constructor'
     ).exists()
-
-
-def bundle_bin_dir() -> Optional[str]:
-    """Return path to briefcase app_packages/bin if it exists."""
-    bin = os_path.join(os_path.dirname(sys.exec_prefix), 'app_packages', 'bin')
-    if os_path.isdir(bin):
-        return bin
 
 
 def in_jupyter() -> bool:
     """Return true if we're running in jupyter notebook/lab or qtconsole."""
-    try:
+    with contextlib.suppress(ImportError):
         from IPython import get_ipython
 
         return get_ipython().__class__.__name__ == 'ZMQInteractiveShell'
-    except Exception:
-        pass
     return False
 
 
 def in_ipython() -> bool:
     """Return true if we're running in an IPython interactive shell."""
-    try:
+    with contextlib.suppress(ImportError):
         from IPython import get_ipython
 
         return get_ipython().__class__.__name__ == 'TerminalInteractiveShell'
-    except Exception:
-        pass
     return False
 
 
-def str_to_rgb(arg):
+def in_python_repl() -> bool:
+    """Return true if we're running in a Python REPL."""
+    with contextlib.suppress(ImportError):
+        from IPython import get_ipython
+
+        return get_ipython().__class__.__name__ == 'NoneType' and hasattr(
+            sys, 'ps1'
+        )
+    return False
+
+
+def str_to_rgb(arg: str) -> list[int]:
     """Convert an rgb string 'rgb(x,y,z)' to a list of ints [x,y,z]."""
-    return list(
-        map(int, re.match(r'rgb\((\d+),\s*(\d+),\s*(\d+)\)', arg).groups())
-    )
+    match = re.match(r'rgb\((\d+),\s*(\d+),\s*(\d+)\)', arg)
+    if match is None:
+        raise ValueError("arg not in format 'rgb(x,y,z)'")
+    return list(map(int, match.groups()))
 
 
-def ensure_iterable(arg, color=False):
+def ensure_iterable(
+    arg: Union[None, str, Enum, float, list, npt.NDArray],
+    color: object | bool = _sentinel,
+):
     """Ensure an argument is an iterable. Useful when an input argument
-    can either be a single value or a list. If a color is passed then it
-    will be treated specially to determine if it is iterable.
+    can either be a single value or a list.
+    Argument color is deprecated since version 0.5.0 and will be removed in 0.6.0.
     """
-    if is_iterable(arg, color=color):
+    # deprecate color
+    if color is not _sentinel:
+        warnings.warn(
+            trans._(
+                'Argument color is deprecated since version 0.5.0 and will be removed in 0.6.0.',
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,  # not sure what level to use here
+        )
+    if is_iterable(
+        arg, color=color
+    ):  # argument color is to be removed in 0.6.0
         return arg
-    else:
-        return itertools.repeat(arg)
+
+    return itertools.repeat(arg)
 
 
-def is_iterable(arg, color=False, allow_none=False):
-    """Determine if a single argument is an iterable. If a color is being
-    provided and the argument is a 1-D array of length 3 or 4 then the input
-    is taken to not be iterable. If allow_none is True, `None` is considered iterable.
+def is_iterable(
+    arg: Union[None, str, Enum, float, list, npt.NDArray],
+    color: object | bool = _sentinel,
+    allow_none: bool = False,
+) -> bool:
+    """Determine if a single argument is an iterable.
+    Argument color is deprecated since version 0.5.0 and will be removed in 0.6.0.
     """
-    if arg is None and not allow_none:
+    # deprecate color
+    if color is not _sentinel:
+        warnings.warn(
+            trans._(
+                'Argument color is deprecated since version 0.5.0 and will be removed in 0.6.0.',
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,  # not sure what level to use here
+        )
+
+    if arg is None:
+        return allow_none
+
+    # Here if arg is None it used to return allow_none
+    if isinstance(arg, (str, Enum)) or np.isscalar(arg):
         return False
-    elif type(arg) is str:
-        return False
-    elif np.isscalar(arg):
-        return False
-    elif color and isinstance(arg, (list, np.ndarray)):
-        if np.array(arg).ndim == 1 and (len(arg) == 3 or len(arg) == 4):
-            return False
-        else:
-            return True
-    else:
-        return True
+
+    # this is to be removed in 0.6.0, color is never set True
+    if color is True and isinstance(arg, (list, np.ndarray)):
+        return np.array(arg).ndim != 1 or len(arg) not in [3, 4]
+
+    return isinstance(arg, collections.abc.Iterable)
 
 
-def is_sequence(arg):
+def is_sequence(arg: Any) -> bool:
     """Check if ``arg`` is a sequence like a list or tuple.
 
     return True:
@@ -157,13 +199,13 @@ def is_sequence(arg):
         dict
         set
     """
-    if isinstance(arg, collections.abc.Sequence) and not isinstance(arg, str):
-        return True
-    return False
+    return bool(
+        isinstance(arg, collections.abc.Sequence) and not isinstance(arg, str)
+    )
 
 
 def ensure_sequence_of_iterables(
-    obj,
+    obj: Any,
     length: Optional[int] = None,
     repeat_empty: bool = False,
     allow_none: bool = False,
@@ -217,18 +259,18 @@ def ensure_sequence_of_iterables(
         obj is not None
         and is_sequence(obj)
         and all(is_iterable(el, allow_none=allow_none) for el in obj)
+        and (not repeat_empty or len(obj) > 0)
     ):
         if length is not None and len(obj) != length:
-            if (len(obj) == 0 and not repeat_empty) or len(obj) > 0:
-                # sequence of iterables of wrong length
-                raise ValueError(
-                    trans._(
-                        "length of {obj} must equal {length}",
-                        deferred=True,
-                        obj=obj,
-                        length=length,
-                    )
+            # sequence of iterables of wrong length
+            raise ValueError(
+                trans._(
+                    'length of {obj} must equal {length}',
+                    deferred=True,
+                    obj=obj,
+                    length=length,
                 )
+            )
 
         if len(obj) > 0 or not repeat_empty:
             return obj
@@ -243,9 +285,9 @@ def formatdoc(obj):
         obj.__doc__ = obj.__doc__.format(
             **{**frame.f_globals, **frame.f_locals}
         )
-        return obj
     finally:
         del frame
+    return obj
 
 
 class StringEnumMeta(EnumMeta):
@@ -263,7 +305,7 @@ class StringEnumMeta(EnumMeta):
         *,
         module=None,
         qualname=None,
-        type=None,
+        type=None,  # noqa: A002
         start=1,
     ):
         """set the item value case to lowercase for value lookup"""
@@ -271,17 +313,17 @@ class StringEnumMeta(EnumMeta):
         if names is None:
             if isinstance(value, str):
                 return super().__call__(value.lower())
-            elif isinstance(value, cls):
+            if isinstance(value, cls):
                 return value
-            else:
-                raise ValueError(
-                    trans._(
-                        '{class_name} may only be called with a `str` or an instance of {class_name}. Got {dtype}',
-                        deferred=True,
-                        class_name=cls,
-                        dtype=builtins.type(value),
-                    )
+
+            raise ValueError(
+                trans._(
+                    '{class_name} may only be called with a `str` or an instance of {class_name}. Got {dtype}',
+                    deferred=True,
+                    class_name=cls,
+                    dtype=builtins.type(value),
                 )
+            )
 
         # otherwise create new Enum class
         return cls._create_(
@@ -293,45 +335,46 @@ class StringEnumMeta(EnumMeta):
             start=start,
         )
 
-    def keys(self):
+    def keys(self) -> list[str]:
         return list(map(str, self))
 
 
 class StringEnum(Enum, metaclass=StringEnumMeta):
-    def _generate_next_value_(name, start, count, last_values):
+    @staticmethod
+    def _generate_next_value_(name: str, start, count, last_values) -> str:
         """autonaming function assigns each value its own name as a value"""
         return name.lower()
 
-    def __str__(self):
+    def __str__(self) -> str:
         """String representation: The string method returns the lowercase
         string of the Enum name
         """
         return self.value
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         if type(self) is type(other):
             return self is other
-        elif isinstance(other, str):
+        if isinstance(other, str):
             return str(self) == other
-        return NotImplemented
+        return False
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(str(self))
 
 
 camel_to_snake_pattern = re.compile(r'(.)([A-Z][a-z]+)')
 camel_to_spaces_pattern = re.compile(
-    r"((?<=[a-z])[A-Z]|(?<!\A)[A-R,T-Z](?=[a-z]))"
+    r'((?<=[a-z])[A-Z]|(?<!\A)[A-R,T-Z](?=[a-z]))'
 )
 
 
-def camel_to_snake(name):
+def camel_to_snake(name: str) -> str:
     # https://gist.github.com/jaytaylor/3660565
     return camel_to_snake_pattern.sub(r'\1_\2', name).lower()
 
 
-def camel_to_spaces(val):
-    return camel_to_spaces_pattern.sub(r" \1", val)
+def camel_to_spaces(val: str) -> str:
+    return camel_to_spaces_pattern.sub(r' \1', val)
 
 
 T = TypeVar('T', str, Path)
@@ -360,20 +403,20 @@ def abspath_or_url(relpath: T, *, must_exist: bool = False) -> T:
 
     if not isinstance(relpath, (str, Path)):
         raise TypeError(
-            trans._("Argument must be a string or Path", deferred=True)
+            trans._('Argument must be a string or Path', deferred=True)
         )
     OriginType = type(relpath)
 
-    relpath = fspath(relpath)
-    urlp = urlparse(relpath)
+    relpath_str = fspath(relpath)
+    urlp = urlparse(relpath_str)
     if urlp.scheme and urlp.netloc:
-        return relpath
+        return OriginType(relpath_str)
 
-    path = os_path.abspath(os_path.expanduser(relpath))
+    path = os_path.abspath(os_path.expanduser(relpath_str))
     if must_exist and not (urlp.scheme or urlp.netloc or os.path.exists(path)):
         raise ValueError(
             trans._(
-                "Requested path {path!r} does not exist.",
+                'Requested path {path!r} does not exist.',
                 deferred=True,
                 path=path,
             )
@@ -382,27 +425,34 @@ def abspath_or_url(relpath: T, *, must_exist: bool = False) -> T:
 
 
 class CallDefault(inspect.Parameter):
-    def __str__(self):
+    warnings.warn(
+        trans._(
+            '`CallDefault` in napari v0.5.0 and will be removed in v0.6.0.',
+        ),
+        category=DeprecationWarning,
+    )
+
+    def __str__(self) -> str:
         """wrap defaults"""
         kind = self.kind
-        formatted = self._name
+        formatted = self.name
 
         # Fill in defaults
         if (
-            self._default is not inspect._empty
-            or kind == inspect._KEYWORD_ONLY
+            self.default is not inspect._empty
+            or kind == inspect.Parameter.KEYWORD_ONLY
         ):
             formatted = f'{formatted}={formatted}'
 
-        if kind == inspect._VAR_POSITIONAL:
+        if kind == inspect.Parameter.VAR_POSITIONAL:
             formatted = '*' + formatted
-        elif kind == inspect._VAR_KEYWORD:
+        elif kind == inspect.Parameter.VAR_KEYWORD:
             formatted = '**' + formatted
 
         return formatted
 
 
-def all_subclasses(cls: Type) -> set:
+def all_subclasses(cls: type) -> set:
     """Recursively find all subclasses of class ``cls``.
 
     Parameters
@@ -420,7 +470,7 @@ def all_subclasses(cls: Type) -> set:
     )
 
 
-def ensure_n_tuple(val, n, fill=0):
+def ensure_n_tuple(val: Iterable, n: int, fill: int = 0) -> tuple:
     """Ensure input is a length n tuple.
 
     Parameters
@@ -440,7 +490,7 @@ def ensure_n_tuple(val, n, fill=0):
     return (fill,) * (n - len(tuple_value)) + tuple_value[-n:]
 
 
-def ensure_layer_data_tuple(val):
+def ensure_layer_data_tuple(val: tuple) -> tuple:
     msg = trans._(
         'Not a valid layer data tuple: {value!r}',
         deferred=True,
@@ -456,7 +506,7 @@ def ensure_layer_data_tuple(val):
     return val
 
 
-def ensure_list_of_layer_data_tuple(val) -> List[tuple]:
+def ensure_list_of_layer_data_tuple(val: list[tuple]) -> list[tuple]:
     # allow empty list to be returned but do nothing in that case
     if isinstance(val, list):
         with contextlib.suppress(TypeError):
@@ -466,10 +516,14 @@ def ensure_list_of_layer_data_tuple(val) -> List[tuple]:
     )
 
 
-def _quiet_array_equal(*a, **k):
+def _quiet_array_equal(*a, **k) -> bool:
     with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", "elementwise comparison")
+        warnings.filterwarnings('ignore', 'elementwise comparison')
         return np.array_equal(*a, **k)
+
+
+def _pandas_dataframe_equal(df1, df2):
+    return df1.equals(df2)
 
 
 def _arraylike_short_names(obj) -> Iterator[str]:
@@ -479,7 +533,7 @@ def _arraylike_short_names(obj) -> Iterator[str]:
         yield f'{base.__module__.split(".", maxsplit=1)[0]}.{base.__name__}'
 
 
-def pick_equality_operator(obj) -> Callable[[Any, Any], bool]:
+def pick_equality_operator(obj: Any) -> Callable[[Any, Any], bool]:
     """Return a function that can check equality between ``obj`` and another.
 
     Rather than always using ``==`` (i.e. ``operator.eq``), this function
@@ -504,12 +558,13 @@ def pick_equality_operator(obj) -> Callable[[Any, Any], bool]:
 
     # yes, it's a little riskier, but we are checking namespaces instead of
     # actual `issubclass` here to avoid slow import times
-    _known_arrays = {
+    _known_arrays: dict[str, Callable[[Any, Any], bool]] = {
         'numpy.ndarray': _quiet_array_equal,  # numpy.ndarray
         'dask.Array': operator.is_,  # dask.array.core.Array
         'dask.Delayed': operator.is_,  # dask.delayed.Delayed
         'zarr.Array': operator.is_,  # zarr.core.Array
         'xarray.DataArray': _quiet_array_equal,  # xarray.core.dataarray.DataArray
+        'pandas.DataFrame': _pandas_dataframe_equal,  # pandas.DataFrame.equals
     }
 
     for name in _arraylike_short_names(obj):
@@ -520,7 +575,7 @@ def pick_equality_operator(obj) -> Callable[[Any, Any], bool]:
     return operator.eq
 
 
-def _is_array_type(array, type_name: str) -> bool:
+def _is_array_type(array: npt.ArrayLike, type_name: str) -> bool:
     """Checks if an array-like instance or class is of the type described by a short name.
 
     This is useful when you want to check the type of array-like quickly without
@@ -541,7 +596,9 @@ def _is_array_type(array, type_name: str) -> bool:
 
 
 def dir_hash(
-    path: Union[str, Path], include_paths=True, ignore_hidden=True
+    path: Union[str, Path],
+    include_paths: bool = True,
+    ignore_hidden: bool = True,
 ) -> str:
     """Compute the hash of a directory, based on structure and contents.
 
@@ -566,7 +623,7 @@ def dir_hash(
     if not Path(path).is_dir():
         raise TypeError(
             trans._(
-                "{path} is not a directory.",
+                '{path} is not a directory.',
                 deferred=True,
                 path=path,
             )
@@ -576,9 +633,9 @@ def dir_hash(
     _hash = hash_func()
     for root, _, files in os.walk(path):
         for fname in sorted(files):
-            if fname.startswith(".") and ignore_hidden:
+            if fname.startswith('.') and ignore_hidden:
                 continue
-            _file_hash(_hash, Path(root) / fname, path, include_paths)
+            _file_hash(_hash, Path(root) / fname, Path(path), include_paths)
     return _hash.hexdigest()
 
 
@@ -610,13 +667,15 @@ def paths_hash(
     _hash = hash_func()
     for file_path in sorted(paths):
         file_path = Path(file_path)
-        if ignore_hidden and str(file_path.stem).startswith("."):
+        if ignore_hidden and str(file_path.stem).startswith('.'):
             continue
         _file_hash(_hash, file_path, file_path.parent, include_paths)
     return _hash.hexdigest()
 
 
-def _file_hash(_hash, file: Path, path: Path, include_paths: bool = True):
+def _file_hash(
+    _hash, file: Path, path: Path, include_paths: bool = True
+) -> None:
     """Update hash with based on file contents and optionally relative path.
 
     Parameters
@@ -638,7 +697,9 @@ def _file_hash(_hash, file: Path, path: Path, include_paths: bool = True):
 
 
 def _combine_signatures(
-    *objects: Callable, return_annotation=inspect.Signature.empty, exclude=()
+    *objects: Callable,
+    return_annotation=inspect.Signature.empty,
+    exclude: Iterable[str] = (),
 ) -> inspect.Signature:
     """Create combined Signature from objects, excluding names in `exclude`.
 
@@ -669,7 +730,7 @@ def _combine_signatures(
     return inspect.Signature(new_params, return_annotation=return_annotation)
 
 
-def deep_update(dct: dict, merge_dct: dict, copy=True) -> dict:
+def deep_update(dct: dict, merge_dct: dict, copy: bool = True) -> dict:
     """Merge possibly nested dicts"""
     _dct = dct.copy() if copy else dct
     for k, v in merge_dct.items():
@@ -680,7 +741,7 @@ def deep_update(dct: dict, merge_dct: dict, copy=True) -> dict:
     return _dct
 
 
-def install_certifi_opener():
+def install_certifi_opener() -> None:
     """Install urlopener that uses certifi context.
 
     This is useful in the bundle, where otherwise users might get SSL errors
@@ -695,3 +756,63 @@ def install_certifi_opener():
     https_handler = request.HTTPSHandler(context=context)
     opener = request.build_opener(https_handler)
     request.install_opener(opener)
+
+
+def reorder_after_dim_reduction(order: Sequence[int]) -> tuple[int, ...]:
+    """Ensure current dimension order is preserved after dims are dropped.
+
+    This is similar to :func:`scipy.stats.rankdata`, but only deals with
+    unique integers (like dimension indices), so is simpler and faster.
+
+    Parameters
+    ----------
+    order : Sequence[int]
+        The data to reorder.
+
+    Returns
+    -------
+    Tuple[int, ...]
+        A permutation of ``range(len(order))`` that is consistent with the input order.
+
+    Examples
+    --------
+    >>> reorder_after_dim_reduction([2, 0])
+    (1, 0)
+
+    >>> reorder_after_dim_reduction([0, 1, 2])
+    (0, 1, 2)
+
+    >>> reorder_after_dim_reduction([4, 0, 2])
+    (2, 0, 1)
+    """
+    # A single argsort works for strictly increasing/decreasing orders,
+    # but not for arbitrary orders.
+    return tuple(argsort(argsort(order)))
+
+
+def argsort(values: Sequence[int]) -> list[int]:
+    """Equivalent to :func:`numpy.argsort` but faster in some cases.
+
+    Parameters
+    ----------
+    values : Sequence[int]
+        The integer values to sort.
+
+    Returns
+    -------
+    List[int]
+        The indices that when used to index the input values will produce
+        the values sorted in increasing order.
+
+    Examples
+    --------
+    >>> argsort([2, 0])
+    [1, 0]
+
+    >>> argsort([0, 1, 2])
+    [0, 1, 2]
+
+    >>> argsort([4, 0, 2])
+    [1, 2, 0]
+    """
+    return sorted(range(len(values)), key=values.__getitem__)

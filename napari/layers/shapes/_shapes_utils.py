@@ -1,18 +1,67 @@
-from typing import Tuple
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 import numpy as np
 from skimage.draw import line, polygon2mask
 from vispy.geometry import PolygonData
 from vispy.visuals.tube import _frenet_frames
 
-from ...utils.translations import trans
-from ..utils.layer_utils import segment_normal
+from napari.layers.utils.layer_utils import segment_normal
+from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    import numpy.typing as npt
 
 try:
     # see https://github.com/vispy/vispy/issues/1029
     from triangle import triangulate
 except ModuleNotFoundError:
     triangulate = None
+
+
+def _is_convex(poly: npt.NDArray) -> bool:
+    """Check whether a polygon is convex.
+
+    Parameters
+    ----------
+    poly: numpy array of floats, shape (N, 3)
+        Polygon vertices, in order.
+
+    Returns
+    -------
+    bool
+        True if the given polygon is convex.
+    """
+    fst = poly
+    snd = np.roll(poly, -1, axis=0)
+    thrd = np.roll(poly, -2, axis=0)
+    return np.unique(orientation(fst.T, snd.T, thrd.T)).size == 1
+
+
+def _fan_triangulation(poly: npt.NDArray) -> tuple[npt.NDArray, npt.NDArray]:
+    """Return a fan triangulation of a given polygon.
+
+    https://en.wikipedia.org/wiki/Fan_triangulation
+
+    Parameters
+    ----------
+    poly: numpy array of float, shape (N, 3)
+        Polygon vertices, in order.
+
+    Returns
+    -------
+    vertices : numpy array of float, shape (N, 3)
+        The vertices of the triangulation. In this case, the input array.
+    triangles : numpy array of int, shape (N, 3)
+        The triangles of the triangulation, as triplets of indices into the
+        vertices array.
+    """
+    vertices = np.copy(poly)
+    triangles = np.zeros((len(poly) - 2, 3), dtype=np.uint32)
+    triangles[:, 1] = np.arange(1, len(poly) - 1)
+    triangles[:, 2] = np.arange(2, len(poly))
+    return vertices, triangles
 
 
 def inside_boxes(boxes):
@@ -39,9 +88,9 @@ def inside_boxes(boxes):
     BCBM = np.multiply(BC, BM).sum(1)
     BCBC = np.multiply(BC, BC).sum(1)
 
-    c1 = 0 <= ABAM
+    c1 = ABAM >= 0
     c2 = ABAM <= ABAB
-    c3 = 0 <= BCBM
+    c3 = BCBM >= 0
     c4 = BCBM <= BCBC
 
     inside = np.all(np.array([c1, c2, c3, c4]), axis=0)
@@ -181,7 +230,7 @@ def lines_intersect(p1, q1, p2, q2):
         return True
 
     # p2, q2 and q1 are collinear and q1 lies on segment p2q2
-    if o4 == 0 and on_segment(p2, q1, q2):
+    if o4 == 0 and on_segment(p2, q1, q2):  # noqa: SIM103
         return True
 
     # Doesn't fall into any special cases
@@ -242,7 +291,7 @@ def orientation(p, q, r):
     return val
 
 
-def is_collinear(points):
+def is_collinear(points: npt.NDArray) -> bool:
     """Determines if a list of 2D points are collinear.
 
     Parameters
@@ -260,11 +309,7 @@ def is_collinear(points):
 
     # The collinearity test takes three points, the first two are the first
     # two in the list, and then the third is iterated through in the loop
-    for p in points[2:]:
-        if orientation(points[0], points[1], p) != 0:
-            return False
-
-    return True
+    return all(orientation(points[0], points[1], p) == 0 for p in points[2:])
 
 
 def point_to_lines(point, lines):
@@ -300,8 +345,11 @@ def point_to_lines(point, lines):
     norm_lines[reject] = 1
     unit_lines = lines_vectors / norm_lines
 
-    # calculate distance to line
-    line_dist = abs(np.cross(unit_lines, point_vectors))
+    # calculate distance to line (2D cross-product)
+    line_dist = abs(
+        unit_lines[..., 0] * point_vectors[..., 1]
+        - unit_lines[..., 1] * point_vectors[..., 0]
+    )
 
     # calculate scale
     line_loc = (unit_lines * point_vectors).sum(axis=1) / norm_lines.squeeze()
@@ -324,7 +372,7 @@ def point_to_lines(point, lines):
     return index, location
 
 
-def create_box(data):
+def create_box(data: npt.NDArray) -> npt.NDArray:
     """Creates the axis aligned interaction box of a list of points
 
     Parameters
@@ -361,7 +409,7 @@ def create_box(data):
     return box
 
 
-def rectangle_to_box(data):
+def rectangle_to_box(data: npt.NDArray) -> npt.NDArray:
     """Converts the four corners of a rectangle into a interaction box like
     representation. If the rectangle is not axis aligned the resulting box
     representation will not be axis aligned either
@@ -381,7 +429,7 @@ def rectangle_to_box(data):
     if not data.shape[0] == 4:
         raise ValueError(
             trans._(
-                "Data shape does not match expected `[4, D]` shape specifying corners for the rectangle",
+                'Data shape does not match expected `[4, D]` shape specifying corners for the rectangle',
                 deferred=True,
             )
         )
@@ -401,7 +449,7 @@ def rectangle_to_box(data):
     return box
 
 
-def find_corners(data):
+def find_corners(data: npt.NDArray) -> npt.NDArray:
     """Finds the four corners of the interaction box defined by an array of
     points
 
@@ -425,27 +473,31 @@ def find_corners(data):
     return corners
 
 
-def center_radii_to_corners(center, radii):
+def center_radii_to_corners(
+    center: npt.NDArray, radii: npt.NDArray
+) -> npt.NDArray:
     """Expands a center and radii into a four corner rectangle
 
     Parameters
     ----------
-    center : np.ndarray | list
-        Length 2 array or list of the center coordinates
-    radii : np.ndarray | list
-        Length 2 array or list of the two radii
+    center : np.ndarray
+        Length 2 array of the center coordinates.
+    radii : np.ndarray
+        Length 2 array of the two radii.
 
     Returns
     -------
     corners : np.ndarray
-        4x2 array of corners of the bounding box
+        4x2 array of corners of the bounding box.
     """
     data = np.array([center + radii, center - radii])
     corners = find_corners(data)
     return corners
 
 
-def triangulate_ellipse(corners, num_segments=100):
+def triangulate_ellipse(
+    corners: npt.NDArray, num_segments: int = 100
+) -> tuple[npt.NDArray, npt.NDArray]:
     """Determines the triangulation of a path. The resulting `offsets` can
     multiplied by a `width` scalar and be added to the resulting `centers`
     to generate the vertices of the triangles for the triangulation, i.e.
@@ -487,7 +539,7 @@ def triangulate_ellipse(corners, num_segments=100):
     if not corners.shape[0] == 4:
         raise ValueError(
             trans._(
-                "Data shape does not match expected `[4, D]` shape specifying corners for the ellipse",
+                'Data shape does not match expected `[4, D]` shape specifying corners for the ellipse',
                 deferred=True,
             )
         )
@@ -502,7 +554,7 @@ def triangulate_ellipse(corners, num_segments=100):
     # Compute the transformation matrix from the unit circle
     # to our current ellipse.
     # ... it's easy just the 1/2 minor/major axes for the two column
-    # note that our transform shape will depends on wether we are 2D-> 2D (matrix, 2 by 2),
+    # note that our transform shape will depends on whether we are 2D-> 2D (matrix, 2 by 2),
     # or 2D -> 3D (matrix 2 by 3).
     transform = np.stack((ax1, ax2))
     if corners.shape == (4, 2):
@@ -530,7 +582,7 @@ def triangulate_ellipse(corners, num_segments=100):
     return vertices, triangles
 
 
-def triangulate_face(data):
+def triangulate_face(data: npt.NDArray) -> tuple[npt.NDArray, npt.NDArray]:
     """Determines the triangulation of the face of a shape.
 
     Parameters
@@ -556,8 +608,10 @@ def triangulate_face(data):
         # connect last with first vertex
         edges[-1, 1] = 0
 
-        res = triangulate(dict(vertices=data, segments=edges), "p")
+        res = triangulate({'vertices': data, 'segments': edges}, 'p')
         vertices, triangles = res['vertices'], res['triangles']
+    elif _is_convex(data):
+        vertices, triangles = _fan_triangulation(data)
     else:
         vertices, triangles = PolygonData(vertices=data).triangulate()
 
@@ -566,7 +620,9 @@ def triangulate_face(data):
     return vertices, triangles
 
 
-def triangulate_edge(path, closed=False):
+def triangulate_edge(
+    path: npt.NDArray, closed: bool = False
+) -> tuple[npt.NDArray, npt.NDArray, npt.NDArray]:
     """Determines the triangulation of a path. The resulting `offsets` can
     multiplied by a `width` scalar and be added to the resulting `centers`
     to generate the vertices of the triangles for the triangulation, i.e.
@@ -632,10 +688,10 @@ def _sign_cross(x, y):
     """sign of cross product (faster for 2d)"""
     if x.shape[1] == y.shape[1] == 2:
         return _sign_nonzero(x[:, 0] * y[:, 1] - x[:, 1] * y[:, 0])
-    elif x.shape[1] == y.shape[1] == 3:
+    if x.shape[1] == y.shape[1] == 3:
         return _sign_nonzero(np.cross(x, y))
-    else:
-        raise ValueError(x.shape[1], y.shape[1])
+
+    raise ValueError(x.shape[1], y.shape[1])
 
 
 def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
@@ -729,22 +785,29 @@ def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
     )[0]
 
     if len(idx_bevel) > 0:
-        # only the 'outwards sticking' offsets should be changed
-        # TODO: This is not entirely true as in extreme cases both can go to infinity
         idx_offset = (miter_signs[idx_bevel] < 0).astype(int)
-        idx_bevel_full = 2 * idx_bevel + idx_offset
+
+        # outside and inside offsets are treated differently (only outside offsets get beveled)
+        # See drawing at:
+        # https://github.com/napari/napari/pull/6706#discussion_r1528790407
+        idx_bevel_outside = 2 * idx_bevel + idx_offset
+        idx_bevel_inside = 2 * idx_bevel + (1 - idx_offset)
         sign_bevel = np.expand_dims(miter_signs[idx_bevel], -1)
 
-        # adjust offset of outer "left" vertex
-        offsets[idx_bevel_full] = (
+        # adjust offset of outer offset
+        offsets[idx_bevel_outside] = (
             -0.5 * full_normals[:-1][idx_bevel] * sign_bevel
+        )
+        # adjust/normalize length of inner offset
+        offsets[idx_bevel_inside] /= np.sqrt(
+            miter_lengths_squared[idx_bevel, np.newaxis]
         )
 
         # special cases for the last vertex
         _nonspecial = idx_bevel != len(path) - 1
 
         idx_bevel = idx_bevel[_nonspecial]
-        idx_bevel_full = idx_bevel_full[_nonspecial]
+        idx_bevel_outside = idx_bevel_outside[_nonspecial]
         sign_bevel = sign_bevel[_nonspecial]
         idx_offset = idx_offset[_nonspecial]
 
@@ -757,13 +820,12 @@ def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
         triangles[2 * idx_bevel, idx_offset] = len(centers) + np.arange(
             len(idx_bevel)
         )
-        triangles[
-            2 * idx_bevel + (1 - idx_offset), idx_offset
-        ] = n_centers + np.arange(len(idx_bevel))
+        triangles[2 * idx_bevel + (1 - idx_offset), idx_offset] = (
+            n_centers + np.arange(len(idx_bevel))
+        )
 
-        # add center triangle
+        # add a new center/bevel triangle
         triangles0 = np.tile(np.array([[0, 1, 2]]), (len(idx_bevel), 1))
-
         triangles_bevel = np.array(
             [
                 2 * idx_bevel + idx_offset,
@@ -771,7 +833,6 @@ def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
                 n_centers + np.arange(len(idx_bevel)),
             ]
         ).T
-
         # add all new centers, offsets, and triangles
         centers = np.concatenate([centers, centers_bevel])
         offsets = np.concatenate([offsets, offsets_bevel])
@@ -813,7 +874,7 @@ def generate_tube_meshes(path, closed=False, tube_points=10):
     """
     points = np.array(path).astype(float)
 
-    if closed and not np.all(points[0] == points[-1]):
+    if closed and not np.array_equal(points[0], points[-1]):
         points = np.concatenate([points, [points[0]]], axis=0)
 
     tangents, normals, binormals = _frenet_frames(points, closed)
@@ -857,7 +918,9 @@ def generate_tube_meshes(path, closed=False, tube_points=10):
     return centers, offsets, triangles
 
 
-def path_to_mask(mask_shape, vertices):
+def path_to_mask(
+    mask_shape: npt.NDArray, vertices: npt.NDArray
+) -> npt.NDArray[np.bool_]:
     """Converts a path to a boolean mask with `True` for points lying along
     each edge.
 
@@ -895,7 +958,9 @@ def path_to_mask(mask_shape, vertices):
     return mask
 
 
-def poly_to_mask(mask_shape, vertices):
+def poly_to_mask(
+    mask_shape: npt.ArrayLike, vertices: npt.ArrayLike
+) -> npt.NDArray[np.bool_]:
     """Converts a polygon to a boolean mask with `True` for points
     lying inside the shape. Uses the bounding box of the vertices to reduce
     computation time.
@@ -973,7 +1038,7 @@ def points_in_poly(points, vertices):
         d = np.where(abs(d) < tolerance, 0, d)
         if d[1] == 0:
             # If y vertices are aligned avoid division by zero
-            cond_4 = 0 < d[0] * (points[:, 1] - vertices[i, 1])
+            cond_4 = d[0] * (points[:, 1] - vertices[i, 1]) > 0
         else:
             cond_4 = points[:, 0] < (
                 d[0] * (points[:, 1] - vertices[i, 1]) / d[1] + vertices[i, 0]
@@ -1006,11 +1071,11 @@ def extract_shape_type(data, shape_type=None):
         type of each shape in data, or None if none was passed
     """
     # Tuple for one shape or list of shapes with shape_type
-    if isinstance(data, Tuple):
+    if isinstance(data, tuple):
         shape_type = data[1]
         data = data[0]
     # List of (vertices, shape_type) tuples
-    elif len(data) != 0 and all(isinstance(datum, Tuple) for datum in data):
+    elif len(data) != 0 and all(isinstance(datum, tuple) for datum in data):
         shape_type = [datum[1] for datum in data]
         data = [datum[0] for datum in data]
     return data, shape_type
@@ -1031,7 +1096,7 @@ def get_default_shape_type(current_type):
     default_type : str
         default shape type
     """
-    default = "polygon"
+    default = 'polygon'
     if not current_type:
         return default
     first_type = current_type[0]
@@ -1137,10 +1202,86 @@ def validate_num_vertices(
         ):
             raise ValueError(
                 trans._(
-                    "{shape_type} {shape} has invalid number of vertices: {shape_length}.",
+                    '{shape_type} {shape} has invalid number of vertices: {shape_length}.',
                     deferred=True,
                     shape_type=shape_type,
                     shape=shape,
                     shape_length=len(shape),
                 )
             )
+
+
+def perpendicular_distance(
+    point: npt.NDArray, line_start: npt.NDArray, line_end: npt.NDArray
+) -> float:
+    """Calculate the perpendicular distance of a point to a given euclidean line.
+
+    Calculates the shortest distance of a point to a euclidean line defined by a line_start point and a line_end point.
+    Works up to any dimension.
+
+    Parameters
+    ---------
+    point : np.ndarray
+        A point defined by a numpy array of shape (viewer.ndims,)  which is part of a polygon shape.
+    line_start : np.ndarray
+        A point defined by a numpy array of shape (viewer.ndims,)  used to define the starting point of a line.
+    line_end : np.ndarray
+        A point defined by a numpy array of shape (viewer.ndims,)  used to define the end point of a line.
+
+    Returns
+    -------
+    float
+        A float number representing the distance of point to a euclidean line defined by line_start and line_end.
+    """
+
+    if np.array_equal(line_start, line_end):
+        return float(np.linalg.norm(point - line_start))
+
+    t = np.dot(point - line_end, line_start - line_end) / np.dot(
+        line_start - line_end, line_start - line_end
+    )
+    return float(
+        np.linalg.norm(t * (line_start - line_end) + line_end - point)
+    )
+
+
+def rdp(vertices: npt.NDArray, epsilon: float) -> npt.NDArray:
+    """Reduce the number of vertices that make up a polygon.
+
+    Implementation of the Ramer-Douglas-Peucker algorithm based on:
+    https://github.com/fhirschmann/rdp/blob/master/rdp. This algorithm reduces the amounts of points in a polyline or
+    in this case reduces the number of vertices in a polygon shape.
+
+    Parameters
+    ----------
+    vertices : np.ndarray
+        A numpy array of shape (n, viewer.ndims) containing the vertices of a polygon shape.
+    epsilon : float
+        A float representing the maximum distance threshold. When the perpendicular distance of a point to a given line
+        is higher, subsequent refinement occurs.
+
+    Returns
+    -------
+    np.ndarray
+        A numpy array of shape (n, viewer.ndims) containing the vertices of a polygon shape.
+    """
+    max_distance_index = -1
+    max_distance = 0.0
+
+    for i in range(1, vertices.shape[0]):
+        d = perpendicular_distance(vertices[i], vertices[0], vertices[-1])
+        if d > max_distance:
+            max_distance_index = i
+            max_distance = d
+
+    if epsilon != 0:
+        if max_distance > epsilon and epsilon:
+            l1 = rdp(vertices[: max_distance_index + 1], epsilon)
+            l2 = rdp(vertices[max_distance_index:], epsilon)
+            return np.vstack((l1[:-1], l2))
+
+        # This part of the algorithm is actually responsible for removing the datapoints.
+        return np.vstack((vertices[0], vertices[-1]))
+
+    # When epsilon is 0, avoid removing datapoints
+    return vertices

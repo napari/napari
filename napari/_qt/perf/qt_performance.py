@@ -1,6 +1,7 @@
-"""QtPerformance widget to show performance information.
-"""
+"""QtPerformance widget to show performance information."""
+
 import time
+from typing import ClassVar
 
 from qtpy.QtCore import Qt, QTimer
 from qtpy.QtGui import QTextCursor
@@ -16,8 +17,8 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from ...utils import perf
-from ...utils.translations import trans
+from napari.utils import perf
+from napari.utils.translations import trans
 
 
 class TextLog(QTextEdit):
@@ -39,7 +40,7 @@ class TextLog(QTextEdit):
         self.moveCursor(QTextCursor.MoveOperation.End)
         self.setTextColor(Qt.GlobalColor.red)
         self.insertPlainText(
-            trans._("{time_ms:5.0f}ms {name}\n", time_ms=time_ms, name=name)
+            trans._('{time_ms:5.0f}ms {name}\n', time_ms=time_ms, name=name)
         )
 
 
@@ -74,24 +75,24 @@ class QtPerformance(QWidget):
 
     # We log events slower than some threshold (in milliseconds).
     THRESH_DEFAULT = 100
-    THRESH_OPTIONS = [
-        "1",
-        "5",
-        "10",
-        "15",
-        "20",
-        "30",
-        "40",
-        "50",
-        "100",
-        "200",
+    THRESH_OPTIONS: ClassVar[list[str]] = [
+        '1',
+        '5',
+        '10',
+        '15',
+        '20',
+        '30',
+        '40',
+        '50',
+        '100',
+        '200',
     ]
 
     # Update at 250ms / 4Hz for now. The more we update more alive our
     # display will look, but the more we will slow things down.
     UPDATE_MS = 250
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Create our windgets."""
         super().__init__()
         layout = QVBoxLayout()
@@ -102,7 +103,7 @@ class QtPerformance(QWidget):
         self.start_time = time.time()
 
         # Label for our progress bar.
-        bar_label = QLabel(trans._("Draw Time:"))
+        bar_label = QLabel(trans._('Draw Time:'))
         layout.addWidget(bar_label)
 
         # Progress bar is not used for "progress", it's just a bar graph to show
@@ -110,7 +111,7 @@ class QtPerformance(QWidget):
         bar = QProgressBar()
         bar.setRange(0, 100)
         bar.setValue(50)
-        bar.setFormat("%vms")
+        bar.setFormat('%vms')
         layout.addWidget(bar)
         self.bar = bar
 
@@ -122,9 +123,9 @@ class QtPerformance(QWidget):
         self.thresh_combo.setCurrentText(str(self.thresh_ms))
 
         combo_layout = QHBoxLayout()
-        combo_layout.addWidget(QLabel(trans._("Show Events Slower Than:")))
+        combo_layout.addWidget(QLabel(trans._('Show Events Slower Than:')))
         combo_layout.addWidget(self.thresh_combo)
-        combo_layout.addWidget(QLabel(trans._("milliseconds")))
+        combo_layout.addWidget(QLabel(trans._('milliseconds')))
         combo_layout.addItem(
             QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
         )
@@ -159,10 +160,9 @@ class QtPerformance(QWidget):
         # Updating widgets can create immediate Qt Events which would modify the
         # timers out from under us!
         for name, timer in perf.timers.timers.items():
-
             # The Qt Event "UpdateRequest" is the main "draw" event, so
             # that's what we use for our progress bar.
-            if name == "UpdateRequest":
+            if name.startswith('UpdateRequest'):
                 average = timer.average
 
             # Log any "long" events to the text window.
@@ -176,7 +176,7 @@ class QtPerformance(QWidget):
         # Update our timer label.
         elapsed = time.time() - self.start_time
         self.timer_label.setText(
-            trans._("Uptime: {elapsed:.2f}", elapsed=elapsed)
+            trans._('Uptime: {elapsed:.2f}', elapsed=elapsed)
         )
 
         average, long_events = self._get_timer_info()

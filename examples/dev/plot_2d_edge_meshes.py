@@ -1,8 +1,9 @@
-from napari.layers.shapes._shapes_utils import (
-    generate_2D_edge_meshes,
-)  # , old_generate_2D_edge_meshes
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
+
+from napari.layers.shapes._shapes_utils import (
+    generate_2D_edge_meshes,
+)
 
 fig, axes = plt.subplots(2, 3)
 # fig.set_figwidth(15)
@@ -33,4 +34,6 @@ for closed in [False, True]:
         ax.set_ylim(-1, 6)
         sup.set_xlim(-1, 6)
         sup.set_ylim(-1, 6)
-plt.show()
+
+if __name__ == '__main__':
+    plt.show()

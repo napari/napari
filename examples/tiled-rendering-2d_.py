@@ -25,8 +25,8 @@ import os
 os.environ.setdefault('NAPARI_OCTREE', '1')
 
 import dask.array as da
-import napari
 
+import napari
 
 ndim = 2
 data = da.random.randint(

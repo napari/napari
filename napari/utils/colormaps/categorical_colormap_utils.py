@@ -1,14 +1,14 @@
 from dataclasses import dataclass
 from itertools import cycle
-from typing import Dict, Union
+from typing import Union
 
 import numpy as np
 
-from ...layers.utils.color_transformations import (
+from napari.layers.utils.color_transformations import (
     transform_color,
     transform_color_cycle,
 )
-from ..translations import trans
+from napari.utils.translations import trans
 
 
 @dataclass(eq=False)
@@ -36,10 +36,10 @@ class ColorCycle:
         # turn a generic dict into object
         if isinstance(val, dict):
             return _coerce_colorcycle_from_dict(val)
-        elif isinstance(val, ColorCycle):
+        if isinstance(val, ColorCycle):
             return val
-        else:
-            return _coerce_colorcycle_from_colors(val)
+
+        return _coerce_colorcycle_from_colors(val)
 
     def _json_encode(self):
         return {'values': self.values.tolist()}
@@ -53,7 +53,7 @@ class ColorCycle:
 
 
 def _coerce_colorcycle_from_dict(
-    val: Dict[str, Union[str, list, np.ndarray, cycle]]
+    val: dict[str, Union[str, list, np.ndarray, cycle]],
 ) -> ColorCycle:
     # validate values
     color_values = val.get('values')
@@ -70,10 +70,12 @@ def _coerce_colorcycle_from_dict(
         transformed_color_cycle = transform_color_cycle(
             color_cycle=color_values,
             elem_name='color_cycle',
-            default="white",
+            default='white',
         )[0]
-    else:
+    elif isinstance(color_cycle, cycle):
         transformed_color_cycle = color_cycle
+    else:
+        raise TypeError(f'cycle entry must be type(cycle), got {type(cycle)}')
 
     return ColorCycle(
         values=transformed_color_values, cycle=transformed_color_cycle
@@ -81,7 +83,7 @@ def _coerce_colorcycle_from_dict(
 
 
 def _coerce_colorcycle_from_colors(
-    val: Union[str, list, np.ndarray]
+    val: Union[str, list, np.ndarray],
 ) -> ColorCycle:
     if isinstance(val, str):
         val = [val]
@@ -91,7 +93,7 @@ def _coerce_colorcycle_from_colors(
     ) = transform_color_cycle(
         color_cycle=val,
         elem_name='color_cycle',
-        default="white",
+        default='white',
     )
     return ColorCycle(
         values=transformed_color_values, cycle=transformed_color_cycle
@@ -99,7 +101,6 @@ def _coerce_colorcycle_from_colors(
 
 
 def compare_colormap_dicts(cmap_1, cmap_2):
-
     if len(cmap_1) != len(cmap_2):
         return False
     for k, v in cmap_1.items():

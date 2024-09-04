@@ -1,5 +1,6 @@
-"""Provides a QtPluginErrReporter that allows the user report plugin errors.
-"""
+"""Provides a QtPluginErrReporter that allows the user report plugin errors."""
+
+import contextlib
 from typing import Optional
 
 from napari_plugin_engine import standard_metadata
@@ -15,12 +16,12 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from superqt.utils import CodeSyntaxHighlight
 
-from ...plugins.exceptions import format_exceptions
-from ...settings import get_settings
-from ...utils.theme import get_theme
-from ...utils.translations import trans
-from ..code_syntax_highlight import Pylighter
+from napari.plugins.exceptions import format_exceptions
+from napari.settings import get_settings
+from napari.utils.theme import get_theme
+from napari.utils.translations import trans
 
 
 class QtPluginErrReporter(QDialog):
@@ -61,7 +62,7 @@ class QtPluginErrReporter(QDialog):
         initial_plugin: Optional[str] = None,
     ) -> None:
         super().__init__(parent)
-        from ...plugins import plugin_manager
+        from napari.plugins import plugin_manager
 
         self.plugin_manager = plugin_manager
 
@@ -73,9 +74,9 @@ class QtPluginErrReporter(QDialog):
         self.setLayout(self.layout)
 
         self.text_area = QTextEdit()
-        theme = get_theme(get_settings().appearance.theme, as_dict=False)
-        self._highlight = Pylighter(
-            self.text_area.document(), "python", theme.syntax_style
+        theme = get_theme(get_settings().appearance.theme)
+        self._highlight = CodeSyntaxHighlight(
+            self.text_area.document(), 'python', theme.syntax_style
         )
         self.text_area.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextSelectableByMouse
@@ -86,7 +87,7 @@ class QtPluginErrReporter(QDialog):
         self.plugin_combo = QComboBox()
         self.plugin_combo.addItem(self.NULL_OPTION)
         bad_plugins = [e.plugin_name for e in self.plugin_manager.get_errors()]
-        self.plugin_combo.addItems(list(sorted(set(bad_plugins))))
+        self.plugin_combo.addItems(sorted(set(bad_plugins)))
         self.plugin_combo.currentTextChanged.connect(self.set_plugin)
         self.plugin_combo.setCurrentText(self.NULL_OPTION)
 
@@ -102,15 +103,15 @@ class QtPluginErrReporter(QDialog):
         # create copy to clipboard button
         self.clipboard_button = QPushButton()
         self.clipboard_button.hide()
-        self.clipboard_button.setObjectName("QtCopyToClipboardButton")
+        self.clipboard_button.setObjectName('QtCopyToClipboardButton')
         self.clipboard_button.setToolTip(
-            trans._("Copy error log to clipboard")
+            trans._('Copy error log to clipboard')
         )
         self.clipboard_button.clicked.connect(self.copyToClipboard)
 
         # plugin_meta contains a URL to the home page, (and/or other details)
         self.plugin_meta = QLabel('', parent=self)
-        self.plugin_meta.setObjectName("pluginInfo")
+        self.plugin_meta.setObjectName('pluginInfo')
         self.plugin_meta.setTextFormat(Qt.TextFormat.RichText)
         self.plugin_meta.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextBrowserInteraction
@@ -149,12 +150,10 @@ class QtPluginErrReporter(QDialog):
         """
         self.github_button.hide()
         self.clipboard_button.hide()
-        try:
+        with contextlib.suppress(RuntimeError, TypeError):
             self.github_button.clicked.disconnect()
-        # when disconnecting a non-existent signal
-        # PySide2 raises runtimeError, PyQt5 raises TypeError
-        except (RuntimeError, TypeError):
-            pass
+            # when disconnecting a non-existent signal
+            # PySide2 raises runtimeError, PyQt5 raises TypeError
 
         if not plugin or (plugin == self.NULL_OPTION):
             self.plugin_meta.setText('')
@@ -170,7 +169,7 @@ class QtPluginErrReporter(QDialog):
 
         self.plugin_combo.setCurrentText(plugin)
 
-        err_string = format_exceptions(plugin, as_html=False, color="NoColor")
+        err_string = format_exceptions(plugin, as_html=False, color='NoColor')
         self.text_area.setText(err_string)
         self.clipboard_button.show()
 
@@ -195,9 +194,9 @@ class QtPluginErrReporter(QDialog):
 
                     err = format_exceptions(plugin, as_html=False)
                     err = (
-                        "<!--Provide detail on the error here-->\n\n\n\n"
-                        "<details>\n<summary>Traceback from napari</summary>"
-                        f"\n\n```\n{err}\n```\n</details>"
+                        '<!--Provide detail on the error here-->\n\n\n\n'
+                        '<details>\n<summary>Traceback from napari</summary>'
+                        f'\n\n```\n{err}\n```\n</details>'
                     )
                     url = f'{meta.get("url")}/issues/new?&body={err}'
                     webbrowser.open(url, new=2)

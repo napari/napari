@@ -1,19 +1,19 @@
-from typing import Any, Dict, Tuple, Union
+from typing import Any, Union
 
 import numpy as np
 
-from ...utils.colormaps import Colormap
-from ...utils.translations import trans
+from napari.utils.colormaps import Colormap
+from napari.utils.translations import trans
 
 
-def guess_continuous(property: np.ndarray) -> bool:
+def guess_continuous(color_map: np.ndarray) -> bool:
     """Guess if the property is continuous (return True) or categorical (return False)
 
     The property is guessed as continuous if it is a float or contains over 16 elements.
 
     Parameters
     ----------
-    property : np.ndarray
+    color_map : np.ndarray
         The property values to guess if they are continuous
 
     Returns
@@ -22,40 +22,34 @@ def guess_continuous(property: np.ndarray) -> bool:
         True of the property is guessed to be continuous, False if not.
     """
     # if the property is a floating type, guess continuous
-    if (
-        issubclass(property.dtype.type, np.floating)
-        or len(np.unique(property)) > 16
-    ):
-        return True
-    else:
-        return False
+    return issubclass(color_map.dtype.type, np.floating) or (
+        len(np.unique(color_map)) > 16
+        and issubclass(color_map.dtype.type, np.integer)
+    )
 
 
 def is_color_mapped(color, properties):
     """determines if the new color argument is for directly setting or cycle/colormap"""
     if isinstance(color, str):
-        if color in properties:
-            return True
-        else:
-            return False
-    elif isinstance(color, dict):
+        return color in properties
+    if isinstance(color, dict):
         return True
-    elif isinstance(color, (list, np.ndarray)):
+    if isinstance(color, (list, np.ndarray)):
         return False
-    else:
-        raise ValueError(
-            trans._(
-                'face_color should be the name of a color, an array of colors, or the name of an property',
-                deferred=True,
-            )
+
+    raise ValueError(
+        trans._(
+            'face_color should be the name of a color, an array of colors, or the name of an property',
+            deferred=True,
         )
+    )
 
 
 def map_property(
     prop: np.ndarray,
     colormap: Colormap,
-    contrast_limits: Union[None, Tuple[float, float]] = None,
-) -> Tuple[np.ndarray, Tuple[float, float]]:
+    contrast_limits: Union[None, tuple[float, float]] = None,
+) -> tuple[np.ndarray, tuple[float, float]]:
     """Apply a colormap to a property
 
     Parameters
@@ -80,8 +74,8 @@ def map_property(
 
 
 def _validate_colormap_mode(
-    values: Dict[str, Any]
-) -> Tuple[np.ndarray, Dict[str, Any]]:
+    values: dict[str, Any],
+) -> tuple[np.ndarray, dict[str, Any]]:
     """Validate the ColorManager field values specific for colormap mode
     This is called by the root_validator in ColorManager
 
@@ -124,8 +118,8 @@ def _validate_colormap_mode(
 
 
 def _validate_cycle_mode(
-    values: Dict[str, Any]
-) -> Tuple[np.ndarray, Dict[str, Any]]:
+    values: dict[str, Any],
+) -> tuple[np.ndarray, dict[str, Any]]:
     """Validate the ColorManager field values specific for color cycle mode
     This is called by the root_validator in ColorManager
 

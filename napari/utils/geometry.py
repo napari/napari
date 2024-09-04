@@ -1,22 +1,23 @@
-from typing import Dict, Optional, Tuple
+from typing import Optional
 
 import numpy as np
+import numpy.typing as npt
 
 # normal vectors for a 3D axis-aligned box
 # coordinates are ordered [z, y, x]
 FACE_NORMALS = {
-    "x_pos": np.array([0, 0, 1]),
-    "x_neg": np.array([0, 0, -1]),
-    "y_pos": np.array([0, 1, 0]),
-    "y_neg": np.array([0, -1, 0]),
-    "z_pos": np.array([1, 0, 0]),
-    "z_neg": np.array([-1, 0, 0]),
+    'x_pos': np.array([0, 0, 1]),
+    'x_neg': np.array([0, 0, -1]),
+    'y_pos': np.array([0, 1, 0]),
+    'y_neg': np.array([0, -1, 0]),
+    'z_pos': np.array([1, 0, 0]),
+    'z_neg': np.array([-1, 0, 0]),
 }
 
 
 def project_points_onto_plane(
     points: np.ndarray, plane_point: np.ndarray, plane_normal: np.ndarray
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """Project points on to a plane.
 
     Plane is defined by a point and a normal vector. This function
@@ -97,7 +98,9 @@ def rotation_matrix_from_vectors_2d(
     return rotation_matrix
 
 
-def rotation_matrix_from_vectors_3d(vec_1, vec_2):
+def rotation_matrix_from_vectors_3d(
+    vec_1: np.ndarray, vec_2: np.ndarray
+) -> np.ndarray:
     """Calculate the rotation matrix that aligns vec1 to vec2.
 
     Parameters
@@ -144,7 +147,7 @@ def rotate_points(
     points: np.ndarray,
     current_plane_normal: np.ndarray,
     new_plane_normal: np.ndarray,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """Rotate points using a rotation matrix defined by the rotation from
     current_plane to new_plane.
 
@@ -184,9 +187,9 @@ def point_in_bounding_box(point: np.ndarray, bounding_box: np.ndarray) -> bool:
         (2, n) array containing the min and max of the nD bounding box.
         As returned by `Layer._extent_data`.
     """
-    if np.all(point >= bounding_box[0]) and np.all(point <= bounding_box[1]):
-        return True
-    return False
+    return bool(
+        np.all(point >= bounding_box[0]) and np.all(point <= bounding_box[1])
+    )
 
 
 def clamp_point_to_bounding_box(point: np.ndarray, bounding_box: np.ndarray):
@@ -282,7 +285,7 @@ def intersect_line_with_axis_aligned_plane(
 
 def bounding_box_to_face_vertices(
     bounding_box: np.ndarray,
-) -> Dict[str, np.ndarray]:
+) -> dict[str, np.ndarray]:
     """From a layer bounding box (N, 2), N=ndim, return a dictionary containing
     the vertices of each face of the bounding_box.
 
@@ -307,7 +310,7 @@ def bounding_box_to_face_vertices(
     z_min, z_max = bounding_box[-3, :]
 
     face_coords = {
-        "x_pos": np.array(
+        'x_pos': np.array(
             [
                 [z_min, y_min, x_max],
                 [z_min, y_max, x_max],
@@ -315,7 +318,7 @@ def bounding_box_to_face_vertices(
                 [z_max, y_min, x_max],
             ]
         ),
-        "x_neg": np.array(
+        'x_neg': np.array(
             [
                 [z_min, y_min, x_min],
                 [z_min, y_max, x_min],
@@ -323,7 +326,7 @@ def bounding_box_to_face_vertices(
                 [z_max, y_min, x_min],
             ]
         ),
-        "y_pos": np.array(
+        'y_pos': np.array(
             [
                 [z_min, y_max, x_min],
                 [z_min, y_max, x_max],
@@ -331,7 +334,7 @@ def bounding_box_to_face_vertices(
                 [z_max, y_max, x_min],
             ]
         ),
-        "y_neg": np.array(
+        'y_neg': np.array(
             [
                 [z_min, y_min, x_min],
                 [z_min, y_min, x_max],
@@ -339,7 +342,7 @@ def bounding_box_to_face_vertices(
                 [z_max, y_min, x_min],
             ]
         ),
-        "z_pos": np.array(
+        'z_pos': np.array(
             [
                 [z_max, y_min, x_min],
                 [z_max, y_min, x_max],
@@ -347,7 +350,7 @@ def bounding_box_to_face_vertices(
                 [z_max, y_max, x_min],
             ]
         ),
-        "z_neg": np.array(
+        'z_neg': np.array(
             [
                 [z_min, y_min, x_min],
                 [z_min, y_min, x_max],
@@ -386,10 +389,10 @@ def inside_triangles(triangles):
 
 
 def intersect_line_with_plane_3d(
-    line_position: np.ndarray,
-    line_direction: np.ndarray,
-    plane_position: np.ndarray,
-    plane_normal: np.ndarray,
+    line_position: npt.ArrayLike,
+    line_direction: npt.ArrayLike,
+    plane_position: npt.ArrayLike,
+    plane_normal: npt.ArrayLike,
 ) -> np.ndarray:
     """Find the intersection of a line with an arbitrarily oriented plane in 3D.
     The line is defined by a position and a direction vector.
@@ -555,10 +558,7 @@ def point_in_quadrilateral_2d(
         (quadrilateral[[0, 1, 2]], quadrilateral[[0, 2, 3]])
     )
     in_triangles = inside_triangles(triangle_vertices - point)
-    if in_triangles.sum() < 1:
-        return False
-    else:
-        return True
+    return in_triangles.sum() >= 1
 
 
 def line_in_quadrilateral_3d(
@@ -604,7 +604,7 @@ def line_in_quadrilateral_3d(
     rotated_vertices, rotation_matrix = rotate_points(
         points=vertices_plane,
         current_plane_normal=line_direction,
-        new_plane_normal=[0, 0, 1],
+        new_plane_normal=np.array([0, 0, 1]),
     )
     quadrilateral_2D = rotated_vertices[:, :2]
     click_pos_2D = rotation_matrix.dot(line_point)[:2]
@@ -646,7 +646,7 @@ def line_in_triangles_3d(
 
     # rotate the plane to make the triangles 2D
     rotation_matrix = rotation_matrix_from_vectors_3d(
-        line_direction, [0, 0, 1]
+        line_direction, np.array([0, 0, 1])
     )
     rotated_vertices = vertices_plane @ rotation_matrix.T
 
@@ -690,16 +690,15 @@ def find_front_back_face(
 
     bbox_face_coords = bounding_box_to_face_vertices(bounding_box)
     for k, v in FACE_NORMALS.items():
-        if (np.dot(view_dir, v) + 0.001) < 0:
+        if np.dot(view_dir, v) < -0.001:
             if line_in_quadrilateral_3d(
                 click_pos, view_dir, bbox_face_coords[k]
             ):
                 front_face_normal = v
-        elif (np.dot(view_dir, v) + 0.001) > 0:
-            if line_in_quadrilateral_3d(
-                click_pos, view_dir, bbox_face_coords[k]
-            ):
-                back_face_normal = v
+        elif line_in_quadrilateral_3d(
+            click_pos, view_dir, bbox_face_coords[k]
+        ):
+            back_face_normal = v
         if front_face_normal is not None and back_face_normal is not None:
             # stop looping if both the front and back faces have been found
             break
@@ -787,7 +786,7 @@ def distance_between_point_and_line_3d(
 
 def find_nearest_triangle_intersection(
     ray_position: np.ndarray, ray_direction: np.ndarray, triangles: np.ndarray
-) -> Tuple[Optional[int], Optional[np.ndarray]]:
+) -> tuple[Optional[int], Optional[np.ndarray]]:
     """Given an array of triangles, find the index and intersection location
     of a ray and the nearest triangle.
 

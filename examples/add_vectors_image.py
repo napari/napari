@@ -11,9 +11,9 @@ Each vector position is defined by an (x-proj, y-proj) element where
 .. tags:: visualization-basic
 """
 
-import napari
 import numpy as np
 
+import napari
 
 # create the viewer and window
 viewer = napari.Viewer()

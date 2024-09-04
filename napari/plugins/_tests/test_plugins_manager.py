@@ -78,11 +78,13 @@ def test_plugin_extension_assignment(napari_plugin_manager):
         def napari_get_reader(path):
             if path.endswith('.png'):
                 return lambda x: None
+            return None
 
         @napari_hook_implementation
         def napari_get_writer(path, *args):
             if path.endswith('.png'):
                 return lambda x: None
+            return None
 
     tnpm: NapariPluginManager = napari_plugin_manager
     tnpm.register(Plugin, name='test_plugin')
@@ -96,6 +98,5 @@ def test_plugin_extension_assignment(napari_plugin_manager):
         # reader may not recognize extension
         tnpm.assign_reader_to_extensions('test_plugin', '.pndfdg')
 
-    with pytest.raises(ValueError):
-        # invalid plugin name
+    with pytest.raises(ValueError, match='is not a valid reader'):
         tnpm.assign_reader_to_extensions('test_pldfdfugin', '.png')

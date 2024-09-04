@@ -1,11 +1,16 @@
+import contextlib
 import inspect
-import re
 import sys
 import warnings
 
 from numpydoc.docscrape import FunctionDoc
 
-from ..utils.translations import trans
+from napari.utils.key_bindings import (
+    KeyBindingLike,
+    KeyCode,
+    coerce_keybinding,
+)
+from napari.utils.translations import trans
 
 
 def mouse_wheel_callbacks(obj, event):
@@ -44,7 +49,7 @@ def mouse_wheel_callbacks(obj, event):
         if inspect.isgenerator(gen):
             try:
                 next(gen)
-                # now store iterated genenerator
+                # now store iterated generator
                 obj._mouse_wheel_gen[mouse_wheel_func] = gen
                 # and now store event that initially triggered the press
                 obj._persisted_mouse_event[gen] = event
@@ -122,7 +127,7 @@ def mouse_press_callbacks(obj, event):
         if inspect.isgenerator(gen):
             try:
                 next(gen)
-                # now store iterated genenerator
+                # now store iterated generator
                 obj._mouse_drag_gen[mouse_drag_func] = gen
                 # and now store event that initially triggered the press
                 obj._persisted_mouse_event[gen] = event
@@ -206,44 +211,36 @@ def mouse_release_callbacks(obj, event):
     """
     for func, gen in tuple(obj._mouse_drag_gen.items()):
         obj._persisted_mouse_event[gen].__wrapped__ = event
-        try:
+        with contextlib.suppress(StopIteration):
             # Run last part of the function to trigger release event
             next(gen)
-        except StopIteration:
-            pass
         # Finally delete the generator and stored event
         del obj._mouse_drag_gen[func]
         del obj._persisted_mouse_event[gen]
 
 
 KEY_SYMBOLS = {
-    'Control': 'Ctrl',
-    'Shift': '⇧',
-    'Alt': 'Alt',
-    'Option': 'Opt',
-    'Meta': '⊞',
-    'Left': '←',
-    'Right': '→',
-    'Up': '↑',
-    'Down': '↓',
-    'Backspace': '⌫',
-    'Delete': '⌦',
-    'Tab': '↹',
-    'Escape': 'Esc',
-    'Return': '⏎',
-    'Enter': '↵',
-    'Space': '␣',
+    'Ctrl': KeyCode.from_string('Ctrl').os_symbol(),
+    'Shift': KeyCode.from_string('Shift').os_symbol(),
+    'Alt': KeyCode.from_string('Alt').os_symbol(),
+    'Meta': KeyCode.from_string('Meta').os_symbol(),
+    'Left': KeyCode.from_string('Left').os_symbol(),
+    'Right': KeyCode.from_string('Right').os_symbol(),
+    'Up': KeyCode.from_string('Up').os_symbol(),
+    'Down': KeyCode.from_string('Down').os_symbol(),
+    'Backspace': KeyCode.from_string('Backspace').os_symbol(),
+    'Delete': KeyCode.from_string('Delete').os_symbol(),
+    'Tab': KeyCode.from_string('Tab').os_symbol(),
+    'Escape': KeyCode.from_string('Escape').os_symbol(),
+    'Return': KeyCode.from_string('Return').os_symbol(),
+    'Enter': KeyCode.from_string('Enter').os_symbol(),
+    'Space': KeyCode.from_string('Space').os_symbol(),
 }
 
 
-joinchar = '+'
+JOINCHAR = '+'
 if sys.platform.startswith('darwin'):
-    KEY_SYMBOLS.update(
-        {'Control': '⌘', 'Alt': '⌥', 'Option': '⌥', 'Meta': '⌃'}
-    )
-    joinchar = ''
-elif sys.platform.startswith('linux'):
-    KEY_SYMBOLS.update({'Meta': 'Super'})
+    JOINCHAR = ''
 
 
 class Shortcut:
@@ -258,38 +255,71 @@ class Shortcut:
     instead of -.
     """
 
-    def __init__(self, shortcut: str):
-        """
-        Parameters
+    def __init__(self, shortcut: KeyBindingLike) -> None:
+        """Parameters
         ----------
-        shortcut : string
-            shortcut to format in the form of dash separated keys to press
-
+        shortcut : keybinding-like
+            shortcut to format
         """
-        self._values = re.split('-(?=.+)', shortcut)
-        for shortcut_key in self._values:
-            if (
-                len(shortcut_key) > 1
-                and shortcut_key not in KEY_SYMBOLS.keys()
-            ):
+        error_msg = trans._(
+            '`{shortcut}` does not seem to be a valid shortcut Key.',
+            shortcut=shortcut,
+        )
+        error = False
 
-                warnings.warn(
-                    trans._(
-                        "{shortcut_key} does not seem to be a valid shortcut Key.",
-                        shortcut_key=shortcut_key,
-                    ),
-                    UserWarning,
-                    stacklevel=2,
-                )
+        try:
+            self._kb = coerce_keybinding(shortcut)
+        except ValueError:
+            error = True
+        else:
+            for part in self._kb.parts:
+                shortcut_key = str(part.key)
+                if len(shortcut_key) > 1 and shortcut_key not in KEY_SYMBOLS:
+                    error = True
+
+        if error:
+            warnings.warn(error_msg, UserWarning, stacklevel=2)
+
+    @staticmethod
+    def parse_platform(text: str) -> str:
+        """
+        Parse a current_platform_specific shortcut, and return a canonical
+        version separated with dashes.
+
+        This replace platform specific symbols, like ↵ by Enter,  ⌘ by Command on MacOS....
+        """
+        # edge case, shortcut combination where `+` is a key.
+        # this should be rare as on english keyboard + is Shift-Minus.
+        # but not unheard of. In those case `+` is always at the end with `++`
+        # as you can't get two non-modifier keys,  or alone.
+        if text == '+':
+            return text
+        if JOINCHAR == '+':
+            text = text.replace('++', '+Plus')
+            text = text.replace('+', '')
+            text = text.replace('Plus', '+')
+        for k, v in KEY_SYMBOLS.items():
+            if text.endswith(v):
+                text = text.replace(v, k)
+            else:
+                text = text.replace(v, k + '-')
+
+        return text
 
     @property
     def qt(self) -> str:
-        return '+'.join(self._values)
+        """Representation of the keybinding as it would appear in Qt.
+
+        Returns
+        -------
+        string
+            Shortcut formatted to be used with Qt.
+        """
+        return str(self._kb)
 
     @property
     def platform(self) -> str:
-        """
-        Format the given shortcut for the current platform.
+        """Format the given shortcut for the current platform.
 
         Replace Cmd, Ctrl, Meta...etc by appropriate symbols if relevant for the
         given platform.
@@ -299,8 +329,7 @@ class Shortcut:
         string
             Shortcut formatted to be displayed on current paltform.
         """
-
-        return joinchar.join(KEY_SYMBOLS.get(x, x) for x in self._values)
+        return self._kb.to_text(use_symbols=True, joinchar=JOINCHAR)
 
     def __str__(self):
         return self.platform
@@ -325,14 +354,14 @@ def get_key_bindings_summary(keymap, col='rgb(134, 142, 147)'):
     key_bindings_strs = ['<table border="0" width="100%">']
     for key in keymap:
         keycodes = [KEY_SYMBOLS.get(k, k) for k in key.split('-')]
-        keycodes = "+".join(
+        keycodes = '+'.join(
             [f"<span style='color: {col}'><b>{k}</b></span>" for k in keycodes]
         )
         key_bindings_strs.append(
             "<tr><td width='80' style='text-align: right; padding: 4px;'>"
             f"<span style='color: rgb(66, 72, 80)'>{keycodes}</span></td>"
             "<td style='text-align: left; padding: 4px; color: #CCC;'>"
-            f"{keymap[key]}</td></tr>"
+            f'{keymap[key]}</td></tr>'
         )
     key_bindings_strs.append('</table>')
     return ''.join(key_bindings_strs)

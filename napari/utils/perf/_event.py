@@ -1,15 +1,38 @@
-"""PerfEvent class.
-"""
+"""PerfEvent class."""
+
 import os
 import threading
-from collections import namedtuple
-from typing import Optional
+from typing import NamedTuple, Optional
 
-# The span of time that the event ocurred.
-Span = namedtuple("Span", "start_ns end_ns")
 
-# What process/thread produced the event.
-Origin = namedtuple("Origin", "process_id thread_id")
+class Span(NamedTuple):
+    """The span of time that the event ocurred.
+
+    Parameters
+    ----------
+    start_ns : int
+        Start time in nanoseconds.
+    end_ns : int
+        End time in nanoseconds.
+    """
+
+    start_ns: int
+    end_ns: int
+
+
+class Origin(NamedTuple):
+    """What process/thread produced the event.
+
+    Parameters
+    ----------
+    process_id : int
+        The process id that produced the event.
+    thread_id : int
+        The thread id that produced the event.
+    """
+
+    process_id: int
+    thread_id: int
 
 
 class PerfEvent:
@@ -42,7 +65,7 @@ class PerfEvent:
     span : Span
         The time span when the event happened.
     category : str
-        Comma separated categories such has "render,update".
+        Comma separated categories such as "render,update".
     origin : Origin
         The process and thread that produced the event.
     args : dict
@@ -68,11 +91,11 @@ class PerfEvent:
         start_ns: int,
         end_ns: int,
         category: Optional[str] = None,
-        process_id: int = None,
-        thread_id: int = None,
-        phase: str = "X",  # "X" is a "complete event" in their spec.
-        **kwargs: dict,
-    ):
+        process_id: Optional[int] = None,
+        thread_id: Optional[int] = None,
+        phase: str = 'X',  # "X" is a "complete event" in their spec.
+        **kwargs: float,
+    ) -> None:
         if process_id is None:
             process_id = os.getpid()
         if thread_id is None:
@@ -80,7 +103,7 @@ class PerfEvent:
 
         self.name: str = name
         self.span: Span = Span(start_ns, end_ns)
-        self.category: str = category
+        self.category: Optional[str] = category
         self.origin: Origin = Origin(process_id, thread_id)
         self.args = kwargs
         self.phase: str = phase
@@ -96,26 +119,26 @@ class PerfEvent:
         self.span = Span(self.span.start_ns, end_ns)
 
     @property
-    def start_us(self):
+    def start_us(self) -> float:
         """Start time in microseconds."""
         return self.span.start_ns / 1e3
 
     @property
-    def start_ms(self):
+    def start_ms(self) -> float:
         """Start time in milliseconds."""
         return self.span.start_ns / 1e6
 
     @property
-    def duration_ns(self):
+    def duration_ns(self) -> int:
         """Duration in nanoseconds."""
         return self.span.end_ns - self.span.start_ns
 
     @property
-    def duration_us(self):
+    def duration_us(self) -> float:
         """Duration in microseconds."""
         return self.duration_ns / 1e3
 
     @property
-    def duration_ms(self):
+    def duration_ms(self) -> float:
         """Duration in milliseconds."""
         return self.duration_ns / 1e6

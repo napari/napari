@@ -1,25 +1,18 @@
+from collections.abc import Sequence
 from string import Formatter
-from typing import (
-    Any,
-    Dict,
-    Literal,
-    Protocol,
-    Sequence,
-    Union,
-    runtime_checkable,
-)
+from typing import Any, Literal, Protocol, Union, runtime_checkable
 
 import numpy as np
-from pydantic import parse_obj_as
 
-from ...utils.events.custom_types import Array
-from ...utils.translations import trans
-from .style_encoding import (
+from napari._pydantic_compat import parse_obj_as
+from napari.layers.utils.style_encoding import (
     StyleEncoding,
     _ConstantStyleEncoding,
     _DerivedStyleEncoding,
     _ManualStyleEncoding,
 )
+from napari.utils.events.custom_types import Array
+from napari.utils.translations import trans
 
 """A scalar array that represents one string value."""
 StringValue = Array[str, ()]
@@ -173,16 +166,18 @@ class FormatStringEncoding(_DerivedStyleEncoding[StringValue, StringArray]):
     encoding_type: Literal['FormatStringEncoding'] = 'FormatStringEncoding'
 
     def __call__(self, features: Any) -> StringArray:
+        feature_names = features.columns.to_list()
+        # Expose the dataframe index to the format string keys
+        # unless a column exists with the name "index", which takes precedence.
+        with_index = False
+        if 'index' not in feature_names:
+            feature_names = ['index'] + feature_names
+            with_index = True
         values = [
-            self.format.format(**_get_feature_row(features, i))
-            for i in range(len(features))
+            self.format.format(**dict(zip(feature_names, row)))
+            for row in features.itertuples(index=with_index, name=None)
         ]
         return np.array(values, dtype=str)
-
-
-def _get_feature_row(features: Any, index: int) -> Dict[str, Any]:
-    """Returns one row of the features table as a dictionary."""
-    return {name: values.iloc[index] for name, values in features.items()}
 
 
 def _is_format_string(string: str) -> bool:

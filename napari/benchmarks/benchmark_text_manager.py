@@ -2,10 +2,13 @@
 # https://asv.readthedocs.io/en/latest/writing_benchmarks.html
 # or the napari documentation on benchmarking
 # https://napari.org/developers/benchmarks.html
+
 import numpy as np
 import pandas as pd
 
 from napari.layers.utils.text_manager import TextManager
+
+from .utils import Skip
 
 
 class TextManagerSuite:
@@ -21,6 +24,8 @@ class TextManagerSuite:
             '{string_property}: {float_property:.2f}',
         ],
     ]
+
+    skip_params = Skip(if_in_pr=lambda n, string: n > 2**6)
 
     def setup(self, n, string):
         np.random.seed(0)
@@ -63,3 +68,9 @@ class TextManagerSuite:
     time_remove_as_batch.warmup_time = 0
     # See https://asv.readthedocs.io/en/stable/benchmarks.html#timing-benchmarks
     # for more details
+
+
+if __name__ == '__main__':
+    from utils import run_benchmark
+
+    run_benchmark()

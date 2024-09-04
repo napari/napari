@@ -5,19 +5,29 @@ from unittest.mock import Mock
 import numpy as np
 import pandas as pd
 import pytest
-from pydantic import ValidationError
+from psygnal.containers import Selection
 from vispy.color import get_colormap
 
+from napari._pydantic_compat import ValidationError
 from napari._tests.utils import (
+    assert_colors_equal,
     assert_layer_state_equal,
     check_layer_world_data_extent,
 )
+from napari.components.dims import Dims
 from napari.layers import Points
+from napari.layers.base._base_constants import ActionType
 from napari.layers.points._points_constants import Mode
 from napari.layers.points._points_utils import points_to_squares
+from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.layers.utils._text_constants import Anchor
 from napari.layers.utils.color_encoding import ConstantColorEncoding
 from napari.layers.utils.color_manager import ColorProperties
+from napari.utils._test_utils import (
+    validate_all_params_in_docstring,
+    validate_docstring_parent_class_consistency,
+    validate_kwargs_sorted,
+)
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.transforms import CompositeAffine
 
@@ -44,6 +54,33 @@ def _make_cycled_properties(values, length):
 def test_empty_points():
     pts = Points()
     assert pts.data.shape == (0, 2)
+    assert pts.ndim == 2
+
+
+def test_3d_empty_points():
+    pts = Points(np.empty((0, 3)))
+    assert pts.ndim == 3
+
+
+def test_empty_points_with_features():
+    """See the following for the issues this covers:
+    https://github.com/napari/napari/issues/5632
+    https://github.com/napari/napari/issues/5634
+    """
+    points = Points(
+        features={'a': np.empty(0, int)},
+        feature_defaults={'a': 0},
+        face_color='a',
+        face_color_cycle=list('rgb'),
+    )
+
+    points.add([0, 0])
+    points.feature_defaults['a'] = 1
+    points.add([50, 50])
+    points.feature_defaults = {'a': 2}
+    points.add([100, 100])
+
+    assert_colors_equal(points.face_color, list('rgb'))
 
 
 def test_empty_points_with_properties():
@@ -111,27 +148,27 @@ def test_empty_layer_with_face_colormap():
     np.testing.assert_allclose(layer._face.current_color, face_color)
 
 
-def test_empty_layer_with_edge_colormap():
+def test_empty_layer_with_border_colormap():
     """Test creating an empty layer where the face color is a colormap
     See: https://github.com/napari/napari/pull/1069
     """
     default_properties = {'point_type': np.array([1.5], dtype=float)}
     layer = Points(
         property_choices=default_properties,
-        edge_color='point_type',
-        edge_colormap='gray',
+        border_color='point_type',
+        border_colormap='gray',
     )
 
-    assert layer.edge_color_mode == 'colormap'
+    assert layer.border_color_mode == 'colormap'
 
     # verify the current_face_color is correct
-    edge_color = np.array([1, 1, 1, 1])
-    np.testing.assert_allclose(layer._edge.current_color, edge_color)
+    border_color = np.array([1, 1, 1, 1])
+    np.testing.assert_allclose(layer._border.current_color, border_color)
 
 
-@pytest.mark.parametrize('feature_name', ('edge', 'face'))
+@pytest.mark.parametrize('feature_name', ['border', 'face'])
 def test_set_current_properties_on_empty_layer_with_color_cycle(feature_name):
-    """Test setting current_properties an empty layer where the face/edge color
+    """Test setting current_properties an empty layer where the face/border color
     is a color cycle.
 
     See: https://github.com/napari/napari/pull/3110
@@ -199,7 +236,7 @@ def test_random_points():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
-    assert np.all(layer.data == data)
+    assert np.array_equal(layer.data, data)
     assert layer.ndim == shape[1]
     assert layer._view_data.ndim == 2
     assert len(layer.data) == 10
@@ -210,9 +247,9 @@ def test_integer_points():
     """Test instantiating Points layer with integer data."""
     shape = (10, 2)
     np.random.seed(0)
-    data = np.random.randint(20, size=(10, 2))
+    data = np.random.randint(20, size=shape)
     layer = Points(data)
-    assert np.all(layer.data == data)
+    assert np.array_equal(layer.data, data)
     assert layer.ndim == shape[1]
     assert layer._view_data.ndim == 2
     assert len(layer.data) == 10
@@ -224,7 +261,7 @@ def test_negative_points():
     np.random.seed(0)
     data = 20 * np.random.random(shape) - 10
     layer = Points(data)
-    assert np.all(layer.data == data)
+    assert np.array_equal(layer.data, data)
     assert layer.ndim == shape[1]
     assert layer._view_data.ndim == 2
     assert len(layer.data) == 10
@@ -235,7 +272,7 @@ def test_empty_points_array():
     shape = (0, 2)
     data = np.empty(shape)
     layer = Points(data)
-    assert np.all(layer.data == data)
+    assert np.array_equal(layer.data, data)
     assert layer.ndim == shape[1]
     assert layer._view_data.ndim == 2
     assert len(layer.data) == 0
@@ -247,7 +284,7 @@ def test_3D_points():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
-    assert np.all(layer.data == data)
+    assert np.array_equal(layer.data, data)
     assert layer.ndim == shape[1]
     assert layer._view_data.ndim == 2
     assert len(layer.data) == 10
@@ -258,9 +295,9 @@ def test_single_point_extent():
     shape = (1, 3)
     data = np.zeros(shape)
     layer = Points(data)
-    assert np.all(layer.extent.data == 0)
-    assert np.all(layer.extent.world == 0)
-    assert np.all(layer.extent.step == 1)
+    assert np.array_equal(layer.extent.data, np.zeros((2, 3)))
+    assert np.array_equal(layer.extent.world, np.zeros((2, 3)))
+    assert np.array_equal(layer.extent.step, np.ones(3))
 
 
 def test_4D_points():
@@ -269,7 +306,7 @@ def test_4D_points():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
-    assert np.all(layer.data == data)
+    assert np.array_equal(layer.data, data)
     assert layer.ndim == shape[1]
     assert layer._view_data.ndim == 2
     assert len(layer.data) == 10
@@ -284,7 +321,7 @@ def test_changing_points():
     data_b = 20 * np.random.random(shape_b)
     layer = Points(data_a)
     layer.data = data_b
-    assert np.all(layer.data == data_b)
+    assert np.array_equal(layer.data, data_b)
     assert layer.ndim == shape_b[1]
     assert layer._view_data.ndim == 2
     assert len(layer.data) == 20
@@ -302,7 +339,7 @@ def test_selecting_points():
     assert layer.selected_data == data_to_select
 
     # test switching to 3D
-    layer._slice_dims(ndisplay=3)
+    layer._slice_dims(Dims(ndisplay=3))
     assert layer.selected_data == data_to_select
 
     # select different points while in 3D mode
@@ -311,7 +348,7 @@ def test_selecting_points():
     assert layer.selected_data == other_data_to_select
 
     # selection should persist when going back to 2D mode
-    layer._slice_dims(ndisplay=2)
+    layer._slice_dims(Dims(ndisplay=2))
     assert layer.selected_data == other_data_to_select
 
     # selection should persist when switching between between select and pan_zoom
@@ -336,7 +373,7 @@ def test_adding_points():
     coord = [20, 20]
     layer.add(coord)
     assert len(layer.data) == 11
-    assert np.all(layer.data[10] == coord)
+    assert np.array_equal(layer.data[10], coord)
     # the added point should be selected
     assert layer.selected_data == {10}
 
@@ -344,11 +381,24 @@ def test_adding_points():
     coords = [[10, 10], [15, 15]]
     layer.add(coords)
     assert len(layer.data) == 13
-    assert np.all(layer.data[11:, :] == coords)
+    assert np.array_equal(layer.data[11:, :], coords)
+    assert layer.selected_data == {11, 12}
 
     # test that the last added points can be deleted
     layer.remove_selected()
     np.testing.assert_equal(layer.data, np.vstack((data, coord)))
+
+
+def test_points_selection_with_setter():
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+
+    coords = [[10, 10], [15, 15]]
+    layer.data = np.append(layer.data, np.atleast_2d(coords), axis=0)
+    assert len(layer.data) == 12
+    assert layer.selected_data == set()
 
 
 def test_adding_points_to_empty():
@@ -361,7 +411,8 @@ def test_adding_points_to_empty():
     coord = [20, 20]
     layer.add(coord)
     assert len(layer.data) == 1
-    assert np.all(layer.data[0] == coord)
+    assert np.array_equal(layer.data[0], coord)
+    assert layer.selected_data == {0}
 
 
 def test_removing_selected_points():
@@ -380,8 +431,8 @@ def test_removing_selected_points():
     layer.remove_selected()
     assert len(layer.data) == shape[0] - 2
     assert len(layer.selected_data) == 0
-    keep = [1, 2] + list(range(4, 10))
-    assert np.all(layer.data == data[keep])
+    keep = [1, 2, *range(4, 10)]
+    assert np.array_equal(layer.data, data[keep])
     assert layer._value is None
 
     # Select another point and remove it
@@ -419,13 +470,27 @@ def test_remove_selected_updates_value():
     data = 20 * np.random.random(shape)
     layer = Points(data)
 
+    old_data = layer.data
+    layer.events.data = Mock()
     # set the value
     layer._value = 3
     layer._value_stored = 3
 
-    layer.selected_data = {0, 5, 6, 7}
+    selection = {0, 5, 6, 7}
+    layer.selected_data = selection
     layer.remove_selected()
-
+    assert layer.events.data.call_args_list[0][1] == {
+        'value': old_data,
+        'action': ActionType.REMOVING,
+        'data_indices': tuple(selection),
+        'vertex_indices': ((),),
+    }
+    assert layer.events.data.call_args[1] == {
+        'value': layer.data,
+        'action': ActionType.REMOVED,
+        'data_indices': tuple(selection),
+        'vertex_indices': ((),),
+    }
     assert layer._value == 2
 
 
@@ -436,6 +501,7 @@ def test_remove_selected_removes_corresponding_attributes():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     size = np.random.rand(shape[0])
+    symbol = np.random.choice(['o', 's'], shape[0])
     color = np.random.rand(shape[0], 4)
     feature = np.random.rand(shape[0])
     shown = np.random.randint(2, size=shape[0]).astype(bool)
@@ -444,10 +510,11 @@ def test_remove_selected_removes_corresponding_attributes():
     layer = Points(
         data,
         size=size,
-        edge_width=size,
+        border_width=size,
+        symbol=symbol,
         features={'feature': feature},
         face_color=color,
-        edge_color=color,
+        border_color=color,
         text=text,
         shown=shown,
     )
@@ -455,10 +522,12 @@ def test_remove_selected_removes_corresponding_attributes():
     layer_expected = Points(
         data[1:],
         size=size[1:],
-        edge_width=size[1:],
+        symbol=symbol[1:],
+        border_width=size[1:],
         features={'feature': feature[1:]},
+        feature_defaults={'feature': feature[0]},
         face_color=color[1:],
-        edge_color=color[1:],
+        border_color=color[1:],
         text=text,  # computed from feature
         shown=shown[1:],
     )
@@ -479,18 +548,31 @@ def test_move():
     data = 20 * np.random.random(shape)
     unmoved = copy(data)
     layer = Points(data)
+    layer.events.data = Mock()
 
     # Move one point relative to an initial drag start location
     layer._move([0], [0, 0])
     layer._move([0], [10, 10])
     layer._drag_start = None
-    assert np.all(layer.data[0] == unmoved[0] + [10, 10])
-    assert np.all(layer.data[1:] == unmoved[1:])
+    assert np.array_equal(layer.data[0], unmoved[0] + [10, 10])
+    assert np.array_equal(layer.data[1:], unmoved[1:])
+    assert layer.events.data.call_args[1] == {
+        'value': layer.data,
+        'action': ActionType.CHANGED,
+        'data_indices': (0,),
+        'vertex_indices': ((),),
+    }
 
     # Move two points relative to an initial drag start location
     layer._move([1, 2], [2, 2])
     layer._move([1, 2], np.add([2, 2], [-3, 4]))
-    assert np.all(layer.data[1:2] == unmoved[1:2] + [-3, 4])
+    assert layer.events.data.call_args[1] == {
+        'value': layer.data,
+        'action': ActionType.CHANGED,
+        'data_indices': (1, 2),
+        'vertex_indices': ((),),
+    }
+    assert np.array_equal(layer.data[1:2], unmoved[1:2] + [-3, 4])
 
 
 def test_changing_modes():
@@ -500,20 +582,20 @@ def test_changing_modes():
     data = 20 * np.random.random(shape)
     layer = Points(data)
     assert layer.mode == 'pan_zoom'
-    assert layer.interactive is True
+    assert layer.mouse_pan is True
 
     layer.mode = 'add'
     assert layer.mode == 'add'
 
     layer.mode = 'select'
     assert layer.mode == 'select'
-    assert layer.interactive is False
+    assert layer.mouse_pan is False
 
     layer.mode = 'pan_zoom'
     assert layer.mode == 'pan_zoom'
-    assert layer.interactive is True
+    assert layer.mouse_pan is True
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='not a valid Mode'):
         layer.mode = 'not_a_mode'
 
 
@@ -588,20 +670,30 @@ def test_symbol():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
-    assert layer.symbol == 'disc'
+    assert np.array_equiv(layer.symbol, 'disc')
 
     layer.symbol = 'cross'
-    assert layer.symbol == 'cross'
+    assert np.array_equiv(layer.symbol, 'cross')
+
+    symbol = ['o', 's'] * 5
+    expected = ['disc', 'square'] * 5
+    layer.symbol = symbol
+    assert np.array_equal(layer.symbol, expected)
+
+    with pytest.raises(
+        ValueError, match='Symbol array must be the same length as data'
+    ):
+        layer.symbol = symbol[1:5]
 
     layer = Points(data, symbol='star')
-    assert layer.symbol == 'star'
+    assert np.array_equiv(layer.symbol, 'star')
 
 
 properties_array = {'point_type': _make_cycled_properties(['A', 'B'], 10)}
 properties_list = {'point_type': list(_make_cycled_properties(['A', 'B'], 10))}
 
 
-@pytest.mark.parametrize("properties", [properties_array, properties_list])
+@pytest.mark.parametrize('properties', [properties_array, properties_list])
 def test_properties(properties):
     shape = (10, 2)
     np.random.seed(0)
@@ -617,7 +709,7 @@ def test_properties(properties):
     layer.remove_selected()
     remove_properties = properties['point_type'][2::]
     assert len(layer.properties['point_type']) == (shape[0] - 2)
-    assert np.all(layer.properties['point_type'] == remove_properties)
+    assert np.array_equal(layer.properties['point_type'], remove_properties)
 
     # test selection of properties
     layer.selected_data = {0}
@@ -628,22 +720,24 @@ def test_properties(properties):
     # test adding points with properties
     layer.add([10, 10])
     add_annotations = np.concatenate((remove_properties, ['A']), axis=0)
-    assert np.all(layer.properties['point_type'] == add_annotations)
+    assert np.array_equal(layer.properties['point_type'], add_annotations)
 
     # test copy/paste
     layer.selected_data = {0, 1}
     layer._copy_data()
-    assert np.all(layer._clipboard['features']['point_type'] == ['A', 'B'])
+    assert np.array_equal(
+        layer._clipboard['features']['point_type'], ['A', 'B']
+    )
 
     layer._paste_data()
     paste_annotations = np.concatenate((add_annotations, ['A', 'B']), axis=0)
-    assert np.all(layer.properties['point_type'] == paste_annotations)
+    assert np.array_equal(layer.properties['point_type'], paste_annotations)
 
-    assert layer.get_status(data[0])['coordinates'].endswith("point_type: B")
-    assert layer.get_status(data[1])['coordinates'].endswith("point_type: A")
+    assert layer.get_status(data[0])['coordinates'].endswith('point_type: B')
+    assert layer.get_status(data[1])['coordinates'].endswith('point_type: A')
 
 
-@pytest.mark.parametrize("attribute", ['edge', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_adding_properties(attribute):
     """Test adding properties to an existing layer"""
     shape = (10, 2)
@@ -754,7 +848,7 @@ def test_setting_current_properties():
     }
 
     coerced_current_properties = layer.current_properties
-    for k, v in coerced_current_properties.items():
+    for k in coerced_current_properties:
         value = coerced_current_properties[k]
         assert isinstance(value, np.ndarray)
         np.testing.assert_equal(value, expected_current_properties[k])
@@ -764,7 +858,7 @@ properties_array = {'point_type': _make_cycled_properties(['A', 'B'], 10)}
 properties_list = {'point_type': list(_make_cycled_properties(['A', 'B'], 10))}
 
 
-@pytest.mark.parametrize("properties", [properties_array, properties_list])
+@pytest.mark.parametrize('properties', [properties_array, properties_list])
 def test_text_from_property_value(properties):
     """Test setting text from a property value"""
     shape = (10, 2)
@@ -775,7 +869,7 @@ def test_text_from_property_value(properties):
     np.testing.assert_equal(layer.text.values, properties['point_type'])
 
 
-@pytest.mark.parametrize("properties", [properties_array, properties_list])
+@pytest.mark.parametrize('properties', [properties_array, properties_list])
 def test_text_from_property_fstring(properties):
     """Test setting text with an f-string from the property value"""
     shape = (10, 2)
@@ -797,18 +891,18 @@ def test_text_from_property_fstring(properties):
     layer.selected_data = {0}
     layer._copy_data()
     layer._paste_data()
-    expected_text_3 = expected_text_2 + ['type-ish: A']
+    expected_text_3 = [*expected_text_2, 'type-ish: A']
     np.testing.assert_equal(layer.text.values, expected_text_3)
 
     # add point
     layer.selected_data = {0}
     new_shape = np.random.random((1, 2))
     layer.add(new_shape)
-    expected_text_4 = expected_text_3 + ['type-ish: A']
+    expected_text_4 = [*expected_text_3, 'type-ish: A']
     np.testing.assert_equal(layer.text.values, expected_text_4)
 
 
-@pytest.mark.parametrize("properties", [properties_array, properties_list])
+@pytest.mark.parametrize('properties', [properties_array, properties_list])
 def test_set_text_with_kwarg_dict(properties):
     text_kwargs = {
         'string': 'type: {point_type}',
@@ -827,14 +921,14 @@ def test_set_text_with_kwarg_dict(properties):
     expected_text = ['type: ' + v for v in properties['point_type']]
     np.testing.assert_equal(layer.text.values, expected_text)
 
-    for property, value in text_kwargs.items():
-        if property == 'string':
+    for property_, value in text_kwargs.items():
+        if property_ == 'string':
             continue
-        layer_value = getattr(layer._text, property)
+        layer_value = getattr(layer._text, property_)
         np.testing.assert_equal(layer_value, value)
 
 
-@pytest.mark.parametrize("properties", [properties_array, properties_list])
+@pytest.mark.parametrize('properties', [properties_array, properties_list])
 def test_text_error(properties):
     """creating a layer with text as the wrong type should raise an error"""
     shape = (10, 2)
@@ -849,6 +943,18 @@ def test_select_properties_object_dtype():
     """selecting points when they have a property of object dtype should not fail"""
     # pandas uses object as dtype for strings by default
     properties = pd.DataFrame({'color': ['red', 'green']})
+    pl = Points(np.ones((2, 2)), properties=properties)
+    selection = {0, 1}
+    pl.selected_data = selection
+    assert pl.selected_data == selection
+
+
+def test_select_properties_unsortable():
+    """selecting multiple points when they have properties that cannot be sorted should not fail
+
+    see https://github.com/napari/napari/issues/5174
+    """
+    properties = pd.DataFrame({'unsortable': [{}, {}]})
     pl = Points(np.ones((2, 2)), properties=properties)
     selection = {0, 1}
     pl.selected_data = selection
@@ -873,67 +979,72 @@ def test_points_errors():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
 
+    annotations = {'point_type': np.array(['A', 'B'])}
+
     # try adding properties with the wrong number of properties
-    with pytest.raises(ValueError):
-        annotations = {'point_type': np.array(['A', 'B'])}
+    with pytest.raises(
+        ValueError, match='(does not match length)|(indices imply)'
+    ):
         Points(data, properties=copy(annotations))
 
 
-def test_edge_width():
-    """Test setting edge width."""
+def test_border_width():
+    """Test setting border width."""
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
-    np.testing.assert_array_equal(layer.edge_width, 0.05)
+    np.testing.assert_array_equal(layer.border_width, 0.05)
 
-    layer.edge_width = 0.5
-    np.testing.assert_array_equal(layer.edge_width, 0.5)
+    layer.border_width = 0.5
+    np.testing.assert_array_equal(layer.border_width, 0.5)
 
     # fail outside of range 0, 1 if relative is enabled (default)
-    with pytest.raises(ValueError):
-        layer.edge_width = 2
+    with pytest.raises(ValueError, match='must be between 0 and 1'):
+        layer.border_width = 2
 
-    layer.edge_width_is_relative = False
-    layer.edge_width = 2
-    np.testing.assert_array_equal(layer.edge_width, 2)
+    layer.border_width_is_relative = False
+    layer.border_width = 2
+    np.testing.assert_array_equal(layer.border_width, 2)
 
     # fail if we try to come back again
-    with pytest.raises(ValueError):
-        layer.edge_width_is_relative = True
+    with pytest.raises(ValueError, match='between 0 and 1'):
+        layer.border_width_is_relative = True
 
     # all should work on instantiation too
-    layer = Points(data, edge_width=3, edge_width_is_relative=False)
-    np.testing.assert_array_equal(layer.edge_width, 3)
-    assert layer.edge_width_is_relative is False
-    with pytest.raises(ValueError):
-        layer.edge_width = -2
+    layer = Points(data, border_width=3, border_width_is_relative=False)
+    np.testing.assert_array_equal(layer.border_width, 3)
+    assert layer.border_width_is_relative is False
+    with pytest.raises(ValueError, match='must be > 0'):
+        layer.border_width = -2
 
 
 @pytest.mark.parametrize(
-    "edge_width",
-    [int(1), float(1), np.array([1, 2, 3, 4, 5]), [1, 2, 3, 4, 5]],
+    'border_width',
+    [1, float(1), np.array([1, 2, 3, 4, 5]), [1, 2, 3, 4, 5]],
 )
-def test_edge_width_types(edge_width):
-    """Test edge_width dtypes with valid values"""
+def test_border_width_types(border_width):
+    """Test border_width dtypes with valid values"""
     shape = (5, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    layer = Points(data, edge_width=edge_width, edge_width_is_relative=False)
-    np.testing.assert_array_equal(layer.edge_width, edge_width)
+    layer = Points(
+        data, border_width=border_width, border_width_is_relative=False
+    )
+    np.testing.assert_array_equal(layer.border_width, border_width)
 
 
 @pytest.mark.parametrize(
-    "edge_width",
-    [int(-1), float(-1), np.array([-1, 2, 3, 4, 5]), [-1, 2, 3, 4, 5]],
+    'border_width',
+    [-1, float(-1), np.array([-1, 2, 3, 4, 5]), [-1, 2, 3, 4, 5]],
 )
-def test_edge_width_types_negative(edge_width):
-    """Test negative values in all edge_width dtypes"""
+def test_border_width_types_negative(border_width):
+    """Test negative values in all border_width dtypes"""
     shape = (5, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    with pytest.raises(ValueError):
-        Points(data, edge_width=edge_width, edge_width_is_relative=False)
+    with pytest.raises(ValueError, match='must be > 0'):
+        Points(data, border_width=border_width, border_width_is_relative=False)
 
 
 def test_out_of_slice_display():
@@ -962,7 +1073,7 @@ def test_out_of_slice_display():
     assert layer.out_of_slice_display is True
 
 
-@pytest.mark.parametrize("attribute", ['edge', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_switch_color_mode(attribute):
     """Test switching between color modes"""
     shape = (10, 2)
@@ -994,13 +1105,13 @@ def test_switch_color_mode(attribute):
         layer_color, np.repeat([initial_color], shape[0], axis=0)
     )
 
-    # there should not be an edge_color_property
+    # there should not be an border_color_property
     color_manager = getattr(layer, f'_{attribute}')
     color_property = color_manager.color_properties
     assert color_property is None
 
     # transitioning to colormap should raise a warning
-    # because there isn't an edge color property yet and
+    # because there isn't an border color property yet and
     # the first property in points.properties is being automatically selected
     with pytest.warns(UserWarning):
         setattr(layer, f'{attribute}_color_mode', 'colormap')
@@ -1017,13 +1128,13 @@ def test_switch_color_mode(attribute):
     layer_color = transform_color(color_cycle * int(shape[0] / 2))
     np.testing.assert_allclose(color, layer_color)
 
-    # switch back to direct, edge_colors shouldn't change
+    # switch back to direct, border_colors shouldn't change
     setattr(layer, f'{attribute}_color_mode', 'direct')
-    new_edge_color = getattr(layer, f'{attribute}_color')
-    np.testing.assert_allclose(new_edge_color, color)
+    new_border_color = getattr(layer, f'{attribute}_color')
+    np.testing.assert_allclose(new_border_color, color)
 
 
-@pytest.mark.parametrize("attribute", ['edge', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_colormap_without_properties(attribute):
     """Setting the colormode to colormap should raise an exception"""
     shape = (10, 2)
@@ -1031,11 +1142,11 @@ def test_colormap_without_properties(attribute):
     data = 20 * np.random.random(shape)
     layer = Points(data)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must be a valid Points.properties'):
         setattr(layer, f'{attribute}_color_mode', 'colormap')
 
 
-@pytest.mark.parametrize("attribute", ['edge', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_colormap_with_categorical_properties(attribute):
     """Setting the colormode to colormap should raise an exception"""
     shape = (10, 2)
@@ -1044,12 +1155,11 @@ def test_colormap_with_categorical_properties(attribute):
     properties = {'point_type': _make_cycled_properties(['A', 'B'], shape[0])}
     layer = Points(data, properties=properties)
 
-    with pytest.raises(TypeError):
-        with pytest.warns(UserWarning):
-            setattr(layer, f'{attribute}_color_mode', 'colormap')
+    with pytest.raises(TypeError), pytest.warns(UserWarning):
+        setattr(layer, f'{attribute}_color_mode', 'colormap')
 
 
-@pytest.mark.parametrize("attribute", ['edge', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_add_colormap(attribute):
     """Test  directly adding a vispy Colormap object"""
     shape = (10, 2)
@@ -1066,20 +1176,36 @@ def test_add_colormap(attribute):
     assert 'unnamed colormap' in layer_colormap.name
 
 
-@pytest.mark.parametrize("attribute", ['edge', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_add_point_direct(attribute: str):
     """Test adding points to layer directly"""
     layer = Points()
+    old_data = layer.data
     assert len(getattr(layer, f'{attribute}_color')) == 0
+
+    layer.events.data = Mock()
     setattr(layer, f'current_{attribute}_color', 'red')
     coord = [18, 18]
+
     layer.add(coord)
+    assert layer.events.data.call_args_list[0][1] == {
+        'value': old_data,
+        'action': ActionType.ADDING,
+        'data_indices': (-1,),
+        'vertex_indices': ((),),
+    }
+    assert layer.events.data.call_args[1] == {
+        'value': layer.data,
+        'action': ActionType.ADDED,
+        'data_indices': (-1,),
+        'vertex_indices': ((),),
+    }
     np.testing.assert_allclose(
         [[1, 0, 0, 1]], getattr(layer, f'{attribute}_color')
     )
 
 
-@pytest.mark.parametrize("attribute", ['edge', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_color_direct(attribute: str):
     """Test setting colors directly"""
     shape = (10, 2)
@@ -1091,7 +1217,7 @@ def test_color_direct(attribute: str):
     current_color = getattr(layer, f'current_{attribute}_color')
     layer_color = getattr(layer, f'{attribute}_color')
     assert current_color == 'black'
-    assert len(layer.edge_color) == shape[0]
+    assert len(layer.border_color) == shape[0]
     np.testing.assert_allclose(color_array, layer_color)
 
     # With no data selected changing color has no effect
@@ -1100,7 +1226,7 @@ def test_color_direct(attribute: str):
     assert current_color == 'blue'
     np.testing.assert_allclose(color_array, layer_color)
 
-    # Select data and change edge color of selection
+    # Select data and change border color of selection
     selected_data = {0, 1}
     layer.selected_data = {0, 1}
     current_color = getattr(layer, f'current_{attribute}_color')
@@ -1139,13 +1265,13 @@ color_cycle_rgb = [[1, 0, 0], [0, 0, 1]]
 color_cycle_rgba = [[1, 0, 0, 1], [0, 0, 1, 1]]
 
 
-@pytest.mark.parametrize("attribute", ['edge', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 @pytest.mark.parametrize(
-    "color_cycle",
+    'color_cycle',
     [color_cycle_str, color_cycle_rgb, color_cycle_rgba],
 )
 def test_color_cycle(attribute, color_cycle):
-    """Test setting edge/face color with a color cycle list"""
+    """Test setting border/face color with a color cycle list"""
     # create Points using list color cycle
     shape = (10, 2)
     np.random.seed(0)
@@ -1204,9 +1330,9 @@ def test_color_cycle(attribute, color_cycle):
     )
 
 
-@pytest.mark.parametrize("attribute", ['edge', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_color_cycle_dict(attribute):
-    """Test setting edge/face color with a color cycle dict"""
+    """Test setting border/face color with a color cycle dict"""
     data = np.array([[0, 0], [100, 0], [0, 100]])
     properties = {'my_colors': [2, 6, 3]}
     points_kwargs = {
@@ -1223,9 +1349,9 @@ def test_color_cycle_dict(attribute):
     np.testing.assert_allclose(color_cycle_map[6], [1, 1, 1, 1])  # 6 is white
 
 
-@pytest.mark.parametrize("attribute", ['edge', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_add_color_cycle_to_empty_layer(attribute):
-    """Test adding a point to an empty layer when edge/face color is a color cycle
+    """Test adding a point to an empty layer when border/face color is a color cycle
 
     See: https://github.com/napari/napari/pull/1069
     """
@@ -1238,7 +1364,7 @@ def test_add_color_cycle_to_empty_layer(attribute):
     }
     layer = Points(**points_kwargs)
 
-    # verify the current_edge_color is correct
+    # verify the current_border_color is correct
     expected_color = transform_color(color_cycle[0])[0]
     color_manager = getattr(layer, f'_{attribute}')
     current_color = color_manager.current_color
@@ -1264,11 +1390,11 @@ def test_add_color_cycle_to_empty_layer(attribute):
     np.testing.assert_equal(layer.properties, new_properties)
 
 
-@pytest.mark.parametrize("attribute", ['edge', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_adding_value_color_cycle(attribute):
     """Test that adding values to properties used to set a color cycle
     and then calling Points.refresh_colors() performs the update and adds the
-    new value to the face/edge_color_cycle_map.
+    new value to the face/border_color_cycle_map.
 
     See: https://github.com/napari/napari/issues/988
     """
@@ -1297,9 +1423,9 @@ def test_adding_value_color_cycle(attribute):
     assert 'C' in color_map_keys
 
 
-@pytest.mark.parametrize("attribute", ['edge', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_color_colormap(attribute):
-    """Test setting edge/face color with a colormap"""
+    """Test setting border/face color with a colormap"""
     # create Points using with a colormap
     shape = (10, 2)
     np.random.seed(0)
@@ -1318,12 +1444,12 @@ def test_color_colormap(attribute):
     assert color_mode == 'colormap'
     color_array = transform_color(['black', 'white'] * int(shape[0] / 2))
     attribute_color = getattr(layer, f'{attribute}_color')
-    assert np.all(attribute_color == color_array)
+    assert np.array_equal(attribute_color, color_array)
 
     # change the color cycle - face_color should not change
     setattr(layer, f'{attribute}_color_cycle', ['red', 'blue'])
     attribute_color = getattr(layer, f'{attribute}_color')
-    assert np.all(attribute_color == color_array)
+    assert np.array_equal(attribute_color, color_array)
 
     # Add new point and test its color
     coord = [18, 18]
@@ -1372,33 +1498,33 @@ def test_size():
     data = 20 * np.random.random(shape)
     layer = Points(data)
     assert layer.current_size == 10
-    assert layer.size.shape == shape
+    assert layer.size.shape == (10,)
     assert np.unique(layer.size)[0] == 10
 
     # Add a new point, it should get current size
     coord = [17, 17]
     layer.add(coord)
-    assert layer.size.shape == (11, 2)
+    assert layer.size.shape == (11,)
     assert np.unique(layer.size)[0] == 10
 
     # Setting size affects newly added points not current points
     layer.current_size = 20
     assert layer.current_size == 20
-    assert layer.size.shape == (11, 2)
+    assert layer.size.shape == (11,)
     assert np.unique(layer.size)[0] == 10
 
     # Add new point, should have new size
     coord = [18, 18]
     layer.add(coord)
-    assert layer.size.shape == (12, 2)
+    assert layer.size.shape == (12,)
     assert np.unique(layer.size[:11])[0] == 10
-    assert np.all(layer.size[11] == [20, 20])
+    assert np.array_equal(layer.size[11], 20)
 
     # Select data and change size
     layer.selected_data = {0, 1}
     assert layer.current_size == 10
     layer.current_size = 16
-    assert layer.size.shape == (12, 2)
+    assert layer.size.shape == (12,)
     assert np.unique(layer.size[2:11])[0] == 10
     assert np.unique(layer.size[:2])[0] == 16
 
@@ -1407,141 +1533,59 @@ def test_size():
     assert layer.current_size == 20
 
 
-def test_size_with_arrays():
+@pytest.mark.parametrize('ndim', [2, 3])
+def test_size_with_arrays(ndim):
     """Test setting size with arrays."""
-    shape = (10, 2)
+    shape = (10, ndim)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
-    sizes = 5 * np.random.random(shape)
+    sizes = 5 * np.random.random(10)
     layer.size = sizes
-    assert np.all(layer.size == sizes)
-
-    # Test broadcasting of sizes
-    sizes = [5, 5]
-    layer.size = sizes
-    assert np.all(layer.size[0] == sizes)
-
-    # Test broadcasting of transposed sizes
-    sizes = np.random.randint(low=1, high=5, size=shape[::-1])
-    layer.size = sizes
-    np.testing.assert_equal(layer.size, sizes.T)
+    assert np.array_equal(layer.size, sizes)
 
     # Un-broadcastable array should raise an exception
-    bad_sizes = np.random.randint(low=1, high=5, size=(3, 8))
-    with pytest.raises(ValueError):
-        layer.size = bad_sizes
-
-    # Create new layer with new size array data
-    sizes = 5 * np.random.random(shape)
-    layer = Points(data, size=sizes)
-    assert layer.current_size == 10
-    assert layer.size.shape == shape
-    assert np.all(layer.size == sizes)
-
-    # Create new layer with new size array data
     sizes = [5, 5]
+    with pytest.raises(ValueError, match='not compatible for broadcasting'):
+        layer.size = sizes
+
+    # Create new layer with new size array data
+    sizes = 5 * np.random.random(10)
     layer = Points(data, size=sizes)
     assert layer.current_size == 10
-    assert layer.size.shape == shape
-    assert np.all(layer.size[0] == sizes)
+    assert layer.size.shape == (10,)
+    np.testing.assert_array_equal(layer.size, sizes)
 
     # Add new point, should have new size
-    coord = [18, 18]
+    coord = [18] * ndim
     layer.current_size = 13
     layer.add(coord)
-    assert layer.size.shape == (11, 2)
-    assert np.unique(layer.size[:10])[0] == 5
-    assert np.all(layer.size[10] == [13, 13])
+    assert layer.size.shape == (11,)
+    np.testing.assert_array_equal(layer.size[:10], sizes[:10])
+    assert layer.size[10] == 13
 
     # Select data and change size
     layer.selected_data = {0, 1}
-    assert layer.current_size == 5
+    # current_size does not change because idx 0 and 1 are different sizes
+    assert layer.current_size == 13
     layer.current_size = 16
-    assert layer.size.shape == (11, 2)
-    assert np.unique(layer.size[2:10])[0] == 5
-    assert np.unique(layer.size[:2])[0] == 16
+    assert layer.size.shape == (11,)
+    np.testing.assert_array_equal(layer.size[2:10], sizes[2:10])
+    np.testing.assert_array_equal(layer.size[:2], 16)
 
-    # Check removing data adjusts colors correctly
+    # check that current size is correctly set if all points are the same size
+    layer.selected_data = {10}
+    assert layer.current_size == 13
+    layer.selected_data = {0, 1}
+    assert layer.current_size == 16
+
+    # Check removing data adjusts sizes correctly
     layer.selected_data = {0, 2}
     layer.remove_selected()
     assert len(layer.data) == 9
     assert len(layer.size) == 9
-    assert np.all(layer.size[0] == [16, 16])
-    assert np.all(layer.size[1] == [5, 5])
-
-
-def test_size_with_3D_arrays():
-    """Test setting size with 3D arrays."""
-    shape = (10, 3)
-    np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    data[:2, 0] = 0
-    layer = Points(data)
-    assert layer.current_size == 10
-    assert layer.size.shape == shape
-    assert np.unique(layer.size)[0] == 10
-
-    sizes = 5 * np.random.random(shape)
-    layer.size = sizes
-    assert np.all(layer.size == sizes)
-
-    # Test broadcasting of sizes
-    sizes = [1, 5, 5]
-    layer.size = sizes
-    assert np.all(layer.size[0] == sizes)
-
-    # Create new layer with new size array data
-    sizes = 5 * np.random.random(shape)
-    layer = Points(data, size=sizes)
-    assert layer.current_size == 10
-    assert layer.size.shape == shape
-    assert np.all(layer.size == sizes)
-
-    # Create new layer with new size array data
-    sizes = [1, 5, 5]
-    layer = Points(data, size=sizes)
-    assert layer.current_size == 10
-    assert layer.size.shape == shape
-    assert np.all(layer.size[0] == sizes)
-
-    # Add new point, should have new size in last dim only
-    coord = [4, 18, 18]
-    layer.current_size = 13
-    layer.add(coord)
-    assert layer.size.shape == (11, 3)
-    assert np.unique(layer.size[:10, 1:])[0] == 5
-    assert np.all(layer.size[10] == [1, 13, 13])
-
-    # Select data and change size
-    layer.selected_data = {0, 1}
-    assert layer.current_size == 5
-    layer.current_size = 16
-    assert layer.size.shape == (11, 3)
-    assert np.unique(layer.size[2:10, 1:])[0] == 5
-    assert np.all(layer.size[0] == [16, 16, 16])
-
-    # Create new 3D layer with new 2D points size data
-    sizes = [0, 5, 5]
-    layer = Points(data, size=sizes)
-    assert layer.current_size == 10
-    assert layer.size.shape == shape
-    assert np.all(layer.size[0] == sizes)
-
-    # Add new point, should have new size only in last 2 dimensions
-    coord = [4, 18, 18]
-    layer.current_size = 13
-    layer.add(coord)
-    assert layer.size.shape == (11, 3)
-    assert np.all(layer.size[10] == [0, 13, 13])
-
-    # Select data and change size
-    layer.selected_data = {0, 1}
-    assert layer.current_size == 5
-    layer.current_size = 16
-    assert layer.size.shape == (11, 3)
-    assert np.unique(layer.size[2:10, 1:])[0] == 5
-    assert np.all(layer.size[0] == [0, 16, 16])
+    assert layer.size[0] == 16
+    assert layer.size[1] == sizes[3]
 
 
 def test_copy_and_paste():
@@ -1567,12 +1611,12 @@ def test_copy_and_paste():
     layer._paste_data()
     assert len(layer._clipboard.keys()) > 0
     assert len(layer.data) == shape[0] + 2
-    assert np.all(layer.data[:2] == layer.data[-2:])
+    assert np.array_equal(layer.data[:2], layer.data[-2:])
 
     # Pasting again adds two more points to data
     layer._paste_data()
     assert len(layer.data) == shape[0] + 4
-    assert np.all(layer.data[:2] == layer.data[-2:])
+    assert np.array_equal(layer.data[:2], layer.data[-2:])
 
     # Unselecting everything and copying and pasting will empty the clipboard
     # and add no new data
@@ -1599,7 +1643,14 @@ def test_value():
 
 
 @pytest.mark.parametrize(
-    'position,view_direction,dims_displayed,world,scale,expected',
+    (
+        'position',
+        'view_direction',
+        'dims_displayed',
+        'world',
+        'scale',
+        'expected',
+    ),
     [
         ((0, 5, 15, 15), [0, 1, 0, 0], [1, 2, 3], False, (1, 1, 1, 1), 2),
         ((0, 5, 15, 15), [0, -1, 0, 0], [1, 2, 3], False, (1, 1, 1, 1), 0),
@@ -1617,7 +1668,7 @@ def test_value_3d(
     """Test get_value in 3D with and without scale"""
     data = np.array([[0, 10, 15, 15], [0, 10, 5, 5], [0, 5, 15, 15]])
     layer = Points(data, size=5, scale=scale)
-    layer._slice_dims([0, 0, 0, 0], ndisplay=3)
+    layer._slice_dims(Dims(ndim=4, ndisplay=3))
     value = layer.get_value(
         position,
         view_direction=view_direction,
@@ -1638,7 +1689,7 @@ def test_message():
     data[-1] = [0, 0]
     layer = Points(data)
     msg = layer.get_status((0,) * 2)
-    assert type(msg) == dict
+    assert isinstance(msg, dict)
 
 
 def test_message_3d():
@@ -1647,10 +1698,15 @@ def test_message_3d():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
+    layer._slice_input = _SliceInput(
+        ndisplay=3,
+        world_slice=_ThickNDSlice.make_full(ndim=2),
+        order=(0, 1, 2),
+    )
     msg = layer.get_status(
         (0, 0, 0), view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]
     )
-    assert type(msg) == dict
+    assert isinstance(msg, dict)
 
 
 def test_thumbnail():
@@ -1711,7 +1767,7 @@ def test_thumbnail_with_n_points_greater_than_max():
     # #3D
     bigger_data_3d = np.random.randint(10, 100, (max_points, 3))
     bigger_layer_3d = Points(bigger_data_3d)
-    bigger_layer_3d._slice_dims(ndisplay=3)
+    bigger_layer_3d._slice_dims(Dims(ndim=3, ndisplay=3))
     bigger_layer_3d._update_thumbnail()
     assert bigger_layer_3d.thumbnail.shape == bigger_layer_3d._thumbnail_shape
 
@@ -1720,42 +1776,38 @@ def test_view_data():
     coords = np.array([[0, 1, 1], [0, 2, 2], [1, 3, 3], [3, 3, 3]])
     layer = Points(coords)
 
-    layer._slice_dims([0, slice(None), slice(None)])
-    assert np.all(
-        layer._view_data == coords[np.ix_([0, 1], layer._dims_displayed)]
-    )
+    layer._slice_dims(Dims(ndim=3, point=(0, 0, 0)))
+    assert np.array_equal(layer._view_data, coords[np.ix_([0, 1], [1, 2])])
 
-    layer._slice_dims([1, slice(None), slice(None)])
-    assert np.all(
-        layer._view_data == coords[np.ix_([2], layer._dims_displayed)]
-    )
+    layer._slice_dims(Dims(ndim=3, point=(1, 0, 0)))
+    assert np.array_equal(layer._view_data, coords[np.ix_([2], [1, 2])])
 
-    layer._slice_dims([1, slice(None), slice(None)], ndisplay=3)
-    assert np.all(layer._view_data == coords)
+    layer._slice_dims(Dims(ndim=3, point=(1, 0, 0), ndisplay=3))
+    assert np.array_equal(layer._view_data, coords)
 
 
 def test_view_size():
-    coords = np.array([[0, 1, 1], [0, 2, 2], [1, 3, 3], [3, 3, 3]])
-    sizes = np.array([[3, 5, 5], [3, 5, 5], [3, 3, 3], [2, 2, 3]])
+    """Test out of slice point rendering and slicing with no points."""
+    coords = np.array([[0, 1, 1], [0, 2, 2], [1, 3, 3], [4, 3, 3]])
+    sizes = np.array([5, 5, 3, 3])
     layer = Points(coords, size=sizes, out_of_slice_display=False)
 
-    layer._slice_dims([0, slice(None), slice(None)])
-    assert np.all(
-        layer._view_size == sizes[np.ix_([0, 1], layer._dims_displayed)]
-    )
+    layer._slice_dims(Dims(ndim=3, point=(0, 0, 0)))
+    assert np.array_equal(layer._view_size, sizes[[0, 1]])
 
-    layer._slice_dims([1, slice(None), slice(None)])
-    assert np.all(
-        layer._view_size == sizes[np.ix_([2], layer._dims_displayed)]
-    )
+    layer._slice_dims(Dims(ndim=3, point=(1, 0, 0)))
+    assert np.array_equal(layer._view_size, sizes[[2]])
 
     layer.out_of_slice_display = True
+    # NOTE: since a dims slice of thickness 0 defaults back to 1,
+    # out_of_slice_display actually compares the half-size with
+    # distance + 0.5, not just distance
     assert len(layer._view_size) == 3
 
     # test a slice with no points
     layer.out_of_slice_display = False
-    layer._slice_dims([2, slice(None), slice(None)])
-    assert np.all(layer._view_size == [])
+    layer._slice_dims(Dims(ndim=3, point=(2, 0, 0)))
+    assert np.array_equal(layer._view_size, [])
 
 
 def test_view_colors():
@@ -1763,23 +1815,23 @@ def test_view_colors():
     face_color = np.array(
         [[1, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1], [0, 0, 1, 1]]
     )
-    edge_color = np.array(
+    border_color = np.array(
         [[0, 0, 1, 1], [1, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]]
     )
 
-    layer = Points(coords, face_color=face_color, edge_color=edge_color)
-    layer._slice_dims([0, slice(None), slice(None)])
-    assert np.all(layer._view_face_color == face_color[[0, 1]])
-    assert np.all(layer._view_edge_color == edge_color[[0, 1]])
+    layer = Points(coords, face_color=face_color, border_color=border_color)
+    layer._slice_dims(Dims(ndim=3, point=(0, 0, 0)))
+    assert np.array_equal(layer._view_face_color, face_color[[0, 1]])
+    assert np.array_equal(layer._view_border_color, border_color[[0, 1]])
 
-    layer._slice_dims([1, slice(None), slice(None)])
-    assert np.all(layer._view_face_color == face_color[[2]])
-    assert np.all(layer._view_edge_color == edge_color[[2]])
+    layer._slice_dims(Dims(ndim=3, point=(1, 0, 0)))
+    assert np.array_equal(layer._view_face_color, face_color[[2]])
+    assert np.array_equal(layer._view_border_color, border_color[[2]])
 
     # view colors should return empty array if there are no points
-    layer._slice_dims([2, slice(None), slice(None)])
+    layer._slice_dims(Dims(ndim=3, point=(2, 0, 0)))
     assert len(layer._view_face_color) == 0
-    assert len(layer._view_edge_color) == 0
+    assert len(layer._view_border_color) == 0
 
 
 def test_interaction_box():
@@ -1807,25 +1859,7 @@ def test_world_data_extent():
     max_val = (7, 30, 15)
     layer = Points(data)
     extent = np.array((min_val, max_val))
-    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5), False)
-
-
-def test_slice_data():
-    data = [
-        (10, 2, 4),
-        (10 + 2 * 1e-7, 4, 6),
-        (8, 1, 7),
-        (10.1, 7, 2),
-        (10 - 2 * 1e-7, 1, 6),
-    ]
-    layer = Points(data)
-    assert len(layer._slice_data((8, slice(None), slice(None)))[0]) == 1
-    assert len(layer._slice_data((10, slice(None), slice(None)))[0]) == 4
-    assert (
-        len(layer._slice_data((10 + 2 * 1e-12, slice(None), slice(None)))[0])
-        == 4
-    )
-    assert len(layer._slice_data((10.1, slice(None), slice(None)))[0]) == 4
+    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
 
 
 def test_scale_init():
@@ -1836,7 +1870,7 @@ def test_scale_init():
     layer2 = Points([])
     assert layer2.ndim == 2
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='dimensions must be equal to ndim'):
         Points([[1, 1, 1]], scale=(1, 1, 1, 1))
 
 
@@ -1971,7 +2005,7 @@ def test_to_mask_2d_with_size_4_bottom_right():
 
 
 def test_to_mask_2d_with_diff_sizes():
-    points = Points([[2, 2], [1, 4]], size=[[1, 1], [2, 2]])
+    points = Points([[2, 2], [1, 4]], size=[1, 2])
 
     mask = points.to_mask(shape=(5, 7))
 
@@ -2259,7 +2293,9 @@ def test_set_properties_with_invalid_shape_errors_safely():
     np.testing.assert_equal(points.properties, properties)
     np.testing.assert_array_equal(points.text.values, ['A', 'B', 'C'])
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match='(does not match length)|(indices imply)'
+    ):
         points.properties = {'class': np.array(['D', 'E'])}
 
     np.testing.assert_equal(points.properties, properties)
@@ -2303,40 +2339,6 @@ def test_text_param_and_setter_are_consistent():
     )
 
 
-def test_editable_2d_layer_ndisplay_3():
-    """Interactivity doesn't work for 2D points layers
-    being rendered in 3D. Verify that layer.editable is set
-    to False upon switching to 3D rendering mode.
-
-    See: https://github.com/napari/napari/pull/4184
-    """
-    data = np.random.random((10, 2))
-    layer = Points(data, size=5)
-    assert layer.editable is True
-
-    # simulate switching to 3D rendering
-    # layer should no longer b editable
-    layer._slice_dims([0, 0, 0], ndisplay=3)
-    assert layer.editable is False
-
-
-def test_editable_3d_layer_ndisplay_3():
-    """Interactivity works for 3D points layers
-    being rendered in 3D. Verify that layer.editable remains
-    True upon switching to 3D rendering mode.
-
-    See: https://github.com/napari/napari/pull/4184
-    """
-    data = np.random.random((10, 3))
-    layer = Points(data, size=5)
-    assert layer.editable is True
-
-    # simulate switching to 3D rendering
-    # layer should no longer b editable
-    layer._slice_dims([0, 0, 0], ndisplay=3)
-    assert layer.editable is True
-
-
 def test_shown():
     """Test setting shown property"""
     shape = (10, 2)
@@ -2344,38 +2346,20 @@ def test_shown():
     data = 20 * np.random.random(shape)
     layer = Points(data)
     assert len(layer.shown) == shape[0]
-    assert np.all(layer.shown == True)  # noqa
+    assert np.all(layer.shown)
 
     # Hide the last point
     layer.shown[-1] = False
-    assert np.all(layer.shown[:-1] == True)  # noqa
+    assert np.all(layer.shown[:-1])
     assert layer.shown[-1] == False  # noqa
 
     # Add a new point, it should be shown but not affect the others
     coord = [17, 17]
     layer.add(coord)
     assert len(layer.shown) == shape[0] + 1
-    assert np.all(layer.shown[:-2] == True)  # noqa
+    assert np.all(layer.shown[:-2])
     assert layer.shown[-2] == False  # noqa
     assert layer.shown[-1] == True  # noqa
-
-
-def test_selected_data_with_non_uniform_sizes():
-    data = np.zeros((3, 2))
-    size = [[1, 3], [1, 4], [1, 3]]
-    layer = Points(data, size=size)
-    # Current size is the default 10 because passed size is not a scalar.
-    assert layer.current_size == 10
-
-    # The first two points have different mean sizes, so the current size
-    # should not change.
-    layer.selected_data = (0, 1)
-    assert layer.current_size == 10
-
-    # The first and last point have the same mean size, so the current size
-    # should change to that mean.
-    layer.selected_data = (0, 2)
-    assert layer.current_size == 2
 
 
 def test_shown_view_size_and_view_data_have_the_same_dimension():
@@ -2416,7 +2400,7 @@ def test_shown_view_size_and_view_data_have_the_same_dimension():
     layer = Points(data, out_of_slice_display=True, shown=[True, True], size=3)
     assert layer._view_size.shape[0] == layer._view_data.shape[0]
     assert layer._view_size.shape[0] == 2
-    assert np.array_equal(layer._view_size, [3, 1])
+    assert np.array_equiv(layer._view_size, [3, 2])
 
     # Out of slice display == True && shown == [True, False]
     layer = Points(
@@ -2432,7 +2416,7 @@ def test_shown_view_size_and_view_data_have_the_same_dimension():
     )
     assert layer._view_size.shape[0] == layer._view_data.shape[0]
     assert layer._view_size.shape[0] == 1
-    assert np.array_equal(layer._view_size, [1])
+    assert np.array_equal(layer._view_size, [2])
 
     # Out of slice display == True && shown == [False, False]
     layer = Points(
@@ -2445,18 +2429,18 @@ def test_shown_view_size_and_view_data_have_the_same_dimension():
 
 def test_empty_data_from_tuple():
     """Test that empty data raises an error."""
-    layer = Points(name="points")
+    layer = Points(name='points')
     layer2 = Points.create(*layer.as_layer_data_tuple())
     assert layer2.data.size == 0
 
 
 @pytest.mark.parametrize(
-    'attribute, new_value',
+    ('attribute', 'new_value'),
     [
-        ("size", [20, 20]),
-        ("face_color", np.asarray([0.0, 0.0, 1.0, 1.0])),
-        ("edge_color", np.asarray([0.0, 0.0, 1.0, 1.0])),
-        ("edge_width", np.asarray([0.2])),
+        ('size', 20),
+        ('face_color', np.asarray([0.0, 0.0, 1.0, 1.0])),
+        ('border_color', np.asarray([0.0, 0.0, 1.0, 1.0])),
+        ('border_width', np.asarray([0.2])),
     ],
 )
 def test_new_point_size_editable(attribute, new_value):
@@ -2465,7 +2449,7 @@ def test_new_point_size_editable(attribute, new_value):
     layer.mode = Mode.ADD
     layer.add((0, 0))
 
-    setattr(layer, f"current_{attribute}", new_value)
+    setattr(layer, f'current_{attribute}', new_value)
     np.testing.assert_allclose(getattr(layer, attribute)[0], new_value)
 
 
@@ -2495,10 +2479,224 @@ def test_set_drag_start():
     assert layer._drag_start is None
     position = (0, 1)
     layer._set_drag_start({0}, position=position)
-    assert all(
-        layer._drag_start[i] == position[i] for i in layer._dims_displayed
-    )
+    np.testing.assert_array_equal(layer._drag_start, position)
     layer._set_drag_start({0}, position=(1, 2))
-    assert all(
-        layer._drag_start[i] == position[i] for i in layer._dims_displayed
+    np.testing.assert_array_equal(layer._drag_start, position)
+
+
+@pytest.mark.parametrize(
+    ('dims_indices', 'target_indices'),
+    [
+        ((8, np.nan, np.nan), [2]),
+        ((10, np.nan, np.nan), [0, 1, 3, 4]),
+        ((10 + 2 * 1e-12, np.nan, np.nan), [0, 1, 3, 4]),
+        ((10.1, np.nan, np.nan), [0, 1, 3, 4]),
+    ],
+)
+def test_point_slice_request_response(dims_indices, target_indices):
+    """Test points slicing with request and response."""
+    data = [
+        (10, 2, 4),
+        (10 + 2 * 1e-7, 4, 6),
+        (8, 1, 7),
+        (10.1, 7, 2),
+        (10 - 2 * 1e-7, 1, 6),
+    ]
+
+    layer = Points(data)
+
+    data_slice = _ThickNDSlice.make_full(point=dims_indices)
+
+    request = layer._make_slice_request_internal(
+        layer._slice_input, data_slice
     )
+    response = request()
+
+    assert len(response.indices) == len(target_indices)
+    assert all(a == b for a, b in zip(response.indices, target_indices))
+
+
+def test_editable_and_visible_are_independent():
+    """See https://github.com/napari/napari/issues/1346"""
+    data = np.empty((0, 2))
+    layer = Points(data)
+    assert layer.editable
+    assert layer.visible
+
+    layer.editable = False
+    layer.visible = False
+    assert not layer.editable
+    assert not layer.visible
+
+    layer.visible = True
+
+    assert not layer.editable
+
+
+def test_point_selection_remains_evented_after_update():
+    """Existing evented selection model should be updated rather than replaced."""
+    data = np.empty((3, 2))
+    layer = Points(data)
+    assert isinstance(layer.selected_data, Selection)
+    layer.selected_data = {0, 1}
+    assert isinstance(layer.selected_data, Selection)
+
+
+def test_points_data_setter_emits_event():
+    data = np.random.random((5, 2))
+    emitted_events = Mock()
+    layer = Points(data)
+    layer.events.data.connect(emitted_events)
+    layer.data = np.random.random((5, 2))
+    assert emitted_events.call_count == 2
+
+
+def test_points_add_delete_only_emit_two_events():
+    data = np.random.random((5, 2))
+    emitted_events = Mock()
+    layer = Points(data)
+    layer.events.data.connect(emitted_events)
+    layer.add(np.random.random(2))
+    assert emitted_events.call_count == 2
+    layer.selected_data = {3}
+    layer.remove_selected()
+    assert emitted_events.call_count == 4
+
+
+def test_data_setter_events():
+    data = np.random.random((5, 2))
+    layer = Points(data)
+    layer.events.data = Mock()
+
+    layer.data = []
+    assert layer.events.data.call_args_list[0][1] == {
+        'value': data,
+        'action': ActionType.REMOVING,
+        'data_indices': tuple(i for i in range(len(data))),
+        'vertex_indices': ((),),
+    }
+
+    # Avoid truth value of empty array error
+    assert np.array_equal(
+        layer.events.data.call_args_list[1][1]['value'], np.empty((0, 2))
+    )
+    assert (
+        layer.events.data.call_args_list[1][1]['action'] == ActionType.REMOVED
+    )
+    assert layer.events.data.call_args_list[1][1]['data_indices'] == ()
+    assert layer.events.data.call_args_list[1][1]['vertex_indices'] == ((),)
+
+    layer.data = data
+    assert np.array_equal(
+        layer.events.data.call_args_list[2][1]['value'], np.empty((0, 2))
+    )
+    assert (
+        layer.events.data.call_args_list[2][1]['action'] == ActionType.ADDING
+    )
+    assert layer.events.data.call_args_list[2][1]['data_indices'] == tuple(
+        i for i in range(len(data))
+    )
+    assert layer.events.data.call_args_list[2][1]['vertex_indices'] == ((),)
+
+    assert layer.events.data.call_args_list[3][1] == {
+        'value': data,
+        'action': ActionType.ADDED,
+        'data_indices': tuple(i for i in range(len(data))),
+        'vertex_indices': ((),),
+    }
+
+    layer.data = data
+    assert layer.events.data.call_args_list[4][1] == {
+        'value': data,
+        'action': ActionType.CHANGING,
+        'data_indices': tuple(i for i in range(len(layer.data))),
+        'vertex_indices': ((),),
+    }
+    assert layer.events.data.call_args_list[5][1] == {
+        'value': data,
+        'action': ActionType.CHANGED,
+        'data_indices': tuple(i for i in range(len(layer.data))),
+        'vertex_indices': ((),),
+    }
+
+
+def test_thick_slice():
+    data = np.array([[0, 0, 0], [10, 10, 10]])
+    layer = Points(data)
+
+    # only first point shown
+    layer._slice_dims(Dims(ndim=3, point=(0, 0, 0)))
+    np.testing.assert_array_equal(layer._view_data, data[:1, -2:])
+
+    layer.projection_mode = 'all'
+    np.testing.assert_array_equal(layer._view_data, data[:1, -2:])
+
+    # if margin is thick enough and projection is `all`,
+    # it will take in the other point
+    layer._slice_dims(Dims(ndim=3, point=(0, 0, 0), margin_right=(10, 0, 0)))
+    np.testing.assert_array_equal(layer._view_data, data[:, -2:])
+
+
+@pytest.mark.parametrize(
+    ('old_name', 'new_name', 'value'),
+    [
+        ('edge_width', 'border_width', 0.9),
+        ('edge_width_is_relative', 'border_width_is_relative', False),
+        ('current_edge_width', 'current_border_width', 0.9),
+        ('edge_color', 'border_color', 'blue'),
+        ('current_edge_color', 'current_border_color', 'pink'),
+    ],
+)
+def test_events_callback(old_name, new_name, value):
+    data = np.array([[0, 0, 0], [10, 10, 10]])
+    layer = Points(data)
+    old_name_callback = Mock()
+    new_name_callback = Mock()
+    with pytest.warns(FutureWarning):
+        getattr(layer.events, old_name).connect(old_name_callback)
+    getattr(layer.events, new_name).connect(new_name_callback)
+
+    setattr(layer, new_name, value)
+
+    new_name_callback.assert_called_once()
+    old_name_callback.assert_called_once()
+
+
+def test_changing_symbol():
+    """Changing the symbol should update the UI"""
+    layer = Points(np.random.rand(2, 2))
+
+    assert layer.symbol[1].value == 'disc'
+    assert layer.current_symbol.value == 'disc'
+
+    # select a point and change its symbol
+    layer.selected_data = {1}
+    layer.current_symbol = 'square'
+    assert layer.symbol[1].value == 'square'
+    # add a point and check that it has the new symbol
+    layer.add([1, 1])
+    assert layer.symbol[2].value == 'square'
+    assert layer.symbol[0].value == 'disc'
+
+
+def test_docstring():
+    validate_all_params_in_docstring(Points)
+    validate_kwargs_sorted(Points)
+    validate_docstring_parent_class_consistency(Points)
+
+
+@pytest.mark.parametrize(
+    'key',
+    [
+        'edge_width',
+        'edge_width_is_relative',
+        'edge_color',
+        'edge_color_cycle',
+        'edge_colormap',
+        'edge_contrast_limits',
+    ],
+)
+def test_as_layer_data_tuple_read_deprecated_attr(key: str):
+    _, attrs, _ = Points().as_layer_data_tuple()
+    with pytest.warns(FutureWarning, match='is deprecated since'):
+        attrs[key]

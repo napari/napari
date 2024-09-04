@@ -2,15 +2,15 @@
 
 Sends messages to remote clients.
 """
+
 import logging
 import time
-from typing import Dict
+from typing import Optional
 
-from ....layers.image.experimental.octree_image import _OctreeImageBase
-from ...layerlist import LayerList
-from ..monitor import monitor
+from napari.components.experimental.monitor import monitor
+from napari.components.layerlist import LayerList
 
-LOGGER = logging.getLogger("napari.monitor")
+LOGGER = logging.getLogger('napari.monitor')
 
 
 class RemoteMessages:
@@ -22,10 +22,10 @@ class RemoteMessages:
         The viewer's layers, so we can call into them.
     """
 
-    def __init__(self, layers: LayerList):
+    def __init__(self, layers: LayerList) -> None:
         self.layers = layers
         self._frame_number = 0
-        self._last_time = None
+        self._last_time: Optional[float] = None
 
     def on_poll(self) -> None:
         """Send messages to clients.
@@ -49,13 +49,9 @@ class RemoteMessages:
         """
         self._frame_number += 1
 
-        layers: Dict[int, dict] = {}
+        layers: dict[int, dict] = {}
 
-        for layer in self.layers:
-            if isinstance(layer, _OctreeImageBase):
-                layers[id(layer)] = layer.remote_messages
-
-        monitor.add_data({"poll": {"layers": layers}})
+        monitor.add_data({'poll': {'layers': layers}})
         self._send_frame_time()
 
     def _send_frame_time(self) -> None:

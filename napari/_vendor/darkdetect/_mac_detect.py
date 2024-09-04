@@ -6,6 +6,19 @@
 
 import ctypes
 import ctypes.util
+import subprocess
+import sys
+import os
+from pathlib import Path
+from typing import Callable
+
+try:
+    from Foundation import NSObject, NSKeyValueObservingOptionNew, NSKeyValueChangeNewKey, NSUserDefaults
+    from PyObjCTools import AppHelper
+    _can_listen = True
+except ModuleNotFoundError:
+    _can_listen = False
+
 
 try:
     # macOS Big Sur+ use "a built-in dynamic linker cache of all system-provided libraries"
@@ -69,6 +82,43 @@ def isDark():
 def isLight():
     return theme() == 'Light'
 
-#def listener(callback: typing.Callable[[str], None]) -> None:
-def listener(callback):
-    raise NotImplementedError()
+
+def _listen_child():
+    """
+    Run by a child process, install an observer and print theme on change
+    """
+    import signal
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+
+    OBSERVED_KEY = "AppleInterfaceStyle"
+
+    class Observer(NSObject):
+        def observeValueForKeyPath_ofObject_change_context_(
+            self, path, object, changeDescription, context
+        ):
+            result = changeDescription[NSKeyValueChangeNewKey]
+            try:
+                print(f"{'Light' if result is None else result}", flush=True)
+            except IOError:
+                os._exit(1)
+
+    observer = Observer.new()  # Keep a reference alive after installing
+    defaults = NSUserDefaults.standardUserDefaults()
+    defaults.addObserver_forKeyPath_options_context_(
+        observer, OBSERVED_KEY, NSKeyValueObservingOptionNew, 0
+    )
+
+    AppHelper.runConsoleEventLoop()
+
+
+def listener(callback: Callable[[str], None]) -> None:
+    if not _can_listen:
+        raise NotImplementedError()
+    with subprocess.Popen(
+        (sys.executable, "-c", "import _mac_detect as m; m._listen_child()"),
+        stdout=subprocess.PIPE,
+        universal_newlines=True,
+        cwd=Path(__file__).parent,
+    ) as p:
+        for line in p.stdout:
+            callback(line.strip())

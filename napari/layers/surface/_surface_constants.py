@@ -1,7 +1,7 @@
 from enum import auto
 
-from ...utils.misc import StringEnum
-from ...utils.translations import trans
+from napari.utils.misc import StringEnum
+from napari.utils.translations import trans
 
 
 class Shading(StringEnum):
@@ -27,7 +27,7 @@ class Shading(StringEnum):
 
 
 SHADING_TRANSLATION = {
-    trans._("none"): Shading.NONE,
-    trans._("flat"): Shading.FLAT,
-    trans._("smooth"): Shading.SMOOTH,
+    trans._('none'): Shading.NONE,
+    trans._('flat'): Shading.FLAT,
+    trans._('smooth'): Shading.SMOOTH,
 }

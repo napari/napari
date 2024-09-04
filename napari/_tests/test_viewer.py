@@ -1,9 +1,11 @@
 import os
+from unittest.mock import Mock
 
 import numpy as np
 import pytest
 
 from napari import Viewer, layers
+from napari._pydantic_compat import ValidationError
 from napari._tests.utils import (
     add_layer_by_type,
     check_view_transform_consistency,
@@ -12,33 +14,45 @@ from napari._tests.utils import (
     skip_local_popups,
     skip_on_win_ci,
 )
+from napari.settings import get_settings
 from napari.utils._tests.test_naming import eval_with_filename
 from napari.utils.action_manager import action_manager
 
 
-def _get_all_keybinding_methods(type_):
-    obj_methods = set(super(type_, type_).class_keymap.values())
-    obj_methods.update({v.__name__ for v in type_.class_keymap.values()})
-    obj_methods.update(
-        {
-            a.command.__name__
-            for a in action_manager._get_layer_actions(type_).values()
-        }
-    )
-    return obj_methods
+def _get_provider_actions(type_):
+    actions = set()
+    for superclass in type_.mro():
+        actions.update(
+            action.command
+            for action in action_manager._get_provider_actions(
+                superclass
+            ).values()
+        )
+    return actions
 
 
-viewer_methods = _get_all_keybinding_methods(Viewer)
-EXPECTED_NUMBER_OF_VIEWER_METHODS = 14
+def _assert_shortcuts_exist_for_each_action(type_):
+    actions = _get_provider_actions(type_)
+    shortcuts = {
+        name.partition(':')[-1] for name in get_settings().shortcuts.shortcuts
+    }
+    shortcuts.update(func.__name__ for func in type_.class_keymap.values())
+    for action in actions:
+        assert (
+            action.__name__ in shortcuts
+        ), f"missing shortcut for action '{action.__name__}' on '{type_.__name__}' is missing"
 
 
-def test_len_methods_viewer(make_napari_viewer):
+viewer_actions = _get_provider_actions(Viewer)
+
+
+def test_all_viewer_actions_are_accessible_via_shortcut(make_napari_viewer):
     """
-    Make sure we do find all the methods attached to a viewer via keybindings
+    Make sure we do find all the actions attached to a viewer via keybindings
     """
+    # instantiate to make sure everything is initialized correctly
     _ = make_napari_viewer()
-    viewer_methods = _get_all_keybinding_methods(Viewer)
-    assert len(viewer_methods) == EXPECTED_NUMBER_OF_VIEWER_METHODS
+    _assert_shortcuts_exist_for_each_action(Viewer)
 
 
 @pytest.mark.xfail
@@ -47,19 +61,18 @@ def test_non_existing_bindings():
     Those are condition tested in next unittest; but do not exists; this is
     likely due to an oversight somewhere.
     """
-    assert 'play' in [x.__name__ for x in viewer_methods]
-    assert 'toggle_fullscreen' in [x.__name__ for x in viewer_methods]
+    assert 'play' in [func.__name__ for func in viewer_actions]
+    assert 'toggle_fullscreen' in [func.__name__ for func in viewer_actions]
 
 
-@pytest.mark.parametrize('func', viewer_methods)
-def test_viewer_methods(make_napari_viewer, func):
-    """Test instantiating viewer."""
+@pytest.mark.parametrize('func', viewer_actions)
+def test_viewer_actions(make_napari_viewer, func):
     viewer = make_napari_viewer()
 
-    if func.__name__ == 'toggle_fullscreen' and not os.getenv("CI"):
-        pytest.skip("Fullscreen cannot be tested in CI")
+    if func.__name__ == 'toggle_fullscreen' and not os.getenv('CI'):
+        pytest.skip('Fullscreen cannot be tested in CI')
     if func.__name__ == 'play':
-        pytest.skip("Play cannot be tested with Pytest")
+        pytest.skip('Play cannot be tested with Pytest')
     func(viewer)
 
 
@@ -85,7 +98,7 @@ def test_viewer(make_napari_viewer):
     assert viewer.dims.ndisplay == 2
 
 
-@pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
+@pytest.mark.parametrize(('layer_class', 'data', 'ndim'), layer_test_data)
 def test_add_layer(make_napari_viewer, layer_class, data, ndim):
     viewer = make_napari_viewer()
     layer = add_layer_by_type(viewer, layer_class, data, visible=True)
@@ -95,29 +108,32 @@ def test_add_layer(make_napari_viewer, layer_class, data, ndim):
         func(layer)
 
 
-EXPECTED_NUMBER_OF_LAYER_METHODS = {
-    'Image': 5,
-    'Vectors': 0,
-    'Surface': 0,
-    'Tracks': 0,
-    'Points': 9,
-    'Labels': 14,
-    'Shapes': 17,
-}
+layer_types = (
+    'Image',
+    'Vectors',
+    'Surface',
+    'Tracks',
+    'Points',
+    'Labels',
+    'Shapes',
+)
+
+
+@pytest.mark.parametrize(('layer_class', 'data', 'ndim'), layer_test_data)
+def test_all_layer_actions_are_accessible_via_shortcut(
+    layer_class, data, ndim
+):
+    """
+    Make sure we do find all the actions attached to a layer via keybindings
+    """
+    # instantiate to make sure everything is initialized correctly
+    _ = layer_class(data)
+    _assert_shortcuts_exist_for_each_action(layer_class)
 
 
 @pytest.mark.parametrize(
-    'cls, expectation', EXPECTED_NUMBER_OF_LAYER_METHODS.items()
+    ('layer_class', 'a_unique_name', 'ndim'), layer_test_data
 )
-def test_expected_number_of_layer_methods(cls, expectation):
-    """
-    Make sure we do find all the methods attached to a layer via keybindings
-    """
-    layer_methods = _get_all_keybinding_methods(getattr(layers, cls))
-    assert len(layer_methods) == expectation
-
-
-@pytest.mark.parametrize('layer_class, a_unique_name, ndim', layer_test_data)
 def test_add_layer_magic_name(
     make_napari_viewer, layer_class, a_unique_name, ndim
 ):
@@ -125,14 +141,14 @@ def test_add_layer_magic_name(
     # Tests for issue #1709
     viewer = make_napari_viewer()  # noqa: F841
     layer = eval_with_filename(
-        "add_layer_by_type(viewer, layer_class, a_unique_name)",
-        "somefile.py",
+        'add_layer_by_type(viewer, layer_class, a_unique_name)',
+        'somefile.py',
     )
-    assert layer.name == "a_unique_name"
+    assert layer.name == 'a_unique_name'
 
 
 @skip_on_win_ci
-def test_screenshot(make_napari_viewer):
+def test_screenshot(make_napari_viewer, qtbot):
     """Test taking a screenshot."""
     viewer = make_napari_viewer()
 
@@ -165,6 +181,17 @@ def test_screenshot(make_napari_viewer):
     screenshot = viewer.screenshot(canvas_only=False, flash=False)
     assert screenshot.ndim == 3
 
+    # test size argument (and ensure it coerces to int)
+    screenshot = viewer.screenshot(canvas_only=True, size=(20, 20.0))
+    assert screenshot.shape == (20, 20, 4)
+    # Here we wait until the flash animation will be over. We cannot wait on finished
+    # signal as _flash_animation may be already removed when calling wait.
+    qtbot.waitUntil(
+        lambda: not hasattr(
+            viewer.window._qt_viewer._welcome_widget, '_flash_animation'
+        )
+    )
+
 
 @skip_on_win_ci
 def test_changing_theme(make_napari_viewer):
@@ -185,16 +212,15 @@ def test_changing_theme(make_napari_viewer):
     equal = (screenshot_dark == screenshot_light).min(-1)
 
     # more than 99.5% of the pixels have changed
-    assert (np.count_nonzero(equal) / equal.size) < 0.05, "Themes too similar"
+    assert (np.count_nonzero(equal) / equal.size) < 0.05, 'Themes too similar'
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValidationError, match="Theme 'nonexistent_theme' not found"
+    ):
         viewer.theme = 'nonexistent_theme'
 
 
-# TODO: revisit the need for sync_only here.
-# An async failure was observed here on CI, but was not reproduced locally
-@pytest.mark.sync_only
-@pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
+@pytest.mark.parametrize(('layer_class', 'data', 'ndim'), layer_test_data)
 def test_roll_transpose_update(make_napari_viewer, layer_class, data, ndim):
     """Check that transpose and roll preserve correct transform sequence."""
     viewer = make_napari_viewer()
@@ -218,7 +244,7 @@ def test_roll_transpose_update(make_napari_viewer, layer_class, data, ndim):
     check_view_transform_consistency(layer, viewer, transf_dict)
 
     # Roll dims and check again:
-    viewer.dims._roll()
+    viewer.dims.roll()
     check_view_transform_consistency(layer, viewer, transf_dict)
 
     # Transpose and check again:
@@ -287,6 +313,7 @@ def test_deleting_points(make_napari_viewer):
     assert len(pts_layer.data) == 3
 
 
+@skip_on_win_ci
 @skip_local_popups
 def test_custom_layer(make_napari_viewer):
     """Make sure that custom layers subclasses can be added to the viewer."""
@@ -310,13 +337,14 @@ def test_emitting_data_doesnt_change_points_value(make_napari_viewer):
     assert layer._value is None
     viewer.mouse_over_canvas = True
     viewer.cursor.position = tuple(layer.data[1])
+    viewer._calc_status_from_cursor()
     assert layer._value == 1
 
     layer.events.data(value=layer.data)
     assert layer._value == 1
 
 
-@pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
+@pytest.mark.parametrize(('layer_class', 'data', 'ndim'), layer_test_data)
 def test_emitting_data_doesnt_change_cursor_position(
     make_napari_viewer, layer_class, data, ndim
 ):
@@ -359,6 +387,18 @@ def test_current_viewer(make_napari_viewer):
     assert current_viewer() is not viewer2
 
 
+@pytest.mark.parametrize('n_viewers', [1, 2, 3, 4])
+def test_close_all(n_viewers, make_napari_viewer):
+    """Test that close all closes multiple viewers"""
+
+    # Make several viewers
+    viewers = [make_napari_viewer() for _ in range(n_viewers)]
+    last_viewer = viewers[-1]
+
+    # Ensure the last viewer closes all
+    assert last_viewer.close_all() == n_viewers
+
+
 def test_reset_empty(make_napari_viewer):
     """
     Test that resetting an empty viewer doesn't crash
@@ -376,3 +416,21 @@ def test_reset_non_empty(make_napari_viewer):
     viewer = make_napari_viewer()
     viewer.add_points([(0, 1), (2, 3)])
     viewer.reset()
+
+
+def test_running_status_thread(make_napari_viewer, qtbot, monkeypatch):
+    viewer = make_napari_viewer()
+    settings = get_settings()
+    start_mock, stop_mock = Mock(), Mock()
+    monkeypatch.setattr(
+        viewer.window._qt_window.status_thread, 'start', start_mock
+    )
+    monkeypatch.setattr(
+        viewer.window._qt_window.status_thread, 'terminate', stop_mock
+    )
+    assert settings.appearance.update_status_based_on_layer
+    settings.appearance.update_status_based_on_layer = False
+    stop_mock.assert_called_once()
+    start_mock.assert_not_called()
+    settings.appearance.update_status_based_on_layer = True
+    start_mock.assert_called_once()

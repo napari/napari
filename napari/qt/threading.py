@@ -4,7 +4,7 @@ from superqt.utils._qthreading import (
     WorkerBaseSignals,
 )
 
-from .._qt.qthreading import (
+from napari._qt.qthreading import (
     FunctionWorker,
     GeneratorWorker,
     create_worker,

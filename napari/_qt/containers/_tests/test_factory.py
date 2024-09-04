@@ -12,12 +12,12 @@ from napari.utils.tree import Group, Node
 
 
 class T(Node):
-    def __init__(self, x):
+    def __init__(self, x) -> None:
         self.x = x
 
 
 @pytest.mark.parametrize(
-    'cls, exView, exModel',
+    ('cls', 'exView', 'exModel'),
     [
         (SelectableEventedList, QtListView, QtListModel),
         (Group, QtNodeTreeView, QtNodeTreeModel),

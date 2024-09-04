@@ -1,13 +1,19 @@
 import dask.array as da
 import numpy as np
+import numpy.testing as npt
 import pytest
 import xarray as xr
 
 from napari._tests.utils import check_layer_world_data_extent
+from napari.components.dims import Dims
 from napari.layers import Image
 from napari.layers.image._image_constants import ImageRendering
 from napari.layers.utils.plane import ClippingPlaneList, SlicingPlane
 from napari.utils import Colormap
+from napari.utils._test_utils import (
+    validate_all_params_in_docstring,
+    validate_kwargs_sorted,
+)
 from napari.utils.transforms.transform_utils import rotate_to_matrix
 
 
@@ -17,9 +23,9 @@ def test_random_image():
     np.random.seed(0)
     data = np.random.random(shape)
     layer = Image(data)
-    assert np.all(layer.data == data)
+    assert np.array_equal(layer.data, data)
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1], shape)
+    np.testing.assert_array_equal(layer.extent.data[1], [s - 1 for s in shape])
     assert layer.rgb is False
     assert layer.multiscale is False
     assert layer._data_view.shape == shape[-2:]
@@ -32,18 +38,18 @@ def test_negative_image():
     # Data between -1.0 and 1.0
     data = 2 * np.random.random(shape) - 1.0
     layer = Image(data)
-    assert np.all(layer.data == data)
+    assert np.array_equal(layer.data, data)
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1], shape)
+    np.testing.assert_array_equal(layer.extent.data[1], [s - 1 for s in shape])
     assert layer.rgb is False
     assert layer._data_view.shape == shape[-2:]
 
     # Data between -10 and 10
     data = 20 * np.random.random(shape) - 10
     layer = Image(data)
-    assert np.all(layer.data == data)
+    assert np.array_equal(layer.data, data)
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1], shape)
+    np.testing.assert_array_equal(layer.extent.data[1], [s - 1 for s in shape])
     assert layer.rgb is False
     assert layer._data_view.shape == shape[-2:]
 
@@ -53,9 +59,9 @@ def test_all_zeros_image():
     shape = (10, 15)
     data = np.zeros(shape, dtype=float)
     layer = Image(data)
-    assert np.all(layer.data == data)
+    assert np.array_equal(layer.data, data)
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1], shape)
+    np.testing.assert_array_equal(layer.extent.data[1], [s - 1 for s in shape])
     assert layer.rgb is False
     assert layer._data_view.shape == shape[-2:]
 
@@ -66,9 +72,9 @@ def test_integer_image():
     np.random.seed(0)
     data = np.round(10 * np.random.random(shape)).astype(int)
     layer = Image(data)
-    assert np.all(layer.data == data)
+    assert np.array_equal(layer.data, data)
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1], shape)
+    np.testing.assert_array_equal(layer.extent.data[1], [s - 1 for s in shape])
     assert layer.rgb is False
     assert layer._data_view.shape == shape[-2:]
 
@@ -78,9 +84,9 @@ def test_bool_image():
     shape = (10, 15)
     data = np.zeros(shape, dtype=bool)
     layer = Image(data)
-    assert np.all(layer.data == data)
+    assert np.array_equal(layer.data, data)
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1], shape)
+    np.testing.assert_array_equal(layer.extent.data[1], [s - 1 for s in shape])
     assert layer.rgb is False
     assert layer._data_view.shape == shape[-2:]
 
@@ -91,9 +97,9 @@ def test_3D_image():
     np.random.seed(0)
     data = np.random.random(shape)
     layer = Image(data)
-    assert np.all(layer.data == data)
+    assert np.array_equal(layer.data, data)
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1], shape)
+    np.testing.assert_array_equal(layer.extent.data[1], [s - 1 for s in shape])
     assert layer.rgb is False
     assert layer._data_view.shape == shape[-2:]
 
@@ -104,9 +110,9 @@ def test_3D_image_shape_1():
     np.random.seed(0)
     data = np.random.random(shape)
     layer = Image(data)
-    assert np.all(layer.data == data)
+    assert np.array_equal(layer.data, data)
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1], shape)
+    np.testing.assert_array_equal(layer.extent.data[1], [s - 1 for s in shape])
     assert layer.rgb is False
     assert layer._data_view.shape == shape[-2:]
 
@@ -117,9 +123,9 @@ def test_4D_image():
     np.random.seed(0)
     data = np.random.random(shape)
     layer = Image(data)
-    assert np.all(layer.data == data)
+    assert np.array_equal(layer.data, data)
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1], shape)
+    np.testing.assert_array_equal(layer.extent.data[1], [s - 1 for s in shape])
     assert layer.rgb is False
     assert layer._data_view.shape == shape[-2:]
 
@@ -130,9 +136,9 @@ def test_5D_image_shape_1():
     np.random.seed(0)
     data = np.random.random(shape)
     layer = Image(data)
-    assert np.all(layer.data == data)
+    assert np.array_equal(layer.data, data)
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1], shape)
+    np.testing.assert_array_equal(layer.extent.data[1], [s - 1 for s in shape])
     assert layer.rgb is False
     assert layer._data_view.shape == shape[-2:]
 
@@ -143,9 +149,11 @@ def test_rgb_image():
     np.random.seed(0)
     data = np.random.random(shape)
     layer = Image(data)
-    assert np.all(layer.data == data)
+    assert np.array_equal(layer.data, data)
     assert layer.ndim == len(shape) - 1
-    np.testing.assert_array_equal(layer.extent.data[1], shape[:-1])
+    np.testing.assert_array_equal(
+        layer.extent.data[1], [s - 1 for s in shape[:-1]]
+    )
     assert layer.rgb is True
     assert layer._data_view.shape == shape[-3:]
 
@@ -156,9 +164,11 @@ def test_rgba_image():
     np.random.seed(0)
     data = np.random.random(shape)
     layer = Image(data)
-    assert np.all(layer.data == data)
+    assert np.array_equal(layer.data, data)
     assert layer.ndim == len(shape) - 1
-    np.testing.assert_array_equal(layer.extent.data[1], shape[:-1])
+    np.testing.assert_array_equal(
+        layer.extent.data[1], [s - 1 for s in shape[:-1]]
+    )
     assert layer.rgb is True
     assert layer._data_view.shape == shape[-3:]
 
@@ -170,18 +180,22 @@ def test_negative_rgba_image():
     # Data between -1.0 and 1.0
     data = 2 * np.random.random(shape) - 1
     layer = Image(data)
-    assert np.all(layer.data == data)
+    assert np.array_equal(layer.data, data)
     assert layer.ndim == len(shape) - 1
-    np.testing.assert_array_equal(layer.extent.data[1], shape[:-1])
+    np.testing.assert_array_equal(
+        layer.extent.data[1], [s - 1 for s in shape[:-1]]
+    )
     assert layer.rgb is True
     assert layer._data_view.shape == shape[-3:]
 
     # Data between -10 and 10
     data = 20 * np.random.random(shape) - 10
     layer = Image(data)
-    assert np.all(layer.data == data)
+    assert np.array_equal(layer.data, data)
     assert layer.ndim == len(shape) - 1
-    np.testing.assert_array_equal(layer.extent.data[1], shape[:-1])
+    np.testing.assert_array_equal(
+        layer.extent.data[1], [s - 1 for s in shape[:-1]]
+    )
     assert layer.rgb is True
     assert layer._data_view.shape == shape[-3:]
 
@@ -192,14 +206,14 @@ def test_non_rgb_image():
     np.random.seed(0)
     data = np.random.random(shape)
     layer = Image(data, rgb=False)
-    assert np.all(layer.data == data)
+    assert np.array_equal(layer.data, data)
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1], shape)
+    np.testing.assert_array_equal(layer.extent.data[1], [s - 1 for s in shape])
     assert layer.rgb is False
     assert layer._data_view.shape == shape[-2:]
 
 
-@pytest.mark.parametrize("shape", [(10, 15, 6), (10, 10)])
+@pytest.mark.parametrize('shape', [(10, 15, 6), (10, 10)])
 def test_error_non_rgb_image(shape):
     """Test error on trying non rgb as rgb."""
     # If rgb is set to be True in constructor but the last dim has a
@@ -218,9 +232,11 @@ def test_changing_image():
     data_b = np.random.random(shape_b)
     layer = Image(data_a)
     layer.data = data_b
-    assert np.all(layer.data == data_b)
+    assert np.array_equal(layer.data, data_b)
     assert layer.ndim == len(shape_b)
-    np.testing.assert_array_equal(layer.extent.data[1], shape_b)
+    np.testing.assert_array_equal(
+        layer.extent.data[1], [s - 1 for s in shape_b]
+    )
     assert layer.rgb is False
     assert layer._data_view.shape == shape_b[-2:]
 
@@ -236,9 +252,11 @@ def test_changing_image_dims():
 
     # Prep indices for switch to 3D
     layer.data = data_b
-    assert np.all(layer.data == data_b)
+    assert np.array_equal(layer.data, data_b)
     assert layer.ndim == len(shape_b)
-    np.testing.assert_array_equal(layer.extent.data[1], shape_b)
+    np.testing.assert_array_equal(
+        layer.extent.data[1], [s - 1 for s in shape_b]
+    )
     assert layer.rgb is False
     assert layer._data_view.shape == shape_b[-2:]
 
@@ -321,10 +339,11 @@ def test_interpolation():
     assert layer.interpolation2d == 'nearest'
     assert layer.interpolation3d == 'linear'
 
-    layer = Image(data, interpolation2d='bicubic')
-    assert layer.interpolation2d == 'bicubic'
     with pytest.deprecated_call():
-        assert layer.interpolation == 'bicubic'
+        layer = Image(data, interpolation2d='bicubic')
+    assert layer.interpolation2d == 'cubic'
+    with pytest.deprecated_call():
+        assert layer.interpolation == 'cubic'
 
     layer.interpolation2d = 'linear'
     assert layer.interpolation2d == 'linear'
@@ -421,14 +440,33 @@ def test_set_contrast_limits_range():
     # clim values should stay within the contrast limits range
     layer.contrast_limits_range = [0, 30]
     assert layer.contrast_limits == [20, 30]
-    # setting contrast limits range should clamp both of the clims values
+    # setting clim range outside of clim should override clim
     layer.contrast_limits_range = [0, 10]
-    assert layer.contrast_limits == [10, 10]
+    assert layer.contrast_limits == [0, 10]
+
     # in both directions...
     layer.contrast_limits_range = [0, 100]
     layer.contrast_limits = [20, 40]
     layer.contrast_limits_range = [60, 100]
-    assert layer.contrast_limits == [60, 60]
+    assert layer.contrast_limits == [60, 100]
+
+
+@pytest.mark.parametrize(
+    'contrast_limits_range',
+    [
+        [-2, -1],  # range below lower boundary of [0, 1]
+        [-1, 0],  # range on lower boundary of [0, 1]
+        [1, 2],  # range on upper boundary of [0, 1]
+        [2, 3],  # range above upper boundary of [0, 1]
+    ],
+)
+def test_set_contrast_limits_range_at_boundary_of_contrast_limits(
+    contrast_limits_range,
+):
+    """See https://github.com/napari/napari/issues/5257"""
+    layer = Image(np.zeros((6, 5)), contrast_limits=[0, 1])
+    layer.contrast_limits_range = contrast_limits_range
+    assert layer.contrast_limits == contrast_limits_range
 
 
 def test_gamma():
@@ -477,7 +515,7 @@ def test_iso_threshold():
     np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
-    assert layer.iso_threshold == 0.5
+    assert np.min(data) <= layer.iso_threshold <= np.max(data)
 
     # Change iso_threshold property
     iso_threshold = 0.7
@@ -527,7 +565,7 @@ def test_value():
 
 
 @pytest.mark.parametrize(
-    'position,view_direction,dims_displayed,world',
+    ('position', 'view_direction', 'dims_displayed', 'world'),
     [
         ((0, 0, 0), [1, 0, 0], [0, 1, 2], False),
         ((0, 0, 0), [1, 0, 0], [0, 1, 2], True),
@@ -539,7 +577,7 @@ def test_value_3d(position, view_direction, dims_displayed, world):
     np.random.seed(0)
     data = np.random.random((10, 15, 15))
     layer = Image(data)
-    layer._slice_dims([0, 0, 0], ndisplay=3)
+    layer._slice_dims(Dims(ndim=3, ndisplay=3))
     value = layer.get_value(
         position,
         view_direction=view_direction,
@@ -555,7 +593,7 @@ def test_message():
     data = np.random.random((10, 15))
     layer = Image(data)
     msg = layer.get_status((0,) * 2)
-    assert type(msg) == dict
+    assert isinstance(msg, dict)
 
 
 def test_message_3d():
@@ -563,11 +601,11 @@ def test_message_3d():
     np.random.seed(0)
     data = np.random.random((10, 15, 15))
     layer = Image(data)
-    layer._ndisplay = 3
+    layer._slice_dims(Dims(ndim=3, ndisplay=3))
     msg = layer.get_status(
         (0, 0, 0), view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]
     )
-    assert type(msg) == dict
+    assert isinstance(msg, dict)
 
 
 def test_thumbnail():
@@ -590,8 +628,8 @@ def test_narrow_thumbnail():
     layer._update_thumbnail()
     thumbnail = layer.thumbnail[..., :3]  # ignore alpha channel
     middle_row = thumbnail.shape[0] // 2
-    assert np.all(thumbnail[: middle_row - 1] == 0)
-    assert np.all(thumbnail[middle_row + 1 :] == 0)
+    assert np.array_equiv(thumbnail[: middle_row - 1], 0)
+    assert np.array_equiv(thumbnail[middle_row + 1 :], 0)
     assert np.mean(thumbnail[middle_row - 1 : middle_row + 1]) > 0
 
 
@@ -610,7 +648,7 @@ def test_out_of_range_no_contrast(dtype):
 
 
 @pytest.mark.parametrize(
-    "scale",
+    'scale',
     [
         (None),
         ([1, 1]),
@@ -628,7 +666,7 @@ def test_image_scale(scale):
 
 
 @pytest.mark.parametrize(
-    "translate",
+    'translate',
     [
         (None),
         ([1, 1]),
@@ -674,8 +712,8 @@ def test_world_data_extent():
     shape = (6, 10, 15)
     data = np.random.random(shape)
     layer = Image(data)
-    extent = np.array(((0,) * 3, shape))
-    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5), True)
+    extent = np.array(((0,) * 3, [s - 1 for s in shape]))
+    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
 
 
 def test_data_to_world_2d_scale_translate_affine_composed():
@@ -695,7 +733,7 @@ def test_data_to_world_2d_scale_translate_affine_composed():
     )
 
 
-@pytest.mark.parametrize('scale', ((1, 1), (-1, 1), (1, -1), (-1, -1)))
+@pytest.mark.parametrize('scale', [(1, 1), (-1, 1), (1, -1), (-1, -1)])
 @pytest.mark.parametrize('angle_degrees', range(-180, 180, 30))
 def test_rotate_with_reflections_in_scale(scale, angle_degrees):
     # See the GitHub issue for more details:
@@ -801,11 +839,17 @@ def test_tensorstore_image():
         np.full(shape=(1024, 1024), fill_value=255, dtype=np.uint8)
     )
     layer = Image(data)
-    assert np.all(layer.data == data)
+    assert np.array_equal(layer.data, data)
 
 
 @pytest.mark.parametrize(
-    "start_position, end_position, view_direction, vector, expected_value",
+    (
+        'start_position',
+        'end_position',
+        'view_direction',
+        'vector',
+        'expected_value',
+    ),
     [
         # drag vector parallel to view direction
         # projected onto perpendicular vector
@@ -816,16 +860,13 @@ def test_tensorstore_image():
         # drag vector perpendicular to view direction
         # projected onto itself
         ([0, 0, 0], [0, 1, 0], [0, 0, 1], [0, 1, 0], 1),
-        # drag vector perpendicular to view direction
-        # projected onto itself
-        ([0, 0, 0], [0, 1, 0], [0, 0, 1], [0, 1, 0], 1),
     ],
 )
 def test_projected_distance_from_mouse_drag(
     start_position, end_position, view_direction, vector, expected_value
 ):
     image = Image(np.ones((32, 32, 32)))
-    image._slice_dims(point=[0, 0, 0], ndisplay=3)
+    image._slice_dims(Dims(ndim=3, ndisplay=3))
     result = image.projected_distance_from_mouse_drag(
         start_position,
         end_position,
@@ -842,3 +883,160 @@ def test_rendering_init():
     layer = Image(data, rendering='iso')
 
     assert layer.rendering == ImageRendering.ISO.value
+
+
+def test_thick_slice():
+    data = np.ones((5, 5, 5)) * np.arange(5).reshape(-1, 1, 1)
+    layer = Image(data)
+
+    layer._slice_dims(Dims(ndim=3, point=(0, 0, 0)))
+    np.testing.assert_array_equal(layer._slice.image.raw, data[0])
+
+    # round down if at 0.5 and no margins
+    layer._slice_dims(Dims(ndim=3, point=(0.5, 0, 0)))
+    np.testing.assert_array_equal(layer._slice.image.raw, data[0])
+
+    # no changes if projection mode is 'none'
+    layer._slice_dims(
+        Dims(
+            ndim=3,
+            point=(0, 0, 0),
+            margin_left=(1, 0, 0),
+            margin_right=(1, 0, 0),
+        )
+    )
+    np.testing.assert_array_equal(layer._slice.image.raw, data[0])
+
+    layer.projection_mode = 'mean'
+    np.testing.assert_array_equal(
+        layer._slice.image.raw, np.mean(data[:2], axis=0)
+    )
+
+    layer._slice_dims(
+        Dims(
+            ndim=3,
+            point=(1, 0, 0),
+            margin_left=(1, 0, 0),
+            margin_right=(1, 0, 0),
+        )
+    )
+    np.testing.assert_array_equal(
+        layer._slice.image.raw, np.mean(data[:3], axis=0)
+    )
+
+    layer._slice_dims(
+        Dims(
+            ndim=3,
+            range=((0, 3, 1), (0, 2, 1), (0, 2, 1)),
+            point=(2.3, 0, 0),
+            margin_left=(0, 0, 0),
+            margin_right=(1.7, 0, 0),
+        )
+    )
+    np.testing.assert_array_equal(
+        layer._slice.image.raw, np.mean(data[2:5], axis=0)
+    )
+
+    layer._slice_dims(
+        Dims(
+            ndim=3,
+            range=((0, 3, 1), (0, 2, 1), (0, 2, 1)),
+            point=(2.3, 0, 0),
+            margin_left=(0, 0, 0),
+            margin_right=(1.6, 0, 0),
+        )
+    )
+    np.testing.assert_array_equal(
+        layer._slice.image.raw, np.mean(data[2:4], axis=0)
+    )
+
+    layer.projection_mode = 'max'
+    np.testing.assert_array_equal(
+        layer._slice.image.raw, np.max(data[2:4], axis=0)
+    )
+
+
+def test_adjust_contrast_out_of_range():
+    arr = np.linspace(1, 9, 5 * 5, dtype=np.float64).reshape((5, 5))
+    img_lay = Image(arr)
+    npt.assert_array_equal(img_lay._slice.image.view, img_lay._slice.image.raw)
+    img_lay.contrast_limits = (0, float(np.finfo(np.float32).max) * 2)
+    assert not np.array_equal(
+        img_lay._slice.image.view, img_lay._slice.image.raw
+    )
+
+
+def test_adjust_contrast_limits_range_set_data():
+    arr = np.linspace(1, 9, 5 * 5, dtype=np.float64).reshape((5, 5))
+    img_lay = Image(arr)
+    img_lay._keep_auto_contrast = True
+    npt.assert_array_equal(img_lay._slice.image.view, img_lay._slice.image.raw)
+    img_lay.data = arr * 1e39
+    assert not np.array_equal(
+        img_lay._slice.image.view, img_lay._slice.image.raw
+    )
+
+
+def test_thick_slice_multiscale():
+    data = np.ones((5, 5, 5)) * np.arange(5).reshape(-1, 1, 1)
+    data_zoom = data.repeat(2, 0).repeat(2, 1).repeat(2, 2)
+    layer = Image([data_zoom, data])
+
+    # ensure we're slicing level 0. We also need to update corner_pixels
+    # to ensure the full image is in view
+    layer.corner_pixels = np.array([[0, 0, 0], [10, 10, 10]])
+    layer.data_level = 0
+
+    layer._slice_dims(Dims(ndim=3, point=(0, 0, 0)))
+    np.testing.assert_array_equal(layer._slice.image.raw, data_zoom[0])
+
+    layer.projection_mode = 'mean'
+    # NOTE that here we rescale slicing to twice the non-multiscale test
+    # in order to get the same results, because the actual full scale image
+    # is doubled in size
+    layer._slice_dims(
+        Dims(
+            ndim=3,
+            range=((0, 5, 1), (0, 2, 1), (0, 2, 1)),
+            point=(4.6, 0, 0),
+            margin_left=(0, 0, 0),
+            margin_right=(3.4, 0, 0),
+        )
+    )
+    np.testing.assert_array_equal(
+        layer._slice.image.raw, np.mean(data_zoom[4:10], axis=0)
+    )
+
+    # check level 1
+    layer.corner_pixels = np.array([[0, 0, 0], [5, 5, 5]])
+    layer.data_level = 1
+
+    layer._slice_dims(Dims(ndim=3, point=(0, 0, 0)))
+    np.testing.assert_array_equal(layer._slice.image.raw, data[0])
+
+    layer.projection_mode = 'mean'
+    # here we slice in the same point as earlier, but to get the expected value
+    # we need to slice `data` with halved indices
+    layer._slice_dims(
+        Dims(
+            ndim=3,
+            range=((0, 5, 1), (0, 2, 1), (0, 2, 1)),
+            point=(4.6, 0, 0),
+            margin_left=(0, 0, 0),
+            margin_right=(3.4, 0, 0),
+        )
+    )
+    np.testing.assert_array_equal(
+        layer._slice.image.raw, np.mean(data[2:5], axis=0)
+    )
+
+
+def test_contrast_outside_range():
+    data = np.zeros((64, 64), dtype=np.uint8)
+
+    Image(data, contrast_limits=(0, 1000))
+
+
+def test_docstring():
+    validate_all_params_in_docstring(Image)
+    validate_kwargs_sorted(Image)

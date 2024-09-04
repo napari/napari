@@ -9,8 +9,8 @@ Display one 4-D image layer using the :func:`view_image` API.
 
 import numpy as np
 from skimage import data
-import napari
 
+import napari
 
 blobs = np.stack(
     [

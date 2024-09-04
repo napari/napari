@@ -48,11 +48,12 @@ three of these should be removed before merging the PR into main. While
 they have almost zero overhead when perfmon is disabled, it's still better
 not to leave them in the code. Think of them as similar to debug prints.
 """
+
 import os
 
-from ._config import perf_config
-from ._event import PerfEvent
-from ._timers import (
+from napari.utils.perf._config import perf_config
+from napari.utils.perf._event import PerfEvent
+from napari.utils.perf._timers import (
     add_counter_event,
     add_instant_event,
     block_timer,
@@ -60,4 +61,16 @@ from ._timers import (
     timers,
 )
 
-USE_PERFMON = os.getenv("NAPARI_PERFMON", "0") != "0"
+USE_PERFMON = os.getenv('NAPARI_PERFMON', '0') != '0'
+
+
+__all__ = [
+    'perf_config',
+    'USE_PERFMON',
+    'add_counter_event',
+    'add_instant_event',
+    'block_timer',
+    'perf_timer',
+    'timers',
+    'PerfEvent',
+]

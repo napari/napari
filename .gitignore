@@ -1,3 +1,4 @@
+docs
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -70,6 +71,7 @@ docs/source/api/
 docs/source/release/
 docs/source/releases.rst
 docs/build/
+docs/_tags
 
 # PyBuilder
 target/
@@ -140,11 +142,6 @@ _qt_resources*.py
 res.qrc
 # ignore all generated themed svgs
 napari/resources/themes
-
-# briefcase
-macOS/
-linux/
-windows/
 
 napari/_version.py
 

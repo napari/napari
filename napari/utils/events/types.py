@@ -1,6 +1,6 @@
 from typing import Protocol, runtime_checkable
 
-from .event import EmitterGroup
+from napari.utils.events.event import EmitterGroup
 
 
 @runtime_checkable

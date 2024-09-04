@@ -11,10 +11,9 @@ up to date, and can modify the python object... while maintining the python
 object as the single "source of truth".
 """
 import napari
-from napari.qt import get_app
 from napari._qt.containers import QtListView
+from napari.qt import get_app
 from napari.utils.events import SelectableEventedList
-
 
 get_app()
 
@@ -22,7 +21,7 @@ get_app()
 class MyObject:
     """generic object."""
 
-    def __init__(self, name):
+    def __init__(self, name) -> None:
         self.name = name
 
     def __str__(self):
@@ -38,15 +37,15 @@ view.show()
 
 
 # spy on events
-root.events.reordered.connect(lambda e: print("reordered to: ", e.value))
+root.events.reordered.connect(lambda e: print('reordered to: ', e.value))
 root.selection.events.changed.connect(
     lambda e: print(
-        f"selection changed.  added: {e.added}, removed: {e.removed}"
+        f'selection changed.  added: {e.added}, removed: {e.removed}'
     )
 )
 root.selection.events._current.connect(
-    lambda e: print(f"current item changed to: {e.value}")
+    lambda e: print(f'current item changed to: {e.value}')
 )
 
-
-napari.run()
+if __name__ == '__main__':
+    napari.run()

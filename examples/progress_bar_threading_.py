@@ -8,7 +8,9 @@ This file provides a minimal working example using a progress bar alongside
 .. tags:: interactivity
 """
 from time import sleep
+
 from qtpy.QtWidgets import QPushButton, QVBoxLayout, QWidget
+
 import napari
 from napari.qt import thread_worker
 
@@ -16,7 +18,7 @@ viewer = napari.Viewer()
 
 
 def handle_yields(yielded_val):
-    print(f"Just yielded: {yielded_val}")
+    print(f'Just yielded: {yielded_val}')
 
 
 # generator thread workers can provide progress updates on each yield
@@ -53,7 +55,7 @@ def my_indeterminate_thread(*_):
 
 
 def return_func(return_val):
-    print(f"Returned: {return_val}")
+    print(f'Returned: {return_val}')
 
 
 # finally, a FunctionWorker can still provide an indeterminate
@@ -64,30 +66,30 @@ def return_func(return_val):
     connect={'returned': return_func},
 )
 def my_function(*_):
-    sum = 0
+    sum_val = 0
     for i in range(10):
-        sum += i
+        sum_val += i
         sleep(0.1)
-    return sum
+    return sum_val
 
 
 button_layout = QVBoxLayout()
-start_btn = QPushButton("Start")
+start_btn = QPushButton('Start')
 start_btn.clicked.connect(my_long_running_thread)
 button_layout.addWidget(start_btn)
 
-start_btn2 = QPushButton("Start Indeterminate")
+start_btn2 = QPushButton('Start Indeterminate')
 start_btn2.clicked.connect(my_indeterminate_thread)
 button_layout.addWidget(start_btn2)
 
-start_btn3 = QPushButton("Start FunctionWorker")
+start_btn3 = QPushButton('Start FunctionWorker')
 start_btn3.clicked.connect(my_function)
 button_layout.addWidget(start_btn3)
 
 pbar_widget = QWidget()
 pbar_widget.setLayout(button_layout)
-pbar_widget.setObjectName("Threading Examples")
-viewer.window.add_dock_widget(pbar_widget, allowed_areas=["right"])
+pbar_widget.setObjectName('Threading Examples')
+viewer.window.add_dock_widget(pbar_widget, allowed_areas=['right'])
 
 # showing the activity dock so we can see the progress bars
 viewer.window._status_bar._toggle_activity_dock(True)

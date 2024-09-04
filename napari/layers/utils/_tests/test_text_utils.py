@@ -19,7 +19,7 @@ view_data_ndarray = coords
 
 
 @pytest.mark.parametrize(
-    "view_data,expected_coords",
+    ('view_data', 'expected_coords'),
     [(view_data_list, [[5, 5]]), (view_data_ndarray, coords)],
 )
 def test_bbox_center(view_data, expected_coords):
@@ -30,7 +30,7 @@ def test_bbox_center(view_data, expected_coords):
 
 
 @pytest.mark.parametrize(
-    "view_data,expected_coords",
+    ('view_data', 'expected_coords'),
     [(view_data_list, [[0, 0]]), (view_data_ndarray, coords)],
 )
 def test_bbox_upper_left(view_data, expected_coords):
@@ -41,7 +41,7 @@ def test_bbox_upper_left(view_data, expected_coords):
 
 
 @pytest.mark.parametrize(
-    "view_data,expected_coords",
+    ('view_data', 'expected_coords'),
     [(view_data_list, [[0, 10]]), (view_data_ndarray, coords)],
 )
 def test_bbox_upper_right(view_data, expected_coords):
@@ -52,7 +52,7 @@ def test_bbox_upper_right(view_data, expected_coords):
 
 
 @pytest.mark.parametrize(
-    "view_data,expected_coords",
+    ('view_data', 'expected_coords'),
     [(view_data_list, [[10, 0]]), (view_data_ndarray, coords)],
 )
 def test_bbox_lower_left(view_data, expected_coords):
@@ -63,7 +63,7 @@ def test_bbox_lower_left(view_data, expected_coords):
 
 
 @pytest.mark.parametrize(
-    "view_data,expected_coords",
+    ('view_data', 'expected_coords'),
     [(view_data_list, [[10, 10]]), (view_data_ndarray, coords)],
 )
 def test_bbox_lower_right(view_data, expected_coords):
@@ -74,7 +74,7 @@ def test_bbox_lower_right(view_data, expected_coords):
 
 
 @pytest.mark.parametrize(
-    "anchor_type,ndisplay,expected_coords",
+    ('anchor_type', 'ndisplay', 'expected_coords'),
     [
         (Anchor.CENTER, 2, [[5, 5]]),
         (Anchor.UPPER_LEFT, 2, [[0, 0]]),
