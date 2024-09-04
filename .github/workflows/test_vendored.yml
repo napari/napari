@@ -22,6 +22,7 @@ jobs:
 
       - name: Set variables
         run: echo "vendored=$(cat "tools/vendored_modules.txt")" >> "$GITHUB_OUTPUT"
+        shell: bash
 
       - name: Create PR updating vendored modules
         uses: peter-evans/create-pull-request@v6
