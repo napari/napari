@@ -167,7 +167,7 @@ class QtViewerDockWidget(QDockWidget):
             settings.application.plugins_widget_positions[self.name] = 'top'
         elif value == Qt.DockWidgetArea.BottomDockWidgetArea:
             settings.application.plugins_widget_positions[self.name] = 'bottom'
-        settings.save()
+        settings._maybe_save()
 
     @property
     def _parent(self):
