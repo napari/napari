@@ -87,7 +87,7 @@ exceptiongroup==1.2.2
     #   hypothesis
     #   ipython
     #   pytest
-executing==2.0.1
+executing==2.1.0
     # via stack-data
 fasteners==0.19
     # via zarr
@@ -634,7 +634,7 @@ sqlalchemy==2.0.32
     # via jupyter-cache
 stack-data==0.6.3
     # via ipython
-starlette==0.38.2
+starlette==0.38.4
     # via sphinx-autobuild
 superqt==0.6.7
     # via
@@ -653,7 +653,7 @@ tensorstore==0.1.64
     #   napari (napari_repo/pyproject.toml)
 threadpoolctl==3.5.0
     # via scikit-learn
-tifffile==2024.8.28
+tifffile==2024.8.30
     # via
     #   napari (napari_repo/pyproject.toml)
     #   scikit-image
