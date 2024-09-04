@@ -6,7 +6,7 @@ from napari.utils.interactions import Shortcut
 
 
 @pytest.mark.parametrize(
-    'shortcut,reason',
+    ('shortcut', 'reason'),
     [
         ('Atl-A', 'Alt misspelled'),
         ('Ctrl-AA', 'AA makes no sense'),
@@ -35,7 +35,7 @@ def test_shortcut_qt():
     sys.platform != 'darwin', reason='Parsing macos specific keys'
 )
 @pytest.mark.parametrize(
-    'expected, shortcut',
+    ('expected', 'shortcut'),
     [
         ('␣', 'Space'),
         ('⌥', 'Alt'),

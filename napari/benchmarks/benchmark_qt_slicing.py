@@ -186,3 +186,9 @@ class QtViewerAsyncPointsAndImage2DSuite:
 
     def teardown(self, *args):
         self.viewer.window.close()
+
+
+if __name__ == '__main__':
+    from utils import run_benchmark
+
+    run_benchmark()

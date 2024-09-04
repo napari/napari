@@ -149,7 +149,11 @@ class Selection(EventedSet[_T]):
         yield cls.validate
 
     @classmethod
-    def validate(cls, v: Union['Selection', dict], field: 'ModelField') -> 'Selection':  # type: ignore[override]
+    def validate(
+        cls,
+        v: Union['Selection', dict],  # type: ignore[override]
+        field: 'ModelField',
+    ) -> 'Selection':
         """Pydantic validator."""
         from napari._pydantic_compat import sequence_like
 
@@ -193,7 +197,8 @@ class Selection(EventedSet[_T]):
         if errors:
             from napari._pydantic_compat import ValidationError
 
-            raise ValidationError(errors, cls)
+            raise ValidationError(errors, cls)  # type: ignore [arg-type]
+            # need to be fixed when migrate to pydantic 2
         obj = cls(data=data)
         obj._current_ = current
         return obj

@@ -91,7 +91,7 @@ class Plane(EventedModel):
         a = np.array(a)
         b = np.array(b)
         c = np.array(c)
-        abc = np.row_stack((a, b, c))
+        abc = np.vstack((a, b, c))
         ab = b - a
         ac = c - a
 
@@ -236,3 +236,7 @@ class ClippingPlaneList(SelectableEventedList):
                     )
                 )
         return cls(planes)
+
+    def add_plane(self, **kwargs: Any) -> None:
+        """Add a clipping plane to the list."""
+        self.append(ClippingPlane(**kwargs))

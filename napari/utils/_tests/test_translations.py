@@ -361,7 +361,7 @@ def test_exception_string(trans):
     assert str(result) != expected_result
     assert str(result) == 'MORE ABOUT NAPARI'
 
-    with pytest.raises(ValueError) as err:
+    with pytest.raises(ValueError, match='MORE ABOUT NAPARI') as err:
         raise ValueError(result)
 
     assert isinstance(err.value.args[0], TranslationString)
@@ -370,7 +370,7 @@ def test_exception_string(trans):
 # Test TranslationString
 # ----------------------
 def test_translation_string_exceptions():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Must provide at least'):
         TranslationString()
 
 

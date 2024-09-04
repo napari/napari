@@ -11,7 +11,6 @@ import pandas as pd
 import pytest
 import xarray as xr
 import zarr
-from numpy.core.numerictypes import issubdtype
 from skimage import data as sk_data
 
 from napari._tests.utils import check_layer_world_data_extent
@@ -110,13 +109,13 @@ def test_bool_labels():
     """Test instantiating labels layer with bools"""
     data = np.zeros((10, 10), dtype=bool)
     layer = Labels(data)
-    assert issubdtype(layer.data.dtype, np.integer)
+    assert np.issubdtype(layer.data.dtype, np.integer)
 
     data0 = np.zeros((20, 20), dtype=bool)
     data1 = data0[::2, ::2].astype(np.int32)
     data = [data0, data1]
     layer = Labels(data)
-    assert all(issubdtype(d.dtype, np.integer) for d in layer.data)
+    assert all(np.issubdtype(d.dtype, np.integer) for d in layer.data)
 
 
 def test_changing_labels():
@@ -420,6 +419,26 @@ def test_custom_color_dict():
     assert not (layer.get_color(1) == np.array([1.0, 1.0, 1.0, 1.0])).all()
 
 
+@pytest.mark.parametrize(
+    'colormap_like',
+    [
+        ['red', 'blue'],
+        [[1, 0, 0, 1], [0, 0, 1, 1]],
+        {None: 'transparent', 1: 'red', 2: 'blue'},
+        {None: [0, 0, 0, 0], 1: [1, 0, 0, 1], 2: [0, 0, 1, 1]},
+        defaultdict(lambda: 'transparent', {1: 'red', 2: 'blue'}),
+    ],
+)
+def test_colormap_simple_data_types(colormap_like):
+    """Test that setting colormap with list or dict of colors works."""
+    data = np.random.randint(20, size=(10, 15))
+    # test in constructor
+    _ = Labels(data, colormap=colormap_like)
+    # test assignment
+    layer = Labels(data)
+    layer.colormap = colormap_like
+
+
 def test_metadata():
     """Test setting labels metadata."""
     np.random.seed(0)
@@ -463,7 +482,7 @@ def test_n_edit_dimensions():
 
 
 @pytest.mark.parametrize(
-    'input_data, expected_data_view',
+    ('input_data', 'expected_data_view'),
     [
         (
             np.array(
@@ -917,7 +936,7 @@ def test_value():
 
 
 @pytest.mark.parametrize(
-    'position,view_direction,dims_displayed,world',
+    ('position', 'view_direction', 'dims_displayed', 'world'),
     [
         ([10, 5, 5], [1, 0, 0], [0, 1, 2], False),
         ([10, 5, 5], [1, 0, 0], [0, 1, 2], True),
@@ -979,7 +998,13 @@ def test_world_data_extent():
 
 
 @pytest.mark.parametrize(
-    'brush_size, mode, selected_label, preserve_labels, n_dimensional',
+    (
+        'brush_size',
+        'mode',
+        'selected_label',
+        'preserve_labels',
+        'n_dimensional',
+    ),
     list(
         itertools.product(
             list(range(1, 22, 5)),
@@ -1050,7 +1075,8 @@ def test_ndim_paint():
     layer.paint((1, 1, 1, 1), 1)
 
     assert np.sum(layer.data) == 19  # 18 + center
-    assert not np.any(layer.data[0]) and not np.any(layer.data[2:])
+    assert not np.any(layer.data[0])
+    assert not np.any(layer.data[2:])
 
     layer.n_edit_dimensions = 2  # 3x3 square
     layer._slice_dims(Dims(ndim=4, order=(1, 2, 0, 3)))
@@ -1076,9 +1102,6 @@ def test_cursor_size_with_negative_scale():
     assert layer.cursor_size > 0
 
 
-@pytest.mark.xfail(
-    reason='labels are converted to float32 before being mapped'
-)
 def test_large_label_values():
     label_array = 2**23 + np.arange(4, dtype=np.uint64).reshape((2, 2))
     layer = Labels(label_array)
@@ -1686,7 +1709,7 @@ def test_copy():
 
 
 @pytest.mark.parametrize(
-    'colormap,expected',
+    ('colormap', 'expected'),
     [
         (label_colormap(49, 0.5), [0, 1]),
         (

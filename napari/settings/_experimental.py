@@ -46,6 +46,16 @@ class ExperimentalSettings(EventedSettings):
         lt=50,
     )
 
+    completion_radius: int = Field(
+        default=-1,
+        title=trans._(
+            'Double-click Labels polygon completion radius (-1 to always complete)'
+        ),
+        description=trans._(
+            'Max radius in pixels from first vertex for double-click to complete a polygon; set -1 to always complete.'
+        ),
+    )
+
     class NapariConfig:
         # Napari specific configuration
         preferences_exclude = ('schema_version',)

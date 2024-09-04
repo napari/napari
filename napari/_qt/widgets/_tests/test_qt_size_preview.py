@@ -107,7 +107,7 @@ def test_qt_size_slider_preview_widget_minimum_invalid(
 ):
     widget = font_size_preview_widget()
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must be smaller than'):
         widget.setMinimum(60)
 
 
@@ -137,7 +137,7 @@ def test_qt_size_slider_preview_widget_maximum_invalid(
 ):
     widget = font_size_preview_widget()
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must be larger than'):
         widget.setMaximum(-5)
 
 

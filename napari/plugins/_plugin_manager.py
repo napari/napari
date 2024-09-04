@@ -150,7 +150,7 @@ class NapariPluginManager(PluginManager):
             self._theme_data,
             self._function_widgets,
         ):
-            _dict.pop(_name, None)  # type: ignore
+            _dict.pop(_name, None)
 
         self.events.unregistered(value=_name)
 

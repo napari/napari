@@ -2,11 +2,17 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QCheckBox, QComboBox, QDoubleSpinBox, QLabel
+from qtpy.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QDoubleSpinBox,
+    QLabel,
+)
 
 from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
 from napari._qt.utils import qt_signals_blocked
 from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
+from napari.layers.base._base_constants import Mode
 from napari.layers.utils._color_manager_constants import ColorMode
 from napari.layers.vectors._vectors_constants import VECTORSTYLE_TRANSLATIONS
 from napari.utils.translations import trans
@@ -25,6 +31,20 @@ class QtVectorsControls(QtLayerControls):
 
     Attributes
     ----------
+    layer : napari.layers.Vectors
+        An instance of a napari Vectors layer.
+    MODE : Enum
+        Available modes in the associated layer.
+    PAN_ZOOM_ACTION_NAME : str
+        String id for the pan-zoom action to bind to the pan_zoom button.
+    TRANSFORM_ACTION_NAME : str
+        String id for the transform action to bind to the transform button.
+    button_group : qtpy.QtWidgets.QButtonGroup
+        Button group of points layer modes (ADD, PAN_ZOOM, SELECT).
+    panzoom_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
+        Button for pan/zoom mode.
+    transform_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
+        Button to select transform mode.
     edge_color_label : qtpy.QtWidgets.QLabel
         Label for edgeColorSwatch
     edgeColorEdit : QColorSwatchEdit
@@ -51,6 +71,9 @@ class QtVectorsControls(QtLayerControls):
     """
 
     layer: 'napari.layers.Vectors'
+    MODE = Mode
+    PAN_ZOOM_ACTION_NAME = 'activate_tracks_pan_zoom_mode'
+    TRANSFORM_ACTION_NAME = 'activate_tracks_transform_mode'
 
     def __init__(self, layer) -> None:
         super().__init__(layer)
@@ -69,7 +92,7 @@ class QtVectorsControls(QtLayerControls):
         self.edgeColorEdit = QColorSwatchEdit(
             initial_color=self.layer.edge_color,
             tooltip=trans._(
-                'click to set current edge color',
+                'Click to set current edge color',
             ),
         )
         self.edgeColorEdit.color_changed.connect(self.change_edge_color_direct)
@@ -122,6 +145,7 @@ class QtVectorsControls(QtLayerControls):
         out_of_slice_cb.stateChanged.connect(self.change_out_of_slice)
         self.outOfSliceCheckBox = out_of_slice_cb
 
+        self.layout().addRow(self.button_grid)
         self.layout().addRow(self.opacityLabel, self.opacitySlider)
         self.layout().addRow(trans._('width:'), self.widthSpinBox)
         self.layout().addRow(trans._('length:'), self.lengthSpinBox)

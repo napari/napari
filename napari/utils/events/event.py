@@ -48,6 +48,7 @@ to emit events. The EmitterGroup groups EventEmitter objects.
 For more information see http://github.com/vispy/vispy/wiki/API_Events
 
 """
+
 import contextlib
 import inspect
 import os
@@ -137,12 +138,12 @@ class Event:
 
     @property
     def type(self) -> str:
-        # No docstring; documeted in class docstring
+        # No docstring; documented in class docstring
         return self._type
 
     @property
     def native(self) -> Any:
-        # No docstring; documeted in class docstring
+        # No docstring; documented in class docstring
         return self._native
 
     @property
@@ -409,7 +410,7 @@ class EventEmitter:
         self,
         callback: Union[Callback, CallbackRef, CallbackStr, 'EventEmitter'],
         ref: Union[bool, str] = False,
-        position: Literal['first', 'last'] = 'first',
+        position: Literal['first', 'last'] = 'last',
         before: Union[str, Callback, list[Union[str, Callback]], None] = None,
         after: Union[str, Callback, list[Union[str, Callback]], None] = None,
         until: Optional['EventEmitter'] = None,
@@ -1041,7 +1042,9 @@ class EmitterGroup(EventEmitter):
 
             if inspect.isclass(emitter) and issubclass(emitter, Event):  # type: ignore
                 emitter = EventEmitter(
-                    source=self.source, type_name=name, event_class=emitter  # type: ignore
+                    source=self.source,
+                    type_name=name,
+                    event_class=emitter,  # type: ignore
                 )
             elif not isinstance(emitter, EventEmitter):
                 raise RuntimeError(

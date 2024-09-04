@@ -475,7 +475,7 @@ def test_unselecting_points(create_known_points_layer_2d):
     assert len(layer.selected_data) == 0
 
     # check that this also works with scaled data and position near a point (see #5737)
-    # we are taking the first point and shiftling *slightly* more than the point size
+    # we are taking the first point and shifting *slightly* more than the point size
     layer.scale = 100, 100
     pos = np.array(layer.data[0])
     pos[1] += layer.size[0] * 2
@@ -664,7 +664,7 @@ def test_selecting_no_points_with_drag_3d(create_known_points_layer_3d):
 
 
 @pytest.mark.parametrize(
-    'pre_selection,on_point,modifier',
+    ('pre_selection', 'on_point', 'modifier'),
     [
         (set(), True, []),
         ({0}, True, []),
@@ -841,7 +841,7 @@ def test_drag_start_selection(
         assert 0 in layer.selected_data
         assert layer.selected_data == set(range(n_points))
     else:
-        assert False, 'Unreachable code'  # pragma: no cover
+        pytest.fail('Unreachable code')
     assert layer._drag_box is None
     assert layer._drag_start is None
 

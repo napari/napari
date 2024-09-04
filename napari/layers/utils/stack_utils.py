@@ -4,6 +4,7 @@ import itertools
 from typing import TYPE_CHECKING
 
 import numpy as np
+import pint
 
 from napari.layers import Image
 from napari.layers.image._image_utils import guess_multiscale
@@ -87,14 +88,15 @@ def split_channels(
     kwargs.setdefault('colormap', None)
     # these arguments are *already* iterables in the single-channel case.
     iterable_kwargs = {
+        'axis_labels',
         'scale',
         'translate',
-        'affine',
         'contrast_limits',
         'metadata',
         'plane',
         'experimental_clipping_planes',
         'custom_interpolation_kernel_2d',
+        'units',
     }
 
     # turn the kwargs dict into a mapping of {key: iterator}
@@ -122,6 +124,11 @@ def split_channels(
                     allow_none=True,
                 )
             )
+        elif key == 'affine' and isinstance(val, np.ndarray):
+            # affine may be Affine or np.ndarray object that is not
+            # iterable, but it is not now a problem as we use it only to warning
+            # if a provided object is a sequence and channel_axis is not provided
+            kwargs[key] = itertools.repeat(val, n_channels)
         else:
             kwargs[key] = iter(ensure_iterable(val))
 
@@ -227,6 +234,8 @@ def stack_to_images(stack: Image, axis: int, **kwargs) -> list[Image]:
     meta['rotate'] = None
     meta['shear'] = None
     meta['affine'] = None
+    meta['axis_labels'] = None
+    meta['units'] = None
 
     meta.update(kwargs)
     imagelist = []
@@ -283,6 +292,8 @@ def images_to_stack(images: list[Image], axis: int = 0, **kwargs) -> Image:
     kwargs.setdefault('translate', np.insert(meta['translate'], axis, 0))
 
     meta.update(kwargs)
+    meta['units'] = (pint.get_application_registry().pixel,) + meta['units']
+    meta['axis_labels'] = (f'axis -{data.ndim + 1}',) + meta['axis_labels']
     new_data = np.stack([image.data for image in images], axis=axis)
     return Image(new_data, **meta)
 

@@ -11,7 +11,6 @@ from typing import Any, Literal, Optional, Union, overload
 import npe2
 
 from napari._pydantic_compat import Color, validator
-from napari._vendor import darkdetect
 from napari.resources._icons import (
     PLUGIN_FILE_NAME,
     _theme_path,
@@ -217,12 +216,16 @@ def template(css: str, **theme):
         css = opacity_pattern.sub(opacity_match, css)
         if isinstance(v, Color):
             v = v.as_rgb()
-        css = css.replace('{{ %s }}' % k, v)
+        css = css.replace(f'{{{{ {k} }}}}', v)
     return css
 
 
 def get_system_theme() -> str:
     """Return the system default theme, either 'dark', or 'light'."""
+    try:
+        from napari._vendor import darkdetect
+    except ImportError:
+        return 'dark'
     try:
         id_ = darkdetect.theme().lower()
     except AttributeError:
