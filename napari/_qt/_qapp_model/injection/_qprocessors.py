@@ -22,6 +22,7 @@ from napari._qt._qapp_model.injection._qproviders import (
     _provide_viewer,
     _provide_viewer_or_raise,
 )
+from napari.layers import Image
 from napari.layers._source import layer_source
 
 
@@ -99,9 +100,11 @@ def _add_layer_data_to_viewer(
         if layer_name:
             with suppress(KeyError):
                 # layerlist also allow lookup by name
-                viewer.layers[layer_name].data = data
-                viewer.layers[layer_name].reset_contrast_limits_range()
-                viewer.layers[layer_name].reset_contrast_limits()
+                layer = viewer.layers[layer_name]
+                layer.data = data
+                if isinstance(layer, Image):
+                    layer.reset_contrast_limits_range()
+                    layer.reset_contrast_limits()
                 return
         if get_origin(return_type) is Union:
             if len(return_type.__args__) != 2 or return_type.__args__[
