@@ -1167,7 +1167,7 @@ class Window:
 
         if area is None:
             settings = get_settings()
-            area = settings.application.plugins_widget_positions.get(
+            area = settings.application.plugin_widget_positions.get(
                 name, 'right'
             )
 
