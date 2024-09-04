@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from napari.viewer import Viewer
 
 
+# TODO: Remove this in favor of app-model actions/keybindings?
 def register_viewer_action(description, repeatable=False):
     """
     Convenient decorator to register an action with the current ViewerModel

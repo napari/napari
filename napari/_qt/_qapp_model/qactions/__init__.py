@@ -51,6 +51,10 @@ def init_qactions() -> None:
         Q_VIEW_ACTIONS,
         VIEW_SUBMENUS,
     )
+    from napari._qt._qapp_model.qactions._viewer import (
+        Q_VIEWER_ACTIONS,
+        Q_VIEWER_NEW_DELETE_ACTIONS,
+    )
     from napari._qt._qapp_model.qactions._window import Q_WINDOW_ACTIONS
     from napari._qt.qt_main_window import Window
     from napari._qt.qt_viewer import QtViewer
@@ -70,7 +74,7 @@ def init_qactions() -> None:
         providers=QPROVIDERS,
     )
 
-    # register menubar actions
+    # register menubar and viewer actions
     app.register_actions(
         chain(
             Q_DEBUG_ACTIONS,
@@ -81,6 +85,8 @@ def init_qactions() -> None:
             LAYERS_ACTIONS,
             Q_LAYERLIST_CONTEXT_ACTIONS,
             Q_WINDOW_ACTIONS,
+            Q_VIEWER_ACTIONS,
+            Q_VIEWER_NEW_DELETE_ACTIONS,
         )
     )
 

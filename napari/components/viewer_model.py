@@ -209,7 +209,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self, title='napari', ndisplay=2, order=(), axis_labels=()
     ) -> None:
         # max_depth=0 means don't look for parent contexts.
-        from napari._app_model.context import create_context
+        from napari._app_model.context import ViewerContextKeys, create_context
 
         # FIXME: just like the LayerList, this object should ideally be created
         # elsewhere.  The app should know about the ViewerModel, but not vice versa.
@@ -224,6 +224,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 'order': order,
             },
         )
+
+        self._ctx_keys = ViewerContextKeys(self._ctx)
         self.__config__.extra = Extra.ignore
 
         settings = get_settings()
@@ -254,13 +256,16 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 type_name='layers_change',
             ),
             reset_view=Event,
+            update_ctx=Event,
         )
 
         # Connect events
         self.grid.events.connect(self.reset_view)
         self.grid.events.connect(self._on_grid_change)
+        self.grid.events.connect(self._update_ctx)
         self.dims.events.ndisplay.connect(self._update_layers)
         self.dims.events.ndisplay.connect(self.reset_view)
+        self.dims.events.ndisplay.connect(self._update_ctx)
         self.dims.events.order.connect(self._update_layers)
         self.dims.events.order.connect(self.reset_view)
         self.dims.events.point.connect(self._update_layers)
@@ -436,7 +441,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             angles=self.camera.angles,
         )
 
-    def _new_labels(self):
+    def _new_labels(self) -> None:
         """Create new labels layer filling full world coordinates space."""
         layers_extent = self.layers.extent
         extent = layers_extent.world
@@ -583,6 +588,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.status, self.tooltip.text = status
         if (active := self.layers.selection.active) is not None:
             self.help = active.help
+
+    def _update_ctx(self, event=None):
+        self._ctx_keys.update_from_source(self)
+        self.events.update_ctx()
 
     def _on_grid_change(self):
         """Arrange the current layers is a 2D grid."""

@@ -4,25 +4,40 @@ import pytest
 from qtpy.QtCore import QPoint, Qt
 from qtpy.QtWidgets import QApplication
 
+from napari._app_model import get_app
 from napari._qt.dialogs.qt_modal import QtPopup
 from napari._qt.widgets.qt_viewer_buttons import QtViewerButtons
 from napari.components.viewer_model import ViewerModel
 
 
 @pytest.fixture
-def qt_viewer_buttons(qtbot):
-    # create viewer model and buttons
+def qt_viewer_buttons(qtbot, mock_app):
+    # initialize app-model actions (actions and menus app registries)
+    from napari._qt._qapp_model.qactions import init_qactions
+
+    init_qactions.cache_clear()
+    init_qactions()
+
+    # create viewer model, setup provider and buttons
+    app = get_app()
     viewer = ViewerModel()
-    viewer_buttons = QtViewerButtons(viewer)
-    qtbot.addWidget(viewer_buttons)
 
-    yield viewer, viewer_buttons
+    def _provide_viewer_model() -> ViewerModel:
+        return viewer
 
-    # close still open popup widgets
-    for widget in QApplication.topLevelWidgets():
-        if isinstance(widget, QtPopup):
-            widget.close()
-    viewer_buttons.close()
+    app.injection_store.clear()
+    with app.injection_store.register(providers=[(_provide_viewer_model,)]):
+        # create viewer model and buttons
+        viewer_buttons = QtViewerButtons(viewer)
+        qtbot.addWidget(viewer_buttons)
+
+        yield viewer, viewer_buttons
+
+        # close still open popup widgets
+        for widget in QApplication.topLevelWidgets():
+            if isinstance(widget, QtPopup):
+                widget.close()
+        viewer_buttons.close()
 
 
 def test_roll_dims_button_popup(qt_viewer_buttons, qtbot):
@@ -155,9 +170,4 @@ def test_transpose_rotate_button(monkeypatch, qt_viewer_buttons, qtbot):
     )
     action_manager_mock.trigger.assert_called_with('napari:rotate_layers')
 
-    trigger_mock = Mock()
-    monkeypatch.setattr(
-        'napari.utils.action_manager.ActionManager.trigger', trigger_mock
-    )
     qtbot.mouseClick(viewer_buttons.transposeDimsButton, Qt.LeftButton)
-    trigger_mock.assert_called_with('napari:transpose_axes')

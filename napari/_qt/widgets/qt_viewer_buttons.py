@@ -1,43 +1,34 @@
 import warnings
-from functools import partial, wraps
-from typing import TYPE_CHECKING
+from functools import wraps
+from typing import TYPE_CHECKING, Optional
 
+from app_model.expressions import get_context
 from qtpy.QtCore import QEvent, QPoint, Qt
 from qtpy.QtWidgets import (
+    QAction,
     QApplication,
     QFormLayout,
     QFrame,
     QHBoxLayout,
     QLabel,
     QPushButton,
+    QSizePolicy,
     QSlider,
     QVBoxLayout,
+    QWidget,
 )
 
+from napari._app_model.constants._menus import MenuId
+from napari._qt._qapp_model import build_qmodel_menu, build_qmodel_toolbar
 from napari._qt.dialogs.qt_modal import QtPopup
 from napari._qt.widgets.qt_dims_sorter import QtDimsSorter
 from napari._qt.widgets.qt_spinbox import QtSpinBox
 from napari._qt.widgets.qt_tooltip import QtToolTipLabel
 from napari.utils.action_manager import action_manager
-from napari.utils.misc import in_ipython, in_jupyter, in_python_repl
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from napari.viewer import ViewerModel
-
-
-def add_new_points(viewer):
-    viewer.add_points(
-        ndim=max(viewer.dims.ndim, 2),
-        scale=viewer.layers.extent.step,
-    )
-
-
-def add_new_shapes(viewer):
-    viewer.add_shapes(
-        ndim=max(viewer.dims.ndim, 2),
-        scale=viewer.layers.extent.step,
-    )
 
 
 class QtLayerButtons(QFrame):
@@ -50,13 +41,13 @@ class QtLayerButtons(QFrame):
 
     Attributes
     ----------
-    deleteButton : QtDeleteButton
+    deleteButton : qtpy.QtWidgets.QToolButton
         Button to delete selected layers.
-    newLabelsButton : QtViewerPushButton
+    newLabelsButton : qtpy.QtWidgets.QToolButton
         Button to add new Label layer.
-    newPointsButton : QtViewerPushButton
+    newPointsButton : qtpy.QtWidgets.QToolButton
         Button to add new Points layer.
-    newShapesButton : QtViewerPushButton
+    newShapesButton : qtpy.QtWidgets.QToolButton
         Button to add new Shapes layer.
     viewer : napari.components.ViewerModel
         Napari viewer containing the rendered scene, layers, and controls.
@@ -67,35 +58,87 @@ class QtLayerButtons(QFrame):
 
         self.viewer = viewer
 
-        self.deleteButton = QtViewerPushButton(
-            'delete_button', action='napari:delete_selected_layers'
+        # Setup toolbar
+        self._menu = build_qmodel_menu(
+            MenuId.VIEWER_NEW_DELETE_LAYER, parent=self
+        )
+        self.toolbar = build_qmodel_toolbar(
+            MenuId.VIEWER_NEW_DELETE_LAYER,
+            title='Layer creation controls',
+            parent=self,
         )
 
-        self.newPointsButton = QtViewerPushButton(
-            'new_points',
-            trans._('New points layer'),
-            partial(add_new_points, self.viewer),
+        # TODO: Insert empty widget/spacer after new labels button/before delete button
+        # Setup controls/buttons
+        new_points_action = self._menu.findAction(
+            'napari.viewer.new_layer.new_points'
+        )
+        new_points_tool = self.toolbar.widgetForAction(new_points_action)
+        new_points_tool.setProperty('mode', 'new_points')
+        self.newPointsButton = new_points_tool
+
+        new_shapes_action = self._menu.findAction(
+            'napari.viewer.new_layer.new_shapes'
+        )
+        new_shapes_tool = self.toolbar.widgetForAction(new_shapes_action)
+        new_shapes_tool.setProperty('mode', 'new_shapes')
+        self.newShapesButton = new_shapes_tool
+
+        new_labels_action = self._menu.findAction(
+            'napari.viewer.new_layer.new_labels'
+        )
+        new_labels_tool = self.toolbar.widgetForAction(new_labels_action)
+        new_labels_tool.setProperty('mode', 'new_labels')
+        self.newLabelsButton = new_labels_tool
+
+        delete_action = self._menu.findAction(
+            'napari.viewer.delete_selected_layers'
+        )
+        delete_tool = self.toolbar.widgetForAction(delete_action)
+        delete_tool.setProperty('mode', 'delete_button')
+        self.deleteButton = delete_tool
+
+        empty_widget = QWidget(self)
+        empty_widget.setSizePolicy(
+            QSizePolicy.Expanding, QSizePolicy.Preferred
+        )
+        self.empty_action = self.insert_toolbar_widget(
+            empty_widget, before='napari.viewer.delete_selected_layers'
         )
 
-        self.newShapesButton = QtViewerPushButton(
-            'new_shapes',
-            trans._('New shapes layer'),
-            partial(add_new_shapes, self.viewer),
-        )
-        self.newLabelsButton = QtViewerPushButton(
-            'new_labels',
-            trans._('New labels layer'),
-            self.viewer._new_labels,
-        )
-
+        # Setup layout
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self.newPointsButton)
-        layout.addWidget(self.newShapesButton)
-        layout.addWidget(self.newLabelsButton)
-        layout.addStretch(0)
-        layout.addWidget(self.deleteButton)
+        layout.addWidget(self.toolbar)
         self.setLayout(layout)
+
+    def insert_toolbar_widget(
+        self, widget: QWidget, before: Optional[str] = 'empty'
+    ) -> QAction:
+        """
+        Insert a widget before the widget representing the action with `before` id.
+
+        To add a widget over the left side of the empty space use `empty` as `before` param.
+
+        Parameters
+        ----------
+        widget : QWidget
+            The QWidget instance to add to the toolbar.
+        before : Optional[str], optional
+            The id of the action. The default is 'empty' which represents the empty space widget.
+
+        Returns
+        -------
+        QAction
+            The QAction instance related with the added widget.
+
+        """
+        before_action = (
+            self._menu.findAction(before)
+            if before != 'empty'
+            else self.empty_action
+        )
+        return self.toolbar.insertWidget(before_action, widget)
 
 
 class QtViewerButtons(QFrame):
@@ -108,86 +151,98 @@ class QtViewerButtons(QFrame):
 
     Attributes
     ----------
-    consoleButton : QtViewerPushButton
-        Button to open iPython console within napari.
-    rollDimsButton : QtViewerPushButton
+    consoleButton : qtpy.QtWidgets.QToolButton
+        Button to open IPython console within napari.
+    rollDimsButton : qtpy.QtWidgets.QToolButton
         Button to roll orientation of spatial dimensions in the napari viewer.
-    transposeDimsButton : QtViewerPushButton
+    transposeDimsButton : qtpy.QtWidgets.QToolButton
         Button to transpose dimensions in the napari viewer.
-    resetViewButton : QtViewerPushButton
+    resetViewButton : qtpy.QtWidgets.QToolButton
         Button resetting the view of the rendered scene.
-    gridViewButton : QtViewerPushButton
+    gridViewButton : qtpy.QtWidgets.QToolButton
         Button to toggle grid view mode of layers on and off.
-    ndisplayButton : QtViewerPushButton
+    ndisplayButton : qtpy.QtWidgets.QToolButton
         Button to toggle number of displayed dimensions.
     viewer : napari.components.ViewerModel
         Napari viewer containing the rendered scene, layers, and controls.
+    toolbar : app_model.backends.qt import QModelToolBar
+        app-model toolbar that gets populated with viewer menu actions.
     """
 
     def __init__(self, viewer: 'ViewerModel') -> None:
         super().__init__()
 
+        # General attributes
         self.viewer = viewer
 
-        self.consoleButton = QtViewerPushButton(
-            'console', action='napari:toggle_console_visibility'
+        # Toolbar attributes
+        self._menu = build_qmodel_menu(MenuId.VIEWER_CONTROLS, parent=self)
+        self.toolbar = build_qmodel_toolbar(
+            MenuId.VIEWER_CONTROLS, title='Viewer controls', parent=self
         )
-        self.consoleButton.setProperty('expanded', False)
-        if in_ipython() or in_jupyter() or in_python_repl():
-            self.consoleButton.setEnabled(False)
 
-        rdb = QtViewerPushButton('roll', action='napari:roll_axes')
-        self.rollDimsButton = rdb
-        rdb.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        rdb.customContextMenuRequested.connect(self._open_roll_popup)
+        @self.viewer.events.update_ctx.connect
+        def _update_toolbar_from_context(event):
+            ctx = get_context(event.source)
+            self.toolbar.update_from_context(ctx)
 
-        self.transposeDimsButton = QtViewerPushButton(
-            'transpose',
-            action='napari:transpose_axes',
-            extra_tooltip_text=trans._(
-                '\nAlt/option-click to rotate visible axes'
-            ),
+        # Setup controls/buttons
+        console_action = self._menu.findAction(
+            'napari.viewer.toggle_console_visibility'
         )
+        console_tool = self.toolbar.widgetForAction(console_action)
+        console_tool.setProperty('mode', 'console')
+        console_tool.setProperty('expanded', False)
+        self.consoleButton = console_tool
+
+        roll_action = self._menu.findAction('napari.viewer.roll_axes')
+        roll_tool = self.toolbar.widgetForAction(roll_action)
+        roll_tool.setProperty('mode', 'roll')
+        roll_tool.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        roll_tool.customContextMenuRequested.connect(self._open_roll_popup)
+        self.rollDimsButton = roll_tool
+
+        transpose_action = self._menu.findAction(
+            'napari.viewer.transpose_axes'
+        )
+        transpose_tool = self.toolbar.widgetForAction(transpose_action)
+        transpose_tool.setProperty('mode', 'transpose')
+        self.transposeDimsButton = transpose_tool
         self.transposeDimsButton.installEventFilter(self)
 
-        self.resetViewButton = QtViewerPushButton(
-            'home', action='napari:reset_view'
+        reset_view_action = self._menu.findAction('napari.viewer.reset_view')
+        reset_view_tool = self.toolbar.widgetForAction(reset_view_action)
+        reset_view_tool.setProperty('mode', 'home')
+        self.resetViewButton = reset_view_tool
+
+        grid_view_action = self._menu.findAction('napari.viewer.toggle_grid')
+        grid_view_tool = self.toolbar.widgetForAction(grid_view_action)
+        grid_view_tool.setProperty('mode', 'grid_view_button')
+        grid_view_tool.setContextMenuPolicy(
+            Qt.ContextMenuPolicy.CustomContextMenu
         )
-        gvb = QtViewerPushButton(
-            'grid_view_button', action='napari:toggle_grid'
+        grid_view_tool.customContextMenuRequested.connect(
+            self._open_grid_popup
         )
-        self.gridViewButton = gvb
-        gvb.setCheckable(True)
-        gvb.setChecked(viewer.grid.enabled)
-        gvb.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        gvb.customContextMenuRequested.connect(self._open_grid_popup)
+        self.gridViewButton = grid_view_tool
 
-        @self.viewer.grid.events.enabled.connect
-        def _set_grid_mode_checkstate(event):
-            gvb.setChecked(event.value)
-
-        ndb = QtViewerPushButton(
-            'ndisplay_button', action='napari:toggle_ndisplay'
+        ndisplay_action = self._menu.findAction(
+            'napari.viewer.toggle_ndisplay'
         )
-        self.ndisplayButton = ndb
-        ndb.setCheckable(True)
-        ndb.setChecked(self.viewer.dims.ndisplay == 3)
-        ndb.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        ndb.customContextMenuRequested.connect(self.open_perspective_popup)
+        ndisplay_tool = self.toolbar.widgetForAction(ndisplay_action)
+        ndisplay_tool.setProperty('mode', 'ndisplay_button')
+        ndisplay_tool.setContextMenuPolicy(
+            Qt.ContextMenuPolicy.CustomContextMenu
+        )
+        ndisplay_tool.customContextMenuRequested.connect(
+            self.open_perspective_popup
+        )
+        self.ndisplayButton = ndisplay_tool
 
-        @self.viewer.dims.events.ndisplay.connect
-        def _set_ndisplay_mode_checkstate(event):
-            ndb.setChecked(event.value == 3)
-
+        # Setup layout
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self.consoleButton)
-        layout.addWidget(self.ndisplayButton)
-        layout.addWidget(self.rollDimsButton)
-        layout.addWidget(self.transposeDimsButton)
-        layout.addWidget(self.gridViewButton)
-        layout.addWidget(self.resetViewButton)
-        layout.addStretch(0)
+        layout.addWidget(self.toolbar)
         self.setLayout(layout)
 
     def eventFilter(self, qobject, event):
@@ -421,6 +476,7 @@ class QtViewerPushButton(QPushButton):
         action: str = '',
         extra_tooltip_text: str = '',
     ) -> None:
+        # TODO: Should the class be marked as deprecated or be changed to use the app-model command registry (`execute_command`)?
         super().__init__()
 
         self.setToolTip(tooltip or button_name)
