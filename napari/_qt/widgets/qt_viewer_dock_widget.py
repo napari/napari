@@ -160,13 +160,13 @@ class QtViewerDockWidget(QDockWidget):
             return
         settings = get_settings()
         if value == Qt.DockWidgetArea.LeftDockWidgetArea:
-            settings.application.plugins_widget_positions[self.name] = 'left'
+            settings.application.plugin_widget_positions[self.name] = 'left'
         elif value == Qt.DockWidgetArea.RightDockWidgetArea:
-            settings.application.plugins_widget_positions[self.name] = 'right'
+            settings.application.plugin_widget_positions[self.name] = 'right'
         elif value == Qt.DockWidgetArea.TopDockWidgetArea:
-            settings.application.plugins_widget_positions[self.name] = 'top'
+            settings.application.plugin_widget_positions[self.name] = 'top'
         elif value == Qt.DockWidgetArea.BottomDockWidgetArea:
-            settings.application.plugins_widget_positions[self.name] = 'bottom'
+            settings.application.plugin_widget_positions[self.name] = 'bottom'
         settings._maybe_save()
 
     @property

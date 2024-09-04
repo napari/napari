@@ -213,11 +213,11 @@ class ApplicationSettings(EventedModel):
         ),
     )
 
-    plugins_widget_positions: dict[str, str] = Field(
+    plugin_widget_positions: dict[str, str] = Field(
         default={},
-        title=trans._('Plugins widget positions'),
+        title=trans._('Plugin widget positions'),
         description=trans._(
-            'Last saved positions of plugins dockwidgets. This setting is managed by the application.'
+            'Per-widget last saved position of plugin dock widgets. This setting is managed by the application.'
         ),
     )
 
@@ -247,5 +247,5 @@ class ApplicationSettings(EventedModel):
             'open_history',
             'save_history',
             'ipy_interactive',
-            'plugins_widget_positions',
+            'plugin_widget_positions',
         )
