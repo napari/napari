@@ -1108,7 +1108,7 @@ class Window:
         widget: Union[QWidget, 'Widget'],
         *,
         name: str = '',
-        area: str = 'right',
+        area: Optional[str] = None,
         allowed_areas: Optional[Sequence[str]] = None,
         shortcut=_sentinel,
         add_vertical_stretch=True,
@@ -1164,6 +1164,12 @@ class Window:
             )
 
             self._unnamed_dockwidget_count += 1
+
+        if area is None:
+            settings = get_settings()
+            area = settings.application.plugins_widget_positions.get(
+                name, 'right'
+            )
 
         if shortcut is not _sentinel:
             warnings.warn(

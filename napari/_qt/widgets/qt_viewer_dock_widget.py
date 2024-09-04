@@ -18,6 +18,7 @@ from qtpy.QtWidgets import (
 )
 
 from napari._qt.utils import combine_widgets, qt_signals_blocked
+from napari.settings import get_settings
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -151,6 +152,22 @@ class QtViewerDockWidget(QDockWidget):
         )
         self.setTitleBarWidget(self.title)
         self.visibilityChanged.connect(self._on_visibility_changed)
+
+        self.dockLocationChanged.connect(self._update_default_dock_area)
+
+    def _update_default_dock_area(self, value):
+        if value == Qt.DockWidgetArea.NoDockWidgetArea:
+            return
+        settings = get_settings()
+        if value == Qt.DockWidgetArea.LeftDockWidgetArea:
+            settings.application.plugins_widget_positions[self.name] = 'left'
+        elif value == Qt.DockWidgetArea.RightDockWidgetArea:
+            settings.application.plugins_widget_positions[self.name] = 'right'
+        elif value == Qt.DockWidgetArea.TopDockWidgetArea:
+            settings.application.plugins_widget_positions[self.name] = 'top'
+        elif value == Qt.DockWidgetArea.BottomDockWidgetArea:
+            settings.application.plugins_widget_positions[self.name] = 'bottom'
+        settings.save()
 
     @property
     def _parent(self):
