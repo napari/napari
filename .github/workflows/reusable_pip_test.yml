@@ -22,10 +22,23 @@ jobs:
 
       - uses: tlambert03/setup-qt-libs@v1
 
-      - name: Install this commit
+      - name: Build wheel
         run: |
-          pip install --upgrade pip
-          pip install "./napari-from-github[pyqt,testing]"
+          pip install --upgrade pip build
+          python -m build "./napari-from-github"
+          # there is a bug in build/setuptools that build only wheel will ignore manifest content.
+          # so we need to build sdist first and then build wheel
+
+      - name: get wheel path
+        run: |
+          WHEEL_PATH=$(ls napari-from-github/dist/*.whl)
+          echo "WHEEL_PATH=$WHEEL_PATH" >> "$GITHUB_ENV"
+
+      - name: Install napari from wheel
+        run: |
+          pip install "${{ env.WHEEL_PATH }}[pyqt,testing]"
+        shell:
+            bash
         env:
           PIP_CONSTRAINT: napari-from-github/resources/constraints/constraints_py3.9.txt
 
@@ -42,7 +55,8 @@ jobs:
 
       - name: Upload test artifacts
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.4.0
         with:
           name: test artifacts pip install
           path: .pytest_tmp
+          include-hidden-files: true

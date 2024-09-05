@@ -245,7 +245,7 @@ def _run() -> None:
             )
         # I *think* that Qt is looking in sys.argv for a flag `--plugins`,
         # which emits "WARNING: No such plugin for spec 'builtins'"
-        # so remove --plugin from sys.argv to prevent that warningz
+        # so remove --plugin from sys.argv to prevent that warning
         sys.argv.remove('--plugin')
 
     if any(p.endswith('.py') for p in args.paths):

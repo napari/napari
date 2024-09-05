@@ -1712,12 +1712,15 @@ class Shapes(Layer):
         }
 
         # don't update thumbnail on mode changes
-        with self.block_thumbnail_update():
-            if not (mode in draw_modes and self._mode in draw_modes):
-                # Shapes._finish_drawing() calls Shapes.refresh()
+        if not (mode in draw_modes and self._mode in draw_modes):
+            # Shapes._finish_drawing() calls Shapes.refresh() via Shapes._update_dims()
+            # so we need to block thumbnail update from here
+            # TODO: this is not great... ideally we should no longer need this blocking system
+            #       but maybe follow up PR
+            with self.block_thumbnail_update():
                 self._finish_drawing()
-            else:
-                self.refresh()
+        else:
+            self.refresh(data_displayed=False, extent=False, thumbnail=False)
 
     def _reset_editable(self) -> None:
         self.editable = self._slice_input.ndisplay == 2
@@ -2396,7 +2399,7 @@ class Shapes(Layer):
 
     def interaction_box(self, index):
         """Create the interaction box around a shape or list of shapes.
-        If a single index is passed then the boudning box will be inherited
+        If a single index is passed then the bounding box will be inherited
         from that shapes interaction box. If list of indices is passed it will
         be computed directly.
 
@@ -2501,7 +2504,7 @@ class Shapes(Layer):
         """
         if len(self.selected_data) > 0:
             if self._mode == Mode.SELECT:
-                # If in select mode just show the interaction boudning box
+                # If in select mode just show the interaction bounding box
                 # including its vertices and the rotation handle
                 box = self._selected_box[Box.WITH_HANDLE]
                 if self._value[0] is None or self._value[1] is None:
@@ -2589,12 +2592,10 @@ class Shapes(Layer):
             and np.array_equal(self._drag_box, self._drag_box_stored)
         ) and not force:
             return
-        prev_selected = self._selected_data_stored
         self._selected_data_stored = copy(self.selected_data)
         self._value_stored = copy(self._value)
         self._drag_box_stored = copy(self._drag_box)
-        if prev_selected != self._selected_data_stored:
-            self.events.highlight()
+        self.events.highlight()
 
     def _finish_drawing(self, event=None) -> None:
         """Reset properties used in shape drawing."""
@@ -3010,7 +3011,7 @@ class Shapes(Layer):
         new_z_index = max(self._data_view._z_index) + 1
         for index in self.selected_data:
             self._data_view.update_z_index(index, new_z_index)
-        self.refresh()
+        self.refresh(extent=False, highlight=False)
 
     def move_to_back(self) -> None:
         """Moves selected objects to be displayed behind all others."""
@@ -3019,7 +3020,7 @@ class Shapes(Layer):
         new_z_index = min(self._data_view._z_index) - 1
         for index in self.selected_data:
             self._data_view.update_z_index(index, new_z_index)
-        self.refresh()
+        self.refresh(extent=False, highlight=False)
 
     def _copy_data(self) -> None:
         """Copy selected shapes to clipboard."""

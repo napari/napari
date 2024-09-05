@@ -372,7 +372,7 @@ class ScalarFieldBase(Layer, ABC):
         if self._data_level == level:
             return
         self._data_level = level
-        self.refresh()
+        self.refresh(extent=False)
 
     def _get_level_shapes(self):
         data = self.data

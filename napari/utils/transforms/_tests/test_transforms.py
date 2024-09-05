@@ -248,7 +248,7 @@ def test_affine_matrix_compose(dimensionality):
     np.testing.assert_almost_equal(transform_A.affine_matrix, A)
     np.testing.assert_almost_equal(transform_B.affine_matrix, B)
 
-    # Compose tranform and directly matrix multiply
+    # Compose transform and directly matrix multiply
     transform_C = transform_B.compose(transform_A)
     C = B @ A
     np.testing.assert_almost_equal(transform_C.affine_matrix, C)

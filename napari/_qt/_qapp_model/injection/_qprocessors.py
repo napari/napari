@@ -125,7 +125,7 @@ def _add_layer_to_viewer(
         viewer.add_layer(layer)
 
 
-# here to prevent garbace collection of the future object while processing.
+# here to prevent garbage collection of the future object while processing.
 _FUTURES: set[Future] = set()
 
 
