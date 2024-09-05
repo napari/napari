@@ -84,22 +84,22 @@ def main():
     vendored_modules = []
     for org, reponame, tag, source, target in [
         ("albertosottile", "darkdetect", "master", None, None),
-        (
-            "matplotlib",
-            "matplotlib",
-            "v3.7.1",
-            [
-                # this file seem to be post 3.0.3 but pre 3.1
-                # plus there may have been custom changes.
-                # 'lib/matplotlib/colors.py',
-                #
-                # this file seem much more recent, but is touched much more rarely.
-                # it is at least from 3.2.1 as the turbo colormap is present and
-                # was added in matplotlib in 3.2.1
-                'lib/matplotlib/_cm_listed.py'
-            ],
-            'utils/colormaps/vendored/',
-        ),
+        # (
+        #     "matplotlib",
+        #     "matplotlib",
+        #     "v3.7.1",
+        #     [
+        #         # this file seem to be post 3.0.3 but pre 3.1
+        #         # plus there may have been custom changes.
+        #         # 'lib/matplotlib/colors.py',
+        #         #
+        #         # this file seem much more recent, but is touched much more rarely.
+        #         # it is at least from 3.2.1 as the turbo colormap is present and
+        #         # was added in matplotlib in 3.2.1
+        #         'lib/matplotlib/_cm_listed.py'
+        #     ],
+        #     'utils/colormaps/vendored/',
+        # ),
     ]:
         print(f"\n * Checking '{org}/{reponame}'\n")
         if source is None:
