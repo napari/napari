@@ -349,7 +349,7 @@ def test_layers_populate_immediately(make_napari_viewer):
     assert len(labels_layer.choices) == 1
 
 
-def test_from_layer_data_tuple_accept_deprecated_dict(make_napari_viewer):
+def test_from_layer_data_tuple_accept_deprecating_dict(make_napari_viewer):
     """Test that a function returning a layer data tuple runs without error."""
     viewer = make_napari_viewer()
 
