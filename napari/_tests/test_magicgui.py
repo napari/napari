@@ -11,6 +11,7 @@ from napari import Viewer, layers, types
 from napari._tests.utils import layer_test_data
 from napari.layers import Image, Labels, Layer
 from napari.utils._proxies import PublicOnlyProxy
+from napari.utils.migrations import _DeprecatingDict
 from napari.utils.misc import all_subclasses
 
 if TYPE_CHECKING:
@@ -355,7 +356,7 @@ def test_from_layer_data_tuple(make_napari_viewer):
     @magicgui
     def from_layer_data_tuple() -> types.LayerDataTuple:
         data = np.random.rand(10, 10)
-        meta = {'name': 'test_image'}
+        meta = _DeprecatingDict({'name': 'test_image'})
         layer_type = 'image'
         return data, meta, layer_type
 
