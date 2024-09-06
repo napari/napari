@@ -34,6 +34,13 @@ _SHORTCUT_DEPRECATION_STRING = trans._(
     shortcut='{shortcut}',
 )
 
+dock_area_to_str = {
+    Qt.DockWidgetArea.LeftDockWidgetArea: 'left',
+    Qt.DockWidgetArea.RightDockWidgetArea: 'right',
+    Qt.DockWidgetArea.TopDockWidgetArea: 'top',
+    Qt.DockWidgetArea.BottomDockWidgetArea: 'bottom',
+}
+
 
 class QtViewerDockWidget(QDockWidget):
     """Wrap a QWidget in a QDockWidget and forward viewer events
@@ -156,17 +163,12 @@ class QtViewerDockWidget(QDockWidget):
         self.dockLocationChanged.connect(self._update_default_dock_area)
 
     def _update_default_dock_area(self, value):
-        if value == Qt.DockWidgetArea.NoDockWidgetArea:
+        if value not in dock_area_to_str:
             return
         settings = get_settings()
-        if value == Qt.DockWidgetArea.LeftDockWidgetArea:
-            settings.application.plugin_widget_positions[self.name] = 'left'
-        elif value == Qt.DockWidgetArea.RightDockWidgetArea:
-            settings.application.plugin_widget_positions[self.name] = 'right'
-        elif value == Qt.DockWidgetArea.TopDockWidgetArea:
-            settings.application.plugin_widget_positions[self.name] = 'top'
-        elif value == Qt.DockWidgetArea.BottomDockWidgetArea:
-            settings.application.plugin_widget_positions[self.name] = 'bottom'
+        settings.application.plugin_widget_positions[self.name] = (
+            dock_area_to_str[value]
+        )
         settings._maybe_save()
 
     @property
