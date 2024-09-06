@@ -744,13 +744,37 @@ def _dangling_qanimations(monkeypatch, request):
     )
 
 
+@pytest.fixture
+def _find_dangling_widgets(request):
+    yield
+
+    from qtpy.QtWidgets import QApplication
+
+    top_level_widgets = QApplication.topLevelWidgets()
+
+    qtbot_widgets = getattr(request.node, 'qt_widgets', [])
+
+    for widget in top_level_widgets:
+        for widget_ref in qtbot_widgets:
+            if widget_ref() is widget:
+                break
+        else:
+            raise RuntimeError(
+                f'Found dangling widget {widget} of type {type(widget)}'
+            )
+
+
 def pytest_runtest_setup(item):
     if 'qapp' in item.fixturenames:
         # here we do autouse for dangling fixtures only if qapp is used
         if 'qtbot' not in item.fixturenames:
             # for proper waiting for threads to finish
             item.fixturenames.append('qtbot')
-
+        if 'make_napari_viewer' in item.fixturenames:
+            viewer_index = item.fixturenames.index('make_napari_viewer')
+            item.fixturenames.insert(viewer_index, '_find_dangling_widgets')
+        else:
+            item.fixturenames.append('_find_dangling_widgets')
         item.fixturenames.extend(
             [
                 '_dangling_qthread_pool',
