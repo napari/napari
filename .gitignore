@@ -1,6 +1,7 @@
 docs
 # Byte-compiled / optimized / DLL files
-.tools/vendored_modules.txt
+tools/vendored_modules.txt
+tools/matplotlib
 
 __pycache__/
 *.py[cod]
