@@ -753,8 +753,13 @@ def _find_dangling_widgets(request):
     top_level_widgets = QApplication.topLevelWidgets()
 
     qtbot_widgets = getattr(request.node, 'qt_widgets', [])
+    viewer_weak_set = getattr(request.node, '_viewer_weak_set', set())
 
     for widget in top_level_widgets:
+        if widget.parent() is not None:
+            continue
+        if widget._qt_viewer.viewer in viewer_weak_set:
+            continue
         for widget_ref in qtbot_widgets:
             if widget_ref() is widget:
                 break
@@ -770,13 +775,9 @@ def pytest_runtest_setup(item):
         if 'qtbot' not in item.fixturenames:
             # for proper waiting for threads to finish
             item.fixturenames.append('qtbot')
-        if 'make_napari_viewer' in item.fixturenames:
-            viewer_index = item.fixturenames.index('make_napari_viewer')
-            item.fixturenames.insert(viewer_index, '_find_dangling_widgets')
-        else:
-            item.fixturenames.append('_find_dangling_widgets')
         item.fixturenames.extend(
             [
+                '_find_dangling_widgets',
                 '_dangling_qthread_pool',
                 '_dangling_qanimations',
                 '_dangling_qthreads',

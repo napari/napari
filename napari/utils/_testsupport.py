@@ -268,6 +268,7 @@ def make_napari_viewer(
     init_qactions.cache_clear()
 
     viewers: WeakSet[Viewer] = WeakSet()
+    request.node._viewer_weak_set = viewers
 
     # may be overridden by using the parameter `strict_qt`
     _strict = False
