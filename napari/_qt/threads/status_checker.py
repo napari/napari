@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from threading import Event
 from typing import TYPE_CHECKING
 from weakref import ref
@@ -69,6 +70,12 @@ class StatusChecker(QThread):
         self._terminate = True
         self._need_status_update.set()
 
+    def start(
+        self, priority: QThread.Priority = QThread.Priority.InheritPriority
+    ) -> None:
+        self._terminate = False
+        super().start(priority)
+
     def run(self) -> None:
         while not self._terminate:
             if self.viewer_ref() is None:
@@ -101,3 +108,11 @@ class StatusChecker(QThread):
             # We do not want to crash the thread to keep the status updates.
             notification_manager.dispatch(Notification.from_exception(e))
         self.status_and_tooltip_changed.emit(res)
+
+
+if os.environ.get('ASV') == 'true':
+    # This is a hack to make sure that the StatusChecker thread is not
+    # running when the benchmark is running. This is because the
+    # StatusChecker thread may introduce some noise in the benchmark
+    # results from waiting on its termination.
+    StatusChecker.start = lambda self, priority=0: None  # type: ignore[assignment]

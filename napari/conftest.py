@@ -292,6 +292,21 @@ def tmp_plugin(npe2pm_: TestPluginManager):
         yield plugin
 
 
+@pytest.fixture(autouse=True)
+def _clear_cached_action_injection():
+    """Automatically clear cached property `Action.injected`.
+
+    Allows action manager actions to be injected using current provider/processors
+    and dependencies. See #7219 for details.
+    To be removed after ActionManager deprecation.
+    """
+    from napari.utils.action_manager import action_manager
+
+    for action in action_manager._actions.values():
+        if 'injected' in action.__dict__:
+            del action.__dict__['injected']
+
+
 def _event_check(instance):
     def _prepare_check(name, no_event_):
         def check(instance, no_event=no_event_):
