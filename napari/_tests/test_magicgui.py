@@ -355,7 +355,7 @@ def test_from_layer_data_tuple_accept_deprecating_dict(make_napari_viewer):
 
     @magicgui
     def from_layer_data_tuple() -> types.LayerDataTuple:
-        data = np.zeros(10, 10)
+        data = np.zeros((10, 10))
         meta = _DeprecatingDict({'name': 'test_image'})
         layer_type = 'image'
         return data, meta, layer_type
