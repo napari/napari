@@ -77,7 +77,6 @@ def read_data_with_plugins(
 
     res = _npe2.read(paths, plugin, stack=stack)
     if res is not None:
-        ld_: Sequence[LayerData]
         ld_, hookimpl = res
         return [] if _is_null_layer_sentinel(ld_) else list(ld_), hookimpl
 
