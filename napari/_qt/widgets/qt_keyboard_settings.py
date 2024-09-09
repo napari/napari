@@ -294,14 +294,14 @@ class ShortcutEditor(QWidget):
 
     def _get_layer_actions(self):
         """
-        Get all the actions that could potencially raise a keybinding conflict
+        Get all the actions that could potentially raise a keybinding conflict
         taking into account the current selected keybinding group.
 
         Returns
         -------
         actions_all: tuple
             Tuple with tuples of actions that can potencially enter in conflict
-            when changing keybindings.The returned tuple is formated in the
+            when changing keybindings.The returned tuple is formatted in the
             following way:
                 (
                     ('keybinding_group_1', ('action_name', action)),
