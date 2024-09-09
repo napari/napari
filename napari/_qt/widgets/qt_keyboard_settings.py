@@ -292,7 +292,7 @@ class ShortcutEditor(QWidget):
             item.setFlags(Qt.ItemFlag.NoItemFlags)
             self._table.setItem(0, 0, item)
 
-    def _get_layer_actions(self):
+    def _get_potential_conflicting_actions(self):
         """
         Get all actions we want to avoid keybinding conflicts with.
 
@@ -356,9 +356,11 @@ class ShortcutEditor(QWidget):
     def _mark_conflicts(self, new_shortcut, row) -> bool:
         # Go through all layer actions to determine if the new shortcut is already here.
         current_action = self._table.item(row, self._action_col).text()
-        actions_all = self._get_layer_actions()
+        actions_all = self._get_potential_conflicting_actions()
         current_item = self._table.currentItem()
-        for row1, (group, (action_name, action)) in enumerate(actions_all):
+        for conflicting_row, (group, (action_name, action)) in enumerate(
+            actions_all
+        ):
             shortcuts = action_manager._shortcuts.get(action_name, [])
 
             if Shortcut(new_shortcut).qt not in [
@@ -370,7 +372,7 @@ class ShortcutEditor(QWidget):
                 # the shortcut is saved to a different action
 
                 # show warning symbols
-                self._show_warning_icons([row, row1])
+                self._show_warning_icons([row, conflicting_row])
 
                 # show warning message
                 message = trans._(
@@ -383,7 +385,7 @@ class ShortcutEditor(QWidget):
 
                 self._restore_shortcuts(row)
 
-                self._cleanup_warning_icons([row, row1])
+                self._cleanup_warning_icons([row, conflicting_row])
 
                 return False
 
