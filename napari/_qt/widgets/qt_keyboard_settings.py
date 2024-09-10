@@ -344,11 +344,43 @@ class ShortcutEditor(QWidget):
                 else ''
             )
 
+    def _show_conflicts_warning(
+        self, new_shortcut, conflicting_actions, conflicting_rows
+    ):
+        # create string listing info of all the conflicts found
+        conflicting_actions_string = '<ul>'
+        for group, action_description in conflicting_actions:
+            conflicting_actions_string += trans._(
+                '<li><b>{action_description}</b> in the <b>{group}</b> group</li>',
+                action_description=action_description,
+                group=group,
+            )
+        conflicting_actions_string += '</ul>'
+
+        # show warning symbols
+        self._show_warning_icons(conflicting_rows)
+
+        # show warning message
+        message = trans._(
+            'The keybinding <b>{new_shortcut}</b> is already assigned to:'
+            '{conflicting_actions_string}'
+            'Change or clear conflicting shortcuts before assigning <b>{new_shortcut}</b> to this one.',
+            new_shortcut=new_shortcut,
+            conflicting_actions_string=conflicting_actions_string,
+        )
+        self._show_warning(conflicting_rows[0], message)
+
+        self._restore_shortcuts(conflicting_rows[0])
+
+        self._cleanup_warning_icons(conflicting_rows)
+
     def _mark_conflicts(self, new_shortcut, row) -> bool:
         # Go through all layer actions to determine if the new shortcut is already here.
         current_action = self._table.item(row, self._action_col).text()
         actions_all = self._get_potential_conflicting_actions()
         current_item = self._table.currentItem()
+        conflicting_rows = [row]
+        conflicting_actions = []
         for conflicting_row, (group, (action_name, action)) in enumerate(
             actions_all
         ):
@@ -358,32 +390,27 @@ class ShortcutEditor(QWidget):
                 Shortcut(shortcut).qt for shortcut in shortcuts
             ]:
                 continue
+
             # Shortcut is here (either same action or not), don't replace in settings.
             if action_name != current_action:
-                # the shortcut is saved to a different action
-
-                # show warning symbols
-                self._show_warning_icons([row, conflicting_row])
-
-                # show warning message
-                message = trans._(
-                    'The keybinding <b>{new_shortcut}</b>  is already assigned to <b>{action_description}</b> in the <b>{group}</b> group; change or clear that shortcut before assigning <b>{new_shortcut}</b> to this one.',
-                    new_shortcut=new_shortcut,
-                    action_description=action.description,
-                    group=group,
-                )
-                self._show_warning(row, message)
-
-                self._restore_shortcuts(row)
-
-                self._cleanup_warning_icons([row, conflicting_row])
-
-                return False
+                # the shortcut is saved to a different action, save conflicting shortcut info
+                if conflicting_row < self._table.rowCount():
+                    # only save row number for conflicts that are inside the current table
+                    conflicting_rows.append(conflicting_row)
+                conflicting_actions.append((group, action.description))
 
             # This shortcut was here.  Reformat and reset text.
             format_shortcut = Shortcut(new_shortcut).platform
             with lock_keybind_update(self):
                 current_item.setText(format_shortcut)
+
+        if len(conflicting_actions) > 0:
+            # show conflicts message and mark conflicting rows as necessary
+            self._show_conflicts_warning(
+                new_shortcut, conflicting_actions, conflicting_rows
+            )
+
+            return False
 
         return True
 
@@ -546,14 +573,6 @@ class ShortcutEditor(QWidget):
             text=message,
         )
         self._warn_dialog.move(global_point)
-
-        # Styling adjustments.
-        self._warn_dialog.resize(250, self._warn_dialog.sizeHint().height())
-
-        self._warn_dialog._message.resize(
-            200, self._warn_dialog._message.sizeHint().height()
-        )
-
         self._warn_dialog.exec_()
 
     def value(self):
