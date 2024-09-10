@@ -1,4 +1,5 @@
 import contextlib
+import itertools
 import sys
 from collections import OrderedDict
 from typing import Optional
@@ -303,42 +304,32 @@ class ShortcutEditor(QWidget):
 
         Returns
         -------
-        actions_all: tuple[str, tuple[str, Action]]
+        actions_all: list[tuple[str, tuple[str, Action]]]
             Tuple of group names and actions, to avoid keybinding
             conflicts with.
             Format:
-                (
+                [
                     ('keybinding_group', ('action_name', Action)),
                     ...
-                )
+                ]
         """
         current_layer_text = self.layer_combo_box.currentText()
-        layer_actions = self.key_bindings_strs[current_layer_text]
-        actions_all = tuple(
-            zip(
-                (current_layer_text,) * len(layer_actions.items()),
-                layer_actions.items(),
-            )
-        )
+        actions_all = list(self._get_group_actions(current_layer_text))
+
         if current_layer_text != self.VIEWER_KEYBINDINGS:
-            viewer_actions = self.key_bindings_strs[self.VIEWER_KEYBINDINGS]
-            actions_all += tuple(
-                zip(
-                    (self.VIEWER_KEYBINDINGS,) * len(viewer_actions.items()),
-                    viewer_actions.items(),
-                )
+            actions_all = list(self._get_group_actions(current_layer_text))
+            actions_all.extend(
+                self._get_group_actions(self.VIEWER_KEYBINDINGS)
             )
         else:
-            for group, keybindings in self.key_bindings_strs.items():
-                if group != self.VIEWER_KEYBINDINGS:
-                    group_actions = tuple(
-                        zip(
-                            (group,) * len(keybindings.items()),
-                            keybindings.items(),
-                        )
-                    )
-                    actions_all += group_actions
+            actions_all = []
+            for group in self.key_bindings_strs:
+                actions_all.extend(self._get_group_actions(group))
         return actions_all
+
+    def _get_group_actions(self, group_name):
+        group_actions = self.key_bindings_strs[group_name]
+        return zip(itertools.repeat(group_name), group_actions.items())
 
     def _restore_shortcuts(self, row):
         action_name = self._table.item(row, self._action_col).text()

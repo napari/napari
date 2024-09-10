@@ -1,3 +1,4 @@
+import itertools
 import sys
 from unittest.mock import patch
 
@@ -47,29 +48,27 @@ def test_shortcut_editor_defaults(
     shortcut_editor_widget()
 
 
-def test_layer_actions(shortcut_editor_widget):
+def test_potencially_conflicting_actions(shortcut_editor_widget):
     widget = shortcut_editor_widget()
     assert widget.layer_combo_box.currentText() == widget.VIEWER_KEYBINDINGS
     actions1 = widget._get_potential_conflicting_actions()
-    expected_actions1 = ()
+    expected_actions1 = []
     for group, keybindings in widget.key_bindings_strs.items():
-        expected_actions1 += tuple(
-            zip((group,) * len(keybindings.items()), keybindings.items())
+        expected_actions1.extend(
+            zip(itertools.repeat(group), keybindings.items())
         )
     assert actions1 == expected_actions1
     widget.layer_combo_box.setCurrentText('Labels layer')
     actions2 = widget._get_potential_conflicting_actions()
-    expected_actions2 = tuple(
+    expected_actions2 = list(
         zip(
-            ('Labels layer',)
-            * len(widget.key_bindings_strs['Labels layer'].items()),
+            itertools.repeat('Labels layer'),
             widget.key_bindings_strs['Labels layer'].items(),
         )
     )
-    expected_actions2 += tuple(
+    expected_actions2.extend(
         zip(
-            (widget.VIEWER_KEYBINDINGS,)
-            * len(widget.key_bindings_strs[widget.VIEWER_KEYBINDINGS].items()),
+            itertools.repeat(widget.VIEWER_KEYBINDINGS),
             widget.key_bindings_strs[widget.VIEWER_KEYBINDINGS].items(),
         )
     )
