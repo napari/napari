@@ -40,4 +40,7 @@ class Command(Generic[_R]):
 
     def enabled(self, context) -> bool:
         """Return True if the command is enabled."""
-        return self.enablement.eval(context)
+        try:
+            return self.enablement.eval(context)
+        except NameError:
+            return False

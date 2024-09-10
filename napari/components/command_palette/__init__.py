@@ -7,17 +7,8 @@ __all__ = [
     'Command',
     'get_palette',
     'CommandPalette',
-    'get_napari_command_palette',
     'create_napari_command_palette',
 ]
-
-
-def get_napari_command_palette():
-    """Get the command palette for the current napari app name."""
-    from napari._app_model import get_app
-
-    app = get_app()
-    return get_palette(app.name)
 
 
 def create_napari_command_palette() -> CommandPalette:
@@ -31,5 +22,4 @@ def create_napari_command_palette() -> CommandPalette:
     for menu_or_submenu in all_menus:
         cmd = menu_or_submenu.command
         palette.register(cmd)
-        # palette.register(cmd, enablement=menu_or_submenu.when)
     return palette

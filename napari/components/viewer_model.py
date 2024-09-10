@@ -26,10 +26,6 @@ from napari._pydantic_compat import Extra, Field, PrivateAttr, validator
 from napari.components._layer_slicer import _LayerSlicer
 from napari.components._viewer_mouse_bindings import dims_scroll
 from napari.components.camera import Camera
-from napari.components.command_palette import (
-    CommandPalette,
-    get_napari_command_palette,
-)
 from napari.components.cursor import Cursor, CursorStyle
 from napari.components.dims import Dims
 from napari.components.grid import GridCanvas

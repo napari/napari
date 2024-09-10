@@ -1013,6 +1013,7 @@ class Window:
         if palette.isVisible():
             palette.hide()
         else:
+            palette.update_context(self._qt_window)
             palette.show()
 
     def _toggle_fullscreen(self):

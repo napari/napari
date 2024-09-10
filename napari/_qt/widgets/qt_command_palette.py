@@ -11,7 +11,6 @@ from napari._app_model.context._context import get_context
 
 if TYPE_CHECKING:
     from napari._qt.qt_main_window import _QtMainWindow
-    from napari.components import ViewerModel
     from napari.components.command_palette import Command
 
 
@@ -20,11 +19,11 @@ class QCommandPalette(QtW.QWidget):
 
     hidden = Signal()
 
-    def __init__(self, parent: _QtMainWindow):
+    def __init__(self, parent: QtW.QWidget | None = None):
         super().__init__(parent)
 
         self._line = QCommandLineEdit()
-        self._list = QCommandList(parent._qt_viewer.viewer)
+        self._list = QCommandList()
         _layout = QtW.QVBoxLayout(self)
         _layout.addWidget(self._line)
         _layout.addWidget(self._list)
@@ -50,16 +49,8 @@ class QCommandPalette(QtW.QWidget):
         """Set the color used for the matched characters."""
         return self._list.set_match_color(color)
 
-    def add_command(self, cmd: Command):
-        self._list.add_command(cmd)
-        return
-
     def extend_command(self, list_of_commands: list[Command]):
         self._list.extend_command(list_of_commands)
-        return
-
-    def clear_commands(self):
-        self._list.clear_commands()
         return
 
     def install_to(self, parent: QtW.QWidget):
@@ -79,12 +70,8 @@ class QCommandPalette(QtW.QWidget):
         self.hide()
         return super().focusOutEvent(a0)
 
-    def _qt_window(self) -> _QtMainWindow:
-        return self.parentWidget()
-
-    def update_context(self) -> None:
+    def update_context(self, parent: _QtMainWindow) -> None:
         """Update the context of the palette."""
-        parent = self._qt_window()
         context = {}
         context.update(get_context(parent))
         context.update(get_context(parent._qt_viewer.viewer.layers))
@@ -92,7 +79,6 @@ class QCommandPalette(QtW.QWidget):
         return
 
     def show(self):
-        self.update_context()
         self._line.setText('')
         self._list.update_for_text('')
         super().show()
@@ -117,11 +103,6 @@ class QCommandPalette(QtW.QWidget):
     def text(self) -> str:
         """Return the text in the line edit."""
         return self._line.text()
-
-    def setText(self, text: str):
-        """Set the text in the line edit."""
-        self._line.setText(text)
-        return
 
 
 class QCommandLineEdit(QtW.QLineEdit):
@@ -255,11 +236,8 @@ class QCommandLabel(QtW.QLabel):
 class QCommandList(QtW.QListView):
     commandClicked = Signal(int)  # one of the items is clicked
 
-    def __init__(
-        self, viewer: ViewerModel, parent: QtW.QWidget | None = None
-    ) -> None:
+    def __init__(self, parent: QtW.QWidget | None = None) -> None:
         super().__init__(parent)
-        self._viewer = viewer
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setModel(QCommandMatchModel(self))
         self.setSelectionMode(QtW.QAbstractItemView.SelectionMode.NoSelection)
