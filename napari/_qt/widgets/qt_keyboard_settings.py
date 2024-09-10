@@ -299,7 +299,7 @@ class ShortcutEditor(QWidget):
         If current selected keybinding group is a layer, return
         the selected layer actions and viewer actions.
         If the current selected keybinding group is viewer,
-        return actions from all layers.
+        return viewer actions and actions from all layers.
 
         Returns
         -------
