@@ -69,7 +69,7 @@ exceptiongroup==1.2.2
     #   hypothesis
     #   ipython
     #   pytest
-executing==2.0.1
+executing==2.1.0
     # via stack-data
 fasteners==0.19
     # via zarr
@@ -509,7 +509,7 @@ tensorstore==0.1.64
     # via
     #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari (napari_repo/pyproject.toml)
-tifffile==2024.8.28
+tifffile==2024.8.30
     # via
     #   napari (napari_repo/pyproject.toml)
     #   scikit-image
