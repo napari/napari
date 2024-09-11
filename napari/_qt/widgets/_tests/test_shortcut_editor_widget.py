@@ -48,7 +48,7 @@ def test_shortcut_editor_defaults(
     shortcut_editor_widget()
 
 
-def test_potencially_conflicting_actions(shortcut_editor_widget):
+def test_potentially_conflicting_actions(shortcut_editor_widget):
     widget = shortcut_editor_widget()
     assert widget.layer_combo_box.currentText() == widget.VIEWER_KEYBINDINGS
     actions1 = widget._get_potential_conflicting_actions()
