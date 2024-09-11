@@ -4,7 +4,7 @@ annotated-types==0.7.0
     # via pydantic
 appdirs==1.4.4
     # via npe2
-build==1.2.1
+build==1.2.2
     # via npe2
 certifi==2024.8.30
     # via requests
@@ -28,7 +28,7 @@ mypy-extensions==1.0.0
     # via mypy
 npe2==0.7.7
     # via -r napari_repo/resources/requirements_mypy.in
-numpy==2.1.0
+numpy==2.1.1
     # via -r napari_repo/resources/requirements_mypy.in
 packaging==24.1
     # via
@@ -40,11 +40,11 @@ psygnal==0.11.1
     #   npe2
 pyconify==0.1.6
     # via superqt
-pydantic==2.8.2
+pydantic==2.9.0
     # via
     #   -r napari_repo/resources/requirements_mypy.in
     #   npe2
-pydantic-core==2.20.1
+pydantic-core==2.23.2
     # via pydantic
 pygments==2.18.0
     # via
@@ -81,9 +81,9 @@ typer==0.12.5
     # via npe2
 types-pyyaml==6.0.12.20240808
     # via -r napari_repo/resources/requirements_mypy.in
-types-requests==2.32.0.20240712
+types-requests==2.32.0.20240907
     # via -r napari_repo/resources/requirements_mypy.in
-types-setuptools==74.0.0.20240831
+types-setuptools==74.1.0.20240907
     # via -r napari_repo/resources/requirements_mypy.in
 typing-extensions==4.12.2
     # via
@@ -93,6 +93,8 @@ typing-extensions==4.12.2
     #   pydantic-core
     #   superqt
     #   typer
+tzdata==2024.1
+    # via pydantic
 urllib3==2.2.2
     # via
     #   requests
