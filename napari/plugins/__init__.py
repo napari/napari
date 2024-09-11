@@ -31,7 +31,11 @@ def _initialize_plugins() -> None:
             _npe2pm.disable(p)
 
     # just in case anything has already been registered before we initialized
-    _npe2.on_plugins_registered(set(_npe2pm.iter_manifests()))
+    manifests = sorted(
+        set(_npe2pm.iter_manifests()),
+        key=lambda mf: mf.display_name if mf.display_name else mf.name,
+    )
+    _npe2.on_plugins_registered(manifests)
 
     # connect enablement/registration events to listeners
     _npe2pm.events.enablement_changed.connect(
