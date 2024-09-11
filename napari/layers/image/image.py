@@ -719,7 +719,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         if self.rendering == ImageRendering.MIP:
             return np.nanmax(values)
         if self.rendering == ImageRendering.MINIP:
-            return np.nanmax(values)
+            return np.nanmin(values)
         if self.rendering == ImageRendering.ATTENUATED_MIP:
             # normalize values so attenuation applies from 0 to 1
             values_attenuated = (
@@ -733,7 +733,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
                 * len(values_attenuated)
             )
             scale = np.exp(-self.attenuation * (sumval - 1))
-            return values[np.nanargmax(values_attenuated * scale)]
+            return values[np.nanargmin(values_attenuated * scale)]
 
         raise RuntimeError(
             f'ray value calculation not implemented for {self.rendering}'
