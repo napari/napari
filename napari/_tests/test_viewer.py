@@ -1,4 +1,5 @@
 import os
+from unittest.mock import Mock
 
 import numpy as np
 import pytest
@@ -54,7 +55,7 @@ def test_all_viewer_actions_are_accessible_via_shortcut(make_napari_viewer):
     _assert_shortcuts_exist_for_each_action(Viewer)
 
 
-@pytest.mark.xfail()
+@pytest.mark.xfail
 def test_non_existing_bindings():
     """
     Those are condition tested in next unittest; but do not exists; this is
@@ -336,6 +337,7 @@ def test_emitting_data_doesnt_change_points_value(make_napari_viewer):
     assert layer._value is None
     viewer.mouse_over_canvas = True
     viewer.cursor.position = tuple(layer.data[1])
+    viewer._calc_status_from_cursor()
     assert layer._value == 1
 
     layer.events.data(value=layer.data)
@@ -414,3 +416,21 @@ def test_reset_non_empty(make_napari_viewer):
     viewer = make_napari_viewer()
     viewer.add_points([(0, 1), (2, 3)])
     viewer.reset()
+
+
+def test_running_status_thread(make_napari_viewer, qtbot, monkeypatch):
+    viewer = make_napari_viewer()
+    settings = get_settings()
+    start_mock, stop_mock = Mock(), Mock()
+    monkeypatch.setattr(
+        viewer.window._qt_window.status_thread, 'start', start_mock
+    )
+    monkeypatch.setattr(
+        viewer.window._qt_window.status_thread, 'terminate', stop_mock
+    )
+    assert settings.appearance.update_status_based_on_layer
+    settings.appearance.update_status_based_on_layer = False
+    stop_mock.assert_called_once()
+    start_mock.assert_not_called()
+    settings.appearance.update_status_based_on_layer = True
+    start_mock.assert_called_once()

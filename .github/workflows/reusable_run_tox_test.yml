@@ -100,7 +100,7 @@ jobs:
           echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
 
       # tox and tox-gh-actions will take care of the "actual" installation
-      # of python dependendencies into a virtualenv.  see tox.ini for more
+      # of python dependencies into a virtualenv.  see tox.ini for more
       - name: Install dependencies
         run: |
           pip install --upgrade pip
@@ -193,10 +193,11 @@ jobs:
 
       - name: Upload test artifacts
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.4.0
         with:
           name: test artifacts ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }}
           path: .pytest_tmp
+          include-hidden-files: true
 
       - name: Upload leaked viewer graph
         if: failure()
@@ -213,9 +214,10 @@ jobs:
             ./report-*.json
 
       - name: Upload coverage data
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.4.0
         if: ${{ inputs.coverage == 'cov' }}
         with:
           name: coverage reports ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }}
+          include-hidden-files: true
           path: |
             ./.coverage.*

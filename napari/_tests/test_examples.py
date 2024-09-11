@@ -29,7 +29,6 @@ skip = [
     'embed_ipython_.py',  # fails without monkeypatch
     'new_theme.py',  # testing theme is extremely slow on CI
     'dynamic-projections-dask.py',  # extremely slow / does not finish
-    'surface_multi_texture_.py',  # resource not available
 ]
 # To skip examples during docs build end name with `_.py`
 
@@ -52,7 +51,7 @@ if os.getenv('CI') and os.name == 'nt' and API_NAME == 'PyQt5':
 if os.getenv('CI') and os.name == 'nt' and 'to_screenshot.py' in examples:
     examples.remove('to_screenshot.py')
 
-@pytest.fixture()
+@pytest.fixture
 def _example_monkeypatch(monkeypatch):
     # hide viewer window
     monkeypatch.setattr(Window, 'show', lambda *a: None)

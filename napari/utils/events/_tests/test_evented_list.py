@@ -7,7 +7,7 @@ import pytest
 from napari.utils.events import EmitterGroup, EventedList, NestableEventedList
 
 
-@pytest.fixture()
+@pytest.fixture
 def regular_list():
     return list(range(5))
 

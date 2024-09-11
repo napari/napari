@@ -149,7 +149,7 @@ def ensure_iterable(
         )
     if is_iterable(
         arg, color=color
-    ):  # argumnet color is to be removed in 0.6.0
+    ):  # argument color is to be removed in 0.6.0
         return arg
 
     return itertools.repeat(arg)
@@ -180,7 +180,7 @@ def is_iterable(
     if isinstance(arg, (str, Enum)) or np.isscalar(arg):
         return False
 
-    # this is to be removed in 0.6.0, coloer is never set True
+    # this is to be removed in 0.6.0, color is never set True
     if color is True and isinstance(arg, (list, np.ndarray)):
         return np.array(arg).ndim != 1 or len(arg) not in [3, 4]
 
@@ -193,7 +193,7 @@ def is_sequence(arg: Any) -> bool:
     return True:
         list
         tuple
-    return False
+    return False:
         string
         numbers
         dict
@@ -499,7 +499,7 @@ def ensure_layer_data_tuple(val: tuple) -> tuple:
     if not isinstance(val, tuple) and val:
         raise TypeError(msg)
     if len(val) > 1:
-        if not isinstance(val[1], dict):
+        if not isinstance(val[1], collections.abc.Mapping):
             raise TypeError(msg)
         if len(val) > 2 and not isinstance(val[2], str):
             raise TypeError(msg)
