@@ -213,6 +213,14 @@ class ApplicationSettings(EventedModel):
         ),
     )
 
+    plugin_widget_positions: dict[str, str] = Field(
+        default={},
+        title=trans._('Plugin widget positions'),
+        description=trans._(
+            'Per-widget last saved position of plugin dock widgets. This setting is managed by the application.'
+        ),
+    )
+
     @validator('window_state', allow_reuse=True)
     def _validate_qbtye(cls, v: str) -> str:
         if v and (not isinstance(v, str) or not v.startswith('!QBYTE_')):
@@ -239,4 +247,5 @@ class ApplicationSettings(EventedModel):
             'open_history',
             'save_history',
             'ipy_interactive',
+            'plugin_widget_positions',
         )
