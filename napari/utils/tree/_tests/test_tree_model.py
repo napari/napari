@@ -5,7 +5,7 @@ import pytest
 from napari.utils.tree import Group, Node
 
 
-@pytest.fixture()
+@pytest.fixture
 def tree():
     return Group(
         [

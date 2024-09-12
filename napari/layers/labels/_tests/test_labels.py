@@ -31,7 +31,7 @@ from napari.utils.colormaps import (
 )
 
 
-@pytest.fixture()
+@pytest.fixture
 def direct_colormap():
     """Return a DirectLabelColormap."""
     return DirectLabelColormap(
@@ -44,7 +44,7 @@ def direct_colormap():
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def random_colormap():
     """Return a LabelColormap."""
     return label_colormap(50)

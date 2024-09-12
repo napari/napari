@@ -7,7 +7,7 @@ from napari.utils.events._tests.test_evented_list import NESTED_POS_INDICES
 from napari.utils.tree import Group, Node
 
 
-@pytest.fixture()
+@pytest.fixture
 def tree_model(qapp):
     root = Group(
         [

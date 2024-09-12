@@ -8,6 +8,8 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from napari._qt.utils import combine_widgets
+
 
 def test_add_dock_widget(make_napari_viewer):
     """Test basic add_dock_widget functionality"""
@@ -139,3 +141,11 @@ def test_adding_stretch(make_napari_viewer):
     dw = viewer.window.add_dock_widget(widg, area='bottom')
     assert widg.layout().count() == 1
     dw.close()
+
+
+def test_combine_widgets_error():
+    """Check error raised when combining widgets with invalid types."""
+    with pytest.raises(
+        TypeError, match='"widgets" must be a QWidget, a magicgui'
+    ):
+        combine_widgets(['string'])
