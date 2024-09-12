@@ -39,9 +39,9 @@ def _is_convex(poly: npt.NDArray) -> bool:
     orn_set = np.unique(orientation(fst.T, snd.T, thrd.T))
     if orn_set.size != 1:
         return False
-    return orn_set[0] == orientation(poly[-2], poly[-1], poly[0]) and orn_set[
-        0
-    ] == orientation(poly[-1], poly[0], poly[1])
+    return (orn_set[0] == orientation(poly[-2], poly[-1], poly[0])) and (
+        orn_set[0] == orientation(poly[-1], poly[0], poly[1])
+    )
 
 
 def _fan_triangulation(poly: npt.NDArray) -> tuple[npt.NDArray, npt.NDArray]:
