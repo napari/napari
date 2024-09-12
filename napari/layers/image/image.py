@@ -735,6 +735,6 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             scale = np.exp(-self.attenuation * (sumval - 1))
             return values[np.nanargmin(values_attenuated * scale)]
 
-        raise RuntimeError(
+        raise RuntimeError(  # pragma: no cover
             f'ray value calculation not implemented for {self.rendering}'
         )
