@@ -361,6 +361,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         # Needs to be imported here to avoid circular import in _source
         from napari.layers._source import current_source
 
+        self._highlight_visible = True
         self._unique_id = None
         self._source = current_source()
         self.dask_optimized_slicing = configure_dask(data, cache)
@@ -588,6 +589,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             self._overlays['transform_box'].visible = (
                 self.mode == TRANSFORM and visible
             )
+
+    def update_highlight_visibility(self, visible):
+        self._highlight_visible = visible
+        self._set_highlight(force=True)
 
     @property
     def mode(self) -> str:

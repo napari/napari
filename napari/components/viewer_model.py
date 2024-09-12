@@ -481,13 +481,16 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if active_layer is None:
             for layer in self.layers:
                 layer.update_transform_box_visibility(False)
+                layer.update_highlight_visibility(False)
             self.help = ''
             self.cursor.style = CursorStyle.STANDARD
         else:
             active_layer.update_transform_box_visibility(True)
+            active_layer.update_highlight_visibility(True)
             for layer in self.layers:
                 if layer != active_layer:
                     layer.update_transform_box_visibility(False)
+                    layer.update_highlight_visibility(False)
             self.help = active_layer.help
             self.cursor.style = active_layer.cursor
             self.cursor.size = active_layer.cursor_size
