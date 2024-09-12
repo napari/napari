@@ -215,7 +215,7 @@ def _labels_raw_to_texture_direct_inner_loop(
 
 try:
     import numba
-except ModuleNotFoundError:
+except:
     zero_preserving_modulo = zero_preserving_modulo_numpy
     labels_raw_to_texture_direct = _labels_raw_to_texture_direct_numpy
     prange = range
