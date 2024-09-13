@@ -103,7 +103,7 @@ def get_app(*args, **kwargs) -> QApplication:
     """
     warn(
         trans._(
-            '`QApplication` access through `get_app` is deprecated.\n'
+            '`QApplication` instance access through `get_app` is deprecated.\n'
             'Please use `get_qapp` instead.\n',
             deferred=True,
         ),

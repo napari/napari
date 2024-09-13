@@ -168,7 +168,7 @@ def mock_app():
 
     app = NapariApplication('test_app')
     app.injection_store.namespace = _napari_names
-    with patch.object(NapariApplication, 'get_app_model', return_value=app):
+    with patch.object(NapariApplication, 'get_app', return_value=app):
         try:
             yield app
         finally:
