@@ -329,11 +329,11 @@ def on_plugins_registered(manifests: set[PluginManifest]):
 
     'Registered' means that a manifest has been provided or discovered.
     """
-    manifests = sorted(
+    sorted_manifests = sorted(
         manifests,
         key=lambda mf: mf.display_name if mf.display_name else mf.name,
     )
-    for mf in manifests:
+    for mf in sorted_manifests:
         if not pm.is_disabled(mf.name):
             _register_manifest_actions(mf)
             _safe_register_qt_actions(mf)
