@@ -1,5 +1,5 @@
 from napari import Viewer
-from napari._app_model._app import get_app
+from napari._app_model._app import get_app_model
 from napari._qt._qapp_model.qactions._toggle_action import (
     DockWidgetToggleAction,
     ViewerToggleAction,
@@ -16,7 +16,7 @@ def test_viewer_toggler(mock_app):
         viewer_attribute='axes',
         sub_attribute='visible',
     )
-    app = get_app()
+    app = get_app_model()
     app.register_action(action)
 
     # Injection required as there is no current viewer, use a high weight (100)
@@ -41,7 +41,7 @@ def test_dock_widget_toggler(make_napari_viewer):
         title='Toggle Dock Widget',
         dock_widget='dockConsole',
     )
-    app = get_app()
+    app = get_app_model()
     app.register_action(action)
 
     with app.injection_store.register(

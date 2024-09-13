@@ -61,7 +61,59 @@ _app_ref = None
 _IPYTHON_WAS_HERE_FIRST = 'IPython' in sys.modules
 
 
-def get_app(
+def get_app(*args, **kwargs) -> QApplication:
+    """Get or create the Qt QApplication.
+
+    There is only one global QApplication instance, which can be retrieved by
+    calling get_app again, (or by using QApplication.instance())
+
+    Parameters
+    ----------
+    app_name : str, optional
+        Set app name (if creating for the first time), by default 'napari'
+    app_version : str, optional
+        Set app version (if creating for the first time), by default __version__
+    icon : str, optional
+        Set app icon (if creating for the first time), by default
+        NAPARI_ICON_PATH
+    org_name : str, optional
+        Set organization name (if creating for the first time), by default
+        'napari'
+    org_domain : str, optional
+        Set organization domain (if creating for the first time), by default
+        'napari.org'
+    app_id : str, optional
+        Set organization domain (if creating for the first time).  Will be
+        passed to set_app_id (which may also be called independently), by
+        default NAPARI_APP_ID
+    ipy_interactive : bool, optional
+        Use the IPython Qt event loop ('%gui qt' magic) if running in an
+        interactive IPython terminal.
+
+    Returns
+    -------
+    QApplication
+        [description]
+
+    Notes
+    -----
+    Substitutes QApplicationWithTracing when the NAPARI_PERFMON env variable
+    is set.
+
+    """
+    warn(
+        trans._(
+            '`QApplication` access through `get_app` is deprecated.\n'
+            'Please use `get_qapp` instead.\n',
+            deferred=True,
+        ),
+        category=FutureWarning,
+        stacklevel=2,
+    )
+    return get_qapp(*args, **kwargs)
+
+
+def get_qapp(
     *,
     app_name: Optional[str] = None,
     app_version: Optional[str] = None,

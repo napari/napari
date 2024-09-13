@@ -4,7 +4,7 @@ import pytest
 from qtpy.QtCore import QPoint, Qt
 from qtpy.QtWidgets import QApplication
 
-from napari._app_model._app import get_app
+from napari._app_model._app import get_app_model
 from napari._qt.dialogs.qt_modal import QtPopup
 from napari._qt.widgets.qt_viewer_buttons import QtViewerButtons
 from napari.components.viewer_model import ViewerModel
@@ -142,7 +142,7 @@ def test_toggle_ndisplay(mock_app, qt_viewer_buttons, qtbot):
     viewer, viewer_buttons = qt_viewer_buttons
     assert viewer_buttons.ndisplayButton
 
-    app = get_app()
+    app = get_app_model()
 
     assert viewer.dims.ndisplay == 2
     with app.injection_store.register(

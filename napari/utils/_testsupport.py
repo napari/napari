@@ -143,7 +143,7 @@ def pytest_runtest_makereport(item, call):
 def mock_app():
     """Mock clean 'test_app' `NapariApplication` instance.
 
-    This fixture must be used whenever `napari._app_model.get_app()` is called to
+    This fixture must be used whenever `napari._app_model.get_app_model()` is called to
     return a 'test_app' `NapariApplication` instead of the 'napari'
     `NapariApplication`. The `make_napari_viewer` fixture is already equipped with
     a `mock_app`.
@@ -168,7 +168,7 @@ def mock_app():
 
     app = NapariApplication('test_app')
     app.injection_store.namespace = _napari_names
-    with patch.object(NapariApplication, 'get_app', return_value=app):
+    with patch.object(NapariApplication, 'get_app_model', return_value=app):
         try:
             yield app
         finally:

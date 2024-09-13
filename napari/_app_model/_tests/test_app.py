@@ -1,10 +1,10 @@
-from napari._app_model import get_app
+from napari._app_model import get_app_model
 from napari.layers import Points
 
 
 def test_app(mock_app):
     """just make sure our app model is registering menus and commands"""
-    app = get_app()
+    app = get_app_model()
     assert app.name == 'test_app'
     assert list(app.menus)
     assert list(app.commands)
@@ -13,7 +13,7 @@ def test_app(mock_app):
 
 def test_app_injection(mock_app):
     """Simple test to make sure napari namespaces are working in app injection."""
-    app = get_app()
+    app = get_app_model()
 
     def use_points(points: 'Points'):
         return points

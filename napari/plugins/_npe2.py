@@ -341,9 +341,9 @@ def _register_manifest_actions(mf: PluginManifest) -> None:
     This is called when a plugin is registered or enabled and it adds the
     plugin's menus and submenus to the app model registry.
     """
-    from napari._app_model import get_app
+    from napari._app_model import get_app_model
 
-    app = get_app()
+    app = get_app_model()
     actions, submenus = _npe2_manifest_to_actions(mf)
 
     context = pm.get_context(cast('PluginName', mf.name))

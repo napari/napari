@@ -7,7 +7,7 @@ from app_model.types import MenuItem, SubmenuItem
 from npe2 import DynamicPlugin
 from qtpy.QtWidgets import QWidget
 
-from napari._app_model import get_app
+from napari._app_model import get_app_model
 from napari._app_model.constants import MenuId
 from napari._qt._qapp_model.qactions import _plugins, init_qactions
 from napari._qt._qplugins._qnpe2 import _toggle_or_get_widget
@@ -32,7 +32,7 @@ def test_plugin_manager_action(make_napari_viewer):
 
     The test is skipped in case `napari_plugin_manager` is not available
     """
-    app = get_app()
+    app = get_app_model()
     viewer = make_napari_viewer()
 
     with mock.patch(
@@ -47,7 +47,7 @@ def test_plugin_manager_action(make_napari_viewer):
 def test_plugin_errors_action(make_napari_viewer):
     """Test plugin errors action."""
     make_napari_viewer()
-    app = get_app()
+    app = get_app_model()
 
     with mock.patch(
         'napari._qt._qapp_model.qactions._plugins.QtPluginErrReporter.exec_'
@@ -73,7 +73,7 @@ def test_toggle_or_get_widget(
     def widget1():
         return DummyWidget()
 
-    app = get_app()
+    app = get_app_model()
     # Viewer needs to be visible
     viewer = make_napari_viewer(show=True)
 
@@ -116,7 +116,7 @@ def test_plugin_single_widget_menu(
     def widget1():
         return DummyWidget()
 
-    app = get_app()
+    app = get_app_model()
     viewer = make_napari_viewer()
 
     assert tmp_plugin.display_name == 'Temp Plugin'
@@ -144,7 +144,7 @@ def test_plugin_multiple_widget_menu(
     def widget2():
         return DummyWidget()
 
-    app = get_app()
+    app = get_app_model()
     viewer = make_napari_viewer()
 
     assert tmp_plugin.display_name == 'Temp Plugin'
@@ -165,7 +165,7 @@ def test_plugin_menu_plugin_state_change(
     tmp_plugin: DynamicPlugin,
 ):
     """Check plugin menu items correct after a plugin changes state."""
-    app = get_app()
+    app = get_app_model()
     pm = tmp_plugin.plugin_manager
 
     # Register plugin q actions
@@ -219,7 +219,7 @@ def test_plugin_widget_checked(
     def widget_contrib():
         return DummyWidget()
 
-    app = get_app()
+    app = get_app_model()
     viewer = make_napari_viewer()
 
     assert 'tmp_plugin:Widget' in app.commands
