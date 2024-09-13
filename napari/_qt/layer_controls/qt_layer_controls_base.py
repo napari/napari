@@ -546,6 +546,8 @@ class NewQtLayerControls(
         icon_label = QLabel()
         icon_label.setProperty('layer_type_icon_label', True)
         icon_label.setObjectName(f'{self._layer._basename()}')
+        # Needed to prevent focus to go to the layer name when controls dockwidget gets undock
+        icon_label.setFocusPolicy(Qt.StrongFocus)
 
         self._name_edit = QtLayerName(self._layer.name)
         self._name_edit.setToolTip(self._layer.name)
