@@ -663,7 +663,7 @@ def triangulate_edge(
         clean_path = path
 
     if clean_path.shape[-1] == 2:
-        centers, offsets, triangles = generate_2D_edge_meshes(
+        centers, offsets, triangles = generate_2D_edge_meshes2(
             clean_path, closed=closed
         )
     else:
@@ -671,6 +671,7 @@ def triangulate_edge(
             clean_path, closed=closed
         )
 
+    # offsets[2,1] = -0.5
     return centers, offsets, triangles
 
 
@@ -692,6 +693,92 @@ def _sign_cross(x, y):
         return _sign_nonzero(np.cross(x, y))
 
     raise ValueError(x.shape[1], y.shape[1])
+
+
+def generate_2D_edge_meshes2(path, closed=False, limit=3, bevel=False):
+    """Determines the triangulation of a path in 2D. The resulting `offsets`
+    can be multiplied by a `width` scalar and be added to the resulting
+    `centers` to generate the vertices of the triangles for the triangulation,
+    i.e. `vertices = centers + width*offsets`. Using the `centers` and
+    `offsets` representation thus allows for the computed triangulation to be
+    independent of the line width.
+
+    Parameters
+    ----------
+    path : np.ndarray
+        Nx2 or Nx3 array of central coordinates of path to be triangulated
+    closed : bool
+        Bool which determines if the path is closed or not
+    limit : float
+        Miter limit which determines when to switch from a miter join to a
+        bevel join
+    bevel : bool
+        Bool which if True causes a bevel join to always be used. If False
+        a bevel join will only be used when the miter limit is exceeded
+
+    Returns
+    -------
+    centers : np.ndarray
+        Mx2 or Mx3 array central coordinates of path triangles.
+    offsets : np.ndarray
+        Mx2 or Mx3 array of the offsets to the central coordinates that need to
+        be scaled by the line width and then added to the centers to
+        generate the actual vertices of the triangulation
+    triangles : np.ndarray
+        Px3 array of the indices of the vertices that will form the
+        triangles of the triangulation
+    """
+    path = np.asarray(path, dtype=float)
+    # normals = segment_normal(path[:-1], path[1:])
+
+    vec_diff = path[1:] - path[:-1]
+    norm = np.linalg.norm(vec_diff, axis=1, keepdims=True)
+    normals = vec_diff / norm
+
+    if closed:
+        result_shape = (len(path) * 2 + 2, 2)
+        shift = 2
+    else:
+        result_shape = (len(path) * 2, 2)
+        shift = 0
+
+    double_path_len = len(path) * 2
+
+    mitters = (normals[:-1] - normals[1:]) * 0.5
+    centers = np.empty(result_shape, dtype=float)
+    centers[:double_path_len:2] = path
+    centers[1:double_path_len:2] = path
+    offsets = np.zeros(result_shape, dtype=float)
+
+    offsets[2 : -2 - shift : 2] = -mitters
+    offsets[3 : -1 - shift : 2] = mitters
+
+    if closed:
+        vec_diff_last = path[0] - path[-1]
+        normals_last = vec_diff_last / np.linalg.norm(vec_diff_last)
+
+        offsets[0] = (normals[0] - normals_last) * 0.5
+        offsets[1] = -offsets[0]
+        offsets[-4] = (normals_last - normals[-1]) * 0.5
+        offsets[-3] = -offsets[-4]
+        offsets[-2:] = offsets[:2]
+        centers[-2:] = centers[:2]
+
+        triangle_count = len(path)
+    else:
+        offsets[0] = normals[0, ::-1] * 0.5
+        offsets[1] = -offsets[0]
+        offsets[-2] = normals[-1, ::-1] * 0.5
+        offsets[-1] = -offsets[-2]
+        triangle_count = len(path) - 1
+
+    triangles0 = np.tile(np.array([[0, 1, 3], [0, 3, 2]]), (triangle_count, 1))
+    triangles = triangles0 + 2 * np.repeat(
+        np.arange(triangle_count)[:, np.newaxis], 2, 0
+    )
+    # print("centers", centers)
+    # print("offsets", offsets)
+    return centers, offsets, triangles
 
 
 def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
