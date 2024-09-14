@@ -363,6 +363,7 @@ def make_napari_viewer(
         leak = (x for x in leak if x.objectName() != 'handled_widget')
         # still not sure how to clean up some of the remaining vispy
         # vispy.app.backends._qt.CanvasBackendDesktop widgets...
+        # observed in `test_sys_info.py`
         if any(n.__class__.__name__ != 'CanvasBackendDesktop' for n in leak):
             # just a warning... but this can be converted to test errors
             # in pytest with `-W error`

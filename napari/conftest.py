@@ -811,6 +811,10 @@ def _find_dangling_widgets(request, qtbot):
         if widget.objectName() == 'handled_widget':
             continue
 
+        if widget.__class__.__name__ == 'CanvasBackendDesktop':
+            # leaking in the tests_sys_info.py
+            continue
+
         problematic_widgets.append(widget)
 
     if problematic_widgets:
