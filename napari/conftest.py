@@ -801,6 +801,10 @@ def _find_dangling_widgets(request, qtbot):
             and widget._qt_viewer.viewer in viewer_weak_set
         ):
             continue
+
+        if widget.__class__.__module__.startswith('qtconsole'):
+            continue
+
         if getattr(widget, '__qtbot_handled__', False):
             continue
 
