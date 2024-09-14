@@ -32,7 +32,7 @@ from qtpy.QtCore import (
     Qt,
     Slot,
 )
-from qtpy.QtGui import QIcon
+from qtpy.QtGui import QHideEvent, QIcon, QShowEvent
 from qtpy.QtWidgets import (
     QApplication,
     QDialog,
@@ -205,8 +205,6 @@ class _QtMainWindow(QMainWindow):
         self.status_thread.status_and_tooltip_changed.connect(
             self.set_status_and_tooltip
         )
-        if settings.appearance.update_status_based_on_layer:
-            self.status_thread.start()
         viewer.cursor.events.position.connect(
             self.status_thread.trigger_status_update
         )
@@ -219,6 +217,17 @@ class _QtMainWindow(QMainWindow):
             self.status_thread.start()
         else:
             self.status_thread.terminate()
+
+    def showEvent(self, event: QShowEvent):
+        """Override to handle window state changes."""
+        settings = get_settings()
+        if settings.appearance.update_status_based_on_layer:
+            self.status_thread.start()
+        super().showEvent(event)
+
+    def hideEvent(self, event: QHideEvent):
+        self.status_thread.terminate()
+        super().hideEvent(event)
 
     def set_status_and_tooltip(
         self, status_and_tooltip: Optional[tuple[Union[str, dict], str]]
@@ -1108,7 +1117,7 @@ class Window:
         widget: Union[QWidget, 'Widget'],
         *,
         name: str = '',
-        area: str = 'right',
+        area: Optional[str] = None,
         allowed_areas: Optional[Sequence[str]] = None,
         shortcut=_sentinel,
         add_vertical_stretch=True,
@@ -1164,6 +1173,12 @@ class Window:
             )
 
             self._unnamed_dockwidget_count += 1
+
+        if area is None:
+            settings = get_settings()
+            area = settings.application.plugin_widget_positions.get(
+                name, 'right'
+            )
 
         if shortcut is not _sentinel:
             warnings.warn(

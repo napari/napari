@@ -17,6 +17,7 @@ _default_shortcuts = {
     'napari:focus_axes_down': [KeyMod.Alt | KeyCode.DownArrow],
     'napari:roll_axes': [KeyMod.CtrlCmd | KeyCode.KeyE],
     'napari:transpose_axes': [KeyMod.CtrlCmd | KeyCode.KeyT],
+    'napari:rotate_layers': [KeyMod.CtrlCmd | KeyMod.Alt | KeyCode.KeyT],
     'napari:toggle_grid': [KeyMod.CtrlCmd | KeyCode.KeyG],
     'napari:toggle_selected_visibility': [KeyCode.KeyV],
     'napari:toggle_unselected_visibility': [KeyMod.Shift | KeyCode.KeyV],
