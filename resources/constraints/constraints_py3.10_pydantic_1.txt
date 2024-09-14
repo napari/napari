@@ -22,7 +22,7 @@ babel==2.16.0
     # via
     #   napari (napari_repo/pyproject.toml)
     #   sphinx
-build==1.2.1
+build==1.2.2
     # via npe2
 cachey==0.2.1
     # via napari (napari_repo/pyproject.toml)
@@ -71,7 +71,7 @@ executing==2.1.0
     # via stack-data
 fasteners==0.19
     # via zarr
-filelock==3.15.4
+filelock==3.16.0
     # via
     #   torch
     #   triton
@@ -84,7 +84,7 @@ fonttools==4.53.1
     # via matplotlib
 freetype-py==2.5.1
     # via vispy
-fsspec==2024.6.1
+fsspec==2024.9.0
     # via
     #   napari (napari_repo/pyproject.toml)
     #   dask
@@ -93,7 +93,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.111.2
+hypothesis==6.112.0
     # via napari (napari_repo/pyproject.toml)
 idna==3.8
     # via requests
@@ -140,7 +140,7 @@ jupyter-core==5.7.2
     #   ipykernel
     #   jupyter-client
     #   qtconsole
-kiwisolver==1.4.5
+kiwisolver==1.4.7
     # via
     #   matplotlib
     #   vispy
@@ -289,7 +289,7 @@ pint==0.24.3
     # via napari (napari_repo/pyproject.toml)
 pip==24.2
     # via napari-plugin-manager
-platformdirs==4.2.2
+platformdirs==4.3.2
     # via
     #   jupyter-core
     #   pooch
@@ -502,7 +502,7 @@ sympy==1.13.2
     # via torch
 tabulate==0.9.0
     # via numpydoc
-tensorstore==0.1.64
+tensorstore==0.1.65
     # via
     #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari (napari_repo/pyproject.toml)
@@ -525,7 +525,7 @@ toolz==0.12.1
     #   napari (napari_repo/pyproject.toml)
     #   dask
     #   partd
-torch==2.4.0
+torch==2.4.1
     # via napari (napari_repo/pyproject.toml)
 tornado==6.4.1
     # via
@@ -565,7 +565,7 @@ tzdata==2024.1
     # via pandas
 urllib3==2.2.2
     # via requests
-virtualenv==20.26.3
+virtualenv==20.26.4
     # via napari (napari_repo/pyproject.toml)
 vispy==0.14.3
     # via
@@ -577,7 +577,7 @@ wrapt==1.16.0
     # via napari (napari_repo/pyproject.toml)
 xarray==2024.7.0
     # via napari (napari_repo/pyproject.toml)
-zarr==2.18.2
+zarr==2.18.3
     # via
     #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari (napari_repo/pyproject.toml)
