@@ -360,6 +360,7 @@ def make_napari_viewer(
     if _strict and getattr(sys, 'last_value', None) is prior_exception:
         QApplication.processEvents()
         leak = set(QApplication.topLevelWidgets()).difference(initial)
+        leak = (x for x in leak if x.objectName() != 'handled_widget')
         # still not sure how to clean up some of the remaining vispy
         # vispy.app.backends._qt.CanvasBackendDesktop widgets...
         if any(n.__class__.__name__ != 'CanvasBackendDesktop' for n in leak):

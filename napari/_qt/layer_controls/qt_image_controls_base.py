@@ -152,6 +152,9 @@ class QtBaseImageControls(QtLayerControls):
         self.colorbarLabel.setToolTip(trans._('Colorbar'))
 
         self._on_colormap_change()
+        if self.__class__ == QtBaseImageControls:
+            # this if is to prevent leaking of buttons in the tests
+            self.layout().addRow(self.button_grid)
 
     def changeColor(self, text):
         """Change colormap on the layer model.

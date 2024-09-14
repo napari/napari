@@ -31,6 +31,7 @@ Notes for using the plugin-related fixtures here:
 
 from __future__ import annotations
 
+import contextlib
 import os
 import sys
 import threading
@@ -744,8 +745,42 @@ def _dangling_qanimations(monkeypatch, request):
     )
 
 
+with contextlib.suppress(ImportError):
+    from pytestqt.qtbot import QtBot
+
+    class OwnQtBot(QtBot):
+        def addWidget(self, widget, *, before_close_func=None):
+            if widget.objectName() == '':
+                widget.setObjectName('handled_widget')
+                before_close_func_ = before_close_func
+            else:
+                if before_close_func is None:
+
+                    def before_close_func_(w):
+                        w.setObjectName('handled_widget')
+                else:
+
+                    def before_close_func_(w):
+                        w.setObjectName('handled_widget')
+                        before_close_func(w)
+
+            super().addWidget(widget, before_close_func=before_close_func_)
+
+            widget.__qtbot_handled__ = True
+
+    @pytest.fixture
+    def qtbot(qapp, request):
+        """
+        Fixture used to create a QtBot instance for using during testing.
+
+        Make sure to call addWidget for each top-level widget you create to ensure
+        that they are properly closed after the test ends.
+        """
+        return OwnQtBot(request)
+
+
 @pytest.fixture
-def _find_dangling_widgets(request):
+def _find_dangling_widgets(request, qtbot):
     yield
 
     from qtpy.QtWidgets import QApplication
@@ -754,8 +789,9 @@ def _find_dangling_widgets(request):
 
     top_level_widgets = QApplication.topLevelWidgets()
 
-    qtbot_widgets = getattr(request.node, 'qt_widgets', [])
     viewer_weak_set = getattr(request.node, '_viewer_weak_set', set())
+
+    problematic_widgets = []
 
     for widget in top_level_widgets:
         if widget.parent() is not None:
@@ -765,13 +801,22 @@ def _find_dangling_widgets(request):
             and widget._qt_viewer.viewer in viewer_weak_set
         ):
             continue
-        for widget_ref in qtbot_widgets:
-            if widget_ref() is widget:
-                break
-        else:
-            raise RuntimeError(
-                f'Found dangling widget {widget} of type {type(widget)}'
-            )
+        if getattr(widget, '__qtbot_handled__', False):
+            continue
+
+        if widget.objectName() == 'handled_widget':
+            continue
+
+        problematic_widgets.append(widget)
+
+    if problematic_widgets:
+        text = '\n'.join(
+            f'Widget: {widget} of type {type(widget)} with name {widget.objectName()}'
+            for widget in problematic_widgets
+        )
+        raise RuntimeError(f'Found dangling widgets:\n{text}')
+    for widget in problematic_widgets:
+        widget.setObjectName('handled_widget')
 
 
 def pytest_runtest_setup(item):

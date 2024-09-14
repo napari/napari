@@ -122,7 +122,7 @@ class QtLayerControls(QFrame):
         self.transform_button.installEventFilter(self)
         self._on_editable_or_visible_change()
 
-        self.button_grid = QGridLayout()
+        self.button_grid = QGridLayout(self)
         self.button_grid.addWidget(self.panzoom_button, 0, 6)
         self.button_grid.addWidget(self.transform_button, 0, 7)
         self.button_grid.setContentsMargins(5, 0, 0, 5)
@@ -157,6 +157,9 @@ class QtLayerControls(QFrame):
         self.opacityLabel.setEnabled(
             self.layer.blending not in NO_OPACITY_BLENDING_MODES
         )
+        if self.__class__ == QtLayerControls:
+            # this if is to prevent leaking of buttons in the tests
+            self.layout().addRow(self.button_grid)
 
     def changeOpacity(self, value):
         """Change opacity value on the layer model.
@@ -239,6 +242,7 @@ class QtLayerControls(QFrame):
         """
         action_name = f'napari:{action_name}'
         btn = QtModeRadioButton(layer, btn_name, mode, **kwargs)
+        btn.setObjectName(f'{btn_name}_button')
         action_manager.bind_button(
             action_name,
             btn,
