@@ -11,7 +11,10 @@ def test_app(mock_app):
     assert list(app.menus)
     assert list(app.commands)
     # assert list(app.keybindings)  # don't have any yet
-    with pytest.warns(FutureWarning):
+    with pytest.warns(
+        FutureWarning,
+        match='`NapariApplication` instance access through `get_app` is deprecated.\nPlease use `get_app_model` instead.\n',
+    ):
         deprecated_app = get_app()
     assert app == deprecated_app
 

@@ -16,7 +16,10 @@ from napari._qt.qt_event_loop import (
 
 def test_qapp(qapp):
     qapp = get_qapp()
-    with pytest.warns(FutureWarning):
+    with pytest.warns(
+        FutureWarning,
+        match='`QApplication` instance access through `get_app` is deprecated.\nPlease use `get_qapp` instead.\n',
+    ):
         deprecated_qapp = get_app()
     assert qapp == deprecated_qapp
 
