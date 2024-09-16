@@ -131,11 +131,11 @@ def test_qt_image_controls_change_contrast(qtbot):
     assert tuple(layer.contrast_limits) == (0.1, 0.8)
 
 
-def test_tensorstore_clim_popup():
+def test_tensorstore_clim_popup(qtbot):
     """Regression to test, makes sure it works with tensorstore dtype"""
     ts = pytest.importorskip('tensorstore')
     layer = Image(ts.array(np.random.rand(20, 20)))
-    QContrastLimitsPopup(layer)
+    qtbot.addWidget(QContrastLimitsPopup(layer))
 
 
 def test_blending_opacity_slider(qtbot):
