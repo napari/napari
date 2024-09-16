@@ -769,7 +769,7 @@ with contextlib.suppress(ImportError):
             widget.__qtbot_handled__ = True
 
     @pytest.fixture
-    def qtbot(qapp, request):
+    def qtbot(qapp, request):  # pragma: no cover
         """
         Fixture used to create a QtBot instance for using during testing.
 
