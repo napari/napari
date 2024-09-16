@@ -69,18 +69,6 @@ def _clean_current(monkeypatch, qtbot):
     monkeypatch.setattr(_QtMainWindow, 'current', mock_current_main_window)
 
 
-# @pytest.fixture(autouse=True)
-# def handle_napari_qnotification(monkeypatch, qtbot):
-#     orig = NapariQtNotification.from_notification
-#
-#     def from_notification_save(self, *args, **kwargs):
-#         dialog = orig(self, *args, **kwargs)
-#         qtbot.add_widget(dialog)
-#         return dialog
-#
-#     monkeypatch.setattr(NapariQtNotification, 'from_notification', from_notification_save)
-
-
 @dataclass
 class ShowStatus:
     show_notification_count: int = 0
