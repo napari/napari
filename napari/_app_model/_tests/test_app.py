@@ -1,4 +1,6 @@
-from napari._app_model import get_app_model
+import pytest
+
+from napari._app_model import get_app, get_app_model
 from napari.layers import Points
 
 
@@ -9,6 +11,9 @@ def test_app(mock_app):
     assert list(app.menus)
     assert list(app.commands)
     # assert list(app.keybindings)  # don't have any yet
+    with pytest.warns(FutureWarning):
+        deprecated_app = get_app()
+    assert app == deprecated_app
 
 
 def test_app_injection(mock_app):
