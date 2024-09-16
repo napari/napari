@@ -49,7 +49,6 @@ def _clean_current(monkeypatch, qtbot):
     base_show = NapariQtNotification.show
 
     widget = QWidget()
-    # widget.setObjectName('welcome_widget')
     qtbot.addWidget(widget)
     mock_window = MagicMock()
     widget.resized = MagicMock()
@@ -148,8 +147,8 @@ def test_notification_manager_via_gui(
     Test that the notification_manager intercepts `sys.excepthook`` and
     `threading.excepthook`.
     """
-    errButton = QPushButton('err')
-    warnButton = QPushButton('warn')
+    errButton = QPushButton()
+    warnButton = QPushButton()
     errButton.clicked.connect(raise_func)
     warnButton.clicked.connect(warn_func)
     qtbot.addWidget(errButton)
