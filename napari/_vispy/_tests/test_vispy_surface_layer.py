@@ -2,8 +2,10 @@ import numpy as np
 import pytest
 from vispy.geometry import create_cube
 
+from napari._qt.qt_viewer import QtViewer
 from napari._tests.utils import skip_local_popups
 from napari._vispy.layers.surface import VispySurfaceLayer
+from napari.components import ViewerModel
 from napari.components.dims import Dims
 from napari.layers import Surface
 
@@ -114,7 +116,7 @@ def test_vertex_colors(cube_layer):
 
 
 @skip_local_popups
-def test_check_surface_without_visible_faces(make_napari_viewer):
+def test_check_surface_without_visible_faces(qtbot):
     points = np.array(
         [
             [0, 0.0, 0.0, 0.0],
@@ -127,8 +129,11 @@ def test_check_surface_without_visible_faces(make_napari_viewer):
     )
     faces = np.array([[0, 1, 2], [3, 4, 5]])
     layer = Surface((points, faces))
-    viewer = make_napari_viewer(ndisplay=3)
-    viewer.show()
-    viewer.add_layer(layer)
+    viewer_model = ViewerModel()
+    qt_viewer = QtViewer(viewer_model)
+    qtbot.addWidget(qt_viewer)
+    qt_viewer.show()
+    viewer_model.add_layer(layer)
     # The following with throw an exception.
-    viewer.reset()
+    viewer_model.reset()
+    qt_viewer.hide()
