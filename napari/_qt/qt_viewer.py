@@ -1175,7 +1175,7 @@ class QtViewer(QSplitter):
             Event from the Qt context.
         """
         if self._layers is not None:
-        	# do not create layerlist if it do not exist yet. 
+            # do not create layerlist if it do not exist yet.
             self.layers.close()
 
         # if the viewer.QtDims object is playing an axis, we need to terminate
