@@ -324,5 +324,10 @@ authors:
   family-names: Winston
   affiliation: Tobeva Software
   alias: pwinston
+- given-names: Rubin
+  family-names: Zhao
+  affiliation: Chinese Academy of Sciences - SIAT, Shenzhen, China
+  orcid: https://orcid.org/0009-0005-8264-5682
+  alias: BeanLi
 repository-code: https://github.com/napari/napari
 license: BSD-3-Clause
