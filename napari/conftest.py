@@ -293,6 +293,116 @@ def tmp_plugin(npe2pm_: TestPluginManager):
         yield plugin
 
 
+@pytest.fixture
+def viewer_model():
+    from napari.components import ViewerModel
+
+    return ViewerModel()
+
+
+@pytest.fixture
+def qt_viewer(qtbot, viewer_model, monkeypatch):
+    from napari._qt.qt_viewer import QtViewer
+
+    viewer = QtViewer(viewer_model)
+
+    original_controls = viewer.__class__.controls.fget
+    original_layers = viewer.__class__.layers.fget
+    original_layer_buttons = viewer.__class__.layerButtons.fget
+    original_viewer_buttons = viewer.__class__.viewerButtons.fget
+    original_dock_layer_list = viewer.__class__.dockLayerList.fget
+    original_dock_layer_controls = viewer.__class__.dockLayerControls.fget
+    original_dock_console = viewer.__class__.dockConsole.fget
+    original_dock_performance = viewer.__class__.dockPerformance.fget
+
+    def hide_widget(widget):
+        widget.hide()
+
+    def hide_and_clear_qt_viewer(viewer: QtViewer):
+        viewer._instances.clear()
+        viewer.hide()
+
+    def patched_controls(self):
+        if self._controls is None:
+            self._controls = original_controls(self)
+            qtbot.addWidget(self._controls, before_close_func=hide_widget)
+        return self._controls
+
+    def patched_layers(self):
+        if self._layers is None:
+            self._layers = original_layers(self)
+            qtbot.addWidget(self._layers, before_close_func=hide_widget)
+        return self._layers
+
+    def patched_layer_buttons(self):
+        if self._layersButtons is None:
+            self._layersButtons = original_layer_buttons(self)
+            qtbot.addWidget(self._layersButtons, before_close_func=hide_widget)
+        return self._layersButtons
+
+    def patched_viewer_buttons(self):
+        if self._viewerButtons is None:
+            self._viewerButtons = original_viewer_buttons(self)
+            qtbot.addWidget(self._viewerButtons, before_close_func=hide_widget)
+        return self._viewerButtons
+
+    def patched_dock_layer_list(self):
+        if self._dockLayerList is None:
+            self._dockLayerList = original_dock_layer_list(self)
+            qtbot.addWidget(self._dockLayerList, before_close_func=hide_widget)
+        return self._dockLayerList
+
+    def patched_dock_layer_controls(self):
+        if self._dockLayerControls is None:
+            self._dockLayerControls = original_dock_layer_controls(self)
+            qtbot.addWidget(
+                self._dockLayerControls, before_close_func=hide_widget
+            )
+        return self._dockLayerControls
+
+    def patched_dock_console(self):
+        if self._dockConsole is None:
+            self._dockConsole = original_dock_console(self)
+            qtbot.addWidget(self._dockConsole, before_close_func=hide_widget)
+        return self._dockConsole
+
+    def patched_dock_performance(self):
+        if self._dockPerformance is None:
+            self._dockPerformance = original_dock_performance(self)
+            qtbot.addWidget(
+                self._dockPerformance, before_close_func=hide_widget
+            )
+        return self._dockPerformance
+
+    monkeypatch.setattr(
+        viewer.__class__, 'controls', property(patched_controls)
+    )
+    monkeypatch.setattr(viewer.__class__, 'layers', property(patched_layers))
+    monkeypatch.setattr(
+        viewer.__class__, 'layerButtons', property(patched_layer_buttons)
+    )
+    monkeypatch.setattr(
+        viewer.__class__, 'viewerButtons', property(patched_viewer_buttons)
+    )
+    monkeypatch.setattr(
+        viewer.__class__, 'dockLayerList', property(patched_dock_layer_list)
+    )
+    monkeypatch.setattr(
+        viewer.__class__,
+        'dockLayerControls',
+        property(patched_dock_layer_controls),
+    )
+    monkeypatch.setattr(
+        viewer.__class__, 'dockConsole', property(patched_dock_console)
+    )
+    monkeypatch.setattr(
+        viewer.__class__, 'dockPerformance', property(patched_dock_performance)
+    )
+
+    qtbot.addWidget(viewer, before_close_func=hide_and_clear_qt_viewer)
+    return viewer
+
+
 def _event_check(instance):
     def _prepare_check(name, no_event_):
         def check(instance, no_event=no_event_):
@@ -746,35 +856,50 @@ def _dangling_qanimations(monkeypatch, request):
 
 
 with contextlib.suppress(ImportError):
+    # in headless test suite we don't have Qt bindings
+    # So we cannot inherit from QtBot and declare the fixture
+
     from pytestqt.qtbot import QtBot
 
     class OwnQtBot(QtBot):
+        """This is a modified version of QtBot that
+        ensures that all widgets added to it
+        has, after the test ends, objectName set to 'handled_widget'
+        This allows distinguishing them from non-handled widgets
+        in the _find_dangling_widgets fixture.
+        """
+
         def addWidget(self, widget, *, before_close_func=None):
             if widget.objectName() == '':
+                # objet do not have name, so we can set it
                 widget.setObjectName('handled_widget')
                 before_close_func_ = before_close_func
+            elif before_close_func is None:
+                # there is no custom teardown function
+                # so we could provide one that will set object name
+
+                def before_close_func_(w):
+                    w.setObjectName('handled_widget')
             else:
-                if before_close_func is None:
+                # user provided custom teardown function
+                # so we need to wrap it to set object name
 
-                    def before_close_func_(w):
-                        w.setObjectName('handled_widget')
-                else:
-
-                    def before_close_func_(w):
-                        w.setObjectName('handled_widget')
-                        before_close_func(w)
+                def before_close_func_(w):
+                    before_close_func(w)
+                    w.setObjectName('handled_widget')
 
             super().addWidget(widget, before_close_func=before_close_func_)
-
-            widget.__qtbot_handled__ = True
 
     @pytest.fixture
     def qtbot(qapp, request):  # pragma: no cover
         """
-        Fixture used to create a QtBot instance for using during testing.
+        Fixture used to create a OwnQtBot instance for using during testing.
 
         Make sure to call addWidget for each top-level widget you create to ensure
         that they are properly closed after the test ends.
+
+        The `qapp` fixture is used to ensure that the QApplication is created before,
+        so we need it, even without using it directly in this fixture
         """
         return OwnQtBot(request)
 
@@ -805,9 +930,6 @@ def _find_dangling_widgets(request, qtbot):
         if widget.__class__.__module__.startswith('qtconsole'):
             continue
 
-        if getattr(widget, '__qtbot_handled__', False):
-            continue
-
         if widget.objectName() == 'handled_widget':
             continue
 
@@ -828,6 +950,18 @@ def _find_dangling_widgets(request, qtbot):
 
 
 def pytest_runtest_setup(item):
+    """Because we have headless test suite we cannot use
+    @pytest.fixture(autouse=True) for fixtures that are detecting
+    leaking Qt objects.
+    So we use here  trick to detect if the `qapp` fixture is used to detect test
+    that are using Qt and need to be checked for Qt objects leaks.
+
+    It may happen that some test is using Qt but is not using `qapp` fixture.
+    This should be caught during the PullRequest review.
+    If you found such a test, please add `qapp` fixture to it.
+    As lack of this fixture may end reporting of a problem in the wrong place.
+    """
+
     if 'qapp' in item.fixturenames:
         # here we do autouse for dangling fixtures only if qapp is used
         if 'qtbot' not in item.fixturenames:
