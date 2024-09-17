@@ -31,7 +31,7 @@ class NapariApplication(Application):
         self.menus.append_menu_items(LAYERLIST_CONTEXT_SUBMENUS)
 
     @classmethod
-    def get_app(cls, app_name: str = APP_NAME) -> NapariApplication:
+    def get_app_model(cls, app_name: str = APP_NAME) -> NapariApplication:
         return Application.get_app(app_name) or cls()  # type: ignore[return-value]
 
 
@@ -59,7 +59,7 @@ def _napari_names() -> dict[str, object]:
 
 
 def get_app() -> NapariApplication:
-    """Get the Napari Application singleton."""
+    """Get the Napari Application singleton. Now deprecated, use `get_app_model`."""
     warn(
         trans._(
             '`NapariApplication` instance access through `get_app` is deprecated.\n'
@@ -74,4 +74,4 @@ def get_app() -> NapariApplication:
 
 def get_app_model() -> NapariApplication:
     """Get the Napari Application singleton."""
-    return NapariApplication.get_app()
+    return NapariApplication.get_app_model()

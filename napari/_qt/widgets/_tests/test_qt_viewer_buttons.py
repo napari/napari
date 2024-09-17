@@ -137,7 +137,7 @@ def test_ndisplay_button_popup(qt_viewer_buttons, qtbot):
     )
 
 
-def test_toggle_ndisplay(mock_app, qt_viewer_buttons, qtbot):
+def test_toggle_ndisplay(mock_app_model, qt_viewer_buttons, qtbot):
     """Check `toggle_ndisplay` works via `mouseClick`."""
     viewer, viewer_buttons = qt_viewer_buttons
     assert viewer_buttons.ndisplayButton

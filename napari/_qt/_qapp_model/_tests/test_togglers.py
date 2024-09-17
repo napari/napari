@@ -8,7 +8,7 @@ from napari._qt.qt_main_window import Window
 from napari.components import ViewerModel
 
 
-def test_viewer_toggler(mock_app):
+def test_viewer_toggler(mock_app_model):
     viewer = ViewerModel()
     action = ViewerToggleAction(
         id='some.command.id',
