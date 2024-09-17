@@ -405,6 +405,10 @@ def qt_viewer_(qtbot, viewer_model, monkeypatch):
 
 @pytest.fixture
 def qt_viewer(qt_viewer_):
+    """We created `qt_viewer_` fixture to allow modifying qt_viewer
+    if module-level-specific modifications are necessary.
+    For example, in `test_qt_viewer.py`.
+    """
     return qt_viewer_
 
 
