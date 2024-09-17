@@ -301,7 +301,7 @@ def viewer_model():
 
 
 @pytest.fixture
-def qt_viewer(qtbot, viewer_model, monkeypatch):
+def qt_viewer_(qtbot, viewer_model, monkeypatch):
     from napari._qt.qt_viewer import QtViewer
 
     viewer = QtViewer(viewer_model)
@@ -401,6 +401,11 @@ def qt_viewer(qtbot, viewer_model, monkeypatch):
 
     qtbot.addWidget(viewer, before_close_func=hide_and_clear_qt_viewer)
     return viewer
+
+
+@pytest.fixture
+def qt_viewer(qt_viewer_):
+    return qt_viewer_
 
 
 def _event_check(instance):
