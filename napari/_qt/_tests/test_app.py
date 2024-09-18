@@ -8,7 +8,7 @@ from qtpy.QtWidgets import QAction, QShortcut
 from napari._qt.qt_event_loop import _ipython_has_eventloop, run, set_app_id
 
 
-@pytest.mark.skipif(os.name != 'Windows', reason='Windows specific')
+@pytest.mark.skipif(os.name != 'nt', reason='Windows specific')
 def test_windows_grouping_overwrite(qapp):
     import ctypes
 
