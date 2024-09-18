@@ -58,6 +58,7 @@ def _napari_names() -> dict[str, object]:
     }
 
 
+# TODO: Remove in 0.6.0
 def get_app() -> NapariApplication:
     """Get the Napari Application singleton. Now deprecated, use `get_app_model`."""
     warn(
