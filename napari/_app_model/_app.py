@@ -63,7 +63,7 @@ def get_app() -> NapariApplication:
     """Get the Napari Application singleton. Now deprecated, use `get_app_model`."""
     warn(
         trans._(
-            '`NapariApplication` instance access through `get_app` is deprecated.\n'
+            '`NapariApplication` instance access through `get_app` is deprecated and will be removed in 0.6.0.\n'
             'Please use `get_app_model` instead.\n',
             deferred=True,
         ),
