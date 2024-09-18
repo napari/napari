@@ -11,6 +11,7 @@ from napari._app_model import get_app
 from napari._app_model.constants import MenuId
 from napari._qt._qapp_model._tests.utils import get_submenu_action
 from napari.layers import Image
+from napari.plugins._tests.test_npe2 import mock_pm
 from napari.utils.action_manager import action_manager
 
 
@@ -139,7 +140,8 @@ def test_sample_menu_single_data(
     assert 'tmp_plugin:tmp-sample-1' in app.commands
 
 
-def test_sample_menu_sorted(mock_pm, mock_app, tmp_plugin: DynamicPlugin):
+@pytest.mark.usefixtures('mock_pm')
+def test_sample_menu_sorted(mock_app, tmp_plugin: DynamicPlugin):
     from napari._app_model import get_app
     from napari.plugins import _initialize_plugins
 
