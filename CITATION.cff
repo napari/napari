@@ -23,6 +23,7 @@ authors:
 - given-names: Juan
   family-names: Nunez-Iglesias
   affiliation: Monash eResearch Centre, Monash University
+  orcid: https://orcid.org/0000-0002-7239-5828
   alias: jni
 - given-names: Peter
   family-names: Sobolewski
