@@ -6,8 +6,7 @@ from unittest.mock import MagicMock
 import npe2
 import numpy as np
 import pytest
-from app_model.types import SubmenuItem
-from npe2 import DynamicPlugin, PluginManifest
+from npe2 import PluginManifest
 
 if TYPE_CHECKING:
     from npe2._pytest_plugin import TestPluginManager
@@ -208,77 +207,3 @@ def test_plugin_actions(mock_pm: 'TestPluginManager', mock_app):
     menus_items4 = list(app.menus.get_menu('napari/file/new_layer'))
     assert len(menus_items4) == 2
     assert 'my-plugin.hello_world' in app.commands
-
-
-def test_plugins_menu_sorted(mock_pm, mock_app, tmp_plugin: DynamicPlugin):
-    from napari._app_model import get_app
-    from napari.plugins import _initialize_plugins
-
-    # we make sure 'plugin-b' is registered first
-    tmp_plugin2 = tmp_plugin.spawn(
-        name='plugin-b', plugin_manager=mock_pm, register=True
-    )
-    tmp_plugin1 = tmp_plugin.spawn(
-        name='plugin-a', plugin_manager=mock_pm, register=True
-    )
-
-    @tmp_plugin1.contribute.widget(display_name='Widget 1')
-    def widget1():
-        pass
-
-    @tmp_plugin1.contribute.widget(display_name='Widget 2')
-    def widget2():
-        pass
-
-    @tmp_plugin2.contribute.widget(display_name='Widget 1')
-    def widget2_1():
-        pass
-
-    @tmp_plugin2.contribute.widget(display_name='Widget 2')
-    def widget2_2():
-        pass
-
-    _initialize_plugins()
-    plugins_menu = list(get_app().menus.get_menu('napari/plugins'))
-    submenus = [item for item in plugins_menu if isinstance(item, SubmenuItem)]
-    assert len(submenus) == 2
-    assert submenus[0].title == 'plugin-a'
-    assert submenus[1].title == 'plugin-b'
-
-
-def test_samples_menu_sorted(mock_pm, mock_app, tmp_plugin: DynamicPlugin):
-    from napari._app_model import get_app
-    from napari.plugins import _initialize_plugins
-
-    # we make sure 'plugin-b' is registered first
-    tmp_plugin2 = tmp_plugin.spawn(
-        name='plugin-b', plugin_manager=mock_pm, register=True
-    )
-    tmp_plugin1 = tmp_plugin.spawn(
-        name='plugin-a', plugin_manager=mock_pm, register=True
-    )
-
-    @tmp_plugin1.contribute.sample_data(display_name='Sample 1')
-    def sample1():
-        pass
-
-    @tmp_plugin1.contribute.sample_data(display_name='Sample 2')
-    def sample2():
-        pass
-
-    @tmp_plugin2.contribute.sample_data(display_name='Sample 1')
-    def sample2_1():
-        pass
-
-    @tmp_plugin2.contribute.sample_data(display_name='Sample 2')
-    def sample2_2():
-        pass
-
-    _initialize_plugins()
-    samples_menu = list(get_app().menus.get_menu('napari/file/samples'))
-    submenus = [item for item in samples_menu if isinstance(item, SubmenuItem)]
-    # sample plugin registered with mock_pm also contributes two samples
-    assert len(submenus) == 3
-    assert submenus[0].title == 'My Plugin'
-    assert submenus[1].title == 'plugin-a'
-    assert submenus[2].title == 'plugin-b'

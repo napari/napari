@@ -139,6 +139,44 @@ def test_sample_menu_single_data(
     assert 'tmp_plugin:tmp-sample-1' in app.commands
 
 
+def test_sample_menu_sorted(mock_pm, mock_app, tmp_plugin: DynamicPlugin):
+    from napari._app_model import get_app
+    from napari.plugins import _initialize_plugins
+
+    # we make sure 'plugin-b' is registered first
+    tmp_plugin2 = tmp_plugin.spawn(
+        name='plugin-b', plugin_manager=mock_pm, register=True
+    )
+    tmp_plugin1 = tmp_plugin.spawn(
+        name='plugin-a', plugin_manager=mock_pm, register=True
+    )
+
+    @tmp_plugin1.contribute.sample_data(display_name='Sample 1')
+    def sample1():
+        pass
+
+    @tmp_plugin1.contribute.sample_data(display_name='Sample 2')
+    def sample2():
+        pass
+
+    @tmp_plugin2.contribute.sample_data(display_name='Sample 1')
+    def sample2_1():
+        pass
+
+    @tmp_plugin2.contribute.sample_data(display_name='Sample 2')
+    def sample2_2():
+        pass
+
+    _initialize_plugins()
+    samples_menu = list(get_app().menus.get_menu('napari/file/samples'))
+    submenus = [item for item in samples_menu if isinstance(item, SubmenuItem)]
+    # sample plugin registered with mock_pm also contributes two samples
+    assert len(submenus) == 3
+    assert submenus[0].title == 'My Plugin'
+    assert submenus[1].title == 'plugin-a'
+    assert submenus[2].title == 'plugin-b'
+
+
 def test_show_shortcuts_actions(make_napari_viewer):
     viewer = make_napari_viewer()
     assert viewer.window._pref_dialog is None
