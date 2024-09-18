@@ -12,7 +12,7 @@ from napari._app_model.constants import MenuId
 from napari._qt._qapp_model.qactions import _plugins, init_qactions
 from napari._qt._qplugins._qnpe2 import _toggle_or_get_widget
 from napari._tests.utils import skip_local_popups
-from napari.plugins._tests.test_npe2 import mock_pm
+from napari.plugins._tests.test_npe2 import mock_pm  # noqa: F401
 
 
 class DummyWidget(QWidget):
@@ -282,8 +282,11 @@ def test_no_plugin_manager(monkeypatch, make_napari_viewer):
     assert not plugin_install_action.isVisible()
 
 
-@pytest.mark.usefixtures('mock_pm')
-def test_plugins_menu_sorted(mock_app, tmp_plugin: DynamicPlugin):
+def test_plugins_menu_sorted(
+    mock_pm,  # noqa: F811
+    mock_app,
+    tmp_plugin: DynamicPlugin,
+):
     from napari._app_model import get_app
     from napari.plugins import _initialize_plugins
 
