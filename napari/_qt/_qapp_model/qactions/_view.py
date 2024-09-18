@@ -137,7 +137,7 @@ Q_VIEW_ACTIONS: list[Action] = [
             }
         ],
         callback=_reset_zoom,
-        keybindings=[{'primary': KeyMod.CtrlCmd | KeyCode.Digit0}],
+        keybindings=[StandardKeyBinding.OriginalSize],
     ),
     Action(
         id='napari.viewer.camera.zoom_in',
