@@ -300,19 +300,19 @@ def test_plugins_menu_sorted(
 
     @tmp_plugin1.contribute.widget(display_name='Widget 1')
     def widget1():
-        pass
+        ...
 
     @tmp_plugin1.contribute.widget(display_name='Widget 2')
     def widget2():
-        pass
+        ...
 
     @tmp_plugin2.contribute.widget(display_name='Widget 1')
     def widget2_1():
-        pass
+        ...
 
     @tmp_plugin2.contribute.widget(display_name='Widget 2')
     def widget2_2():
-        pass
+        ...
 
     _initialize_plugins()
     plugins_menu = list(get_app().menus.get_menu('napari/plugins'))

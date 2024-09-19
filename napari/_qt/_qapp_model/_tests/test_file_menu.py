@@ -154,19 +154,19 @@ def test_sample_menu_sorted(
 
     @tmp_plugin1.contribute.sample_data(display_name='Sample 1')
     def sample1():
-        pass
+        ...
 
     @tmp_plugin1.contribute.sample_data(display_name='Sample 2')
     def sample2():
-        pass
+        ...
 
     @tmp_plugin2.contribute.sample_data(display_name='Sample 1')
     def sample2_1():
-        pass
+        ...
 
     @tmp_plugin2.contribute.sample_data(display_name='Sample 2')
     def sample2_2():
-        pass
+        ...
 
     _initialize_plugins()
     samples_menu = list(get_app().menus.get_menu('napari/file/samples'))
