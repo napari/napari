@@ -1,12 +1,9 @@
+from collections.abc import Generator
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
-    Generator,
-    List,
     Optional,
-    Type,
     Union,
 )
 
@@ -20,6 +17,22 @@ if TYPE_CHECKING:
     from napari._pydantic_compat import ModelField
 
     Number = Union[int, float, Decimal]
+
+# In numpy 2, the semantics of the copy argument in np.array changed
+# so that copy=False errors if a copy is needed:
+# https://numpy.org/devdocs/numpy_2_0_migration_guide.html#adapting-to-changes-in-the-copy-keyword
+#
+# In numpy 1, copy=False meant that a copy was avoided unless necessary,
+# but would not error.
+#
+# In most usage like this use np.asarray instead, but sometimes we need
+# to use some of the unique arguments of np.array (e.g. ndmin).
+#
+# This solution assumes numpy 1 by default, and switches to the numpy 2
+# value for any release of numpy 2 on PyPI (including betas and RCs).
+copy_if_needed: Optional[bool] = False
+if np.lib.NumpyVersion(np.__version__) >= '2.0.0b1':
+    copy_if_needed = None
 
 
 class Array(np.ndarray):
@@ -38,7 +51,9 @@ class Array(np.ndarray):
         else:
             shape = ()
 
-        result = np.array(val, dtype=dtype, copy=False, ndmin=len(shape))
+        result = np.array(
+            val, dtype=dtype, copy=copy_if_needed, ndmin=len(shape)
+        )
 
         if any(
             (shape[i] != -1 and shape[i] != result.shape[i])
@@ -59,10 +74,10 @@ class NumberNotEqError(errors.PydanticValueError):
 class ConstrainedInt(types.ConstrainedInt):
     """ConstrainedInt extension that adds not-equal"""
 
-    ne: Optional[Union[int, List[int]]] = None
+    ne: Optional[Union[int, list[int]]] = None
 
     @classmethod
-    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+    def __modify_schema__(cls, field_schema: dict[str, Any]) -> None:
         super().__modify_schema__(field_schema)
         if cls.ne is not None:
             f = 'const' if isinstance(cls.ne, int) else 'enum'
@@ -91,7 +106,7 @@ def conint(
     le: Optional[int] = None,
     multiple_of: Optional[int] = None,
     ne: Optional[int] = None,
-) -> Type[int]:
+) -> type[int]:
     """Extended version of `pydantic.types.conint` that includes not-equal."""
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = {

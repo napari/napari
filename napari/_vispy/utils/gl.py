@@ -1,9 +1,9 @@
-"""OpenGL Utilities.
-"""
+"""OpenGL Utilities."""
 
+from collections.abc import Generator
 from contextlib import contextmanager
 from functools import lru_cache
-from typing import Any, Generator, Tuple, Union, cast
+from typing import Any, Union, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -45,7 +45,7 @@ def get_gl_extensions() -> str:
 
 
 @lru_cache
-def get_max_texture_sizes() -> Tuple[int, int]:
+def get_max_texture_sizes() -> tuple[int, int]:
     """Return the maximum texture sizes for 2D and 3D rendering.
 
     If this function is called without an OpenGL context it will create a

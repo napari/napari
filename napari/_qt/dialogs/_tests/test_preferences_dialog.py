@@ -1,5 +1,6 @@
 import sys
 
+import numpy.testing as npt
 import pytest
 from qtpy.QtCore import Qt
 
@@ -9,21 +10,45 @@ from napari._qt.dialogs.preferences_dialog import (
     QMessageBox,
 )
 from napari._vendor.qt_json_builder.qt_jsonschema_form.widgets import (
+    EnumSchemaWidget,
     FontSizeSchemaWidget,
+    HighlightPreviewWidget,
     HorizontalObjectSchemaWidget,
 )
 from napari.settings import NapariSettings, get_settings
+from napari.settings._constants import BrushSizeOnMouseModifiers, LabelDTypes
+from napari.utils.interactions import Shortcut
+from napari.utils.key_bindings import KeyBinding
 
 
 @pytest.fixture
 def pref(qtbot):
     dlg = PreferencesDialog()
     qtbot.addWidget(dlg)
+    # check settings default values and change them for later checks
     settings = get_settings()
+    # change theme setting (default `dark`)
     assert settings.appearance.theme == 'dark'
     dlg._settings.appearance.theme = 'light'
     assert get_settings().appearance.theme == 'light'
-    yield dlg
+    # change highlight setting related value (default thickness `1`)
+    assert get_settings().appearance.highlight.highlight_thickness == 1
+    dlg._settings.appearance.highlight.highlight_thickness = 5
+    assert get_settings().appearance.highlight.highlight_thickness == 5
+    # change `napari:reset_scroll_progress` shortcut/keybinding (default keybinding `Ctrl`/`Control`)
+    # a copy of the initial `shortcuts` dictionary needs to be done since, to trigger an
+    # event update from the `ShortcutsSettings` model, the whole `shortcuts` dictionary
+    # needs to be reassigned.
+    assert dlg._settings.shortcuts.shortcuts[
+        'napari:reset_scroll_progress'
+    ] == [KeyBinding.from_str('Ctrl')]
+    shortcuts = dlg._settings.shortcuts.shortcuts.copy()
+    shortcuts['napari:reset_scroll_progress'] = [KeyBinding.from_str('U')]
+    dlg._settings.shortcuts.shortcuts = shortcuts
+    assert dlg._settings.shortcuts.shortcuts[
+        'napari:reset_scroll_progress'
+    ] == [KeyBinding.from_str('U')]
+    return dlg
 
 
 def test_prefdialog_populated(pref):
@@ -35,10 +60,29 @@ def test_prefdialog_populated(pref):
 
 
 def test_dask_widget(qtbot, pref):
-    assert isinstance(
-        pref._stack.currentWidget().widget().widget.widgets['dask'],
-        HorizontalObjectSchemaWidget,
-    )
+    dask_widget = pref._stack.currentWidget().widget().widget.widgets['dask']
+    def_dask_enabled = True
+    settings = pref._settings
+
+    # check custom widget definition and default value for dask cache `enabled` setting
+    assert isinstance(dask_widget, HorizontalObjectSchemaWidget)
+    assert settings.application.dask.enabled == def_dask_enabled
+    assert dask_widget.state['enabled'] == def_dask_enabled
+
+    # check changing dask cache `enabled` setting via widget
+    new_dask_enabled = False
+    dask_widget.state = {
+        'enabled': new_dask_enabled,
+        'cache': dask_widget.state['cache'],
+    }
+    assert settings.application.dask.enabled == new_dask_enabled
+    assert dask_widget.state['enabled'] == new_dask_enabled
+    assert dask_widget.widgets['enabled'].state == new_dask_enabled
+
+    # check changing dask `enabled` setting via settings object (to default value)
+    settings.application.dask.enabled = def_dask_enabled
+    assert dask_widget.state['enabled'] == def_dask_enabled
+    assert dask_widget.widgets['enabled'].state == def_dask_enabled
 
 
 def test_font_size_widget(qtbot, pref):
@@ -58,7 +102,7 @@ def test_font_size_widget(qtbot, pref):
     font_size_widget.state = new_font_size
     assert get_settings().appearance.font_size == new_font_size
 
-    # check a theme change keeps setted font size value
+    # verify that a theme change preserves the font size value
     assert get_settings().appearance.theme == 'light'
     get_settings().appearance.theme = 'dark'
     assert get_settings().appearance.font_size == new_font_size
@@ -68,6 +112,94 @@ def test_font_size_widget(qtbot, pref):
     font_size_widget._reset_button.click()
     assert get_settings().appearance.font_size == def_font_size
     assert font_size_widget.state == def_font_size
+
+
+@pytest.mark.parametrize(
+    ('enum_setting_name', 'enum_setting_class'),
+    [
+        ('new_labels_dtype', LabelDTypes),
+        ('brush_size_on_mouse_move_modifiers', BrushSizeOnMouseModifiers),
+    ],
+)
+def test_StrEnum_widgets(qtbot, pref, enum_setting_name, enum_setting_class):
+    enum_widget = (
+        pref._stack.currentWidget().widget().widget.widgets[enum_setting_name]
+    )
+    settings = pref._settings
+
+    # check custom widget definition and widget value follows setting
+    assert isinstance(enum_widget, EnumSchemaWidget)
+    assert enum_widget.state == getattr(
+        settings.application, enum_setting_name
+    )
+
+    # check changing setting via widget
+    for idx in range(enum_widget.count()):
+        item_text = enum_widget.itemText(idx)
+        item_data = enum_widget.itemData(idx)
+        enum_widget.setCurrentText(item_text)
+        assert getattr(settings.application, enum_setting_name) == item_data
+        assert enum_widget.state == item_data
+
+    # check changing setting updates widget
+    for enum_value in enum_setting_class:
+        setattr(settings.application, enum_setting_name, enum_value)
+        assert enum_widget.state == enum_value
+
+
+def test_highlight_widget(qtbot, pref):
+    highlight_widget = (
+        pref._stack.widget(1).widget().widget.widgets['highlight']
+    )
+    settings = pref._settings
+
+    # check custom widget definition and widget follows settings values
+    assert isinstance(highlight_widget, HighlightPreviewWidget)
+    assert (
+        highlight_widget.state['highlight_color']
+        == settings.appearance.highlight.highlight_color
+    )
+    assert (
+        highlight_widget.state['highlight_thickness']
+        == settings.appearance.highlight.highlight_thickness
+    )
+
+    # check changing setting via widget
+    new_widget_values = {
+        'highlight_thickness': 5,
+        'highlight_color': [0.6, 0.6, 1.0, 1.0],
+    }
+    highlight_widget.setValue(new_widget_values)
+    npt.assert_allclose(
+        settings.appearance.highlight.highlight_color,
+        new_widget_values['highlight_color'],
+    )
+    assert (
+        settings.appearance.highlight.highlight_thickness
+        == new_widget_values['highlight_thickness']
+    )
+
+    # check changing setting updates widget
+    new_setting_values = {
+        'highlight_thickness': 1,
+        'highlight_color': [0.5, 0.6, 1.0, 1.0],
+    }
+
+    settings.appearance.highlight.highlight_color = new_setting_values[
+        'highlight_color'
+    ]
+    npt.assert_allclose(
+        highlight_widget.state['highlight_color'],
+        new_setting_values['highlight_color'],
+    )
+
+    settings.appearance.highlight.highlight_thickness = new_setting_values[
+        'highlight_thickness'
+    ]
+    assert (
+        highlight_widget.state['highlight_thickness']
+        == new_setting_values['highlight_thickness']
+    )
 
 
 def test_preferences_dialog_accept(qtbot, pref):
@@ -98,12 +230,51 @@ def test_preferences_dialog_cancel(qtbot, pref):
     with qtbot.waitSignal(pref.finished):
         pref._button_cancel.click()
     assert get_settings().appearance.theme == 'dark'
+    assert get_settings().shortcuts.shortcuts[
+        'napari:reset_scroll_progress'
+    ] == [KeyBinding.from_str('Ctrl')]
 
 
 def test_preferences_dialog_restore(qtbot, pref, monkeypatch):
+    theme_widget = pref._stack.widget(1).widget().widget.widgets['theme']
+    highlight_widget = (
+        pref._stack.widget(1).widget().widget.widgets['highlight']
+    )
+    shortcut_widget = (
+        pref._stack.widget(3).widget().widget.widgets['shortcuts']
+    )
+
     assert get_settings().appearance.theme == 'light'
+    assert theme_widget.state == 'light'
+    assert get_settings().appearance.highlight.highlight_thickness == 5
+    assert highlight_widget.state['highlight_thickness'] == 5
+    assert get_settings().shortcuts.shortcuts[
+        'napari:reset_scroll_progress'
+    ] == [KeyBinding.from_str('U')]
+    assert KeyBinding.from_str(
+        Shortcut.parse_platform(
+            shortcut_widget._table.item(
+                0, shortcut_widget._shortcut_col
+            ).text()
+        )
+    ) == KeyBinding.from_str('U')
+
     monkeypatch.setattr(
         QMessageBox, 'question', lambda *a: QMessageBox.RestoreDefaults
     )
     pref._restore_default_dialog()
+
     assert get_settings().appearance.theme == 'dark'
+    assert theme_widget.state == 'dark'
+    assert get_settings().appearance.highlight.highlight_thickness == 1
+    assert highlight_widget.state['highlight_thickness'] == 1
+    assert get_settings().shortcuts.shortcuts[
+        'napari:reset_scroll_progress'
+    ] == [KeyBinding.from_str('Ctrl')]
+    assert KeyBinding.from_str(
+        Shortcut.parse_platform(
+            shortcut_widget._table.item(
+                0, shortcut_widget._shortcut_col
+            ).text()
+        )
+    ) == KeyBinding.from_str('Ctrl')

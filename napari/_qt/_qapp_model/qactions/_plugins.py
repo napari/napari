@@ -1,12 +1,11 @@
-"""Defines plugins menu q actions."""
+"""Qt 'Plugins' menu Actions."""
 
 from importlib.util import find_spec
 from logging import getLogger
-from typing import List
 
 from app_model.types import Action
 
-from napari._app_model.constants import CommandId, MenuGroup, MenuId
+from napari._app_model.constants import MenuGroup, MenuId
 from napari._qt.dialogs.qt_plugin_report import QtPluginErrReporter
 from napari._qt.qt_main_window import Window
 from napari.utils.translations import trans
@@ -41,10 +40,10 @@ def _show_plugin_err_reporter(window: Window) -> None:
     QtPluginErrReporter(parent=window._qt_window).exec_()  # type: ignore [attr-defined]
 
 
-Q_PLUGINS_ACTIONS: List[Action] = [
+Q_PLUGINS_ACTIONS: list[Action] = [
     Action(
-        id=CommandId.DLG_PLUGIN_INSTALL,
-        title=CommandId.DLG_PLUGIN_INSTALL.command_title,
+        id='napari.window.plugins.plugin_install_dialog',
+        title=trans._('Install/Uninstall Plugins...'),
         menus=[
             {
                 'id': MenuId.MENUBAR_PLUGINS,
@@ -56,8 +55,8 @@ Q_PLUGINS_ACTIONS: List[Action] = [
         callback=_show_plugin_install_dialog,
     ),
     Action(
-        id=CommandId.DLG_PLUGIN_ERR,
-        title=CommandId.DLG_PLUGIN_ERR.command_title,
+        id='napari.window.plugins.plugin_err_reporter',
+        title=trans._('Plugin Errors...'),
         menus=[
             {
                 'id': MenuId.MENUBAR_PLUGINS,

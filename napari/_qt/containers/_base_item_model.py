@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import MutableSequence
-from typing import TYPE_CHECKING, Any, Generic, Tuple, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Generic, TypeVar, Union
 
 from qtpy.QtCore import QAbstractItemModel, QModelIndex, Qt
 
@@ -224,13 +224,13 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         self._root.events.connect(self._process_event)
 
     def _split_nested_index(
-        self, nested_index: Union[int, Tuple[int, ...]]
-    ) -> Tuple[QModelIndex, int]:
+        self, nested_index: Union[int, tuple[int, ...]]
+    ) -> tuple[QModelIndex, int]:
         """Return (parent_index, row) for a given index."""
         if isinstance(nested_index, int):
             return QModelIndex(), nested_index
         # Tuple indexes are used in NestableEventedList, so we support them
-        # here so that subclasses needn't reimplmenet our _on_begin_* methods
+        # here so that subclasses needn't reimplement our _on_begin_* methods
         par = QModelIndex()
         *_p, idx = nested_index
         for i in _p:

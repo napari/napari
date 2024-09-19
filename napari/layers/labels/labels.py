@@ -1,14 +1,12 @@
 import warnings
 from collections import deque
+from collections.abc import Sequence
 from contextlib import contextmanager
 from typing import (
+    Any,
     Callable,
     ClassVar,
-    Dict,
-    List,
     Optional,
-    Sequence,
-    Tuple,
     Union,
     cast,
 )
@@ -30,6 +28,7 @@ from napari.layers.base._base_mouse_bindings import (
 from napari.layers.image._image_utils import guess_multiscale
 from napari.layers.image._slice import _ImageSliceResponse
 from napari.layers.labels._labels_constants import (
+    IsoCategoricalGradientMode,
     LabelColorMode,
     LabelsRendering,
     Mode,
@@ -56,6 +55,7 @@ from napari.utils.colormaps import (
 from napari.utils.colormaps.colormap import (
     CyclicLabelColormap,
     LabelColormapBase,
+    _normalize_label_colormap,
 )
 from napari.utils.colormaps.colormap_utils import shuffle_and_extend_colormap
 from napari.utils.events import EmitterGroup, Event
@@ -87,6 +87,9 @@ class Labels(ScalarFieldBase):
         the final column is a length N translation vector and a 1 or a napari
         `Affine` transform object. Applied as an extra transform on top of the
         provided scale, rotate, and shear values.
+    axis_labels : tuple of str, optional
+        Dimension names of the layer data.
+        If not provided, axis_labels will be set to (..., 'axis -2', 'axis -1').
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -107,6 +110,12 @@ class Labels(ScalarFieldBase):
     features : dict[str, array-like] or DataFrame
         Features table where each row corresponds to a label and each column
         is a feature. The first row corresponds to the background label.
+    iso_gradient_mode : str
+        Method for calulating the gradient (used to get the surface normal) in the
+        'iso_categorical' rendering mode. Must be one of {'fast', 'smooth'}.
+        'fast' uses a simple finite difference gradient in x, y, and z. 'smooth' uses an
+        isotropic Sobel gradient, which is smoother but more computationally expensive.
+        The default value is 'fast'.
     metadata : dict
         Layer metadata.
     multiscale : bool
@@ -125,13 +134,13 @@ class Labels(ScalarFieldBase):
         Properties defining plane rendering in 3D. Properties are defined in
         data coordinates. Valid dictionary keys are
         {'position', 'normal', 'thickness', and 'enabled'}.
+    projection_mode : str
+        How data outside the viewed dimensions but inside the thick Dims slice will
+        be projected onto the viewed dimensions
     properties : dict {str: array (N,)} or DataFrame
         Properties for each label. Each property should be an array of length
         N, where N is the number of labels, and the first property corresponds
         to background.
-    projection_mode : str
-        How data outside the viewed dimensions but inside the thick Dims slice will
-        be projected onto the viewed dimensions
     rendering : str
         3D Rendering mode used by vispy. Must be one {'translucent', 'iso_categorical'}.
         'translucent' renders without lighting. 'iso_categorical' uses isosurface
@@ -150,6 +159,9 @@ class Labels(ScalarFieldBase):
         ones along the main diagonal.
     translate : tuple of float
         Translation values for the layer.
+    units : tuple of str or pint.Unit, optional
+        Units of the layer data in world coordinates.
+        If not provided, the default units are assumed to be pixels.
     visible : bool
         Whether the layer visual is currently being displayed.
 
@@ -161,6 +173,8 @@ class Labels(ScalarFieldBase):
         belongs to. The label 0 is rendered as transparent. Please note
         multiscale rendering is only supported in 2D. In 3D, only
         the lowest resolution scale is displayed.
+    axis_labels : tuple of str
+        Dimension names of the layer data.
     multiscale : bool
         Whether the data is a multiscale image or not. Multiscale data is
         represented by a list of array like image data. The first image in the
@@ -228,6 +242,8 @@ class Labels(ScalarFieldBase):
         Properties defining plane rendering in 3D.
     experimental_clipping_planes : ClippingPlaneList
         Clipping planes defined in data coordinates, used to clip the volume.
+    units: tuple of pint.Unit
+        Units of the layer data in world coordinates.
 
     Notes
     -----
@@ -241,7 +257,7 @@ class Labels(ScalarFieldBase):
 
     _modeclass = Mode
 
-    _drag_modes: ClassVar[Dict[Mode, Callable[['Labels', Event], None]]] = {  # type: ignore[assignment]
+    _drag_modes: ClassVar[dict[Mode, Callable[['Labels', Event], None]]] = {  # type: ignore[assignment]
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
         Mode.PICK: pick,
@@ -253,7 +269,9 @@ class Labels(ScalarFieldBase):
 
     brush_size_on_mouse_move = BrushSizeOnMouseMove(min_brush_size=1)
 
-    _move_modes: ClassVar[Dict[StringEnum, Callable[['Labels', Event], None]]] = {  # type: ignore[assignment]
+    _move_modes: ClassVar[
+        dict[StringEnum, Callable[['Labels', Event], None]]
+    ] = {  # type: ignore[assignment]
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
         Mode.PICK: no_op,
@@ -263,7 +281,7 @@ class Labels(ScalarFieldBase):
         Mode.POLYGON: no_op,  # the overlay handles mouse events in this mode
     }
 
-    _cursor_modes: ClassVar[Dict[Mode, str]] = {  # type: ignore[assignment]
+    _cursor_modes: ClassVar[dict[Mode, str]] = {  # type: ignore[assignment]
         Mode.PAN_ZOOM: 'standard',
         Mode.TRANSFORM: 'standard',
         Mode.PICK: 'cross',
@@ -280,24 +298,27 @@ class Labels(ScalarFieldBase):
         data,
         *,
         affine=None,
+        axis_labels=None,
         blending='translucent',
         cache=True,
         colormap=None,
         depiction='volume',
         experimental_clipping_planes=None,
         features=None,
+        iso_gradient_mode=IsoCategoricalGradientMode.FAST.value,
         metadata=None,
         multiscale=None,
         name=None,
         opacity=0.7,
         plane=None,
-        properties=None,
         projection_mode='none',
+        properties=None,
         rendering='iso_categorical',
         rotate=None,
         scale=None,
         shear=None,
         translate=None,
+        units=None,
         visible=True,
     ) -> None:
         if name is None and data is not None:
@@ -322,23 +343,25 @@ class Labels(ScalarFieldBase):
 
         super().__init__(
             data,
-            rendering=rendering,
-            depiction=depiction,
-            name=name,
-            metadata=metadata,
-            scale=scale,
-            translate=translate,
-            rotate=rotate,
-            shear=shear,
             affine=affine,
-            opacity=opacity,
+            axis_labels=axis_labels,
             blending=blending,
-            visible=visible,
-            multiscale=multiscale,
             cache=cache,
-            plane=plane,
+            depiction=depiction,
             experimental_clipping_planes=experimental_clipping_planes,
+            rendering=rendering,
+            metadata=metadata,
+            multiscale=multiscale,
+            name=name,
+            scale=scale,
+            shear=shear,
+            plane=plane,
+            opacity=opacity,
             projection_mode=projection_mode,
+            rotate=rotate,
+            translate=translate,
+            units=units,
+            visible=visible,
         )
 
         self.events.add(
@@ -348,6 +371,7 @@ class Labels(ScalarFieldBase):
             contiguous=Event,
             contour=Event,
             features=Event,
+            iso_gradient_mode=Event,
             labels_update=Event,
             n_edit_dimensions=Event,
             paint=Event,
@@ -371,6 +395,8 @@ class Labels(ScalarFieldBase):
         self._n_edit_dimensions = 2
         self._contiguous = True
         self._brush_size = 10
+
+        self._iso_gradient_mode = IsoCategoricalGradientMode.FAST
 
         self._selected_label = 1
         self.colormap.selection = self._selected_label
@@ -417,6 +443,27 @@ class Labels(ScalarFieldBase):
         self.events.rendering()
 
     @property
+    def iso_gradient_mode(self):
+        """Return current gradient mode for isosurface rendering.
+
+        Selects the finite-difference gradient method for the isosurface shader. Options include:
+            * ``fast``: use a simple finite difference gradient along each axis
+            * ``smooth``: use an isotropic Sobel gradient, smoother but more
+              computationally expensive
+
+        Returns
+        -------
+        str
+            The current gradient mode
+        """
+        return str(self._iso_gradient_mode)
+
+    @iso_gradient_mode.setter
+    def iso_gradient_mode(self, value):
+        self._iso_gradient_mode = IsoCategoricalGradientMode(value)
+        self.events.iso_gradient_mode()
+
+    @property
     def contiguous(self):
         """bool: fill bucket changes only connected pixels of same label."""
         return self._contiguous
@@ -446,7 +493,7 @@ class Labels(ScalarFieldBase):
             raise ValueError('contour value must be >= 0')
         self._contour = int(contour)
         self.events.contour()
-        self.refresh()
+        self.refresh(extent=False)
 
     @property
     def brush_size(self):
@@ -487,6 +534,7 @@ class Labels(ScalarFieldBase):
         self._set_colormap(colormap)
 
     def _set_colormap(self, colormap):
+        colormap = _normalize_label_colormap(colormap)
         if isinstance(colormap, CyclicLabelColormap):
             self._random_colormap = colormap
             self._original_random_colormap = colormap
@@ -513,7 +561,7 @@ class Labels(ScalarFieldBase):
         self._color_mode = color_mode
         self.events.colormap()  # Will update the LabelVispyColormap shader
         self.events.selected_label()
-        self.refresh()
+        self.refresh(extent=False)
 
     @property
     def data(self) -> Union[LayerDataProtocol, MultiScaleData]:
@@ -534,7 +582,7 @@ class Labels(ScalarFieldBase):
         """Dataframe-like features table.
 
         It is an implementation detail that this is a `pandas.DataFrame`. In the future,
-        we will target the currently-in-development Data API dataframe protocol [1].
+        we will target the currently-in-development Data API dataframe protocol [1]_.
         This will enable us to use alternate libraries such as xarray or cuDF for
         additional features without breaking existing usage of this.
 
@@ -543,14 +591,14 @@ class Labels(ScalarFieldBase):
 
         References
         ----------
-        .. [1]: https://data-apis.org/dataframe-protocol/latest/API.html
+        .. [1] https://data-apis.org/dataframe-protocol/latest/API.html
         """
         return self._feature_table.values
 
     @features.setter
     def features(
         self,
-        features: Union[Dict[str, np.ndarray], pd.DataFrame],
+        features: Union[dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
         self._feature_table.set_values(features)
         self._label_index = self._make_label_index()
@@ -558,15 +606,15 @@ class Labels(ScalarFieldBase):
         self.events.features()
 
     @property
-    def properties(self) -> Dict[str, np.ndarray]:
+    def properties(self) -> dict[str, np.ndarray]:
         """dict {str: array (N,)}, DataFrame: Properties for each label."""
         return self._feature_table.properties()
 
     @properties.setter
-    def properties(self, properties: Dict[str, Array]):
+    def properties(self, properties: dict[str, Array]):
         self.features = properties
 
-    def _make_label_index(self) -> Dict[int, int]:
+    def _make_label_index(self) -> dict[int, int]:
         features = self._feature_table.values
         label_index = {}
         if 'index' in features:
@@ -591,17 +639,13 @@ class Labels(ScalarFieldBase):
         bool
             True if color contains only default colors, otherwise False.
         """
-        if {None, self.colormap.background_value} != set(color.keys()):
-            return False
-
-        if not np.allclose(color[None], [0, 0, 0, 1]):
-            return False
-        if not np.allclose(
-            color[self.colormap.background_value], [0, 0, 0, 0]
-        ):
-            return False
-
-        return True
+        return (
+            {None, self.colormap.background_value} == set(color.keys())
+            and np.allclose(color[None], [0, 0, 0, 1])
+            and np.allclose(
+                color[self.colormap.background_value], [0, 0, 0, 0]
+            )
+        )
 
     def _ensure_int_labels(self, data):
         """Ensure data is integer by converting from bool if required, raising an error otherwise."""
@@ -628,12 +672,12 @@ class Labels(ScalarFieldBase):
             data = data[0]
         return data
 
-    def _get_state(self):
+    def _get_state(self) -> dict[str, Any]:
         """Get dictionary of layer state.
 
         Returns
         -------
-        state : dict
+        state : dict of str to Any
             Dictionary of layer state.
         """
         state = self._get_base_state()
@@ -642,6 +686,7 @@ class Labels(ScalarFieldBase):
                 'multiscale': self.multiscale,
                 'properties': self.properties,
                 'rendering': self.rendering,
+                'iso_gradient_mode': self.iso_gradient_mode,
                 'depiction': self.depiction,
                 'plane': self.plane.dict(),
                 'experimental_clipping_planes': [
@@ -672,7 +717,7 @@ class Labels(ScalarFieldBase):
         self.events.selected_label()
 
         if self.show_selected_label:
-            self.refresh()
+            self.refresh(extent=False)
 
     def swap_selected_and_background_labels(self):
         """Swap between the selected label and the background label."""
@@ -692,7 +737,7 @@ class Labels(ScalarFieldBase):
         self.colormap.use_selection = show_selected
         self.colormap.selection = self.selected_label
         self.events.show_selected_label(show_selected_label=show_selected)
-        self.refresh()
+        self.refresh(extent=False)
 
     # Only overriding to change the docstring
     @property
@@ -810,7 +855,7 @@ class Labels(ScalarFieldBase):
         self._updated_slice = None
 
     def _calculate_contour(
-        self, labels: np.ndarray, data_slice: Tuple[slice, ...]
+        self, labels: np.ndarray, data_slice: tuple[slice, ...]
     ) -> Optional[np.ndarray]:
         """Calculate the contour of a given label array within the specified data slice.
 
@@ -854,7 +899,7 @@ class Labels(ScalarFieldBase):
         return sliced_labels[delta_slice]
 
     def _raw_to_displayed(
-        self, raw, data_slice: Optional[Tuple[slice, ...]] = None
+        self, raw, data_slice: Optional[tuple[slice, ...]] = None
     ) -> np.ndarray:
         """Determine displayed image from a saved raw image and a saved seed.
 
@@ -941,7 +986,7 @@ class Labels(ScalarFieldBase):
         self,
         start_point: Optional[np.ndarray],
         end_point: Optional[np.ndarray],
-        dims_displayed: List[int],
+        dims_displayed: list[int],
     ) -> Optional[int]:
         """Get the first non-background value encountered along a ray.
 
@@ -1002,7 +1047,7 @@ class Labels(ScalarFieldBase):
             values = im_slice[tuple(clamped.T)]
             nonzero_indices = np.flatnonzero(values)
             if len(nonzero_indices > 0):
-                # if a nonzer0 value was found, return the first one
+                # if a nonzero value was found, return the first one
                 return values[nonzero_indices[0]]
 
         return None
@@ -1011,7 +1056,7 @@ class Labels(ScalarFieldBase):
         self,
         start_point: Optional[np.ndarray],
         end_point: Optional[np.ndarray],
-        dims_displayed: List[int],
+        dims_displayed: list[int],
     ) -> Optional[int]:
         """Get the first non-background value encountered along a ray.
 
@@ -1379,7 +1424,7 @@ class Labels(ScalarFieldBase):
 
         self.data_setitem(slice_coord, new_label, refresh)
 
-    def _get_shape_and_dims_to_paint(self) -> Tuple[list, list]:
+    def _get_shape_and_dims_to_paint(self) -> tuple[list, list]:
         dims_to_paint = sorted(self._get_dims_to_paint())
         shape = list(self.data.shape)
 
@@ -1391,7 +1436,7 @@ class Labels(ScalarFieldBase):
     def _get_dims_to_paint(self) -> list:
         return list(self._slice_input.order[-self.n_edit_dimensions :])
 
-    def _get_pt_not_disp(self) -> Dict[int, int]:
+    def _get_pt_not_disp(self) -> dict[int, int]:
         """
         Get indices of current visible slice.
         """
@@ -1408,7 +1453,7 @@ class Labels(ScalarFieldBase):
         ----------
         indices : tuple of arrays of int
             Indices in data to overwrite. Must be a tuple of arrays of length
-            equal to the number of data dimensions. (Fancy indexing in [1]_).
+            equal to the number of data dimensions. (Fancy indexing in [2]_).
         value : int or array of int
             New label value(s). If more than one value, must match or
             broadcast with the given indices.
@@ -1417,7 +1462,7 @@ class Labels(ScalarFieldBase):
 
         References
         ----------
-        ..[1] https://numpy.org/doc/stable/user/basics.indexing.html
+        .. [2] https://numpy.org/doc/stable/user/basics.indexing.html
         """
         changed_indices = self.data[indices] != value
         indices = tuple(x[changed_indices] for x in indices)
@@ -1480,7 +1525,7 @@ class Labels(ScalarFieldBase):
         if self.contour > 0:
             # Expand the slice by 1 pixel as the changes can go beyond
             # the original slice because of the morphological dilation
-            # (1 pixel because get_countours always applies 1 pixel dilation)
+            # (1 pixel because get_contours always applies 1 pixel dilation)
             updated_slice = expand_slice(updated_slice, self.data.shape, 1)
         else:
             # update data view
@@ -1506,7 +1551,7 @@ class Labels(ScalarFieldBase):
         position: Optional[npt.ArrayLike] = None,
         *,
         view_direction: Optional[npt.ArrayLike] = None,
-        dims_displayed: Optional[List[int]] = None,
+        dims_displayed: Optional[list[int]] = None,
         world: bool = False,
     ) -> dict:
         """Status message information of the data at a coordinate position.
@@ -1564,7 +1609,7 @@ class Labels(ScalarFieldBase):
         position,
         *,
         view_direction: Optional[np.ndarray] = None,
-        dims_displayed: Optional[List[int]] = None,
+        dims_displayed: Optional[list[int]] = None,
         world: bool = False,
     ):
         """
@@ -1603,7 +1648,7 @@ class Labels(ScalarFieldBase):
         position,
         *,
         view_direction: Optional[np.ndarray] = None,
-        dims_displayed: Optional[List[int]] = None,
+        dims_displayed: Optional[list[int]] = None,
         world: bool = False,
     ) -> list:
         if len(self._label_index) == 0 or self.features.shape[1] == 0:

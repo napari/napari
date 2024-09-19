@@ -9,6 +9,10 @@ from napari.components.dims import Dims
 from napari.layers import Surface
 from napari.layers.surface.normals import SurfaceNormals
 from napari.layers.surface.wireframe import SurfaceWireframe
+from napari.utils._test_utils import (
+    validate_all_params_in_docstring,
+    validate_kwargs_sorted,
+)
 
 
 def test_random_surface():
@@ -322,7 +326,7 @@ def test_vertex_colors():
 
 
 @pytest.mark.parametrize(
-    'ray_start,ray_direction,expected_value,expected_index',
+    ('ray_start', 'ray_direction', 'expected_value', 'expected_index'),
     [
         ([0, 1, 1], [1, 0, 0], 2, 0),
         ([10, 1, 1], [-1, 0, 0], 2, 1),
@@ -360,7 +364,7 @@ def test_get_value_3d(
 
 
 @pytest.mark.parametrize(
-    'ray_start,ray_direction,expected_value,expected_index',
+    ('ray_start', 'ray_direction', 'expected_value', 'expected_index'),
     [
         ([0, 0, 1, 1], [0, 1, 0, 0], 2, 0),
         ([0, 10, 1, 1], [0, -1, 0, 0], 2, 1),
@@ -487,3 +491,22 @@ def test_surface_copy():
     l1 = Surface((vertices, faces, values))
     l2 = copy.copy(l1)
     assert l1.data[0] is not l2.data[0]
+
+
+def test_surface_with_no_visible_faces():
+    points = np.array([[0, 0.0, 0.0, 0.0], [0, 1.0, 0, 0], [0, 1, 1, 0]])
+    faces = np.array([[0, 1, 2]])
+    layer = Surface((points, faces))
+    # the following with throw an exception when _view_faces
+    # is non-integer values.
+    with pytest.raises(
+        ValueError, match='operands could not be broadcast together'
+    ):
+        layer._get_value_3d(
+            np.array([1, 0, 0, 0]), np.array([1, 1, 0, 0]), [1, 2, 3]
+        )
+
+
+def test_docstring():
+    validate_all_params_in_docstring(Surface)
+    validate_kwargs_sorted(Surface)

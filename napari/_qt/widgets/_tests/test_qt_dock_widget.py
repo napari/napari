@@ -8,6 +8,8 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from napari._qt.utils import combine_widgets
+
 
 def test_add_dock_widget(make_napari_viewer):
     """Test basic add_dock_widget functionality"""
@@ -26,18 +28,15 @@ def test_add_dock_widget(make_napari_viewer):
     assert dwidg2.widget() == widg2
     dwidg2._on_visibility_changed(True)  # smoke test
 
-    with pytest.raises(ValueError):
-        # 'under' is not a valid area
+    with pytest.raises(ValueError, match='area argument must be'):
         viewer.window.add_dock_widget(widg2, name='test2', area='under')
 
-    with pytest.raises(ValueError):
-        # 'under' is not a valid area
+    with pytest.raises(ValueError, match='all allowed_areas argument must be'):
         viewer.window.add_dock_widget(
             widg2, name='test2', allowed_areas=['under']
         )
 
-    with pytest.raises(TypeError):
-        # allowed_areas must be a list
+    with pytest.raises(TypeError, match='`allowed_areas` must be a list'):
         viewer.window.add_dock_widget(
             widg2, name='test2', allowed_areas='under'
         )
@@ -142,3 +141,11 @@ def test_adding_stretch(make_napari_viewer):
     dw = viewer.window.add_dock_widget(widg, area='bottom')
     assert widg.layout().count() == 1
     dw.close()
+
+
+def test_combine_widgets_error():
+    """Check error raised when combining widgets with invalid types."""
+    with pytest.raises(
+        TypeError, match='"widgets" must be a QWidget, a magicgui'
+    ):
+        combine_widgets(['string'])

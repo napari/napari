@@ -1,12 +1,12 @@
 import itertools
 import os
+from collections.abc import Sequence
 from functools import lru_cache
+from types import ModuleType
 from typing import (
     Callable,
     Literal,
     Optional,
-    Sequence,
-    Tuple,
     Union,
     overload,
 )
@@ -75,7 +75,7 @@ def _generate_density(radius: int, ndim: int) -> np.ndarray:
 
 
 def _structure_at_coordinates(
-    shape: Tuple[int],
+    shape: tuple[int],
     coordinates: np.ndarray,
     structure: np.ndarray,
     *,
@@ -168,7 +168,7 @@ def labeled_particles(
     n: int = 144,
     seed: Optional[int] = None,
     return_density: Literal[True] = True,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]: ...
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]: ...
 
 
 @lru_cache
@@ -178,7 +178,7 @@ def labeled_particles(
     n: int = 144,
     seed: Optional[int] = None,
     return_density: bool = False,
-) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray, np.ndarray]]:
+) -> Union[np.ndarray, tuple[np.ndarray, np.ndarray, np.ndarray]]:
     """Generate labeled blobs of given shape and dtype.
 
     Parameters
@@ -223,3 +223,51 @@ def labeled_particles(
         return labels, densities, points
     else:  # noqa: RET505
         return labels
+
+
+def run_benchmark_from_module(
+    module: ModuleType, klass_name: str, method_name: str
+):
+    klass = getattr(module, klass_name)
+    if getattr(klass, 'params', None):
+        skip_if = getattr(klass, 'skip_params', {})
+        if isinstance(klass.params[0], Sequence):
+            params = itertools.product(*klass.params)
+        else:
+            params = ((i,) for i in klass.params)
+        for param in params:
+            if param in skip_if:
+                continue
+            obj = klass()
+            try:
+                obj.setup(*param)
+            except NotImplementedError:
+                continue
+            getattr(obj, method_name)(*param)
+            getattr(obj, 'teardown', lambda: None)()
+    else:
+        obj = klass()
+        try:
+            obj.setup()
+        except NotImplementedError:
+            return
+        getattr(obj, method_name)()
+        getattr(obj, 'teardown', lambda: None)()
+
+
+def run_benchmark():
+    import argparse
+    import inspect
+
+    parser = argparse.ArgumentParser(description='Run benchmark')
+    parser.add_argument(
+        'benchmark', type=str, help='Name of the benchmark to run', default=''
+    )
+
+    args = parser.parse_args()
+
+    benchmark_selection = args.benchmark.split('.')
+
+    # get module of parent frame
+    call_module = inspect.getmodule(inspect.currentframe().f_back)
+    run_benchmark_from_module(call_module, *benchmark_selection)

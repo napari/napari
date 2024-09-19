@@ -1,8 +1,8 @@
 import typing
-from collections.abc import Iterable
+from collections.abc import Generator, Iterable, Sequence
 from contextlib import contextmanager
 from functools import wraps
-from typing import Generator, List, Literal, Sequence, Union
+from typing import Literal, Union
 
 import numpy as np
 import numpy.typing as npt
@@ -88,7 +88,7 @@ class ShapeList:
         self, data: typing.Iterable[Shape] = (), ndisplay: int = 2
     ) -> None:
         self._ndisplay = ndisplay
-        self.shapes: List[Shape] = []
+        self.shapes: list[Shape] = []
         self._displayed = np.array([])
         self._slice_key = np.array([])
         self.displayed_vertices = np.array([])
@@ -150,7 +150,7 @@ class ShapeList:
         assert self.__batched_level >= 0
 
     @property
-    def data(self) -> List[npt.NDArray]:
+    def data(self) -> list[npt.NDArray]:
         """list of (M, D) array: data arrays for each shape."""
         return [s.data for s in self.shapes]
 
@@ -181,7 +181,7 @@ class ShapeList:
         return np.array([s.slice_key for s in self.shapes])
 
     @property
-    def shape_types(self) -> List[str]:
+    def shape_types(self) -> list[str]:
         """list of str: shape types for each shape."""
         return [s.name for s in self.shapes]
 
@@ -235,12 +235,12 @@ class ShapeList:
         self._update_displayed()
 
     @property
-    def edge_widths(self) -> List[float]:
+    def edge_widths(self) -> list[float]:
         """list of float: edge width for each shape."""
         return [s.edge_width for s in self.shapes]
 
     @property
-    def z_indices(self) -> List[int]:
+    def z_indices(self) -> list[int]:
         """list of int: z-index for each shape."""
         return [s.z_index for s in self.shapes]
 
@@ -1019,7 +1019,9 @@ class ShapeList:
         self.add(shape, shape_index=index)
         self._update_z_order()
 
-    def outline(self, indices: Union[int, Sequence[int]]):
+    def outline(
+        self, indices: Union[int, Sequence[int]]
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Finds outlines of shapes listed in indices
 
         Parameters
@@ -1038,10 +1040,17 @@ class ShapeList:
             Mx3 array of any indices of vertices for triangles of outline
         """
         if not isinstance(indices, Sequence):
-            indices = [indices]
+            shape = self.shapes[indices]
+            return (
+                shape._edge_vertices,
+                shape._edge_offsets,
+                shape._edge_triangles,
+            )
         return self.outlines(indices)
 
-    def outlines(self, indices: Sequence[int]):
+    def outlines(
+        self, indices: Sequence[int]
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Finds outlines of shapes listed in indices
 
         Parameters
@@ -1058,31 +1067,10 @@ class ShapeList:
         triangles : np.ndarray
             Mx3 array of any indices of vertices for triangles of outline
         """
-        indices_set = set(indices)
-        meshes = self._mesh.triangles_index
-        triangle_indices = [
-            i
-            for i, x in enumerate(meshes)
-            if x[0] in indices_set and x[1] == 1
-        ]
-        meshes = self._mesh.vertices_index
-        vertices_indices = [
-            i
-            for i, x in enumerate(meshes)
-            if x[0] in indices_set and x[1] == 1
-        ]
-
-        offsets = self._mesh.vertices_offsets[vertices_indices]
-        centers = self._mesh.vertices_centers[vertices_indices]
-        triangles = self._mesh.triangles[triangle_indices]
-
-        t_ind = self._mesh.triangles_index[triangle_indices][:, 0]
-        inds = self._mesh.vertices_index[vertices_indices][:, 0]
-        starts = np.unique(inds, return_index=True)[1]
-        for i, ind in enumerate(indices):
-            inds = t_ind == ind
-            adjust_index = starts[i] - vertices_indices[starts[i]]
-            triangles[inds] = triangles[inds] + adjust_index
+        shapes_list = [self.shapes[i] for i in indices]
+        offsets = np.vstack([s._edge_offsets for s in shapes_list])
+        centers = np.vstack([s._edge_vertices for s in shapes_list])
+        triangles = np.vstack([s._edge_triangles for s in shapes_list])
 
         return centers, offsets, triangles
 

@@ -2,7 +2,7 @@ import inspect
 import os
 import site
 from textwrap import indent
-from typing import TYPE_CHECKING, ClassVar, Set
+from typing import TYPE_CHECKING, ClassVar
 
 from napari._pydantic_compat import BaseSettings, Field, PrivateAttr
 from napari.utils.misc import ROOT_DIR
@@ -36,12 +36,12 @@ class EventDebugSettings(BaseSettings):
 
     # event emitters (e.g. 'Shapes') and event names (e.g. 'set_data')
     # to include/exclude when printing events.
-    include_emitters: Set[str] = Field(default_factory=set)
-    include_events: Set[str] = Field(default_factory=set)
-    exclude_emitters: Set[str] = Field(
+    include_emitters: set[str] = Field(default_factory=set)
+    include_events: set[str] = Field(default_factory=set)
+    exclude_emitters: set[str] = Field(
         default_factory=lambda: {'TransformChain', 'Context'}
     )
-    exclude_events: Set[str] = Field(
+    exclude_events: set[str] = Field(
         default_factory=lambda: {'status', 'position'}
     )
     # stack depth to show
@@ -113,7 +113,7 @@ def log_event_stack(event: 'Event', cfg: EventDebugSettings = _SETTINGS):
                 lines.insert(1, f'  was triggered by {trigger}, via:')
                 break
 
-    # seperate groups of events
+    # separate groups of events
     if not cfg._cur_depth:
         lines = ['─' * 79, '', *lines]
     elif not cfg.nesting_allowance:

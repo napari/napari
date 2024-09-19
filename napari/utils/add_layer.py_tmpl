@@ -1,0 +1,16 @@
+def {name}{signature}:
+    kwargs = dict(locals())
+    kwargs.pop('self', None)
+    pos_kwargs = dict()
+    for name in getattr({cls_name}.__init__, "_deprecated_constructor_args", []):
+        pos_kwargs[name] = kwargs.pop(name, None)
+    layer = {cls_name}(**kwargs)
+    for name, value in pos_kwargs.items():
+        if value is not None:
+            setattr(layer, name, value)
+    self.layers.append(layer)
+    return layer
+
+# This file is created to improve user bug reports when
+# user use `viewer.add_xxxx` and some error occurs.
+# this allow to have more readable stacktrace.

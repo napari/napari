@@ -6,7 +6,7 @@ pytest.importorskip('qtpy', reason='Cannot test event filters without qtpy.')
 
 
 @pytest.mark.parametrize(
-    'tooltip,is_qt_tag_present',
+    ('tooltip', 'is_qt_tag_present'),
     [
         (
             '<html>'

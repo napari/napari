@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import TYPE_CHECKING, Optional, Tuple
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 
@@ -13,8 +13,8 @@ if TYPE_CHECKING:
 
 @lru_cache
 def generate_interaction_box_vertices(
-    top_left: Tuple[float, float],
-    bot_right: Tuple[float, float],
+    top_left: tuple[float, float],
+    bot_right: tuple[float, float],
     handles: bool = True,
 ) -> np.ndarray:
     """
@@ -61,7 +61,7 @@ def generate_interaction_box_vertices(
 
 
 def generate_transform_box_from_layer(
-    layer: Layer, dims_displayed: Tuple[int, int]
+    layer: Layer, dims_displayed: tuple[int, int]
 ) -> np.ndarray:
     """
     Generate coordinates for the handles of a layer's transform box.
@@ -88,7 +88,7 @@ def generate_transform_box_from_layer(
 
 def calculate_bounds_from_contained_points(
     points: np.ndarray,
-) -> Tuple[Tuple[float, float], Tuple[float, float]]:
+) -> tuple[tuple[float, float], tuple[float, float]]:
     """
     Calculate the top-left and bottom-right corners of an axis-aligned bounding box.
 

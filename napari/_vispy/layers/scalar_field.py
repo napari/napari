@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import warnings
 from abc import ABC, abstractmethod
-from typing import Dict, Optional
+from typing import Optional
 
 import numpy as np
 from vispy.scene import Node
@@ -103,8 +103,8 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
             ndisplay, getattr(data, 'dtype', None)
         )
 
-        if ndisplay == 3 and self.layer.ndim == 2:
-            data = np.expand_dims(data, axis=0)
+        if ndisplay > data.ndim:
+            data = data.reshape((1,) * (ndisplay - data.ndim) + data.shape)
 
         # Check if data exceeds MAX_TEXTURE_SIZE and downsample
         if self.MAX_TEXTURE_SIZE_2D is not None and ndisplay == 2:
@@ -224,7 +224,7 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
         return data
 
 
-_VISPY_FORMAT_TO_DTYPE: Dict[Optional[str], np.dtype] = {
+_VISPY_FORMAT_TO_DTYPE: dict[Optional[str], np.dtype] = {
     'r8': np.dtype(np.uint8),
     'r16': np.dtype(np.uint16),
     'r32f': np.dtype(np.float32),

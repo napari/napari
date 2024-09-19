@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, List, Optional, Tuple
+from typing import Optional
 
 from psutil import virtual_memory
 
@@ -36,13 +36,6 @@ class DaskSettings(EventedModel):
 
 
 class ApplicationSettings(EventedModel):
-    def __init__(self, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
-        self.dask.events.connect(self._dask_changed)
-
-    def _dask_changed(self) -> None:
-        self.events.dask(value=self.dask)
-
     first_time: bool = Field(
         True,
         title=trans._('First time'),
@@ -77,14 +70,14 @@ class ApplicationSettings(EventedModel):
         title=trans._('Save window state'),
         description=trans._('Toggle saving the main window state of widgets.'),
     )
-    window_position: Optional[Tuple[int, int]] = Field(
+    window_position: Optional[tuple[int, int]] = Field(
         None,
         title=trans._('Window position'),
         description=trans._(
             'Last saved x and y coordinates for the main window. This setting is managed by the application.'
         ),
     )
-    window_size: Optional[Tuple[int, int]] = Field(
+    window_size: Optional[tuple[int, int]] = Field(
         None,
         title=trans._('Window size'),
         description=trans._(
@@ -119,7 +112,7 @@ class ApplicationSettings(EventedModel):
             'Toggle diplaying the status bar for the main window.'
         ),
     )
-    preferences_size: Optional[Tuple[int, int]] = Field(
+    preferences_size: Optional[tuple[int, int]] = Field(
         None,
         title=trans._('Preferences size'),
         description=trans._(
@@ -138,14 +131,14 @@ class ApplicationSettings(EventedModel):
         title=trans._('Console notification level'),
         description=trans._('Select the notification level for the console.'),
     )
-    open_history: List[str] = Field(
+    open_history: list[str] = Field(
         [],
         title=trans._('Opened folders history'),
         description=trans._(
             'Last saved list of opened folders. This setting is managed by the application.'
         ),
     )
-    save_history: List[str] = Field(
+    save_history: list[str] = Field(
         [],
         title=trans._('Saved folders history'),
         description=trans._(
@@ -220,6 +213,14 @@ class ApplicationSettings(EventedModel):
         ),
     )
 
+    plugin_widget_positions: dict[str, str] = Field(
+        default={},
+        title=trans._('Plugin widget positions'),
+        description=trans._(
+            'Per-widget last saved position of plugin dock widgets. This setting is managed by the application.'
+        ),
+    )
+
     @validator('window_state', allow_reuse=True)
     def _validate_qbtye(cls, v: str) -> str:
         if v and (not isinstance(v, str) or not v.startswith('!QBYTE_')):
@@ -246,4 +247,5 @@ class ApplicationSettings(EventedModel):
             'open_history',
             'save_history',
             'ipy_interactive',
+            'plugin_widget_positions',
         )

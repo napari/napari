@@ -1,15 +1,9 @@
 import logging
+from collections.abc import Iterable, MutableSequence, Sequence
 from typing import (
     Any,
     Callable,
-    Dict,
-    Iterable,
-    List,
-    MutableSequence,
     Optional,
-    Sequence,
-    Tuple,
-    Type,
     TypeVar,
     Union,
     overload,
@@ -26,7 +20,7 @@ logger = logging.getLogger(__name__)
 Index = Union[int, slice]
 
 _T = TypeVar('_T')
-_L = TypeVar('_L')
+_L = TypeVar('_L', bound=Any)
 
 
 class TypedMutableSequence(MutableSequence[_T]):
@@ -53,13 +47,13 @@ class TypedMutableSequence(MutableSequence[_T]):
         self,
         data: Iterable[_T] = (),
         *,
-        basetype: Union[Type[_T], Sequence[Type[_T]]] = (),
-        lookup: Optional[Dict[Type[_L], Callable[[_T], Union[_T, _L]]]] = None,
+        basetype: Union[type[_T], Sequence[type[_T]]] = (),
+        lookup: Optional[dict[type[_L], Callable[[_T], Union[_T, _L]]]] = None,
     ) -> None:
         if lookup is None:
             lookup = {}
-        self._list: List[_T] = []
-        self._basetypes: Tuple[Type[_T], ...] = (
+        self._list: list[_T] = []
+        self._basetypes: tuple[type[_T], ...] = (
             tuple(basetype) if isinstance(basetype, Sequence) else (basetype,)
         )
         self._lookup = lookup.copy()
@@ -176,7 +170,7 @@ class TypedMutableSequence(MutableSequence[_T]):
         self, iterable: Iterable[_T]
     ) -> 'TypedMutableSequence[_T]':
         new = self.__class__()
-        # seperating this allows subclasses to omit these from their `__init__`
+        # separating this allows subclasses to omit these from their `__init__`
         new._basetypes = self._basetypes
         new._lookup = self._lookup.copy()
         new.extend(iterable)
@@ -197,7 +191,7 @@ class TypedMutableSequence(MutableSequence[_T]):
         self.extend(other)
         return self
 
-    def __radd__(self, other: List) -> List:
+    def __radd__(self, other: list) -> list:
         """Add other to self in place (self += other)."""
         return other + list(self)
 

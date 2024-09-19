@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Callable
+
 from app_model.types import KeyCode, KeyMod
 
 from napari.layers.points._points_constants import Mode
@@ -12,31 +14,35 @@ from napari.utils.notifications import show_info
 from napari.utils.translations import trans
 
 
-def register_points_action(description: str, repeatable: bool = False):
+def register_points_action(
+    description: str, repeatable: bool = False
+) -> Callable[[Callable], Callable]:
     return register_layer_action(Points, description, repeatable)
 
 
-def register_points_mode_action(description):
+def register_points_mode_action(
+    description: str,
+) -> Callable[[Callable], Callable]:
     return register_layer_attr_action(Points, description, 'mode')
 
 
 @register_points_mode_action(trans._('Transform'))
-def activate_points_transform_mode(layer):
+def activate_points_transform_mode(layer: Points) -> None:
     layer.mode = Mode.TRANSFORM
 
 
 @register_points_mode_action(trans._('Pan/zoom'))
-def activate_points_pan_zoom_mode(layer: Points):
+def activate_points_pan_zoom_mode(layer: Points) -> None:
     layer.mode = Mode.PAN_ZOOM
 
 
 @register_points_mode_action(trans._('Add points'))
-def activate_points_add_mode(layer: Points):
+def activate_points_add_mode(layer: Points) -> None:
     layer.mode = Mode.ADD
 
 
 @register_points_mode_action(trans._('Select points'))
-def activate_points_select_mode(layer: Points):
+def activate_points_select_mode(layer: Points) -> None:
     layer.mode = Mode.SELECT
 
 
@@ -49,21 +55,21 @@ points_fun_to_mode = [
 
 
 @Points.bind_key(KeyMod.CtrlCmd | KeyCode.KeyC, overwrite=True)
-def copy(layer: Points):
+def copy(layer: Points) -> None:
     """Copy any selected points."""
     layer._copy_data()
 
 
 @Points.bind_key(KeyMod.CtrlCmd | KeyCode.KeyV, overwrite=True)
-def paste(layer: Points):
+def paste(layer: Points) -> None:
     """Paste any copied points."""
     layer._paste_data()
 
 
 @register_points_action(
-    trans._('Select all points in the current view slice.'),
+    trans._('Select/Deselect all points in the current view slice.'),
 )
-def select_all_in_slice(layer: Points):
+def select_all_in_slice(layer: Points) -> None:
     new_selected = set(layer._indices_view[: len(layer._view_data)])
 
     # If all visible points are already selected, deselect the visible points
@@ -88,13 +94,12 @@ def select_all_in_slice(layer: Points):
                 deferred=True,
             )
         )
-    layer._set_highlight(force=True)
 
 
 @register_points_action(
-    trans._('Select all points in the layer.'),
+    trans._('Select/Deselect all points in the layer.'),
 )
-def select_all_data(layer: Points):
+def select_all_data(layer: Points) -> None:
     # If all points are already selected, deselect all points
     if len(layer.selected_data) == len(layer.data):
         layer.selected_data = set()
@@ -115,10 +120,9 @@ def select_all_data(layer: Points):
                 deferred=True,
             )
         )
-    layer._set_highlight(force=True)
 
 
 @register_points_action(trans._('Delete selected points'))
-def delete_selected_points(layer: Points):
+def delete_selected_points(layer: Points) -> None:
     """Delete all selected points."""
     layer.remove_selected()

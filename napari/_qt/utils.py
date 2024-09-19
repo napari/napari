@@ -4,9 +4,10 @@ import re
 import signal
 import socket
 import weakref
+from collections.abc import Iterable, Sequence
 from contextlib import contextmanager
 from functools import partial
-from typing import Iterable, Sequence, Union
+from typing import Union
 
 import numpy as np
 import qtpy
@@ -242,7 +243,10 @@ def combine_widgets(
                 container.layout().addWidget(widget)
             return container
     raise TypeError(
-        trans._('"widget" must be a QWidget or a sequence of QWidgets')
+        trans._(
+            '"widgets" must be a QWidget, a magicgui Widget or a sequence of '
+            'such types'
+        )
     )
 
 

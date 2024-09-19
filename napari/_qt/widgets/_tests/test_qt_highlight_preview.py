@@ -168,7 +168,7 @@ def test_qt_highlight_preview_widget_minimum_invalid(
 ):
     widget = highlight_preview_widget()
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must be smaller than'):
         widget.setMinimum(60)
 
 
@@ -211,7 +211,7 @@ def test_qt_highlight_preview_widget_maximum_invalid(
 ):
     widget = highlight_preview_widget()
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must be larger than'):
         widget.setMaximum(-5)
 
 

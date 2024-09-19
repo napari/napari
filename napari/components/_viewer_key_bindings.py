@@ -2,16 +2,21 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import numpy as np
+from app_model.types import KeyCode, KeyMod
+
 from napari.components.viewer_model import ViewerModel
 from napari.utils.action_manager import action_manager
+from napari.utils.notifications import show_info
 from napari.utils.theme import available_themes, get_system_theme
+from napari.utils.transforms import Affine
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from napari.viewer import Viewer
 
 
-def register_viewer_action(description):
+def register_viewer_action(description, repeatable=False):
     """
     Convenient decorator to register an action with the current ViewerModel
 
@@ -25,10 +30,21 @@ def register_viewer_action(description):
             command=func,
             description=description,
             keymapprovider=ViewerModel,
+            repeatable=repeatable,
         )
         return func
 
     return _inner
+
+
+@ViewerModel.bind_key(KeyMod.Shift | KeyCode.UpArrow, overwrite=True)
+def extend_selection_to_layer_above(viewer: Viewer):
+    viewer.layers.select_next(shift=True)
+
+
+@ViewerModel.bind_key(KeyMod.Shift | KeyCode.DownArrow, overwrite=True)
+def extend_selection_to_layer_below(viewer: Viewer):
+    viewer.layers.select_previous(shift=True)
 
 
 @register_viewer_action(trans._('Reset scroll.'))
@@ -84,12 +100,16 @@ def delete_selected_layers(viewer: Viewer):
     viewer.layers.remove_selected()
 
 
-@register_viewer_action(trans._('Increment dimensions slider to the left.'))
+@register_viewer_action(
+    trans._('Increment dimensions slider to the left.'), repeatable=True
+)
 def increment_dims_left(viewer: Viewer):
     viewer.dims._increment_dims_left()
 
 
-@register_viewer_action(trans._('Increment dimensions slider to the right.'))
+@register_viewer_action(
+    trans._('Increment dimensions slider to the right.'), repeatable=True
+)
 def increment_dims_right(viewer: Viewer):
     viewer.dims._increment_dims_right()
 
@@ -107,21 +127,57 @@ def focus_axes_down(viewer: Viewer):
 # Use non-breaking spaces and non-breaking hyphen for Preferences table
 @register_viewer_action(
     trans._(
-        'Change order of the visible axes, e.g.\u00A0[0,\u00A01,\u00A02]\u00A0\u2011>\u00A0[2,\u00A00,\u00A01].'
+        'Change order of the visible axes, e.g.\u00a0[0,\u00a01,\u00a02]\u00a0\u2011>\u00a0[2,\u00a00,\u00a01].'
     ),
 )
 def roll_axes(viewer: Viewer):
-    viewer.dims._roll()
+    viewer.dims.roll()
 
 
 # Use non-breaking spaces and non-breaking hyphen for Preferences table
 @register_viewer_action(
     trans._(
-        'Transpose order of the last two visible axes, e.g.\u00A0[0,\u00A01]\u00A0\u2011>\u00A0[1,\u00A00].'
+        'Transpose order of the last two visible axes, e.g.\u00a0[0,\u00a01]\u00a0\u2011>\u00a0[1,\u00a00].'
     ),
 )
 def transpose_axes(viewer: Viewer):
     viewer.dims.transpose()
+
+
+@register_viewer_action(trans._('Rotate layers 90 degrees counter-clockwise.'))
+def rotate_layers(viewer: Viewer):
+    if viewer.dims.ndisplay == 3:
+        show_info(trans._('Rotating layers only works in 2D.'))
+        return
+    for layer in viewer.layers:
+        if layer.ndim == 2:
+            visible_dims = [0, 1]
+        else:
+            visible_dims = list(viewer.dims.displayed)
+
+        initial_affine = layer.affine.set_slice(visible_dims)
+        # want to rotate around a fixed refernce for all layers
+        center = (
+            np.asarray(viewer.dims.range)[:, 0][
+                np.asarray(viewer.dims.displayed)
+            ]
+            + (
+                np.asarray(viewer.dims.range)[:, 1][
+                    np.asarray(viewer.dims.displayed)
+                ]
+                - np.asarray(viewer.dims.range)[:, 0][
+                    np.asarray(viewer.dims.displayed)
+                ]
+            )
+            / 2
+        )
+        new_affine = (
+            Affine(translate=center)
+            .compose(Affine(rotate=90))
+            .compose(Affine(translate=-center))
+            .compose(initial_affine)
+        )
+        layer.affine = layer.affine.replace_slice(visible_dims, new_affine)
 
 
 @register_viewer_action(trans._('Toggle grid mode.'))

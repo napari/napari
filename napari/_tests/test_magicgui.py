@@ -1,7 +1,7 @@
 import contextlib
 import sys
 import time
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pytest
@@ -11,6 +11,7 @@ from napari import Viewer, layers, types
 from napari._tests.utils import layer_test_data
 from napari.layers import Image, Labels, Layer
 from napari.utils._proxies import PublicOnlyProxy
+from napari.utils.migrations import _DeprecatingDict
 from napari.utils.misc import all_subclasses
 
 if TYPE_CHECKING:
@@ -37,7 +38,7 @@ for cls in all_subclasses(Layer):
 test_data.sort(key=lambda x: x[0].__name__)  # required for xdist to work
 
 
-@pytest.mark.parametrize('LayerType, data, ndim', test_data)
+@pytest.mark.parametrize(('LayerType', 'data', 'ndim'), test_data)
 def test_magicgui_add_data(make_napari_viewer, LayerType, data, ndim):
     """Test that annotating with napari.types.<layer_type>Data works.
 
@@ -81,10 +82,7 @@ def test_add_layer_data_to_viewer_optional(make_napari_viewer):
     assert len(viewer.layers) == 1
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 9), reason='Futures not subscriptable before py3.9'
-)
-@pytest.mark.parametrize('LayerType, data, ndim', test_data)
+@pytest.mark.parametrize(('LayerType', 'data', 'ndim'), test_data)
 def test_magicgui_add_future_data(
     qtbot, make_napari_viewer, LayerType, data, ndim
 ):
@@ -149,7 +147,7 @@ def test_magicgui_add_threadworker(qtbot, make_napari_viewer):
     assert np.array_equal(viewer.layers[0].data, DATA)
 
 
-@pytest.mark.parametrize('LayerType, data, ndim', test_data)
+@pytest.mark.parametrize(('LayerType', 'data', 'ndim'), test_data)
 def test_magicgui_get_data(make_napari_viewer, LayerType, data, ndim):
     """Test that annotating parameters with napari.types.<layer_type>Data.
 
@@ -171,7 +169,7 @@ def test_magicgui_get_data(make_napari_viewer, LayerType, data, ndim):
     viewer.add_layer(layer)
 
 
-@pytest.mark.parametrize('LayerType, data, ndim', test_data)
+@pytest.mark.parametrize(('LayerType', 'data', 'ndim'), test_data)
 def test_magicgui_add_layer(make_napari_viewer, LayerType, data, ndim):
     viewer = make_napari_viewer()
 
@@ -190,7 +188,7 @@ def test_magicgui_add_layer_list(make_napari_viewer):
     viewer = make_napari_viewer()
 
     @magicgui
-    def add_layer() -> List[Layer]:
+    def add_layer() -> list[Layer]:
         a = Image(data=np.random.randint(0, 10, size=(10, 10)))
         b = Labels(data=np.random.randint(0, 10, size=(10, 10)))
         return [a, b]
@@ -230,7 +228,7 @@ def test_magicgui_add_layer_data_tuple_list(make_napari_viewer):
     viewer = make_napari_viewer()
 
     @magicgui
-    def add_layer() -> List[types.LayerDataTuple]:
+    def add_layer() -> list[types.LayerDataTuple]:
         data1 = (np.random.rand(10, 10), {'name': 'hi'})
         data2 = (
             np.random.randint(0, 10, size=(10, 10)),
@@ -321,7 +319,10 @@ def test_mgui_forward_refs(name, monkeypatch):
     monkeypatch.delitem(sys.modules, 'napari')
     monkeypatch.delitem(sys.modules, 'napari.viewer')
     monkeypatch.delitem(sys.modules, 'napari.types')
-    # need to clear all of these submodules too, otherise the layers are oddly not
+    monkeypatch.setattr(
+        'napari.utils.action_manager.action_manager._actions', {}
+    )
+    # need to clear all of these submodules too, otherwise the layers are oddly not
     # subclasses of napari.layers.Layer, and napari.layers.NAMES
     # oddly ends up as an empty set
     for m in list(sys.modules):
@@ -330,7 +331,8 @@ def test_mgui_forward_refs(name, monkeypatch):
 
     wdg, options = get_widget_class(annotation=name)
     if name == 'napari.Viewer':
-        assert wdg == magicgui.widgets.EmptyWidget and 'bind' in options
+        assert wdg == magicgui.widgets.EmptyWidget
+        assert 'bind' in options
     else:
         assert wdg == magicgui.widgets.Combobox
 
@@ -345,3 +347,21 @@ def test_layers_populate_immediately(make_napari_viewer):
     assert not len(labels_layer.choices)
     viewer.window.add_dock_widget(labels_layer)
     assert len(labels_layer.choices) == 1
+
+
+def test_from_layer_data_tuple_accept_deprecating_dict(make_napari_viewer):
+    """Test that a function returning a layer data tuple runs without error."""
+    viewer = make_napari_viewer()
+
+    @magicgui
+    def from_layer_data_tuple() -> types.LayerDataTuple:
+        data = np.zeros((10, 10))
+        meta = _DeprecatingDict({'name': 'test_image'})
+        layer_type = 'image'
+        return data, meta, layer_type
+
+    viewer.window.add_dock_widget(from_layer_data_tuple)
+    from_layer_data_tuple()
+    assert len(viewer.layers) == 1
+    assert isinstance(viewer.layers[0], Image)
+    assert viewer.layers[0].name == 'test_image'

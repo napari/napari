@@ -182,19 +182,19 @@ def test_event_order_func():
     res_li = []
     e.connect(fun3)
     e()
-    assert res_li == [3, 1, 2]
+    assert res_li == [1, 3, 2]
     res_li = []
     e.connect(fun4)
     e()
-    assert res_li == [3, 1, 4, 2]
+    assert res_li == [1, 3, 2, 4]
     res_li = []
-    e.connect(partial(fun5, val=5), position='last')
+    e.connect(partial(fun5, val=5), position='first')
     e()
-    assert res_li == [3, 1, 5, 4, 2]
+    assert res_li == [5, 1, 3, 2, 4]
     res_li = []
-    e.connect(partial(fun6, val=6), position='last')
+    e.connect(partial(fun6, val=6), position='first')
     e()
-    assert res_li == [3, 1, 5, 4, 2, 6]
+    assert res_li == [5, 1, 3, 6, 2, 4]
 
 
 def test_event_order_methods():
@@ -228,7 +228,7 @@ def test_event_order_methods():
     e.connect(t1.fun2)
     e.connect(t2.fun4)
     e()
-    assert res_li == [2, 1, 4, 3]
+    assert res_li == [1, 2, 3, 4]
 
 
 def test_no_event_arg():
