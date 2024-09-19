@@ -1,6 +1,6 @@
 import os
-import warnings
 import struct
+import warnings
 
 import numpy as np
 
