@@ -12,6 +12,7 @@ from napari._app_model.constants import MenuId
 from napari._qt._qapp_model.qactions import _plugins, init_qactions
 from napari._qt._qplugins._qnpe2 import _toggle_or_get_widget
 from napari._tests.utils import skip_local_popups
+from napari.plugins._tests.test_npe2 import mock_pm  # noqa: F401
 
 
 class DummyWidget(QWidget):
@@ -279,3 +280,39 @@ def test_no_plugin_manager(monkeypatch, make_napari_viewer):
         'napari.window.plugins.plugin_install_dialog',
     )
     assert not plugin_install_action.isVisible()
+
+
+def test_plugins_menu_sorted(
+    mock_pm,  # noqa: F811
+    mock_app,
+    tmp_plugin: DynamicPlugin,
+):
+    from napari._app_model import get_app
+    from napari.plugins import _initialize_plugins
+
+    # we make sure 'plugin-b' is registered first
+    tmp_plugin2 = tmp_plugin.spawn(
+        name='plugin-b', plugin_manager=mock_pm, register=True
+    )
+    tmp_plugin1 = tmp_plugin.spawn(
+        name='plugin-a', plugin_manager=mock_pm, register=True
+    )
+
+    @tmp_plugin1.contribute.widget(display_name='Widget 1')
+    def widget1(): ...
+
+    @tmp_plugin1.contribute.widget(display_name='Widget 2')
+    def widget2(): ...
+
+    @tmp_plugin2.contribute.widget(display_name='Widget 1')
+    def widget2_1(): ...
+
+    @tmp_plugin2.contribute.widget(display_name='Widget 2')
+    def widget2_2(): ...
+
+    _initialize_plugins()
+    plugins_menu = list(get_app().menus.get_menu('napari/plugins'))
+    submenus = [item for item in plugins_menu if isinstance(item, SubmenuItem)]
+    assert len(submenus) == 2
+    assert submenus[0].title == 'plugin-a'
+    assert submenus[1].title == 'plugin-b'

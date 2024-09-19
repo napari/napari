@@ -11,6 +11,7 @@ from napari._app_model import get_app
 from napari._app_model.constants import MenuId
 from napari._qt._qapp_model._tests.utils import get_submenu_action
 from napari.layers import Image
+from napari.plugins._tests.test_npe2 import mock_pm  # noqa: F401
 from napari.utils.action_manager import action_manager
 
 
@@ -137,6 +138,40 @@ def test_sample_menu_single_data(
     assert len(samples_menu) == 1
     assert samples_menu[0].command.title == 'Temp Sample One (Temp Plugin)'
     assert 'tmp_plugin:tmp-sample-1' in app.commands
+
+
+def test_sample_menu_sorted(
+    mock_pm,  # noqa: F811
+    mock_app,
+    tmp_plugin: DynamicPlugin,
+):
+    from napari._app_model import get_app
+    from napari.plugins import _initialize_plugins
+
+    # we make sure 'plugin-b' is registered first
+    tmp_plugin2 = tmp_plugin.spawn(name='plugin-b', register=True)
+    tmp_plugin1 = tmp_plugin.spawn(name='plugin-a', register=True)
+
+    @tmp_plugin1.contribute.sample_data(display_name='Sample 1')
+    def sample1(): ...
+
+    @tmp_plugin1.contribute.sample_data(display_name='Sample 2')
+    def sample2(): ...
+
+    @tmp_plugin2.contribute.sample_data(display_name='Sample 1')
+    def sample2_1(): ...
+
+    @tmp_plugin2.contribute.sample_data(display_name='Sample 2')
+    def sample2_2(): ...
+
+    _initialize_plugins()
+    samples_menu = list(get_app().menus.get_menu('napari/file/samples'))
+    submenus = [item for item in samples_menu if isinstance(item, SubmenuItem)]
+    assert len(submenus) == 3
+    # mock_pm registers a sample_manifest with two sample data contributions
+    assert submenus[0].title == 'My Plugin'
+    assert submenus[1].title == 'plugin-a'
+    assert submenus[2].title == 'plugin-b'
 
 
 def test_show_shortcuts_actions(make_napari_viewer):
