@@ -1,5 +1,6 @@
 import os
 import warnings
+import struct
 
 import numpy as np
 
@@ -103,7 +104,15 @@ def imsave_tiff(filename, data):
         # 'compression' kwarg since 2021.6.6; we depend on more recent versions
         # now. See:
         # https://forum.image.sc/t/problem-saving-generated-labels-in-cellpose-napari/54892/8
-        tifffile.imwrite(filename, data, compression=('zlib', 1), bigtiff=(data.nbytes >= 2**32))
+        try:
+            tifffile.imwrite(filename, data, compression=('zlib', 1))
+        except struct.error:  # compressed data >4GB
+            tifffile.imwrite(
+                filename,
+                data,
+                compresion=('zlib', 1),
+                bigtiff=True,
+            )
 
 
 def __getattr__(name: str):
