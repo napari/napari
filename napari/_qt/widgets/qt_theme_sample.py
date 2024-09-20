@@ -157,11 +157,11 @@ if __name__ == '__main__':
     import logging
     import sys
 
-    from napari._qt.qt_event_loop import get_app
+    from napari._qt.qt_event_loop import get_qapp
     from napari.utils.theme import available_themes
 
     themes = [sys.argv[1]] if len(sys.argv) > 1 else available_themes()
-    app = get_app()
+    app = get_qapp()
     widgets = []
     for n, theme in enumerate(themes):
         try:

@@ -1,4 +1,4 @@
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from functools import partial, wraps
 from pathlib import Path
 from types import TracebackType
@@ -63,8 +63,8 @@ ArrayLike = Union[np.ndarray, 'dask.array.Array', 'zarr.Array']
 
 # layer data may be: (data,) (data, meta), or (data, meta, layer_type)
 # using "Any" for the data type until ArrayLike is more mature.
-FullLayerData = tuple[Any, dict, LayerTypeName]
-LayerData = Union[tuple[Any], tuple[Any, dict], FullLayerData]
+FullLayerData = tuple[Any, Mapping, LayerTypeName]
+LayerData = Union[tuple[Any], tuple[Any, Mapping], FullLayerData]
 
 PathLike = Union[str, Path]
 PathOrPaths = Union[PathLike, Sequence[PathLike]]

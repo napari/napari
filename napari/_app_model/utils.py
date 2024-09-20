@@ -3,7 +3,7 @@ from typing import Union
 from app_model.expressions import parse_expression
 from app_model.types import Action, MenuItem, SubmenuItem
 
-from napari._app_model import get_app
+from napari._app_model import get_app_model
 from napari._app_model.constants import MenuGroup, MenuId
 
 MenuOrSubmenu = Union[MenuItem, SubmenuItem]
@@ -73,7 +73,7 @@ def is_empty_menu(menu_id: str) -> bool:
     bool
         True if the given menu_id is empty, otherwise False
     """
-    app = get_app()
+    app = get_app_model()
     if menu_id not in app.menus:
         return True
     if len(app.menus.get_menu(menu_id)) == 0:
