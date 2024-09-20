@@ -4,7 +4,7 @@ import inspect
 import itertools
 import os
 import warnings
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from functools import lru_cache
 from pathlib import Path
 from typing import (
@@ -1444,7 +1444,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     def _add_layer_from_data(
         self,
         data,
-        meta: Optional[Dict[str, Any]] = None,
+        meta: Optional[Mapping[str, Any]] = None,
         layer_type: Optional[str] = None,
     ) -> list[Layer]:
         """Add arbitrary layer data to the viewer.
@@ -1587,12 +1587,12 @@ def _unify_data_and_user_kwargs(
 ) -> FullLayerData:
     """Merge data returned from plugins with options specified by user.
 
-    If ``data == (_data, _meta, _type)``.  Then:
+    If ``data == (data_, meta_, type_)``.  Then:
 
-    - ``kwargs`` will be used to update ``_meta``
-    - ``layer_type`` will replace ``_type`` and, if provided, ``_meta`` keys
+    - ``kwargs`` will be used to update ``meta_``
+    - ``layer_type`` will replace ``type_`` and, if provided, ``meta_`` keys
         will be pruned to layer_type-appropriate kwargs
-    - ``fallback_name`` is used if ``not _meta.get('name')``
+    - ``fallback_name`` is used if ``not meta_.get('name')``
 
     .. note:
 
@@ -1619,13 +1619,16 @@ def _unify_data_and_user_kwargs(
     FullLayerData
         Fully qualified LayerData tuple with user-provided overrides.
     """
-    _data, _meta, _type = _normalize_layer_data(data)
+    data_, meta_, type_ = _normalize_layer_data(data)
 
     if layer_type:
         # the user has explicitly requested this be a certain layer type
         # strip any kwargs from the plugin that are no longer relevant
-        _meta = prune_kwargs(_meta, layer_type)
-        _type = layer_type
+        meta_ = prune_kwargs(meta_, layer_type)
+        type_ = layer_type
+
+    if not isinstance(meta_, dict):
+        meta_ = dict(meta_)
 
     if kwargs:
         # if user provided kwargs, use to override any meta dict values that
@@ -1634,14 +1637,14 @@ def _unify_data_and_user_kwargs(
         # both layer_type and additional keyword arguments to viewer.open(),
         # it is their responsibility to make sure the kwargs match the
         # layer_type.
-        _meta.update(prune_kwargs(kwargs, _type) if not layer_type else kwargs)
+        meta_.update(prune_kwargs(kwargs, type_) if not layer_type else kwargs)
 
-    if not _meta.get('name') and fallback_name:
-        _meta['name'] = fallback_name
-    return (_data, _meta, _type)
+    if not meta_.get('name') and fallback_name:
+        meta_['name'] = fallback_name
+    return data_, meta_, type_
 
 
-def prune_kwargs(kwargs: dict[str, Any], layer_type: str) -> dict[str, Any]:
+def prune_kwargs(kwargs: Mapping[str, Any], layer_type: str) -> dict[str, Any]:
     """Return copy of ``kwargs`` with only keys valid for ``add_<layer_type>``
 
     Parameters

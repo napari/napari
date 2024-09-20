@@ -191,13 +191,13 @@ class QtImageControls(QtBaseImageControls):
 
         self.layout().addRow(self.button_grid)
         self.layout().addRow(self.opacityLabel, self.opacitySlider)
+        self.layout().addRow(trans._('blending:'), self.blendComboBox)
         self.layout().addRow(
             trans._('contrast limits:'), self.contrastLimitsSlider
         )
         self.layout().addRow(trans._('auto-contrast:'), self.autoScaleBar)
         self.layout().addRow(trans._('gamma:'), self.gammaSlider)
         self.layout().addRow(trans._('colormap:'), colormap_layout)
-        self.layout().addRow(trans._('blending:'), self.blendComboBox)
         self.layout().addRow(self.interpLabel, self.interpComboBox)
         self.layout().addRow(self.depictionLabel, self.depictionComboBox)
         self.layout().addRow(self.renderLabel, self.renderComboBox)

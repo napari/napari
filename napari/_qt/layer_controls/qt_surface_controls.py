@@ -65,13 +65,13 @@ class QtSurfaceControls(QtBaseImageControls):
 
         self.layout().addRow(self.button_grid)
         self.layout().addRow(self.opacityLabel, self.opacitySlider)
+        self.layout().addRow(trans._('blending:'), self.blendComboBox)
         self.layout().addRow(
             trans._('contrast limits:'), self.contrastLimitsSlider
         )
         self.layout().addRow(trans._('auto-contrast:'), self.autoScaleBar)
         self.layout().addRow(trans._('gamma:'), self.gammaSlider)
         self.layout().addRow(trans._('colormap:'), colormap_layout)
-        self.layout().addRow(trans._('blending:'), self.blendComboBox)
         self.layout().addRow(trans._('shading:'), self.shadingComboBox)
 
     def changeShading(self, text):
