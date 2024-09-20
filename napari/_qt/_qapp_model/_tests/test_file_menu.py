@@ -7,7 +7,7 @@ from npe2 import DynamicPlugin
 from npe2.manifest.contributions import SampleDataURI
 from qtpy.QtGui import QGuiApplication
 
-from napari._app_model import get_app
+from napari._app_model import get_app_model
 from napari._app_model.constants import MenuId
 from napari._qt._qapp_model._tests.utils import get_submenu_action
 from napari.layers import Image
@@ -35,7 +35,7 @@ def test_sample_data_triggers_reader_dialog(
         uri='some-path/some-file.tif',
     )
     tmp_plugin.manifest.contributions.sample_data = [my_sample]
-    app = get_app()
+    app = get_app_model()
     # Configures `app`, registers actions and initializes plugins
     make_napari_viewer()
     with mock.patch(
@@ -52,7 +52,7 @@ def test_plugin_display_name_use_for_multiple_samples(
     builtins,
 ):
     """Check 'display_name' used for submenu when plugin has >1 sample data."""
-    app = get_app()
+    app = get_app_model()
     viewer = make_napari_viewer()
 
     # builtins provides more than one sample,
@@ -74,7 +74,7 @@ def test_sample_menu_plugin_state_change(
 ):
     """Check samples submenu correct after plugin changes state."""
 
-    app = get_app()
+    app = get_app_model()
     pm = tmp_plugin.plugin_manager
     # Check no samples menu before plugin registration
     with pytest.raises(KeyError):
@@ -123,7 +123,7 @@ def test_sample_menu_single_data(
     tmp_plugin: DynamicPlugin,
 ):
     """Checks sample submenu correct when plugin has single sample data."""
-    app = get_app()
+    app = get_app_model()
     sample = SampleDataURI(
         key='tmp-sample-1',
         display_name='Temp Sample One',
@@ -185,7 +185,7 @@ def test_show_shortcuts_actions(make_napari_viewer):
 
 def test_image_from_clipboard(make_napari_viewer):
     make_napari_viewer()
-    app = get_app()
+    app = get_app_model()
 
     # Ensure clipboard is empty
     QGuiApplication.clipboard().clear()
@@ -239,7 +239,7 @@ def test_open(
 ):
     """Test base `Open ...` actions can be triggered."""
     make_napari_viewer()
-    app = get_app()
+    app = get_app_model()
 
     # Check action command execution
     with (
@@ -313,7 +313,7 @@ def test_open_with_plugin(
 def test_preference_dialog(make_napari_viewer):
     """Test preferences action can be triggered."""
     make_napari_viewer()
-    app = get_app()
+    app = get_app_model()
 
     # Check action command execution
     with (
@@ -329,7 +329,7 @@ def test_preference_dialog(make_napari_viewer):
 
 def test_save_layers_enablement_updated_context(make_napari_viewer, builtins):
     """Test that enablement status of save layer actions updated correctly."""
-    get_app()
+    get_app_model()
     viewer = make_napari_viewer()
 
     save_layers_action = viewer.window.file_menu.findAction(
@@ -382,7 +382,7 @@ def test_save_layers(
 ):
     """Test save layer selected/all actions can be triggered."""
     viewer = make_napari_viewer()
-    app = get_app()
+    app = get_app_model()
 
     # Add selected layer
     layer = Image(np.random.random((10, 10)))
@@ -414,7 +414,7 @@ def test_screenshot(
 ):
     """Test screenshot actions can be triggered."""
     make_napari_viewer()
-    app = get_app()
+    app = get_app_model()
 
     # Check action command execution
     with mock.patch(patch_method) as mock_screenshot:
@@ -433,7 +433,7 @@ def test_screenshot(
 def test_screenshot_to_clipboard(make_napari_viewer, qtbot, action_id):
     """Test screenshot to clipboard actions can be triggered."""
     viewer = make_napari_viewer()
-    app = get_app()
+    app = get_app_model()
 
     # Add selected layer
     layer = Image(np.random.random((10, 10)))
@@ -471,7 +471,7 @@ def test_screenshot_to_clipboard(make_napari_viewer, qtbot, action_id):
 def test_restart(make_napari_viewer, action_id, patch_method):
     """Testrestart action can be triggered."""
     make_napari_viewer()
-    app = get_app()
+    app = get_app_model()
 
     # Check action command execution
     with mock.patch(patch_method) as mock_restart:
@@ -499,7 +499,7 @@ def test_restart(make_napari_viewer, action_id, patch_method):
 def test_close(make_napari_viewer, action_id, patch_method, method_params):
     """Test close/exit actions can be triggered."""
     make_napari_viewer()
-    app = get_app()
+    app = get_app_model()
     quit_app, confirm_need = method_params
 
     # Check action command execution

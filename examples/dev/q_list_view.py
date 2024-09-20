@@ -12,10 +12,10 @@ object as the single "source of truth".
 """
 import napari
 from napari._qt.containers import QtListView
-from napari.qt import get_app
+from napari.qt import get_qapp
 from napari.utils.events import SelectableEventedList
 
-get_app()
+get_qapp()
 
 
 class MyObject:
