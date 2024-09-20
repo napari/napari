@@ -242,7 +242,6 @@ class QtLayerControls(QFrame):
         """
         action_name = f'napari:{action_name}'
         btn = QtModeRadioButton(layer, btn_name, mode, **kwargs)
-        btn.setObjectName(f'{btn_name}_button')
         action_manager.bind_button(
             action_name,
             btn,
