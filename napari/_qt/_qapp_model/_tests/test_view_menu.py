@@ -194,7 +194,7 @@ def test_toggle_layer_tooltips(make_napari_viewer, qtbot):
 def test_zoom_actions(make_napari_viewer):
     """Test zoom actions"""
     viewer = make_napari_viewer()
-    app = get_app()
+    app = get_app_model()
 
     viewer.add_image(np.ones((10, 10)))
 
