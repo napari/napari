@@ -284,10 +284,10 @@ def test_no_plugin_manager(monkeypatch, make_napari_viewer):
 
 def test_plugins_menu_sorted(
     mock_pm,  # noqa: F811
-    mock_app,
+    mock_app_model,
     tmp_plugin: DynamicPlugin,
 ):
-    from napari._app_model import get_app
+    from napari._app_model import get_app_model
     from napari.plugins import _initialize_plugins
 
     # we make sure 'plugin-b' is registered first
@@ -311,7 +311,7 @@ def test_plugins_menu_sorted(
     def widget2_2(): ...
 
     _initialize_plugins()
-    plugins_menu = list(get_app().menus.get_menu('napari/plugins'))
+    plugins_menu = list(get_app_model().menus.get_menu('napari/plugins'))
     submenus = [item for item in plugins_menu if isinstance(item, SubmenuItem)]
     assert len(submenus) == 2
     assert submenus[0].title == 'plugin-a'
