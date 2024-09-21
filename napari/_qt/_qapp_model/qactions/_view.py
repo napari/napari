@@ -62,8 +62,8 @@ def _get_current_tooltip_visibility() -> bool:
     return get_settings().appearance.layer_tooltip_visibility
 
 
-def _reset_zoom(viewer: Viewer):
-    viewer.reset_view()
+def _fit_to_view(viewer: Viewer):
+    viewer.reset_view(reset_camera_angle=False)
 
 
 def _zoom_in(viewer: Viewer):
@@ -127,8 +127,8 @@ Q_VIEW_ACTIONS: list[Action] = [
         toggled=ToggleRule(get_current=_get_current_play_status),
     ),
     Action(
-        id='napari.viewer.reset_view',
-        title=trans._('Reset Zoom'),
+        id='napari.viewer.fit_to_view',
+        title=trans._('Fit to View'),
         menus=[
             {
                 'id': MenuId.MENUBAR_VIEW,
@@ -136,7 +136,7 @@ Q_VIEW_ACTIONS: list[Action] = [
                 'order': 1,
             }
         ],
-        callback=_reset_zoom,
+        callback=_fit_to_view,
         keybindings=[StandardKeyBinding.OriginalSize],
     ),
     Action(

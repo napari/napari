@@ -196,7 +196,7 @@ def test_zoom_actions(make_napari_viewer):
     viewer = make_napari_viewer()
     app = get_app_model()
 
-    viewer.add_image(np.ones((10, 10)))
+    viewer.add_image(np.ones((10, 10, 10)))
 
     # get initial zoom state
     initial_zoom = viewer.camera.zoom
@@ -211,5 +211,14 @@ def test_zoom_actions(make_napari_viewer):
 
     viewer.camera.zoom = 2
     # Check reset zoom action
-    app.commands.execute_command('napari.viewer.reset_view')
+    app.commands.execute_command('napari.viewer.fit_to_view')
     assert viewer.camera.zoom == pytest.approx(initial_zoom)
+
+    # Check that angle is preserved
+    viewer.dims.ndisplay = 3
+    viewer.camera.angles = (90, 0, 0)
+    viewer.camera.zoom = 2
+    app.commands.execute_command('napari.viewer.fit_to_view')
+    # Zoom should be reset, but angle unchanged
+    assert viewer.camera.zoom == pytest.approx(initial_zoom)
+    assert viewer.camera.angles == (90, 0, 0)
