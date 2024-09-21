@@ -142,10 +142,10 @@ def test_sample_menu_single_data(
 
 def test_sample_menu_sorted(
     mock_pm,  # noqa: F811
-    mock_app,
+    mock_app_model,
     tmp_plugin: DynamicPlugin,
 ):
-    from napari._app_model import get_app
+    from napari._app_model import get_app_model
     from napari.plugins import _initialize_plugins
 
     # we make sure 'plugin-b' is registered first
@@ -165,7 +165,7 @@ def test_sample_menu_sorted(
     def sample2_2(): ...
 
     _initialize_plugins()
-    samples_menu = list(get_app().menus.get_menu('napari/file/samples'))
+    samples_menu = list(get_app_model().menus.get_menu('napari/file/samples'))
     submenus = [item for item in samples_menu if isinstance(item, SubmenuItem)]
     assert len(submenus) == 3
     # mock_pm registers a sample_manifest with two sample data contributions
