@@ -193,7 +193,7 @@ def is_sequence(arg: Any) -> bool:
     return True:
         list
         tuple
-    return False
+    return False:
         string
         numbers
         dict
@@ -499,7 +499,7 @@ def ensure_layer_data_tuple(val: tuple) -> tuple:
     if not isinstance(val, tuple) and val:
         raise TypeError(msg)
     if len(val) > 1:
-        if not isinstance(val[1], dict):
+        if not isinstance(val[1], collections.abc.Mapping):
             raise TypeError(msg)
         if len(val) > 2 and not isinstance(val[2], str):
             raise TypeError(msg)

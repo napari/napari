@@ -33,10 +33,15 @@ def _is_convex(poly: npt.NDArray) -> bool:
     bool
         True if the given polygon is convex.
     """
-    fst = poly
-    snd = np.roll(poly, -1, axis=0)
-    thrd = np.roll(poly, -2, axis=0)
-    return np.unique(orientation(fst.T, snd.T, thrd.T)).size == 1
+    fst = poly[:-2]
+    snd = poly[1:-1]
+    thrd = poly[2:]
+    orn_set = np.unique(orientation(fst.T, snd.T, thrd.T))
+    if orn_set.size != 1:
+        return False
+    return (orn_set[0] == orientation(poly[-2], poly[-1], poly[0])) and (
+        orn_set[0] == orientation(poly[-1], poly[0], poly[1])
+    )
 
 
 def _fan_triangulation(poly: npt.NDArray) -> tuple[npt.NDArray, npt.NDArray]:

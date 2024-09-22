@@ -272,10 +272,10 @@ class QtLabelsControls(QtLayerControls):
         color_layout.addWidget(self.selectionSpinBox)
 
         self.layout().addRow(self.button_grid)
-        self.layout().addRow(trans._('label:'), color_layout)
         self.layout().addRow(self.opacityLabel, self.opacitySlider)
-        self.layout().addRow(trans._('brush size:'), self.brushSizeSlider)
         self.layout().addRow(trans._('blending:'), self.blendComboBox)
+        self.layout().addRow(trans._('label:'), color_layout)
+        self.layout().addRow(trans._('brush size:'), self.brushSizeSlider)
         self.layout().addRow(self.renderLabel, self.renderComboBox)
         self.layout().addRow(self.isoGradientLabel, self.isoGradientComboBox)
         self.layout().addRow(trans._('color mode:'), self.colorModeComboBox)
