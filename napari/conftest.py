@@ -967,7 +967,9 @@ def _find_dangling_widgets(request, qtbot):
             continue
 
         if widget.__class__.__name__ == 'CanvasBackendDesktop':
-            # leaking in the tests_sys_info.py
+            # TODO: we don't understand why this class leaks in
+            #  napari/_tests/test_sys_info.py, so we make an exception
+            #  here and we don't raise when this class leaks.
             continue
 
         problematic_widgets.append(widget)
