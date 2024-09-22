@@ -34,14 +34,15 @@ def make_labels_layer(array_type, shape):
 
 @skip_local_popups
 @pytest.mark.parametrize('array_type', ['numpy', 'zarr', 'tensorstore'])
-def test_labels_painting(qtbot, array_type, viewer_model, qt_viewer):
+def test_labels_painting(qtbot, array_type, qt_viewer):
     """Check that painting labels paints on the canvas.
 
     This should work regardless of array type. See:
     https://github.com/napari/napari/issues/6079
     """
+    viewer = qt_viewer.viewer
     labels = make_labels_layer(array_type, shape=(20, 20))
-    layer = viewer_model.add_labels(labels)
+    layer = viewer.add_labels(labels)
     QCoreApplication.instance().processEvents()
     layer.paint((10, 10), 1, refresh=True)
     visual = qt_viewer.layer_to_visual[layer]
@@ -50,7 +51,7 @@ def test_labels_painting(qtbot, array_type, viewer_model, qt_viewer):
 
 @skip_local_popups
 @pytest.mark.parametrize('array_type', ['numpy', 'zarr', 'tensorstore'])
-def test_labels_fill_slice(qtbot, array_type, viewer_model, qt_viewer):
+def test_labels_fill_slice(qtbot, array_type, qt_viewer):
     """Check that painting labels paints only on current slice.
 
     This should work regardless of array type. See:
@@ -60,7 +61,9 @@ def test_labels_fill_slice(qtbot, array_type, viewer_model, qt_viewer):
     labels[0, :, :] = 1
     labels[1, 10, 10] = 1
     labels[2, :, :] = 1
-    layer = viewer_model.add_labels(labels)
+
+    viewer = qt_viewer.viewer
+    layer = viewer.add_labels(labels)
     layer.n_edit_dimensions = 3
     QCoreApplication.instance().processEvents()
     layer.fill((1, 10, 10), 13, refresh=True)
@@ -70,9 +73,7 @@ def test_labels_fill_slice(qtbot, array_type, viewer_model, qt_viewer):
 
 @skip_local_popups
 @pytest.mark.parametrize('array_type', ['numpy', 'zarr', 'tensorstore'])
-def test_labels_painting_with_mouse(
-    MouseEvent, qtbot, array_type, viewer_model, qt_viewer
-):
+def test_labels_painting_with_mouse(MouseEvent, qtbot, array_type, qt_viewer):
     """Check that painting labels paints on the canvas when using mouse.
 
     This should work regardless of array type. See:
@@ -80,7 +81,8 @@ def test_labels_painting_with_mouse(
     """
     labels = make_labels_layer(array_type, shape=(20, 20))
 
-    layer = viewer_model.add_labels(labels)
+    viewer = qt_viewer.viewer
+    layer = viewer.add_labels(labels)
     QCoreApplication.instance().processEvents()
 
     layer.mode = 'paint'
@@ -98,18 +100,19 @@ def test_labels_painting_with_mouse(
 
 @skip_local_popups
 @skip_on_win_ci
-def test_labels_iso_gradient_modes(qtbot, viewer_model, qt_viewer):
+def test_labels_iso_gradient_modes(qtbot, qt_viewer):
     """Check that we can set `iso_gradient_mode` with `iso_categorical` rendering (test shader)."""
     # NOTE: this test currently segfaults on Windows CI, but confirmed working locally
     # because it's a segfault, we have to skip instead of xfail
     qt_viewer.show()
+    viewer = qt_viewer.viewer
 
     labels = make_labels_layer('numpy', shape=(32, 32, 32))
     labels[14:18, 14:18, 14:18] = 1
-    layer = viewer_model.add_labels(labels)
+    layer = viewer.add_labels(labels)
     visual = qt_viewer.layer_to_visual[layer]
 
-    viewer_model.dims.ndisplay = 3
+    viewer.dims.ndisplay = 3
     QCoreApplication.instance().processEvents()
     assert layer.rendering == 'iso_categorical'
     assert isinstance(visual.node, VolumeNode)

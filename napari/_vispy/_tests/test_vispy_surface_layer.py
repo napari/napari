@@ -114,7 +114,7 @@ def test_vertex_colors(cube_layer):
 
 
 @skip_local_popups
-def test_check_surface_without_visible_faces(qtbot, viewer_model, qt_viewer):
+def test_check_surface_without_visible_faces(qtbot, qt_viewer):
     points = np.array(
         [
             [0, 0.0, 0.0, 0.0],
@@ -128,7 +128,8 @@ def test_check_surface_without_visible_faces(qtbot, viewer_model, qt_viewer):
     faces = np.array([[0, 1, 2], [3, 4, 5]])
     layer = Surface((points, faces))
     qt_viewer.show()
-    viewer_model.add_layer(layer)
+    viewer = qt_viewer.viewer
+    viewer.add_layer(layer)
     # The following with throw an exception.
-    viewer_model.reset()
+    viewer.reset()
     qt_viewer.hide()
