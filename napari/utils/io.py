@@ -110,7 +110,7 @@ def imsave_tiff(filename, data):
             tifffile.imwrite(
                 filename,
                 data,
-                compresion=('zlib', 1),
+                compression=('zlib', 1),
                 bigtiff=True,
             )
 
