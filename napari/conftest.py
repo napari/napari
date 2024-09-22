@@ -985,16 +985,23 @@ def _find_dangling_widgets(request, qtbot):
 
 
 def pytest_runtest_setup(item):
-    """Because we have headless test suite we cannot use
-    @pytest.fixture(autouse=True) for fixtures that are detecting
-    leaking Qt objects.
-    So we use here  trick to detect if the `qapp` fixture is used to detect test
-    that are using Qt and need to be checked for Qt objects leaks.
+    """Add Qt leak detection fixtures *only* in tests using the qapp fixture.
 
-    It may happen that some test is using Qt but is not using `qapp` fixture.
-    This should be caught during the PullRequest review.
-    If you found such a test, please add `qapp` fixture to it.
-    As lack of this fixture may end reporting of a problem in the wrong place.
+    Because we have headless test suite that does not include Qt, we cannot
+    simply use `@pytest.fixture(autouse=True)` on all our fixtures for
+    detecting leaking Qt objects.
+
+    Instead, here we detect whether the `qapp` fixture is being used, detecting
+    tests that use Qt and need to be checked for Qt objects leaks.
+
+    A note to maintainers: tests *may* attempt to use Qt classes but not use
+    the `qapp` fixture. This is BAD, and may cause Qt failures to be reported
+    far away from the problematic code or test. If you find any tests
+    instantiating Qt objects but not using qapp or qtbot, please submit a PR
+    adding the qtbot fixture and adding any top-level Qt widgets with::
+
+        qtbot.addWidget(widget_instance)
+
     """
 
     if 'qapp' in item.fixturenames:
