@@ -813,7 +813,29 @@ def _enclosing(
     )
 
 
-def _remove_holes(path):
+def _indices(labels_array):
+    """Return csr_matrix where mat[i, j] is 1 iff labels_array[j] == i.
+
+    Uses linear indices if labels_array has more than one dimension.
+
+    See for discussion:
+    https://github.com/scikit-image/scikit-image/issues/4855
+    """
+    linear_labels = labels_array.reshape(-1)
+    idxs = np.arange(linear_labels.size)
+    label_idxs = sparse.coo_matrix(
+        (np.broadcast_to(1, idxs.size), (linear_labels, idxs))
+    ).tocsr()
+    return label_idxs
+
+
+def _get_idxs(label2idxs_csr: sparse.csr_matrix, i: int):
+    """Fast access to the nonzero indices corresponding to row i."""
+    u, v = label2idxs_csr.indptr[i : i + 2]
+    return label2idxs_csr.indices[u:v]
+
+
+def _remove_internal_edges(path, keep_holes=True):
     """Remove holes from a path representing a polygon.
 
     Holes are represented as vertices winding in the opposite direction to the
@@ -838,29 +860,29 @@ def _remove_holes(path):
         (np.ones(n_edge), tuple(e.T)), shape=(m + 1, m + 1)
     ).tocsr()
     n_comp, labels = sparse.csgraph.connected_components(csr, directed=False)
-    if n_comp > 1:
-        current_topleft = np.mean(v, axis=0)
-        current_bottomright = current_topleft
-        start = None
-        for comp in range(n_comp):
-            current_indices = np.flatnonzero(labels == comp)
-            current_coords = v[current_indices]  # todo: optimise to 1 pass
-            topleft = np.min(current_coords, axis=0)
-            bottomright = np.max(current_coords, axis=0)
-            if _enclosing(
-                topleft, bottomright, current_topleft, current_bottomright
-            ):
-                current_topleft = topleft
-                current_bottomright = bottomright
-                start = current_indices[0]
-        path_order = sparse.csgraph.depth_first_order(
-            csr, start, directed=False, return_predecessors=False
+    comp2idxs = _indices(labels)
+    idxs = [_get_idxs(comp2idxs, i) for i in range(n_comp)]
+    # having found the connected components, we make sure we sort the vertices
+    # in adjacent sequence.
+    # TODO: Check whether we can simplify this step.
+    #  This *might* be unnecessary work because the unique vertices might be
+    #  in the correct order anyway.
+    path_orders = [
+        sparse.csgraph.depth_first_order(
+            csr, idx[0], directed=False, return_predecessors=False
         )
-        path = v[path_order]
-    return path
+        for idx in idxs
+    ]
+    paths = [v[path_order] for path_order in path_orders]
+    if not keep_holes:
+        # any holes will necessarily have a smaller span than the enclosing
+        # polygon, so it is sufficient to check the ptp (max-min) of each array
+        # along an arbitrary axis
+        paths = [max(paths, key=lambda p: np.ptp(p[:, 0]))]
+    return paths
 
 
-def _combine_triangulations(meshes_list):
+def _combine_meshes(meshes_list):
     """Combine a list of (centers, offsets, triangles) meshes into one.
 
     Meshes are generated as tuples of (centers, offsets, triangles), where the
@@ -904,7 +926,9 @@ def _combine_triangulations(meshes_list):
     return centers, offsets, triangles
 
 
-def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
+def generate_2D_edge_meshes(
+    path, closed=False, limit=3, bevel=False, contiguous=False
+):
     """Find the triangulation of a path in 2D.
 
     The resulting `offsets` can be multiplied by a `width` scalar and be
@@ -925,6 +949,10 @@ def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
     bevel : bool
         Bool which if True causes a bevel join to always be used. If False
         a bevel join will only be used when the miter limit is exceeded
+    contiguous : bool
+        Whether a (closed) path is guaranteed to be contiguous. Polygons may
+        have holes in them, in which case, the path of the contour and the
+        paths of any internal holes will not be contiguous.
 
     Returns
     -------
@@ -938,9 +966,16 @@ def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
         Px3 array of the indices of the vertices that will form the
         triangles of the triangulation
     """
-    if closed:
+    if closed and not contiguous:
         # polygon — might include holes, we remove internal edges
-        path = _remove_holes(path)
+        return _combine_meshes(
+            [
+                generate_2D_edge_meshes(
+                    p, closed=closed, limit=limit, bevel=bevel, contiguous=True
+                )
+                for p in _remove_internal_edges(path)
+            ]
+        )
 
     path = np.asarray(path, dtype=float)
 
