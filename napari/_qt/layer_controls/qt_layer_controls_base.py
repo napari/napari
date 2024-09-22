@@ -158,7 +158,10 @@ class QtLayerControls(QFrame):
             self.layer.blending not in NO_OPACITY_BLENDING_MODES
         )
         if self.__class__ == QtLayerControls:
-            # this if is to prevent leaking of buttons in the tests
+            # This base class is only instantiated in tests. When it's not a
+            # concrete subclass, we need to parent the button_grid to the
+            # layout so that qtbot will correctly clean up all instantiated
+            # widgets.
             self.layout().addRow(self.button_grid)
 
     def changeOpacity(self, value):
