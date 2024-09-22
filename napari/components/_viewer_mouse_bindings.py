@@ -13,3 +13,13 @@ def dims_scroll(viewer, event):
         else:
             viewer.dims._increment_dims_right()
             viewer.dims._scroll_progress -= 1
+
+
+def double_click_to_zoom(viewer, event):
+    """Zoom on double click."""
+    if viewer.layers.selection.active.mode != 'pan_zoom':
+        return
+    if 'Alt' in event.modifiers:
+        viewer.camera.zoom /= 2
+    else:
+        viewer.camera.zoom *= 2
