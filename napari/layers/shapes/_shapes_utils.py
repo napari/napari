@@ -834,7 +834,7 @@ def _indices(labels_array):
     return label_idxs
 
 
-def _get_idxs(label2idxs_csr: sparse.csr_matrix, i: int):
+def _get_idxs(label2idxs_csr: sparse.csr_matrix, i: int) -> npt.NDArray:
     """Fast access to the nonzero indices corresponding to row i."""
     u, v = label2idxs_csr.indptr[i : i + 2]
     return label2idxs_csr.indices[u:v]
