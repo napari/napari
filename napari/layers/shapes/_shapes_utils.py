@@ -971,7 +971,7 @@ def generate_2D_edge_meshes(
         Px3 array of the indices of the vertices that will form the
         triangles of the triangulation
     """
-    if closed and not contiguous:
+    if closed and not contiguous and len(path) > 2:
         # polygon — might include holes, we remove internal edges
         return _combine_meshes(
             [
