@@ -705,7 +705,9 @@ def triangulate_face(
     raw_vertices, edges = _normalize_vertices_and_edges(
         polygon_vertices, close=True
     )
-    if triangulate is not None:
+    if _is_convex(polygon_vertices):
+        vertices, triangles = _fan_triangulation(polygon_vertices)
+    elif triangulate is not None:
         # if the triangle library is installed, use it because it's faster.
         res = triangulate(
             {'vertices': raw_vertices, 'segments': edges}, opts='p'
@@ -715,8 +717,6 @@ def triangulate_face(
         triangles = _cull_triangles_not_in_poly(
             vertices, raw_triangles, polygon_vertices
         )
-    elif _is_convex(polygon_vertices):
-        vertices, triangles = _fan_triangulation(polygon_vertices)
     else:
         # otherwise, we use VisPy's triangulation, which is slower and gives
         # less balanced polygons, but works.
