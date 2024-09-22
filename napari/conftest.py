@@ -885,27 +885,37 @@ with contextlib.suppress(ImportError):
 
     from pytestqt.qtbot import QtBot
 
-    class OwnQtBot(QtBot):
-        """This is a modified version of QtBot that
-        ensures that all widgets added to it
-        has, after the test ends, objectName set to 'handled_widget'
-        This allows distinguishing them from non-handled widgets
-        in the _find_dangling_widgets fixture.
+    class QtBotWithOnCloseRenaming(QtBot):
+        """Modified QtBot that renames widgets when closing them in tests.
+
+        After a test ends that uses QtBot, all instantiated widgets added to
+        the bot have their name changed to 'handled_widget'. This allows us to
+        detect leaking widgets at the end of a test run, and avoid the
+        segmentation faults that often result from such leaks. [1]_
+
+        See Also
+        --------
+        `_find_dangling_widgets`: fixture that finds all widgets that have not
+        been renamed to 'handled_widget'.
+
+        References
+        ----------
+        .. [1] https://czaki.github.io/blog/2024/09/16/preventing-segfaults-in-test-suite-that-has-qt-tests/
         """
 
         def addWidget(self, widget, *, before_close_func=None):
             if widget.objectName() == '':
-                # objet do not have name, so we can set it
+                # object does not have a name, so we can set it
                 widget.setObjectName('handled_widget')
                 before_close_func_ = before_close_func
             elif before_close_func is None:
-                # there is no custom teardown function
-                # so we could provide one that will set object name
+                # there is no custom teardown function,
+                # so we provide one that will set object name
 
                 def before_close_func_(w):
                     w.setObjectName('handled_widget')
             else:
-                # user provided custom teardown function
+                # user provided custom teardown function,
                 # so we need to wrap it to set object name
 
                 def before_close_func_(w):
@@ -916,16 +926,15 @@ with contextlib.suppress(ImportError):
 
     @pytest.fixture
     def qtbot(qapp, request):  # pragma: no cover
-        """
-        Fixture used to create a OwnQtBot instance for using during testing.
+        """Fixture to create a QtBotWithOnCloseRenaming instance for testing.
 
-        Make sure to call addWidget for each top-level widget you create to ensure
-        that they are properly closed after the test ends.
+        Make sure to call addWidget for each top-level widget you create to
+        ensure that they are properly closed after the test ends.
 
-        The `qapp` fixture is used to ensure that the QApplication is created before,
-        so we need it, even without using it directly in this fixture
+        The `qapp` fixture is used to ensure that the QApplication is created
+        before, so we need it, even without using it directly in this fixture.
         """
-        return OwnQtBot(request)
+        return QtBotWithOnCloseRenaming(request)
 
 
 @pytest.fixture
