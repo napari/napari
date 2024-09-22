@@ -61,7 +61,22 @@ _app_ref = None
 _IPYTHON_WAS_HERE_FIRST = 'IPython' in sys.modules
 
 
-def get_app(
+# TODO: Remove in napari 0.6.0
+def get_app(*args, **kwargs) -> QApplication:
+    """Get or create the Qt QApplication. Now deprecated, use `get_qapp`."""
+    warn(
+        trans._(
+            '`QApplication` instance access through `get_app` is deprecated and will be removed in 0.6.0.\n'
+            'Please use `get_qapp` instead.\n',
+            deferred=True,
+        ),
+        category=FutureWarning,
+        stacklevel=2,
+    )
+    return get_qapp(*args, **kwargs)
+
+
+def get_qapp(
     *,
     app_name: Optional[str] = None,
     app_version: Optional[str] = None,

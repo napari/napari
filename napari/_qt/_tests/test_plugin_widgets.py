@@ -8,7 +8,7 @@ from npe2 import DynamicPlugin
 from qtpy.QtWidgets import QWidget
 
 import napari
-from napari._app_model import get_app
+from napari._app_model import get_app_model
 from napari._qt._qplugins._qnpe2 import _get_widget_viewer_param
 from napari._qt.qt_main_window import _instantiate_dock_widget
 from napari.utils._proxies import PublicOnlyProxy
@@ -182,7 +182,7 @@ def test_widget_types_supported(
     # instance of a widget
     tmp_plugin.contribute.widget(display_name='Widget')(Widget)
 
-    app = get_app()
+    app = get_app_model()
     viewer = make_napari_viewer()
 
     # `side_effect` required so widget is added to window and then

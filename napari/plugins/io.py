@@ -77,8 +77,8 @@ def read_data_with_plugins(
 
     res = _npe2.read(paths, plugin, stack=stack)
     if res is not None:
-        _ld, hookimpl = res
-        return [] if _is_null_layer_sentinel(_ld) else _ld, hookimpl
+        ld_, hookimpl = res
+        return [] if _is_null_layer_sentinel(ld_) else list(ld_), hookimpl
 
     hook_caller = plugin_manager.hook.napari_get_reader
     paths = [abspath_or_url(p, must_exist=True) for p in paths]
