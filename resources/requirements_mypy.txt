@@ -14,7 +14,7 @@ click==8.1.7
     # via typer
 docstring-parser==0.16
     # via magicgui
-idna==3.8
+idna==3.10
     # via requests
 magicgui==0.9.1
     # via -r napari_repo/resources/requirements_mypy.in
@@ -40,11 +40,11 @@ psygnal==0.11.1
     #   npe2
 pyconify==0.1.6
     # via superqt
-pydantic==2.9.0
+pydantic==2.9.2
     # via
     #   -r napari_repo/resources/requirements_mypy.in
     #   npe2
-pydantic-core==2.23.2
+pydantic-core==2.23.4
     # via pydantic
 pygments==2.18.0
     # via
@@ -67,7 +67,7 @@ qtpy==2.4.1
     #   superqt
 requests==2.32.3
     # via pyconify
-rich==13.8.0
+rich==13.8.1
     # via
     #   npe2
     #   typer
@@ -79,11 +79,11 @@ tomli-w==1.0.0
     # via npe2
 typer==0.12.5
     # via npe2
-types-pyyaml==6.0.12.20240808
+types-pyyaml==6.0.12.20240917
     # via -r napari_repo/resources/requirements_mypy.in
-types-requests==2.32.0.20240907
+types-requests==2.32.0.20240914
     # via -r napari_repo/resources/requirements_mypy.in
-types-setuptools==74.1.0.20240907
+types-setuptools==75.1.0.20240917
     # via -r napari_repo/resources/requirements_mypy.in
 typing-extensions==4.12.2
     # via
@@ -93,9 +93,7 @@ typing-extensions==4.12.2
     #   pydantic-core
     #   superqt
     #   typer
-tzdata==2024.1
-    # via pydantic
-urllib3==2.2.2
+urllib3==2.2.3
     # via
     #   requests
     #   types-requests
