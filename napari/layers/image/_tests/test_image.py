@@ -145,7 +145,7 @@ def test_5D_image_shape_1():
 
 def test_rgb_image():
     """Test instantiating Image layer with RGB data."""
-    shape = (10, 15, 3)
+    shape = (40, 45, 3)
     np.random.seed(0)
     data = np.random.random(shape)
     layer = Image(data)
@@ -160,7 +160,7 @@ def test_rgb_image():
 
 def test_rgba_image():
     """Test instantiating Image layer with RGBA data."""
-    shape = (10, 15, 4)
+    shape = (40, 45, 4)
     np.random.seed(0)
     data = np.random.random(shape)
     layer = Image(data)
@@ -175,7 +175,7 @@ def test_rgba_image():
 
 def test_negative_rgba_image():
     """Test instantiating Image layer with negative RGBA data."""
-    shape = (10, 15, 4)
+    shape = (40, 45, 4)
     np.random.seed(0)
     # Data between -1.0 and 1.0
     data = 2 * np.random.random(shape) - 1

@@ -1,5 +1,6 @@
 import os
 import sys
+from unittest.mock import patch
 
 import pytest
 from qtpy.QtCore import QPointF
@@ -13,7 +14,8 @@ from napari._qt.widgets.qt_tooltip import QtToolTipLabel
     os.environ.get('CI', False) and sys.platform == 'darwin',
     reason='Timeouts when running on macOS CI',
 )
-def test_qt_tooltip_label(qtbot):
+@patch.object(QToolTip, 'showText')
+def test_qt_tooltip_label(show_text, qtbot):
     tooltip_text = 'Test QtToolTipLabel showing a tooltip'
     widget = QtToolTipLabel('Label with a tooltip')
     widget.setToolTip(tooltip_text)
@@ -25,5 +27,5 @@ def test_qt_tooltip_label(qtbot):
     pos = QPointF(widget.rect().center())
     event = QEnterEvent(pos, pos, QPointF(widget.pos()) + pos)
     widget.enterEvent(event)
-    qtbot.waitUntil(lambda: QToolTip.isVisible())
-    qtbot.waitUntil(lambda: QToolTip.text() == tooltip_text)
+    assert show_text.called
+    assert show_text.call_args[0][1] == tooltip_text
