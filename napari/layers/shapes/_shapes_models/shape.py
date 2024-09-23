@@ -167,7 +167,7 @@ class Shape(ABC):
 
     @property
     def bounding_box(self) -> np.ndarray:
-        """np.ndarray: 9x2 array of vertices of the interaction box."""
+        """(2, N) array, bounding box of the object."""
         return self._bounding_box[:, self.dims_displayed]
 
     @property

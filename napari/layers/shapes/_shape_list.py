@@ -495,7 +495,7 @@ class ShapeList:
         if z_refresh:
             # Set z_order
             self._update_z_order()
-        self.__dict__.pop('_bounding_boxes', None)
+        self._clear_cache()
 
     def _add_multiple_shapes(
         self,
@@ -659,7 +659,7 @@ class ShapeList:
         if z_refresh:
             # Set z_order
             self._update_z_order()
-        self.__dict__.pop('_bounding_boxes', None)
+        self._clear_cache()
 
     @_batch_dec
     def remove_all(self):
@@ -1020,7 +1020,7 @@ class ShapeList:
         self.remove(index, renumber=False)
         self.add(shape, shape_index=index)
         self._update_z_order()
-        self.__dict__.pop('_bounding_boxes', None)
+        self._clear_cache()
 
     def outline(
         self, indices: Union[int, Sequence[int]]
@@ -1124,12 +1124,12 @@ class ShapeList:
         if not self.shapes:
             return None
         bounding_boxes = self._bounding_boxes
-        inside = np.all(
+        in_bbox = np.all(
             (bounding_boxes[0] <= coord) * (bounding_boxes[1] >= coord),
             axis=1,
         )
-        inside_indices = np.nonzero(inside)[0]
-        if not inside_indices.size:
+        inside_indices = np.flatnonzero(in_bbox)
+        if inside_indices.size == 0:
             return None
         try:
             return next(
@@ -1339,7 +1339,7 @@ class ShapeList:
         # If there are too many shapes to render responsively, just render
         # the top max_shapes shapes
         if max_shapes is not None and len(z_order_in_view) > max_shapes:
-            z_order_in_view = z_order_in_view[0:max_shapes]
+            z_order_in_view = z_order_in_view[:max_shapes]
 
         for ind in z_order_in_view:
             mask = self.shapes[ind].to_mask(
@@ -1352,3 +1352,6 @@ class ShapeList:
             colors[mask, :] = col
 
         return colors
+
+    def _clear_cache(self):
+        self.__dict__.pop('_bounding_boxes', None)
