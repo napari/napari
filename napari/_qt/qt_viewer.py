@@ -1174,7 +1174,9 @@ class QtViewer(QSplitter):
         event : qtpy.QtCore.QCloseEvent
             Event from the Qt context.
         """
-        self.layers.close()
+        if self._layers is not None:
+            # do not create layerlist if it does not exist yet.
+            self.layers.close()
 
         # if the viewer.QtDims object is playing an axis, we need to terminate
         # the AnimationThread before close, otherwise it will cause a segFault

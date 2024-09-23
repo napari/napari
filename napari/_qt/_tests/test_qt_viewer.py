@@ -743,17 +743,9 @@ def _update_data(
 
 
 @pytest.fixture
-def qt_viewer_with_controls(qtbot):
-    qt_viewer = QtViewer(viewer=ViewerModel())
-    qt_viewer.show()
+def qt_viewer_with_controls(qt_viewer):
     qt_viewer.controls.show()
-    yield qt_viewer
-    qt_viewer.controls.hide()
-    qt_viewer.controls.close()
-    qt_viewer.hide()
-    qt_viewer.close()
-    qt_viewer._instances.clear()
-    qtbot.wait(50)
+    return qt_viewer
 
 
 @skip_local_popups
@@ -866,15 +858,11 @@ def test_axis_labels(make_napari_viewer):
 
 
 @pytest.fixture
-def qt_viewer(qtbot):
-    qt_viewer = QtViewer(ViewerModel())
-    qt_viewer.show()
-    qt_viewer.resize(460, 460)
+def qt_viewer(qtbot, qt_viewer_: QtViewer):
+    qt_viewer_.show()
+    qt_viewer_.resize(460, 460)
     QApplication.processEvents()
-    yield qt_viewer
-    qt_viewer.close()
-    qt_viewer._instances.clear()
-    del qt_viewer
+    return qt_viewer_
 
 
 def _find_margin(data: np.ndarray, additional_margin: int) -> tuple[int, int]:
