@@ -4,9 +4,11 @@ import pytest
 from qtpy.QtCore import QPoint, Qt
 from qtpy.QtWidgets import QApplication
 
+from napari._app_model._app import get_app_model
 from napari._qt.dialogs.qt_modal import QtPopup
 from napari._qt.widgets.qt_viewer_buttons import QtViewerButtons
 from napari.components.viewer_model import ViewerModel
+from napari.viewer import Viewer
 
 
 @pytest.fixture
@@ -133,6 +135,23 @@ def test_ndisplay_button_popup(qt_viewer_buttons, qtbot):
         == viewer_buttons.perspective_slider.value()
         == 10
     )
+
+
+def test_toggle_ndisplay(mock_app_model, qt_viewer_buttons, qtbot):
+    """Check `toggle_ndisplay` works via `mouseClick`."""
+    viewer, viewer_buttons = qt_viewer_buttons
+    assert viewer_buttons.ndisplayButton
+
+    app = get_app_model()
+
+    assert viewer.dims.ndisplay == 2
+    with app.injection_store.register(
+        providers=[
+            (lambda: viewer, Viewer, 100),
+        ]
+    ):
+        qtbot.mouseClick(viewer_buttons.ndisplayButton, Qt.LeftButton)
+        assert viewer.dims.ndisplay == 3
 
 
 def test_transpose_rotate_button(monkeypatch, qt_viewer_buttons, qtbot):

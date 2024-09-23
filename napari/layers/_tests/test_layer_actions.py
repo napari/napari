@@ -39,7 +39,7 @@ def test_split_stack():
 
 def test_split_rgb():
     layer_list = LayerList()
-    layer_list.append(Image(np.random.random((8, 8, 3))))
+    layer_list.append(Image(np.random.random((48, 48, 3))))
     assert len(layer_list) == 1
     assert layer_list[0].rgb is True
 
@@ -48,7 +48,7 @@ def test_split_rgb():
     assert len(layer_list) == 3
 
     for idx in range(3):
-        assert layer_list[idx].data.shape == (8, 8)
+        assert layer_list[idx].data.shape == (48, 48)
 
 
 def test_merge_stack():

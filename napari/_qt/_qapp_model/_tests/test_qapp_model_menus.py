@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from app_model.types import Action
 
-from napari._app_model import get_app
+from napari._app_model import get_app_model
 from napari._app_model.constants import MenuId
 from napari._app_model.context import LayerListContextKeys as LLCK
 from napari._qt._qapp_model import build_qmodel_menu
@@ -13,7 +13,7 @@ from napari.layers import Image
 @pytest.mark.parametrize('menu_id', list(MenuId))
 def test_build_qmodel_menu(builtins, make_napari_viewer, qtbot, menu_id):
     """Test that we can build qmenus for all registered menu IDs."""
-    app = get_app()
+    app = get_app_model()
 
     # Configures `app`, registers actions and initializes plugins
     make_napari_viewer()
@@ -29,7 +29,7 @@ def test_build_qmodel_menu(builtins, make_napari_viewer, qtbot, menu_id):
 
 def test_update_menu_state_context(make_napari_viewer):
     """Test `_update_menu_state` correctly updates enabled/visible state."""
-    app = get_app()
+    app = get_app_model()
     viewer = make_napari_viewer()
 
     action = Action(

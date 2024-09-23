@@ -18,6 +18,7 @@ from qtpy.QtWidgets import (
 )
 
 from napari._qt.utils import combine_widgets, qt_signals_blocked
+from napari.settings import get_settings
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -32,6 +33,13 @@ _SHORTCUT_DEPRECATION_STRING = trans._(
     'The shortcut parameter is deprecated since version 0.4.8, please use the action and shortcut manager APIs. The new action manager and shortcut API allow user configuration and localisation. (got {shortcut})',
     shortcut='{shortcut}',
 )
+
+dock_area_to_str = {
+    Qt.DockWidgetArea.LeftDockWidgetArea: 'left',
+    Qt.DockWidgetArea.RightDockWidgetArea: 'right',
+    Qt.DockWidgetArea.TopDockWidgetArea: 'top',
+    Qt.DockWidgetArea.BottomDockWidgetArea: 'bottom',
+}
 
 
 class QtViewerDockWidget(QDockWidget):
@@ -151,6 +159,17 @@ class QtViewerDockWidget(QDockWidget):
         )
         self.setTitleBarWidget(self.title)
         self.visibilityChanged.connect(self._on_visibility_changed)
+
+        self.dockLocationChanged.connect(self._update_default_dock_area)
+
+    def _update_default_dock_area(self, value):
+        if value not in dock_area_to_str:
+            return
+        settings = get_settings()
+        settings.application.plugin_widget_positions[self.name] = (
+            dock_area_to_str[value]
+        )
+        settings._maybe_save()
 
     @property
     def _parent(self):

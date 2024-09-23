@@ -6,7 +6,7 @@ from unittest import mock
 import pytest
 import requests
 
-from napari._app_model import get_app
+from napari._app_model import get_app_model
 from napari._qt._qapp_model.qactions._help import HELP_URLS
 
 
@@ -29,7 +29,7 @@ def test_help_urls(url):
     else ['napari.window.help.info'],
 )
 def test_about_action(make_napari_viewer, action_id):
-    app = get_app()
+    app = get_app_model()
     viewer = make_napari_viewer()
 
     with mock.patch(
