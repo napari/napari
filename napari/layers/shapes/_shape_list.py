@@ -1022,7 +1022,9 @@ class ShapeList:
         self._update_z_order()
         self.__dict__.pop('_bounding_boxes', None)
 
-    def outline(self, indices: Union[int, Sequence[int]]):
+    def outline(
+        self, indices: Union[int, Sequence[int]]
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Finds outlines of shapes listed in indices
 
         Parameters
@@ -1041,10 +1043,17 @@ class ShapeList:
             Mx3 array of any indices of vertices for triangles of outline
         """
         if not isinstance(indices, Sequence):
-            indices = [indices]
+            shape = self.shapes[indices]
+            return (
+                shape._edge_vertices,
+                shape._edge_offsets,
+                shape._edge_triangles,
+            )
         return self.outlines(indices)
 
-    def outlines(self, indices: Sequence[int]):
+    def outlines(
+        self, indices: Sequence[int]
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Finds outlines of shapes listed in indices
 
         Parameters
@@ -1061,31 +1070,10 @@ class ShapeList:
         triangles : np.ndarray
             Mx3 array of any indices of vertices for triangles of outline
         """
-        indices_set = set(indices)
-        meshes = self._mesh.triangles_index
-        triangle_indices = [
-            i
-            for i, x in enumerate(meshes)
-            if x[0] in indices_set and x[1] == 1
-        ]
-        meshes = self._mesh.vertices_index
-        vertices_indices = [
-            i
-            for i, x in enumerate(meshes)
-            if x[0] in indices_set and x[1] == 1
-        ]
-
-        offsets = self._mesh.vertices_offsets[vertices_indices]
-        centers = self._mesh.vertices_centers[vertices_indices]
-        triangles = self._mesh.triangles[triangle_indices]
-
-        t_ind = self._mesh.triangles_index[triangle_indices][:, 0]
-        inds = self._mesh.vertices_index[vertices_indices][:, 0]
-        starts = np.unique(inds, return_index=True)[1]
-        for i, ind in enumerate(indices):
-            inds = t_ind == ind
-            adjust_index = starts[i] - vertices_indices[starts[i]]
-            triangles[inds] = triangles[inds] + adjust_index
+        shapes_list = [self.shapes[i] for i in indices]
+        offsets = np.vstack([s._edge_offsets for s in shapes_list])
+        centers = np.vstack([s._edge_vertices for s in shapes_list])
+        triangles = np.vstack([s._edge_triangles for s in shapes_list])
 
         return centers, offsets, triangles
 

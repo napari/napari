@@ -118,7 +118,9 @@ def sys_info(as_html: bool = False) -> str:
         ('superqt', 'superqt'),
         ('in_n_out', 'in-n-out'),
         ('app_model', 'app-model'),
+        ('psygnal', 'psygnal'),
         ('npe2', 'npe2'),
+        ('pydantic', 'pydantic'),
     )
 
     loaded = {}
