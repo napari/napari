@@ -246,7 +246,7 @@ class QtLayerControls(QFrame):  # TODO: Remove
         self.transform_button.installEventFilter(self)
         self._on_editable_or_visible_change()
 
-        self.button_grid = QGridLayout()
+        self.button_grid = QGridLayout(self)
         self.button_grid.addWidget(self.panzoom_button, 0, 6)
         self.button_grid.addWidget(self.transform_button, 0, 7)
         self.button_grid.setContentsMargins(5, 0, 0, 5)
@@ -281,6 +281,12 @@ class QtLayerControls(QFrame):  # TODO: Remove
         self.opacityLabel.setEnabled(
             self.layer.blending not in NO_OPACITY_BLENDING_MODES
         )
+        if self.__class__ == QtLayerControls:
+            # This base class is only instantiated in tests. When it's not a
+            # concrete subclass, we need to parent the button_grid to the
+            # layout so that qtbot will correctly clean up all instantiated
+            # widgets.
+            self.layout().addRow(self.button_grid)
 
     def changeOpacity(self, value):
         """Change opacity value on the layer model.

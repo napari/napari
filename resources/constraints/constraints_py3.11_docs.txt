@@ -8,7 +8,7 @@ anyio==4.4.0
     # via
     #   starlette
     #   watchfiles
-app-model==0.2.7
+app-model==0.3.0
     # via napari (pyproject.toml)
 appdirs==1.4.4
     # via
