@@ -569,7 +569,7 @@ def test_shapes_with_holes(make_napari_viewer):
 
     # show must be True or the screenshot will be blank
     viewer = make_napari_viewer(show=True)
-    viewer.add_shapes(embedded, shape_type='polygon')
+    viewer.add_shapes(embedded, shape_type='polygon', edge_width=0)
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     # center should have a hole
     # use -1 because edge is exactly halfway down.
