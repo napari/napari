@@ -8,7 +8,7 @@ from npe2 import DynamicPlugin
 from npe2.manifest.contributions import SampleDataURI
 from qtpy.QtWidgets import QLabel, QRadioButton
 
-from napari._app_model import get_app
+from napari._app_model import get_app_model
 from napari._qt.dialogs.qt_reader_dialog import (
     QtReaderDialog,
     open_with_dialog_choices,
@@ -151,7 +151,7 @@ def test_open_sample_data_shows_all_readers(
     )
     tmp_plugin.manifest.contributions.sample_data = [my_sample]
 
-    app = get_app()
+    app = get_app_model()
     # required so setup steps run in init of `Viewer` and `Window`
     viewer = make_napari_viewer()
     # Ensure that `handle_gui_reading`` is not passed the sample plugin name

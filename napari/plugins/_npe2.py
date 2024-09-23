@@ -329,7 +329,11 @@ def on_plugins_registered(manifests: set[PluginManifest]):
 
     'Registered' means that a manifest has been provided or discovered.
     """
-    for mf in manifests:
+    sorted_manifests = sorted(
+        manifests,
+        key=lambda mf: mf.display_name if mf.display_name else mf.name,
+    )
+    for mf in sorted_manifests:
         if not pm.is_disabled(mf.name):
             _register_manifest_actions(mf)
             _safe_register_qt_actions(mf)
@@ -341,9 +345,9 @@ def _register_manifest_actions(mf: PluginManifest) -> None:
     This is called when a plugin is registered or enabled and it adds the
     plugin's menus and submenus to the app model registry.
     """
-    from napari._app_model import get_app
+    from napari._app_model import get_app_model
 
-    app = get_app()
+    app = get_app_model()
     actions, submenus = _npe2_manifest_to_actions(mf)
 
     context = pm.get_context(cast('PluginName', mf.name))
