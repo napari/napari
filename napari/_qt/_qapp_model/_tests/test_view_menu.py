@@ -5,7 +5,7 @@ import pytest
 from qtpy.QtCore import QPoint, Qt
 from qtpy.QtWidgets import QApplication
 
-from napari._app_model import get_app
+from napari._app_model import get_app_model
 from napari._qt._qapp_model.qactions._view import (
     _get_current_tooltip_visibility,
     toggle_action_details,
@@ -34,7 +34,7 @@ def test_toggle_axes_scale_bar_attr(
         * `colored`
         * `ticks`
     """
-    app = get_app()
+    app = get_app_model()
     viewer = make_napari_viewer()
 
     # Get viewer attribute to check (`axes` or `scale_bar`)
@@ -53,7 +53,7 @@ def test_toggle_axes_scale_bar_attr(
 def test_toggle_fullscreen(make_napari_viewer, qtbot):
     """Test toggle fullscreen action."""
     action_id = 'napari.window.view.toggle_fullscreen'
-    app = get_app()
+    app = get_app_model()
     viewer = make_napari_viewer(show=True)
 
     # Check initial default state (no fullscreen)
@@ -87,7 +87,7 @@ def test_toggle_menubar(make_napari_viewer, qtbot):
     toggle action doesn't exist/isn't enabled there.
     """
     action_id = 'napari.window.view.toggle_menubar'
-    app = get_app()
+    app = get_app_model()
     viewer = make_napari_viewer(show=True)
 
     # Check initial state (visible menubar)
@@ -117,7 +117,7 @@ def test_toggle_menubar(make_napari_viewer, qtbot):
 def test_toggle_play(make_napari_viewer, qtbot):
     """Test toggle play action."""
     action_id = 'napari.window.view.toggle_play'
-    app = get_app()
+    app = get_app_model()
     viewer = make_napari_viewer()
 
     # Check action on empty viewer
@@ -146,7 +146,7 @@ def test_toggle_play(make_napari_viewer, qtbot):
 def test_toggle_activity_dock(make_napari_viewer):
     """Test toggle activity dock"""
     action_id = 'napari.window.view.toggle_activity_dock'
-    app = get_app()
+    app = get_app_model()
     viewer = make_napari_viewer(show=True)
 
     # Check initial activity dock state (hidden)
@@ -177,7 +177,7 @@ def test_toggle_layer_tooltips(make_napari_viewer, qtbot):
     """Test toggle layer tooltips"""
     make_napari_viewer()
     action_id = 'napari.window.view.toggle_layer_tooltips'
-    app = get_app()
+    app = get_app_model()
 
     # Check initial layer tooltip visibility settings state (False)
     assert not _get_current_tooltip_visibility()
@@ -189,3 +189,36 @@ def test_toggle_layer_tooltips(make_napari_viewer, qtbot):
     # Restore layer tooltip visibility
     app.commands.execute_command(action_id)
     assert not _get_current_tooltip_visibility()
+
+
+def test_zoom_actions(make_napari_viewer):
+    """Test zoom actions"""
+    viewer = make_napari_viewer()
+    app = get_app_model()
+
+    viewer.add_image(np.ones((10, 10, 10)))
+
+    # get initial zoom state
+    initial_zoom = viewer.camera.zoom
+
+    # Check zoom in action
+    app.commands.execute_command('napari.viewer.camera.zoom_in')
+    assert viewer.camera.zoom == pytest.approx(1.5 * initial_zoom)
+
+    # Check zoom out action
+    app.commands.execute_command('napari.viewer.camera.zoom_out')
+    assert viewer.camera.zoom == pytest.approx(initial_zoom)
+
+    viewer.camera.zoom = 2
+    # Check reset zoom action
+    app.commands.execute_command('napari.viewer.fit_to_view')
+    assert viewer.camera.zoom == pytest.approx(initial_zoom)
+
+    # Check that angle is preserved
+    viewer.dims.ndisplay = 3
+    viewer.camera.angles = (90, 0, 0)
+    viewer.camera.zoom = 2
+    app.commands.execute_command('napari.viewer.fit_to_view')
+    # Zoom should be reset, but angle unchanged
+    assert viewer.camera.zoom == pytest.approx(initial_zoom)
+    assert viewer.camera.angles == (90, 0, 0)

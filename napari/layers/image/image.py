@@ -263,15 +263,14 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
     ):
         # Determine if rgb
         data_shape = data.shape if hasattr(data, 'shape') else data[0].shape
-        rgb_guess = guess_rgb(data_shape)
-        if rgb and not rgb_guess:
+        if rgb and not guess_rgb(data_shape, min_side_len=0):
             raise ValueError(
                 trans._(
                     "'rgb' was set to True but data does not have suitable dimensions."
                 )
             )
         if rgb is None:
-            rgb = rgb_guess
+            rgb = guess_rgb(data_shape)
 
         self.rgb = rgb
         super().__init__(

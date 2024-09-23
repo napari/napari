@@ -1,4 +1,5 @@
 import contextlib
+import itertools
 import sys
 from collections import OrderedDict
 from typing import Optional
@@ -292,15 +293,43 @@ class ShortcutEditor(QWidget):
             item.setFlags(Qt.ItemFlag.NoItemFlags)
             self._table.setItem(0, 0, item)
 
-    def _get_layer_actions(self):
-        current_layer_text = self.layer_combo_box.currentText()
-        layer_actions = self.key_bindings_strs[current_layer_text]
-        actions_all = layer_actions.copy()
-        if current_layer_text is not self.VIEWER_KEYBINDINGS:
-            viewer_actions = self.key_bindings_strs[self.VIEWER_KEYBINDINGS]
+    def _get_potential_conflicting_actions(self):
+        """
+        Get all actions we want to avoid keybinding conflicts with.
 
-            actions_all.update(viewer_actions)
+        If current selected keybinding group is a layer, return
+        the selected layer actions and viewer actions.
+        If the current selected keybinding group is viewer,
+        return viewer actions and actions from all layers.
+
+        Returns
+        -------
+        actions_all: list[tuple[str, tuple[str, Action]]]
+            Tuple of group names and actions, to avoid keybinding
+            conflicts with.
+            Format:
+                [
+                    ('keybinding_group', ('action_name', Action)),
+                    ...
+                ]
+        """
+        current_layer_text = self.layer_combo_box.currentText()
+        actions_all = list(self._get_group_actions(current_layer_text))
+
+        if current_layer_text != self.VIEWER_KEYBINDINGS:
+            actions_all = list(self._get_group_actions(current_layer_text))
+            actions_all.extend(
+                self._get_group_actions(self.VIEWER_KEYBINDINGS)
+            )
+        else:
+            actions_all = []
+            for group in self.key_bindings_strs:
+                actions_all.extend(self._get_group_actions(group))
         return actions_all
+
+    def _get_group_actions(self, group_name):
+        group_actions = self.key_bindings_strs[group_name]
+        return zip(itertools.repeat(group_name), group_actions.items())
 
     def _restore_shortcuts(self, row):
         action_name = self._table.item(row, self._action_col).text()
@@ -315,43 +344,73 @@ class ShortcutEditor(QWidget):
                 else ''
             )
 
+    def _show_conflicts_warning(
+        self, new_shortcut, conflicting_actions, conflicting_rows
+    ):
+        # create string listing info of all the conflicts found
+        conflicting_actions_string = '<ul>'
+        for group, action_description in conflicting_actions:
+            conflicting_actions_string += trans._(
+                '<li><b>{action_description}</b> in the <b>{group}</b> group</li>',
+                action_description=action_description,
+                group=group,
+            )
+        conflicting_actions_string += '</ul>'
+
+        # show warning symbols
+        self._show_warning_icons(conflicting_rows)
+
+        # show warning message
+        message = trans._(
+            'The keybinding <b>{new_shortcut}</b> is already assigned to:'
+            '{conflicting_actions_string}'
+            'Change or clear conflicting shortcuts before assigning <b>{new_shortcut}</b> to this one.',
+            new_shortcut=new_shortcut,
+            conflicting_actions_string=conflicting_actions_string,
+        )
+        self._show_warning(conflicting_rows[0], message)
+
+        self._restore_shortcuts(conflicting_rows[0])
+
+        self._cleanup_warning_icons(conflicting_rows)
+
     def _mark_conflicts(self, new_shortcut, row) -> bool:
         # Go through all layer actions to determine if the new shortcut is already here.
         current_action = self._table.item(row, self._action_col).text()
-        actions_all = self._get_layer_actions()
+        actions_all = self._get_potential_conflicting_actions()
         current_item = self._table.currentItem()
-        for row1, (action_name, action) in enumerate(actions_all.items()):
+        conflicting_rows = [row]
+        conflicting_actions = []
+        for conflicting_row, (group, (action_name, action)) in enumerate(
+            actions_all
+        ):
             shortcuts = action_manager._shortcuts.get(action_name, [])
 
             if Shortcut(new_shortcut).qt not in [
                 Shortcut(shortcut).qt for shortcut in shortcuts
             ]:
                 continue
+
             # Shortcut is here (either same action or not), don't replace in settings.
             if action_name != current_action:
-                # the shortcut is saved to a different action
-
-                # show warning symbols
-                self._show_warning_icons([row, row1])
-
-                # show warning message
-                message = trans._(
-                    'The keybinding <b>{new_shortcut}</b>  is already assigned to <b>{action_description}</b>; change or clear that shortcut before assigning <b>{new_shortcut}</b> to this one.',
-                    new_shortcut=new_shortcut,
-                    action_description=action.description,
-                )
-                self._show_warning(row, message)
-
-                self._restore_shortcuts(row)
-
-                self._cleanup_warning_icons([row, row1])
-
-                return False
+                # the shortcut is saved to a different action, save conflicting shortcut info
+                if conflicting_row < self._table.rowCount():
+                    # only save row number for conflicts that are inside the current table
+                    conflicting_rows.append(conflicting_row)
+                conflicting_actions.append((group, action.description))
 
             # This shortcut was here.  Reformat and reset text.
             format_shortcut = Shortcut(new_shortcut).platform
             with lock_keybind_update(self):
                 current_item.setText(format_shortcut)
+
+        if len(conflicting_actions) > 0:
+            # show conflicts message and mark conflicting rows as necessary
+            self._show_conflicts_warning(
+                new_shortcut, conflicting_actions, conflicting_rows
+            )
+
+            return False
 
         return True
 
@@ -393,19 +452,6 @@ class ShortcutEditor(QWidget):
         self._table.setCurrentItem(self._table.item(row, col))
 
         if col in {self._shortcut_col, self._shortcut_col2}:
-            # Get all layer actions and viewer actions in order to determine
-            # the new shortcut is not already set to an action.
-
-            current_layer_text = self.layer_combo_box.currentText()
-            layer_actions = self.key_bindings_strs[current_layer_text]
-            actions_all = layer_actions.copy()
-            if current_layer_text is not self.VIEWER_KEYBINDINGS:
-                viewer_actions = self.key_bindings_strs[
-                    self.VIEWER_KEYBINDINGS
-                ]
-
-                actions_all.update(viewer_actions)
-
             # get the current item from shortcuts column
             current_item = self._table.currentItem()
             new_shortcut = Shortcut.parse_platform(current_item.text())
@@ -527,14 +573,6 @@ class ShortcutEditor(QWidget):
             text=message,
         )
         self._warn_dialog.move(global_point)
-
-        # Styling adjustments.
-        self._warn_dialog.resize(250, self._warn_dialog.sizeHint().height())
-
-        self._warn_dialog._message.resize(
-            200, self._warn_dialog._message.sizeHint().height()
-        )
-
         self._warn_dialog.exec_()
 
     def value(self):
