@@ -1,10 +1,13 @@
 from __future__ import annotations
+
 import numpy as np
 from numba import njit
 
 
 @njit(cache=True)
-def _calc_output_size(normals: np.ndarray, closed: bool, cos_limit: float, bevel: bool) -> int:
+def _calc_output_size(
+    normals: np.ndarray, closed: bool, cos_limit: float, bevel: bool
+) -> int:
     point_count = len(normals) * 2
     if closed:
         point_count += 2
@@ -43,7 +46,14 @@ def _calc_output_size(normals: np.ndarray, closed: bool, cos_limit: float, bevel
 
 @njit(cache=True)
 def _set_centers_and_offsets(
-    centers: np.ndarray, offsets: np.ndarray, triangles: np.ndarray, path: np.ndarray, vec1: np.ndarray, vec2: np.ndarray, j: int, cos_limit: float
+    centers: np.ndarray,
+    offsets: np.ndarray,
+    triangles: np.ndarray,
+    path: np.ndarray,
+    vec1: np.ndarray,
+    vec2: np.ndarray,
+    j: int,
+    cos_limit: float,
 ) -> int:
     centers[j] = path
     centers[j + 1] = path
@@ -83,7 +93,12 @@ def _set_centers_and_offsets(
 
 
 @njit(cache=True)
-def generate_2D_edge_meshes(path: np.ndarray, closed: bool=False, limit:float=3.0, bevel:bool=False) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def generate_2D_edge_meshes(
+    path: np.ndarray,
+    closed: bool = False,
+    limit: float = 3.0,
+    bevel: bool = False,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Determines the triangulation of a path in 2D. The resulting `offsets`
     can be multiplied by a `width` scalar and be added to the resulting
     `centers` to generate the vertices of the triangles for the triangulation,
