@@ -921,6 +921,9 @@ def _combine_meshes(meshes_list):
     triangles : np.ndarray of int
         Px3 array of indices into centers to form the triangles.
     """
+    if len(meshes_list) == 1:
+        # nothing to do in this case!
+        return meshes_list[0]
     centers_list, offsets_list, triangles_list = list(zip(*meshes_list))
     # Prepend zero because np.cumsum is flawed. See:
     # https://mail.python.org/archives/list/numpy-discussion@python.org/message/PCFRGU5B4OLYA7NQDWX3Q5Q2Y5IBGP65/
