@@ -1,8 +1,12 @@
 import numpy as np
 
 import napari
-from napari.layers.shapes._shapes_utils import _sign_cross, acc_generate_2D_edge_meshes, generate_2D_edge_meshes
-from napari.layers import Shapes, Points, Vectors
+from napari.layers import Points, Shapes, Vectors
+from napari.layers.shapes._shapes_utils import (
+    acc_generate_2D_edge_meshes,
+    generate_2D_edge_meshes,
+)
+
 
 def generate_regular_polygon(n, radius=1):
     """

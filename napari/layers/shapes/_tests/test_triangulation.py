@@ -1,8 +1,10 @@
+import importlib
 from unittest.mock import patch
-from napari.layers.shapes import _accelerated_triangulate as ac
+
 import numpy as np
 import pytest
-import importlib
+
+from napari.layers.shapes import _accelerated_triangulate as ac
 
 
 @pytest.fixture
@@ -21,20 +23,21 @@ def _disable_jit(monkeypatch):
     importlib.reload(ac)
 
 
-
 @pytest.mark.parametrize(
-    ("path","closed", "bevel", "expeected"),
+    ('path', 'closed', 'bevel', 'expeected'),
     [
         ([[0, 0], [0, 10], [10, 10], [10, 0]], True, False, 10),
         ([[0, 0], [0, 10], [10, 10], [10, 0]], False, False, 8),
         ([[0, 0], [0, 10], [10, 10], [10, 0]], True, True, 14),
         ([[0, 0], [0, 10], [10, 10], [10, 0]], False, True, 10),
-        ([[2, 10], [0, -5], [-2, 10], [-2, -10], [2, -10]], True, False, 15)
-    ]
+        ([[2, 10], [0, -5], [-2, 10], [-2, -10], [2, -10]], True, False, 15),
+    ],
 )
 @pytest.mark.usefixtures('_disable_jit')
 def test_generate_2D_edge_meshes(path, closed, bevel, expeected):
-    centers, offsets, triangles = ac.generate_2D_edge_meshes(np.array(path, dtype='float32'), closed=closed, bevel=bevel)
+    centers, offsets, triangles = ac.generate_2D_edge_meshes(
+        np.array(path, dtype='float32'), closed=closed, bevel=bevel
+    )
     assert centers.shape == offsets.shape
     assert centers.shape[0] == expeected
-    assert triangles.shape[0] == expeected-2
+    assert triangles.shape[0] == expeected - 2

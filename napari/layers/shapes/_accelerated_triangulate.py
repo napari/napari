@@ -1,5 +1,5 @@
 import numpy as np
-from numba import njit, float32, int32, bool_
+from numba import njit
 
 
 @njit(cache=True)
@@ -15,18 +15,25 @@ def _calc_output_size(normals, closed: bool, cos_limit: float, bevel: bool):
         if not closed:
             bevel_count -= 2
     else:
-
-        for i in range(1, len(normals)-1):
-            cos_angle = normals[i - 1, 0] * normals[i, 0] + normals[i - 1, 1] * normals[i, 1]
+        for i in range(1, len(normals) - 1):
+            cos_angle = (
+                normals[i - 1, 0] * normals[i, 0]
+                + normals[i - 1, 1] * normals[i, 1]
+            )
             if cos_limit > cos_angle:
                 # bevel
                 bevel_count += 1
 
         if closed:
-            cos_angle = normals[-2, 0] * normals[-1, 0] + normals[-2, 1] * normals[-1, 1]
+            cos_angle = (
+                normals[-2, 0] * normals[-1, 0]
+                + normals[-2, 1] * normals[-1, 1]
+            )
             if cos_limit > cos_angle:
                 bevel_count += 1
-            cos_angle = normals[-1, 0] * normals[0, 0] + normals[-1, 1] * normals[0, 1]
+            cos_angle = (
+                normals[-1, 0] * normals[0, 0] + normals[-1, 1] * normals[0, 1]
+            )
             if cos_limit > cos_angle:
                 bevel_count += 1
 
@@ -34,7 +41,9 @@ def _calc_output_size(normals, closed: bool, cos_limit: float, bevel: bool):
 
 
 @njit(cache=True)
-def _set_centers_and_offsets(centers, offsets, triangles, path, vec1, vec2, j, cos_limit):
+def _set_centers_and_offsets(
+    centers, offsets, triangles, path, vec1, vec2, j, cos_limit
+):
     centers[j] = path
     centers[j + 1] = path
     cos_angle = vec1[0] * vec2[0] + vec1[1] * vec2[1]
@@ -43,13 +52,13 @@ def _set_centers_and_offsets(centers, offsets, triangles, path, vec1, vec2, j, c
     if cos_limit > cos_angle:
         centers[j + 2] = path
         if sin_angle < 0:
-            offsets[j ] = mitter
-            offsets[j+1, 0] = -vec1[1] * 0.5
-            offsets[j+1, 1] = vec1[0] * 0.5
+            offsets[j] = mitter
+            offsets[j + 1, 0] = -vec1[1] * 0.5
+            offsets[j + 1, 1] = vec1[0] * 0.5
             offsets[j + 2, 0] = -vec2[1] * 0.5
             offsets[j + 2, 1] = vec2[0] * 0.5
             triangles[j + 1] = [j, j + 2, j + 3]
-            triangles[j + 2] = [j+2, j + 3, j + 4]
+            triangles[j + 2] = [j + 2, j + 3, j + 4]
         else:
             offsets[j, 0] = vec1[1] * 0.5
             offsets[j, 1] = -vec1[0] * 0.5
@@ -62,12 +71,12 @@ def _set_centers_and_offsets(centers, offsets, triangles, path, vec1, vec2, j, c
         triangles[j] = [j, j + 1, j + 2]
 
         return 3
-    else:
-        offsets[j] = mitter
-        offsets[j + 1] = -mitter
-        triangles[j] = [j, j + 1, j + 2]
-        triangles[j + 1] = [j+1, j + 2, j + 3]
-        return 2
+    offsets[j] = mitter
+    offsets[j + 1] = -mitter
+    triangles[j] = [j, j + 1, j + 2]
+    triangles[j + 1] = [j + 1, j + 2, j + 3]
+    return 2
+
 
 @njit(cache=True)
 def generate_2D_edge_meshes(path, closed=False, limit=3.0, bevel=False):
@@ -106,12 +115,14 @@ def generate_2D_edge_meshes(path, closed=False, limit=3.0, bevel=False):
 
     path = np.asarray(path, dtype=np.float32)
 
-    cos_limit = - np.float32(np.sqrt(1.0 - 1.0/(limit**2)))
+    cos_limit = -np.float32(np.sqrt(1.0 - 1.0 / (limit**2)))
 
     normals = np.empty_like(path)
     for i in range(1, len(path)):
         vec_diff = path[i] - path[i - 1]
-        normals[i - 1] = vec_diff / np.sqrt(vec_diff[0] ** 2 + vec_diff[1] ** 2)
+        normals[i - 1] = vec_diff / np.sqrt(
+            vec_diff[0] ** 2 + vec_diff[1] ** 2
+        )
 
     if closed:
         vec_diff = path[0] - path[-1]
@@ -121,10 +132,19 @@ def generate_2D_edge_meshes(path, closed=False, limit=3.0, bevel=False):
 
     centers = np.empty((point_count, 2), dtype=np.float32)
     offsets = np.empty((point_count, 2), dtype=np.float32)
-    triangles = np.empty((point_count-2, 3), dtype=np.int32)
+    triangles = np.empty((point_count - 2, 3), dtype=np.int32)
 
     if closed:
-        j = _set_centers_and_offsets(centers, offsets, triangles, path[0], normals[-1], normals[0], 0, cos_limit)
+        j = _set_centers_and_offsets(
+            centers,
+            offsets,
+            triangles,
+            path[0],
+            normals[-1],
+            normals[0],
+            0,
+            cos_limit,
+        )
     else:
         centers[0] = path[0]
         centers[1] = path[0]
@@ -134,10 +154,28 @@ def generate_2D_edge_meshes(path, closed=False, limit=3.0, bevel=False):
         triangles[0] = [0, 1, 2]
         triangles[1] = [1, 2, 3]
         j = 2
-    for i in range(1, len(normals) -1):
-        j += _set_centers_and_offsets(centers, offsets, triangles, path[i], normals[i-1], normals[i], j, cos_limit)
+    for i in range(1, len(normals) - 1):
+        j += _set_centers_and_offsets(
+            centers,
+            offsets,
+            triangles,
+            path[i],
+            normals[i - 1],
+            normals[i],
+            j,
+            cos_limit,
+        )
     if closed:
-        j += _set_centers_and_offsets(centers, offsets, triangles,  path[-1], normals[-2], normals[-1], j, cos_limit)
+        j += _set_centers_and_offsets(
+            centers,
+            offsets,
+            triangles,
+            path[-1],
+            normals[-2],
+            normals[-1],
+            j,
+            cos_limit,
+        )
         centers[j] = centers[0]
         centers[j + 1] = centers[1]
         offsets[j] = offsets[0]
@@ -150,4 +188,3 @@ def generate_2D_edge_meshes(path, closed=False, limit=3.0, bevel=False):
         offsets[j + 1] = -offsets[j]
 
     return centers, offsets, triangles
-

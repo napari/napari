@@ -10,7 +10,6 @@ from vispy.visuals.tube import _frenet_frames
 from napari.layers.utils.layer_utils import segment_normal
 from napari.utils.translations import trans
 
-
 if TYPE_CHECKING:
     import numpy.typing as npt
 
@@ -22,7 +21,9 @@ except ModuleNotFoundError:
 
 
 try:
-    from napari.layers.shapes._accelerated_triangulate import generate_2D_edge_meshes as acc_generate_2D_edge_meshes
+    from napari.layers.shapes._accelerated_triangulate import (
+        generate_2D_edge_meshes as acc_generate_2D_edge_meshes,
+    )
 except ImportError:
     acc_generate_2D_edge_meshes = None
 
