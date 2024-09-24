@@ -60,7 +60,7 @@ from napari._qt.dialogs.qt_activity_dialog import QtActivityDialog
 from napari._qt.dialogs.qt_notification import NapariQtNotification
 from napari._qt.qt_event_loop import (
     NAPARI_ICON_PATH,
-    get_app,
+    get_qapp,
     quit_app as quit_app_,
 )
 from napari._qt.qt_resources import get_stylesheet
@@ -682,7 +682,7 @@ class Window:
 
     def __init__(self, viewer: 'Viewer', *, show: bool = True) -> None:
         # create QApplication if it doesn't already exist
-        qapp = get_app()
+        qapp = get_qapp()
 
         # Dictionary holding dock widgets
         self._dock_widgets: MutableMapping[str, QtViewerDockWidget] = (
@@ -1513,7 +1513,7 @@ class Window:
         # B) it is not the first time a QMainWindow is being created
 
         # `app_name` will be "napari" iff the application was instantiated in
-        # get_app(). isActiveWindow() will be True if it is the second time a
+        # get_qapp(). isActiveWindow() will be True if it is the second time a
         # _qt_window has been created.
         # See #721, #732, #735, #795, #1594
         app_name = QApplication.instance().applicationName()
