@@ -54,6 +54,7 @@ def _set_centers_and_offsets(
     vec2: np.ndarray,
     j: int,
     cos_limit: float,
+    sin_limit: float,
 ) -> int:
     centers[j] = path
     centers[j + 1] = path
@@ -62,6 +63,8 @@ def _set_centers_and_offsets(
     if sin_angle == 0:
         mitter = np.array([vec1[1], -vec1[0]], dtype=np.float32) * 0.5
     else:
+        if sin_limit > sin_angle > -sin_limit and cos_limit > cos_angle:
+            sin_angle = sin_limit if sin_angle > 0 else -sin_limit
         mitter = (vec1 - vec2) * 0.5 * (1 / sin_angle)
     if cos_limit > cos_angle:
         centers[j + 2] = path
@@ -134,7 +137,8 @@ def generate_2D_edge_meshes(
 
     path = np.asarray(path, dtype=np.float32)
 
-    cos_limit = -np.float32(np.sqrt(1.0 - 1.0 / (limit**2)))
+    cos_limit = -np.float32(np.sqrt(1.0 - 1.0 / ((limit /2)**2))) # divide by 2 to be consistent with the original code
+    sin_limit  = 1.0 / limit  # limit the maximum length of the offset vector
 
     normals = np.empty_like(path)
     for i in range(1, len(path)):
@@ -163,6 +167,7 @@ def generate_2D_edge_meshes(
             normals[0],
             0,
             cos_limit,
+            sin_limit,
         )
     else:
         centers[0] = path[0]
@@ -183,6 +188,7 @@ def generate_2D_edge_meshes(
             normals[i],
             j,
             cos_limit,
+            sin_limit,
         )
     if closed:
         j += _set_centers_and_offsets(
@@ -194,6 +200,7 @@ def generate_2D_edge_meshes(
             normals[-1],
             j,
             cos_limit,
+            sin_limit,
         )
         centers[j] = centers[0]
         centers[j + 1] = centers[1]

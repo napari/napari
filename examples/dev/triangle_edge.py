@@ -103,9 +103,19 @@ polygons = [
     path + np.array([[0, 50]]),
     generate_regular_polygon(10, radius=1) * 10 + np.array([[25, 50]]),
     np.array([[0, -10], [0, 0], [0, 10]]) + np.array([[50, 50]]),
+    np.array(
+    [
+        [10.97627008, 14.30378733],
+        [12.05526752, 10.89766366],
+        [8.47309599, 12.91788226],
+        [8.75174423, 17.83546002],
+        [19.27325521, 7.66883038],
+        [15.83450076, 10.5778984],
+    ]
+    ) + np.array([[60, -15]]),
 ]
 
-shape_type=['polygon'] * 6 + ['path'] * 3
+shape_type=['polygon'] * 6 + ['path'] * 3 + ['polygon']
 s = Shapes(polygons, shape_type=shape_type)
 
 
@@ -149,7 +159,9 @@ v.add_layer(ve2)
 v.add_layer(ve3)
 v.add_layer(ve4)
 v.add_layer(ve5)
-v.camera.center = (0, 25, 25)
+v.camera.center = (0, 75, 0)
 v.camera.zoom = 50
+
+v.window._qt_viewer.console.push({"mesh2_li": mesh2_li})
 
 napari.run()
