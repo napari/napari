@@ -707,12 +707,13 @@ def triangulate_face(
         Px3 array of the indices of the vertices that will form the
         triangles of the triangulation
     """
+    if _is_convex(polygon_vertices):
+        return _fan_triangulation(polygon_vertices)
+
     raw_vertices, edges = _normalize_vertices_and_edges(
         polygon_vertices, close=True
     )
-    if _is_convex(polygon_vertices):
-        vertices, triangles = _fan_triangulation(polygon_vertices)
-    elif triangulate is not None:
+    if triangulate is not None:
         # if the triangle library is installed, use it because it's faster.
         res = triangulate(
             {'vertices': raw_vertices, 'segments': edges}, opts='p'
