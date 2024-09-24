@@ -720,6 +720,11 @@ def triangulate_face(
         )
         vertices = res['vertices']
         raw_triangles = res['triangles']
+        # unlike VisPy below, triangle's constrained Delaunay triangulation
+        # returns triangles inside the hole as well. (I guess in case you want
+        # to render holes but in a different color, for example.) In our case,
+        # we want to get rid of them, so we cull them with some NumPy
+        # calculations
         triangles = _cull_triangles_not_in_poly(
             vertices, raw_triangles, polygon_vertices
         )
