@@ -102,9 +102,10 @@ polygons = [
     sharp[::-1] + np.array([[50, 26]]),
     path + np.array([[0, 50]]),
     generate_regular_polygon(10, radius=1) * 10 + np.array([[25, 50]]),
+    np.array([[0, -10], [0, 0], [0, 10]]) + np.array([[50, 50]]),
 ]
 
-shape_type=['polygon'] * 6 + ['path'] * 2
+shape_type=['polygon'] * 6 + ['path'] * 3
 s = Shapes(polygons, shape_type=shape_type)
 
 

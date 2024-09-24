@@ -31,6 +31,8 @@ def _disable_jit(monkeypatch):
         ([[0, 0], [0, 10], [10, 10], [10, 0]], True, True, 14),
         ([[0, 0], [0, 10], [10, 10], [10, 0]], False, True, 10),
         ([[2, 10], [0, -5], [-2, 10], [-2, -10], [2, -10]], True, False, 15),
+        ([[0, 0], [0, 10]], False, False, 4),
+        ([[0, 0], [0, 10], [0, 20]], False, False, 6),
     ],
 )
 @pytest.mark.usefixtures('_disable_jit')
