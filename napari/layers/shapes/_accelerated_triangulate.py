@@ -137,8 +137,10 @@ def generate_2D_edge_meshes(
 
     path = np.asarray(path, dtype=np.float32)
 
-    cos_limit = -np.float32(np.sqrt(1.0 - 1.0 / ((limit /2)**2))) # divide by 2 to be consistent with the original code
-    sin_limit  = 1.0 / limit  # limit the maximum length of the offset vector
+    cos_limit = -np.float32(
+        np.sqrt(1.0 - 1.0 / ((limit / 2) ** 2))
+    )  # divide by 2 to be consistent with the original code
+    sin_limit = 1.0 / limit  # limit the maximum length of the offset vector
 
     normals = np.empty_like(path)
     for i in range(1, len(path)):
