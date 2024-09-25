@@ -166,6 +166,26 @@ def generate_2D_edge_meshes(
 
     path = np.asarray(path, dtype=np.float32)
 
+    if np.all(path[-1] == path[-2]):
+        # Part of ugly hack to keep lasso tools working
+        # should be removed after fixing the lasso tool
+        path = path[:-1]
+
+    if len(path) <= 2:
+        centers = np.empty((4, 2), dtype=np.float32)
+        centers[0] = path[0]
+        centers[1] = path[0]
+        centers[2] = path[0]
+        centers[3] = path[0]
+        triangles = np.empty((2, 3), dtype=np.int32)
+        triangles[0] = [0, 1, 3]
+        triangles[1] = [1, 3, 2]
+        return (
+            centers,
+            np.zeros((4, 2), dtype=np.float32),
+            triangles
+        )
+
     cos_limit = -np.float32(
         np.sqrt(1.0 - 1.0 / ((limit / 2) ** 2))
     )  # divide by 2 to be consistent with the original code
@@ -269,8 +289,15 @@ def remove_path_duplicates(path: np.ndarray, closed: bool) -> np.ndarray:
     np.ndarray
         Nx2 or Nx3 array of central coordinates of deduplicated path
     """
+    if len(path) <= 2:
+        # part of ugly hack to keep lasso tools working
+        # should be removed after fixing the lasso tool
+        return path
+
     dup_count = 0
-    for i in range(len(path) - 1):
+    for i in range(len(path) - 2):
+        # should be len(path) - 1 but we need to allow
+        # duplication of the last point to keep the lasse tool working
         if np.all(path[i] == path[i + 1]):
             dup_count += 1
 
