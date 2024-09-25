@@ -4,8 +4,8 @@ from unittest.mock import patch
 import numpy as np
 import pytest
 
-from napari.layers.shapes import _accelerated_triangulate as ac
 
+ac = pytest.importorskip('napari.layers.shapes._accelerated_triangulate')
 
 @pytest.fixture
 def _disable_jit(monkeypatch):
