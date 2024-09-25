@@ -180,11 +180,7 @@ def generate_2D_edge_meshes(
         triangles = np.empty((2, 3), dtype=np.int32)
         triangles[0] = [0, 1, 3]
         triangles[1] = [1, 3, 2]
-        return (
-            centers,
-            np.zeros((4, 2), dtype=np.float32),
-            triangles
-        )
+        return (centers, np.zeros((4, 2), dtype=np.float32), triangles)
 
     cos_limit = -np.float32(
         np.sqrt(1.0 - 1.0 / ((limit / 2) ** 2))

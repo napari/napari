@@ -102,7 +102,9 @@ def test_generate_2D_edge_meshes(path, closed, bevel, expeected):
                 ],
                 dtype='float32',
             ),
-            np.array([[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]], dtype='float32'),
+            np.array(
+                [[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]], dtype='float32'
+            ),
             True,
         ),
     ],
