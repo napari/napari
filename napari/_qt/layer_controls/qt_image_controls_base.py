@@ -152,6 +152,12 @@ class QtBaseImageControls(QtLayerControls):
         self.colorbarLabel.setToolTip(trans._('Colorbar'))
 
         self._on_colormap_change()
+        if self.__class__ == QtBaseImageControls:
+            # This base class is only instantiated in tests. When it's not a
+            # concrete subclass, we need to parent the button_grid to the
+            # layout so that qtbot will correctly clean up all instantiated
+            # widgets.
+            self.layout().addRow(self.button_grid)
 
     def changeColor(self, text):
         """Change colormap on the layer model.

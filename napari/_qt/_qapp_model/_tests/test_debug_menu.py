@@ -132,6 +132,9 @@ def test_start_stop_trace_actions(
 
         # Stop perf widget timer to prevent test failure on teardown
         viewer.window._qt_viewer.dockPerformance.widget().timer.stop()
+        qtbot.waitUntil(
+            lambda: not viewer.window._qt_viewer.dockPerformance.widget().timer.isActive()
+        )
     else:
         # Nothing to test
         pytest.skip('Perfmon is disabled')
