@@ -253,3 +253,43 @@ def generate_2D_edge_meshes(
     _fix_triangle_orientation(triangles, centers, offsets)
 
     return centers, offsets, triangles
+
+
+@njit(cache=True)
+def remove_path_duplicates(path: np.ndarray, closed: bool) -> np.ndarray:
+    """Remove duplicates from a path.
+
+    Parameters
+    ----------
+    path : np.ndarray
+        Nx2 or Nx3 array of central coordinates of path to be deduplicated
+
+    Returns
+    -------
+    np.ndarray
+        Nx2 or Nx3 array of central coordinates of deduplicated path
+    """
+    dup_count = 0
+    for i in range(len(path) - 1):
+        if np.all(path[i] == path[i + 1]):
+            dup_count += 1
+
+    if closed and np.all(path[0] == path[-1]):
+        dup_count += 1
+
+    if dup_count == 0:
+        return path
+
+    target_len = len(path) - dup_count
+    new_path = np.empty((target_len, path.shape[1]), dtype=np.float32)
+    index = 0
+
+    new_path[0] = path[0]
+    for i in range(1, len(path)):
+        if index == target_len-1:
+            break
+        if np.any(new_path[index] != path[i]):
+            new_path[index+1] = path[i]
+            index += 1
+
+    return new_path

@@ -43,3 +43,22 @@ def test_generate_2D_edge_meshes(path, closed, bevel, expeected):
     assert centers.shape == offsets.shape
     assert centers.shape[0] == expeected
     assert triangles.shape[0] == expeected - 2
+
+
+@pytest.mark.parametrize(
+    ('data', 'expected', 'closed'),
+    [
+        (np.array([[0,0], [1, 0], [1, 1], [0, 1]], dtype='float32'), np.array([[0, 0], [1, 0], [1, 1], [0, 1]], dtype='float32'), True),
+        (np.array([[0,0], [1, 0], [1, 1], [0, 1]], dtype='float32'), np.array([[0, 0], [1, 0], [1, 1], [0, 1]], dtype='float32'), False),
+        (np.array([[0,0], [1, 0], [1, 0], [1, 1], [0, 1]], dtype='float32'), np.array([[0, 0], [1, 0], [1, 1], [0, 1]], dtype='float32'), True),
+        (np.array([[0,0], [1, 0], [1, 0], [1, 1], [0, 1]], dtype='float32'), np.array([[0, 0], [1, 0], [1, 1], [0, 1]], dtype='float32'), False),
+        (np.array([[0,0], [1, 0], [1, 0], [1, 0], [1, 0], [1, 1], [0, 1]], dtype='float32'), np.array([[0, 0], [1, 0], [1, 1], [0, 1]], dtype='float32'), False),
+        (np.array([[0,0], [1, 0], [1, 1], [0, 1], [0, 0]], dtype='float32'), np.array([[0, 0], [1, 0], [1, 1], [0, 1]], dtype='float32'), True),
+        (np.array([[0,0], [1, 0], [1, 1], [0, 1], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0]], dtype='float32'), np.array([[0, 0], [1, 0], [1, 1], [0, 1]], dtype='float32'), True),
+
+   ]
+)
+@pytest.mark.usefixtures('_disable_jit')
+def test_remove_path_duplicates(data, expected, closed):
+    result = ac.remove_path_duplicates(data, closed=closed)
+    assert np.all(result == expected)
