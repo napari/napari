@@ -96,6 +96,21 @@ def _set_centers_and_offsets(
 
 
 @njit(cache=True)
+def _fix_triangle_orientation(
+    triangles: np.ndarray, centers: np.ndarray, offsets: np.ndarray
+):
+    for i in range(len(triangles)):
+        triangle = triangles[i]
+        p1 = centers[triangle[0]] + offsets[triangle[0]]
+        p2 = centers[triangle[1]] + offsets[triangle[1]]
+        p3 = centers[triangle[2]] + offsets[triangle[2]]
+        if (p2[0] - p1[0]) * (p3[1] - p1[1]) - (p2[1] - p1[1]) * (
+            p3[0] - p1[0]
+        ) < 0:
+            triangles[i] = [triangle[2], triangle[1], triangle[0]]
+
+
+@njit(cache=True)
 def generate_2D_edge_meshes(
     path: np.ndarray,
     closed: bool = False,
@@ -214,5 +229,7 @@ def generate_2D_edge_meshes(
         offsets[j, 0] = normals[-2][1] * 0.5
         offsets[j, 1] = -normals[-2][0] * 0.5
         offsets[j + 1] = -offsets[j]
+
+    _fix_triangle_orientation(triangles, centers, offsets)
 
     return centers, offsets, triangles
