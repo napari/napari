@@ -48,15 +48,64 @@ def test_generate_2D_edge_meshes(path, closed, bevel, expeected):
 @pytest.mark.parametrize(
     ('data', 'expected', 'closed'),
     [
-        (np.array([[0,0], [1, 0], [1, 1], [0, 1]], dtype='float32'), np.array([[0, 0], [1, 0], [1, 1], [0, 1]], dtype='float32'), True),
-        (np.array([[0,0], [1, 0], [1, 1], [0, 1]], dtype='float32'), np.array([[0, 0], [1, 0], [1, 1], [0, 1]], dtype='float32'), False),
-        (np.array([[0,0], [1, 0], [1, 0], [1, 1], [0, 1]], dtype='float32'), np.array([[0, 0], [1, 0], [1, 1], [0, 1]], dtype='float32'), True),
-        (np.array([[0,0], [1, 0], [1, 0], [1, 1], [0, 1]], dtype='float32'), np.array([[0, 0], [1, 0], [1, 1], [0, 1]], dtype='float32'), False),
-        (np.array([[0,0], [1, 0], [1, 0], [1, 0], [1, 0], [1, 1], [0, 1]], dtype='float32'), np.array([[0, 0], [1, 0], [1, 1], [0, 1]], dtype='float32'), False),
-        (np.array([[0,0], [1, 0], [1, 1], [0, 1], [0, 0]], dtype='float32'), np.array([[0, 0], [1, 0], [1, 1], [0, 1]], dtype='float32'), True),
-        (np.array([[0,0], [1, 0], [1, 1], [0, 1], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0]], dtype='float32'), np.array([[0, 0], [1, 0], [1, 1], [0, 1]], dtype='float32'), True),
-
-   ]
+        (
+            np.array([[0, 0], [1, 0], [1, 1], [0, 1]], dtype='float32'),
+            np.array([[0, 0], [1, 0], [1, 1], [0, 1]], dtype='float32'),
+            True,
+        ),
+        (
+            np.array([[0, 0], [1, 0], [1, 1], [0, 1]], dtype='float32'),
+            np.array([[0, 0], [1, 0], [1, 1], [0, 1]], dtype='float32'),
+            False,
+        ),
+        (
+            np.array(
+                [[0, 0], [1, 0], [1, 0], [1, 1], [0, 1]], dtype='float32'
+            ),
+            np.array([[0, 0], [1, 0], [1, 1], [0, 1]], dtype='float32'),
+            True,
+        ),
+        (
+            np.array(
+                [[0, 0], [1, 0], [1, 0], [1, 1], [0, 1]], dtype='float32'
+            ),
+            np.array([[0, 0], [1, 0], [1, 1], [0, 1]], dtype='float32'),
+            False,
+        ),
+        (
+            np.array(
+                [[0, 0], [1, 0], [1, 0], [1, 0], [1, 0], [1, 1], [0, 1]],
+                dtype='float32',
+            ),
+            np.array([[0, 0], [1, 0], [1, 1], [0, 1]], dtype='float32'),
+            False,
+        ),
+        (
+            np.array(
+                [[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]], dtype='float32'
+            ),
+            np.array([[0, 0], [1, 0], [1, 1], [0, 1]], dtype='float32'),
+            True,
+        ),
+        (
+            np.array(
+                [
+                    [0, 0],
+                    [1, 0],
+                    [1, 1],
+                    [0, 1],
+                    [0, 0],
+                    [0, 0],
+                    [0, 0],
+                    [0, 0],
+                    [0, 0],
+                ],
+                dtype='float32',
+            ),
+            np.array([[0, 0], [1, 0], [1, 1], [0, 1]], dtype='float32'),
+            True,
+        ),
+    ],
 )
 @pytest.mark.usefixtures('_disable_jit')
 def test_remove_path_duplicates(data, expected, closed):

@@ -286,10 +286,10 @@ def remove_path_duplicates(path: np.ndarray, closed: bool) -> np.ndarray:
 
     new_path[0] = path[0]
     for i in range(1, len(path)):
-        if index == target_len-1:
+        if index == target_len - 1:
             break
         if np.any(new_path[index] != path[i]):
-            new_path[index+1] = path[i]
+            new_path[index + 1] = path[i]
             index += 1
 
     return new_path
