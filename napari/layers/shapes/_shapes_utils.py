@@ -1303,5 +1303,5 @@ def rdp(vertices: npt.NDArray, epsilon: float) -> npt.NDArray:
 
 if acc_generate_2D_edge_meshes is not None:
     _generate_2D_edge_meshes = acc_generate_2D_edge_meshes
-else:
+else:  # pragma: no cover
     _generate_2D_edge_meshes = generate_2D_edge_meshes

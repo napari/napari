@@ -33,6 +33,11 @@ def _disable_jit(monkeypatch):
         ([[2, 10], [0, -5], [-2, 10], [-2, -10], [2, -10]], True, False, 15),
         ([[0, 0], [0, 10]], False, False, 4),
         ([[0, 0], [0, 10], [0, 20]], False, False, 6),
+        ([[0,0], [0, 2], [10, 1]], True, False, 9),
+        ([[0,0], [10, 1], [9, 1.1]], False, False, 7),
+        ([[9,0.9], [10, 1], [0, 2]], False, False, 7),
+        ([[0,0], [-10, 1], [-9, 1.1]], False, False, 7),
+        ([[-9,0.9], [-10, 1], [0, 2]], False, False, 7),
     ],
 )
 @pytest.mark.usefixtures('_disable_jit')
@@ -106,7 +111,7 @@ def test_generate_2D_edge_meshes(path, closed, bevel, expeected):
                 [[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]], dtype='float32'
             ),
             True,
-        ),
+        )
     ],
 )
 @pytest.mark.usefixtures('_disable_jit')
