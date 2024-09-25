@@ -1132,11 +1132,15 @@ class ShapeList:
         if inside_indices.size == 0:
             return None
         try:
+            z_index = [self.shapes[i].z_index for i in inside_indices]
+            pos = np.argsort(z_index)
             return next(
-                i
-                for i in inside_indices
+                inside_indices[p]
+                for p in pos[::-1]
                 if np.any(
-                    inside_triangles(self.shapes[i]._all_triangles() - coord)
+                    inside_triangles(
+                        self.shapes[inside_indices[p]]._all_triangles() - coord
+                    )
                 )
             )
         except StopIteration:
