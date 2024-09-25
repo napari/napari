@@ -74,12 +74,11 @@ def zero_preserving_modulo_numpy(
         The result: 0 for the ``to_zero`` value, ``values % n + 1``
         everywhere else.
     """
-    dtype_info = np.iinfo(dtype)
-    if n > dtype_info.max:
-        # we have signed integer data that are in to small dtype
-        for dtype_ in (np.int16, np.int32, np.int64):
-            if n <= np.iinfo(dtype_).max:
-                values = values.astype(dtype_)
+    if n > np.iinfo(dtype).max:
+        # n is to big, modulo will be pointless
+        res = values.astype(dtype)
+        res[values == to_zero] = 0
+        return res
     res = ((values - 1) % n + 1).astype(dtype)
     res[values == to_zero] = 0
     return res
