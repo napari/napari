@@ -112,7 +112,7 @@ def _set_centers_and_offsets(
 @njit(cache=True)
 def _fix_triangle_orientation(
     triangles: np.ndarray, centers: np.ndarray, offsets: np.ndarray
-):
+) -> None:
     for i in range(len(triangles)):
         triangle = triangles[i]
         p1 = centers[triangle[0]] + offsets[triangle[0]]
