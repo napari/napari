@@ -664,7 +664,7 @@ class Labels(ScalarFieldBase):
                     )
                 )
             if data_level.dtype == bool:
-                int_data.append(data_level.astype(np.int8))
+                int_data.append(data_level.view(np.uint8))
             else:
                 int_data.append(data_level)
         data = int_data
