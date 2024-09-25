@@ -159,7 +159,7 @@ v.add_layer(ve2)
 v.add_layer(ve3)
 v.add_layer(ve4)
 v.add_layer(ve5)
-v.camera.center = (0, 75, 0)
+v.camera.center = (0, 25, 25)
 v.camera.zoom = 50
 
 v.window._qt_viewer.console.push({"mesh2_li": mesh2_li})

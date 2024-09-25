@@ -52,6 +52,8 @@ def _set_centers_and_offsets(
     path: np.ndarray,
     vec1: np.ndarray,
     vec2: np.ndarray,
+    vec1_len: float,
+    vec2_len: float,
     j: int,
     cos_limit: float,
     sin_limit: float,
@@ -63,8 +65,20 @@ def _set_centers_and_offsets(
     if sin_angle == 0:
         mitter = np.array([vec1[1], -vec1[0]], dtype=np.float32) * 0.5
     else:
-        if sin_limit > sin_angle > -sin_limit and cos_limit > cos_angle:
-            sin_angle = sin_limit if sin_angle > 0 else -sin_limit
+        if cos_limit > cos_angle:
+            elapsed_len = 1/sin_angle
+            if vec1_len < vec2_len:
+                if elapsed_len > vec1_len:
+                    sin_angle = 1 / vec1_len
+                elif elapsed_len < -vec1_len:
+                    sin_angle = -1 / vec1_len
+            else:
+                if elapsed_len > vec2_len:
+                    sin_angle = 1 / vec2_len
+                elif elapsed_len < -vec2_len:
+                    sin_angle = -1 / vec2_len
+        # if sin_limit > sin_angle > -sin_limit and cos_limit > cos_angle:
+        #     sin_angle = sin_limit if sin_angle > 0 else -sin_limit
         mitter = (vec1 - vec2) * 0.5 * (1 / sin_angle)
     if cos_limit > cos_angle:
         centers[j + 2] = path
@@ -158,15 +172,16 @@ def generate_2D_edge_meshes(
     sin_limit = 1.0 / limit  # limit the maximum length of the offset vector
 
     normals = np.empty_like(path)
+    vec_len_arr = np.empty((len(path) - 1), dtype=np.float32)
     for i in range(1, len(path)):
         vec_diff = path[i] - path[i - 1]
-        normals[i - 1] = vec_diff / np.sqrt(
-            vec_diff[0] ** 2 + vec_diff[1] ** 2
-        )
+        vec_len_arr[i - 1] = np.sqrt(vec_diff[0] ** 2 + vec_diff[1] ** 2)
+        normals[i - 1] = vec_diff / vec_len_arr[i - 1]
 
     if closed:
         vec_diff = path[0] - path[-1]
-        normals[-1] = vec_diff / np.sqrt(vec_diff[0] ** 2 + vec_diff[1] ** 2)
+        vec_len_arr[-1] = np.sqrt(vec_diff[0] ** 2 + vec_diff[1] ** 2)
+        normals[-1] = vec_diff / vec_len_arr[-1]
 
     point_count = _calc_output_size(normals, closed, cos_limit, bevel)
 
@@ -182,6 +197,8 @@ def generate_2D_edge_meshes(
             path[0],
             normals[-1],
             normals[0],
+            vec_len_arr[-1],
+            vec_len_arr[0],
             0,
             cos_limit,
             sin_limit,
@@ -203,6 +220,8 @@ def generate_2D_edge_meshes(
             path[i],
             normals[i - 1],
             normals[i],
+            vec_len_arr[i - 1],
+            vec_len_arr[i],
             j,
             cos_limit,
             sin_limit,
@@ -215,6 +234,8 @@ def generate_2D_edge_meshes(
             path[-1],
             normals[-2],
             normals[-1],
+            vec_len_arr[-2],
+            vec_len_arr[-1],
             j,
             cos_limit,
             sin_limit,
