@@ -66,7 +66,7 @@ def _set_centers_and_offsets(
         mitter = np.array([vec1[1], -vec1[0]], dtype=np.float32) * 0.5
     else:
         if cos_limit > cos_angle:
-            elapsed_len = 1/sin_angle
+            elapsed_len = 1 / sin_angle
             if vec1_len < vec2_len:
                 if elapsed_len > vec1_len:
                     sin_angle = 1 / vec1_len
