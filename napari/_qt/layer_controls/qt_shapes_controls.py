@@ -1,18 +1,16 @@
-from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
-import numpy as np
-from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QCheckBox
-
 from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
-from napari._qt.utils import qt_signals_blocked
-from napari._qt.widgets._slider_compat import QSlider
-from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
+from napari._qt.layer_controls.widgets import (
+    QtEdgeColorControl,
+    QtEdgeWidthSliderControl,
+    QtFaceColorControl,
+    QtOpacityBlendingControls,
+    QtTextVisibilityControl,
+)
 from napari._qt.widgets.qt_mode_buttons import QtModePushButton
 from napari.layers.shapes._shapes_constants import Mode
 from napari.utils.action_manager import action_manager
-from napari.utils.events import disconnect_events
 from napari.utils.interactions import Shortcut
 from napari.utils.translations import trans
 
@@ -50,8 +48,6 @@ class QtShapesControls(QtLayerControls):
         Widget allowing user to set edge color of points.
     ellipse_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to add ellipses to shapes layer.
-    faceColorEdit : QColorSwatchEdit
-        Widget allowing user to set face color of points.
     line_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to add lines to shapes layer.
     move_back_button : qtpy.QtWidgets.QtModePushButton
@@ -72,14 +68,25 @@ class QtShapesControls(QtLayerControls):
         Button to add rectangles to shapes layer.
     select_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to select shapes.
-    textDispCheckBox : qtpy.QtWidgets.QCheckBox
-        Checkbox to control if text should be displayed
     vertex_insert_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to insert vertex into shape.
     vertex_remove_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to remove vertex from shapes.
-    widthSlider : qtpy.QtWidgets.QSlider
+
+    Controls attributes
+    -------------------
+    blendComboBox : qtpy.QtWidgets.QComboBox
+        Dropdown widget to select blending mode of layer.
+    opacitySlider : qtpy.QtWidgets.QSlider
+        Slider controlling opacity of the layer.
+    edgeWidthSlider : qtpy.QtWidgets.QSlider
         Slider controlling line edge width of shapes.
+    edgeColorEdit : QColorSwatchEdit
+        Widget allowing user to set edge color of points.
+    faceColorEdit : QColorSwatchEdit
+        Widget allowing user to set face color of points.
+    textDispCheckBox : qtpy.QtWidgets.QCheckBox
+        Checkbox to control if text should be displayed
 
     Raises
     ------
@@ -95,34 +102,7 @@ class QtShapesControls(QtLayerControls):
     def __init__(self, layer) -> None:
         super().__init__(layer)
 
-        self.layer.events.edge_width.connect(self._on_edge_width_change)
-        self.layer.events.current_edge_color.connect(
-            self._on_current_edge_color_change
-        )
-        self.layer.events.current_face_color.connect(
-            self._on_current_face_color_change
-        )
-        self.layer.text.events.visible.connect(self._on_text_visibility_change)
-
-        sld = QSlider(Qt.Orientation.Horizontal)
-        sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        sld.setMinimum(0)
-        sld.setMaximum(40)
-        sld.setSingleStep(1)
-        value = self.layer.current_edge_width
-        if isinstance(value, Iterable):
-            if isinstance(value, list):
-                value = np.asarray(value)
-            value = value.mean()
-        sld.setValue(int(value))
-        sld.valueChanged.connect(self.changeWidth)
-        self.widthSlider = sld
-        self.widthSlider.setToolTip(
-            trans._(
-                'Set the edge width of currently selected shapes and any added afterwards.'
-            )
-        )
-
+        # Setup buttons
         self.select_button = self._radio_button(
             layer, 'select', Mode.SELECT, True, 'activate_select_mode'
         )
@@ -229,80 +209,28 @@ class QtShapesControls(QtLayerControls):
         self.button_grid.setColumnStretch(0, 1)
         self.button_grid.setSpacing(4)
 
-        self.faceColorEdit = QColorSwatchEdit(
-            initial_color=self.layer.current_face_color,
-            tooltip=trans._(
-                'Click to set the face color of currently selected shapes and any added afterwards.'
-            ),
+        # Setup widgets controls
+        self._add_widget_controls(QtOpacityBlendingControls(self, layer))
+        self._add_widget_controls(QtEdgeWidthSliderControl(self, layer))
+        self._add_widget_controls(
+            QtEdgeColorControl(
+                self,
+                layer,
+                tooltip=trans._(
+                    'Click to set the edge color of currently selected shapes and any added afterwards'
+                ),
+            )
         )
-        self._on_current_face_color_change()
-        self.edgeColorEdit = QColorSwatchEdit(
-            initial_color=self.layer.current_edge_color,
-            tooltip=trans._(
-                'Click to set the edge color of currently selected shapes and any added afterwards'
-            ),
+        self._add_widget_controls(
+            QtFaceColorControl(
+                self,
+                layer,
+                tooltip=trans._(
+                    'Click to set the face color of currently selected shapes and any added afterwards.'
+                ),
+            )
         )
-        self._on_current_edge_color_change()
-        self.faceColorEdit.color_changed.connect(self.changeFaceColor)
-        self.edgeColorEdit.color_changed.connect(self.changeEdgeColor)
-
-        text_disp_cb = QCheckBox()
-        text_disp_cb.setToolTip(trans._('Toggle text visibility'))
-        text_disp_cb.setChecked(self.layer.text.visible)
-        text_disp_cb.stateChanged.connect(self.change_text_visibility)
-        self.textDispCheckBox = text_disp_cb
-
-        self.layout().addRow(self.button_grid)
-        self.layout().addRow(self.opacityLabel, self.opacitySlider)
-        self.layout().addRow(trans._('blending:'), self.blendComboBox)
-        self.layout().addRow(trans._('edge width:'), self.widthSlider)
-        self.layout().addRow(trans._('face color:'), self.faceColorEdit)
-        self.layout().addRow(trans._('edge color:'), self.edgeColorEdit)
-        self.layout().addRow(trans._('display text:'), self.textDispCheckBox)
-
-    def changeFaceColor(self, color: np.ndarray):
-        """Change face color of shapes.
-
-        Parameters
-        ----------
-        color : np.ndarray
-            Face color for shapes, color name or hex string.
-            Eg: 'white', 'red', 'blue', '#00ff00', etc.
-        """
-        with self.layer.events.current_face_color.blocker():
-            self.layer.current_face_color = color
-
-    def changeEdgeColor(self, color: np.ndarray):
-        """Change edge color of shapes.
-
-        Parameters
-        ----------
-        color : np.ndarray
-            Edge color for shapes, color name or hex string.
-            Eg: 'white', 'red', 'blue', '#00ff00', etc.
-        """
-        with self.layer.events.current_edge_color.blocker():
-            self.layer.current_edge_color = color
-
-    def changeWidth(self, value):
-        """Change edge line width of shapes on the layer model.
-
-        Parameters
-        ----------
-        value : float
-            Line width of shapes.
-        """
-        self.layer.current_edge_width = float(value)
-
-    def change_text_visibility(self, state):
-        """Toggle the visibility of the text.
-
-        Parameters
-        ----------
-        state : int
-            Integer value of Qt.CheckState that indicates the check state of textDispCheckBox
-        """
-        self.layer.text.visible = Qt.CheckState(state) == Qt.CheckState.Checked
+        self._add_widget_controls(QtTextVisibilityControl(self, layer))
 
     def _on_mode_change(self, event):
         """Update ticks in checkbox widgets when shapes layer mode changed.
@@ -333,33 +261,6 @@ class QtShapesControls(QtLayerControls):
         """
         super()._on_mode_change(event)
 
-    def _on_text_visibility_change(self):
-        """Receive layer model text visibiltiy change change event and update checkbox."""
-        with self.layer.text.events.visible.blocker():
-            self.textDispCheckBox.setChecked(self.layer.text.visible)
-
-    def _on_edge_width_change(self):
-        """Receive layer model edge line width change event and update slider."""
-        with self.layer.events.edge_width.blocker():
-            value = self.layer.current_edge_width
-            value = np.clip(int(value), 0, 40)
-            self.widthSlider.setValue(value)
-
-    def _on_current_edge_color_change(self):
-        """Receive layer model edge color change event and update color swatch."""
-        with qt_signals_blocked(self.edgeColorEdit):
-            self.edgeColorEdit.setColor(self.layer.current_edge_color)
-
-    def _on_current_face_color_change(self):
-        """Receive layer model face color change event and update color swatch."""
-        with qt_signals_blocked(self.faceColorEdit):
-            self.faceColorEdit.setColor(self.layer.current_face_color)
-
     def _on_ndisplay_changed(self):
         self.layer.editable = self.ndisplay == 2
         super()._on_ndisplay_changed()
-
-    def close(self):
-        """Disconnect events when widget is closing."""
-        disconnect_events(self.layer.text.events, self)
-        super().close()

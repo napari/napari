@@ -1,20 +1,23 @@
+from typing import Optional
+
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QMouseEvent
 from qtpy.QtWidgets import (
     QButtonGroup,
-    QComboBox,
     QFormLayout,
     QFrame,
     QGridLayout,
     QLabel,
     QMessageBox,
+    QWidget,
 )
 
+from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
+    QtWidgetControlsBase,
+)
 from napari._qt.utils import set_widgets_enabled_with_opacity
-from napari._qt.widgets._slider_compat import QDoubleSlider
 from napari._qt.widgets.qt_mode_buttons import QtModeRadioButton
 from napari.layers.base._base_constants import (
-    BLENDING_TRANSLATIONS,
     Blending,
     Mode,
 )
@@ -85,13 +88,12 @@ class QtLayerControls(QFrame):
         self._ndisplay: int = 2
         self._EDIT_BUTTONS: tuple = ()
         self._MODE_BUTTONS: dict = {}
+        self._widget_controls: list = []
 
         self.layer = layer
         self.layer.events.mode.connect(self._on_mode_change)
         self.layer.events.editable.connect(self._on_editable_or_visible_change)
         self.layer.events.visible.connect(self._on_editable_or_visible_change)
-        self.layer.events.blending.connect(self._on_blending_change)
-        self.layer.events.opacity.connect(self._on_opacity_change)
 
         self.setObjectName('layer')
         self.setMouseTracking(True)
@@ -128,41 +130,57 @@ class QtLayerControls(QFrame):
         self.button_grid.setContentsMargins(5, 0, 0, 5)
         self.button_grid.setColumnStretch(0, 1)
         self.button_grid.setSpacing(4)
+        self.layout().addRow(self.button_grid)
 
-        # Control widgets
-        sld = QDoubleSlider(Qt.Orientation.Horizontal, parent=self)
-        sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        sld.setMinimum(0)
-        sld.setMaximum(1)
-        sld.setSingleStep(0.01)
-        sld.valueChanged.connect(self.changeOpacity)
-        self.opacitySlider = sld
-        self.opacityLabel = QLabel(trans._('opacity:'))
-
-        self._on_opacity_change()
-
-        blend_comboBox = QComboBox(self)
-        for index, (data, text) in enumerate(BLENDING_TRANSLATIONS.items()):
-            data = data.value
-            blend_comboBox.addItem(text, data)
-            if data == self.layer.blending:
-                blend_comboBox.setCurrentIndex(index)
-
-        blend_comboBox.currentTextChanged.connect(self.changeBlending)
-        self.blendComboBox = blend_comboBox
-        # opaque and minimum blending do not support changing alpha
-        self.opacitySlider.setEnabled(
-            self.layer.blending not in NO_OPACITY_BLENDING_MODES
-        )
-        self.opacityLabel.setEnabled(
-            self.layer.blending not in NO_OPACITY_BLENDING_MODES
-        )
         if self.__class__ == QtLayerControls:
             # This base class is only instantiated in tests. When it's not a
             # concrete subclass, we need to parent the button_grid to the
             # layout so that qtbot will correctly clean up all instantiated
             # widgets.
             self.layout().addRow(self.button_grid)
+
+    def __getattr__(self, attr: str):
+        """
+        Redefinition of __getattr__ to enable access to widget controls.
+        """
+        for widget_control in self._widget_controls:
+            widget_attr = getattr(widget_control, attr, None)
+            if widget_attr:
+                return widget_attr
+        return super().__getattr__(attr)
+
+    def _add_widget_controls(
+        self,
+        wrapper: QtWidgetControlsBase,
+        controls: Optional[list[tuple[QLabel, QWidget]]] = None,
+        add_wrapper: bool = True,
+    ) -> None:
+        """
+        Add widget controls.
+
+        Parameters
+        ----------
+        wrapper : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWidgetControlsBase
+            An instance of a `QtWidgetControlsBase` subclass that setups
+            widgets for a layer attribute.
+        controls : list[tuple[QLabel, QWidget]]
+            A list of widget controls tuples. Each tuple has the label for the
+            control and the respective control widget to show.
+        add_wrapper : bool
+            True if a reference to the wrapper class should be kept.
+            False otherwise.
+        """
+        if controls is None:
+            controls = []
+
+        if add_wrapper:
+            self._widget_controls.append(wrapper)
+
+        if len(controls) == 0:
+            controls = wrapper.get_widget_controls()
+
+        for label_text, control_widget in controls:
+            self.layout().addRow(label_text, control_widget)
 
     def changeOpacity(self, value):
         """Change opacity value on the layer model.
@@ -289,18 +307,6 @@ class QtLayerControls(QFrame):
             self.layer.editable and self.layer.visible,
         )
         self._set_transform_tool_state()
-
-    def _on_opacity_change(self):
-        """Receive layer model opacity change event and update opacity slider."""
-        with self.layer.events.opacity.blocker():
-            self.opacitySlider.setValue(self.layer.opacity)
-
-    def _on_blending_change(self):
-        """Receive layer model blending mode change event and update slider."""
-        with self.layer.events.blending.blocker():
-            self.blendComboBox.setCurrentIndex(
-                self.blendComboBox.findData(self.layer.blending)
-            )
 
     @property
     def ndisplay(self) -> int:

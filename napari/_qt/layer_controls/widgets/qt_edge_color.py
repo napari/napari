@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 from qtpy.QtWidgets import QWidget
 
@@ -31,7 +33,9 @@ class QtEdgeColorControl(QtWidgetControlsBase):
             Label for the current edge color chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layer: Layer) -> None:
+    def __init__(
+        self, parent: QWidget, layer: Layer, tooltip: Optional[str] = None
+    ) -> None:
         super().__init__(parent, layer)
         # Setup layer
         self._layer.events.current_edge_color.connect(
@@ -41,9 +45,7 @@ class QtEdgeColorControl(QtWidgetControlsBase):
         # Setup widgets
         self.edgeColorEdit = QColorSwatchEdit(
             initial_color=self._layer.current_edge_color,
-            tooltip=trans._(
-                'Click to set the edge color of currently selected shapes and any added afterwards'
-            ),
+            tooltip=tooltip,
         )
         self.edgeColorLabel = QtWrappedLabel(trans._('edge color:'))
         self._on_current_edge_color_change()

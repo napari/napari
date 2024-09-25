@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 from qtpy.QtWidgets import QWidget
 
@@ -31,7 +33,9 @@ class QtFaceColorControl(QtWidgetControlsBase):
             Label for the current face color widget.
     """
 
-    def __init__(self, parent: QWidget, layer: Layer) -> None:
+    def __init__(
+        self, parent: QWidget, layer: Layer, tooltip: Optional[str] = None
+    ) -> None:
         super().__init__(parent, layer)
         # Setup layer
         self._layer.events.current_face_color.connect(
@@ -41,9 +45,7 @@ class QtFaceColorControl(QtWidgetControlsBase):
         # Setup widgets
         self.faceColorEdit = QColorSwatchEdit(
             initial_color=self._layer.current_face_color,
-            tooltip=trans._(
-                'Click to set the face color of currently selected shapes and any added afterwards.'
-            ),
+            tooltip=tooltip,
         )
         self.faceColorLabel = QtWrappedLabel(trans._('face color:'))
         self._on_current_face_color_change()
