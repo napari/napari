@@ -1766,3 +1766,13 @@ class TestLabels:
 def test_docstring():
     validate_all_params_in_docstring(Labels)
     validate_kwargs_sorted(Labels)
+
+
+def test_new_colormap_int8():
+    """Check that int8 labels colors can be shuffled without overflow.
+
+    See https://github.com/napari/napari/issues/7277.
+    """
+    data = np.arange(-128, 128, dtype=np.int8).reshape((16, 16))
+    layer = Labels(data)
+    layer.new_colormap(seed=0)
