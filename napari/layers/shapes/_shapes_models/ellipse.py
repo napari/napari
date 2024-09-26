@@ -77,6 +77,12 @@ class Ellipse(Shape):
             )
 
         self._data = data
+        self._bounding_box = np.round(
+            [
+                np.min(data, axis=0),
+                np.max(data, axis=0),
+            ]
+        )
         self._update_displayed_data()
 
     def _update_displayed_data(self) -> None:
@@ -88,13 +94,9 @@ class Ellipse(Shape):
         self._face_triangles = triangles
         self._box = rectangle_to_box(self.data_displayed)
 
-        data_not_displayed = self.data[:, self.dims_not_displayed]
-        self.slice_key = np.round(
-            [
-                np.min(data_not_displayed, axis=0),
-                np.max(data_not_displayed, axis=0),
-            ]
-        ).astype('int')
+        self.slice_key = self._bounding_box[:, self.dims_not_displayed].astype(
+            'int'
+        )
 
     def transform(self, transform):
         """Performs a linear transform on the shape
@@ -118,3 +120,9 @@ class Ellipse(Shape):
         self._edge_vertices = centers
         self._edge_offsets = offsets
         self._edge_triangles = triangles
+        self._bounding_box = np.array(
+            [
+                np.min(self._data, axis=0),
+                np.max(self._data, axis=0),
+            ]
+        )
