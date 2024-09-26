@@ -118,6 +118,20 @@ def test_bool_labels():
     assert all(np.issubdtype(d.dtype, np.integer) for d in layer.data)
 
 
+def test_editing_bool_labels():
+    # make random data, mostly 0s
+    data = np.random.random((10, 10)) > 0.7
+    # create layer, which may convert bool to uint8 *as a view*
+    layer = Labels(data)
+    # paint the whole layer with 1
+    layer.paint_polygon(
+        points=[[-1, -1], [-1, 11], [11, 11], [11, -1]],
+        new_label=1,
+    )
+    # check that the original data has been correspondingly modified
+    assert np.all(data)
+
+
 def test_changing_labels():
     """Test changing Labels data."""
     shape_a = (10, 15)
