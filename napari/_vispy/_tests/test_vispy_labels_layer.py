@@ -126,3 +126,13 @@ def test_labels_iso_gradient_modes(qtbot, qt_viewer):
     QCoreApplication.instance().processEvents()
     assert layer.iso_gradient_mode == 'fast'
     assert visual.node.iso_gradient_mode == 'fast'
+
+
+def test_int8_labels_color(qtbot, qt_viewer):
+    """Check that int8 labels colors can be shuffled without overflow.
+
+    See https://github.com/napari/napari/issues/7277.
+    """
+    data = np.arange(-128, 128, dtype=np.int8).reshape((16, 16))
+    layer = qt_viewer.viewer.add_labels(data)
+    layer.new_colormap(seed=0)
