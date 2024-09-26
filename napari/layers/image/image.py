@@ -688,3 +688,52 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
                 self.refresh(highlight=False, extent=False)
             finally:
                 self._keep_auto_contrast = prev
+
+    def _calculate_value_from_ray(self, values):
+        # translucent is special: just return the first value, no matter what
+        if self.rendering == ImageRendering.TRANSLUCENT:
+            return np.ravel(values)[0]
+        # iso is weird too: just return None always
+        if self.rendering == ImageRendering.ISO:
+            return None
+
+        # if the whole ray is NaN, we should see nothing, so return None
+        # this check saves us some warnings later as well, so better do it now
+        if np.all(np.isnan(values)):
+            return None
+
+        # "summary" renderings; they do not represent a specific pixel, so we just
+        # return the summary value. We should probably differentiate these somehow.
+        # these are also probably not the same as how the gpu does it...
+        if self.rendering == ImageRendering.AVERAGE:
+            return np.nanmean(values)
+        if self.rendering == ImageRendering.ADDITIVE:
+            # TODO: this is "broken" cause same pixel gets multisampled...
+            #       but it looks like it's also overdoing it in vispy vis too?
+            #       I don't know if there's a way to *not* do it...
+            return np.nansum(values)
+
+        # all the following cases are returning the *actual* value of the image at the
+        # "selected" pixel, whose position changes depending on the rendering mode.
+        if self.rendering == ImageRendering.MIP:
+            return np.nanmax(values)
+        if self.rendering == ImageRendering.MINIP:
+            return np.nanmin(values)
+        if self.rendering == ImageRendering.ATTENUATED_MIP:
+            # normalize values so attenuation applies from 0 to 1
+            values_attenuated = (
+                values - self.contrast_limits[0]
+            ) / self.contrast_limits[1]
+            # approx, step size is actually calculated with int(lenght(ray) * 2)
+            step_size = 0.5
+            sumval = (
+                step_size
+                * np.cumsum(np.clip(values_attenuated, 0, 1))
+                * len(values_attenuated)
+            )
+            scale = np.exp(-self.attenuation * (sumval - 1))
+            return values[np.nanargmin(values_attenuated * scale)]
+
+        raise RuntimeError(  # pragma: no cover
+            f'ray value calculation not implemented for {self.rendering}'
+        )
