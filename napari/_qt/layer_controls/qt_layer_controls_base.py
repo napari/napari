@@ -122,7 +122,7 @@ class QtLayerControls(QFrame):
         self.transform_button.installEventFilter(self)
         self._on_editable_or_visible_change()
 
-        self.button_grid = QGridLayout(self)
+        self.button_grid = QGridLayout()
         self.button_grid.addWidget(self.panzoom_button, 0, 6)
         self.button_grid.addWidget(self.transform_button, 0, 7)
         self.button_grid.setContentsMargins(5, 0, 0, 5)
