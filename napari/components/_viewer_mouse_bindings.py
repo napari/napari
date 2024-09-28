@@ -25,7 +25,7 @@ def double_click_to_zoom(viewer, event):
         and viewer.layers.selection.active.mode != 'pan_zoom'
     ):
         return
-    # if Alt held down, zoomt out instead
+    # if Alt held down, zoom out instead
     zoom_factor = 0.5 if 'Alt' in event.modifiers else 2
 
     viewer.camera.zoom *= zoom_factor
