@@ -299,11 +299,7 @@ class _QtMainWindow(QMainWindow):
         self._fullscreen_flag = False
         if os.name == 'nt':
             self.setWindowFlags(
-                self.windowFlags()
-                ^ (
-                    Qt.WindowType.FramelessWindowHint
-                    | Qt.WindowType.WindowStaysOnTopHint
-                )
+                self.windowFlags() ^ (Qt.WindowType.FramelessWindowHint)
             )
             if not self._maximized_flag:
                 # self._normal_geometry = self.normalGeometry()
@@ -324,9 +320,7 @@ class _QtMainWindow(QMainWindow):
         self._fullscreen_flag = True
         if os.name == 'nt':
             self.setWindowFlags(
-                self.windowFlags()
-                | Qt.WindowType.FramelessWindowHint
-                | Qt.WindowType.WindowStaysOnTopHint
+                self.windowFlags() | Qt.WindowType.FramelessWindowHint
             )
             self._maximized_flag = self.isMaximized()
             super().showNormal()
