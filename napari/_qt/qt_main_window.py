@@ -305,7 +305,9 @@ class _QtMainWindow(QMainWindow):
                     | Qt.WindowType.WindowStaysOnTopHint
                 )
             )
-            self.setGeometry(self._normal_geometry)
+            if not self._maximized_flag:
+                # self._normal_geometry = self.normalGeometry()
+                self.setGeometry(self._normal_geometry)
         super().showNormal()
 
     def showFullScreen(self):
@@ -326,8 +328,10 @@ class _QtMainWindow(QMainWindow):
                 | Qt.WindowType.FramelessWindowHint
                 | Qt.WindowType.WindowStaysOnTopHint
             )
+            self._maximized_flag = self.isMaximized()
             super().showNormal()
-            self._normal_geometry = self.normalGeometry()
+            if not self._maximized_flag:
+                self._normal_geometry = self.normalGeometry()
             screen_rect = self.windowHandle().screen().geometry()
             self.setGeometry(
                 screen_rect.left() - 1,
@@ -1016,6 +1020,8 @@ class Window:
         """Toggle fullscreen mode."""
         if self._qt_window.isFullScreen():
             self._qt_window.showNormal()
+            if self._qt_window._maximized_flag:
+                self._qt_window.showMaximized()
         else:
             self._qt_window.showFullScreen()
 
