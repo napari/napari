@@ -1,3 +1,4 @@
+import os
 import sys
 
 import numpy as np
@@ -74,21 +75,30 @@ def test_toggle_fullscreen(make_napari_viewer, qtbot):
         qtbot.wait(250)
     assert not viewer.window._qt_window.isFullScreen()
 
+
+@skip_local_popups
+@pytest.mark.skipif(
+    os.name != 'nt',
+    reason='Custom logic to toggle from maximized to fullscreen window state only applies on Windows',
+)
+@pytest.mark.qt_log_level_fail('WARNING')
+def test_toggle_maximized_fullscreen(make_napari_viewer):
+    """
+    Test toggle fullscreen action when coming from a maximized window state on Windows.
+    """
+    action_id = 'napari.window.view.toggle_fullscreen'
+    app = get_app_model()
+    viewer = make_napari_viewer(show=True)
+
     # Check fullscreen state change while maximized
     assert not viewer.window._qt_window._maximized_flag
     viewer.window._qt_window.showMaximized()
     app.commands.execute_command(action_id)
-    if sys.platform == 'darwin':
-        # On macOS, wait for the animation to complete
-        qtbot.wait(250)
     assert viewer.window._qt_window.isFullScreen()
     assert viewer.window._qt_window._maximized_flag
 
     # Check return to maximized state
     app.commands.execute_command(action_id)
-    if sys.platform == 'darwin':
-        # On macOS, wait for the animation to complete
-        qtbot.wait(250)
     assert not viewer.window._qt_window.isFullScreen()
     assert viewer.window._qt_window.isMaximized()
 
