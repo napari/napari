@@ -329,8 +329,8 @@ class _QtMainWindow(QMainWindow):
             self.setGeometry(
                 screen_rect.left() - 1,
                 screen_rect.top() - 1,
-                screen_rect.width() + 2,
-                screen_rect.height() + 2,
+                screen_rect.width() + 1,
+                screen_rect.height() + 1,
             )
         else:
             super().showFullScreen()
