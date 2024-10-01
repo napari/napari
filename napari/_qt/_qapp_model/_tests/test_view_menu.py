@@ -102,6 +102,9 @@ def test_toggle_maximized_fullscreen(make_napari_viewer):
     assert not viewer.window._qt_window.isFullScreen()
     assert viewer.window._qt_window.isMaximized()
 
+    # Set window into normal state
+    viewer.window._qt_window.showNormal()
+
 
 @skip_local_focus
 @pytest.mark.skipif(
