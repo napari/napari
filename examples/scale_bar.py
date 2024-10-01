@@ -33,7 +33,7 @@ viewer.scale_bar.color = 'yellow'  # default value is magenta: (1,0,1,1)
 
 # Background box
 viewer.scale_bar.box = True  # add background box, default is False
-viewer.scale_bar.box_color = (0, 1, 1, 0.1)  # magenta with alpha=0.4
+viewer.scale_bar.box_color = (0, 1, 1, 0.2)  # cyan with alpha=0.2
 
 # Scale bar position
 viewer.scale_bar.position = 'bottom_left'  # default is 'bottom_right'
