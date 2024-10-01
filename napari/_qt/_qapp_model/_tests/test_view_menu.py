@@ -50,6 +50,7 @@ def test_toggle_axes_scale_bar_attr(
 
 
 @skip_local_popups
+@pytest.mark.qt_log_level_fail('WARNING')
 def test_toggle_fullscreen(make_napari_viewer, qtbot):
     """Test toggle fullscreen action."""
     action_id = 'napari.window.view.toggle_fullscreen'
@@ -72,6 +73,24 @@ def test_toggle_fullscreen(make_napari_viewer, qtbot):
         # On macOS, wait for the animation to complete
         qtbot.wait(250)
     assert not viewer.window._qt_window.isFullScreen()
+
+    # Check fullscreen state change while maximized
+    assert not viewer.window._qt_window._maximized_flag
+    viewer.window._qt_window.showMaximized()
+    app.commands.execute_command(action_id)
+    assert viewer.window._qt_window._maximized_flag
+    if sys.platform == 'darwin':
+        # On macOS, wait for the animation to complete
+        qtbot.wait(250)
+    assert viewer.window._qt_window.isFullScreen()
+
+    # Check return to maximized state
+    app.commands.execute_command(action_id)
+    if sys.platform == 'darwin':
+        # On macOS, wait for the animation to complete
+        qtbot.wait(250)
+    assert not viewer.window._qt_window.isFullScreen()
+    assert viewer.window._qt_window.isMaximized()
 
 
 @skip_local_focus

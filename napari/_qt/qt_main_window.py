@@ -302,7 +302,6 @@ class _QtMainWindow(QMainWindow):
                 self.windowFlags() ^ (Qt.WindowType.FramelessWindowHint)
             )
             if not self._maximized_flag:
-                # self._normal_geometry = self.normalGeometry()
                 self.setGeometry(self._normal_geometry)
         super().showNormal()
 
