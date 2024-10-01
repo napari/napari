@@ -24,7 +24,7 @@ def test_qapp(qapp):
     assert qapp == deprecated_qapp
 
 
-@pytest.mark.skipif(os.name != 'Windows', reason='Windows specific')
+@pytest.mark.skipif(os.name != 'nt', reason='Windows specific')
 def test_windows_grouping_overwrite(qapp):
     import ctypes
 
@@ -42,8 +42,10 @@ def test_windows_grouping_overwrite(qapp):
     assert get_app_id() == 'test_text'
     set_app_id('custom_string')
     assert get_app_id() == 'custom_string'
-    set_app_id('')
-    assert get_app_id() == ''
+    set_app_id('')  # app id can't be an empty string
+    assert get_app_id() == 'custom_string'
+    set_app_id(' ')
+    assert get_app_id() == ' '
 
 
 def test_run_outside_ipython(make_napari_viewer, qapp, monkeypatch):
