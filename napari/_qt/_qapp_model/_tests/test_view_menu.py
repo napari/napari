@@ -98,40 +98,40 @@ def test_toggle_fullscreen(make_napari_viewer, qtbot):
         qtbot.wait(250)
     assert not viewer.window._qt_window.isFullScreen()
 
-    # # Check fullscreen state change while maximized
-    # assert not viewer.window._qt_window.isMaximized()
-    # viewer.window._qt_window.showMaximized()
+    # Check fullscreen state change while maximized
+    assert not viewer.window._qt_window.isMaximized()
+    viewer.window._qt_window.showMaximized()
 
-    # # Check `View` menu can be seen in maximized window state
-    # assert not viewer.window.view_menu.isVisible()
-    # qtbot.keyClick(
-    #     viewer.window._qt_window.menuBar(), Qt.Key_V, modifier=Qt.AltModifier
-    # )
-    # qtbot.waitUntil(lambda: viewer.window.view_menu.isVisible())
-    # viewer.window.view_menu.close()
-    # assert not viewer.window.view_menu.isVisible()
+    # Check `View` menu can be seen in maximized window state
+    assert not viewer.window.view_menu.isVisible()
+    qtbot.keyClick(
+        viewer.window._qt_window.menuBar(), Qt.Key_V, modifier=Qt.AltModifier
+    )
+    qtbot.waitUntil(lambda: viewer.window.view_menu.isVisible())
+    viewer.window.view_menu.close()
+    assert not viewer.window.view_menu.isVisible()
 
-    # app.commands.execute_command(action_id)
-    # if sys.platform == 'darwin':
-    #     # On macOS, wait for the animation to complete
-    #     qtbot.wait(250)
-    # assert viewer.window._qt_window.isFullScreen()
+    app.commands.execute_command(action_id)
+    if sys.platform == 'darwin':
+        # On macOS, wait for the animation to complete
+        qtbot.wait(250)
+    assert viewer.window._qt_window.isFullScreen()
 
-    # # Check `View` menu can be seen in fullscreen window state coming from maximized state
-    # assert not viewer.window.view_menu.isVisible()
-    # qtbot.keyClick(
-    #     viewer.window._qt_window.menuBar(), Qt.Key_V, modifier=Qt.AltModifier
-    # )
-    # qtbot.waitUntil(lambda: viewer.window.view_menu.isVisible())
-    # viewer.window.view_menu.close()
-    # assert not viewer.window.view_menu.isVisible()
+    # Check `View` menu can be seen in fullscreen window state coming from maximized state
+    assert not viewer.window.view_menu.isVisible()
+    qtbot.keyClick(
+        viewer.window._qt_window.menuBar(), Qt.Key_V, modifier=Qt.AltModifier
+    )
+    qtbot.waitUntil(lambda: viewer.window.view_menu.isVisible())
+    viewer.window.view_menu.close()
+    assert not viewer.window.view_menu.isVisible()
 
-    # # Check return to non fullscreen state
-    # app.commands.execute_command(action_id)
-    # if sys.platform == 'darwin':
-    #     # On macOS, wait for the animation to complete
-    #     qtbot.wait(250)
-    # assert not viewer.window._qt_window.isFullScreen()
+    # Check return to non fullscreen state
+    app.commands.execute_command(action_id)
+    if sys.platform == 'darwin':
+        # On macOS, wait for the animation to complete
+        qtbot.wait(250)
+    assert not viewer.window._qt_window.isFullScreen()
 
     # Check `View` still menu can be seen in non fullscreen window state
     assert not viewer.window.view_menu.isVisible()
