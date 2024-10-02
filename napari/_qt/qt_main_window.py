@@ -253,20 +253,6 @@ class _QtMainWindow(QMainWindow):
         return window._qt_viewer.viewer if window else None
 
     def event(self, e: QEvent) -> bool:
-        # Handle QOpenGl fullscreen issue on Windows.
-        # For more info see: https://doc.qt.io/qt-6/windows-issues.html#fullscreen-opengl-based-windows
-        if os.name == 'nt' and e.type() == QEvent.WinIdChange:
-            import win32con
-            import win32gui
-
-            if self.windowHandle():
-                handle = int(self.windowHandle().winId())
-                win32gui.SetWindowLong(
-                    handle,
-                    win32con.GWL_STYLE,
-                    win32gui.GetWindowLong(handle, win32con.GWL_STYLE)
-                    | win32con.WS_BORDER,
-                )
         if (
             e.type() == QEvent.Type.ToolTip
             and self._qt_viewer.viewer.tooltip.visible
@@ -293,6 +279,26 @@ class _QtMainWindow(QMainWindow):
                 _QtMainWindow._instances.remove(self)
 
         return res
+
+    def showFullScreen(self):
+        super().showFullScreen()
+        # Handle OpenGL based windows fullscreen issue on Windows.
+        # For more info see:
+        #  * https://doc.qt.io/qt-6/windows-issues.html#fullscreen-opengl-based-windows
+        #  * https://bugreports.qt.io/browse/QTBUG-41309
+        #  * https://bugreports.qt.io/browse/QTBUG-104511
+        if os.name == 'nt':
+            import win32con
+            import win32gui
+
+            if self.windowHandle():
+                handle = int(self.windowHandle().winId())
+                win32gui.SetWindowLong(
+                    handle,
+                    win32con.GWL_STYLE,
+                    win32gui.GetWindowLong(handle, win32con.GWL_STYLE)
+                    | win32con.WS_BORDER,
+                )
 
     def eventFilter(self, source, event):
         # Handle showing hidden menubar on mouse move event.
