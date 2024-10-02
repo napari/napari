@@ -255,7 +255,7 @@ class _QtMainWindow(QMainWindow):
     def event(self, e: QEvent) -> bool:
         # Handle QOpenGl fullscreen issue on Windows.
         # For more info see: https://doc.qt.io/qt-6/windows-issues.html#fullscreen-opengl-based-windows
-        if e.type() == QEvent.WinIdChange:
+        if os.name == 'nt' and e.type() == QEvent.WinIdChange:
             import win32con
             import win32gui
 
