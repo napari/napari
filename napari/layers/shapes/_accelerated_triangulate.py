@@ -147,7 +147,6 @@ def _set_centers_and_offsets(
                 elif elapsed_len < -vec2_len:
                     sin_angle = -1 / vec2_len
 
-
         # We use here the Intercept theorem for calculating the mitter length
         mitter = (vec1 - vec2) * 0.5 * (1 / sin_angle)
     if bevel or cos_limit > cos_angle:
