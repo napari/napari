@@ -261,7 +261,9 @@ def split_rgb(stack: Image, with_alpha=False) -> list[Image]:
     return images if with_alpha else images[:3]
 
 
-def images_to_stack(images: list[Image], axis: int = 0, **kwargs) -> Image:
+def images_to_stack(
+    images: list[Image], axis: int = 0, rgb=False, **kwargs
+) -> Image:
     """Combines a list of Image layers into one layer stacked along axis
 
     The new image layer will get the meta properties of the first
@@ -273,6 +275,8 @@ def images_to_stack(images: list[Image], axis: int = 0, **kwargs) -> Image:
         List of Image Layers
     axis : int
         Index to to insert the new axis
+    rgb : bool
+        Whether or not the stack should instead be treated as an RGB image
     **kwargs : dict
         Dictionary of parameters values to override parameters
         from the first image in images list.
@@ -288,13 +292,19 @@ def images_to_stack(images: list[Image], axis: int = 0, **kwargs) -> Image:
 
     data, meta, _ = images[0].as_layer_data_tuple()
 
-    kwargs.setdefault('scale', np.insert(meta['scale'], axis, 1))
-    kwargs.setdefault('translate', np.insert(meta['translate'], axis, 0))
-
     meta.update(kwargs)
-    meta['units'] = (pint.get_application_registry().pixel,) + meta['units']
-    meta['axis_labels'] = (f'axis -{data.ndim + 1}',) + meta['axis_labels']
     new_data = np.stack([image.data for image in images], axis=axis)
+
+    if rgb:
+        meta['rgb'] = True
+    if not rgb:
+        kwargs.setdefault('scale', np.insert(meta['scale'], axis, 1))
+        kwargs.setdefault('translate', np.insert(meta['translate'], axis, 0))
+        meta['units'] = (pint.get_application_registry().pixel,) + meta[
+            'units'
+        ]
+        meta['axis_labels'] = (f'axis -{data.ndim + 1}',) + meta['axis_labels']
+
     return Image(new_data, **meta)
 
 
