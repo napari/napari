@@ -8,6 +8,32 @@ from numba import njit
 def _calc_output_size(
     normals: np.ndarray, closed: bool, cos_limit: float, bevel: bool
 ) -> int:
+    """Calculate the size of the output arrays for the triangulation.
+
+    Parameters
+    ----------
+    normals : np.ndarray
+        Nx2 array of normal vectors of the path
+    closed : bool
+        Bool if shape edge is a closed path or not.
+    cos_limit : float
+        Miter limit which determines when to switch from a miter join to a
+        bevel join
+    bevel : bool
+        Bool which if True causes a bevel join to always be used.
+        If False a bevel join will only be used when the miter limit is exceeded
+
+    Returns
+    -------
+    int
+        number of points in the output arrays
+
+    Notes
+    -----
+    we use cos_limit instead of maximum miter length
+    for performance reasons.
+    This is an equivalent check, see note in generate_2D_edge_meshes
+    """
     point_count = len(normals) * 2
     if closed:
         point_count += 2
@@ -49,7 +75,7 @@ def _set_centers_and_offsets(
     centers: np.ndarray,
     offsets: np.ndarray,
     triangles: np.ndarray,
-    path: np.ndarray,
+    vertex: np.ndarray,
     vec1: np.ndarray,
     vec2: np.ndarray,
     vec1_len: float,
@@ -58,14 +84,57 @@ def _set_centers_and_offsets(
     cos_limit: float,
     bevel: bool,
 ) -> int:
-    centers[j] = path
-    centers[j + 1] = path
+    """Set the centers, offsets, and triangles for a given path.
+
+    Parameters
+    ----------
+    centers : np.ndarray
+        Mx2 array central coordinates of path triangles.
+    offsets : np.ndarray
+        Mx2 array of the offsets to the central coordinates that need to
+        be scaled by the line width and then added to the centers to
+        generate the actual vertices of the triangulation
+    triangles : np.ndarray
+        (M-2)x3 array of the indices of the vertices that will form the
+        triangles of the triangulation
+    vertex : np.ndarray
+        The vertex of the path for which the centers,
+         offsets and triangles art calculated
+    vec1 : np.ndarray
+        The normal vector from previous vertex to the current vertex
+    vec2 : np.ndarray
+        The normal vector from the current vertex to the next vertex
+    vec1_len : float
+        The length of the vec1 vector, used for miter limit calculation.
+    vec2_len : float
+        The length of the vec2 vector, used for miter limit calculation.
+    j : int
+        The index of position to start putting items in the centers,
+        offsets and triangles arrays
+    cos_limit : float
+        Miter limit which determines when to switch from a miter join to a
+        bevel join
+    bevel : bool
+        Bool which if True causes a bevel join to always be used.
+        If False a bevel join will only be used when the miter limit is exceeded
+
+    Returns
+    -------
+    int
+        number of triangles, centers and offsets added to the arrays
+    """
+    centers[j] = vertex
+    centers[j + 1] = vertex
     cos_angle = vec1[0] * vec2[0] + vec1[1] * vec2[1]
     sin_angle = vec1[0] * vec2[1] - vec1[1] * vec2[0]
     if sin_angle == 0:
         mitter = np.array([vec1[1], -vec1[0]], dtype=np.float32) * 0.5
     else:
-        if cos_limit > cos_angle:
+        if bevel or cos_limit > cos_angle:
+            # There is a case of bevels join, and
+            # there is a need to check if the miter length is not too long.
+            # For performance reasons here, the mitter length is estimated
+            # by the inverse of the sin of the angle between the two vectors.
             elapsed_len = 1 / sin_angle
             if vec1_len < vec2_len:
                 if elapsed_len > vec1_len:
@@ -77,11 +146,13 @@ def _set_centers_and_offsets(
                     sin_angle = 1 / vec2_len
                 elif elapsed_len < -vec2_len:
                     sin_angle = -1 / vec2_len
-        # if sin_limit > sin_angle > -sin_limit and cos_limit > cos_angle:
-        #     sin_angle = sin_limit if sin_angle > 0 else -sin_limit
+
+
+        # We use here the Intercept theorem for calculating the mitter length
         mitter = (vec1 - vec2) * 0.5 * (1 / sin_angle)
     if bevel or cos_limit > cos_angle:
-        centers[j + 2] = path
+        centers[j + 2] = vertex
+        # clock-wise and counter clock-wise cases
         if sin_angle < 0:
             offsets[j] = mitter
             offsets[j + 1, 0] = -vec1[1] * 0.5
@@ -101,18 +172,34 @@ def _set_centers_and_offsets(
 
         triangles[j] = [j, j + 1, j + 2]
 
-        return 3
+        return 3  # added 3 triangles because of bevel
     offsets[j] = mitter
     offsets[j + 1] = -mitter
     triangles[j] = [j, j + 1, j + 2]
     triangles[j + 1] = [j + 1, j + 2, j + 3]
-    return 2
+    return 2  # added 2 triangles
 
 
 @njit(cache=True)
 def _fix_triangle_orientation(
     triangles: np.ndarray, centers: np.ndarray, offsets: np.ndarray
 ) -> None:
+    """Fix the orientation of the triangles.
+
+    For checking if a point is inside a triangle.
+
+    Parameters
+    ----------
+    triangles : np.ndarray
+        (M-2)x3 array of the indices of the vertices that will form the
+        triangles of the triangulation
+    centers : np.ndarray
+        Mx2 array central coordinates of path triangles.
+    offsets : np.ndarray
+        Mx2 array of the offsets to the central coordinates that need to
+        be scaled by the line width and then added to the centers to
+        generate the actual vertices of the triangulation
+    """
     for i in range(len(triangles)):
         triangle = triangles[i]
         p1 = centers[triangle[0]] + offsets[triangle[0]]
@@ -141,7 +228,7 @@ def generate_2D_edge_meshes(
     Parameters
     ----------
     path : np.ndarray
-        Nx2 or Nx3 array of central coordinates of path to be triangulated
+        Nx2 array of central coordinates of path to be triangulated
     closed : bool
         Bool which determines if the path is closed or not
     limit : float
@@ -154,13 +241,13 @@ def generate_2D_edge_meshes(
     Returns
     -------
     centers : np.ndarray
-        Mx2 or Mx3 array central coordinates of path triangles.
+        Mx2 array central coordinates of path triangles.
     offsets : np.ndarray
-        Mx2 or Mx3 array of the offsets to the central coordinates that need to
+        Mx2 array of the offsets to the central coordinates that need to
         be scaled by the line width and then added to the centers to
         generate the actual vertices of the triangulation
     triangles : np.ndarray
-        Px3 array of the indices of the vertices that will form the
+        (M-2)x3 array of the indices of the vertices that will form the
         triangles of the triangulation
     """
 
@@ -266,6 +353,8 @@ def generate_2D_edge_meshes(
         offsets[j, 1] = -normals[-2][0] * 0.5
         offsets[j + 1] = -offsets[j]
 
+    # We need to fix triangle orientation, as our code for checking
+    # if points is in triangle is not robust to orientation
     _fix_triangle_orientation(triangles, centers, offsets)
 
     return centers, offsets, triangles
