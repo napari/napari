@@ -146,7 +146,6 @@ class _QtMainWindow(QMainWindow):
         self.setWindowTitle(self._qt_viewer.viewer.title)
 
         self._maximized_flag = False
-        self._fullscreen_flag = False
         self._normal_geometry = QRect()
         self._window_size = None
         self._window_pos = None
@@ -254,6 +253,20 @@ class _QtMainWindow(QMainWindow):
         return window._qt_viewer.viewer if window else None
 
     def event(self, e: QEvent) -> bool:
+        # Handle QOpenGl fullscreen issue on Windows.
+        # For more info see: https://doc.qt.io/qt-6/windows-issues.html#fullscreen-opengl-based-windows
+        if e.type() == QEvent.WinIdChange:
+            import win32con
+            import win32gui
+
+            if self.windowHandle():
+                handle = int(self.windowHandle().winId())
+                win32gui.SetWindowLong(
+                    handle,
+                    win32con.GWL_STYLE,
+                    win32gui.GetWindowLong(handle, win32con.GWL_STYLE)
+                    | win32con.WS_BORDER,
+                )
         if (
             e.type() == QEvent.Type.ToolTip
             and self._qt_viewer.viewer.tooltip.visible
@@ -280,60 +293,6 @@ class _QtMainWindow(QMainWindow):
                 _QtMainWindow._instances.remove(self)
 
         return res
-
-    def isFullScreen(self):
-        # Needed to prevent errors when going to fullscreen mode on Windows
-        # Use a flag attribute to determine if the window is in full screen mode
-        # See https://bugreports.qt.io/browse/QTBUG-41309
-        # Based on https://github.com/spyder-ide/spyder/pull/7720
-        return self._fullscreen_flag
-
-    def showNormal(self):
-        # Needed to prevent errors when going to fullscreen mode on Windows. Here we:
-        #   * Set fullscreen flag
-        #   * Remove `Qt.FramelessWindowHint` and `Qt.WindowStaysOnTopHint` window flags if needed
-        #   * Set geometry to previously stored normal geometry or default empty QRect
-        # Always call super `showNormal` to set Qt window state
-        # See https://bugreports.qt.io/browse/QTBUG-41309
-        # Based on https://github.com/spyder-ide/spyder/pull/7720
-        self._fullscreen_flag = False
-        if os.name == 'nt':
-            self.setWindowFlags(
-                self.windowFlags() ^ (Qt.WindowType.FramelessWindowHint)
-            )
-            if not self._maximized_flag:
-                self.setGeometry(self._normal_geometry)
-        super().showNormal()
-
-    def showFullScreen(self):
-        # Needed to prevent errors when going to fullscreen mode on Windows. Here we:
-        #   * Set fullscreen flag
-        #   * Add `Qt.FramelessWindowHint` and `Qt.WindowStaysOnTopHint` window flags if needed
-        #   * Call super `showNormal` to update the normal screen geometry to apply it later if needed
-        #   * Save window normal geometry if needed
-        #   * Get screen geometry
-        #   * Set geometry window to use total screen geometry +1 in every direction if needed
-        # If the workaround is not needed just call super `showFullScreen`
-        # See https://bugreports.qt.io/browse/QTBUG-41309
-        # Based on https://github.com/spyder-ide/spyder/pull/7720
-        self._fullscreen_flag = True
-        if os.name == 'nt':
-            self.setWindowFlags(
-                self.windowFlags() | Qt.WindowType.FramelessWindowHint
-            )
-            self._maximized_flag = self.isMaximized()
-            super().showNormal()
-            if not self._maximized_flag:
-                self._normal_geometry = self.normalGeometry()
-            screen_rect = self.windowHandle().screen().geometry()
-            self.setGeometry(
-                screen_rect.left() - 1,
-                screen_rect.top() - 1,
-                screen_rect.width() + 1,
-                screen_rect.height() + 1,
-            )
-        else:
-            super().showFullScreen()
 
     def eventFilter(self, source, event):
         # Handle showing hidden menubar on mouse move event.
@@ -1013,8 +972,6 @@ class Window:
         """Toggle fullscreen mode."""
         if self._qt_window.isFullScreen():
             self._qt_window.showNormal()
-            if self._qt_window._maximized_flag:
-                self._qt_window.showMaximized()
         else:
             self._qt_window.showFullScreen()
 
