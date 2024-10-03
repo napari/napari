@@ -268,9 +268,7 @@ def generate_2D_edge_meshes(
         triangles[1] = [1, 3, 2]
         return (centers, np.zeros((4, 2), dtype=np.float32), triangles)
 
-    cos_limit = -np.float32(
-        np.sqrt(1.0 - 1.0 / ((limit / 2) ** 2))
-    )  # divide by 2 to be consistent with the original code
+    cos_limit = 1/ (2 * limit**2) - 1.0
 
     normals = np.empty_like(path)
     vec_len_arr = np.empty((len(path) - 1), dtype=np.float32)
