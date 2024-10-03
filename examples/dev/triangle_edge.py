@@ -1,12 +1,11 @@
 import typing
 
-import numpy as np
 import numba
+import numpy as np
 
 import napari
 from napari.layers import Points, Shapes, Vectors
 from napari.layers.shapes._shapes_utils import generate_2D_edge_meshes
-
 
 
 def generate_regular_polygon(n, radius=1):

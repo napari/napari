@@ -142,12 +142,12 @@ def _set_centers_and_offsets(
                 if elapsed_len > vec1_len:
                     scale_factor = vec1_len
                 elif elapsed_len < -vec1_len:
-                    scale_factor = - vec1_len
+                    scale_factor = -vec1_len
             else:
                 if elapsed_len > vec2_len:
                     scale_factor = vec2_len
                 elif elapsed_len < -vec2_len:
-                    scale_factor = - vec2_len
+                    scale_factor = -vec2_len
 
         # We use here the Intercept theorem for calculating the mitter length
         # More details in PR description:
@@ -272,7 +272,7 @@ def generate_2D_edge_meshes(
         triangles[1] = [1, 3, 2]
         return (centers, np.zeros((4, 2), dtype=np.float32), triangles)
 
-    cos_limit = 1/ (2 * (limit/2)**2) - 1.0
+    cos_limit = 1 / (2 * (limit / 2) ** 2) - 1.0
     # why cos_limit uis calculated this way is explained in the note in
     # https://github.com/napari/napari/pull/7268#user-content-bevel-limit
 
