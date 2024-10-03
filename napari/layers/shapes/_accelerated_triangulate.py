@@ -130,28 +130,29 @@ def _set_centers_and_offsets(
     if sin_angle == 0:
         mitter = np.array([vec1[1], -vec1[0]], dtype=np.float32) * 0.5
     else:
+        scale_factor = 1 / sin_angle
         if bevel or cos_limit > cos_angle:
             # There is a case of bevels join, and
             # there is a need to check if the miter length is not too long.
             # For performance reasons here, the mitter length is estimated
             # by the inverse of the sin of the angle between the two vectors.
             # See https://github.com/napari/napari/pull/7268#user-content-bevel-cut
-            elapsed_len = 1 / sin_angle
+            elapsed_len = scale_factor
             if vec1_len < vec2_len:
                 if elapsed_len > vec1_len:
-                    sin_angle = 1 / vec1_len
+                    scale_factor = vec1_len
                 elif elapsed_len < -vec1_len:
-                    sin_angle = -1 / vec1_len
+                    scale_factor = - vec1_len
             else:
                 if elapsed_len > vec2_len:
-                    sin_angle = 1 / vec2_len
+                    scale_factor = vec2_len
                 elif elapsed_len < -vec2_len:
-                    sin_angle = -1 / vec2_len
+                    scale_factor = - vec2_len
 
         # We use here the Intercept theorem for calculating the mitter length
         # More details in PR description:
         # https://github.com/napari/napari/pull/7268#user-content-miter
-        mitter = (vec1 - vec2) * 0.5 * (1 / sin_angle)
+        mitter = (vec1 - vec2) * 0.5 * scale_factor
     if bevel or cos_limit > cos_angle:
         centers[j + 2] = vertex
         # clock-wise and counter clock-wise cases
