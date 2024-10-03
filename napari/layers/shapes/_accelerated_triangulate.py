@@ -135,6 +135,7 @@ def _set_centers_and_offsets(
             # there is a need to check if the miter length is not too long.
             # For performance reasons here, the mitter length is estimated
             # by the inverse of the sin of the angle between the two vectors.
+            # See https://github.com/napari/napari/pull/7268#user-content-bevel-cut
             elapsed_len = 1 / sin_angle
             if vec1_len < vec2_len:
                 if elapsed_len > vec1_len:
@@ -148,6 +149,8 @@ def _set_centers_and_offsets(
                     sin_angle = -1 / vec2_len
 
         # We use here the Intercept theorem for calculating the mitter length
+        # More details in PR description:
+        # https://github.com/napari/napari/pull/7268#user-content-miter
         mitter = (vec1 - vec2) * 0.5 * (1 / sin_angle)
     if bevel or cos_limit > cos_angle:
         centers[j + 2] = vertex
@@ -268,10 +271,12 @@ def generate_2D_edge_meshes(
         triangles[1] = [1, 3, 2]
         return (centers, np.zeros((4, 2), dtype=np.float32), triangles)
 
-    cos_limit = 1/ (2 * limit**2) - 1.0
+    cos_limit = 1/ (2 * (limit/2)**2) - 1.0
+    # why cos_limit uis calculated this way is explained in the note in
+    # https://github.com/napari/napari/pull/7268#user-content-bevel-limit
 
     normals = np.empty_like(path)
-    vec_len_arr = np.empty((len(path) - 1), dtype=np.float32)
+    vec_len_arr = np.empty((len(path)), dtype=np.float32)
     for i in range(1, len(path)):
         vec_diff = path[i] - path[i - 1]
         vec_len_arr[i - 1] = np.sqrt(vec_diff[0] ** 2 + vec_diff[1] ** 2)
