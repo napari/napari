@@ -1,11 +1,12 @@
+import typing
+
 import numpy as np
+import numba
 
 import napari
 from napari.layers import Points, Shapes, Vectors
-from napari.layers.shapes._shapes_utils import (
-    acc_generate_2D_edge_meshes,
-    generate_2D_edge_meshes,
-)
+from napari.layers.shapes._shapes_utils import generate_2D_edge_meshes
+
 
 
 def generate_regular_polygon(n, radius=1):
@@ -23,6 +24,7 @@ def generate_regular_polygon(n, radius=1):
     return np.column_stack((radius * np.cos(angles), radius * np.sin(angles)))
 
 
+# @numba.njit
 def generate_order_vectors(path_, closed) -> np.ndarray:
     """Generate the vectors tangent to the path."""
     n = path_[1:] - path_[:-1]
@@ -37,6 +39,7 @@ def generate_order_vectors(path_, closed) -> np.ndarray:
         vec[-1, 1] = -vec[-2, 1]
     return vec
 
+# @numba.njit
 def generate_miter_helper_vectors(normal_vector: np.ndarray) -> np.ndarray:
     """Generate the miter helper vectors.
 
@@ -52,6 +55,7 @@ def generate_miter_helper_vectors(normal_vector: np.ndarray) -> np.ndarray:
     vec3[:, 0] += vec2[:, 1]
     return np.concatenate([vec2, vec3], axis=0)
 
+@numba.njit
 def generate_orthogonal_vectors(normal_vector: np.ndarray) -> np.ndarray:
     """Generate the orthogonal vectors to the normal vectors.
 
@@ -66,6 +70,7 @@ def generate_orthogonal_vectors(normal_vector: np.ndarray) -> np.ndarray:
     vec5[:, 1, 1] = vec2[:, 1, 0]
     return vec5
 
+@numba.njit
 def generate_mitter_vectors(mesh) -> np.ndarray:
     """For each point on path, generate the vectors pointing to adjusted points. Generate the mitter vectors for each point on the path.
     """
@@ -74,18 +79,42 @@ def generate_mitter_vectors(mesh) -> np.ndarray:
     vec_points[:, 1] = mesh[1]
     return vec_points
 
-def generate_triangle_borders(mesh) -> np.ndarray:
+@numba.njit
+def generate_edge_triangle_borders(centers, offsets, triangles) -> np.ndarray:
     """For each triangle in mesh generate 3 vectors that represent the borders of the triangle.
     """
-    res = []
-    centers, offsets, triangles = mesh
-    for triangle in triangles:
+    res = np.empty((len(triangles)*3, 2, 2), dtype=centers.dtype)
+    for i, triangle in enumerate(triangles):
         a, b, c = triangle
         a1 = centers[a] + offsets[a]
         b1 = centers[b] + offsets[b]
         c1 = centers[c] + offsets[c]
-        res.extend([[a1, (b1 - a1)], [b1, (c1 - b1)], [c1, (a1 - c1)]])
-    return np.array(res)
+        res[i * 3, 0] = a1
+        res[i * 3, 1] = (b1 - a1)
+        res[i * 3 + 1, 0] = b1
+        res[i * 3 + 1, 1] = (c1 - b1)
+        res[i * 3 + 2, 0] = c1
+        res[i * 3 + 2, 1] = (a1 - c1)
+    return res
+
+@numba.njit
+def generate_face_triangle_borders(vertices, triangles) -> np.ndarray:
+    """For each triangle in mesh generate 3 vectors that represent the borders of the triangle.
+    """
+    res = np.empty((len(triangles)*3, 2, 2), dtype=vertices.dtype)
+    for i, triangle in enumerate(triangles):
+        a, b, c = triangle
+        a1 = vertices[a]
+        b1 = vertices[b]
+        c1 = vertices[c]
+        res[i * 3, 0] = a1
+        res[i * 3, 1] = (b1 - a1)
+        res[i * 3 + 1, 0] = b1
+        res[i * 3 + 1, 1] = (c1 - b1)
+        res[i * 3 + 2, 0] = c1
+        res[i * 3 + 2, 1] = (a1 - c1)
+    return res
+
 
 path = np.array([[0,0], [0,1], [1,1], [1,0]]) * 10
 # path = generate_regular_polygon(4, radius=1) * 10
@@ -116,52 +145,116 @@ polygons = [
 ]
 
 shape_type=['polygon'] * 6 + ['path'] * 3 + ['polygon']
-s = Shapes(polygons, shape_type=shape_type)
+s = Shapes(polygons, shape_type=shape_type, name="shapes")
 
 
 mesh1_li = [generate_2D_edge_meshes(p, closed=s != 'path') for p, s in zip(polygons, shape_type)]
-mesh2_li = [
-    acc_generate_2D_edge_meshes(p, closed=s != 'path') for p, s in zip(polygons, shape_type)
-]
 
 mesh1 = tuple(np.concatenate(el, axis=0) for el in zip(*mesh1_li))
-mesh2 = tuple(np.concatenate(el, axis=0) for el in zip(*mesh2_li))
 
 
-order_vectors_li = [generate_order_vectors(p, s!='path') for p, s in zip(polygons, shape_type)]
+class Helpers(typing.NamedTuple):
+    points: np.ndarray
+    order_vectors: np.ndarray
+    miter_helper: np.ndarray
+    orthogonal_vector: np.ndarray
+    miter_vectors: np.ndarray
+    triangles_vectors: np.ndarray
+    face_triangles_vectors: np.ndarray
 
-order_vectors = np.concatenate(order_vectors_li, axis=0)
+def get_helper_data_from_shapes(shape: Shapes) -> Helpers:
+    shapes = shape._data_view.shapes
+    mesh_list = [(x._edge_vertices, x._edge_offsets, x._edge_triangles) for x in shapes]
+    path_list = [(x.data, x._closed) for x in shapes]
+    mesh = tuple(np.concatenate(el, axis=0) for el in zip(*mesh_list))
+    face_mesh_list = [(x._face_vertices, x._face_triangles) for x in shapes if len(x._face_vertices)]
 
-miter_helper = np.concatenate([generate_miter_helper_vectors(o) for o in order_vectors_li], axis=0)
+    points = mesh[0] + mesh[1]
+    order_vectors_li = [generate_order_vectors(path_, closed) for path_, closed in path_list]
+    order_vectors = np.concatenate(order_vectors_li, axis=0)
+    miter_helper = np.concatenate([generate_miter_helper_vectors(o) for o in order_vectors_li], axis=0)
+    orthogonal_vector = np.concatenate([generate_orthogonal_vectors(o) for o in order_vectors_li], axis=0)
+    miter_vectors = np.concatenate([generate_mitter_vectors(m) for m in mesh_list], axis=0)
+    triangles_vectors = np.concatenate([generate_edge_triangle_borders(*m) for m in mesh_list], axis=0)
+    face_triangles_vectors = np.concatenate([generate_face_triangle_borders(*m) for m in face_mesh_list], axis=0)
 
-orthogonal_vector = np.concatenate([generate_orthogonal_vectors(o) for o in order_vectors_li], axis=0)
+    return Helpers(
+        points=points,
+        order_vectors=order_vectors,
+        miter_helper=miter_helper,
+        orthogonal_vector=orthogonal_vector,
+        miter_vectors=miter_vectors,
+        triangles_vectors=triangles_vectors,
+        face_triangles_vectors=face_triangles_vectors,
+    )
 
-miter_vectors = np.concatenate([generate_mitter_vectors(m) for m in mesh2_li], axis=0)
 
-triangles_vectors = np.concatenate([generate_triangle_borders(m) for m in mesh2_li], axis=0)
+def update_layers():
+    shapes_layer = v.layers['shapes']
+
+    helpers = get_helper_data_from_shapes(shapes_layer)
+    v.layers['join points'].data = helpers.points
+    v.layers['normal vectors'].data = helpers.order_vectors
+    v.layers['miter helper'].data = helpers.miter_helper
+    v.layers['orthogonal'].data = helpers.orthogonal_vector
+    v.layers['miter vectors'].data = helpers.miter_vectors
+    v.layers['triangle face vectors'].data = helpers.face_triangles_vectors
+    v.layers['triangle vectors'].data = helpers.triangles_vectors
 
 
-s = Shapes(polygons, shape_type=shape_type)
-p = Points(mesh2[0] + mesh2[1], size=0.2, face_color='white', name='new')
-p1 = Points(mesh1[0] + mesh1[1], size=0.1, face_color='yellow', name='original')
-ve = Vectors(order_vectors, edge_width=0.1, vector_style='arrow', name='order')
-ve2 = Vectors(miter_helper, edge_width=0.06, vector_style='arrow', edge_color="blue")
-ve3 = Vectors(orthogonal_vector, edge_width=0.04, vector_style='arrow', edge_color="green", name='orthogonal')
-ve4 = Vectors(miter_vectors, edge_width=0.05, vector_style='arrow', edge_color="yellow", name='miter vectors')
-ve5 = Vectors(triangles_vectors, edge_width=0.04, vector_style='arrow', edge_color="pink", name='triangle vectors')
+def add_helper_layers(viewer: napari.Viewer):
+    shapes = viewer.layers['shapes']
+    helpers = get_helper_data_from_shapes(shapes)
+    p = Points(helpers.points, size=0.1, face_color='white', name='join points')
+    ve = Vectors(helpers.order_vectors, edge_width=0.1, vector_style='arrow', name='normal vectors')
+    ve2 = Vectors(helpers.miter_helper, edge_width=0.06, vector_style='arrow', edge_color="blue", name="miter helper")
+    ve3 = Vectors(helpers.orthogonal_vector, edge_width=0.04, vector_style='arrow', edge_color="green", name='orthogonal')
+    ve4 = Vectors(helpers.miter_vectors, edge_width=0.05, vector_style='arrow', edge_color="yellow", name='miter vectors')
+    ve5 = Vectors(helpers.face_triangles_vectors, edge_width=0.04, vector_style='arrow', edge_color="magenta", name='triangle face vectors')
+    ve6 = Vectors(helpers.triangles_vectors, edge_width=0.04, vector_style='arrow', edge_color="pink", name='triangle vectors')
+    viewer.add_layer(p)
+    viewer.add_layer(ve)
+    viewer.add_layer(ve2)
+    viewer.add_layer(ve3)
+    viewer.add_layer(ve4)
+    viewer.add_layer(ve5)
+    viewer.add_layer(ve6)
+
+
+def get_nono_accelerated_points(shape: Shapes) -> np.ndarray:
+    """Get the non-accelerated points"""
+    shapes = shape._data_view.shapes
+    path_list = [(x.data, x._closed) for x in shapes]
+    mesh_list = [generate_2D_edge_meshes(path, closed) for path, closed in path_list]
+    mesh = tuple(np.concatenate(el, axis=0) for el in zip(*mesh_list))
+
+    return mesh[0] + mesh[1]
+
+
+def update_non_accelerated_points():
+    data = get_nono_accelerated_points(v.layers["shapes"])
+    v.layers["non accelerated join points"].data = data
+
+
+
+def add_non_accelerated_points(viewer: napari.Viewer):
+    data = get_nono_accelerated_points(v.layers["shapes"])
+    p = Points(data, size=0.2, face_color='yellow', name='non accelerated join points')
+    viewer.add_layer(p)
+
 
 v = napari.Viewer()
 v.add_layer(s)
-v.add_layer(p)
-v.add_layer(p1)
-v.add_layer(ve)
-v.add_layer(ve2)
-v.add_layer(ve3)
-v.add_layer(ve4)
-v.add_layer(ve5)
+
+add_non_accelerated_points(v)
+add_helper_layers(v)
+
+
+s.events.set_data.connect(update_layers)
+s.events.set_data.connect(update_non_accelerated_points)
+
+
 v.camera.center = (0, 25, 25)
 v.camera.zoom = 50
-
-v.window._qt_viewer.console.push({"mesh2_li": mesh2_li})
 
 napari.run()
