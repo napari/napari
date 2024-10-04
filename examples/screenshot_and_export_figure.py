@@ -2,14 +2,16 @@
 Comparison of Screenshot and Figure Export
 =============
 
-Display multiple layer types, a scale bar and take a screenshot or export a
+Display multiple layer types, add scale bar, and take a screenshot or export a
 figure from a 'light' canvas. Then switch to a 'dark' canvas and display the
 screenshot and figure. Compare the limits of each export method. The screenshot
 will include the entire canvas, and results in some layers (e.g. the 'pos'
 layer) if it extends outside the canvas. In comparison, the `export_figure`
 will only include the extent of the layers and any other elements overlayed
-on the canvas, such as the scale bar. Currently, 'export_figure` does not
-support the 3D view, but screenshot does.
+on the canvas, such as the scale bar. Exported figures also move the scale bar
+to within the margins of the canvas.
+
+Currently, 'export_figure` does not support the 3D view, but screenshot does.
 
 .. tags:: visualization-advanced
 """
@@ -128,7 +130,7 @@ pos_layer = viewer.add_vectors(pos, edge_width=2)
 # add scale_bar with background box
 viewer.scale_bar.visible = True
 viewer.scale_bar.box = True
-# viewer.scale_bar.position = 'top_right'
+# viewer.scale_bar.length = 150  # prevent dynamic adjustment of scale bar length
 
 # take screenshots in light theme to show difference in canvas margins
 viewer.theme = 'light'
