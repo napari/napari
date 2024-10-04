@@ -1532,7 +1532,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             return [layer]
 
         try:
-            layer = Layer.create(data, meta, layer_type)
+            layer = Layer.create(data, {**meta}, layer_type)
             self.add_layer(layer)
         except TypeError as exc:
             if 'unexpected keyword argument' not in str(exc):
