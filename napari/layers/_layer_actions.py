@@ -105,10 +105,22 @@ def _convert_to_image(ll: LayerList) -> None:
 def _merge_stack(ll: LayerList, rgb: bool = False) -> None:
     # force selection to follow LayerList ordering
     imgs = cast(list[Image], [layer for layer in ll if layer in ll.selection])
-    assert all(
-        isinstance(layer, Image) for layer in imgs
-    ), 'All layers in selection to be merged must be Image layers.'
+    assert all(isinstance(layer, Image) for layer in imgs), trans._(
+        'All layers in selection to be merged must be Image layers.',
+        deferred=True,
+    )
     if rgb:
+        assert len(imgs) == 3, trans._(
+            'Merging to RGB, requires exactly 3 Image layers to be selected.',
+            deferred=True,
+        )
+        # Check that all 3 layers have the same shape
+        first_shape = next(iter(ll.selection)).data.shape
+        for layer in ll.selection:
+            assert layer.data.shape == first_shape, trans._(
+                'Shape mismatch! To merge to RGB, all selected Image layers must have the same shape.'
+            )
+
         # we will check for the presence of R G B colormaps to determine how to merge
         colormaps = {layer.colormap.name for layer in ll.selection}
         r_g_b = ['red', 'green', 'blue']
