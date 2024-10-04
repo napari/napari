@@ -128,7 +128,7 @@ pos_layer = viewer.add_vectors(pos, edge_width=2)
 # add scale_bar with background box
 viewer.scale_bar.visible = True
 viewer.scale_bar.box = True
-viewer.scale_bar.position = 'top_right'
+# viewer.scale_bar.position = 'top_right'
 
 # take screenshots in light theme to show difference in canvas margins
 viewer.theme = 'light'
