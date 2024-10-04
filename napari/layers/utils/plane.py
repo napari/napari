@@ -1,5 +1,5 @@
 import sys
-from typing import Any, Tuple, cast
+from typing import Any, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -17,7 +17,7 @@ else:
     from typing import TypeAlias
 
 
-Point3D: TypeAlias = Tuple[float, float, float]
+Point3D: TypeAlias = tuple[float, float, float]
 
 
 class Plane(EventedModel):
@@ -91,7 +91,7 @@ class Plane(EventedModel):
         a = np.array(a)
         b = np.array(b)
         c = np.array(c)
-        abc = np.row_stack((a, b, c))
+        abc = np.vstack((a, b, c))
         ab = b - a
         ac = c - a
 
@@ -236,3 +236,7 @@ class ClippingPlaneList(SelectableEventedList):
                     )
                 )
         return cls(planes)
+
+    def add_plane(self, **kwargs: Any) -> None:
+        """Add a clipping plane to the list."""
+        self.append(ClippingPlane(**kwargs))

@@ -3,6 +3,7 @@ import os
 import platform
 import subprocess
 import sys
+from importlib.metadata import PackageNotFoundError, version
 
 import napari
 
@@ -117,16 +118,18 @@ def sys_info(as_html: bool = False) -> str:
         ('superqt', 'superqt'),
         ('in_n_out', 'in-n-out'),
         ('app_model', 'app-model'),
+        ('psygnal', 'psygnal'),
         ('npe2', 'npe2'),
+        ('pydantic', 'pydantic'),
     )
 
     loaded = {}
     for module, name in modules:
         try:
             loaded[module] = __import__(module)
-            text += f'<b>{name}</b>: {loaded[module].__version__}<br>'
-        except Exception as e:  # noqa BLE001
-            text += f'<b>{name}</b>: Import failed ({e})<br>'
+            text += f'<b>{name}</b>: {version(module)}<br>'
+        except PackageNotFoundError:
+            text += f'<b>{name}</b>: Import failed<br>'
 
     text += '<br><b>OpenGL:</b><br>'
 
@@ -159,6 +162,20 @@ def sys_info(as_html: bool = False) -> str:
             text += f'  - screen {i}: resolution {screen.geometry().width()}x{screen.geometry().height()}, scale {screen.devicePixelRatio()}<br>'
     except Exception as e:  # noqa BLE001
         text += f'  - failed to load screen information {e}'
+
+    text += '<br><b>Optional:</b><br>'
+
+    optional_modules = (
+        ('numba', 'numba'),
+        ('triangle', 'triangle'),
+        ('napari_plugin_manager', 'napari-plugin-manager'),
+    )
+
+    for module, name in optional_modules:
+        try:
+            text += f'  - <b>{name}</b>: {version(module)}<br>'
+        except PackageNotFoundError:
+            text += f'  - {name} not installed<br>'
 
     text += '<br><b>Settings path:</b><br>'
     try:

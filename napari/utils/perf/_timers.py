@@ -1,10 +1,10 @@
-"""PerfTimers class and global instance.
-"""
+"""PerfTimers class and global instance."""
 
 import contextlib
 import os
+from collections.abc import Generator
 from time import perf_counter_ns
-from typing import Callable, Dict, Generator, Optional, Tuple
+from typing import Optional, Union
 
 from napari.utils.perf._event import PerfEvent
 from napari.utils.perf._stat import Stat
@@ -48,13 +48,14 @@ class PerfTimers:
     def __init__(self) -> None:
         """Create PerfTimers."""
         # Maps a timer name to one Stat object.
-        self.timers: Dict[str, Stat] = {}
+        self.timers: dict[str, Stat] = {}
 
         # Menu item "Debug -> Record Trace File..." starts a trace.
         self.trace_file: Optional[PerfTraceFile] = None
 
     def add_event(self, event: PerfEvent) -> None:
-        """Add one performance event.
+        """Save an event to performance trace file and
+        update the timers if the event has phase 'X'.
 
         Parameters
         ----------
@@ -83,12 +84,18 @@ class PerfTimers:
         thread_id: Optional[int] = None,
         **kwargs: float,
     ) -> None:
-        """Add one instant event.
+        """Build and add one event of length 0.
 
         Parameters
         ----------
         name : str
             Add this event.
+        category : str | None
+            Comma separated categories such as "render,update".
+        process_id : int | None
+            The process id that produced the event.
+        thread_id : int | None
+            The thread id that produced the event.
         **kwargs
             Arguments to display in the Args section of the Tracing GUI.
         """
@@ -184,7 +191,7 @@ def block_timer(
     name : str
         The name of this timer.
     category : str
-        Comma separated categories such has "render,update".
+        Comma separated categories such as "render,update".
     print_time : bool
         Print the duration of the timer when it finishes.
     **kwargs : dict
@@ -222,81 +229,94 @@ def block_timer(
     if timers:
         timers.add_event(event)
     if print_time:
-        print(f'{name} {event.duration_ms:.3f}ms')
+        print(f'{name} {event.duration_ms:.3f}ms')  # noqa: T201
 
 
-def _create_timer() -> Tuple[PerfTimers, Callable, Callable, Callable]:
-    # The one global instance
-    timers = PerfTimers()
+class DummyTimer:
+    """
+    An empty timer to use when perfmon is disabled.
+    It implements the same interface as PerfTimers.
+    """
 
-    # perf_timer is enabled
-    perf_timer = block_timer
+    def __init__(self) -> None:
+        self.trace_file = None
 
     def add_instant_event(
-        name: str,
-        *,
-        category: Optional[str] = None,
-        process_id: Optional[int] = None,
-        thread_id: Optional[int] = None,
-        **kwargs: float,
+        self, name: str, **kwargs: Union[str, float, None]
     ) -> None:
-        """Add one instant event.
+        """empty timer to use when perfmon is disabled"""
 
-        Parameters
-        ----------
-        name : str
-            Add this event.
-        **kwargs
-            Arguments to display in the Args section of the Chrome Tracing GUI.
-        """
-        timers.add_instant_event(
-            name,
-            category=category,
-            process_id=process_id,
-            thread_id=thread_id,
-            **kwargs,
-        )
+    def add_counter_event(self, name: str, **kwargs: float) -> None:
+        """empty timer to use when perfmon is disabled"""
 
-    def add_counter_event(name: str, **kwargs: float) -> None:
-        """Add one counter event.
+    def add_event(self, event: PerfEvent) -> None:
+        """empty timer to use when perfmon is disabled"""
 
-        Parameters
-        ----------
-        name : str
-            The name of this event like "draw".
-        **kwargs : float
-            The individual counters for this event.
+    def start_trace_file(self, path: str) -> None:
+        """empty timer to use when perfmon is disabled"""
 
-        Notes
-        -----
-        For example add_counter_event("draw", triangles=5, squares=10).
-        """
-        timers.add_counter_event(name, **kwargs)
-
-    return timers, perf_timer, add_instant_event, add_counter_event
+    def stop_trace_file(self) -> None:
+        """empty timer to use when perfmon is disabled"""
 
 
-timers: Optional[PerfTimers]
+def add_instant_event(
+    name: str,
+    *,
+    category: Optional[str] = None,
+    process_id: Optional[int] = None,
+    thread_id: Optional[int] = None,
+    **kwargs: float,
+) -> None:
+    """Add one instant event.
+
+    Parameters
+    ----------
+    name : str
+        Add this event.
+    category : str | None
+        Comma separated categories such as "render,update".
+    process_id : int | None
+        The process id that produced the event.
+    thread_id : int | None
+        The thread id that produced the event.
+    **kwargs
+        Arguments to display in the Args section of the Chrome Tracing GUI.
+    """
+    timers.add_instant_event(
+        name,
+        category=category,
+        process_id=process_id,
+        thread_id=thread_id,
+        **kwargs,
+    )
+
+
+def add_counter_event(name: str, **kwargs: float) -> None:
+    """Add one counter event.
+
+    Parameters
+    ----------
+    name : str
+        The name of this event like "draw".
+    **kwargs : float
+        The individual counters for this event.
+
+    Notes
+    -----
+    For example add_counter_event("draw", triangles=5, squares=10).
+    """
+    timers.add_counter_event(name, **kwargs)
+
+
+timers: Union[DummyTimer, PerfTimers]
 
 if USE_PERFMON:
-    timers, perf_timer, add_instant_event, add_counter_event = _create_timer()
+    timers = PerfTimers()
+    perf_timer = block_timer
 
 else:
     # Make sure no one accesses the timers when they are disabled.
-    timers = None
-
-    def add_instant_event(
-        name: str,
-        *,
-        category: Optional[str] = None,
-        process_id: Optional[int] = None,
-        thread_id: Optional[int] = None,
-        **kwargs: float,
-    ) -> None:
-        pass
-
-    def add_counter_event(name: str, **kwargs: float) -> None:
-        pass
+    timers = DummyTimer()
 
     # perf_timer is disabled. Using contextlib.nullcontext did not work.
     @contextlib.contextmanager
@@ -310,4 +330,5 @@ else:
         phase: str = 'X',
         **kwargs: float,
     ) -> Generator[None, None, None]:
+        """Do nothing when perfmon is disabled."""
         yield

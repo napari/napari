@@ -25,16 +25,17 @@ class LabelsPolygonOverlay(SceneOverlay):
         Controls whether the overlay is activated.
     points : list
         A list of (x, y) coordinates of the vertices of the polygon.
-    double_click_completion : bool
-        Whether drawing the polygon can be completed with a left mouse double-click.
-    completion_radius : int
+    use_double_click_completion_radius : bool
+        Whether double-click to complete drawing the polygon requires being within
+        completion_radius of the first point.
+    completion_radius : int | float
         Defines the radius from the first polygon vertex within which
         the drawing process can be completed by a left double-click.
     """
 
     enabled: bool = False
     points: list = Field(default_factory=list)
-    double_click_completion: bool = True
+    use_double_click_completion_radius: bool = False
     completion_radius: int = 20
 
     def add_polygon_to_labels(self, layer: Labels) -> None:

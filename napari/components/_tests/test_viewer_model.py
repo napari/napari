@@ -85,6 +85,13 @@ def test_add_image_colormap_variants():
     assert "did you mean to specify a 'channel_axis'" in str(err.value)
 
 
+def test_add_image_accepts_all_arguments_as_sequence():
+    """See https://github.com/napari/napari/pull/7089."""
+    viewer = ViewerModel(ndisplay=3)
+    img = viewer.add_image(np.random.rand(2, 2))
+    viewer.add_image(**img._get_state())
+
+
 def test_add_volume():
     """Test adding volume."""
     viewer = ViewerModel(ndisplay=3)
@@ -504,16 +511,16 @@ def test_add_layer_from_data_raises():
     # make sure that adding invalid data or kwargs raises the right errors
     viewer = ViewerModel()
     # unrecognized layer type raises Value Error
-    with pytest.raises(ValueError):
-        # 'layer' is not a valid type
+    with pytest.raises(ValueError, match='Unrecognized layer_type'):
         # (even though there is an add_layer method)
         viewer._add_layer_from_data(
             np.random.random((10, 10)), layer_type='layer'
         )
 
     # even with the correct meta kwargs, the underlying add_* method may raise
-    with pytest.raises(ValueError):
-        # improper dims for rgb data
+    with pytest.raises(
+        ValueError, match='data does not have suitable dimensions'
+    ):
         viewer._add_layer_from_data(
             np.random.random((10, 10, 6)), {'rgb': True}
         )
@@ -586,23 +593,32 @@ def test_active_layer():
     viewer.add_image(np.random.random((5, 5, 10, 15)))
     assert len(viewer.layers) == 1
     assert viewer.layers.selection.active == viewer.layers[0]
+    assert viewer.layers[0]._highlight_visible
 
     # Check newly added layer is active
     viewer.add_image(np.random.random((5, 6, 5, 10, 15)))
     assert len(viewer.layers) == 2
     assert viewer.layers.selection.active == viewer.layers[1]
+    assert not viewer.layers[0]._highlight_visible
+    assert viewer.layers[1]._highlight_visible
 
     # Check no active layer after unselecting all
     viewer.layers.selection.clear()
     assert viewer.layers.selection.active is None
+    assert not viewer.layers[0]._highlight_visible
+    assert not viewer.layers[1]._highlight_visible
 
     # Check selected layer is active
     viewer.layers.selection.add(viewer.layers[0])
     assert viewer.layers.selection.active == viewer.layers[0]
+    assert viewer.layers[0]._highlight_visible
+    assert not viewer.layers[1]._highlight_visible
 
     # Check no layer is active if both layers are selected
     viewer.layers.selection.add(viewer.layers[1])
     assert viewer.layers.selection.active is None
+    assert not viewer.layers[0]._highlight_visible
+    assert not viewer.layers[1]._highlight_visible
 
 
 def test_active_layer_status_update():
@@ -618,7 +634,9 @@ def test_active_layer_status_update():
     time.sleep(1)
     viewer.mouse_over_canvas = True
     viewer.cursor.position = [1, 1, 1, 1, 1]
-    assert viewer.status == viewer.layers.selection.active.get_status(
+    assert viewer._calc_status_from_cursor()[
+        0
+    ] == viewer.layers.selection.active.get_status(
         viewer.cursor.position, world=True
     )
 
@@ -737,7 +755,7 @@ def test_update_scale():
     )
 
 
-@pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
+@pytest.mark.parametrize(('Layer', 'data', 'ndim'), layer_test_data)
 def test_add_remove_layer_no_callbacks(Layer, data, ndim):
     """Test all callbacks for layer emmitters removed."""
     viewer = ViewerModel()
@@ -768,7 +786,7 @@ def test_add_remove_layer_no_callbacks(Layer, data, ndim):
         assert len(em.callbacks) == count_warning_events(em.callbacks)
 
 
-@pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
+@pytest.mark.parametrize(('Layer', 'data', 'ndim'), layer_test_data)
 def test_add_remove_layer_external_callbacks(Layer, data, ndim):
     """Test external callbacks for layer emmitters preserved."""
     viewer = ViewerModel()
@@ -831,7 +849,7 @@ def test_not_mutable_fields(field):
     )
 
 
-@pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
+@pytest.mark.parametrize(('Layer', 'data', 'ndim'), layer_test_data)
 def test_status_tooltip(Layer, data, ndim):
     viewer = ViewerModel()
     viewer.tooltip.visible = True
@@ -974,3 +992,61 @@ def test_slice_order_with_mixed_dims():
     assert image_2d._slice.image.view.shape == (4, 5)
     assert image_3d._slice.image.view.shape == (3, 5)
     assert image_4d._slice.image.view.shape == (2, 5)
+
+
+def test_make_layer_visible_after_slicing():
+    """See https://github.com/napari/napari/issues/6760"""
+    viewer = ViewerModel(ndisplay=2)
+    data = np.array([np.ones((2, 2)) * i for i in range(3)])
+    layer: Image = viewer.add_image(data)
+    layer.visible = False
+    assert viewer.dims.current_step[0] != 0
+    assert not np.array_equal(layer._slice.image.raw, data[0])
+
+    viewer.dims.current_step = (0, 0, 0)
+    layer.visible = True
+
+    np.testing.assert_array_equal(layer._slice.image.raw, data[0])
+
+
+def test_get_status_text():
+    viewer = ViewerModel(ndisplay=2)
+    viewer.mouse_over_canvas = False
+    assert viewer._calc_status_from_cursor() is None
+    viewer.mouse_over_canvas = True
+    assert viewer._calc_status_from_cursor() == ('Ready', '')
+    viewer.cursor.position = (1, 2)
+    viewer.add_labels(
+        np.zeros((10, 10), dtype='uint8'), features={'a': [1, 2]}
+    )
+    viewer.tooltip.visible = False
+    assert viewer._calc_status_from_cursor() == (
+        {
+            'coordinates': ' [1 2]: 0; a: 1',
+            'layer_base': 'Labels',
+            'layer_name': 'Labels',
+            'plugin': '',
+            'source_type': '',
+        },
+        '',
+    )
+    viewer.tooltip.visible = True
+    assert viewer._calc_status_from_cursor() == (
+        {
+            'coordinates': ' [1 2]: 0; a: 1',
+            'layer_base': 'Labels',
+            'layer_name': 'Labels',
+            'plugin': '',
+            'source_type': '',
+        },
+        'a: 1',
+    )
+    viewer.update_status_from_cursor()
+    assert viewer.status == {
+        'coordinates': ' [1 2]: 0; a: 1',
+        'layer_base': 'Labels',
+        'layer_name': 'Labels',
+        'plugin': '',
+        'source_type': '',
+    }
+    assert viewer.tooltip.text == 'a: 1'

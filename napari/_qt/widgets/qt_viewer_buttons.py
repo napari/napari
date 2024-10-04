@@ -1,9 +1,10 @@
 import warnings
-from functools import wraps
+from functools import partial, wraps
 from typing import TYPE_CHECKING
 
-from qtpy.QtCore import QPoint, Qt
+from qtpy.QtCore import QEvent, QPoint, Qt
 from qtpy.QtWidgets import (
+    QApplication,
     QFormLayout,
     QFrame,
     QHBoxLayout,
@@ -23,6 +24,20 @@ from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from napari.viewer import ViewerModel
+
+
+def add_new_points(viewer):
+    viewer.add_points(
+        ndim=max(viewer.dims.ndim, 2),
+        scale=viewer.layers.extent.step,
+    )
+
+
+def add_new_shapes(viewer):
+    viewer.add_shapes(
+        ndim=max(viewer.dims.ndim, 2),
+        scale=viewer.layers.extent.step,
+    )
 
 
 class QtLayerButtons(QFrame):
@@ -59,19 +74,13 @@ class QtLayerButtons(QFrame):
         self.newPointsButton = QtViewerPushButton(
             'new_points',
             trans._('New points layer'),
-            lambda: self.viewer.add_points(
-                ndim=max(self.viewer.dims.ndim, 2),
-                scale=self.viewer.layers.extent.step,
-            ),
+            partial(add_new_points, self.viewer),
         )
 
         self.newShapesButton = QtViewerPushButton(
             'new_shapes',
             trans._('New shapes layer'),
-            lambda: self.viewer.add_shapes(
-                ndim=max(self.viewer.dims.ndim, 2),
-                scale=self.viewer.layers.extent.step,
-            ),
+            partial(add_new_shapes, self.viewer),
         )
         self.newLabelsButton = QtViewerPushButton(
             'new_labels',
@@ -133,8 +142,14 @@ class QtViewerButtons(QFrame):
         rdb.customContextMenuRequested.connect(self._open_roll_popup)
 
         self.transposeDimsButton = QtViewerPushButton(
-            'transpose', action='napari:transpose_axes'
+            'transpose',
+            action='napari:transpose_axes',
+            extra_tooltip_text=trans._(
+                '\nAlt/option-click to rotate visible axes'
+            ),
         )
+        self.transposeDimsButton.installEventFilter(self)
+
         self.resetViewButton = QtViewerPushButton(
             'home', action='napari:reset_view'
         )
@@ -175,6 +190,18 @@ class QtViewerButtons(QFrame):
         layout.addStretch(0)
         self.setLayout(layout)
 
+    def eventFilter(self, qobject, event):
+        """Have Alt/Option key rotate layers with the transpose button."""
+        modifiers = QApplication.keyboardModifiers()
+        if (
+            modifiers == Qt.AltModifier
+            and qobject == self.transposeDimsButton
+            and event.type() == QEvent.MouseButtonPress
+        ):
+            action_manager.trigger('napari:rotate_layers')
+            return True
+        return False
+
     def open_perspective_popup(self):
         """Show a slider to control the viewer `camera.perspective`."""
         if self.viewer.dims.ndisplay != 3:
@@ -204,16 +231,19 @@ class QtViewerButtons(QFrame):
         if self.viewer.dims.ndisplay != 2:
             return
 
-        dim_sorter = QtDimsSorter(self.viewer, self)
+        # popup
+        pop = QtPopup(self)
+
+        # dims sorter widget
+        dim_sorter = QtDimsSorter(self.viewer.dims, pop)
         dim_sorter.setObjectName('dim_sorter')
 
         # make layout
         layout = QHBoxLayout()
         layout.addWidget(dim_sorter)
-
-        # popup and show
-        pop = QtPopup(self)
         pop.frame.setLayout(layout)
+
+        # show popup
         pop.show_above_mouse()
 
     def _open_grid_popup(self):
@@ -384,7 +414,12 @@ class QtViewerPushButton(QPushButton):
 
     @_omit_viewer_args
     def __init__(
-        self, button_name: str, tooltip: str = '', slot=None, action: str = ''
+        self,
+        button_name: str,
+        tooltip: str = '',
+        slot=None,
+        action: str = '',
+        extra_tooltip_text: str = '',
     ) -> None:
         super().__init__()
 
@@ -393,4 +428,6 @@ class QtViewerPushButton(QPushButton):
         if slot is not None:
             self.clicked.connect(slot)
         if action:
-            action_manager.bind_button(action, self)
+            action_manager.bind_button(
+                action, self, extra_tooltip_text=extra_tooltip_text
+            )

@@ -2,7 +2,7 @@
 # from napari.utils.events import Event
 # from napari.utils.colormaps import AVAILABLE_COLORMAPS
 
-from typing import Dict, List, Optional, Union
+from typing import Any, Optional, Union
 from warnings import warn
 
 import numpy as np
@@ -24,27 +24,24 @@ class Tracks(Layer):
         Coordinates for N points in D+1 dimensions. ID,T,(Z),Y,X. The first
         axis is the integer ID of the track. D is either 3 or 4 for planar
         or volumetric timeseries respectively.
-    features : Dataframe-like
-        Features table where each row corresponds to a point and each column
-        is a feature.
-    properties : dict {str: array (N,)}, DataFrame
-        Properties for each point. Each property should be an array of length N,
-        where N is the number of points.
-    graph : dict {int: list}
-        Graph representing associations between tracks. Dictionary defines the
-        mapping between a track ID and the parents of the track. This can be
-        one (the track has one parent, and the parent has >=1 child) in the
-        case of track splitting, or more than one (the track has multiple
-        parents, but only one child) in the case of track merging.
-        See examples/tracks_3d_with_graph.py
+    affine : n-D array or napari.utils.transforms.Affine
+        (N+1, N+1) affine transformation matrix in homogeneous coordinates.
+        The first (N, N) entries correspond to a linear transform and
+        the final column is a length N translation vector and a 1 or a napari
+        `Affine` transform object. Applied as an extra transform on top of the
+        provided scale, rotate, and shear values.
+    axis_labels : tuple of str, optional
+        Dimension names of the layer data.
+        If not provided, axis_labels will be set to (..., 'axis -2', 'axis -1').
+    blending : str
+        One of a list of preset blending modes that determines how RGB and
+        alpha values of the layer visual get mixed. Allowed values are
+        {'opaque', 'translucent', and 'additive'}.
+    cache : bool
+        Whether slices of out-of-core datasets should be cached upon retrieval.
+        Currently, this only applies to dask arrays.
     color_by : str
         Track property (from property keys) by which to color vertices.
-    tail_width : float
-        Width of the track tails in pixels.
-    tail_length : float
-        Length of the positive (backward in time) tails in units of time.
-    head_length : float
-        Length of the positive (forward in time) tails in units of time.
     colormap : str
         Default colormap to use to set vertex colors. Specialized colormaps,
         relating to specified properties can be passed to the layer via
@@ -53,41 +50,56 @@ class Tracks(Layer):
         Optional dictionary mapping each property to a colormap for that
         property. This allows each property to be assigned a specific colormap,
         rather than having a global colormap for everything.
-    name : str
-        Name of the layer.
+    experimental_clipping_planes : list of dicts, list of ClippingPlane, or ClippingPlaneList
+        Each dict defines a clipping plane in 3D in data coordinates.
+        Valid dictionary keys are {'position', 'normal', and 'enabled'}.
+        Values on the negative side of the normal are discarded if the plane is enabled.
+    features : Dataframe-like
+        Features table where each row corresponds to a point and each column
+        is a feature.
+    graph : dict {int: list}
+        Graph representing associations between tracks. Dictionary defines the
+        mapping between a track ID and the parents of the track. This can be
+        one (the track has one parent, and the parent has >=1 child) in the
+        case of track splitting, or more than one (the track has multiple
+        parents, but only one child) in the case of track merging.
+        See examples/tracks_3d_with_graph.py
+    head_length : float
+        Length of the positive (forward in time) tails in units of time.
     metadata : dict
         Layer metadata.
-    scale : tuple of float
-        Scale factors for the layer.
-    translate : tuple of float
-        Translation values for the layer.
+    name : str
+        Name of the layer.
+    opacity : float
+        Opacity of the layer visual, between 0.0 and 1.0.
+    projection_mode : str
+        How data outside the viewed dimensions but inside the thick Dims slice will
+        be projected onto the viewed dimenions.
+    properties : dict {str: array (N,)}, DataFrame
+        Properties for each point. Each property should be an array of length N,
+        where N is the number of points.
     rotate : float, 3-tuple of float, or n-D array.
         If a float convert into a 2D rotation matrix using that value as an
         angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
         pitch, roll convention. Otherwise assume an nD rotation. Angles are
         assumed to be in degrees. They can be converted from radians with
         np.degrees if needed.
+    scale : tuple of float
+        Scale factors for the layer.
     shear : 1-D array or n-D array
         Either a vector of upper triangular values, or an nD shear matrix with
         ones along the main diagonal.
-    affine : n-D array or napari.utils.transforms.Affine
-        (N+1, N+1) affine transformation matrix in homogeneous coordinates.
-        The first (N, N) entries correspond to a linear transform and
-        the final column is a length N translation vector and a 1 or a napari
-        `Affine` transform object. Applied as an extra transform on top of the
-        provided scale, rotate, and shear values.
-    opacity : float
-        Opacity of the layer visual, between 0.0 and 1.0.
-    blending : str
-        One of a list of preset blending modes that determines how RGB and
-        alpha values of the layer visual get mixed. Allowed values are
-        {'opaque', 'translucent', and 'additive'}.
+    tail_length : float
+        Length of the positive (backward in time) tails in units of time.
+    tail_width : float
+        Width of the track tails in pixels.
+    translate : tuple of float
+        Translation values for the layer.
+    units : tuple of str or pint.Unit, optional
+        Units of the layer data in world coordinates.
+        If not provided, the default units are assumed to be pixels.
     visible : bool
         Whether the layer visual is currently being displayed.
-    cache : bool
-        Whether slices of out-of-core datasets should be cached upon retrieval.
-        Currently, this only applies to dask arrays.
-
     """
 
     # The max number of tracks that will ever be used to render the thumbnail
@@ -98,28 +110,30 @@ class Tracks(Layer):
         self,
         data,
         *,
-        features=None,
-        properties=None,
-        graph=None,
-        tail_width: int = 2,
-        tail_length: int = 30,
-        head_length: int = 0,
-        name=None,
-        metadata=None,
-        scale=None,
-        translate=None,
-        rotate=None,
-        shear=None,
         affine=None,
-        opacity=1.0,
+        axis_labels=None,
         blending='additive',
-        visible=True,
-        colormap='turbo',
-        color_by='track_id',
-        colormaps_dict=None,
         cache=True,
+        color_by='track_id',
+        colormap='turbo',
+        colormaps_dict=None,
         experimental_clipping_planes=None,
+        features=None,
+        graph=None,
+        head_length: int = 0,
+        metadata=None,
+        name=None,
+        opacity=1.0,
         projection_mode='none',
+        properties=None,
+        rotate=None,
+        scale=None,
+        shear=None,
+        tail_length: int = 30,
+        tail_width: int = 2,
+        translate=None,
+        units=None,
+        visible=True,
     ) -> None:
         # if not provided with any data, set up an empty layer in 2D+t
         # otherwise convert the data to an np.ndarray
@@ -131,19 +145,21 @@ class Tracks(Layer):
         super().__init__(
             data,
             ndim,
-            name=name,
-            metadata=metadata,
-            scale=scale,
-            translate=translate,
-            rotate=rotate,
-            shear=shear,
             affine=affine,
-            opacity=opacity,
+            axis_labels=axis_labels,
             blending=blending,
-            visible=visible,
             cache=cache,
             experimental_clipping_planes=experimental_clipping_planes,
+            name=name,
+            metadata=metadata,
+            opacity=opacity,
             projection_mode=projection_mode,
+            rotate=rotate,
+            scale=scale,
+            shear=shear,
+            translate=translate,
+            units=units,
+            visible=visible,
         )
 
         self.events.add(
@@ -219,12 +235,12 @@ class Tracks(Layer):
         """Determine number of dimensions of the layer."""
         return self._manager.ndim
 
-    def _get_state(self):
+    def _get_state(self) -> dict[str, Any]:
         """Get dictionary of layer state.
 
         Returns
         -------
-        state : dict
+        state : dict of str to Any
             Dictionary of layer state.
         """
         state = self._get_base_state()
@@ -244,7 +260,7 @@ class Tracks(Layer):
         )
         return state
 
-    def _set_view_slice(self):
+    def _set_view_slice(self) -> None:
         """Sets the view given the indices to slice with."""
 
         # if the displayed dims have changed, update the shader data
@@ -258,7 +274,7 @@ class Tracks(Layer):
 
         return
 
-    def _get_value(self, position) -> int:
+    def _get_value(self, position) -> Optional[int]:
         """Value of the data at a position in data coordinates.
 
         Use a kd-tree to lookup the ID of the nearest tree.
@@ -273,9 +289,12 @@ class Tracks(Layer):
         value : int or None
             Index of track that is at the current coordinate if any.
         """
-        return self._manager.get_value(np.array(position))
+        val = self._manager.get_value(np.array(position))
+        if val is None:
+            return None
+        return int(val)
 
-    def _update_thumbnail(self):
+    def _update_thumbnail(self) -> None:
         """Update thumbnail with current points and colors."""
         colormapped = np.zeros(self._thumbnail_shape)
         colormapped[..., 3] = 1
@@ -296,7 +315,7 @@ class Tracks(Layer):
                 points = self._view_data[thumbnail_indices]
             else:
                 points = self._view_data
-                thumbnail_indices = range(len(self._view_data))
+                thumbnail_indices = np.array(range(len(self._view_data)))
 
             # get the track coords here
             coords = np.floor(
@@ -307,6 +326,8 @@ class Tracks(Layer):
             )
 
             # modulate track colors as per colormap/current_time
+            assert self.track_times is not None
+            assert self.current_time is not None
             colors = self.track_colors[thumbnail_indices]
             times = self.track_times[thumbnail_indices]
             alpha = (self.head_length + self.current_time - times) / (
@@ -317,7 +338,8 @@ class Tracks(Layer):
             colormapped[coords[:, 1], coords[:, 0]] = colors
 
         colormapped[..., 3] *= self.opacity
-        self.thumbnail = colormapped
+        colormapped[np.isnan(colormapped)] = 0
+        self.thumbnail = colormapped.astype(np.uint8)
 
     @property
     def _view_data(self):
@@ -344,7 +366,7 @@ class Tracks(Layer):
         return data[:, (2, 1, 0)]  # z, y, x -> x, y, z
 
     @property
-    def current_time(self):
+    def current_time(self) -> Optional[int]:
         """current time according to the first dimension"""
         # TODO(arl): get the correct index here
         time_step = self._data_slice.point[0]
@@ -368,7 +390,7 @@ class Tracks(Layer):
         return self._manager.data
 
     @data.setter
-    def data(self, data: np.ndarray):
+    def data(self, data: np.ndarray) -> None:
         """set the data and build the vispy arrays for display"""
         # set the data and build the tracks
         self._manager.data = data
@@ -390,7 +412,7 @@ class Tracks(Layer):
         self._reset_editable()
 
     @property
-    def features(self):
+    def features(self) -> pd.DataFrame:
         """Dataframe-like features table.
 
         It is an implementation detail that this is a `pandas.DataFrame`. In the future,
@@ -410,34 +432,34 @@ class Tracks(Layer):
     @features.setter
     def features(
         self,
-        features: Union[Dict[str, np.ndarray], pd.DataFrame],
+        features: Union[dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
         self._manager.features = features
         self._check_color_by_in_features()
         self.events.properties()
 
     @property
-    def properties(self) -> Dict[str, np.ndarray]:
+    def properties(self) -> dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}: Properties for each track."""
         return self._manager.properties
 
     @properties.setter
-    def properties(self, properties: Dict[str, np.ndarray]):
+    def properties(self, properties: dict[str, np.ndarray]) -> None:
         """set track properties"""
         self.features = properties
 
     @property
-    def properties_to_color_by(self) -> List[str]:
+    def properties_to_color_by(self) -> list[str]:
         """track properties that can be used for coloring etc..."""
         return list(self.properties.keys())
 
     @property
-    def graph(self) -> Optional[Dict[int, List[int]]]:
+    def graph(self) -> Optional[dict[int, list[int]]]:
         """dict {int: list}: Graph representing associations between tracks."""
         return self._manager.graph
 
     @graph.setter
-    def graph(self, graph: Dict[int, Union[int, List[int]]]):
+    def graph(self, graph: dict[int, Union[int, list[int]]]) -> None:
         """Set the track graph."""
         # Ignored type, because mypy can't handle different signatures
         # on getters and setters; see https://github.com/python/mypy/issues/3004
@@ -451,7 +473,7 @@ class Tracks(Layer):
         return self._tail_width
 
     @tail_width.setter
-    def tail_width(self, tail_width: float):
+    def tail_width(self, tail_width: float) -> None:
         self._tail_width: float = np.clip(tail_width, 0.5, self._max_width)
         self.events.tail_width()
 
@@ -461,7 +483,7 @@ class Tracks(Layer):
         return self._tail_length
 
     @tail_length.setter
-    def tail_length(self, tail_length: int):
+    def tail_length(self, tail_length: int) -> None:
         if tail_length > self._max_length:
             self._max_length = tail_length
         self._tail_length: int = tail_length
@@ -472,7 +494,7 @@ class Tracks(Layer):
         return self._head_length
 
     @head_length.setter
-    def head_length(self, head_length: int):
+    def head_length(self, head_length: int) -> None:
         if head_length > self._max_length:
             self._max_length = head_length
         self._head_length: int = head_length
@@ -484,10 +506,12 @@ class Tracks(Layer):
         return self._display_id
 
     @display_id.setter
-    def display_id(self, value: bool):
+    def display_id(self, value: bool) -> None:
         self._display_id = value
         self.events.display_id()
-        self.refresh()
+        # TODO: this refresh is only here to trigger setting the id text...
+        #       a bit overkill? But maybe for a future PR.
+        self.refresh(extent=False, thumbnail=False)
 
     @property
     def display_tail(self) -> bool:
@@ -495,7 +519,7 @@ class Tracks(Layer):
         return self._display_tail
 
     @display_tail.setter
-    def display_tail(self, value: bool):
+    def display_tail(self, value: bool) -> None:
         self._display_tail = value
         self.events.display_tail()
 
@@ -505,7 +529,7 @@ class Tracks(Layer):
         return self._display_graph
 
     @display_graph.setter
-    def display_graph(self, value: bool):
+    def display_graph(self, value: bool) -> None:
         self._display_graph = value
         self.events.display_graph()
 
@@ -514,7 +538,7 @@ class Tracks(Layer):
         return self._color_by
 
     @color_by.setter
-    def color_by(self, color_by: str):
+    def color_by(self, color_by: str) -> None:
         """set the property to color vertices by"""
         if color_by not in self.properties_to_color_by:
             raise ValueError(
@@ -533,7 +557,7 @@ class Tracks(Layer):
         return self._colormap
 
     @colormap.setter
-    def colormap(self, colormap: str):
+    def colormap(self, colormap: str) -> None:
         """set the default colormap"""
         if colormap not in AVAILABLE_COLORMAPS:
             raise ValueError(
@@ -548,17 +572,17 @@ class Tracks(Layer):
         self.events.colormap()
 
     @property
-    def colormaps_dict(self) -> Dict[str, Colormap]:
+    def colormaps_dict(self) -> dict[str, Colormap]:
         return self._colormaps_dict
 
     # Ignored type because mypy doesn't recognise colormaps_dict as a property
     # TODO: investigate and fix this - not sure why this is the case?
     @colormaps_dict.setter  # type: ignore[attr-defined]
-    def colomaps_dict(self, colormaps_dict: Dict[str, Colormap]):
+    def colomaps_dict(self, colormaps_dict: dict[str, Colormap]) -> None:
         # validate the dictionary entries?
         self._colormaps_dict = colormaps_dict
 
-    def _recolor_tracks(self):
+    def _recolor_tracks(self) -> None:
         """recolor the tracks"""
 
         # this catch prevents a problem coloring the tracks if the data is
@@ -596,7 +620,7 @@ class Tracks(Layer):
         return self._track_colors
 
     @property
-    def graph_connex(self) -> np.ndarray:
+    def graph_connex(self) -> Optional[np.ndarray]:
         """vertex connections for drawing the graph"""
         return self._manager.graph_connex
 
@@ -613,6 +637,7 @@ class Tracks(Layer):
     @property
     def track_labels(self) -> tuple:
         """return track labels at the current time"""
+        assert self.current_time is not None
         labels, positions = self._manager.track_labels(self.current_time)
 
         # if there are no labels, return empty for vispy
@@ -622,7 +647,7 @@ class Tracks(Layer):
         padded_positions = self._pad_display_data(positions)
         return labels, padded_positions
 
-    def _check_color_by_in_features(self):
+    def _check_color_by_in_features(self) -> None:
         if self._color_by not in self.features.columns:
             warn(
                 (

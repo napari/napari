@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Callable, Optional, Sequence, Tuple, Union
+from collections.abc import Sequence
+from typing import Callable, Optional, Union
 
 from qtpy.QtCore import (
     QEasingCurve,
@@ -24,15 +25,15 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 from superqt import QElidingLabel, ensure_main_thread
+from superqt.utils import CodeSyntaxHighlight
 
-from napari._qt.code_syntax_highlight import Pylighter
 from napari._qt.qt_resources import QColoredSVGIcon
 from napari.settings import get_settings
 from napari.utils.notifications import Notification, NotificationSeverity
 from napari.utils.theme import get_theme
 from napari.utils.translations import trans
 
-ActionSequence = Sequence[Tuple[str, Callable[['NapariQtNotification'], None]]]
+ActionSequence = Sequence[tuple[str, Callable[['NapariQtNotification'], None]]]
 
 
 class NapariQtNotification(QDialog):
@@ -404,9 +405,11 @@ def _debug_tb(tb):
     QApplication.processEvents()
     QApplication.processEvents()
     with event_hook_removed():
-        print("Entering debugger. Type 'q' to return to napari.\n")
+        print(  # noqa: T201
+            "Entering debugger. Type 'q' to return to napari.\n"
+        )
         pdb.post_mortem(tb)
-        print('\nDebugging finished.  Napari active again.')
+        print('\nDebugging finished. Napari active again.')  # noqa: T201
 
 
 class TracebackDialog(QDialog):
@@ -418,7 +421,9 @@ class TracebackDialog(QDialog):
         self.resize(650, 270)
         text = QTextEdit()
         theme = get_theme(get_settings().appearance.theme)
-        _highlight = Pylighter(text.document(), 'python', theme.syntax_style)
+        _highlight = CodeSyntaxHighlight(
+            text.document(), 'python', theme.syntax_style
+        )
         text.setText(exception.as_text())
         text.setReadOnly(True)
         self.btn = QPushButton(trans._('Enter Debugger'))

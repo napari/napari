@@ -57,3 +57,9 @@ class EventedModelSuite:
         self.model.events.e.connect(long_connection)
 
         self.model.d = 15
+
+
+if __name__ == '__main__':
+    from utils import run_benchmark
+
+    run_benchmark()

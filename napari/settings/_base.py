@@ -3,10 +3,10 @@ from __future__ import annotations
 import contextlib
 import logging
 import os
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple, cast
+from typing import TYPE_CHECKING, Optional, cast
 from warnings import warn
 
 from napari._pydantic_compat import (
@@ -24,7 +24,8 @@ from napari.utils.translations import trans
 _logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from typing import AbstractSet, Any, Union
+    from collections.abc import Set as AbstractSet
+    from typing import Any, Union
 
     from napari._pydantic_compat import (
         EnvSettingsSource,
@@ -34,8 +35,10 @@ if TYPE_CHECKING:
 
     IntStr = Union[int, str]
     AbstractSetIntStr = AbstractSet[IntStr]
-    DictStrAny = Dict[str, Any]
+    DictStrAny = dict[str, Any]
     MappingIntStrAny = Mapping[IntStr, Any]
+
+Dict = dict  # rename, because EventedSettings has method dict
 
 
 class EventedSettings(BaseSettings, EventedModel):
@@ -46,6 +49,10 @@ class EventedSettings(BaseSettings, EventedModel):
     """
 
     # provide config_path=None to prevent reading from disk.
+
+    class Config(EventedModel.Config):
+        pass
+
     def __init__(self, **values: Any) -> None:
         super().__init__(**values)
         self.events.add(changed=None)
@@ -232,7 +239,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
             init_settings: SettingsSourceCallable,
             env_settings: EnvSettingsSource,
             file_secret_settings: SettingsSourceCallable,
-        ) -> Tuple[SettingsSourceCallable, ...]:
+        ) -> tuple[SettingsSourceCallable, ...]:
             """customise the way data is loaded.
 
             This does 2 things:
@@ -246,17 +253,19 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
             the return list to change the priority of sources.
             """
             cls._env_settings = nested_env_settings(env_settings)
-            return (
+            return (  # type: ignore[return-value]
                 init_settings,
                 cls._env_settings,
                 cls._config_file_settings_source,
                 file_secret_settings,
             )
+            # Even when EventedConfigFileSettings is a subclass of BaseSettings,
+            # mypy do not see this
 
         @classmethod
         def _config_file_settings_source(
             cls, settings: EventedConfigFileSettings
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             return config_file_settings_source(settings)
 
 
@@ -282,7 +291,7 @@ def nested_env_settings(
     nesting as well.
     """
 
-    def _inner(settings: BaseSettings) -> Dict[str, Any]:
+    def _inner(settings: BaseSettings) -> dict[str, Any]:
         # first call the original implementation
         d = super_eset(settings)
 
@@ -311,31 +320,33 @@ def nested_env_settings(
                     # otherwise, look for the standard nested env var
                     else:
                         env_val = env_vars.get(f'{env_name}_{subf.name}')
-                        if env_val is not None:
-                            break
 
-                is_complex, all_json_fail = super_eset.field_is_complex(subf)
-                if env_val is not None and is_complex:
-                    try:
-                        env_val = settings.__config__.json_loads(env_val)
-                    except ValueError as e:
-                        if not all_json_fail:
-                            msg = trans._(
-                                'error parsing JSON for "{env_name}"',
-                                deferred=True,
-                                env_name=env_name,
+                    is_complex, all_json_fail = super_eset.field_is_complex(
+                        subf
+                    )
+                    if env_val is not None and is_complex:
+                        try:
+                            env_val = settings.__config__.json_loads(env_val)
+                        except ValueError as e:
+                            if not all_json_fail:
+                                msg = trans._(
+                                    'error parsing JSON for "{env_name}"',
+                                    deferred=True,
+                                    env_name=env_name,
+                                )
+                                raise SettingsError(msg) from e
+
+                        if isinstance(env_val, dict):
+                            explode = super_eset.explode_env_vars(
+                                field, env_vars
                             )
-                            raise SettingsError(msg) from e
+                            env_val = deep_update(env_val, explode)
 
-                    if isinstance(env_val, dict):
-                        explode = super_eset.explode_env_vars(field, env_vars)
-                        env_val = deep_update(env_val, explode)
-
-                # if we found an env var, store it and return it
-                if env_val is not None:
-                    if field.alias not in d:
-                        d[field.alias] = {}
-                    d[field.alias][subf.name] = env_val
+                    # if we found an env var, store it and return it
+                    if env_val is not None:
+                        if field.alias not in d:
+                            d[field.alias] = {}
+                        d[field.alias][subf.name] = env_val
         return d
 
     return _inner
@@ -343,7 +354,7 @@ def nested_env_settings(
 
 def config_file_settings_source(
     settings: EventedConfigFileSettings,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Read config files during init of an EventedConfigFileSettings obj.
 
     The two important values are the `settings._config_path`
@@ -369,7 +380,7 @@ def config_file_settings_source(
     default_cfg = getattr(default_cfg, 'default', None)
 
     # if the config has a `sources` list, read those too and merge.
-    sources: List[str] = list(getattr(settings.__config__, 'sources', []))
+    sources: list[str] = list(getattr(settings.__config__, 'sources', []))
     if config_path:
         sources.append(config_path)
     if not sources:
@@ -458,7 +469,7 @@ def config_file_settings_source(
     return data
 
 
-def _remove_bad_keys(data: dict, keys: List[Tuple[Union[int, str], ...]]):
+def _remove_bad_keys(data: dict, keys: list[tuple[Union[int, str], ...]]):
     """Remove list of keys (as string tuples) from dict (in place).
 
     Parameters

@@ -1,15 +1,15 @@
 import math
-from typing import TYPE_CHECKING, Dict, Tuple
+from typing import TYPE_CHECKING
 
 import numpy as np
 from vispy.color import Colormap as VispyColormap
 from vispy.gloo import Texture2D
 from vispy.scene.node import Node
 
-from napari._vispy.layers.image import (
+from napari._vispy.layers.scalar_field import (
     _DTYPE_TO_VISPY_FORMAT,
     _VISPY_FORMAT_TO_DTYPE,
-    ImageLayerNode,
+    ScalarFieldLayerNode,
     VispyScalarFieldBaseLayer,
     get_dtype_from_vispy_texture_format,
 )
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from napari.layers import Labels
 
 
-ColorTuple = Tuple[float, float, float, float]
+ColorTuple = tuple[float, float, float, float]
 
 
 auto_lookup_shader_uint8 = """
@@ -146,7 +146,7 @@ class DirectLabelVispyColormap(VispyColormap):
 
 
 def build_textures_from_dict(
-    color_dict: Dict[int, ColorTuple], max_size: int
+    color_dict: dict[int, ColorTuple], max_size: int
 ) -> np.ndarray:
     """This code assumes that the keys in the color_dict are sequential from 0.
 
@@ -206,6 +206,9 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
         self.layer.events.labels_update.connect(self._on_partial_labels_update)
         self.layer.events.selected_label.connect(self._on_colormap_change)
         self.layer.events.show_selected_label.connect(self._on_colormap_change)
+        self.layer.events.iso_gradient_mode.connect(
+            self._on_iso_gradient_mode_change
+        )
         self.layer.events.data.connect(self._on_colormap_change)
         # as we generate colormap texture based on the data type, we need to
         # update it when the data type changes
@@ -291,6 +294,10 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
         else:
             self.node.cmap = VispyColormap(*colormap)
 
+    def _on_iso_gradient_mode_change(self):
+        if isinstance(self.node, VolumeNode):
+            self.node.iso_gradient_mode = self.layer.iso_gradient_mode
+
     def _on_partial_labels_update(self, event):
         if not self.layer.loaded:
             return
@@ -299,6 +306,7 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
         ndims = len(event.offset)
 
         if self.node._texture.shape[:ndims] != raw_displayed.shape[:ndims]:
+            # TODO: I'm confused by this whole process; should this refresh be changed?
             self.layer.refresh()
             return
 
@@ -312,7 +320,7 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
         self._on_colormap_change()
 
 
-class LabelLayerNode(ImageLayerNode):
+class LabelLayerNode(ScalarFieldLayerNode):
     def __init__(self, custom_node: Node = None, texture_format=None):
         self._custom_node = custom_node
         self._setup_nodes(texture_format)

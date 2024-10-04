@@ -7,8 +7,8 @@ from napari.plugins import exceptions
 
 
 # monkeypatch fixture is from pytest
-@pytest.mark.parametrize('as_html', (True, False), ids=['as_html', 'as_text'])
-@pytest.mark.parametrize('cgitb', (True, False), ids=['cgitb', 'ipython'])
+@pytest.mark.parametrize('as_html', [True, False], ids=['as_html', 'as_text'])
+@pytest.mark.parametrize('cgitb', [True, False], ids=['cgitb', 'ipython'])
 def test_format_exceptions(cgitb, as_html, monkeypatch):
     if cgitb:
         monkeypatch.setitem(sys.modules, 'IPython.core.ultratb', None)

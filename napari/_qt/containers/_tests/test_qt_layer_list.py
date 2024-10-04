@@ -1,5 +1,3 @@
-from typing import Tuple
-
 import numpy as np
 from qtpy.QtCore import QModelIndex, QPoint, Qt
 from qtpy.QtWidgets import QLineEdit, QStyleOptionViewItem
@@ -167,14 +165,18 @@ def test_contextual_menu_updates_selection_ctx_keys(monkeypatch, qtbot):
     delegate.show_context_menu(
         index, view.model(), QPoint(10, 10), parent=view
     )
-    assert layer_list._selection_ctx_keys.selected_empty_shapes_layer
+    assert not delegate._context_menu.findAction(
+        'napari.layer.convert_to_labels'
+    ).isEnabled()
 
     layer_list[0].add(np.array(([0, 0], [0, 10], [10, 10], [10, 0])))
     assert layer_list[0].data
     delegate.show_context_menu(
         index, view.model(), QPoint(10, 10), parent=view
     )
-    assert not layer_list._selection_ctx_keys.selected_empty_shapes_layer
+    assert delegate._context_menu.findAction(
+        'napari.layer.convert_to_labels'
+    ).isEnabled()
 
 
 def make_qt_layer_list_with_delegate(qtbot):
@@ -191,7 +193,7 @@ def make_qt_layer_list_with_delegate(qtbot):
     return image1, image2, image3, layers, view, delegate
 
 
-def make_qt_layer_list_with_layer(qtbot) -> Tuple[QtLayerList, Image]:
+def make_qt_layer_list_with_layer(qtbot) -> tuple[QtLayerList, Image]:
     image = Image(np.zeros((4, 3)))
     layers = LayerList([image])
     view = QtLayerList(layers)

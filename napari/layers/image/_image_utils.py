@@ -1,7 +1,7 @@
-"""guess_rgb, guess_multiscale, guess_labels.
-"""
+"""guess_rgb, guess_multiscale, guess_labels."""
 
-from typing import Any, Callable, Literal, Sequence, Tuple, Union
+from collections.abc import Sequence
+from typing import Any, Callable, Literal, Union
 
 import numpy as np
 import numpy.typing as npt
@@ -12,10 +12,11 @@ from napari.layers.image._image_constants import ImageProjectionMode
 from napari.utils.translations import trans
 
 
-def guess_rgb(shape: Tuple[int, ...]) -> bool:
+def guess_rgb(shape: tuple[int, ...], min_side_len: int = 30) -> bool:
     """Guess if the passed shape comes from rgb data.
 
-    If last dim is 3 or 4 assume the data is rgb, including rgba.
+    If last dim is 3 or 4 and other dims are larger (>30), assume the data is
+    rgb, including rgba.
 
     Parameters
     ----------
@@ -29,13 +30,18 @@ def guess_rgb(shape: Tuple[int, ...]) -> bool:
     """
     ndim = len(shape)
     last_dim = shape[-1]
+    viewed_dims = shape[-3:-1]
 
-    return ndim > 2 and last_dim in (3, 4)
+    return (
+        ndim > 2
+        and last_dim in (3, 4)
+        and all(d > min_side_len for d in viewed_dims)
+    )
 
 
 def guess_multiscale(
     data: Union[MultiScaleData, list, tuple],
-) -> Tuple[bool, Union[LayerDataProtocol, Sequence[LayerDataProtocol]]]:
+) -> tuple[bool, Union[LayerDataProtocol, Sequence[LayerDataProtocol]]]:
     """Guess whether the passed data is multiscale, process it accordingly.
 
     If shape of arrays along first axis is strictly decreasing, the data is
@@ -111,8 +117,8 @@ def guess_labels(data: Any) -> Literal['labels', 'image']:
 
 
 def project_slice(
-    data: npt.NDArray, axis: Tuple[int, ...], mode: ImageProjectionMode
-) -> float:
+    data: npt.NDArray, axis: tuple[int, ...], mode: ImageProjectionMode
+) -> npt.NDArray:
     """Project a thick slice along axis based on mode."""
     func: Callable
     if mode == ImageProjectionMode.SUM:

@@ -31,7 +31,7 @@ def test_bind_key():
     def spam():
         return 'SPAM'
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='already used'):
         bind_key(kb, 'A', spam)
 
     bind_key(kb, 'A', spam, overwrite=True)

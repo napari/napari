@@ -42,7 +42,10 @@ def test_docstring(layer):
     # check summary section
     method_summary = ' '.join(method_doc['Summary'])  # join multi-line summary
 
-    summary_format = 'Add an? .+? layer to the layer list.'
+    if name == 'Image':
+        summary_format = 'Add one or more Image layers to the layer list.'
+    else:
+        summary_format = 'Add an? .+? layers? to the layer list.'
 
     assert re.match(
         summary_format, method_summary
@@ -125,7 +128,7 @@ def test_signature(layer):
 
 
 # plugin_manager fixture is added to prevent errors due to installed plugins
-@pytest.mark.parametrize('layer_type, data, ndim', layer_test_data)
+@pytest.mark.parametrize(('layer_type', 'data', 'ndim'), layer_test_data)
 def test_view(qtbot, napari_plugin_manager, layer_type, data, ndim):
     np.random.seed(0)
     viewer = getattr(napari, f'view_{layer_type.__name__.lower()}')(
