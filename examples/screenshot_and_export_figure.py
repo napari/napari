@@ -123,20 +123,22 @@ pos[:, 1, 0] = 2 * radius_space * np.cos(phi_space)
 pos[:, 1, 1] = 2 * radius_space * np.sin(phi_space)
 
 # add the vectors
-layer = viewer.add_vectors(pos, edge_width=2)
+pos_layer = viewer.add_vectors(pos, edge_width=2)
 
 # add scale_bar with background box
 viewer.scale_bar.visible = True
 viewer.scale_bar.box = True
 viewer.scale_bar.position = 'top_right'
 
-# take screenshot in light theme
+# take screenshots in light theme to show difference in canvas margins
 viewer.theme = 'light'
 screenshot = viewer.screenshot()
 figure = viewer.export_figure()
+# optionally, save the exported figure: viewer.export_figure(path='export_figure.png')
+# or screenshot: viewer.screenshot(path='screenshot.png')
 
 # export a figure without the 'pos' layer.
-viewer.layers.remove(layer)
+viewer.layers.remove(pos_layer)
 figure_no_pos = viewer.export_figure()
 
 # switch back to dark theme and remove original layers
@@ -149,7 +151,6 @@ viewer.add_image(figure_no_pos, rgb=True, name='figure_no_pos')
 viewer.add_image(figure, rgb=True, name='figure')
 viewer.add_image(screenshot, rgb=True, name='screenshot')
 viewer.grid.enabled = True
-viewer.grid.shape = (1, -1)
 
 if __name__ == '__main__':
     napari.run()
