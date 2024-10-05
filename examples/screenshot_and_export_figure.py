@@ -1,6 +1,6 @@
 """
 Comparison of Screenshot and Figure Export
-=============
+==================================
 
 Display multiple layer types, add scale bar, and take a screenshot or export a
 figure from a 'light' canvas. Then switch to a 'dark' canvas and display the
@@ -124,7 +124,7 @@ pos[:, 0, 1] = radius_space * np.sin(phi_space) + 256
 pos[:, 1, 0] = 2 * radius_space * np.cos(phi_space)
 pos[:, 1, 1] = 2 * radius_space * np.sin(phi_space)
 
-# add the vectors
+# add the vectors, note that they extend beyond image extent
 pos_layer = viewer.add_vectors(pos, edge_width=2)
 
 # add scale_bar with background box
@@ -139,7 +139,8 @@ figure = viewer.export_figure()
 # optionally, save the exported figure: viewer.export_figure(path='export_figure.png')
 # or screenshot: viewer.screenshot(path='screenshot.png')
 
-# export a figure without the 'pos' layer.
+# export a figure without the 'pos' layer
+# this is the vectors layer that extends beyond the image extent
 viewer.layers.remove(pos_layer)
 figure_no_pos = viewer.export_figure()
 
