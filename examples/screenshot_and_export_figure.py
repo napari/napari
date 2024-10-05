@@ -1,6 +1,6 @@
 """
 Comparison of Screenshot and Figure Export
-==================================
+==========================================
 
 Display multiple layer types, add scale bar, and take a screenshot or export a
 figure from a 'light' canvas. Then switch to a 'dark' canvas and display the
@@ -139,6 +139,11 @@ figure = viewer.export_figure()
 # optionally, save the exported figure: viewer.export_figure(path='export_figure.png')
 # or screenshot: viewer.screenshot(path='screenshot.png')
 
+# show different handling when canvas is zoomed in
+viewer.camera.zoom = 2
+screenshot_zoomed = viewer.screenshot()
+figure_zoomed = viewer.export_figure()
+
 # export a figure without the 'pos' layer
 # this is the vectors layer that extends beyond the image extent
 viewer.layers.remove(pos_layer)
@@ -150,10 +155,14 @@ viewer.layers.select_all()
 viewer.layers.remove_selected()
 
 # display the screenshot and figure and switch to gride mode for comparison
-viewer.add_image(figure_no_pos, rgb=True, name='figure_no_pos')
-viewer.add_image(figure, rgb=True, name='figure')
+viewer.add_image(screenshot_zoomed, rgb=True, name='screenshot_zoomed')
 viewer.add_image(screenshot, rgb=True, name='screenshot')
+viewer.add_image(figure_no_pos, rgb=True, name='figure_no_pos')
+viewer.add_image(figure_zoomed, rgb=True, name='figure_zoomed')
+viewer.add_image(figure, rgb=True, name='figure')
+
 viewer.grid.enabled = True
+viewer.grid.shape = (2, 3)
 
 if __name__ == '__main__':
     napari.run()
