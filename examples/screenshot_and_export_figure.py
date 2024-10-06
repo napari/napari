@@ -48,9 +48,6 @@ layer_outside = viewer.add_shapes(
     name='shapes_outside',
 )
 
-# add a points layer
-viewer.add_points(np.array([[103, 56], [346, 231]]), size=(30, 20))
-
 # add scale_bar with background box
 viewer.scale_bar.visible = True
 viewer.scale_bar.box = True
