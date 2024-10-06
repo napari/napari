@@ -70,9 +70,18 @@ def _rotate_with_box(
     center_to_handle /= np.linalg.norm(center_to_handle)
     center_to_mouse = mouse_pos - initial_center
     center_to_mouse /= np.linalg.norm(center_to_mouse)
-    angle = np.arctan2(center_to_mouse[1], center_to_mouse[0]) - np.arctan2(
-        center_to_handle[1], center_to_handle[0]
-    )
+
+    # if shift held, snap rotation to 45 degree steps
+    if 'Shift' in event.modifiers:
+        angle = np.round(
+            np.arctan2(center_to_mouse[1], center_to_mouse[0]) / np.deg2rad(45)
+        ) * np.deg2rad(45) - np.arctan2(
+            center_to_handle[1], center_to_handle[0]
+        )
+    else:
+        angle = np.arctan2(
+            center_to_mouse[1], center_to_mouse[0]
+        ) - np.arctan2(center_to_handle[1], center_to_handle[0])
 
     new_affine = (
         Affine(translate=initial_center)

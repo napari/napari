@@ -24,7 +24,7 @@ def guess_continuous(color_map: np.ndarray) -> bool:
     # if the property is a floating type, guess continuous
     return issubclass(color_map.dtype.type, np.floating) or (
         len(np.unique(color_map)) > 16
-        and isinstance(color_map.dtype.type, np.integer)
+        and issubclass(color_map.dtype.type, np.integer)
     )
 
 

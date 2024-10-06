@@ -108,5 +108,4 @@ def fix_data_vectors(
                 ndim=ndim,
             )
         )
-    ndim = data_ndim
-    return vectors, ndim
+    return vectors, data_ndim

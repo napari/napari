@@ -154,19 +154,20 @@ class SampleWidget(QWidget):
 
 
 if __name__ == '__main__':
+    import logging
     import sys
 
-    from napari._qt.qt_event_loop import get_app
+    from napari._qt.qt_event_loop import get_qapp
     from napari.utils.theme import available_themes
 
     themes = [sys.argv[1]] if len(sys.argv) > 1 else available_themes()
-    app = get_app()
+    app = get_qapp()
     widgets = []
     for n, theme in enumerate(themes):
         try:
             w = SampleWidget(theme)
         except KeyError:
-            print(f'{theme} is not a recognized theme')
+            logging.warning('%s is not a recognized theme', theme)
             continue
         w.setGeometry(10 + 430 * n, 0, 425, 600)
         w.show()

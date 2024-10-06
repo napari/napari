@@ -17,7 +17,7 @@ def set_dims_order(dims: Dims, order: tuple[int, ...]):
     order : tuple of int
         New dimension order.
     """
-    if type(order[0]) == AxisModel:
+    if type(order[0]) is AxisModel:
         order = [a.axis for a in order]
     dims.order = order
 
@@ -50,7 +50,7 @@ class QtDimsSorter(QWidget):
 
         self.view = QtListView(self.axis_list)
         if len(self.axis_list) <= 2:
-            # prevent exess space in popup
+            # prevent excess space in popup
             self.view.setSizeAdjustPolicy(QtListView.AdjustToContents)
 
         layout = QGridLayout()

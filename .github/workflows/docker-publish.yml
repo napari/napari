@@ -1,0 +1,99 @@
+name: Docker build
+
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+on:
+  workflow_dispatch:
+
+  pull_request:
+    paths:
+      - '.github/workflows/docker-publish.yml'
+
+#  schedule:
+#    - cron: '31 0 * * *'
+  push:
+    branches: [ main ]
+    # Publish semver tags as releases.
+    tags: [ 'v*.*.*' ]
+
+env:
+  # Use docker.io for Docker Hub if empty
+  REGISTRY: ghcr.io
+
+jobs:
+  build1:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - recipe: Docker
+            target: napari
+            image-name: napari/napari
+          - recipe: Docker
+            target: napari-xpra
+            image-name: napari/napari-xpra
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Login against a Docker registry except on PR
+      # https://github.com/docker/login-action
+      - name: Log into registry ${{ env.REGISTRY }}
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3.3.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Extract metadata (tags, labels) for Docker
+      # https://github.com/docker/metadata-action
+      # https://github.com/docker/build-push-action/blob/master/docs/advanced/tags-labels.md
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          # list of Docker images to use as base name for tags
+          images: ${{ env.REGISTRY }}/${{ matrix.image-name }}
+          #          images: |
+          #            name/app
+          #            ghcr.io/username/app
+          # generate Docker tags based on the following events/attributes
+          tags: |
+            type=schedule
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha
+            latest
+          # oras://ghcr.io is tagged latest too, and seems to override the docker://ghcr.io tag -> race condition?
+
+      # Build and push Docker image with Buildx (don't push on PR)
+      # https://github.com/docker/build-push-action
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        id: docker_build
+        with:
+          context: .
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          file: "dockerfile"
+          target: ${{ matrix.target }}
+          # We build from the the tag name if triggered by tag, otherwise from the commit hash
+          build-args: |
+            NAPARI_COMMIT=${{ github.ref_type == 'tag' && github.ref_name || github.sha }}
+
+      - name: Test Docker image
+        run: |
+          docker run --rm --entrypoint=/bin/bash ${{ steps.docker_build.outputs.imageid }} -ec "python3 -m napari --version"

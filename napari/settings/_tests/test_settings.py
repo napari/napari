@@ -12,7 +12,7 @@ from napari.settings import CURRENT_SCHEMA_VERSION, NapariSettings
 from napari.utils.theme import get_theme, register_theme
 
 
-@pytest.fixture()
+@pytest.fixture
 def test_settings(tmp_path):
     """A fixture that can be used to test and save settings"""
     from napari.settings import NapariSettings
@@ -83,7 +83,8 @@ def test_settings_load_invalid_key(tmp_path, monkeypatch):
     # The invalid key will be removed
 
     fake_path = tmp_path / 'fake_path.yml'
-    data = """
+    data = f"""
+    schema_version: {CURRENT_SCHEMA_VERSION}
     application:
        non_existing_key: [1, 2]
        first_time: false
@@ -218,6 +219,20 @@ def test_settings_env_variables(monkeypatch):
     monkeypatch.setenv('NAPARI_PLUGINS_EXTENSION2READER', '{"*.zarr": "hi"}')
     assert NapariSettings(None).plugins.extension2reader == {'*.zarr': 'hi'}
 
+    # can also use short `env` name for EventedSettings class
+    assert NapariSettings(None).experimental.async_ is False
+    monkeypatch.setenv('NAPARI_ASYNC', '1')
+    assert NapariSettings(None).experimental.async_ is True
+
+
+def test_two_env_variable_settings(monkeypatch):
+    assert NapariSettings(None).experimental.async_ is False
+    assert NapariSettings(None).experimental.autoswap_buffers is False
+    monkeypatch.setenv('NAPARI_EXPERIMENTAL_ASYNC_', '1')
+    monkeypatch.setenv('NAPARI_EXPERIMENTAL_AUTOSWAP_BUFFERS', '1')
+    assert NapariSettings(None).experimental.async_ is True
+    assert NapariSettings(None).experimental.autoswap_buffers is True
+
 
 def test_settings_env_variables_fails(monkeypatch):
     monkeypatch.setenv('NAPARI_APPEARANCE_THEME', 'FOOBAR')
@@ -263,7 +278,7 @@ def test_settings_env_variables_do_not_write_to_disk(tmp_path, monkeypatch):
     assert settings.env_settings()['appearance']['theme'] == 'dark'
 
     # when we save it shouldn't use environment variables and it shouldn't
-    # have overriden our non-default value of `theme: light`
+    # have overridden our non-default value of `theme: light`
     settings.save()
     disk_settings = fake_path.read_text()
     assert 'theme: light' in disk_settings
@@ -273,6 +288,29 @@ def test_settings_env_variables_do_not_write_to_disk(tmp_path, monkeypatch):
     assert NapariSettings(fake_path).appearance.theme == 'light'
 
 
+def test_settings_env_variables_override_file(tmp_path, monkeypatch):
+    # create a settings file with async_ = true
+    data = 'experimental:\n   async_: true\n   autoswap_buffers: true'
+    fake_path = tmp_path / 'fake_path.yml'
+    fake_path.write_text(data)
+
+    # make sure they wrote correctly
+    disk_settings = fake_path.read_text()
+    assert 'async_: true' in disk_settings
+    assert 'autoswap_buffers: true' in disk_settings
+    # make sure they load correctly
+    assert NapariSettings(fake_path).experimental.async_ is True
+    assert NapariSettings(fake_path).experimental.autoswap_buffers is True
+
+    # now load settings again with an Env-var override
+    monkeypatch.setenv('NAPARI_ASYNC', '0')
+    monkeypatch.setenv('NAPARI_AUTOSWAP', '0')
+    settings = NapariSettings(fake_path)
+    # make sure the override worked, and save again
+    assert settings.experimental.async_ is False
+    assert settings.experimental.autoswap_buffers is False
+
+
 def test_settings_only_saves_non_default_values(monkeypatch, tmp_path):
     from yaml import safe_load
 
@@ -280,7 +318,7 @@ def test_settings_only_saves_non_default_values(monkeypatch, tmp_path):
     monkeypatch.setattr(os, 'environ', {})
 
     # manually get all default data and write to yaml file
-    all_data = NapariSettings(None).yaml()
+    all_data = NapariSettings(schema_version=CURRENT_SCHEMA_VERSION).yaml()
     fake_path = tmp_path / 'fake_path.yml'
     assert 'appearance' in all_data
     assert 'application' in all_data
@@ -359,3 +397,32 @@ def test_full_serialize(test_settings: NapariSettings, tmp_path, ext):
     Should work with both json and yaml.
     """
     test_settings.save(tmp_path / f't.{ext}', exclude_defaults=False)
+
+
+def test_shortcut_aliases():
+    """Check that Command, Option, Super, Cmd are all valid modifiers."""
+    settings_original = NapariSettings(
+        schema_version='0.6.0',
+        shortcuts={
+            'shortcuts': {
+                'napari:focus_axes_up': ['Option-Up'],
+                'napari:roll_axes': ['Super-E'],
+                'napari:transpose_axes': ['Control-Alt-T'],
+                'napari:paste_shape': ['V', 'Command-T'],
+                'napari:reset_view': ['Cmd-R'],
+            }
+        },
+    )
+    settings_canonical = NapariSettings(
+        schema_version='0.6.0',
+        shortcuts={
+            'shortcuts': {
+                'napari:focus_axes_up': ['Alt+Up'],
+                'napari:roll_axes': ['Meta+E'],
+                'napari:transpose_axes': ['Ctrl+Alt+T'],
+                'napari:paste_shape': ['V', 'Meta+T'],
+                'napari:reset_view': ['Meta+R'],
+            }
+        },
+    )
+    assert settings_original == settings_canonical

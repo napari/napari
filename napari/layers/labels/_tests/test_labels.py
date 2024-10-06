@@ -11,7 +11,6 @@ import pandas as pd
 import pytest
 import xarray as xr
 import zarr
-from numpy.core.numerictypes import issubdtype
 from skimage import data as sk_data
 
 from napari._tests.utils import check_layer_world_data_extent
@@ -32,7 +31,7 @@ from napari.utils.colormaps import (
 )
 
 
-@pytest.fixture()
+@pytest.fixture
 def direct_colormap():
     """Return a DirectLabelColormap."""
     return DirectLabelColormap(
@@ -45,7 +44,7 @@ def direct_colormap():
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def random_colormap():
     """Return a LabelColormap."""
     return label_colormap(50)
@@ -110,13 +109,27 @@ def test_bool_labels():
     """Test instantiating labels layer with bools"""
     data = np.zeros((10, 10), dtype=bool)
     layer = Labels(data)
-    assert issubdtype(layer.data.dtype, np.integer)
+    assert np.issubdtype(layer.data.dtype, np.integer)
 
     data0 = np.zeros((20, 20), dtype=bool)
     data1 = data0[::2, ::2].astype(np.int32)
     data = [data0, data1]
     layer = Labels(data)
-    assert all(issubdtype(d.dtype, np.integer) for d in layer.data)
+    assert all(np.issubdtype(d.dtype, np.integer) for d in layer.data)
+
+
+def test_editing_bool_labels():
+    # make random data, mostly 0s
+    data = np.random.random((10, 10)) > 0.7
+    # create layer, which may convert bool to uint8 *as a view*
+    layer = Labels(data)
+    # paint the whole layer with 1
+    layer.paint_polygon(
+        points=[[-1, -1], [-1, 11], [11, 11], [11, -1]],
+        new_label=1,
+    )
+    # check that the original data has been correspondingly modified
+    assert np.all(data)
 
 
 def test_changing_labels():
@@ -418,6 +431,26 @@ def test_custom_color_dict():
     # test disable custom color dict
     # should not initialize as white since we are using random.seed
     assert not (layer.get_color(1) == np.array([1.0, 1.0, 1.0, 1.0])).all()
+
+
+@pytest.mark.parametrize(
+    'colormap_like',
+    [
+        ['red', 'blue'],
+        [[1, 0, 0, 1], [0, 0, 1, 1]],
+        {None: 'transparent', 1: 'red', 2: 'blue'},
+        {None: [0, 0, 0, 0], 1: [1, 0, 0, 1], 2: [0, 0, 1, 1]},
+        defaultdict(lambda: 'transparent', {1: 'red', 2: 'blue'}),
+    ],
+)
+def test_colormap_simple_data_types(colormap_like):
+    """Test that setting colormap with list or dict of colors works."""
+    data = np.random.randint(20, size=(10, 15))
+    # test in constructor
+    _ = Labels(data, colormap=colormap_like)
+    # test assignment
+    layer = Labels(data)
+    layer.colormap = colormap_like
 
 
 def test_metadata():
@@ -1733,3 +1766,13 @@ class TestLabels:
 def test_docstring():
     validate_all_params_in_docstring(Labels)
     validate_kwargs_sorted(Labels)
+
+
+def test_new_colormap_int8():
+    """Check that int8 labels colors can be shuffled without overflow.
+
+    See https://github.com/napari/napari/issues/7277.
+    """
+    data = np.arange(-128, 128, dtype=np.int8).reshape((16, 16))
+    layer = Labels(data)
+    layer.new_colormap(seed=0)

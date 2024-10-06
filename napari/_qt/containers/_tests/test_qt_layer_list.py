@@ -165,14 +165,18 @@ def test_contextual_menu_updates_selection_ctx_keys(monkeypatch, qtbot):
     delegate.show_context_menu(
         index, view.model(), QPoint(10, 10), parent=view
     )
-    assert layer_list._selection_ctx_keys.selected_empty_shapes_layer
+    assert not delegate._context_menu.findAction(
+        'napari.layer.convert_to_labels'
+    ).isEnabled()
 
     layer_list[0].add(np.array(([0, 0], [0, 10], [10, 10], [10, 0])))
     assert layer_list[0].data
     delegate.show_context_menu(
         index, view.model(), QPoint(10, 10), parent=view
     )
-    assert not layer_list._selection_ctx_keys.selected_empty_shapes_layer
+    assert delegate._context_menu.findAction(
+        'napari.layer.convert_to_labels'
+    ).isEnabled()
 
 
 def make_qt_layer_list_with_delegate(qtbot):
