@@ -154,7 +154,7 @@ viewer.theme = 'dark'
 viewer.layers.select_all()
 viewer.layers.remove_selected()
 
-# display the screenshot and figure and switch to gride mode for comparison
+# display the screenshots and figures and switch to grid mode for comparison
 viewer.add_image(screenshot_zoomed, rgb=True, name='screenshot_zoomed')
 viewer.add_image(screenshot, rgb=True, name='screenshot')
 viewer.add_image(figure_no_pos, rgb=True, name='figure_no_pos')
