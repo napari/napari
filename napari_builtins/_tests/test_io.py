@@ -111,7 +111,7 @@ def test_zarr_multiscale(tmp_path):
     ]
     fout = str(tmp_path / 'multiscale.zarr')
 
-    root = zarr.open_group(fout, 'a')
+    root = zarr.open_group(fout, mode='a')
     for i in range(len(multiscale)):
         shape = 20 // 2**i
         z = root.create_dataset(str(i), shape=(shape,) * 2)
