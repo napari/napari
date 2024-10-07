@@ -4,7 +4,7 @@ import numpy as np
 from numba import njit
 
 
-@njit(cache=True)
+@njit(cache=True, inline="always")
 def _calc_output_size(
     normals: np.ndarray, closed: bool, cos_limit: float, bevel: bool
 ) -> int:
@@ -70,7 +70,7 @@ def _calc_output_size(
     return point_count + bevel_count
 
 
-@njit(cache=True)
+@njit(cache=True, inline="always")
 def _set_centers_and_offsets(
     centers: np.ndarray,
     offsets: np.ndarray,
@@ -183,7 +183,7 @@ def _set_centers_and_offsets(
     return 2  # added 2 triangles
 
 
-@njit(cache=True)
+@njit(cache=True, inline="always")
 def _fix_triangle_orientation(
     triangles: np.ndarray, centers: np.ndarray, offsets: np.ndarray
 ) -> None:
@@ -214,7 +214,7 @@ def _fix_triangle_orientation(
             triangles[i] = [triangle[2], triangle[1], triangle[0]]
 
 
-@njit(cache=True)
+@njit(cache=True, inline="always")
 def _normal_vec_and_length(
     path: np.ndarray, closed: bool
 ) -> tuple[np.ndarray, np.ndarray]:
@@ -254,7 +254,7 @@ def _normal_vec_and_length(
     return normals, vec_len_arr * 0.5
 
 
-@njit(cache=True)
+@njit(cache=True, inline="always")
 def _generate_2D_edge_meshes_loop(
     path: np.ndarray,
     closed: bool,
@@ -329,6 +329,26 @@ def _generate_2D_edge_meshes_loop(
         offsets[j + 1] = -offsets[j]
 
 
+@njit(cache=True, inline="always")
+def _cut_end_if_repetition(path: np.ndarray) -> np.ndarray:
+    """Cut the last point of the path if it is the same as the second last point.
+
+    Parameters
+    ----------
+    path : np.ndarray
+        Nx2 array of central coordinates of path to be triangulated
+
+    Returns
+    -------
+    np.ndarray
+        Nx2 or (N-1)x2  array of central coordinates of path to be triangulated
+    """
+    path_ = np.asarray(path, dtype=np.float32)
+    if np.all(path_[-1] == path_[-2]):
+        return path_[:-1]
+    return path_
+
+
 @njit(cache=True)
 def generate_2D_edge_meshes(
     path: np.ndarray,
@@ -369,12 +389,7 @@ def generate_2D_edge_meshes(
         triangles of the triangulation
     """
 
-    path = np.asarray(path, dtype=np.float32)
-
-    if np.all(path[-1] == path[-2]):
-        # Part of ugly hack to keep lasso tools working
-        # should be removed after fixing the lasso tool
-        path = path[:-1]
+    path = _cut_end_if_repetition(path)
 
     if len(path) <= 2:
         centers = np.empty((4, 2), dtype=np.float32)
