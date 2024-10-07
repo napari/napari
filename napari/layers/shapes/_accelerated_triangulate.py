@@ -215,7 +215,9 @@ def _fix_triangle_orientation(
 
 
 @njit(cache=True)
-def _normal_vec_and_length(path: np.ndarray, closed: bool) -> tuple[np.ndarray, np.ndarray]:
+def _normal_vec_and_length(
+    path: np.ndarray, closed: bool
+) -> tuple[np.ndarray, np.ndarray]:
     """Calculate the normal vector and length of the vector.
 
     Parameters
@@ -252,7 +254,6 @@ def _normal_vec_and_length(path: np.ndarray, closed: bool) -> tuple[np.ndarray, 
     return normals, vec_len_arr * 0.5
 
 
-
 @njit(cache=True)
 def _generate_2D_edge_meshes_loop(
     path: np.ndarray,
@@ -265,7 +266,6 @@ def _generate_2D_edge_meshes_loop(
     offsets: np.ndarray,
     triangles: np.ndarray,
 ) -> None:
-
     if closed:
         j = _set_centers_and_offsets(
             centers,
