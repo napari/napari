@@ -266,6 +266,36 @@ def _generate_2D_edge_meshes_loop(
     offsets: np.ndarray,
     triangles: np.ndarray,
 ) -> None:
+    """Main loop for :py:func:`generate_2D_edge_meshes`.
+
+    Parameters
+    ----------
+    path : np.ndarray
+        Nx2 array of central coordinates of path to be triangulated
+    closed : bool
+        Bool which determines if the path is closed or not
+    cos_limit : float
+        Miter limit which determines when to switch from a miter join to a
+        bevel join
+    bevel : bool
+        Bool which if True causes a bevel join to always be used. If False
+        a bevel join will only be used when the miter limit is exceeded
+    normals : np.ndarray
+        Nx2 array of normal vectors of the path
+    bevel_limit_array : np.ndarray
+        The array of limit of length of inner vectors in bevel joins.
+        To reduce the graphical artifacts, the inner vectors are limited
+        to half of the length of the adjacent edges in path.
+    centers : np.ndarray
+        Mx2 array to put central coordinates of path triangles.
+    offsets : np.ndarray
+        Mx2 array to put the offsets to the central coordinates that need to
+        be scaled by the line width and then added to the centers to
+        generate the actual vertices of the triangulation
+    triangles : np.ndarray
+        (M-2)x3 array to put the indices of the vertices that will form the
+        triangles of the triangulation
+    """
     if closed:
         j = _set_centers_and_offsets(
             centers,
