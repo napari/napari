@@ -215,6 +215,121 @@ def _fix_triangle_orientation(
 
 
 @njit(cache=True)
+def _normal_vec_and_length(path: np.ndarray, closed: bool) -> tuple[np.ndarray, np.ndarray]:
+    """Calculate the normal vector and length of the vector.
+
+    Parameters
+    ----------
+    path : np.ndarray
+        Mx2 array representing path to calculate the normal vector and length.
+        Assumes that there is no point repetition in the path.
+        (no two consecutive points are the same)
+    closed : bool
+        Bool if shape edge is a closed path or not.
+
+    Returns
+    -------
+    np.ndarray
+        Mx2 array representing containing normal vectors of the path.
+        If closed is False, the last vector has unspecified value.
+    np.ndarray
+        The array of limit of length of inner vectors in bevel joins.
+        To reduce the graphical artifacts, the inner vectors are limited
+        to half of the length of the adjacent egdes in path.
+    """
+    normals = np.empty_like(path)
+    vec_len_arr = np.empty((len(path)), dtype=np.float32)
+    for i in range(1, len(path)):
+        vec_diff = path[i] - path[i - 1]
+        vec_len_arr[i - 1] = np.sqrt(vec_diff[0] ** 2 + vec_diff[1] ** 2)
+        normals[i - 1] = vec_diff / vec_len_arr[i - 1]
+
+    if closed:
+        vec_diff = path[0] - path[-1]
+        vec_len_arr[-1] = np.sqrt(vec_diff[0] ** 2 + vec_diff[1] ** 2)
+        normals[-1] = vec_diff / vec_len_arr[-1]
+
+    return normals, vec_len_arr * 0.5
+
+
+
+@njit(cache=True)
+def _generate_2D_edge_meshes_loop(
+    path: np.ndarray,
+    closed: bool,
+    cos_limit: float,
+    bevel: bool,
+    normals: np.ndarray,
+    bevel_limit_array: np.ndarray,
+    centers: np.ndarray,
+    offsets: np.ndarray,
+    triangles: np.ndarray,
+) -> None:
+
+    if closed:
+        j = _set_centers_and_offsets(
+            centers,
+            offsets,
+            triangles,
+            path[0],
+            normals[-1],
+            normals[0],
+            bevel_limit_array[-1],
+            bevel_limit_array[0],
+            0,
+            cos_limit,
+            bevel,
+        )
+    else:
+        centers[0] = path[0]
+        centers[1] = path[0]
+        offsets[0, 0] = normals[0][1] * 0.5
+        offsets[0, 1] = -normals[0][0] * 0.5
+        offsets[1] = -offsets[0]
+        triangles[0] = [0, 1, 2]
+        triangles[1] = [1, 2, 3]
+        j = 2
+    for i in range(1, len(normals) - 1):
+        j += _set_centers_and_offsets(
+            centers,
+            offsets,
+            triangles,
+            path[i],
+            normals[i - 1],
+            normals[i],
+            bevel_limit_array[i - 1],
+            bevel_limit_array[i],
+            j,
+            cos_limit,
+            bevel,
+        )
+    if closed:
+        j += _set_centers_and_offsets(
+            centers,
+            offsets,
+            triangles,
+            path[-1],
+            normals[-2],
+            normals[-1],
+            bevel_limit_array[-2],
+            bevel_limit_array[-1],
+            j,
+            cos_limit,
+            bevel,
+        )
+        centers[j] = centers[0]
+        centers[j + 1] = centers[1]
+        offsets[j] = offsets[0]
+        offsets[j + 1] = offsets[1]
+    else:
+        centers[j] = path[-1]
+        centers[j + 1] = path[-1]
+        offsets[j, 0] = normals[-2][1] * 0.5
+        offsets[j, 1] = -normals[-2][0] * 0.5
+        offsets[j + 1] = -offsets[j]
+
+
+@njit(cache=True)
 def generate_2D_edge_meshes(
     path: np.ndarray,
     closed: bool = False,
@@ -276,17 +391,7 @@ def generate_2D_edge_meshes(
     # why cos_limit uis calculated this way is explained in the note in
     # https://github.com/napari/napari/pull/7268#user-content-bevel-limit
 
-    normals = np.empty_like(path)
-    vec_len_arr = np.empty((len(path)), dtype=np.float32)
-    for i in range(1, len(path)):
-        vec_diff = path[i] - path[i - 1]
-        vec_len_arr[i - 1] = np.sqrt(vec_diff[0] ** 2 + vec_diff[1] ** 2)
-        normals[i - 1] = vec_diff / vec_len_arr[i - 1]
-
-    if closed:
-        vec_diff = path[0] - path[-1]
-        vec_len_arr[-1] = np.sqrt(vec_diff[0] ** 2 + vec_diff[1] ** 2)
-        normals[-1] = vec_diff / vec_len_arr[-1]
+    normals, bevel_limit_array = _normal_vec_and_length(path, closed)
 
     point_count = _calc_output_size(normals, closed, cos_limit, bevel)
 
@@ -294,67 +399,17 @@ def generate_2D_edge_meshes(
     offsets = np.empty((point_count, 2), dtype=np.float32)
     triangles = np.empty((point_count - 2, 3), dtype=np.int32)
 
-    if closed:
-        j = _set_centers_and_offsets(
-            centers,
-            offsets,
-            triangles,
-            path[0],
-            normals[-1],
-            normals[0],
-            vec_len_arr[-1],
-            vec_len_arr[0],
-            0,
-            cos_limit,
-            bevel,
-        )
-    else:
-        centers[0] = path[0]
-        centers[1] = path[0]
-        offsets[0, 0] = normals[0][1] * 0.5
-        offsets[0, 1] = -normals[0][0] * 0.5
-        offsets[1] = -offsets[0]
-        triangles[0] = [0, 1, 2]
-        triangles[1] = [1, 2, 3]
-        j = 2
-    for i in range(1, len(normals) - 1):
-        j += _set_centers_and_offsets(
-            centers,
-            offsets,
-            triangles,
-            path[i],
-            normals[i - 1],
-            normals[i],
-            vec_len_arr[i - 1],
-            vec_len_arr[i],
-            j,
-            cos_limit,
-            bevel,
-        )
-    if closed:
-        j += _set_centers_and_offsets(
-            centers,
-            offsets,
-            triangles,
-            path[-1],
-            normals[-2],
-            normals[-1],
-            vec_len_arr[-2],
-            vec_len_arr[-1],
-            j,
-            cos_limit,
-            bevel,
-        )
-        centers[j] = centers[0]
-        centers[j + 1] = centers[1]
-        offsets[j] = offsets[0]
-        offsets[j + 1] = offsets[1]
-    else:
-        centers[j] = path[-1]
-        centers[j + 1] = path[-1]
-        offsets[j, 0] = normals[-2][1] * 0.5
-        offsets[j, 1] = -normals[-2][0] * 0.5
-        offsets[j + 1] = -offsets[j]
+    _generate_2D_edge_meshes_loop(
+        path,
+        closed,
+        cos_limit,
+        bevel,
+        normals,
+        bevel_limit_array,
+        centers,
+        offsets,
+        triangles,
+    )
 
     # We need to fix triangle orientation, as our code for checking
     # if points is in triangle is not robust to orientation
