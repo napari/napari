@@ -5,6 +5,15 @@ from napari.layers.shapes._shapes_models.shape import Shape
 from napari.layers.shapes._shapes_utils import create_box
 from napari.utils.translations import trans
 
+try:
+    from napari.layers.shapes._accelerated_triangulate import (
+        remove_path_duplicates,
+    )
+except ImportError:
+
+    def remove_path_duplicates(data: np.ndarray, closed: bool):
+        return data
+
 
 class PolygonBase(Shape):
     """Class for a polygon or path.
@@ -65,7 +74,8 @@ class PolygonBase(Shape):
 
     @data.setter
     def data(self, data):
-        data = np.array(data).astype(float)
+        data = np.array(data).astype(np.float32)
+        data = remove_path_duplicates(data, self._closed)
 
         if len(self.dims_order) != data.shape[1]:
             self._dims_order = list(range(data.shape[1]))
@@ -73,7 +83,7 @@ class PolygonBase(Shape):
         if len(data) < 2:
             raise ValueError(
                 trans._(
-                    'Shape needs at least two vertices, {number} provided.',
+                    'Shape needs at least two unique vertices, {number} provided.',
                     deferred=True,
                     number=len(data),
                 )
