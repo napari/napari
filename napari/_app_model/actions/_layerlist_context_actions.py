@@ -131,6 +131,17 @@ LAYERLIST_CONTEXT_ACTIONS: list[Action] = [
         menus=[LAYERCTX_SPLITMERGE],
     ),
     Action(
+        id='napari.layer.merge_rgb',
+        title=trans._('Merge to RGB'),
+        callback=partial(_layer_actions._merge_stack, rgb=True),
+        enablement=(
+            (LLSCK.num_selected_layers == 3)
+            & (LLSCK.num_selected_image_layers == LLSCK.num_selected_layers)
+            & LLSCK.all_selected_layers_same_shape
+        ),
+        menus=[LAYERCTX_SPLITMERGE],
+    ),
+    Action(
         id='napari.layer.toggle_visibility',
         title=trans._('Toggle visibility'),
         callback=_layer_actions._toggle_visibility,
