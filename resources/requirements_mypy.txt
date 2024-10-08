@@ -4,7 +4,7 @@ annotated-types==0.7.0
     # via pydantic
 appdirs==1.4.4
     # via npe2
-build==1.2.2
+build==1.2.2.post1
     # via npe2
 certifi==2024.8.30
     # via requests
@@ -28,7 +28,7 @@ mypy-extensions==1.0.0
     # via mypy
 npe2==0.7.7
     # via -r napari_repo/resources/requirements_mypy.in
-numpy==2.1.1
+numpy==2.1.2
     # via -r napari_repo/resources/requirements_mypy.in
 packaging==24.1
     # via
@@ -50,11 +50,11 @@ pygments==2.18.0
     # via
     #   rich
     #   superqt
-pyproject-hooks==1.1.0
+pyproject-hooks==1.2.0
     # via build
 pyqt6==6.7.1
     # via -r napari_repo/resources/requirements_mypy.in
-pyqt6-qt6==6.7.2
+pyqt6-qt6==6.7.3
     # via pyqt6
 pyqt6-sip==13.8.0
     # via pyqt6
@@ -67,7 +67,7 @@ qtpy==2.4.1
     #   superqt
 requests==2.32.3
     # via pyconify
-rich==13.8.1
+rich==13.9.2
     # via
     #   npe2
     #   typer
