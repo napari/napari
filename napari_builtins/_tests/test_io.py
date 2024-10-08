@@ -1,5 +1,6 @@
 import csv
 import os
+from importlib.metadata import version
 from pathlib import Path
 from typing import NamedTuple
 from uuid import uuid4
@@ -11,6 +12,7 @@ import numpy as np
 import pytest
 import tifffile
 import zarr
+from packaging.version import parse as parse_version
 
 from napari_builtins.io._read import (
     _guess_layer_type_from_column_names,
@@ -83,7 +85,7 @@ def test_zarr_nested(tmp_path):
     image_name = 'my_image'
     root_path = tmp_path / 'dataset.zarr'
     grp = zarr.open(store=str(root_path), mode='a')
-    grp.create_dataset(image_name, data=image)
+    grp.create_dataset(image_name, data=image, shape=image.shape)
 
     image_in = magic_imread([str(root_path / image_name)])
     np.testing.assert_array_equal(image, image_in)
@@ -94,7 +96,7 @@ def test_zarr_with_unrelated_file(tmp_path):
     image_name = 'my_image'
     root_path = tmp_path / 'dataset.zarr'
     grp = zarr.open(store=str(root_path), mode='a')
-    grp.create_dataset(image_name, data=image)
+    grp.create_dataset(image_name, data=image, shape=image.shape)
 
     txt_file_path = root_path / 'unrelated.txt'
     txt_file_path.touch()
@@ -312,6 +314,10 @@ def test_add_zarr(write_spec):
     assert out[0].shape == ZARR1.shape  # type: ignore
 
 
+@pytest.mark.skipif(
+    parse_version(version('zarr')) > parse_version('3a0'),
+    reason='zarr 3+ does not support setting 1d data',
+)
 def test_add_zarr_1d_array_is_ignored(tmp_path):
     zarr_dir = str(tmp_path / 'data.zarr')
     # For more details: https://github.com/napari/napari/issues/1471
@@ -323,6 +329,10 @@ def test_add_zarr_1d_array_is_ignored(tmp_path):
     assert npe2.read([image_path], stack=False) == [(None,)]
 
 
+@pytest.mark.skipif(
+    parse_version(version('zarr')) > parse_version('3a0'),
+    reason='zarr 3+ does not support setting 1d data',
+)
 def test_add_many_zarr_1d_array_is_ignored(tmp_path):
     # For more details: https://github.com/napari/napari/issues/1471
     zarr_dir = tmp_path / 'data.zarr'
