@@ -328,7 +328,7 @@ xarray = "xr"
 [tool.pytest.ini_options]
 # These follow standard library warnings filters syntax.  See more here:
 # https://docs.python.org/3/library/warnings.html#describing-warning-filters
-addopts = ["--maxfail=5",  "--durations=10",  "-ra", "--strict-markers", "--strict-config"]
+addopts = ["--maxfail=50",  "--durations=10",  "-ra", "--strict-markers", "--strict-config"]
 console_output_style = "count"
 minversion = "8"
 # log_cli_level = "INFO"
@@ -362,7 +362,8 @@ filterwarnings = [
   # https://github.com/pydata/xarray/pull/8939
   "ignore:__array__ implementation doesn't accept a copy keyword, so passing copy=False failed.",
   "ignore:pkg_resources is deprecated",
-  "ignore:Deprecated call to `pkg_resources.declare_namespace"
+  "ignore:Deprecated call to `pkg_resources.declare_namespace",
+  "ignore:Use Group.create_array instead."
 ]
 markers = [
     "examples: Test of examples",

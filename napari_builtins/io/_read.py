@@ -133,6 +133,12 @@ def read_zarr_dataset(path: str):
         ]
         assert image, 'No arrays found in zarr group'
         shape = image[0].shape
+    elif (path / 'zarr.json').exists():
+        # zarr v3
+        import zarr
+
+        image = zarr.open(store=path)
+        shape = image.shape
     else:  # pragma: no cover
         raise ValueError(
             trans._(

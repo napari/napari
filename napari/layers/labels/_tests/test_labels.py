@@ -3,6 +3,7 @@ import itertools
 import time
 from collections import defaultdict
 from dataclasses import dataclass
+from importlib.metadata import version
 from tempfile import TemporaryDirectory
 
 import numpy as np
@@ -11,6 +12,7 @@ import pandas as pd
 import pytest
 import xarray as xr
 import zarr
+from packaging.version import parse as parse_version
 from skimage import data as sk_data
 
 from napari._tests.utils import check_layer_world_data_extent
@@ -1124,6 +1126,11 @@ def test_large_label_values():
     assert len(np.unique(mapped.reshape((-1, 4)), axis=0)) == 4
 
 
+@pytest.mark.xfail(
+    parse_version(version('zarr')).is_prerelease,
+    reason='tensorstore is not compatible with zarr 3',
+    strict=True,
+)
 def test_fill_tensorstore():
     ts = pytest.importorskip('tensorstore')
 
@@ -1133,7 +1140,7 @@ def test_fill_tensorstore():
     labels[2, 3:5, 5:7, 6:8] = 3
     with TemporaryDirectory(suffix='.zarr') as fout:
         labels_temp = zarr.open(
-            fout,
+            store=fout,
             mode='w',
             shape=labels.shape,
             dtype=np.uint32,
