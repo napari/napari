@@ -979,9 +979,11 @@ def _find_dangling_widgets(request, qtbot):
             f'Widget: {widget} of type {type(widget)} with name {widget.objectName()}'
             for widget in problematic_widgets
         )
+
+        for widget in problematic_widgets:
+            widget.setObjectName('handled_widget')
+
         raise RuntimeError(f'Found dangling widgets:\n{text}')
-    for widget in problematic_widgets:
-        widget.setObjectName('handled_widget')
 
 
 def pytest_runtest_setup(item):
