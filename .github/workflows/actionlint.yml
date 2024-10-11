@@ -8,7 +8,7 @@ on:
 jobs:
   actionlint:
     name: Action lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
       - name: Check workflow files

@@ -16,7 +16,7 @@ jobs:
   check_labels:
     if: (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ready to merge'))
     name: Check ready-to-merge PR has at least one type label
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Check labels
         uses: docker://agilepathway/pull-request-label-checker:latest
@@ -27,7 +27,7 @@ jobs:
   check_next_milestone:
     name: Check milestone is next release
     if: (github.event_name == 'pull_request' && github.event.pull_request.milestone != null)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Check milestone for closest due date
         env:

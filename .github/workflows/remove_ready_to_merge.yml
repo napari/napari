@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   remove_label:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Remove label
         uses: actions/github-script@v7

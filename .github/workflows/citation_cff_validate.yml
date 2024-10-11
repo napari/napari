@@ -10,7 +10,7 @@ on:
 name: CITATION.cff
 jobs:
   Validate-CITATION-cff:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     name: Validate CITATION.cff
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}

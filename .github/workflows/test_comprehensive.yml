@@ -24,7 +24,7 @@ concurrency:
 jobs:
   manifest:
     name: Check Manifest
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
       - name: "Set up Python 3.11"
@@ -49,7 +49,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [ubuntu-latest, windows-latest]
+        platform: [ubuntu-22.04, windows-latest]
         python: ["3.9", "3.10", "3.11", "3.12"]
         backend: [pyqt5, pyside2]
         include:
@@ -66,11 +66,11 @@ jobs:
             platform: ubuntu-20.04
             backend: headless
           - python: "3.12"
-            platform: ubuntu-latest
+            platform: ubuntu-22.04
             backend: pyqt6
             tox_extras: "testing_extra"
           - python: "3.11"
-            platform: ubuntu-latest
+            platform: ubuntu-22.04
             backend: pyside6
             tox_extras: "testing_extra"
         exclude:
@@ -114,7 +114,7 @@ jobs:
 
   synchronize_bot_repository:
     name: Synchronize bot repository
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     if: github.ref == 'refs/heads/main' && github.repository == 'napari/napari'
     permissions:
       contents: read

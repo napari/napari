@@ -62,7 +62,7 @@ jobs:
       issues: write
     name: Upgrade & Open Pull Request
     if: (github.event.issue.pull_request != '' && contains(github.event.comment.body, '@napari-bot update constraints')) || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Add eyes reaction
         # show that workflow has started

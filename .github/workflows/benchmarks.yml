@@ -54,7 +54,7 @@ jobs:
           - benchmark-name: non-Qt
             asv-command: continuous
             selection-regex: "^benchmark_(?!qt_).*"
-            runs-on: ubuntu-latest
+            runs-on: ubuntu-22.04
 
     steps:
       # We need the full repo to avoid this issue
@@ -180,7 +180,7 @@ jobs:
           path: .asv/results
 
   combine-artifacts:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: benchmark
     if: always()
     steps:

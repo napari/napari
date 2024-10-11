@@ -16,7 +16,7 @@ concurrency:
 jobs:
   build-napari-docs:
     name: Build docs on napari/docs
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: get directory name
         # if this is a tag, use the tag name as the directory name else dev

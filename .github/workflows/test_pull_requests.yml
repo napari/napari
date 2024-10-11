@@ -18,7 +18,7 @@ jobs:
   import_lint:
     name: Import lint
     timeout-minutes: 5
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python 3.11
@@ -36,7 +36,7 @@ jobs:
     # make sure all necessary files will be bundled in the release
     name: Check Manifest
     timeout-minutes: 15
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -58,7 +58,7 @@ jobs:
   localization_syntax:
     # make sure all necessary files will be bundled in the release
     name: Check l18n syntax
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 2
     steps:
       - uses: actions/checkout@v4
@@ -85,13 +85,13 @@ jobs:
       matrix:
         include:
           - python: 3.9
-            platform: ubuntu-latest
+            platform: ubuntu-22.04
             backend: pyqt5
             pydantic: "_pydantic_1"
             coverage: no_cov
             min_req: ""
           - python: 3.12
-            platform: ubuntu-latest
+            platform: ubuntu-22.04
             backend: pyqt6
             pydantic: ""
             coverage: no_cov
@@ -111,7 +111,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [ ubuntu-latest ]
+        platform: [ ubuntu-22.04 ]
         python: [ "3.9", "3.11" ]
         backend: [ "pyqt5,pyside6" ]
         coverage: [ cov ]
@@ -152,13 +152,13 @@ jobs:
             backend: headless
             coverage: no_cov
           - python: "3.12"
-            platform: ubuntu-latest
+            platform: ubuntu-22.04
             backend: pyqt6
             coverage: cov
             tox_extras: "testing_extra"
           # pyside2 test
           - python: "3.10"
-            platform: ubuntu-latest
+            platform: ubuntu-22.04
             backend: pyside2
             coverage: no_cov
 
@@ -200,7 +200,7 @@ jobs:
 
   test_benchmarks:
     name: test benchmarks
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: test_initial
     timeout-minutes: 60
     env:
