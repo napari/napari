@@ -268,6 +268,7 @@ def make_napari_viewer(
     init_qactions.cache_clear()
 
     viewers: WeakSet[Viewer] = WeakSet()
+    request.node._viewer_weak_set = viewers
 
     # may be overridden by using the parameter `strict_qt`
     _strict = False
@@ -359,8 +360,10 @@ def make_napari_viewer(
     if _strict and getattr(sys, 'last_value', None) is prior_exception:
         QApplication.processEvents()
         leak = set(QApplication.topLevelWidgets()).difference(initial)
+        leak = (x for x in leak if x.objectName() != 'handled_widget')
         # still not sure how to clean up some of the remaining vispy
         # vispy.app.backends._qt.CanvasBackendDesktop widgets...
+        # observed in `test_sys_info.py`
         if any(n.__class__.__name__ != 'CanvasBackendDesktop' for n in leak):
             # just a warning... but this can be converted to test errors
             # in pytest with `-W error`
