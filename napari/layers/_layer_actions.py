@@ -106,12 +106,12 @@ def _merge_stack(ll: LayerList, rgb: bool = False) -> None:
     # force selection to follow LayerList ordering
     imgs = cast(list[Image], [layer for layer in ll if layer in ll.selection])
     assert all(isinstance(layer, Image) for layer in imgs), trans._(
-        'All layers in selection to be merged must be Image layers.',
+        'All selected layers to be merged must be Image layers.',
         deferred=True,
     )
     if rgb:
         assert len(imgs) == 3, trans._(
-            'Merging to RGB, requires exactly 3 Image layers to be selected.',
+            'Merging to RGB requires exactly 3 Image layers to be selected.',
             deferred=True,
         )
         # Check that all 3 layers have the same shape
