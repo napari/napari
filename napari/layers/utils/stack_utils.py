@@ -288,13 +288,22 @@ def images_to_stack(images: list[Image], axis: int = 0, **kwargs) -> Image:
 
     data, meta, _ = images[0].as_layer_data_tuple()
 
-    kwargs.setdefault('scale', np.insert(meta['scale'], axis, 1))
-    kwargs.setdefault('translate', np.insert(meta['translate'], axis, 0))
+    # RGB images do not need extra dimensions inserted into metadata
+    if 'rgb' not in kwargs:
+        kwargs.setdefault('scale', np.insert(meta['scale'], axis, 1))
+        kwargs.setdefault('translate', np.insert(meta['translate'], axis, 0))
 
     meta.update(kwargs)
-    meta['units'] = (pint.get_application_registry().pixel,) + meta['units']
-    meta['axis_labels'] = (f'axis -{data.ndim + 1}',) + meta['axis_labels']
     new_data = np.stack([image.data for image in images], axis=axis)
+
+    # RGB images do not need extra dimensions inserted into metadata
+    # They can use the meta dict from one of the source image layers
+    if not meta['rgb']:
+        meta['units'] = (pint.get_application_registry().pixel,) + meta[
+            'units'
+        ]
+        meta['axis_labels'] = (f'axis -{data.ndim + 1}',) + meta['axis_labels']
+
     return Image(new_data, **meta)
 
 
