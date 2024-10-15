@@ -115,7 +115,8 @@ def test_polygon():
             [8.75174423, 17.83546002],
             [19.27325521, 7.66883038],
             [15.83450076, 10.5778984],
-        ]
+        ],
+        dtype=np.float32,
     )
     shape = Polygon(data)
     np.testing.assert_array_equal(shape.data, data)
@@ -151,7 +152,7 @@ def test_nD_polygon():
     """Test creating Shape with a random nD polygon."""
     # Test a single six vertex planar 3D polygon
     np.random.seed(0)
-    data = 20 * np.random.random((6, 3))
+    data = 20 * np.random.random((6, 3)).astype(np.float32)
     data[:, 0] = 0
     shape = Polygon(data)
     np.testing.assert_array_equal(shape.data, data)
@@ -166,7 +167,7 @@ def test_path():
     """Test creating Shape with a random path."""
     # Test a single six vertex path
     np.random.seed(0)
-    data = 20 * np.random.random((6, 2))
+    data = 20 * np.random.random((6, 2)).astype(np.float32)
     shape = Path(data)
     np.testing.assert_array_equal(shape.data, data)
     assert shape.data_displayed.shape == (6, 2)
@@ -177,7 +178,7 @@ def test_nD_path():
     """Test creating Shape with a random nD path."""
     # Test a single six vertex 3D path
     np.random.seed(0)
-    data = 20 * np.random.random((6, 3))
+    data = 20 * np.random.random((6, 3)).astype(np.float32)
     shape = Path(data)
     np.testing.assert_array_equal(shape.data, data)
     assert shape.data_displayed.shape == (6, 2)
