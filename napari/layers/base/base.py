@@ -9,7 +9,7 @@ import uuid
 import warnings
 from abc import ABC, ABCMeta, abstractmethod
 from collections import defaultdict
-from collections.abc import Generator, Hashable, Sequence
+from collections.abc import Generator, Hashable, Mapping, Sequence
 from contextlib import contextmanager
 from functools import cached_property
 from typing import (
@@ -361,6 +361,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         # Needs to be imported here to avoid circular import in _source
         from napari.layers._source import current_source
 
+        self._highlight_visible = True
         self._unique_id = None
         self._source = current_source()
         self.dask_optimized_slicing = configure_dask(data, cache)
@@ -588,6 +589,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             self._overlays['transform_box'].visible = (
                 self.mode == TRANSFORM and visible
             )
+
+    def update_highlight_visibility(self, visible):
+        self._highlight_visible = visible
+        self._set_highlight(force=True)
 
     @property
     def mode(self) -> str:
@@ -2236,7 +2241,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     def create(
         cls,
         data: Any,
-        meta: Optional[dict] = None,
+        meta: Optional[Mapping] = None,
         layer_type: Optional[str] = None,
     ) -> Layer:
         """Create layer from `data` of type `layer_type`.

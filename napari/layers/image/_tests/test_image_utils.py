@@ -1,3 +1,4 @@
+import inspect
 import time
 
 import dask
@@ -19,22 +20,44 @@ data_dask = da.random.random(
 
 
 def test_guess_rgb():
-    shape = (10, 15)
+    sig = inspect.signature(guess_rgb)
+    min_side_len = sig.parameters['min_side_len'].default
+
+    shape = (10, 15)  # 2D only
     assert not guess_rgb(shape)
 
-    shape = (10, 15, 6)
+    shape = (40, 45, 6)  # final dim is too long
     assert not guess_rgb(shape)
 
-    shape = (10, 15, 3)
+    shape = (min_side_len - 1, min_side_len - 1, 3)  # 2D sides too small
+    assert not guess_rgb(shape)
+
+    shape = (min_side_len - 1, min_side_len + 1, 3)  # one 2D side too small
+    assert not guess_rgb(shape)
+
+    shape = (min_side_len + 1, min_side_len + 1, 3)
     assert guess_rgb(shape)
 
-    shape = (10, 15, 4)
+    shape = (512, 512, 3)
     assert guess_rgb(shape)
+
+    shape = (100, 100, 4)
+    assert guess_rgb(shape)
+
+    shape = (10, 10, 3)
+    assert guess_rgb(shape, min_side_len=5)
 
 
 @given(shape=array_shapes(min_dims=3, min_side=0))
 def test_guess_rgb_property(shape):
-    assert guess_rgb(shape) == (shape[-1] in (3, 4))
+    sig = inspect.signature(guess_rgb)
+    min_side_len = sig.parameters['min_side_len'].default
+
+    assert guess_rgb(shape) == (
+        shape[-1] in (3, 4)
+        and shape[-2] > min_side_len
+        and shape[-3] > min_side_len
+    )
 
 
 def test_guess_multiscale():
