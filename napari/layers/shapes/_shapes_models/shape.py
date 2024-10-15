@@ -169,7 +169,10 @@ class Shape(ABC):
     def bounding_box(self) -> np.ndarray:
         """(2, N) array, bounding box of the object."""
         # We add +-0.5 to handle edge width
-        return self._bounding_box[:, self.dims_displayed] + [[-0.5], [0.5]]
+        return self._bounding_box[:, self.dims_displayed] + [
+            [-0.5 * self.edge_width],
+            [0.5 * self.edge_width],
+        ]
 
     @property
     def dims_not_displayed(self):
