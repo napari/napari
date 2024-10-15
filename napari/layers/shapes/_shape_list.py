@@ -757,6 +757,7 @@ class ShapeList:
             indices = self._index == index
             self._vertices[indices] = shape.data_displayed
             self._update_displayed()
+        self._clear_cache()
 
     @_batch_dec
     def _update_z_order(self):
