@@ -35,24 +35,30 @@ def test_rectangle():
 
 def test_rectangle_shift():
     shape = Rectangle(np.array([[0, 0], [1, 0], [1, 1], [0, 1]]))
-    npt.assert_array_equal(shape.bounding_box, np.array([[0, 0], [1, 1]]))
+    npt.assert_array_equal(
+        shape.bounding_box, np.array([[-0.5, -0.5], [1.5, 1.5]])
+    )
 
     shape.shift((1, 1))
     npt.assert_array_equal(
         shape.data, np.array([[1, 1], [2, 1], [2, 2], [1, 2]])
     )
-    npt.assert_array_equal(shape.bounding_box, np.array([[1, 1], [2, 2]]))
+    npt.assert_array_equal(
+        shape.bounding_box, np.array([[0.5, 0.5], [2.5, 2.5]])
+    )
 
 
 def test_rectangle_rotate():
     shape = Rectangle(np.array([[1, 2], [-1, 2], [-1, -2], [1, -2]]))
-    npt.assert_array_equal(shape.bounding_box, np.array([[-1, -2], [1, 2]]))
+    npt.assert_array_equal(
+        shape.bounding_box, np.array([[-1.5, -2.5], [1.5, 2.5]])
+    )
     shape.rotate(-90)
     npt.assert_array_almost_equal(
         shape.data, np.array([[-2, 1], [-2, -1], [2, -1], [2, 1]])
     )
     npt.assert_array_almost_equal(
-        shape.bounding_box, np.array([[-2, -1], [2, 1]])
+        shape.bounding_box, np.array([[-2.5, -1.5], [2.5, 1.5]])
     )
 
 
@@ -247,22 +253,28 @@ def test_nD_ellipse():
 
 def test_ellipse_shift():
     shape = Ellipse(np.array([[0, 0], [1, 0], [1, 1], [0, 1]]))
-    npt.assert_array_equal(shape.bounding_box, np.array([[0, 0], [1, 1]]))
+    npt.assert_array_equal(
+        shape.bounding_box, np.array([[-0.5, -0.5], [1.5, 1.5]])
+    )
 
     shape.shift((1, 1))
     npt.assert_array_equal(
         shape.data, np.array([[1, 1], [2, 1], [2, 2], [1, 2]])
     )
-    npt.assert_array_equal(shape.bounding_box, np.array([[1, 1], [2, 2]]))
+    npt.assert_array_equal(
+        shape.bounding_box, np.array([[0.5, 0.5], [2.5, 2.5]])
+    )
 
 
 def test_ellipse_rotate():
     shape = Ellipse(np.array([[1, 2], [-1, 2], [-1, -2], [1, -2]]))
-    npt.assert_array_equal(shape.bounding_box, np.array([[-1, -2], [1, 2]]))
+    npt.assert_array_equal(
+        shape.bounding_box, np.array([[-1.5, -2.5], [1.5, 2.5]])
+    )
     shape.rotate(-90)
     npt.assert_array_almost_equal(
         shape.data, np.array([[-2, 1], [-2, -1], [2, -1], [2, 1]])
     )
     npt.assert_array_almost_equal(
-        shape.bounding_box, np.array([[-2, -1], [2, 1]])
+        shape.bounding_box, np.array([[-2.5, -1.5], [2.5, 1.5]])
     )
