@@ -137,8 +137,14 @@ def read_zarr_dataset(path: str):
         # zarr v3
         import zarr
 
-        image = zarr.open(store=path)
-        shape = image.shape
+        data = zarr.open(store=path)
+        if isinstance(data, zarr.Array):
+            image = da.from_zarr(data)
+            shape = image.shape
+        else:
+            image = [data[k] for k in sorted(data)]
+            assert image, 'No arrays found in zarr group'
+            shape = image[0].shape
     else:  # pragma: no cover
         raise ValueError(
             trans._(
