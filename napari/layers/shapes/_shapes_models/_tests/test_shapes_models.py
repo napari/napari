@@ -33,6 +33,19 @@ def test_rectangle():
     assert shape.slice_key.shape == (2, 0)
 
 
+def test_rectangle_bounding_box():
+    """Test that the bounding box is correctly updated based on edge width."""
+    data = [[10, 10], [20, 20]]
+    shape = Rectangle(data)
+    npt.assert_array_equal(
+        shape.bounding_box, np.array([[9.5, 9.5], [20.5, 20.5]])
+    )
+    shape.edge_width = 2
+    npt.assert_array_equal(shape.bounding_box, np.array([[9, 9], [21, 21]]))
+    shape.edge_width = 4
+    npt.assert_array_equal(shape.bounding_box, np.array([[8, 8], [22, 22]]))
+
+
 def test_rectangle_shift():
     shape = Rectangle(np.array([[0, 0], [1, 0], [1, 1], [0, 1]]))
     npt.assert_array_equal(

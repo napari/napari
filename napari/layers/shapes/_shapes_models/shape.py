@@ -345,6 +345,7 @@ class Shape(ABC):
         if center is None:
             self.transform(transform)
         else:
+            center = np.array(center)
             self.shift(-center)
             self.transform(transform)
             self.shift(center)
@@ -366,6 +367,7 @@ class Shape(ABC):
         if center is None:
             self.transform(transform)
         else:
+            center = np.array(center)
             self.shift(-center)
             self.transform(transform)
             self.shift(center)
