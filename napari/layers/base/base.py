@@ -9,7 +9,7 @@ import uuid
 import warnings
 from abc import ABC, ABCMeta, abstractmethod
 from collections import defaultdict
-from collections.abc import Generator, Hashable, Sequence
+from collections.abc import Generator, Hashable, Mapping, Sequence
 from contextlib import contextmanager
 from functools import cached_property
 from typing import (
@@ -2241,7 +2241,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     def create(
         cls,
         data: Any,
-        meta: Optional[dict] = None,
+        meta: Optional[Mapping] = None,
         layer_type: Optional[str] = None,
     ) -> Layer:
         """Create layer from `data` of type `layer_type`.
