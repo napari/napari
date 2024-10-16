@@ -3,6 +3,7 @@ import itertools
 import time
 from collections import defaultdict
 from dataclasses import dataclass
+from importlib.metadata import version
 
 import numpy as np
 import numpy.testing as npt
@@ -10,6 +11,7 @@ import pandas as pd
 import pytest
 import xarray as xr
 import zarr
+from packaging.version import parse as parse_version
 from skimage import data as sk_data
 
 from napari._tests.utils import check_layer_world_data_extent
@@ -1123,7 +1125,14 @@ def test_large_label_values():
     assert len(np.unique(mapped.reshape((-1, 4)), axis=0)) == 4
 
 
-def test_fill_tensorstore(tmp_path):
+if parse_version(version('zarr')) > parse_version('3.0.0a0'):
+    driver = [(2, 'zarr'), (3, 'zarr3')]
+else:
+    driver = [(2, 'zarr')]
+
+
+@pytest.mark.parametrize(('zarr_version', 'zarr_driver'), driver)
+def test_fill_tensorstore(tmp_path, zarr_version, zarr_driver):
     ts = pytest.importorskip('tensorstore')
 
     labels = np.zeros((5, 7, 8, 9), dtype=int)
@@ -1139,17 +1148,13 @@ def test_fill_tensorstore(tmp_path):
         shape=labels.shape,
         dtype=np.uint32,
         chunks=(1, 1, 8, 9),
+        zarr_version=zarr_version,
     )
     labels_temp[:] = labels
     labels_ts_spec = {
-        'driver': 'zarr',
+        'driver': zarr_driver,
         'kvstore': {'driver': 'file', 'path': file_path},
         'path': '',
-        'metadata': {
-            'dtype': labels_temp.dtype.str,
-            'order': labels_temp.order,
-            'shape': labels.shape,
-        },
     }
     data = ts.open(labels_ts_spec, create=False, open=True).result()
     layer = Labels(data)
