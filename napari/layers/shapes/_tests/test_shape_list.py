@@ -25,7 +25,7 @@ def test_adding_to_shape_list():
 
 
 def test_reset_bounding_box_rotation():
-    """Test if move or rotate resets bounding box."""
+    """Test if rotating shape resets bounding box."""
     shape = Rectangle(np.array([[0, 0], [10, 10]]))
     shape_list = ShapeList()
     shape_list.add(shape)
@@ -43,7 +43,7 @@ def test_reset_bounding_box_rotation():
 
 
 def test_reset_bounding_box_shift():
-    """Test if move or rotate resets bounding box."""
+    """Test if shifting shape resets bounding box."""
     shape = Rectangle(np.array([[0, 0], [10, 10]]))
     shape_list = ShapeList()
     shape_list.add(shape)
@@ -60,6 +60,7 @@ def test_reset_bounding_box_shift():
 
 
 def test_reset_bounding_box_scale():
+    """Test if scaling shape resets the bounding box."""
     shape = Rectangle(np.array([[0, 0], [10, 10]]))
     shape_list = ShapeList()
     shape_list.add(shape)
