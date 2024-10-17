@@ -75,8 +75,6 @@ def test_zarr(tmp_path):
     z = zarr.open(store=data_path, mode='a', shape=image.shape)
     z[:] = image
     image_in = magic_imread([data_path])
-    # Note: due to lazy loading, the next line needs to happen within
-    # the context manager. Alternatively, we could convert to NumPy here.
     np.testing.assert_array_equal(image, image_in)
 
 
@@ -120,8 +118,6 @@ def test_zarr_multiscale(tmp_path):
         z[:] = multiscale[i]
     multiscale_in = magic_imread([fout])
     assert len(multiscale) == len(multiscale_in)
-    # Note: due to lazy loading, the next line needs to happen within
-    # the context manager. Alternatively, we could convert to NumPy here.
     for images, images_in in zip(multiscale, multiscale_in):
         np.testing.assert_array_equal(images, images_in)
 
