@@ -1031,7 +1031,7 @@ class ShapeList:
         ----------
         indices : int | Sequence[int]
             Location in list of the shapes to be outline.
-            If sequence must be a list of int
+            If sequence, all elements should be ints
 
         Returns
         -------
