@@ -1029,9 +1029,9 @@ class ShapeList:
 
         Parameters
         ----------
-        indices : int | list
-            Location in list of the shapes to be outline. If list must be a
-            list of int
+        indices : int | Sequence[int]
+            Location in list of the shapes to be outline.
+            If sequence must be a list of int
 
         Returns
         -------
@@ -1042,6 +1042,8 @@ class ShapeList:
         triangles : np.ndarray
             Mx3 array of any indices of vertices for triangles of outline
         """
+        if isinstance(indices, Sequence) and len(indices) == 1:
+            indices = indices[0]
         if not isinstance(indices, Sequence):
             shape = self.shapes[indices]
             return (
