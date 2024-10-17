@@ -2395,6 +2395,14 @@ def test_shapes_add_delete_only_emit_two_events():
     assert emitted_events.call_count == 4
 
 
+def test_clean_selection_on_set_data():
+    data = [[[0, 0], (10, 10)], [[0, 15], [10, 25]]]
+    layer = Shapes(data)
+    layer.selected_data = {0}
+    layer.data = [[[0, 0], (10, 10)]]
+    assert layer.selected_data == set()
+
+
 def test_docstring():
     validate_all_params_in_docstring(Shapes)
     validate_kwargs_sorted(Shapes)

@@ -667,6 +667,7 @@ class Shapes(Layer):
     @data.setter
     def data(self, data):
         self._finish_drawing()
+        self.selected_data = set()
         prior_data = len(self.data) > 0
         data, shape_type = extract_shape_type(data)
         n_new_shapes = number_of_shapes(data)
