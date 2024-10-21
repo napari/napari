@@ -667,6 +667,7 @@ class Shapes(Layer):
     @data.setter
     def data(self, data):
         self._finish_drawing()
+        self.selected_data = set()
         prior_data = len(self.data) > 0
         data, shape_type = extract_shape_type(data)
         n_new_shapes = number_of_shapes(data)
@@ -2460,8 +2461,10 @@ class Shapes(Layer):
             Mx3 array of any indices of vertices for triangles of outline or
             None
         """
-        if self._value is not None and (
-            self._value[0] is not None or len(self.selected_data) > 0
+        if (
+            self._highlight_visible
+            and self._value is not None
+            and (self._value[0] is not None or len(self.selected_data) > 0)
         ):
             if len(self.selected_data) > 0:
                 index = list(self.selected_data)
@@ -2502,7 +2505,7 @@ class Shapes(Layer):
         width : float
             Width of the box edge
         """
-        if len(self.selected_data) > 0:
+        if self._highlight_visible and len(self.selected_data) > 0:
             if self._mode == Mode.SELECT:
                 # If in select mode just show the interaction bounding box
                 # including its vertices and the rotation handle
@@ -2553,7 +2556,7 @@ class Shapes(Layer):
                 edge_color = 'white'
                 pos = None
                 width = 0
-        elif self._is_selecting:
+        elif self._highlight_visible and self._is_selecting:
             # If currently dragging a selection box just show an outline of
             # that box
             vertices = np.empty((0, 2))

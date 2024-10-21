@@ -72,7 +72,7 @@ labels_fun_to_mode = [
 
 @register_label_action(
     trans._(
-        'Set the currently selected label to the largest used label plus one.'
+        'Set the currently selected label to the largest used label plus one'
     ),
 )
 def new_label(layer: Labels):
@@ -97,7 +97,7 @@ def new_label(layer: Labels):
 
 
 @register_label_action(
-    trans._('Swap between the selected label and the background label.'),
+    trans._('Swap between the selected label and the background label'),
 )
 def swap_selected_and_background_labels(layer: Labels):
     """Swap between the selected label and the background label."""
@@ -105,21 +105,21 @@ def swap_selected_and_background_labels(layer: Labels):
 
 
 @register_label_action(
-    trans._('Decrease the currently selected label by one.'),
+    trans._('Decrease the currently selected label by one'),
 )
 def decrease_label_id(layer: Labels):
     layer.selected_label -= 1
 
 
 @register_label_action(
-    trans._('Increase the currently selected label by one.'),
+    trans._('Increase the currently selected label by one'),
 )
 def increase_label_id(layer: Labels):
     layer.selected_label += 1
 
 
 @register_label_action(
-    trans._('Decrease the paint brush size by one.'),
+    trans._('Decrease the paint brush size by one'),
     repeatable=True,
 )
 def decrease_brush_size(layer: Labels):
@@ -132,7 +132,7 @@ def decrease_brush_size(layer: Labels):
 
 
 @register_label_action(
-    trans._('Increase the paint brush size by one.'),
+    trans._('Increase the paint brush size by one'),
     repeatable=True,
 )
 def increase_brush_size(layer: Labels):
