@@ -563,7 +563,7 @@ class QtViewer(QSplitter):
 
             with warnings.catch_warnings():
                 warnings.filterwarnings('ignore')
-                console = QtConsole(self.viewer)
+                console = QtConsole(self.viewer, style_sheet=self.styleSheet())
                 console.push(
                     {'napari': napari, 'action_manager': action_manager}
                 )
