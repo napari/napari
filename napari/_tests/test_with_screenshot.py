@@ -545,3 +545,39 @@ def test_blending_modes_with_canvas(make_napari_viewer):
     img2_layer.blending = 'minimum'
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     np.testing.assert_array_equal(screenshot[:, :, 0], np.minimum(img1, img2))
+
+
+@skip_local_popups
+def test_active_layer_highlight_visibility(make_napari_viewer):
+    viewer = make_napari_viewer(show=True)
+    viewer.window._qt_viewer.set_welcome_visible(False)
+
+    # take initial screenshot (full black/empty screenshot since welcome message is hidden)
+    launch_screenshot = viewer.screenshot(canvas_only=True, flash=False)
+    assert launch_screenshot[..., :-1].max() == 0
+
+    # add shapes layer setting edge and face color to `black` (so shapes aren't
+    # visible unless they're selected), create a rectangle and select the created shape
+    shapes_layer = viewer.add_shapes(edge_color='black', face_color='black')
+    shapes_layer.add_rectangles([[0, 0], [1, 1]])
+    shapes_layer.selected_data = {0}
+
+    # there should be a highlight so a screenshot should have something visible
+    highlight_screenshot = viewer.screenshot(canvas_only=True, flash=False)
+    assert highlight_screenshot[..., :-1].max() > 0
+
+    # clear viewer layer selection
+    viewer.layers.selection.clear()
+
+    # there shouldn't be a highlight so a new screenshot shouldn't have something visible
+    no_highlight_screenshot = viewer.screenshot(canvas_only=True, flash=False)
+    assert no_highlight_screenshot[..., :-1].max() == 0
+
+    # selecte again the layer with the rectangle shape
+    viewer.layers.selection.add(shapes_layer)
+
+    # there should be a highlight so a screenshot should have something visible
+    reselection_highlight_screenshot = viewer.screenshot(
+        canvas_only=True, flash=False
+    )
+    assert reselection_highlight_screenshot[..., :-1].max() > 0
