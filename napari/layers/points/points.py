@@ -2009,7 +2009,9 @@ class Points(Layer):
         self._value_stored = copy(self._value)
         self._drag_box_stored = copy(self._drag_box)
 
-        if self._value is not None or len(self._selected_view) > 0:
+        if self._highlight_visible and (
+            self._value is not None or len(self._selected_view) > 0
+        ):
             if len(self._selected_view) > 0:
                 index = copy(self._selected_view)
                 # highlight the hovered point if not in adding mode
@@ -2039,7 +2041,7 @@ class Points(Layer):
             self._highlight_index = []
 
         # only display dragging selection box in 2D
-        if self._is_selecting:
+        if self._highlight_visible and self._is_selecting:
             if self._drag_normal is None:
                 pos = create_box(self._drag_box)
             else:

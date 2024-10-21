@@ -2103,6 +2103,7 @@ def test_value():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     data[-1, :] = [[0, 0], [0, 10], [10, 0], [10, 10]]
+    assert Shapes([]).get_value((0,) * 2) == (None, None)
     layer = Shapes(data)
     value = layer.get_value((0,) * 2)
     assert value == (9, None)
@@ -2115,6 +2116,16 @@ def test_value():
     layer = Shapes(data + 5)
     value = layer.get_value((0,) * 2)
     assert value == (None, None)
+
+
+def test_value_non_convex():
+    """Test getting the value of the data at the current coordinates."""
+    data = [
+        [[0, 0], [10, 10], [20, 0], [10, 5]],
+    ]
+    layer = Shapes(data, shape_type='polygon')
+    assert layer.get_value((1,) * 2) == (0, None)
+    assert layer.get_value((10, 3)) == (None, None)
 
 
 @pytest.mark.parametrize(
@@ -2382,6 +2393,14 @@ def test_shapes_add_delete_only_emit_two_events():
     layer.selected_data = {1}
     layer.remove_selected()
     assert emitted_events.call_count == 4
+
+
+def test_clean_selection_on_set_data():
+    data = [[[0, 0], (10, 10)], [[0, 15], [10, 25]]]
+    layer = Shapes(data)
+    layer.selected_data = {0}
+    layer.data = [[[0, 0], (10, 10)]]
+    assert layer.selected_data == set()
 
 
 def test_docstring():

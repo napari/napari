@@ -474,6 +474,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # shown with this position may be incorrect. See the discussion for more details:
         # https://github.com/napari/napari/pull/5377#discussion_r1036280855
         position = list(self.cursor.position)
+        if len(position) < self.dims.ndim:
+            # cursor dimensionality is outdated — reset to correct dimension
+            position = [0.0] * self.dims.ndim
         for ind in self.dims.order[: -self.dims.ndisplay]:
             position[ind] = self.dims.point[ind]
         self.cursor.position = tuple(position)
@@ -484,13 +487,16 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if active_layer is None:
             for layer in self.layers:
                 layer.update_transform_box_visibility(False)
+                layer.update_highlight_visibility(False)
             self.help = ''
             self.cursor.style = CursorStyle.STANDARD
         else:
             active_layer.update_transform_box_visibility(True)
+            active_layer.update_highlight_visibility(True)
             for layer in self.layers:
                 if layer != active_layer:
                     layer.update_transform_box_visibility(False)
+                    layer.update_highlight_visibility(False)
             self.help = active_layer.help
             self.cursor.style = active_layer.cursor
             self.cursor.size = active_layer.cursor_size

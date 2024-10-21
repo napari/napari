@@ -180,7 +180,7 @@ def move_shapes_selection_to_back(layer: Shapes) -> None:
 
 @register_shapes_action(
     trans._(
-        'Finish any drawing, for example when using the path or polygon tool.'
+        'Finish any drawing, for example when using the path or polygon tool'
     ),
 )
 def finish_drawing_shape(layer: Shapes) -> None:
