@@ -211,6 +211,11 @@ class Labels(ScalarFieldBase):
         with a thickness equal to its value. Must be >= 0.
     brush_size : float
         Size of the paint brush in data coordinates.
+    iso_gradient_mode : str
+        Method for calulating the gradient (used to get the surface normal) in the
+        'iso_categorical' rendering mode. Must be one of {'fast', 'smooth'}.
+        'fast' uses a simple finite difference gradient in x, y, and z. 'smooth' uses an
+        isotropic Sobel gradient, which is smoother but more computationally expensive.
     selected_label : int
         Index of selected label. Can be greater than the current maximum label.
     mode : str
@@ -394,7 +399,7 @@ class Labels(ScalarFieldBase):
         self._contiguous = True
         self._brush_size = 10
 
-        self._iso_gradient_mode = IsoCategoricalGradientMode.FAST
+        self._iso_gradient_mode = IsoCategoricalGradientMode(iso_gradient_mode)
 
         self._selected_label = 1
         self.colormap.selection = self._selected_label
