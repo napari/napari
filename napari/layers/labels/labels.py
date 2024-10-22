@@ -446,7 +446,7 @@ class Labels(ScalarFieldBase):
         self.events.rendering()
 
     @property
-    def iso_gradient_mode(self):
+    def iso_gradient_mode(self) -> str:
         """Return current gradient mode for isosurface rendering.
 
         Selects the finite-difference gradient method for the isosurface shader. Options include:
@@ -462,7 +462,7 @@ class Labels(ScalarFieldBase):
         return str(self._iso_gradient_mode)
 
     @iso_gradient_mode.setter
-    def iso_gradient_mode(self, value):
+    def iso_gradient_mode(self, value: Union[IsoCategoricalGradientMode, str]):
         self._iso_gradient_mode = IsoCategoricalGradientMode(value)
         self.events.iso_gradient_mode()
 
