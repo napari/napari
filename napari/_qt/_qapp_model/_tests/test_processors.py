@@ -56,10 +56,13 @@ def test_add_layer_data_to_viewer():
 def test_add_layer_to_viewer():
     layer = MagicMock()
     viewer = MagicMock()
+    _add_layer_to_viewer(None)
     _add_layer_to_viewer(layer)
     _add_layer_to_viewer(layer, viewer)
 
 
 def test_add_future_data():
     future = MagicMock()
+    viewer = MagicMock()
     _add_future_data(future, Union[ImageData, LabelsData])
+    _add_future_data(future, Union[ImageData, LabelsData], viewer=viewer)
