@@ -73,7 +73,6 @@ from napari._qt.widgets.qt_viewer_dock_widget import (
     QtViewerDockWidget,
 )
 from napari._qt.widgets.qt_viewer_status_bar import ViewerStatusBar
-from napari.components.command_palette import create_napari_command_palette
 from napari.plugins import (
     menu_item_template as plugin_menu_item_template,
     plugin_manager,
@@ -214,8 +213,7 @@ class _QtMainWindow(QMainWindow):
             self._toggle_status_thread
         )
 
-        palette = create_napari_command_palette()
-        self._command_palette = QCommandPalette(self, palette)
+        self._command_palette = QCommandPalette(self)
 
     def _toggle_status_thread(self, event: Event):
         if event.value:

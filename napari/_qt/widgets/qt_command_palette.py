@@ -20,7 +20,7 @@ class QCommandPalette(QtW.QWidget):
 
     hidden = Signal()
 
-    def __init__(self, parent: QtW.QWidget | None = None, palette=None):
+    def __init__(self, parent: QtW.QWidget | None = None):
         super().__init__(parent)
 
         self._line = QCommandLineEdit()
@@ -39,7 +39,11 @@ class QCommandPalette(QtW.QWidget):
         self._line.setFont(font)
         self.hide()
 
-        self.extend_command(palette._command_rules)
+        app = get_app_model()
+        # this appears to be a flat list of menu items, even though the
+        # type hint suggests menu or submenu
+        menu_items = app.menus.get_menu(app.menus.COMMAND_PALETTE_ID)
+        self.extend_command([item.command for item in menu_items])
 
     def sizeHint(self) -> QtCore.QSize:
         return QtCore.QSize(600, 400)

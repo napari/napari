@@ -35,6 +35,8 @@ class CommandPalette:
 
 
 _GLOBAL_PALETTES: dict[str, CommandPalette] = {}
+"""Keyed by application name, in case multiple applications are running
+in the same process."""
 
 
 def get_palette(name) -> CommandPalette:
