@@ -573,7 +573,7 @@ def test_active_layer_highlight_visibility(make_napari_viewer):
     no_highlight_screenshot = viewer.screenshot(canvas_only=True, flash=False)
     assert no_highlight_screenshot[..., :-1].max() == 0
 
-    # selecte again the layer with the rectangle shape
+    # select again the layer with the rectangle shape
     viewer.layers.selection.add(shapes_layer)
 
     # there should be a highlight so a screenshot should have something visible
