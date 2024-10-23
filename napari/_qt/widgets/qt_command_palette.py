@@ -44,6 +44,7 @@ class QCommandPalette(QtW.QWidget):
         # type hint suggests menu or submenu
         menu_items = app.menus.get_menu(app.menus.COMMAND_PALETTE_ID)
         self.extend_command([item.command for item in menu_items])
+        app.menus.menus_changed.connect(self._on_app_menus_changed)
 
     def sizeHint(self) -> QtCore.QSize:
         return QtCore.QSize(600, 400)
@@ -72,6 +73,25 @@ class QCommandPalette(QtW.QWidget):
         self._list.execute(index)
         self.hide()
         return
+
+    def _on_app_menus_changed(self, changed_menus: set[str]):
+        """Connected to app_model.menus.menus_changed."""
+        app = get_app_model()
+        if app.menus.COMMAND_PALETTE_ID not in changed_menus:
+            return
+        all_cmds_set = set(self._list.all_commands)
+        palette_menu_commands = [
+            item.command
+            for item in app.menus.get_menu(app.menus.COMMAND_PALETTE_ID)
+        ]
+        palette_menu_set = set(palette_menu_commands)
+        removed = all_cmds_set - palette_menu_set
+        added = palette_menu_set - all_cmds_set
+        for elem in removed:
+            self._list.all_commands.remove(elem)
+        for elem in palette_menu_commands:
+            if elem in added:
+                self._list.all_commands.append(elem)
 
     def focusOutEvent(self, a0: QtGui.QFocusEvent) -> None:
         self.hide()
