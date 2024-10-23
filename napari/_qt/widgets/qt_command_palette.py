@@ -20,7 +20,7 @@ class QCommandPalette(QtW.QWidget):
 
     hidden = Signal()
 
-    def __init__(self, parent: QtW.QWidget | None = None):
+    def __init__(self, parent: QtW.QWidget | None = None, palette=None):
         super().__init__(parent)
 
         self._line = QCommandLineEdit()
@@ -38,6 +38,8 @@ class QCommandPalette(QtW.QWidget):
         self.setFont(font)
         self._line.setFont(font)
         self.hide()
+
+        self.extend_command(palette._command_rules)
 
     def sizeHint(self) -> QtCore.QSize:
         return QtCore.QSize(600, 400)

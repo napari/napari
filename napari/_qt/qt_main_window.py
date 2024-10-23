@@ -67,6 +67,7 @@ from napari._qt.qt_resources import get_stylesheet
 from napari._qt.qt_viewer import QtViewer
 from napari._qt.threads.status_checker import StatusChecker
 from napari._qt.utils import QImg2array, qbytearray_to_str, str_to_qbytearray
+from napari._qt.widgets.qt_command_palette import QCommandPalette
 from napari._qt.widgets.qt_viewer_dock_widget import (
     _SHORTCUT_DEPRECATION_STRING,
     QtViewerDockWidget,
@@ -214,7 +215,7 @@ class _QtMainWindow(QMainWindow):
         )
 
         palette = create_napari_command_palette()
-        self._command_palette = palette.get_widget(self)
+        self._command_palette = QCommandPalette(self, palette)
 
     def _toggle_status_thread(self, event: Event):
         if event.value:

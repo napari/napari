@@ -33,18 +33,6 @@ class CommandPalette:
         self._command_rules.append(cmd)
         return
 
-    def get_widget(self, parent: QtW.QWidget) -> QCommandPalette:
-        """Get a command palette widget for the given parent widget."""
-        from napari._qt.widgets.qt_command_palette import QCommandPalette
-
-        _id = id(parent)
-        if (widget := self._parent_to_palette_map.get(_id)) is None:
-            widget = QCommandPalette(parent)
-            widget.extend_command(self._command_rules)
-            self._parent_to_palette_map[_id] = widget
-            self._palette_to_parent_map[id(widget)] = parent
-        return widget
-
 
 _GLOBAL_PALETTES: dict[str, CommandPalette] = {}
 
