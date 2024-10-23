@@ -4,14 +4,15 @@ import re
 from collections.abc import Iterator
 from typing import TYPE_CHECKING, Any
 
+from app_model.types import CommandRule
 from qtpy import QtCore, QtGui, QtWidgets as QtW
 from qtpy.QtCore import Qt, Signal
 
-from napari._app_model.context._context import get_context
+from napari._app_model import get_app_model
+from napari._app_model.context._context import ContextMapping, get_context
 
 if TYPE_CHECKING:
     from napari._qt.qt_main_window import _QtMainWindow
-    from napari.components.command_palette import Command
 
 
 class QCommandPalette(QtW.QWidget):
@@ -49,7 +50,7 @@ class QCommandPalette(QtW.QWidget):
         """Set the color used for the matched characters."""
         return self._list.set_match_color(color)
 
-    def extend_command(self, list_of_commands: list[Command]):
+    def extend_command(self, list_of_commands: list[CommandRule]):
         self._list.extend_command(list_of_commands)
         return
 
@@ -161,7 +162,7 @@ class QCommandMatchModel(QtCore.QAbstractListModel):
 
     def __init__(self, parent: QtW.QWidget = None):
         super().__init__(parent)
-        self._commands: list[Command] = []
+        self._commands: list[CommandRule] = []
         self._max_matches = 80
 
     def rowCount(self, parent: QtCore.QModelIndex = None) -> int:
@@ -180,7 +181,7 @@ class QCommandLabel(QtW.QLabel):
 
     DISABLED_COLOR = 'gray'
 
-    def __init__(self, cmd: Command | None = None):
+    def __init__(self, cmd: CommandRule | None = None):
         super().__init__()
         if cmd is not None:
             self.set_command(cmd)
@@ -188,13 +189,13 @@ class QCommandLabel(QtW.QLabel):
             self._command = None
             self._command_text = ''
 
-    def command(self) -> Command:
-        """Command bound to this label."""
+    def command(self) -> CommandRule:
+        """The app-model Action bound to this label."""
         return self._command
 
-    def set_command(self, cmd: Command) -> None:
+    def set_command(self, cmd: CommandRule) -> None:
         """Set command to this widget."""
-        command_text = cmd.fmt()
+        command_text = _format_action_name(cmd)
         self._command_text = command_text
         self._command = cmd
         self.setText(command_text)
@@ -288,14 +289,14 @@ class QCommandList(QtW.QListView):
         return
 
     @property
-    def all_commands(self) -> list[Command]:
+    def all_commands(self) -> list[CommandRule]:
         return self.model()._commands
 
-    def add_command(self, command: Command) -> None:
+    def add_command(self, command: CommandRule) -> None:
         self.all_commands.append(command)
         return
 
-    def extend_command(self, commands: list[Command]) -> None:
+    def extend_command(self, commands: list[CommandRule]) -> None:
         """Extend the list of commands."""
         self.all_commands.extend(commands)
         return
@@ -304,11 +305,11 @@ class QCommandList(QtW.QListView):
         """Clear all the command"""
         return self.all_commands.clear()
 
-    def command_at(self, index: int) -> Command:
+    def command_at(self, index: int) -> CommandRule:
         i = index - self._index_offset
         return self.indexWidget(self.model().index(i)).command()
 
-    def iter_command(self) -> Iterator[Command]:
+    def iter_command(self) -> Iterator[CommandRule]:
         for i in range(self.model().rowCount()):
             if not self.isRowHidden(i):
                 yield self.command_at(i)
@@ -317,34 +318,34 @@ class QCommandList(QtW.QListView):
         """Execute the currently selected command."""
         if index is None:
             index = self._selected_index
-        cmd = self.command_at(index)
-        if cmd is None:
+        action = self.command_at(index)
+        if action is None:
             return
-        cmd.exec()
+        _exec_action(action)
         # move to the top
-        self.all_commands.remove(cmd)
-        self.all_commands.insert(0, cmd)
+        self.all_commands.remove(action)
+        self.all_commands.insert(0, action)
         return
 
     def can_execute(self) -> bool:
         """Return true if the command can be executed."""
         index = self._selected_index
-        cmd = self.command_at(index)
-        return cmd.enabled(self._app_model_context)
+        action = self.command_at(index)
+        return _enabled(action, self._app_model_context)
 
     def update_for_text(self, input_text: str) -> None:
         """Update the list to match the input text."""
         self._selected_index = 0
         max_matches = self.model()._max_matches
         row = 0
-        for row, cmd in enumerate(self.iter_top_hits(input_text)):
+        for row, action in enumerate(self.iter_top_hits(input_text)):
             self.setRowHidden(row, False)
             lw = self.indexWidget(self.model().index(row))
             if lw is None:
                 self._current_max_index = row
                 break
-            lw.set_command(cmd)
-            if cmd.enabled(self._app_model_context):
+            lw.set_command(action)
+            if _enabled(action, self._app_model_context):
                 lw.set_text_colors(input_text, color=self._match_color)
             else:
                 lw.set_disabled()
@@ -352,7 +353,9 @@ class QCommandList(QtW.QListView):
             if row >= max_matches:
                 self._current_max_index = max_matches
                 break
+            row = row + 1
         else:
+            # if the loop completes without break
             self._current_max_index = row
             for r in range(row, max_matches):
                 self.setRowHidden(r, True)
@@ -360,18 +363,18 @@ class QCommandList(QtW.QListView):
         self.update()
         return
 
-    def iter_top_hits(self, input_text: str) -> Iterator[Command]:
+    def iter_top_hits(self, input_text: str) -> Iterator[CommandRule]:
         """Iterate over the top hits for the input text"""
-        commands: list[tuple[float, Command]] = []
-        for cmd in self.all_commands:
-            score = cmd.match_score(input_text)
+        actions: list[tuple[float, CommandRule]] = []
+        for action in self.all_commands:
+            score = _match_score(action, input_text)
             if score > 0.0:
-                if cmd.enabled(self._app_model_context):
+                if _enabled(action, self._app_model_context):
                     score += 10.0
-                commands.append((score, cmd))
-        commands.sort(key=lambda x: x[0], reverse=True)
-        for _, cmd in commands:
-            yield cmd
+                actions.append((score, action))
+        actions.sort(key=lambda x: x[0], reverse=True)
+        for _, action in actions:
+            yield action
 
     if TYPE_CHECKING:
 
@@ -379,3 +382,35 @@ class QCommandList(QtW.QListView):
         def indexWidget(
             self, index: QtCore.QModelIndex
         ) -> QCommandLabel | None: ...
+
+
+def _enabled(action: CommandRule, context: ContextMapping):
+    if action.enablement is None:
+        return True
+    try:
+        return action.enablement.eval(context)
+    except NameError:
+        return False
+
+
+def _match_score(action: CommandRule, input_text: str) -> float:
+    """Return a match score (between 0 and 1) for the input text."""
+    name = _format_action_name(action).lower()
+    if all(word in name for word in input_text.lower().split(' ')):
+        return 1.0
+    return 0.0
+
+
+def _format_action_name(cmd: CommandRule):
+    sep = ':' if ':' in cmd.id else '.'
+    *contexts, _ = cmd.id.split(sep)
+    title = ' > '.join(contexts)
+    desc = cmd.title
+    if title:
+        return f'{title} > {desc}'
+    return desc
+
+
+def _exec_action(action: CommandRule):
+    app = get_app_model()
+    return app.commands.execute_command(action.id).result()

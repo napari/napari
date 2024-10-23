@@ -3,12 +3,9 @@ from __future__ import annotations
 import weakref
 from typing import TYPE_CHECKING
 
-from app_model.expressions import Constant
-
-from napari.components.command_palette._components import Command
+from app_model.types import CommandRule
 
 if TYPE_CHECKING:
-    from app_model.types import CommandRule
     from qtpy import QtWidgets as QtW
 
     from napari._qt.widgets.qt_command_palette import QCommandPalette
@@ -20,27 +17,20 @@ class CommandPalette:
     """The command palette interface."""
 
     def __init__(self, name: str) -> None:
-        self._commands: list[Command] = []
+        self._command_rules: list[CommandRule] = []
         self._parent_to_palette_map: dict[int, QCommandPalette] = {}
         self._palette_to_parent_map: _WVDict = weakref.WeakValueDictionary()
         self._name = name
 
     @property
-    def commands(self) -> list[Command]:
+    def command_rules(self) -> list[CommandRule]:
         """List of all the commands."""
-        return self._commands.copy()
+        return self._command_rules.copy()
 
     def register(self, cmd: CommandRule) -> None:
         """Register a command to the palette."""
         # update defaults
-        sep = ':' if ':' in cmd.id else '.'
-        *contexts, _ = cmd.id.split(sep)
-        title = ' > '.join(contexts)
-        enablement = cmd.enablement or Constant(True)
-        desc = cmd.title
-        tooltip = cmd.status_tip or ''
-        cmd = Command(cmd, title, desc, tooltip, enablement)
-        self._commands.append(cmd)
+        self._command_rules.append(cmd)
         return
 
     def get_widget(self, parent: QtW.QWidget) -> QCommandPalette:
@@ -50,7 +40,7 @@ class CommandPalette:
         _id = id(parent)
         if (widget := self._parent_to_palette_map.get(_id)) is None:
             widget = QCommandPalette(parent)
-            widget.extend_command(self._commands)
+            widget.extend_command(self._command_rules)
             self._parent_to_palette_map[_id] = widget
             self._palette_to_parent_map[id(widget)] = parent
         return widget
