@@ -488,7 +488,8 @@ class MouseEvent:
     pos: list[int]
 
 
-def test_process_mouse_event(make_napari_viewer):
+@pytest.mark.parametrize('fov', [0, 50])
+def test_process_mouse_event(make_napari_viewer, fov):
     """Test that the correct properties are added to the
     MouseEvent by _process_mouse_events.
     """
@@ -501,6 +502,7 @@ def test_process_mouse_event(make_napari_viewer):
     data[1, 0:10, 0:10, 0:10] = 1
 
     viewer = make_napari_viewer()
+    viewer.camera.perspective = fov
     view = viewer.window._qt_viewer
     labels = viewer.add_labels(data, scale=(1, 2, 1, 1), translate=(5, 5, 5))
 
@@ -511,7 +513,7 @@ def test_process_mouse_event(make_napari_viewer):
         assert event.dims_point[0] == data.shape[0] // 2
 
         expected_position = view.canvas._map_canvas2world(new_pos)
-        np.testing.assert_almost_equal(expected_position, list(event.position))
+        np.testing.assert_almost_equal(event.position, expected_position)
 
     viewer.dims.ndisplay = 3
     view.canvas._process_mouse_event(mouse_press_callbacks, mouse_event)
