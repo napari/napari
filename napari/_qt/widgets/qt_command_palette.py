@@ -85,7 +85,7 @@ class QCommandPalette(QtW.QWidget):
                 self._list.all_commands.append(elem)
         return
 
-    def focusOutEvent(self, a0: QtGui.QFocusEvent) -> None:
+    def focusOutEvent(self, a0: QtGui.QFocusEvent | None) -> None:
         """Hide the palette when focus is lost."""
         self.hide()
         return super().focusOutEvent(a0)
@@ -131,7 +131,7 @@ class QCommandLineEdit(QtW.QLineEdit):
 
     def commandPalette(self) -> QCommandPalette:
         """The parent command palette widget."""
-        return self.parent()
+        return cast(QCommandPalette, self.parent())
 
     def event(self, e: QtCore.QEvent | None) -> bool:
         if e is None or e.type() != QtCore.QEvent.Type.KeyPress:
@@ -180,7 +180,7 @@ def colored(text: str, color: str) -> str:
 class QCommandMatchModel(QtCore.QAbstractListModel):
     """A list model for the command palette."""
 
-    def __init__(self, parent: QtW.QWidget = None):
+    def __init__(self, parent: QtW.QWidget | None = None):
         super().__init__(parent)
         self._commands: list[CommandRule] = []
         self._max_matches = 80
@@ -192,7 +192,7 @@ class QCommandMatchModel(QtCore.QAbstractListModel):
         """Don't show any data. Texts are rendered by the item widget."""
         return QtCore.QVariant()
 
-    def flags(self, index: QtCore.QModelIndex) -> Qt.ItemFlag:
+    def flags(self, index: QtCore.QModelIndex) -> Qt.ItemFlags:
         return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
 
 
@@ -297,9 +297,10 @@ class QCommandList(QtW.QListView):
     def update_selection(self) -> None:
         """Update the widget selection state based on the selected index."""
         index = self.model().index(self._selected_index - self._index_offset)
-        self.selectionModel().setCurrentIndex(
-            index, QtCore.QItemSelectionModel.SelectionFlag.ClearAndSelect
-        )
+        if model := self.selectionModel():
+            model.setCurrentIndex(
+                index, QtCore.QItemSelectionModel.SelectionFlag.ClearAndSelect
+            )
         return
 
     @property
