@@ -8,6 +8,7 @@ from napari.utils.transforms import Affine
 
 def test_interaction_box_rotation():
     layer = Mock(affine=Affine())
+    layer._slice_input.displayed = [0, 1]
     initial_affine = Affine()
     initial_mouse_pos = Mock()
     # rotation handle is 8th
@@ -43,6 +44,7 @@ def test_interaction_box_rotation():
 
 def test_interaction_box_fixed_rotation():
     layer = Mock(affine=Affine())
+    layer._slice_input.displayed = [0, 1]
     initial_affine = Affine()
     initial_mouse_pos = Mock()
     # rotation handle is 8th
