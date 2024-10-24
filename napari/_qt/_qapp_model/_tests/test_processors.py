@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Optional, Union
 from unittest.mock import MagicMock
 
 import numpy as np
@@ -25,10 +25,9 @@ def test_add_plugin_dock_widget(qtbot):
     _add_plugin_dock_widget((widget, 'widget'), viewer)
 
 
-def test_add_layer_data_tuples_to_viewer():
+def test_add_layer_data_tuples_to_viewer_invalid_data():
     viewer = MagicMock()
     error_data = (np.zeros((10, 10)), np.zeros((10, 10)))
-    valid_data = [(np.zeros((10, 10)),), (np.zeros((10, 10)),)]
     with pytest.raises(
         TypeError, match='Not a valid list of layer data tuples!'
     ):
@@ -37,14 +36,24 @@ def test_add_layer_data_tuples_to_viewer():
             return_type=Union[ImageData, LabelsData],
             viewer=viewer,
         )
+
+
+def test_add_layer_data_tuples_to_viewer_valid_data(make_napari_viewer):
+    viewer = make_napari_viewer()
+    valid_data = [
+        (np.zeros((10, 10)), {'name': 'layer1'}, 'image'),
+        (np.zeros((10, 20)), {'name': 'layer1'}, 'image'),
+    ]
     _add_layer_data_tuples_to_viewer(
         data=valid_data,
         return_type=Union[ImageData, LabelsData],
         viewer=viewer,
     )
+    assert len(viewer.layers) == 1
+    assert np.array_equal(viewer.layers[0].data, np.zeros((10, 20)))
 
 
-def test_add_layer_data_to_viewer():
+def test_add_layer_data_to_viewer_return_type():
     v = MagicMock()
     with pytest.raises(TypeError, match='napari supports only Optional'):
         _add_layer_data_to_viewer(
@@ -52,6 +61,31 @@ def test_add_layer_data_to_viewer():
             return_type=Union[ImageData, LabelsData],
             viewer=v,
         )
+    _add_layer_data_to_viewer(
+        data=np.zeros((10, 10)),
+        return_type=Optional[ImageData],
+        viewer=v,
+    )
+
+
+def test_add_layer_data_to_viewer(make_napari_viewer):
+    viewer = make_napari_viewer()
+    _add_layer_data_to_viewer(
+        data=np.zeros((10, 10)),
+        return_type=Optional[ImageData],
+        viewer=viewer,
+        layer_name='layer1',
+    )
+    assert len(viewer.layers) == 1
+    assert np.array_equal(viewer.layers[0].data, np.zeros((10, 10)))
+    _add_layer_data_to_viewer(
+        data=np.zeros((10, 20)),
+        return_type=Optional[ImageData],
+        viewer=viewer,
+        layer_name='layer1',
+    )
+    assert len(viewer.layers) == 1
+    assert np.array_equal(viewer.layers[0].data, np.zeros((10, 20)))
 
 
 def test_add_layer_to_viewer(make_napari_viewer):
@@ -62,8 +96,9 @@ def test_add_layer_to_viewer(make_napari_viewer):
     assert len(viewer.layers) == 0
     _add_layer_to_viewer(layer1)
     assert len(viewer.layers) == 1
-    _add_layer_to_viewer(layer2, viewer)
+    _add_layer_to_viewer(layer2, source={'parent': layer1}, viewer=viewer)
     assert len(viewer.layers) == 2
+    assert layer2._source.parent == layer1
 
 
 def test_add_future_data():
