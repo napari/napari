@@ -2,8 +2,12 @@ import os
 from unittest.mock import Mock
 
 import numpy as np
+import pytest
 
 from napari._tests.utils import skip_on_win_ci
+from napari.layers import Image
+from napari.layers.base._base_constants import InteractionBoxHandle
+from napari.layers.base._base_mouse_bindings import highlight_box_handles
 
 
 @skip_on_win_ci
@@ -248,3 +252,25 @@ def test_unselected_layer_mouse_bindings(qtbot, make_napari_viewer):
     mock_drag.method.assert_not_called()
     mock_release.method.assert_not_called()
     mock_move.method.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ('position', 'dims_displayed', 'nearby_handle'),
+    [
+        ([0, 3], [0, 1], InteractionBoxHandle.INSIDE),
+        ([0, 3, 3], [1, 2], InteractionBoxHandle.INSIDE),
+        ([0, 11], [0, 1], None),
+        ([0, 11, 11], [1, 2], None),
+    ],
+)
+def test_highlight_box_handles(position, dims_displayed, nearby_handle):
+    layer = Image(np.empty((10, 10)))
+    event = Mock(
+        position=position, dims_displayed=dims_displayed, modifiers=[None]
+    )
+    highlight_box_handles(
+        layer,
+        event,
+    )
+    # mouse event should be detected over the expected handle
+    assert layer._overlays['transform_box'].selected_handle == nearby_handle
