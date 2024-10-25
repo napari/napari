@@ -12,6 +12,7 @@ from napari._qt._qapp_model.injection._qprocessors import (
     _add_layer_to_viewer,
     _add_plugin_dock_widget,
 )
+from napari.components import ViewerModel
 from napari.layers import Image
 from napari.types import ImageData, LabelsData
 
@@ -23,6 +24,7 @@ def test_add_plugin_dock_widget(qtbot):
     with pytest.raises(RuntimeError, match='No current `Viewer` found.'):
         _add_plugin_dock_widget((widget, 'widget'))
     _add_plugin_dock_widget((widget, 'widget'), viewer)
+    viewer.window.add_dock_widget.assert_called_with(widget, name='widget')
 
 
 def test_add_layer_data_tuples_to_viewer_invalid_data():
@@ -38,8 +40,8 @@ def test_add_layer_data_tuples_to_viewer_invalid_data():
         )
 
 
-def test_add_layer_data_tuples_to_viewer_valid_data(make_napari_viewer):
-    viewer = make_napari_viewer()
+def test_add_layer_data_tuples_to_viewer_valid_data():
+    viewer = ViewerModel()
     valid_data = [
         (np.zeros((10, 10)), {'name': 'layer1'}, 'image'),
         (np.zeros((10, 20)), {'name': 'layer1'}, 'image'),
@@ -66,10 +68,11 @@ def test_add_layer_data_to_viewer_return_type():
         return_type=Optional[ImageData],
         viewer=v,
     )
+    v.add_image.assert_called_once()
 
 
-def test_add_layer_data_to_viewer(make_napari_viewer):
-    viewer = make_napari_viewer()
+def test_add_layer_data_to_viewer():
+    viewer = ViewerModel()
     _add_layer_data_to_viewer(
         data=np.zeros((10, 10)),
         return_type=Optional[ImageData],
@@ -88,13 +91,13 @@ def test_add_layer_data_to_viewer(make_napari_viewer):
     assert np.array_equal(viewer.layers[0].data, np.zeros((10, 20)))
 
 
-def test_add_layer_to_viewer(make_napari_viewer):
+def test_add_layer_to_viewer():
     layer1 = Image(np.zeros((10, 10)))
     layer2 = Image(np.zeros((10, 10)))
-    viewer = make_napari_viewer()
+    viewer = ViewerModel()
     _add_layer_to_viewer(None)
     assert len(viewer.layers) == 0
-    _add_layer_to_viewer(layer1)
+    _add_layer_to_viewer(layer1, viewer=viewer)
     assert len(viewer.layers) == 1
     _add_layer_to_viewer(layer2, source={'parent': layer1}, viewer=viewer)
     assert len(viewer.layers) == 2
@@ -106,3 +109,4 @@ def test_add_future_data():
     viewer = MagicMock()
     _add_future_data(future, Union[ImageData, LabelsData])
     _add_future_data(future, Union[ImageData, LabelsData], viewer=viewer)
+    future.add_done_callback.assert_called()
