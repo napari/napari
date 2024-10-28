@@ -15,8 +15,7 @@ def qt_viewer(qt_viewer_):
     # show the qt_viewer and hide its welcome widget
     qt_viewer_.show()
     qt_viewer_.set_welcome_visible(False)
-    yield qt_viewer_
-    qt_viewer_.hide()
+    return qt_viewer_
 
 
 @skip_on_win_ci
