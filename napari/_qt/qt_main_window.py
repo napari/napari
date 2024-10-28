@@ -287,7 +287,8 @@ class _QtMainWindow(QMainWindow):
         #  * https://doc.qt.io/qt-6/windows-issues.html#fullscreen-opengl-based-windows
         #  * https://bugreports.qt.io/browse/QTBUG-41309
         #  * https://bugreports.qt.io/browse/QTBUG-104511
-        if os.name == 'nt':
+        if os.name != 'nt':
+            return
             import win32con
             import win32gui
 

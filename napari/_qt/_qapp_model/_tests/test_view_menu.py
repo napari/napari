@@ -65,7 +65,8 @@ def test_toggle_fullscreen(make_napari_viewer, qtbot):
     viewer = make_napari_viewer(show=True)
 
     def check_windows_style():
-        if os.name == 'nt':
+        if os.name != 'nt':
+            return
             import win32con
             import win32gui
 
