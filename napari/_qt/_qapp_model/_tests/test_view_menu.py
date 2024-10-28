@@ -67,15 +67,15 @@ def test_toggle_fullscreen(make_napari_viewer, qtbot):
     def check_windows_style():
         if os.name != 'nt':
             return
-            import win32con
-            import win32gui
+        import win32con
+        import win32gui
 
-            window_handle = viewer.window._qt_window.windowHandle()
-            window_handle_id = int(window_handle.winId())
-            window_style = win32gui.GetWindowLong(
-                window_handle_id, win32con.GWL_STYLE
-            )
-            assert window_style & win32con.WS_BORDER == win32con.WS_BORDER
+        window_handle = viewer.window._qt_window.windowHandle()
+        window_handle_id = int(window_handle.winId())
+        window_style = win32gui.GetWindowLong(
+            window_handle_id, win32con.GWL_STYLE
+        )
+        assert window_style & win32con.WS_BORDER == win32con.WS_BORDER
 
     # Check initial default state (no fullscreen)
     assert not viewer.window._qt_window.isFullScreen()

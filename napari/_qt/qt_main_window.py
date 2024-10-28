@@ -289,17 +289,17 @@ class _QtMainWindow(QMainWindow):
         #  * https://bugreports.qt.io/browse/QTBUG-104511
         if os.name != 'nt':
             return
-            import win32con
-            import win32gui
+        import win32con
+        import win32gui
 
-            if self.windowHandle():
-                handle = int(self.windowHandle().winId())
-                win32gui.SetWindowLong(
-                    handle,
-                    win32con.GWL_STYLE,
-                    win32gui.GetWindowLong(handle, win32con.GWL_STYLE)
-                    | win32con.WS_BORDER,
-                )
+        if self.windowHandle():
+            handle = int(self.windowHandle().winId())
+            win32gui.SetWindowLong(
+                handle,
+                win32con.GWL_STYLE,
+                win32gui.GetWindowLong(handle, win32con.GWL_STYLE)
+                | win32con.WS_BORDER,
+            )
 
     def eventFilter(self, source, event):
         # Handle showing hidden menubar on mouse move event.

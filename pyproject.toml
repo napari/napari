@@ -60,6 +60,7 @@ dependencies = [
     "pydantic>=1.9.0",
     "pygments>=2.6.0",
     "PyOpenGL>=3.1.0",
+    "pywin32 ; platform_system == 'Windows'",
     "PyYAML>=5.1",
     "qtpy>=1.10.0",
     "scikit-image[data]>=0.19.1",
