@@ -1,3 +1,4 @@
+import os
 import sys
 
 import numpy as np
@@ -63,6 +64,18 @@ def test_toggle_fullscreen(make_napari_viewer, qtbot):
     app = get_app_model()
     viewer = make_napari_viewer(show=True)
 
+    def check_windows_style():
+        if os.name == 'nt':
+            import win32con
+            import win32gui
+
+            window_handle = viewer.window._qt_window.windowHandle()
+            window_handle_id = int(window_handle.winId())
+            window_style = win32gui.GetWindowLong(
+                window_handle_id, win32con.GWL_STYLE
+            )
+            assert window_style & win32con.WS_BORDER == win32con.WS_BORDER
+
     # Check initial default state (no fullscreen)
     assert not viewer.window._qt_window.isFullScreen()
 
@@ -81,6 +94,7 @@ def test_toggle_fullscreen(make_napari_viewer, qtbot):
         # On macOS, wait for the animation to complete
         qtbot.wait(250)
     assert viewer.window._qt_window.isFullScreen()
+    check_windows_style()
 
     # Check `View` menu can be seen in fullscreen window state
     assert not viewer.window.view_menu.isVisible()
@@ -97,6 +111,7 @@ def test_toggle_fullscreen(make_napari_viewer, qtbot):
         # On macOS, wait for the animation to complete
         qtbot.wait(250)
     assert not viewer.window._qt_window.isFullScreen()
+    check_windows_style()
 
     # Check fullscreen state change while maximized
     assert not viewer.window._qt_window.isMaximized()
@@ -116,6 +131,7 @@ def test_toggle_fullscreen(make_napari_viewer, qtbot):
         # On macOS, wait for the animation to complete
         qtbot.wait(250)
     assert viewer.window._qt_window.isFullScreen()
+    check_windows_style()
 
     # Check `View` menu can be seen in fullscreen window state coming from maximized state
     assert not viewer.window.view_menu.isVisible()
@@ -132,6 +148,7 @@ def test_toggle_fullscreen(make_napari_viewer, qtbot):
         # On macOS, wait for the animation to complete
         qtbot.wait(250)
     assert not viewer.window._qt_window.isFullScreen()
+    check_windows_style()
 
     # Check `View` still menu can be seen in non fullscreen window state
     assert not viewer.window.view_menu.isVisible()
