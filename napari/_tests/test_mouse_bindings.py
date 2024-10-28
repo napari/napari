@@ -7,7 +7,10 @@ import pytest
 from napari._tests.utils import skip_on_win_ci
 from napari.layers import Image
 from napari.layers.base._base_constants import InteractionBoxHandle
-from napari.layers.base._base_mouse_bindings import highlight_box_handles
+from napari.layers.base._base_mouse_bindings import (
+    highlight_box_handles,
+    transform_with_box,
+)
 
 
 @skip_on_win_ci
@@ -278,3 +281,11 @@ def test_highlight_box_handles(position, dims_displayed, nearby_handle):
     )
     # mouse event should be detected over the expected handle
     assert layer._overlays['transform_box'].selected_handle == nearby_handle
+
+
+def test_transform_box():
+    layer = Image(np.empty((10, 10)))
+    event = Mock(position=[0, 3], dims_displayed=[0, 1], modifiers=[None])
+    transform_with_box(layer, event)
+    # no interaction has been done so affine should be the same as the initial
+    assert layer.affine == layer._initial_affine
