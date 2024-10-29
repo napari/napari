@@ -286,6 +286,6 @@ def test_highlight_box_handles(position, dims_displayed, nearby_handle):
 def test_transform_box():
     layer = Image(np.empty((10, 10)))
     event = Mock(position=[0, 3], dims_displayed=[0, 1], modifiers=[None])
-    transform_with_box(layer, event)
+    next(transform_with_box(layer, event))
     # no interaction has been done so affine should be the same as the initial
     assert layer.affine == layer._initial_affine
