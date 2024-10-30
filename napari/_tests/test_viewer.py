@@ -434,3 +434,14 @@ def test_running_status_thread(make_napari_viewer, qtbot, monkeypatch):
     start_mock.assert_not_called()
     settings.appearance.update_status_based_on_layer = True
     start_mock.assert_called_once()
+
+
+def test_negative_translate(make_napari_viewer, qtbot):
+    """Check that negative translation behaves as expected.
+
+    See https://github.com/napari/napari/issues/7248
+    """
+    data = np.random.random((1, 3, 10, 12, 12))
+    viewer = make_napari_viewer()
+    _ = viewer.add_image(data, translate=(-1, 0, 0))
+    assert viewer.dims.range[2].start == -1

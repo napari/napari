@@ -1,7 +1,7 @@
 import typing
 from collections.abc import Generator, Iterable, Sequence
 from contextlib import contextmanager
-from functools import wraps
+from functools import cached_property, wraps
 from typing import Literal, Union
 
 import numpy as np
@@ -495,6 +495,7 @@ class ShapeList:
         if z_refresh:
             # Set z_order
             self._update_z_order()
+        self._clear_cache()
 
     def _add_multiple_shapes(
         self,
@@ -658,6 +659,7 @@ class ShapeList:
         if z_refresh:
             # Set z_order
             self._update_z_order()
+        self._clear_cache()
 
     @_batch_dec
     def remove_all(self):
@@ -720,6 +722,7 @@ class ShapeList:
                 self._mesh.vertices_index[indices, 0] - 1
             )
             self._update_z_order()
+        self._clear_cache()
 
     @_batch_dec
     def _update_mesh_vertices(self, index, edge=False, face=False):
@@ -754,6 +757,7 @@ class ShapeList:
             indices = self._index == index
             self._vertices[indices] = shape.data_displayed
             self._update_displayed()
+        self._clear_cache()
 
     @_batch_dec
     def _update_z_order(self):
@@ -1018,6 +1022,7 @@ class ShapeList:
         self.remove(index, renumber=False)
         self.add(shape, shape_index=index)
         self._update_z_order()
+        self._clear_cache()
 
     def outline(
         self, indices: Union[int, Sequence[int]]
@@ -1026,9 +1031,9 @@ class ShapeList:
 
         Parameters
         ----------
-        indices : int | list
-            Location in list of the shapes to be outline. If list must be a
-            list of int
+        indices : int | Sequence[int]
+            Location in list of the shapes to be outline.
+            If sequence, all elements should be ints
 
         Returns
         -------
@@ -1039,6 +1044,8 @@ class ShapeList:
         triangles : np.ndarray
             Mx3 array of any indices of vertices for triangles of outline
         """
+        if isinstance(indices, Sequence) and len(indices) == 1:
+            indices = indices[0]
         if not isinstance(indices, Sequence):
             shape = self.shapes[indices]
             return (
@@ -1098,6 +1105,11 @@ class ShapeList:
 
         return shapes
 
+    @cached_property
+    def _bounding_boxes(self):
+        data = np.array([s.bounding_box for s in self.shapes])
+        return data[:, 0], data[:, 1]
+
     def inside(self, coord):
         """Determines if any shape at given coord by looking inside triangle
         meshes. Looks only at displayed shapes
@@ -1113,17 +1125,30 @@ class ShapeList:
             Index of shape if any that is at the coordinates. Returns `None`
             if no shape is found.
         """
-        triangles = self._mesh.vertices[self._mesh.displayed_triangles]
-        indices = inside_triangles(triangles - coord)
-        shapes = self._mesh.displayed_triangles_index[indices, 0]
-
-        if len(shapes) == 0:
+        if not self.shapes:
             return None
-
-        z_list = self._z_order.tolist()
-        order_indices = np.array([z_list.index(m) for m in shapes])
-        ordered_shapes = shapes[np.argsort(order_indices)]
-        return ordered_shapes[0]
+        bounding_boxes = self._bounding_boxes
+        in_bbox = np.all(
+            (bounding_boxes[0] <= coord) * (bounding_boxes[1] >= coord),
+            axis=1,
+        )
+        inside_indices = np.flatnonzero(in_bbox)
+        if inside_indices.size == 0:
+            return None
+        try:
+            z_index = [self.shapes[i].z_index for i in inside_indices]
+            pos = np.argsort(z_index)
+            return next(
+                inside_indices[p]
+                for p in pos[::-1]
+                if np.any(
+                    inside_triangles(
+                        self.shapes[inside_indices[p]]._all_triangles() - coord
+                    )
+                )
+            )
+        except StopIteration:
+            return None
 
     def _inside_3d(self, ray_position: np.ndarray, ray_direction: np.ndarray):
         """Determines if any shape is intersected by a ray by looking inside triangle
@@ -1322,7 +1347,7 @@ class ShapeList:
         # If there are too many shapes to render responsively, just render
         # the top max_shapes shapes
         if max_shapes is not None and len(z_order_in_view) > max_shapes:
-            z_order_in_view = z_order_in_view[0:max_shapes]
+            z_order_in_view = z_order_in_view[:max_shapes]
 
         for ind in z_order_in_view:
             mask = self.shapes[ind].to_mask(
@@ -1335,3 +1360,6 @@ class ShapeList:
             colors[mask, :] = col
 
         return colors
+
+    def _clear_cache(self):
+        self.__dict__.pop('_bounding_boxes', None)

@@ -47,7 +47,7 @@ def extend_selection_to_layer_below(viewer: Viewer):
     viewer.layers.select_previous(shift=True)
 
 
-@register_viewer_action(trans._('Reset scroll.'))
+@register_viewer_action(trans._('Reset scroll'))
 def reset_scroll_progress(viewer: Viewer):
     # on key press
     viewer.dims._scroll_progress = 0
@@ -60,7 +60,7 @@ def reset_scroll_progress(viewer: Viewer):
 reset_scroll_progress.__doc__ = trans._('Reset dims scroll progress')
 
 
-@register_viewer_action(trans._('Toggle 2D/3D view.'))
+@register_viewer_action(trans._('Toggle 2D/3D view'))
 def toggle_ndisplay(viewer: Viewer):
     if viewer.dims.ndisplay == 2:
         viewer.dims.ndisplay = 3
@@ -73,7 +73,7 @@ def toggle_ndisplay(viewer: Viewer):
 # ```
 # RuntimeError: wrapped C/C++ object of type CanvasBackendDesktop has been deleted
 # ```
-@register_viewer_action(trans._('Toggle current viewer theme.'))
+@register_viewer_action(trans._('Toggle current viewer theme'))
 def toggle_theme(viewer: ViewerModel):
     """Toggle theme for current viewer"""
     themes = available_themes()
@@ -90,36 +90,36 @@ def toggle_theme(viewer: ViewerModel):
     viewer.theme = themes[idx]
 
 
-@register_viewer_action(trans._('Reset view to original state.'))
+@register_viewer_action(trans._('Reset view to original state'))
 def reset_view(viewer: Viewer):
     viewer.reset_view()
 
 
-@register_viewer_action(trans._('Delete selected layers.'))
+@register_viewer_action(trans._('Delete selected layers'))
 def delete_selected_layers(viewer: Viewer):
     viewer.layers.remove_selected()
 
 
 @register_viewer_action(
-    trans._('Increment dimensions slider to the left.'), repeatable=True
+    trans._('Increment dimensions slider to the left'), repeatable=True
 )
 def increment_dims_left(viewer: Viewer):
     viewer.dims._increment_dims_left()
 
 
 @register_viewer_action(
-    trans._('Increment dimensions slider to the right.'), repeatable=True
+    trans._('Increment dimensions slider to the right'), repeatable=True
 )
 def increment_dims_right(viewer: Viewer):
     viewer.dims._increment_dims_right()
 
 
-@register_viewer_action(trans._('Move focus of dimensions slider up.'))
+@register_viewer_action(trans._('Move focus of dimensions slider up'))
 def focus_axes_up(viewer: Viewer):
     viewer.dims._focus_up()
 
 
-@register_viewer_action(trans._('Move focus of dimensions slider down.'))
+@register_viewer_action(trans._('Move focus of dimensions slider down'))
 def focus_axes_down(viewer: Viewer):
     viewer.dims._focus_down()
 
@@ -127,7 +127,7 @@ def focus_axes_down(viewer: Viewer):
 # Use non-breaking spaces and non-breaking hyphen for Preferences table
 @register_viewer_action(
     trans._(
-        'Change order of the visible axes, e.g.\u00a0[0,\u00a01,\u00a02]\u00a0\u2011>\u00a0[2,\u00a00,\u00a01].'
+        'Change order of the visible axes, e.g.\u00a0[0,\u00a01,\u00a02]\u00a0\u2011>\u00a0[2,\u00a00,\u00a01]'
     ),
 )
 def roll_axes(viewer: Viewer):
@@ -137,17 +137,17 @@ def roll_axes(viewer: Viewer):
 # Use non-breaking spaces and non-breaking hyphen for Preferences table
 @register_viewer_action(
     trans._(
-        'Transpose order of the last two visible axes, e.g.\u00a0[0,\u00a01]\u00a0\u2011>\u00a0[1,\u00a00].'
+        'Transpose order of the last two visible axes, e.g.\u00a0[0,\u00a01]\u00a0\u2011>\u00a0[1,\u00a00]'
     ),
 )
 def transpose_axes(viewer: Viewer):
     viewer.dims.transpose()
 
 
-@register_viewer_action(trans._('Rotate layers 90 degrees counter-clockwise.'))
+@register_viewer_action(trans._('Rotate layers 90 degrees counter-clockwise'))
 def rotate_layers(viewer: Viewer):
     if viewer.dims.ndisplay == 3:
-        show_info(trans._('Rotating layers only works in 2D.'))
+        show_info(trans._('Rotating layers only works in 2D'))
         return
     for layer in viewer.layers:
         if layer.ndim == 2:
@@ -180,7 +180,7 @@ def rotate_layers(viewer: Viewer):
         layer.affine = layer.affine.replace_slice(visible_dims, new_affine)
 
 
-@register_viewer_action(trans._('Toggle grid mode.'))
+@register_viewer_action(trans._('Toggle grid mode'))
 def toggle_grid(viewer: Viewer):
     viewer.grid.enabled = not viewer.grid.enabled
 
@@ -197,13 +197,13 @@ def toggle_unselected_visibility(viewer: Viewer):
             layer.visible = not layer.visible
 
 
-@register_viewer_action(trans._('Select and show only layer above.'))
+@register_viewer_action(trans._('Select and show only layer above'))
 def show_only_layer_above(viewer):
     viewer.layers.select_next()
     _show_only_selected_layer(viewer)
 
 
-@register_viewer_action(trans._('Select and show only layer below.'))
+@register_viewer_action(trans._('Select and show only layer below'))
 def show_only_layer_below(viewer):
     viewer.layers.select_previous()
     _show_only_selected_layer(viewer)
