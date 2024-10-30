@@ -109,4 +109,4 @@ def test_add_future_data():
     viewer = MagicMock()
     _add_future_data(future, Union[ImageData, LabelsData])
     _add_future_data(future, Union[ImageData, LabelsData], viewer=viewer)
-    future.add_done_callback.assert_called()
+    assert future.add_done_callback.call_count == 2
