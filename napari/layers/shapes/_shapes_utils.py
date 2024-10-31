@@ -606,7 +606,7 @@ def triangulate_face(data: npt.NDArray) -> tuple[npt.NDArray, npt.NDArray]:
     """
 
     triangles, vertices = triangulate_polygon_numpy(data)
-    return vertices, triangles
+    return vertices, triangles.astype(int)
 
     if triangulate is not None:
         len_data = len(data)
