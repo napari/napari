@@ -107,6 +107,7 @@ class StatusChecker(QThread):
             #
             # We do not want to crash the thread to keep the status updates.
             notification_manager.dispatch(Notification.from_exception(e))
+            return
         self.status_and_tooltip_changed.emit(res)
 
 
