@@ -128,4 +128,3 @@ def test_double_click_to_zoom():
     # Assert nothing has changed
     assert viewer.camera.zoom == initial_zoom
     assert np.allclose(viewer.camera.center, (0, 0, 0))
-
