@@ -773,6 +773,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @visible.setter
     def visible(self, visible: bool) -> None:
         self._visible = visible
+        self.editable = visible
         if visible:
             # needed because things might have changed while invisible
             # and refresh is noop while invisible
