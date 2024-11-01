@@ -118,3 +118,14 @@ def test_double_click_to_zoom():
     assert viewer.camera.zoom == initial_zoom
     # Assert the camera center is back to initial
     assert np.allclose(viewer.camera.center, (0, 0, 0))
+
+    # Test in a mode other than pan_zoom
+    viewer.layers.selection.active.mode = 'transform'
+    assert viewer.layers.selection.active.mode != 'pan_zoom'
+
+    double_click_to_zoom(viewer, event)
+
+    # Assert nothing has changed
+    assert viewer.camera.zoom == initial_zoom
+    assert np.allclose(viewer.camera.center, (0, 0, 0))
+
