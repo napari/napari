@@ -76,7 +76,7 @@ def test_merge_stack_rgb():
     layer_list.selection.add(layer_list[2])
 
     # check that without R G B colormaps we warn
-    with pytest.warns(UserWarning, match='Missing colormap'):
+    with pytest.raises(ValueError, match='Missing colormap'):
         _merge_stack(layer_list, rgb=True)
 
     layer_list[0].colormap = 'red'
