@@ -319,7 +319,9 @@ def merge_rgb(images: list[Image]) -> Image:
     """Variant of images_to_stack that makes an RGB from 3 images."""
     if not (len(images) == 3 and all(isinstance(x, Image) for x in images)):
         raise ValueError(
-            trans._('merge_rgb requires 3 images layers', deferred=True)
+            trans._(
+                'Merging to RGB requires exactly 3 Image layers', deferred=True
+            )
         )
     first_shape = images[0].data.shape
     for image in images:
