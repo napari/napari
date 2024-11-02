@@ -286,6 +286,14 @@ def images_to_stack(images: list[Image], axis: int = 0, **kwargs) -> Image:
     if not images:
         raise IndexError(trans._('images list is empty', deferred=True))
 
+    if not all(isinstance(layer, Image) for layer in images):
+        raise ValueError(
+            trans._(
+                'All selected layers to be merged must be Image layers.',
+                deferred=True,
+            )
+        )
+
     data, meta, _ = images[0].as_layer_data_tuple()
 
     # RGB images do not need extra dimensions inserted into metadata
@@ -313,4 +321,32 @@ def merge_rgb(images: list[Image]) -> Image:
         raise ValueError(
             trans._('merge_rgb requires 3 images layers', deferred=True)
         )
-    return images_to_stack(images, axis=-1, rgb=True)
+    first_shape = images[0].data.shape
+    for image in images:
+        if image.data.shape != first_shape:
+            raise ValueError(
+                trans._(
+                    'Shape mismatch! To merge to RGB, all selected Image layers (with R, G, and B colormaps) must have the same shape.'
+                )
+            )
+    # we will check for the presence of R G B colormaps to determine how to merge
+    colormaps = {image.colormap.name for image in images}
+    r_g_b = ['red', 'green', 'blue']
+    if colormaps != set(r_g_b):
+        missing_colormaps = set(r_g_b) - colormaps
+        raise ValueError(
+            trans._(
+                'Missing colormap(s): {missing_colormaps}! To merge layers to RGB, ensure you have red, green, and blue as layer colormaps.',
+                missing_colormaps=missing_colormaps,
+                deferred=True,
+            )
+        )
+
+    # use the R G B colormaps to order the images for merging
+    imgs = [
+        image
+        for color in r_g_b
+        for image in images
+        if image.colormap.name == color
+    ]
+    return images_to_stack(imgs, axis=-1, rgb=True)

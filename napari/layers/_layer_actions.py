@@ -105,45 +105,9 @@ def _convert_to_image(ll: LayerList) -> None:
 def _merge_stack(ll: LayerList, rgb: bool = False) -> None:
     # force selection to follow LayerList ordering
     imgs = cast(list[Image], [layer for layer in ll if layer in ll.selection])
-    assert all(isinstance(layer, Image) for layer in imgs), trans._(
-        'All selected layers to be merged must be Image layers.',
-        deferred=True,
-    )
     if not rgb:
         merged = stack_utils.images_to_stack(imgs)
     else:
-        assert len(imgs) == 3, trans._(
-            'Merging to RGB requires exactly 3 Image layers (with R, G, and B colormaps and same shape) to be selected.',
-            deferred=True,
-        )
-        # Check that all 3 layers have the same shape
-        first_shape = next(iter(ll.selection)).data.shape
-        for layer in ll.selection:
-            assert layer.data.shape == first_shape, trans._(
-                'Shape mismatch! To merge to RGB, all selected Image layers (with R, G, and B colormaps) must have the same shape.'
-            )
-
-        # we will check for the presence of R G B colormaps to determine how to merge
-        colormaps = {layer.colormap.name for layer in ll.selection}
-        r_g_b = ['red', 'green', 'blue']
-        if colormaps != set(r_g_b):
-            missing_colormaps = set(r_g_b) - colormaps
-            warnings.warn(
-                trans._(
-                    'Missing colormap(s): {missing_colormaps}! To merge layers to RGB, ensure you have red, green, and blue as layer colormaps.',
-                    missing_colormaps=missing_colormaps,
-                    deferred=True,
-                )
-            )
-            return
-
-        # use the R G B colormaps to order the images for merging
-        imgs = [
-            layer
-            for color in r_g_b
-            for layer in ll.selection
-            if layer.colormap.name == color
-        ]
         merged = stack_utils.merge_rgb(imgs)
 
     for layer in imgs:
