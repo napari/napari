@@ -1,4 +1,5 @@
 import numpy as np
+import numpy.testing as npt
 import pytest
 
 from napari.layers.shapes._shape_list import ShapeList
@@ -21,6 +22,58 @@ def test_adding_to_shape_list():
     shape_list.add(shape)
     assert len(shape_list.shapes) == 1
     assert shape_list.shapes[0] == shape
+
+
+def test_reset_bounding_box_rotation():
+    """Test if rotating shape resets bounding box."""
+    shape = Rectangle(np.array([[0, 0], [10, 10]]))
+    shape_list = ShapeList()
+    shape_list.add(shape)
+    npt.assert_array_almost_equal(
+        shape_list._bounding_boxes, np.array([[[-0.5, -0.5]], [[10.5, 10.5]]])
+    )
+    shape_list.rotate(0, 45, (5, 5))
+    p = 5 * np.sqrt(2) + 0.5
+    npt.assert_array_almost_equal(
+        shape.bounding_box, np.array([[5 - p, 5 - p], [5 + p, 5 + p]])
+    )
+    npt.assert_array_almost_equal(
+        shape_list._bounding_boxes, shape.bounding_box[:, np.newaxis, :]
+    )
+
+
+def test_reset_bounding_box_shift():
+    """Test if shifting shape resets bounding box."""
+    shape = Rectangle(np.array([[0, 0], [10, 10]]))
+    shape_list = ShapeList()
+    shape_list.add(shape)
+    npt.assert_array_almost_equal(
+        shape_list._bounding_boxes, shape.bounding_box[:, np.newaxis, :]
+    )
+    shape_list.shift(0, np.array([5, 5]))
+    npt.assert_array_almost_equal(
+        shape.bounding_box, np.array([[4.5, 4.5], [15.5, 15.5]])
+    )
+    npt.assert_array_almost_equal(
+        shape_list._bounding_boxes, shape.bounding_box[:, np.newaxis, :]
+    )
+
+
+def test_reset_bounding_box_scale():
+    """Test if scaling shape resets the bounding box."""
+    shape = Rectangle(np.array([[0, 0], [10, 10]]))
+    shape_list = ShapeList()
+    shape_list.add(shape)
+    npt.assert_array_almost_equal(
+        shape_list._bounding_boxes, shape.bounding_box[:, np.newaxis, :]
+    )
+    shape_list.scale(0, 2, (5, 5))
+    npt.assert_array_almost_equal(
+        shape.bounding_box, np.array([[-5.5, -5.5], [15.5, 15.5]])
+    )
+    npt.assert_array_almost_equal(
+        shape_list._bounding_boxes, shape.bounding_box[:, np.newaxis, :]
+    )
 
 
 def test_shape_list_outline():
