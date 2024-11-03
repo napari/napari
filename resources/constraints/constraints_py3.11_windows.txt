@@ -428,7 +428,7 @@ scipy==1.14.1
     #   scikit-image
 shellingham==1.5.4
     # via typer
-shiboken6==6.4.2
+shiboken6==6.8.0.2
     # via
     #   pyside6
     #   pyside6-addons
