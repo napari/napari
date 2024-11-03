@@ -105,11 +105,11 @@ def _convert_to_image(ll: LayerList) -> None:
 def _merge_stack(ll: LayerList, rgb: bool = False) -> None:
     # force selection to follow LayerList ordering
     imgs = cast(list[Image], [layer for layer in ll if layer in ll.selection])
-    if not rgb:
-        merged = stack_utils.images_to_stack(imgs)
-    else:
-        merged = stack_utils.merge_rgb(imgs)
-
+    merged = (
+        stack_utils.merge_rgb(imgs)
+        if rgb
+        else stack_utils.images_to_stack(imgs)
+    )
     for layer in imgs:
         ll.remove(layer)
     ll.append(merged)
