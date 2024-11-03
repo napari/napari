@@ -323,7 +323,7 @@ def merge_rgb(images: list[Image]) -> Image:
                 'Merging to RGB requires exactly 3 Image layers', deferred=True
             )
         )
-    if not all(image.data.shape == images[0].data.shape for image in images)::
+    if not all(image.data.shape == images[0].data.shape for image in images):
         raise ValueError(
             trans._(
                 'Shape mismatch! To merge to RGB, all selected Image layers (with R, G, and B colormaps) must have the same shape.'
