@@ -287,10 +287,12 @@ def images_to_stack(images: list[Image], axis: int = 0, **kwargs) -> Image:
         raise IndexError(trans._('images list is empty', deferred=True))
 
     if not all(isinstance(layer, Image) for layer in images):
+        non_image_layers = [(layer.name, type(layer).__name__) for layer in images if not isinstance(layer, Image)]
         raise ValueError(
             trans._(
-                'All selected layers to be merged must be Image layers.',
-                deferred=True,
+                'All selected layers to be merged must be Image layers. '
+                'The following layers are not Image layers: '
+                f'{", ".join(f"{name} ({layer_type})" for name, layer_type in non_image_layers)}'
             )
         )
 
@@ -324,12 +326,15 @@ def merge_rgb(images: list[Image]) -> Image:
             )
         )
     if not all(image.data.shape == images[0].data.shape for image in images):
+        mismatched_shapes = [(image.name, image.data.shape) for image in images if image.data.shape != images[0].data.shape]
         raise ValueError(
             trans._(
-                'Shape mismatch! To merge to RGB, all selected Image layers (with R, G, and B colormaps) must have the same shape.'
+                'Shape mismatch! To merge to RGB, all selected Image layers (with R, G, and B colormaps) must have the same shape. '
+                'The following layers have mismatched shapes: '
+                f'{", ".join(f"{name} (shape: {shape})" for name, shape in mismatched_shapes)}'
             )
         )
-
+        
     # we will check for the presence of R G B colormaps to determine how to merge
     colormaps = {image.colormap.name for image in images}
     r_g_b = ['red', 'green', 'blue']
