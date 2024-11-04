@@ -363,6 +363,7 @@ filterwarnings = [
   "ignore:__array__ implementation doesn't accept a copy keyword, so passing copy=False failed.",
   "ignore:pkg_resources is deprecated",
   "ignore:Deprecated call to `pkg_resources.declare_namespace",
+  "ignore:Use Group.create_array instead."
 ]
 markers = [
     "examples: Test of examples",
