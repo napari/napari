@@ -83,7 +83,7 @@ def test_zarr_nested(tmp_path):
     image_name = 'my_image'
     root_path = tmp_path / 'dataset.zarr'
     grp = zarr.open(store=str(root_path), mode='a')
-    grp.create_dataset(image_name, data=image, shape=image.shape)
+    grp.create_array(image_name, data=image, shape=image.shape)
 
     image_in = magic_imread([str(root_path / image_name)])
     np.testing.assert_array_equal(image, image_in)
@@ -94,7 +94,7 @@ def test_zarr_with_unrelated_file(tmp_path):
     image_name = 'my_image'
     root_path = tmp_path / 'dataset.zarr'
     grp = zarr.open(store=str(root_path), mode='a')
-    grp.create_dataset(image_name, data=image, shape=image.shape)
+    grp.create_array(image_name, data=image, shape=image.shape)
 
     txt_file_path = root_path / 'unrelated.txt'
     txt_file_path.touch()
@@ -114,7 +114,7 @@ def test_zarr_multiscale(tmp_path):
     root = zarr.open_group(fout, mode='a')
     for i in range(len(multiscale)):
         shape = 20 // 2**i
-        z = root.create_dataset(str(i), shape=(shape,) * 2)
+        z = root.create_array(str(i), shape=(shape,) * 2)
         z[:] = multiscale[i]
     multiscale_in = magic_imread([fout])
     assert len(multiscale) == len(multiscale_in)
