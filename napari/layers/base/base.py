@@ -369,6 +369,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._opacity = opacity
         self._blending = Blending(blending)
         self._visible = visible
+        self._visible_mode = None
         self._freeze = False
         self._status = 'Ready'
         self._help = ''
