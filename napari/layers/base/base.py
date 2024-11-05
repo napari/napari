@@ -788,7 +788,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             self.mode = self._visible_mode
         else:
             self._visible_mode = self.mode
-            self.mode = self._modeclass.PAN_ZOOM
+            self.mode = self._modeclass.PAN_ZOOM  # type: ignore[attr-defined]
 
     @property
     def editable(self) -> bool:
