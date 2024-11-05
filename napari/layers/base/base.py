@@ -775,17 +775,20 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     def visible(self, visible: bool) -> None:
         self._visible = visible
 
-        if not visible:
-            self._visible_mode = self.mode
-            self.mode = 'pan_zoom'
-
         if visible:
-            if self._visible_mode:
-                self.mode = self._visible_mode
             # needed because things might have changed while invisible
             # and refresh is noop while invisible
             self.refresh(extent=False)
+        self._on_visible_changed()
         self.events.visible()
+
+    def _on_visible_changed(self) -> None:
+        """Execute side-effects on this layer related to changes of the visible state."""
+        if self.visible and self._visible_mode:
+            self.mode = self._visible_mode
+        else:
+            self._visible_mode = self.mode
+            self.mode = self._modeclass.PAN_ZOOM
 
     @property
     def editable(self) -> bool:
