@@ -267,7 +267,7 @@ def _enable_measure_shapes(ll: LayerList):
         lay.feature_defaults = lay.feature_defaults.to_dict().update(
             {'_perimeter': 0.0, '_area': 0.0}
         )
-        lay.text = 'P = {_perimeter}\nA={_area}'
+        lay.text = 'P = {_perimeter:.3f}\nA={_area:.3f}'
 
         @lay.events.set_data.connect
         def update_features(event=None, lay=lay):
