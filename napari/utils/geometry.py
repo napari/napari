@@ -839,21 +839,28 @@ def find_nearest_triangle_intersection(
     return closest_intersected_triangle_index, intersection
 
 
-def get_center_bbox(shape):
+def get_center_bbox(roi: np.ndarray) -> tuple[list[float, float], int, int]:
+    """Get the center coordinate, height, width of the roi.
 
-    """Get the center coordinate, height, width of the shape roi
     Parameters
     ----------
-    shapes : napari.layers.shape
-      A napari shapes layer
-       
+    roi : np.ndarray
+        An array of shape (2, 2) where the first two coordinates correspond
+        to the top left and the last two coordinates correspond to the
+        bottom right corners
+
     Returns
     -------
-    center coords, height and width of shape: float
-        The center coordinates, height and widht of shape roi
+    center_coords: list[float, float]
+        center y and x coordinates of the roi
+    height: int
+        height of the roi in data pixels
+    width: int
+        width of the roi in data pixels
+
     """
-    height, width = shape.max(axis=0) - shape.min(axis=0)
-    min_y, min_x = shape.min(axis=0)
+    height, width = roi.max(axis=0) - roi.min(axis=0)
+    min_y, min_x = roi.min(axis=0)
     center_coords = [min_y + height / 2, min_x + width / 2]
 
-    return center_coords, height, width 
+    return center_coords, height, width

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import typing
 from typing import TYPE_CHECKING, Optional
 from weakref import WeakSet
@@ -5,6 +7,7 @@ from weakref import WeakSet
 import magicgui as mgui
 import numpy as np
 
+import napari
 from napari.components.viewer_model import ViewerModel
 from napari.utils import _magicgui
 
@@ -33,8 +36,8 @@ class Viewer(ViewerModel):
         Whether to show the viewer after instantiation. By default True.
     """
 
-    _window: 'Window' = None  # type: ignore
-    _instances: typing.ClassVar[WeakSet['Viewer']] = WeakSet()
+    _window: Window = None  # type: ignore
+    _instances: typing.ClassVar[WeakSet[Viewer]] = WeakSet()
 
     def __init__(
         self,
@@ -68,7 +71,7 @@ class Viewer(ViewerModel):
 
     # Expose private window publically. This is needed to keep window off pydantic model
     @property
-    def window(self) -> 'Window':
+    def window(self) -> Window:
         return self._window
 
     def update_console(self, variables):
@@ -144,7 +147,7 @@ class Viewer(ViewerModel):
 
     def export_rois(
         self,
-        shapes_data,
+        rois: np.ndarray,
         paths: list[str] | None = None,
         scale: float | None = None,
     ):
@@ -152,8 +155,10 @@ class Viewer(ViewerModel):
 
         Parameters
         ----------
-        shapes_data: napari.layers.shape
-            A napari shapes layer
+        rois: numpy array
+            An array of shape (n, 2, 2) where n is the number of rois
+            and the first two coordinates correspond to the top left and
+            the last two coordinates correspond to the bottom right corners
         paths: list
             The list to store file path for shapes roi
 
@@ -162,12 +167,15 @@ class Viewer(ViewerModel):
         roi_dict: dictionary
             The dictionary with index and file paths for each shapes roi
         """
+        # Check to see if roi has shape (n,2,2)
+        if len(rois.shape) != 3 or rois.shape[1:] != (2, 2):
+            raise ValueError('roi must have shape (n,2,2)')
 
-        roi_dict = self.window.export_rois(
-            shapes_data, paths=paths, scale=scale
+        screenshot_list = self.window.export_rois(
+            rois, paths=paths, scale=scale
         )
 
-        return roi_dict
+        return screenshot_list
 
     def screenshot(
         self,
@@ -262,8 +270,6 @@ def current_viewer() -> Optional[Viewer]:
         return _QtMainWindow.current_viewer()
 
 
-import napari
-
 viewer = napari.Viewer()
 
 
@@ -285,40 +291,3 @@ def get_center_bbox(shape):
     center_coords = [min_y + height / 2, min_x + width / 2]
 
     return center_coords, height, width
-
-
-def export_rois(shapes_data, paths: list[str] | None = None):
-    """Export the shapes rois with storage file paths
-
-    Parameters
-    ----------
-    shapes_data: napari.layers.shape
-           A napari shapes layer
-    paths: list
-           The list to store file path for shapes roi
-
-    Returns
-    -------
-    roi_dict: dictionary
-           The dictionary with index and file paths for each shapes roi
-
-    """
-
-    # roi_dict = {}
-    # start_camera_center = viewer.camera.center
-    # start_camera_zoom = viewer.camera.zoom
-    # prev_size = viewer.window.qt_viewer.canvas.size
-    # for index, shape in enumerate(shapes_data):
-    #      center_coord, height, width = get_center_bbox(shape)
-    #     viewer.camera.center = center_coord
-    #    viewer.window.qt_viewer.canvas.size = (int(height), int(width))
-
-    #   viewer.camera.zoom = 1.0
-    #  path = paths[index] if paths is not None else None
-    # roi_dict[index] = viewer.screenshot(path=path)
-
-    # viewer.window.qt_viewer.canvas.size = prev_size
-    # viewer.camera.center = start_camera_center
-    # viewer.camera.zoom = start_camera_zoom
-
-    # return roi_dict

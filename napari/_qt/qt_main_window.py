@@ -3,6 +3,8 @@ Custom Qt widgets that serve as native objects that the public-facing elements
 wrap.
 """
 
+from __future__ import annotations
+
 import contextlib
 import inspect
 import os
@@ -121,14 +123,12 @@ class _QtMainWindow(QMainWindow):
     # We use this instead of QApplication.activeWindow for compatibility with
     # IPython usage. When you activate IPython, it will appear that there are
     # *no* active windows, so we want to track the most recently active windows
-    _instances: ClassVar[list['_QtMainWindow']] = []
+    _instances: ClassVar[list[_QtMainWindow]] = []
 
     # `window` is passed through on construction, so it's available to a window
     # provider for dependency injection
     # See https://github.com/napari/napari/pull/4826
-    def __init__(
-        self, viewer: 'Viewer', window: 'Window', parent=None
-    ) -> None:
+    def __init__(self, viewer: Viewer, window: Window, parent=None) -> None:
         super().__init__(parent)
         self._ev = None
         self._window = window
@@ -200,7 +200,7 @@ class _QtMainWindow(QMainWindow):
         self.status_throttler.setTimeout(50)
         self._throttle_cursor_to_status_connection(viewer)
 
-    def _throttle_cursor_to_status_connection(self, viewer: 'Viewer'):
+    def _throttle_cursor_to_status_connection(self, viewer: Viewer):
         # In the GUI we expect lots of changes to the cursor position, so
         # replace the direct connection with a throttled one.
         with contextlib.suppress(IndexError):
@@ -212,11 +212,11 @@ class _QtMainWindow(QMainWindow):
             viewer._update_status_bar_from_cursor
         )
 
-    def statusBar(self) -> 'ViewerStatusBar':
+    def statusBar(self) -> ViewerStatusBar:
         return super().statusBar()
 
     @classmethod
-    def current(cls) -> Optional['_QtMainWindow']:
+    def current(cls) -> Optional[_QtMainWindow]:
         return cls._instances[-1] if cls._instances else None
 
     @classmethod
@@ -650,7 +650,7 @@ class Window:
         Window menu.
     """
 
-    def __init__(self, viewer: 'Viewer', *, show: bool = True) -> None:
+    def __init__(self, viewer: Viewer, *, show: bool = True) -> None:
         # create QApplication if it doesn't already exist
         qapp = get_app()
 
@@ -1087,7 +1087,7 @@ class Window:
 
     def add_dock_widget(
         self,
-        widget: Union[QWidget, 'Widget'],
+        widget: Union[QWidget, Widget],
         *,
         name: str = '',
         area: str = 'right',
@@ -1577,7 +1577,7 @@ class Window:
         flash: bool = True,
         canvas_only: bool = False,
         fit_to_data_extent: bool = False,
-    ) -> 'QImage':
+    ) -> QImage:
         """Capture screenshot of the currently displayed viewer.
 
         Parameters
@@ -1733,26 +1733,28 @@ class Window:
 
     def export_rois(
         self,
-        shapes_data,
+        rois: np.ndarray,
         paths: list[str] | None = None,
         scale: float | None = None,
     ):
-        """Export the shapes rois with storage file paths
+        """Export the shapes rois with storage file paths.
 
         Parameters
         ----------
-        shapes_data: napari.layers.shape
-               A napari shapes layer
+        rois: np.ndarray
+            An array of shape (n, 2, 2) where n is the number of rois
+            and the first two coordinates correspond to the top left and
+            the last two coordinates correspond to the bottom right corners
         paths: list
-               The list to store file path for shapes roi
+            The list to store file path for shapes roi
 
         Returns
         -------
-        roi_dict: dictionary
-               The dictionary with index and file paths for each shapes roi
+        screenshot_list: list
+            The list with roi screenshots.
 
         """
-        if paths is not None and len(paths) != len(shapes_data):
+        if paths is not None and len(paths) != len(rois):
             raise ValueError(
                 trans._(
                     'The number of file paths does not match the number of ROI shapes',
@@ -1767,7 +1769,13 @@ class Window:
         canvas = self._qt_viewer.canvas
         prev_size = canvas.size
 
-        for index, shape in enumerate(shapes_data):
+        for index, shape in enumerate(rois):
+            top_left = shape[0]
+            bottom_right = shape[1]
+            x1, y1 = top_left
+            x2, y2 = bottom_right
+            if x1 > x2 or y1 > y2:
+                raise ValueError('ROI shape error')
             center_coord, height, width = get_center_bbox(shape)
             camera.center = center_coord
             canvas.size = (int(height), int(width))
@@ -1889,7 +1897,7 @@ class Window:
             update_save_history(dial.selectedFiles()[0])
 
 
-def _instantiate_dock_widget(wdg_cls, viewer: 'Viewer'):
+def _instantiate_dock_widget(wdg_cls, viewer: Viewer):
     # if the signature is looking a for a napari viewer, pass it.
     from napari.viewer import Viewer
 
