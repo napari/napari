@@ -545,7 +545,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         TRANSFORM = self._modeclass.TRANSFORM  # type: ignore[attr-defined]
         assert mode is not None
 
-        if not self.editable:
+        if not self.editable or not self.visible:
             mode = PAN_ZOOM
         if mode == self._mode:
             return mode
