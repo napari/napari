@@ -147,9 +147,9 @@ class QtVectorsControls(QtLayerControls):
 
         self.layout().addRow(self.button_grid)
         self.layout().addRow(self.opacityLabel, self.opacitySlider)
+        self.layout().addRow(trans._('blending:'), self.blendComboBox)
         self.layout().addRow(trans._('width:'), self.widthSpinBox)
         self.layout().addRow(trans._('length:'), self.lengthSpinBox)
-        self.layout().addRow(trans._('blending:'), self.blendComboBox)
         self.layout().addRow(
             trans._('vector style:'), self.vector_style_comboBox
         )

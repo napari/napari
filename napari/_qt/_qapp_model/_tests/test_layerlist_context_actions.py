@@ -1,6 +1,6 @@
 import pytest
 
-from napari._app_model import get_app
+from napari._app_model import get_app_model
 from napari._app_model.actions._layerlist_context_actions import (
     LAYERLIST_CONTEXT_ACTIONS,
 )
@@ -20,7 +20,7 @@ def test_layer_actions_ctx_menu_execute_command(
         To check a set of functional tests related to these actions you can
         see: https://github.com/napari/napari/blob/main/napari/layers/_tests/test_layer_actions.py
     """
-    app = get_app()
+    app = get_app_model()
     make_napari_viewer()
     command_id = layer_action.id
 
