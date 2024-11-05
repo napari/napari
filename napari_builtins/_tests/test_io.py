@@ -1,6 +1,5 @@
 import csv
 import os
-from importlib.metadata import version
 from pathlib import Path
 from typing import NamedTuple
 from uuid import uuid4
@@ -12,7 +11,6 @@ import numpy as np
 import pytest
 import tifffile
 import zarr
-from packaging.version import parse as parse_version
 
 from napari_builtins.io._read import (
     _guess_layer_type_from_column_names,
@@ -310,32 +308,28 @@ def test_add_zarr(write_spec):
     assert out[0].shape == ZARR1.shape  # type: ignore
 
 
-@pytest.mark.skipif(
-    parse_version(version('zarr')) > parse_version('3a0'),
-    reason='zarr 3+ does not support setting 1d data',
-)
 def test_add_zarr_1d_array_is_ignored(tmp_path):
     zarr_dir = str(tmp_path / 'data.zarr')
     # For more details: https://github.com/napari/napari/issues/1471
 
     z = zarr.open(store=zarr_dir, mode='w')
-    z['1d'] = np.zeros(3)
+    arr = z.create('1d', shape=(3,), chunks=(3,), dtype='float32')
+    arr[...] = np.zeros(3)
 
     image_path = os.path.join(zarr_dir, '1d')
     assert npe2.read([image_path], stack=False) == [(None,)]
 
 
-@pytest.mark.skipif(
-    parse_version(version('zarr')) > parse_version('3a0'),
-    reason='zarr 3+ does not support setting 1d data',
-)
 def test_add_many_zarr_1d_array_is_ignored(tmp_path):
     # For more details: https://github.com/napari/napari/issues/1471
     zarr_dir = tmp_path / 'data.zarr'
     z = zarr.open(store=zarr_dir, mode='w')
-    z['1d'] = np.zeros(3)
-    z['2d'] = np.zeros((3, 4))
-    z['3d'] = np.zeros((3, 4, 5))
+    arr_1d = z.create('1d', shape=(3,), chunks=(3,), dtype='float32')
+    arr_1d[...] = np.zeros(3)
+    arr_2d = z.create('2d', shape=(3, 4), chunks=(3, 4), dtype='float32')
+    arr_2d[...] = np.zeros((3, 4))
+    arr_3d = z.create('3d', shape=(3, 4, 5), chunks=(3, 4, 5), dtype='float32')
+    arr_3d[...] = np.zeros((3, 4, 5))
 
     for name in z.array_keys():
         [out] = npe2.read([os.path.join(zarr_dir, name)], stack=False)
