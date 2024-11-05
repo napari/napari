@@ -312,9 +312,9 @@ def test_add_zarr_1d_array_is_ignored(tmp_path):
     zarr_dir = str(tmp_path / 'data.zarr')
     # For more details: https://github.com/napari/napari/issues/1471
 
-    z = zarr.open(store=zarr_dir, mode='w')
-    arr = z.create('1d', shape=(3,), chunks=(3,), dtype='float32')
-    arr[...] = np.zeros(3)
+    with zarr.open(store=zarr_dir, mode='w') as z:
+        arr = z.create('1d', shape=(3,), chunks=(3,), dtype='float32')
+        arr[...] = np.zeros(3)
 
     image_path = os.path.join(zarr_dir, '1d')
     assert npe2.read([image_path], stack=False) == [(None,)]
@@ -322,19 +322,22 @@ def test_add_zarr_1d_array_is_ignored(tmp_path):
 
 def test_add_many_zarr_1d_array_is_ignored(tmp_path):
     # For more details: https://github.com/napari/napari/issues/1471
-    zarr_dir = tmp_path / 'data.zarr'
-    z = zarr.open(store=zarr_dir, mode='w')
-    arr_1d = z.create('1d', shape=(3,), chunks=(3,), dtype='float32')
-    arr_1d[...] = np.zeros(3)
-    arr_2d = z.create('2d', shape=(3, 4), chunks=(3, 4), dtype='float32')
-    arr_2d[...] = np.zeros((3, 4))
-    arr_3d = z.create('3d', shape=(3, 4, 5), chunks=(3, 4, 5), dtype='float32')
-    arr_3d[...] = np.zeros((3, 4, 5))
+    zarr_dir = str(tmp_path / 'data.zarr')
+    with zarr.open(store=zarr_dir, mode='w') as z:
+        arr_1d = z.create('1d', shape=(3,), chunks=(3,), dtype='float32')
+        arr_1d[...] = np.zeros(3)
+        arr_2d = z.create('2d', shape=(3, 4), chunks=(3, 4), dtype='float32')
+        arr_2d[...] = np.zeros((3, 4))
+        arr_3d = z.create(
+            '3d', shape=(3, 4, 5), chunks=(3, 4, 5), dtype='float32'
+        )
+        arr_3d[...] = np.zeros((3, 4, 5))
 
-    for name in z.array_keys():
-        [out] = npe2.read([os.path.join(zarr_dir, name)], stack=False)
-        if name == '1d':
-            assert out == (None,)
-        else:
-            assert isinstance(out[0], da.Array)
-            assert out[0].ndim == int(name[0])
+    with zarr.open(store=zarr_dir, mode='r') as z:
+        for name in z.array_keys():
+            [out] = npe2.read([os.path.join(zarr_dir, name)], stack=False)
+            if name == '1d':
+                assert out == (None,)
+            else:
+                assert isinstance(out[0], da.Array)
+                assert out[0].ndim == int(name[0])
