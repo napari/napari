@@ -1,5 +1,6 @@
 import csv
 import os
+from importlib.metadata import version
 from pathlib import Path
 from typing import NamedTuple
 from uuid import uuid4
@@ -11,6 +12,7 @@ import numpy as np
 import pytest
 import tifffile
 import zarr
+from packaging.version import parse as parse_version
 
 from napari_builtins.io._read import (
     _guess_layer_type_from_column_names,
@@ -319,6 +321,11 @@ def test_add_zarr_1d_array_is_ignored(tmp_path):
     assert npe2.read([image_path], stack=False) == [(None,)]
 
 
+@pytest.mark.skipif(
+    parse_version(version('zarr')) >= parse_version('3.0.0a0')
+    and os.name == 'nt',
+    reason='zarr 3 return incorrect key in windows',
+)
 def test_add_many_zarr_1d_array_is_ignored(tmp_path):
     # For more details: https://github.com/napari/napari/issues/1471
     zarr_dir = str(tmp_path / 'data.zarr')
@@ -331,7 +338,7 @@ def test_add_many_zarr_1d_array_is_ignored(tmp_path):
 
     for name in z.array_keys():
         [out] = npe2.read([os.path.join(zarr_dir, name)], stack=False)
-        if name == '1d':
+        if name.endswith('1d'):
             assert out == (None,)
         else:
             assert isinstance(out[0], da.Array), name
