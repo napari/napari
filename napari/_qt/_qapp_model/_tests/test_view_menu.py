@@ -85,7 +85,7 @@ def test_toggle_fullscreen(make_napari_viewer, qtbot):
     qtbot.keyClick(
         viewer.window._qt_window.menuBar(), Qt.Key_V, modifier=Qt.AltModifier
     )
-    qtbot.waitUntil(lambda: viewer.window.view_menu.isVisible())
+    qtbot.waitUntil(viewer.window.view_menu.isVisible)
     viewer.window.view_menu.close()
     assert not viewer.window.view_menu.isVisible()
 
@@ -102,7 +102,7 @@ def test_toggle_fullscreen(make_napari_viewer, qtbot):
     qtbot.keyClick(
         viewer.window._qt_window.menuBar(), Qt.Key_V, modifier=Qt.AltModifier
     )
-    qtbot.waitUntil(lambda: viewer.window.view_menu.isVisible())
+    qtbot.waitUntil(viewer.window.view_menu.isVisible)
     viewer.window.view_menu.close()
     assert not viewer.window.view_menu.isVisible()
 
@@ -123,7 +123,7 @@ def test_toggle_fullscreen(make_napari_viewer, qtbot):
     qtbot.keyClick(
         viewer.window._qt_window.menuBar(), Qt.Key_V, modifier=Qt.AltModifier
     )
-    qtbot.waitUntil(lambda: viewer.window.view_menu.isVisible())
+    qtbot.waitUntil(viewer.window.view_menu.isVisible)
     viewer.window.view_menu.close()
     assert not viewer.window.view_menu.isVisible()
 
@@ -139,7 +139,7 @@ def test_toggle_fullscreen(make_napari_viewer, qtbot):
     qtbot.keyClick(
         viewer.window._qt_window.menuBar(), Qt.Key_V, modifier=Qt.AltModifier
     )
-    qtbot.waitUntil(lambda: viewer.window.view_menu.isVisible())
+    qtbot.waitUntil(viewer.window.view_menu.isVisible)
     viewer.window.view_menu.close()
     assert not viewer.window.view_menu.isVisible()
 
@@ -156,7 +156,7 @@ def test_toggle_fullscreen(make_napari_viewer, qtbot):
     qtbot.keyClick(
         viewer.window._qt_window.menuBar(), Qt.Key_V, modifier=Qt.AltModifier
     )
-    qtbot.waitUntil(lambda: viewer.window.view_menu.isVisible())
+    qtbot.waitUntil(viewer.window.view_menu.isVisible)
     viewer.window.view_menu.close()
     assert not viewer.window.view_menu.isVisible()
 
