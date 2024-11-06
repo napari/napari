@@ -1,7 +1,13 @@
+import numpy as np
 import pytest
 
+from napari._tests.utils import (
+    add_layer_by_type,
+    layer_test_data,
+)
 from napari.components._viewer_key_bindings import (
     hold_for_pan_zoom,
+    rotate_layers,
     show_only_layer_above,
     show_only_layer_below,
     toggle_selected_visibility,
@@ -141,6 +147,36 @@ def test_show_only_layer_below():
     assert not viewer.layers[2].visible
     assert not viewer.layers[1].visible
     assert viewer.layers[0].visible
+
+
+@pytest.mark.parametrize(('layer_class', 'data', 'ndim'), layer_test_data)
+def test_rotate_layers(layer_class, data, ndim):
+    """Test rotate layers works with all layer types/data"""
+    viewer = ViewerModel()
+    layer = add_layer_by_type(viewer, layer_class, data, visible=True)
+    np.testing.assert_array_equal(
+        layer.affine.rotate, np.eye(ndim, dtype=float)
+    )
+    rotate_layers(viewer)
+    np.testing.assert_array_equal(
+        layer.affine.rotate[-2:, -2:], np.array([[0, -1], [1, 0]], dtype=float)
+    )
+
+
+def test_rotate_layers_in_3D():
+    """Test that rotate layers is disabled in 3D viewer mode"""
+    viewer = ViewerModel()
+    layer = add_layer_by_type(
+        viewer, Points, np.array([[1, 2, 3]]), visible=True
+    )
+    initial_rotation_matrix = layer.affine.rotate[-2:, -2:]
+    viewer.dims.ndisplay = 3
+    assert viewer.dims.ndisplay == 3
+    rotate_layers(viewer)
+    # with ndisplay == 3 rotation is disabled, the matrix should not have changed
+    np.testing.assert_array_equal(
+        layer.affine.rotate[-2:, -2:], initial_rotation_matrix
+    )
 
 
 def make_viewer_with_three_layers():

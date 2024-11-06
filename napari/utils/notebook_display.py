@@ -108,9 +108,9 @@ class NotebookScreenshot:
         -------
         In memory binary stream containing PNG screenshot image.
         """
-        from napari._qt.qt_event_loop import get_app
+        from napari._qt.qt_event_loop import get_qapp
 
-        get_app().processEvents()
+        get_qapp().processEvents()
         self.image = self.viewer.screenshot(
             canvas_only=self.canvas_only, flash=False
         )

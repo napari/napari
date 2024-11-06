@@ -244,6 +244,15 @@ def run_benchmark_from_module(
             except NotImplementedError:
                 continue
             getattr(obj, method_name)(*param)
+            getattr(obj, 'teardown', lambda: None)()
+    else:
+        obj = klass()
+        try:
+            obj.setup()
+        except NotImplementedError:
+            return
+        getattr(obj, method_name)()
+        getattr(obj, 'teardown', lambda: None)()
 
 
 def run_benchmark():

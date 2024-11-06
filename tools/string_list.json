@@ -903,6 +903,7 @@
       "viewer",
       "napari:roll_axes",
       "napari:transpose_axes",
+      "napari:rotate_layers",
       "napari:reset_view",
       "napari:toggle_grid",
       "napari:toggle_ndisplay",

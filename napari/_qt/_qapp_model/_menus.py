@@ -16,7 +16,7 @@ def build_qmodel_menu(
     Parameters
     ----------
     menu_id : str
-        ID of a menu registered with napari._app_model.get_app().menus
+        ID of a menu registered with napari._app_model.get_app_model().menus
     title : Optional[str]
         Title of the menu
     parent : Optional[QWidget]
@@ -27,8 +27,8 @@ def build_qmodel_menu(
     QModelMenu
         QMenu subclass populated with all items in `menu_id` menu.
     """
-    from napari._app_model import get_app
+    from napari._app_model import get_app_model
 
     return QModelMenu(
-        menu_id=menu_id, app=get_app(), title=title, parent=parent
+        menu_id=menu_id, app=get_app_model(), title=title, parent=parent
     )

@@ -37,7 +37,7 @@ classifiers = [
 requires-python = ">=3.9"
 dependencies = [
     "appdirs>=1.4.4",
-    "app-model>=0.2.8,<0.3.0",
+    "app-model>=0.3.0,<0.4.0",
     "cachey>=0.2.1",
     "certifi>=2018.1.18",
     "dask[array]>=2021.10.0",
@@ -115,7 +115,7 @@ qt = [
 ]
 all = [
     "napari[pyqt,optional]",
-    "napari-plugin-manager >=0.1.0a1, <0.2.0",
+    "napari-plugin-manager >=0.1.3, <0.2.0",
 ]
 optional = [
     "triangle ; platform_machine != 'arm64'",
@@ -609,7 +609,6 @@ module = [
     "napari._vispy.overlays.scale_bar",
     "napari._vispy.overlays.text",
     "napari.layers.labels._labels_key_bindings",
-    "napari.layers.tracks._tracks_key_bindings",
     "napari.layers.utils._slice_input",
     "napari.utils._register",
     "napari.utils.colormaps.categorical_colormap",
@@ -690,7 +689,6 @@ module = [
     "napari.conftest",
     "napari.layers.labels._labels_utils",
     "napari.layers.points._points_mouse_bindings",
-    "napari.layers.tracks._track_utils",
     "napari.utils.colormaps.colormap",
     "napari.utils.notifications",
 ]
