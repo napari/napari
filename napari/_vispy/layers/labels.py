@@ -318,6 +318,7 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
     def reset(self, event=None) -> None:
         super().reset()
         self._on_colormap_change()
+        self._on_iso_gradient_mode_change()
 
 
 class LabelLayerNode(ScalarFieldLayerNode):
