@@ -7,7 +7,7 @@ multiple textures.
 
 Thanks to Emmanuel Reynaud and Luis Gutierrez for providing the gorgeous coral
 model for this demo. You can find the data on FigShare:
-https://doi.org/10.6084/m9.figshare.22348645
+https://zenodo.org/records/13380203
 
 More information on the methods used to generate this model can be found in *L.
 Gutierrez-Heredia, C. Keogh, E. G. Reynaud, Assessing the Capabilities of
@@ -55,7 +55,7 @@ import napari
 # Download the model
 # ------------------
 download = pooch.DOIDownloader(progressbar=True)
-doi = '10.6084/m9.figshare.22348645.v1'
+doi = '10.5281/zenodo.13380203'
 tmp_dir = pooch.os_cache('napari-surface-texture-example')
 os.makedirs(tmp_dir, exist_ok=True)
 data_files = {

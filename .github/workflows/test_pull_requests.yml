@@ -48,6 +48,8 @@ jobs:
         run: pip install --upgrade pip
       - name: Install Napari dev
         run: pip install -e .[build]
+        env:
+          PIP_CONSTRAINT: resources/constraints/constraints_py3.11.txt
       - name: Make Typestubs
         run: |
           make typestubs

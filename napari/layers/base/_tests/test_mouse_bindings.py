@@ -37,7 +37,7 @@ def test_interaction_box_rotation():
         mouse_pos,
         event,
     )
-    # should be ~33 degrees
+    # should be approximately 33 degrees
     assert np.allclose(layer.affine.rotate, Affine(rotate=33.69).rotate)
 
 
@@ -74,6 +74,4 @@ def test_interaction_box_fixed_rotation():
         event,
     )
     # should be 45 degrees
-    assert np.allclose(
-        layer.affine.rotate, Affine(rotate=45).rotate
-    )  # now lets use shift to fix
+    assert np.allclose(layer.affine.rotate, Affine(rotate=45).rotate)
