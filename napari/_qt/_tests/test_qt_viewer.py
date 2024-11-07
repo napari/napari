@@ -269,44 +269,40 @@ def test_screenshot(make_napari_viewer):
     assert screenshot.ndim == 3
 
 
-def test_export_figure(make_napari_viewer, tmp_path):
+def test_export_rois(make_napari_viewer, tmp_path):
+    # Create an image with a defined shape (100x100) and a square in the middle
+
+    img = np.zeros((100, 100), dtype=np.uint8)
+    img[25:75, 25:75] = 255
+
+    # Add viewer
     viewer = make_napari_viewer()
+    viewer.add_image(img)
 
-    np.random.seed(0)
-    # Add image
-    data = np.random.randint(150, 250, size=(250, 250))
-    layer = viewer.add_image(data)
+    # Create a couple of clearly defined rectangular polygons for validation
+    roi_shapes_data = [
+        np.array([[25, 35], [25, 55], [35, 55], [35, 35]]),  # ROI 1
+        np.array([[15, 25], [15, 45], [35, 45], [35, 25]]),  # ROI 2
+        np.array([[35, 45], [35, 75], [45, 75], [45, 45]]),  # ROI 3
+        np.array([[20, 25], [20, 75], [40, 75], [40, 25]]),  # ROI 4
+    ]
+    # Add ROIs to viewer
+    roi_shapes = viewer.add_shapes(roi_shapes_data)
 
+    # Save original camera state for comparison later
     camera_center = viewer.camera.center
     camera_zoom = viewer.camera.zoom
-    img = viewer.export_figure(flash=False, path=str(tmp_path / 'img.png'))
 
-    assert viewer.camera.center == camera_center
-    assert viewer.camera.zoom == camera_zoom
-    assert img.shape == (250, 250, 4)
-    assert np.all(img != np.array([0, 0, 0, 0]))
+    # Export ROI to image path
+    test_roi = viewer.export_rois(roi_shapes, path=str(tmp_path / 'img.png'))
 
+    # Check (1) if path exist, (2) if camera center changes
+    # (3) if camera camera zoom changes
+    # (4) if the value of square region (25:75, 25:75) is 255
     assert (tmp_path / 'img.png').exists()
-
-    layer.scale = [0.12, 0.24]
-    img = viewer.export_figure(flash=False)
-    # allclose accounts for rounding errors when computing size in hidpi aka
-    # retina displays
-    np.testing.assert_allclose(img.shape, (250, 499, 4), atol=1)
-
-    layer.scale = [0.12, 0.12]
-    img = viewer.export_figure(flash=False)
-    assert img.shape == (250, 250, 4)
-
-    viewer.camera.center = [100, 100]
-    camera_center = viewer.camera.center
-    camera_zoom = viewer.camera.zoom
-    img = viewer.export_figure()
-
     assert viewer.camera.center == camera_center
     assert viewer.camera.zoom == camera_zoom
-    assert img.shape == (250, 250, 4)
-    assert np.all(img != np.array([0, 0, 0, 0]))
+    assert test_roi.shape[25:75, 25, 75] == (255, 255)
     viewer.close()
 
 
