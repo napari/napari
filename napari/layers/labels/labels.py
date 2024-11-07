@@ -1,3 +1,4 @@
+import typing
 import warnings
 from collections import deque
 from collections.abc import Sequence
@@ -1571,7 +1572,9 @@ class Labels(ScalarFieldBase):
         if value is None:
             return []
 
-        label_value = value[1] if self.multiscale else value
+        label_value: int = typing.cast(
+            int, value[1] if self.multiscale else value
+        )
         if label_value not in self._label_index:
             return [trans._('[No Properties]')]
 
