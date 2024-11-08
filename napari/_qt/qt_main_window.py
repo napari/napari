@@ -1786,6 +1786,13 @@ class Window:
         self._setup_existing_themes(False)
         _themes.events.added.disconnect(self._add_theme)
         _themes.events.removed.disconnect(self._remove_theme)
+        viewer = self._qt_viewer.viewer
+
+        # prevent from error after  self._qt_window defete
+        viewer.events.help.disconnect(self._help_changed)
+        viewer.events.title.disconnect(self._title_changed)
+        viewer.events.theme.disconnect(self._update_theme)
+        viewer.events.status.disconnect(self._status_changed)
 
     def close(self):
         """Close the viewer window and cleanup sub-widgets."""
