@@ -127,7 +127,7 @@ jobs:
           - python: "3.12"
             platform: windows-latest
             backend: pyqt6
-            coverage: no_cov
+            coverage: cov
           - python: "3.12"
             platform: macos-13
             backend: pyqt5
