@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import typing
 import warnings
 from typing import Any, Literal, Union, cast
 
@@ -399,7 +400,9 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         if self._keep_auto_contrast:
             data = response.image.raw
             input_data = data[-1] if self.multiscale else data
-            self.contrast_limits = calc_data_range(input_data, rgb=self.rgb)
+            self.contrast_limits = calc_data_range(
+                typing.cast(LayerDataProtocol, input_data), rgb=self.rgb
+            )
 
         super()._update_slice_response(response)
 
