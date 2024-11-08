@@ -2,7 +2,6 @@ import importlib
 from unittest import mock
 
 import pytest
-import qtpy
 from app_model.types import MenuItem, SubmenuItem
 from npe2 import DynamicPlugin
 from qtpy.QtWidgets import QWidget
@@ -22,10 +21,6 @@ class DummyWidget(QWidget):
 @pytest.mark.skipif(
     not _plugins._plugin_manager_dialog_avail(),
     reason='`napari_plugin_manager` not available',
-)
-@pytest.mark.skipif(
-    qtpy.PYSIDE2 or getattr(qtpy, 'PYSIDE6', False),
-    reason='Test segfaults with PySide2/6',
 )
 def test_plugin_manager_action(make_napari_viewer):
     """
@@ -244,7 +239,6 @@ def test_plugin_widget_checked(
     assert widget_action.isChecked()
 
 
-@pytest.mark.skipif(qtpy.PYSIDE2, reason='Test segfaults with PySide2')
 def test_import_plugin_manager():
     from napari_plugin_manager.qt_plugin_dialog import QtPluginDialog
 

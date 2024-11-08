@@ -517,6 +517,35 @@ def test_process_mouse_event(make_napari_viewer):
     view.canvas._process_mouse_event(mouse_press_callbacks, mouse_event)
 
 
+def test_process_mouse_event_2d_layer_3d_viewer(make_napari_viewer):
+    """Test that _process_mouse_events can handle 2d layers in 3D.
+
+    This is a test for: https://github.com/napari/napari/issues/7299
+    """
+
+    # make a mock mouse event
+    new_pos = [5, 5]
+    mouse_event = MouseEvent(
+        pos=new_pos,
+    )
+    data = np.zeros((20, 20))
+
+    viewer = make_napari_viewer()
+    view = viewer.window._qt_viewer
+    image = viewer.add_image(data)
+
+    @image.mouse_drag_callbacks.append
+    def on_click(layer, event):
+        expected_position = view.canvas._map_canvas2world(new_pos)
+        np.testing.assert_almost_equal(expected_position, list(event.position))
+
+    assert viewer.dims.ndisplay == 2
+    view.canvas._process_mouse_event(mouse_press_callbacks, mouse_event)
+
+    viewer.dims.ndisplay = 3
+    view.canvas._process_mouse_event(mouse_press_callbacks, mouse_event)
+
+
 @skip_local_popups
 def test_memory_leaking(qtbot, make_napari_viewer):
     data = np.zeros((5, 20, 20, 20), dtype=int)

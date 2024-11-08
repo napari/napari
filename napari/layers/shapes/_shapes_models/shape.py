@@ -119,6 +119,7 @@ class Shape(ABC):
         self.name = ''
 
         self._data: npt.NDArray
+        self._bounding_box = np.empty((0, self.ndisplay))
 
     @property
     @abstractmethod
@@ -163,6 +164,15 @@ class Shape(ABC):
     def dims_displayed(self):
         """tuple: Dimensions that are displayed."""
         return self.dims_order[-self.ndisplay :]
+
+    @property
+    def bounding_box(self) -> np.ndarray:
+        """(2, N) array, bounding box of the object."""
+        # We add +-0.5 to handle edge width
+        return self._bounding_box[:, self.dims_displayed] + [
+            [-0.5 * self.edge_width],
+            [0.5 * self.edge_width],
+        ]
 
     @property
     def dims_not_displayed(self):
@@ -254,6 +264,23 @@ class Shape(ABC):
             self._face_vertices = np.empty((0, self.ndisplay))
             self._face_triangles = np.empty((0, 3), dtype=np.uint32)
 
+    def _all_triangles(self):
+        """Return all triangles for the shape
+
+        Returns
+        -------
+        np.ndarray
+            Nx3 array of vertex indices that form the triangles for the shape
+        """
+        return np.vstack(
+            [
+                self._face_vertices[self._face_triangles],
+                (self._edge_vertices + self.edge_width * self._edge_offsets)[
+                    self._edge_triangles
+                ],
+            ]
+        )
+
     def transform(self, transform: npt.NDArray) -> None:
         """Performs a linear transform on the shape
 
@@ -276,6 +303,12 @@ class Shape(ABC):
         self._edge_vertices = centers
         self._edge_offsets = offsets
         self._edge_triangles = triangles
+        self._bounding_box = np.array(
+            [
+                np.min(self._data, axis=0),
+                np.max(self._data, axis=0),
+            ]
+        )
 
     def shift(self, shift: npt.NDArray) -> None:
         """Performs a 2D shift on the shape
@@ -291,6 +324,9 @@ class Shape(ABC):
         self._edge_vertices = self._edge_vertices + shift
         self._box = self._box + shift
         self._data[:, self.dims_displayed] = self.data_displayed + shift
+        self._bounding_box[:, self.dims_displayed] = (
+            self._bounding_box[:, self.dims_displayed] + shift
+        )
 
     def scale(self, scale, center=None):
         """Performs a scaling on the shape
@@ -309,6 +345,7 @@ class Shape(ABC):
         if center is None:
             self.transform(transform)
         else:
+            center = np.array(center)
             self.shift(-center)
             self.transform(transform)
             self.shift(center)
@@ -330,6 +367,7 @@ class Shape(ABC):
         if center is None:
             self.transform(transform)
         else:
+            center = np.array(center)
             self.shift(-center)
             self.transform(transform)
             self.shift(center)
