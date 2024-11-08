@@ -156,7 +156,7 @@ class NapariQtNotification(QDialog):
         """Show the message with a fade and slight slide in from the bottom."""
         super().show()
         self.slide_in()
-        if not self.parent().isActiveWindow():
+        if self.parent() is not None and not self.parent().isActiveWindow():
             return
         if self.DISMISS_AFTER > 0:
             self.timer.setInterval(self.DISMISS_AFTER)
