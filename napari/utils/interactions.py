@@ -41,6 +41,9 @@ def mouse_wheel_callbacks(obj, event):
     event : Event
         Mouse event
     """
+    if hasattr(obj, 'visible') and not obj.visible:
+        return
+
     # iterate through drag callback functions
     for mouse_wheel_func in obj.mouse_wheel_callbacks:
         # execute function to run press event code
@@ -79,6 +82,9 @@ def mouse_double_click_callbacks(obj, event) -> None:
     None
 
     """
+    if hasattr(obj, 'visible') and not obj.visible:
+        return
+
     # iterate through drag callback functions
     for mouse_click_func in obj.mouse_double_click_callbacks:
         # execute function to run press event code
@@ -119,6 +125,9 @@ def mouse_press_callbacks(obj, event):
     event : Event
         Mouse event
     """
+    if hasattr(obj, 'visible') and not obj.visible:
+        return
+
     # iterate through drag callback functions
     for mouse_drag_func in obj.mouse_drag_callbacks:
         # execute function to run press event code
@@ -163,6 +172,9 @@ def mouse_move_callbacks(obj, event):
     event : Event
         Mouse event
     """
+    if hasattr(obj, 'visible') and not obj.visible:
+        return
+
     if not event.is_dragging:
         # if not dragging simply call the mouse move callbacks
         for mouse_move_func in obj.mouse_move_callbacks:
@@ -209,6 +221,9 @@ def mouse_release_callbacks(obj, event):
     event : Event
         Mouse event
     """
+    if hasattr(obj, 'visible') and not obj.visible:
+        return
+
     for func, gen in tuple(obj._mouse_drag_gen.items()):
         obj._persisted_mouse_event[gen].__wrapped__ = event
         with contextlib.suppress(StopIteration):
