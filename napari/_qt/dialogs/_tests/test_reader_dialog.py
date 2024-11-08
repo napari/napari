@@ -192,7 +192,7 @@ def test_open_with_dialog_choices_persist(builtins, tmp_path, qtbot):
 def test_open_with_dialog_choices_persist_dir(builtins, tmp_path, qtbot):
     pth = tmp_path / 'data.zarr'
     z = zarr.open(
-        str(pth), mode='w', shape=(10, 10), chunks=(5, 5), dtype='f4'
+        store=str(pth), mode='w', shape=(10, 10), chunks=(5, 5), dtype='f4'
     )
     z[:] = np.random.random((10, 10))
 
