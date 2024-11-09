@@ -5,6 +5,7 @@ wrap.
 
 import contextlib
 import inspect
+import logging
 import os
 import sys
 import time
@@ -1802,6 +1803,9 @@ class Window:
             self._teardown()
             self._qt_viewer.close()
             self._qt_window.close()
+
+            logging.warning('teardown', stack_info=True)
+
             del self._qt_window
 
     def _open_preferences_dialog(self) -> PreferencesDialog:
