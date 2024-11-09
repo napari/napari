@@ -51,7 +51,9 @@ layer_outside = viewer.add_shapes(
 assert hasattr(viewer.window, "_qt_window")
 # add scale_bar with background box
 viewer.scale_bar.visible = True
+assert hasattr(viewer.window, "_qt_window")
 viewer.scale_bar.box = True
+assert hasattr(viewer.window, "_qt_window")
 # viewer.scale_bar.length = 150  # prevent dynamic adjustment of scale bar length
 
 #######################################################################
