@@ -27,11 +27,12 @@ import napari
 # useful in displaying how figure export handles the extent of all layers.
 
 viewer = napari.Viewer()
-
+assert hasattr(viewer.window, "_qt_window")
 # add a 2D image layer
 img_layer = viewer.add_image(data.camera(), name='photographer')
+assert hasattr(viewer.window, "_qt_window")
 img_layer.colormap = 'gray'
-
+assert hasattr(viewer.window, "_qt_window")
 # polygon within image extent
 layer_within = viewer.add_shapes(
     np.array([[11, 13], [111, 113], [22, 246]]),
@@ -39,7 +40,7 @@ layer_within = viewer.add_shapes(
     face_color='coral',
     name='shapes_within',
 )
-
+assert hasattr(viewer.window, "_qt_window")
 # add a polygon shape layer
 layer_outside = viewer.add_shapes(
     np.array([[572, 222], [305, 292], [577, 440]]),
@@ -47,7 +48,7 @@ layer_outside = viewer.add_shapes(
     face_color='royalblue',
     name='shapes_outside',
 )
-
+assert hasattr(viewer.window, "_qt_window")
 # add scale_bar with background box
 viewer.scale_bar.visible = True
 viewer.scale_bar.box = True
@@ -57,8 +58,11 @@ viewer.scale_bar.box = True
 # Take screenshots and export figures in 'light' theme, to show the canvas
 # margins and the extent of the exported figure.
 
+assert hasattr(viewer.window, "_qt_window")
 viewer.theme = 'light'
+assert hasattr(viewer.window, "_qt_window")
 screenshot = viewer.screenshot()
+assert hasattr(viewer.window, "_qt_window")
 figure = viewer.export_figure()
 # optionally, save the exported figure: viewer.export_figure(path='export_figure.png')
 # or screenshot: viewer.screenshot(path='screenshot.png')
