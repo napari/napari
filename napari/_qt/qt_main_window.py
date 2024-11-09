@@ -658,6 +658,7 @@ class Window:
 
         # Connect the Viewer and create the Main Window
         self._qt_window = _QtMainWindow(viewer, self)
+        logging.warning('qt window created', stack_info=True)
         qapp.installEventFilter(self._qt_window)
 
         # connect theme events before collecting plugin-provided themes
