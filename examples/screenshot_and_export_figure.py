@@ -27,6 +27,7 @@ import napari
 # useful in displaying how figure export handles the extent of all layers.
 
 viewer = napari.Viewer()
+viewer.window._noclose = True
 assert hasattr(viewer.window, "_qt_window")
 # add a 2D image layer
 img_layer = viewer.add_image(data.camera(), name='photographer')
@@ -105,6 +106,8 @@ viewer.add_image(figure, rgb=True, name='figure')
 
 viewer.grid.enabled = True
 viewer.grid.shape = (2, 3)
+
+viewer.window._noclose = False
 
 if __name__ == '__main__':
     napari.run()

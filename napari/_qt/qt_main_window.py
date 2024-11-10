@@ -1800,6 +1800,8 @@ class Window:
         """Close the viewer window and cleanup sub-widgets."""
         # Someone is closing us twice? Only try to delete self._qt_window
         # if we still have one.
+        if getattr(self, '_noclose', False):
+            raise RuntimeError('Should not close')
         if hasattr(self, '_qt_window'):
             self._teardown()
             self._qt_viewer.close()
