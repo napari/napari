@@ -41,7 +41,7 @@ def mouse_wheel_callbacks(obj, event):
     event : Event
         Mouse event
     """
-    if not getattr(obj, 'visible', False):
+    if not getattr(obj, 'visible', True):
         return
 
     # iterate through drag callback functions
@@ -82,7 +82,7 @@ def mouse_double_click_callbacks(obj, event) -> None:
     None
 
     """
-    if not getattr(obj, 'visible', False):
+    if not getattr(obj, 'visible', True):
         return
 
     # iterate through drag callback functions
@@ -125,7 +125,7 @@ def mouse_press_callbacks(obj, event):
     event : Event
         Mouse event
     """
-    if not getattr(obj, 'visible', False):
+    if not getattr(obj, 'visible', True):
         return
 
     # iterate through drag callback functions
@@ -172,7 +172,7 @@ def mouse_move_callbacks(obj, event):
     event : Event
         Mouse event
     """
-    if not getattr(obj, 'visible', False):
+    if not getattr(obj, 'visible', True):
         return
 
     if not event.is_dragging:
@@ -221,7 +221,7 @@ def mouse_release_callbacks(obj, event):
     event : Event
         Mouse event
     """
-    if not getattr(obj, 'visible', False):
+    if not getattr(obj, 'visible', True):
         return
 
     for func, gen in tuple(obj._mouse_drag_gen.items()):
