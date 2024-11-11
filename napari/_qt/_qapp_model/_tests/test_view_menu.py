@@ -90,10 +90,7 @@ def test_toggle_fullscreen_from_normal(make_napari_viewer, qtbot):
 
     # Check fullscreen state change
     app.commands.execute_command(action_id)
-    if sys.platform == 'darwin':
-        # On macOS, wait for the animation to complete
-        qtbot.wait(250)
-    assert viewer.window._qt_window.isFullScreen()
+    qtbot.waitUntil(viewer.window._qt_window.isFullScreen)
     check_windows_style(viewer)
 
     # Check `View` menu can be seen in fullscreen window state
@@ -107,10 +104,7 @@ def test_toggle_fullscreen_from_normal(make_napari_viewer, qtbot):
 
     # Check return to non fullscreen state
     app.commands.execute_command(action_id)
-    if sys.platform == 'darwin':
-        # On macOS, wait for the animation to complete
-        qtbot.wait(250)
-    assert not viewer.window._qt_window.isFullScreen()
+    qtbot.waitUntil(viewer.window._qt_window.isFullScreen)
     check_windows_style(viewer)
 
     # Check `View` still menu can be seen in non fullscreen window state
@@ -151,10 +145,7 @@ def test_toggle_fullscreen_from_maximized(make_napari_viewer, qtbot):
     assert not viewer.window.view_menu.isVisible()
 
     app.commands.execute_command(action_id)
-    if sys.platform == 'darwin':
-        # On macOS, wait for the animation to complete
-        qtbot.wait(250)
-    assert viewer.window._qt_window.isFullScreen()
+    qtbot.waitUntil(viewer.window._qt_window.isFullScreen)
     check_windows_style(viewer)
 
     # Check `View` menu can be seen in fullscreen window state coming from maximized state
@@ -168,10 +159,7 @@ def test_toggle_fullscreen_from_maximized(make_napari_viewer, qtbot):
 
     # Check return to non fullscreen state
     app.commands.execute_command(action_id)
-    if sys.platform == 'darwin':
-        # On macOS, wait for the animation to complete
-        qtbot.wait(350)
-    assert not viewer.window._qt_window.isFullScreen()
+    qtbot.waitUntil(viewer.window._qt_window.isFullScreen)
     check_windows_style(viewer)
 
     # Check `View` still menu can be seen in non fullscreen window state
