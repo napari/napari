@@ -154,8 +154,12 @@ def test_toggle_fullscreen_from_maximized(make_napari_viewer, qtbot):
     app.commands.execute_command(action_id)
     if sys.platform == 'darwin':
         # On macOS, wait for the animation to complete
-        qtbot.wait(500)
-    assert not viewer.window._qt_window.isFullScreen()
+        qtbot.wait(250)
+
+    def check_not_fullscreen():
+        assert not viewer.window._qt_window.isFullScreen()
+
+    qtbot.waitUntil(check_not_fullscreen)
     check_windows_style(viewer)
 
     # Check `View` still menu can be seen in non fullscreen window state
