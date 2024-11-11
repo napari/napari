@@ -90,6 +90,9 @@ def test_toggle_fullscreen_from_normal(make_napari_viewer, qtbot):
 
     # Check fullscreen state change
     app.commands.execute_command(action_id)
+    if sys.platform == 'darwin':
+        # On macOS, wait for the animation to complete
+        qtbot.wait(250)
     qtbot.waitUntil(viewer.window._qt_window.isFullScreen)
     check_windows_style(viewer)
 
@@ -104,6 +107,9 @@ def test_toggle_fullscreen_from_normal(make_napari_viewer, qtbot):
 
     # Check return to non fullscreen state
     app.commands.execute_command(action_id)
+    if sys.platform == 'darwin':
+        # On macOS, wait for the animation to complete
+        qtbot.wait(250)
     qtbot.waitUntil(viewer.window._qt_window.isFullScreen)
     check_windows_style(viewer)
 
@@ -145,6 +151,9 @@ def test_toggle_fullscreen_from_maximized(make_napari_viewer, qtbot):
     assert not viewer.window.view_menu.isVisible()
 
     app.commands.execute_command(action_id)
+    if sys.platform == 'darwin':
+        # On macOS, wait for the animation to complete
+        qtbot.wait(250)
     qtbot.waitUntil(viewer.window._qt_window.isFullScreen)
     check_windows_style(viewer)
 
@@ -159,6 +168,9 @@ def test_toggle_fullscreen_from_maximized(make_napari_viewer, qtbot):
 
     # Check return to non fullscreen state
     app.commands.execute_command(action_id)
+    if sys.platform == 'darwin':
+        # On macOS, wait for the animation to complete
+        qtbot.wait(250)
     qtbot.waitUntil(viewer.window._qt_window.isFullScreen)
     check_windows_style(viewer)
 
