@@ -170,7 +170,7 @@ def test_toggle_fullscreen_from_maximized(make_napari_viewer, qtbot):
     app.commands.execute_command(action_id)
     if sys.platform == 'darwin':
         # On macOS, wait for the animation to complete
-        qtbot.wait(250)
+        qtbot.wait(350)
     assert not viewer.window._qt_window.isFullScreen()
     check_windows_style(viewer)
 
