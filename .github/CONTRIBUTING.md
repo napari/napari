@@ -1,14 +1,21 @@
 # Contributing to GitHub workflows and actions
 
-Created: 2024-11-11; Updated:
+*Created: 2024-11-11; Updated:*
 
-See the napari website for more detailed information.
+See the napari website for more detailed contributor information.
 
 ## Workflows and actions
 
 There are over 20 GitHub workflows found in `.github/workflows`.
 The team creates a workflow to automate manual actions and steps.
-This results in improved accuracy and quality.
+This results in improved accuracy and quality. Some key workflows:
+- `actionlint.yml` does static testing of GitHub action workflows
+- benchmarks
+- `reusable_run_tox_test.yml` uses our constraint files to install the
+  compatible dependencies for each test environment which may differ
+  by OS and qt versions.
+- `upgrade_test_constraints.yml` automates upgrading dependencies for
+  our test environments
 
 If adding a workflow, please take a moment to explain its purpose at the
 top of its file.
