@@ -8,7 +8,7 @@ from numba import njit
 
 @njit(cache=True, inline='always')
 def _calc_output_size(
-    normals: np.ndarray, closed: bool, cos_limit: float, bevel: bool
+    normals: np.ndarray, closed: bool, cos_miter_limit: float, bevel: bool
 ) -> int:
     """Calculate the size of the output arrays for the triangulation.
 
@@ -18,7 +18,7 @@ def _calc_output_size(
         Nx2 array of normal vectors of the path
     closed : bool
         True if shape edge is a closed path.
-    cos_limit : float
+    cos_miter_limit : float
         Miter limit which determines when to switch from a miter join to a
         bevel join
     bevel : bool
@@ -53,7 +53,7 @@ def _calc_output_size(
                 normals[i - 1, 0] * normals[i, 0]
                 + normals[i - 1, 1] * normals[i, 1]
             )
-            if cos_angle < cos_limit:
+            if cos_angle < cos_miter_limit:
                 # bevel
                 bevel_count += 1
 
@@ -62,12 +62,12 @@ def _calc_output_size(
                 normals[-2, 0] * normals[-1, 0]
                 + normals[-2, 1] * normals[-1, 1]
             )
-            if cos_angle < cos_limit:
+            if cos_angle < cos_miter_limit:
                 bevel_count += 1
             cos_angle = (
                 normals[-1, 0] * normals[0, 0] + normals[-1, 1] * normals[0, 1]
             )
-            if cos_angle < cos_limit:
+            if cos_angle < cos_miter_limit:
                 bevel_count += 1
 
     return point_count + bevel_count
@@ -141,16 +141,16 @@ def _set_centers_and_offsets(
             # For performance reasons here, the mitter length is estimated
             # by the inverse of the sin of the angle between the two vectors.
             # See https://github.com/napari/napari/pull/7268#user-content-bevel-cut
-            elapsed_len = scale_factor
+            estimated_len = scale_factor
             if vec1_len < vec2_len:
-                if elapsed_len > vec1_len:
+                if estimated_len > vec1_len:
                     scale_factor = vec1_len
-                elif elapsed_len < -vec1_len:
+                elif estimated_len < -vec1_len:
                     scale_factor = -vec1_len
             else:
-                if elapsed_len > vec2_len:
+                if estimated_len > vec2_len:
                     scale_factor = vec2_len
-                elif elapsed_len < -vec2_len:
+                elif estimated_len < -vec2_len:
                     scale_factor = -vec2_len
 
         # We use here the Intercept theorem for calculating the mitter length

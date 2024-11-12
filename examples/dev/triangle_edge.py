@@ -39,20 +39,33 @@ def generate_order_vectors(path_, closed) -> np.ndarray:
     return vec
 
 # @numba.njit
-def generate_miter_helper_vectors(normal_vector: np.ndarray) -> np.ndarray:
+def generate_miter_helper_vectors(normal_vector_arr: np.ndarray) -> np.ndarray:
     """Generate the miter helper vectors.
 
     for each point on the path, the miter helper vectors are pairs of vectors
     First vector is the normal vector scaled by 1/2
     Second vector is the normal vector of previous point scaled by -1/2
+
+    https://github.com/napari/napari/pull/7268#user-content-miter
+    Blue vectors on the image.
+
+    Parameters
+    ----------
+    normal_vector_arr : array of shape (n, 2)
+        array of normal vectors representing edges in the path
+
+    Returns
+    -------
+    array of shape (n, 2, 2)
+        array of miter helper vectors
     """
-    vec2 = normal_vector.copy()
-    vec2[:, 1] *= 0.5
-    vec3 = vec2.copy()
-    vec3[:, 1] *= -1
-    vec3[:, 1] = np.roll(vec3[:, 1], 1, axis=0)
-    vec3[:, 0] += vec2[:, 1]
-    return np.concatenate([vec2, vec3], axis=0)
+    half_of_normal = normal_vector_arr.copy()
+    half_of_normal[:, 1] *= 0.5
+    half_of_prev_normal = half_of_normal.copy()
+    half_of_prev_normal[:, 1] *= -1
+    half_of_prev_normal[:, 1] = np.roll(half_of_prev_normal[:, 1], 1, axis=0)
+    half_of_prev_normal[:, 0] += half_of_normal[:, 1]
+    return np.concatenate([half_of_normal, half_of_prev_normal], axis=0)
 
 @numba.njit
 def generate_orthogonal_vectors(normal_vector: np.ndarray) -> np.ndarray:
