@@ -15,7 +15,8 @@ This results in improved accuracy and quality. Some key workflows:
   compatible dependencies for each test environment which may differ
   by OS and qt versions.
 - `upgrade_test_constraints.yml` automates upgrading dependencies for
-  our test environments
+  our test environments. It also has extensive commenting on what the
+  upgrade process entails.
 
 If adding a workflow, please take a moment to explain its purpose at the
 top of its file.
