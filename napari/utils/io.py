@@ -114,7 +114,7 @@ def imsave_tiff(filename, data):
             else:
                 tifffile.imwrite(filename, data, compression=('zlib', 1))
         except struct.error:  # compressed data >4GB
-            if tifffile.__version__ >= '2022.7.28':
+            if parse(version('tifffile')) >= parse('2022.7.28'):
                 tifffile.imwrite(
                     filename, data, compressionargs={'zlib': 1}, bigtiff=True
                 )
