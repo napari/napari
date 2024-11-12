@@ -326,7 +326,7 @@ class _QtMainWindow(QMainWindow):
                         self.menuBar().hide()
             elif event.type() == QEvent.Type.Leave and source is self:
                 self.menuBar().hide()
-        return False
+        return super().eventFilter(source, event)
 
     def _load_window_settings(self):
         """
