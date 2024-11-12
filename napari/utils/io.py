@@ -107,9 +107,9 @@ def imsave_tiff(filename, data):
         # Deprecation warning for tuple instead of 'compressionargs' in 2022.7.28 version
         try:
             from importlib.metadata import version
-            from packaging.version import parse as parse_version 
-            
-            if parse(version("tifffile")) >= parse('2022.7.28'):
+
+
+            if parse(version('tifffile')) >= parse('2022.7.28'):
                 tifffile.imwrite(filename, data, compressionargs={'zlib': 1})
             else:
                 tifffile.imwrite(filename, data, compression=('zlib', 1))
