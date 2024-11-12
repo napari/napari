@@ -1,0 +1,39 @@
+# Contributing to GitHub workflows and actions
+
+Created: 2024-11-11; Updated:
+
+See the napari website for more detailed information.
+
+## Workflows and actions
+
+There are over 20 GitHub workflows found in `.github/workflows`.
+The team creates a workflow to automate manual actions and steps.
+This results in improved accuracy and quality.
+
+If adding a workflow, please take a moment to explain its purpose at the
+top of its file.
+
+## Templates
+
+Used to provide a consistent user experience when submitting an issue or PR.
+napari uses the following:
+- `PULL_REQUEST_TEMPLATE.md`
+- `ISSUE_TEMPLATE` directory containing:
+   - `config.yml` to add the menu selector when "New Issue" button is pressed
+   - `design_related.md`
+   - `documentation.md`
+   - `feature_request.md`
+   - `bug_report.yml` config file to provide text areas for users to complete for bug reports.
+- `FUNDING.yml`: redirect GitHub to napari NumFOCUS account
+- Testing and bots
+   - `missing_translations.md`: used if an action detects a missing language translation
+   - `dependabot.yml`: opens a PR to notify maintainers of updates to dependencies
+   - `labeler.yml` is a labels config file for labeler action
+   - `BOT_REPO_UPDATE_FAIL_TEMPLATE.md` is an bot failure notification template
+   - `TEST_FAIL_TEMPLATE.md` is a test failure notification template
+
+## CODEOWNERS
+
+This `CODEOWNERS` file identifies which individuals are notified if a
+particular file or directory is found in a PR. Core team members can
+update if desired.
