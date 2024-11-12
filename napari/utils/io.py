@@ -108,7 +108,6 @@ def imsave_tiff(filename, data):
         try:
             from importlib.metadata import version
 
-
             if parse(version('tifffile')) >= parse('2022.7.28'):
                 tifffile.imwrite(filename, data, compressionargs={'zlib': 1})
             else:
