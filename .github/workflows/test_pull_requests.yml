@@ -142,11 +142,6 @@ jobs:
             backend: pyqt5
             MIN_REQ: 1
             coverage: cov
-          # basic test for 3.9
-          - python: "3.9"
-            platform: ubuntu-latest
-            backend: pyqt5
-            coverage: no_cov
           - python: "3.11"
             platform: ubuntu-22.04
             backend: pyqt5
