@@ -64,7 +64,7 @@ def generate_orthogonal_vectors(normal_vector: np.ndarray) -> np.ndarray:
     vec1 = normal_vector.copy()
     vec1[:, 1] *= 0.5
     orthogonal_vector = vec1.copy()
-    
+
     orthogonal_vector[:, 0] += vec1[:, 1]
     orthogonal_vector[:, 1, 0] = -vec1[:, 1, 1]
     orthogonal_vector[:, 1, 1] = vec1[:, 1, 0]

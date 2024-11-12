@@ -1,4 +1,5 @@
 """Triangulation utilities"""
+
 from __future__ import annotations
 
 import numpy as np
@@ -156,7 +157,7 @@ def _set_centers_and_offsets(
         # More details in PR description:
         # https://github.com/napari/napari/pull/7268#user-content-miter
         mitter = (vec1 - vec2) * 0.5 * scale_factor
- 
+
     if bevel or cos_limit > cos_angle:
         centers[j + 2] = vertex
         # clock-wise and counter clock-wise cases
@@ -392,7 +393,7 @@ def generate_2D_edge_meshes(
     bevel: bool = False,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Determines the triangulation of a path in 2D.
-    
+
     The resulting `offsets`
     can be multiplied by a `width` scalar and be added to the resulting
     `centers` to generate the vertices of the triangles for the triangulation,
