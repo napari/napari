@@ -61,13 +61,14 @@ def generate_orthogonal_vectors(normal_vector: np.ndarray) -> np.ndarray:
     The orthogonal vector starts at the middle of the normal vector and is orthogonal to it.
     It has length equal to half of the normal vector.
     """
-    vec2 = normal_vector.copy()
-    vec2[:, 1] *= 0.5
-    vec5 = vec2.copy()
-    vec5[:, 0] += vec2[:, 1]
-    vec5[:, 1, 0] = -vec2[:, 1, 1]
-    vec5[:, 1, 1] = vec2[:, 1, 0]
-    return vec5
+    vec1 = normal_vector.copy()
+    vec1[:, 1] *= 0.5
+    orthogonal_vector = vec1.copy()
+    
+    orthogonal_vector[:, 0] += vec1[:, 1]
+    orthogonal_vector[:, 1, 0] = -vec1[:, 1, 1]
+    orthogonal_vector[:, 1, 1] = vec1[:, 1, 0]
+    return orthogonal_vector
 
 @numba.njit
 def generate_mitter_vectors(mesh) -> np.ndarray:
@@ -82,41 +83,40 @@ def generate_mitter_vectors(mesh) -> np.ndarray:
 def generate_edge_triangle_borders(centers, offsets, triangles) -> np.ndarray:
     """For each triangle in mesh generate 3 vectors that represent the borders of the triangle.
     """
-    res = np.empty((len(triangles)*3, 2, 2), dtype=centers.dtype)
+    borders = np.empty((len(triangles)*3, 2, 2), dtype=centers.dtype)
     for i, triangle in enumerate(triangles):
         a, b, c = triangle
         a1 = centers[a] + offsets[a]
         b1 = centers[b] + offsets[b]
         c1 = centers[c] + offsets[c]
-        res[i * 3, 0] = a1
-        res[i * 3, 1] = (b1 - a1)
-        res[i * 3 + 1, 0] = b1
-        res[i * 3 + 1, 1] = (c1 - b1)
-        res[i * 3 + 2, 0] = c1
-        res[i * 3 + 2, 1] = (a1 - c1)
-    return res
+        borders[i * 3, 0] = a1
+        borders[i * 3, 1] = (b1 - a1)
+        borders[i * 3 + 1, 0] = b1
+        borders[i * 3 + 1, 1] = (c1 - b1)
+        borders[i * 3 + 2, 0] = c1
+        borders[i * 3 + 2, 1] = (a1 - c1)
+    return borders
 
 @numba.njit
 def generate_face_triangle_borders(vertices, triangles) -> np.ndarray:
     """For each triangle in mesh generate 3 vectors that represent the borders of the triangle.
     """
-    res = np.empty((len(triangles)*3, 2, 2), dtype=vertices.dtype)
+    borders = np.empty((len(triangles)*3, 2, 2), dtype=vertices.dtype)
     for i, triangle in enumerate(triangles):
         a, b, c = triangle
         a1 = vertices[a]
         b1 = vertices[b]
         c1 = vertices[c]
-        res[i * 3, 0] = a1
-        res[i * 3, 1] = (b1 - a1)
-        res[i * 3 + 1, 0] = b1
-        res[i * 3 + 1, 1] = (c1 - b1)
-        res[i * 3 + 2, 0] = c1
-        res[i * 3 + 2, 1] = (a1 - c1)
-    return res
+        borders[i * 3, 0] = a1
+        borders[i * 3, 1] = (b1 - a1)
+        borders[i * 3 + 1, 0] = b1
+        borders[i * 3 + 1, 1] = (c1 - b1)
+        borders[i * 3 + 2, 0] = c1
+        borders[i * 3 + 2, 1] = (a1 - c1)
+    return borders
 
 
 path = np.array([[0,0], [0,1], [1,1], [1,0]]) * 10
-# path = generate_regular_polygon(4, radius=1) * 10
 
 sharp = np.array([[1, 1], [10, 0], [1, -1], [0, -10], [-1, -1], [-10, 0], [-1, 1], [0, 10]])
 sharp2 = np.array([[2, 10], [0, -5], [-2, 10], [-2, -10], [2, -10]])

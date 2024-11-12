@@ -1,3 +1,4 @@
+"""Triangulation utilities"""
 from __future__ import annotations
 
 import numpy as np
@@ -15,13 +16,13 @@ def _calc_output_size(
     normals : np.ndarray
         Nx2 array of normal vectors of the path
     closed : bool
-        Bool if shape edge is a closed path or not.
+        True if shape edge is a closed path.
     cos_limit : float
         Miter limit which determines when to switch from a miter join to a
         bevel join
     bevel : bool
-        Bool which if True causes a bevel join to always be used.
-        If False a bevel join will only be used when the miter limit is exceeded
+        If True, a bevel join is always to be used.
+        If False, a bevel join will only be used when the miter limit is exceeded.
 
     Returns
     -------
@@ -30,9 +31,10 @@ def _calc_output_size(
 
     Notes
     -----
-    we use cos_limit instead of maximum miter length
+    We use a miter limit instead of maximum miter length
     for performance reasons.
-    This is an equivalent check, see note in generate_2D_edge_meshes
+    This approach provides an equivalent check.
+    See note in generate_2D_edge_meshes
     """
     point_count = len(normals) * 2
     if closed:
@@ -50,7 +52,7 @@ def _calc_output_size(
                 normals[i - 1, 0] * normals[i, 0]
                 + normals[i - 1, 1] * normals[i, 1]
             )
-            if cos_limit > cos_angle:
+            if cos_angle < cos_limit:
                 # bevel
                 bevel_count += 1
 
@@ -59,12 +61,12 @@ def _calc_output_size(
                 normals[-2, 0] * normals[-1, 0]
                 + normals[-2, 1] * normals[-1, 1]
             )
-            if cos_limit > cos_angle:
+            if cos_angle < cos_limit:
                 bevel_count += 1
             cos_angle = (
                 normals[-1, 0] * normals[0, 0] + normals[-1, 1] * normals[0, 1]
             )
-            if cos_limit > cos_angle:
+            if cos_angle < cos_limit:
                 bevel_count += 1
 
     return point_count + bevel_count
@@ -91,7 +93,7 @@ def _set_centers_and_offsets(
     centers : np.ndarray
         Mx2 array central coordinates of path triangles.
     offsets : np.ndarray
-        Mx2 array of the offsets to the central coordinates that need to
+        Mx2 array of the offsets to the central coordinates. Offsets need to
         be scaled by the line width and then added to the centers to
         generate the actual vertices of the triangulation
     triangles : np.ndarray
@@ -99,7 +101,7 @@ def _set_centers_and_offsets(
         triangles of the triangulation
     vertex : np.ndarray
         The vertex of the path for which the centers,
-         offsets and triangles art calculated
+        offsets and triangles art calculated
     vec1 : np.ndarray
         The normal vector from previous vertex to the current vertex
     vec2 : np.ndarray
@@ -127,11 +129,12 @@ def _set_centers_and_offsets(
     centers[j + 1] = vertex
     cos_angle = vec1[0] * vec2[0] + vec1[1] * vec2[1]
     sin_angle = vec1[0] * vec2[1] - vec1[1] * vec2[0]
+
     if sin_angle == 0:
         mitter = np.array([vec1[1], -vec1[0]], dtype=np.float32) * 0.5
     else:
         scale_factor = 1 / sin_angle
-        if bevel or cos_limit > cos_angle:
+        if bevel or cos_angle < cos_limit:
             # There is a case of bevels join, and
             # there is a need to check if the miter length is not too long.
             # For performance reasons here, the mitter length is estimated
@@ -153,6 +156,7 @@ def _set_centers_and_offsets(
         # More details in PR description:
         # https://github.com/napari/napari/pull/7268#user-content-miter
         mitter = (vec1 - vec2) * 0.5 * scale_factor
+ 
     if bevel or cos_limit > cos_angle:
         centers[j + 2] = vertex
         # clock-wise and counter clock-wise cases
@@ -174,13 +178,12 @@ def _set_centers_and_offsets(
             triangles[j + 2] = [j + 1, j + 3, j + 4]
 
         triangles[j] = [j, j + 1, j + 2]
-
-        return 3  # added 3 triangles because of bevel
+        return 3  # bevel join added 3 triangles
     offsets[j] = mitter
     offsets[j + 1] = -mitter
     triangles[j] = [j, j + 1, j + 2]
     triangles[j + 1] = [j + 1, j + 2, j + 3]
-    return 2  # added 2 triangles
+    return 2  # miter join added 2 triangles
 
 
 @njit(cache=True, inline='always')
@@ -189,7 +192,7 @@ def _fix_triangle_orientation(
 ) -> None:
     """Fix the orientation of the triangles.
 
-    For checking if a point is inside a triangle.
+    The orientation is useful to check if a point is inside a triangle.
 
     Parameters
     ----------
@@ -199,7 +202,7 @@ def _fix_triangle_orientation(
     centers : np.ndarray
         Mx2 array central coordinates of path triangles.
     offsets : np.ndarray
-        Mx2 array of the offsets to the central coordinates that need to
+        Mx2 array of the offsets to the central coordinates. Offsets need to
         be scaled by the line width and then added to the centers to
         generate the actual vertices of the triangulation
     """
@@ -218,14 +221,14 @@ def _fix_triangle_orientation(
 def _normal_vec_and_length(
     path: np.ndarray, closed: bool
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Calculate the normal vector and length of the vector.
+    """Calculate the normal vector and its length.
 
     Parameters
     ----------
     path : np.ndarray
         Mx2 array representing path to calculate the normal vector and length.
         Assumes that there is no point repetition in the path.
-        (no two consecutive points are the same)
+        In other words, assume no two consecutive points are the same.
     closed : bool
         Bool if shape edge is a closed path or not.
 
@@ -319,6 +322,7 @@ def _generate_2D_edge_meshes_loop(
         triangles[0] = [0, 1, 2]
         triangles[1] = [1, 2, 3]
         j = 2
+
     for i in range(1, len(normals) - 1):
         j += _set_centers_and_offsets(
             centers,
@@ -361,7 +365,7 @@ def _generate_2D_edge_meshes_loop(
 
 @njit(cache=True, inline='always')
 def _cut_end_if_repetition(path: np.ndarray) -> np.ndarray:
-    """Cut the last point of the path if it is the same as the second last point.
+    """Cut the last point of the path if it is the same as the second to last point.
 
     Parameters
     ----------
@@ -379,6 +383,7 @@ def _cut_end_if_repetition(path: np.ndarray) -> np.ndarray:
     return path_
 
 
+# Note: removing this decorator will double execution time.
 @njit(cache=True)
 def generate_2D_edge_meshes(
     path: np.ndarray,
@@ -386,11 +391,13 @@ def generate_2D_edge_meshes(
     limit: float = 3.0,
     bevel: bool = False,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Determines the triangulation of a path in 2D. The resulting `offsets`
+    """Determines the triangulation of a path in 2D.
+    
+    The resulting `offsets`
     can be multiplied by a `width` scalar and be added to the resulting
     `centers` to generate the vertices of the triangles for the triangulation,
-    i.e. `vertices = centers + width*offsets`. Using the `centers` and
-    `offsets` representation thus allows for the computed triangulation to be
+    i.e. `vertices = centers + width*offsets`. By using the `centers` and
+    `offsets` representation, the computed triangulation can be
     independent of the line width.
 
     Parameters
@@ -432,9 +439,9 @@ def generate_2D_edge_meshes(
         triangles[1] = [1, 3, 2]
         return (centers, np.zeros((4, 2), dtype=np.float32), triangles)
 
-    cos_limit = 1 / (2 * (limit / 2) ** 2) - 1.0
-    # why cos_limit uis calculated this way is explained in the note in
+    # why cos_limit is calculated this way is explained in the note in
     # https://github.com/napari/napari/pull/7268#user-content-bevel-limit
+    cos_limit = 1 / (2 * (limit / 2) ** 2) - 1.0
 
     normals, bevel_limit_array = _normal_vec_and_length(path, closed)
 
@@ -456,8 +463,9 @@ def generate_2D_edge_meshes(
         triangles,
     )
 
-    # We need to fix triangle orientation, as our code for checking
-    # if points is in triangle is not robust to orientation
+    # We fix triangle orientation to improve checks for
+    # whether points are in triangle.
+    # Without the fix, the code is not robust to orientation.
     _fix_triangle_orientation(triangles, centers, offsets)
 
     return centers, offsets, triangles
@@ -483,9 +491,11 @@ def remove_path_duplicates(path: np.ndarray, closed: bool) -> np.ndarray:
         return path
 
     dup_count = 0
+    # We would would like to use len(path) - 1 as the range.
+    # To keep the lasso tool working, we need to allow
+    # duplication of the last point.
+    # If the lasso tool is refactored, update to use the preferred range.
     for i in range(len(path) - 2):
-        # should be len(path) - 1 but we need to allow
-        # duplication of the last point to keep the lasse tool working
         if np.all(path[i] == path[i + 1]):
             dup_count += 1
 
@@ -497,9 +507,8 @@ def remove_path_duplicates(path: np.ndarray, closed: bool) -> np.ndarray:
 
     target_len = len(path) - dup_count
     new_path = np.empty((target_len, path.shape[1]), dtype=np.float32)
-    index = 0
-
     new_path[0] = path[0]
+    index = 0
     for i in range(1, len(path)):
         if index == target_len - 1:
             break
