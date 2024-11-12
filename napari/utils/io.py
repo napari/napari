@@ -5,7 +5,7 @@ import warnings
 import numpy as np
 
 from napari._version import __version__
-from napari/settings/_fields import parse
+from napari.settings._fields import parse
 from napari.utils.notifications import show_warning
 from napari.utils.translations import trans
 
