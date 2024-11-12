@@ -11,7 +11,7 @@ from qtpy.QtWidgets import (
 from napari._qt.utils import combine_widgets
 
 
-def test_add_dock_widget(make_napari_viewer, qtbot):
+def test_add_dock_widget(make_napari_viewer):
     """Test basic add_dock_widget functionality"""
     viewer = make_napari_viewer()
     widg = QPushButton('button')
@@ -42,7 +42,7 @@ def test_add_dock_widget(make_napari_viewer, qtbot):
         )
 
 
-def test_add_dock_widget_from_list(make_napari_viewer, qtbot):
+def test_add_dock_widget_from_list(make_napari_viewer):
     """Test that we can add a list of widgets and they will be combined"""
     viewer = make_napari_viewer()
     widg = QPushButton('button')
@@ -61,7 +61,7 @@ def test_add_dock_widget_from_list(make_napari_viewer, qtbot):
     assert isinstance(dwidg.widget().layout(), QHBoxLayout)
 
 
-def test_add_dock_widget_raises(make_napari_viewer, qtbot):
+def test_add_dock_widget_raises(make_napari_viewer):
     """Test that the widget passed must be a DockWidget."""
     viewer = make_napari_viewer()
     widg = object()
@@ -103,7 +103,7 @@ def test_remove_dock_widget_by_widget_reference(make_napari_viewer, qtbot):
     assert not widg.parent()
 
 
-def test_adding_modified_widget(make_napari_viewer, qtbot):
+def test_adding_modified_widget(make_napari_viewer):
     viewer = make_napari_viewer()
     widg = QWidget()
     # not uncommon to see people shadow the builtin layout()
@@ -113,7 +113,7 @@ def test_adding_modified_widget(make_napari_viewer, qtbot):
     assert dw.widget() is widg
 
 
-def test_adding_stretch(make_napari_viewer, qtbot):
+def test_adding_stretch(make_napari_viewer):
     """Make sure that vertical stretch only gets added when appropriate."""
     viewer = make_napari_viewer()
 

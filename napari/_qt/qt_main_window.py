@@ -1783,9 +1783,11 @@ class Window:
 
     def _teardown(self):
         """Carry out various teardown tasks such as event disconnection."""
+        qapp = get_qapp()
         self._setup_existing_themes(False)
         _themes.events.added.disconnect(self._add_theme)
         _themes.events.removed.disconnect(self._remove_theme)
+        qapp.removeEventFilter(self._qt_window)
 
     def close(self):
         """Close the viewer window and cleanup sub-widgets."""
