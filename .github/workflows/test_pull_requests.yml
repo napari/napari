@@ -114,7 +114,7 @@ jobs:
       fail-fast: false
       matrix:
         platform: [ ubuntu-latest ]
-        python: [ "3.9", "3.11" ]
+        python: [ "3.10", "3.11" ]
         backend: [ "pyqt5,pyside6" ]
         coverage: [ cov ]
         pydantic: ["_pydantic_1"]
@@ -163,7 +163,6 @@ jobs:
             platform: ubuntu-latest
             backend: pyside2
             coverage: no_cov
-
     with:
       python_version: ${{ matrix.python }}
       platform: ${{ matrix.platform }}
