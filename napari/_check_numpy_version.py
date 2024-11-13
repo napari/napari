@@ -85,5 +85,6 @@ def limit_numpy1x_threads_on_macos_arm() -> (
         )
         if openblas_set_num_threads is not None:
             openblas_set_num_threads(1)
+            break
     else:
         logging.warning('openblas_set_num_threads not found')
