@@ -98,9 +98,6 @@ pyside2 = [
 pyside6_experimental = [
     "PySide6 < 6.5 ; python_version < '3.12'"
 ]
-pyside6_latest = [
-    "PySide6; python_version>='3.12'"
-]
 pyqt6 = [
     "PyQt6 > 6.5",
     "PyQt6 != 6.6.1 ; platform_system == 'Darwin'"
@@ -132,7 +129,7 @@ testing = [
     "hypothesis>=6.8.0",
     "lxml[html_clean]>5",
     "matplotlib >= 3.6.1",
-    #"numba>=0.57.1",
+    "numba>=0.57.1",
     "pooch>=1.6.0",
     "coverage>7",
     "docstring_parser>=0.15",
