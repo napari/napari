@@ -5,11 +5,13 @@ on a layer in the LayerList.
 
 from __future__ import annotations
 
+import warnings
 from typing import TYPE_CHECKING, cast
 
 import numpy as np
 import numpy.typing as npt
 
+from napari import layers
 from napari.layers import Image, Labels, Layer
 from napari.layers._source import layer_source
 from napari.layers.utils import stack_utils
@@ -53,17 +55,37 @@ def _convert(ll: LayerList, type_: str) -> None:
 
     for lay in list(ll.selection):
         idx = ll.index(lay)
-        ll.pop(idx)
-
         if isinstance(lay, Shapes) and type_ == 'labels':
             data = lay.to_labels()
+            idx += 1
         elif (
             not np.issubdtype(lay.data.dtype, np.integer) and type_ == 'labels'
         ):
             data = lay.data.astype(int)
+            idx += 1
         else:
             data = lay.data
-        new_layer = Layer.create(data, lay._get_base_state(), type_)
+            # int image layer to labels is fully reversible
+            ll.pop(idx)
+        # projection mode may not be compatible with new type,
+        # we're ok with dropping it in that case
+        layer_type = getattr(layers, type_.title())
+        state = lay._get_base_state()
+        try:
+            layer_type._projectionclass(state['projection_mode'].value)
+        except ValueError:
+            state['projection_mode'] = 'none'
+            warnings.warn(
+                trans._(
+                    'projection mode "{mode}" is not compatible with {type_} layers. Falling back to "none".',
+                    mode=state['projection_mode'],
+                    type_=type_.title(),
+                    deferred=True,
+                ),
+                category=UserWarning,
+                stacklevel=1,
+            )
+        new_layer = Layer.create(data, state, type_)
         ll.insert(idx, new_layer)
 
 
@@ -83,7 +105,6 @@ def _convert_to_image(ll: LayerList) -> None:
 def _merge_stack(ll: LayerList, rgb: bool = False) -> None:
     # force selection to follow LayerList ordering
     imgs = cast(list[Image], [layer for layer in ll if layer in ll.selection])
-    assert all(isinstance(layer, Image) for layer in imgs)
     merged = (
         stack_utils.merge_rgb(imgs)
         if rgb
@@ -184,11 +205,24 @@ def _project(ll: LayerList, axis: int = 0, mode: str = 'max') -> None:
     # before opening up to other layer types, this line should be updated.
     data = (getattr(np, mode)(layer.data, axis=axis, keepdims=False),)
 
-    # get the meta data of the layer, but without transforms
+    # Get the meta-data of the layer, but without transforms,
+    # the transforms are updated bellow as projection of transforms
+    # requires a bit more work than just copying them
+    # (e.g., the axis of the projection should be removed).
+    # It is done in `set_slice` method of `TransformChain`
     meta = {
         key: layer._get_base_state()[key]
         for key in layer._get_base_state()
-        if key not in ('scale', 'translate', 'rotate', 'shear', 'affine')
+        if key
+        not in (
+            'scale',
+            'translate',
+            'rotate',
+            'shear',
+            'affine',
+            'axis_labels',
+            'units',
+        )
     }
     meta.update(  # sourcery skip
         {

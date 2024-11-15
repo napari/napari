@@ -10,7 +10,7 @@ from napari import layers
 
 
 @pytest.fixture(autouse=True)
-def _mock_npe2_pm():
+def mock_npe2_pm():
     """Mock plugin manager with no registered plugins."""
     with patch.object(PluginManager, 'discover'):
         _pm = PluginManager()
@@ -19,8 +19,8 @@ def _mock_npe2_pm():
 
 
 @pytest.fixture(autouse=True)
-def _use_builtins(_mock_npe2_pm: PluginManager):
-    plugin = DynamicPlugin('napari', plugin_manager=_mock_npe2_pm)
+def use_builtins(mock_npe2_pm: PluginManager):
+    plugin = DynamicPlugin('napari', plugin_manager=mock_npe2_pm)
     mf = PluginManifest.from_file(
         Path(napari_builtins.__file__).parent / 'builtins.yaml'
     )
@@ -54,6 +54,6 @@ def some_layer(request):
     return request.param
 
 
-@pytest.fixture()
+@pytest.fixture
 def layers_list():
     return LAYERS

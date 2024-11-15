@@ -1,4 +1,7 @@
-# See: .github/workflows/labeler.yml and https://github.com/marketplace/actions/labeler
+# This config file maps code base files to GitHub labels.
+# We use `.github/workflow/labeler.yml` action and use this file to apply labels to PRs.
+# Repo: https://github.com/actions/labeler
+# Marketplace Action docs: https://github.com/marketplace/actions/labeler
 design:
   - changed-files:
     - any-glob-to-any-file: 'napari/_qt/qt_resources/**/*'

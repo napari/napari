@@ -37,7 +37,7 @@ multi_channel_test_data = [
     # split single RGB image
     ((15, 10, 3), {'colormap': ['red', 'green', 'blue']}),
     # multiple RGB images
-    ((15, 10, 5, 3), {'channel_axis': 2, 'rgb': True}),
+    ((45, 40, 5, 3), {'channel_axis': 2, 'rgb': True}),
     # Test adding multichannel image with custom names.
     ((), {'name': ['multi ' + str(i + 3) for i in range(5)]}),
     # Test adding multichannel image with custom contrast limits.
@@ -94,7 +94,7 @@ ids = [
 ]
 
 
-@pytest.mark.parametrize('shape, kwargs', multi_channel_test_data, ids=ids)
+@pytest.mark.parametrize(('shape', 'kwargs'), multi_channel_test_data, ids=ids)
 def test_multichannel(shape, kwargs):
     """Test adding multichannel image."""
     viewer = ViewerModel()
@@ -233,6 +233,6 @@ def test_multichannel_index_error_hint():
     with pytest.raises(IndexError) as e:
         viewer.add_image(data, channel_axis=0, name=['a', 'b'])
     assert (
-        "Requested channel_axis (0) had length 5, but the "
+        'Requested channel_axis (0) had length 5, but the '
         "'name' argument only provided 2 values." in str(e)
     )

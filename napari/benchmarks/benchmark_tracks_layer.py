@@ -45,3 +45,9 @@ class TracksSuite:
 
     def time_update_layer(self, *_) -> None:
         self.layer.data = self.data
+
+
+if __name__ == '__main__':
+    from utils import run_benchmark
+
+    run_benchmark()

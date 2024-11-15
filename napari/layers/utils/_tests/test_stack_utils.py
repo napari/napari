@@ -4,7 +4,9 @@ import pytest
 from napari.layers import Image
 from napari.layers.utils.stack_utils import (
     images_to_stack,
+    merge_rgb,
     split_channels,
+    split_rgb,
     stack_to_images,
 )
 from napari.utils.transforms import Affine
@@ -21,7 +23,7 @@ def test_stack_to_images_basic():
     assert len(images) == 2
 
     for i in images:
-        assert type(stack) == type(i)
+        assert type(stack) is type(i)
         assert i.data.shape == (10, 128, 128)
 
 
@@ -53,7 +55,7 @@ def test_stack_to_images_rgb():
     assert len(images) == 3
 
     for i in images:
-        assert type(stack) == type(i)
+        assert type(stack) is type(i)
         assert i.data.shape == (10, 128, 128)
         assert i.scale.shape == (3,)
         assert i.rgb is False
@@ -69,7 +71,7 @@ def test_stack_to_images_4_channels():
     assert len(images) == 4
     assert images[-2].colormap.name == 'red'
     for i in images:
-        assert type(stack) == type(i)
+        assert type(stack) is type(i)
         assert i.data.shape == (128, 128)
 
 
@@ -83,7 +85,7 @@ def test_stack_to_images_0_rgb():
     assert len(images) == 10
     for i in images:
         assert i.rgb
-        assert type(stack) == type(i)
+        assert type(stack) is type(i)
         assert i.data.shape == (128, 128, 3)
 
 
@@ -97,7 +99,7 @@ def test_stack_to_images_1_channel():
     assert len(images) == 1
     for i in images:
         assert i.rgb is False
-        assert type(stack) == type(i)
+        assert type(stack) is type(i)
         assert i.data.shape == (10, 128, 128)
 
 
@@ -136,6 +138,24 @@ def test_images_to_stack_none_scale():
     assert stack.colormap.name == 'green'
     assert list(stack.scale) == [4, 1, 1, 1]
     assert list(stack.translate) == [0, 0, -1, 2]
+
+
+def test_split_and_merge_rgb():
+    """Test merging 3 images with RGB colormaps into single RGB image."""
+    # Make an RGB
+    data = np.random.randint(0, 100, (10, 128, 128, 3))
+    stack = Image(data)
+    assert stack.rgb is True
+
+    # split the RGB into 3 images
+    images = split_rgb(stack)
+    assert len(images) == 3
+    colormaps = {image.colormap.name for image in images}
+    assert colormaps == {'red', 'green', 'blue'}
+
+    # merge the 3 images back into an RGB
+    rgb_image = merge_rgb(images)
+    assert rgb_image.rgb is True
 
 
 @pytest.fixture(

@@ -1,5 +1,4 @@
-"""QtPerformance widget to show performance information.
-"""
+"""QtPerformance widget to show performance information."""
 
 import time
 from typing import ClassVar

@@ -145,7 +145,7 @@ def test_5D_image_shape_1():
 
 def test_rgb_image():
     """Test instantiating Image layer with RGB data."""
-    shape = (10, 15, 3)
+    shape = (40, 45, 3)
     np.random.seed(0)
     data = np.random.random(shape)
     layer = Image(data)
@@ -160,7 +160,7 @@ def test_rgb_image():
 
 def test_rgba_image():
     """Test instantiating Image layer with RGBA data."""
-    shape = (10, 15, 4)
+    shape = (40, 45, 4)
     np.random.seed(0)
     data = np.random.random(shape)
     layer = Image(data)
@@ -175,7 +175,7 @@ def test_rgba_image():
 
 def test_negative_rgba_image():
     """Test instantiating Image layer with negative RGBA data."""
-    shape = (10, 15, 4)
+    shape = (40, 45, 4)
     np.random.seed(0)
     # Data between -1.0 and 1.0
     data = 2 * np.random.random(shape) - 1
@@ -453,12 +453,12 @@ def test_set_contrast_limits_range():
 
 @pytest.mark.parametrize(
     'contrast_limits_range',
-    (
+    [
         [-2, -1],  # range below lower boundary of [0, 1]
         [-1, 0],  # range on lower boundary of [0, 1]
         [1, 2],  # range on upper boundary of [0, 1]
         [2, 3],  # range above upper boundary of [0, 1]
-    ),
+    ],
 )
 def test_set_contrast_limits_range_at_boundary_of_contrast_limits(
     contrast_limits_range,
@@ -565,26 +565,45 @@ def test_value():
 
 
 @pytest.mark.parametrize(
-    'position,view_direction,dims_displayed,world',
+    (
+        'position',
+        'view_direction',
+        'dims_displayed',
+        'world',
+        'render_mode',
+        'result',
+    ),
     [
-        ((0, 0, 0), [1, 0, 0], [0, 1, 2], False),
-        ((0, 0, 0), [1, 0, 0], [0, 1, 2], True),
-        ((0, 0, 0, 0), [0, 1, 0, 0], [1, 2, 3], True),
+        ((0, 0, 0), [1, 0, 0], [0, 1, 2], False, 'mip', 0),
+        ((0, 0, 0), [1, 0, 0], [0, 1, 2], True, 'mip', 0),
+        ((2, 2, 2), [1, 0, 0], [0, 1, 2], False, 'mip', 1),
+        ((2, 2, 2), [1, 0, 0], [0, 1, 2], False, 'minip', 0),
+        ((2, 2, 2), [1, 0, 0], [0, 1, 2], False, 'average', 1 / 5),
+        ((2, 2, 2), [1, 0, 0], [0, 1, 2], False, 'translucent', 0),
+        # not quite as expected for additive
+        ((2, 2, 2), [1, 0, 0], [0, 1, 2], False, 'additive', 2),
+        ((2, 2, 2), [1, 0, 0], [0, 1, 2], False, 'iso', None),
+        ((2, 2, 2), [1, 0, 0], [0, 1, 2], False, 'attenuated_mip', 0),
+        ((0, 2, 2, 2), [0, 1, 0, 0], [1, 2, 3], False, 'mip', 1),
     ],
 )
-def test_value_3d(position, view_direction, dims_displayed, world):
-    """Currently get_value should return None in 3D"""
-    np.random.seed(0)
-    data = np.random.random((10, 15, 15))
-    layer = Image(data)
-    layer._slice_dims(Dims(ndim=3, ndisplay=3))
+def test_value_3d(
+    position, view_direction, dims_displayed, world, render_mode, result
+):
+    data = np.zeros((5, 5, 5, 5))
+    data[:, 2, 2, 2] = 1
+    layer = Image(data, rendering=render_mode)
+    layer._slice_dims(Dims(ndim=4, ndisplay=3))
     value = layer.get_value(
         position,
         view_direction=view_direction,
         dims_displayed=dims_displayed,
         world=world,
     )
-    assert value is None
+    if result is None:
+        assert value is None
+    else:
+        npt.assert_allclose(value, result)
 
 
 def test_message():
@@ -733,7 +752,7 @@ def test_data_to_world_2d_scale_translate_affine_composed():
     )
 
 
-@pytest.mark.parametrize('scale', ((1, 1), (-1, 1), (1, -1), (-1, -1)))
+@pytest.mark.parametrize('scale', [(1, 1), (-1, 1), (1, -1), (-1, -1)])
 @pytest.mark.parametrize('angle_degrees', range(-180, 180, 30))
 def test_rotate_with_reflections_in_scale(scale, angle_degrees):
     # See the GitHub issue for more details:
@@ -843,7 +862,13 @@ def test_tensorstore_image():
 
 
 @pytest.mark.parametrize(
-    'start_position, end_position, view_direction, vector, expected_value',
+    (
+        'start_position',
+        'end_position',
+        'view_direction',
+        'vector',
+        'expected_value',
+    ),
     [
         # drag vector parallel to view direction
         # projected onto perpendicular vector
@@ -851,9 +876,6 @@ def test_tensorstore_image():
         # same as above, projection onto multiple perpendicular vectors
         # should produce multiple results
         ([0, 0, 0], [0, 0, 1], [0, 0, 1], [[1, 0, 0], [0, 1, 0]], [0, 0]),
-        # drag vector perpendicular to view direction
-        # projected onto itself
-        ([0, 0, 0], [0, 1, 0], [0, 0, 1], [0, 1, 0], 1),
         # drag vector perpendicular to view direction
         # projected onto itself
         ([0, 0, 0], [0, 1, 0], [0, 0, 1], [0, 1, 0], 1),
@@ -989,7 +1011,7 @@ def test_thick_slice_multiscale():
 
     layer.projection_mode = 'mean'
     # NOTE that here we rescale slicing to twice the non-multiscale test
-    # in order to get the same results, becase the actual full scale image
+    # in order to get the same results, because the actual full scale image
     # is doubled in size
     layer._slice_dims(
         Dims(
@@ -1026,6 +1048,12 @@ def test_thick_slice_multiscale():
     np.testing.assert_array_equal(
         layer._slice.image.raw, np.mean(data[2:5], axis=0)
     )
+
+
+def test_contrast_outside_range():
+    data = np.zeros((64, 64), dtype=np.uint8)
+
+    Image(data, contrast_limits=(0, 1000))
 
 
 def test_docstring():

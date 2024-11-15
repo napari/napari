@@ -1,4 +1,5 @@
 import numpy as np
+import pint
 import pytest
 import zarr
 
@@ -11,11 +12,80 @@ from napari.layers._layer_actions import (
     _hide_selected,
     _hide_unselected,
     _link_selected_layers,
+    _merge_stack,
     _project,
     _show_selected,
     _show_unselected,
+    _split_rgb,
+    _split_stack,
     _toggle_visibility,
 )
+
+REG = pint.get_application_registry()
+
+
+def test_split_stack():
+    layer_list = LayerList()
+    layer_list.append(Image(np.random.rand(8, 8, 8)))
+    assert len(layer_list) == 1
+
+    layer_list.selection.active = layer_list[0]
+    _split_stack(layer_list)
+    assert len(layer_list) == 8
+
+    for idx in range(8):
+        assert layer_list[idx].data.shape == (8, 8)
+
+
+def test_split_rgb():
+    layer_list = LayerList()
+    layer_list.append(Image(np.random.random((48, 48, 3))))
+    assert len(layer_list) == 1
+    assert layer_list[0].rgb is True
+
+    layer_list.selection.active = layer_list[0]
+    _split_rgb(layer_list)
+    assert len(layer_list) == 3
+
+    for idx in range(3):
+        assert layer_list[idx].data.shape == (48, 48)
+
+
+def test_merge_stack():
+    layer_list = LayerList()
+    layer_list.append(Image(np.random.rand(8, 8)))
+    layer_list.append(Image(np.random.rand(8, 8)))
+    assert len(layer_list) == 2
+
+    layer_list.selection.active = layer_list[0]
+    layer_list.selection.add(layer_list[1])
+    _merge_stack(layer_list)
+    assert len(layer_list) == 1
+    assert layer_list[0].data.shape == (2, 8, 8)
+
+
+def test_merge_stack_rgb():
+    layer_list = LayerList()
+    layer_list.append(Image(np.random.rand(8, 8)))
+    layer_list.append(Image(np.random.rand(8, 8)))
+    layer_list.append(Image(np.random.rand(8, 8)))
+    assert len(layer_list) == 3
+
+    layer_list.selection.active = layer_list[0]
+    layer_list.selection.add(layer_list[1])
+    layer_list.selection.add(layer_list[2])
+
+    # check that without R G B colormaps we warn
+    with pytest.raises(ValueError, match='Missing colormap'):
+        _merge_stack(layer_list, rgb=True)
+
+    layer_list[0].colormap = 'red'
+    layer_list[1].colormap = 'green'
+    layer_list[2].colormap = 'blue'
+    _merge_stack(layer_list, rgb=True)
+    assert len(layer_list) == 1
+    assert layer_list[0].data.shape == (8, 8, 3)
+    assert layer_list[0].rgb is True
 
 
 def test_toggle_visibility():
@@ -162,13 +232,25 @@ def test_show_selected_layers():
 )
 def test_projections(mode):
     ll = LayerList()
-    ll.append(Image(np.random.rand(8, 8, 8)))
+    ll.append(
+        Image(
+            np.random.rand(7, 8, 8),
+            scale=(3, 2, 2),
+            translate=(10, 5, 5),
+            units=('nm', 'um', 'um'),
+            axis_labels=('z', 'y', 'x'),
+        )
+    )
     assert len(ll) == 1
     assert ll[-1].data.ndim == 3
     _project(ll, mode=mode)
     assert len(ll) == 2
     # because keepdims = False
     assert ll[-1].data.shape == (8, 8)
+    assert tuple(ll[-1].scale) == (2, 2)
+    assert tuple(ll[-1].translate) == (5, 5)
+    assert ll[-1].units == (REG.um, REG.um)
+    assert ll[-1].axis_labels == ('y', 'x')
 
 
 @pytest.mark.parametrize(
@@ -197,9 +279,10 @@ def test_convert_dtype(mode):
 
 
 @pytest.mark.parametrize(
-    'layer, type_',
+    ('layer', 'type_'),
     [
         (Image(np.random.rand(10, 10)), 'labels'),
+        (Image(np.array([[1.5, 2.5], [3.5, 4.5]])), 'labels'),
         (Image(np.array([[1, 2], [3, 4]], dtype=(int))), 'labels'),
         (
             Image(zarr.array([[1, 2], [3, 4]], dtype=(int), chunks=(1, 2))),
@@ -216,17 +299,32 @@ def test_convert_layer(layer, type_):
     ll.append(layer)
     assert ll[0]._type_string != type_
     _convert(ll, type_)
-    assert ll[0]._type_string == type_
-    assert np.array_equal(ll[0].scale, original_scale)
-
-    if (
+    if isinstance(layer, Shapes) or (
         type_ == 'labels'
         and isinstance(layer, Image)
-        and np.issubdtype(layer.data.dtype, np.integer)
+        and np.issubdtype(layer.data.dtype, float)
     ):
+        assert ll[1]._type_string == type_
+        assert np.array_equal(ll[1].scale, original_scale)
+    else:
         assert (
             layer.data is ll[0].data
         )  # check array data not copied unnecessarily
+
+
+def test_convert_warns_with_projecton_mode():
+    # inplace
+    ll = LayerList(
+        [Image(np.random.rand(10, 10).astype(int), projection_mode='mean')]
+    )
+    with pytest.warns(UserWarning, match='projection mode'):
+        _convert(ll, 'labels')
+    assert isinstance(ll['Image'], Labels)
+    # not inplace
+    ll = LayerList([Image(np.random.rand(10, 10), projection_mode='mean')])
+    with pytest.warns(UserWarning, match='projection mode'):
+        _convert(ll, 'labels')
+    assert isinstance(ll['Image [1]'], Labels)
 
 
 def make_three_layer_layerlist():

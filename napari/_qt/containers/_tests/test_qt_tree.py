@@ -59,7 +59,9 @@ def test_move_single_tree_item(tree_model):
     _assert_models_synced(root, tree_model)
 
 
-@pytest.mark.parametrize('sources, dest, expectation', NESTED_POS_INDICES)
+@pytest.mark.parametrize(
+    ('sources', 'dest', 'expectation'), NESTED_POS_INDICES
+)
 def test_nested_move_multiple(qapp, sources, dest, expectation):
     """Test that models stay in sync with complicated moves.
 

@@ -20,6 +20,55 @@ except ModuleNotFoundError:
     triangulate = None
 
 
+def _is_convex(poly: npt.NDArray) -> bool:
+    """Check whether a polygon is convex.
+
+    Parameters
+    ----------
+    poly: numpy array of floats, shape (N, 3)
+        Polygon vertices, in order.
+
+    Returns
+    -------
+    bool
+        True if the given polygon is convex.
+    """
+    fst = poly[:-2]
+    snd = poly[1:-1]
+    thrd = poly[2:]
+    orn_set = np.unique(orientation(fst.T, snd.T, thrd.T))
+    if orn_set.size != 1:
+        return False
+    return (orn_set[0] == orientation(poly[-2], poly[-1], poly[0])) and (
+        orn_set[0] == orientation(poly[-1], poly[0], poly[1])
+    )
+
+
+def _fan_triangulation(poly: npt.NDArray) -> tuple[npt.NDArray, npt.NDArray]:
+    """Return a fan triangulation of a given polygon.
+
+    https://en.wikipedia.org/wiki/Fan_triangulation
+
+    Parameters
+    ----------
+    poly: numpy array of float, shape (N, 3)
+        Polygon vertices, in order.
+
+    Returns
+    -------
+    vertices : numpy array of float, shape (N, 3)
+        The vertices of the triangulation. In this case, the input array.
+    triangles : numpy array of int, shape (N, 3)
+        The triangles of the triangulation, as triplets of indices into the
+        vertices array.
+    """
+    vertices = np.copy(poly)
+    triangles = np.zeros((len(poly) - 2, 3), dtype=np.uint32)
+    triangles[:, 1] = np.arange(1, len(poly) - 1)
+    triangles[:, 2] = np.arange(2, len(poly))
+    return vertices, triangles
+
+
 def inside_boxes(boxes):
     """Checks which boxes contain the origin. Boxes need not be axis aligned
 
@@ -186,7 +235,7 @@ def lines_intersect(p1, q1, p2, q2):
         return True
 
     # p2, q2 and q1 are collinear and q1 lies on segment p2q2
-    if o4 == 0 and on_segment(p2, q1, q2):
+    if o4 == 0 and on_segment(p2, q1, q2):  # noqa: SIM103
         return True
 
     # Doesn't fall into any special cases
@@ -301,8 +350,11 @@ def point_to_lines(point, lines):
     norm_lines[reject] = 1
     unit_lines = lines_vectors / norm_lines
 
-    # calculate distance to line
-    line_dist = abs(np.cross(unit_lines, point_vectors))
+    # calculate distance to line (2D cross-product)
+    line_dist = abs(
+        unit_lines[..., 0] * point_vectors[..., 1]
+        - unit_lines[..., 1] * point_vectors[..., 0]
+    )
 
     # calculate scale
     line_loc = (unit_lines * point_vectors).sum(axis=1) / norm_lines.squeeze()
@@ -507,7 +559,7 @@ def triangulate_ellipse(
     # Compute the transformation matrix from the unit circle
     # to our current ellipse.
     # ... it's easy just the 1/2 minor/major axes for the two column
-    # note that our transform shape will depends on wether we are 2D-> 2D (matrix, 2 by 2),
+    # note that our transform shape will depends on whether we are 2D-> 2D (matrix, 2 by 2),
     # or 2D -> 3D (matrix 2 by 3).
     transform = np.stack((ax1, ax2))
     if corners.shape == (4, 2):
@@ -563,6 +615,8 @@ def triangulate_face(data: npt.NDArray) -> tuple[npt.NDArray, npt.NDArray]:
 
         res = triangulate({'vertices': data, 'segments': edges}, 'p')
         vertices, triangles = res['vertices'], res['triangles']
+    elif _is_convex(data):
+        vertices, triangles = _fan_triangulation(data)
     else:
         vertices, triangles = PolygonData(vertices=data).triangulate()
 

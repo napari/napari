@@ -183,7 +183,7 @@ def test_update_console(make_napari_viewer):
 
 @pytest.mark.enable_console
 @pytest.mark.filterwarnings('ignore::DeprecationWarning:jupyter_client')
-def test_update_lazy_console(make_napari_viewer, capsys):
+def test_update_lazy_console(make_napari_viewer, caplog):
     """Test updating the console with local variables,
     before console is instantiated."""
     viewer = make_napari_viewer()
@@ -197,8 +197,8 @@ def test_update_lazy_console(make_napari_viewer, capsys):
     viewer.update_console('x')
 
     viewer.update_console('missing')
-    captured = capsys.readouterr()
-    assert 'Could not get' in captured.out
+
+    assert 'Could not get' in caplog.text
     with pytest.raises(TypeError):
         viewer.update_console(x)
 

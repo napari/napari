@@ -230,7 +230,7 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         if isinstance(nested_index, int):
             return QModelIndex(), nested_index
         # Tuple indexes are used in NestableEventedList, so we support them
-        # here so that subclasses needn't reimplmenet our _on_begin_* methods
+        # here so that subclasses needn't reimplement our _on_begin_* methods
         par = QModelIndex()
         *_p, idx = nested_index
         for i in _p:

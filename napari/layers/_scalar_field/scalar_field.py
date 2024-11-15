@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import types
-from abc import ABC
+from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from contextlib import nullcontext
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Optional, Union, cast
 
 import numpy as np
 from numpy import typing as npt
@@ -26,6 +26,7 @@ from napari.utils.colormaps import AVAILABLE_COLORMAPS
 from napari.utils.events import Event
 from napari.utils.events.event import WarningEmitter
 from napari.utils.events.event_utils import connect_no_arg
+from napari.utils.geometry import clamp_point_to_bounding_box
 from napari.utils.naming import magic_name
 from napari.utils.translations import trans
 
@@ -57,6 +58,9 @@ class ScalarFieldBase(Layer, ABC):
         the final column is a length N translation vector and a 1 or a napari
         `Affine` transform object. Applied as an extra transform on top of the
         provided scale, rotate, and shear values.
+    axis_labels : tuple of str, optional
+        Dimension names of the layer data.
+        If not provided, axis_labels will be set to (..., 'axis -2', 'axis -1').
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -112,6 +116,9 @@ class ScalarFieldBase(Layer, ABC):
         ones along the main diagonal.
     translate : tuple of float
         Translation values for the layer.
+    units : tuple of str or pint.Unit, optional
+        Units of the layer data in world coordinates.
+        If not provided, the default units are assumed to be pixels.
     visible : bool
         Whether the layer visual is currently being displayed.
 
@@ -125,31 +132,35 @@ class ScalarFieldBase(Layer, ABC):
         multiscale image. Please note multiscale rendering is only
         supported in 2D. In 3D, only the lowest resolution scale is
         displayed.
+    axis_labels : tuple of str
+        Dimension names of the layer data.
+    custom_interpolation_kernel_2d : np.ndarray
+        Convolution kernel used with the 'custom' interpolation mode in 2D rendering.
+    depiction : str
+        3D Depiction mode used by vispy. Must be one of our supported modes.
+    experimental_clipping_planes : ClippingPlaneList
+        Clipping planes defined in data coordinates, used to clip the volume.
     metadata : dict
         Image metadata.
+    mode : str
+        Interactive mode. The normal, default mode is PAN_ZOOM, which
+        allows for normal interactivity with the canvas.
+
+        In TRANSFORM mode the image can be transformed interactively.
     multiscale : bool
         Whether the data is a multiscale image or not. Multiscale data is
         represented by a list of array like image data. The first image in the
         list should be the largest. Please note multiscale rendering is only
         supported in 2D. In 3D, only the lowest resolution scale is
         displayed.
-    mode : str
-        Interactive mode. The normal, default mode is PAN_ZOOM, which
-        allows for normal interactivity with the canvas.
-
-        In TRANSFORM mode the image can be transformed interactively.
-    rendering : str
-        Rendering mode used by vispy. Must be one of our supported
-        modes.
-    depiction : str
-        3D Depiction mode used by vispy. Must be one of our supported modes.
     plane : SlicingPlane or dict
         Properties defining plane rendering in 3D. Valid dictionary keys are
         {'position', 'normal', 'thickness'}.
-    experimental_clipping_planes : ClippingPlaneList
-        Clipping planes defined in data coordinates, used to clip the volume.
-    custom_interpolation_kernel_2d : np.ndarray
-        Convolution kernel used with the 'custom' interpolation mode in 2D rendering.
+    rendering : str
+        Rendering mode used by vispy. Must be one of our supported
+        modes.
+    units: tuple of pint.Unit
+        Units of the layer data in world coordinates.
 
     Notes
     -----
@@ -168,6 +179,7 @@ class ScalarFieldBase(Layer, ABC):
         data,
         *,
         affine=None,
+        axis_labels=None,
         blending='translucent',
         cache=True,
         custom_interpolation_kernel_2d=None,
@@ -185,6 +197,7 @@ class ScalarFieldBase(Layer, ABC):
         scale=None,
         shear=None,
         translate=None,
+        units=None,
         visible=True,
     ):
         if name is None and data is not None:
@@ -212,20 +225,22 @@ class ScalarFieldBase(Layer, ABC):
         super().__init__(
             data,
             ndim,
-            name=name,
-            metadata=metadata,
-            scale=scale,
-            translate=translate,
-            rotate=rotate,
-            shear=shear,
             affine=affine,
-            opacity=opacity,
+            axis_labels=axis_labels,
             blending=blending,
-            visible=visible,
-            multiscale=multiscale,
             cache=cache,
             experimental_clipping_planes=experimental_clipping_planes,
+            metadata=metadata,
+            multiscale=multiscale,
+            name=name,
+            opacity=opacity,
             projection_mode=projection_mode,
+            scale=scale,
+            shear=shear,
+            rotate=rotate,
+            translate=translate,
+            units=units,
+            visible=visible,
         )
 
         self.events.add(
@@ -357,7 +372,7 @@ class ScalarFieldBase(Layer, ABC):
         if self._data_level == level:
             return
         self._data_level = level
-        self.refresh()
+        self.refresh(extent=False)
 
     def _get_level_shapes(self):
         data = self.data
@@ -444,6 +459,7 @@ class ScalarFieldBase(Layer, ABC):
         self._custom_interpolation_kernel_2d = np.array(value, np.float32)
         self.events.custom_interpolation_kernel_2d()
 
+    @abstractmethod
     def _raw_to_displayed(self, raw: np.ndarray) -> np.ndarray:
         """Determine displayed image from raw image.
 
@@ -573,6 +589,106 @@ class ScalarFieldBase(Layer, ABC):
             value = (self.data_level, value)
 
         return value
+
+    def _get_value_ray(
+        self,
+        start_point: Optional[np.ndarray],
+        end_point: Optional[np.ndarray],
+        dims_displayed: list[int],
+    ) -> Optional[int]:
+        """Get the first non-background value encountered along a ray.
+
+        Parameters
+        ----------
+        start_point : np.ndarray
+            (n,) array containing the start point of the ray in data coordinates.
+        end_point : np.ndarray
+            (n,) array containing the end point of the ray in data coordinates.
+        dims_displayed : List[int]
+            The indices of the dimensions currently displayed in the viewer.
+
+        Returns
+        -------
+        value : Optional[int]
+            The first non-background value encountered along the ray. If none
+            was encountered or the viewer is in 2D mode, returns None.
+        """
+        if start_point is None or end_point is None:
+            return None
+        if len(dims_displayed) == 3:
+            # only use get_value_ray on 3D for now
+            # we use dims_displayed because the image slice
+            # has its dimensions  in th same order as the vispy
+            # Volume
+            # Account for downsampling in the case of multiscale
+            # -1 means lowest resolution here.
+            start_point = (
+                start_point[dims_displayed]
+                / self.downsample_factors[-1][dims_displayed]
+            )
+            end_point = (
+                end_point[dims_displayed]
+                / self.downsample_factors[-1][dims_displayed]
+            )
+            start_point = cast(np.ndarray, start_point)
+            end_point = cast(np.ndarray, end_point)
+            sample_ray = end_point - start_point
+            length_sample_vector = np.linalg.norm(sample_ray)
+            n_points = int(2 * length_sample_vector)
+            sample_points = np.linspace(
+                start_point, end_point, n_points, endpoint=True
+            )
+            im_slice = self._slice.image.raw
+            # ensure the bounding box is for the proper multiscale level
+            bounding_box = self._display_bounding_box_at_level(
+                dims_displayed, self.data_level
+            )
+            # the display bounding box is returned as a closed interval
+            # (i.e. the endpoint is included) by the method, but we need
+            # open intervals in the code that follows, so we add 1.
+            bounding_box[:, 1] += 1
+
+            clamped = clamp_point_to_bounding_box(
+                sample_points,
+                bounding_box,
+            ).astype(int)
+            values = im_slice[tuple(clamped.T)]
+            return self._calculate_value_from_ray(values)
+
+        return None
+
+    @abstractmethod
+    def _calculate_value_from_ray(self, values):
+        raise NotImplementedError
+
+    def _get_value_3d(
+        self,
+        start_point: Optional[np.ndarray],
+        end_point: Optional[np.ndarray],
+        dims_displayed: list[int],
+    ) -> Optional[int]:
+        """Get the first non-background value encountered along a ray.
+
+        Parameters
+        ----------
+        start_point : np.ndarray
+            (n,) array containing the start point of the ray in data coordinates.
+        end_point : np.ndarray
+            (n,) array containing the end point of the ray in data coordinates.
+        dims_displayed : List[int]
+            The indices of the dimensions currently displayed in the viewer.
+
+        Returns
+        -------
+        value : int
+            The first non-zero value encountered along the ray. If a
+            non-zero value is not encountered, returns None.
+        """
+        return self._get_value_ray(
+            start_point=start_point,
+            end_point=end_point,
+            dims_displayed=dims_displayed,
+        )
 
     def _get_offset_data_position(self, position: npt.NDArray) -> npt.NDArray:
         """Adjust position for offset between viewer and data coordinates.

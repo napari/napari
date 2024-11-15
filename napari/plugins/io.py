@@ -77,8 +77,8 @@ def read_data_with_plugins(
 
     res = _npe2.read(paths, plugin, stack=stack)
     if res is not None:
-        _ld, hookimpl = res
-        return [] if _is_null_layer_sentinel(_ld) else _ld, hookimpl
+        ld_, hookimpl = res
+        return [] if _is_null_layer_sentinel(ld_) else list(ld_), hookimpl
 
     hook_caller = plugin_manager.hook.napari_get_reader
     paths = [abspath_or_url(p, must_exist=True) for p in paths]
@@ -150,7 +150,7 @@ def read_data_with_plugins(
         try:
             layer_data = reader(npe1_path)  # try to read data
             hookimpl = result.implementation
-        except Exception as exc:  # noqa BLE001
+        except Exception as exc:  # BLE001
             raise PluginCallError(result.implementation, cause=exc) from exc
 
     if not layer_data:
@@ -406,7 +406,7 @@ def _write_multiple_layers_with_plugins(
             writer_function(abspath_or_url(path), layer_data),
             implementation.plugin_name,
         )
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         raise PluginCallError(implementation, cause=exc) from exc
 
 

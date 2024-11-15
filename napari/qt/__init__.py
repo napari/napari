@@ -1,4 +1,4 @@
-from napari._qt.qt_event_loop import get_app, run
+from napari._qt.qt_event_loop import get_app, get_qapp, run
 from napari._qt.qt_main_window import Window
 from napari._qt.qt_resources import get_current_stylesheet, get_stylesheet
 from napari._qt.qt_viewer import QtViewer
@@ -14,6 +14,7 @@ __all__ = (
     'thread_worker',
     'Window',
     'get_app',
+    'get_qapp',
     'get_stylesheet',
     'get_current_stylesheet',
     'run',

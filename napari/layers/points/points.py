@@ -87,6 +87,9 @@ class Points(Layer):
         provided scale, rotate, and shear values.
     antialiasing: float
         Amount of antialiasing in canvas pixels.
+    axis_labels : tuple of str, optional
+        Dimension names of the layer data.
+        If not provided, axis_labels will be set to (..., 'axis -2', 'axis -1').
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -190,6 +193,9 @@ class Points(Layer):
         For example usage, see /napari/examples/add_points_with_text.py.
     translate : tuple of float
         Translation values for the layer.
+    units : tuple of str or pint.Unit, optional
+        Units of the layer data in world coordinates.
+        If not provided, the default units are assumed to be pixels.
     visible : bool
         Whether the layer visual is currently being displayed.
 
@@ -197,6 +203,8 @@ class Points(Layer):
     ----------
     data : array (N, D)
         Coordinates for N points in D dimensions.
+    axis_labels : tuple of str
+        Dimension names of the layer data.
     features : DataFrame-like
         Features table where each row corresponds to a point and each column
         is a feature.
@@ -294,6 +302,8 @@ class Points(Layer):
         Lower and upper limits for the size of points in canvas pixels.
     shown : 1-D array of bool
         Whether each point is shown.
+    units: tuple of pint.Unit
+        Units of the layer data in world coordinates.
 
     Notes
     -----
@@ -385,6 +395,7 @@ class Points(Layer):
         *,
         affine=None,
         antialiasing=1,
+        axis_labels=None,
         blending='translucent',
         border_color='dimgray',
         border_color_cycle=None,
@@ -418,6 +429,7 @@ class Points(Layer):
         symbol='o',
         text=None,
         translate=None,
+        units=None,
         visible=True,
     ) -> None:
         if ndim is None:
@@ -459,19 +471,21 @@ class Points(Layer):
         super().__init__(
             data,
             ndim,
-            name=name,
-            metadata=metadata,
-            scale=scale,
-            translate=translate,
-            rotate=rotate,
-            shear=shear,
             affine=affine,
-            opacity=opacity,
+            axis_labels=axis_labels,
             blending=blending,
-            visible=visible,
             cache=cache,
             experimental_clipping_planes=experimental_clipping_planes,
+            metadata=metadata,
+            name=name,
+            opacity=opacity,
             projection_mode=projection_mode,
+            rotate=rotate,
+            scale=scale,
+            shear=shear,
+            translate=translate,
+            units=units,
+            visible=visible,
         )
 
         self.events.add(
@@ -603,7 +617,7 @@ class Points(Layer):
         self.antialiasing = antialiasing
 
         # Trigger generation of view slice and thumbnail
-        self.refresh()
+        self.refresh(extent=False)
 
     @classmethod
     def _add_deprecated_properties(cls) -> None:
@@ -921,7 +935,7 @@ class Points(Layer):
         self._out_of_slice_display = bool(out_of_slice_display)
         self.events.out_of_slice_display()
         self.events.n_dimensional()
-        self.refresh()
+        self.refresh(extent=False)
 
     @property
     def n_dimensional(self) -> bool:
@@ -941,8 +955,21 @@ class Points(Layer):
 
     @symbol.setter
     def symbol(self, symbol: Union[str, np.ndarray, list]) -> None:
-        symbol = np.broadcast_to(symbol, self.data.shape[0])
-        self._symbol = coerce_symbols(symbol)
+        coerced_symbols = coerce_symbols(symbol)
+        # If a single symbol has been converted, this will broadcast it to
+        # the number of points in the data. If symbols is already an array,
+        # this will check that it is the correct length.
+        if coerced_symbols.size == 1:
+            coerced_symbols = np.full(
+                self.data.shape[0], coerced_symbols[0], dtype=object
+            )
+        else:
+            coerced_symbols = np.array(coerced_symbols)
+            if coerced_symbols.size != self.data.shape[0]:
+                raise ValueError(
+                    'Symbol array must be the same length as data.'
+                )
+        self._symbol = coerced_symbols
         self.events.symbol()
         self.events.highlight()
 
@@ -993,8 +1020,8 @@ class Points(Layer):
                     category=DeprecationWarning,
                     stacklevel=2,
                 )
-        self._clear_extent_augmented()
-        self.refresh()
+        # TODO: technically not needed to cleat the non-augmented extent... maybe it's fine like this to avoid complexity
+        self.refresh(highlight=False)
 
     @property
     def current_size(self) -> Union[int, float]:
@@ -1033,8 +1060,8 @@ class Points(Layer):
         if self._update_properties and len(self.selected_data) > 0:
             idx = np.fromiter(self.selected_data, dtype=int)
             self.size[idx] = size
-            self._clear_extent_augmented()
-            self.refresh()
+            # TODO: also here technically no need to clear base extent
+            self.refresh(highlight=False)
             self.events.size()
         self.events.current_size()
 
@@ -1090,7 +1117,7 @@ class Points(Layer):
     @shown.setter
     def shown(self, shown):
         self._shown = np.broadcast_to(shown, self.data.shape[0]).astype(bool)
-        self.refresh()
+        self.refresh(extent=False, highlight=False)
 
     @property
     def border_width(self) -> np.ndarray:
@@ -1123,7 +1150,7 @@ class Points(Layer):
 
         self._border_width = border_width
         self.events.border_width(value=border_width)
-        self.refresh()
+        self.refresh(extent=False)
 
     @property
     def border_width_is_relative(self) -> bool:
@@ -1155,7 +1182,7 @@ class Points(Layer):
         if self._update_properties and len(self.selected_data) > 0:
             idx = np.fromiter(self.selected_data, dtype=int)
             self.border_width[idx] = border_width
-            self.refresh()
+            self.refresh(highlight=False)
             self.events.border_width()
         self.events.current_border_width()
 
@@ -1422,12 +1449,12 @@ class Points(Layer):
         self._border._refresh_colors(self.properties, update_color_mapping)
         self._face._refresh_colors(self.properties, update_color_mapping)
 
-    def _get_state(self):
+    def _get_state(self) -> dict[str, Any]:
         """Get dictionary of layer state.
 
         Returns
         -------
-        state : dict
+        state : dict of str to Any
             Dictionary of layer state.
         """
         state = self._get_base_state()
@@ -1982,7 +2009,9 @@ class Points(Layer):
         self._value_stored = copy(self._value)
         self._drag_box_stored = copy(self._drag_box)
 
-        if self._value is not None or len(self._selected_view) > 0:
+        if self._highlight_visible and (
+            self._value is not None or len(self._selected_view) > 0
+        ):
             if len(self._selected_view) > 0:
                 index = copy(self._selected_view)
                 # highlight the hovered point if not in adding mode
@@ -2012,7 +2041,7 @@ class Points(Layer):
             self._highlight_index = []
 
         # only display dragging selection box in 2D
-        if self._is_selecting:
+        if self._highlight_visible and self._is_selecting:
             if self._drag_normal is None:
                 pos = create_box(self._drag_box)
             else:
