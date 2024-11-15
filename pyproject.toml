@@ -160,7 +160,7 @@ dev = [
     "ruff",
     "check-manifest>=0.42",
     "pre-commit>=2.9.0",
-    "pydantic[dotenv]",
+    "pydantic",
     "python-dotenv",
     "napari[testing]",
 ]
