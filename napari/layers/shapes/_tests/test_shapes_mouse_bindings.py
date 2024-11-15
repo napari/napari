@@ -67,6 +67,48 @@ def test_not_adding_or_selecting_shape(create_known_shapes_layer):
 
 
 @pytest.mark.parametrize('shape_type', ['rectangle', 'ellipse', 'line'])
+def test_add_simple_shape_non_visible(shape_type, create_known_shapes_layer):
+    """Check is not possible to add simple shape by clicking in add mode while the layer is not visible."""
+    layer, n_shapes, known_non_shape = create_known_shapes_layer
+    initial_data = np.copy(layer.data)
+
+    # Try to add shape at location where non exists and set layer not visible
+    layer.mode = 'add_' + shape_type
+    layer.visible = False
+
+    # Simulate click
+    event = read_only_mouse_event(
+        type='mouse_press',
+        position=known_non_shape,
+    )
+    mouse_press_callbacks(layer, event)
+
+    known_non_shape_end = [40, 60]
+    # Simulate drag end
+    event = read_only_mouse_event(
+        type='mouse_move',
+        is_dragging=True,
+        position=known_non_shape_end,
+    )
+    mouse_move_callbacks(layer, event)
+
+    # Simulate release
+    event = read_only_mouse_event(
+        type='mouse_release',
+        position=known_non_shape_end,
+    )
+    mouse_release_callbacks(layer, event)
+
+    # Check no shape was added and data is still the initial one
+    assert len(layer.data) == n_shapes
+    np.testing.assert_equal(layer.data, initial_data)
+
+    # Ensure nothing is selected, accounting no interaction since layer is not visible
+    assert len(layer.selected_data) == 0
+    assert layer.selected_data == set()
+
+
+@pytest.mark.parametrize('shape_type', ['rectangle', 'ellipse', 'line'])
 def test_add_simple_shape(shape_type, create_known_shapes_layer):
     """Add simple shape by clicking in add mode."""
     layer, n_shapes, known_non_shape = create_known_shapes_layer
