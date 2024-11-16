@@ -97,7 +97,9 @@ class StatusChecker(QThread):
             return
 
         try:
-            self.status_and_tooltip_changed.emit(viewer._calc_status_from_cursor())
+            self.status_and_tooltip_changed.emit(
+                viewer._calc_status_from_cursor()
+            )
         except Exception as e:  # pragma: no cover # noqa: BLE001
             # Our codebase is not threadsafe. It is possible that an
             # ViewerModel or Layer state is changed while we are trying to
