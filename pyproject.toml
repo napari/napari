@@ -359,7 +359,7 @@ filterwarnings = [
   "ignore:There is no current event loop:DeprecationWarning:",
   "ignore:(?s).*Pyarrow will become a required dependency of pandas:DeprecationWarning",  # pandas pyarrow (pandas<3.0),
   # TODO: remove once xarray is updated to avoid this warning
-  # https://github.com/pydata/xarray/blame/b1f3fea467ff9387ed35c221205a70524f4caa18b/pyproject.toml#L333-L334
+  # https://github.com/pydata/xarray/blame/b1f3fea467f9387ed35c221205a70524f4caa18b/pyproject.toml#L333-L334
   # https://github.com/pydata/xarray/pull/8939
   "ignore:__array__ implementation doesn't accept a copy keyword, so passing copy=False failed.",
   "ignore:pkg_resources is deprecated",
