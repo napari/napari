@@ -82,9 +82,7 @@ def test_imsave_large_file(monkeypatch, tmp_path):
 
     monkeypatch.setattr(tifffile, 'imwrite', raise_no_bigtiff)
 
-    data = np.random.randint(
-        low=0, high=2**16, size=(128, 4096, 4096), dtype='uint16'
-    )  # 4GB size
+    data = np.empty((128, 4096, 4096), dtype='uint16')  # 4GB size
 
     # create image and assert image file creation
     image_path = str(tmp_path / 'data.tif')
