@@ -26,6 +26,19 @@ def check_windows_style(viewer):
     assert window_style & win32con.WS_BORDER == win32con.WS_BORDER
 
 
+def check_view_menu_visibility(viewer, qtbot):
+    if viewer.window._qt_window.menuBar().isNativeMenuBar():
+        return
+
+    assert not viewer.window.view_menu.isVisible()
+    qtbot.keyClick(
+        viewer.window._qt_window.menuBar(), Qt.Key_V, modifier=Qt.AltModifier
+    )
+    qtbot.waitUntil(viewer.window.view_menu.isVisible)
+    viewer.window.view_menu.close()
+    assert not viewer.window.view_menu.isVisible()
+
+
 @pytest.mark.parametrize(
     ('action_id', 'action_title', 'viewer_attr', 'sub_attr'),
     toggle_action_details,
@@ -80,13 +93,7 @@ def test_toggle_fullscreen_from_normal(make_napari_viewer, qtbot):
     assert not viewer.window._qt_window.isFullScreen()
 
     # Check `View` menu can be seen in normal window state
-    assert not viewer.window.view_menu.isVisible()
-    qtbot.keyClick(
-        viewer.window._qt_window.menuBar(), Qt.Key_V, modifier=Qt.AltModifier
-    )
-    qtbot.waitUntil(viewer.window.view_menu.isVisible)
-    viewer.window.view_menu.close()
-    assert not viewer.window.view_menu.isVisible()
+    check_view_menu_visibility(viewer, qtbot)
 
     # Check fullscreen state change
     app.commands.execute_command(action_id)
@@ -97,13 +104,7 @@ def test_toggle_fullscreen_from_normal(make_napari_viewer, qtbot):
     check_windows_style(viewer)
 
     # Check `View` menu can be seen in fullscreen window state
-    assert not viewer.window.view_menu.isVisible()
-    qtbot.keyClick(
-        viewer.window._qt_window.menuBar(), Qt.Key_V, modifier=Qt.AltModifier
-    )
-    qtbot.waitUntil(viewer.window.view_menu.isVisible)
-    viewer.window.view_menu.close()
-    assert not viewer.window.view_menu.isVisible()
+    check_view_menu_visibility(viewer, qtbot)
 
     # Check return to non fullscreen state
     app.commands.execute_command(action_id)
@@ -114,13 +115,7 @@ def test_toggle_fullscreen_from_normal(make_napari_viewer, qtbot):
     check_windows_style(viewer)
 
     # Check `View` still menu can be seen in non fullscreen window state
-    assert not viewer.window.view_menu.isVisible()
-    qtbot.keyClick(
-        viewer.window._qt_window.menuBar(), Qt.Key_V, modifier=Qt.AltModifier
-    )
-    qtbot.waitUntil(viewer.window.view_menu.isVisible)
-    viewer.window.view_menu.close()
-    assert not viewer.window.view_menu.isVisible()
+    check_view_menu_visibility(viewer, qtbot)
 
 
 @skip_local_popups
@@ -142,14 +137,9 @@ def test_toggle_fullscreen_from_maximized(make_napari_viewer, qtbot):
     viewer.window._qt_window.showMaximized()
 
     # Check `View` menu can be seen in maximized window state
-    assert not viewer.window.view_menu.isVisible()
-    qtbot.keyClick(
-        viewer.window._qt_window.menuBar(), Qt.Key_V, modifier=Qt.AltModifier
-    )
-    qtbot.waitUntil(viewer.window.view_menu.isVisible)
-    viewer.window.view_menu.close()
-    assert not viewer.window.view_menu.isVisible()
+    check_view_menu_visibility(viewer, qtbot)
 
+    # Check fullscreen state change
     app.commands.execute_command(action_id)
     if sys.platform == 'darwin':
         # On macOS, wait for the animation to complete
@@ -158,30 +148,22 @@ def test_toggle_fullscreen_from_maximized(make_napari_viewer, qtbot):
     check_windows_style(viewer)
 
     # Check `View` menu can be seen in fullscreen window state coming from maximized state
-    assert not viewer.window.view_menu.isVisible()
-    qtbot.keyClick(
-        viewer.window._qt_window.menuBar(), Qt.Key_V, modifier=Qt.AltModifier
-    )
-    qtbot.waitUntil(viewer.window.view_menu.isVisible)
-    viewer.window.view_menu.close()
-    assert not viewer.window.view_menu.isVisible()
+    check_view_menu_visibility(viewer, qtbot)
 
     # Check return to non fullscreen state
     app.commands.execute_command(action_id)
     if sys.platform == 'darwin':
         # On macOS, wait for the animation to complete
         qtbot.wait(250)
-    assert not viewer.window._qt_window.isFullScreen()
+
+    def check_not_fullscreen():
+        assert not viewer.window._qt_window.isFullScreen()
+
+    qtbot.waitUntil(check_not_fullscreen)
     check_windows_style(viewer)
 
     # Check `View` still menu can be seen in non fullscreen window state
-    assert not viewer.window.view_menu.isVisible()
-    qtbot.keyClick(
-        viewer.window._qt_window.menuBar(), Qt.Key_V, modifier=Qt.AltModifier
-    )
-    qtbot.waitUntil(viewer.window.view_menu.isVisible)
-    viewer.window.view_menu.close()
-    assert not viewer.window.view_menu.isVisible()
+    check_view_menu_visibility(viewer, qtbot)
 
 
 @skip_local_focus
