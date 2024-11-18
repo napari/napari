@@ -73,7 +73,6 @@ def test_imsave_float(tmp_path, image_file):
         assert not image_file_path.is_file()
 
 
-@pytest.mark.slow
 def test_imsave_large_file(monkeypatch, tmp_path):
     old_write = tifffile.imwrite
 
