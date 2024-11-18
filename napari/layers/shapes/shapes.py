@@ -1292,6 +1292,8 @@ class Shapes(Layer):
                 with self.block_update_properties():
                     self.current_properties = unique_properties
 
+        self._set_highlight()
+
     @property
     def _is_moving(self) -> bool:
         return self._private_is_moving
