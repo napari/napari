@@ -469,7 +469,7 @@ module = [
     'napari._qt.layer_controls.widgets.qt_contiguous_checkbox',
     'napari._qt.layer_controls.widgets.qt_ndim_spinbox',
     'napari._qt.layer_controls.widgets.qt_contour_spinbox',
-    'napari._qt.layer_controls.widgets.qt_preserver_label_checkbox',
+    'napari._qt.layer_controls.widgets.qt_preserve_labels_checkbox',
     'napari._qt.layer_controls.widgets.qt_display_selected_label_checkbox',
     'napari._qt.layer_controls.widgets.qt_render_combobox',
     'napari._qt.menus._util',

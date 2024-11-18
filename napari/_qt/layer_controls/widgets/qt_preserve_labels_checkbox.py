@@ -56,7 +56,7 @@ class QtPreserveLabelsCheckBoxControl(QtWidgetControlsBase):
             trans._('preserve\nlabels:')
         )
 
-    def change_preserve_labels(self, state):
+    def change_preserve_labels(self, state) -> None:
         """Toggle preserve_labels state of label layer.
 
         Parameters
@@ -68,7 +68,7 @@ class QtPreserveLabelsCheckBoxControl(QtWidgetControlsBase):
             Qt.CheckState(state) == Qt.CheckState.Checked
         )
 
-    def _on_preserve_labels_change(self):
+    def _on_preserve_labels_change(self) -> None:
         """Receive layer model preserve_labels event and update the checkbox."""
         with self._layer.events.preserve_labels.blocker():
             self.preserveLabelsCheckBox.setChecked(self._layer.preserve_labels)
