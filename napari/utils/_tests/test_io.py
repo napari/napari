@@ -82,8 +82,8 @@ def test_imsave_large_file(monkeypatch, tmp_path):
 
     monkeypatch.setattr(tifffile, 'imwrite', raise_no_bigtiff)
 
-    # create image data, it could be smaller, as we patch the tifffile.imwrite
-    # function to raise an error if bigtiff is not set
+    # create image data. It can be <4GB compressed because we
+    # monkeypatch tifffile.imwrite to raise an error if bigtiff is not set
     data = np.empty((20, 200, 200), dtype='uint16')
 
     # create image and assert image file creation
