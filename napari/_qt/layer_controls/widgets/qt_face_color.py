@@ -1,6 +1,7 @@
 from typing import Optional
 
 import numpy as np
+from qtpy.QtCore import Slot
 from qtpy.QtWidgets import QWidget
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
@@ -41,6 +42,11 @@ class QtFaceColorControl(QtWidgetControlsBase):
         self._layer.events.current_face_color.connect(
             self._on_current_face_color_change
         )
+        if hasattr(self._layer, '_face'):
+            # Handle Points layer case
+            self._layer._face.events.current_color.connect(
+                self._on_current_face_color_change
+            )
 
         # Setup widgets
         self.faceColorEdit = QColorSwatchEdit(
@@ -51,6 +57,7 @@ class QtFaceColorControl(QtWidgetControlsBase):
         self._on_current_face_color_change()
         self.faceColorEdit.color_changed.connect(self.changeFaceColor)
 
+    @Slot(np.ndarray)
     def changeFaceColor(self, color: np.ndarray) -> None:
         """Change face color of shapes.
 
@@ -60,7 +67,9 @@ class QtFaceColorControl(QtWidgetControlsBase):
             Face color for shapes, color name or hex string.
             Eg: 'white', 'red', 'blue', '#00ff00', etc.
         """
-        with self._layer.events.current_face_color.blocker():
+        with self._layer.events.current_face_color.blocker(
+            self._on_current_face_color_change
+        ):
             self._layer.current_face_color = color
 
     def _on_current_face_color_change(self) -> None:

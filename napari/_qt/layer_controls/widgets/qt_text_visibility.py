@@ -53,9 +53,12 @@ class QtTextVisibilityControl(QtWidgetControlsBase):
         state : int
             Integer value of Qt.CheckState that indicates the check state of textDispCheckBox
         """
-        self._layer.text.visible = (
-            Qt.CheckState(state) == Qt.CheckState.Checked
-        )
+        with self.layer.text.events.visible.blocker(
+            self._on_text_visibility_change
+        ):
+            self._layer.text.visible = (
+                Qt.CheckState(state) == Qt.CheckState.Checked
+            )
 
     def _on_text_visibility_change(self) -> None:
         """Receive layer model text visibiltiy change change event and update checkbox."""

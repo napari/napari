@@ -473,6 +473,7 @@ module = [
     'napari._qt.layer_controls.widgets.qt_preserve_labels_checkbox',
     'napari._qt.layer_controls.widgets.qt_display_selected_label_checkbox',
     'napari._qt.layer_controls.widgets.qt_render_combobox',
+    'napari._qt.layer_controls.widgets.qt_current_size_slider',
     'napari._qt.menus._util',
     'napari._qt.menus.file_menu',
     'napari._qt.perf.qt_event_tracing',
