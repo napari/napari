@@ -68,7 +68,7 @@ class QtSymbolComboBoxControl(QtWidgetControlsBase):
 
         self.symbolComboBoxLabel = QtWrappedLabel(trans._('symbol:'))
 
-    def changeCurrentSymbol(self, text):
+    def changeCurrentSymbol(self, text) -> None:
         """Change marker symbol of the points on the layer model.
 
         Parameters
@@ -79,7 +79,7 @@ class QtSymbolComboBoxControl(QtWidgetControlsBase):
         with self._layer.events.symbol.blocker(self._on_current_symbol_change):
             self._layer.current_symbol = SYMBOL_TRANSLATION_INVERTED[text]
 
-    def _on_current_symbol_change(self):
+    def _on_current_symbol_change(self) -> None:
         """Receive marker symbol change event and update the dropdown menu."""
         with qt_signals_blocked(self.symbolComboBox):
             self.symbolComboBox.setCurrentIndex(

@@ -59,14 +59,14 @@ class QtBorderColorControl(QtWidgetControlsBase):
         self.borderColorEditLabel = QtWrappedLabel(trans._('border color:'))
 
     @Slot(np.ndarray)
-    def changeCurrentBorderColor(self, color: np.ndarray):
+    def changeCurrentBorderColor(self, color: np.ndarray) -> None:
         """Update border color of layer model from color picker user input."""
         with self._layer.events.current_border_color.blocker(
             self._on_current_border_color_change
         ):
             self._layer.current_border_color = color
 
-    def _on_current_border_color_change(self):
+    def _on_current_border_color_change(self) -> None:
         """Receive layer.current_border_color() change event and update view."""
         with qt_signals_blocked(self.borderColorEdit):
             self.borderColorEdit.setColor(self._layer.current_border_color)

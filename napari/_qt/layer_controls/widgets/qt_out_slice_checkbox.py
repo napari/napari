@@ -51,7 +51,7 @@ class QtOutSliceCheckBoxControl(QtWidgetControlsBase):
 
         self.outOfSliceCheckBoxLabel = QtWrappedLabel(trans._('out of slice:'))
 
-    def change_out_of_slice(self, state):
+    def change_out_of_slice(self, state) -> None:
         """Toggleout of slice display of points layer.
 
         Parameters
@@ -65,7 +65,7 @@ class QtOutSliceCheckBoxControl(QtWidgetControlsBase):
         ):
             self._layer.out_of_slice_display = bool(state)
 
-    def _on_out_of_slice_display_change(self):
+    def _on_out_of_slice_display_change(self) -> None:
         """Receive layer model out_of_slice_display change event and update checkbox."""
         with qt_signals_blocked(self.outOfSliceCheckBox):
             self.outOfSliceCheckBox.setChecked(
