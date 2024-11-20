@@ -3,9 +3,10 @@ from __future__ import annotations
 import os
 import sys
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, cast
 from warnings import warn
 
+from PyQt6.QtWidgets import QWidget
 from qtpy import PYQT5, PYSIDE2
 from qtpy.QtCore import QDir, Qt
 from qtpy.QtGui import QIcon
@@ -59,6 +60,29 @@ _defaults = {
 # store reference to QApplication to prevent garbage collection
 _app_ref = None
 _IPYTHON_WAS_HERE_FIRST = 'IPython' in sys.modules
+
+
+def _focus_changed(old: Optional[QWidget], new: Optional[QWidget]):
+    if old is not None and new is not None:
+        return  # ignore focus changes between two widgets
+    if old is None and new is None:
+        return  # this should not happen
+    if old is None:
+        start_timer = True
+        window = new.window()
+    else:
+        start_timer = False
+        window = old.window()
+    notifications = cast(
+        list[NapariQtNotification], window.findChildren(NapariQtNotification)
+    )
+    if not notifications:
+        return
+    if start_timer:
+        notifications[-1].timer_start()
+    else:
+        for notification in notifications:
+            notification.timer_stop()
 
 
 # TODO: Remove in napari 0.6.0
@@ -203,11 +227,6 @@ def get_qapp(
     if _IPYTHON_WAS_HERE_FIRST:
         _try_enable_ipython_gui('qt' if ipy_interactive else None)
 
-    notification_manager.notification_ready.connect(
-        NapariQtNotification.show_notification
-    )
-    notification_manager.notification_ready.connect(show_console_notification)
-
     if perf_config and not perf_config.patched:
         # Will patch based on config file.
         perf_config.patch_callables()
@@ -229,6 +248,15 @@ def get_qapp(
             QDir.addSearchPath(f'theme_{name}', str(_theme_path(name)))
 
         register_threadworker_processors()
+
+        notification_manager.notification_ready.connect(
+            NapariQtNotification.show_notification
+        )
+        notification_manager.notification_ready.connect(
+            show_console_notification
+        )
+
+        app.focusChanged.connect(_focus_changed)
 
     _app_ref = app  # prevent garbage collection
 
