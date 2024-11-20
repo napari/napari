@@ -6,11 +6,10 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING, Optional, cast
 from warnings import warn
 
-from PyQt6.QtWidgets import QWidget
 from qtpy import PYQT5, PYSIDE2
 from qtpy.QtCore import QDir, Qt
 from qtpy.QtGui import QIcon
-from qtpy.QtWidgets import QApplication
+from qtpy.QtWidgets import QApplication, QWidget
 
 from napari import Viewer, __version__
 from napari._qt.dialogs.qt_notification import NapariQtNotification
