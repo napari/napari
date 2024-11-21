@@ -89,13 +89,16 @@ class QtColorBox(QWidget):
             painter.drawRect(0, 0, self._height, self._height)
             self.color = tuple(color)
 
-    def deleteLater(self):
+    def disconnect_widget_controls(self):
         disconnect_events(self._layer.events, self)
+
+    def deleteLater(self):
+        self.disconnect_widget_controls()
         super().deleteLater()
 
     def closeEvent(self, event):
         """Disconnect events when widget is closing."""
-        disconnect_events(self._layer.events, self)
+        self.disconnect_widget_controls()
         super().closeEvent(event)
 
 
@@ -175,6 +178,10 @@ class QtLabelControl(QtWidgetControlsBase):
         """Update label selection spinbox min/max when data changes."""
         dtype_lims = get_dtype_limits(get_dtype(self._layer))
         self.selectionSpinBox.setRange(*dtype_lims)
+
+    def disconnect_widget_controls(self):
+        self.colorBox.disconnect_widget_controls()
+        super().disconnect_widget_controls()
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [(self.labelColorLabel, self.labelColor)]

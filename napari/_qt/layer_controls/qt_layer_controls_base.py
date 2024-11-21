@@ -179,43 +179,6 @@ class QtLayerControls(QFrame):
         for label_text, control_widget in controls:
             self.layout().addRow(label_text, control_widget)
 
-    def changeOpacity(self, value):
-        """Change opacity value on the layer model.
-
-        Parameters
-        ----------
-        value : float
-            Opacity value for shapes.
-            Input range 0 - 100 (transparent to fully opaque).
-        """
-        with self.layer.events.blocker(self._on_opacity_change):
-            self.layer.opacity = value
-
-    def changeBlending(self, text):
-        """Change blending mode on the layer model.
-
-        Parameters
-        ----------
-        text : str
-            Name of blending mode, eg: 'translucent', 'additive', 'opaque'.
-        """
-        self.layer.blending = self.blendComboBox.currentData()
-        # opaque and minimum blending do not support changing alpha
-        self.opacitySlider.setEnabled(
-            self.layer.blending not in NO_OPACITY_BLENDING_MODES
-        )
-        self.opacityLabel.setEnabled(
-            self.layer.blending not in NO_OPACITY_BLENDING_MODES
-        )
-
-        blending_tooltip = ''
-        if self.layer.blending == str(Blending.MINIMUM):
-            blending_tooltip = trans._(
-                '`minimum` blending mode works best with inverted colormaps with a white background.',
-            )
-        self.blendComboBox.setToolTip(blending_tooltip)
-        self.layer.help = blending_tooltip
-
     def _radio_button(
         self,
         layer,
@@ -363,11 +326,15 @@ class QtLayerControls(QFrame):
 
     def deleteLater(self):
         disconnect_events(self.layer.events, self)
+        for widget_control in self._widget_controls:
+            widget_control.disconnect_widget_controls()
         super().deleteLater()
 
     def close(self):
         """Disconnect events when widget is closing."""
         disconnect_events(self.layer.events, self)
+        for widget_control in self._widget_controls:
+            widget_control.disconnect_widget_controls()
         for child in self.children():
             close_method = getattr(child, 'close', None)
             if close_method is not None:
