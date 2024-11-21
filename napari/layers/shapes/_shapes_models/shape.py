@@ -16,6 +16,15 @@ from napari.layers.shapes._shapes_utils import (
 from napari.utils.misc import argsort
 from napari.utils.translations import trans
 
+try:
+    from napari.layers.shapes._accelerated_triangulate import (
+        remove_path_duplicates,
+    )
+except ImportError:
+
+    def remove_path_duplicates(data: np.ndarray, closed: bool):
+        return data
+
 
 class Shape(ABC):
     """Base class for a single shape
@@ -224,6 +233,7 @@ class Shape(ABC):
         edge : bool
             Bool which determines if the edge need to be traingulated
         """
+        data = remove_path_duplicates(data, closed=closed)
         if edge:
             centers, offsets, triangles = triangulate_edge(data, closed=closed)
             self._edge_vertices = centers
@@ -296,7 +306,7 @@ class Shape(ABC):
         self._face_vertices = self._face_vertices @ transform.T
 
         points = self.data_displayed
-
+        points = remove_path_duplicates(points, closed=self._closed)
         centers, offsets, triangles = triangulate_edge(
             points, closed=self._closed
         )
