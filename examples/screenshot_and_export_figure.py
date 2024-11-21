@@ -6,8 +6,8 @@ Display multiple layer types, add scale bar, and take a screenshot or export a
 figure from a 'light' canvas. Then switch to a 'dark' canvas and display the
 screenshot and figure. Compare the limits of each export method. The screenshot
 will include the entire canvas, and results in some layers being clipped
-if it extends outside the canvas. This also means that screenshots will 
-reflect the current zoom. In comparison, the `export_figure` will always 
+if it extends outside the canvas. This also means that screenshots will
+reflect the current zoom. In comparison, the `export_figure` will always
 include the extent of the layers and any other elements overlayed
 on the canvas, such as the scale bar. Exported figures also move the scale bar
 to within the margins of the canvas.
