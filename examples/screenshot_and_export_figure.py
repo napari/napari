@@ -90,7 +90,7 @@ viewer.layers.remove_selected()
 
 viewer.add_image(screenshot_zoomed, rgb=True, name='screenshot_zoomed')
 viewer.add_image(screenshot, rgb=True, name='screenshot')
-viewer.add_image(figure_no_outside_shape, rgb=True, name='figure_no_pos')
+viewer.add_image(figure_no_outside_shape, rgb=True, name='figure_no_outside_shape')
 viewer.add_image(figure_zoomed, rgb=True, name='figure_zoomed')
 viewer.add_image(figure, rgb=True, name='figure')
 
