@@ -233,7 +233,7 @@ class Shape(ABC):
         edge : bool
             Bool which determines if the edge need to be traingulated
         """
-        data = remove_path_duplicates(data.astype(np.float32), closed=closed)
+        data = remove_path_duplicates(data, closed=closed)
         if edge:
             centers, offsets, triangles = triangulate_edge(data, closed=closed)
             self._edge_vertices = centers

@@ -507,7 +507,7 @@ def remove_path_duplicates(path: np.ndarray, closed: bool) -> np.ndarray:
         return path
 
     target_len = len(path) - dup_count
-    new_path = np.empty((target_len, path.shape[1]), dtype=np.float32)
+    new_path = np.empty((target_len, path.shape[1]), dtype=path.dtype)
     new_path[0] = path[0]
     index = 0
     for i in range(1, len(path)):
