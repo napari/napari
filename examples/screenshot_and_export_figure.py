@@ -15,6 +15,7 @@ to within the margins of the canvas.
 Currently, 'export_figure` does not support the 3D view, but screenshot does.
 
 In the final grid state shown below, the first row represents exported images. The first two show that zoom is not reflected in the exported figure. The final one shows how the exported figure adapts to change in the layer extent. In the second row are the screenshots, showing the fact that the entire canvas is captured and that zoom is preserved.
+
 .. tags:: visualization-advanced
 """
 
