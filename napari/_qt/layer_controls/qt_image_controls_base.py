@@ -8,7 +8,6 @@ from napari._qt.layer_controls.widgets import (
     QtColormapControl,
     QtContrastLimitsSliderControl,
     QtGammaSliderControl,
-    QtOpacityBlendingControls,
 )
 
 if TYPE_CHECKING:
@@ -60,7 +59,6 @@ class QtBaseImageControls(QtLayerControls):
     def __init__(self, layer: Image) -> None:
         super().__init__(layer)
         # Setup widgets controls
-        self._add_widget_controls(QtOpacityBlendingControls(self, layer))
         self._add_widget_controls(QtContrastLimitsSliderControl(self, layer))
         self._add_widget_controls(QtAutoScaleControl(self, layer))
         self._add_widget_controls(QtGammaSliderControl(self, layer))

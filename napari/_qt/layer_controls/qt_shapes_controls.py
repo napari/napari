@@ -5,7 +5,6 @@ from napari._qt.layer_controls.widgets import (
     QtEdgeColorControl,
     QtEdgeWidthSliderControl,
     QtFaceColorControl,
-    QtOpacityBlendingControls,
     QtTextVisibilityControl,
 )
 from napari._qt.widgets.qt_mode_buttons import QtModePushButton
@@ -210,7 +209,6 @@ class QtShapesControls(QtLayerControls):
         self.button_grid.setSpacing(4)
 
         # Setup widgets controls
-        self._add_widget_controls(QtOpacityBlendingControls(self, layer))
         self._add_widget_controls(QtEdgeWidthSliderControl(self, layer))
         self._add_widget_controls(
             QtEdgeColorControl(

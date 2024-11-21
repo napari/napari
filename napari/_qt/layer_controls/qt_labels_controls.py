@@ -10,7 +10,6 @@ from napari._qt.layer_controls.widgets import (
     QtLabelControl,
     QtLabelRenderControl,
     QtNdimSpinBoxControl,
-    QtOpacityBlendingControls,
     QtPreserveLabelsCheckBoxControl,
 )
 from napari._qt.utils import set_widgets_enabled_with_opacity
@@ -156,7 +155,6 @@ class QtLabelsControls(QtLayerControls):
         self.button_grid.addWidget(self.pick_button, 0, 5)
 
         # Setup widgets controls
-        self._add_widget_controls(QtOpacityBlendingControls(self, layer))
         self._add_widget_controls(QtLabelControl(self, layer))
         self._add_widget_controls(QtBrushSizeSliderControl(self, layer))
         self._renderControl = QtLabelRenderControl(self, layer)

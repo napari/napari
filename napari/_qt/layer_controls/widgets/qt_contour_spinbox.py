@@ -67,7 +67,7 @@ class QtContourSpinBoxControl(QtWidgetControlsBase):
         """
         self._layer.contour = value
         self.contourSpinBox.clearFocus()
-        self.setFocus()
+        self.parent().setFocus()
 
     def _on_contour_change(self):
         """Receive layer model contour value change event and update spinbox."""

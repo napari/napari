@@ -5,7 +5,6 @@ from napari._qt.layer_controls.widgets import (
     QtBorderColorControl,
     QtCurrentSizeSliderControl,
     QtFaceColorControl,
-    QtOpacityBlendingControls,
     QtOutSliceCheckBoxControl,
     QtSymbolComboBoxControl,
     QtTextVisibilityControl,
@@ -107,7 +106,6 @@ class QtPointsControls(QtLayerControls):
         self.button_grid.addWidget(self.select_button, 0, 5)
 
         # Setup widgets controls
-        self._add_widget_controls(QtOpacityBlendingControls(self, layer))
         self._add_widget_controls(QtCurrentSizeSliderControl(self, layer))
         self._add_widget_controls(QtSymbolComboBoxControl(self, layer))
         self._add_widget_controls(

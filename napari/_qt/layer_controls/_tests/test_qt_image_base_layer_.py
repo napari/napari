@@ -7,10 +7,12 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QPushButton
 
 from napari._qt.layer_controls.qt_image_controls_base import (
-    QContrastLimitsPopup,
-    QRangeSliderPopup,
     QtBaseImageControls,
     QtLayerControls,
+)
+from napari._qt.layer_controls.widgets.qt_contrast_limits import (
+    QContrastLimitsPopup,
+    QRangeSliderPopup,
     range_to_decimals,
 )
 from napari.components.dims import Dims
@@ -43,7 +45,7 @@ def test_clim_right_click_shows_popup(mock_show, qtbot, layer):
     qtctrl = QtBaseImageControls(layer)
     qtbot.addWidget(qtctrl)
     qtbot.mousePress(qtctrl.contrastLimitsSlider, Qt.RightButton)
-    assert hasattr(qtctrl, 'clim_popup')
+    assert hasattr(qtctrl.contrastLimitsSlider.parent(), 'clim_popup')
     # this mock doesn't seem to be working on cirrus windows
     # but it works on local windows tests...
     if not (os.name == 'nt' and os.getenv('CI')):
@@ -75,14 +77,14 @@ def test_range_popup_clim_buttons(mock_show, qtbot, qapp, layer):
     qtbot.mousePress(qtctrl.contrastLimitsSlider, Qt.RightButton)
 
     # pressing the reset button returns the clims to the default values
-    reset_button = qtctrl.clim_popup.findChild(
+    reset_button = qtctrl.contrastLimitsSlider.parent().clim_popup.findChild(
         QPushButton, 'reset_clims_button'
     )
     reset_button.click()
     qapp.processEvents()
     assert tuple(qtctrl.contrastLimitsSlider.value()) == original_clims
 
-    rangebtn = qtctrl.clim_popup.findChild(
+    rangebtn = qtctrl.contrastLimitsSlider.parent().clim_popup.findChild(
         QPushButton, 'full_clim_range_button'
     )
     # data in this test is uint16 or int32 for Image, and float for Surface.

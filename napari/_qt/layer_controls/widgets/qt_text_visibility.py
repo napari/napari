@@ -53,7 +53,7 @@ class QtTextVisibilityControl(QtWidgetControlsBase):
         state : int
             Integer value of Qt.CheckState that indicates the check state of textDispCheckBox
         """
-        with self.layer.text.events.visible.blocker(
+        with self._layer.text.events.visible.blocker(
             self._on_text_visibility_change
         ):
             self._layer.text.visible = (

@@ -68,6 +68,9 @@ from napari._qt.layer_controls.widgets.qt_symbol_combobox import (
 from napari._qt.layer_controls.widgets.qt_text_visibility import (
     QtTextVisibilityControl,
 )
+from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
+    QtWidgetControlsBase,
+)
 
 __all__ = [
     'QtEdgeColorControl',
@@ -96,4 +99,5 @@ __all__ = [
     'QtInterpolationComboBoxControl',
     'QtImageRenderControl',
     'QtDepictionControl',
+    'QtWidgetControlsBase',
 ]

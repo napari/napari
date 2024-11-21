@@ -12,7 +12,8 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
+from napari._qt.layer_controls.widgets import (
+    QtOpacityBlendingControls,
     QtWidgetControlsBase,
 )
 from napari._qt.utils import set_widgets_enabled_with_opacity
@@ -132,12 +133,8 @@ class QtLayerControls(QFrame):
         self.button_grid.setSpacing(4)
         self.layout().addRow(self.button_grid)
 
-        # if self.__class__ == QtLayerControls:
-        #     # This base class is only instantiated in tests. When it's not a
-        #     # concrete subclass, we need to parent the button_grid to the
-        #     # layout so that qtbot will correctly clean up all instantiated
-        #     # widgets.
-        #     self.layout().addRow(self.button_grid)
+        # Setup widgets controls
+        self._add_widget_controls(QtOpacityBlendingControls(self, layer))
 
     def __getattr__(self, attr: str):
         """
