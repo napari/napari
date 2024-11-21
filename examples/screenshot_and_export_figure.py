@@ -6,13 +6,15 @@ Display multiple layer types, add scale bar, and take a screenshot or export a
 figure from a 'light' canvas. Then switch to a 'dark' canvas and display the
 screenshot and figure. Compare the limits of each export method. The screenshot
 will include the entire canvas, and results in some layers being clipped
-if it extends outside the canvas. In comparison, the `export_figure`
-will only include the extent of the layers and any other elements overlayed
+if it extends outside the canvas. This also means that screenshots will 
+reflect the current zoom. In comparison, the `export_figure` will always 
+include the extent of the layers and any other elements overlayed
 on the canvas, such as the scale bar. Exported figures also move the scale bar
 to within the margins of the canvas.
 
 Currently, 'export_figure` does not support the 3D view, but screenshot does.
 
+In the final grid state shown below, the first row represents exported images. The first two show that zoom is not reflected in the exported figure. The final one shows how the exported figure adapts to change in the layer extent. In the second row are the screenshots, showing the fact that the entire canvas is captured and that zoom is preserved.
 .. tags:: visualization-advanced
 """
 
@@ -77,11 +79,11 @@ figure_no_outside_shape = viewer.export_figure()
 
 
 # Display the screenshots and figures in 'dark' theme, and switch to grid mode
-# for comparison. The `screenshot` will include the entire canvas, and results in
-# an image that is dependent on the zoom level. In comparison, the `export_figure`
-# will only include the extent of the layers and any other elements overlayed on
-# the canvas, such as the scale bar. Exported figures also move the scale bar to
-# within the margins of the canvas.
+# for comparison. In the final grid state shown, the first row represents exported
+# images. The first two show that zoom is not reflected in the exported figure. 
+# The final one shows how the exported figure adapts to change in the layer extent. 
+# In the second row are the screenshots, showing the fact that the entire canvas
+# is captured and that zoom is preserved.
 viewer.theme = 'dark'
 viewer.layers.select_all()
 viewer.layers.remove_selected()
