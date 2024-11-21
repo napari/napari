@@ -54,9 +54,9 @@ colorama==0.4.6
     # via sphinx-autobuild
 comm==0.2.2
     # via ipykernel
-contourpy==1.3.0
+contourpy==1.3.1
     # via matplotlib
-coverage==7.6.4
+coverage==7.6.7
     # via
     #   napari (napari_repo/pyproject.toml)
     #   pytest-cov
@@ -101,7 +101,7 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.54.1
+fonttools==4.55.0
     # via matplotlib
 freetype-py==2.5.1
     # via vispy
@@ -118,7 +118,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.118.7
+hypothesis==6.119.3
     # via napari (napari_repo/pyproject.toml)
 idna==3.10
     # via
@@ -174,7 +174,7 @@ jsonschema==4.23.0
     #   nbformat
 jsonschema-specifications==2024.10.1
     # via jsonschema
-jupyter-cache==1.0.0
+jupyter-cache==1.0.1
     # via myst-nb
 jupyter-client==8.6.3
     # via
@@ -205,7 +205,7 @@ lxml==5.3.0
     #   napari (napari_repo/pyproject.toml)
     #   lxml-html-clean
     #   nilearn
-lxml-html-clean==0.3.1
+lxml-html-clean==0.4.1
     # via
     #   -r docs/requirements.txt
     #   lxml
@@ -564,7 +564,7 @@ scipy==1.14.1
     #   nilearn
     #   scikit-image
     #   scikit-learn
-setuptools==75.3.0
+setuptools==75.5.0
     # via imageio-ffmpeg
 shellingham==1.5.4
     # via typer
@@ -650,7 +650,7 @@ tabulate==0.9.0
     # via
     #   jupyter-cache
     #   numpydoc
-tensorstore==0.1.67
+tensorstore==0.1.68
     # via
     #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari (napari_repo/pyproject.toml)
@@ -660,7 +660,7 @@ tifffile==2024.9.20
     # via
     #   napari (napari_repo/pyproject.toml)
     #   scikit-image
-tomli==2.0.2
+tomli==2.1.0
     # via
     #   build
     #   coverage
@@ -736,7 +736,7 @@ watchfiles==0.24.0
     # via sphinx-autobuild
 wcwidth==0.2.13
     # via prompt-toolkit
-websockets==14.0
+websockets==14.1
     # via sphinx-autobuild
 wrapt==1.16.0
     # via napari (napari_repo/pyproject.toml)
