@@ -474,7 +474,7 @@ def generate_2D_edge_meshes(
 
 @njit(cache=True)
 def remove_path_duplicates(path: np.ndarray, closed: bool) -> np.ndarray:
-    """Remove duplicates from a path.
+    """Remove consecutive duplicates from a path.
 
     Parameters
     ----------
