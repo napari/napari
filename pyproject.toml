@@ -160,7 +160,8 @@ dev = [
     "ruff",
     "check-manifest>=0.42",
     "pre-commit>=2.9.0",
-    "pydantic[dotenv]",
+    "pydantic",
+    "python-dotenv",
     "napari[testing]",
 ]
 build = [
@@ -373,6 +374,7 @@ markers = [
     "disable_qtimer_start: Disable timer start in this Test",
     "disable_qanimation_start: Disable animation start in this Test",
     "enable_console: Don't mock the IPython console (in QtConsole) in this Test",
+    "key_bindings: Test of keybindings",
 ]
 
 [tool.mypy]

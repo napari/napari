@@ -1018,7 +1018,7 @@ def test_world_data_extent():
         'mode',
         'selected_label',
         'preserve_labels',
-        'n_dimensional',
+        'n_edit_dimensions',
     ),
     list(
         itertools.product(
@@ -1026,7 +1026,7 @@ def test_world_data_extent():
             ['fill', 'erase', 'paint'],
             [1, 20, 100],
             [True, False],
-            [True, False],
+            [3, 2],
         )
     ),
 )
@@ -1035,7 +1035,7 @@ def test_undo_redo(
     mode,
     selected_label,
     preserve_labels,
-    n_dimensional,
+    n_edit_dimensions,
 ):
     blobs = sk_data.binary_blobs(length=64, volume_fraction=0.3, n_dim=3)
     layer = Labels(blobs)
@@ -1044,7 +1044,7 @@ def test_undo_redo(
     layer.mode = mode
     layer.selected_label = selected_label
     layer.preserve_labels = preserve_labels
-    layer.n_edit_dimensions = 3 if n_dimensional else 2
+    layer.n_edit_dimensions = n_edit_dimensions
     coord = np.random.random((3,)) * (np.array(blobs.shape) - 1)
     while layer.data[tuple(coord.astype(int))] == 0 and np.any(layer.data):
         coord = np.random.random((3,)) * (np.array(blobs.shape) - 1)
