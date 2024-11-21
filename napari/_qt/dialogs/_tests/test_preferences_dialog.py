@@ -226,6 +226,7 @@ def test_preferences_dialog_escape(qtbot, pref):
     assert get_settings().appearance.theme == 'light'
 
 
+@pytest.mark.key_bindings
 def test_preferences_dialog_cancel(qtbot, pref):
     with qtbot.waitSignal(pref.finished):
         pref._button_cancel.click()
@@ -235,6 +236,7 @@ def test_preferences_dialog_cancel(qtbot, pref):
     ] == [KeyBinding.from_str('Ctrl')]
 
 
+@pytest.mark.key_bindings
 def test_preferences_dialog_restore(qtbot, pref, monkeypatch):
     theme_widget = pref._stack.widget(1).widget().widget.widgets['theme']
     highlight_widget = (
