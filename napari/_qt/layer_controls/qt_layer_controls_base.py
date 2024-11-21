@@ -132,12 +132,12 @@ class QtLayerControls(QFrame):
         self.button_grid.setSpacing(4)
         self.layout().addRow(self.button_grid)
 
-        if self.__class__ == QtLayerControls:
-            # This base class is only instantiated in tests. When it's not a
-            # concrete subclass, we need to parent the button_grid to the
-            # layout so that qtbot will correctly clean up all instantiated
-            # widgets.
-            self.layout().addRow(self.button_grid)
+        # if self.__class__ == QtLayerControls:
+        #     # This base class is only instantiated in tests. When it's not a
+        #     # concrete subclass, we need to parent the button_grid to the
+        #     # layout so that qtbot will correctly clean up all instantiated
+        #     # widgets.
+        #     self.layout().addRow(self.button_grid)
 
     def __getattr__(self, attr: str):
         """

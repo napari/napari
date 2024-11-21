@@ -8,10 +8,10 @@ from napari._qt.layer_controls.widgets import (
     QtContourSpinBoxControl,
     QtDisplaySelectedLabelCheckBoxControl,
     QtLabelControl,
+    QtLabelRenderControl,
     QtNdimSpinBoxControl,
     QtOpacityBlendingControls,
     QtPreserveLabelsCheckBoxControl,
-    QtRenderComboBoxControl,
 )
 from napari._qt.utils import set_widgets_enabled_with_opacity
 from napari._qt.widgets.qt_mode_buttons import QtModePushButton
@@ -159,7 +159,7 @@ class QtLabelsControls(QtLayerControls):
         self._add_widget_controls(QtOpacityBlendingControls(self, layer))
         self._add_widget_controls(QtLabelControl(self, layer))
         self._add_widget_controls(QtBrushSizeSliderControl(self, layer))
-        self._renderControl = QtRenderComboBoxControl(self, layer)
+        self._renderControl = QtLabelRenderControl(self, layer)
         self._add_widget_controls(self._renderControl)
         self._add_widget_controls(QtColorModeComboBoxControl(self, layer))
         self._add_widget_controls(QtContourSpinBoxControl(self, layer))
