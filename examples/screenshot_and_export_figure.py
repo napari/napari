@@ -80,8 +80,8 @@ figure_no_outside_shape = viewer.export_figure()
 
 # Display the screenshots and figures in 'dark' theme, and switch to grid mode
 # for comparison. In the final grid state shown, the first row represents exported
-# images. The first two show that zoom is not reflected in the exported figure. 
-# The final one shows how the exported figure adapts to change in the layer extent. 
+# images. The first two show that zoom is not reflected in the exported figure.
+# The final one shows how the exported figure adapts to change in the layer extent.
 # In the second row are the screenshots, showing the fact that the entire canvas
 # is captured and that zoom is preserved.
 viewer.theme = 'dark'
