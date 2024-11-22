@@ -1,3 +1,25 @@
+"""Visualize the triangulation algorithms used by the Shapes layer.
+
+This example uses napari layers to draw each of the components of a face and
+edge triangulation in a Shapes layer.
+
+Shapes layers don't "just" draw polygons, ellipses, and so on: each shape,
+as well as its borders, is broken down into a collection of triangles (this
+is called a *triangulation*), which are then sent to OpenGL for drawing:
+drawing triangles is one of the "visualization primitives" in OpenGL and most
+2D and 3D drawing frameworks.
+
+It turns out that converting arbitrary shapes into a collection of triangles
+can be quite tricky: very shallow angles cause errors in the algorithms, and
+can also make certain desirable properties (such as edges not overlapping with
+each other when a polygon makes a sharp turn) actually impossible to achieve
+with fast (single-pass) algorithms.
+
+This example draws the Shapes layer normally, but also overlays all the
+elements of the triangulation: the triangles themselves, and the normal vectors
+on each polygon vertex, from which the triangulation is computed.
+"""
+
 import typing
 
 import numba
