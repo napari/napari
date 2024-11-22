@@ -453,6 +453,7 @@ def test_qt_viewer_clipboard_without_flash(make_napari_viewer):
     assert not hasattr(viewer.window._qt_window, '_flash_animation')
 
 
+@pytest.mark.key_bindings
 def test_active_keybindings(make_napari_viewer):
     """Test instantiating viewer."""
     viewer = make_napari_viewer()

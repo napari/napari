@@ -83,7 +83,7 @@ types-pyyaml==6.0.12.20240917
     # via -r napari_repo/resources/requirements_mypy.in
 types-requests==2.32.0.20241016
     # via -r napari_repo/resources/requirements_mypy.in
-types-setuptools==75.3.0.20241107
+types-setuptools==75.5.0.20241116
     # via -r napari_repo/resources/requirements_mypy.in
 typing-extensions==4.12.2
     # via
