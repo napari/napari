@@ -1786,9 +1786,9 @@ class Window:
                 self.screenshot(path=path, canvas_only=True, scale=scale)
             )
 
-            canvas.size = prev_size
-            camera.center = start_camera_center
-            camera.zoom = start_camera_zoom
+        canvas.size = prev_size
+        camera.center = start_camera_center
+        camera.zoom = start_camera_zoom
 
         return screenshot_list
 
