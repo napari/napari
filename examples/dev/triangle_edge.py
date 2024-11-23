@@ -31,15 +31,19 @@ from napari.layers.shapes._shapes_utils import generate_2D_edge_meshes
 
 
 def generate_regular_polygon(n, radius=1):
-    """
-    Generates the vertices of a regular n-sided polygon centered at the origin.
+    """Generate vertices of a regular n-sided polygon centered at the origin.
 
-    Parameters:
-    n (int): The number of sides (vertices).
-    radius (float): The radius of the circumscribed circle. Default is 1.
+    Parameters
+    ----------
+    n : int
+        The number of sides (vertices).
+    radius : float, optional
+        The radius of the circumscribed circle.
 
-    Returns:
-    np.ndarray: An array of shape (n, 2) containing the vertices coordinates.
+    Returns
+    -------
+    np.ndarray
+        An array of shape (n, 2) containing the vertex coordinates.
     """
     angles = np.linspace(0, 2 * np.pi, n, endpoint=False)
     return np.column_stack((radius * np.cos(angles), radius * np.sin(angles)))
