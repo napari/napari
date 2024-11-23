@@ -7,7 +7,6 @@ from weakref import WeakSet
 import magicgui as mgui
 import numpy as np
 
-import napari
 from napari.components.viewer_model import ViewerModel
 from napari.utils import _magicgui
 
@@ -268,6 +267,3 @@ def current_viewer() -> Optional[Viewer]:
         return None
     else:
         return _QtMainWindow.current_viewer()
-
-
-viewer = napari.Viewer()

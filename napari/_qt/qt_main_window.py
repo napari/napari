@@ -1777,6 +1777,8 @@ class Window:
             if x1 > x2 or y1 > y2:
                 raise ValueError('ROI shape error')
             center_coord, height, width = get_center_bbox(shape)
+            # Note: camera.center is float and canvas.size is integer
+            # please test for proper alignment
             camera.center = center_coord
             canvas.size = (int(height), int(width))
 
