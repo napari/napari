@@ -271,23 +271,3 @@ def current_viewer() -> Optional[Viewer]:
 
 
 viewer = napari.Viewer()
-
-
-def get_center_bbox(shape):
-    """Get the center coordinate, height, width of the shape roi
-
-    Parameters
-    ----------
-    shapes : napari.layers.shape
-           A napari shapes layer
-
-    Returns
-    -------
-    center coords, height and width of shape: float
-           The center coordinates, height and widht of shape roi
-    """
-    height, width = shape.max(axis=0) - shape.min(axis=0)
-    min_y, min_x = shape.min(axis=0)
-    center_coords = [min_y + height / 2, min_x + width / 2]
-
-    return center_coords, height, width
