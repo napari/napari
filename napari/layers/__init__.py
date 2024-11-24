@@ -17,7 +17,7 @@ from napari.layers.tracks import Tracks
 from napari.layers.vectors import Vectors
 from napari.utils.misc import all_subclasses as _all_subcls
 
-# isabstact check is to exclude _ImageBase class
+# isabstract check is to exclude _ImageBase class
 NAMES: set[str] = {
     subclass.__name__.lower()
     for subclass in _all_subcls(Layer)

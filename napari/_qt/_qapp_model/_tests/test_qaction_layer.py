@@ -20,7 +20,7 @@ from napari.layers.base._test_util_sample_layer import SampleLayer
 from napari.utils.transforms import Affine
 
 
-@pytest.fixture()
+@pytest.fixture
 def layer_list():
     layer_1 = SampleLayer(
         data=np.empty((10, 10)),
@@ -55,7 +55,7 @@ def layer_list():
     return ll
 
 
-@pytest.fixture()
+@pytest.fixture
 def layer_list_dim():
     layer_1 = SampleLayer(
         data=np.empty((5, 10, 10)),

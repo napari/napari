@@ -34,7 +34,7 @@ from qtpy.QtCore import (
     Qt,
     Slot,
 )
-from qtpy.QtGui import QIcon
+from qtpy.QtGui import QHideEvent, QIcon, QShowEvent
 from qtpy.QtWidgets import (
     QApplication,
     QDialog,
@@ -46,7 +46,6 @@ from qtpy.QtWidgets import (
     QToolTip,
     QWidget,
 )
-from superqt.utils import QSignalThrottler
 
 from napari._app_model.constants import MenuId
 from napari._app_model.context import create_context, get_context
@@ -63,11 +62,12 @@ from napari._qt.dialogs.qt_activity_dialog import QtActivityDialog
 from napari._qt.dialogs.qt_notification import NapariQtNotification
 from napari._qt.qt_event_loop import (
     NAPARI_ICON_PATH,
-    get_app,
+    get_qapp,
     quit_app as quit_app_,
 )
 from napari._qt.qt_resources import get_stylesheet
 from napari._qt.qt_viewer import QtViewer
+from napari._qt.threads.status_checker import StatusChecker
 from napari._qt.utils import QImg2array, qbytearray_to_str, str_to_qbytearray
 from napari._qt.widgets.qt_viewer_dock_widget import (
     _SHORTCUT_DEPRECATION_STRING,
@@ -82,6 +82,7 @@ from napari.plugins._npe2 import index_npe1_adapters
 from napari.settings import get_settings
 from napari.utils import perf
 from napari.utils._proxies import PublicOnlyProxy
+from napari.utils.events import Event
 from napari.utils.geometry import get_center_bbox
 from napari.utils.io import imsave
 from napari.utils.misc import (
@@ -146,7 +147,6 @@ class _QtMainWindow(QMainWindow):
         self.setWindowTitle(self._qt_viewer.viewer.title)
 
         self._maximized_flag = False
-        self._fullscreen_flag = False
         self._normal_geometry = QRect()
         self._window_size = None
         self._window_pos = None
@@ -196,21 +196,50 @@ class _QtMainWindow(QMainWindow):
         # were defined somewhere in the `_qt` module and imported in init_qactions
         init_qactions()
 
-        self.status_throttler = QSignalThrottler(parent=self)
-        self.status_throttler.setTimeout(50)
-        self._throttle_cursor_to_status_connection(viewer)
-
-    def _throttle_cursor_to_status_connection(self, viewer: Viewer):
-        # In the GUI we expect lots of changes to the cursor position, so
-        # replace the direct connection with a throttled one.
         with contextlib.suppress(IndexError):
             viewer.cursor.events.position.disconnect(
-                viewer._update_status_bar_from_cursor
+                viewer.update_status_from_cursor
             )
-        viewer.cursor.events.position.connect(self.status_throttler.throttle)
-        self.status_throttler.triggered.connect(
-            viewer._update_status_bar_from_cursor
+
+        self.status_thread = StatusChecker(viewer, parent=self)
+        self.status_thread.status_and_tooltip_changed.connect(
+            self.set_status_and_tooltip
         )
+        viewer.cursor.events.position.connect(
+            self.status_thread.trigger_status_update
+        )
+        settings.appearance.events.update_status_based_on_layer.connect(
+            self._toggle_status_thread
+        )
+
+    def _toggle_status_thread(self, event: Event):
+        if event.value:
+            self.status_thread.start()
+        else:
+            self.status_thread.terminate()
+
+    def showEvent(self, event: QShowEvent):
+        """Override to handle window state changes."""
+        settings = get_settings()
+        if settings.appearance.update_status_based_on_layer:
+            self.status_thread.start()
+        super().showEvent(event)
+
+    def hideEvent(self, event: QHideEvent):
+        self.status_thread.terminate()
+        super().hideEvent(event)
+
+    def set_status_and_tooltip(
+        self, status_and_tooltip: Optional[tuple[Union[str, dict], str]]
+    ):
+        if status_and_tooltip is None:
+            return
+        self._qt_viewer.viewer.status = status_and_tooltip[0]
+        self._qt_viewer.viewer.tooltip.text = status_and_tooltip[1]
+        if (
+            active := self._qt_viewer.viewer.layers.selection.active
+        ) is not None:
+            self._qt_viewer.viewer.help = active.help
 
     def statusBar(self) -> ViewerStatusBar:
         return super().statusBar()
@@ -252,62 +281,26 @@ class _QtMainWindow(QMainWindow):
 
         return res
 
-    def isFullScreen(self):
-        # Needed to prevent errors when going to fullscreen mode on Windows
-        # Use a flag attribute to determine if the window is in full screen mode
-        # See https://bugreports.qt.io/browse/QTBUG-41309
-        # Based on https://github.com/spyder-ide/spyder/pull/7720
-        return self._fullscreen_flag
-
-    def showNormal(self):
-        # Needed to prevent errors when going to fullscreen mode on Windows. Here we:
-        #   * Set fullscreen flag
-        #   * Remove `Qt.FramelessWindowHint` and `Qt.WindowStaysOnTopHint` window flags if needed
-        #   * Set geometry to previously stored normal geometry or default empty QRect
-        # Always call super `showNormal` to set Qt window state
-        # See https://bugreports.qt.io/browse/QTBUG-41309
-        # Based on https://github.com/spyder-ide/spyder/pull/7720
-        self._fullscreen_flag = False
-        if os.name == 'nt':
-            self.setWindowFlags(
-                self.windowFlags()
-                ^ (
-                    Qt.WindowType.FramelessWindowHint
-                    | Qt.WindowType.WindowStaysOnTopHint
-                )
-            )
-            self.setGeometry(self._normal_geometry)
-        super().showNormal()
-
     def showFullScreen(self):
-        # Needed to prevent errors when going to fullscreen mode on Windows. Here we:
-        #   * Set fullscreen flag
-        #   * Add `Qt.FramelessWindowHint` and `Qt.WindowStaysOnTopHint` window flags if needed
-        #   * Call super `showNormal` to update the normal screen geometry to apply it later if needed
-        #   * Save window normal geometry if needed
-        #   * Get screen geometry
-        #   * Set geometry window to use total screen geometry +1 in every direction if needed
-        # If the workaround is not needed just call super `showFullScreen`
-        # See https://bugreports.qt.io/browse/QTBUG-41309
-        # Based on https://github.com/spyder-ide/spyder/pull/7720
-        self._fullscreen_flag = True
-        if os.name == 'nt':
-            self.setWindowFlags(
-                self.windowFlags()
-                | Qt.WindowType.FramelessWindowHint
-                | Qt.WindowType.WindowStaysOnTopHint
+        super().showFullScreen()
+        # Handle OpenGL based windows fullscreen issue on Windows.
+        # For more info see:
+        #  * https://doc.qt.io/qt-6/windows-issues.html#fullscreen-opengl-based-windows
+        #  * https://bugreports.qt.io/browse/QTBUG-41309
+        #  * https://bugreports.qt.io/browse/QTBUG-104511
+        if os.name != 'nt':
+            return
+        import win32con
+        import win32gui
+
+        if self.windowHandle():
+            handle = int(self.windowHandle().winId())
+            win32gui.SetWindowLong(
+                handle,
+                win32con.GWL_STYLE,
+                win32gui.GetWindowLong(handle, win32con.GWL_STYLE)
+                | win32con.WS_BORDER,
             )
-            super().showNormal()
-            self._normal_geometry = self.normalGeometry()
-            screen_rect = self.windowHandle().screen().geometry()
-            self.setGeometry(
-                screen_rect.left() - 1,
-                screen_rect.top() - 1,
-                screen_rect.width() + 2,
-                screen_rect.height() + 2,
-            )
-        else:
-            super().showFullScreen()
 
     def eventFilter(self, source, event):
         # Handle showing hidden menubar on mouse move event.
@@ -448,8 +441,6 @@ class _QtMainWindow(QMainWindow):
 
     def close(self, quit_app=False, confirm_need=False):
         """Override to handle closing app or just the window."""
-        if hasattr(self.status_throttler, '_timer'):
-            self.status_throttler._timer.stop()
         if not quit_app and not self._qt_viewer.viewer.layers:
             return super().close()
         confirm_need_local = confirm_need and self._is_close_dialog[quit_app]
@@ -574,6 +565,9 @@ class _QtMainWindow(QMainWindow):
             event.ignore()
             return
 
+        self.status_thread.terminate()
+        self.status_thread.wait()
+
         if self._ev and self._ev.isRunning():
             self._ev.quit()
 
@@ -652,7 +646,7 @@ class Window:
 
     def __init__(self, viewer: Viewer, *, show: bool = True) -> None:
         # create QApplication if it doesn't already exist
-        qapp = get_app()
+        qapp = get_qapp()
 
         # Dictionary holding dock widgets
         self._dock_widgets: MutableMapping[str, QtViewerDockWidget] = (
@@ -685,10 +679,7 @@ class Window:
         # **and** the layerlist context key are available when we update
         # menus. We need a single context to contain all keys required for
         # menu update, so we add them to the layerlist context for now.
-        if self._qt_viewer._layers is not None:
-            add_dummy_actions(
-                self._qt_viewer._layers.model().sourceModel()._root._ctx
-            )
+        add_dummy_actions(self._qt_viewer.viewer.layers._ctx)
         self._update_theme()
         self._update_theme_font_size()
         get_settings().appearance.events.theme.connect(self._update_theme)
@@ -831,7 +822,7 @@ class Window:
 
     def _update_menu_state(self, menu: MenuStr):
         """Update enabled/visible state of menu item with context."""
-        layerlist = self._qt_viewer._layers.model().sourceModel()._root
+        layerlist = self._qt_viewer.viewer.layers
         menu_model = getattr(self, menu)
         menu_model.update_from_context(get_context(layerlist))
 
@@ -1090,7 +1081,7 @@ class Window:
         widget: Union[QWidget, Widget],
         *,
         name: str = '',
-        area: str = 'right',
+        area: Optional[str] = None,
         allowed_areas: Optional[Sequence[str]] = None,
         shortcut=_sentinel,
         add_vertical_stretch=True,
@@ -1146,6 +1137,12 @@ class Window:
             )
 
             self._unnamed_dockwidget_count += 1
+
+        if area is None:
+            settings = get_settings()
+            area = settings.application.plugin_widget_positions.get(
+                name, 'right'
+            )
 
         if shortcut is not _sentinel:
             warnings.warn(
@@ -1207,7 +1204,7 @@ class Window:
         menu : QMenu, optional
             Menu bar to add toggle action to. If `None` nothing added to menu.
         """
-        # Find if any othe dock widgets are currently in area
+        # Find if any other dock widgets are currently in area
         current_dws_in_area = [
             dw
             for dw in self._qt_window.findChildren(QDockWidget)
@@ -1480,7 +1477,7 @@ class Window:
         # B) it is not the first time a QMainWindow is being created
 
         # `app_name` will be "napari" iff the application was instantiated in
-        # get_app(). isActiveWindow() will be True if it is the second time a
+        # get_qapp(). isActiveWindow() will be True if it is the second time a
         # _qt_window has been created.
         # See #721, #732, #735, #795, #1594
         app_name = QApplication.instance().applicationName()
@@ -1521,11 +1518,13 @@ class Window:
                     {'font_size': f'{settings.appearance.font_size}pt'}
                 )
             # set the style sheet with the theme name and extra_variables
-            self._qt_window.setStyleSheet(
-                get_stylesheet(
-                    actual_theme_name, extra_variables=extra_variables
-                )
+            style_sheet = get_stylesheet(
+                actual_theme_name, extra_variables=extra_variables
             )
+            self._qt_window.setStyleSheet(style_sheet)
+            self._qt_viewer.setStyleSheet(style_sheet)
+            if self._qt_viewer._console:
+                self._qt_viewer._console._update_theme(style_sheet=style_sheet)
 
     def _status_changed(self, event):
         """Update status bar.

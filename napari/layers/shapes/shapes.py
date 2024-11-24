@@ -30,6 +30,7 @@ from napari.layers.shapes._shapes_constants import (
     shape_classes,
 )
 from napari.layers.shapes._shapes_mouse_bindings import (
+    _set_highlight,
     add_ellipse,
     add_line,
     add_path_polygon,
@@ -612,6 +613,8 @@ class Shapes(Layer):
         )
 
         # Trigger generation of view slice and thumbnail
+        self.mouse_wheel_callbacks.append(_set_highlight)
+        self.mouse_drag_callbacks.append(_set_highlight)
         self.refresh()
 
     def _initialize_current_color_for_empty_layer(
@@ -667,6 +670,7 @@ class Shapes(Layer):
     @data.setter
     def data(self, data):
         self._finish_drawing()
+        self.selected_data = set()
         prior_data = len(self.data) > 0
         data, shape_type = extract_shape_type(data)
         n_new_shapes = number_of_shapes(data)
@@ -1288,6 +1292,8 @@ class Shapes(Layer):
                 with self.block_update_properties():
                     self.current_properties = unique_properties
 
+        self._set_highlight()
+
     @property
     def _is_moving(self) -> bool:
         return self._private_is_moving
@@ -1712,12 +1718,15 @@ class Shapes(Layer):
         }
 
         # don't update thumbnail on mode changes
-        with self.block_thumbnail_update():
-            if not (mode in draw_modes and self._mode in draw_modes):
-                # Shapes._finish_drawing() calls Shapes.refresh()
+        if not (mode in draw_modes and self._mode in draw_modes):
+            # Shapes._finish_drawing() calls Shapes.refresh() via Shapes._update_dims()
+            # so we need to block thumbnail update from here
+            # TODO: this is not great... ideally we should no longer need this blocking system
+            #       but maybe follow up PR
+            with self.block_thumbnail_update():
                 self._finish_drawing()
-            else:
-                self.refresh()
+        else:
+            self.refresh(data_displayed=False, extent=False, thumbnail=False)
 
     def _reset_editable(self) -> None:
         self.editable = self._slice_input.ndisplay == 2
@@ -2396,7 +2405,7 @@ class Shapes(Layer):
 
     def interaction_box(self, index):
         """Create the interaction box around a shape or list of shapes.
-        If a single index is passed then the boudning box will be inherited
+        If a single index is passed then the bounding box will be inherited
         from that shapes interaction box. If list of indices is passed it will
         be computed directly.
 
@@ -2457,8 +2466,10 @@ class Shapes(Layer):
             Mx3 array of any indices of vertices for triangles of outline or
             None
         """
-        if self._value is not None and (
-            self._value[0] is not None or len(self.selected_data) > 0
+        if (
+            self._highlight_visible
+            and self._value is not None
+            and (self._value[0] is not None or len(self.selected_data) > 0)
         ):
             if len(self.selected_data) > 0:
                 index = list(self.selected_data)
@@ -2499,9 +2510,9 @@ class Shapes(Layer):
         width : float
             Width of the box edge
         """
-        if len(self.selected_data) > 0:
+        if self._highlight_visible and len(self.selected_data) > 0:
             if self._mode == Mode.SELECT:
-                # If in select mode just show the interaction boudning box
+                # If in select mode just show the interaction bounding box
                 # including its vertices and the rotation handle
                 box = self._selected_box[Box.WITH_HANDLE]
                 if self._value[0] is None or self._value[1] is None:
@@ -2550,7 +2561,7 @@ class Shapes(Layer):
                 edge_color = 'white'
                 pos = None
                 width = 0
-        elif self._is_selecting:
+        elif self._highlight_visible and self._is_selecting:
             # If currently dragging a selection box just show an outline of
             # that box
             vertices = np.empty((0, 2))
@@ -2784,16 +2795,6 @@ class Shapes(Layer):
             box[Box.HANDLE] = box[Box.TOP_CENTER] + r * handle_vec / cur_len
         self._selected_box = box + center
 
-    def _update_draw(
-        self, scale_factor, corner_pixels_displayed, shape_threshold
-    ):
-        prev_scale = self.scale_factor
-        super()._update_draw(
-            scale_factor, corner_pixels_displayed, shape_threshold
-        )
-        # update highlight only if scale has changed, otherwise causes a cycle
-        self._set_highlight(force=(prev_scale != self.scale_factor))
-
     def _get_value(self, position):
         """Value of the data at a position in data coordinates.
 
@@ -3008,7 +3009,7 @@ class Shapes(Layer):
         new_z_index = max(self._data_view._z_index) + 1
         for index in self.selected_data:
             self._data_view.update_z_index(index, new_z_index)
-        self.refresh()
+        self.refresh(extent=False, highlight=False)
 
     def move_to_back(self) -> None:
         """Moves selected objects to be displayed behind all others."""
@@ -3017,7 +3018,7 @@ class Shapes(Layer):
         new_z_index = min(self._data_view._z_index) - 1
         for index in self.selected_data:
             self._data_view.update_z_index(index, new_z_index)
-        self.refresh()
+        self.refresh(extent=False, highlight=False)
 
     def _copy_data(self) -> None:
         """Copy selected shapes to clipboard."""

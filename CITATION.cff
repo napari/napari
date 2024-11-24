@@ -23,6 +23,7 @@ authors:
 - given-names: Juan
   family-names: Nunez-Iglesias
   affiliation: Monash eResearch Centre, Monash University
+  orcid: https://orcid.org/0000-0002-7239-5828
   alias: jni
 - given-names: Peter
   family-names: Sobolewski
@@ -324,5 +325,10 @@ authors:
   family-names: Winston
   affiliation: Tobeva Software
   alias: pwinston
+- given-names: Rubin
+  family-names: Zhao
+  affiliation: Chinese Academy of Sciences - SIAT, Shenzhen, China
+  orcid: https://orcid.org/0009-0005-8264-5682
+  alias: BeanLi
 repository-code: https://github.com/napari/napari
 license: BSD-3-Clause
