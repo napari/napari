@@ -108,7 +108,7 @@ def _merge_layer_viewer_sigs_docs(func):
         'return': Viewer,
     }
 
-    # _forwardrefns_ is used by stubgen.py to populate the globalns
+    # _forwardrefns_ is used by stubgen.py to populate the globals
     # when evaluate forward references with get_type_hints
     func._forwardrefns_ = {**add_method.__globals__}
     return func

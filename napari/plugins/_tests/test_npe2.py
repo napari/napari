@@ -19,7 +19,7 @@ PLUGIN_DISPLAY_NAME = 'My Plugin'  # this matches the sample_manifest
 MANIFEST_PATH = Path(__file__).parent / '_sample_manifest.yaml'
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_pm(npe2pm: 'TestPluginManager'):
     from napari.plugins import _initialize_plugins
 
@@ -177,11 +177,11 @@ def test_widget_iterator(mock_pm):
     assert wdgs == [('dock', (PLUGIN_NAME, ['My Widget']))]
 
 
-def test_plugin_actions(mock_pm: 'TestPluginManager', mock_app):
-    from napari._app_model import get_app
+def test_plugin_actions(mock_pm: 'TestPluginManager', mock_app_model):
+    from napari._app_model import get_app_model
     from napari.plugins import _initialize_plugins
 
-    app = get_app()
+    app = get_app_model()
     # nothing yet registered with this menu
     assert 'napari/file/new_layer' not in app.menus
     # menus_items1 = list(app.menus.get_menu('napari/file/new_layer'))

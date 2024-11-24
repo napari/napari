@@ -14,3 +14,9 @@ class CoerceSymbolsSuite:
 
     def time_coerce_symbols2(self):
         coerce_symbols(self.symbols2)
+
+
+if __name__ == '__main__':
+    from utils import run_benchmark
+
+    run_benchmark()

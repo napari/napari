@@ -16,7 +16,7 @@ from napari.utils.interactions import (
 )
 
 
-@pytest.fixture()
+@pytest.fixture
 def create_known_shapes_layer():
     """Create shapes layer with known coordinates
 
@@ -700,6 +700,75 @@ def test_after_in_add_mode_shape(mode, create_known_shapes_layer):
     # Check no new shape added and non selected
     assert len(layer.data) == n_shapes
     assert len(layer.selected_data) == 0
+
+
+@pytest.mark.parametrize(
+    'mode',
+    [
+        'add_polygon',
+        'add_path',
+    ],
+)
+def test_clicking_the_same_point_is_not_crashing(
+    mode, create_known_shapes_layer
+):
+    layer, n_shapes, _ = create_known_shapes_layer
+
+    layer.mode = mode
+    position = tuple(layer.data[0][0])
+
+    for _ in range(2):
+        event = read_only_mouse_event(type='mouse_press', position=position)
+        mouse_press_callbacks(layer, event)
+
+        event = read_only_mouse_event(type='mouse_release', position=position)
+        mouse_release_callbacks(layer, event)
+
+    # If there was no move event between the two clicks, we expect value[1] must be None
+    assert layer.get_value(event.position, world=True)[1] is None
+
+
+@pytest.mark.parametrize(
+    'mode',
+    [
+        'add_polygon',
+        'add_path',
+    ],
+)
+def test_is_creating_is_false_on_creation(mode, create_known_shapes_layer):
+    layer, n_shapes, _ = create_known_shapes_layer
+
+    layer.mode = mode
+    position = tuple(layer.data[0][0])
+
+    def is_creating_is_True(event):
+        assert event.source._is_creating
+
+    def is_creating_is_False(event):
+        assert not event.source._is_creating
+
+    assert not layer._is_creating
+    layer.events.set_data.connect(is_creating_is_True)
+
+    event = read_only_mouse_event(type='mouse_press', position=position)
+    mouse_press_callbacks(layer, event)
+
+    assert layer._is_creating
+
+    event = read_only_mouse_event(type='mouse_release', position=position)
+    mouse_release_callbacks(layer, event)
+
+    assert layer._is_creating
+
+    layer.events.set_data.disconnect(is_creating_is_True)
+    layer.events.set_data.connect(is_creating_is_False)
+    end_click = read_only_mouse_event(
+        type='mouse_double_click',
+        position=position,
+    )
+    mouse_double_click_callbacks(layer, end_click)
+
+    assert not layer._is_creating
 
 
 @pytest.mark.parametrize('mode', ['select', 'direct'])

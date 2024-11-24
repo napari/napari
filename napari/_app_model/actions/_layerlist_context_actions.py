@@ -96,6 +96,17 @@ LAYERLIST_CONTEXT_ACTIONS: list[Action] = [
         enablement=LLSCK.active_layer_is_rgb,
     ),
     Action(
+        id='napari.layer.merge_rgb',
+        title=trans._('Merge to RGB'),
+        callback=partial(_layer_actions._merge_stack, rgb=True),
+        enablement=(
+            (LLSCK.num_selected_layers == 3)
+            & (LLSCK.num_selected_image_layers == LLSCK.num_selected_layers)
+            & LLSCK.all_selected_layers_same_shape
+        ),
+        menus=[LAYERCTX_SPLITMERGE],
+    ),
+    Action(
         id='napari.layer.convert_to_labels',
         title=trans._('Convert to Labels'),
         callback=_layer_actions._convert_to_labels,

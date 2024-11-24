@@ -1,6 +1,6 @@
 import pytest
 
-from napari._app_model import get_app
+from napari._app_model import get_app_model
 from napari._qt._qapp_model.qactions._window import toggle_action_details
 from napari._tests.utils import skip_local_popups
 
@@ -22,7 +22,7 @@ def test_toggle_dockwidget_actions(
     action_dockwidget_name,
     action_status_tooltip,
 ):
-    app = get_app()
+    app = get_app_model()
     viewer = make_napari_viewer(show=True)
     widget = getattr(viewer.window._qt_viewer, action_dockwidget_name)
     widget_initial_visibility = widget.isVisible()

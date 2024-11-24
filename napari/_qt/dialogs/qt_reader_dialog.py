@@ -237,7 +237,7 @@ def prepare_remaining_readers(
         raises previous error if no readers are left to try
     """
     readers = get_potential_readers(paths[0])
-    # remove plugin we already tried e.g. prefered plugin
+    # remove plugin we already tried e.g. preferred plugin
     if plugin_name in readers:
         del readers[plugin_name]
     # if there's no other readers left, raise the exception
@@ -294,8 +294,10 @@ def open_with_dialog_choices(
     qt_viewer.viewer.open(paths, stack=stack, plugin=plugin_name, **kwargs)
 
     if persist:
-        if not extension.endswith(os.sep):
-            extension = '*' + extension
+        if not os.path.isabs(extension):
+            extension = f'*{extension}'
+        elif os.path.isdir(extension) and not extension.endswith(os.sep):
+            extension += os.sep
         get_settings().plugins.extension2reader = {
             **get_settings().plugins.extension2reader,
             extension: plugin_name,
