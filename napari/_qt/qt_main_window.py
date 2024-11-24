@@ -1739,6 +1739,12 @@ class Window:
     ):
         """Export the shapes rois with storage file paths.
 
+        For each shape, moves the camera to the center of the shape
+        and adjust the canvas size to fit the shape.
+        Note: The shape height and width can be of type float.
+        However, the canvas size only accepts a tuple of integers.
+        This can result in slight misalignment.
+
         Parameters
         ----------
         rois: np.ndarray
@@ -1777,8 +1783,6 @@ class Window:
             if x1 > x2 or y1 > y2:
                 raise ValueError('ROI shape error')
             center_coord, height, width = get_center_bbox(shape)
-            # Note: camera.center is float and canvas.size is integer
-            # please test for proper alignment
             camera.center = center_coord
             canvas.size = (int(height), int(width))
 
