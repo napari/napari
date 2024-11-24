@@ -49,17 +49,32 @@ def generate_regular_polygon(n, radius=1):
     return np.column_stack((radius * np.cos(angles), radius * np.sin(angles)))
 
 
-# @numba.njit
 def generate_order_vectors(path_, closed) -> np.ndarray:
-    """Generate the vectors tangent to the path."""
-    n = path_[1:] - path_[:-1]
-    norm = np.linalg.norm(n, axis=1, keepdims=True)
-    normals = n / norm
+    """Generate the vectors tangent to the path.
+
+    Parameters
+    ----------
+    path_ : np.ndarray, shape (N, 2)
+        A list of 2D path coordinates.
+    closed : bool
+        Whether the coordinates represent a closed polygon or an open
+        line/path.
+
+    Returns
+    -------
+    vec : np.ndarray, shape (N, 2, 2)
+        A set of vectors, defined by a 2D position and a 2D projection.
+    """
+    raw_vecs = np.diff(path_, axis=0)
+    norm = np.linalg.norm(raw_vecs, axis=1, keepdims=True)
+    normals = raw_vecs / norm
     vec = np.empty((path_.shape[0], 2, 2))
     vec[:, 0] = path_
     vec[:-1, 1] = normals
     if closed:
-        vec[-1, 1] = (path_[0] - path_[-1]) / np.linalg.norm(path_[-1] - path_[0])
+        vec[-1, 1] = (
+                (path_[0] - path_[-1]) / np.linalg.norm(path_[-1] - path_[0])
+                )
     else:
         vec[-1, 1] = -vec[-2, 1]
     return vec
