@@ -72,6 +72,11 @@ def _focus_changed(old: Optional[QWidget], new: Optional[QWidget]):
     else:
         start_timer = False
         window = old.window()
+
+    from napari._qt.qt_main_window import _QtMainWindow
+
+    if not isinstance(window, _QtMainWindow):
+        return
     notifications = cast(
         list[NapariQtNotification], window.findChildren(NapariQtNotification)
     )
