@@ -10,8 +10,12 @@ from napari._qt.layer_controls.widgets.qt_brush_size_slider import (
 from napari._qt.layer_controls.widgets.qt_color_mode_combobox import (
     QtColorModeComboBoxControl,
 )
+from napari._qt.layer_controls.widgets.qt_color_properties_combobox import (
+    QtColorPropertiesComboBoxControl,
+)
 from napari._qt.layer_controls.widgets.qt_colormap_control import (
     QtColormapControl,
+    QtSimpleColormapComboBoxControl,
 )
 from napari._qt.layer_controls.widgets.qt_contiguous_checkbox import (
     QtContiguousCheckBoxControl,
@@ -42,6 +46,15 @@ from napari._qt.layer_controls.widgets.qt_face_color import QtFaceColorControl
 from napari._qt.layer_controls.widgets.qt_gamma_slider import (
     QtGammaSliderControl,
 )
+from napari._qt.layer_controls.widgets.qt_graph_checkbox import (
+    QtGraphCheckBoxControl,
+)
+from napari._qt.layer_controls.widgets.qt_head_slider import (
+    QtHeadLengthSliderControl,
+)
+from napari._qt.layer_controls.widgets.qt_id_checkbox import (
+    QtIdCheckBoxControl,
+)
 from napari._qt.layer_controls.widgets.qt_interpolation_combobox import (
     QtInterpolationComboBoxControl,
 )
@@ -71,6 +84,11 @@ from napari._qt.layer_controls.widgets.qt_shading_combobox import (
 )
 from napari._qt.layer_controls.widgets.qt_symbol_combobox import (
     QtSymbolComboBoxControl,
+)
+from napari._qt.layer_controls.widgets.qt_tail_control import (
+    QtTailDisplayCheckBoxControl,
+    QtTailLengthSliderControl,
+    QtTailWidthSliderControl,
 )
 from napari._qt.layer_controls.widgets.qt_text_visibility import (
     QtTextVisibilityControl,
@@ -114,4 +132,12 @@ __all__ = [
     'QtVectorStyleComboBoxControl',
     'QtWidthSpinBoxControl',
     'QtLengthSpinBoxControl',
+    'QtColorPropertiesComboBoxControl',
+    'QtSimpleColormapComboBoxControl',
+    'QtHeadLengthSliderControl',
+    'QtTailLengthSliderControl',
+    'QtTailWidthSliderControl',
+    'QtTailDisplayCheckBoxControl',
+    'QtIdCheckBoxControl',
+    'QtGraphCheckBoxControl',
 ]
