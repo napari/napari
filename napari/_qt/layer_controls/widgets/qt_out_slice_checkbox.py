@@ -1,5 +1,3 @@
-from typing import Optional
-
 from qtpy.QtWidgets import (
     QCheckBox,
     QWidget,
@@ -34,9 +32,7 @@ class QtOutSliceCheckBoxControl(QtWidgetControlsBase):
             Label for the out of slice display enablement chooser widget.
     """
 
-    def __init__(
-        self, parent: QWidget, layer: Layer, tooltip: Optional[str] = None
-    ) -> None:
+    def __init__(self, parent: QWidget, layer: Layer) -> None:
         super().__init__(parent, layer)
         # Setup layer
         self._layer.events.out_of_slice_display.connect(
@@ -64,6 +60,10 @@ class QtOutSliceCheckBoxControl(QtWidgetControlsBase):
             self._on_out_of_slice_display_change
         ):
             self._layer.out_of_slice_display = bool(state)
+            # Another alternative is:
+            # self.layer.out_of_slice_display = (
+            #     Qt.CheckState(state) == Qt.CheckState.Checked
+            # )
 
     def _on_out_of_slice_display_change(self) -> None:
         """Receive layer model out_of_slice_display change event and update checkbox."""

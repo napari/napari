@@ -485,6 +485,8 @@ module = [
     'napari._qt.layer_controls.widgets.qt_shading_combobox',
     'napari._qt.layer_controls.widgets.qt_interpolation_combobox',
     'napari._qt.layer_controls.widgets.qt_depiction_control',
+    'napari._qt.layer_controls.widgets.qt_vector_style_combobox',
+    'napari._qt.layer_controls.widgets.qt_line_dimension_spinbox',
     'napari._qt.menus._util',
     'napari._qt.menus.file_menu',
     'napari._qt.perf.qt_event_tracing',

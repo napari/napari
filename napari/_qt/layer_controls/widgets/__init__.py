@@ -31,7 +31,10 @@ from napari._qt.layer_controls.widgets.qt_depiction_control import (
 from napari._qt.layer_controls.widgets.qt_display_selected_label_checkbox import (
     QtDisplaySelectedLabelCheckBoxControl,
 )
-from napari._qt.layer_controls.widgets.qt_edge_color import QtEdgeColorControl
+from napari._qt.layer_controls.widgets.qt_edge_color import (
+    QtEdgeColorControl,
+    QtEdgeColorPropertyControl,
+)
 from napari._qt.layer_controls.widgets.qt_edge_width_slider import (
     QtEdgeWidthSliderControl,
 )
@@ -43,6 +46,10 @@ from napari._qt.layer_controls.widgets.qt_interpolation_combobox import (
     QtInterpolationComboBoxControl,
 )
 from napari._qt.layer_controls.widgets.qt_label_color import QtLabelControl
+from napari._qt.layer_controls.widgets.qt_line_dimension_spinbox import (
+    QtLengthSpinBoxControl,
+    QtWidthSpinBoxControl,
+)
 from napari._qt.layer_controls.widgets.qt_ndim_spinbox import (
     QtNdimSpinBoxControl,
 )
@@ -67,6 +74,9 @@ from napari._qt.layer_controls.widgets.qt_symbol_combobox import (
 )
 from napari._qt.layer_controls.widgets.qt_text_visibility import (
     QtTextVisibilityControl,
+)
+from napari._qt.layer_controls.widgets.qt_vector_style_combobox import (
+    QtVectorStyleComboBoxControl,
 )
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
@@ -100,4 +110,8 @@ __all__ = [
     'QtImageRenderControl',
     'QtDepictionControl',
     'QtWidgetControlsBase',
+    'QtEdgeColorPropertyControl',
+    'QtVectorStyleComboBoxControl',
+    'QtWidthSpinBoxControl',
+    'QtLengthSpinBoxControl',
 ]

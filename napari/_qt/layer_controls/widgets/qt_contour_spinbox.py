@@ -32,7 +32,7 @@ class QtContourSpinBoxControl(QtWidgetControlsBase):
     ----------
         contourSpinBox : superqt.QLargeSpinBox
             Spinbox to control the layer contour thickness.
-        ndimSpinBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        contourSpinBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
             Label for the layer contour thickness chooser widget.
     """
 
