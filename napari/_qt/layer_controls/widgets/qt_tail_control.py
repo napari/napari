@@ -61,7 +61,7 @@ class QtTailLengthSliderControl(QtWidgetControlsBase):
         """
         self._layer.tail_length = value
 
-    def _on_tail_length_change(self):
+    def _on_tail_length_change(self) -> None:
         """Receive layer model track line width change event and update slider."""
         with self._layer.events.tail_length.blocker():
             value = self._layer.tail_length
@@ -119,7 +119,7 @@ class QtTailWidthSliderControl(QtWidgetControlsBase):
         """
         self._layer.tail_width = float(value) / 2.0
 
-    def _on_tail_width_change(self):
+    def _on_tail_width_change(self) -> None:
         """Receive layer model track line width change event and update slider."""
         with self._layer.events.tail_width.blocker():
             value = int(2 * self._layer.tail_width)
@@ -161,7 +161,7 @@ class QtTailDisplayCheckBoxControl(QtWidgetControlsBase):
 
         self.tail_checkbox_label = QtWrappedLabel(trans._('tail:'))
 
-    def change_display_tail(self, state):
+    def change_display_tail(self, state: Qt.CheckState) -> None:
         self._layer.display_tail = self.tail_checkbox.isChecked()
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:

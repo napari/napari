@@ -489,7 +489,7 @@ module = [
     'napari._qt.layer_controls.widgets.qt_line_dimension_spinbox',
     'napari._qt.layer_controls.widgets.qt_color_properties_combobox',
     'napari._qt.layer_controls.widgets.qt_head_slider',
-    'napari._qt.layer_controls.widgets.qt_tail_controls',
+    'napari._qt.layer_controls.widgets.qt_tail_control',
     'napari._qt.layer_controls.widgets.qt_id_checkbox',
     'napari._qt.layer_controls.widgets.qt_graph_checkbox',
     'napari._qt.menus._util',
