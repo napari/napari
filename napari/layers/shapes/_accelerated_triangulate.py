@@ -32,10 +32,13 @@ def _calc_output_size(
 
     Notes
     -----
-    We use a miter limit instead of maximum miter length
-    for performance reasons.
-    This approach provides an equivalent check.
-    See note in generate_2D_edge_meshes
+    We use a cosine miter limit instead of maximum miter length for performance
+    reasons. The cosine miter limit is related to the miter length by the
+    following equation:
+
+    .. math::
+
+        c = \frac{1}{2 (l/2)^2} - 1 = \frac{2}{l^2} - 1
     """
     point_count = len(normals) * 2
     if closed:

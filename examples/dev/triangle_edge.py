@@ -79,11 +79,11 @@ def generate_order_vectors(path_, closed) -> np.ndarray:
         vec[-1, 1] = -vec[-2, 1]
     return vec
 
-# @numba.njit
+
 def generate_miter_helper_vectors(normal_vector_arr: np.ndarray) -> np.ndarray:
     """Generate the miter helper vectors.
 
-    for each point on the path, the miter helper vectors are pairs of vectors
+    For each point on the path, the miter helper vectors are pairs of vectors
     First vector is the normal vector scaled by 1/2
     Second vector is the normal vector of previous point scaled by -1/2
 
