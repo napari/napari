@@ -111,4 +111,4 @@ def current_source() -> Source:
 
     The main place this function is used is in :meth:`Layer.__init__`.
     """
-    return Source(**_LAYER_SOURCE.get())
+    return Source(**(_LAYER_SOURCE.get() or {}))
