@@ -19,7 +19,12 @@ notification_manager: napari.utils.notifications.NotificationManager
 
 __all__ = (
     'Viewer',
+    '__version__',
     'current_viewer',
+    'gui_qt',
+    'notification_manager',
+    'run',
+    'save_layers',
     'view_image',
     'view_labels',
     'view_path',
@@ -28,9 +33,4 @@ __all__ = (
     'view_surface',
     'view_tracks',
     'view_vectors',
-    'save_layers',
-    'gui_qt',
-    'run',
-    'notification_manager',
-    '__version__',
 )
