@@ -3,7 +3,7 @@ import itertools
 import time
 from collections import defaultdict
 from dataclasses import dataclass
-from tempfile import TemporaryDirectory
+from importlib.metadata import version
 
 import numpy as np
 import numpy.testing as npt
@@ -11,6 +11,7 @@ import pandas as pd
 import pytest
 import xarray as xr
 import zarr
+from packaging.version import parse as parse_version
 from skimage import data as sk_data
 
 from napari._tests.utils import check_layer_world_data_extent
@@ -1017,7 +1018,7 @@ def test_world_data_extent():
         'mode',
         'selected_label',
         'preserve_labels',
-        'n_dimensional',
+        'n_edit_dimensions',
     ),
     list(
         itertools.product(
@@ -1025,7 +1026,7 @@ def test_world_data_extent():
             ['fill', 'erase', 'paint'],
             [1, 20, 100],
             [True, False],
-            [True, False],
+            [3, 2],
         )
     ),
 )
@@ -1034,7 +1035,7 @@ def test_undo_redo(
     mode,
     selected_label,
     preserve_labels,
-    n_dimensional,
+    n_edit_dimensions,
 ):
     blobs = sk_data.binary_blobs(length=64, volume_fraction=0.3, n_dim=3)
     layer = Labels(blobs)
@@ -1043,7 +1044,7 @@ def test_undo_redo(
     layer.mode = mode
     layer.selected_label = selected_label
     layer.preserve_labels = preserve_labels
-    layer.n_edit_dimensions = 3 if n_dimensional else 2
+    layer.n_edit_dimensions = n_edit_dimensions
     coord = np.random.random((3,)) * (np.array(blobs.shape) - 1)
     while layer.data[tuple(coord.astype(int))] == 0 and np.any(layer.data):
         coord = np.random.random((3,)) * (np.array(blobs.shape) - 1)
@@ -1124,38 +1125,43 @@ def test_large_label_values():
     assert len(np.unique(mapped.reshape((-1, 4)), axis=0)) == 4
 
 
-def test_fill_tensorstore():
+if parse_version(version('zarr')) > parse_version('3.0.0a0'):
+    driver = [(2, 'zarr'), (3, 'zarr3')]
+else:
+    driver = [(2, 'zarr')]
+
+
+@pytest.mark.parametrize(('zarr_version', 'zarr_driver'), driver)
+def test_fill_tensorstore(tmp_path, zarr_version, zarr_driver):
     ts = pytest.importorskip('tensorstore')
 
     labels = np.zeros((5, 7, 8, 9), dtype=int)
     labels[1, 2:4, 4:6, 4:6] = 1
     labels[1, 3:5, 5:7, 6:8] = 2
     labels[2, 3:5, 5:7, 6:8] = 3
-    with TemporaryDirectory(suffix='.zarr') as fout:
-        labels_temp = zarr.open(
-            fout,
-            mode='w',
-            shape=labels.shape,
-            dtype=np.uint32,
-            chunks=(1, 1, 8, 9),
-        )
-        labels_temp[:] = labels
-        labels_ts_spec = {
-            'driver': 'zarr',
-            'kvstore': {'driver': 'file', 'path': fout},
-            'path': '',
-            'metadata': {
-                'dtype': labels_temp.dtype.str,
-                'order': labels_temp.order,
-                'shape': labels.shape,
-            },
-        }
-        data = ts.open(labels_ts_spec, create=False, open=True).result()
-        layer = Labels(data)
-        layer.n_edit_dimensions = 3
-        layer.fill((1, 4, 6, 7), 4)
-        modified_labels = np.where(labels == 2, 4, labels)
-        np.testing.assert_array_equal(modified_labels, np.asarray(data))
+
+    file_path = str(tmp_path / 'labels.zarr')
+
+    labels_temp = zarr.open(
+        store=file_path,
+        mode='w',
+        shape=labels.shape,
+        dtype=np.uint32,
+        chunks=(1, 1, 8, 9),
+        zarr_version=zarr_version,
+    )
+    labels_temp[:] = labels
+    labels_ts_spec = {
+        'driver': zarr_driver,
+        'kvstore': {'driver': 'file', 'path': file_path},
+        'path': '',
+    }
+    data = ts.open(labels_ts_spec, create=False, open=True).result()
+    layer = Labels(data)
+    layer.n_edit_dimensions = 3
+    layer.fill((1, 4, 6, 7), 4)
+    modified_labels = np.where(labels == 2, 4, labels)
+    np.testing.assert_array_equal(modified_labels, np.asarray(data))
 
 
 def test_fill_with_xarray():

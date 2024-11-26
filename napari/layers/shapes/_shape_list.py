@@ -722,6 +722,7 @@ class ShapeList:
                 self._mesh.vertices_index[indices, 0] - 1
             )
             self._update_z_order()
+        self._clear_cache()
 
     @_batch_dec
     def _update_mesh_vertices(self, index, edge=False, face=False):
@@ -756,6 +757,7 @@ class ShapeList:
             indices = self._index == index
             self._vertices[indices] = shape.data_displayed
             self._update_displayed()
+        self._clear_cache()
 
     @_batch_dec
     def _update_z_order(self):
@@ -1029,9 +1031,9 @@ class ShapeList:
 
         Parameters
         ----------
-        indices : int | list
-            Location in list of the shapes to be outline. If list must be a
-            list of int
+        indices : int | Sequence[int]
+            Location in list of the shapes to be outline.
+            If sequence, all elements should be ints
 
         Returns
         -------
@@ -1042,6 +1044,8 @@ class ShapeList:
         triangles : np.ndarray
             Mx3 array of any indices of vertices for triangles of outline
         """
+        if isinstance(indices, Sequence) and len(indices) == 1:
+            indices = indices[0]
         if not isinstance(indices, Sequence):
             shape = self.shapes[indices]
             return (
