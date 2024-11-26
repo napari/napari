@@ -774,9 +774,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     def visible(self, visible: bool) -> None:
         self._visible = visible
         if visible:
+            # needed to prevent enabling mouse pan outside the pan/zoom mode
+            self.mouse_pan = self.mode == self._modeclass.PAN_ZOOM  # type: ignore[attr-defined]
             # needed because things might have changed while invisible
             # and refresh is noop while invisible
             self.refresh(extent=False)
+        else:
+            # needed to enable mouse pan outside pan/zoom mode while the layer
+            # is not visible
+            self.mouse_pan = True
         self.events.visible()
 
     @property
