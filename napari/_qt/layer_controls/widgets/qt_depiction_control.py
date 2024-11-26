@@ -165,7 +165,9 @@ class QtDepictionControl(QtWidgetControlsBase):
         depiction = VolumeDepiction(self._layer.depiction)
         # TODO: Better way to handle the ndisplay value?
         visible = (
-            depiction == VolumeDepiction.PLANE and self.parent().ndisplay == 3
+            depiction == VolumeDepiction.PLANE
+            and self.parent().ndisplay == 3
+            and self._layer.ndim >= 3
         )
         self.planeNormalButtons.setVisible(visible)
         self.planeNormalLabel.setVisible(visible)
