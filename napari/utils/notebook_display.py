@@ -14,7 +14,7 @@ except ImportError:
 
 from napari.utils.io import imsave_png
 
-__all__ = ['nbscreenshot', 'NotebookScreenshot']
+__all__ = ['NotebookScreenshot', 'nbscreenshot']
 
 
 class NotebookScreenshot:

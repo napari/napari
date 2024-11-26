@@ -13,9 +13,9 @@ UnitsInfo = Union[None, pint.Unit, tuple[pint.Unit, ...]]
 
 
 __all__ = (
-    'get_units_from_name',
-    'UnitsLike',
     'UnitsInfo',
+    'UnitsLike',
+    'get_units_from_name',
 )
 
 

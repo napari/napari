@@ -714,8 +714,7 @@ class Shapes(Layer):
         data_not_empty = (
             data is not None
             and (isinstance(data, np.ndarray) and data.size > 0)
-            or (isinstance(data, list) and len(data) > 0)
-        )
+        ) or (isinstance(data, list) and len(data) > 0)
         kwargs = {
             'value': self.data,
             'vertex_indices': ((),),
