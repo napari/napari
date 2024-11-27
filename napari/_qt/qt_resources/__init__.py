@@ -4,7 +4,7 @@ from typing import Optional
 from napari._qt.qt_resources._svg import QColoredSVGIcon
 from napari.settings import get_settings
 
-__all__ = ['get_stylesheet', 'QColoredSVGIcon']
+__all__ = ['QColoredSVGIcon', 'get_stylesheet']
 
 
 STYLE_PATH = (Path(__file__).parent / 'styles').resolve()
