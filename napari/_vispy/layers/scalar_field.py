@@ -114,8 +114,7 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
 
         # Check if ndisplay has changed current node type needs updating
         if (ndisplay == 3 and not isinstance(node, VolumeNode)) or (
-            ndisplay == 2
-            and not isinstance(node, ImageVisual)
+            (ndisplay == 2 and not isinstance(node, ImageVisual))
             or node != self.node
         ):
             self._on_display_change(data)

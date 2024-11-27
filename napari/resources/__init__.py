@@ -7,9 +7,9 @@ from napari.resources._icons import (
 )
 
 __all__ = [
+    'ICONS',
+    'ICON_PATH',
+    'LOADING_GIF_PATH',
     'get_colorized_svg',
     'get_icon_path',
-    'ICON_PATH',
-    'ICONS',
-    'LOADING_GIF_PATH',
 ]

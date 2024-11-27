@@ -871,3 +871,8 @@ def _move_active_element_under_cursor(
             shapes = layer.selected_data
             layer._selected_box = layer.interaction_box(shapes)
             layer.refresh()
+
+
+def _set_highlight(layer: Shapes, event: MouseEvent) -> None:
+    if event.type in {'mouse_press', 'mouse_wheel'}:
+        layer._set_highlight()
