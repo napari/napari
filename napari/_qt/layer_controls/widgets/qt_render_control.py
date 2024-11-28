@@ -35,18 +35,18 @@ class QtImageRenderControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-        renderComboBox : qtpy.QtWidgets.QComboBox
-            Combobox to control labels render method.
-        renderComboBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-            Label for the way labels should be rendered chooser widget.
-        isoThresholdSlider : qtpy.QtWidgets.QSlider
-            Slider controlling the isosurface threshold value for rendering.
-        isoThresholdLabel : qtpy.QtWidgets.QLabel
-            Label for the isosurface threshold slider widget.
-        attenuationSlider : qtpy.QtWidgets.QSlider
-            Slider controlling attenuation rate for `attenuated_mip` mode.
-        attenuationLabel : qtpy.QtWidgets.QLabel
-            Label for the attenuation slider widget.
+    renderComboBox : qtpy.QtWidgets.QComboBox
+        Combobox to control labels render method.
+    renderComboBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the way labels should be rendered chooser widget.
+    isoThresholdSlider : qtpy.QtWidgets.QSlider
+        Slider controlling the isosurface threshold value for rendering.
+    isoThresholdLabel : qtpy.QtWidgets.QLabel
+        Label for the isosurface threshold slider widget.
+    attenuationSlider : qtpy.QtWidgets.QSlider
+        Slider controlling attenuation rate for `attenuated_mip` mode.
+    attenuationLabel : qtpy.QtWidgets.QLabel
+        Label for the attenuation slider widget.
     """
 
     def __init__(
@@ -214,14 +214,14 @@ class QtLabelRenderControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-        renderComboBox : superqt.QEnumComboBox
-            Combobox to control labels render method.
-        isoGradientComboBox : superqt.QEnumComboBox
-            Combobox to control gradient method when isosurface rendering is selected.
-        renderComboBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-            Label for the way labels should be rendered chooser widget.
-        isoGradientComboBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-            Label for the chooser widget of the gradient to use when labels are using isosurface rendering.
+    renderComboBox : superqt.QEnumComboBox
+        Combobox to control current label render method.
+    renderComboBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the way labels should be rendered chooser widget.
+    isoGradientComboBox : superqt.QEnumComboBox
+        Combobox to control gradient method when isosurface rendering is selected.
+    isoGradientComboBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the chooser widget of the gradient to use when labels are using isosurface rendering.
     """
 
     def __init__(
@@ -305,6 +305,18 @@ class QtLabelRenderControl(QtWidgetControlsBase):
             self.isoGradientComboBox.setCurrentEnum(
                 IsoCategoricalGradientMode(self._layer.iso_gradient_mode)
             )
+
+    def _on_display_change_hide(self):
+        self.renderComboBox.hide()
+        self.renderComboBoxLabel.hide()
+        self.isoGradientComboBox.hide()
+        self.isoGradientComboBoxLabel.hide()
+
+    def _on_display_change_show(self):
+        self.renderComboBox.show()
+        self.renderComboBoxLabel.show()
+        self.isoGradientComboBox.show()
+        self.isoGradientComboBoxLabel.show()
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [

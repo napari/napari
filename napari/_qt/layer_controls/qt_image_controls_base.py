@@ -43,17 +43,25 @@ class QtBaseImageControls(QtLayerControls):
         Button to pan/zoom shapes layer.
     transform_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to transform shapes layer.
-    clim_popup : napari._qt.qt_range_slider_popup.QRangeSliderPopup
-        Popup widget launching the contrast range slider.
-    colorbarLabel : qtpy.QtWidgets.QLabel
-        Label text of colorbar widget.
-    colormapComboBox : qtpy.QtWidgets.QComboBox
-        Dropdown widget for selecting the layer colormap.
+
+    Controls attributes
+    -------------------
+    blendComboBox : qtpy.QtWidgets.QComboBox
+        Dropdown widget to select blending mode of layer.
+    blendLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the blending combobox widget.
+    opacitySlider : qtpy.QtWidgets.QSlider
+        Slider controlling opacity of the layer.
+    opacityLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the opacity slider widget.
     contrastLimitsSlider : superqt.QRangeSlider
         Contrast range slider widget.
+    autoScaleBar : qtpy.QtWidgets.QWidget
+        Widget to wrap push buttons related with the layer auto-contrast funtionality.
     gammaSlider : qtpy.QtWidgets.QSlider
         Gamma adjustment slider widget.
-
+    colormapWidget : qtpy.QtWidgets.QWidget
+        Widget to wrap combobox and label widgets related with the layer colormap attribute.
     """
 
     def __init__(self, layer: Image) -> None:

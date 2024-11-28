@@ -27,10 +27,10 @@ class QtEdgeWidthSliderControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-        edgeWidthSlider : qtpy.QtWidgets.QSlider
-            Slider controlling line edge width of layer.
-        edgeWidthLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-            Label for the current edge width widget.
+    edgeWidthSlider : qtpy.QtWidgets.QSlider
+        Slider controlling line edge width of layer.
+    edgeWidthLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the current edge width widget.
     """
 
     def __init__(self, parent: QWidget, layer: Layer) -> None:

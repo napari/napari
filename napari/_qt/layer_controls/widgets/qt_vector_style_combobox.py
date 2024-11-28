@@ -27,10 +27,10 @@ class QtVectorStyleComboBoxControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-        vector_style_comboBox : qtpy.QtWidgets.QComboBox
-            ComboBox controlling current edge style value of the layer.
-        vector_style_comboBox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-            Label for the edge style value chooser widget.
+    vector_style_comboBox : qtpy.QtWidgets.QComboBox
+        Dropdown widget to select vector_style for the vectors.
+    vector_style_comboBox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for vector_style value chooser widget.
     """
 
     def __init__(self, parent: QWidget, layer: Layer) -> None:

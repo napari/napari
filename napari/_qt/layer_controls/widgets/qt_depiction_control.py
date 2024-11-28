@@ -22,7 +22,7 @@ from napari.utils.translations import trans
 class PlaneNormalButtons(QWidget):
     """Qt buttons for controlling plane orientation.
 
-        Attributes
+    Attributes
     ----------
     xButton : qtpy.QtWidgets.QPushButton
         Button which orients a plane normal along the x axis.
@@ -81,18 +81,18 @@ class QtDepictionControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-        depictionComboBox : qtpy.QtWidgets.QComboBox
-            ComboBox controlling current depiction value of the layer.
-        depictionLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-            Label for the depiction value chooser widget.
-        planeNormalButtons : PlaneNormalButtons
-            Buttons controlling plane normal orientation when the `plane` depiction value is choosed.
-        planeNormalLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-            Label for the plane normal value chooser widget.
-        planeThicknessSlider : superqt.QLabeledDoubleSlider
-            Slider controlling plane normal thickness when the `plane` depiction value is choosed.
-        planeThicknessLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-            Label for the plane normal thickness value chooser widget.
+    depictionComboBox : qtpy.QtWidgets.QComboBox
+        ComboBox controlling current depiction value of the layer.
+    depictionLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the depiction value chooser widget.
+    planeNormalButtons : PlaneNormalButtons
+        Buttons controlling plane normal orientation when the `plane` depiction value is choosed.
+    planeNormalLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the plane normal value chooser widget.
+    planeThicknessSlider : superqt.QLabeledDoubleSlider
+        Slider controlling plane normal thickness when the `plane` depiction value is choosed.
+    planeThicknessLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the plane normal thickness value chooser widget.
     """
 
     def __init__(

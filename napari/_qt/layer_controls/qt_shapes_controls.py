@@ -76,16 +76,28 @@ class QtShapesControls(QtLayerControls):
     -------------------
     blendComboBox : qtpy.QtWidgets.QComboBox
         Dropdown widget to select blending mode of layer.
+    blendLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the blending combobox widget.
     opacitySlider : qtpy.QtWidgets.QSlider
         Slider controlling opacity of the layer.
+    opacityLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the opacity slider widget.
     edgeWidthSlider : qtpy.QtWidgets.QSlider
-        Slider controlling line edge width of shapes.
-    edgeColorEdit : QColorSwatchEdit
-        Widget allowing user to set edge color of points.
-    faceColorEdit : QColorSwatchEdit
-        Widget allowing user to set face color of points.
-    textDispCheckBox : qtpy.QtWidgets.QCheckBox
-        Checkbox to control if text should be displayed
+        Slider controlling line edge width of layer.
+    edgeWidthLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the current edge width widget.
+    edgeColorEdit : qtpy.QtWidgets.QSlider
+        ColorSwatchEdit controlling current edge color of the layer.
+    edgeColorLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the current edge color chooser widget.
+    faceColorEdit : qtpy.QtWidgets.QSlider
+        ColorSwatchEdit controlling current face color of the layer.
+    faceColorLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the current face color widget.
+    textDispCheckBox : qtpy.QtWidgets.QCheckbox
+        Checkbox controlling if text on the layer is visible or not.
+    textDispLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the text visibility widget.
 
     Raises
     ------

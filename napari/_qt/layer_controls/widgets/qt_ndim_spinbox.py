@@ -28,10 +28,10 @@ class QtNdimSpinBoxControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-        ndimSpinBox : qtpy.QtWidgets.QSpinBox
-            Spinbox to control the number of editable dimensions of label layer.
-        ndimSpinBox : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-            Label for the number of editable dimensions chooser widget.
+    ndimSpinBox : qtpy.QtWidgets.QSpinBox
+        Spinbox to control the number of editable dimensions of label layer.
+    ndimSpinBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the number of editable dimensions chooser widget.
     """
 
     def __init__(

@@ -29,10 +29,10 @@ class QtSymbolComboBoxControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-        symbolComboBox : qtpy.QtWidgets.QComboBox
-            Combobox controlling current symbol attribute of the layer.
-        symbolComboBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-            Label for the current face color widget.
+    symbolComboBox : qtpy.QtWidgets.QComboBox
+        Combobox controlling current symbol attribute of the layer.
+    symbolComboBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the current symbol chooser widget.
     """
 
     def __init__(

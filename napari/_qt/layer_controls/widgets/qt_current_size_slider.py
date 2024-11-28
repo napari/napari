@@ -31,10 +31,10 @@ class QtCurrentSizeSliderControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-        sizeSlider : napari._qt.widgets._slider_compat.QSlider
-            Slider controlling current size attribute of the layer.
-        sizeSliderLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-            Label for the current size chooser widget.
+    sizeSlider : napari._qt.widgets._slider_compat.QSlider
+        Slider controlling current size attribute of the layer.
+    sizeSliderLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the size chooser widget.
     """
 
     def __init__(

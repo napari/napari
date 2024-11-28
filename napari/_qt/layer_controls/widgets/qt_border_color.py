@@ -28,10 +28,10 @@ class QtBorderColorControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-        borderColorEdit : qtpy.QtWidgets.QSlider
-            ColorSwatchEdit controlling current face color of the layer.
-        borderColorEditLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-            Label for the current face color widget.
+    borderColorEdit : napari._qt.widgets.qt_color_swatch.QColorSwatchEdit
+        ColorSwatchEdit controlling current face color of the layer.
+    borderColorEditLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the current egde color chooser widget.
     """
 
     def __init__(

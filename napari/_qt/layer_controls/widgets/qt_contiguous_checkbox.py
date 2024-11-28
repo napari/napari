@@ -28,10 +28,10 @@ class QtContiguousCheckBoxControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-        contigCheckBox : qtpy.QtWidgets.QCheckBox
-            Checkbox to control if label layer is contiguous.
-        contigCheckBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-            Label for the contiguous model chooser widget.
+    contigCheckBox : qtpy.QtWidgets.QCheckBox
+        Checkbox to control if label layer is contiguous.
+    contigCheckBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the contiguous model chooser widget.
     """
 
     def __init__(

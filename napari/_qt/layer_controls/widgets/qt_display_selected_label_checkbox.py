@@ -28,10 +28,10 @@ class QtDisplaySelectedLabelCheckBoxControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-        selectedColorCheckbox : qtpy.QtWidgets.QCheckBox
-            Checkbox to control if only currently selected label is shown.
-        selectedColorCheckboxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-            Label for the layer should show only currently selected label chooser widget.
+    selectedColorCheckbox : qtpy.QtWidgets.QCheckBox
+        Checkbox to control if only currently selected label is shown.
+    selectedColorCheckboxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the layer should show only currently selected label chooser widget.
     """
 
     def __init__(

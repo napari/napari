@@ -26,10 +26,10 @@ class QtHeadLengthSliderControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-        head_length_slider : qtpy.QtWidgets.QSlider
-            Slider controlling head length of the layer.
-        head_length_slider_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-            Label for the head length chooser widget.
+    head_length_slider : qtpy.QtWidgets.QSlider
+        Slider controlling head length of the layer.
+    head_length_slider_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the head length chooser widget.
     """
 
     def __init__(self, parent: QWidget, layer: Layer) -> None:

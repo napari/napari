@@ -26,10 +26,10 @@ class QtOutSliceCheckBoxControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-        outOfSliceCheckBox : qtpy.QtWidgets.QCheckBox
-            Checkbox to control if label layer display out of slice is enabled.
-        outOfSliceCheckBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-            Label for the out of slice display enablement chooser widget.
+    outOfSliceCheckBox : qtpy.QtWidgets.QCheckBox
+        Checkbox to indicate whether to render out of slice.
+    outOfSliceCheckBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the out of slice display enablement chooser widget.
     """
 
     def __init__(self, parent: QWidget, layer: Layer) -> None:

@@ -25,10 +25,10 @@ class QtGraphCheckBoxControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-        graph_checkbox : qtpy.QtWidgets.QCheckBox
-            Checkbox controlling if graph of the layer should be shown.
-        graph_checkbox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-            Label for showing the graph chooser widget.
+    graph_checkbox : qtpy.QtWidgets.QCheckBox
+        Checkbox controlling if graph of the layer should be shown.
+    graph_checkbox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for showing the graph chooser widget.
     """
 
     def __init__(self, parent: QWidget, layer: Layer) -> None:

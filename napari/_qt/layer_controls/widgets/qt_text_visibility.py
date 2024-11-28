@@ -24,10 +24,10 @@ class QtTextVisibilityControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-        textDispCheckBox : qtpy.QtWidgets.QCheckbox
-            Checkbox controlling if text on the layer is visible or not.
-        textDispLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-            Label for the text visibility widget.
+    textDispCheckBox : qtpy.QtWidgets.QCheckbox
+        Checkbox controlling if text on the layer is visible or not.
+    textDispLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the text visibility widget.
     """
 
     def __init__(self, parent: QWidget, layer: Layer) -> None:

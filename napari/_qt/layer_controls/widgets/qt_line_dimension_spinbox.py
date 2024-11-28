@@ -26,10 +26,10 @@ class QtWidthSpinBoxControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-        contourSpinBox : qtpy.QtWidgets.QDoubleSpinBox
-            Spinbox to control the layer line width.
-        ndimSpinBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-            Label for the layer line width chooser widget.
+    widthSpinBox : qtpy.QtWidgets.QDoubleSpinBox
+        Spin box widget controlling edge line width of vectors.
+    widthSpinBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the edge line width of vectors chooser widget.
     """
 
     def __init__(self, parent: QWidget, layer: Layer) -> None:
@@ -84,10 +84,11 @@ class QtLengthSpinBoxControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-        lengthSpinBox : qtpy.QtWidgets.QDoubleSpinBox
-            Spinbox to control the layer line width.
-        lengthSpinBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-            Label for the layer line width chooser widget.
+    lengthSpinBox : qtpy.QtWidgets.QDoubleSpinBox
+        Spinbox widget controlling line length of vectors.
+        Multiplicative factor on projections for length of all vectors.
+    lengthSpinBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for line length of vectors chooser widget.
     """
 
     def __init__(self, parent: QWidget, layer: Layer) -> None:

@@ -29,10 +29,18 @@ class QtEdgeColorPropertyControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-        edgeColorEdit : qtpy.QtWidgets.QSlider
-            ColorSwatchEdit controlling current edge color of the layer.
-        edgeColorLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-            Label for the current edge color chooser widget.
+    color_mode_comboBox : qtpy.QtWidgets.QComboBox
+        Dropdown to select the edge color mode.
+    color_mode_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the current selected edge_color_mode chooser widget.
+    edgeColorEdit : qtpy.QtWidgets.QSlider
+        ColorSwatchEdit controlling current edge color of the layer.
+    edge_color_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the current edge color chooser widget.
+    color_prop_box : qtpy.QtWidgets.QComboBox
+        Dropdown to select the property for mapping edge_color.
+    edge_prop_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the current selected _edge_color_property chooser widget.
     """
 
     def __init__(
@@ -46,15 +54,14 @@ class QtEdgeColorPropertyControl(QtWidgetControlsBase):
         self._layer.events.edge_color.connect(self._on_edge_color_change)
 
         # Setup widgets
-        # dropdown to select the property for mapping edge_color
-        color_properties = self._get_property_values()
-        self.color_prop_box = QComboBox(parent)
-        self.color_prop_box.currentTextChanged.connect(
-            self.change_edge_color_property
+        # dropdown to select the edge color mode
+        self.color_mode_comboBox = QComboBox(parent)
+        color_modes = [e.value for e in ColorMode]
+        self.color_mode_comboBox.addItems(color_modes)
+        self.color_mode_comboBox.currentTextChanged.connect(
+            self.change_edge_color_mode
         )
-        self.color_prop_box.addItems(color_properties)
-
-        self.edge_prop_label = QtWrappedLabel(trans._('edge property:'))
+        self.color_mode_label = QtWrappedLabel(trans._('edge color mode:'))
 
         # vector direct color mode adjustment and widget
         self.edgeColorEdit = QColorSwatchEdit(
@@ -65,16 +72,18 @@ class QtEdgeColorPropertyControl(QtWidgetControlsBase):
         )
         self.edgeColorEdit.color_changed.connect(self.change_edge_color_direct)
         self.edge_color_label = QtWrappedLabel(trans._('edge color:'))
+
+        # dropdown to select the property for mapping edge_color
+        color_properties = self._get_property_values()
+        self.color_prop_box = QComboBox(parent)
+        self.color_prop_box.currentTextChanged.connect(
+            self.change_edge_color_property
+        )
+        self.color_prop_box.addItems(color_properties)
+
+        self.edge_prop_label = QtWrappedLabel(trans._('edge property:'))
         self._on_edge_color_change()
 
-        # dropdown to select the edge color mode
-        self.color_mode_comboBox = QComboBox(parent)
-        color_modes = [e.value for e in ColorMode]
-        self.color_mode_comboBox.addItems(color_modes)
-        self.color_mode_comboBox.currentTextChanged.connect(
-            self.change_edge_color_mode
-        )
-        self.color_mode_label = QtWrappedLabel(trans._('edge color mode:'))
         self._on_edge_color_mode_change()
 
     def change_edge_color_direct(self, color: np.ndarray):
@@ -218,10 +227,10 @@ class QtEdgeColorControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-        edgeColorEdit : qtpy.QtWidgets.QSlider
-            ColorSwatchEdit controlling current edge color of the layer.
-        edgeColorLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-            Label for the current edge color chooser widget.
+    edgeColorEdit : qtpy.QtWidgets.QSlider
+        ColorSwatchEdit controlling current edge color of the layer.
+    edgeColorLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the current edge color chooser widget.
     """
 
     def __init__(

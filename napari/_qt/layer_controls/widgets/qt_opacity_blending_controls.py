@@ -31,14 +31,14 @@ class QtOpacityBlendingControls(QtWidgetControlsBase):
 
     Attributes
     ----------
-        blendComboBox : qtpy.QtWidgets.QComboBox
-            Dropdown widget to select blending mode of layer.
-        blendLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-            Label for the blending combobox widget.
-        opacitySlider : qtpy.QtWidgets.QSlider
-            Slider controlling opacity of the layer.
-        opacityLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-            Label for the opacity slider widget.
+    blendComboBox : qtpy.QtWidgets.QComboBox
+        Dropdown widget to select blending mode of layer.
+    blendLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the blending combobox widget.
+    opacitySlider : qtpy.QtWidgets.QSlider
+        Slider controlling opacity of the layer.
+    opacityLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the opacity slider widget.
     """
 
     def __init__(self, parent: QWidget, layer: Layer) -> None:

@@ -69,13 +69,16 @@ class QtLayerControls(QFrame):
         Button to pan/zoom shapes layer.
     transform_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to transform shapes layer.
+
+    Controls attributes
+    -------------------
     blendComboBox : qtpy.QtWidgets.QComboBox
         Dropdown widget to select blending mode of layer.
-    layer : napari.layers.Layer
-        An instance of a napari layer.
+    blendLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the blending combobox widget.
     opacitySlider : qtpy.QtWidgets.QSlider
         Slider controlling opacity of the layer.
-    opacityLabel : qtpy.QtWidgets.QLabel
+    opacityLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the opacity slider widget.
     """
 

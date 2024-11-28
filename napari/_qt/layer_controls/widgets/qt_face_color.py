@@ -28,10 +28,10 @@ class QtFaceColorControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-        faceColorEdit : qtpy.QtWidgets.QSlider
-            ColorSwatchEdit controlling current face color of the layer.
-        faceColorLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-            Label for the current face color widget.
+    faceColorEdit : napari._qt.widgets.qt_color_swatch.QColorSwatchEdit
+        ColorSwatchEdit controlling current face color of the layer.
+    faceColorLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the current face color chooser widget.
     """
 
     def __init__(

@@ -32,10 +32,10 @@ class QtColorModeComboBoxControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-        colorModeComboBox : qtpy.QtWidgets.QComboBox
-            ComboBox controlling current color mode of the layer.
-        colorModeComboBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-            Label for the color mode chooser widget.
+    colorModeComboBox : qtpy.QtWidgets.QComboBox
+        ComboBox controlling current color mode of the layer.
+    colorModeComboBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the color mode chooser widget.
     """
 
     def __init__(

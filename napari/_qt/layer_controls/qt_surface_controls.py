@@ -36,6 +36,28 @@ class QtSurfaceControls(QtBaseImageControls):
     transform_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to transform shapes layer.
 
+    Controls attributes
+    -------------------
+    blendComboBox : qtpy.QtWidgets.QComboBox
+        Dropdown widget to select blending mode of layer.
+    blendLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the blending combobox widget.
+    opacitySlider : qtpy.QtWidgets.QSlider
+        Slider controlling opacity of the layer.
+    opacityLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the opacity slider widget.
+    contrastLimitsSlider : superqt.QRangeSlider
+        Contrast range slider widget.
+    autoScaleBar : qtpy.QtWidgets.QWidget
+        Widget to wrap push buttons related with the layer auto-contrast funtionality.
+    gammaSlider : qtpy.QtWidgets.QSlider
+        Gamma adjustment slider widget.
+    colormapWidget : qtpy.QtWidgets.QWidget
+        Widget to wrap combobox and label widgets related with the layer colormap attribute.
+    shadingComboBox : qtpy.QtWidgets.QComboBox
+        ComboBox controlling current shading value of the layer.
+    shadingComboBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the shading value chooser widget.
     """
 
     layer: 'napari.layers.Surface'

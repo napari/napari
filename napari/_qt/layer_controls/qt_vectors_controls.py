@@ -38,29 +38,46 @@ class QtVectorsControls(QtLayerControls):
         Button for pan/zoom mode.
     transform_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to select transform mode.
-    edge_color_label : qtpy.QtWidgets.QLabel
-        Label for edgeColorSwatch
-    edgeColorEdit : QColorSwatchEdit
-        Widget to select display color for vectors.
-    vector_style_comboBox : qtpy.QtWidgets.QComboBox
-        Dropdown widget to select vector_style for the vectors.
-    color_mode_comboBox : qtpy.QtWidgets.QComboBox
-        Dropdown widget to select edge_color_mode for the vectors.
-    color_prop_box : qtpy.QtWidgets.QComboBox
-        Dropdown widget to select _edge_color_property for the vectors.
-    edge_prop_label : qtpy.QtWidgets.QLabel
-        Label for color_prop_box
-    layer : napari.layers.Vectors
-        An instance of a napari Vectors layer.
-    outOfSliceCheckBox : qtpy.QtWidgets.QCheckBox
-        Checkbox to indicate whether to render out of slice.
-    lengthSpinBox : qtpy.QtWidgets.QDoubleSpinBox
-        Spin box widget controlling line length of vectors.
-        Multiplicative factor on projections for length of all vectors.
+
+    Controls attributes
+    -------------------
+    blendComboBox : qtpy.QtWidgets.QComboBox
+        Dropdown widget to select blending mode of layer.
+    blendLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the blending combobox widget.
+    opacitySlider : qtpy.QtWidgets.QSlider
+        Slider controlling opacity of the layer.
+    opacityLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the opacity slider widget.
     widthSpinBox : qtpy.QtWidgets.QDoubleSpinBox
         Spin box widget controlling edge line width of vectors.
+    widthSpinBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the edge line width of vectors chooser widget.
+    lengthSpinBox : qtpy.QtWidgets.QDoubleSpinBox
+        Spinbox widget controlling line length of vectors.
+        Multiplicative factor on projections for length of all vectors.
+    lengthSpinBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for line length of vectors chooser widget.
     vector_style_comboBox : qtpy.QtWidgets.QComboBox
         Dropdown widget to select vector_style for the vectors.
+    vector_style_comboBox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for vector_style value chooser widget.
+    color_mode_comboBox : qtpy.QtWidgets.QComboBox
+        Dropdown widget to select edge_color_mode for the vectors.
+    color_mode_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the current selected edge_color_mode chooser widget.
+    edgeColorEdit : qtpy.QtWidgets.QSlider
+        Widget to select display color for vectors.
+    edge_color_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the current edge color chooser widget.
+    color_prop_box : qtpy.QtWidgets.QComboBox
+        Dropdown widget to select _edge_color_property for the vectors.
+    edge_prop_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the _edge_color_property chooser widget.
+    outOfSliceCheckBox : qtpy.QtWidgets.QCheckBox
+        Checkbox to indicate whether to render out of slice.
+    outOfSliceCheckBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the out of slice display enablement chooser widget.
     """
 
     layer: 'napari.layers.Vectors'

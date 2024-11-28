@@ -64,26 +64,52 @@ class QtLabelsControls(QtLayerControls):
     -------------------
     blendComboBox : qtpy.QtWidgets.QComboBox
         Dropdown widget to select blending mode of layer.
+    blendLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the blending combobox widget.
     opacitySlider : qtpy.QtWidgets.QSlider
         Slider controlling opacity of the layer.
+    opacityLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the opacity slider widget.
     labelColor : qtpy.QtWidget.QWidget
-        Wrapper widget for the selectionSpinBox and colorBox widgets
+        Wrapper widget for the selectionSpinBox and colorBox widgets.
+    labelColorLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the label chooser widget.
     brushSizeSlider : qtpy.QtWidgets.QSlider
         Slider controlling current brush size of the layer.
+    brushSizeSliderLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the brush size chooser widget.
     renderComboBox : superqt.QEnumComboBox
         Combobox to control current label render method.
+    renderComboBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the way current label should be rendered chooser widget.
+    isoGradientComboBox : superqt.QEnumComboBox
+        Combobox to control gradient method when isosurface rendering is selected.
+    isoGradientComboBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the chooser widget of the gradient to use when labels are using isosurface rendering.
     colorModeComboBox : qtpy.QtWidgets.QComboBox
         ComboBox controlling current color mode of the layer.
+    colorModeComboBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the color mode chooser widget.
     contourSpinBox : superqt.QLargeSpinBox
         Spinbox to control the layer contour thickness.
+    contourSpinBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the layer contour thickness chooser widget.
     ndimSpinBox : qtpy.QtWidgets.QSpinBox
         Spinbox to control the number of editable dimensions of label layer.
+    ndimSpinBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the number of editable dimensions chooser widget.
     contigCheckBox : qtpy.QtWidgets.QCheckBox
         Checkbox to control if label layer is contiguous.
+    contigCheckBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the contiguous model chooser widget.
     preserveLabelsCheckBox : qtpy.QtWidgets.QCheckBox
-        Checkbox to control if existing labels are preserved
+        Checkbox to control if existing labels are preserved.
+    preserveLabelsCheckBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the layer should preserve labels chooser widget.
     selectedColorCheckbox : qtpy.QtWidgets.QCheckBox
         Checkbox to control if only currently selected label is shown.
+    selectedColorCheckboxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the layer should show only currently selected label chooser widget.
 
     Raises
     ------
@@ -196,13 +222,10 @@ class QtLabelsControls(QtLayerControls):
 
     def _on_ndisplay_changed(self):
         show_3d_widgets = self.ndisplay == 3
-        # TODO: Better way to do this?
-        self._renderControl.renderComboBox.setVisible(show_3d_widgets)
-        self._renderControl.renderComboBoxLabel.setVisible(show_3d_widgets)
-        self._renderControl.isoGradientComboBox.setVisible(show_3d_widgets)
-        self._renderControl.isoGradientComboBoxLabel.setVisible(
-            show_3d_widgets
-        )
+        if show_3d_widgets:
+            self._renderControl._on_display_change_show()
+        else:
+            self._renderControl._on_display_change_hide()
         self._on_editable_or_visible_change()
         self._set_polygon_tool_state()
         super()._on_ndisplay_changed()

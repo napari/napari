@@ -26,10 +26,10 @@ class QtSimpleColormapComboBoxControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-        colormap_combobox : qtpy.QtWidgets.QComboBox
-            ComboBox controlling current colormap of the layer.
-        colormap_combobox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-            Label for the colormap chooser widget.
+    colormap_combobox : qtpy.QtWidgets.QComboBox
+        ComboBox controlling current colormap of the layer.
+    colormap_combobox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the colormap chooser widget.
     """
 
     def __init__(self, parent: QWidget, layer: Layer) -> None:
@@ -76,14 +76,14 @@ class QtColormapControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-        colorbarLabel : qtpy.QtWidgets.QLabel
-            Label text of colorbar widget.
-        colormapComboBox : qtpy.QtWidgets.QComboBox
-            ComboBox controlling current colormap of the layer.
-        colormapWidget : qtpy.QtWidgets.QWidget
-            Widget to wrap combobox and label widgets related with the layer colormap attribute.
-        colormapWidgetLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-            Label for the color mode chooser widget.
+    colorbarLabel : qtpy.QtWidgets.QLabel
+        Label text of colorbar widget.
+    colormapComboBox : qtpy.QtWidgets.QComboBox
+        ComboBox controlling current colormap of the layer.
+    colormapWidget : qtpy.QtWidgets.QWidget
+        Widget to wrap combobox and label widgets related with the layer colormap attribute.
+    colormapWidgetLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the color mode chooser widget.
     """
 
     def __init__(self, parent: QWidget, layer: Layer) -> None:

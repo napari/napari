@@ -28,10 +28,10 @@ class QtShadingComboBoxControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-        shadingComboBox : qtpy.QtWidgets.QComboBox
-            ComboBox controlling current shading value of the layer.
-        shadingComboBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-            Label for the shading value chooser widget.
+    shadingComboBox : qtpy.QtWidgets.QComboBox
+        ComboBox controlling current shading value of the layer.
+    shadingComboBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the shading value chooser widget.
     """
 
     def __init__(

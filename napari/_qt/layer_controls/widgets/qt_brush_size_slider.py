@@ -29,10 +29,10 @@ class QtBrushSizeSliderControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-        brushSizeSlider : qtpy.QtWidgets.QSlider
-            Slider controlling current brush size of the layer.
-        brushSizeSliderLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-            Label for the brush size chooser widget.
+    brushSizeSlider : qtpy.QtWidgets.QSlider
+        Slider controlling current brush size of the layer.
+    brushSizeSliderLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the brush size chooser widget.
     """
 
     def __init__(

@@ -25,10 +25,10 @@ class QtIdCheckBoxControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-        id_checkbox : qtpy.QtWidgets.QCheckBox
-            Checkbox controlling if id of the layer should be shown.
-        id_checkbox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-            Label for showing the id chooser widget.
+    id_checkbox : qtpy.QtWidgets.QCheckBox
+        Checkbox controlling if id of the layer should be shown.
+    id_checkbox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for showing the id chooser widget.
     """
 
     def __init__(self, parent: QWidget, layer: Layer) -> None:

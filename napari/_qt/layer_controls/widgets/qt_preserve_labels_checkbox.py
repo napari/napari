@@ -28,10 +28,10 @@ class QtPreserveLabelsCheckBoxControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-        preserveLabelsCheckBox : qtpy.QtWidgets.QCheckBox
-            Checkbox to control if existing labels are preserved
-        preserveLabelsCheckBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-            Label for the layer should preserve labels chooser widget.
+    preserveLabelsCheckBox : qtpy.QtWidgets.QCheckBox
+        Checkbox to control if existing labels are preserved.
+    preserveLabelsCheckBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the layer should preserve labels chooser widget.
     """
 
     def __init__(

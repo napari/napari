@@ -27,10 +27,10 @@ class QtTailLengthSliderControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-        tail_length_slider : qtpy.QtWidgets.QSlider
-            Slider controlling tail length of the layer.
-        tail_length_slider_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-            Label for the tail length chooser widget.
+    tail_length_slider : qtpy.QtWidgets.QSlider
+        Slider controlling tail length of the layer.
+    tail_length_slider_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the tail length chooser widget.
     """
 
     def __init__(self, parent: QWidget, layer: Layer) -> None:
@@ -85,10 +85,10 @@ class QtTailWidthSliderControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-        tail_width_slider : qtpy.QtWidgets.QSlider
-            Slider controlling tail width of the layer.
-        tail_width_slider_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-            Label for the tail width chooser widget.
+    tail_width_slider : qtpy.QtWidgets.QSlider
+        Slider controlling tail width of the layer.
+    tail_width_slider_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the tail width chooser widget.
     """
 
     def __init__(self, parent: QWidget, layer: Layer) -> None:
@@ -143,10 +143,10 @@ class QtTailDisplayCheckBoxControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-        tail_checkbox : qtpy.QtWidgets.QCheckBox
-            Checkbox controlling if tails of the layer should be shown.
-        tail_width_slider_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-            Label for showing the tails chooser widget.
+    tail_checkbox : qtpy.QtWidgets.QCheckBox
+        Checkbox controlling if tails of the layer should be shown.
+    tail_width_slider_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for showing the tails chooser widget.
     """
 
     def __init__(self, parent: QWidget, layer: Layer) -> None:
