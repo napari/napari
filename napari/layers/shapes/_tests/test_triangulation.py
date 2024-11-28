@@ -24,7 +24,7 @@ def _disable_jit(monkeypatch):
 
 
 @pytest.mark.parametrize(
-    ('path', 'closed', 'bevel', 'expeected'),
+    ('path', 'closed', 'bevel', 'expected'),
     [
         ([[0, 0], [0, 10], [10, 10], [10, 0]], True, False, 10),
         ([[0, 0], [0, 10], [10, 10], [10, 0]], False, False, 8),
@@ -41,13 +41,13 @@ def _disable_jit(monkeypatch):
     ],
 )
 @pytest.mark.usefixtures('_disable_jit')
-def test_generate_2D_edge_meshes(path, closed, bevel, expeected):
+def test_generate_2D_edge_meshes(path, closed, bevel, expected):
     centers, offsets, triangles = ac.generate_2D_edge_meshes(
         np.array(path, dtype='float32'), closed=closed, bevel=bevel
     )
     assert centers.shape == offsets.shape
-    assert centers.shape[0] == expeected
-    assert triangles.shape[0] == expeected - 2
+    assert centers.shape[0] == expected
+    assert triangles.shape[0] == expected - 2
 
 
 @pytest.mark.parametrize(
