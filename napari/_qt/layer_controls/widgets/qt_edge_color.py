@@ -54,14 +54,14 @@ class QtEdgeColorPropertyControl(QtWidgetControlsBase):
         self._layer.events.edge_color.connect(self._on_edge_color_change)
 
         # Setup widgets
-        # dropdown to select the edge color mode
-        self.color_mode_comboBox = QComboBox(parent)
-        color_modes = [e.value for e in ColorMode]
-        self.color_mode_comboBox.addItems(color_modes)
-        self.color_mode_comboBox.currentTextChanged.connect(
-            self.change_edge_color_mode
+        # dropdown to select the property for mapping edge_color
+        color_properties = self._get_property_values()
+        self.color_prop_box = QComboBox(parent)
+        self.color_prop_box.currentTextChanged.connect(
+            self.change_edge_color_property
         )
-        self.color_mode_label = QtWrappedLabel(trans._('edge color mode:'))
+        self.color_prop_box.addItems(color_properties)
+        self.edge_prop_label = QtWrappedLabel(trans._('edge property:'))
 
         # vector direct color mode adjustment and widget
         self.edgeColorEdit = QColorSwatchEdit(
@@ -72,18 +72,16 @@ class QtEdgeColorPropertyControl(QtWidgetControlsBase):
         )
         self.edgeColorEdit.color_changed.connect(self.change_edge_color_direct)
         self.edge_color_label = QtWrappedLabel(trans._('edge color:'))
-
-        # dropdown to select the property for mapping edge_color
-        color_properties = self._get_property_values()
-        self.color_prop_box = QComboBox(parent)
-        self.color_prop_box.currentTextChanged.connect(
-            self.change_edge_color_property
-        )
-        self.color_prop_box.addItems(color_properties)
-
-        self.edge_prop_label = QtWrappedLabel(trans._('edge property:'))
         self._on_edge_color_change()
 
+        # dropdown to select the edge color mode
+        self.color_mode_comboBox = QComboBox(parent)
+        color_modes = [e.value for e in ColorMode]
+        self.color_mode_comboBox.addItems(color_modes)
+        self.color_mode_comboBox.currentTextChanged.connect(
+            self.change_edge_color_mode
+        )
+        self.color_mode_label = QtWrappedLabel(trans._('edge color mode:'))
         self._on_edge_color_mode_change()
 
     def change_edge_color_direct(self, color: np.ndarray):
