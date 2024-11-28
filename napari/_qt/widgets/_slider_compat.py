@@ -8,4 +8,4 @@ if tuple(int(x) for x in QT_VERSION.split('.')) >= (5, 14):
     from superqt import QLabeledSlider as QSlider
 
 
-__all__ = ['QSlider', 'QDoubleSlider']
+__all__ = ['QDoubleSlider', 'QSlider']
