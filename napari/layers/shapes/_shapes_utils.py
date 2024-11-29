@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy as np
-from PartSegCore_compiled_backend.triangulate import triangulate_polygon_numpy
 from skimage.draw import line, polygon2mask
 from vispy.geometry import PolygonData
 from vispy.visuals.tube import _frenet_frames
@@ -604,9 +603,6 @@ def triangulate_face(data: npt.NDArray) -> tuple[npt.NDArray, npt.NDArray]:
         Px3 array of the indices of the vertices that will form the
         triangles of the triangulation
     """
-
-    triangles, vertices = triangulate_polygon_numpy(data)
-    return vertices, triangles.astype(int)
 
     if triangulate is not None:
         len_data = len(data)
