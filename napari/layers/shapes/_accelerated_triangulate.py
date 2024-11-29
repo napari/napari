@@ -432,7 +432,7 @@ def generate_2D_edge_meshes(
 
     path = _cut_end_if_repetition(path)
 
-    if len(path) <= 2:
+    if len(path) < 2:
         centers = np.empty((4, 2), dtype=np.float32)
         centers[0] = path[0]
         centers[1] = path[0]
