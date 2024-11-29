@@ -23,6 +23,7 @@ from napari.layers import Image
 from napari.viewer import Viewer
 
 __all__ = [
+    'imshow',
     'view_image',
     'view_labels',
     'view_path',
@@ -31,7 +32,6 @@ __all__ = [
     'view_surface',
     'view_tracks',
     'view_vectors',
-    'imshow',
 ]
 
 _doc_template = """Create a viewer and add a{n} {layer_string} layer.

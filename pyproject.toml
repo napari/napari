@@ -45,7 +45,7 @@ dependencies = [
     "jsonschema>=3.2.0",
     "lazy_loader>=0.2",
     "magicgui>=0.7.0",
-    "napari-console>=0.0.9",
+    "napari-console>=0.1.1",
     "napari-plugin-engine>=0.1.9",
     "napari-svg>=0.1.8",
     "npe2>=0.7.6",
@@ -60,6 +60,7 @@ dependencies = [
     "pydantic>=1.9.0",
     "pygments>=2.6.0",
     "PyOpenGL>=3.1.0",
+    "pywin32 ; platform_system == 'Windows'",
     "PyYAML>=5.1",
     "qtpy>=1.10.0",
     "scikit-image[data]>=0.19.1",
@@ -159,7 +160,8 @@ dev = [
     "ruff",
     "check-manifest>=0.42",
     "pre-commit>=2.9.0",
-    "pydantic[dotenv]",
+    "pydantic",
+    "python-dotenv",
     "napari[testing]",
 ]
 build = [
@@ -251,7 +253,7 @@ select = [
     "UP", # pyupgrade
     "I", # isort
     "YTT", #flake8-2020
-    "TCH", # flake8-type-checing
+    "TC", # flake8-type-checing
     "BLE", # flake8-blind-exception
     "B", # flake8-bugbear
     "A", # flake8-builtins
@@ -280,7 +282,7 @@ select = [
     "T20", # flake8-print
 ]
 ignore = [
-    "E501", "TCH001", "TCH002", "TCH003",
+    "E501", "TC001", "TC002", "TC003",
     "A003", # flake8-builtins - we have class attributes violating these rule
     "COM812", # flake8-commas - we don't like adding comma on single line of arguments
     "COM819", # conflicts with ruff-format
@@ -362,7 +364,8 @@ filterwarnings = [
   # https://github.com/pydata/xarray/pull/8939
   "ignore:__array__ implementation doesn't accept a copy keyword, so passing copy=False failed.",
   "ignore:pkg_resources is deprecated",
-  "ignore:Deprecated call to `pkg_resources.declare_namespace"
+  "ignore:Deprecated call to `pkg_resources.declare_namespace",
+  "ignore:Use Group.create_array instead."
 ]
 markers = [
     "examples: Test of examples",
@@ -371,6 +374,7 @@ markers = [
     "disable_qtimer_start: Disable timer start in this Test",
     "disable_qanimation_start: Disable animation start in this Test",
     "enable_console: Don't mock the IPython console (in QtConsole) in this Test",
+    "key_bindings: Test of keybindings",
 ]
 
 [tool.mypy]

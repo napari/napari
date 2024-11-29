@@ -17,9 +17,9 @@ if TYPE_CHECKING:
 
 
 __all__ = (
+    'labels_raw_to_texture_direct',
     'minimum_dtype_for_labels',
     'zero_preserving_modulo',
-    'labels_raw_to_texture_direct',
     'zero_preserving_modulo_numpy',
 )
 
