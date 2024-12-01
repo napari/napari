@@ -728,7 +728,8 @@ class EditorWidget(QLineEdit):
         }:
             # Do not allow user to set these keys as shortcut.
             # Use them as a save trigger for modifier only shortcuts.
-            self.clearFocus()
+            if event_key == Qt.Key.Key_CapsLock:
+                self.clearFocus()
             return
 
         # Translate key value to key string.
