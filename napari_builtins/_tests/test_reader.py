@@ -51,6 +51,7 @@ def test_animated_gif_reader(save_image):
     assert layer_data[0][0].shape == (5, 20, 20, 3)
 
 
+@pytest.mark.slow
 def test_reader_plugin_url():
     layer_data = npe2.read(
         ['https://samples.fiji.sc/FakeTracks.tif'], stack=False

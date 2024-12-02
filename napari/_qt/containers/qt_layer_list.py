@@ -84,5 +84,9 @@ class QtLayerList(QtListView[Layer]):
             e.ignore()
         elif e.key() != Qt.Key.Key_Space:
             super().keyPressEvent(e)
-        if e.key() not in (Qt.Key.Key_Backspace, Qt.Key.Key_Delete):
+        if e.key() not in (
+            Qt.Key.Key_Backspace,
+            Qt.Key.Key_Delete,
+            Qt.Key.Key_Return,
+        ):
             e.ignore()  # pass key events up to viewer
