@@ -104,3 +104,14 @@ def test_axis_labels_error():
 
     with pytest.raises(ValueError, match='must have length ndim'):
         SampleLayer(np.empty((10, 10)), axis_labels=('x', 'y', 'z'))
+
+
+def test_non_visible_mode():
+    layer = SampleLayer(np.empty((10, 10)))
+    layer.mode = 'transform'
+
+    # change layer visibility and check the layer mode gets updated
+    layer.visible = False
+    assert layer.mode == 'pan_zoom'
+    layer.visible = True
+    assert layer.mode == 'transform'
