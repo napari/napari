@@ -457,6 +457,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             source=self,
             axis_labels=Event,
             data=Event,
+            metadata=Event,
             affine=Event,
             blending=Event,
             cursor=Event,
@@ -671,6 +672,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     def metadata(self, value: dict) -> None:
         self._metadata.clear()
         self._metadata.update(value)
+        self.events.metadata()
 
     @property
     def source(self) -> Source:
