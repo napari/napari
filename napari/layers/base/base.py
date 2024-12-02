@@ -1699,6 +1699,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         ----------
         vector_world : tuple, list, 1D array
             A vector in world coordinates.
+        dims_displayed : list[int]
+            Indices of displayed dimensions of the data.
 
         Returns
         -------
@@ -1711,24 +1713,23 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         For more information see also:
         https://www.scratchapixel.com/lessons/mathematics-physics-for-computer-graphics/geometry/transforming-normals.html
         """
-        unit_vector = np.asarray(vector_world) / np.linalg.norm(vector_world)
 
         # the napari transform is from layer -> world.
         # We want the inverse of the world ->  layer, so we just take the napari transform
         inverse_transform = self._transforms[1:].simplified.linear_matrix
-        transpose_inverse_transform = inverse_transform.T
+
+        # Extract the relevant submatrix based on dims_displayed
+        submatrix = inverse_transform[np.ix_(dims_displayed, dims_displayed)]
+        transpose_inverse_transform = submatrix.T
 
         # transform the vector
         transformed_vector = np.matmul(
-            transpose_inverse_transform, unit_vector
+            transpose_inverse_transform, vector_world
         )
 
-        transformed_vector_displayed = transformed_vector[dims_displayed]
-        transformed_vector_displayed /= np.linalg.norm(
-            transformed_vector_displayed
-        )
+        transformed_vector /= np.linalg.norm(transformed_vector)
 
-        return transformed_vector_displayed
+        return transformed_vector
 
     def _world_to_layer_dims(
         self, *, world_dims: npt.NDArray, ndim_world: int
