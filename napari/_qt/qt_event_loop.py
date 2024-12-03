@@ -61,7 +61,22 @@ _app_ref = None
 _IPYTHON_WAS_HERE_FIRST = 'IPython' in sys.modules
 
 
-def get_app(
+# TODO: Remove in napari 0.6.0
+def get_app(*args, **kwargs) -> QApplication:
+    """Get or create the Qt QApplication. Now deprecated, use `get_qapp`."""
+    warn(
+        trans._(
+            '`QApplication` instance access through `get_app` is deprecated and will be removed in 0.6.0.\n'
+            'Please use `get_qapp` instead.\n',
+            deferred=True,
+        ),
+        category=FutureWarning,
+        stacklevel=2,
+    )
+    return get_qapp(*args, **kwargs)
+
+
+def get_qapp(
     *,
     app_name: Optional[str] = None,
     app_version: Optional[str] = None,
@@ -188,13 +203,10 @@ def get_app(
     if _IPYTHON_WAS_HERE_FIRST:
         _try_enable_ipython_gui('qt' if ipy_interactive else None)
 
-    if not _ipython_has_eventloop():
-        notification_manager.notification_ready.connect(
-            NapariQtNotification.show_notification
-        )
-        notification_manager.notification_ready.connect(
-            show_console_notification
-        )
+    notification_manager.notification_ready.connect(
+        NapariQtNotification.show_notification
+    )
+    notification_manager.notification_ready.connect(show_console_notification)
 
     if perf_config and not perf_config.patched:
         # Will patch based on config file.
@@ -246,7 +258,7 @@ def quit_app():
     else:
         QApplication.setWindowIcon(QIcon())
 
-    if perf.USE_PERFMON:
+    if perf.perf_config is not None:
         # Write trace file before exit, if we were writing one.
         # Is there a better place to make sure this is done on exit?
         perf.timers.stop_trace_file()

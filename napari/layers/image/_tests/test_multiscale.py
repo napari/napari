@@ -123,7 +123,7 @@ def test_non_uniform_3D_multiscale():
 
 def test_rgb_multiscale():
     """Test instantiating Image layer with RGB data."""
-    shapes = [(40, 20, 3), (20, 10, 3), (10, 5, 3)]
+    shapes = [(40, 32, 3), (20, 16, 3), (10, 8, 3)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     layer = Image(data, multiscale=True)
@@ -138,7 +138,7 @@ def test_rgb_multiscale():
 
 def test_3D_rgb_multiscale():
     """Test instantiating Image layer with 3D RGB data."""
-    shapes = [(8, 40, 20, 3), (4, 20, 10, 3), (2, 10, 5, 3)]
+    shapes = [(8, 40, 32, 3), (4, 20, 16, 3), (2, 10, 8, 3)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     layer = Image(data, multiscale=True)
@@ -153,7 +153,7 @@ def test_3D_rgb_multiscale():
 
 def test_non_rgb_image():
     """Test forcing Image layer to be 3D and not rgb."""
-    shapes = [(40, 20, 3), (20, 10, 3), (10, 5, 3)]
+    shapes = [(40, 32, 3), (20, 16, 3), (10, 8, 3)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     layer = Image(data, multiscale=True, rgb=False)
@@ -455,13 +455,13 @@ def test_multiscale_data_protocol():
 
 @pytest.mark.parametrize(
     ('corner_pixels_world', 'exp_level', 'exp_corner_pixels_data'),
-    (
+    [
         ([[5, 5], [15, 15]], 0, [[5, 5], [15, 15]]),
         # Multiscale level selection uses > rather than >= so use -1 and 21
         # instead of 0 and 20 to ensure that the FOV is big enough.
         ([[-1, -1], [21, 21]], 1, [[0, 0], [9, 9]]),
         ([[-11, -11], [31, 31]], 2, [[0, 0], [4, 4]]),
-    ),
+    ],
 )
 def test_update_draw_variable_fov_fixed_canvas_size(
     corner_pixels_world, exp_level, exp_corner_pixels_data
@@ -483,11 +483,11 @@ def test_update_draw_variable_fov_fixed_canvas_size(
 
 @pytest.mark.parametrize(
     ('canvas_size_pixels', 'exp_level', 'exp_corner_pixels_data'),
-    (
+    [
         ([16, 16], 0, [[0, 0], [19, 19]]),
         ([8, 8], 1, [[0, 0], [9, 9]]),
         ([4, 4], 2, [[0, 0], [4, 4]]),
-    ),
+    ],
 )
 def test_update_draw_variable_canvas_size_fixed_fov(
     canvas_size_pixels, exp_level, exp_corner_pixels_data

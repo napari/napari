@@ -51,7 +51,7 @@ def test_tracks_controls_color_by(null_data, properties, qtbot):
     assert qtctrl.color_by_combobox.currentText() == qt_update_color_by
 
 
-@pytest.mark.parametrize('color_by', ('track_id', 'speed'))
+@pytest.mark.parametrize('color_by', ['track_id', 'speed'])
 def test_color_by_same_after_properties_change(
     null_data, properties, color_by, qtbot
 ):

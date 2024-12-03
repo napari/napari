@@ -60,6 +60,9 @@ Keymap = Mapping[
 USER_KEYMAP: Mapping[str, Callable] = {}
 
 KEY_SUBS = {
+    'Super': 'Meta',
+    'Command': 'Meta',
+    'Cmd': 'Meta',
     'Control': 'Ctrl',
     'Option': 'Alt',
 }
@@ -521,8 +524,7 @@ class KeymapHandler:
         """
         if event.key is None or (
             # on linux press down is treated as multiple press and release
-            event.native is not None
-            and event.native.isAutoRepeat()
+            event.native is not None and event.native.isAutoRepeat()
         ):
             return
         kb = _vispy2appmodel(event)

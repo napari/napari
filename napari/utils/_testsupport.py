@@ -4,6 +4,7 @@ import sys
 import warnings
 from contextlib import suppress
 from dataclasses import dataclass
+from pathlib import Path
 from typing import TYPE_CHECKING
 from unittest.mock import patch
 from weakref import WeakSet
@@ -11,7 +12,7 @@ from weakref import WeakSet
 import pytest
 
 if TYPE_CHECKING:
-    from pytest import FixtureRequest
+    from pytest import FixtureRequest  # noqa: PT013
 
 _SAVE_GRAPH_OPNAME = '--save-leaked-object-graph'
 
@@ -33,14 +34,14 @@ def pytest_addoption(parser):
         action='store_true',
         default=False,
         help="Try to save a graph of leaked object's reference (need objgraph"
-        "and graphviz installed",
+        'and graphviz installed',
     )
 
 
 COUNTER = 0
 
 
-def fail_obj_graph(Klass):
+def fail_obj_graph(Klass):  # pragma: no cover
     """
     Fail is a given class _instances weakset is non empty and print the object graph.
     """
@@ -55,17 +56,29 @@ def fail_obj_graph(Klass):
         COUNTER += 1
         import gc
 
-        gc.collect()
+        leaked_objects_count = len(Klass._instances)
 
+        gc.collect()
+        file_path = Path(
+            f'{Klass.__name__}-leak-backref-graph-{COUNTER}.pdf'
+        ).absolute()
         objgraph.show_backrefs(
             list(Klass._instances),
             max_depth=20,
-            filename=f'{Klass.__name__}-leak-backref-graph-{COUNTER}.pdf',
+            filename=str(file_path),
         )
+
+        Klass._instances.clear()
+
+        assert file_path.exists()
 
         # DO not remove len, this can break as C++ obj are gone, but python objects
         # still hang around and _repr_ would crash.
-        assert False, len(Klass._instances)
+        pytest.fail(
+            f'Test run fail with leaked {leaked_objects_count} instances of {Klass}.'
+            f'The object graph is saved in {file_path}.'
+            f'{len(Klass._instances)} objects left after cleanup'
+        )
 
 
 @pytest.fixture
@@ -103,7 +116,7 @@ GCPASS = 0
 
 
 @pytest.fixture(autouse=True)
-def clean_themes():
+def _clean_themes():
     from napari.utils import theme
 
     themes = set(theme.available_themes())
@@ -127,12 +140,48 @@ def pytest_runtest_makereport(item, call):
 
 
 @pytest.fixture
+def mock_app_model():
+    """Mock clean 'test_app' `NapariApplication` instance.
+
+    This fixture must be used whenever `napari._app_model.get_app_model()` is called to
+    return a 'test_app' `NapariApplication` instead of the 'napari'
+    `NapariApplication`. The `make_napari_viewer` fixture is already equipped with
+    a `mock_app_model`.
+
+    Note that `NapariApplication` registers app-model actions.
+    If this is not desired, please create a clean
+    `app_model.Application` in the test.
+
+    It does not register Qt related actions, providers or processors, which is done
+    via `init_qactions()`. Nor does it register plugins, done via `_initialize_plugins`.
+    If these are required, the `make_napari_viewer` fixture can be used, which
+    will register ALL actions, providers and processors and register plugins.
+    It will also automatically clear the lru cache.
+
+    Alternatively, you can specifically run `init_qactions()` or
+    `_initialize_plugins` within the test, ensuring that you `cache_clear()`
+    first.
+    """
+    from app_model import Application
+
+    from napari._app_model._app import NapariApplication, _napari_names
+
+    app = NapariApplication('test_app')
+    app.injection_store.namespace = _napari_names
+    with patch.object(NapariApplication, 'get_app_model', return_value=app):
+        try:
+            yield app
+        finally:
+            Application.destroy('test_app')
+
+
+@pytest.fixture
 def make_napari_viewer(
     qtbot,
     request: 'FixtureRequest',
+    mock_app_model,
     napari_plugin_manager,
     monkeypatch,
-    clean_themes,
 ):
     """A pytest fixture function that creates a napari viewer for use in testing.
 
@@ -219,6 +268,7 @@ def make_napari_viewer(
     init_qactions.cache_clear()
 
     viewers: WeakSet[Viewer] = WeakSet()
+    request.node._viewer_weak_set = viewers
 
     # may be overridden by using the parameter `strict_qt`
     _strict = False
@@ -227,9 +277,9 @@ def make_napari_viewer(
     prior_exception = getattr(sys, 'last_value', None)
     is_internal_test = request.module.__name__.startswith('napari.')
 
-    # disable throttling cursor event in tests
+    # disable thread for status checker
     monkeypatch.setattr(
-        'napari._qt.qt_main_window._QtMainWindow._throttle_cursor_to_status_connection',
+        'napari._qt.threads.status_checker.StatusChecker.start',
         _empty,
     )
 
@@ -301,15 +351,19 @@ def make_napari_viewer(
 
     # do not inline to avoid pytest trying to compute repr of expression.
     # it fails if C++ object gone but not Python object.
-    assert _do_not_inline_below == 0
+    assert (
+        _do_not_inline_below == 0
+    ), f'{request.config.getoption(_SAVE_GRAPH_OPNAME)}, {_SAVE_GRAPH_OPNAME}'
 
     # only check for leaked widgets if an exception was raised during the test,
     # and "strict" mode was used.
     if _strict and getattr(sys, 'last_value', None) is prior_exception:
         QApplication.processEvents()
         leak = set(QApplication.topLevelWidgets()).difference(initial)
+        leak = (x for x in leak if x.objectName() != 'handled_widget')
         # still not sure how to clean up some of the remaining vispy
         # vispy.app.backends._qt.CanvasBackendDesktop widgets...
+        # observed in `test_sys_info.py`
         if any(n.__class__.__name__ != 'CanvasBackendDesktop' for n in leak):
             # just a warning... but this can be converted to test errors
             # in pytest with `-W error`
@@ -360,7 +414,7 @@ def make_napari_viewer_proxy(make_napari_viewer, monkeypatch):
 
     proxies.clear()
 
-    yield actual_factory
+    return actual_factory
 
 
 @pytest.fixture

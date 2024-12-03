@@ -229,6 +229,14 @@ def calc_data_range(
     if data.dtype == np.uint8:
         return (0, 255)
 
+    if isinstance(data, np.ndarray) and data.ndim < 3:
+        min_val = _nanmin(data)
+        max_val = _nanmax(data)
+        if min_val == max_val:
+            min_val = min(min_val, 0)
+            max_val = max(max_val, 1)
+        return float(min_val), float(max_val)
+
     center: Union[int, list[int]]
     reduced_data: Union[list, LayerDataProtocol]
     if data.size > 1e7 and (data.ndim == 1 or (rgb and data.ndim == 2)):
@@ -278,8 +286,8 @@ def calc_data_range(
     max_val = _nanmax(reduced_data)
 
     if min_val == max_val:
-        min_val = 0
-        max_val = 1
+        min_val = min(min_val, 0)
+        max_val = max(max_val, 1)
     return (float(min_val), float(max_val))
 
 
@@ -303,7 +311,7 @@ def segment_normal(a, b, p=(0, 0, 1)) -> np.ndarray:
     """
     d = b - a
 
-    norm: Any  # float or array or float, mypy has some difficulities.
+    norm: Any  # float or array or float, mypy has some difficulties.
 
     if d.ndim == 1:
         normal = np.array([d[1], -d[0]]) if len(d) == 2 else np.cross(d, p)
@@ -466,7 +474,7 @@ def _validate_property_choices(property_choices):
 
 
 def _coerce_current_properties_value(
-    value: Union[float, str, bool, list, tuple, np.ndarray]
+    value: Union[float, str, bool, list, tuple, np.ndarray],
 ) -> np.ndarray:
     """Coerce a value in a current_properties dictionary into the correct type.
 
@@ -498,7 +506,7 @@ def _coerce_current_properties_value(
 def coerce_current_properties(
     current_properties: Mapping[
         str, Union[float, str, int, bool, list, tuple, npt.NDArray]
-    ]
+    ],
 ) -> dict[str, np.ndarray]:
     """Coerce a current_properties dictionary into the correct type.
 
@@ -981,9 +989,7 @@ def _validate_features(
         # a pandas Series with mixed indices as input.
         # This way should handle all array-like objects correctly.
         # See https://github.com/napari/napari/pull/4755 for more details.
-        features = {
-            key: np.array(value, copy=False) for key, value in features.items()
-        }
+        features = {key: np.asarray(value) for key, value in features.items()}
     index = None if num_data is None else range(num_data)
     return pd.DataFrame(data=features, index=index)
 

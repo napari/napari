@@ -30,6 +30,7 @@ from napari.layers.shapes._shapes_constants import (
     shape_classes,
 )
 from napari.layers.shapes._shapes_mouse_bindings import (
+    _set_highlight,
     add_ellipse,
     add_line,
     add_path_polygon,
@@ -93,34 +94,22 @@ class Shapes(Layer):
     ndim : int
         Number of dimensions for shapes. When data is not None, ndim must be D.
         An empty shapes layer can be instantiated with arbitrary ndim.
-    features : dict[str, array-like] or Dataframe-like
-        Features table where each row corresponds to a shape and each column
-        is a feature.
-    feature_defaults : dict[str, Any] or Dataframe-like
-        The default value of each feature in a table with one row.
-    properties : dict {str: array (N,)}, DataFrame
-        Properties for each shape. Each property should be an array of length N,
-        where N is the number of shapes.
-    property_choices : dict {str: array (N,)}
-        possible values for each property.
-    text : str, dict
-        Text to be displayed with the shapes. If text is set to a key in properties,
-        the value of that property will be displayed. Multiple properties can be
-        composed using f-string-like syntax (e.g., '{property_1}, {float_property:.2f}).
-        A dictionary can be provided with keyword arguments to set the text values
-        and display properties. See TextManager.__init__() for the valid keyword arguments.
-        For example usage, see /napari/examples/add_shapes_with_text.py.
-    shape_type : string or list
-        String of shape shape_type, must be one of "{'line', 'rectangle',
-        'ellipse', 'path', 'polygon'}". If a list is supplied it must be
-        the same length as the length of `data` and each element will be
-        applied to each shape otherwise the same value will be used for all
-        shapes.
-    edge_width : float or list
-        Thickness of lines and edges. If a list is supplied it must be the
-        same length as the length of `data` and each element will be
-        applied to each shape otherwise the same value will be used for all
-        shapes.
+    affine : n-D array or napari.utils.transforms.Affine
+        (N+1, N+1) affine transformation matrix in homogeneous coordinates.
+        The first (N, N) entries correspond to a linear transform and
+        the final column is a length N translation vector and a 1 or a napari
+        `Affine` transform object. Applied as an extra transform on top of the
+        provided scale, rotate, and shear values.
+    axis_labels : tuple of str, optional
+        Dimension names of the layer data.
+        If not provided, axis_labels will be set to (..., 'axis -2', 'axis -1').
+    blending : str
+        One of a list of preset blending modes that determines how RGB and
+        alpha values of the layer visual get mixed. Allowed values are
+        {'opaque', 'translucent', and 'additive'}.
+    cache : bool
+        Whether slices of out-of-core datasets should be cached upon retrieval.
+        Currently, this only applies to dask arrays.
     edge_color : str, array-like
         If string can be any color name recognized by vispy or hex value if
         starting with `#`. If array-like must be 1-dimensional array with 3
@@ -137,6 +126,15 @@ class Shapes(Layer):
         of the specified property that are mapped to 0 and 1, respectively.
         The default value is None. If set the none, the clims will be set to
         (property.min(), property.max())
+    edge_width : float or list
+        Thickness of lines and edges. If a list is supplied it must be the
+        same length as the length of `data` and each element will be
+        applied to each shape otherwise the same value will be used for all
+        shapes.
+    experimental_clipping_planes : list of dicts, list of ClippingPlane, or ClippingPlaneList
+        Each dict defines a clipping plane in 3D in data coordinates.
+        Valid dictionary keys are {'position', 'normal', and 'enabled'}.
+        Values on the negative side of the normal are discarded if the plane is enabled.
     face_color : str, array-like
         If string can be any color name recognized by vispy or hex value if
         starting with `#`. If array-like must be 1-dimensional array with 3
@@ -153,52 +151,70 @@ class Shapes(Layer):
         of the specified property that are mapped to 0 and 1, respectively.
         The default value is None. If set the none, the clims will be set to
         (property.min(), property.max())
-    z_index : int or list
-        Specifier of z order priority. Shapes with higher z order are
-        displayed ontop of others. If a list is supplied it must be the
-        same length as the length of `data` and each element will be
-        applied to each shape otherwise the same value will be used for all
-        shapes.
-    name : str
-        Name of the layer.
+    feature_defaults : dict[str, Any] or Dataframe-like
+        The default value of each feature in a table with one row.
+    features : dict[str, array-like] or Dataframe-like
+        Features table where each row corresponds to a shape and each column
+        is a feature.
     metadata : dict
         Layer metadata.
-    scale : tuple of float
-        Scale factors for the layer.
-    translate : tuple of float
-        Translation values for the layer.
+    name : str
+        Name of the layer.
+    opacity : float
+        Opacity of the layer visual, between 0.0 and 1.0.
+    projection_mode : str
+        How data outside the viewed dimensions but inside the thick Dims slice will
+        be projected onto the viewed dimenions.
+    properties : dict {str: array (N,)}, DataFrame
+        Properties for each shape. Each property should be an array of length N,
+        where N is the number of shapes.
+    property_choices : dict {str: array (N,)}
+        possible values for each property.
     rotate : float, 3-tuple of float, or n-D array.
         If a float convert into a 2D rotation matrix using that value as an
         angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
         pitch, roll convention. Otherwise assume an nD rotation. Angles are
         assumed to be in degrees. They can be converted from radians with
         np.degrees if needed.
+    scale : tuple of float
+        Scale factors for the layer.
+    shape_type : string or list
+        String of shape shape_type, must be one of "{'line', 'rectangle',
+        'ellipse', 'path', 'polygon'}". If a list is supplied it must be
+        the same length as the length of `data` and each element will be
+        applied to each shape otherwise the same value will be used for all
+        shapes.
     shear : 1-D array or n-D array
         Either a vector of upper triangular values, or an nD shear matrix with
         ones along the main diagonal.
-    affine : n-D array or napari.utils.transforms.Affine
-        (N+1, N+1) affine transformation matrix in homogeneous coordinates.
-        The first (N, N) entries correspond to a linear transform and
-        the final column is a length N translation vector and a 1 or a napari
-        `Affine` transform object. Applied as an extra transform on top of the
-        provided scale, rotate, and shear values.
-    opacity : float
-        Opacity of the layer visual, between 0.0 and 1.0.
-    blending : str
-        One of a list of preset blending modes that determines how RGB and
-        alpha values of the layer visual get mixed. Allowed values are
-        {'opaque', 'translucent', and 'additive'}.
+    text : str, dict
+        Text to be displayed with the shapes. If text is set to a key in properties,
+        the value of that property will be displayed. Multiple properties can be
+        composed using f-string-like syntax (e.g., '{property_1}, {float_property:.2f}).
+        A dictionary can be provided with keyword arguments to set the text values
+        and display properties. See TextManager.__init__() for the valid keyword arguments.
+        For example usage, see /napari/examples/add_shapes_with_text.py.
+    translate : tuple of float
+        Translation values for the layer.
+    units : tuple of str or pint.Unit, optional
+        Units of the layer data in world coordinates.
+        If not provided, the default units are assumed to be pixels.
     visible : bool
         Whether the layer visual is currently being displayed.
-    cache : bool
-        Whether slices of out-of-core datasets should be cached upon retrieval.
-        Currently, this only applies to dask arrays.
+    z_index : int or list
+        Specifier of z order priority. Shapes with higher z order are
+        displayed ontop of others. If a list is supplied it must be the
+        same length as the length of `data` and each element will be
+        applied to each shape otherwise the same value will be used for all
+        shapes.
 
     Attributes
     ----------
     data : (N, ) list of array
         List of shape data, where each element is an (N, D) array of the
         N vertices of a shape in D dimensions.
+    axis_labels : tuple of str
+        Dimension names of the layer data.
     features : Dataframe-like
         Features table where each row corresponds to a shape and each column
         is a feature.
@@ -251,6 +267,8 @@ class Shapes(Layer):
 
         The ADD_RECTANGLE, ADD_ELLIPSE, ADD_LINE, ADD_PATH, and ADD_POLYGON
         modes all allow for their corresponding shape type to be added.
+    units: tuple of pint.Unit
+        Units of the layer data in world coordinates.
 
     Notes
     -----
@@ -413,37 +431,39 @@ class Shapes(Layer):
     def __init__(
         self,
         data=None,
-        *,
         ndim=None,
-        features=None,
-        feature_defaults=None,
-        properties=None,
-        property_choices=None,
-        text=None,
-        shape_type='rectangle',
-        edge_width=1,
+        *,
+        affine=None,
+        axis_labels=None,
+        blending='translucent',
+        cache=True,
         edge_color='#777777',
         edge_color_cycle=None,
         edge_colormap='viridis',
         edge_contrast_limits=None,
+        edge_width=1,
+        experimental_clipping_planes=None,
         face_color='white',
         face_color_cycle=None,
         face_colormap='viridis',
         face_contrast_limits=None,
-        z_index=0,
-        name=None,
+        feature_defaults=None,
+        features=None,
         metadata=None,
-        scale=None,
-        translate=None,
-        rotate=None,
-        shear=None,
-        affine=None,
+        name=None,
         opacity=0.7,
-        blending='translucent',
-        visible=True,
-        cache=True,
-        experimental_clipping_planes=None,
         projection_mode='none',
+        properties=None,
+        property_choices=None,
+        rotate=None,
+        scale=None,
+        shape_type='rectangle',
+        shear=None,
+        text=None,
+        translate=None,
+        units=None,
+        visible=True,
+        z_index=0,
     ) -> None:
         if data is None or len(data) == 0:
             if ndim is None:
@@ -463,20 +483,22 @@ class Shapes(Layer):
 
         super().__init__(
             data,
-            ndim=ndim,
-            name=name,
-            metadata=metadata,
-            scale=scale,
-            translate=translate,
-            rotate=rotate,
-            shear=shear,
+            ndim,
             affine=affine,
-            opacity=opacity,
+            axis_labels=axis_labels,
             blending=blending,
-            visible=visible,
             cache=cache,
             experimental_clipping_planes=experimental_clipping_planes,
+            metadata=metadata,
+            name=name,
+            opacity=opacity,
             projection_mode=projection_mode,
+            rotate=rotate,
+            scale=scale,
+            shear=shear,
+            translate=translate,
+            units=units,
+            visible=visible,
         )
 
         self.events.add(
@@ -591,6 +613,8 @@ class Shapes(Layer):
         )
 
         # Trigger generation of view slice and thumbnail
+        self.mouse_wheel_callbacks.append(_set_highlight)
+        self.mouse_drag_callbacks.append(_set_highlight)
         self.refresh()
 
     def _initialize_current_color_for_empty_layer(
@@ -646,6 +670,7 @@ class Shapes(Layer):
     @data.setter
     def data(self, data):
         self._finish_drawing()
+        self.selected_data = set()
         prior_data = len(self.data) > 0
         data, shape_type = extract_shape_type(data)
         n_new_shapes = number_of_shapes(data)
@@ -689,8 +714,7 @@ class Shapes(Layer):
         data_not_empty = (
             data is not None
             and (isinstance(data, np.ndarray) and data.size > 0)
-            or (isinstance(data, list) and len(data) > 0)
-        )
+        ) or (isinstance(data, list) and len(data) > 0)
         kwargs = {
             'value': self.data,
             'vertex_indices': ((),),
@@ -1267,6 +1291,19 @@ class Shapes(Layer):
                 with self.block_update_properties():
                     self.current_properties = unique_properties
 
+        self._set_highlight()
+
+    @property
+    def _is_moving(self) -> bool:
+        return self._private_is_moving
+
+    @_is_moving.setter
+    def _is_moving(self, value):
+        assert value in (True, False)
+        if value:
+            assert self._moving_coordinates is not None
+        self._private_is_moving = value
+
     def _set_color(self, color, attribute: str):
         """Set the face_color or edge_color property
 
@@ -1433,7 +1470,7 @@ class Shapes(Layer):
                 # and update_color_mapping==False
                 color_cycle_map = getattr(self, f'{attribute}_color_cycle_map')
                 color_cycle_keys = [*color_cycle_map]
-                props_in_map = np.in1d(color_properties, color_cycle_keys)
+                props_in_map = np.isin(color_properties, color_cycle_keys)
                 if not np.all(props_in_map):
                     props_to_add = np.unique(
                         color_properties[np.logical_not(props_in_map)]
@@ -1547,12 +1584,12 @@ class Shapes(Layer):
             )
         )
 
-    def _get_state(self):
+    def _get_state(self) -> dict[str, Any]:
         """Get dictionary of layer state.
 
         Returns
         -------
-        state : dict
+        state : dict of str to Any
             Dictionary of layer state.
         """
         state = self._get_base_state()
@@ -1680,12 +1717,15 @@ class Shapes(Layer):
         }
 
         # don't update thumbnail on mode changes
-        with self.block_thumbnail_update():
-            if not (mode in draw_modes and self._mode in draw_modes):
-                # Shapes._finish_drawing() calls Shapes.refresh()
+        if not (mode in draw_modes and self._mode in draw_modes):
+            # Shapes._finish_drawing() calls Shapes.refresh() via Shapes._update_dims()
+            # so we need to block thumbnail update from here
+            # TODO: this is not great... ideally we should no longer need this blocking system
+            #       but maybe follow up PR
+            with self.block_thumbnail_update():
                 self._finish_drawing()
-            else:
-                self.refresh()
+        else:
+            self.refresh(data_displayed=False, extent=False, thumbnail=False)
 
     def _reset_editable(self) -> None:
         self.editable = self._slice_input.ndisplay == 2
@@ -2364,7 +2404,7 @@ class Shapes(Layer):
 
     def interaction_box(self, index):
         """Create the interaction box around a shape or list of shapes.
-        If a single index is passed then the boudning box will be inherited
+        If a single index is passed then the bounding box will be inherited
         from that shapes interaction box. If list of indices is passed it will
         be computed directly.
 
@@ -2425,8 +2465,10 @@ class Shapes(Layer):
             Mx3 array of any indices of vertices for triangles of outline or
             None
         """
-        if self._value is not None and (
-            self._value[0] is not None or len(self.selected_data) > 0
+        if (
+            self._highlight_visible
+            and self._value is not None
+            and (self._value[0] is not None or len(self.selected_data) > 0)
         ):
             if len(self.selected_data) > 0:
                 index = list(self.selected_data)
@@ -2467,9 +2509,9 @@ class Shapes(Layer):
         width : float
             Width of the box edge
         """
-        if len(self.selected_data) > 0:
+        if self._highlight_visible and len(self.selected_data) > 0:
             if self._mode == Mode.SELECT:
-                # If in select mode just show the interaction boudning box
+                # If in select mode just show the interaction bounding box
                 # including its vertices and the rotation handle
                 box = self._selected_box[Box.WITH_HANDLE]
                 if self._value[0] is None or self._value[1] is None:
@@ -2518,7 +2560,7 @@ class Shapes(Layer):
                 edge_color = 'white'
                 pos = None
                 width = 0
-        elif self._is_selecting:
+        elif self._highlight_visible and self._is_selecting:
             # If currently dragging a selection box just show an outline of
             # that box
             vertices = np.empty((0, 2))
@@ -2572,17 +2614,24 @@ class Shapes(Layer):
         self._fixed_vertex = None
         self._value = (None, None)
         self._moving_value = (None, None)
+        self._last_cursor_position = None
         if self._is_creating is True:
             if self._mode == Mode.ADD_PATH:
                 vertices = self._data_view.shapes[index].data
                 if len(vertices) <= 2:
                     self._data_view.remove(index)
+                    # Clear selected data to prevent issues.
+                    # See https://github.com/napari/napari/pull/6912#discussion_r1601169680
+                    self.selected_data.clear()
                 else:
                     self._data_view.edit(index, vertices[:-1])
             if self._mode in {Mode.ADD_POLYGON, Mode.ADD_POLYGON_LASSO}:
                 vertices = self._data_view.shapes[index].data
                 if len(vertices) <= 3:
                     self._data_view.remove(index)
+                    # Clear selected data to prevent issues.
+                    # See https://github.com/napari/napari/pull/6912#discussion_r1601169680
+                    self.selected_data.clear()
                 elif self._mode == Mode.ADD_POLYGON:
                     self._data_view.edit(index, vertices[:-1])
                 else:
@@ -2744,16 +2793,6 @@ class Shapes(Layer):
             cur_len = np.linalg.norm(handle_vec)
             box[Box.HANDLE] = box[Box.TOP_CENTER] + r * handle_vec / cur_len
         self._selected_box = box + center
-
-    def _update_draw(
-        self, scale_factor, corner_pixels_displayed, shape_threshold
-    ):
-        prev_scale = self.scale_factor
-        super()._update_draw(
-            scale_factor, corner_pixels_displayed, shape_threshold
-        )
-        # update highlight only if scale has changed, otherwise causes a cycle
-        self._set_highlight(force=(prev_scale != self.scale_factor))
 
     def _get_value(self, position):
         """Value of the data at a position in data coordinates.
@@ -2969,7 +3008,7 @@ class Shapes(Layer):
         new_z_index = max(self._data_view._z_index) + 1
         for index in self.selected_data:
             self._data_view.update_z_index(index, new_z_index)
-        self.refresh()
+        self.refresh(extent=False, highlight=False)
 
     def move_to_back(self) -> None:
         """Moves selected objects to be displayed behind all others."""
@@ -2978,7 +3017,7 @@ class Shapes(Layer):
         new_z_index = min(self._data_view._z_index) - 1
         for index in self.selected_data:
             self._data_view.update_z_index(index, new_z_index)
-        self.refresh()
+        self.refresh(extent=False, highlight=False)
 
     def _copy_data(self) -> None:
         """Copy selected shapes to clipboard."""

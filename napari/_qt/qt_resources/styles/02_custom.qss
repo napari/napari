@@ -116,6 +116,7 @@ QtConsole > QTextEdit {
   selection-background-color: {{ highlight }};
   margin: 10px;
   font-family: Menlo, Consolas, "Ubuntu Mono", "Roboto Mono", "DejaVu Sans Mono", monospace;
+  font-size: {{ font_size }};
 }
 .inverted {
   background-color: {{ background }};
@@ -881,6 +882,23 @@ QtLayerList::indicator:checked {
   image: url("theme_{{ id }}:/error.svg");
   min-height: 36px;
   min-width: 36px;
+}
+
+/* ------------- Set size for dims sorter --------- */
+
+QtDimsSorter > QtListView {
+  max-height: 100px;
+  max-width: 150px;
+}
+
+/* ------------- Lock check buttons for dims sorter --------- */
+
+QtDimsSorter > QtListView::indicator::unchecked {
+  image: url("theme_{{ id }}:/lock.svg");
+}
+
+QtDimsSorter > QtListView::indicator::checked {
+  image: url("theme_{{ id }}:/lock_open.svg");
 }
 
 /* --------------- Menus (application and context menus) ---------------- */

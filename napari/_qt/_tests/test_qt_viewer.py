@@ -33,6 +33,16 @@ from napari.utils.theme import available_themes
 
 BUILTINS_DISP = 'napari'
 BUILTINS_NAME = 'builtins'
+NUMPY_INTEGER_TYPES = [
+    np.int8,
+    np.int16,
+    np.int32,
+    np.int64,
+    np.uint8,
+    np.uint16,
+    np.uint32,
+    np.uint64,
+]
 
 
 def test_qt_viewer(make_napari_viewer):
@@ -88,7 +98,7 @@ def test_qt_viewer_console_focus(qtbot, make_napari_viewer):
     qtbot.waitUntil(console_has_focus)
 
 
-@pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
+@pytest.mark.parametrize(('layer_class', 'data', 'ndim'), layer_test_data)
 def test_add_layer(make_napari_viewer, layer_class, data, ndim):
     viewer = make_napari_viewer(ndisplay=int(np.clip(ndim, 2, 3)))
     view = viewer.window._qt_viewer
@@ -254,9 +264,50 @@ def test_screenshot(make_napari_viewer):
 
     # Take screenshot
     with pytest.warns(FutureWarning):
-        screenshot = viewer.window.qt_viewer.screenshot(flash=False)
+        viewer.window.qt_viewer.screenshot(flash=False)
     screenshot = viewer.window.screenshot(flash=False, canvas_only=True)
     assert screenshot.ndim == 3
+
+
+def test_export_figure(make_napari_viewer, tmp_path):
+    viewer = make_napari_viewer()
+
+    np.random.seed(0)
+    # Add image
+    data = np.random.randint(150, 250, size=(250, 250))
+    layer = viewer.add_image(data)
+
+    camera_center = viewer.camera.center
+    camera_zoom = viewer.camera.zoom
+    img = viewer.export_figure(flash=False, path=str(tmp_path / 'img.png'))
+
+    assert viewer.camera.center == camera_center
+    assert viewer.camera.zoom == camera_zoom
+    assert img.shape == (250, 250, 4)
+    assert np.all(img != np.array([0, 0, 0, 0]))
+
+    assert (tmp_path / 'img.png').exists()
+
+    layer.scale = [0.12, 0.24]
+    img = viewer.export_figure(flash=False)
+    # allclose accounts for rounding errors when computing size in hidpi aka
+    # retina displays
+    np.testing.assert_allclose(img.shape, (250, 499, 4), atol=1)
+
+    layer.scale = [0.12, 0.12]
+    img = viewer.export_figure(flash=False)
+    assert img.shape == (250, 250, 4)
+
+    viewer.camera.center = [100, 100]
+    camera_center = viewer.camera.center
+    camera_zoom = viewer.camera.zoom
+    img = viewer.export_figure()
+
+    assert viewer.camera.center == camera_center
+    assert viewer.camera.zoom == camera_zoom
+    assert img.shape == (250, 250, 4)
+    assert np.all(img != np.array([0, 0, 0, 0]))
+    viewer.close()
 
 
 @pytest.mark.skip('new approach')
@@ -316,6 +367,7 @@ def test_points_layer_display_correct_slice_on_scale(make_napari_viewer):
     np.testing.assert_equal(response.indices, [0])
 
 
+@pytest.mark.slow
 @skip_on_win_ci
 def test_qt_viewer_clipboard_with_flash(make_napari_viewer, qtbot):
     viewer = make_napari_viewer()
@@ -402,6 +454,7 @@ def test_qt_viewer_clipboard_without_flash(make_napari_viewer):
     assert not hasattr(viewer.window._qt_window, '_flash_animation')
 
 
+@pytest.mark.key_bindings
 def test_active_keybindings(make_napari_viewer):
     """Test instantiating viewer."""
     viewer = make_napari_viewer()
@@ -461,6 +514,35 @@ def test_process_mouse_event(make_napari_viewer):
 
         expected_position = view.canvas._map_canvas2world(new_pos)
         np.testing.assert_almost_equal(expected_position, list(event.position))
+
+    viewer.dims.ndisplay = 3
+    view.canvas._process_mouse_event(mouse_press_callbacks, mouse_event)
+
+
+def test_process_mouse_event_2d_layer_3d_viewer(make_napari_viewer):
+    """Test that _process_mouse_events can handle 2d layers in 3D.
+
+    This is a test for: https://github.com/napari/napari/issues/7299
+    """
+
+    # make a mock mouse event
+    new_pos = [5, 5]
+    mouse_event = MouseEvent(
+        pos=new_pos,
+    )
+    data = np.zeros((20, 20))
+
+    viewer = make_napari_viewer()
+    view = viewer.window._qt_viewer
+    image = viewer.add_image(data)
+
+    @image.mouse_drag_callbacks.append
+    def on_click(layer, event):
+        expected_position = view.canvas._map_canvas2world(new_pos)
+        np.testing.assert_almost_equal(expected_position, list(event.position))
+
+    assert viewer.dims.ndisplay == 2
+    view.canvas._process_mouse_event(mouse_press_callbacks, mouse_event)
 
     viewer.dims.ndisplay = 3
     view.canvas._process_mouse_event(mouse_press_callbacks, mouse_event)
@@ -691,18 +773,10 @@ def _update_data(
     return color_box_color, middle_pixel
 
 
-@pytest.fixture()
-def qt_viewer_with_controls(qtbot):
-    qt_viewer = QtViewer(viewer=ViewerModel())
-    qt_viewer.show()
+@pytest.fixture
+def qt_viewer_with_controls(qt_viewer):
     qt_viewer.controls.show()
-    yield qt_viewer
-    qt_viewer.controls.hide()
-    qt_viewer.controls.close()
-    qt_viewer.hide()
-    qt_viewer.close()
-    qt_viewer._instances.clear()
-    qtbot.wait(50)
+    return qt_viewer
 
 
 @skip_local_popups
@@ -800,7 +874,7 @@ def test_label_colors_matching_widget_direct(
         )
 
 
-def test_axes_labels(make_napari_viewer):
+def test_axis_labels(make_napari_viewer):
     viewer = make_napari_viewer(ndisplay=3)
     layer = viewer.add_image(np.zeros((2, 2, 2)), scale=(1, 2, 4))
 
@@ -814,16 +888,12 @@ def test_axes_labels(make_napari_viewer):
     assert tuple(axes_visual.node.text.text) == ('2', '1', '0')
 
 
-@pytest.fixture()
-def qt_viewer(qtbot):
-    qt_viewer = QtViewer(ViewerModel())
-    qt_viewer.show()
-    qt_viewer.resize(460, 460)
+@pytest.fixture
+def qt_viewer(qtbot, qt_viewer_: QtViewer):
+    qt_viewer_.show()
+    qt_viewer_.resize(460, 460)
     QApplication.processEvents()
-    yield qt_viewer
-    qt_viewer.close()
-    qt_viewer._instances.clear()
-    del qt_viewer
+    return qt_viewer_
 
 
 def _find_margin(data: np.ndarray, additional_margin: int) -> tuple[int, int]:
@@ -958,6 +1028,7 @@ def test_shortcut_passing(make_napari_viewer):
     assert layer.mode == 'erase'
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize('mode', ['direct', 'random'])
 def test_selection_collision(qt_viewer: QtViewer, mode):
     data = np.zeros((10, 10), dtype=np.uint8)
@@ -970,7 +1041,7 @@ def test_selection_collision(qt_viewer: QtViewer, mode):
             color_dict={10: 'red', 10 + 49: 'red', None: 'black'}
         )
 
-    for dtype in np.sctypes['int'] + np.sctypes['uint']:
+    for dtype in NUMPY_INTEGER_TYPES:
         layer.data = data.astype(dtype)
         layer.show_selected_label = False
         QApplication.processEvents()
@@ -994,21 +1065,21 @@ def test_selection_collision(qt_viewer: QtViewer, mode):
 
 def test_all_supported_dtypes(qt_viewer):
     data = np.zeros((10, 10), dtype=np.uint8)
-    layer = qt_viewer.viewer.add_labels(data, opacity=1)
+    layer_ = qt_viewer.viewer.add_labels(data, opacity=1)
 
-    for i, dtype in enumerate(np.sctypes['int'] + np.sctypes['uint'], start=1):
+    for i, dtype in enumerate(NUMPY_INTEGER_TYPES, start=1):
         data = np.full((10, 10), i, dtype=dtype)
-        layer.data = data
+        layer_.data = data
         QApplication.processEvents()
         canvas_screenshot = qt_viewer.screenshot(flash=False)
         midd_pixel = canvas_screenshot[
             tuple(np.array(canvas_screenshot.shape[:2]) // 2)
         ]
         npt.assert_equal(
-            midd_pixel, layer.colormap.map(i) * 255, err_msg=f'{dtype} {i}'
+            midd_pixel, layer_.colormap.map(i) * 255, err_msg=f'{dtype=} {i=}'
         )
 
-    layer.colormap = DirectLabelColormap(
+    layer_.colormap = DirectLabelColormap(
         color_dict={
             0: 'red',
             1: 'green',
@@ -1026,19 +1097,20 @@ def test_all_supported_dtypes(qt_viewer):
         }
     )
 
-    for i, dtype in enumerate(np.sctypes['int'] + np.sctypes['uint'], start=1):
+    for i, dtype in enumerate(NUMPY_INTEGER_TYPES, start=1):
         data = np.full((10, 10), i, dtype=dtype)
-        layer.data = data
+        layer_.data = data
         QApplication.processEvents()
         canvas_screenshot = qt_viewer.screenshot(flash=False)
         midd_pixel = canvas_screenshot[
             tuple(np.array(canvas_screenshot.shape[:2]) // 2)
         ]
         npt.assert_equal(
-            midd_pixel, layer.colormap.map(i) * 255, err_msg=f'{dtype} {i}'
+            midd_pixel, layer_.colormap.map(i) * 255, err_msg=f'{dtype} {i}'
         )
 
 
+@pytest.mark.slow
 def test_more_than_uint16_colors(qt_viewer):
     pytest.importorskip('numba')
     # this test is slow (10s locally)
@@ -1066,3 +1138,134 @@ def test_more_than_uint16_colors(qt_viewer):
         npt.assert_equal(
             midd_pixel, layer.colormap.map(i) * 255, err_msg=f'{i}'
         )
+
+
+def test_points_2d_to_3d(make_napari_viewer):
+    """See https://github.com/napari/napari/issues/6925"""
+    # this requires a full viewer cause some issues are caused only by
+    # qt processing events
+    viewer = make_napari_viewer(ndisplay=2, show=True)
+    viewer.add_points()
+    QApplication.processEvents()
+    viewer.dims.ndisplay = 3
+    QApplication.processEvents()
+
+
+@skip_local_popups
+def test_scale_bar_colored(qt_viewer, qtbot):
+    viewer = qt_viewer.viewer
+    scale_bar = viewer.scale_bar
+
+    # Add black image
+    data = np.zeros((2, 2))
+    viewer.add_image(data)
+
+    # Check scale bar is not visible (all the canvas is black - `[0, 0, 0, 255]`)
+    def check_all_black():
+        screenshot = qt_viewer.screenshot(flash=False)
+        assert np.all(screenshot == [0, 0, 0, 255], axis=-1).all()
+
+    qtbot.waitUntil(check_all_black)
+
+    # Check scale bar is visible (canvas has white `[1, 1, 1, 255]` in it)
+    def check_white_scale_bar():
+        screenshot = qt_viewer.screenshot(flash=False)
+        assert not np.all(screenshot == [0, 0, 0, 255], axis=-1).all()
+        assert np.all(screenshot == [1, 1, 1, 255], axis=-1).any()
+
+    scale_bar.visible = True
+    qtbot.waitUntil(check_white_scale_bar)
+
+    # Check scale bar is colored (canvas has fuchsia `[1, 0, 1, 255]` and not white in it)
+    def check_colored_scale_bar():
+        screenshot = qt_viewer.screenshot(flash=False)
+        assert not np.all(screenshot == [1, 1, 1, 255], axis=-1).any()
+        assert np.all(screenshot == [1, 0, 1, 255], axis=-1).any()
+
+    scale_bar.colored = True
+    qtbot.waitUntil(check_colored_scale_bar)
+
+    # Check scale bar is still visible but not colored (canvas has white again but not fuchsia in it)
+    def check_only_white_scale_bar():
+        screenshot = qt_viewer.screenshot(flash=False)
+        assert np.all(screenshot == [1, 1, 1, 255], axis=-1).any()
+        assert not np.all(screenshot == [1, 0, 1, 255], axis=-1).any()
+
+    scale_bar.colored = False
+    qtbot.waitUntil(check_only_white_scale_bar)
+
+
+@skip_local_popups
+def test_scale_bar_ticks(qt_viewer, qtbot):
+    viewer = qt_viewer.viewer
+    scale_bar = viewer.scale_bar
+
+    # Add black image
+    data = np.zeros((2, 2))
+    viewer.add_image(data)
+
+    # Check scale bar is not visible (all the canvas is black - `[0, 0, 0, 255]`)
+    def check_all_black():
+        screenshot = qt_viewer.screenshot(flash=False)
+        assert np.all(screenshot == [0, 0, 0, 255], axis=-1).all()
+
+    qtbot.waitUntil(check_all_black)
+
+    # Check scale bar is visible (canvas has white `[1, 1, 1, 255]` in it)
+    def check_white_scale_bar():
+        screenshot = qt_viewer.screenshot(flash=False)
+        assert not np.all(screenshot == [0, 0, 0, 255], axis=-1).all()
+        assert np.all(screenshot == [1, 1, 1, 255], axis=-1).any()
+
+    scale_bar.visible = True
+    qtbot.waitUntil(check_white_scale_bar)
+
+    # Check scale bar has ticks active and take screenshot for later comparison
+    assert scale_bar.ticks
+    screenshot_with_ticks = qt_viewer.screenshot(flash=False)
+
+    # Check scale bar without ticks (still white present but new screenshot differs from ticks one)
+    def check_no_ticks_scale_bar():
+        screenshot = qt_viewer.screenshot(flash=False)
+        assert np.all(screenshot == [1, 1, 1, 255], axis=-1).any()
+        npt.assert_raises(
+            AssertionError,
+            npt.assert_array_equal,
+            screenshot,
+            screenshot_with_ticks,
+        )
+
+    scale_bar.ticks = False
+    qtbot.waitUntil(check_no_ticks_scale_bar)
+
+    # Check scale bar again has ticks (still white present and new screenshot corresponds with ticks one)
+    def check_ticks_scale_bar():
+        screenshot = qt_viewer.screenshot(flash=False)
+        assert np.all(screenshot == [1, 1, 1, 255], axis=-1).any()
+        npt.assert_array_equal(screenshot, screenshot_with_ticks)
+
+    scale_bar.ticks = True
+    qtbot.waitUntil(check_ticks_scale_bar)
+
+
+@skip_local_popups
+def test_dask_cache(qt_viewer):
+    initial_dask_cache = get_settings().application.dask.cache
+
+    # check that disabling dask cache setting calls related logic
+    with mock.patch(
+        'napari._qt.qt_viewer.resize_dask_cache'
+    ) as mock_resize_dask_cache:
+        get_settings().application.dask.enabled = False
+    mock_resize_dask_cache.assert_called_once_with(
+        int(int(False) * initial_dask_cache * 1e9)
+    )
+
+    # check that enabling dask cache setting calls related logic
+    with mock.patch(
+        'napari._qt.qt_viewer.resize_dask_cache'
+    ) as mock_resize_dask_cache:
+        get_settings().application.dask.enabled = True
+    mock_resize_dask_cache.assert_called_once_with(
+        int(int(True) * initial_dask_cache * 1e9)
+    )

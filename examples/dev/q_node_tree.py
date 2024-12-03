@@ -16,10 +16,10 @@ is capable of providing a basic GUI for any tree structure based on
 """
 import napari
 from napari._qt.containers import QtNodeTreeView
-from napari.qt import get_app
+from napari.qt import get_qapp
 from napari.utils.tree import Group, Node
 
-get_app()
+get_qapp()
 
 # create a group of nodes.
 root = Group(
@@ -75,4 +75,5 @@ root.selection.events._current.connect(
     lambda e: print(f'current item changed to: {e.value}')
 )
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

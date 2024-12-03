@@ -111,15 +111,14 @@ class VispyPointsLayer(VispyBaseLayer):
             border_width = np.array([0])
 
         scale = self.layer.scale[-1]
-        scaled_highlight = (
-            settings.appearance.highlight.highlight_thickness
-            * self.layer.scale_factor
-        )
+        highlight_thickness = settings.appearance.highlight.highlight_thickness
+        scaled_highlight = highlight_thickness * self.layer.scale_factor
+        scaled_size = (size + border_width) * scale
         highlight_color = tuple(settings.appearance.highlight.highlight_color)
 
         self.node.selection_markers.set_data(
             data[:, ::-1],
-            size=(size + border_width) * scale,
+            size=scaled_size,
             symbol=symbol,
             edge_width=scaled_highlight * 2,
             edge_color=highlight_color,
@@ -131,15 +130,14 @@ class VispyPointsLayer(VispyBaseLayer):
             or 0 in self.layer._highlight_box.shape
         ):
             pos = np.zeros((1, self.layer._slice_input.ndisplay))
-            width = 0
+            highlight_thickness = 0
         else:
             pos = self.layer._highlight_box
-            width = scaled_highlight
 
         self.node.highlight_lines.set_data(
             pos=pos[:, ::-1],
             color=highlight_color,
-            width=width,
+            width=highlight_thickness,
         )
 
         self.node.update()
@@ -192,7 +190,18 @@ class VispyPointsLayer(VispyBaseLayer):
         self.node.spherical = shading == 'spherical'
 
     def _on_canvas_size_limits_change(self):
-        self.node.canvas_size_limits = self.layer.canvas_size_limits
+        self.node.points_markers.canvas_size_limits = (
+            self.layer.canvas_size_limits
+        )
+        highlight_thickness = (
+            get_settings().appearance.highlight.highlight_thickness
+        )
+        low, high = self.layer.canvas_size_limits
+        self.node.selection_markers.canvas_size_limits = (
+            low + highlight_thickness,
+            high + highlight_thickness,
+        )
+        self.node.update()
 
     def reset(self):
         super().reset()

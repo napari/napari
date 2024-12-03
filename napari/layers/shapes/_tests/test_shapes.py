@@ -17,6 +17,10 @@ from napari.layers import Shapes
 from napari.layers.base._base_constants import ActionType
 from napari.layers.utils._text_constants import Anchor
 from napari.layers.utils.color_encoding import ConstantColorEncoding
+from napari.utils._test_utils import (
+    validate_all_params_in_docstring,
+    validate_kwargs_sorted,
+)
 from napari.utils.colormaps.standardize_color import transform_color
 
 
@@ -503,11 +507,11 @@ def test_add_rectangles_raises_errors():
     np.random.seed(0)
     # single rectangle, 3 vertices
     data = 20 * np.random.random((1, 3, 2))
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='invalid number of vertices'):
         layer.add_rectangles(data)
     # multiple rectangles, 5 vertices
     data = 20 * np.random.random((5, 5, 2))
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='invalid number of vertices'):
         layer.add_rectangles(data)
 
 
@@ -659,11 +663,11 @@ def test_add_ellipses_raises_error():
     np.random.seed(0)
     # single ellipse, 3 vertices
     data = 20 * np.random.random((1, 3, 2))
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='invalid number of vertices'):
         layer.add_ellipses(data)
     # multiple ellipses, 5 vertices
     data = 20 * np.random.random((5, 5, 2))
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='invalid number of vertices'):
         layer.add_ellipses(data)
 
 
@@ -806,14 +810,14 @@ def test_add_lines_raises_error():
     shape = (1, 3, 2)
     data = 20 * np.random.random(shape)
     layer = Shapes()
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='invalid number of vertices'):
         layer.add_lines(data)
 
     # multiple lines
     data = [
         20 * np.random.random((np.random.randint(3, 10), 2)) for _ in range(10)
     ]
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='invalid number of vertices'):
         layer.add_lines(data)
 
 
@@ -905,12 +909,12 @@ def test_add_paths_raises_error():
     shape = (1, 1, 2)
     data = 20 * np.random.random(shape)
     layer = Shapes()
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='invalid number of vertices'):
         layer.add_paths(data)
 
     # multiple paths
     data = 20 * np.random.random((10, 1, 2))
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='invalid number of vertices'):
         layer.add_paths(data)
 
 
@@ -1021,13 +1025,13 @@ def test_add_polygons_raises_error():
     np.random.seed(0)
     # single polygon, 2 vertices
     data = 20 * np.random.random((1, 2, 2))
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='invalid number of vertices'):
         layer.add_polygons(data)
     # multiple polygons, only some with 2 vertices
     data = [20 * np.random.random((5, 2)) for _ in range(5)] + [
         20 * np.random.random((2, 2)) for _ in range(2)
     ]
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='invalid number of vertices'):
         layer.add_polygons(data)
 
 
@@ -1857,7 +1861,7 @@ def test_colormap_without_properties(attribute):
     data = 20 * np.random.random(shape)
     layer = Shapes(data)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must be a valid Shapes.properties'):
         setattr(layer, f'{attribute}_color_mode', 'colormap')
 
 
@@ -1953,7 +1957,7 @@ def test_edge_width():
 
     # Test setting with incorrect size list throws error
     new_widths = [2, 3]
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='does not match number of shapes'):
         layer.edge_width = new_widths
 
 
@@ -1998,7 +2002,7 @@ def test_z_index():
 
     # Test setting with incorrect size list throws error
     new_z_indices = [2, 3]
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='does not match number of shapes'):
         layer.z_index = new_z_indices
 
 
@@ -2099,6 +2103,7 @@ def test_value():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     data[-1, :] = [[0, 0], [0, 10], [10, 0], [10, 10]]
+    assert Shapes([]).get_value((0,) * 2) == (None, None)
     layer = Shapes(data)
     value = layer.get_value((0,) * 2)
     assert value == (9, None)
@@ -2113,8 +2118,25 @@ def test_value():
     assert value == (None, None)
 
 
+def test_value_non_convex():
+    """Test getting the value of the data at the current coordinates."""
+    data = [
+        [[0, 0], [10, 10], [20, 0], [10, 5]],
+    ]
+    layer = Shapes(data, shape_type='polygon')
+    assert layer.get_value((1,) * 2) == (0, None)
+    assert layer.get_value((10, 3)) == (None, None)
+
+
 @pytest.mark.parametrize(
-    'position,view_direction,dims_displayed,world,scale,expected',
+    (
+        'position',
+        'view_direction',
+        'dims_displayed',
+        'world',
+        'scale',
+        'expected',
+    ),
     [
         ((0, 5, 15, 15), [0, 1, 0, 0], [1, 2, 3], False, (1, 1, 1, 1), 2),
         ((0, 5, 15, 15), [0, -1, 0, 0], [1, 2, 3], False, (1, 1, 1, 1), 0),
@@ -2371,3 +2393,16 @@ def test_shapes_add_delete_only_emit_two_events():
     layer.selected_data = {1}
     layer.remove_selected()
     assert emitted_events.call_count == 4
+
+
+def test_clean_selection_on_set_data():
+    data = [[[0, 0], (10, 10)], [[0, 15], [10, 25]]]
+    layer = Shapes(data)
+    layer.selected_data = {0}
+    layer.data = [[[0, 0], (10, 10)]]
+    assert layer.selected_data == set()
+
+
+def test_docstring():
+    validate_all_params_in_docstring(Shapes)
+    validate_kwargs_sorted(Shapes)

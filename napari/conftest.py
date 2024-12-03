@@ -2,7 +2,7 @@
 
 Notes for using the plugin-related fixtures here:
 
-1. The `_npe2pm` fixture is always used, and it mocks the global npe2 plugin
+1. The `npe2pm_` fixture is always used, and it mocks the global npe2 plugin
    manager instance with a discovery-deficient plugin manager.  No plugins should be
    discovered in tests without explicit registration.
 2. wherever the builtins need to be tested, the `builtins` fixture should be explicitly
@@ -31,15 +31,17 @@ Notes for using the plugin-related fixtures here:
 
 from __future__ import annotations
 
+import contextlib
 import os
 import sys
+import threading
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
+from functools import partial
 from itertools import chain
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
-from unittest.mock import patch
 from weakref import WeakKeyDictionary
 
 from npe2 import PackageMetadata
@@ -154,7 +156,7 @@ def layer(request):
     return None
 
 
-@pytest.fixture()
+@pytest.fixture
 def layers():
     """Fixture that supplies a layers list for testing.
 
@@ -175,7 +177,7 @@ def layers():
 
 
 @pytest.fixture(autouse=True)
-def skip_examples(request):
+def _skip_examples(request):
     """Skip examples test if ."""
     if request.node.get_closest_marker(
         'examples'
@@ -198,7 +200,7 @@ if os.getenv('_PYTEST_RAISE', '0') != '0':
 
 
 @pytest.fixture(autouse=True)
-def fresh_settings(monkeypatch):
+def _fresh_settings(monkeypatch):
     """This fixture ensures that default settings are used for every test.
 
     and ensures that changes to settings in a test are reverted, and never
@@ -224,11 +226,11 @@ def fresh_settings(monkeypatch):
 
     # this makes sure that we start with fresh settings for every test.
     settings._SETTINGS = None
-    yield
+    return
 
 
 @pytest.fixture(autouse=True)
-def auto_shutdown_dask_threadworkers():
+def _auto_shutdown_dask_threadworkers():
     """
     This automatically shutdown dask thread workers.
 
@@ -266,20 +268,8 @@ def napari_svg_name():
     return 'napari-svg'
 
 
-@pytest.fixture(autouse=True, scope='session')
-def _no_error_reports():
-    """Turn off napari_error_reporter if it's installed."""
-    try:
-        p1 = patch('napari_error_reporter.capture_exception')
-        p2 = patch('napari_error_reporter.install_error_reporter')
-        with p1, p2:
-            yield
-    except (ModuleNotFoundError, AttributeError):
-        yield
-
-
 @pytest.fixture(autouse=True)
-def _npe2pm(npe2pm, monkeypatch):
+def npe2pm_(npe2pm, monkeypatch):
     """Autouse npe2 & npe1 mock plugin managers with no registered plugins."""
     from napari.plugins import NapariPluginManager
 
@@ -288,19 +278,153 @@ def _npe2pm(npe2pm, monkeypatch):
 
 
 @pytest.fixture
-def builtins(_npe2pm: TestPluginManager):
-    with _npe2pm.tmp_plugin(package='napari') as plugin:
+def builtins(npe2pm_: TestPluginManager):
+    with npe2pm_.tmp_plugin(package='napari') as plugin:
         yield plugin
 
 
 @pytest.fixture
-def tmp_plugin(_npe2pm: TestPluginManager):
-    with _npe2pm.tmp_plugin() as plugin:
-        plugin.manifest.package_metadata = PackageMetadata(
+def tmp_plugin(npe2pm_: TestPluginManager):
+    with npe2pm_.tmp_plugin() as plugin:
+        plugin.manifest.package_metadata = PackageMetadata(  # type: ignore[call-arg]
             version='0.1.0', name='test'
         )
         plugin.manifest.display_name = 'Temp Plugin'
         yield plugin
+
+
+@pytest.fixture
+def viewer_model():
+    from napari.components import ViewerModel
+
+    return ViewerModel()
+
+
+@pytest.fixture
+def qt_viewer_(qtbot, viewer_model, monkeypatch):
+    from napari._qt.qt_viewer import QtViewer
+
+    viewer = QtViewer(viewer_model)
+
+    original_controls = viewer.__class__.controls.fget
+    original_layers = viewer.__class__.layers.fget
+    original_layer_buttons = viewer.__class__.layerButtons.fget
+    original_viewer_buttons = viewer.__class__.viewerButtons.fget
+    original_dock_layer_list = viewer.__class__.dockLayerList.fget
+    original_dock_layer_controls = viewer.__class__.dockLayerControls.fget
+    original_dock_console = viewer.__class__.dockConsole.fget
+    original_dock_performance = viewer.__class__.dockPerformance.fget
+
+    def hide_widget(widget):
+        widget.hide()
+
+    def hide_and_clear_qt_viewer(viewer: QtViewer):
+        viewer._instances.clear()
+        viewer.hide()
+
+    def patched_controls(self):
+        if self._controls is None:
+            self._controls = original_controls(self)
+            qtbot.addWidget(self._controls, before_close_func=hide_widget)
+        return self._controls
+
+    def patched_layers(self):
+        if self._layers is None:
+            self._layers = original_layers(self)
+            qtbot.addWidget(self._layers, before_close_func=hide_widget)
+        return self._layers
+
+    def patched_layer_buttons(self):
+        if self._layersButtons is None:
+            self._layersButtons = original_layer_buttons(self)
+            qtbot.addWidget(self._layersButtons, before_close_func=hide_widget)
+        return self._layersButtons
+
+    def patched_viewer_buttons(self):
+        if self._viewerButtons is None:
+            self._viewerButtons = original_viewer_buttons(self)
+            qtbot.addWidget(self._viewerButtons, before_close_func=hide_widget)
+        return self._viewerButtons
+
+    def patched_dock_layer_list(self):
+        if self._dockLayerList is None:
+            self._dockLayerList = original_dock_layer_list(self)
+            qtbot.addWidget(self._dockLayerList, before_close_func=hide_widget)
+        return self._dockLayerList
+
+    def patched_dock_layer_controls(self):
+        if self._dockLayerControls is None:
+            self._dockLayerControls = original_dock_layer_controls(self)
+            qtbot.addWidget(
+                self._dockLayerControls, before_close_func=hide_widget
+            )
+        return self._dockLayerControls
+
+    def patched_dock_console(self):
+        if self._dockConsole is None:
+            self._dockConsole = original_dock_console(self)
+            qtbot.addWidget(self._dockConsole, before_close_func=hide_widget)
+        return self._dockConsole
+
+    def patched_dock_performance(self):
+        if self._dockPerformance is None:
+            self._dockPerformance = original_dock_performance(self)
+            qtbot.addWidget(
+                self._dockPerformance, before_close_func=hide_widget
+            )
+        return self._dockPerformance
+
+    monkeypatch.setattr(
+        viewer.__class__, 'controls', property(patched_controls)
+    )
+    monkeypatch.setattr(viewer.__class__, 'layers', property(patched_layers))
+    monkeypatch.setattr(
+        viewer.__class__, 'layerButtons', property(patched_layer_buttons)
+    )
+    monkeypatch.setattr(
+        viewer.__class__, 'viewerButtons', property(patched_viewer_buttons)
+    )
+    monkeypatch.setattr(
+        viewer.__class__, 'dockLayerList', property(patched_dock_layer_list)
+    )
+    monkeypatch.setattr(
+        viewer.__class__,
+        'dockLayerControls',
+        property(patched_dock_layer_controls),
+    )
+    monkeypatch.setattr(
+        viewer.__class__, 'dockConsole', property(patched_dock_console)
+    )
+    monkeypatch.setattr(
+        viewer.__class__, 'dockPerformance', property(patched_dock_performance)
+    )
+
+    qtbot.addWidget(viewer, before_close_func=hide_and_clear_qt_viewer)
+    return viewer
+
+
+@pytest.fixture
+def qt_viewer(qt_viewer_):
+    """We created `qt_viewer_` fixture to allow modifying qt_viewer
+    if module-level-specific modifications are necessary.
+    For example, in `test_qt_viewer.py`.
+    """
+    return qt_viewer_
+
+
+@pytest.fixture(autouse=True)
+def _clear_cached_action_injection():
+    """Automatically clear cached property `Action.injected`.
+
+    Allows action manager actions to be injected using current provider/processors
+    and dependencies. See #7219 for details.
+    To be removed after ActionManager deprecation.
+    """
+    from napari.utils.action_manager import action_manager
+
+    for action in action_manager._actions.values():
+        if 'injected' in action.__dict__:
+            del action.__dict__['injected']
 
 
 def _event_check(instance):
@@ -379,7 +503,7 @@ def pytest_collection_modifyitems(session, config, items):
 
 
 @pytest.fixture(autouse=True)
-def disable_notification_dismiss_timer(monkeypatch):
+def _disable_notification_dismiss_timer(monkeypatch):
     """
     This fixture disables starting timer for closing notification
     by setting the value of `NapariQtNotification.DISMISS_AFTER` to 0.
@@ -402,42 +526,11 @@ def disable_notification_dismiss_timer(monkeypatch):
         monkeypatch.setattr(NapariQtNotification, 'FADE_OUT_RATE', 0)
 
 
-@pytest.fixture()
+@pytest.fixture
 def single_threaded_executor():
     executor = ThreadPoolExecutor(max_workers=1)
     yield executor
     executor.shutdown()
-
-
-@pytest.fixture(autouse=True)
-def _mock_app():
-    """Mock clean 'test_app' `NapariApplication` instance.
-
-    This is used whenever `napari._app_model.get_app()` is called to return
-    a 'test_app' `NapariApplication` instead of the 'napari'
-    `NapariApplication`.
-
-    Note that `NapariApplication` registers app-model actions, providers and
-    processors. If this is not desired, please create a clean
-    `app_model.Application` in the test. It does not however, register Qt
-    related actions or providers or register plugins.
-    If these are required, the `make_napari_viewer` fixture can be used, which
-    will run both these function and automatically clear the lru cache.
-    Alternatively, you can specifically run `init_qactions()` or
-    `_initialize_plugins` within the test, ensuring that you `cache_clear()`
-    first.
-    """
-    from app_model import Application
-
-    from napari._app_model._app import NapariApplication, _napari_names
-
-    app = NapariApplication('test_app')
-    app.injection_store.namespace = _napari_names
-    with patch.object(NapariApplication, 'get_app', return_value=app):
-        try:
-            yield app
-        finally:
-            Application.destroy('test_app')
 
 
 def _get_calling_stack():  # pragma: no cover
@@ -468,25 +561,59 @@ def _get_calling_place(depth=1):  # pragma: no cover
 
 
 @pytest.fixture
-def dangling_qthreads(monkeypatch, qtbot, request):
+def _dangling_qthreads(monkeypatch, qtbot, request):
     from qtpy.QtCore import QThread
 
     base_start = QThread.start
     thread_dict = WeakKeyDictionary()
+    base_constructor = QThread.__init__
+
+    def run_with_trace(self):  # pragma: no cover
+        """
+        QThread.run but adding execution to sys.settrace when measuring coverage.
+
+        See https://github.com/nedbat/coveragepy/issues/686#issuecomment-634932753
+        and `init_with_trace`. When running QThreads during testing, we monkeypatch
+        the QThread constructor and run methods with traceable equivalents.
+        """
+        if 'coverage' in sys.modules:
+            # https://github.com/nedbat/coveragepy/issues/686#issuecomment-634932753
+            sys.settrace(threading._trace_hook)
+        self._base_run()
+
+    def init_with_trace(self, *args, **kwargs):
+        """Constructor for QThread adding tracing for coverage measurements.
+
+        Functions running in QThreads don't get measured by coverage.py, see
+        https://github.com/nedbat/coveragepy/issues/686. Therefore, we will
+        monkeypatch the constructor to add to the thread to `sys.settrace` when
+        we call `run` and `coverage` is in `sys.modules`.
+        """
+        base_constructor(self, *args, **kwargs)
+        self._base_run = self.run
+        self.run = partial(run_with_trace, self)
+
     # dict of threads that have been started but not yet terminated
 
     if 'disable_qthread_start' in request.keywords:
 
-        def my_start(self, priority=QThread.InheritPriority):
-            """dummy function to prevent thread start"""
+        def start_with_save_reference(self, priority=QThread.InheritPriority):
+            """Dummy function to prevent thread starts."""
 
     else:
 
-        def my_start(self, priority=QThread.InheritPriority):
+        def start_with_save_reference(self, priority=QThread.InheritPriority):
+            """Thread start function with logs to detect hanging threads.
+
+            Saves a weak reference to the thread and detects hanging threads,
+            as well as where the threads were started.
+            """
             thread_dict[self] = _get_calling_place()
             base_start(self, priority)
 
-    monkeypatch.setattr(QThread, 'start', my_start)
+    monkeypatch.setattr(QThread, 'start', start_with_save_reference)
+    monkeypatch.setattr(QThread, '__init__', init_with_trace)
+
     yield
 
     dangling_threads_li = []
@@ -528,7 +655,7 @@ def dangling_qthreads(monkeypatch, qtbot, request):
 
 
 @pytest.fixture
-def dangling_qthread_pool(monkeypatch, request):
+def _dangling_qthread_pool(monkeypatch, request):
     from qtpy.QtCore import QThreadPool
 
     base_start = QThreadPool.start
@@ -584,7 +711,7 @@ def dangling_qthread_pool(monkeypatch, request):
 
 
 @pytest.fixture
-def dangling_qtimers(monkeypatch, request):
+def _dangling_qtimers(monkeypatch, request):
     from qtpy.QtCore import QTimer
 
     base_start = QTimer.start
@@ -671,8 +798,8 @@ def dangling_qtimers(monkeypatch, request):
             return (
                 path
                 + " it's possible that there was a problem with unfinished work by a "
-                "qthrottler; to solve this, you can either try to wait (such as with "
-                "`qtbot.wait`) or disable throttling with the disable_throttling fixture"
+                'qthrottler; to solve this, you can either try to wait (such as with '
+                '`qtbot.wait`) or disable throttling with the disable_throttling fixture'
             )
         return path
 
@@ -690,7 +817,7 @@ def _flush_mock(self):
 
 
 @pytest.fixture
-def disable_throttling(monkeypatch):
+def _disable_throttling(monkeypatch):
     """Disable qthrottler from superqt.
 
     This is sometimes necessary to avoid flaky failures in tests
@@ -707,7 +834,7 @@ def disable_throttling(monkeypatch):
 
 
 @pytest.fixture
-def dangling_qanimations(monkeypatch, request):
+def _dangling_qanimations(monkeypatch, request):
     from qtpy.QtCore import QPropertyAnimation
 
     base_start = QPropertyAnimation.start
@@ -752,19 +879,145 @@ def dangling_qanimations(monkeypatch, request):
     )
 
 
+with contextlib.suppress(ImportError):
+    # in headless test suite we don't have Qt bindings
+    # So we cannot inherit from QtBot and declare the fixture
+
+    from pytestqt.qtbot import QtBot
+
+    class QtBotWithOnCloseRenaming(QtBot):
+        """Modified QtBot that renames widgets when closing them in tests.
+
+        After a test ends that uses QtBot, all instantiated widgets added to
+        the bot have their name changed to 'handled_widget'. This allows us to
+        detect leaking widgets at the end of a test run, and avoid the
+        segmentation faults that often result from such leaks. [1]_
+
+        See Also
+        --------
+        `_find_dangling_widgets`: fixture that finds all widgets that have not
+        been renamed to 'handled_widget'.
+
+        References
+        ----------
+        .. [1] https://czaki.github.io/blog/2024/09/16/preventing-segfaults-in-test-suite-that-has-qt-tests/
+        """
+
+        def addWidget(self, widget, *, before_close_func=None):
+            if widget.objectName() == '':
+                # object does not have a name, so we can set it
+                widget.setObjectName('handled_widget')
+                before_close_func_ = before_close_func
+            elif before_close_func is None:
+                # there is no custom teardown function,
+                # so we provide one that will set object name
+
+                def before_close_func_(w):
+                    w.setObjectName('handled_widget')
+            else:
+                # user provided custom teardown function,
+                # so we need to wrap it to set object name
+
+                def before_close_func_(w):
+                    before_close_func(w)
+                    w.setObjectName('handled_widget')
+
+            super().addWidget(widget, before_close_func=before_close_func_)
+
+    @pytest.fixture
+    def qtbot(qapp, request):  # pragma: no cover
+        """Fixture to create a QtBotWithOnCloseRenaming instance for testing.
+
+        Make sure to call addWidget for each top-level widget you create to
+        ensure that they are properly closed after the test ends.
+
+        The `qapp` fixture is used to ensure that the QApplication is created
+        before, so we need it, even without using it directly in this fixture.
+        """
+        return QtBotWithOnCloseRenaming(request)
+
+
+@pytest.fixture
+def _find_dangling_widgets(request, qtbot):
+    yield
+
+    from qtpy.QtWidgets import QApplication
+
+    from napari._qt.qt_main_window import _QtMainWindow
+
+    top_level_widgets = QApplication.topLevelWidgets()
+
+    viewer_weak_set = getattr(request.node, '_viewer_weak_set', set())
+
+    problematic_widgets = []
+
+    for widget in top_level_widgets:
+        if widget.parent() is not None:
+            continue
+        if (
+            isinstance(widget, _QtMainWindow)
+            and widget._qt_viewer.viewer in viewer_weak_set
+        ):
+            continue
+
+        if widget.__class__.__module__.startswith('qtconsole'):
+            continue
+
+        if widget.objectName() == 'handled_widget':
+            continue
+
+        if widget.__class__.__name__ == 'CanvasBackendDesktop':
+            # TODO: we don't understand why this class leaks in
+            #  napari/_tests/test_sys_info.py, so we make an exception
+            #  here and we don't raise when this class leaks.
+            continue
+
+        problematic_widgets.append(widget)
+
+    if problematic_widgets:
+        text = '\n'.join(
+            f'Widget: {widget} of type {type(widget)} with name {widget.objectName()}'
+            for widget in problematic_widgets
+        )
+
+        for widget in problematic_widgets:
+            widget.setObjectName('handled_widget')
+
+        raise RuntimeError(f'Found dangling widgets:\n{text}')
+
+
 def pytest_runtest_setup(item):
+    """Add Qt leak detection fixtures *only* in tests using the qapp fixture.
+
+    Because we have headless test suite that does not include Qt, we cannot
+    simply use `@pytest.fixture(autouse=True)` on all our fixtures for
+    detecting leaking Qt objects.
+
+    Instead, here we detect whether the `qapp` fixture is being used, detecting
+    tests that use Qt and need to be checked for Qt objects leaks.
+
+    A note to maintainers: tests *may* attempt to use Qt classes but not use
+    the `qapp` fixture. This is BAD, and may cause Qt failures to be reported
+    far away from the problematic code or test. If you find any tests
+    instantiating Qt objects but not using qapp or qtbot, please submit a PR
+    adding the qtbot fixture and adding any top-level Qt widgets with::
+
+        qtbot.addWidget(widget_instance)
+
+    """
+
     if 'qapp' in item.fixturenames:
         # here we do autouse for dangling fixtures only if qapp is used
         if 'qtbot' not in item.fixturenames:
             # for proper waiting for threads to finish
             item.fixturenames.append('qtbot')
-
         item.fixturenames.extend(
             [
-                'dangling_qthread_pool',
-                'dangling_qanimations',
-                'dangling_qthreads',
-                'dangling_qtimers',
+                '_find_dangling_widgets',
+                '_dangling_qthread_pool',
+                '_dangling_qanimations',
+                '_dangling_qthreads',
+                '_dangling_qtimers',
             ]
         )
 

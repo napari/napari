@@ -1,5 +1,6 @@
-"""Miscellaneous utility functions.
-"""
+"""Miscellaneous utility functions."""
+
+from __future__ import annotations
 
 import builtins
 import collections.abc
@@ -29,6 +30,8 @@ import numpy.typing as npt
 
 from napari.utils.translations import trans
 
+_sentinel = object()
+
 if TYPE_CHECKING:
     import packaging.version
 
@@ -36,7 +39,7 @@ if TYPE_CHECKING:
 ROOT_DIR = os_path.dirname(os_path.dirname(__file__))
 
 
-def parse_version(v: str) -> 'packaging.version._BaseVersion':
+def parse_version(v: str) -> packaging.version._BaseVersion:
     """Parse a version string and return a packaging.version.Version obj."""
     import packaging.version
 
@@ -128,13 +131,25 @@ def str_to_rgb(arg: str) -> list[int]:
 
 
 def ensure_iterable(
-    arg: Union[None, str, Enum, float, list, npt.NDArray], color: bool = False
+    arg: Union[None, str, Enum, float, list, npt.NDArray],
+    color: object | bool = _sentinel,
 ):
     """Ensure an argument is an iterable. Useful when an input argument
-    can either be a single value or a list. If a color is passed then it
-    will be treated specially to determine if it is iterable.
+    can either be a single value or a list.
+    Argument color is deprecated since version 0.5.0 and will be removed in 0.6.0.
     """
-    if is_iterable(arg, color=color):
+    # deprecate color
+    if color is not _sentinel:
+        warnings.warn(
+            trans._(
+                'Argument color is deprecated since version 0.5.0 and will be removed in 0.6.0.',
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,  # not sure what level to use here
+        )
+    if is_iterable(
+        arg, color=color
+    ):  # argument color is to be removed in 0.6.0
         return arg
 
     return itertools.repeat(arg)
@@ -142,23 +157,34 @@ def ensure_iterable(
 
 def is_iterable(
     arg: Union[None, str, Enum, float, list, npt.NDArray],
-    color: bool = False,
+    color: object | bool = _sentinel,
     allow_none: bool = False,
 ) -> bool:
-    """Determine if a single argument is an iterable. If a color is being
-    provided and the argument is a 1-D array of length 3 or 4 then the input
-    is taken to not be iterable. If allow_none is True, `None` is considered iterable.
+    """Determine if a single argument is an iterable.
+    Argument color is deprecated since version 0.5.0 and will be removed in 0.6.0.
     """
-    if arg is None and not allow_none:
+    # deprecate color
+    if color is not _sentinel:
+        warnings.warn(
+            trans._(
+                'Argument color is deprecated since version 0.5.0 and will be removed in 0.6.0.',
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,  # not sure what level to use here
+        )
+
+    if arg is None:
+        return allow_none
+
+    # Here if arg is None it used to return allow_none
+    if isinstance(arg, (str, Enum)) or np.isscalar(arg):
         return False
-    if isinstance(arg, (str, Enum)):
-        return False
-    if np.isscalar(arg):
-        return False
-    if color and isinstance(arg, (list, np.ndarray)):
+
+    # this is to be removed in 0.6.0, color is never set True
+    if color is True and isinstance(arg, (list, np.ndarray)):
         return np.array(arg).ndim != 1 or len(arg) not in [3, 4]
 
-    return True
+    return isinstance(arg, collections.abc.Iterable)
 
 
 def is_sequence(arg: Any) -> bool:
@@ -167,15 +193,15 @@ def is_sequence(arg: Any) -> bool:
     return True:
         list
         tuple
-    return False
+    return False:
         string
         numbers
         dict
         set
     """
-    if isinstance(arg, collections.abc.Sequence) and not isinstance(arg, str):
-        return True
-    return False
+    return bool(
+        isinstance(arg, collections.abc.Sequence) and not isinstance(arg, str)
+    )
 
 
 def ensure_sequence_of_iterables(
@@ -399,6 +425,13 @@ def abspath_or_url(relpath: T, *, must_exist: bool = False) -> T:
 
 
 class CallDefault(inspect.Parameter):
+    warnings.warn(
+        trans._(
+            '`CallDefault` in napari v0.5.0 and will be removed in v0.6.0.',
+        ),
+        category=DeprecationWarning,
+    )
+
     def __str__(self) -> str:
         """wrap defaults"""
         kind = self.kind
@@ -466,7 +499,7 @@ def ensure_layer_data_tuple(val: tuple) -> tuple:
     if not isinstance(val, tuple) and val:
         raise TypeError(msg)
     if len(val) > 1:
-        if not isinstance(val[1], dict):
+        if not isinstance(val[1], collections.abc.Mapping):
             raise TypeError(msg)
         if len(val) > 2 and not isinstance(val[2], str):
             raise TypeError(msg)

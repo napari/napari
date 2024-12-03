@@ -4,7 +4,7 @@ import inspect
 import itertools
 import os
 import warnings
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from functools import lru_cache
 from pathlib import Path
 from typing import (
@@ -17,14 +17,17 @@ from typing import (
 
 import numpy as np
 
-# This cannot be condition to TYPE_CHEKCKING or the stubgen fails
-# with underfined Context.
+# This cannot be condition to TYPE_CHECKING or the stubgen fails
+# with undefined Context.
 from app_model.expressions import Context
 
 from napari import layers
 from napari._pydantic_compat import Extra, Field, PrivateAttr, validator
 from napari.components._layer_slicer import _LayerSlicer
-from napari.components._viewer_mouse_bindings import dims_scroll
+from napari.components._viewer_mouse_bindings import (
+    dims_scroll,
+    double_click_to_zoom,
+)
 from napari.components.camera import Camera
 from napari.components.cursor import Cursor, CursorStyle
 from napari.components.dims import Dims
@@ -268,15 +271,13 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         #        the source of truth, and is now defined in world space. This exposed an existing
         #        bug where if a field in Dims is modified by the root_validator, events won't
         #        be fired for it. This won't happen for properties because we have dependency
-        #        checks. To fix this, we need dep checks for fileds (psygnal!) and then we
+        #        checks. To fix this, we need dep checks for fields (psygnal!) and then we
         #        can remove the following line. Note that because of this we fire double events,
         #        but this should be ok because we have early returns when slices are unchanged.
         self.dims.events.current_step.connect(self._update_layers)
         self.dims.events.margin_left.connect(self._update_layers)
         self.dims.events.margin_right.connect(self._update_layers)
-        self.cursor.events.position.connect(
-            self._update_status_bar_from_cursor
-        )
+        self.cursor.events.position.connect(self.update_status_from_cursor)
         self.layers.events.inserted.connect(self._on_add_layer)
         self.layers.events.removed.connect(self._on_remove_layer)
         self.layers.events.reordered.connect(self._on_grid_change)
@@ -285,6 +286,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         # Add mouse callback
         self.mouse_wheel_callbacks.append(dims_scroll)
+        self.mouse_double_click_callbacks.append(double_click_to_zoom)
 
         self._overlays.update({k: v() for k, v in DEFAULT_OVERLAYS.items()})
 
@@ -377,8 +379,17 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             )
         return self.layers._extent_world_augmented[:, self.dims.displayed]
 
-    def reset_view(self) -> None:
-        """Reset the camera view."""
+    def reset_view(
+        self, *, margin: float = 0.05, reset_camera_angle: bool = True
+    ) -> None:
+        """Reset the camera view.
+
+        Parameters
+        ----------
+        margin : float in [0, 1)
+            Margin as fraction of the canvas, showing blank space around the
+            data.
+        """
 
         extent = self._sliced_extent_world_augmented
         scene_size = extent[1] - extent[0]
@@ -399,18 +410,30 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         )
         assert len(center) in (2, 3)
         self.camera.center = center
-        # zoom is definied as the number of canvas pixels per world pixel
+        # zoom is defined as the number of canvas pixels per world pixel
         # The default value used below will zoom such that the whole field
         # of view will occupy 95% of the canvas on the most filled axis
+
+        if 0 <= margin < 1:
+            scale_factor = 1 - margin
+        else:
+            raise ValueError(
+                trans._(
+                    'margin must be between 0 and 1; got {margin} instead.',
+                    deferred=True,
+                    margin=margin,
+                )
+            )
         if np.max(size) == 0:
-            self.camera.zoom = 0.95 * np.min(self._canvas_size)
+            self.camera.zoom = scale_factor * np.min(self._canvas_size)
         else:
             scale = np.array(size[-2:])
             scale[np.isclose(scale, 0)] = 1
-            self.camera.zoom = 0.95 * np.min(
+            self.camera.zoom = scale_factor * np.min(
                 np.array(self._canvas_size) / scale
             )
-        self.camera.angles = (0, 0, 90)
+        if reset_camera_angle:
+            self.camera.angles = (0, 0, 90)
 
         # Emit a reset view event, which is no longer used internally, but
         # which maybe useful for building on napari.
@@ -433,7 +456,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         ]
         dtype_str = get_settings().application.new_labels_dtype
         empty_labels = np.zeros(shape, dtype=dtype_str)
-        self.add_labels(empty_labels, translate=np.array(corner), scale=scale)
+        self.add_labels(empty_labels, translate=np.array(corner), scale=scale)  # type: ignore[attr-defined]
+        # We define `add_labels` dynamically, so mypy doesn't know about it.
 
     def _on_layer_reload(self, event: Event) -> None:
         self._layer_slicer.submit(
@@ -454,6 +478,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # shown with this position may be incorrect. See the discussion for more details:
         # https://github.com/napari/napari/pull/5377#discussion_r1036280855
         position = list(self.cursor.position)
+        if len(position) < self.dims.ndim:
+            # cursor dimensionality is outdated — reset to correct dimension
+            position = [0.0] * self.dims.ndim
         for ind in self.dims.order[: -self.dims.ndisplay]:
             position[ind] = self.dims.point[ind]
         self.cursor.position = tuple(position)
@@ -462,15 +489,26 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         """Update viewer state for a new active layer."""
         active_layer = event.value
         if active_layer is None:
+            for layer in self.layers:
+                layer.update_transform_box_visibility(False)
+                layer.update_highlight_visibility(False)
             self.help = ''
             self.cursor.style = CursorStyle.STANDARD
+            self.camera.mouse_pan = True
+            self.camera.mouse_zoom = True
         else:
+            active_layer.update_transform_box_visibility(True)
+            active_layer.update_highlight_visibility(True)
+            for layer in self.layers:
+                if layer != active_layer:
+                    layer.update_transform_box_visibility(False)
+                    layer.update_highlight_visibility(False)
             self.help = active_layer.help
             self.cursor.style = active_layer.cursor
             self.cursor.size = active_layer.cursor_size
             self.camera.mouse_pan = active_layer.mouse_pan
             self.camera.mouse_zoom = active_layer.mouse_zoom
-            self._update_status_bar_from_cursor()
+            self.update_status_from_cursor()
 
     @staticmethod
     def rounded_division(min_val, max_val, precision):
@@ -525,33 +563,41 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         """Set layer slicer to force synchronous if async is disabled."""
         self._layer_slicer._force_sync = not event.value
 
-    def _update_status_bar_from_cursor(self, event=None):
-        """Update the status bar based on the current cursor position.
-
-        This is generally used as a callback when cursor.position is updated.
-        """
-        # Update status and help bar based on active layer
+    def _calc_status_from_cursor(
+        self,
+    ) -> Optional[tuple[Union[str, Dict], str]]:
         if not self.mouse_over_canvas:
-            return
+            return None
         active = self.layers.selection.active
         if active is not None:
-            self.status = active.get_status(
+            status = active.get_status(
                 self.cursor.position,
                 view_direction=self.cursor._view_direction,
                 dims_displayed=list(self.dims.displayed),
                 world=True,
             )
 
-            self.help = active.help
             if self.tooltip.visible:
-                self.tooltip.text = active._get_tooltip_text(
+                tooltip_text = active._get_tooltip_text(
                     np.asarray(self.cursor.position),
                     view_direction=np.asarray(self.cursor._view_direction),
                     dims_displayed=list(self.dims.displayed),
                     world=True,
                 )
-        else:
-            self.status = 'Ready'
+            else:
+                tooltip_text = ''
+
+            return status, tooltip_text
+
+        return 'Ready', ''
+
+    def update_status_from_cursor(self):
+        """Update the status and tooltip from the cursor position."""
+        status = self._calc_status_from_cursor()
+        if status is not None:
+            self.status, self.tooltip.text = status
+        if (active := self.layers.selection.active) is not None:
+            self.help = active.help
 
     def _on_grid_change(self):
         """Arrange the current layers is a 2D grid."""
@@ -729,6 +775,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         *,
         channel_axis=None,
         affine=None,
+        axis_labels=None,
         attenuation=0.05,
         blending=None,
         cache=True,
@@ -753,6 +800,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         scale=None,
         shear=None,
         translate=None,
+        units=None,
         visible=True,
     ) -> Union[Image, list[Image]]:
         """Add one or more Image layers to the layer list.
@@ -781,6 +829,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             the final column is a length N translation vector and a 1 or a
             napari `Affine` transform object. Applied as an extra transform on
             top of the provided scale, rotate, and shear values.
+        axis_labels : tuple of str
+            Dimension names of the layer data.
+            If not provided, axis_labels will be set to (..., 'axis -2', 'axis -1').
         attenuation : float or list of float
             Attenuation rate for attenuated maximum intensity projection.
         blending : str or list of str
@@ -867,6 +918,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             A vector of shear values for an upper triangular n-D shear matrix.
         translate : tuple of float or list of tuple of float
             Translation values for the layer.
+        units : tuple of str or pint.Unit, optional
+            Units of the layer data in world coordinates.
+            If not provided, the default units are assumed to be pixels.
         visible : bool or list of bool
             Whether the layer visual is currently being displayed.
 
@@ -889,6 +943,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # doing this here for IDE/console autocompletion in add_image function.
         kwargs = {
             'rgb': rgb,
+            'axis_labels': axis_labels,
             'colormap': colormap,
             'contrast_limits': contrast_limits,
             'gamma': gamma,
@@ -914,6 +969,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             'experimental_clipping_planes': experimental_clipping_planes,
             'custom_interpolation_kernel_2d': custom_interpolation_kernel_2d,
             'projection_mode': projection_mode,
+            'units': units,
         }
 
         # these arguments are *already* iterables in the single-channel case.
@@ -927,6 +983,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             'metadata',
             'experimental_clipping_planes',
             'custom_interpolation_kernel_2d',
+            'axis_labels',
+            'units',
         }
 
         if channel_axis is None:
@@ -1285,7 +1343,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     layer_type=layer_type,
                 )
             # plugin failed
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:
                 raise ReaderPluginError(
                     trans._(
                         'Tried opening with {plugin}, but failed.',
@@ -1401,7 +1459,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     def _add_layer_from_data(
         self,
         data,
-        meta: Optional[Dict[str, Any]] = None,
+        meta: Optional[Mapping[str, Any]] = None,
         layer_type: Optional[str] = None,
     ) -> list[Layer]:
         """Add arbitrary layer data to the viewer.
@@ -1544,12 +1602,12 @@ def _unify_data_and_user_kwargs(
 ) -> FullLayerData:
     """Merge data returned from plugins with options specified by user.
 
-    If ``data == (_data, _meta, _type)``.  Then:
+    If ``data == (data_, meta_, type_)``.  Then:
 
-    - ``kwargs`` will be used to update ``_meta``
-    - ``layer_type`` will replace ``_type`` and, if provided, ``_meta`` keys
+    - ``kwargs`` will be used to update ``meta_``
+    - ``layer_type`` will replace ``type_`` and, if provided, ``meta_`` keys
         will be pruned to layer_type-appropriate kwargs
-    - ``fallback_name`` is used if ``not _meta.get('name')``
+    - ``fallback_name`` is used if ``not meta_.get('name')``
 
     .. note:
 
@@ -1576,13 +1634,16 @@ def _unify_data_and_user_kwargs(
     FullLayerData
         Fully qualified LayerData tuple with user-provided overrides.
     """
-    _data, _meta, _type = _normalize_layer_data(data)
+    data_, meta_, type_ = _normalize_layer_data(data)
 
     if layer_type:
         # the user has explicitly requested this be a certain layer type
         # strip any kwargs from the plugin that are no longer relevant
-        _meta = prune_kwargs(_meta, layer_type)
-        _type = layer_type
+        meta_ = prune_kwargs(meta_, layer_type)
+        type_ = layer_type
+
+    if not isinstance(meta_, dict):
+        meta_ = dict(meta_)
 
     if kwargs:
         # if user provided kwargs, use to override any meta dict values that
@@ -1591,14 +1652,14 @@ def _unify_data_and_user_kwargs(
         # both layer_type and additional keyword arguments to viewer.open(),
         # it is their responsibility to make sure the kwargs match the
         # layer_type.
-        _meta.update(prune_kwargs(kwargs, _type) if not layer_type else kwargs)
+        meta_.update(prune_kwargs(kwargs, type_) if not layer_type else kwargs)
 
-    if not _meta.get('name') and fallback_name:
-        _meta['name'] = fallback_name
-    return (_data, _meta, _type)
+    if not meta_.get('name') and fallback_name:
+        meta_['name'] = fallback_name
+    return data_, meta_, type_
 
 
-def prune_kwargs(kwargs: dict[str, Any], layer_type: str) -> dict[str, Any]:
+def prune_kwargs(kwargs: Mapping[str, Any], layer_type: str) -> dict[str, Any]:
     """Return copy of ``kwargs`` with only keys valid for ``add_<layer_type>``
 
     Parameters
@@ -1670,5 +1731,5 @@ for _layer in (
     layers.Tracks,
     layers.Vectors,
 ):
-    func = create_add_method(_layer, filename=__file__)
+    func = create_add_method(_layer)
     setattr(ViewerModel, func.__name__, func)

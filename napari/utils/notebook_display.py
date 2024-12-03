@@ -9,12 +9,12 @@ try:
     from lxml.html.clean import Cleaner
 
     lxml_unavailable = False
-except ModuleNotFoundError:
+except ImportError:
     lxml_unavailable = True
 
 from napari.utils.io import imsave_png
 
-__all__ = ['nbscreenshot']
+__all__ = ['NotebookScreenshot', 'nbscreenshot']
 
 
 class NotebookScreenshot:
@@ -35,17 +35,16 @@ class NotebookScreenshot:
 
     Examples
     --------
-    ```
-    import napari
-    from napari.utils import nbscreenshot
-    from skimage.data import chelsea
 
-    viewer = napari.view_image(chelsea(), name='chelsea-the-cat')
-    nbscreenshot(viewer)
+    >>> import napari
+    >>> from napari.utils import nbscreenshot
+    >>> from skimage.data import chelsea
 
+    >>> viewer = napari.view_image(chelsea(), name='chelsea-the-cat')
+    >>> nbscreenshot(viewer)
     # screenshot just the canvas with the napari viewer framing it
-    nbscreenshot(viewer, canvas_only=False)
-    ```
+    >>> nbscreenshot(viewer, canvas_only=False)
+
     """
 
     def __init__(
@@ -80,9 +79,9 @@ class NotebookScreenshot:
         if alt_text is not None:
             if lxml_unavailable:
                 warn(
-                    'The lxml library is not installed, and is required to '
-                    'sanitize alt text for napari screenshots. Alt-text '
-                    'will be stripped altogether without lxml.'
+                    'The lxml_html_clean library is not installed, and is '
+                    'required to sanitize alt text for napari screenshots. '
+                    'Alt Text will be stripped altogether.'
                 )
                 return None
             # cleaner won't recognize escaped script tags, so always unescape
@@ -109,9 +108,9 @@ class NotebookScreenshot:
         -------
         In memory binary stream containing PNG screenshot image.
         """
-        from napari._qt.qt_event_loop import get_app
+        from napari._qt.qt_event_loop import get_qapp
 
-        get_app().processEvents()
+        get_qapp().processEvents()
         self.image = self.viewer.screenshot(
             canvas_only=self.canvas_only, flash=False
         )
