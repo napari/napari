@@ -263,7 +263,7 @@ class Shape(ABC):
             self._face_vertices = np.empty((0, self.ndisplay))
             self._face_triangles = np.empty((0, 3), dtype=np.uint32)
 
-    def _all_triangles(self):
+    def _all_triangles(self) -> npt.NDArray:
         """Return all triangles for the shape
 
         Returns
