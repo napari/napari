@@ -25,7 +25,7 @@ try:
     )
 
 except ImportError:
-    triangulate_path_edge_py = (None,)
+    triangulate_path_edge_py = None
     triangulate_polygon_numpy_li = None
     triangulate_polygon_with_edge_numpy_li = None
 
