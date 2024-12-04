@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-import os
 from abc import ABC, abstractmethod
 from typing import Optional
 
 import numpy as np
 import numpy.typing as npt
 
-from napari.settings import get_settings
 from napari.layers.shapes._shapes_utils import (
     is_collinear,
     path_to_mask,
@@ -15,6 +13,7 @@ from napari.layers.shapes._shapes_utils import (
     triangulate_edge,
     triangulate_face,
 )
+from napari.settings import get_settings
 from napari.utils.misc import argsort
 from napari.utils.translations import trans
 
@@ -26,7 +25,7 @@ try:
     )
 
 except ImportError:
-    triangulate_path_edge_py = None,
+    triangulate_path_edge_py = (None,)
     triangulate_polygon_numpy_li = None
     triangulate_polygon_with_edge_numpy_li = None
 
@@ -136,7 +135,10 @@ class Shape(ABC):
         self._bounding_box = np.empty((0, self.ndisplay))
 
     def __new__(cls, *args, **kwargs):
-        if get_settings().experimental.compiled_triangulation and triangulate_path_edge_py is not None:
+        if (
+            get_settings().experimental.compiled_triangulation
+            and triangulate_path_edge_py is not None
+        ):
             cls._set_meshes = cls._set_meshes_compiled
         else:
             cls._set_meshes = cls._set_meshes_classic
@@ -295,9 +297,7 @@ class Shape(ABC):
             Bool which determines if the edge need to be traingulated
         """
         if edge:
-            centers, offsets, triangles = triangulate_edge(
-                data, closed=closed
-            )
+            centers, offsets, triangles = triangulate_edge(data, closed=closed)
             self._edge_vertices = centers
             self._edge_offsets = offsets
             self._edge_triangles = triangles
@@ -317,12 +317,8 @@ class Shape(ABC):
                     vertices, triangles = triangulate_face(clean_data)
                 elif len(np.unique(clean_data[:, 0])) == 1:
                     val = np.unique(clean_data[:, 0])
-                    vertices, triangles = triangulate_face(
-                        clean_data[:, -2:]
-                    )
-                    exp = np.expand_dims(
-                        np.repeat(val, len(vertices)), axis=1
-                    )
+                    vertices, triangles = triangulate_face(clean_data[:, -2:])
+                    exp = np.expand_dims(np.repeat(val, len(vertices)), axis=1)
                     vertices = np.concatenate([exp, vertices], axis=1)
                 else:
                     triangles = np.array([])
@@ -332,9 +328,7 @@ class Shape(ABC):
                     self._face_triangles = triangles
                 else:
                     self._face_vertices = np.empty((0, self.ndisplay))
-                    self._face_triangles = np.empty(
-                        (0, 3), dtype=np.uint32
-                    )
+                    self._face_triangles = np.empty((0, 3), dtype=np.uint32)
             else:
                 self._face_vertices = np.empty((0, self.ndisplay))
                 self._face_triangles = np.empty((0, 3), dtype=np.uint32)
