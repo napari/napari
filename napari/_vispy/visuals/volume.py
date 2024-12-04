@@ -330,6 +330,7 @@ class Volume(TextureMixin, BaseVolume):
     def __init__(self, *args, **kwargs) -> None:  # type: ignore [no-untyped-def]
         super().__init__(*args, **kwargs)
         self.unfreeze()
+        self.clamp_at_border = True
         self.iso_gradient_mode = IsoCategoricalGradientMode.FAST.value
         self.freeze()
 
@@ -345,14 +346,24 @@ class Volume(TextureMixin, BaseVolume):
             if value == IsoCategoricalGradientMode.SMOOTH
             else FAST_GRADIENT_SHADER
         )
-        self.shared_program['u_clamp_at_border'] = True
+        self.shared_program['u_clamp_at_border'] = self._clamp_at_border
         self.update()
 
     @property
     def clamp_at_border(self) -> bool:
-        return self.shared_program['u_clamp_at_border']
+        """Clamp values beyond volume limits when computing isosurface gradients.
+
+        This has an effect on the appearance of labels at the border of the volume.
+
+            True: labels will appear darker at the border. [DEFAULT]
+
+            False: labels will appear brighter at the border, as if the volume extends beyond its
+            actual limits but the labels do not.
+        """
+        return self._clamp_at_border
 
     @clamp_at_border.setter
     def clamp_at_border(self, value: bool) -> None:
-        self.shared_program['u_clamp_at_border'] = value
+        self._clamp_at_border = value
+        self.shared_program['u_clamp_at_border'] = self._clamp_at_border
         self.update()
