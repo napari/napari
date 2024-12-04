@@ -56,6 +56,16 @@ class ExperimentalSettings(EventedSettings):
         ),
     )
 
+    compiled_triangulation: bool = Field(
+        False,
+        title=trans._("If use compiled backend to speedup create/update of compiled layer"),
+        description=trans._(
+            "When enabled its uses compiled code from PartSegCore-compiled-backend for speedup of creation"
+            " of Shapes layer. In worst case scenario it may end with segfault. In such situation please report it "
+            "to allow us fix it"
+        )
+    )
+
     class NapariConfig:
         # Napari specific configuration
         preferences_exclude = ('schema_version',)
