@@ -48,6 +48,7 @@ def test_shortcut_editor_defaults(
     shortcut_editor_widget()
 
 
+@pytest.mark.key_bindings
 def test_potentially_conflicting_actions(shortcut_editor_widget):
     widget = shortcut_editor_widget()
     assert widget.layer_combo_box.currentText() == widget.VIEWER_KEYBINDINGS
@@ -75,6 +76,7 @@ def test_potentially_conflicting_actions(shortcut_editor_widget):
     assert actions2 == expected_actions2
 
 
+@pytest.mark.key_bindings
 def test_mark_conflicts(shortcut_editor_widget, qtbot):
     widget = shortcut_editor_widget()
     ctrl_keybinding = KeyBinding.from_str('Ctrl')
@@ -133,6 +135,7 @@ def test_restore_defaults(shortcut_editor_widget):
     assert shortcut == KEY_SYMBOLS['Ctrl']
 
 
+@pytest.mark.key_bindings
 @skip_local_focus
 @pytest.mark.parametrize(
     ('key', 'modifier', 'key_symbols'),
