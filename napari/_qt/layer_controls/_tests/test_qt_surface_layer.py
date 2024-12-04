@@ -16,10 +16,10 @@ def test_shading_combobox(qtbot):
     qtbot.addWidget(qtctrl)
     assert qtctrl.shadingComboBox.currentText() == layer.shading
 
-    for display, _ in SHADING_TRANSLATION.items():
+    for display, shading in SHADING_TRANSLATION.items():
         qtctrl.shadingComboBox.setCurrentText(display)
-        assert layer.shading == qtctrl.shadingComboBox.currentText()
+        assert layer.shading == shading
 
-    for _, shading in SHADING_TRANSLATION.items():
+    for display, shading in SHADING_TRANSLATION.items():
         layer.shading = shading
-        assert qtctrl.shadingComboBox.currentText() == layer.shading
+        assert qtctrl.shadingComboBox.currentText() == display
