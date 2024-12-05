@@ -330,7 +330,7 @@ class Volume(TextureMixin, BaseVolume):
     def __init__(self, *args, **kwargs) -> None:  # type: ignore [no-untyped-def]
         super().__init__(*args, **kwargs)
         self.unfreeze()
-        self.clamp_at_border = True
+        self.clamp_at_border = False
         self.iso_gradient_mode = IsoCategoricalGradientMode.FAST.value
         self.freeze()
 
