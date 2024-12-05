@@ -140,8 +140,6 @@ class Shape(ABC):
             and triangulate_path_edge_py is not None
         ):
             cls._set_meshes = cls._set_meshes_compiled
-        else:
-            cls._set_meshes = cls._set_meshes_classic
         return super().__new__(cls)
 
     @property
@@ -276,7 +274,7 @@ class Shape(ABC):
             self._face_vertices = np.empty((0, self.ndisplay))
             self._face_triangles = np.empty((0, 3), dtype=np.uint32)
 
-    def _set_meshes_classic(
+    def _set_meshes(
         self,
         data: npt.NDArray,
         closed: bool = True,
