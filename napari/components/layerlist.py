@@ -97,13 +97,7 @@ class LayerList(SelectableEventedList[Layer]):
             self.events.inserted.connect(self._ctx_keys.update)
             self.events.removed.connect(self._ctx_keys.update)
 
-        self._selection_ctx = create_context(self)
-        if (
-            self._selection_ctx is not None
-        ):  # happens during Viewer type creation
-            self._selection_ctx_keys = LayerListSelectionContextKeys(
-                self._selection_ctx
-            )
+            self._selection_ctx_keys = LayerListSelectionContextKeys(self._ctx)
             self.selection.events.changed.connect(
                 self._selection_ctx_keys.update
             )

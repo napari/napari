@@ -138,12 +138,12 @@ class Event:
 
     @property
     def type(self) -> str:
-        # No docstring; documeted in class docstring
+        # No docstring; documented in class docstring
         return self._type
 
     @property
     def native(self) -> Any:
-        # No docstring; documeted in class docstring
+        # No docstring; documented in class docstring
         return self._native
 
     @property
@@ -410,7 +410,7 @@ class EventEmitter:
         self,
         callback: Union[Callback, CallbackRef, CallbackStr, 'EventEmitter'],
         ref: Union[bool, str] = False,
-        position: Literal['first', 'last'] = 'first',
+        position: Literal['first', 'last'] = 'last',
         before: Union[str, Callback, list[Union[str, Callback]], None] = None,
         after: Union[str, Callback, list[Union[str, Callback]], None] = None,
         until: Optional['EventEmitter'] = None,

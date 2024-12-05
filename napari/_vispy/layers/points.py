@@ -130,6 +130,7 @@ class VispyPointsLayer(VispyBaseLayer):
             or 0 in self.layer._highlight_box.shape
         ):
             pos = np.zeros((1, self.layer._slice_input.ndisplay))
+            highlight_thickness = 0
         else:
             pos = self.layer._highlight_box
 

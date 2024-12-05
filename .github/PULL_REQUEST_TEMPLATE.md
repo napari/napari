@@ -15,5 +15,8 @@ a screenshot or a screen capture: "An image is worth a thousand words!" -->
   (open a PR on the docs repository (https://github.com/napari/docs) if relevant!)
 - I have added tests that prove my fix is effective or that my feature works
 - If I included new strings, I have used `trans._("some string")` to make them localizable.
-  (For more information see our [translations guide](https://napari.org/developers/translations.html)).
+  (For more information see our [translations guide](https://napari.org/stable/developers/contributing/translations.html)).
+- If an API has been modified, I have added a `.. versionadded::` or `.. versionchanged::`
+  directive to the appropriate docstring (For more information see
+  [the Sphinx documentation](https://www.sphinx-doc.org/en/master/usage/restructuredtext/directives.html#describing-changes-between-versions)).
 -->

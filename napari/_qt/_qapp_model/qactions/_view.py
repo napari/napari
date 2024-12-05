@@ -1,8 +1,4 @@
-"""Actions related to the 'View' menu that require Qt.
-
-'View' actions that do not require Qt should be placed under
-`napari/_app_model/actions/` in a `_view_actions.py` file.
-"""
+"""Qt 'View' menu Actions."""
 
 import sys
 
@@ -11,6 +7,7 @@ from app_model.types import (
     KeyCode,
     KeyMod,
     StandardKeyBinding,
+    SubmenuItem,
     ToggleRule,
 )
 
@@ -20,8 +17,22 @@ from napari._qt.qt_main_window import Window
 from napari._qt.qt_viewer import QtViewer
 from napari.settings import get_settings
 from napari.utils.translations import trans
+from napari.viewer import Viewer
+
+# View submenus
+VIEW_SUBMENUS = [
+    (
+        MenuId.MENUBAR_VIEW,
+        SubmenuItem(submenu=MenuId.VIEW_AXES, title=trans._('Axes')),
+    ),
+    (
+        MenuId.MENUBAR_VIEW,
+        SubmenuItem(submenu=MenuId.VIEW_SCALEBAR, title=trans._('Scale Bar')),
+    ),
+]
 
 
+# View actions
 def _toggle_activity_dock(window: Window):
     window._status_bar._toggle_activity_dock()
 
@@ -49,6 +60,18 @@ def _tooltip_visibility_toggle() -> None:
 
 def _get_current_tooltip_visibility() -> bool:
     return get_settings().appearance.layer_tooltip_visibility
+
+
+def _fit_to_view(viewer: Viewer):
+    viewer.reset_view(reset_camera_angle=False)
+
+
+def _zoom_in(viewer: Viewer):
+    viewer.camera.zoom *= 1.5
+
+
+def _zoom_out(viewer: Viewer):
+    viewer.camera.zoom /= 1.5
 
 
 Q_VIEW_ACTIONS: list[Action] = [
@@ -102,6 +125,45 @@ Q_VIEW_ACTIONS: list[Action] = [
         callback=Window._toggle_play,
         keybindings=[{'primary': KeyMod.CtrlCmd | KeyMod.Alt | KeyCode.KeyP}],
         toggled=ToggleRule(get_current=_get_current_play_status),
+    ),
+    Action(
+        id='napari.viewer.fit_to_view',
+        title=trans._('Fit to View'),
+        menus=[
+            {
+                'id': MenuId.MENUBAR_VIEW,
+                'group': MenuGroup.ZOOM,
+                'order': 1,
+            }
+        ],
+        callback=_fit_to_view,
+        keybindings=[StandardKeyBinding.OriginalSize],
+    ),
+    Action(
+        id='napari.viewer.camera.zoom_in',
+        title=trans._('Zoom In'),
+        menus=[
+            {
+                'id': MenuId.MENUBAR_VIEW,
+                'group': MenuGroup.ZOOM,
+                'order': 1,
+            }
+        ],
+        callback=_zoom_in,
+        keybindings=[StandardKeyBinding.ZoomIn],
+    ),
+    Action(
+        id='napari.viewer.camera.zoom_out',
+        title=trans._('Zoom Out'),
+        menus=[
+            {
+                'id': MenuId.MENUBAR_VIEW,
+                'group': MenuGroup.ZOOM,
+                'order': 1,
+            }
+        ],
+        callback=_zoom_out,
+        keybindings=[StandardKeyBinding.ZoomOut],
     ),
     Action(
         id='napari.window.view.toggle_activity_dock',

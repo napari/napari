@@ -103,8 +103,8 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
             ndisplay, getattr(data, 'dtype', None)
         )
 
-        if ndisplay == 3 and self.layer.ndim == 2:
-            data = np.expand_dims(data, axis=0)
+        if ndisplay > data.ndim:
+            data = data.reshape((1,) * (ndisplay - data.ndim) + data.shape)
 
         # Check if data exceeds MAX_TEXTURE_SIZE and downsample
         if self.MAX_TEXTURE_SIZE_2D is not None and ndisplay == 2:
@@ -114,8 +114,7 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
 
         # Check if ndisplay has changed current node type needs updating
         if (ndisplay == 3 and not isinstance(node, VolumeNode)) or (
-            ndisplay == 2
-            and not isinstance(node, ImageVisual)
+            (ndisplay == 2 and not isinstance(node, ImageVisual))
             or node != self.node
         ):
             self._on_display_change(data)

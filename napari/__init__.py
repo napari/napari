@@ -2,6 +2,8 @@ import os
 
 from lazy_loader import attach as _attach
 
+from napari._check_numpy_version import limit_numpy1x_threads_on_macos_arm
+
 try:
     from napari._version import version as __version__
 except ImportError:
@@ -9,6 +11,9 @@ except ImportError:
 
 # Allows us to use pydata/sparse arrays as layer data
 os.environ.setdefault('SPARSE_AUTO_DENSIFY', '1')
+limit_numpy1x_threads_on_macos_arm()
+
+del limit_numpy1x_threads_on_macos_arm
 del os
 
 # Add everything that needs to be accessible from the napari namespace here.

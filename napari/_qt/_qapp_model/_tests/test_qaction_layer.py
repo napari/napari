@@ -5,7 +5,7 @@ import numpy.testing as npt
 import pytest
 from qtpy.QtWidgets import QApplication
 
-from napari._qt._qapp_model.qactions._layer import (
+from napari._qt._qapp_model.qactions._layerlist_context import (
     _copy_affine_to_clipboard,
     _copy_rotate_to_clipboard,
     _copy_scale_to_clipboard,
@@ -20,7 +20,7 @@ from napari.layers.base._test_util_sample_layer import SampleLayer
 from napari.utils.transforms import Affine
 
 
-@pytest.fixture()
+@pytest.fixture
 def layer_list():
     layer_1 = SampleLayer(
         data=np.empty((10, 10)),
@@ -55,7 +55,7 @@ def layer_list():
     return ll
 
 
-@pytest.fixture()
+@pytest.fixture
 def layer_list_dim():
     layer_1 = SampleLayer(
         data=np.empty((5, 10, 10)),
@@ -174,7 +174,8 @@ def test_fail_copy_to_clipboard(monkeypatch):
 
     monkeypatch.setattr(QApplication, 'clipboard', mock_clipboard)
     monkeypatch.setattr(
-        'napari._qt._qapp_model.qactions._layer.show_warning', warning_mock
+        'napari._qt._qapp_model.qactions._layerlist_context.show_warning',
+        warning_mock,
     )
     layer = SampleLayer(data=np.empty((10, 10)))
 
@@ -190,7 +191,8 @@ def test_fail_copy_data_from_clipboard(monkeypatch, layer_list):
 
     monkeypatch.setattr(QApplication, 'clipboard', mock_clipboard)
     monkeypatch.setattr(
-        'napari._qt._qapp_model.qactions._layer.show_warning', warning_mock
+        'napari._qt._qapp_model.qactions._layerlist_context.show_warning',
+        warning_mock,
     )
 
     _paste_spatial_from_clipboard(layer_list)
@@ -203,7 +205,8 @@ def test_fail_copy_data_from_clipboard(monkeypatch, layer_list):
 def test_fail_decode_text(monkeypatch, layer_list):
     warning_mock = Mock()
     monkeypatch.setattr(
-        'napari._qt._qapp_model.qactions._layer.show_warning', warning_mock
+        'napari._qt._qapp_model.qactions._layerlist_context.show_warning',
+        warning_mock,
     )
 
     clip = QApplication.clipboard()

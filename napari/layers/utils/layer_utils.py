@@ -311,7 +311,7 @@ def segment_normal(a, b, p=(0, 0, 1)) -> np.ndarray:
     """
     d = b - a
 
-    norm: Any  # float or array or float, mypy has some difficulities.
+    norm: Any  # float or array or float, mypy has some difficulties.
 
     if d.ndim == 1:
         normal = np.array([d[1], -d[0]]) if len(d) == 2 else np.cross(d, p)
@@ -989,9 +989,7 @@ def _validate_features(
         # a pandas Series with mixed indices as input.
         # This way should handle all array-like objects correctly.
         # See https://github.com/napari/napari/pull/4755 for more details.
-        features = {
-            key: np.array(value, copy=False) for key, value in features.items()
-        }
+        features = {key: np.asarray(value) for key, value in features.items()}
     index = None if num_data is None else range(num_data)
     return pd.DataFrame(data=features, index=index)
 

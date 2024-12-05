@@ -71,6 +71,4 @@ def _has_visible_text(layer: Union[Points, Shapes]) -> bool:
         and text.string.constant == ''
     ):
         return False
-    if len(layer._indices_view) == 0:
-        return False
-    return True
+    return len(layer._indices_view) != 0

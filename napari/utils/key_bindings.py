@@ -60,6 +60,9 @@ Keymap = Mapping[
 USER_KEYMAP: Mapping[str, Callable] = {}
 
 KEY_SUBS = {
+    'Super': 'Meta',
+    'Command': 'Meta',
+    'Cmd': 'Meta',
     'Control': 'Ctrl',
     'Option': 'Alt',
 }
