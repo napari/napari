@@ -369,6 +369,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._opacity = opacity
         self._blending = Blending(blending)
         self._visible = visible
+        self._visible_mode = None
         self._freeze = False
         self._status = 'Ready'
         self._help = ''
@@ -456,6 +457,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             source=self,
             axis_labels=Event,
             data=Event,
+            metadata=Event,
             affine=Event,
             blending=Event,
             cursor=Event,
@@ -544,7 +546,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         TRANSFORM = self._modeclass.TRANSFORM  # type: ignore[attr-defined]
         assert mode is not None
 
-        if not self.editable:
+        if not self.editable or not self.visible:
             mode = PAN_ZOOM
         if mode == self._mode:
             return mode
@@ -670,6 +672,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     def metadata(self, value: dict) -> None:
         self._metadata.clear()
         self._metadata.update(value)
+        self.events.metadata()
 
     @property
     def source(self) -> Source:
@@ -773,11 +776,21 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @visible.setter
     def visible(self, visible: bool) -> None:
         self._visible = visible
+
         if visible:
             # needed because things might have changed while invisible
             # and refresh is noop while invisible
             self.refresh(extent=False)
+        self._on_visible_changed()
         self.events.visible()
+
+    def _on_visible_changed(self) -> None:
+        """Execute side-effects on this layer related to changes of the visible state."""
+        if self.visible and self._visible_mode:
+            self.mode = self._visible_mode
+        else:
+            self._visible_mode = self.mode
+            self.mode = self._modeclass.PAN_ZOOM  # type: ignore[attr-defined]
 
     @property
     def editable(self) -> bool:
