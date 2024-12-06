@@ -38,6 +38,8 @@ class QtShadingComboBoxControl(QtWidgetControlsBase):
         self, parent: QWidget, layer: Layer, tooltip: Optional[str] = None
     ) -> None:
         super().__init__(parent, layer)
+        # Setup layer
+        self._layer.events.shading.connect(self._on_shading_change)
 
         # Setup widgets
         shading_comboBox = QComboBox(parent)
@@ -60,6 +62,15 @@ class QtShadingComboBoxControl(QtWidgetControlsBase):
             Name of shading mode, eg: 'flat', 'smooth', 'none'.
         """
         self._layer.shading = self.shadingComboBox.currentData()
+
+    def _on_shading_change(self):
+        """Receive layer model shading change event and update combobox."""
+        with self._layer.events.shading.blocker():
+            self.shadingComboBox.setCurrentIndex(
+                self.shadingComboBox.findData(
+                    SHADING_TRANSLATION[self._layer.shading]
+                )
+            )
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [(self.shadingComboBoxLabel, self.shadingComboBox)]
