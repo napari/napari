@@ -6,7 +6,7 @@ Display a variety of layer types in the napari viewer and export the figure with
 The exported figure is then added back as an image layer.
 
 Exported figures include the extent of all data in 2D view, and does not presently work for 3D views.
-To capture the extent of the canvas, instead of the layers, see `viewer.screenshot()`: `examples/to_screenshot.py` and `examples/screenshot_and_export_figure.py`.
+To capture the extent of the canvas, instead of the layers, see `viewer.screenshot()`: :ref:`sphx_glr_gallery_to_screenshot.py` and :ref:`sphx_glr_gallery_screenshot_and_export_figure.py`.
 
 .. tags:: visualization-advanced
 """
