@@ -270,23 +270,8 @@ QLabel#logo_silhouette {
 /* ------------------------------------------------------ */
 
 QFrame#empty_controls_widget {
-    min-height: 225px;
-    min-width: 240px;
-}
-
-QtLayerControlsContainer {
-    border-radius: 2px;
-    padding: 0px;
-    margin: 10px;
-    margin-left: 10px;
-    margin-right: 8px;
-    margin-bottom: 4px;
-}
-
-QtLayerControlsContainer > QFrame {
-  padding: 5px;
-  padding-right: 8px;
-  border-radius: 2px;
+    min-height: 125px;
+    min-width: 272px;
 }
 
 /* the box that shows the current Label color */
@@ -303,9 +288,48 @@ QtColorBox {
 
 /* ----------------- QtLayerControls -------------------- */
 
+/* TODO: Should be removed */
 QtLayerControls > QComboBox, QtLayerControls > QLabel, QtLayerControls, QtPlaneControls > QLabeledSlider > QAbstractSpinBox {
   font-size: {{ decrease(font_size, 1) }};
   color: {{ text }};
+}
+
+QScrollArea#controls {
+  min-height: 25px;
+}
+
+QtLayerControls > QElidingLineEdit#layer_name {
+  background-color: {{ background }};
+  font-size: {{ font_size }};
+  font-weight: bold;
+  min-width: 220px;
+  max-width: 220px;
+  min-height: 18px;
+  max-height: 18px;
+  margin: 0px;
+  padding: 0px;
+}
+
+QtLayerControls > QElidingLineEdit#layer_name:focus {
+  background-color: {{ canvas }};
+  selection-background-color: {{ lighten(current, 20) }};
+  min-width: 220px;
+  max-width: 220px;
+  min-height: 18px;
+  max-height: 18px;
+  margin: 0px;
+  padding: 0px;
+}
+
+/* width defined following `_layer_delegate.py` size definition for decoration element (layer type icon) */
+QLabel[layer_type_icon_label="true"] {
+  max-width: 18px;  /* width defined following `_layer_delegate.py` size definition for decoration element (layer type icon) */
+  min-width: 18px;
+  min-height: 18px;  /* height defined following `_layer_delegate.py` size definition for decoration element (layer type icon) */
+  max-height: 18px;
+  margin-left: 8px;  /* Should be 10px but less is set since the layer type images have some internal padding +-2px */
+  margin-right: 3px;   /* Should be 5px but less is set since the layer type images have some internal padding +-2px*/
+  padding: 0px;
 }
 
 QLabeledRangeSlider > QAbstractSpinBox {
@@ -338,6 +362,110 @@ PlaneNormalButtons QPushButton {
     font-size: {{ decrease(font_size, 3) }};
     padding: 4;
 }
+
+/* ------------ Narrow scrollbars for QtLayerControlsContainer --------- */
+
+QtLayerControlsContainer QAbstractScrollArea::corner,
+QtLayerControlsContainer QScrollArea > QWidget,
+QtLayerControlsContainer QFrame {
+  background: {{ background }};
+}
+
+QtLayerControlsContainer QScrollBar:vertical {
+  max-width: 8px;
+}
+
+QtLayerControlsContainer QScrollBar::add-line:vertical,
+QtLayerControlsContainer QScrollBar::sub-line:vertical  {
+  height: 10px;
+  width: 8px;
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+
+QtLayerControlsContainer QScrollBar:up-arrow,
+QtLayerControlsContainer QScrollBar:down-arrow {
+  min-height: 6px;
+  min-width: 6px;
+  max-height: 6px;
+  max-width: 6px;
+  background: {{ foreground }};
+}
+
+QtLayerControlsContainer QScrollBar:horizontal {
+  min-height: 6px;
+  max-height: 8px;
+}
+
+QtLayerControlsContainer QScrollBar::add-line:horizontal,
+QtLayerControlsContainer QScrollBar::sub-line:horizontal {
+  height: 8px;
+  width: 10px;
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+
+QtLayerControlsContainer QScrollBar:left-arrow,
+QtLayerControlsContainer QScrollBar:right-arrow {
+  min-height: 6px;
+  min-width: 6px;
+  max-height: 6px;
+  max-width: 6px;
+  background: {{ foreground }};
+  padding: 2px 1px;
+}
+
+
+/* ---- Customize QtCollapsibleLayerControlsSection for layer controls ---- */
+
+QtLayerControlsContainer QtCollapsibleLayerControlsSection[emphasized="true"] {
+  padding: 0px;
+  margin: 0px;
+  border-radius: 2px;
+  min-width: 250px;
+  font-size: {{ decrease(font_size, 1) }};
+}
+
+QtCollapsibleLayerControlsSection[emphasized="true"] QWidget{
+  font-size: {{ decrease(font_size, 1) }}; /* TODO: Check font-size value */
+  color: {{ text }};
+}
+
+QtCollapsibleLayerControlsSection[emphasized="true"] > QPushButton:hover,
+QtCollapsibleLayerControlsSection[emphasized="true"] > QPushButton:checked:hover {
+  background-color: {{ highlight }};
+  font-weight: bold;
+  padding-left: 8px;
+}
+
+QtCollapsibleLayerControlsSection[emphasized="true"] > QPushButton,
+QtCollapsibleLayerControlsSection[emphasized="true"] > QPushButton:disabled,
+QtCollapsibleLayerControlsSection[emphasized="true"] > QPushButton:pressed,
+QtCollapsibleLayerControlsSection[emphasized="true"] > QPushButton:checked {
+  background-color: {{ foreground }};
+  font-weight: bold;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+
+QtCollapsibleLayerControlsSection[emphasized="true"] QLineEdit {
+  background-color: {{ primary }};
+}
+
+QtCollapsibleLayerControlsSection[emphasized="true"] QLineEdit:focus {
+  background-color: {{ darken(background, 20) }};
+  selection-background-color: {{ lighten(current, 20) }};
+}
+
+QtCollapsibleLayerControlsSection[emphasized="true"] QtWrappedLabel {
+  max-width: 64px; /* TODO: Check values. Design sets it at 60px but using that value makes the text wrap.*/
+  min-width: 64px; /*       Seems like depending on screen scale/resolution text could get wrap*/
+  min-height: 20px;
+  padding: 0px;
+  margin: 0px;
+}
+
 /* ------------- DimsSliders --------- */
 
 QtDimSliderWidget > QScrollBar::handle[last_used=false]:horizontal {
