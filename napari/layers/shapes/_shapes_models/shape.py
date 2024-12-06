@@ -13,8 +13,21 @@ from napari.layers.shapes._shapes_utils import (
     triangulate_edge,
     triangulate_face,
 )
+from napari.settings import get_settings
 from napari.utils.misc import argsort
 from napari.utils.translations import trans
+
+try:
+    from PartSegCore_compiled_backend.triangulate import (
+        triangulate_path_edge_py,
+        triangulate_polygon_numpy_li,
+        triangulate_polygon_with_edge_numpy_li,
+    )
+
+except ImportError:
+    triangulate_path_edge_py = None
+    triangulate_polygon_numpy_li = None
+    triangulate_polygon_with_edge_numpy_li = None
 
 
 class Shape(ABC):
@@ -121,6 +134,14 @@ class Shape(ABC):
         self._data: npt.NDArray
         self._bounding_box = np.empty((0, self.ndisplay))
 
+    def __new__(cls, *args, **kwargs):
+        if (
+            get_settings().experimental.compiled_triangulation
+            and triangulate_path_edge_py is not None
+        ):
+            cls._set_meshes = cls._set_meshes_compiled
+        return super().__new__(cls)
+
     @property
     @abstractmethod
     def data(self):
@@ -203,6 +224,55 @@ class Shape(ABC):
     @z_index.setter
     def z_index(self, z_index):
         self._z_index = z_index
+
+    def _set_meshes_compiled(
+        self,
+        data: npt.NDArray,
+        closed: bool = True,
+        face: bool = True,
+        edge: bool = True,
+    ) -> None:
+        """Sets the face and edge meshes from a set of points.
+
+        Parameters
+        ----------
+        data : np.ndarray
+            Nx2 or Nx3 array specifying the shape to be triangulated
+        closed : bool
+            Bool which determines if the edge is closed or not
+        face : bool
+            Bool which determines if the face need to be traingulated
+        edge : bool
+            Bool which determines if the edge need to be traingulated
+        """
+        if edge and face:
+            (triangles, vertices), (centers, offsets, edge_triangles) = (
+                triangulate_polygon_with_edge_numpy_li([data])
+            )
+            self._edge_vertices = centers
+            self._edge_offsets = offsets
+            self._edge_triangles = edge_triangles
+            self._face_vertices = vertices
+            self._face_triangles = triangles
+            return
+        if edge:
+            centers, offsets, triangles = triangulate_path_edge_py(
+                data, closed=closed
+            )
+            self._edge_vertices = centers
+            self._edge_offsets = offsets
+            self._edge_triangles = triangles
+        else:
+            self._edge_vertices = np.empty((0, self.ndisplay))
+            self._edge_offsets = np.empty((0, self.ndisplay))
+            self._edge_triangles = np.empty((0, 3), dtype=np.uint32)
+        if face:
+            triangles, vertices = triangulate_polygon_numpy_li([data])
+            self._face_vertices = vertices
+            self._face_triangles = triangles
+        else:
+            self._face_vertices = np.empty((0, self.ndisplay))
+            self._face_triangles = np.empty((0, 3), dtype=np.uint32)
 
     def _set_meshes(
         self,
