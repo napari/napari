@@ -67,62 +67,84 @@ def generate_order_vectors(path_, closed) -> np.ndarray:
     """
     raw_vecs = np.diff(path_, axis=0)
     norm = np.linalg.norm(raw_vecs, axis=1, keepdims=True)
-    normals = raw_vecs / norm
+    directions = raw_vecs / norm
     vec = np.empty((path_.shape[0], 2, 2))
     vec[:, 0] = path_
-    vec[:-1, 1] = normals
+    vec[:-1, 1] = directions
     if closed:
+        # point from the last vertex towards the first vertex
         vec[-1, 1] = (
                 (path_[0] - path_[-1]) / np.linalg.norm(path_[-1] - path_[0])
                 )
     else:
+        # point back towards the penultimate vertex
         vec[-1, 1] = -vec[-2, 1]
     return vec
 
 
-def generate_miter_helper_vectors(normal_vector_arr: np.ndarray) -> np.ndarray:
+def generate_miter_helper_vectors(
+        direction_vectors_array: np.ndarray
+        ) -> np.ndarray:
     """Generate the miter helper vectors.
 
-    For each point on the path, the miter helper vectors are pairs of vectors
-    First vector is the normal vector scaled by 1/2
-    Second vector is the normal vector of previous point scaled by -1/2
-
-    https://github.com/napari/napari/pull/7268#user-content-miter
-    Blue vectors on the image.
+    The miter helper vectors are a pair of vectors for each point in the path,
+    which together help define whether a bevel join will be needed. The first
+    vector is half of the normalized direction vector for that vertex, and the
+    second is *minus* half of the normalized direction vector for the previous
+    vertex. Their angle is the angle of the edges at that vertex.
 
     Parameters
     ----------
-    normal_vector_arr : array of shape (n, 2)
-        array of normal vectors representing edges in the path
+    direction_vectors_array : array of shape (n, 2)
+        array of normalized (length 1) direction vectors for each point in the
+        path.
 
     Returns
     -------
     array of shape (n, 2, 2)
         array of miter helper vectors
     """
-    half_of_normal = normal_vector_arr.copy()
-    half_of_normal[:, 1] *= 0.5
-    half_of_prev_normal = half_of_normal.copy()
-    half_of_prev_normal[:, 1] *= -1
-    half_of_prev_normal[:, 1] = np.roll(half_of_prev_normal[:, 1], 1, axis=0)
-    half_of_prev_normal[:, 0] += half_of_normal[:, 1]
-    return np.concatenate([half_of_normal, half_of_prev_normal], axis=0)
+    half_direction = direction_vectors_array.copy()
+    half_direction[:, 1] *= 0.5
+    half_prev_direction = half_direction.copy()
+    half_prev_direction[:, 1] *= -1
+    half_prev_direction[:, 1] = np.roll(half_prev_direction[:, 1], 1, axis=0)
+    half_prev_direction[:, 0] += half_direction[:, 1]
+    return np.concatenate([half_direction, half_prev_direction], axis=0)
+
 
 @numba.njit
-def generate_orthogonal_vectors(normal_vector: np.ndarray) -> np.ndarray:
-    """Generate the orthogonal vectors to the normal vectors.
+def generate_orthogonal_vectors(direction_vectors: np.ndarray) -> np.ndarray:
+    """Generate the orthogonal vectors to the direction vectors.
 
-    The orthogonal vector starts at the middle of the normal vector and is orthogonal to it.
-    It has length equal to half of the normal vector.
+    The orthogonal vector starts at the middle of the direction vector and is
+    orthogonal to it in the positive orientation. Its length is half of the
+    direction vector, to align with the normalized edge width.
+
+    Parameters
+    ----------
+    direction_vectors : array, shape (n, 2, 2)
+        The direction vector start points (``direction_vectors[:, 0, :]``) and
+        directions (``direction_vectors[:, 1, :]``).
+
+    Returns
+    -------
+    orthogonal_vectors : array, shape(n, 2, 2)
+        The orthogonal vector start points and directions.
     """
-    vec1 = normal_vector.copy()
-    vec1[:, 1] *= 0.5
-    orthogonal_vector = vec1.copy()
+    position = 0
+    vector = 1
+    y, x = 0, 1
+    half_direction = 0.5 * direction_vectors[:, 1, :]
+    orthogonal_vectors = direction_vectors.copy()
+    orthogonal_vectors[:, position] = (
+            direction_vectors[:, position] + half_direction
+            )
 
-    orthogonal_vector[:, 0] += vec1[:, 1]
-    orthogonal_vector[:, 1, 0] = -vec1[:, 1, 1]
-    orthogonal_vector[:, 1, 1] = vec1[:, 1, 0]
-    return orthogonal_vector
+    orthogonal_vectors[:, vector, y] = -half_direction[:, x]
+    orthogonal_vectors[:, vector, x] = half_direction[:, y]
+    return orthogonal_vectors
+
 
 @numba.njit
 def generate_miter_vectors(mesh) -> np.ndarray:
@@ -247,7 +269,7 @@ def update_layers():
 
     helpers = get_helper_data_from_shapes(shapes_layer)
     v.layers['join points'].data = helpers.points
-    v.layers['normal vectors'].data = helpers.order_vectors
+    v.layers['direction vectors'].data = helpers.order_vectors
     v.layers['miter helper'].data = helpers.miter_helper
     v.layers['orthogonal'].data = helpers.orthogonal_vector
     v.layers['miter vectors'].data = helpers.miter_vectors
@@ -259,7 +281,7 @@ def add_helper_layers(viewer: napari.Viewer):
     shapes = viewer.layers['shapes']
     helpers = get_helper_data_from_shapes(shapes)
     p = Points(helpers.points, size=0.1, face_color='white', name='join points')
-    ve = Vectors(helpers.order_vectors, edge_width=0.1, vector_style='arrow', name='normal vectors')
+    ve = Vectors(helpers.order_vectors, edge_width=0.1, vector_style='arrow', name='direction vectors')
     ve2 = Vectors(helpers.miter_helper, edge_width=0.06, vector_style='arrow', edge_color="blue", name="miter helper")
     ve3 = Vectors(helpers.orthogonal_vector, edge_width=0.04, vector_style='arrow', edge_color="green", name='orthogonal')
     ve4 = Vectors(helpers.miter_vectors, edge_width=0.05, vector_style='arrow', edge_color="yellow", name='miter vectors')
