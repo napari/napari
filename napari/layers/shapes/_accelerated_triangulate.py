@@ -135,13 +135,13 @@ def _set_centers_and_offsets(
     sin_angle = vec1[0] * vec2[1] - vec1[1] * vec2[0]
 
     if sin_angle == 0:
-        mitter = np.array([vec1[1], -vec1[0]], dtype=np.float32) * 0.5
+        miter = np.array([vec1[1], -vec1[0]], dtype=np.float32) * 0.5
     else:
         scale_factor = 1 / sin_angle
         if bevel or cos_angle < cos_limit:
             # There is a case of bevels join, and
             # there is a need to check if the miter length is not too long.
-            # For performance reasons here, the mitter length is estimated
+            # For performance reasons here, the miter length is estimated
             # by the inverse of the sin of the angle between the two vectors.
             # See https://github.com/napari/napari/pull/7268#user-content-bevel-cut
             estimated_len = scale_factor
@@ -156,16 +156,16 @@ def _set_centers_and_offsets(
                 elif estimated_len < -vec2_len:
                     scale_factor = -vec2_len
 
-        # We use here the Intercept theorem for calculating the mitter length
+        # We use here the Intercept theorem for calculating the miter length
         # More details in PR description:
         # https://github.com/napari/napari/pull/7268#user-content-miter
-        mitter = (vec1 - vec2) * 0.5 * scale_factor
+        miter = (vec1 - vec2) * 0.5 * scale_factor
 
     if bevel or cos_limit > cos_angle:
         centers[j + 2] = vertex
         # clock-wise and counter clock-wise cases
         if sin_angle < 0:
-            offsets[j] = mitter
+            offsets[j] = miter
             offsets[j + 1, 0] = -vec1[1] * 0.5
             offsets[j + 1, 1] = vec1[0] * 0.5
             offsets[j + 2, 0] = -vec2[1] * 0.5
@@ -175,7 +175,7 @@ def _set_centers_and_offsets(
         else:
             offsets[j, 0] = vec1[1] * 0.5
             offsets[j, 1] = -vec1[0] * 0.5
-            offsets[j + 1] = -mitter
+            offsets[j + 1] = -miter
             offsets[j + 2, 0] = vec2[1] * 0.5
             offsets[j + 2, 1] = -vec2[0] * 0.5
             triangles[j + 1] = [j + 1, j + 2, j + 3]
@@ -183,8 +183,8 @@ def _set_centers_and_offsets(
 
         triangles[j] = [j, j + 1, j + 2]
         return 3  # bevel join added 3 triangles
-    offsets[j] = mitter
-    offsets[j + 1] = -mitter
+    offsets[j] = miter
+    offsets[j + 1] = -miter
     triangles[j] = [j, j + 1, j + 2]
     triangles[j + 1] = [j + 1, j + 2, j + 3]
     return 2  # miter join added 2 triangles
