@@ -54,7 +54,7 @@ vec4 calculateShadedCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)
 
     // Calculate normal vector from gradient
     vec3 N;
-    N = calculateGradient(loc, step);
+    N = calculateGradient(loc, step, val0);
 
     // Normalize and flip normal so it points towards viewer
     N = normalize(N);
@@ -96,7 +96,7 @@ vec4 calculateShadedCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)
 """
 
 FAST_GRADIENT_DEFINITION = """
-vec3 calculateGradient(vec3 loc, vec3 step) {
+vec3 calculateGradient(vec3 loc, vec3 step, float current_val) {
     // calculate gradient within the volume by finite differences
 
     vec3 G = vec3(0.0);
@@ -104,7 +104,6 @@ vec3 calculateGradient(vec3 loc, vec3 step) {
     float prev;
     float next;
     int in_bounds;
-    float curr = colorToVal($get_data(loc));
 
     for (int i=0; i<3; i++) {
         vec3 ax_step = vec3(0.0);
@@ -126,7 +125,7 @@ vec3 calculateGradient(vec3 loc, vec3 step) {
 
         // add to the gradient where the adjacent voxels are both background
         // to fix dim pixels due to poor normal estimation
-        G[i] = next - prev + (next - curr) * 2.0 * detectAdjacentBackground(prev, next);
+        G[i] = next - prev + (next - current_val) * 2.0 * detectAdjacentBackground(prev, next);
     }
 
     return G;
@@ -134,7 +133,7 @@ vec3 calculateGradient(vec3 loc, vec3 step) {
 """
 
 SMOOTH_GRADIENT_DEFINITION = """
-vec3 calculateGradient(vec3 loc, vec3 step) {
+vec3 calculateGradient(vec3 loc, vec3 step, float current_val) {
     // calculate gradient within the volume by finite differences
     // using a 3D sobel-feldman convolution kernel
 
@@ -157,7 +156,6 @@ vec3 calculateGradient(vec3 loc, vec3 step) {
     // see https://en.wikipedia.org/wiki/Sobel_operator#Extension_to_other_dimensions
 
     vec3 G = vec3(0.0);
-    float curr = 0.0;
     // next and prev are the directly adjacent values along x, y, and z
     vec3 next = vec3(0.0);
     vec3 prev = vec3(0.0);
@@ -188,7 +186,6 @@ vec3 calculateGradient(vec3 loc, vec3 step) {
                 G.z += val * -float(k) *
                     (1 + float(i == 0 || j == 0) + 2 * float(i == 0 && j == 0));
 
-                curr += int(i == 0 && j == 0 && k == 0) * val;
                 next.x += int(i == 1 && j == 0 && k == 0) * val;
                 next.y += int(i == 0 && j == 1 && k == 0) * val;
                 next.z += int(i == 0 && j == 0 && k == 1) * val;
@@ -209,9 +206,9 @@ vec3 calculateGradient(vec3 loc, vec3 step) {
     } else {
         // add to the gradient where the adjacent voxels are both background
         // to fix dim pixels due to poor normal estimation
-        G.x = G.x + (next.x - curr) * 2.0 * detectAdjacentBackground(prev.x, next.x);
-        G.y = G.y + (next.y - curr) * 2.0 * detectAdjacentBackground(prev.y, next.y);
-        G.z = G.z + (next.z - curr) * 2.0 * detectAdjacentBackground(prev.z, next.z);
+        G.x = G.x + (next.x - current_val) * 2.0 * detectAdjacentBackground(prev.x, next.x);
+        G.y = G.y + (next.y - current_val) * 2.0 * detectAdjacentBackground(prev.y, next.y);
+        G.z = G.z + (next.z - current_val) * 2.0 * detectAdjacentBackground(prev.z, next.z);
     }
 
     return G;
