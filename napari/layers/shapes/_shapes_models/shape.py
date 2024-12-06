@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Literal, Optional, Union
 
 import numpy as np
 import numpy.typing as npt
@@ -94,11 +94,11 @@ class Shape(ABC):
     def __init__(
         self,
         *,
-        shape_type='rectangle',
-        edge_width=1,
-        z_index=0,
-        dims_order=None,
-        ndisplay=2,
+        shape_type: str = 'rectangle',
+        edge_width: float = 1,
+        z_index: int = 0,
+        dims_order: Optional[list[int]] = None,
+        ndisplay: Literal[2] = 2,
     ) -> None:
         self._dims_order = dims_order or list(range(2))
         self._ndisplay = ndisplay
@@ -123,13 +123,13 @@ class Shape(ABC):
 
     @property
     @abstractmethod
-    def data(self):
+    def data(self) -> npt.NDArray:
         # user writes own docstring
         raise NotImplementedError
 
     @data.setter
     @abstractmethod
-    def data(self, data):
+    def data(self, data: npt.NDArray) -> None:
         raise NotImplementedError
 
     @abstractmethod
@@ -137,35 +137,34 @@ class Shape(ABC):
         raise NotImplementedError
 
     @property
-    def ndisplay(self):
+    def ndisplay(self) -> Literal[2]:
         """int: Number of displayed dimensions."""
         return self._ndisplay
 
     @ndisplay.setter
-    def ndisplay(self, ndisplay):
+    def ndisplay(self, ndisplay: Literal[2]) -> None:
         if self.ndisplay == ndisplay:
             return
         self._ndisplay = ndisplay
         self._update_displayed_data()
 
     @property
-    def dims_order(self):
+    def dims_order(self) -> list[int]:
         """(D,) list: Order that the dimensions are rendered in."""
         return self._dims_order
 
     @dims_order.setter
-    def dims_order(self, dims_order):
+    def dims_order(self, dims_order: list[int]) -> None:
         if self.dims_order == dims_order:
             return
         self._dims_order = dims_order
         self._update_displayed_data()
 
     @property
-    def dims_displayed(self):
-        """tuple: Dimensions that are displayed."""
+    def dims_displayed(self) -> list[int]:
+        """list: Dimensions that are displayed."""
         return self.dims_order[-self.ndisplay :]
 
-    @property
     def bounding_box(self) -> np.ndarray:
         """(2, N) array, bounding box of the object."""
         # We add +-0.5 to handle edge width
@@ -175,33 +174,33 @@ class Shape(ABC):
         ]
 
     @property
-    def dims_not_displayed(self):
-        """tuple: Dimensions that are not displayed."""
+    def dims_not_displayed(self) -> list[int]:
+        """list: Dimensions that are not displayed."""
         return self.dims_order[: -self.ndisplay]
 
     @property
-    def data_displayed(self):
+    def data_displayed(self) -> npt.NDArray:
         """(N, 2) array: Vertices of the shape that are currently displayed."""
         return self.data[:, self.dims_displayed]
 
     @property
-    def edge_width(self):
+    def edge_width(self) -> float:
         """float: thickness of lines and edges."""
         return self._edge_width
 
     @edge_width.setter
-    def edge_width(self, edge_width):
+    def edge_width(self, edge_width: float) -> None:
         self._edge_width = edge_width
 
     @property
-    def z_index(self):
+    def z_index(self) -> int:
         """int: z order priority of shape. Shapes with higher z order displayed
         ontop of others.
         """
         return self._z_index
 
     @z_index.setter
-    def z_index(self, z_index):
+    def z_index(self, z_index: int) -> None:
         self._z_index = z_index
 
     def _set_meshes(
@@ -264,7 +263,7 @@ class Shape(ABC):
             self._face_vertices = np.empty((0, self.ndisplay))
             self._face_triangles = np.empty((0, 3), dtype=np.uint32)
 
-    def _all_triangles(self):
+    def _all_triangles(self) -> npt.NDArray:
         """Return all triangles for the shape
 
         Returns
@@ -328,14 +327,18 @@ class Shape(ABC):
             self._bounding_box[:, self.dims_displayed] + shift
         )
 
-    def scale(self, scale, center=None):
+    def scale(
+        self,
+        scale: Union[float, list[float]],
+        center: Optional[npt.NDArray] = None,
+    ) -> None:
         """Performs a scaling on the shape
 
         Parameters
         ----------
         scale : float, list
             scalar or list specifying rescaling of shape.
-        center : list
+        center : np.ndarray
             length 2 list specifying coordinate of center of scaling.
         """
         if isinstance(scale, (list, np.ndarray)):
@@ -350,14 +353,16 @@ class Shape(ABC):
             self.transform(transform)
             self.shift(center)
 
-    def rotate(self, angle, center=None):
+    def rotate(
+        self, angle: float, center: Optional[npt.NDArray] = None
+    ) -> None:
         """Performs a rotation on the shape
 
         Parameters
         ----------
         angle : float
             angle specifying rotation of shape in degrees. CCW is positive.
-        center : list
+        center : np.ndarray
             length 2 list specifying coordinate of fixed point of the rotation.
         """
         theta = np.radians(angle)
@@ -372,7 +377,9 @@ class Shape(ABC):
             self.transform(transform)
             self.shift(center)
 
-    def flip(self, axis, center=None):
+    def flip(
+        self, axis: Literal[0, 1], center: Optional[npt.NDArray] = None
+    ) -> None:
         """Performs a flip on the shape, either horizontal or vertical.
 
         Parameters
@@ -401,7 +408,12 @@ class Shape(ABC):
             self.transform(transform)
             self.shift(-center)
 
-    def to_mask(self, mask_shape=None, zoom_factor=1, offset=(0, 0)):
+    def to_mask(
+        self,
+        mask_shape: Optional[npt.NDArray] = None,
+        zoom_factor: float = 1,
+        offset: tuple[int, int] = (0, 0),
+    ) -> npt.NDArray:
         """Convert the shape vertices to a boolean mask.
 
         Set points to `True` if they are lying inside the shape if the shape is
