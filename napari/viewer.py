@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import typing
 from typing import TYPE_CHECKING, Optional
 from weakref import WeakSet
@@ -34,8 +36,8 @@ class Viewer(ViewerModel):
         Whether to show the viewer after instantiation. By default True.
     """
 
-    _window: 'Window' = None  # type: ignore
-    _instances: typing.ClassVar[WeakSet['Viewer']] = WeakSet()
+    _window: Window = None  # type: ignore
+    _instances: typing.ClassVar[WeakSet[Viewer]] = WeakSet()
 
     def __init__(
         self,
@@ -69,7 +71,7 @@ class Viewer(ViewerModel):
 
     # Expose private window publicly. This is needed to keep window off pydantic model
     @property
-    def window(self) -> 'Window':
+    def window(self) -> Window:
         return self._window
 
     def update_console(self, variables):
@@ -142,6 +144,38 @@ class Viewer(ViewerModel):
             scale=scale_factor,
             flash=flash,
         )
+
+    def export_rois(
+        self,
+        rois: np.ndarray,
+        paths: list[str] | None = None,
+        scale: float | None = None,
+    ):
+        """Export the shapes rois with storage file paths
+
+        Parameters
+        ----------
+        rois: numpy array
+            An array of shape (n, 2, 2) where n is the number of rois
+            and the first two coordinates correspond to the top left and
+            the last two coordinates correspond to the bottom right corners
+        paths: list
+            The list to store file path for shapes roi
+
+        Returns
+        -------
+        roi_dict: dictionary
+            The dictionary with index and file paths for each shapes roi
+        """
+        # Check to see if roi has shape (n,2,2)
+        if len(rois.shape) != 3 or rois.shape[1:] != (2, 2):
+            raise ValueError('roi must have shape (n,2,2)')
+
+        screenshot_list = self.window.export_rois(
+            rois, paths=paths, scale=scale
+        )
+
+        return screenshot_list
 
     def screenshot(
         self,
