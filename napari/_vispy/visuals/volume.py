@@ -201,8 +201,10 @@ vec3 calculateGradient(vec3 loc, vec3 step) {
         }
     }
 
-    if (is_on_border) {
+    if (is_on_border && u_clamp_at_border) {
         // fallback to simple gradient calculation if we are on the border
+        // and clamping is enabled (old behavior with dark/hollow faces at the border)
+        // this makes the faces in `fast` and `smooth` look the same in both clamping modes
         G = next - prev;
     } else {
         // add to the gradient where the adjacent voxels are both background
