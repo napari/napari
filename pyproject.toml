@@ -484,7 +484,7 @@ module = [
     'napari._qt.layer_controls.widgets.qt_contrast_limits',
     'napari._qt.layer_controls.widgets.qt_autoscale_control',
     'napari._qt.layer_controls.widgets.qt_gamma_slider',
-    'napari._qt.layer_controls.widgets.qt_shading_combobox',
+    'napari._qt.layer_controls.widgets.surface.qt_shading_combobox',
     'napari._qt.layer_controls.widgets.qt_interpolation_combobox',
     'napari._qt.layer_controls.widgets.qt_depiction_control',
     'napari._qt.layer_controls.widgets.qt_vector_style_combobox',

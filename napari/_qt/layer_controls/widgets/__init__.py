@@ -67,9 +67,6 @@ from napari._qt.layer_controls.widgets.qt_render_control import (
     QtImageRenderControl,
     QtLabelRenderControl,
 )
-from napari._qt.layer_controls.widgets.qt_shading_combobox import (
-    QtShadingComboBoxControl,
-)
 from napari._qt.layer_controls.widgets.qt_symbol_combobox import (
     QtSymbolComboBoxControl,
 )
@@ -109,7 +106,6 @@ __all__ = [
     'QtOpacityBlendingControls',
     'QtOutSliceCheckBoxControl',
     'QtPreserveLabelsCheckBoxControl',
-    'QtShadingComboBoxControl',
     'QtSimpleColormapComboBoxControl',
     'QtSymbolComboBoxControl',
     'QtTextVisibilityControl',
