@@ -125,8 +125,8 @@ def generate_orthogonal_vectors(normal_vector: np.ndarray) -> np.ndarray:
     return orthogonal_vector
 
 @numba.njit
-def generate_mitter_vectors(mesh) -> np.ndarray:
-    """For each point on path, generate the vectors pointing to adjusted points. Generate the mitter vectors for each point on the path.
+def generate_miter_vectors(mesh) -> np.ndarray:
+    """For each point on path, generate the vectors pointing to miter points.
     """
     vec_points = np.empty((mesh[0].shape[0], 2, 2))
     vec_points[:, 0] = mesh[0]
@@ -227,7 +227,7 @@ def get_helper_data_from_shapes(shape: Shapes) -> Helpers:
     order_vectors = np.concatenate(order_vectors_li, axis=0)
     miter_helper = np.concatenate([generate_miter_helper_vectors(o) for o in order_vectors_li], axis=0)
     orthogonal_vector = np.concatenate([generate_orthogonal_vectors(o) for o in order_vectors_li], axis=0)
-    miter_vectors = np.concatenate([generate_mitter_vectors(m) for m in mesh_list], axis=0)
+    miter_vectors = np.concatenate([generate_miter_vectors(m) for m in mesh_list], axis=0)
     triangles_vectors = np.concatenate([generate_edge_triangle_borders(*m) for m in mesh_list], axis=0)
     face_triangles_vectors = np.concatenate([generate_face_triangle_borders(*m) for m in face_mesh_list], axis=0)
 
