@@ -242,9 +242,11 @@ def _orientation(p1, p2, p3) -> float:
     float
         Positive if anti-clockwise, negative if clockwise, 0 if collinear.
     """
-    return (p2[0] - p1[0]) * (p3[1] - p1[1]) - (p2[1] - p1[1]) * (
-        p3[0] - p1[0]
+    # fmt: off
+    return (
+        (p2[0] - p1[0]) * (p3[1] - p1[1]) - (p2[1] - p1[1]) * (p3[0] - p1[0])
     )
+    # fmt: on
 
 
 @njit(cache=True, inline='always')
