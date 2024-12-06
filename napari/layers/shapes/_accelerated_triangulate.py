@@ -191,10 +191,15 @@ def _set_centers_and_offsets(
 
 
 @njit(cache=True, inline='always')
-def _fix_triangle_orientation(
+def _normalize_triangle_orientation(
     triangles: np.ndarray, centers: np.ndarray, offsets: np.ndarray
 ) -> None:
-    """Fix the orientation of the triangles.
+    """Ensure vertices of all triangles are listed in the same orientation.
+
+    In terms of napari's preferred coordinate frame (axis 0, y, is pointing
+    down, axis 1, x is pointing right), this orientation is positive for
+    anti-clockwise and negative for clockwise. This function normalises all
+    triangle data in-place to have positive orientation.
 
     The orientation is useful to check if a point is inside a triangle.
 
@@ -211,14 +216,35 @@ def _fix_triangle_orientation(
         generate the actual vertices of the triangulation
     """
     for i in range(len(triangles)):
-        triangle = triangles[i]
-        p1 = centers[triangle[0]] + offsets[triangle[0]]
-        p2 = centers[triangle[1]] + offsets[triangle[1]]
-        p3 = centers[triangle[2]] + offsets[triangle[2]]
-        if (p2[0] - p1[0]) * (p3[1] - p1[1]) - (p2[1] - p1[1]) * (
-            p3[0] - p1[0]
-        ) < 0:
-            triangles[i] = [triangle[2], triangle[1], triangle[0]]
+        ti = triangles[i]
+        p1 = centers[ti[0]] + offsets[ti[0]]
+        p2 = centers[ti[1]] + offsets[ti[1]]
+        p3 = centers[ti[2]] + offsets[ti[2]]
+        if _orientation(p1, p2, p3) < 0:
+            triangles[i] = [ti[2], ti[1], ti[0]]
+
+
+@njit(cache=True, inline='always')
+def _orientation(p1, p2, p3) -> float:
+    """Compute the orientation of three points.
+
+    In terms of napari's preferred coordinate frame (axis 0, y, is pointing
+    down, axis 1, x is pointing right), this orientation is positive for
+    anti-clockwise and negative for clockwise.
+
+    Parameters
+    ----------
+    p1, p2, p3: np.ndarray, shape (2,)
+        The three points to check.
+
+    Returns
+    -------
+    float
+        Positive if anti-clockwise, negative if clockwise, 0 if collinear.
+    """
+    return (p2[0] - p1[0]) * (p3[1] - p1[1]) - (p2[1] - p1[1]) * (
+        p3[0] - p1[0]
+    )
 
 
 @njit(cache=True, inline='always')
@@ -470,7 +496,7 @@ def generate_2D_edge_meshes(
     # We fix triangle orientation to improve checks for
     # whether points are in triangle.
     # Without the fix, the code is not robust to orientation.
-    _fix_triangle_orientation(triangles, centers, offsets)
+    _normalize_triangle_orientation(triangles, centers, offsets)
 
     return centers, offsets, triangles
 
