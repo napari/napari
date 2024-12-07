@@ -315,7 +315,7 @@ def get_helper_data_from_shapes(shapes_layer: Shapes) -> Helpers:
                 [generate_edge_triangle_borders(*m) for m in mesh_list],
                 axis=0,
                 ),
-        face_triangles_vectors = np.concatenate(
+        face_triangles_vectors=np.concatenate(
                 [generate_face_triangle_borders(*m) for m in face_mesh_list],
                 axis=0,
                 ),
