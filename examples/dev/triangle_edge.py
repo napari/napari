@@ -181,6 +181,7 @@ def generate_miter_vectors(
     vec_points[:, 1] = mesh[1]
     return vec_points
 
+
 @numba.njit
 def generate_edge_triangle_borders(centers, offsets, triangles) -> np.ndarray:
     """Generate 3 vectors that represent the borders of the triangle.
@@ -214,6 +215,7 @@ def generate_edge_triangle_borders(centers, offsets, triangles) -> np.ndarray:
         borders[i * 3 + 2, projection] = (a1 - c1)
     return borders
 
+
 @numba.njit
 def generate_face_triangle_borders(vertices, triangles) -> np.ndarray:
     """For each triangle in mesh generate 3 vectors that represent the borders of the triangle.
@@ -232,45 +234,6 @@ def generate_face_triangle_borders(vertices, triangles) -> np.ndarray:
         borders[i * 3 + 2, 1] = (a1 - c1)
     return borders
 
-
-path = np.array([[0,0], [0,1], [1,1], [1,0]]) * 10
-
-sparkle = np.array([[1, 1], [10, 0], [1, -1], [0, -10],
-                    [-1, -1], [-10, 0], [-1, 1], [0, 10]])
-fork = np.array([[2, 10], [0, -5], [-2, 10], [-2, -10], [2, -10]])
-
-polygons = [
-    # square
-    generate_regular_polygon(4, radius=1) * 10,
-    # decagon
-    generate_regular_polygon(10, radius=1) * 10 + np.array([[25, 0]]),
-    # triangle
-    generate_regular_polygon(3, radius=1) * 10 + np.array([[0, 25]]),
-    # two sharp prongs
-    fork + np.array([[25, 25]]),
-    # a four-sided star
-    sparkle + np.array([[50, 0]]),
-    # same star, but winding in the opposite direction
-    sparkle[::-1] + np.array([[50, 26]]),
-    # problem shape —
-    # lighting bolt with sharp angles and overlapping edge widths
-    np.array([[10.97627008, 14.30378733],
-              [12.05526752, 10.89766366],
-              [8.47309599, 12.91788226],
-              [8.75174423, 17.83546002],
-              [19.27325521, 7.66883038],
-              [15.83450076, 10.5778984]],
-            ) + np.array([[60, -15]]),
-]
-
-paths = [
-    # a simple backwards-c shape
-    path + np.array([[0, 50]]),
-    # an unclosed decagon
-    generate_regular_polygon(10, radius=1) * 10 + np.array([[25, 50]]),
-    # a three-point straight line (tests collinear points in path)
-    np.array([[0, -10], [0, 0], [0, 10]]) + np.array([[50, 50]]),
-]
 
 @dataclass
 class Helpers:
@@ -359,6 +322,44 @@ def add_helper_layers(viewer: napari.Viewer, source_layer):
                     vector_style='arrow', edge_width=size, edge_color=color,
                     )
 
+
+path = np.array([[0,0], [0,1], [1,1], [1,0]]) * 10
+sparkle = np.array([[1, 1], [10, 0], [1, -1], [0, -10],
+                    [-1, -1], [-10, 0], [-1, 1], [0, 10]])
+fork = np.array([[2, 10], [0, -5], [-2, 10], [-2, -10], [2, -10]])
+
+polygons = [
+    # square
+    generate_regular_polygon(4, radius=1) * 10,
+    # decagon
+    generate_regular_polygon(10, radius=1) * 10 + np.array([[25, 0]]),
+    # triangle
+    generate_regular_polygon(3, radius=1) * 10 + np.array([[0, 25]]),
+    # two sharp prongs
+    fork + np.array([[25, 25]]),
+    # a four-sided star
+    sparkle + np.array([[50, 0]]),
+    # same star, but winding in the opposite direction
+    sparkle[::-1] + np.array([[50, 26]]),
+    # problem shape —
+    # lighting bolt with sharp angles and overlapping edge widths
+    np.array([[10.97627008, 14.30378733],
+              [12.05526752, 10.89766366],
+              [8.47309599, 12.91788226],
+              [8.75174423, 17.83546002],
+              [19.27325521, 7.66883038],
+              [15.83450076, 10.5778984]],
+             ) + np.array([[60, -15]]),
+    ]
+
+paths = [
+    # a simple backwards-c shape
+    path + np.array([[0, 50]]),
+    # an unclosed decagon
+    generate_regular_polygon(10, radius=1) * 10 + np.array([[25, 50]]),
+    # a three-point straight line (tests collinear points in path)
+    np.array([[0, -10], [0, 0], [0, 10]]) + np.array([[50, 50]]),
+    ]
 
 shapes = polygons + paths
 shape_types=['polygon'] * len(polygons) + ['path'] * len(paths)
