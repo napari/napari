@@ -7,6 +7,11 @@ from numba import njit
 
 
 @njit(cache=True, inline='always')
+def _dot(v0, v1):
+    return v0[0] * v1[0] + v0[1] * v1[1]
+
+
+@njit(cache=True, inline='always')
 def _calc_output_size(
     direction_vectors: np.ndarray,
     closed: bool,
@@ -45,39 +50,39 @@ def _calc_output_size(
 
         c = \frac{1}{2 (l/2)^2} - 1 = \frac{2}{l^2} - 1
     """
-    point_count = len(direction_vectors) * 2
-    if closed:
-        point_count += 2
-
-    bevel_count = 0
+    n = len(direction_vectors)
+    # for every miter join, we have two points on either side of the path
+    # vertex; if the path is closed, we add two more points — repeats of the
+    # start of the path
+    point_count = 2 * n + 2 * closed
 
     if bevel:
-        bevel_count = len(direction_vectors)
-        if not closed:
-            bevel_count -= 2
-    else:
-        for i in range(1, len(direction_vectors) - 1):
-            cos_angle = (
-                direction_vectors[i - 1, 0] * direction_vectors[i, 0]
-                + direction_vectors[i - 1, 1] * direction_vectors[i, 1]
-            )
-            if cos_angle < cos_miter_limit:
-                # bevel
-                bevel_count += 1
+        # if every join is a bevel join, the computation is trivial — we need
+        # one more point at each path vertex, removing the first and last
+        # vertices if the path is not closed...
+        bevel_count = n - 2 * (not closed)
+        # ... and we can return early
+        return point_count + bevel_count
 
-        if closed:
-            cos_angle = (
-                direction_vectors[-2, 0] * direction_vectors[-1, 0]
-                + direction_vectors[-2, 1] * direction_vectors[-1, 1]
-            )
-            if cos_angle < cos_miter_limit:
-                bevel_count += 1
-            cos_angle = (
-                direction_vectors[-1, 0] * direction_vectors[0, 0]
-                + direction_vectors[-1, 1] * direction_vectors[0, 1]
-            )
-            if cos_angle < cos_miter_limit:
-                bevel_count += 1
+    # Otherwise, we use the norm-1 direction vectors to quickly check the
+    # cosine of each angle in the path. If the angle is too sharp, we get a
+    # negative cosine greater than some limit, and we add a bevel point for
+    # that position.
+    bevel_count = 0
+    # We are effectively doing a sliding window of three points along the path
+    # of n points. If the path is closed, we start with indices (-1, 0, 1) and
+    # end with indices (-2, -1, 0). In contrast, in an open path, we start with
+    # (0, 1, 2) and end with (-3, -2, -1).
+    # In the following loop, i represents the center point of the sliding
+    # window. Therefore, and keeping in mind that the stop value of a range in
+    # Python is exclusive, if closed we want i in the range [0, n), while if
+    # open we want i in the range [1, n-1). This can be accomplished by:
+    start = 1 - closed
+    stop = n - 1 + closed
+    for i in range(start, stop):
+        cos_angle = _dot(direction_vectors[i - 1], direction_vectors[i])
+        if cos_angle < cos_miter_limit:
+            bevel_count += 1
 
     return point_count + bevel_count
 
