@@ -223,36 +223,49 @@ def generate_face_triangle_borders(vertices, triangles) -> np.ndarray:
 
 path = np.array([[0,0], [0,1], [1,1], [1,0]]) * 10
 
-sharp = np.array([[1, 1], [10, 0], [1, -1], [0, -10], [-1, -1], [-10, 0], [-1, 1], [0, 10]])
-sharp2 = np.array([[2, 10], [0, -5], [-2, 10], [-2, -10], [2, -10]])
+sparkle = np.array([[1, 1], [10, 0], [1, -1], [0, -10],
+                    [-1, -1], [-10, 0], [-1, 1], [0, 10]])
+fork = np.array([[2, 10], [0, -5], [-2, 10], [-2, -10], [2, -10]])
 
 polygons = [
+    # square
     generate_regular_polygon(4, radius=1) * 10,
+    # decagon
     generate_regular_polygon(10, radius=1) * 10 + np.array([[25, 0]]),
+    # triangle
     generate_regular_polygon(3, radius=1) * 10 + np.array([[0, 25]]),
-    sharp2 + np.array([[25, 25]]),
-    sharp + np.array([[50, 0]]),
-    sharp[::-1] + np.array([[50, 26]]),
-    path + np.array([[0, 50]]),
-    generate_regular_polygon(10, radius=1) * 10 + np.array([[25, 50]]),
-    np.array([[0, -10], [0, 0], [0, 10]]) + np.array([[50, 50]]),
-    np.array(
-    [
-        [10.97627008, 14.30378733],
-        [12.05526752, 10.89766366],
-        [8.47309599, 12.91788226],
-        [8.75174423, 17.83546002],
-        [19.27325521, 7.66883038],
-        [15.83450076, 10.5778984],
-    ]
-    ) + np.array([[60, -15]]),
+    # two sharp prongs
+    fork + np.array([[25, 25]]),
+    # a four-sided star
+    sparkle + np.array([[50, 0]]),
+    # same star, but winding in the opposite direction
+    sparkle[::-1] + np.array([[50, 26]]),
+    # problem shape —
+    # lighting bolt with sharp angles and overlapping edge widths
+    np.array([[10.97627008, 14.30378733],
+              [12.05526752, 10.89766366],
+              [8.47309599, 12.91788226],
+              [8.75174423, 17.83546002],
+              [19.27325521, 7.66883038],
+              [15.83450076, 10.5778984]],
+            ) + np.array([[60, -15]]),
 ]
 
-shape_type=['polygon'] * 6 + ['path'] * 3 + ['polygon']
-s = Shapes(polygons, shape_type=shape_type, name="shapes")
+paths = [
+    # a simple backwards-c shape
+    path + np.array([[0, 50]]),
+    # an unclosed decagon
+    generate_regular_polygon(10, radius=1) * 10 + np.array([[25, 50]]),
+    # a three-point straight line (tests collinear points in path)
+    np.array([[0, -10], [0, 0], [0, 10]]) + np.array([[50, 50]]),
+]
+
+shapes = polygons + paths
+shape_type=['polygon'] * len(polygons) + ['path'] * len(paths)
+s = Shapes(shapes, shape_type=shape_type, name="shapes")
 
 
-mesh1_li = [generate_2D_edge_meshes(p, closed=s != 'path') for p, s in zip(polygons, shape_type)]
+mesh1_li = [generate_2D_edge_meshes(p, closed=s != 'path') for p, s in zip(shapes, shape_type)]
 
 mesh1 = tuple(np.concatenate(el, axis=0) for el in zip(*mesh1_li))
 
