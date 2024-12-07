@@ -20,7 +20,7 @@ elements of the triangulation: the triangles themselves, and the normal vectors
 on each polygon vertex, from which the triangulation is computed.
 """
 
-import typing
+from dataclasses import dataclass, fields
 
 import numba
 import numpy as np
@@ -265,7 +265,8 @@ shape_type=['polygon'] * len(polygons) + ['path'] * len(paths)
 shapes_layer = Shapes(shapes, shape_type=shape_type, name="shapes")
 
 
-class Helpers(typing.NamedTuple):
+@dataclass
+class Helpers:
     """Simple class to hold all auxiliary vector data for a shapes layer."""
     points: np.ndarray
     order_vectors: np.ndarray
@@ -274,6 +275,12 @@ class Helpers(typing.NamedTuple):
     miter_vectors: np.ndarray
     triangles_vectors: np.ndarray
     face_triangles_vectors: np.ndarray
+
+
+def asdict(dataclass_instance):
+    """Shallow copy version of `dataclasses.asdict`."""
+    return {f.name: getattr(dataclass_instance, f.name)
+            for f in fields(dataclass_instance)}
 
 
 def get_helper_data_from_shapes(shapes_layer: Shapes) -> Helpers:
