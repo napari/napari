@@ -336,7 +336,7 @@ def add_helper_layers(viewer: napari.Viewer):
     viewer.add_layer(ve6)
 
 
-def get_nono_accelerated_points(shape: Shapes) -> np.ndarray:
+def get_non_accelerated_points(shape: Shapes) -> np.ndarray:
     """Get the non-accelerated points"""
     shapes = shape._data_view.shapes
     path_list = [(x.data, x._closed) for x in shapes]
@@ -347,13 +347,13 @@ def get_nono_accelerated_points(shape: Shapes) -> np.ndarray:
 
 
 def update_non_accelerated_points():
-    data = get_nono_accelerated_points(v.layers["shapes"])
+    data = get_non_accelerated_points(v.layers["shapes"])
     v.layers["non accelerated join points"].data = data
 
 
 
 def add_non_accelerated_points(viewer: napari.Viewer):
-    data = get_nono_accelerated_points(v.layers["shapes"])
+    data = get_non_accelerated_points(v.layers["shapes"])
     p = Points(data, size=0.2, face_color='yellow', name='non accelerated join points')
     viewer.add_layer(p)
 
