@@ -26,7 +26,7 @@ import numba
 import numpy as np
 
 import napari
-from napari.layers import Points, Shapes, Vectors
+from napari.layers import Points, Shapes
 from napari.layers.shapes._shapes_utils import generate_2D_edge_meshes
 
 
@@ -324,36 +324,31 @@ def get_helper_data_from_shapes(shapes_layer: Shapes) -> Helpers:
     return helpers
 
 
-def update_layers():
-    shapes_layer = v.layers['shapes']
+def update_layers(viewer: napari.Viewer):
+    shapes_layer = viewer.layers['shapes']
 
-    helpers = get_helper_data_from_shapes(shapes_layer)
-    v.layers['join points'].data = helpers.points
-    v.layers['direction vectors'].data = helpers.order_vectors
-    v.layers['miter helper'].data = helpers.miter_helper
-    v.layers['orthogonal'].data = helpers.orthogonal_vectors
-    v.layers['miter vectors'].data = helpers.miter_vectors
-    v.layers['triangle face vectors'].data = helpers.face_triangles_vectors
-    v.layers['triangle vectors'].data = helpers.triangles_vectors
+    updated_helpers = get_helper_data_from_shapes(shapes_layer)
+    for name, data in asdict(updated_helpers).items():
+        viewer.layers[name].data = data
 
 
 def add_helper_layers(viewer: napari.Viewer):
     shapes = viewer.layers['shapes']
     helpers = get_helper_data_from_shapes(shapes)
-    p = Points(helpers.points, size=0.1, face_color='white', name='join points')
-    ve = Vectors(helpers.order_vectors, edge_width=0.1, vector_style='arrow', name='direction vectors')
-    ve2 = Vectors(helpers.miter_helper, edge_width=0.06, vector_style='arrow', edge_color="blue", name="miter helper")
-    ve3 = Vectors(helpers.orthogonal_vectors, edge_width=0.04, vector_style='arrow', edge_color="green", name='orthogonal')
-    ve4 = Vectors(helpers.miter_vectors, edge_width=0.05, vector_style='arrow', edge_color="yellow", name='miter vectors')
-    ve5 = Vectors(helpers.face_triangles_vectors, edge_width=0.04, vector_style='arrow', edge_color="magenta", name='triangle face vectors')
-    ve6 = Vectors(helpers.triangles_vectors, edge_width=0.04, vector_style='arrow', edge_color="pink", name='triangle vectors')
-    viewer.add_layer(p)
-    viewer.add_layer(ve)
-    viewer.add_layer(ve2)
-    viewer.add_layer(ve3)
-    viewer.add_layer(ve4)
-    viewer.add_layer(ve5)
-    viewer.add_layer(ve6)
+    # sizes and colors are hardcoded based on vibes
+    sizes = [0.1, 0.1, 0.06, 0.04, 0.05, 0.04, 0.04]
+    colors = ['white', 'red', 'blue', 'green', 'yellow', 'pink', 'magenta']
+    for (name, data), size, color in zip(
+            asdict(helpers).items(), sizes, colors
+            ):
+        if 'points' in name:
+            viewer.add_points(data, name=name, size=size, face_color=color)
+        else:  # all other fields are vectors
+            viewer.add_vectors(
+                    data,
+                    name=name,
+                    vector_style='arrow', edge_width=size, edge_color=color
+                    )
 
 
 def get_non_accelerated_points(shape: Shapes) -> np.ndarray:
