@@ -321,6 +321,9 @@ def add_helper_layers(viewer: napari.Viewer, source_layer):
                     name=name,
                     vector_style='arrow', edge_width=size, edge_color=color,
                     )
+    source_layer.events.set_data.connect(
+        partial(update_helper_layers, viewer=viewer, source_layer=source_layer)
+    )
 
 
 path = np.array([[0,0], [0,1], [1,1], [1,0]]) * 10
@@ -368,9 +371,6 @@ viewer = napari.Viewer()
 shapes_layer = viewer.add_shapes(shapes, shape_type=shape_types, name='shapes')
 
 add_helper_layers(viewer, source_layer=shapes_layer)
-shapes_layer.events.set_data.connect(
-        partial(update_helper_layers, viewer=viewer, source_layer=shapes_layer)
-        )
 viewer.layers.selection = {shapes_layer}
 
 viewer.camera.center = (0, 25, 25)
