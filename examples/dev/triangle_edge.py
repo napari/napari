@@ -356,7 +356,7 @@ def add_helper_layers(viewer: napari.Viewer, source_layer):
             viewer.add_vectors(
                     data,
                     name=name,
-                    vector_style='arrow', edge_width=size, edge_color=color
+                    vector_style='arrow', edge_width=size, edge_color=color,
                     )
 
 
