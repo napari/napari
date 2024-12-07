@@ -372,6 +372,7 @@ viewer.add_layer(shapes_layer)
 
 add_helper_layers(viewer, source_layer=shapes_layer)
 shapes_layer.events.set_data.connect(partial(update_layers, viewer=viewer))
+viewer.layers.selection = {shapes_layer}
 
 
 viewer.camera.center = (0, 25, 25)
