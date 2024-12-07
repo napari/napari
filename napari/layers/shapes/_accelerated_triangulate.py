@@ -8,22 +8,27 @@ from numba import njit
 
 @njit(cache=True, inline='always')
 def _calc_output_size(
-    normals: np.ndarray, closed: bool, cos_miter_limit: float, bevel: bool
+    direction_vectors: np.ndarray,
+    closed: bool,
+    cos_miter_limit: float,
+    bevel: bool,
 ) -> int:
     """Calculate the size of the output arrays for the triangulation.
 
     Parameters
     ----------
-    normals : np.ndarray
-        Nx2 array of normal vectors of the path
+    direction_vectors : np.ndarray
+        Nx2 array of direction vectors along the path. The direction vectors
+        have norm 1, so computing the cosine between them is just the dot
+        product.
     closed : bool
         True if shape edge is a closed path.
     cos_miter_limit : float
         Miter limit which determines when to switch from a miter join to a
         bevel join
     bevel : bool
-        If True, a bevel join is always to be used.
-        If False, a bevel join will only be used when the miter limit is exceeded.
+        If True, a bevel join is always used.
+        If False, a bevel join will be used when the miter limit is exceeded.
 
     Returns
     -------
@@ -40,21 +45,21 @@ def _calc_output_size(
 
         c = \frac{1}{2 (l/2)^2} - 1 = \frac{2}{l^2} - 1
     """
-    point_count = len(normals) * 2
+    point_count = len(direction_vectors) * 2
     if closed:
         point_count += 2
 
     bevel_count = 0
 
     if bevel:
-        bevel_count = len(normals)
+        bevel_count = len(direction_vectors)
         if not closed:
             bevel_count -= 2
     else:
-        for i in range(1, len(normals) - 1):
+        for i in range(1, len(direction_vectors) - 1):
             cos_angle = (
-                normals[i - 1, 0] * normals[i, 0]
-                + normals[i - 1, 1] * normals[i, 1]
+                direction_vectors[i - 1, 0] * direction_vectors[i, 0]
+                + direction_vectors[i - 1, 1] * direction_vectors[i, 1]
             )
             if cos_angle < cos_miter_limit:
                 # bevel
@@ -62,13 +67,14 @@ def _calc_output_size(
 
         if closed:
             cos_angle = (
-                normals[-2, 0] * normals[-1, 0]
-                + normals[-2, 1] * normals[-1, 1]
+                direction_vectors[-2, 0] * direction_vectors[-1, 0]
+                + direction_vectors[-2, 1] * direction_vectors[-1, 1]
             )
             if cos_angle < cos_miter_limit:
                 bevel_count += 1
             cos_angle = (
-                normals[-1, 0] * normals[0, 0] + normals[-1, 1] * normals[0, 1]
+                direction_vectors[-1, 0] * direction_vectors[0, 0]
+                + direction_vectors[-1, 1] * direction_vectors[0, 1]
             )
             if cos_angle < cos_miter_limit:
                 bevel_count += 1
