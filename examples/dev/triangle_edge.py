@@ -372,8 +372,6 @@ shapes_layer = viewer.add_shapes(shapes, shape_type=shape_types, name='shapes')
 
 add_helper_layers(viewer, source_layer=shapes_layer)
 viewer.layers.selection = {shapes_layer}
-
-viewer.camera.center = (0, 25, 25)
-viewer.camera.zoom = 50
+viewer.reset_view()
 
 napari.run()
