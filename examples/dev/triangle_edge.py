@@ -147,8 +147,22 @@ def generate_orthogonal_vectors(direction_vectors: np.ndarray) -> np.ndarray:
 
 
 @numba.njit
-def generate_miter_vectors(mesh) -> np.ndarray:
+def generate_miter_vectors(
+        mesh: tuple[np.ndarray, np.ndarray, np.ndarray]
+        ) -> np.ndarray:
     """For each point on path, generate the vectors pointing to miter points.
+
+    Parameters
+    ----------
+    mesh : tuple[np.ndarray]
+        vertices, offsets, and triangles of the mesh corresponding to the edges
+        of a single shape.
+
+    Returns
+    -------
+    np.ndarray, shape (n, 2, 2)
+        Positions and projections of vectors corresponding to the miter points
+        offset from the path points.
     """
     vec_points = np.empty((mesh[0].shape[0], 2, 2))
     vec_points[:, 0] = mesh[0]
