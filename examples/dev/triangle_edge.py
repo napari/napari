@@ -305,6 +305,7 @@ def update_helper_layers(viewer: napari.Viewer, source_layer: Shapes):
 
 
 def add_helper_layers(viewer: napari.Viewer, source_layer):
+    """Add helper layers to the viewer that track with the source shapes."""
     helpers = get_helper_data_from_shapes(source_layer)
     # sizes and colors are hardcoded based on vibes
     sizes = [0.2, 0.1, 0.1, 0.06, 0.04, 0.05, 0.04, 0.04]
