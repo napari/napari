@@ -7,7 +7,7 @@ from numba import njit
 
 
 @njit(cache=True, inline='always')
-def _dot(v0, v1):
+def _dot(v0: np.ndarray, v1: np.ndarray) -> float:
     return v0[0] * v1[0] + v0[1] * v1[1]
 
 
@@ -236,7 +236,7 @@ def _normalize_triangle_orientation(
 
 
 @njit(cache=True, inline='always')
-def _orientation(p1, p2, p3) -> float:
+def _orientation(p1: np.ndarray, p2: np.ndarray, p3: np.ndarray) -> float:
     """Compute the orientation of three points.
 
     In terms of napari's preferred coordinate frame (axis 0, y, is pointing
