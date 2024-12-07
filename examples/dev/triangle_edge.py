@@ -262,7 +262,7 @@ paths = [
 
 shapes = polygons + paths
 shape_type=['polygon'] * len(polygons) + ['path'] * len(paths)
-s = Shapes(shapes, shape_type=shape_type, name="shapes")
+shapes_layer = Shapes(shapes, shape_type=shape_type, name="shapes")
 
 
 class Helpers(typing.NamedTuple):
@@ -270,38 +270,51 @@ class Helpers(typing.NamedTuple):
     points: np.ndarray
     order_vectors: np.ndarray
     miter_helper: np.ndarray
-    orthogonal_vector: np.ndarray
+    orthogonal_vectors: np.ndarray
     miter_vectors: np.ndarray
     triangles_vectors: np.ndarray
     face_triangles_vectors: np.ndarray
 
 
-def get_helper_data_from_shapes(shape: Shapes) -> Helpers:
+def get_helper_data_from_shapes(shapes_layer: Shapes) -> Helpers:
     """Function to generate all auxiliary data for a shapes layer."""
-    shapes = shape._data_view.shapes
-    mesh_list = [(x._edge_vertices, x._edge_offsets, x._edge_triangles) for x in shapes]
-    path_list = [(x.data, x._closed) for x in shapes]
+    shapes = shapes_layer._data_view.shapes
+    mesh_list = [(s._edge_vertices, s._edge_offsets, s._edge_triangles)
+                 for s in shapes]
+    path_list = [(s.data, s._closed) for s in shapes]
     mesh = tuple(np.concatenate(el, axis=0) for el in zip(*mesh_list))
-    face_mesh_list = [(x._face_vertices, x._face_triangles) for x in shapes if len(x._face_vertices)]
+    face_mesh_list = [(s._face_vertices, s._face_triangles)
+                      for s in shapes
+                      if len(s._face_vertices) > 0]
+    order_vectors_list = [generate_order_vectors(path_, closed)
+                          for path_, closed in path_list]
 
-    points = mesh[0] + mesh[1]
-    order_vectors_li = [generate_order_vectors(path_, closed) for path_, closed in path_list]
-    order_vectors = np.concatenate(order_vectors_li, axis=0)
-    miter_helper = np.concatenate([generate_miter_helper_vectors(o) for o in order_vectors_li], axis=0)
-    orthogonal_vector = np.concatenate([generate_orthogonal_vectors(o) for o in order_vectors_li], axis=0)
-    miter_vectors = np.concatenate([generate_miter_vectors(m) for m in mesh_list], axis=0)
-    triangles_vectors = np.concatenate([generate_edge_triangle_borders(*m) for m in mesh_list], axis=0)
-    face_triangles_vectors = np.concatenate([generate_face_triangle_borders(*m) for m in face_mesh_list], axis=0)
-
-    return Helpers(
-        points=points,
-        order_vectors=order_vectors,
-        miter_helper=miter_helper,
-        orthogonal_vector=orthogonal_vector,
-        miter_vectors=miter_vectors,
-        triangles_vectors=triangles_vectors,
-        face_triangles_vectors=face_triangles_vectors,
+    helpers = Helpers(
+        points=mesh[0] + mesh[1],
+        order_vectors=np.concatenate(order_vectors_list, axis=0),
+        miter_helper=np.concatenate(
+                [generate_miter_helper_vectors(o) for o in order_vectors_list],
+                axis=0,
+                ),
+        orthogonal_vectors=np.concatenate(
+                [generate_orthogonal_vectors(o) for o in order_vectors_list],
+                axis=0,
+                ),
+        miter_vectors=np.concatenate(
+                [generate_miter_vectors(m) for m in mesh_list],
+                axis=0,
+                ),
+        triangles_vectors=np.concatenate(
+                [generate_edge_triangle_borders(*m) for m in mesh_list],
+                axis=0,
+                ),
+        face_triangles_vectors = np.concatenate(
+                [generate_face_triangle_borders(*m) for m in face_mesh_list],
+                axis=0,
+                ),
     )
+
+    return helpers
 
 
 def update_layers():
@@ -311,7 +324,7 @@ def update_layers():
     v.layers['join points'].data = helpers.points
     v.layers['direction vectors'].data = helpers.order_vectors
     v.layers['miter helper'].data = helpers.miter_helper
-    v.layers['orthogonal'].data = helpers.orthogonal_vector
+    v.layers['orthogonal'].data = helpers.orthogonal_vectors
     v.layers['miter vectors'].data = helpers.miter_vectors
     v.layers['triangle face vectors'].data = helpers.face_triangles_vectors
     v.layers['triangle vectors'].data = helpers.triangles_vectors
@@ -323,7 +336,7 @@ def add_helper_layers(viewer: napari.Viewer):
     p = Points(helpers.points, size=0.1, face_color='white', name='join points')
     ve = Vectors(helpers.order_vectors, edge_width=0.1, vector_style='arrow', name='direction vectors')
     ve2 = Vectors(helpers.miter_helper, edge_width=0.06, vector_style='arrow', edge_color="blue", name="miter helper")
-    ve3 = Vectors(helpers.orthogonal_vector, edge_width=0.04, vector_style='arrow', edge_color="green", name='orthogonal')
+    ve3 = Vectors(helpers.orthogonal_vectors, edge_width=0.04, vector_style='arrow', edge_color="green", name='orthogonal')
     ve4 = Vectors(helpers.miter_vectors, edge_width=0.05, vector_style='arrow', edge_color="yellow", name='miter vectors')
     ve5 = Vectors(helpers.face_triangles_vectors, edge_width=0.04, vector_style='arrow', edge_color="magenta", name='triangle face vectors')
     ve6 = Vectors(helpers.triangles_vectors, edge_width=0.04, vector_style='arrow', edge_color="pink", name='triangle vectors')
@@ -340,7 +353,8 @@ def get_non_accelerated_points(shape: Shapes) -> np.ndarray:
     """Get the non-accelerated points"""
     shapes = shape._data_view.shapes
     path_list = [(x.data, x._closed) for x in shapes]
-    mesh_list = [generate_2D_edge_meshes(path, closed) for path, closed in path_list]
+    mesh_list = [generate_2D_edge_meshes(path, closed)
+                 for path, closed in path_list]
     mesh = tuple(np.concatenate(el, axis=0) for el in zip(*mesh_list))
 
     return mesh[0] + mesh[1]
@@ -359,14 +373,14 @@ def add_non_accelerated_points(viewer: napari.Viewer):
 
 
 v = napari.Viewer()
-v.add_layer(s)
+v.add_layer(shapes_layer)
 
 add_non_accelerated_points(v)
 add_helper_layers(v)
 
 
-s.events.set_data.connect(update_layers)
-s.events.set_data.connect(update_non_accelerated_points)
+shapes_layer.events.set_data.connect(update_layers)
+shapes_layer.events.set_data.connect(update_non_accelerated_points)
 
 
 v.camera.center = (0, 25, 25)
