@@ -266,6 +266,7 @@ s = Shapes(shapes, shape_type=shape_type, name="shapes")
 
 
 class Helpers(typing.NamedTuple):
+    """Simple class to hold all auxiliary vector data for a shapes layer."""
     points: np.ndarray
     order_vectors: np.ndarray
     miter_helper: np.ndarray
@@ -274,7 +275,9 @@ class Helpers(typing.NamedTuple):
     triangles_vectors: np.ndarray
     face_triangles_vectors: np.ndarray
 
+
 def get_helper_data_from_shapes(shape: Shapes) -> Helpers:
+    """Function to generate all auxiliary data for a shapes layer."""
     shapes = shape._data_view.shapes
     mesh_list = [(x._edge_vertices, x._edge_offsets, x._edge_triangles) for x in shapes]
     path_list = [(x.data, x._closed) for x in shapes]
