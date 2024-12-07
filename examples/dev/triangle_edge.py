@@ -171,20 +171,35 @@ def generate_miter_vectors(
 
 @numba.njit
 def generate_edge_triangle_borders(centers, offsets, triangles) -> np.ndarray:
-    """For each triangle in mesh generate 3 vectors that represent the borders of the triangle.
+    """Generate 3 vectors that represent the borders of the triangle.
+
+    These are vectors to show the *ordering* of the triangles in the data.
+
+    Parameters
+    ----------
+    centers, offsets, triangles : np.ndarray of float
+        The mesh triangulation of the shape's edge path.
+
+    Returns
+    -------
+    borders : np.ndarray of float
+        Positions and projections corresponding to each triangle edge in
+        the triangulation of the path.
     """
     borders = np.empty((len(triangles)*3, 2, 2), dtype=centers.dtype)
+    position = 0
+    projection = 1
     for i, triangle in enumerate(triangles):
         a, b, c = triangle
         a1 = centers[a] + offsets[a]
         b1 = centers[b] + offsets[b]
         c1 = centers[c] + offsets[c]
-        borders[i * 3, 0] = a1
-        borders[i * 3, 1] = (b1 - a1)
-        borders[i * 3 + 1, 0] = b1
-        borders[i * 3 + 1, 1] = (c1 - b1)
-        borders[i * 3 + 2, 0] = c1
-        borders[i * 3 + 2, 1] = (a1 - c1)
+        borders[i * 3, position] = a1
+        borders[i * 3, projection] = (b1 - a1)
+        borders[i * 3 + 1, position] = b1
+        borders[i * 3 + 1, projection] = (c1 - b1)
+        borders[i * 3 + 2, position] = c1
+        borders[i * 3 + 2, projection] = (a1 - c1)
     return borders
 
 @numba.njit
