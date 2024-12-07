@@ -125,7 +125,7 @@ class QtVectorsControls(QtLayerControls):
         self.widthSpinBox = QDoubleSpinBox()
         self.widthSpinBox.setKeyboardTracking(False)
         self.widthSpinBox.setSingleStep(0.1)
-        self.widthSpinBox.setMinimum(0.1)
+        self.widthSpinBox.setMinimum(0.01)
         self.widthSpinBox.setMaximum(np.inf)
         self.widthSpinBox.setValue(self.layer.edge_width)
         self.widthSpinBox.valueChanged.connect(self.change_width)
