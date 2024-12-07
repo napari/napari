@@ -374,4 +374,5 @@ add_helper_layers(viewer, source_layer=shapes_layer)
 viewer.layers.selection = {shapes_layer}
 viewer.reset_view()
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()
