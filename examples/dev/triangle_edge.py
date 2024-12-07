@@ -265,11 +265,6 @@ shape_type=['polygon'] * len(polygons) + ['path'] * len(paths)
 s = Shapes(shapes, shape_type=shape_type, name="shapes")
 
 
-mesh1_li = [generate_2D_edge_meshes(p, closed=s != 'path') for p, s in zip(shapes, shape_type)]
-
-mesh1 = tuple(np.concatenate(el, axis=0) for el in zip(*mesh1_li))
-
-
 class Helpers(typing.NamedTuple):
     points: np.ndarray
     order_vectors: np.ndarray
