@@ -27,7 +27,7 @@ import numba
 import numpy as np
 
 import napari
-from napari.layers import Points, Shapes
+from napari.layers import Shapes
 from napari.layers.shapes._shapes_utils import generate_2D_edge_meshes
 
 
@@ -48,6 +48,17 @@ def generate_regular_polygon(n, radius=1):
     """
     angles = np.linspace(0, 2 * np.pi, n, endpoint=False)
     return np.column_stack((radius * np.cos(angles), radius * np.sin(angles)))
+
+
+def get_reference_edge_triangulation_points(shape: Shapes) -> np.ndarray:
+    """Get the non-accelerated points"""
+    shapes = shape._data_view.shapes
+    path_list = [(x.data, x._closed) for x in shapes]
+    mesh_list = [generate_2D_edge_meshes(path, closed)
+                 for path, closed in path_list]
+    mesh = tuple(np.concatenate(el, axis=0) for el in zip(*mesh_list))
+
+    return mesh[0] + mesh[1]
 
 
 def generate_order_vectors(path_, closed) -> np.ndarray:
@@ -269,6 +280,7 @@ shapes_layer = Shapes(shapes, shape_type=shape_type, name="shapes")
 @dataclass
 class Helpers:
     """Simple class to hold all auxiliary vector data for a shapes layer."""
+    reference_join_points: np.ndarray
     join_points: np.ndarray
     direction_vectors: np.ndarray
     miter_helper_vectors: np.ndarray
@@ -298,6 +310,9 @@ def get_helper_data_from_shapes(shapes_layer: Shapes) -> Helpers:
                           for path_, closed in path_list]
 
     helpers = Helpers(
+        reference_join_points=get_reference_edge_triangulation_points(
+                shapes_layer
+                ),
         join_points=mesh[0] + mesh[1],
         direction_vectors=np.concatenate(order_vectors_list, axis=0),
         miter_helper_vectors=np.concatenate(
@@ -336,8 +351,9 @@ def update_layers(viewer: napari.Viewer):
 def add_helper_layers(viewer: napari.Viewer, source_layer):
     helpers = get_helper_data_from_shapes(source_layer)
     # sizes and colors are hardcoded based on vibes
-    sizes = [0.1, 0.1, 0.06, 0.04, 0.05, 0.04, 0.04]
-    colors = ['white', 'red', 'blue', 'green', 'yellow', 'pink', 'magenta']
+    sizes = [0.2, 0.1, 0.1, 0.06, 0.04, 0.05, 0.04, 0.04]
+    colors = ['yellow', 'white', 'red', 'blue',
+              'green', 'yellow', 'pink', 'magenta']
     for (name, data), size, color in zip(
             asdict(helpers).items(), sizes, colors
             ):
@@ -351,38 +367,11 @@ def add_helper_layers(viewer: napari.Viewer, source_layer):
                     )
 
 
-def get_reference_edge_triangulation_points(shape: Shapes) -> np.ndarray:
-    """Get the non-accelerated points"""
-    shapes = shape._data_view.shapes
-    path_list = [(x.data, x._closed) for x in shapes]
-    mesh_list = [generate_2D_edge_meshes(path, closed)
-                 for path, closed in path_list]
-    mesh = tuple(np.concatenate(el, axis=0) for el in zip(*mesh_list))
-
-    return mesh[0] + mesh[1]
-
-
-def update_reference_edge_triangulation_points():
-    data = get_reference_edge_triangulation_points(viewer.layers["shapes"])
-    viewer.layers["non accelerated join points"].data = data
-
-
-
-def add_non_accelerated_points(viewer: napari.Viewer):
-    data = get_reference_edge_triangulation_points(viewer.layers["shapes"])
-    p = Points(data, size=0.2, face_color='yellow', name='non accelerated join points')
-    viewer.add_layer(p)
-
-
 viewer = napari.Viewer()
 viewer.add_layer(shapes_layer)
 
-add_non_accelerated_points(viewer)
 add_helper_layers(viewer, source_layer=shapes_layer)
-
-
 shapes_layer.events.set_data.connect(partial(update_layers, viewer=viewer))
-shapes_layer.events.set_data.connect(update_reference_edge_triangulation_points)
 
 
 viewer.camera.center = (0, 25, 25)
