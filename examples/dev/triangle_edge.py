@@ -272,11 +272,6 @@ paths = [
     np.array([[0, -10], [0, 0], [0, 10]]) + np.array([[50, 50]]),
 ]
 
-shapes = polygons + paths
-shape_type=['polygon'] * len(polygons) + ['path'] * len(paths)
-shapes_layer = Shapes(shapes, shape_type=shape_type, name="shapes")
-
-
 @dataclass
 class Helpers:
     """Simple class to hold all auxiliary vector data for a shapes layer."""
@@ -340,10 +335,8 @@ def get_helper_data_from_shapes(shapes_layer: Shapes) -> Helpers:
     return helpers
 
 
-def update_layers(viewer: napari.Viewer):
-    shapes_layer = viewer.layers['shapes']
-
-    updated_helpers = get_helper_data_from_shapes(shapes_layer)
+def update_helper_layers(viewer: napari.Viewer, source_layer: Shapes):
+    updated_helpers = get_helper_data_from_shapes(source_layer)
     for name, data in asdict(updated_helpers).items():
         viewer.layers[name].data = data
 
@@ -367,13 +360,17 @@ def add_helper_layers(viewer: napari.Viewer, source_layer):
                     )
 
 
+shapes = polygons + paths
+shape_types=['polygon'] * len(polygons) + ['path'] * len(paths)
+
 viewer = napari.Viewer()
-viewer.add_layer(shapes_layer)
+shapes_layer = viewer.add_shapes(shapes, shape_type=shape_types, name='shapes')
 
 add_helper_layers(viewer, source_layer=shapes_layer)
-shapes_layer.events.set_data.connect(partial(update_layers, viewer=viewer))
+shapes_layer.events.set_data.connect(
+        partial(update_helper_layers, viewer=viewer, source_layer=shapes_layer)
+        )
 viewer.layers.selection = {shapes_layer}
-
 
 viewer.camera.center = (0, 25, 25)
 viewer.camera.zoom = 50
