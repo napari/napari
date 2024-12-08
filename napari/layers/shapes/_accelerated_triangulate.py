@@ -287,15 +287,10 @@ def _normal_vec_and_length(
     """
     normals = np.empty_like(path)
     vec_len_arr = np.empty((len(path)), dtype=np.float32)
-    for i in range(1, len(path)):
+    for i in range(1 - closed, len(path)):
         vec_diff = path[i] - path[i - 1]
         vec_len_arr[i - 1] = np.sqrt(vec_diff[0] ** 2 + vec_diff[1] ** 2)
         normals[i - 1] = vec_diff / vec_len_arr[i - 1]
-
-    if closed:
-        vec_diff = path[0] - path[-1]
-        vec_len_arr[-1] = np.sqrt(vec_diff[0] ** 2 + vec_diff[1] ** 2)
-        normals[-1] = vec_diff / vec_len_arr[-1]
 
     return normals, vec_len_arr * 0.5
 
