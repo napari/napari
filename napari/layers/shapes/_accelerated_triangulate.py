@@ -261,7 +261,7 @@ def _orientation(p1: np.ndarray, p2: np.ndarray, p3: np.ndarray) -> float:
 
 
 @njit(cache=True, inline='always')
-def _normal_vec_and_length(
+def _direction_vec_and_length(
     path: np.ndarray, closed: bool
 ) -> tuple[np.ndarray, np.ndarray]:
     """Calculate the normal vector and its length.
@@ -484,7 +484,7 @@ def generate_2D_edge_meshes(
     # https://github.com/napari/napari/pull/7268#user-content-bevel-limit
     cos_limit = 1 / (2 * (limit / 2) ** 2) - 1.0
 
-    normals, bevel_limit_array = _normal_vec_and_length(path, closed)
+    normals, bevel_limit_array = _direction_vec_and_length(path, closed)
 
     point_count = _calc_output_size(normals, closed, cos_limit, bevel)
 
