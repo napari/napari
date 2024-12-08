@@ -269,11 +269,14 @@ def _normal_vec_and_length(
     Parameters
     ----------
     path : np.ndarray
-        Mx2 array representing path to calculate the normal vector and length.
-        Assumes that there is no point repetition in the path.
-        In other words, assume no two consecutive points are the same.
+        Mx2 array representing path for which to calculate the direction
+        vectors and the length of each segment.
+        This function assumes that there is no point repetition in the path:
+        consecutive points should not have identical coordinates.
     closed : bool
-        Bool if shape edge is a closed path or not.
+        True if the input path is closed (forms a loop): the edge from the
+        last node in the path back to the first one is automatically inserted
+        if so.
 
     Returns
     -------
