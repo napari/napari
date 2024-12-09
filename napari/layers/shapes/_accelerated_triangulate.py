@@ -178,11 +178,9 @@ def _set_centers_and_offsets(
             # For performance reasons here, the miter length is estimated
             # by the inverse of the sin of the angle between the two vectors.
             # See https://github.com/napari/napari/pull/7268#user-content-bevel-cut
-            min_len = min(vec1_len, vec2_len)
-            if scale_factor > min_len:
-                scale_factor = min_len
-            elif scale_factor < -min_len:
-                scale_factor = -min_len
+            scale_factor = np.sign(scale_factor) * min(
+                np.abs(scale_factor), vec1_len, vec2_len
+            )
         miter = (vec1 - vec2) * 0.5 * scale_factor
 
     if bevel or cos_limit > cos_angle:
