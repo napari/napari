@@ -25,6 +25,21 @@ def _cross_z(v0: np.ndarray, v1: np.ndarray) -> float:
 
 
 @njit(cache=True, inline='always')
+def _sign(f: float) -> float:
+    """Return 1, -1, or 0 based on the sign of f.
+
+    The order of if-statements shows what the function is optimized for given
+    the early returns. In this case, an array with many positive values will
+    execute more quickly than one with many negative values.
+    """
+    if f > 0:
+        return 1.0
+    if f < 0:
+        return -1.0
+    return 0.0
+
+
+@njit(cache=True, inline='always')
 def _calc_output_size(
     direction_vectors: np.ndarray,
     closed: bool,
@@ -178,7 +193,7 @@ def _set_centers_and_offsets(
             # For performance reasons here, the miter length is estimated
             # by the inverse of the sin of the angle between the two vectors.
             # See https://github.com/napari/napari/pull/7268#user-content-bevel-cut
-            scale_factor = np.sign(scale_factor) * min(
+            scale_factor = _sign(scale_factor) * min(
                 np.abs(scale_factor), vec1_len, vec2_len
             )
         miter = (vec1 - vec2) * 0.5 * scale_factor
