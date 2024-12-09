@@ -4,8 +4,10 @@ from napari._qt.layer_controls.qt_image_controls_base import (
     QtBaseImageControls,
 )
 from napari._qt.layer_controls.widgets import (
-    QtDepictionControl,
     QtImageRenderControl,
+)
+from napari._qt.layer_controls.widgets.image import (
+    QtDepictionControl,
     QtInterpolationComboBoxControl,
 )
 

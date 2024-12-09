@@ -26,9 +26,6 @@ from napari._qt.layer_controls.widgets.qt_contrast_limits import (
 from napari._qt.layer_controls.widgets.qt_current_size_slider import (
     QtCurrentSizeSliderControl,
 )
-from napari._qt.layer_controls.widgets.qt_depiction_control import (
-    QtDepictionControl,
-)
 from napari._qt.layer_controls.widgets.qt_display_selected_label_checkbox import (
     QtDisplaySelectedLabelCheckBoxControl,
 )
@@ -42,9 +39,6 @@ from napari._qt.layer_controls.widgets.qt_edge_width_slider import (
 from napari._qt.layer_controls.widgets.qt_face_color import QtFaceColorControl
 from napari._qt.layer_controls.widgets.qt_gamma_slider import (
     QtGammaSliderControl,
-)
-from napari._qt.layer_controls.widgets.qt_interpolation_combobox import (
-    QtInterpolationComboBoxControl,
 )
 from napari._qt.layer_controls.widgets.qt_label_color import QtLabelControl
 from napari._qt.layer_controls.widgets.qt_line_dimension_spinbox import (
@@ -90,7 +84,6 @@ __all__ = [
     'QtContourSpinBoxControl',
     'QtContrastLimitsSliderControl',
     'QtCurrentSizeSliderControl',
-    'QtDepictionControl',
     'QtDisplaySelectedLabelCheckBoxControl',
     'QtEdgeColorControl',
     'QtEdgeColorPropertyControl',
