@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 
 from napari._tests.utils import skip_local_popups, skip_on_win_ci
+from napari.layers import Shapes
 from napari.utils._test_utils import read_only_mouse_event
 from napari.utils.interactions import (
     mouse_move_callbacks,
@@ -566,7 +567,9 @@ def test_active_layer_highlight_visibility(qt_viewer):
 
     # add shapes layer setting edge and face color to `black` (so shapes aren't
     # visible unless they're selected), create a rectangle and select the created shape
-    shapes_layer = viewer.add_shapes(edge_color='black', face_color='black')
+    shapes_layer: Shapes = viewer.add_shapes(
+        edge_color='black', face_color='black'
+    )
     shapes_layer.add_rectangles([[0, 0], [1, 1]])
     shapes_layer.selected_data = {0}
 

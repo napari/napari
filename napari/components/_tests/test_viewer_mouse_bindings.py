@@ -1,7 +1,10 @@
+from unittest.mock import Mock
+
 import numpy as np
 import pytest
 
 from napari.components import ViewerModel
+from napari.components._viewer_mouse_bindings import double_click_to_zoom
 from napari.utils._test_utils import read_only_mouse_event
 from napari.utils.interactions import mouse_wheel_callbacks
 
@@ -68,3 +71,60 @@ def test_paint(modifiers, native, expected_dim):
     )
     mouse_wheel_callbacks(viewer, event)
     assert np.equal(viewer.dims.point, expected_dim[3]).all()
+
+
+def test_double_click_to_zoom():
+    viewer = ViewerModel()
+    data = np.zeros((10, 10, 10))
+    viewer.add_image(data)
+
+    # Ensure `pan_zoom` mode is active
+    assert viewer.layers.selection.active.mode == 'pan_zoom'
+
+    # Mock the mouse event
+    event = Mock()
+    event.modifiers = []
+    event.position = [100, 100]
+
+    viewer.camera.center = (0, 0, 0)
+    initial_zoom = viewer.camera.zoom
+    initial_center = np.asarray(viewer.camera.center)
+    assert viewer.dims.ndisplay == 2
+
+    double_click_to_zoom(viewer, event)
+
+    assert viewer.camera.zoom == initial_zoom * 2
+    # should be half way between the old center and the event.position
+    assert np.allclose(viewer.camera.center, (0, 50, 50))
+
+    # Assert the camera center has moved correctly in 3D
+    viewer.dims.ndisplay = 3
+    assert viewer.dims.ndisplay == 3
+    # reset to initial values
+    viewer.camera.center = initial_center
+    viewer.camera.zoom = initial_zoom
+
+    event.position = [0, 100, 100]
+    double_click_to_zoom(viewer, event)
+    assert viewer.camera.zoom == initial_zoom * 2
+    assert np.allclose(viewer.camera.center, (0, 50, 50))
+
+    # Test with Alt key pressed
+    event.modifiers = ['Alt']
+
+    double_click_to_zoom(viewer, event)
+
+    # Assert the zoom level is back to initial
+    assert viewer.camera.zoom == initial_zoom
+    # Assert the camera center is back to initial
+    assert np.allclose(viewer.camera.center, (0, 0, 0))
+
+    # Test in a mode other than pan_zoom
+    viewer.layers.selection.active.mode = 'transform'
+    assert viewer.layers.selection.active.mode != 'pan_zoom'
+
+    double_click_to_zoom(viewer, event)
+
+    # Assert nothing has changed
+    assert viewer.camera.zoom == initial_zoom
+    assert np.allclose(viewer.camera.center, (0, 0, 0))
