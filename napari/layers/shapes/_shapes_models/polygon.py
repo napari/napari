@@ -1,4 +1,8 @@
-from napari.layers.shapes._shapes_models._polygon_base import PolygonBase
+from typing import Literal, Optional
+
+import numpy.typing as npt
+
+from napari.layers.shapes._shapes_models._polgyon_base import PolygonBase
 
 
 class Polygon(PolygonBase):
@@ -19,13 +23,13 @@ class Polygon(PolygonBase):
 
     def __init__(
         self,
-        data,
+        data: npt.NDArray,
         *,
-        edge_width=1,
-        z_index=0,
-        dims_order=None,
-        ndisplay=2,
-        interpolation_order=1,
+        edge_width: float = 1,
+        z_index: int = 0,
+        dims_order: Optional[list[int]] = None,
+        ndisplay: Literal[2] = 2,
+        interpolation_order: int = 1,
     ) -> None:
         super().__init__(
             data=data,

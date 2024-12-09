@@ -85,7 +85,7 @@ class ShapeList:
     """
 
     def __init__(
-        self, data: typing.Iterable[Shape] = (), ndisplay: int = 2
+        self, data: typing.Iterable[Shape] = (), ndisplay: Literal[2] = 2
     ) -> None:
         self._ndisplay = ndisplay
         self.shapes: list[Shape] = []
@@ -155,12 +155,12 @@ class ShapeList:
         return [s.data for s in self.shapes]
 
     @property
-    def ndisplay(self) -> int:
+    def ndisplay(self) -> Literal[2]:
         """int: Number of displayed dimensions."""
         return self._ndisplay
 
     @ndisplay.setter
-    def ndisplay(self, ndisplay: int) -> None:
+    def ndisplay(self, ndisplay: Literal[2]) -> None:
         if self.ndisplay == ndisplay:
             return
 
