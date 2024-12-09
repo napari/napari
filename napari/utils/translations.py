@@ -171,13 +171,13 @@ class TranslationString(str):
     """
 
     __slots__ = (
+        '_deferred',
         '_domain',
+        '_kwargs',
         '_msgctxt',
         '_msgid',
         '_msgid_plural',
         '_n',
-        '_deferred',
-        '_kwargs',
     )
 
     def __deepcopy__(self, memo):

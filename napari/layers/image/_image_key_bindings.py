@@ -61,7 +61,7 @@ def orient_plane_normal_along_view_direction(
         event: Union[None, Event] = None,
     ) -> None:
         """Plane normal syncronisation mouse callback."""
-        layer.plane.normal = layer._world_to_displayed_data_ray(
+        layer.plane.normal = layer._world_to_displayed_data_normal(
             viewer.camera.view_direction, [-3, -2, -1]
         )
 
@@ -82,7 +82,7 @@ def orient_plane_normal_along_view_direction_no_gen(layer: Image) -> None:
     viewer = napari.viewer.current_viewer()
     if viewer is None or viewer.dims.ndisplay != 3:
         return
-    layer.plane.normal = layer._world_to_displayed_data_ray(
+    layer.plane.normal = layer._world_to_displayed_data_normal(
         viewer.camera.view_direction, [-3, -2, -1]
     )
 

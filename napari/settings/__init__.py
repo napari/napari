@@ -8,7 +8,7 @@ from napari.settings._napari_settings import (
 )
 from napari.utils.translations import trans
 
-__all__ = ['NapariSettings', 'get_settings', 'CURRENT_SCHEMA_VERSION']
+__all__ = ['CURRENT_SCHEMA_VERSION', 'NapariSettings', 'get_settings']
 
 
 class _SettingsProxy:

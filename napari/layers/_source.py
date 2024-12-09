@@ -58,7 +58,9 @@ class Source(BaseModel):
 
 # layer source context management
 
-_LAYER_SOURCE: ContextVar[dict] = ContextVar('_LAYER_SOURCE', default={})
+_LAYER_SOURCE: ContextVar[dict | None] = ContextVar(
+    '_LAYER_SOURCE', default=None
+)
 
 
 @contextmanager
@@ -97,7 +99,7 @@ def layer_source(**source_kwargs: Any) -> Generator[None, None, None]:
     >>> assert points.source == Source(path='file.ext', reader_plugin='plugin')  # doctest: +SKIP
 
     """
-    token = _LAYER_SOURCE.set({**_LAYER_SOURCE.get(), **source_kwargs})
+    token = _LAYER_SOURCE.set({**(_LAYER_SOURCE.get() or {}), **source_kwargs})
     try:
         yield
     finally:
@@ -109,4 +111,4 @@ def current_source() -> Source:
 
     The main place this function is used is in :meth:`Layer.__init__`.
     """
-    return Source(**_LAYER_SOURCE.get())
+    return Source(**(_LAYER_SOURCE.get() or {}))

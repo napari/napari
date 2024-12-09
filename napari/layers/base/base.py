@@ -369,6 +369,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._opacity = opacity
         self._blending = Blending(blending)
         self._visible = visible
+        self._visible_mode = None
         self._freeze = False
         self._status = 'Ready'
         self._help = ''
@@ -456,6 +457,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             source=self,
             axis_labels=Event,
             data=Event,
+            metadata=Event,
             affine=Event,
             blending=Event,
             cursor=Event,
@@ -544,7 +546,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         TRANSFORM = self._modeclass.TRANSFORM  # type: ignore[attr-defined]
         assert mode is not None
 
-        if not self.editable:
+        if not self.editable or not self.visible:
             mode = PAN_ZOOM
         if mode == self._mode:
             return mode
@@ -670,6 +672,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     def metadata(self, value: dict) -> None:
         self._metadata.clear()
         self._metadata.update(value)
+        self.events.metadata()
 
     @property
     def source(self) -> Source:
@@ -773,11 +776,21 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @visible.setter
     def visible(self, visible: bool) -> None:
         self._visible = visible
+
         if visible:
             # needed because things might have changed while invisible
             # and refresh is noop while invisible
             self.refresh(extent=False)
+        self._on_visible_changed()
         self.events.visible()
+
+    def _on_visible_changed(self) -> None:
+        """Execute side-effects on this layer related to changes of the visible state."""
+        if self.visible and self._visible_mode:
+            self.mode = self._visible_mode
+        else:
+            self._visible_mode = self.mode
+            self.mode = self._modeclass.PAN_ZOOM  # type: ignore[attr-defined]
 
     @property
     def editable(self) -> bool:
@@ -1689,6 +1702,47 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         vector_data_ndisplay = vector_data_nd[dims_displayed]
         vector_data_ndisplay /= np.linalg.norm(vector_data_ndisplay)
         return vector_data_ndisplay
+
+    def _world_to_displayed_data_normal(
+        self, vector_world: npt.ArrayLike, dims_displayed: list[int]
+    ) -> np.ndarray:
+        """Convert a normal vector defining an orientation from world coordinates to data coordinates.
+
+        Parameters
+        ----------
+        vector_world : tuple, list, 1D array
+            A vector in world coordinates.
+        dims_displayed : list[int]
+            Indices of displayed dimensions of the data.
+
+        Returns
+        -------
+        np.ndarray
+            Transformed normal vector (unit vector) in data coordinates.
+
+        Notes
+        -----
+        This method is adapted from napari-threedee under BSD-3-Clause License.
+        For more information see also:
+        https://www.scratchapixel.com/lessons/mathematics-physics-for-computer-graphics/geometry/transforming-normals.html
+        """
+
+        # the napari transform is from layer -> world.
+        # We want the inverse of the world ->  layer, so we just take the napari transform
+        inverse_transform = self._transforms[1:].simplified.linear_matrix
+
+        # Extract the relevant submatrix based on dims_displayed
+        submatrix = inverse_transform[np.ix_(dims_displayed, dims_displayed)]
+        transpose_inverse_transform = submatrix.T
+
+        # transform the vector
+        transformed_vector = np.matmul(
+            transpose_inverse_transform, vector_world
+        )
+
+        transformed_vector /= np.linalg.norm(transformed_vector)
+
+        return transformed_vector
 
     def _world_to_layer_dims(
         self, *, world_dims: npt.NDArray, ndim_world: int
