@@ -65,7 +65,7 @@ class PolygonBase(Shape):
 
     @data.setter
     def data(self, data):
-        data = np.array(data).astype(float)
+        data = np.array(data).astype(np.float32)
 
         if len(self.dims_order) != data.shape[1]:
             self._dims_order = list(range(data.shape[1]))
@@ -73,7 +73,7 @@ class PolygonBase(Shape):
         if len(data) < 2:
             raise ValueError(
                 trans._(
-                    'Shape needs at least two vertices, {number} provided.',
+                    'Shape needs at least two unique vertices, {number} provided.',
                     deferred=True,
                     number=len(data),
                 )
