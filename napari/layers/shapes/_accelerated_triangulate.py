@@ -8,7 +8,20 @@ from numba import njit
 
 @njit(cache=True, inline='always')
 def _dot(v0: np.ndarray, v1: np.ndarray) -> float:
+    """Return the dot product of two 2D vectors.
+
+    If the vectors have norm 1, this is the cosine of the angle between them.
+    """
     return v0[0] * v1[0] + v0[1] * v1[1]
+
+
+@njit(cache=True, inline='always')
+def _cross_z(v0: np.ndarray, v1: np.ndarray) -> float:
+    """Return the z-magnitude of the cross-product between two vectors.
+
+    If the vectors have norm 1, this is the sine of the angle between them.
+    """
+    return v0[0] * v1[1] - v0[1] * v1[0]
 
 
 @njit(cache=True, inline='always')
@@ -142,8 +155,8 @@ def _set_centers_and_offsets(
     """
     centers[j] = vertex
     centers[j + 1] = vertex
-    cos_angle = vec1[0] * vec2[0] + vec1[1] * vec2[1]
-    sin_angle = vec1[0] * vec2[1] - vec1[1] * vec2[0]
+    cos_angle = _dot(vec1, vec2)
+    sin_angle = _cross_z(vec1, vec2)
 
     if sin_angle == 0:
         miter = np.array([vec1[1], -vec1[0]], dtype=np.float32) * 0.5
