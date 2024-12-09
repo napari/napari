@@ -159,8 +159,18 @@ def _set_centers_and_offsets(
     sin_angle = _cross_z(vec1, vec2)
 
     if sin_angle == 0:
+        # if the vectors are collinear, the miter join points are exactly
+        # perpendicular to the path — we can construct this vector from vec1.
         miter = np.array([vec1[1], -vec1[0]], dtype=np.float32) * 0.5
     else:
+        # otherwise, we use the line intercept theorem to calculate the miter
+        # direction as (vec1 - vec2) * 0.5 — these are the
+        # `miter_helper_vectors` in examples/dev/triangle_edge.py — and scale.
+        # If there is a bevel join, we have to make sure that the miter points
+        # to the inside of the angle, *and*, we have to make sure that it does
+        # not exceed the length of either incoming edge.
+        # See also:
+        # https://github.com/napari/napari/pull/7268#user-content-miter
         scale_factor = 1 / sin_angle
         if bevel or cos_angle < cos_limit:
             # There is a case of bevels join, and
@@ -179,10 +189,6 @@ def _set_centers_and_offsets(
                     scale_factor = vec2_len
                 elif estimated_len < -vec2_len:
                     scale_factor = -vec2_len
-
-        # We use here the Intercept theorem for calculating the miter length
-        # More details in PR description:
-        # https://github.com/napari/napari/pull/7268#user-content-miter
         miter = (vec1 - vec2) * 0.5 * scale_factor
 
     if bevel or cos_limit > cos_angle:
