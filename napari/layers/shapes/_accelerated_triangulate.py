@@ -41,6 +41,21 @@ def _sign_abs(f: float) -> tuple[float, float]:
 
 @njit(cache=True, inline='always')
 def _orthogonal_vector(v: np.ndarray, ccw: bool = True) -> np.ndarray:
+    """Return an orthogonal vector to v (2D).
+
+    Parameters
+    ----------
+    v : np.ndarray of float, shape (2,)
+        The input vector.
+    ccw : bool
+        Whether you want the orthogonal vector in the counterclockwise
+        direction (in the napari reference frame) or clockwise.
+
+    Returns
+    -------
+    np.ndarray, shape (2,)
+        A vector orthogonal to the input vector, and of the same magnitude.
+    """
     if ccw:
         return np.array([v[1], -v[0]])
     return np.array([-v[1], v[0]])
