@@ -1,8 +1,5 @@
 [build-system]
-requires = [
-  "setuptools >= 69",
-  "setuptools_scm[toml]>=8"
-]
+requires = ["setuptools >= 69", "setuptools_scm[toml]>=8"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -73,9 +70,7 @@ dependencies = [
     "vispy>=0.14.1,<0.15",
     "wrapt>=1.11.1",
 ]
-dynamic = [
-    "version",
-]
+dynamic = ["version"]
 
 [project.license]
 text = "BSD 3-Clause"
@@ -95,33 +90,17 @@ Documentation = "https://napari.org"
 pyside2 = [
     "PySide2>=5.13.2,!=5.15.0 ; python_version < '3.11' and platform_machine != 'arm64'",
 ]
-pyside6_experimental = [
-    "PySide6 < 6.5 ; python_version < '3.12'"
-]
-pyqt6 = [
-    "PyQt6 > 6.5",
-    "PyQt6 != 6.6.1 ; platform_system == 'Darwin'"
-]
-pyside = [
-    "napari[pyside2]"
-]
-pyqt5 = [
-    "PyQt5>=5.13.2,!=5.15.0",
-]
-pyqt = [
-    "napari[pyqt5]"
-]
-qt = [
-    "napari[pyqt]"
-]
-all = [
-    "napari[pyqt,optional]",
-    "napari-plugin-manager >=0.1.3, <0.2.0",
-]
+pyside6_experimental = ["PySide6 < 6.5 ; python_version < '3.12'"]
+pyqt6 = ["PyQt6 > 6.5", "PyQt6 != 6.6.1 ; platform_system == 'Darwin'"]
+pyside = ["napari[pyside2]"]
+pyqt5 = ["PyQt5>=5.13.2,!=5.15.0"]
+pyqt = ["napari[pyqt5]"]
+qt = ["napari[pyqt]"]
+all = ["napari[pyqt,optional]", "napari-plugin-manager >=0.1.3, <0.2.0"]
 optional = [
     "triangle ; platform_machine != 'arm64'",
     "numba>=0.57.1",
-    "zarr>=2.12.0", # needed by `builtins` (dask.array.from_zarr) to open zarr
+    "zarr>=2.12.0",                           # needed by `builtins` (dask.array.from_zarr) to open zarr
 ]
 testing = [
     "babel>=2.9.0",
@@ -147,9 +126,7 @@ testing = [
     "rich>=12.0.0",
     "napari-plugin-manager >=0.1.0a2, <0.2.0",
 ]
-testing_extra = [
-    "torch>=1.7",
-]
+testing_extra = ["torch>=1.7"]
 release = [
     "PyGithub>=1.44.1",
     "twine>=3.1.1",
@@ -164,10 +141,7 @@ dev = [
     "python-dotenv",
     "napari[testing]",
 ]
-build = [
-    "ruff",
-    "pyqt5",
-]
+build = ["ruff", "pyqt5"]
 
 [project.entry-points.pytest11]
 napari = "napari.utils._testsupport"
@@ -181,20 +155,14 @@ napari = "napari.__main__:main"
 [tool.setuptools]
 zip-safe = false
 include-package-data = true
-license-files = [
-    "LICENSE",
-]
+license-files = ["LICENSE"]
 
 [tool.setuptools.packages.find]
 namespaces = false
 
 [tool.setuptools.package-data]
-"*" = [
-    "*.pyi",
-]
-napari_builtins = [
-    "builtins.yaml",
-]
+"*" = ["*.pyi"]
+napari_builtins = ["builtins.yaml"]
 
 
 [tool.setuptools_scm]
@@ -202,20 +170,20 @@ write_to = "napari/_version.py"
 
 [tool.check-manifest]
 ignore = [
-  ".cirrus.yml",
-  ".pre-commit-config.yaml",
-  "asv.conf.json",
-  "codecov.yml",
-  "Makefile",
-  "napari/_version.py",  # added during build by setuptools_scm
-  "tools/minreq.py",
-  "tox.ini",
-  "napari/_qt/qt_resources/_qt_resources_*.py",
-  "*.pyi",  # added by make typestubs
-  "binder/*",
-  ".env_sample",
-  ".devcontainer/*",
-  "napari/resources/icons/_themes/*/*.svg"
+    ".cirrus.yml",
+    ".pre-commit-config.yaml",
+    "asv.conf.json",
+    "codecov.yml",
+    "Makefile",
+    "napari/_version.py",                         # added during build by setuptools_scm
+    "tools/minreq.py",
+    "tox.ini",
+    "napari/_qt/qt_resources/_qt_resources_*.py",
+    "*.pyi",                                      # added by make typestubs
+    "binder/*",
+    ".env_sample",
+    ".devcontainer/*",
+    "napari/resources/icons/_themes/*/*.svg",
 ]
 
 [tool.ruff]
@@ -249,50 +217,60 @@ quote-style = "single"
 
 [tool.ruff.lint]
 select = [
-    "E", "F", "W", #flake8
-    "UP", # pyupgrade
-    "I", # isort
-    "YTT", #flake8-2020
-    "TC", # flake8-type-checing
-    "BLE", # flake8-blind-exception
-    "B", # flake8-bugbear
-    "A", # flake8-builtins
-    "C4", # flake8-comprehensions
-    "ISC", # flake8-implicit-str-concat
-    "G", # flake8-logging-format
-    "PIE", # flake8-pie
-    "COM", # flake8-commas
-    "SIM", # flake8-simplify
-    "INP", # flake8-no-pep420
-    "PYI", # flake8-pyi
-    "Q", # flake8-quotes
-    "RSE", # flake8-raise
-    "RET", # flake8-return
-    "TID",  # flake8-tidy-imports # replace absolutify import
-    "TRY", # tryceratops
-    "ICN", # flake8-import-conventions
-    "RUF", # ruff specyfic rules
+    "E",
+    "F",
+    "W",      #flake8
+    "UP",     # pyupgrade
+    "I",      # isort
+    "YTT",    #flake8-2020
+    "TC",     # flake8-type-checing
+    "BLE",    # flake8-blind-exception
+    "B",      # flake8-bugbear
+    "A",      # flake8-builtins
+    "C4",     # flake8-comprehensions
+    "ISC",    # flake8-implicit-str-concat
+    "G",      # flake8-logging-format
+    "PIE",    # flake8-pie
+    "COM",    # flake8-commas
+    "SIM",    # flake8-simplify
+    "INP",    # flake8-no-pep420
+    "PYI",    # flake8-pyi
+    "Q",      # flake8-quotes
+    "RSE",    # flake8-raise
+    "RET",    # flake8-return
+    "TID",    # flake8-tidy-imports # replace absolutify import
+    "TRY",    # tryceratops
+    "ICN",    # flake8-import-conventions
+    "RUF",    # ruff specyfic rules
     "NPY201", # checks compatibility with numpy version 2.0
-    "ASYNC", # flake8-async
-    "EXE", # flake8-executable
-    "FA", # flake8-future-annotations
-    "LOG", # flake8-logging
-    "SLOT", # flake8-slots
-    "PT", # flake8-pytest-style
-    "T20", # flake8-print
+    "ASYNC",  # flake8-async
+    "EXE",    # flake8-executable
+    "FA",     # flake8-future-annotations
+    "LOG",    # flake8-logging
+    "SLOT",   # flake8-slots
+    "PT",     # flake8-pytest-style
+    "T20",    # flake8-print
 ]
 ignore = [
-    "E501", "TC001", "TC002", "TC003",
-    "A003", # flake8-builtins - we have class attributes violating these rule
+    "E501",
+    "TC001",
+    "TC002",
+    "TC003",
+    "A003",   # flake8-builtins - we have class attributes violating these rule
     "COM812", # flake8-commas - we don't like adding comma on single line of arguments
     "COM819", # conflicts with ruff-format
     "SIM117", # flake8-simplify - we some of merged with statements are not looking great with black, reanble after drop python 3.9
     "RET504", # not fixed yet https://github.com/charliermarsh/ruff/issues/2950
     "TRY003", # require implement multiple exception class
     "RUF005", # problem with numpy compatybility, see https://github.com/charliermarsh/ruff/issues/2142#issuecomment-1451038741
-    "B028", # need to be fixed
+    "B028",   # need to be fixed
     "PYI015", # it produces bad looking files (@jni opinion)
-    "W191", "Q000", "Q001", "Q002", "Q003", "ISC001", # https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
+    "W191",
+    "Q000",
+    "Q001",
+    "Q002",
+    "Q003",
+    "ISC001", # https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -318,7 +296,7 @@ multiline-quotes = "double"
 ban-relative-imports = "all"
 
 [tool.ruff.lint.isort]
-known-first-party=['napari']
+known-first-party = ['napari']
 combine-as-imports = true
 
 [tool.ruff.lint.flake8-import-conventions]
@@ -330,7 +308,13 @@ xarray = "xr"
 [tool.pytest.ini_options]
 # These follow standard library warnings filters syntax.  See more here:
 # https://docs.python.org/3/library/warnings.html#describing-warning-filters
-addopts = ["--maxfail=5",  "--durations=10",  "-ra", "--strict-markers", "--strict-config"]
+addopts = [
+    "--maxfail=5",
+    "--durations=10",
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+]
 console_output_style = "count"
 minversion = "8"
 # log_cli_level = "INFO"
@@ -343,29 +327,29 @@ testpaths = ["napari", "napari_builtins"]
 # instead... assert the warning with `pytest.warns()` in the relevant test,
 # That way we can clean them up when no longer necessary
 filterwarnings = [
-  "error:::napari", # turn warnings from napari into errors
-  "error:::test_.*", # turn warnings in our own tests into errors
-  "default:::napari.+vendored.+",  # just print warnings inside vendored modules
-  "ignore::DeprecationWarning:shibokensupport",
-  "ignore::DeprecationWarning:ipykernel",
-  "ignore::DeprecationWarning:tensorstore",
-  "ignore:Accessing zmq Socket:DeprecationWarning:jupyter_client",
-  "ignore:pythonw executable not found:UserWarning:",
-  "ignore:data shape .* exceeds GL_MAX_TEXTURE_SIZE:UserWarning",
-  "ignore:For best performance with Dask arrays in napari:UserWarning:",
-  "ignore:numpy.ufunc size changed:RuntimeWarning",
-  "ignore:Multiscale rendering is only supported in 2D. In 3D, only the lowest resolution scale is displayed",
-  "ignore:Alternative shading modes are only available in 3D, defaulting to none",
-  "ignore:distutils Version classes are deprecated::",
-  "ignore:There is no current event loop:DeprecationWarning:",
-  "ignore:(?s).*Pyarrow will become a required dependency of pandas:DeprecationWarning",  # pandas pyarrow (pandas<3.0),
-  # TODO: remove once xarray is updated to avoid this warning
-  # https://github.com/pydata/xarray/blame/b1f3fea467f9387ed35c221205a70524f4caa18b/pyproject.toml#L333-L334
-  # https://github.com/pydata/xarray/pull/8939
-  "ignore:__array__ implementation doesn't accept a copy keyword, so passing copy=False failed.",
-  "ignore:pkg_resources is deprecated",
-  "ignore:Deprecated call to `pkg_resources.declare_namespace",
-  "ignore:Use Group.create_array instead."
+    "error:::napari",                                                                                            # turn warnings from napari into errors
+    "error:::test_.*",                                                                                           # turn warnings in our own tests into errors
+    "default:::napari.+vendored.+",                                                                              # just print warnings inside vendored modules
+    "ignore::DeprecationWarning:shibokensupport",
+    "ignore::DeprecationWarning:ipykernel",
+    "ignore::DeprecationWarning:tensorstore",
+    "ignore:Accessing zmq Socket:DeprecationWarning:jupyter_client",
+    "ignore:pythonw executable not found:UserWarning:",
+    "ignore:data shape .* exceeds GL_MAX_TEXTURE_SIZE:UserWarning",
+    "ignore:For best performance with Dask arrays in napari:UserWarning:",
+    "ignore:numpy.ufunc size changed:RuntimeWarning",
+    "ignore:Multiscale rendering is only supported in 2D. In 3D, only the lowest resolution scale is displayed",
+    "ignore:Alternative shading modes are only available in 3D, defaulting to none",
+    "ignore:distutils Version classes are deprecated::",
+    "ignore:There is no current event loop:DeprecationWarning:",
+    "ignore:(?s).*Pyarrow will become a required dependency of pandas:DeprecationWarning",                       # pandas pyarrow (pandas<3.0),
+    # TODO: remove once xarray is updated to avoid this warning
+    # https://github.com/pydata/xarray/blame/b1f3fea467f9387ed35c221205a70524f4caa18b/pyproject.toml#L333-L334
+    # https://github.com/pydata/xarray/pull/8939
+    "ignore:__array__ implementation doesn't accept a copy keyword, so passing copy=False failed.",
+    "ignore:pkg_resources is deprecated",
+    "ignore:Deprecated call to `pkg_resources.declare_namespace",
+    "ignore:Use Group.create_array instead.",
 ]
 markers = [
     "examples: Test of examples",
@@ -384,7 +368,7 @@ files = "napari"
 # This file triggers an internal mypy error, so exclude collection
 # TODO: fix this
 exclude = "napari/utils/events/_tests/test_evented_model\\.py"
-plugins =  "numpy.typing.mypy_plugin, pydantic.mypy"
+plugins = "numpy.typing.mypy_plugin, pydantic.mypy"
 ignore_missing_imports = true
 hide_error_codes = false
 warn_redundant_casts = true
@@ -395,29 +379,27 @@ warn_unused_ignores = true
 check_untyped_defs = true
 no_implicit_optional = true
 disable_error_code = [
-  # See discussion at https://github.com/python/mypy/issues/2427;
-  # mypy cannot run type checking on method assignment, but we use
-  # that in several places, so ignore the error
-  'method-assign'
+    # See discussion at https://github.com/python/mypy/issues/2427;
+    # mypy cannot run type checking on method assignment, but we use
+    # that in several places, so ignore the error
+    'method-assign',
 ]
 # see `$ qtpy mypy-args` and qtpy readme. This will be used by `tox -e mypy`
 # to properly infer with PyQt6 installed
-always_false=['PYSIDE6', 'PYSIDE2', 'PYQT5']
-always_true=['PYQT6']
+always_false = ['PYSIDE6', 'PYSIDE2', 'PYQT5']
+always_true = ['PYQT6']
 
 
 # gloabl ignore error
 [[tool.mypy.overrides]]
 module = [
-  '*._tests.*',
-  '*.experimental.*',
-  '*._vendor.*',
-  '*.benchmarks.*',
-  'napari_builtins.*'
+    '*._tests.*',
+    '*.experimental.*',
+    '*._vendor.*',
+    '*.benchmarks.*',
+    'napari_builtins.*',
 ]
 ignore_errors = true
-
-
 
 
 # individual ignore error
@@ -555,20 +537,14 @@ module = [
     "napari._vispy.visuals.clipping_planes_mixin",
     "napari._vispy.visuals.markers",
     "napari._vispy.visuals.surface",
-    "napari.layers.shapes._shapes_models.path",
-    "napari.layers.shapes._shapes_models.polygon",
-    "napari.layers.shapes._shapes_models._polygon_base",
-    "napari.layers.shapes._shapes_models.ellipse",
-    "napari.layers.shapes._shapes_models.line",
-    "napari.layers.shapes._shapes_models.rectangle",
-    "napari.layers.shapes._shapes_models.shape",
+    "napari.layers._data_protocols",
     "napari.resources._icons",
     "napari.utils.color",
     "napari.utils.events.containers._dict",
     "napari.utils.events.event_utils",
     "napari.utils.migrations",
     "napari.utils.validators",
-    "napari.window"
+    "napari.window",
 ]
 disallow_incomplete_defs = false
 disallow_untyped_defs = false
@@ -643,16 +619,13 @@ module = [
     "napari.utils.colormaps.vendored._cm",
     "napari.utils.colormaps.vendored.cm",
     "napari.utils.status_messages",
-    "napari.layers.shapes._shapes_utils"
+    "napari.layers.shapes._shapes_utils",
 ]
 disallow_untyped_calls = false
 disallow_untyped_defs = false
 
 [[tool.mypy.overrides]]
-module = [
-    "napari._app_model._app",
-    "napari.utils.theme",
-]
+module = ["napari._app_model._app", "napari.utils.theme"]
 disallow_incomplete_defs = false
 disallow_untyped_calls = false
 disallow_untyped_defs = false
@@ -661,7 +634,7 @@ warn_unused_ignores = false
 [[tool.mypy.overrides]]
 module = [
     "napari._app_model.context._context",
-    "napari._qt.containers._factory"
+    "napari._qt.containers._factory",
 ]
 disallow_incomplete_defs = false
 disallow_untyped_defs = false
@@ -703,9 +676,7 @@ disallow_incomplete_defs = false
 disallow_untyped_defs = false
 
 [[tool.mypy.overrides]]
-module = [
-    "napari.utils.events.containers._typed",
-]
+module = ["napari.utils.events.containers._typed"]
 check_untyped_defs = false
 disallow_incomplete_defs = false
 disallow_untyped_calls = false
@@ -728,15 +699,12 @@ module = [
     "napari._app_model.context._layerlist_context",
     "napari.components.overlays.labels_polygon",
     "napari.plugins.io",
-    "napari.utils.colormaps.vendored._cm_listed"
+    "napari.utils.colormaps.vendored._cm_listed",
 ]
 disallow_untyped_calls = false
 
 [[tool.mypy.overrides]]
-module = [
-    "napari._qt.containers.qt_layer_list",
-    "napari.layers.base.base"
-]
+module = ["napari._qt.containers.qt_layer_list", "napari.layers.base.base"]
 check_untyped_defs = false
 disallow_untyped_calls = false
 disallow_untyped_defs = false
@@ -752,9 +720,7 @@ check_untyped_defs = false
 disallow_untyped_defs = false
 
 [[tool.mypy.overrides]]
-module = [
-    "napari._pydantic_compat",
-]
+module = ["napari._pydantic_compat"]
 ignore_errors = true
 
 
@@ -773,12 +739,9 @@ omit = [
     "*/_version.py",
     "*/benchmarks/*",
     "napari/utils/indexing.py",
-    "**/add_layer.py_tmpl"
+    "**/add_layer.py_tmpl",
 ]
-source = [
-    "napari",
-    "napari_builtins",
-]
+source = ["napari", "napari_builtins"]
 
 [tool.coverage.paths]
 source = [
@@ -811,7 +774,7 @@ ignore_imports = [
 [[tool.importlinter.contracts]]
 name = "Block import from qt module in napari.layers"
 type = "layers"
-layers = ["napari.qt","napari.layers"]
+layers = ["napari.qt", "napari.layers"]
 ignore_imports = [
     "napari.plugins._npe2 -> napari._qt._qplugins",
     # TODO: remove once npe1 deprecated
@@ -821,7 +784,7 @@ ignore_imports = [
 [[tool.importlinter.contracts]]
 name = "Block import from qt module in napari.components"
 type = "layers"
-layers = ["napari.qt","napari.components"]
+layers = ["napari.qt", "napari.components"]
 ignore_imports = [
     "napari.plugins._npe2 -> napari._qt._qplugins",
     # TODO: remove once npe1 deprecated
