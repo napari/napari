@@ -408,10 +408,8 @@ def _generate_2D_edge_meshes_loop(
     """
     j = 0
     if not closed:
-        centers[0] = path[0]
-        centers[1] = path[0]
-        offsets[0, 0] = direction_vectors[0][1] * 0.5
-        offsets[0, 1] = -direction_vectors[0][0] * 0.5
+        centers[:2] = path[0]
+        offsets[0] = 0.5 * _orthogonal_vector(direction_vectors[0], ccw=True)
         offsets[1] = -offsets[0]
         triangles[0] = [0, 1, 2]
         triangles[1] = [1, 2, 3]
