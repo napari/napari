@@ -1732,7 +1732,7 @@ class Window:
 
     def export_rois(
         self,
-        rois: np.ndarray,
+        rois: list[np.ndarray],
         paths: list[str] | None = None,
         scale: float | None = None,
     ):
@@ -1746,10 +1746,11 @@ class Window:
 
         Parameters
         ----------
-        rois: np.ndarray
-            An array of shape (n, 2, 2) where n is the number of rois
-            and the first two coordinates correspond to the top left and
-            the last two coordinates correspond to the bottom right corners
+        rois: list[np.ndarray]
+            A list of arrays  with the last 2 dimensions
+            being of shape (4, 2) and the first two coordinates correspond to
+            the top left and the last two coordinates correspond to the bottom
+            right corners.
         paths: list
             The list to store file path for shapes roi
 
@@ -1774,14 +1775,8 @@ class Window:
         canvas = self._qt_viewer.canvas
         prev_size = canvas.size
 
-        for index, shape in enumerate(rois):
-            top_left = shape[0]
-            bottom_right = shape[1]
-            x1, y1 = top_left
-            x2, y2 = bottom_right
-            if x1 > x2 or y1 > y2:
-                raise ValueError('ROI shape error')
-            center_coord, height, width = get_center_bbox(shape)
+        for index, roi in enumerate(rois):
+            center_coord, height, width = get_center_bbox(roi)
             camera.center = center_coord
             canvas.size = (int(height), int(width))
 

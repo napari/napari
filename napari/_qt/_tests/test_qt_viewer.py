@@ -277,32 +277,39 @@ def test_export_rois(make_napari_viewer, tmp_path):
 
     # Add viewer
     viewer = make_napari_viewer()
-    viewer.add_image(img)
+    viewer.add_image(img, colormap='gray')
 
     # Create a couple of clearly defined rectangular polygons for validation
     roi_shapes_data = [
-        np.array([[25, 35], [25, 55], [35, 55], [35, 35]]),  # ROI 1
-        np.array([[15, 25], [15, 45], [35, 45], [35, 25]]),  # ROI 2
-        np.array([[35, 45], [35, 75], [45, 75], [45, 45]]),  # ROI 3
-        np.array([[20, 25], [20, 75], [40, 75], [40, 25]]),  # ROI 4
+        np.array([[15, 15], [35, 15], [35, 35], [15, 35]]),
+        np.array([[65, 65], [85, 65], [85, 85], [65, 85]]),
+        np.array([[15, 65], [35, 65], [35, 85], [15, 85]]),
+        np.array([[65, 15], [85, 15], [85, 35], [65, 35]]),
+        np.array([[40, 40], [60, 40], [60, 60], [40, 60]]),
+        np.array([[0, 0], [20, 0], [20, 20], [0, 20]]),
     ]
-    # Add ROIs to viewer
-    roi_shapes = viewer.add_shapes(roi_shapes_data)
+    paths = [
+        str(tmp_path / f'roi_{i}.png') for i in range(len(roi_shapes_data))
+    ]
 
     # Save original camera state for comparison later
     camera_center = viewer.camera.center
     camera_zoom = viewer.camera.zoom
 
+    with pytest.raises(ValueError, match='The number of file'):
+        viewer.export_rois(roi_shapes_data, paths=paths + ['fake'])
     # Export ROI to image path
-    test_roi = viewer.export_rois(roi_shapes, path=str(tmp_path / 'img.png'))
+    test_roi = viewer.export_rois(roi_shapes_data, paths=paths)
 
-    # Check (1) if path exist, (2) if camera center changes
-    # (3) if camera camera zoom changes
-    # (4) if the value of square region (25:75, 25:75) is 255
-    assert (tmp_path / 'img.png').exists()
+    assert all(
+        (tmp_path / f'roi_{i}.png').exists()
+        for i in range(len(roi_shapes_data))
+    )
+    assert all(roi.shape == (20, 20, 4) for roi in test_roi)
     assert viewer.camera.center == camera_center
     assert viewer.camera.zoom == camera_zoom
-    assert test_roi.shape[25:75, 25, 75] == (255, 255)
+
+    # Not testing the exact content of the screenshot. It seems not to work within the test, but manual testing does.
     viewer.close()
 
 

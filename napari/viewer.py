@@ -147,7 +147,7 @@ class Viewer(ViewerModel):
 
     def export_rois(
         self,
-        rois: np.ndarray,
+        rois: list[np.ndarray],
         paths: list[str] | None = None,
         scale: float | None = None,
     ):
@@ -156,7 +156,7 @@ class Viewer(ViewerModel):
         Parameters
         ----------
         rois: numpy array
-            An array of shape (n, 2, 2) where n is the number of rois
+            An array of shape (n, 4, 2) where n is the number of rois
             and the first two coordinates correspond to the top left and
             the last two coordinates correspond to the bottom right corners
         paths: list
@@ -168,8 +168,10 @@ class Viewer(ViewerModel):
             The dictionary with index and file paths for each shapes roi
         """
         # Check to see if roi has shape (n,2,2)
-        if len(rois.shape) != 3 or rois.shape[1:] != (2, 2):
-            raise ValueError('roi must have shape (n,2,2)')
+        if any(roi.shape[-2:] != (4, 2) for roi in rois):
+            raise ValueError(
+                'ROI found with invalid shape, all rois must have shape (4, 2), i.e. have 4 corners.'
+            )
 
         screenshot_list = self.window.export_rois(
             rois, paths=paths, scale=scale
