@@ -3,7 +3,7 @@
 
 # submodules
 napari/_vispy/      @brisvag @melonora
-napari/_qt/         @Czaki @lucyleeow @DragaDoncila @psobolewskiPhD
+napari/_qt/         @Czaki @DragaDoncila @psobolewskiPhD
 napari/_app_model/  @lucyleeow @DragaDoncila
 napari/benchmarks/  @Czaki @jni
 napari/plugins/     @Czaki @DragaDoncila @lucyleeow
