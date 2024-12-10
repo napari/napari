@@ -370,7 +370,7 @@ def _generate_2D_edge_meshes_loop(
     closed: bool,
     cos_limit: float,
     bevel: bool,
-    normals: np.ndarray,
+    direction_vectors: np.ndarray,
     bevel_limit_array: np.ndarray,
     centers: np.ndarray,
     offsets: np.ndarray,
@@ -390,7 +390,7 @@ def _generate_2D_edge_meshes_loop(
     bevel : bool
         Bool which if True causes a bevel join to always be used. If False
         a bevel join will only be used when the miter limit is exceeded
-    normals : np.ndarray
+    direction_vectors : np.ndarray
         Nx2 array of normal vectors of the path
     bevel_limit_array : np.ndarray
         The array of limit of length of inner vectors in bevel joins.
@@ -406,38 +406,25 @@ def _generate_2D_edge_meshes_loop(
         (M-2)x3 array to put the indices of the vertices that will form the
         triangles of the triangulation
     """
-    if closed:
-        j = _set_centers_and_offsets(
-            centers,
-            offsets,
-            triangles,
-            path[0],
-            normals[-1],
-            normals[0],
-            bevel_limit_array[-1],
-            bevel_limit_array[0],
-            0,
-            cos_limit,
-            bevel,
-        )
-    else:
+    j = 0
+    if not closed:
         centers[0] = path[0]
         centers[1] = path[0]
-        offsets[0, 0] = normals[0][1] * 0.5
-        offsets[0, 1] = -normals[0][0] * 0.5
+        offsets[0, 0] = direction_vectors[0][1] * 0.5
+        offsets[0, 1] = -direction_vectors[0][0] * 0.5
         offsets[1] = -offsets[0]
         triangles[0] = [0, 1, 2]
         triangles[1] = [1, 2, 3]
         j = 2
 
-    for i in range(1, len(normals) - 1):
+    for i in range(1 - closed, len(direction_vectors) - 1 + closed):
         j += _set_centers_and_offsets(
             centers,
             offsets,
             triangles,
             path[i],
-            normals[i - 1],
-            normals[i],
+            direction_vectors[i - 1],
+            direction_vectors[i],
             bevel_limit_array[i - 1],
             bevel_limit_array[i],
             j,
@@ -445,19 +432,6 @@ def _generate_2D_edge_meshes_loop(
             bevel,
         )
     if closed:
-        j += _set_centers_and_offsets(
-            centers,
-            offsets,
-            triangles,
-            path[-1],
-            normals[-2],
-            normals[-1],
-            bevel_limit_array[-2],
-            bevel_limit_array[-1],
-            j,
-            cos_limit,
-            bevel,
-        )
         centers[j] = centers[0]
         centers[j + 1] = centers[1]
         offsets[j] = offsets[0]
@@ -465,8 +439,8 @@ def _generate_2D_edge_meshes_loop(
     else:
         centers[j] = path[-1]
         centers[j + 1] = path[-1]
-        offsets[j, 0] = normals[-2][1] * 0.5
-        offsets[j, 1] = -normals[-2][0] * 0.5
+        offsets[j, 0] = direction_vectors[-2][1] * 0.5
+        offsets[j, 1] = -direction_vectors[-2][0] * 0.5
         offsets[j + 1] = -offsets[j]
 
 
