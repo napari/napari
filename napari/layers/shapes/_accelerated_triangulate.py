@@ -25,18 +25,25 @@ def _cross_z(v0: np.ndarray, v1: np.ndarray) -> float:
 
 
 @njit(cache=True, inline='always')
-def _sign(f: float) -> float:
-    """Return 1, -1, or 0 based on the sign of f.
+def _sign_abs(f: float) -> tuple[float, float]:
+    """Return 1, -1, or 0 based on the sign of f, as well as the abs of f.
 
     The order of if-statements shows what the function is optimized for given
     the early returns. In this case, an array with many positive values will
     execute more quickly than one with many negative values.
     """
     if f > 0:
-        return 1.0
+        return 1.0, f
     if f < 0:
-        return -1.0
-    return 0.0
+        return -1.0, -f
+    return 0.0, 0.0
+
+
+@njit(cache=True, inline='always')
+def _orthogonal_vector(v: np.ndarray, ccw: bool = True) -> np.ndarray:
+    if ccw:
+        return np.array([v[1], -v[0]])
+    return np.array([-v[1], v[0]])
 
 
 @njit(cache=True, inline='always')
@@ -127,51 +134,71 @@ def _set_centers_and_offsets(
     vec2_len: float,
     j: int,
     cos_limit: float,
-    bevel: bool,
+    always_bevel: bool,
 ) -> int:
-    """Set the centers, offsets, and triangles for a given path.
+    """Set the centers, offsets, and triangles for a given path and position.
+
+    This function computes the positions of the vertices of the edge triangles
+    at the given path vertex and towards the next path vertex, including, if
+    needed, the miter join triangle overlapping the path vertex.
+
+    If a miter join is needed, this function will add three triangles.
+    Otherwise, it will add two triangles (dividing parallelogram of the
+    next edge into two triangles).
+
+    The positions of the triangle vertices are given as the path vertex
+    (repeated once for each triangle vertex), and offset vectors from that
+    vertex.
+
+    The added triangles "optimistically" index into vertices past the vertices
+    added in this iteration (indices j+3 and j+4).
 
     Parameters
     ----------
-    centers : np.ndarray
-        Mx2 array central coordinates of path triangles.
-    offsets : np.ndarray
-        Mx2 array of the offsets to the central coordinates. Offsets need to
-        be scaled by the line width and then added to the centers to
-        generate the actual vertices of the triangulation
-    triangles : np.ndarray
-        (M-2)x3 array of the indices of the vertices that will form the
-        triangles of the triangulation
+    centers : np.ndarray of float
+        Mx2 output array of central coordinates of path triangles.
+    offsets : np.ndarray of float
+        Mx2 output array of the offsets from the central coordinates. Offsets
+        need to be scaled by the line width and then added to the centers to
+        generate the actual vertices of the triangulation.
+    triangles : np.ndarray of int
+        (M-2)x3 output array of the indices of the vertices that will form the
+        triangles of the triangulation.
     vertex : np.ndarray
-        The vertex of the path for which the centers,
-        offsets and triangles art calculated
+        The path vertex for which the centers, offsets and triangles are
+        being calculated.
     vec1 : np.ndarray
-        The normal vector from previous vertex to the current vertex
+        The norm-1 direction vector from the previous path vertex to the
+        current path vertex.
     vec2 : np.ndarray
-        The normal vector from the current vertex to the next vertex
+        The norm-1 direction vector from the current path vertex to the next
+        path vertex.
     vec1_len : float
-        The length of the vec1 vector, used for miter limit calculation.
+        The length of the segment between the previous path vertex and the
+        current path vertex (used for bevel join calculation).
     vec2_len : float
-        The length of the vec2 vector, used for miter limit calculation.
+        The length of the segment between the current path vertex and the
+        next path vertex (used for bevel join calculation).
     j : int
-        The index of position to start putting items in the centers,
-        offsets and triangles arrays
+        The current index in the ouput arrays.
     cos_limit : float
         Miter limit which determines when to switch from a miter join to a
-        bevel join
-    bevel : bool
-        Bool which if True causes a bevel join to always be used.
-        If False a bevel join will only be used when the miter limit is exceeded
+        bevel join, to avoid very sharp shape angles.
+    always_bevel : bool
+        If True, a bevel join is always used.
+        If False, a bevel join will only be used when the miter limit is
+        exceeded.
 
     Returns
     -------
-    int
-        number of triangles, centers and offsets added to the arrays
+    int in {2, 3}
+        The number of triangles, centers and offsets added to the arrays
     """
-    centers[j] = vertex
-    centers[j + 1] = vertex
     cos_angle = _dot(vec1, vec2)
     sin_angle = _cross_z(vec1, vec2)
+    bevel = always_bevel or cos_angle < cos_limit
+    for i in range(2 + bevel):
+        centers[j + i] = vertex
 
     if sin_angle == 0:
         # if the vectors are collinear, the miter join points are exactly
@@ -187,39 +214,37 @@ def _set_centers_and_offsets(
         # See also:
         # https://github.com/napari/napari/pull/7268#user-content-miter
         scale_factor = 1 / sin_angle
-        if bevel or cos_angle < cos_limit:
+        if bevel:
             # There is a case of bevels join, and
             # there is a need to check if the miter length is not too long.
             # For performance reasons here, the miter length is estimated
             # by the inverse of the sin of the angle between the two vectors.
             # See https://github.com/napari/napari/pull/7268#user-content-bevel-cut
-            scale_factor = _sign(scale_factor) * min(
-                np.abs(scale_factor), vec1_len, vec2_len
-            )
+            sign, mag = _sign_abs(scale_factor)
+            scale_factor = sign * min(mag, vec1_len, vec2_len)
         miter = (vec1 - vec2) * 0.5 * scale_factor
 
-    if bevel or cos_limit > cos_angle:
-        centers[j + 2] = vertex
-        # clock-wise and counter clock-wise cases
-        if sin_angle < 0:
-            offsets[j] = miter
-            offsets[j + 1, 0] = -vec1[1] * 0.5
-            offsets[j + 1, 1] = vec1[0] * 0.5
-            offsets[j + 2, 0] = -vec2[1] * 0.5
-            offsets[j + 2, 1] = vec2[0] * 0.5
-            triangles[j + 1] = [j, j + 2, j + 3]
-            triangles[j + 2] = [j + 2, j + 3, j + 4]
-        else:
-            offsets[j, 0] = vec1[1] * 0.5
-            offsets[j, 1] = -vec1[0] * 0.5
-            offsets[j + 1] = -miter
-            offsets[j + 2, 0] = vec2[1] * 0.5
-            offsets[j + 2, 1] = -vec2[0] * 0.5
-            triangles[j + 1] = [j + 1, j + 2, j + 3]
-            triangles[j + 2] = [j + 1, j + 3, j + 4]
-
+    if bevel:
+        # add three vertices using offset vectors orthogonal to the path as
+        # well as the miter vector.
+        # the order in which the vertices and triangles are added depends on
+        # whether the turn is clockwise or counterclockwise.
+        clockwise = sin_angle < 0
+        counterclockwise = not clockwise
+        invert = -1.0 if counterclockwise else 1.0
+        offsets[j + counterclockwise] = invert * miter
+        offsets[j + clockwise] = 0.5 * _orthogonal_vector(
+            vec1, ccw=counterclockwise
+        )
+        offsets[j + 2] = 0.5 * _orthogonal_vector(vec2, ccw=counterclockwise)
         triangles[j] = [j, j + 1, j + 2]
+        triangles[j + 1] = [j + counterclockwise, j + 2, j + 3]
+        triangles[j + 2] = [j + 1 + clockwise, j + 3, j + 4]
+
         return 3  # bevel join added 3 triangles
+
+    # otherwise, we just use the miter vector in either direction and add two
+    # triangles
     offsets[j] = miter
     offsets[j + 1] = -miter
     triangles[j] = [j, j + 1, j + 2]
