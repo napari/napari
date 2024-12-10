@@ -8,6 +8,7 @@ from imageio.v3 import imread
 from napari.utils.io import imsave
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(
     'image_file', ['image', 'image.png', 'image.tif', 'image.bmp']
 )

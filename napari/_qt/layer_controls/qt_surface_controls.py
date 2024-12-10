@@ -48,6 +48,8 @@ class QtSurfaceControls(QtBaseImageControls):
     def __init__(self, layer) -> None:
         super().__init__(layer)
 
+        self.layer.events.shading.connect(self._on_shading_change)
+
         colormap_layout = QHBoxLayout()
         colormap_layout.addWidget(self.colorbarLabel)
         colormap_layout.addWidget(self.colormapComboBox)
@@ -82,3 +84,12 @@ class QtSurfaceControls(QtBaseImageControls):
             Name of shading mode, eg: 'flat', 'smooth', 'none'.
         """
         self.layer.shading = self.shadingComboBox.currentData()
+
+    def _on_shading_change(self):
+        """Receive layer model shading change event and update combobox."""
+        with self.layer.events.shading.blocker():
+            self.shadingComboBox.setCurrentIndex(
+                self.shadingComboBox.findData(
+                    SHADING_TRANSLATION[self.layer.shading]
+                )
+            )
