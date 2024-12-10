@@ -1,9 +1,6 @@
 from napari._qt.layer_controls.widgets.qt_autoscale_control import (
     QtAutoScaleControl,
 )
-from napari._qt.layer_controls.widgets.qt_border_color import (
-    QtBorderColorControl,
-)
 from napari._qt.layer_controls.widgets.qt_brush_size_slider import (
     QtBrushSizeSliderControl,
 )
@@ -22,9 +19,6 @@ from napari._qt.layer_controls.widgets.qt_contour_spinbox import (
 )
 from napari._qt.layer_controls.widgets.qt_contrast_limits import (
     QtContrastLimitsSliderControl,
-)
-from napari._qt.layer_controls.widgets.qt_current_size_slider import (
-    QtCurrentSizeSliderControl,
 )
 from napari._qt.layer_controls.widgets.qt_display_selected_label_checkbox import (
     QtDisplaySelectedLabelCheckBoxControl,
@@ -61,9 +55,6 @@ from napari._qt.layer_controls.widgets.qt_render_control import (
     QtImageRenderControl,
     QtLabelRenderControl,
 )
-from napari._qt.layer_controls.widgets.qt_symbol_combobox import (
-    QtSymbolComboBoxControl,
-)
 from napari._qt.layer_controls.widgets.qt_text_visibility import (
     QtTextVisibilityControl,
 )
@@ -76,14 +67,12 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 
 __all__ = [
     'QtAutoScaleControl',
-    'QtBorderColorControl',
     'QtBrushSizeSliderControl',
     'QtColorModeComboBoxControl',
     'QtColormapControl',
     'QtContiguousCheckBoxControl',
     'QtContourSpinBoxControl',
     'QtContrastLimitsSliderControl',
-    'QtCurrentSizeSliderControl',
     'QtDisplaySelectedLabelCheckBoxControl',
     'QtEdgeColorControl',
     'QtEdgeColorPropertyControl',
@@ -100,7 +89,6 @@ __all__ = [
     'QtOutSliceCheckBoxControl',
     'QtPreserveLabelsCheckBoxControl',
     'QtSimpleColormapComboBoxControl',
-    'QtSymbolComboBoxControl',
     'QtTextVisibilityControl',
     'QtVectorStyleComboBoxControl',
     'QtWidgetControlsBase',

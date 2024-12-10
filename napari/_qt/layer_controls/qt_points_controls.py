@@ -2,12 +2,14 @@ from typing import TYPE_CHECKING
 
 from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
 from napari._qt.layer_controls.widgets import (
-    QtBorderColorControl,
-    QtCurrentSizeSliderControl,
     QtFaceColorControl,
     QtOutSliceCheckBoxControl,
-    QtSymbolComboBoxControl,
     QtTextVisibilityControl,
+)
+from napari._qt.layer_controls.widgets.points import (
+    QtBorderColorControl,
+    QtCurrentSizeSliderControl,
+    QtSymbolComboBoxControl,
 )
 from napari._qt.widgets.qt_mode_buttons import QtModePushButton
 from napari.layers.points._points_constants import Mode
