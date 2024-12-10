@@ -437,8 +437,7 @@ def _generate_2D_edge_meshes_loop(
     else:
         centers[j] = path[-1]
         centers[j + 1] = path[-1]
-        offsets[j, 0] = direction_vectors[-2][1] * 0.5
-        offsets[j, 1] = -direction_vectors[-2][0] * 0.5
+        offsets[j] = 0.5 * _orthogonal_vector(direction_vectors[-2])
         offsets[j + 1] = -offsets[j]
 
 
