@@ -14,8 +14,8 @@ from napari.utils.translations import trans
 
 class QtOutSliceCheckBoxControl(QtWidgetControlsBase):
     """
-    Class that wraps the connection of events/signals between if the layer should
-    display out of slice model attribute and Qt widgets.
+    Class that wraps the connection of events/signals between the layer out of slice
+    display attribute and Qt widgets.
 
     Parameters
     ----------

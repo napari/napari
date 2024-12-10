@@ -3,8 +3,10 @@ from typing import TYPE_CHECKING
 from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
 from napari._qt.layer_controls.widgets import (
     QtEdgeColorPropertyControl,
-    QtLengthSpinBoxControl,
     QtOutSliceCheckBoxControl,
+)
+from napari._qt.layer_controls.widgets.vectors import (
+    QtLengthSpinBoxControl,
     QtVectorStyleComboBoxControl,
     QtWidthSpinBoxControl,
 )

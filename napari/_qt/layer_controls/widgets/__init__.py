@@ -35,10 +35,6 @@ from napari._qt.layer_controls.widgets.qt_gamma_slider import (
     QtGammaSliderControl,
 )
 from napari._qt.layer_controls.widgets.qt_label_color import QtLabelControl
-from napari._qt.layer_controls.widgets.qt_line_dimension_spinbox import (
-    QtLengthSpinBoxControl,
-    QtWidthSpinBoxControl,
-)
 from napari._qt.layer_controls.widgets.qt_ndim_spinbox import (
     QtNdimSpinBoxControl,
 )
@@ -57,9 +53,6 @@ from napari._qt.layer_controls.widgets.qt_render_control import (
 )
 from napari._qt.layer_controls.widgets.qt_text_visibility import (
     QtTextVisibilityControl,
-)
-from napari._qt.layer_controls.widgets.qt_vector_style_combobox import (
-    QtVectorStyleComboBoxControl,
 )
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
@@ -83,14 +76,11 @@ __all__ = [
     'QtInterpolationComboBoxControl',
     'QtLabelControl',
     'QtLabelRenderControl',
-    'QtLengthSpinBoxControl',
     'QtNdimSpinBoxControl',
     'QtOpacityBlendingControls',
     'QtOutSliceCheckBoxControl',
     'QtPreserveLabelsCheckBoxControl',
     'QtSimpleColormapComboBoxControl',
     'QtTextVisibilityControl',
-    'QtVectorStyleComboBoxControl',
     'QtWidgetControlsBase',
-    'QtWidthSpinBoxControl',
 ]
