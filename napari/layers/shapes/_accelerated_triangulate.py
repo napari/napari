@@ -521,9 +521,13 @@ def generate_2D_edge_meshes(
     # https://github.com/napari/napari/pull/7268#user-content-bevel-limit
     cos_limit = 1 / (2 * (limit / 2) ** 2) - 1.0
 
-    normals, bevel_limit_array = _direction_vec_and_length(path, closed)
+    direction_vectors, bevel_limit_array = _direction_vec_and_length(
+        path, closed
+    )
 
-    point_count = _calc_output_size(normals, closed, cos_limit, bevel)
+    point_count = _calc_output_size(
+        direction_vectors, closed, cos_limit, bevel
+    )
 
     centers = np.empty((point_count, 2), dtype=np.float32)
     offsets = np.empty((point_count, 2), dtype=np.float32)
@@ -534,7 +538,7 @@ def generate_2D_edge_meshes(
         closed,
         cos_limit,
         bevel,
-        normals,
+        direction_vectors,
         bevel_limit_array,
         centers,
         offsets,
