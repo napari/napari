@@ -839,7 +839,7 @@ def find_nearest_triangle_intersection(
     return closest_intersected_triangle_index, intersection
 
 
-def get_center_bbox(roi: np.ndarray) -> tuple[list[float, float], int, int]:
+def get_center_bbox(roi: np.ndarray) -> tuple[list[float], int, int]:
     """Get the center coordinate, height, width of the roi.
 
     Parameters
