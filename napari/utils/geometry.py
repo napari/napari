@@ -845,9 +845,7 @@ def get_center_bbox(roi: np.ndarray) -> tuple[list[float], int, int]:
     Parameters
     ----------
     roi : np.ndarray
-        An array of shape (2, 2) where the first two coordinates correspond
-        to the top left and the last two coordinates correspond to the
-        bottom right corners
+        An array of shape (4, 2) representing a rectangular roi.
 
     Returns
     -------

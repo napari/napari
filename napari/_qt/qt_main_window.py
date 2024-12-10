@@ -1747,10 +1747,7 @@ class Window:
         Parameters
         ----------
         rois: list[np.ndarray]
-            A list of arrays  with the last 2 dimensions
-            being of shape (4, 2) and the first two coordinates correspond to
-            the top left and the last two coordinates correspond to the bottom
-            right corners.
+            A list of arrays  with each being of shape (4, 2) representing a rectangular roi.
         paths: list
             The list to store file path for shapes roi
 

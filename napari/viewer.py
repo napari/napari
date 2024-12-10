@@ -156,9 +156,7 @@ class Viewer(ViewerModel):
         Parameters
         ----------
         rois: numpy array
-            An array of shape (n, 4, 2) where n is the number of rois
-            and the first two coordinates correspond to the top left and
-            the last two coordinates correspond to the bottom right corners
+            An list of arrays with each having shape (4, 2) representing a rectangular roi.
         paths: list
             The list to store file path for shapes roi
 
@@ -170,7 +168,8 @@ class Viewer(ViewerModel):
         # Check to see if roi has shape (n,2,2)
         if any(roi.shape[-2:] != (4, 2) for roi in rois):
             raise ValueError(
-                'ROI found with invalid shape, all rois must have shape (4, 2), i.e. have 4 corners.'
+                'ROI found with invalid shape, all rois must have shape (4, 2), i.e. have 4 corners defined in 2 '
+                'dimensions. 3D is not supported.'
             )
 
         screenshot_list = self.window.export_rois(
