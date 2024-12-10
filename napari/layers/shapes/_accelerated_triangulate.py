@@ -545,7 +545,7 @@ def generate_2D_edge_meshes(
         triangles,
     )
 
-    # We fix triangle orientation to improve checks for
+    # We fix triangle orientation to speed up checks for
     # whether points are in triangle.
     # Without the fix, the code is not robust to orientation.
     _normalize_triangle_orientation(triangles, centers, offsets)
@@ -573,7 +573,7 @@ def remove_path_duplicates(path: np.ndarray, closed: bool) -> np.ndarray:
         return path
 
     dup_count = 0
-    # We would would like to use len(path) - 1 as the range.
+    # We would like to use len(path) - 1 as the range.
     # To keep the lasso tool working, we need to allow
     # duplication of the last point.
     # If the lasso tool is refactored, update to use the preferred range.
