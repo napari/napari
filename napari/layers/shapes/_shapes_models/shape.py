@@ -16,29 +16,32 @@ from napari.layers.shapes._shapes_utils import (
 from napari.utils.misc import argsort
 from napari.utils.translations import trans
 
+
+def _remove_path_duplicates_np(data: np.ndarray, closed: bool):
+    # We add the first data point at the end to get the same length bool
+    # array as the data, and also to work on closed shapes; the last value
+    # in the diff array compares the last and first vertex.
+    diff = np.diff(np.append(data, data[0:1, :], axis=0), axis=0)
+    dup = np.all(diff == 0, axis=1)
+    # if the shape is closed, check whether the first vertex is the same
+    # as the last vertex, and count it as a duplicate if so
+    if closed and dup[-1]:
+        dup[0] = True
+    # we allow repeated nodes at the end for the lasso tool, which
+    # for an instant needs both the last placed point and the point at the
+    # cursor to be the same; if the lasso implementation becomes cleaner,
+    # remove this hardcoding
+    dup[-2:] = False
+    indices = np.arange(data.shape[0])
+    return data[indices[~dup]]
+
+
 try:
     from napari.layers.shapes._accelerated_triangulate import (
         remove_path_duplicates,
     )
 except ImportError:
-
-    def remove_path_duplicates(data: np.ndarray, closed: bool):
-        # We add the first data point at the end to get the same length bool
-        # array as the data, and also to work on closed shapes; the last value
-        # in the diff array compares the last and first vertex.
-        diff = np.diff(np.append(data, data[0:1, :], axis=0), axis=0)
-        dup = np.all(diff == 0, axis=1)
-        # if the shape is closed, check whether the first vertex is the same
-        # as the last vertex, and count it as a duplicate if so
-        if closed and dup[-1]:
-            dup[0] = True
-        # we allow repeated nodes at the end for the lasso tool, which
-        # for an instant needs both the last placed point and the point at the
-        # cursor to be the same; if the lasso implementation becomes cleaner,
-        # remove this hardcoding
-        dup[-2:] = False
-        indices = np.arange(data.shape[0])
-        return data[indices[~dup]]
+    remove_path_duplicates = _remove_path_duplicates_np
 
 
 class Shape(ABC):
