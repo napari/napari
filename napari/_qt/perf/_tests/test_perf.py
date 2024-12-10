@@ -37,7 +37,7 @@ CONFIG = {
 }
 
 
-@pytest.fixture()
+@pytest.fixture
 def perf_config(tmp_path: Path):
     trace_path = tmp_path / 'trace.json'
     config_path = tmp_path / 'perfmon.json'
@@ -47,7 +47,7 @@ def perf_config(tmp_path: Path):
     return stub(path=config_path, trace_path=trace_path)
 
 
-@pytest.fixture()
+@pytest.fixture
 def perfmon_script(tmp_path):
     script = PERFMON_SCRIPT
     if 'coverage' in sys.modules:

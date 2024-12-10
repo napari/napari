@@ -29,7 +29,7 @@ def init_qactions() -> None:
     - registering provider functions for the names added to the namespace
     - registering Qt-dependent actions with app-model (i.e. Q_*_ACTIONS actions).
     """
-    from napari._app_model import get_app
+    from napari._app_model import get_app_model
     from napari._qt._qapp_model.qactions._debug import (
         DEBUG_SUBMENUS,
         Q_DEBUG_ACTIONS,
@@ -56,7 +56,7 @@ def init_qactions() -> None:
     from napari._qt.qt_viewer import QtViewer
 
     # update the namespace with the Qt-specific types/providers/processors
-    app = get_app()
+    app = get_app_model()
     store = app.injection_store
     store.namespace = {
         **store.namespace,
@@ -105,16 +105,19 @@ def add_dummy_actions(context: Context) -> None:
     context : Context
         context to store functional keys used in `when` conditions
     """
-    from napari._app_model import get_app
+    from napari._app_model import get_app_model
     from napari._app_model.constants._menus import MenuId
     from napari._app_model.utils import get_dummy_action, is_empty_menu
 
-    app = get_app()
+    app = get_app_model()
 
     actions = []
     for menu_id in MenuId.contributables():
         dummmy_action, context_key = get_dummy_action(menu_id)
         if dummmy_action.id not in app.commands:
             actions.append(dummmy_action)
-            context[context_key] = partial(is_empty_menu, menu_id)
+        # NOTE: even if action is already registered, the `context` instance
+        # may be new e.g. when closing and relaunching a viewer
+        # in a notebook. Context key should be assigned regardless
+        context[context_key] = partial(is_empty_menu, menu_id)
     app.register_actions(actions)

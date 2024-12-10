@@ -97,6 +97,11 @@ class QtImageControls(QtBaseImageControls):
         self.interpComboBox.currentTextChanged.connect(
             self.changeInterpolation
         )
+        self.interpComboBox.setToolTip(
+            trans._(
+                'Texture interpolation for display.\nnearest and linear are most performant.'
+            )
+        )
         self.interpLabel = QLabel(trans._('interpolation:'))
 
         renderComboBox = QComboBox(self)
@@ -186,22 +191,22 @@ class QtImageControls(QtBaseImageControls):
 
         self.layout().addRow(self.button_grid)
         self.layout().addRow(self.opacityLabel, self.opacitySlider)
+        self.layout().addRow(trans._('blending:'), self.blendComboBox)
         self.layout().addRow(
             trans._('contrast limits:'), self.contrastLimitsSlider
         )
         self.layout().addRow(trans._('auto-contrast:'), self.autoScaleBar)
         self.layout().addRow(trans._('gamma:'), self.gammaSlider)
         self.layout().addRow(trans._('colormap:'), colormap_layout)
-        self.layout().addRow(trans._('blending:'), self.blendComboBox)
         self.layout().addRow(self.interpLabel, self.interpComboBox)
         self.layout().addRow(self.depictionLabel, self.depictionComboBox)
-        self.layout().addRow(self.renderLabel, self.renderComboBox)
-        self.layout().addRow(self.isoThresholdLabel, self.isoThresholdSlider)
-        self.layout().addRow(self.attenuationLabel, self.attenuationSlider)
         self.layout().addRow(self.planeNormalLabel, self.planeNormalButtons)
         self.layout().addRow(
             self.planeThicknessLabel, self.planeThicknessSlider
         )
+        self.layout().addRow(self.renderLabel, self.renderComboBox)
+        self.layout().addRow(self.isoThresholdLabel, self.isoThresholdSlider)
+        self.layout().addRow(self.attenuationLabel, self.attenuationSlider)
 
     def changeInterpolation(self, text):
         """Change interpolation mode for image display.
@@ -346,7 +351,11 @@ class QtImageControls(QtBaseImageControls):
     def _update_plane_parameter_visibility(self):
         """Hide plane rendering controls if they aren't needed."""
         depiction = VolumeDepiction(self.layer.depiction)
-        visible = depiction == VolumeDepiction.PLANE and self.ndisplay == 3
+        visible = (
+            depiction == VolumeDepiction.PLANE
+            and self.ndisplay == 3
+            and self.layer.ndim >= 3
+        )
         self.planeNormalButtons.setVisible(visible)
         self.planeNormalLabel.setVisible(visible)
         self.planeThicknessSlider.setVisible(visible)

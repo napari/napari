@@ -87,6 +87,7 @@ class QtPointsControls(QtLayerControls):
         )
         self.layer.events.symbol.connect(self._on_current_symbol_change)
         self.layer.events.size.connect(self._on_current_size_change)
+        self.layer.events.current_size.connect(self._on_current_size_change)
         self.layer.events.current_border_color.connect(
             self._on_current_border_color_change
         )
@@ -125,11 +126,15 @@ class QtPointsControls(QtLayerControls):
 
         self.faceColorEdit = QColorSwatchEdit(
             initial_color=self.layer.current_face_color,
-            tooltip=trans._('click to set current face color'),
+            tooltip=trans._(
+                'Click to set the face color of currently selected points and any added afterwards.'
+            ),
         )
         self.borderColorEdit = QColorSwatchEdit(
             initial_color=self.layer.current_border_color,
-            tooltip=trans._('click to set current border color'),
+            tooltip=trans._(
+                'Click to set the border color of currently selected points and any added afterwards.'
+            ),
         )
         self.faceColorEdit.color_changed.connect(self.changeCurrentFaceColor)
         self.borderColorEdit.color_changed.connect(
@@ -162,7 +167,7 @@ class QtPointsControls(QtLayerControls):
         self.outOfSliceCheckBox.stateChanged.connect(self.change_out_of_slice)
 
         self.textDispCheckBox = QCheckBox()
-        self.textDispCheckBox.setToolTip(trans._('toggle text visibility'))
+        self.textDispCheckBox.setToolTip(trans._('Toggle text visibility'))
         self.textDispCheckBox.setChecked(self.layer.text.visible)
         self.textDispCheckBox.stateChanged.connect(self.change_text_visibility)
 
@@ -197,8 +202,8 @@ class QtPointsControls(QtLayerControls):
 
         self.layout().addRow(self.button_grid)
         self.layout().addRow(self.opacityLabel, self.opacitySlider)
-        self.layout().addRow(trans._('point size:'), self.sizeSlider)
         self.layout().addRow(trans._('blending:'), self.blendComboBox)
+        self.layout().addRow(trans._('point size:'), self.sizeSlider)
         self.layout().addRow(trans._('symbol:'), self.symbolComboBox)
         self.layout().addRow(trans._('face color:'), self.faceColorEdit)
         self.layout().addRow(trans._('border color:'), self.borderColorEdit)

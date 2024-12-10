@@ -8,7 +8,7 @@ from napari.components.dims import Dims
 from napari.layers import Surface
 
 
-@pytest.fixture()
+@pytest.fixture
 def cube_layer():
     vertices, faces, _ = create_cube()
     return Surface((vertices['position'] * 100, faces))
@@ -48,7 +48,7 @@ def test_add_texture(cube_layer, texture_shape):
 
     texture = np.random.random(texture_shape).astype(np.float32)
     cube_layer.texture = texture
-    # no texture filter initally
+    # no texture filter initially
     assert visual._texture_filter is None
 
     # the texture filter is created when texture + texcoords are added
@@ -114,7 +114,7 @@ def test_vertex_colors(cube_layer):
 
 
 @skip_local_popups
-def test_check_surface_without_visible_faces(make_napari_viewer):
+def test_check_surface_without_visible_faces(qtbot, qt_viewer):
     points = np.array(
         [
             [0, 0.0, 0.0, 0.0],
@@ -127,8 +127,9 @@ def test_check_surface_without_visible_faces(make_napari_viewer):
     )
     faces = np.array([[0, 1, 2], [3, 4, 5]])
     layer = Surface((points, faces))
-    viewer = make_napari_viewer(ndisplay=3)
-    viewer.show()
+    qt_viewer.show()
+    viewer = qt_viewer.viewer
     viewer.add_layer(layer)
     # The following with throw an exception.
     viewer.reset()
+    qt_viewer.hide()

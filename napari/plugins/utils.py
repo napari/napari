@@ -84,7 +84,7 @@ def _get_preferred_readers(path: PathLike) -> list[tuple[str, str]]:
     filtered_preferences : List[Tuple[str, str]]
         Filtered patterns and their corresponding readers.
     """
-    path = str(path)
+    path = os.path.realpath(str(path))
 
     if osp.isdir(path) and not path.endswith(os.sep):
         path = path + os.sep

@@ -17,3 +17,9 @@ class QtViewerSuite:
     def time_create_viewer(self):
         """Time to create the viewer."""
         self.viewer = napari.Viewer()
+
+
+if __name__ == '__main__':
+    from utils import run_benchmark
+
+    run_benchmark()

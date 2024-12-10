@@ -206,6 +206,9 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
         self.layer.events.labels_update.connect(self._on_partial_labels_update)
         self.layer.events.selected_label.connect(self._on_colormap_change)
         self.layer.events.show_selected_label.connect(self._on_colormap_change)
+        self.layer.events.iso_gradient_mode.connect(
+            self._on_iso_gradient_mode_change
+        )
         self.layer.events.data.connect(self._on_colormap_change)
         # as we generate colormap texture based on the data type, we need to
         # update it when the data type changes
@@ -291,6 +294,10 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
         else:
             self.node.cmap = VispyColormap(*colormap)
 
+    def _on_iso_gradient_mode_change(self):
+        if isinstance(self.node, VolumeNode):
+            self.node.iso_gradient_mode = self.layer.iso_gradient_mode
+
     def _on_partial_labels_update(self, event):
         if not self.layer.loaded:
             return
@@ -299,6 +306,7 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
         ndims = len(event.offset)
 
         if self.node._texture.shape[:ndims] != raw_displayed.shape[:ndims]:
+            # TODO: I'm confused by this whole process; should this refresh be changed?
             self.layer.refresh()
             return
 
@@ -310,6 +318,7 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
     def reset(self, event=None) -> None:
         super().reset()
         self._on_colormap_change()
+        self._on_iso_gradient_mode_change()
 
 
 class LabelLayerNode(ScalarFieldLayerNode):

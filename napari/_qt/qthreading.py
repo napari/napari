@@ -19,8 +19,8 @@ __all__ = [
     'FunctionWorker',
     'GeneratorWorker',
     'create_worker',
-    'thread_worker',
     'register_threadworker_processors',
+    'thread_worker',
 ]
 
 wait_for_workers_to_quit = _qthreading.WorkerBase.await_workers
@@ -350,11 +350,11 @@ def register_threadworker_processors():
     import magicgui
 
     from napari import layers, types
-    from napari._app_model import get_app
+    from napari._app_model import get_app_model
     from napari.types import LayerDataTuple
     from napari.utils import _magicgui as _mgui
 
-    app = get_app()
+    app = get_app_model()
 
     for _type in (LayerDataTuple, list[LayerDataTuple]):
         t = FunctionWorker[_type]

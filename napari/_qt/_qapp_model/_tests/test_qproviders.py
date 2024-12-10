@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from app_model.types import Action
 
-from napari._app_model._app import get_app
+from napari._app_model._app import get_app_model
 from napari._qt._qapp_model.injection._qproviders import (
     _provide_active_layer,
     _provide_active_layer_list,
@@ -48,7 +48,7 @@ def test_publicproxy_provide_viewer(capsys, make_napari_viewer):
         title='some title',
         callback=my_viewer,
     )
-    app = get_app()
+    app = get_app_model()
     app.register_action(action)
     app.commands.execute_command('some.command.id')
     captured = capsys.readouterr()

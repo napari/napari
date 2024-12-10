@@ -153,3 +153,9 @@ class PointsToMaskSuite:
 
     def time_to_mask(self, num_points, mask_shape, point_size):
         self.layer.to_mask(shape=mask_shape)
+
+
+if __name__ == '__main__':
+    from utils import run_benchmark
+
+    run_benchmark()
