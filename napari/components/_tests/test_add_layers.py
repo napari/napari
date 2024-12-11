@@ -35,6 +35,21 @@ def test_add_layers_with_plugins(layer_datum):
         assert all(lay.source == expected_source for lay in v.layers)
 
 
+def test_add_layers_with_plugins_full_layers(layer_data_and_types):
+    """Test that add_layers_with_plugins works for full Layer objects."""
+    layers, _, _, layer_fnames = layer_data_and_types
+    for layer, layer_fname in zip(layers, layer_fnames):
+        with patch(
+            'napari.plugins.io.read_data_with_plugins',
+            MagicMock(return_value=([layer], _testimpl)),
+        ):
+            v = ViewerModel()
+            v._add_layers_with_plugins([layer_fname], stack=False)
+            assert len(v.layers) == 1
+            assert v.layers[0].source.path == layer_fname
+            assert v.layers[0].source.reader_plugin == 'testimpl'
+
+
 @patch(
     'napari.plugins.io.read_data_with_plugins',
     MagicMock(return_value=([], _testimpl)),
