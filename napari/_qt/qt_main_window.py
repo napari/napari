@@ -3,8 +3,6 @@ Custom Qt widgets that serve as native objects that the public-facing elements
 wrap.
 """
 
-from __future__ import annotations
-
 import contextlib
 import inspect
 import os
@@ -13,7 +11,6 @@ import time
 import warnings
 from collections.abc import MutableMapping, Sequence
 from typing import (
-    TYPE_CHECKING,
     Any,
     ClassVar,
     Literal,
@@ -24,6 +21,7 @@ from typing import (
 from weakref import WeakValueDictionary
 
 import numpy as np
+from magicgui.widgets import Widget
 from qtpy.QtCore import (
     QEvent,
     QEventLoop,
@@ -34,7 +32,7 @@ from qtpy.QtCore import (
     Qt,
     Slot,
 )
-from qtpy.QtGui import QHideEvent, QIcon, QShowEvent
+from qtpy.QtGui import QHideEvent, QIcon, QImage, QShowEvent
 from qtpy.QtWidgets import (
     QApplication,
     QDialog,
@@ -94,14 +92,9 @@ from napari.utils.misc import (
 from napari.utils.notifications import Notification
 from napari.utils.theme import _themes, get_system_theme
 from napari.utils.translations import trans
+from napari.viewer import Viewer
 
 _sentinel = object()
-
-if TYPE_CHECKING:
-    from magicgui.widgets import Widget
-    from qtpy.QtGui import QImage
-
-    from napari.viewer import Viewer
 
 
 MenuStr = Literal[
@@ -124,12 +117,12 @@ class _QtMainWindow(QMainWindow):
     # We use this instead of QApplication.activeWindow for compatibility with
     # IPython usage. When you activate IPython, it will appear that there are
     # *no* active windows, so we want to track the most recently active windows
-    _instances: ClassVar[list[_QtMainWindow]] = []
+    _instances: ClassVar[list['_QtMainWindow']] = []
 
     # `window` is passed through on construction, so it's available to a window
     # provider for dependency injection
     # See https://github.com/napari/napari/pull/4826
-    def __init__(self, viewer: Viewer, window: Window, parent=None) -> None:
+    def __init__(self, viewer: Viewer, window: 'Window', parent=None) -> None:
         super().__init__(parent)
         self._ev = None
         self._window = window
@@ -241,11 +234,11 @@ class _QtMainWindow(QMainWindow):
         ) is not None:
             self._qt_viewer.viewer.help = active.help
 
-    def statusBar(self) -> ViewerStatusBar:
+    def statusBar(self) -> 'ViewerStatusBar':
         return super().statusBar()
 
     @classmethod
-    def current(cls) -> Optional[_QtMainWindow]:
+    def current(cls) -> Optional['_QtMainWindow']:
         return cls._instances[-1] if cls._instances else None
 
     @classmethod
@@ -1733,8 +1726,8 @@ class Window:
     def export_rois(
         self,
         rois: list[np.ndarray],
-        paths: list[str] | None = None,
-        scale: float | None = None,
+        paths: Optional[list[str]] = None,
+        scale: Optional[float] = None,
     ):
         """Export the shapes rois with storage file paths.
 
