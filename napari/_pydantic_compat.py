@@ -64,6 +64,8 @@ except ImportError:
 Color = color.Color
 
 __all__ = (
+    'ROOT_KEY',
+    'SHAPE_LIST',
     'BaseModel',
     'BaseSettings',
     'ClassAttribute',
@@ -72,15 +74,13 @@ __all__ = (
     'ErrorWrapper',
     'Extra',
     'Field',
-    'ModelField',
     'GenericModel',
+    'ModelField',
     'ModelMetaclass',
     'PositiveInt',
     'PrivateAttr',
-    'ROOT_KEY',
     'SettingsError',
     'SettingsSourceCallable',
-    'SHAPE_LIST',
     'ValidationError',
     'color',
     'conlist',

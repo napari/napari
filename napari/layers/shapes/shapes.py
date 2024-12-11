@@ -30,6 +30,7 @@ from napari.layers.shapes._shapes_constants import (
     shape_classes,
 )
 from napari.layers.shapes._shapes_mouse_bindings import (
+    _set_highlight,
     add_ellipse,
     add_line,
     add_path_polygon,
@@ -612,6 +613,8 @@ class Shapes(Layer):
         )
 
         # Trigger generation of view slice and thumbnail
+        self.mouse_wheel_callbacks.append(_set_highlight)
+        self.mouse_drag_callbacks.append(_set_highlight)
         self.refresh()
 
     def _initialize_current_color_for_empty_layer(
@@ -667,6 +670,7 @@ class Shapes(Layer):
     @data.setter
     def data(self, data):
         self._finish_drawing()
+        self.selected_data = set()
         prior_data = len(self.data) > 0
         data, shape_type = extract_shape_type(data)
         n_new_shapes = number_of_shapes(data)
@@ -710,8 +714,7 @@ class Shapes(Layer):
         data_not_empty = (
             data is not None
             and (isinstance(data, np.ndarray) and data.size > 0)
-            or (isinstance(data, list) and len(data) > 0)
-        )
+        ) or (isinstance(data, list) and len(data) > 0)
         kwargs = {
             'value': self.data,
             'vertex_indices': ((),),
@@ -1287,6 +1290,8 @@ class Shapes(Layer):
             if all(p is not None for p in unique_properties.values()):
                 with self.block_update_properties():
                     self.current_properties = unique_properties
+
+        self._set_highlight()
 
     @property
     def _is_moving(self) -> bool:
@@ -2460,8 +2465,10 @@ class Shapes(Layer):
             Mx3 array of any indices of vertices for triangles of outline or
             None
         """
-        if self._value is not None and (
-            self._value[0] is not None or len(self.selected_data) > 0
+        if (
+            self._highlight_visible
+            and self._value is not None
+            and (self._value[0] is not None or len(self.selected_data) > 0)
         ):
             if len(self.selected_data) > 0:
                 index = list(self.selected_data)
@@ -2502,7 +2509,7 @@ class Shapes(Layer):
         width : float
             Width of the box edge
         """
-        if len(self.selected_data) > 0:
+        if self._highlight_visible and len(self.selected_data) > 0:
             if self._mode == Mode.SELECT:
                 # If in select mode just show the interaction bounding box
                 # including its vertices and the rotation handle
@@ -2553,7 +2560,7 @@ class Shapes(Layer):
                 edge_color = 'white'
                 pos = None
                 width = 0
-        elif self._is_selecting:
+        elif self._highlight_visible and self._is_selecting:
             # If currently dragging a selection box just show an outline of
             # that box
             vertices = np.empty((0, 2))
@@ -2786,16 +2793,6 @@ class Shapes(Layer):
             cur_len = np.linalg.norm(handle_vec)
             box[Box.HANDLE] = box[Box.TOP_CENTER] + r * handle_vec / cur_len
         self._selected_box = box + center
-
-    def _update_draw(
-        self, scale_factor, corner_pixels_displayed, shape_threshold
-    ):
-        prev_scale = self.scale_factor
-        super()._update_draw(
-            scale_factor, corner_pixels_displayed, shape_threshold
-        )
-        # update highlight only if scale has changed, otherwise causes a cycle
-        self._set_highlight(force=(prev_scale != self.scale_factor))
 
     def _get_value(self, position):
         """Value of the data at a position in data coordinates.

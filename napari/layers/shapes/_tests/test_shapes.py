@@ -887,7 +887,7 @@ def test_paths(shape):
     """Test instantiating Shapes layer with random 2D paths."""
 
     # Test instantiating with data
-    data = [20 * np.random.random(shape)]
+    data = [20 * np.random.random(shape).astype(np.float32)]
     layer = Shapes(data, shape_type='path')
     assert layer.nshapes == len(data)
     assert np.all([np.array_equal(ld, d) for ld, d in zip(layer.data, data)])
@@ -923,7 +923,7 @@ def test_paths_with_shape_type():
     # Test (single path, shape_type) tuple
     shape = (1, 6, 2)
     np.random.seed(0)
-    path_points = 20 * np.random.random(shape)
+    path_points = 20 * np.random.random(shape).astype(np.float32)
     data = (path_points, 'path')
     layer = Shapes(data)
     assert layer.nshapes == shape[0]
@@ -933,7 +933,8 @@ def test_paths_with_shape_type():
 
     # Test (list of paths, shape_type) tuple
     path_points = [
-        20 * np.random.random((np.random.randint(2, 12), 2)) for i in range(10)
+        20 * np.random.random((np.random.randint(2, 12), 2)).astype(np.float32)
+        for i in range(10)
     ]
     data = (path_points, 'path')
     layer = Shapes(data)
@@ -984,7 +985,7 @@ def test_polygons(shape):
     """Test instantiating Shapes layer with a random 2D polygons."""
 
     # Test instantiating with data
-    data = [20 * np.random.random(shape)]
+    data = [20 * np.random.random(shape).astype(np.float32)]
     layer = Shapes(data, shape_type='polygon')
     assert layer.nshapes == len(data)
     assert np.all([np.array_equal(ld, d) for ld, d in zip(layer.data, data)])
@@ -1041,7 +1042,7 @@ def test_polygons_with_shape_type():
     # Test single (polygon, shape_type) tuple
     shape = (1, 6, 2)
     np.random.seed(0)
-    vertices = 20 * np.random.random(shape)
+    vertices = 20 * np.random.random(shape).astype(np.float32)
     data = (vertices, 'polygon')
     layer = Shapes(data)
     assert layer.nshapes == shape[0]
@@ -1051,7 +1052,8 @@ def test_polygons_with_shape_type():
 
     # Test (list of polygons, shape_type) tuple
     polygons = [
-        20 * np.random.random((np.random.randint(2, 12), 2)) for i in range(10)
+        20 * np.random.random((np.random.randint(2, 12), 2)).astype(np.float32)
+        for i in range(10)
     ]
     data = (polygons, 'polygon')
     layer = Shapes(data)
@@ -1091,8 +1093,9 @@ def test_mixed_shapes():
     # Test multiple polygons with different numbers of points
     np.random.seed(0)
     shape_vertices = [
-        20 * np.random.random((np.random.randint(2, 12), 2)) for i in range(5)
-    ] + list(np.random.random((5, 4, 2)))
+        20 * np.random.random((np.random.randint(2, 12), 2)).astype(np.float32)
+        for i in range(5)
+    ] + list(np.random.random((5, 4, 2)).astype(np.float32))
     shape_type = ['polygon'] * 5 + ['rectangle'] * 3 + ['ellipse'] * 2
     layer = Shapes(shape_vertices, shape_type=shape_type)
     assert layer.nshapes == len(shape_vertices)
@@ -1116,8 +1119,9 @@ def test_mixed_shapes_with_shape_type():
     """Test adding mixed shapes with shape_type in data"""
     np.random.seed(0)
     shape_vertices = [
-        20 * np.random.random((np.random.randint(2, 12), 2)) for i in range(5)
-    ] + list(np.random.random((5, 4, 2)))
+        20 * np.random.random((np.random.randint(2, 12), 2)).astype(np.float32)
+        for i in range(5)
+    ] + list(np.random.random((5, 4, 2)).astype(np.float32))
     shape_type = ['polygon'] * 5 + ['rectangle'] * 3 + ['ellipse'] * 2
 
     # Test multiple (shape, shape_type) tuples
@@ -1215,11 +1219,12 @@ def test_adding_shapes():
     # Start with polygons with different numbers of points
     np.random.seed(0)
     data = [
-        20 * np.random.random((np.random.randint(2, 12), 2)) for i in range(5)
+        20 * np.random.random((np.random.randint(2, 12), 2)).astype(np.float32)
+        for i in range(5)
     ]
     # shape_type = ['polygon'] * 5 + ['rectangle'] * 3 + ['ellipse'] * 2
     layer = Shapes(data, shape_type='polygon')
-    new_data = np.random.random((5, 4, 2))
+    new_data = np.random.random((5, 4, 2)).astype(np.float32)
     new_shape_type = ['rectangle'] * 3 + ['ellipse'] * 2
     layer.add(new_data, shape_type=new_shape_type)
     all_data = data + list(new_data)
@@ -1254,8 +1259,9 @@ def test_adding_shapes_to_empty():
     assert len(layer.data) == 0
 
     data = [
-        20 * np.random.random((np.random.randint(2, 12), 2)) for i in range(5)
-    ] + list(np.random.random((5, 4, 2)))
+        20 * np.random.random((np.random.randint(2, 12), 2)).astype(np.float32)
+        for i in range(5)
+    ] + list(np.random.random((5, 4, 2)).astype(np.float32))
     shape_type = ['path'] * 5 + ['rectangle'] * 3 + ['ellipse'] * 2
 
     layer.add(data, shape_type=shape_type)
@@ -1334,8 +1340,9 @@ def test_removing_selected_shapes():
     """Test removing selected shapes."""
     np.random.seed(0)
     data = [
-        20 * np.random.random((np.random.randint(2, 12), 2)) for i in range(5)
-    ] + list(np.random.random((5, 4, 2)))
+        20 * np.random.random((np.random.randint(2, 12), 2)).astype(np.float32)
+        for i in range(5)
+    ] + list(np.random.random((5, 4, 2)).astype(np.float32))
     shape_type = ['polygon'] * 5 + ['rectangle'] * 3 + ['ellipse'] * 2
     layer = Shapes(data, shape_type=shape_type)
     layer.events.data = Mock()
@@ -2103,6 +2110,7 @@ def test_value():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     data[-1, :] = [[0, 0], [0, 10], [10, 0], [10, 10]]
+    assert Shapes([]).get_value((0,) * 2) == (None, None)
     layer = Shapes(data)
     value = layer.get_value((0,) * 2)
     assert value == (9, None)
@@ -2115,6 +2123,16 @@ def test_value():
     layer = Shapes(data + 5)
     value = layer.get_value((0,) * 2)
     assert value == (None, None)
+
+
+def test_value_non_convex():
+    """Test getting the value of the data at the current coordinates."""
+    data = [
+        [[0, 0], [10, 10], [20, 0], [10, 5]],
+    ]
+    layer = Shapes(data, shape_type='polygon')
+    assert layer.get_value((1,) * 2) == (0, None)
+    assert layer.get_value((10, 3)) == (None, None)
 
 
 @pytest.mark.parametrize(
@@ -2382,6 +2400,14 @@ def test_shapes_add_delete_only_emit_two_events():
     layer.selected_data = {1}
     layer.remove_selected()
     assert emitted_events.call_count == 4
+
+
+def test_clean_selection_on_set_data():
+    data = [[[0, 0], (10, 10)], [[0, 15], [10, 25]]]
+    layer = Shapes(data)
+    layer.selected_data = {0}
+    layer.data = [[[0, 0], (10, 10)]]
+    assert layer.selected_data == set()
 
 
 def test_docstring():

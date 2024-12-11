@@ -367,6 +367,7 @@ def test_points_layer_display_correct_slice_on_scale(make_napari_viewer):
     np.testing.assert_equal(response.indices, [0])
 
 
+@pytest.mark.slow
 @skip_on_win_ci
 def test_qt_viewer_clipboard_with_flash(make_napari_viewer, qtbot):
     viewer = make_napari_viewer()
@@ -453,6 +454,7 @@ def test_qt_viewer_clipboard_without_flash(make_napari_viewer):
     assert not hasattr(viewer.window._qt_window, '_flash_animation')
 
 
+@pytest.mark.key_bindings
 def test_active_keybindings(make_napari_viewer):
     """Test instantiating viewer."""
     viewer = make_napari_viewer()
@@ -512,6 +514,35 @@ def test_process_mouse_event(make_napari_viewer):
 
         expected_position = view.canvas._map_canvas2world(new_pos)
         np.testing.assert_almost_equal(expected_position, list(event.position))
+
+    viewer.dims.ndisplay = 3
+    view.canvas._process_mouse_event(mouse_press_callbacks, mouse_event)
+
+
+def test_process_mouse_event_2d_layer_3d_viewer(make_napari_viewer):
+    """Test that _process_mouse_events can handle 2d layers in 3D.
+
+    This is a test for: https://github.com/napari/napari/issues/7299
+    """
+
+    # make a mock mouse event
+    new_pos = [5, 5]
+    mouse_event = MouseEvent(
+        pos=new_pos,
+    )
+    data = np.zeros((20, 20))
+
+    viewer = make_napari_viewer()
+    view = viewer.window._qt_viewer
+    image = viewer.add_image(data)
+
+    @image.mouse_drag_callbacks.append
+    def on_click(layer, event):
+        expected_position = view.canvas._map_canvas2world(new_pos)
+        np.testing.assert_almost_equal(expected_position, list(event.position))
+
+    assert viewer.dims.ndisplay == 2
+    view.canvas._process_mouse_event(mouse_press_callbacks, mouse_event)
 
     viewer.dims.ndisplay = 3
     view.canvas._process_mouse_event(mouse_press_callbacks, mouse_event)
@@ -997,6 +1028,7 @@ def test_shortcut_passing(make_napari_viewer):
     assert layer.mode == 'erase'
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize('mode', ['direct', 'random'])
 def test_selection_collision(qt_viewer: QtViewer, mode):
     data = np.zeros((10, 10), dtype=np.uint8)
@@ -1078,6 +1110,7 @@ def test_all_supported_dtypes(qt_viewer):
         )
 
 
+@pytest.mark.slow
 def test_more_than_uint16_colors(qt_viewer):
     pytest.importorskip('numba')
     # this test is slow (10s locally)

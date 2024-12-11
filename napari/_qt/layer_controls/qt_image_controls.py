@@ -200,13 +200,13 @@ class QtImageControls(QtBaseImageControls):
         self.layout().addRow(trans._('colormap:'), colormap_layout)
         self.layout().addRow(self.interpLabel, self.interpComboBox)
         self.layout().addRow(self.depictionLabel, self.depictionComboBox)
-        self.layout().addRow(self.renderLabel, self.renderComboBox)
-        self.layout().addRow(self.isoThresholdLabel, self.isoThresholdSlider)
-        self.layout().addRow(self.attenuationLabel, self.attenuationSlider)
         self.layout().addRow(self.planeNormalLabel, self.planeNormalButtons)
         self.layout().addRow(
             self.planeThicknessLabel, self.planeThicknessSlider
         )
+        self.layout().addRow(self.renderLabel, self.renderComboBox)
+        self.layout().addRow(self.isoThresholdLabel, self.isoThresholdSlider)
+        self.layout().addRow(self.attenuationLabel, self.attenuationSlider)
 
     def changeInterpolation(self, text):
         """Change interpolation mode for image display.
@@ -351,7 +351,11 @@ class QtImageControls(QtBaseImageControls):
     def _update_plane_parameter_visibility(self):
         """Hide plane rendering controls if they aren't needed."""
         depiction = VolumeDepiction(self.layer.depiction)
-        visible = depiction == VolumeDepiction.PLANE and self.ndisplay == 3
+        visible = (
+            depiction == VolumeDepiction.PLANE
+            and self.ndisplay == 3
+            and self.layer.ndim >= 3
+        )
         self.planeNormalButtons.setVisible(visible)
         self.planeNormalLabel.setVisible(visible)
         self.planeThicknessSlider.setVisible(visible)

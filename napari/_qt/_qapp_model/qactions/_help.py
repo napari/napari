@@ -2,7 +2,7 @@
 
 import sys
 from functools import partial
-from webbrowser import open
+from webbrowser import open as web_open
 
 from app_model.types import Action, KeyBindingRule, KeyCode, KeyMod
 from packaging.version import parse
@@ -56,31 +56,31 @@ Q_HELP_ACTIONS: list[Action] = [
     Action(
         id='napari.window.help.getting_started',
         title=trans._('Getting started'),
-        callback=partial(open, url=HELP_URLS['getting_started']),
+        callback=partial(web_open, url=HELP_URLS['getting_started']),
         menus=[{'id': MenuId.MENUBAR_HELP}],
     ),
     Action(
         id='napari.window.help.tutorials',
         title=trans._('Tutorials'),
-        callback=partial(open, url=HELP_URLS['tutorials']),
+        callback=partial(web_open, url=HELP_URLS['tutorials']),
         menus=[{'id': MenuId.MENUBAR_HELP}],
     ),
     Action(
         id='napari.window.help.layers_guide',
         title=trans._('Using Layers Guides'),
-        callback=partial(open, url=HELP_URLS['layers_guide']),
+        callback=partial(web_open, url=HELP_URLS['layers_guide']),
         menus=[{'id': MenuId.MENUBAR_HELP}],
     ),
     Action(
         id='napari.window.help.examples',
         title=trans._('Examples Gallery'),
-        callback=partial(open, url=HELP_URLS['examples_gallery']),
+        callback=partial(web_open, url=HELP_URLS['examples_gallery']),
         menus=[{'id': MenuId.MENUBAR_HELP}],
     ),
     Action(
         id='napari.window.help.release_notes',
         title=trans._('Release Notes'),
-        callback=partial(open, url=HELP_URLS['release_notes']),
+        callback=partial(web_open, url=HELP_URLS['release_notes']),
         menus=[
             {
                 'id': MenuId.MENUBAR_HELP,
@@ -92,7 +92,7 @@ Q_HELP_ACTIONS: list[Action] = [
     Action(
         id='napari.window.help.github_issue',
         title=trans._('Report an issue on GitHub'),
-        callback=partial(open, url=HELP_URLS['github_issue']),
+        callback=partial(web_open, url=HELP_URLS['github_issue']),
         menus=[
             {
                 'id': MenuId.MENUBAR_HELP,
@@ -104,7 +104,7 @@ Q_HELP_ACTIONS: list[Action] = [
     Action(
         id='napari.window.help.homepage',
         title=trans._('napari homepage'),
-        callback=partial(open, url=HELP_URLS['homepage']),
+        callback=partial(web_open, url=HELP_URLS['homepage']),
         menus=[{'id': MenuId.MENUBAR_HELP, 'group': MenuGroup.NAVIGATION}],
     ),
 ]
