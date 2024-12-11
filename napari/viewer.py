@@ -5,10 +5,13 @@ from weakref import WeakSet
 import magicgui as mgui
 import numpy as np
 
-from napari._qt.qt_main_window import Window
 from napari.components.viewer_model import ViewerModel
 from napari.utils import _magicgui
 from napari.utils.events.event_utils import disconnect_events
+
+if typing.TYPE_CHECKING:
+    # helpful for IDE support
+    from napari._qt.qt_main_window import Window
 
 
 @mgui.register_type(bind=_magicgui.proxy_viewer_ancestor)
@@ -66,7 +69,7 @@ class Viewer(ViewerModel):
 
     # Expose private window publicly. This is needed to keep window off pydantic model
     @property
-    def window(self) -> Window:
+    def window(self) -> 'Window':
         return self._window
 
     def update_console(self, variables):

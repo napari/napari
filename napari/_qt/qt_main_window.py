@@ -11,6 +11,7 @@ import time
 import warnings
 from collections.abc import MutableMapping, Sequence
 from typing import (
+    TYPE_CHECKING,
     Any,
     ClassVar,
     Literal,
@@ -21,7 +22,6 @@ from typing import (
 from weakref import WeakValueDictionary
 
 import numpy as np
-from magicgui.widgets import Widget
 from qtpy.QtCore import (
     QEvent,
     QEventLoop,
@@ -32,7 +32,7 @@ from qtpy.QtCore import (
     Qt,
     Slot,
 )
-from qtpy.QtGui import QHideEvent, QIcon, QImage, QShowEvent
+from qtpy.QtGui import QHideEvent, QIcon, QShowEvent
 from qtpy.QtWidgets import (
     QApplication,
     QDialog,
@@ -92,7 +92,12 @@ from napari.utils.misc import (
 from napari.utils.notifications import Notification
 from napari.utils.theme import _themes, get_system_theme
 from napari.utils.translations import trans
-from napari.viewer import Viewer
+
+if TYPE_CHECKING:
+    from magicgui.widgets import Widget
+    from qtpy.QtGui import QImage
+
+    from napari.viewer import Viewer
 
 _sentinel = object()
 
@@ -1073,7 +1078,7 @@ class Window:
 
     def add_dock_widget(
         self,
-        widget: Union[QWidget, Widget],
+        widget: Union[QWidget, 'Widget'],
         *,
         name: str = '',
         area: Optional[str] = None,
@@ -1571,7 +1576,7 @@ class Window:
         flash: bool = True,
         canvas_only: bool = False,
         fit_to_data_extent: bool = False,
-    ) -> QImage:
+    ) -> 'QImage':
         """Capture screenshot of the currently displayed viewer.
 
         Parameters
