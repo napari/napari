@@ -1,19 +1,14 @@
-from __future__ import annotations
-
 import typing
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 from weakref import WeakSet
 
 import magicgui as mgui
 import numpy as np
 
+from napari._qt.qt_main_window import Window
 from napari.components.viewer_model import ViewerModel
 from napari.utils import _magicgui
 from napari.utils.events.event_utils import disconnect_events
-
-if TYPE_CHECKING:
-    # helpful for IDE support
-    from napari._qt.qt_main_window import Window
 
 
 @mgui.register_type(bind=_magicgui.proxy_viewer_ancestor)
@@ -36,8 +31,8 @@ class Viewer(ViewerModel):
         Whether to show the viewer after instantiation. By default True.
     """
 
-    _window: Window = None  # type: ignore
-    _instances: typing.ClassVar[WeakSet[Viewer]] = WeakSet()
+    _window: 'Window' = None  # type: ignore
+    _instances: typing.ClassVar[WeakSet['Viewer']] = WeakSet()
 
     def __init__(
         self,
@@ -148,8 +143,8 @@ class Viewer(ViewerModel):
     def export_rois(
         self,
         rois: list[np.ndarray],
-        paths: list[str] | None = None,
-        scale: float | None = None,
+        paths: Optional[list[str]] = None,
+        scale: Optional[float] = None,
     ):
         """Export the shapes rois with storage file paths
 

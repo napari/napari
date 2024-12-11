@@ -122,7 +122,9 @@ class _QtMainWindow(QMainWindow):
     # `window` is passed through on construction, so it's available to a window
     # provider for dependency injection
     # See https://github.com/napari/napari/pull/4826
-    def __init__(self, viewer: Viewer, window: 'Window', parent=None) -> None:
+    def __init__(
+        self, viewer: 'Viewer', window: 'Window', parent=None
+    ) -> None:
         super().__init__(parent)
         self._ev = None
         self._window = window
@@ -637,7 +639,7 @@ class Window:
         Window menu.
     """
 
-    def __init__(self, viewer: Viewer, *, show: bool = True) -> None:
+    def __init__(self, viewer: 'Viewer', *, show: bool = True) -> None:
         # create QApplication if it doesn't already exist
         qapp = get_qapp()
 
@@ -1887,7 +1889,7 @@ class Window:
             update_save_history(dial.selectedFiles()[0])
 
 
-def _instantiate_dock_widget(wdg_cls, viewer: Viewer):
+def _instantiate_dock_widget(wdg_cls, viewer: 'Viewer'):
     # if the signature is looking a for a napari viewer, pass it.
     from napari.viewer import Viewer
 
