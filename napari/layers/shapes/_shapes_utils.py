@@ -20,6 +20,14 @@ except ModuleNotFoundError:
     triangulate = None
 
 
+try:
+    from napari.layers.shapes._accelerated_triangulate import (
+        generate_2D_edge_meshes as acc_generate_2D_edge_meshes,
+    )
+except ImportError:
+    acc_generate_2D_edge_meshes = None
+
+
 def _is_convex(poly: npt.NDArray) -> bool:
     """Check whether a polygon is convex.
 
@@ -668,14 +676,15 @@ def triangulate_edge(
         clean_path = path
 
     if clean_path.shape[-1] == 2:
-        centers, offsets, triangles = generate_2D_edge_meshes(
-            clean_path, closed=closed
+        centers, offsets, triangles = _generate_2D_edge_meshes(
+            np.asarray(clean_path, dtype=np.float32), closed=closed
         )
     else:
         centers, offsets, triangles = generate_tube_meshes(
             clean_path, closed=closed
         )
 
+    # offsets[2,1] = -0.5
     return centers, offsets, triangles
 
 
@@ -1290,3 +1299,9 @@ def rdp(vertices: npt.NDArray, epsilon: float) -> npt.NDArray:
 
     # When epsilon is 0, avoid removing datapoints
     return vertices
+
+
+if acc_generate_2D_edge_meshes is not None:
+    _generate_2D_edge_meshes = acc_generate_2D_edge_meshes
+else:  # pragma: no cover
+    _generate_2D_edge_meshes = generate_2D_edge_meshes
