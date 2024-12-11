@@ -145,8 +145,8 @@ def _set_centers_and_offsets(
     vertex: np.ndarray,
     vec1: np.ndarray,
     vec2: np.ndarray,
-    vec1_len: float,
-    vec2_len: float,
+    half_vec1_len: float,
+    half_vec2_len: float,
     j: int,
     cos_limit: float,
     always_bevel: bool,
@@ -188,11 +188,11 @@ def _set_centers_and_offsets(
     vec2 : np.ndarray
         The norm-1 direction vector from the current path vertex to the next
         path vertex.
-    vec1_len : float
-        The length of the segment between the previous path vertex and the
+    half_vec1_len : float
+        Half the length of the segment between the previous path vertex and the
         current path vertex (used for bevel join calculation).
-    vec2_len : float
-        The length of the segment between the current path vertex and the
+    half_vec2_len : float
+        Half the length of the segment between the current path vertex and the
         next path vertex (used for bevel join calculation).
     j : int
         The current index in the ouput arrays.
@@ -236,7 +236,7 @@ def _set_centers_and_offsets(
             # by the inverse of the sin of the angle between the two vectors.
             # See https://github.com/napari/napari/pull/7268#user-content-bevel-cut
             sign, mag = _sign_abs(scale_factor)
-            scale_factor = sign * min(mag, vec1_len, vec2_len)
+            scale_factor = sign * min(mag, half_vec1_len, half_vec2_len)
         miter = (vec1 - vec2) * 0.5 * scale_factor
 
     if bevel:
