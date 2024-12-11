@@ -678,6 +678,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     def source(self) -> Source:
         return self._source
 
+    @source.setter
+    def source(self, source: Source) -> None:
+        self._source = source
+
     @property
     def loaded(self) -> bool:
         """True if this layer is fully loaded in memory, False otherwise.

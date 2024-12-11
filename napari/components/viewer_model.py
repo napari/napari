@@ -56,7 +56,7 @@ from napari.layers import (
     Tracks,
     Vectors,
 )
-from napari.layers._source import layer_source
+from napari.layers._source import Source, layer_source
 from napari.layers.image._image_key_bindings import image_fun_to_mode
 from napari.layers.image._image_utils import guess_labels
 from napari.layers.labels._labels_key_bindings import labels_fun_to_mode
@@ -1448,12 +1448,22 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         plugin = hookimpl.plugin_name if hookimpl else None
         for data, filename in zip(layer_data, filenames):
             basename, _ext = os.path.splitext(os.path.basename(filename))
-            _data = _unify_data_and_user_kwargs(
-                data, kwargs, layer_type, fallback_name=basename
-            )
             # actually add the layer
-            with layer_source(path=filename, reader_plugin=plugin):
-                added.extend(self._add_layer_from_data(*_data))
+            if isinstance(data, Layer):
+                lyr = self.add_layer(data)
+                if (
+                    lyr.source.path is None
+                    and lyr.source.reader_plugin is None
+                ):
+                    lyr.source = Source(path=filename, reader_plugin=plugin)
+                current_added = [lyr]
+            else:
+                _data = _unify_data_and_user_kwargs(
+                    data, kwargs, layer_type, fallback_name=basename
+                )
+                with layer_source(path=filename, reader_plugin=plugin):
+                    current_added = self._add_layer_from_data(*_data)
+            added.extend(current_added)
         return added
 
     def _add_layer_from_data(
