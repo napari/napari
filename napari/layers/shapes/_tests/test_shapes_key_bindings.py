@@ -46,7 +46,7 @@ def test_activate_modes():
     key_bindings.activate_add_line_mode(layer)
     assert layer.mode == 'add_line'
     key_bindings.activate_add_polyline_mode(layer)
-    assert layer.mode == 'add_poly_line'
+    assert layer.mode == 'add_polyline'
     key_bindings.activate_add_path_mode(layer)
     assert layer.mode == 'add_path'
     key_bindings.activate_add_polygon_mode(layer)
