@@ -23,7 +23,16 @@ on each polygon vertex, from which the triangulation is computed.
 from dataclasses import dataclass, fields
 from functools import partial
 
-import numba
+try:
+    import numba
+except ImportError:
+    # Create a dummy numba.njit to allow running this script without numba
+    import toolz as tz
+    class numba:
+        @tz.curry
+        def njit(func, cache=True, inline=None):
+            return func
+
 import numpy as np
 
 import napari
