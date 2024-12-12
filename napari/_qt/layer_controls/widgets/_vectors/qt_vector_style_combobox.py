@@ -56,7 +56,7 @@ class QtVectorStyleComboBoxControl(QtWidgetControlsBase):
             trans._('vector style:')
         )
 
-    def change_vector_style(self, vector_style: str):
+    def change_vector_style(self, vector_style: str) -> None:
         """Change vector style of vectors on the layer model.
 
         Parameters
@@ -67,12 +67,12 @@ class QtVectorStyleComboBoxControl(QtWidgetControlsBase):
         with self._layer.events.vector_style.blocker():
             self._layer.vector_style = vector_style
 
-    def _on_vector_style_change(self):
+    def _on_vector_style_change(self) -> None:
         """Receive layer model vector style change event & update dropdown."""
         with self._layer.events.vector_style.blocker():
             vector_style = self._layer.vector_style
             index = self.vector_style_comboBox.findText(
-                vector_style, Qt.MatchFixedString
+                vector_style, Qt.MatchFlag.MatchFixedString
             )
             self.vector_style_comboBox.setCurrentIndex(index)
 

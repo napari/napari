@@ -68,7 +68,7 @@ class QtSymbolComboBoxControl(QtWidgetControlsBase):
 
         self.symbolComboBoxLabel = QtWrappedLabel(trans._('symbol:'))
 
-    def changeCurrentSymbol(self, text) -> None:
+    def changeCurrentSymbol(self, text: str) -> None:
         """Change marker symbol of the points on the layer model.
 
         Parameters

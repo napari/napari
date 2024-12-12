@@ -57,7 +57,7 @@ class QtContourSpinBoxControl(QtWidgetControlsBase):
 
         self.contourSpinBoxLabel = QtWrappedLabel(trans._('contour:'))
 
-    def change_contour(self, value):
+    def change_contour(self, value: int) -> None:
         """Change contour thickness.
 
         Parameters
@@ -69,7 +69,7 @@ class QtContourSpinBoxControl(QtWidgetControlsBase):
         self.contourSpinBox.clearFocus()
         self.parent().setFocus()
 
-    def _on_contour_change(self):
+    def _on_contour_change(self) -> None:
         """Receive layer model contour value change event and update spinbox."""
         with self._layer.events.contour.blocker():
             value = self._layer.contour

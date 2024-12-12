@@ -67,7 +67,7 @@ class QtCurrentSizeSliderControl(QtWidgetControlsBase):
 
         self.sizeSliderLabel = QtWrappedLabel(trans._('point size:'))
 
-    def changeCurrentSize(self, value):
+    def changeCurrentSize(self, value: float) -> None:
         """Change size of points on the layer model.
 
         Parameters
@@ -80,7 +80,7 @@ class QtCurrentSizeSliderControl(QtWidgetControlsBase):
         ):
             self._layer.current_size = value
 
-    def _on_current_size_change(self):
+    def _on_current_size_change(self) -> None:
         """Receive layer model size change event and update point size slider."""
         with qt_signals_blocked(self.sizeSlider):
             value = self._layer.current_size

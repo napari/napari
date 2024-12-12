@@ -51,7 +51,7 @@ class QtTailLengthSliderControl(QtWidgetControlsBase):
 
         self._on_tail_length_change()
 
-    def change_tail_length(self, value):
+    def change_tail_length(self, value) -> None:
         """Change edge line backward length of shapes on the layer model.
 
         Parameters

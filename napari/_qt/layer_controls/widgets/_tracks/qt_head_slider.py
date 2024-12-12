@@ -48,7 +48,7 @@ class QtHeadLengthSliderControl(QtWidgetControlsBase):
 
         self.head_length_slider_label = QtWrappedLabel(trans._('head length:'))
 
-    def change_head_length(self, value):
+    def change_head_length(self, value) -> None:
         """Change edge line forward length of shapes on the layer model.
 
         Parameters
@@ -58,7 +58,7 @@ class QtHeadLengthSliderControl(QtWidgetControlsBase):
         """
         self._layer.head_length = value
 
-    def _on_head_length_change(self):
+    def _on_head_length_change(self) -> None:
         """Receive layer model track line width change event and update slider."""
         with self._layer.events.head_length.blocker():
             value = self._layer.head_length

@@ -43,7 +43,7 @@ class QtGraphCheckBoxControl(QtWidgetControlsBase):
 
         self.graph_checkbox_label = QtWrappedLabel(trans._('graph:'))
 
-    def change_display_graph(self, state):
+    def change_display_graph(self, state) -> None:
         self._layer.display_graph = self.graph_checkbox.isChecked()
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:

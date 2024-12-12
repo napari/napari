@@ -50,7 +50,7 @@ class QtContiguousCheckBoxControl(QtWidgetControlsBase):
 
         self.contigCheckBoxLabel = QtWrappedLabel(trans._('contiguous:'))
 
-    def change_contig(self, state):
+    def change_contig(self, state: int) -> None:
         """Toggle contiguous state of label layer.
 
         Parameters
@@ -60,7 +60,7 @@ class QtContiguousCheckBoxControl(QtWidgetControlsBase):
         """
         self._layer.contiguous = Qt.CheckState(state) == Qt.CheckState.Checked
 
-    def _on_contiguous_change(self):
+    def _on_contiguous_change(self) -> None:
         """Receive layer model contiguous change event and update the checkbox."""
         with self._layer.events.contiguous.blocker():
             self.contigCheckBox.setChecked(self._layer.contiguous)

@@ -51,10 +51,10 @@ class QtColorPropertiesComboBoxControl(QtWidgetControlsBase):
 
         self._on_color_by_change()
 
-    def change_color_by(self, value: str):
+    def change_color_by(self, value: str) -> None:
         self._layer.color_by = value
 
-    def _on_color_by_change(self):
+    def _on_color_by_change(self) -> None:
         """Receive layer model color_by change event and update combobox."""
         with self._layer.events.color_by.blocker():
             color_by = self._layer.color_by
@@ -64,7 +64,7 @@ class QtColorPropertiesComboBoxControl(QtWidgetControlsBase):
             )
             self.color_by_combobox.setCurrentIndex(idx)
 
-    def _on_properties_change(self):
+    def _on_properties_change(self) -> None:
         """Change the properties that can be used to color the tracks."""
         with qt_signals_blocked(self.color_by_combobox):
             self.color_by_combobox.clear()

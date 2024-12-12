@@ -54,7 +54,7 @@ class QtShadingComboBoxControl(QtWidgetControlsBase):
 
         self.shadingComboBoxLabel = QtWrappedLabel(trans._('shading:'))
 
-    def changeShading(self, text):
+    def changeShading(self, text: str) -> None:
         """Change shading value on the surface layer.
         Parameters
         ----------
@@ -63,7 +63,7 @@ class QtShadingComboBoxControl(QtWidgetControlsBase):
         """
         self._layer.shading = self.shadingComboBox.currentData()
 
-    def _on_shading_change(self):
+    def _on_shading_change(self) -> None:
         """Receive layer model shading change event and update combobox."""
         with self._layer.events.shading.blocker():
             self.shadingComboBox.setCurrentIndex(

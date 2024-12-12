@@ -49,7 +49,7 @@ class QtWidthSpinBoxControl(QtWidgetControlsBase):
 
         self.widthSpinBoxLabel = QtWrappedLabel(trans._('width:'))
 
-    def change_width(self, value):
+    def change_width(self, value) -> None:
         """Change edge line width of vectors on the layer model.
 
         Parameters
@@ -59,9 +59,10 @@ class QtWidthSpinBoxControl(QtWidgetControlsBase):
         """
         self._layer.edge_width = value
         self.widthSpinBox.clearFocus()
+        # TODO: Check other way to give focus without calling parent
         self.parent().setFocus()
 
-    def _on_edge_width_change(self):
+    def _on_edge_width_change(self) -> None:
         """Receive layer model width change event and update width spinbox."""
         with self._layer.events.edge_width.blocker():
             self.widthSpinBox.setValue(self._layer.edge_width)
@@ -108,7 +109,7 @@ class QtLengthSpinBoxControl(QtWidgetControlsBase):
 
         self.lengthSpinBoxLabel = QtWrappedLabel(trans._('length:'))
 
-    def change_length(self, value):
+    def change_length(self, value: float) -> None:
         """Change length of vectors on the layer model.
 
         Multiplicative factor on projections for length of all vectors.
@@ -120,9 +121,10 @@ class QtLengthSpinBoxControl(QtWidgetControlsBase):
         """
         self._layer.length = value
         self.lengthSpinBox.clearFocus()
+        # TODO: Check other way to give focus without calling parent
         self.parent().setFocus()
 
-    def _on_length_change(self):
+    def _on_length_change(self) -> None:
         """Change length of vectors."""
         with self._layer.events.length.blocker():
             self.lengthSpinBox.setValue(self._layer.length)

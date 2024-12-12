@@ -56,7 +56,7 @@ class QtNdimSpinBoxControl(QtWidgetControlsBase):
 
         self.ndimSpinBoxLabel = QtWrappedLabel(trans._('n edit dim:'))
 
-    def change_n_edit_dim(self, value):
+    def change_n_edit_dim(self, value: int) -> None:
         """Change the number of editable dimensions of label layer.
 
         Parameters
@@ -70,7 +70,7 @@ class QtNdimSpinBoxControl(QtWidgetControlsBase):
         # TODO: Check how to decouple this
         self.parent().setFocus()
 
-    def _on_n_edit_dimensions_change(self):
+    def _on_n_edit_dimensions_change(self) -> None:
         """Receive layer model n-dim mode change event and update the checkbox."""
         with self._layer.events.n_edit_dimensions.blocker():
             value = self._layer.n_edit_dimensions

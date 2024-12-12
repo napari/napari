@@ -56,7 +56,7 @@ class QtDisplaySelectedLabelCheckBoxControl(QtWidgetControlsBase):
             trans._('show\nselected:')
         )
 
-    def toggle_selected_mode(self, state):
+    def toggle_selected_mode(self, state: int) -> None:
         """Toggle display of selected label only.
 
         Parameters
@@ -68,7 +68,7 @@ class QtDisplaySelectedLabelCheckBoxControl(QtWidgetControlsBase):
             Qt.CheckState(state) == Qt.CheckState.Checked
         )
 
-    def _on_show_selected_label_change(self):
+    def _on_show_selected_label_change(self) -> None:
         """Receive layer model show_selected_labels event and update the checkbox."""
         with self._layer.events.show_selected_label.blocker():
             self.selectedColorCheckbox.setChecked(

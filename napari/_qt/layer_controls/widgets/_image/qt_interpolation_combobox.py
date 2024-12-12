@@ -60,7 +60,7 @@ class QtInterpolationComboBoxControl(QtWidgetControlsBase):
 
         self.interpComboBoxLabel = QtWrappedLabel(trans._('interpolation:'))
 
-    def changeInterpolation(self, text):
+    def changeInterpolation(self, text: str) -> None:
         """Change interpolation mode for image display.
 
         Parameters
@@ -78,7 +78,7 @@ class QtInterpolationComboBoxControl(QtWidgetControlsBase):
         else:
             self._layer.interpolation3d = text
 
-    def _on_interpolation_change(self, event):
+    def _on_interpolation_change(self, event) -> None:
         """Receive layer interpolation change event and update dropdown menu.
 
         Parameters
@@ -97,7 +97,7 @@ class QtInterpolationComboBoxControl(QtWidgetControlsBase):
                 self.interpComboBox.addItem(interp_string)
             self.interpComboBox.setCurrentText(interp_string)
 
-    def _update_interpolation_combo(self, ndisplay):
+    def _update_interpolation_combo(self, ndisplay: int) -> None:
         interp_names = [i.value for i in Interpolation.view_subset()]
         interp = (
             self._layer.interpolation2d

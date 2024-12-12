@@ -132,14 +132,14 @@ class QtDepictionControl(QtWidgetControlsBase):
         )
         self.planeThicknessLabel = QtWrappedLabel(trans._('plane thickness:'))
 
-    def changeDepiction(self, text):
+    def changeDepiction(self, text: str) -> None:
         self._layer.depiction = text
         self._update_plane_parameter_visibility()
 
-    def changePlaneThickness(self, value: float):
+    def changePlaneThickness(self, value: float) -> None:
         self._layer.plane.thickness = value
 
-    def _on_depiction_change(self):
+    def _on_depiction_change(self) -> None:
         """Receive layer model depiction change event and update combobox."""
         with self._layer.events.depiction.blocker():
             index = self.depictionComboBox.findText(
@@ -148,19 +148,19 @@ class QtDepictionControl(QtWidgetControlsBase):
             self.depictionComboBox.setCurrentIndex(index)
             self._update_plane_parameter_visibility()
 
-    def _on_plane_thickness_change(self):
+    def _on_plane_thickness_change(self) -> None:
         with self._layer.plane.events.blocker():
             self.planeThicknessSlider.setValue(self._layer.plane.thickness)
 
-    def _on_display_change_hide(self):
+    def _on_display_change_hide(self) -> None:
         self.depictionComboBox.hide()
         self.depictionLabel.hide()
 
-    def _on_display_change_show(self):
+    def _on_display_change_show(self) -> None:
         self.depictionComboBox.show()
         self.depictionLabel.show()
 
-    def _update_plane_parameter_visibility(self):
+    def _update_plane_parameter_visibility(self) -> None:
         """Hide plane rendering controls if they aren't needed."""
         depiction = VolumeDepiction(self._layer.depiction)
         # TODO: Better way to handle the ndisplay value?

@@ -29,7 +29,7 @@ class QtColorBox(QWidget):
         An instance of a napari layer.
     """
 
-    def __init__(self, layer) -> None:
+    def __init__(self, layer: Layer) -> None:
         super().__init__()
 
         self._layer = layer
@@ -48,19 +48,19 @@ class QtColorBox(QWidget):
 
         self.color = None
 
-    def _on_selected_label_change(self):
+    def _on_selected_label_change(self) -> None:
         """Receive layer model label selection change event & update colorbox."""
         self.update()
 
-    def _on_opacity_change(self):
+    def _on_opacity_change(self) -> None:
         """Receive layer model label selection change event & update colorbox."""
         self.update()
 
-    def _on_colormap_change(self):
+    def _on_colormap_change(self) -> None:
         """Receive label colormap change event & update colorbox."""
         self.update()
 
-    def paintEvent(self, event):
+    def paintEvent(self, event) -> None:
         """Paint the colorbox.  If no color, display a checkerboard pattern.
 
         Parameters
@@ -89,14 +89,14 @@ class QtColorBox(QWidget):
             painter.drawRect(0, 0, self._height, self._height)
             self.color = tuple(color)
 
-    def disconnect_widget_controls(self):
+    def disconnect_widget_controls(self) -> None:
         disconnect_events(self._layer.events, self)
 
-    def deleteLater(self):
+    def deleteLater(self) -> None:
         self.disconnect_widget_controls()
         super().deleteLater()
 
-    def closeEvent(self, event):
+    def closeEvent(self, event) -> None:
         """Disconnect events when widget is closing."""
         self.disconnect_widget_controls()
         super().closeEvent(event)
@@ -155,7 +155,7 @@ class QtLabelControl(QtWidgetControlsBase):
         color_layout.addWidget(self.selectionSpinBox)
         self.labelColor.setLayout(color_layout)
 
-    def changeSelection(self, value):
+    def changeSelection(self, value: int) -> None:
         """Change currently selected label.
 
         Parameters
@@ -168,18 +168,18 @@ class QtLabelControl(QtWidgetControlsBase):
         # TODO: decouple
         self.parent().setFocus()
 
-    def _on_selected_label_change(self):
+    def _on_selected_label_change(self) -> None:
         """Receive layer model label selection change event and update spinbox."""
         with self._layer.events.selected_label.blocker():
             value = self._layer.selected_label
             self.selectionSpinBox.setValue(value)
 
-    def _on_data_change(self):
+    def _on_data_change(self) -> None:
         """Update label selection spinbox min/max when data changes."""
         dtype_lims = get_dtype_limits(get_dtype(self._layer))
         self.selectionSpinBox.setRange(*dtype_lims)
 
-    def disconnect_widget_controls(self):
+    def disconnect_widget_controls(self) -> None:
         self.colorBox.disconnect_widget_controls()
         super().disconnect_widget_controls()
 
