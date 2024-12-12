@@ -15,6 +15,7 @@ from napari.layers.utils._color_manager_constants import ColorMode
 from napari.utils.translations import trans
 
 
+# TODO: Create base edge color control class?
 class QtEdgeColorPropertyControl(QtWidgetControlsBase):
     """
     Class that wraps the connection of events/signals between the current edge

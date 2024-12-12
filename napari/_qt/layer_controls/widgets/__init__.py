@@ -12,9 +12,6 @@ from napari._qt.layer_controls.widgets.qt_edge_color import (
     QtEdgeColorControl,
     QtEdgeColorPropertyControl,
 )
-from napari._qt.layer_controls.widgets.qt_edge_width_slider import (
-    QtEdgeWidthSliderControl,
-)
 from napari._qt.layer_controls.widgets.qt_face_color import QtFaceColorControl
 from napari._qt.layer_controls.widgets.qt_gamma_slider import (
     QtGammaSliderControl,
@@ -42,7 +39,6 @@ __all__ = [
     'QtContrastLimitsSliderControl',
     'QtEdgeColorControl',
     'QtEdgeColorPropertyControl',
-    'QtEdgeWidthSliderControl',
     'QtFaceColorControl',
     'QtGammaSliderControl',
     'QtImageRenderControl',
