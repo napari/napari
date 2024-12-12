@@ -463,7 +463,7 @@ module = [
     'napari._qt.layer_controls.qt_vectors_controls',
     'napari._qt.layer_controls.widgets.qt_widget_controls_base',
     'napari._qt.layer_controls.widgets.qt_edge_color',
-    'napari._qt.layer_controls.widgets.shapes.qt_edge_width_slider',
+    'napari._qt.layer_controls.widgets._shapes.qt_edge_width_slider',
     'napari._qt.layer_controls.widgets.qt_face_color',
     'napari._qt.layer_controls.widgets.qt_opacity_blending_controls',
     'napari._qt.layer_controls.widgets.qt_text_visibility',
