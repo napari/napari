@@ -6,7 +6,7 @@ from napari._qt.layer_controls.widgets import (
     QtFaceColorControl,
     QtTextVisibilityControl,
 )
-from napari._qt.layer_controls.widgets.shapes import QtEdgeWidthSliderControl
+from napari._qt.layer_controls.widgets._shapes import QtEdgeWidthSliderControl
 from napari._qt.widgets.qt_mode_buttons import QtModePushButton
 from napari.layers.shapes._shapes_constants import Mode
 from napari.utils.action_manager import action_manager

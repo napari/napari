@@ -4,7 +4,7 @@ from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
 from napari._qt.layer_controls.widgets import (
     QtSimpleColormapComboBoxControl,
 )
-from napari._qt.layer_controls.widgets.tracks import (
+from napari._qt.layer_controls.widgets._tracks import (
     QtColorPropertiesComboBoxControl,
     QtGraphCheckBoxControl,
     QtHeadLengthSliderControl,

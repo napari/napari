@@ -6,7 +6,7 @@ from napari._qt.layer_controls.widgets import (
     QtOutSliceCheckBoxControl,
     QtTextVisibilityControl,
 )
-from napari._qt.layer_controls.widgets.points import (
+from napari._qt.layer_controls.widgets._points import (
     QtBorderColorControl,
     QtCurrentSizeSliderControl,
     QtSymbolComboBoxControl,

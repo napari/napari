@@ -5,7 +5,7 @@ from napari._qt.layer_controls.widgets import (
     QtEdgeColorPropertyControl,
     QtOutSliceCheckBoxControl,
 )
-from napari._qt.layer_controls.widgets.vectors import (
+from napari._qt.layer_controls.widgets._vectors import (
     QtLengthSpinBoxControl,
     QtVectorStyleComboBoxControl,
     QtWidthSpinBoxControl,

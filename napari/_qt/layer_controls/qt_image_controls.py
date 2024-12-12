@@ -6,7 +6,7 @@ from napari._qt.layer_controls.qt_image_controls_base import (
 from napari._qt.layer_controls.widgets import (
     QtImageRenderControl,
 )
-from napari._qt.layer_controls.widgets.image import (
+from napari._qt.layer_controls.widgets._image import (
     QtDepictionControl,
     QtInterpolationComboBoxControl,
 )

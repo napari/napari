@@ -4,7 +4,7 @@ from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
 from napari._qt.layer_controls.widgets import (
     QtLabelRenderControl,
 )
-from napari._qt.layer_controls.widgets.labels import (
+from napari._qt.layer_controls.widgets._labels import (
     QtBrushSizeSliderControl,
     QtColorModeComboBoxControl,
     QtContiguousCheckBoxControl,
