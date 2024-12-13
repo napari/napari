@@ -299,10 +299,11 @@ def test_export_figure(make_napari_viewer, tmp_path):
 
 
 def test_export_rois(make_napari_viewer, tmp_path):
+    from skimage.color import rgb2gray
     # Create an image with a defined shape (100x100) and a square in the middle
 
     img = np.zeros((100, 100), dtype=np.uint8)
-    img[25:75, 25:75] = 255
+    img[25:76, 25:76] = 255
 
     # Add viewer
     viewer = make_napari_viewer()
@@ -310,12 +311,12 @@ def test_export_rois(make_napari_viewer, tmp_path):
 
     # Create a couple of clearly defined rectangular polygons for validation
     roi_shapes_data = [
+        np.array([[0, 0], [20, 0], [20, 20], [0, 20]]),
         np.array([[15, 15], [35, 15], [35, 35], [15, 35]]),
         np.array([[65, 65], [85, 65], [85, 85], [65, 85]]),
         np.array([[15, 65], [35, 65], [35, 85], [15, 85]]),
         np.array([[65, 15], [85, 15], [85, 35], [65, 35]]),
         np.array([[40, 40], [60, 40], [60, 60], [40, 60]]),
-        np.array([[0, 0], [20, 0], [20, 20], [0, 20]]),
     ]
     paths = [
         str(tmp_path / f'roi_{i}.png') for i in range(len(roi_shapes_data))
@@ -337,6 +338,11 @@ def test_export_rois(make_napari_viewer, tmp_path):
     assert all(roi.shape == (20, 20, 4) for roi in test_roi)
     assert viewer.camera.center == camera_center
     assert viewer.camera.zoom == camera_zoom
+
+    expected_values = [0, 100, 100, 100, 100, 400]
+    for index, roi_img in enumerate(test_roi):
+        gray_img = rgb2gray(roi_img[:, :, :3])
+        assert gray_img.flatten().sum() == expected_values[index]
 
     # Not testing the exact content of the screenshot. It seems not to work within the test, but manual testing does.
     viewer.close()
