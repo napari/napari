@@ -50,6 +50,27 @@ def test_add_layers_with_plugins_full_layers(layer_data_and_types):
             assert v.layers[0].source.reader_plugin == 'testimpl'
 
 
+def test_add_layers_with_plugins_layer_mix(layer_data_and_types):
+    """Test add_layers_with_plugins handles mixed Layer and LayerDataTuple."""
+    layers, _, layer_types, layer_fnames = layer_data_and_types
+    for layer, layer_type, layer_fname in zip(
+        layers, layer_types, layer_fnames
+    ):
+        layer_tuple = (layer.data, {}, layer_type)
+        with patch(
+            'napari.plugins.io.read_data_with_plugins',
+            # return one instantiated layer and one layer tuple
+            MagicMock(return_value=([layer, layer_tuple], _testimpl)),
+        ):
+            v = ViewerModel()
+            v._add_layers_with_plugins([layer_fname], stack=False)
+            # both were added
+            assert len(v.layers) == 2
+            for lyr in v.layers:
+                assert lyr.source.path == layer_fname
+                assert lyr.source.reader_plugin == 'testimpl'
+
+
 @patch(
     'napari.plugins.io.read_data_with_plugins',
     MagicMock(return_value=([], _testimpl)),
