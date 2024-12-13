@@ -122,7 +122,7 @@ QtModeRadioButton[mode="line"]::indicator {
 }
 
 QtModeRadioButton[mode="polyline"]::indicator {
-  image: url("theme_{{ id }}:/poly_line.svg");
+  image: url("theme_{{ id }}:/polyline.svg");
 }
 
 QtModeRadioButton[mode="path"]::indicator {
