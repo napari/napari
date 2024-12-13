@@ -154,7 +154,8 @@ class Viewer(ViewerModel):
         Parameters
         ----------
         rois: numpy array
-            An list of arrays with each having shape (4, 2) representing a rectangular roi.
+            An list of arrays with each having shape (4, 2) representing a rectangular roi. If not rectangular
+            a screenshot of the bounding box of the roi will be taken.
         paths: list
             The list to store file path for shapes roi
 
