@@ -4,7 +4,7 @@ import inspect
 import itertools
 import os
 import warnings
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Iterator, Mapping, MutableMapping, Sequence
 from functools import lru_cache
 from pathlib import Path
 from typing import (
@@ -1581,10 +1581,10 @@ def _normalize_layer_data(data: LayerData) -> FullLayerData:
 
     _data = list(data)
     if len(_data) > 1:
-        if not isinstance(_data[1], dict):
+        if not isinstance(_data[1], MutableMapping):
             raise ValueError(
                 trans._(
-                    'The second item in a LayerData tuple must be a dict',
+                    'The second item in a LayerData tuple must be a dict or other MutableMapping.',
                     deferred=True,
                 )
             )
