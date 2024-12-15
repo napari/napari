@@ -256,7 +256,7 @@ def test_keybinding_with_only_modifiers(
 )
 @pytest.mark.parametrize(
     'confirm_key',
-    [Qt.Key.Key_Enter, Qt.Key.Key_Return, Qt.Key.Key_CapsLock],
+    [Qt.Key.Key_Enter, Qt.Key.Key_Return, Qt.Key.Key_Tab, Qt.Key.Key_CapsLock],
 )
 def test_remove_shortcut(
     shortcut_editor_widget, qtbot, removal_trigger_key, confirm_key

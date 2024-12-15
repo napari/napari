@@ -290,7 +290,7 @@ def test_preferences_dialog_restore(qtbot, pref, monkeypatch):
 @pytest.mark.key_bindings
 @pytest.mark.parametrize(
     'confirm_key',
-    ['enter', 'return', 'capslock'],
+    ['enter', 'return', 'tab', 'capslock'],
 )
 def test_preferences_dialog_not_dismissed_by_keybind_confirm(
     qtbot, pref, confirm_key
