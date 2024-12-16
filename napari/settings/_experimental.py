@@ -59,7 +59,7 @@ class ExperimentalSettings(EventedSettings):
     compiled_triangulation: bool = Field(
         False,
         title=trans._(
-            'If use compiled backend to speedup create/update of compiled layer'
+            'If use compiled backend to speedup create/update of Shapes layer'
         ),
         description=trans._(
             'When enabled its uses compiled code from PartSegCore-compiled-backend for speedup of creation'
