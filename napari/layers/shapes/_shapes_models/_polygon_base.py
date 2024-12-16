@@ -102,26 +102,24 @@ class PolygonBase(Shape):
         # # cannot index with bools directly (flattens by design)
         # data_spline = data[~np.all(duplicates, axis=1)]
 
-        data_spline = remove_path_duplicates(data, closed=True)
+        if self.interpolation_order > 1:
+            data_spline = remove_path_duplicates(data, closed=True)
 
-        if (
-            self.interpolation_order > 1
-            and len(data_spline) > self.interpolation_order
-        ):
-            data = data_spline.copy()
-            if self._closed:
-                data = np.append(data, data[:1], axis=0)
+            if len(data_spline) > self.interpolation_order:
+                data = data_spline.copy()
+                if self._closed:
+                    data = np.append(data, data[:1], axis=0)
 
-            tck, *_ = splprep(
-                data.T, s=0, k=self.interpolation_order, per=self._closed
-            )
+                tck, *_ = splprep(
+                    data.T, s=0, k=self.interpolation_order, per=self._closed
+                )
 
-            # the number of sampled data points might need to be carefully thought
-            # about (might need to change with image scale?)
-            u = np.linspace(0, 1, self.interpolation_sampling * len(data))
+                # the number of sampled data points might need to be carefully thought
+                # about (might need to change with image scale?)
+                u = np.linspace(0, 1, self.interpolation_sampling * len(data))
 
-            # get interpolated data (discard last element which is a copy)
-            data = np.stack(splev(u, tck), axis=1)[:-1]
+                # get interpolated data (discard last element which is a copy)
+                data = np.stack(splev(u, tck), axis=1)[:-1]
 
         # For path connect every all data
         self._set_meshes(data, face=self._filled, closed=self._closed)
