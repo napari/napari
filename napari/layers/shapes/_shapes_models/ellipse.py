@@ -127,3 +127,4 @@ class Ellipse(Shape):
                 np.max(self._data, axis=0),
             ]
         )
+        self._clean_cache()
