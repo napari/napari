@@ -581,8 +581,8 @@ class Shape(ABC):
 
         return mask
 
-    def _clean_cache(self):
-        if "dims_displayed" in self.__dict__:
-            del self.__dict__["dims_displayed"]
-        if "data_displayed" in self.__dict__:
-            del self.__dict__["data_displayed"]
+    def _clean_cache(self) -> None:
+        if 'dims_displayed' in self.__dict__:
+            del self.__dict__['dims_displayed']
+        if 'data_displayed' in self.__dict__:
+            del self.__dict__['data_displayed']
