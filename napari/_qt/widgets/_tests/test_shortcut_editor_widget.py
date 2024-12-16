@@ -153,7 +153,7 @@ def test_restore_defaults(shortcut_editor_widget):
         (
             Qt.Key.Key_Backspace,
             META_CONTROL_KEY,
-            [KEY_SYMBOLS['Ctrl'], KEY_SYMBOLS['Backspace']],
+            [KEY_SYMBOLS['Shift'], KEY_SYMBOLS['Backspace']],
         ),
         (
             Qt.Key.Key_Delete,
