@@ -1,11 +1,15 @@
 import numpy as np
 from scipy.interpolate import splev, splprep
 
-from napari.layers.shapes._shapes_models.shape import Shape
-from napari.layers.shapes._shapes_utils import create_box, create_box_from_bounding
+from napari.layers.shapes._shapes_models.shape import (
+    Shape,
+    remove_path_duplicates,
+)
+from napari.layers.shapes._shapes_utils import (
+    create_box_from_bounding,
+)
 from napari.utils.translations import trans
 
-from napari.layers.shapes._shapes_models.shape import remove_path_duplicates
 
 class PolygonBase(Shape):
     """Class for a polygon or path.
@@ -126,4 +130,6 @@ class PolygonBase(Shape):
         bbox = self._bounding_box[:, self.dims_displayed]
         self._box = create_box_from_bounding(bbox)
 
-        self.slice_key = self._bounding_box[:, self.dims_not_displayed].astype('int')
+        self.slice_key = self._bounding_box[:, self.dims_not_displayed].astype(
+            'int'
+        )

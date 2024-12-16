@@ -22,8 +22,8 @@ except ModuleNotFoundError:
 
 try:
     from napari.layers.shapes._accelerated_triangulate import (
+        create_box_from_bounding as acc_create_box_from_bounding,
         generate_2D_edge_meshes as acc_generate_2D_edge_meshes,
-        create_box_from_bounding as acc_create_box_from_bounding
     )
 except ImportError:
     acc_generate_2D_edge_meshes = None
@@ -385,7 +385,6 @@ def point_to_lines(point, lines):
     location = line_loc[index]
 
     return index, location
-
 
 
 def create_box_from_bounding(bounding_box: npt.NDArray) -> npt.NDArray:

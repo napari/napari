@@ -859,8 +859,12 @@ class Shapes(Layer):
         if len(self.data) == 0:
             extrema = np.full((2, self.ndim), np.nan)
         else:
-            maxs = np.max([d._bounding_box[1] for d in self._data_view.shapes], axis=0)
-            mins = np.min([d._bounding_box[0] for d in self._data_view.shapes], axis=0)
+            maxs = np.max(
+                [d._bounding_box[1] for d in self._data_view.shapes], axis=0
+            )
+            mins = np.min(
+                [d._bounding_box[0] for d in self._data_view.shapes], axis=0
+            )
             extrema = np.vstack([mins, maxs])
         return extrema
 
