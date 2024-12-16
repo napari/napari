@@ -6,3 +6,4 @@ pyopengl!=3.1.7
 tensorstore!=0.1.38
 ipykernel!=7.0.0a0
 wrapt!=1.17.0 # problem with macOS intel
+zarr!=3.0.0b3,!=3.0.0b2
