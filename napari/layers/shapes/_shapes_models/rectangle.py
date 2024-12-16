@@ -79,6 +79,7 @@ class Rectangle(Shape):
     def _update_displayed_data(self) -> None:
         """Update the data that is to be displayed."""
         # Add four boundary lines and then two triangles for each
+        self._clean_cache()
         self._set_meshes(self.data_displayed, face=False)
         self._face_vertices = self.data_displayed
         self._face_triangles = np.array([[0, 1, 2], [0, 2, 3]])

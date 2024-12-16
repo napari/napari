@@ -2,9 +2,10 @@ import numpy as np
 from scipy.interpolate import splev, splprep
 
 from napari.layers.shapes._shapes_models.shape import Shape
-from napari.layers.shapes._shapes_utils import create_box
+from napari.layers.shapes._shapes_utils import create_box, create_box_from_bounding
 from napari.utils.translations import trans
 
+from napari.layers.shapes._shapes_models.shape import remove_path_duplicates
 
 class PolygonBase(Shape):
     """Class for a polygon or path.
@@ -90,15 +91,18 @@ class PolygonBase(Shape):
 
     def _update_displayed_data(self) -> None:
         """Update the data that is to be displayed."""
+        self._clean_cache()
         # Raw vertices
         data = self.data_displayed
 
-        # splprep fails if two adjacent values are identical, which happens
-        # when a point was just created and the new potential point is set to exactly the same
-        # to prevent issues, we remove the extra points.
-        duplicates = np.isclose(data, np.roll(data, 1, axis=0))
-        # cannot index with bools directly (flattens by design)
-        data_spline = data[~np.all(duplicates, axis=1)]
+        # # splprep fails if two adjacent values are identical, which happens
+        # # when a point was just created and the new potential point is set to exactly the same
+        # # to prevent issues, we remove the extra points.
+        # duplicates = np.isclose(data, np.roll(data, 1, axis=0))
+        # # cannot index with bools directly (flattens by design)
+        # data_spline = data[~np.all(duplicates, axis=1)]
+
+        data_spline = remove_path_duplicates(data, closed=True)
 
         if (
             self.interpolation_order > 1
@@ -121,8 +125,7 @@ class PolygonBase(Shape):
 
         # For path connect every all data
         self._set_meshes(data, face=self._filled, closed=self._closed)
-        self._box = create_box(self.data_displayed)
+        bbox = self._bounding_box[:, self.dims_displayed]
+        self._box = create_box_from_bounding(bbox)
 
-        self.slice_key = np.round(
-            self._bounding_box[:, self.dims_not_displayed]
-        ).astype('int')
+        self.slice_key = self._bounding_box[:, self.dims_not_displayed].astype('int')

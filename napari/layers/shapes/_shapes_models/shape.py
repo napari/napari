@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from functools import cached_property
 from typing import Optional
 
 import numpy as np
@@ -208,7 +209,7 @@ class Shape(ABC):
         self._dims_order = dims_order
         self._update_displayed_data()
 
-    @property
+    @cached_property
     def dims_displayed(self):
         """tuple: Dimensions that are displayed."""
         return self.dims_order[-self.ndisplay :]
@@ -227,7 +228,7 @@ class Shape(ABC):
         """tuple: Dimensions that are not displayed."""
         return self.dims_order[: -self.ndisplay]
 
-    @property
+    @cached_property
     def data_displayed(self):
         """(N, 2) array: Vertices of the shape that are currently displayed."""
         return self.data[:, self.dims_displayed]
@@ -579,3 +580,9 @@ class Shape(ABC):
             mask = mask_p
 
         return mask
+
+    def _clean_cache(self):
+        if "dims_displayed" in self.__dict__:
+            del self.__dict__["dims_displayed"]
+        if "data_displayed" in self.__dict__:
+            del self.__dict__["data_displayed"]
