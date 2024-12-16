@@ -302,7 +302,7 @@ def test_export_rois(make_napari_viewer, tmp_path):
     # Create an image with a defined shape (100x100) and a square in the middle
 
     img = np.zeros((100, 100), dtype=np.uint8)
-    img[25:76, 25:76] = 255
+    img[25:75, 25:75] = 255
 
     # Add viewer
     viewer = make_napari_viewer()
