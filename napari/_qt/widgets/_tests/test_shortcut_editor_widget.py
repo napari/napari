@@ -151,9 +151,9 @@ def test_restore_defaults(shortcut_editor_widget):
             [KEY_SYMBOLS['Ctrl'], KEY_SYMBOLS['Shift'], 'Y'],
         ),
         (
-            Qt.Key.Key_Tab,
+            Qt.Key.Key_Escape,
             META_CONTROL_KEY,
-            [KEY_SYMBOLS['Ctrl'], KEY_SYMBOLS['Tab']],
+            [KEY_SYMBOLS['Ctrl'], KEY_SYMBOLS['Escape']],
         ),
         (
             Qt.Key.Key_Delete,
