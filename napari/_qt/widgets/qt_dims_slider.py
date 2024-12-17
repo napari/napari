@@ -1,8 +1,9 @@
+import threading
 from typing import TYPE_CHECKING, Optional
 from weakref import ref
 
 import numpy as np
-from qtpy.QtCore import QObject, Qt, QThread, QTimer, Signal, Slot
+from qtpy.QtCore import QObject, Qt, QThread, Signal, Slot
 from qtpy.QtGui import QIntValidator
 from qtpy.QtWidgets import (
     QApplication,
@@ -17,10 +18,9 @@ from qtpy.QtWidgets import (
     QPushButton,
     QWidget,
 )
-from superqt import QElidingLineEdit, ensure_object_thread
+from superqt import QElidingLineEdit
 
 from napari._qt.dialogs.qt_modal import QtPopup
-from napari._qt.qthreading import _new_worker_qthread
 from napari._qt.widgets.qt_scrollbar import ModifiedScrollBar
 from napari.settings import get_settings
 from napari.settings._constants import LoopMode
@@ -371,58 +371,6 @@ class QtDimSliderWidget(QWidget):
         if frame_range is not None:
             self.frame_range = frame_range
 
-    def _play(
-        self,
-        fps: Optional[float] = None,
-        loop_mode: Optional[str] = None,
-        frame_range: Optional[tuple[int, int]] = None,
-    ):
-        """Animate (play) axis. Same API as QtDims.play()
-
-        Putting the AnimationWorker logic here makes it easier to call
-        QtDims.play(axis), or hit the keybinding, and have each axis remember
-        it's own settings (fps, mode, etc...).
-
-        Parameters
-        ----------
-        fps : float
-            Frames per second for animation.
-        loop_mode : napari._qt._constants.LoopMode
-            Loop mode for animation.
-            Available options for the loop mode string enumeration are:
-            - LoopMode.ONCE
-                Animation will stop once movie reaches the max frame
-                (if fps > 0) or the first frame (if fps < 0).
-            - LoopMode.LOOP
-                Movie will return to the first frame after reaching
-                the last frame, looping continuously until stopped.
-            - LoopMode.BACK_AND_FORTH
-                Movie will loop continuously until stopped,
-                reversing direction when the maximum or minimum frame
-                has been reached.
-        frame_range : tuple(int, int)
-            Frame range as tuple/list with range (minimum_frame, maximum_frame)
-        """
-
-        # having this here makes sure that using the QtDims.play() API
-        # keeps the play preferences synchronized with the play_button.popup
-        self._update_play_settings(fps, loop_mode, frame_range)
-
-        # setting fps to 0 just stops the animation
-        if fps == 0:
-            return None
-
-        worker, thread = _new_worker_qthread(
-            AnimationWorker,
-            self,
-            _start_thread=True,
-            _connect={'frame_requested': self.qt_dims._set_frame},
-        )
-        thread.finished.connect(self.qt_dims.cleaned_worker)
-        thread.finished.connect(self.play_stopped)
-        self.play_started.emit()
-        return worker, thread
-
     def resizeEvent(self, event):
         """Emit a signal to inform about a size change."""
         self.size_changed.emit()
@@ -585,7 +533,7 @@ class QtPlayButton(QPushButton):
         self.style().polish(self)
 
 
-class AnimationWorker(QObject):
+class AnimationThread(QThread):
     """A thread to keep the animation timer independent of the main event loop.
 
     This prevents mouseovers and other events from causing animation lag. See
@@ -593,35 +541,39 @@ class AnimationWorker(QObject):
     """
 
     frame_requested = Signal(int, int)  # axis, point
-    finished = Signal()
-    started = Signal()
 
-    def __init__(self, slider) -> None:
-        # FIXME there are attributes defined outsid of __init__.
-        super().__init__()
+    def __init__(self, parent: Optional[QObject] = None) -> None:
+        # FIXME there are attributes defined outside of __init__.
+        super().__init__(parent=parent)
         self._interval = 1
+        self.slider = None
+        self._waiter = threading.Event()
+
+    def run(self):
+        self.work()
+
+    def set_slider(self, slider):
+        prev_slider = self.slider
         self.slider = slider
-        self.dims = slider.dims
-        self.axis = slider.axis
-        self.loop_mode = slider.loop_mode
-
-        self.timer = QTimer()
-
-        slider.fps_changed.connect(self.set_fps)
-        slider.mode_changed.connect(self.set_loop_mode)
-        slider.range_changed.connect(self.set_frame_range)
         self.set_fps(self.slider.fps)
         self.set_frame_range(slider.frame_range)
-
-        # after dims.set_current_step is called, it will emit a dims.events.current_step()
-        # we use this to update this threads current frame (in case it
-        # was some other event that updated the axis)
-        self.dims.events.current_step.connect(self._on_axis_changed)
-        self.current = max(self.dims.current_step[self.axis], self.min_point)
+        if prev_slider is not None:
+            prev_slider.fps_changed.disconnect(self.set_fps)
+            prev_slider.range_changed.disconnect(self.set_frame_range)
+            prev_slider.dims.events.current_step.disconnect(
+                self._on_axis_changed
+            )
+            self.finished.disconnect(prev_slider.play_button._handle_stop)
+            self.started.disconnect(prev_slider.play_button._handle_start)
+        slider.fps_changed.connect(self.set_fps)
+        slider.range_changed.connect(self.set_frame_range)
+        slider.dims.events.current_step.connect(self._on_axis_changed)
+        self.finished.connect(slider.play_button._handle_stop)
+        self.started.connect(slider.play_button._handle_start)
+        self.current = max(
+            slider.dims.current_step[slider.axis], self.min_point
+        )
         self.current = min(self.current, self.max_point)
-
-        self.timer.setSingleShot(True)
-        self.timer.timeout.connect(self.advance)
 
     @property
     def interval(self):
@@ -630,7 +582,6 @@ class AnimationWorker(QObject):
     @interval.setter
     def interval(self, value):
         self._interval = value
-        self.timer.setInterval(int(self._interval))
 
     @Slot()
     def work(self):
@@ -642,18 +593,18 @@ class AnimationWorker(QObject):
                 self.frame_requested.emit(self.axis, self.min_point)
             elif self.step < 0 and self.current <= self.min_point + 1:
                 self.frame_requested.emit(self.axis, self.max_point)
-            self.timer.start()
         else:
             # immediately advance one frame
             self.advance()
-        self.started.emit()
+        self._waiter.clear()
+        self._waiter.wait(self.interval / 1000)
+        while not self._waiter.is_set():
+            self.advance()
+            self._waiter.wait(self.interval / 1000)
 
-    @ensure_object_thread
     def _stop(self):
         """Stop the animation."""
-        if self.timer.isActive():
-            self.timer.stop()
-            self.finish()
+        self._waiter.set()
 
     @Slot(float)
     def set_fps(self, fps):
@@ -701,28 +652,6 @@ class AnimationWorker(QObject):
             )
         self.max_point += 1  # range is inclusive
 
-    @Slot(str)
-    def set_loop_mode(self, mode):
-        """Set the loop mode for the animation.
-
-        Parameters
-        ----------
-        mode : str
-            Loop mode for animation.
-            Available options for the loop mode string enumeration are:
-            - LoopMode.ONCE
-                Animation will stop once movie reaches the max frame
-                (if fps > 0) or the first frame (if fps < 0).
-            - LoopMode.LOOP
-                Movie will return to the first frame after reaching
-                the last frame, looping continuously until stopped.
-            - LoopMode.BACK_AND_FORTH
-                Movie will loop continuously until stopped,
-                reversing direction when the maximum or minimum frame
-                has been reached.
-        """
-        self.loop_mode = LoopMode(mode)
-
     @Slot()
     def advance(self):
         """Advance the current frame in the animation.
@@ -755,25 +684,26 @@ class AnimationWorker(QObject):
                 return self.finish()
         with self.dims.events.current_step.blocker(self._on_axis_changed):
             self.frame_requested.emit(self.axis, self.current)
-        self.timer.start()
+        # self.timer.start()
         return None
+
+    @property
+    def loop_mode(self):
+        return self.slider.loop_mode
+
+    @property
+    def axis(self):
+        return self.slider.axis
+
+    @property
+    def dims(self):
+        return self.slider.dims
 
     def finish(self):
         """Emit the finished event signal."""
-        self.finished.emit()
+        self._stop()
 
     def _on_axis_changed(self):
         """Update the current frame if the axis has changed."""
         # slot for external events to update the current frame
         self.current = self.dims.current_step[self.axis]
-
-    def moveToThread(self, thread: QThread):
-        """Move the animation to a given thread.
-
-        Parameters
-        ----------
-        thread : QThread
-            The thread to move the animation to.
-        """
-        super().moveToThread(thread)
-        self.timer.moveToThread(thread)

@@ -21,6 +21,7 @@ from typing import (
 )
 from weakref import WeakValueDictionary
 
+import numpy as np
 from qtpy.QtCore import (
     QEvent,
     QEventLoop,
@@ -31,7 +32,7 @@ from qtpy.QtCore import (
     Qt,
     Slot,
 )
-from qtpy.QtGui import QIcon
+from qtpy.QtGui import QHideEvent, QIcon, QShowEvent
 from qtpy.QtWidgets import (
     QApplication,
     QDialog,
@@ -43,12 +44,11 @@ from qtpy.QtWidgets import (
     QToolTip,
     QWidget,
 )
-from superqt.utils import QSignalThrottler
 
 from napari._app_model.constants import MenuId
 from napari._app_model.context import create_context, get_context
 from napari._qt._qapp_model import build_qmodel_menu
-from napari._qt._qapp_model.qactions import init_qactions
+from napari._qt._qapp_model.qactions import add_dummy_actions, init_qactions
 from napari._qt._qapp_model.qactions._debug import _is_set_trace_active
 from napari._qt._qplugins import (
     _rebuild_npe1_plugins_menu,
@@ -60,11 +60,12 @@ from napari._qt.dialogs.qt_activity_dialog import QtActivityDialog
 from napari._qt.dialogs.qt_notification import NapariQtNotification
 from napari._qt.qt_event_loop import (
     NAPARI_ICON_PATH,
-    get_app,
+    get_qapp,
     quit_app as quit_app_,
 )
 from napari._qt.qt_resources import get_stylesheet
 from napari._qt.qt_viewer import QtViewer
+from napari._qt.threads.status_checker import StatusChecker
 from napari._qt.utils import QImg2array, qbytearray_to_str, str_to_qbytearray
 from napari._qt.widgets.qt_viewer_dock_widget import (
     _SHORTCUT_DEPRECATION_STRING,
@@ -79,6 +80,7 @@ from napari.plugins._npe2 import index_npe1_adapters
 from napari.settings import get_settings
 from napari.utils import perf
 from napari.utils._proxies import PublicOnlyProxy
+from napari.utils.events import Event
 from napari.utils.io import imsave
 from napari.utils.misc import (
     in_ipython,
@@ -100,7 +102,12 @@ if TYPE_CHECKING:
 
 
 MenuStr = Literal[
-    'file_menu', 'view_menu', 'plugins_menu', 'window_menu', 'help_menu'
+    'file_menu',
+    'view_menu',
+    'layers_menu',
+    'plugins_menu',
+    'window_menu',
+    'help_menu',
 ]
 
 
@@ -139,7 +146,6 @@ class _QtMainWindow(QMainWindow):
         self.setWindowTitle(self._qt_viewer.viewer.title)
 
         self._maximized_flag = False
-        self._fullscreen_flag = False
         self._normal_geometry = QRect()
         self._window_size = None
         self._window_pos = None
@@ -166,6 +172,7 @@ class _QtMainWindow(QMainWindow):
 
         # Ideally this would be in `NapariApplication` but that is outside of Qt
         self._viewer_context = create_context(self)
+        self._viewer_context['is_set_trace_active'] = _is_set_trace_active
 
         settings = get_settings()
 
@@ -188,21 +195,50 @@ class _QtMainWindow(QMainWindow):
         # were defined somewhere in the `_qt` module and imported in init_qactions
         init_qactions()
 
-        self.status_throttler = QSignalThrottler(parent=self)
-        self.status_throttler.setTimeout(50)
-        self._throttle_cursor_to_status_connection(viewer)
-
-    def _throttle_cursor_to_status_connection(self, viewer: 'Viewer'):
-        # In the GUI we expect lots of changes to the cursor position, so
-        # replace the direct connection with a throttled one.
         with contextlib.suppress(IndexError):
             viewer.cursor.events.position.disconnect(
-                viewer._update_status_bar_from_cursor
+                viewer.update_status_from_cursor
             )
-        viewer.cursor.events.position.connect(self.status_throttler.throttle)
-        self.status_throttler.triggered.connect(
-            viewer._update_status_bar_from_cursor
+
+        self.status_thread = StatusChecker(viewer, parent=self)
+        self.status_thread.status_and_tooltip_changed.connect(
+            self.set_status_and_tooltip
         )
+        viewer.cursor.events.position.connect(
+            self.status_thread.trigger_status_update
+        )
+        settings.appearance.events.update_status_based_on_layer.connect(
+            self._toggle_status_thread
+        )
+
+    def _toggle_status_thread(self, event: Event):
+        if event.value:
+            self.status_thread.start()
+        else:
+            self.status_thread.terminate()
+
+    def showEvent(self, event: QShowEvent):
+        """Override to handle window state changes."""
+        settings = get_settings()
+        if settings.appearance.update_status_based_on_layer:
+            self.status_thread.start()
+        super().showEvent(event)
+
+    def hideEvent(self, event: QHideEvent):
+        self.status_thread.terminate()
+        super().hideEvent(event)
+
+    def set_status_and_tooltip(
+        self, status_and_tooltip: Optional[tuple[Union[str, dict], str]]
+    ):
+        if status_and_tooltip is None:
+            return
+        self._qt_viewer.viewer.status = status_and_tooltip[0]
+        self._qt_viewer.viewer.tooltip.text = status_and_tooltip[1]
+        if (
+            active := self._qt_viewer.viewer.layers.selection.active
+        ) is not None:
+            self._qt_viewer.viewer.help = active.help
 
     def statusBar(self) -> 'ViewerStatusBar':
         return super().statusBar()
@@ -244,62 +280,26 @@ class _QtMainWindow(QMainWindow):
 
         return res
 
-    def isFullScreen(self):
-        # Needed to prevent errors when going to fullscreen mode on Windows
-        # Use a flag attribute to determine if the window is in full screen mode
-        # See https://bugreports.qt.io/browse/QTBUG-41309
-        # Based on https://github.com/spyder-ide/spyder/pull/7720
-        return self._fullscreen_flag
-
-    def showNormal(self):
-        # Needed to prevent errors when going to fullscreen mode on Windows. Here we:
-        #   * Set fullscreen flag
-        #   * Remove `Qt.FramelessWindowHint` and `Qt.WindowStaysOnTopHint` window flags if needed
-        #   * Set geometry to previously stored normal geometry or default empty QRect
-        # Always call super `showNormal` to set Qt window state
-        # See https://bugreports.qt.io/browse/QTBUG-41309
-        # Based on https://github.com/spyder-ide/spyder/pull/7720
-        self._fullscreen_flag = False
-        if os.name == 'nt':
-            self.setWindowFlags(
-                self.windowFlags()
-                ^ (
-                    Qt.WindowType.FramelessWindowHint
-                    | Qt.WindowType.WindowStaysOnTopHint
-                )
-            )
-            self.setGeometry(self._normal_geometry)
-        super().showNormal()
-
     def showFullScreen(self):
-        # Needed to prevent errors when going to fullscreen mode on Windows. Here we:
-        #   * Set fullscreen flag
-        #   * Add `Qt.FramelessWindowHint` and `Qt.WindowStaysOnTopHint` window flags if needed
-        #   * Call super `showNormal` to update the normal screen geometry to apply it later if needed
-        #   * Save window normal geometry if needed
-        #   * Get screen geometry
-        #   * Set geometry window to use total screen geometry +1 in every direction if needed
-        # If the workaround is not needed just call super `showFullScreen`
-        # See https://bugreports.qt.io/browse/QTBUG-41309
-        # Based on https://github.com/spyder-ide/spyder/pull/7720
-        self._fullscreen_flag = True
-        if os.name == 'nt':
-            self.setWindowFlags(
-                self.windowFlags()
-                | Qt.WindowType.FramelessWindowHint
-                | Qt.WindowType.WindowStaysOnTopHint
+        super().showFullScreen()
+        # Handle OpenGL based windows fullscreen issue on Windows.
+        # For more info see:
+        #  * https://doc.qt.io/qt-6/windows-issues.html#fullscreen-opengl-based-windows
+        #  * https://bugreports.qt.io/browse/QTBUG-41309
+        #  * https://bugreports.qt.io/browse/QTBUG-104511
+        if os.name != 'nt':
+            return
+        import win32con
+        import win32gui
+
+        if self.windowHandle():
+            handle = int(self.windowHandle().winId())
+            win32gui.SetWindowLong(
+                handle,
+                win32con.GWL_STYLE,
+                win32gui.GetWindowLong(handle, win32con.GWL_STYLE)
+                | win32con.WS_BORDER,
             )
-            super().showNormal()
-            self._normal_geometry = self.normalGeometry()
-            screen_rect = self.windowHandle().screen().geometry()
-            self.setGeometry(
-                screen_rect.left() - 1,
-                screen_rect.top() - 1,
-                screen_rect.width() + 2,
-                screen_rect.height() + 2,
-            )
-        else:
-            super().showFullScreen()
 
     def eventFilter(self, source, event):
         # Handle showing hidden menubar on mouse move event.
@@ -440,8 +440,6 @@ class _QtMainWindow(QMainWindow):
 
     def close(self, quit_app=False, confirm_need=False):
         """Override to handle closing app or just the window."""
-        if hasattr(self.status_throttler, '_timer'):
-            self.status_throttler._timer.stop()
         if not quit_app and not self._qt_viewer.viewer.layers:
             return super().close()
         confirm_need_local = confirm_need and self._is_close_dialog[quit_app]
@@ -566,6 +564,9 @@ class _QtMainWindow(QMainWindow):
             event.ignore()
             return
 
+        self.status_thread.terminate()
+        self.status_thread.wait()
+
         if self._ev and self._ev.isRunning():
             self._ev.quit()
 
@@ -644,7 +645,7 @@ class Window:
 
     def __init__(self, viewer: 'Viewer', *, show: bool = True) -> None:
         # create QApplication if it doesn't already exist
-        qapp = get_app()
+        qapp = get_qapp()
 
         # Dictionary holding dock widgets
         self._dock_widgets: MutableMapping[str, QtViewerDockWidget] = (
@@ -671,6 +672,13 @@ class Window:
         index_npe1_adapters()
 
         self._add_menus()
+        # TODO: the dummy actions should **not** live on the layerlist context
+        # as they are unrelated. However, we do not currently have a suitable
+        # enclosing context where we could store these keys, such that they
+        # **and** the layerlist context key are available when we update
+        # menus. We need a single context to contain all keys required for
+        # menu update, so we add them to the layerlist context for now.
+        add_dummy_actions(self._qt_viewer.viewer.layers._ctx)
         self._update_theme()
         self._update_theme_font_size()
         get_settings().appearance.events.theme.connect(self._update_theme)
@@ -686,7 +694,7 @@ class Window:
         self._add_viewer_dock_widget(
             self._qt_viewer.dockLayerList, tabify=False
         )
-        if perf.USE_PERFMON:
+        if perf.perf_config is not None:
             self._add_viewer_dock_widget(
                 self._qt_viewer.dockPerformance, menu=self.window_menu
             )
@@ -813,7 +821,7 @@ class Window:
 
     def _update_menu_state(self, menu: MenuStr):
         """Update enabled/visible state of menu item with context."""
-        layerlist = self._qt_viewer._layers.model().sourceModel()._root
+        layerlist = self._qt_viewer.viewer.layers
         menu_model = getattr(self, menu)
         menu_model.update_from_context(get_context(layerlist))
 
@@ -822,6 +830,9 @@ class Window:
 
     def _update_view_menu_state(self):
         self._update_menu_state('view_menu')
+
+    def _update_layers_menu_state(self):
+        self._update_menu_state('layers_menu')
 
     def _update_window_menu_state(self):
         self._update_menu_state('window_menu')
@@ -834,7 +845,6 @@ class Window:
 
     def _update_debug_menu_state(self):
         viewer_ctx = get_context(self._qt_window)
-        viewer_ctx['is_set_trace_active'] = _is_set_trace_active()
         self._debug_menu.update_from_context(viewer_ctx)
 
     # TODO: Remove once npe1 deprecated
@@ -903,6 +913,16 @@ class Window:
             self._update_view_menu_state,
         )
         self.main_menu.addMenu(self.view_menu)
+        # layers menu
+        self.layers_menu = build_qmodel_menu(
+            MenuId.MENUBAR_LAYERS,
+            title=trans._('&Layers'),
+            parent=self._qt_window,
+        )
+        self.layers_menu.aboutToShow.connect(
+            self._update_layers_menu_state,
+        )
+        self.main_menu.addMenu(self.layers_menu)
         # plugins menu
         self.plugins_menu = build_qmodel_menu(
             MenuId.MENUBAR_PLUGINS,
@@ -1060,7 +1080,7 @@ class Window:
         widget: Union[QWidget, 'Widget'],
         *,
         name: str = '',
-        area: str = 'right',
+        area: Optional[str] = None,
         allowed_areas: Optional[Sequence[str]] = None,
         shortcut=_sentinel,
         add_vertical_stretch=True,
@@ -1116,6 +1136,12 @@ class Window:
             )
 
             self._unnamed_dockwidget_count += 1
+
+        if area is None:
+            settings = get_settings()
+            area = settings.application.plugin_widget_positions.get(
+                name, 'right'
+            )
 
         if shortcut is not _sentinel:
             warnings.warn(
@@ -1177,7 +1203,7 @@ class Window:
         menu : QMenu, optional
             Menu bar to add toggle action to. If `None` nothing added to menu.
         """
-        # Find if any othe dock widgets are currently in area
+        # Find if any other dock widgets are currently in area
         current_dws_in_area = [
             dw
             for dw in self._qt_window.findChildren(QDockWidget)
@@ -1450,7 +1476,7 @@ class Window:
         # B) it is not the first time a QMainWindow is being created
 
         # `app_name` will be "napari" iff the application was instantiated in
-        # get_app(). isActiveWindow() will be True if it is the second time a
+        # get_qapp(). isActiveWindow() will be True if it is the second time a
         # _qt_window has been created.
         # See #721, #732, #735, #795, #1594
         app_name = QApplication.instance().applicationName()
@@ -1491,11 +1517,13 @@ class Window:
                     {'font_size': f'{settings.appearance.font_size}pt'}
                 )
             # set the style sheet with the theme name and extra_variables
-            self._qt_window.setStyleSheet(
-                get_stylesheet(
-                    actual_theme_name, extra_variables=extra_variables
-                )
+            style_sheet = get_stylesheet(
+                actual_theme_name, extra_variables=extra_variables
             )
+            self._qt_window.setStyleSheet(style_sheet)
+            self._qt_viewer.setStyleSheet(style_sheet)
+            if self._qt_viewer._console:
+                self._qt_viewer._console._update_theme(style_sheet=style_sheet)
 
     def _status_changed(self, event):
         """Update status bar.
@@ -1542,10 +1570,10 @@ class Window:
 
     def _screenshot(
         self,
-        size=None,
-        scale=None,
-        flash=True,
-        canvas_only=False,
+        size: Optional[tuple[int, int]] = None,
+        scale: Optional[float] = None,
+        flash: bool = True,
+        canvas_only: bool = False,
         fit_to_data_extent: bool = False,
     ) -> 'QImage':
         """Capture screenshot of the currently displayed viewer.
@@ -1555,10 +1583,11 @@ class Window:
         flash : bool
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
-        size : tuple (int, int)
-            Size (resolution height x width) of the screenshot. By default, the currently displayed size.
-            Only used if `canvas_only` is True.
-        scale : float
+        size : tuple of two ints, optional
+            Size (resolution height x width) of the screenshot. By default, the
+            currently displayed size. Only used if `canvas_only` is True. This
+            argument is ignored if fit_to_data_extent is set to True.
+        scale : float, optional
             Scale factor used to increase resolution of canvas for the screenshot.
             By default, the currently displayed resolution.
             Only used if `canvas_only` is True.
@@ -1568,8 +1597,8 @@ class Window:
             By default, True.
         fit_to_data_extent: bool
             Tightly fit the canvas around the data to prevent margins from
-            showing in the screenshot. If False, a screenshot of the whole
-            currently visible canvas will be generated.
+            showing in the screenshot. If False, a screenshot of the currently
+            visible canvas will be generated.
 
         Returns
         -------
@@ -1579,66 +1608,70 @@ class Window:
 
         canvas = self._qt_viewer.canvas
         prev_size = canvas.size
-        if fit_to_data_extent:
-            if not canvas_only:
-                raise ValueError(
-                    trans._(
-                        "'fit_to_data_extent' cannot be set to True if 'canvas_only' is"
-                        ' set to False',
-                        deferred=True,
-                    )
-                )
-            ndisplay = self._qt_viewer.viewer.dims.ndisplay
-            camera = self._qt_viewer.viewer.camera
-            old_center = camera.center
-            old_zoom = camera.zoom
-            if ndisplay > 2:
-                raise NotImplementedError(
-                    trans._(
-                        'fit_to_data_extent=True is not yet implemented for 3D. '
-                        'Please set fit_to_data_extent to False in 3D view.',
-                        deferred=True,
-                    )
-                )
+        camera = self._qt_viewer.viewer.camera
+        old_center = camera.center
+        old_zoom = camera.zoom
+        ndisplay = self._qt_viewer.viewer.dims.ndisplay
 
-            self._qt_viewer.viewer.reset_view()
-            canvas.size = (
-                self._qt_viewer.viewer.layers.extent.world[1][
-                    -ndisplay:
-                ].astype(int)
-                + 1
+        # Part 1: validate incompatible parameters
+        if not canvas_only and (
+            fit_to_data_extent or size is not None or scale is not None
+        ):
+            raise ValueError(
+                trans._(
+                    'scale, size, and fit_to_data_extent can only be set for '
+                    'canvas_only screenshots.',
+                    deferred=True,
+                )
             )
-            self._qt_viewer.viewer.reset_view(margin=0)
-
-        if canvas_only:
-            if size is not None:
-                if len(size) != 2:
-                    raise ValueError(
-                        trans._(
-                            'screenshot size must be 2 values, got {len_size}',
-                            len_size=len(size),
-                        )
-                    )
-                # Scale the requested size to account for HiDPI
-                size = tuple(
-                    int(dim / self._qt_window.devicePixelRatio())
-                    for dim in size
+        if fit_to_data_extent and ndisplay > 2:
+            raise NotImplementedError(
+                trans._(
+                    'fit_to_data_extent is not yet implemented for 3D view.',
+                    deferred=True,
                 )
-                canvas.size = size
-            if scale is not None:
-                # multiply canvas dimensions by the scale factor to get new size
-                canvas.size = tuple(int(dim * scale) for dim in canvas.size)
+            )
+        if size is not None and len(size) != 2:
+            raise ValueError(
+                trans._(
+                    'screenshot size must be 2 values, got {len_size}',
+                    deferred=True,
+                    len_size=len(size),
+                )
+            )
+
+        # Part 2: compute canvas size and view based on parameters
+        if fit_to_data_extent:
+            extent_world = self._qt_viewer.viewer.layers.extent.world[1][
+                -ndisplay:
+            ]
+            extent_step = min(
+                self._qt_viewer.viewer.layers.extent.step[-ndisplay:]
+            )
+            size = extent_world / extent_step + 1
+        if size is not None:
+            size = np.asarray(size) / self._qt_window.devicePixelRatio()
+        else:
+            size = np.asarray(prev_size)
+        if scale is not None:
+            # multiply canvas dimensions by the scale factor to get new size
+            size *= scale
+
+        # Part 3: take the screenshot
+        if canvas_only:
+            canvas.size = tuple(size.astype(int))
+            if fit_to_data_extent:
+                # tight view around data
+                self._qt_viewer.viewer.reset_view(margin=0)
             try:
                 img = canvas.screenshot()
                 if flash:
                     add_flash_animation(self._qt_viewer._welcome_widget)
             finally:
                 # make sure we always go back to the right canvas size
-                if size is not None or scale is not None or fit_to_data_extent:
-                    canvas.size = prev_size
-                if fit_to_data_extent:
-                    camera.center = old_center
-                    camera.zoom = old_zoom
+                canvas.size = prev_size
+                camera.center = old_center
+                camera.zoom = old_zoom
         else:
             img = self._qt_window.grab().toImage()
             if flash:
@@ -1647,19 +1680,25 @@ class Window:
 
     def export_figure(
         self,
-        path=None,
-        scale=None,
+        path: Optional[str] = None,
+        scale: float = 1,
         flash=True,
-    ):
-        """Take currently displayed canvas, resets the view and create a screenshot without margins around the data.
+    ) -> np.ndarray:
+        """Export an image of the full extent of the displayed layer data.
+
+        This function finds a tight boundary around the data, resets the view
+        around that boundary (and, when scale=1, such that 1 captured pixel is
+        equivalent to one data pixel), takes a screenshot, then restores the
+        previous zoom and canvas sizes. Currently, only works when 2 dimensions
+        are displayed.
 
         Parameters
         ----------
-        path : str
+        path : str, optional
             Filename for saving screenshot image.
         scale : float
-            Scale factor used to increase resolution of canvas for the screenshot. By default, the currently displayed resolution.
-            Only used if `canvas_only` is True.
+            Scale factor used to increase resolution of canvas for the
+            screenshot. By default, a scale of 1.
         flash : bool
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
@@ -1671,6 +1710,13 @@ class Window:
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
         """
+        if not isinstance(scale, (float, int)):
+            raise TypeError(
+                trans._(
+                    'Scale must be a float or an int.',
+                    deferred=True,
+                )
+            )
         img = QImg2array(
             self._screenshot(
                 scale=scale,

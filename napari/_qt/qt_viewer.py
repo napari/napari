@@ -257,7 +257,7 @@ class QtViewer(QSplitter):
         settings = get_settings()
         self._update_dask_cache_settings(settings.application.dask)
 
-        settings.application.events.dask.connect(
+        settings.application.dask.events.connect(
             self._update_dask_cache_settings
         )
 
@@ -313,7 +313,7 @@ class QtViewer(QSplitter):
         if not dask_setting:
             return
         if not isinstance(dask_setting, DaskSettings):
-            dask_setting = dask_setting.value
+            dask_setting = get_settings().application.dask
 
         enabled = dask_setting.enabled
         size = dask_setting.cache
@@ -439,7 +439,7 @@ class QtViewer(QSplitter):
 
     def _create_performance_dock_widget(self):
         """Create the dock widget that shows performance metrics."""
-        if perf.USE_PERFMON:
+        if perf.perf_config is not None:
             return QtViewerDockWidget(
                 self,
                 QtPerformance(),
@@ -563,7 +563,7 @@ class QtViewer(QSplitter):
 
             with warnings.catch_warnings():
                 warnings.filterwarnings('ignore')
-                console = QtConsole(self.viewer)
+                console = QtConsole(self.viewer, style_sheet=self.styleSheet())
                 console.push(
                     {'napari': napari, 'action_manager': action_manager}
                 )
@@ -914,13 +914,8 @@ class QtViewer(QSplitter):
         """Add files from the menubar."""
         filenames = self._open_file_dialog_uni(trans._('Select file(s)...'))
 
-        if (filenames != []) and (filenames is not None):
-            for filename in filenames:
-                self._qt_open(
-                    [filename],
-                    choose_plugin=choose_plugin,
-                    stack=stack,
-                )
+        if filenames:
+            self._qt_open(filenames, choose_plugin=choose_plugin, stack=stack)
             update_open_history(filenames[0])
 
     def _open_files_dialog_as_stack_dialog(self, choose_plugin=False):
@@ -1179,7 +1174,9 @@ class QtViewer(QSplitter):
         event : qtpy.QtCore.QCloseEvent
             Event from the Qt context.
         """
-        self.layers.close()
+        if self._layers is not None:
+            # do not create layerlist if it does not exist yet.
+            self.layers.close()
 
         # if the viewer.QtDims object is playing an axis, we need to terminate
         # the AnimationThread before close, otherwise it will cause a segFault

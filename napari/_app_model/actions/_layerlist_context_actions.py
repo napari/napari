@@ -24,11 +24,11 @@ if TYPE_CHECKING:
     from app_model.types import MenuRuleDict
 
 # Layer submenus
-LAYER_SUBMENUS = [
+LAYERLIST_CONTEXT_SUBMENUS = [
     (
         MenuId.LAYERLIST_CONTEXT,
         SubmenuItem(
-            submenu=MenuId.LAYERS_CONVERT_DTYPE,
+            submenu=MenuId.LAYERS_CONTEXT_CONVERT_DTYPE,
             title=trans._('Convert data type'),
             group=MenuGroup.LAYERLIST_CONTEXT.CONVERSION,
             order=None,
@@ -38,7 +38,7 @@ LAYER_SUBMENUS = [
     (
         MenuId.LAYERLIST_CONTEXT,
         SubmenuItem(
-            submenu=MenuId.LAYERS_PROJECT,
+            submenu=MenuId.LAYERS_CONTEXT_PROJECT,
             title=trans._('Projections'),
             group=MenuGroup.LAYERLIST_CONTEXT.SPLIT_MERGE,
             order=None,
@@ -48,7 +48,7 @@ LAYER_SUBMENUS = [
     (
         MenuId.LAYERLIST_CONTEXT,
         SubmenuItem(
-            submenu=MenuId.LAYERS_COPY_SPATIAL,
+            submenu=MenuId.LAYERS_CONTEXT_COPY_SPATIAL,
             title=trans._('Copy scale and transforms'),
             group=MenuGroup.LAYERLIST_CONTEXT.COPY_SPATIAL,
             order=None,
@@ -74,7 +74,7 @@ LAYERCTX_LINK: MenuRuleDict = {
 
 # Statically defined Layer actions.
 # modifying this list at runtime has no effect.
-LAYER_ACTIONS: list[Action] = [
+LAYERLIST_CONTEXT_ACTIONS: list[Action] = [
     Action(
         id='napari.layer.duplicate',
         title=trans._('Duplicate Layer'),
@@ -94,6 +94,17 @@ LAYER_ACTIONS: list[Action] = [
         callback=_layer_actions._split_rgb,
         menus=[{**LAYERCTX_SPLITMERGE, 'when': LLSCK.active_layer_is_rgb}],
         enablement=LLSCK.active_layer_is_rgb,
+    ),
+    Action(
+        id='napari.layer.merge_rgb',
+        title=trans._('Merge to RGB'),
+        callback=partial(_layer_actions._merge_stack, rgb=True),
+        enablement=(
+            (LLSCK.num_selected_layers == 3)
+            & (LLSCK.num_selected_image_layers == LLSCK.num_selected_layers)
+            & LLSCK.all_selected_layers_same_shape
+        ),
+        menus=[LAYERCTX_SPLITMERGE],
     ),
     Action(
         id='napari.layer.convert_to_labels',
@@ -220,7 +231,7 @@ for _dtype in (
     'uint32',
     'uint64',
 ):
-    LAYER_ACTIONS.append(
+    LAYERLIST_CONTEXT_ACTIONS.append(
         Action(
             id=f'napari.layer.convert_to_{_dtype}',
             title=trans._('Convert to {dtype}', dtype=_dtype),
@@ -229,17 +240,17 @@ for _dtype in (
                 LLSCK.all_selected_layers_labels
                 & (LLSCK.active_layer_dtype != _dtype)
             ),
-            menus=[{'id': MenuId.LAYERS_CONVERT_DTYPE}],
+            menus=[{'id': MenuId.LAYERS_CONTEXT_CONVERT_DTYPE}],
         )
     )
 
 for mode in ('max', 'min', 'std', 'sum', 'mean', 'median'):
-    LAYER_ACTIONS.append(
+    LAYERLIST_CONTEXT_ACTIONS.append(
         Action(
             id=f'napari.layer.project_{mode}',
             title=trans._('{mode} projection', mode=mode),
             callback=partial(_layer_actions._project, mode=mode),
             enablement=LLSCK.active_layer_is_image_3d,
-            menus=[{'id': MenuId.LAYERS_PROJECT}],
+            menus=[{'id': MenuId.LAYERS_CONTEXT_PROJECT}],
         )
     )

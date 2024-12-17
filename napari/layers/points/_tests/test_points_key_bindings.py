@@ -1,6 +1,9 @@
+import pytest
+
 from napari.layers.points import Points, _points_key_bindings as key_bindings
 
 
+@pytest.mark.key_bindings
 def test_modes(layer):
     data = [[1, 3], [8, 4], [10, 10], [15, 4]]
     layer = Points(data, size=1)
@@ -13,6 +16,7 @@ def test_modes(layer):
     assert layer.mode == 'pan_zoom'
 
 
+@pytest.mark.key_bindings
 def test_copy_paste(layer):
     data = [[1, 3], [8, 4], [10, 10], [15, 4]]
     layer = Points(data, size=1)
@@ -31,6 +35,7 @@ def test_copy_paste(layer):
     assert len(layer._clipboard) > 0
 
 
+@pytest.mark.key_bindings
 def test_select_all_in_slice(layer):
     data = [[1, 3], [8, 4], [10, 10], [15, 4]]
     layer = Points(data, size=1)
@@ -47,6 +52,7 @@ def test_select_all_in_slice(layer):
     assert len(layer.selected_data) == 0
 
 
+@pytest.mark.key_bindings
 def test_select_all_in_slice_3d_data(layer):
     data = [[0, 1, 3], [0, 8, 4], [0, 10, 10], [1, 15, 4]]
     layer = Points(data, size=1)
@@ -63,6 +69,7 @@ def test_select_all_in_slice_3d_data(layer):
     assert len(layer.selected_data) == 0
 
 
+@pytest.mark.key_bindings
 def test_select_all_data(layer):
     data = [[1, 3], [8, 4], [10, 10], [15, 4]]
     layer = Points(data, size=1)
@@ -79,6 +86,7 @@ def test_select_all_data(layer):
     assert len(layer.selected_data) == 0
 
 
+@pytest.mark.key_bindings
 def test_select_all_data_3d_data(layer):
     data = [[0, 1, 3], [0, 8, 4], [0, 10, 10], [1, 15, 4]]
     layer = Points(data, size=1)

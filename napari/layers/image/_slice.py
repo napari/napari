@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Any, Callable, Union
+from typing import Any, Callable, Optional, Union
 
 import numpy as np
 
@@ -83,7 +83,11 @@ class _ImageSliceResponse:
 
     @classmethod
     def make_empty(
-        cls, *, slice_input: _SliceInput, rgb: bool
+        cls,
+        *,
+        slice_input: _SliceInput,
+        rgb: bool,
+        request_id: Optional[int] = None,
     ) -> '_ImageSliceResponse':
         """Returns an empty image slice response.
 
@@ -99,6 +103,11 @@ class _ImageSliceResponse:
             True if the underlying image is an RGB or RGBA image (i.e. that the
             last dimension represents a color channel that should not be sliced),
             False otherwise.
+        request_id : int | None
+            The request id for which we are responding with an empty slice.
+            If None, a new request id will be returned, which guarantees that
+            the empty slice never appears as loaded. (Used for layer
+            initialisation before attempting data loading.)
         """
         shape = (1,) * slice_input.ndisplay
         if rgb:
@@ -109,12 +118,14 @@ class _ImageSliceResponse:
         tile_to_data = Affine(
             name='tile2data', linear_matrix=np.eye(ndim), ndim=ndim
         )
+        if request_id is None:
+            request_id = _next_request_id()
         return _ImageSliceResponse(
             image=image,
             thumbnail=image,
             tile_to_data=tile_to_data,
             slice_input=slice_input,
-            request_id=_next_request_id(),
+            request_id=request_id,
             empty=True,
         )
 
@@ -192,7 +203,7 @@ class _ImageSliceRequest:
     def __call__(self) -> _ImageSliceResponse:
         if self._slice_out_of_bounds():
             return _ImageSliceResponse.make_empty(
-                slice_input=self.slice_input, rgb=self.rgb
+                slice_input=self.slice_input, rgb=self.rgb, request_id=self.id
             )
         with self.dask_indexer():
             return (

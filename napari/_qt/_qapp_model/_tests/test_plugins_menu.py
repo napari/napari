@@ -6,11 +6,12 @@ from app_model.types import MenuItem, SubmenuItem
 from npe2 import DynamicPlugin
 from qtpy.QtWidgets import QWidget
 
-from napari._app_model import get_app
+from napari._app_model import get_app_model
 from napari._app_model.constants import MenuId
 from napari._qt._qapp_model.qactions import _plugins, init_qactions
 from napari._qt._qplugins._qnpe2 import _toggle_or_get_widget
 from napari._tests.utils import skip_local_popups
+from napari.plugins._tests.test_npe2 import mock_pm  # noqa: F401
 
 
 class DummyWidget(QWidget):
@@ -27,7 +28,7 @@ def test_plugin_manager_action(make_napari_viewer):
 
     The test is skipped in case `napari_plugin_manager` is not available
     """
-    app = get_app()
+    app = get_app_model()
     viewer = make_napari_viewer()
 
     with mock.patch(
@@ -42,7 +43,7 @@ def test_plugin_manager_action(make_napari_viewer):
 def test_plugin_errors_action(make_napari_viewer):
     """Test plugin errors action."""
     make_napari_viewer()
-    app = get_app()
+    app = get_app_model()
 
     with mock.patch(
         'napari._qt._qapp_model.qactions._plugins.QtPluginErrReporter.exec_'
@@ -68,7 +69,7 @@ def test_toggle_or_get_widget(
     def widget1():
         return DummyWidget()
 
-    app = get_app()
+    app = get_app_model()
     # Viewer needs to be visible
     viewer = make_napari_viewer(show=True)
 
@@ -111,7 +112,7 @@ def test_plugin_single_widget_menu(
     def widget1():
         return DummyWidget()
 
-    app = get_app()
+    app = get_app_model()
     viewer = make_napari_viewer()
 
     assert tmp_plugin.display_name == 'Temp Plugin'
@@ -139,7 +140,7 @@ def test_plugin_multiple_widget_menu(
     def widget2():
         return DummyWidget()
 
-    app = get_app()
+    app = get_app_model()
     viewer = make_napari_viewer()
 
     assert tmp_plugin.display_name == 'Temp Plugin'
@@ -160,7 +161,7 @@ def test_plugin_menu_plugin_state_change(
     tmp_plugin: DynamicPlugin,
 ):
     """Check plugin menu items correct after a plugin changes state."""
-    app = get_app()
+    app = get_app_model()
     pm = tmp_plugin.plugin_manager
 
     # Register plugin q actions
@@ -214,7 +215,7 @@ def test_plugin_widget_checked(
     def widget_contrib():
         return DummyWidget()
 
-    app = get_app()
+    app = get_app_model()
     viewer = make_napari_viewer()
 
     assert 'tmp_plugin:Widget' in app.commands
@@ -273,3 +274,39 @@ def test_no_plugin_manager(monkeypatch, make_napari_viewer):
         'napari.window.plugins.plugin_install_dialog',
     )
     assert not plugin_install_action.isVisible()
+
+
+def test_plugins_menu_sorted(
+    mock_pm,  # noqa: F811
+    mock_app_model,
+    tmp_plugin: DynamicPlugin,
+):
+    from napari._app_model import get_app_model
+    from napari.plugins import _initialize_plugins
+
+    # we make sure 'plugin-b' is registered first
+    tmp_plugin2 = tmp_plugin.spawn(
+        name='plugin-b', plugin_manager=mock_pm, register=True
+    )
+    tmp_plugin1 = tmp_plugin.spawn(
+        name='plugin-a', plugin_manager=mock_pm, register=True
+    )
+
+    @tmp_plugin1.contribute.widget(display_name='Widget 1')
+    def widget1(): ...
+
+    @tmp_plugin1.contribute.widget(display_name='Widget 2')
+    def widget2(): ...
+
+    @tmp_plugin2.contribute.widget(display_name='Widget 1')
+    def widget2_1(): ...
+
+    @tmp_plugin2.contribute.widget(display_name='Widget 2')
+    def widget2_2(): ...
+
+    _initialize_plugins()
+    plugins_menu = list(get_app_model().menus.get_menu('napari/plugins'))
+    submenus = [item for item in plugins_menu if isinstance(item, SubmenuItem)]
+    assert len(submenus) == 2
+    assert submenus[0].title == 'plugin-a'
+    assert submenus[1].title == 'plugin-b'

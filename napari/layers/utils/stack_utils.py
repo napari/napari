@@ -286,15 +286,38 @@ def images_to_stack(images: list[Image], axis: int = 0, **kwargs) -> Image:
     if not images:
         raise IndexError(trans._('images list is empty', deferred=True))
 
+    if not all(isinstance(layer, Image) for layer in images):
+        non_image_layers = [
+            (layer.name, type(layer).__name__)
+            for layer in images
+            if not isinstance(layer, Image)
+        ]
+        raise ValueError(
+            trans._(
+                'All selected layers to be merged must be Image layers. '
+                'The following layers are not Image layers: '
+                f'{", ".join(f"{name} ({layer_type})" for name, layer_type in non_image_layers)}'
+            )
+        )
+
     data, meta, _ = images[0].as_layer_data_tuple()
 
-    kwargs.setdefault('scale', np.insert(meta['scale'], axis, 1))
-    kwargs.setdefault('translate', np.insert(meta['translate'], axis, 0))
+    # RGB images do not need extra dimensions inserted into metadata
+    if 'rgb' not in kwargs:
+        kwargs.setdefault('scale', np.insert(meta['scale'], axis, 1))
+        kwargs.setdefault('translate', np.insert(meta['translate'], axis, 0))
 
     meta.update(kwargs)
-    meta['units'] = (pint.get_application_registry().pixel,) + meta['units']
-    meta['axis_labels'] = (f'axis -{data.ndim + 1}',) + meta['axis_labels']
     new_data = np.stack([image.data for image in images], axis=axis)
+
+    # RGB images do not need extra dimensions inserted into metadata
+    # They can use the meta dict from one of the source image layers
+    if not meta['rgb']:
+        meta['units'] = (pint.get_application_registry().pixel,) + meta[
+            'units'
+        ]
+        meta['axis_labels'] = (f'axis -{data.ndim + 1}',) + meta['axis_labels']
+
     return Image(new_data, **meta)
 
 
@@ -302,6 +325,38 @@ def merge_rgb(images: list[Image]) -> Image:
     """Variant of images_to_stack that makes an RGB from 3 images."""
     if not (len(images) == 3 and all(isinstance(x, Image) for x in images)):
         raise ValueError(
-            trans._('merge_rgb requires 3 images layers', deferred=True)
+            trans._(
+                'Merging to RGB requires exactly 3 Image layers', deferred=True
+            )
         )
-    return images_to_stack(images, axis=-1, rgb=True)
+    if not all(image.data.shape == images[0].data.shape for image in images):
+        all_shapes = [(image.name, image.data.shape) for image in images]
+        raise ValueError(
+            trans._(
+                'Shape mismatch! To merge to RGB, all selected Image layers (with R, G, and B colormaps) must have the same shape. '
+                'Mismatched shapes: '
+                f'{", ".join(f"{name} (shape: {shape})" for name, shape in all_shapes)}'
+            )
+        )
+
+    # we will check for the presence of R G B colormaps to determine how to merge
+    colormaps = {image.colormap.name for image in images}
+    r_g_b = ['red', 'green', 'blue']
+    if colormaps != set(r_g_b):
+        missing_colormaps = set(r_g_b) - colormaps
+        raise ValueError(
+            trans._(
+                'Missing colormap(s): {missing_colormaps}! To merge layers to RGB, ensure you have red, green, and blue as layer colormaps.',
+                missing_colormaps=missing_colormaps,
+                deferred=True,
+            )
+        )
+
+    # use the R G B colormaps to order the images for merging
+    imgs = [
+        image
+        for color in r_g_b
+        for image in images
+        if image.colormap.name == color
+    ]
+    return images_to_stack(imgs, axis=-1, rgb=True)

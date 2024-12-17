@@ -20,6 +20,63 @@ except ModuleNotFoundError:
     triangulate = None
 
 
+try:
+    from napari.layers.shapes._accelerated_triangulate import (
+        generate_2D_edge_meshes as acc_generate_2D_edge_meshes,
+    )
+except ImportError:
+    acc_generate_2D_edge_meshes = None
+
+
+def _is_convex(poly: npt.NDArray) -> bool:
+    """Check whether a polygon is convex.
+
+    Parameters
+    ----------
+    poly: numpy array of floats, shape (N, 3)
+        Polygon vertices, in order.
+
+    Returns
+    -------
+    bool
+        True if the given polygon is convex.
+    """
+    fst = poly[:-2]
+    snd = poly[1:-1]
+    thrd = poly[2:]
+    orn_set = np.unique(orientation(fst.T, snd.T, thrd.T))
+    if orn_set.size != 1:
+        return False
+    return (orn_set[0] == orientation(poly[-2], poly[-1], poly[0])) and (
+        orn_set[0] == orientation(poly[-1], poly[0], poly[1])
+    )
+
+
+def _fan_triangulation(poly: npt.NDArray) -> tuple[npt.NDArray, npt.NDArray]:
+    """Return a fan triangulation of a given polygon.
+
+    https://en.wikipedia.org/wiki/Fan_triangulation
+
+    Parameters
+    ----------
+    poly: numpy array of float, shape (N, 3)
+        Polygon vertices, in order.
+
+    Returns
+    -------
+    vertices : numpy array of float, shape (N, 3)
+        The vertices of the triangulation. In this case, the input array.
+    triangles : numpy array of int, shape (N, 3)
+        The triangles of the triangulation, as triplets of indices into the
+        vertices array.
+    """
+    vertices = np.copy(poly)
+    triangles = np.zeros((len(poly) - 2, 3), dtype=np.uint32)
+    triangles[:, 1] = np.arange(1, len(poly) - 1)
+    triangles[:, 2] = np.arange(2, len(poly))
+    return vertices, triangles
+
+
 def inside_boxes(boxes):
     """Checks which boxes contain the origin. Boxes need not be axis aligned
 
@@ -186,7 +243,7 @@ def lines_intersect(p1, q1, p2, q2):
         return True
 
     # p2, q2 and q1 are collinear and q1 lies on segment p2q2
-    if o4 == 0 and on_segment(p2, q1, q2):
+    if o4 == 0 and on_segment(p2, q1, q2):  # noqa: SIM103
         return True
 
     # Doesn't fall into any special cases
@@ -510,7 +567,7 @@ def triangulate_ellipse(
     # Compute the transformation matrix from the unit circle
     # to our current ellipse.
     # ... it's easy just the 1/2 minor/major axes for the two column
-    # note that our transform shape will depends on wether we are 2D-> 2D (matrix, 2 by 2),
+    # note that our transform shape will depends on whether we are 2D-> 2D (matrix, 2 by 2),
     # or 2D -> 3D (matrix 2 by 3).
     transform = np.stack((ax1, ax2))
     if corners.shape == (4, 2):
@@ -566,6 +623,8 @@ def triangulate_face(data: npt.NDArray) -> tuple[npt.NDArray, npt.NDArray]:
 
         res = triangulate({'vertices': data, 'segments': edges}, 'p')
         vertices, triangles = res['vertices'], res['triangles']
+    elif _is_convex(data):
+        vertices, triangles = _fan_triangulation(data)
     else:
         vertices, triangles = PolygonData(vertices=data).triangulate()
 
@@ -617,14 +676,15 @@ def triangulate_edge(
         clean_path = path
 
     if clean_path.shape[-1] == 2:
-        centers, offsets, triangles = generate_2D_edge_meshes(
-            clean_path, closed=closed
+        centers, offsets, triangles = _generate_2D_edge_meshes(
+            np.asarray(clean_path, dtype=np.float32), closed=closed
         )
     else:
         centers, offsets, triangles = generate_tube_meshes(
             clean_path, closed=closed
         )
 
+    # offsets[2,1] = -0.5
     return centers, offsets, triangles
 
 
@@ -1239,3 +1299,9 @@ def rdp(vertices: npt.NDArray, epsilon: float) -> npt.NDArray:
 
     # When epsilon is 0, avoid removing datapoints
     return vertices
+
+
+if acc_generate_2D_edge_meshes is not None:
+    _generate_2D_edge_meshes = acc_generate_2D_edge_meshes
+else:  # pragma: no cover
+    _generate_2D_edge_meshes = generate_2D_edge_meshes

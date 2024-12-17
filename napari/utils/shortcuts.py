@@ -17,6 +17,7 @@ _default_shortcuts = {
     'napari:focus_axes_down': [KeyMod.Alt | KeyCode.DownArrow],
     'napari:roll_axes': [KeyMod.CtrlCmd | KeyCode.KeyE],
     'napari:transpose_axes': [KeyMod.CtrlCmd | KeyCode.KeyT],
+    'napari:rotate_layers': [KeyMod.CtrlCmd | KeyMod.Alt | KeyCode.KeyT],
     'napari:toggle_grid': [KeyMod.CtrlCmd | KeyCode.KeyG],
     'napari:toggle_selected_visibility': [KeyCode.KeyV],
     'napari:toggle_unselected_visibility': [KeyMod.Shift | KeyCode.KeyV],
@@ -82,8 +83,12 @@ _default_shortcuts = {
         KeyCode.Delete,
         KeyCode.Backspace,
     ],
-    'napari:finish_drawing_shape': [KeyCode.Escape],
+    'napari:finish_drawing_shape': [KeyCode.Enter, KeyCode.Escape],
     # image
+    'napari:orient_plane_normal_along_x': [KeyCode.KeyX],
+    'napari:orient_plane_normal_along_y': [KeyCode.KeyY],
+    'napari:orient_plane_normal_along_z': [KeyCode.KeyZ],
+    'napari:orient_plane_normal_along_view_direction': [KeyCode.KeyO],
     'napari:activate_image_pan_zoom_mode': [KeyCode.Digit1],
     'napari:activate_image_transform_mode': [KeyCode.Digit2],
     # vectors

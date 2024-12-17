@@ -19,7 +19,7 @@ PLUGIN_DISPLAY_NAME = 'My Plugin'  # this matches the sample_manifest
 MANIFEST_PATH = Path(__file__).parent / '_sample_manifest.yaml'
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_pm(npe2pm: 'TestPluginManager'):
     from napari.plugins import _initialize_plugins
 
@@ -117,7 +117,7 @@ def test_get_widget_contribution(mock_pm: 'TestPluginManager'):
 
 def test_populate_qmenu(mock_pm: 'TestPluginManager'):
     menu = MagicMock()
-    _npe2.populate_qmenu(menu, 'napari/layers/context')
+    _npe2.populate_qmenu(menu, 'napari/file/new_layer')
     menu.addMenu.assert_called_once_with('My SubMenu')
     menu.addAction.assert_called_once_with('Hello World')
 
@@ -177,32 +177,33 @@ def test_widget_iterator(mock_pm):
     assert wdgs == [('dock', (PLUGIN_NAME, ['My Widget']))]
 
 
-def test_plugin_actions(mock_pm: 'TestPluginManager', mock_app):
-    from napari._app_model import get_app
+def test_plugin_actions(mock_pm: 'TestPluginManager', mock_app_model):
+    from napari._app_model import get_app_model
     from napari.plugins import _initialize_plugins
 
-    app = get_app()
-    menus_items1 = list(app.menus.get_menu('napari/layers/context'))
-    assert 'my-plugin.hello_world' not in app.commands
+    app = get_app_model()
+    # nothing yet registered with this menu
+    assert 'napari/file/new_layer' not in app.menus
+    # menus_items1 = list(app.menus.get_menu('napari/file/new_layer'))
+    # assert 'my-plugin.hello_world' not in app.commands
 
     _initialize_plugins()  # connect registration callbacks and populate registries
     # the _sample_manifest should have added two items to menus
 
-    menus_items2 = list(app.menus.get_menu('napari/layers/context'))
+    # now we have command registered
+    menus_items2 = list(app.menus.get_menu('napari/file/new_layer'))
     assert 'my-plugin.hello_world' in app.commands
 
-    assert len(menus_items2) == len(menus_items1) + 2
+    assert len(menus_items2) == 2
 
     # then disable and re-enable the plugin
 
     mock_pm.disable(PLUGIN_NAME)
 
-    menus_items3 = list(app.menus.get_menu('napari/layers/context'))
-    assert len(menus_items3) == len(menus_items1)
-    assert 'my-plugin.hello_world' not in app.commands
+    assert 'napari/file/new_layer' not in app.menus
 
     mock_pm.enable(PLUGIN_NAME)
 
-    menus_items4 = list(app.menus.get_menu('napari/layers/context'))
-    assert len(menus_items4) == len(menus_items2)
+    menus_items4 = list(app.menus.get_menu('napari/file/new_layer'))
+    assert len(menus_items4) == 2
     assert 'my-plugin.hello_world' in app.commands

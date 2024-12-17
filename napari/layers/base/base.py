@@ -5,10 +5,11 @@ import inspect
 import itertools
 import logging
 import os.path
+import uuid
 import warnings
 from abc import ABC, ABCMeta, abstractmethod
 from collections import defaultdict
-from collections.abc import Generator, Sequence
+from collections.abc import Generator, Hashable, Mapping, Sequence
 from contextlib import contextmanager
 from functools import cached_property
 from typing import (
@@ -61,6 +62,7 @@ from napari.utils.geometry import (
     intersect_line_with_axis_aligned_bounding_box_3d,
 )
 from napari.utils.key_bindings import KeymapProvider
+from napari.utils.migrations import _DeprecatingDict
 from napari.utils.misc import StringEnum
 from napari.utils.mouse_bindings import MousemapProvider
 from napari.utils.naming import magic_name
@@ -273,6 +275,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         Translation values for the layer.
     thumbnail : (N, M, 4) array
         Array of thumbnail data for the layer.
+    unique_id : Hashable
+        Unique id of the layer. Guaranteed to be unique across the lifetime
+        of a viewer.
     visible : bool
         Whether the layer visual is currently being displayed.
     units: tuple of pint.Unit
@@ -356,12 +361,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         # Needs to be imported here to avoid circular import in _source
         from napari.layers._source import current_source
 
+        self._highlight_visible = True
+        self._unique_id = None
         self._source = current_source()
         self.dask_optimized_slicing = configure_dask(data, cache)
         self._metadata = dict(metadata or {})
         self._opacity = opacity
         self._blending = Blending(blending)
         self._visible = visible
+        self._visible_mode = None
         self._freeze = False
         self._status = 'Ready'
         self._help = ''
@@ -405,6 +413,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             scale = [1] * ndim
         if translate is None:
             translate = [0] * ndim
+        self._initial_affine = coerce_affine(
+            affine, ndim=ndim, name='physical2world'
+        )
         self._transforms: TransformChain[Affine] = TransformChain(
             [
                 Affine(np.ones(ndim), np.zeros(ndim), name='tile2data'),
@@ -418,7 +429,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                     name='data2physical',
                     units=units,
                 ),
-                coerce_affine(affine, ndim=ndim, name='physical2world'),
+                self._initial_affine,
                 Affine(np.ones(ndim), np.zeros(ndim), name='world2grid'),
             ]
         )
@@ -446,6 +457,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             source=self,
             axis_labels=Event,
             data=Event,
+            metadata=Event,
             affine=Event,
             blending=Event,
             cursor=Event,
@@ -534,7 +546,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         TRANSFORM = self._modeclass.TRANSFORM  # type: ignore[attr-defined]
         assert mode is not None
 
-        if not self.editable:
+        if not self.editable or not self.visible:
             mode = PAN_ZOOM
         if mode == self._mode:
             return mode
@@ -573,6 +585,17 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         return mode
 
+    def update_transform_box_visibility(self, visible):
+        if 'transform_box' in self._overlays:
+            TRANSFORM = self._modeclass.TRANSFORM  # type: ignore[attr-defined]
+            self._overlays['transform_box'].visible = (
+                self.mode == TRANSFORM and visible
+            )
+
+    def update_highlight_visibility(self, visible):
+        self._highlight_visible = visible
+        self._set_highlight(force=True)
+
     @property
     def mode(self) -> str:
         """str: Interactive mode
@@ -609,7 +632,18 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         if self._projection_mode != mode:
             self._projection_mode = mode
             self.events.projection_mode()
-            self.refresh()
+            self.refresh(extent=False)
+
+    @property
+    def unique_id(self) -> Hashable:
+        """Unique ID of the layer.
+
+        This is guaranteed to be unique to this specific layer instance
+        over the lifetime of the program.
+        """
+        if self._unique_id is None:
+            self._unique_id = uuid.uuid4()
+        return self._unique_id
 
     @classmethod
     def _basename(cls) -> str:
@@ -638,6 +672,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     def metadata(self, value: dict) -> None:
         self._metadata.clear()
         self._metadata.update(value)
+        self.events.metadata()
 
     @property
     def source(self) -> Source:
@@ -741,8 +776,21 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @visible.setter
     def visible(self, visible: bool) -> None:
         self._visible = visible
-        self.refresh()
+
+        if visible:
+            # needed because things might have changed while invisible
+            # and refresh is noop while invisible
+            self.refresh(extent=False)
+        self._on_visible_changed()
         self.events.visible()
+
+    def _on_visible_changed(self) -> None:
+        """Execute side-effects on this layer related to changes of the visible state."""
+        if self.visible and self._visible_mode:
+            self.mode = self._visible_mode
+        else:
+            self._visible_mode = self.mode
+            self.mode = self._modeclass.PAN_ZOOM  # type: ignore[attr-defined]
 
     @property
     def editable(self) -> bool:
@@ -800,7 +848,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         if scale is None:
             scale = np.array([1] * self.ndim)
         self._transforms['data2physical'].scale = np.array(scale)
-        self._clear_extents_and_refresh()
+        self.refresh()
         self.events.scale()
 
     @property
@@ -811,7 +859,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @translate.setter
     def translate(self, translate: npt.ArrayLike) -> None:
         self._transforms['data2physical'].translate = np.array(translate)
-        self._clear_extents_and_refresh()
+        self.refresh()
         self.events.translate()
 
     @property
@@ -822,7 +870,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @rotate.setter
     def rotate(self, rotate: npt.NDArray) -> None:
         self._transforms['data2physical'].rotate = rotate
-        self._clear_extents_and_refresh()
+        self.refresh()
         self.events.rotate()
 
     @property
@@ -833,7 +881,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @shear.setter
     def shear(self, shear: npt.NDArray) -> None:
         self._transforms['data2physical'].shear = shear
-        self._clear_extents_and_refresh()
+        self.refresh()
         self.events.shear()
 
     @property
@@ -849,8 +897,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._transforms[2] = coerce_affine(
             affine, ndim=self.ndim, name='physical2world'
         )
-        self._clear_extents_and_refresh()
+        self.refresh()
         self.events.affine()
+
+    def _reset_affine(self) -> None:
+        self.affine = self._initial_affine
 
     @property
     def _translate_grid(self) -> npt.NDArray:
@@ -880,7 +931,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         self._ndim = ndim
 
-        self._clear_extents_and_refresh()
+        self.refresh()
 
     @property
     @abstractmethod
@@ -998,17 +1049,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             del self._extent_augmented
         self.events._extent_augmented()
 
-    def _clear_extents_and_refresh(self) -> None:
-        """Clears the cached extents, emits events and refreshes the layer.
-
-        This should be called whenever this data or transform information
-        changes, and should be called before any other related events
-        are emitted so that they use the updated extent values.
-        """
-        self._clear_extent()
-        self._clear_extent_augmented()
-        self.refresh()
-
     @property
     def _data_slice(self) -> _ThickNDSlice:
         """Slice in data coordinates."""
@@ -1025,12 +1065,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     def _get_ndim(self) -> int:
         raise NotImplementedError
 
-    def _get_base_state(self) -> dict:
+    def _get_base_state(self) -> dict[str, Any]:
         """Get dictionary of attributes on base layer.
+
+        This is useful for serialization and deserialization of the layer.
+        And similarly for plugins to pass state without direct dependencies on napari types.
 
         Returns
         -------
-        state : dict
+        dict of str to Any
             Dictionary of attributes on base layer.
         """
         base_dict = {
@@ -1054,7 +1097,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         return base_dict
 
     @abstractmethod
-    def _get_state(self):
+    def _get_state(self) -> dict[str, Any]:
         raise NotImplementedError
 
     @property
@@ -1064,6 +1107,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     def as_layer_data_tuple(self):
         state = self._get_state()
         state.pop('data', None)
+        if hasattr(self.__init__, '_rename_argument'):
+            state = _DeprecatingDict(state)
+            for element in self.__init__._rename_argument:
+                state.set_deprecated_from_rename(**element._asdict())
         return self.data, state, self._type_string
 
     @property
@@ -1251,7 +1298,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         slice_input = self._make_slice_input(dims)
         if force or (self._slice_input != slice_input):
             self._slice_input = slice_input
-            self._refresh_sync()
+            self._refresh_sync(
+                data_displayed=True,
+                thumbnail=True,
+                highlight=True,
+                extent=True,
+            )
 
     def _make_slice_input(
         self,
@@ -1478,7 +1530,16 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         finally:
             self._refresh_blocked = previous
 
-    def refresh(self, event: Optional[Event] = None) -> None:
+    def refresh(
+        self,
+        event: Optional[Event] = None,
+        *,
+        thumbnail: bool = True,
+        data_displayed: bool = True,
+        highlight: bool = True,
+        extent: bool = True,
+        force: bool = False,
+    ) -> None:
         """Refresh all layer data based on current view slice."""
         if self._refresh_blocked:
             logger.debug('Layer.refresh blocked: %s', self)
@@ -1489,14 +1550,35 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             self.events.reload(layer=self)
         # Otherwise, slice immediately on the calling thread.
         else:
-            self._refresh_sync()
+            self._refresh_sync(
+                thumbnail=thumbnail,
+                data_displayed=data_displayed,
+                highlight=highlight,
+                extent=extent,
+                force=force,
+            )
 
-    def _refresh_sync(self, event: Optional[Event] = None) -> None:
+    def _refresh_sync(
+        self,
+        *,
+        thumbnail: bool = False,
+        data_displayed: bool = False,
+        highlight: bool = False,
+        extent: bool = False,
+        force: bool = False,
+    ) -> None:
         logger.debug('Layer._refresh_sync: %s', self)
-        if self.visible:
+        if not (self.visible or force):
+            return
+        if extent:
+            self._clear_extent()
+            self._clear_extent_augmented()
+        if data_displayed:
             self.set_view_slice()
             self.events.set_data()
+        if thumbnail:
             self._update_thumbnail()
+        if highlight:
             self._set_highlight(force=True)
 
     def world_to_data(self, position: npt.ArrayLike) -> npt.NDArray:
@@ -1620,6 +1702,47 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         vector_data_ndisplay = vector_data_nd[dims_displayed]
         vector_data_ndisplay /= np.linalg.norm(vector_data_ndisplay)
         return vector_data_ndisplay
+
+    def _world_to_displayed_data_normal(
+        self, vector_world: npt.ArrayLike, dims_displayed: list[int]
+    ) -> np.ndarray:
+        """Convert a normal vector defining an orientation from world coordinates to data coordinates.
+
+        Parameters
+        ----------
+        vector_world : tuple, list, 1D array
+            A vector in world coordinates.
+        dims_displayed : list[int]
+            Indices of displayed dimensions of the data.
+
+        Returns
+        -------
+        np.ndarray
+            Transformed normal vector (unit vector) in data coordinates.
+
+        Notes
+        -----
+        This method is adapted from napari-threedee under BSD-3-Clause License.
+        For more information see also:
+        https://www.scratchapixel.com/lessons/mathematics-physics-for-computer-graphics/geometry/transforming-normals.html
+        """
+
+        # the napari transform is from layer -> world.
+        # We want the inverse of the world ->  layer, so we just take the napari transform
+        inverse_transform = self._transforms[1:].simplified.linear_matrix
+
+        # Extract the relevant submatrix based on dims_displayed
+        submatrix = inverse_transform[np.ix_(dims_displayed, dims_displayed)]
+        transpose_inverse_transform = submatrix.T
+
+        # transform the vector
+        transformed_vector = np.matmul(
+            transpose_inverse_transform, vector_world
+        )
+
+        transformed_vector /= np.linalg.norm(transformed_vector)
+
+        return transformed_vector
 
     def _world_to_layer_dims(
         self, *, world_dims: npt.NDArray, ndim_world: int
@@ -1965,7 +2088,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             ):
                 self._data_level = level
                 self.corner_pixels = corners
-                self.refresh()
+                self.refresh(extent=False, thumbnail=False)
         else:
             # set the data_level so that it is the lowest resolution in 3d view
             if self.multiscale is True:
@@ -2172,7 +2295,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     def create(
         cls,
         data: Any,
-        meta: Optional[dict] = None,
+        meta: Optional[Mapping] = None,
         layer_type: Optional[str] = None,
     ) -> Layer:
         """Create layer from `data` of type `layer_type`.

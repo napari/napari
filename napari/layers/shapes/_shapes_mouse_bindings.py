@@ -257,6 +257,8 @@ def _add_line_rectangle_ellipse(
         String indicating the type of shape to be added.
     """
     # on press
+    # reset layer._aspect_ratio for a new shape
+    layer._aspect_ratio = 1
     # Start drawing rectangle / ellipse / line
     layer.add(data, shape_type=shape_type, gui=True)
     layer.selected_data = {layer.nshapes - 1}
@@ -309,12 +311,12 @@ def initiate_polygon_draw(
     coordinates : Tuple[float, ...]
         A tuple with the coordinates of the initial vertex in image data space.
     """
+    layer._is_creating = True
     data = np.array([coordinates, coordinates])
     layer.add(data, shape_type='path', gui=True)
     layer.selected_data = {layer.nshapes - 1}
     layer._value = (layer.nshapes - 1, 1)
     layer._moving_value = copy(layer._value)
-    layer._is_creating = True
     layer._set_highlight()
 
 
@@ -381,6 +383,10 @@ def add_vertex_to_path(
     vertices = layer._data_view.shapes[index].data
     vertices = np.concatenate((vertices, [coordinates]), axis=0)
     value = layer.get_value(event.position, world=True)
+    # If there was no move event between two clicks value[1] is None
+    # and needs to be taken care of.
+    if value[1] is None:
+        value = layer._moving_value
     layer._value = (value[0], value[1] + 1)
     layer._moving_value = copy(layer._value)
     layer._data_view.edit(index, vertices, new_type=new_type)
@@ -724,6 +730,7 @@ def _move_active_element_under_cursor(
             layer.refresh()
         elif vertex < Box.LEN:
             # Corner / edge vertex is being dragged so resize object
+            # Also applies while drawing line, rectangle, ellipse
             box = layer._selected_box
             if layer._fixed_vertex is None:
                 layer._fixed_index = (vertex + 4) % Box.LEN
@@ -744,13 +751,23 @@ def _move_active_element_under_cursor(
 
             fixed = layer._fixed_vertex
             new = list(coord)
-
             box_center = box[Box.CENTER]
             if layer._fixed_aspect and layer._fixed_index % 2 == 0:
                 # corner
-                new = (box[vertex] - box_center) / np.linalg.norm(
-                    box[vertex] - box_center
-                ) * np.linalg.norm(new - box_center) + box_center
+                # ensure line rotates through 45 degree steps if aspect ratio is 1
+                if layer._mode == Mode.ADD_LINE and layer._aspect_ratio == 1:
+                    new_offset = coord - layer._fixed_vertex
+                    angle_rad = np.arctan2(new_offset[0], -new_offset[1])
+                    angle_rad = np.round(angle_rad / (np.pi / 4)) * (np.pi / 4)
+                    new = (
+                        np.array([np.sin(angle_rad), -np.cos(angle_rad)])
+                        * np.linalg.norm(new - box_center)
+                        + box_center
+                    )
+                else:
+                    new = (box[vertex] - box_center) / np.linalg.norm(
+                        box[vertex] - box_center
+                    ) * np.linalg.norm(new - box_center) + box_center
 
             if layer._fixed_index % 2 == 0:
                 # corner selected
@@ -854,3 +871,8 @@ def _move_active_element_under_cursor(
             shapes = layer.selected_data
             layer._selected_box = layer.interaction_box(shapes)
             layer.refresh()
+
+
+def _set_highlight(layer: Shapes, event: MouseEvent) -> None:
+    if event.type in {'mouse_press', 'mouse_wheel'}:
+        layer._set_highlight()

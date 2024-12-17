@@ -3,7 +3,7 @@ from unittest import mock
 
 import pytest
 
-from napari._app_model import get_app
+from napari._app_model import get_app_model
 from napari._qt._qapp_model._tests.utils import get_submenu_action
 
 
@@ -80,7 +80,7 @@ def test_start_stop_trace_actions(
     use_perfmon = perfmon_activation
     if use_perfmon:
         trace_file = tmp_path / 'trace.json'
-        app = get_app()
+        app = get_app_model()
         viewer = make_napari_viewer()
 
         # Check Debug menu exists and actions state
@@ -132,6 +132,9 @@ def test_start_stop_trace_actions(
 
         # Stop perf widget timer to prevent test failure on teardown
         viewer.window._qt_viewer.dockPerformance.widget().timer.stop()
+        qtbot.waitUntil(
+            lambda: not viewer.window._qt_viewer.dockPerformance.widget().timer.isActive()
+        )
     else:
         # Nothing to test
         pytest.skip('Perfmon is disabled')

@@ -9,7 +9,7 @@ import pytest
 from napari.utils.action_manager import ActionManager
 
 
-@pytest.fixture()
+@pytest.fixture
 def action_manager():
     """
     Unlike normal napari we use a different instance we have complete control
