@@ -54,6 +54,8 @@ class QtShapesControls(QtLayerControls):
         Widget allowing user to set face color of points.
     line_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to add lines to shapes layer.
+    polyline_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
+        Button to add polylines to shapes layer.
     move_back_button : qtpy.QtWidgets.QtModePushButton
         Button to move selected shape(s) to the back.
     move_front_button : qtpy.QtWidgets.QtModePushButton
@@ -146,6 +148,13 @@ class QtShapesControls(QtLayerControls):
         self.line_button = self._radio_button(
             layer, 'line', Mode.ADD_LINE, True, 'activate_add_line_mode'
         )
+        self.polyline_button = self._radio_button(
+            layer,
+            'polyline',
+            Mode.ADD_POLYLINE,
+            True,
+            'activate_add_polyline_mode',
+        )
         self.path_button = self._radio_button(
             layer, 'path', Mode.ADD_PATH, True, 'activate_add_path_mode'
         )
@@ -212,19 +221,20 @@ class QtShapesControls(QtLayerControls):
         )
         self._on_editable_or_visible_change()
 
+        self.button_grid.addWidget(self.move_back_button, 0, 0)
         self.button_grid.addWidget(self.vertex_remove_button, 0, 1)
         self.button_grid.addWidget(self.vertex_insert_button, 0, 2)
         self.button_grid.addWidget(self.delete_button, 0, 3)
         self.button_grid.addWidget(self.direct_button, 0, 4)
         self.button_grid.addWidget(self.select_button, 0, 5)
-        self.button_grid.addWidget(self.move_back_button, 1, 0)
-        self.button_grid.addWidget(self.move_front_button, 1, 1)
-        self.button_grid.addWidget(self.ellipse_button, 1, 2)
-        self.button_grid.addWidget(self.rectangle_button, 1, 3)
-        self.button_grid.addWidget(self.polygon_button, 1, 4)
-        self.button_grid.addWidget(self.polygon_lasso_button, 1, 5)
-        self.button_grid.addWidget(self.line_button, 1, 6)
-        self.button_grid.addWidget(self.path_button, 1, 7)
+        self.button_grid.addWidget(self.move_front_button, 1, 0)
+        self.button_grid.addWidget(self.ellipse_button, 1, 1)
+        self.button_grid.addWidget(self.rectangle_button, 1, 2)
+        self.button_grid.addWidget(self.polygon_button, 1, 3)
+        self.button_grid.addWidget(self.polygon_lasso_button, 1, 4)
+        self.button_grid.addWidget(self.line_button, 1, 5)
+        self.button_grid.addWidget(self.path_button, 1, 6)
+        self.button_grid.addWidget(self.polyline_button, 1, 7)
         self.button_grid.setContentsMargins(5, 0, 0, 5)
         self.button_grid.setColumnStretch(0, 1)
         self.button_grid.setSpacing(4)
