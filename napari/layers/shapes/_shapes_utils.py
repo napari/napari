@@ -403,8 +403,8 @@ def create_box_from_bounding(bounding_box: npt.NDArray) -> npt.NDArray:
         the corners and midpoints of the box in clockwise order starting in the
         upper-left corner. The last point is the center of the box
     """
-    tl = bounding_box[0]
-    br = bounding_box[1]
+    tl = bounding_box[(0, 0), (0, 1)]
+    br = bounding_box[(1, 1), (0, 1)]
     tr = bounding_box[(1, 0), (0, 1)]
     bl = bounding_box[(0, 1), (0, 1)]
     return np.array(
