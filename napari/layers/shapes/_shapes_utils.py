@@ -22,10 +22,12 @@ except ModuleNotFoundError:
 
 try:
     from napari.layers.shapes._accelerated_triangulate import (
+        create_box_from_bounding as acc_create_box_from_bounding,
         generate_2D_edge_meshes as acc_generate_2D_edge_meshes,
     )
 except ImportError:
     acc_generate_2D_edge_meshes = None
+    acc_create_box_from_bounding = None
 
 
 def _is_convex(poly: npt.NDArray) -> bool:
@@ -383,6 +385,41 @@ def point_to_lines(point, lines):
     location = line_loc[index]
 
     return index, location
+
+
+def create_box_from_bounding(bounding_box: npt.NDArray) -> npt.NDArray:
+    """Creates the axis aligned interaction box of a bounding box
+
+    Parameters
+    ----------
+    bounding_box : np.ndarray
+        2x2 array of the bounding box. The first row is the minimum values and
+        the second row is the maximum values
+
+    Returns
+    -------
+    box : np.ndarray
+        9x2 array of vertices of the interaction box. The first 8 points are
+        the corners and midpoints of the box in clockwise order starting in the
+        upper-left corner. The last point is the center of the box
+    """
+    tl = bounding_box[(0, 0), (0, 1)]
+    br = bounding_box[(1, 1), (0, 1)]
+    tr = bounding_box[(1, 0), (0, 1)]
+    bl = bounding_box[(0, 1), (0, 1)]
+    return np.array(
+        [
+            tl,
+            (tl + tr) / 2,
+            tr,
+            (tr + br) / 2,
+            br,
+            (br + bl) / 2,
+            bl,
+            (bl + tl) / 2,
+            (tl + br) / 2,
+        ]
+    )
 
 
 def create_box(data: npt.NDArray) -> npt.NDArray:
@@ -1305,3 +1342,7 @@ if acc_generate_2D_edge_meshes is not None:
     _generate_2D_edge_meshes = acc_generate_2D_edge_meshes
 else:  # pragma: no cover
     _generate_2D_edge_meshes = generate_2D_edge_meshes
+
+
+if acc_create_box_from_bounding is not None:
+    create_box_from_bounding = acc_create_box_from_bounding
