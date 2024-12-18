@@ -2324,7 +2324,7 @@ class Shapes(Layer):
         # build all shapes
         sh_inp = tuple(
             (
-                shape_classes[ShapeType(st)](
+                shape_classes[st](
                     d,
                     edge_width=ew,
                     z_index=z,
