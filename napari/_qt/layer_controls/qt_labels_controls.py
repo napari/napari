@@ -1,9 +1,6 @@
 from typing import TYPE_CHECKING
 
 from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
-from napari._qt.layer_controls.widgets import (
-    QtLabelRenderControl,
-)
 from napari._qt.layer_controls.widgets._labels import (
     QtBrushSizeSliderControl,
     QtColorModeComboBoxControl,
@@ -11,6 +8,7 @@ from napari._qt.layer_controls.widgets._labels import (
     QtContourSpinBoxControl,
     QtDisplaySelectedLabelCheckBoxControl,
     QtLabelControl,
+    QtLabelRenderControl,
     QtNdimSpinBoxControl,
     QtPreserveLabelsCheckBoxControl,
 )

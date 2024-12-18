@@ -1,6 +1,9 @@
 from napari._qt.layer_controls.widgets._tracks.qt_color_properties_combobox import (
     QtColorPropertiesComboBoxControl,
 )
+from napari._qt.layer_controls.widgets._tracks.qt_colormap_control import (
+    QtColormapComboBoxControl,
+)
 from napari._qt.layer_controls.widgets._tracks.qt_graph_checkbox import (
     QtGraphCheckBoxControl,
 )
@@ -18,6 +21,7 @@ from napari._qt.layer_controls.widgets._tracks.qt_tail_control import (
 
 __all__ = [
     'QtColorPropertiesComboBoxControl',
+    'QtColormapComboBoxControl',
     'QtGraphCheckBoxControl',
     'QtHeadLengthSliderControl',
     'QtIdCheckBoxControl',

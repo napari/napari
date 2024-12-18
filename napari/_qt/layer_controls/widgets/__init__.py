@@ -3,14 +3,9 @@ from napari._qt.layer_controls.widgets.qt_autoscale_control import (
 )
 from napari._qt.layer_controls.widgets.qt_colormap_control import (
     QtColormapControl,
-    QtSimpleColormapComboBoxControl,
 )
 from napari._qt.layer_controls.widgets.qt_contrast_limits import (
     QtContrastLimitsSliderControl,
-)
-from napari._qt.layer_controls.widgets.qt_edge_color import (
-    QtEdgeColorControl,
-    QtEdgeColorPropertyControl,
 )
 from napari._qt.layer_controls.widgets.qt_face_color import QtFaceColorControl
 from napari._qt.layer_controls.widgets.qt_gamma_slider import (
@@ -21,10 +16,6 @@ from napari._qt.layer_controls.widgets.qt_opacity_blending_controls import (
 )
 from napari._qt.layer_controls.widgets.qt_out_slice_checkbox import (
     QtOutSliceCheckBoxControl,
-)
-from napari._qt.layer_controls.widgets.qt_render_control import (
-    QtImageRenderControl,
-    QtLabelRenderControl,
 )
 from napari._qt.layer_controls.widgets.qt_text_visibility import (
     QtTextVisibilityControl,
@@ -37,16 +28,11 @@ __all__ = [
     'QtAutoScaleControl',
     'QtColormapControl',
     'QtContrastLimitsSliderControl',
-    'QtEdgeColorControl',
-    'QtEdgeColorPropertyControl',
     'QtFaceColorControl',
     'QtGammaSliderControl',
-    'QtImageRenderControl',
     'QtInterpolationComboBoxControl',
-    'QtLabelRenderControl',
     'QtOpacityBlendingControls',
     'QtOutSliceCheckBoxControl',
-    'QtSimpleColormapComboBoxControl',
     'QtTextVisibilityControl',
     'QtWidgetControlsBase',
 ]

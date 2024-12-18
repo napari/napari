@@ -1,10 +1,8 @@
 from typing import TYPE_CHECKING
 
 from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
-from napari._qt.layer_controls.widgets import (
-    QtSimpleColormapComboBoxControl,
-)
 from napari._qt.layer_controls.widgets._tracks import (
+    QtColormapComboBoxControl,
     QtColorPropertiesComboBoxControl,
     QtGraphCheckBoxControl,
     QtHeadLengthSliderControl,
@@ -89,7 +87,7 @@ class QtTracksControls(QtLayerControls):
         self._add_widget_controls(
             QtColorPropertiesComboBoxControl(self, layer)
         )
-        self._add_widget_controls(QtSimpleColormapComboBoxControl(self, layer))
+        self._add_widget_controls(QtColormapComboBoxControl(self, layer))
         self._add_widget_controls(QtTailWidthSliderControl(self, layer))
         self._add_widget_controls(QtTailLengthSliderControl(self, layer))
         self._add_widget_controls(QtHeadLengthSliderControl(self, layer))
