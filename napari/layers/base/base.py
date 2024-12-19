@@ -679,7 +679,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         return self._source
 
     @source.setter
-    def source(self, source: Source) -> None:
+    def _source(self, source: Source) -> None:
         self._source = source
 
     @property

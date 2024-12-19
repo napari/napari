@@ -1454,7 +1454,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     data.source.path is None
                     and data.source.reader_plugin is None
                 ):
-                    data.source = Source(path=filename, reader_plugin=plugin)
+                    data._source = Source(path=filename, reader_plugin=plugin)
                 lyr = self.add_layer(data)
                 current_added = [lyr]
             else:
