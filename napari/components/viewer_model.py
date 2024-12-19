@@ -1450,11 +1450,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             basename, _ext = os.path.splitext(os.path.basename(filename))
             # actually add the layer
             if isinstance(data, Layer):
-                if (
-                    data.source.path is None
-                    and data.source.reader_plugin is None
-                ):
-                    data._source = Source(path=filename, reader_plugin=plugin)
+                data._set_source(Source(path=filename, reader_plugin=plugin))
                 lyr = self.add_layer(data)
                 current_added = [lyr]
             else:

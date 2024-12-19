@@ -678,8 +678,20 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     def source(self) -> Source:
         return self._source
 
-    @source.setter
-    def _source(self, source: Source) -> None:
+    def _set_source(self, source: Source) -> None:
+        if any(
+            getattr(self._source, attr)
+            for attr in [
+                'path',
+                'reader_plugin',
+                'sample',
+                'widget',
+                'parent',
+            ]
+        ):
+            raise ValueError(
+                f'Tried to set source on layer {self.name} when source is already set to {self._source}'
+            )
         self._source = source
 
     @property
