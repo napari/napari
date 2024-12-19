@@ -19,8 +19,8 @@ __all__ = [
     'FunctionWorker',
     'GeneratorWorker',
     'create_worker',
-    'thread_worker',
     'register_threadworker_processors',
+    'thread_worker',
 ]
 
 wait_for_workers_to_quit = _qthreading.WorkerBase.await_workers

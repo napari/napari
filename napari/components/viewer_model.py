@@ -494,6 +494,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 layer.update_highlight_visibility(False)
             self.help = ''
             self.cursor.style = CursorStyle.STANDARD
+            self.camera.mouse_pan = True
+            self.camera.mouse_zoom = True
         else:
             active_layer.update_transform_box_visibility(True)
             active_layer.update_highlight_visibility(True)

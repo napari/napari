@@ -2,9 +2,14 @@
 To screenshot
 =============
 
-Display one shapes layer ontop of one image layer using the ``add_shapes`` and
-``add_image`` APIs. When the window is closed it will print the coordinates of
-your shapes.
+Display a variety of layer types in the napari viewer and take a screenshot of the viewer canvas with `viewer.screenshot()`.
+The screenshot is then added back as an image layer.
+
+Screenshots include all visible layers, bounded by the extent of the canvas, and is functional for 2D and 3D views.
+To capture the extent of all data in 2D view, see `viewer.export_figure()`: :ref:`sphx_glr_gallery_export_figure.py` and :ref:`sphx_glr_gallery_screenshot_and_export_figure.py`.
+
+This example code demonstrates screenshot shortcuts that do not include the viewer (e.g. `File` -> `Copy Screenshot to Clipboard`).
+To include the napari viewer in the screenshot, use `viewer.screenshot(canvas_only=False)` or e.g. `File` -> `Copy Screenshot with Viewer to Clipboard`).
 
 .. tags:: visualization-advanced
 """
@@ -121,7 +126,7 @@ pos[:, 1, 1] = 2 * radius_space * np.sin(phi_space)
 layer = viewer.add_vectors(pos, edge_width=2)
 
 # take screenshot
-screenshot = viewer.screenshot()
+screenshot = viewer.screenshot(flash=False) # bug: default flash=True causes the canvas to be grayscale in docs
 viewer.add_image(screenshot, rgb=True, name='screenshot')
 
 # from skimage.io import imsave
