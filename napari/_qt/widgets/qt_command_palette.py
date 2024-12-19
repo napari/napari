@@ -190,7 +190,7 @@ class QCommandMatchModel(QtCore.QAbstractListModel):
 
     def data(self, index: QtCore.QModelIndex, role: int = 0) -> Any:
         """Don't show any data. Texts are rendered by the item widget."""
-        return QtCore.QVariant()
+        return None
 
     def flags(self, index: QtCore.QModelIndex) -> Qt.ItemFlag:
         return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
