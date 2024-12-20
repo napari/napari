@@ -31,8 +31,6 @@ class QtPointsControls(QtLayerControls):
 
     Attributes
     ----------
-    layer : napari.layers.Points
-        An instance of a napari Points layer.
     MODE : Enum
         Available modes in the associated layer.
     PAN_ZOOM_ACTION_NAME : str
@@ -41,27 +39,36 @@ class QtPointsControls(QtLayerControls):
         String id for the transform action to bind to the transform button.
     addition_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to add points to layer.
-    button_group : qtpy.QtWidgets.QButtonGroup
-        Button group of points layer modes (ADD, PAN_ZOOM, SELECT).
-    delete_button : qtpy.QtWidgets.QtModePushButton
-        Button to delete points from layer.
-    select_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
-        Button to select points from layer.
-    panzoom_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
-        Button for pan/zoom mode.
-    transform_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
-        Button to select transform mode.
-
-    Controls attributes
-    -------------------
     blendComboBox : qtpy.QtWidgets.QComboBox
         Dropdown widget to select blending mode of layer.
     blendLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the blending combobox widget.
-    opacitySlider : qtpy.QtWidgets.QSlider
-        Slider controlling opacity of the layer.
+    borderColorEdit : napari._qt.widgets.qt_color_swatch.QColorSwatchEdit
+        Widget to select display color for points borders.
+    borderColorEditLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the current egde color chooser widget.
+    button_group : qtpy.QtWidgets.QButtonGroup
+        Button group of points layer modes (ADD, PAN_ZOOM, SELECT).
+    delete_button : qtpy.QtWidgets.QtModePushButton
+        Button to delete points from layer.
+    faceColorEdit : napari._qt.widgets.qt_color_swatch.QColorSwatchEdit
+        Widget to select display color for points faces.
+    faceColorLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the current face color chooser widget.
+    layer : napari.layers.Points
+        An instance of a napari Points layer.
     opacityLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the opacity slider widget.
+    opacitySlider : qtpy.QtWidgets.QSlider
+        Slider controlling opacity of the layer.
+    outOfSliceCheckBox : qtpy.QtWidgets.QCheckBox
+        Checkbox to indicate whether to render out of slice.
+    outOfSliceCheckBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the out of slice display enablement chooser widget.
+    panzoom_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
+        Button for pan/zoom mode.
+    select_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
+        Button to select points from layer.
     sizeSlider : napari._qt.widgets._slider_compat.QSlider
         Slider controlling size of points.
     sizeSliderLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
@@ -70,22 +77,12 @@ class QtPointsControls(QtLayerControls):
         Dropdown list of symbol options for points markers.
     symbolComboBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for points symbol chooser widget.
-    faceColorEdit : napari._qt.widgets.qt_color_swatch.QColorSwatchEdit
-        Widget to select display color for points faces.
-    faceColorLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for the current face color chooser widget.
-    borderColorEdit : napari._qt.widgets.qt_color_swatch.QColorSwatchEdit
-        Widget to select display color for points borders.
-    borderColorEditLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for the current egde color chooser widget.
     textDispCheckBox : qtpy.QtWidgets.QCheckbox
         Checkbox controlling if text on the layer is visible or not.
     textDispLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the text visibility widget.
-    outOfSliceCheckBox : qtpy.QtWidgets.QCheckBox
-        Checkbox to indicate whether to render out of slice.
-    outOfSliceCheckBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for the out of slice display enablement chooser widget.
+    transform_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
+        Button to select transform mode.
 
     Raises
     ------

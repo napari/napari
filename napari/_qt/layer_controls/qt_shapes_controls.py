@@ -29,36 +29,54 @@ class QtShapesControls(QtLayerControls):
 
     Attributes
     ----------
-    layer : napari.layers.Shapes
-        An instance of a napari Shapes layer.
     MODE : Enum
         Available modes in the associated layer.
     PAN_ZOOM_ACTION_NAME : str
         String id for the pan-zoom action to bind to the pan_zoom button.
     TRANSFORM_ACTION_NAME : str
         String id for the transform action to bind to the transform button.
+    blendComboBox : qtpy.QtWidgets.QComboBox
+        Dropdown widget to select blending mode of layer.
+    blendLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the blending combobox widget.
     button_group : qtpy.QtWidgets.QButtonGroup
-        Button group for shapes layer modes
         (SELECT, DIRECT, PAN_ZOOM, ADD_RECTANGLE, ADD_ELLIPSE, ADD_LINE,
         ADD_PATH, ADD_POLYGON, VERTEX_INSERT, VERTEX_REMOVE, TRANSFORM).
+        Button group for shapes layer modes
     delete_button : qtpy.QtWidgets.QtModePushButton
         Button to delete selected shapes
     direct_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to select individual vertices in shapes.
     edgeColorEdit : QColorSwatchEdit
         Widget allowing user to set edge color of points.
+    edgeColorEdit : qtpy.QtWidgets.QSlider
+        ColorSwatchEdit controlling current edge color of the layer.
+    edgeColorLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the current edge color chooser widget.
+    edgeWidthLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the current edge width widget.
+    edgeWidthSlider : qtpy.QtWidgets.QSlider
+        Slider controlling line edge width of layer.
     ellipse_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to add ellipses to shapes layer.
+    faceColorEdit : qtpy.QtWidgets.QSlider
+        ColorSwatchEdit controlling current face color of the layer.
+    faceColorLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the current face color widget.
+    layer : napari.layers.Shapes
+        An instance of a napari Shapes layer.
     line_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to add lines to shapes layer.
     move_back_button : qtpy.QtWidgets.QtModePushButton
         Button to move selected shape(s) to the back.
     move_front_button : qtpy.QtWidgets.QtModePushButton
         Button to move shape(s) to the front.
+    opacityLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the opacity slider widget.
+    opacitySlider : qtpy.QtWidgets.QSlider
+        Slider controlling opacity of the layer.
     panzoom_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to pan/zoom shapes layer.
-    transform_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
-        Button to transform shapes layer.
     path_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to add paths to shapes layer.
     polygon_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
@@ -69,37 +87,16 @@ class QtShapesControls(QtLayerControls):
         Button to add rectangles to shapes layer.
     select_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to select shapes.
-    vertex_insert_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
-        Button to insert vertex into shape.
-    vertex_remove_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
-        Button to remove vertex from shapes.
-
-    Controls attributes
-    -------------------
-    blendComboBox : qtpy.QtWidgets.QComboBox
-        Dropdown widget to select blending mode of layer.
-    blendLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for the blending combobox widget.
-    opacitySlider : qtpy.QtWidgets.QSlider
-        Slider controlling opacity of the layer.
-    opacityLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for the opacity slider widget.
-    edgeWidthSlider : qtpy.QtWidgets.QSlider
-        Slider controlling line edge width of layer.
-    edgeWidthLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for the current edge width widget.
-    edgeColorEdit : qtpy.QtWidgets.QSlider
-        ColorSwatchEdit controlling current edge color of the layer.
-    edgeColorLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for the current edge color chooser widget.
-    faceColorEdit : qtpy.QtWidgets.QSlider
-        ColorSwatchEdit controlling current face color of the layer.
-    faceColorLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for the current face color widget.
     textDispCheckBox : qtpy.QtWidgets.QCheckbox
         Checkbox controlling if text on the layer is visible or not.
     textDispLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the text visibility widget.
+    transform_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
+        Button to transform shapes layer.
+    vertex_insert_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
+        Button to insert vertex into shape.
+    vertex_remove_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
+        Button to remove vertex from shapes.
 
     Raises
     ------
