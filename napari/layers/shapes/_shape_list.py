@@ -1109,11 +1109,13 @@ class ShapeList:
     @cached_property
     def _visible_shapes(self):
         slice_key = self.slice_key
-        return [
-            (i, s)
-            for i, s in enumerate(self.shapes)
-            if s.slice_key[0] <= slice_key <= s.slice_key[1]
-        ]
+        if len(slice_key):
+            return [
+                (i, s)
+                for i, s in enumerate(self.shapes)
+                if s.slice_key[0] <= slice_key <= s.slice_key[1]
+            ]
+        return list(enumerate(self.shapes))
 
     @cached_property
     def _bounding_boxes(self):
