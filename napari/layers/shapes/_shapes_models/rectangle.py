@@ -79,10 +79,12 @@ class Rectangle(Shape):
     def _update_displayed_data(self) -> None:
         """Update the data that is to be displayed."""
         # Add four boundary lines and then two triangles for each
-        self._set_meshes(self.data_displayed, face=False)
-        self._face_vertices = self.data_displayed
+        self._clean_cache()
+        data_displayed = self.data_displayed
+        self._set_meshes(data_displayed, face=False)
+        self._face_vertices = data_displayed
         self._face_triangles = np.array([[0, 1, 2], [0, 2, 3]])
-        self._box = rectangle_to_box(self.data_displayed)
+        self._box = rectangle_to_box(data_displayed)
         self.slice_key = self._bounding_box[:, self.dims_not_displayed].astype(
             'int'
         )
