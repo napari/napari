@@ -150,3 +150,14 @@ def test_bad_color_array(attribute):
     bad_color_array = np.array([[0, 0, 0, 1], [1, 1, 1, 1]])
     with pytest.raises(ValueError, match='must have shape'):
         setattr(shape_list, f'{attribute}_color', bad_color_array)
+
+
+def test_inside():
+    shape1 = Polygon(np.array([[0, 0, 0], [0, 1, 0], [0, 1, 1], [0, 0, 1]]))
+    shape2 = Polygon(np.array([[1, 0, 0], [1, 1, 0], [1, 1, 1], [1, 0, 1]]))
+    shape3 = Polygon(np.array([[2, 0, 0], [2, 1, 0], [2, 1, 1], [2, 0, 1]]))
+
+    shape_list = ShapeList()
+    shape_list.add([shape1, shape2, shape3])
+    shape_list.slice_key = (1,)
+    assert shape_list.inside((0.5, 0.5)) == 1
