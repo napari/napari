@@ -312,7 +312,7 @@ def test_preferences_dialog_not_dismissed_by_keybind_confirm(
     )
     pref._stack.setCurrentIndex(3)
     # ensure the dialog is showing
-    qtbot.waitUntil(pref.show())
+    qtbot.waitExposed(pref)
     assert pref.isVisible()
 
     shortcut = shortcut_widget._table.item(
