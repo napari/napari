@@ -723,12 +723,10 @@ class EditorWidget(QLineEdit):
         if event_key in {
             Qt.Key.Key_Return,
             Qt.Key.Key_Tab,
-            Qt.Key.Key_CapsLock,
             Qt.Key.Key_Enter,
         }:
             # Do not allow user to set these keys as shortcut.
             # Use them as a save trigger for modifier only shortcuts.
-            self.clearFocus()
             return
 
         # Translate key value to key string.
