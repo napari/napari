@@ -220,9 +220,25 @@ class _QtMainWindow(QMainWindow):
     def showEvent(self, event: QShowEvent):
         """Override to handle window state changes."""
         settings = get_settings()
-        if settings.appearance.update_status_based_on_layer:
+        # if event loop is not running, we don't want to start the thread
+        # If event loop is running, the loopLevel will be above 0
+        if (
+            settings.appearance.update_status_based_on_layer
+            and QApplication.instance().thread().loopLevel()
+        ):
             self.status_thread.start()
         super().showEvent(event)
+
+    def enterEvent(self, a0):
+        # as we call show in Viewer constructor, we need to start the thread
+        # when the mouse enters the window
+        # as first call of showEvent is before the event loop is running
+        if (
+            get_settings().appearance.update_status_based_on_layer
+            and not self.status_thread.isRunning()
+        ):
+            self.status_thread.start()
+        super().enterEvent(a0)
 
     def hideEvent(self, event: QHideEvent):
         self.status_thread.terminate()
