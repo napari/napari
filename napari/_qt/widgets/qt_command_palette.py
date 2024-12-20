@@ -23,9 +23,9 @@ class QCommandPalette(QtW.QWidget):
     def __init__(self, parent: QtW.QWidget | None = None):
         super().__init__(parent)
 
-        self._line = QCommandLineEdit(parent=self)
-        self._list = QCommandList(parent=self)
-        _layout = QtW.QVBoxLayout(parent=self)
+        self._line = QCommandLineEdit()
+        self._list = QCommandList()
+        _layout = QtW.QVBoxLayout(self)
         _layout.addWidget(self._line)
         _layout.addWidget(self._list)
         self.setLayout(_layout)
