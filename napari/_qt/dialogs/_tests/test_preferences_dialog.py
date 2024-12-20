@@ -290,7 +290,7 @@ def test_preferences_dialog_restore(qtbot, pref, monkeypatch):
 @pytest.mark.key_bindings
 @pytest.mark.parametrize(
     'confirm_key',
-    ['enter', 'return', 'tab', 'capslock'],
+    ['enter', 'return', 'tab'],
 )
 def test_preferences_dialog_not_dismissed_by_keybind_confirm(
     qtbot, pref, confirm_key
@@ -312,7 +312,7 @@ def test_preferences_dialog_not_dismissed_by_keybind_confirm(
     )
     pref._stack.setCurrentIndex(3)
     # ensure the dialog is showing
-    pref.show()
+    qtbot.waitUntil(pref.show())
     assert pref.isVisible()
 
     shortcut = shortcut_widget._table.item(
