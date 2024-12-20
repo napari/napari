@@ -110,6 +110,18 @@ def test_shape_list_outline():
         assert np.array_equal(value_by_idx, value_by_idx_np)
 
 
+def test_shape_list_outline_two_shapes():
+    shape1 = Polygon([[0, 0], [0, 10], [10, 10], [10, 0]])
+    shape2 = Polygon([[20, 20], [20, 30], [30, 30], [30, 20]])
+    shape_list = ShapeList()
+    shape_list.add([shape1, shape2])
+
+    # check if the outline contains triangle with vertex of number 16
+
+    triangles = shape_list.outline([0, 1])[2]
+    assert np.any(triangles == 16)
+
+
 def test_nD_shapes():
     """Test adding shapes to ShapeList."""
     np.random.seed(0)
