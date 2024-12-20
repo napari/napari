@@ -1,5 +1,5 @@
 import typing
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 from weakref import WeakSet
 
 import magicgui as mgui
@@ -9,7 +9,7 @@ from napari.components.viewer_model import ViewerModel
 from napari.utils import _magicgui
 from napari.utils.events.event_utils import disconnect_events
 
-if TYPE_CHECKING:
+if typing.TYPE_CHECKING:
     # helpful for IDE support
     from napari._qt.qt_main_window import Window
 
@@ -142,6 +142,40 @@ class Viewer(ViewerModel):
             scale=scale_factor,
             flash=flash,
         )
+
+    def export_rois(
+        self,
+        rois: list[np.ndarray],
+        paths: Optional[list[str]] = None,
+        scale: Optional[float] = None,
+    ):
+        """Export the shapes rois with storage file paths
+
+        Parameters
+        ----------
+        rois: numpy array
+            An list of arrays with each having shape (4, 2) representing a rectangular roi. If not rectangular
+            a screenshot of the bounding box of the roi will be taken.
+        paths: list
+            The list to store file path for shapes roi
+
+        Returns
+        -------
+        roi_dict: dictionary
+            The dictionary with index and file paths for each shapes roi
+        """
+        # Check to see if roi has shape (n,2,2)
+        if any(roi.shape[-2:] != (4, 2) for roi in rois):
+            raise ValueError(
+                'ROI found with invalid shape, all rois must have shape (4, 2), i.e. have 4 corners defined in 2 '
+                'dimensions. 3D is not supported.'
+            )
+
+        screenshot_list = self.window.export_rois(
+            rois, paths=paths, scale=scale
+        )
+
+        return screenshot_list
 
     def screenshot(
         self,
