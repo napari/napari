@@ -94,7 +94,7 @@ class LayerDelegate(QStyledItemDelegate):
     ):
         """Paint the item in the model at `index`."""
         # update the icon based on layer type
-
+        option.textElideMode = Qt.TextElideMode.ElideMiddle
         self.get_layer_icon(option, index)
         # paint the standard itemView (includes name, icon, and vis. checkbox)
         super().paint(painter, option, index)
