@@ -255,6 +255,7 @@ class ShapeList:
         slice_key = list(slice_key)
         if not np.array_equal(self._slice_key, slice_key):
             self._slice_key = slice_key
+            self._clear_cache()
             self._update_displayed()
 
     def _update_displayed(self) -> None:
@@ -1106,8 +1107,21 @@ class ShapeList:
         return shapes
 
     @cached_property
+    def _visible_shapes(self):
+        slice_key = self.slice_key
+        if len(slice_key):
+            return [
+                (i, s)
+                for i, s in enumerate(self.shapes)
+                if s.slice_key[0] <= slice_key <= s.slice_key[1]
+            ]
+        return list(enumerate(self.shapes))
+
+    @cached_property
     def _bounding_boxes(self):
-        data = np.array([s.bounding_box for s in self.shapes])
+        data = np.array([s[1].bounding_box for s in self._visible_shapes])
+        if data.size == 0:
+            return np.empty((0, self.ndisplay)), np.empty((0, self.ndisplay))
         return data[:, 0], data[:, 1]
 
     def inside(self, coord):
@@ -1136,17 +1150,24 @@ class ShapeList:
         if inside_indices.size == 0:
             return None
         try:
-            z_index = [self.shapes[i].z_index for i in inside_indices]
+            z_index = [
+                self._visible_shapes[i][1].z_index for i in inside_indices
+            ]
             pos = np.argsort(z_index)
-            return next(
-                inside_indices[p]
-                for p in pos[::-1]
-                if np.any(
-                    inside_triangles(
-                        self.shapes[inside_indices[p]]._all_triangles() - coord
+            return self._visible_shapes[
+                next(
+                    inside_indices[p]
+                    for p in pos[::-1]
+                    if np.any(
+                        inside_triangles(
+                            self._visible_shapes[inside_indices[p]][
+                                1
+                            ]._all_triangles()
+                            - coord
+                        )
                     )
                 )
-            )
+            ][0]
         except StopIteration:
             return None
 
@@ -1363,3 +1384,4 @@ class ShapeList:
 
     def _clear_cache(self):
         self.__dict__.pop('_bounding_boxes', None)
+        self.__dict__.pop('_visible_shapes', None)
