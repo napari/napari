@@ -158,11 +158,11 @@ def test_line_fixed_angles(create_known_shapes_layer):
     assert np.allclose(theta, 45.0)
 
 
-def test_polyline_tablet(create_known_shapes_layer):
+def test_path_tablet(create_known_shapes_layer):
     layer, n_shapes, known_non_shape = create_known_shapes_layer
     desired_shape = np.array([[20, 30], [10, 50], [60, 40], [80, 20]])
 
-    layer.mode = 'add_polyline'
+    layer.mode = 'add_path'
     event = read_only_mouse_event(
         type='mouse_press',
         is_dragging=True,
@@ -204,7 +204,7 @@ def test_polyline_mouse(create_known_shapes_layer):
     layer, n_shapes, known_non_shape = create_known_shapes_layer
     desired_shape = np.array([[20, 30], [10, 50], [60, 40], [80, 20]])
 
-    layer.mode = 'add_polyline'
+    layer.mode = 'add_path'
 
     event = read_only_mouse_event(
         type='mouse_press',

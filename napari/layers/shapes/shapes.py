@@ -265,8 +265,9 @@ class Shapes(Layer):
         vertices either to be added to or removed from shapes that are already
         selected. Note that shapes cannot be selected in this mode.
 
-        The ADD_RECTANGLE, ADD_ELLIPSE, ADD_LINE, ADD_PATH, and ADD_POLYGON
-        modes all allow for their corresponding shape type to be added.
+        The ADD_RECTANGLE, ADD_ELLIPSE, ADD_LINE, ADD_POLYLINE, ADD_PATH, and
+        ADD_POLYGON modes all allow for their corresponding shape type to be
+        added.
     units: tuple of pint.Unit
         Units of the layer data in world coordinates.
 
@@ -372,8 +373,8 @@ class Shapes(Layer):
         Mode.ADD_RECTANGLE: add_rectangle,
         Mode.ADD_ELLIPSE: add_ellipse,
         Mode.ADD_LINE: add_line,
-        Mode.ADD_POLYLINE: add_path_polygon_lasso,
-        Mode.ADD_PATH: add_path_polygon,
+        Mode.ADD_PATH: add_path_polygon_lasso,
+        Mode.ADD_POLYLINE: add_path_polygon,
         Mode.ADD_POLYGON: add_path_polygon,
         Mode.ADD_POLYGON_LASSO: add_path_polygon_lasso,
     }
@@ -406,8 +407,8 @@ class Shapes(Layer):
         Mode.ADD_RECTANGLE: no_op,
         Mode.ADD_ELLIPSE: no_op,
         Mode.ADD_LINE: no_op,
-        Mode.ADD_POLYLINE: no_op,
-        Mode.ADD_PATH: finish_drawing_shape,
+        Mode.ADD_PATH: no_op,
+        Mode.ADD_POLYLINE: finish_drawing_shape,
         Mode.ADD_POLYGON: finish_drawing_shape,
         Mode.ADD_POLYGON_LASSO: no_op,
     }
@@ -1699,8 +1700,9 @@ class Shapes(Layer):
         vertices either to be added to or removed from shapes that are already
         selected. Note that shapes cannot be selected in this mode.
 
-        The ADD_RECTANGLE, ADD_ELLIPSE, ADD_LINE, ADD_PATH, and ADD_POLYGON
-        modes all allow for their corresponding shape type to be added.
+        The ADD_RECTANGLE, ADD_ELLIPSE, ADD_LINE, ADD_POLYLINE, ADD_PATH, and
+        ADD_POLYGON modes all allow for their corresponding shape type to be
+        added.
         """
         return str(self._mode)
 
@@ -2548,7 +2550,7 @@ class Shapes(Layer):
                 )
                 vertices = self._data_view.displayed_vertices[inds][:, ::-1]
                 # If currently adding path don't show box over last vertex
-                if self._mode == Mode.ADD_PATH:
+                if self._mode == Mode.ADD_POLYLINE:
                     vertices = vertices[:-1]
 
                 if self._value[0] is None or self._value[1] is None:

@@ -82,7 +82,7 @@ def activate_add_line_mode(layer: Shapes) -> None:
 
 @register_shapes_mode_action(trans._('Add polylines'))
 def activate_add_polyline_mode(layer: Shapes) -> None:
-    """Activate add line tool."""
+    """Activate add polyline tool."""
     layer.mode = Mode.ADD_POLYLINE
 
 

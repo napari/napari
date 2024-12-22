@@ -414,7 +414,7 @@ def polygon_creating(layer: Shapes, event: MouseEvent) -> None:
         coordinates = layer.world_to_data(event.position)
         move_active_vertex_under_cursor(layer, coordinates)
 
-        if layer._mode in [Mode.ADD_POLYGON_LASSO, Mode.ADD_POLYLINE]:
+        if layer._mode in [Mode.ADD_POLYGON_LASSO, Mode.ADD_PATH]:
             index = layer._moving_value[0]
 
             position_diff = np.linalg.norm(

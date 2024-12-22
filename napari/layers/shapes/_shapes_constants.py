@@ -26,8 +26,9 @@ class Mode(StringEnum):
     vertices either to be added to or removed from shapes that are already
     selected. Note that shapes cannot be selected in this mode.
 
-    The ADD_RECTANGLE, ADD_ELLIPSE, ADD_LINE, ADD_PATH, and ADD_POLYGON
-    modes all allow for their corresponding shape type to be added.
+    The ADD_RECTANGLE, ADD_ELLIPSE, ADD_LINE, ADD_POLYLINE, ADD_PATH, and
+    ADD_POLYGON modes all allow for their corresponding shape type to be
+    added.
     """
 
     PAN_ZOOM = auto()

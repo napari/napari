@@ -41,7 +41,8 @@ class QtShapesControls(QtLayerControls):
     button_group : qtpy.QtWidgets.QButtonGroup
         Button group for shapes layer modes
         (SELECT, DIRECT, PAN_ZOOM, ADD_RECTANGLE, ADD_ELLIPSE, ADD_LINE,
-        ADD_PATH, ADD_POLYGON, VERTEX_INSERT, VERTEX_REMOVE, TRANSFORM).
+        ADD_POLYLINE, ADD_PATH, ADD_POLYGON, VERTEX_INSERT, VERTEX_REMOVE,
+        TRANSFORM).
     delete_button : qtpy.QtWidgets.QtModePushButton
         Button to delete selected shapes
     direct_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
@@ -233,8 +234,8 @@ class QtShapesControls(QtLayerControls):
         self.button_grid.addWidget(self.polygon_button, 1, 3)
         self.button_grid.addWidget(self.polygon_lasso_button, 1, 4)
         self.button_grid.addWidget(self.line_button, 1, 5)
-        self.button_grid.addWidget(self.path_button, 1, 6)
-        self.button_grid.addWidget(self.polyline_button, 1, 7)
+        self.button_grid.addWidget(self.polyline_button, 1, 6)
+        self.button_grid.addWidget(self.path_button, 1, 7)
         self.button_grid.setContentsMargins(5, 0, 0, 5)
         self.button_grid.setColumnStretch(0, 1)
         self.button_grid.setSpacing(4)
@@ -324,6 +325,7 @@ class QtShapesControls(QtLayerControls):
         * ADD_RECTANGLE
         * ADD_ELLIPSE
         * ADD_LINE
+        * ADD_POLYLINE
         * ADD_PATH
         * ADD_POLYGON
         * ADD_POLYGON_LASSO
