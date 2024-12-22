@@ -225,7 +225,8 @@ def _fresh_settings(monkeypatch):
     monkeypatch.setattr(NapariSettings, 'save', _mock_save)
 
     # this makes sure that we start with fresh settings for every test.
-    settings._SETTINGS = None
+    settings._SETTINGS = NapariSettings()
+    settings._SETTINGS.experimental.compiled_triangulation = True
     return
 
 
