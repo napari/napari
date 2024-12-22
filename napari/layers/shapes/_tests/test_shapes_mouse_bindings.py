@@ -350,7 +350,7 @@ def test_distance_polygon_creating(create_known_shapes_layer):
     assert len(layer.data[-1] == 2)
 
 
-@pytest.mark.parametrize('shape_type', ['path', 'polygon'])
+@pytest.mark.parametrize('shape_type', ['polyline', 'polygon'])
 def test_add_complex_shape(shape_type, create_known_shapes_layer):
     """Add simple shape by clicking in add mode."""
     layer, n_shapes, known_non_shape = create_known_shapes_layer
@@ -392,6 +392,7 @@ def test_add_complex_shape(shape_type, create_known_shapes_layer):
     assert len(layer.data) == n_shapes + 1
     assert layer.data[-1].shape, desired_shape.shape
     np.testing.assert_allclose(layer.data[-1], desired_shape)
+    shape_type = shape_type if shape_type == 'polygon' else 'path'
     assert layer.shape_type[-1] == shape_type
 
     # Ensure it's selected, accounting for zero-indexing
@@ -402,7 +403,7 @@ def test_add_complex_shape(shape_type, create_known_shapes_layer):
 @pytest.mark.parametrize(
     'shape_type_vertices',
     [
-        ('path', [[20, 30], [20, 30]]),
+        ('polyline', [[20, 30], [20, 30]]),
         ('polygon', [[20, 30], [10, 50], [10, 50]]),
     ],
 )
@@ -813,7 +814,7 @@ def test_clicking_the_same_point_is_not_crashing(
     'mode',
     [
         'add_polygon',
-        'add_path',
+        'add_polyline',
     ],
 )
 def test_is_creating_is_false_on_creation(mode, create_known_shapes_layer):
