@@ -13,7 +13,7 @@ by the changes. Threading is used to smoothly animate the waves.
 from time import sleep, time
 
 import numpy as np
-from magicgui import magic_factory
+from magicgui import magicgui
 from scipy.fft import fft2, fftshift
 
 import napari
@@ -116,7 +116,7 @@ def update_viewer():
 thread = update_viewer()
 
 
-@magic_factory(
+@magicgui(
     auto_call=True,
     frequency={'widget_type': 'FloatSlider', 'min': 0, 'max': 1, 'step': 0.01},
     angle={'widget_type': 'Slider', 'min': 0, 'max': 180},
@@ -140,11 +140,9 @@ def moving_wave(
         thread.send((wave_id, frequency, angle, phase_shift, speed))
 
 
-wdg = moving_wave()
-
 # add the widget to the window and run it once
-viewer.window.add_dock_widget(wdg, area='bottom')
-wdg()
+viewer.window.add_dock_widget(moving_wave, area='bottom')
+moving_wave()
 
 napari.run()
 
