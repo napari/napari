@@ -1772,12 +1772,15 @@ class Window:
         canvas = self._qt_viewer.canvas
         prev_size = canvas.size
 
+        visible_dims = list(self._qt_viewer.viewer.dims.displayed)
+        steep = min(self._qt_viewer.viewer.layers.extent.step[visible_dims])
+
         for index, roi in enumerate(rois):
             center_coord, height, width = get_center_bbox(roi)
             camera.center = center_coord
-            canvas.size = (int(height), int(width))
+            canvas.size = (int(height/steep), int(width/steep))
 
-            camera.zoom = 1.0
+            camera.zoom = 1/steep
             path = paths[index] if paths is not None else None
             screenshot_list.append(
                 self.screenshot(path=path, canvas_only=True, scale=scale)
