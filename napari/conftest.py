@@ -208,10 +208,17 @@ def _fresh_settings(monkeypatch):
     """
     from napari import settings
     from napari.settings import NapariSettings
+    from napari.settings._experimental import ExperimentalSettings
 
     # prevent the developer's config file from being used if it exists
     cp = NapariSettings.__private_attributes__['_config_path']
     monkeypatch.setattr(cp, 'default', None)
+
+    monkeypatch.setattr(
+        ExperimentalSettings.__fields__['compiled_triangulation'],
+        'default',
+        True,
+    )
 
     # calling save() with no config path is normally an error
     # here we just have save() return if called without a valid path
@@ -224,9 +231,8 @@ def _fresh_settings(monkeypatch):
 
     monkeypatch.setattr(NapariSettings, 'save', _mock_save)
 
+    settings._SETTINGS = None
     # this makes sure that we start with fresh settings for every test.
-    settings._SETTINGS = NapariSettings()
-    settings._SETTINGS.experimental.compiled_triangulation = True
     return
 
 
