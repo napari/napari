@@ -1778,9 +1778,9 @@ class Window:
         for index, roi in enumerate(rois):
             center_coord, height, width = get_center_bbox(roi)
             camera.center = center_coord
-            canvas.size = (int(height/steep), int(width/steep))
+            canvas.size = (int(height / steep), int(width / steep))
 
-            camera.zoom = 1/steep
+            camera.zoom = 1 / steep
             path = paths[index] if paths is not None else None
             screenshot_list.append(
                 self.screenshot(path=path, canvas_only=True, scale=scale)
