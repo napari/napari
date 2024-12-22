@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from functools import cached_property
-from typing import Optional
 
 import numpy as np
 import numpy.typing as npt
@@ -143,7 +142,7 @@ class Shape(ABC):
     ) -> None:
         self._dims_order = dims_order or list(range(2))
         self._ndisplay = ndisplay
-        self.slice_key: Optional[npt.NDArray] = None
+        self.slice_key: npt.NDArray
 
         self._face_vertices = np.empty((0, self.ndisplay))
         self._face_triangles = np.empty((0, 3), dtype=np.uint32)
