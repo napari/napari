@@ -98,12 +98,6 @@ jobs:
             pydantic: ""
             coverage: no_cov
             min_req: ""
-          - python: 3.11
-            platform: ubuntu-22.04
-            backend: pyqt5
-            coverage: cov
-            pydantic: ""
-            tox_extras: "optional"
     with:
       python_version: ${{ matrix.python }}
       platform: ${{ matrix.platform }}
