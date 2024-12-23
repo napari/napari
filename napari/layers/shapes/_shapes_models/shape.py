@@ -278,7 +278,6 @@ class Shape(ABC):
             self._set_meshes_orig(data, closed=closed, face=face, edge=edge)
             return
 
-        assert data.dtype == np.float32
         if edge and face:
             (triangles, vertices), (centers, offsets, edge_triangles) = (
                 triangulate_polygon_with_edge_numpy_li([data])
