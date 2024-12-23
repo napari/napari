@@ -208,7 +208,7 @@ def test_add_shapes():
     """Test adding shapes."""
     viewer = ViewerModel()
     np.random.seed(0)
-    data = 20 * np.random.random((10, 4, 2))
+    data = 20 * np.random.random((10, 4, 2)).astype(np.float32)
     viewer.add_shapes(data)
     assert len(viewer.layers) == 1
     assert np.array_equal(viewer.layers[0].data, data)
