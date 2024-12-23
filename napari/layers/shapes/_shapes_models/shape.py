@@ -167,6 +167,8 @@ class Shape(ABC):
             and triangulate_path_edge_py is not None
         ):
             cls._set_meshes = cls._set_meshes_compiled
+        else:
+            cls._set_meshes = cls._set_meshes_orig
         return super().__new__(cls)
 
     @property
@@ -272,6 +274,9 @@ class Shape(ABC):
         edge : bool
             Bool which determines if the edge need to be traingulated
         """
+        if data.shape[1] == 3:
+            return self._set_meshes_orig(data, closed=closed, face=face, edge=edge)
+
         assert data.dtype == np.float32
         if edge and face:
             (triangles, vertices), (centers, offsets, edge_triangles) = (
@@ -302,7 +307,7 @@ class Shape(ABC):
             self._face_vertices = np.empty((0, self.ndisplay))
             self._face_triangles = np.empty((0, 3), dtype=np.uint32)
 
-    def _set_meshes(
+    def _set_meshes_orig(
         self,
         data: npt.NDArray,
         closed: bool = True,
