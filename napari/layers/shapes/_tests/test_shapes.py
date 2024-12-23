@@ -684,6 +684,7 @@ def test_ellipses_with_shape_type1():
     assert layer.ndim == shape[2]
     assert np.all([s == 'ellipse' for s in layer.shape_type])
 
+
 def test_ellipses_with_shape_type2():
     # Test multiple four corner (list of vertices, shape_type) tuple
     shape = (10, 4, 2)
@@ -697,6 +698,7 @@ def test_ellipses_with_shape_type2():
     )
     assert layer.ndim == shape[2]
     assert np.all([s == 'ellipse' for s in layer.shape_type])
+
 
 def test_ellipses_with_shape_type3():
     # Test list of four corner (vertices, shape_type) tuples
@@ -712,6 +714,7 @@ def test_ellipses_with_shape_type3():
     assert layer.ndim == shape[2]
     assert np.all([s == 'ellipse' for s in layer.shape_type])
 
+
 def test_ellipses_with_shape_type4():
     # Test single (center-radii, shape_type) ellipse
     shape = (1, 2, 2)
@@ -722,6 +725,7 @@ def test_ellipses_with_shape_type4():
     assert len(layer.data[0]) == 4
     assert layer.ndim == shape[2]
     assert np.all([s == 'ellipse' for s in layer.shape_type])
+
 
 def test_ellipses_with_shape_type5():
     # Test (list of center-radii, shape_type) tuple
@@ -734,6 +738,7 @@ def test_ellipses_with_shape_type5():
     assert np.all([len(ld) == 4 for ld in layer.data])
     assert layer.ndim == shape[2]
     assert np.all([s == 'ellipse' for s in layer.shape_type])
+
 
 def test_ellipses_with_shape_type6():
     # Test list of (center-radii, shape_type) tuples
@@ -839,6 +844,7 @@ def test_lines_with_shape_type1():
     assert layer.ndim == shape[2]
     assert np.all([s == 'line' for s in layer.shape_type])
 
+
 def test_lines_with_shape_type2():
     # Test (multiple lines, shape_type) tuple
     shape = (10, 2, 2)
@@ -852,6 +858,7 @@ def test_lines_with_shape_type2():
     )
     assert layer.ndim == shape[2]
     assert np.all([s == 'line' for s in layer.shape_type])
+
 
 def test_lines_with_shape_type3():
     # Test list of (line, shape_type) tuples
