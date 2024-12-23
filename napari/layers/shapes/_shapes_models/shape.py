@@ -275,7 +275,8 @@ class Shape(ABC):
             Bool which determines if the edge need to be traingulated
         """
         if data.shape[1] == 3:
-            return self._set_meshes_orig(data, closed=closed, face=face, edge=edge)
+            self._set_meshes_orig(data, closed=closed, face=face, edge=edge)
+            return
 
         assert data.dtype == np.float32
         if edge and face:
@@ -306,6 +307,14 @@ class Shape(ABC):
         else:
             self._face_vertices = np.empty((0, self.ndisplay))
             self._face_triangles = np.empty((0, 3), dtype=np.uint32)
+
+    def _set_meshes(  # noqa: B027
+        self,
+        data: npt.NDArray,
+        closed: bool = True,
+        face: bool = True,
+        edge: bool = True,
+    ) -> None: ...
 
     def _set_meshes_orig(
         self,
