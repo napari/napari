@@ -150,6 +150,7 @@ class QtLabelControl(QtWidgetControlsBase):
         self.labelColor = QWidget()
         self.labelColor.setProperty('emphasized', True)
         color_layout = QHBoxLayout()
+        color_layout.setContentsMargins(0, 2, 0, 1)
         self.colorBox = QtColorBox(layer)
         color_layout.addWidget(self.colorBox)
         color_layout.addWidget(self.selectionSpinBox)

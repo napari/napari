@@ -145,6 +145,7 @@ class QtColormapControl(QtWidgetControlsBase):
         self.colorbarLabel.setToolTip(trans._('Colorbar'))
 
         colormap_layout = QHBoxLayout()
+        colormap_layout.setContentsMargins(0, 0, 0, 2)
         if hasattr(self._layer, 'rgb') and self._layer.rgb:
             colormap_layout.addWidget(QLabel('RGB'))
             self.colormapComboBox.setVisible(False)
