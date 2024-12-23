@@ -128,6 +128,7 @@ class PolygonBase(Shape):
                 data = np.stack(splev(u, tck), axis=1)[:-1]
 
         # For path connect every all data
+        assert data.dtype == np.float32
         self._set_meshes(data, face=self._filled, closed=self._closed)
         bbox = self._bounding_box[:, self.dims_displayed]
         self._box = create_box_from_bounding(bbox)
