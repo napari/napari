@@ -1811,6 +1811,7 @@ class Window:
             self._teardown()
             self._qt_viewer.close()
             self._qt_window.close()
+            self._qt_window.deleteLater()
             self._qt_window = None
 
     def _open_preferences_dialog(self) -> PreferencesDialog:
