@@ -125,10 +125,10 @@ class PolygonBase(Shape):
                 u = np.linspace(0, 1, self.interpolation_sampling * len(data))
 
                 # get interpolated data (discard last element which is a copy)
-                data = np.stack(splev(u, tck), axis=1)[:-1]
+                data = np.stack(splev(u, tck), axis=1)[:-1].astype(np.float32)
 
         # For path connect every all data
-        assert data.dtype == np.float32
+        assert data.dtype == np.float32, self.interpolation_order
         self._set_meshes(data, face=self._filled, closed=self._closed)
         bbox = self._bounding_box[:, self.dims_displayed]
         self._box = create_box_from_bounding(bbox)

@@ -14,19 +14,23 @@ from napari.layers.shapes._shapes_models import (
 )
 from napari.layers.shapes._shapes_utils import triangulate_face
 
+BETTER_TRIANGULATION = (
+    'triangle' in sys.modules or 'PartSegCore_compiled_backend' in sys.modules
+)
+
 
 def test_rectangle():
     """Test creating Shape with a random rectangle."""
     # Test a single four corner rectangle
     np.random.seed(0)
-    data = 20 * np.random.random((4, 2))
+    data = 20 * np.random.random((4, 2)).astype(np.float32)
     shape = Rectangle(data)
     np.testing.assert_array_equal(shape.data, data)
     assert shape.data_displayed.shape == (4, 2)
     assert shape.slice_key.shape == (2, 0)
 
     # If given two corners, representation will be expanded to four
-    data = 20 * np.random.random((2, 2))
+    data = 20 * np.random.random((2, 2)).astype(np.float32)
     shape = Rectangle(data)
     assert len(shape.data) == 4
     assert shape.data_displayed.shape == (4, 2)
@@ -79,7 +83,7 @@ def test_nD_rectangle():
     """Test creating Shape with a random nD rectangle."""
     # Test a single four corner planar 3D rectangle
     np.random.seed(0)
-    data = 20 * np.random.random((4, 3))
+    data = 20 * np.random.random((4, 3)).astype(np.float32)
     data[:, 0] = 0
     shape = Rectangle(data)
     np.testing.assert_array_equal(shape.data, data)
@@ -142,7 +146,7 @@ def test_polygon():
     assert shape.data_displayed.shape == (6, 2)
     assert shape.slice_key.shape == (2, 0)
     # should get few triangles
-    expected_face = (6, 2) if 'triangle' in sys.modules else (8, 2)
+    expected_face = (6, 2) if BETTER_TRIANGULATION else (8, 2)
     assert shape._edge_vertices.shape == (16, 2)
     assert shape._face_vertices.shape == expected_face
 
@@ -211,7 +215,7 @@ def test_line():
     """Test creating Shape with a random line."""
     # Test a single two vertex line
     np.random.seed(0)
-    data = 20 * np.random.random((2, 2))
+    data = 20 * np.random.random((2, 2)).astype(np.float32)
     shape = Line(data)
     np.testing.assert_array_equal(shape.data, data)
     assert shape.data_displayed.shape == (2, 2)
@@ -222,7 +226,7 @@ def test_nD_line():
     """Test creating Shape with a random nD line."""
     # Test a single two vertex 3D line
     np.random.seed(0)
-    data = 20 * np.random.random((2, 3))
+    data = 20 * np.random.random((2, 3)).astype(np.float32)
     shape = Line(data)
     np.testing.assert_array_equal(shape.data, data)
     assert shape.data_displayed.shape == (2, 2)
@@ -236,14 +240,14 @@ def test_ellipse():
     """Test creating Shape with a random ellipse."""
     # Test a single four corner ellipse
     np.random.seed(0)
-    data = 20 * np.random.random((4, 2))
+    data = 20 * np.random.random((4, 2)).astype(np.float32)
     shape = Ellipse(data)
     np.testing.assert_array_equal(shape.data, data)
     assert shape.data_displayed.shape == (4, 2)
     assert shape.slice_key.shape == (2, 0)
 
     # If center radii, representation will be expanded to four corners
-    data = 20 * np.random.random((2, 2))
+    data = 20 * np.random.random((2, 2)).astype(np.float32)
     shape = Ellipse(data)
     assert len(shape.data) == 4
     assert shape.data_displayed.shape == (4, 2)
@@ -254,7 +258,7 @@ def test_nD_ellipse():
     """Test creating Shape with a random nD ellipse."""
     # Test a single four corner planar 3D ellipse
     np.random.seed(0)
-    data = 20 * np.random.random((4, 3))
+    data = 20 * np.random.random((4, 3)).astype(np.float32)
     data[:, 0] = 0
     shape = Ellipse(data)
     np.testing.assert_array_equal(shape.data, data)
