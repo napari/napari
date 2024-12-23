@@ -91,6 +91,7 @@ class PolygonBase(Shape):
                 np.max(data, axis=0),
             ]
         )
+        assert data.dtype == np.float32
         self._update_displayed_data()
 
     def _update_displayed_data(self) -> None:
@@ -98,6 +99,7 @@ class PolygonBase(Shape):
         self._clean_cache()
         # Raw vertices
         data = self.data_displayed
+        assert data.dtype == np.float32
 
         # # splprep fails if two adjacent values are identical, which happens
         # # when a point was just created and the new potential point is set to exactly the same

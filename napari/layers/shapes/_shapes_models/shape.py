@@ -272,6 +272,7 @@ class Shape(ABC):
         edge : bool
             Bool which determines if the edge need to be traingulated
         """
+        assert data.dtype == np.float32
         if edge and face:
             (triangles, vertices), (centers, offsets, edge_triangles) = (
                 triangulate_polygon_with_edge_numpy_li([data])
