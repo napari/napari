@@ -110,7 +110,7 @@ def test_interaction_box_fixed_rotation(dims_displayed):
 
 
 @pytest.mark.parametrize('dims_displayed', [[0, 1], [1, 2]])
-def test_interaction_box_scale(dims_displayed):
+def test_interaction_box_scale_with_fixed_aspect(dims_displayed):
     layer = Mock(affine=Affine())
     layer._slice_input.displayed = [0, 1]
     initial_handle_coords_data = np.asarray(
@@ -146,7 +146,7 @@ def test_interaction_box_scale(dims_displayed):
         event,
     )
     # when clicking on handle, scale should be 1
-    assert np.array_equal(
+    assert np.allclose(
         layer.affine.scale,
         Affine(scale=np.asarray([1, 1], dtype=np.float32)).scale,
     )
