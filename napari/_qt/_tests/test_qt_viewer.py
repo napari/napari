@@ -338,6 +338,17 @@ def test_export_rois(make_napari_viewer, tmp_path):
     assert viewer.camera.center == camera_center
     assert viewer.camera.zoom == camera_zoom
 
+    # Add 3d ROI for testing
+    roi_3d = np.array(
+        [
+            [[20, 20, 0], [40, 20, 0], [40, 40, 0], [20, 40, 0]],
+            [[20, 20, 1], [40, 20, 1], [40, 40, 1], [20, 40, 1]],
+        ]
+    )
+
+    # Add a test that ahould fail
+    assert roi_3d.shape == (4, 2)
+
     # expected_values = [0, 100, 100, 100, 100, 400]
     # for index, roi_img in enumerate(test_roi):
     #     gray_img = rgb2gray(roi_img[:, :, :3])
