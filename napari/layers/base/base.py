@@ -1703,6 +1703,47 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         vector_data_ndisplay /= np.linalg.norm(vector_data_ndisplay)
         return vector_data_ndisplay
 
+    def _world_to_displayed_data_normal(
+        self, vector_world: npt.ArrayLike, dims_displayed: list[int]
+    ) -> np.ndarray:
+        """Convert a normal vector defining an orientation from world coordinates to data coordinates.
+
+        Parameters
+        ----------
+        vector_world : tuple, list, 1D array
+            A vector in world coordinates.
+        dims_displayed : list[int]
+            Indices of displayed dimensions of the data.
+
+        Returns
+        -------
+        np.ndarray
+            Transformed normal vector (unit vector) in data coordinates.
+
+        Notes
+        -----
+        This method is adapted from napari-threedee under BSD-3-Clause License.
+        For more information see also:
+        https://www.scratchapixel.com/lessons/mathematics-physics-for-computer-graphics/geometry/transforming-normals.html
+        """
+
+        # the napari transform is from layer -> world.
+        # We want the inverse of the world ->  layer, so we just take the napari transform
+        inverse_transform = self._transforms[1:].simplified.linear_matrix
+
+        # Extract the relevant submatrix based on dims_displayed
+        submatrix = inverse_transform[np.ix_(dims_displayed, dims_displayed)]
+        transpose_inverse_transform = submatrix.T
+
+        # transform the vector
+        transformed_vector = np.matmul(
+            transpose_inverse_transform, vector_world
+        )
+
+        transformed_vector /= np.linalg.norm(transformed_vector)
+
+        return transformed_vector
+
     def _world_to_layer_dims(
         self, *, world_dims: npt.NDArray, ndim_world: int
     ) -> np.ndarray:

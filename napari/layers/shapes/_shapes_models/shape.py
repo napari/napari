@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Optional
 
 import numpy as np
 import numpy.typing as npt
@@ -15,6 +14,33 @@ from napari.layers.shapes._shapes_utils import (
 )
 from napari.utils.misc import argsort
 from napari.utils.translations import trans
+
+
+def _remove_path_duplicates_np(data: np.ndarray, closed: bool):
+    # We add the first data point at the end to get the same length bool
+    # array as the data, and also to work on closed shapes; the last value
+    # in the diff array compares the last and first vertex.
+    diff = np.diff(np.append(data, data[0:1, :], axis=0), axis=0)
+    dup = np.all(diff == 0, axis=1)
+    # if the shape is closed, check whether the first vertex is the same
+    # as the last vertex, and count it as a duplicate if so
+    if closed and dup[-1]:
+        dup[0] = True
+    # we allow repeated nodes at the end for the lasso tool, which
+    # for an instant needs both the last placed point and the point at the
+    # cursor to be the same; if the lasso implementation becomes cleaner,
+    # remove this hardcoding
+    dup[-2:] = False
+    indices = np.arange(data.shape[0])
+    return data[indices[~dup]]
+
+
+try:
+    from napari.layers.shapes._accelerated_triangulate import (
+        remove_path_duplicates,
+    )
+except ImportError:
+    remove_path_duplicates = _remove_path_duplicates_np
 
 
 class Shape(ABC):
@@ -102,7 +128,7 @@ class Shape(ABC):
     ) -> None:
         self._dims_order = dims_order or list(range(2))
         self._ndisplay = ndisplay
-        self.slice_key: Optional[npt.NDArray] = None
+        self.slice_key: npt.NDArray
 
         self._face_vertices = np.empty((0, self.ndisplay))
         self._face_triangles = np.empty((0, 3), dtype=np.uint32)
@@ -224,6 +250,7 @@ class Shape(ABC):
         edge : bool
             Bool which determines if the edge need to be traingulated
         """
+        data = remove_path_duplicates(data, closed=closed)
         if edge:
             centers, offsets, triangles = triangulate_edge(data, closed=closed)
             self._edge_vertices = centers
@@ -296,7 +323,7 @@ class Shape(ABC):
         self._face_vertices = self._face_vertices @ transform.T
 
         points = self.data_displayed
-
+        points = remove_path_duplicates(points, closed=self._closed)
         centers, offsets, triangles = triangulate_edge(
             points, closed=self._closed
         )
