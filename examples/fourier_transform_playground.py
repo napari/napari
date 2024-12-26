@@ -144,6 +144,7 @@ def moving_wave(
 viewer.window.add_dock_widget(moving_wave, area='bottom')
 moving_wave()
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()
 
 thread.quit()
