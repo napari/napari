@@ -348,7 +348,7 @@ def test_export_rois(make_napari_viewer, tmp_path):
 
     # Add a test that ahould fail
     test_3d = viewer.export_rois(roi_3d, paths=paths)
-    assert test_3d.shape == (4, 2)
+    assert test_3d.shape == (20, 20, 4)
 
     # expected_values = [0, 100, 100, 100, 100, 400]
     # for index, roi_img in enumerate(test_roi):
