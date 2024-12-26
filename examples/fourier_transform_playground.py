@@ -145,5 +145,9 @@ moving_wave()
 
 if __name__ == '__main__':
     napari.run()
+else:
+    # for the gallery, sleep to make sure that the images are captured
+    import time
+    time.sleep(1)
 
 thread.quit()
