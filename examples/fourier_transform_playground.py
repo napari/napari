@@ -99,7 +99,6 @@ def update_viewer():
     # keep track of each wave in a dictionary by id, this way we can modify/remove
     # existing waves or add new ones
     wave_args = {}
-    new_params = None
     while True:
         sleep(1 / FPS)
         # see https://napari.org/stable/guides/threading.html#full-two-way-communication
