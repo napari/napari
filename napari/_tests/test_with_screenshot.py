@@ -2,12 +2,21 @@ import numpy as np
 import pytest
 
 from napari._tests.utils import skip_local_popups, skip_on_win_ci
+from napari.layers import Shapes
 from napari.utils._test_utils import read_only_mouse_event
 from napari.utils.interactions import (
     mouse_move_callbacks,
     mouse_press_callbacks,
     mouse_release_callbacks,
 )
+
+
+@pytest.fixture
+def qt_viewer(qt_viewer_):
+    # show the qt_viewer and hide its welcome widget
+    qt_viewer_.show()
+    qt_viewer_.set_welcome_visible(False)
+    return qt_viewer_
 
 
 @skip_on_win_ci
@@ -545,3 +554,42 @@ def test_blending_modes_with_canvas(make_napari_viewer):
     img2_layer.blending = 'minimum'
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     np.testing.assert_array_equal(screenshot[:, :, 0], np.minimum(img1, img2))
+
+
+@skip_local_popups
+def test_active_layer_highlight_visibility(qt_viewer):
+    viewer = qt_viewer.viewer
+
+    # take initial screenshot (full black/empty screenshot since welcome message is hidden)
+    launch_screenshot = qt_viewer.screenshot(flash=False)
+    # check screenshot ignoring alpha
+    assert launch_screenshot[..., :-1].max() == 0
+
+    # add shapes layer setting edge and face color to `black` (so shapes aren't
+    # visible unless they're selected), create a rectangle and select the created shape
+    shapes_layer: Shapes = viewer.add_shapes(
+        edge_color='black', face_color='black'
+    )
+    shapes_layer.add_rectangles([[0, 0], [1, 1]])
+    shapes_layer.selected_data = {0}
+
+    # there should be a highlight so a screenshot should have something visible
+    highlight_screenshot = qt_viewer.screenshot(flash=False)
+    # check screenshot ignoring alpha
+    assert highlight_screenshot[..., :-1].max() > 0
+
+    # clear viewer layer selection
+    viewer.layers.selection.clear()
+
+    # there shouldn't be a highlight so a new screenshot shouldn't have something visible
+    no_highlight_screenshot = qt_viewer.screenshot(flash=False)
+    # check screenshot ignoring alpha
+    assert no_highlight_screenshot[..., :-1].max() == 0
+
+    # select again the layer with the rectangle shape
+    viewer.layers.selection.add(shapes_layer)
+
+    # there should be a highlight so a screenshot should have something visible
+    reselection_highlight_screenshot = qt_viewer.screenshot(flash=False)
+    # check screenshot ignoring alpha
+    assert reselection_highlight_screenshot[..., :-1].max() > 0

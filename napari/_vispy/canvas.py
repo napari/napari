@@ -640,7 +640,7 @@ class VispyCanvas:
     def _calculate_view_direction(self, event_pos: list[float]) -> list[float]:
         """calculate view direction by ray shot from the camera"""
         # this method is only implemented for 3 dimension
-        if self.viewer.dims.ndisplay == 2:
+        if self.viewer.dims.ndisplay == 2 or self.viewer.dims.ndim == 2:
             return self.viewer.camera.calculate_nd_view_direction(
                 self.viewer.dims.ndim, self.viewer.dims.displayed
             )

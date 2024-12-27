@@ -65,7 +65,7 @@ class PolygonBase(Shape):
 
     @data.setter
     def data(self, data):
-        data = np.array(data).astype(float)
+        data = np.array(data).astype(np.float32)
 
         if len(self.dims_order) != data.shape[1]:
             self._dims_order = list(range(data.shape[1]))
@@ -73,13 +73,19 @@ class PolygonBase(Shape):
         if len(data) < 2:
             raise ValueError(
                 trans._(
-                    'Shape needs at least two vertices, {number} provided.',
+                    'Shape needs at least two unique vertices, {number} provided.',
                     deferred=True,
                     number=len(data),
                 )
             )
 
         self._data = data
+        self._bounding_box = np.array(
+            [
+                np.min(data, axis=0),
+                np.max(data, axis=0),
+            ]
+        )
         self._update_displayed_data()
 
     def _update_displayed_data(self) -> None:
@@ -117,10 +123,6 @@ class PolygonBase(Shape):
         self._set_meshes(data, face=self._filled, closed=self._closed)
         self._box = create_box(self.data_displayed)
 
-        data_not_displayed = self.data[:, self.dims_not_displayed]
         self.slice_key = np.round(
-            [
-                np.min(data_not_displayed, axis=0),
-                np.max(data_not_displayed, axis=0),
-            ]
+            self._bounding_box[:, self.dims_not_displayed]
         ).astype('int')

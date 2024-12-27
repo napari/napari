@@ -11,14 +11,14 @@ from napari.utils.events.containers._set import EventedSet
 from napari.utils.events.containers._typed import TypedMutableSequence
 
 __all__ = [
+    'EventedDict',
     'EventedList',
     'EventedSet',
     'NestableEventedList',
-    'EventedDict',
     'Selectable',
     'SelectableEventedList',
     'SelectableNestableEventedList',
     'Selection',
-    'TypedMutableSequence',
     'TypedMutableMapping',
+    'TypedMutableSequence',
 ]

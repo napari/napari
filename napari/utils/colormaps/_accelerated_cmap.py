@@ -17,9 +17,9 @@ if TYPE_CHECKING:
 
 
 __all__ = (
+    'labels_raw_to_texture_direct',
     'minimum_dtype_for_labels',
     'zero_preserving_modulo',
-    'labels_raw_to_texture_direct',
     'zero_preserving_modulo_numpy',
 )
 
@@ -74,6 +74,11 @@ def zero_preserving_modulo_numpy(
         The result: 0 for the ``to_zero`` value, ``values % n + 1``
         everywhere else.
     """
+    if n > np.iinfo(dtype).max:
+        # n is to big, modulo will be pointless
+        res = values.astype(dtype)
+        res[values == to_zero] = 0
+        return res
     res = ((values - 1) % n + 1).astype(dtype)
     res[values == to_zero] = 0
     return res

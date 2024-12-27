@@ -48,6 +48,8 @@ jobs:
         run: pip install --upgrade pip
       - name: Install Napari dev
         run: pip install -e .[build]
+        env:
+          PIP_CONSTRAINT: resources/constraints/constraints_py3.11.txt
       - name: Make Typestubs
         run: |
           make typestubs
@@ -112,7 +114,7 @@ jobs:
       fail-fast: false
       matrix:
         platform: [ ubuntu-latest ]
-        python: [ "3.9", "3.11" ]
+        python: [ "3.10", "3.11" ]
         backend: [ "pyqt5,pyside6" ]
         coverage: [ cov ]
         pydantic: ["_pydantic_1"]
@@ -125,7 +127,7 @@ jobs:
           - python: "3.12"
             platform: windows-latest
             backend: pyqt6
-            coverage: no_cov
+            coverage: cov
           - python: "3.12"
             platform: macos-13
             backend: pyqt5
@@ -161,7 +163,6 @@ jobs:
             platform: ubuntu-latest
             backend: pyside2
             coverage: no_cov
-
     with:
       python_version: ${{ matrix.python }}
       platform: ${{ matrix.platform }}
