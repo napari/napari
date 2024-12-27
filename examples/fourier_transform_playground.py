@@ -148,6 +148,6 @@ if __name__ == '__main__':
 else:
     # for the gallery, sleep to make sure that the images are captured
     import time
-    time.sleep(1)
+    time.sleep(5)
 
 thread.quit()
