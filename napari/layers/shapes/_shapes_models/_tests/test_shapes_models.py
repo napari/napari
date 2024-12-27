@@ -78,8 +78,7 @@ def test_rectangle_rotate():
 
 
 def test_nD_rectangle():
-    """Test creating Shape with a random nD rectangle."""
-    # Test a single four corner planar 3D rectangle
+    """Test creating Shape with a single four corner planar 3D rectangle."""
     data = np.array(
         [[0, -10, -10], [0, -10, 20], [0, 20, 20], [0, 20, -10]],
         dtype=np.float32,
