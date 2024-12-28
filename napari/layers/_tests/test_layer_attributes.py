@@ -1,12 +1,15 @@
+from unittest.mock import MagicMock
+
 import numpy as np
 import pytest
 
 from napari._tests.utils import layer_test_data
+from napari.components.dims import Dims
 from napari.layers import Image, Labels
 
 
 @pytest.mark.parametrize(
-    'image_shape, dims_displayed, expected',
+    ('image_shape', 'dims_displayed', 'expected'),
     [
         ((10, 20, 30), (0, 1, 2), [[0, 9.0], [0, 19.0], [0, 29.0]]),
         ((10, 20, 30), (0, 2, 1), [[0, 9.0], [0, 29.0], [0, 19.0]]),
@@ -21,7 +24,7 @@ def test_layer_bounding_box_order(image_shape, dims_displayed, expected):
     )
 
 
-@pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
+@pytest.mark.parametrize(('Layer', 'data', 'ndim'), layer_test_data)
 def test_update_scale_updates_layer_extent_cache(Layer, data, ndim):
     np.random.seed(0)
     layer = Layer(data)
@@ -38,7 +41,7 @@ def test_update_scale_updates_layer_extent_cache(Layer, data, ndim):
     np.testing.assert_almost_equal(layer.extent.step, (2,) * layer.ndim)
 
 
-@pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
+@pytest.mark.parametrize(('Layer', 'data', 'ndim'), layer_test_data)
 def test_update_data_updates_layer_extent_cache(Layer, data, ndim):
     np.random.seed(0)
     layer = Layer(data)
@@ -59,9 +62,9 @@ def test_update_data_updates_layer_extent_cache(Layer, data, ndim):
 def test_contrast_limits_must_be_increasing():
     np.random.seed(0)
     Image(np.random.rand(8, 8), contrast_limits=[0, 1])
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must be monotonically increasing'):
         Image(np.random.rand(8, 8), contrast_limits=[1, 1])
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must be monotonically increasing'):
         Image(np.random.rand(8, 8), contrast_limits=[1, 0])
 
 
@@ -102,7 +105,7 @@ def test_get_value_at_subpixel_offsets(ImageClass, ndim):
 
     # test using non-uniform scale per-axis
     layer = ImageClass(data, scale=(0.5, 1, 2)[:ndim])
-    layer._slice_dims([0] * ndim, ndisplay=ndim)
+    layer._slice_dims(Dims(ndim=ndim, ndisplay=ndim))
 
     # dictionary of expected values at each voxel center coordinate
     val_dict = {
@@ -122,7 +125,7 @@ def test_get_value_3d_view_of_2d_image(ImageClass):
     ndisplay = 3
     # test using non-uniform scale per-axis
     layer = ImageClass(data, scale=(0.5, 1))
-    layer._slice_dims([0] * ndisplay, ndisplay=ndisplay)
+    layer._slice_dims(Dims(ndim=ndisplay, ndisplay=ndisplay))
 
     # dictionary of expected values at each voxel center coordinate
     val_dict = {
@@ -134,6 +137,52 @@ def test_get_value_3d_view_of_2d_image(ImageClass):
     _check_subpixel_values(layer, val_dict)
 
 
+@pytest.mark.parametrize(('Layer', 'data', 'ndim'), layer_test_data)
+def test_layer_unique_id(Layer, data, ndim):
+    layer = Layer(data)
+    assert layer.unique_id is not None
+
+
+def test_layer_id_unique():
+    layer1 = Image(np.random.rand(10, 10))
+    layer2 = Labels(np.ones((10, 10)).astype(int))
+    assert layer1.unique_id != layer2.unique_id
+
+
 def test_zero_scale_layer():
     with pytest.raises(ValueError, match='scale values of 0'):
         Image(np.zeros((64, 64)), scale=(0, 1))
+
+
+@pytest.mark.parametrize(('Layer', 'data', 'ndim'), layer_test_data)
+def test_sync_refresh_block(Layer, data, ndim):
+    my_layer = Layer(data)
+    my_layer.set_view_slice = MagicMock()
+
+    with my_layer._block_refresh():
+        my_layer.refresh()
+    my_layer.set_view_slice.assert_not_called
+
+    my_layer.refresh()
+    my_layer.set_view_slice.assert_called_once()
+
+
+@pytest.mark.parametrize(('Layer', 'data', 'ndim'), layer_test_data)
+def test_async_refresh_block(Layer, data, ndim):
+    from napari import settings
+
+    settings.get_settings().experimental.async_ = True
+
+    my_layer = Layer(data)
+
+    mock = MagicMock()
+
+    my_layer.events.reload.connect(mock)
+
+    with my_layer._block_refresh():
+        my_layer.refresh()
+
+    mock.assert_not_called()
+
+    my_layer.refresh()
+    mock.assert_called_once()

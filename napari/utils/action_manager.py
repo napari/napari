@@ -5,7 +5,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from functools import cached_property
 from inspect import isgeneratorfunction
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from napari.utils.events import EmitterGroup
 from napari.utils.interactions import Shortcut
@@ -18,14 +18,12 @@ if TYPE_CHECKING:
     from napari.utils.key_bindings import KeymapProvider
 
     class SignalInstance(Protocol):
-        def connect(self, callback: Callable) -> None:
-            ...
+        def connect(self, callback: Callable) -> None: ...
 
     class Button(Protocol):
         clicked: SignalInstance
 
-        def setToolTip(self, text: str) -> None:
-            ...
+        def setToolTip(self, text: str) -> None: ...
 
     class ShortcutEvent:
         name: str
@@ -48,9 +46,9 @@ class Action:
         layer into the commands.  See :func:`inject_napari_dependencies` for
         details.
         """
-        from napari._app_model import get_app
+        from napari._app_model import get_app_model
 
-        return get_app().injection_store.inject(self.command)
+        return get_app_model().injection_store.inject(self.command)
 
 
 class ActionManager:
@@ -78,13 +76,13 @@ class ActionManager:
     in.
     """
 
-    _actions: Dict[str, Action]
+    _actions: dict[str, Action]
 
     def __init__(self) -> None:
         # map associating a name/id with a Comm
-        self._actions: Dict[str, Action] = {}
-        self._shortcuts: Dict[str, List[str]] = defaultdict(list)
-        self._stack: List[str] = []
+        self._actions: dict[str, Action] = {}
+        self._shortcuts: dict[str, list[str]] = defaultdict(list)
+        self._stack: list[str] = []
         self._tooltip_include_action_name = False
         self.events = EmitterGroup(source=self, shorcut_changed=None)
 
@@ -106,7 +104,7 @@ class ActionManager:
         name: str,
         command: Callable,
         description: str,
-        keymapprovider: KeymapProvider,
+        keymapprovider: Optional[KeymapProvider],
         repeatable: bool = False,
     ):
         """
@@ -163,7 +161,8 @@ class ActionManager:
         self._actions[name] = Action(
             command, description, keymapprovider, repeatable
         )
-        self._update_shortcut_bindings(name)
+        if keymapprovider:
+            self._update_shortcut_bindings(name)
 
     def _update_shortcut_bindings(self, name: str):
         """
@@ -175,7 +174,7 @@ class ActionManager:
         if name not in self._shortcuts:
             return
         action = self._actions[name]
-        km_provider: KeymapProvider = action.keymapprovider
+        km_provider = action.keymapprovider
         if hasattr(km_provider, 'bind_key'):
             for shortcut in self._shortcuts[name]:
                 # NOTE: it would be better if we could bind `self.trigger` here
@@ -217,7 +216,7 @@ class ActionManager:
         self._validate_action_name(name)
 
         if (action := self._actions.get(name)) and isgeneratorfunction(
-            getattr(action, "command", None)
+            getattr(action, 'command', None)
         ):
             raise ValueError(
                 trans._(
@@ -268,7 +267,7 @@ class ActionManager:
         self._update_shortcut_bindings(name)
         self._emit_shortcut_change(name, shortcut)
 
-    def unbind_shortcut(self, name: str) -> Optional[List[str]]:
+    def unbind_shortcut(self, name: str) -> Optional[list[str]]:
         """
         Unbind all shortcuts for a given action name.
 
@@ -294,7 +293,7 @@ class ActionManager:
         if action is None:
             warnings.warn(
                 trans._(
-                    "Attempting to unbind an action which does not exists ({name}), this may have no effects. This can happen if your settings are out of date, if you upgraded napari, upgraded or deactivated a plugin, or made a typo in in your custom keybinding.",
+                    'Attempting to unbind an action which does not exists ({name}), this may have no effects. This can happen if your settings are out of date, if you upgraded napari, upgraded or deactivated a plugin, or made a typo in in your custom keybinding.',
                     name=name,
                 ),
                 UserWarning,
@@ -321,7 +320,7 @@ class ActionManager:
 
         if name in self._shortcuts:
             jstr = ' ' + trans._p('<keysequence> or <keysequence>', 'or') + ' '
-            shorts = jstr.join(f"{Shortcut(s)}" for s in self._shortcuts[name])
+            shorts = jstr.join(f'{Shortcut(s)}' for s in self._shortcuts[name])
             ttip += f' ({shorts})'
 
         ttip += f'[{name}]' if self._tooltip_include_action_name else ''
@@ -349,9 +348,9 @@ class ActionManager:
                 action = self._actions.get(name, None)
                 if action and layer == action.keymapprovider:
                     for shortcut in shortcuts:
-                        layer_shortcuts[layer][
-                            str(shortcut)
-                        ] = action.description
+                        layer_shortcuts[layer][str(shortcut)] = (
+                            action.description
+                        )
 
         return layer_shortcuts
 

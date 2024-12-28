@@ -3,10 +3,10 @@ from itertools import permutations
 import numpy as np
 import pandas as pd
 import pytest
-from pydantic import ValidationError
 
+from napari._pydantic_compat import ValidationError
 from napari._tests.utils import assert_colors_equal
-from napari.layers.utils._slice_input import _SliceInput
+from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.layers.utils.string_encoding import (
     ConstantStringEncoding,
     FormatStringEncoding,
@@ -720,17 +720,17 @@ def test_copy_paste_with_derived_color():
 
 @pytest.mark.parametrize(
     ('ndim', 'ndisplay', 'translation'),
-    (
+    [
         (2, 2, 0),  # 2D data and display, no translation
         (2, 3, 0),  # 2D data and 3D display, no translation
-        (2, 2, 0),  # 3D data and display, no translation
+        (3, 3, 0),  # 3D data and display, no translation
         (2, 2, 5.2),  # 2D data and display, constant translation
         (2, 3, 5.2),  # 2D data and 3D display, constant translation
-        (2, 2, 5.2),  # 3D data and display, constant translation
+        (3, 3, 5.2),  # 3D data and display, constant translation
         (2, 2, [5.2, -3.2]),  # 2D data, display, translation
         (2, 3, [5.2, -3.2]),  # 2D data, 3D display, 2D translation
         (3, 3, [5.2, -3.2, 0.1]),  # 3D data, display, translation
-    ),
+    ],
 )
 def test_compute_text_coords(ndim, ndisplay, translation):
     """See https://github.com/napari/napari/issues/5111"""
@@ -762,7 +762,9 @@ def test_compute_text_coords_with_3D_data_2D_display(order):
         features=pd.DataFrame(index=range(num_points)),
         translation=translation,
     )
-    slice_input = _SliceInput(ndisplay=2, point=(0.0,) * 3, order=order)
+    slice_input = _SliceInput(
+        ndisplay=2, world_slice=_ThickNDSlice.make_full(ndim=3), order=order
+    )
     np.random.seed(0)
     coords = np.random.rand(num_points, slice_input.ndisplay)
 

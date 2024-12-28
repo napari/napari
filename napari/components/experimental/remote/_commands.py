@@ -1,11 +1,11 @@
-"""RemoteCommands class.
-"""
+"""RemoteCommands class."""
+
 import json
 import logging
 
 from napari.components.layerlist import LayerList
 
-LOGGER = logging.getLogger("napari.monitor")
+LOGGER = logging.getLogger('napari.monitor')
 
 
 class RemoteCommands:
@@ -47,7 +47,7 @@ class RemoteCommands:
             The remote command.
         """
         command = event.command
-        LOGGER.info("RemoveCommands._process_command: %s", json.dumps(command))
+        LOGGER.info('RemoveCommands._process_command: %s', json.dumps(command))
 
         # Every top-level key in in the command should be a method
         # in this RemoveCommands class.
@@ -59,7 +59,7 @@ class RemoteCommands:
         for name, args in command.items():
             try:
                 method = getattr(self, name)
-                LOGGER.info("Calling RemoteCommands.%s(%s)", name, args)
+                LOGGER.info('Calling RemoteCommands.%s(%s)', name, args)
                 method(args)
             except AttributeError:
-                LOGGER.exception("RemoteCommands.%s does not exist.", name)
+                LOGGER.exception('RemoteCommands.%s does not exist.', name)

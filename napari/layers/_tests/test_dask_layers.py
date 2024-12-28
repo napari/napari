@@ -44,20 +44,20 @@ def test_dask_array_creates_cache():
     resize_dask_cache(1)
     assert _dask_utils._DASK_CACHE.cache.available_bytes == 1
     # by default we have no dask_cache and task fusion is active
-    original = dask.config.get("optimization.fuse.active", None)
+    original = dask.config.get('optimization.fuse.active', None)
 
     def mock_set_view_slice():
-        assert dask.config.get("optimization.fuse.active") is False
+        assert dask.config.get('optimization.fuse.active') is False
 
     layer = layers.Image(da.ones((100, 100)))
     layer._set_view_slice = mock_set_view_slice
     layer.set_view_slice()
 
-    # adding a dask array will reate cache and turn off task fusion,
+    # adding a dask array will create cache and turn off task fusion,
     # *but only* during slicing (see "mock_set_view_slice" above)
     assert _dask_utils._DASK_CACHE.cache.available_bytes > 100
     assert not _dask_utils._DASK_CACHE.active
-    assert dask.config.get("optimization.fuse.active", None) == original
+    assert dask.config.get('optimization.fuse.active', None) == original
 
     # make sure we can resize the cache
     resize_dask_cache(10000)
@@ -65,7 +65,7 @@ def test_dask_array_creates_cache():
 
     # This should only affect dask arrays, and not numpy data
     def mock_set_view_slice2():
-        assert dask.config.get("optimization.fuse.active", None) == original
+        assert dask.config.get('optimization.fuse.active', None) == original
 
     layer2 = layers.Image(np.ones((100, 100)))
     layer2._set_view_slice = mock_set_view_slice2
@@ -76,11 +76,11 @@ def test_list_of_dask_arrays_doesnt_create_cache():
     """Test that adding a list of dask array also creates a dask cache."""
     resize_dask_cache(1)  # in case other tests created it
     assert _dask_utils._DASK_CACHE.cache.available_bytes == 1
-    original = dask.config.get("optimization.fuse.active", None)
+    original = dask.config.get('optimization.fuse.active', None)
     _ = layers.Image([da.ones((100, 100)), da.ones((20, 20))])
     assert _dask_utils._DASK_CACHE.cache.available_bytes > 100
     assert not _dask_utils._DASK_CACHE.active
-    assert dask.config.get("optimization.fuse.active", None) == original
+    assert dask.config.get('optimization.fuse.active', None) == original
 
 
 @pytest.fixture

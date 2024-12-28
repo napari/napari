@@ -2,6 +2,7 @@
 # https://asv.readthedocs.io/en/latest/writing_benchmarks.html
 # or the napari documentation on benchmarking
 # https://github.com/napari/napari/blob/main/docs/BENCHMARKS.md
+import os
 
 import numpy as np
 
@@ -18,6 +19,9 @@ class Shapes2DSuite:
     """Benchmarks for the Shapes layer with 2D data"""
 
     params = [2**i for i in range(4, 9)]
+
+    if 'PR' in os.environ:
+        skip_params = [(2**i,) for i in range(6, 9)]
 
     def setup(self, n):
         np.random.seed(0)
@@ -42,7 +46,8 @@ class Shapes2DSuite:
 
     def time_get_value(self, n):
         """Time to get current value."""
-        self.layer.get_value((0,) * 2)
+        for i in range(100):
+            self.layer.get_value((i,) * 2)
 
     def mem_layer(self, n):
         """Memory used by layer."""
@@ -57,6 +62,8 @@ class Shapes3DSuite:
     """Benchmarks for the Shapes layer with 3D data."""
 
     params = [2**i for i in range(4, 9)]
+    if 'PR' in os.environ:
+        skip_params = [(2**i,) for i in range(6, 9)]
 
     def setup(self, n):
         np.random.seed(0)
@@ -203,3 +210,9 @@ class ShapesInteractionSuite:
         mouse_release_callbacks(self.layer, release_event)
 
     time_select_shape.param_names = ['n_shapes']
+
+
+if __name__ == '__main__':
+    from utils import run_benchmark
+
+    run_benchmark()

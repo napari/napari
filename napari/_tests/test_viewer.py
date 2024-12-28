@@ -1,9 +1,11 @@
 import os
+from unittest.mock import Mock
 
 import numpy as np
 import pytest
 
 from napari import Viewer, layers
+from napari._pydantic_compat import ValidationError
 from napari._tests.utils import (
     add_layer_by_type,
     check_view_transform_consistency,
@@ -67,10 +69,10 @@ def test_non_existing_bindings():
 def test_viewer_actions(make_napari_viewer, func):
     viewer = make_napari_viewer()
 
-    if func.__name__ == 'toggle_fullscreen' and not os.getenv("CI"):
-        pytest.skip("Fullscreen cannot be tested in CI")
+    if func.__name__ == 'toggle_fullscreen' and not os.getenv('CI'):
+        pytest.skip('Fullscreen cannot be tested in CI')
     if func.__name__ == 'play':
-        pytest.skip("Play cannot be tested with Pytest")
+        pytest.skip('Play cannot be tested with Pytest')
     func(viewer)
 
 
@@ -96,7 +98,7 @@ def test_viewer(make_napari_viewer):
     assert viewer.dims.ndisplay == 2
 
 
-@pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
+@pytest.mark.parametrize(('layer_class', 'data', 'ndim'), layer_test_data)
 def test_add_layer(make_napari_viewer, layer_class, data, ndim):
     viewer = make_napari_viewer()
     layer = add_layer_by_type(viewer, layer_class, data, visible=True)
@@ -117,7 +119,7 @@ layer_types = (
 )
 
 
-@pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
+@pytest.mark.parametrize(('layer_class', 'data', 'ndim'), layer_test_data)
 def test_all_layer_actions_are_accessible_via_shortcut(
     layer_class, data, ndim
 ):
@@ -129,7 +131,9 @@ def test_all_layer_actions_are_accessible_via_shortcut(
     _assert_shortcuts_exist_for_each_action(layer_class)
 
 
-@pytest.mark.parametrize('layer_class, a_unique_name, ndim', layer_test_data)
+@pytest.mark.parametrize(
+    ('layer_class', 'a_unique_name', 'ndim'), layer_test_data
+)
 def test_add_layer_magic_name(
     make_napari_viewer, layer_class, a_unique_name, ndim
 ):
@@ -137,10 +141,10 @@ def test_add_layer_magic_name(
     # Tests for issue #1709
     viewer = make_napari_viewer()  # noqa: F841
     layer = eval_with_filename(
-        "add_layer_by_type(viewer, layer_class, a_unique_name)",
-        "somefile.py",
+        'add_layer_by_type(viewer, layer_class, a_unique_name)',
+        'somefile.py',
     )
-    assert layer.name == "a_unique_name"
+    assert layer.name == 'a_unique_name'
 
 
 @skip_on_win_ci
@@ -208,13 +212,15 @@ def test_changing_theme(make_napari_viewer):
     equal = (screenshot_dark == screenshot_light).min(-1)
 
     # more than 99.5% of the pixels have changed
-    assert (np.count_nonzero(equal) / equal.size) < 0.05, "Themes too similar"
+    assert (np.count_nonzero(equal) / equal.size) < 0.05, 'Themes too similar'
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValidationError, match="Theme 'nonexistent_theme' not found"
+    ):
         viewer.theme = 'nonexistent_theme'
 
 
-@pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
+@pytest.mark.parametrize(('layer_class', 'data', 'ndim'), layer_test_data)
 def test_roll_transpose_update(make_napari_viewer, layer_class, data, ndim):
     """Check that transpose and roll preserve correct transform sequence."""
     viewer = make_napari_viewer()
@@ -238,7 +244,7 @@ def test_roll_transpose_update(make_napari_viewer, layer_class, data, ndim):
     check_view_transform_consistency(layer, viewer, transf_dict)
 
     # Roll dims and check again:
-    viewer.dims._roll()
+    viewer.dims.roll()
     check_view_transform_consistency(layer, viewer, transf_dict)
 
     # Transpose and check again:
@@ -331,13 +337,14 @@ def test_emitting_data_doesnt_change_points_value(make_napari_viewer):
     assert layer._value is None
     viewer.mouse_over_canvas = True
     viewer.cursor.position = tuple(layer.data[1])
+    viewer._calc_status_from_cursor()
     assert layer._value == 1
 
     layer.events.data(value=layer.data)
     assert layer._value == 1
 
 
-@pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
+@pytest.mark.parametrize(('layer_class', 'data', 'ndim'), layer_test_data)
 def test_emitting_data_doesnt_change_cursor_position(
     make_napari_viewer, layer_class, data, ndim
 ):
@@ -380,6 +387,18 @@ def test_current_viewer(make_napari_viewer):
     assert current_viewer() is not viewer2
 
 
+@pytest.mark.parametrize('n_viewers', [1, 2, 3, 4])
+def test_close_all(n_viewers, make_napari_viewer):
+    """Test that close all closes multiple viewers"""
+
+    # Make several viewers
+    viewers = [make_napari_viewer() for _ in range(n_viewers)]
+    last_viewer = viewers[-1]
+
+    # Ensure the last viewer closes all
+    assert last_viewer.close_all() == n_viewers
+
+
 def test_reset_empty(make_napari_viewer):
     """
     Test that resetting an empty viewer doesn't crash
@@ -397,3 +416,32 @@ def test_reset_non_empty(make_napari_viewer):
     viewer = make_napari_viewer()
     viewer.add_points([(0, 1), (2, 3)])
     viewer.reset()
+
+
+def test_running_status_thread(make_napari_viewer, qtbot, monkeypatch):
+    viewer = make_napari_viewer()
+    settings = get_settings()
+    start_mock, stop_mock = Mock(), Mock()
+    monkeypatch.setattr(
+        viewer.window._qt_window.status_thread, 'start', start_mock
+    )
+    monkeypatch.setattr(
+        viewer.window._qt_window.status_thread, 'terminate', stop_mock
+    )
+    assert settings.appearance.update_status_based_on_layer
+    settings.appearance.update_status_based_on_layer = False
+    stop_mock.assert_called_once()
+    start_mock.assert_not_called()
+    settings.appearance.update_status_based_on_layer = True
+    start_mock.assert_called_once()
+
+
+def test_negative_translate(make_napari_viewer, qtbot):
+    """Check that negative translation behaves as expected.
+
+    See https://github.com/napari/napari/issues/7248
+    """
+    data = np.random.random((1, 3, 10, 12, 12))
+    viewer = make_napari_viewer()
+    _ = viewer.add_image(data, translate=(-1, 0, 0))
+    assert viewer.dims.range[2].start == -1

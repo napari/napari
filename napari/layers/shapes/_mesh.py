@@ -51,11 +51,11 @@ class Mesh:
 
     _types = ('face', 'edge')
 
-    def __init__(self, ndisplay=2) -> None:
+    def __init__(self, ndisplay: int = 2) -> None:
         self._ndisplay = ndisplay
         self.clear()
 
-    def clear(self):
+    def clear(self) -> None:
         """Resets mesh data"""
         self.vertices = np.empty((0, self.ndisplay))
         self.vertices_centers = np.empty((0, self.ndisplay))
@@ -71,12 +71,12 @@ class Mesh:
         self.displayed_triangles_colors = np.empty((0, 4))
 
     @property
-    def ndisplay(self):
+    def ndisplay(self) -> int:
         """int: Number of displayed dimensions."""
         return self._ndisplay
 
     @ndisplay.setter
-    def ndisplay(self, ndisplay):
+    def ndisplay(self, ndisplay: int) -> None:
         if self.ndisplay == ndisplay:
             return
 

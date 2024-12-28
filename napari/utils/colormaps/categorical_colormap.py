@@ -1,8 +1,8 @@
-from typing import Any, Dict, Union
+from typing import Any, Union
 
 import numpy as np
-from pydantic import Field
 
+from napari._pydantic_compat import Field
 from napari.utils.color import ColorValue
 from napari.utils.colormaps.categorical_colormap_utils import (
     ColorCycle,
@@ -28,7 +28,7 @@ class CategoricalColormap(EventedModel):
         The default value is a cycle of all white.
     """
 
-    colormap: Dict[Any, ColorValue] = Field(default_factory=dict)
+    colormap: dict[Any, ColorValue] = Field(default_factory=dict)
     fallback_color: ColorCycle = Field(
         default_factory=lambda: ColorCycle.validate_type('white')
     )
@@ -51,7 +51,7 @@ class CategoricalColormap(EventedModel):
 
         # add properties if they are not in the colormap
         color_cycle_keys = [*self.colormap]
-        props_in_map = np.in1d(color_properties, color_cycle_keys)
+        props_in_map = np.isin(color_properties, color_cycle_keys)
         if not np.all(props_in_map):
             new_prop_values = color_properties[np.logical_not(props_in_map)]
             indices_to_add = np.unique(new_prop_values, return_index=True)[1]
@@ -79,7 +79,7 @@ class CategoricalColormap(EventedModel):
                 }
             else:
                 colormap = {}
-            fallback_color = params.get("fallback_color", "white")
+            fallback_color = params.get('fallback_color', 'white')
         else:
             colormap = {k: transform_color(v)[0] for k, v in params.items()}
             fallback_color = 'white'
@@ -107,13 +107,10 @@ class CategoricalColormap(EventedModel):
         )
 
     def __eq__(self, other):
-        if isinstance(other, CategoricalColormap):
-            if not compare_colormap_dicts(self.colormap, other.colormap):
-                return False
-            if not np.allclose(
+        return (
+            isinstance(other, CategoricalColormap)
+            and compare_colormap_dicts(self.colormap, other.colormap)
+            and np.allclose(
                 self.fallback_color.values, other.fallback_color.values
-            ):
-                return False
-            return True
-
-        return False
+            )
+        )

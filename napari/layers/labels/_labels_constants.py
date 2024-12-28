@@ -63,10 +63,11 @@ class LabelColorMode(StringEnum):
 
 BACKSPACE = 'delete' if sys.platform == 'darwin' else 'backspace'
 
+
 LABEL_COLOR_MODE_TRANSLATIONS = OrderedDict(
     [
-        (LabelColorMode.AUTO, trans._("auto")),
-        (LabelColorMode.DIRECT, trans._("direct")),
+        (LabelColorMode.AUTO, trans._('auto')),
+        (LabelColorMode.DIRECT, trans._('direct')),
     ]
 )
 
@@ -85,3 +86,15 @@ class LabelsRendering(StringEnum):
 
     TRANSLUCENT = auto()
     ISO_CATEGORICAL = auto()
+
+
+class IsoCategoricalGradientMode(StringEnum):
+    """IsoCategoricalGradientMode: Gradient mode for the IsoCategorical rendering mode.
+
+    Selects the finite-difference gradient method for the isosurface shader:
+        * fast: use a simple finite difference gradient along each axis
+        * smooth: use an isotropic Sobel gradient, smoother but more computationally expensive
+    """
+
+    FAST = auto()
+    SMOOTH = auto()

@@ -1,5 +1,5 @@
-"""VispyCanvas class.
-"""
+"""VispyCanvas class."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -26,7 +26,7 @@ from napari.utils.interactions import (
 from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
-    from typing import Callable, List, Optional, Tuple, Union
+    from typing import Callable, Optional, Union
 
     import numpy.typing as npt
     from qtpy.QtCore import Qt, pyqtBoundSignal
@@ -34,8 +34,11 @@ if TYPE_CHECKING:
     from vispy.app.backends._qt import CanvasBackendDesktop
     from vispy.app.canvas import DrawEvent, MouseEvent, ResizeEvent
 
+    from napari._vispy.layers.base import VispyBaseLayer
+    from napari._vispy.overlays.base import VispyBaseOverlay
     from napari.components import ViewerModel
     from napari.components.overlays import Overlay
+    from napari.layers import Layer
     from napari.utils.events.event import Event
     from napari.utils.key_bindings import KeymapHandler
 
@@ -112,8 +115,8 @@ class VispyCanvas:
         self.camera = VispyCamera(
             self.view, self.viewer.camera, self.viewer.dims
         )
-        self.layer_to_visual = {}
-        self._overlay_to_visual = {}
+        self.layer_to_visual: dict[Layer, VispyBaseLayer] = {}
+        self._overlay_to_visual: dict[Overlay, VispyBaseOverlay] = {}
         self._key_map_handler = key_map_handler
         self._instances.add(self)
 
@@ -163,6 +166,12 @@ class VispyCanvas:
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
         self.viewer.layers.events.removed.connect(self._remove_layer)
         self.destroyed.connect(self._disconnect_theme)
+
+    @property
+    def events(self):
+        # This is backwards compatible with the old events system
+        # https://github.com/napari/napari/issues/7054#issuecomment-2205548968
+        return self._scene_canvas.events
 
     @property
     def destroyed(self) -> pyqtBoundSignal:
@@ -240,13 +249,13 @@ class VispyCanvas:
         return self._scene_canvas._central_widget
 
     @property
-    def size(self) -> Tuple[int, int]:
+    def size(self) -> tuple[int, int]:
         """Return canvas size as tuple (height, width) or accepts size as tuple (height, width)
         and sets Vispy SceneCanvas size as (width, height)."""
         return self._scene_canvas.size[::-1]
 
     @size.setter
-    def size(self, size: Tuple[int, int]):
+    def size(self, size: tuple[int, int]):
         self._scene_canvas.size = size[::-1]
 
     @property
@@ -307,8 +316,9 @@ class VispyCanvas:
         )
 
     def _map_canvas2world(
-        self, position: List[int, int]
-    ) -> Tuple[float, float]:
+        self,
+        position: tuple[int, ...],
+    ) -> tuple[float, float]:
         """Map position from canvas pixels into world coordinates.
 
         Parameters
@@ -324,9 +334,13 @@ class VispyCanvas:
         """
         nd = self.viewer.dims.ndisplay
         transform = self.view.scene.transform
-        mapped_position = transform.imap(list(position))[:nd]
-        position_world_slice = mapped_position[::-1]
-
+        # cartesian to homogeneous coordinates
+        mapped_position = transform.imap(list(position))
+        if nd == 3:
+            mapped_position = mapped_position[0:nd] / mapped_position[nd]
+        else:
+            mapped_position = mapped_position[0:nd]
+        position_world_slice = np.array(mapped_position[::-1])
         # handle position for 3D views of 2D data
         nd_point = len(self.viewer.dims.point)
         if nd_point < nd:
@@ -335,6 +349,7 @@ class VispyCanvas:
         position_world = list(self.viewer.dims.point)
         for i, d in enumerate(self.viewer.dims.displayed):
             position_world[d] = position_world_slice[i]
+
         return tuple(position_world)
 
     def _process_mouse_event(
@@ -372,9 +387,7 @@ class VispyCanvas:
             return
 
         # Add the view ray to the event
-        event.view_direction = self.viewer.camera.calculate_nd_view_direction(
-            self.viewer.dims.ndim, self.viewer.dims.displayed
-        )
+        event.view_direction = self._calculate_view_direction(event.pos)
         event.up_direction = self.viewer.camera.calculate_nd_up_direction(
             self.viewer.dims.ndim, self.viewer.dims.displayed
         )
@@ -384,7 +397,7 @@ class VispyCanvas:
 
         # Update the cursor position
         self.viewer.cursor._view_direction = event.view_direction
-        self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
+        self.viewer.cursor.position = self._map_canvas2world(event.pos)
 
         # Add the cursor position to the event
         event.position = self.viewer.cursor.position
@@ -494,7 +507,7 @@ class VispyCanvas:
             Coordinates of top left and bottom right canvas pixel in the world.
         """
         # Find corners of canvas in world coordinates
-        top_left = self._map_canvas2world([0, 0])
+        top_left = self._map_canvas2world((0, 0))
         bottom_right = self._map_canvas2world(self._scene_canvas.size)
         return np.array([top_left, bottom_right])
 
@@ -548,14 +561,16 @@ class VispyCanvas:
         """
         self.viewer._canvas_size = self.size
 
-    def add_layer_visual_mapping(self, napari_layer, vispy_layer) -> None:
+    def add_layer_visual_mapping(
+        self, napari_layer: Layer, vispy_layer: VispyBaseLayer
+    ) -> None:
         """Maps a napari layer to its corresponding vispy layer and sets the parent scene of the vispy layer.
 
-        Paremeters
+        Parameters
         ----------
-        napari_layer : napari.layers
+        napari_layer :
             Any napari layer, the layer type is the same as the vispy layer.
-        vispy_layer : napari._vispy.layers
+        vispy_layer :
             Any vispy layer, the layer type is the same as the napari layer.
 
         Returns
@@ -574,9 +589,9 @@ class VispyCanvas:
     def _remove_layer(self, event: Event) -> None:
         """Upon receiving event closes the Vispy visual, deletes it and reorders the still existing layers.
 
-         Parameters
-         ----------
-         event: napari.utils.events.event.Event
+        Parameters
+        ----------
+        event : napari.utils.events.event.Event
             The event causing a particular layer to be removed
 
         Returns
@@ -621,6 +636,40 @@ class VispyCanvas:
         elif isinstance(overlay, SceneOverlay):
             vispy_overlay.node.parent = self.view.scene
         self._overlay_to_visual[overlay] = vispy_overlay
+
+    def _calculate_view_direction(self, event_pos: list[float]) -> list[float]:
+        """calculate view direction by ray shot from the camera"""
+        # this method is only implemented for 3 dimension
+        if self.viewer.dims.ndisplay == 2 or self.viewer.dims.ndim == 2:
+            return self.viewer.camera.calculate_nd_view_direction(
+                self.viewer.dims.ndim, self.viewer.dims.displayed
+            )
+        x, y = event_pos
+        w, h = self.size
+        nd = self.viewer.dims.ndisplay
+
+        transform = self.view.scene.transform
+        # map click pos to scene coordinates
+        click_scene = transform.imap([x, y, 0, 1])
+        # canvas center at infinite far z- (eye position in canvas coordinates)
+        eye_canvas = [w / 2, h / 2, -1e10, 1]
+        # map eye pos to scene coordinates
+        eye_scene = transform.imap(eye_canvas)
+        # homogeneous coordinate to cartesian
+        click_scene = click_scene[0:nd] / click_scene[nd]
+        # homogeneous coordinate to cartesian
+        eye_scene = eye_scene[0:nd] / eye_scene[nd]
+
+        # calculate direction of the ray
+        d = click_scene - eye_scene
+        d = d[0:nd]
+        d = d / np.linalg.norm(d)
+        # xyz to zyx
+        d = list(d[::-1])
+        # convert to nd view direction
+        view_direction_nd = np.zeros(self.viewer.dims.ndim)
+        view_direction_nd[list(self.viewer.dims.displayed)] = d
+        return view_direction_nd
 
     def screenshot(self) -> QImage:
         """Return a QImage based on what is shown in the viewer."""

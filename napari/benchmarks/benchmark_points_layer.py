@@ -2,15 +2,27 @@
 # https://asv.readthedocs.io/en/latest/writing_benchmarks.html
 # or the napari documentation on benchmarking
 # https://github.com/napari/napari/blob/main/docs/BENCHMARKS.md
-import numpy as np
+import os
 
+import numpy as np
+from packaging.version import parse as parse_version
+
+import napari
+from napari.components import Dims
 from napari.layers import Points
+
+from .utils import Skip
+
+NAPARI_0_4_19 = parse_version(napari.__version__) <= parse_version('0.4.19')
 
 
 class Points2DSuite:
     """Benchmarks for the Points layer with 2D data"""
 
     params = [2**i for i in range(4, 18, 2)]
+
+    if 'PR' in os.environ:
+        skip_params = [(2**i,) for i in range(8, 18, 2)]
 
     def setup(self, n):
         np.random.seed(0)
@@ -53,6 +65,8 @@ class Points3DSuite:
     """Benchmarks for the Points layer with 3D data."""
 
     params = [2**i for i in range(4, 18, 2)]
+    if 'PR' in os.environ:
+        skip_params = [(2**i,) for i in range(6, 18, 2)]
 
     def setup(self, n):
         np.random.seed(0)
@@ -93,18 +107,20 @@ class PointsSlicingSuite:
 
     params = [True, False]
     timeout = 300
+    skip_params = Skip(always=lambda _: NAPARI_0_4_19)
 
     def setup(self, flatten_slice_axis):
         np.random.seed(0)
-        self.data = np.random.uniform(size=(20_000_000, 3), low=0, high=500)
+        size = 20000 if 'PR' in os.environ else 20000000
+        self.data = np.random.uniform(size=(size, 3), low=0, high=500)
         if flatten_slice_axis:
             self.data[:, 0] = np.round(self.data[:, 0])
         self.layer = Points(self.data)
-        self.slice = np.s_[249, :, :]
+        self.dims = Dims(ndim=3, point=(249, 0, 0))
 
     def time_slice_points(self, flatten_slice_axis):
         """Time to take one slice of points"""
-        self.layer._slice_data(self.slice)
+        self.layer._make_slice_request(self.dims)()
 
 
 class PointsToMaskSuite:
@@ -125,6 +141,11 @@ class PointsToMaskSuite:
         [5, 10],
     ]
 
+    skip_params = Skip(
+        if_in_pr=lambda num_points, mask_shape, points_size: num_points > 256
+        or mask_shape[0] > 512
+    )
+
     def setup(self, num_points, mask_shape, point_size):
         np.random.seed(0)
         data = np.random.random((num_points, len(mask_shape))) * mask_shape
@@ -132,3 +153,9 @@ class PointsToMaskSuite:
 
     def time_to_mask(self, num_points, mask_shape, point_size):
         self.layer.to_mask(shape=mask_shape)
+
+
+if __name__ == '__main__':
+    from utils import run_benchmark
+
+    run_benchmark()

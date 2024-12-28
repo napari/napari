@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import List, Sequence, Tuple, Union
+from collections.abc import Sequence
+from typing import Union
 
 import numpy as np
 
@@ -35,13 +36,23 @@ class MultiScaleData(Sequence[LayerDataProtocol]):
         self,
         data: Sequence[LayerDataProtocol],
     ) -> None:
-        self._data: List[LayerDataProtocol] = list(data)
+        self._data: list[LayerDataProtocol] = list(data)
         if not self._data:
             raise ValueError(
-                trans._("Multiscale data must be a (non-empty) sequence")
+                trans._('Multiscale data must be a (non-empty) sequence')
             )
         for d in self._data:
             assert_protocol(d)
+
+    @property
+    def size(self) -> int:
+        """Return size of the first scale.."""
+        return self._data[0].size
+
+    @property
+    def ndim(self) -> int:
+        """Return ndim of the first scale.."""
+        return self._data[0].ndim
 
     @property
     def dtype(self) -> np.dtype:
@@ -49,17 +60,17 @@ class MultiScaleData(Sequence[LayerDataProtocol]):
         return self._data[0].dtype
 
     @property
-    def shape(self) -> Tuple[int, ...]:
+    def shape(self) -> tuple[int, ...]:
         """Shape of multiscale is just the biggest shape."""
         return self._data[0].shape
 
     @property
-    def shapes(self) -> Tuple[Tuple[int, ...], ...]:
+    def shapes(self) -> tuple[tuple[int, ...], ...]:
         """Tuple shapes for all scales."""
         return tuple(im.shape for im in self._data)
 
     def __getitem__(  # type: ignore [override]
-        self, key: Union[int, Tuple[slice, ...]]
+        self, key: Union[int, tuple[slice, ...]]
     ) -> LayerDataProtocol:
         """Multiscale indexing."""
         return self._data[key]
@@ -84,6 +95,6 @@ class MultiScaleData(Sequence[LayerDataProtocol]):
 
     def __repr__(self) -> str:
         return (
-            f"<MultiScaleData at {hex(id(self))}. "
+            f'<MultiScaleData at {hex(id(self))}. '
             f"{len(self)} levels, '{self.dtype}', shapes: {self.shapes}>"
         )

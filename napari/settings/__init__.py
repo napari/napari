@@ -8,7 +8,7 @@ from napari.settings._napari_settings import (
 )
 from napari.utils.translations import trans
 
-__all__ = ['NapariSettings', 'get_settings', 'CURRENT_SCHEMA_VERSION']
+__all__ = ['CURRENT_SCHEMA_VERSION', 'NapariSettings', 'get_settings']
 
 
 class _SettingsProxy:
@@ -57,7 +57,7 @@ def get_settings(path=_NOT_SET) -> NapariSettings:
         calframe = inspect.getouterframes(curframe, 2)
         raise RuntimeError(
             trans._(
-                "The path can only be set once per session. Settings called from {calframe}",
+                'The path can only be set once per session. Settings called from {calframe}',
                 deferred=True,
                 calframe=calframe[1][3],
             )

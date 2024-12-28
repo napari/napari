@@ -3,8 +3,8 @@ from itertools import cycle, islice
 
 import numpy as np
 import pytest
-from pydantic import ValidationError
 
+from napari._pydantic_compat import ValidationError
 from napari.layers.utils.color_manager import ColorManager, ColorProperties
 from napari.utils.colormaps.categorical_colormap import CategoricalColormap
 from napari.utils.colormaps.standardize_color import transform_color
@@ -42,7 +42,7 @@ categorical_map = CategoricalColormap(
 
 
 @pytest.mark.parametrize(
-    'cat_cmap,expected',
+    ('cat_cmap', 'expected'),
     [
         ({'colormap': color_mapping}, (color_mapping, default_fallback_color)),
         (
@@ -86,7 +86,7 @@ c_prop_obj = ColorProperties(**c_prop_dict)
 
 
 @pytest.mark.parametrize(
-    'c_props,expected',
+    ('c_props', 'expected'),
     [
         (None, None),
         ({}, None),
@@ -116,7 +116,7 @@ def test_invalid_color_properties(c_props):
 
 
 @pytest.mark.parametrize(
-    'curr_color,expected',
+    ('curr_color', 'expected'),
     [
         (None, np.array([0, 0, 0, 1])),
         ([], np.array([0, 0, 0, 1])),
@@ -281,7 +281,7 @@ color_cycle_rgba = [[1, 0, 0, 1], [0, 0, 1, 1]]
 
 
 @pytest.mark.parametrize(
-    "color_cycle",
+    'color_cycle',
     [color_cycle_str, color_cycle_rgb, color_cycle_rgba],
 )
 def test_color_cycle(color_cycle):

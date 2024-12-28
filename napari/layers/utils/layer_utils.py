@@ -3,15 +3,13 @@ from __future__ import annotations
 import functools
 import inspect
 import warnings
+from collections.abc import Sequence
 from typing import (
     TYPE_CHECKING,
     Any,
-    Dict,
-    List,
+    Callable,
     NamedTuple,
     Optional,
-    Sequence,
-    Tuple,
     Union,
 )
 
@@ -25,9 +23,11 @@ from napari.utils.transforms import Affine
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from typing import Mapping
+    from collections.abc import Mapping
 
     import numpy.typing as npt
+
+    from napari.layers._data_protocols import LayerDataProtocol
 
 
 class Extent(NamedTuple):
@@ -60,8 +60,8 @@ def register_layer_action(
     keymapprovider,
     description: str,
     repeatable: bool = False,
-    shortcuts: Optional[str] = None,
-):
+    shortcuts: Optional[Union[str, list[str]]] = None,
+) -> Callable[[Callable], Callable]:
     """
     Convenient decorator to register an action with the current Layers
 
@@ -90,7 +90,7 @@ def register_layer_action(
 
     """
 
-    def _inner(func):
+    def _inner(func: Callable) -> Callable:
         nonlocal shortcuts
         name = 'napari:' + func.__name__
 
@@ -117,7 +117,7 @@ def register_layer_attr_action(
     description: str,
     attribute_name: str,
     shortcuts=None,
-):
+) -> Callable[[Callable], Callable]:
     """
     Convenient decorator to register an action with the current Layers.
     This will get and restore attribute from function first argument.
@@ -146,14 +146,14 @@ def register_layer_attr_action(
 
     """
 
-    def _handle(func):
+    def _handle(func: Callable) -> Callable:
         sig = inspect.signature(func)
         try:
             first_variable_name = next(iter(sig.parameters))
         except StopIteration as e:
             raise RuntimeError(
                 trans._(
-                    "If actions has no arguments there is no way to know what to set the attribute to.",
+                    'If actions has no arguments there is no way to know what to set the attribute to.',
                     deferred=True,
                 ),
             ) from e
@@ -204,7 +204,9 @@ def _nanmax(array):
     return max_value
 
 
-def calc_data_range(data, rgb=False) -> Tuple[float, float]:
+def calc_data_range(
+    data: LayerDataProtocol, rgb: bool = False
+) -> tuple[float, float]:
     """Calculate range of data values. If all values are equal return [0, 1].
 
     Parameters
@@ -227,8 +229,16 @@ def calc_data_range(data, rgb=False) -> Tuple[float, float]:
     if data.dtype == np.uint8:
         return (0, 255)
 
-    center: Union[int, List[int]]
+    if isinstance(data, np.ndarray) and data.ndim < 3:
+        min_val = _nanmin(data)
+        max_val = _nanmax(data)
+        if min_val == max_val:
+            min_val = min(min_val, 0)
+            max_val = max(max_val, 1)
+        return float(min_val), float(max_val)
 
+    center: Union[int, list[int]]
+    reduced_data: Union[list, LayerDataProtocol]
     if data.size > 1e7 and (data.ndim == 1 or (rgb and data.ndim == 2)):
         # If data is very large take the average of start, middle and end.
         center = int(data.shape[0] // 2)
@@ -276,12 +286,12 @@ def calc_data_range(data, rgb=False) -> Tuple[float, float]:
     max_val = _nanmax(reduced_data)
 
     if min_val == max_val:
-        min_val = 0
-        max_val = 1
+        min_val = min(min_val, 0)
+        max_val = max(max_val, 1)
     return (float(min_val), float(max_val))
 
 
-def segment_normal(a, b, p=(0, 0, 1)):
+def segment_normal(a, b, p=(0, 0, 1)) -> np.ndarray:
     """Determines the unit normal of the vector from a to b.
 
     Parameters
@@ -301,6 +311,8 @@ def segment_normal(a, b, p=(0, 0, 1)):
     """
     d = b - a
 
+    norm: Any  # float or array or float, mypy has some difficulties.
+
     if d.ndim == 1:
         normal = np.array([d[1], -d[0]]) if len(d) == 2 else np.cross(d, p)
         norm = np.linalg.norm(normal)
@@ -315,12 +327,10 @@ def segment_normal(a, b, p=(0, 0, 1)):
         norm = np.linalg.norm(normal, axis=1, keepdims=True)
         ind = norm == 0
         norm[ind] = 1
-    unit_norm = normal / norm
-
-    return unit_norm
+    return normal / norm
 
 
-def convert_to_uint8(data: np.ndarray) -> Optional[np.ndarray]:
+def convert_to_uint8(data: np.ndarray) -> np.ndarray:
     """
     Convert array content to uint8, always returning a copy.
 
@@ -342,17 +352,17 @@ def convert_to_uint8(data: np.ndarray) -> Optional[np.ndarray]:
     if data.dtype == out_dtype:
         return data
     in_kind = data.dtype.kind
-    if in_kind == "b":
+    if in_kind == 'b':
         return data.astype(out_dtype) * 255
-    if in_kind == "f":
+    if in_kind == 'f':
         image_out = np.multiply(data, out_max, dtype=data.dtype)
         np.rint(image_out, out=image_out)
         np.clip(image_out, 0, out_max, out=image_out)
         image_out = np.nan_to_num(image_out, copy=False)
         return image_out.astype(out_dtype)
 
-    if in_kind in "ui":
-        if in_kind == "u":
+    if in_kind in 'ui':
+        if in_kind == 'u':
             if data.max() < out_max:
                 return data.astype(out_dtype)
             return np.right_shift(data, (data.dtype.itemsize - 1) * 8).astype(
@@ -367,14 +377,14 @@ def convert_to_uint8(data: np.ndarray) -> Optional[np.ndarray]:
         return np.right_shift(data, (data.dtype.itemsize - 1) * 8 - 1).astype(
             out_dtype
         )
-    return None
+    raise NotImplementedError
 
 
 def get_current_properties(
-    properties: Dict[str, np.ndarray],
-    choices: Dict[str, np.ndarray],
+    properties: dict[str, np.ndarray],
+    choices: dict[str, np.ndarray],
     num_data: int = 0,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Get the current property values from the properties or choices.
 
     Parameters
@@ -406,7 +416,7 @@ def get_current_properties(
 
 def dataframe_to_properties(
     dataframe: pd.DataFrame,
-) -> Dict[str, np.ndarray]:
+) -> dict[str, np.ndarray]:
     """Convert a dataframe to a properties dictionary.
     Parameters
     ----------
@@ -422,9 +432,9 @@ def dataframe_to_properties(
 
 
 def validate_properties(
-    properties: Optional[Union[Dict[str, Array], pd.DataFrame]],
+    properties: Optional[Union[dict[str, Array], pd.DataFrame]],
     expected_len: Optional[int] = None,
-) -> Dict[str, np.ndarray]:
+) -> dict[str, np.ndarray]:
     """Validate the type and size of properties and coerce values to numpy arrays.
     Parameters
     ----------
@@ -449,7 +459,7 @@ def validate_properties(
     if any(v != expected_len for v in lens):
         raise ValueError(
             trans._(
-                "the number of items must be equal for all properties",
+                'the number of items must be equal for all properties',
                 deferred=True,
             )
         )
@@ -464,7 +474,7 @@ def _validate_property_choices(property_choices):
 
 
 def _coerce_current_properties_value(
-    value: Union[float, str, bool, list, tuple, np.ndarray]
+    value: Union[float, str, bool, list, tuple, np.ndarray],
 ) -> np.ndarray:
     """Coerce a value in a current_properties dictionary into the correct type.
 
@@ -496,8 +506,8 @@ def _coerce_current_properties_value(
 def coerce_current_properties(
     current_properties: Mapping[
         str, Union[float, str, int, bool, list, tuple, npt.NDArray]
-    ]
-) -> Dict[str, np.ndarray]:
+    ],
+) -> dict[str, np.ndarray]:
     """Coerce a current_properties dictionary into the correct type.
 
 
@@ -593,7 +603,12 @@ def compute_multiscale_level_and_corners(
     return level, corners
 
 
-def coerce_affine(affine, *, ndim, name=None):
+def coerce_affine(
+    affine: Union[npt.ArrayLike, Affine],
+    *,
+    ndim: int,
+    name: Optional[str] = None,
+) -> Affine:
     """Coerce a user input into an affine transform object.
 
     If the input is already an affine transform object, that same object is returned
@@ -634,10 +649,10 @@ def coerce_affine(affine, *, ndim, name=None):
 
 
 def dims_displayed_world_to_layer(
-    dims_displayed_world: List[int],
+    dims_displayed_world: list[int],
     ndim_world: int,
     ndim_layer: int,
-) -> List[int]:
+) -> list[int]:
     """Convert the dims_displayed from world dims to the layer dims.
 
     This accounts differences in the number of dimensions in the world
@@ -678,7 +693,11 @@ def dims_displayed_world_to_layer(
     return dims_displayed
 
 
-def get_extent_world(data_extent, data_to_world, centered=None):
+def get_extent_world(
+    data_extent: npt.NDArray,
+    data_to_world: Affine,
+    centered: Optional[Any] = None,
+) -> npt.NDArray:
     """Range of layer in world coordinates base on provided data_extent
 
     Parameters
@@ -755,10 +774,10 @@ class _FeatureTable:
 
     def __init__(
         self,
-        values: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
+        values: Optional[Union[dict[str, np.ndarray], pd.DataFrame]] = None,
         *,
         num_data: Optional[int] = None,
-        defaults: Optional[Union[Dict[str, Any], pd.DataFrame]] = None,
+        defaults: Optional[Union[dict[str, Any], pd.DataFrame]] = None,
     ) -> None:
         self._values = _validate_features(values, num_data=num_data)
         self._defaults = _validate_feature_defaults(defaults, self._values)
@@ -779,12 +798,12 @@ class _FeatureTable:
         return self._defaults
 
     def set_defaults(
-        self, defaults: Union[Dict[str, Any], pd.DataFrame]
+        self, defaults: Union[dict[str, Any], pd.DataFrame]
     ) -> None:
         """Sets the feature default values."""
         self._defaults = _validate_feature_defaults(defaults, self._values)
 
-    def properties(self) -> Dict[str, np.ndarray]:
+    def properties(self) -> dict[str, np.ndarray]:
         """Converts this to a deprecated properties dictionary.
 
         This will reference the features data when possible, but in general the
@@ -797,7 +816,7 @@ class _FeatureTable:
         """
         return _features_to_properties(self._values)
 
-    def choices(self) -> Dict[str, np.ndarray]:
+    def choices(self) -> dict[str, np.ndarray]:
         """Converts this to a deprecated property choices dictionary.
 
         Only categorical features will have corresponding entries in the dictionary.
@@ -813,15 +832,15 @@ class _FeatureTable:
             if isinstance(series.dtype, pd.CategoricalDtype)
         }
 
-    def currents(self) -> Dict[str, np.ndarray]:
+    def currents(self) -> dict[str, np.ndarray]:
         """Converts the defaults table to a deprecated current properties dictionary."""
         return _features_to_properties(self._defaults)
 
     def set_currents(
         self,
-        currents: Dict[str, npt.NDArray],
+        currents: dict[str, npt.NDArray],
         *,
-        update_indices: Optional[List[int]] = None,
+        update_indices: Optional[list[int]] = None,
     ) -> None:
         """Sets the default values using the deprecated current properties dictionary.
 
@@ -839,7 +858,7 @@ class _FeatureTable:
         self._defaults = _validate_features(currents, num_data=1)
         if update_indices is not None:
             for k in self._defaults:
-                self._values[k][update_indices] = self._defaults[k][0]
+                self._values.loc[update_indices, k] = self._defaults[k][0]
 
     def resize(
         self,
@@ -890,12 +909,12 @@ class _FeatureTable:
     def from_layer(
         cls,
         *,
-        features: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
-        feature_defaults: Optional[Union[Dict[str, Any], pd.DataFrame]] = None,
+        features: Optional[Union[dict[str, np.ndarray], pd.DataFrame]] = None,
+        feature_defaults: Optional[Union[dict[str, Any], pd.DataFrame]] = None,
         properties: Optional[
-            Union[Dict[str, np.ndarray], pd.DataFrame]
+            Union[dict[str, np.ndarray], pd.DataFrame]
         ] = None,
-        property_choices: Optional[Dict[str, np.ndarray]] = None,
+        property_choices: Optional[dict[str, np.ndarray]] = None,
         num_data: Optional[int] = None,
     ) -> _FeatureTable:
         """Coerces a layer's keyword arguments to a feature manager.
@@ -952,7 +971,7 @@ def _get_default_column(column: pd.Series) -> pd.Series:
 
 
 def _validate_features(
-    features: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]],
+    features: Optional[Union[dict[str, np.ndarray], pd.DataFrame]],
     *,
     num_data: Optional[int] = None,
 ) -> pd.DataFrame:
@@ -970,15 +989,13 @@ def _validate_features(
         # a pandas Series with mixed indices as input.
         # This way should handle all array-like objects correctly.
         # See https://github.com/napari/napari/pull/4755 for more details.
-        features = {
-            key: np.array(value, copy=False) for key, value in features.items()
-        }
+        features = {key: np.asarray(value) for key, value in features.items()}
     index = None if num_data is None else range(num_data)
     return pd.DataFrame(data=features, index=index)
 
 
 def _validate_feature_defaults(
-    defaults: Optional[Union[Dict[str, Any], pd.DataFrame]],
+    defaults: Optional[Union[dict[str, Any], pd.DataFrame]],
     values: pd.DataFrame,
 ) -> pd.DataFrame:
     """Validates and coerces feature default values into a pandas DataFrame.
@@ -1026,8 +1043,8 @@ def _validate_feature_defaults(
 
 def _features_from_properties(
     *,
-    properties: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
-    property_choices: Optional[Dict[str, np.ndarray]] = None,
+    properties: Optional[Union[dict[str, np.ndarray], pd.DataFrame]] = None,
+    property_choices: Optional[dict[str, np.ndarray]] = None,
     num_data: Optional[int] = None,
 ) -> pd.DataFrame:
     """Validates and coerces deprecated properties input into a features DataFrame.
@@ -1049,7 +1066,7 @@ def _features_from_properties(
     return _validate_features(properties, num_data=num_data)
 
 
-def _features_to_properties(features: pd.DataFrame) -> Dict[str, np.ndarray]:
+def _features_to_properties(features: pd.DataFrame) -> dict[str, np.ndarray]:
     """Converts a features DataFrame to a deprecated properties dictionary.
 
     See Also

@@ -1,16 +1,18 @@
 from __future__ import annotations
 
+import sys
 import warnings
 from contextlib import contextmanager
 from importlib.metadata import distributions
-from typing import TYPE_CHECKING, Callable, List, NamedTuple
+from typing import TYPE_CHECKING, Callable, NamedTuple
 
 from napari.settings._fields import Version
+from napari.settings._shortcuts import ShortcutsSettings
 
 if TYPE_CHECKING:
     from napari.settings._napari_settings import NapariSettings
 
-_MIGRATORS: List[Migrator] = []
+_MIGRATORS: list[Migrator] = []
 MigratorF = Callable[['NapariSettings'], None]
 
 
@@ -33,8 +35,8 @@ def do_migrations(model: NapariSettings):
                     model.schema_version = migration.to_
                 except Exception as e:  # noqa BLE001
                     msg = (
-                        f"Failed to migrate settings from v{migration.from_} "
-                        f"to v{migration.to_}. Error: {e}. "
+                        f'Failed to migrate settings from v{migration.from_} '
+                        f'to v{migration.to_}. Error: {e}. '
                     )
                     try:
                         model.update(backup)
@@ -97,7 +99,7 @@ def v030_v040(model: NapariSettings):
     """
     for dist in distributions():
         for ep in dist.entry_points:
-            if ep.group == "napari.manifest":
+            if ep.group == 'napari.manifest':
                 model.plugins.disabled_plugins.discard(dist.metadata['Name'])
 
 
@@ -115,3 +117,57 @@ def v040_050(model: NapariSettings):
     current_settings = model.plugins.extension2reader
     new_settings = _coerce_extensions_to_globs(current_settings)
     model.plugins.extension2reader = new_settings
+
+
+def _swap_ctrl_cmd(keybinding):
+    """Swap the Control and Command/Super/Meta modifiers in a keybinding.
+
+    See `v050_060` for motivation.
+    """
+    from napari.utils.key_bindings import KeyBinding
+
+    kb = KeyBinding.from_str(
+        str(keybinding)
+        .replace('Ctrl', 'Temp')
+        .replace('Meta', 'Ctrl')
+        .replace('Temp', 'Meta')
+    )
+    return kb
+
+
+@migrator('0.5.0', '0.6.0')
+def v050_060(model: NapariSettings):
+    """Migrate from v0.5.0 to v0.6.0.
+
+    In #5103 we went from using our own keybinding model to using app-model's.
+    Several consequences of this are:
+    - Control is written out as Ctrl (and that is the only valid input)
+    - Option is written out as Alt (and that is the only valid input)
+    - Super/Command/Cmd are written out as Meta (both Meta and Cmd are valid
+      inputs)
+    - modifiers with keys are written as Mod+Key rather than Mod-Key. However,
+      both versions are valid inputs.
+    - macOS shortcuts using command keys are written out as Meta, where they
+      used to be written out as Control.
+
+    The alias problem is solved in `napari.utils.keybindings.coerce_keybinding`
+    by substituting all variants with the canonical versions in app-model.
+
+    The separator problem (-/+) can be ignored.
+
+    This migrator solves the final problem, by detecting whether the current
+    OS is macOS, and swapping Control and Meta in all key bindings if so.
+    """
+    if sys.platform == 'darwin':
+        current_keybinds = model.shortcuts.shortcuts
+        default_shortcuts = ShortcutsSettings().shortcuts
+        new_keybinds = {}
+        for action_str, keybind_list in current_keybinds.items():
+            new_keybind_list = []
+            for kb in keybind_list:
+                if kb not in default_shortcuts[action_str]:
+                    new_keybind_list.append(_swap_ctrl_cmd(kb))
+                else:
+                    new_keybind_list.append(kb)
+            new_keybinds[action_str] = new_keybind_list
+        model.shortcuts.shortcuts = new_keybinds

@@ -1,14 +1,13 @@
+import typing
 import warnings
 from collections import deque
+from collections.abc import Sequence
 from contextlib import contextmanager
 from typing import (
+    Any,
     Callable,
     ClassVar,
-    Dict,
-    Iterable,
-    List,
     Optional,
-    Tuple,
     Union,
 )
 
@@ -18,6 +17,9 @@ import pandas as pd
 from scipy import ndimage as ndi
 from skimage.draw import polygon2mask
 
+from napari.layers._data_protocols import LayerDataProtocol
+from napari.layers._multiscale_data import MultiScaleData
+from napari.layers._scalar_field.scalar_field import ScalarFieldBase
 from napari.layers.base import Layer, no_op
 from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
@@ -25,8 +27,8 @@ from napari.layers.base._base_mouse_bindings import (
 )
 from napari.layers.image._image_utils import guess_multiscale
 from napari.layers.image._slice import _ImageSliceResponse
-from napari.layers.image.image import _ImageBase
 from napari.layers.labels._labels_constants import (
+    IsoCategoricalGradientMode,
     LabelColorMode,
     LabelsRendering,
     Mode,
@@ -43,24 +45,30 @@ from napari.layers.labels._labels_utils import (
     interpolate_coordinates,
     sphere_indices,
 )
-from napari.layers.utils.color_transformations import transform_color
 from napari.layers.utils.layer_utils import _FeatureTable
-from napari.utils._dtype import normalize_dtype
+from napari.utils._dtype import normalize_dtype, vispy_texture_dtype
+from napari.utils._indexing import elements_in_slice, index_in_slice
 from napari.utils.colormaps import (
     direct_colormap,
     label_colormap,
 )
-from napari.utils.events import Event
+from napari.utils.colormaps.colormap import (
+    CyclicLabelColormap,
+    LabelColormapBase,
+    _normalize_label_colormap,
+)
+from napari.utils.colormaps.colormap_utils import shuffle_and_extend_colormap
+from napari.utils.events import EmitterGroup, Event
 from napari.utils.events.custom_types import Array
-from napari.utils.geometry import clamp_point_to_bounding_box
-from napari.utils.indexing import index_in_slice
 from napari.utils.misc import StringEnum, _is_array_type
 from napari.utils.naming import magic_name
 from napari.utils.status_messages import generate_layer_coords_status
 from napari.utils.translations import trans
 
+__all__ = ('Labels',)
 
-class Labels(_ImageBase):
+
+class Labels(ScalarFieldBase):
     """Labels (or segmentation) layer.
 
     An image-like layer where every pixel contains an integer ID
@@ -72,59 +80,43 @@ class Labels(_ImageBase):
         Labels data as an array or multiscale. Must be integer type or bools.
         Please note multiscale rendering is only supported in 2D. In 3D, only
         the lowest resolution scale is displayed.
-    num_colors : int
-        Number of unique colors to use in colormap.
-    features : dict[str, array-like] or DataFrame
-        Features table where each row corresponds to a label and each column
-        is a feature. The first row corresponds to the background label.
-    properties : dict {str: array (N,)} or DataFrame
-        Properties for each label. Each property should be an array of length
-        N, where N is the number of labels, and the first property corresponds
-        to background.
-    color : dict of int to str or array
-        Custom label to color mapping. Values must be valid color names or RGBA
-        arrays.
-    seed : float
-        Seed for colormap random generator.
-    name : str
-        Name of the layer.
-    metadata : dict
-        Layer metadata.
-    scale : tuple of float
-        Scale factors for the layer.
-    translate : tuple of float
-        Translation values for the layer.
-    rotate : float, 3-tuple of float, or n-D array.
-        If a float convert into a 2D rotation matrix using that value as an
-        angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
-        pitch, roll convention. Otherwise assume an nD rotation. Angles are
-        assumed to be in degrees. They can be converted from radians with
-        np.degrees if needed.
-    shear : 1-D array or n-D array
-        Either a vector of upper triangular values, or an nD shear matrix with
-        ones along the main diagonal.
     affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
         the final column is a length N translation vector and a 1 or a napari
         `Affine` transform object. Applied as an extra transform on top of the
         provided scale, rotate, and shear values.
-    opacity : float
-        Opacity of the layer visual, between 0.0 and 1.0.
+    axis_labels : tuple of str, optional
+        Dimension names of the layer data.
+        If not provided, axis_labels will be set to (..., 'axis -2', 'axis -1').
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
         {'opaque', 'translucent', and 'additive'}.
-    rendering : str
-        3D Rendering mode used by vispy. Must be one {'translucent', 'iso_categorical'}.
-        'translucent' renders without lighting. 'iso_categorical' uses isosurface
-        rendering to calculate lighting effects on labeled surfaces.
-        The default value is 'iso_categorical'.
+    cache : bool
+        Whether slices of out-of-core datasets should be cached upon retrieval.
+        Currently, this only applies to dask arrays.
+    colormap : CyclicLabelColormap or DirectLabelColormap or None
+        Colormap to use for the labels. If None, a random colormap will be
+        used.
     depiction : str
         3D Depiction mode. Must be one of {'volume', 'plane'}.
         The default value is 'volume'.
-    visible : bool
-        Whether the layer visual is currently being displayed.
+    experimental_clipping_planes : list of dicts, list of ClippingPlane, or ClippingPlaneList
+        Each dict defines a clipping plane in 3D in data coordinates.
+        Valid dictionary keys are {'position', 'normal', and 'enabled'}.
+        Values on the negative side of the normal are discarded if the plane is enabled.
+    features : dict[str, array-like] or DataFrame
+        Features table where each row corresponds to a label and each column
+        is a feature. The first row corresponds to the background label.
+    iso_gradient_mode : str
+        Method for calulating the gradient (used to get the surface normal) in the
+        'iso_categorical' rendering mode. Must be one of {'fast', 'smooth'}.
+        'fast' uses a simple finite difference gradient in x, y, and z. 'smooth' uses an
+        isotropic Sobel gradient, which is smoother but more computationally expensive.
+        The default value is 'fast'.
+    metadata : dict
+        Layer metadata.
     multiscale : bool
         Whether the data is a multiscale image or not. Multiscale data is
         represented by a list of array like image data. If not specified by
@@ -133,17 +125,44 @@ class Labels(_ImageBase):
         should be the largest. Please note multiscale rendering is only
         supported in 2D. In 3D, only the lowest resolution scale is
         displayed.
-    cache : bool
-        Whether slices of out-of-core datasets should be cached upon retrieval.
-        Currently, this only applies to dask arrays.
+    name : str
+        Name of the layer.
+    opacity : float
+        Opacity of the layer visual, between 0.0 and 1.0.
     plane : dict or SlicingPlane
         Properties defining plane rendering in 3D. Properties are defined in
         data coordinates. Valid dictionary keys are
         {'position', 'normal', 'thickness', and 'enabled'}.
-    experimental_clipping_planes : list of dicts, list of ClippingPlane, or ClippingPlaneList
-        Each dict defines a clipping plane in 3D in data coordinates.
-        Valid dictionary keys are {'position', 'normal', and 'enabled'}.
-        Values on the negative side of the normal are discarded if the plane is enabled.
+    projection_mode : str
+        How data outside the viewed dimensions but inside the thick Dims slice will
+        be projected onto the viewed dimensions
+    properties : dict {str: array (N,)} or DataFrame
+        Properties for each label. Each property should be an array of length
+        N, where N is the number of labels, and the first property corresponds
+        to background.
+    rendering : str
+        3D Rendering mode used by vispy. Must be one {'translucent', 'iso_categorical'}.
+        'translucent' renders without lighting. 'iso_categorical' uses isosurface
+        rendering to calculate lighting effects on labeled surfaces.
+        The default value is 'iso_categorical'.
+    rotate : float, 3-tuple of float, or n-D array.
+        If a float convert into a 2D rotation matrix using that value as an
+        angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
+        pitch, roll convention. Otherwise assume an nD rotation. Angles are
+        assumed to be in degrees. They can be converted from radians with
+        np.degrees if needed.
+    scale : tuple of float
+        Scale factors for the layer.
+    shear : 1-D array or n-D array
+        Either a vector of upper triangular values, or an nD shear matrix with
+        ones along the main diagonal.
+    translate : tuple of float
+        Translation values for the layer.
+    units : tuple of str or pint.Unit, optional
+        Units of the layer data in world coordinates.
+        If not provided, the default units are assumed to be pixels.
+    visible : bool
+        Whether the layer visual is currently being displayed.
 
     Attributes
     ----------
@@ -153,6 +172,8 @@ class Labels(_ImageBase):
         belongs to. The label 0 is rendered as transparent. Please note
         multiscale rendering is only supported in 2D. In 3D, only
         the lowest resolution scale is displayed.
+    axis_labels : tuple of str
+        Dimension names of the layer data.
     multiscale : bool
         Whether the data is a multiscale image or not. Multiscale data is
         represented by a list of array like image data. The first image in the
@@ -162,7 +183,8 @@ class Labels(_ImageBase):
     metadata : dict
         Labels metadata.
     num_colors : int
-        Number of unique colors to use in colormap.
+        Number of unique colors to use in colormap. DEPRECATED: set
+        ``colormap`` directly, using `napari.utils.colormaps.label_colormap`.
     features : Dataframe-like
         Features table where each row corresponds to a label and each column
         is a feature. The first row corresponds to the background label.
@@ -174,9 +196,11 @@ class Labels(_ImageBase):
         Custom label to color mapping. Values must be valid color names or RGBA
         arrays. While there is no limit to the number of custom labels, the
         the layer will render incorrectly if they map to more than 1024 distinct
-        colors.
+        colors. DEPRECATED: set ``colormap`` directly, using
+        `napari.utils.colormaps.DirectLabelColormap`.
     seed : float
-        Seed for colormap random generator.
+        Seed for colormap random generator. DEPRECATED: set ``colormap``
+        directly, using `napari.utils.colormaps.label_colormap`.
     opacity : float
         Opacity of the labels, must be between 0 and 1.
     contiguous : bool
@@ -188,6 +212,11 @@ class Labels(_ImageBase):
         with a thickness equal to its value. Must be >= 0.
     brush_size : float
         Size of the paint brush in data coordinates.
+    iso_gradient_mode : str
+        Method for calulating the gradient (used to get the surface normal) in the
+        'iso_categorical' rendering mode. Must be one of {'fast', 'smooth'}.
+        'fast' uses a simple finite difference gradient in x, y, and z. 'smooth' uses an
+        isotropic Sobel gradient, which is smoother but more computationally expensive.
     selected_label : int
         Index of selected label. Can be greater than the current maximum label.
     mode : str
@@ -217,6 +246,8 @@ class Labels(_ImageBase):
         Properties defining plane rendering in 3D.
     experimental_clipping_planes : ClippingPlaneList
         Clipping planes defined in data coordinates, used to clip the volume.
+    units: tuple of pint.Unit
+        Units of the layer data in world coordinates.
 
     Notes
     -----
@@ -225,9 +256,12 @@ class Labels(_ImageBase):
         background label `0` is selected.
     """
 
+    events: EmitterGroup
+    _colormap: LabelColormapBase
+
     _modeclass = Mode
 
-    _drag_modes: ClassVar[Dict[Mode, Callable[["Labels", Event], None]]] = {  # type: ignore[assignment]
+    _drag_modes: ClassVar[dict[Mode, Callable[['Labels', Event], None]]] = {  # type: ignore[assignment]
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
         Mode.PICK: pick,
@@ -239,7 +273,9 @@ class Labels(_ImageBase):
 
     brush_size_on_mouse_move = BrushSizeOnMouseMove(min_brush_size=1)
 
-    _move_modes: ClassVar[Dict[StringEnum, Callable[["Labels", Event], None]]] = {  # type: ignore[assignment]
+    _move_modes: ClassVar[
+        dict[StringEnum, Callable[['Labels', Event], None]]
+    ] = {  # type: ignore[assignment]
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
         Mode.PICK: no_op,
@@ -249,7 +285,7 @@ class Labels(_ImageBase):
         Mode.POLYGON: no_op,  # the overlay handles mouse events in this mode
     }
 
-    _cursor_modes: ClassVar[Dict[Mode, str]] = {  # type: ignore[assignment]
+    _cursor_modes: ClassVar[dict[Mode, str]] = {  # type: ignore[assignment]
         Mode.PAN_ZOOM: 'standard',
         Mode.TRANSFORM: 'standard',
         Mode.PICK: 'cross',
@@ -265,91 +301,95 @@ class Labels(_ImageBase):
         self,
         data,
         *,
-        num_colors=49,
-        features=None,
-        properties=None,
-        color=None,
-        seed=0.5,
-        name=None,
-        metadata=None,
-        scale=None,
-        translate=None,
-        rotate=None,
-        shear=None,
         affine=None,
-        opacity=0.7,
+        axis_labels=None,
         blending='translucent',
-        rendering='iso_categorical',
-        depiction='volume',
-        visible=True,
-        multiscale=None,
         cache=True,
-        plane=None,
+        colormap=None,
+        depiction='volume',
         experimental_clipping_planes=None,
+        features=None,
+        iso_gradient_mode=IsoCategoricalGradientMode.FAST.value,
+        metadata=None,
+        multiscale=None,
+        name=None,
+        opacity=0.7,
+        plane=None,
+        projection_mode='none',
+        properties=None,
+        rendering='iso_categorical',
+        rotate=None,
+        scale=None,
+        shear=None,
+        translate=None,
+        units=None,
+        visible=True,
     ) -> None:
         if name is None and data is not None:
             name = magic_name(data)
 
-        self._seed = seed
-        self._background_label = 0
-        self._num_colors = num_colors
-        self._random_colormap = label_colormap(self.num_colors, seed)
-        self._direct_colormap = direct_colormap()
+        self._seed = 0.5
+        # We use 50 colors (49 + transparency) by default for historical
+        # consistency. This may change in future versions.
+        self._random_colormap = label_colormap(
+            49, self._seed, background_value=0
+        )
+        self._original_random_colormap = self._random_colormap
+        self._direct_colormap = direct_colormap(
+            {0: 'transparent', None: 'black'}
+        )
+        self._colormap = self._random_colormap
         self._color_mode = LabelColorMode.AUTO
         self._show_selected_label = False
         self._contour = 0
-        self._cached_labels: Optional[np.ndarray] = None
-        self._cached_mapped_labels: Optional[np.ndarray] = None
 
         data = self._ensure_int_labels(data)
 
         super().__init__(
             data,
-            rgb=False,
-            colormap=self._random_colormap,
-            contrast_limits=[0.0, 2**23 - 1.0],
-            interpolation2d='nearest',
-            interpolation3d='nearest',
-            rendering=rendering,
-            depiction=depiction,
-            iso_threshold=0,
-            name=name,
-            metadata=metadata,
-            scale=scale,
-            translate=translate,
-            rotate=rotate,
-            shear=shear,
             affine=affine,
-            opacity=opacity,
+            axis_labels=axis_labels,
             blending=blending,
-            visible=visible,
-            multiscale=multiscale,
             cache=cache,
-            plane=plane,
+            depiction=depiction,
             experimental_clipping_planes=experimental_clipping_planes,
+            rendering=rendering,
+            metadata=metadata,
+            multiscale=multiscale,
+            name=name,
+            scale=scale,
+            shear=shear,
+            plane=plane,
+            opacity=opacity,
+            projection_mode=projection_mode,
+            rotate=rotate,
+            translate=translate,
+            units=units,
+            visible=visible,
         )
 
         self.events.add(
-            preserve_labels=Event,
-            show_selected_label=Event,
-            properties=Event,
-            n_edit_dimensions=Event,
-            contiguous=Event,
-            brush_size=Event,
-            selected_label=Event,
-            color_mode=Event,
             brush_shape=Event,
+            brush_size=Event,
+            colormap=Event,
+            contiguous=Event,
             contour=Event,
             features=Event,
-            paint=Event,
+            iso_gradient_mode=Event,
             labels_update=Event,
+            n_edit_dimensions=Event,
+            paint=Event,
+            preserve_labels=Event,
+            properties=Event,
+            selected_label=Event,
+            show_selected_label=Event,
         )
 
         from napari.components.overlays.labels_polygon import (
             LabelsPolygonOverlay,
         )
 
-        self._overlays.update({"polygon": LabelsPolygonOverlay()})
+        self._overlays.update({'polygon': LabelsPolygonOverlay()})
 
         self._feature_table = _FeatureTable.from_layer(
             features=features, properties=properties
@@ -360,19 +400,22 @@ class Labels(_ImageBase):
         self._contiguous = True
         self._brush_size = 10
 
+        self._iso_gradient_mode = IsoCategoricalGradientMode(iso_gradient_mode)
+
         self._selected_label = 1
         self.colormap.selection = self._selected_label
         self.colormap.use_selection = self._show_selected_label
         self._prev_selected_label = None
         self._selected_color = self.get_color(self._selected_label)
         self._updated_slice = None
-        self.color = color
+        if colormap is not None:
+            self._set_colormap(colormap)
 
         self._status = self.mode
         self._preserve_labels = False
 
+    def _post_init(self):
         self._reset_history()
-
         # Trigger generation of view slice and thumbnail
         self.refresh()
         self._reset_editable()
@@ -404,6 +447,27 @@ class Labels(_ImageBase):
         self.events.rendering()
 
     @property
+    def iso_gradient_mode(self) -> str:
+        """Return current gradient mode for isosurface rendering.
+
+        Selects the finite-difference gradient method for the isosurface shader. Options include:
+            * ``fast``: use a simple finite difference gradient along each axis
+            * ``smooth``: use an isotropic Sobel gradient, smoother but more
+              computationally expensive
+
+        Returns
+        -------
+        str
+            The current gradient mode
+        """
+        return str(self._iso_gradient_mode)
+
+    @iso_gradient_mode.setter
+    def iso_gradient_mode(self, value: Union[IsoCategoricalGradientMode, str]):
+        self._iso_gradient_mode = IsoCategoricalGradientMode(value)
+        self.events.iso_gradient_mode()
+
+    @property
     def contiguous(self):
         """bool: fill bucket changes only connected pixels of same label."""
         return self._contiguous
@@ -430,10 +494,10 @@ class Labels(_ImageBase):
     @contour.setter
     def contour(self, contour: int) -> None:
         if contour < 0:
-            raise ValueError("contour value must be >= 0")
+            raise ValueError('contour value must be >= 0')
         self._contour = int(contour)
         self.events.contour()
-        self.refresh()
+        self.refresh(extent=False)
 
     @property
     def brush_size(self):
@@ -455,48 +519,64 @@ class Labels(_ImageBase):
         )
         return abs(self.brush_size * min_scale)
 
-    @property
-    def seed(self):
-        """float: Seed for colormap random generator."""
-        return self._seed
+    def new_colormap(self, seed: Optional[int] = None):
+        if seed is None:
+            seed = np.random.default_rng().integers(2**32 - 1)
 
-    @seed.setter
-    def seed(self, seed):
-        self._seed = seed
-        self.colormap.seed = seed
+        orig = self._original_random_colormap
+        self.colormap = shuffle_and_extend_colormap(
+            self._original_random_colormap, seed
+        )
+        self._original_random_colormap = orig
+
+    @property
+    def colormap(self) -> LabelColormapBase:
+        return self._colormap
+
+    @colormap.setter
+    def colormap(self, colormap: LabelColormapBase):
+        self._set_colormap(colormap)
+
+    def _set_colormap(self, colormap):
+        colormap = _normalize_label_colormap(colormap)
+        if isinstance(colormap, CyclicLabelColormap):
+            self._random_colormap = colormap
+            self._original_random_colormap = colormap
+            self._colormap = self._random_colormap
+            color_mode = LabelColorMode.AUTO
+        else:
+            self._direct_colormap = colormap
+            # `self._direct_colormap.color_dict` may contain just the default None and background label
+            # colors, in which case we need to be in AUTO color mode. Otherwise,
+            # `self._direct_colormap.color_dict` contains colors for all labels, and we should be in DIRECT
+            # mode.
+
+            # For more information
+            # - https://github.com/napari/napari/issues/2479
+            # - https://github.com/napari/napari/issues/2953
+            if self._is_default_colors(self._direct_colormap.color_dict):
+                color_mode = LabelColorMode.AUTO
+                self._colormap = self._random_colormap
+            else:
+                color_mode = LabelColorMode.DIRECT
+                self._colormap = self._direct_colormap
         self._cached_labels = None  # invalidate the cached color mapping
         self._selected_color = self.get_color(self.selected_label)
+        self._color_mode = color_mode
         self.events.colormap()  # Will update the LabelVispyColormap shader
-        self.refresh()
         self.events.selected_label()
-
-    @_ImageBase.colormap.setter
-    def colormap(self, colormap):
-        super()._set_colormap(colormap)
-        self._selected_color = self.get_color(self.selected_label)
+        self.refresh(extent=False)
 
     @property
-    def num_colors(self):
-        """int: Number of unique colors to use in colormap."""
-        return self._num_colors
-
-    @num_colors.setter
-    def num_colors(self, num_colors):
-        self._num_colors = num_colors
-        self.colormap = label_colormap(num_colors)
-        self.refresh()
-        self._selected_color = self.get_color(self.selected_label)
-        self.events.selected_label()
-
-    @property
-    def data(self):
+    def data(self) -> Union[LayerDataProtocol, MultiScaleData]:
         """array: Image data."""
         return self._data
 
     @data.setter
-    def data(self, data):
+    def data(self, data: Union[LayerDataProtocol, MultiScaleData]):
         data = self._ensure_int_labels(data)
         self._data = data
+        self._ndim = len(self._data.shape)
         self._update_dims()
         self.events.data(value=self.data)
         self._reset_editable()
@@ -506,7 +586,7 @@ class Labels(_ImageBase):
         """Dataframe-like features table.
 
         It is an implementation detail that this is a `pandas.DataFrame`. In the future,
-        we will target the currently-in-development Data API dataframe protocol [1].
+        we will target the currently-in-development Data API dataframe protocol [1]_.
         This will enable us to use alternate libraries such as xarray or cuDF for
         additional features without breaking existing usage of this.
 
@@ -515,14 +595,14 @@ class Labels(_ImageBase):
 
         References
         ----------
-        .. [1]: https://data-apis.org/dataframe-protocol/latest/API.html
+        .. [1] https://data-apis.org/dataframe-protocol/latest/API.html
         """
         return self._feature_table.values
 
     @features.setter
     def features(
         self,
-        features: Union[Dict[str, np.ndarray], pd.DataFrame],
+        features: Union[dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
         self._feature_table.set_values(features)
         self._label_index = self._make_label_index()
@@ -530,15 +610,15 @@ class Labels(_ImageBase):
         self.events.features()
 
     @property
-    def properties(self) -> Dict[str, np.ndarray]:
+    def properties(self) -> dict[str, np.ndarray]:
         """dict {str: array (N,)}, DataFrame: Properties for each label."""
         return self._feature_table.properties()
 
     @properties.setter
-    def properties(self, properties: Dict[str, Array]):
+    def properties(self, properties: dict[str, Array]):
         self.features = properties
 
-    def _make_label_index(self) -> Dict[int, int]:
+    def _make_label_index(self) -> dict[int, int]:
         features = self._feature_table.values
         label_index = {}
         if 'index' in features:
@@ -547,91 +627,11 @@ class Labels(_ImageBase):
             label_index = {i: i for i in range(features.shape[0])}
         return label_index
 
-    @property
-    def color(self):
-        """dict: custom color dict for label coloring"""
-        return self._color
-
-    @color.setter
-    def color(self, color):
-        if not color:
-            color = {}
-
-        if self._background_label not in color:
-            color[self._background_label] = 'transparent'
-
-        none_color = color.pop(None, 'black')
-        self._validate_colors(color)
-
-        color[None] = none_color
-
-        colors = {
-            label: transform_color(color_str)[0]
-            for label, color_str in color.items()
-        }
-
-        self._color = colors
-        self._direct_colormap = direct_colormap(colors)
-
-        # `colors` may contain just the default None and background label
-        # colors, in which case we need to be in AUTO color mode. Otherwise,
-        # `colors` contains colors for all labels, and we should be in DIRECT
-        # mode.
-
-        # For more information
-        # - https://github.com/napari/napari/issues/2479
-        # - https://github.com/napari/napari/issues/2953
-        if self._is_default_colors(colors):
-            color_mode = LabelColorMode.AUTO
-        else:
-            color_mode = LabelColorMode.DIRECT
-
-        self.color_mode = color_mode
-
-    @classmethod
-    def _validate_colors(cls, labels: Iterable[int]):
-        """Check whether any of the given labels will be aliased together.
-
-        See https://github.com/napari/napari/issues/6084 for details.
-        """
-        labels_int = np.fromiter(labels, dtype=int)
-        labels_unique = np.unique(cls._to_vispy_texture_dtype(labels_int))
-        if labels_unique.size == labels_int.size:
-            return
-
-        # recalculate here second time to provide best performance on colors that are not colliding
-        labels_unique, inverse, count = np.unique(
-            cls._to_vispy_texture_dtype(labels_int),
-            return_inverse=True,
-            return_counts=True,
-        )
-        collided_idx = np.where(count > 1)[0]
-        aliased_list = [
-            labels_int[np.where(inverse == idx)[0]] for idx in collided_idx
-        ]
-
-        alias_string = "\n".join(
-            trans._(
-                'Labels {col_li} will display as the same color as {col_la};',
-                col_li=",".join(str(i) for i in lst[:-1]),
-                col_la=str(lst[-1]),
-            )
-            for lst in aliased_list
-        )
-        warn_text = trans._(
-            "Because integer labels are cast to less-precise float for display, "
-            "the following label sets will render as the same color:\n"
-            "{alias_string}\n"
-            "See https://github.com/napari/napari/issues/6084 for details.",
-            alias_string=alias_string,
-        )
-        warnings.warn(warn_text, category=RuntimeWarning)
-
     def _is_default_colors(self, color):
         """Returns True if color contains only default colors, otherwise False.
 
         Default colors are black for `None` and transparent for
-        `self._background_label`.
+        `self.colormap.background_value`.
 
         Parameters
         ----------
@@ -643,21 +643,13 @@ class Labels(_ImageBase):
         bool
             True if color contains only default colors, otherwise False.
         """
-        if len(color) != 2:
-            return False
-
-        if not hasattr(self, '_color'):
-            return False
-
-        default_keys = [None, self._background_label]
-        if set(default_keys) != set(color.keys()):
-            return False
-
-        for key in default_keys:
-            if not np.allclose(self._color[key], color[key]):
-                return False
-
-        return True
+        return (
+            {None, self.colormap.background_value} == set(color.keys())
+            and np.allclose(color[None], [0, 0, 0, 1])
+            and np.allclose(
+                color[self.colormap.background_value], [0, 0, 0, 0]
+            )
+        )
 
     def _ensure_int_labels(self, data):
         """Ensure data is integer by converting from bool if required, raising an error otherwise."""
@@ -671,12 +663,12 @@ class Labels(_ImageBase):
             if np.issubdtype(normalize_dtype(data_level.dtype), np.floating):
                 raise TypeError(
                     trans._(
-                        "Only integer types are supported for Labels layers, but data contains {data_level_type}.",
+                        'Only integer types are supported for Labels layers, but data contains {data_level_type}.',
                         data_level_type=data_level.dtype,
                     )
                 )
             if data_level.dtype == bool:
-                int_data.append(data_level.astype(np.int8))
+                int_data.append(data_level.view(np.uint8))
             else:
                 int_data.append(data_level)
         data = int_data
@@ -684,30 +676,29 @@ class Labels(_ImageBase):
             data = data[0]
         return data
 
-    def _get_state(self):
+    def _get_state(self) -> dict[str, Any]:
         """Get dictionary of layer state.
 
         Returns
         -------
-        state : dict
+        state : dict of str to Any
             Dictionary of layer state.
         """
         state = self._get_base_state()
         state.update(
             {
                 'multiscale': self.multiscale,
-                'num_colors': self.num_colors,
                 'properties': self.properties,
                 'rendering': self.rendering,
+                'iso_gradient_mode': self.iso_gradient_mode,
                 'depiction': self.depiction,
                 'plane': self.plane.dict(),
                 'experimental_clipping_planes': [
                     plane.dict() for plane in self.experimental_clipping_planes
                 ],
-                'seed': self.seed,
                 'data': self.data,
-                'color': self.color,
                 'features': self.features,
+                'colormap': self.colormap,
             }
         )
         return state
@@ -730,40 +721,14 @@ class Labels(_ImageBase):
         self.events.selected_label()
 
         if self.show_selected_label:
-            self._cached_labels = None  # invalidates labels cache
-            self.refresh()
+            self.refresh(extent=False)
 
     def swap_selected_and_background_labels(self):
         """Swap between the selected label and the background label."""
-        if self.selected_label != self._background_label:
-            self.selected_label = self._background_label
+        if self.selected_label != self.colormap.background_value:
+            self.selected_label = self.colormap.background_value
         else:
             self.selected_label = self._prev_selected_label
-
-    @property
-    def color_mode(self):
-        """Color mode to change how color is represented.
-
-        AUTO (default) allows color to be set via a hash function with a seed.
-
-        DIRECT allows color of each label to be set directly by a color dict.
-        """
-        return str(self._color_mode)
-
-    @color_mode.setter
-    def color_mode(self, color_mode: Union[str, LabelColorMode]):
-        color_mode = LabelColorMode(color_mode)
-        self._cached_labels = None  # invalidates labels cache
-        self._color_mode = color_mode
-        if color_mode == LabelColorMode.AUTO:
-            super()._set_colormap(self._random_colormap)
-        else:
-            super()._set_colormap(self._direct_colormap)
-        self._selected_color = self.get_color(self.selected_label)
-        self.events.color_mode()
-        self.events.colormap()
-        self.events.selected_label()
-        self.refresh()
 
     @property
     def show_selected_label(self):
@@ -774,9 +739,9 @@ class Labels(_ImageBase):
     def show_selected_label(self, show_selected):
         self._show_selected_label = show_selected
         self.colormap.use_selection = show_selected
+        self.colormap.selection = self.selected_label
         self.events.show_selected_label(show_selected_label=show_selected)
-        self._cached_labels = None
-        self.refresh()
+        self.refresh(extent=False)
 
     # Only overriding to change the docstring
     @property
@@ -816,7 +781,7 @@ class Labels(_ImageBase):
         if mode == self._mode:
             return mode
 
-        self._overlays["polygon"].enabled = mode == Mode.POLYGON
+        self._overlays['polygon'].enabled = mode == Mode.POLYGON
         if mode in {Mode.PAINT, Mode.ERASE}:
             self.cursor_size = self._calculate_cursor_size()
 
@@ -836,16 +801,6 @@ class Labels(_ImageBase):
         self._preserve_labels = preserve_labels
         self.events.preserve_labels(preserve_labels=preserve_labels)
 
-    @property
-    def contrast_limits(self):
-        return self._contrast_limits
-
-    @contrast_limits.setter
-    def contrast_limits(self, value):
-        # Setting contrast_limits of labels layers leads to wrong visualization
-        # of the layer, so we ignore the value
-        self._contrast_limits = (0, 1)
-
     def _reset_editable(self) -> None:
         self.editable = not self.multiscale
 
@@ -863,7 +818,7 @@ class Labels(_ImageBase):
         float32 as it can represent all input values (though not losslessly,
         see https://github.com/napari/napari/issues/6084).
         """
-        return data.astype(np.float32)
+        return vispy_texture_dtype(data)
 
     def _update_slice_response(self, response: _ImageSliceResponse) -> None:
         """Override to convert raw slice data to displayed label colors."""
@@ -881,21 +836,75 @@ class Labels(_ImageBase):
 
         # Keep only the dimensions that correspond to the current view
         updated_slice = tuple(
-            [self._updated_slice[index] for index in dims_displayed]
+            self._updated_slice[index] for index in dims_displayed
         )
 
         offset = [axis_slice.start for axis_slice in updated_slice]
 
-        colors_sliced = self._raw_to_displayed(
-            raw_displayed, data_slice=updated_slice
-        )
+        if self.contour > 0:
+            colors_sliced = self._raw_to_displayed(
+                raw_displayed, data_slice=updated_slice
+            )
+        else:
+            colors_sliced = self._slice.image.view[updated_slice]
+        # The next line is needed to make the following tests pass in
+        # napari/_vispy/_tests/:
+        # - test_vispy_labels_layer.py::test_labels_painting
+        # - test_vispy_labels_layer.py::test_labels_fill_slice
+        # See https://github.com/napari/napari/pull/6112/files#r1291613760
+        # and https://github.com/napari/napari/issues/6185
+        self._slice.image.view[updated_slice] = colors_sliced
 
         self.events.labels_update(data=colors_sliced, offset=offset)
         self._updated_slice = None
 
+    def _calculate_contour(
+        self, labels: np.ndarray, data_slice: tuple[slice, ...]
+    ) -> Optional[np.ndarray]:
+        """Calculate the contour of a given label array within the specified data slice.
+
+        Parameters
+        ----------
+        labels : np.ndarray
+            The label array.
+        data_slice : Tuple[slice, ...]
+            The slice of the label array on which to calculate the contour.
+
+        Returns
+        -------
+        Optional[np.ndarray]
+            The calculated contour as a boolean mask array.
+            Returns None if the contour parameter is less than 1,
+            or if the label array has more than 2 dimensions.
+        """
+        if self.contour < 1:
+            return None
+        if labels.ndim > 2:
+            warnings.warn(
+                trans._(
+                    'Contours are not displayed during 3D rendering',
+                    deferred=True,
+                )
+            )
+            return None
+
+        expanded_slice = expand_slice(data_slice, labels.shape, 1)
+        sliced_labels = get_contours(
+            labels[expanded_slice],
+            self.contour,
+            self.colormap.background_value,
+        )
+
+        # Remove the latest one-pixel border from the result
+        delta_slice = tuple(
+            slice(s1.start - s2.start, s1.stop - s2.start)
+            for s1, s2 in zip(data_slice, expanded_slice)
+        )
+        return sliced_labels[delta_slice]
+
     def _raw_to_displayed(
-        self, raw, data_slice: Optional[Tuple[slice, ...]] = None
-    ):
+        self, raw, data_slice: Optional[tuple[slice, ...]] = None
+    ) -> np.ndarray:
         """Determine displayed image from a saved raw image and a saved seed.
 
         This function ensures that the 0 label gets mapped to the 0 displayed
@@ -910,80 +919,26 @@ class Labels(_ImageBase):
             Slice that specifies the portion of the input image that
             should be computed and displayed.
             If None, the whole input image will be processed.
+
         Returns
         -------
         mapped_labels : array
             Encoded colors mapped between 0 and 1 to be displayed.
         """
+
         if data_slice is None:
             data_slice = tuple(slice(0, size) for size in raw.shape)
 
         labels = raw  # for readability
-        sliced_labels = None
+
+        sliced_labels = self._calculate_contour(labels, data_slice)
 
         # lookup function -> self._as_type
-        if self.contour > 0:
-            if labels.ndim == 2:
-                # Add one more pixel for the correct borders computation
-                expanded_slice = expand_slice(data_slice, labels.shape, 1)
-                sliced_labels = get_contours(
-                    labels[expanded_slice],
-                    self.contour,
-                    self._background_label,
-                )
-
-                # Remove the latest one-pixel border from the result
-                delta_slice = tuple(
-                    [
-                        slice(s1.start - s2.start, s1.stop - s2.start)
-                        for s1, s2 in zip(data_slice, expanded_slice)
-                    ]
-                )
-                sliced_labels = sliced_labels[delta_slice]
-            elif labels.ndim > 2:
-                warnings.warn(
-                    trans._(
-                        "Contours are not displayed during 3D rendering",
-                        deferred=True,
-                    )
-                )
 
         if sliced_labels is None:
             sliced_labels = labels[data_slice]
 
-        # cache the labels and keep track of when values are changed
-        update_mask = None
-        if (
-            self._cached_labels is not None
-            and self._cached_mapped_labels is not None
-            and self._cached_labels.shape == labels.shape
-        ):
-            update_mask = self._cached_labels[data_slice] != sliced_labels
-            # Select only a subset with changes for further computations
-            labels_to_map = sliced_labels[update_mask]
-            # Update the cache
-            self._cached_labels[data_slice][update_mask] = labels_to_map
-        else:
-            _cached_labels = np.zeros_like(labels)
-            _cached_labels[data_slice] = sliced_labels.copy()
-            self._cached_labels = _cached_labels
-            self._cached_mapped_labels = np.zeros_like(
-                labels, dtype=np.float32
-            )
-            labels_to_map = sliced_labels
-
-        # If there are no changes, just return the cached image
-        if labels_to_map.size == 0:
-            return self._cached_mapped_labels[data_slice]
-
-        mapped_labels = self._to_vispy_texture_dtype(labels_to_map)
-
-        if update_mask is not None:
-            self._cached_mapped_labels[data_slice][update_mask] = mapped_labels
-        else:
-            self._cached_mapped_labels[data_slice] = mapped_labels
-
-        return self._cached_mapped_labels[data_slice]
+        return self.colormap._data_to_texture(sliced_labels)
 
     def _update_thumbnail(self):
         """Update the thumbnail with current data and colormap.
@@ -997,7 +952,7 @@ class Labels(_ImageBase):
             # Is there a nicer way to prevent this from getting called?
             return
 
-        image = self._slice.thumbnail.view
+        image = self._slice.thumbnail.raw
         if self._slice_input.ndisplay == 3 and self.ndim > 2:
             # we are only using the current slice so `image` will never be
             # bigger than 3. If we are in this clause, it is exactly 3, so we
@@ -1014,119 +969,22 @@ class Labels(_ImageBase):
         zoom_factor = tuple(new_shape / imshape)
 
         downsampled = ndi.zoom(image, zoom_factor, prefilter=False, order=0)
-        if self.color_mode == LabelColorMode.AUTO:
-            color_array = self.colormap.map(downsampled.ravel())
-        else:  # direct
-            color_array = self._direct_colormap.map(downsampled.ravel())
-        colormapped = color_array.reshape(downsampled.shape + (4,))
-        colormapped[..., 3] *= self.opacity
+        color_array = self.colormap.map(downsampled)
+        color_array[..., 3] *= self.opacity
 
-        self.thumbnail = colormapped
-
-    def new_colormap(self):
-        self.seed = np.random.rand()
+        self.thumbnail = color_array
 
     def get_color(self, label):
         """Return the color corresponding to a specific label."""
-        if label == self._background_label:
+        if label == self.colormap.background_value:
             col = None
         elif label is None or (
             self.show_selected_label and label != self.selected_label
         ):
-            col = self.colormap.map([0, 0, 0, 0])[0]
+            col = self.colormap.map(self.colormap.background_value)
         else:
-            val = self._to_vispy_texture_dtype(np.array([label]))
-            col = self.colormap.map(val)[0]
+            col = self.colormap.map(label)
         return col
-
-    def _get_value_ray(
-        self,
-        start_point: np.ndarray,
-        end_point: np.ndarray,
-        dims_displayed: List[int],
-    ) -> Optional[int]:
-        """Get the first non-background value encountered along a ray.
-
-        Parameters
-        ----------
-        start_point : np.ndarray
-            (n,) array containing the start point of the ray in data coordinates.
-        end_point : np.ndarray
-            (n,) array containing the end point of the ray in data coordinates.
-        dims_displayed : List[int]
-            The indices of the dimensions currently displayed in the viewer.
-
-        Returns
-        -------
-        value : Optional[int]
-            The first non-zero value encountered along the ray. If none
-            was encountered or the viewer is in 2D mode, None is returned.
-        """
-        if start_point is None or end_point is None:
-            return None
-        if len(dims_displayed) == 3:
-            # only use get_value_ray on 3D for now
-            # we use dims_displayed because the image slice
-            # has its dimensions  in th same order as the vispy
-            # Volume
-            start_point = start_point[dims_displayed]
-            end_point = end_point[dims_displayed]
-            sample_ray = end_point - start_point
-            length_sample_vector = np.linalg.norm(sample_ray)
-            n_points = int(2 * length_sample_vector)
-            sample_points = np.linspace(
-                start_point, end_point, n_points, endpoint=True
-            )
-            im_slice = self._slice.image.raw
-            bounding_box = self._display_bounding_box(dims_displayed)
-            # the display bounding box is returned as a closed interval
-            # (i.e. the endpoint is included) by the method, but we need
-            # open intervals in the code that follows, so we add 1.
-            bounding_box[:, 1] += 1
-
-            clamped = clamp_point_to_bounding_box(
-                sample_points,
-                bounding_box,
-            ).astype(int)
-            values = im_slice[tuple(clamped.T)]
-            nonzero_indices = np.flatnonzero(values)
-            if len(nonzero_indices > 0):
-                # if a nonzer0 value was found, return the first one
-                return values[nonzero_indices[0]]
-
-        return None
-
-    def _get_value_3d(
-        self,
-        start_point: np.ndarray,
-        end_point: np.ndarray,
-        dims_displayed: List[int],
-    ) -> Optional[int]:
-        """Get the first non-background value encountered along a ray.
-
-        Parameters
-        ----------
-        start_point : np.ndarray
-            (n,) array containing the start point of the ray in data coordinates.
-        end_point : np.ndarray
-            (n,) array containing the end point of the ray in data coordinates.
-        dims_displayed : List[int]
-            The indices of the dimensions currently displayed in the viewer.
-
-        Returns
-        -------
-        value : int
-            The first non-zero value encountered along the ray. If a
-            non-zero value is not encountered, returns 0 (the background value).
-        """
-        return (
-            self._get_value_ray(
-                start_point=start_point,
-                end_point=end_point,
-                dims_displayed=dims_displayed,
-            )
-            or 0
-        )
 
     def _reset_history(self, event=None):
         self._undo_history = deque(maxlen=self._history_limit)
@@ -1260,7 +1118,8 @@ class Labels(_ImageBase):
         # If requested new label doesn't change old label then return
         old_label = np.asarray(self.data[int_coord]).item()
         if old_label == new_label or (
-            self.preserve_labels and old_label != self._background_label
+            self.preserve_labels
+            and old_label != self.colormap.background_value
         ):
             return
 
@@ -1388,7 +1247,7 @@ class Labels(_ImageBase):
 
         if len(dims_to_paint) != 2:
             raise NotImplementedError(
-                "Polygon painting is implemented only in 2D."
+                'Polygon painting is implemented only in 2D.'
             )
 
         points = np.array(points, dtype=int)
@@ -1426,7 +1285,7 @@ class Labels(_ImageBase):
             Value of the new label to be filled in.
         shape : list
             The label data shape upon which painting is performed.
-        dims_to_paint: list
+        dims_to_paint : list
             List of dimensions of the label data that are used for painting.
         refresh : bool
             Whether to refresh view slice or not. Set to False to batch paint
@@ -1457,17 +1316,19 @@ class Labels(_ImageBase):
         # subset it if we want to only paint into background/only erase
         # current label
         if self.preserve_labels:
-            if new_label == self._background_label:
+            if new_label == self.colormap.background_value:
                 keep_coords = self.data[slice_coord] == self.selected_label
             else:
-                keep_coords = self.data[slice_coord] == self._background_label
+                keep_coords = (
+                    self.data[slice_coord] == self.colormap.background_value
+                )
             slice_coord = tuple(sc[keep_coords] for sc in slice_coord)
 
         self.data_setitem(slice_coord, new_label, refresh)
 
-    def _get_shape_and_dims_to_paint(self) -> Tuple[list, list]:
+    def _get_shape_and_dims_to_paint(self) -> tuple[list, list]:
         dims_to_paint = sorted(self._get_dims_to_paint())
-        shape = self.data.shape
+        shape = list(self.data.shape)
 
         if self.n_edit_dimensions < self.ndim:
             shape = [shape[i] for i in dims_to_paint]
@@ -1477,6 +1338,16 @@ class Labels(_ImageBase):
     def _get_dims_to_paint(self) -> list:
         return list(self._slice_input.order[-self.n_edit_dimensions :])
 
+    def _get_pt_not_disp(self) -> dict[int, int]:
+        """
+        Get indices of current visible slice.
+        """
+        slice_input = self._slice.slice_input
+        point = np.round(
+            self.world_to_data(slice_input.world_slice.point)
+        ).astype(int)
+        return {dim: point[dim] for dim in slice_input.not_displayed}
+
     def data_setitem(self, indices, value, refresh=True):
         """Set `indices` in `data` to `value`, while writing to edit history.
 
@@ -1484,7 +1355,7 @@ class Labels(_ImageBase):
         ----------
         indices : tuple of arrays of int
             Indices in data to overwrite. Must be a tuple of arrays of length
-            equal to the number of data dimensions. (Fancy indexing in [1]_).
+            equal to the number of data dimensions. (Fancy indexing in [2]_).
         value : int or array of int
             New label value(s). If more than one value, must match or
             broadcast with the given indices.
@@ -1493,10 +1364,19 @@ class Labels(_ImageBase):
 
         References
         ----------
-        ..[1] https://numpy.org/doc/stable/user/basics.indexing.html
+        .. [2] https://numpy.org/doc/stable/user/basics.indexing.html
         """
         changed_indices = self.data[indices] != value
-        indices = tuple([x[changed_indices] for x in indices])
+        indices = tuple(x[changed_indices] for x in indices)
+
+        if isinstance(value, Sequence):
+            value = np.asarray(value, dtype=self._slice.image.raw.dtype)
+        else:
+            value = self._slice.image.raw.dtype.type(value)
+
+        # Resize value array to remove unchanged elements
+        if isinstance(value, np.ndarray):
+            value = value[changed_indices]
 
         if not indices or indices[0].size == 0:
             return
@@ -1512,6 +1392,15 @@ class Labels(_ImageBase):
         # update the labels image
         self.data[indices] = value
 
+        pt_not_disp = self._get_pt_not_disp()
+        displayed_indices = index_in_slice(
+            indices, pt_not_disp, self._slice.slice_input.order
+        )
+        if isinstance(value, np.ndarray):
+            visible_values = value[elements_in_slice(indices, pt_not_disp)]
+        else:
+            visible_values = value
+
         if not (  # if not a numpy array or numpy-backed xarray
             isinstance(self.data, np.ndarray)
             or isinstance(getattr(self.data, 'data', None), np.ndarray)
@@ -1521,11 +1410,7 @@ class Labels(_ImageBase):
             # array, or a NumPy-array-backed Xarray, is the slice a view and
             # therefore updated automatically.
             # For other types, we update it manually here.
-            dims = self._slice.dims
-            point = np.round(self.world_to_data(dims.point)).astype(int)
-            pt_not_disp = {dim: point[dim] for dim in dims.not_displayed}
-            displayed_indices = index_in_slice(indices, pt_not_disp)
-            self._slice.image.raw[displayed_indices] = value
+            self._slice.image.raw[displayed_indices] = visible_values
 
         # tensorstore and xarray do not return their indices in
         # np.ndarray format, so they need to be converted explicitly
@@ -1542,8 +1427,13 @@ class Labels(_ImageBase):
         if self.contour > 0:
             # Expand the slice by 1 pixel as the changes can go beyond
             # the original slice because of the morphological dilation
-            # (1 pixel because get_countours always applies 1 pixel dilation)
+            # (1 pixel because get_contours always applies 1 pixel dilation)
             updated_slice = expand_slice(updated_slice, self.data.shape, 1)
+        else:
+            # update data view
+            self._slice.image.view[displayed_indices] = (
+                self.colormap._data_to_texture(visible_values)
+            )
 
         if self._updated_slice is None:
             self._updated_slice = updated_slice
@@ -1558,12 +1448,18 @@ class Labels(_ImageBase):
         if refresh is True:
             self._partial_labels_refresh()
 
+    def _calculate_value_from_ray(self, values):
+        non_bg = values != self.colormap.background_value
+        if not np.any(non_bg):
+            return None
+        return values[np.argmax(np.ravel(non_bg))]
+
     def get_status(
         self,
         position: Optional[npt.ArrayLike] = None,
         *,
         view_direction: Optional[npt.ArrayLike] = None,
-        dims_displayed: Optional[List[int]] = None,
+        dims_displayed: Optional[list[int]] = None,
         world: bool = False,
     ) -> dict:
         """Status message information of the data at a coordinate position.
@@ -1612,7 +1508,7 @@ class Labels(_ImageBase):
             world=world,
         )
         if properties:
-            source_info['coordinates'] += "; " + ", ".join(properties)
+            source_info['coordinates'] += '; ' + ', '.join(properties)
 
         return source_info
 
@@ -1621,7 +1517,7 @@ class Labels(_ImageBase):
         position,
         *,
         view_direction: Optional[np.ndarray] = None,
-        dims_displayed: Optional[List[int]] = None,
+        dims_displayed: Optional[list[int]] = None,
         world: bool = False,
     ):
         """
@@ -1646,7 +1542,7 @@ class Labels(_ImageBase):
         msg : string
             String containing a message that can be used as a tooltip.
         """
-        return "\n".join(
+        return '\n'.join(
             self._get_properties(
                 position,
                 view_direction=view_direction,
@@ -1660,7 +1556,7 @@ class Labels(_ImageBase):
         position,
         *,
         view_direction: Optional[np.ndarray] = None,
-        dims_displayed: Optional[List[int]] = None,
+        dims_displayed: Optional[list[int]] = None,
         world: bool = False,
     ) -> list:
         if len(self._label_index) == 0 or self.features.shape[1] == 0:
@@ -1676,7 +1572,9 @@ class Labels(_ImageBase):
         if value is None:
             return []
 
-        label_value = value[1] if self.multiscale else value
+        label_value: int = typing.cast(
+            int, value[1] if self.multiscale else value
+        )
         if label_value not in self._label_index:
             return [trans._('[No Properties]')]
 

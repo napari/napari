@@ -8,17 +8,17 @@ from napari._vispy.layers.vectors import (
 
 
 @pytest.mark.parametrize(
-    "edge_width, length, dims, style",
+    ('edge_width', 'length', 'dims', 'style'),
     [
-        [0, 0, 2, 'line'],
-        [0.3, 0.3, 2, 'line'],
-        [1, 1, 3, 'line'],
-        [0, 0, 2, 'triangle'],
-        [0.3, 0.3, 2, 'triangle'],
-        [1, 1, 3, 'triangle'],
-        [0, 0, 2, 'arrow'],
-        [0.3, 0.3, 2, 'arrow'],
-        [1, 1, 3, 'arrow'],
+        (0, 0, 2, 'line'),
+        (0.3, 0.3, 2, 'line'),
+        (1, 1, 3, 'line'),
+        (0, 0, 2, 'triangle'),
+        (0.3, 0.3, 2, 'triangle'),
+        (1, 1, 3, 'triangle'),
+        (0, 0, 2, 'arrow'),
+        (0.3, 0.3, 2, 'arrow'),
+        (1, 1, 3, 'arrow'),
     ],
 )
 def test_generate_vector_meshes(edge_width, length, dims, style):
@@ -58,17 +58,17 @@ def test_generate_vector_meshes(edge_width, length, dims, style):
 
 
 @pytest.mark.parametrize(
-    "edge_width, length, style, p",
+    ('edge_width', 'length', 'style', 'p'),
     [
-        [0, 0, 'line', (1, 0, 0)],
-        [0.3, 0.3, 'line', (0, 1, 0)],
-        [1, 1, 'line', (0, 0, 1)],
-        [0, 0, 'triangle', (1, 0, 0)],
-        [0.3, 0.3, 'triangle', (0, 1, 0)],
-        [1, 1, 'triangle', (0, 0, 1)],
-        [0, 0, 'arrow', (1, 0, 0)],
-        [0.3, 0.3, 'arrow', (0, 1, 0)],
-        [1, 1, 'arrow', (0, 0, 1)],
+        (0, 0, 'line', (1, 0, 0)),
+        (0.3, 0.3, 'line', (0, 1, 0)),
+        (1, 1, 'line', (0, 0, 1)),
+        (0, 0, 'triangle', (1, 0, 0)),
+        (0.3, 0.3, 'triangle', (0, 1, 0)),
+        (1, 1, 'triangle', (0, 0, 1)),
+        (0, 0, 'arrow', (1, 0, 0)),
+        (0.3, 0.3, 'arrow', (0, 1, 0)),
+        (1, 1, 'arrow', (0, 0, 1)),
     ],
 )
 def test_generate_vector_meshes_2D(edge_width, length, style, p):
@@ -97,17 +97,17 @@ def test_generate_vector_meshes_2D(edge_width, length, style, p):
 
 
 @pytest.mark.parametrize(
-    "initial_vector_style, new_vector_style",
+    ('initial_vector_style', 'new_vector_style'),
     [
-        ['line', 'line'],
-        ['line', 'triangle'],
-        ['line', 'arrow'],
-        ['triangle', 'line'],
-        ['triangle', 'triangle'],
-        ['triangle', 'arrow'],
-        ['arrow', 'line'],
-        ['arrow', 'triangle'],
-        ['arrow', 'arrow'],
+        ('line', 'line'),
+        ('line', 'triangle'),
+        ('line', 'arrow'),
+        ('triangle', 'line'),
+        ('triangle', 'triangle'),
+        ('triangle', 'arrow'),
+        ('arrow', 'line'),
+        ('arrow', 'triangle'),
+        ('arrow', 'arrow'),
     ],
 )
 def test_vector_style_change(

@@ -1,12 +1,15 @@
 import warnings
-from typing import Optional, Tuple
+from typing import Optional
 
 import numpy as np
 from qtpy.QtCore import Slot
 from qtpy.QtGui import QFont, QFontMetrics
 from qtpy.QtWidgets import QSizePolicy, QVBoxLayout, QWidget
 
-from napari._qt.widgets.qt_dims_slider import QtDimSliderWidget
+from napari._qt.widgets.qt_dims_slider import (
+    AnimationThread,
+    QtDimSliderWidget,
+)
 from napari.components.dims import Dims
 from napari.settings._constants import LoopMode
 from napari.utils.translations import trans
@@ -44,8 +47,7 @@ class QtDims(QWidget):
         # True / False if slider is or is not displayed
         self._displayed_sliders = []
 
-        self._animation_thread = None
-        self._animation_worker = None
+        self._animation_thread = AnimationThread(self)
 
         # Initialises the layout:
         layout = QVBoxLayout()
@@ -98,7 +100,6 @@ class QtDims(QWidget):
 
     def _update_display(self):
         """Updates display for all sliders."""
-        self.stop()
         widgets = reversed(list(enumerate(self.slider_widgets)))
         nsteps = self.dims.nsteps
         for axis, widget in widgets:
@@ -116,10 +117,10 @@ class QtDims(QWidget):
         self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
         self._resize_slice_labels()
         self._resize_axis_labels()
+        self.stop()
 
     def _update_nsliders(self):
         """Updates the number of sliders based on the number of dimensions."""
-        self.stop()
         self._trim_sliders(0)
         self._create_sliders(self.dims.ndim)
         self._update_display()
@@ -127,6 +128,7 @@ class QtDims(QWidget):
             self._update_range()
             if self._displayed_sliders[i]:
                 self._update_slider()
+        self.stop()
 
     def _resize_axis_labels(self):
         """When any of the labels get updated, this method updates all label
@@ -174,8 +176,8 @@ class QtDims(QWidget):
                 if length > width:
                     width = length
         # gui width of a string of length `width`
-        fm = QFontMetrics(QFont("", 0))
-        width = fm.boundingRect("8" * width).width()
+        fm = QFontMetrics(QFont('', 0))
+        width = fm.boundingRect('8' * width).width()
         for labl in self.findChildren(QWidget, 'slice_label'):
             labl.setFixedWidth(width + 6)
 
@@ -243,7 +245,7 @@ class QtDims(QWidget):
         axis: int = 0,
         fps: Optional[float] = None,
         loop_mode: Optional[str] = None,
-        frame_range: Optional[Tuple[int, int]] = None,
+        frame_range: Optional[tuple[int, int]] = None,
     ):
         """Animate (play) axis.
 
@@ -293,23 +295,27 @@ class QtDims(QWidget):
         if axis >= self.dims.ndim:
             raise IndexError(trans._('axis argument out of range'))
 
-        if self.is_playing:
-            if self._animation_worker.axis == axis:
-                self.slider_widgets[axis]._update_play_settings(
-                    fps, loop_mode, frame_range
-                )
-                return
-
-            self.stop()
+        if self.is_playing and self._animation_thread.axis == axis:
+            self.slider_widgets[axis]._update_play_settings(
+                fps, loop_mode, frame_range
+            )
+            return
 
         # we want to avoid playing a dimension that does not have a slider
         # (like X or Y, or a third dimension in volume view.)
         if self._displayed_sliders[axis]:
-            work = self.slider_widgets[axis]._play(fps, loop_mode, frame_range)
-            if work:
-                self._animation_worker, self._animation_thread = work
+            if self._animation_thread.isRunning():
+                self._animation_thread.slider.play_button._handle_stop()
+            self.slider_widgets[axis]._update_play_settings(
+                fps, loop_mode, frame_range
+            )
+            self._animation_thread.set_slider(self.slider_widgets[axis])
+            self._animation_thread.frame_requested.connect(self._set_frame)
+            if not self._animation_thread.isRunning():
+                self._animation_thread.start()
             else:
-                self._animation_worker, self._animation_thread = None, None
+                self._animation_thread.slider.play_button._handle_start()
+
         else:
             warnings.warn(
                 trans._(
@@ -321,27 +327,17 @@ class QtDims(QWidget):
     @Slot()
     def stop(self):
         """Stop axis animation"""
-        if self._animation_worker is not None:
-            # Thread will be stop by the worker
-            self._animation_worker._stop()
-
-    @Slot()
-    def cleaned_worker(self):
-        self._animation_thread = None
-        self._animation_worker = None
-        self.dims._play_ready = True
+        self._animation_thread._stop()
 
     @property
     def is_playing(self):
         """Return True if any axis is currently animated."""
         try:
-            return (
-                self._animation_thread and self._animation_thread.isRunning()
-            )
+            return not self._animation_thread._waiter.is_set()
         except RuntimeError as e:  # pragma: no cover
             if (
-                "wrapped C/C++ object of type" not in e.args[0]
-                and "Internal C++ object" not in e.args[0]
+                'wrapped C/C++ object of type' not in e.args[0]
+                and 'Internal C++ object' not in e.args[0]
             ):
                 # checking if threat is partially deleted. Otherwise
                 # reraise exception. For more details see:

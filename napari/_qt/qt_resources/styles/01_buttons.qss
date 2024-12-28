@@ -7,7 +7,7 @@ QtViewerPushButton{
    min-height : 28px;
    max-height : 28px;
    padding: 0px;
-   
+
 }
 
 QtViewerPushButton[mode="delete_button"] {
@@ -96,6 +96,10 @@ QtModeRadioButton[mode="pan"]::indicator {
   image: url("theme_{{ id }}:/pan_arrows.svg");
 }
 
+QtModeRadioButton[mode="transform"]::indicator {
+  image: url("theme_{{ id }}:/transform.svg");
+}
+
 QtModeRadioButton[mode="select"]::indicator {
   image: url("theme_{{ id }}:/select.svg");
 }
@@ -126,7 +130,7 @@ QtModeRadioButton[mode="polygon"]::indicator {
 }
 
 QtModeRadioButton[mode="labels_polygon"]::indicator {
-  image: url("theme_{{ id }}:/polygon_lasso.svg");
+  image: url("theme_{{ id }}:/polygon.svg");
 }
 
 QtModeRadioButton[mode="polygon_lasso"]::indicator {

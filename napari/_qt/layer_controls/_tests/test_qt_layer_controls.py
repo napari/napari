@@ -1,7 +1,8 @@
 import os
 import random
 import sys
-from typing import NamedTuple, Optional, Type
+from typing import NamedTuple, Optional
+from unittest.mock import Mock
 
 import numpy as np
 import pytest
@@ -13,6 +14,7 @@ from qtpy.QtWidgets import (
     QAbstractSpinBox,
     QCheckBox,
     QComboBox,
+    QMessageBox,
     QPushButton,
     QRadioButton,
 )
@@ -41,14 +43,16 @@ from napari.layers import (
     Tracks,
     Vectors,
 )
+from napari.utils.colormaps import DirectLabelColormap
+from napari.utils.events.event import Event
 
 
 class LayerTypeWithData(NamedTuple):
-    type: Type[Layer]
+    type: type[Layer]
     data: np.ndarray
-    color: Optional[dict]
+    colormap: Optional[DirectLabelColormap]
     properties: Optional[dict]
-    expected_isinstance: Type[QtLayerControlsContainer]
+    expected_isinstance: type[QtLayerControlsContainer]
 
 
 np.random.seed(0)
@@ -57,35 +61,44 @@ np.random.seed(0)
 _IMAGE = LayerTypeWithData(
     type=Image,
     data=np.random.rand(8, 8),
-    color=None,
+    colormap=None,
     properties=None,
     expected_isinstance=QtImageControls,
 )
-_LABELS_WITH_COLOR = LayerTypeWithData(
+_LABELS_WITH_DIRECT_COLORMAP = LayerTypeWithData(
     type=Labels,
     data=np.random.randint(5, size=(10, 15)),
-    color={1: 'white', 2: 'blue', 3: 'green', 4: 'red', 5: 'yellow'},
+    colormap=DirectLabelColormap(
+        color_dict={
+            1: 'white',
+            2: 'blue',
+            3: 'green',
+            4: 'red',
+            5: 'yellow',
+            None: 'black',
+        }
+    ),
     properties=None,
     expected_isinstance=QtLabelsControls,
 )
 _LABELS = LayerTypeWithData(
     type=Labels,
     data=np.random.randint(5, size=(10, 15)),
-    color=None,
+    colormap=None,
     properties=None,
     expected_isinstance=QtLabelsControls,
 )
 _POINTS = LayerTypeWithData(
     type=Points,
     data=np.random.random((5, 2)),
-    color=None,
+    colormap=None,
     properties=None,
     expected_isinstance=QtPointsControls,
 )
 _SHAPES = LayerTypeWithData(
     type=Shapes,
     data=np.random.random((10, 4, 2)),
-    color=None,
+    colormap=None,
     properties=None,
     expected_isinstance=QtShapesControls,
 )
@@ -96,14 +109,14 @@ _SURFACE = LayerTypeWithData(
         np.random.randint(10, size=(6, 3)),
         np.random.random(10),
     ),
-    color=None,
+    colormap=None,
     properties=None,
     expected_isinstance=QtSurfaceControls,
 )
 _TRACKS = LayerTypeWithData(
     type=Tracks,
     data=np.zeros((2, 4)),
-    color=None,
+    colormap=None,
     properties={
         'track_id': [0, 0],
         'time': [0, 0],
@@ -114,7 +127,7 @@ _TRACKS = LayerTypeWithData(
 _VECTORS = LayerTypeWithData(
     type=Vectors,
     data=np.zeros((2, 2, 2)),
-    color=None,
+    colormap=None,
     properties=None,
     expected_isinstance=QtVectorsControls,
 )
@@ -124,9 +137,10 @@ _LINES_DATA = np.random.random((6, 2, 2))
 @pytest.fixture
 def create_layer_controls(qtbot):
     def _create_layer_controls(layer_type_with_data):
-        if layer_type_with_data.color:
+        if layer_type_with_data.colormap:
             layer = layer_type_with_data.type(
-                layer_type_with_data.data, color=layer_type_with_data.color
+                layer_type_with_data.data,
+                colormap=layer_type_with_data.colormap,
             )
         elif layer_type_with_data.properties:
             layer = layer_type_with_data.type(
@@ -147,7 +161,7 @@ def create_layer_controls(qtbot):
 @pytest.mark.parametrize(
     'layer_type_with_data',
     [
-        _LABELS_WITH_COLOR,
+        _LABELS_WITH_DIRECT_COLORMAP,
         _LABELS,
         _IMAGE,
         _POINTS,
@@ -156,9 +170,19 @@ def create_layer_controls(qtbot):
         _TRACKS,
         _VECTORS,
     ],
+    ids=[
+        'labels_with_direct_colormap',
+        'labels_with_auto_colormap',
+        'image',
+        'points',
+        'shapes',
+        'surface',
+        'tracks',
+        'vectors',
+    ],
 )
 @pytest.mark.qt_no_exception_capture
-@pytest.mark.skipif(os.environ.get("MIN_REQ", "0") == "1", reason="min req")
+@pytest.mark.skipif(os.environ.get('MIN_REQ', '0') == '1', reason='min req')
 def test_create_layer_controls(
     qtbot, create_layer_controls, layer_type_with_data, capsys
 ):
@@ -186,38 +210,47 @@ def test_create_layer_controls(
             qcombobox.setCurrentIndex(qcombobox_initial_idx)
 
 
-if sys.version_info[:2] == (3, 11) and (
+skip_predicate = sys.version_info >= (3, 11) and (
     qtpy.API == 'pyqt5' or qtpy.API == 'pyqt6'
-):
-    test_data = []
-else:
-    # those 2 fail on 3.11 + pyqt5 and pyqt6 with a segfault that can't be caught by
-    # pytest in qspinbox.setValue(value)
-    # See: https://github.com/napari/napari/pull/5439
-    test_data = [_LABELS_WITH_COLOR, _LABELS]
-
-
-test_data += [
-    _IMAGE,
-    _POINTS,
-    _SHAPES,
-    _SURFACE,
-    _TRACKS,
-    _VECTORS,
-]
+)
 
 
 @pytest.mark.parametrize(
     'layer_type_with_data',
-    test_data,
+    [
+        # those 2 fail on 3.11 + pyqt5 and pyqt6 with a segfault that can't be caught by
+        # pytest in qspinbox.setValue(value)
+        # See: https://github.com/napari/napari/pull/5439
+        pytest.param(
+            _LABELS_WITH_DIRECT_COLORMAP,
+            marks=pytest.mark.skipif(
+                skip_predicate,
+                reason='segfault on Python 3.11+ and pyqt5 or Pyqt6',
+            ),
+        ),
+        pytest.param(
+            _LABELS,
+            marks=pytest.mark.skipif(
+                skip_predicate,
+                reason='segfault on Python 3.11+ and pyqt5 or Pyqt6',
+            ),
+        ),
+        _IMAGE,
+        _POINTS,
+        _SHAPES,
+        _SURFACE,
+        _TRACKS,
+        _VECTORS,
+    ],
 )
 @pytest.mark.qt_no_exception_capture
-@pytest.mark.skipif(os.environ.get("MIN_REQ", "0") == "1", reason="min req")
+@pytest.mark.skipif(os.environ.get('MIN_REQ', '0') == '1', reason='min req')
 def test_create_layer_controls_spin(
     qtbot, create_layer_controls, layer_type_with_data, capsys
 ):
     # create layer controls widget
     ctrl = create_layer_controls(layer_type_with_data)
+    qtbot.addWidget(ctrl)
 
     # check create widget corresponds to the expected class for each type of layer
     assert isinstance(ctrl, layer_type_with_data.expected_isinstance)
@@ -258,16 +291,16 @@ def test_create_layer_controls_spin(
             if captured.err:
                 # since an error was found check if it is associated with a known issue still open
                 expected_errors = [
-                    "MemoryError: Unable to allocate",  # See https://github.com/napari/napari/issues/5798
-                    "ValueError: array is too big; `arr.size * arr.dtype.itemsize` is larger than the maximum possible size.",  # See https://github.com/napari/napari/issues/5798
-                    "ValueError: Maximum allowed dimension exceeded",  # See https://github.com/napari/napari/issues/5798
-                    "IndexError: index ",  # See https://github.com/napari/napari/issues/4864
-                    "RuntimeWarning: overflow encountered",  # See https://github.com/napari/napari/issues/4864
+                    'MemoryError: Unable to allocate',  # See https://github.com/napari/napari/issues/5798
+                    'ValueError: array is too big; `arr.size * arr.dtype.itemsize` is larger than the maximum possible size.',  # See https://github.com/napari/napari/issues/5798
+                    'ValueError: Maximum allowed dimension exceeded',  # See https://github.com/napari/napari/issues/5798
+                    'IndexError: index ',  # See https://github.com/napari/napari/issues/4864
+                    'RuntimeWarning: overflow encountered',  # See https://github.com/napari/napari/issues/4864
                 ]
                 assert any(
                     expected_error in captured.err
                     for expected_error in expected_errors
-                ), captured.err
+                ), f'value: {value}, range {value_range}\nerr: {captured.err}'
 
         assert qspinbox.value() in [qspinbox_max, qspinbox_max - 1]
         qspinbox.setValue(qspinbox_initial_value)
@@ -276,7 +309,7 @@ def test_create_layer_controls_spin(
 @pytest.mark.parametrize(
     'layer_type_with_data',
     [
-        _LABELS_WITH_COLOR,
+        _LABELS_WITH_DIRECT_COLORMAP,
         _LABELS,
         _IMAGE,
         _POINTS,
@@ -287,7 +320,7 @@ def test_create_layer_controls_spin(
     ],
 )
 @pytest.mark.qt_no_exception_capture
-@pytest.mark.skipif(os.environ.get("MIN_REQ", "0") == "1", reason="min req")
+@pytest.mark.skipif(os.environ.get('MIN_REQ', '0') == '1', reason='min req')
 def test_create_layer_controls_qslider(
     qtbot, create_layer_controls, layer_type_with_data, capsys
 ):
@@ -300,7 +333,7 @@ def test_create_layer_controls_qslider(
     # check QAbstractSlider by changing value with `setValue` from minimum value to maximum
     for qslider in ctrl.findChildren(QAbstractSlider):
         if isinstance(qslider.minimum(), float):
-            if getattr(qslider, "_valuesChanged", None):
+            if getattr(qslider, '_valuesChanged', None):
                 # create a list of tuples in the case the slider is ranged
                 # from (minimum, minimum) to (maximum, maximum) +
                 # from (minimum, maximum) to (minimum, minimum)
@@ -320,7 +353,7 @@ def test_create_layer_controls_qslider(
             else:
                 value_range = np.linspace(qslider.minimum(), qslider.maximum())
         else:
-            if getattr(qslider, "_valuesChanged", None):
+            if getattr(qslider, '_valuesChanged', None):
                 # create a list of tuples in the case the slider is ranged
                 # from (minimum, minimum) to (maximum, maximum) +
                 # from (minimum, maximum) to (minimum, minimum)
@@ -349,7 +382,7 @@ def test_create_layer_controls_qslider(
             captured = capsys.readouterr()
             assert not captured.out
             assert not captured.err
-        if getattr(qslider, "_valuesChanged", None):
+        if getattr(qslider, '_valuesChanged', None):
             assert qslider.value()[0] == qslider.minimum()
         else:
             assert qslider.value() == qslider.maximum()
@@ -358,7 +391,7 @@ def test_create_layer_controls_qslider(
 @pytest.mark.parametrize(
     'layer_type_with_data',
     [
-        _LABELS_WITH_COLOR,
+        _LABELS_WITH_DIRECT_COLORMAP,
         _LABELS,
         _IMAGE,
         _POINTS,
@@ -369,7 +402,7 @@ def test_create_layer_controls_qslider(
     ],
 )
 @pytest.mark.qt_no_exception_capture
-@pytest.mark.skipif(os.environ.get("MIN_REQ", "0") == "1", reason="min req")
+@pytest.mark.skipif(os.environ.get('MIN_REQ', '0') == '1', reason='min req')
 def test_create_layer_controls_qcolorswatchedit(
     qtbot, create_layer_controls, layer_type_with_data, capsys
 ):
@@ -384,12 +417,12 @@ def test_create_layer_controls_qcolorswatchedit(
         lineedit = qcolorswatchedit.line_edit
         colorswatch = qcolorswatchedit.color_swatch
         colors = [
-            ("white", "white", np.array([1.0, 1.0, 1.0, 1.0])),
-            ("black", "black", np.array([0.0, 0.0, 0.0, 1.0])),
+            ('white', 'white', np.array([1.0, 1.0, 1.0, 1.0])),
+            ('black', 'black', np.array([0.0, 0.0, 0.0, 1.0])),
             # check autocompletion `bla` -> `black`
-            ("bla", "black", np.array([0.0, 0.0, 0.0, 1.0])),
+            ('bla', 'black', np.array([0.0, 0.0, 0.0, 1.0])),
             # check that setting an invalid color makes it fallback to the previous value
-            ("invalid_value", "black", np.array([0.0, 0.0, 0.0, 1.0])),
+            ('invalid_value', 'black', np.array([0.0, 0.0, 0.0, 1.0])),
         ]
         for color, expected_color, expected_array in colors:
             lineedit.clear()
@@ -423,6 +456,130 @@ def test_create_layer_controls_qcolorswatchedit(
             captured = capsys.readouterr()
             assert not captured.out
             assert not captured.err
+
+
+@pytest.mark.parametrize(
+    (
+        'layer_type_with_data',
+        'action_manager_trigger',
+    ),
+    [
+        (
+            _LABELS_WITH_DIRECT_COLORMAP,
+            'napari:activate_labels_transform_mode',
+        ),
+        (
+            _LABELS,
+            'napari:activate_labels_transform_mode',
+        ),
+        (
+            _IMAGE,
+            'napari:activate_image_transform_mode',
+        ),
+        (
+            _POINTS,
+            'napari:activate_points_transform_mode',
+        ),
+        (
+            _SHAPES,
+            'napari:activate_shapes_transform_mode',
+        ),
+        (
+            _SURFACE,
+            'napari:activate_surface_transform_mode',
+        ),
+        (
+            _TRACKS,
+            'napari:activate_tracks_transform_mode',
+        ),
+        (
+            _VECTORS,
+            'napari:activate_vectors_transform_mode',
+        ),
+    ],
+)
+def test_create_layer_controls_transform_mode_button(
+    qtbot,
+    create_layer_controls,
+    layer_type_with_data,
+    action_manager_trigger,
+    monkeypatch,
+):
+    action_manager_mock = Mock(trigger=Mock())
+
+    # Monkeypatch the action_manager instance to prevent `KeyError: 'layer'`
+    # over `napari.layers.utils.layer_utils.register_layer_attr_action._handle._wrapper`
+    monkeypatch.setattr(
+        'napari._qt.layer_controls.qt_layer_controls_base.action_manager',
+        action_manager_mock,
+    )
+
+    # create layer controls widget
+    ctrl = create_layer_controls(layer_type_with_data)
+
+    # check create widget corresponds to the expected class for each type of layer
+    assert isinstance(ctrl, layer_type_with_data.expected_isinstance)
+
+    # check transform mode button existence
+    assert ctrl.transform_button
+
+    # check layer mode change
+    assert ctrl.layer.mode == 'pan_zoom'
+    ctrl.transform_button.click()
+    assert ctrl.layer.mode == 'transform'
+
+    # check reset transform behavior
+    ctrl.layer.affine = None
+    assert ctrl.layer.affine != ctrl.layer._initial_affine
+
+    def reset_transform_warning_dialog(*args):
+        return QMessageBox.Yes
+
+    monkeypatch.setattr(
+        'qtpy.QtWidgets.QMessageBox.warning', reset_transform_warning_dialog
+    )
+    qtbot.mouseClick(
+        ctrl.transform_button,
+        Qt.LeftButton,
+        Qt.KeyboardModifier.AltModifier,
+    )
+    assert ctrl.layer.affine == ctrl.layer._initial_affine
+
+
+@pytest.mark.parametrize(
+    'layer_type_with_data',
+    [
+        _LABELS_WITH_DIRECT_COLORMAP,
+        _LABELS,
+        _IMAGE,
+        _POINTS,
+        _SHAPES,
+        _SURFACE,
+        _TRACKS,
+        _VECTORS,
+    ],
+)
+def test_layer_controls_invalid_mode(
+    qtbot,
+    create_layer_controls,
+    layer_type_with_data,
+):
+    # create layer controls widget
+    ctrl = create_layer_controls(layer_type_with_data)
+
+    # check create widget corresponds to the expected class for each type of layer
+    assert isinstance(ctrl, layer_type_with_data.expected_isinstance)
+
+    # check layer mode and corresponding mode button
+    assert ctrl.layer.mode == 'pan_zoom'
+    assert ctrl.panzoom_button.isChecked()
+
+    # check setting invalid mode
+    with pytest.raises(ValueError, match='not recognized'):
+        ctrl._on_mode_change(Event('mode', mode='invalid_mode'))
+
+    # check panzoom_button is still checked
+    assert ctrl.panzoom_button.isChecked()
 
 
 def test_unknown_raises(qtbot):
@@ -481,7 +638,7 @@ def test_set_text_then_set_visible_updates_checkbox(
     assert ctrl.textDispCheckBox.isChecked()
 
 
-@pytest.mark.parametrize(('ndim', 'editable_after'), ((2, False), (3, True)))
+@pytest.mark.parametrize(('ndim', 'editable_after'), [(2, False), (3, True)])
 def test_set_3d_display_with_points(qtbot, ndim, editable_after):
     """Interactivity only works for 2D points layers rendered in 2D and not
     in 3D. Verify that layer.editable is set appropriately upon switching to
@@ -520,10 +677,106 @@ def test_set_3d_display_with_shapes(qtbot):
     assert not layer.editable
 
 
+def test_set_3d_display_with_labels(qtbot):
+    """Some modes only work for labels layers rendered in 2D and not
+    in 3D. Verify that the related mode buttons are disabled upon switching to
+    3D rendering mode while the layer is still editable.
+    """
+    viewer = ViewerModel()
+    container = QtLayerControlsContainer(viewer)
+    qtbot.addWidget(container)
+    layer = viewer.add_labels(np.zeros((3, 4), dtype=int))
+    assert viewer.dims.ndisplay == 2
+    assert container.currentWidget().polygon_button.isEnabled()
+    assert container.currentWidget().transform_button.isEnabled()
+    assert layer.editable
+
+    viewer.dims.ndisplay = 3
+
+    assert not container.currentWidget().polygon_button.isEnabled()
+    assert not container.currentWidget().transform_button.isEnabled()
+    assert layer.editable
+
+
+@pytest.mark.parametrize(
+    'add_layer_with_data',
+    [
+        ('add_labels', np.zeros((3, 4), dtype=int)),
+        ('add_points', np.empty((0, 2))),
+        ('add_shapes', np.empty((0, 2, 4))),
+        ('add_image', np.random.rand(8, 8)),
+        (
+            'add_surface',
+            (
+                np.random.random((10, 2)),
+                np.random.randint(10, size=(6, 3)),
+                np.random.random(10),
+            ),
+        ),
+        ('add_tracks', np.zeros((2, 4))),
+        ('add_vectors', np.zeros((2, 2, 2))),
+    ],
+)
+def test_set_3d_display_and_layer_visibility(qtbot, add_layer_with_data):
+    """Some modes only work for layers rendered in 2D and not
+    in 3D. Verify that the related mode buttons are disabled upon switching to
+    3D rendering mode and the disable state is kept even when changing layer
+    visibility.
+
+    For the labels layer the specific polygon mode button should be disabled in
+    3D regardless of the layer being visible or not. For all the layers the same
+    applies for the transform mode button.
+    """
+    viewer = ViewerModel()
+    container = QtLayerControlsContainer(viewer)
+    qtbot.addWidget(container)
+    add_layer_method, data = add_layer_with_data
+    layer = getattr(viewer, add_layer_method)(data)
+
+    # 2D mode
+    assert viewer.dims.ndisplay == 2
+    if add_layer_method == 'add_labels':
+        assert container.currentWidget().polygon_button.isEnabled()
+    assert container.currentWidget().transform_button.isEnabled()
+
+    # 2D mode + layer not visible
+    layer.visible = False
+    if add_layer_method == 'add_labels':
+        assert not container.currentWidget().polygon_button.isEnabled()
+    assert not container.currentWidget().transform_button.isEnabled()
+
+    # 2D mode + layer visible
+    layer.visible = True
+    if add_layer_method == 'add_labels':
+        assert container.currentWidget().polygon_button.isEnabled()
+    assert container.currentWidget().transform_button.isEnabled()
+
+    # 3D mode
+    viewer.dims.ndisplay = 3
+    if add_layer_method == 'add_labels':
+        assert not container.currentWidget().polygon_button.isEnabled()
+    assert not container.currentWidget().transform_button.isEnabled()
+
+    # 3D mode + layer not visible
+    layer.visible = False
+    if add_layer_method == 'add_labels':
+        assert not container.currentWidget().polygon_button.isEnabled()
+    assert not container.currentWidget().transform_button.isEnabled()
+
+    # 3D mode + layer visible
+    layer.visible = True
+    if add_layer_method == 'add_labels':
+        assert not container.currentWidget().polygon_button.isEnabled()
+    assert not container.currentWidget().transform_button.isEnabled()
+
+
 # The following tests handle changes to the layer's visible and
 # editable state for layer control types that have controls to edit
 # the layer. For more context see:
 # https://github.com/napari/napari/issues/1346
+# Updated due to the addition of a transform mode button for all the layers,
+# For more context see:
+# https://github.com/napari/napari/pull/6794
 
 
 @pytest.fixture(
@@ -531,6 +784,17 @@ def test_set_3d_display_with_shapes(qtbot):
         (Labels, np.zeros((3, 4), dtype=int)),
         (Points, np.empty((0, 2))),
         (Shapes, np.empty((0, 2, 4))),
+        (Image, np.random.rand(8, 8)),
+        (
+            Surface,
+            (
+                np.random.random((10, 2)),
+                np.random.randint(10, size=(6, 3)),
+                np.random.random(10),
+            ),
+        ),
+        (Tracks, np.zeros((2, 4))),
+        (Vectors, np.zeros((2, 2, 2))),
     )
 )
 def editable_layer(request):

@@ -4,6 +4,9 @@ from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QSortFilterProxyModel, Qt  # type: ignore[attr-defined]
 
+from napari._qt._qapp_model.qactions._layerlist_context import (
+    is_valid_spatial_in_clipboard,
+)
 from napari._qt.containers._base_item_model import (
     SortRole,
     _BaseEventedItemModel,
@@ -47,26 +50,43 @@ class QtLayerList(QtListView[Layer]):
     def __init__(
         self, root: LayerList, parent: Optional[QWidget] = None
     ) -> None:
+        root._ctx['valid_spatial_json_clipboard'] = (
+            is_valid_spatial_in_clipboard
+        )
         super().__init__(root, parent)
         layer_delegate = LayerDelegate()
         self.setItemDelegate(layer_delegate)
         # To be able to update the loading indicator frame in the item delegate
         # smoothly and also be able to leave the item painted in a coherent
         # state (showing the loading indicator or the thumbnail)
-        layer_delegate.loading_frame_changed.connect(self.viewport().update)
+        viewport = self.viewport()
+        assert viewport is not None
+
+        layer_delegate.loading_frame_changed.connect(viewport.update)
 
         self.setToolTip(trans._('Layer list'))
-        font = self.font()
-        font.setPointSize(12)
-        self.setFont(font)
 
         # This reverses the order of the items in the view,
         # so items at the end of the list are at the top.
         self.setModel(ReverseProxyModel(self.model()))
 
-    def keyPressEvent(self, e: QKeyEvent) -> None:
+    def keyPressEvent(self, e: Optional[QKeyEvent]) -> None:
         """Override Qt event to pass events to the viewer."""
-        if e.key() != Qt.Key.Key_Space:
+        if e is None:
+            return
+        # capture arrows with modifiers so they are handled by Viewer keybindings
+        if (e.key() == Qt.Key.Key_Up or e.key() == Qt.Key.Key_Down) and (
+            e.modifiers() & Qt.KeyboardModifier.AltModifier
+            or e.modifiers() & Qt.KeyboardModifier.ControlModifier
+            or e.modifiers() & Qt.KeyboardModifier.MetaModifier
+            or e.modifiers() & Qt.KeyboardModifier.ShiftModifier
+        ):
+            e.ignore()
+        elif e.key() != Qt.Key.Key_Space:
             super().keyPressEvent(e)
-        if e.key() not in (Qt.Key.Key_Backspace, Qt.Key.Key_Delete):
+        if e.key() not in (
+            Qt.Key.Key_Backspace,
+            Qt.Key.Key_Delete,
+            Qt.Key.Key_Return,
+        ):
             e.ignore()  # pass key events up to viewer

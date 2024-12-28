@@ -33,6 +33,7 @@ General rendering flow:
    https://doc.qt.io/qt-5/stylesheet-reference.html#list-of-sub-controls
 
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -93,7 +94,7 @@ class LayerDelegate(QStyledItemDelegate):
     ):
         """Paint the item in the model at `index`."""
         # update the icon based on layer type
-
+        option.textElideMode = Qt.TextElideMode.ElideMiddle
         self.get_layer_icon(option, index)
         # paint the standard itemView (includes name, icon, and vis. checkbox)
         super().paint(painter, option, index)
@@ -200,14 +201,14 @@ class LayerDelegate(QStyledItemDelegate):
         ):
             pnt = (
                 event.globalPosition().toPoint()
-                if hasattr(event, "globalPosition")
+                if hasattr(event, 'globalPosition')
                 else event.globalPos()
             )
 
             self.show_context_menu(index, model, pnt, option.widget)
 
         # if the user clicks quickly on the visibility checkbox, we *don't*
-        # want it to be interpreted as a double-click.  We want the visibilty
+        # want it to be interpreted as a double-click.  We want the visibility
         # to simply be toggled.
         if event.type() == QMouseEvent.MouseButtonDblClick:
             self.initStyleOption(option, index)
@@ -313,5 +314,6 @@ class LayerDelegate(QStyledItemDelegate):
             )
 
         layer_list: LayerList = model.sourceModel()._root
-        self._context_menu.update_from_context(get_context(layer_list))
+        ctx = get_context(layer_list)
+        self._context_menu.update_from_context(ctx)
         self._context_menu.exec_(pos)

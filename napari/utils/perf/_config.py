@@ -1,9 +1,10 @@
-"""Perf configuration flags.
-"""
+"""Perf configuration flags."""
+
 import json
 import os
 from pathlib import Path
-from typing import List, Optional
+from types import ModuleType
+from typing import Any, Callable, Optional, Union
 
 import wrapt
 
@@ -11,17 +12,16 @@ from napari.utils.perf._patcher import patch_callables
 from napari.utils.perf._timers import perf_timer
 from napari.utils.translations import trans
 
-PERFMON_ENV_VAR = "NAPARI_PERFMON"
+PERFMON_ENV_VAR = 'NAPARI_PERFMON'
 
 
 class PerfmonConfigError(Exception):
     """Error parsing or interpreting config file."""
 
-    def __init__(self, message) -> None:
-        self.message = message
 
-
-def _patch_perf_timer(parent, callable_name: str, label: str) -> None:
+def _patch_perf_timer(
+    parent: Union[ModuleType, type], callable_name: str, label: str
+) -> None:
     """Patches the callable to run it inside a perf_timer.
 
     Parameters
@@ -35,8 +35,13 @@ def _patch_perf_timer(parent, callable_name: str, label: str) -> None:
     """
 
     @wrapt.patch_function_wrapper(parent, callable_name)
-    def perf_time_callable(wrapped, instance, args, kwargs):
-        with perf_timer(f"{label}"):
+    def perf_time_callable(
+        wrapped: Callable,
+        instance: Any,
+        args: tuple[Any],
+        kwargs: dict[str, Any],
+    ) -> Callable:
+        with perf_timer(f'{label}'):
             return wrapped(*args, **kwargs)
 
 
@@ -83,7 +88,7 @@ class PerfmonConfig:
         with path.open() as infile:
             self.data = json.load(infile)
 
-    def patch_callables(self):
+    def patch_callables(self) -> None:
         """Patch callables according to the config file.
 
         Call once at startup but after main() has started running. Do not
@@ -97,14 +102,14 @@ class PerfmonConfig:
         self._patch_callables()
         self.patched = True
 
-    def _get_callables(self, list_name: str) -> List[str]:
+    def _get_callables(self, list_name: str) -> list[str]:
         """Get the list of callables from the config file.
 
         list_name : str
             The name of the list to return.
         """
         try:
-            return self.data["callable_lists"][list_name]
+            return self.data['callable_lists'][list_name]
         except KeyError as e:
             raise PerfmonConfigError(
                 trans._(
@@ -115,7 +120,7 @@ class PerfmonConfig:
                 )
             ) from e
 
-    def _patch_callables(self):
+    def _patch_callables(self) -> None:
         """Add a perf_timer to every callable.
 
         Notes
@@ -123,7 +128,7 @@ class PerfmonConfig:
         data["trace_callables"] should contain the names of one or more
         lists of callables which are defined in data["callable_lists"].
         """
-        for list_name in self.data["trace_callables"]:
+        for list_name in self.data['trace_callables']:
             callable_list = self._get_callables(list_name)
             patch_callables(callable_list, _patch_perf_timer)
 
@@ -133,7 +138,7 @@ class PerfmonConfig:
         if self.config_path is None:
             return True  # always trace qt events in legacy mode
         try:
-            return self.data["trace_qt_events"]
+            return self.data['trace_qt_events']
         except KeyError:
             return False
 
@@ -143,7 +148,7 @@ class PerfmonConfig:
         if self.config_path is None:
             return None  # don't trace on start in legacy mode
         try:
-            path = self.data["trace_file_on_start"]
+            path = self.data['trace_file_on_start']
 
             # Return None if it was empty string or false.
         except KeyError:
@@ -152,12 +157,12 @@ class PerfmonConfig:
             return path or None
 
 
-def _create_perf_config():
-    value = os.getenv("NAPARI_PERFMON")
+def _create_perf_config() -> Optional[PerfmonConfig]:
+    value = os.getenv('NAPARI_PERFMON')
 
-    if value is None or value == "0":
+    if value is None or value == '0':
         return None  # Totally disabled
-    if value == "1":
+    if value == '1':
         return PerfmonConfig(None)  # Legacy no config, Qt events only.
 
     return PerfmonConfig(value)  # Normal parse the config file.

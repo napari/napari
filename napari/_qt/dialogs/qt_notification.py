@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Callable, Optional, Sequence, Tuple, Union
+from collections.abc import Sequence
+from typing import Callable, Optional, Union
 
 from qtpy.QtCore import (
     QEasingCurve,
@@ -24,15 +25,15 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 from superqt import QElidingLabel, ensure_main_thread
+from superqt.utils import CodeSyntaxHighlight
 
-from napari._qt.code_syntax_highlight import Pylighter
 from napari._qt.qt_resources import QColoredSVGIcon
 from napari.settings import get_settings
 from napari.utils.notifications import Notification, NotificationSeverity
 from napari.utils.theme import get_theme
 from napari.utils.translations import trans
 
-ActionSequence = Sequence[Tuple[str, Callable[['NapariQtNotification'], None]]]
+ActionSequence = Sequence[tuple[str, Callable[['NapariQtNotification'], None]]]
 
 
 class NapariQtNotification(QDialog):
@@ -104,8 +105,8 @@ class NapariQtNotification(QDialog):
         self.timer = QTimer()
         self.opacity = QGraphicsOpacityEffect()
         self.setGraphicsEffect(self.opacity)
-        self.opacity_anim = QPropertyAnimation(self.opacity, b"opacity", self)
-        self.geom_anim = QPropertyAnimation(self, b"geometry", self)
+        self.opacity_anim = QPropertyAnimation(self.opacity, b'opacity', self)
+        self.geom_anim = QPropertyAnimation(self, b'geometry', self)
         self.move_to_bottom_right()
 
     def _update_icon(self, severity: str):
@@ -115,13 +116,13 @@ class NapariQtNotification(QDialog):
 
         settings = get_settings()
         theme = settings.appearance.theme
-        default_color = get_theme(theme).icon
+        default_color = get_theme(theme).icon.as_hex()
 
         # FIXME: Should these be defined at the theme level?
         # Currently there is a warning one
         colors = {
-            'error': "#D85E38",
-            'warning': "#E3B617",
+            'error': '#D85E38',
+            'warning': '#E3B617',
             'info': default_color,
             'debug': default_color,
             'none': default_color,
@@ -155,6 +156,8 @@ class NapariQtNotification(QDialog):
         """Show the message with a fade and slight slide in from the bottom."""
         super().show()
         self.slide_in()
+        if self.parent() is not None and not self.parent().isActiveWindow():
+            return
         if self.DISMISS_AFTER > 0:
             self.timer.setInterval(self.DISMISS_AFTER)
             self.timer.setSingleShot(True)
@@ -250,7 +253,7 @@ class NapariQtNotification(QDialog):
         self.row1.setContentsMargins(12, 12, 12, 8)
         self.row1.setSpacing(4)
         self.severity_icon = QLabel(self.row1_widget)
-        self.severity_icon.setObjectName("severity_icon")
+        self.severity_icon.setObjectName('severity_icon')
         self.severity_icon.setMinimumWidth(30)
         self.severity_icon.setMaximumWidth(30)
         self.row1.addWidget(
@@ -265,7 +268,7 @@ class NapariQtNotification(QDialog):
         )
         self.row1.addWidget(self.message, alignment=Qt.AlignmentFlag.AlignTop)
         self.expand_button = QPushButton(self.row1_widget)
-        self.expand_button.setObjectName("expand_button")
+        self.expand_button.setObjectName('expand_button')
         self.expand_button.setCursor(Qt.PointingHandCursor)
         self.expand_button.setMaximumWidth(20)
         self.expand_button.setFlat(True)
@@ -274,7 +277,7 @@ class NapariQtNotification(QDialog):
             self.expand_button, alignment=Qt.AlignmentFlag.AlignTop
         )
         self.close_button = QPushButton(self.row1_widget)
-        self.close_button.setObjectName("close_button")
+        self.close_button.setObjectName('close_button')
         self.close_button.setCursor(Qt.PointingHandCursor)
         self.close_button.setMaximumWidth(20)
         self.close_button.setFlat(True)
@@ -287,7 +290,7 @@ class NapariQtNotification(QDialog):
         self.row2_widget.hide()
         self.row2 = QHBoxLayout(self.row2_widget)
         self.source_label = QLabel(self.row2_widget)
-        self.source_label.setObjectName("source_label")
+        self.source_label.setObjectName('source_label')
         self.row2.addWidget(
             self.source_label, alignment=Qt.AlignmentFlag.AlignBottom
         )
@@ -404,9 +407,11 @@ def _debug_tb(tb):
     QApplication.processEvents()
     QApplication.processEvents()
     with event_hook_removed():
-        print("Entering debugger. Type 'q' to return to napari.\n")
+        print(  # noqa: T201
+            "Entering debugger. Type 'q' to return to napari.\n"
+        )
         pdb.post_mortem(tb)
-        print("\nDebugging finished.  Napari active again.")
+        print('\nDebugging finished. Napari active again.')  # noqa: T201
 
 
 class TracebackDialog(QDialog):
@@ -418,7 +423,9 @@ class TracebackDialog(QDialog):
         self.resize(650, 270)
         text = QTextEdit()
         theme = get_theme(get_settings().appearance.theme)
-        _highlight = Pylighter(text.document(), "python", theme.syntax_style)
+        _highlight = CodeSyntaxHighlight(
+            text.document(), 'python', theme.syntax_style
+        )
         text.setText(exception.as_text())
         text.setReadOnly(True)
         self.btn = QPushButton(trans._('Enter Debugger'))

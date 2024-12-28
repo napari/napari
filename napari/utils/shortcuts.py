@@ -1,5 +1,3 @@
-from typing import Dict, List
-
 from app_model.types import KeyBinding, KeyCode, KeyMod
 
 _default_shortcuts = {
@@ -19,8 +17,16 @@ _default_shortcuts = {
     'napari:focus_axes_down': [KeyMod.Alt | KeyCode.DownArrow],
     'napari:roll_axes': [KeyMod.CtrlCmd | KeyCode.KeyE],
     'napari:transpose_axes': [KeyMod.CtrlCmd | KeyCode.KeyT],
+    'napari:rotate_layers': [KeyMod.CtrlCmd | KeyMod.Alt | KeyCode.KeyT],
     'napari:toggle_grid': [KeyMod.CtrlCmd | KeyCode.KeyG],
-    'napari:toggle_selected_visibility': [KeyCode.KeyG],
+    'napari:toggle_selected_visibility': [KeyCode.KeyV],
+    'napari:toggle_unselected_visibility': [KeyMod.Shift | KeyCode.KeyV],
+    'napari:show_only_layer_above': [
+        KeyMod.Shift | KeyMod.Alt | KeyCode.UpArrow
+    ],
+    'napari:show_only_layer_below': [
+        KeyMod.Shift | KeyMod.Alt | KeyCode.DownArrow
+    ],
     'napari:hold_for_pan_zoom': [KeyCode.Space],
     # labels
     'napari:activate_labels_erase_mode': [KeyCode.Digit1, KeyCode.KeyE],
@@ -50,9 +56,9 @@ _default_shortcuts = {
     ],
     'napari:select_all_data': [KeyMod.Shift | KeyCode.KeyA],
     'napari:delete_selected_points': [
-        KeyCode.Backspace,
-        KeyCode.Delete,
         KeyCode.Digit1,
+        KeyCode.Delete,
+        KeyCode.Backspace,
     ],
     # shapes
     'napari:activate_add_rectangle_mode': [KeyCode.KeyR],
@@ -73,12 +79,16 @@ _default_shortcuts = {
     'napari:move_shapes_selection_to_back': [KeyCode.KeyB],
     'napari:select_all_shapes': [KeyCode.KeyA],
     'napari:delete_selected_shapes': [
-        KeyCode.Backspace,
-        KeyCode.Delete,
         KeyCode.Digit3,
+        KeyCode.Delete,
+        KeyCode.Backspace,
     ],
-    'napari:finish_drawing_shape': [KeyCode.Escape],
+    'napari:finish_drawing_shape': [KeyCode.Enter, KeyCode.Escape],
     # image
+    'napari:orient_plane_normal_along_x': [KeyCode.KeyX],
+    'napari:orient_plane_normal_along_y': [KeyCode.KeyY],
+    'napari:orient_plane_normal_along_z': [KeyCode.KeyZ],
+    'napari:orient_plane_normal_along_view_direction': [KeyCode.KeyO],
     'napari:activate_image_pan_zoom_mode': [KeyCode.Digit1],
     'napari:activate_image_transform_mode': [KeyCode.Digit2],
     # vectors
@@ -92,7 +102,7 @@ _default_shortcuts = {
     'napari:activate_surface_transform_mode': [KeyCode.Digit2],
 }
 
-default_shortcuts: Dict[str, List[KeyBinding]] = {
+default_shortcuts: dict[str, list[KeyBinding]] = {
     name: [KeyBinding.from_int(kb) for kb in value]
     for name, value in _default_shortcuts.items()
 }

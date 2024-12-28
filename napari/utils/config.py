@@ -1,7 +1,8 @@
-"""Napari Configuration.
-"""
+"""Napari Configuration."""
+
 import os
 import warnings
+from typing import Optional
 
 from napari.utils.translations import trans
 
@@ -14,7 +15,7 @@ def _set(env_var: str) -> bool:
     bool
         True if the env var was set to a non-zero value.
     """
-    return os.getenv(env_var) not in [None, "0"]
+    return os.getenv(env_var) not in [None, '0']
 
 
 """
@@ -32,7 +33,7 @@ https://github.com/napari/napari/pull/1909.
 # fixed values in the module level __getattr__
 # https://peps.python.org/pep-0562/
 # Other module attributes are defined as normal.
-def __getattr__(name):
+def __getattr__(name: str) -> Optional[bool]:
     if name == 'octree_config':
         warnings.warn(
             trans._(
@@ -78,4 +79,4 @@ def __getattr__(name):
 
 
 # Shared Memory Server
-monitor = _set("NAPARI_MON")
+monitor = _set('NAPARI_MON')

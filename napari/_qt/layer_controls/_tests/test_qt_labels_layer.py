@@ -3,17 +3,30 @@ import pytest
 
 from napari._qt.layer_controls.qt_labels_controls import QtLabelsControls
 from napari.layers import Labels
-from napari.utils.colormaps import colormap_utils
+from napari.layers.labels._labels_constants import (
+    IsoCategoricalGradientMode,
+    LabelsRendering,
+)
+from napari.utils.colormaps import DirectLabelColormap, colormap_utils
 
 np.random.seed(0)
-_LABELS = np.random.randint(5, size=(10, 15))
-_COLOR = {1: 'white', 2: 'blue', 3: 'green', 4: 'red', 5: 'yellow'}
+_LABELS = np.random.randint(5, size=(10, 15), dtype=np.uint8)
+_COLOR = DirectLabelColormap(
+    color_dict={
+        1: 'white',
+        2: 'blue',
+        3: 'green',
+        4: 'red',
+        5: 'yellow',
+        None: 'black',
+    }
+)
 
 
 @pytest.fixture
-def make_labels_controls(qtbot, color=None):
-    def _make_labels_controls(color=color):
-        layer = Labels(_LABELS, color=color)
+def make_labels_controls(qtbot, colormap=None):
+    def _make_labels_controls(colormap=colormap):
+        layer = Labels(_LABELS, colormap=colormap)
         qtctrl = QtLabelsControls(layer)
         qtbot.add_widget(qtctrl)
         return layer, qtctrl
@@ -23,13 +36,12 @@ def make_labels_controls(qtbot, color=None):
 
 def test_changing_layer_color_mode_updates_combo_box(make_labels_controls):
     """Updating layer color mode changes the combo box selection"""
-    layer, qtctrl = make_labels_controls(color=_COLOR)
+    layer, qtctrl = make_labels_controls(colormap=_COLOR)
 
-    original_color_mode = layer.color_mode
-    assert original_color_mode == qtctrl.colorModeComboBox.currentText()
+    assert qtctrl.colorModeComboBox.currentText() == 'direct'
 
-    layer.color_mode = 'auto'
-    assert layer.color_mode == qtctrl.colorModeComboBox.currentText()
+    layer.colormap = layer._random_colormap
+    assert qtctrl.colorModeComboBox.currentText() == 'auto'
 
 
 def test_changing_layer_show_selected_label_updates_check_box(
@@ -60,7 +72,7 @@ def test_rendering_combobox(make_labels_controls):
 
 def test_changing_colormap_updates_colorbox(make_labels_controls):
     """Test that changing the colormap on a layer will update color swatch in the combo box"""
-    layer, qtctrl = make_labels_controls(color=_COLOR)
+    layer, qtctrl = make_labels_controls(colormap=_COLOR)
     color_box = qtctrl.colorBox
 
     layer.selected_label = 1
@@ -115,3 +127,65 @@ def test_preserve_labels_checkbox(make_labels_controls):
     assert not layer.preserve_labels
     qtctrl.preserveLabelsCheckBox.setChecked(True)
     assert layer.preserve_labels
+
+
+def test_change_label_selector_range(make_labels_controls):
+    """Changing the label layer dtype should update label selector range."""
+    layer, qtctrl = make_labels_controls()
+    assert layer.data.dtype == np.uint8
+    assert qtctrl.selectionSpinBox.minimum() == 0
+    assert qtctrl.selectionSpinBox.maximum() == 255
+
+    layer.data = layer.data.astype(np.int8)
+
+    assert qtctrl.selectionSpinBox.minimum() == -128
+    assert qtctrl.selectionSpinBox.maximum() == 127
+
+
+def test_change_iso_gradient_mode(make_labels_controls):
+    """Changing the iso gradient mode should update the layer and vice versa."""
+    layer, qtctrl = make_labels_controls()
+    qtctrl.ndisplay = 3
+    assert layer.rendering == LabelsRendering.ISO_CATEGORICAL
+    assert layer.iso_gradient_mode == IsoCategoricalGradientMode.FAST
+
+    # Change the iso gradient mode via the control, check the layer
+    qtctrl.isoGradientComboBox.setCurrentEnum(
+        IsoCategoricalGradientMode.SMOOTH
+    )
+    assert layer.iso_gradient_mode == IsoCategoricalGradientMode.SMOOTH
+
+    # Change the iso gradient mode via the layer, check the control
+    layer.iso_gradient_mode = IsoCategoricalGradientMode.FAST
+    assert (
+        qtctrl.isoGradientComboBox.currentEnum()
+        == IsoCategoricalGradientMode.FAST
+    )
+
+
+def test_iso_gradient_mode_hidden_for_2d(make_labels_controls):
+    """Test that the iso gradient mode control is hidden with 2D view."""
+    layer, qtctrl = make_labels_controls()
+    assert qtctrl.isoGradientComboBox.isHidden()
+    layer.data = np.random.randint(5, size=(10, 15), dtype=np.uint8)
+    assert qtctrl.isoGradientComboBox.isHidden()
+    qtctrl.ndisplay = 3
+    assert not qtctrl.isoGradientComboBox.isHidden()
+    qtctrl.ndisplay = 2
+    assert qtctrl.isoGradientComboBox.isHidden()
+
+
+def test_iso_gradient_mode_with_rendering(make_labels_controls):
+    """Test the iso gradeint mode control is enabled for iso_categorical rendering."""
+    layer, qtctrl = make_labels_controls()
+    qtctrl.ndisplay = 3
+    assert layer.rendering == LabelsRendering.ISO_CATEGORICAL
+    assert (
+        qtctrl.isoGradientComboBox.currentText()
+        == IsoCategoricalGradientMode.FAST
+    )
+    assert qtctrl.isoGradientComboBox.isEnabled()
+    layer.rendering = LabelsRendering.TRANSLUCENT
+    assert not qtctrl.isoGradientComboBox.isEnabled()
+    layer.rendering = LabelsRendering.ISO_CATEGORICAL
+    assert qtctrl.isoGradientComboBox.isEnabled()

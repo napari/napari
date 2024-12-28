@@ -25,8 +25,20 @@ class VectorStyle(StringEnum):
 
 VECTORSTYLE_TRANSLATIONS = OrderedDict(
     [
-        (VectorStyle.LINE, trans._("line")),
-        (VectorStyle.TRIANGLE, trans._("triangle")),
-        (VectorStyle.ARROW, trans._("arrow")),
+        (VectorStyle.LINE, trans._('line')),
+        (VectorStyle.TRIANGLE, trans._('triangle')),
+        (VectorStyle.ARROW, trans._('arrow')),
     ]
 )
+
+
+class VectorsProjectionMode(StringEnum):
+    """
+    Projection mode for aggregating a thick nD slice onto displayed dimensions.
+
+        * NONE: ignore slice thickness, only using the dims point
+        * ALL: project all vectors in the slice onto displayed dimensions
+    """
+
+    NONE = auto()
+    ALL = auto()

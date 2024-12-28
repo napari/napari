@@ -6,6 +6,7 @@ from napari.components.overlays import LabelsPolygonOverlay
 from napari.layers import Labels
 from napari.layers.labels._labels_constants import Mode
 from napari.layers.labels._labels_utils import mouse_event_to_labels_coordinate
+from napari.settings import get_settings
 
 
 def _only_when_enabled(callback):
@@ -32,6 +33,8 @@ def _only_when_enabled(callback):
 
 
 class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
+    layer: Labels
+
     def __init__(
         self, *, layer: Labels, overlay: LabelsPolygonOverlay, parent=None
     ):
@@ -71,15 +74,30 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
 
         layer.events.selected_label.connect(self._update_color)
         layer.events.colormap.connect(self._update_color)
-        layer.events.color_mode.connect(self._update_color)
         layer.events.opacity.connect(self._update_color)
 
         self._first_point_pos = np.zeros(2)
+
+        # set completion radius based on settings
+        self._on_completion_radius_settings_change()
+        get_settings().experimental.events.completion_radius.connect(
+            self._on_completion_radius_settings_change
+        )
 
         self.reset()
         self._update_color()
         # If there are no points, it won't be visible
         self.overlay.visible = True
+
+    def _on_completion_radius_settings_change(self, event=None):
+        completion_radius_setting = (
+            get_settings().experimental.completion_radius
+        )
+        # if setting is -1, then the completion_radius is disabled
+        # so double click always works. If >0, use the radius
+        if completion_radius_setting > 0:
+            self.overlay.use_double_click_completion_radius = True
+            self.overlay.completion_radius = completion_radius_setting
 
     def _on_enabled_change(self):
         if self.overlay.enabled:
@@ -124,7 +142,7 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
 
     def _update_color(self):
         layer = self.layer
-        if layer._selected_label == layer._background_label:
+        if layer._selected_label == layer.colormap.background_value:
             self._set_color((1, 0, 0, 0))
         else:
             self._set_color(
@@ -175,17 +193,22 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
         if event.button == 2:
             self._on_mouse_press(layer, event)
             return None
-
         first_point_dist = np.linalg.norm(event.pos - self._first_point_pos)
         if (
-            not self.overlay.double_click_completion
-            or first_point_dist > self.overlay.completion_radius
+            self.overlay.use_double_click_completion_radius
+            and first_point_dist > self.overlay.completion_radius
         ):
             return self._on_mouse_press(layer, event)
 
-        # Remove the latest 2 points as double click always follows a simple click
-        # and another point is reserved for the visualization purpose
-        self.overlay.points = self.overlay.points[:-2]
+        if self.overlay.use_double_click_completion_radius:
+            # Remove the latest 2 points as double click always follows a simple click,
+            # the double-click is close to initial vertex, and another
+            # point is reserved for the visualization purpose
+            self.overlay.points = self.overlay.points[:-2]
+        else:
+            # Remove the last point from double click, but keep the vertex
+            self.overlay.points = self.overlay.points[:-1]
+
         self.overlay.add_polygon_to_labels(layer)
         return None
 

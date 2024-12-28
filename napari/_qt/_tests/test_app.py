@@ -5,11 +5,26 @@ from unittest.mock import Mock
 import pytest
 from qtpy.QtWidgets import QAction, QShortcut
 
-from napari import Viewer
-from napari._qt.qt_event_loop import _ipython_has_eventloop, run, set_app_id
+from napari._qt.qt_event_loop import (
+    _ipython_has_eventloop,
+    get_app,
+    get_qapp,
+    run,
+    set_app_id,
+)
 
 
-@pytest.mark.skipif(os.name != "Windows", reason="Windows specific")
+def test_qapp(qapp):
+    qapp = get_qapp()
+    with pytest.warns(
+        FutureWarning,
+        match='`QApplication` instance access through `get_app` is deprecated and will be removed in 0.6.0.\nPlease use `get_qapp` instead.\n',
+    ):
+        deprecated_qapp = get_app()
+    assert qapp == deprecated_qapp
+
+
+@pytest.mark.skipif(os.name != 'nt', reason='Windows specific')
 def test_windows_grouping_overwrite(qapp):
     import ctypes
 
@@ -22,21 +37,23 @@ def test_windows_grouping_overwrite(qapp):
         ctypes.windll.Ole32.CoTaskMemFree(mem)
         return res
 
-    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("test_text")
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('test_text')
 
-    assert get_app_id() == "test_text"
-    set_app_id("custom_string")
-    assert get_app_id() == "custom_string"
-    set_app_id("")
-    assert get_app_id() == ""
+    assert get_app_id() == 'test_text'
+    set_app_id('custom_string')
+    assert get_app_id() == 'custom_string'
+    set_app_id('')  # app id can't be an empty string
+    assert get_app_id() == 'custom_string'
+    set_app_id(' ')
+    assert get_app_id() == ' '
 
 
-def test_run_outside_ipython(qapp, monkeypatch):
+def test_run_outside_ipython(make_napari_viewer, qapp, monkeypatch):
     """Test that we don't incorrectly give ipython the event loop."""
     assert not _ipython_has_eventloop()
-    v1 = Viewer(show=False)
+    v1 = make_napari_viewer()
     assert not _ipython_has_eventloop()
-    v2 = Viewer(show=False)
+    v2 = make_napari_viewer()
     assert not _ipython_has_eventloop()
 
     with monkeypatch.context() as m:
@@ -56,7 +73,7 @@ def test_shortcut_collision(qtbot, make_napari_viewer):
     shortcuts = viewer.window._qt_window.findChildren(QShortcut)
     for shortcut in shortcuts:
         key = shortcut.key().toString()
-        if key == "Ctrl+M":
+        if key == 'Ctrl+M':
             # menubar toggle support
             # https://github.com/napari/napari/pull/3204
             continue

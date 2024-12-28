@@ -1,14 +1,24 @@
 from abc import ABC, abstractmethod
+from typing import Generic, TypeVar, cast
 
 import numpy as np
+from vispy.scene import VisualNode
 from vispy.visuals.transforms import MatrixTransform
 
+from napari._vispy.overlays.base import VispyBaseOverlay
 from napari._vispy.utils.gl import BLENDING_MODES, get_max_texture_sizes
-from napari.components.overlays.base import CanvasOverlay, SceneOverlay
+from napari.components.overlays.base import (
+    CanvasOverlay,
+    Overlay,
+    SceneOverlay,
+)
+from napari.layers import Layer
 from napari.utils.events import disconnect_events
 
+_L = TypeVar('_L', bound=Layer)
 
-class VispyBaseLayer(ABC):
+
+class VispyBaseLayer(ABC, Generic[_L]):
     """Base object for individual layer views
 
     Meant to be subclassed.
@@ -42,7 +52,10 @@ class VispyBaseLayer(ABC):
         Transform positioning the layer visual inside the scenecanvas.
     """
 
-    def __init__(self, layer, node) -> None:
+    layer: _L
+    overlays: dict[Overlay, VispyBaseOverlay]
+
+    def __init__(self, layer: _L, node: VisualNode) -> None:
         super().__init__()
         self.events = None  # Some derived classes have events.
 
@@ -124,7 +137,7 @@ class VispyBaseLayer(ABC):
 
     def _on_blending_change(self, event=None):
         blending = self.layer.blending
-        blending_kwargs = BLENDING_MODES[blending].copy()
+        blending_kwargs = cast(dict, BLENDING_MODES[blending]).copy()
 
         if self.first_visible:
             # if the first layer, then we should blend differently
@@ -142,16 +155,16 @@ class VispyBaseLayer(ABC):
                 src_color_blending = 'src_alpha'
                 dst_color_blending = 'one_minus_src_alpha'
             blending_kwargs = {
-                "depth_test": blending_kwargs['depth_test'],
-                "cull_face": False,
-                "blend": True,
-                "blend_func": (
+                'depth_test': blending_kwargs['depth_test'],
+                'cull_face': False,
+                'blend': True,
+                'blend_func': (
                     src_color_blending,
                     dst_color_blending,
                     'one',
                     'one',
                 ),
-                "blend_equation": 'func_add',
+                'blend_equation': 'func_add',
             }
 
         self.node.set_gl_state(**blending_kwargs)
@@ -186,19 +199,40 @@ class VispyBaseLayer(ABC):
                 overlay_visual.close()
 
     def _on_matrix_change(self):
-        transform = self.layer._transforms.simplified.set_slice(
-            self.layer._slice_input.displayed
-        )
+        dims_displayed = self.layer._slice_input.displayed
+        # mypy: self.layer._transforms.simplified cannot be None
+        transform = self.layer._transforms.simplified.set_slice(dims_displayed)
         # convert NumPy axis ordering to VisPy axis ordering
         # by reversing the axes order and flipping the linear
         # matrix
         translate = transform.translate[::-1]
         matrix = transform.linear_matrix[::-1, ::-1].T
 
+        # The following accounts for the offset between samples at different
+        # resolutions of 3D multi-scale array-like layers (e.g. images).
+        # The 2D case is handled differently because that has more complex support
+        # (multiple levels, partial field-of-view) that also currently interacts
+        # with how pixels are centered (see further below).
+        if (
+            self._array_like
+            and self.layer._slice_input.ndisplay == 3
+            and self.layer.multiscale
+            and hasattr(self.layer, 'downsample_factors')
+        ):
+            # The last downsample factor is used because we only ever show the
+            # last/lowest multi-scale level for 3D.
+            translate += (
+                # displayed dimensions, order inverted to match VisPy, then
+                # adjust by half a pixel per downscale level
+                self.layer.downsample_factors[-1][dims_displayed][::-1] - 1
+            ) / 2
+
         # Embed in the top left corner of a 4x4 affine matrix
         affine_matrix = np.eye(4)
         affine_matrix[: matrix.shape[0], : matrix.shape[1]] = matrix
         affine_matrix[-1, : len(translate)] = translate
+
+        child_offset = np.zeros(len(dims_displayed))
 
         if self._array_like and self.layer._slice_input.ndisplay == 2:
             # Perform pixel offset to shift origin from top left corner
@@ -206,7 +240,7 @@ class VispyBaseLayer(ABC):
             # Note this offset is only required for array like data in
             # 2D.
             offset_matrix = self.layer._data_to_world.set_slice(
-                self.layer._slice_input.displayed
+                dims_displayed
             ).linear_matrix
             offset = -offset_matrix @ np.ones(offset_matrix.shape[1]) / 2
             # Convert NumPy axis ordering to VisPy axis ordering
@@ -214,7 +248,26 @@ class VispyBaseLayer(ABC):
             affine_offset = np.eye(4)
             affine_offset[-1, : len(offset)] = offset[::-1]
             affine_matrix = affine_matrix @ affine_offset
+            if self.layer.multiscale:
+                # For performance reasons, when displaying multiscale images,
+                # only the part of the data that is visible on the canvas is
+                # sent as a texture to the GPU. This means that the texture
+                # gets an additional transform, to position the texture
+                # correctly offset from the origin of the full data. However,
+                # child nodes, which include overlays such as bounding boxes,
+                # should *not* receive this offset, so we undo it here:
+                child_offset = (
+                    np.ones(offset_matrix.shape[1]) / 2
+                    - self.layer.corner_pixels[0][dims_displayed][::-1]
+                )
+            else:
+                child_offset = np.ones(offset_matrix.shape[1]) / 2
         self._master_transform.matrix = affine_matrix
+
+        child_matrix = np.eye(4)
+        child_matrix[-1, : len(child_offset)] = child_offset
+        for child in self.node.children:
+            child.transform.matrix = child_matrix
 
     def _on_experimental_clipping_planes_change(self):
         if hasattr(self.node, 'clipping_planes') and hasattr(
@@ -237,7 +290,7 @@ class VispyBaseLayer(ABC):
         self._on_overlays_change()
         self._on_camera_move()
 
-    def _on_poll(self, event=None):  # noqa: B027
+    def _on_poll(self, event=None):
         """Called when camera moves, before we are drawn.
 
         Optionally called for some period once the camera stops, so the

@@ -1,10 +1,12 @@
-"""OpenGL Utilities.
-"""
+"""OpenGL Utilities."""
+
+from collections.abc import Generator
 from contextlib import contextmanager
 from functools import lru_cache
-from typing import Tuple
+from typing import Any, Union, cast
 
 import numpy as np
+import numpy.typing as npt
 from vispy.app import Canvas
 from vispy.gloo import gl
 from vispy.gloo.context import get_current_canvas
@@ -19,7 +21,7 @@ texture_dtypes = [
 
 
 @contextmanager
-def _opengl_context():
+def _opengl_context() -> Generator[None, None, None]:
     """Assure we are running with a valid OpenGL context.
 
     Only create a Canvas is one doesn't exist. Creating and closing a
@@ -43,7 +45,7 @@ def get_gl_extensions() -> str:
 
 
 @lru_cache
-def get_max_texture_sizes() -> Tuple[int, int]:
+def get_max_texture_sizes() -> tuple[int, int]:
     """Return the maximum texture sizes for 2D and 3D rendering.
 
     If this function is called without an OpenGL context it will create a
@@ -75,7 +77,7 @@ def get_max_texture_sizes() -> Tuple[int, int]:
     return max_size_2d, max_size_3d
 
 
-def fix_data_dtype(data):
+def fix_data_dtype(data: npt.NDArray) -> npt.NDArray:
     """Makes sure the dtype of the data is accetpable to vispy.
 
     Acceptable types are int8, uint8, int16, uint16, float32.
@@ -96,12 +98,17 @@ def fix_data_dtype(data):
         return data
 
     try:
-        dtype = {
-            "i": np.float32,
-            "f": np.float32,
-            "u": np.uint16,
-            "b": np.uint8,
-        }[dtype.kind]
+        dtype_ = cast(
+            'type[Union[np.unsignedinteger[Any], np.floating[Any]]]',
+            {
+                'i': np.float32,
+                'f': np.float32,
+                'u': np.uint16,
+                'b': np.uint8,
+            }[dtype.kind],
+        )
+        if dtype_ == np.uint16 and dtype.itemsize > 2:
+            dtype_ = np.float32
     except KeyError as e:  # not an int or float
         raise TypeError(
             trans._(
@@ -111,7 +118,7 @@ def fix_data_dtype(data):
                 textures=set(texture_dtypes),
             )
         ) from e
-    return data.astype(dtype)
+    return data.astype(dtype_)
 
 
 # blend_func parameters are multiplying:
@@ -123,35 +130,35 @@ def fix_data_dtype(data):
 
 BLENDING_MODES = {
     'opaque': {
-        "depth_test": True,
-        "cull_face": False,
-        "blend": False,
+        'depth_test': True,
+        'cull_face': False,
+        'blend': False,
     },
     'translucent': {
-        "depth_test": True,
-        "cull_face": False,
-        "blend": True,
-        "blend_func": ('src_alpha', 'one_minus_src_alpha', 'one', 'one'),
-        "blend_equation": 'func_add',
+        'depth_test': True,
+        'cull_face': False,
+        'blend': True,
+        'blend_func': ('src_alpha', 'one_minus_src_alpha', 'one', 'one'),
+        'blend_equation': 'func_add',
     },
     'translucent_no_depth': {
-        "depth_test": False,
-        "cull_face": False,
-        "blend": True,
-        "blend_func": ('src_alpha', 'one_minus_src_alpha', 'one', 'one'),
-        "blend_equation": 'func_add',  # see vispy/vispy#2324
+        'depth_test': False,
+        'cull_face': False,
+        'blend': True,
+        'blend_func': ('src_alpha', 'one_minus_src_alpha', 'one', 'one'),
+        'blend_equation': 'func_add',  # see vispy/vispy#2324
     },
     'additive': {
-        "depth_test": False,
-        "cull_face": False,
-        "blend": True,
-        "blend_func": ('src_alpha', 'dst_alpha', 'one', 'one'),
-        "blend_equation": 'func_add',
+        'depth_test': False,
+        'cull_face': False,
+        'blend': True,
+        'blend_func': ('src_alpha', 'dst_alpha', 'one', 'one'),
+        'blend_equation': 'func_add',
     },
     'minimum': {
-        "depth_test": False,
-        "cull_face": False,
-        "blend": True,
-        "blend_equation": 'min',
+        'depth_test': False,
+        'cull_face': False,
+        'blend': True,
+        'blend_equation': 'min',
     },
 }

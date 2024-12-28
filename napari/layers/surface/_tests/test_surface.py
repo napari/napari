@@ -1,10 +1,18 @@
+import copy
+
 import numpy as np
+import pandas as pd
 import pytest
 
 from napari._tests.utils import check_layer_world_data_extent
+from napari.components.dims import Dims
 from napari.layers import Surface
 from napari.layers.surface.normals import SurfaceNormals
 from napari.layers.surface.wireframe import SurfaceWireframe
+from napari.utils._test_utils import (
+    validate_all_params_in_docstring,
+    validate_kwargs_sorted,
+)
 
 
 def test_random_surface():
@@ -22,6 +30,51 @@ def test_random_surface():
     assert np.array_equal(layer.vertex_values, values)
     assert layer._data_view.shape[1] == 2
     assert layer._view_vertex_values.ndim == 1
+
+
+def test_random_surface_features():
+    """Test instantiating surface layer with features."""
+    np.random.seed(0)
+    vertices = np.random.random((10, 3))
+    faces = np.random.randint(10, size=(6, 3))
+    values = np.random.random(10)
+    features = pd.DataFrame({'feature': np.random.random(10)})
+
+    data = (vertices, faces, values)
+    layer = Surface(data, features=features)
+    assert 'feature' in layer.features.columns
+
+
+def test_set_features_and_defaults():
+    """Test setting features and defaults."""
+    np.random.seed(0)
+    vertices = np.random.random((10, 3))
+    faces = np.random.randint(10, size=(6, 3))
+    values = np.random.random(10)
+
+    data = (vertices, faces, values)
+    layer = Surface(data)
+
+    assert layer.features.shape[1] == layer.feature_defaults.shape[1] == 0
+
+    features = pd.DataFrame(
+        {
+            'str': ('a', 'b') * 5,
+            'float': np.random.random(10),
+        }
+    )
+    feature_defaults = pd.DataFrame(
+        {
+            'str': ('b',),
+            'float': (0.5,),
+        }
+    )
+
+    layer.features = features
+    layer.feature_defaults = feature_defaults
+
+    pd.testing.assert_frame_equal(layer.features, features)
+    pd.testing.assert_frame_equal(layer.feature_defaults, feature_defaults)
 
 
 def test_random_surface_no_values():
@@ -66,7 +119,7 @@ def test_random_3D_surface():
     assert layer._data_view.shape[1] == 2
     assert layer._view_vertex_values.ndim == 1
 
-    layer._slice_dims(ndisplay=3)
+    layer._slice_dims(Dims(ndim=3, ndisplay=3))
     assert layer._data_view.shape[1] == 3
     assert layer._view_vertex_values.ndim == 1
 
@@ -84,7 +137,7 @@ def test_random_4D_surface():
     assert layer._data_view.shape[1] == 2
     assert layer._view_vertex_values.ndim == 1
 
-    layer._slice_dims(ndisplay=3)
+    layer._slice_dims(Dims(ndim=4, ndisplay=3))
     assert layer._data_view.shape[1] == 3
     assert layer._view_vertex_values.ndim == 1
 
@@ -103,14 +156,14 @@ def test_random_3D_timeseries_surface():
     assert layer._view_vertex_values.ndim == 1
     assert layer.extent.data[1][0] == 21
 
-    layer._slice_dims(ndisplay=3)
+    layer._slice_dims(Dims(ndim=4, ndisplay=3))
     assert layer._data_view.shape[1] == 3
     assert layer._view_vertex_values.ndim == 1
 
     # If a values axis is made to be a displayed axis then no data should be
     # shown
     with pytest.warns(UserWarning):
-        layer._slice_dims(ndisplay=3, order=[3, 0, 1, 2])
+        layer._slice_dims(Dims(ndim=4, ndisplay=3, order=(3, 0, 1, 2)))
         assert len(layer._data_view) == 0
 
 
@@ -129,7 +182,7 @@ def test_random_3D_multitimeseries_surface():
     assert layer.extent.data[1][0] == 15
     assert layer.extent.data[1][1] == 21
 
-    layer._slice_dims(ndisplay=3)
+    layer._slice_dims(Dims(ndim=5, ndisplay=3))
     assert layer._data_view.shape[1] == 3
     assert layer._view_vertex_values.ndim == 1
 
@@ -153,7 +206,7 @@ def test_changing_surface():
     assert layer._data_view.shape[1] == 2
     assert layer._view_vertex_values.ndim == 1
 
-    layer._slice_dims(ndisplay=3)
+    layer._slice_dims(Dims(ndim=3, ndisplay=3))
     assert layer._data_view.shape[1] == 3
     assert layer._view_vertex_values.ndim == 1
 
@@ -273,7 +326,7 @@ def test_vertex_colors():
 
 
 @pytest.mark.parametrize(
-    "ray_start,ray_direction,expected_value,expected_index",
+    ('ray_start', 'ray_direction', 'expected_value', 'expected_index'),
     [
         ([0, 1, 1], [1, 0, 0], 2, 0),
         ([10, 1, 1], [-1, 0, 0], 2, 1),
@@ -299,7 +352,7 @@ def test_get_value_3d(
     values = np.array([1, 2, 3, 1, 2, 3, 1, 2, 3])
     surface_layer = Surface((vertices, faces, values))
 
-    surface_layer._slice_dims([0, 0, 0], ndisplay=3)
+    surface_layer._slice_dims(Dims(ndim=3, ndisplay=3))
     value, index = surface_layer.get_value(
         position=ray_start,
         view_direction=ray_direction,
@@ -311,7 +364,7 @@ def test_get_value_3d(
 
 
 @pytest.mark.parametrize(
-    "ray_start,ray_direction,expected_value,expected_index",
+    ('ray_start', 'ray_direction', 'expected_value', 'expected_index'),
     [
         ([0, 0, 1, 1], [0, 1, 0, 0], 2, 0),
         ([0, 10, 1, 1], [0, -1, 0, 0], 2, 1),
@@ -337,7 +390,7 @@ def test_get_value_3d_nd(
     values = np.array([1, 2, 3, 1, 2, 3, 1, 2, 3])
     surface_layer = Surface((vertices, faces, values))
 
-    surface_layer._slice_dims([0, 0, 0, 0], ndisplay=3)
+    surface_layer._slice_dims(Dims(ndim=4, ndisplay=3))
     value, index = surface_layer.get_value(
         position=ray_start,
         view_direction=ray_direction,
@@ -369,7 +422,7 @@ def test_surface_normals():
     faces = np.array([[0, 1, 2], [3, 4, 5], [6, 7, 8]])
     values = np.array([1, 2, 3, 1, 2, 3, 1, 2, 3])
 
-    normals = {"face": {"visible": True, "color": 'red'}}
+    normals = {'face': {'visible': True, 'color': 'red'}}
     surface_layer = Surface((vertices, faces, values), normals=normals)
     assert isinstance(surface_layer.normals, SurfaceNormals)
     assert surface_layer.normals.face.visible is True
@@ -404,7 +457,7 @@ def test_surface_wireframe():
     faces = np.array([[0, 1, 2], [3, 4, 5], [6, 7, 8]])
     values = np.array([1, 2, 3, 1, 2, 3, 1, 2, 3])
 
-    wireframe = {"visible": True, "color": 'red'}
+    wireframe = {'visible': True, 'color': 'red'}
     surface_layer = Surface((vertices, faces, values), wireframe=wireframe)
     assert isinstance(surface_layer.wireframe, SurfaceWireframe)
     assert surface_layer.wireframe.visible is True
@@ -416,3 +469,44 @@ def test_surface_wireframe():
     assert isinstance(surface_layer.wireframe, SurfaceWireframe)
     assert surface_layer.wireframe.visible is True
     assert np.array_equal(surface_layer.wireframe.color, (1, 0, 0, 1))
+
+
+def test_surface_copy():
+    vertices = np.array(
+        [
+            [3, 0, 0],
+            [3, 0, 3],
+            [3, 3, 0],
+            [5, 0, 0],
+            [5, 0, 3],
+            [5, 3, 0],
+            [2, 50, 50],
+            [2, 50, 100],
+            [2, 100, 50],
+        ]
+    )
+    faces = np.array([[0, 1, 2], [3, 4, 5], [6, 7, 8]])
+    values = np.array([1, 2, 3, 1, 2, 3, 1, 2, 3])
+
+    l1 = Surface((vertices, faces, values))
+    l2 = copy.copy(l1)
+    assert l1.data[0] is not l2.data[0]
+
+
+def test_surface_with_no_visible_faces():
+    points = np.array([[0, 0.0, 0.0, 0.0], [0, 1.0, 0, 0], [0, 1, 1, 0]])
+    faces = np.array([[0, 1, 2]])
+    layer = Surface((points, faces))
+    # the following with throw an exception when _view_faces
+    # is non-integer values.
+    with pytest.raises(
+        ValueError, match='operands could not be broadcast together'
+    ):
+        layer._get_value_3d(
+            np.array([1, 0, 0, 0]), np.array([1, 1, 0, 0]), [1, 2, 3]
+        )
+
+
+def test_docstring():
+    validate_all_params_in_docstring(Surface)
+    validate_kwargs_sorted(Surface)

@@ -2,13 +2,12 @@ import contextlib
 import inspect
 import sys
 import warnings
-from typing import List
 
 from numpydoc.docscrape import FunctionDoc
 
 from napari.utils.key_bindings import (
-    KeyBinding,
     KeyBindingLike,
+    KeyCode,
     coerce_keybinding,
 )
 from napari.utils.translations import trans
@@ -50,7 +49,7 @@ def mouse_wheel_callbacks(obj, event):
         if inspect.isgenerator(gen):
             try:
                 next(gen)
-                # now store iterated genenerator
+                # now store iterated generator
                 obj._mouse_wheel_gen[mouse_wheel_func] = gen
                 # and now store event that initially triggered the press
                 obj._persisted_mouse_event[gen] = event
@@ -128,7 +127,7 @@ def mouse_press_callbacks(obj, event):
         if inspect.isgenerator(gen):
             try:
                 next(gen)
-                # now store iterated genenerator
+                # now store iterated generator
                 obj._mouse_drag_gen[mouse_drag_func] = gen
                 # and now store event that initially triggered the press
                 obj._persisted_mouse_event[gen] = event
@@ -221,55 +220,27 @@ def mouse_release_callbacks(obj, event):
 
 
 KEY_SYMBOLS = {
-    'Ctrl': 'Ctrl',
-    'Shift': '⇧',
-    'Alt': 'Alt',
-    'Meta': '⊞',
-    'Left': '←',
-    'Right': '→',
-    'Up': '↑',
-    'Down': '↓',
-    'Backspace': '⌫',
-    'Delete': '⌦',
-    'Tab': '↹',
-    'Escape': 'Esc',
-    'Return': '⏎',
-    'Enter': '↵',
-    'Space': '␣',
+    'Ctrl': KeyCode.from_string('Ctrl').os_symbol(),
+    'Shift': KeyCode.from_string('Shift').os_symbol(),
+    'Alt': KeyCode.from_string('Alt').os_symbol(),
+    'Meta': KeyCode.from_string('Meta').os_symbol(),
+    'Left': KeyCode.from_string('Left').os_symbol(),
+    'Right': KeyCode.from_string('Right').os_symbol(),
+    'Up': KeyCode.from_string('Up').os_symbol(),
+    'Down': KeyCode.from_string('Down').os_symbol(),
+    'Backspace': KeyCode.from_string('Backspace').os_symbol(),
+    'Delete': KeyCode.from_string('Delete').os_symbol(),
+    'Tab': KeyCode.from_string('Tab').os_symbol(),
+    'Escape': KeyCode.from_string('Escape').os_symbol(),
+    'Return': KeyCode.from_string('Return').os_symbol(),
+    'Enter': KeyCode.from_string('Enter').os_symbol(),
+    'Space': KeyCode.from_string('Space').os_symbol(),
 }
 
 
-joinchar = '+'
+JOINCHAR = '+'
 if sys.platform.startswith('darwin'):
-    KEY_SYMBOLS.update({'Ctrl': '⌃', 'Alt': '⌥', 'Meta': '⌘'})
-    joinchar = ''
-elif sys.platform.startswith('linux'):
-    KEY_SYMBOLS.update({'Meta': 'Super'})
-
-
-def _kb2mods(key_bind: KeyBinding) -> List[str]:
-    """Extract list of modifiers from a key binding.
-
-    Parameters
-    ----------
-    key_bind : KeyBinding
-        The key binding whose mods are to be extracted.
-
-    Returns
-    -------
-    list of str
-        The key modifiers used by the key binding.
-    """
-    mods = []
-    if key_bind.ctrl:
-        mods.append('Ctrl')
-    if key_bind.shift:
-        mods.append('Shift')
-    if key_bind.alt:
-        mods.append('Alt')
-    if key_bind.meta:
-        mods.append('Meta')
-    return mods
+    JOINCHAR = ''
 
 
 class Shortcut:
@@ -291,7 +262,7 @@ class Shortcut:
             shortcut to format
         """
         error_msg = trans._(
-            "`{shortcut}` does not seem to be a valid shortcut Key.",
+            '`{shortcut}` does not seem to be a valid shortcut Key.',
             shortcut=shortcut,
         )
         error = False
@@ -317,20 +288,19 @@ class Shortcut:
 
         This replace platform specific symbols, like ↵ by Enter,  ⌘ by Command on MacOS....
         """
-        # edge case, shortcut combinaison where `+` is a key.
+        # edge case, shortcut combination where `+` is a key.
         # this should be rare as on english keyboard + is Shift-Minus.
         # but not unheard of. In those case `+` is always at the end with `++`
         # as you can't get two non-modifier keys,  or alone.
         if text == '+':
             return text
-        if joinchar == "+":
-            text.replace('++', '+Plus')
-            text.replace('+', '')
-            text.replace('Plus', '+')
+        if JOINCHAR == '+':
+            text = text.replace('++', '+Plus')
+            text = text.replace('+', '')
+            text = text.replace('Plus', '+')
         for k, v in KEY_SYMBOLS.items():
             if text.endswith(v):
                 text = text.replace(v, k)
-                assert v not in text
             else:
                 text = text.replace(v, k + '-')
 
@@ -359,13 +329,7 @@ class Shortcut:
         string
             Shortcut formatted to be displayed on current paltform.
         """
-        return ' '.join(
-            joinchar.join(
-                KEY_SYMBOLS.get(x, x)
-                for x in ([*_kb2mods(part), str(part.key)])
-            )
-            for part in self._kb.parts
-        )
+        return self._kb.to_text(use_symbols=True, joinchar=JOINCHAR)
 
     def __str__(self):
         return self.platform
@@ -390,14 +354,14 @@ def get_key_bindings_summary(keymap, col='rgb(134, 142, 147)'):
     key_bindings_strs = ['<table border="0" width="100%">']
     for key in keymap:
         keycodes = [KEY_SYMBOLS.get(k, k) for k in key.split('-')]
-        keycodes = "+".join(
+        keycodes = '+'.join(
             [f"<span style='color: {col}'><b>{k}</b></span>" for k in keycodes]
         )
         key_bindings_strs.append(
             "<tr><td width='80' style='text-align: right; padding: 4px;'>"
             f"<span style='color: rgb(66, 72, 80)'>{keycodes}</span></td>"
             "<td style='text-align: left; padding: 4px; color: #CCC;'>"
-            f"{keymap[key]}</td></tr>"
+            f'{keymap[key]}</td></tr>'
         )
     key_bindings_strs.append('</table>')
     return ''.join(key_bindings_strs)
