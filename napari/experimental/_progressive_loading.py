@@ -4,7 +4,8 @@ import logging
 import sys
 import time
 from collections import defaultdict
-from typing import Dict, Iterable, List, Optional, Union
+from collections.abc import Iterable
+from typing import Dict, List, Optional, Union
 
 import dask.array as da
 import numpy as np
@@ -18,12 +19,12 @@ from napari.experimental._virtual_data import (
 )
 from napari.qt.threading import thread_worker
 
-LOGGER = logging.getLogger("napari.experimental._progressive_loading")
+LOGGER = logging.getLogger('napari.experimental._progressive_loading')
 LOGGER.setLevel(logging.DEBUG)
 
 streamHandler = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter(
-    "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 streamHandler.setFormatter(formatter)
 LOGGER.addHandler(streamHandler)
@@ -65,7 +66,7 @@ def get_chunk(
 
         retry += 1
 
-    LOGGER.info(f"get_chunk (end) : {(time.time() - start_time)}")
+    LOGGER.info(f'get_chunk (end) : {(time.time() - start_time)}')
 
     return real_array
 
@@ -240,8 +241,8 @@ def render_sequence(
     # it is further limited to the visible data on the vispy canvas
 
     LOGGER.info(
-        f"render_sequence: inside with corner pixels {corner_pixels} with \
-        visible_scales {visible_scales}"
+        f'render_sequence: inside with corner pixels {corner_pixels} with \
+        visible_scales {visible_scales}'
     )
 
     if not visible_scales:
@@ -254,11 +255,11 @@ def render_sequence(
 
             data_interval = corner_pixels / data._scale_factors[scale]
             LOGGER.info(
-                f"render_sequence: computing chunk slices for {data_interval}"
+                f'render_sequence: computing chunk slices for {data_interval}'
             )
             chunk_keys = chunk_slices(vdata, interval=data_interval)
 
-            LOGGER.info("render_sequence: computing priority")
+            LOGGER.info('render_sequence: computing priority')
             chunk_queue = []
             if ndisplay == 2:
                 chunk_queue = chunk_priority_2D(
@@ -273,13 +274,13 @@ def render_sequence(
                 )
             else:
                 LOGGER.info(
-                    f"render_sequence: {ndisplay} dimensions not supported"
+                    f'render_sequence: {ndisplay} dimensions not supported'
                 )
                 return
 
             LOGGER.info(
-                f"render_sequence: {scale}, {vdata.shape} fetching \
-                {len(chunk_queue)} chunks"
+                f'render_sequence: {scale}, {vdata.shape} fetching \
+                {len(chunk_queue)} chunks'
             )
 
             # Fetch all chunks in priority order
@@ -304,7 +305,7 @@ def render_sequence(
                 )
 
                 LOGGER.info(
-                    f"render_sequence: yielding chunk {chunk_slice} at scale {scale} which has priority\t{priority}"
+                    f'render_sequence: yielding chunk {chunk_slice} at scale {scale} which has priority\t{priority}'
                 )
 
                 yield tuple(list(chunk_result) + [len(chunk_queue) == 0])
@@ -312,7 +313,7 @@ def render_sequence(
                 # TODO blank out lower resolution
                 # if lower resolution is visible, send zeros
 
-            LOGGER.info(f"render_sequence: done fetching {scale}")
+            LOGGER.info(f'render_sequence: done fetching {scale}')
 
 
 def chunk_keys_within_interval(chunk_keys, mins, maxs):
@@ -341,7 +342,7 @@ def chunk_keys_within_interval(chunk_keys, mins, maxs):
 
 def get_layer_name_for_scale(scale):
     """Return the layer name for a given scale."""
-    return f"scale_{scale}"
+    return f'scale_{scale}'
 
 
 def draw_chunk_boundaries(
@@ -389,7 +390,7 @@ def draw_chunk_boundaries(
 
     if layer is None:
         layer = viewer.add_shapes(
-            all_edges, shape_type="line", edge_width=scale[0] / 10
+            all_edges, shape_type='line', edge_width=scale[0] / 10
         )
     else:
         layer.data = all_edges
@@ -412,18 +413,18 @@ def progressively_update_layer(invar, viewer, data=None, ndisplay=None):
     root_layer = viewer.layers[get_layer_name_for_scale(0)]
 
     if (
-        "should_render" in root_layer.metadata
-        and not root_layer.metadata["should_render"]
+        'should_render' in root_layer.metadata
+        and not root_layer.metadata['should_render']
     ):
-        LOGGER.info(f"Not rendering because {root_layer.metadata}")
+        LOGGER.info(f'Not rendering because {root_layer.metadata}')
         return
 
     worker = None
-    if "worker" in root_layer.metadata:
-        worker = root_layer.metadata["worker"]
+    if 'worker' in root_layer.metadata:
+        worker = root_layer.metadata['worker']
 
-    if "MultiScaleVirtualData" in root_layer.metadata:
-        data = root_layer.metadata["MultiScaleVirtualData"]
+    if 'MultiScaleVirtualData' in root_layer.metadata:
+        data = root_layer.metadata['MultiScaleVirtualData']
 
     # TODO global worker usage is not viable for real implementation
     # Terminate existing multiscale render pass
@@ -435,7 +436,7 @@ def progressively_update_layer(invar, viewer, data=None, ndisplay=None):
     # Find the corners of visible data in the highest resolution
     corner_pixels = root_layer.corner_pixels
 
-    LOGGER.info(f"corner pixels: {corner_pixels}")
+    LOGGER.info(f'corner pixels: {corner_pixels}')
 
     top_left = corner_pixels[0, :]
     bottom_right = corner_pixels[1, :]
@@ -456,7 +457,7 @@ def progressively_update_layer(invar, viewer, data=None, ndisplay=None):
         pdb.set_trace()
 
     LOGGER.info(
-        f"progressively_update_layer: start render_sequence {corner_pixels} on {root_layer}"
+        f'progressively_update_layer: start render_sequence {corner_pixels} on {root_layer}'
     )
 
     # Find the visible scales
@@ -475,7 +476,7 @@ def progressively_update_layer(invar, viewer, data=None, ndisplay=None):
         layer_name = get_layer_name_for_scale(scale)
         layer = viewer.layers[layer_name]
 
-        layer.metadata["translated"] = False
+        layer.metadata['translated'] = False
 
         # Reenable visibility of layer
         visible_scales[scale] = should_render_scale(
@@ -485,8 +486,8 @@ def progressively_update_layer(invar, viewer, data=None, ndisplay=None):
         layer.opacity = 0.9
 
         LOGGER.info(
-            f"scale {scale} name {layer_name}\twith translate \
-            {layer.data.translate}"
+            f'scale {scale} name {layer_name}\twith translate \
+            {layer.data.translate}'
         )
 
         # TODO make this optional to support debugging
@@ -520,7 +521,7 @@ def progressively_update_layer(invar, viewer, data=None, ndisplay=None):
     )
 
     LOGGER.info(
-        f"progressively_update_layer: started render_sequence with corners {corner_pixels}"
+        f'progressively_update_layer: started render_sequence with corners {corner_pixels}'
     )
 
     # This will consume our chunks and update the numpy "canvas" and refresh
@@ -540,39 +541,39 @@ def progressively_update_layer(invar, viewer, data=None, ndisplay=None):
         texture = node._texture
 
         LOGGER.info(
-            f"Writing chunk with size {chunk.shape} to: \
+            f'Writing chunk with size {chunk.shape} to: \
             {(scale, [(sl.start, sl.stop) for sl in chunk_slice])} in layer \
             {scale} with shape {layer.data.shape} and dataplane shape \
-            {layer.data.hyperslice.shape} sum {chunk.sum()}"
+            {layer.data.hyperslice.shape} sum {chunk.sum()}'
         )
 
-        if not layer.metadata["translated"]:
+        if not layer.metadata['translated']:
             layer.translate = (
                 np.array(layer.data.translate) * scale_factors[scale]
             )
 
             # Toggle visibility of lower res layer
-            if layer.metadata["prev_layer"]:
+            if layer.metadata['prev_layer']:
                 # We want to keep prev_layer visible because current layer is
                 # loading, but hide others
-                if layer.metadata["prev_layer"].metadata["prev_layer"]:
-                    layer.metadata["prev_layer"].metadata[
-                        "prev_layer"
+                if layer.metadata['prev_layer'].metadata['prev_layer']:
+                    layer.metadata['prev_layer'].metadata[
+                        'prev_layer'
                     ].visible = False
-            layer.metadata["translated"] = True
+            layer.metadata['translated'] = True
 
         # If this is the last chunk of the layer, turn off the previous layer
         # TODO if chunks are zero-ed when replaced by higher res data,
         #      then delete this
-        if is_last_chunk and layer.metadata["prev_layer"]:
-            layer.metadata["prev_layer"].visible = False
+        if is_last_chunk and layer.metadata['prev_layer']:
+            layer.metadata['prev_layer'].visible = False
 
         # Log the shape of the array being set as texture data
         if layer.data.hyperslice.size == 0 or any(
             dim == 0 for dim in layer.data.hyperslice.shape
         ):
             LOGGER.warning(
-                f"Trying to set empty array as texture data: Shape {layer.data.hyperslice.shape}"
+                f'Trying to set empty array as texture data: Shape {layer.data.hyperslice.shape}'
             )
 
         layer.data.set_offset(chunk_slice, chunk)
@@ -580,7 +581,7 @@ def progressively_update_layer(invar, viewer, data=None, ndisplay=None):
         node.update()
 
     worker.yielded.connect(on_yield)
-    root_layer.metadata["worker"] = worker
+    root_layer.metadata['worker'] = worker
     worker.start()
 
 
@@ -608,7 +609,7 @@ def initialize_multiscale_virtual_data(img, viewer, ndisplay):
 
     if np.any(bottom_right < top_left):
         LOGGER.warning(
-            f"Issue with bottom_right values detected, returning early. top_left {top_left} and bottom_right {bottom_right}"
+            f'Issue with bottom_right values detected, returning early. top_left {top_left} and bottom_right {bottom_right}'
         )
         return None
 
@@ -626,7 +627,7 @@ def initialize_multiscale_virtual_data(img, viewer, ndisplay):
     # TODO this goes away when we stop using multiple layers
     if get_layer_name_for_scale(0) in viewer.layers:
         root_layer = viewer.layers[get_layer_name_for_scale(0)]
-        root_layer.metadata["MultiScaleVirtualData"] = multiscale_data
+        root_layer.metadata['MultiScaleVirtualData'] = multiscale_data
 
     return multiscale_data
 
@@ -637,7 +638,7 @@ def add_progressive_loading_image(
     contrast_limits=None,
     colormap='PiYG',
     ndisplay=2,
-    rendering="attenuated_mip",
+    rendering='attenuated_mip',
     scale=None,
 ):
     """Add tiled multiscale image."""
@@ -650,13 +651,13 @@ def add_progressive_loading_image(
         viewer = Viewer()
 
     viewer.scale_bar.visible = True
-    viewer.scale_bar.unit = "mm"
+    viewer.scale_bar.unit = 'mm'
     viewer.dims.ndim = ndisplay
     viewer._layer_slicer._force_sync = False
 
     # Call the helper function to initialize MultiScaleVirtualData
     multiscale_data = initialize_multiscale_virtual_data(img, viewer, ndisplay)
-    LOGGER.info(f"Adding MultiscaleData with shape: {multiscale_data.shape}")
+    LOGGER.info(f'Adding MultiscaleData with shape: {multiscale_data.shape}')
 
     # TODO yikes!
     import napari
@@ -676,7 +677,7 @@ def add_progressive_loading_image(
     if scale is None:
         scale = np.ones(ndisplay)
     else:
-        LOGGER.error("scale other than 1 is currently not supported")
+        LOGGER.error('scale other than 1 is currently not supported')
         return None
         # scale = np.asarray(scale)
 
@@ -691,11 +692,11 @@ def add_progressive_loading_image(
             contrast_limits=contrast_limits,
         )
         layers[scale_idx] = layer
-        layer.metadata["translated"] = False
+        layer.metadata['translated'] = False
 
     # Linked list of layers for visibility control
     for scale_idx in reversed(range(len(layers))):
-        layers[scale_idx].metadata["prev_layer"] = (
+        layers[scale_idx].metadata['prev_layer'] = (
             layers[scale_idx + 1]
             if scale_idx < len(multiscale_data._data) - 1
             else None
@@ -721,7 +722,7 @@ def add_progressive_loading_image(
         None, data=multiscale_data, viewer=viewer, ndisplay=ndisplay
     )
 
-    layers[0].metadata["should_render"] = True
+    layers[0].metadata['should_render'] = True
 
     return viewer
 
@@ -823,9 +824,7 @@ def should_render_scale_2D(scale, viewer, min_scale, max_scale):
     render = min_pixel < pixel_size < max_pixel
 
     if not render:
-        if scale == min_scale and pixel_size > max_pixel:
-            render = True
-        elif scale == max_scale and pixel_size < min_pixel:
+        if (scale == min_scale and pixel_size > max_pixel) or (scale == max_scale and pixel_size < min_pixel):
             render = True
 
     return render
@@ -956,9 +955,7 @@ def should_render_scale_3D(scale, viewer, min_scale, max_scale):
     render = greater_than_min_pixel and less_than_max_pixel
 
     if not render:
-        if scale == min_scale and pixel_size > max_pixel:
-            render = True
-        elif scale == max_scale and pixel_size < min_pixel:
+        if (scale == min_scale and pixel_size > max_pixel) or (scale == max_scale and pixel_size < min_pixel):
             render = True
 
     return render

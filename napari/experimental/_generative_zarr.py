@@ -7,12 +7,12 @@ from numba import njit
 from zarr.storage import init_array, init_group
 from zarr.util import json_dumps
 
-LOGGER = logging.getLogger("napari.experimental._generative_zarr")
+LOGGER = logging.getLogger('napari.experimental._generative_zarr')
 LOGGER.setLevel(logging.DEBUG)
 
 streamHandler = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter(
-    "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 streamHandler.setFormatter(formatter)
 LOGGER.addHandler(streamHandler)
@@ -39,9 +39,9 @@ def create_meta_store(levels, tilesize, compressor, dtype, ndim=3):
     store = {}
     init_group(store)
 
-    datasets = [{"path": str(i)} for i in range(levels)]
-    root_attrs = {"multiscales": [{"datasets": datasets, "version": "0.1"}]}
-    store[".zattrs"] = json_dumps(root_attrs)
+    datasets = [{'path': str(i)} for i in range(levels)]
+    root_attrs = {'multiscales': [{'datasets': datasets, 'version': '0.1'}]}
+    store['.zattrs'] = json_dumps(root_attrs)
 
     base_width = tilesize * 2**levels
     for level in range(levels):
@@ -154,9 +154,9 @@ class MandelbrotStore(zarr.storage.Store):
 
         try:
             # Try parsing pyramidal coords
-            level, chunk_key = key.split("/")
+            level, chunk_key = key.split('/')
             level = int(level)
-            y, x = map(int, chunk_key.split("."))
+            y, x = map(int, chunk_key.split('.'))
         except:
             raise KeyError
 
@@ -311,9 +311,9 @@ class MandelbulbStore(zarr.storage.Store):
 
         try:
             # Try parsing pyramidal coords
-            level, chunk_key = key.split("/")
+            level, chunk_key = key.split('/')
             level = int(level)
-            z, y, x = map(int, chunk_key.split("."))
+            z, y, x = map(int, chunk_key.split('.'))
         except:
             raise KeyError
 

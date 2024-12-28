@@ -29,7 +29,7 @@ dataset_loaders_fail = [
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize("dataset_loader", dataset_loaders)
+@pytest.mark.parametrize('dataset_loader', dataset_loaders)
 def test_datasets(dataset_loader):
     """Test to ensure that datasets are functional. Most of these are
     time consuming and therefore should only be run infrequently.
@@ -41,16 +41,16 @@ def test_datasets(dataset_loader):
 
 @pytest.mark.slow
 @pytest.mark.xfail
-@pytest.mark.parametrize("dataset_loader", dataset_loaders_fail)
+@pytest.mark.parametrize('dataset_loader', dataset_loaders_fail)
 def test_failing_datasets(dataset_loader):
     """Temporary placeholder for datasets that currently fail during creation"""
     dataset_loader()
 
 
-@pytest.mark.parametrize("level", [2, 4])
+@pytest.mark.parametrize('level', [2, 4])
 def test_mandelbrot_dataset(level):
     large_image = mandelbrot_dataset(max_levels=level)
-    multiscale_img = large_image["arrays"]
+    multiscale_img = large_image['arrays']
 
     assert isinstance(multiscale_img[0], zarr.Array)
     assert len(multiscale_img) == level

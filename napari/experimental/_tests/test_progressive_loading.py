@@ -33,18 +33,18 @@ def chunked_array():
 @pytest.fixture
 def mandelbrot_arrays(max_level):
     large_image = mandelbrot_dataset(max_levels=max_level)
-    multiscale_img = large_image["arrays"]
+    multiscale_img = large_image['arrays']
     return multiscale_img
 
 
-@pytest.mark.filterwarnings("ignore::FutureWarning")
+@pytest.mark.filterwarnings('ignore::FutureWarning')
 def test_add_progressive_loading_image(mandelbrot_arrays):
     viewer = napari.Viewer()
     # pytest.warns()
     add_progressive_loading_image(mandelbrot_arrays, viewer=viewer)
 
 
-@pytest.mark.filterwarnings("ignore::FutureWarning")
+@pytest.mark.filterwarnings('ignore::FutureWarning')
 def test_add_progressive_loading_image_zoom_in(mandelbrot_arrays):
     viewer = napari.Viewer()
     viewer.camera.zoom = 0.0001
@@ -52,7 +52,7 @@ def test_add_progressive_loading_image_zoom_in(mandelbrot_arrays):
     viewer.camera.zoom = 0.001  # only fails if we change visible scales
 
 
-@pytest.mark.filterwarnings("ignore::FutureWarning")
+@pytest.mark.filterwarnings('ignore::FutureWarning')
 def test_add_progressive_loading_image_zoom_out(mandelbrot_arrays):
     viewer = napari.Viewer()
     viewer.camera.zoom = 0.001
@@ -249,12 +249,12 @@ def test_chunk_slices_with_interval():
     assert slices == expected
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     viewer = napari.Viewer()
     max_level = 8
 
     large_image = mandelbrot_dataset(max_levels=max_level)
-    mandelbrot_arrays = large_image["arrays"]
+    mandelbrot_arrays = large_image['arrays']
 
     scale = 7
     vdata = _progressive_loading.VirtualData(

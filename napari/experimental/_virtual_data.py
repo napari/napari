@@ -7,12 +7,12 @@ import numpy as np
 
 from napari.layers._data_protocols import Index, LayerDataProtocol
 
-LOGGER = logging.getLogger("napari.experimental._virtual_data")
+LOGGER = logging.getLogger('napari.experimental._virtual_data')
 LOGGER.setLevel(logging.DEBUG)
 
 streamHandler = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter(
-    "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 streamHandler.setFormatter(formatter)
 LOGGER.addHandler(streamHandler)
@@ -96,20 +96,20 @@ class VirtualData:
 
         # Validate coords
         if not isinstance(coords, tuple):
-            raise ValueError("coords must be a tuple of slices.")
+            raise ValueError('coords must be a tuple of slices.')
 
         if len(coords) != self.ndim:
             raise ValueError(
-                f"coords must have {self.ndim} slices, but got {len(coords)}"
+                f'coords must have {self.ndim} slices, but got {len(coords)}'
             )
 
         for i, sl in enumerate(coords):
             if not isinstance(sl, slice):
-                raise ValueError(f"coords[{i}] is not a slice object: {sl}")
+                raise ValueError(f'coords[{i}] is not a slice object: {sl}')
 
         if sl.start < 0 or sl.stop > self.shape[i]:
             raise ValueError(
-                f"coords[{i}] is out of bounds for array shape: {self.shape}"
+                f'coords[{i}] is out of bounds for array shape: {self.shape}'
             )
 
         # store the last interval
@@ -174,8 +174,8 @@ class VirtualData:
         ]
 
         LOGGER.debug(
-            f"VirtualData: update_with_minmax: {self.translate} max \
-            {self._max_coord} interval size {interval_size}"
+            f'VirtualData: update_with_minmax: {self.translate} max \
+            {self._max_coord} interval size {interval_size}'
         )
 
         # Update hyperslice
@@ -218,7 +218,7 @@ class VirtualData:
                 next_stop = next_start + width
 
                 LOGGER.debug(
-                    f"Dimension {dim}, Prev start: {prev_start}, Next start: {next_start}, Width: {width}"
+                    f'Dimension {dim}, Prev start: {prev_start}, Next start: {next_start}, Width: {width}'
                 )
 
                 prev_slices += [slice(int(prev_start), int(prev_stop))]
@@ -229,8 +229,8 @@ class VirtualData:
                 and self.hyperslice[tuple(prev_slices)].size > 0
             ):
                 LOGGER.info(
-                    f"reusing data plane: prev {prev_slices} next \
-                    {next_slices}"
+                    f'reusing data plane: prev {prev_slices} next \
+                    {next_slices}'
                 )
                 if (
                     next_hyperslice[tuple(next_slices)].size
@@ -244,13 +244,15 @@ class VirtualData:
                 ]
             else:
                 LOGGER.info(
-                    f"could not reuse data plane: prev {prev_slices} next \
-                    {next_slices}"
+                    f'could not reuse data plane: prev {prev_slices} next \
+                    {next_slices}'
                 )
 
         self.hyperslice = next_hyperslice
 
-    def _hyperslice_key(self, key: Union[Index, Tuple[Index, ...], LayerDataProtocol]):
+    def _hyperslice_key(
+        self, key: Union[Index, Tuple[Index, ...], LayerDataProtocol]
+    ):
         """Convert a key in data coordinates to a key in 'hyperslice' coordinates.
 
         Offsets both slice start/stop and any integer indices by `self.translate[i]`.
@@ -348,7 +350,7 @@ class VirtualData:
                     for sl in key
                 ]
             )
-            LOGGER.info(f"get_offset failed {key}")
+            LOGGER.info(f'get_offset failed {key}')
             return np.zeros(shape)
 
     def set_offset(
@@ -357,11 +359,11 @@ class VirtualData:
         """Return self[key]."""
         hyperslice_key = self._hyperslice_key(key)
         LOGGER.info(
-            f"hyperslice_key {hyperslice_key} hyperslice shape {self.hyperslice.shape}"
+            f'hyperslice_key {hyperslice_key} hyperslice shape {self.hyperslice.shape}'
         )
         LOGGER.info(
-            f"set_offset: {hyperslice_key} hyperslice shape: \
-            {self.hyperslice[hyperslice_key].shape} value shape: {value.shape} "
+            f'set_offset: {hyperslice_key} hyperslice shape: \
+            {self.hyperslice[hyperslice_key].shape} value shape: {value.shape} '
         )
 
         # TODO hack for malformed data
@@ -381,8 +383,7 @@ class VirtualData:
         """Return the size of a chunk."""
         if isinstance(self.array, da.Array):
             return self.array.chunksize
-        else:
-            return self.array.info  # Based on zarr
+        return self.array.info  # Based on zarr
 
     @property
     def chunks(self):
@@ -534,7 +535,7 @@ class MultiScaleVirtualData:
 
                 self._translate[scale] = scaled_min
                 LOGGER.info(
-                    f"MultiscaleVirtualData: update_with_minmax: scale {scale} min {min_coord} : {scaled_min} max {max_coord} : scaled max {scaled_max}"
+                    f'MultiscaleVirtualData: update_with_minmax: scale {scale} min {min_coord} : {scaled_min} max {max_coord} : scaled max {scaled_max}'
                 )
 
                 coords = tuple(

@@ -19,7 +19,7 @@ def max_level():
 @pytest.fixture
 def mandelbrot_arrays(max_level):
     large_image = mandelbrot_dataset(max_levels=max_level)
-    multiscale_img = large_image["arrays"]
+    multiscale_img = large_image['arrays']
     return multiscale_img
 
 
@@ -151,11 +151,11 @@ def test_multiscale_set_interval(mandelbrot_arrays):
 #         assert vdata.hyperslice.shape == shape[-2:]
 #         assert isinstance(vdata.hyperslice, da.Array)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     max_level = 8
 
     large_image = mandelbrot_dataset(max_levels=8)
-    multiscale_img = large_image["arrays"]
+    multiscale_img = large_image['arrays']
 
     scale = max_level - 1
     vdata = _virtual_data.VirtualData(multiscale_img[-1], scale=scale)

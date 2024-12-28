@@ -7,6 +7,7 @@ from napari.experimental._progressive_loading import (
     add_progressive_loading_image,
 )
 
+
 def mandelbulb_dataset(max_levels=14, channels=[4, 5,6 ]):
     """Generate a multiscale image of the mandelbulb set for a given number
     of levels/scales. Scale 0 will be the highest resolution.
