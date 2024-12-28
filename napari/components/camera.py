@@ -1,5 +1,5 @@
 import warnings
-from typing import Optional, Union
+from typing import Optional, Union, Tuple
 
 import numpy as np
 from scipy.spatial.transform import Rotation as R

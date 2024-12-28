@@ -83,3 +83,5 @@ if __name__ == "__main__":
     )
 
     viewer.axes.visible = True
+
+    napari.run()

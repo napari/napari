@@ -72,6 +72,8 @@ dependencies = [
     "typing_extensions>=4.2.0",
     "vispy>=0.14.1,<0.15",
     "wrapt>=1.11.1",
+    "zarr>=2.18.2",
+    "numba>=0.60.0",
 ]
 dynamic = [
     "version",
