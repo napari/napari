@@ -250,67 +250,62 @@ class VirtualData:
 
         self.hyperslice = next_hyperslice
 
-    def _hyperslice_key(
-        self, key: Union[Index, Tuple[Index, ...], LayerDataProtocol]
-    ):
-        """Convert a key into a key for the hyperslice.
+    def _hyperslice_key(self, key: Union[Index, Tuple[Index, ...], LayerDataProtocol]):
+        """Convert a key in data coordinates to a key in 'hyperslice' coordinates.
 
-        The _hyperslice_key is the corresponding value of key
-        within plane. The difference between key and hyperslice_key is
-        key - translate / scale
+        Offsets both slice start/stop and any integer indices by `self.translate[i]`.
         """
-        # TODO maybe fine, but a little lazy
-        if type(key) is not tuple:
+        # 1) always make key a tuple
+        if not isinstance(key, tuple):
             key = (key,)
 
-        indices = [None] * len(key)
-        for i, index in enumerate(indices):
-            if type(index) == slice:
-                indices[i] = slice(
-                    index.start - self.translate[i],
-                    index.stop - self.translate[i],
-                )
-            elif np.issubdtype(int, type(index)):
-                indices[i] = index - self.translate[i]
-            # else:
-            #     LOGGER.info(f"_hyperslice_key: unexpected type {type(index)}\
-            #     with value {index}")
+        output_key = []
+        # Note: we only offset the first len(self.translate) dims.
+        # If a user provides fewer or more dims than self.ndim, handle gracefully.
+        max_dims = min(len(key), len(self.translate))
 
-        if type(key) is tuple and type(key[0]) == slice:
-            if key[0].start is None:
-                return key
-            hyperslice_key = tuple(
-                [
-                    slice(
-                        int(
-                            max(
-                                0,
-                                sl.start - self.translate[idx],
-                            )
-                        ),
-                        int(
-                            max(
-                                0,
-                                sl.stop - self.translate[idx],
-                            )
-                        ),
-                        sl.step,
-                    )
-                    for (idx, sl) in enumerate(key[(-self.ndisplay) :])
-                ]
-            )
-        elif type(key) is tuple and type(key[0]) is int:
-            hyperslice_key = tuple(
-                [
-                    int(v - self.translate[idx])
-                    for idx, v in enumerate(key[(-self.ndisplay) :])
-                ]
-            )
-        else:
-            LOGGER.info(f"_hyperslice_key: funky key {key}")
-            hyperslice_key = key
+        for i, k in enumerate(key):
+            if i >= len(self.translate):
+                # If the user gave more indices than we have dims, just append as-is
+                output_key.append(k)
+                continue
 
-        return hyperslice_key
+            tr = self.translate[i]
+
+            if isinstance(k, slice):
+                # Convert None -> 0 or shape to do the offset
+                start = k.start
+                stop = k.stop
+                step = k.step if k.step is not None else 1
+
+                # If start is not None, offset it
+                if start is not None:
+                    start = start - tr
+                    # Optionally clamp to 0
+                    # start = max(start, 0)
+
+                # If stop is not None, offset it
+                if stop is not None:
+                    stop = stop - tr
+                    # Optionally clamp to self.hyperslice.shape[i]
+                    # stop = min(stop, self.hyperslice.shape[i])
+
+                output_key.append(slice(start, stop, step))
+
+            elif isinstance(k, (int, np.integer)):
+                # offset integer index
+                output_key.append(k - tr)
+
+            else:
+                # fallback for Ellipsis, arrays, or other index types
+                output_key.append(k)
+
+        # If key has more elements than self.ndim, just keep them all
+        if len(key) > max_dims:
+            # we already appended them, so do nothing special
+            pass
+
+        return tuple(output_key)
 
     def __getitem__(
         self, key: Union[Index, Tuple[Index, ...], LayerDataProtocol]
