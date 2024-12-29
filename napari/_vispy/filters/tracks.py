@@ -138,7 +138,7 @@ class TracksFilter(Filter):
 
     @property
     def head_length(self) -> float:
-        return self._tail_length
+        return self._head_length
 
     @head_length.setter
     def head_length(self, head_length: float):
