@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Optional
 
 import numpy as np
-from qtpy.QtCore import Qt
+from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import QPushButton, QWidget
 from superqt import QDoubleRangeSlider
 
@@ -52,6 +52,8 @@ def range_to_decimals(range_, dtype):
 
 
 class _QDoubleRangeSlider(QDoubleRangeSlider):
+    show_clim_popup = Signal()
+
     def mousePressEvent(self, event):
         """Update the slider, or, on right-click, pop-up an expanded slider.
 
@@ -64,7 +66,7 @@ class _QDoubleRangeSlider(QDoubleRangeSlider):
             The napari event that triggered this method.
         """
         if event.button() == Qt.MouseButton.RightButton:
-            self.parent().show_clim_popupup()
+            self.show_clim_popup.emit()
         else:
             super().mousePressEvent(event)
 
@@ -154,8 +156,9 @@ class QtContrastLimitsSliderControl(QtWidgetControlsBase):
 
         # Setup widgets
         self.contrastLimitsSlider = _QDoubleRangeSlider(
-            Qt.Orientation.Horizontal, parent
+            Qt.Orientation.Horizontal,
         )
+        self.contrastLimitsSlider.show_clim_popup.connect(self.show_clim_popup)
         decimals = range_to_decimals(
             self._layer.contrast_limits_range, self._layer.dtype
         )
@@ -183,7 +186,7 @@ class QtContrastLimitsSliderControl(QtWidgetControlsBase):
             trans._('contrast limits:')
         )
 
-    def show_clim_popupup(self):
+    def show_clim_popup(self):
         self.clim_popup = QContrastLimitsPopup(self._layer, self.parent())
         self.clim_popup.setParent(self.parent())
         self.clim_popup.move_to('top', min_length=650)

@@ -1,5 +1,3 @@
-from typing import Optional
-
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QMouseEvent
 from qtpy.QtWidgets import (
@@ -7,9 +5,7 @@ from qtpy.QtWidgets import (
     QFormLayout,
     QFrame,
     QGridLayout,
-    QLabel,
     QMessageBox,
-    QWidget,
 )
 
 from napari._qt.layer_controls.widgets import (
@@ -136,21 +132,9 @@ class QtLayerControls(QFrame):
         # Setup widgets controls
         self._add_widget_controls(QtOpacityBlendingControls(self, layer))
 
-    def __getattr__(self, attr: str):
-        """
-        Redefinition of __getattr__ to enable access to widget controls.
-        """
-        for widget_control in self._widget_controls:
-            widget_attr = getattr(widget_control, attr, None)
-            if widget_attr:
-                return widget_attr
-        return super().__getattr__(attr)
-
     def _add_widget_controls(
         self,
         wrapper: QtWidgetControlsBase,
-        controls: Optional[list[tuple[QLabel, QWidget]]] = None,
-        add_wrapper: bool = True,
     ) -> None:
         """
         Add widget controls.
@@ -160,21 +144,12 @@ class QtLayerControls(QFrame):
         wrapper : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWidgetControlsBase
             An instance of a `QtWidgetControlsBase` subclass that setups
             widgets for a layer attribute.
-        controls : list[tuple[QLabel, QWidget]]
-            A list of widget controls tuples. Each tuple has the label for the
-            control and the respective control widget to show.
-        add_wrapper : bool
-            True if a reference to the wrapper class should be kept.
-            False otherwise.
         """
-        if controls is None:
-            controls = []
-
-        if add_wrapper:
-            self._widget_controls.append(wrapper)
-
-        if len(controls) == 0:
-            controls = wrapper.get_widget_controls()
+        wrapper_name = wrapper.__class__.__name__
+        wrapper_name = wrapper_name[0].lower() + wrapper_name[1:]
+        setattr(self, wrapper_name, wrapper)
+        self._widget_controls.append(wrapper)
+        controls = wrapper.get_widget_controls()
 
         for label_text, control_widget in controls:
             self.layout().addRow(label_text, control_widget)
