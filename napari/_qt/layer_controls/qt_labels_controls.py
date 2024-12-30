@@ -40,71 +40,71 @@ class QtLabelsControls(QtLayerControls):
         String id for the pan-zoom action to bind to the pan_zoom button.
     TRANSFORM_ACTION_NAME : str
         String id for the transform action to bind to the transform button.
-    blendComboBox : qtpy.QtWidgets.QComboBox
-        Dropdown widget to select blending mode of layer.
-    blendLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for the blending combobox widget.
-    brushSizeSlider : qtpy.QtWidgets.QSlider
-        Slider controlling current brush size of the layer.
-    brushSizeSliderLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for the brush size chooser widget.
     button_group : qtpy.QtWidgets.QButtonGroup
         Button group of labels layer modes: PAN_ZOOM, PICKER, PAINT, ERASE, or
         FILL.
-    colorModeComboBox : qtpy.QtWidgets.QComboBox
-        ComboBox controlling current color mode of the layer.
-    colorModeComboBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for the color mode chooser widget.
     colormapUpdate : qtpy.QtWidgets.QPushButton
         Button to update colormap of label layer.
-    contigCheckBox : qtpy.QtWidgets.QCheckBox
-        Checkbox to control if label layer is contiguous.
-    contigCheckBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for the contiguous model chooser widget.
-    contourSpinBox : superqt.QLargeSpinBox
-        Spinbox to control the layer contour thickness.
-    contourSpinBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for the layer contour thickness chooser widget.
     erase_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to select ERASE mode on Labels layer.
     fill_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to select FILL mode on Labels layer.
-    isoGradientComboBox : superqt.QEnumComboBox
-        Combobox to control gradient method when isosurface rendering is selected.
-    isoGradientComboBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for the chooser widget of the gradient to use when labels are using isosurface rendering.
-    labelColor : qtpy.QtWidget.QWidget
-        Wrapper widget for the selectionSpinBox and colorBox widgets.
-    labelColorLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for the label chooser widget.
     layer : napari.layers.Labels
         An instance of a napari Labels layer.
-    ndimSpinBox : qtpy.QtWidgets.QSpinBox
-        Spinbox to control the number of editable dimensions of label layer.
-    ndimSpinBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for the number of editable dimensions chooser widget.
-    opacityLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for the opacity slider widget.
-    opacitySlider : qtpy.QtWidgets.QSlider
-        Slider controlling opacity of the layer.
     paint_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to select PAINT mode on Labels layer.
     panzoom_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to select PAN_ZOOM mode on Labels layer.
     pick_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to select PICKER mode on Labels layer.
-    preserveLabelsCheckBox : qtpy.QtWidgets.QCheckBox
-        Checkbox to control if existing labels are preserved.
-    preserveLabelsCheckBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for the layer should preserve labels chooser widget.
-    renderComboBox : superqt.QEnumComboBox
-        Combobox to control current label render method.
-    renderComboBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for the way current label should be rendered chooser widget.
-    selectedColorCheckbox : qtpy.QtWidgets.QCheckBox
+    qtBrushSizeSliderControl.brushSizeSlider : qtpy.QtWidgets.QSlider
+        Slider controlling current brush size of the layer.
+    qtBrushSizeSliderControl.brushSizeSliderLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the brush size chooser widget.
+    qtColorModeComboBoxControl.colorModeComboBox : qtpy.QtWidgets.QComboBox
+        ComboBox controlling current color mode of the layer.
+    qtColorModeComboBoxControl.colorModeComboBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the color mode chooser widget.
+    qtContiguousCheckBoxControl.contigCheckBox : qtpy.QtWidgets.QCheckBox
+        Checkbox to control if label layer is contiguous.
+    qtContiguousCheckBoxControl.contigCheckBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the contiguous model chooser widget.
+    qtContourSpinBoxControl.contourSpinBox : superqt.QLargeSpinBox
+        Spinbox to control the layer contour thickness.
+    qtContourSpinBoxControl.contourSpinBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the layer contour thickness chooser widget.
+    qtDisplaySelectedLabelCheckBoxControl.selectedColorCheckbox : qtpy.QtWidgets.QCheckBox
         Checkbox to control if only currently selected label is shown.
-    selectedColorCheckboxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+    qtDisplaySelectedLabelCheckBoxControl.selectedColorCheckboxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the layer should show only currently selected label chooser widget.
+    qtLabelControl.labelColor : qtpy.QtWidget.QWidget
+        Wrapper widget for the selectionSpinBox and colorBox widgets.
+    qtLabelControl.labelColorLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the label chooser widget.
+    qtLabelRenderControl.isoGradientComboBox : superqt.QEnumComboBox
+        Combobox to control gradient method when isosurface rendering is selected.
+    qtLabelRenderControl.isoGradientComboBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the chooser widget of the gradient to use when labels are using isosurface rendering.
+    qtLabelRenderControl.renderComboBox : superqt.QEnumComboBox
+        Combobox to control current label render method.
+    qtLabelRenderControl.renderComboBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the way current label should be rendered chooser widget.
+    qtNdimSpinBoxControl.ndimSpinBox : qtpy.QtWidgets.QSpinBox
+        Spinbox to control the number of editable dimensions of label layer.
+    qtNdimSpinBoxControl.ndimSpinBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the number of editable dimensions chooser widget.
+    qtOpacityBlendingControls.blendComboBox : qtpy.QtWidgets.QComboBox
+        Dropdown widget to select blending mode of layer.
+    qtOpacityBlendingControls.blendLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the blending combobox widget.
+    qtOpacityBlendingControls.opacityLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the opacity slider widget.
+    qtOpacityBlendingControls.opacitySlider : qtpy.QtWidgets.QSlider
+        Slider controlling opacity of the layer.
+    qtPreserveLabelsCheckBoxControl.preserveLabelsCheckBox : qtpy.QtWidgets.QCheckBox
+        Checkbox to control if existing labels are preserved.
+    qtPreserveLabelsCheckBoxControl.preserveLabelsCheckBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the layer should preserve labels chooser widget.
     transform_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to select TRANSFORM mode on Labels layer.
 

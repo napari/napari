@@ -33,47 +33,47 @@ class QtTracksControls(QtLayerControls):
         String id for the pan-zoom action to bind to the pan_zoom button.
     TRANSFORM_ACTION_NAME : str
         String id for the transform action to bind to the transform button.
-    blendComboBox : qtpy.QtWidgets.QComboBox
-        Dropdown widget to select blending mode of layer.
-    blendLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for the blending combobox widget.
     button_group : qtpy.QtWidgets.QButtonGroup
         Button group of points layer modes (ADD, PAN_ZOOM, SELECT).
-    colormap_combobox : qtpy.QtWidgets.QComboBox
-        ComboBox controlling current colormap of the layer.
-    colormap_combobox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for the colormap chooser widget.
-    graph_checkbox : qtpy.QtWidgets.QCheckBox
-        Checkbox controlling if graph of the layer should be shown.
-    graph_checkbox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for showing the graph chooser widget.
-    head_length_slider : qtpy.QtWidgets.QSlider
-        Slider controlling head length of the layer.
-    head_length_slider_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for the head length chooser widget.
-    id_checkbox : qtpy.QtWidgets.QCheckBox
-        Checkbox controlling if id of the layer should be shown.
-    id_checkbox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for showing the id chooser widget.
     layer : layers.Tracks
         An instance of a Tracks layer.
-    opacityLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for the opacity slider widget.
-    opacitySlider : qtpy.QtWidgets.QSlider
-        Slider controlling opacity of the layer.
     panzoom_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button for pan/zoom mode.
-    tail_checkbox : qtpy.QtWidgets.QCheckBox
+    qtColormapComboBoxControl.colormap_combobox : qtpy.QtWidgets.QComboBox
+        ComboBox controlling current colormap of the layer.
+    qtColormapComboBoxControl.colormap_combobox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the colormap chooser widget.
+    qtGraphCheckBoxControl.graph_checkbox : qtpy.QtWidgets.QCheckBox
+        Checkbox controlling if graph of the layer should be shown.
+    qtGraphCheckBoxControl.graph_checkbox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for showing the graph chooser widget.
+    qtHeadLengthSliderControl.head_length_slider : qtpy.QtWidgets.QSlider
+        Slider controlling head length of the layer.
+    qtHeadLengthSliderControl.head_length_slider_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the head length chooser widget.
+    qtIdCheckBoxControl.id_checkbox : qtpy.QtWidgets.QCheckBox
+        Checkbox controlling if id of the layer should be shown.
+    qtIdCheckBoxControl.id_checkbox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for showing the id chooser widget.
+    qtOpacityBlendingControls.blendComboBox : qtpy.QtWidgets.QComboBox
+        Dropdown widget to select blending mode of layer.
+    qtOpacityBlendingControls.blendLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the blending combobox widget.
+    qtOpacityBlendingControls.opacityLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the opacity slider widget.
+    qtOpacityBlendingControls.opacitySlider : qtpy.QtWidgets.QSlider
+        Slider controlling opacity of the layer.
+    qtTailDisplayCheckBoxControl.tail_checkbox : qtpy.QtWidgets.QCheckBox
         Checkbox controlling if tails of the layer should be shown.
-    tail_length_slider : qtpy.QtWidgets.QSlider
-        Slider controlling tail length of the layer.
-    tail_length_slider_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for the tail length chooser widget.
-    tail_width_slider : qtpy.QtWidgets.QSlider
-        Slider controlling tail width of the layer.
-    tail_width_slider_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-    tail_width_slider_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+    qtTailDisplayCheckBoxControl.tail_tail_checkbox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for showing the tails chooser widget.
+    qtTailLengthSliderControl.tail_length_slider : qtpy.QtWidgets.QSlider
+        Slider controlling tail length of the layer.
+    qtTailLengthSliderControl.tail_length_slider_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the tail length chooser widget.
+    qtTailWidthSliderControl.tail_width_slider : qtpy.QtWidgets.QSlider
+        Slider controlling tail width of the layer.
+    qtTailWidthSliderControl.tail_width_slider_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the tail width chooser widget.
     transform_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to select transform mode.

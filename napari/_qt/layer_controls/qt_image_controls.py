@@ -33,54 +33,54 @@ class QtImageControls(QtBaseImageControls):
         Label for the attenuation slider widget.
     attenuationSlider : qtpy.QtWidgets.QSlider
         Slider controlling attenuation rate for `attenuated_mip` mode.
-    autoScaleBar : qtpy.QtWidgets.QWidget
-        Widget to wrap push buttons related with the layer auto-contrast funtionality.
-    blendComboBox : qtpy.QtWidgets.QComboBox
-        Dropdown widget to select blending mode of layer.
-    blendLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for the blending combobox widget.
     button_grid : qtpy.QtWidgets.QGridLayout
         GridLayout for the layer mode buttons
     button_group : qtpy.QtWidgets.QButtonGroup
         Button group for image based layer modes (PAN_ZOOM TRANSFORM).
-    colormapWidget : qtpy.QtWidgets.QWidget
-        Widget to wrap combobox and label widgets related with the layer colormap attribute.
-    contrastLimitsSlider : superqt.QRangeSlider
-        Contrast range slider widget.
-    depictionComboBox : qtpy.QtWidgets.QComboBox
-        ComboBox controlling current depiction value of the layer.
-    depictionLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for the depiction value chooser widget.
-    gammaSlider : qtpy.QtWidgets.QSlider
-        Gamma adjustment slider widget.
-    interpComboBox : qtpy.QtWidgets.QComboBox
-        Dropdown menu to select the interpolation mode for image display.
-    interpLabel : qtpy.QtWidgets.QLabel
-        Label for the interpolation dropdown menu.
-    isoThresholdLabel : qtpy.QtWidgets.QLabel
-        Label for the isosurface threshold slider widget.
-    isoThresholdSlider : qtpy.QtWidgets.QSlider
-        Slider controlling the isosurface threshold value for rendering.
     layer : napari.layers.Image
         An instance of a napari Image layer.
-    opacityLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for the opacity slider widget.
-    opacitySlider : qtpy.QtWidgets.QSlider
-        Slider controlling opacity of the layer.
     panzoom_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to pan/zoom shapes layer.
-    planeNormalButtons : PlaneNormalButtons
+    qtAutoScaleControl.autoScaleBar : qtpy.QtWidgets.QWidget
+        Widget to wrap push buttons related with the layer auto-contrast funtionality.
+    qtColormapControl.colormapWidget : qtpy.QtWidgets.QWidget
+        Widget to wrap combobox and label widgets related with the layer colormap attribute.
+    qtContrastLimitsSliderControl.contrastLimitsSlider : superqt.QRangeSlider
+        Contrast range slider widget.
+    qtDepictionControl.depictionComboBox : qtpy.QtWidgets.QComboBox
+        ComboBox controlling current depiction value of the layer.
+    qtDepictionControl.depictionLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the depiction value chooser widget.
+    qtDepictionControl.planeNormalButtons : PlaneNormalButtons
         Buttons controlling plane normal orientation when the `plane` depiction value is choosed.
-    planeNormalLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+    qtDepictionControl.planeNormalLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the plane normal value chooser widget.
-    planeThicknessLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+    qtDepictionControl.planeThicknessLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the plane normal thickness value chooser widget.
-    planeThicknessSlider : superqt.QLabeledDoubleSlider
+    qtDepictionControl.planeThicknessSlider : superqt.QLabeledDoubleSlider
         Slider controlling plane normal thickness when the `plane` depiction value is choosed.
-    renderComboBox : qtpy.QtWidgets.QComboBox
+    qtGammaSliderControl.gammaSlider : qtpy.QtWidgets.QSlider
+        Gamma adjustment slider widget.
+    qtImageRenderControl.isoThresholdLabel : qtpy.QtWidgets.QLabel
+        Label for the isosurface threshold slider widget.
+    qtImageRenderControl.isoThresholdSlider : qtpy.QtWidgets.QSlider
+        Slider controlling the isosurface threshold value for rendering.
+    qtImageRenderControl.renderComboBox : qtpy.QtWidgets.QComboBox
         Dropdown menu to select the rendering mode for image display.
-    renderLabel : qtpy.QtWidgets.QLabel
+    qtImageRenderControl.renderLabel : qtpy.QtWidgets.QLabel
         Label for the rendering mode dropdown menu.
+    qtInterpolationComboBoxControl.interpComboBox : qtpy.QtWidgets.QComboBox
+        Dropdown menu to select the interpolation mode for image display.
+    qtInterpolationComboBoxControl.interpLabel : qtpy.QtWidgets.QLabel
+        Label for the interpolation dropdown menu.
+    qtOpacityBlendingControls.blendComboBox : qtpy.QtWidgets.QComboBox
+        Dropdown widget to select blending mode of layer.
+    qtOpacityBlendingControls.blendLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the blending combobox widget.
+    qtOpacityBlendingControls.opacityLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the opacity slider widget.
+    qtOpacityBlendingControls.opacitySlider : qtpy.QtWidgets.QSlider
+        Slider controlling opacity of the layer.
     transform_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to transform shapes layer.
     """
