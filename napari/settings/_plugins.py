@@ -2,6 +2,7 @@ from typing_extensions import TypedDict
 
 from napari._pydantic_compat import Field
 from napari.settings._base import EventedSettings
+from napari.settings._constants import PluginShimWarningLevel
 from napari.utils.translations import trans
 
 
@@ -17,14 +18,31 @@ CallOrderDict = dict[str, list[PluginHookOption]]
 
 class PluginsSettings(EventedSettings):
     use_npe2_adaptor: bool = Field(
-        False,
+        True,
         title=trans._('Use npe2 adaptor'),
         description=trans._(
             "Use npe2-adaptor for first generation plugins.\nWhen an npe1 plugin is found, this option will\nimport its contributions and create/cache\na 'shim' npe2 manifest that allows it to be treated\nlike an npe2 plugin (with delayed imports, etc...)",
         ),
         requires_restart=True,
     )
-
+    # TODO: what happens with shim failures
+    warn_on_shimmed_plugin: PluginShimWarningLevel = Field(
+        PluginShimWarningLevel.NEW,
+        title=trans._('npe1 plugin warning'),
+        description=trans._(
+            'Choose when to be warned about npe1 plugins.\nUse "never" to disable warnings.\nUse "always" to be warned about plugins on each startup.\nUse "new" to be warned only when an npe1 plugin has been newly installed.\n'
+        ),
+        # TODO: does it require restart?
+    )
+    # TODO: rename
+    # TODO: should be popping from this set on uninstall and adding on warning
+    warned_on_shim_plugins: set = Field(
+        default_factory=set,
+        title=trans._('Shimmed plugins already warned'),
+        description=trans._(
+            'Set of installed shimmed plugins that have already been warned about.'
+        ),
+    )
     call_order: CallOrderDict = Field(
         default_factory=dict,
         title=trans._('Plugin sort order'),
@@ -62,5 +80,6 @@ class PluginsSettings(EventedSettings):
         preferences_exclude = (
             'schema_version',
             'disabled_plugins',
+            'warned_on_shim_plugins',
             'extension2writer',
         )

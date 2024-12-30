@@ -367,6 +367,9 @@ def _build_widgets_submenu_actions(
     if not mf.contributions.widgets:
         return [], []
 
+    if mf.name == 'napari-clusters-plotter':
+        print('napari-clusters-plotter')
+
     # if this plugin declares any menu items, its actions should have the
     # plugin name.
     # TODO: update once plugin has self menus - they shouldn't exclude it

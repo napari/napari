@@ -42,3 +42,19 @@ class BrushSizeOnMouseModifiers(StrEnum):
     CTRL_ALT = 'Control+Alt'
     CTRL_SHIFT = 'Control+Shift'
     DISABLED = 'Disabled'  # a non-existent modifier that is never activated
+
+
+class PluginShimWarningLevel(StrEnum):
+    """Warning level for shimmed plugins.
+
+    PluginShimWarningLevel.NEVER
+        Warnings will never be shown when loading a shimmed plugin.
+    PluginShimWarningLevel.NEW
+        Warnings will be shown when a newly installed plugin is shimmed.
+    PluginShimWarningLevel.ALWAYS
+        Warnings will be shown for all shimmed plugins on each startup.
+    """
+
+    NEVER = 'never'
+    NEW = 'new'
+    ALWAYS = 'always'

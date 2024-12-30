@@ -58,6 +58,7 @@ from napari._qt.dialogs.confirm_close_dialog import ConfirmCloseDialog
 from napari._qt.dialogs.preferences_dialog import PreferencesDialog
 from napari._qt.dialogs.qt_activity_dialog import QtActivityDialog
 from napari._qt.dialogs.qt_notification import NapariQtNotification
+from napari._qt.dialogs.shimmed_plugin_dialog import ShimmedPluginDialog
 from napari._qt.qt_event_loop import (
     NAPARI_ICON_PATH,
     get_qapp,
@@ -454,6 +455,34 @@ class _QtMainWindow(QMainWindow):
         if settings.application.save_window_state:
             settings.application.window_state = window_state
 
+    def _warn_on_shimmed_plugins(self):
+        """Warn about shimmed plugins if needed."""
+        settings = get_settings()
+        if settings.plugins.warn_on_shimmed_plugin == 'never':
+            return
+
+        from npe2 import plugin_manager as pm
+
+        shimmed_plugins = set(pm.get_shimmed_plugins())
+        if settings.plugins.warn_on_shimmed_plugin == 'new':
+            new_plugins = (
+                shimmed_plugins - settings.plugins.warned_on_shim_plugins
+            )
+        else:
+            new_plugins = shimmed_plugins
+        accepted = True
+        if new_plugins:
+            dialog = ShimmedPluginDialog(self, new_plugins)
+            if dialog.exec_() != QDialog.Accepted:
+                accepted = False
+        # if the user cancelled, we don't update the new plugins
+        # in all other cases (including if we didn't show a dialog)
+        # we do. this means uninstallin and re-installing a plugin
+        # will result in a new warning if napari has been launched
+        # in the meantime
+        if accepted:
+            settings.plugins.warned_on_shim_plugins = shimmed_plugins
+
     def close(self, quit_app=False, confirm_need=False):
         """Override to handle closing app or just the window."""
         if not quit_app and not self._qt_viewer.viewer.layers:
@@ -731,6 +760,8 @@ class Window:
                 [self._qt_viewer.dockLayerControls.minimumHeight(), 10000],
                 Qt.Orientation.Vertical,
             )
+            # TODO: where to put this?
+            self._qt_window._warn_on_shimmed_plugins()
 
     def _setup_existing_themes(self, connect: bool = True):
         """This function is only executed once at the startup of napari
