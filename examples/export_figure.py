@@ -109,8 +109,5 @@ viewer.add_image(export_figure, rgb=True, name='exported_figure')
 viewer.add_image(scaled_export_figure, rgb=True, name='scaled_exported_figure')
 viewer.reset_view()
 
-# from skimage.io import imsave
-# imsave('screenshot.png', screenshot)
-
 if __name__ == '__main__':
     napari.run()

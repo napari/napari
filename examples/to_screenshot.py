@@ -127,10 +127,8 @@ layer = viewer.add_vectors(pos, edge_width=2)
 
 # take screenshot
 screenshot = viewer.screenshot()
+# optionally for saving the exported screenshot: viewer.screenshot(path="screenshot.png")
 viewer.add_image(screenshot, rgb=True, name='screenshot')
-
-# from skimage.io import imsave
-# imsave('screenshot.png', screenshot)
 
 if __name__ == '__main__':
     napari.run()
