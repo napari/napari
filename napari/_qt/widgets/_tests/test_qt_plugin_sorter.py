@@ -148,5 +148,5 @@ def test_qt_plugin_sorter_help_info(qtbot, hook_name, help_info):
     hook_combo_box.setCurrentText(hook_name)
 
     if sys.version_info >= (3, 13):
-        help_info = re.sub(r"<br> +", r"<br>", help_info)
+        help_info = re.sub(r'<br> +', r'<br>', help_info)
     assert help_info in info_widget.toolTip()
