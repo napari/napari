@@ -325,7 +325,7 @@ pygments==2.18.0
     #   superqt
 pymsgbox==1.0.9
     # via pyautogui
-pyopengl==3.1.6
+pyopengl==3.1.7
     # via
     #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari (napari_repo/pyproject.toml)
