@@ -110,26 +110,49 @@ def test_score_specificity_simple():
 
 
 def test_score_specificity_complex():
-    assert score_specificity('*/my-specific-folder/[nested]/*?.tif') == (
-        True,
-        -3,
-        [
-            MatchFlag.STAR,
-            MatchFlag.NONE,
-            MatchFlag.SET,
-            MatchFlag.STAR | MatchFlag.ANY,
-        ],
-    )
-
-    assert score_specificity('/my-specific-folder/[nested]/*?.tif') == (
-        False,
-        -2,
-        [
-            MatchFlag.NONE,
-            MatchFlag.SET,
-            MatchFlag.STAR | MatchFlag.ANY,
-        ],
-    )
+    # account for py313 change in https://github.com/python/cpython/pull/113829
+    if sys.platform.startswith('win') and sys.version_info >= (3, 13):
+        assert score_specificity(r'*\my-specific-folder\[nested]\*?.tif') == (
+                True,
+                -3,
+                [
+                    MatchFlag.STAR,
+                    MatchFlag.NONE,
+                    MatchFlag.SET,
+                    MatchFlag.STAR | MatchFlag.ANY,
+                ],
+            )
+        
+            assert score_specificity(r'\\my-specific-folder\[nested]\*?.tif') == (
+                False,
+                -2,
+                [
+                    MatchFlag.NONE,
+                    MatchFlag.SET,
+                    MatchFlag.STAR | MatchFlag.ANY,
+                ],
+            )
+    else:
+        assert score_specificity('*/my-specific-folder/[nested]/*?.tif') == (
+            True,
+            -3,
+            [
+                MatchFlag.STAR,
+                MatchFlag.NONE,
+                MatchFlag.SET,
+                MatchFlag.STAR | MatchFlag.ANY,
+            ],
+        )
+    
+        assert score_specificity('/my-specific-folder/[nested]/*?.tif') == (
+            False,
+            -2,
+            [
+                MatchFlag.NONE,
+                MatchFlag.SET,
+                MatchFlag.STAR | MatchFlag.ANY,
+            ],
+        )
 
 
 def test_score_specificity_collapse_star():
@@ -149,7 +172,11 @@ def test_score_specificity_collapse_star():
         -1,
         [MatchFlag.STAR, MatchFlag.STAR],
     )
-    assert score_specificity('/abc*/*.tif') == (False, 0, [MatchFlag.STAR])
+    # account for py313 change in https://github.com/python/cpython/pull/113829
+    if sys.platform.startswith('win') and sys.version_info >= (3, 13):
+        assert score_specificity(r'\\abc*\*.tif') == (False, 0, [MatchFlag.STAR])
+    else:
+        assert score_specificity('/abc*/*.tif') == (False, 0, [MatchFlag.STAR])
 
 
 def test_score_specificity_range():
