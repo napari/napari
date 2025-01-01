@@ -1,4 +1,5 @@
 import os.path
+import sys
 
 from npe2 import DynamicPlugin
 
@@ -123,15 +124,15 @@ def test_score_specificity_complex():
                 ],
             )
         
-            assert score_specificity(r'\\my-specific-folder\[nested]\*?.tif') == (
-                False,
-                -2,
-                [
-                    MatchFlag.NONE,
-                    MatchFlag.SET,
-                    MatchFlag.STAR | MatchFlag.ANY,
-                ],
-            )
+        assert score_specificity(r'\\my-specific-folder\[nested]\*?.tif') == (
+            False,
+            -2,
+            [
+                MatchFlag.NONE,
+                MatchFlag.SET,
+                MatchFlag.STAR | MatchFlag.ANY,
+            ],
+        )
     else:
         assert score_specificity('*/my-specific-folder/[nested]/*?.tif') == (
             True,
