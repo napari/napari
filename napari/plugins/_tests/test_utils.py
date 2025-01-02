@@ -113,47 +113,31 @@ def test_score_specificity_simple():
 def test_score_specificity_complex():
     # account for py313 change in https://github.com/python/cpython/pull/113829
     if sys.platform.startswith('win') and sys.version_info >= (3, 13):
-        assert score_specificity(r'*\my-specific-folder\[nested]\*?.tif') == (
-            True,
-            -3,
-            [
-                MatchFlag.STAR,
-                MatchFlag.NONE,
-                MatchFlag.SET,
-                MatchFlag.STAR | MatchFlag.ANY,
-            ],
-        )
-
-        assert score_specificity(r'\\my-specific-folder\[nested]\*?.tif') == (
-            False,
-            -2,
-            [
-                MatchFlag.NONE,
-                MatchFlag.SET,
-                MatchFlag.STAR | MatchFlag.ANY,
-            ],
-        )
+        relative_path = r'*\my-specific-folder\[nested]\*?.tif'
+        absolute_path = r'\\my-specific-folder\[nested]\*?.tif'
     else:
-        assert score_specificity('*/my-specific-folder/[nested]/*?.tif') == (
-            True,
-            -3,
-            [
-                MatchFlag.STAR,
-                MatchFlag.NONE,
-                MatchFlag.SET,
-                MatchFlag.STAR | MatchFlag.ANY,
-            ],
-        )
+        relative_path = '*/my-specific-folder/[nested]/*?.tif'
+        absolute_path = '/my-specific-folder/[nested]/*?.tif'
 
-        assert score_specificity('/my-specific-folder/[nested]/*?.tif') == (
-            False,
-            -2,
-            [
-                MatchFlag.NONE,
-                MatchFlag.SET,
-                MatchFlag.STAR | MatchFlag.ANY,
-            ],
-        )
+    assert score_specificity(relative_path) == (
+        True,
+        -3,
+        [
+            MatchFlag.STAR,
+            MatchFlag.NONE,
+            MatchFlag.SET,
+            MatchFlag.STAR | MatchFlag.ANY,
+        ],
+    )
+    assert score_specificity(absolute_path) == (
+        False,
+        -2,
+        [
+            MatchFlag.NONE,
+            MatchFlag.SET,
+            MatchFlag.STAR | MatchFlag.ANY,
+        ],
+    )
 
 
 def test_score_specificity_collapse_star():
