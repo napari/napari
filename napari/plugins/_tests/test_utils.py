@@ -159,13 +159,11 @@ def test_score_specificity_collapse_star():
     )
     # account for py313 change in https://github.com/python/cpython/pull/113829
     if sys.platform.startswith('win') and sys.version_info >= (3, 13):
-        assert score_specificity(r'\\abc*\*.tif') == (
-            False,
-            0,
-            [MatchFlag.STAR],
-        )
+        absolute_path = r'\\abc*\*.tif'
     else:
-        assert score_specificity('/abc*/*.tif') == (False, 0, [MatchFlag.STAR])
+        absolute_path = '/abc*/*.tif'
+
+    assert score_specificity(absolute_path) == (False, 0, [MatchFlag.STAR])
 
 
 def test_score_specificity_range():
