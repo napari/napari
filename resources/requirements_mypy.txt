@@ -8,7 +8,7 @@ build==1.2.2.post1
     # via npe2
 certifi==2024.12.14
     # via requests
-charset-normalizer==3.4.0
+charset-normalizer==3.4.1
     # via requests
 click==8.1.8
     # via typer
@@ -79,7 +79,7 @@ tomli-w==1.1.0
     # via npe2
 typer==0.15.1
     # via npe2
-types-pyyaml==6.0.12.20241221
+types-pyyaml==6.0.12.20241230
     # via -r napari_repo/resources/requirements_mypy.in
 types-requests==2.32.0.20241016
     # via -r napari_repo/resources/requirements_mypy.in
