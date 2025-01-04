@@ -81,6 +81,7 @@ from napari.settings import get_settings
 from napari.utils import perf
 from napari.utils._proxies import PublicOnlyProxy
 from napari.utils.events import Event
+from napari.utils.geometry import get_center_bbox
 from napari.utils.io import imsave
 from napari.utils.misc import (
     in_ipython,
@@ -92,13 +93,13 @@ from napari.utils.notifications import Notification
 from napari.utils.theme import _themes, get_system_theme
 from napari.utils.translations import trans
 
-_sentinel = object()
-
 if TYPE_CHECKING:
     from magicgui.widgets import Widget
     from qtpy.QtGui import QImage
 
     from napari.viewer import Viewer
+
+_sentinel = object()
 
 
 MenuStr = Literal[
@@ -1744,6 +1745,68 @@ class Window:
         if path is not None:
             imsave(path, img)
         return img
+
+    def export_rois(
+        self,
+        rois: list[np.ndarray],
+        paths: Optional[list[str]] = None,
+        scale: Optional[float] = None,
+    ):
+        """Export the shapes rois with storage file paths.
+
+        For each shape, moves the camera to the center of the shape
+        and adjust the canvas size to fit the shape.
+        Note: The shape height and width can be of type float.
+        However, the canvas size only accepts a tuple of integers.
+        This can result in slight misalignment.
+
+        Parameters
+        ----------
+        rois: list[np.ndarray]
+            A list of arrays  with each being of shape (4, 2) representing a rectangular roi.
+        paths: list
+            The list to store file path for shapes roi
+
+        Returns
+        -------
+        screenshot_list: list
+            The list with roi screenshots.
+
+        """
+        if paths is not None and len(paths) != len(rois):
+            raise ValueError(
+                trans._(
+                    'The number of file paths does not match the number of ROI shapes',
+                    deferred=True,
+                )
+            )
+
+        screenshot_list = []
+        camera = self._qt_viewer.viewer.camera
+        start_camera_center = camera.center
+        start_camera_zoom = camera.zoom
+        canvas = self._qt_viewer.canvas
+        prev_size = canvas.size
+
+        visible_dims = list(self._qt_viewer.viewer.dims.displayed)
+        steep = min(self._qt_viewer.viewer.layers.extent.step[visible_dims])
+
+        for index, roi in enumerate(rois):
+            center_coord, height, width = get_center_bbox(roi)
+            camera.center = center_coord
+            canvas.size = (int(height / steep), int(width / steep))
+
+            camera.zoom = 1 / steep
+            path = paths[index] if paths is not None else None
+            screenshot_list.append(
+                self.screenshot(path=path, canvas_only=True, scale=scale)
+            )
+
+        canvas.size = prev_size
+        camera.center = start_camera_center
+        camera.zoom = start_camera_zoom
+
+        return screenshot_list
 
     def screenshot(
         self, path=None, size=None, scale=None, flash=True, canvas_only=False
