@@ -27,9 +27,10 @@ class ExperimentalSettings(EventedSettings):
 
     rdp_epsilon: float = Field(
         0.5,
-        title=trans._('Shapes polygon lasso RDP epsilon'),
+        title=trans._('Shapes polygon lasso and path RDP epsilon'),
         description=trans._(
-            'Setting this higher removes more points from polygons. \nSetting this to 0 keeps all vertices of a given polygon'
+            'Setting this higher removes more points from polygons or paths. \nSetting this to 0 keeps all vertices of '
+            'a given polygon or path.'
         ),
         type=float,
         ge=0,
@@ -37,9 +38,12 @@ class ExperimentalSettings(EventedSettings):
 
     lasso_vertex_distance: int = Field(
         10,
-        title=trans._('Minimum distance threshold of shapes lasso tool'),
+        title=trans._(
+            'Minimum distance threshold of shapes lasso and path tool'
+        ),
         description=trans._(
-            'Value determines how many screen pixels one has to move before another vertex can be added to the polygon.'
+            'Value determines how many screen pixels one has to move before another vertex can be added to the polygon'
+            'or path.'
         ),
         type=int,
         gt=0,

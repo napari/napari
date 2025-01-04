@@ -1,16 +1,488 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
-<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-	 viewBox="0 0 100 100" style="enable-background:new 0 0 100 100;" xml:space="preserve">
-<path d="M58.8,82.6c-4.7,0-8.6-3.9-8.6-8.6s3.9-8.6,8.6-8.6s8.6,3.9,8.6,8.6S63.5,82.6,58.8,82.6z M58.8,71c-1.7,0-3,1.3-3,3
-	s1.3,3,3,3s3-1.3,3-3S60.5,71,58.8,71z"/>
-<path d="M39.5,39.8c-4.7,0-8.6-3.9-8.6-8.6s3.9-8.6,8.6-8.6s8.6,3.9,8.6,8.6S44.2,39.8,39.5,39.8z M39.5,28.2c-1.7,0-3,1.3-3,3
-	s1.3,3,3,3s3-1.3,3-3S41.2,28.2,39.5,28.2z"/>
-<path d="M19.2,82.6c-4.7,0-8.6-3.9-8.6-8.6s3.9-8.6,8.6-8.6s8.6,3.9,8.6,8.6S23.9,82.6,19.2,82.6z M19.2,71c-1.7,0-3,1.3-3,3
-	s1.3,3,3,3s3-1.3,3-3S20.9,71,19.2,71z"/>
-<path d="M83.1,39.8c-4.7,0-8.6-3.9-8.6-8.6s3.9-8.6,8.6-8.6s8.6,3.9,8.6,8.6S87.8,39.8,83.1,39.8z M83.1,28.2c-1.7,0-3,1.3-3,3
-	s1.3,3,3,3s3-1.3,3-3S84.8,28.2,83.1,28.2z"/>
-<rect x="51.1" y="49.2" transform="matrix(0.5355 -0.8445 0.8445 0.5355 -11.219 83.5029)" width="38.5" height="5.5"/>
-<rect x="46.4" y="35.3" transform="matrix(0.9001 -0.4356 0.4356 0.9001 -18.0059 26.666)" width="5.5" height="34.7"/>
-<rect x="10" y="51.3" transform="matrix(0.4615 -0.8872 0.8872 0.4615 -32.1006 55.1188)" width="38.8" height="5.5"/>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   id="Layer_1"
+   data-name="Layer 1"
+   version="1.1"
+   viewBox="0 0 100 100"
+   sodipodi:docname="path.svg"
+   inkscape:version="1.3.2 (091e20e, 2023-11-25, custom)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview9"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="8.13"
+     inkscape:cx="40.836408"
+     inkscape:cy="59.717097"
+     inkscape:window-width="1920"
+     inkscape:window-height="1009"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="Layer_1" />
+  <defs
+     id="defs1">
+    <style
+       id="style1">
+      .cls-1, .cls-2, .cls-3 {
+        stroke: #fff;
+        stroke-miterlimit: 10;
+      }
+
+      .cls-1, .cls-3 {
+        fill: none;
+      }
+
+      .cls-2 {
+        fill: #fff;
+      }
+
+      .cls-3 {
+        stroke-width: 2px;
+      }
+    </style>
+    <filter
+       inkscape:label="Black Light"
+       inkscape:menu="Color"
+       inkscape:menu-tooltip="Light areas turn to black"
+       style="color-interpolation-filters:sRGB;"
+       id="filter10"
+       x="-0.029069767"
+       y="-0.029069767"
+       width="1.0581395"
+       height="1.0581395">
+      <feColorMatrix
+         type="luminanceToAlpha"
+         result="result2"
+         id="feColorMatrix9" />
+      <feComposite
+         in2="SourceGraphic"
+         operator="arithmetic"
+         in="result2"
+         k3="2"
+         result="result4"
+         id="feComposite9" />
+      <feBlend
+         in="result4"
+         mode="multiply"
+         result="result3"
+         in2="result2"
+         id="feBlend9" />
+      <feComposite
+         in2="SourceGraphic"
+         operator="in"
+         in="result3"
+         id="feComposite10" />
+    </filter>
+    <filter
+       inkscape:label="Black Light"
+       inkscape:menu="Color"
+       inkscape:menu-tooltip="Light areas turn to black"
+       style="color-interpolation-filters:sRGB;"
+       id="filter12"
+       x="-0.029069767"
+       y="-0.029069767"
+       width="1.0581395"
+       height="1.0581395">
+      <feColorMatrix
+         type="luminanceToAlpha"
+         result="result2"
+         id="feColorMatrix10" />
+      <feComposite
+         in2="SourceGraphic"
+         operator="arithmetic"
+         in="result2"
+         k3="2"
+         result="result4"
+         id="feComposite11" />
+      <feBlend
+         in="result4"
+         mode="multiply"
+         result="result3"
+         in2="result2"
+         id="feBlend11" />
+      <feComposite
+         in2="SourceGraphic"
+         operator="in"
+         in="result3"
+         id="feComposite12" />
+    </filter>
+    <filter
+       inkscape:label="Black Light"
+       inkscape:menu="Color"
+       inkscape:menu-tooltip="Light areas turn to black"
+       style="color-interpolation-filters:sRGB;"
+       id="filter14"
+       x="-0.029069767"
+       y="-0.029069767"
+       width="1.0581395"
+       height="1.0581395">
+      <feColorMatrix
+         type="luminanceToAlpha"
+         result="result2"
+         id="feColorMatrix12" />
+      <feComposite
+         in2="SourceGraphic"
+         operator="arithmetic"
+         in="result2"
+         k3="2"
+         result="result4"
+         id="feComposite13" />
+      <feBlend
+         in="result4"
+         mode="multiply"
+         result="result3"
+         in2="result2"
+         id="feBlend13" />
+      <feComposite
+         in2="SourceGraphic"
+         operator="in"
+         in="result3"
+         id="feComposite14" />
+    </filter>
+    <filter
+       inkscape:label="Black Light"
+       inkscape:menu="Color"
+       inkscape:menu-tooltip="Light areas turn to black"
+       style="color-interpolation-filters:sRGB;"
+       id="filter16"
+       x="-0.029069767"
+       y="-0.029069767"
+       width="1.0581395"
+       height="1.0581395">
+      <feColorMatrix
+         type="luminanceToAlpha"
+         result="result2"
+         id="feColorMatrix14" />
+      <feComposite
+         in2="SourceGraphic"
+         operator="arithmetic"
+         in="result2"
+         k3="2"
+         result="result4"
+         id="feComposite15" />
+      <feBlend
+         in="result4"
+         mode="multiply"
+         result="result3"
+         in2="result2"
+         id="feBlend15" />
+      <feComposite
+         in2="SourceGraphic"
+         operator="in"
+         in="result3"
+         id="feComposite16" />
+    </filter>
+    <filter
+       inkscape:label="Black Light"
+       inkscape:menu="Color"
+       inkscape:menu-tooltip="Light areas turn to black"
+       style="color-interpolation-filters:sRGB;"
+       id="filter18"
+       x="-0.038167939"
+       y="-0.025125628"
+       width="1.0381679"
+       height="1.0251256">
+      <feColorMatrix
+         type="luminanceToAlpha"
+         result="result2"
+         id="feColorMatrix16" />
+      <feComposite
+         in2="SourceGraphic"
+         operator="arithmetic"
+         in="result2"
+         k3="2"
+         result="result4"
+         id="feComposite17" />
+      <feBlend
+         in="result4"
+         mode="multiply"
+         result="result3"
+         in2="result2"
+         id="feBlend17" />
+      <feComposite
+         in2="SourceGraphic"
+         operator="in"
+         in="result3"
+         id="feComposite18" />
+    </filter>
+    <filter
+       inkscape:label="Black Light"
+       inkscape:menu="Color"
+       inkscape:menu-tooltip="Light areas turn to black"
+       style="color-interpolation-filters:sRGB;"
+       id="filter20"
+       x="-0.036231884"
+       y="0"
+       width="1.0362319"
+       height="1.0246305">
+      <feColorMatrix
+         type="luminanceToAlpha"
+         result="result2"
+         id="feColorMatrix18" />
+      <feComposite
+         in2="SourceGraphic"
+         operator="arithmetic"
+         in="result2"
+         k3="2"
+         result="result4"
+         id="feComposite19" />
+      <feBlend
+         in="result4"
+         mode="multiply"
+         result="result3"
+         in2="result2"
+         id="feBlend19" />
+      <feComposite
+         in2="SourceGraphic"
+         operator="in"
+         in="result3"
+         id="feComposite20" />
+    </filter>
+    <filter
+       inkscape:label="Black Light"
+       inkscape:menu="Color"
+       inkscape:menu-tooltip="Light areas turn to black"
+       style="color-interpolation-filters:sRGB;"
+       id="filter22"
+       x="-0.035657954"
+       y="-0.064831383"
+       width="1.035658"
+       height="1.1293181">
+      <feColorMatrix
+         type="luminanceToAlpha"
+         result="result2"
+         id="feColorMatrix20" />
+      <feComposite
+         in2="SourceGraphic"
+         operator="arithmetic"
+         in="result2"
+         k3="2"
+         result="result4"
+         id="feComposite21" />
+      <feBlend
+         in="result4"
+         mode="multiply"
+         result="result3"
+         in2="result2"
+         id="feBlend21" />
+      <feComposite
+         in2="SourceGraphic"
+         operator="in"
+         in="result3"
+         id="feComposite22" />
+    </filter>
+    <filter
+       inkscape:label="Black Light"
+       inkscape:menu="Color"
+       inkscape:menu-tooltip="Light areas turn to black"
+       style="color-interpolation-filters:sRGB;"
+       id="filter24"
+       x="-0.081300813"
+       y="0"
+       width="1.0813008"
+       height="1.0460829">
+      <feColorMatrix
+         type="luminanceToAlpha"
+         result="result2"
+         id="feColorMatrix22" />
+      <feComposite
+         in2="SourceGraphic"
+         operator="arithmetic"
+         in="result2"
+         k3="2"
+         result="result4"
+         id="feComposite23" />
+      <feBlend
+         in="result4"
+         mode="multiply"
+         result="result3"
+         in2="result2"
+         id="feBlend23" />
+      <feComposite
+         in2="SourceGraphic"
+         operator="in"
+         in="result3"
+         id="feComposite24" />
+    </filter>
+    <filter
+       inkscape:label="Black Light"
+       inkscape:menu="Color"
+       inkscape:menu-tooltip="Light areas turn to black"
+       style="color-interpolation-filters:sRGB;"
+       id="filter26"
+       x="-0.066225166"
+       y="-0.048780488"
+       width="1.0662252"
+       height="1.0487805">
+      <feColorMatrix
+         type="luminanceToAlpha"
+         result="result2"
+         id="feColorMatrix24" />
+      <feComposite
+         in2="SourceGraphic"
+         operator="arithmetic"
+         in="result2"
+         k3="2"
+         result="result4"
+         id="feComposite25" />
+      <feBlend
+         in="result4"
+         mode="multiply"
+         result="result3"
+         in2="result2"
+         id="feBlend25" />
+      <feComposite
+         in2="SourceGraphic"
+         operator="in"
+         in="result3"
+         id="feComposite26" />
+    </filter>
+    <filter
+       inkscape:label="Black Light"
+       inkscape:menu="Color"
+       inkscape:menu-tooltip="Light areas turn to black"
+       style="color-interpolation-filters:sRGB"
+       id="filter22-4"
+       x="-0.035657954"
+       y="-0.064831383"
+       width="1.035658"
+       height="1.1293181">
+      <feColorMatrix
+         type="luminanceToAlpha"
+         result="result2"
+         id="feColorMatrix20-0" />
+      <feComposite
+         in2="SourceGraphic"
+         operator="arithmetic"
+         in="result2"
+         k3="2"
+         result="result4"
+         id="feComposite21-8"
+         k1="0"
+         k2="0"
+         k4="0" />
+      <feBlend
+         in="result4"
+         mode="multiply"
+         result="result3"
+         in2="result2"
+         id="feBlend21-0" />
+      <feComposite
+         in2="SourceGraphic"
+         operator="in"
+         in="result3"
+         id="feComposite22-1" />
+    </filter>
+    <filter
+       inkscape:label="Black Light"
+       inkscape:menu="Color"
+       inkscape:menu-tooltip="Light areas turn to black"
+       style="color-interpolation-filters:sRGB"
+       id="filter22-0"
+       x="-0.035657953"
+       y="-0.064831388"
+       width="1.035658"
+       height="1.1293181">
+      <feColorMatrix
+         type="luminanceToAlpha"
+         result="result2"
+         id="feColorMatrix20-9" />
+      <feComposite
+         in2="SourceGraphic"
+         operator="arithmetic"
+         in="result2"
+         k3="2"
+         result="result4"
+         id="feComposite21-0"
+         k1="0"
+         k2="0"
+         k4="0" />
+      <feBlend
+         in="result4"
+         mode="multiply"
+         result="result3"
+         in2="result2"
+         id="feBlend21-06" />
+      <feComposite
+         in2="SourceGraphic"
+         operator="in"
+         in="result3"
+         id="feComposite22-7" />
+    </filter>
+    <filter
+       inkscape:label="Black Light"
+       inkscape:menu="Color"
+       inkscape:menu-tooltip="Light areas turn to black"
+       style="color-interpolation-filters:sRGB"
+       id="filter22-4-1"
+       x="-0.035657954"
+       y="-0.064831383"
+       width="1.035658"
+       height="1.1293181">
+      <feColorMatrix
+         type="luminanceToAlpha"
+         result="result2"
+         id="feColorMatrix20-0-2" />
+      <feComposite
+         in2="SourceGraphic"
+         operator="arithmetic"
+         in="result2"
+         k3="2"
+         result="result4"
+         id="feComposite21-8-6"
+         k1="0"
+         k2="0"
+         k4="0" />
+      <feBlend
+         in="result4"
+         mode="multiply"
+         result="result3"
+         in2="result2"
+         id="feBlend21-0-9" />
+      <feComposite
+         in2="SourceGraphic"
+         operator="in"
+         in="result3"
+         id="feComposite22-1-8" />
+    </filter>
+  </defs>
+  <g
+     id="g1"
+     transform="matrix(0.9934556,0,0,1.6331686,0.33047511,-37.311753)">
+    <path
+       class="cls-3"
+       d="M 14.398385,54.919345 C 25.417872,67.107626 27.736808,42.928044 35.200984,42.928044"
+       id="path7"
+       style="filter:url(#filter22)"
+       sodipodi:nodetypes="cc" />
+    <path
+       class="cls-3"
+       d="M 50.741778,75.991301 C 61.761265,88.179582 64.080201,64 71.544377,64"
+       id="path7-8"
+       style="fill:none;stroke:#ffffff;stroke-width:2px;stroke-miterlimit:10;filter:url(#filter22-4)"
+       sodipodi:nodetypes="cc"
+       transform="matrix(-1,0,0,1,106.53823,-21.03321)" />
+    <path
+       class="cls-3"
+       d="M 45.013611,54.98884 C 56.033098,67.17712 58.352034,42.99754 65.81621,42.99754"
+       id="path7-5"
+       style="fill:none;stroke:#ffffff;stroke-width:2px;stroke-miterlimit:10;filter:url(#filter22-0)"
+       sodipodi:nodetypes="cc" />
+    <path
+       class="cls-3"
+       d="M 50.741778,75.991301 C 61.761265,88.179582 64.080201,64 71.544377,64"
+       id="path7-8-3"
+       style="fill:none;stroke:#ffffff;stroke-width:2px;stroke-miterlimit:10;filter:url(#filter22-4-1)"
+       sodipodi:nodetypes="cc"
+       transform="matrix(-1,0,0,1,137.33814,-21.00738)" />
+  </g>
 </svg>

@@ -397,7 +397,7 @@ def add_vertex_to_path(
 def polygon_creating(layer: Shapes, event: MouseEvent) -> None:
     """Let active vertex follow cursor while drawing polygon, adding it to polygon after a certain distance.
 
-    When drawing a polygon in lasso mode, a vertex follows the cursor, creating a polygon
+    When drawing a polygon in lasso mode or adding a path, a vertex follows the cursor, creating a polygon
     visually that is *not* the final polygon to be created: it is the polygon if the current
     mouse position were to be the last position added. After the mouse moves a distance of 10 screen pixels,
     a new vertex is automatically added and the last cursor position is set to the global screen coordinates
@@ -414,7 +414,7 @@ def polygon_creating(layer: Shapes, event: MouseEvent) -> None:
         coordinates = layer.world_to_data(event.position)
         move_active_vertex_under_cursor(layer, coordinates)
 
-        if layer._mode == Mode.ADD_POLYGON_LASSO:
+        if layer._mode in [Mode.ADD_POLYGON_LASSO, Mode.ADD_PATH]:
             index = layer._moving_value[0]
 
             position_diff = np.linalg.norm(
@@ -851,6 +851,7 @@ def _move_active_element_under_cursor(
         in [
             Mode.DIRECT,
             Mode.ADD_PATH,
+            Mode.ADD_POLYLINE,
             Mode.ADD_POLYGON,
             Mode.ADD_POLYGON_LASSO,
         ]

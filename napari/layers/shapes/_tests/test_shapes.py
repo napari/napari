@@ -1364,41 +1364,23 @@ def test_changing_modes():
     assert layer.mode == 'pan_zoom'
     assert layer.mouse_pan is True
 
-    layer.mode = 'select'
-    assert layer.mode == 'select'
-    assert layer.mouse_pan is False
-
-    layer.mode = 'direct'
-    assert layer.mode == 'direct'
-    assert layer.mouse_pan is False
-
-    layer.mode = 'vertex_insert'
-    assert layer.mode == 'vertex_insert'
-    assert layer.mouse_pan is False
-
-    layer.mode = 'vertex_remove'
-    assert layer.mode == 'vertex_remove'
-    assert layer.mouse_pan is False
-
-    layer.mode = 'add_rectangle'
-    assert layer.mode == 'add_rectangle'
-    assert layer.mouse_pan is False
-
-    layer.mode = 'add_ellipse'
-    assert layer.mode == 'add_ellipse'
-    assert layer.mouse_pan is False
-
-    layer.mode = 'add_line'
-    assert layer.mode == 'add_line'
-    assert layer.mouse_pan is False
-
-    layer.mode = 'add_path'
-    assert layer.mode == 'add_path'
-    assert layer.mouse_pan is False
-
-    layer.mode = 'add_polygon'
-    assert layer.mode == 'add_polygon'
-    assert layer.mouse_pan is False
+    modes = [
+        'select',
+        'direct',
+        'vertex_insert',
+        'vertex_remove',
+        'add_rectangle',
+        'add_ellipse',
+        'add_line',
+        'add_polyline',
+        'add_path',
+        'add_polygon',
+        'add_polygon_lasso',
+    ]
+    for mode in modes:
+        layer.mode = mode
+        assert layer.mode == mode
+        assert layer.mouse_pan is False
 
     layer.mode = 'pan_zoom'
     assert layer.mode == 'pan_zoom'
