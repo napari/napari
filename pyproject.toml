@@ -150,6 +150,26 @@ testing = [
 testing_extra = [
     "torch>=1.7",
 ]
+# needed for gallery examples
+gallery = [
+    "scikit-image[data]",
+    "numpy",
+    "tqdm",
+    "omero-py",
+    "pandas",
+    "zarr",
+    "dask[array,distributed]",
+    "scipy",
+    "magicgui",
+    "tifffile",
+    "matplotlib",
+    "superqt",
+    "imageio",
+    "vispy",
+    "pooch",
+    "nilearn",
+    "xarray",
+]
 release = [
     "PyGithub>=1.44.1",
     "twine>=3.1.1",
