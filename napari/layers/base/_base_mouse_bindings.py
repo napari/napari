@@ -137,7 +137,6 @@ def _scale_with_box(
         initial_handle_coords_data[nearby_handle] - scaling_center
     )
     center_to_mouse = initial_world_to_data(mouse_pos) - scaling_center
-
     # get per-dimension scale values
     with warnings.catch_warnings():
         # a "divide by zero" warning is raised here when resizing along only one axis
@@ -149,7 +148,7 @@ def _scale_with_box(
         scale = np.nan_to_num(scale, posinf=1, neginf=1)
 
     if locked_aspect_ratio:
-        scale_factor = np.linalg.norm(scale)
+        scale_factor = np.mean(scale)
         scale = [scale_factor, scale_factor]
 
     new_affine = (
