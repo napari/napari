@@ -124,6 +124,7 @@ optional = [
     "zarr>=2.12.0", # needed by `builtins` (dask.array.from_zarr) to open zarr
 ]
 testing = [
+    "napari[gallery]",
     "babel>=2.9.0",
     "fsspec>=2023.10.0",
     "hypothesis>=6.8.0",
