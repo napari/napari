@@ -95,7 +95,7 @@ class Viewer(ViewerModel):
         path: Optional[str] = None,
         *,
         scale_factor: float = 1,
-        flash: bool = True,
+        flash: bool = False,
     ) -> np.ndarray:
         """Export an image of the full extent of the displayed layer data.
 
@@ -129,7 +129,7 @@ class Viewer(ViewerModel):
             each layer.
         flash : bool
             Flag to indicate whether flash animation should be shown after
-            the screenshot was captured. By default, True.
+            the screenshot was captured. By default, False.
 
         Returns
         -------
@@ -150,7 +150,7 @@ class Viewer(ViewerModel):
         size: Optional[tuple[str, str]] = None,
         scale: Optional[float] = None,
         canvas_only: bool = True,
-        flash: bool = True,
+        flash: bool = False,
     ):
         """Take currently displayed screen and convert to an image array.
 
@@ -171,7 +171,7 @@ class Viewer(ViewerModel):
         flash : bool
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
-            By default, True.
+            By default, False.
 
         Returns
         -------

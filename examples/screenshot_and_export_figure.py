@@ -59,8 +59,8 @@ viewer.scale_bar.box = True
 # Take screenshots and export figures in 'light' theme, to show the canvas
 # margins and the extent of the exported figure.
 viewer.theme = 'light'
-screenshot = viewer.screenshot(flash=False) # bug: default flash=True causes the canvas to be grayscale in docs
-figure = viewer.export_figure(flash=False)
+screenshot = viewer.screenshot()
+figure = viewer.export_figure()
 # optionally, save the exported figure: viewer.export_figure(path='export_figure.png')
 # or screenshot: viewer.screenshot(path='screenshot.png')
 
@@ -68,15 +68,15 @@ figure = viewer.export_figure(flash=False)
 # Zoom in and take another screenshot and export figure to show the different
 # extents of the exported figure and screenshot.
 viewer.camera.zoom = 3
-screenshot_zoomed = viewer.screenshot(flash=False)
-figure_zoomed = viewer.export_figure(flash=False)
+screenshot_zoomed = viewer.screenshot()
+figure_zoomed = viewer.export_figure()
 
 
 # Remove the layer that exists outside the image extent and take another
 # figure export to show the extent of the exported figure without the
 # layer that exists outside the camera image extent.
 viewer.layers.remove(layer_outside)
-figure_no_outside_shape = viewer.export_figure(flash=False)
+figure_no_outside_shape = viewer.export_figure()
 
 
 # Display the screenshots and figures in 'dark' theme, and switch to grid mode
