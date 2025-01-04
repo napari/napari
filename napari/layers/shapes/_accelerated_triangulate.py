@@ -599,3 +599,37 @@ def remove_path_duplicates(path: np.ndarray, closed: bool) -> np.ndarray:
             index += 1
 
     return new_path
+
+
+@njit(cache=True)
+def create_box_from_bounding(bounding_box: np.ndarray) -> np.ndarray:
+    """Creates the axis aligned interaction box of a bounding box
+
+    Parameters
+    ----------
+    bounding_box : np.ndarray
+        2x2 array of the bounding box. The first row is the minimum values and
+        the second row is the maximum values
+
+    Returns
+    -------
+    box : np.ndarray
+        9x2 array of vertices of the interaction box. The first 8 points are
+        the corners and midpoints of the box in clockwise order starting in the
+        upper-left corner. The last point is the center of the box
+    """
+    x_min = bounding_box[0, 0]
+    x_max = bounding_box[1, 0]
+    y_min = bounding_box[0, 1]
+    y_max = bounding_box[1, 1]
+    result = np.empty((9, 2), dtype=np.float32)
+    result[0] = [x_min, y_min]
+    result[1] = [(x_min + x_max) / 2, y_min]
+    result[2] = [x_max, y_min]
+    result[3] = [x_max, (y_min + y_max) / 2]
+    result[4] = [x_max, y_max]
+    result[5] = [(x_min + x_max) / 2, y_max]
+    result[6] = [x_min, y_max]
+    result[7] = [x_min, (y_min + y_max) / 2]
+    result[8] = [(x_min + x_max) / 2, (y_min + y_max) / 2]
+    return result

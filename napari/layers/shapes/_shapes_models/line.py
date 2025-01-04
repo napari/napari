@@ -74,6 +74,7 @@ class Line(Shape):
     def _update_displayed_data(self) -> None:
         """Update the data that is to be displayed."""
         # For path connect every all data
+        self._clean_cache()
         self._set_meshes(self.data_displayed, face=False, closed=False)
         self._box = create_box(self.data_displayed)
 

@@ -120,6 +120,7 @@ all = [
 ]
 optional = [
     "triangle ; platform_machine != 'arm64'",
+    "PartSegCore-compiled-backend>=0.15.8",
     "numba>=0.57.1",
     "zarr>=2.12.0", # needed by `builtins` (dask.array.from_zarr) to open zarr
 ]
@@ -762,6 +763,7 @@ ignore_errors = true
 exclude_lines = [
     "pragma: no cover",
     "if TYPE_CHECKING:",
+    "if typing.TYPE_CHECKING:",
     "raise NotImplementedError()",
     "except ImportError:",
     "^ +\\.\\.\\.$",

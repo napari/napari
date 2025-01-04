@@ -2,6 +2,7 @@ import importlib
 from unittest.mock import patch
 
 import numpy as np
+import numpy.testing as npt
 import pytest
 
 ac = pytest.importorskip('napari.layers.shapes._accelerated_triangulate')
@@ -118,3 +119,24 @@ def test_generate_2D_edge_meshes(path, closed, bevel, expected):
 def test_remove_path_duplicates(data, expected, closed):
     result = ac.remove_path_duplicates(data, closed=closed)
     assert np.all(result == expected)
+
+
+@pytest.mark.usefixtures('_disable_jit')
+def test_create_box_from_bounding():
+    bounding = np.array([[0, 0], [2, 2]], dtype='float32')
+    box = ac.create_box_from_bounding(bounding)
+    assert box.shape == (9, 2)
+    npt.assert_array_equal(
+        box,
+        [
+            [0, 0],
+            [1, 0],
+            [2, 0],
+            [2, 1],
+            [2, 2],
+            [1, 2],
+            [0, 2],
+            [0, 1],
+            [1, 1],
+        ],
+    )
