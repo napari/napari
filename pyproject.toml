@@ -171,6 +171,26 @@ gallery = [
     "nilearn",
     "xarray",
 ]
+# needed to build docs
+docs = [
+    "napari[gallery]",
+    "sphinx<8",
+    "sphinx-autobuild",
+    "sphinx-tabs",
+    "sphinx-tags",
+    "sphinx-design",
+    "sphinx-external-toc",
+    "sphinx-favicon>=1.0",
+    "sphinx-copybutton",
+    "sphinx-gallery",
+    "sphinx_autodoc_typehints==1.12.0",
+    "myst-nb",
+    "napari-sphinx-theme>=0.3.0",
+    "matplotlib",
+    "lxml[html_clean]>5",
+    "imageio-ffmpeg",
+    "pytest",
+]
 release = [
     "PyGithub>=1.44.1",
     "twine>=3.1.1",
