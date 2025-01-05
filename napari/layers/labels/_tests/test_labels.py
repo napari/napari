@@ -1149,6 +1149,7 @@ def test_fill_tensorstore(tmp_path, zarr_version, zarr_driver):
         dtype=np.uint32,
         chunks=(1, 1, 8, 9),
         zarr_version=zarr_version,
+        compressor=None,
     )
     labels_temp[:] = labels
     labels_ts_spec = {
