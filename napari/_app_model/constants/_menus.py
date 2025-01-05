@@ -90,15 +90,18 @@ class MenuId(StrEnum):
 class MenuGroup:
     NAVIGATION = 'navigation'  # always the first group in any menu
     RENDER = '1_render'
+    # View menu
+    ZOOM = 'zoom'
     # Plugins menubar
     PLUGINS = '1_plugins'
     PLUGIN_MULTI_SUBMENU = '2_plugin_multi_submenu'
     PLUGIN_SINGLE_CONTRIBUTIONS = '3_plugin_contributions'
     # File menubar
     OPEN = '1_open'
-    PREFERENCES = '2_preferences'
-    SAVE = '3_save'
-    CLOSE = '4_close'
+    UTIL = '2_util'
+    PREFERENCES = '3_preferences'
+    SAVE = '4_save'
+    CLOSE = '5_close'
 
     class LAYERLIST_CONTEXT:
         CONVERSION = '1_conversion'

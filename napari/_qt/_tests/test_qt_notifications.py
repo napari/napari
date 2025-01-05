@@ -42,7 +42,7 @@ def _raise():
     raise ValueError('error!')
 
 
-@pytest.fixture()
+@pytest.fixture
 def _clean_current(monkeypatch, qtbot):
     from napari._qt.qt_main_window import _QtMainWindow
 
@@ -95,7 +95,7 @@ def _raise_on_show(monkeypatch, qtbot):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def count_show(monkeypatch, qtbot):
     stat = ShowStatus()
 
@@ -207,7 +207,7 @@ def test_notification_display(count_show, severity, monkeypatch):
     and warnings.showwarning... and that it emits an event which is an instance
     of napari.utils.notifications.Notification.
 
-    in `get_app()`, we connect `notification_manager.notification_ready` to
+    in `get_qapp()`, we connect `notification_manager.notification_ready` to
     `NapariQtNotification.show_notification`, so all we have to test here is
     that show_notification is capable of receiving various event types.
     (we don't need to test that )

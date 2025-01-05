@@ -1,0 +1,26 @@
+# anything with no explicit code owners will be tagged to @core-devs
+*   @napari/core-devs
+
+# submodules
+napari/_vispy/      @brisvag @melonora
+napari/_qt/         @Czaki @DragaDoncila @psobolewskiPhD
+napari/_app_model/  @lucyleeow @DragaDoncila
+napari/benchmarks/  @Czaki @jni
+napari/plugins/     @Czaki @DragaDoncila @lucyleeow
+napari/qt/          @Czaki @jni
+napari/settings/    @Czaki @jni
+
+# specific layers
+napari/layers/image/    @Czaki @brisvag @andy-sweet @kephale
+napari/layers/labels/   @jni @Czaki @brisvag
+napari/layers/points/   @brisvag @kevinyamauchi @andy-sweet @DragaDoncila @kephale
+napari/layers/shapes/   @kevinyamauchi @DragaDoncila @melonora
+napari/layers/surface/  @brisvag @kevinyamauchi @Czaki
+napari/layers/tracks/   @jni @andy-sweet
+napari/layers/vectors/  @brisvag @kevinyamauchi @andy-sweet
+
+# docs
+examples/                            @melissawm @psobolewskiPhD @lucyleeow
+.github/workflows/build_docs.yml     @melissawm @psobolewskiPhD @lucyleeow
+.github/workflows/deploy_docs.yml    @melissawm @psobolewskiPhD
+.github/workflows/circleci.yml       @melissawm @psobolewskiPhD

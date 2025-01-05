@@ -1,3 +1,6 @@
+import os.path
+import sys
+
 from npe2 import DynamicPlugin
 
 from napari.plugins.utils import (
@@ -79,7 +82,7 @@ def test_get_preferred_reader_more_nested():
 def test_get_preferred_reader_abs_path():
     get_settings().plugins.extension2reader = {
         # abs path so highest specificity
-        '/asdf/*.tif': 'most-specific-plugin',
+        os.path.realpath('/asdf/*.tif'): 'most-specific-plugin',
         # less nested so less specificity
         '*.tif': 'generic-tif-plugin',
         # more nested so higher specificity
@@ -108,7 +111,15 @@ def test_score_specificity_simple():
 
 
 def test_score_specificity_complex():
-    assert score_specificity('*/my-specific-folder/[nested]/*?.tif') == (
+    # account for py313 change in https://github.com/python/cpython/pull/113829
+    if sys.platform.startswith('win') and sys.version_info >= (3, 13):
+        relative_path = r'*\my-specific-folder\[nested]\*?.tif'
+        absolute_path = r'\\my-specific-folder\[nested]\*?.tif'
+    else:
+        relative_path = '*/my-specific-folder/[nested]/*?.tif'
+        absolute_path = '/my-specific-folder/[nested]/*?.tif'
+
+    assert score_specificity(relative_path) == (
         True,
         -3,
         [
@@ -118,8 +129,7 @@ def test_score_specificity_complex():
             MatchFlag.STAR | MatchFlag.ANY,
         ],
     )
-
-    assert score_specificity('/my-specific-folder/[nested]/*?.tif') == (
+    assert score_specificity(absolute_path) == (
         False,
         -2,
         [
@@ -147,7 +157,13 @@ def test_score_specificity_collapse_star():
         -1,
         [MatchFlag.STAR, MatchFlag.STAR],
     )
-    assert score_specificity('/abc*/*.tif') == (False, 0, [MatchFlag.STAR])
+    # account for py313 change in https://github.com/python/cpython/pull/113829
+    if sys.platform.startswith('win') and sys.version_info >= (3, 13):
+        absolute_path = r'\\abc*\*.tif'
+    else:
+        absolute_path = '/abc*/*.tif'
+
+    assert score_specificity(absolute_path) == (False, 0, [MatchFlag.STAR])
 
 
 def test_score_specificity_range():
@@ -169,6 +185,17 @@ def test_score_specificity_range():
 
 def test_get_preferred_reader_no_extension():
     assert get_preferred_reader('my_file') is None
+
+
+def test_get_preferred_reader_full_path(tmp_path, monkeypatch):
+    (tmp_path / 'my_file.zarr').mkdir()
+    zarr_path = str(tmp_path / 'my_file.zarr')
+
+    assert get_preferred_reader(zarr_path) is None
+    get_settings().plugins.extension2reader[f'{zarr_path}/'] = 'fake-plugin'
+    assert get_preferred_reader(zarr_path) == 'fake-plugin'
+    monkeypatch.chdir(tmp_path)
+    assert get_preferred_reader('./my_file.zarr') == 'fake-plugin'
 
 
 def test_get_potential_readers_gives_napari(

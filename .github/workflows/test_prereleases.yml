@@ -47,12 +47,18 @@ jobs:
         uses: ts-graphviz/setup-graphviz@v2
         continue-on-error: true
 
+      - name: Set Windows resolution
+        if: runner.os == 'Windows'
+        run: Set-DisplayResolution -Width 1920 -Height 1080 -Force
+        shell: powershell
+
       - name: Install Windows OpenGL
         if: runner.os == 'Windows'
         run: |
           git clone --depth 1 https://github.com/pyvista/gl-ci-helpers.git
           powershell gl-ci-helpers/appveyor/install_opengl.ps1
           if (Test-Path -Path "C:\Windows\system32\opengl32.dll" -PathType Leaf) {Exit 0} else {Exit 1}
+        shell: powershell
 
       - name: Install dependencies
         run: |

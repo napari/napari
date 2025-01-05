@@ -264,9 +264,50 @@ def test_screenshot(make_napari_viewer):
 
     # Take screenshot
     with pytest.warns(FutureWarning):
-        screenshot = viewer.window.qt_viewer.screenshot(flash=False)
+        viewer.window.qt_viewer.screenshot(flash=False)
     screenshot = viewer.window.screenshot(flash=False, canvas_only=True)
     assert screenshot.ndim == 3
+
+
+def test_export_figure(make_napari_viewer, tmp_path):
+    viewer = make_napari_viewer()
+
+    np.random.seed(0)
+    # Add image
+    data = np.random.randint(150, 250, size=(250, 250))
+    layer = viewer.add_image(data)
+
+    camera_center = viewer.camera.center
+    camera_zoom = viewer.camera.zoom
+    img = viewer.export_figure(flash=False, path=str(tmp_path / 'img.png'))
+
+    assert viewer.camera.center == camera_center
+    assert viewer.camera.zoom == camera_zoom
+    assert img.shape == (250, 250, 4)
+    assert np.all(img != np.array([0, 0, 0, 0]))
+
+    assert (tmp_path / 'img.png').exists()
+
+    layer.scale = [0.12, 0.24]
+    img = viewer.export_figure(flash=False)
+    # allclose accounts for rounding errors when computing size in hidpi aka
+    # retina displays
+    np.testing.assert_allclose(img.shape, (250, 499, 4), atol=1)
+
+    layer.scale = [0.12, 0.12]
+    img = viewer.export_figure(flash=False)
+    assert img.shape == (250, 250, 4)
+
+    viewer.camera.center = [100, 100]
+    camera_center = viewer.camera.center
+    camera_zoom = viewer.camera.zoom
+    img = viewer.export_figure()
+
+    assert viewer.camera.center == camera_center
+    assert viewer.camera.zoom == camera_zoom
+    assert img.shape == (250, 250, 4)
+    assert np.all(img != np.array([0, 0, 0, 0]))
+    viewer.close()
 
 
 @pytest.mark.skip('new approach')
@@ -326,6 +367,7 @@ def test_points_layer_display_correct_slice_on_scale(make_napari_viewer):
     np.testing.assert_equal(response.indices, [0])
 
 
+@pytest.mark.slow
 @skip_on_win_ci
 def test_qt_viewer_clipboard_with_flash(make_napari_viewer, qtbot):
     viewer = make_napari_viewer()
@@ -412,6 +454,7 @@ def test_qt_viewer_clipboard_without_flash(make_napari_viewer):
     assert not hasattr(viewer.window._qt_window, '_flash_animation')
 
 
+@pytest.mark.key_bindings
 def test_active_keybindings(make_napari_viewer):
     """Test instantiating viewer."""
     viewer = make_napari_viewer()
@@ -471,6 +514,35 @@ def test_process_mouse_event(make_napari_viewer):
 
         expected_position = view.canvas._map_canvas2world(new_pos)
         np.testing.assert_almost_equal(expected_position, list(event.position))
+
+    viewer.dims.ndisplay = 3
+    view.canvas._process_mouse_event(mouse_press_callbacks, mouse_event)
+
+
+def test_process_mouse_event_2d_layer_3d_viewer(make_napari_viewer):
+    """Test that _process_mouse_events can handle 2d layers in 3D.
+
+    This is a test for: https://github.com/napari/napari/issues/7299
+    """
+
+    # make a mock mouse event
+    new_pos = [5, 5]
+    mouse_event = MouseEvent(
+        pos=new_pos,
+    )
+    data = np.zeros((20, 20))
+
+    viewer = make_napari_viewer()
+    view = viewer.window._qt_viewer
+    image = viewer.add_image(data)
+
+    @image.mouse_drag_callbacks.append
+    def on_click(layer, event):
+        expected_position = view.canvas._map_canvas2world(new_pos)
+        np.testing.assert_almost_equal(expected_position, list(event.position))
+
+    assert viewer.dims.ndisplay == 2
+    view.canvas._process_mouse_event(mouse_press_callbacks, mouse_event)
 
     viewer.dims.ndisplay = 3
     view.canvas._process_mouse_event(mouse_press_callbacks, mouse_event)
@@ -701,18 +773,10 @@ def _update_data(
     return color_box_color, middle_pixel
 
 
-@pytest.fixture()
-def qt_viewer_with_controls(qtbot):
-    qt_viewer = QtViewer(viewer=ViewerModel())
-    qt_viewer.show()
+@pytest.fixture
+def qt_viewer_with_controls(qt_viewer):
     qt_viewer.controls.show()
-    yield qt_viewer
-    qt_viewer.controls.hide()
-    qt_viewer.controls.close()
-    qt_viewer.hide()
-    qt_viewer.close()
-    qt_viewer._instances.clear()
-    qtbot.wait(50)
+    return qt_viewer
 
 
 @skip_local_popups
@@ -824,16 +888,12 @@ def test_axis_labels(make_napari_viewer):
     assert tuple(axes_visual.node.text.text) == ('2', '1', '0')
 
 
-@pytest.fixture()
-def qt_viewer(qtbot):
-    qt_viewer = QtViewer(ViewerModel())
-    qt_viewer.show()
-    qt_viewer.resize(460, 460)
+@pytest.fixture
+def qt_viewer(qtbot, qt_viewer_: QtViewer):
+    qt_viewer_.show()
+    qt_viewer_.resize(460, 460)
     QApplication.processEvents()
-    yield qt_viewer
-    qt_viewer.close()
-    qt_viewer._instances.clear()
-    del qt_viewer
+    return qt_viewer_
 
 
 def _find_margin(data: np.ndarray, additional_margin: int) -> tuple[int, int]:
@@ -968,6 +1028,7 @@ def test_shortcut_passing(make_napari_viewer):
     assert layer.mode == 'erase'
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize('mode', ['direct', 'random'])
 def test_selection_collision(qt_viewer: QtViewer, mode):
     data = np.zeros((10, 10), dtype=np.uint8)
@@ -1049,6 +1110,7 @@ def test_all_supported_dtypes(qt_viewer):
         )
 
 
+@pytest.mark.slow
 def test_more_than_uint16_colors(qt_viewer):
     pytest.importorskip('numba')
     # this test is slow (10s locally)
@@ -1184,3 +1246,26 @@ def test_scale_bar_ticks(qt_viewer, qtbot):
 
     scale_bar.ticks = True
     qtbot.waitUntil(check_ticks_scale_bar)
+
+
+@skip_local_popups
+def test_dask_cache(qt_viewer):
+    initial_dask_cache = get_settings().application.dask.cache
+
+    # check that disabling dask cache setting calls related logic
+    with mock.patch(
+        'napari._qt.qt_viewer.resize_dask_cache'
+    ) as mock_resize_dask_cache:
+        get_settings().application.dask.enabled = False
+    mock_resize_dask_cache.assert_called_once_with(
+        int(int(False) * initial_dask_cache * 1e9)
+    )
+
+    # check that enabling dask cache setting calls related logic
+    with mock.patch(
+        'napari._qt.qt_viewer.resize_dask_cache'
+    ) as mock_resize_dask_cache:
+        get_settings().application.dask.enabled = True
+    mock_resize_dask_cache.assert_called_once_with(
+        int(int(True) * initial_dask_cache * 1e9)
+    )

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Optional
 
 from psutil import virtual_memory
 
@@ -36,13 +36,6 @@ class DaskSettings(EventedModel):
 
 
 class ApplicationSettings(EventedModel):
-    def __init__(self, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
-        self.dask.events.connect(self._dask_changed)
-
-    def _dask_changed(self) -> None:
-        self.events.dask(value=self.dask)
-
     first_time: bool = Field(
         True,
         title=trans._('First time'),
@@ -220,6 +213,14 @@ class ApplicationSettings(EventedModel):
         ),
     )
 
+    plugin_widget_positions: dict[str, str] = Field(
+        default={},
+        title=trans._('Plugin widget positions'),
+        description=trans._(
+            'Per-widget last saved position of plugin dock widgets. This setting is managed by the application.'
+        ),
+    )
+
     @validator('window_state', allow_reuse=True)
     def _validate_qbtye(cls, v: str) -> str:
         if v and (not isinstance(v, str) or not v.startswith('!QBYTE_')):
@@ -246,4 +247,5 @@ class ApplicationSettings(EventedModel):
             'open_history',
             'save_history',
             'ipy_interactive',
+            'plugin_widget_positions',
         )

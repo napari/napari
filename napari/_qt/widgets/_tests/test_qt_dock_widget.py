@@ -8,6 +8,8 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from napari._qt.utils import combine_widgets
+
 
 def test_add_dock_widget(make_napari_viewer):
     """Test basic add_dock_widget functionality"""
@@ -68,9 +70,10 @@ def test_add_dock_widget_raises(make_napari_viewer):
         viewer.window.add_dock_widget(widg, name='test')
 
 
-def test_remove_dock_widget_orphans_widget(make_napari_viewer):
+def test_remove_dock_widget_orphans_widget(make_napari_viewer, qtbot):
     viewer = make_napari_viewer()
     widg = QPushButton('button')
+    qtbot.addWidget(widg)
 
     assert not widg.parent()
     dw = viewer.window.add_dock_widget(
@@ -85,9 +88,10 @@ def test_remove_dock_widget_orphans_widget(make_napari_viewer):
     assert not widg.parent()
 
 
-def test_remove_dock_widget_by_widget_reference(make_napari_viewer):
+def test_remove_dock_widget_by_widget_reference(make_napari_viewer, qtbot):
     viewer = make_napari_viewer()
     widg = QPushButton('button')
+    qtbot.addWidget(widg)
 
     dw = viewer.window.add_dock_widget(widg, name='test')
     assert widg.parent() is dw
@@ -139,3 +143,11 @@ def test_adding_stretch(make_napari_viewer):
     dw = viewer.window.add_dock_widget(widg, area='bottom')
     assert widg.layout().count() == 1
     dw.close()
+
+
+def test_combine_widgets_error():
+    """Check error raised when combining widgets with invalid types."""
+    with pytest.raises(
+        TypeError, match='"widgets" must be a QWidget, a magicgui'
+    ):
+        combine_widgets(['string'])

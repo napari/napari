@@ -28,12 +28,11 @@ def highlight_box_handles(layer: 'Layer', event: Event) -> None:
     # we work in data space so we're axis aligned which simplifies calculation
     # same as Layer.world_to_data
     world_to_data = (
-        layer._transforms[1:].set_slice(event.dims_displayed).inverse
+        layer._transforms[1:].set_slice(layer._slice_input.displayed).inverse
     )
     pos = np.array(world_to_data(event.position))[event.dims_displayed]
-
     handle_coords = generate_transform_box_from_layer(
-        layer, event.dims_displayed
+        layer, layer._slice_input.displayed
     )
     # TODO: dynamically set tolerance based on canvas size so it's not hard to pick small layer
     nearby_handle = get_nearby_handle(pos, handle_coords)
@@ -51,7 +50,9 @@ def _translate_with_box(
 ) -> None:
     offset = mouse_pos - initial_mouse_pos
     new_affine = Affine(translate=offset).compose(initial_affine)
-    layer.affine = layer.affine.replace_slice(event.dims_displayed, new_affine)
+    layer.affine = layer.affine.replace_slice(
+        layer._slice_input.displayed, new_affine
+    )
 
 
 def _rotate_with_box(
@@ -89,7 +90,9 @@ def _rotate_with_box(
         .compose(Affine(translate=-initial_center))
         .compose(initial_affine)
     )
-    layer.affine = layer.affine.replace_slice(event.dims_displayed, new_affine)
+    layer.affine = layer.affine.replace_slice(
+        layer._slice_input.displayed, new_affine
+    )
 
 
 def _scale_with_box(
@@ -163,7 +166,9 @@ def _scale_with_box(
         # compose with the original affine
         .compose(initial_affine)
     )
-    layer.affine = layer.affine.replace_slice(event.dims_displayed, new_affine)
+    layer.affine = layer.affine.replace_slice(
+        layer._slice_input.displayed, new_affine
+    )
 
 
 def transform_with_box(
@@ -178,13 +183,13 @@ def transform_with_box(
     # we work in data space so we're axis aligned which simplifies calculation
     # same as Layer.data_to_world
     simplified = layer._transforms[1:].simplified
-    initial_data_to_world = simplified.set_slice(event.dims_displayed)
+    initial_data_to_world = simplified.set_slice(layer._slice_input.displayed)
     initial_world_to_data = initial_data_to_world.inverse
     initial_mouse_pos = np.array(event.position)[event.dims_displayed]
     initial_mouse_pos_data = initial_world_to_data(initial_mouse_pos)
 
     initial_handle_coords_data = generate_transform_box_from_layer(
-        layer, event.dims_displayed
+        layer, layer._slice_input.displayed
     )
     nearby_handle = get_nearby_handle(
         initial_mouse_pos_data, initial_handle_coords_data
@@ -198,11 +203,11 @@ def transform_with_box(
     initial_handle_coords = initial_data_to_world(initial_handle_coords_data)
 
     # initial layer transform so we can calculate changes later
-    initial_affine = layer.affine.set_slice(event.dims_displayed)
+    initial_affine = layer.affine.set_slice(layer._slice_input.displayed)
 
     # needed for rescaling
     initial_data2physical = layer._transforms['data2physical'].set_slice(
-        event.dims_displayed
+        layer._slice_input.displayed
     )
 
     # needed for resize and rotate

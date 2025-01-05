@@ -146,7 +146,7 @@ def test_minimum_dtype_for_labels(num, dtype):
     assert _accelerated_cmap.minimum_dtype_for_labels(num) == dtype
 
 
-@pytest.fixture()
+@pytest.fixture
 def _disable_jit(monkeypatch):
     """Fixture to temporarily disable numba JIT during testing.
 
@@ -176,7 +176,7 @@ def test_cast_labels_to_minimum_type_auto(num: int, dtype, monkeypatch):
     assert cast_arr[2] == 10**6 % num + 5
 
 
-@pytest.fixture()
+@pytest.fixture
 def direct_label_colormap():
     return DirectLabelColormap(
         color_dict={
@@ -448,7 +448,7 @@ def test_direct_colormap_with_values_outside_data_dtype():
 
 def test_direct_colormap_with_empty_color_dict():
     # Create a DirectLabelColormap with an empty color_dict
-    with pytest.raises(ValueError, match='color_dict must contain None'):
+    with pytest.warns(Warning, match='color_dict did not provide'):
         DirectLabelColormap(color_dict={})
 
 

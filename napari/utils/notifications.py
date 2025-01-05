@@ -23,16 +23,16 @@ name2num = {
 }
 
 __all__ = [
-    'NotificationSeverity',
-    'Notification',
     'ErrorNotification',
-    'WarningNotification',
+    'Notification',
     'NotificationManager',
+    'NotificationSeverity',
+    'WarningNotification',
+    'show_console_notification',
     'show_debug',
+    'show_error',
     'show_info',
     'show_warning',
-    'show_error',
-    'show_console_notification',
 ]
 
 

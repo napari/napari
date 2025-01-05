@@ -206,7 +206,7 @@ def test_imshow_with_viewer(qtbot, napari_plugin_manager, make_napari_viewer):
     shape = (10, 15)
     ndim = len(shape)
     np.random.seed(0)
-    data = np.random.random(shape)
+    data = np.random.random(shape).astype(np.float32)
     viewer = make_napari_viewer()
     viewer2, layer = napari.imshow(data, viewer=viewer, show=False)
     assert viewer is viewer2

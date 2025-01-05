@@ -149,7 +149,7 @@ def orient_plane_normal_around_cursor(
         layer.plane.position = intersection
 
     # update plane normal
-    layer.plane.normal = layer._world_to_displayed_data_ray(
+    layer.plane.normal = layer._world_to_displayed_data_normal(
         np.asarray(plane_normal), dims_displayed=layer._slice_input.displayed
     )
 

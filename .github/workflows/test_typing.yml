@@ -1,4 +1,4 @@
-name: Test typing
+name: Type-check
 
 on:
   pull_request:
@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  typing:
+  mypy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
