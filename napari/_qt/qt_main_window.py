@@ -1765,6 +1765,11 @@ class Window:
                 )
             )
 
+        if self._qt_viewer.viewer.dims.ndisplay > 2:
+            raise NotImplementedError(
+                "'export_rois' is not implemented for 3D view."
+            )
+
         screenshot_list = []
         camera = self._qt_viewer.viewer.camera
         start_camera_center = camera.center

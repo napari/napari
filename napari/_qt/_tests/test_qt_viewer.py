@@ -338,24 +338,41 @@ def test_export_rois(make_napari_viewer, tmp_path):
     assert viewer.camera.center == camera_center
     assert viewer.camera.zoom == camera_zoom
 
-    # Add 3d ROI for testing
-    roi_3d = np.array(
-        [
-            [[20, 20, 0], [40, 20, 0], [40, 40, 0], [20, 40, 0]],
-            [[20, 20, 1], [40, 20, 1], [40, 40, 1], [20, 40, 1]],
-        ]
-    )
-
-    # Add a test that ahould fail
-    test_3d = viewer.export_rois(roi_3d, paths=paths)
-    assert test_3d.shape == (20, 20, 4)
-
     # expected_values = [0, 100, 100, 100, 100, 400]
     # for index, roi_img in enumerate(test_roi):
     #     gray_img = rgb2gray(roi_img[:, :, :3])
     #     assert gray_img.flatten().sum() == expected_values[index]
 
     # Not testing the exact content of the screenshot. It seems not to work within the test, but manual testing does.
+    viewer.close()
+
+
+def test_export_rois_3d_fail(make_napari_viewer):
+    viewer = make_napari_viewer()
+
+    # create 3d ROI for testing
+    roi_3d = [
+        np.array([[0, 0, 0], [0, 20, 0], [0, 20, 20], [0, 0, 20]]),
+        np.array([[0, 15, 15], [0, 35, 15], [0, 35, 35], [0, 15, 35]]),
+    ]
+
+    # Only 2D roi supported at the moment
+    with pytest.raises(ValueError, match='ROI found with invalid'):
+        viewer.export_rois(roi_3d)
+
+    test_data = np.zeros((4, 50, 50))
+    viewer.add_image(test_data)
+    viewer.dims.ndisplay = 3
+
+    # 3D view should fail
+    roi_data = [
+        np.array([[0, 0], [20, 0], [20, 20], [0, 20]]),
+        np.array([[15, 15], [35, 15], [35, 35], [15, 35]]),
+    ]
+    with pytest.raises(
+        NotImplementedError, match="'export_rois' is not implemented"
+    ):
+        viewer.export_rois(roi_data)
     viewer.close()
 
 
