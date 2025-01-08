@@ -11,7 +11,7 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:svg="http://www.w3.org/2000/svg">
   <sodipodi:namedview
-     id="namedview9"
+     id="namedview1"
      pagecolor="#ffffff"
      bordercolor="#000000"
      borderopacity="0.25"
@@ -19,15 +19,15 @@
      inkscape:pageopacity="0.0"
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
-     inkscape:zoom="8.13"
-     inkscape:cx="40.836408"
-     inkscape:cy="59.717097"
-     inkscape:window-width="1920"
-     inkscape:window-height="1009"
+     inkscape:zoom="10.94"
+     inkscape:cx="49.954296"
+     inkscape:cy="49.954296"
+     inkscape:window-width="5120"
+     inkscape:window-height="1369"
      inkscape:window-x="-8"
      inkscape:window-y="-8"
      inkscape:window-maximized="1"
-     inkscape:current-layer="Layer_1" />
+     inkscape:current-layer="g1" />
   <defs
      id="defs1">
     <style
@@ -50,9 +50,6 @@
       }
     </style>
     <filter
-       inkscape:label="Black Light"
-       inkscape:menu="Color"
-       inkscape:menu-tooltip="Light areas turn to black"
        style="color-interpolation-filters:sRGB;"
        id="filter10"
        x="-0.029069767"
@@ -83,9 +80,6 @@
          id="feComposite10" />
     </filter>
     <filter
-       inkscape:label="Black Light"
-       inkscape:menu="Color"
-       inkscape:menu-tooltip="Light areas turn to black"
        style="color-interpolation-filters:sRGB;"
        id="filter12"
        x="-0.029069767"
@@ -116,9 +110,6 @@
          id="feComposite12" />
     </filter>
     <filter
-       inkscape:label="Black Light"
-       inkscape:menu="Color"
-       inkscape:menu-tooltip="Light areas turn to black"
        style="color-interpolation-filters:sRGB;"
        id="filter14"
        x="-0.029069767"
@@ -149,9 +140,6 @@
          id="feComposite14" />
     </filter>
     <filter
-       inkscape:label="Black Light"
-       inkscape:menu="Color"
-       inkscape:menu-tooltip="Light areas turn to black"
        style="color-interpolation-filters:sRGB;"
        id="filter16"
        x="-0.029069767"
@@ -182,9 +170,6 @@
          id="feComposite16" />
     </filter>
     <filter
-       inkscape:label="Black Light"
-       inkscape:menu="Color"
-       inkscape:menu-tooltip="Light areas turn to black"
        style="color-interpolation-filters:sRGB;"
        id="filter18"
        x="-0.038167939"
@@ -215,9 +200,6 @@
          id="feComposite18" />
     </filter>
     <filter
-       inkscape:label="Black Light"
-       inkscape:menu="Color"
-       inkscape:menu-tooltip="Light areas turn to black"
        style="color-interpolation-filters:sRGB;"
        id="filter20"
        x="-0.036231884"
@@ -248,9 +230,6 @@
          id="feComposite20" />
     </filter>
     <filter
-       inkscape:label="Black Light"
-       inkscape:menu="Color"
-       inkscape:menu-tooltip="Light areas turn to black"
        style="color-interpolation-filters:sRGB;"
        id="filter22"
        x="-0.035657954"
@@ -281,9 +260,6 @@
          id="feComposite22" />
     </filter>
     <filter
-       inkscape:label="Black Light"
-       inkscape:menu="Color"
-       inkscape:menu-tooltip="Light areas turn to black"
        style="color-interpolation-filters:sRGB;"
        id="filter24"
        x="-0.081300813"
@@ -314,9 +290,6 @@
          id="feComposite24" />
     </filter>
     <filter
-       inkscape:label="Black Light"
-       inkscape:menu="Color"
-       inkscape:menu-tooltip="Light areas turn to black"
        style="color-interpolation-filters:sRGB;"
        id="filter26"
        x="-0.066225166"
@@ -347,9 +320,6 @@
          id="feComposite26" />
     </filter>
     <filter
-       inkscape:label="Black Light"
-       inkscape:menu="Color"
-       inkscape:menu-tooltip="Light areas turn to black"
        style="color-interpolation-filters:sRGB"
        id="filter22-4"
        x="-0.035657954"
@@ -383,9 +353,6 @@
          id="feComposite22-1" />
     </filter>
     <filter
-       inkscape:label="Black Light"
-       inkscape:menu="Color"
-       inkscape:menu-tooltip="Light areas turn to black"
        style="color-interpolation-filters:sRGB"
        id="filter22-0"
        x="-0.035657953"
@@ -419,15 +386,12 @@
          id="feComposite22-7" />
     </filter>
     <filter
-       inkscape:label="Black Light"
-       inkscape:menu="Color"
-       inkscape:menu-tooltip="Light areas turn to black"
        style="color-interpolation-filters:sRGB"
        id="filter22-4-1"
-       x="-0.035657954"
+       x="-0.035657955"
        y="-0.064831383"
        width="1.035658"
-       height="1.1293181">
+       height="1.1290846">
       <feColorMatrix
          type="luminanceToAlpha"
          result="result2"
@@ -458,31 +422,25 @@
   <g
      id="g1"
      transform="matrix(0.9934556,0,0,1.6331686,0.33047511,-37.311753)">
-    <path
-       class="cls-3"
-       d="M 14.398385,54.919345 C 25.417872,67.107626 27.736808,42.928044 35.200984,42.928044"
-       id="path7"
-       style="filter:url(#filter22)"
-       sodipodi:nodetypes="cc" />
-    <path
-       class="cls-3"
-       d="M 50.741778,75.991301 C 61.761265,88.179582 64.080201,64 71.544377,64"
-       id="path7-8"
-       style="fill:none;stroke:#ffffff;stroke-width:2px;stroke-miterlimit:10;filter:url(#filter22-4)"
-       sodipodi:nodetypes="cc"
-       transform="matrix(-1,0,0,1,106.53823,-21.03321)" />
-    <path
-       class="cls-3"
-       d="M 45.013611,54.98884 C 56.033098,67.17712 58.352034,42.99754 65.81621,42.99754"
-       id="path7-5"
-       style="fill:none;stroke:#ffffff;stroke-width:2px;stroke-miterlimit:10;filter:url(#filter22-0)"
-       sodipodi:nodetypes="cc" />
-    <path
-       class="cls-3"
-       d="M 50.741778,75.991301 C 61.761265,88.179582 64.080201,64 71.544377,64"
-       id="path7-8-3"
-       style="fill:none;stroke:#ffffff;stroke-width:2px;stroke-miterlimit:10;filter:url(#filter22-4-1)"
-       sodipodi:nodetypes="cc"
-       transform="matrix(-1,0,0,1,137.33814,-21.00738)" />
+    <g
+       id="g2"
+       transform="matrix(1.6694383,0,0,2.0666554,-17.166889,-49.128823)">
+      <path
+         class="cls-3"
+         d="M 14.398385,54.919345 C 25.417872,67.107626 27.736808,42.928044 35.200984,42.928044"
+         id="path7"
+         style="filter:url(#filter22)" />
+      <path
+         class="cls-3"
+         d="M 50.741778,75.991301 C 61.761265,88.179582 64.080201,64 71.544377,64"
+         id="path7-8"
+         style="fill:none;stroke:#ffffff;stroke-width:2px;stroke-miterlimit:10;filter:url(#filter22-4)"
+         transform="matrix(-1,0,0,1,106.53823,-21.03321)" />
+      <path
+         class="cls-3"
+         d="M 45.013611,54.98884 C 56.033098,67.17712 58.352034,42.99754 65.81621,42.99754"
+         id="path7-5"
+         style="fill:none;stroke:#ffffff;stroke-width:2px;stroke-miterlimit:10;filter:url(#filter22-0)" />
+    </g>
   </g>
 </svg>
