@@ -1,5 +1,6 @@
 import typing
-from typing import Optional
+from pathlib import Path
+from typing import Optional, Union
 from weakref import WeakSet
 
 import magicgui as mgui
@@ -146,7 +147,7 @@ class Viewer(ViewerModel):
     def export_rois(
         self,
         rois: list[np.ndarray],
-        paths: Optional[list[str]] = None,
+        paths: Optional[Union[str, Path, list[str, Path]]] = None,
         scale: Optional[float] = None,
     ):
         """Export the shapes rois with storage file paths

@@ -338,6 +338,12 @@ def test_export_rois(make_napari_viewer, tmp_path):
     assert viewer.camera.center == camera_center
     assert viewer.camera.zoom == camera_zoom
 
+    test_dir = tmp_path / 'test_dir'
+    viewer.export_rois(roi_shapes_data, paths=test_dir)
+    assert all(
+        (test_dir / f'roi_{i}.png').exists()
+        for i in range(len(roi_shapes_data))
+    )
     # expected_values = [0, 100, 100, 100, 100, 400]
     # for index, roi_img in enumerate(test_roi):
     #     gray_img = rgb2gray(roi_img[:, :, :3])

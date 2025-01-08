@@ -10,6 +10,7 @@ import sys
 import time
 import warnings
 from collections.abc import MutableMapping, Sequence
+from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -1733,7 +1734,7 @@ class Window:
     def export_rois(
         self,
         rois: list[np.ndarray],
-        paths: Optional[list[str]] = None,
+        paths: Optional[Union[str, list[str]]] = None,
         scale: Optional[float] = None,
     ):
         """Export the shapes rois with storage file paths.
@@ -1757,13 +1758,22 @@ class Window:
             The list with roi screenshots.
 
         """
-        if paths is not None and len(paths) != len(rois):
+        if (
+            paths is not None
+            and isinstance(paths, list)
+            and len(paths) != len(rois)
+        ):
             raise ValueError(
                 trans._(
                     'The number of file paths does not match the number of ROI shapes',
                     deferred=True,
                 )
             )
+
+        if isinstance(paths, (str, Path)):
+            storage_dir = Path(paths)
+            storage_dir.mkdir(parents=True, exist_ok=True)
+            paths = [storage_dir / f'roi_{n}.png' for n in range(len(rois))]
 
         if self._qt_viewer.viewer.dims.ndisplay > 2:
             raise NotImplementedError(
@@ -1778,14 +1788,14 @@ class Window:
         prev_size = canvas.size
 
         visible_dims = list(self._qt_viewer.viewer.dims.displayed)
-        steep = min(self._qt_viewer.viewer.layers.extent.step[visible_dims])
+        step = min(self._qt_viewer.viewer.layers.extent.step[visible_dims])
 
         for index, roi in enumerate(rois):
             center_coord, height, width = get_center_bbox(roi)
             camera.center = center_coord
-            canvas.size = (int(height / steep), int(width / steep))
+            canvas.size = (int(height / step), int(width / step))
 
-            camera.zoom = 1 / steep
+            camera.zoom = 1 / step
             path = paths[index] if paths is not None else None
             screenshot_list.append(
                 self.screenshot(path=path, canvas_only=True, scale=scale)
