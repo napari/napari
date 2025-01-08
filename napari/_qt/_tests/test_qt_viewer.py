@@ -305,17 +305,17 @@ def test_export_rois(make_napari_viewer, tmp_path):
     img[25:75, 25:75] = 255
 
     # Add viewer
-    viewer = make_napari_viewer()
+    viewer = make_napari_viewer(show=True)
     viewer.add_image(img, colormap='gray')
 
     # Create a couple of clearly defined rectangular polygons for validation
     roi_shapes_data = [
-        np.array([[0, 0], [20, 0], [20, 20], [0, 20]]),
-        np.array([[15, 15], [35, 15], [35, 35], [15, 35]]),
-        np.array([[65, 65], [85, 65], [85, 85], [65, 85]]),
-        np.array([[15, 65], [35, 65], [35, 85], [15, 85]]),
-        np.array([[65, 15], [85, 15], [85, 35], [65, 35]]),
-        np.array([[40, 40], [60, 40], [60, 60], [40, 60]]),
+        np.array([[0, 0], [20, 0], [20, 20], [0, 20]]) - (0.5, 0.5),
+        np.array([[15, 15], [35, 15], [35, 35], [15, 35]]) - (0.5, 0.5),
+        np.array([[65, 65], [85, 65], [85, 85], [65, 85]]) - (0.5, 0.5),
+        np.array([[15, 65], [35, 65], [35, 85], [15, 85]]) - (0.5, 0.5),
+        np.array([[65, 15], [85, 15], [85, 35], [65, 35]]) - (0.5, 0.5),
+        np.array([[40, 40], [60, 40], [60, 60], [40, 60]]) - (0.5, 0.5),
     ]
     paths = [
         str(tmp_path / f'roi_{i}.png') for i in range(len(roi_shapes_data))
@@ -344,10 +344,12 @@ def test_export_rois(make_napari_viewer, tmp_path):
         (test_dir / f'roi_{i}.png').exists()
         for i in range(len(roi_shapes_data))
     )
-    # expected_values = [0, 100, 100, 100, 100, 400]
-    # for index, roi_img in enumerate(test_roi):
-    #     gray_img = rgb2gray(roi_img[:, :, :3])
-    #     assert gray_img.flatten().sum() == expected_values[index]
+    expected_values = [0, 100, 100, 100, 100, 400]
+    for index, roi_img in enumerate(test_roi):
+        gray_img = roi_img[..., 0]
+        assert (
+            np.count_nonzero(gray_img) == expected_values[index]
+        ), f'Wrong number of white pixels in the ROI {index}'
 
     # Not testing the exact content of the screenshot. It seems not to work within the test, but manual testing does.
     viewer.close()
