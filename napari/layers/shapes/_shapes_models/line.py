@@ -47,7 +47,7 @@ class Line(Shape):
 
     @data.setter
     def data(self, data):
-        data = np.array(data).astype(float)
+        data = np.array(data).astype(np.float32)
 
         if len(self.dims_order) != data.shape[1]:
             self._dims_order = list(range(data.shape[1]))
