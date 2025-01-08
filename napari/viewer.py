@@ -152,18 +152,24 @@ class Viewer(ViewerModel):
     ):
         """Export the shapes rois with storage file paths
 
+        Iteratively take a screenshot of each given roi. Note that 3D rois or taking rois when number of dimensions
+        displayed in the viewer canvas is 3, is currently not supported.
+
         Parameters
         ----------
         rois: numpy array
             An list of arrays with each having shape (4, 2) representing a rectangular roi. If not rectangular
             a screenshot of the bounding box of the roi will be taken.
-        paths: list
-            The list to store file path for shapes roi
+        paths: str, Path, list[str, Path], optional
+            Where to save the rois. If a string or a Path, a directory will be created if it does not exist yet and
+            screenshots will be saved with filename `roi_{n}.png` where n is the nth roi. If paths is a list of either
+            string or paths, these need to be the full paths of where to store each individual roi. In this case
+            the length of the list and the number of rois must match.
 
         Returns
         -------
-        roi_dict: dictionary
-            The dictionary with index and file paths for each shapes roi
+        screenshot_list: list
+            The list containing all the screenshots.
         """
         # Check to see if roi has shape (n,2,2)
         if any(roi.shape[-2:] != (4, 2) for roi in rois):

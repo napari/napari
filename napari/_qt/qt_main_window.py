@@ -1734,7 +1734,7 @@ class Window:
     def export_rois(
         self,
         rois: list[np.ndarray],
-        paths: Optional[Union[str, list[str]]] = None,
+        paths: Optional[Union[str, Path, list[str]]] = None,
         scale: Optional[float] = None,
     ):
         """Export the shapes rois with storage file paths.
@@ -1749,8 +1749,11 @@ class Window:
         ----------
         rois: list[np.ndarray]
             A list of arrays  with each being of shape (4, 2) representing a rectangular roi.
-        paths: list
-            The list to store file path for shapes roi
+        paths: str, Path, list[str, Path], optional
+            Where to save the rois. If a string or a Path, a directory will be created if it does not exist yet and
+            screenshots will be saved with filename `roi_{n}.png` where n is the nth roi. If paths is a list of either
+            string or paths, these need to be the full paths of where to store each individual roi. In this case
+            the length of the list and the number of rois must match.
 
         Returns
         -------
@@ -1814,7 +1817,7 @@ class Window:
 
         Parameters
         ----------
-        path : str
+        path : str, Path
             Filename for saving screenshot image.
         size : tuple (int, int)
             Size (resolution) of the screenshot. By default, the currently displayed size.
