@@ -59,12 +59,17 @@ class ExperimentalSettings(EventedSettings):
     compiled_triangulation: bool = Field(
         False,
         title=trans._(
-            'Use compiled backend to speedup create/update of Shapes layer'
+            'Use C++ code to speedup creation and updates of Shapes layers'
+            '(requires optional dependencies)'
         ),
         description=trans._(
-            'When enabled its uses compiled code from PartSegCore-compiled-backend for speedup of creation'
-            ' of Shapes layer. In worst case scenario it may end with segfault. In such situation please report it '
-            'to allow us fix it'
+            'When enabled, triangulation (breaking down polygons into '
+            "triangles that can be displayed by napari's graphics engine) is "
+            'sped up by using C++ code from the optional library '
+            'PartSegCore-compiled-backend. C++ code can cause bad crashes '
+            'called segmentation faults or access violations. If you '
+            'encounter such a crash while using this option please report '
+            'it at https://github.com/napari/napari/issues.'
         ),
     )
 
