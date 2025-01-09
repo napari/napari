@@ -95,4 +95,9 @@ shape_classes = {
     ShapeType.LINE: Line,
     ShapeType.PATH: Path,
     ShapeType.POLYGON: Polygon,
+    str(ShapeType.RECTANGLE): Rectangle,
+    str(ShapeType.ELLIPSE): Ellipse,
+    str(ShapeType.LINE): Line,
+    str(ShapeType.PATH): Path,
+    str(ShapeType.POLYGON): Polygon,
 }
