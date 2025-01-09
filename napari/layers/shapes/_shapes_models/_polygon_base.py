@@ -130,6 +130,6 @@ class PolygonBase(Shape):
         bbox = self._bounding_box[:, self.dims_displayed]
         self._box = create_box_from_bounding(bbox)
 
-        self.slice_key = self._bounding_box[:, self.dims_not_displayed].astype(
-            'int'
+        self.slice_key = np.rint(
+            self._bounding_box[:, self.dims_not_displayed]
         )
