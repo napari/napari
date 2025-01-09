@@ -132,4 +132,4 @@ class PolygonBase(Shape):
 
         self.slice_key = np.rint(
             self._bounding_box[:, self.dims_not_displayed]
-        )
+        ).astype(int)
