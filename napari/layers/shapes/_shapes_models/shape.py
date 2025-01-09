@@ -278,6 +278,8 @@ class Shape(ABC):
             self._set_meshes_py(data, closed=closed, face=face, edge=edge)
             return
 
+        # if we are computing both edge and face triangles, we can do so
+        # with a single call to the compiled backend
         if edge and face:
             (triangles, vertices), (centers, offsets, edge_triangles) = (
                 triangulate_polygon_with_edge_numpy_li([data])
@@ -288,6 +290,8 @@ class Shape(ABC):
             self._face_vertices = vertices
             self._face_triangles = triangles
             return
+
+        # otherwise, we make individual calls to specialized functions
         if edge:
             centers, offsets, triangles = triangulate_path_edge_py(
                 data, closed=closed
