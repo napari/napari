@@ -147,7 +147,7 @@ if __name__ == '__main__':
     napari.run()
 else:
     # for the gallery, sleep to make sure that the images are captured
-    import time
-    time.sleep(5)
+    from time import sleep
+    sleep(5)
 
 thread.quit()
