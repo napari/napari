@@ -130,14 +130,14 @@ class Camera(EventedModel):
             up_direction = (1, 0, 0)  # align up direction along z axis
 
         # xyz ordering for vispy
-        view_vector = np.asarray(view_direction, dtype=float)[::-1]
+        view_vector = np.asarray(view_direction, dtype=float, copy=True)[::-1]
         # flip z axis for right-handed frame
         view_vector *= [1, 1, -1]
         # normalise vector for rotation matrix
         view_vector /= np.linalg.norm(view_vector)
 
         # xyz ordering for vispy
-        up_vector = np.asarray(up_direction, dtype=float)[::-1]
+        up_vector = np.asarray(up_direction, dtype=float, copy=True)[::-1]
         # flip z axis for right-handed frame
         up_vector *= [1, 1, -1]
         # ??? why a cross product here?
