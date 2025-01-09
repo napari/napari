@@ -168,7 +168,7 @@ class Shape(ABC):
         ):
             cls._set_meshes = cls._set_meshes_compiled
         else:
-            cls._set_meshes = cls._set_meshes_orig
+            cls._set_meshes = cls._set_meshes_py
         return super().__new__(cls)
 
     @property
@@ -275,7 +275,7 @@ class Shape(ABC):
             Bool which determines if the edge need to be traingulated
         """
         if data.shape[1] == 3:
-            self._set_meshes_orig(data, closed=closed, face=face, edge=edge)
+            self._set_meshes_py(data, closed=closed, face=face, edge=edge)
             return
 
         if edge and face:
@@ -315,7 +315,7 @@ class Shape(ABC):
         edge: bool = True,
     ) -> None: ...
 
-    def _set_meshes_orig(
+    def _set_meshes_py(
         self,
         data: npt.NDArray,
         closed: bool = True,
