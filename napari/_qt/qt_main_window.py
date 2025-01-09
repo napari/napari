@@ -1734,7 +1734,7 @@ class Window:
     def export_rois(
         self,
         rois: list[np.ndarray],
-        paths: Optional[Union[str, Path, list[str]]] = None,
+        paths: Optional[Union[str, Path, list[Union[str, Path]]]] = None,
         scale: Optional[float] = None,
     ):
         """Export the shapes rois with storage file paths.
