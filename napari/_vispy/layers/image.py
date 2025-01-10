@@ -47,9 +47,7 @@ class ImageLayerNode(ScalarFieldLayerNode):
             texture_format=texture_format,
         )
 
-    def get_node(
-        self, ndisplay: int, dtype: np.dtype | None = None
-    ) -> Node:
+    def get_node(self, ndisplay: int, dtype: np.dtype | None = None) -> Node:
         # Return custom node if we have one.
         if self._custom_node is not None:
             return self._custom_node

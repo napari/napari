@@ -1,4 +1,3 @@
-
 import numpy as np
 from vispy.scene.visuals import Text
 

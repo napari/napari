@@ -10,7 +10,6 @@ from napari.utils.events.containers import SelectableEventedList
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-
     from qtpy.QtWidgets import QWidget  # type: ignore[attr-defined]
 
 

@@ -503,9 +503,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         return cast(InterpolationStr, str(self._interpolation2d))
 
     @interpolation2d.setter
-    def interpolation2d(
-        self, value: InterpolationStr | Interpolation
-    ) -> None:
+    def interpolation2d(self, value: InterpolationStr | Interpolation) -> None:
         if value == 'bilinear':
             raise ValueError(
                 trans._(
@@ -528,9 +526,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         return cast(InterpolationStr, str(self._interpolation3d))
 
     @interpolation3d.setter
-    def interpolation3d(
-        self, value: InterpolationStr | Interpolation
-    ) -> None:
+    def interpolation3d(self, value: InterpolationStr | Interpolation) -> None:
         if value == 'custom':
             raise NotImplementedError(
                 'custom interpolation is not implemented yet for 3D rendering'

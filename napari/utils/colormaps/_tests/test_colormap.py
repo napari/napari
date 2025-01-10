@@ -277,7 +277,9 @@ def test_test_cast_direct_labels_to_minimum_type_no_jit(num, dtype):
             **{
                 k: np.array([*v, 1])
                 for k, v in zip(
-                    range(num), product(np.linspace(0, 1, num=256), repeat=3), strict=False
+                    range(num),
+                    product(np.linspace(0, 1, num=256), repeat=3),
+                    strict=False,
                 )
             },
         },
@@ -366,7 +368,8 @@ def test_cast_direct_labels_to_minimum_type_naive(size):
                 k: np.array([*v, 1])
                 for k, v in zip(
                     range(size - 2),
-                    product(np.linspace(0, 1, num=256), repeat=3), strict=False,
+                    product(np.linspace(0, 1, num=256), repeat=3),
+                    strict=False,
                 )
             },
         },

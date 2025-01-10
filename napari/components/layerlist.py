@@ -357,7 +357,8 @@ class LayerList(SelectableEventedList[Layer]):
         """Get ranges for Dims.range in world coordinates."""
         ext = self.extent
         return tuple(
-            RangeTuple(*x) for x in zip(ext.world[0], ext.world[1], ext.step, strict=False)
+            RangeTuple(*x)
+            for x in zip(ext.world[0], ext.world[1], ext.step, strict=False)
         )
 
     @property

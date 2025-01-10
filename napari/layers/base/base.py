@@ -1255,7 +1255,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @experimental_clipping_planes.setter
     def experimental_clipping_planes(
         self,
-        value: dict | ClippingPlane | list[ClippingPlane | dict] | ClippingPlaneList,
+        value: dict
+        | ClippingPlane
+        | list[ClippingPlane | dict]
+        | ClippingPlaneList,
     ) -> None:
         self._experimental_clipping_planes.clear()
         if value is None:

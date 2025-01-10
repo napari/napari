@@ -1,4 +1,3 @@
-
 from qtpy import QtCore
 from qtpy.QtWidgets import (
     QApplication,

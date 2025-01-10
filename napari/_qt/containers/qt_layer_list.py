@@ -17,7 +17,6 @@ from napari.layers import Layer
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-
     from qtpy.QtGui import QKeyEvent  # type: ignore[attr-defined]
     from qtpy.QtWidgets import QWidget  # type: ignore[attr-defined]
 
@@ -46,9 +45,7 @@ class QtLayerList(QtListView[Layer]):
     reversing the view with ReverseProxyModel.
     """
 
-    def __init__(
-        self, root: LayerList, parent: QWidget | None = None
-    ) -> None:
+    def __init__(self, root: LayerList, parent: QWidget | None = None) -> None:
         root._ctx['valid_spatial_json_clipboard'] = (
             is_valid_spatial_in_clipboard
         )

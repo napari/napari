@@ -15,7 +15,6 @@ from napari.utils.migrations import _DeprecatingDict
 from napari.utils.misc import all_subclasses
 
 if TYPE_CHECKING:
-
     import napari.types
 
 try:

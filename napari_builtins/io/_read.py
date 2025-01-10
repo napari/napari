@@ -344,7 +344,9 @@ def _shapes_csv_to_layerdata(
 
     data = []
     shape_type = []
-    for ind_a, ind_b in zip(shape_boundaries[:-1], shape_boundaries[1:], strict=False):
+    for ind_a, ind_b in zip(
+        shape_boundaries[:-1], shape_boundaries[1:], strict=False
+    ):
         data.append(raw_data[ind_a:ind_b])
         shape_type.append(table[ind_a, 1])
 

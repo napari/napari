@@ -956,7 +956,8 @@ class Shapes(Layer):
             self._data_view.edge_widths,
             self._data_view.edge_color,
             self._data_view.face_color,
-            self._data_view.z_indices, strict=False,
+            self._data_view.z_indices,
+            strict=False,
         )
 
         self._add_shapes_to_view(shape_inputs, new_data_view)
@@ -1097,9 +1098,7 @@ class Shapes(Layer):
     def face_color_mode(self, face_color_mode):
         self._set_color_mode(face_color_mode, 'face')
 
-    def _set_color_mode(
-        self, color_mode: ColorMode | str, attribute: str
-    ):
+    def _set_color_mode(self, color_mode: ColorMode | str, attribute: str):
         """Set the face_color_mode or edge_color_mode property
 
         Parameters
@@ -1463,7 +1462,9 @@ class Shapes(Layer):
                 color_cycle = getattr(self, f'_{attribute}_color_cycle')
                 color_cycle_map = {
                     k: np.squeeze(transform_color(c))
-                    for k, c in zip(np.unique(color_properties), color_cycle, strict=False)
+                    for k, c in zip(
+                        np.unique(color_properties), color_cycle, strict=False
+                    )
                 }
                 setattr(self, f'{attribute}_color_cycle_map', color_cycle_map)
 
@@ -2305,7 +2306,8 @@ class Shapes(Layer):
                 ensure_iterable(edge_width),
                 transformed_edge_color,
                 transformed_face_color,
-                ensure_iterable(z_index), strict=False,
+                ensure_iterable(z_index),
+                strict=False,
             )
 
             self._add_shapes_to_view(shape_inputs, self._data_view)

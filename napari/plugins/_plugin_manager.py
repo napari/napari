@@ -106,9 +106,7 @@ class NapariPluginManager(PluginManager):
             self._extension2reader.update(plugin_settings.extension2reader)
             self._extension2writer.update(plugin_settings.extension2writer)
 
-    def register(
-        self, namespace: Any, name: str | None = None
-    ) -> str | None:
+    def register(self, namespace: Any, name: str | None = None) -> str | None:
         name = super().register(namespace, name=name)
         if name:
             self.events.registered(value=name)

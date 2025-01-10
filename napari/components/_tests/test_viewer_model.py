@@ -227,7 +227,10 @@ def test_add_surface():
     viewer.add_surface(data)
     assert len(viewer.layers) == 1
     assert np.all(
-        [np.array_equal(vd, d) for vd, d in zip(viewer.layers[0].data, data, strict=False)]
+        [
+            np.array_equal(vd, d)
+            for vd, d in zip(viewer.layers[0].data, data, strict=False)
+        ]
     )
     assert viewer.dims.ndim == 3
 

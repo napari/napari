@@ -73,7 +73,9 @@ def test_list_interface_parity(test_list, regular_list, meth):
     else:
         test_list_method(*args)  # smoke test
 
-    for c, expect in zip(test_list.events.call_args_list, expected, strict=False):
+    for c, expect in zip(
+        test_list.events.call_args_list, expected, strict=False
+    ):
         event = c.args[0]
         assert event.type == expect
 
@@ -325,7 +327,9 @@ def test_nested_events(meth, group_index):
         method(*args)
 
     # make sure the correct event type and number was emitted
-    for c, expected in zip(ne_list.events.call_args_list, expected_events, strict=False):
+    for c, expected in zip(
+        ne_list.events.call_args_list, expected_events, strict=False
+    ):
         event = c.args[0]
         assert event.type == expected
         if group_index == ():

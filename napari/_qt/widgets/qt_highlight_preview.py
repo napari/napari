@@ -1,4 +1,3 @@
-
 import numpy as np
 from qtpy.QtCore import QSize, Qt, Signal
 from qtpy.QtGui import QColor, QIntValidator, QPainter, QPainterPath, QPen

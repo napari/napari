@@ -53,7 +53,8 @@ class Plane(EventedModel):
         self.position = cast(
             Point3D,
             tuple(
-                p + (distance * n) for p, n in zip(self.position, self.normal, strict=False)
+                p + (distance * n)
+                for p, n in zip(self.position, self.normal, strict=False)
             ),
         )
 

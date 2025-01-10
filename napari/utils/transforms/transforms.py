@@ -123,9 +123,7 @@ _T = TypeVar('_T', bound=Transform)
 
 
 class TransformChain(EventedList[_T], Transform, Generic[_T]):
-    def __init__(
-        self, transforms: Iterable[Transform] | None = None
-    ) -> None:
+    def __init__(self, transforms: Iterable[Transform] | None = None) -> None:
         if transforms is None:
             transforms = []
         super().__init__(

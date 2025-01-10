@@ -300,7 +300,10 @@ def test_irregular_images(write_spec, stack):
     images = magic_imread(fnames, use_dask=False, stack=stack)
     assert isinstance(images, list)
     assert len(images) == 2
-    assert all(img.shape == spec.shape for img, spec in zip(images, specs, strict=False))
+    assert all(
+        img.shape == spec.shape
+        for img, spec in zip(images, specs, strict=False)
+    )
 
 
 def test_add_zarr(write_spec):

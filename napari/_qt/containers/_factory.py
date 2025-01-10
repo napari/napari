@@ -9,7 +9,6 @@ from napari.utils.translations import trans
 from napari.utils.tree import Group
 
 if TYPE_CHECKING:
-
     from qtpy.QtWidgets import QWidget  # type: ignore[attr-defined]
 
 

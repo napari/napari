@@ -320,7 +320,9 @@ def color_dict_to_colormap(colors):
 
     control2index = {
         tuple(color): control_point
-        for color, control_point in zip(colormap.colors, colormap.controls, strict=False)
+        for color, control_point in zip(
+            colormap.colors, colormap.controls, strict=False
+        )
     }
 
     control_small_delta = 0.5 / len(control_colors)

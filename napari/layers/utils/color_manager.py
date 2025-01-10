@@ -455,7 +455,10 @@ class ColorManager(EventedModel):
         n_colors: int | None = None,
         continuous_colormap: str | Colormap | None = None,
         contrast_limits: tuple[float, float] | None = None,
-        categorical_colormap: CategoricalColormap | list | np.ndarray | None = None,
+        categorical_colormap: CategoricalColormap
+        | list
+        | np.ndarray
+        | None = None,
         color_mode: ColorMode | str | None = None,
         current_color: np.ndarray | None = None,
         default_color_cycle: ColorType = None,

@@ -43,9 +43,10 @@ class IntensityVisualizationMixin:
             None,
             None,
         )
-        self._contrast_limits_range: tuple[
-            float | None, float | None
-        ] = (None, None)
+        self._contrast_limits_range: tuple[float | None, float | None] = (
+            None,
+            None,
+        )
         self._auto_contrast_source = 'slice'
         self._keep_auto_contrast = False
 

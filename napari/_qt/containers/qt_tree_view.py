@@ -10,7 +10,6 @@ from napari._qt.containers.qt_tree_model import QtNodeTreeModel
 from napari.utils.tree import Group, Node
 
 if TYPE_CHECKING:
-
     from qtpy.QtCore import QModelIndex
     from qtpy.QtWidgets import QWidget  # type: ignore[attr-defined]
 

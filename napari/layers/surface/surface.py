@@ -525,9 +525,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         return self._wireframe
 
     @wireframe.setter
-    def wireframe(
-        self, wireframe: dict | SurfaceWireframe | None
-    ) -> None:
+    def wireframe(self, wireframe: dict | SurfaceWireframe | None) -> None:
         if wireframe is None:
             self._wireframe.reset()
         elif isinstance(wireframe, (SurfaceWireframe, dict)):

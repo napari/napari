@@ -1082,7 +1082,10 @@ class ShapeList:
             [0] + [len(s._edge_vertices) for s in shapes_list]
         )
         triangles = np.vstack(
-            [s._edge_triangles + c for s, c in zip(shapes_list, vert_count, strict=False)]
+            [
+                s._edge_triangles + c
+                for s, c in zip(shapes_list, vert_count, strict=False)
+            ]
         )
 
         return centers, offsets, triangles

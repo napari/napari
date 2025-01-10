@@ -794,9 +794,7 @@ class _FeatureTable:
         """The default values one-row table."""
         return self._defaults
 
-    def set_defaults(
-        self, defaults: dict[str, Any] | pd.DataFrame
-    ) -> None:
+    def set_defaults(self, defaults: dict[str, Any] | pd.DataFrame) -> None:
         """Sets the feature default values."""
         self._defaults = _validate_feature_defaults(defaults, self._values)
 

@@ -1,4 +1,3 @@
-
 from napari.components.overlays.base import SceneOverlay
 from napari.layers.utils.interaction_box import (
     InteractionBoxHandle,

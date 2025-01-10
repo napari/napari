@@ -8,7 +8,6 @@ from napari._qt.containers._base_item_view import _BaseEventedItemView
 from napari._qt.containers.qt_list_model import QtListModel
 
 if TYPE_CHECKING:
-
     from qtpy.QtWidgets import QWidget  # type: ignore[attr-defined]
 
     from napari.utils.events.containers import SelectableEventedList

@@ -1,4 +1,3 @@
-
 from qtpy.QtCore import QSize, Qt, Signal
 from qtpy.QtGui import QFont, QIntValidator
 from qtpy.QtWidgets import (

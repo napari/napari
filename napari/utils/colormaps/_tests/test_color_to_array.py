@@ -39,7 +39,8 @@ def test_warns_but_parses():
 
 
 @pytest.mark.parametrize(
-    ('colors', 'true_colors'), zip(two_color_options, two_colors_as_array, strict=False)
+    ('colors', 'true_colors'),
+    zip(two_color_options, two_colors_as_array, strict=False),
 )
 def test_twod_points(colors, true_colors):
     np.testing.assert_array_equal(true_colors, transform_color(colors))

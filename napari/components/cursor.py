@@ -1,4 +1,3 @@
-
 from napari.components._viewer_constants import CursorStyle
 from napari.utils.events import EventedModel
 

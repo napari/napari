@@ -1,4 +1,3 @@
-
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
@@ -94,7 +93,9 @@ class TrackManager:
         # access first position of each t slice
         time = sorted_time[start]
 
-        return {t: slice(s, e) for s, e, t in zip(start, end, time, strict=False)}
+        return {
+            t: slice(s, e) for s, e, t in zip(start, end, time, strict=False)
+        }
 
     @property
     def data(self) -> np.ndarray:

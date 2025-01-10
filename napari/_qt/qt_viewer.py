@@ -79,7 +79,8 @@ def _npe2_decode_selected_filter(
 
     for entry, writer in zip(
         ext_str.split(';;'),
-        writers, strict=False,
+        writers,
+        strict=False,
     ):
         if entry.startswith(selected_filter):
             return writer
@@ -1224,9 +1225,7 @@ def _create_qt_poll(parent: QObject, camera: Camera) -> QtPoll | None:
     return qt_poll
 
 
-def _create_remote_manager(
-    layers: LayerList, qt_poll
-) -> RemoteManager | None:
+def _create_remote_manager(layers: LayerList, qt_poll) -> RemoteManager | None:
     """Create and return a RemoteManager instance, if we need one.
 
     Parameters

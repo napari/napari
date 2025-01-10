@@ -148,7 +148,9 @@ def test_multichannel(shape, kwargs):
                 expectation = ensure_iterable(exp)
             else:
                 expectation = ensure_iterable(expectation)
-            expectation = [v for i, v in zip(range(i + 1), expectation, strict=False)]
+            expectation = [
+                v for i, v in zip(range(i + 1), expectation, strict=False)
+            ]
 
             result = getattr(viewer.layers[i], key)
             if key == 'colormap':  # colormaps are tuples of (name, cmap)
@@ -174,7 +176,8 @@ def test_multichannel_multiscale():
                 np.array_equal(l_d, d)
                 for l_d, d in zip(
                     viewer.layers[i].data,
-                    [data[j].take(i, axis=-1) for j in range(len(data))], strict=False,
+                    [data[j].take(i, axis=-1) for j in range(len(data))],
+                    strict=False,
                 )
             ]
         )
@@ -196,7 +199,8 @@ def test_multichannel_implicit_multiscale():
                 np.array_equal(l_d, d)
                 for l_d, d in zip(
                     viewer.layers[i].data,
-                    [data[j].take(i, axis=-1) for j in range(len(data))], strict=False,
+                    [data[j].take(i, axis=-1) for j in range(len(data))],
+                    strict=False,
                 )
             ]
         )

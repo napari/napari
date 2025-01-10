@@ -52,9 +52,7 @@ else:
     EllipsisType = type(Ellipsis)
 
 KeyBindingLike = Union[KeyBinding, str, int]
-Keymap = Mapping[
-    KeyBinding | EllipsisType, Callable | EllipsisType
-]
+Keymap = Mapping[KeyBinding | EllipsisType, Callable | EllipsisType]
 
 # global user keymap; to be made public later in refactoring process
 USER_KEYMAP: Mapping[str, Callable] = {}

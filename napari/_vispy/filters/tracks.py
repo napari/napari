@@ -1,4 +1,3 @@
-
 import numpy as np
 from vispy.gloo import VertexBuffer
 from vispy.visuals.filters.base_filter import Filter

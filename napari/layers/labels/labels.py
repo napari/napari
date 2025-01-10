@@ -1438,7 +1438,9 @@ class Labels(ScalarFieldBase):
             self._updated_slice = tuple(
                 [
                     slice(min(s1.start, s2.start), max(s1.stop, s2.stop))
-                    for s1, s2 in zip(updated_slice, self._updated_slice, strict=False)
+                    for s1, s2 in zip(
+                        updated_slice, self._updated_slice, strict=False
+                    )
                 ]
             )
 

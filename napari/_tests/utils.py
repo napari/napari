@@ -109,7 +109,8 @@ with suppress(ModuleNotFoundError):
 classes = [Labels, Points, Vectors, Shapes, Surface, Tracks, Image]
 names = [cls.__name__.lower() for cls in classes]
 layer2addmethod = {
-    cls: getattr(Viewer, 'add_' + name) for cls, name in zip(classes, names, strict=False)
+    cls: getattr(Viewer, 'add_' + name)
+    for cls, name in zip(classes, names, strict=False)
 }
 
 

@@ -22,9 +22,7 @@ class ScalarFieldLayerNode(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_node(
-        self, ndisplay: int, dtype: np.dtype | None = None
-    ) -> Node:
+    def get_node(self, ndisplay: int, dtype: np.dtype | None = None) -> Node:
         """Return the appropriate node for the given ndisplay and dtype."""
         raise NotImplementedError
 

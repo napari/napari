@@ -45,7 +45,9 @@ def test_dict_interface_parity(test_dict, regular_dict, meth):
     else:
         test_dict_method(*args)  # smoke test
 
-    for c, expect in zip(test_dict.events.call_args_list, expected, strict=False):
+    for c, expect in zip(
+        test_dict.events.call_args_list, expected, strict=False
+    ):
         event = c.args[0]
         assert event.type == expect
 

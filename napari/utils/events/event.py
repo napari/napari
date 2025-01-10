@@ -375,9 +375,7 @@ class EventEmitter:
     def source(self, s):
         self._source = None if s is None else weakref.ref(s)
 
-    def _is_core_callback(
-        self, callback: CallbackRef | Callback, core: str
-    ):
+    def _is_core_callback(self, callback: CallbackRef | Callback, core: str):
         """
         Check if the callback is a core callback
 
@@ -535,7 +533,9 @@ class EventEmitter:
                 for c in criteria:
                     count = sum(
                         c in [cn, cc]
-                        for cn, cc in zip(callback_refs, callbacks, strict=False)
+                        for cn, cc in zip(
+                            callback_refs, callbacks, strict=False
+                        )
                     )
                     if count != 1:
                         raise ValueError(
@@ -666,9 +666,7 @@ class EventEmitter:
             for x in signature.parameters.values()
         )
 
-    def _normalize_cb(
-        self, callback
-    ) -> tuple[CallbackRef | Callback, bool]:
+    def _normalize_cb(self, callback) -> tuple[CallbackRef | Callback, bool]:
         # dereference methods into a (self, method_name) pair so that we can
         # make the connection without making a strong reference to the
         # instance.

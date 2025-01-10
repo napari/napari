@@ -1121,9 +1121,7 @@ class Points(Layer):
         return self._border_width
 
     @border_width.setter
-    def border_width(
-        self, border_width: float | np.ndarray | list
-    ) -> None:
+    def border_width(self, border_width: float | np.ndarray | list) -> None:
         # broadcast to np.array
         border_width = np.broadcast_to(border_width, self.data.shape[0]).copy()
 
@@ -1268,9 +1266,7 @@ class Points(Layer):
         return self._border.color_mode
 
     @border_color_mode.setter
-    def border_color_mode(
-        self, border_color_mode: str | ColorMode
-    ) -> None:
+    def border_color_mode(self, border_color_mode: str | ColorMode) -> None:
         self._set_color_mode(border_color_mode, 'border')
 
     @property
@@ -1296,9 +1292,7 @@ class Points(Layer):
         return self._face.categorical_colormap.fallback_color.values
 
     @face_color_cycle.setter
-    def face_color_cycle(
-        self, face_color_cycle: np.ndarray | cycle
-    ) -> None:
+    def face_color_cycle(self, face_color_cycle: np.ndarray | cycle) -> None:
         self._face.categorical_colormap = face_color_cycle
 
     @property

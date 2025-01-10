@@ -123,7 +123,9 @@ class _ThickNDSlice(Generic[_T]):
 
     def __iter__(self):
         # iterate all three fields dimension per dimension
-        yield from zip(self.point, self.margin_left, self.margin_right, strict=False)
+        yield from zip(
+            self.point, self.margin_left, self.margin_right, strict=False
+        )
 
 
 @dataclass(frozen=True)

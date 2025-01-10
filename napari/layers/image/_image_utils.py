@@ -79,7 +79,9 @@ def guess_multiscale(
     if len(sizes) <= 1:
         return False, data
 
-    consistent = all(s1 > s2 for s1, s2 in zip(sizes[:-1], sizes[1:], strict=False))
+    consistent = all(
+        s1 > s2 for s1, s2 in zip(sizes[:-1], sizes[1:], strict=False)
+    )
     if all(s == sizes[0] for s in sizes):
         # note: the individual array case should be caught by the first
         # code line in this function, hasattr(ndim) and ndim > 1.
