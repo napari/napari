@@ -1774,7 +1774,7 @@ class Window:
             )
 
         if isinstance(paths, (str, Path)):
-            storage_dir = Path(paths)
+            storage_dir = Path(paths).expanduser()
             storage_dir.mkdir(parents=True, exist_ok=True)
             paths = [storage_dir / f'roi_{n}.png' for n in range(len(rois))]
 
