@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 import numpy as np
 from vispy.color import Colormap as VispyColormap
 from vispy.scene import Node
@@ -22,7 +20,7 @@ from napari.utils.translations import trans
 
 class ImageLayerNode(ScalarFieldLayerNode):
     def __init__(
-        self, custom_node: Node = None, texture_format: Optional[str] = None
+        self, custom_node: Node = None, texture_format: str | None = None
     ) -> None:
         if (
             texture_format == 'auto'
@@ -50,7 +48,7 @@ class ImageLayerNode(ScalarFieldLayerNode):
         )
 
     def get_node(
-        self, ndisplay: int, dtype: Optional[np.dtype] = None
+        self, ndisplay: int, dtype: np.dtype | None = None
     ) -> Node:
         # Return custom node if we have one.
         if self._custom_node is not None:

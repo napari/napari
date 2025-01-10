@@ -120,7 +120,7 @@ def _toggle_visibility(ll: LayerList) -> None:
     for layer in ll.selection:
         current_visibility_state.append(layer.visible)
 
-    for visibility, layer in zip(current_visibility_state, ll.selection):
+    for visibility, layer in zip(current_visibility_state, ll.selection, strict=False):
         if layer.visible == visibility:
             layer.visible = not visibility
 

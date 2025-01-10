@@ -11,8 +11,6 @@ from types import FrameType
 from typing import (
     TYPE_CHECKING,
     Any,
-    Optional,
-    Union,
 )
 from weakref import WeakSet, ref
 
@@ -70,7 +68,7 @@ if TYPE_CHECKING:
 
 def _npe2_decode_selected_filter(
     ext_str: str, selected_filter: str, writers: Sequence[WriterContribution]
-) -> Optional[WriterContribution]:
+) -> WriterContribution | None:
     """Determine the writer that should be invoked to save data.
 
     When npe2 can be imported, resolves a selected file extension
@@ -81,7 +79,7 @@ def _npe2_decode_selected_filter(
 
     for entry, writer in zip(
         ext_str.split(';;'),
-        writers,
+        writers, strict=False,
     ):
         if entry.startswith(selected_filter):
             return writer
@@ -307,7 +305,7 @@ class QtViewer(QSplitter):
 
     @staticmethod
     def _update_dask_cache_settings(
-        dask_setting: Union[DaskSettings, Event] = None,
+        dask_setting: DaskSettings | Event = None,
     ):
         """Update dask cache to match settings."""
         if not dask_setting:
@@ -535,7 +533,7 @@ class QtViewer(QSplitter):
         """List: items to push to console when instantiated."""
         return self._console_backlog
 
-    def _get_console(self) -> Optional[QtConsole]:
+    def _get_console(self) -> QtConsole | None:
         """Function to setup console.
 
         Returns
@@ -946,10 +944,10 @@ class QtViewer(QSplitter):
     def _qt_open(
         self,
         filenames: list[str],
-        stack: Union[bool, list[list[str]]],
+        stack: bool | list[list[str]],
         choose_plugin: bool = False,
-        plugin: Optional[str] = None,
-        layer_type: Optional[str] = None,
+        plugin: str | None = None,
+        layer_type: str | None = None,
         **kwargs,
     ):
         """Open files, potentially popping reader dialog for plugin selection.
@@ -1195,7 +1193,7 @@ if TYPE_CHECKING:
     from napari.components.experimental.remote import RemoteManager
 
 
-def _create_qt_poll(parent: QObject, camera: Camera) -> Optional[QtPoll]:
+def _create_qt_poll(parent: QObject, camera: Camera) -> QtPoll | None:
     """Create and return a QtPoll instance, if needed.
 
     Create a QtPoll instance for the monitor.
@@ -1228,7 +1226,7 @@ def _create_qt_poll(parent: QObject, camera: Camera) -> Optional[QtPoll]:
 
 def _create_remote_manager(
     layers: LayerList, qt_poll
-) -> Optional[RemoteManager]:
+) -> RemoteManager | None:
     """Create and return a RemoteManager instance, if we need one.
 
     Parameters

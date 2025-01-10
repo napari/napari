@@ -1,4 +1,3 @@
-from typing import Union
 
 from napari.components._viewer_constants import CanvasPosition
 from napari.layers.base._base_constants import Blending
@@ -51,7 +50,7 @@ class CanvasOverlay(Overlay):
         The rendering order of the overlay: lower numbers get rendered first.
     """
 
-    position: Union[CanvasPosition, tuple[int, int]] = (
+    position: CanvasPosition | tuple[int, int] = (
         CanvasPosition.BOTTOM_RIGHT
     )
     blending: Blending = Blending.TRANSLUCENT_NO_DEPTH
