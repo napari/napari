@@ -19,13 +19,13 @@ from napari.utils.translations import trans
 
 try:
     from PartSegCore_compiled_backend.triangulate import (
-        triangulate_path_edge_py,
+        triangulate_path_edge_numpy,
         triangulate_polygon_numpy_li,
         triangulate_polygon_with_edge_numpy_li,
     )
 
 except ImportError:
-    triangulate_path_edge_py = None
+    triangulate_path_edge_numpy = None
     triangulate_polygon_numpy_li = None
     triangulate_polygon_with_edge_numpy_li = None
 
@@ -164,7 +164,7 @@ class Shape(ABC):
     def __new__(cls, *args, **kwargs):
         if (
             get_settings().experimental.compiled_triangulation
-            and triangulate_path_edge_py is not None
+            and triangulate_path_edge_numpy is not None
         ):
             cls._set_meshes = cls._set_meshes_compiled
         else:
@@ -293,7 +293,7 @@ class Shape(ABC):
 
         # otherwise, we make individual calls to specialized functions
         if edge:
-            centers, offsets, triangles = triangulate_path_edge_py(
+            centers, offsets, triangles = triangulate_path_edge_numpy(
                 data, closed=closed
             )
             self._edge_vertices = centers
