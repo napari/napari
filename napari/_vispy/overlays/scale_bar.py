@@ -1,7 +1,6 @@
 import bisect
 from decimal import Decimal
 from math import floor, log
-from sys import platform
 
 import numpy as np
 import pint
@@ -174,25 +173,34 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
     def _on_text_change(self):
         """Update text information"""
-        self.node.text.font_size = self.overlay.font_size
+        # update the dpi scale factor to account for screen dpi
+        if self.node.text.transforms.dpi:
+            # use 96 dpi as the reference
+            dpi_scale_factor = 96 / self.node.text.transforms.dpi
+        else:
+            dpi_scale_factor = 1
+
+        self.node.text.font_size = self.overlay.font_size * dpi_scale_factor
+        # ensure we recalculate the y_offset from the text size when at top of canvas
         if 'top' in self.overlay.position:
             self._on_position_change()
 
     def _on_position_change(self, event=None):
         # prevent the text from being cut off by shifting down
         if 'top' in self.overlay.position:
-            # account for dpi difference on macOS
-            font_dpi_scale_factor = 96 if platform != 'darwin' else 72
-            self.y_offset = (
-                10
-                + self.overlay.font_size
-                * font_dpi_scale_factor
-                / 72
-                * self.viewer.window._qt_window.devicePixelRatio()
-            )
+            # convert font_size to logical pixels as vispy does
+            # 96 dpi is used as the reference
+            font_logical_pix = self.overlay.font_size * 96 / 72
+            # 7 is value for the default 10 font size
+            self.y_offset = 7 + font_logical_pix
         else:
             self.y_offset = 20
         super()._on_position_change()
+
+    def _on_visible_change(self):
+        # ensure that dpi is updated when the scale bar is visible
+        self._on_text_change()
+        return super()._on_visible_change()
 
     def reset(self):
         super().reset()
