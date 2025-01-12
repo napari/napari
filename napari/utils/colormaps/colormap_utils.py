@@ -51,8 +51,6 @@ matplotlib_colormaps = _MATPLOTLIB_COLORMAP_NAMES = OrderedDict(
     magma=trans._p('colormap', 'magma'),
     inferno=trans._p('colormap', 'inferno'),
     plasma=trans._p('colormap', 'plasma'),
-    gray=trans._p('colormap', 'gray'),
-    gray_r=trans._p('colormap', 'gray r'),
     hsv=trans._p('colormap', 'hsv'),
     turbo=trans._p('colormap', 'turbo'),
     twilight=trans._p('colormap', 'twilight'),
@@ -111,6 +109,16 @@ SIMPLE_COLORMAPS = {
     for name, (display_name, color) in _PRIMARY_COLORS.items()
 }
 
+# add conventional grayscale colormap as a simple one
+SIMPLE_COLORMAPS.update(
+    {
+        'gray': Colormap(
+            name='gray',
+            display_name='gray',
+            colors=[[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]],
+        )
+    }
+)
 
 # dictionary for bop colormap objects
 BOP_COLORMAPS = {
@@ -122,6 +130,17 @@ INVERSE_COLORMAPS = {
     name: Colormap(value, name=name, display_name=display_name)
     for name, (display_name, value) in inverse_cmaps.items()
 }
+
+# Add the reversed grayscale colormap (white to black) to inverse colormaps
+INVERSE_COLORMAPS.update(
+    {
+        'gray_r': Colormap(
+            name='gray_r',
+            display_name='gray r',
+            colors=[[1.0, 1.0, 1.0], [0.0, 0.0, 0.0]],
+        ),
+    }
+)
 
 _FLOAT32_MAX = float(np.finfo(np.float32).max)
 _MAX_VISPY_SUPPORTED_VALUE = _FLOAT32_MAX / 8
@@ -751,6 +770,11 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
     """
     with AVAILABLE_COLORMAPS_LOCK:
         if isinstance(colormap, str):
+            # when black given as end color, want reversed grayscale colormap
+            # from white to black, named gray_r
+            if colormap == '#000000' or colormap.lower() == 'black':
+                colormap = 'gray_r'
+
             # Is a colormap with this name already available?
             custom_cmap = AVAILABLE_COLORMAPS.get(colormap)
             if custom_cmap is None:
