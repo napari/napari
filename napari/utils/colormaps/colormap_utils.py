@@ -772,7 +772,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
         if isinstance(colormap, str):
             # when black given as end color, want reversed grayscale colormap
             # from white to black, named gray_r
-            if colormap == '#000000' or colormap.lower() == 'black':
+            if colormap.startswith('#000000') or colormap.lower() == 'black':
                 colormap = 'gray_r'
 
             # Is a colormap with this name already available?
