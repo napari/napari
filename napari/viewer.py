@@ -150,21 +150,29 @@ class Viewer(ViewerModel):
         paths: Optional[Union[str, Path, list[Union[str, Path]]]] = None,
         scale: Optional[float] = None,
     ):
-        """Export the shapes rois with storage file paths
+        """Export the given rectangular rois to specified file paths.
 
-        Iteratively take a screenshot of each given roi. Note that 3D rois or taking rois when number of dimensions
-        displayed in the viewer canvas is 3, is currently not supported.
+        Iteratively take a screenshot of each given roi. Note that 3D rois
+        or taking rois when number of dimensions displayed in the viewer
+        canvas is 3, is currently not supported.
 
         Parameters
         ----------
         rois: numpy array
-            An list of arrays with each having shape (4, 2) representing a rectangular roi. If not rectangular
-            a screenshot of the bounding box of the roi will be taken.
+            A list of arrays with each having shape (4, 2) representing a
+            rectangular roi.
         paths: str, Path, list[str, Path], optional
-            Where to save the rois. If a string or a Path, a directory will be created if it does not exist yet and
-            screenshots will be saved with filename `roi_{n}.png` where n is the nth roi. If paths is a list of either
-            string or paths, these need to be the full paths of where to store each individual roi. In this case
+            Where to save the rois. If a string or a Path, a directory will
+            be created if it does not exist yet and screenshots will be saved
+            with filename `roi_{n}.png` where n is the nth roi. If paths is
+            a list of either string or paths, these need to be the full paths
+            of where to store each individual roi. In this case
             the length of the list and the number of rois must match.
+            If None, the screenshots will only be returned
+            and not saved to disk.
+        scale: float, optional
+            Scale factor used to increase resolution of canvas for the screenshot.
+            By default, uses the displayed scale.
 
         Returns
         -------
