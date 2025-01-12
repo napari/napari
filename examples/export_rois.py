@@ -64,9 +64,9 @@ viewer.scale_bar.box = True
 # Take screenshots of the rois.
 screenshot_rois = viewer.export_rois(rois)
 # Optionally, save the exported rois in a directory of choice with name `roi_n.png` where n is the index of the roi:
-# viewer.export_rois(rois, path='home/data/exported_rois')
+# viewer.export_rois(rois, paths='home/data/exported_rois')
 # Optionally, save the exported rois while specifying the location for each roi to be stored:
-# viewer.export_rois(rois, path=['first_roi.png', 'second_roi.png', 'third_roi.png', 'fourth_roi.png'])
+# viewer.export_rois(rois, paths=['first_roi.png', 'second_roi.png', 'third_roi.png', 'fourth_roi.png'])
 
 # Also take scaled roi screenshots.
 screenshot_rois_scaled = viewer.export_rois(rois, scale=2
