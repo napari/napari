@@ -1,5 +1,5 @@
 import warnings
-from typing import Optional, Union
+from typing import Optional, Tuple, Union
 
 import numpy as np
 from scipy.spatial.transform import Rotation as R
@@ -163,6 +163,15 @@ class Camera(EventedModel):
             seq='yzx', degrees=True
         )
         self.angles = euler_angles
+
+    def look_at(self, point: Tuple[float, float, float]):
+        """Point the camera at a point in 3D scene coordinates.
+
+        This method modifies only the view direction, not the current center
+        point.
+        """
+        view_direction = np.asarray(point) - np.asarray(self.center)
+        self.set_view_direction(view_direction, up_direction=self.up_direction)
 
     def calculate_nd_view_direction(
         self, ndim: int, dims_displayed: tuple[int, ...]
