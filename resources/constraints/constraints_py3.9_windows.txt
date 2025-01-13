@@ -101,7 +101,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.123.13
+hypothesis==6.123.16
     # via napari (napari_repo/pyproject.toml)
 idna==3.10
     # via requests
@@ -555,7 +555,7 @@ vispy==0.14.3
     #   napari-svg
 wcwidth==0.2.13
     # via prompt-toolkit
-wrapt==1.16.0
+wrapt==1.17.1
     # via
     #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari (napari_repo/pyproject.toml)
