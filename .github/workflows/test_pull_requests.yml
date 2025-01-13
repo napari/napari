@@ -161,7 +161,7 @@ jobs:
           # test with no numba
           - python: "3.12"
             platform: ubuntu-latest
-            backend: pyqt6_no_numba
+            backend: no_numba
             coverage: cov
             pydantic: ""
           # pyside2 test
