@@ -569,7 +569,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if not self.mouse_over_canvas:
             return None
         active = self.layers.selection.active
-        if active is not None:
+        if active is not None and active._loaded:
             status = active.get_status(
                 self.cursor.position,
                 view_direction=self.cursor._view_direction,
