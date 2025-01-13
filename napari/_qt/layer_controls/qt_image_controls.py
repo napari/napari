@@ -166,7 +166,7 @@ class QtImageControls(QtBaseImageControls):
         self.isoThresholdSlider = sld
         self.isoThresholdLabel = QLabel(trans._('iso threshold:'))
 
-        sld = QDoubleSlider(Qt.Orientation.Horizontal, parent=self)
+        sld = QLabeledDoubleSlider(Qt.Orientation.Horizontal, parent=self)
         sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         sld.setMinimum(0)
         sld.setMaximum(0.5)
