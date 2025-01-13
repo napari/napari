@@ -91,9 +91,9 @@ def test_qt_viewer_console_focus(qtbot, make_napari_viewer):
     view.toggle_console_visibility(None)
 
     def console_has_focus():
-        assert (
-            view.console.hasFocus()
-        ), 'console does not have focus when shown'
+        assert view.console.hasFocus(), (
+            'console does not have focus when shown'
+        )
 
     qtbot.waitUntil(console_has_focus)
 
@@ -946,9 +946,9 @@ def test_thumbnail_labels(qtbot, direct, qt_viewer: QtViewer, tmp_path):
     # cut off black border
     margin1, margin2 = _find_margin(canvas_screenshot_, 10)
     canvas_screenshot = canvas_screenshot_[margin1:-margin1, margin2:-margin2]
-    assert (
-        canvas_screenshot.size > 0
-    ), f'{canvas_screenshot_.shape}, {margin1=}, {margin2=}'
+    assert canvas_screenshot.size > 0, (
+        f'{canvas_screenshot_.shape}, {margin1=}, {margin2=}'
+    )
 
     thumbnail = layer.thumbnail
     scaled_thumbnail = ndi.zoom(
