@@ -15,7 +15,6 @@ from napari._qt.layer_controls.qt_image_controls_base import (
     QtBaseImageControls,
 )
 from napari._qt.utils import qt_signals_blocked
-from napari._qt.widgets._slider_compat import QDoubleSlider
 from napari.layers.image._image_constants import (
     ImageRendering,
     Interpolation,
@@ -157,7 +156,7 @@ class QtImageControls(QtBaseImageControls):
             self.changePlaneThickness
         )
 
-        sld = QDoubleSlider(Qt.Orientation.Horizontal, parent=self)
+        sld = QLabeledDoubleSlider(Qt.Orientation.Horizontal, parent=self)
         sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         cmin, cmax = self.layer.contrast_limits_range
         sld.setMinimum(cmin)

@@ -11,11 +11,10 @@ from qtpy.QtWidgets import (
     QSpinBox,
     QWidget,
 )
-from superqt import QEnumComboBox, QLargeIntSpinBox
+from superqt import QEnumComboBox, QLabeledSlider, QLargeIntSpinBox
 
 from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
 from napari._qt.utils import set_widgets_enabled_with_opacity
-from napari._qt.widgets._slider_compat import QSlider
 from napari._qt.widgets.qt_mode_buttons import QtModePushButton
 from napari.layers.labels._labels_constants import (
     LABEL_COLOR_MODE_TRANSLATIONS,
@@ -130,7 +129,7 @@ class QtLabelsControls(QtLayerControls):
         self.selectionSpinBox.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._on_selected_label_change()
 
-        sld = QSlider(Qt.Orientation.Horizontal)
+        sld = QLabeledSlider(Qt.Orientation.Horizontal)
         sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         sld.setMinimum(1)
         sld.setMaximum(40)
