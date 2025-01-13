@@ -115,11 +115,11 @@ qt = [
     "napari[pyqt]"
 ]
 all = [
-    "napari[pyqt,optional]",
-    "napari-plugin-manager >=0.1.3, <0.2.0",
+    "napari[pyqt,optional]"
 ]
 optional = [
-    "triangle ; platform_machine != 'arm64'",
+    "napari-plugin-manager >=0.1.3, <0.2.0",
+    "triangle",
     "PartSegCore-compiled-backend>=0.15.8",
     "numba>=0.57.1",
     "zarr>=2.12.0", # needed by `builtins` (dask.array.from_zarr) to open zarr
