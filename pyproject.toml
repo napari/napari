@@ -117,15 +117,15 @@ qt = [
 all = [
     "napari[pyqt,optional]"
 ]
-optional_base = [
+optional-base = [
     "zarr>=2.12.0", # needed by `builtins` (dask.array.from_zarr) to open zarr
     "napari-plugin-manager >=0.1.3, <0.2.0",
 ]
-optional_numba = [
+optional-numba = [
     "numba>=0.57.1",
 ]
 optional = [
-    "napari[optional_base,optional_numba]",
+    "napari[optional-base,optional-numba]",
     "triangle",
     "PartSegCore-compiled-backend>=0.15.8",
 ]
@@ -149,7 +149,7 @@ testing = [
     "IPython>=7.25.0",
     "qtconsole>=4.5.1",
     "rich>=12.0.0",
-    "napari[optional_base]",
+    "napari[optional-base]",
 ]
 testing_extra = [
     "torch>=1.7",
