@@ -169,9 +169,10 @@ class QtImageControls(QtBaseImageControls):
         sld = QDoubleSlider(Qt.Orientation.Horizontal, parent=self)
         sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         sld.setMinimum(0)
-        sld.setMaximum(100)
-        sld.setSingleStep(1)
-        sld.setValue(int(self.layer.attenuation * 200))
+        sld.setMaximum(0.5)
+        sld.setSingleStep(0.001)
+        sld.setValue(self.layer.attenuation)
+        sld.setDecimals(3)
         sld.valueChanged.connect(self.changeAttenuation)
         self.attenuationSlider = sld
         self.attenuationLabel = QLabel(trans._('attenuation:'))
@@ -289,12 +290,12 @@ class QtImageControls(QtBaseImageControls):
             Attenuation rate for attenuated maximum intensity projection.
         """
         with self.layer.events.blocker(self._on_attenuation_change):
-            self.layer.attenuation = value / 200
+            self.layer.attenuation = value
 
     def _on_attenuation_change(self):
         """Receive layer model attenuation change event and update the slider."""
         with self.layer.events.attenuation.blocker():
-            self.attenuationSlider.setValue(int(self.layer.attenuation * 200))
+            self.attenuationSlider.setValue(self.layer.attenuation)
 
     def _on_interpolation_change(self, event):
         """Receive layer interpolation change event and update dropdown menu.
