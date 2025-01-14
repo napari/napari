@@ -62,30 +62,26 @@ QtViewerPushButton[mode="grid_view_button"] {
   image: url("theme_{{ id }}:/grid.svg");
 }
 
-QtModeRadioButton {
+QtModeRadioButton,
+QtModePushButton,
+QtModeRadioButton::indicator:unchecked,
+QtModeRadioButton::indicator:checked {
+  border-radius: 3px;
+  width: 28px;
+  height: 28px;
+  min-width : 28px;
+  max-width : 28px;
   min-height : 28px;
-  padding: 0px;
+  max-height : 28px;
+  padding: 0;
 }
 
 QtModeRadioButton::indicator:unchecked {
-  border-radius: 3px;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  background-color: {{ primary }};
+  background-color: {{ foreground }};
 }
 
 QtModeRadioButton::indicator:checked {
-  border-radius: 3px;
-  height: 28px;
-  width: 28px;
-  padding: 0;
   background-color: {{ current }};
-}
-
-
-QtModeRadioButton::indicator:disabled {
-  background-color: {{ darken(foreground, 20) }}
 }
 
 QtModeRadioButton::indicator:unchecked:hover {
@@ -189,7 +185,7 @@ QtModePushButton[mode="delete_shape"] {
    image: url("theme_{{ id }}:/delete_shape.svg");
 }
 
-QWidget[emphasized="true"] QtModePushButton[mode="delete_shape"]:pressed {
+QtModePushButton[mode="delete_shape"]:pressed {
   background-color: {{ error }};
 }
 
