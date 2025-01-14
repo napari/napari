@@ -859,8 +859,12 @@ class Shapes(Layer):
         if len(self.data) == 0:
             extrema = np.full((2, self.ndim), np.nan)
         else:
-            maxs = np.max([np.max(d, axis=0) for d in self.data], axis=0)
-            mins = np.min([np.min(d, axis=0) for d in self.data], axis=0)
+            maxs = np.max(
+                [d._bounding_box[1] for d in self._data_view.shapes], axis=0
+            )
+            mins = np.min(
+                [d._bounding_box[0] for d in self._data_view.shapes], axis=0
+            )
             extrema = np.vstack([mins, maxs])
         return extrema
 
@@ -2312,7 +2316,7 @@ class Shapes(Layer):
         self._ndisplay_stored = copy(self._slice_input.ndisplay)
         self._update_dims()
 
-    def _add_shapes_to_view(self, shape_inputs, data_view):
+    def _add_shapes_to_view(self, shape_inputs, data_view: ShapeList):
         """Build new shapes and add them to the _data_view"""
 
         shape_inputs = tuple(shape_inputs)
@@ -2320,7 +2324,7 @@ class Shapes(Layer):
         # build all shapes
         sh_inp = tuple(
             (
-                shape_classes[ShapeType(st)](
+                shape_classes[st](
                     d,
                     edge_width=ew,
                     z_index=z,
