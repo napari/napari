@@ -896,7 +896,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
 
 def _colormap_from_colors(
     colors: ColorType,
-    name: Optional[str] = 'custom',
+    name: Optional[str] = trans._('custom'),
     display_name: Optional[str] = None,
 ) -> Optional[Colormap]:
     try:
