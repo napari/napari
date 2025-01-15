@@ -669,9 +669,6 @@ class QtViewer(QSplitter):
 
         See: https://github.com/napari/napari/issues/2138
         """
-        if self.viewer.dims.ndisplay == 2:
-            # don't bother updating 3D camera if we're not using it
-            return
         # otherwise, set depth to diameter of displayed dimensions
         extent = self.viewer.layers.extent
         # we add a step because the difference is *right* at the point
