@@ -31,6 +31,10 @@ jobs:
         platform: [windows-latest, macos-latest, ubuntu-latest]
         python: [3.12, 3.13]
         backend: [pyqt5, pyqt6]
+        include:
+          - platform: ubuntu-latest
+            python: 3.12
+            backend: pyqt6_no_numba
 
     steps:
       - uses: actions/checkout@v4
