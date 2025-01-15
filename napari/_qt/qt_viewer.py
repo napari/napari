@@ -233,7 +233,8 @@ class QtViewer(QSplitter):
         self.viewer._layer_slicer.events.ready.connect(self._on_slice_ready)
 
         self._on_active_change()
-        self.viewer.events.layers_change.connect(self._update_camera_depth)
+        self.viewer.layers.events.inserted.connect(self._update_camera_depth)
+        self.viewer.layers.events.removed.connect(self._update_camera_depth)
         self.viewer.dims.events.ndisplay.connect(self._update_camera_depth)
         self.viewer.layers.events.inserted.connect(self._update_welcome_screen)
         self.viewer.layers.events.removed.connect(self._update_welcome_screen)
