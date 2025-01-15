@@ -234,6 +234,7 @@ class QtViewer(QSplitter):
 
         self._on_active_change()
         self.viewer.events.layers_change.connect(self._update_camera_depth)
+        self.viewer.dims.events.ndisplay.connect(self._update_camera_depth)
         self.viewer.layers.events.inserted.connect(self._update_welcome_screen)
         self.viewer.layers.events.removed.connect(self._update_welcome_screen)
         self.viewer.layers.selection.events.active.connect(
@@ -669,6 +670,9 @@ class QtViewer(QSplitter):
 
         See: https://github.com/napari/napari/issues/2138
         """
+        if self.viewer.dims.ndisplay == 2:
+            # don't bother updating 3D camera if we're not using it
+            return
         # otherwise, set depth to diameter of displayed dimensions
         extent = self.viewer.layers.extent
         # we add a step because the difference is *right* at the point
