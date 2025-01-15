@@ -53,9 +53,9 @@ def test_dict_interface_parity(test_dict, regular_dict, meth):
 def test_copy(test_dict, regular_dict):
     """Copying an evented dict should return a same-class evented dict."""
     new_test = test_dict.copy()
-    assert (
-        len({type(k) for k in new_test}) >= 2
-    ), 'We want at least non-string keys to test edge cases'
+    assert len({type(k) for k in new_test}) >= 2, (
+        'We want at least non-string keys to test edge cases'
+    )
 
     new_reg = regular_dict.copy()
     assert id(new_test) != id(test_dict)

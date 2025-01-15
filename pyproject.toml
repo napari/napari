@@ -309,6 +309,9 @@ ignore = [
 "**/vendored/**" = ["TID"]
 "napari/benchmarks/**" = ["RUF012", "TID252"]
 
+[tool.ruff.lint.flake8-builtins]
+builtins-allowed-modules = ["io", "types", "threading"]
+
 [tool.ruff.lint.pyupgrade]
 keep-runtime-typing = true
 
