@@ -185,7 +185,7 @@ def sys_info(as_html: bool = False) -> str:
     except ValueError:
         from napari.utils._appdirs import user_config_dir
 
-        text += f"  - {os.getenv('NAPARI_CONFIG', user_config_dir())}"
+        text += f'  - {os.getenv("NAPARI_CONFIG", user_config_dir())}'
 
     if not as_html:
         text = (
