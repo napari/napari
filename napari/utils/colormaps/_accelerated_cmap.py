@@ -154,7 +154,7 @@ def _zero_preserving_modulo_inner_loop(
 
 if parse('2.0') <= parse(version('numpy')) < parse('2.1'):
 
-    def clip(data, min_val, max_val):
+    def clip(data: np.ndarray, min_val: int, max_val: int) -> np.ndarray:
         """
         Clip data to the given range.
         """
@@ -163,7 +163,9 @@ if parse('2.0') <= parse(version('numpy')) < parse('2.1'):
         max_val = min(max_val, dtype_info.max)
         return np.clip(data, min_val, max_val)
 else:
-    clip = np.clip
+
+    def clip(data: np.ndarray, min_val: int, max_val: int) -> np.ndarray:
+        return np.clip(data, min_val, max_val)
 
 
 def _labels_raw_to_texture_direct_numpy(
