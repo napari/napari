@@ -4,7 +4,7 @@ import inspect
 import itertools
 import os
 import warnings
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Iterator, Mapping, MutableMapping, Sequence
 from functools import lru_cache
 from pathlib import Path
 from typing import (
@@ -56,7 +56,7 @@ from napari.layers import (
     Tracks,
     Vectors,
 )
-from napari.layers._source import layer_source
+from napari.layers._source import Source, layer_source
 from napari.layers.image._image_key_bindings import image_fun_to_mode
 from napari.layers.image._image_utils import guess_labels
 from napari.layers.labels._labels_key_bindings import labels_fun_to_mode
@@ -573,7 +573,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if not self.mouse_over_canvas:
             return None
         active = self.layers.selection.active
-        if active is not None:
+        if active is not None and active._loaded:
             status = active.get_status(
                 self.cursor.position,
                 view_direction=self.cursor._view_direction,
@@ -1462,12 +1462,18 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         plugin = hookimpl.plugin_name if hookimpl else None
         for data, filename in zip(layer_data, filenames):
             basename, _ext = os.path.splitext(os.path.basename(filename))
-            _data = _unify_data_and_user_kwargs(
-                data, kwargs, layer_type, fallback_name=basename
-            )
             # actually add the layer
-            with layer_source(path=filename, reader_plugin=plugin):
-                added.extend(self._add_layer_from_data(*_data))
+            if isinstance(data, Layer):
+                data._set_source(Source(path=filename, reader_plugin=plugin))
+                lyr = self.add_layer(data)
+                current_added = [lyr]
+            else:
+                _data = _unify_data_and_user_kwargs(
+                    data, kwargs, layer_type, fallback_name=basename
+                )
+                with layer_source(path=filename, reader_plugin=plugin):
+                    current_added = self._add_layer_from_data(*_data)
+            added.extend(current_added)
         return added
 
     def _add_layer_from_data(
@@ -1585,10 +1591,10 @@ def _normalize_layer_data(data: LayerData) -> FullLayerData:
 
     _data = list(data)
     if len(_data) > 1:
-        if not isinstance(_data[1], dict):
+        if not isinstance(_data[1], MutableMapping):
             raise ValueError(
                 trans._(
-                    'The second item in a LayerData tuple must be a dict',
+                    'The second item in a LayerData tuple must be a dict or other MutableMapping.',
                     deferred=True,
                 )
             )
