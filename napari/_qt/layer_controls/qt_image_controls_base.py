@@ -11,12 +11,11 @@ from qtpy.QtWidgets import (
     QPushButton,
     QWidget,
 )
-from superqt import QDoubleRangeSlider
+from superqt import QDoubleRangeSlider, QLabeledDoubleSlider
 
 from napari._qt.layer_controls.qt_colormap_combobox import QtColormapComboBox
 from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
 from napari._qt.utils import qt_signals_blocked
-from napari._qt.widgets._slider_compat import QDoubleSlider
 from napari._qt.widgets.qt_range_slider_popup import QRangeSliderPopup
 from napari.utils._dtype import normalize_dtype
 from napari.utils.colormaps import AVAILABLE_COLORMAPS
@@ -139,7 +138,7 @@ class QtBaseImageControls(QtLayerControls):
         self.autoScaleBar = AutoScaleButtons(layer, self)
 
         # gamma slider
-        sld = QDoubleSlider(Qt.Orientation.Horizontal, parent=self)
+        sld = QLabeledDoubleSlider(Qt.Orientation.Horizontal, parent=self)
         sld.setMinimum(0.2)
         sld.setMaximum(2)
         sld.setSingleStep(0.02)
