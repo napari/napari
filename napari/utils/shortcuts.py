@@ -68,6 +68,7 @@ _default_shortcuts = {
     'napari:activate_add_ellipse_mode': [KeyCode.KeyE],
     'napari:activate_add_line_mode': [KeyCode.KeyL],
     'napari:activate_add_path_mode': [KeyCode.KeyT],
+    'napari:activate_add_polyline_mode': [KeyMod.Shift | KeyCode.KeyL],
     'napari:activate_add_polygon_mode': [KeyCode.KeyP],
     'napari:activate_add_polygon_lasso_mode': [KeyMod.Shift | KeyCode.KeyP],
     'napari:activate_direct_mode': [KeyCode.Digit4, KeyCode.KeyD],

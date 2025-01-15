@@ -91,7 +91,7 @@ class Theme(EventedModel):
         assert value in STYLE_MAP, trans._(
             'Incorrect `syntax_style` value: {value} provided. Please use one of the following: {syntax_style}',
             deferred=True,
-            syntax_style=f" {', '.join(STYLE_MAP)}",
+            syntax_style=f' {", ".join(STYLE_MAP)}',
             value=value,
         )
         return value

@@ -47,9 +47,9 @@ def test_docstring(layer):
     else:
         summary_format = 'Add an? .+? layers? to the layer list.'
 
-    assert re.match(
-        summary_format, method_summary
-    ), f"improper 'Summary' section of '{method_name}'"
+    assert re.match(summary_format, method_summary), (
+        f"improper 'Summary' section of '{method_name}'"
+    )
 
     # check parameters section
     method_params = method_doc['Parameters']
@@ -77,12 +77,12 @@ def test_docstring(layer):
                 l_description = ' '.join(l_description)
 
                 assert m_name == l_name, 'different parameter names or order'
-                assert (
-                    m_type == l_type
-                ), f"type mismatch of parameter '{m_name}'"
-                assert (
-                    m_description == l_description
-                ), f"description mismatch of parameter '{m_name}'"
+                assert m_type == l_type, (
+                    f"type mismatch of parameter '{m_name}'"
+                )
+                assert m_description == l_description, (
+                    f"description mismatch of parameter '{m_name}'"
+                )
         except AssertionError as e:
             raise AssertionError(
                 f"docstrings don't match for class {name}"
