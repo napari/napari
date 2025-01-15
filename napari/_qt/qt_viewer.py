@@ -233,6 +233,7 @@ class QtViewer(QSplitter):
         self.viewer._layer_slicer.events.ready.connect(self._on_slice_ready)
 
         self._on_active_change()
+        self.viewer.events.layers_change.connect(self._update_camera_depth)
         self.viewer.layers.events.inserted.connect(self._update_welcome_screen)
         self.viewer.layers.events.removed.connect(self._update_welcome_screen)
         self.viewer.layers.selection.events.active.connect(
@@ -656,6 +657,23 @@ class QtViewer(QSplitter):
         """
         layer = event.value
         self._add_layer(layer)
+
+    def _update_camera_depth(self):
+        """When the layer extents change, update the camera depth.
+
+        The camera depth is the difference between the near clipping plane
+        and the far clipping plane in a scene. If they are set too high
+        relative to the actual depth of a scene, precision issues can arise
+        in the depth of objects in the scene, with objects at the back
+        seeming to pop to the front.
+
+        See: https://github.com/napari/napari/issues/2138
+        """
+        extent = self.viewer.layers.extent
+        diameter = np.linalg.norm(
+            extent.world[1] - extent.world[0] + extent.step
+        )
+        self.canvas.camera._3D_camera.depth_value = diameter
 
     def _add_layer(self, layer):
         """When a layer is added, set its parent and order.
