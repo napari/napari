@@ -62,7 +62,7 @@ dependencies = [
     "PyOpenGL>=3.1.0",
     "pywin32 ; platform_system == 'Windows'",
     "PyYAML>=5.1",
-    "qtpy>=1.10.0",
+    "qtpy>=2.3.1",
     "scikit-image[data]>=0.19.1",
     "scipy>=1.5.4",
     "superqt>=0.6.7",
@@ -117,12 +117,17 @@ qt = [
 all = [
     "napari[pyqt,optional]"
 ]
-optional = [
+optional-base = [
+    "zarr>=2.12.0", # needed by `builtins` (dask.array.from_zarr) to open zarr
     "napari-plugin-manager >=0.1.3, <0.2.0",
+]
+optional-numba = [
+    "numba>=0.57.1",
+]
+optional = [
+    "napari[optional-base,optional-numba]",
     "triangle",
     "PartSegCore-compiled-backend>=0.15.8",
-    "numba>=0.57.1",
-    "zarr>=2.12.0", # needed by `builtins` (dask.array.from_zarr) to open zarr
 ]
 testing = [
     "babel>=2.9.0",
@@ -130,7 +135,6 @@ testing = [
     "hypothesis>=6.8.0",
     "lxml[html_clean]>5",
     "matplotlib >= 3.6.1",
-    "numba>=0.57.1",
     "pooch>=1.6.0",
     "coverage>7",
     "docstring_parser>=0.15",
@@ -142,11 +146,10 @@ testing = [
     "tensorstore>=0.1.13",
     "virtualenv>=20.17",
     "xarray>=0.16.2",
-    "zarr>=2.12.0",
     "IPython>=7.25.0",
     "qtconsole>=4.5.1",
     "rich>=12.0.0",
-    "napari-plugin-manager >=0.1.0a2, <0.2.0",
+    "napari[optional-base]",
 ]
 testing_extra = [
     "torch>=1.7",
