@@ -669,10 +669,23 @@ class QtViewer(QSplitter):
 
         See: https://github.com/napari/napari/issues/2138
         """
+        if self.viewer.dims.ndisplay == 2:
+            # don't bother updating 3D camera if we're not using it
+            return
+        # otherwise, set depth to diameter of displayed dimensions
         extent = self.viewer.layers.extent
-        diameter = np.linalg.norm(
-            extent.world[1] - extent.world[0] + extent.step
-        )
+        # we add a step because the difference is *right* at the point
+        # coordinates, not accounting for voxel size:
+        # >>> viewer.add_image(np.random.random((2, 3, 4, 5)))
+        # >>> viewer.layers.extent
+        # Extent(
+        #     data=None,
+        #     world=array([[0., 0., 0., 0.],
+        #                  [1., 2., 3., 4.]]),
+        #     step=array([1., 1., 1., 1.]))
+        extent_all = extent.world[1] - extent.world[0] + extent.step
+        extent_displayed = extent_all[list(self.viewer.dims.displayed)]
+        diameter = np.linalg.norm(extent_displayed)
         self.canvas.camera._3D_camera.depth_value = diameter
 
     def _add_layer(self, layer):
