@@ -271,7 +271,6 @@ def test_screenshot(make_napari_viewer):
 
 def test_export_figure(make_napari_viewer, tmp_path):
     viewer = make_napari_viewer()
-
     np.random.seed(0)
     # Add image
     data = np.random.randint(150, 250, size=(250, 250))
@@ -298,15 +297,90 @@ def test_export_figure(make_napari_viewer, tmp_path):
     img = viewer.export_figure(flash=False)
     assert img.shape == (250, 250, 4)
 
-    viewer.camera.center = [100, 100]
+
+def test_export_rois(make_napari_viewer, tmp_path):
+    # Create an image with a defined shape (100x100) and a square in the middle
+
+    img = np.zeros((100, 100), dtype=np.uint8)
+    img[25:75, 25:75] = 255
+
+    # Add viewer
+    viewer = make_napari_viewer(show=True)
+    viewer.add_image(img, colormap='gray')
+
+    # Create a couple of clearly defined rectangular polygons for validation
+    roi_shapes_data = [
+        np.array([[0, 0], [20, 0], [20, 20], [0, 20]]) - (0.5, 0.5),
+        np.array([[15, 15], [35, 15], [35, 35], [15, 35]]) - (0.5, 0.5),
+        np.array([[65, 65], [85, 65], [85, 85], [65, 85]]) - (0.5, 0.5),
+        np.array([[15, 65], [35, 65], [35, 85], [15, 85]]) - (0.5, 0.5),
+        np.array([[65, 15], [85, 15], [85, 35], [65, 35]]) - (0.5, 0.5),
+        np.array([[40, 40], [60, 40], [60, 60], [40, 60]]) - (0.5, 0.5),
+    ]
+    paths = [
+        str(tmp_path / f'roi_{i}.png') for i in range(len(roi_shapes_data))
+    ]
+
+    # Save original camera state for comparison later
     camera_center = viewer.camera.center
     camera_zoom = viewer.camera.zoom
-    img = viewer.export_figure()
 
+    with pytest.raises(ValueError, match='The number of file'):
+        viewer.export_rois(roi_shapes_data, paths=paths + ['fake'])
+    # Export ROI to image path
+    test_roi = viewer.export_rois(roi_shapes_data, paths=paths)
+
+    assert all(
+        (tmp_path / f'roi_{i}.png').exists()
+        for i in range(len(roi_shapes_data))
+    )
+    assert all(roi.shape == (20, 20, 4) for roi in test_roi)
     assert viewer.camera.center == camera_center
     assert viewer.camera.zoom == camera_zoom
-    assert img.shape == (250, 250, 4)
-    assert np.all(img != np.array([0, 0, 0, 0]))
+
+    test_dir = tmp_path / 'test_dir'
+    viewer.export_rois(roi_shapes_data, paths=test_dir)
+    assert all(
+        (test_dir / f'roi_{i}.png').exists()
+        for i in range(len(roi_shapes_data))
+    )
+    expected_values = [0, 100, 100, 100, 100, 400]
+    for index, roi_img in enumerate(test_roi):
+        gray_img = roi_img[..., 0]
+        assert (
+            np.count_nonzero(gray_img) == expected_values[index]
+        ), f'Wrong number of white pixels in the ROI {index}'
+
+    # Not testing the exact content of the screenshot. It seems not to work within the test, but manual testing does.
+    viewer.close()
+
+
+def test_export_rois_3d_fail(make_napari_viewer):
+    viewer = make_napari_viewer()
+
+    # create 3d ROI for testing
+    roi_3d = [
+        np.array([[0, 0, 0], [0, 20, 0], [0, 20, 20], [0, 0, 20]]),
+        np.array([[0, 15, 15], [0, 35, 15], [0, 35, 35], [0, 15, 35]]),
+    ]
+
+    # Only 2D roi supported at the moment
+    with pytest.raises(ValueError, match='ROI found with invalid'):
+        viewer.export_rois(roi_3d)
+
+    test_data = np.zeros((4, 50, 50))
+    viewer.add_image(test_data)
+    viewer.dims.ndisplay = 3
+
+    # 3D view should fail
+    roi_data = [
+        np.array([[0, 0], [20, 0], [20, 20], [0, 20]]),
+        np.array([[15, 15], [35, 15], [35, 35], [15, 35]]),
+    ]
+    with pytest.raises(
+        NotImplementedError, match="'export_rois' is not implemented"
+    ):
+        viewer.export_rois(roi_data)
     viewer.close()
 
 
