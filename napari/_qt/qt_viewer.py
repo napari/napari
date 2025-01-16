@@ -689,10 +689,11 @@ class QtViewer(QSplitter):
         extent_all = extent.world[1] - extent.world[0] + extent.step
         extent_displayed = extent_all[list(self.viewer.dims.displayed)]
         diameter = np.linalg.norm(extent_displayed)
-        # Use 2x the diameter to avoid aggressive near-plane clipping while
-        # in perspective projection. See:
+        # Use 128x the diameter to avoid aggressive near- and far-plane
+        # clipping in perspective projection, while still preserving enough
+        # bit depth in the depth buffer to avoid artifacts. See discussion at:
         # https://github.com/napari/napari/pull/7529#issuecomment-2594203871
-        self.canvas.camera._3D_camera.depth_value = 2 * diameter
+        self.canvas.camera._3D_camera.depth_value = 128 * diameter
 
     def _add_layer(self, layer):
         """When a layer is added, set its parent and order.
