@@ -438,13 +438,13 @@ def _event_check(instance):
     def _prepare_check(name, no_event_):
         def check(instance, no_event=no_event_):
             if name in no_event:
-                assert not hasattr(
-                    instance.events, name
-                ), f'event {name} defined'
+                assert not hasattr(instance.events, name), (
+                    f'event {name} defined'
+                )
             else:
-                assert hasattr(
-                    instance.events, name
-                ), f'event {name} not defined'
+                assert hasattr(instance.events, name), (
+                    f'event {name} not defined'
+                )
 
         return check
 

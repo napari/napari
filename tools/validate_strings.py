@@ -529,7 +529,7 @@ def test_missing_translations(checks):
         '`tools/strings_list.py` file.\n\n'
     )
     for fpath, values in issues.items():
-        print(f"{fpath}\n{'*' * len(fpath)}")
+        print(f'{fpath}\n{"*" * len(fpath)}')
         unique_values = set()
         for line, value in values:
             unique_values.add(value)
@@ -565,7 +565,7 @@ def test_outdated_string_skips(checks):
         'outdated.\nPlease remove them from the skip list.\n\n'
     )
     for fpath, values in outdated_strings.items():
-        print(f"{fpath}\n{'*' * len(fpath)}")
+        print(f'{fpath}\n{"*" * len(fpath)}')
         print(', '.join(repr(value) for value in values))
         print('')
 
@@ -580,11 +580,11 @@ def test_translation_errors(checks):
         'interpolation variables:\n\n'
     )
     for fpath, errors in trans_errors.items():
-        print(f"{fpath}\n{'*' * len(fpath)}")
+        print(f'{fpath}\n{"*" * len(fpath)}')
         for string, variables in errors:
             print(f'String:\t\t{string!r}')
             print(
-                f"Variables:\t{', '.join(repr(value) for value in variables)}"
+                f'Variables:\t{", ".join(repr(value) for value in variables)}'
             )
             print('')
 

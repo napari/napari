@@ -296,9 +296,9 @@ def _unlink_keys(keys: Iterable[LinkKey]) -> None:
     _LINKED_LAYERS = _rebuild_link_index()
 
 
-def _rebuild_link_index() -> (
-    defaultdict[ReferenceType[Layer], set[ReferenceType[Layer]]]
-):
+def _rebuild_link_index() -> defaultdict[
+    ReferenceType[Layer], set[ReferenceType[Layer]]
+]:
     links = defaultdict(set)
     for l1, l2, _attr in _UNLINKERS:
         links[l1].add(l2)
