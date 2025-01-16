@@ -347,9 +347,9 @@ def test_export_rois(make_napari_viewer, tmp_path):
     expected_values = [0, 100, 100, 100, 100, 400]
     for index, roi_img in enumerate(test_roi):
         gray_img = roi_img[..., 0]
-        assert (
-            np.count_nonzero(gray_img) == expected_values[index]
-        ), f'Wrong number of white pixels in the ROI {index}'
+        assert np.count_nonzero(gray_img) == expected_values[index], (
+            f'Wrong number of white pixels in the ROI {index}'
+        )
 
     # Not testing the exact content of the screenshot. It seems not to work within the test, but manual testing does.
     viewer.close()
