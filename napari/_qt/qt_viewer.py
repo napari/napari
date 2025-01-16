@@ -684,7 +684,8 @@ class QtViewer(QSplitter):
         #     data=None,
         #     world=array([[0., 0., 0., 0.],
         #                  [1., 2., 3., 4.]]),
-        #     step=array([1., 1., 1., 1.]))
+        #     step=array([1., 1., 1., 1.]),
+        # )
         extent_all = extent.world[1] - extent.world[0] + extent.step
         extent_displayed = extent_all[list(self.viewer.dims.displayed)]
         diameter = np.linalg.norm(extent_displayed)
