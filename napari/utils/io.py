@@ -110,6 +110,10 @@ def imsave_tiff(filename, data):
                 compressionargs={'level': 1},
             )
         except struct.error:
+            # regular tiffs don't support compressed data >4GB
+            # in that case a struct.error is raised, and we write with the
+            # bigtiff flag. (The flag is not on by default because it is
+            # not as widely supported as normal tiffs.)
             tifffile.imwrite(
                 filename,
                 data,
