@@ -102,12 +102,19 @@ def imsave_tiff(filename, data):
         tifffile.imwrite(filename, data)
     else:
         try:
-            tifffile.imwrite(filename, data, compressionargs={'zlib': 1})
-        except struct.error:  # compressed data >4GB
             tifffile.imwrite(
                 filename,
                 data,
-                compressionargs={'zlib': 1},
+                # compression arg structure since tifffile 2022.7.28
+                compression='zlib',
+                compressionargs={'level': 1},
+            )
+        except struct.error:
+            tifffile.imwrite(
+                filename,
+                data,
+                compression='zlib',
+                compressionargs={'level': 1},
                 bigtiff=True,
             )
 
