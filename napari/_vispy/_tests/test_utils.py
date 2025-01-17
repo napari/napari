@@ -39,8 +39,13 @@ def test_quaternion2euler_degrees(angles):
 def test_get_view_direction_in_scene_coordinates(make_napari_viewer):
     viewer = make_napari_viewer()
 
+    # Note: as of 0.5.6, setting the dims ndim to 3 with no layers leaves the
+    # viewer in an inconsistent state, because the dims are 3 but the layers
+    # extent is only 2D. Therefore, instead of setting dims to 3 we add a 3D
+    # dataset to the viewer
+    _ = viewer.add_image(np.random.random((2, 3, 4)))
+
     # reset view sets the camera angles to (0, 0, 90)
-    viewer.dims.ndim = 3
     viewer.dims.ndisplay = 3
 
     # get the viewbox
