@@ -176,7 +176,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         # update the dpi scale factor to account for screen dpi
         # because vispy scales pixel height of text by screen dpi
         if self.node.text.transforms.dpi:
-            # use 96 as the reference dpi
+            # use 96 as the napari reference dpi for historical reasons
             dpi_scale_factor = 96 / self.node.text.transforms.dpi
         else:
             dpi_scale_factor = 1
@@ -190,7 +190,9 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         # prevent the text from being cut off by shifting down
         if 'top' in self.overlay.position:
             # convert font_size to logical pixels as vispy does
-            # 96 dpi is used as the reference dpi
+            # in vispy/visuals/text/text.py
+            # 72 is the vispy reference dpi
+            # 96 dpi is used as the napari reference dpi
             font_logical_pix = self.overlay.font_size * 96 / 72
             # 7 is base value for the default 10 font size
             self.y_offset = 7 + font_logical_pix
