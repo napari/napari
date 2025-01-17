@@ -101,16 +101,17 @@ def imsave_tiff(filename, data):
     if data.dtype == bool:
         tifffile.imwrite(filename, data)
     else:
-        # 'compression' kwarg since 2021.6.6; we depend on more recent versions
-        # now. See:
+        # We need to be able to save bigtiff tiff files, if data are too big,
+        # but not do this by default, as not every software support reading bigtiff.
+        # See:
         # https://forum.image.sc/t/problem-saving-generated-labels-in-cellpose-napari/54892/8
         try:
-            tifffile.imwrite(filename, data, compression=('zlib', 1))
+            tifffile.imwrite(filename, data, compressionargs={'zlib': 1})
         except struct.error:  # compressed data >4GB
             tifffile.imwrite(
                 filename,
                 data,
-                compression=('zlib', 1),
+                compressionargs={'zlib': 1},
                 bigtiff=True,
             )
 
