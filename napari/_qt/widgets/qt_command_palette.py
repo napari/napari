@@ -28,15 +28,11 @@ class QCommandPalette(QtW.QWidget):
         _layout = QtW.QVBoxLayout(self)
         _layout.addWidget(self._line)
         _layout.addWidget(self._list)
-        self.setLayout(_layout)
 
+        self._line.setPlaceholderText('Type to search commands...')
         self._line.textChanged.connect(self._on_text_changed)
         self._list.commandClicked.connect(self._on_command_clicked)
         self._line.editingFinished.connect(self.hide)
-        font = self.font()
-        font.setPointSize(16)
-        self.setFont(font)
-        self._line.setFont(font)
         self.hide()
 
         app = get_app_model()
