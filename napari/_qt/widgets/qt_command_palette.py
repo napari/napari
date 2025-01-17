@@ -371,7 +371,6 @@ class QCommandList(QtW.QListView):
             for r in range(row, max_matches):
                 self.setRowHidden(r, True)
         self.update_selection()
-        self.update()
         return
 
     def iter_top_hits(self, input_text: str) -> Iterator[CommandRule]:
