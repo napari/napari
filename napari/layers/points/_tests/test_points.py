@@ -1191,17 +1191,17 @@ def test_add_points_direct(attribute: str):
     assert layer.events.data.call_args_list[0][1] == {
         'value': old_data,
         'action': ActionType.ADDING,
-        'data_indices': (-2,-1),
+        'data_indices': (-2, -1),
         'vertex_indices': ((),),
     }
     assert layer.events.data.call_args[1] == {
         'value': layer.data,
         'action': ActionType.ADDED,
-        'data_indices': (-2,-1),
+        'data_indices': (-2, -1),
         'vertex_indices': ((),),
     }
     np.testing.assert_allclose(
-        [[1, 0, 0, 1],[1, 0, 0, 1]], getattr(layer, f'{attribute}_color')
+        [[1, 0, 0, 1], [1, 0, 0, 1]], getattr(layer, f'{attribute}_color')
     )
 
 
