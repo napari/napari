@@ -88,6 +88,7 @@ class _ImageSliceResponse:
         slice_input: _SliceInput,
         rgb: bool,
         request_id: Optional[int] = None,
+        dtype=np.uint8,
     ) -> '_ImageSliceResponse':
         """Returns an empty image slice response.
 
@@ -108,11 +109,13 @@ class _ImageSliceResponse:
             If None, a new request id will be returned, which guarantees that
             the empty slice never appears as loaded. (Used for layer
             initialisation before attempting data loading.)
+        dtype : np.dtype
+            The dtype of the empty image slice.
         """
         shape = (1,) * slice_input.ndisplay
         if rgb:
             shape = shape + (3,)
-        data = np.zeros(shape, dtype=np.uint8)
+        data = np.zeros(shape, dtype=dtype)
         image = _ImageView.from_view(data)
         ndim = slice_input.ndim
         tile_to_data = Affine(
