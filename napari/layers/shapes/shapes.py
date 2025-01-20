@@ -474,6 +474,7 @@ class Shapes(Layer):
             if ndim is None:
                 ndim = 2
             data = np.empty((0, 0, ndim))
+            warmup_numba_cache()
         else:
             data, shape_type = extract_shape_type(data, shape_type)
             data_ndim = get_shape_ndim(data)
@@ -3133,3 +3134,10 @@ class Shapes(Layer):
         labels = self._data_view.to_labels(labels_shape=labels_shape)
 
         return labels
+
+
+def warmup_numba_cache():
+    from napari.layers.shapes._shapes_utils import acc_generate_2D_edge_meshes
+
+    if acc_generate_2D_edge_meshes is not None:
+        acc_generate_2D_edge_meshes(np.array([[0, 0], [1, 1], [0, 1]]))
