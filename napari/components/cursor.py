@@ -1,5 +1,7 @@
 from typing import Optional
 
+import numpy as np
+
 from napari.components._viewer_constants import CursorStyle
 from napari.utils.events import EventedModel
 
@@ -9,7 +11,7 @@ class Cursor(EventedModel):
 
     Attributes
     ----------
-    position : tuple or None
+    position : tuple of float
         Position of the cursor in world coordinates. None if outside the
         world.
     scaled : bool
@@ -28,14 +30,16 @@ class Cursor(EventedModel):
             * pointing: A finger for pointing
             * standard: The standard cursor
             # crosshair: A crosshair
-    _view_direction : Optional[Tuple[float, float, float]]
-        The vector describing the direction of the camera in the scene.
+    _view_direction : Optional[np.ndarray]
+        The vector describing the direction of the camera in the scene
+        in world coordinates.
         This is None when viewing in 2D.
     """
 
     # fields
-    position: tuple[float, ...] = (1, 1)
+    position: Optional[tuple[float, ...]] = (1.0, 1.0)
+    # FIXME: None value of position is not compatible with ViewerModel._on_layers_change
     scaled: bool = True
     size = 1.0
     style: CursorStyle = CursorStyle.STANDARD
-    _view_direction: Optional[tuple[float, float, float]] = None
+    _view_direction: Optional[np.ndarray] = None
