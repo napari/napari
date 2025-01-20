@@ -115,7 +115,10 @@ class _ImageSliceResponse:
         shape = (1,) * slice_input.ndisplay
         if rgb:
             shape = shape + (3,)
-        data = np.zeros(shape, dtype=dtype)
+        try:
+            data = np.zeros(shape, dtype=np.dtype(dtype))
+        except TypeError:
+            data = np.zeros(shape, dtype=dtype.numpy_dtype)
         image = _ImageView.from_view(data)
         ndim = slice_input.ndim
         tile_to_data = Affine(
