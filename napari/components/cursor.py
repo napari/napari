@@ -12,8 +12,8 @@ class Cursor(EventedModel):
     Attributes
     ----------
     position : tuple of float
-        Position of the cursor in world coordinates. None if outside the
-        world.
+        Position of the cursor in world coordinates. If cursor outside of canvas,
+        then last known position is stored.
     scaled : bool
         Flag to indicate whether cursor size should be scaled to zoom.
         Only relevant for circle and square cursors which are drawn
@@ -37,8 +37,7 @@ class Cursor(EventedModel):
     """
 
     # fields
-    position: Optional[tuple[float, ...]] = (1.0, 1.0)
-    # FIXME: None value of position is not compatible with ViewerModel._on_layers_change
+    position: tuple[float, ...] = (1.0, 1.0)
     scaled: bool = True
     size = 1.0
     style: CursorStyle = CursorStyle.STANDARD
