@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Any, Callable, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 import numpy as np
 
@@ -11,6 +11,9 @@ from napari.types import ArrayLike
 from napari.utils._dask_utils import DaskIndexer
 from napari.utils.misc import reorder_after_dim_reduction
 from napari.utils.transforms import Affine
+
+if TYPE_CHECKING:
+    from tensorstore import dtype as ts_dtype
 
 
 @dataclass(frozen=True)
@@ -88,7 +91,7 @@ class _ImageSliceResponse:
         slice_input: _SliceInput,
         rgb: bool,
         request_id: Optional[int] = None,
-        dtype=np.uint8,
+        dtype: Union[np.dtype, 'ts_dtype', None] = None,
     ) -> '_ImageSliceResponse':
         """Returns an empty image slice response.
 
@@ -113,12 +116,14 @@ class _ImageSliceResponse:
             The dtype of the empty image slice.
         """
         shape = (1,) * slice_input.ndisplay
+        if dtype is None:
+            dtype = np.uint8
         if rgb:
             shape = shape + (3,)
         try:
             data = np.zeros(shape, dtype=np.dtype(dtype))
         except TypeError:
-            data = np.zeros(shape, dtype=dtype.numpy_dtype)
+            data = np.zeros(shape, dtype=dtype.numpy_dtype)  # type: ignore [union-attr]
         image = _ImageView.from_view(data)
         ndim = slice_input.ndim
         tile_to_data = Affine(
