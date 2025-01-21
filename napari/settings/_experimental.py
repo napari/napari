@@ -63,7 +63,7 @@ class ExperimentalSettings(EventedSettings):
     compiled_triangulation: bool = Field(
         False,
         title=trans._(
-            'Use C++ code to speedup creation and updates of Shapes layers'
+            'Use C++ code to speed up creation and updates of Shapes layers'
             '(requires optional dependencies)'
         ),
         description=trans._(
