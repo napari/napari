@@ -2112,7 +2112,7 @@ class Points(Layer):
         self.events.data(
             value=self.data,
             action=ActionType.ADDING,
-            data_indices=(1,),
+            data_indices=(-1,),
             vertex_indices=((),),
         )
         self._set_data(np.append(self.data, np.atleast_2d(coords), axis=0))
