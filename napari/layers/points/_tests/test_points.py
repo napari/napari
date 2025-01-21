@@ -1191,7 +1191,7 @@ def test_add_points_direct(attribute: str):
     assert layer.events.data.call_args_list[0][1] == {
         'value': old_data,
         'action': ActionType.ADDING,
-        'data_indices': (-2, -1),
+        'data_indices': (-1,),
         'vertex_indices': ((),),
     }
     assert layer.events.data.call_args[1] == {
