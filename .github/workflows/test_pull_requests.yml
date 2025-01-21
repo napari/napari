@@ -158,6 +158,12 @@ jobs:
             backend: pyqt6
             coverage: cov
             tox_extras: "testing_extra"
+          # test with no numba
+          - python: "3.12"
+            platform: ubuntu-latest
+            backend: pyqt6_no_numba
+            coverage: cov
+            pydantic: ""
           # pyside2 test
           - python: "3.10"
             platform: ubuntu-latest

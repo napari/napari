@@ -1,3 +1,5 @@
+import typing
+
 import numpy as np
 
 from napari._vispy.layers.base import VispyBaseLayer
@@ -7,9 +9,13 @@ from napari._vispy.visuals.shapes import ShapesVisual
 from napari.settings import get_settings
 from napari.utils.events import disconnect_events
 
+if typing.TYPE_CHECKING:
+    from napari.layers import Shapes
+
 
 class VispyShapesLayer(VispyBaseLayer):
     node: ShapesVisual
+    layer: 'Shapes'
 
     def __init__(self, layer) -> None:
         node = ShapesVisual()

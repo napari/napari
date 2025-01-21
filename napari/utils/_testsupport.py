@@ -351,9 +351,9 @@ def make_napari_viewer(
 
     # do not inline to avoid pytest trying to compute repr of expression.
     # it fails if C++ object gone but not Python object.
-    assert (
-        _do_not_inline_below == 0
-    ), f'{request.config.getoption(_SAVE_GRAPH_OPNAME)}, {_SAVE_GRAPH_OPNAME}'
+    assert _do_not_inline_below == 0, (
+        f'{request.config.getoption(_SAVE_GRAPH_OPNAME)}, {_SAVE_GRAPH_OPNAME}'
+    )
 
     # only check for leaked widgets if an exception was raised during the test,
     # and "strict" mode was used.
