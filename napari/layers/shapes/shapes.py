@@ -3140,4 +3140,6 @@ def warmup_numba_cache():
     from napari.layers.shapes._shapes_utils import acc_generate_2D_edge_meshes
 
     if acc_generate_2D_edge_meshes is not None:
-        acc_generate_2D_edge_meshes(np.array([[0, 0], [1, 1], [0, 1]]))
+        acc_generate_2D_edge_meshes(
+            np.array([[0, 0], [1, 1], [0, 1]], dtype=np.float32)
+        )
