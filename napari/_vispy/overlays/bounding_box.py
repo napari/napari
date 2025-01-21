@@ -26,6 +26,16 @@ class VispyBoundingBoxOverlay(LayerOverlayMixin, VispySceneOverlay):
         bounds = self.layer._display_bounding_box_augmented_data_level(
             self.layer._slice_input.displayed
         )
+        if (
+            len(self.layer._slice_input.displayed) == 3
+            and self.layer.multiscale
+        ):
+            # for 3D multiscale layers, the lowest data level is displayed
+            # and we need the augmented bounding box
+            bounds = self.layer._display_bounding_box_at_level(
+                self.layer._slice_input.displayed, len(self.layer.data) - 1
+            ) + np.array([[-0.5, 0.5]])
+
         if len(bounds) == 2:
             # 2d layers are assumed to be at 0 in the 3rd dimension
             bounds = np.pad(bounds, ((1, 0), (0, 0)))
