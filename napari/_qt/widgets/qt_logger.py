@@ -1,3 +1,5 @@
+import logging
+
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QFontDatabase
 from qtpy.QtWidgets import (
@@ -32,16 +34,29 @@ class LogWidget(QWidget):
         self.layout.addWidget(title_label)
 
         # level selection
-        self.level_selection = QComboBox()
-        self.level_selection.addItems(
+        self.level_layout = QHBoxLayout()
+        self.level_layout.addWidget(QLabel('Current log level:'))
+        self.loglevel = QComboBox()
+        self.loglevel.addItems(
             ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
         )
-        self.layout.addWidget(self.level_selection)
+        self.level_layout.addWidget(self.loglevel)
+        self.level_layout.addStretch()
+        self.layout.addLayout(self.level_layout)
 
-        # text filter
+        # filtering
+        self.filter_layout = QHBoxLayout()
+        self.filter_layout.addWidget(QLabel('Filter:'))
+        self.level_filter = QComboBox()
+        self.level_filter.addItems(
+            ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
+        )
+        self.filter_layout.addWidget(self.level_filter)
+
         self.text_filter = QLineEdit()
         self.text_filter.setPlaceholderText('text filter')
-        self.layout.addWidget(self.text_filter)
+        self.filter_layout.addWidget(self.text_filter)
+        self.layout.addLayout(self.filter_layout)
 
         # log text box
         self.log_text_box = QTextEdit()
@@ -64,7 +79,8 @@ class LogWidget(QWidget):
 
         self.setLayout(self.layout)
 
-        self.level_selection.currentTextChanged.connect(self._on_change)
+        self.loglevel.currentTextChanged.connect(self._on_loglevel_change)
+        self.level_filter.currentTextChanged.connect(self._on_change)
         self.text_filter.textChanged.connect(self._on_change)
 
         # TODO: super laggy when open :/
@@ -73,14 +89,20 @@ class LogWidget(QWidget):
         self.log_text_box.verticalScrollBar().rangeChanged.connect(
             self._jump_to_pos
         )
+
+        self._on_loglevel_change()
         self._on_change()
         self._jump_to_pos()
+
+    def _on_loglevel_change(self, event=None):
+        level = logging.getLevelNamesMapping().get(event, logging.NOTSET)
+        logging.getLogger().setLevel(level)
 
     def _on_new_message(self, event=None):
         self._prev_pos = self._scroll_pos()
 
         log = LOG_STREAM.get_filtered_logs_html(
-            self.level_selection.currentText(),
+            self.level_filter.currentText(),
             self.text_filter.text(),
             last_only=True,
         )[0]
@@ -90,7 +112,7 @@ class LogWidget(QWidget):
         self._prev_pos = self._scroll_pos()
 
         logs = LOG_STREAM.get_filtered_logs_html(
-            self.level_selection.currentText(), self.text_filter.text()
+            self.level_filter.currentText(), self.text_filter.text()
         )
         self.log_text_box.setHtml('<br>'.join(logs))
 
