@@ -14,7 +14,7 @@ from napari.utils.translations import trans
 if TYPE_CHECKING:
     from napari.utils.events import Event
 
-__all__ = ['create_context', 'get_context', 'Context', 'SettingsAwareContext']
+__all__ = ['Context', 'SettingsAwareContext', 'create_context', 'get_context']
 
 
 class ContextMapping(collections.abc.Mapping):

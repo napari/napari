@@ -118,7 +118,9 @@ def sys_info(as_html: bool = False) -> str:
         ('superqt', 'superqt'),
         ('in_n_out', 'in-n-out'),
         ('app_model', 'app-model'),
+        ('psygnal', 'psygnal'),
         ('npe2', 'npe2'),
+        ('pydantic', 'pydantic'),
     )
 
     loaded = {}
@@ -183,7 +185,7 @@ def sys_info(as_html: bool = False) -> str:
     except ValueError:
         from napari.utils._appdirs import user_config_dir
 
-        text += f"  - {os.getenv('NAPARI_CONFIG', user_config_dir())}"
+        text += f'  - {os.getenv("NAPARI_CONFIG", user_config_dir())}'
 
     if not as_html:
         text = (

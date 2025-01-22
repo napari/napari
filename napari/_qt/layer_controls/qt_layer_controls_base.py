@@ -9,9 +9,9 @@ from qtpy.QtWidgets import (
     QLabel,
     QMessageBox,
 )
+from superqt import QLabeledDoubleSlider
 
 from napari._qt.utils import set_widgets_enabled_with_opacity
-from napari._qt.widgets._slider_compat import QDoubleSlider
 from napari._qt.widgets.qt_mode_buttons import QtModeRadioButton
 from napari.layers.base._base_constants import (
     BLENDING_TRANSLATIONS,
@@ -130,7 +130,7 @@ class QtLayerControls(QFrame):
         self.button_grid.setSpacing(4)
 
         # Control widgets
-        sld = QDoubleSlider(Qt.Orientation.Horizontal, parent=self)
+        sld = QLabeledDoubleSlider(Qt.Orientation.Horizontal, parent=self)
         sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         sld.setMinimum(0)
         sld.setMaximum(1)
@@ -157,6 +157,12 @@ class QtLayerControls(QFrame):
         self.opacityLabel.setEnabled(
             self.layer.blending not in NO_OPACITY_BLENDING_MODES
         )
+        if self.__class__ == QtLayerControls:
+            # This base class is only instantiated in tests. When it's not a
+            # concrete subclass, we need to parent the button_grid to the
+            # layout so that qtbot will correctly clean up all instantiated
+            # widgets.
+            self.layout().addRow(self.button_grid)
 
     def changeOpacity(self, value):
         """Change opacity value on the layer model.

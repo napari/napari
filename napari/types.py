@@ -1,4 +1,4 @@
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from functools import partial, wraps
 from pathlib import Path
 from types import TracebackType
@@ -28,28 +28,28 @@ if TYPE_CHECKING:
 
 
 __all__ = [
-    'ArrayLike',
-    'LayerTypeName',
-    'FullLayerData',
-    'LayerData',
-    'PathLike',
-    'PathOrPaths',
-    'ReaderFunction',
-    'WriterFunction',
-    'ExcInfo',
-    'WidgetCallable',
-    'AugmentedWidget',
-    'SampleData',
-    'SampleDict',
     'ArrayBase',
+    'ArrayLike',
+    'AugmentedWidget',
+    'ExcInfo',
+    'FullLayerData',
     'ImageData',
     'LabelsData',
+    'LayerData',
+    'LayerDataTuple',
+    'LayerTypeName',
+    'PathLike',
+    'PathOrPaths',
     'PointsData',
+    'ReaderFunction',
+    'SampleData',
+    'SampleDict',
     'ShapesData',
     'SurfaceData',
     'TracksData',
     'VectorsData',
-    'LayerDataTuple',
+    'WidgetCallable',
+    'WriterFunction',
     'image_reader_to_layerdata_reader',
 ]
 
@@ -63,8 +63,8 @@ ArrayLike = Union[np.ndarray, 'dask.array.Array', 'zarr.Array']
 
 # layer data may be: (data,) (data, meta), or (data, meta, layer_type)
 # using "Any" for the data type until ArrayLike is more mature.
-FullLayerData = tuple[Any, dict, LayerTypeName]
-LayerData = Union[tuple[Any], tuple[Any, dict], FullLayerData]
+FullLayerData = tuple[Any, Mapping, LayerTypeName]
+LayerData = Union[tuple[Any], tuple[Any, Mapping], FullLayerData]
 
 PathLike = Union[str, Path]
 PathOrPaths = Union[PathLike, Sequence[PathLike]]

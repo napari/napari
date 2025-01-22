@@ -56,7 +56,7 @@ class AppearanceSettings(EventedModel):
         True,
         title=trans._('Update status based on layer'),
         description=trans._(
-            'Calculate status bar based on current active layer and mose position.'
+            'Calculate status bar based on current active layer and mouse position.'
         ),
     )
 

@@ -80,6 +80,12 @@ def activate_add_line_mode(layer: Shapes) -> None:
     layer.mode = Mode.ADD_LINE
 
 
+@register_shapes_mode_action(trans._('Add polylines'))
+def activate_add_polyline_mode(layer: Shapes) -> None:
+    """Activate add polyline tool."""
+    layer.mode = Mode.ADD_POLYLINE
+
+
 @register_shapes_mode_action(trans._('Add path'))
 def activate_add_path_mode(layer: Shapes) -> None:
     """Activate add path tool."""
@@ -128,6 +134,7 @@ shapes_fun_to_mode = [
     (activate_add_rectangle_mode, Mode.ADD_RECTANGLE),
     (activate_add_ellipse_mode, Mode.ADD_ELLIPSE),
     (activate_add_line_mode, Mode.ADD_LINE),
+    (activate_add_polyline_mode, Mode.ADD_POLYLINE),
     (activate_add_path_mode, Mode.ADD_PATH),
     (activate_add_polygon_mode, Mode.ADD_POLYGON),
     (activate_add_polygon_lasso_mode, Mode.ADD_POLYGON_LASSO),
@@ -180,7 +187,7 @@ def move_shapes_selection_to_back(layer: Shapes) -> None:
 
 @register_shapes_action(
     trans._(
-        'Finish any drawing, for example when using the path or polygon tool.'
+        'Finish any drawing, for example when using the path or polygon tool'
     ),
 )
 def finish_drawing_shape(layer: Shapes) -> None:

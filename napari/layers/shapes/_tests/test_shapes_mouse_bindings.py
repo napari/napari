@@ -158,6 +158,87 @@ def test_line_fixed_angles(create_known_shapes_layer):
     assert np.allclose(theta, 45.0)
 
 
+def test_path_tablet(create_known_shapes_layer):
+    layer, n_shapes, known_non_shape = create_known_shapes_layer
+    desired_shape = np.array([[20, 30], [10, 50], [60, 40], [80, 20]])
+
+    layer.mode = 'add_path'
+    event = read_only_mouse_event(
+        type='mouse_press',
+        is_dragging=True,
+        position=desired_shape[0],
+        pos=desired_shape[0],
+    )
+    mouse_press_callbacks(layer, event)
+    assert layer.shape_type[-1] == 'path'
+
+    for coord in desired_shape[1:]:
+        event = read_only_mouse_event(
+            type='mouse_move',
+            is_dragging=True,
+            position=coord,
+            pos=coord,
+        )
+        mouse_move_callbacks(layer, event)
+
+    event = read_only_mouse_event(
+        type='mouse_release',
+        is_dragging=True,
+        position=desired_shape[-1],
+        pos=desired_shape[-1],
+    )
+    mouse_release_callbacks(layer, event)
+
+    assert len(layer.data) == n_shapes + 1
+    assert np.array_equal(desired_shape, layer.data[-1])
+
+    assert layer.shape_type[-1] == 'path'
+    assert not layer._is_creating
+
+    # Ensure it's selected, accounting for zero-indexing
+    assert len(layer.selected_data) == 1
+    assert layer.selected_data == {n_shapes}
+
+
+def test_polyline_mouse(create_known_shapes_layer):
+    layer, n_shapes, known_non_shape = create_known_shapes_layer
+    desired_shape = np.array([[20, 30], [10, 50], [60, 40], [80, 20]])
+
+    layer.mode = 'add_path'
+
+    event = read_only_mouse_event(
+        type='mouse_press',
+        position=desired_shape[0],
+        pos=desired_shape[0],
+    )
+    mouse_press_callbacks(layer, event)
+    assert layer.shape_type[-1] == 'path'
+
+    for coord in desired_shape[1:]:
+        event = read_only_mouse_event(
+            type='mouse_move',
+            position=coord,
+            pos=coord,
+        )
+        mouse_move_callbacks(layer, event)
+
+    event = read_only_mouse_event(
+        type='mouse_press',
+        position=desired_shape[-1],
+        pos=desired_shape[-1],
+    )
+    mouse_press_callbacks(layer, event)
+
+    assert len(layer.data) == n_shapes + 1
+    assert np.array_equal(desired_shape, layer.data[-1])
+    assert layer.shape_type[-1] == 'path'
+    assert not layer._is_creating
+
+    # Ensure it's selected, accounting for zero-indexing
+    assert len(layer.selected_data) == 1
+    assert layer.selected_data == {n_shapes}
+
+
 def test_polygon_lasso_tablet(create_known_shapes_layer):
     """Draw polygon with tablet simulated by mouse drag event."""
     layer, n_shapes, known_non_shape = create_known_shapes_layer
@@ -269,7 +350,7 @@ def test_distance_polygon_creating(create_known_shapes_layer):
     assert len(layer.data[-1] == 2)
 
 
-@pytest.mark.parametrize('shape_type', ['path', 'polygon'])
+@pytest.mark.parametrize('shape_type', ['polyline', 'polygon'])
 def test_add_complex_shape(shape_type, create_known_shapes_layer):
     """Add simple shape by clicking in add mode."""
     layer, n_shapes, known_non_shape = create_known_shapes_layer
@@ -311,6 +392,7 @@ def test_add_complex_shape(shape_type, create_known_shapes_layer):
     assert len(layer.data) == n_shapes + 1
     assert layer.data[-1].shape, desired_shape.shape
     np.testing.assert_allclose(layer.data[-1], desired_shape)
+    shape_type = shape_type if shape_type == 'polygon' else 'path'
     assert layer.shape_type[-1] == shape_type
 
     # Ensure it's selected, accounting for zero-indexing
@@ -321,7 +403,7 @@ def test_add_complex_shape(shape_type, create_known_shapes_layer):
 @pytest.mark.parametrize(
     'shape_type_vertices',
     [
-        ('path', [[20, 30], [20, 30]]),
+        ('polyline', [[20, 30], [20, 30]]),
         ('polygon', [[20, 30], [10, 50], [10, 50]]),
     ],
 )
@@ -732,7 +814,7 @@ def test_clicking_the_same_point_is_not_crashing(
     'mode',
     [
         'add_polygon',
-        'add_path',
+        'add_polyline',
     ],
 )
 def test_is_creating_is_false_on_creation(mode, create_known_shapes_layer):

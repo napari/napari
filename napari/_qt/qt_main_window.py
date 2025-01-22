@@ -10,6 +10,7 @@ import sys
 import time
 import warnings
 from collections.abc import MutableMapping, Sequence
+from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -60,7 +61,7 @@ from napari._qt.dialogs.qt_activity_dialog import QtActivityDialog
 from napari._qt.dialogs.qt_notification import NapariQtNotification
 from napari._qt.qt_event_loop import (
     NAPARI_ICON_PATH,
-    get_app,
+    get_qapp,
     quit_app as quit_app_,
 )
 from napari._qt.qt_resources import get_stylesheet
@@ -81,6 +82,7 @@ from napari.settings import get_settings
 from napari.utils import perf
 from napari.utils._proxies import PublicOnlyProxy
 from napari.utils.events import Event
+from napari.utils.geometry import get_center_bbox
 from napari.utils.io import imsave
 from napari.utils.misc import (
     in_ipython,
@@ -92,13 +94,13 @@ from napari.utils.notifications import Notification
 from napari.utils.theme import _themes, get_system_theme
 from napari.utils.translations import trans
 
-_sentinel = object()
-
 if TYPE_CHECKING:
     from magicgui.widgets import Widget
     from qtpy.QtGui import QImage
 
     from napari.viewer import Viewer
+
+_sentinel = object()
 
 
 MenuStr = Literal[
@@ -146,7 +148,6 @@ class _QtMainWindow(QMainWindow):
         self.setWindowTitle(self._qt_viewer.viewer.title)
 
         self._maximized_flag = False
-        self._fullscreen_flag = False
         self._normal_geometry = QRect()
         self._window_size = None
         self._window_pos = None
@@ -221,9 +222,25 @@ class _QtMainWindow(QMainWindow):
     def showEvent(self, event: QShowEvent):
         """Override to handle window state changes."""
         settings = get_settings()
-        if settings.appearance.update_status_based_on_layer:
+        # if event loop is not running, we don't want to start the thread
+        # If event loop is running, the loopLevel will be above 0
+        if (
+            settings.appearance.update_status_based_on_layer
+            and QApplication.instance().thread().loopLevel()
+        ):
             self.status_thread.start()
         super().showEvent(event)
+
+    def enterEvent(self, a0):
+        # as we call show in Viewer constructor, we need to start the thread
+        # when the mouse enters the window
+        # as first call of showEvent is before the event loop is running
+        if (
+            get_settings().appearance.update_status_based_on_layer
+            and not self.status_thread.isRunning()
+        ):
+            self.status_thread.start()
+        super().enterEvent(a0)
 
     def hideEvent(self, event: QHideEvent):
         self.status_thread.terminate()
@@ -281,62 +298,26 @@ class _QtMainWindow(QMainWindow):
 
         return res
 
-    def isFullScreen(self):
-        # Needed to prevent errors when going to fullscreen mode on Windows
-        # Use a flag attribute to determine if the window is in full screen mode
-        # See https://bugreports.qt.io/browse/QTBUG-41309
-        # Based on https://github.com/spyder-ide/spyder/pull/7720
-        return self._fullscreen_flag
-
-    def showNormal(self):
-        # Needed to prevent errors when going to fullscreen mode on Windows. Here we:
-        #   * Set fullscreen flag
-        #   * Remove `Qt.FramelessWindowHint` and `Qt.WindowStaysOnTopHint` window flags if needed
-        #   * Set geometry to previously stored normal geometry or default empty QRect
-        # Always call super `showNormal` to set Qt window state
-        # See https://bugreports.qt.io/browse/QTBUG-41309
-        # Based on https://github.com/spyder-ide/spyder/pull/7720
-        self._fullscreen_flag = False
-        if os.name == 'nt':
-            self.setWindowFlags(
-                self.windowFlags()
-                ^ (
-                    Qt.WindowType.FramelessWindowHint
-                    | Qt.WindowType.WindowStaysOnTopHint
-                )
-            )
-            self.setGeometry(self._normal_geometry)
-        super().showNormal()
-
     def showFullScreen(self):
-        # Needed to prevent errors when going to fullscreen mode on Windows. Here we:
-        #   * Set fullscreen flag
-        #   * Add `Qt.FramelessWindowHint` and `Qt.WindowStaysOnTopHint` window flags if needed
-        #   * Call super `showNormal` to update the normal screen geometry to apply it later if needed
-        #   * Save window normal geometry if needed
-        #   * Get screen geometry
-        #   * Set geometry window to use total screen geometry +1 in every direction if needed
-        # If the workaround is not needed just call super `showFullScreen`
-        # See https://bugreports.qt.io/browse/QTBUG-41309
-        # Based on https://github.com/spyder-ide/spyder/pull/7720
-        self._fullscreen_flag = True
-        if os.name == 'nt':
-            self.setWindowFlags(
-                self.windowFlags()
-                | Qt.WindowType.FramelessWindowHint
-                | Qt.WindowType.WindowStaysOnTopHint
+        super().showFullScreen()
+        # Handle OpenGL based windows fullscreen issue on Windows.
+        # For more info see:
+        #  * https://doc.qt.io/qt-6/windows-issues.html#fullscreen-opengl-based-windows
+        #  * https://bugreports.qt.io/browse/QTBUG-41309
+        #  * https://bugreports.qt.io/browse/QTBUG-104511
+        if os.name != 'nt':
+            return
+        import win32con
+        import win32gui
+
+        if self.windowHandle():
+            handle = int(self.windowHandle().winId())
+            win32gui.SetWindowLong(
+                handle,
+                win32con.GWL_STYLE,
+                win32gui.GetWindowLong(handle, win32con.GWL_STYLE)
+                | win32con.WS_BORDER,
             )
-            super().showNormal()
-            self._normal_geometry = self.normalGeometry()
-            screen_rect = self.windowHandle().screen().geometry()
-            self.setGeometry(
-                screen_rect.left() - 1,
-                screen_rect.top() - 1,
-                screen_rect.width() + 2,
-                screen_rect.height() + 2,
-            )
-        else:
-            super().showFullScreen()
 
     def eventFilter(self, source, event):
         # Handle showing hidden menubar on mouse move event.
@@ -682,7 +663,7 @@ class Window:
 
     def __init__(self, viewer: 'Viewer', *, show: bool = True) -> None:
         # create QApplication if it doesn't already exist
-        qapp = get_app()
+        qapp = get_qapp()
 
         # Dictionary holding dock widgets
         self._dock_widgets: MutableMapping[str, QtViewerDockWidget] = (
@@ -1513,7 +1494,7 @@ class Window:
         # B) it is not the first time a QMainWindow is being created
 
         # `app_name` will be "napari" iff the application was instantiated in
-        # get_app(). isActiveWindow() will be True if it is the second time a
+        # get_qapp(). isActiveWindow() will be True if it is the second time a
         # _qt_window has been created.
         # See #721, #732, #735, #795, #1594
         app_name = QApplication.instance().applicationName()
@@ -1554,11 +1535,13 @@ class Window:
                     {'font_size': f'{settings.appearance.font_size}pt'}
                 )
             # set the style sheet with the theme name and extra_variables
-            self._qt_window.setStyleSheet(
-                get_stylesheet(
-                    actual_theme_name, extra_variables=extra_variables
-                )
+            style_sheet = get_stylesheet(
+                actual_theme_name, extra_variables=extra_variables
             )
+            self._qt_window.setStyleSheet(style_sheet)
+            self._qt_viewer.setStyleSheet(style_sheet)
+            if self._qt_viewer._console:
+                self._qt_viewer._console._update_theme(style_sheet=style_sheet)
 
     def _status_changed(self, event):
         """Update status bar.
@@ -1764,6 +1747,93 @@ class Window:
             imsave(path, img)
         return img
 
+    def export_rois(
+        self,
+        rois: list[np.ndarray],
+        paths: Optional[Union[str, Path, list[Union[str, Path]]]] = None,
+        scale: Optional[float] = None,
+    ):
+        """Export the given rectangular rois to specified file paths.
+
+        For each shape, moves the camera to the center of the shape
+        and adjust the canvas size to fit the shape.
+        Note: The shape height and width can be of type float.
+        However, the canvas size only accepts a tuple of integers.
+        This can result in slight misalignment.
+
+        Parameters
+        ----------
+        rois: list[np.ndarray]
+            A list of arrays  with each being of shape (4, 2) representing
+            a rectangular roi.
+        paths: str, Path, list[str, Path], optional
+            Where to save the rois. If a string or a Path, a directory will
+            be created if it does not exist yet and screenshots will be
+            saved with filename `roi_{n}.png` where n is the nth roi. If
+            paths is a list of either string or paths, these need to be the
+            full paths of where to store each individual roi. In this case
+            the length of the list and the number of rois must match.
+            If None, the screenshots will only be returned and not saved
+            to disk.
+        scale: float, optional
+            Scale factor used to increase resolution of canvas for the screenshot.
+            By default, uses the displayed scale.
+
+        Returns
+        -------
+        screenshot_list: list
+            The list with roi screenshots.
+
+        """
+        if (
+            paths is not None
+            and isinstance(paths, list)
+            and len(paths) != len(rois)
+        ):
+            raise ValueError(
+                trans._(
+                    'The number of file paths does not match the number of ROI shapes',
+                    deferred=True,
+                )
+            )
+
+        if isinstance(paths, (str, Path)):
+            storage_dir = Path(paths).expanduser()
+            storage_dir.mkdir(parents=True, exist_ok=True)
+            paths = [storage_dir / f'roi_{n}.png' for n in range(len(rois))]
+
+        if self._qt_viewer.viewer.dims.ndisplay > 2:
+            raise NotImplementedError(
+                "'export_rois' is not implemented for 3D view."
+            )
+
+        screenshot_list = []
+        camera = self._qt_viewer.viewer.camera
+        start_camera_center = camera.center
+        start_camera_zoom = camera.zoom
+        canvas = self._qt_viewer.canvas
+        prev_size = canvas.size
+
+        visible_dims = list(self._qt_viewer.viewer.dims.displayed)
+        step = min(self._qt_viewer.viewer.layers.extent.step[visible_dims])
+
+        for index, roi in enumerate(rois):
+            center_coord, height, width = get_center_bbox(roi)
+            camera.center = center_coord
+            canvas.size = (int(height / step), int(width / step))
+
+            camera.zoom = 1 / step
+            path = paths[index] if paths is not None else None
+            screenshot_list.append(
+                self.screenshot(path=path, canvas_only=True, scale=scale)
+            )
+
+        canvas.size = prev_size
+        camera.center = start_camera_center
+        camera.zoom = start_camera_zoom
+
+        return screenshot_list
+
     def screenshot(
         self, path=None, size=None, scale=None, flash=True, canvas_only=False
     ):
@@ -1771,7 +1841,7 @@ class Window:
 
         Parameters
         ----------
-        path : str
+        path : str, Path
             Filename for saving screenshot image.
         size : tuple (int, int)
             Size (resolution) of the screenshot. By default, the currently displayed size.

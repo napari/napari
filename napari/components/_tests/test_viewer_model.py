@@ -13,6 +13,9 @@ from napari.components import ViewerModel
 from napari.errors import MultipleReaderError, ReaderPluginError
 from napari.errors.reader_errors import NoAvailableReaderError
 from napari.layers import Image
+from napari.layers.shapes._tests.conftest import (
+    ten_four_corner,  # noqa: F401
+)  # import to not put this data in top level conftest.py
 from napari.settings import get_settings
 from napari.utils.colormaps import AVAILABLE_COLORMAPS, Colormap
 from napari.utils.events.event import WarningEmitter
@@ -204,14 +207,12 @@ def test_add_vectors():
     assert viewer.dims.ndim == 2
 
 
-def test_add_shapes():
+def test_add_shapes(ten_four_corner):  # noqa: F811
     """Test adding shapes."""
     viewer = ViewerModel()
-    np.random.seed(0)
-    data = 20 * np.random.random((10, 4, 2))
-    viewer.add_shapes(data)
+    viewer.add_shapes(ten_four_corner)
     assert len(viewer.layers) == 1
-    assert np.array_equal(viewer.layers[0].data, data)
+    assert np.array_equal(viewer.layers[0].data, ten_four_corner)
     assert viewer.dims.ndim == 2
 
 
@@ -593,23 +594,32 @@ def test_active_layer():
     viewer.add_image(np.random.random((5, 5, 10, 15)))
     assert len(viewer.layers) == 1
     assert viewer.layers.selection.active == viewer.layers[0]
+    assert viewer.layers[0]._highlight_visible
 
     # Check newly added layer is active
     viewer.add_image(np.random.random((5, 6, 5, 10, 15)))
     assert len(viewer.layers) == 2
     assert viewer.layers.selection.active == viewer.layers[1]
+    assert not viewer.layers[0]._highlight_visible
+    assert viewer.layers[1]._highlight_visible
 
     # Check no active layer after unselecting all
     viewer.layers.selection.clear()
     assert viewer.layers.selection.active is None
+    assert not viewer.layers[0]._highlight_visible
+    assert not viewer.layers[1]._highlight_visible
 
     # Check selected layer is active
     viewer.layers.selection.add(viewer.layers[0])
     assert viewer.layers.selection.active == viewer.layers[0]
+    assert viewer.layers[0]._highlight_visible
+    assert not viewer.layers[1]._highlight_visible
 
     # Check no layer is active if both layers are selected
     viewer.layers.selection.add(viewer.layers[1])
     assert viewer.layers.selection.active is None
+    assert not viewer.layers[0]._highlight_visible
+    assert not viewer.layers[1]._highlight_visible
 
 
 def test_active_layer_status_update():

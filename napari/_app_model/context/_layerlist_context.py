@@ -163,7 +163,7 @@ def _active_is_image_3d(s: LayerSel) -> bool:
     return (
         _active_type(s) == 'image'
         and _activ_ndim is not None
-        and (_activ_ndim > 3 or (_activ_ndim) > 2 and not _is_rgb(s))
+        and (_activ_ndim > 3 or ((_activ_ndim) > 2 and not _is_rgb(s)))
     )
 
 

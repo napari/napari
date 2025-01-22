@@ -39,7 +39,7 @@ def test_split_stack():
 
 def test_split_rgb():
     layer_list = LayerList()
-    layer_list.append(Image(np.random.random((8, 8, 3))))
+    layer_list.append(Image(np.random.random((48, 48, 3))))
     assert len(layer_list) == 1
     assert layer_list[0].rgb is True
 
@@ -48,7 +48,7 @@ def test_split_rgb():
     assert len(layer_list) == 3
 
     for idx in range(3):
-        assert layer_list[idx].data.shape == (8, 8)
+        assert layer_list[idx].data.shape == (48, 48)
 
 
 def test_merge_stack():
@@ -62,6 +62,30 @@ def test_merge_stack():
     _merge_stack(layer_list)
     assert len(layer_list) == 1
     assert layer_list[0].data.shape == (2, 8, 8)
+
+
+def test_merge_stack_rgb():
+    layer_list = LayerList()
+    layer_list.append(Image(np.random.rand(8, 8)))
+    layer_list.append(Image(np.random.rand(8, 8)))
+    layer_list.append(Image(np.random.rand(8, 8)))
+    assert len(layer_list) == 3
+
+    layer_list.selection.active = layer_list[0]
+    layer_list.selection.add(layer_list[1])
+    layer_list.selection.add(layer_list[2])
+
+    # check that without R G B colormaps we warn
+    with pytest.raises(ValueError, match='Missing colormap'):
+        _merge_stack(layer_list, rgb=True)
+
+    layer_list[0].colormap = 'red'
+    layer_list[1].colormap = 'green'
+    layer_list[2].colormap = 'blue'
+    _merge_stack(layer_list, rgb=True)
+    assert len(layer_list) == 1
+    assert layer_list[0].data.shape == (8, 8, 3)
+    assert layer_list[0].rgb is True
 
 
 def test_toggle_visibility():

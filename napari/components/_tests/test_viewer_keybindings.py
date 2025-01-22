@@ -20,6 +20,7 @@ from napari.settings import get_settings
 from napari.utils.theme import available_themes, get_system_theme
 
 
+@pytest.mark.key_bindings
 def test_theme_toggle_keybinding():
     viewer = ViewerModel()
     assert viewer.theme == get_settings().appearance.theme

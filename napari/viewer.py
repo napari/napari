@@ -1,5 +1,6 @@
 import typing
-from typing import TYPE_CHECKING, Optional
+from pathlib import Path
+from typing import Optional, Union
 from weakref import WeakSet
 
 import magicgui as mgui
@@ -9,7 +10,7 @@ from napari.components.viewer_model import ViewerModel
 from napari.utils import _magicgui
 from napari.utils.events.event_utils import disconnect_events
 
-if TYPE_CHECKING:
+if typing.TYPE_CHECKING:
     # helpful for IDE support
     from napari._qt.qt_main_window import Window
 
@@ -95,7 +96,7 @@ class Viewer(ViewerModel):
         path: Optional[str] = None,
         *,
         scale_factor: float = 1,
-        flash: bool = True,
+        flash: bool = False,
     ) -> np.ndarray:
         """Export an image of the full extent of the displayed layer data.
 
@@ -129,7 +130,7 @@ class Viewer(ViewerModel):
             each layer.
         flash : bool
             Flag to indicate whether flash animation should be shown after
-            the screenshot was captured. By default, True.
+            the screenshot was captured. By default, False.
 
         Returns
         -------
@@ -143,6 +144,54 @@ class Viewer(ViewerModel):
             flash=flash,
         )
 
+    def export_rois(
+        self,
+        rois: list[np.ndarray],
+        paths: Optional[Union[str, Path, list[Union[str, Path]]]] = None,
+        scale: Optional[float] = None,
+    ):
+        """Export the given rectangular rois to specified file paths.
+
+        Iteratively take a screenshot of each given roi. Note that 3D rois
+        or taking rois when number of dimensions displayed in the viewer
+        canvas is 3, is currently not supported.
+
+        Parameters
+        ----------
+        rois: numpy array
+            A list of arrays with each having shape (4, 2) representing a
+            rectangular roi.
+        paths: str, Path, list[str, Path], optional
+            Where to save the rois. If a string or a Path, a directory will
+            be created if it does not exist yet and screenshots will be saved
+            with filename `roi_{n}.png` where n is the nth roi. If paths is
+            a list of either string or paths, these need to be the full paths
+            of where to store each individual roi. In this case
+            the length of the list and the number of rois must match.
+            If None, the screenshots will only be returned
+            and not saved to disk.
+        scale: float, optional
+            Scale factor used to increase resolution of canvas for the screenshot.
+            By default, uses the displayed scale.
+
+        Returns
+        -------
+        screenshot_list: list
+            The list containing all the screenshots.
+        """
+        # Check to see if roi has shape (n,2,2)
+        if any(roi.shape[-2:] != (4, 2) for roi in rois):
+            raise ValueError(
+                'ROI found with invalid shape, all rois must have shape (4, 2), i.e. have 4 corners defined in 2 '
+                'dimensions. 3D is not supported.'
+            )
+
+        screenshot_list = self.window.export_rois(
+            rois, paths=paths, scale=scale
+        )
+
+        return screenshot_list
+
     def screenshot(
         self,
         path: Optional[str] = None,
@@ -150,7 +199,7 @@ class Viewer(ViewerModel):
         size: Optional[tuple[str, str]] = None,
         scale: Optional[float] = None,
         canvas_only: bool = True,
-        flash: bool = True,
+        flash: bool = False,
     ):
         """Take currently displayed screen and convert to an image array.
 
@@ -171,7 +220,7 @@ class Viewer(ViewerModel):
         flash : bool
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
-            By default, True.
+            By default, False.
 
         Returns
         -------
