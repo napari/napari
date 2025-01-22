@@ -114,7 +114,11 @@ class LogWidget(QWidget):
         logs = LOG_STREAM.get_filtered_logs_html(
             self.level_filter.currentText(), self.text_filter.text()
         )
-        self.log_text_box.setHtml('<br>'.join(logs))
+        self.log_text_box.clear()
+        for log in logs:
+            # by looping here instead of joinging the lines,
+            # we ensure each line is separate (allows better selection)
+            self.log_text_box.append(log)
 
     def _jump_to_pos(self, event=None):
         # for some reason using scrollbar.setValue() doesn't keep up,
