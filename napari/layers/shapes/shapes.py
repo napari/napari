@@ -3137,14 +3137,12 @@ class Shapes(Layer):
 
 
 def warmup_numba_cache():
-    import threading
-
     from napari.layers.shapes._shapes_models.shape import (
         remove_path_duplicates,
     )
     from napari.layers.shapes._shapes_utils import acc_generate_2D_edge_meshes
 
-    def warmup_thread():
+    if acc_generate_2D_edge_meshes is not None:
         for order in ('C', 'F'):
             data = np.array(
                 [[0, 0], [1, 1], [0, 1], [1, 0]], dtype=np.float32, order=order
@@ -3153,7 +3151,3 @@ def warmup_numba_cache():
             acc_generate_2D_edge_meshes(data, False)
             remove_path_duplicates(data, False)
             remove_path_duplicates(data, True)
-
-    if acc_generate_2D_edge_meshes is not None:
-        thread = threading.Thread(target=warmup_thread)
-        thread.start()
