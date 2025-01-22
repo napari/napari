@@ -2,12 +2,12 @@ from qtpy.QtCore import Qt
 from qtpy.QtGui import QFontDatabase
 from qtpy.QtWidgets import (
     QComboBox,
-    QDialog,
     QHBoxLayout,
     QLabel,
     QLineEdit,
     QTextEdit,
     QVBoxLayout,
+    QWidget,
 )
 
 from napari._qt.dialogs.qt_about import QtCopyToClipboardButton
@@ -15,7 +15,7 @@ from napari.utils._logging import LOG_STREAM
 from napari.utils.translations import trans
 
 
-class LogDialog(QDialog):
+class LogWidget(QWidget):
     def __init__(
         self,
         parent=None,
@@ -25,7 +25,7 @@ class LogDialog(QDialog):
         self.layout = QVBoxLayout()
 
         # Description
-        title_label = QLabel(trans._('napari log'))
+        title_label = QLabel(trans._('logger'))
         title_label.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextSelectableByMouse
         )
@@ -75,14 +75,6 @@ class LogDialog(QDialog):
         )
         self._on_change()
         self._jump_to_pos()
-
-    @staticmethod
-    def showLog(parent=None):
-        d = LogDialog(parent)
-        d.setObjectName('LogDialog')
-        d.setWindowTitle(trans._('napari Log'))
-        d.setModal(False)
-        d.show()
 
     def _on_new_message(self, event=None):
         self._prev_pos = self._scroll_pos()

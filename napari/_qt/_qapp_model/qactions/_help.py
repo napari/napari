@@ -9,9 +9,9 @@ from packaging.version import parse
 
 from napari import __version__
 from napari._app_model.constants import MenuGroup, MenuId
-from napari._qt.dialogs.log_dialog import LogDialog
 from napari._qt.dialogs.qt_about import QtAbout
 from napari._qt.qt_main_window import Window
+from napari._qt.widgets.qt_logger import LogWidget
 from napari.utils.translations import trans
 
 
@@ -20,7 +20,9 @@ def _show_about(window: Window):
 
 
 def _show_log(window: Window):
-    LogDialog.showLog(window._qt_window)
+    window.add_dock_widget(
+        LogWidget(), name='logger', area='bottom', tabify=True
+    )
 
 
 v = parse(__version__)
