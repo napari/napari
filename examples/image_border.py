@@ -28,7 +28,7 @@ viewer.grid.enabled = True
 # Add a border overlay to each layer, and modify properties of the border overlay.
 viewer.layers[0].bounding_box.visible = True
 viewer.layers[0].bounding_box.line_color = 'cyan' # default: 'red'
-viewer.layers[0].bounding_box.line_thickness = 5 # default: 1, max: 5
+viewer.layers[0].bounding_box.line_thickness = 5 # default: 1, apparent max: 5; GPU-dependent, see: https://vispy.org/api/vispy.scene.visuals.html#vispy.scene.visuals.Line
 viewer.layers[0].bounding_box.point_size = 10 # default: 5
 viewer.layers[0].bounding_box.point_color = 'yellow' # default: 'blue'
 
