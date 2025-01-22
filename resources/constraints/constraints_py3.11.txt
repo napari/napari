@@ -35,7 +35,7 @@ click==8.1.8
     # via
     #   dask
     #   typer
-cloudpickle==3.1.0
+cloudpickle==3.1.1
     # via dask
 comm==0.2.2
     # via ipykernel
@@ -49,12 +49,14 @@ crc32c==2.7.1
     # via numcodecs
 cycler==0.12.1
     # via matplotlib
-dask==2024.12.1
+dask==2025.1.0
     # via napari (napari_repo/pyproject.toml)
-debugpy==1.8.11
+debugpy==1.8.12
     # via ipykernel
 decorator==5.1.1
     # via ipython
+deprecated==1.2.15
+    # via numcodecs
 distlib==0.3.9
     # via virtualenv
 docstring-parser==0.16
@@ -67,7 +69,7 @@ donfig==0.8.1.post1
     # via zarr
 executing==2.1.0
     # via stack-data
-filelock==3.16.1
+filelock==3.17.0
     # via
     #   torch
     #   triton
@@ -76,7 +78,7 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.55.3
+fonttools==4.55.4
     # via matplotlib
 freetype-py==2.5.1
     # via vispy
@@ -89,18 +91,18 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.123.16
+hypothesis==6.124.2
     # via napari (napari_repo/pyproject.toml)
 idna==3.10
     # via requests
-imageio==2.36.1
+imageio==2.37.0
     # via
     #   napari (napari_repo/pyproject.toml)
     #   napari-svg
     #   scikit-image
 imagesize==1.4.1
     # via sphinx
-importlib-metadata==8.5.0
+importlib-metadata==8.6.1
     # via dask
 in-n-out==0.2.1
     # via app-model
@@ -143,7 +145,7 @@ lazy-loader==0.4
     # via
     #   napari (napari_repo/pyproject.toml)
     #   scikit-image
-llvmlite==0.43.0
+llvmlite==0.44.0
     # via numba
 locket==1.0.0
     # via partd
@@ -179,7 +181,7 @@ napari-plugin-engine==0.2.0
     # via napari (napari_repo/pyproject.toml)
 napari-plugin-manager==0.1.4
     # via napari (napari_repo/pyproject.toml)
-napari-svg==0.2.0
+napari-svg==0.2.1
     # via napari (napari_repo/pyproject.toml)
 nest-asyncio==1.6.0
     # via ipykernel
@@ -191,11 +193,11 @@ npe2==0.7.7
     # via
     #   napari (napari_repo/pyproject.toml)
     #   napari-plugin-manager
-numba==0.60.0
+numba==0.61.0
     # via napari (napari_repo/pyproject.toml)
-numcodecs==0.14.1
+numcodecs==0.15.0
     # via zarr
-numpy==2.0.2
+numpy==2.1.3
     # via
     #   napari (napari_repo/pyproject.toml)
     #   contourpy
@@ -306,7 +308,7 @@ pooch==1.8.2
     #   scikit-image
 pretend==1.0.9
     # via napari (napari_repo/pyproject.toml)
-prompt-toolkit==3.0.48
+prompt-toolkit==3.0.50
     # via ipython
 psutil==6.1.1
     # via
@@ -348,7 +350,7 @@ pygments==2.19.1
     #   superqt
 pymsgbox==1.0.9
     # via pyautogui
-pyopengl==3.1.7
+pyopengl==3.1.9
     # via
     #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari (napari_repo/pyproject.toml)
@@ -437,7 +439,7 @@ qtpy==2.4.2
     #   napari-plugin-manager
     #   qtconsole
     #   superqt
-referencing==0.35.1
+referencing==0.36.1
     # via
     #   jsonschema
     #   jsonschema-specifications
@@ -510,7 +512,7 @@ tifffile==2025.1.10
     #   scikit-image
 tomli==2.2.1
     # via coverage
-tomli-w==1.1.0
+tomli-w==1.2.0
     # via npe2
 toolz==1.0.0
     # via
@@ -551,15 +553,16 @@ typing-extensions==4.12.2
     #   pint
     #   pydantic
     #   pydantic-core
+    #   referencing
     #   superqt
     #   torch
     #   typer
     #   zarr
-tzdata==2024.2
+tzdata==2025.1
     # via pandas
 urllib3==2.3.0
     # via requests
-virtualenv==20.28.1
+virtualenv==20.29.1
     # via napari (napari_repo/pyproject.toml)
 vispy==0.14.3
     # via
@@ -567,13 +570,14 @@ vispy==0.14.3
     #   napari-svg
 wcwidth==0.2.13
     # via prompt-toolkit
-wrapt==1.17.1
+wrapt==1.17.2
     # via
     #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari (napari_repo/pyproject.toml)
+    #   deprecated
 xarray==2025.1.1
     # via napari (napari_repo/pyproject.toml)
-zarr==3.0.0
+zarr==3.0.1
     # via
     #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari (napari_repo/pyproject.toml)
