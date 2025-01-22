@@ -387,25 +387,3 @@ def show_console_notification(notification: Notification):
         )
         # this will likely get silenced by QT.
         raise
-
-
-def _setup_thread_excepthook():
-    """
-    Workaround for `sys.excepthook` thread bug from:
-    http://bugs.python.org/issue1230540
-    """
-    _init = threading.Thread.__init__
-
-    def init(self, *args, **kwargs):
-        _init(self, *args, **kwargs)
-        _run = self.run
-
-        def run_with_except_hook(*args2, **kwargs2):
-            try:
-                _run(*args2, **kwargs2)
-            except Exception:  # noqa BLE001
-                sys.excepthook(*sys.exc_info())
-
-        self.run = run_with_except_hook
-
-    threading.Thread.__init__ = init
