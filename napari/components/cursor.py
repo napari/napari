@@ -12,8 +12,8 @@ class Cursor(EventedModel):
     Attributes
     ----------
     position : tuple of float
-        Position of the cursor in world coordinates. If cursor outside of canvas,
-        then last known position is stored.
+        Position of the cursor in world coordinates. If the cursor is outside of,
+        the canvas, then the last known position is stored instead.
     scaled : bool
         Flag to indicate whether cursor size should be scaled to zoom.
         Only relevant for circle and square cursors which are drawn
