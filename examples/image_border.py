@@ -1,6 +1,6 @@
 """
 Layer Bounding Box (Border) Overlay
-====================
+===================================
 
 Display an image in napari and add a bounding box overlay (a border) at the edges of the layer.
 
