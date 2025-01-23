@@ -1,13 +1,14 @@
 """
-Layer Border Overlay
+Layer Bounding Box (Border) Overlay
 ====================
 
-Display an image in napari and add a border overlay (i.e. `bounding_box`).
+Display an image in napari and add a bounding box overlay (a border) at the edges of the layer.
 
-Demonstrates visualization of many border overlay properties,
+The bounding box overlay is a visual representation of the extents of a layer.
+This example demonstrates visualization of many bounding box overlay properties,
 including line color, line thickness, point size, opacity.
 In addition, this viewer shows how layer overlays interact when draw on top of each other (at the intersection of the grid).
-Use `viewer.layers[0].bounding_box` to view all modifiable attributes of the border overlay.
+Use `viewer.layers[0].bounding_box` to view all modifiable attributes of the overlay.
 
 For an example showing how bounding box extents are visualized, see
 :ref:`sphx_glr_gallery_layer_bounding_box.py`.
@@ -28,7 +29,7 @@ viewer.grid.enabled = True
 # Add a border overlay to each layer, and modify properties of the border overlay.
 viewer.layers[0].bounding_box.visible = True
 viewer.layers[0].bounding_box.line_color = 'cyan' # default: 'red'
-viewer.layers[0].bounding_box.line_thickness = 5 # default: 1, apparent max: 5; GPU-dependent, see: https://vispy.org/api/vispy.scene.visuals.html#vispy.scene.visuals.Line
+viewer.layers[0].bounding_box.line_thickness = 5 # default: 1, maximum is GPU-dependent, see: https://vispy.org/api/vispy.scene.visuals.html#vispy.scene.visuals.Line
 viewer.layers[0].bounding_box.point_size = 10 # default: 5
 viewer.layers[0].bounding_box.point_color = 'yellow' # default: 'blue'
 
