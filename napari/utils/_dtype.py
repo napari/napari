@@ -77,6 +77,8 @@ def normalize_dtype(dtype_spec: 'DTypeLike') -> np.dtype:
         # Handle NumPy dtypes directly, especially big endian types.
         # FIXME: handle big endian types from tensorstore
         return dtype_spec
+    if isinstance(dtype_spec, str):
+        return np.dtype(dtype_spec)
     dtype_str = str(dtype_spec)
     if 'uint' in dtype_str:
         return _normalize_str_by_bit_depth(dtype_str, 'uint')
