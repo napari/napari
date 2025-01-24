@@ -3,7 +3,7 @@ import pytest
 from numpy import array
 
 from napari.layers.shapes._accelerated_triangulate_wrap import (
-    generate_2D_edge_meshes,
+    generate_2D_edge_meshes_py,
 )
 from napari.layers.shapes._shapes_utils import (
     get_default_shape_type,
@@ -360,7 +360,7 @@ def test_generate_2D_edge_meshes(
     bevel,
     expected,
 ):
-    c, o, t = generate_2D_edge_meshes(path, closed, limit, bevel)
+    c, o, t = generate_2D_edge_meshes_py(path, closed, limit, bevel)
     expected_center, expected_offsets, expected_triangles = expected
     assert np.allclose(c, expected_center)
     assert np.allclose(o, expected_offsets)
