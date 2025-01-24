@@ -730,7 +730,7 @@ def generate_tube_meshes(path, closed=False, tube_points=10):
         grid_off[i] = cx[:, np.newaxis] * normal + cy[:, np.newaxis] * binormal
 
     # construct the mesh
-    indices = []
+    indices: list[tuple[int, int, int]] = []
     for i, j in itertools.product(range(segments), range(tube_points)):
         ip = (i + 1) % segments if closed else i + 1
         jp = (j + 1) % tube_points
@@ -741,7 +741,7 @@ def generate_tube_meshes(path, closed=False, tube_points=10):
         index_d = i * tube_points + jp
 
         indices.extend(
-            ([index_a, index_b, index_d], [index_b, index_c, index_d])
+            ([index_a, index_b, index_d], [index_b, index_c, index_d])  # type: ignore[arg-type]
         )
     triangles = np.array(indices, dtype=np.uint32)
 

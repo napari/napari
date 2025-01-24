@@ -13,7 +13,9 @@ __all__ = (
 )
 
 
-def remove_path_duplicates_np(data: np.ndarray, closed: bool):
+def remove_path_duplicates_np(
+    data: npt.NDArray[np.float32], closed: bool
+) -> npt.NDArray[np.float32]:
     # We add the first data point at the end to get the same length bool
     # array as the data, and also to work on closed shapes; the last value
     # in the diff array compares the last and first vertex.
@@ -32,17 +34,17 @@ def remove_path_duplicates_np(data: np.ndarray, closed: bool):
     return data[indices[~dup]]
 
 
-def _mirror_point(x, y):
+def _mirror_point(x: np.ndarray, y: np.ndarray) -> np.ndarray:
     return 2 * y - x
 
 
-def _sign_nonzero(x):
-    y = np.sign(x).astype(int)
+def _sign_nonzero(x: np.ndarray) -> npt.NDArray[np.int32]:
+    y = np.sign(x).astype(np.int32)
     y[y == 0] = 1
     return y
 
 
-def _sign_cross(x, y):
+def _sign_cross(x: np.ndarray, y: np.ndarray) -> npt.NDArray[np.int32]:
     """sign of cross product (faster for 2d)"""
     if x.shape[1] == y.shape[1] == 2:
         return _sign_nonzero(x[:, 0] * y[:, 1] - x[:, 1] * y[:, 0])
@@ -52,7 +54,12 @@ def _sign_cross(x, y):
     raise ValueError(x.shape[1], y.shape[1])
 
 
-def generate_2D_edge_meshes_py(path, closed=False, limit=3, bevel=False):
+def generate_2D_edge_meshes_py(
+    path: npt.NDArray[np.float32],
+    closed: bool = False,
+    limit: float = 3,
+    bevel: bool = False,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Determines the triangulation of a path in 2D. The resulting `offsets`
     can be multiplied by a `width` scalar and be added to the resulting
     `centers` to generate the vertices of the triangles for the triangulation,
@@ -258,7 +265,7 @@ try:
         remove_path_duplicates,
     )
 
-    def warmup_numba_cache():
+    def warmup_numba_cache() -> None:
         global CACHE_WARMUP
         if CACHE_WARMUP:
             return
@@ -285,6 +292,6 @@ except ImportError:
     remove_path_duplicates = remove_path_duplicates_np
     create_box_from_bounding = create_box_from_bounding_py
 
-    def warmup_numba_cache():
+    def warmup_numba_cache() -> None:
         # no numba, nothing to warm up
         pass

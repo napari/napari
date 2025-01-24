@@ -1,3 +1,5 @@
+from typing import Any
+
 from napari._pydantic_compat import Field
 from napari.settings._base import EventedSettings
 from napari.utils.translations import trans
@@ -6,7 +8,7 @@ from napari.utils.translations import trans
 # this class inherits from EventedSettings instead of EventedModel because
 # it uses Field(env=...) for one of its attributes
 class ExperimentalSettings(EventedSettings):
-    def __init__(self, **data):
+    def __init__(self, **data: dict[str, Any]):
         super().__init__(**data)
 
         self.events.compiled_triangulation.connect(
@@ -89,7 +91,7 @@ class ExperimentalSettings(EventedSettings):
         # Napari specific configuration
         preferences_exclude = ('schema_version',)
 
-    def _update_compiled_backend(self):
+    def _update_compiled_backend(self) -> None:
         from napari.layers.shapes import _accelerated_triangulate_wrap
 
         _accelerated_triangulate_wrap.USE_COMPILED_BACKEND = (
