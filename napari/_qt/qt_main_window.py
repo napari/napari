@@ -10,6 +10,7 @@ import sys
 import time
 import warnings
 from collections.abc import MutableMapping, Sequence
+from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -82,6 +83,7 @@ from napari.settings import get_settings
 from napari.utils import perf
 from napari.utils._proxies import PublicOnlyProxy
 from napari.utils.events import Event
+from napari.utils.geometry import get_center_bbox
 from napari.utils.io import imsave
 from napari.utils.misc import (
     in_ipython,
@@ -93,13 +95,13 @@ from napari.utils.notifications import Notification
 from napari.utils.theme import _themes, get_system_theme
 from napari.utils.translations import trans
 
-_sentinel = object()
-
 if TYPE_CHECKING:
     from magicgui.widgets import Widget
     from qtpy.QtGui import QImage
 
     from napari.viewer import Viewer
+
+_sentinel = object()
 
 
 MenuStr = Literal[
@@ -223,9 +225,25 @@ class _QtMainWindow(QMainWindow):
     def showEvent(self, event: QShowEvent):
         """Override to handle window state changes."""
         settings = get_settings()
-        if settings.appearance.update_status_based_on_layer:
+        # if event loop is not running, we don't want to start the thread
+        # If event loop is running, the loopLevel will be above 0
+        if (
+            settings.appearance.update_status_based_on_layer
+            and QApplication.instance().thread().loopLevel()
+        ):
             self.status_thread.start()
         super().showEvent(event)
+
+    def enterEvent(self, a0):
+        # as we call show in Viewer constructor, we need to start the thread
+        # when the mouse enters the window
+        # as first call of showEvent is before the event loop is running
+        if (
+            get_settings().appearance.update_status_based_on_layer
+            and not self.status_thread.isRunning()
+        ):
+            self.status_thread.start()
+        super().enterEvent(a0)
 
     def hideEvent(self, event: QHideEvent):
         self.status_thread.terminate()
@@ -1741,6 +1759,93 @@ class Window:
             imsave(path, img)
         return img
 
+    def export_rois(
+        self,
+        rois: list[np.ndarray],
+        paths: Optional[Union[str, Path, list[Union[str, Path]]]] = None,
+        scale: Optional[float] = None,
+    ):
+        """Export the given rectangular rois to specified file paths.
+
+        For each shape, moves the camera to the center of the shape
+        and adjust the canvas size to fit the shape.
+        Note: The shape height and width can be of type float.
+        However, the canvas size only accepts a tuple of integers.
+        This can result in slight misalignment.
+
+        Parameters
+        ----------
+        rois: list[np.ndarray]
+            A list of arrays  with each being of shape (4, 2) representing
+            a rectangular roi.
+        paths: str, Path, list[str, Path], optional
+            Where to save the rois. If a string or a Path, a directory will
+            be created if it does not exist yet and screenshots will be
+            saved with filename `roi_{n}.png` where n is the nth roi. If
+            paths is a list of either string or paths, these need to be the
+            full paths of where to store each individual roi. In this case
+            the length of the list and the number of rois must match.
+            If None, the screenshots will only be returned and not saved
+            to disk.
+        scale: float, optional
+            Scale factor used to increase resolution of canvas for the screenshot.
+            By default, uses the displayed scale.
+
+        Returns
+        -------
+        screenshot_list: list
+            The list with roi screenshots.
+
+        """
+        if (
+            paths is not None
+            and isinstance(paths, list)
+            and len(paths) != len(rois)
+        ):
+            raise ValueError(
+                trans._(
+                    'The number of file paths does not match the number of ROI shapes',
+                    deferred=True,
+                )
+            )
+
+        if isinstance(paths, (str, Path)):
+            storage_dir = Path(paths).expanduser()
+            storage_dir.mkdir(parents=True, exist_ok=True)
+            paths = [storage_dir / f'roi_{n}.png' for n in range(len(rois))]
+
+        if self._qt_viewer.viewer.dims.ndisplay > 2:
+            raise NotImplementedError(
+                "'export_rois' is not implemented for 3D view."
+            )
+
+        screenshot_list = []
+        camera = self._qt_viewer.viewer.camera
+        start_camera_center = camera.center
+        start_camera_zoom = camera.zoom
+        canvas = self._qt_viewer.canvas
+        prev_size = canvas.size
+
+        visible_dims = list(self._qt_viewer.viewer.dims.displayed)
+        step = min(self._qt_viewer.viewer.layers.extent.step[visible_dims])
+
+        for index, roi in enumerate(rois):
+            center_coord, height, width = get_center_bbox(roi)
+            camera.center = center_coord
+            canvas.size = (int(height / step), int(width / step))
+
+            camera.zoom = 1 / step
+            path = paths[index] if paths is not None else None
+            screenshot_list.append(
+                self.screenshot(path=path, canvas_only=True, scale=scale)
+            )
+
+        canvas.size = prev_size
+        camera.center = start_camera_center
+        camera.zoom = start_camera_zoom
+
+        return screenshot_list
+
     def screenshot(
         self, path=None, size=None, scale=None, flash=True, canvas_only=False
     ):
@@ -1748,7 +1853,7 @@ class Window:
 
         Parameters
         ----------
-        path : str
+        path : str, Path
             Filename for saving screenshot image.
         size : tuple (int, int)
             Size (resolution) of the screenshot. By default, the currently displayed size.

@@ -265,8 +265,9 @@ class Shapes(Layer):
         vertices either to be added to or removed from shapes that are already
         selected. Note that shapes cannot be selected in this mode.
 
-        The ADD_RECTANGLE, ADD_ELLIPSE, ADD_LINE, ADD_PATH, and ADD_POLYGON
-        modes all allow for their corresponding shape type to be added.
+        The ADD_RECTANGLE, ADD_ELLIPSE, ADD_LINE, ADD_POLYLINE, ADD_PATH, and
+        ADD_POLYGON modes all allow for their corresponding shape type to be
+        added.
     units: tuple of pint.Unit
         Units of the layer data in world coordinates.
 
@@ -372,7 +373,8 @@ class Shapes(Layer):
         Mode.ADD_RECTANGLE: add_rectangle,
         Mode.ADD_ELLIPSE: add_ellipse,
         Mode.ADD_LINE: add_line,
-        Mode.ADD_PATH: add_path_polygon,
+        Mode.ADD_PATH: add_path_polygon_lasso,
+        Mode.ADD_POLYLINE: add_path_polygon,
         Mode.ADD_POLYGON: add_path_polygon,
         Mode.ADD_POLYGON_LASSO: add_path_polygon_lasso,
     }
@@ -387,6 +389,7 @@ class Shapes(Layer):
         Mode.ADD_RECTANGLE: no_op,
         Mode.ADD_ELLIPSE: no_op,
         Mode.ADD_LINE: no_op,
+        Mode.ADD_POLYLINE: polygon_creating,
         Mode.ADD_PATH: polygon_creating,
         Mode.ADD_POLYGON: polygon_creating,
         Mode.ADD_POLYGON_LASSO: polygon_creating,
@@ -404,7 +407,8 @@ class Shapes(Layer):
         Mode.ADD_RECTANGLE: no_op,
         Mode.ADD_ELLIPSE: no_op,
         Mode.ADD_LINE: no_op,
-        Mode.ADD_PATH: finish_drawing_shape,
+        Mode.ADD_PATH: no_op,
+        Mode.ADD_POLYLINE: finish_drawing_shape,
         Mode.ADD_POLYGON: finish_drawing_shape,
         Mode.ADD_POLYGON_LASSO: no_op,
     }
@@ -419,6 +423,7 @@ class Shapes(Layer):
         Mode.ADD_RECTANGLE: 'cross',
         Mode.ADD_ELLIPSE: 'cross',
         Mode.ADD_LINE: 'cross',
+        Mode.ADD_POLYLINE: 'cross',
         Mode.ADD_PATH: 'cross',
         Mode.ADD_POLYGON: 'cross',
         Mode.ADD_POLYGON_LASSO: 'cross',
@@ -859,8 +864,12 @@ class Shapes(Layer):
         if len(self.data) == 0:
             extrema = np.full((2, self.ndim), np.nan)
         else:
-            maxs = np.max([np.max(d, axis=0) for d in self.data], axis=0)
-            mins = np.min([np.min(d, axis=0) for d in self.data], axis=0)
+            maxs = np.max(
+                [d._bounding_box[1] for d in self._data_view.shapes], axis=0
+            )
+            mins = np.min(
+                [d._bounding_box[0] for d in self._data_view.shapes], axis=0
+            )
             extrema = np.vstack([mins, maxs])
         return extrema
 
@@ -1695,8 +1704,9 @@ class Shapes(Layer):
         vertices either to be added to or removed from shapes that are already
         selected. Note that shapes cannot be selected in this mode.
 
-        The ADD_RECTANGLE, ADD_ELLIPSE, ADD_LINE, ADD_PATH, and ADD_POLYGON
-        modes all allow for their corresponding shape type to be added.
+        The ADD_RECTANGLE, ADD_ELLIPSE, ADD_LINE, ADD_POLYLINE, ADD_PATH, and
+        ADD_POLYGON modes all allow for their corresponding shape type to be
+        added.
         """
         return str(self._mode)
 
@@ -2312,7 +2322,7 @@ class Shapes(Layer):
         self._ndisplay_stored = copy(self._slice_input.ndisplay)
         self._update_dims()
 
-    def _add_shapes_to_view(self, shape_inputs, data_view):
+    def _add_shapes_to_view(self, shape_inputs, data_view: ShapeList):
         """Build new shapes and add them to the _data_view"""
 
         shape_inputs = tuple(shape_inputs)
@@ -2320,7 +2330,7 @@ class Shapes(Layer):
         # build all shapes
         sh_inp = tuple(
             (
-                shape_classes[ShapeType(st)](
+                shape_classes[st](
                     d,
                     edge_width=ew,
                     z_index=z,
@@ -2533,6 +2543,7 @@ class Shapes(Layer):
                     Mode.ADD_RECTANGLE,
                     Mode.ADD_ELLIPSE,
                     Mode.ADD_LINE,
+                    Mode.ADD_POLYLINE,
                     Mode.VERTEX_INSERT,
                     Mode.VERTEX_REMOVE,
                 ]
@@ -2543,7 +2554,7 @@ class Shapes(Layer):
                 )
                 vertices = self._data_view.displayed_vertices[inds][:, ::-1]
                 # If currently adding path don't show box over last vertex
-                if self._mode == Mode.ADD_PATH:
+                if self._mode == Mode.ADD_POLYLINE:
                     vertices = vertices[:-1]
 
                 if self._value[0] is None or self._value[1] is None:
@@ -2616,7 +2627,7 @@ class Shapes(Layer):
         self._moving_value = (None, None)
         self._last_cursor_position = None
         if self._is_creating is True:
-            if self._mode == Mode.ADD_PATH:
+            if self._mode in {Mode.ADD_PATH, Mode.ADD_POLYLINE}:
                 vertices = self._data_view.shapes[index].data
                 if len(vertices) <= 2:
                     self._data_view.remove(index)
