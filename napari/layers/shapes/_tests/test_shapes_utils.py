@@ -2,8 +2,10 @@ import numpy as np
 import pytest
 from numpy import array
 
-from napari.layers.shapes._shapes_utils import (
+from napari.layers.shapes._accelerated_triangulate_wrap import (
     generate_2D_edge_meshes,
+)
+from napari.layers.shapes._shapes_utils import (
     get_default_shape_type,
     number_of_shapes,
     perpendicular_distance,
