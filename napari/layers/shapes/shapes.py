@@ -21,6 +21,9 @@ from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
     transform_with_box,
 )
+from napari.layers.shapes._accelerated_triangulate_wrap import (
+    warmup_numba_cache,
+)
 from napari.layers.shapes._shape_list import ShapeList
 from napari.layers.shapes._shapes_constants import (
     Box,
@@ -3134,20 +3137,3 @@ class Shapes(Layer):
         labels = self._data_view.to_labels(labels_shape=labels_shape)
 
         return labels
-
-
-def warmup_numba_cache():
-    from napari.layers.shapes._shapes_models.shape import (
-        remove_path_duplicates,
-    )
-    from napari.layers.shapes._shapes_utils import acc_generate_2D_edge_meshes
-
-    if acc_generate_2D_edge_meshes is not None:
-        for order in ('C', 'F'):
-            data = np.array(
-                [[0, 0], [1, 1], [0, 1], [1, 0]], dtype=np.float32, order=order
-            )
-            acc_generate_2D_edge_meshes(data, True)
-            acc_generate_2D_edge_meshes(data, False)
-            remove_path_duplicates(data, False)
-            remove_path_duplicates(data, True)

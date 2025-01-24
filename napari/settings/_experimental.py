@@ -6,6 +6,14 @@ from napari.utils.translations import trans
 # this class inherits from EventedSettings instead of EventedModel because
 # it uses Field(env=...) for one of its attributes
 class ExperimentalSettings(EventedSettings):
+    def __init__(self, **data):
+        super().__init__(**data)
+
+        self.events.compiled_triangulation.connect(
+            self._update_compiled_backend
+        )
+        self._update_compiled_backend()
+
     async_: bool = Field(
         False,
         title=trans._('Render Images Asynchronously'),
@@ -80,3 +88,10 @@ class ExperimentalSettings(EventedSettings):
     class NapariConfig:
         # Napari specific configuration
         preferences_exclude = ('schema_version',)
+
+    def _update_compiled_backend(self):
+        from napari.layers.shapes import _accelerated_triangulate_wrap
+
+        _accelerated_triangulate_wrap.USE_COMPILED_BACKEND = (
+            self.compiled_triangulation
+        )
