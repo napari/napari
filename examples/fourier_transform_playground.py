@@ -33,6 +33,7 @@ def wait_on_layers():
     """
     while "wave 0" not in viewer.layers:
         sleep(0.1)
+        QApplication.processEvents()
 
     QApplication.processEvents()
 
@@ -156,12 +157,11 @@ wdg = moving_wave()
 viewer.window.add_dock_widget(wdg, area='bottom')
 wdg()
 
+# wait for the layers to be added before running the viewer
+wait_on_layers()
 
 if __name__ == '__main__':
     napari.run()
-else:
-    # wait for the layers to be added before running the viewer
-    wait_on_layers()
 
 thread.quit()
 
