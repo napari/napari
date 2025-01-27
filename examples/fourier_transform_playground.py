@@ -14,6 +14,7 @@ from time import sleep, time
 
 import numpy as np
 from magicgui import magic_factory
+from qtpy.QtWidgets import QApplication
 from scipy.fft import fft2, fftshift
 
 import napari
@@ -25,6 +26,15 @@ FPS = 20
 # meshgrid used to calculate the 2D sine waves
 x = np.arange(IMAGE_SIZE) - IMAGE_SIZE / 2
 X, Y = np.meshgrid(x, x)
+
+def wait_on_layers():
+    """Wait for the thread to finish.
+    To not close program before the thread finishes.
+    """
+    while "wave 0" not in viewer.layers:
+        sleep(0.1)
+
+    QApplication.processEvents()
 
 
 def wave_2d(frequency, angle, phase_shift):
@@ -146,6 +156,12 @@ wdg = moving_wave()
 viewer.window.add_dock_widget(wdg, area='bottom')
 wdg()
 
-napari.run()
+
+if __name__ == '__main__':
+    napari.run()
+else:
+    # wait for the layers to be added before running the viewer
+    wait_on_layers()
 
 thread.quit()
+
