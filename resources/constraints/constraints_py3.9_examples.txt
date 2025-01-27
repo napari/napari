@@ -14,7 +14,7 @@ asciitree==0.3.3
     # via zarr
 asttokens==3.0.0
     # via stack-data
-attrs==24.3.0
+attrs==25.1.0
     # via
     #   hypothesis
     #   jsonschema
@@ -68,7 +68,7 @@ exceptiongroup==1.2.2
     #   hypothesis
     #   ipython
     #   pytest
-executing==2.1.0
+executing==2.2.0
     # via stack-data
 fasteners==0.19
     # via zarr
@@ -81,7 +81,7 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.55.4
+fonttools==4.55.6
     # via matplotlib
 freetype-py==2.5.1
     # via vispy
@@ -94,7 +94,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.124.2
+hypothesis==6.124.7
     # via napari (napari_repo/pyproject.toml)
 idna==3.10
     # via requests
@@ -316,7 +316,7 @@ pillow==11.1.0
     #   scikit-image
 pint==0.24.4
     # via napari (napari_repo/pyproject.toml)
-pip==24.3.1
+pip==25.0
     # via napari-plugin-manager
 platformdirs==4.3.6
     # via
@@ -354,7 +354,7 @@ pyautogui==0.9.54
     # via napari (napari_repo/pyproject.toml)
 pyconify==0.2
     # via superqt
-pydantic==2.10.5
+pydantic==2.10.6
     # via
     #   napari (napari_repo/pyproject.toml)
     #   app-model
@@ -466,7 +466,7 @@ qtpy==2.4.2
     #   napari-plugin-manager
     #   qtconsole
     #   superqt
-referencing==0.36.1
+referencing==0.36.2
     # via
     #   jsonschema
     #   jsonschema-specifications
