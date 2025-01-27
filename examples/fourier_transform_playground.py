@@ -22,6 +22,7 @@ from napari.qt.threading import thread_worker
 
 IMAGE_SIZE = 100
 FPS = 20
+FINISHED = False
 
 # meshgrid used to calculate the 2D sine waves
 x = np.arange(IMAGE_SIZE) - IMAGE_SIZE / 2
@@ -57,6 +58,9 @@ def update_layer(name, data, **kwargs):
     If data is None, then the layer is removed.
     If the layer is not present, it's added to the viewer.
     """
+    if FINISHED:
+        return # don't update the viewer after the example has finished
+
     if data is None:
         if name in viewer.layers:
             viewer.layers.pop(name)
@@ -164,4 +168,5 @@ if __name__ == '__main__':
     napari.run()
 
 thread.quit()
+FINISHED = True
 
