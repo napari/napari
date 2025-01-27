@@ -23,5 +23,6 @@ viewer.text_overlay.visible = True
 # without warning in future versions!
 viewer.window._qt_viewer.canvas._scene_canvas.measure_fps(callback=update_fps)
 
+update_fps(60)
 if __name__ == '__main__':
     napari.run()
