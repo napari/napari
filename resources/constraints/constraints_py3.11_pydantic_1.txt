@@ -10,7 +10,7 @@ appdirs==1.4.4
     #   npe2
 asttokens==3.0.0
     # via stack-data
-attrs==24.3.0
+attrs==25.1.0
     # via
     #   hypothesis
     #   jsonschema
@@ -53,7 +53,7 @@ debugpy==1.8.12
     # via ipykernel
 decorator==5.1.1
     # via ipython
-deprecated==1.2.15
+deprecated==1.2.17
     # via numcodecs
 distlib==0.3.9
     # via virtualenv
@@ -65,7 +65,7 @@ docutils==0.21.2
     # via sphinx
 donfig==0.8.1.post1
     # via zarr
-executing==2.1.0
+executing==2.2.0
     # via stack-data
 filelock==3.17.0
     # via
@@ -76,7 +76,7 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.55.4
+fonttools==4.55.6
     # via matplotlib
 freetype-py==2.5.1
     # via vispy
@@ -89,7 +89,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.124.2
+hypothesis==6.124.7
     # via napari (napari_repo/pyproject.toml)
 idna==3.10
     # via requests
@@ -288,7 +288,7 @@ pillow==11.1.0
     #   scikit-image
 pint==0.24.4
     # via napari (napari_repo/pyproject.toml)
-pip==24.3.1
+pip==25.0
     # via napari-plugin-manager
 platformdirs==4.3.6
     # via
@@ -436,7 +436,7 @@ qtpy==2.4.2
     #   napari-plugin-manager
     #   qtconsole
     #   superqt
-referencing==0.36.1
+referencing==0.36.2
     # via
     #   jsonschema
     #   jsonschema-specifications
@@ -455,7 +455,7 @@ rpds-py==0.22.3
     # via
     #   jsonschema
     #   referencing
-scikit-image==0.25.0
+scikit-image==0.25.1
     # via napari (napari_repo/pyproject.toml)
 scipy==1.15.1
     # via
