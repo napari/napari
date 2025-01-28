@@ -32,7 +32,7 @@ X, Y = np.meshgrid(x, x)
 
 def wait_for_layers(viewer, layer_names, *, interval=0.1):
     """Wait for any thread creating layers to finish.
-    
+
     If we expect a different thread to be adding layers to
     `viewer`, we can wait for them to be added based on
     their expected names.
