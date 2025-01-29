@@ -40,7 +40,7 @@ psygnal==0.11.1
     #   npe2
 pyconify==0.2
     # via superqt
-pydantic==2.10.5
+pydantic==2.10.6
     # via
     #   -r napari_repo/resources/requirements_mypy.in
     #   npe2
@@ -75,7 +75,7 @@ shellingham==1.5.4
     # via typer
 superqt==0.7.1
     # via magicgui
-tomli-w==1.1.0
+tomli-w==1.2.0
     # via npe2
 typer==0.15.1
     # via npe2

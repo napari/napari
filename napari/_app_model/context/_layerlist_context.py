@@ -150,7 +150,7 @@ def _active_dtype(s: LayerSel) -> DTypeLike:
     dtype = None
     if s.active:
         with contextlib.suppress(AttributeError):
-            dtype = normalize_dtype(s.active.data.dtype).__name__
+            dtype = normalize_dtype(s.active.data.dtype).name
     return dtype
 
 

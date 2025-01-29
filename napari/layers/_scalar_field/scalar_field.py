@@ -289,6 +289,7 @@ class ScalarFieldBase(Layer, ABC):
         self._slice = _ImageSliceResponse.make_empty(
             slice_input=self._slice_input,
             rgb=len(self.data.shape) != self.ndim,
+            dtype=self.dtype,
         )
 
         self._plane = SlicingPlane(thickness=1)
