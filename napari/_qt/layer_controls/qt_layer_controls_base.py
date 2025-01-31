@@ -107,7 +107,7 @@ class QtLayerControls(QFrame):
             False,
             self.PAN_ZOOM_ACTION_NAME,
             extra_tooltip_text=trans._(
-                '\n(or hold Space\n[+Shift to pan in 3D])'
+                '\n(or hold Space)\n(hold Shift to pan in 3D)'
             ),
             checked=True,
         )
