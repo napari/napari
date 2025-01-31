@@ -168,7 +168,7 @@ viewer.window.add_dock_widget(wdg, area='bottom')
 wdg()
 
 # wait for the layers to be added before running the viewer
-wait_for_layers(viewer, ['wave_0'])
+wait_for_layers(viewer, ['wave 0'])
 
 if __name__ == '__main__':
     napari.run()
