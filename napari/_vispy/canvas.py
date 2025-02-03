@@ -387,7 +387,7 @@ class VispyCanvas:
         if event.pos is None:
             return
 
-        new_event = NapariMouseEvent(
+        napari_event = NapariMouseEvent(
             event=event,
             view_direction=self._calculate_view_direction(event.pos),
             up_direction=self.viewer.camera.calculate_nd_up_direction(
@@ -400,16 +400,18 @@ class VispyCanvas:
         )
 
         # Update the cursor position
-        self.viewer.cursor._view_direction = new_event.view_direction
-        self.viewer.cursor.position = new_event.position
+        self.viewer.cursor._view_direction = napari_event.view_direction
+        self.viewer.cursor.position = napari_event.position
 
         # Put a read only wrapper on the event
-        new_event_wrap = ReadOnlyWrapper(new_event, exceptions=('handled',))
-        mouse_callbacks(self.viewer, new_event_wrap)
+        read_only_event = ReadOnlyWrapper(
+            napari_event, exceptions=('handled',)
+        )
+        mouse_callbacks(self.viewer, read_only_event)
 
         layer = self.viewer.layers.selection.active
         if layer is not None:
-            mouse_callbacks(layer, new_event_wrap)
+            mouse_callbacks(layer, read_only_event)
 
     def _on_mouse_double_click(self, event: MouseEvent) -> None:
         """Called whenever a mouse double-click happen on the canvas
