@@ -710,7 +710,7 @@ def _move_selected_layer(
             layer._data_view.shift(index, shift)
         layer._selected_box = layer._selected_box + shift
         layer.refresh()
-    if vertex < Box.LEN:
+    elif vertex < Box.LEN:
         # Corner / edge vertex is being dragged so resize object
         # Also applies while drawing line, rectangle, ellipse
         box = layer._selected_box
@@ -830,15 +830,25 @@ def _add_rectangle_ellipse_line(
         handle_offset = [1, 1]
     handle_offset_norm = handle_offset / np.linalg.norm(handle_offset)
 
-    sign = np.sign(handle_offset_norm[1])
+    if layer._mode == Mode.ADD_LINE:
+        sign = np.sign(handle_offset_norm[0])
+        rot = np.array(
+            [
+                [sign, 0],
+                [0, sign],
+            ]
+        )
+        inv_rot = rot
+    else:
+        sign = np.sign(handle_offset_norm[1])
 
-    rot = np.array(
-        [
-            [0, -sign],
-            [sign, 0],
-        ]
-    )
-    inv_rot = -rot
+        rot = np.array(
+            [
+                [0, -sign],
+                [sign, 0],
+            ]
+        )
+        inv_rot = -rot
 
     fixed = layer._fixed_vertex
     new = list(coord)
