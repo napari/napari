@@ -34,7 +34,6 @@ class QtViewerSingleLabelsSuite:
         self.layer.brush_size = 10
         self.layer.mode = 'paint'
         self.layer.selected_label = 3
-        self.layer._last_cursor_coord = (511, 511)
         self.event = MouseEvent(
             type='mouse_move',
             press_event=MouseEvent(type='mouse_press', pos=(505, 500)),
