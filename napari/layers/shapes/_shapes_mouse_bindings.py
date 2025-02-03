@@ -682,8 +682,8 @@ def _set_drag_start(
     return coord
 
 
-def _move_selected_or_add_rectangle_ellipse_line(
-    layer: Shapes, coordinates: tuple[float, ...], vertex: int
+def _move_selected_layer(
+    layer: Shapes, coordinates: tuple[float, ...], vertex: Optional[int]
 ) -> None:
     if layer._mode == Mode.SELECT and not layer._is_moving:
         vertex_indices = tuple(
@@ -699,7 +699,6 @@ def _move_selected_or_add_rectangle_ellipse_line(
             data_indices=tuple(layer.selected_data),
             vertex_indices=vertex_indices,
         )
-
     coord = _set_drag_start(layer, coordinates)
     layer._moving_coordinates = coordinates
     layer._is_moving = True
@@ -711,7 +710,7 @@ def _move_selected_or_add_rectangle_ellipse_line(
             layer._data_view.shift(index, shift)
         layer._selected_box = layer._selected_box + shift
         layer.refresh()
-    elif vertex < Box.LEN:
+    if vertex < Box.LEN:
         # Corner / edge vertex is being dragged so resize object
         # Also applies while drawing line, rectangle, ellipse
         box = layer._selected_box
@@ -736,21 +735,9 @@ def _move_selected_or_add_rectangle_ellipse_line(
         new = list(coord)
         box_center = box[Box.CENTER]
         if layer._fixed_aspect and layer._fixed_index % 2 == 0:
-            # corner
-            # ensure line rotates through 45 degree steps if aspect ratio is 1
-            if layer._mode == Mode.ADD_LINE and layer._aspect_ratio == 1:
-                new_offset = coord - layer._fixed_vertex
-                angle_rad = np.arctan2(new_offset[0], -new_offset[1])
-                angle_rad = np.round(angle_rad / (np.pi / 4)) * (np.pi / 4)
-                new = (
-                    np.array([np.sin(angle_rad), -np.cos(angle_rad)])
-                    * np.linalg.norm(new - box_center)
-                    + box_center
-                )
-            else:
-                new = (box[vertex] - box_center) / np.linalg.norm(
-                    box[vertex] - box_center
-                ) * np.linalg.norm(new - box_center) + box_center
+            new = (box[vertex] - box_center) / np.linalg.norm(
+                box[vertex] - box_center
+            ) * np.linalg.norm(new - box_center) + box_center
 
         if layer._fixed_index % 2 == 0:
             # corner selected
@@ -825,6 +812,74 @@ def _move_selected_or_add_rectangle_ellipse_line(
         layer.refresh()
 
 
+def _add_rectangle_ellipse_line(
+    layer: Shapes, coordinates: tuple[float, ...], vertex: int
+) -> None:
+    coord = _set_drag_start(layer, coordinates)
+    layer._moving_coordinates = coordinates
+    layer._is_moving = True
+    assert vertex == 4, 'vertex should be 4 on creation'
+
+    box = layer._selected_box
+    if layer._fixed_vertex is None:
+        layer._fixed_index = 0
+        layer._fixed_vertex = box[layer._fixed_index]
+
+    handle_offset = box[Box.HANDLE] - box[Box.CENTER]
+    if np.linalg.norm(handle_offset) == 0:
+        handle_offset = [1, 1]
+    handle_offset_norm = handle_offset / np.linalg.norm(handle_offset)
+
+    sign = np.sign(handle_offset_norm[1])
+
+    rot = np.array(
+        [
+            [0, -sign],
+            [sign, 0],
+        ]
+    )
+    inv_rot = -rot
+
+    fixed = layer._fixed_vertex
+    new = list(coord)
+    box_center = box[Box.CENTER]
+    if layer._fixed_aspect and layer._fixed_index % 2 == 0:
+        # corner
+        # ensure line rotates through 45 degree steps if aspect ratio is 1
+        if layer._mode == Mode.ADD_LINE and layer._aspect_ratio == 1:
+            new_offset = coord - layer._fixed_vertex
+            angle_rad = np.arctan2(new_offset[0], -new_offset[1])
+            angle_rad = np.round(angle_rad / (np.pi / 4)) * (np.pi / 4)
+            new = (
+                np.array([np.sin(angle_rad), -np.cos(angle_rad)])
+                * np.linalg.norm(new - box_center)
+                + box_center
+            )
+        else:
+            new = (box[vertex] - box_center) / np.linalg.norm(
+                box[vertex] - box_center
+            ) * np.linalg.norm(new - box_center) + box_center
+
+    drag_scale = (inv_rot @ (new - fixed)) / (inv_rot @ (box[vertex] - fixed))
+
+    # prevent box from shrinking below a threshold size
+    size = (np.linalg.norm(box[Box.TOP_LEFT] - box_center),)
+    if np.any(np.abs(size * drag_scale) < layer._normalized_vertex_radius):
+        drag_scale[:] = 1
+    # on vertical/horizontal drags we get scale of 0
+    # when we actually simply don't want to scale
+    drag_scale[drag_scale == 0] = 1
+
+    scale_mat = np.array([[drag_scale[0], 0], [0, drag_scale[1]]])
+    transform = rot @ scale_mat @ inv_rot
+    index = next(iter(layer.selected_data))
+    layer._data_view.shift(index, -layer._fixed_vertex)
+    layer._data_view.transform(index, transform)
+    layer._data_view.shift(index, layer._fixed_vertex)
+    layer._transform_box(transform, center=layer._fixed_vertex)
+    layer.refresh()
+
+
 def _move_active_element_under_cursor(
     layer: Shapes, coordinates: tuple[float, ...]
 ) -> None:
@@ -843,12 +898,12 @@ def _move_active_element_under_cursor(
 
     vertex = layer._moving_value[1]
 
-    if layer._mode in (
-        {Mode.SELECT, Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE, Mode.ADD_LINE}
-    ):
-        _move_selected_or_add_rectangle_ellipse_line(
-            layer, coordinates, vertex
-        )
+    if layer._mode == Mode.SELECT:
+        _move_selected_layer(layer, coordinates, vertex)
+
+    if layer._mode in ({Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE, Mode.ADD_LINE}):
+        assert vertex is not None
+        _add_rectangle_ellipse_line(layer, coordinates, vertex)
 
     elif (
         layer._mode
