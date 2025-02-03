@@ -12,7 +12,6 @@ if TYPE_CHECKING:
 class NapariMouseEvent(MouseEvent):
     """NapariMouseEvent extends MouseEvent to include additional information.
 
-
     Parameters
     ----------
     event : MouseEvent
