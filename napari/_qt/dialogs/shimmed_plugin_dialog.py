@@ -26,12 +26,12 @@ class ShimmedPluginDialog(QDialog):
 Some functionality e.g. code designed to run on import may not work as expected.
 
 To use this plugin without shimming, turn off the 'Use npe2 adaptor' setting in the plugin preferences.
-This setting will cease to exist in napari 0.0.6 npe1 plugins will only be usable in shimmed form.
+This setting will cease to exist in napari 0.7.0 and npe1 plugins will only be usable in shimmed form.
 
 Please contact the plugin author to ask them about updating their plugin to npe2.
 """
-        self.do_not_ask = QCheckBox(
-            trans._('Never warn me about shimmed plugins.')
+        self.only_new_checkbox = QCheckBox(
+            trans._('Only warn me about newly installed shimmed plugins.')
         )
 
         cancel_btn.clicked.connect(self.reject)
@@ -47,7 +47,7 @@ Please contact the plugin author to ask them about updating their plugin to npe2
         layout3 = QVBoxLayout()
         layout3.addWidget(QLabel(info_text))
         layout4 = QHBoxLayout()
-        layout4.addWidget(self.do_not_ask)
+        layout4.addWidget(self.only_new_checkbox)
         layout4.addStretch(1)
         layout4.addWidget(cancel_btn)
         layout4.addWidget(close_btn)
@@ -62,8 +62,8 @@ Please contact the plugin author to ask them about updating their plugin to npe2
         self.cancel_btn = cancel_btn
 
     def accept(self):
-        if self.do_not_ask.isChecked():
+        if self.only_new_checkbox.isChecked():
             get_settings().plugins.warn_on_shimmed_plugin = (
-                PluginShimWarningLevel.NEVER
+                PluginShimWarningLevel.NEW
             )
         super().accept()

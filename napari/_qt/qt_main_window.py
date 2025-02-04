@@ -457,11 +457,9 @@ class _QtMainWindow(QMainWindow):
 
     def _warn_on_shimmed_plugins(self):
         """Warn about shimmed plugins if needed."""
-        settings = get_settings()
-        if settings.plugins.warn_on_shimmed_plugin == 'never':
-            return
-
         from npe2 import plugin_manager as pm
+
+        settings = get_settings()
 
         shimmed_plugins = set(pm.get_shimmed_plugins())
         if settings.plugins.warn_on_shimmed_plugin == 'new':
@@ -477,7 +475,7 @@ class _QtMainWindow(QMainWindow):
                 accepted = False
         # if the user cancelled, we don't update the new plugins
         # in all other cases (including if we didn't show a dialog)
-        # we do. this means uninstallin and re-installing a plugin
+        # we do. this means uninstalling and re-installing a plugin
         # will result in a new warning if napari has been launched
         # in the meantime
         if accepted:

@@ -367,22 +367,15 @@ def _build_widgets_submenu_actions(
     if not mf.contributions.widgets:
         return [], []
 
-    if mf.name == 'napari-clusters-plotter':
-        print('napari-clusters-plotter')
-
     # if this plugin declares any menu items, its actions should have the
     # plugin name.
     # TODO: update once plugin has self menus - they shouldn't exclude it
     # from the shorter name
-
-    # npe1 adapter rego doesn't result in menu map being populated
-    # so we'll get keyerrors everywhere
-    # need to make sure when we index an npe1 adapter, it also gets
-    # the menu map populated with defaultdicts
     declares_menu_items = any(
         len(pm.instance()._command_menu_map[mf.name][command.id])
         for command in mf.contributions.commands or []
     )
+
     widgets = mf.contributions.widgets
     multiprovider = len(widgets) > 1
     default_submenu_id, default_submenu = _get_contrib_parent_menu(

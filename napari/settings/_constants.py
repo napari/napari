@@ -47,14 +47,11 @@ class BrushSizeOnMouseModifiers(StrEnum):
 class PluginShimWarningLevel(StrEnum):
     """Warning level for shimmed plugins.
 
-    PluginShimWarningLevel.NEVER
-        Warnings will never be shown when loading a shimmed plugin.
-    PluginShimWarningLevel.NEW
-        Warnings will be shown when a newly installed plugin is shimmed.
     PluginShimWarningLevel.ALWAYS
         Warnings will be shown for all shimmed plugins on each startup.
+    PluginShimWarningLevel.NEW
+        Warnings will be shown when a shimmed plugin is newly installed.
     """
 
-    NEVER = 'never'
-    NEW = 'new'
     ALWAYS = 'always'
+    NEW = 'new'

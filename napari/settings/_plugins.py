@@ -27,10 +27,10 @@ class PluginsSettings(EventedSettings):
     )
     # TODO: what happens with shim failures
     warn_on_shimmed_plugin: PluginShimWarningLevel = Field(
-        PluginShimWarningLevel.NEW,
+        PluginShimWarningLevel.ALWAYS,
         title=trans._('npe1 plugin warning'),
         description=trans._(
-            'Choose when to be warned about npe1 plugins.\nUse "never" to disable warnings.\nUse "always" to be warned about plugins on each startup.\nUse "new" to be warned only when an npe1 plugin has been newly installed.\n'
+            'Choose when to be warned about npe1 plugins.\nUse "always" to be warned about plugins on each startup.\nUse "new" to be warned only when an npe1 plugin has been newly installed.\n'
         ),
         # TODO: does it require restart?
     )
