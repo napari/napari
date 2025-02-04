@@ -55,7 +55,7 @@ QtViewerPushButton[mode="ndisplay_button"] {
 }
 
 QtViewerPushButton[mode="grid_view_button"]:checked {
-  image: url("theme_{{ id }}:/square.svg");
+  image: url("theme_{{ id }}:/layers.svg");
 }
 
 QtViewerPushButton[mode="grid_view_button"] {
