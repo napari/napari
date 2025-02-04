@@ -49,9 +49,9 @@ class QtImageControls(QtBaseImageControls):
     button_grid : qtpy.QtWidgets.QGridLayout
         GridLayout for the layer mode buttons
     panzoom_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
-        Button to activate move camera mode.
+        Button to pan/zoom shapes layer.
     transform_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
-        Button to transform layer.
+        Button to transform shapes layer.
     attenuationSlider : qtpy.QtWidgets.QSlider
         Slider controlling attenuation rate for `attenuated_mip` mode.
     attenuationLabel : qtpy.QtWidgets.QLabel

@@ -62,9 +62,9 @@ class QtLayerControls(QFrame):
     button_grid : qtpy.QtWidgets.QGridLayout
         GridLayout for the layer mode buttons
     panzoom_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
-        Button to activate move camera mode for layer.
+        Button to pan/zoom shapes layer.
     transform_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
-        Button to transform layer.
+        Button to transform shapes layer.
     blendComboBox : qtpy.QtWidgets.QComboBox
         Dropdown widget to select blending mode of layer.
     layer : napari.layers.Layer
@@ -106,9 +106,7 @@ class QtLayerControls(QFrame):
             self.MODE.PAN_ZOOM,
             False,
             self.PAN_ZOOM_ACTION_NAME,
-            extra_tooltip_text=trans._(
-                '\n(or hold Space [2D]\nor Shift+Space [3D])'
-            ),
+            extra_tooltip_text=trans._('(or hold Space)'),
             checked=True,
         )
         self.transform_button = self._radio_button(

@@ -70,9 +70,9 @@ class QtBaseImageControls(QtLayerControls):
     button_grid : qtpy.QtWidgets.QGridLayout
         GridLayout for the layer mode buttons
     panzoom_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
-        Button to activate move camera mode for layer.
+        Button to pan/zoom shapes layer.
     transform_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
-        Button to transform image layer.
+        Button to transform shapes layer.
     clim_popup : napari._qt.qt_range_slider_popup.QRangeSliderPopup
         Popup widget launching the contrast range slider.
     colorbarLabel : qtpy.QtWidgets.QLabel

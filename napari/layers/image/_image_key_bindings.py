@@ -102,7 +102,7 @@ def activate_image_transform_mode(layer: Image) -> None:
     layer.mode = str(Mode.TRANSFORM)
 
 
-@register_image_mode_action(trans._('Move camera'))
+@register_image_mode_action(trans._('Pan/zoom'))
 def activate_image_pan_zoom_mode(layer: Image) -> None:
     layer.mode = str(Mode.PAN_ZOOM)
 

@@ -578,7 +578,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         if mode == TRANSFORM:
             self.help = trans._(
-                'hold <space> to move camera, hold <shift> to preserve aspect ratio and rotate in 45° increments'
+                'hold <space> to pan/zoom, hold <shift> to preserve aspect ratio and rotate in 45° increments'
             )
         elif mode == PAN_ZOOM:
             self.help = ''

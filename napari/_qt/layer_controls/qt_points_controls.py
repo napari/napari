@@ -57,7 +57,7 @@ class QtPointsControls(QtLayerControls):
     outOfSliceCheckBox : qtpy.QtWidgets.QCheckBox
         Checkbox to indicate whether to render out of slice.
     panzoom_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
-        Button to activate move camera mode for layer.
+        Button for pan/zoom mode.
     transform_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to select transform mode.
     select_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
