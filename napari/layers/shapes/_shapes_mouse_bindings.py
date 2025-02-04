@@ -765,11 +765,10 @@ def _move_selected_layer(
 
         # prevent box from shrinking below a threshold size
         size = (np.linalg.norm(box[Box.TOP_LEFT] - box_center),)
-        if np.linalg.norm(size * drag_scale) < layer._normalized_vertex_radius:
-            drag_scale[:] = 1
-        # on vertical/horizontal drags we get scale of 0
-        # when we actually simply don't want to scale
-        drag_scale[drag_scale == 0] = 1
+        drag_scale_thr = (
+            np.abs(size * drag_scale) < layer._normalized_vertex_radius
+        )
+        drag_scale[drag_scale_thr] = 1
 
         # check orientation of box
         if abs(handle_offset_norm[0]) == 1:
@@ -874,11 +873,10 @@ def _add_rectangle_ellipse_line(
 
     # prevent box from shrinking below a threshold size
     size = (np.linalg.norm(box[Box.TOP_LEFT] - box_center),)
-    if np.any(np.abs(size * drag_scale) < layer._normalized_vertex_radius):
-        drag_scale[:] = 1
-    # on vertical/horizontal drags we get scale of 0
-    # when we actually simply don't want to scale
-    drag_scale[drag_scale == 0] = 1
+    drag_scale_thr = (
+        np.abs(size * drag_scale) < layer._normalized_vertex_radius
+    )
+    drag_scale[drag_scale_thr] = 1
 
     scale_mat = np.array([[drag_scale[0], 0], [0, drag_scale[1]]])
     transform = rot @ scale_mat @ inv_rot
