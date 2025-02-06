@@ -55,11 +55,11 @@ QtViewerPushButton[mode="ndisplay_button"] {
 }
 
 QtViewerPushButton[mode="grid_view_button"]:checked {
-  image: url("theme_{{ id }}:/layers.svg");
+  image: url("theme_{{ id }}:/canvas_stack_view.svg");
 }
 
 QtViewerPushButton[mode="grid_view_button"] {
-  image: url("theme_{{ id }}:/grid.svg");
+  image: url("theme_{{ id }}:/canvas_grid_view.svg");
 }
 
 QtModeRadioButton {
