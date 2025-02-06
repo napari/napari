@@ -63,7 +63,7 @@ class Theme(EventedModel):
         Color used to indicate something is wrong or could stop functionality.
     current : Color
         Color used to highlight Qt widget.
-    font_size : str
+    ui_font_size : str
         Font size (in points, pt) used in the application.
     """
 
@@ -83,6 +83,7 @@ class Theme(EventedModel):
     error: Color
     current: Color
     font_size: str = '12pt' if sys.platform == 'darwin' else '9pt'
+    overlay_font_size: str = '14pt'
 
     @validator('syntax_style', pre=True, allow_reuse=True)
     def _ensure_syntax_style(cls, value: str) -> str:

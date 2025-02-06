@@ -35,10 +35,19 @@ class AppearanceSettings(EventedModel):
     )
     font_size: int = Field(
         int(get_theme('dark').font_size[:-2]),
-        title=trans._('Font size'),
-        description=trans._('Select the user interface font size.'),
+        title=trans._('UI font size'),
+        description=trans._('Set the user interface font size.'),
         ge=5,
         le=20,
+    )
+    overlay_font_size: int = Field(
+        int(get_theme('dark').overlay_font_size[:-2]),
+        title=trans._('Overlay font size'),
+        description=trans._(
+            'Set the default font size of overlay text, such as the scale bar.'
+        ),
+        ge=5,
+        le=30,
     )
     highlight: HighlightSettings = Field(
         HighlightSettings(),
@@ -76,6 +85,12 @@ class AppearanceSettings(EventedModel):
             new_theme = get_theme(values['theme'])
             if values['font_size'] == int(current_theme.font_size[:-2]):
                 values['font_size'] = int(new_theme.font_size[:-2])
+            if values['overlay_font_size'] == int(
+                current_theme.overlay_font_size[:-2]
+            ):
+                values['overlay_font_size'] = int(
+                    new_theme.overlay_font_size[:-2]
+                )
         super().update(values, recurse)
 
     def __setattr__(self, key: str, value: Theme) -> None:
@@ -97,6 +112,15 @@ class AppearanceSettings(EventedModel):
                     and self.font_size == int(current_theme.font_size[:-2])
                 ):
                     self.font_size = int(new_theme.font_size[:-2])
+                if (
+                    new_theme
+                    and current_theme
+                    and self.overlay_font_size
+                    == int(current_theme.overlay_font_size[:-2])
+                ):
+                    self.overlay_font_size = int(
+                        new_theme.overlay_font_size[:-2]
+                    )
                 super().__setattr__(key, value)
         else:
             super().__setattr__(key, value)

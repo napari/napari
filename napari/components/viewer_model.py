@@ -290,7 +290,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         self._overlays.update({k: v() for k, v in DEFAULT_OVERLAYS.items()})
         self._update_overlay_font_size()
-        settings.appearance.events.font_size.connect(
+        settings.appearance.events.overlay_font_size.connect(
             self._update_overlay_font_size
         )
 
@@ -613,13 +613,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def _update_overlay_font_size(self):
         """Keep viewer overlay font sizes current with settings values."""
-        font_size = get_settings().appearance.font_size
-        font_size_scaled = (
-            font_size * 1.667
-        )  # roughly scales default font size to suitable design for scale bar thickness
+        overlay_font_size = get_settings().appearance.overlay_font_size
 
-        self.scale_bar.font_size = font_size_scaled
-        self.text_overlay.font_size = font_size_scaled
+        self.scale_bar.font_size = overlay_font_size
+        self.text_overlay.font_size = overlay_font_size
 
     def _subplot(self, layer, position, extent):
         """Shift a layer to a specified position in a 2D grid.
