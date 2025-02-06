@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Any, Callable, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 import numpy as np
 
@@ -9,8 +9,12 @@ from napari.layers.image._image_utils import project_slice
 from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.types import ArrayLike
 from napari.utils._dask_utils import DaskIndexer
+from napari.utils._dtype import normalize_dtype
 from napari.utils.misc import reorder_after_dim_reduction
 from napari.utils.transforms import Affine
+
+if TYPE_CHECKING:
+    from numpy.typing import DTypeLike
 
 
 @dataclass(frozen=True)
@@ -88,6 +92,7 @@ class _ImageSliceResponse:
         slice_input: _SliceInput,
         rgb: bool,
         request_id: Optional[int] = None,
+        dtype: 'DTypeLike' = np.uint8,
     ) -> '_ImageSliceResponse':
         """Returns an empty image slice response.
 
@@ -108,11 +113,13 @@ class _ImageSliceResponse:
             If None, a new request id will be returned, which guarantees that
             the empty slice never appears as loaded. (Used for layer
             initialisation before attempting data loading.)
+        dtype : np.dtype
+            The dtype of the empty image slice.
         """
         shape = (1,) * slice_input.ndisplay
         if rgb:
             shape = shape + (3,)
-        data = np.zeros(shape, dtype=np.uint8)
+        data = np.zeros(shape, dtype=normalize_dtype(dtype))
         image = _ImageView.from_view(data)
         ndim = slice_input.ndim
         tile_to_data = Affine(
