@@ -311,7 +311,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         # Set contrast limits, colormaps and plane parameters
         if contrast_limits is None:
             if not isinstance(data, np.ndarray):
-                dtype = normalize_dtype(getattr(data, 'dtype', None))
+                dtype = normalize_dtype(getattr(data, 'dtype', np.float32))
                 if np.issubdtype(dtype, np.integer):
                     self.contrast_limits_range = get_dtype_limits(dtype)
                 else:

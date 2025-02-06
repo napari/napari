@@ -64,7 +64,9 @@ class Camera(EventedModel):
         """
         ang = np.deg2rad(self.angles)
         view_direction = (
-            np.sin(ang[2]) * np.cos(ang[1]),
+            # z has a negative sign for the right-handed reference frame
+            # flip (#7488)
+            -np.sin(ang[2]) * np.cos(ang[1]),
             np.cos(ang[2]) * np.cos(ang[1]),
             -np.sin(ang[1]),
         )
@@ -82,7 +84,9 @@ class Camera(EventedModel):
             seq='yzx', angles=self.angles, degrees=True
         ).as_matrix()
         return (
-            rotation_matrix[2, 2],
+            # z has a negative sign for the right-handed reference frame
+            # flip (#7488)
+            -rotation_matrix[2, 2],
             rotation_matrix[1, 2],
             rotation_matrix[0, 2],
         )
@@ -123,14 +127,22 @@ class Camera(EventedModel):
             0,
         )
         if view_direction_along_y_axis and up_direction_along_y_axis:
-            up_direction = (-1, 0, 0)  # align up direction along z axis
+            up_direction = (1, 0, 0)  # align up direction along z axis
 
-        # xyz ordering for vispy, normalise vectors for rotation matrix
-        view_vector = np.asarray(view_direction, dtype=float)[::-1]
+        # xyz ordering for vispy
+        view_vector = np.array(view_direction, dtype=float, copy=True)[::-1]
+        # flip z axis for right-handed frame
+        view_vector *= [1, 1, -1]
+        # normalise vector for rotation matrix
         view_vector /= np.linalg.norm(view_vector)
 
-        up_vector = np.asarray(up_direction, dtype=float)[::-1]
+        # xyz ordering for vispy
+        up_vector = np.array(up_direction, dtype=float, copy=True)[::-1]
+        # flip z axis for right-handed frame
+        up_vector *= [1, 1, -1]
+        # ??? why a cross product here?
         up_vector = np.cross(view_vector, up_vector)
+        # normalise vector for rotation matrix
         up_vector /= np.linalg.norm(up_vector)
 
         # explicit check for parallel view direction and up direction
