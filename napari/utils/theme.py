@@ -63,7 +63,7 @@ class Theme(EventedModel):
         Color used to indicate something is wrong or could stop functionality.
     current : Color
         Color used to highlight Qt widget.
-    ui_font_size : str
+    font_size : str
         Font size (in points, pt) used in the application.
     """
 
@@ -402,6 +402,7 @@ DARK = Theme(
     console='rgb(18, 18, 18)',
     canvas='black',
     font_size='12pt' if sys.platform == 'darwin' else '9pt',
+    overlay_font_size='14pt',
 )
 LIGHT = Theme(
     id='light',
@@ -420,6 +421,7 @@ LIGHT = Theme(
     console='rgb(255, 255, 255)',
     canvas='white',
     font_size='12pt' if sys.platform == 'darwin' else '9pt',
+    overlay_font_size='14pt',
 )
 
 register_theme('dark', DARK, 'builtin')
