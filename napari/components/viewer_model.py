@@ -245,6 +245,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         settings.application.events.grid_height.connect(
             self._update_viewer_grid
         )
+        settings.application.events.grid_spacing.connect(
+            self._update_viewer_grid
+        )
         settings.experimental.events.async_.connect(self._update_async)
 
         # Add extra events - ideally these will be removed too!
@@ -320,6 +323,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             settings.application.grid_height,
             settings.application.grid_width,
         )
+        self.grid.spacing = settings.application.grid_spacing
 
     @validator('theme', allow_reuse=True)
     def _valid_theme(cls, v):
@@ -605,9 +609,15 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         n_layers = len(self.layers)
         for i, layer in enumerate(self.layers):
             i_row, i_column = self.grid.position(n_layers - 1 - i, n_layers)
-            self._subplot(layer, (i_row, i_column), extent)
+            self._subplot(layer, (i_row, i_column), extent, self.grid.spacing)
 
-    def _subplot(self, layer, position, extent):
+    def _subplot(
+        self,
+        layer: Layer,
+        position: tuple[int, int],
+        extent: np.ndarray,
+        spacing: float = 0.0,
+    ):
         """Shift a layer to a specified position in a 2D grid.
 
         Parameters
@@ -618,9 +628,19 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             New position of layer in grid.
         extent : array, shape (2, D)
             Extent of the world.
+        spacing : float, optional
+            Value for spacing between layers. Negative values will
+            cause layers to overlap. Positive values will cause layers to
+            have space between them.
         """
         scene_shift = extent[1] - extent[0]
-        translate_2d = np.multiply(scene_shift[-2:], position)
+        position_array = np.array(position)
+        translate_2d = np.multiply(
+            scene_shift[-2:], position_array
+        )  # shift layer in 2D
+        translate_2d += np.multiply(
+            scene_shift[-2:], spacing * position_array
+        )  # add offset to position for spacing
         translate = [0] * layer.ndim
         translate[-2:] = translate_2d
         layer._translate_grid = translate

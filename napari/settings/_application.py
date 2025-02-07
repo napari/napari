@@ -4,7 +4,7 @@ from typing import Optional
 
 from psutil import virtual_memory
 
-from napari._pydantic_compat import Field, validator
+from napari._pydantic_compat import Field, confloat, validator
 from napari.settings._constants import (
     BrushSizeOnMouseModifiers,
     LabelDTypes,
@@ -20,6 +20,7 @@ from napari.utils.translations import trans
 GridStride = conint(ge=-50, le=50, ne=0)
 GridWidth = conint(ge=-1, ne=0)
 GridHeight = conint(ge=-1, ne=0)
+GridSpacing = confloat(ge=-1.0, le=1.0)
 
 _DEFAULT_MEM_FRACTION = 0.25
 MAX_CACHE = virtual_memory().total * 0.5 / 1e9
@@ -173,6 +174,13 @@ class ApplicationSettings(EventedModel):
         title=trans._('Grid Height'),
         description=trans._('Number of rows in the grid.'),
     )
+
+    grid_spacing: GridSpacing = Field(  # type: ignore [valid-type]
+        default=0.0,
+        title=trans._('Grid Spacing'),
+        description=trans._('Spacing between grid layers.'),
+    )
+
     confirm_close_window: bool = Field(
         default=True,
         title=trans._('Confirm window or application closing'),

@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from qtpy.QtCore import QEvent, QPoint, Qt
 from qtpy.QtWidgets import (
     QApplication,
+    QDoubleSpinBox,
     QFormLayout,
     QFrame,
     QHBoxLayout,
@@ -254,8 +255,10 @@ class QtViewerButtons(QFrame):
         grid_stride = QtSpinBox(popup)
         grid_width = QtSpinBox(popup)
         grid_height = QtSpinBox(popup)
+        grid_spacing = QDoubleSpinBox(popup)
         shape_help_symbol = QtToolTipLabel(self)
         stride_help_symbol = QtToolTipLabel(self)
+        spacing_help_symbol = QtToolTipLabel(self)
         blank = QLabel(self)  # helps with placing help symbols.
 
         shape_help_msg = trans._(
@@ -264,6 +267,10 @@ class QtViewerButtons(QFrame):
 
         stride_help_msg = trans._(
             'Number of layers to place in each grid square before moving on to the next square. The default ordering is to place the most visible layer in the top left corner of the grid. A negative stride will cause the order in which the layers are placed in the grid to be reversed. 0 is not a valid entry.'
+        )
+
+        spacing_help_msg = trans._(
+            'Spacing between grid layers, as a proportion of the layer size. 0 has the layers touching. Positive values will space the layers apart, and negative values will overlap the layers.'
         )
 
         # set up
@@ -302,22 +309,43 @@ class QtViewerButtons(QFrame):
         grid_height.valueChanged.connect(self._update_grid_height)
         self.grid_height_box = grid_height
 
+        # set up spacing
+        spacing_min = self.viewer.grid.__fields__['spacing'].type_.ge
+        spacing_max = self.viewer.grid.__fields__['spacing'].type_.le
+        grid_spacing.setObjectName('gridSpacingBox')
+        grid_spacing.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        grid_spacing.setMinimum(spacing_min)
+        grid_spacing.setMaximum(spacing_max)
+        grid_spacing.setValue(self.viewer.grid.spacing)
+        grid_spacing.setDecimals(2)
+        grid_spacing.setSingleStep(0.05)
+        grid_spacing.valueChanged.connect(self._update_grid_spacing)
+        self.grid_spacing_box = grid_spacing
+
+        # help symbols
         shape_help_symbol.setObjectName('help_label')
         shape_help_symbol.setToolTip(shape_help_msg)
 
         stride_help_symbol.setObjectName('help_label')
         stride_help_symbol.setToolTip(stride_help_msg)
 
+        spacing_help_symbol.setObjectName('help_label')
+        spacing_help_symbol.setToolTip(spacing_help_msg)
+
         # layout
         form_layout = QFormLayout()
         form_layout.insertRow(0, QLabel(trans._('Grid stride:')), grid_stride)
         form_layout.insertRow(1, QLabel(trans._('Grid width:')), grid_width)
         form_layout.insertRow(2, QLabel(trans._('Grid height:')), grid_height)
+        form_layout.insertRow(
+            3, QLabel(trans._('Grid spacing:')), grid_spacing
+        )
 
         help_layout = QVBoxLayout()
         help_layout.addWidget(stride_help_symbol)
         help_layout.addWidget(blank)
         help_layout.addWidget(shape_help_symbol)
+        help_layout.addWidget(spacing_help_symbol)
 
         layout = QHBoxLayout()
         layout.addLayout(form_layout)
@@ -369,6 +397,17 @@ class QtViewerButtons(QFrame):
         """
 
         self.viewer.grid.shape = (value, self.viewer.grid.shape[1])
+
+    def _update_grid_spacing(self, value):
+        """Update spacing value in grid settings.
+
+        Parameters
+        ----------
+        value : float
+            New grid spacing value.
+        """
+
+        self.viewer.grid.spacing = value
 
 
 def _omit_viewer_args(constructor):
