@@ -117,7 +117,6 @@ jobs:
         python: [ "3.10", "3.11" ]
         backend: [ "pyqt5,pyside6" ]
         coverage: [ cov ]
-        pydantic: ["_pydantic_1"]
         include:
           # Windows py310
           - python: "3.10"
