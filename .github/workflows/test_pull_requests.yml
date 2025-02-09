@@ -102,7 +102,6 @@ jobs:
       qt_backend: ${{ matrix.backend }}
       coverage: ${{ matrix.coverage }}
       min_req: ${{ matrix.MIN_REQ }}
-      constraints_suffix: ${{ matrix.pydantic }}
 
   test:
     name: ${{ matrix.platform }}
