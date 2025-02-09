@@ -6,7 +6,7 @@ This can be removed when everything has been migrated to pydantic v2.
 """
 
 # The Pydantic V2 package can access the Pydantic V1 API by importing through `pydantic.v1`.
-# See https://docs.pydantic.dev/latest/migration/#continue-using-pydantic-v1-features 
+# See https://docs.pydantic.dev/latest/migration/#continue-using-pydantic-v1-features
 from pydantic.v1 import (
     BaseModel,
     BaseSettings,
