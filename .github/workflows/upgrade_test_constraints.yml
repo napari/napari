@@ -177,7 +177,7 @@ jobs:
 
 
           uv pip compile --python-version 3.9 --upgrade --output-file ${constraints}/constraints_py3.9_examples.txt ${pyproject_toml} ${constraints}/version_denylist.txt ${constraints}/version_denylist_examples.txt "${flags[@]}"
-          uv pip compile --python-version 3.10 --upgrade --output-file ${constraints}/constraints_py3.10_docs.txt ${pyproject_toml} ${constraints}/version_denylist.txt ${constraints}/version_denylist_examples.txt docs/requirements.txt ${constraints}/pydantic_le_2.txt "${flags[@]}"
+          uv pip compile --python-version 3.10 --upgrade --output-file ${constraints}/constraints_py3.10_docs.txt ${pyproject_toml} ${constraints}/version_denylist.txt ${constraints}/version_denylist_examples.txt docs/requirements.txt "${flags[@]}"
           uv pip compile --python-version 3.11 --upgrade --output-file ${prefix}/resources/requirements_mypy.txt ${prefix}/resources/requirements_mypy.in
 
       # END PYTHON DEPENDENCIES
