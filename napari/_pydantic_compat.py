@@ -1,10 +1,12 @@
 """
-This module was added for compatibility with pydantic v1 and v2.
-I think that we should keep them until we stop using pydantic.v1 module, and fully use
-pydantic 2 module.
+This module provides compatibility between pydantic v1 and v2.
+
+Keep using this compatibility module until we stop using any pydantic v1 API functionality.
+This can be removed when everything has been migrated to pydantic v2.
 """
 
-# pydantic v2
+# The Pydantic V2 package can access the Pydantic V1 API by importing through `pydantic.v1`.
+# See https://docs.pydantic.dev/latest/migration/#continue-using-pydantic-v1-features 
 from pydantic.v1 import (
     BaseModel,
     BaseSettings,
