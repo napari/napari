@@ -216,9 +216,9 @@ QtCopyToClipboardButton {
 
 QtPlayButton {
   border-radius: 2px;
-  height: 12px;
-  width: 12px;
-  margin: 0px;
+  height: 13px;
+  width: 13px;
+  margin: 0px 2px;
   padding: 1px;
   border: 0px;
 }
