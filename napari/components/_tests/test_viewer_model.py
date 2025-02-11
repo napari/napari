@@ -427,6 +427,7 @@ def test_grid():
     assert not viewer.grid.enabled
     assert viewer.grid.actual_shape(6) == (1, 1)
     assert viewer.grid.stride == 1
+    assert viewer.grid.spacing == 0
     translations = [layer._translate_grid for layer in viewer.layers]
     expected_translations = np.zeros((6, 2))
     np.testing.assert_allclose(translations, expected_translations)
@@ -436,6 +437,7 @@ def test_grid():
     assert viewer.grid.enabled
     assert viewer.grid.actual_shape(6) == (2, 3)
     assert viewer.grid.stride == 1
+    assert viewer.grid.spacing == 0
     translations = [layer._translate_grid for layer in viewer.layers]
     expected_translations = [
         [0, 0],
@@ -447,11 +449,27 @@ def test_grid():
     ]
     np.testing.assert_allclose(translations, expected_translations[::-1])
 
+    # test grid spacing
+    viewer.grid.spacing = 0.1
+    assert viewer.grid.spacing == 0.1
+    translations = [layer._translate_grid for layer in viewer.layers]
+    expected_translations = [
+        [0, 0],
+        [0, 16.5],
+        [0, 33],
+        [16.5, 0],
+        [16.5, 16.5],
+        [16.5, 33],
+    ]
+    np.testing.assert_allclose(translations, expected_translations[::-1])
+    viewer.grid.spacing = 0  # reset spacing to make remaining tests easier
+
     # return to stack view
     viewer.grid.enabled = False
     assert not viewer.grid.enabled
     assert viewer.grid.actual_shape(6) == (1, 1)
     assert viewer.grid.stride == 1
+    assert viewer.grid.spacing == 0
     translations = [layer._translate_grid for layer in viewer.layers]
     expected_translations = np.zeros((6, 2))
     np.testing.assert_allclose(translations, expected_translations)
@@ -462,6 +480,7 @@ def test_grid():
     assert viewer.grid.enabled
     assert viewer.grid.actual_shape(6) == (2, 2)
     assert viewer.grid.stride == -2
+    assert viewer.grid.spacing == 0
     translations = [layer._translate_grid for layer in viewer.layers]
     expected_translations = [
         [0, 0],
