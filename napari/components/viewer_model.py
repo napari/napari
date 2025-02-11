@@ -399,9 +399,15 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         scene_size = extent[1] - extent[0]
         corner = extent[0]
         grid_size = list(self.grid.actual_shape(len(self.layers)))
+
         if len(scene_size) > len(grid_size):
             grid_size = [1] * (len(scene_size) - len(grid_size)) + grid_size
-        size = np.multiply(scene_size, grid_size)
+
+        # total spacing accounts for the distance between layers, results in 0 if not grid mode (grid_size = [1, 1] - 1)
+        total_spacing = np.multiply(
+            scene_size, self.grid.spacing * (np.array(grid_size) - 1)
+        )
+        size = np.multiply(scene_size, grid_size) + total_spacing
         center_array = np.add(corner, np.divide(size, 2))[
             -self.dims.ndisplay :
         ]
@@ -616,7 +622,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         layer: Layer,
         position: tuple[int, int],
         extent: np.ndarray,
-        spacing: float = 0.0,
+        spacing: float,
     ):
         """Shift a layer to a specified position in a 2D grid.
 
