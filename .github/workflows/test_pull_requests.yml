@@ -89,13 +89,11 @@ jobs:
           - python: 3.9
             platform: ubuntu-latest
             backend: pyqt5
-            pydantic: "_pydantic_1"
             coverage: no_cov
             min_req: ""
           - python: 3.12
             platform: ubuntu-latest
             backend: pyqt6
-            pydantic: ""
             coverage: no_cov
             min_req: ""
     with:
@@ -104,7 +102,6 @@ jobs:
       qt_backend: ${{ matrix.backend }}
       coverage: ${{ matrix.coverage }}
       min_req: ${{ matrix.MIN_REQ }}
-      constraints_suffix: ${{ matrix.pydantic }}
 
   test:
     name: ${{ matrix.platform }}
@@ -117,7 +114,6 @@ jobs:
         python: [ "3.10", "3.11" ]
         backend: [ "pyqt5,pyside6" ]
         coverage: [ cov ]
-        pydantic: ["_pydantic_1"]
         include:
           # Windows py310
           - python: "3.10"
@@ -146,7 +142,6 @@ jobs:
             platform: ubuntu-22.04
             backend: pyqt5
             coverage: cov
-            pydantic: ""
             tox_extras: "optional"
           # test without any Qt backends
           - python: "3.10"
@@ -163,7 +158,6 @@ jobs:
             platform: ubuntu-latest
             backend: pyqt6_no_numba
             coverage: cov
-            pydantic: ""
           # pyside2 test
           - python: "3.10"
             platform: ubuntu-latest
@@ -176,7 +170,6 @@ jobs:
       min_req: ${{ matrix.MIN_REQ }}
       coverage: ${{ matrix.coverage }}
       tox_extras: ${{ matrix.tox_extras }}
-      constraints_suffix: ${{ matrix.pydantic }}
 
 
   test_pip_install:
