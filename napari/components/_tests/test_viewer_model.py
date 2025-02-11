@@ -449,7 +449,7 @@ def test_grid():
     ]
     np.testing.assert_allclose(translations, expected_translations[::-1])
 
-    # test grid spacing
+    # test grid spacing, translation will be proportionally 0.1 larger: (0.1 * 15) = 16.5
     viewer.grid.spacing = 0.1
     assert viewer.grid.spacing == 0.1
     translations = [layer._translate_grid for layer in viewer.layers]
@@ -462,8 +462,8 @@ def test_grid():
         [16.5, 33],
     ]
     np.testing.assert_allclose(translations, expected_translations[::-1])
-    viewer.grid.spacing = 0  # reset spacing to make remaining tests easier
-
+    # reset spacing to make remaining translation calculations easier
+    viewer.grid.spacing = 0
     # return to stack view
     viewer.grid.enabled = False
     assert not viewer.grid.enabled
