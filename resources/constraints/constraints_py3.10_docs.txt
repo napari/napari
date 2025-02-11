@@ -420,7 +420,7 @@ pyautogui==0.9.54
     # via napari (napari_repo/pyproject.toml)
 pyconify==0.2
     # via superqt
-pydantic==1.10.21
+pydantic==2.10.6
     # via
     #   -r napari_repo/resources/constraints/pydantic_le_2.txt
     #   napari (napari_repo/pyproject.toml)
