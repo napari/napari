@@ -649,7 +649,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         )  # add offset to position for spacing
         translate = [0] * layer.ndim
         translate[-2:] = translate_2d
-        layer._translate_grid = translate
+        layer._translate_grid = np.array(translate)
 
     @property
     def experimental(self):
