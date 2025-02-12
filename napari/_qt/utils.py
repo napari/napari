@@ -21,13 +21,13 @@ from qtpy.QtCore import (
 )
 from qtpy.QtGui import QColor, QCursor, QDrag, QImage, QPainter, QPixmap
 from qtpy.QtWidgets import (
+    QColorDialog,
     QGraphicsColorizeEffect,
     QGraphicsOpacityEffect,
     QHBoxLayout,
     QListWidget,
     QVBoxLayout,
     QWidget,
-QColorDialog
 )
 
 from napari.utils.colormaps.standardize_color import transform_color
@@ -393,7 +393,9 @@ def in_qt_main_thread() -> bool:
 
 
 def get_color(
-    color: str | np.ndarray | None = None, as_hex: bool = True, as_array: bool = False,
+    color: str | np.ndarray | None = None,
+    as_hex: bool = True,
+    as_array: bool = False,
 ) -> np.ndarray:
     """Get color."""
 
@@ -411,5 +413,10 @@ def get_color(
         if as_hex:
             new_color = new_color.name()
         if as_array:
-            new_color = np.asarray([new_color.red(), new_color.green(), new_color.blue()]) / 255
+            new_color = (
+                np.asarray(
+                    [new_color.red(), new_color.green(), new_color.blue()]
+                )
+                / 255
+            )
     return new_color

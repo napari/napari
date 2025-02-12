@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from qtpy.QtCore import Qt
-from qtpy.QtGui import QImage, QPixmap, QIcon
+from qtpy.QtGui import QIcon, QImage, QPixmap
 from qtpy.QtWidgets import (
     QHBoxLayout,
     QPushButton,
