@@ -2225,7 +2225,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 # position may be higher-dimensional due to other
                 # layers in the viewer, but self._translate_grid already
                 # has the correct dimensionality
-                position[-self.ndim :] - self._translate_grid, value
+                position[-self.ndim :] - self._translate_grid,
+                value,
             )
         else:
             source_info['coordinates'] = generate_layer_coords_status(
