@@ -119,3 +119,43 @@ def conint(
         'ne': ne,
     }
     return type('ConstrainedIntValue', (ConstrainedInt,), namespace)
+
+
+class ConstrainedFloat(types.ConstrainedFloat):
+    """ConstrainedFloat extension that adds step size"""
+
+    step: Optional[float] = None
+
+    @classmethod
+    def __modify_schema__(cls, field_schema: dict[str, Any]) -> None:
+        super().__modify_schema__(field_schema)
+        if cls.step is not None:
+            field_schema['step'] = cls.step
+
+    @classmethod
+    def __get_validators__(cls) -> Generator[Callable[..., Any], None, None]:
+        yield from super().__get_validators__()
+
+
+def confloat(
+    *,
+    strict: bool = False,
+    gt: Optional[float] = None,
+    ge: Optional[float] = None,
+    lt: Optional[float] = None,
+    le: Optional[float] = None,
+    multiple_of: Optional[float] = None,
+    step: Optional[float] = None,
+) -> type[float]:
+    """Extended version of `pydantic.types.confloat` that includes step size."""
+    # use kwargs then define conf in a dict to aid with IDE type hinting
+    namespace = {
+        'strict': strict,
+        'gt': gt,
+        'ge': ge,
+        'lt': lt,
+        'le': le,
+        'multiple_of': multiple_of,
+        'step': step,
+    }
+    return type('ConstrainedFloatValue', (ConstrainedFloat,), namespace)
