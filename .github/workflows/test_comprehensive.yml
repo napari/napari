@@ -58,12 +58,12 @@ jobs:
             backend: pyqt5
           # test with minimum specified requirements
           - python: "3.9"
-            platform: ubuntu-20.04
+            platform: ubuntu-22.04
             backend: pyqt5
             MIN_REQ: 1
           # test without any Qt backends
           - python: "3.9"
-            platform: ubuntu-20.04
+            platform: ubuntu-22.04
             backend: headless
           - python: "3.12"
             platform: ubuntu-latest
