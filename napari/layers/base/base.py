@@ -2222,6 +2222,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         # use self._translate_grid to adjust layer origin in grid mode
         if position is not None:
             source_info['coordinates'] = generate_layer_coords_status(
+                # position may be higher-dimensional due to other
+                # layers in the viewer, but self._translate_grid already
+                # has the correct dimensionality
                 position[-self.ndim :] - self._translate_grid, value
             )
         else:
