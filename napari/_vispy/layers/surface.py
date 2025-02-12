@@ -18,7 +18,7 @@ class VispySurfaceLayer(VispyBaseLayer):
     def __init__(self, layer) -> None:
         node = SurfaceVisual()
         self._texture_filter = None
-        self._light_direction = (-1, 1, 1)
+        self._light_direction = (1, 1, 1)
         self._meshdata = None
         super().__init__(layer, node)
 
@@ -200,7 +200,7 @@ class VispySurfaceLayer(VispyBaseLayer):
             up = np.array(camera.up_direction)[::-1]
             view = np.array(camera.view_direction)[::-1]
             # combine to get light behind the camera on the top right
-            self._light_direction = view - up + np.cross(up, view)
+            self._light_direction = up - view - np.cross(up, view)
         if (
             self.node.shading_filter is not None
             and self._meshdata._vertices is not None

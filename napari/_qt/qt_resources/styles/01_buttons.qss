@@ -55,11 +55,11 @@ QtViewerPushButton[mode="ndisplay_button"] {
 }
 
 QtViewerPushButton[mode="grid_view_button"]:checked {
-  image: url("theme_{{ id }}:/square.svg");
+  image: url("theme_{{ id }}:/canvas-standard-view.svg");
 }
 
 QtViewerPushButton[mode="grid_view_button"] {
-  image: url("theme_{{ id }}:/grid.svg");
+  image: url("theme_{{ id }}:/canvas-grid-view.svg");
 }
 
 QtModeRadioButton {
@@ -216,20 +216,20 @@ QtCopyToClipboardButton {
 
 QtPlayButton {
   border-radius: 2px;
-  height: 11px;
-  width: 11px;
+  height: 13px;
+  width: 13px;
   margin: 0px 2px;
-  padding: 2px;
+  padding: 1px;
   border: 0px;
 }
 
 QtPlayButton[reverse=True] {
-    image: url("theme_{{ id }}:/left_arrow.svg");
+    image: url("theme_{{ id }}:/playback-reverse.svg");
 }
 
 QtPlayButton[reverse=False] {
   background: {{ foreground }};
-  image: url("theme_{{ id }}:/right_arrow.svg");
+  image: url("theme_{{ id }}:/playback-forward.svg");
 }
 
 QtPlayButton[reverse=True]:hover, QtPlayButton[reverse=False]:hover {
@@ -241,9 +241,6 @@ QtPlayButton[playing=True]:hover {
 }
 
 QtPlayButton[playing=True] {
-    image: url("theme_{{ id }}:/square.svg");
+    image: url("theme_{{ id }}:/playback-stop.svg");
     background-color: {{ error }};
-    height: 12px;
-    width: 12px;
-    padding: 2px;
 }

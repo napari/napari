@@ -100,7 +100,7 @@ def create_crosshair_cursor():
 
 
 def create_blank_cursor():
-    return QCursor(Qt.BlankCursor)
+    return QCursor(Qt.CursorShape.BlankCursor)
 
 
 class QtCursorVisual(Enum):

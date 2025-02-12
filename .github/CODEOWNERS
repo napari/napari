@@ -11,13 +11,13 @@ napari/qt/          @Czaki @jni
 napari/settings/    @Czaki @jni
 
 # specific layers
-napari/layers/image/    @Czaki @brisvag @andy-sweet @kephale
+napari/layers/image/    @Czaki @brisvag @kephale
 napari/layers/labels/   @jni @Czaki @brisvag
-napari/layers/points/   @brisvag @kevinyamauchi @andy-sweet @DragaDoncila @kephale
+napari/layers/points/   @brisvag @kevinyamauchi @DragaDoncila @kephale
 napari/layers/shapes/   @kevinyamauchi @DragaDoncila @melonora
 napari/layers/surface/  @brisvag @kevinyamauchi @Czaki
-napari/layers/tracks/   @jni @andy-sweet
-napari/layers/vectors/  @brisvag @kevinyamauchi @andy-sweet
+napari/layers/tracks/   @jni
+napari/layers/vectors/  @brisvag @kevinyamauchi
 
 # docs
 examples/                            @melissawm @psobolewskiPhD @lucyleeow

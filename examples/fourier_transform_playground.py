@@ -14,6 +14,7 @@ from time import sleep, time
 
 import numpy as np
 from magicgui import magic_factory
+from qtpy.QtWidgets import QApplication
 from scipy.fft import fft2, fftshift
 
 import napari
@@ -21,10 +22,27 @@ from napari.qt.threading import thread_worker
 
 IMAGE_SIZE = 100
 FPS = 20
+# when running this example in sphinx-gallery, we need to tell the
+# thread when the example is finished running to stop updates
+FINISHED = False
 
 # meshgrid used to calculate the 2D sine waves
 x = np.arange(IMAGE_SIZE) - IMAGE_SIZE / 2
 X, Y = np.meshgrid(x, x)
+
+def wait_for_layers(viewer, layer_names, *, interval=0.1):
+    """Wait for any thread creating layers to finish.
+
+    If we expect a different thread to be adding layers to
+    `viewer`, we can wait for them to be added based on
+    their expected names.
+    """
+    for name in layer_names:
+        while name not in viewer.layers:
+            sleep(interval)
+            QApplication.processEvents()
+
+    QApplication.processEvents()
 
 
 def wave_2d(frequency, angle, phase_shift):
@@ -46,6 +64,9 @@ def update_layer(name, data, **kwargs):
     If data is None, then the layer is removed.
     If the layer is not present, it's added to the viewer.
     """
+    if FINISHED:
+        return # don't update the viewer after the example has finished
+
     if data is None:
         if name in viewer.layers:
             viewer.layers.pop(name)
@@ -146,6 +167,12 @@ wdg = moving_wave()
 viewer.window.add_dock_widget(wdg, area='bottom')
 wdg()
 
-napari.run()
+# wait for the layers to be added before running the viewer
+wait_for_layers(viewer, ['wave 0'])
+
+if __name__ == '__main__':
+    napari.run()
 
 thread.quit()
+FINISHED = True
+

@@ -55,7 +55,7 @@ def test_get_view_direction_in_scene_coordinates(make_napari_viewer):
     view_dir = get_view_direction_in_scene_coordinates(
         view_box, viewer.dims.ndim, viewer.dims.displayed
     )
-    np.testing.assert_allclose(view_dir, [1, 0, 0], atol=1e-8)
+    np.testing.assert_allclose(view_dir, [-1, 0, 0], atol=1e-8)
 
 
 def test_get_view_direction_in_scene_coordinates_2d(make_napari_viewer):

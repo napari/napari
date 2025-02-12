@@ -2,6 +2,7 @@ import contextlib
 import inspect
 import sys
 import warnings
+from typing import TYPE_CHECKING
 
 from numpydoc.docscrape import FunctionDoc
 
@@ -11,6 +12,9 @@ from napari.utils.key_bindings import (
     coerce_keybinding,
 )
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from napari._vispy.mouse_event import NapariMouseEvent
 
 
 def mouse_wheel_callbacks(obj, event):
@@ -135,7 +139,7 @@ def mouse_press_callbacks(obj, event):
                 pass
 
 
-def mouse_move_callbacks(obj, event):
+def mouse_move_callbacks(obj, event: 'NapariMouseEvent'):
     """Run mouse move callbacks on either layer or viewer object.
 
     Note that drag callbacks should have the following form:
@@ -160,7 +164,7 @@ def mouse_move_callbacks(obj, event):
     ----------
     obj : ViewerModel or Layer
         Layer or Viewer object to run callbacks on
-    event : Event
+    event : NapariMouseEvent
         Mouse event
     """
     if not event.is_dragging:

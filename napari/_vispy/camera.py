@@ -31,6 +31,9 @@ class VispyCamera:
         # Create 3D camera
         self._3D_camera = MouseToggledArcballCamera(fov=0)
         self._3D_camera.viewbox_key_event = viewbox_key_event
+        # flip z-axis to ensure right-handed frame in 3D view
+        # see https://github.com/napari/napari/issues/4633
+        self._3D_camera.flip = (0, 0, 1)
 
         # Set 2D camera by default
         self._view.camera = self._2D_camera

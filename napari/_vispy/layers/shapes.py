@@ -17,7 +17,7 @@ class VispyShapesLayer(VispyBaseLayer):
     node: ShapesVisual
     layer: 'Shapes'
 
-    def __init__(self, layer) -> None:
+    def __init__(self, layer: 'Shapes') -> None:
         node = ShapesVisual()
         super().__init__(layer, node)
 

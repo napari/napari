@@ -30,8 +30,14 @@ class NotebookScreenshot:
     viewer : napari.Viewer
         The napari viewer.
     canvas_only : bool, optional
-        If True includes the napari viewer frame in the screenshot,
-        otherwise just includes the canvas. By default, True.
+        If False include the napari viewer frame in the screenshot,
+        and if True then take screenshot of just the image display canvas.
+        By default, False.
+    alt_text : str, optional
+        Image description alternative text, for screenreader accessibility.
+        Good alt-text describes the image and any text within the image
+        in no more than three short, complete sentences.
+        By default, None.
 
     Examples
     --------
@@ -42,8 +48,8 @@ class NotebookScreenshot:
 
     >>> viewer = napari.view_image(chelsea(), name='chelsea-the-cat')
     >>> nbscreenshot(viewer)
-    # screenshot just the canvas with the napari viewer framing it
-    >>> nbscreenshot(viewer, canvas_only=False)
+    # screenshot just the canvas without the napari viewer framing it
+    >>> nbscreenshot(viewer, canvas_only=True)
 
     """
 
