@@ -319,8 +319,8 @@ else:
     timers = DummyTimer()
 
     # perf_timer is disabled. Using contextlib.nullcontext did not work.
-    @contextlib.contextmanager  # type: ignore [misc]
-    def perf_timer(
+    @contextlib.contextmanager
+    def perf_timer(  # type: ignore [misc]
         name: str,
         category: Optional[str] = None,
         print_time: bool = False,
