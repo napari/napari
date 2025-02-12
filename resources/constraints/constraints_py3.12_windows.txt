@@ -17,7 +17,7 @@ attrs==25.1.0
     #   hypothesis
     #   jsonschema
     #   referencing
-babel==2.16.0
+babel==2.17.0
     # via
     #   napari (napari_repo/pyproject.toml)
     #   sphinx
@@ -25,7 +25,7 @@ build==1.2.2.post1
     # via npe2
 cachey==0.2.1
     # via napari (napari_repo/pyproject.toml)
-certifi==2024.12.14
+certifi==2025.1.31
     # via
     #   napari (napari_repo/pyproject.toml)
     #   requests
@@ -49,7 +49,7 @@ comm==0.2.2
     # via ipykernel
 contourpy==1.3.1
     # via matplotlib
-coverage==7.6.10
+coverage==7.6.12
     # via
     #   napari (napari_repo/pyproject.toml)
     #   pytest-cov
@@ -63,7 +63,7 @@ debugpy==1.8.12
     # via ipykernel
 decorator==5.1.1
     # via ipython
-deprecated==1.2.17
+deprecated==1.2.18
     # via numcodecs
 distlib==0.3.9
     # via virtualenv
@@ -85,11 +85,11 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.55.6
+fonttools==4.56.0
     # via matplotlib
 freetype-py==2.5.1
     # via vispy
-fsspec==2024.12.0
+fsspec==2025.2.0
     # via
     #   napari (napari_repo/pyproject.toml)
     #   dask
@@ -98,7 +98,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.124.7
+hypothesis==6.125.2
     # via napari (napari_repo/pyproject.toml)
 idna==3.10
     # via requests
@@ -118,7 +118,7 @@ ipykernel==6.29.5
     #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari-console
     #   qtconsole
-ipython==8.31.0
+ipython==8.32.0
     # via
     #   napari (napari_repo/pyproject.toml)
     #   ipykernel
@@ -154,7 +154,7 @@ llvmlite==0.44.0
     # via numba
 locket==1.0.0
     # via partd
-lxml==5.3.0
+lxml==5.3.1
     # via
     #   napari (napari_repo/pyproject.toml)
     #   lxml-html-clean
@@ -200,7 +200,7 @@ npe2==0.7.7
     #   napari-plugin-manager
 numba==0.61.0
     # via napari (napari_repo/pyproject.toml)
-numcodecs==0.15.0
+numcodecs==0.15.1
     # via zarr
 numpy==2.1.3
     # via
@@ -260,7 +260,7 @@ pillow==11.1.0
     #   scikit-image
 pint==0.24.4
     # via napari (napari_repo/pyproject.toml)
-pip==25.0
+pip==25.0.1
     # via napari-plugin-manager
 platformdirs==4.3.6
     # via
@@ -284,7 +284,7 @@ psutil==6.1.1
     # via
     #   napari (napari_repo/pyproject.toml)
     #   ipykernel
-psygnal==0.11.1
+psygnal==0.12.0
     # via
     #   napari (napari_repo/pyproject.toml)
     #   app-model
@@ -294,7 +294,7 @@ pure-eval==0.2.3
     # via stack-data
 pyautogui==0.9.54
     # via napari (napari_repo/pyproject.toml)
-pyconify==0.2
+pyconify==0.2.1
     # via superqt
 pydantic==2.10.6
     # via
@@ -332,13 +332,13 @@ pyqt5==5.15.11
     # via napari (napari_repo/pyproject.toml)
 pyqt5-qt5==5.15.2
     # via pyqt5
-pyqt5-sip==12.16.1
+pyqt5-sip==12.17.0
     # via pyqt5
-pyqt6==6.8.0
+pyqt6==6.8.1
     # via napari (napari_repo/pyproject.toml)
-pyqt6-qt6==6.8.1
+pyqt6-qt6==6.8.2
     # via pyqt6
-pyqt6-sip==13.9.1
+pyqt6-sip==13.10.0
     # via pyqt6
 pyrect==0.2.0
     # via pygetwindow
@@ -369,7 +369,7 @@ python-dateutil==2.9.0.post0
     #   pandas
 pytweening==1.2.0
     # via pyautogui
-pytz==2024.2
+pytz==2025.1
     # via pandas
 pywin32==308
     # via
@@ -381,7 +381,7 @@ pyyaml==6.0.2
     #   dask
     #   donfig
     #   npe2
-pyzmq==26.2.0
+pyzmq==26.2.1
     # via
     #   ipykernel
     #   jupyter-client
@@ -389,7 +389,7 @@ qtconsole==5.6.1
     # via
     #   napari (napari_repo/pyproject.toml)
     #   napari-console
-qtpy==2.4.2
+qtpy==2.4.3
     # via
     #   napari (napari_repo/pyproject.toml)
     #   magicgui
@@ -472,7 +472,7 @@ toolz==1.0.0
     #   napari (napari_repo/pyproject.toml)
     #   dask
     #   partd
-torch==2.5.1
+torch==2.6.0
     # via napari (napari_repo/pyproject.toml)
 tornado==6.4.2
     # via
@@ -512,7 +512,7 @@ tzdata==2025.1
     # via pandas
 urllib3==2.3.0
     # via requests
-virtualenv==20.29.1
+virtualenv==20.29.2
     # via napari (napari_repo/pyproject.toml)
 vispy==0.14.3
     # via
@@ -525,9 +525,9 @@ wrapt==1.17.2
     #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari (napari_repo/pyproject.toml)
     #   deprecated
-xarray==2025.1.1
+xarray==2025.1.2
     # via napari (napari_repo/pyproject.toml)
-zarr==3.0.1
+zarr==3.0.2
     # via
     #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari (napari_repo/pyproject.toml)

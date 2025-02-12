@@ -1,5 +1,5 @@
 import warnings
-from typing import Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 import numpy as np
 from scipy.spatial.transform import Rotation as R
@@ -8,6 +8,9 @@ from napari._pydantic_compat import validator
 from napari.utils.events import EventedModel
 from napari.utils.misc import ensure_n_tuple
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    import numpy.typing as npt
 
 
 class Camera(EventedModel):
@@ -166,7 +169,7 @@ class Camera(EventedModel):
 
     def calculate_nd_view_direction(
         self, ndim: int, dims_displayed: tuple[int, ...]
-    ) -> Optional[np.ndarray]:
+    ) -> Optional['npt.NDArray[np.float64]']:
         """Calculate the nD view direction vector of the camera.
 
         Parameters

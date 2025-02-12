@@ -134,7 +134,7 @@ jobs:
             coverage: no_cov
           # minimum specified requirements
           - python: "3.9"
-            platform: ubuntu-20.04
+            platform: ubuntu-22.04
             backend: pyqt5
             MIN_REQ: 1
             coverage: cov
@@ -145,7 +145,7 @@ jobs:
             tox_extras: "optional"
           # test without any Qt backends
           - python: "3.10"
-            platform: ubuntu-20.04
+            platform: ubuntu-22.04
             backend: headless
             coverage: no_cov
           - python: "3.12"
