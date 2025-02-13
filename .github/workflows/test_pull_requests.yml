@@ -111,7 +111,7 @@ jobs:
       fail-fast: false
       matrix:
         platform: [ ubuntu-latest ]
-        python: [ "3.11", "3.12" ]
+        python: [ "3.11" ]
         backend: [ "pyqt5,pyside6" ]
         coverage: [ cov ]
         include:
