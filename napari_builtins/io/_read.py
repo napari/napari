@@ -101,7 +101,7 @@ def imread(filename: str, use_memmap: bool = False) -> np.ndarray:
     with file_or_url_context(filename) as filename:
         if use_memmap:
             try:
-                return tifffile.memmap(str(filename), mode="r")
+                return tifffile.memmap(str(filename), mode='r')
             except ValueError:
                 return tifffile.imread(str(filename))
         return tifffile.imread(str(filename))
@@ -167,7 +167,10 @@ PathOrStr = Union[str, Path]
 
 
 def magic_imread(
-    filenames: Union[PathOrStr, list[PathOrStr]], *, use_dask=None, stack=True,
+    filenames: Union[PathOrStr, list[PathOrStr]],
+    *,
+    use_dask=None,
+    stack=True,
     use_memmap: Optional[bool] = None,
 ):
     """Dispatch the appropriate reader given some files.

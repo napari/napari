@@ -252,7 +252,7 @@ def test_single_file(spec: ImageSpec, write_spec, stacks: int):
 @pytest.mark.parametrize('use_dask', [True, False, None])
 @pytest.mark.parametrize('use_memmap', [True, False, None])
 def test_magic_imread(
-        write_spec, spec: ImageSpec, stack, use_dask, use_memmap
+    write_spec, spec: ImageSpec, stack, use_dask, use_memmap
 ):
     fnames = (
         [write_spec(s) for s in spec]
