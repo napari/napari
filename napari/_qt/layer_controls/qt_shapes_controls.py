@@ -62,7 +62,7 @@ class QtShapesControls(QtLayerControls):
     move_front_button : qtpy.QtWidgets.QtModePushButton
         Button to move shape(s) to the front.
     panzoom_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
-        Button to pan/zoom shapes layer.
+        Button to activate move camera mode for layer.
     transform_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to transform shapes layer.
     path_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton

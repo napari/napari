@@ -1,7 +1,6 @@
 import gc
 import os
 import weakref
-from dataclasses import dataclass
 from itertools import product, takewhile
 from unittest import mock
 
@@ -14,6 +13,7 @@ from qtpy.QtCore import QEvent, Qt
 from qtpy.QtGui import QGuiApplication, QKeyEvent
 from qtpy.QtWidgets import QApplication, QMessageBox
 from scipy import ndimage as ndi
+from vispy.app import MouseEvent
 
 from napari._qt.qt_viewer import QtViewer
 from napari._tests.utils import (
@@ -558,19 +558,14 @@ def test_active_keybindings(make_napari_viewer):
     assert view._key_map_handler.keymap_providers[0] == layer_image
 
 
-@dataclass
-class MouseEvent:
-    # mock mouse event class
-    pos: list[int]
-
-
 def test_process_mouse_event(make_napari_viewer):
     """Test that the correct properties are added to the
     MouseEvent by _process_mouse_events.
     """
     # make a mock mouse event
-    new_pos = [25, 25]
+    new_pos = (25, 25)
     mouse_event = MouseEvent(
+        type='mouse_press',
         pos=new_pos,
     )
     data = np.zeros((5, 20, 20, 20), dtype=int)
@@ -582,7 +577,7 @@ def test_process_mouse_event(make_napari_viewer):
 
     @labels.mouse_drag_callbacks.append
     def on_click(layer, event):
-        np.testing.assert_almost_equal(event.view_direction, [0, 1, 0, 0])
+        np.testing.assert_almost_equal(event.view_direction, [0, -1, 0, 0])
         np.testing.assert_array_equal(event.dims_displayed, [1, 2, 3])
         assert event.dims_point[0] == data.shape[0] // 2
 
@@ -600,8 +595,9 @@ def test_process_mouse_event_2d_layer_3d_viewer(make_napari_viewer):
     """
 
     # make a mock mouse event
-    new_pos = [5, 5]
+    new_pos = (5, 5)
     mouse_event = MouseEvent(
+        type='mouse_press',
         pos=new_pos,
     )
     data = np.zeros((20, 20))
