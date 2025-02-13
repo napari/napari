@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
+    Union,
     cast,
 )
 
@@ -187,7 +188,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         default_factory=LayerList, allow_mutation=False
     )  # Need to create custom JSON encoder for layer!
     help: str = ''
-    status: str | dict = 'Ready'
+    status: Union[str, dict] = 'Ready'
     tooltip: Tooltip = Field(default_factory=Tooltip, allow_mutation=False)
     theme: str = Field(default_factory=_current_theme)
     title: str = 'napari'
