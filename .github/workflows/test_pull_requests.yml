@@ -159,7 +159,7 @@ jobs:
             backend: pyqt6_no_numba
             coverage: cov
           # pyside2 test
-          - python: "3.11"
+          - python: "3.10"
             platform: ubuntu-latest
             backend: pyside2
             coverage: no_cov
