@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Final, Union
+from typing import TYPE_CHECKING, Final
 
 import numpy as np
 
@@ -109,7 +109,7 @@ def get_dtype_limits(dtype_spec: 'DTypeLike') -> tuple[float, float]:
         The smallest/largest numbers expressible by the type.
     """
     dtype = normalize_dtype(dtype_spec)
-    info: Union[np.iinfo, np.finfo]
+    info: np.iinfo | np.finfo
     if np.issubdtype(dtype, np.integer):
         info = np.iinfo(dtype)
     elif dtype and np.issubdtype(dtype, np.floating):

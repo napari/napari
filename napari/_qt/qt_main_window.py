@@ -250,7 +250,7 @@ class _QtMainWindow(QMainWindow):
         super().hideEvent(event)
 
     def set_status_and_tooltip(
-        self, status_and_tooltip: Optional[tuple[Union[str, dict], str]]
+        self, status_and_tooltip: tuple[str | dict, str] | None
     ):
         if status_and_tooltip is None:
             return
@@ -1023,7 +1023,7 @@ class Window:
     def add_plugin_dock_widget(
         self,
         plugin_name: str,
-        widget_name: Optional[str] = None,
+        widget_name: str | None = None,
         tabify: bool = False,
     ) -> tuple[QtViewerDockWidget, Any]:
         """Add plugin dock widget if not already added.
@@ -1110,12 +1110,12 @@ class Window:
         widget: Union[QWidget, 'Widget'],
         *,
         name: str = '',
-        area: Optional[str] = None,
-        allowed_areas: Optional[Sequence[str]] = None,
+        area: str | None = None,
+        allowed_areas: Sequence[str] | None = None,
         shortcut=_sentinel,
         add_vertical_stretch=True,
         tabify: bool = False,
-        menu: Optional[QMenu] = None,
+        menu: QMenu | None = None,
     ):
         """Convenience method to add a QDockWidget to the main window.
 
@@ -1218,7 +1218,7 @@ class Window:
         self,
         dock_widget: QtViewerDockWidget,
         tabify: bool = False,
-        menu: Optional[QMenu] = None,
+        menu: QMenu | None = None,
     ):
         """Add a QtViewerDockWidget to the main window
 
@@ -1600,8 +1600,8 @@ class Window:
 
     def _screenshot(
         self,
-        size: Optional[tuple[int, int]] = None,
-        scale: Optional[float] = None,
+        size: tuple[int, int] | None = None,
+        scale: float | None = None,
         flash: bool = True,
         canvas_only: bool = False,
         fit_to_data_extent: bool = False,
@@ -1710,7 +1710,7 @@ class Window:
 
     def export_figure(
         self,
-        path: Optional[str] = None,
+        path: str | None = None,
         scale: float = 1,
         flash=True,
     ) -> np.ndarray:
@@ -1762,8 +1762,8 @@ class Window:
     def export_rois(
         self,
         rois: list[np.ndarray],
-        paths: Optional[Union[str, Path, list[Union[str, Path]]]] = None,
-        scale: Optional[float] = None,
+        paths: str | Path | list[str | Path] | None = None,
+        scale: float | None = None,
     ):
         """Export the given rectangular rois to specified file paths.
 
