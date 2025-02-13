@@ -161,12 +161,11 @@ class QtBaseImageControls(QtLayerControls):
     def _on_make_colormap(self):
         """Make new colormap."""
         from napari._qt.utils import get_color
-        from napari.utils.colormaps.colormap_utils import napari_colormap
+        from napari.utils.colormaps.colormap_utils import ensure_colormap
 
         color = get_color(self, as_hex=True)
         if color:
-            colormap = napari_colormap(color, name=color)
-            self.layer.colormap = colormap
+            self.layer.colormap = ensure_colormap(color)
 
     def changeColor(self, text):
         """Change colormap on the layer model.

@@ -230,18 +230,6 @@ def convert_vispy_colormap(colormap, name='vispy'):
     )
 
 
-def vispy_colormap(color: ColorArray) -> VispyColormap:
-    """Return vispy colormap."""
-    from vispy.color import Colormap
-
-    return Colormap([np.asarray([0.0, 0.0, 0.0, 1.0]), color])
-
-
-def napari_colormap(color: ColorArray, name: str = ''):
-    """Return napari colormap."""
-    return convert_vispy_colormap(vispy_colormap(color), name=name)
-
-
 def _validate_rgb(colors, *, tolerance=0.0):
     """Return the subset of colors that is in [0, 1] for all channels.
 
