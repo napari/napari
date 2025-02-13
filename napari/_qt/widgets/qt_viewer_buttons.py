@@ -270,7 +270,7 @@ class QtViewerButtons(QFrame):
         )
 
         spacing_help_msg = trans._(
-            'Spacing between grid layers, as a proportion of the layer size. 0 has the layers touching. Positive values will space the layers apart, and negative values will overlap the layers.'
+            'Proportional spacing between grid layers. 0 has the layers touching. Positive values will space the layers apart, and negative values will overlap the layers.'
         )
 
         # set up
@@ -399,7 +399,7 @@ class QtViewerButtons(QFrame):
 
         self.viewer.grid.shape = (value, self.viewer.grid.shape[1])
 
-    def _update_grid_spacing(self, value):
+    def _update_grid_spacing(self, value: float) -> None:
         """Update spacing value in grid settings.
 
         Parameters

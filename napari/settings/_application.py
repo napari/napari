@@ -178,7 +178,7 @@ class ApplicationSettings(EventedModel):
     grid_spacing: GridSpacing = Field(  # type: ignore [valid-type]
         default=0.0,
         title=trans._('Grid Spacing'),
-        description=trans._('Spacing between grid layers.'),
+        description=trans._('Proportional spacing between grid layers.'),
     )
 
     confirm_close_window: bool = Field(

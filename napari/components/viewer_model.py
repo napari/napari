@@ -403,9 +403,12 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if len(scene_size) > len(grid_size):
             grid_size = [1] * (len(scene_size) - len(grid_size)) + grid_size
 
-        # total spacing accounts for the distance between layers, results in 0 if not grid mode (grid_size = [1, 1] - 1)
-        total_spacing = np.multiply(
-            scene_size, self.grid.spacing * (np.array(grid_size) - 1)
+        # total spacing accounts for the distance between layers
+        # results in 0 if not grid mode (grid_size = [1, 1] - 1)
+        total_spacing = (
+            np.mean(scene_size[-2:])
+            * self.grid.spacing
+            * (np.array(grid_size) - 1)
         )
         size = np.multiply(scene_size, grid_size) + total_spacing
         center_array = np.add(corner, np.divide(size, 2))[
@@ -641,12 +644,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         """
         scene_shift = extent[1] - extent[0]
         position_array = np.array(position)
-        translate_2d = np.multiply(
-            scene_shift[-2:], position_array
-        )  # shift layer in 2D
-        translate_2d += np.multiply(
-            scene_shift[-2:], spacing * position_array
-        )  # add offset to position for spacing
+        # shift the layer in the grid by the extent of the scene
+        translate_2d = np.multiply(scene_shift[-2:], position_array)
+        # calculate average scene extent, and use for a symmetrical spacing adjustment
+        translate_2d += np.mean(scene_shift[-2:]) * spacing * position_array
         translate = [0] * layer.ndim
         translate[-2:] = translate_2d
         layer._translate_grid = np.array(translate)
