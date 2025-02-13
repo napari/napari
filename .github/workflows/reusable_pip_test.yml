@@ -40,7 +40,7 @@ jobs:
         shell:
             bash
         env:
-          PIP_CONSTRAINT: napari-from-github/resources/constraints/constraints_py3.9.txt
+          PIP_CONSTRAINT: napari-from-github/resources/constraints/constraints_py3.12.txt
 
       - name: uninstall numba
         run: |
