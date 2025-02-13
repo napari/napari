@@ -163,7 +163,7 @@ class QtBaseImageControls(QtLayerControls):
         from napari._qt.utils import get_color
         from napari.utils.colormaps.colormap_utils import ensure_colormap
 
-        color = get_color(self, as_hex=True)
+        color = get_color(self, mode='hex')
         if color:
             self.layer.colormap = ensure_colormap(color)
 

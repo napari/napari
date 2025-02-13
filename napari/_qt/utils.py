@@ -6,6 +6,7 @@ import socket
 import weakref
 from collections.abc import Iterable, Sequence
 from contextlib import contextmanager
+from enum import auto
 from functools import partial
 from typing import Union
 
@@ -32,11 +33,27 @@ from qtpy.QtWidgets import (
 
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.events.custom_types import Array
-from napari.utils.misc import is_sequence
+from napari.utils.misc import StringEnum, is_sequence
 from napari.utils.translations import trans
 
 QBYTE_FLAG = '!QBYTE_'
 RICH_TEXT_PATTERN = re.compile('<[^\n]+>')
+
+
+class ColorMode(StringEnum):
+    """Looping mode for animating an axis.
+
+    ColorMode.HEX
+        Returns color as hex string.
+    ColorMode.LOOP
+        Returns color as a numpy array.
+    ColorMode.QCOLOR
+        Returns color as a QColor object
+    """
+
+    HEX = auto()
+    ARRAY = auto()
+    QCOLOR = auto()
 
 
 def is_qbyte(string: str) -> bool:
@@ -393,26 +410,23 @@ def in_qt_main_thread() -> bool:
 
 
 def get_color(
-    color: str | np.ndarray | None = None,
-    as_hex: bool = True,
-    as_array: bool = False,
-) -> np.ndarray:
+    color: str | np.ndarray | QColor | None = None,
+    mode: ColorMode = ColorMode.HEX,
+) -> np.ndarray | None:
     """Get color."""
 
-    if as_array:
-        as_hex = False
     if isinstance(color, str):
         color = QColor(color)
     elif isinstance(color, np.ndarray):
         color = QColor(*color.astype(int))
 
     dlg = QColorDialog(color)
-    new_color: Union[str, np.ndarray] | None = None
+    new_color: Union[str, np.ndarray, QColor] | None = None
     if dlg.exec_():
         new_color = dlg.currentColor()
-        if as_hex:
+        if mode == ColorMode.HEX:
             new_color = new_color.name()
-        if as_array:
+        elif mode == ColorMode.ARRAY:
             new_color = (
                 np.asarray(
                     [new_color.red(), new_color.green(), new_color.blue()]
