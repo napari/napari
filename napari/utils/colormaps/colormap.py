@@ -488,7 +488,7 @@ class DirectLabelColormap(LabelColormapBase):
             if self.use_selection and values != self.selection:
                 return np.array((0, 0, 0, 0))
             return self.color_dict.get(values, self.default_color)
-        if isinstance(values, (list, tuple)):
+        if isinstance(values, list | tuple):
             values = np.array(values)
         if not isinstance(values, np.ndarray) or values.dtype.kind in 'fU':
             raise TypeError('DirectLabelColormap can only be used with int')
@@ -911,7 +911,7 @@ def _normalize_label_colormap(
         The computed LabelColormap object.
     """
     if isinstance(
-        any_colormap_like, (CyclicLabelColormap, DirectLabelColormap)
+        any_colormap_like, CyclicLabelColormap | DirectLabelColormap
     ):
         return any_colormap_like
     if isinstance(any_colormap_like, Sequence):

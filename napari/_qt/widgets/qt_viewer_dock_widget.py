@@ -119,7 +119,7 @@ class QtViewerDockWidget(QDockWidget):
         self._shortcut = shortcut
 
         if allowed_areas:
-            if not isinstance(allowed_areas, (list, tuple)):
+            if not isinstance(allowed_areas, list | tuple):
                 raise TypeError(
                     trans._(
                         '`allowed_areas` must be a list or tuple',

@@ -1,5 +1,6 @@
 """guess_rgb, guess_multiscale, guess_labels."""
 
+import itertools
 from collections.abc import Callable, Sequence
 from typing import Any, Literal
 
@@ -71,7 +72,7 @@ def guess_multiscale(
     if hasattr(data, 'ndim') and data.ndim > 1:
         return False, data
 
-    if isinstance(data, (list, tuple)) and len(data) == 1:
+    if isinstance(data, list | tuple) and len(data) == 1:
         # pyramid with only one level, unwrap
         return False, data[0]
 
@@ -79,9 +80,7 @@ def guess_multiscale(
     if len(sizes) <= 1:
         return False, data
 
-    consistent = all(
-        s1 > s2 for s1, s2 in zip(sizes[:-1], sizes[1:], strict=False)
-    )
+    consistent = all(s1 > s2 for s1, s2 in itertools.pairwise(sizes))
     if all(s == sizes[0] for s in sizes):
         # note: the individual array case should be caught by the first
         # code line in this function, hasattr(ndim) and ndim > 1.

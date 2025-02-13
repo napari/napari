@@ -1105,7 +1105,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 for datum in data(**kwargs):
                     added.extend(self._add_layer_from_data(*datum))
                 return added
-            if isinstance(data, (str, Path)):
+            if isinstance(data, str | Path):
                 try:
                     return self.open(data, plugin=reader_plugin)
                 except Exception as e:
@@ -1195,7 +1195,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         paths_: list[PathLike] = (
             [os.fspath(path)]
-            if isinstance(path, (Path, str))
+            if isinstance(path, Path | str)
             else [os.fspath(p) for p in path]
         )
 

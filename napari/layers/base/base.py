@@ -1264,7 +1264,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         if value is None:
             return
 
-        if isinstance(value, (ClippingPlane, dict)):
+        if isinstance(value, ClippingPlane | dict):
             value = [value]
         for new_plane in value:
             plane = ClippingPlane()

@@ -283,7 +283,7 @@ def _get_widget_viewer_param(
     """Get widget parameter name for `viewer` (if any) and check type."""
     if inspect.isclass(widget_callable) and issubclass(
         widget_callable,
-        (QWidget, Widget),
+        QWidget | Widget,
     ):
         widget_param = ''
         try:

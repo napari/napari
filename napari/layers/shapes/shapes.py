@@ -1582,7 +1582,7 @@ class Shapes(Layer):
         """determines if the new color argument is for directly setting or cycle/colormap"""
         if isinstance(color, str):
             return color in self.properties
-        if isinstance(color, (list, np.ndarray)):
+        if isinstance(color, list | np.ndarray):
             return False
 
         raise ValueError(
@@ -2433,7 +2433,7 @@ class Shapes(Layer):
             the box, and the last point is the location of the rotation handle
             that can be used to rotate the box
         """
-        if isinstance(index, (list, np.ndarray, set)):
+        if isinstance(index, list | np.ndarray | set):
             if len(index) == 0:
                 box = None
             elif len(index) == 1:
@@ -2775,7 +2775,7 @@ class Shapes(Layer):
         center : list
             coordinates of center of rotation.
         """
-        if not isinstance(scale, (list, np.ndarray)):
+        if not isinstance(scale, list | np.ndarray):
             scale = [scale, scale]
         box = self._selected_box - center
         box = np.array(box * scale)

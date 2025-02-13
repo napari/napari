@@ -153,11 +153,11 @@ class Version:
 
     @classmethod
     def _from_obj(cls, other):
-        if isinstance(other, (str, bytes)):
+        if isinstance(other, str | bytes):
             other = Version.parse(other)
         elif isinstance(other, dict):
             other = Version(**other)
-        elif isinstance(other, (tuple, list)):
+        elif isinstance(other, tuple | list):
             other = Version(*other)
         elif not isinstance(other, Version):
             raise TypeError(

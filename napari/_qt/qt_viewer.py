@@ -508,7 +508,7 @@ class QtViewer(QSplitter):
             give (list/tuple/str) then the variable values looked up in the
             callers frame.
         """
-        if isinstance(variables, (str, list, tuple)):
+        if isinstance(variables, str | list | tuple):
             if isinstance(variables, str):
                 vlist = variables.split()
             else:

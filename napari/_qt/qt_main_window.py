@@ -1740,7 +1740,7 @@ class Window:
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
         """
-        if not isinstance(scale, (float, int)):
+        if not isinstance(scale, float | int):
             raise TypeError(
                 trans._(
                     'Scale must be a float or an int.',
@@ -1809,7 +1809,7 @@ class Window:
                 )
             )
 
-        if isinstance(paths, (str, Path)):
+        if isinstance(paths, str | Path):
             storage_dir = Path(paths).expanduser()
             storage_dir.mkdir(parents=True, exist_ok=True)
             paths = [storage_dir / f'roi_{n}.png' for n in range(len(rois))]

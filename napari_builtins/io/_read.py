@@ -1,4 +1,5 @@
 import csv
+import itertools
 import os
 import re
 import tempfile
@@ -185,7 +186,7 @@ def magic_imread(
     """
     _filenames: list[str] = (
         [str(x) for x in filenames]
-        if isinstance(filenames, (list, tuple))
+        if isinstance(filenames, list | tuple)
         else [str(filenames)]
     )
     if not _filenames:  # pragma: no cover
@@ -344,9 +345,7 @@ def _shapes_csv_to_layerdata(
 
     data = []
     shape_type = []
-    for ind_a, ind_b in zip(
-        shape_boundaries[:-1], shape_boundaries[1:], strict=False
-    ):
+    for ind_a, ind_b in itertools.pairwise(shape_boundaries):
         data.append(raw_data[ind_a:ind_b])
         shape_type.append(table[ind_a, 1])
 

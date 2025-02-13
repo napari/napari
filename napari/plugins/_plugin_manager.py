@@ -295,7 +295,7 @@ class NapariPluginManager(PluginManager):
 
             if not (
                 callable(datum['data'])
-                or isinstance(datum['data'], (str, Path))
+                or isinstance(datum['data'], str | Path)
             ):
                 warn_message = trans._(
                     'Plugin {plugin_name!r} provided invalid data for key {name!r} in the dict returned by {hook_name!r}. (Must be str, callable, or dict), got ({dtype}).',

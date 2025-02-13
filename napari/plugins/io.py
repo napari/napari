@@ -353,7 +353,7 @@ def _write_multiple_layers_with_plugins(
     layer_data = [layer.as_layer_data_tuple() for layer in layers]
     layer_types = [ld[2] for ld in layer_data]
 
-    if not plugin_name and isinstance(path, (str, pathlib.Path)):
+    if not plugin_name and isinstance(path, str | pathlib.Path):
         extension = os.path.splitext(path)[-1]
         plugin_name = plugin_manager.get_writer_for_extension(extension)
 
@@ -465,7 +465,7 @@ def _write_single_layer_with_plugins(
         plugin_manager.hook, f'napari_write_{layer._type_string}'
     )
 
-    if not plugin_name and isinstance(path, (str, pathlib.Path)):
+    if not plugin_name and isinstance(path, str | pathlib.Path):
         extension = os.path.splitext(path)[-1]
         plugin_name = plugin_manager.get_writer_for_extension(extension)
 

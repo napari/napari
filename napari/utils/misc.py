@@ -174,11 +174,11 @@ def is_iterable(
         return allow_none
 
     # Here if arg is None it used to return allow_none
-    if isinstance(arg, (str, Enum)) or np.isscalar(arg):
+    if isinstance(arg, str | Enum) or np.isscalar(arg):
         return False
 
     # this is to be removed in 0.6.0, color is never set True
-    if color is True and isinstance(arg, (list, np.ndarray)):
+    if color is True and isinstance(arg, list | np.ndarray):
         return np.array(arg).ndim != 1 or len(arg) not in [3, 4]
 
     return isinstance(arg, collections.abc.Iterable)
@@ -398,7 +398,7 @@ def abspath_or_url(relpath: T, *, must_exist: bool = False) -> T:
     """
     from urllib.parse import urlparse
 
-    if not isinstance(relpath, (str, Path)):
+    if not isinstance(relpath, str | Path):
         raise TypeError(
             trans._('Argument must be a string or Path', deferred=True)
         )

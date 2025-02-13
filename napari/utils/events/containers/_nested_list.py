@@ -47,7 +47,7 @@ def ensure_tuple_index(index: MaybeNestedIndex) -> NestedIndex:
     TypeError
         If the input ``index`` is not an ``int``, ``slice``, or ``tuple``.
     """
-    if isinstance(index, (slice, int)):
+    if isinstance(index, slice | int):
         return (index,)  # single integer inserts to self
     if isinstance(index, tuple):
         return index
@@ -327,7 +327,7 @@ class NestableEventedList(EventedList[_T]):
 
         # we iterate indices from the end first, so pop() always works
         for idx in sorted(sources, reverse=True):
-            if isinstance(idx, (int, slice)):
+            if isinstance(idx, int | slice):
                 idx = (idx,)
             if idx == ():
                 raise IndexError(

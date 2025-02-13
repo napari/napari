@@ -590,7 +590,7 @@ class EventEmitter:
             self._callbacks = []
             self._callback_refs = []
             self._callback_pass_event = []
-        elif isinstance(callback, (Callable, tuple)):
+        elif isinstance(callback, Callable | tuple):
             callback, _pass_event = self._normalize_cb(callback)
             if callback in self._callbacks:
                 idx = self._callbacks.index(callback)

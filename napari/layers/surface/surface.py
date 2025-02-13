@@ -528,7 +528,7 @@ class Surface(IntensityVisualizationMixin, Layer):
     def wireframe(self, wireframe: dict | SurfaceWireframe | None) -> None:
         if wireframe is None:
             self._wireframe.reset()
-        elif isinstance(wireframe, (SurfaceWireframe, dict)):
+        elif isinstance(wireframe, SurfaceWireframe | dict):
             self._wireframe.update(wireframe)
         else:
             raise ValueError(
@@ -544,7 +544,7 @@ class Surface(IntensityVisualizationMixin, Layer):
     def normals(self, normals: dict | SurfaceNormals | None) -> None:
         if normals is None:
             self._normals.reset()
-        elif not isinstance(normals, (SurfaceNormals, dict)):
+        elif not isinstance(normals, SurfaceNormals | dict):
             raise ValueError(
                 f'normals should be None, a dict, or SurfaceNormals; got {type(normals)}'
             )

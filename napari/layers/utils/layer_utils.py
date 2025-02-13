@@ -485,7 +485,7 @@ def _coerce_current_properties_value(
     coerced_value : np.ndarray
         The value in a 1D numpy array with length 1.
     """
-    if isinstance(value, (np.ndarray, list, tuple)):
+    if isinstance(value, np.ndarray | list | tuple):
         if len(value) != 1:
             raise ValueError(
                 trans._(

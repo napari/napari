@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import itertools
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -999,7 +1000,7 @@ def path_to_mask(
     vertices = vertices[~duplicates]
 
     iis, jjs = [], []
-    for v1, v2 in zip(vertices, vertices[1:], strict=False):
+    for v1, v2 in itertools.pairwise(vertices):
         ii, jj = line(*v1, *v2)
         iis.extend(ii.tolist())
         jjs.extend(jj.tolist())

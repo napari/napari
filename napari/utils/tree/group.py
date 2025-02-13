@@ -76,7 +76,7 @@ class Group(Node, SelectableNestableEventedList[NodeType]):
 
     def __delitem__(self, key: MaybeNestedIndex):
         """Remove item at ``key``, and unparent."""
-        if isinstance(key, (int, tuple)):
+        if isinstance(key, int | tuple):
             self[key].parent = None  # type: ignore
         else:
             for item in self[key]:

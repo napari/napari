@@ -826,7 +826,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
             if (
                 len(colormap) == 2
                 and isinstance(colormap[0], str)
-                and isinstance(colormap[1], (VispyColormap, Colormap))
+                and isinstance(colormap[1], VispyColormap | Colormap)
             ):
                 name = colormap[0]
                 cmap = colormap[1]
@@ -854,13 +854,13 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
 
         elif isinstance(colormap, dict):
             if 'colors' in colormap and not (
-                isinstance(colormap['colors'], (VispyColormap, Colormap))
+                isinstance(colormap['colors'], VispyColormap | Colormap)
             ):
                 cmap = Colormap(**colormap)
                 name = cmap.name
                 AVAILABLE_COLORMAPS[name] = cmap
             elif not all(
-                (isinstance(i, (VispyColormap, Colormap)))
+                (isinstance(i, VispyColormap | Colormap))
                 for i in colormap.values()
             ):
                 raise TypeError(

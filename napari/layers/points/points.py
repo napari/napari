@@ -1026,7 +1026,7 @@ class Points(Layer):
 
     @current_size.setter
     def current_size(self, size: None | float) -> None:
-        if isinstance(size, (list, tuple, np.ndarray)):
+        if isinstance(size, list | tuple | np.ndarray):
             warnings.warn(
                 trans._(
                     'Since 0.4.18 point sizes must be isotropic; the average from each dimension will be used instead. '

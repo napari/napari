@@ -34,7 +34,7 @@ def is_color_mapped(color, properties):
         return color in properties
     if isinstance(color, dict):
         return True
-    if isinstance(color, (list, np.ndarray)):
+    if isinstance(color, list | np.ndarray):
         return False
 
     raise ValueError(

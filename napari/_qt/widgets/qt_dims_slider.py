@@ -327,7 +327,7 @@ class QtDimSliderWidget(QWidget):
         value : tuple(int, int)
             Frame range as tuple/list with range (minimum_frame, maximum_frame)
         """
-        if not isinstance(value, (tuple, list, type(None))):
+        if not isinstance(value, tuple | list | type(None)):
             raise TypeError(
                 trans._('frame_range value must be a list or tuple')
             )
