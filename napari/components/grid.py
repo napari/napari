@@ -35,6 +35,9 @@ class GridCanvas(EventedModel):
         A value of 0.0 will have the grid layers touching each other.
         Positive values will space the layers apart, and negative values
         will overlap the layers.
+
+        .. versionadded:: 0.6.0
+            ``spacing`` was added in 0.6.0.
     """
 
     # fields
