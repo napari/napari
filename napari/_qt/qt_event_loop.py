@@ -66,6 +66,8 @@ def _focus_changed(old: QWidget | None, new: QWidget | None):
         return  # ignore focus changes between two widgets
     if old is None and new is None:
         return  # this should not happen
+    if not isinstance(old, QWidget):
+        return  # ignore event happened during teardown of test
     if old is None:
         start_timer = True
         window = new.window()

@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Optional
 
 from napari._qt.qt_resources._svg import QColoredSVGIcon
 from napari.settings import get_settings
