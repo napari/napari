@@ -88,7 +88,9 @@ You can see details of [the project roadmap here](https://napari.org/stable/road
 
 Contributions are encouraged! Please read our [contributing guide](https://napari.org/dev/developers/contributing/index.html) to get started. Given that we're in an early stage, you may want to reach out on our [GitHub Issues](https://github.com/napari/napari/issues) before jumping in. 
 
-If you want to contribute or edit to our documentation, please go to [napari/docs](https://github.com/napari/docs). 
+If you want to contribute to or edit our documentation, please go to [napari/docs](https://github.com/napari/docs).
+
+Visit our [project weather report dashboard](https://napari.org/weather-report/) to see metrics and how development is progressing.
 
 ## code of conduct
 
