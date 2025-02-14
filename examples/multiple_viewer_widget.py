@@ -13,7 +13,6 @@ current dims point (`viewer.dims.point`).
 """
 
 from copy import deepcopy
-from typing import Optional
 
 import numpy as np
 from qtpy.QtCore import Qt
@@ -76,7 +75,7 @@ def center_cross_on_mouse(
             [
                 max(min_, min(p, max_)) / step
                 for p, (min_, max_, step) in zip(
-                    viewer_model.cursor.position, viewer_model.dims.range
+                    viewer_model.cursor.position, viewer_model.dims.range, strict=False
                 )
             ]
         ).astype(int)
@@ -126,8 +125,8 @@ class QtViewerWrap(QtViewer):
         self,
         filenames: list,
         stack: bool,
-        plugin: Optional[str] = None,
-        layer_type: Optional[str] = None,
+        plugin: str | None = None,
+        layer_type: str | None = None,
         **kwargs,
     ):
         """for drag and drop open files"""
