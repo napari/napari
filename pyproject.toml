@@ -126,7 +126,7 @@ optional-numba = [
 optional = [
     "napari[optional-base,optional-numba]",
     "triangle",
-    "PartSegCore-compiled-backend>=0.15.10",
+    "PartSegCore-compiled-backend>=0.15.11",
 ]
 testing = [
     "babel>=2.9.0",
