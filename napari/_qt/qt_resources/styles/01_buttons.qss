@@ -47,11 +47,19 @@ QtViewerPushButton[mode="home"] {
 }
 
 QtViewerPushButton[mode="ndisplay_button"]:checked {
-  image: url("theme_{{ id }}:/3D.svg");
+  image: url("theme_{{ id }}:/3D-toggle.svg");
+  min-width: 49px;
+  max-width: 49px;
+  min-height: 28px;
+  max-height: 28px;
 }
 
 QtViewerPushButton[mode="ndisplay_button"] {
-  image: url("theme_{{ id }}:/2D.svg");
+  image: url("theme_{{ id }}:/2D-toggle.svg");
+  min-width: 49px;
+  max-width: 49px;
+  min-height: 28px;
+  max-height: 28px;
 }
 
 QtViewerPushButton[mode="grid_view_button"]:checked {
