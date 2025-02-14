@@ -278,7 +278,7 @@ parso==0.8.4
     # via jedi
 partd==1.4.2
     # via dask
-partsegcore-compiled-backend==0.15.10
+partsegcore-compiled-backend==0.15.11
     # via napari (napari_repo/pyproject.toml)
 pexpect==4.9.0
     # via ipython
