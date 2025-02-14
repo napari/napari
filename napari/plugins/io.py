@@ -5,7 +5,7 @@ import pathlib
 import warnings
 from collections.abc import Sequence
 from logging import getLogger
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from napari_plugin_engine import HookImplementation, PluginCallError
 
@@ -17,14 +17,16 @@ from napari.utils.translations import trans
 
 logger = getLogger(__name__)
 if TYPE_CHECKING:
+    from typing import Optional
+
     from npe2.manifest.contributions import WriterContribution
 
 
 def read_data_with_plugins(
     paths: Sequence[PathLike],
-    plugin: Optional[str] = None,
+    plugin: str | None = None,
     stack: bool = False,
-) -> tuple[Optional[list[LayerData]], Optional[HookImplementation]]:
+) -> tuple[list[LayerData] | None, HookImplementation | None]:
     """Iterate reader hooks and return first non-None LayerData or None.
 
     This function returns as soon as the path has been read successfully,
@@ -73,7 +75,7 @@ def read_data_with_plugins(
     assert isinstance(paths, list)
     if not stack:
         assert len(paths) == 1
-    hookimpl: Optional[HookImplementation]
+    hookimpl: HookImplementation | None
 
     res = _npe2.read(paths, plugin, stack=stack)
     if res is not None:
@@ -183,8 +185,8 @@ def save_layers(
     path: str,
     layers: list[Layer],
     *,
-    plugin: Optional[str] = None,
-    _writer: Optional[WriterContribution] = None,
+    plugin: str | None = None,
+    _writer: WriterContribution | None = None,
 ) -> list[str]:
     """Write list of layers or individual layer to a path using writer plugins.
 
@@ -300,8 +302,8 @@ def _write_multiple_layers_with_plugins(
     path: str,
     layers: list[Layer],
     *,
-    plugin_name: Optional[str] = None,
-    _writer: Optional[WriterContribution] = None,
+    plugin_name: str | None = None,
+    _writer: WriterContribution | None = None,
 ) -> tuple[list[str], str]:
     """Write data from multiple layers data with a plugin.
 
@@ -353,7 +355,7 @@ def _write_multiple_layers_with_plugins(
     layer_data = [layer.as_layer_data_tuple() for layer in layers]
     layer_types = [ld[2] for ld in layer_data]
 
-    if not plugin_name and isinstance(path, (str, pathlib.Path)):
+    if not plugin_name and isinstance(path, str | pathlib.Path):
         extension = os.path.splitext(path)[-1]
         plugin_name = plugin_manager.get_writer_for_extension(extension)
 
@@ -414,9 +416,9 @@ def _write_single_layer_with_plugins(
     path: str,
     layer: Layer,
     *,
-    plugin_name: Optional[str] = None,
-    _writer: Optional[WriterContribution] = None,
-) -> tuple[Optional[str], str]:
+    plugin_name: str | None = None,
+    _writer: WriterContribution | None = None,
+) -> tuple[str | None, str]:
     """Write single layer data with a plugin.
 
     If ``plugin_name`` is not provided then we just directly call
@@ -465,7 +467,7 @@ def _write_single_layer_with_plugins(
         plugin_manager.hook, f'napari_write_{layer._type_string}'
     )
 
-    if not plugin_name and isinstance(path, (str, pathlib.Path)):
+    if not plugin_name and isinstance(path, str | pathlib.Path):
         extension = os.path.splitext(path)[-1]
         plugin_name = plugin_manager.get_writer_for_extension(extension)
 
@@ -482,10 +484,10 @@ def _write_single_layer_with_plugins(
         )
 
     # Call the hook_caller
-    written_path = hook_caller(
+    written_path: Optional[str] = hook_caller(
         _plugin=plugin_name,
         path=abspath_or_url(path),
         data=layer.data,
         meta=layer._get_state(),
-    )  # type: Optional[str]
+    )
     return (written_path, plugin_name or '')
