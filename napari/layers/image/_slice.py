@@ -166,6 +166,7 @@ class _ImageSliceResponse:
             tile_to_data=self.tile_to_data,
             slice_input=self.slice_input,
             request_id=self.request_id,
+            empty=self.empty,
         )
 
 
