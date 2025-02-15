@@ -141,7 +141,7 @@ def confloat(
     gt: float | None = None,
     ge: float | None = None,
     lt: float | None = None,
-    le: float | None] = None,
+    le: float | None = None,
     multiple_of: float | None = None,
     step: float | None = None,
 ) -> type[float]:
