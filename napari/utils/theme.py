@@ -83,6 +83,7 @@ class Theme(EventedModel):
     error: Color
     current: Color
     font_size: str = '12pt' if sys.platform == 'darwin' else '9pt'
+    overlay_font_size: str = '14pt'
 
     @validator('syntax_style', pre=True, allow_reuse=True)
     def _ensure_syntax_style(cls, value: str) -> str:
@@ -401,6 +402,7 @@ DARK = Theme(
     console='rgb(18, 18, 18)',
     canvas='black',
     font_size='12pt' if sys.platform == 'darwin' else '9pt',
+    overlay_font_size='14pt',
 )
 LIGHT = Theme(
     id='light',
@@ -419,6 +421,7 @@ LIGHT = Theme(
     console='rgb(255, 255, 255)',
     canvas='white',
     font_size='12pt' if sys.platform == 'darwin' else '9pt',
+    overlay_font_size='14pt',
 )
 
 register_theme('dark', DARK, 'builtin')
