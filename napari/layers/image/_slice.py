@@ -166,6 +166,7 @@ class _ImageSliceResponse:
             tile_to_data=self.tile_to_data,
             slice_input=self.slice_input,
             request_id=self.request_id,
+            empty=self.empty,
         )
 
 
@@ -211,7 +212,10 @@ class _ImageSliceRequest:
     def __call__(self) -> _ImageSliceResponse:
         if self._slice_out_of_bounds():
             return _ImageSliceResponse.make_empty(
-                slice_input=self.slice_input, rgb=self.rgb, request_id=self.id
+                slice_input=self.slice_input,
+                rgb=self.rgb,
+                request_id=self.id,
+                dtype=self.data.dtype,
             )
         with self.dask_indexer():
             return (
