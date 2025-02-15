@@ -1,5 +1,3 @@
-from typing import Optional
-
 import numpy as np
 
 from napari.components._viewer_constants import CursorStyle
@@ -41,4 +39,4 @@ class Cursor(EventedModel):
     scaled: bool = True
     size = 1.0
     style: CursorStyle = CursorStyle.STANDARD
-    _view_direction: Optional[np.ndarray] = None
+    _view_direction: np.ndarray | None = None
