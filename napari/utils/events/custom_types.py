@@ -122,7 +122,7 @@ def conint(
 class ConstrainedFloat(types.ConstrainedFloat):
     """ConstrainedFloat extension that adds step size"""
 
-    step: Optional[float] = None
+    step: float | None = None
 
     @classmethod
     def __modify_schema__(cls, field_schema: dict[str, Any]) -> None:
@@ -138,12 +138,12 @@ class ConstrainedFloat(types.ConstrainedFloat):
 def confloat(
     *,
     strict: bool = False,
-    gt: Optional[float] = None,
-    ge: Optional[float] = None,
-    lt: Optional[float] = None,
-    le: Optional[float] = None,
-    multiple_of: Optional[float] = None,
-    step: Optional[float] = None,
+    gt: float | None = None,
+    ge: float | None = None,
+    lt: float | None = None,
+    le: float | None] = None,
+    multiple_of: float | None = None,
+    step: float | None = None,
 ) -> type[float]:
     """Extended version of `pydantic.types.confloat` that includes step size."""
     # use kwargs then define conf in a dict to aid with IDE type hinting
