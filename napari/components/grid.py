@@ -31,7 +31,8 @@ class GridCanvas(EventedModel):
         auto calculation of the necessary grid shape to appropriately fill
         all the layers at the appropriate stride.
     spacing : float
-        Spacing between grid layers, as a proportion of the layer extent.
+        Spacing between grid layers, as a proportion of the average
+        of the height and width of the extent of layers in world coordinates after slicing.
         A value of 0.0 will have the grid layers touching each other.
         Positive values will space the layers apart, and negative values
         will overlap the layers.
