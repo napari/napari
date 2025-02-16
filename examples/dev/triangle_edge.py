@@ -375,6 +375,7 @@ paths = [
     generate_regular_polygon(10, radius=1) * 10 + np.array([[25, 50]]),
     # a three-point straight line (tests collinear points in path)
     np.array([[0, -10], [0, 0], [0, 10]]) + np.array([[50, 50]]),
+    poly_hole + np.array([[65, 45]]),
     ]
 
 shapes = polygons + paths
