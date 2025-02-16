@@ -341,6 +341,8 @@ sparkle = np.array([[1, 1], [10, 0], [1, -1], [0, -10],
                     [-1, -1], [-10, 0], [-1, 1], [0, 10]])
 fork = np.array([[2, 10], [0, -5], [-2, 10], [-2, -10], [2, -10]])
 
+poly_hole = np.array([[0,0], [10, 0], [10, 10], [0, 10], [0, 0], [2, 5], [5, 8], [8, 5], [5, 2], [2, 5]]) *1.5
+
 polygons = [
     # square
     generate_regular_polygon(4, radius=1) * 10,
@@ -363,6 +365,7 @@ polygons = [
               [19.27325521, 7.66883038],
               [15.83450076, 10.5778984]],
              ) + np.array([[60, -15]]),
+    poly_hole + np.array([[65, 20]]),
     ]
 
 paths = [
@@ -372,6 +375,7 @@ paths = [
     generate_regular_polygon(10, radius=1) * 10 + np.array([[25, 50]]),
     # a three-point straight line (tests collinear points in path)
     np.array([[0, -10], [0, 0], [0, 10]]) + np.array([[50, 50]]),
+    poly_hole + np.array([[65, 45]]),
     ]
 
 shapes = polygons + paths
