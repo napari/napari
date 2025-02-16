@@ -421,10 +421,6 @@ def get_color(
         color = QColor(*color.astype(int))
 
     dlg = QColorDialog(color)
-    dlg.setOptions(
-        QColorDialog.DontUseNativeDialog | QColorDialog.ShowAlphaChannel
-    )
-
     new_color: Union[str, np.ndarray, QColor] | None = None
     if dlg.exec_():
         new_color = dlg.currentColor()
