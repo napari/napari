@@ -67,12 +67,19 @@ class QtWelcomeWidget(QWidget):
         )
         shortcut_layout.addRow(
             QtShortcutLabel(sc),
-            QtShortcutLabel(trans._('open image(s)')),
+            QtShortcutLabel(trans._('Open image(s)')),
+        )
+        sc = QKeySequence('Ctrl+Shift+P', QKeySequence.PortableText).toString(
+            QKeySequence.NativeText
+        )
+        shortcut_layout.addRow(
+            QtShortcutLabel(sc),
+            QtShortcutLabel(trans._('Show Command Palette')),
         )
         self._shortcut_label = QtShortcutLabel('')
         shortcut_layout.addRow(
             self._shortcut_label,
-            QtShortcutLabel(trans._('show all key bindings')),
+            QtShortcutLabel(trans._('Show all key bindings')),
         )
         shortcut_layout.setSpacing(0)
 
