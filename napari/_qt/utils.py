@@ -6,6 +6,7 @@ import socket
 import weakref
 from collections.abc import Iterable, Sequence
 from contextlib import contextmanager
+from enum import auto
 from functools import partial
 
 import numpy as np
@@ -20,6 +21,7 @@ from qtpy.QtCore import (
 )
 from qtpy.QtGui import QColor, QCursor, QDrag, QImage, QPainter, QPixmap
 from qtpy.QtWidgets import (
+    QColorDialog,
     QGraphicsColorizeEffect,
     QGraphicsOpacityEffect,
     QHBoxLayout,
@@ -30,11 +32,27 @@ from qtpy.QtWidgets import (
 
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.events.custom_types import Array
-from napari.utils.misc import is_sequence
+from napari.utils.misc import StringEnum, is_sequence
 from napari.utils.translations import trans
 
 QBYTE_FLAG = '!QBYTE_'
 RICH_TEXT_PATTERN = re.compile('<[^\n]+>')
+
+
+class ColorMode(StringEnum):
+    """Looping mode for animating an axis.
+
+    ColorMode.HEX
+        Returns color as hex string.
+    ColorMode.LOOP
+        Returns color as a numpy array.
+    ColorMode.QCOLOR
+        Returns color as a QColor object
+    """
+
+    HEX = auto()
+    ARRAY = auto()
+    QCOLOR = auto()
 
 
 def is_qbyte(string: str) -> bool:
@@ -388,3 +406,34 @@ def in_qt_main_thread() -> bool:
         True if we are in the main thread, False otherwise.
     """
     return QCoreApplication.instance().thread() == QThread.currentThread()
+
+
+def get_color(
+    color: str | np.ndarray | QColor | None = None,
+    mode: ColorMode = ColorMode.HEX,
+) -> np.ndarray | None:
+    """Get color."""
+
+    if isinstance(color, str):
+        color = QColor(color)
+    elif isinstance(color, np.ndarray):
+        color = QColor(*color.astype(int))
+
+    dlg = QColorDialog(color)
+    dlg.setOptions(
+        QColorDialog.DontUseNativeDialog | QColorDialog.ShowAlphaChannel
+    )
+
+    new_color: Union[str, np.ndarray, QColor] | None = None
+    if dlg.exec_():
+        new_color = dlg.currentColor()
+        if mode == ColorMode.HEX:
+            new_color = new_color.name()
+        elif mode == ColorMode.ARRAY:
+            new_color = (
+                np.asarray(
+                    [new_color.red(), new_color.green(), new_color.blue()]
+                )
+                / 255
+            )
+    return new_color
