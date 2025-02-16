@@ -1,6 +1,11 @@
 import numpy as np
 
-from napari.settings._application import GridHeight, GridStride, GridWidth
+from napari.settings._application import (
+    GridHeight,
+    GridSpacing,
+    GridStride,
+    GridWidth,
+)
 from napari.utils.events import EventedModel
 
 
@@ -25,6 +30,15 @@ class GridCanvas(EventedModel):
         both of will be used the row and column numbers will trigger an
         auto calculation of the necessary grid shape to appropriately fill
         all the layers at the appropriate stride.
+    spacing : float
+        Spacing between grid layers, as a proportion of the average
+        of the height and width of the extent of layers in world coordinates after slicing.
+        A value of 0.0 will have the grid layers touching each other.
+        Positive values will space the layers apart, and negative values
+        will overlap the layers.
+
+        .. versionadded:: 0.6.0
+            ``spacing`` was added in 0.6.0.
     """
 
     # fields
@@ -33,6 +47,7 @@ class GridCanvas(EventedModel):
     stride: GridStride = 1  # type: ignore[valid-type]
     shape: tuple[GridHeight, GridWidth] = (-1, -1)  # type: ignore[valid-type]
     enabled: bool = False
+    spacing: GridSpacing = 0.0  # type: ignore[valid-type]
 
     def actual_shape(self, nlayers: int = 1) -> tuple[int, int]:
         """Return the actual shape of the grid.
