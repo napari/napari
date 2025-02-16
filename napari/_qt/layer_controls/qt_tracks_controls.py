@@ -38,7 +38,7 @@ class QtTracksControls(QtLayerControls):
     layer : layers.Tracks
         An instance of a Tracks layer.
     panzoom_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
-        Button for pan/zoom mode.
+        Button for activate move camera mode for layer.
     qtColormapComboBoxControl.colormap_combobox : qtpy.QtWidgets.QComboBox
         ComboBox controlling current colormap of the layer.
     qtColormapComboBoxControl.colormap_combobox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel

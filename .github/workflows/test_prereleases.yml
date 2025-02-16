@@ -29,8 +29,12 @@ jobs:
       fail-fast: false
       matrix:
         platform: [windows-latest, macos-latest, ubuntu-latest]
-        python: [3.12]
+        python: [3.12, 3.13]
         backend: [pyqt5, pyqt6]
+        include:
+          - platform: ubuntu-latest
+            python: 3.12
+            backend: pyqt6_no_numba
 
     steps:
       - uses: actions/checkout@v4
@@ -73,6 +77,7 @@ jobs:
         env:
           PLATFORM: ${{ matrix.platform }}
           BACKEND: ${{ matrix.backend }}
+          PYTHON: ${{ matrix.python }}
           COVERAGE: "no_cov"
           PYVISTA_OFF_SCREEN: True  # required for opengl on windows
           PIP_CONSTRAINT: resources/constraints/version_denylist.txt

@@ -32,7 +32,7 @@ class QtSurfaceControls(QtBaseImageControls):
     layer : napari.layers.Surface
         An instance of a napari Surface layer.
     panzoom_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
-        Button to pan/zoom shapes layer.
+        Button to activate move camera mode for layer.
     qtAutoScaleControl.autoScaleBar : qtpy.QtWidgets.QWidget
         Widget to wrap push buttons related with the layer auto-contrast funtionality.
     qtColormapControl.colormapWidget : qtpy.QtWidgets.QWidget
@@ -54,7 +54,7 @@ class QtSurfaceControls(QtBaseImageControls):
     qtShadingComboBoxControl.shadingComboBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the shading value chooser widget.
     transform_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
-        Button to transform shapes layer.
+        Button to transform surface layer.
     """
 
     layer: 'napari.layers.Surface'

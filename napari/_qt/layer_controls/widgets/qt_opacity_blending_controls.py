@@ -3,12 +3,12 @@ from qtpy.QtWidgets import (
     QComboBox,
     QWidget,
 )
+from superqt import QLabeledDoubleSlider
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
-from napari._qt.widgets._slider_compat import QDoubleSlider
 from napari.layers.base._base_constants import BLENDING_TRANSLATIONS, Blending
 from napari.layers.base.base import Layer
 from napari.utils.translations import trans
@@ -35,7 +35,7 @@ class QtOpacityBlendingControls(QtWidgetControlsBase):
         Dropdown widget to select blending mode of layer.
     blendLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the blending combobox widget.
-    opacitySlider : qtpy.QtWidgets.QSlider
+    opacitySlider : superqt.QLabeledDoubleSlider
         Slider controlling opacity of the layer.
     opacityLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the opacity slider widget.
@@ -48,7 +48,7 @@ class QtOpacityBlendingControls(QtWidgetControlsBase):
         self._layer.events.opacity.connect(self._on_opacity_change)
 
         # Setup widgets
-        sld = QDoubleSlider(Qt.Orientation.Horizontal, parent=parent)
+        sld = QLabeledDoubleSlider(Qt.Orientation.Horizontal, parent=parent)
         sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         sld.setMinimum(0)
         sld.setMaximum(1)

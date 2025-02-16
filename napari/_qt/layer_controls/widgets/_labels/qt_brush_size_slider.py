@@ -3,9 +3,9 @@ from typing import Optional
 import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
-    QSlider,
     QWidget,
 )
+from superqt import QLabeledSlider
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
@@ -29,7 +29,7 @@ class QtBrushSizeSliderControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-    brushSizeSlider : qtpy.QtWidgets.QSlider
+    brushSizeSlider : superqt.QLabeledDoubleSlider
         Slider controlling current brush size of the layer.
     brushSizeSliderLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the brush size chooser widget.
@@ -43,7 +43,7 @@ class QtBrushSizeSliderControl(QtWidgetControlsBase):
         self._layer.events.brush_size.connect(self._on_brush_size_change)
 
         # Setup widgets
-        sld = QSlider(Qt.Orientation.Horizontal)
+        sld = QLabeledSlider(Qt.Orientation.Horizontal)
         sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         sld.setMinimum(1)
         sld.setMaximum(40)

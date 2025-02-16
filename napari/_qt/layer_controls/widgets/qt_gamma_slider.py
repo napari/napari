@@ -2,13 +2,13 @@ from typing import Optional
 
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QWidget
+from superqt import QLabeledDoubleSlider
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
 from napari._qt.utils import qt_signals_blocked
-from napari._qt.widgets._slider_compat import QDoubleSlider
 from napari.layers.base.base import Layer
 from napari.utils.events.event_utils import connect_setattr
 from napari.utils.translations import trans
@@ -28,7 +28,7 @@ class QtGammaSliderControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-        gammaSlider : qtpy.QtWidgets.QSlider
+        gammaSlider : superqt.QLabeledDoubleSlider
             Gamma adjustment slider widget.
         gammaSliderLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
             Label for the gamma chooser widget.
@@ -42,7 +42,7 @@ class QtGammaSliderControl(QtWidgetControlsBase):
         self._layer.events.gamma.connect(self._on_gamma_change)
 
         # Setup widgets
-        sld = QDoubleSlider(Qt.Orientation.Horizontal, parent)
+        sld = QLabeledDoubleSlider(Qt.Orientation.Horizontal, parent)
         sld.setMinimum(0.2)
         sld.setMaximum(2)
         sld.setSingleStep(0.02)

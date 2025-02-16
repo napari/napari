@@ -37,7 +37,8 @@ class QtShapesControls(QtLayerControls):
         String id for the transform action to bind to the transform button.
     button_group : qtpy.QtWidgets.QButtonGroup
         (SELECT, DIRECT, PAN_ZOOM, ADD_RECTANGLE, ADD_ELLIPSE, ADD_LINE,
-        ADD_PATH, ADD_POLYGON, VERTEX_INSERT, VERTEX_REMOVE, TRANSFORM).
+        ADD_POLYLINE, ADD_PATH, ADD_POLYGON, VERTEX_INSERT, VERTEX_REMOVE,
+        TRANSFORM).
         Button group for shapes layer modes
     delete_button : qtpy.QtWidgets.QtModePushButton
         Button to delete selected shapes
@@ -49,27 +50,29 @@ class QtShapesControls(QtLayerControls):
         An instance of a napari Shapes layer.
     line_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to add lines to shapes layer.
+    polyline_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
+        Button to add polylines to shapes layer.
     move_back_button : qtpy.QtWidgets.QtModePushButton
         Button to move selected shape(s) to the back.
     move_front_button : qtpy.QtWidgets.QtModePushButton
         Button to move shape(s) to the front.
     panzoom_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
-        Button to pan/zoom shapes layer.
+        Button to activate move camera mode for layer.
     path_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to add paths to shapes layer.
     polygon_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to add polygons to shapes layer.
     polygon_lasso_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to add polygons to shapes layer with a lasso tool.
-    qtEdgeColorControl.edgeColorEdit : qtpy.QtWidgets.QColorSwatchEdit
+    qtEdgeColorControl.edgeColorEdit : napari._qt.widgets.qt_color_swatch.QColorSwatchEdit
         ColorSwatchEdit controlling current edge color of the layer.
     qtEdgeColorControl.edgeColorLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the current edge color chooser widget.
     qtEdgeWidthSliderControl.edgeWidthLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the current edge width widget.
-    qtEdgeWidthSliderControl.edgeWidthSlider : qtpy.QtWidgets.QSlider
+    qtEdgeWidthSliderControl.edgeWidthSlider : superqt.QLabeledDoubleSlider
         Slider controlling line edge width of layer.
-    qtFaceColorControl.faceColorEdit : qtpy.QtWidgets.QSlider
+    qtFaceColorControl.faceColorEdit : napari._qt.widgets.qt_color_swatch.QColorSwatchEdit
         ColorSwatchEdit controlling current face color of the layer.
     qtFaceColorControl.faceColorLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the current face color widget.
@@ -79,7 +82,7 @@ class QtShapesControls(QtLayerControls):
         Label for the blending combobox widget.
     qtOpacityBlendingControls.opacityLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the opacity slider widget.
-    qtOpacityBlendingControls.opacitySlider : qtpy.QtWidgets.QSlider
+    qtOpacityBlendingControls.opacitySlider : superqt.QLabeledDoubleSlider
         Slider controlling opacity of the layer.
     qtTextVisibilityControl.textDispCheckBox : qtpy.QtWidgets.QCheckbox
         Checkbox controlling if text on the layer is visible or not.
@@ -133,6 +136,13 @@ class QtShapesControls(QtLayerControls):
         )
         self.line_button = self._radio_button(
             layer, 'line', Mode.ADD_LINE, True, 'activate_add_line_mode'
+        )
+        self.polyline_button = self._radio_button(
+            layer,
+            'polyline',
+            Mode.ADD_POLYLINE,
+            True,
+            'activate_add_polyline_mode',
         )
         self.path_button = self._radio_button(
             layer, 'path', Mode.ADD_PATH, True, 'activate_add_path_mode'
@@ -200,18 +210,19 @@ class QtShapesControls(QtLayerControls):
         )
         self._on_editable_or_visible_change()
 
+        self.button_grid.addWidget(self.move_back_button, 0, 0)
         self.button_grid.addWidget(self.vertex_remove_button, 0, 1)
         self.button_grid.addWidget(self.vertex_insert_button, 0, 2)
         self.button_grid.addWidget(self.delete_button, 0, 3)
         self.button_grid.addWidget(self.direct_button, 0, 4)
         self.button_grid.addWidget(self.select_button, 0, 5)
-        self.button_grid.addWidget(self.move_back_button, 1, 0)
-        self.button_grid.addWidget(self.move_front_button, 1, 1)
-        self.button_grid.addWidget(self.ellipse_button, 1, 2)
-        self.button_grid.addWidget(self.rectangle_button, 1, 3)
-        self.button_grid.addWidget(self.polygon_button, 1, 4)
-        self.button_grid.addWidget(self.polygon_lasso_button, 1, 5)
-        self.button_grid.addWidget(self.line_button, 1, 6)
+        self.button_grid.addWidget(self.move_front_button, 1, 0)
+        self.button_grid.addWidget(self.ellipse_button, 1, 1)
+        self.button_grid.addWidget(self.rectangle_button, 1, 2)
+        self.button_grid.addWidget(self.polygon_button, 1, 3)
+        self.button_grid.addWidget(self.polygon_lasso_button, 1, 4)
+        self.button_grid.addWidget(self.line_button, 1, 5)
+        self.button_grid.addWidget(self.polyline_button, 1, 6)
         self.button_grid.addWidget(self.path_button, 1, 7)
         self.button_grid.setContentsMargins(5, 0, 0, 5)
         self.button_grid.setColumnStretch(0, 1)
@@ -249,6 +260,7 @@ class QtShapesControls(QtLayerControls):
         * ADD_RECTANGLE
         * ADD_ELLIPSE
         * ADD_LINE
+        * ADD_POLYLINE
         * ADD_PATH
         * ADD_POLYGON
         * ADD_POLYGON_LASSO

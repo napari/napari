@@ -67,12 +67,12 @@ class QtLayerControls(QFrame):
         An instance of a napari layer.
     qtOpacityBlendingControls.opacityLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the opacity slider widget.
-    qtOpacityBlendingControls.opacitySlider : qtpy.QtWidgets.QSlider
+    qtOpacityBlendingControls.opacitySlider : superqt.QLabeledDoubleSlider
         Slider controlling opacity of the layer.
     panzoom_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
-        Button to pan/zoom shapes layer.
+        Button to activate move camera mode for layer.
     transform_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
-        Button to transform shapes layer.
+        Button to transform layer.
     """
 
     MODE = Mode
@@ -105,7 +105,9 @@ class QtLayerControls(QFrame):
             self.MODE.PAN_ZOOM,
             False,
             self.PAN_ZOOM_ACTION_NAME,
-            extra_tooltip_text=trans._('(or hold Space)'),
+            extra_tooltip_text=trans._(
+                '\n(or hold Space)\n(hold Shift to pan in 3D)'
+            ),
             checked=True,
         )
         self.transform_button = self._radio_button(

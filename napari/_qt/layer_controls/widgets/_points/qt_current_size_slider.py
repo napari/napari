@@ -6,13 +6,13 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QWidget,
 )
+from superqt import QLabeledSlider
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
 from napari._qt.utils import qt_signals_blocked
-from napari._qt.widgets._slider_compat import QSlider
 from napari.layers.base.base import Layer
 from napari.utils.translations import trans
 
@@ -31,7 +31,7 @@ class QtCurrentSizeSliderControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-    sizeSlider : napari._qt.widgets._slider_compat.QSlider
+    sizeSlider : superqt.QLabeledDoubleSlider
         Slider controlling current size attribute of the layer.
     sizeSliderLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the size chooser widget.
@@ -46,7 +46,7 @@ class QtCurrentSizeSliderControl(QtWidgetControlsBase):
         self._layer.events.current_size.connect(self._on_current_size_change)
 
         # Setup widgets
-        sld = QSlider(Qt.Orientation.Horizontal)
+        sld = QLabeledSlider(Qt.Orientation.Horizontal)
         sld.setToolTip(
             trans._(
                 'Change the size of currently selected points and any added afterwards.'

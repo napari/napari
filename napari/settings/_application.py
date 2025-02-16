@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 from psutil import virtual_memory
 
 from napari._pydantic_compat import Field, validator
@@ -12,7 +10,7 @@ from napari.settings._constants import (
 )
 from napari.settings._fields import Language
 from napari.utils._base import _DEFAULT_LOCALE
-from napari.utils.events.custom_types import conint
+from napari.utils.events.custom_types import confloat, conint
 from napari.utils.events.evented_model import EventedModel
 from napari.utils.notifications import NotificationSeverity
 from napari.utils.translations import trans
@@ -20,6 +18,7 @@ from napari.utils.translations import trans
 GridStride = conint(ge=-50, le=50, ne=0)
 GridWidth = conint(ge=-1, ne=0)
 GridHeight = conint(ge=-1, ne=0)
+GridSpacing = confloat(ge=-1.0, le=1.0, step=0.05)
 
 _DEFAULT_MEM_FRACTION = 0.25
 MAX_CACHE = virtual_memory().total * 0.5 / 1e9
@@ -70,14 +69,14 @@ class ApplicationSettings(EventedModel):
         title=trans._('Save window state'),
         description=trans._('Toggle saving the main window state of widgets.'),
     )
-    window_position: Optional[tuple[int, int]] = Field(
+    window_position: tuple[int, int] | None = Field(
         None,
         title=trans._('Window position'),
         description=trans._(
             'Last saved x and y coordinates for the main window. This setting is managed by the application.'
         ),
     )
-    window_size: Optional[tuple[int, int]] = Field(
+    window_size: tuple[int, int] | None = Field(
         None,
         title=trans._('Window size'),
         description=trans._(
@@ -98,7 +97,7 @@ class ApplicationSettings(EventedModel):
             'Last saved fullscreen state for the main window. This setting is managed by the application.'
         ),
     )
-    window_state: Optional[str] = Field(
+    window_state: str | None = Field(
         None,
         title=trans._('Window state'),
         description=trans._(
@@ -112,7 +111,7 @@ class ApplicationSettings(EventedModel):
             'Toggle diplaying the status bar for the main window.'
         ),
     )
-    preferences_size: Optional[tuple[int, int]] = Field(
+    preferences_size: tuple[int, int] | None = Field(
         None,
         title=trans._('Preferences size'),
         description=trans._(
@@ -173,6 +172,13 @@ class ApplicationSettings(EventedModel):
         title=trans._('Grid Height'),
         description=trans._('Number of rows in the grid.'),
     )
+
+    grid_spacing: GridSpacing = Field(  # type: ignore [valid-type]
+        default=0.0,
+        title=trans._('Grid Spacing'),
+        description=trans._('Proportional spacing between grid layers.'),
+    )
+
     confirm_close_window: bool = Field(
         default=True,
         title=trans._('Confirm window or application closing'),

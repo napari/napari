@@ -57,7 +57,7 @@ class QtLabelsControls(QtLayerControls):
         Button to select PAN_ZOOM mode on Labels layer.
     pick_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to select PICKER mode on Labels layer.
-    qtBrushSizeSliderControl.brushSizeSlider : qtpy.QtWidgets.QSlider
+    qtBrushSizeSliderControl.brushSizeSlider : superqt.QLabeledDoubleSlider
         Slider controlling current brush size of the layer.
     qtBrushSizeSliderControl.brushSizeSliderLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the brush size chooser widget.
@@ -99,7 +99,7 @@ class QtLabelsControls(QtLayerControls):
         Label for the blending combobox widget.
     qtOpacityBlendingControls.opacityLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the opacity slider widget.
-    qtOpacityBlendingControls.opacitySlider : qtpy.QtWidgets.QSlider
+    qtOpacityBlendingControls.opacitySlider : superqt.QLabeledDoubleSlider
         Slider controlling opacity of the layer.
     qtPreserveLabelsCheckBoxControl.preserveLabelsCheckBox : qtpy.QtWidgets.QCheckBox
         Checkbox to control if existing labels are preserved.

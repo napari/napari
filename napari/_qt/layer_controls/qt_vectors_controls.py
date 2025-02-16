@@ -37,7 +37,7 @@ class QtVectorsControls(QtLayerControls):
     layer : napari.layers.Vectors
         An instance of a napari Vectors layer.
     panzoom_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
-        Button for pan/zoom mode.
+        Button for activate move camera mode for layer.
     qtEdgeColorPropertyControl.color_mode_comboBox : qtpy.QtWidgets.QComboBox
         Dropdown widget to select edge_color_mode for the vectors.
     qtEdgeColorPropertyControl.color_mode_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel

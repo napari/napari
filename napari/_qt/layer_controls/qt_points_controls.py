@@ -46,12 +46,12 @@ class QtPointsControls(QtLayerControls):
     layer : napari.layers.Points
         An instance of a napari Points layer.
     panzoom_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
-        Button for pan/zoom mode.
+        Button to activate move camera mode for layer.
     qtBorderColorControl.borderColorEdit : napari._qt.widgets.qt_color_swatch.QColorSwatchEdit
         Widget to select display color for points borders.
     qtBorderColorControl.borderColorEditLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the current egde color chooser widget.
-    qtCurrentSizeSliderControl.sizeSlider : napari._qt.widgets._slider_compat.QSlider
+    qtCurrentSizeSliderControl.sizeSlider : superqt.QLabeledDoubleSlider
         Slider controlling size of points.
     qtCurrentSizeSliderControl.sizeSliderLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the points size chooser widget.
@@ -65,7 +65,7 @@ class QtPointsControls(QtLayerControls):
         Label for the blending combobox widget.
     qtOpacityBlendingControls.opacityLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the opacity slider widget.
-    qtOpacityBlendingControls.opacitySlider : qtpy.QtWidgets.QSlider
+    qtOpacityBlendingControls.opacitySlider : superqt.QLabeledDoubleSlider
         Slider controlling opacity of the layer.
     qtOutSliceCheckBoxControl.outOfSliceCheckBox : qtpy.QtWidgets.QCheckBox
         Checkbox to indicate whether to render out of slice.

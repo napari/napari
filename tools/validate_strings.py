@@ -141,7 +141,7 @@ show_trans_strings = FindTransStrings()
 
 
 def _find_func_definitions(
-    node: ast.AST, defs: Optional[list[ast.FunctionDef]] = None
+    node: ast.AST, defs: list[ast.FunctionDef] | None = None
 ) -> list[ast.FunctionDef]:
     """Find all functions definition recrusively.
 
@@ -404,7 +404,7 @@ def find_trans_strings(
     return trans_strings, errors
 
 
-def import_module_by_path(fpath: str) -> Optional[ModuleType]:
+def import_module_by_path(fpath: str) -> ModuleType | None:
     """Import a module given py a path.
 
     Parameters
@@ -529,7 +529,7 @@ def test_missing_translations(checks):
         '`tools/strings_list.py` file.\n\n'
     )
     for fpath, values in issues.items():
-        print(f"{fpath}\n{'*' * len(fpath)}")
+        print(f'{fpath}\n{"*" * len(fpath)}')
         unique_values = set()
         for line, value in values:
             unique_values.add(value)
@@ -565,7 +565,7 @@ def test_outdated_string_skips(checks):
         'outdated.\nPlease remove them from the skip list.\n\n'
     )
     for fpath, values in outdated_strings.items():
-        print(f"{fpath}\n{'*' * len(fpath)}")
+        print(f'{fpath}\n{"*" * len(fpath)}')
         print(', '.join(repr(value) for value in values))
         print('')
 
@@ -580,11 +580,11 @@ def test_translation_errors(checks):
         'interpolation variables:\n\n'
     )
     for fpath, errors in trans_errors.items():
-        print(f"{fpath}\n{'*' * len(fpath)}")
+        print(f'{fpath}\n{"*" * len(fpath)}')
         for string, variables in errors:
             print(f'String:\t\t{string!r}')
             print(
-                f"Variables:\t{', '.join(repr(value) for value in variables)}"
+                f'Variables:\t{", ".join(repr(value) for value in variables)}'
             )
             print('')
 

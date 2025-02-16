@@ -40,14 +40,14 @@ class QtBaseImageControls(QtLayerControls):
     layer : napari.layers.Layer
         An instance of a napari layer.
     panzoom_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
-        Button to pan/zoom shapes layer.
+        Button to activate move camera mode for layer.
     qtAutoScaleControl.autoScaleBar : qtpy.QtWidgets.QWidget
         Widget to wrap push buttons related with the layer auto-contrast funtionality.
     qtColormapControl.colormapWidget : qtpy.QtWidgets.QWidget
         Widget to wrap combobox and label widgets related with the layer colormap attribute.
     qtContrastLimitsSliderControl.contrastLimitsSlider : superqt.QRangeSlider
         Contrast range slider widget.
-    qtGammaSliderControl.gammaSlider : qtpy.QtWidgets.QSlider
+    qtGammaSliderControl.gammaSlider : superqt.QLabeledDoubleSlider
         Gamma adjustment slider widget.
     qtOpacityBlendingControls.blendComboBox : qtpy.QtWidgets.QComboBox
         Dropdown widget to select blending mode of layer.
@@ -55,10 +55,10 @@ class QtBaseImageControls(QtLayerControls):
         Label for the blending combobox widget.
     qtOpacityBlendingControls.opacityLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the opacity slider widget.
-    qtOpacityBlendingControls.opacitySlider : qtpy.QtWidgets.QSlider
+    qtOpacityBlendingControls.opacitySlider : superqt.QLabeledDoubleSlider
         Slider controlling opacity of the layer.
     transform_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
-        Button to transform shapes layer.
+        Button to transform image layer.
     """
 
     def __init__(self, layer: Image) -> None:

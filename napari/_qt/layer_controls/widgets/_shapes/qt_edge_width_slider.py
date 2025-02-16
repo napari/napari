@@ -3,12 +3,12 @@ from collections.abc import Iterable
 import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QWidget
+from superqt import QLabeledSlider
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
-from napari._qt.widgets._slider_compat import QSlider
 from napari.layers.base.base import Layer
 from napari.utils.translations import trans
 
@@ -27,7 +27,7 @@ class QtEdgeWidthSliderControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-    edgeWidthSlider : qtpy.QtWidgets.QSlider
+    edgeWidthSlider : superqt.QLabeledDoubleSlider
         Slider controlling line edge width of layer.
     edgeWidthLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the current edge width widget.
@@ -39,7 +39,7 @@ class QtEdgeWidthSliderControl(QtWidgetControlsBase):
         self._layer.events.edge_width.connect(self._on_edge_width_change)
 
         # Setup widgets
-        sld = QSlider(Qt.Orientation.Horizontal)
+        sld = QLabeledSlider(Qt.Orientation.Horizontal)
         sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         sld.setMinimum(0)
         sld.setMaximum(40)

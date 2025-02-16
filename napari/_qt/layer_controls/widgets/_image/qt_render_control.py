@@ -1,13 +1,13 @@
 from typing import Optional
 
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QComboBox, QSlider, QWidget
+from qtpy.QtWidgets import QComboBox, QWidget
+from superqt import QLabeledDoubleSlider
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
-from napari._qt.widgets._slider_compat import QDoubleSlider
 from napari.layers.base.base import Layer
 from napari.layers.image._image_constants import (
     ImageRendering,
@@ -33,11 +33,11 @@ class QtImageRenderControl(QtWidgetControlsBase):
         Combobox to control labels render method.
     renderComboBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the way labels should be rendered chooser widget.
-    isoThresholdSlider : qtpy.QtWidgets.QSlider
+    isoThresholdSlider : superqt.QLabeledDoubleSlider
         Slider controlling the isosurface threshold value for rendering.
     isoThresholdLabel : qtpy.QtWidgets.QLabel
         Label for the isosurface threshold slider widget.
-    attenuationSlider : qtpy.QtWidgets.QSlider
+    attenuationSlider : superqt.QLabeledDoubleSlider
         Slider controlling attenuation rate for `attenuated_mip` mode.
     attenuationLabel : qtpy.QtWidgets.QLabel
         Label for the attenuation slider widget.
@@ -68,7 +68,7 @@ class QtImageRenderControl(QtWidgetControlsBase):
 
         self.renderLabel = QtWrappedLabel(trans._('rendering:'))
 
-        sld = QDoubleSlider(Qt.Orientation.Horizontal, parent=parent)
+        sld = QLabeledDoubleSlider(Qt.Orientation.Horizontal, parent=parent)
         sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         cmin, cmax = self._layer.contrast_limits_range
         sld.setMinimum(cmin)
@@ -79,12 +79,13 @@ class QtImageRenderControl(QtWidgetControlsBase):
 
         self.isoThresholdLabel = QtWrappedLabel(trans._('iso threshold:'))
 
-        sld = QSlider(Qt.Orientation.Horizontal, parent=parent)
+        sld = QLabeledDoubleSlider(Qt.Orientation.Horizontal, parent=parent)
         sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         sld.setMinimum(0)
-        sld.setMaximum(100)
-        sld.setSingleStep(1)
-        sld.setValue(int(self._layer.attenuation * 200))
+        sld.setMaximum(0.5)
+        sld.setSingleStep(0.001)
+        sld.setValue(self._layer.attenuation)
+        sld.setDecimals(3)
         sld.valueChanged.connect(self.changeAttenuation)
         self.attenuationSlider = sld
 
@@ -136,7 +137,7 @@ class QtImageRenderControl(QtWidgetControlsBase):
             Attenuation rate for attenuated maximum intensity projection.
         """
         with self._layer.events.blocker(self._on_attenuation_change):
-            self._layer.attenuation = value / 200
+            self._layer.attenuation = value
 
     def _on_rendering_change(self):
         """Receive layer model rendering change event and update dropdown menu."""
@@ -161,7 +162,7 @@ class QtImageRenderControl(QtWidgetControlsBase):
     def _on_attenuation_change(self):
         """Receive layer model attenuation change event and update the slider."""
         with self._layer.events.attenuation.blocker():
-            self.attenuationSlider.setValue(int(self._layer.attenuation * 200))
+            self.attenuationSlider.setValue(self._layer.attenuation)
 
     def _on_display_change_hide(self):
         self.isoThresholdSlider.hide()

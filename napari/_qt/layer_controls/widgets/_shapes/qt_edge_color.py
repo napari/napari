@@ -27,7 +27,7 @@ class QtEdgeColorControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-    edgeColorEdit : qtpy.QtWidgets.QSlider
+    edgeColorEdit : napari._qt.widgets.qt_color_swatch.QColorSwatchEdit
         ColorSwatchEdit controlling current edge color of the layer.
     edgeColorLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the current edge color chooser widget.
