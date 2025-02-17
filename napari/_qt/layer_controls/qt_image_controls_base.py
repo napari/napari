@@ -159,7 +159,7 @@ class QtBaseImageControls(QtLayerControls):
             self.layout().addRow(self.button_grid)
 
     def _on_make_colormap(self):
-        """Make new colormap."""
+        """Make new colormap when colorbarLabel (pushbutton) is pressed."""
         from napari._qt.utils import get_color
         from napari.utils.colormaps.colormap_utils import ensure_colormap
 

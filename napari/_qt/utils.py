@@ -40,7 +40,7 @@ RICH_TEXT_PATTERN = re.compile('<[^\n]+>')
 
 
 class ColorMode(StringEnum):
-    """Looping mode for animating an axis.
+    """Enum fo selecting the color mode to return the color in.
 
     ColorMode.HEX
         Returns color as hex string.
@@ -412,7 +412,21 @@ def get_color(
     color: str | np.ndarray | QColor | None = None,
     mode: ColorMode = ColorMode.HEX,
 ) -> np.ndarray | None:
-    """Get color."""
+    """
+    Helper function to get a color from q QColorDialog.
+
+    Parameters
+    ----------
+    color : str | np.ndarray | QColor | None
+        Initial color to display in the dialog. Color will be automatically converted to QColor.
+    mode : ColorMode
+        Mode to return the color in (hex, array, QColor).
+
+    Returns
+    -------
+    new_color : str | np.ndarray | QColor
+        New color in the desired format.
+    """
 
     if isinstance(color, str):
         color = QColor(color)

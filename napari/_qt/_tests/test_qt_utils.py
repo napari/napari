@@ -125,6 +125,7 @@ def test_thread_proxy_guard(monkeypatch, qapp, single_threaded_executor):
 
 
 def test_get_color(qtbot):
+    """Test the get_color utility function."""
     widget = QMainWindow()
     qtbot.addWidget(widget)
 
