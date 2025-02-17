@@ -68,6 +68,7 @@ from napari._qt.qt_resources import get_stylesheet
 from napari._qt.qt_viewer import QtViewer
 from napari._qt.threads.status_checker import StatusChecker
 from napari._qt.utils import QImg2array, qbytearray_to_str, str_to_qbytearray
+from napari._qt.widgets.qt_command_palette import QCommandPalette
 from napari._qt.widgets.qt_viewer_dock_widget import (
     _SHORTCUT_DEPRECATION_STRING,
     QtViewerDockWidget,
@@ -213,6 +214,8 @@ class _QtMainWindow(QMainWindow):
             self._toggle_status_thread
         )
 
+        self._command_palette = QCommandPalette(self)
+
     def _toggle_status_thread(self, event: Event):
         if event.value:
             self.status_thread.start()
@@ -247,7 +250,7 @@ class _QtMainWindow(QMainWindow):
         super().hideEvent(event)
 
     def set_status_and_tooltip(
-        self, status_and_tooltip: Optional[tuple[Union[str, dict], str]]
+        self, status_and_tooltip: tuple[str | dict, str] | None
     ):
         if status_and_tooltip is None:
             return
@@ -993,6 +996,15 @@ class Window:
         toggle_menubar_visibility = self._qt_window.toggle_menubar_visibility()
         self._main_menu_shortcut.setEnabled(toggle_menubar_visibility)
 
+    def _toggle_command_palette(self):
+        """Toggle the visibility of the command palette."""
+        palette = self._qt_window._command_palette
+        if palette.isVisible():
+            palette.hide()
+        else:
+            palette.update_context(self._qt_window)
+            palette.show()
+
     def _toggle_fullscreen(self):
         """Toggle fullscreen mode."""
         if self._qt_window.isFullScreen():
@@ -1011,7 +1023,7 @@ class Window:
     def add_plugin_dock_widget(
         self,
         plugin_name: str,
-        widget_name: Optional[str] = None,
+        widget_name: str | None = None,
         tabify: bool = False,
     ) -> tuple[QtViewerDockWidget, Any]:
         """Add plugin dock widget if not already added.
@@ -1098,12 +1110,12 @@ class Window:
         widget: Union[QWidget, 'Widget'],
         *,
         name: str = '',
-        area: Optional[str] = None,
-        allowed_areas: Optional[Sequence[str]] = None,
+        area: str | None = None,
+        allowed_areas: Sequence[str] | None = None,
         shortcut=_sentinel,
         add_vertical_stretch=True,
         tabify: bool = False,
-        menu: Optional[QMenu] = None,
+        menu: QMenu | None = None,
     ):
         """Convenience method to add a QDockWidget to the main window.
 
@@ -1206,7 +1218,7 @@ class Window:
         self,
         dock_widget: QtViewerDockWidget,
         tabify: bool = False,
-        menu: Optional[QMenu] = None,
+        menu: QMenu | None = None,
     ):
         """Add a QtViewerDockWidget to the main window
 
@@ -1588,8 +1600,8 @@ class Window:
 
     def _screenshot(
         self,
-        size: Optional[tuple[int, int]] = None,
-        scale: Optional[float] = None,
+        size: tuple[int, int] | None = None,
+        scale: float | None = None,
         flash: bool = True,
         canvas_only: bool = False,
         fit_to_data_extent: bool = False,
@@ -1698,7 +1710,7 @@ class Window:
 
     def export_figure(
         self,
-        path: Optional[str] = None,
+        path: str | None = None,
         scale: float = 1,
         flash=True,
     ) -> np.ndarray:
@@ -1728,7 +1740,7 @@ class Window:
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
         """
-        if not isinstance(scale, (float, int)):
+        if not isinstance(scale, float | int):
             raise TypeError(
                 trans._(
                     'Scale must be a float or an int.',
@@ -1750,8 +1762,8 @@ class Window:
     def export_rois(
         self,
         rois: list[np.ndarray],
-        paths: Optional[Union[str, Path, list[Union[str, Path]]]] = None,
-        scale: Optional[float] = None,
+        paths: str | Path | list[str | Path] | None = None,
+        scale: float | None = None,
     ):
         """Export the given rectangular rois to specified file paths.
 
@@ -1797,7 +1809,7 @@ class Window:
                 )
             )
 
-        if isinstance(paths, (str, Path)):
+        if isinstance(paths, str | Path):
             storage_dir = Path(paths).expanduser()
             storage_dir.mkdir(parents=True, exist_ok=True)
             paths = [storage_dir / f'roi_{n}.png' for n in range(len(rois))]
