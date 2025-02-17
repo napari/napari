@@ -420,7 +420,7 @@ def get_color(
         color = QColor(*color.astype(int))
 
     dlg = QColorDialog(color)
-    new_color: Union[str, np.ndarray, QColor] | None = None
+    new_color: str | np.ndarray | QColor | None = None
     if dlg.exec_():
         new_color = dlg.currentColor()
         if mode == ColorMode.HEX:
