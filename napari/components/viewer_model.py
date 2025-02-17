@@ -244,6 +244,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         settings.application.events.grid_height.connect(
             self._update_viewer_grid
         )
+        settings.application.events.grid_spacing.connect(
+            self._update_viewer_grid
+        )
         settings.experimental.events.async_.connect(self._update_async)
 
         # Add extra events - ideally these will be removed too!
@@ -319,6 +322,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             settings.application.grid_height,
             settings.application.grid_width,
         )
+        self.grid.spacing = settings.application.grid_spacing
 
     @validator('theme', allow_reuse=True)
     def _valid_theme(cls, v):
@@ -394,9 +398,18 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         scene_size = extent[1] - extent[0]
         corner = extent[0]
         grid_size = list(self.grid.actual_shape(len(self.layers)))
+
         if len(scene_size) > len(grid_size):
             grid_size = [1] * (len(scene_size) - len(grid_size)) + grid_size
-        size = np.multiply(scene_size, grid_size)
+
+        # total spacing accounts for the distance between layers
+        # results in 0 if not grid mode (grid_size = [1, 1] - 1)
+        total_spacing = (
+            np.mean(scene_size[-2:])
+            * self.grid.spacing
+            * (np.array(grid_size) - 1)
+        )
+        size = np.multiply(scene_size, grid_size) + total_spacing
         center_array = np.add(corner, np.divide(size, 2))[
             -self.dims.ndisplay :
         ]
@@ -604,9 +617,15 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         n_layers = len(self.layers)
         for i, layer in enumerate(self.layers):
             i_row, i_column = self.grid.position(n_layers - 1 - i, n_layers)
-            self._subplot(layer, (i_row, i_column), extent)
+            self._subplot(layer, (i_row, i_column), extent, self.grid.spacing)
 
-    def _subplot(self, layer, position, extent):
+    def _subplot(
+        self,
+        layer: Layer,
+        position: tuple[int, int],
+        extent: np.ndarray,
+        spacing: float,
+    ):
         """Shift a layer to a specified position in a 2D grid.
 
         Parameters
@@ -617,12 +636,20 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             New position of layer in grid.
         extent : array, shape (2, D)
             Extent of the world.
+        spacing : float, optional
+            Value for spacing between layers. Negative values will
+            cause layers to overlap. Positive values will cause layers to
+            have space between them.
         """
         scene_shift = extent[1] - extent[0]
-        translate_2d = np.multiply(scene_shift[-2:], position)
+        position_array = np.array(position)
+        # shift the layer in the grid by the extent of the scene
+        translate_2d = np.multiply(scene_shift[-2:], position_array)
+        # calculate average scene extent, and use for a symmetrical spacing adjustment
+        translate_2d += np.mean(scene_shift[-2:]) * spacing * position_array
         translate = [0] * layer.ndim
         translate[-2:] = translate_2d
-        layer._translate_grid = translate
+        layer._translate_grid = np.array(translate)
 
     @property
     def experimental(self):
