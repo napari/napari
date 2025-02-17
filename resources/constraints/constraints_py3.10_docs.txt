@@ -64,7 +64,7 @@ coverage==7.6.12
     #   pytest-cov
 cycler==0.12.1
     # via matplotlib
-dask==2025.1.0
+dask==2025.2.0
     # via napari (napari_repo/pyproject.toml)
 debugpy==1.8.12
     # via ipykernel
@@ -119,7 +119,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.125.2
+hypothesis==6.125.3
     # via napari (napari_repo/pyproject.toml)
 idna==3.10
     # via
@@ -241,7 +241,7 @@ mpmath==1.3.0
     # via sympy
 myst-nb==1.2.0
     # via -r docs/requirements.txt
-myst-parser==4.0.0
+myst-parser==4.0.1
     # via myst-nb
 napari-console==0.1.3
     # via napari (napari_repo/pyproject.toml)
@@ -371,7 +371,7 @@ parso==0.8.4
     # via jedi
 partd==1.4.2
     # via dask
-partsegcore-compiled-backend==0.15.9
+partsegcore-compiled-backend==0.15.11
     # via napari (napari_repo/pyproject.toml)
 pexpect==4.9.0
     # via ipython
@@ -405,7 +405,7 @@ pretend==1.0.9
     # via napari (napari_repo/pyproject.toml)
 prompt-toolkit==3.0.50
     # via ipython
-psutil==6.1.1
+psutil==7.0.0
     # via
     #   napari (napari_repo/pyproject.toml)
     #   ipykernel
@@ -425,6 +425,7 @@ pyconify==0.2.1
     # via superqt
 pydantic==2.10.6
     # via
+    #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari (napari_repo/pyproject.toml)
     #   app-model
     #   npe2
@@ -572,7 +573,7 @@ scikit-image==0.25.1
     # via napari (napari_repo/pyproject.toml)
 scikit-learn==1.6.1
     # via nilearn
-scipy==1.15.1
+scipy==1.15.2
     # via
     #   napari (napari_repo/pyproject.toml)
     #   nilearn
@@ -628,7 +629,7 @@ sphinx-external-toc==1.0.1
     # via -r docs/requirements.txt
 sphinx-favicon==1.0.1
     # via -r docs/requirements.txt
-sphinx-gallery==0.18.0
+sphinx-gallery==0.19.0
     # via -r docs/requirements.txt
 sphinx-tabs==3.4.7
     # via -r docs/requirements.txt
@@ -758,7 +759,7 @@ watchfiles==1.0.4
     # via sphinx-autobuild
 wcwidth==0.2.13
     # via prompt-toolkit
-websockets==14.2
+websockets==15.0
     # via sphinx-autobuild
 wrapt==1.17.2
     # via

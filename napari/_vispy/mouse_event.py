@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import numpy as np
 from vispy.app.canvas import MouseEvent
@@ -34,7 +34,7 @@ class NapariMouseEvent(MouseEvent):
         self,
         event: MouseEvent,
         view_direction: npt.NDArray[np.float64],
-        up_direction: Optional[np.ndarray],
+        up_direction: np.ndarray | None,
         camera_zoom: float,
         position: tuple[float, float],
         dims_displayed: list[int],

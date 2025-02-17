@@ -282,7 +282,9 @@ class Shape(ABC):
         # with a single call to the compiled backend
         if edge and face:
             (triangles, vertices), (centers, offsets, edge_triangles) = (
-                triangulate_polygon_with_edge_numpy_li([data])
+                triangulate_polygon_with_edge_numpy_li(
+                    [data], split_edges=True
+                )
             )
             self._edge_vertices = centers
             self._edge_offsets = offsets
@@ -456,7 +458,7 @@ class Shape(ABC):
         center : list
             length 2 list specifying coordinate of center of scaling.
         """
-        if isinstance(scale, (list, np.ndarray)):
+        if isinstance(scale, list | np.ndarray):
             transform = np.array([[scale[0], 0], [0, scale[1]]])
         else:
             transform = np.array([[scale, 0], [0, scale]])

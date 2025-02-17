@@ -1,5 +1,5 @@
 import warnings
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 from scipy.spatial.transform import Rotation as R
@@ -41,7 +41,7 @@ class Camera(EventedModel):
     """
 
     # fields
-    center: Union[tuple[float, float, float], tuple[float, float]] = (
+    center: tuple[float, float, float] | tuple[float, float] = (
         0.0,
         0.0,
         0.0,
@@ -192,7 +192,7 @@ class Camera(EventedModel):
 
     def calculate_nd_up_direction(
         self, ndim: int, dims_displayed: tuple[int, ...]
-    ) -> Optional[np.ndarray]:
+    ) -> np.ndarray | None:
         """Calculate the nD up direction vector of the camera.
 
         Parameters

@@ -19,7 +19,6 @@ from napari.settings import get_settings
 
 if TYPE_CHECKING:
     from collections.abc import Generator
-    from typing import Optional
 
     import numpy.typing as npt
     from vispy.app.canvas import MouseEvent
@@ -364,7 +363,7 @@ def add_vertex_to_path(
     event: MouseEvent,
     index: int,
     coordinates: tuple[float, ...],
-    new_type: Optional[str],
+    new_type: str | None,
 ) -> None:
     """Add a vertex to an existing path or polygon and edit the layer view.
 
@@ -683,7 +682,7 @@ def _set_drag_start(
 
 
 def _move_selected_layer(
-    layer: Shapes, coordinates: tuple[float, ...], vertex: Optional[int]
+    layer: Shapes, coordinates: tuple[float, ...], vertex: int | None
 ) -> None:
     if layer._mode == Mode.SELECT and not layer._is_moving:
         vertex_indices = tuple(
