@@ -65,8 +65,9 @@ class LayerList(SelectableEventedList[Layer]):
     Notes
     -----
 
-    Note that ``changed`` events are only emitted when the value of an item in
-    the layer list item value is changed, not when the item is inserted or removed.
+    Note that ``changed`` events are only emitted when the object reference of
+    the layer list changes. For example, `layerlist[idx].scale = [2, 1, 1] changes the "value" of the layer
+    at position `idx`, but does not cause ``changed`` to be emitted.
 
     Examples
     --------
