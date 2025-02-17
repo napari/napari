@@ -1,10 +1,15 @@
+from unittest.mock import patch
+
+import numpy as np
 import pytest
 from qtpy.QtCore import QObject, Signal
-from qtpy.QtWidgets import QMainWindow
+from qtpy.QtGui import QColor
+from qtpy.QtWidgets import QApplication, QColorDialog, QMainWindow
 
 from napari._qt.utils import (
     QBYTE_FLAG,
     add_flash_animation,
+    get_color,
     is_qbyte,
     qbytearray_to_str,
     qt_might_be_rich_text,
@@ -117,3 +122,50 @@ def test_thread_proxy_guard(monkeypatch, qapp, single_threaded_executor):
     with pytest.raises(RuntimeError):
         f.result()
     assert x.a == 2
+
+
+def test_get_color(qtbot):
+    """Test the get_color utility function."""
+    widget = QMainWindow()
+    qtbot.addWidget(widget)
+
+    with patch.object(QColorDialog, 'exec_') as mock:
+        mock.return_value = QColorDialog.Accepted
+        color = get_color(None, 'hex')
+        assert isinstance(color, str), 'Expected string color'
+
+    with patch.object(QColorDialog, 'exec_') as mock:
+        mock.return_value = QColorDialog.Accepted
+        color = get_color('#FF00FF', 'hex')
+        assert isinstance(color, str), 'Expected string color'
+        assert color == '#ff00ff', 'Expected color to be #FF00FF'
+
+    with patch.object(QColorDialog, 'exec_') as mock:
+        mock.return_value = QColorDialog.Accepted
+        color = get_color(None, 'array')
+        assert not isinstance(color, str), 'Expected array color'
+        assert isinstance(color, np.ndarray), 'Expected numpy array color'
+
+    with patch.object(QColorDialog, 'exec_') as mock:
+        mock.return_value = QColorDialog.Accepted
+        color = get_color(np.asarray([255, 0, 255]), 'array')
+        assert not isinstance(color, str), 'Expected array color'
+        assert isinstance(color, np.ndarray), 'Expected numpy array color'
+        np.testing.assert_array_equal(color, np.asarray([1, 0, 1]))
+
+    with patch.object(QColorDialog, 'exec_') as mock:
+        mock.return_value = QColorDialog.Accepted
+        color = get_color(None, 'qcolor')
+        assert not isinstance(color, np.ndarray), 'Expected QColor color'
+        assert isinstance(color, QColor), 'Expected QColor color'
+
+    with patch.object(QColorDialog, 'exec_') as mock:
+        mock.return_value = QColorDialog.Rejected
+        color = get_color(None, 'qcolor')
+        assert color is None, 'Expected None color'
+
+    # close still open popup widgets
+    for widget in QApplication.topLevelWidgets():
+        if isinstance(widget, QColorDialog):
+            widget.accept()
+            widget.close()
