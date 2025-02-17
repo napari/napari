@@ -468,7 +468,7 @@ scikit-image==0.25.1
     # via napari (napari_repo/pyproject.toml)
 scikit-learn==1.6.1
     # via nilearn
-scipy==1.15.1
+scipy==1.15.2
     # via
     #   napari (napari_repo/pyproject.toml)
     #   nilearn
@@ -584,7 +584,7 @@ wrapt==1.17.2
     #   deprecated
 xarray==2025.1.2
     # via napari (napari_repo/pyproject.toml)
-zarr==3.0.2
+zarr==3.0.3
     # via
     #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari (napari_repo/pyproject.toml)
