@@ -8,7 +8,6 @@ from collections.abc import Iterable, Sequence
 from contextlib import contextmanager
 from enum import auto
 from functools import partial
-from typing import Union
 
 import numpy as np
 import qtpy
@@ -219,7 +218,7 @@ def drag_with_pixmap(list_widget: QListWidget) -> QDrag:
 
 
 def combine_widgets(
-    widgets: Union[QWidget, Sequence[QWidget]], vertical: bool = False
+    widgets: QWidget | Sequence[QWidget], vertical: bool = False
 ) -> QWidget:
     """Combine a list of widgets into a single QWidget with Layout.
 

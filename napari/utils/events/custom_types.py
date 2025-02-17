@@ -1,9 +1,7 @@
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
-    Optional,
     Union,
 )
 
@@ -30,7 +28,7 @@ if TYPE_CHECKING:
 #
 # This solution assumes numpy 1 by default, and switches to the numpy 2
 # value for any release of numpy 2 on PyPI (including betas and RCs).
-copy_if_needed: Optional[bool] = False
+copy_if_needed: bool | None = False
 if np.lib.NumpyVersion(np.__version__) >= '2.0.0b1':
     copy_if_needed = None
 
@@ -74,7 +72,7 @@ class NumberNotEqError(errors.PydanticValueError):
 class ConstrainedInt(types.ConstrainedInt):
     """ConstrainedInt extension that adds not-equal"""
 
-    ne: Optional[Union[int, list[int]]] = None
+    ne: int | list[int] | None = None
 
     @classmethod
     def __modify_schema__(cls, field_schema: dict[str, Any]) -> None:
@@ -100,12 +98,12 @@ class ConstrainedInt(types.ConstrainedInt):
 def conint(
     *,
     strict: bool = False,
-    gt: Optional[int] = None,
-    ge: Optional[int] = None,
-    lt: Optional[int] = None,
-    le: Optional[int] = None,
-    multiple_of: Optional[int] = None,
-    ne: Optional[int] = None,
+    gt: int | None = None,
+    ge: int | None = None,
+    lt: int | None = None,
+    le: int | None = None,
+    multiple_of: int | None = None,
+    ne: int | None = None,
 ) -> type[int]:
     """Extended version of `pydantic.types.conint` that includes not-equal."""
     # use kwargs then define conf in a dict to aid with IDE type hinting
@@ -119,3 +117,43 @@ def conint(
         'ne': ne,
     }
     return type('ConstrainedIntValue', (ConstrainedInt,), namespace)
+
+
+class ConstrainedFloat(types.ConstrainedFloat):
+    """ConstrainedFloat extension that adds step size"""
+
+    step: float | None = None
+
+    @classmethod
+    def __modify_schema__(cls, field_schema: dict[str, Any]) -> None:
+        super().__modify_schema__(field_schema)
+        if cls.step is not None:
+            field_schema['step'] = cls.step
+
+    @classmethod
+    def __get_validators__(cls) -> Generator[Callable[..., Any], None, None]:
+        yield from super().__get_validators__()
+
+
+def confloat(
+    *,
+    strict: bool = False,
+    gt: float | None = None,
+    ge: float | None = None,
+    lt: float | None = None,
+    le: float | None = None,
+    multiple_of: float | None = None,
+    step: float | None = None,
+) -> type[float]:
+    """Extended version of `pydantic.types.confloat` that includes step size."""
+    # use kwargs then define conf in a dict to aid with IDE type hinting
+    namespace = {
+        'strict': strict,
+        'gt': gt,
+        'ge': ge,
+        'lt': lt,
+        'le': le,
+        'multiple_of': multiple_of,
+        'step': step,
+    }
+    return type('ConstrainedFloatValue', (ConstrainedFloat,), namespace)
