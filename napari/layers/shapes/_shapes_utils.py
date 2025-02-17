@@ -781,7 +781,7 @@ def path_to_mask(
     vertices = vertices[~duplicates]
 
     iis, jjs = [], []
-    for v1, v2 in zip(vertices, vertices[1:]):
+    for v1, v2 in itertools.pairwise(vertices):
         ii, jj = line(*v1, *v2)
         iis.extend(ii.tolist())
         jjs.extend(jj.tolist())
