@@ -10,6 +10,7 @@ from superqt.utils import qthrottled
 from vispy.scene import SceneCanvas as SceneCanvas_, Widget
 
 from napari._vispy import VispyCamera
+from napari._vispy.mouse_event import NapariMouseEvent
 from napari._vispy.utils.cursor import QtCursorVisual
 from napari._vispy.utils.gl import get_max_texture_sizes
 from napari._vispy.utils.visual import create_vispy_overlay
@@ -26,7 +27,7 @@ from napari.utils.interactions import (
 from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
-    from typing import Callable, Optional, Union
+    from collections.abc import Callable
 
     import numpy.typing as npt
     from qtpy.QtCore import Qt, pyqtBoundSignal
@@ -188,7 +189,7 @@ class VispyCanvas:
         return self._scene_canvas._backend.screen_changed
 
     @property
-    def background_color_override(self) -> Optional[str]:
+    def background_color_override(self) -> str | None:
         """Background color of VispyCanvas.view returned as hex string. When not None, color is shown instead of
         VispyCanvas.bgcolor. The setter expects str (any in vispy.color.get_color_names) or hex starting
         with # or a tuple | np.array ({3,4},) with values between 0 and 1.
@@ -200,7 +201,7 @@ class VispyCanvas:
 
     @background_color_override.setter
     def background_color_override(
-        self, value: Union[str, npt.ArrayLike, None]
+        self, value: str | npt.ArrayLike | None
     ) -> None:
         if value:
             self.view.bgcolor = value
@@ -234,7 +235,7 @@ class VispyCanvas:
         return self._scene_canvas.bgcolor.hex
 
     @bgcolor.setter
-    def bgcolor(self, value: Union[str, npt.ArrayLike]) -> None:
+    def bgcolor(self, value: str | npt.ArrayLike) -> None:
         self._scene_canvas.bgcolor = value
 
     @property
@@ -264,7 +265,7 @@ class VispyCanvas:
         return self.native.cursor()
 
     @cursor.setter
-    def cursor(self, q_cursor: Union[QCursor, Qt.CursorShape]):
+    def cursor(self, q_cursor: QCursor | Qt.CursorShape):
         """Setting the cursor of the native widget"""
         self.native.setCursor(q_cursor)
 
@@ -328,7 +329,7 @@ class VispyCanvas:
 
         Returns
         -------
-        coords : tuple
+        coords : tuple of two floats
             Position in world coordinates, matches the total dimensionality
             of the viewer.
         """
@@ -386,35 +387,31 @@ class VispyCanvas:
         if event.pos is None:
             return
 
-        # Add the view ray to the event
-        event.view_direction = self._calculate_view_direction(event.pos)
-        event.up_direction = self.viewer.camera.calculate_nd_up_direction(
-            self.viewer.dims.ndim, self.viewer.dims.displayed
+        napari_event = NapariMouseEvent(
+            event=event,
+            view_direction=self._calculate_view_direction(event.pos),
+            up_direction=self.viewer.camera.calculate_nd_up_direction(
+                self.viewer.dims.ndim, self.viewer.dims.displayed
+            ),
+            camera_zoom=self.viewer.camera.zoom,
+            position=self._map_canvas2world(event.pos),
+            dims_displayed=list(self.viewer.dims.displayed),
+            dims_point=list(self.viewer.dims.point),
         )
 
-        # Add the camera zoom scale to the event
-        event.camera_zoom = self.viewer.camera.zoom
-
         # Update the cursor position
-        self.viewer.cursor._view_direction = event.view_direction
-        self.viewer.cursor.position = self._map_canvas2world(event.pos)
-
-        # Add the cursor position to the event
-        event.position = self.viewer.cursor.position
-
-        # Add the displayed dimensions to the event
-        event.dims_displayed = list(self.viewer.dims.displayed)
-
-        # Add the current dims indices
-        event.dims_point = list(self.viewer.dims.point)
+        self.viewer.cursor._view_direction = napari_event.view_direction
+        self.viewer.cursor.position = napari_event.position
 
         # Put a read only wrapper on the event
-        event = ReadOnlyWrapper(event, exceptions=('handled',))
-        mouse_callbacks(self.viewer, event)
+        read_only_event = ReadOnlyWrapper(
+            napari_event, exceptions=('handled',)
+        )
+        mouse_callbacks(self.viewer, read_only_event)
 
         layer = self.viewer.layers.selection.active
         if layer is not None:
-            mouse_callbacks(layer, event)
+            mouse_callbacks(layer, read_only_event)
 
     def _on_mouse_double_click(self, event: MouseEvent) -> None:
         """Called whenever a mouse double-click happen on the canvas
@@ -637,10 +634,15 @@ class VispyCanvas:
             vispy_overlay.node.parent = self.view.scene
         self._overlay_to_visual[overlay] = vispy_overlay
 
-    def _calculate_view_direction(self, event_pos: list[float]) -> list[float]:
+    def _calculate_view_direction(
+        self, event_pos: tuple[float, float]
+    ) -> npt.NDArray[np.float64] | None:
         """calculate view direction by ray shot from the camera"""
         # this method is only implemented for 3 dimension
-        if self.viewer.dims.ndisplay == 2 or self.viewer.dims.ndim == 2:
+        if self.viewer.dims.ndisplay == 2:
+            return None
+
+        if self.viewer.dims.ndim == 2:
             return self.viewer.camera.calculate_nd_view_direction(
                 self.viewer.dims.ndim, self.viewer.dims.displayed
             )
@@ -665,9 +667,9 @@ class VispyCanvas:
         d = d[0:nd]
         d = d / np.linalg.norm(d)
         # xyz to zyx
-        d = list(d[::-1])
+        d: list[float] = list(d[::-1])
         # convert to nd view direction
-        view_direction_nd = np.zeros(self.viewer.dims.ndim)
+        view_direction_nd = np.zeros(self.viewer.dims.ndim, dtype=np.float64)
         view_direction_nd[list(self.viewer.dims.displayed)] = d
         return view_direction_nd
 

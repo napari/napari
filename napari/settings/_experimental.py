@@ -27,9 +27,10 @@ class ExperimentalSettings(EventedSettings):
 
     rdp_epsilon: float = Field(
         0.5,
-        title=trans._('Shapes polygon lasso RDP epsilon'),
+        title=trans._('Shapes polygon lasso and path RDP epsilon'),
         description=trans._(
-            'Setting this higher removes more points from polygons. \nSetting this to 0 keeps all vertices of a given polygon'
+            'Setting this higher removes more points from polygons or paths. \nSetting this to 0 keeps all vertices of '
+            'a given polygon or path.'
         ),
         type=float,
         ge=0,
@@ -37,9 +38,12 @@ class ExperimentalSettings(EventedSettings):
 
     lasso_vertex_distance: int = Field(
         10,
-        title=trans._('Minimum distance threshold of shapes lasso tool'),
+        title=trans._(
+            'Minimum distance threshold of shapes lasso and path tool'
+        ),
         description=trans._(
-            'Value determines how many screen pixels one has to move before another vertex can be added to the polygon.'
+            'Value determines how many screen pixels one has to move before another vertex can be added to the polygon'
+            'or path.'
         ),
         type=int,
         gt=0,
@@ -53,6 +57,23 @@ class ExperimentalSettings(EventedSettings):
         ),
         description=trans._(
             'Max radius in pixels from first vertex for double-click to complete a polygon; set -1 to always complete.'
+        ),
+    )
+
+    compiled_triangulation: bool = Field(
+        False,
+        title=trans._(
+            'Use C++ code to speed up creation and updates of Shapes layers'
+            '(requires optional dependencies)'
+        ),
+        description=trans._(
+            'When enabled, triangulation (breaking down polygons into '
+            "triangles that can be displayed by napari's graphics engine) is "
+            'sped up by using C++ code from the optional library '
+            'PartSegCore-compiled-backend. C++ code can cause bad crashes '
+            'called segmentation faults or access violations. If you '
+            'encounter such a crash while using this option please report '
+            'it at https://github.com/napari/napari/issues.'
         ),
     )
 

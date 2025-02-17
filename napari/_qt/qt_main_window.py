@@ -10,6 +10,7 @@ import sys
 import time
 import warnings
 from collections.abc import MutableMapping, Sequence
+from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -67,6 +68,7 @@ from napari._qt.qt_resources import get_stylesheet
 from napari._qt.qt_viewer import QtViewer
 from napari._qt.threads.status_checker import StatusChecker
 from napari._qt.utils import QImg2array, qbytearray_to_str, str_to_qbytearray
+from napari._qt.widgets.qt_command_palette import QCommandPalette
 from napari._qt.widgets.qt_viewer_dock_widget import (
     _SHORTCUT_DEPRECATION_STRING,
     QtViewerDockWidget,
@@ -81,6 +83,7 @@ from napari.settings import get_settings
 from napari.utils import perf
 from napari.utils._proxies import PublicOnlyProxy
 from napari.utils.events import Event
+from napari.utils.geometry import get_center_bbox
 from napari.utils.io import imsave
 from napari.utils.misc import (
     in_ipython,
@@ -92,13 +95,13 @@ from napari.utils.notifications import Notification
 from napari.utils.theme import _themes, get_system_theme
 from napari.utils.translations import trans
 
-_sentinel = object()
-
 if TYPE_CHECKING:
     from magicgui.widgets import Widget
     from qtpy.QtGui import QImage
 
     from napari.viewer import Viewer
+
+_sentinel = object()
 
 
 MenuStr = Literal[
@@ -211,6 +214,8 @@ class _QtMainWindow(QMainWindow):
             self._toggle_status_thread
         )
 
+        self._command_palette = QCommandPalette(self)
+
     def _toggle_status_thread(self, event: Event):
         if event.value:
             self.status_thread.start()
@@ -220,16 +225,32 @@ class _QtMainWindow(QMainWindow):
     def showEvent(self, event: QShowEvent):
         """Override to handle window state changes."""
         settings = get_settings()
-        if settings.appearance.update_status_based_on_layer:
+        # if event loop is not running, we don't want to start the thread
+        # If event loop is running, the loopLevel will be above 0
+        if (
+            settings.appearance.update_status_based_on_layer
+            and QApplication.instance().thread().loopLevel()
+        ):
             self.status_thread.start()
         super().showEvent(event)
+
+    def enterEvent(self, a0):
+        # as we call show in Viewer constructor, we need to start the thread
+        # when the mouse enters the window
+        # as first call of showEvent is before the event loop is running
+        if (
+            get_settings().appearance.update_status_based_on_layer
+            and not self.status_thread.isRunning()
+        ):
+            self.status_thread.start()
+        super().enterEvent(a0)
 
     def hideEvent(self, event: QHideEvent):
         self.status_thread.terminate()
         super().hideEvent(event)
 
     def set_status_and_tooltip(
-        self, status_and_tooltip: Optional[tuple[Union[str, dict], str]]
+        self, status_and_tooltip: tuple[str | dict, str] | None
     ):
         if status_and_tooltip is None:
             return
@@ -975,6 +996,15 @@ class Window:
         toggle_menubar_visibility = self._qt_window.toggle_menubar_visibility()
         self._main_menu_shortcut.setEnabled(toggle_menubar_visibility)
 
+    def _toggle_command_palette(self):
+        """Toggle the visibility of the command palette."""
+        palette = self._qt_window._command_palette
+        if palette.isVisible():
+            palette.hide()
+        else:
+            palette.update_context(self._qt_window)
+            palette.show()
+
     def _toggle_fullscreen(self):
         """Toggle fullscreen mode."""
         if self._qt_window.isFullScreen():
@@ -993,7 +1023,7 @@ class Window:
     def add_plugin_dock_widget(
         self,
         plugin_name: str,
-        widget_name: Optional[str] = None,
+        widget_name: str | None = None,
         tabify: bool = False,
     ) -> tuple[QtViewerDockWidget, Any]:
         """Add plugin dock widget if not already added.
@@ -1080,12 +1110,12 @@ class Window:
         widget: Union[QWidget, 'Widget'],
         *,
         name: str = '',
-        area: Optional[str] = None,
-        allowed_areas: Optional[Sequence[str]] = None,
+        area: str | None = None,
+        allowed_areas: Sequence[str] | None = None,
         shortcut=_sentinel,
         add_vertical_stretch=True,
         tabify: bool = False,
-        menu: Optional[QMenu] = None,
+        menu: QMenu | None = None,
     ):
         """Convenience method to add a QDockWidget to the main window.
 
@@ -1188,7 +1218,7 @@ class Window:
         self,
         dock_widget: QtViewerDockWidget,
         tabify: bool = False,
-        menu: Optional[QMenu] = None,
+        menu: QMenu | None = None,
     ):
         """Add a QtViewerDockWidget to the main window
 
@@ -1570,8 +1600,8 @@ class Window:
 
     def _screenshot(
         self,
-        size: Optional[tuple[int, int]] = None,
-        scale: Optional[float] = None,
+        size: tuple[int, int] | None = None,
+        scale: float | None = None,
         flash: bool = True,
         canvas_only: bool = False,
         fit_to_data_extent: bool = False,
@@ -1680,7 +1710,7 @@ class Window:
 
     def export_figure(
         self,
-        path: Optional[str] = None,
+        path: str | None = None,
         scale: float = 1,
         flash=True,
     ) -> np.ndarray:
@@ -1710,7 +1740,7 @@ class Window:
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
         """
-        if not isinstance(scale, (float, int)):
+        if not isinstance(scale, float | int):
             raise TypeError(
                 trans._(
                     'Scale must be a float or an int.',
@@ -1729,6 +1759,93 @@ class Window:
             imsave(path, img)
         return img
 
+    def export_rois(
+        self,
+        rois: list[np.ndarray],
+        paths: str | Path | list[str | Path] | None = None,
+        scale: float | None = None,
+    ):
+        """Export the given rectangular rois to specified file paths.
+
+        For each shape, moves the camera to the center of the shape
+        and adjust the canvas size to fit the shape.
+        Note: The shape height and width can be of type float.
+        However, the canvas size only accepts a tuple of integers.
+        This can result in slight misalignment.
+
+        Parameters
+        ----------
+        rois: list[np.ndarray]
+            A list of arrays  with each being of shape (4, 2) representing
+            a rectangular roi.
+        paths: str, Path, list[str, Path], optional
+            Where to save the rois. If a string or a Path, a directory will
+            be created if it does not exist yet and screenshots will be
+            saved with filename `roi_{n}.png` where n is the nth roi. If
+            paths is a list of either string or paths, these need to be the
+            full paths of where to store each individual roi. In this case
+            the length of the list and the number of rois must match.
+            If None, the screenshots will only be returned and not saved
+            to disk.
+        scale: float, optional
+            Scale factor used to increase resolution of canvas for the screenshot.
+            By default, uses the displayed scale.
+
+        Returns
+        -------
+        screenshot_list: list
+            The list with roi screenshots.
+
+        """
+        if (
+            paths is not None
+            and isinstance(paths, list)
+            and len(paths) != len(rois)
+        ):
+            raise ValueError(
+                trans._(
+                    'The number of file paths does not match the number of ROI shapes',
+                    deferred=True,
+                )
+            )
+
+        if isinstance(paths, str | Path):
+            storage_dir = Path(paths).expanduser()
+            storage_dir.mkdir(parents=True, exist_ok=True)
+            paths = [storage_dir / f'roi_{n}.png' for n in range(len(rois))]
+
+        if self._qt_viewer.viewer.dims.ndisplay > 2:
+            raise NotImplementedError(
+                "'export_rois' is not implemented for 3D view."
+            )
+
+        screenshot_list = []
+        camera = self._qt_viewer.viewer.camera
+        start_camera_center = camera.center
+        start_camera_zoom = camera.zoom
+        canvas = self._qt_viewer.canvas
+        prev_size = canvas.size
+
+        visible_dims = list(self._qt_viewer.viewer.dims.displayed)
+        step = min(self._qt_viewer.viewer.layers.extent.step[visible_dims])
+
+        for index, roi in enumerate(rois):
+            center_coord, height, width = get_center_bbox(roi)
+            camera.center = center_coord
+            canvas.size = (int(height / step), int(width / step))
+
+            camera.zoom = 1 / step
+            path = paths[index] if paths is not None else None
+            screenshot_list.append(
+                self.screenshot(path=path, canvas_only=True, scale=scale)
+            )
+
+        canvas.size = prev_size
+        camera.center = start_camera_center
+        camera.zoom = start_camera_zoom
+
+        return screenshot_list
+
     def screenshot(
         self, path=None, size=None, scale=None, flash=True, canvas_only=False
     ):
@@ -1736,7 +1853,7 @@ class Window:
 
         Parameters
         ----------
-        path : str
+        path : str, Path
             Filename for saving screenshot image.
         size : tuple (int, int)
             Size (resolution) of the screenshot. By default, the currently displayed size.
