@@ -437,7 +437,7 @@ rpds-py==0.22.3
     #   referencing
 scikit-image==0.25.1
     # via napari (napari_repo/pyproject.toml)
-scipy==1.15.1
+scipy==1.15.2
     # via
     #   napari (napari_repo/pyproject.toml)
     #   scikit-image
