@@ -96,21 +96,21 @@ class QtImageControls(QtBaseImageControls):
             self, layer
         )
         self._add_widget_controls(self._interpolationControl)
-        self._depictionControl = QtDepictionControl(self, layer)
+        self._depiction_control = QtDepictionControl(self, layer)
         self._add_widget_controls(self._depictionControl)
-        self._renderControl = QtImageRenderControl(self, layer)
+        self._render_control = QtImageRenderControl(self, layer)
         self._add_widget_controls(self._renderControl)
 
         self._on_ndisplay_changed()
 
     def _on_ndisplay_changed(self):
         """Update widget visibility based on 2D and 3D visualization modes."""
-        self._interpolationControl._update_interpolation_combo(self.ndisplay)
-        self._depictionControl._update_plane_parameter_visibility()
+        self._interpolation_control._update_interpolation_combo(self.ndisplay)
+        self._depiction_control._update_plane_parameter_visibility()
         if self.ndisplay == 2:
-            self._renderControl._on_display_change_hide()
-            self._depictionControl._on_display_change_hide()
+            self._render_control._on_display_change_hide()
+            self._depiction_control._on_display_change_hide()
         else:
-            self._renderControl._on_display_change_show()
-            self._depictionControl._on_display_change_show()
+            self._render_control._on_display_change_show()
+            self._depiction_control._on_display_change_show()
         super()._on_ndisplay_changed()
