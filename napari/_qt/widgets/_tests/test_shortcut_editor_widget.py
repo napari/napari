@@ -151,9 +151,9 @@ def test_restore_defaults(shortcut_editor_widget):
             [KEY_SYMBOLS['Ctrl'], KEY_SYMBOLS['Shift'], 'Y'],
         ),
         (
-            Qt.Key.Key_Backspace,
+            Qt.Key.Key_Escape,
             META_CONTROL_KEY,
-            [KEY_SYMBOLS['Ctrl'], KEY_SYMBOLS['Backspace']],
+            [KEY_SYMBOLS['Ctrl'], KEY_SYMBOLS['Escape']],
         ),
         (
             Qt.Key.Key_Delete,
@@ -254,7 +254,13 @@ def test_keybinding_with_only_modifiers(
         Qt.Key.Key_Backspace,
     ],
 )
-def test_remove_shortcut(shortcut_editor_widget, qtbot, removal_trigger_key):
+@pytest.mark.parametrize(
+    'confirm_key',
+    [Qt.Key.Key_Enter, Qt.Key.Key_Return, Qt.Key.Key_Tab],
+)
+def test_remove_shortcut(
+    shortcut_editor_widget, qtbot, removal_trigger_key, confirm_key
+):
     widget = shortcut_editor_widget()
     shortcut = widget._table.item(0, widget._shortcut_col).text()
     assert shortcut == KEY_SYMBOLS['Ctrl']
@@ -268,7 +274,7 @@ def test_remove_shortcut(shortcut_editor_widget, qtbot, removal_trigger_key):
     qtbot.waitUntil(lambda: widget._table.focusWidget() is not None)
     editor = widget._table.focusWidget()
     qtbot.keyClick(editor, removal_trigger_key)
-    qtbot.keyClick(editor, Qt.Key.Key_Enter)
+    qtbot.keyClick(editor, confirm_key)
     widget._table.commitData(editor)
     widget._table.closeEditor(editor, QAbstractItemDelegate.NoHint)
 
