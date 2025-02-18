@@ -6,9 +6,11 @@ testing, which can break instance/class relationships when done dynamically.
 See https://github.com/napari/napari/pull/7025#issuecomment-2186190719.
 """
 
+from importlib.metadata import version
 from typing import TYPE_CHECKING
 
 import numpy as np
+from packaging.version import parse
 
 if TYPE_CHECKING:
     from numba import typed
@@ -150,6 +152,22 @@ def _zero_preserving_modulo_inner_loop(
     return out
 
 
+if parse('2.0') <= parse(version('numpy')) < parse('2.1'):
+
+    def clip(data: np.ndarray, min_val: int, max_val: int) -> np.ndarray:
+        """
+        Clip data to the given range.
+        """
+        dtype_info = np.iinfo(data.dtype)
+        min_val = max(min_val, dtype_info.min)
+        max_val = min(max_val, dtype_info.max)
+        return np.clip(data, min_val, max_val)
+else:
+
+    def clip(data: np.ndarray, min_val: int, max_val: int) -> np.ndarray:
+        return np.clip(data, min_val, max_val)
+
+
 def _labels_raw_to_texture_direct_numpy(
     data: np.ndarray, direct_colormap: 'DirectLabelColormap'
 ) -> np.ndarray:
@@ -164,9 +182,9 @@ def _labels_raw_to_texture_direct_numpy(
     mapper = direct_colormap._array_map
     if any(x < 0 for x in direct_colormap.color_dict if x is not None):
         half_shape = mapper.shape[0] // 2 - 1
-        data = np.clip(data, -half_shape, half_shape)
+        data = clip(data, -half_shape, half_shape)
     else:
-        data = np.clip(data, 0, mapper.shape[0] - 1)
+        data = clip(data, 0, mapper.shape[0] - 1)
 
     return mapper[data]
 

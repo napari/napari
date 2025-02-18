@@ -11,8 +11,6 @@ from types import FrameType
 from typing import (
     TYPE_CHECKING,
     Any,
-    Optional,
-    Union,
 )
 from weakref import WeakSet, ref
 
@@ -70,7 +68,7 @@ if TYPE_CHECKING:
 
 def _npe2_decode_selected_filter(
     ext_str: str, selected_filter: str, writers: Sequence[WriterContribution]
-) -> Optional[WriterContribution]:
+) -> WriterContribution | None:
     """Determine the writer that should be invoked to save data.
 
     When npe2 can be imported, resolves a selected file extension
@@ -82,6 +80,7 @@ def _npe2_decode_selected_filter(
     for entry, writer in zip(
         ext_str.split(';;'),
         writers,
+        strict=False,
     ):
         if entry.startswith(selected_filter):
             return writer
@@ -233,6 +232,9 @@ class QtViewer(QSplitter):
         self.viewer._layer_slicer.events.ready.connect(self._on_slice_ready)
 
         self._on_active_change()
+        self.viewer.layers.events.inserted.connect(self._update_camera_depth)
+        self.viewer.layers.events.removed.connect(self._update_camera_depth)
+        self.viewer.dims.events.ndisplay.connect(self._update_camera_depth)
         self.viewer.layers.events.inserted.connect(self._update_welcome_screen)
         self.viewer.layers.events.removed.connect(self._update_welcome_screen)
         self.viewer.layers.selection.events.active.connect(
@@ -307,7 +309,7 @@ class QtViewer(QSplitter):
 
     @staticmethod
     def _update_dask_cache_settings(
-        dask_setting: Union[DaskSettings, Event] = None,
+        dask_setting: DaskSettings | Event = None,
     ):
         """Update dask cache to match settings."""
         if not dask_setting:
@@ -506,7 +508,7 @@ class QtViewer(QSplitter):
             give (list/tuple/str) then the variable values looked up in the
             callers frame.
         """
-        if isinstance(variables, (str, list, tuple)):
+        if isinstance(variables, str | list | tuple):
             if isinstance(variables, str):
                 vlist = variables.split()
             else:
@@ -535,7 +537,7 @@ class QtViewer(QSplitter):
         """List: items to push to console when instantiated."""
         return self._console_backlog
 
-    def _get_console(self) -> Optional[QtConsole]:
+    def _get_console(self) -> QtConsole | None:
         """Function to setup console.
 
         Returns
@@ -656,6 +658,41 @@ class QtViewer(QSplitter):
         """
         layer = event.value
         self._add_layer(layer)
+
+    def _update_camera_depth(self):
+        """When the layer extents change, update the camera depth.
+
+        The camera depth is the difference between the near clipping plane
+        and the far clipping plane in a scene. If they are set too high
+        relative to the actual depth of a scene, precision issues can arise
+        in the depth of objects in the scene, with objects at the back
+        seeming to pop to the front.
+
+        See: https://github.com/napari/napari/issues/2138
+        """
+        if self.viewer.dims.ndisplay == 2:
+            # don't bother updating 3D camera if we're not using it
+            return
+        # otherwise, set depth to diameter of displayed dimensions
+        extent = self.viewer.layers.extent
+        # we add a step because the difference is *right* at the point
+        # coordinates, not accounting for voxel size:
+        # >>> viewer.add_image(np.random.random((2, 3, 4, 5)))
+        # >>> viewer.layers.extent
+        # Extent(
+        #     data=None,
+        #     world=array([[0., 0., 0., 0.],
+        #                  [1., 2., 3., 4.]]),
+        #     step=array([1., 1., 1., 1.]),
+        # )
+        extent_all = extent.world[1] - extent.world[0] + extent.step
+        extent_displayed = extent_all[list(self.viewer.dims.displayed)]
+        diameter = np.linalg.norm(extent_displayed)
+        # Use 128x the diameter to avoid aggressive near- and far-plane
+        # clipping in perspective projection, while still preserving enough
+        # bit depth in the depth buffer to avoid artifacts. See discussion at:
+        # https://github.com/napari/napari/pull/7529#issuecomment-2594203871
+        self.canvas.camera._3D_camera.depth_value = 128 * diameter
 
     def _add_layer(self, layer):
         """When a layer is added, set its parent and order.
@@ -946,10 +983,10 @@ class QtViewer(QSplitter):
     def _qt_open(
         self,
         filenames: list[str],
-        stack: Union[bool, list[list[str]]],
+        stack: bool | list[list[str]],
         choose_plugin: bool = False,
-        plugin: Optional[str] = None,
-        layer_type: Optional[str] = None,
+        plugin: str | None = None,
+        layer_type: str | None = None,
         **kwargs,
     ):
         """Open files, potentially popping reader dialog for plugin selection.
@@ -1195,7 +1232,7 @@ if TYPE_CHECKING:
     from napari.components.experimental.remote import RemoteManager
 
 
-def _create_qt_poll(parent: QObject, camera: Camera) -> Optional[QtPoll]:
+def _create_qt_poll(parent: QObject, camera: Camera) -> QtPoll | None:
     """Create and return a QtPoll instance, if needed.
 
     Create a QtPoll instance for the monitor.
@@ -1226,9 +1263,7 @@ def _create_qt_poll(parent: QObject, camera: Camera) -> Optional[QtPoll]:
     return qt_poll
 
 
-def _create_remote_manager(
-    layers: LayerList, qt_poll
-) -> Optional[RemoteManager]:
+def _create_remote_manager(layers: LayerList, qt_poll) -> RemoteManager | None:
     """Create and return a RemoteManager instance, if we need one.
 
     Parameters

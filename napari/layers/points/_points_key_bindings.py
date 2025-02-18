@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Callable
+from collections.abc import Callable
 
 from app_model.types import KeyCode, KeyMod
 
@@ -31,7 +31,7 @@ def activate_points_transform_mode(layer: Points) -> None:
     layer.mode = Mode.TRANSFORM
 
 
-@register_points_mode_action(trans._('Pan/zoom'))
+@register_points_mode_action(trans._('Move camera'))
 def activate_points_pan_zoom_mode(layer: Points) -> None:
     layer.mode = Mode.PAN_ZOOM
 
