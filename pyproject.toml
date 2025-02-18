@@ -835,3 +835,10 @@ ignore_imports = [
     # TODO: remove once npe1 deprecated
     "napari._qt.qt_main_window -> napari._qt._qplugins",
 ]
+
+[tool.codespell]
+# Ref: https://github.com/codespell-project/codespell#using-a-config-file
+skip = '.git*,*.svg'
+check-hidden = true
+ignore-regex = '^\s*"image/\S+": ".*'
+# ignore-words-list = ''
