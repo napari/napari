@@ -256,7 +256,7 @@ def test_order_when_changing_ndim(qtbot):
 def test_update_dims_labels(qtbot):
     """
     Test that the slider_widget axis labels are updated with the dims model
-    and vice versa with eliding capabilites.
+    and vice versa with eliding capabilities.
     """
     ndim = 4
     view = QtDims(Dims(ndim=ndim))

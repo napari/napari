@@ -8,7 +8,7 @@ screenshot and figure. Compare the limits of each export method. The screenshot
 will include the entire canvas, and results in some layers being clipped
 if it extends outside the canvas. This also means that screenshots will
 reflect the current zoom. In comparison, the `export_figure` will always
-include the extent of the layers and any other elements overlayed
+include the extent of the layers and any other elements overlaid
 on the canvas, such as the scale bar. Exported figures also move the scale bar
 to within the margins of the canvas.
 

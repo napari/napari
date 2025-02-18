@@ -265,7 +265,7 @@ class TranslationString(str):
         n : int
             The number for pluralization.
         kwargs : dict
-            Any additional arguments to use when formating the string.
+            Any additional arguments to use when formatting the string.
         """
         string = msgid if n is None or n == 1 else msgid_plural
         return string.format(**kwargs)
@@ -408,7 +408,7 @@ class TranslationBundle:
         n : int, optional
             The number for pluralization.
         **kwargs : dict, optional
-            Any additional arguments to use when formating the string.
+            Any additional arguments to use when formatting the string.
         """
         if msgctxt is not None and n is not None and msgid_plural is not None:
             translation = gettext.dnpgettext(
@@ -486,7 +486,7 @@ class TranslationBundle:
             Define if the string translation should be deferred or executed
             in place. Default is False.
         **kwargs : dict, optional
-            Any additional arguments to use when formating the string.
+            Any additional arguments to use when formatting the string.
 
         Returns
         -------
@@ -529,7 +529,7 @@ class TranslationBundle:
             Define if the string translation should be deferred or executed
             in place. Default is False.
         **kwargs : dict, optional
-            Any additional arguments to use when formating the string.
+            Any additional arguments to use when formatting the string.
 
         Returns
         -------
@@ -575,7 +575,7 @@ class TranslationBundle:
             Define if the string translation should be deferred or executed
             in place. Default is False.
         **kwargs : dict, optional
-            Any additional arguments to use when formating the string.
+            Any additional arguments to use when formatting the string.
 
         Returns
         -------

@@ -191,7 +191,7 @@ class LayerDelegate(QStyledItemDelegate):
         option: QStyleOptionViewItem,
         index: QtCore.QModelIndex,
     ) -> bool:
-        """Called when an event has occured in the editor.
+        """Called when an event has occurred in the editor.
 
         This can be used to customize how the delegate handles mouse/key events
         """

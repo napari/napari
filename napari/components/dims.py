@@ -436,7 +436,7 @@ class Dims(EventedModel):
         self.last_used = sliders[index]
 
     def _focus_down(self):
-        """Shift focused dimension slider to be the next slider bellow."""
+        """Shift focused dimension slider to be the next slider below."""
         sliders = [d for d in self.not_displayed if self.nsteps[d] > 1]
         if len(sliders) == 0:
             return

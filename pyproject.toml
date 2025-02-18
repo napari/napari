@@ -377,7 +377,7 @@ filterwarnings = [
 markers = [
     "examples: Test of examples",
     "disable_qthread_start: Disable thread start in this Test",
-    "disable_qthread_pool_start: Disable strarting QRunnable using QThreadPool start in this Test",
+    "disable_qthread_pool_start: Disable starting QRunnable using QThreadPool start in this Test",
     "disable_qtimer_start: Disable timer start in this Test",
     "disable_qanimation_start: Disable animation start in this Test",
     "enable_console: Don't mock the IPython console (in QtConsole) in this Test",
@@ -413,7 +413,7 @@ always_false=['PYSIDE6', 'PYSIDE2', 'PYQT5']
 always_true=['PYQT6']
 
 
-# gloabl ignore error
+# global ignore error
 [[tool.mypy.overrides]]
 module = [
   '*._tests.*',

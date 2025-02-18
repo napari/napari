@@ -64,7 +64,7 @@ class LayerDataProtocol(Protocol):
     https://data-apis.org/array-api/latest/API_specification/array_object.html
 
 
-    WIP: Shapes.data may be an execption.
+    WIP: Shapes.data may be an exception.
     """
 
     @property

@@ -41,7 +41,7 @@ class NapariQtNotification(QDialog):
 
     By default, only the first line of the notification is shown, and the text
     is elided.  Double-clicking on the text (or clicking the chevron icon) will
-    expand to show the full notification.  The dialog will autmatically
+    expand to show the full notification.  The dialog will automatically
     disappear in ``DISMISS_AFTER`` milliseconds, unless hovered or clicked.
 
     Parameters
@@ -53,7 +53,7 @@ class NapariQtNotification(QDialog):
         the icon associated with the message.
         by default NotificationSeverity.WARNING.
     source : str, optional
-        A source string for the notifcation (intended to show the module and
+        A source string for the notification (intended to show the module and
         or package responsible for the notification), by default None
     actions : list of tuple, optional
         A sequence of 2-tuples, where each tuple is a string and a callable.

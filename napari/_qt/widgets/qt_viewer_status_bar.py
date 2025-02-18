@@ -147,7 +147,7 @@ class StatusBarWidget(QWidget):
 
     @staticmethod
     def _calc_width(fm: QFontMetrics, label: QLabel) -> int:
-        # magical nuber +2 is from superqt code
+        # magical number +2 is from superqt code
         # magical number +12 is from experiments
         # Adding this values is required to avoid the text to be elided
         # if there is enough space to show it.

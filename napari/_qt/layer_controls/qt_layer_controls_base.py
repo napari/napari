@@ -242,7 +242,7 @@ class QtLayerControls(QFrame):
 
         Notes
         -----
-        When shortcuts are modifed/added/removed via the action manager, the
+        When shortcuts are modified/added/removed via the action manager, the
         tooltip will be updated to reflect the new shortcut.
         """
         action_name = f'napari:{action_name}'

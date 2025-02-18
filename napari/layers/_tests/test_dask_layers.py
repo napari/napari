@@ -270,7 +270,7 @@ def test_dask_cache_resizing(delayed_dask_stack):
 
 
 def test_prevent_dask_cache(delayed_dask_stack):
-    """Test that pre-emptively setting cache to zero keeps it off"""
+    """Test that preemptively setting cache to zero keeps it off"""
     resize_dask_cache(0)
 
     v = ViewerModel()

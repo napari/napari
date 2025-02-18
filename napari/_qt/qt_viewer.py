@@ -92,7 +92,7 @@ def _extension_string_for_layers(
 ) -> tuple[str, list[WriterContribution]]:
     """Return an extension string and the list of corresponding writers.
 
-    The extension string is a ";;" delimeted string of entries. Each entry
+    The extension string is a ";;" delimited string of entries. Each entry
     has a brief description of the file type and a list of extensions.
 
     The writers, when provided, are the npe2.manifest.io.WriterContribution
@@ -462,7 +462,7 @@ class QtViewer(QSplitter):
             From https://docs.python.org/3/library/weakref.html: "Objects which
             support weak references include class instances, functions written
             in Python (but not in C), instance methods, sets, frozensets, some
-            file objects, generators, type objects, sockets, arrays, deques,
+            file objects, generators, type objects, sockets, arrays, dequeues,
             regular expression pattern objects, and code objects."
 
         Returns

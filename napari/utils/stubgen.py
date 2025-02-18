@@ -1,6 +1,6 @@
 """This module provides helper functions for autogenerating type stubs.
 
-It is intentended to be run as a script or module as follows:
+It is intended to be run as a script or module as follows:
 
     python -m napari.utils.stubgen module.a module.b
 

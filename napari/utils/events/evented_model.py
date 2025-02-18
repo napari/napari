@@ -152,7 +152,7 @@ def _get_field_dependents(cls: 'EventedModel') -> dict[str, set[str]]:
     Dependencies will be guessed by inspecting the code of each property
     in order to emit an event for a computed property when a model field
     that it depends on changes (e.g: @property 'c' depends on model fields
-    'a' and 'b'). Alternatvely, dependencies may be declared excplicitly
+    'a' and 'b'). Alternatively, dependencies may be declared explicitly
     in the Model Config.
 
     Note: accessing a field with `getattr()` instead of dot notation won't
