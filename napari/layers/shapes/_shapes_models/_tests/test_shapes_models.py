@@ -14,6 +14,10 @@ from napari.layers.shapes._shapes_models import (
 )
 from napari.layers.shapes._shapes_utils import triangulate_face
 
+BETTER_TRIANGULATION = (
+    'triangle' in sys.modules or 'PartSegCore_compiled_backend' in sys.modules
+)
+
 
 def test_rectangle1():
     """Test creating Rectangle by four corners."""
@@ -144,7 +148,7 @@ def test_polygon():
     assert shape.data_displayed.shape == (6, 2)
     assert shape.slice_key.shape == (2, 0)
     # should get few triangles
-    expected_face = (6, 2) if 'triangle' in sys.modules else (8, 2)
+    expected_face = (6, 2) if BETTER_TRIANGULATION else (8, 2)
     assert shape._edge_vertices.shape == (16, 2)
     assert shape._face_vertices.shape == expected_face
 

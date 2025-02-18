@@ -5,11 +5,10 @@ import os
 import sys
 import threading
 import warnings
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from datetime import datetime
 from enum import auto
 from types import TracebackType
-from typing import Callable, Optional, Union
 
 from napari.utils.events import Event, EventEmitter
 from napari.utils.misc import StringEnum
@@ -96,9 +95,7 @@ class Notification(Event):
     def __init__(
         self,
         message: str,
-        severity: Union[
-            str, NotificationSeverity
-        ] = NotificationSeverity.WARNING,
+        severity: str | NotificationSeverity = NotificationSeverity.WARNING,
         actions: ActionSequence = (),
         **kwargs,
     ) -> None:
@@ -221,7 +218,7 @@ class NotificationManager:
     """
 
     records: list[Notification]
-    _instance: Optional[NotificationManager] = None
+    _instance: NotificationManager | None = None
 
     def __init__(self) -> None:
         self.records: list[Notification] = []
@@ -251,13 +248,9 @@ class NotificationManager:
         threading.excepthook to display any message in the UI,
         storing the previous hooks to be restored if necessary.
         """
-        if getattr(threading, 'excepthook', None):
-            # TODO: we might want to display the additional thread information
-            self._originals_thread_except_hooks.append(threading.excepthook)
-            threading.excepthook = self.receive_thread_error
-        else:
-            # Patch for Python < 3.8
-            _setup_thread_excepthook()
+        # TODO: we might want to display the additional thread information
+        self._originals_thread_except_hooks.append(threading.excepthook)
+        threading.excepthook = self.receive_thread_error
 
         self._originals_except_hooks.append(sys.excepthook)
         self._original_showwarnings_hooks.append(warnings.showwarning)
@@ -269,9 +262,7 @@ class NotificationManager:
         """
         Remove hooks installed by `install_hooks` and restore previous hooks.
         """
-        if getattr(threading, 'excepthook', None):
-            # `threading.excepthook` available only for Python >= 3.8
-            threading.excepthook = self._originals_thread_except_hooks.pop()
+        threading.excepthook = self._originals_thread_except_hooks.pop()
 
         sys.excepthook = self._originals_except_hooks.pop()
         warnings.showwarning = self._original_showwarnings_hooks.pop()
@@ -285,8 +276,8 @@ class NotificationManager:
         args: tuple[
             type[BaseException],
             BaseException,
-            Optional[TracebackType],
-            Optional[threading.Thread],
+            TracebackType | None,
+            threading.Thread | None,
         ],
     ):
         self.receive_error(*args)
@@ -295,8 +286,8 @@ class NotificationManager:
         self,
         exctype: type[BaseException],
         value: BaseException,
-        traceback: Optional[TracebackType] = None,
-        thread: Optional[threading.Thread] = None,
+        traceback: TracebackType | None = None,
+        thread: threading.Thread | None = None,
     ):
         if isinstance(value, KeyboardInterrupt):
             sys.exit('Closed by KeyboardInterrupt')
@@ -393,25 +384,3 @@ def show_console_notification(notification: Notification):
         )
         # this will likely get silenced by QT.
         raise
-
-
-def _setup_thread_excepthook():
-    """
-    Workaround for `sys.excepthook` thread bug from:
-    http://bugs.python.org/issue1230540
-    """
-    _init = threading.Thread.__init__
-
-    def init(self, *args, **kwargs):
-        _init(self, *args, **kwargs)
-        _run = self.run
-
-        def run_with_except_hook(*args2, **kwargs2):
-            try:
-                _run(*args2, **kwargs2)
-            except Exception:  # noqa BLE001
-                sys.excepthook(*sys.exc_info())
-
-        self.run = run_with_except_hook
-
-    threading.Thread.__init__ = init

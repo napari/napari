@@ -7,10 +7,10 @@ from qtpy.QtWidgets import (
     QCheckBox,
     QComboBox,
 )
+from superqt import QLabeledSlider
 
 from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
 from napari._qt.utils import qt_signals_blocked
-from napari._qt.widgets._slider_compat import QSlider
 from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
 from napari._qt.widgets.qt_mode_buttons import QtModePushButton
 from napari.layers.points._points_constants import (
@@ -57,7 +57,7 @@ class QtPointsControls(QtLayerControls):
     outOfSliceCheckBox : qtpy.QtWidgets.QCheckBox
         Checkbox to indicate whether to render out of slice.
     panzoom_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
-        Button for pan/zoom mode.
+        Button to activate move camera mode for layer.
     transform_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to select transform mode.
     select_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
@@ -105,7 +105,7 @@ class QtPointsControls(QtLayerControls):
         )
         self.layer.text.events.visible.connect(self._on_text_visibility_change)
 
-        sld = QSlider(Qt.Orientation.Horizontal)
+        sld = QLabeledSlider(Qt.Orientation.Horizontal)
         sld.setToolTip(
             trans._(
                 'Change the size of currently selected points and any added afterwards.'

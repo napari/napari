@@ -45,7 +45,9 @@ def test_dict_interface_parity(test_dict, regular_dict, meth):
     else:
         test_dict_method(*args)  # smoke test
 
-    for c, expect in zip(test_dict.events.call_args_list, expected):
+    for c, expect in zip(
+        test_dict.events.call_args_list, expected, strict=False
+    ):
         event = c.args[0]
         assert event.type == expect
 
@@ -53,9 +55,9 @@ def test_dict_interface_parity(test_dict, regular_dict, meth):
 def test_copy(test_dict, regular_dict):
     """Copying an evented dict should return a same-class evented dict."""
     new_test = test_dict.copy()
-    assert (
-        len({type(k) for k in new_test}) >= 2
-    ), 'We want at least non-string keys to test edge cases'
+    assert len({type(k) for k in new_test}) >= 2, (
+        'We want at least non-string keys to test edge cases'
+    )
 
     new_reg = regular_dict.copy()
     assert id(new_test) != id(test_dict)
@@ -84,7 +86,7 @@ def test_child_events():
         ('added', 'A', e_obj),  # after b was added into root
         ('test', 'A', 'hi'),  # when e_obj emitted an event called "test"
     ]
-    for o, e in zip(obs, expected):
+    for o, e in zip(obs, expected, strict=False):
         assert o == e
 
 
