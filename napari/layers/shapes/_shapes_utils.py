@@ -971,7 +971,9 @@ def _combine_meshes(meshes_list):
     if len(meshes_list) == 1:
         # nothing to do in this case!
         return meshes_list[0]
-    centers_list, offsets_list, triangles_list = list(zip(*meshes_list, strict=False))
+    centers_list, offsets_list, triangles_list = list(
+        zip(*meshes_list, strict=False)
+    )
     # Prepend zero because np.cumsum is flawed. See:
     # https://mail.python.org/archives/list/numpy-discussion@python.org/message/PCFRGU5B4OLYA7NQDWX3Q5Q2Y5IBGP65/
     # and discussion in that thread and linked GitHub issues and threads.
@@ -979,7 +981,12 @@ def _combine_meshes(meshes_list):
     # take care of it.
     cumulative_size_offsets = np.cumsum([0] + [len(c) for c in centers_list])
     triangles = np.concatenate(
-        [t + off for t, off in zip(triangles_list, cumulative_size_offsets, strict=False)],
+        [
+            t + off
+            for t, off in zip(
+                triangles_list, cumulative_size_offsets, strict=False
+            )
+        ],
         axis=0,
     )
     centers = np.concatenate(centers_list, axis=0)
