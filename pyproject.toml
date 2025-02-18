@@ -159,7 +159,6 @@ gallery = [
     "scikit-image[data]",
     "numpy",
     "tqdm",
-    "omero-py",
     "pandas",
     "zarr",
     "dask[array,distributed]",
