@@ -32,7 +32,7 @@ fwidget_args = {
 def test_function_widget_registration(
     arg, napari_plugin_manager, request, recwarn
 ):
-    """Test that function widgets get validated and registerd correctly."""
+    """Test that function widgets get validated and registered correctly."""
 
     class Plugin:
         @napari_hook_implementation

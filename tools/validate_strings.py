@@ -351,7 +351,7 @@ def find_strings(fpath: str) -> dict[tuple[int, str], tuple[int, str]]:
     -------
     dict
         A dict with a tuple for key and a tuple for value. The tuple contains
-        the line number and the stripped string. The value containes the line
+        the line number and the stripped string. The value contains the line
         number and the original string.
     """
     strings = {}
@@ -452,7 +452,7 @@ def find_issues(
         Each issue is a tuple with line number and the untranslated string.
         The second item is a dictionary of files that contain outdated
         skipped strings. The third item is a dictionary of the translation
-        errors found per path. Translation errors referes to missing
+        errors found per path. Translation errors refers to missing
         interpolation variables, or spelling errors of the `deferred` keyword.
     """
     issues = {}

@@ -84,7 +84,7 @@ dwidget_args = {
 def test_dock_widget_registration(
     arg, napari_plugin_manager, request, recwarn
 ):
-    """Test that dock widgets get validated and registerd correctly."""
+    """Test that dock widgets get validated and registered correctly."""
 
     class Plugin:
         @napari_hook_implementation

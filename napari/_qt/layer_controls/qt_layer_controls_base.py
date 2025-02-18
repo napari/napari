@@ -222,7 +222,7 @@ class QtLayerControls(QFrame):
         layer : napari.layers.Layer
             The layer instance that this button controls.n
         btn_name : str
-            name fo the button
+            name for the button
         mode : Enum
             Value Associated to current button
         edit_button: bool
