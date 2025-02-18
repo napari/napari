@@ -838,7 +838,9 @@ ignore_imports = [
 
 [tool.codespell]
 # Ref: https://github.com/codespell-project/codespell#using-a-config-file
-skip = '.git*,*.svg'
+skip = '.git*,*.svg,string_list.json,*.rtf,*.rtf.tmpl'
 check-hidden = true
-ignore-regex = '^\s*"image/\S+": ".*'
-# ignore-words-list = ''
+# lines with é -- non-English
+ignore-regex = '(.*[àéç].*|^\s*"image/\S+": ".*|\biTerm\b)'
+# some variable names
+ignore-words-list = 'nd,ontop'
