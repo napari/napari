@@ -62,6 +62,10 @@ def test_magicgui_add_data(make_napari_viewer, LayerType, data, ndim):
 
 
 def test_magicgui_add_data_inheritance(make_napari_viewer):
+    """This test validates if the scale and translate are inherited from the
+    previous layer when adding a new layer with magicgui if function requests,
+    a LayerData type.
+    """
     viewer = make_napari_viewer()
     viewer.add_image(np.random.rand(10, 10), scale=(2, 2), translate=(1, 1))
 
@@ -78,6 +82,12 @@ def test_magicgui_add_data_inheritance(make_napari_viewer):
 
 
 def test_magicgui_add_layer_inheritance(make_napari_viewer):
+    """This test validates if the scale and translate are inherited from the
+    previous layer when adding a new layer with magicgui if function requests,
+    a Layer type.
+    It also checks if the presence of additional combo box in the
+    function does not affect getting the data from the previous layer.
+    """
     viewer = make_napari_viewer()
     viewer.add_image(np.random.rand(10, 10), scale=(2, 2), translate=(1, 1))
 
