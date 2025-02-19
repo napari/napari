@@ -193,6 +193,9 @@ jobs:
     needs:
       - test
       - test_examples
+    permissions:
+      id-token: write  # Required for OIDC
+      contents: read    # Required for checkout
     uses: ./.github/workflows/reusable_coverage_upload.yml
     secrets: inherit
 
