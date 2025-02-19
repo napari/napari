@@ -52,8 +52,7 @@ class QtSurfaceControls(QtBaseImageControls):
 
         colormap_layout = QHBoxLayout()
         colormap_layout.addWidget(self.colorbarLabel)
-        colormap_layout.addWidget(self.colormapComboBox)
-        colormap_layout.addStretch(1)
+        colormap_layout.addWidget(self.colormapComboBox, stretch=1)
 
         shading_comboBox = QComboBox(self)
         for display_name, shading in SHADING_TRANSLATION.items():

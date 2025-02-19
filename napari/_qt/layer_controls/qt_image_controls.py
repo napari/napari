@@ -185,8 +185,7 @@ class QtImageControls(QtBaseImageControls):
             self.colorbarLabel.setVisible(False)
         else:
             colormap_layout.addWidget(self.colorbarLabel)
-            colormap_layout.addWidget(self.colormapComboBox)
-        colormap_layout.addStretch(1)
+            colormap_layout.addWidget(self.colormapComboBox, stretch=1)
 
         self.layout().addRow(self.button_grid)
         self.layout().addRow(self.opacityLabel, self.opacitySlider)
