@@ -194,13 +194,12 @@ jobs:
       - test
       - test_examples
     uses: ./.github/workflows/reusable_coverage_upload.yml
-    secrets:
-      secrets: inherit
+    secrets: inherit
 
   test_benchmarks:
     name: test benchmarks
     runs-on: ubuntu-latest
-    needs: test_initial
+    needs: test_initialts
     timeout-minutes: 60
     env:
       GIT_LFS_SKIP_SMUDGE: 1

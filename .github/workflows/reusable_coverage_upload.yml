@@ -1,6 +1,6 @@
 name: Upload coverage
 on:
-  workflow_call:
+  workflow_call
 
 jobs:
   upload_coverage:
