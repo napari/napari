@@ -460,14 +460,14 @@ class _QtMainWindow(QMainWindow):
         if settings.application.save_window_state:
             settings.application.window_state = window_state
 
-    def _warn_on_shimmed_plugins(self, only_new: bool = False) -> None:
+    def _warn_on_shimmed_plugins(self) -> None:
         """Warn about shimmed plugins if needed."""
         from npe2 import plugin_manager as pm
 
         settings = get_settings()
 
         shimmed_plugins = set(pm.get_shimmed_plugins())
-        if only_new or settings.plugins.warn_on_shimmed_plugin == 'new':
+        if settings.plugins.warn_on_shimmed_plugin == 'new':
             new_plugins = (
                 shimmed_plugins - settings.plugins.warned_on_shim_plugins
             )
