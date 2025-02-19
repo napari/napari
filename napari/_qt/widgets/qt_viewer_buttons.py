@@ -11,7 +11,7 @@ from qtpy.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QPushButton,
-    QSlider,
+    QSpinBox,
     QVBoxLayout,
 )
 
@@ -208,17 +208,41 @@ class QtViewerButtons(QFrame):
         if self.viewer.dims.ndisplay != 3:
             return
 
+        popup = QtPopup(self)
+
+        # tooltip symbols
+        perspective_help_symbol = QtToolTipLabel(self)
+        zoom_help_symbol = QtToolTipLabel(self)
+        angle_help_symbol = QtToolTipLabel(self)
+        blank = QLabel(self)  # helps with placing help symbols.
+
+        perspective_help_msg = trans._(
+            'Controls perspective projection strength. 0 is orthographic, larger values increase perspective effect.'
+        )
+        zoom_help_msg = trans._(
+            'Controls zoom level of the camera. Larger values zoom in, smaller values zoom out.'
+        )
+        angle_help_msg = trans._(
+            'Controls the rotation angles around each axis in degrees. Range is -180 to 180 degrees.'
+        )
+        perspective_help_symbol.setObjectName('help_label')
+        perspective_help_symbol.setToolTip(perspective_help_msg)
+        zoom_help_symbol.setObjectName('help_label')
+        zoom_help_symbol.setToolTip(zoom_help_msg)
+        angle_help_symbol.setObjectName('help_label')
+        angle_help_symbol.setToolTip(angle_help_msg)
+
         # make slider connected to perspective parameter
-        sld = QSlider(Qt.Orientation.Horizontal, self)
-        sld.setRange(0, max(90, int(self.viewer.camera.perspective)))
-        sld.setValue(int(self.viewer.camera.perspective))
-        sld.valueChanged.connect(
+        perspective = QSpinBox(popup)
+        perspective.setRange(0, max(90, int(self.viewer.camera.perspective)))
+        perspective.setValue(int(self.viewer.camera.perspective))
+        perspective.setSingleStep(5)
+        perspective.valueChanged.connect(
             lambda v: setattr(self.viewer.camera, 'perspective', v)
         )
-        self.perspective_slider = sld
 
         # make widget connected to camera zoom
-        zoom = QDoubleSpinBox(self)
+        zoom = QDoubleSpinBox(popup)
         zoom.setRange(0.01, 100)
         zoom.setValue(self.viewer.camera.zoom)
         zoom.setSingleStep(0.1)
@@ -226,10 +250,9 @@ class QtViewerButtons(QFrame):
         zoom.valueChanged.connect(
             lambda v: setattr(self.viewer.camera, 'zoom', v)
         )
-        self.zoom_spinbox = zoom
 
         # make widget connected to camera angle
-        rx = QDoubleSpinBox(self)
+        rx = QDoubleSpinBox(popup)
         rx.setRange(-180, 180)
         rx.setValue(self.viewer.camera.angles[0])
         rx.setSingleStep(5)
@@ -246,7 +269,7 @@ class QtViewerButtons(QFrame):
             )
         )
 
-        ry = QDoubleSpinBox(self)
+        ry = QDoubleSpinBox(popup)
         ry.setRange(-180, 180)
         ry.setValue(self.viewer.camera.angles[1])
         ry.setSingleStep(5)
@@ -263,7 +286,7 @@ class QtViewerButtons(QFrame):
             )
         )
 
-        rz = QDoubleSpinBox(self)
+        rz = QDoubleSpinBox(popup)
         rz.setRange(-180, 180)
         rz.setValue(self.viewer.camera.angles[2])
         rz.setSingleStep(5)
@@ -281,22 +304,25 @@ class QtViewerButtons(QFrame):
         )
 
         # make layout
-        layout = QVBoxLayout()
-        layout.addWidget(QLabel(trans._('Perspective'), self))
-        layout.addWidget(sld)
-        layout.addWidget(QLabel(trans._('Zoom'), self))
-        layout.addWidget(zoom)
-        layout.addWidget(QLabel(trans._('X Angle'), self))
-        layout.addWidget(rx)
-        layout.addWidget(QLabel(trans._('Y Angle'), self))
-        layout.addWidget(ry)
-        layout.addWidget(QLabel(trans._('Z Angle'), self))
-        layout.addWidget(rz)
+        form_layout = QFormLayout()
+        form_layout.insertRow(0, QLabel(trans._('Perspective:')), perspective)
+        form_layout.insertRow(1, QLabel(trans._('Zoom:')), zoom)
+        form_layout.insertRow(2, QLabel(trans._('X Angle:')), rx)
+        form_layout.insertRow(3, QLabel(trans._('Y Angle:')), ry)
+        form_layout.insertRow(4, QLabel(trans._('Z Angle:')), rz)
 
-        # popup and show
-        pop = QtPopup(self)
-        pop.frame.setLayout(layout)
-        pop.show_above_mouse()
+        help_layout = QVBoxLayout()
+        help_layout.addWidget(perspective_help_symbol)
+        help_layout.addWidget(zoom_help_symbol)
+        help_layout.addWidget(blank)
+        help_layout.addWidget(angle_help_symbol)
+
+        layout = QHBoxLayout()
+        layout.addLayout(form_layout)
+        layout.addLayout(help_layout)
+
+        popup.frame.setLayout(layout)
+        popup.show_above_mouse()
 
     def _open_roll_popup(self):
         """Open a grid popup to manually order the dimensions"""
