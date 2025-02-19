@@ -369,7 +369,8 @@ class Shape(ABC):
         if face and not is_collinear(data2d):
             vertices, triangles = triangulate_face(data2d)
             if ndim == 3:
-                vertices = np.insert(vertices, axis, value, axis=1)
+                # axis and value can be None, but not if ndim == 3, so ignore
+                vertices = np.insert(vertices, axis, value, axis=1)  # type:ignore[arg-type]
             if len(triangles) > 0:
                 self._face_vertices = vertices
                 self._face_triangles = triangles
