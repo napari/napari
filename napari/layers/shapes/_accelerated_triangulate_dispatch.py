@@ -1,3 +1,12 @@
+"""Module providing a unified interface for triangulation helper functions.
+
+We don't want numba to be a required dependency. Therefore, for
+numba-accelerated functions, we provide slower NumPy-only alternatives.
+
+With this module, downstream modules can import these helper functions without
+knowing which implementation is being used.
+"""
+
 import numpy as np
 import numpy.typing as npt
 
