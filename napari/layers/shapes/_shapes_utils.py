@@ -31,6 +31,43 @@ except ImportError:
     acc_create_box_from_bounding = None
 
 
+def find_planar_axis(
+    points: npt.NDArray,
+) -> tuple[npt.NDArray, int | None, float | None]:
+    """Find an axis along which the input points are planar.
+
+    If points are 2D, they are returned unchanged.
+
+    If there is a planar axis, return the corresponding 2D points, the axis
+    position, and the coordinate of the plane.
+
+    If there is *no* planar axis, return an empty dataset.
+
+    Parameters
+    ----------
+    points : array, shape (npoints, ndim)
+        An array of point coordinates. ``ndim`` must be 2 or 3.
+
+    Returns
+    -------
+    points2d : array, shape (npoints | 0, 2)
+        Array of 2D points. May be empty if input points are not planar along
+        any axis.
+    axis_idx : int | None
+        The axis along which points are planar.
+    value : float | None
+        The coordinate of the points along ``axis``.
+    """
+    ndim = points.shape[1]
+    if ndim == 2:
+        return points, None, None
+    for axis_idx in range(ndim):
+        values = np.unique(points[:, axis_idx])
+        if len(values) == 1:
+            return np.delete(points, axis_idx, axis=1), axis_idx, values[0]
+    return np.empty((0, 2), dtype=points.dtype), None, None
+
+
 def _is_convex(poly: npt.NDArray) -> bool:
     """Check whether a polygon is convex.
 
