@@ -19,7 +19,7 @@ from functools import cache, partial
 from typing import TYPE_CHECKING, Any, Optional, get_args
 
 import numpy as np
-from magicgui.widgets import ComboBox, FunctionGu
+from magicgui.widgets import ComboBox
 
 from napari.utils._proxies import PublicOnlyProxy
 
