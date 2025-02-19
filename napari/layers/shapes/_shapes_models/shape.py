@@ -6,7 +6,7 @@ from functools import cached_property
 import numpy as np
 import numpy.typing as npt
 
-from napari.layers.shapes._accelerated_triangulate_wrap import (
+from napari.layers.shapes._accelerated_triangulate_dispatch import (
     remove_path_duplicates,
 )
 from napari.layers.shapes._shapes_utils import (

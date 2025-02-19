@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from numpy import array
 
-from napari.layers.shapes._accelerated_triangulate_wrap import (
+from napari.layers.shapes._accelerated_triangulate_dispatch import (
     generate_2D_edge_meshes_py,
 )
 from napari.layers.shapes._shapes_utils import (

@@ -8,7 +8,7 @@ from skimage.draw import line, polygon2mask
 from vispy.geometry import PolygonData
 from vispy.visuals.tube import _frenet_frames
 
-from napari.layers.shapes._accelerated_triangulate_wrap import (
+from napari.layers.shapes._accelerated_triangulate_dispatch import (
     generate_2D_edge_meshes_py,
 )
 from napari.utils.translations import trans

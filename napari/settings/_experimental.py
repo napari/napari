@@ -92,8 +92,8 @@ class ExperimentalSettings(EventedSettings):
         preferences_exclude = ('schema_version',)
 
     def _update_compiled_backend(self) -> None:
-        from napari.layers.shapes import _accelerated_triangulate_wrap
+        from napari.layers.shapes import _accelerated_triangulate_dispatch
 
-        _accelerated_triangulate_wrap.USE_COMPILED_BACKEND = (
+        _accelerated_triangulate_dispatch.USE_COMPILED_BACKEND = (
             self.compiled_triangulation
         )

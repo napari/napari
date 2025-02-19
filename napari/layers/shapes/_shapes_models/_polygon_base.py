@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.interpolate import splev, splprep
 
-from napari.layers.shapes._accelerated_triangulate_wrap import (
+from napari.layers.shapes._accelerated_triangulate_dispatch import (
     create_box_from_bounding,
 )
 from napari.layers.shapes._shapes_models.shape import (

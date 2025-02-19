@@ -19,7 +19,7 @@ from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
     transform_with_box,
 )
-from napari.layers.shapes._accelerated_triangulate_wrap import (
+from napari.layers.shapes._accelerated_triangulate_dispatch import (
     warmup_numba_cache,
 )
 from napari.layers.shapes._shape_list import ShapeList
