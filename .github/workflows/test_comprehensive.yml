@@ -112,7 +112,7 @@ jobs:
       - test_examples
     uses: ./.github/workflows/reusable_coverage_upload.yml
     secrets:
-      codecov_token: ${{ secrets.CODECOV_TOKEN }}
+      secrets: inherit
 
   synchronize_bot_repository:
     name: Synchronize bot repository

@@ -8,6 +8,9 @@ on:
 
 jobs:
   upload_coverage:
+    permissions:
+      id-token: write  # Required for OIDC authentication
+      contents: read    # Required for code checkout
     name: Upload coverage
     runs-on: ubuntu-latest
     steps:
