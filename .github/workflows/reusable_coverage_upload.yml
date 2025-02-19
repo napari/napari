@@ -1,10 +1,6 @@
 name: Upload coverage
 on:
   workflow_call:
-    secrets:
-      codecov_token:
-        required: true
-
 
 jobs:
   upload_coverage:
