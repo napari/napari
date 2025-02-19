@@ -300,6 +300,12 @@ def test_export_figure(make_napari_viewer, tmp_path):
 
 def test_export_rois(make_napari_viewer, tmp_path):
     # Create an image with a defined shape (100x100) and a square in the middle
+    #
+    # Troubleshooting note: If you see a test failure running on a MacBook, it
+    # may be due to the retina display since every pixel in source data is
+    # rendered as 4 pixels on screen. If disabled using BetterDisplay, the test
+    # should pass.
+    # See: https://napari.zulipchat.com/#narrow/channel/212875-general/topic/Check.20export.20roi.20test/near/500698702
 
     img = np.zeros((100, 100), dtype=np.uint8)
     img[25:75, 25:75] = 255
