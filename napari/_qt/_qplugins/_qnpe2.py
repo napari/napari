@@ -373,7 +373,6 @@ def _build_widgets_submenu_actions(
         len(pm.instance()._command_menu_map[mf.name][command.id])
         for command in mf.contributions.commands or []
     )
-
     widgets = mf.contributions.widgets
     multiprovider = len(widgets) > 1
     default_submenu_id, default_submenu = _get_contrib_parent_menu(
