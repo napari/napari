@@ -1,7 +1,8 @@
 """guess_rgb, guess_multiscale, guess_labels."""
 
-from collections.abc import Sequence
-from typing import Any, Callable, Literal, Union
+import itertools
+from collections.abc import Callable, Sequence
+from typing import Any, Literal
 
 import numpy as np
 import numpy.typing as npt
@@ -12,10 +13,11 @@ from napari.layers.image._image_constants import ImageProjectionMode
 from napari.utils.translations import trans
 
 
-def guess_rgb(shape: tuple[int, ...]) -> bool:
+def guess_rgb(shape: tuple[int, ...], min_side_len: int = 30) -> bool:
     """Guess if the passed shape comes from rgb data.
 
-    If last dim is 3 or 4 assume the data is rgb, including rgba.
+    If last dim is 3 or 4 and other dims are larger (>30), assume the data is
+    rgb, including rgba.
 
     Parameters
     ----------
@@ -29,13 +31,18 @@ def guess_rgb(shape: tuple[int, ...]) -> bool:
     """
     ndim = len(shape)
     last_dim = shape[-1]
+    viewed_dims = shape[-3:-1]
 
-    return ndim > 2 and last_dim in (3, 4)
+    return (
+        ndim > 2
+        and last_dim in (3, 4)
+        and all(d > min_side_len for d in viewed_dims)
+    )
 
 
 def guess_multiscale(
-    data: Union[MultiScaleData, list, tuple],
-) -> tuple[bool, Union[LayerDataProtocol, Sequence[LayerDataProtocol]]]:
+    data: MultiScaleData | list | tuple,
+) -> tuple[bool, LayerDataProtocol | Sequence[LayerDataProtocol]]:
     """Guess whether the passed data is multiscale, process it accordingly.
 
     If shape of arrays along first axis is strictly decreasing, the data is
@@ -65,7 +72,7 @@ def guess_multiscale(
     if hasattr(data, 'ndim') and data.ndim > 1:
         return False, data
 
-    if isinstance(data, (list, tuple)) and len(data) == 1:
+    if isinstance(data, list | tuple) and len(data) == 1:
         # pyramid with only one level, unwrap
         return False, data[0]
 
@@ -73,7 +80,7 @@ def guess_multiscale(
     if len(sizes) <= 1:
         return False, data
 
-    consistent = all(s1 > s2 for s1, s2 in zip(sizes[:-1], sizes[1:]))
+    consistent = all(s1 > s2 for s1, s2 in itertools.pairwise(sizes))
     if all(s == sizes[0] for s in sizes):
         # note: the individual array case should be caught by the first
         # code line in this function, hasattr(ndim) and ndim > 1.

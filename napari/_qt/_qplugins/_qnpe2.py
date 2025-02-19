@@ -11,8 +11,6 @@ from itertools import chain
 from typing import (
     TYPE_CHECKING,
     Any,
-    Optional,
-    Union,
     cast,
 )
 
@@ -23,7 +21,7 @@ from magicgui.widgets import FunctionGui, Widget
 from npe2 import plugin_manager as pm
 from qtpy.QtWidgets import QWidget
 
-from napari._app_model import get_app
+from napari._app_model import get_app_model
 from napari._app_model.constants import MenuGroup, MenuId
 from napari._qt._qapp_model.injection._qproviders import (
     _provide_viewer_or_raise,
@@ -49,7 +47,7 @@ if TYPE_CHECKING:
 # can be easily deleted once npe1 is no longer supported.
 def _rebuild_npe1_samples_menu() -> None:  # pragma: no cover
     """Register submenu and actions for all npe1 plugins, clearing all first."""
-    app = get_app()
+    app = get_app_model()
     # Unregister all existing npe1 sample menu actions and submenus
     if unreg := plugin_manager._unreg_sample_submenus:
         unreg()
@@ -123,7 +121,7 @@ def _toggle_or_get_widget_npe1(
 
 def _rebuild_npe1_plugins_menu() -> None:
     """Register widget submenu and actions for all npe1 plugins, clearing all first."""
-    app = get_app()
+    app = get_app_model()
 
     # Unregister all existing npe1 plugin menu actions and submenus
     if unreg := plugin_manager._unreg_plugin_submenus:
@@ -194,7 +192,7 @@ def _get_contrib_parent_menu(
     multiprovider: bool,
     parent_menu: MenuId,
     mf: PluginManifest,
-    group: Optional[str] = None,
+    group: str | None = None,
 ) -> tuple[str, list[tuple[str, SubmenuItem]]]:
     """Get parent menu of plugin contribution (samples/widgets).
 
@@ -285,7 +283,7 @@ def _get_widget_viewer_param(
     """Get widget parameter name for `viewer` (if any) and check type."""
     if inspect.isclass(widget_callable) and issubclass(
         widget_callable,
-        (QWidget, Widget),
+        QWidget | Widget,
     ):
         widget_param = ''
         try:
@@ -324,7 +322,7 @@ def _toggle_or_get_widget(
     plugin: str,
     widget_name: str,
     full_name: str,
-) -> Optional[tuple[Union[FunctionGui, QWidget, Widget], str]]:
+) -> tuple[FunctionGui | QWidget | Widget, str] | None:
     """Toggle if widget already built otherwise return widget.
 
     Returned widget will be added to main window by a processor.
@@ -439,7 +437,7 @@ def _register_qt_actions(mf: PluginManifest) -> None:
     This is called when a plugin is registered or enabled and it adds the
     plugin's sample and widget actions and submenus to the app model registry.
     """
-    app = get_app()
+    app = get_app_model()
     samples_submenu, sample_actions = _build_samples_submenu_actions(mf)
     widgets_submenu, widget_actions = _build_widgets_submenu_actions(mf)
 

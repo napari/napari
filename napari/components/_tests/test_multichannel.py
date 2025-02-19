@@ -37,7 +37,7 @@ multi_channel_test_data = [
     # split single RGB image
     ((15, 10, 3), {'colormap': ['red', 'green', 'blue']}),
     # multiple RGB images
-    ((15, 10, 5, 3), {'channel_axis': 2, 'rgb': True}),
+    ((45, 40, 5, 3), {'channel_axis': 2, 'rgb': True}),
     # Test adding multichannel image with custom names.
     ((), {'name': ['multi ' + str(i + 3) for i in range(5)]}),
     # Test adding multichannel image with custom contrast limits.
@@ -148,7 +148,9 @@ def test_multichannel(shape, kwargs):
                 expectation = ensure_iterable(exp)
             else:
                 expectation = ensure_iterable(expectation)
-            expectation = [v for i, v in zip(range(i + 1), expectation)]
+            expectation = [
+                v for i, v in zip(range(i + 1), expectation, strict=False)
+            ]
 
             result = getattr(viewer.layers[i], key)
             if key == 'colormap':  # colormaps are tuples of (name, cmap)
@@ -175,6 +177,7 @@ def test_multichannel_multiscale():
                 for l_d, d in zip(
                     viewer.layers[i].data,
                     [data[j].take(i, axis=-1) for j in range(len(data))],
+                    strict=False,
                 )
             ]
         )
@@ -197,6 +200,7 @@ def test_multichannel_implicit_multiscale():
                 for l_d, d in zip(
                     viewer.layers[i].data,
                     [data[j].take(i, axis=-1) for j in range(len(data))],
+                    strict=False,
                 )
             ]
         )

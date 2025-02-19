@@ -105,7 +105,7 @@ def test_set_new_objects(test_set, regular_set, meth):
     regular_set_method = getattr(regular_set, method_name)
     result = test_set_method(arg)
     assert result == regular_set_method(arg)
-    assert isinstance(result, (EventedSet, bool))
+    assert isinstance(result, EventedSet | bool)
     assert result is not test_set
 
     assert test_set.events.mock_calls == []

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import itertools
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -20,6 +21,16 @@ except ModuleNotFoundError:
     triangulate = None
 
 
+try:
+    from napari.layers.shapes._accelerated_triangulate import (
+        create_box_from_bounding as acc_create_box_from_bounding,
+        generate_2D_edge_meshes as acc_generate_2D_edge_meshes,
+    )
+except ImportError:
+    acc_generate_2D_edge_meshes = None
+    acc_create_box_from_bounding = None
+
+
 def _is_convex(poly: npt.NDArray) -> bool:
     """Check whether a polygon is convex.
 
@@ -33,10 +44,15 @@ def _is_convex(poly: npt.NDArray) -> bool:
     bool
         True if the given polygon is convex.
     """
-    fst = poly
-    snd = np.roll(poly, -1, axis=0)
-    thrd = np.roll(poly, -2, axis=0)
-    return np.unique(orientation(fst.T, snd.T, thrd.T)).size == 1
+    fst = poly[:-2]
+    snd = poly[1:-1]
+    thrd = poly[2:]
+    orn_set = np.unique(orientation(fst.T, snd.T, thrd.T))
+    if orn_set.size != 1:
+        return False
+    return (orn_set[0] == orientation(poly[-2], poly[-1], poly[0])) and (
+        orn_set[0] == orientation(poly[-1], poly[0], poly[1])
+    )
 
 
 def _fan_triangulation(poly: npt.NDArray) -> tuple[npt.NDArray, npt.NDArray]:
@@ -372,6 +388,41 @@ def point_to_lines(point, lines):
     return index, location
 
 
+def create_box_from_bounding(bounding_box: npt.NDArray) -> npt.NDArray:
+    """Creates the axis aligned interaction box of a bounding box
+
+    Parameters
+    ----------
+    bounding_box : np.ndarray
+        2x2 array of the bounding box. The first row is the minimum values and
+        the second row is the maximum values
+
+    Returns
+    -------
+    box : np.ndarray
+        9x2 array of vertices of the interaction box. The first 8 points are
+        the corners and midpoints of the box in clockwise order starting in the
+        upper-left corner. The last point is the center of the box
+    """
+    tl = bounding_box[(0, 0), (0, 1)]
+    br = bounding_box[(1, 1), (0, 1)]
+    tr = bounding_box[(1, 0), (0, 1)]
+    bl = bounding_box[(0, 1), (0, 1)]
+    return np.array(
+        [
+            tl,
+            (tl + tr) / 2,
+            tr,
+            (tr + br) / 2,
+            br,
+            (br + bl) / 2,
+            bl,
+            (bl + tl) / 2,
+            (tl + br) / 2,
+        ]
+    )
+
+
 def create_box(data: npt.NDArray) -> npt.NDArray:
     """Creates the axis aligned interaction box of a list of points
 
@@ -663,14 +714,15 @@ def triangulate_edge(
         clean_path = path
 
     if clean_path.shape[-1] == 2:
-        centers, offsets, triangles = generate_2D_edge_meshes(
-            clean_path, closed=closed
+        centers, offsets, triangles = _generate_2D_edge_meshes(
+            np.asarray(clean_path, dtype=np.float32), closed=closed
         )
     else:
         centers, offsets, triangles = generate_tube_meshes(
             clean_path, closed=closed
         )
 
+    # offsets[2,1] = -0.5
     return centers, offsets, triangles
 
 
@@ -948,7 +1000,7 @@ def path_to_mask(
     vertices = vertices[~duplicates]
 
     iis, jjs = [], []
-    for v1, v2 in zip(vertices, vertices[1:]):
+    for v1, v2 in itertools.pairwise(vertices):
         ii, jj = line(*v1, *v2)
         iis.extend(ii.tolist())
         jjs.extend(jj.tolist())
@@ -1285,3 +1337,13 @@ def rdp(vertices: npt.NDArray, epsilon: float) -> npt.NDArray:
 
     # When epsilon is 0, avoid removing datapoints
     return vertices
+
+
+if acc_generate_2D_edge_meshes is not None:
+    _generate_2D_edge_meshes = acc_generate_2D_edge_meshes
+else:  # pragma: no cover
+    _generate_2D_edge_meshes = generate_2D_edge_meshes
+
+
+if acc_create_box_from_bounding is not None:
+    create_box_from_bounding = acc_create_box_from_bounding

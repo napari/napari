@@ -13,16 +13,16 @@ from napari.utils.notebook_display import (
 from napari.utils.progress import cancelable_progress, progrange, progress
 
 __all__ = (
+    'NUMPY_VERSION_IS_THREADSAFE',
     'Colormap',
-    'DirectLabelColormap',
     'CyclicLabelColormap',
+    'DirectLabelColormap',
+    'NotebookScreenshot',
     'cancelable_progress',
     'citation_text',
     'nbscreenshot',
-    'NotebookScreenshot',
     'progrange',
     'progress',
     'resize_dask_cache',
     'sys_info',
-    'NUMPY_VERSION_IS_THREADSAFE',
 )

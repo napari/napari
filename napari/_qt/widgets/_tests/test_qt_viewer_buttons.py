@@ -4,7 +4,7 @@ import pytest
 from qtpy.QtCore import QPoint, Qt
 from qtpy.QtWidgets import QApplication
 
-from napari._app_model._app import get_app
+from napari._app_model._app import get_app_model
 from napari._qt.dialogs.qt_modal import QtPopup
 from napari._qt.widgets.qt_viewer_buttons import QtViewerButtons
 from napari.components.viewer_model import ViewerModel
@@ -66,6 +66,8 @@ def test_grid_view_button_popup(qt_viewer_buttons, qtbot):
     assert viewer_buttons.grid_width_box.value() == viewer.grid.shape[1]
     assert viewer_buttons.grid_height_box
     assert viewer_buttons.grid_height_box.value() == viewer.grid.shape[0]
+    assert viewer_buttons.grid_spacing_box
+    assert viewer_buttons.grid_spacing_box.value() == viewer.grid.spacing
 
     # check that widget controls value changes update viewer grid values
     viewer_buttons.grid_stride_box.setValue(2)
@@ -74,10 +76,13 @@ def test_grid_view_button_popup(qt_viewer_buttons, qtbot):
     assert viewer_buttons.grid_width_box.value() == viewer.grid.shape[1]
     viewer_buttons.grid_height_box.setValue(2)
     assert viewer_buttons.grid_height_box.value() == viewer.grid.shape[0]
+    viewer_buttons.grid_spacing_box.setValue(0.5)
+    assert viewer_buttons.grid_spacing_box.value() == viewer.grid.spacing
 
     # check viewer grid values changes update popup widget controls values
     viewer.grid.stride = 1
     viewer.grid.shape = (-1, -1)
+    viewer.grid.spacing = 0.1
     # popup needs to be relaunched to get widget controls with the new values
     for widget in QApplication.topLevelWidgets():
         if isinstance(widget, QtPopup):
@@ -87,6 +92,7 @@ def test_grid_view_button_popup(qt_viewer_buttons, qtbot):
     viewer_buttons.grid_width_box.setValue(2)
     assert viewer_buttons.grid_width_box.value() == viewer.grid.shape[1]
     assert viewer_buttons.grid_height_box.value() == viewer.grid.shape[0]
+    assert viewer_buttons.grid_spacing_box.value() == viewer.grid.spacing
 
 
 def test_ndisplay_button_popup(qt_viewer_buttons, qtbot):
@@ -137,12 +143,12 @@ def test_ndisplay_button_popup(qt_viewer_buttons, qtbot):
     )
 
 
-def test_toggle_ndisplay(mock_app, qt_viewer_buttons, qtbot):
+def test_toggle_ndisplay(mock_app_model, qt_viewer_buttons, qtbot):
     """Check `toggle_ndisplay` works via `mouseClick`."""
     viewer, viewer_buttons = qt_viewer_buttons
     assert viewer_buttons.ndisplayButton
 
-    app = get_app()
+    app = get_app_model()
 
     assert viewer.dims.ndisplay == 2
     with app.injection_store.register(

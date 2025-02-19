@@ -32,7 +32,7 @@ class QtTracksControls(QtLayerControls):
     button_group : qtpy.QtWidgets.QButtonGroup
         Button group of points layer modes (ADD, PAN_ZOOM, SELECT).
     panzoom_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
-        Button for pan/zoom mode.
+        Button for activate move camera mode for layer.
     transform_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to select transform mode.
 
@@ -102,10 +102,10 @@ class QtTracksControls(QtLayerControls):
         self.colormap_combobox.currentTextChanged.connect(self.change_colormap)
 
         self.layout().addRow(self.button_grid)
+        self.layout().addRow(self.opacityLabel, self.opacitySlider)
+        self.layout().addRow(trans._('blending:'), self.blendComboBox)
         self.layout().addRow(trans._('color by:'), self.color_by_combobox)
         self.layout().addRow(trans._('colormap:'), self.colormap_combobox)
-        self.layout().addRow(trans._('blending:'), self.blendComboBox)
-        self.layout().addRow(self.opacityLabel, self.opacitySlider)
         self.layout().addRow(trans._('tail width:'), self.tail_width_slider)
         self.layout().addRow(trans._('tail length:'), self.tail_length_slider)
         self.layout().addRow(trans._('head length:'), self.head_length_slider)

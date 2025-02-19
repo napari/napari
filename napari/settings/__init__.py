@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from napari.settings._base import _NOT_SET
 from napari.settings._napari_settings import (
@@ -8,7 +8,7 @@ from napari.settings._napari_settings import (
 )
 from napari.utils.translations import trans
 
-__all__ = ['NapariSettings', 'get_settings', 'CURRENT_SCHEMA_VERSION']
+__all__ = ['CURRENT_SCHEMA_VERSION', 'NapariSettings', 'get_settings']
 
 
 class _SettingsProxy:
@@ -23,7 +23,7 @@ SETTINGS = _SettingsProxy()
 
 # private global object
 # will be populated on first call of get_settings
-_SETTINGS: Optional[NapariSettings] = None
+_SETTINGS: NapariSettings | None = None
 
 
 def get_settings(path=_NOT_SET) -> NapariSettings:

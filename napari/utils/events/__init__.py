@@ -18,18 +18,18 @@ from napari.utils.events.evented_model import EventedModel
 from napari.utils.events.types import SupportsEvents
 
 __all__ = [
-    'disconnect_events',
     'EmitterGroup',
     'Event',
+    'EventEmitter',
     'EventedDict',
     'EventedList',
     'EventedModel',
     'EventedSet',
-    'EventEmitter',
     'NestableEventedList',
     'SelectableEventedList',
     'Selection',
     'SupportsEvents',
     'TypedMutableSequence',
+    'disconnect_events',
     'set_event_tracing_enabled',
 ]

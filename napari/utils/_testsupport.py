@@ -140,13 +140,13 @@ def pytest_runtest_makereport(item, call):
 
 
 @pytest.fixture
-def mock_app():
+def mock_app_model():
     """Mock clean 'test_app' `NapariApplication` instance.
 
-    This fixture must be used whenever `napari._app_model.get_app()` is called to
+    This fixture must be used whenever `napari._app_model.get_app_model()` is called to
     return a 'test_app' `NapariApplication` instead of the 'napari'
     `NapariApplication`. The `make_napari_viewer` fixture is already equipped with
-    a `mock_app`.
+    a `mock_app_model`.
 
     Note that `NapariApplication` registers app-model actions.
     If this is not desired, please create a clean
@@ -168,7 +168,7 @@ def mock_app():
 
     app = NapariApplication('test_app')
     app.injection_store.namespace = _napari_names
-    with patch.object(NapariApplication, 'get_app', return_value=app):
+    with patch.object(NapariApplication, 'get_app_model', return_value=app):
         try:
             yield app
         finally:
@@ -179,7 +179,7 @@ def mock_app():
 def make_napari_viewer(
     qtbot,
     request: 'FixtureRequest',
-    mock_app,
+    mock_app_model,
     napari_plugin_manager,
     monkeypatch,
 ):
@@ -268,6 +268,7 @@ def make_napari_viewer(
     init_qactions.cache_clear()
 
     viewers: WeakSet[Viewer] = WeakSet()
+    request.node._viewer_weak_set = viewers
 
     # may be overridden by using the parameter `strict_qt`
     _strict = False
@@ -350,17 +351,19 @@ def make_napari_viewer(
 
     # do not inline to avoid pytest trying to compute repr of expression.
     # it fails if C++ object gone but not Python object.
-    assert (
-        _do_not_inline_below == 0
-    ), f'{request.config.getoption(_SAVE_GRAPH_OPNAME)}, {_SAVE_GRAPH_OPNAME}'
+    assert _do_not_inline_below == 0, (
+        f'{request.config.getoption(_SAVE_GRAPH_OPNAME)}, {_SAVE_GRAPH_OPNAME}'
+    )
 
     # only check for leaked widgets if an exception was raised during the test,
     # and "strict" mode was used.
     if _strict and getattr(sys, 'last_value', None) is prior_exception:
         QApplication.processEvents()
         leak = set(QApplication.topLevelWidgets()).difference(initial)
+        leak = (x for x in leak if x.objectName() != 'handled_widget')
         # still not sure how to clean up some of the remaining vispy
         # vispy.app.backends._qt.CanvasBackendDesktop widgets...
+        # observed in `test_sys_info.py`
         if any(n.__class__.__name__ != 'CanvasBackendDesktop' for n in leak):
             # just a warning... but this can be converted to test errors
             # in pytest with `-W error`

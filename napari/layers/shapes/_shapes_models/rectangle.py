@@ -50,7 +50,7 @@ class Rectangle(Shape):
 
     @data.setter
     def data(self, data):
-        data = np.array(data).astype(float)
+        data = np.array(data).astype(np.float32)
 
         if len(self.dims_order) != data.shape[1]:
             self._dims_order = list(range(data.shape[1]))
@@ -68,19 +68,23 @@ class Rectangle(Shape):
             )
 
         self._data = data
+        self._bounding_box = np.array(
+            [
+                np.min(data, axis=0),
+                np.max(data, axis=0),
+            ]
+        )
         self._update_displayed_data()
 
     def _update_displayed_data(self) -> None:
         """Update the data that is to be displayed."""
         # Add four boundary lines and then two triangles for each
-        self._set_meshes(self.data_displayed, face=False)
-        self._face_vertices = self.data_displayed
+        self._clean_cache()
+        data_displayed = self.data_displayed
+        self._set_meshes(data_displayed, face=False)
+        self._face_vertices = data_displayed
         self._face_triangles = np.array([[0, 1, 2], [0, 2, 3]])
-        self._box = rectangle_to_box(self.data_displayed)
-        data_not_displayed = self.data[:, self.dims_not_displayed]
-        self.slice_key = np.round(
-            [
-                np.min(data_not_displayed, axis=0),
-                np.max(data_not_displayed, axis=0),
-            ]
-        ).astype('int')
+        self._box = rectangle_to_box(data_displayed)
+        self.slice_key = self._bounding_box[:, self.dims_not_displayed].astype(
+            'int'
+        )
