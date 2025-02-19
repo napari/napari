@@ -28,7 +28,7 @@ def test_normalize_dtype_torch(dtype_str):
     # see https://github.com/pytorch/pytorch/issues/40568
     torch_arr = torch.zeros(5, dtype=getattr(torch, dtype_str))
     np_arr = np.zeros(5, dtype=dtype_str)
-    assert normalize_dtype(torch_arr.dtype) is np_arr.dtype.type
+    assert normalize_dtype(torch_arr.dtype) == np.dtype(np_arr.dtype)
 
 
 @pytest.mark.parametrize(
@@ -37,7 +37,7 @@ def test_normalize_dtype_torch(dtype_str):
 def test_normalize_dtype_tensorstore(dtype_str):
     np_arr = np.zeros(5, dtype=dtype_str)
     ts_arr = ts.array(np_arr)  # inherit ts dtype from np dtype
-    assert normalize_dtype(ts_arr.dtype) is np_arr.dtype.type
+    assert normalize_dtype(ts_arr.dtype) is np.dtype(np_arr.dtype)
 
 
 @pytest.mark.parametrize(

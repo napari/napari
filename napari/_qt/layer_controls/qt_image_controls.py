@@ -6,7 +6,6 @@ from qtpy.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QPushButton,
-    QSlider,
     QWidget,
 )
 from superqt import QLabeledDoubleSlider
@@ -15,7 +14,6 @@ from napari._qt.layer_controls.qt_image_controls_base import (
     QtBaseImageControls,
 )
 from napari._qt.utils import qt_signals_blocked
-from napari._qt.widgets._slider_compat import QDoubleSlider
 from napari.layers.image._image_constants import (
     ImageRendering,
     Interpolation,
@@ -51,9 +49,9 @@ class QtImageControls(QtBaseImageControls):
     button_grid : qtpy.QtWidgets.QGridLayout
         GridLayout for the layer mode buttons
     panzoom_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
-        Button to pan/zoom shapes layer.
+        Button to activate move camera mode.
     transform_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
-        Button to transform shapes layer.
+        Button to transform layer.
     attenuationSlider : qtpy.QtWidgets.QSlider
         Slider controlling attenuation rate for `attenuated_mip` mode.
     attenuationLabel : qtpy.QtWidgets.QLabel
@@ -157,7 +155,7 @@ class QtImageControls(QtBaseImageControls):
             self.changePlaneThickness
         )
 
-        sld = QDoubleSlider(Qt.Orientation.Horizontal, parent=self)
+        sld = QLabeledDoubleSlider(Qt.Orientation.Horizontal, parent=self)
         sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         cmin, cmax = self.layer.contrast_limits_range
         sld.setMinimum(cmin)
@@ -167,12 +165,13 @@ class QtImageControls(QtBaseImageControls):
         self.isoThresholdSlider = sld
         self.isoThresholdLabel = QLabel(trans._('iso threshold:'))
 
-        sld = QSlider(Qt.Orientation.Horizontal, parent=self)
+        sld = QLabeledDoubleSlider(Qt.Orientation.Horizontal, parent=self)
         sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         sld.setMinimum(0)
-        sld.setMaximum(100)
-        sld.setSingleStep(1)
-        sld.setValue(int(self.layer.attenuation * 200))
+        sld.setMaximum(0.5)
+        sld.setSingleStep(0.001)
+        sld.setValue(self.layer.attenuation)
+        sld.setDecimals(3)
         sld.valueChanged.connect(self.changeAttenuation)
         self.attenuationSlider = sld
         self.attenuationLabel = QLabel(trans._('attenuation:'))
@@ -186,8 +185,7 @@ class QtImageControls(QtBaseImageControls):
             self.colorbarLabel.setVisible(False)
         else:
             colormap_layout.addWidget(self.colorbarLabel)
-            colormap_layout.addWidget(self.colormapComboBox)
-        colormap_layout.addStretch(1)
+            colormap_layout.addWidget(self.colormapComboBox, stretch=1)
 
         self.layout().addRow(self.button_grid)
         self.layout().addRow(self.opacityLabel, self.opacitySlider)
@@ -290,12 +288,12 @@ class QtImageControls(QtBaseImageControls):
             Attenuation rate for attenuated maximum intensity projection.
         """
         with self.layer.events.blocker(self._on_attenuation_change):
-            self.layer.attenuation = value / 200
+            self.layer.attenuation = value
 
     def _on_attenuation_change(self):
         """Receive layer model attenuation change event and update the slider."""
         with self.layer.events.attenuation.blocker():
-            self.attenuationSlider.setValue(int(self.layer.attenuation * 200))
+            self.attenuationSlider.setValue(self.layer.attenuation)
 
     def _on_interpolation_change(self, event):
         """Receive layer interpolation change event and update dropdown menu.

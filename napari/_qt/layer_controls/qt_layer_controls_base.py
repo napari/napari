@@ -9,9 +9,9 @@ from qtpy.QtWidgets import (
     QLabel,
     QMessageBox,
 )
+from superqt import QLabeledDoubleSlider
 
 from napari._qt.utils import set_widgets_enabled_with_opacity
-from napari._qt.widgets._slider_compat import QDoubleSlider
 from napari._qt.widgets.qt_mode_buttons import QtModeRadioButton
 from napari.layers.base._base_constants import (
     BLENDING_TRANSLATIONS,
@@ -62,9 +62,9 @@ class QtLayerControls(QFrame):
     button_grid : qtpy.QtWidgets.QGridLayout
         GridLayout for the layer mode buttons
     panzoom_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
-        Button to pan/zoom shapes layer.
+        Button to activate move camera mode for layer.
     transform_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
-        Button to transform shapes layer.
+        Button to transform layer.
     blendComboBox : qtpy.QtWidgets.QComboBox
         Dropdown widget to select blending mode of layer.
     layer : napari.layers.Layer
@@ -106,7 +106,9 @@ class QtLayerControls(QFrame):
             self.MODE.PAN_ZOOM,
             False,
             self.PAN_ZOOM_ACTION_NAME,
-            extra_tooltip_text=trans._('(or hold Space)'),
+            extra_tooltip_text=trans._(
+                '\n(or hold Space)\n(hold Shift to pan in 3D)'
+            ),
             checked=True,
         )
         self.transform_button = self._radio_button(
@@ -130,7 +132,7 @@ class QtLayerControls(QFrame):
         self.button_grid.setSpacing(4)
 
         # Control widgets
-        sld = QDoubleSlider(Qt.Orientation.Horizontal, parent=self)
+        sld = QLabeledDoubleSlider(Qt.Orientation.Horizontal, parent=self)
         sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         sld.setMinimum(0)
         sld.setMaximum(1)
