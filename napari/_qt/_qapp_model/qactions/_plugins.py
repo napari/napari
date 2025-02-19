@@ -1,5 +1,6 @@
 """Qt 'Plugins' menu Actions."""
 
+from functools import partial
 from importlib.util import find_spec
 from logging import getLogger
 
@@ -32,7 +33,14 @@ def _show_plugin_install_dialog(window: Window) -> None:
     # This callback is only used when this package is available, thus we do not check
     from napari_plugin_manager.qt_plugin_dialog import QtPluginDialog
 
-    QtPluginDialog(window._qt_window).exec_()
+    dialog = QtPluginDialog(window._qt_window)
+    # after installing new plugins, user may need to be warned about shimmed
+    # plugins. We only warn about new ones in this case.
+    only_new_warn = partial(
+        window._qt_window._warn_on_shimmed_plugins, only_new=True
+    )
+    dialog.accepted.connect(only_new_warn)
+    dialog.exec_()
 
 
 def _show_plugin_err_reporter(window: Window) -> None:

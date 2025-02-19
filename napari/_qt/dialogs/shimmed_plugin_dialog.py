@@ -14,24 +14,31 @@ from napari.utils.translations import trans
 
 
 class ShimmedPluginDialog(QDialog):
-    def __init__(self, parent, plugins: set[str]) -> None:
+    def __init__(self, parent: QWidget, plugins: set[str]) -> None:
         super().__init__(parent)
         cancel_btn = QPushButton(trans._('Cancel'))
         close_btn = QPushButton(trans._('Close'))
         icon_label = QWidget()
         icon_label.setObjectName('warning_icon_element')
-        plugin_info_text = 'The following plugins are npe1 plugins that have been shimmed to work with npe2: '
+        plugin_info_text = """
+The following plugins are using the old plugin engine and have been
+automatically converted to the new plugin engine:
+        """
         plugin_text = '\n'.join(plugins)
         info_text = """
 Some functionality e.g. code designed to run on import may not work as expected.
 
-To use this plugin without shimming, turn off the 'Use npe2 adaptor' setting in the plugin preferences.
-This setting will cease to exist in napari 0.7.0 and npe1 plugins will only be usable in shimmed form.
+If you notice broken functionality in any of these plugins, turn off
+the 'Use npe2 adaptor' setting in the plugin preferences.
 
-Please contact the plugin author to ask them about updating their plugin to npe2.
-"""
+This setting will cease to exist in napari 0.7.0 and these plugins
+will only be usable if they can be automatically converted.
+
+Please contact the plugin author to ask them about updating their plugin to use npe2,
+the new plugin engine.
+        """
         self.only_new_checkbox = QCheckBox(
-            trans._('Only warn me about newly installed shimmed plugins.')
+            trans._('Only warn me about newly installed plugins.')
         )
 
         cancel_btn.clicked.connect(self.reject)
@@ -61,7 +68,7 @@ Please contact the plugin author to ask them about updating their plugin to npe2
         self.close_btn = close_btn
         self.cancel_btn = cancel_btn
 
-    def accept(self):
+    def accept(self) -> None:
         if self.only_new_checkbox.isChecked():
             get_settings().plugins.warn_on_shimmed_plugin = (
                 PluginShimWarningLevel.NEW
