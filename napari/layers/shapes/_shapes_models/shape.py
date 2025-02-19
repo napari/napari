@@ -353,17 +353,12 @@ class Shape(ABC):
             self._edge_triangles = np.empty((0, 3), dtype=np.uint32)
 
         if face:
-            idx = np.concatenate(
-                [[True], ~np.all(data[1:] == data[:-1], axis=-1)]
-            )
-            clean_data = data[idx].copy()
-
-            if not is_collinear(clean_data[:, -2:]):
-                if clean_data.shape[1] == 2:
-                    vertices, triangles = triangulate_face(clean_data)
-                elif len(np.unique(clean_data[:, 0])) == 1:
-                    val = np.unique(clean_data[:, 0])
-                    vertices, triangles = triangulate_face(clean_data[:, -2:])
+            if not is_collinear(data[:, -2:]):
+                if data.shape[1] == 2:
+                    vertices, triangles = triangulate_face(data)
+                elif len(np.unique(data[:, 0])) == 1:
+                    val = np.unique(data[:, 0])
+                    vertices, triangles = triangulate_face(data[:, -2:])
                     exp = np.expand_dims(np.repeat(val, len(vertices)), axis=1)
                     vertices = np.concatenate([exp, vertices], axis=1)
                 else:
