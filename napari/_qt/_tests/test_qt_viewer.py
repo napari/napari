@@ -298,7 +298,7 @@ def test_export_figure(make_napari_viewer, tmp_path):
     assert img.shape == (250, 250, 4)
 
 
-def test_export_rois(make_napari_viewer, tmp_path):
+def test_export_rois(make_napari_viewer, tmp_path, qapp):
     # Create an image with a defined shape (100x100) and a square in the middle
 
     img = np.zeros((100, 100), dtype=np.uint8)
@@ -334,7 +334,11 @@ def test_export_rois(make_napari_viewer, tmp_path):
         (tmp_path / f'roi_{i}.png').exists()
         for i in range(len(roi_shapes_data))
     )
-    assert all(roi.shape == (20, 20, 4) for roi in test_roi)
+    scaling = viewer.window._qt_window.screen().devicePixelRatio()
+
+    assert all(
+        roi.shape == (20 * scaling, 20 * scaling, 4) for roi in test_roi
+    )
     assert viewer.camera.center == camera_center
     assert viewer.camera.zoom == camera_zoom
 
@@ -347,9 +351,9 @@ def test_export_rois(make_napari_viewer, tmp_path):
     expected_values = [0, 100, 100, 100, 100, 400]
     for index, roi_img in enumerate(test_roi):
         gray_img = roi_img[..., 0]
-        assert np.count_nonzero(gray_img) == expected_values[index], (
-            f'Wrong number of white pixels in the ROI {index}'
-        )
+        assert (
+            np.count_nonzero(gray_img) == expected_values[index] * scaling**2
+        ), f'Wrong number of white pixels in the ROI {index}'
 
     # Not testing the exact content of the screenshot. It seems not to work within the test, but manual testing does.
     viewer.close()
