@@ -368,9 +368,12 @@ class Shape(ABC):
 
         if face and not is_collinear(data2d):
             vertices, triangles = triangulate_face(data2d)
-            if ndim == 3:
-                # axis and value can be None, but not if ndim == 3, so ignore
-                vertices = np.insert(vertices, axis, value, axis=1)  # type:ignore[arg-type]
+            if ndim == 3 and axis is not None and value is not None:
+                # axis and value can be None if data 3D but not limited to an
+                # axis-aligned plane. However in that situation data2d will be
+                # empty, is_collinear is True, and we will never get here. But
+                # we check anyway for mypy's sake
+                vertices = np.insert(vertices, axis, value, axis=1)
             if len(triangles) > 0:
                 self._face_vertices = vertices
                 self._face_triangles = triangles
