@@ -469,7 +469,8 @@ class _QtMainWindow(QMainWindow):
         shimmed_plugins = set(pm.get_shimmed_plugins())
         if settings.plugins.warn_on_shimmed_plugin == 'new':
             new_plugins = (
-                shimmed_plugins - settings.plugins.warned_on_shim_plugins
+                shimmed_plugins
+                - settings.plugins.already_warned_shimmed_plugins
             )
         else:
             new_plugins = shimmed_plugins
@@ -484,7 +485,7 @@ class _QtMainWindow(QMainWindow):
         # will result in a new warning if napari has been launched
         # in the meantime
         if accepted:
-            settings.plugins.warned_on_shim_plugins = shimmed_plugins
+            settings.plugins.already_warned_shimmed_plugins = shimmed_plugins
 
     def close(self, quit_app=False, confirm_need=False):
         """Override to handle closing app or just the window."""

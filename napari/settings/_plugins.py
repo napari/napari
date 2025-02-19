@@ -25,18 +25,14 @@ class PluginsSettings(EventedSettings):
         ),
         requires_restart=True,
     )
-    # TODO: what happens with shim failures
     warn_on_shimmed_plugin: PluginShimWarningLevel = Field(
         PluginShimWarningLevel.ALWAYS,
         title=trans._('npe1 plugin warning'),
         description=trans._(
             'Choose when to be warned about npe1 plugins.\nUse "always" to be warned about plugins on each startup.\nUse "new" to be warned only when an npe1 plugin has been newly installed.\n'
         ),
-        # TODO: does it require restart?
     )
-    # TODO: rename
-    # TODO: should be popping from this set on uninstall and adding on warning
-    warned_on_shim_plugins: set = Field(
+    already_warned_shimmed_plugins: set = Field(
         default_factory=set,
         title=trans._('Shimmed plugins already warned'),
         description=trans._(
