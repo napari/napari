@@ -217,10 +217,81 @@ class QtViewerButtons(QFrame):
         )
         self.perspective_slider = sld
 
+        # make widget connected to camera zoom
+        zoom = QDoubleSpinBox(self)
+        zoom.setRange(0.01, 100)
+        zoom.setValue(self.viewer.camera.zoom)
+        zoom.setSingleStep(0.1)
+        zoom.setDecimals(2)
+        zoom.valueChanged.connect(
+            lambda v: setattr(self.viewer.camera, 'zoom', v)
+        )
+        self.zoom_spinbox = zoom
+
+        # make widget connected to camera angle
+        rx = QDoubleSpinBox(self)
+        rx.setRange(-180, 180)
+        rx.setValue(self.viewer.camera.angles[0])
+        rx.setSingleStep(5)
+        rx.setDecimals(2)
+        rx.valueChanged.connect(
+            lambda v: setattr(
+                self.viewer.camera,
+                'angles',
+                (
+                    v,
+                    self.viewer.camera.angles[1],
+                    self.viewer.camera.angles[2],
+                ),
+            )
+        )
+
+        ry = QDoubleSpinBox(self)
+        ry.setRange(-180, 180)
+        ry.setValue(self.viewer.camera.angles[1])
+        ry.setSingleStep(5)
+        ry.setDecimals(2)
+        ry.valueChanged.connect(
+            lambda v: setattr(
+                self.viewer.camera,
+                'angles',
+                (
+                    self.viewer.camera.angles[0],
+                    v,
+                    self.viewer.camera.angles[2],
+                ),
+            )
+        )
+
+        rz = QDoubleSpinBox(self)
+        rz.setRange(-180, 180)
+        rz.setValue(self.viewer.camera.angles[2])
+        rz.setSingleStep(5)
+        rz.setDecimals(2)
+        rz.valueChanged.connect(
+            lambda v: setattr(
+                self.viewer.camera,
+                'angles',
+                (
+                    self.viewer.camera.angles[0],
+                    self.viewer.camera.angles[1],
+                    v,
+                ),
+            )
+        )
+
         # make layout
-        layout = QHBoxLayout()
+        layout = QVBoxLayout()
         layout.addWidget(QLabel(trans._('Perspective'), self))
         layout.addWidget(sld)
+        layout.addWidget(QLabel(trans._('Zoom'), self))
+        layout.addWidget(zoom)
+        layout.addWidget(QLabel(trans._('X Angle'), self))
+        layout.addWidget(rx)
+        layout.addWidget(QLabel(trans._('Y Angle'), self))
+        layout.addWidget(ry)
+        layout.addWidget(QLabel(trans._('Z Angle'), self))
+        layout.addWidget(rz)
 
         # popup and show
         pop = QtPopup(self)
