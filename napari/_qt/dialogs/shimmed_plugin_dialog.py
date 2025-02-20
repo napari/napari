@@ -21,21 +21,21 @@ class ShimmedPluginDialog(QDialog):
         icon_label = QWidget()
         icon_label.setObjectName('warning_icon_element')
         plugin_info_text = """
-The following plugins are using the old plugin engine and have been
-automatically converted to the new plugin engine:
+The following plugins use napari's old plugin engine. These plugins have been
+automatically converted to the new plugin engine, npe2:
         """
         plugin_text = '\n'.join(plugins)
         info_text = """
-Some functionality e.g. code designed to run on import may not work as expected.
+While the conversion should work for these plugins, some plugin functionality, such as code designed to run on import, may not work as expected.
 
-If you notice broken functionality in any of these plugins, turn off
+If you notice an error in any of these plugins, drop back to
+using the old plugin engine by turning off
 the 'Use npe2 adaptor' setting in the plugin preferences.
 
-This setting will cease to exist in napari 0.7.0 and these plugins
-will only be usable if they can be automatically converted.
+The 'Use npe2 adaptor' setting will be removed in napari 0.7.0, and plugins
+will only be usable if they can be automatically converted or updated to use npe2.
 
-Please contact the plugin author to ask them about updating their plugin to use npe2,
-the new plugin engine.
+For plugin upgrades, contact the plugin's author and request npe2 updates.
         """
         self.only_new_checkbox = QCheckBox(
             trans._('Only warn me about newly installed plugins.')

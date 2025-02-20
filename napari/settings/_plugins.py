@@ -29,7 +29,7 @@ class PluginsSettings(EventedSettings):
         PluginShimWarningLevel.ALWAYS,
         title=trans._('npe1 plugin warning'),
         description=trans._(
-            'Choose when to be warned about npe1 plugins.\nUse "always" to be warned about plugins on each startup.\nUse "new" to be warned only when an npe1 plugin has been newly installed.\n'
+            'Choose when to be warned if plugins do not support npe2.\nUse "always" to be warned about plugins on each startup.\nUse "new" to be warned only when an old npe1 plugin is newly installed.\n'
         ),
     )
     already_warned_shimmed_plugins: set = Field(
