@@ -334,6 +334,10 @@ def test_export_rois(make_napari_viewer, tmp_path):
         (tmp_path / f'roi_{i}.png').exists()
         for i in range(len(roi_shapes_data))
     )
+
+    # we get scaling to adjust the expected size of ROI images
+    # and number of white pixels in the ROI screenshots
+    # it may not work for screens with fractional scaling
     scaling = viewer.window._qt_window.screen().devicePixelRatio()
 
     assert all(
