@@ -76,6 +76,6 @@ class PluginsSettings(EventedSettings):
         preferences_exclude = (
             'schema_version',
             'disabled_plugins',
-            'warned_on_shim_plugins',
+            'already_warned_shimmed_plugins',
             'extension2writer',
         )
