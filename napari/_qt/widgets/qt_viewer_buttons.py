@@ -240,6 +240,7 @@ class QtViewerButtons(QFrame):
         perspective.valueChanged.connect(
             lambda v: setattr(self.viewer.camera, 'perspective', v)
         )
+        self.perspective = perspective
 
         # make widget connected to camera zoom
         zoom = QDoubleSpinBox(popup)
@@ -250,6 +251,7 @@ class QtViewerButtons(QFrame):
         zoom.valueChanged.connect(
             lambda v: setattr(self.viewer.camera, 'zoom', v)
         )
+        self.zoom = zoom
 
         # make widget connected to camera angle
         rx = QDoubleSpinBox(popup)
@@ -268,6 +270,7 @@ class QtViewerButtons(QFrame):
                 ),
             )
         )
+        self.rx = rx
 
         ry = QDoubleSpinBox(popup)
         ry.setRange(-180, 180)
@@ -285,6 +288,7 @@ class QtViewerButtons(QFrame):
                 ),
             )
         )
+        self.ry = ry
 
         rz = QDoubleSpinBox(popup)
         rz.setRange(-180, 180)
@@ -302,6 +306,7 @@ class QtViewerButtons(QFrame):
                 ),
             )
         )
+        self.rz = rz
 
         # make layout
         form_layout = QFormLayout()
