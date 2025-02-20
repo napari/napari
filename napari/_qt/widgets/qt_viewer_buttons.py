@@ -254,11 +254,16 @@ class QtViewerButtons(QFrame):
         self.zoom = zoom
 
         # make widget connected to camera angle
+        ANGLE_MIN = -180
+        ANGLE_MAX = 180
+        ANGLE_STEP = 5
+        ANGLE_DECIMALS = 0
+
         rx = QDoubleSpinBox(popup)
-        rx.setRange(-180, 180)
+        rx.setRange(ANGLE_MIN, ANGLE_MAX)
         rx.setValue(self.viewer.camera.angles[0])
-        rx.setSingleStep(5)
-        rx.setDecimals(2)
+        rx.setSingleStep(ANGLE_STEP)
+        rx.setDecimals(ANGLE_DECIMALS)
         rx.valueChanged.connect(
             lambda v: setattr(
                 self.viewer.camera,
@@ -273,10 +278,10 @@ class QtViewerButtons(QFrame):
         self.rx = rx
 
         ry = QDoubleSpinBox(popup)
-        ry.setRange(-180, 180)
+        ry.setRange(ANGLE_MIN, ANGLE_MAX)
         ry.setValue(self.viewer.camera.angles[1])
-        ry.setSingleStep(5)
-        ry.setDecimals(2)
+        ry.setSingleStep(ANGLE_STEP)
+        ry.setDecimals(ANGLE_DECIMALS)
         ry.valueChanged.connect(
             lambda v: setattr(
                 self.viewer.camera,
@@ -291,10 +296,10 @@ class QtViewerButtons(QFrame):
         self.ry = ry
 
         rz = QDoubleSpinBox(popup)
-        rz.setRange(-180, 180)
+        rz.setRange(ANGLE_MIN, ANGLE_MAX)
         rz.setValue(self.viewer.camera.angles[2])
-        rz.setSingleStep(5)
-        rz.setDecimals(2)
+        rz.setSingleStep(ANGLE_STEP)
+        rz.setDecimals(ANGLE_DECIMALS)
         rz.valueChanged.connect(
             lambda v: setattr(
                 self.viewer.camera,
@@ -308,13 +313,18 @@ class QtViewerButtons(QFrame):
         )
         self.rz = rz
 
+        angles_layout = QVBoxLayout()
+        angles_layout.addWidget(rx)
+        angles_layout.addWidget(ry)
+        angles_layout.addWidget(rz)
+
         # make layout
         form_layout = QFormLayout()
         form_layout.insertRow(0, QLabel(trans._('Perspective:')), perspective)
         form_layout.insertRow(1, QLabel(trans._('Zoom:')), zoom)
-        form_layout.insertRow(2, QLabel(trans._('X Angle:')), rx)
-        form_layout.insertRow(3, QLabel(trans._('Y Angle:')), ry)
-        form_layout.insertRow(4, QLabel(trans._('Z Angle:')), rz)
+        form_layout.insertRow(
+            2, QLabel(trans._('\nAngles (XYZ):')), angles_layout
+        )
 
         help_layout = QVBoxLayout()
         help_layout.addWidget(perspective_help_symbol)
