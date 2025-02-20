@@ -28,7 +28,7 @@ We're working on [tutorials](https://napari.org/stable/tutorials/), but you can 
 It is recommended to install napari into a virtual environment, like this:
 
 ```sh
-conda create -y -n napari-env -c conda-forge python=3.9
+conda create -y -n napari-env -c conda-forge python=3.11
 conda activate napari-env
 python -m pip install "napari[all]"
 ```
@@ -88,7 +88,9 @@ You can see details of [the project roadmap here](https://napari.org/stable/road
 
 Contributions are encouraged! Please read our [contributing guide](https://napari.org/dev/developers/contributing/index.html) to get started. Given that we're in an early stage, you may want to reach out on our [GitHub Issues](https://github.com/napari/napari/issues) before jumping in. 
 
-If you want to contribute or edit to our documentation, please go to [napari/docs](https://github.com/napari/docs). 
+If you want to contribute to or edit our documentation, please go to [napari/docs](https://github.com/napari/docs).
+
+Visit our [project weather report dashboard](https://napari.org/weather-report/) to see metrics and how development is progressing.
 
 ## code of conduct
 

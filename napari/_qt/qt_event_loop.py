@@ -3,13 +3,13 @@ from __future__ import annotations
 import os
 import sys
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, cast
 from warnings import warn
 
 from qtpy import PYQT5, PYSIDE2
 from qtpy.QtCore import QDir, Qt
 from qtpy.QtGui import QIcon
-from qtpy.QtWidgets import QApplication
+from qtpy.QtWidgets import QApplication, QWidget
 
 from napari import Viewer, __version__
 from napari._qt.dialogs.qt_notification import NapariQtNotification
@@ -61,6 +61,36 @@ _app_ref = None
 _IPYTHON_WAS_HERE_FIRST = 'IPython' in sys.modules
 
 
+def _focus_changed(old: QWidget | None, new: QWidget | None):
+    if old is not None and new is not None:
+        return  # ignore focus changes between two widgets
+    if old is None and new is None:
+        return  # this should not happen
+    if not isinstance(old, QWidget):
+        return  # ignore event happened during teardown of test
+    if old is None:
+        start_timer = True
+        window = new.window()
+    else:
+        start_timer = False
+        window = old.window()
+
+    from napari._qt.qt_main_window import _QtMainWindow
+
+    if not isinstance(window, _QtMainWindow):
+        return
+    notifications = cast(
+        list[NapariQtNotification], window.findChildren(NapariQtNotification)
+    )
+    if not notifications:
+        return
+    if start_timer:
+        notifications[-1].timer_start()
+    else:
+        for notification in notifications:
+            notification.timer_stop()
+
+
 # TODO: Remove in napari 0.6.0
 def get_app(*args, **kwargs) -> QApplication:
     """Get or create the Qt QApplication. Now deprecated, use `get_qapp`."""
@@ -78,13 +108,13 @@ def get_app(*args, **kwargs) -> QApplication:
 
 def get_qapp(
     *,
-    app_name: Optional[str] = None,
-    app_version: Optional[str] = None,
-    icon: Optional[str] = None,
-    org_name: Optional[str] = None,
-    org_domain: Optional[str] = None,
-    app_id: Optional[str] = None,
-    ipy_interactive: Optional[bool] = None,
+    app_name: str | None = None,
+    app_version: str | None = None,
+    icon: str | None = None,
+    org_name: str | None = None,
+    org_domain: str | None = None,
+    app_id: str | None = None,
+    ipy_interactive: bool | None = None,
 ) -> QApplication:
     """Get or create the Qt QApplication.
 
@@ -203,11 +233,6 @@ def get_qapp(
     if _IPYTHON_WAS_HERE_FIRST:
         _try_enable_ipython_gui('qt' if ipy_interactive else None)
 
-    notification_manager.notification_ready.connect(
-        NapariQtNotification.show_notification
-    )
-    notification_manager.notification_ready.connect(show_console_notification)
-
     if perf_config and not perf_config.patched:
         # Will patch based on config file.
         perf_config.patch_callables()
@@ -229,6 +254,15 @@ def get_qapp(
             QDir.addSearchPath(f'theme_{name}', str(_theme_path(name)))
 
         register_threadworker_processors()
+
+        notification_manager.notification_ready.connect(
+            NapariQtNotification.show_notification
+        )
+        notification_manager.notification_ready.connect(
+            show_console_notification
+        )
+
+        app.focusChanged.connect(_focus_changed)
 
     _app_ref = app  # prevent garbage collection
 

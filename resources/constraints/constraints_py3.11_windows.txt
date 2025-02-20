@@ -10,16 +10,14 @@ appdirs==1.4.4
     # via
     #   napari (napari_repo/pyproject.toml)
     #   npe2
-asciitree==0.3.3
-    # via zarr
 asttokens==3.0.0
     # via stack-data
-attrs==24.3.0
+attrs==25.1.0
     # via
     #   hypothesis
     #   jsonschema
     #   referencing
-babel==2.16.0
+babel==2.17.0
     # via
     #   napari (napari_repo/pyproject.toml)
     #   sphinx
@@ -27,17 +25,17 @@ build==1.2.2.post1
     # via npe2
 cachey==0.2.1
     # via napari (napari_repo/pyproject.toml)
-certifi==2024.12.14
+certifi==2025.1.31
     # via
     #   napari (napari_repo/pyproject.toml)
     #   requests
-charset-normalizer==3.4.0
+charset-normalizer==3.4.1
     # via requests
 click==8.1.8
     # via
     #   dask
     #   typer
-cloudpickle==3.1.0
+cloudpickle==3.1.1
     # via dask
 colorama==0.4.6
     # via
@@ -51,18 +49,22 @@ comm==0.2.2
     # via ipykernel
 contourpy==1.3.1
     # via matplotlib
-coverage==7.6.9
+coverage==7.6.12
     # via
     #   napari (napari_repo/pyproject.toml)
     #   pytest-cov
+crc32c==2.7.1
+    # via numcodecs
 cycler==0.12.1
     # via matplotlib
-dask==2024.12.1
+dask==2025.2.0
     # via napari (napari_repo/pyproject.toml)
-debugpy==1.8.11
+debugpy==1.8.12
     # via ipykernel
 decorator==5.1.1
     # via ipython
+deprecated==1.2.18
+    # via numcodecs
 distlib==0.3.9
     # via virtualenv
 docstring-parser==0.16
@@ -71,11 +73,11 @@ docstring-parser==0.16
     #   magicgui
 docutils==0.21.2
     # via sphinx
-executing==2.1.0
-    # via stack-data
-fasteners==0.19
+donfig==0.8.1.post1
     # via zarr
-filelock==3.16.1
+executing==2.2.0
+    # via stack-data
+filelock==3.17.0
     # via
     #   torch
     #   virtualenv
@@ -83,11 +85,11 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.55.3
+fonttools==4.56.0
     # via matplotlib
 freetype-py==2.5.1
     # via vispy
-fsspec==2024.12.0
+fsspec==2025.2.0
     # via
     #   napari (napari_repo/pyproject.toml)
     #   dask
@@ -96,18 +98,18 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.122.7
+hypothesis==6.125.3
     # via napari (napari_repo/pyproject.toml)
 idna==3.10
     # via requests
-imageio==2.36.1
+imageio==2.37.0
     # via
     #   napari (napari_repo/pyproject.toml)
     #   napari-svg
     #   scikit-image
 imagesize==1.4.1
     # via sphinx
-importlib-metadata==8.5.0
+importlib-metadata==8.6.1
     # via dask
 in-n-out==0.2.1
     # via app-model
@@ -118,7 +120,7 @@ ipykernel==6.29.5
     #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari-console
     #   qtconsole
-ipython==8.31.0
+ipython==8.32.0
     # via
     #   napari (napari_repo/pyproject.toml)
     #   ipykernel
@@ -142,7 +144,7 @@ jupyter-core==5.7.2
     #   ipykernel
     #   jupyter-client
     #   qtconsole
-kiwisolver==1.4.7
+kiwisolver==1.4.8
     # via
     #   matplotlib
     #   vispy
@@ -150,11 +152,11 @@ lazy-loader==0.4
     # via
     #   napari (napari_repo/pyproject.toml)
     #   scikit-image
-llvmlite==0.43.0
+llvmlite==0.44.0
     # via numba
 locket==1.0.0
     # via partd
-lxml==5.3.0
+lxml==5.3.1
     # via
     #   napari (napari_repo/pyproject.toml)
     #   lxml-html-clean
@@ -174,7 +176,7 @@ matplotlib-inline==0.1.7
     #   ipython
 mdurl==0.1.2
     # via markdown-it-py
-ml-dtypes==0.5.0
+ml-dtypes==0.5.1
     # via tensorstore
 mouseinfo==0.1.3
     # via pyautogui
@@ -184,9 +186,9 @@ napari-console==0.1.3
     # via napari (napari_repo/pyproject.toml)
 napari-plugin-engine==0.2.0
     # via napari (napari_repo/pyproject.toml)
-napari-plugin-manager==0.1.3
+napari-plugin-manager==0.1.4
     # via napari (napari_repo/pyproject.toml)
-napari-svg==0.2.0
+napari-svg==0.2.1
     # via napari (napari_repo/pyproject.toml)
 nest-asyncio==1.6.0
     # via ipykernel
@@ -198,11 +200,11 @@ npe2==0.7.7
     # via
     #   napari (napari_repo/pyproject.toml)
     #   napari-plugin-manager
-numba==0.60.0
+numba==0.61.0
     # via napari (napari_repo/pyproject.toml)
-numcodecs==0.13.1
+numcodecs==0.15.1
     # via zarr
-numpy==2.0.2
+numpy==2.1.3
     # via
     #   napari (napari_repo/pyproject.toml)
     #   contourpy
@@ -214,6 +216,7 @@ numpy==2.0.2
     #   numba
     #   numcodecs
     #   pandas
+    #   partsegcore-compiled-backend
     #   scikit-image
     #   scipy
     #   tensorstore
@@ -231,6 +234,7 @@ packaging==24.2
     #   ipykernel
     #   lazy-loader
     #   matplotlib
+    #   napari-plugin-manager
     #   pooch
     #   pytest
     #   qtconsole
@@ -239,6 +243,7 @@ packaging==24.2
     #   sphinx
     #   vispy
     #   xarray
+    #   zarr
 pandas==2.2.3
     # via
     #   napari (napari_repo/pyproject.toml)
@@ -247,7 +252,9 @@ parso==0.8.4
     # via jedi
 partd==1.4.2
     # via dask
-pillow==11.0.0
+partsegcore-compiled-backend==0.15.11
+    # via napari (napari_repo/pyproject.toml)
+pillow==11.1.0
     # via
     #   napari (napari_repo/pyproject.toml)
     #   imageio
@@ -256,7 +263,7 @@ pillow==11.0.0
     #   scikit-image
 pint==0.24.4
     # via napari (napari_repo/pyproject.toml)
-pip==24.3.1
+pip==25.0.1
     # via napari-plugin-manager
 platformdirs==4.3.6
     # via
@@ -274,13 +281,13 @@ pooch==1.8.2
     #   scikit-image
 pretend==1.0.9
     # via napari (napari_repo/pyproject.toml)
-prompt-toolkit==3.0.48
+prompt-toolkit==3.0.50
     # via ipython
-psutil==6.1.1
+psutil==7.0.0
     # via
     #   napari (napari_repo/pyproject.toml)
     #   ipykernel
-psygnal==0.11.1
+psygnal==0.12.0
     # via
     #   napari (napari_repo/pyproject.toml)
     #   app-model
@@ -290,10 +297,11 @@ pure-eval==0.2.3
     # via stack-data
 pyautogui==0.9.54
     # via napari (napari_repo/pyproject.toml)
-pyconify==0.1.6
+pyconify==0.2.1
     # via superqt
-pydantic==2.10.4
+pydantic==2.10.6
     # via
+    #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari (napari_repo/pyproject.toml)
     #   app-model
     #   npe2
@@ -304,7 +312,7 @@ pydantic-core==2.27.2
     # via pydantic
 pygetwindow==0.0.9
     # via pyautogui
-pygments==2.18.0
+pygments==2.19.1
     # via
     #   napari (napari_repo/pyproject.toml)
     #   ipython
@@ -314,11 +322,11 @@ pygments==2.18.0
     #   superqt
 pymsgbox==1.0.9
     # via pyautogui
-pyopengl==3.1.6
+pyopengl==3.1.9
     # via
     #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari (napari_repo/pyproject.toml)
-pyparsing==3.2.0
+pyparsing==3.2.1
     # via matplotlib
 pyperclip==1.9.0
     # via mouseinfo
@@ -328,13 +336,13 @@ pyqt5==5.15.11
     # via napari (napari_repo/pyproject.toml)
 pyqt5-qt5==5.15.2
     # via pyqt5
-pyqt5-sip==12.16.1
+pyqt5-sip==12.17.0
     # via pyqt5
-pyqt6==6.8.0
+pyqt6==6.8.1
     # via napari (napari_repo/pyproject.toml)
-pyqt6-qt6==6.8.1
+pyqt6-qt6==6.8.2
     # via pyqt6
-pyqt6-sip==13.9.1
+pyqt6-sip==13.10.0
     # via pyqt6
 pyrect==0.2.0
     # via pygetwindow
@@ -375,7 +383,7 @@ python-dateutil==2.9.0.post0
     #   pandas
 pytweening==1.2.0
     # via pyautogui
-pytz==2024.2
+pytz==2025.1
     # via pandas
 pywin32==308
     # via
@@ -385,8 +393,9 @@ pyyaml==6.0.2
     # via
     #   napari (napari_repo/pyproject.toml)
     #   dask
+    #   donfig
     #   npe2
-pyzmq==26.2.0
+pyzmq==26.2.1
     # via
     #   ipykernel
     #   jupyter-client
@@ -394,7 +403,7 @@ qtconsole==5.6.1
     # via
     #   napari (napari_repo/pyproject.toml)
     #   napari-console
-qtpy==2.4.2
+qtpy==2.4.3
     # via
     #   napari (napari_repo/pyproject.toml)
     #   magicgui
@@ -402,7 +411,7 @@ qtpy==2.4.2
     #   napari-plugin-manager
     #   qtconsole
     #   superqt
-referencing==0.35.1
+referencing==0.36.2
     # via
     #   jsonschema
     #   jsonschema-specifications
@@ -421,9 +430,9 @@ rpds-py==0.22.3
     # via
     #   jsonschema
     #   referencing
-scikit-image==0.25.0
+scikit-image==0.25.1
     # via napari (napari_repo/pyproject.toml)
-scipy==1.14.1
+scipy==1.15.2
     # via
     #   napari (napari_repo/pyproject.toml)
     #   scikit-image
@@ -456,7 +465,7 @@ sphinxcontrib-serializinghtml==2.0.0
     # via sphinx
 stack-data==0.6.3
     # via ipython
-superqt==0.7.0
+superqt==0.7.1
     # via
     #   napari (napari_repo/pyproject.toml)
     #   magicgui
@@ -469,20 +478,20 @@ tensorstore==0.1.71
     # via
     #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari (napari_repo/pyproject.toml)
-tifffile==2024.12.12
+tifffile==2025.1.10
     # via
     #   napari (napari_repo/pyproject.toml)
     #   scikit-image
 tomli==2.2.1
     # via coverage
-tomli-w==1.1.0
+tomli-w==1.2.0
     # via npe2
 toolz==1.0.0
     # via
     #   napari (napari_repo/pyproject.toml)
     #   dask
     #   partd
-torch==2.5.1
+torch==2.6.0
     # via napari (napari_repo/pyproject.toml)
 tornado==6.4.2
     # via
@@ -499,7 +508,7 @@ traitlets==5.14.3
     #   jupyter-core
     #   matplotlib-inline
     #   qtconsole
-triangle==20230923
+triangle==20250106
     # via napari (napari_repo/pyproject.toml)
 typer==0.15.1
     # via npe2
@@ -514,14 +523,16 @@ typing-extensions==4.12.2
     #   pint
     #   pydantic
     #   pydantic-core
+    #   referencing
     #   superqt
     #   torch
     #   typer
-tzdata==2024.2
+    #   zarr
+tzdata==2025.1
     # via pandas
 urllib3==2.3.0
     # via requests
-virtualenv==20.28.0
+virtualenv==20.29.2
     # via napari (napari_repo/pyproject.toml)
 vispy==0.14.3
     # via
@@ -529,13 +540,14 @@ vispy==0.14.3
     #   napari-svg
 wcwidth==0.2.13
     # via prompt-toolkit
-wrapt==1.16.0
+wrapt==1.17.2
     # via
     #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari (napari_repo/pyproject.toml)
-xarray==2024.11.0
+    #   deprecated
+xarray==2025.1.2
     # via napari (napari_repo/pyproject.toml)
-zarr==2.18.4
+zarr==3.0.3
     # via
     #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari (napari_repo/pyproject.toml)

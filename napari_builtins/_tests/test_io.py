@@ -1,6 +1,5 @@
 import csv
 import os
-from importlib.metadata import version
 from pathlib import Path
 from typing import NamedTuple
 from uuid import uuid4
@@ -12,7 +11,6 @@ import numpy as np
 import pytest
 import tifffile
 import zarr
-from packaging.version import parse as parse_version
 
 from napari_builtins.io._read import (
     _guess_layer_type_from_column_names,
@@ -114,11 +112,11 @@ def test_zarr_multiscale(tmp_path):
     root = zarr.open_group(fout, mode='a')
     for i in range(len(multiscale)):
         shape = 20 // 2**i
-        z = root.create_dataset(str(i), shape=(shape,) * 2)
+        z = root.create_dataset(str(i), shape=(shape,) * 2, dtype=np.float64)
         z[:] = multiscale[i]
     multiscale_in = magic_imread([fout])
     assert len(multiscale) == len(multiscale_in)
-    for images, images_in in zip(multiscale, multiscale_in):
+    for images, images_in in zip(multiscale, multiscale_in, strict=False):
         np.testing.assert_array_equal(images, images_in)
 
 
@@ -302,7 +300,10 @@ def test_irregular_images(write_spec, stack):
     images = magic_imread(fnames, use_dask=False, stack=stack)
     assert isinstance(images, list)
     assert len(images) == 2
-    assert all(img.shape == spec.shape for img, spec in zip(images, specs))
+    assert all(
+        img.shape == spec.shape
+        for img, spec in zip(images, specs, strict=False)
+    )
 
 
 def test_add_zarr(write_spec):
@@ -321,12 +322,6 @@ def test_add_zarr_1d_array_is_ignored(tmp_path):
     assert npe2.read([image_path], stack=False) == [(None,)]
 
 
-@pytest.mark.xfail(
-    parse_version(version('zarr')) >= parse_version('3.0.0a0')
-    and os.name == 'nt',
-    reason='zarr 3 return incorrect key in windows',
-    strict=True,
-)
 def test_add_many_zarr_1d_array_is_ignored(tmp_path):
     # For more details: https://github.com/napari/napari/issues/1471
     zarr_dir = str(tmp_path / 'data.zarr')

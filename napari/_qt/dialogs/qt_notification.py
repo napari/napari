@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
-from typing import Callable, Optional, Union
+from collections.abc import Callable, Sequence
+from typing import cast
 
 from qtpy.QtCore import (
     QEasingCurve,
@@ -77,8 +77,8 @@ class NapariQtNotification(QDialog):
     def __init__(
         self,
         message: str,
-        severity: Union[str, NotificationSeverity] = 'WARNING',
-        source: Optional[str] = None,
+        severity: str | NotificationSeverity = 'WARNING',
+        source: str | None = None,
         actions: ActionSequence = (),
         parent=None,
     ) -> None:
@@ -158,14 +158,34 @@ class NapariQtNotification(QDialog):
         self.slide_in()
         if self.parent() is not None and not self.parent().isActiveWindow():
             return
+        if self.parent() is not None:
+            notifications = cast(
+                list[NapariQtNotification],
+                self.parent().findChildren(NapariQtNotification),
+            )
+            for notification in notifications:
+                notification.timer_stop()
         if self.DISMISS_AFTER > 0:
             self.timer.setInterval(self.DISMISS_AFTER)
             self.timer.setSingleShot(True)
             self.timer.timeout.connect(self.close_with_fade)
             self.timer.start()
 
-    def mouseMoveEvent(self, event):
+    def enterEvent(self, event):
         """On hover, stop the self-destruct timer"""
+        self.timer_stop()
+
+    def leaveEvent(self, event):
+        """On hover exit, restart the self-destruct timer"""
+        self.timer_start()
+
+    def timer_start(self):
+        """Start the self-destruct timer"""
+        if self.DISMISS_AFTER > 0:
+            self.timer.start()
+
+    def timer_stop(self):
+        """Stop the self-destruct timer"""
         self.timer.stop()
 
     def mouseDoubleClickEvent(self, event):
@@ -173,9 +193,16 @@ class NapariQtNotification(QDialog):
         self.toggle_expansion()
 
     def close(self):
-        self.timer.stop()
+        self.timer_stop()
         self.opacity_anim.stop()
         self.geom_anim.stop()
+        if self.parent() is not None:
+            notifications = cast(
+                list[NapariQtNotification],
+                self.parent().findChildren(NapariQtNotification),
+            )
+            if len(notifications) > 1 and notifications[-1] == self:
+                notifications[-2].timer_start()
         super().close()
 
     def close_with_fade(self):

@@ -1,5 +1,4 @@
 from collections.abc import Iterable
-from typing import Optional
 
 import numpy as np
 import numpy.typing as npt
@@ -44,11 +43,11 @@ def status_format(value):
 
 
 def generate_layer_coords_status(
-    position: Optional[npt.ArrayLike], value: Optional[tuple]
+    position: npt.ArrayLike | None, value: tuple | None
 ) -> str:
     if position is not None:
         full_coord = map(str, np.round(np.array(position)).astype(int))
-        msg = f" [{' '.join(full_coord)}]"
+        msg = f' [{" ".join(full_coord)}]'
     else:
         msg = ''
 
@@ -83,7 +82,7 @@ def generate_layer_status(name, position, value):
     """
     if position is not None:
         full_coord = map(str, np.round(position).astype(int))
-        msg = f"{name} [{' '.join(full_coord)}]"
+        msg = f'{name} [{" ".join(full_coord)}]'
     else:
         msg = f'{name}'
 

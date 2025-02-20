@@ -13,6 +13,9 @@ from napari.components import ViewerModel
 from napari.errors import MultipleReaderError, ReaderPluginError
 from napari.errors.reader_errors import NoAvailableReaderError
 from napari.layers import Image
+from napari.layers.shapes._tests.conftest import (
+    ten_four_corner,  # noqa: F401
+)  # import to not put this data in top level conftest.py
 from napari.settings import get_settings
 from napari.utils.colormaps import AVAILABLE_COLORMAPS, Colormap
 from napari.utils.events.event import WarningEmitter
@@ -204,14 +207,12 @@ def test_add_vectors():
     assert viewer.dims.ndim == 2
 
 
-def test_add_shapes():
+def test_add_shapes(ten_four_corner):  # noqa: F811
     """Test adding shapes."""
     viewer = ViewerModel()
-    np.random.seed(0)
-    data = 20 * np.random.random((10, 4, 2))
-    viewer.add_shapes(data)
+    viewer.add_shapes(ten_four_corner)
     assert len(viewer.layers) == 1
-    assert np.array_equal(viewer.layers[0].data, data)
+    assert np.array_equal(viewer.layers[0].data, ten_four_corner)
     assert viewer.dims.ndim == 2
 
 
@@ -226,7 +227,10 @@ def test_add_surface():
     viewer.add_surface(data)
     assert len(viewer.layers) == 1
     assert np.all(
-        [np.array_equal(vd, d) for vd, d in zip(viewer.layers[0].data, data)]
+        [
+            np.array_equal(vd, d)
+            for vd, d in zip(viewer.layers[0].data, data, strict=False)
+        ]
     )
     assert viewer.dims.ndim == 3
 
@@ -426,6 +430,7 @@ def test_grid():
     assert not viewer.grid.enabled
     assert viewer.grid.actual_shape(6) == (1, 1)
     assert viewer.grid.stride == 1
+    assert viewer.grid.spacing == 0
     translations = [layer._translate_grid for layer in viewer.layers]
     expected_translations = np.zeros((6, 2))
     np.testing.assert_allclose(translations, expected_translations)
@@ -435,6 +440,7 @@ def test_grid():
     assert viewer.grid.enabled
     assert viewer.grid.actual_shape(6) == (2, 3)
     assert viewer.grid.stride == 1
+    assert viewer.grid.spacing == 0
     translations = [layer._translate_grid for layer in viewer.layers]
     expected_translations = [
         [0, 0],
@@ -446,11 +452,27 @@ def test_grid():
     ]
     np.testing.assert_allclose(translations, expected_translations[::-1])
 
+    # test grid spacing, translation will be proportionally 0.1 larger: (0.1 * 15) = 16.5
+    viewer.grid.spacing = 0.1
+    assert viewer.grid.spacing == 0.1
+    translations = [layer._translate_grid for layer in viewer.layers]
+    expected_translations = [
+        [0, 0],
+        [0, 16.5],
+        [0, 33],
+        [16.5, 0],
+        [16.5, 16.5],
+        [16.5, 33],
+    ]
+    np.testing.assert_allclose(translations, expected_translations[::-1])
+    # reset spacing to make remaining translation calculations easier
+    viewer.grid.spacing = 0
     # return to stack view
     viewer.grid.enabled = False
     assert not viewer.grid.enabled
     assert viewer.grid.actual_shape(6) == (1, 1)
     assert viewer.grid.stride == 1
+    assert viewer.grid.spacing == 0
     translations = [layer._translate_grid for layer in viewer.layers]
     expected_translations = np.zeros((6, 2))
     np.testing.assert_allclose(translations, expected_translations)
@@ -461,6 +483,7 @@ def test_grid():
     assert viewer.grid.enabled
     assert viewer.grid.actual_shape(6) == (2, 2)
     assert viewer.grid.stride == -2
+    assert viewer.grid.spacing == 0
     translations = [layer._translate_grid for layer in viewer.layers]
     expected_translations = [
         [0, 0],
@@ -751,7 +774,7 @@ def test_update_scale():
     scale = (3.0, 2.0, 1.0)
     viewer.layers[0].scale = scale
     assert viewer.dims.range == tuple(
-        (0.0, (x - 1) * s, s) for x, s in zip(shape, scale)
+        (0.0, (x - 1) * s, s) for x, s in zip(shape, scale, strict=False)
     )
 
 

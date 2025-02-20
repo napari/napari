@@ -4,7 +4,6 @@ File with things that are useful for testing, but not to be fixtures
 
 import inspect
 from dataclasses import dataclass, field
-from typing import Optional, Union
 
 import numpy as np
 from docstring_parser import parse
@@ -19,18 +18,18 @@ class MouseEvent:
     type: str
     is_dragging: bool = False
     modifiers: list[str] = field(default_factory=list)
-    position: Union[tuple[int, int], tuple[int, int, int]] = (
+    position: tuple[int, int] | tuple[int, int, int] = (
         0,
         0,
     )  # world coords
     pos: np.ndarray = field(
         default_factory=lambda: np.zeros(2)
     )  # canvas coords
-    view_direction: Optional[list[float]] = None
-    up_direction: Optional[list[float]] = None
+    view_direction: list[float] | None = None
+    up_direction: list[float] | None = None
     dims_displayed: list[int] = field(default_factory=lambda: [0, 1])
-    delta: Optional[tuple[float, float]] = None
-    native: Optional[bool] = None
+    delta: tuple[float, float] | None = None
+    native: bool | None = None
 
 
 def read_only_mouse_event(*args, **kwargs):
@@ -50,13 +49,13 @@ def validate_all_params_in_docstring(func):
     # get only parameters from docstring
 
     signature = inspect.signature(func)
-    assert set(signature.parameters.keys()) == {
-        x.arg_name for x in params
-    }, 'Parameters in signature and docstring do not match'
-    for sig, doc in zip(signature.parameters.values(), params):
-        assert (
-            sig.name == doc.arg_name
-        ), 'Parameters in signature and docstring are not in the same order.'
+    assert set(signature.parameters.keys()) == {x.arg_name for x in params}, (
+        'Parameters in signature and docstring do not match'
+    )
+    for sig, doc in zip(signature.parameters.values(), params, strict=False):
+        assert sig.name == doc.arg_name, (
+            'Parameters in signature and docstring are not in the same order.'
+        )
         # assert sig.annotation == doc.type_name, f"Type of parameter {sig.name} in signature and docstring do not match"
 
 
@@ -70,9 +69,9 @@ def validate_kwargs_sorted(func):
         for x in signature.parameters.values()
         if x.kind == inspect.Parameter.KEYWORD_ONLY
     ]
-    assert kwargs_list == sorted(
-        kwargs_list
-    ), 'Keyword arguments are not sorted in function signature'
+    assert kwargs_list == sorted(kwargs_list), (
+        'Keyword arguments are not sorted in function signature'
+    )
 
 
 def validate_docstring_parent_class_consistency(klass, skip=('data', 'ndim')):
@@ -108,9 +107,9 @@ def validate_docstring_parent_class_consistency(klass, skip=('data', 'ndim')):
         for name, doc in params.items():
             if name not in base_parsed:
                 continue
-            assert (
-                doc.description == base_parsed[name].description
-            ), f'Description of parameter "{name}" in {klass} and {base_klass} do not match'
-            assert (
-                doc.type_name == base_parsed[name].type_name
-            ), f'Type annotation of parameter "{name}" in {klass} ({doc.type_name}) and {base_klass} ({base_parsed[name].type_name}) do not match'
+            assert doc.description == base_parsed[name].description, (
+                f'Description of parameter "{name}" in {klass} and {base_klass} do not match'
+            )
+            assert doc.type_name == base_parsed[name].type_name, (
+                f'Type annotation of parameter "{name}" in {klass} ({doc.type_name}) and {base_klass} ({base_parsed[name].type_name}) do not match'
+            )
