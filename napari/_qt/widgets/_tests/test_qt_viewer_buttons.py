@@ -102,7 +102,7 @@ def test_ndisplay_button_popup(qt_viewer_buttons, qtbot):
     # get viewer model and buttons
     viewer, viewer_buttons = qt_viewer_buttons
     assert viewer_buttons.ndisplayButton
-    
+
     # trigger popup for ndisplay==2
     viewer.dims.ndisplay = 2
     viewer_buttons.ndisplayButton.customContextMenuRequested.emit(QPoint())
@@ -111,7 +111,7 @@ def test_ndisplay_button_popup(qt_viewer_buttons, qtbot):
         if isinstance(widget, QtPopup):
             perspective_popup = widget
     assert perspective_popup
-    
+
     # check zoom slider change affects viewer camera zoom
     assert viewer_buttons.zoom
     viewer_buttons.zoom.setValue(3)
