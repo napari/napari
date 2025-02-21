@@ -288,12 +288,15 @@ class _ShapeTriangulationBaseShapeCount(_ShapeTriangulationBase):
 
 
 class ShapeTriangulationNonConvexSuite(_ShapeTriangulationBaseShapeCount):
-    params = [
-        (5_000,),
-        (128,),
-        ('polygon',),
-        (False,),
-    ]
+    skip_params = Skip(
+        always=lambda n_shapes,
+        n_points,
+        shape_type,
+        compiled_triangulation: n_shapes == 5000
+        and n_points == 128
+        and shape_type == 'polygon'
+        and not compiled_triangulation
+    )
 
     def setup(self, n_shapes, n_points, shape_type, compiled_triangulation):
         self.data = non_convex_cords(n_shapes, n_points)[4151:]
