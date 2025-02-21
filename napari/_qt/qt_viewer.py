@@ -462,7 +462,7 @@ class QtViewer(QSplitter):
             From https://docs.python.org/3/library/weakref.html: "Objects which
             support weak references include class instances, functions written
             in Python (but not in C), instance methods, sets, frozensets, some
-            file objects, generators, type objects, sockets, arrays, dequeues,
+            file objects, generators, type objects, sockets, arrays, deques,
             regular expression pattern objects, and code objects."
 
         Returns

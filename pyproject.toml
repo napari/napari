@@ -843,4 +843,4 @@ check-hidden = true
 # lines with é -- non-English
 ignore-regex = '(.*[àéç].*|^\s*"image/\S+": ".*|\biTerm\b)'
 # some variable names
-ignore-words-list = 'nd,ontop'
+ignore-words-list = 'nd,ontop,deques'
