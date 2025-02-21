@@ -32,7 +32,7 @@ jobs:
           name: Install napari-dev
           command: |
             . venv/bin/activate
-            python -m pip install -e "napari/[pyside,dev]"
+            python -m pip install -e "napari/[pyside,dev,docs,gallery]"
           environment:
             PIP_CONSTRAINT: napari/resources/constraints/constraints_py3.10_docs.txt
       - run:
