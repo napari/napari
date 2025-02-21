@@ -226,7 +226,7 @@ class QtViewerButtons(QFrame):
         # Create layout
         form_layout = QFormLayout()
         form_layout.insertRow(0, QLabel(trans._('Zoom:')), zoom)
-        
+
         help_layout = QVBoxLayout()
         help_layout.addWidget(zoom_help_symbol)
 
@@ -234,7 +234,9 @@ class QtViewerButtons(QFrame):
         if self.viewer.dims.ndisplay == 3:
             # Perspective slider
             perspective = QLabeledDoubleSlider(popup)
-            perspective.setRange(0, max(90, int(self.viewer.camera.perspective)))
+            perspective.setRange(
+                0, max(90, int(self.viewer.camera.perspective))
+            )
             perspective.setValue(int(self.viewer.camera.perspective))
             perspective.setDecimals(0)
             perspective.valueChanged.connect(self._update_perspective)
@@ -279,7 +281,9 @@ class QtViewerButtons(QFrame):
             angle_help_symbol.setToolTip(angle_help_msg)
 
             # Add 3D controls to layouts
-            form_layout.insertRow(1, QLabel(trans._('Perspective:')), perspective)
+            form_layout.insertRow(
+                1, QLabel(trans._('Perspective:')), perspective
+            )
             form_layout.insertRow(2, QLabel(trans._('Angles    X:')), rx)
             form_layout.insertRow(3, QLabel(trans._('             Y:')), ry)
             form_layout.insertRow(4, QLabel(trans._('             Z:')), rz)
@@ -293,19 +297,21 @@ class QtViewerButtons(QFrame):
         layout.addLayout(form_layout)
         layout.addLayout(help_layout)
         popup.frame.setLayout(layout)
-        
+
         # Position the popup so that it remains with the viewer
         # Use the location of the ndisplay button as a reference
         # and place the popup above it. move_to will adjust the
         # position if the popup is too close to the edge of the screen.
         button_rect = self.ndisplayButton.rect()
         button_pos = self.ndisplayButton.mapToGlobal(button_rect.topLeft())
-        popup.move_to((
-            button_pos.x(),
-            button_pos.y() - popup.sizeHint().height() - 5,
-            popup.sizeHint().width(),
-            popup.sizeHint().height()
-        ))
+        popup.move_to(
+            (
+                button_pos.x(),
+                button_pos.y() - popup.sizeHint().height() - 5,
+                popup.sizeHint().width(),
+                popup.sizeHint().height(),
+            )
+        )
         popup.show()
 
     def _update_camera_angles(self, idx: int, value: float) -> None:
@@ -322,7 +328,7 @@ class QtViewerButtons(QFrame):
         angles = list(self.viewer.camera.angles)
         angles[idx] = value
         self.viewer.camera.angles = tuple(angles)
-        
+
     def _update_zoom(self, value: float) -> None:
         """Update the camera zoom.
 
@@ -331,9 +337,9 @@ class QtViewerButtons(QFrame):
         value : float
             New camera.zoom value.
         """
-        
+
         self.viewer.camera.zoom = value
-        
+
     def _update_perspective(self, value: float) -> None:
         """Update the camera perspective.
 
@@ -342,7 +348,7 @@ class QtViewerButtons(QFrame):
         value : float
             New camera.perspective value.
         """
-        
+
         self.viewer.camera.perspective = value
 
     def _open_roll_popup(self):
