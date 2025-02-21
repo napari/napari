@@ -115,7 +115,7 @@ def test_ndisplay_button_popup(qt_viewer_buttons, qtbot):
     # check zoom slider change affects viewer camera zoom
     assert viewer_buttons.zoom
     viewer_buttons.zoom.setValue(3)
-    assert viewer.camera.zoom == viewer_buttons.zoom.value() == 5
+    assert viewer.camera.zoom == viewer_buttons.zoom.value() == 3
 
     # toggle ndisplay to be able to trigger ndisplay==3 popup
     viewer.dims.ndisplay = 2 + (viewer.dims.ndisplay == 2)
