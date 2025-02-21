@@ -10,6 +10,7 @@ from napari.layers.shapes._accelerated_triangulate_dispatch import (
     remove_path_duplicates,
 )
 from napari.layers.shapes._shapes_utils import (
+    find_planar_axis,
     is_collinear,
     path_to_mask,
     poly_to_mask,
@@ -328,35 +329,30 @@ class Shape(ABC):
             self._edge_offsets = np.empty((0, self.ndisplay))
             self._edge_triangles = np.empty((0, 3), dtype=np.uint32)
 
-        if face:
-            idx = np.concatenate(
-                [[True], ~np.all(data[1:] == data[:-1], axis=-1)]
-            )
-            clean_data = data[idx].copy()
+        ndim = data.shape[1]
+        # this method is called right before display, on sliced data, so
+        # ndim can only be 2 or 3. If 3D, shapes must be confined to a plane
+        # along *some* axis. We find that axis and the plane coordinate, then
+        # proceed as if 2D. If 2D, the data is passed through unchanged. And
+        # if there is no planar axis, we cannot triangulate and we return an
+        # empty data array
+        data2d, axis, value = find_planar_axis(data)
 
-            if not is_collinear(clean_data[:, -2:]):
-                if clean_data.shape[1] == 2:
-                    vertices, triangles = triangulate_face(clean_data)
-                elif len(np.unique(clean_data[:, 0])) == 1:
-                    val = np.unique(clean_data[:, 0])
-                    vertices, triangles = triangulate_face(clean_data[:, -2:])
-                    exp = np.expand_dims(np.repeat(val, len(vertices)), axis=1)
-                    vertices = np.concatenate([exp, vertices], axis=1)
-                else:
-                    triangles = np.array([])
-                    vertices = np.array([])
-                if len(triangles) > 0:
-                    self._face_vertices = vertices
-                    self._face_triangles = triangles
-                else:
-                    self._face_vertices = np.empty((0, self.ndisplay))
-                    self._face_triangles = np.empty((0, 3), dtype=np.uint32)
-            else:
-                self._face_vertices = np.empty((0, self.ndisplay))
-                self._face_triangles = np.empty((0, 3), dtype=np.uint32)
-        else:
-            self._face_vertices = np.empty((0, self.ndisplay))
-            self._face_triangles = np.empty((0, 3), dtype=np.uint32)
+        # set empty data as fallback
+        self._face_vertices = np.empty((0, self.ndisplay))
+        self._face_triangles = np.empty((0, 3), dtype=np.uint32)
+
+        if face and not is_collinear(data2d):
+            vertices, triangles = triangulate_face(data2d)
+            if ndim == 3 and axis is not None and value is not None:
+                # axis and value can be None if data 3D but not limited to an
+                # axis-aligned plane. However in that situation data2d will be
+                # empty, is_collinear is True, and we will never get here. But
+                # we check anyway for mypy's sake
+                vertices = np.insert(vertices, axis, value, axis=1)
+            if len(triangles) > 0:
+                self._face_vertices = vertices
+                self._face_triangles = triangles
 
     def _all_triangles(self):
         """Return all triangles for the shape
