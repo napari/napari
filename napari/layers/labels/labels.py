@@ -428,7 +428,7 @@ class Labels(ScalarFieldBase):
           the result is opaque.
         * ``iso_categorical``: isosurface for categorical data.
           Cast a ray until a non-background value is encountered. At that
-          location, lightning calculations are performed to give the visual
+          location, lighting calculations are performed to give the visual
           appearance of a surface.
 
         Returns
