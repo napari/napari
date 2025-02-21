@@ -11,9 +11,9 @@ from qtpy.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QPushButton,
-    QSpinBox,
     QVBoxLayout,
 )
+from superqt import QLabeledDoubleSlider
 
 from napari._qt.dialogs.qt_modal import QtPopup
 from napari._qt.widgets.qt_dims_sorter import QtDimsSorter
@@ -204,140 +204,146 @@ class QtViewerButtons(QFrame):
         return False
 
     def open_perspective_popup(self):
-        """Show a slider to control the viewer `camera.perspective`."""
-        if self.viewer.dims.ndisplay != 3:
-            return
-
+        """Show controls for camera settings based on display mode."""
         popup = QtPopup(self)
 
-        # tooltip symbols
-        perspective_help_symbol = QtToolTipLabel(self)
-        zoom_help_symbol = QtToolTipLabel(self)
-        angle_help_symbol = QtToolTipLabel(self)
-        blank = QLabel(self)  # helps with placing help symbols.
+        # Common widgets for both 2D and 3D
+        zoom = QLabeledDoubleSlider(popup)
+        zoom.setRange(0.01, 100)
+        zoom.setValue(self.viewer.camera.zoom)
+        zoom.setDecimals(2)
+        zoom.valueChanged.connect(self._update_zoom)
+        self.zoom = zoom
 
-        perspective_help_msg = trans._(
-            'Controls perspective projection strength. 0 is orthographic, larger values increase perspective effect.'
-        )
+        # Help symbols
+        zoom_help_symbol = QtToolTipLabel(self)
         zoom_help_msg = trans._(
             'Controls zoom level of the camera. Larger values zoom in, smaller values zoom out.'
         )
-        angle_help_msg = trans._(
-            'Controls the rotation angles around each axis in degrees. Range is -180 to 180 degrees.'
-        )
-        perspective_help_symbol.setObjectName('help_label')
-        perspective_help_symbol.setToolTip(perspective_help_msg)
         zoom_help_symbol.setObjectName('help_label')
         zoom_help_symbol.setToolTip(zoom_help_msg)
-        angle_help_symbol.setObjectName('help_label')
-        angle_help_symbol.setToolTip(angle_help_msg)
 
-        # make slider connected to perspective parameter
-        perspective = QSpinBox(popup)
-        perspective.setRange(0, max(90, int(self.viewer.camera.perspective)))
-        perspective.setValue(int(self.viewer.camera.perspective))
-        perspective.setSingleStep(5)
-        perspective.valueChanged.connect(
-            lambda v: setattr(self.viewer.camera, 'perspective', v)
-        )
-        self.perspective = perspective
-
-        # make widget connected to camera zoom
-        zoom = QDoubleSpinBox(popup)
-        zoom.setRange(0.01, 100)
-        zoom.setValue(self.viewer.camera.zoom)
-        zoom.setSingleStep(0.1)
-        zoom.setDecimals(2)
-        zoom.valueChanged.connect(
-            lambda v: setattr(self.viewer.camera, 'zoom', v)
-        )
-        self.zoom = zoom
-
-        # make widget connected to camera angle
-        ANGLE_MIN = -180
-        ANGLE_MAX = 180
-        ANGLE_STEP = 5
-        ANGLE_DECIMALS = 0
-
-        rx = QDoubleSpinBox(popup)
-        rx.setRange(ANGLE_MIN, ANGLE_MAX)
-        rx.setValue(self.viewer.camera.angles[0])
-        rx.setSingleStep(ANGLE_STEP)
-        rx.setDecimals(ANGLE_DECIMALS)
-        rx.valueChanged.connect(
-            lambda v: setattr(
-                self.viewer.camera,
-                'angles',
-                (
-                    v,
-                    self.viewer.camera.angles[1],
-                    self.viewer.camera.angles[2],
-                ),
-            )
-        )
-        self.rx = rx
-
-        ry = QDoubleSpinBox(popup)
-        ry.setRange(ANGLE_MIN, ANGLE_MAX)
-        ry.setValue(self.viewer.camera.angles[1])
-        ry.setSingleStep(ANGLE_STEP)
-        ry.setDecimals(ANGLE_DECIMALS)
-        ry.valueChanged.connect(
-            lambda v: setattr(
-                self.viewer.camera,
-                'angles',
-                (
-                    self.viewer.camera.angles[0],
-                    v,
-                    self.viewer.camera.angles[2],
-                ),
-            )
-        )
-        self.ry = ry
-
-        rz = QDoubleSpinBox(popup)
-        rz.setRange(ANGLE_MIN, ANGLE_MAX)
-        rz.setValue(self.viewer.camera.angles[2])
-        rz.setSingleStep(ANGLE_STEP)
-        rz.setDecimals(ANGLE_DECIMALS)
-        rz.valueChanged.connect(
-            lambda v: setattr(
-                self.viewer.camera,
-                'angles',
-                (
-                    self.viewer.camera.angles[0],
-                    self.viewer.camera.angles[1],
-                    v,
-                ),
-            )
-        )
-        self.rz = rz
-
-        angles_layout = QVBoxLayout()
-        angles_layout.addWidget(rx)
-        angles_layout.addWidget(ry)
-        angles_layout.addWidget(rz)
-
-        # make layout
+        # Create layout
         form_layout = QFormLayout()
-        form_layout.insertRow(0, QLabel(trans._('Perspective:')), perspective)
-        form_layout.insertRow(1, QLabel(trans._('Zoom:')), zoom)
-        form_layout.insertRow(
-            2, QLabel(trans._('\nAngles (XYZ):')), angles_layout
-        )
-
+        form_layout.insertRow(0, QLabel(trans._('Zoom:')), zoom)
+        
         help_layout = QVBoxLayout()
-        help_layout.addWidget(perspective_help_symbol)
         help_layout.addWidget(zoom_help_symbol)
-        help_layout.addWidget(blank)
-        help_layout.addWidget(angle_help_symbol)
 
+        # Add 3D specific controls
+        if self.viewer.dims.ndisplay == 3:
+            # Perspective slider
+            perspective = QLabeledDoubleSlider(popup)
+            perspective.setRange(0, max(90, int(self.viewer.camera.perspective)))
+            perspective.setValue(int(self.viewer.camera.perspective))
+            perspective.setDecimals(0)
+            perspective.valueChanged.connect(self._update_perspective)
+            self.perspective = perspective
+
+            # Angle sliders
+            rx = QLabeledDoubleSlider(popup)
+            rx.setRange(-180, 180)
+            rx.setValue(self.viewer.camera.angles[0])
+            rx.setDecimals(0)
+            rx.valueChanged.connect(partial(self._update_camera_angles, 0))
+            self.rx = rx
+
+            ry = QLabeledDoubleSlider(popup)
+            ry.setRange(-89, 89)
+            ry.setValue(self.viewer.camera.angles[1])
+            ry.setDecimals(0)
+            ry.valueChanged.connect(partial(self._update_camera_angles, 1))
+            self.ry = ry
+
+            rz = QLabeledDoubleSlider(popup)
+            rz.setRange(-180, 180)
+            rz.setValue(self.viewer.camera.angles[2])
+            rz.setDecimals(0)
+            rz.valueChanged.connect(partial(self._update_camera_angles, 2))
+            self.rz = rz
+
+            # Add additional help symbols
+            perspective_help_symbol = QtToolTipLabel(self)
+            angle_help_symbol = QtToolTipLabel(self)
+            blank = QLabel(self)
+
+            perspective_help_msg = trans._(
+                'Controls perspective projection strength. 0 is orthographic, larger values increase perspective effect.'
+            )
+            angle_help_msg = trans._(
+                'Controls the rotation angles around each axis in degrees.'
+            )
+            perspective_help_symbol.setObjectName('help_label')
+            perspective_help_symbol.setToolTip(perspective_help_msg)
+            angle_help_symbol.setObjectName('help_label')
+            angle_help_symbol.setToolTip(angle_help_msg)
+
+            # Add 3D controls to layouts
+            form_layout.insertRow(1, QLabel(trans._('Perspective:')), perspective)
+            form_layout.insertRow(2, QLabel(trans._('Angles    X:')), rx)
+            form_layout.insertRow(3, QLabel(trans._('             Y:')), ry)
+            form_layout.insertRow(4, QLabel(trans._('             Z:')), rz)
+
+            help_layout.addWidget(perspective_help_symbol)
+            help_layout.addWidget(angle_help_symbol)
+            help_layout.addWidget(blank)
+
+        # Finalize layout
         layout = QHBoxLayout()
         layout.addLayout(form_layout)
         layout.addLayout(help_layout)
-
         popup.frame.setLayout(layout)
-        popup.show_above_mouse()
+        
+        # Position the popup so that it remains with the viewer
+        # Use the location of the ndisplay button as a reference
+        # and place the popup above it. move_to will adjust the
+        # position if the popup is too close to the edge of the screen.
+        button_rect = self.ndisplayButton.rect()
+        button_pos = self.ndisplayButton.mapToGlobal(button_rect.topLeft())
+        popup.move_to((
+            button_pos.x(),
+            button_pos.y() - popup.sizeHint().height() - 5,
+            popup.sizeHint().width(),
+            popup.sizeHint().height()
+        ))
+        popup.show()
+
+    def _update_camera_angles(self, idx: int, value: float) -> None:
+        """Update the camera angles.
+
+        Parameters
+        ----------
+        idx : int
+            Index of the angle to update. In the order of (rx, ry, rz).
+        value : float
+            New angle value.
+        """
+
+        angles = list(self.viewer.camera.angles)
+        angles[idx] = value
+        self.viewer.camera.angles = tuple(angles)
+        
+    def _update_zoom(self, value: float) -> None:
+        """Update the camera zoom.
+
+        Parameters
+        ----------
+        value : float
+            New camera.zoom value.
+        """
+        
+        self.viewer.camera.zoom = value
+        
+    def _update_perspective(self, value: float) -> None:
+        """Update the camera perspective.
+
+        Parameters
+        ----------
+        value : float
+            New camera.perspective value.
+        """
+        
+        self.viewer.camera.perspective = value
 
     def _open_roll_popup(self):
         """Open a grid popup to manually order the dimensions"""
