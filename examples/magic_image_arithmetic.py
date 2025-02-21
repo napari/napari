@@ -46,9 +46,10 @@ def image_arithmetic(
 
 
 # create a new viewer with a couple image layers
+# setting scale is to show new feature of scale inheritance.
 viewer = napari.Viewer()
-viewer.add_image(np.random.rand(20, 20), name='Layer 1')
-viewer.add_image(np.random.rand(20, 20), name='Layer 2')
+viewer.add_image(np.random.rand(20, 20), name='Layer 1', scale=(2, 2))
+viewer.add_image(np.random.rand(20, 20), name='Layer 2', scale=(2, 2))
 
 # Add our magic function to napari
 viewer.window.add_function_widget(image_arithmetic)
