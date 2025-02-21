@@ -115,12 +115,28 @@ def test_ndisplay_button_popup(qt_viewer_buttons, qtbot):
     assert perspective_popup
 
     # check perspective slider change affects viewer camera perspective
-    assert viewer_buttons.perspective_slider
-    viewer_buttons.perspective_slider.setValue(5)
+    assert viewer_buttons.perspective
+    viewer_buttons.perspective.setValue(5)
+    assert viewer.camera.perspective == viewer_buttons.perspective.value() == 5
+
+    assert viewer_buttons.zoom
+    viewer_buttons.zoom.setValue(5)
+    assert viewer.camera.zoom == viewer_buttons.zoom.value() == 5
+
+    assert viewer_buttons.rx
+    assert viewer_buttons.ry
+    assert viewer_buttons.rz
+    viewer_buttons.rx.setValue(90)
+    viewer_buttons.ry.setValue(45)
+    viewer_buttons.rz.setValue(0)
     assert (
-        viewer.camera.perspective
-        == viewer_buttons.perspective_slider.value()
-        == 5
+        viewer.camera.angles
+        == (
+            viewer_buttons.rx.value(),
+            viewer_buttons.ry.value(),
+            viewer_buttons.rz.value(),
+        )
+        == (90, 45, 0)
     )
 
     # popup needs to be relaunched to get widget controls with the new values
@@ -130,16 +146,30 @@ def test_ndisplay_button_popup(qt_viewer_buttons, qtbot):
     # check viewer camera perspective value affects perspective popup slider
     # initial value
     viewer.camera.perspective = 10
+    viewer.camera.zoom = 2
+    viewer.camera.angles = (0, 0, 90)
     viewer_buttons.ndisplayButton.customContextMenuRequested.emit(QPoint())
     for widget in QApplication.topLevelWidgets():
         if isinstance(widget, QtPopup):
             perspective_popup = widget
     assert perspective_popup
-    assert viewer_buttons.perspective_slider
+    assert viewer_buttons.perspective
     assert (
-        viewer.camera.perspective
-        == viewer_buttons.perspective_slider.value()
-        == 10
+        viewer.camera.perspective == viewer_buttons.perspective.value() == 10
+    )
+    assert viewer_buttons.zoom
+    assert viewer.camera.zoom == viewer_buttons.zoom.value() == 2
+    assert viewer_buttons.rx
+    assert viewer_buttons.ry
+    assert viewer_buttons.rz
+    assert (
+        viewer.camera.angles
+        == (
+            viewer_buttons.rx.value(),
+            viewer_buttons.ry.value(),
+            viewer_buttons.rz.value(),
+        )
+        == (0, 0, 90)
     )
 
 
