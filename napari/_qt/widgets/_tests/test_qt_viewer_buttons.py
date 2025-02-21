@@ -102,8 +102,22 @@ def test_ndisplay_button_popup(qt_viewer_buttons, qtbot):
     # get viewer model and buttons
     viewer, viewer_buttons = qt_viewer_buttons
     assert viewer_buttons.ndisplayButton
+    
+    # trigger popup for ndisplay==2
+    viewer.dims.ndisplay = 2
+    viewer_buttons.ndisplayButton.customContextMenuRequested.emit(QPoint())
+    perspective_popup = None
+    for widget in QApplication.topLevelWidgets():
+        if isinstance(widget, QtPopup):
+            perspective_popup = widget
+    assert perspective_popup
+    
+    # check zoom slider change affects viewer camera zoom
+    assert viewer_buttons.zoom
+    viewer_buttons.zoom.setValue(3)
+    assert viewer.camera.zoom == viewer_buttons.zoom.value() == 5
 
-    # toggle ndisplay to be able to trigger popup
+    # toggle ndisplay to be able to trigger ndisplay==3 popup
     viewer.dims.ndisplay = 2 + (viewer.dims.ndisplay == 2)
 
     # make ndisplay perspective setting popup
@@ -119,10 +133,12 @@ def test_ndisplay_button_popup(qt_viewer_buttons, qtbot):
     viewer_buttons.perspective.setValue(5)
     assert viewer.camera.perspective == viewer_buttons.perspective.value() == 5
 
+    # check zoom slider change affects viewer camera zoom
     assert viewer_buttons.zoom
     viewer_buttons.zoom.setValue(5)
     assert viewer.camera.zoom == viewer_buttons.zoom.value() == 5
 
+    # check viewer camera rotation value affects camera angles
     assert viewer_buttons.rx
     assert viewer_buttons.ry
     assert viewer_buttons.rz
