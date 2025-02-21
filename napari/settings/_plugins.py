@@ -32,8 +32,8 @@ class PluginsSettings(EventedSettings):
             'Choose when to be warned if plugins do not support npe2.\nUse "always" to be warned about plugins on each startup.\nUse "new" to be warned only when an old npe1 plugin is newly installed.\n'
         ),
     )
-    already_warned_shimmed_plugins: set = Field(
-        default_factory=set,
+    already_warned_shimmed_plugins: set[str] = Field(
+        set(),
         title=trans._('Shimmed plugins already warned'),
         description=trans._(
             'Set of installed shimmed plugins that have already been warned about.'
