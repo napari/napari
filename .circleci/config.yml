@@ -40,7 +40,7 @@ jobs:
           command: |
             . venv/bin/activate
             cd docs
-            xvfb-run --auto-servernum make docs
+            xvfb-run --auto-servernum make docs-build
           environment:
             PIP_CONSTRAINT: ../napari/resources/constraints/constraints_py3.10_docs.txt
       - store_artifacts:
