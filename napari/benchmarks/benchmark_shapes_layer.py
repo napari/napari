@@ -269,7 +269,7 @@ class _ShapeTriangulationBase:
             cls(data)
 
 
-class ShapeTriangulationNonConvexSuite(_ShapeTriangulationBase):
+class _ShapeTriangulationBaseShapeCount(_ShapeTriangulationBase):
     param_names = [
         'n_shapes',
         'n_points',
@@ -286,58 +286,57 @@ class ShapeTriangulationNonConvexSuite(_ShapeTriangulationBase):
         (True, False),
     ]
 
-    # the case of 128 points crashes the benchmark on call of PolygonData(vertices=data).triangulate()
-    skip_params = Skip(
-        if_in_pr=lambda n_shapes,
-        n_points,
-        shape_type,
-        compiled_triangulation: n_shapes > 1000 or n_points > 10,
-        always=lambda n_shapes,
-        n_points,
-        shape_type,
-        compiled_triangulation: not compiled_triangulation
-        and n_points > 100
-        and shape_type == 'polygon',
-    )
+
+class ShapeTriangulationNonConvexSuite(_ShapeTriangulationBaseShapeCount):
+    params = [
+        (5_000,),
+        (128,),
+        ('polygon',),
+        (False,),
+    ]
 
     def setup(self, n_shapes, n_points, shape_type, compiled_triangulation):
-        self.data = non_convex_cords(n_shapes, n_points)
+        self.data = non_convex_cords(n_shapes, n_points)[4151:]
         self.select_backend(compiled_triangulation)
 
 
-class ShapeTriangulationConvexSuite(_ShapeTriangulationBase):
-    param_names = [
-        'n_shapes',
-        'n_points',
-        'shape_type',
-        'compiled_triangulation',
-    ]
+class ShapeTriangulationConvexSuite(_ShapeTriangulationBaseShapeCount):
+    def setup(self, n_shapes, n_points, shape_type, compiled_triangulation):
+        self.data = convex_cords(n_shapes, n_points)
+        self.select_backend(compiled_triangulation)
+
+
+class ShapeTriangulationIntersectionSuite(_ShapeTriangulationBaseShapeCount):
     params = [
         (
             100,
             5_000,
         ),
-        (8, 32, 128),
+        (7, 9, 15, 33),
         ('path', 'polygon'),
         (True, False),
     ]
 
-    # the case of 128 points crashes the benchmark on call of PolygonData(vertices=data).triangulate()
-    skip_params = Skip(
-        if_in_pr=lambda n_shapes,
-        n_points,
-        shape_type,
-        compiled_triangulation: n_shapes > 1000 or n_points > 10,
-        always=lambda n_shapes,
-        n_points,
-        shape_type,
-        compiled_triangulation: not compiled_triangulation
-        and n_points > 100
-        and shape_type == 'polygon',
-    )
+    def setup(self, n_shapes, n_points, shape_type, compiled_triangulation):
+        self.data = self_intersecting_cords(n_shapes, n_points)
+        self.select_backend(compiled_triangulation)
+
+
+class ShapeTriangulationStarIntersectionSuite(
+    _ShapeTriangulationBaseShapeCount
+):
+    params = [
+        (
+            100,
+            5_000,
+        ),
+        (7, 9, 15, 33),
+        ('path', 'polygon'),
+        (True, False),
+    ]
 
     def setup(self, n_shapes, n_points, shape_type, compiled_triangulation):
-        self.data = convex_cords(n_shapes, n_points)
+        self.data = self_intersecting_stars_cords(n_shapes, n_points)
         self.select_backend(compiled_triangulation)
 
 
@@ -386,8 +385,8 @@ def non_convex_cords(n_shapes=5_000, n_points=32):
         Number of virtex of each shape
     """
     rng = np.random.default_rng(0)
-    radius = 500 / np.sqrt(n_shapes)
-    center = rng.uniform(0, 1000, (n_shapes, 2))
+    radius = 1000
+    center = rng.uniform(1500, 4500, (n_shapes, 2))
     phi = np.linspace(0, 2 * np.pi, n_points)
     rays = np.stack([np.sin(phi), np.cos(phi)], axis=1)
     rays = rays.reshape((1, -1, 2))
@@ -397,7 +396,7 @@ def non_convex_cords(n_shapes=5_000, n_points=32):
 
 
 @cache
-def self_intersecting_cords(n_shapes=5_000, n_points=32):
+def self_intersecting_stars_cords(n_shapes=5_000, n_points=31):
     """
     Create a set of non-convex coordinates
 
@@ -408,13 +407,39 @@ def self_intersecting_cords(n_shapes=5_000, n_points=32):
     n_points : int
         Number of virtex of each shape
     """
+    assert n_points % 2 == 1
     rng = np.random.default_rng(0)
-    radius = 500 / np.sqrt(n_shapes)
-    center = rng.uniform(0, 1000, (n_shapes, 2))
-    phi = np.linspace(0, 2 * np.pi, n_points)
+    radius = 5000
+    center = rng.uniform(5000, 15000, (n_shapes, 2))
+    shift = np.floor(n_points / 2) + 1
+    phi = np.linspace(0, 2 * np.pi, n_points + 1) * shift
     rays = np.stack([np.sin(phi), np.cos(phi)], axis=1)
     rays = rays.reshape((1, -1, 2))
-    rays = rays * rng.uniform(0.9, 1.1, (n_shapes, n_points, 2))
+    rays = rays * rng.uniform(0.9, 1.1, (n_shapes, n_points + 1, 2))
+    center = center.reshape((-1, 1, 2))
+    return center + radius * rays
+
+
+@cache
+def self_intersecting_cords(n_shapes=5_000, n_points=31):
+    """
+    Create a set of non-convex coordinates
+
+    Parameters
+    ----------
+    n_shapes : int
+        Number of shapes to create
+    n_points : int
+        Number of virtex of each shape
+    """
+    assert n_points % 2 == 1
+    rng = np.random.default_rng(0)
+    radius = 5000
+    center = rng.uniform(5000, 15000, (n_shapes, 2))
+    phi = np.linspace(0, 2 * np.pi, n_points + 1) * 2
+    rays = np.stack([np.sin(phi), np.cos(phi)], axis=1)
+    rays = rays.reshape((1, -1, 2))
+    rays = rays * rng.uniform(0.9, 1.1, (n_shapes, n_points + 1, 2))
     center = center.reshape((-1, 1, 2))
     return center + radius * rays
 
@@ -433,8 +458,8 @@ def convex_cords(n_shapes=5_000, n_points=32):
     """
     rng = np.random.default_rng(0)
     radius = 500 / np.sqrt(n_shapes)
-    center = rng.uniform(0, 1000, (n_shapes, 2))
-    phi = np.linspace(0, 2 * np.pi, n_points)
+    center = rng.uniform(500, 1500, (n_shapes, 2))
+    phi = np.linspace(0, 2 * np.pi, n_points, endpoint=False)
     rays = np.stack([np.sin(phi), np.cos(phi)], axis=1)
     rays = rays.reshape((1, -1, 2))
     center = center.reshape((-1, 1, 2))
