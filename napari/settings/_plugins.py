@@ -2,6 +2,7 @@ from typing_extensions import TypedDict
 
 from napari._pydantic_compat import Field
 from napari.settings._base import EventedSettings
+from napari.settings._constants import PluginShimWarningLevel
 from napari.utils.translations import trans
 
 
@@ -17,14 +18,27 @@ CallOrderDict = dict[str, list[PluginHookOption]]
 
 class PluginsSettings(EventedSettings):
     use_npe2_adaptor: bool = Field(
-        False,
+        True,
         title=trans._('Use npe2 adaptor'),
         description=trans._(
             "Use npe2-adaptor for first generation plugins.\nWhen an npe1 plugin is found, this option will\nimport its contributions and create/cache\na 'shim' npe2 manifest that allows it to be treated\nlike an npe2 plugin (with delayed imports, etc...)",
         ),
         requires_restart=True,
     )
-
+    warn_on_shimmed_plugin: PluginShimWarningLevel = Field(
+        PluginShimWarningLevel.ALWAYS,
+        title=trans._('npe1 plugin warning'),
+        description=trans._(
+            'Choose when to be warned if plugins do not support npe2.\nUse "always" to be warned about plugins on each startup.\nUse "new" to be warned only when an old npe1 plugin is newly installed.\n'
+        ),
+    )
+    already_warned_shimmed_plugins: set[str] = Field(
+        set(),
+        title=trans._('Shimmed plugins already warned'),
+        description=trans._(
+            'Set of installed shimmed plugins that have already been warned about.'
+        ),
+    )
     call_order: CallOrderDict = Field(
         default_factory=dict,
         title=trans._('Plugin sort order'),
@@ -62,5 +76,6 @@ class PluginsSettings(EventedSettings):
         preferences_exclude = (
             'schema_version',
             'disabled_plugins',
+            'already_warned_shimmed_plugins',
             'extension2writer',
         )
