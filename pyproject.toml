@@ -176,12 +176,16 @@ docs = [
     "sphinx-copybutton",
     "sphinx-gallery",
     "sphinx_autodoc_typehints==1.12.0",
+    "sphinxcontrib-mermaid>=1.0.0"
     "myst-nb",
     "napari-sphinx-theme>=0.3.0",
     "matplotlib",
     "lxml[html_clean]>5",
     "imageio-ffmpeg",
+    "pydeps",
+    "seedir",
     "pytest",
+    "linkify-it-py",
 ]
 release = [
     "PyGithub>=1.46",
