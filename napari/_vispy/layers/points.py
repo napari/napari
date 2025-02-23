@@ -129,10 +129,13 @@ class VispyPointsLayer(VispyBaseLayer):
             self.layer._highlight_box is None
             or 0 in self.layer._highlight_box.shape
         ):
-            pos = np.zeros((1, self.layer._slice_input.ndisplay))
+            pos = np.zeros((1, 3))
             highlight_thickness = 0
         else:
             pos = self.layer._highlight_box
+            # add z=0 if 2d (see #6819)
+            if pos.shape[1] == 2:
+                pos = np.pad(pos, ((0, 0), (1, 0)))
 
         self.node.highlight_lines.set_data(
             pos=pos[:, ::-1],
