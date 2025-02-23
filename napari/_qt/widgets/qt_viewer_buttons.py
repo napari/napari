@@ -174,7 +174,7 @@ class QtViewerButtons(QFrame):
         ndb.setCheckable(True)
         ndb.setChecked(self.viewer.dims.ndisplay == 3)
         ndb.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        ndb.customContextMenuRequested.connect(self.open_perspective_popup)
+        ndb.customContextMenuRequested.connect(self.open_ndisplay_camera_popup)
 
         @self.viewer.dims.events.ndisplay.connect
         def _set_ndisplay_mode_checkstate(event):
@@ -203,107 +203,43 @@ class QtViewerButtons(QFrame):
             return True
         return False
 
-    def open_perspective_popup(self):
-        """Show controls for camera settings based on display mode."""
-        popup = QtPopup(self)
+    def _create_labeled_slider(
+        self,
+        popup: QtPopup,
+        value: float,
+        min_val: float,
+        max_val: float,
+        decimals: int,
+    ):
+        """Create a labeled float slider widget."""
+        slider = QLabeledDoubleSlider(popup)
+        slider.setRange(min_val, max_val)
+        slider.setValue(value)
+        slider.setDecimals(decimals)
+        return slider
 
-        # Common widgets for both 2D and 3D
-        zoom = QLabeledDoubleSlider(popup)
-        zoom.setRange(0.01, 100)
-        zoom.setValue(self.viewer.camera.zoom)
-        zoom.setDecimals(2)
-        zoom.valueChanged.connect(self._update_zoom)
-        self.zoom = zoom
+    def _create_help_tooltip(
+        self,
+        parent: QtPopup,
+        tooltip_msg: str,
+    ):
+        """Create a help symbol with a tooltip."""
+        help_symbol = QtToolTipLabel(parent)
+        help_symbol.setObjectName('help_label')
+        help_symbol.setToolTip(tooltip_msg)
+        return help_symbol
 
-        # Help symbols
-        zoom_help_symbol = QtToolTipLabel(self)
-        zoom_help_msg = trans._(
-            'Controls zoom level of the camera. Larger values zoom in, smaller values zoom out.'
-        )
-        zoom_help_symbol.setObjectName('help_label')
-        zoom_help_symbol.setToolTip(zoom_help_msg)
+    def _position_popup_inside_viewer(
+        self, popup: QtPopup, button: QPushButton
+    ):
+        """Position the popup so that it remains with the viewer.
 
-        # Create layout
-        form_layout = QFormLayout()
-        form_layout.insertRow(0, QLabel(trans._('Zoom:')), zoom)
-
-        help_layout = QVBoxLayout()
-        help_layout.addWidget(zoom_help_symbol)
-
-        # Add 3D specific controls
-        if self.viewer.dims.ndisplay == 3:
-            # Perspective slider
-            perspective = QLabeledDoubleSlider(popup)
-            perspective.setRange(
-                0, max(90, int(self.viewer.camera.perspective))
-            )
-            perspective.setValue(int(self.viewer.camera.perspective))
-            perspective.setDecimals(0)
-            perspective.valueChanged.connect(self._update_perspective)
-            self.perspective = perspective
-
-            # Angle sliders
-            rx = QLabeledDoubleSlider(popup)
-            rx.setRange(-180, 180)
-            rx.setValue(self.viewer.camera.angles[0])
-            rx.setDecimals(0)
-            rx.valueChanged.connect(partial(self._update_camera_angles, 0))
-            self.rx = rx
-
-            ry = QLabeledDoubleSlider(popup)
-            ry.setRange(-89, 89)
-            ry.setValue(self.viewer.camera.angles[1])
-            ry.setDecimals(0)
-            ry.valueChanged.connect(partial(self._update_camera_angles, 1))
-            self.ry = ry
-
-            rz = QLabeledDoubleSlider(popup)
-            rz.setRange(-180, 180)
-            rz.setValue(self.viewer.camera.angles[2])
-            rz.setDecimals(0)
-            rz.valueChanged.connect(partial(self._update_camera_angles, 2))
-            self.rz = rz
-
-            # Add additional help symbols
-            perspective_help_symbol = QtToolTipLabel(self)
-            angle_help_symbol = QtToolTipLabel(self)
-            blank = QLabel(self)
-
-            perspective_help_msg = trans._(
-                'Controls perspective projection strength. 0 is orthographic, larger values increase perspective effect.'
-            )
-            angle_help_msg = trans._(
-                'Controls the rotation angles around each axis in degrees.'
-            )
-            perspective_help_symbol.setObjectName('help_label')
-            perspective_help_symbol.setToolTip(perspective_help_msg)
-            angle_help_symbol.setObjectName('help_label')
-            angle_help_symbol.setToolTip(angle_help_msg)
-
-            # Add 3D controls to layouts
-            form_layout.insertRow(
-                1, QLabel(trans._('Perspective:')), perspective
-            )
-            form_layout.insertRow(2, QLabel(trans._('Angles    X:')), rx)
-            form_layout.insertRow(3, QLabel(trans._('             Y:')), ry)
-            form_layout.insertRow(4, QLabel(trans._('             Z:')), rz)
-
-            help_layout.addWidget(perspective_help_symbol)
-            help_layout.addWidget(angle_help_symbol)
-            help_layout.addWidget(blank)
-
-        # Finalize layout
-        layout = QHBoxLayout()
-        layout.addLayout(form_layout)
-        layout.addLayout(help_layout)
-        popup.frame.setLayout(layout)
-
-        # Position the popup so that it remains with the viewer
-        # Use the location of the ndisplay button as a reference
-        # and place the popup above it. move_to will adjust the
-        # position if the popup is too close to the edge of the screen.
-        button_rect = self.ndisplayButton.rect()
-        button_pos = self.ndisplayButton.mapToGlobal(button_rect.topLeft())
+        Use the location of the button as a reference and place the popup
+        above it. move_to will adjust the position if the popup is too close
+        to the edge of the screen.
+        """
+        button_rect = button.rect()
+        button_pos = button.mapToGlobal(button_rect.topLeft())
         popup.move_to(
             (
                 button_pos.x(),
@@ -313,6 +249,110 @@ class QtViewerButtons(QFrame):
             )
         )
         popup.show()
+
+    def _add_3d_camera_controls(
+        self,
+        popup: QtPopup,
+        form_layout: QFormLayout,
+        help_layout: QVBoxLayout,
+    ):
+        """Add 3D camera controls to the popup."""
+        # Perspective slider
+        self.perspective = self._create_labeled_slider(
+            popup,
+            self.viewer.camera.perspective,
+            0,
+            90,
+            0,
+        )
+        self.perspective.valueChanged.connect(self._update_perspective)
+
+        perspective_help_symbol = self._create_help_tooltip(
+            popup,
+            'Controls perspective projection strength. 0 is orthographic, larger values increase perspective effect.',
+        )
+
+        # Angle sliders
+        self.rx = self._create_labeled_slider(
+            popup,
+            self.viewer.camera.angles[0],
+            -180,
+            180,
+            0,
+        )
+        self.rx.valueChanged.connect(partial(self._update_camera_angles, 0))
+        self.ry = self._create_labeled_slider(
+            popup,
+            self.viewer.camera.angles[1],
+            -89,
+            89,
+            0,
+        )
+        self.ry.valueChanged.connect(partial(self._update_camera_angles, 1))
+        self.rz = self._create_labeled_slider(
+            popup,
+            self.viewer.camera.angles[2],
+            -180,
+            180,
+            0,
+        )
+        self.rz.valueChanged.connect(partial(self._update_camera_angles, 2))
+
+        angle_help_symbol = self._create_help_tooltip(
+            popup,
+            'Controls the rotation angles around each axis in degrees.',
+        )
+
+        # Add 3D controls to layouts
+        form_layout.insertRow(
+            1, QLabel(trans._('Perspective:')), self.perspective
+        )
+        form_layout.insertRow(2, QLabel(trans._('Angles    X:')), self.rx)
+        form_layout.insertRow(3, QLabel(trans._('             Y:')), self.ry)
+        form_layout.insertRow(4, QLabel(trans._('             Z:')), self.rz)
+
+        help_layout.addWidget(perspective_help_symbol)
+        help_layout.addWidget(angle_help_symbol)
+        help_layout.addWidget(QLabel(self))  # blank space
+
+    def open_ndisplay_camera_popup(self):
+        """Show controls for camera settings based on ndisplay mode."""
+        popup = QtPopup(self)
+
+        # Common widgets for both 2D and 3D
+        self.zoom = self._create_labeled_slider(
+            popup,
+            self.viewer.camera.zoom,
+            0.01,
+            100,
+            2,
+        )
+        self.zoom.valueChanged.connect(self._update_zoom)
+
+        zoom_help_symbol = self._create_help_tooltip(
+            popup,
+            'Controls zoom level of the camera. Larger values zoom in, smaller values zoom out.',
+        )
+
+        # Create layout
+        form_layout = QFormLayout()
+        form_layout.insertRow(0, QLabel(trans._('Zoom:')), self.zoom)
+
+        help_layout = QVBoxLayout()
+        help_layout.addWidget(zoom_help_symbol)
+
+        # Add 3D specific controls
+        if self.viewer.dims.ndisplay == 3:
+            self._add_3d_camera_controls(popup, form_layout, help_layout)
+
+        # Finalize layout
+        layout = QHBoxLayout()
+        layout.addLayout(form_layout)
+        layout.addLayout(help_layout)
+        popup.frame.setLayout(layout)
+
+        # Reposition popup, must be done after all widgets are added
+        self._position_popup_inside_viewer(popup, self.ndisplayButton)
 
     def _update_camera_angles(self, idx: int, value: float) -> None:
         """Update the camera angles.
