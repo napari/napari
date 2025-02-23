@@ -126,7 +126,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.125.3
+hypothesis==6.126.0
     # via napari (napari_repo/pyproject.toml)
 idna==3.10
     # via
@@ -205,8 +205,6 @@ lazy-loader==0.4
     # via
     #   napari (napari_repo/pyproject.toml)
     #   scikit-image
-linkify-it-py==2.0.3
-    # via napari (napari_repo/pyproject.toml)
 llvmlite==0.44.0
     # via numba
 locket==1.0.0
@@ -261,8 +259,6 @@ napari-sphinx-theme==0.6.0
     # via napari (napari_repo/pyproject.toml)
 napari-svg==0.2.1
     # via napari (napari_repo/pyproject.toml)
-natsort==8.4.0
-    # via seedir
 nbclient==0.10.2
     # via
     #   jupyter-cache
@@ -544,7 +540,6 @@ pyyaml==6.0.2
     #   myst-parser
     #   npe2
     #   sphinx-external-toc
-    #   sphinxcontrib-mermaid
 pyzmq==26.2.1
     # via
     #   ipykernel
@@ -581,7 +576,7 @@ rpds-py==0.23.1
     # via
     #   jsonschema
     #   referencing
-scikit-image==0.25.1
+scikit-image==0.25.2
     # via napari (napari_repo/pyproject.toml)
 scikit-learn==1.6.1
     # via nilearn
@@ -630,7 +625,6 @@ sphinx==7.4.7
     #   sphinx-gallery
     #   sphinx-tabs
     #   sphinx-tags
-    #   sphinxcontrib-mermaid
 sphinx-autobuild==2024.10.3
     # via napari (napari_repo/pyproject.toml)
 sphinx-autodoc-typehints==1.12.0
@@ -690,7 +684,7 @@ tensorstore==0.1.71
     #   napari (napari_repo/pyproject.toml)
 threadpoolctl==3.5.0
     # via scikit-learn
-tifffile==2025.1.10
+tifffile==2025.2.18
     # via
     #   napari (napari_repo/pyproject.toml)
     #   scikit-image
@@ -761,8 +755,6 @@ typing-extensions==4.12.2
     #   uvicorn
 tzdata==2025.1
     # via pandas
-uc-micro-py==1.0.3
-    # via linkify-it-py
 urllib3==2.3.0
     # via
     #   distributed
