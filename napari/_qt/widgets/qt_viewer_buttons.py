@@ -203,32 +203,6 @@ class QtViewerButtons(QFrame):
             return True
         return False
 
-    def _create_labeled_slider(
-        self,
-        popup: QtPopup,
-        value: float,
-        min_val: float,
-        max_val: float,
-        decimals: int,
-    ):
-        """Create a labeled float slider widget."""
-        slider = QLabeledDoubleSlider(popup)
-        slider.setRange(min_val, max_val)
-        slider.setValue(value)
-        slider.setDecimals(decimals)
-        return slider
-
-    def _create_help_tooltip(
-        self,
-        parent: QtPopup,
-        tooltip_msg: str,
-    ):
-        """Create a help symbol with a tooltip."""
-        help_symbol = QtToolTipLabel(parent)
-        help_symbol.setObjectName('help_label')
-        help_symbol.setToolTip(tooltip_msg)
-        return help_symbol
-
     def _position_popup_inside_viewer(
         self, popup: QtPopup, button: QPushButton
     ):
@@ -258,49 +232,41 @@ class QtViewerButtons(QFrame):
     ):
         """Add 3D camera controls to the popup."""
         # Perspective slider
-        self.perspective = self._create_labeled_slider(
-            popup,
-            self.viewer.camera.perspective,
-            0,
-            90,
-            0,
-        )
+        self.perspective = QLabeledDoubleSlider(popup)
+        self.perspective.setRange(0, 90)
+        self.perspective.setValue(self.viewer.camera.perspective)
+        self.perspective.setDecimals(0)
         self.perspective.valueChanged.connect(self._update_perspective)
 
-        perspective_help_symbol = self._create_help_tooltip(
-            popup,
-            'Controls perspective projection strength. 0 is orthographic, larger values increase perspective effect.',
+        perspective_help_symbol = QtToolTipLabel(popup)
+        perspective_help_symbol.setObjectName('help_label')
+        perspective_help_symbol.setToolTip(
+            'Controls perspective projection strength. 0 is orthographic, larger values increase perspective effect.'
         )
 
         # Angle sliders
-        self.rx = self._create_labeled_slider(
-            popup,
-            self.viewer.camera.angles[0],
-            -180,
-            180,
-            0,
-        )
+        self.rx = QLabeledDoubleSlider(popup)
+        self.rx.setRange(-180, 180)
+        self.rx.setValue(self.viewer.camera.angles[0])
+        self.rx.setDecimals(0)
         self.rx.valueChanged.connect(partial(self._update_camera_angles, 0))
-        self.ry = self._create_labeled_slider(
-            popup,
-            self.viewer.camera.angles[1],
-            -89,
-            89,
-            0,
-        )
+
+        self.ry = QLabeledDoubleSlider(popup)
+        self.ry.setRange(-89, 89)
+        self.ry.setValue(self.viewer.camera.angles[1])
+        self.ry.setDecimals(0)
         self.ry.valueChanged.connect(partial(self._update_camera_angles, 1))
-        self.rz = self._create_labeled_slider(
-            popup,
-            self.viewer.camera.angles[2],
-            -180,
-            180,
-            0,
-        )
+
+        self.rz = QLabeledDoubleSlider(popup)
+        self.rz.setRange(-180, 180)
+        self.rz.setValue(self.viewer.camera.angles[2])
+        self.rz.setDecimals(0)
         self.rz.valueChanged.connect(partial(self._update_camera_angles, 2))
 
-        angle_help_symbol = self._create_help_tooltip(
-            popup,
-            'Controls the rotation angles around each axis in degrees.',
+        angle_help_symbol = QtToolTipLabel(popup)
+        angle_help_symbol.setObjectName('help_label')
+        angle_help_symbol.setToolTip(
+            'Controls the rotation angles around each axis in degrees.'
         )
 
         # Add 3D controls to layouts
@@ -320,18 +286,16 @@ class QtViewerButtons(QFrame):
         popup = QtPopup(self)
 
         # Common widgets for both 2D and 3D
-        self.zoom = self._create_labeled_slider(
-            popup,
-            self.viewer.camera.zoom,
-            0.01,
-            100,
-            2,
-        )
+        self.zoom = QLabeledDoubleSlider(popup)
+        self.zoom.setRange(0.01, 100)
+        self.zoom.setValue(self.viewer.camera.zoom)
+        self.zoom.setDecimals(2)
         self.zoom.valueChanged.connect(self._update_zoom)
 
-        zoom_help_symbol = self._create_help_tooltip(
-            popup,
-            'Controls zoom level of the camera. Larger values zoom in, smaller values zoom out.',
+        zoom_help_symbol = QtToolTipLabel(popup)
+        zoom_help_symbol.setObjectName('help_label')
+        zoom_help_symbol.setToolTip(
+            'Controls zoom level of the camera. Larger values zoom in, smaller values zoom out.'
         )
 
         # Create layout
