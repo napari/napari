@@ -32,7 +32,7 @@ jobs:
           name: Install napari-dev
           command: |
             . venv/bin/activate
-            python -m pip install -e "napari/[pyside,dev]"
+            python -m pip install -e "napari/[pyqt5,docs]"
           environment:
             PIP_CONSTRAINT: napari/resources/constraints/constraints_py3.10_docs.txt
       - run:
@@ -40,7 +40,7 @@ jobs:
           command: |
             . venv/bin/activate
             cd docs
-            xvfb-run --auto-servernum make docs
+            xvfb-run --auto-servernum make html
           environment:
             PIP_CONSTRAINT: ../napari/resources/constraints/constraints_py3.10_docs.txt
       - store_artifacts:
