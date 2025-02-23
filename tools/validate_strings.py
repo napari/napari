@@ -143,7 +143,7 @@ show_trans_strings = FindTransStrings()
 def _find_func_definitions(
     node: ast.AST, defs: list[ast.FunctionDef] | None = None
 ) -> list[ast.FunctionDef]:
-    """Find all functions definition recrusively.
+    """Find all functions definition recursively.
 
     This also find functions nested inside other functions.
 
@@ -269,7 +269,7 @@ def compress_str(gen):
     This function takes a stream of token and tries to join
     consecutive strings.
 
-    This is usefull for long translation string to be broken across
+    This is useful for long translation string to be broken across
     many lines.
 
     This should support both joined strings without backslashes:
@@ -280,7 +280,7 @@ def compress_str(gen):
             "work"
         )
 
-    Those have NL in between each STING.
+    Those have NL in between each STRING.
 
     The following will work as well:
 
@@ -351,7 +351,7 @@ def find_strings(fpath: str) -> dict[tuple[int, str], tuple[int, str]]:
     -------
     dict
         A dict with a tuple for key and a tuple for value. The tuple contains
-        the line number and the stripped string. The value containes the line
+        the line number and the stripped string. The value contains the line
         number and the original string.
     """
     strings = {}
@@ -386,7 +386,7 @@ def find_trans_strings(
     -------
     tuple
         The first item is a dict with a stripped string as key and the
-        orginal string for value. The second item is a list of tuples that
+        original string for value. The second item is a list of tuples that
         includes errors in translations.
     """
     with open(fpath) as fh:
@@ -452,7 +452,7 @@ def find_issues(
         Each issue is a tuple with line number and the untranslated string.
         The second item is a dictionary of files that contain outdated
         skipped strings. The third item is a dictionary of the translation
-        errors found per path. Translation errors referes to missing
+        errors found per path. Translation errors refers to missing
         interpolation variables, or spelling errors of the `deferred` keyword.
     """
     issues = {}
@@ -685,7 +685,7 @@ if __name__ == '__main__':
             if autosugg:
                 print_colored_diff(raw_code, sugg)
             else:
-                print(f'{RED}f-string nedds manual intervention{NORMAL}')
+                print(f'{RED}f-string needs manual intervention{NORMAL}')
                 for lt in code[line - 3 : line - 1]:
                     print(' ', lt)
                 print('>', code[line - 1].replace(text, GREEN + text + NORMAL))

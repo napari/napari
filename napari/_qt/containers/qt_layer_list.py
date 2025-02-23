@@ -41,7 +41,7 @@ class ReverseProxyModel(QSortFilterProxyModel):
 class QtLayerList(QtListView[Layer]):
     """QItemView subclass specialized for the LayerList.
 
-    This is as mostly for targetting with QSS, applying the delegate and
+    This is as mostly for targeting with QSS, applying the delegate and
     reversing the view with ReverseProxyModel.
     """
 

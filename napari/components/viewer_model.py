@@ -1319,7 +1319,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         NoAvailableReaderError
             when no plugins are available to read path
         ReaderPluginError
-            when reading with only available or prefered plugin fails
+            when reading with only available or preferred plugin fails
         MultipleReaderError
             when multiple readers are available to read the path
         """
@@ -1528,7 +1528,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         Examples
         --------
-        A typical use case might be to upack a tuple of layer data with a
+        A typical use case might be to unpack a tuple of layer data with a
         specified layer_type.
 
         >>> viewer = napari.Viewer()
