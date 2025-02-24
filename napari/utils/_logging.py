@@ -14,6 +14,12 @@ if TYPE_CHECKING:
 
 
 class _LogStream:
+    """
+    Custom stream object to receive logging info.
+
+    Needs to define `write` and `flush` methods which are called by the log handler.
+    """
+
     changed = Signal()
 
     def __init__(self) -> None:
@@ -56,7 +62,7 @@ class _LogStream:
         ]
 
         return [
-            f'{_html_level(level_name, level_value)} '
+            f'{_html_tag_for_level(level_name, level_value)} '
             f'<b>{name}</b> '
             f'<font style="color:gray"><i>[{time}] ({thread})</i></font>: '
             f'{msg}'
@@ -75,6 +81,9 @@ LOG_HANDLER.setLevel(logging.DEBUG)
 
 
 def register_logger(module: str) -> None:
+    """
+    Register a specific module's logger to use our custom log handler.
+    """
     logger = logging.getLogger(module)
     # ensure the default "last resort" logging to console remains
     if not logger.handlers and logging.lastResort:
@@ -82,7 +91,10 @@ def register_logger(module: str) -> None:
     logger.addHandler(LOG_HANDLER)
 
 
-def _html_level(level_name: str, level_value: int) -> str:
+def _html_tag_for_level(level_name: str, level_value: int) -> str:
+    """
+    Generate html tag for the appropriate logging level.
+    """
     colors = {
         logging.INFO: 'cyan',
         logging.WARNING: 'orange',

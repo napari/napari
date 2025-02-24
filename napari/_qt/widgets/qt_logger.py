@@ -18,6 +18,10 @@ from napari.utils.translations import trans
 
 
 class LogWidget(QWidget):
+    """
+    Widget for inspecting and filtering logging output.
+    """
+
     def __init__(
         self,
         parent=None,
@@ -121,6 +125,7 @@ class LogWidget(QWidget):
             self.log_text_box.append(log)
 
     def _jump_to_pos(self, event=None):
+        # maintains position when updating the contents of the text
         # for some reason using scrollbar.setValue() doesn't keep up,
         # cursor's better
         scrollbar = self.log_text_box.verticalScrollBar()
