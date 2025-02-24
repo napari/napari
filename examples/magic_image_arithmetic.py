@@ -46,7 +46,7 @@ def image_arithmetic(
 
 
 # create a new viewer with a couple image layers
-# setting scale is to show new feature of scale inheritance.
+# Since the input layers have been scaled, the resulting returned layer will inherit the same scale value.
 viewer = napari.Viewer()
 viewer.add_image(np.random.rand(20, 20), name='Layer 1', scale=(2, 2))
 viewer.add_image(np.random.rand(20, 20), name='Layer 2', scale=(2, 2))
