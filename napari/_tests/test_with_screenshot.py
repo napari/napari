@@ -282,7 +282,7 @@ def test_grid_mode(make_napari_viewer):
         [255, 255, 0, 255],
         [0, 255, 255, 255],
     ]
-    for c, p in zip(color, pos):
+    for c, p in zip(color, pos, strict=False):
         coord = tuple(
             np.round(np.multiply(screenshot.shape[:2], p)).astype(int)
         )
@@ -303,7 +303,7 @@ def test_grid_mode(make_napari_viewer):
         [255, 255, 0, 255],
         [0, 0, 255, 255],
     ]
-    for c, p in zip(color, pos):
+    for c, p in zip(color, pos, strict=False):
         coord = tuple(
             np.round(np.multiply(screenshot.shape[:2], p)).astype(int)
         )
@@ -329,7 +329,7 @@ def test_grid_mode(make_napari_viewer):
 def test_changing_image_attenuation(make_napari_viewer):
     """Test changing attenuation value changes rendering."""
     data = np.zeros((100, 10, 10))
-    data[-1] = 1
+    data[0] = 1
 
     viewer = make_napari_viewer(show=True)
     viewer.dims.ndisplay = 3

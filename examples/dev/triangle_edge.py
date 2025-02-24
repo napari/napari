@@ -37,7 +37,9 @@ import numpy as np
 
 import napari
 from napari.layers import Shapes
-from napari.layers.shapes._shapes_utils import generate_2D_edge_meshes
+from napari.layers.shapes._accelerated_triangulate_dispatch import (
+    generate_2D_edge_meshes_py,
+)
 
 
 def generate_regular_polygon(n, radius=1):
@@ -63,9 +65,9 @@ def get_reference_edge_triangulation_points(shape: Shapes) -> np.ndarray:
     """Get the non-accelerated points"""
     shapes = shape._data_view.shapes
     path_list = [(x.data, x._closed) for x in shapes]
-    mesh_list = [generate_2D_edge_meshes(path, closed)
+    mesh_list = [generate_2D_edge_meshes_py(path, closed)
                  for path, closed in path_list]
-    mesh = tuple(np.concatenate(el, axis=0) for el in zip(*mesh_list))
+    mesh = tuple(np.concatenate(el, axis=0) for el in zip(*mesh_list, strict=False))
 
     return mesh[0] + mesh[1]
 
@@ -269,7 +271,7 @@ def get_helper_data_from_shapes(shapes_layer: Shapes) -> Helpers:
     mesh_list = [(s._edge_vertices, s._edge_offsets, s._edge_triangles)
                  for s in shapes]
     path_list = [(s.data, s._closed) for s in shapes]
-    mesh = tuple(np.concatenate(el, axis=0) for el in zip(*mesh_list))
+    mesh = tuple(np.concatenate(el, axis=0) for el in zip(*mesh_list, strict=False))
     face_mesh_list = [(s._face_vertices, s._face_triangles)
                       for s in shapes
                       if len(s._face_vertices) > 0]
@@ -321,7 +323,7 @@ def add_helper_layers(viewer: napari.Viewer, source_layer):
     colors = ['yellow', 'white', 'red', 'blue',
               'green', 'yellow', 'pink', 'magenta']
     for (name, data), size, color in zip(
-            asdict(helpers).items(), sizes, colors
+            asdict(helpers).items(), sizes, colors, strict=False
             ):
         if 'points' in name:
             viewer.add_points(data, name=name, size=size, face_color=color)
@@ -340,6 +342,8 @@ path = np.array([[0,0], [0,1], [1,1], [1,0]]) * 10
 sparkle = np.array([[1, 1], [10, 0], [1, -1], [0, -10],
                     [-1, -1], [-10, 0], [-1, 1], [0, 10]])
 fork = np.array([[2, 10], [0, -5], [-2, 10], [-2, -10], [2, -10]])
+
+poly_hole = np.array([[0,0], [10, 0], [10, 10], [0, 10], [0, 0], [2, 5], [5, 8], [8, 5], [5, 2], [2, 5]]) *1.5
 
 polygons = [
     # square
@@ -363,6 +367,7 @@ polygons = [
               [19.27325521, 7.66883038],
               [15.83450076, 10.5778984]],
              ) + np.array([[60, -15]]),
+    poly_hole + np.array([[65, 20]]),
     ]
 
 paths = [
@@ -372,6 +377,7 @@ paths = [
     generate_regular_polygon(10, radius=1) * 10 + np.array([[25, 50]]),
     # a three-point straight line (tests collinear points in path)
     np.array([[0, -10], [0, 0], [0, 10]]) + np.array([[50, 50]]),
+    poly_hole + np.array([[65, 45]]),
     ]
 
 shapes = polygons + paths

@@ -5,7 +5,7 @@ import typing
 import warnings
 from collections.abc import Iterable
 from functools import cached_property
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -49,9 +49,11 @@ class LayerList(SelectableEventedList[Layer]):
     moved : (index: int, new_index: int, value: T)
         emitted after ``value`` is moved from ``index`` to ``new_index``
     changed : (index: int, old_value: T, value: T)
-        emitted when item at ``index`` is changed from ``old_value`` to ``value``
+        emitted when item at ``index`` is changed from ``old_value`` to
+        ``value``
     changed <OVERLOAD> : (index: slice, old_value: List[_T], value: List[_T])
-        emitted when item at ``index`` is changed from ``old_value`` to ``value``
+        emitted when items at ``index``es are changed from ``old_value`` to
+        ``value``
     reordered : (value: self)
         emitted when the list is reordered (eg. moved/reversed).
     selection.events.changed : (added: Set[_T], removed: Set[_T])
@@ -61,6 +63,49 @@ class LayerList(SelectableEventedList[Layer]):
         emitted when the current item has changed.
     selection.events._current : (value: _T)
         emitted when the current item has changed. (Private event)
+
+    Notes
+    -----
+
+    Note that ``changed`` events are only emitted when an element of the
+    list changes, *not* when the list itself changes (for example when items
+    are added or removed). For example, ``layerlist.append(layer)`` will emit
+    an ``inserted`` event. ``layerlist[idx] = layer`` *will* emit a ``changed``
+    event.
+
+    However, the layerlist does not have a way of detecting when an object in
+    the list is modified in-place. Therefore, although
+    ``layerlist[idx].scale = [2, 1, 1]`` changes the *value* of the layer at
+    position ``idx``, a ``changed`` event will not be emitted.
+
+    Examples
+    --------
+
+    >>> import napari
+    >>> from skimage.data import astronaut
+    >>> viewer = napari.Viewer()
+    >>> event_list = []
+
+    Connect to the event list:
+
+    >>> viewer.layers.events.connect(event_list.append)
+    <built-in method append of list object at 0x7fc225764780>
+
+    >>> viewer.add_image(astronaut())
+    <Image layer 'Image' at 0x7f0fe7fa9e90>
+    >>> viewer.add_points()
+    <Points layer 'Points' at 0x7f102f962350>
+    >>> viewer.layers
+    [<Image layer 'Image' at 0x7f0fe7fa9e90>, <Points layer 'Points' at 0x7f102f962350>]
+
+    Inspecting the list of events, we see:
+
+    >>> event_list[0].type
+    'inserting'
+    >>> viewer.layers.pop(1)
+    <Points layer 'Points' at 0x7f102f962350>
+    >>> event_list[-1].type
+    'removed'
 
     """
 
@@ -161,7 +206,7 @@ class LayerList(SelectableEventedList[Layer]):
         return values
 
     @typing.overload
-    def __getitem__(self, item: Union[int, str]) -> Layer: ...
+    def __getitem__(self, item: int | str) -> Layer: ...
 
     @typing.overload
     def __getitem__(self, item: slice) -> Self: ...
@@ -357,7 +402,8 @@ class LayerList(SelectableEventedList[Layer]):
         """Get ranges for Dims.range in world coordinates."""
         ext = self.extent
         return tuple(
-            RangeTuple(*x) for x in zip(ext.world[0], ext.world[1], ext.step)
+            RangeTuple(*x)
+            for x in zip(ext.world[0], ext.world[1], ext.step, strict=False)
         )
 
     @property
@@ -375,7 +421,7 @@ class LayerList(SelectableEventedList[Layer]):
     def _link_layers(
         self,
         method: str,
-        layers: Optional[Iterable[Union[str, Layer]]] = None,
+        layers: Iterable[str | Layer] | None = None,
         attributes: Iterable[str] = (),
     ):
         # adding this method here allows us to emit an event when
@@ -392,16 +438,27 @@ class LayerList(SelectableEventedList[Layer]):
 
     def link_layers(
         self,
-        layers: Optional[Iterable[Union[str, Layer]]] = None,
+        layers: Iterable[str | Layer] | None = None,
         attributes: Iterable[str] = (),
     ):
+        """
+        Links the selected layers.
+
+        Once layers are linked, any action performed on one layer will be
+        performed on all linked layers at the same time.
+        """
         return self._link_layers('link_layers', layers, attributes)
 
     def unlink_layers(
         self,
-        layers: Optional[Iterable[Union[str, Layer]]] = None,
+        layers: Iterable[str | Layer] | None = None,
         attributes: Iterable[str] = (),
     ):
+        """Unlinks previously linked layers.
+
+        Changes to one of the layer's properties no longer result in the same
+        changes to the previously linked layers.
+        """
         return self._link_layers('unlink_layers', layers, attributes)
 
     def save(
@@ -409,8 +466,8 @@ class LayerList(SelectableEventedList[Layer]):
         path: str,
         *,
         selected: bool = False,
-        plugin: Optional[str] = None,
-        _writer: Optional[WriterContribution] = None,
+        plugin: str | None = None,
+        _writer: WriterContribution | None = None,
     ) -> list[str]:
         """Save all or only selected layers to a path using writer plugins.
 

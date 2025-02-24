@@ -73,9 +73,16 @@ def test_paint(modifiers, native, expected_dim):
     assert np.equal(viewer.dims.point, expected_dim[3]).all()
 
 
-def test_double_click_to_zoom():
+@pytest.mark.parametrize(
+    'layer_shape',
+    [
+        (10, 10, 10),
+        (10, 10),
+    ],
+)
+def test_double_click_to_zoom(layer_shape):
     viewer = ViewerModel()
-    data = np.zeros((10, 10, 10))
+    data = np.zeros(layer_shape)
     viewer.add_image(data)
 
     # Ensure `pan_zoom` mode is active

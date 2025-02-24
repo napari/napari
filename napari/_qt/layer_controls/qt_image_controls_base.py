@@ -4,10 +4,9 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from qtpy.QtCore import Qt
-from qtpy.QtGui import QImage, QPixmap
+from qtpy.QtGui import QIcon, QImage, QPixmap
 from qtpy.QtWidgets import (
     QHBoxLayout,
-    QLabel,
     QPushButton,
     QWidget,
 )
@@ -70,13 +69,13 @@ class QtBaseImageControls(QtLayerControls):
     button_grid : qtpy.QtWidgets.QGridLayout
         GridLayout for the layer mode buttons
     panzoom_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
-        Button to pan/zoom shapes layer.
+        Button to activate move camera mode for layer.
     transform_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
-        Button to transform shapes layer.
+        Button to transform image layer.
     clim_popup : napari._qt.qt_range_slider_popup.QRangeSliderPopup
         Popup widget launching the contrast range slider.
-    colorbarLabel : qtpy.QtWidgets.QLabel
-        Label text of colorbar widget.
+    colorbarLabel : qtpy.QtWidgets.QPushButton
+        Button showing colorbar widget. Also enables selection of custom colormap.
     colormapComboBox : qtpy.QtWidgets.QComboBox
         Dropdown widget for selecting the layer colormap.
     contrastLimitsSlider : superqt.QRangeSlider
@@ -146,9 +145,10 @@ class QtBaseImageControls(QtLayerControls):
         connect_setattr(sld.valueChanged, self.layer, 'gamma')
         self.gammaSlider = sld
 
-        self.colorbarLabel = QLabel(parent=self)
+        self.colorbarLabel = QPushButton(parent=self)
         self.colorbarLabel.setObjectName('colorbar')
         self.colorbarLabel.setToolTip(trans._('Colorbar'))
+        self.colorbarLabel.clicked.connect(self._on_make_colormap)
 
         self._on_colormap_change()
         if self.__class__ == QtBaseImageControls:
@@ -157,6 +157,15 @@ class QtBaseImageControls(QtLayerControls):
             # layout so that qtbot will correctly clean up all instantiated
             # widgets.
             self.layout().addRow(self.button_grid)
+
+    def _on_make_colormap(self):
+        """Make new colormap when colorbarLabel (pushbutton) is pressed."""
+        from napari._qt.utils import get_color
+        from napari.utils.colormaps.colormap_utils import ensure_colormap
+
+        color = get_color(self, mode='hex')
+        if color:
+            self.layer.colormap = ensure_colormap(color)
 
     def changeColor(self, text):
         """Change colormap on the layer model.
@@ -215,7 +224,7 @@ class QtBaseImageControls(QtLayerControls):
             cbar.shape[0],
             QImage.Format_RGBA8888,
         )
-        self.colorbarLabel.setPixmap(QPixmap.fromImage(image))
+        self.colorbarLabel.setIcon(QIcon(QPixmap.fromImage(image)))
 
     def _on_gamma_change(self):
         """Receive the layer model gamma change event and update the slider."""
