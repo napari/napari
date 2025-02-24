@@ -1,10 +1,11 @@
 from qtpy.QtCore import QModelIndex, QRect
-from qtpy.QtGui import QImage, QPainter, QPixmap
+from qtpy.QtGui import QIcon, QImage, QPainter, QPixmap
 from qtpy.QtWidgets import (
     QComboBox,
     QHBoxLayout,
     QLabel,
     QListView,
+    QPushButton,
     QStyledItemDelegate,
     QStyleOptionViewItem,
     QWidget,
@@ -114,8 +115,8 @@ class QtColormapControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-    colorbarLabel : qtpy.QtWidgets.QLabel
-        Label text of colorbar widget.
+    colorbarLabel : qtpy.QtWidgets.QPushButton
+        Button showing colorbar widget. Also enables selection of custom colormap.
     colormapComboBox : qtpy.QtWidgets.QComboBox
         ComboBox controlling current colormap of the layer.
     colormapWidget : qtpy.QtWidgets.QWidget
@@ -140,9 +141,10 @@ class QtColormapControl(QtWidgetControlsBase):
 
         comboBox.currentTextChanged.connect(self.changeColor)
         self.colormapComboBox = comboBox
-        self.colorbarLabel = QLabel(parent=parent)
+        self.colorbarLabel = QPushButton(parent=parent)
         self.colorbarLabel.setObjectName('colorbar')
         self.colorbarLabel.setToolTip(trans._('Colorbar'))
+        self.colorbarLabel.clicked.connect(self._on_make_colormap)
 
         colormap_layout = QHBoxLayout()
         colormap_layout.setContentsMargins(0, 0, 0, 2)
@@ -152,7 +154,7 @@ class QtColormapControl(QtWidgetControlsBase):
             self.colorbarLabel.setVisible(False)
         else:
             colormap_layout.addWidget(self.colorbarLabel)
-            colormap_layout.addWidget(self.colormapComboBox)
+            colormap_layout.addWidget(self.colormapComboBox, stretch=1)
         colormap_layout.addStretch(1)
         self.colormapWidget = QWidget()
         self.colormapWidget.setProperty('emphasized', True)
@@ -193,7 +195,16 @@ class QtColormapControl(QtWidgetControlsBase):
             cbar.shape[0],
             QImage.Format_RGBA8888,
         )
-        self.colorbarLabel.setPixmap(QPixmap.fromImage(image))
+        self.colorbarLabel.setIcon(QIcon(QPixmap.fromImage(image)))
+
+    def _on_make_colormap(self):
+        """Make new colormap when colorbarLabel (pushbutton) is pressed."""
+        from napari._qt.utils import get_color
+        from napari.utils.colormaps.colormap_utils import ensure_colormap
+
+        color = get_color(self.parent(), mode='hex')
+        if color:
+            self._layer.colormap = ensure_colormap(color)
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [(self.colormapWidgetLabel, self.colormapWidget)]
