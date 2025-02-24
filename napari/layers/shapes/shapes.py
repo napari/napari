@@ -19,6 +19,9 @@ from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
     transform_with_box,
 )
+from napari.layers.shapes._accelerated_triangulate_dispatch import (
+    warmup_numba_cache,
+)
 from napari.layers.shapes._shape_list import ShapeList
 from napari.layers.shapes._shapes_constants import (
     Box,
@@ -472,6 +475,7 @@ class Shapes(Layer):
             if ndim is None:
                 ndim = 2
             data = np.empty((0, 0, ndim))
+            warmup_numba_cache()
         else:
             data, shape_type = extract_shape_type(data, shape_type)
             data_ndim = get_shape_ndim(data)
