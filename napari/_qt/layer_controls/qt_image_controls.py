@@ -92,14 +92,14 @@ class QtImageControls(QtBaseImageControls):
     def __init__(self, layer) -> None:
         super().__init__(layer)
         # Setup widgets controls
-        self._interpolationControl = QtInterpolationComboBoxControl(
+        self._interpolation_control = QtInterpolationComboBoxControl(
             self, layer
         )
-        self._add_widget_controls(self._interpolationControl)
+        self._add_widget_controls(self._interpolation_control)
         self._depiction_control = QtDepictionControl(self, layer)
-        self._add_widget_controls(self._depictionControl)
+        self._add_widget_controls(self._depiction_control)
         self._render_control = QtImageRenderControl(self, layer)
-        self._add_widget_controls(self._renderControl)
+        self._add_widget_controls(self._render_control)
 
         self._on_ndisplay_changed()
 
