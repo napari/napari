@@ -22,6 +22,7 @@ import numpy as np
 from magicgui.widgets import ComboBox, FunctionGui
 
 from napari.utils._proxies import PublicOnlyProxy
+from napari.utils.notifications import show_info
 
 if TYPE_CHECKING:
     from concurrent.futures import Future
@@ -82,6 +83,29 @@ def _get_layers_from_widget(gui: FunctionGui, viewer: Viewer) -> list[Layer]:
     return res
 
 
+def _get_spatial_from_layer(layer, ndim):
+    axis = np.array(range(-ndim, 0))
+
+    data2physical = layer._transforms['data2physical'].set_slice(axis)
+    return {
+        'scale': data2physical.scale,
+        'translate': data2physical.translate,
+        'rotate': data2physical.rotate,
+        'shear': data2physical.shear,
+        'affine': layer.affine.set_slice(axis).affine_matrix,
+    }
+
+
+def _cmp_meta(meta1, meta2):
+    return (
+        np.array_equal(meta1['scale'], meta2['scale'])
+        and np.array_equal(meta1['translate'], meta2['translate'])
+        and np.array_equal(meta1['rotate'], meta2['rotate'])
+        and np.array_equal(meta1['shear'], meta2['shear'])
+        and np.array_equal(meta1['affine'], meta2['affine'])
+    )
+
+
 def _calc_affine_from_source_layers(data, source_layers: list[Layer]):
     """Calculate affine information for provided data based on source layers.
 
@@ -106,27 +130,16 @@ def _calc_affine_from_source_layers(data, source_layers: list[Layer]):
         return {}
 
     ndim = data.ndim
-    axis = np.array(range(-ndim, 0))
 
-    data2physical = (
-        source_layers[0]._transforms['data2physical'].set_slice(axis)
-    )
+    meta = _get_spatial_from_layer(source_layers[0], ndim)
 
-    meta = {
-        'scale': data2physical.scale,
-        'translate': data2physical.translate,
-        'rotate': data2physical.rotate,
-        'shear': data2physical.shear,
-        'affine': source_layers[0].affine.set_slice(axis).affine_matrix,
-    }
+    for layer in source_layers[1:]:
+        local_meta = _get_spatial_from_layer(layer, ndim)
+        if not _cmp_meta(meta, local_meta):
+            show_info('Cannot inherit spatial information from source layers')
+            return {}
+
     return meta
-
-    # for layer in source_layers:
-    #     if layer.ndim < ndim:
-    #         continue
-    #
-    #     if layer.affine is not None:
-    #         return layer.affine
 
 
 def add_layer_data_to_viewer(gui: FunctionGui, result: Any, return_type: type):

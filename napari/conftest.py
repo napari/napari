@@ -995,6 +995,11 @@ def _find_dangling_widgets(request, qtbot):
         raise RuntimeError(f'Found dangling widgets:\n{text}')
 
 
+@pytest.fixture
+def rng():
+    return np.random.default_rng(0)
+
+
 def pytest_runtest_setup(item):
     """Add Qt leak detection fixtures *only* in tests using the qapp fixture.
 

@@ -61,13 +61,13 @@ def test_magicgui_add_data(make_napari_viewer, LayerType, data, ndim):
     assert viewer.layers[0].source.widget == add_data
 
 
-def test_magicgui_add_data_inheritance(make_napari_viewer):
+def test_magicgui_add_data_inheritance(make_napari_viewer, rng):
     """This test validates if the scale and translate are inherited from the
     previous layer when adding a new layer with magicgui if function requests,
     a LayerData type.
     """
     viewer = make_napari_viewer()
-    viewer.add_image(np.random.rand(10, 10), scale=(2, 2), translate=(1, 1))
+    viewer.add_image(rng.random((10, 10)), scale=(1, 2), translate=(3, 4))
 
     @magicgui
     def add_data(data: types.ImageData) -> types.LabelsData:
@@ -77,11 +77,38 @@ def test_magicgui_add_data_inheritance(make_napari_viewer):
     add_data()
     assert len(viewer.layers) == 2
     assert isinstance(viewer.layers[1], Labels)
-    npt.assert_array_equal(viewer.layers[1].scale, (2, 2))
-    npt.assert_array_equal(viewer.layers[1].translate, (1, 1))
+    npt.assert_array_equal(viewer.layers[1].scale, (1, 2))
+    npt.assert_array_equal(viewer.layers[1].translate, (3, 4))
 
 
-def test_magicgui_add_layer_inheritance(make_napari_viewer):
+def test_magicgui_add_data_inheritance_two_layer(make_napari_viewer, rng):
+    """This test validates if the scale and translate are inherited from the
+    previous layers when adding a new layer with magicgui if function requests,
+    a LayerData type.
+    """
+    viewer = make_napari_viewer()
+    viewer.add_image(rng.random((10, 10)), scale=(1, 2), translate=(3, 4))
+    viewer.add_labels(
+        (rng.random((10, 10)) > 0.5).astype('uint8'),
+        scale=(1, 2),
+        translate=(3, 4),
+    )
+
+    @magicgui
+    def add_data(
+        data1: types.ImageData, data2: types.LabelsData
+    ) -> types.LabelsData:
+        return (data1 * data2).astype('uint8')
+
+    viewer.window.add_dock_widget(add_data)
+    add_data()
+    assert len(viewer.layers) == 3
+    assert isinstance(viewer.layers[2], Labels)
+    npt.assert_array_equal(viewer.layers[2].scale, (1, 2))
+    npt.assert_array_equal(viewer.layers[2].translate, (3, 4))
+
+
+def test_magicgui_add_layer_inheritance(make_napari_viewer, rng):
     """This test validates if the scale and translate are inherited from the
     previous layer when adding a new layer with magicgui if function requests,
     a Layer type.
@@ -89,7 +116,7 @@ def test_magicgui_add_layer_inheritance(make_napari_viewer):
     function does not affect getting the data from the previous layer.
     """
     viewer = make_napari_viewer()
-    viewer.add_image(np.random.rand(10, 10), scale=(2, 2), translate=(1, 1))
+    viewer.add_image(rng.random((10, 10)), scale=(2, 2), translate=(1, 1))
 
     class SampleEnum(Enum):
         A = 'A'
@@ -99,7 +126,9 @@ def test_magicgui_add_layer_inheritance(make_napari_viewer):
     def add_data(
         data: Image, factor: float = 0.5, combo: SampleEnum = SampleEnum.A
     ) -> types.LabelsData:
-        return (data.data > factor).astype('uint8')
+        return (data.data > factor).astype(
+            'uint8' if combo == SampleEnum.A else 'uint16'
+        )
 
     viewer.window.add_dock_widget(add_data)
     add_data()
@@ -109,9 +138,9 @@ def test_magicgui_add_layer_inheritance(make_napari_viewer):
     npt.assert_array_equal(viewer.layers[1].translate, (1, 1))
 
 
-def test_magicgui_add_data_inheritance_upper_dim(make_napari_viewer):
+def test_magicgui_add_data_inheritance_upper_dim(make_napari_viewer, rng):
     viewer = make_napari_viewer()
-    viewer.add_image(np.random.rand(10, 10), scale=(2, 2), translate=(1, 1))
+    viewer.add_image(rng.random((10, 10)), scale=(2, 2), translate=(1, 1))
 
     @magicgui
     def add_data(data: types.ImageData) -> types.LabelsData:
