@@ -26,6 +26,8 @@ HELP_URLS: dict[str, str] = {
     'tutorials': f'https://napari.org/{VERSION}/tutorials/index.html',
     'layers_guide': f'https://napari.org/{VERSION}/howtos/layers/index.html',
     'examples_gallery': f'https://napari.org/{VERSION}/gallery.html',
+    'plugins': f'https://napari.org/{VERSION}/plugins/index.html',
+    'contribute': f'https://napari.org/{VERSION}/developers/index.html',
     'release_notes': f'https://napari.org/{VERSION}/release/release_{VERSION.replace(".", "_")}.html',
     'github_issue': 'https://github.com/napari/napari/issues',
     'homepage': 'https://napari.org',
@@ -78,6 +80,12 @@ Q_HELP_ACTIONS: list[Action] = [
         menus=[{'id': MenuId.MENUBAR_HELP}],
     ),
     Action(
+        id='napari.window.help.plugins',
+        title=trans._('Plugin Usage'),
+        callback=partial(web_open, url=HELP_URLS['plugins']),
+        menus=[{'id': MenuId.MENUBAR_HELP}],
+    ),
+    Action(
         id='napari.window.help.release_notes',
         title=trans._('Release Notes'),
         callback=partial(web_open, url=HELP_URLS['release_notes']),
@@ -100,6 +108,12 @@ Q_HELP_ACTIONS: list[Action] = [
                 'group': MenuGroup.NAVIGATION,
             }
         ],
+    ),
+    Action(
+        id='napari.window.help.contribute',
+        title=trans._('Contribute to napari'),
+        callback=partial(web_open, url=HELP_URLS['contribute']),
+        menus=[{'id': MenuId.MENUBAR_HELP, 'group': MenuGroup.NAVIGATION}],
     ),
     Action(
         id='napari.window.help.homepage',
