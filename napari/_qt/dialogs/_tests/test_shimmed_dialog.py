@@ -14,7 +14,7 @@ def test_dialog_accept(qtbot):
     dialog.okay_btn.click()
     assert dialog.result() == QDialog.DialogCode.Accepted
     assert (
-        get_settings().plugins.warn_on_shimmed_plugin
+        get_settings().plugins.shimmed_plugin_warning_level
         == PluginShimWarningLevel.ALWAYS
     )
 
@@ -28,7 +28,7 @@ def test_dialog_accept_checked(qtbot):
     dialog.okay_btn.click()
     assert dialog.result() == QDialog.DialogCode.Accepted
     assert (
-        get_settings().plugins.warn_on_shimmed_plugin
+        get_settings().plugins.shimmed_plugin_warning_level
         == PluginShimWarningLevel.NEW
     )
     assert get_settings().plugins.already_warned_shimmed_plugins == {
@@ -46,7 +46,7 @@ def test_dialog_reject(qtbot):
     # rejected doesn't save setting
     assert dialog.result() == QDialog.DialogCode.Rejected
     assert (
-        get_settings().plugins.warn_on_shimmed_plugin
+        get_settings().plugins.shimmed_plugin_warning_level
         == PluginShimWarningLevel.ALWAYS
     )
     assert get_settings().plugins.already_warned_shimmed_plugins == set()

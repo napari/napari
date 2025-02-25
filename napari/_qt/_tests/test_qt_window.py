@@ -172,7 +172,9 @@ def test_shimmed_dialog_no_plugins(make_napari_viewer, npe2pm):
 
 def test_shimmed_dialog_already_warned(make_napari_viewer, npe2pm):
     npe2pm.get_shimmed_plugins = MagicMock(return_value={'plugin1', 'plugin2'})
-    get_settings().plugins.warn_on_shimmed_plugin = PluginShimWarningLevel.NEW
+    get_settings().plugins.shimmed_plugin_warning_level = (
+        PluginShimWarningLevel.NEW
+    )
     get_settings().plugins.already_warned_shimmed_plugins = {
         'plugin1',
         'plugin2',

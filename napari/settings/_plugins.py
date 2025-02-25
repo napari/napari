@@ -25,11 +25,11 @@ class PluginsSettings(EventedSettings):
         ),
         requires_restart=True,
     )
-    warn_on_shimmed_plugin: PluginShimWarningLevel = Field(
+    shimmed_plugin_warning_level: PluginShimWarningLevel = Field(
         PluginShimWarningLevel.ALWAYS,
-        title=trans._('npe1 plugin warning'),
+        title=trans._('Warn on adapted plugins'),
         description=trans._(
-            'Choose when to be warned if plugins do not support npe2.\nUse "always" to be warned about plugins on each startup.\nUse "new" to be warned only when an old npe1 plugin is newly installed.\n'
+            'Choose when to be warned if plugins are adapted from the old plugin engine.\nUse "always" to be warned about plugins on each startup.\nUse "new" to be warned only when an adapted plugin is newly installed.\n'
         ),
     )
     already_warned_shimmed_plugins: set[str] = Field(

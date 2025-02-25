@@ -38,7 +38,7 @@ For plugin upgrades, contact the plugin's author and request npe2 updates.
             trans._('Only warn me about newly installed plugins.')
         )
         new_only = (
-            get_settings().plugins.warn_on_shimmed_plugin
+            get_settings().plugins.shimmed_plugin_warning_level
             == PluginShimWarningLevel.NEW
         )
         self.only_new_checkbox.setChecked(new_only)
@@ -69,14 +69,14 @@ For plugin upgrades, contact the plugin's author and request npe2 updates.
 
     def accept(self) -> None:
         if self.only_new_checkbox.isChecked():
-            get_settings().plugins.warn_on_shimmed_plugin = (
+            get_settings().plugins.shimmed_plugin_warning_level = (
                 PluginShimWarningLevel.NEW
             )
             get_settings().plugins.already_warned_shimmed_plugins.update(
                 self.plugins
             )
         else:
-            get_settings().plugins.warn_on_shimmed_plugin = (
+            get_settings().plugins.shimmed_plugin_warning_level = (
                 PluginShimWarningLevel.ALWAYS
             )
             get_settings().plugins.already_warned_shimmed_plugins.clear()
