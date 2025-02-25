@@ -474,18 +474,9 @@ class _QtMainWindow(QMainWindow):
             )
         else:
             new_plugins = shimmed_plugins
-        accepted = True
         if new_plugins:
             dialog = ShimmedPluginDialog(self, new_plugins)
-            if dialog.exec_() != QDialog.Accepted:
-                accepted = False
-        # if the user cancelled, we don't update the new plugins
-        # in all other cases (including if we didn't show a dialog)
-        # we do. this means uninstalling and re-installing a plugin
-        # will result in a new warning if napari has been launched
-        # in the meantime
-        if accepted:
-            settings.plugins.already_warned_shimmed_plugins = shimmed_plugins
+            dialog.exec_()
 
     def close(self, quit_app=False, confirm_need=False):
         """Override to handle closing app or just the window."""

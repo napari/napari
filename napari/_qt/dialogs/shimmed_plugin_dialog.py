@@ -16,14 +16,16 @@ from napari.utils.translations import trans
 class ShimmedPluginDialog(QDialog):
     def __init__(self, parent: QWidget, plugins: set[str]) -> None:
         super().__init__(parent)
+        self.setWindowTitle('Installed Plugin Warning')
         okay_btn = QPushButton(trans._('Okay'))
         icon_label = QWidget()
         icon_label.setObjectName('warning_icon_element')
-        plugin_info_text = """
+        self.plugin_info_text = """
 The following plugins use napari's old plugin engine. These plugins have been automatically converted to the new plugin engine, npe2:
         """
-        plugin_text = '\n'.join(plugins)
-        info_text = """
+        self.plugins = plugins
+        self.plugin_text = '\n'.join(self.plugins)
+        self.info_text = """
 While the conversion should work for these plugins, some plugin functionality, such as code designed to run on import, may not work as expected.
 
 If you notice an error in any of these plugins, drop back to using the old plugin engine by turning off the 'Use npe2 adaptor' setting in the plugin preferences.
@@ -47,11 +49,11 @@ For plugin upgrades, contact the plugin's author and request npe2 updates.
         layout2 = QHBoxLayout()
         layout2.addWidget(icon_label)
         layout2a = QVBoxLayout()
-        layout2a.addWidget(QLabel(plugin_info_text))
-        layout2a.addWidget(QLabel(plugin_text))
+        layout2a.addWidget(QLabel(self.plugin_info_text))
+        layout2a.addWidget(QLabel(self.plugin_text))
         layout2.addLayout(layout2a)
         layout3 = QVBoxLayout()
-        layout3.addWidget(QLabel(info_text))
+        layout3.addWidget(QLabel(self.info_text))
         layout4 = QHBoxLayout()
         layout4.addWidget(self.only_new_checkbox)
         layout4.addStretch(1)
@@ -70,8 +72,12 @@ For plugin upgrades, contact the plugin's author and request npe2 updates.
             get_settings().plugins.warn_on_shimmed_plugin = (
                 PluginShimWarningLevel.NEW
             )
+            get_settings().plugins.already_warned_shimmed_plugins.update(
+                self.plugins
+            )
         else:
             get_settings().plugins.warn_on_shimmed_plugin = (
                 PluginShimWarningLevel.ALWAYS
             )
+            get_settings().plugins.already_warned_shimmed_plugins.clear()
         super().accept()
