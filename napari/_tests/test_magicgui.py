@@ -139,6 +139,7 @@ def test_magicgui_add_layer_inheritance(make_napari_viewer, rng):
 
 
 def test_magicgui_add_data_inheritance_upper_dim(make_napari_viewer, rng):
+    """In the current implementation, layer with dimensionality lower than produced data are ignored"""
     viewer = make_napari_viewer()
     viewer.add_image(rng.random((10, 10)), scale=(2, 2), translate=(1, 1))
 
