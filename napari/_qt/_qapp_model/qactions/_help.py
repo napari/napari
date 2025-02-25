@@ -81,7 +81,7 @@ Q_HELP_ACTIONS: list[Action] = [
     ),
     Action(
         id='napari.window.help.plugins',
-        title=trans._('Plugin Usage'),
+        title=trans._('Extend with Plugins'),
         callback=partial(web_open, url=HELP_URLS['plugins']),
         menus=[{'id': MenuId.MENUBAR_HELP}],
     ),
