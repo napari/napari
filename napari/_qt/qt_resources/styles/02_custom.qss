@@ -354,11 +354,6 @@ QtDimSliderWidget > QLineEdit {
 
 /* ------------ Special Dialogs ------------ */
 
-QtAboutKeybindings {
-  min-width: 600px;
-  min-height: 605px;
-}
-
 QtAbout > QTextEdit{
   margin: 0px;
   border: 0px;
