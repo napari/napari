@@ -58,7 +58,7 @@ dask==2025.2.0
     #   distributed
 debugpy==1.8.12
     # via ipykernel
-decorator==5.1.1
+decorator==5.2.1
     # via ipython
 distlib==0.3.9
     # via virtualenv
@@ -100,7 +100,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.126.0
+hypothesis==6.127.1
     # via napari (napari_repo/pyproject.toml)
 idna==3.10
     # via requests

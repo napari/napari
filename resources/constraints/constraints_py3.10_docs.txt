@@ -73,7 +73,7 @@ dask==2025.2.0
     #   distributed
 debugpy==1.8.12
     # via ipykernel
-decorator==5.2.0
+decorator==5.2.1
     # via ipython
 distlib==0.3.9
     # via virtualenv
@@ -126,7 +126,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.126.0
+hypothesis==6.127.1
     # via napari (napari_repo/pyproject.toml)
 idna==3.10
     # via
@@ -205,6 +205,8 @@ lazy-loader==0.4
     # via
     #   napari (napari_repo/pyproject.toml)
     #   scikit-image
+linkify-it-py==2.0.3
+    # via napari (napari_repo/pyproject.toml)
 llvmlite==0.44.0
     # via numba
 locket==1.0.0
@@ -259,6 +261,8 @@ napari-sphinx-theme==0.6.0
     # via napari (napari_repo/pyproject.toml)
 napari-svg==0.2.1
     # via napari (napari_repo/pyproject.toml)
+natsort==8.4.0
+    # via seedir
 nbclient==0.10.2
     # via
     #   jupyter-cache
@@ -540,6 +544,7 @@ pyyaml==6.0.2
     #   myst-parser
     #   npe2
     #   sphinx-external-toc
+    #   sphinxcontrib-mermaid
 pyzmq==26.2.1
     # via
     #   ipykernel
@@ -625,6 +630,7 @@ sphinx==7.4.7
     #   sphinx-gallery
     #   sphinx-tabs
     #   sphinx-tags
+    #   sphinxcontrib-mermaid
 sphinx-autobuild==2024.10.3
     # via napari (napari_repo/pyproject.toml)
 sphinx-autodoc-typehints==1.12.0
@@ -755,6 +761,8 @@ typing-extensions==4.12.2
     #   uvicorn
 tzdata==2025.1
     # via pandas
+uc-micro-py==1.0.3
+    # via linkify-it-py
 urllib3==2.3.0
     # via
     #   distributed
