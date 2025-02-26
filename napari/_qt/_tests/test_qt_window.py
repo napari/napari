@@ -1,5 +1,5 @@
 import platform
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
@@ -8,6 +8,7 @@ from qtpy.QtGui import QImage
 from napari._qt.qt_main_window import Window, _QtMainWindow
 from napari._qt.utils import QImg2array
 from napari._tests.utils import skip_on_win_ci
+from napari.settings import get_settings
 from napari.utils.theme import (
     _themes,
     get_theme,
@@ -158,3 +159,34 @@ def test_set_status_and_tooltip(make_napari_viewer):
     viewer.window._qt_window.set_status_and_tooltip(None)
     assert viewer.status == 'Text1'
     assert viewer.tooltip.text == 'Text2'
+
+
+def test_shimmed_dialog_no_plugins(make_napari_viewer, npe2pm):
+    npe2pm.get_shimmed_plugins = MagicMock(return_value={})
+    with patch('napari._qt.qt_main_window.ShimmedPluginDialog') as mock_dialog:
+        make_napari_viewer(show=True)
+        npe2pm.get_shimmed_plugins.assert_called()
+        mock_dialog.assert_not_called()
+
+
+def test_shimmed_dialog_already_warned(make_napari_viewer, npe2pm):
+    npe2pm.get_shimmed_plugins = MagicMock(return_value={'plugin1', 'plugin2'})
+    get_settings().plugins.only_new_shimmed_plugins_warning = True
+    get_settings().plugins.already_warned_shimmed_plugins = {
+        'plugin1',
+        'plugin2',
+    }
+    with patch('napari._qt.qt_main_window.ShimmedPluginDialog') as mock_dialog:
+        make_napari_viewer(show=True)
+        npe2pm.get_shimmed_plugins.assert_called()
+        mock_dialog.assert_not_called()
+
+
+def test_shimmed_dialog_show(make_napari_viewer, npe2pm):
+    npe2pm.get_shimmed_plugins = MagicMock(return_value={'plugin1', 'plugin2'})
+    with patch('napari._qt.qt_main_window.ShimmedPluginDialog') as mock_dialog:
+        viewer = make_napari_viewer(show=True)
+        npe2pm.get_shimmed_plugins.assert_called()
+        mock_dialog.assert_called_once_with(
+            viewer.window._qt_window, {'plugin1', 'plugin2'}
+        )
