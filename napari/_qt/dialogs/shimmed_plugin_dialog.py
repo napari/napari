@@ -9,7 +9,6 @@ from qtpy.QtWidgets import (
 )
 
 from napari.settings import get_settings
-from napari.settings._constants import PluginShimWarningLevel
 from napari.utils.translations import trans
 
 
@@ -37,10 +36,7 @@ For plugin upgrades, contact the plugin's author and request npe2 updates.
         self.only_new_checkbox = QCheckBox(
             trans._('Only warn me about newly installed plugins.')
         )
-        new_only = (
-            get_settings().plugins.shimmed_plugin_warning_level
-            == PluginShimWarningLevel.NEW
-        )
+        new_only = get_settings().plugins.only_new_shimmed_plugins_warning
         self.only_new_checkbox.setChecked(new_only)
 
         okay_btn.clicked.connect(self.accept)
@@ -69,15 +65,11 @@ For plugin upgrades, contact the plugin's author and request npe2 updates.
 
     def accept(self) -> None:
         if self.only_new_checkbox.isChecked():
-            get_settings().plugins.shimmed_plugin_warning_level = (
-                PluginShimWarningLevel.NEW
-            )
+            get_settings().plugins.only_new_shimmed_plugins_warning = True
             get_settings().plugins.already_warned_shimmed_plugins.update(
                 self.plugins
             )
         else:
-            get_settings().plugins.shimmed_plugin_warning_level = (
-                PluginShimWarningLevel.ALWAYS
-            )
+            get_settings().plugins.only_new_shimmed_plugins_warning = False
             get_settings().plugins.already_warned_shimmed_plugins.clear()
         super().accept()

@@ -2,7 +2,6 @@ from typing_extensions import TypedDict
 
 from napari._pydantic_compat import Field
 from napari.settings._base import EventedSettings
-from napari.settings._constants import PluginShimWarningLevel
 from napari.utils.translations import trans
 
 
@@ -25,11 +24,11 @@ class PluginsSettings(EventedSettings):
         ),
         requires_restart=True,
     )
-    shimmed_plugin_warning_level: PluginShimWarningLevel = Field(
-        PluginShimWarningLevel.ALWAYS,
-        title=trans._('Warn on adapted plugins'),
+    only_new_shimmed_plugins_warning: bool = Field(
+        False,
+        title=trans._('Only warn for new adapted plugins'),
         description=trans._(
-            'Choose when to be warned if plugins are adapted from the old plugin engine.\nUse "always" to be warned about plugins on each startup.\nUse "new" to be warned only when an adapted plugin is newly installed.\n'
+            'Only warn about newly installed adapted plugins. Leave unchecked to receive warning with each startup.'
         ),
     )
     already_warned_shimmed_plugins: set[str] = Field(

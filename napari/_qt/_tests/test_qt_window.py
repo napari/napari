@@ -9,7 +9,6 @@ from napari._qt.qt_main_window import Window, _QtMainWindow
 from napari._qt.utils import QImg2array
 from napari._tests.utils import skip_on_win_ci
 from napari.settings import get_settings
-from napari.settings._constants import PluginShimWarningLevel
 from napari.utils.theme import (
     _themes,
     get_theme,
@@ -172,9 +171,7 @@ def test_shimmed_dialog_no_plugins(make_napari_viewer, npe2pm):
 
 def test_shimmed_dialog_already_warned(make_napari_viewer, npe2pm):
     npe2pm.get_shimmed_plugins = MagicMock(return_value={'plugin1', 'plugin2'})
-    get_settings().plugins.shimmed_plugin_warning_level = (
-        PluginShimWarningLevel.NEW
-    )
+    get_settings().plugins.only_new_shimmed_plugins_warning = True
     get_settings().plugins.already_warned_shimmed_plugins = {
         'plugin1',
         'plugin2',
