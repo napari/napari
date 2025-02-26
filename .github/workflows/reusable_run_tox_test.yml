@@ -49,8 +49,8 @@ jobs:
       PYVISTA_OFF_SCREEN: True
       MIN_REQ: ${{ inputs.min_req }}
       FORCE_COLOR: 1
-      PIP_CONSTRAINT: ${{ github.workspace }}/resources/constraints/constraints_py${{ inputs.python_version }}${{ ((startsWith(inputs.platform, 'windows') && '_windows') || '') }}${{ inputs.min_req && '_min_req' }}${{ inputs.constraints_suffix }}.txt
-      UV_CONSTRAINT: ${{ github.workspace }}/resources/constraints/constraints_py${{ inputs.python_version }}${{ ((startsWith(inputs.platform, 'windows') && '_windows') || '') }}${{ inputs.min_req && '_min_req' }}${{ inputs.constraints_suffix }}.txt
+      PIP_CONSTRAINT: ${{ github.workspace }}/resources/constraints/constraints_py${{ inputs.python_version }}${{ inputs.min_req && '_min_req' }}${{ inputs.constraints_suffix }}.txt
+      UV_CONSTRAINT: ${{ github.workspace }}/resources/constraints/constraints_py${{ inputs.python_version }}${{ inputs.min_req && '_min_req' }}${{ inputs.constraints_suffix }}.txt
       # Above we calculate path to constraints file based on python version and platform
       # Because there is no single PyQt5-Qt5 package version available for all platforms we was forced to use
       # different constraints files for Windows. An example with macOS arm64:
