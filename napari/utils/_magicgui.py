@@ -96,7 +96,7 @@ def _get_spatial_from_layer(layer, ndim):
     }
 
 
-def _cmp_meta(meta1, meta2):
+def _compare_meta(meta1, meta2):
     return (
         np.array_equal(meta1['scale'], meta2['scale'])
         and np.array_equal(meta1['translate'], meta2['translate'])
@@ -135,7 +135,7 @@ def _calc_affine_from_source_layers(data, source_layers: list[Layer]):
 
     for layer in source_layers[1:]:
         local_meta = _get_spatial_from_layer(layer, ndim)
-        if not _cmp_meta(meta, local_meta):
+        if not _compare_meta(meta, local_meta):
             show_info('Cannot inherit spatial information from source layers')
             return {}
 
