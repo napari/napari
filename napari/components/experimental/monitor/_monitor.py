@@ -90,7 +90,7 @@ def _setup_logging(config: dict) -> None:
 def _get_monitor_config() -> dict | None:
     """Create and return the configuration for the MonitorService.
 
-    The routine might return None for one serveral reasons:
+    The routine might return None for one several reasons:
     1) We're not running under Python 3.9 or now.
     2) The monitor is explicitly disable, ENABLED_MONITOR is False.
     3) The NAPARI_MON environment variable is not defined.
