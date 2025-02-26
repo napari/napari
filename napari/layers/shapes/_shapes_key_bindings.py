@@ -1,5 +1,4 @@
-from collections.abc import Generator
-from typing import Callable
+from collections.abc import Callable, Generator
 
 import numpy as np
 from app_model.types import KeyCode
@@ -57,7 +56,7 @@ def activate_shapes_transform_mode(layer: Shapes) -> None:
     layer.mode = Mode.TRANSFORM
 
 
-@register_shapes_mode_action(trans._('Pan/zoom'))
+@register_shapes_mode_action(trans._('Move camera'))
 def activate_shapes_pan_zoom_mode(layer: Shapes) -> None:
     layer.mode = Mode.PAN_ZOOM
 

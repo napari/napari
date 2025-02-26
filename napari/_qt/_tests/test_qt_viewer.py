@@ -1,7 +1,6 @@
 import gc
 import os
 import weakref
-from dataclasses import dataclass
 from itertools import product, takewhile
 from unittest import mock
 
@@ -14,6 +13,7 @@ from qtpy.QtCore import QEvent, Qt
 from qtpy.QtGui import QGuiApplication, QKeyEvent
 from qtpy.QtWidgets import QApplication, QMessageBox
 from scipy import ndimage as ndi
+from vispy.app import MouseEvent
 
 from napari._qt.qt_viewer import QtViewer
 from napari._tests.utils import (
@@ -334,7 +334,15 @@ def test_export_rois(make_napari_viewer, tmp_path):
         (tmp_path / f'roi_{i}.png').exists()
         for i in range(len(roi_shapes_data))
     )
-    assert all(roi.shape == (20, 20, 4) for roi in test_roi)
+
+    # This test uses scaling to adjust the expected size of ROI images
+    # and number of white pixels in the ROI screenshots
+    # The assertion may fail if the test is run on screens with fractional scaling.
+    scaling = viewer.window._qt_window.screen().devicePixelRatio()
+
+    assert all(
+        roi.shape == (20 * scaling, 20 * scaling, 4) for roi in test_roi
+    )
     assert viewer.camera.center == camera_center
     assert viewer.camera.zoom == camera_zoom
 
@@ -347,9 +355,9 @@ def test_export_rois(make_napari_viewer, tmp_path):
     expected_values = [0, 100, 100, 100, 100, 400]
     for index, roi_img in enumerate(test_roi):
         gray_img = roi_img[..., 0]
-        assert np.count_nonzero(gray_img) == expected_values[index], (
-            f'Wrong number of white pixels in the ROI {index}'
-        )
+        assert (
+            np.count_nonzero(gray_img) == expected_values[index] * scaling**2
+        ), f'Wrong number of white pixels in the ROI {index}'
 
     # Not testing the exact content of the screenshot. It seems not to work within the test, but manual testing does.
     viewer.close()
@@ -558,19 +566,14 @@ def test_active_keybindings(make_napari_viewer):
     assert view._key_map_handler.keymap_providers[0] == layer_image
 
 
-@dataclass
-class MouseEvent:
-    # mock mouse event class
-    pos: list[int]
-
-
 def test_process_mouse_event(make_napari_viewer):
     """Test that the correct properties are added to the
     MouseEvent by _process_mouse_events.
     """
     # make a mock mouse event
-    new_pos = [25, 25]
+    new_pos = (25, 25)
     mouse_event = MouseEvent(
+        type='mouse_press',
         pos=new_pos,
     )
     data = np.zeros((5, 20, 20, 20), dtype=int)
@@ -582,7 +585,7 @@ def test_process_mouse_event(make_napari_viewer):
 
     @labels.mouse_drag_callbacks.append
     def on_click(layer, event):
-        np.testing.assert_almost_equal(event.view_direction, [0, 1, 0, 0])
+        np.testing.assert_almost_equal(event.view_direction, [0, -1, 0, 0])
         np.testing.assert_array_equal(event.dims_displayed, [1, 2, 3])
         assert event.dims_point[0] == data.shape[0] // 2
 
@@ -600,8 +603,9 @@ def test_process_mouse_event_2d_layer_3d_viewer(make_napari_viewer):
     """
 
     # make a mock mouse event
-    new_pos = [5, 5]
+    new_pos = (5, 5)
     mouse_event = MouseEvent(
+        type='mouse_press',
         pos=new_pos,
     )
     data = np.zeros((20, 20))
@@ -1194,6 +1198,7 @@ def test_more_than_uint16_colors(qt_viewer):
         for i, (x, y, z) in zip(
             range(256**2 + 20),
             product(np.linspace(0, 1, 256, endpoint=True), repeat=3),
+            strict=False,
         )
     }
     colors[None] = (0, 0, 0, 1)
