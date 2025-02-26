@@ -203,6 +203,7 @@ class NapariQtNotification(QDialog):
             )
             if len(notifications) > 1 and notifications[-1] == self:
                 notifications[-2].timer_start()
+            self.parent().setFocus()
         super().close()
 
     def close_with_fade(self):
