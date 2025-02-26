@@ -21,16 +21,16 @@ class ShimmedPluginDialog(QDialog):
         icon_label = QWidget()
         icon_label.setObjectName('warning_icon_element')
         self.plugin_info_text = """
-The following plugins use napari's old plugin engine. These plugins have been automatically converted to the new plugin engine, npe2:
+The following plugins use napari's deprecated plugin engine. These plugins have been automatically converted to the new plugin engine, npe2:
         """
         self.plugins = plugins
-        self.plugin_text = '\n'.join(self.plugins)
+        self.plugin_text = '\n'.join(sorted(self.plugins))
         self.info_text = """
-While the conversion should work for these plugins, some plugin functionality, such as code designed to run on import, may not work as expected.
+Conversion should work for most plugins. Some plugin functionality, such as code designed to run on import, may not work as expected.
 
-If you notice an error in any of these plugins, drop back to using the old plugin engine by turning off the 'Use npe2 adaptor' setting in the plugin preferences.
+If you see an error with these plugins, disable the 'Use npe2 adaptor' setting in plugin preferences. This will drop back napari to use the deprecated plugin engine.
 
-The 'Use npe2 adaptor' setting will be removed in napari 0.7.0, and plugins will only be usable if they can be automatically converted or updated to use npe2.
+The 'Use npe2 adaptor' setting will be removed in napari 0.7.0. Only npe2-compatible plugins will be supported. 
 
 For plugin upgrades, contact the plugin's author and request npe2 updates.
         """
@@ -63,7 +63,7 @@ For plugin upgrades, contact the plugin's author and request npe2 updates.
         layout.addLayout(layout4)
         self.setLayout(layout)
 
-        # for test purposes because of problem with shortcut testing:
+        # To support shortcut testing and its limitations, the okay button is set:
         # https://github.com/pytest-dev/pytest-qt/issues/254
         self.okay_btn = okay_btn
 

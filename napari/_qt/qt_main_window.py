@@ -465,8 +465,8 @@ class _QtMainWindow(QMainWindow):
         from npe2 import plugin_manager as pm
 
         settings = get_settings()
-
         shimmed_plugins = set(pm.get_shimmed_plugins())
+ 
         if settings.plugins.shimmed_plugin_warning_level == 'new':
             new_plugins = (
                 shimmed_plugins
@@ -474,6 +474,7 @@ class _QtMainWindow(QMainWindow):
             )
         else:
             new_plugins = shimmed_plugins
+
         if new_plugins:
             dialog = ShimmedPluginDialog(self, new_plugins)
             dialog.exec_()
