@@ -8,7 +8,7 @@ def test_dialog_accept(qtbot):
     dialog = ShimmedPluginDialog(None, plugins={'plugin1', 'plugin2'})
     qtbot.addWidget(dialog)
     assert dialog.windowTitle() == 'Installed Plugin Warning'
-    assert dialog.plugin_text == '\n'.join({'plugin1', 'plugin2'})
+    assert dialog.plugin_text == '\n'.join(sorted({'plugin1', 'plugin2'}))
     assert not dialog.only_new_checkbox.isChecked()
     dialog.okay_btn.click()
     assert dialog.result() == QDialog.DialogCode.Accepted
@@ -18,7 +18,7 @@ def test_dialog_accept(qtbot):
 def test_dialog_accept_checked(qtbot):
     dialog = ShimmedPluginDialog(None, plugins={'plugin1', 'plugin2'})
     qtbot.addWidget(dialog)
-    assert dialog.plugin_text == '\n'.join({'plugin1', 'plugin2'})
+    assert dialog.plugin_text == '\n'.join(sorted({'plugin1', 'plugin2'}))
     assert not dialog.only_new_checkbox.isChecked()
     dialog.only_new_checkbox.setChecked(True)
     dialog.okay_btn.click()
@@ -33,7 +33,7 @@ def test_dialog_accept_checked(qtbot):
 def test_dialog_reject(qtbot):
     dialog = ShimmedPluginDialog(None, plugins={'plugin1', 'plugin2'})
     qtbot.addWidget(dialog)
-    assert dialog.plugin_text == '\n'.join({'plugin1', 'plugin2'})
+    assert dialog.plugin_text == '\n'.join(sorted({'plugin1', 'plugin2'}))
     dialog.only_new_checkbox.setChecked(True)
     dialog.reject()
     # rejected doesn't save setting
