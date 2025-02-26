@@ -461,7 +461,14 @@ class _QtMainWindow(QMainWindow):
             settings.application.window_state = window_state
 
     def _warn_on_shimmed_plugins(self) -> None:
-        """Warn about shimmed plugins if needed."""
+        """Warn about shimmed plugins if needed.
+
+        In 0.6.0, a plugin using the deprecated plugin engine will be automatically
+        converted so it can be used with npe2. By default, a dialog is displayed
+        with each startup listing all shimmed plugins. The user can change this setting
+        to only be warned about newly installed shimmed plugins.
+
+        """
         from npe2 import plugin_manager as pm
 
         settings = get_settings()
