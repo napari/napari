@@ -466,7 +466,7 @@ class _QtMainWindow(QMainWindow):
 
         settings = get_settings()
         shimmed_plugins = set(pm.get_shimmed_plugins())
- 
+
         if settings.plugins.shimmed_plugin_warning_level == 'new':
             new_plugins = (
                 shimmed_plugins
