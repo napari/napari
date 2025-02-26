@@ -154,6 +154,8 @@ QtDivider[selected=false] {
   background-color: {{ background }};
 }
 
+/* ------------- Layer Type Icons --------- */
+
 QLabel[layer_type_label="true"] {
   max-width: 20px;
   min-width: 20px;
