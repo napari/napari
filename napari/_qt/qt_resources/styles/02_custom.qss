@@ -20,6 +20,10 @@ QtLayerButtons, QtViewerButtons, QtLayerList {
   min-width: 242px;
 }
 
+QLabel#logo_silhouette {
+  image: url("theme_{{ id }}:/logo_silhouette.svg");
+}
+
 /* ------------- QMainWindow --------- */
 /* QDockWidgets will use the MainWindow styles
 as long as they are docked (though they use the
@@ -134,48 +138,6 @@ QSplitter {
   spacing: 0px;
   padding: 0px;
   margin: 0px;
-}
-
-/* ------------- Layer Type Icons --------- */
-
-QLabel[layer_type_label="true"] {
-  max-width: 20px;
-  min-width: 20px;
-  min-height: 20px;
-  max-height: 20px;
-  margin-right: 4px;
-}
-
-QLabel#Shapes {
-  image: url("theme_{{ id }}:/new_shapes.svg");
-}
-
-QLabel#Points {
-  image: url("theme_{{ id }}:/new_points.svg");
-}
-
-QLabel#Labels {
-  image: url("theme_{{ id }}:/new_labels.svg");
-}
-
-QLabel#Image {
-  image: url("theme_{{ id }}:/new_image.svg");
-}
-
-QLabel#Multiscale {
-  image: url("theme_{{ id }}:/new_image.svg");
-}
-
-QLabel#Surface {
-  image: url("theme_{{ id }}:/new_surface.svg");
-}
-
-QLabel#Vectors {
-  image: url("theme_{{ id }}:/new_vectors.svg");
-}
-
-QLabel#logo_silhouette {
-  image: url("theme_{{ id }}:/logo_silhouette.svg");
 }
 
 
