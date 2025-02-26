@@ -33,7 +33,7 @@ def get_tb_formatter() -> Callable[[ExcInfo, bool, str], str]:
         ) -> str:
             # avoid verbose printing of the array data
             with np.printoptions(precision=5, threshold=10, edgeitems=2):
-                if IPython.version_info > (9, 0):
+                if IPython.version_info >= (9, 0):
                     vbtb = IPython.core.ultratb.VerboseTB(
                         theme_name=color.lower()
                     )
