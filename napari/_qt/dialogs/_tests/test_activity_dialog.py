@@ -117,7 +117,7 @@ def test_progress_indicator(make_napari_viewer):
 
 @pytest.mark.skipif(
     bool(sys.platform == 'linux'),
-    reason='need to debug sefaults with set_description',
+    reason='need to debug segfaults with set_description',
 )
 def test_progress_set_description(make_napari_viewer):
     viewer = make_napari_viewer(show=SHOW)
