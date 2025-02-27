@@ -3,6 +3,7 @@ import sys
 import time
 from enum import Enum
 from typing import TYPE_CHECKING
+from unittest.mock import Mock
 
 import numpy as np
 import numpy.testing as npt
@@ -106,6 +107,41 @@ def test_magicgui_add_data_inheritance_two_layer(make_napari_viewer, rng):
     assert isinstance(viewer.layers[2], Labels)
     npt.assert_array_equal(viewer.layers[2].scale, (1, 2))
     npt.assert_array_equal(viewer.layers[2].translate, (3, 4))
+
+
+def test_magicgui_add_data_inheritance_two_layer_inconsistent(
+    make_napari_viewer, rng, monkeypatch
+):
+    """This test validates if the scale and translate are inherited from the
+    previous layers when adding a new layer with magicgui if function requests,
+    a LayerData type.
+    """
+    viewer = make_napari_viewer()
+    viewer.add_image(rng.random((10, 10)), scale=(1, 2), translate=(3, 4))
+    viewer.add_labels(
+        (rng.random((10, 10)) > 0.5).astype('uint8'),
+        scale=(2, 2),
+        translate=(3, 4),
+    )
+
+    @magicgui
+    def add_data(
+        data1: types.ImageData, data2: types.LabelsData
+    ) -> types.LabelsData:
+        return (data1 * data2).astype('uint8')
+
+    viewer.window.add_dock_widget(add_data)
+    mock = Mock()
+    monkeypatch.setattr(
+        'napari.utils.notifications.notification_manager.dispatch', mock
+    )
+    add_data()
+    mock.assert_called_once()
+    assert mock.call_args[0][0].message.startswith('Cannot inherit spatial')
+    assert len(viewer.layers) == 3
+    assert isinstance(viewer.layers[2], Labels)
+    npt.assert_array_equal(viewer.layers[2].scale, (1, 1))
+    npt.assert_array_equal(viewer.layers[2].translate, (0, 0))
 
 
 def test_magicgui_add_layer_inheritance(make_napari_viewer, rng):
