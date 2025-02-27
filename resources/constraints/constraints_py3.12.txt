@@ -97,7 +97,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.127.1
+hypothesis==6.127.2
     # via napari (pyproject.toml)
 idna==3.10
     # via requests
@@ -484,7 +484,7 @@ scipy==1.15.2
     #   nilearn
     #   scikit-image
     #   scikit-learn
-setuptools==75.8.0
+setuptools==75.8.2
     # via torch
 shellingham==1.5.4
     # via typer
