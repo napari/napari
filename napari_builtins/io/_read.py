@@ -72,17 +72,21 @@ def file_or_url_context(resource_name):
         yield resource_name
 
 
-def imread(filename: str) -> np.ndarray:
+def imread(filename: str, use_memmap: bool = False) -> np.ndarray:
     """Custom implementation of imread to avoid skimage dependency.
 
     Parameters
     ----------
     filename : string
         The path from which to read the image.
+    use_memmap : bool
+        If it's a tiff type file, whether to try loading it as a memmap instead
+        of into memory. If True and memmap fails, we fall back to loading it
+        into memory. Defaults to False.
 
     Returns
     -------
-    data : np.ndarray
+    data : np.ndarray or np.memmap
         The image data.
     """
     filename = abspath_or_url(filename)
@@ -96,6 +100,11 @@ def imread(filename: str) -> np.ndarray:
 
     # Pre-download urls before loading them with tifffile
     with file_or_url_context(filename) as filename:
+        if use_memmap:
+            try:
+                return tifffile.memmap(str(filename), mode='r')
+            except ValueError:
+                return tifffile.imread(str(filename))
         return tifffile.imread(str(filename))
 
 
@@ -159,7 +168,11 @@ PathOrStr = Union[str, Path]
 
 
 def magic_imread(
-    filenames: PathOrStr | list[PathOrStr], *, use_dask=None, stack=True
+    filenames: PathOrStr | list[PathOrStr],
+    *,
+    use_dask=None,
+    stack=True,
+    use_memmap: bool | None = None,
 ):
     """Dispatch the appropriate reader given some files.
 
@@ -178,6 +191,14 @@ def magic_imread(
     stack : bool
         Whether to stack the images in multiple files into a single array. If
         False, a list of arrays will be returned.
+    use_memmap : bool
+        If it's a tiff type file, whether to try loading it as a memmap
+        instead of into memory. When memory mapping and it fails, we fall back
+        to loading it into memory.
+
+        If True, we do it for all tiff type files. If None then we only do it
+        when filenames is a single tiff type file. If use_dask
+        resolves to True, use_memmap will be treated as False.
 
     Returns
     -------
@@ -215,6 +236,11 @@ def magic_imread(
     if use_dask is None:
         use_dask = len(filenames_expanded) > 1
 
+    if use_memmap is None:
+        use_memmap = len(filenames_expanded) == 1
+    if use_dask:
+        use_memmap = False
+
     if not filenames_expanded:
         raise ValueError(
             trans._(
@@ -236,16 +262,18 @@ def magic_imread(
             if shape is None:
                 shape = zarr_shape
         else:
+            image = None
             if shape is None:
-                image = imread(filename)
+                image = imread(filename, use_memmap=use_memmap)
                 shape = image.shape
                 dtype = image.dtype
+
             if use_dask:
                 image = da.from_delayed(
                     delayed(imread)(filename), shape=shape, dtype=dtype
                 )
-            elif len(images) > 0:  # not read by shape clause
-                image = imread(filename)
+            elif image is None:
+                image = imread(filename, use_memmap=use_memmap)
         images.append(image)
 
     if not images:
