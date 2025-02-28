@@ -238,6 +238,18 @@ class Camera(EventedModel):
         return up_direction_nd
 
     @property
+    def orientation2d(
+        self,
+    ) -> tuple[VerticalAxisOrientation, HorizontalAxisOrientation]:
+        return self.orientation[1:]
+
+    @orientation2d.setter
+    def orientation2d(
+        self, value: tuple[VerticalAxisOrientation, HorizontalAxisOrientation]
+    ) -> None:
+        self.orientation = (self.orientation[0],) + value
+
+    @property
     def interactive(self) -> bool:
         warnings.warn(
             '`Camera.interactive` is deprecated since 0.5.0 and will be removed in 0.6.0.',
