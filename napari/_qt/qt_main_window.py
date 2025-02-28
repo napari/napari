@@ -1563,6 +1563,8 @@ class Window:
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
+        if not hasattr(self, '_qt_window'):
+            return
         if isinstance(event.value, str):
             self._status_bar.setStatusText(event.value)
         else:
@@ -1582,7 +1584,8 @@ class Window:
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        self._qt_window.setWindowTitle(event.value)
+        if hasattr(self, '_qt_window'):
+            self._qt_window.setWindowTitle(event.value)
 
     def _help_changed(self, event):
         """Update help message on status bar.
@@ -1592,11 +1595,13 @@ class Window:
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        self._status_bar.setHelpText(event.value)
+        if hasattr(self, '_qt_window'):
+            self._status_bar.setHelpText(event.value)
 
     def _restart(self):
         """Restart the napari application."""
-        self._qt_window.restart()
+        if hasattr(self, '_qt_window'):
+            self._qt_window.restart()
 
     def _screenshot(
         self,
