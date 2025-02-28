@@ -15,7 +15,7 @@ colormap.
 .. [1] https://github.com/napari/napari/issues/454
 .. [2] Colour displays for categorical images. Chris Glasbey, Gerie van der
        Heijden, Vivian F. K. Toh, and Alision Gray. (2007)
-       :DOI:`10.1002/col.20327`
+       DOI:10.1002/col.20327
 .. [3] https://github.com/lmcinnes/glasbey
 
 .. tags:: layers, visualization-basic
