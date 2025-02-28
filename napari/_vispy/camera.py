@@ -3,6 +3,9 @@ from vispy.scene import ArcballCamera, BaseCamera, PanZoomCamera
 
 from napari._vispy.utils.quaternion import quaternion2euler_degrees
 
+VISPY_DEFAULT_ORIENTATION_2D = ('right', 'up', 'towards')  # xyz, not zyx
+VISPY_DEFAULT_ORIENTATION_3D = ('right', 'down', 'away')  # xyz, not zyx
+
 
 class VispyCamera:
     """Vipsy camera for both 2D and 3D rendering.
@@ -48,6 +51,7 @@ class VispyCamera:
         self._camera.events.perspective.connect(self._on_perspective_change)
         self._camera.events.mouse_pan.connect(self._on_mouse_toggles_change)
         self._camera.events.mouse_zoom.connect(self._on_mouse_toggles_change)
+        self._camera.events.orientation.connect(self._on_orientation_change)
 
         self._on_ndisplay_change()
 
@@ -165,6 +169,7 @@ class VispyCamera:
         self._on_center_change()
         self._on_zoom_change()
         self._on_angles_change()
+        self._on_orientation_change()
 
     def _on_mouse_toggles_change(self):
         self.mouse_pan = self._camera.mouse_pan
@@ -175,6 +180,21 @@ class VispyCamera:
 
     def _on_zoom_change(self):
         self.zoom = self._camera.zoom
+
+    def _on_orientation_change(self):
+        orientation_xyz = self._camera.orientation[::-1]
+        self._2D_camera.flip = tuple(
+            int(ori != default_ori)
+            for ori, default_ori in zip(
+                orientation_xyz, VISPY_DEFAULT_ORIENTATION_2D, strict=False
+            )
+        )
+        self._3D_camera.flip = tuple(
+            int(ori != default_ori)
+            for ori, default_ori in zip(
+                orientation_xyz, VISPY_DEFAULT_ORIENTATION_3D, strict=False
+            )
+        )
 
     def _on_perspective_change(self):
         self.perspective = self._camera.perspective

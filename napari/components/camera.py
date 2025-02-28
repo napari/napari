@@ -1,4 +1,5 @@
 import warnings
+from enum import auto
 from typing import TYPE_CHECKING, Optional
 
 import numpy as np
@@ -6,11 +7,29 @@ from scipy.spatial.transform import Rotation as R
 
 from napari._pydantic_compat import validator
 from napari.utils.events import EventedModel
-from napari.utils.misc import ensure_n_tuple
+from napari.utils.misc import StringEnum, ensure_n_tuple
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import numpy.typing as npt
+
+
+class VerticalAxisOrientation(StringEnum):
+    UP = auto()
+    DOWN = auto()
+
+
+class HorizontalAxisOrientation(StringEnum):
+    LEFT = auto()
+    RIGHT = auto()
+
+
+class DepthAxisOrientation(StringEnum):
+    AWAY = auto()
+    TOWARDS = auto()
+
+
+DEFAULT_ORIENTATION = ('towards', 'down', 'right')
 
 
 class Camera(EventedModel):
@@ -51,6 +70,11 @@ class Camera(EventedModel):
     perspective: float = 0
     mouse_pan: bool = True
     mouse_zoom: bool = True
+    orientation: tuple[
+        DepthAxisOrientation,
+        VerticalAxisOrientation,
+        HorizontalAxisOrientation,
+    ] = DEFAULT_ORIENTATION
 
     # validators
     @validator('center', 'angles', pre=True, allow_reuse=True)
