@@ -43,7 +43,7 @@ class QtWelcomeWidget(QWidget):
         self._image.setObjectName('logo_silhouette')
         self._image.setMinimumSize(300, 300)
         self._version_label = QtVersionLabel(
-            trans._('version: {version}').format(version=__version__)
+            f'napari {__version__}'
         )
         self._label = QtWelcomeLabel(
             trans._(
