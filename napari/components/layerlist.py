@@ -35,7 +35,7 @@ class LayerList(SelectableEventedList[Layer]):
         Iterable of napari.layer.Layer
 
     Events
-    ------
+    ~~~~~~
     inserting : (index: int)
         emitted before an item is inserted at ``index``
     inserted : (index: int, value: T)
