@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 from qtpy.QtCore import QSize, Qt, Signal
 from qtpy.QtGui import QKeySequence, QPainter
 from qtpy.QtWidgets import (
@@ -12,9 +14,12 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from napari import __version__
 from napari.utils.action_manager import action_manager
 from napari.utils.interactions import Shortcut
 from napari.utils.translations import trans
+
+NAPARI_VERSION = os.environ.get('NAPARI_DOCS_VERSION', __version__)
 
 
 class QtWelcomeLabel(QLabel):
@@ -23,6 +28,10 @@ class QtWelcomeLabel(QLabel):
 
 class QtShortcutLabel(QLabel):
     """Labels used for displaying shortcu information in welcome page."""
+
+
+class QtVersionLabel(QLabel):
+    """Label used for displaying version information."""
 
 
 class QtWelcomeWidget(QWidget):
@@ -37,6 +46,7 @@ class QtWelcomeWidget(QWidget):
         self._image = QLabel()
         self._image.setObjectName('logo_silhouette')
         self._image.setMinimumSize(300, 300)
+        self._version_label = QtVersionLabel(f'napari {NAPARI_VERSION}')
         self._label = QtWelcomeLabel(
             trans._(
                 'Drag image(s) here to open\nor\nUse the menu shortcuts below:'
@@ -48,9 +58,12 @@ class QtWelcomeWidget(QWidget):
         self.setAcceptDrops(True)
         self._image.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Layout
         text_layout = QVBoxLayout()
+        text_layout.setSpacing(10)
+        text_layout.addWidget(self._version_label)
         text_layout.addWidget(self._label)
 
         # TODO: Use action manager for shortcut query and handling
