@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 from qtpy.QtCore import QSize, Qt, Signal
 from qtpy.QtGui import QKeySequence, QPainter
 from qtpy.QtWidgets import (
@@ -16,6 +18,8 @@ from napari import __version__
 from napari.utils.action_manager import action_manager
 from napari.utils.interactions import Shortcut
 from napari.utils.translations import trans
+
+NAPARI_VERSION = os.environ.get('NAPARI_DOCS_VERSION', __version__)
 
 
 class QtWelcomeLabel(QLabel):
@@ -42,7 +46,7 @@ class QtWelcomeWidget(QWidget):
         self._image = QLabel()
         self._image.setObjectName('logo_silhouette')
         self._image.setMinimumSize(300, 300)
-        self._version_label = QtVersionLabel(f'napari {__version__}')
+        self._version_label = QtVersionLabel(f'napari {NAPARI_VERSION}')
         self._label = QtWelcomeLabel(
             trans._(
                 'Drag image(s) here to open\nor\nUse the menu shortcuts below:'
