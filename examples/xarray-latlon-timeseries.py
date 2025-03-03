@@ -1,4 +1,6 @@
-"""Displaying xarray data in napari.
+"""
+Displaying xarray data in napari
+================================
 
 This example shows how to view xarray datasets in napari, including scale
 and translation information.
