@@ -63,7 +63,7 @@ glas19mid = glasbey.create_palette(
 
 ###############################################################################
 # Finally, we display the coins image and the overlaid segmentation. We do this
-# twice to show both colormaps.
+# in two viewers to show both colormaps.
 
 viewer, image_layer = napari.imshow(image, name='coins')
 
