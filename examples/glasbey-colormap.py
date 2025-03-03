@@ -6,10 +6,11 @@ A long-requested feature [1]_ for napari was to display labels/segmentation
 layers using a well-known discrete colormap such as Glasbey [2]_.
 
 In this example, we demonstrate displaying segmentations using custom colormaps
-with the help of the glasbey Python library [3]_. We display a segmentation
-using the napari built-in labels colormap, the original Glasbey colormap, a
-more modern version produced by limiting the lightness and chroma and
-optimizing for colorblind-safety, and finally with the matplotlib tab10
+with the help of the glasbey Python library [3]_, which you can install with
+your favorite Python package manager, such as pip or conda. We display a
+segmentation using the napari built-in labels colormap, the original Glasbey
+colormap, a more modern version produced by limiting the lightness and chroma
+and optimizing for colorblind-safety, and finally with the matplotlib tab10
 colormap.
 
 .. [1] https://github.com/napari/napari/issues/454
