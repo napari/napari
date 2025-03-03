@@ -182,7 +182,12 @@ class VispyCamera:
         self.zoom = self._camera.zoom
 
     def _on_orientation_change(self):
+        # Vispy uses xyz coordinates; napari uses zyx coordinates. We therefore
+        # start by inverting the order of coordinates coming from the napari
+        # camera model:
         orientation_xyz = self._camera.orientation[::-1]
+        # The Vispy camera flip is a tuple of three ints in {0, 1}, indicating
+        # whether they are flipped relative to the Vispy default.
         self._2D_camera.flip = tuple(
             int(ori != default_ori)
             for ori, default_ori in zip(
