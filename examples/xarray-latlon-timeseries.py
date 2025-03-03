@@ -1,10 +1,12 @@
 """Displaying xarray data in napari.
 
 This example shows how to view xarray datasets in napari, including scale
-and translation information. Currently, napari cannot display
-irregularly-sampled data, so the code assumes that the data indices are
-regularly spaced. If your indices are irregular, use `xarray.Dataset.interp`
-to create a regularly-spaced version before displaying it in napari.
+and translation information.
+
+Currently, napari cannot display irregularly-sampled data, so the code
+assumes that the data indices are regularly spaced. If your indices are
+irregular, use `xarray.Dataset.interp` to create a regularly-spaced version
+before displaying it in napari.
 
 .. tags:: visualization-advanced, layers, xarray
 """
