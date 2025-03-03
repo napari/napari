@@ -199,6 +199,8 @@ dev = [
     "pre-commit>=2.9.0",
     "pydantic",
     "python-dotenv",
+    "tox",
+    "tox-min-req",
     "napari[testing]",
 ]
 build = [
