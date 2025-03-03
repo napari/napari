@@ -30,6 +30,11 @@ class DepthAxisOrientation(StringEnum):
 
 
 DEFAULT_ORIENTATION = ('towards', 'down', 'right')
+DEFAULT_ORIENTATION_TYPED = (
+    DepthAxisOrientation.TOWARDS,
+    VerticalAxisOrientation.DOWN,
+    HorizontalAxisOrientation.RIGHT,
+)
 
 
 class Camera(EventedModel):
@@ -74,7 +79,7 @@ class Camera(EventedModel):
         DepthAxisOrientation,
         VerticalAxisOrientation,
         HorizontalAxisOrientation,
-    ] = DEFAULT_ORIENTATION
+    ] = DEFAULT_ORIENTATION_TYPED
 
     # validators
     @validator('center', 'angles', pre=True, allow_reuse=True)
