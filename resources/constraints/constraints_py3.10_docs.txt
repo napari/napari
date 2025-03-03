@@ -126,7 +126,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.127.2
+hypothesis==6.127.4
     # via napari (pyproject.toml)
 idna==3.10
     # via
@@ -159,7 +159,7 @@ ipykernel==6.29.5
     #   myst-nb
     #   napari-console
     #   qtconsole
-ipython==8.32.0
+ipython==8.33.0
     # via
     #   napari (pyproject.toml)
     #   ipykernel
@@ -229,7 +229,7 @@ markdown-it-py==3.0.0
     #   rich
 markupsafe==3.0.2
     # via jinja2
-matplotlib==3.10.0
+matplotlib==3.10.1
     # via napari (pyproject.toml)
 matplotlib-inline==0.1.7
     # via
@@ -497,7 +497,7 @@ pyside6-essentials==6.4.2
     # via
     #   pyside6
     #   pyside6-addons
-pytest==8.3.4
+pytest==8.3.5
     # via
     #   napari (pyproject.toml)
     #   pytest-cov
@@ -728,7 +728,7 @@ triangle==20250106
     # via napari (pyproject.toml)
 triton==3.2.0
     # via torch
-typer==0.15.1
+typer==0.15.2
     # via npe2
 typing-extensions==4.12.2
     # via
