@@ -782,6 +782,11 @@ QtShortcutLabel {
  font-size: {{ increase(font_size, 4) }};
 }
 
+QtVersionLabel {
+  color: {{ foreground }};
+  font-size: {{ increase(font_size, 2) }};
+}
+
 
 /* ------------- Narrow scrollbar for qtlayer list --------- */
 
