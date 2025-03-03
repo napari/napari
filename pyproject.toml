@@ -162,6 +162,7 @@ gallery = [
     "pooch",
     "nilearn",
     "xarray",
+    "h5netcdf",
 ]
 # needed to build docs
 docs = [
