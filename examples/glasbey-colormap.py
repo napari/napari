@@ -22,10 +22,11 @@ colormap.
 .. tags:: layers, visualization-basic
 """
 import glasbey
+import numpy as np
 from skimage import data
 from skimage.filters import threshold_otsu
 from skimage.measure import label
-from skimage.morphology import closing, remove_small_objects, square
+from skimage.morphology import closing, remove_small_objects
 from skimage.segmentation import clear_border
 
 import napari
@@ -37,7 +38,7 @@ image = data.coins()[50:-50, 50:-50]
 
 # apply threshold
 thresh = threshold_otsu(image)
-bw = closing(image > thresh, square(4))
+bw = closing(image > thresh, footprint=np.ones((4, 4), dtype=bool))
 
 # remove artifacts connected to image border
 cleared = remove_small_objects(clear_border(bw), 20)
