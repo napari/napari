@@ -9,6 +9,8 @@ from napari._vispy.utils.quaternion import quaternion2euler_degrees
 # is passed from napari to Vispy, usually with a transposition. In the camera
 # models, this means that the order of these orientations appear in the
 # opposite order to that in napari.components.Camera.
+#
+# Note that the default Vispy camera orientations come from Vispy, not from us.
 VISPY_DEFAULT_ORIENTATION_2D = ('right', 'up', 'towards')  # xyz
 VISPY_DEFAULT_ORIENTATION_3D = ('right', 'down', 'away')  # xyz
 
