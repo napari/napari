@@ -250,7 +250,10 @@ class Camera(EventedModel):
 
     @orientation2d.setter
     def orientation2d(
-        self, value: tuple[VerticalAxisOrientation, HorizontalAxisOrientation]
+        self,
+        value: tuple[
+            VerticalAxisOrientation | str, HorizontalAxisOrientation | str
+        ],
     ) -> None:
         self.orientation = (self.orientation[0],) + value
 
