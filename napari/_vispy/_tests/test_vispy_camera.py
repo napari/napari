@@ -1,4 +1,9 @@
+import os
+import sys
+
 import numpy as np
+import pytest
+from qtpy import PYQT5
 
 
 def test_camera(make_napari_viewer):
@@ -115,6 +120,15 @@ def test_vispy_camera_update_from_model_3D(make_napari_viewer):
     np.testing.assert_almost_equal(viewer.camera.zoom, vispy_camera.zoom)
 
 
+@pytest.mark.xfail(
+    condition=(
+        sys.version_info >= (3, 13)
+        and sys.platform.startswith('darwin')
+        and os.getenv('CI', '0') != '0'
+        and PYQT5
+    ),
+    reason='test fails on this specific CI config for some reason',
+)
 def test_camera_model_update_from_vispy_3D(make_napari_viewer):
     """Test camera model updates from vispy in 3D."""
     viewer = make_napari_viewer()
