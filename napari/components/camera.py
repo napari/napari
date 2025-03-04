@@ -255,7 +255,9 @@ class Camera(EventedModel):
             VerticalAxisOrientation | str, HorizontalAxisOrientation | str
         ],
     ) -> None:
-        self.orientation = (self.orientation[0],) + value
+        # we ignore typing because Pydantic + StrEnum can correctly coerce
+        # str values to their corresponding StrEnum values in the model
+        self.orientation = (self.orientation[0],) + value  # type:ignore[assignment]
 
     @property
     def interactive(self) -> bool:
