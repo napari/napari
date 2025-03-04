@@ -855,19 +855,20 @@ QtLayerList::indicator {
   width: 16px;
   height: 16px;
   position: absolute;
-  left: 0px;
+  left: -3px;
   image: url("theme_{{ id }}:/visibility_off.svg");
   border-radius: 2px;
-  padding: 2px;
-  background: {{ opacity(highlight, 127) }};
+  padding: 3px;
 }
 
 QtLayerList::indicator:unchecked {
   image: url("theme_{{ id }}:/visibility_off_50.svg");
+  background: {{ opacity(background, 190) }};
 }
 
 QtLayerList::indicator:checked {
   image: url("theme_{{ id }}:/visibility.svg");
+  background: {{ opacity(highlight, 190) }};
 }
 
 
