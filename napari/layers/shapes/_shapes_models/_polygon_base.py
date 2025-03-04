@@ -1,12 +1,12 @@
 import numpy as np
 from scipy.interpolate import splev, splprep
 
+from napari.layers.shapes._accelerated_triangulate_dispatch import (
+    create_box_from_bounding,
+)
 from napari.layers.shapes._shapes_models.shape import (
     Shape,
     remove_path_duplicates,
-)
-from napari.layers.shapes._shapes_utils import (
-    create_box_from_bounding,
 )
 from napari.utils.translations import trans
 

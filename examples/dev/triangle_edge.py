@@ -37,7 +37,9 @@ import numpy as np
 
 import napari
 from napari.layers import Shapes
-from napari.layers.shapes._shapes_utils import generate_2D_edge_meshes
+from napari.layers.shapes._accelerated_triangulate_dispatch import (
+    generate_2D_edge_meshes_py,
+)
 
 
 def generate_regular_polygon(n, radius=1):
@@ -63,7 +65,7 @@ def get_reference_edge_triangulation_points(shape: Shapes) -> np.ndarray:
     """Get the non-accelerated points"""
     shapes = shape._data_view.shapes
     path_list = [(x.data, x._closed) for x in shapes]
-    mesh_list = [generate_2D_edge_meshes(path, closed)
+    mesh_list = [generate_2D_edge_meshes_py(path, closed)
                  for path, closed in path_list]
     mesh = tuple(np.concatenate(el, axis=0) for el in zip(*mesh_list, strict=False))
 

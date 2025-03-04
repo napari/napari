@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
 
-from napari.layers.shapes._shapes_utils import (
+from napari.layers.shapes._accelerated_triangulate_dispatch import (
     generate_2D_edge_meshes,
 )
 
