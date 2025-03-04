@@ -197,13 +197,13 @@ class VispyCamera:
         self._2D_camera.flip = tuple(
             int(ori != default_ori)
             for ori, default_ori in zip(
-                orientation_xyz, VISPY_DEFAULT_ORIENTATION_2D, strict=False
+                orientation_xyz, VISPY_DEFAULT_ORIENTATION_2D, strict=True
             )
         )
         self._3D_camera.flip = tuple(
             int(ori != default_ori)
             for ori, default_ori in zip(
-                orientation_xyz, VISPY_DEFAULT_ORIENTATION_3D, strict=False
+                orientation_xyz, VISPY_DEFAULT_ORIENTATION_3D, strict=True
             )
         )
 
