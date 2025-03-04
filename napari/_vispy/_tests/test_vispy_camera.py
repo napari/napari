@@ -141,6 +141,7 @@ def test_camera_model_update_from_vispy_3D(make_napari_viewer):
 
 
 def test_camera_orientation_2d(make_napari_viewer):
+    """Test that flipping orientation of the camera flips displayed image."""
     viewer = make_napari_viewer()
     data = np.arange(16).reshape((4, 4))
     _ = viewer.add_image(data, interpolation2d='linear')
