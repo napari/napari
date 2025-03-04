@@ -3,8 +3,14 @@ from vispy.scene import ArcballCamera, BaseCamera, PanZoomCamera
 
 from napari._vispy.utils.quaternion import quaternion2euler_degrees
 
-VISPY_DEFAULT_ORIENTATION_2D = ('right', 'up', 'towards')  # xyz, not zyx
-VISPY_DEFAULT_ORIENTATION_3D = ('right', 'down', 'away')  # xyz, not zyx
+# Note: the Vispy axis order is xyz, or horizontal, vertical, depth,
+# while the napari axis order is zyx / plane-row-column, or depth, vertical,
+# horizontal — i.e. it is exactly inverted. This switch happens when data
+# is passed from napari to Vispy, usually with a transposition. In the camera
+# models, this means that the order of these orientations appear in the
+# opposite order to that in napari.components.Camera.
+VISPY_DEFAULT_ORIENTATION_2D = ('right', 'up', 'towards')  # xyz
+VISPY_DEFAULT_ORIENTATION_3D = ('right', 'down', 'away')  # xyz
 
 
 class VispyCamera:
