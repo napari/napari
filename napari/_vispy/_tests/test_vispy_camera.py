@@ -190,7 +190,8 @@ def test_camera_orientation_2d(make_napari_viewer):
         and os.getenv('CI', '0') != '0'
         and PYQT5
     ),
-    reason='test fails on this specific CI config for some reason',
+    reason='test sometimes fails on this specific CI config for some reason',
+    strict=False,
 )
 def test_camera_orientation_3d(make_napari_viewer):
     """Test that flipping camera orientation in 3D flips volume as expected."""
