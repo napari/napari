@@ -176,3 +176,28 @@ def test_camera_orientation_2d(make_napari_viewer):
     assert np.all(avg_row_intensity_grad2 <= 0)  # note inverted sign
     avg_col_intensity_grad2 = np.diff(np.mean(sshot2, axis=0))
     assert np.all(avg_col_intensity_grad2 <= 0)
+
+
+def test_camera_orientation_3d(make_napari_viewer):
+    """Test that flipping camera orientation in 3D flips volume as expected."""
+    viewer = make_napari_viewer()
+    viewer.dims.ndisplay = 3
+    gradient_z = np.arange(16).reshape((16, 1, 1))
+    image = np.ones((16, 16))
+    image_3d = gradient_z * image
+    _ = viewer.add_image(image_3d)
+
+    # We have a 3D image with brightness *increasing with z* (the 0th axis).
+    # Therefore, when using a perspective projection, if we point z *away* from
+    # us, the bright part of the image will be small, whereas if we point z
+    # *towards* us, it will be large. We test the dimension flip by comparing
+    # the overall brightness of the image when pointing z in different
+    # directions
+
+    viewer.camera.perspective = 60
+    viewer.camera.orientation = ('away', 'down', 'right')
+    sshot_away = viewer.screenshot(canvas_only=True, flash=False)[..., 0]
+    viewer.camera.orientation = ('towards', 'down', 'right')
+    sshot_towards = viewer.screenshot(canvas_only=True, flash=False)[..., 0]
+
+    assert np.mean(sshot_towards) > np.mean(sshot_away)
