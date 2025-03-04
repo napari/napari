@@ -4,6 +4,7 @@
 # https://github.com/napari/napari/blob/main/docs/BENCHMARKS.md
 import itertools
 import os
+from collections.abc import Callable
 from contextlib import suppress
 from functools import cache, wraps
 
@@ -11,6 +12,7 @@ import numpy as np
 
 from napari.layers import Shapes
 from napari.layers.shapes._shapes_constants import shape_classes
+from napari.layers.shapes._shapes_models import Path, Polygon
 from napari.settings import get_settings
 from napari.utils._test_utils import read_only_mouse_event
 from napari.utils.interactions import (
@@ -19,7 +21,10 @@ from napari.utils.interactions import (
     mouse_release_callbacks,
 )
 
-from .utils import Skip
+try:
+    from .utils import Skip
+except ImportError:
+    from napari.benchmarks.utils import Skip
 
 
 class Shapes2DSuite:
@@ -228,7 +233,10 @@ def get_shape_type(func):
     return wrap
 
 
-class _ShapeTriangulationBase:
+class _BackendSelection:
+    triangulate: Callable | None
+    prev_settings: bool
+
     def select_backend(self, compiled_triangulation):
         with suppress(AttributeError):
             self.prev_settings = (
@@ -242,6 +250,17 @@ class _ShapeTriangulationBase:
 
         self.triangulate = _shapes_utils.triangulate
         _shapes_utils.triangulate = None
+        self.warmup_numba()
+
+    @staticmethod
+    def warmup_numba() -> None:
+        try:
+            from napari.layers.shapes._accelerated_triangulate_dispatch import (
+                warmup_numba_cache,
+            )
+        except ImportError:
+            return
+        warmup_numba_cache()
 
     def revert_backend(self):
         with suppress(AttributeError):
@@ -256,17 +275,14 @@ class _ShapeTriangulationBase:
     def teardown(self, *_):
         self.revert_backend()
 
+
+class _ShapeTriangulationBase(_BackendSelection):
+    data: list[np.ndarray]
+
     @get_shape_type
     def time_create_layer(self, shape_type):
         """Time to create a layer."""
         Shapes(self.data, shape_type=shape_type)
-
-    @get_shape_type
-    def time_create_shapes(self, shape_type):
-        """Time to create a layer."""
-        cls = shape_classes[shape_type]
-        for data in self.data:
-            cls(data)
 
 
 class _ShapeTriangulationBaseShapeCount(_ShapeTriangulationBase):
@@ -373,6 +389,47 @@ class ShapeTriangulationMixed(_ShapeTriangulationBase):
             )
         )
         self.select_backend(compiled_triangulation)
+
+    @get_shape_type
+    def time_create_shapes(self, shape_type):
+        """Time to create a layer."""
+        cls = shape_classes[shape_type]
+        for data in self.data:
+            cls(data)
+
+
+class MeshCalculationSuite(_BackendSelection):
+    data: list[Polygon | Path]
+
+    param_names = ['shape_type', 'compiled_triangulation']
+    params = [('path', 'polygon'), (True, False)]
+
+    def setup(self, shape_type, compiled_triangulation):
+        self.select_backend(compiled_triangulation)
+        part_size = 10
+        self.data = [
+            shape_classes[shape_type](x)
+            for x in itertools.chain(
+                convex_cords(part_size, 4),
+                convex_cords(part_size * 2, 5),
+                convex_cords(part_size * 2, 7),
+                convex_cords(part_size, 60),
+                non_convex_cords(part_size, 10),
+                non_convex_cords(part_size, 60),
+                self_intersecting_stars_cords(part_size, 11),
+                self_intersecting_cords(part_size, 15),
+            )
+        ]
+
+    def time_set_meshes(self, shape_type, _compiled_triangulation):
+        # print("time_set_meshes", shape_type, _compiled_triangulation, self.data[0]._set_meshes_py == self.data[0]._set_meshes)
+        for shape in self.data:
+            shape._set_meshes(
+                shape.data,
+                face=(shape_type == 'polygon'),
+                closed=True,
+                edge=True,
+            )
 
 
 @cache
