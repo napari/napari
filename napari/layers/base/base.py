@@ -2177,6 +2177,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         view_direction: npt.ArrayLike | None = None,
         dims_displayed: list[int] | None = None,
         world: bool = False,
+        value: Any | None = None,
     ) -> dict:
         """
         Status message information of the data at a coordinate position.
@@ -2194,12 +2195,16 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         world : bool
             If True the position is taken to be in world coordinates
             and converted into data coordinates. False by default.
+        value : Any
+            Pre-computed value. In some cases,
 
         Returns
         -------
-        source_info : dict
+        status_dict : dict
             Dictionary containing a information that can be used as a status update.
         """
+        status_dict = self._get_source_info().copy()
+
         if position is not None:
             position = np.asarray(position)
             value = self.get_value(
@@ -2208,13 +2213,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 dims_displayed=dims_displayed,
                 world=world,
             )
-        else:
-            value = None
-
-        source_info = self._get_source_info()
-        # use self._translate_grid to adjust layer origin in grid mode
-        if position is not None:
-            source_info['coordinates'] = generate_layer_coords_status(
+            status_dict['coordinates'] = generate_layer_coords_status(
                 # position may be higher-dimensional due to other
                 # layers in the viewer, but self._translate_grid already
                 # has the correct dimensionality
@@ -2222,10 +2221,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 value,
             )
         else:
-            source_info['coordinates'] = generate_layer_coords_status(
-                position - self._translate_grid, value
-            )
-        return source_info
+            status_dict['coordinates'] = ''
+
+        # use self._translate_grid to adjust layer origin in grid mode
+        return status_dict
 
     def _get_tooltip_text(
         self,
