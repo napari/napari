@@ -97,7 +97,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.127.2
+hypothesis==6.127.4
     # via napari (pyproject.toml)
 idna==3.10
     # via requests
@@ -117,11 +117,13 @@ ipykernel==6.29.5
     #   -r resources/constraints/version_denylist.txt
     #   napari-console
     #   qtconsole
-ipython==8.32.0
+ipython==9.0.0
     # via
     #   napari (pyproject.toml)
     #   ipykernel
     #   napari-console
+ipython-pygments-lexers==1.1.1
+    # via ipython
 jedi==0.19.2
     # via ipython
 jinja2==3.1.5
@@ -173,7 +175,7 @@ markdown-it-py==3.0.0
     # via rich
 markupsafe==3.0.2
     # via jinja2
-matplotlib==3.10.0
+matplotlib==3.10.1
     # via napari (pyproject.toml)
 matplotlib-inline==0.1.7
     # via
@@ -372,6 +374,7 @@ pygments==2.19.1
     # via
     #   napari (pyproject.toml)
     #   ipython
+    #   ipython-pygments-lexers
     #   qtconsole
     #   rich
     #   sphinx
@@ -398,7 +401,7 @@ pyrect==0.2.0
     # via pygetwindow
 pyscreeze==1.0.1
     # via pyautogui
-pytest==8.3.4
+pytest==8.3.5
     # via
     #   napari (pyproject.toml)
     #   pytest-cov
@@ -496,7 +499,7 @@ sortedcontainers==2.4.0
     # via
     #   distributed
     #   hypothesis
-sphinx==8.2.1
+sphinx==8.2.3
     # via numpydoc
 sphinxcontrib-applehelp==2.0.0
     # via sphinx
@@ -563,7 +566,7 @@ triangle==20250106
     # via napari (pyproject.toml)
 triton==3.2.0
     # via torch
-typer==0.15.1
+typer==0.15.2
     # via npe2
 typing-extensions==4.12.2
     # via
