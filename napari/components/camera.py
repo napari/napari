@@ -29,12 +29,12 @@ class DepthAxisOrientation(StringEnum):
     TOWARDS = auto()
 
 
-DEFAULT_ORIENTATION = ('towards', 'down', 'right')
 DEFAULT_ORIENTATION_TYPED = (
     DepthAxisOrientation.TOWARDS,
     VerticalAxisOrientation.DOWN,
     HorizontalAxisOrientation.RIGHT,
 )
+DEFAULT_ORIENTATION = tuple(map(str, DEFAULT_ORIENTATION_TYPED))
 
 
 class Camera(EventedModel):
