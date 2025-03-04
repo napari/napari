@@ -146,33 +146,32 @@ def test_camera_orientation_2d(make_napari_viewer):
     _ = viewer.add_image(data, interpolation2d='linear')
 
     # in the default axis orientation of (down, right), the values in a
-    # screenshot should continually increase as you go down in the shot
-    sshot = viewer.screenshot(canvas_only=True, flash=False)
-    sshot_gray = sshot[..., 0]  # take only first channel in RGBA array
+    # screenshot should continually increase as you go down in the image.
+    # We take only the first channel in the RGBA array for simplicity, since
+    # this is a grayscale image.
+    sshot0 = viewer.screenshot(canvas_only=True, flash=False)[..., 0]
     # check that the values are monotonically increasing down:
-    avg_row_intensity_grad = np.diff(np.mean(sshot_gray, axis=1))
-    assert np.all(avg_row_intensity_grad >= 0)
+    avg_row_intensity_grad0 = np.diff(np.mean(sshot0, axis=1))
+    assert np.all(avg_row_intensity_grad0 >= 0)
 
     # same but to the right
-    avg_col_intensity_grad = np.diff(np.mean(sshot_gray, axis=0))
-    assert np.all(avg_col_intensity_grad >= 0)
+    avg_col_intensity_grad0 = np.diff(np.mean(sshot0, axis=0))
+    assert np.all(avg_col_intensity_grad0 >= 0)
 
     # now we reverse the orientation of the vertical axis, and check that the
     # row gradient has changed direction but not the col gradient
     viewer.camera.orientation2d = ('up', 'right')
-    sshot = viewer.screenshot(canvas_only=True, flash=False)
-    sshot_gray = sshot[..., 0]
-    avg_row_intensity_grad = np.diff(np.mean(sshot_gray, axis=1))
-    assert np.all(avg_row_intensity_grad <= 0)  # note inverted sign
-    avg_col_intensity_grad = np.diff(np.mean(sshot_gray, axis=0))
-    assert np.all(avg_col_intensity_grad >= 0)
+    sshot1 = viewer.screenshot(canvas_only=True, flash=False)[..., 0]
+    avg_row_intensity_grad1 = np.diff(np.mean(sshot1, axis=1))
+    assert np.all(avg_row_intensity_grad1 <= 0)  # note inverted sign
+    avg_col_intensity_grad1 = np.diff(np.mean(sshot1, axis=0))
+    assert np.all(avg_col_intensity_grad1 >= 0)
 
     # finally, reverse orientation of horizontal axis, check that col gradient
     # has now also changed direction
     viewer.camera.orientation2d = ('up', 'left')
-    sshot = viewer.screenshot(canvas_only=True, flash=False)
-    sshot_gray = sshot[..., 0]
-    avg_row_intensity_grad = np.diff(np.mean(sshot_gray, axis=1))
-    assert np.all(avg_row_intensity_grad <= 0)  # note inverted sign
-    avg_col_intensity_grad = np.diff(np.mean(sshot_gray, axis=0))
-    assert np.all(avg_col_intensity_grad <= 0)
+    sshot2 = viewer.screenshot(canvas_only=True, flash=False)[..., 0]
+    avg_row_intensity_grad2 = np.diff(np.mean(sshot2, axis=1))
+    assert np.all(avg_row_intensity_grad2 <= 0)  # note inverted sign
+    avg_col_intensity_grad2 = np.diff(np.mean(sshot2, axis=0))
+    assert np.all(avg_col_intensity_grad2 <= 0)
