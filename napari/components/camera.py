@@ -18,20 +18,24 @@ class VerticalAxisOrientation(StringEnum):
     UP = auto()
     DOWN = auto()
 
-VerticalAxisOrientationStr = Literal['up'] | Literal['down']
+
+VerticalAxisOrientationStr = Literal['up', 'down']
 
 
 class HorizontalAxisOrientation(StringEnum):
     LEFT = auto()
     RIGHT = auto()
-    
-HorizontalAxisOrientationStr = Literal['left'] | Literal['right']
+
+
+HorizontalAxisOrientationStr = Literal['left', 'right']
+
 
 class DepthAxisOrientation(StringEnum):
     AWAY = auto()
     TOWARDS = auto()
-    
-HorizontalAxisOrientationStr = Literal['away'] | Literal['torwards']
+
+
+HorizontalAxisOrientationStr = Literal['away', 'torwards']
 
 
 DEFAULT_ORIENTATION_TYPED = (
@@ -257,12 +261,17 @@ class Camera(EventedModel):
     def orientation2d(
         self,
         value: tuple[
-            VerticalAxisOrientation | VerticalAxisOrientationStr, HorizontalAxisOrientation | HorizontalAxisOrientationStr
+            VerticalAxisOrientation | VerticalAxisOrientationStr,
+            HorizontalAxisOrientation | HorizontalAxisOrientationStr,
         ],
     ) -> None:
         # we ignore typing because Pydantic + StrEnum can correctly coerce
         # str values to their corresponding StrEnum values in the model
-        self.orientation = (self.orientation[0], VerticalAxisOrientation(value[0]), HorizontalAxisOrientation(value[1]))
+        self.orientation = (
+            self.orientation[0],
+            VerticalAxisOrientation(value[0]),
+            HorizontalAxisOrientation(value[1]),
+        )
 
     @property
     def interactive(self) -> bool:
