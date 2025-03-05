@@ -1,6 +1,6 @@
 import warnings
 from enum import auto
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Literal, Optional
 
 import numpy as np
 from scipy.spatial.transform import Rotation as R
@@ -18,15 +18,20 @@ class VerticalAxisOrientation(StringEnum):
     UP = auto()
     DOWN = auto()
 
+VerticalAxisOrientationStr = Literal['up'] | Literal['down']
+
 
 class HorizontalAxisOrientation(StringEnum):
     LEFT = auto()
     RIGHT = auto()
-
+    
+HorizontalAxisOrientationStr = Literal['left'] | Literal['right']
 
 class DepthAxisOrientation(StringEnum):
     AWAY = auto()
     TOWARDS = auto()
+    
+HorizontalAxisOrientationStr = Literal['away'] | Literal['torwards']
 
 
 DEFAULT_ORIENTATION_TYPED = (
@@ -252,12 +257,12 @@ class Camera(EventedModel):
     def orientation2d(
         self,
         value: tuple[
-            VerticalAxisOrientation | str, HorizontalAxisOrientation | str
+            VerticalAxisOrientation | VerticalAxisOrientationStr, HorizontalAxisOrientation | HorizontalAxisOrientationStr
         ],
     ) -> None:
         # we ignore typing because Pydantic + StrEnum can correctly coerce
         # str values to their corresponding StrEnum values in the model
-        self.orientation = (self.orientation[0],) + value  # type:ignore[assignment]
+        self.orientation = (self.orientation[0], VerticalAxisOrientation(value[0]), HorizontalAxisOrientation(value[1]))
 
     @property
     def interactive(self) -> bool:
