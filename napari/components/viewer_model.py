@@ -580,7 +580,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     ) -> tuple[str | Dict, str] | None:
         if not self.mouse_over_canvas:
             return None
-        status = {}
         status_str = ''
         tooltip_text = ''
         active = self.layers.selection.active
@@ -599,12 +598,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             emphasis = '**' if layer is active else ''
             if status['value'] != '':
                 status_str += (
-                    f' {emphasis}{layer.name}{emphasis}: {status["value"]}'
+                    f' // {emphasis}{layer.name}{emphasis}: {status["value"]}'
                 )
-        if len(status) > 1:
-            status['coordinates'] = status_str
-        else:
-            status = 'Ready'
+        if not status_str:
+            status_str = 'Ready'
 
         if self.tooltip.visible and active is not None and active._loaded:
             tooltip_text = active._get_tooltip_text(
@@ -614,7 +611,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 world=True,
             )
 
-        return status, tooltip_text
+        return status_str, tooltip_text
 
     def update_status_from_cursor(self):
         """Update the status and tooltip from the cursor position."""
