@@ -2419,6 +2419,7 @@ class Points(Layer):
         )
         if properties:
             status['coordinates'] += '; ' + ', '.join(properties)
+            status['value'] += '; ' + ', '.join(properties)
 
         return status
 

@@ -1497,6 +1497,7 @@ class Labels(ScalarFieldBase):
         )
         if properties:
             status['coordinates'] += '; ' + ', '.join(properties)
+            status['value'] += '; ' + ', '.join(properties)
 
         return status
 
