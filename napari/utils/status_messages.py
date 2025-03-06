@@ -51,6 +51,7 @@ def generate_layer_status_strings(
     else:
         pos_str = ''
 
+    val_str = ''
     if value is not None:
         if isinstance(value, tuple) and value != (None, None):
             # it's a multiscale -> value = (data_level, value)
