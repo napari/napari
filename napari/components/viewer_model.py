@@ -598,7 +598,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             if not status_str:
                 status_str += status['coords']
             emphasis = '**' if layer is active else ''
-            status_str += f' {emphasis}{layer.name}{status["value"]}{emphasis}'
+            if status['value'] != '':
+                status_str += (
+                    f' {emphasis}{layer.name}{emphasis}: {status["value"]}'
+                )
             if status['value'] != '' and layer.blending != 'additive':
                 # if this layer's value is visible, we set the max opacity;
                 # opaque layers prevent hidden layers from appearing in the
