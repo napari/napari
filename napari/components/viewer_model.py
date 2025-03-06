@@ -580,7 +580,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     ) -> tuple[str | Dict, str] | None:
         if not self.mouse_over_canvas:
             return None
-        max_opacity = 0
         status = {}
         status_str = ''
         tooltip_text = ''
@@ -602,13 +601,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 status_str += (
                     f' {emphasis}{layer.name}{emphasis}: {status["value"]}'
                 )
-            if status['value'] != '' and layer.blending != 'additive':
-                # if this layer's value is visible, we set the max opacity;
-                # opaque layers prevent hidden layers from appearing in the
-                # status message
-                max_opacity = max(max_opacity, layer.opacity)
-            if max_opacity == 1:
-                break
         if len(status) > 1:
             status['coordinates'] = status_str
         else:
