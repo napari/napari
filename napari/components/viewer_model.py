@@ -594,7 +594,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 dims_displayed=list(self.dims.displayed),
                 world=True,
             )
-            emphasis = '**' if layer is active else ''
+            emphasis = ' ### ' if layer is active else ''
             if status['value'] != '':
                 coord_str = f'{status["coords"]} >>> '
                 if coord_str not in coord2val:
