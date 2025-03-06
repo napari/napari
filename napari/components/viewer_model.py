@@ -600,7 +600,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 if coord_str not in coord2val:
                     coord2val[coord_str] = []
                 coord2val[coord_str].append(
-                    f'{emphasis}{layer.name}{emphasis}: {status["value"]}'
+                    f'{emphasis}{layer.name}: {status["value"]}{emphasis}'
                 )
         if coord2val:
             if not self.grid.enabled:
