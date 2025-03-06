@@ -63,7 +63,9 @@ from napari.utils.migrations import _DeprecatingDict
 from napari.utils.misc import StringEnum
 from napari.utils.mouse_bindings import MousemapProvider
 from napari.utils.naming import magic_name
-from napari.utils.status_messages import generate_layer_coords_status
+from napari.utils.status_messages import (
+    generate_layer_status_strings,
+)
 from napari.utils.transforms import Affine, CompositeAffine, TransformChain
 from napari.utils.translations import trans
 
@@ -2213,17 +2215,22 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 dims_displayed=dims_displayed,
                 world=world,
             )
-            status_dict['coordinates'] = generate_layer_coords_status(
+            coords_str, value_str = generate_layer_status_strings(
                 # position may be higher-dimensional due to other
                 # layers in the viewer, but self._translate_grid already
-                # has the correct dimensionality
+                # has the correct dimensionality. We subtract translate_grid
+                # so that the coordinates are valid for the layer, regardless
+                # of grid display.
                 position[-self.ndim :] - self._translate_grid,
                 value,
             )
         else:
-            status_dict['coordinates'] = ''
+            coords_str, value_str = '', ''
 
-        # use self._translate_grid to adjust layer origin in grid mode
+        status_dict['coordinates'] = ': '.join((coords_str, value_str))
+        status_dict['coords'] = coords_str
+        status_dict['value'] = value_str
+
         return status_dict
 
     def _get_tooltip_text(
