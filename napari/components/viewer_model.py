@@ -580,6 +580,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     ) -> tuple[str | Dict, str] | None:
         if not self.mouse_over_canvas:
             return None
+        values = []
         status_str = ''
         tooltip_text = ''
         active = self.layers.selection.active
@@ -594,13 +595,15 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 world=True,
             )
             if not status_str:
-                status_str += status['coords']
+                status_str += f'{status["coords"]} >>> '
             emphasis = '**' if layer is active else ''
             if status['value'] != '':
-                status_str += (
-                    f' // {emphasis}{layer.name}{emphasis}: {status["value"]}'
+                values.append(
+                    f'{emphasis}{layer.name}{emphasis}: {status["value"]}'
                 )
-        if not status_str:
+        if status_str:
+            status_str += ' // '.join(values)
+        else:
             status_str = 'Ready'
 
         if self.tooltip.visible and active is not None and active._loaded:
