@@ -580,7 +580,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     ) -> tuple[str | Dict, str] | None:
         if not self.mouse_over_canvas:
             return None
-        values = []
+        coord2val: dict[str, list[str]] = {}
         status_str = ''
         tooltip_text = ''
         active = self.layers.selection.active
@@ -594,15 +594,24 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 dims_displayed=list(self.dims.displayed),
                 world=True,
             )
-            if not status_str:
-                status_str += f'{status["coords"]} >>> '
             emphasis = '**' if layer is active else ''
             if status['value'] != '':
-                values.append(
+                coord_str = f'{status["coords"]} >>> '
+                if coord_str not in coord2val:
+                    coord2val[coord_str] = []
+                coord2val[coord_str].append(
                     f'{emphasis}{layer.name}{emphasis}: {status["value"]}'
                 )
-        if status_str:
-            status_str += ' // '.join(values)
+        if coord2val:
+            if not self.grid.enabled:
+                # use a single coordinate system
+                values = list(itertools.chain(*coord2val.values()))
+                key = next(iter(coord2val))  # choose arbitrary coordinate
+                coord2val = {key: values}
+            status_strs = [
+                key + ' // '.join(values) for key, values in coord2val.items()
+            ]
+            status_str = ' ||| '.join(status_strs)
         else:
             status_str = 'Ready'
 
