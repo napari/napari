@@ -580,28 +580,46 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     ) -> tuple[str | Dict, str] | None:
         if not self.mouse_over_canvas:
             return None
+        max_opacity = 0
+        status = {}
+        status_str = ''
+        tooltip_text = ''
         active = self.layers.selection.active
-        if active is not None and active._loaded:
-            status = active.get_status(
+
+        for layer in self.layers[::-1]:
+            if not layer.visible or layer.opacity == 0 or not layer._loaded:
+                continue
+            status = layer.get_status(
                 self.cursor.position,
                 view_direction=self.cursor._view_direction,
                 dims_displayed=list(self.dims.displayed),
                 world=True,
             )
+            emphasis = '**' if layer is active else ''
+            status_str += (
+                f' {emphasis}{layer.name}{status["coordinates"]}{emphasis}'
+            )
+            if status['value'] != '' and layer.blending != 'additive':
+                # if this layer's value is visible, we set the max opacity;
+                # opaque layers prevent hidden layers from appearing in the
+                # status message
+                max_opacity = max(max_opacity, layer.opacity)
+            if max_opacity == 1:
+                break
+        if len(status) > 1:
+            status['coordinates'] = status_str
+        else:
+            status = 'Ready'
 
-            if self.tooltip.visible:
-                tooltip_text = active._get_tooltip_text(
-                    np.asarray(self.cursor.position),
-                    view_direction=np.asarray(self.cursor._view_direction),
-                    dims_displayed=list(self.dims.displayed),
-                    world=True,
-                )
-            else:
-                tooltip_text = ''
+        if self.tooltip.visible and active is not None and active._loaded:
+            tooltip_text = active._get_tooltip_text(
+                np.asarray(self.cursor.position),
+                view_direction=np.asarray(self.cursor._view_direction),
+                dims_displayed=list(self.dims.displayed),
+                world=True,
+            )
 
-            return status, tooltip_text
-
-        return 'Ready', ''
+        return status, tooltip_text
 
     def update_status_from_cursor(self):
         """Update the status and tooltip from the cursor position."""
