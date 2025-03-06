@@ -59,7 +59,6 @@ from napari.utils.events import EmitterGroup, Event
 from napari.utils.events.custom_types import Array
 from napari.utils.misc import StringEnum, _is_array_type
 from napari.utils.naming import magic_name
-from napari.utils.status_messages import generate_layer_coords_status
 from napari.utils.translations import trans
 
 __all__ = ('Labels',)
@@ -1479,25 +1478,15 @@ class Labels(ScalarFieldBase):
 
         Returns
         -------
-        source_info : dict
+        status : dict
             Dict containing a information that can be used in a status update.
         """
-        if position is not None:
-            value = self.get_value(
-                position,
-                view_direction=view_direction,
-                dims_displayed=dims_displayed,
-                world=world,
-            )
-        else:
-            value = None
-
-        source_info = self._get_source_info()
-
-        pos = position
-        if pos is not None:
-            pos = np.asarray(pos)[-self.ndim :]
-        source_info['coordinates'] = generate_layer_coords_status(pos, value)
+        status = super().get_status(
+            position,
+            view_direction=view_direction,
+            dims_displayed=dims_displayed,
+            world=world,
+        )
 
         # if this labels layer has properties
         properties = self._get_properties(
@@ -1507,9 +1496,9 @@ class Labels(ScalarFieldBase):
             world=world,
         )
         if properties:
-            source_info['coordinates'] += '; ' + ', '.join(properties)
+            status['coordinates'] += '; ' + ', '.join(properties)
 
-        return source_info
+        return status
 
     def _get_tooltip_text(
         self,
