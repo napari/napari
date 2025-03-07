@@ -30,42 +30,45 @@ except ImportError:
 class Shapes2DSuite:
     """Benchmarks for the Shapes layer with 2D data"""
 
+    data: list[np.ndarray]
+    layer: Shapes
+
     params = [2**i for i in range(4, 9)]
 
     if 'PR' in os.environ:
         skip_params = [(2**i,) for i in range(6, 9)]
 
     def setup(self, n):
-        np.random.seed(0)
-        self.data = [50 * np.random.random((6, 2)) for i in range(n)]
+        rng = np.random.default_rng(0)
+        self.data = [50 * rng.random((6, 2)) for _ in range(n)]
         self.layer = Shapes(self.data, shape_type='polygon')
 
-    def time_create_layer(self, n):
+    def time_create_layer(self, _n):
         """Time to create an image layer."""
         Shapes(self.data, shape_type='polygon')
 
-    def time_refresh(self, n):
+    def time_refresh(self, _n):
         """Time to refresh view."""
         self.layer.refresh()
 
-    def time_set_view_slice(self, n):
+    def time_set_view_slice(self, _n):
         """Time to set view slice."""
         self.layer._set_view_slice()
 
-    def time_update_thumbnail(self, n):
+    def time_update_thumbnail(self, _n):
         """Time to update thumbnail."""
         self.layer._update_thumbnail()
 
-    def time_get_value(self, n):
+    def time_get_value(self, _n):
         """Time to get current value."""
         for i in range(100):
             self.layer.get_value((i,) * 2)
 
-    def mem_layer(self, n):
+    def mem_layer(self, _n):
         """Memory used by layer."""
         return self.layer
 
-    def mem_data(self, n):
+    def mem_data(self, _n):
         """Memory used by raw data."""
         return self.data
 
@@ -73,40 +76,43 @@ class Shapes2DSuite:
 class Shapes3DSuite:
     """Benchmarks for the Shapes layer with 3D data."""
 
+    data: list[np.ndarray]
+    layer: Shapes
+
     params = [2**i for i in range(4, 9)]
     if 'PR' in os.environ:
         skip_params = [(2**i,) for i in range(6, 9)]
 
     def setup(self, n):
-        np.random.seed(0)
-        self.data = [50 * np.random.random((6, 3)) for i in range(n)]
+        rng = np.random.default_rng(0)
+        self.data = [50 * rng.random((6, 3)) for _ in range(n)]
         self.layer = Shapes(self.data, shape_type='polygon')
 
-    def time_create_layer(self, n):
+    def time_create_layer(self, _n):
         """Time to create a layer."""
         Shapes(self.data, shape_type='polygon')
 
-    def time_refresh(self, n):
+    def time_refresh(self, _n):
         """Time to refresh view."""
         self.layer.refresh()
 
-    def time_set_view_slice(self, n):
+    def time_set_view_slice(self, _n):
         """Time to set view slice."""
         self.layer._set_view_slice()
 
-    def time_update_thumbnail(self, n):
+    def time_update_thumbnail(self, _n):
         """Time to update thumbnail."""
         self.layer._update_thumbnail()
 
-    def time_get_value(self, n):
+    def time_get_value(self, _n):
         """Time to get current value."""
         self.layer.get_value((0,) * 3)
 
-    def mem_layer(self, n):
+    def mem_layer(self, _n):
         """Memory used by layer."""
         return self.layer
 
-    def mem_data(self, n):
+    def mem_data(self, _n):
         """Memory used by raw data."""
         return self.data
 
@@ -114,11 +120,14 @@ class Shapes3DSuite:
 class ShapesInteractionSuite:
     """Benchmarks for interacting with the Shapes layer with 2D data"""
 
+    data: list[np.ndarray]
+    layer: Shapes
+
     params = [2**i for i in range(4, 9)]
 
     def setup(self, n):
-        np.random.seed(0)
-        self.data = [50 * np.random.random((6, 2)) for i in range(n)]
+        rng = np.random.default_rng(0)
+        self.data = [50 * rng.random((6, 2)) for _ in range(n)]
         self.layer = Shapes(self.data, shape_type='polygon')
         self.layer.mode = 'select'
 
@@ -145,7 +154,7 @@ class ShapesInteractionSuite:
         # Simulate release
         mouse_release_callbacks(self.layer, release_event)
 
-    def time_drag_shape(self, n):
+    def time_drag_shape(self, _n):
         """Time to process 5 shape drag events"""
         # initialize the position and select a shape
         position = tuple(np.mean(self.layer.data[0], axis=0))
@@ -197,7 +206,7 @@ class ShapesInteractionSuite:
 
     time_drag_shape.param_names = ['n_shapes']
 
-    def time_select_shape(self, n):
+    def time_select_shape(self, _n):
         """Time to process shape selection events"""
         position = tuple(np.mean(self.layer.data[1], axis=0))
 
