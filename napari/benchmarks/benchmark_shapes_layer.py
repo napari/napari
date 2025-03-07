@@ -323,13 +323,13 @@ class ShapeTriangulationNonConvexSuite(_ShapeTriangulationBaseShapeCount):
         and not compiled_triangulation
     )
 
-    def setup(self, n_shapes, n_points, shape_type, compiled_triangulation):
+    def setup(self, n_shapes, n_points, _shape_type, compiled_triangulation):
         self.data = non_convex_cords(n_shapes, n_points)[4151:]
         self.select_backend(compiled_triangulation)
 
 
 class ShapeTriangulationConvexSuite(_ShapeTriangulationBaseShapeCount):
-    def setup(self, n_shapes, n_points, shape_type, compiled_triangulation):
+    def setup(self, n_shapes, n_points, _shape_type, compiled_triangulation):
         self.data = convex_cords(n_shapes, n_points)
         self.select_backend(compiled_triangulation)
 
@@ -345,7 +345,7 @@ class ShapeTriangulationIntersectionSuite(_ShapeTriangulationBaseShapeCount):
         (True, False),
     ]
 
-    def setup(self, n_shapes, n_points, shape_type, compiled_triangulation):
+    def setup(self, n_shapes, n_points, _shape_type, compiled_triangulation):
         self.data = self_intersecting_cords(n_shapes, n_points)
         self.select_backend(compiled_triangulation)
 
@@ -363,7 +363,7 @@ class ShapeTriangulationStarIntersectionSuite(
         (True, False),
     ]
 
-    def setup(self, n_shapes, n_points, shape_type, compiled_triangulation):
+    def setup(self, n_shapes, n_points, _shape_type, compiled_triangulation):
         self.data = self_intersecting_stars_cords(n_shapes, n_points)
         self.select_backend(compiled_triangulation)
 
@@ -385,7 +385,7 @@ class ShapeTriangulationMixed(_ShapeTriangulationBase):
         > 1000,
     )
 
-    def setup(self, n_shapes, shape_type, compiled_triangulation):
+    def setup(self, n_shapes, _shape_type, compiled_triangulation):
         part_size = int(n_shapes / 10)
         self.data = list(
             itertools.chain(
@@ -421,7 +421,7 @@ class MeshCalculationSuite(_BackendSelection):
             for x in itertools.chain(
                 convex_cords(part_size, 4),
                 convex_cords(part_size * 2, 5),
-                convex_cords(part_size * 2, 7),
+                convex_cords(part_size * 2, 12),
                 convex_cords(part_size, 60),
                 non_convex_cords(part_size, 10),
                 non_convex_cords(part_size, 60),
@@ -442,7 +442,7 @@ class MeshCalculationSuite(_BackendSelection):
 
 
 @cache
-def non_convex_cords(n_shapes=5_000, n_points=32):
+def non_convex_cords(n_shapes=5_000, n_points=32) -> list[np.ndarray]:
     """
     Create a set of non-convex coordinates
 
@@ -461,11 +461,13 @@ def non_convex_cords(n_shapes=5_000, n_points=32):
     rays = rays.reshape((1, -1, 2))
     rays = rays * rng.uniform(0.9, 1.1, (n_shapes, n_points, 2))
     center = center.reshape((-1, 1, 2))
-    return center + radius * rays
+    return list(center + radius * rays)
 
 
 @cache
-def self_intersecting_stars_cords(n_shapes=5_000, n_points=31):
+def self_intersecting_stars_cords(
+    n_shapes=5_000, n_points=31
+) -> list[np.ndarray]:
     """
     Create a set of non-convex coordinates
 
@@ -486,11 +488,11 @@ def self_intersecting_stars_cords(n_shapes=5_000, n_points=31):
     rays = rays.reshape((1, -1, 2))
     rays = rays * rng.uniform(0.9, 1.1, (n_shapes, n_points + 1, 2))
     center = center.reshape((-1, 1, 2))
-    return center + radius * rays
+    return list(center + radius * rays)
 
 
 @cache
-def self_intersecting_cords(n_shapes=5_000, n_points=31):
+def self_intersecting_cords(n_shapes=5_000, n_points=31) -> list[np.ndarray]:
     """
     Create a set of non-convex coordinates
 
@@ -510,11 +512,11 @@ def self_intersecting_cords(n_shapes=5_000, n_points=31):
     rays = rays.reshape((1, -1, 2))
     rays = rays * rng.uniform(0.9, 1.1, (n_shapes, n_points + 1, 2))
     center = center.reshape((-1, 1, 2))
-    return center + radius * rays
+    return list(center + radius * rays)
 
 
 @cache
-def convex_cords(n_shapes=5_000, n_points=32):
+def convex_cords(n_shapes=5_000, n_points=32) -> list[np.ndarray]:
     """
     Create a set of convex coordinates
 
@@ -532,7 +534,7 @@ def convex_cords(n_shapes=5_000, n_points=32):
     rays = np.stack([np.sin(phi), np.cos(phi)], axis=1)
     rays = rays.reshape((1, -1, 2))
     center = center.reshape((-1, 1, 2))
-    return center + radius * rays
+    return list(center + radius * rays)
 
 
 if __name__ == '__main__':
