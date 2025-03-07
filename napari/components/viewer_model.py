@@ -584,10 +584,16 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         coord_str = ''
         status_str = ''
         tooltip_text = ''
-        active = self.layers.selection.active
+        selection = self.layers.selection
+        active = selection.active
 
         for layer in self.layers[::-1]:
-            if not layer.visible or layer.opacity == 0 or not layer._loaded:
+            if (
+                not layer.visible
+                or layer.opacity == 0
+                or not layer._loaded
+                or (layer not in selection and not self.grid.enabled)
+            ):
                 continue
             status = layer.get_status(
                 self.cursor.position,
