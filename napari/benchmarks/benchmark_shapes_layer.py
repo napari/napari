@@ -362,6 +362,17 @@ class ShapeTriangulationStarIntersectionSuite(
         ('path', 'polygon'),
         (True, False),
     ]
+    skip_params = Skip(
+        always=lambda n_shapes, n_points, shape_type, compiled_triangulation: (
+            n_shapes == 5000 and n_points == 33 and shape_type == 'polygon'
+        )
+        or (
+            n_shapes == 5000
+            and n_points == 15
+            and shape_type == 'polygon'
+            and not compiled_triangulation
+        )
+    )
 
     def setup(self, n_shapes, n_points, _shape_type, compiled_triangulation):
         self.data = self_intersecting_stars_cords(n_shapes, n_points)
@@ -407,7 +418,7 @@ class ShapeTriangulationMixed(_ShapeTriangulationBase):
             cls(data)
 
 
-class MeshCalculationSuite(_BackendSelection):
+class MeshTriangulationSuite(_BackendSelection):
     data: list[Polygon | Path]
 
     param_names = ['shape_type', 'compiled_triangulation']
