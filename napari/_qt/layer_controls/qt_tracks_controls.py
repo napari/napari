@@ -87,13 +87,29 @@ class QtTracksControls(QtLayerControls):
     def __init__(self, layer) -> None:
         super().__init__(layer)
         # Setup widgets controls
-        self._add_widget_controls(
+        self._color_properties_combobox_control = (
             QtColorPropertiesComboBoxControl(self, layer)
         )
-        self._add_widget_controls(QtColormapComboBoxControl(self, layer))
-        self._add_widget_controls(QtTailWidthSliderControl(self, layer))
-        self._add_widget_controls(QtTailLengthSliderControl(self, layer))
-        self._add_widget_controls(QtHeadLengthSliderControl(self, layer))
-        self._add_widget_controls(QtTailDisplayCheckBoxControl(self, layer))
-        self._add_widget_controls(QtIdCheckBoxControl(self, layer))
-        self._add_widget_controls(QtGraphCheckBoxControl(self, layer))
+        self._add_widget_controls(self._color_properties_combobox_control)
+        self._colormap_combobox_control = QtColormapComboBoxControl(
+            self, layer
+        )
+        self._add_widget_controls(self._colormap_combobox_control)
+        self._tail_width_slider_control = QtTailWidthSliderControl(self, layer)
+        self._add_widget_controls(self._tail_width_slider_control)
+        self._tail_length_slider_control = QtTailLengthSliderControl(
+            self, layer
+        )
+        self._add_widget_controls(self._tail_length_slider_control)
+        self._head_length_slider_control = QtHeadLengthSliderControl(
+            self, layer
+        )
+        self._add_widget_controls(self._head_length_slider_control)
+        self._tail_display_checkbox_control = QtTailDisplayCheckBoxControl(
+            self, layer
+        )
+        self._add_widget_controls(self._tail_display_checkbox_control)
+        self._id_checkbox_control = QtIdCheckBoxControl(self, layer)
+        self._add_widget_controls(self._id_checkbox_control)
+        self._graph_checkbox_control = QtGraphCheckBoxControl(self, layer)
+        self._add_widget_controls(self._graph_checkbox_control)

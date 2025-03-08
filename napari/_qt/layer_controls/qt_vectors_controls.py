@@ -87,8 +87,19 @@ class QtVectorsControls(QtLayerControls):
     def __init__(self, layer) -> None:
         super().__init__(layer)
         # Setup widgets controls
-        self._add_widget_controls(QtWidthSpinBoxControl(self, layer))
-        self._add_widget_controls(QtLengthSpinBoxControl(self, layer))
-        self._add_widget_controls(QtVectorStyleComboBoxControl(self, layer))
-        self._add_widget_controls(QtEdgeColorPropertyControl(self, layer))
-        self._add_widget_controls(QtOutSliceCheckBoxControl(self, layer))
+        self._width_spinbox_control = QtWidthSpinBoxControl(self, layer)
+        self._add_widget_controls(self._width_spinbox_control)
+        self._length_spinbox_control = QtLengthSpinBoxControl(self, layer)
+        self._add_widget_controls(self._length_spinbox_control)
+        self._vector_style_combobox_control = QtVectorStyleComboBoxControl(
+            self, layer
+        )
+        self._add_widget_controls(self._vector_style_combobox_control)
+        self._edge_color_property_control = QtEdgeColorPropertyControl(
+            self, layer
+        )
+        self._add_widget_controls(self._edge_color_property_control)
+        self._out_slice_checkbox_control = QtOutSliceCheckBoxControl(
+            self, layer
+        )
+        self._add_widget_controls(self._out_slice_checkbox_control)

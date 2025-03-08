@@ -129,20 +129,28 @@ class QtPointsControls(QtLayerControls):
         self.button_grid.addWidget(self.select_button, 0, 5)
 
         # Setup widgets controls
-        self._add_widget_controls(QtCurrentSizeSliderControl(self, layer))
-        self._add_widget_controls(QtSymbolComboBoxControl(self, layer))
-        self._add_widget_controls(
-            QtFaceColorControl(
-                self,
-                layer,
-                tooltip=trans._(
-                    'Click to set the face color of currently selected points and any added afterwards.'
-                ),
-            )
+        self._current_size_slider_control = QtCurrentSizeSliderControl(
+            self, layer
         )
-        self._add_widget_controls(QtBorderColorControl(self, layer))
-        self._add_widget_controls(QtTextVisibilityControl(self, layer))
-        self._add_widget_controls(QtOutSliceCheckBoxControl(self, layer))
+        self._add_widget_controls(self._current_size_slider_control)
+        self._symbol_combobox_control = QtSymbolComboBoxControl(self, layer)
+        self._add_widget_controls(self._symbol_combobox_control)
+        self._face_color_control = QtFaceColorControl(
+            self,
+            layer,
+            tooltip=trans._(
+                'Click to set the face color of currently selected points and any added afterwards.'
+            ),
+        )
+        self._add_widget_controls(self._face_color_control)
+        self._border_color_control = QtBorderColorControl(self, layer)
+        self._add_widget_controls(self._border_color_control)
+        self._text_visibility_control = QtTextVisibilityControl(self, layer)
+        self._add_widget_controls(self._text_visibility_control)
+        self._out_slice_checkbox_control = QtOutSliceCheckBoxControl(
+            self, layer
+        )
+        self._add_widget_controls(self._out_slice_checkbox_control)
 
     def _on_mode_change(self, event):
         """Update ticks in checkbox widgets when points layer mode is changed.

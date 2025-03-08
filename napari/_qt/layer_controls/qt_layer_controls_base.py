@@ -85,7 +85,6 @@ class QtLayerControls(QFrame):
         self._ndisplay: int = 2
         self._EDIT_BUTTONS: tuple = ()
         self._MODE_BUTTONS: dict = {}
-        self._widget_controls: list = []
 
         self.layer = layer
         self.layer.events.mode.connect(self._on_mode_change)
@@ -132,7 +131,10 @@ class QtLayerControls(QFrame):
         self.layout().addRow(self.button_grid)
 
         # Setup widgets controls
-        self._add_widget_controls(QtOpacityBlendingControls(self, layer))
+        self._opacity_blending_controls = QtOpacityBlendingControls(
+            self, layer
+        )
+        self._add_widget_controls(self._opacity_blending_controls)
 
     def _add_widget_controls(
         self,
@@ -147,10 +149,6 @@ class QtLayerControls(QFrame):
             An instance of a `QtWidgetControlsBase` subclass that setups
             widgets for a layer attribute.
         """
-        wrapper_name = wrapper.__class__.__name__
-        wrapper_name = wrapper_name[0].lower() + wrapper_name[1:]
-        setattr(self, wrapper_name, wrapper)
-        self._widget_controls.append(wrapper)
         controls = wrapper.get_widget_controls()
 
         for label_text, control_widget in controls:
@@ -303,17 +301,24 @@ class QtLayerControls(QFrame):
 
     def deleteLater(self):
         disconnect_events(self.layer.events, self)
-        for widget_control in self._widget_controls:
-            widget_control.disconnect_widget_controls()
+        for child in self.children():
+            disconnect_method = getattr(
+                child, 'disconnect_widget_controls', None
+            )
+            if disconnect_method is not None:
+                disconnect_method()
         super().deleteLater()
 
     def close(self):
         """Disconnect events when widget is closing."""
         disconnect_events(self.layer.events, self)
-        for widget_control in self._widget_controls:
-            widget_control.disconnect_widget_controls()
         for child in self.children():
             close_method = getattr(child, 'close', None)
+            disconnect_method = getattr(
+                child, 'disconnect_widget_controls', None
+            )
+            if disconnect_method is not None:
+                disconnect_method()
             if close_method is not None:
                 close_method()
         return super().close()

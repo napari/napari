@@ -178,17 +178,33 @@ class QtLabelsControls(QtLayerControls):
         self.button_grid.addWidget(self.pick_button, 0, 5)
 
         # Setup widgets controls
-        self._add_widget_controls(QtLabelControl(self, layer))
-        self._add_widget_controls(QtBrushSizeSliderControl(self, layer))
+        self._label_control = QtLabelControl(self, layer)
+        self._add_widget_controls(self._label_control)
+        self._brush_size_slider_control = QtBrushSizeSliderControl(self, layer)
+        self._add_widget_controls(self._brush_size_slider_control)
         self._render_control = QtLabelRenderControl(self, layer)
         self._add_widget_controls(self._render_control)
-        self._add_widget_controls(QtColorModeComboBoxControl(self, layer))
-        self._add_widget_controls(QtContourSpinBoxControl(self, layer))
-        self._add_widget_controls(QtNdimSpinBoxControl(self, layer))
-        self._add_widget_controls(QtContiguousCheckBoxControl(self, layer))
-        self._add_widget_controls(QtPreserveLabelsCheckBoxControl(self, layer))
-        self._add_widget_controls(
+        self._colormode_combobox_control = QtColorModeComboBoxControl(
+            self, layer
+        )
+        self._add_widget_controls(self._colormode_combobox_control)
+        self._contour_spinbox_control = QtContourSpinBoxControl(self, layer)
+        self._add_widget_controls(self._contour_spinbox_control)
+        self._ndim_spinbox_control = QtNdimSpinBoxControl(self, layer)
+        self._add_widget_controls(self._ndim_spinbox_control)
+        self._contiguous_checkbox_control = QtContiguousCheckBoxControl(
+            self, layer
+        )
+        self._add_widget_controls(self._contiguous_checkbox_control)
+        self._preserve_labels_checkbox_control = (
+            QtPreserveLabelsCheckBoxControl(self, layer)
+        )
+        self._add_widget_controls(self._preserve_labels_checkbox_control)
+        self._display_selected_label_checkbox_control = (
             QtDisplaySelectedLabelCheckBoxControl(self, layer)
+        )
+        self._add_widget_controls(
+            self._display_selected_label_checkbox_control
         )
 
         self._on_ndisplay_changed()

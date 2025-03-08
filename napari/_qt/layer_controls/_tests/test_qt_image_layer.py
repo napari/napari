@@ -10,7 +10,7 @@ def test_interpolation_combobox(qtbot):
     layer = Image(np.random.rand(8, 8))
     qtctrl = QtImageControls(layer)
     qtbot.addWidget(qtctrl)
-    combo = qtctrl.qtInterpolationComboBoxControl.interpComboBox
+    combo = qtctrl._interpolation_control.interpComboBox
     opts = {combo.itemText(i) for i in range(combo.count())}
     assert opts == {'cubic', 'linear', 'kaiser', 'nearest', 'spline36'}
     # programmatically adding approved interpolation works
@@ -23,7 +23,7 @@ def test_rendering_combobox(qtbot):
     layer = Image(np.random.rand(8, 8))
     qtctrl = QtImageControls(layer)
     qtbot.addWidget(qtctrl)
-    combo = qtctrl.qtImageRenderControl.renderComboBox
+    combo = qtctrl._render_control.renderComboBox
     opts = {combo.itemText(i) for i in range(combo.count())}
     rendering_options = {
         'translucent',
@@ -46,7 +46,7 @@ def test_depiction_combobox_changes(qtbot):
     qtctrl = QtImageControls(layer)
     qtctrl.ndisplay = 3
     qtbot.addWidget(qtctrl)
-    combo_box = qtctrl.qtDepictionControl.depictionComboBox
+    combo_box = qtctrl._depiction_control.depictionComboBox
     opts = {combo_box.itemText(i) for i in range(combo_box.count())}
     depiction_options = {
         'volume',
@@ -67,16 +67,16 @@ def test_plane_controls_show_hide_on_depiction_change(qtbot):
     qtctrl.ndisplay = 3
 
     layer.depiction = 'volume'
-    assert qtctrl.qtDepictionControl.planeThicknessSlider.isHidden()
-    assert qtctrl.qtDepictionControl.planeThicknessLabel.isHidden()
-    assert qtctrl.qtDepictionControl.planeNormalButtons.isHidden()
-    assert qtctrl.qtDepictionControl.planeNormalLabel.isHidden()
+    assert qtctrl._depiction_control.planeThicknessSlider.isHidden()
+    assert qtctrl._depiction_control.planeThicknessLabel.isHidden()
+    assert qtctrl._depiction_control.planeNormalButtons.isHidden()
+    assert qtctrl._depiction_control.planeNormalLabel.isHidden()
 
     layer.depiction = 'plane'
-    assert not qtctrl.qtDepictionControl.planeThicknessSlider.isHidden()
-    assert not qtctrl.qtDepictionControl.planeThicknessLabel.isHidden()
-    assert not qtctrl.qtDepictionControl.planeNormalButtons.isHidden()
-    assert not qtctrl.qtDepictionControl.planeNormalLabel.isHidden()
+    assert not qtctrl._depiction_control.planeThicknessSlider.isHidden()
+    assert not qtctrl._depiction_control.planeThicknessLabel.isHidden()
+    assert not qtctrl._depiction_control.planeNormalButtons.isHidden()
+    assert not qtctrl._depiction_control.planeNormalLabel.isHidden()
 
 
 def test_plane_controls_show_hide_on_ndisplay_change(qtbot):
@@ -87,16 +87,16 @@ def test_plane_controls_show_hide_on_ndisplay_change(qtbot):
     qtbot.addWidget(qtctrl)
 
     assert qtctrl.ndisplay == 2
-    assert qtctrl.qtDepictionControl.planeThicknessSlider.isHidden()
-    assert qtctrl.qtDepictionControl.planeThicknessLabel.isHidden()
-    assert qtctrl.qtDepictionControl.planeNormalButtons.isHidden()
-    assert qtctrl.qtDepictionControl.planeNormalLabel.isHidden()
+    assert qtctrl._depiction_control.planeThicknessSlider.isHidden()
+    assert qtctrl._depiction_control.planeThicknessLabel.isHidden()
+    assert qtctrl._depiction_control.planeNormalButtons.isHidden()
+    assert qtctrl._depiction_control.planeNormalLabel.isHidden()
 
     qtctrl.ndisplay = 3
-    assert not qtctrl.qtDepictionControl.planeThicknessSlider.isHidden()
-    assert not qtctrl.qtDepictionControl.planeThicknessLabel.isHidden()
-    assert not qtctrl.qtDepictionControl.planeNormalButtons.isHidden()
-    assert not qtctrl.qtDepictionControl.planeNormalLabel.isHidden()
+    assert not qtctrl._depiction_control.planeThicknessSlider.isHidden()
+    assert not qtctrl._depiction_control.planeThicknessLabel.isHidden()
+    assert not qtctrl._depiction_control.planeNormalButtons.isHidden()
+    assert not qtctrl._depiction_control.planeNormalLabel.isHidden()
 
 
 def test_plane_slider_value_change(qtbot):
@@ -106,7 +106,7 @@ def test_plane_slider_value_change(qtbot):
     qtbot.addWidget(qtctrl)
     layer.plane.thickness *= 2
     assert (
-        qtctrl.qtDepictionControl.planeThicknessSlider.value()
+        qtctrl._depiction_control.planeThicknessSlider.value()
         == layer.plane.thickness
     )
 
@@ -116,7 +116,7 @@ def test_auto_contrast_buttons(qtbot):
     qtctrl = QtImageControls(layer)
     qtbot.addWidget(qtctrl)
     assert layer.contrast_limits == [0, 1]
-    qtctrl.qtAutoScaleControl.autoScaleBar._once_btn.click()
+    qtctrl._auto_scale_control.autoScaleBar._once_btn.click()
     assert layer.contrast_limits == [0, 63]
 
     # change slice
@@ -128,7 +128,7 @@ def test_auto_contrast_buttons(qtbot):
     assert layer.contrast_limits == [0, 63]
 
     # with auto_btn, it should always change
-    qtctrl.qtAutoScaleControl.autoScaleBar._auto_btn.click()
+    qtctrl._auto_scale_control.autoScaleBar._auto_btn.click()
     assert layer.contrast_limits == [64, 127]
     dims.point = (2, 8, 8)
     layer._slice_dims(dims)
@@ -138,7 +138,7 @@ def test_auto_contrast_buttons(qtbot):
     assert layer.contrast_limits == [192, 255]
 
     # once button turns off continuous
-    qtctrl.qtAutoScaleControl.autoScaleBar._once_btn.click()
+    qtctrl._auto_scale_control.autoScaleBar._once_btn.click()
     dims.point = (4, 8, 8)
     layer._slice_dims(dims)
     assert layer.contrast_limits == [192, 255]

@@ -64,7 +64,13 @@ class QtBaseImageControls(QtLayerControls):
     def __init__(self, layer: Image) -> None:
         super().__init__(layer)
         # Setup widgets controls
-        self._add_widget_controls(QtContrastLimitsSliderControl(self, layer))
-        self._add_widget_controls(QtAutoScaleControl(self, layer))
-        self._add_widget_controls(QtGammaSliderControl(self, layer))
-        self._add_widget_controls(QtColormapControl(self, layer))
+        self._contrast_limits_slider_control = QtContrastLimitsSliderControl(
+            self, layer
+        )
+        self._add_widget_controls(self._contrast_limits_slider_control)
+        self._auto_scale_control = QtAutoScaleControl(self, layer)
+        self._add_widget_controls(self._auto_scale_control)
+        self._gamma_slider_control = QtGammaSliderControl(self, layer)
+        self._add_widget_controls(self._gamma_slider_control)
+        self._colormap_control = QtColormapControl(self, layer)
+        self._add_widget_controls(self._colormap_control)

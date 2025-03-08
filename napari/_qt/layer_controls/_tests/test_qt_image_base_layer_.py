@@ -33,7 +33,7 @@ def test_base_controls_creation(qtbot, layer):
     qtbot.addWidget(qtctrl)
     original_clims = tuple(layer.contrast_limits)
     slider_clims = (
-        qtctrl.qtContrastLimitsSliderControl.contrastLimitsSlider.value()
+        qtctrl._contrast_limits_slider_control.contrastLimitsSlider.value()
     )
     assert slider_clims[0] == 0
     assert slider_clims[1] == 99
@@ -47,10 +47,10 @@ def test_clim_right_click_shows_popup(mock_show, qtbot, layer):
     qtctrl = QtBaseImageControls(layer)
     qtbot.addWidget(qtctrl)
     qtbot.mousePress(
-        qtctrl.qtContrastLimitsSliderControl.contrastLimitsSlider,
+        qtctrl._contrast_limits_slider_control.contrastLimitsSlider,
         Qt.RightButton,
     )
-    assert hasattr(qtctrl.qtContrastLimitsSliderControl, 'clim_popup')
+    assert hasattr(qtctrl._contrast_limits_slider_control, 'clim_popup')
     # this mock doesn't seem to be working on cirrus windows
     # but it works on local windows tests...
     if not (os.name == 'nt' and os.getenv('CI')):
@@ -66,7 +66,7 @@ def test_changing_model_updates_view(qtbot, layer):
     layer.contrast_limits = new_clims
     assert (
         tuple(
-            qtctrl.qtContrastLimitsSliderControl.contrastLimitsSlider.value()
+            qtctrl._contrast_limits_slider_control.contrastLimitsSlider.value()
         )
         == new_clims
     )
@@ -85,24 +85,24 @@ def test_range_popup_clim_buttons(mock_show, qtbot, qapp, layer):
     original_clims = tuple(layer.contrast_limits)
     layer.contrast_limits = (20, 40)
     qtbot.mousePress(
-        qtctrl.qtContrastLimitsSliderControl.contrastLimitsSlider,
+        qtctrl._contrast_limits_slider_control.contrastLimitsSlider,
         Qt.RightButton,
     )
 
     # pressing the reset button returns the clims to the default values
-    reset_button = qtctrl.qtContrastLimitsSliderControl.clim_popup.findChild(
+    reset_button = qtctrl._contrast_limits_slider_control.clim_popup.findChild(
         QPushButton, 'reset_clims_button'
     )
     reset_button.click()
     qapp.processEvents()
     assert (
         tuple(
-            qtctrl.qtContrastLimitsSliderControl.contrastLimitsSlider.value()
+            qtctrl._contrast_limits_slider_control.contrastLimitsSlider.value()
         )
         == original_clims
     )
 
-    rangebtn = qtctrl.qtContrastLimitsSliderControl.clim_popup.findChild(
+    rangebtn = qtctrl._contrast_limits_slider_control.clim_popup.findChild(
         QPushButton, 'full_clim_range_button'
     )
     # data in this test is uint16 or int32 for Image, and float for Surface.
@@ -112,12 +112,8 @@ def test_range_popup_clim_buttons(mock_show, qtbot, qapp, layer):
         rangebtn.click()
         qapp.processEvents()
         assert tuple(layer.contrast_limits_range) == (info.min, info.max)
-        min_ = (
-            qtctrl.qtContrastLimitsSliderControl.contrastLimitsSlider.minimum()
-        )
-        max_ = (
-            qtctrl.qtContrastLimitsSliderControl.contrastLimitsSlider.maximum()
-        )
+        min_ = qtctrl._contrast_limits_slider_control.contrastLimitsSlider.minimum()
+        max_ = qtctrl._contrast_limits_slider_control.contrastLimitsSlider.maximum()
         assert (min_, max_) == (info.min, info.max)
     else:
         assert rangebtn is None
@@ -151,7 +147,7 @@ def test_qt_image_controls_change_contrast(qtbot):
     layer = Image(np.random.rand(8, 8))
     qtctrl = QtBaseImageControls(layer)
     qtbot.addWidget(qtctrl)
-    qtctrl.qtContrastLimitsSliderControl.contrastLimitsSlider.setValue(
+    qtctrl._contrast_limits_slider_control.contrastLimitsSlider.setValue(
         (0.1, 0.8)
     )
     assert tuple(layer.contrast_limits) == (0.1, 0.8)
@@ -171,22 +167,22 @@ def test_blending_opacity_slider(qtbot):
     qtbot.addWidget(qtctrl)
     assert layer.blending == 'translucent'
     # check that the opacity slider is present by default
-    assert qtctrl.qtOpacityBlendingControls.opacitySlider.isEnabled()
+    assert qtctrl._opacity_blending_controls.opacitySlider.isEnabled()
     # set minimum blending, the opacity slider should be disabled
     layer.blending = 'minimum'
-    assert not qtctrl.qtOpacityBlendingControls.opacitySlider.isEnabled()
+    assert not qtctrl._opacity_blending_controls.opacitySlider.isEnabled()
     # set the blending to 'additive' confirm the slider is enabled
     layer.blending = 'additive'
     assert layer.blending == 'additive'
-    assert qtctrl.qtOpacityBlendingControls.opacitySlider.isEnabled()
+    assert qtctrl._opacity_blending_controls.opacitySlider.isEnabled()
     # set opaque blending, the opacity slider should be disabled
     layer.blending = 'opaque'
     assert layer.blending == 'opaque'
-    assert not qtctrl.qtOpacityBlendingControls.opacitySlider.isEnabled()
+    assert not qtctrl._opacity_blending_controls.opacitySlider.isEnabled()
     # set the blending back to 'translucent' confirm the slider is enabled
     layer.blending = 'translucent'
     assert layer.blending == 'translucent'
-    assert qtctrl.qtOpacityBlendingControls.opacitySlider.isEnabled()
+    assert qtctrl._opacity_blending_controls.opacitySlider.isEnabled()
 
 
 @pytest.mark.parametrize('layer', [Image(_IMAGE), Surface(_SURF)])
@@ -195,11 +191,11 @@ def test_custom_colormap(qtbot, layer):
     qtctrl = QtBaseImageControls(layer)
 
     # check widget popup
-    assert isinstance(qtctrl.qtColormapControl.colorbarLabel, QPushButton), (
+    assert isinstance(qtctrl._colormap_control.colorbarLabel, QPushButton), (
         'Colorbar button not found'
     )
     qtbot.mouseRelease(
-        qtctrl.qtColormapControl.colorbarLabel, Qt.MouseButton.LeftButton
+        qtctrl._colormap_control.colorbarLabel, Qt.MouseButton.LeftButton
     )
     # close still open popup widgets
     for widget in QApplication.topLevelWidgets():

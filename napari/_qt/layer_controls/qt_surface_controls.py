@@ -65,4 +65,5 @@ class QtSurfaceControls(QtBaseImageControls):
         super().__init__(layer)
 
         # Setup widgets controls
-        self._add_widget_controls(QtShadingComboBoxControl(self, layer))
+        self._shading_combobox_control = QtShadingComboBoxControl(self, layer)
+        self._add_widget_controls(self._shading_combobox_control)
