@@ -182,12 +182,11 @@ def test_camera_orientation_2d(make_napari_viewer):
     assert np.all(avg_col_intensity_grad2 <= 0)
 
 
-@pytest.mark.xfail(
+@pytest.mark.skipif(
     condition=(
         sys.platform.startswith('darwin') and os.getenv('CI', '0') != '0'
     ),
     reason='test sometimes fails on macOS CI for some reason',
-    strict=False,
 )
 def test_camera_orientation_3d(make_napari_viewer):
     """Test that flipping camera orientation in 3D flips volume as expected."""
