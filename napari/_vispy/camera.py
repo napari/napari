@@ -3,6 +3,17 @@ from vispy.scene import ArcballCamera, BaseCamera, PanZoomCamera
 
 from napari._vispy.utils.quaternion import quaternion2euler_degrees
 
+# Note: the Vispy axis order is xyz, or horizontal, vertical, depth,
+# while the napari axis order is zyx / plane-row-column, or depth, vertical,
+# horizontal — i.e. it is exactly inverted. This switch happens when data
+# is passed from napari to Vispy, usually with a transposition. In the camera
+# models, this means that the order of these orientations appear in the
+# opposite order to that in napari.components.Camera.
+#
+# Note that the default Vispy camera orientations come from Vispy, not from us.
+VISPY_DEFAULT_ORIENTATION_2D = ('right', 'up', 'towards')  # xyz
+VISPY_DEFAULT_ORIENTATION_3D = ('right', 'down', 'away')  # xyz
+
 
 class VispyCamera:
     """Vipsy camera for both 2D and 3D rendering.
@@ -24,16 +35,11 @@ class VispyCamera:
 
         # Create 2D camera
         self._2D_camera = MouseToggledPanZoomCamera(aspect=1)
-        # flip y-axis to have correct alignment
-        self._2D_camera.flip = (0, 1, 0)
         self._2D_camera.viewbox_key_event = viewbox_key_event
 
         # Create 3D camera
         self._3D_camera = MouseToggledArcballCamera(fov=0)
         self._3D_camera.viewbox_key_event = viewbox_key_event
-        # flip z-axis to ensure right-handed frame in 3D view
-        # see https://github.com/napari/napari/issues/4633
-        self._3D_camera.flip = (0, 0, 1)
 
         # Set 2D camera by default
         self._view.camera = self._2D_camera
@@ -48,6 +54,7 @@ class VispyCamera:
         self._camera.events.perspective.connect(self._on_perspective_change)
         self._camera.events.mouse_pan.connect(self._on_mouse_toggles_change)
         self._camera.events.mouse_zoom.connect(self._on_mouse_toggles_change)
+        self._camera.events.orientation.connect(self._on_orientation_change)
 
         self._on_ndisplay_change()
 
@@ -165,6 +172,7 @@ class VispyCamera:
         self._on_center_change()
         self._on_zoom_change()
         self._on_angles_change()
+        self._on_orientation_change()
 
     def _on_mouse_toggles_change(self):
         self.mouse_pan = self._camera.mouse_pan
@@ -175,6 +183,26 @@ class VispyCamera:
 
     def _on_zoom_change(self):
         self.zoom = self._camera.zoom
+
+    def _on_orientation_change(self):
+        # Vispy uses xyz coordinates; napari uses zyx coordinates. We therefore
+        # start by inverting the order of coordinates coming from the napari
+        # camera model:
+        orientation_xyz = self._camera.orientation[::-1]
+        # The Vispy camera flip is a tuple of three ints in {0, 1}, indicating
+        # whether they are flipped relative to the Vispy default.
+        self._2D_camera.flip = tuple(
+            int(ori != default_ori)
+            for ori, default_ori in zip(
+                orientation_xyz, VISPY_DEFAULT_ORIENTATION_2D, strict=True
+            )
+        )
+        self._3D_camera.flip = tuple(
+            int(ori != default_ori)
+            for ori, default_ori in zip(
+                orientation_xyz, VISPY_DEFAULT_ORIENTATION_3D, strict=True
+            )
+        )
 
     def _on_perspective_change(self):
         self.perspective = self._camera.perspective
