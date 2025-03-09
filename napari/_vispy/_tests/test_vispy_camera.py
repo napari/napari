@@ -180,7 +180,7 @@ def test_camera_orientation_2d(make_napari_viewer):
 
 def test_camera_orientation_3d(make_napari_viewer, qtbot):
     """Test that flipping camera orientation in 3D flips volume as expected."""
-    viewer = make_napari_viewer()
+    viewer = make_napari_viewer(show=True)
     viewer.dims.ndisplay = 3
     gradient_z = np.arange(16).reshape((16, 1, 1))
     image = np.ones((16, 16))
