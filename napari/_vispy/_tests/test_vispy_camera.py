@@ -151,7 +151,7 @@ def test_camera_orientation_2d(make_napari_viewer, qtbot):
     # We take only the first channel in the RGBA array for simplicity, since
     # this is a grayscale image.
     qtbot.wait(50)
-    sshot0 = viewer.screenshot(canvas_only=True, flash=False)[..., 0]
+    sshot0 = viewer.window.export_figure(scale=10, flash=False)[..., 0]
     # check that the values are monotonically increasing down:
     avg_row_intensity_grad0 = np.diff(np.mean(sshot0, axis=1))
     assert np.all(avg_row_intensity_grad0 >= 0)
@@ -164,7 +164,7 @@ def test_camera_orientation_2d(make_napari_viewer, qtbot):
     # row gradient has changed direction but not the col gradient
     viewer.camera.orientation2d = ('up', 'right')
     qtbot.wait(50)
-    sshot1 = viewer.screenshot(canvas_only=True, flash=False)[..., 0]
+    sshot1 = viewer.window.export_figure(scale=10, flash=False)[..., 0]
     avg_row_intensity_grad1 = np.diff(np.mean(sshot1, axis=1))
     assert np.all(avg_row_intensity_grad1 <= 0)  # note inverted sign
     avg_col_intensity_grad1 = np.diff(np.mean(sshot1, axis=0))
@@ -174,7 +174,7 @@ def test_camera_orientation_2d(make_napari_viewer, qtbot):
     # has now also changed direction
     viewer.camera.orientation2d = ('up', 'left')
     qtbot.wait(50)
-    sshot2 = viewer.screenshot(canvas_only=True, flash=False)[..., 0]
+    sshot2 = viewer.window.export_figure(scale=10, flash=False)[..., 0]
     avg_row_intensity_grad2 = np.diff(np.mean(sshot2, axis=1))
     assert np.all(avg_row_intensity_grad2 <= 0)  # note inverted sign
     avg_col_intensity_grad2 = np.diff(np.mean(sshot2, axis=0))
