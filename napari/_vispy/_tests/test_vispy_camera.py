@@ -1,9 +1,4 @@
-import os
-import sys
-
 import numpy as np
-import pytest
-from qtpy import PYQT5
 
 
 def test_camera(make_napari_viewer):
@@ -183,17 +178,7 @@ def test_camera_orientation_2d(make_napari_viewer):
     assert np.all(avg_col_intensity_grad2 <= 0)
 
 
-@pytest.mark.xfail(
-    condition=(
-        sys.version_info >= (3, 13)
-        and sys.platform.startswith('darwin')
-        and os.getenv('CI', '0') != '0'
-        and PYQT5
-    ),
-    reason='test sometimes fails on this specific CI config for some reason',
-    strict=False,
-)
-def test_camera_orientation_3d(make_napari_viewer):
+def test_camera_orientation_3d(make_napari_viewer, qtbot):
     """Test that flipping camera orientation in 3D flips volume as expected."""
     viewer = make_napari_viewer()
     viewer.dims.ndisplay = 3
@@ -211,8 +196,10 @@ def test_camera_orientation_3d(make_napari_viewer):
 
     viewer.camera.perspective = 60
     viewer.camera.orientation = ('away', 'down', 'right')
+    qtbot.wait(50)
     sshot_away = viewer.screenshot(canvas_only=True, flash=False)[..., 0]
     viewer.camera.orientation = ('towards', 'down', 'right')
+    qtbot.wait(50)
     sshot_towards = viewer.screenshot(canvas_only=True, flash=False)[..., 0]
 
     assert np.mean(sshot_towards) > np.mean(sshot_away)
