@@ -60,6 +60,8 @@ class StatusChecker(QThread):
         self._need_status_update = Event()
         self._need_status_update.clear()
         self._terminate = False
+        self._allow_start = True
+        self.setObjectName('StatusChecker')
 
     def trigger_status_update(self) -> None:
         """Trigger a status update computation.
@@ -68,6 +70,14 @@ class StatusChecker(QThread):
         the status checker to update the viewer with the present status.
         """
         self._need_status_update.set()
+
+    def close_terminate(self) -> None:
+        """Close the status checker thread.
+
+        This method is called when the viewer is closed.
+        """
+        self._allow_start = False
+        self.terminate()
 
     def terminate(self) -> None:
         """Terminate the status checker thread.
@@ -85,6 +95,8 @@ class StatusChecker(QThread):
 
         Make sure to set the _terminate attribute to False prior to start.
         """
+        if not self._allow_start:
+            return
         self._terminate = False
         super().start(priority)
 
