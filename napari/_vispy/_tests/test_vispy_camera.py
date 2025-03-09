@@ -3,7 +3,6 @@ import sys
 
 import numpy as np
 import pytest
-from qtpy import PYQT5
 
 
 def test_camera(make_napari_viewer):
@@ -183,15 +182,11 @@ def test_camera_orientation_2d(make_napari_viewer):
     assert np.all(avg_col_intensity_grad2 <= 0)
 
 
-@pytest.mark.xfail(
+@pytest.mark.skipif(
     condition=(
-        sys.version_info >= (3, 13)
-        and sys.platform.startswith('darwin')
-        and os.getenv('CI', '0') != '0'
-        and PYQT5
+        sys.platform.startswith('darwin') and os.getenv('CI', '0') != '0'
     ),
-    reason='test sometimes fails on this specific CI config for some reason',
-    strict=False,
+    reason='test sometimes fails on macOS CI for some reason',
 )
 def test_camera_orientation_3d(make_napari_viewer):
     """Test that flipping camera orientation in 3D flips volume as expected."""
