@@ -252,7 +252,7 @@ def run_benchmark_from_module(
         getattr(obj, 'teardown', lambda: None)()
 
 
-def run_benchmark():
+def run_benchmark(args=None):
     import argparse
     import inspect
 
@@ -261,7 +261,7 @@ def run_benchmark():
         'benchmark', type=str, help='Name of the benchmark to run', default=''
     )
 
-    args = parser.parse_args()
+    args = parser.parse_args(args)
 
     benchmark_selection = args.benchmark.split('.')
 

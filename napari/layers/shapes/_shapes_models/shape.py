@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import tempfile
 from abc import ABC, abstractmethod
 from functools import cached_property
 
@@ -258,11 +259,25 @@ class Shape(ABC):
         # if we are computing both edge and face triangles, we can do so
         # with a single call to the compiled backend
         if edge and face:
-            (triangles, vertices), (centers, offsets, edge_triangles) = (
-                triangulate_polygon_with_edge_numpy_li(
-                    [data], split_edges=True
+            try:
+                (triangles, vertices), (centers, offsets, edge_triangles) = (
+                    triangulate_polygon_with_edge_numpy_li(
+                        [data], split_edges=True
+                    )
                 )
-            )
+            except Exception as e:
+                path = tempfile.mktemp(
+                    prefix='napari_comp_triang_', suffix='.npz'
+                )
+                text_path = tempfile.mktemp(
+                    prefix='napari_comp_triang_', suffix='.txt'
+                )
+                np.savez(path, data=data)
+                np.savetxt(text_path, data)
+                raise RuntimeError(
+                    f'Triangulation failed. Data saved to {path} and {text_path}'
+                ) from e
+
             self._edge_vertices = centers
             self._edge_offsets = offsets
             self._edge_triangles = edge_triangles
