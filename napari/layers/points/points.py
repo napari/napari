@@ -56,7 +56,6 @@ from napari.utils.events.custom_types import Array
 from napari.utils.events.migrations import deprecation_warning_event
 from napari.utils.geometry import project_points_onto_plane, rotate_points
 from napari.utils.migrations import add_deprecated_property, rename_argument
-from napari.utils.status_messages import generate_layer_coords_status
 from napari.utils.transforms import Affine
 from napari.utils.translations import trans
 
@@ -2404,19 +2403,11 @@ class Points(Layer):
         # source_info : dict
         #     Dict containing information that can be used in a status update.
         #"""
-        if position is not None:
-            value = self.get_value(
-                position,
-                view_direction=view_direction,
-                dims_displayed=dims_displayed,
-                world=world,
-            )
-        else:
-            value = None
-
-        source_info = self._get_source_info()
-        source_info['coordinates'] = generate_layer_coords_status(
-            position[-self.ndim :], value
+        status = super().get_status(
+            position,
+            view_direction=view_direction,
+            dims_displayed=dims_displayed,
+            world=world,
         )
 
         # if this points layer has properties
@@ -2427,9 +2418,10 @@ class Points(Layer):
             world=world,
         )
         if properties:
-            source_info['coordinates'] += '; ' + ', '.join(properties)
+            status['coordinates'] += '; ' + ', '.join(properties)
+            status['value'] += '; ' + ', '.join(properties)
 
-        return source_info
+        return status
 
     def _get_tooltip_text(
         self,
