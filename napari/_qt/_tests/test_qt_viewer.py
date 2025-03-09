@@ -845,7 +845,7 @@ def _update_data(
 
     color_box_color = qt_viewer.controls.widgets[
         layer
-    ].qtLabelControl.colorBox.color
+    ]._label_control.colorBox.color
     screenshot = qt_viewer.screenshot(flash=False)
     shape = np.array(screenshot.shape[:2])
     middle_pixel = screenshot[tuple(shape // 2)]
