@@ -232,7 +232,7 @@ class QtTriangle(QFrame):
         Returns
         -------
         int
-            Mininum value of triangle widget.
+            Minimum value of triangle widget.
         """
         return self._min_value
 

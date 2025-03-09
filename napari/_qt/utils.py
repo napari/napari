@@ -40,7 +40,7 @@ RICH_TEXT_PATTERN = re.compile('<[^\n]+>')
 
 
 class ColorMode(StringEnum):
-    """Enum fo selecting the color mode to return the color in.
+    """Enum for selecting the color mode to return the color in.
 
     ColorMode.HEX
         Returns color as hex string.
