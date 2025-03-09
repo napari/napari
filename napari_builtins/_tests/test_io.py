@@ -250,28 +250,33 @@ def test_single_file(spec: ImageSpec, write_spec, stacks: int):
 )
 @pytest.mark.parametrize('stack', [True, False])
 @pytest.mark.parametrize('use_dask', [True, False, None])
-def test_magic_imread(write_spec, spec: ImageSpec, stack, use_dask):
+@pytest.mark.parametrize('use_memmap', [True, False, None])
+def test_magic_imread(
+    write_spec, spec: ImageSpec, stack, use_dask, use_memmap
+):
     fnames = (
         [write_spec(s) for s in spec]
         if isinstance(spec, list)
         else write_spec(spec)
     )
-    images = magic_imread(fnames, stack=stack, use_dask=use_dask)
+    images = magic_imread(
+        fnames, stack=stack, use_dask=use_dask, use_memmap=use_memmap
+    )
     if isinstance(spec, ImageSpec):
         expect_shape = spec.shape
     else:
         expect_shape = (len(spec), *spec[0].shape) if stack else spec[0].shape
     expect_shape = tuple(i for i in expect_shape if i > 1)
 
-    expected_arr_type = (
-        da.Array
-        if (
-            use_dask
-            or (use_dask is None and isinstance(spec, list) and len(spec) > 1)
-        )
-        else np.ndarray
-    )
-    if isinstance(spec, list) and len(spec) > 1 and not stack:
+    has_multiple_files = isinstance(spec, list) and len(spec) > 1
+    if use_dask or (use_dask is None and has_multiple_files):
+        expected_arr_type = da.Array
+    elif use_memmap or (use_memmap is None and not has_multiple_files):
+        expected_arr_type = np.ndarray, np.memmap
+    else:
+        expected_arr_type = np.ndarray
+
+    if has_multiple_files and not stack:
         assert isinstance(images, list)
         assert all(isinstance(img, expected_arr_type) for img in images)
         assert all(img.shape == expect_shape for img in images)
