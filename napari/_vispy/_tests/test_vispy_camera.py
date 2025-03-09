@@ -140,7 +140,7 @@ def test_camera_model_update_from_vispy_3D(make_napari_viewer):
     np.testing.assert_almost_equal(viewer.camera.zoom, vispy_camera.zoom)
 
 
-def test_camera_orientation_2d(make_napari_viewer):
+def test_camera_orientation_2d(make_napari_viewer, qtbot):
     """Test that flipping orientation of the camera flips displayed image."""
     viewer = make_napari_viewer(show=True)
     data = np.arange(16).reshape((4, 4))
@@ -150,6 +150,7 @@ def test_camera_orientation_2d(make_napari_viewer):
     # screenshot should continually increase as you go down in the image.
     # We take only the first channel in the RGBA array for simplicity, since
     # this is a grayscale image.
+    qtbot.wait(50)
     sshot0 = viewer.screenshot(canvas_only=True, flash=False)[..., 0]
     # check that the values are monotonically increasing down:
     avg_row_intensity_grad0 = np.diff(np.mean(sshot0, axis=1))
@@ -162,6 +163,7 @@ def test_camera_orientation_2d(make_napari_viewer):
     # now we reverse the orientation of the vertical axis, and check that the
     # row gradient has changed direction but not the col gradient
     viewer.camera.orientation2d = ('up', 'right')
+    qtbot.wait(50)
     sshot1 = viewer.screenshot(canvas_only=True, flash=False)[..., 0]
     avg_row_intensity_grad1 = np.diff(np.mean(sshot1, axis=1))
     assert np.all(avg_row_intensity_grad1 <= 0)  # note inverted sign
@@ -171,6 +173,7 @@ def test_camera_orientation_2d(make_napari_viewer):
     # finally, reverse orientation of horizontal axis, check that col gradient
     # has now also changed direction
     viewer.camera.orientation2d = ('up', 'left')
+    qtbot.wait(50)
     sshot2 = viewer.screenshot(canvas_only=True, flash=False)[..., 0]
     avg_row_intensity_grad2 = np.diff(np.mean(sshot2, axis=1))
     assert np.all(avg_row_intensity_grad2 <= 0)  # note inverted sign
