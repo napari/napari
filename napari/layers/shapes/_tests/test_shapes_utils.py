@@ -434,5 +434,14 @@ def pentagram():
     return np.column_stack((radius * np.cos(angles), radius * np.sin(angles)))
 
 
-def test_is_convex():
-    assert not _is_convex(pentagram())
+@pytest.mark.parametrize('angle', np.arange(0, 360, 5), ids=str)
+def test_is_convex(angle):
+    p = pentagram()
+    rot = np.array(
+        [
+            [np.cos(np.radians(angle)), -np.sin(np.radians(angle))],
+            [np.sin(np.radians(angle)), np.cos(np.radians(angle))],
+        ]
+    )
+    data = np.dot(p, rot)
+    assert not _is_convex(data)
