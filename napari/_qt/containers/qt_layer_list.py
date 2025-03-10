@@ -17,8 +17,6 @@ from napari.layers import Layer
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from typing import Optional
-
     from qtpy.QtGui import QKeyEvent  # type: ignore[attr-defined]
     from qtpy.QtWidgets import QWidget  # type: ignore[attr-defined]
 
@@ -47,9 +45,7 @@ class QtLayerList(QtListView[Layer]):
     reversing the view with ReverseProxyModel.
     """
 
-    def __init__(
-        self, root: LayerList, parent: Optional[QWidget] = None
-    ) -> None:
+    def __init__(self, root: LayerList, parent: QWidget | None = None) -> None:
         root._ctx['valid_spatial_json_clipboard'] = (
             is_valid_spatial_in_clipboard
         )
@@ -70,7 +66,7 @@ class QtLayerList(QtListView[Layer]):
         # so items at the end of the list are at the top.
         self.setModel(ReverseProxyModel(self.model()))
 
-    def keyPressEvent(self, e: Optional[QKeyEvent]) -> None:
+    def keyPressEvent(self, e: QKeyEvent | None) -> None:
         """Override Qt event to pass events to the viewer."""
         if e is None:
             return
@@ -84,5 +80,9 @@ class QtLayerList(QtListView[Layer]):
             e.ignore()
         elif e.key() != Qt.Key.Key_Space:
             super().keyPressEvent(e)
-        if e.key() not in (Qt.Key.Key_Backspace, Qt.Key.Key_Delete):
+        if e.key() not in (
+            Qt.Key.Key_Backspace,
+            Qt.Key.Key_Delete,
+            Qt.Key.Key_Return,
+        ):
             e.ignore()  # pass key events up to viewer

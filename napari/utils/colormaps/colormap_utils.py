@@ -3,7 +3,7 @@ from collections import OrderedDict, defaultdict
 from collections.abc import Iterable
 from functools import lru_cache
 from threading import Lock
-from typing import NamedTuple, Optional, Union
+from typing import NamedTuple, Union
 
 import numpy as np
 import skimage.color as colorconv
@@ -51,8 +51,6 @@ matplotlib_colormaps = _MATPLOTLIB_COLORMAP_NAMES = OrderedDict(
     magma=trans._p('colormap', 'magma'),
     inferno=trans._p('colormap', 'inferno'),
     plasma=trans._p('colormap', 'plasma'),
-    gray=trans._p('colormap', 'gray'),
-    gray_r=trans._p('colormap', 'gray r'),
     hsv=trans._p('colormap', 'hsv'),
     turbo=trans._p('colormap', 'turbo'),
     twilight=trans._p('colormap', 'twilight'),
@@ -111,6 +109,16 @@ SIMPLE_COLORMAPS = {
     for name, (display_name, color) in _PRIMARY_COLORS.items()
 }
 
+# add conventional grayscale colormap as a simple one
+SIMPLE_COLORMAPS.update(
+    {
+        'gray': Colormap(
+            name='gray',
+            display_name='gray',
+            colors=[[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]],
+        )
+    }
+)
 
 # dictionary for bop colormap objects
 BOP_COLORMAPS = {
@@ -122,6 +130,17 @@ INVERSE_COLORMAPS = {
     name: Colormap(value, name=name, display_name=display_name)
     for name, (display_name, value) in inverse_cmaps.items()
 }
+
+# Add the reversed grayscale colormap (white to black) to inverse colormaps
+INVERSE_COLORMAPS.update(
+    {
+        'gray_r': Colormap(
+            name='gray_r',
+            display_name='gray r',
+            colors=[[1.0, 1.0, 1.0], [0.0, 0.0, 0.0]],
+        ),
+    }
+)
 
 _FLOAT32_MAX = float(np.finfo(np.float32).max)
 _MAX_VISPY_SUPPORTED_VALUE = _FLOAT32_MAX / 8
@@ -320,7 +339,9 @@ def color_dict_to_colormap(colors):
 
     control2index = {
         tuple(color): control_point
-        for color, control_point in zip(colormap.colors, colormap.controls)
+        for color, control_point in zip(
+            colormap.colors, colormap.controls, strict=False
+        )
     }
 
     control_small_delta = 0.5 / len(control_colors)
@@ -751,6 +772,11 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
     """
     with AVAILABLE_COLORMAPS_LOCK:
         if isinstance(colormap, str):
+            # when black given as end color, want reversed grayscale colormap
+            # from white to black, named gray_r
+            if colormap.startswith('#000000') or colormap.lower() == 'black':
+                colormap = 'gray_r'
+
             # Is a colormap with this name already available?
             custom_cmap = AVAILABLE_COLORMAPS.get(colormap)
             if custom_cmap is None:
@@ -800,7 +826,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
             if (
                 len(colormap) == 2
                 and isinstance(colormap[0], str)
-                and isinstance(colormap[1], (VispyColormap, Colormap))
+                and isinstance(colormap[1], VispyColormap | Colormap)
             ):
                 name = colormap[0]
                 cmap = colormap[1]
@@ -828,13 +854,13 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
 
         elif isinstance(colormap, dict):
             if 'colors' in colormap and not (
-                isinstance(colormap['colors'], (VispyColormap, Colormap))
+                isinstance(colormap['colors'], VispyColormap | Colormap)
             ):
                 cmap = Colormap(**colormap)
                 name = cmap.name
                 AVAILABLE_COLORMAPS[name] = cmap
             elif not all(
-                (isinstance(i, (VispyColormap, Colormap)))
+                (isinstance(i, VispyColormap | Colormap))
                 for i in colormap.values()
             ):
                 raise TypeError(
@@ -896,9 +922,9 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
 
 def _colormap_from_colors(
     colors: ColorType,
-    name: Optional[str] = 'custom',
-    display_name: Optional[str] = None,
-) -> Optional[Colormap]:
+    name: str | None = 'custom',
+    display_name: str | None = None,
+) -> Colormap | None:
     try:
         color_array = transform_color(colors)
     except (ValueError, AttributeError, KeyError):

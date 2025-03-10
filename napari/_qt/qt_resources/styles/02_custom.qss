@@ -116,6 +116,7 @@ QtConsole > QTextEdit {
   selection-background-color: {{ highlight }};
   margin: 10px;
   font-family: Menlo, Consolas, "Ubuntu Mono", "Roboto Mono", "DejaVu Sans Mono", monospace;
+  font-size: {{ font_size }};
 }
 .inverted {
   background-color: {{ background }};
@@ -781,6 +782,11 @@ QtShortcutLabel {
  font-size: {{ increase(font_size, 4) }};
 }
 
+QtVersionLabel {
+  color: {{ foreground }};
+  font-size: {{ increase(font_size, 2) }};
+}
+
 
 /* ------------- Narrow scrollbar for qtlayer list --------- */
 
@@ -849,17 +855,20 @@ QtLayerList::indicator {
   width: 16px;
   height: 16px;
   position: absolute;
-  left: 0px;
+  left: -3px;
   image: url("theme_{{ id }}:/visibility_off.svg");
+  border-radius: 2px;
+  padding: 3px;
 }
 
 QtLayerList::indicator:unchecked {
   image: url("theme_{{ id }}:/visibility_off_50.svg");
-
+  background: {{ opacity(background, 190) }};
 }
 
 QtLayerList::indicator:checked {
   image: url("theme_{{ id }}:/visibility.svg");
+  background: {{ opacity(highlight, 190) }};
 }
 
 
@@ -921,4 +930,10 @@ QMenu:disabled, QModelMenu:disabled {
 
 QMenu, QModelMenu {
 	padding: 6 px;
+}
+
+/* --------------- Command palette ----------------- */
+
+QCommandLineEdit, QCommandList, QCommandLabel {
+  font-size: {{ increase(font_size, 4) }};
 }

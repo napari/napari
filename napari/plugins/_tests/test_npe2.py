@@ -177,11 +177,11 @@ def test_widget_iterator(mock_pm):
     assert wdgs == [('dock', (PLUGIN_NAME, ['My Widget']))]
 
 
-def test_plugin_actions(mock_pm: 'TestPluginManager', mock_app):
-    from napari._app_model import get_app
+def test_plugin_actions(mock_pm: 'TestPluginManager', mock_app_model):
+    from napari._app_model import get_app_model
     from napari.plugins import _initialize_plugins
 
-    app = get_app()
+    app = get_app_model()
     # nothing yet registered with this menu
     assert 'napari/file/new_layer' not in app.menus
     # menus_items1 = list(app.menus.get_menu('napari/file/new_layer'))

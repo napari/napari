@@ -1,4 +1,4 @@
-from typing import Callable
+from collections.abc import Callable
 
 from napari.layers.base._base_constants import Mode
 from napari.layers.tracks.tracks import Tracks
@@ -26,7 +26,7 @@ def activate_tracks_transform_mode(layer: Tracks) -> None:
     layer.mode = str(Mode.TRANSFORM)
 
 
-@register_tracks_mode_action(trans._('Pan/zoom'))
+@register_tracks_mode_action(trans._('Move camera'))
 def activate_tracks_pan_zoom_mode(layer: Tracks) -> None:
     layer.mode = str(Mode.PAN_ZOOM)
 

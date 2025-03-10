@@ -34,3 +34,5 @@ virtualenv==20.26.3
     # via asv
 zipp==3.20.1
     # via importlib-metadata
+
+flexparser!=0.4

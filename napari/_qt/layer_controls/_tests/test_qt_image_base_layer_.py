@@ -4,7 +4,7 @@ from unittest.mock import patch
 import numpy as np
 import pytest
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QPushButton
+from qtpy.QtWidgets import QApplication, QColorDialog, QPushButton
 
 from napari._qt.layer_controls.qt_image_controls_base import (
     QContrastLimitsPopup,
@@ -131,11 +131,11 @@ def test_qt_image_controls_change_contrast(qtbot):
     assert tuple(layer.contrast_limits) == (0.1, 0.8)
 
 
-def test_tensorstore_clim_popup():
+def test_tensorstore_clim_popup(qtbot):
     """Regression to test, makes sure it works with tensorstore dtype"""
     ts = pytest.importorskip('tensorstore')
     layer = Image(ts.array(np.random.rand(20, 20)))
-    QContrastLimitsPopup(layer)
+    qtbot.addWidget(QContrastLimitsPopup(layer))
 
 
 def test_blending_opacity_slider(qtbot):
@@ -161,3 +161,19 @@ def test_blending_opacity_slider(qtbot):
     layer.blending = 'translucent'
     assert layer.blending == 'translucent'
     assert qtctrl.opacitySlider.isEnabled()
+
+
+@pytest.mark.parametrize('layer', [Image(_IMAGE), Surface(_SURF)])
+def test_custom_colormap(qtbot, layer):
+    """Test whether colormap button does anything."""
+    qtctrl = QtBaseImageControls(layer)
+
+    # check widget popup
+    assert isinstance(qtctrl.colorbarLabel, QPushButton), (
+        'Colorbar button not found'
+    )
+    qtbot.mouseRelease(qtctrl.colorbarLabel, Qt.MouseButton.LeftButton)
+    # close still open popup widgets
+    for widget in QApplication.topLevelWidgets():
+        if isinstance(widget, QColorDialog):
+            widget.close()

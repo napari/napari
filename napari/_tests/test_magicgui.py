@@ -11,11 +11,10 @@ from napari import Viewer, layers, types
 from napari._tests.utils import layer_test_data
 from napari.layers import Image, Labels, Layer
 from napari.utils._proxies import PublicOnlyProxy
+from napari.utils.migrations import _DeprecatingDict
 from napari.utils.misc import all_subclasses
 
 if TYPE_CHECKING:
-    import typing
-
     import napari.types
 
 try:
@@ -64,7 +63,7 @@ def test_add_layer_data_to_viewer_optional(make_napari_viewer):
     viewer = make_napari_viewer()
 
     @magicgui
-    def func_optional(a: bool) -> 'typing.Optional[napari.types.ImageData]':
+    def func_optional(a: bool) -> 'napari.types.ImageData | None':
         if a:
             return np.zeros((10, 10))
         return None
@@ -346,3 +345,21 @@ def test_layers_populate_immediately(make_napari_viewer):
     assert not len(labels_layer.choices)
     viewer.window.add_dock_widget(labels_layer)
     assert len(labels_layer.choices) == 1
+
+
+def test_from_layer_data_tuple_accept_deprecating_dict(make_napari_viewer):
+    """Test that a function returning a layer data tuple runs without error."""
+    viewer = make_napari_viewer()
+
+    @magicgui
+    def from_layer_data_tuple() -> types.LayerDataTuple:
+        data = np.zeros((10, 10))
+        meta = _DeprecatingDict({'name': 'test_image'})
+        layer_type = 'image'
+        return data, meta, layer_type
+
+    viewer.window.add_dock_widget(from_layer_data_tuple)
+    from_layer_data_tuple()
+    assert len(viewer.layers) == 1
+    assert isinstance(viewer.layers[0], Image)
+    assert viewer.layers[0].name == 'test_image'

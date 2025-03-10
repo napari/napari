@@ -2,7 +2,7 @@
 
 import sys
 from functools import partial
-from webbrowser import open
+from webbrowser import open as web_open
 
 from app_model.types import Action, KeyBindingRule, KeyCode, KeyMod
 from packaging.version import parse
@@ -26,6 +26,8 @@ HELP_URLS: dict[str, str] = {
     'tutorials': f'https://napari.org/{VERSION}/tutorials/index.html',
     'layers_guide': f'https://napari.org/{VERSION}/howtos/layers/index.html',
     'examples_gallery': f'https://napari.org/{VERSION}/gallery.html',
+    'plugins': f'https://napari.org/{VERSION}/plugins/index.html',
+    'contribute': f'https://napari.org/{VERSION}/developers/index.html',
     'release_notes': f'https://napari.org/{VERSION}/release/release_{VERSION.replace(".", "_")}.html',
     'github_issue': 'https://github.com/napari/napari/issues',
     'homepage': 'https://napari.org',
@@ -56,31 +58,37 @@ Q_HELP_ACTIONS: list[Action] = [
     Action(
         id='napari.window.help.getting_started',
         title=trans._('Getting started'),
-        callback=partial(open, url=HELP_URLS['getting_started']),
+        callback=partial(web_open, url=HELP_URLS['getting_started']),
         menus=[{'id': MenuId.MENUBAR_HELP}],
     ),
     Action(
         id='napari.window.help.tutorials',
         title=trans._('Tutorials'),
-        callback=partial(open, url=HELP_URLS['tutorials']),
+        callback=partial(web_open, url=HELP_URLS['tutorials']),
         menus=[{'id': MenuId.MENUBAR_HELP}],
     ),
     Action(
         id='napari.window.help.layers_guide',
         title=trans._('Using Layers Guides'),
-        callback=partial(open, url=HELP_URLS['layers_guide']),
+        callback=partial(web_open, url=HELP_URLS['layers_guide']),
         menus=[{'id': MenuId.MENUBAR_HELP}],
     ),
     Action(
         id='napari.window.help.examples',
         title=trans._('Examples Gallery'),
-        callback=partial(open, url=HELP_URLS['examples_gallery']),
+        callback=partial(web_open, url=HELP_URLS['examples_gallery']),
+        menus=[{'id': MenuId.MENUBAR_HELP}],
+    ),
+    Action(
+        id='napari.window.help.plugins',
+        title=trans._('Extend with Plugins'),
+        callback=partial(web_open, url=HELP_URLS['plugins']),
         menus=[{'id': MenuId.MENUBAR_HELP}],
     ),
     Action(
         id='napari.window.help.release_notes',
         title=trans._('Release Notes'),
-        callback=partial(open, url=HELP_URLS['release_notes']),
+        callback=partial(web_open, url=HELP_URLS['release_notes']),
         menus=[
             {
                 'id': MenuId.MENUBAR_HELP,
@@ -92,7 +100,7 @@ Q_HELP_ACTIONS: list[Action] = [
     Action(
         id='napari.window.help.github_issue',
         title=trans._('Report an issue on GitHub'),
-        callback=partial(open, url=HELP_URLS['github_issue']),
+        callback=partial(web_open, url=HELP_URLS['github_issue']),
         menus=[
             {
                 'id': MenuId.MENUBAR_HELP,
@@ -102,9 +110,15 @@ Q_HELP_ACTIONS: list[Action] = [
         ],
     ),
     Action(
+        id='napari.window.help.contribute',
+        title=trans._('Contribute to napari'),
+        callback=partial(web_open, url=HELP_URLS['contribute']),
+        menus=[{'id': MenuId.MENUBAR_HELP, 'group': MenuGroup.NAVIGATION}],
+    ),
+    Action(
         id='napari.window.help.homepage',
         title=trans._('napari homepage'),
-        callback=partial(open, url=HELP_URLS['homepage']),
+        callback=partial(web_open, url=HELP_URLS['homepage']),
         menus=[{'id': MenuId.MENUBAR_HELP, 'group': MenuGroup.NAVIGATION}],
     ),
 ]

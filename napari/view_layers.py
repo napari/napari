@@ -14,7 +14,7 @@ of the layer types, like "image", "points", etc...):
 """
 
 import inspect
-from typing import Any, Optional
+from typing import Any
 
 from numpydoc.docscrape import NumpyDocString as _NumpyDocString
 
@@ -23,6 +23,7 @@ from napari.layers import Image
 from napari.viewer import Viewer
 
 __all__ = [
+    'imshow',
     'view_image',
     'view_labels',
     'view_path',
@@ -31,7 +32,6 @@ __all__ = [
     'view_surface',
     'view_tracks',
     'view_vectors',
-    'imshow',
 ]
 
 _doc_template = """Create a viewer and add a{n} {layer_string} layer.
@@ -122,7 +122,7 @@ def _make_viewer_then(
     add_method: str,
     /,
     *args,
-    viewer: Optional[Viewer] = None,
+    viewer: Viewer | None = None,
     **kwargs,
 ) -> tuple[Viewer, Any]:
     """Create a viewer, call given add_* method, then return viewer and layer.

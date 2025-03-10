@@ -327,9 +327,10 @@ def test_changing_points():
     assert len(layer.data) == 20
 
 
-def test_selecting_points():
+@pytest.mark.parametrize('data_shape', [(10, 2), (10, 3), (10, 4)])
+def test_selecting_points(data_shape):
     """Test selecting points."""
-    shape = (10, 2)
+    shape = data_shape
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
@@ -2513,7 +2514,9 @@ def test_point_slice_request_response(dims_indices, target_indices):
     response = request()
 
     assert len(response.indices) == len(target_indices)
-    assert all(a == b for a, b in zip(response.indices, target_indices))
+    assert all(
+        a == b for a, b in zip(response.indices, target_indices, strict=False)
+    )
 
 
 def test_editable_and_visible_are_independent():

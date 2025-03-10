@@ -105,7 +105,6 @@ def _convert_to_image(ll: LayerList) -> None:
 def _merge_stack(ll: LayerList, rgb: bool = False) -> None:
     # force selection to follow LayerList ordering
     imgs = cast(list[Image], [layer for layer in ll if layer in ll.selection])
-    assert all(isinstance(layer, Image) for layer in imgs)
     merged = (
         stack_utils.merge_rgb(imgs)
         if rgb
@@ -121,7 +120,9 @@ def _toggle_visibility(ll: LayerList) -> None:
     for layer in ll.selection:
         current_visibility_state.append(layer.visible)
 
-    for visibility, layer in zip(current_visibility_state, ll.selection):
+    for visibility, layer in zip(
+        current_visibility_state, ll.selection, strict=False
+    ):
         if layer.visible == visibility:
             layer.visible = not visibility
 

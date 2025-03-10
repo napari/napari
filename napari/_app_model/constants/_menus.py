@@ -90,6 +90,8 @@ class MenuId(StrEnum):
 class MenuGroup:
     NAVIGATION = 'navigation'  # always the first group in any menu
     RENDER = '1_render'
+    # View menu
+    ZOOM = 'zoom'
     # Plugins menubar
     PLUGINS = '1_plugins'
     PLUGIN_MULTI_SUBMENU = '2_plugin_multi_submenu'

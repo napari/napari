@@ -8,14 +8,14 @@ from typing import (
 
 import pint
 
-UnitsLike = Union[None, str, pint.Unit, Sequence[Union[str, pint.Unit]]]
+UnitsLike = Union[None, str, pint.Unit, Sequence[str | pint.Unit]]
 UnitsInfo = Union[None, pint.Unit, tuple[pint.Unit, ...]]
 
 
 __all__ = (
-    'get_units_from_name',
-    'UnitsLike',
     'UnitsInfo',
+    'UnitsLike',
+    'get_units_from_name',
 )
 
 
@@ -24,12 +24,12 @@ def get_units_from_name(units: None) -> None: ...
 
 
 @overload
-def get_units_from_name(units: Union[str, pint.Unit]) -> pint.Unit: ...
+def get_units_from_name(units: str | pint.Unit) -> pint.Unit: ...
 
 
 @overload
 def get_units_from_name(
-    units: Sequence[Union[str, pint.Unit]],
+    units: Sequence[str | pint.Unit],
 ) -> tuple[pint.Unit, ...]: ...
 
 

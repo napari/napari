@@ -1,7 +1,6 @@
 import re
 import sys
-from collections.abc import Generator
-from typing import Callable
+from collections.abc import Callable, Generator
 
 import numpy as np
 
@@ -26,6 +25,7 @@ def get_tb_formatter() -> Callable[[ExcInfo, bool, str], str]:
         or plain text.
     """
     try:
+        import IPython
         import IPython.core.ultratb
 
         def format_exc_info(
@@ -33,7 +33,12 @@ def get_tb_formatter() -> Callable[[ExcInfo, bool, str], str]:
         ) -> str:
             # avoid verbose printing of the array data
             with np.printoptions(precision=5, threshold=10, edgeitems=2):
-                vbtb = IPython.core.ultratb.VerboseTB(color_scheme=color)
+                if IPython.version_info >= (9, 0):
+                    vbtb = IPython.core.ultratb.VerboseTB(
+                        theme_name=color.lower()
+                    )
+                else:
+                    vbtb = IPython.core.ultratb.VerboseTB(color_scheme=color)
                 if as_html:
                     ansi_string = vbtb.text(*info).replace(' ', '&nbsp;')
                     html = ''.join(ansi2html(ansi_string))

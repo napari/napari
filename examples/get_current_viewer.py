@@ -9,6 +9,7 @@ viewer when the viewer is out of scope.
 
 .. tags:: gui
 """
+import numpy as np
 
 import napari
 
@@ -20,3 +21,14 @@ viewer = 'oops no viewer here'
 
 # get that reference again
 viewer = napari.current_viewer()
+
+# work with the viewer
+x = np.arange(256)
+y = np.arange(256).reshape((256, 1))
+# from: https://botsin.space/@bitartbot/113553754823363986
+image = (-(~((y - x) ^ (y + x)))) % 11
+layer = viewer.add_image(image)
+layer.contrast_limits = (8.5, 10)
+
+if __name__ == '__main__':
+    napari.run()
