@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from qtpy.QtCore import QEvent, QPoint, Qt
 from qtpy.QtWidgets import (
     QApplication,
+    QComboBox,
     QDoubleSpinBox,
     QFormLayout,
     QFrame,
@@ -12,6 +13,7 @@ from qtpy.QtWidgets import (
     QLabel,
     QPushButton,
     QVBoxLayout,
+    QWidget,
 )
 from superqt import QLabeledDoubleSlider
 
@@ -19,6 +21,11 @@ from napari._qt.dialogs.qt_modal import QtPopup
 from napari._qt.widgets.qt_dims_sorter import QtDimsSorter
 from napari._qt.widgets.qt_spinbox import QtSpinBox
 from napari._qt.widgets.qt_tooltip import QtToolTipLabel
+from napari.components.camera import (
+    DepthAxisOrientation,
+    HorizontalAxisOrientation,
+    VerticalAxisOrientation,
+)
 from napari.utils.action_manager import action_manager
 from napari.utils.misc import in_ipython, in_jupyter, in_python_repl
 from napari.utils.translations import trans
@@ -335,11 +342,82 @@ class QtViewerButtons(QFrame):
         form_layout.insertRow(0, QLabel(trans._('Zoom:')), self.zoom)
         help_layout.addWidget(zoom_help_symbol)
 
+    def _add_orientation_controls(
+        self,
+        popup: QtPopup,
+        form_layout: QFormLayout,
+        help_layout: QVBoxLayout,
+    ) -> None:
+        """Add orientation controls to the popup."""
+        orientation_layout = QHBoxLayout()
+        orientation_layout.setContentsMargins(0, 0, 0, 0)
+        orientation_widget = QWidget(popup)
+
+        if self.viewer.dims.ndisplay == 2:
+            vertical_combo = QComboBox(popup)
+            vertical_combo.addItems([i.value for i in VerticalAxisOrientation])
+            current_v = self.viewer.camera.orientation2d[0].value
+            vertical_combo.setCurrentText(current_v)
+            vertical_combo.currentTextChanged.connect(self._update_vertical)
+
+            horizontal_combo = QComboBox(popup)
+            horizontal_combo.addItems(
+                [i.value for i in HorizontalAxisOrientation]
+            )
+            current_h = self.viewer.camera.orientation2d[1].value
+            horizontal_combo.setCurrentText(current_h)
+            horizontal_combo.currentTextChanged.connect(
+                self._update_horizontal
+            )
+
+            orientation_layout.addWidget(vertical_combo)
+            orientation_layout.addWidget(horizontal_combo)
+        else:
+            depth_combo = QComboBox(popup)
+            depth_combo.addItems([i.value for i in DepthAxisOrientation])
+            current_d = self.viewer.camera.orientation[0].value
+            depth_combo.setCurrentText(current_d)
+            depth_combo.currentTextChanged.connect(self._update_depth)
+
+            vertical_combo = QComboBox(popup)
+            vertical_combo.addItems([i.value for i in VerticalAxisOrientation])
+            current_v = self.viewer.camera.orientation[1].value
+            vertical_combo.setCurrentText(current_v)
+            vertical_combo.currentTextChanged.connect(self._update_vertical)
+
+            horizontal_combo = QComboBox(popup)
+            horizontal_combo.addItems(
+                [i.value for i in HorizontalAxisOrientation]
+            )
+            current_h = self.viewer.camera.orientation[2].value
+            horizontal_combo.setCurrentText(current_h)
+            horizontal_combo.currentTextChanged.connect(
+                self._update_horizontal
+            )
+
+            orientation_layout.addWidget(depth_combo)
+            orientation_layout.addWidget(vertical_combo)
+            orientation_layout.addWidget(horizontal_combo)
+
+        orientation_widget.setLayout(orientation_layout)
+
+        orientation_help_symbol = help_tooltip(
+            parent=popup,
+            text='Controls the orientation of the axes in the scene.',
+        )
+
+        form_layout.insertRow(
+            0, QLabel(trans._('Orientation:')), orientation_widget
+        )
+        help_layout.addWidget(orientation_help_symbol)
+
     def open_ndisplay_camera_popup(self) -> None:
         """Show controls for camera settings based on ndisplay mode."""
         popup = QtPopup(self)
         form_layout = QFormLayout()
         help_layout = QVBoxLayout()
+
+        self._add_orientation_controls(popup, form_layout, help_layout)
 
         self._add_shared_camera_controls(popup, form_layout, help_layout)
 
@@ -390,6 +468,36 @@ class QtViewerButtons(QFrame):
         """
 
         self.viewer.camera.perspective = value
+
+    def _update_depth(self, value) -> None:
+        """Update depth axis orientation."""
+        if self.viewer.dims.ndisplay == 3:
+            depth = DepthAxisOrientation(value)
+            vertical = self.viewer.camera.orientation[1]
+            horizontal = self.viewer.camera.orientation[2]
+            self.viewer.camera.orientation = (depth, vertical, horizontal)
+
+    def _update_vertical(self, value) -> None:
+        """Update vertical axis orientation."""
+        vertical = VerticalAxisOrientation(value)
+        if self.viewer.dims.ndisplay == 2:
+            horizontal = self.viewer.camera.orientation2d[1]
+            self.viewer.camera.orientation2d = (vertical, horizontal)
+        else:
+            depth = self.viewer.camera.orientation[0]
+            horizontal = self.viewer.camera.orientation[2]
+            self.viewer.camera.orientation = (depth, vertical, horizontal)
+
+    def _update_horizontal(self, value) -> None:
+        """Update horizontal axis orientation."""
+        horizontal = HorizontalAxisOrientation(value)
+        if self.viewer.dims.ndisplay == 2:
+            vertical = self.viewer.camera.orientation2d[0]
+            self.viewer.camera.orientation2d = (vertical, horizontal)
+        else:
+            depth = self.viewer.camera.orientation[0]
+            vertical = self.viewer.camera.orientation[1]
+            self.viewer.camera.orientation = (depth, vertical, horizontal)
 
     def _open_roll_popup(self):
         """Open a grid popup to manually order the dimensions"""
