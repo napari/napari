@@ -77,13 +77,13 @@ superqt==0.7.1
     # via magicgui
 tomli-w==1.2.0
     # via npe2
-typer==0.15.1
+typer==0.15.2
     # via npe2
 types-pyyaml==6.0.12.20241230
     # via -r resources/requirements_mypy.in
-types-requests==2.32.0.20241016
+types-requests==2.32.0.20250301
     # via -r resources/requirements_mypy.in
-types-setuptools==75.8.0.20250225
+types-setuptools==75.8.2.20250301
     # via -r resources/requirements_mypy.in
 typing-extensions==4.12.2
     # via
