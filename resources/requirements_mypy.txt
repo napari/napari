@@ -71,6 +71,8 @@ rich==13.9.4
     # via
     #   npe2
     #   typer
+setuptools==76.0.0
+    # via types-setuptools
 shellingham==1.5.4
     # via typer
 superqt==0.7.1
@@ -81,9 +83,9 @@ typer==0.15.2
     # via npe2
 types-pyyaml==6.0.12.20241230
     # via -r resources/requirements_mypy.in
-types-requests==2.32.0.20250301
+types-requests==2.32.0.20250306
     # via -r resources/requirements_mypy.in
-types-setuptools==75.8.2.20250301
+types-setuptools==75.8.2.20250305
     # via -r resources/requirements_mypy.in
 typing-extensions==4.12.2
     # via
