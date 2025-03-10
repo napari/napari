@@ -60,8 +60,8 @@ def find_planar_axis(
     return np.empty((0, 2), dtype=points.dtype), None, None
 
 
-def _is_convex(poly: npt.NDArray) -> bool:
-    """Check whether a polygon is convex.
+def _same_oriented_angles(poly: npt.NDArray) -> bool:
+    """Check whether a polygon has the same orientation for all its angles
 
     Parameters
     ----------
@@ -82,6 +82,31 @@ def _is_convex(poly: npt.NDArray) -> bool:
     return (orn_set[0] == orientation(poly[-2], poly[-1], poly[0])) and (
         orn_set[0] == orientation(poly[-1], poly[0], poly[1])
     )
+
+
+def _is_simple(poly: npt.NDArray) -> bool:
+    if poly.shape[0] < 3:
+        return False  # Not enough vertices to form a polygon
+    centroid = poly.mean(axis=0)
+    angles = np.arctan2(poly[:, 1] - centroid[1], poly[:, 0] - centroid[0])
+    # check if angles are increasing
+    return np.all(np.diff(angles) > 0)
+
+
+def _is_convex(poly: npt.NDArray) -> bool:
+    """Check whether a polygon is convex.
+
+    Parameters
+    ----------
+    poly: numpy array of floats, shape (N, 3)
+        Polygon vertices, in order.
+
+    Returns
+    -------
+    bool
+        True if the given polygon is convex.
+    """
+    return _same_oriented_angles(poly) and _is_simple(poly)
 
 
 def _fan_triangulation(poly: npt.NDArray) -> tuple[npt.NDArray, npt.NDArray]:

@@ -6,6 +6,7 @@ from napari.layers.shapes._accelerated_triangulate_dispatch import (
     generate_2D_edge_meshes_py,
 )
 from napari.layers.shapes._shapes_utils import (
+    _is_convex,
     get_default_shape_type,
     number_of_shapes,
     perpendicular_distance,
@@ -424,3 +425,14 @@ def test_perpendicular_distance(start, end, point):
     distance = perpendicular_distance(point, start, end)
 
     assert distance == 1
+
+
+def pentagram():
+    radius = 10
+    n = 5
+    angles = np.linspace(0, 4 * np.pi, n, endpoint=False)
+    return np.column_stack((radius * np.cos(angles), radius * np.sin(angles)))
+
+
+def test_is_convex():
+    assert not _is_convex(pentagram())
