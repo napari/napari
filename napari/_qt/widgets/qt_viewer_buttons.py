@@ -370,7 +370,7 @@ class QtViewerButtons(QFrame):
         orientation_layout.setContentsMargins(0, 0, 0, 0)
         orientation_widget = QWidget(popup)
 
-        vertical_combo = enum_combobox(
+        self.vertical_combo = enum_combobox(
             parent=popup,
             enum_class=VerticalAxisOrientation,
             current_enum=self.viewer.camera.orientation[1],
@@ -379,7 +379,7 @@ class QtViewerButtons(QFrame):
             ),
         )
 
-        horizontal_combo = enum_combobox(
+        self.horizontal_combo = enum_combobox(
             parent=popup,
             enum_class=HorizontalAxisOrientation,
             current_enum=self.viewer.camera.orientation[2],
@@ -389,15 +389,15 @@ class QtViewerButtons(QFrame):
         )
 
         if self.viewer.dims.ndisplay == 2:
-            orientation_layout.addWidget(vertical_combo)
-            orientation_layout.addWidget(horizontal_combo)
+            orientation_layout.addWidget(self.vertical_combo)
+            orientation_layout.addWidget(self.horizontal_combo)
             orientation_help_symbol = help_tooltip(
                 parent=popup,
                 text='Controls the Vertical and Horizontal orientation of the camera axes.',
             )
 
         else:
-            depth_combo = enum_combobox(
+            self.depth_combo = enum_combobox(
                 parent=popup,
                 enum_class=DepthAxisOrientation,
                 current_enum=self.viewer.camera.orientation[0],
@@ -406,9 +406,9 @@ class QtViewerButtons(QFrame):
                 ),
             )
 
-            orientation_layout.addWidget(depth_combo)
-            orientation_layout.addWidget(vertical_combo)
-            orientation_layout.addWidget(horizontal_combo)
+            orientation_layout.addWidget(self.depth_combo)
+            orientation_layout.addWidget(self.vertical_combo)
+            orientation_layout.addWidget(self.horizontal_combo)
             orientation_help_symbol = help_tooltip(
                 parent=popup,
                 text='Controls the Depth, Vertical, and Horizontal orientation of the camera axes.',
