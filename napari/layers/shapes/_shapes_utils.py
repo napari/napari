@@ -60,7 +60,7 @@ def find_planar_axis(
     return np.empty((0, 2), dtype=points.dtype), None, None
 
 
-def _same_oriented_angles(poly: npt.NDArray) -> bool:
+def _same_oriented_angles(poly: npt.NDArray) -> tuple[bool, int]:
     """Check whether a polygon has the same orientation for all its angles
 
     Parameters
@@ -78,21 +78,25 @@ def _same_oriented_angles(poly: npt.NDArray) -> bool:
     thrd = poly[2:]
     orn_set = np.unique(orientation(fst.T, snd.T, thrd.T))
     if orn_set.size != 1:
-        return False
-    return (orn_set[0] == orientation(poly[-2], poly[-1], poly[0])) and (
-        orn_set[0] == orientation(poly[-1], poly[0], poly[1])
-    )
+        return False, 0
+    return (
+        (orn_set[0] == orientation(poly[-2], poly[-1], poly[0]))
+        and (orn_set[0] == orientation(poly[-1], poly[0], poly[1]))
+    ), int(orn_set[0])
 
 
-def _is_simple(poly: npt.NDArray) -> bool:
+def _is_simple(poly: npt.NDArray, orientation_: int) -> bool:
     if poly.shape[0] < 3:
         return False  # Not enough vertices to form a polygon
     centroid = poly.mean(axis=0)
     angles = np.arctan2(poly[:, 1] - centroid[1], poly[:, 0] - centroid[0])
+    # orig_angles = angles.copy()
     angles = angles - angles[0]
     angles[angles < 0] += 2 * np.pi
     # check if angles are increasing
-    return bool(np.all(np.diff(angles) > 0))
+    if angles[0] < angles[-1]:
+        return bool(np.all(np.diff(angles) > 0))
+    return bool(np.all(np.diff(angles) < 0))
 
 
 def _is_convex(poly: npt.NDArray) -> bool:
@@ -108,7 +112,8 @@ def _is_convex(poly: npt.NDArray) -> bool:
     bool
         True if the given polygon is convex.
     """
-    return _same_oriented_angles(poly) and _is_simple(poly)
+    same_angle, orientation_ = _same_oriented_angles(poly)
+    return same_angle and _is_simple(poly, orientation_)
 
 
 def _fan_triangulation(poly: npt.NDArray) -> tuple[npt.NDArray, npt.NDArray]:
