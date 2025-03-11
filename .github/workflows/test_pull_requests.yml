@@ -21,10 +21,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python 3.11
+      - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
-          python-version: 3.11
+          python-version: 3.12
       - name: Install dependencies
         run: |
           pip install --upgrade pip
@@ -41,7 +41,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
           cache-dependency-path: pyproject.toml
           cache: 'pip'
       - name: Install Dependencies
@@ -49,7 +49,7 @@ jobs:
       - name: Install Napari dev
         run: pip install -e .[build]
         env:
-          PIP_CONSTRAINT: resources/constraints/constraints_py3.11.txt
+          PIP_CONSTRAINT: resources/constraints/constraints_py3.12.txt
       - name: Make Typestubs
         run: |
           make typestubs
@@ -86,16 +86,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - python: 3.9
+          - python: "3.10"
             platform: ubuntu-latest
             backend: pyqt5
-            pydantic: "_pydantic_1"
             coverage: no_cov
             min_req: ""
-          - python: 3.12
+          - python: "3.13"
             platform: ubuntu-latest
             backend: pyqt6
-            pydantic: ""
             coverage: no_cov
             min_req: ""
     with:
@@ -104,7 +102,6 @@ jobs:
       qt_backend: ${{ matrix.backend }}
       coverage: ${{ matrix.coverage }}
       min_req: ${{ matrix.MIN_REQ }}
-      constraints_suffix: ${{ matrix.pydantic }}
 
   test:
     name: ${{ matrix.platform }}
@@ -114,50 +111,53 @@ jobs:
       fail-fast: false
       matrix:
         platform: [ ubuntu-latest ]
-        python: [ "3.10", "3.11" ]
+        python: [ "3.11" ]
         backend: [ "pyqt5,pyside6" ]
         coverage: [ cov ]
-        pydantic: ["_pydantic_1"]
         include:
           # Windows py310
-          - python: "3.10"
+          - python: "3.11"
             platform: windows-latest
             backend: pyqt5 #,pyside2
             coverage: no_cov
-          - python: "3.12"
+          - python: "3.13"
             platform: windows-latest
             backend: pyqt6
             coverage: cov
-          - python: "3.12"
+          - python: "3.13"
             platform: macos-13
             backend: pyqt5
             coverage: no_cov
-          - python: "3.12"
+          - python: "3.13"
             platform: macos-latest
             backend: pyqt5
             coverage: no_cov
           # minimum specified requirements
-          - python: "3.9"
-            platform: ubuntu-20.04
+          - python: "3.10"
+            platform: ubuntu-22.04
             backend: pyqt5
             MIN_REQ: 1
             coverage: cov
-          - python: "3.11"
+          - python: "3.12"
             platform: ubuntu-22.04
             backend: pyqt5
             coverage: cov
-            pydantic: ""
             tox_extras: "optional"
           # test without any Qt backends
-          - python: "3.10"
-            platform: ubuntu-20.04
+          - python: "3.11"
+            platform: ubuntu-22.04
             backend: headless
             coverage: no_cov
-          - python: "3.12"
+          - python: "3.13"
             platform: ubuntu-latest
             backend: pyqt6
             coverage: cov
             tox_extras: "testing_extra"
+          # test with no numba
+          - python: "3.13"
+            platform: ubuntu-latest
+            backend: pyqt6_no_numba
+            coverage: cov
           # pyside2 test
           - python: "3.10"
             platform: ubuntu-latest
@@ -170,7 +170,6 @@ jobs:
       min_req: ${{ matrix.MIN_REQ }}
       coverage: ${{ matrix.coverage }}
       tox_extras: ${{ matrix.tox_extras }}
-      constraints_suffix: ${{ matrix.pydantic }}
 
 
   test_pip_install:
@@ -183,9 +182,9 @@ jobs:
     uses: ./.github/workflows/reusable_run_tox_test.yml
     needs: test_initial
     with:
-        toxenv: py39-linux-pyside2-examples-cov
+        toxenv: py312-linux-pyqt6-examples-cov
         timeout: 60
-        python_version: 3.9
+        python_version: 3.12
         constraints_suffix: _examples
         coverage: cov
 
@@ -194,10 +193,11 @@ jobs:
     needs:
       - test
       - test_examples
+    permissions:
+      id-token: write  # Required for OIDC
+      contents: read    # Required for checkout
     uses: ./.github/workflows/reusable_coverage_upload.yml
-    secrets:
-      codecov_token: ${{ secrets.CODECOV_TOKEN }}
-
+    secrets: inherit
 
   test_benchmarks:
     name: test benchmarks
@@ -213,7 +213,7 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.11
+          python-version: 3.12
           cache-dependency-path: pyproject.toml
 
       - uses: tlambert03/setup-qt-libs@v1

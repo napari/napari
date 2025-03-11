@@ -1,13 +1,11 @@
 import warnings
+from collections.abc import Callable
 from contextlib import contextmanager
 from copy import copy, deepcopy
 from itertools import cycle
 from typing import (
     Any,
-    Callable,
     ClassVar,
-    Optional,
-    Union,
 )
 
 import numpy as np
@@ -20,6 +18,9 @@ from napari.layers.base._base_constants import ActionType
 from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
     transform_with_box,
+)
+from napari.layers.shapes._accelerated_triangulate_dispatch import (
+    warmup_numba_cache,
 )
 from napari.layers.shapes._shape_list import ShapeList
 from napari.layers.shapes._shapes_constants import (
@@ -265,8 +266,9 @@ class Shapes(Layer):
         vertices either to be added to or removed from shapes that are already
         selected. Note that shapes cannot be selected in this mode.
 
-        The ADD_RECTANGLE, ADD_ELLIPSE, ADD_LINE, ADD_PATH, and ADD_POLYGON
-        modes all allow for their corresponding shape type to be added.
+        The ADD_RECTANGLE, ADD_ELLIPSE, ADD_LINE, ADD_POLYLINE, ADD_PATH, and
+        ADD_POLYGON modes all allow for their corresponding shape type to be
+        added.
     units: tuple of pint.Unit
         Units of the layer data in world coordinates.
 
@@ -372,7 +374,8 @@ class Shapes(Layer):
         Mode.ADD_RECTANGLE: add_rectangle,
         Mode.ADD_ELLIPSE: add_ellipse,
         Mode.ADD_LINE: add_line,
-        Mode.ADD_PATH: add_path_polygon,
+        Mode.ADD_PATH: add_path_polygon_lasso,
+        Mode.ADD_POLYLINE: add_path_polygon,
         Mode.ADD_POLYGON: add_path_polygon,
         Mode.ADD_POLYGON_LASSO: add_path_polygon_lasso,
     }
@@ -387,6 +390,7 @@ class Shapes(Layer):
         Mode.ADD_RECTANGLE: no_op,
         Mode.ADD_ELLIPSE: no_op,
         Mode.ADD_LINE: no_op,
+        Mode.ADD_POLYLINE: polygon_creating,
         Mode.ADD_PATH: polygon_creating,
         Mode.ADD_POLYGON: polygon_creating,
         Mode.ADD_POLYGON_LASSO: polygon_creating,
@@ -404,7 +408,8 @@ class Shapes(Layer):
         Mode.ADD_RECTANGLE: no_op,
         Mode.ADD_ELLIPSE: no_op,
         Mode.ADD_LINE: no_op,
-        Mode.ADD_PATH: finish_drawing_shape,
+        Mode.ADD_PATH: no_op,
+        Mode.ADD_POLYLINE: finish_drawing_shape,
         Mode.ADD_POLYGON: finish_drawing_shape,
         Mode.ADD_POLYGON_LASSO: no_op,
     }
@@ -419,6 +424,7 @@ class Shapes(Layer):
         Mode.ADD_RECTANGLE: 'cross',
         Mode.ADD_ELLIPSE: 'cross',
         Mode.ADD_LINE: 'cross',
+        Mode.ADD_POLYLINE: 'cross',
         Mode.ADD_PATH: 'cross',
         Mode.ADD_POLYGON: 'cross',
         Mode.ADD_POLYGON_LASSO: 'cross',
@@ -469,6 +475,7 @@ class Shapes(Layer):
             if ndim is None:
                 ndim = 2
             data = np.empty((0, 0, ndim))
+            warmup_numba_cache()
         else:
             data, shape_type = extract_shape_type(data, shape_type)
             data_ndim = get_shape_ndim(data)
@@ -543,7 +550,7 @@ class Shapes(Layer):
 
         self._value = (None, None)
         self._value_stored = (None, None)
-        self._moving_value: tuple[Optional[int], Optional[int]] = (None, None)
+        self._moving_value: tuple[int | None, int | None] = (None, None)
         self._selected_data = set()
         self._selected_data_stored = set()
         self._selected_data_history = set()
@@ -782,7 +789,7 @@ class Shapes(Layer):
     @features.setter
     def features(
         self,
-        features: Union[dict[str, np.ndarray], pd.DataFrame],
+        features: dict[str, np.ndarray] | pd.DataFrame,
     ) -> None:
         self._feature_table.set_values(features, num_data=self.nshapes)
         if self._face_color_property and (
@@ -824,7 +831,7 @@ class Shapes(Layer):
 
     @feature_defaults.setter
     def feature_defaults(
-        self, defaults: Union[dict[str, Any], pd.DataFrame]
+        self, defaults: dict[str, Any] | pd.DataFrame
     ) -> None:
         self._feature_table.set_defaults(defaults)
         self.events.current_properties()
@@ -859,8 +866,12 @@ class Shapes(Layer):
         if len(self.data) == 0:
             extrema = np.full((2, self.ndim), np.nan)
         else:
-            maxs = np.max([np.max(d, axis=0) for d in self.data], axis=0)
-            mins = np.min([np.min(d, axis=0) for d in self.data], axis=0)
+            maxs = np.max(
+                [d._bounding_box[1] for d in self._data_view.shapes], axis=0
+            )
+            mins = np.min(
+                [d._bounding_box[0] for d in self._data_view.shapes], axis=0
+            )
             extrema = np.vstack([mins, maxs])
         return extrema
 
@@ -955,6 +966,7 @@ class Shapes(Layer):
             self._data_view.edge_color,
             self._data_view.face_color,
             self._data_view.z_indices,
+            strict=False,
         )
 
         self._add_shapes_to_view(shape_inputs, new_data_view)
@@ -982,7 +994,7 @@ class Shapes(Layer):
         return self._edge_color_cycle_values
 
     @edge_color_cycle.setter
-    def edge_color_cycle(self, edge_color_cycle: Union[list, np.ndarray]):
+    def edge_color_cycle(self, edge_color_cycle: list | np.ndarray):
         self._set_color_cycle(np.asarray(edge_color_cycle), 'edge')
 
     @property
@@ -1001,7 +1013,7 @@ class Shapes(Layer):
         self._edge_colormap = ensure_colormap(colormap)
 
     @property
-    def edge_contrast_limits(self) -> Union[tuple[float, float], None]:
+    def edge_contrast_limits(self) -> tuple[float, float] | None:
         """None, (float, float): contrast limits for mapping
         the edge_color colormap property to 0 and 1
         """
@@ -1009,7 +1021,7 @@ class Shapes(Layer):
 
     @edge_contrast_limits.setter
     def edge_contrast_limits(
-        self, contrast_limits: Union[None, tuple[float, float]]
+        self, contrast_limits: None | tuple[float, float]
     ):
         self._edge_contrast_limits = contrast_limits
 
@@ -1026,7 +1038,7 @@ class Shapes(Layer):
         return str(self._edge_color_mode)
 
     @edge_color_mode.setter
-    def edge_color_mode(self, edge_color_mode: Union[str, ColorMode]):
+    def edge_color_mode(self, edge_color_mode: str | ColorMode):
         self._set_color_mode(edge_color_mode, 'edge')
 
     @property
@@ -1048,7 +1060,7 @@ class Shapes(Layer):
         return self._face_color_cycle_values
 
     @face_color_cycle.setter
-    def face_color_cycle(self, face_color_cycle: Union[np.ndarray, cycle]):
+    def face_color_cycle(self, face_color_cycle: np.ndarray | cycle):
         self._set_color_cycle(face_color_cycle, 'face')
 
     @property
@@ -1067,7 +1079,7 @@ class Shapes(Layer):
         self._face_colormap = ensure_colormap(colormap)
 
     @property
-    def face_contrast_limits(self) -> Union[None, tuple[float, float]]:
+    def face_contrast_limits(self) -> None | tuple[float, float]:
         """None, (float, float) : clims for mapping the face_color
         colormap property to 0 and 1
         """
@@ -1075,7 +1087,7 @@ class Shapes(Layer):
 
     @face_contrast_limits.setter
     def face_contrast_limits(
-        self, contrast_limits: Union[None, tuple[float, float]]
+        self, contrast_limits: None | tuple[float, float]
     ):
         self._face_contrast_limits = contrast_limits
 
@@ -1095,9 +1107,7 @@ class Shapes(Layer):
     def face_color_mode(self, face_color_mode):
         self._set_color_mode(face_color_mode, 'face')
 
-    def _set_color_mode(
-        self, color_mode: Union[ColorMode, str], attribute: str
-    ):
+    def _set_color_mode(self, color_mode: ColorMode | str, attribute: str):
         """Set the face_color_mode or edge_color_mode property
 
         Parameters
@@ -1155,7 +1165,7 @@ class Shapes(Layer):
             self.refresh_colors()
 
     def _set_color_cycle(
-        self, color_cycle: Union[np.ndarray, cycle], attribute: str
+        self, color_cycle: np.ndarray | cycle, attribute: str
     ):
         """Set the face_color_cycle or edge_color_cycle property
 
@@ -1461,7 +1471,9 @@ class Shapes(Layer):
                 color_cycle = getattr(self, f'_{attribute}_color_cycle')
                 color_cycle_map = {
                     k: np.squeeze(transform_color(c))
-                    for k, c in zip(np.unique(color_properties), color_cycle)
+                    for k, c in zip(
+                        np.unique(color_properties), color_cycle, strict=False
+                    )
                 }
                 setattr(self, f'{attribute}_color_cycle_map', color_cycle_map)
 
@@ -1574,7 +1586,7 @@ class Shapes(Layer):
         """determines if the new color argument is for directly setting or cycle/colormap"""
         if isinstance(color, str):
             return color in self.properties
-        if isinstance(color, (list, np.ndarray)):
+        if isinstance(color, list | np.ndarray):
             return False
 
         raise ValueError(
@@ -1695,13 +1707,14 @@ class Shapes(Layer):
         vertices either to be added to or removed from shapes that are already
         selected. Note that shapes cannot be selected in this mode.
 
-        The ADD_RECTANGLE, ADD_ELLIPSE, ADD_LINE, ADD_PATH, and ADD_POLYGON
-        modes all allow for their corresponding shape type to be added.
+        The ADD_RECTANGLE, ADD_ELLIPSE, ADD_LINE, ADD_POLYLINE, ADD_PATH, and
+        ADD_POLYGON modes all allow for their corresponding shape type to be
+        added.
         """
         return str(self._mode)
 
     @mode.setter
-    def mode(self, val: Union[str, Mode]):
+    def mode(self, val: str | Mode):
         mode = self._mode_setter_helper(val)
         if mode == self._mode:
             return
@@ -2304,6 +2317,7 @@ class Shapes(Layer):
                 transformed_edge_color,
                 transformed_face_color,
                 ensure_iterable(z_index),
+                strict=False,
             )
 
             self._add_shapes_to_view(shape_inputs, self._data_view)
@@ -2312,7 +2326,7 @@ class Shapes(Layer):
         self._ndisplay_stored = copy(self._slice_input.ndisplay)
         self._update_dims()
 
-    def _add_shapes_to_view(self, shape_inputs, data_view):
+    def _add_shapes_to_view(self, shape_inputs, data_view: ShapeList):
         """Build new shapes and add them to the _data_view"""
 
         shape_inputs = tuple(shape_inputs)
@@ -2320,7 +2334,7 @@ class Shapes(Layer):
         # build all shapes
         sh_inp = tuple(
             (
-                shape_classes[ShapeType(st)](
+                shape_classes[st](
                     d,
                     edge_width=ew,
                     z_index=z,
@@ -2333,7 +2347,7 @@ class Shapes(Layer):
             for d, st, ew, ec, fc, z in shape_inputs
         )
 
-        shapes, edge_colors, face_colors = tuple(zip(*sh_inp))
+        shapes, edge_colors, face_colors = tuple(zip(*sh_inp, strict=False))
 
         # Add all shapes at once (faster than adding them one by one)
         data_view.add(
@@ -2423,7 +2437,7 @@ class Shapes(Layer):
             the box, and the last point is the location of the rotation handle
             that can be used to rotate the box
         """
-        if isinstance(index, (list, np.ndarray, set)):
+        if isinstance(index, list | np.ndarray | set):
             if len(index) == 0:
                 box = None
             elif len(index) == 1:
@@ -2533,6 +2547,7 @@ class Shapes(Layer):
                     Mode.ADD_RECTANGLE,
                     Mode.ADD_ELLIPSE,
                     Mode.ADD_LINE,
+                    Mode.ADD_POLYLINE,
                     Mode.VERTEX_INSERT,
                     Mode.VERTEX_REMOVE,
                 ]
@@ -2543,7 +2558,7 @@ class Shapes(Layer):
                 )
                 vertices = self._data_view.displayed_vertices[inds][:, ::-1]
                 # If currently adding path don't show box over last vertex
-                if self._mode == Mode.ADD_PATH:
+                if self._mode == Mode.ADD_POLYLINE:
                     vertices = vertices[:-1]
 
                 if self._value[0] is None or self._value[1] is None:
@@ -2616,7 +2631,7 @@ class Shapes(Layer):
         self._moving_value = (None, None)
         self._last_cursor_position = None
         if self._is_creating is True:
-            if self._mode == Mode.ADD_PATH:
+            if self._mode in {Mode.ADD_PATH, Mode.ADD_POLYLINE}:
                 vertices = self._data_view.shapes[index].data
                 if len(vertices) <= 2:
                     self._data_view.remove(index)
@@ -2764,7 +2779,7 @@ class Shapes(Layer):
         center : list
             coordinates of center of rotation.
         """
-        if not isinstance(scale, (list, np.ndarray)):
+        if not isinstance(scale, list | np.ndarray):
             scale = [scale, scale]
         box = self._selected_box - center
         box = np.array(box * scale)
@@ -2874,7 +2889,7 @@ class Shapes(Layer):
         start_point: np.ndarray,
         end_point: np.ndarray,
         dims_displayed: list[int],
-    ) -> tuple[Union[float, int, None], None]:
+    ) -> tuple[float | int | None, None]:
         """Get the layer data value along a ray
 
         Parameters
@@ -2906,7 +2921,7 @@ class Shapes(Layer):
         start_point: np.ndarray,
         end_point: np.ndarray,
         dims_displayed: list[int],
-    ) -> tuple[Union[None, float, int], Union[None, np.ndarray]]:
+    ) -> tuple[None | float | int, None | np.ndarray]:
         """Get the shape index and intersection point of the first shape
         (i.e., closest to start_point) along the specified 3D line segment.
 
@@ -2961,7 +2976,7 @@ class Shapes(Layer):
         position: np.ndarray,
         view_direction: np.ndarray,
         dims_displayed: list[int],
-    ) -> tuple[Union[float, int, None], Union[npt.NDArray, None]]:
+    ) -> tuple[float | int | None, npt.NDArray | None]:
         """Get the shape index and intersection point of the first shape
         (i.e., closest to start_point) "under" a mouse click.
 

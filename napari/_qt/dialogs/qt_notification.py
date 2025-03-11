@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
-from typing import Callable, Optional, Union, cast
+from collections.abc import Callable, Sequence
+from typing import cast
 
 from qtpy.QtCore import (
     QEasingCurve,
@@ -77,8 +77,8 @@ class NapariQtNotification(QDialog):
     def __init__(
         self,
         message: str,
-        severity: Union[str, NotificationSeverity] = 'WARNING',
-        source: Optional[str] = None,
+        severity: str | NotificationSeverity = 'WARNING',
+        source: str | None = None,
         actions: ActionSequence = (),
         parent=None,
     ) -> None:
@@ -203,6 +203,7 @@ class NapariQtNotification(QDialog):
             )
             if len(notifications) > 1 and notifications[-1] == self:
                 notifications[-2].timer_start()
+            self.parent().setFocus()
         super().close()
 
     def close_with_fade(self):

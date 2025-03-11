@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
-    Optional,
     Union,
     cast,
 )
@@ -245,6 +244,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         settings.application.events.grid_height.connect(
             self._update_viewer_grid
         )
+        settings.application.events.grid_spacing.connect(
+            self._update_viewer_grid
+        )
         settings.experimental.events.async_.connect(self._update_async)
 
         # Add extra events - ideally these will be removed too!
@@ -320,6 +322,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             settings.application.grid_height,
             settings.application.grid_width,
         )
+        self.grid.spacing = settings.application.grid_spacing
 
     @validator('theme', allow_reuse=True)
     def _valid_theme(cls, v):
@@ -395,14 +398,23 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         scene_size = extent[1] - extent[0]
         corner = extent[0]
         grid_size = list(self.grid.actual_shape(len(self.layers)))
+
         if len(scene_size) > len(grid_size):
             grid_size = [1] * (len(scene_size) - len(grid_size)) + grid_size
-        size = np.multiply(scene_size, grid_size)
+
+        # total spacing accounts for the distance between layers
+        # results in 0 if not grid mode (grid_size = [1, 1] - 1)
+        total_spacing = (
+            np.mean(scene_size[-2:])
+            * self.grid.spacing
+            * (np.array(grid_size) - 1)
+        )
+        size = np.multiply(scene_size, grid_size) + total_spacing
         center_array = np.add(corner, np.divide(size, 2))[
             -self.dims.ndisplay :
         ]
         center = cast(
-            Union[tuple[float, float, float], tuple[float, float]],
+            tuple[float, float, float] | tuple[float, float],
             tuple(
                 [0.0] * (self.dims.ndisplay - len(center_array))
                 + list(center_array)
@@ -452,7 +464,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         corner = extent[0]
         shape = [
             np.round(s / sc).astype('int') + 1
-            for s, sc in zip(scene_size, scale)
+            for s, sc in zip(scene_size, scale, strict=False)
         ]
         dtype_str = get_settings().application.new_labels_dtype
         empty_labels = np.zeros(shape, dtype=dtype_str)
@@ -565,11 +577,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def _calc_status_from_cursor(
         self,
-    ) -> Optional[tuple[Union[str, Dict], str]]:
+    ) -> tuple[str | Dict, str] | None:
         if not self.mouse_over_canvas:
             return None
         active = self.layers.selection.active
-        if active is not None:
+        if active is not None and active._loaded:
             status = active.get_status(
                 self.cursor.position,
                 view_direction=self.cursor._view_direction,
@@ -605,9 +617,15 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         n_layers = len(self.layers)
         for i, layer in enumerate(self.layers):
             i_row, i_column = self.grid.position(n_layers - 1 - i, n_layers)
-            self._subplot(layer, (i_row, i_column), extent)
+            self._subplot(layer, (i_row, i_column), extent, self.grid.spacing)
 
-    def _subplot(self, layer, position, extent):
+    def _subplot(
+        self,
+        layer: Layer,
+        position: tuple[int, int],
+        extent: np.ndarray,
+        spacing: float,
+    ):
         """Shift a layer to a specified position in a 2D grid.
 
         Parameters
@@ -618,12 +636,20 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             New position of layer in grid.
         extent : array, shape (2, D)
             Extent of the world.
+        spacing : float, optional
+            Value for spacing between layers. Negative values will
+            cause layers to overlap. Positive values will cause layers to
+            have space between them.
         """
         scene_shift = extent[1] - extent[0]
-        translate_2d = np.multiply(scene_shift[-2:], position)
+        position_array = np.array(position)
+        # shift the layer in the grid by the extent of the scene
+        translate_2d = np.multiply(scene_shift[-2:], position_array)
+        # calculate average scene extent, and use for a symmetrical spacing adjustment
+        translate_2d += np.mean(scene_shift[-2:]) * spacing * position_array
         translate = [0] * layer.ndim
         translate[-2:] = translate_2d
-        layer._translate_grid = translate
+        layer._translate_grid = np.array(translate)
 
     @property
     def experimental(self):
@@ -802,7 +828,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         translate=None,
         units=None,
         visible=True,
-    ) -> Union[Image, list[Image]]:
+    ) -> Image | list[Image]:
         """Add one or more Image layers to the layer list.
 
         Parameters
@@ -1019,7 +1045,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self,
         plugin: str,
         sample: str,
-        reader_plugin: Optional[str] = None,
+        reader_plugin: str | None = None,
         **kwargs,
     ) -> list[Layer]:
         """Open `sample` from `plugin` and add it to the viewer.
@@ -1054,7 +1080,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         from napari.plugins import _npe2, plugin_manager
 
         plugin_spec_reader = None
-        data: Union[None, SampleDataCreator, SampleData]
+        data: None | SampleDataCreator | SampleData
         # try with npe2
         data, available = _npe2.get_sample_data(plugin, sample)
 
@@ -1107,7 +1133,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 for datum in data(**kwargs):
                     added.extend(self._add_layer_from_data(*datum))
                 return added
-            if isinstance(data, (str, Path)):
+            if isinstance(data, str | Path):
                 try:
                     return self.open(data, plugin=reader_plugin)
                 except Exception as e:
@@ -1142,9 +1168,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self,
         path: PathOrPaths,
         *,
-        stack: Union[bool, list[list[PathLike]]] = False,
-        plugin: Optional[str] = 'napari',
-        layer_type: Optional[LayerTypeName] = None,
+        stack: bool | list[list[PathLike]] = False,
+        plugin: str | None = 'napari',
+        layer_type: LayerTypeName | None = None,
         **kwargs,
     ) -> list[Layer]:
         """Open a path or list of paths with plugins, and add layers to viewer.
@@ -1197,7 +1223,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         paths_: list[PathLike] = (
             [os.fspath(path)]
-            if isinstance(path, (Path, str))
+            if isinstance(path, Path | str)
             else [os.fspath(p) for p in path]
         )
 
@@ -1244,9 +1270,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def _open_or_raise_error(
         self,
-        paths: list[Union[Path, str]],
-        kwargs: Optional[Dict[str, Any]] = None,
-        layer_type: Optional[LayerTypeName] = None,
+        paths: list[Path | str],
+        kwargs: Dict[str, Any] | None = None,
+        layer_type: LayerTypeName | None = None,
         stack: bool = False,
     ):
         """Open paths if plugin choice is unambiguous, raising any errors.
@@ -1373,9 +1399,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         paths: list[PathLike],
         *,
         stack: bool,
-        kwargs: Optional[Dict] = None,
-        plugin: Optional[str] = None,
-        layer_type: Optional[LayerTypeName] = None,
+        kwargs: Dict | None = None,
+        plugin: str | None = None,
+        layer_type: LayerTypeName | None = None,
     ) -> list[Layer]:
         """Load a path or a list of paths into the viewer using plugins.
 
@@ -1446,7 +1472,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # add each layer to the viewer
         added: list[Layer] = []  # for layers that get added
         plugin = hookimpl.plugin_name if hookimpl else None
-        for data, filename in zip(layer_data, filenames):
+        for data, filename in zip(layer_data, filenames, strict=False):
             basename, _ext = os.path.splitext(os.path.basename(filename))
             # actually add the layer
             if isinstance(data, Layer):
@@ -1465,8 +1491,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     def _add_layer_from_data(
         self,
         data,
-        meta: Optional[Mapping[str, Any]] = None,
-        layer_type: Optional[str] = None,
+        meta: Mapping[str, Any] | None = None,
+        layer_type: str | None = None,
     ) -> list[Layer]:
         """Add arbitrary layer data to the viewer.
 
@@ -1602,9 +1628,9 @@ def _normalize_layer_data(data: LayerData) -> FullLayerData:
 
 def _unify_data_and_user_kwargs(
     data: LayerData,
-    kwargs: Optional[dict] = None,
-    layer_type: Optional[LayerTypeName] = None,
-    fallback_name: Optional[str] = None,
+    kwargs: dict | None = None,
+    layer_type: LayerTypeName | None = None,
+    fallback_name: str | None = None,
 ) -> FullLayerData:
     """Merge data returned from plugins with options specified by user.
 

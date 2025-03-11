@@ -106,12 +106,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Clone docs repo
-        uses: actions/checkout@v4
-        with:
-          path: docs  # place in a named directory
-          repository: napari/docs
-
       - name: Clone target repo (remote)
         uses: actions/checkout@v4
         if: github.event_name == 'issue_comment'
@@ -156,7 +150,8 @@ jobs:
         run: |
           set -x
           pip install -U uv
-          flags=(--quiet --extra pyqt5 --extra pyqt6 --extra pyside2 --extra pyside6_experimental --extra testing --extra testing_extra --extra optional)
+          cd napari_repo
+          flags=(--quiet --extra pyqt6 --extra pyside2 --extra pyside6_experimental --extra testing --extra testing_extra --extra optional)
 
           # Explanation of below commands
           # uv pip compile --python-version 3.9 - call uv pip compile but ensure proper interpreter
@@ -164,22 +159,19 @@ jobs:
           # -o resources/constraints/constraints_py3.9.txt - output file
           # pyproject.toml resources/constraints/version_denylist.txt - source files. the resources/constraints/version_denylist.txt - contains our test specific constraints like pytes-cov`
           #
-          # --extra pyqt5 etc - names of extra sections from pyproject.toml that should be checked for the dependencies list (maybe we could create a super extra section to collect them all in)
-          prefix="napari_repo"
-          pyproject_toml="${prefix}/pyproject.toml"
-          constraints="${prefix}/resources/constraints"
+          # --extra pyqt6 etc - names of extra sections from pyproject.toml that should be checked for the dependencies list (maybe we could create a super extra section to collect them all in)
+          pyproject_toml="pyproject.toml"
+          constraints="resources/constraints"
 
 
-          for pyv in 3.9 3.10 3.11 3.12; do
-            uv pip compile --python-version ${pyv} --upgrade --output-file $constraints/constraints_py${pyv}.txt  $pyproject_toml $constraints/version_denylist.txt "${flags[@]}"
-            uv pip compile --python-version ${pyv} --upgrade --output-file $constraints/constraints_py${pyv}_pydantic_1.txt  $pyproject_toml $constraints/version_denylist.txt $constraints/pydantic_le_2.txt "${flags[@]}"
-            uv pip compile --python-platform windows  --python-version ${pyv} --upgrade --output-file $constraints/constraints_py${pyv}_windows.txt  $pyproject_toml $constraints/version_denylist.txt "${flags[@]}"
+          for pyv in 3.10 3.11 3.12 3.13; do
+            uv pip compile --python-version ${pyv} --upgrade --output-file ${constraints}/constraints_py${pyv}.txt  ${pyproject_toml} ${constraints}/version_denylist.txt "${flags[@]}"
           done
 
 
-          uv pip compile --python-version 3.9 --upgrade --output-file $constraints/constraints_py3.9_examples.txt $pyproject_toml $constraints/version_denylist.txt resources/constraints/version_denylist_examples.txt "${flags[@]}"
-          uv pip compile --python-version 3.10 --upgrade --output-file $constraints/constraints_py3.10_docs.txt $pyproject_toml $constraints/version_denylist.txt resources/constraints/version_denylist_examples.txt docs/requirements.txt $constraints/pydantic_le_2.txt "${flags[@]}"
-          uv pip compile --python-version 3.11 --upgrade --output-file ${prefix}/resources/requirements_mypy.txt ${prefix}/resources/requirements_mypy.in
+          uv pip compile --python-version 3.12 --upgrade --output-file ${constraints}/constraints_py3.12_examples.txt ${pyproject_toml} ${constraints}/version_denylist.txt ${constraints}/version_denylist_examples.txt "${flags[@]}"
+          uv pip compile --python-version 3.10 --upgrade --output-file ${constraints}/constraints_py3.10_docs.txt ${pyproject_toml} ${constraints}/version_denylist.txt ${constraints}/version_denylist_examples.txt --extra docs "${flags[@]}"
+          uv pip compile --python-version 3.12 --upgrade --output-file resources/requirements_mypy.txt resources/requirements_mypy.in
 
       # END PYTHON DEPENDENCIES
 

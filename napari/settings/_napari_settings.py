@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from napari._pydantic_compat import Field
 from napari.settings._appearance import AppearanceSettings
@@ -19,7 +19,7 @@ from napari.utils.translations import trans
 
 _CFG_PATH = os.getenv('NAPARI_CONFIG', _DEFAULT_CONFIG_PATH)
 
-CURRENT_SCHEMA_VERSION = Version(0, 6, 0)
+CURRENT_SCHEMA_VERSION = Version(0, 7, 0)
 
 
 class NapariSettings(EventedConfigFileSettings):
@@ -67,7 +67,7 @@ class NapariSettings(EventedConfigFileSettings):
     )
 
     # private attributes and ClassVars will not appear in the schema
-    _config_path: Optional[Path] = Path(_CFG_PATH) if _CFG_PATH else None
+    _config_path: Path | None = Path(_CFG_PATH) if _CFG_PATH else None
 
     class Config(EventedConfigFileSettings.Config):
         env_prefix = 'napari_'
