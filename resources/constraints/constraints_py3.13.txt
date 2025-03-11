@@ -40,6 +40,8 @@ cloudpickle==3.1.1
     # via
     #   dask
     #   distributed
+colorspacious==1.1.2
+    # via glasbey
 comm==0.2.2
     # via ipykernel
 contourpy==1.3.1
@@ -56,7 +58,7 @@ dask==2025.2.0
     # via
     #   napari (pyproject.toml)
     #   distributed
-debugpy==1.8.12
+debugpy==1.8.13
     # via ipykernel
 decorator==5.2.1
     # via ipython
@@ -88,16 +90,22 @@ fonttools==4.56.0
     # via matplotlib
 freetype-py==2.5.1
     # via vispy
-fsspec==2025.2.0
+fsspec==2025.3.0
     # via
     #   napari (pyproject.toml)
     #   dask
     #   torch
+glasbey==0.2.1
+    # via napari (pyproject.toml)
+h5netcdf==1.6.1
+    # via napari (pyproject.toml)
+h5py==3.13.0
+    # via h5netcdf
 heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.127.4
+hypothesis==6.128.2
     # via napari (pyproject.toml)
 idna==3.10
     # via requests
@@ -117,7 +125,7 @@ ipykernel==6.29.5
     #   -r resources/constraints/version_denylist.txt
     #   napari-console
     #   qtconsole
-ipython==9.0.0
+ipython==9.0.2
     # via
     #   napari (pyproject.toml)
     #   ipykernel
@@ -126,7 +134,7 @@ ipython-pygments-lexers==1.1.1
     # via ipython
 jedi==0.19.2
     # via ipython
-jinja2==3.1.5
+jinja2==3.1.6
     # via
     #   distributed
     #   sphinx
@@ -176,7 +184,9 @@ markdown-it-py==3.0.0
 markupsafe==3.0.2
     # via jinja2
 matplotlib==3.10.1
-    # via napari (pyproject.toml)
+    # via
+    #   napari (pyproject.toml)
+    #   glasbey
 matplotlib-inline==0.1.7
     # via
     #   ipykernel
@@ -214,14 +224,19 @@ npe2==0.7.8
     #   napari (pyproject.toml)
     #   napari-plugin-manager
 numba==0.61.0
-    # via napari (pyproject.toml)
+    # via
+    #   napari (pyproject.toml)
+    #   glasbey
 numcodecs==0.15.1
     # via zarr
 numpy==2.1.3
     # via
     #   napari (pyproject.toml)
+    #   colorspacious
     #   contourpy
     #   dask
+    #   glasbey
+    #   h5py
     #   imageio
     #   matplotlib
     #   ml-dtypes
@@ -282,6 +297,7 @@ packaging==24.2
     #   build
     #   dask
     #   distributed
+    #   h5netcdf
     #   ipykernel
     #   lazy-loader
     #   matplotlib
@@ -480,14 +496,16 @@ rpds-py==0.23.1
 scikit-image==0.25.2
     # via napari (pyproject.toml)
 scikit-learn==1.6.1
-    # via nilearn
+    # via
+    #   glasbey
+    #   nilearn
 scipy==1.15.2
     # via
     #   napari (pyproject.toml)
     #   nilearn
     #   scikit-image
     #   scikit-learn
-setuptools==75.8.2
+setuptools==76.0.0
     # via torch
 shellingham==1.5.4
     # via typer
@@ -588,7 +606,7 @@ urllib3==2.3.0
     # via
     #   distributed
     #   requests
-virtualenv==20.29.2
+virtualenv==20.29.3
     # via napari (pyproject.toml)
 vispy==0.14.3
     # via
@@ -603,7 +621,7 @@ wrapt==1.17.2
     #   deprecated
 xarray==2025.1.2
     # via napari (pyproject.toml)
-zarr==3.0.4
+zarr==3.0.5
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
