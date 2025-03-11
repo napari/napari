@@ -393,7 +393,7 @@ class QtViewerButtons(QFrame):
             orientation_layout.addWidget(self.horizontal_combo)
             orientation_help_symbol = help_tooltip(
                 parent=popup,
-                text='Controls the Vertical and Horizontal orientation of the camera axes.',
+                text='Controls the orientation of the vertical and horizontal camera axes.',
             )
 
         else:
@@ -411,7 +411,7 @@ class QtViewerButtons(QFrame):
             orientation_layout.addWidget(self.horizontal_combo)
             orientation_help_symbol = help_tooltip(
                 parent=popup,
-                text='Controls the Depth, Vertical, and Horizontal orientation of the camera axes.',
+                text='Controls the orientation of the depth, vertical, and horizontal camera axes.',
             )
 
         orientation_widget.setLayout(orientation_layout)
@@ -444,12 +444,12 @@ class QtViewerButtons(QFrame):
 
     def _update_orientation(
         self,
-        orientation_enum: (
+        orientation_type: type[
             DepthAxisOrientation
             | VerticalAxisOrientation
             | HorizontalAxisOrientation
-        ),
-        value: (
+        ],
+        orientation_value: (
             DepthAxisOrientationStr
             | VerticalAxisOrientationStr
             | HorizontalAxisOrientationStr
@@ -459,23 +459,20 @@ class QtViewerButtons(QFrame):
 
         Parameters
         ----------
-        orientation_enum : DepthAxisOrientation | VerticalAxisOrientation | HorizontalAxisOrientation
-            The orientation enum to update.
+        orientation_type : type[DepthAxisOrientation | VerticalAxisOrientation | HorizontalAxisOrientation]
+            The orientation type (which implies the position/axis) to update.
         value : DepthAxisOrientationStr | VerticalAxisOrientationStr | HorizontalAxisOrientationStr
-            New orientation value for the enum.
+            New orientation value for the updated axis.
         """
-        orientation = list(self.viewer.camera.orientation)
-
-        new_orientation = orientation_enum(value)
-
-        if orientation_enum is DepthAxisOrientation:
-            orientation[0] = new_orientation
-        elif orientation_enum is VerticalAxisOrientation:
-            orientation[1] = new_orientation
-        elif orientation_enum is HorizontalAxisOrientation:
-            orientation[2] = new_orientation
-
-        self.viewer.camera.orientation = tuple(orientation)
+        axes = (
+            DepthAxisOrientation,
+            VerticalAxisOrientation,
+            HorizontalAxisOrientation,
+        )
+        axis_to_update = axes.index(orientation_type)
+        new_orientation = list(self.viewer.camera.orientation)
+        new_orientation[axis_to_update] = orientation_type(orientation_value)
+        self.viewer.camera.orientation = tuple(new_orientation)
 
     def _update_camera_angles(self, idx: int, value: float) -> None:
         """Update the camera angles.
