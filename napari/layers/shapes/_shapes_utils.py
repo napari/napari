@@ -89,6 +89,8 @@ def _is_simple(poly: npt.NDArray) -> bool:
         return False  # Not enough vertices to form a polygon
     centroid = poly.mean(axis=0)
     angles = np.arctan2(poly[:, 1] - centroid[1], poly[:, 0] - centroid[0])
+    angles = angles - angles[0]
+    angles[angles < 0] += 2 * np.pi
     # check if angles are increasing
     return np.all(np.diff(angles) > 0)
 

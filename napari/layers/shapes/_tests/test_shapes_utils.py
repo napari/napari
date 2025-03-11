@@ -434,14 +434,32 @@ def pentagram():
     return np.column_stack((radius * np.cos(angles), radius * np.sin(angles)))
 
 
-@pytest.mark.parametrize('angle', np.arange(0, 360, 5), ids=str)
-def test_is_convex(angle):
-    p = pentagram()
-    rot = np.array(
+def generate_regular_polygon(n, radius=1):
+    angles = np.linspace(0, 2 * np.pi, n, endpoint=False)
+    return np.column_stack((radius * np.cos(angles), radius * np.sin(angles)))
+
+
+def rotation_matrix(angle):
+    return np.array(
         [
             [np.cos(np.radians(angle)), -np.sin(np.radians(angle))],
             [np.sin(np.radians(angle)), np.cos(np.radians(angle))],
         ]
     )
+
+
+@pytest.mark.parametrize('angle', np.arange(0, 360, 5), ids=str)
+def test_is_convex_self_intersection(angle):
+    p = pentagram()
+    rot = rotation_matrix(angle)
     data = np.dot(p, rot)
     assert not _is_convex(data)
+
+
+@pytest.mark.parametrize('angle', np.arange(0, 360, 5), ids=str)
+@pytest.mark.parametrize('n_vertex', [3, 4, 7, 11, 12, 15, 20])
+def test_is_convex(angle, n_vertex):
+    poly = generate_regular_polygon(n_vertex)
+    rot = rotation_matrix(angle)
+    rotated_poly = np.dot(poly, rot)
+    assert _is_convex(rotated_poly)
