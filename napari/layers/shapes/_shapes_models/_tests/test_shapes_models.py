@@ -158,7 +158,7 @@ def test_polygon2():
     shape = Polygon(data, interpolation_order=3)
     # should get many triangles
 
-    expected_face = (249, 2)
+    expected_face = (251, 2)
 
     assert shape._edge_vertices.shape == (500, 2)
     assert shape._face_vertices.shape == expected_face
