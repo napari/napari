@@ -127,6 +127,21 @@ def labeled_double_slider(
     return slider
 
 
+def enum_combobox(
+    *,
+    parent: QtPopup,
+    enum_class: type,
+    current_enum: str,
+    callback: 'Callable',
+) -> QEnumComboBox:
+    """Create an enum combobox widget."""
+    combo = QEnumComboBox(parent)
+    combo.setEnumClass(enum_class)
+    combo.setCurrentEnum(current_enum)
+    combo.currentEnumChanged.connect(callback)
+    return combo
+
+
 def help_tooltip(
     *,
     parent: QtPopup,
@@ -311,11 +326,11 @@ class QtViewerButtons(QFrame):
         )
 
         form_layout.insertRow(
-            1, QLabel(trans._('Perspective:')), self.perspective
+            2, QLabel(trans._('Perspective:')), self.perspective
         )
-        form_layout.insertRow(2, QLabel(trans._('Angles    X:')), self.rx)
-        form_layout.insertRow(3, QLabel(trans._('             Y:')), self.ry)
-        form_layout.insertRow(4, QLabel(trans._('             Z:')), self.rz)
+        form_layout.insertRow(3, QLabel(trans._('Angles    X:')), self.rx)
+        form_layout.insertRow(4, QLabel(trans._('             Y:')), self.ry)
+        form_layout.insertRow(5, QLabel(trans._('             Z:')), self.rz)
 
         help_layout.addWidget(perspective_help_symbol)
         help_layout.addWidget(angle_help_symbol)
@@ -341,7 +356,7 @@ class QtViewerButtons(QFrame):
             text='Controls zoom level of the camera. Larger values zoom in, smaller values zoom out.',
         )
 
-        form_layout.insertRow(0, QLabel(trans._('Zoom:')), self.zoom)
+        form_layout.insertRow(1, QLabel(trans._('Zoom:')), self.zoom)
         help_layout.addWidget(zoom_help_symbol)
 
     def _add_orientation_controls(
@@ -355,41 +370,51 @@ class QtViewerButtons(QFrame):
         orientation_layout.setContentsMargins(0, 0, 0, 0)
         orientation_widget = QWidget(popup)
 
-        vertical_combo = QEnumComboBox(popup)
-        vertical_combo.setEnumClass(VerticalAxisOrientation)
-        vertical_combo.setCurrentEnum(self.viewer.camera.orientation[1])
-        vertical_combo.currentEnumChanged.connect(
-            partial(self._update_orientation, VerticalAxisOrientation)
+        vertical_combo = enum_combobox(
+            parent=popup,
+            enum_class=VerticalAxisOrientation,
+            current_enum=self.viewer.camera.orientation[1],
+            callback=partial(
+                self._update_orientation, VerticalAxisOrientation
+            ),
         )
 
-        horizontal_combo = QEnumComboBox(popup)
-        horizontal_combo.setEnumClass(HorizontalAxisOrientation)
-        horizontal_combo.setCurrentEnum(self.viewer.camera.orientation[2])
-        horizontal_combo.currentEnumChanged.connect(
-            partial(self._update_orientation, HorizontalAxisOrientation)
+        horizontal_combo = enum_combobox(
+            parent=popup,
+            enum_class=HorizontalAxisOrientation,
+            current_enum=self.viewer.camera.orientation[2],
+            callback=partial(
+                self._update_orientation, HorizontalAxisOrientation
+            ),
         )
 
         if self.viewer.dims.ndisplay == 2:
             orientation_layout.addWidget(vertical_combo)
             orientation_layout.addWidget(horizontal_combo)
+            orientation_help_symbol = help_tooltip(
+                parent=popup,
+                text='Controls the Vertical and Horizontal orientation of the camera axes.',
+            )
 
         else:
-            depth_combo = QEnumComboBox(popup)
-            depth_combo.setEnumClass(DepthAxisOrientation)
-            depth_combo.setCurrentEnum(self.viewer.camera.orientation[0])
-            depth_combo.currentEnumChanged.connect(
-                partial(self._update_orientation, DepthAxisOrientation)
+            depth_combo = enum_combobox(
+                parent=popup,
+                enum_class=DepthAxisOrientation,
+                current_enum=self.viewer.camera.orientation[0],
+                callback=partial(
+                    self._update_orientation, DepthAxisOrientation
+                ),
             )
 
             orientation_layout.addWidget(depth_combo)
             orientation_layout.addWidget(vertical_combo)
             orientation_layout.addWidget(horizontal_combo)
+            orientation_help_symbol = help_tooltip(
+                parent=popup,
+                text='Controls the Depth, Vertical, and Horizontal orientation of the camera axes.',
+            )
 
         orientation_widget.setLayout(orientation_layout)
-        orientation_help_symbol = help_tooltip(
-            parent=popup,
-            text='Controls the orientation of the axes in the scene.',
-        )
 
         form_layout.insertRow(
             0, QLabel(trans._('Orientation:')), orientation_widget
