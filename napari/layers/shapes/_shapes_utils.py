@@ -92,7 +92,7 @@ def _is_simple(poly: npt.NDArray) -> bool:
     angles = angles - angles[0]
     angles[angles < 0] += 2 * np.pi
     # check if angles are increasing
-    return np.all(np.diff(angles) > 0)
+    return bool(np.all(np.diff(angles) > 0))
 
 
 def _is_convex(poly: npt.NDArray) -> bool:
