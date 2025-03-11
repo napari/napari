@@ -444,12 +444,16 @@ class QtViewerButtons(QFrame):
 
     def _update_orientation(
         self,
-        orientation_enum: DepthAxisOrientation
-        | VerticalAxisOrientation
-        | HorizontalAxisOrientation,
-        value: DepthAxisOrientationStr
-        | VerticalAxisOrientationStr
-        | HorizontalAxisOrientationStr,
+        orientation_enum: (
+            DepthAxisOrientation
+            | VerticalAxisOrientation
+            | HorizontalAxisOrientation
+        ),
+        value: (
+            DepthAxisOrientationStr
+            | VerticalAxisOrientationStr
+            | HorizontalAxisOrientationStr
+        ),
     ) -> None:
         """Update the orientation of the camera.
 
