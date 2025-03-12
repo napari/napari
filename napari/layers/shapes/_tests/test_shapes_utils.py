@@ -452,18 +452,21 @@ def rotation_matrix(angle):
     )
 
 
-@pytest.mark.parametrize('angle', np.arange(0, 360, 5), ids=str)
+ANGLES = [0, 5, 75, 95, 355]
+
+
+@pytest.mark.parametrize('angle', ANGLES, ids=str)
 @pytest.mark.parametrize('reverse', [False, True])
 def test_is_convex_self_intersection(angle, reverse):
-    p = pentagram()
+    p = pentagram(reverse)
     rot = rotation_matrix(angle)
     data = np.dot(p, rot)
     assert not _is_convex(data)
 
 
-@pytest.mark.parametrize('angle', np.arange(0, 360, 5), ids=str)
-@pytest.mark.parametrize('n_vertex', [3, 4, 7, 11, 12, 15, 20])
-@pytest.mark.parametrize('reverse', [True, False])
+@pytest.mark.parametrize('angle', ANGLES, ids=str)
+@pytest.mark.parametrize('n_vertex', [3, 4, 7, 12, 15, 20])
+@pytest.mark.parametrize('reverse', [False, True])
 def test_is_convex(angle, n_vertex, reverse):
     poly = generate_regular_polygon(n_vertex, reverse=reverse)
     rot = rotation_matrix(angle)

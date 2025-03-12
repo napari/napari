@@ -88,15 +88,15 @@ def _same_oriented_angles(poly: npt.NDArray) -> tuple[bool, int]:
 def _is_simple(poly: npt.NDArray, orientation_: int) -> bool:
     if poly.shape[0] < 3:
         return False  # Not enough vertices to form a polygon
+    if orientation_ == 1:
+        poly = poly[::-1]
     centroid = poly.mean(axis=0)
     angles = np.arctan2(poly[:, 1] - centroid[1], poly[:, 0] - centroid[0])
     # orig_angles = angles.copy()
-    angles = angles - angles[0]
-    angles[angles < 0] += 2 * np.pi
+    shifted_angles = angles - angles[0]
+    shifted_angles[shifted_angles < 0] += 2 * np.pi
     # check if angles are increasing
-    if angles[0] < angles[-1]:
-        return bool(np.all(np.diff(angles) > 0))
-    return bool(np.all(np.diff(angles) < 0))
+    return bool(np.all(np.diff(shifted_angles) > 0))
 
 
 def _is_convex(poly: npt.NDArray) -> bool:
