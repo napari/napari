@@ -11,7 +11,7 @@
 [![Python package index](https://img.shields.io/pypi/v/napari.svg)](https://pypi.org/project/napari)
 [![Python package index download statistics](https://img.shields.io/pypi/dm/napari.svg)](https://pypistats.org/packages/napari)
 [![Development Status](https://img.shields.io/pypi/status/napari.svg)](https://en.wikipedia.org/wiki/Software_release_life_cycle#Alpha)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/python/black)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![DOI](https://zenodo.org/badge/144513571.svg)](https://zenodo.org/badge/latestdoi/144513571)
 [![NEP29](https://raster.shields.io/badge/Follows-NEP29-brightgreen.png)](https://numpy.org/neps/nep-0029-deprecation_policy.html)
 
