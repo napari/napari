@@ -1056,32 +1056,14 @@ def test_get_status_text():
     )
     viewer.tooltip.visible = False
     assert viewer._calc_status_from_cursor() == (
-        {
-            'coordinates': ' [1 2]: 0; a: 1',
-            'layer_base': 'Labels',
-            'layer_name': 'Labels',
-            'plugin': '',
-            'source_type': '',
-        },
+        ' [1 2] » Labels: 0; a: 1    ',
         '',
     )
     viewer.tooltip.visible = True
     assert viewer._calc_status_from_cursor() == (
-        {
-            'coordinates': ' [1 2]: 0; a: 1',
-            'layer_base': 'Labels',
-            'layer_name': 'Labels',
-            'plugin': '',
-            'source_type': '',
-        },
+        ' [1 2] » Labels: 0; a: 1    ',
         'a: 1',
     )
     viewer.update_status_from_cursor()
-    assert viewer.status == {
-        'coordinates': ' [1 2]: 0; a: 1',
-        'layer_base': 'Labels',
-        'layer_name': 'Labels',
-        'plugin': '',
-        'source_type': '',
-    }
+    assert viewer.status == ' [1 2] » Labels: 0; a: 1    '
     assert viewer.tooltip.text == 'a: 1'
