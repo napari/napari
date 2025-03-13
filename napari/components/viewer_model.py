@@ -601,13 +601,14 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 dims_displayed=list(self.dims.displayed),
                 world=True,
             )
-            emphasis = ' ### ' if layer is active else ''
-            coord_str = f'{status["coords"]} >>> '
+            separator = '    '
+            emphasis = separator if layer is active else ''
+            coord_str = f'{status["coords"]} » '
             if status['value'] != '':
                 if coord_str not in coord2val:
                     coord2val[coord_str] = []
                 coord2val[coord_str].append(
-                    f'{emphasis}{layer.name}: {status["value"]}{emphasis}'
+                    f'{layer.name}: {status["value"]}{emphasis}'
                 )
         if coord2val:
             if not self.grid.enabled:
@@ -616,9 +617,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 key = next(iter(coord2val))  # choose arbitrary coordinate
                 coord2val = {key: values}
             status_strs = [
-                key + ' // '.join(values) for key, values in coord2val.items()
+                key + separator.join(values)
+                for key, values in coord2val.items()
             ]
-            status_str = ' ||| '.join(status_strs)
+            status_str = separator.join(status_strs)
         elif coord_str and not self.grid.enabled:
             status_str = coord_str + '[empty]'
         elif self.grid.enabled:
