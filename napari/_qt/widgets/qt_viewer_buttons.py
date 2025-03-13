@@ -1,4 +1,5 @@
 import warnings
+from enum import Enum, EnumMeta
 from functools import partial, wraps
 from typing import TYPE_CHECKING
 
@@ -14,7 +15,6 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from enum import Enum, EnumMeta
 from superqt import QEnumComboBox, QLabeledDoubleSlider
 
 from napari._qt.dialogs.qt_modal import QtPopup
