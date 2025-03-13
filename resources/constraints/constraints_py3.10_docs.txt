@@ -57,6 +57,8 @@ cloudpickle==3.1.1
     #   distributed
 colorama==0.4.6
     # via sphinx-autobuild
+colorspacious==1.1.2
+    # via glasbey
 comm==0.2.2
     # via ipykernel
 contourpy==1.3.1
@@ -71,7 +73,7 @@ dask==2025.2.0
     # via
     #   napari (pyproject.toml)
     #   distributed
-debugpy==1.8.12
+debugpy==1.8.13
     # via ipykernel
 decorator==5.2.1
     # via ipython
@@ -113,20 +115,26 @@ fonttools==4.56.0
     # via matplotlib
 freetype-py==2.5.1
     # via vispy
-fsspec==2025.2.0
+fsspec==2025.3.0
     # via
     #   napari (pyproject.toml)
     #   dask
     #   torch
+glasbey==0.2.1
+    # via napari (pyproject.toml)
 greenlet==3.1.1
     # via sqlalchemy
 h11==0.14.0
     # via uvicorn
+h5netcdf==1.6.1
+    # via napari (pyproject.toml)
+h5py==3.13.0
+    # via h5netcdf
 heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.127.1
+hypothesis==6.128.2
     # via napari (pyproject.toml)
 idna==3.10
     # via
@@ -159,7 +167,7 @@ ipykernel==6.29.5
     #   myst-nb
     #   napari-console
     #   qtconsole
-ipython==8.32.0
+ipython==8.34.0
     # via
     #   napari (pyproject.toml)
     #   ipykernel
@@ -167,7 +175,7 @@ ipython==8.32.0
     #   napari-console
 jedi==0.19.2
     # via ipython
-jinja2==3.1.5
+jinja2==3.1.6
     # via
     #   distributed
     #   myst-parser
@@ -229,8 +237,10 @@ markdown-it-py==3.0.0
     #   rich
 markupsafe==3.0.2
     # via jinja2
-matplotlib==3.10.0
-    # via napari (pyproject.toml)
+matplotlib==3.10.1
+    # via
+    #   napari (pyproject.toml)
+    #   glasbey
 matplotlib-inline==0.1.7
     # via
     #   ipykernel
@@ -289,14 +299,19 @@ npe2==0.7.8
     #   napari (pyproject.toml)
     #   napari-plugin-manager
 numba==0.61.0
-    # via napari (pyproject.toml)
+    # via
+    #   napari (pyproject.toml)
+    #   glasbey
 numcodecs==0.13.1
     # via zarr
 numpy==2.1.3
     # via
     #   napari (pyproject.toml)
+    #   colorspacious
     #   contourpy
     #   dask
+    #   glasbey
+    #   h5py
     #   imageio
     #   matplotlib
     #   ml-dtypes
@@ -358,6 +373,7 @@ packaging==24.2
     #   build
     #   dask
     #   distributed
+    #   h5netcdf
     #   ipykernel
     #   lazy-loader
     #   matplotlib
@@ -497,7 +513,7 @@ pyside6-essentials==6.4.2
     # via
     #   pyside6
     #   pyside6-addons
-pytest==8.3.4
+pytest==8.3.5
     # via
     #   napari (pyproject.toml)
     #   pytest-cov
@@ -578,7 +594,9 @@ rpds-py==0.23.1
 scikit-image==0.25.2
     # via napari (pyproject.toml)
 scikit-learn==1.6.1
-    # via nilearn
+    # via
+    #   glasbey
+    #   nilearn
 scipy==1.15.2
     # via
     #   napari (pyproject.toml)
@@ -661,7 +679,7 @@ sqlalchemy==2.0.38
     # via jupyter-cache
 stack-data==0.6.3
     # via ipython
-starlette==0.46.0
+starlette==0.46.1
     # via sphinx-autobuild
 stdlib-list==0.11.1
     # via pydeps
@@ -728,7 +746,7 @@ triangle==20250106
     # via napari (pyproject.toml)
 triton==3.2.0
     # via torch
-typer==0.15.1
+typer==0.15.2
     # via npe2
 typing-extensions==4.12.2
     # via
@@ -763,7 +781,7 @@ urllib3==2.3.0
     #   requests
 uvicorn==0.34.0
     # via sphinx-autobuild
-virtualenv==20.29.2
+virtualenv==20.29.3
     # via napari (pyproject.toml)
 vispy==0.14.3
     # via
@@ -773,7 +791,7 @@ watchfiles==1.0.4
     # via sphinx-autobuild
 wcwidth==0.2.13
     # via prompt-toolkit
-websockets==15.0
+websockets==15.0.1
     # via sphinx-autobuild
 wrapt==1.17.2
     # via
