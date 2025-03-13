@@ -35,6 +35,7 @@ from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from typing import Any
 
     from napari.viewer import ViewerModel
 
