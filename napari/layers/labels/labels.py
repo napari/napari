@@ -1459,7 +1459,8 @@ class Labels(ScalarFieldBase):
         view_direction: npt.ArrayLike | None = None,
         dims_displayed: list[int] | None = None,
         world: bool = False,
-    ) -> dict:
+        value: Any | None = None,
+    ) -> dict[str, str]:
         """Status message information of the data at a coordinate position.
 
         Parameters

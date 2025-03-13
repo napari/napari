@@ -78,7 +78,8 @@ def limit_numpy1x_threads_on_macos_arm() -> (
             'libopenblas not found during try to prevent numpy crash'
         )
         return
-    blas = ctypes.CDLL(str(blas_lib[0]), mode=os.RTLD_NOLOAD)
+    # RTLD_NOLOAD is not available on non unix os, so mypy otherwise gives an attribute error here.
+    blas = ctypes.CDLL(str(blas_lib[0]), mode=os.RTLD_NOLOAD)  # type: ignore[attr-defined]
     for suffix in ('', '64_', '_64'):
         openblas_set_num_threads = getattr(
             blas, f'openblas_set_num_threads{suffix}', None

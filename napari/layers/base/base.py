@@ -2180,7 +2180,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         dims_displayed: list[int] | None = None,
         world: bool = False,
         value: Any | None = None,
-    ) -> dict:
+    ) -> dict[str, str]:
         """
         Status message information of the data at a coordinate position.
 
