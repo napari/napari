@@ -14,6 +14,7 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from enum import Enum, EnumMeta
 from superqt import QEnumComboBox, QLabeledDoubleSlider
 
 from napari._qt.dialogs.qt_modal import QtPopup
@@ -130,13 +131,12 @@ def labeled_double_slider(
 def enum_combobox(
     *,
     parent: QtPopup,
-    enum_class: type,
-    current_enum: str,
-    callback: 'Callable',
+    enum_class: EnumMeta,
+    current_enum: Enum,
+    callback: 'Callable[[],Any] | Callable[[Enum],Any]',
 ) -> QEnumComboBox:
     """Create an enum combobox widget."""
-    combo = QEnumComboBox(parent)
-    combo.setEnumClass(enum_class)
+    combo = QEnumComboBox(parent, enum_class=enum_class)
     combo.setCurrentEnum(current_enum)
     combo.currentEnumChanged.connect(callback)
     return combo
