@@ -9,7 +9,7 @@ from vispy.geometry import PolygonData
 from vispy.visuals.tube import _frenet_frames
 
 from napari.layers.shapes._accelerated_triangulate_dispatch import (
-    generate_2D_edge_meshes_py,
+    generate_2D_edge_meshes,
 )
 from napari.utils.translations import trans
 
@@ -705,7 +705,7 @@ def triangulate_edge(
         clean_path = path
 
     if clean_path.shape[-1] == 2:
-        centers, offsets, triangles = generate_2D_edge_meshes_py(
+        centers, offsets, triangles = generate_2D_edge_meshes(
             np.asarray(clean_path, dtype=np.float32), closed=closed
         )
     else:
