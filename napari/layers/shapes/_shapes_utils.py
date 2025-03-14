@@ -89,11 +89,11 @@ def _common_orientation(poly: npt.NDArray) -> int | None:
 
 def _is_simple(poly: npt.NDArray, orientation_: int) -> bool:
     """Check whether a polygon is simple.
-    
-    A polygon is considered simple if its edges do not intersect themselves. 
-    This is determined by checking whether the angles between successive 
-    vertices, measured from the centroid, increase consistently around the 
-    polygon in a counterclockwise (or clockwise) direction. If the angles 
+
+    A polygon is considered simple if its edges do not intersect themselves.
+    This is determined by checking whether the angles between successive
+    vertices, measured from the centroid, increase consistently around the
+    polygon in a counterclockwise (or clockwise) direction. If the angles
     from one vertex to the next increase, the polygon is simple.
 
     Parameters
@@ -101,7 +101,7 @@ def _is_simple(poly: npt.NDArray, orientation_: int) -> bool:
     poly: numpy array of floats, shape (N, 2)
         polygon vertices, in order.
     orientation_: int
-        The orientation of the polygon. A value of `1` indicates clockwise 
+        The orientation of the polygon. A value of `1` indicates clockwise
         and `-1` indicates counterclockwise orientation.
 
     Returns
