@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import itertools
+import tempfile
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -712,7 +713,16 @@ def triangulate_face(data: npt.NDArray) -> tuple[npt.NDArray, npt.NDArray]:
     elif _is_convex(data):
         vertices, triangles = _fan_triangulation(data)
     else:
-        vertices, triangles = PolygonData(vertices=data).triangulate()
+        try:
+            vertices, triangles = PolygonData(vertices=data).triangulate()
+        except Exception as e:
+            path = tempfile.mktemp(prefix='napari_triang_', suffix='.npz')
+            text_path = tempfile.mktemp(prefix='napari_triang_', suffix='.txt')
+            np.savez(path, data=data)
+            np.savetxt(text_path, data)
+            raise RuntimeError(
+                f'Triangulation failed. Data saved to {path} and {text_path}'
+            ) from e
 
     triangles = triangles.astype(np.uint32)
 
