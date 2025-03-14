@@ -1,13 +1,12 @@
 name: Upload coverage
 on:
-  workflow_call:
-    secrets:
-      codecov_token:
-        required: true
-
+  workflow_call
 
 jobs:
   upload_coverage:
+    permissions:
+      id-token: write  # Required for OIDC authentication
+      contents: read    # Required for code checkout
     name: Upload coverage
     runs-on: ubuntu-latest
     steps:
@@ -40,8 +39,7 @@ jobs:
           python -Im coverage report --format=markdown --skip-empty --skip-covered >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload coverage data
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           fail_ci_if_error: true
-          token: ${{ secrets.codecov_token }}
-          version: v0.6.0
+          use_oidc: true
