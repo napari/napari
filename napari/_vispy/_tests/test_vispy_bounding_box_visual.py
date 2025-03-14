@@ -4,7 +4,7 @@ from itertools import product
 import numpy as np
 import pytest
 
-@pytest.mark.skipif(sys.platform="win32", reason="This new test is flaky on windows")
+@pytest.mark.skipif(sys.platform=="win32", reason="This new test is flaky on windows")
 def test_bounding_box_multiscale_3D(make_napari_viewer, qtbot):
     viewer = make_napari_viewer(show=True)
 
