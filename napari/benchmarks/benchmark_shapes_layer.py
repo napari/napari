@@ -400,6 +400,50 @@ class ShapeTriangulationStarIntersectionSuite(
         self.select_backend(compiled_triangulation)
 
 
+class ShapeTriangulationHoleSuite(_ShapeTriangulationBaseShapeCount):
+    params = [
+        (
+            100,
+            1_000,
+        ),
+        (12, 48),
+        ('path', 'polygon'),
+        (True, False),
+    ]
+    skip_params = Skip(
+        if_in_pr=lambda n_shapes,
+        n_points,
+        shape_type,
+        compiled_triangulation: n_shapes > 100
+    )
+
+    def setup(self, n_shapes, n_points, _shape_type, compiled_triangulation):
+        self.data = polygons_with_hole(n_shapes, n_points)
+        self.select_backend(compiled_triangulation)
+
+
+class ShapeTriangulationHolesSuite(_ShapeTriangulationBaseShapeCount):
+    params = [
+        (
+            100,
+            1_000,
+        ),
+        (24, 48),
+        ('path', 'polygon'),
+        (True, False),
+    ]
+    skip_params = Skip(
+        if_in_pr=lambda n_shapes,
+        n_points,
+        shape_type,
+        compiled_triangulation: n_shapes > 100
+    )
+
+    def setup(self, n_shapes, n_points, _shape_type, compiled_triangulation):
+        self.data = polygons_with_hole(n_shapes, n_points)
+        self.select_backend(compiled_triangulation)
+
+
 class ShapeTriangulationMixed(_ShapeTriangulationBase):
     param_names = ['n_shapes', 'shape_type', 'compiled_triangulation']
     params = [
@@ -570,6 +614,73 @@ def convex_polygons(n_shapes=5_000, n_points=32) -> list[np.ndarray]:
     rays = rays.reshape((1, -1, 2))
     center = center.reshape((-1, 1, 2))
     return list(center + radius * rays)
+
+
+@cache
+def polygons_with_hole(n_shapes=5_000, n_points=32) -> list[np.ndarray]:
+    """
+    Create a set of polygon with hole
+
+    Parameters
+    ----------
+    n_shapes : int
+        Number of shapes to create
+    n_points : int
+        Number of virtex of each shape
+    """
+    rng = np.random.default_rng(0)
+    assert n_points > 7, (
+        'n_points should be greater than 7 to generate a polygon with holes'
+    )
+    radius = 500
+    outer_points_num = n_points // 2 + 1
+    inner_points_num = n_points - outer_points_num + 2
+
+    center = rng.uniform(500, 1500, (n_shapes, 2))
+    phi1 = np.linspace(0, 2 * np.pi, outer_points_num, endpoint=True)
+    phi1[-1] = 0
+    phi2 = np.linspace(0, 2 * np.pi, inner_points_num, endpoint=True)
+    phi2[-1] = 0
+    rays1 = np.stack([np.sin(phi1), np.cos(phi1)], axis=1) * radius
+    rays2 = np.stack([np.sin(phi2), np.cos(phi2)], axis=1) * radius // 2
+    rays = np.concatenate([rays1, rays2]).reshape((1, -1, 2))
+    center = center.reshape((-1, 1, 2))
+    return list(center + rays)
+
+
+@cache
+def polygons_with_holes(n_shapes=5_000, n_points=32) -> list[np.ndarray]:
+    rng = np.random.default_rng(0)
+    assert n_points > 20, (
+        'n_points should be greater than 7 to generate a polygon with holes'
+    )
+    radius = 500
+    inner_points_num = 4
+    outer_points_num = n_points - 4 * inner_points_num
+
+    rectangle = np.array([[1, 0], [0, 1], [-1, 0], [0, -1], [1, 0]]) * 50
+
+    center = rng.uniform(500, 1500, (n_shapes, 2))
+    phi = np.linspace(0, 2 * np.pi, outer_points_num, endpoint=True)
+    phi[-1] = 0
+    rays = np.stack([np.sin(phi), np.cos(phi)], axis=1) * radius
+    steep = len(phi) // 4
+
+    points = np.concatenate(
+        [
+            rays[:steep],
+            rectangle + (250, 0),
+            rays[steep - 1 : 2 * steep],
+            rectangle + (0, -250),
+            rays[2 * steep - 1 : 3 * steep],
+            rectangle + (-250, 0),
+            rays[3 * steep - 1 :],
+            rectangle + (0, 250),
+        ]
+    ).reshape((1, -1, 2))
+
+    center = center.reshape((-1, 1, 2))
+    return list(center + points)
 
 
 if __name__ == '__main__':
