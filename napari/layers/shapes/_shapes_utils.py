@@ -60,6 +60,68 @@ def find_planar_axis(
     return np.empty((0, 2), dtype=points.dtype), None, None
 
 
+def _common_orientation(poly: npt.NDArray) -> int | None:
+    """Check whether a polygon has the same orientation for all its angles. and return the orientation.
+
+    Parameters
+    ----------
+    poly: numpy array of floats, shape (N, 3)
+        Polygon vertices, in order.
+
+    Returns
+    -------
+    int or None
+        if all angles have same orientation return it, otherwise None.
+        Possible values: -1 if all angles are counterclockwise, 0 if all angles are collinear, 1 if all angles are clockwise
+    """
+    fst = poly[:-2]
+    snd = poly[1:-1]
+    thrd = poly[2:]
+    orn_set = np.unique(orientation(fst.T, snd.T, thrd.T))
+    if orn_set.size != 1:
+        return None
+    if (orn_set[0] == orientation(poly[-2], poly[-1], poly[0])) and (
+        orn_set[0] == orientation(poly[-1], poly[0], poly[1])
+    ):
+        return int(orn_set[0])
+    return None
+
+
+def _are_polar_angles_monotonic(poly: npt.NDArray, orientation_: int) -> bool:
+    """Check whether a polygon with same oriented angles between successive edges is simple.
+
+    A polygon is considered simple if its edges do not intersect themselves.
+    This is determined by checking whether the angles between successive
+    vertices, measured from the centroid, increase consistently around the
+    polygon in a counterclockwise (or clockwise) direction. If the angles
+    from one vertex to the next increase, the polygon is simple.
+
+    Parameters
+    ----------
+    poly: numpy array of floats, shape (N, 2)
+        polygon vertices, in order.
+    orientation_: int
+        The orientation of the polygon. A value of `1` indicates clockwise
+        and `-1` indicates counterclockwise orientation.
+
+    Returns
+    -------
+    bool:
+        if all angles are increasing return True, otherwise False
+    """
+    if poly.shape[0] < 3:
+        return False  # Not enough vertices to form a polygon
+    if orientation_ == 1:
+        poly = poly[::-1]
+    centroid = poly.mean(axis=0)
+    angles = np.arctan2(poly[:, 1] - centroid[1], poly[:, 0] - centroid[0])
+    # orig_angles = angles.copy()
+    shifted_angles = angles - angles[0]
+    shifted_angles[shifted_angles < 0] += 2 * np.pi
+    # check if angles are increasing
+    return bool(np.all(np.diff(shifted_angles) > 0))
+
+
 def _is_convex(poly: npt.NDArray) -> bool:
     """Check whether a polygon is convex.
 
@@ -73,15 +135,10 @@ def _is_convex(poly: npt.NDArray) -> bool:
     bool
         True if the given polygon is convex.
     """
-    fst = poly[:-2]
-    snd = poly[1:-1]
-    thrd = poly[2:]
-    orn_set = np.unique(orientation(fst.T, snd.T, thrd.T))
-    if orn_set.size != 1:
+    orientation_ = _common_orientation(poly)
+    if orientation_ is None or orientation_ == 0:
         return False
-    return (orn_set[0] == orientation(poly[-2], poly[-1], poly[0])) and (
-        orn_set[0] == orientation(poly[-1], poly[0], poly[1])
-    )
+    return _are_polar_angles_monotonic(poly, orientation_)
 
 
 def _fan_triangulation(poly: npt.NDArray) -> tuple[npt.NDArray, npt.NDArray]:
