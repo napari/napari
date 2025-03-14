@@ -87,7 +87,7 @@ def _common_orientation(poly: npt.NDArray) -> int | None:
     return None
 
 
-def _is_simple(poly: npt.NDArray, orientation_: int) -> bool:
+def _are_polar_angles_monotonic(poly: npt.NDArray, orientation_: int) -> bool:
     """Check whether a polygon with same oriented angles between successive edges is simple.
 
     A polygon is considered simple if its edges do not intersect themselves.
@@ -138,7 +138,7 @@ def _is_convex(poly: npt.NDArray) -> bool:
     orientation_ = _common_orientation(poly)
     if orientation_ is None or orientation_ == 0:
         return False
-    return _is_simple(poly, orientation_)
+    return _are_polar_angles_monotonic(poly, orientation_)
 
 
 def _fan_triangulation(poly: npt.NDArray) -> tuple[npt.NDArray, npt.NDArray]:
