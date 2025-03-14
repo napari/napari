@@ -314,6 +314,7 @@ class _ShapeTriangulationBaseShapeCount(_ShapeTriangulationBase):
 
 class ShapeTriangulationNonConvexSuite(_ShapeTriangulationBaseShapeCount):
     skip_params = Skip(
+        # skip a case when vispy triangulation backend fails
         always=lambda n_shapes,
         n_points,
         shape_type,
@@ -324,13 +325,15 @@ class ShapeTriangulationNonConvexSuite(_ShapeTriangulationBaseShapeCount):
     )
 
     def setup(self, n_shapes, n_points, _shape_type, compiled_triangulation):
-        self.data = non_convex_cords(n_shapes, n_points)[4151:]
+        self.data = non_convex_no_self_intersection_polygons(
+            n_shapes, n_points
+        )
         self.select_backend(compiled_triangulation)
 
 
 class ShapeTriangulationConvexSuite(_ShapeTriangulationBaseShapeCount):
     def setup(self, n_shapes, n_points, _shape_type, compiled_triangulation):
-        self.data = convex_cords(n_shapes, n_points)
+        self.data = convex_polygons(n_shapes, n_points)
         self.select_backend(compiled_triangulation)
 
 
@@ -352,7 +355,7 @@ class ShapeTriangulationIntersectionSuite(_ShapeTriangulationBaseShapeCount):
     )
 
     def setup(self, n_shapes, n_points, _shape_type, compiled_triangulation):
-        self.data = self_intersecting_cords(n_shapes, n_points)
+        self.data = self_intersecting_polygons(n_shapes, n_points)
         self.select_backend(compiled_triangulation)
 
 
@@ -393,7 +396,7 @@ class ShapeTriangulationStarIntersectionSuite(
     )
 
     def setup(self, n_shapes, n_points, _shape_type, compiled_triangulation):
-        self.data = self_intersecting_stars_cords(n_shapes, n_points)
+        self.data = self_intersecting_stars_polygons(n_shapes, n_points)
         self.select_backend(compiled_triangulation)
 
 
@@ -418,12 +421,12 @@ class ShapeTriangulationMixed(_ShapeTriangulationBase):
         part_size = int(n_shapes / 10)
         self.data = list(
             itertools.chain(
-                convex_cords(part_size, 4),
-                convex_cords(part_size * 2, 5),
-                convex_cords(part_size * 2, 7),
-                convex_cords(part_size, 60),
-                non_convex_cords(part_size, 10),
-                non_convex_cords(part_size, 60),
+                convex_polygons(part_size, 4),
+                convex_polygons(part_size * 2, 5),
+                convex_polygons(part_size * 2, 7),
+                convex_polygons(part_size, 60),
+                non_convex_no_self_intersection_polygons(part_size, 10),
+                non_convex_no_self_intersection_polygons(part_size, 60),
             )
         )
         self.select_backend(compiled_triangulation)
@@ -448,19 +451,18 @@ class MeshTriangulationSuite(_BackendSelection):
         self.data = [
             shape_classes[shape_type](x)
             for x in itertools.chain(
-                convex_cords(part_size, 4),
-                convex_cords(part_size * 2, 5),
-                convex_cords(part_size * 2, 12),
-                convex_cords(part_size, 60),
-                non_convex_cords(part_size, 10),
-                non_convex_cords(part_size, 60),
-                self_intersecting_stars_cords(part_size, 11),
-                self_intersecting_cords(part_size, 15),
+                convex_polygons(part_size, 4),
+                convex_polygons(part_size * 2, 5),
+                convex_polygons(part_size * 2, 12),
+                convex_polygons(part_size, 60),
+                non_convex_no_self_intersection_polygons(part_size, 10),
+                non_convex_no_self_intersection_polygons(part_size, 60),
+                self_intersecting_stars_polygons(part_size, 11),
+                self_intersecting_polygons(part_size, 15),
             )
         ]
 
     def time_set_meshes(self, shape_type, _compiled_triangulation):
-        # print("time_set_meshes", shape_type, _compiled_triangulation, self.data[0]._set_meshes_py == self.data[0]._set_meshes)
         for shape in self.data:
             shape._set_meshes(
                 shape.data,
@@ -471,7 +473,9 @@ class MeshTriangulationSuite(_BackendSelection):
 
 
 @cache
-def non_convex_cords(n_shapes=5_000, n_points=32) -> list[np.ndarray]:
+def non_convex_no_self_intersection_polygons(
+    n_shapes=5_000, n_points=32
+) -> list[np.ndarray]:
     """
     Create a set of non-convex coordinates
 
@@ -494,7 +498,7 @@ def non_convex_cords(n_shapes=5_000, n_points=32) -> list[np.ndarray]:
 
 
 @cache
-def self_intersecting_stars_cords(
+def self_intersecting_stars_polygons(
     n_shapes=5_000, n_points=31
 ) -> list[np.ndarray]:
     """
@@ -521,7 +525,9 @@ def self_intersecting_stars_cords(
 
 
 @cache
-def self_intersecting_cords(n_shapes=5_000, n_points=31) -> list[np.ndarray]:
+def self_intersecting_polygons(
+    n_shapes=5_000, n_points=31
+) -> list[np.ndarray]:
     """
     Create a set of non-convex coordinates
 
@@ -545,7 +551,7 @@ def self_intersecting_cords(n_shapes=5_000, n_points=31) -> list[np.ndarray]:
 
 
 @cache
-def convex_cords(n_shapes=5_000, n_points=32) -> list[np.ndarray]:
+def convex_polygons(n_shapes=5_000, n_points=32) -> list[np.ndarray]:
     """
     Create a set of convex coordinates
 
