@@ -72,7 +72,7 @@ def _common_orientation(poly: npt.NDArray) -> int | None:
     -------
     int or None
         if all angles have same orientation return it, otherwise None.
-        Possible values: -1, 0, 1
+        Possible values: -1 if all angles are counterclockwise, 0 if all angles are collinear, 1 if all angles are clockwise
     """
     fst = poly[:-2]
     snd = poly[1:-1]
@@ -89,14 +89,20 @@ def _common_orientation(poly: npt.NDArray) -> int | None:
 
 def _is_simple(poly: npt.NDArray, orientation_: int) -> bool:
     """Check whether a polygon is simple.
-    check if all polygon points have increasing planar coordinates
+    
+    A polygon is considered simple if its edges do not intersect themselves. 
+    This is determined by checking whether the angles between successive 
+    vertices, measured from the centroid, increase consistently around the 
+    polygon in a counterclockwise (or clockwise) direction. If the angles 
+    from one vertex to the next increase, the polygon is simple.
 
     Parameters
     ----------
     poly: numpy array of floats, shape (N, 2)
         polygon vertices, in order.
     orientation_: int
-        clockwise or counterclockwise orientation of the polygon encded as +-1
+        The orientation of the polygon. A value of `1` indicates clockwise 
+        and `-1` indicates counterclockwise orientation.
 
     Returns
     -------
