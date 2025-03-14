@@ -1,4 +1,5 @@
 import warnings
+from enum import Enum, EnumMeta
 from functools import partial, wraps
 from typing import TYPE_CHECKING
 
@@ -12,19 +13,29 @@ from qtpy.QtWidgets import (
     QLabel,
     QPushButton,
     QVBoxLayout,
+    QWidget,
 )
-from superqt import QLabeledDoubleSlider
+from superqt import QEnumComboBox, QLabeledDoubleSlider
 
 from napari._qt.dialogs.qt_modal import QtPopup
 from napari._qt.widgets.qt_dims_sorter import QtDimsSorter
 from napari._qt.widgets.qt_spinbox import QtSpinBox
 from napari._qt.widgets.qt_tooltip import QtToolTipLabel
+from napari.components.camera import (
+    DepthAxisOrientation,
+    DepthAxisOrientationStr,
+    HorizontalAxisOrientation,
+    HorizontalAxisOrientationStr,
+    VerticalAxisOrientation,
+    VerticalAxisOrientationStr,
+)
 from napari.utils.action_manager import action_manager
 from napari.utils.misc import in_ipython, in_jupyter, in_python_repl
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from typing import Any
 
     from napari.viewer import ViewerModel
 
@@ -116,6 +127,20 @@ def labeled_double_slider(
     slider.setDecimals(decimals)
     slider.valueChanged.connect(callback)
     return slider
+
+
+def enum_combobox(
+    *,
+    parent: QtPopup,
+    enum_class: EnumMeta,
+    current_enum: Enum,
+    callback: 'Callable[[],Any] | Callable[[Enum],Any]',
+) -> QEnumComboBox:
+    """Create an enum combobox widget."""
+    combo = QEnumComboBox(parent, enum_class=enum_class)
+    combo.setCurrentEnum(current_enum)
+    combo.currentEnumChanged.connect(callback)
+    return combo
 
 
 def help_tooltip(
@@ -302,11 +327,11 @@ class QtViewerButtons(QFrame):
         )
 
         form_layout.insertRow(
-            1, QLabel(trans._('Perspective:')), self.perspective
+            2, QLabel(trans._('Perspective:')), self.perspective
         )
-        form_layout.insertRow(2, QLabel(trans._('Angles    X:')), self.rx)
-        form_layout.insertRow(3, QLabel(trans._('             Y:')), self.ry)
-        form_layout.insertRow(4, QLabel(trans._('             Z:')), self.rz)
+        form_layout.insertRow(3, QLabel(trans._('Angles    X:')), self.rx)
+        form_layout.insertRow(4, QLabel(trans._('             Y:')), self.ry)
+        form_layout.insertRow(5, QLabel(trans._('             Z:')), self.rz)
 
         help_layout.addWidget(perspective_help_symbol)
         help_layout.addWidget(angle_help_symbol)
@@ -332,14 +357,78 @@ class QtViewerButtons(QFrame):
             text='Controls zoom level of the camera. Larger values zoom in, smaller values zoom out.',
         )
 
-        form_layout.insertRow(0, QLabel(trans._('Zoom:')), self.zoom)
+        form_layout.insertRow(1, QLabel(trans._('Zoom:')), self.zoom)
         help_layout.addWidget(zoom_help_symbol)
+
+    def _add_orientation_controls(
+        self,
+        popup: QtPopup,
+        form_layout: QFormLayout,
+        help_layout: QVBoxLayout,
+    ) -> None:
+        """Add orientation controls to the popup."""
+        orientation_layout = QHBoxLayout()
+        orientation_layout.setContentsMargins(0, 0, 0, 0)
+        orientation_widget = QWidget(popup)
+
+        self.vertical_combo = enum_combobox(
+            parent=popup,
+            enum_class=VerticalAxisOrientation,
+            current_enum=self.viewer.camera.orientation[1],
+            callback=partial(
+                self._update_orientation, VerticalAxisOrientation
+            ),
+        )
+
+        self.horizontal_combo = enum_combobox(
+            parent=popup,
+            enum_class=HorizontalAxisOrientation,
+            current_enum=self.viewer.camera.orientation[2],
+            callback=partial(
+                self._update_orientation, HorizontalAxisOrientation
+            ),
+        )
+
+        if self.viewer.dims.ndisplay == 2:
+            orientation_layout.addWidget(self.vertical_combo)
+            orientation_layout.addWidget(self.horizontal_combo)
+            orientation_help_symbol = help_tooltip(
+                parent=popup,
+                text='Controls the orientation of the vertical and horizontal camera axes.',
+            )
+
+        else:
+            self.depth_combo = enum_combobox(
+                parent=popup,
+                enum_class=DepthAxisOrientation,
+                current_enum=self.viewer.camera.orientation[0],
+                callback=partial(
+                    self._update_orientation, DepthAxisOrientation
+                ),
+            )
+
+            orientation_layout.addWidget(self.depth_combo)
+            orientation_layout.addWidget(self.vertical_combo)
+            orientation_layout.addWidget(self.horizontal_combo)
+            orientation_help_symbol = help_tooltip(
+                parent=popup,
+                text='Controls the orientation of the depth, vertical, and horizontal camera axes.',
+            )
+
+        orientation_widget.setLayout(orientation_layout)
+
+        form_layout.insertRow(
+            0, QLabel(trans._('Orientation:')), orientation_widget
+        )
+        help_layout.addWidget(orientation_help_symbol)
 
     def open_ndisplay_camera_popup(self) -> None:
         """Show controls for camera settings based on ndisplay mode."""
         popup = QtPopup(self)
         form_layout = QFormLayout()
         help_layout = QVBoxLayout()
+
+        self._add_orientation_controls(popup, form_layout, help_layout)
 
         self._add_shared_camera_controls(popup, form_layout, help_layout)
 
@@ -353,6 +442,38 @@ class QtViewerButtons(QFrame):
 
         # Reposition popup, must be done after all widgets are added
         self._position_popup_inside_viewer(popup, self.ndisplayButton)
+
+    def _update_orientation(
+        self,
+        orientation_type: type[
+            DepthAxisOrientation
+            | VerticalAxisOrientation
+            | HorizontalAxisOrientation
+        ],
+        orientation_value: (
+            DepthAxisOrientationStr
+            | VerticalAxisOrientationStr
+            | HorizontalAxisOrientationStr
+        ),
+    ) -> None:
+        """Update the orientation of the camera.
+
+        Parameters
+        ----------
+        orientation_type : type[DepthAxisOrientation | VerticalAxisOrientation | HorizontalAxisOrientation]
+            The orientation type (which implies the position/axis) to update.
+        value : DepthAxisOrientationStr | VerticalAxisOrientationStr | HorizontalAxisOrientationStr
+            New orientation value for the updated axis.
+        """
+        axes = (
+            DepthAxisOrientation,
+            VerticalAxisOrientation,
+            HorizontalAxisOrientation,
+        )
+        axis_to_update = axes.index(orientation_type)
+        new_orientation = list(self.viewer.camera.orientation)
+        new_orientation[axis_to_update] = orientation_type(orientation_value)
+        self.viewer.camera.orientation = tuple(new_orientation)
 
     def _update_camera_angles(self, idx: int, value: float) -> None:
         """Update the camera angles.
