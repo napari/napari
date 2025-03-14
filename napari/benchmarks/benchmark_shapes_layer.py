@@ -290,7 +290,7 @@ class _ShapeTriangulationBase(_BackendSelection):
 
     @get_shape_type
     def time_create_layer(self, shape_type):
-        """Time to create a layer."""
+        """Time to create a Shapes layer when passed data and a shape type."""
         Shapes(self.data, shape_type=shape_type)
 
 
