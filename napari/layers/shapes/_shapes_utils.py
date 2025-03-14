@@ -88,7 +88,7 @@ def _common_orientation(poly: npt.NDArray) -> int | None:
 
 
 def _is_simple(poly: npt.NDArray, orientation_: int) -> bool:
-    """Check whether a polygon is simple.
+    """Check whether a polygon with same oriented angles between successive edges is simple.
 
     A polygon is considered simple if its edges do not intersect themselves.
     This is determined by checking whether the angles between successive
