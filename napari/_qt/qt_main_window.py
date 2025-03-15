@@ -59,6 +59,7 @@ from napari._qt.dialogs.confirm_close_dialog import ConfirmCloseDialog
 from napari._qt.dialogs.preferences_dialog import PreferencesDialog
 from napari._qt.dialogs.qt_activity_dialog import QtActivityDialog
 from napari._qt.dialogs.qt_notification import NapariQtNotification
+from napari._qt.dialogs.shimmed_plugin_dialog import ShimmedPluginDialog
 from napari._qt.qt_event_loop import (
     NAPARI_ICON_PATH,
     get_qapp,
@@ -459,6 +460,31 @@ class _QtMainWindow(QMainWindow):
         if settings.application.save_window_state:
             settings.application.window_state = window_state
 
+    def _warn_on_shimmed_plugins(self) -> None:
+        """Warn about shimmed plugins if needed.
+
+        In 0.6.0, a plugin using the deprecated plugin engine will be automatically
+        converted so it can be used with npe2. By default, a dialog is displayed
+        with each startup listing all shimmed plugins. The user can change this setting
+        to only be warned about newly installed shimmed plugins.
+
+        """
+        from npe2 import plugin_manager as pm
+
+        settings = get_settings()
+        shimmed_plugins = set(pm.get_shimmed_plugins())
+        if settings.plugins.only_new_shimmed_plugins_warning:
+            new_plugins = (
+                shimmed_plugins
+                - settings.plugins.already_warned_shimmed_plugins
+            )
+        else:
+            new_plugins = shimmed_plugins
+
+        if new_plugins:
+            dialog = ShimmedPluginDialog(self, new_plugins)
+            dialog.exec_()
+
     def close(self, quit_app=False, confirm_need=False):
         """Override to handle closing app or just the window."""
         if not quit_app and not self._qt_viewer.viewer.layers:
@@ -585,7 +611,7 @@ class _QtMainWindow(QMainWindow):
             event.ignore()
             return
 
-        self.status_thread.terminate()
+        self.status_thread.close_terminate()
         self.status_thread.wait()
 
         if self._ev and self._ev.isRunning():
@@ -736,6 +762,8 @@ class Window:
                 [self._qt_viewer.dockLayerControls.minimumHeight(), 10000],
                 Qt.Orientation.Vertical,
             )
+            # TODO: where to put this?
+            self._qt_window._warn_on_shimmed_plugins()
 
     def _setup_existing_themes(self, connect: bool = True):
         """This function is only executed once at the startup of napari
@@ -1563,6 +1591,8 @@ class Window:
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
+        if not hasattr(self, '_qt_window'):
+            return
         if isinstance(event.value, str):
             self._status_bar.setStatusText(event.value)
         else:
@@ -1582,7 +1612,8 @@ class Window:
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        self._qt_window.setWindowTitle(event.value)
+        if hasattr(self, '_qt_window'):
+            self._qt_window.setWindowTitle(event.value)
 
     def _help_changed(self, event):
         """Update help message on status bar.
@@ -1592,11 +1623,13 @@ class Window:
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        self._status_bar.setHelpText(event.value)
+        if hasattr(self, '_qt_window'):
+            self._status_bar.setHelpText(event.value)
 
     def _restart(self):
         """Restart the napari application."""
-        self._qt_window.restart()
+        if hasattr(self, '_qt_window'):
+            self._qt_window.restart()
 
     def _screenshot(
         self,
