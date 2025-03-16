@@ -1,6 +1,7 @@
 import sys
-import pytest
+
 import numpy as np
+import pytest
 
 
 def test_camera(make_napari_viewer):
