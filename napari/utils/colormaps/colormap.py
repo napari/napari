@@ -67,7 +67,7 @@ class Colormap(EventedModel):
     name: str = 'custom'
     _display_name: str | None = PrivateAttr(None)
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.LINEAR
-    controls: Array = Field(default_factory=lambda: cast(Array, []))
+    controls: Array = Field(default_factory=lambda: cast('Array', []))
 
     def __init__(
         self, colors, display_name: str | None = None, **data

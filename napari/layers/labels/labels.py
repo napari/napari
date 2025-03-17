@@ -1563,7 +1563,7 @@ class Labels(ScalarFieldBase):
             return []
 
         label_value: int = typing.cast(
-            int, value[1] if self.multiscale else value
+            'int', value[1] if self.multiscale else value
         )
         if label_value not in self._label_index:
             return [trans._('[No Properties]')]

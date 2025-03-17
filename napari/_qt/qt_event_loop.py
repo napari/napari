@@ -80,7 +80,7 @@ def _focus_changed(old: QWidget | None, new: QWidget | None):
     if not isinstance(window, _QtMainWindow):
         return
     notifications = cast(
-        list[NapariQtNotification], window.findChildren(NapariQtNotification)
+        'list[NapariQtNotification]', window.findChildren(NapariQtNotification)
     )
     if not notifications:
         return

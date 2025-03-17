@@ -137,7 +137,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
 
     def _on_blending_change(self, event=None):
         blending = self.layer.blending
-        blending_kwargs = cast(dict, BLENDING_MODES[blending]).copy()
+        blending_kwargs = cast('dict', BLENDING_MODES[blending]).copy()
 
         if self.first_visible:
             # if the first layer, then we should blend differently

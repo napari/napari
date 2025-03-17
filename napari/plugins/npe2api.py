@@ -103,7 +103,7 @@ def iter_napari_plugin_info() -> Iterator[tuple[PackageMetadata, bool, dict]]:
         info_copy.pop('display_name', None)
         pypi_versions = info_copy.pop('pypi_versions')
         conda_versions = info_copy.pop('conda_versions')
-        info_ = cast(_ShortSummaryDict, info_copy)
+        info_ = cast('_ShortSummaryDict', info_copy)
 
         # TODO: use this better.
         # this would require changing the api that qt_plugin_dialog expects to

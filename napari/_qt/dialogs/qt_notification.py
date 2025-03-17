@@ -160,7 +160,7 @@ class NapariQtNotification(QDialog):
             return
         if self.parent() is not None:
             notifications = cast(
-                list[NapariQtNotification],
+                'list[NapariQtNotification]',
                 self.parent().findChildren(NapariQtNotification),
             )
             for notification in notifications:
@@ -198,7 +198,7 @@ class NapariQtNotification(QDialog):
         self.geom_anim.stop()
         if self.parent() is not None:
             notifications = cast(
-                list[NapariQtNotification],
+                'list[NapariQtNotification]',
                 self.parent().findChildren(NapariQtNotification),
             )
             if len(notifications) > 1 and notifications[-1] == self:

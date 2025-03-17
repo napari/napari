@@ -631,8 +631,8 @@ class ScalarFieldBase(Layer, ABC):
                 end_point[dims_displayed]
                 / self.downsample_factors[-1][dims_displayed]
             )
-            start_point = cast(np.ndarray, start_point)
-            end_point = cast(np.ndarray, end_point)
+            start_point = cast('np.ndarray', start_point)
+            end_point = cast('np.ndarray', end_point)
             sample_ray = end_point - start_point
             length_sample_vector = np.linalg.norm(sample_ray)
             n_points = int(2 * length_sample_vector)

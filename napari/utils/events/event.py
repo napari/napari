@@ -752,7 +752,7 @@ class EventEmitter:
                             category=RuntimeWarning,
                         )
                         continue
-                    cb = cast(Callback, cb)
+                    cb = cast('Callback', cb)
 
                 if blocked.get(cb, 0) > 0:
                     self._block_counter.update([cb])
