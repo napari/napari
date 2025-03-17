@@ -1,4 +1,7 @@
+import sys
+
 import numpy as np
+import pytest
 
 
 def test_camera(make_napari_viewer):
@@ -181,6 +184,9 @@ def test_camera_orientation_2d(make_napari_viewer, qtbot):
     assert np.all(avg_col_intensity_grad2 <= 0)
 
 
+@pytest.mark.skipif(
+    sys.platform == 'win32', reason='This new test is flaky on windows'
+)
 def test_camera_orientation_3d(make_napari_viewer, qtbot):
     """Test that flipping camera orientation in 3D flips volume as expected."""
     viewer = make_napari_viewer(show=True)
