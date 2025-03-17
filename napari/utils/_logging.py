@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import sys
 from collections import deque
 from typing import TYPE_CHECKING
 
@@ -11,6 +12,22 @@ _LOG_SEPARATOR = '<NAPARI_LOG_SEPARATOR>'
 
 if TYPE_CHECKING:
     from typing import Any
+
+
+if sys.version_info < (3, 11):
+    # in python 3.10 there's no public mapping, and this getLevelName function
+    # is a bit less resilient (e.g: it "works" both ways (name <-> value), and if
+    # invalid values are passed, it just makes up a new level)
+    def get_log_level_value(log_level_name):
+        if log_level_name is None:
+            return logging.NOTSET
+        return logging.getLevelName(log_level_name)
+else:
+
+    def get_log_level_value(log_level_name):
+        return logging.getLevelNamesMapping().get(
+            log_level_name, logging.NOTSET
+        )
 
 
 class _LogStream:
@@ -27,8 +44,7 @@ class _LogStream:
 
     def write(self, log_msg: str) -> None:
         logger, level_name, time, thread, msg = log_msg.split(_LOG_SEPARATOR)
-        levels = logging.getLevelNamesMapping()
-        level_value = levels[level_name]
+        level_value = get_log_level_value(level_name)
         self.logs.append((logger, level_value, level_name, time, thread, msg))
         # TODO: actually save log to a file somewhere so it can be retrieved?
         self.changed()
@@ -43,7 +59,7 @@ class _LogStream:
         last_only: bool = False,
     ) -> list[str]:
         if isinstance(level, str):
-            level = logging.getLevelNamesMapping().get(level, logging.NOTSET)
+            level = get_log_level_value(level)
 
         logs = [LOG_STREAM.logs[-1]] if last_only else LOG_STREAM.logs
 

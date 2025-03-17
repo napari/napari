@@ -13,7 +13,7 @@ from qtpy.QtWidgets import (
 )
 
 from napari._qt.dialogs.qt_about import QtCopyToClipboardButton
-from napari.utils._logging import LOG_STREAM
+from napari.utils._logging import LOG_STREAM, get_log_level_value
 from napari.utils.translations import trans
 
 
@@ -99,7 +99,7 @@ class LogWidget(QWidget):
         self._jump_to_pos()
 
     def _on_loglevel_change(self, event=None):
-        level = logging.getLevelNamesMapping().get(event, logging.NOTSET)
+        level = get_log_level_value(event)
         logging.getLogger().setLevel(level)
 
     def _on_new_message(self, event=None):
