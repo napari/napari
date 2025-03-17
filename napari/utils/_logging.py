@@ -80,7 +80,7 @@ LOG_HANDLER.setFormatter(
 LOG_HANDLER.setLevel(logging.DEBUG)
 
 
-def register_logger(module: str) -> None:
+def register_logger_to_napari_handler(module: str) -> None:
     """
     Register a specific module's logger to use our custom log handler.
     """
