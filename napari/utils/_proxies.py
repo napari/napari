@@ -60,31 +60,6 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
         )
 
     @staticmethod
-    def _private_attr_warning(name: str, typ: str) -> None:
-        warnings.warn(
-            trans._(
-                "Private attribute access ('{typ}.{name}') in this context "
-                '(e.g. inside a plugin widget or dock widget) is deprecated '
-                'and will be unavailable in version 0.6.0',
-                deferred=True,
-                name=name,
-                typ=typ,
-            ),
-            category=FutureWarning,
-            stacklevel=3,
-        )
-
-        # This is code prepared for a moment where we want to block access to private attributes
-        # raise AttributeError(
-        #     trans._(
-        #         "Private attribute set/access ('{typ}.{name}') not allowed in this context.",
-        #         deferred=True,
-        #         name=name,
-        #         typ=typ,
-        #     )
-        # )
-
-    @staticmethod
     def _is_called_from_napari() -> bool:
         """
         Check if the getter or setter is called from inner napari.
