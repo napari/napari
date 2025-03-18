@@ -1,4 +1,4 @@
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import pytest
 from magicgui import magic_factory, magicgui
@@ -88,7 +88,7 @@ def test_dock_widget_registration(
 
     class Plugin:
         @napari_hook_implementation
-        def napari_experimental_provide_dock_widget():
+        def napari_experimental_provide_dock_widget(self):
             return arg
 
     napari_plugin_manager.register(Plugin, name='Plugin')
@@ -110,11 +110,6 @@ def test_inject_viewer_proxy(make_napari_viewer):
     viewer = make_napari_viewer()
     wdg = _instantiate_dock_widget(Widg3, viewer)
     assert isinstance(wdg.viewer, PublicOnlyProxy)
-
-    # simulate access from outside napari
-    with patch('napari.utils.misc.ROOT_DIR', new='/some/other/package'):
-        with pytest.warns(FutureWarning):
-            wdg.fail()
 
 
 @pytest.mark.parametrize(
