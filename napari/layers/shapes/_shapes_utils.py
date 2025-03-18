@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import itertools
 import tempfile
-from typing import TYPE_CHECKING
+import typing
+from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 from scipy import sparse
@@ -13,6 +14,14 @@ from vispy.visuals.tube import _frenet_frames
 
 from napari.layers.shapes._accelerated_triangulate_dispatch import (
     generate_2D_edge_meshes,
+    reconstruct_polygon_edges,
+)
+from napari.layers.shapes.shape_types import (
+    CoordinateArray,
+    CoordinateArray2D,
+    CoordinateArray3D,
+    EdgeArray,
+    TriangleArray,
 )
 from napari.utils.translations import trans
 
@@ -684,8 +693,13 @@ def triangulate_ellipse(
     return vertices, triangles
 
 
-def _normalize_vertices_and_edges(vertices, close=False):
-    """Get list of edges that must be in a triangulation for a path or polygon.
+def _normalize_vertices_and_edges(
+    vertices, close=False
+) -> tuple[
+    np.ndarray[tuple[int, Literal[2]], np.dtype[np.float32]],
+    np.ndarray[tuple[int, Literal[2]], np.dtype[np.int64]],
+]:
+    """Get a list of edges that must be in triangulation for a path or polygon.
 
     This function ensures that:
 
@@ -754,7 +768,7 @@ def _normalize_vertices_and_edges(vertices, close=False):
         np.sort(edges_unique_nodes, axis=1), axis=0, return_counts=True
     )
     # and finally, we return only edges that don't repeat:
-    return new_vertices, edges[ct == 1]
+    return new_vertices, edges[ct % 2 == 1]
 
 
 def _cull_triangles_not_in_poly(vertices, triangles, poly):
@@ -784,9 +798,100 @@ def _cull_triangles_not_in_poly(vertices, triangles, poly):
     return triangles[in_poly]
 
 
+def triangulate_face_and_edges(
+    polygon_vertices: np.ndarray[
+        tuple[int, Literal[2, 3], np.dtype[np.floating]]
+    ],
+) -> tuple[
+    tuple[np.ndarray, np.ndarray], tuple[np.ndarray, np.ndarray, np.ndarray]
+]:
+    """Determines the triangulation of the face and edges of a shape.
+
+    Parameters
+    ----------
+    polygon_vertices : np.ndarray
+        Nx2 array of vertices of shape to be triangulated
+
+    Returns
+    -------
+    face : tuple[np.ndarray, np.ndarray]
+        Tuple of vertices, offsets, and triangles of the face.
+    edges : tuple[np.ndarray, np.ndarray, np.ndarray]
+        Tuple of vertices and triangles of the edges.
+    """
+    if _is_convex(polygon_vertices):
+        return _fan_triangulation(polygon_vertices), triangulate_edge(
+            polygon_vertices, closed=True
+        )
+
+    raw_vertices, edges = _normalize_vertices_and_edges(
+        polygon_vertices, close=True
+    )
+
+    try:
+        face_tringulation = _triangulate_face(
+            raw_vertices, edges, polygon_vertices
+        )
+    except Exception as e:
+        path = tempfile.mktemp(prefix='napari_triang_', suffix='.npz')
+        text_path = tempfile.mktemp(prefix='napari_triang_', suffix='.txt')
+        np.savez(path, data=polygon_vertices)
+        np.savetxt(text_path, polygon_vertices)
+        raise RuntimeError(
+            f'Triangulation failed. Data saved to {path} and {text_path}'
+        ) from e
+
+    if len(edges) == len(polygon_vertices):
+        # There is no removed edge
+        edges_triangulation = triangulate_edge(polygon_vertices, closed=True)
+
+    else:
+        # There is at least one removed edge
+
+        edges_triangulation = reconstruct_and_triangulate_edge(
+            raw_vertices, edges
+        )
+
+    return face_tringulation, edges_triangulation
+
+
+def reconstruct_and_triangulate_edge(
+    vertices: CoordinateArray, edges: EdgeArray
+) -> tuple[CoordinateArray, CoordinateArray, TriangleArray]:
+    """Based on the vertices and edges of a shape, reconstruct the list of shapes
+    and triangulate them.
+
+    Parameters
+    ----------
+    vertices: np.ndarray
+        Nx2 or Nx3 array of vertices of shape to be triangulated
+    edges: np.ndarray
+        list of edges encoded as vertices.
+
+    Returns
+    -------
+    """
+    polygon_list = reconstruct_polygon_edges(vertices, edges)
+    centers_list = []
+    offset_list = []
+    triangles_list = []
+    offset_idx = 0
+    for polygon in polygon_list:
+        centers, offset, triangles = triangulate_edge(polygon, closed=True)
+        centers_list.append(centers)
+        offset_list.append(offset)
+        triangles_list.append(triangles + offset_idx)
+        offset_idx += len(centers)
+    return (
+        np.concatenate(centers_list),
+        np.concatenate(offset_list),
+        np.concatenate(triangles_list),
+    )
+
+
 def triangulate_face(
-    polygon_vertices: npt.NDArray,
-) -> tuple[npt.NDArray, npt.NDArray]:
+    polygon_vertices: CoordinateArray,
+) -> tuple[CoordinateArray, TriangleArray]:
     """Determines the triangulation of the face of a shape.
 
     Parameters
@@ -808,6 +913,23 @@ def triangulate_face(
     raw_vertices, edges = _normalize_vertices_and_edges(
         polygon_vertices, close=True
     )
+    try:
+        return _triangulate_face(raw_vertices, edges, polygon_vertices)
+    except Exception as e:
+        path = tempfile.mktemp(prefix='napari_triang_', suffix='.npz')
+        text_path = tempfile.mktemp(prefix='napari_triang_', suffix='.txt')
+        np.savez(path, data=polygon_vertices)
+        np.savetxt(text_path, polygon_vertices)
+        raise RuntimeError(
+            f'Triangulation failed. Data saved to {path} and {text_path}'
+        ) from e
+
+
+def _triangulate_face(
+    raw_vertices: CoordinateArray,
+    edges: EdgeArray,
+    polygon_vertices: CoordinateArray,
+) -> tuple[CoordinateArray, TriangleArray]:
     if triangulate is not None:
         # if the triangle library is installed, use it because it's faster.
         res = triangulate(
@@ -826,27 +948,30 @@ def triangulate_face(
     else:
         # otherwise, we use VisPy's triangulation, which is slower and gives
         # less balanced polygons, but works.
-        try:
-            tri = Triangulation(raw_vertices, edges)
-            tri.triangulate()
-            vertices, triangles = tri.pts, tri.tris
-        except Exception as e:
-            path = tempfile.mktemp(prefix='napari_triang_', suffix='.npz')
-            text_path = tempfile.mktemp(prefix='napari_triang_', suffix='.txt')
-            np.savez(path, data=polygon_vertices)
-            np.savetxt(text_path, polygon_vertices)
-            raise RuntimeError(
-                f'Triangulation failed. Data saved to {path} and {text_path}'
-            ) from e
+        tri = Triangulation(raw_vertices, edges)
+        tri.triangulate()
+        vertices, triangles = tri.pts, tri.tris
 
     triangles = triangles.astype(np.uint32)
 
     return vertices, triangles
 
 
+@typing.overload
 def triangulate_edge(
-    path: npt.NDArray, closed: bool = False
-) -> tuple[npt.NDArray, npt.NDArray, npt.NDArray]:
+    path: CoordinateArray2D, closed: bool = False
+) -> tuple[CoordinateArray2D, CoordinateArray2D, TriangleArray]: ...
+
+
+@typing.overload
+def triangulate_edge(
+    path: CoordinateArray3D, closed: bool = False
+) -> tuple[CoordinateArray3D, CoordinateArray3D, TriangleArray]: ...
+
+
+def triangulate_edge(
+    path: CoordinateArray, closed: bool = False
+) -> tuple[CoordinateArray, CoordinateArray, TriangleArray]:
     """Determines the triangulation of a path.
 
     The resulting `offsets` can multiplied by a `width` scalar and be added

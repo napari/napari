@@ -7,9 +7,18 @@ With this module, downstream modules can import these helper functions without
 knowing which implementation is being used.
 """
 
+from collections import defaultdict
+from typing import overload
+
 import numpy as np
 import numpy.typing as npt
 
+from napari.layers.shapes.shape_types import (
+    CoordinateArray,
+    CoordinateArray2D,
+    CoordinateArray3D,
+    EdgeArray,
+)
 from napari.layers.utils.layer_utils import segment_normal
 
 __all__ = (
@@ -256,6 +265,90 @@ def create_box_from_bounding_py(bounding_box: npt.NDArray) -> npt.NDArray:
     )
 
 
+@overload
+def reconstruct_polygon_edges_py(
+    vertices: CoordinateArray2D, edges: EdgeArray
+) -> list[CoordinateArray2D]: ...
+
+
+@overload
+def reconstruct_polygon_edges_py(
+    vertices: CoordinateArray3D, edges: EdgeArray
+) -> list[CoordinateArray3D]: ...
+
+
+def reconstruct_polygon_edges_py(
+    vertices: CoordinateArray, edges: EdgeArray
+) -> list[CoordinateArray]:
+    """
+    Reconstruct polygons from vertices and edges.
+
+    Parameters
+    ----------
+    vertices : np.ndarray
+        Array of vertex coordinates with shape (N, 2) or (N, 3)
+    edges : np.ndarray
+        Array of edge indices with shape (M, 2)
+
+    Returns
+    -------
+    list of np.ndarray
+        List of polygons, where each polygon is an array of vertex coordinates
+    """
+    # Create an adjacency list representation from the edges
+    adjacency = defaultdict(list)
+    for edge in edges:
+        v1, v2 = edge
+        adjacency[v1].append(v2)
+        adjacency[v2].append(v1)
+
+    # Initialize set of unvisited edges
+    unvisited_edges = {(edge[0], edge[1]) for edge in edges}
+    unvisited_edges.update({(edge[1], edge[0]) for edge in edges})
+
+    # List to store resulting polygons
+    polygons = []
+
+    # Process each edge until all are visited
+    while unvisited_edges:
+        # Start with any unvisited edge
+        edge = next(iter(unvisited_edges))
+        current_vertex = edge[0]
+        start_vertex = edge[1]
+
+        # Start a new polygon
+        polygon_indices = [start_vertex]
+
+        # Remove the first edge
+        unvisited_edges.discard((start_vertex, current_vertex))
+        unvisited_edges.discard((current_vertex, start_vertex))
+
+        # Follow the edges to form a polygon
+        while current_vertex != polygon_indices[0]:
+            polygon_indices.append(current_vertex)
+
+            # Find the next unvisited edge
+            next_vertex = None
+            for neighbor in adjacency[current_vertex]:
+                if (current_vertex, neighbor) in unvisited_edges:
+                    next_vertex = neighbor
+                    unvisited_edges.discard((current_vertex, next_vertex))
+                    unvisited_edges.discard((next_vertex, current_vertex))
+                    break
+
+            # If no unvisited edge was found, we have an open polyline
+            if next_vertex is None:
+                break
+
+            current_vertex = next_vertex
+
+        # Convert indices to coordinates and add to the result
+        polygon_vertices = vertices[polygon_indices]
+        polygons.append(polygon_vertices)
+
+    return polygons
+
+
 CACHE_WARMUP = False
 USE_COMPILED_BACKEND = False
 
@@ -271,6 +364,7 @@ try:
     from napari.layers.shapes._accelerated_triangulate import (
         create_box_from_bounding,
         generate_2D_edge_meshes,
+        reconstruct_polygon_edges,
         remove_path_duplicates,
     )
 
@@ -300,6 +394,7 @@ except ImportError:
     generate_2D_edge_meshes = generate_2D_edge_meshes_py
     remove_path_duplicates = remove_path_duplicates_np
     create_box_from_bounding = create_box_from_bounding_py
+    reconstruct_polygon_edges = reconstruct_polygon_edges_py
 
     def warmup_numba_cache() -> None:
         # no numba, nothing to warm up

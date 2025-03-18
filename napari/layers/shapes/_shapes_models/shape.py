@@ -17,6 +17,7 @@ from napari.layers.shapes._shapes_utils import (
     poly_to_mask,
     triangulate_edge,
     triangulate_face,
+    triangulate_face_and_edges,
 )
 from napari.settings import get_settings
 from napari.utils.misc import argsort
@@ -334,6 +335,17 @@ class Shape(ABC):
             Bool which determines if the edge need to be traingulated
         """
         data = remove_path_duplicates(data, closed=closed)
+        if edge and face:
+            (f_vertices, f_triangles), (centers, offsets, triangles) = (
+                triangulate_face_and_edges(data)
+            )
+            self._edge_vertices = centers
+            self._edge_offsets = offsets
+            self._edge_triangles = triangles
+            self._face_vertices = f_vertices
+            self._face_triangles = f_triangles
+            return
+
         if edge:
             centers, offsets, triangles = triangulate_edge(data, closed=closed)
             self._edge_vertices = centers
