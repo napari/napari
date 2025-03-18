@@ -895,6 +895,18 @@ def triangulate_face_and_edges(
     return face_triangulation, edges_triangulation
 
 
+@overload
+def reconstruct_and_triangulate_edge(
+    vertices: CoordinateArray2D, edges: EdgeArray
+) -> tuple[CoordinateArray2D, CoordinateArray2D, TriangleArray]: ...
+
+
+@overload
+def reconstruct_and_triangulate_edge(
+    vertices: CoordinateArray3D, edges: EdgeArray
+) -> tuple[CoordinateArray3D, CoordinateArray3D, TriangleArray]: ...
+
+
 def reconstruct_and_triangulate_edge(
     vertices: CoordinateArray, edges: EdgeArray
 ) -> tuple[CoordinateArray, CoordinateArray, TriangleArray]:
@@ -930,8 +942,8 @@ def reconstruct_and_triangulate_edge(
 
 
 def triangulate_face(
-    polygon_vertices: CoordinateArray,
-) -> tuple[CoordinateArray, TriangleArray]:
+    polygon_vertices: CoordinateArray2D,
+) -> tuple[CoordinateArray2D, TriangleArray]:
     """Determines the triangulation of the face of a shape.
 
     Parameters

@@ -124,10 +124,16 @@ class Shape(ABC):
         self._ndisplay = ndisplay
         self.slice_key: npt.NDArray
 
-        self._face_vertices: CoordinateArray = np.empty((0, self.ndisplay))
+        self._face_vertices: CoordinateArray = np.empty(
+            (0, self.ndisplay), dtype=np.float32
+        )
         self._face_triangles: TriangleArray = np.empty((0, 3), dtype=np.uint32)
-        self._edge_vertices: CoordinateArray = np.empty((0, self.ndisplay))
-        self._edge_offsets: CoordinateArray = np.empty((0, self.ndisplay))
+        self._edge_vertices: CoordinateArray = np.empty(
+            (0, self.ndisplay), dtype=np.float32
+        )
+        self._edge_offsets: CoordinateArray = np.empty(
+            (0, self.ndisplay), dtype=np.float32
+        )
         self._edge_triangles: TriangleArray = np.empty((0, 3), dtype=np.uint32)
         self._box = np.empty((9, 2))
 
@@ -296,15 +302,19 @@ class Shape(ABC):
             self._edge_offsets = offsets
             self._edge_triangles = triangles
         else:
-            self._edge_vertices = np.empty((0, self.ndisplay))
-            self._edge_offsets = np.empty((0, self.ndisplay))
+            self._edge_vertices = np.empty(
+                (0, self.ndisplay), dtype=np.float32
+            )
+            self._edge_offsets = np.empty((0, self.ndisplay), dtype=np.float32)
             self._edge_triangles = np.empty((0, 3), dtype=np.uint32)
         if face:
             triangles, vertices = triangulate_polygon_numpy_li([data])
             self._face_vertices = vertices
             self._face_triangles = triangles
         else:
-            self._face_vertices = np.empty((0, self.ndisplay))
+            self._face_vertices = np.empty(
+                (0, self.ndisplay), dtype=np.float32
+            )
             self._face_triangles = np.empty((0, 3), dtype=np.uint32)
 
     def _set_meshes(  # noqa: B027
@@ -353,8 +363,10 @@ class Shape(ABC):
             self._edge_offsets = offsets
             self._edge_triangles = triangles
         else:
-            self._edge_vertices = np.empty((0, self.ndisplay))
-            self._edge_offsets = np.empty((0, self.ndisplay))
+            self._edge_vertices = np.empty(
+                (0, self.ndisplay), dtype=np.float32
+            )
+            self._edge_offsets = np.empty((0, self.ndisplay), dtype=np.float32)
             self._edge_triangles = np.empty((0, 3), dtype=np.uint32)
 
         ndim = data.shape[1]
@@ -367,7 +379,7 @@ class Shape(ABC):
         data2d, axis, value = find_planar_axis(data)
 
         # set empty data as fallback
-        self._face_vertices = np.empty((0, self.ndisplay))
+        self._face_vertices = np.empty((0, self.ndisplay), dtype=np.float32)
         self._face_triangles = np.empty((0, 3), dtype=np.uint32)
 
         if face and not is_collinear(data2d):
