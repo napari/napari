@@ -5,7 +5,7 @@ import re
 import sys
 from ast import literal_eval
 from contextlib import suppress
-from typing import Any, overload
+from typing import Any
 
 import npe2
 
@@ -231,18 +231,6 @@ def get_system_theme() -> str:
         id_ = 'dark'
 
     return id_
-
-
-@overload
-def get_theme(theme_id: str) -> Theme: ...
-
-
-@overload
-def get_theme(theme_id: str) -> Theme: ...
-
-
-@overload
-def get_theme(theme_id: str) -> dict[str, Any]: ...
 
 
 def get_theme(theme_id: str):
