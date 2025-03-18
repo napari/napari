@@ -5,7 +5,6 @@ from __future__ import annotations
 import builtins
 import collections.abc
 import contextlib
-import importlib.metadata
 import inspect
 import itertools
 import os
@@ -44,43 +43,6 @@ def parse_version(v: str) -> packaging.version._BaseVersion:
         return packaging.version.Version(v)
     except packaging.version.InvalidVersion:
         return packaging.version.LegacyVersion(v)  # type: ignore[attr-defined]
-
-
-def running_as_bundled_app(*, check_conda: bool = True) -> bool:
-    """Infer whether we are running as a bundle."""
-    # https://github.com/beeware/briefcase/issues/412
-    # https://github.com/beeware/briefcase/pull/425
-    # note that a module may not have a __package__ attribute
-    # From 0.4.12 we add a sentinel file next to the bundled sys.executable
-    warnings.warn(
-        trans._(
-            'Briefcase installations are no longer supported as of v0.4.18. '
-            'running_as_bundled_app() will be removed in a 0.6.0 release.',
-        ),
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    if (
-        check_conda
-        and (Path(sys.executable).parent / '.napari_is_bundled').exists()
-    ):
-        return True
-
-    # TODO: Remove from here on?
-    try:
-        app_module = sys.modules['__main__'].__package__
-    except AttributeError:
-        return False
-
-    if not app_module:
-        return False
-
-    try:
-        metadata = importlib.metadata.metadata(app_module)
-    except importlib.metadata.PackageNotFoundError:
-        return False
-
-    return 'Briefcase-Version' in metadata
 
 
 def running_as_constructor_app() -> bool:
