@@ -86,6 +86,8 @@ def _common_orientation(poly: npt.NDArray) -> int | None:
         if all angles have same orientation return it, otherwise None.
         Possible values: -1 if all angles are counterclockwise, 0 if all angles are collinear, 1 if all angles are clockwise
     """
+    if poly.shape[0] < 3:
+        return None
     fst = poly[:-2]
     snd = poly[1:-1]
     thrd = poly[2:]
@@ -798,6 +800,34 @@ def _cull_triangles_not_in_poly(vertices, triangles, poly):
     return triangles[in_poly]
 
 
+def _fix_vertices_if_needed(vertices, triangles, axis: int, value: float):
+    """Fix the vertices if they are not planar along the given axis.
+
+    Parameters
+    ----------
+    vertices: np.ndarray[np.floating], shape (N, 2)
+        The vertices of the triangulation. Holes in the polygon are defined by
+        an embedded polygon that starts from an arbitrary point in the
+        enclosing polygon and wind in the opposite direction.
+    triangles: np.ndarray[np.intp], shape (M, 3)
+        Triangles in the triangulation, defined by three indices into the
+        vertex array.
+    axis: int
+        The axis along which the vertices are planar.
+    value: float
+        The coordinate of the plane.
+
+    Returns
+    -------
+    new_vertices: np.ndarray[np.floating], shape (N, 3)
+        The vertices of the triangulation with the given axis fixed.
+    """
+    if axis is None or value is None:
+        return vertices, triangles
+    new_vertices = np.insert(vertices, axis, value, axis=1)
+    return new_vertices, triangles
+
+
 def triangulate_face_and_edges(
     polygon_vertices: np.ndarray[
         tuple[int, Literal[2, 3], np.dtype[np.floating]]
@@ -819,17 +849,23 @@ def triangulate_face_and_edges(
     edges : tuple[np.ndarray, np.ndarray, np.ndarray]
         Tuple of vertices and triangles of the edges.
     """
-    if _is_convex(polygon_vertices):
-        return _fan_triangulation(polygon_vertices), triangulate_edge(
-            polygon_vertices, closed=True
-        )
+    data2d, axis, value = find_planar_axis(polygon_vertices)
 
-    raw_vertices, edges = _normalize_vertices_and_edges(
-        polygon_vertices, close=True
-    )
+    if not len(data2d):
+        return (
+            np.empty((0, polygon_vertices.shape[1]), dtype=np.float32),
+            np.empty((0, 3), dtype=np.int32),
+        ), triangulate_edge(polygon_vertices, closed=True)
+
+    if _is_convex(data2d):
+        return _fix_vertices_if_needed(
+            *_fan_triangulation(data2d), axis=axis, value=value
+        ), triangulate_edge(polygon_vertices, closed=True)
+
+    raw_vertices, edges = _normalize_vertices_and_edges(data2d, close=True)
 
     try:
-        face_tringulation = _triangulate_face(
+        face_triangulation = _triangulate_face(
             raw_vertices, edges, polygon_vertices
         )
     except Exception as e:
@@ -840,7 +876,9 @@ def triangulate_face_and_edges(
         raise RuntimeError(
             f'Triangulation failed. Data saved to {path} and {text_path}'
         ) from e
-
+    face_triangulation = _fix_vertices_if_needed(
+        *face_triangulation, axis=axis, value=value
+    )
     if len(edges) == len(polygon_vertices):
         # There is no removed edge
         edges_triangulation = triangulate_edge(polygon_vertices, closed=True)
@@ -852,7 +890,7 @@ def triangulate_face_and_edges(
             raw_vertices, edges
         )
 
-    return face_tringulation, edges_triangulation
+    return face_triangulation, edges_triangulation
 
 
 def reconstruct_and_triangulate_edge(
