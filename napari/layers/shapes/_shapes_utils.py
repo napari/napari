@@ -848,7 +848,7 @@ def triangulate_face_and_edges(
     """
     data2d, axis, value = find_planar_axis(polygon_vertices)
 
-    if not len(data2d):
+    if not len(data2d) or is_collinear(data2d):
         return (
             np.empty((0, polygon_vertices.shape[1]), dtype=np.float32),
             np.empty((0, 3), dtype=np.int32),
