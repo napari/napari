@@ -91,24 +91,11 @@ def str_to_rgb(arg: str) -> list[int]:
 
 def ensure_iterable(
     arg: None | str | Enum | float | list | npt.NDArray,
-    color: object | bool = _sentinel,
 ):
     """Ensure an argument is an iterable. Useful when an input argument
     can either be a single value or a list.
-    Argument color is deprecated since version 0.5.0 and will be removed in 0.6.0.
     """
-    # deprecate color
-    if color is not _sentinel:
-        warnings.warn(
-            trans._(
-                'Argument color is deprecated since version 0.5.0 and will be removed in 0.6.0.',
-            ),
-            category=DeprecationWarning,
-            stacklevel=2,  # not sure what level to use here
-        )
-    if is_iterable(
-        arg, color=color
-    ):  # argument color is to be removed in 0.6.0
+    if is_iterable(arg):
         return arg
 
     return itertools.repeat(arg)
@@ -116,32 +103,15 @@ def ensure_iterable(
 
 def is_iterable(
     arg: None | str | Enum | float | list | npt.NDArray,
-    color: object | bool = _sentinel,
     allow_none: bool = False,
 ) -> bool:
-    """Determine if a single argument is an iterable.
-    Argument color is deprecated since version 0.5.0 and will be removed in 0.6.0.
-    """
-    # deprecate color
-    if color is not _sentinel:
-        warnings.warn(
-            trans._(
-                'Argument color is deprecated since version 0.5.0 and will be removed in 0.6.0.',
-            ),
-            category=DeprecationWarning,
-            stacklevel=2,  # not sure what level to use here
-        )
-
+    """Determine if a single argument is an iterable."""
     if arg is None:
         return allow_none
 
     # Here if arg is None it used to return allow_none
     if isinstance(arg, str | Enum) or np.isscalar(arg):
         return False
-
-    # this is to be removed in 0.6.0, color is never set True
-    if color is True and isinstance(arg, list | np.ndarray):
-        return np.array(arg).ndim != 1 or len(arg) not in [3, 4]
 
     return isinstance(arg, collections.abc.Iterable)
 
