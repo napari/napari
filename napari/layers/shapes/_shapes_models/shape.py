@@ -19,6 +19,7 @@ from napari.layers.shapes._shapes_utils import (
     triangulate_face,
     triangulate_face_and_edges,
 )
+from napari.layers.shapes.shape_types import CoordinateArray, TriangleArray
 from napari.settings import get_settings
 from napari.utils.misc import argsort
 from napari.utils.translations import trans
@@ -123,11 +124,11 @@ class Shape(ABC):
         self._ndisplay = ndisplay
         self.slice_key: npt.NDArray
 
-        self._face_vertices = np.empty((0, self.ndisplay))
-        self._face_triangles = np.empty((0, 3), dtype=np.uint32)
-        self._edge_vertices = np.empty((0, self.ndisplay))
-        self._edge_offsets = np.empty((0, self.ndisplay))
-        self._edge_triangles = np.empty((0, 3), dtype=np.uint32)
+        self._face_vertices: CoordinateArray = np.empty((0, self.ndisplay))
+        self._face_triangles: TriangleArray = np.empty((0, 3), dtype=np.uint32)
+        self._edge_vertices: CoordinateArray = np.empty((0, self.ndisplay))
+        self._edge_offsets: CoordinateArray = np.empty((0, self.ndisplay))
+        self._edge_triangles: TriangleArray = np.empty((0, 3), dtype=np.uint32)
         self._box = np.empty((9, 2))
 
         self._closed = False

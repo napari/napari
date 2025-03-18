@@ -279,7 +279,7 @@ def reconstruct_polygon_edges_py(
 
 def reconstruct_polygon_edges_py(
     vertices: CoordinateArray, edges: EdgeArray
-) -> list[CoordinateArray]:
+) -> list[CoordinateArray2D] | list[CoordinateArray3D]:
     """
     Reconstruct polygons from vertices and edges.
 

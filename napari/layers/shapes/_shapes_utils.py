@@ -3,7 +3,7 @@ from __future__ import annotations
 import itertools
 import tempfile
 import typing
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, overload
 
 import numpy as np
 from scipy import sparse
@@ -696,9 +696,9 @@ def triangulate_ellipse(
 
 
 def _normalize_vertices_and_edges(
-    vertices, close=False
+    vertices: CoordinateArray2D, close: bool = False
 ) -> tuple[
-    np.ndarray[tuple[int, Literal[2]], np.dtype[np.float32]],
+    CoordinateArray2D,
     np.ndarray[tuple[int, Literal[2]], np.dtype[np.int64]],
 ]:
     """Get a list of edges that must be in triangulation for a path or polygon.
@@ -800,7 +800,9 @@ def _cull_triangles_not_in_poly(vertices, triangles, poly):
     return triangles[in_poly]
 
 
-def _fix_vertices_if_needed(vertices, triangles, axis: int, value: float):
+def _fix_vertices_if_needed(
+    vertices: CoordinateArray2D, axis: int | None, value: float | None
+) -> CoordinateArray:
     """Fix the vertices if they are not planar along the given axis.
 
     Parameters
@@ -809,9 +811,6 @@ def _fix_vertices_if_needed(vertices, triangles, axis: int, value: float):
         The vertices of the triangulation. Holes in the polygon are defined by
         an embedded polygon that starts from an arbitrary point in the
         enclosing polygon and wind in the opposite direction.
-    triangles: np.ndarray[np.intp], shape (M, 3)
-        Triangles in the triangulation, defined by three indices into the
-        vertex array.
     axis: int
         The axis along which the vertices are planar.
     value: float
@@ -823,15 +822,13 @@ def _fix_vertices_if_needed(vertices, triangles, axis: int, value: float):
         The vertices of the triangulation with the given axis fixed.
     """
     if axis is None or value is None:
-        return vertices, triangles
+        return vertices
     new_vertices = np.insert(vertices, axis, value, axis=1)
-    return new_vertices, triangles
+    return new_vertices
 
 
 def triangulate_face_and_edges(
-    polygon_vertices: np.ndarray[
-        tuple[int, Literal[2, 3], np.dtype[np.floating]]
-    ],
+    polygon_vertices: CoordinateArray,
 ) -> tuple[
     tuple[np.ndarray, np.ndarray], tuple[np.ndarray, np.ndarray, np.ndarray]
 ]:
@@ -858,8 +855,12 @@ def triangulate_face_and_edges(
         ), triangulate_edge(polygon_vertices, closed=True)
 
     if _is_convex(data2d):
-        return _fix_vertices_if_needed(
-            *_fan_triangulation(data2d), axis=axis, value=value
+        face_triangulation = _fan_triangulation(data2d)
+        return (
+            _fix_vertices_if_needed(
+                face_triangulation[0], axis=axis, value=value
+            ),
+            face_triangulation[1],
         ), triangulate_edge(polygon_vertices, closed=True)
 
     raw_vertices, edges = _normalize_vertices_and_edges(data2d, close=True)
@@ -876,8 +877,9 @@ def triangulate_face_and_edges(
         raise RuntimeError(
             f'Triangulation failed. Data saved to {path} and {text_path}'
         ) from e
-    face_triangulation = _fix_vertices_if_needed(
-        *face_triangulation, axis=axis, value=value
+    face_triangulation = (
+        _fix_vertices_if_needed(face_triangulation[0], axis=axis, value=value),
+        face_triangulation[1],
     )
     if len(edges) == len(polygon_vertices):
         # There is no removed edge
@@ -961,6 +963,22 @@ def triangulate_face(
         raise RuntimeError(
             f'Triangulation failed. Data saved to {path} and {text_path}'
         ) from e
+
+
+@overload
+def _triangulate_face(
+    raw_vertices: CoordinateArray2D,
+    edges: EdgeArray,
+    polygon_vertices: CoordinateArray,
+) -> tuple[CoordinateArray2D, TriangleArray]: ...
+
+
+@overload
+def _triangulate_face(
+    raw_vertices: CoordinateArray3D,
+    edges: EdgeArray,
+    polygon_vertices: CoordinateArray,
+) -> tuple[CoordinateArray3D, TriangleArray]: ...
 
 
 def _triangulate_face(
