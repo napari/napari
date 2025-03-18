@@ -867,7 +867,7 @@ def triangulate_face_and_edges(
 
     try:
         face_triangulation = _triangulate_face(
-            raw_vertices, edges, polygon_vertices
+            raw_vertices.copy(), edges.copy(), polygon_vertices
         )
     except Exception as e:
         path = tempfile.mktemp(prefix='napari_triang_', suffix='.npz')
