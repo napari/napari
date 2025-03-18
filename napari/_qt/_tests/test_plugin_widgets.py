@@ -88,7 +88,7 @@ def test_dock_widget_registration(
 
     class Plugin:
         @napari_hook_implementation
-        def napari_experimental_provide_dock_widget(self):
+        def napari_experimental_provide_dock_widget():
             return arg
 
     napari_plugin_manager.register(Plugin, name='Plugin')
