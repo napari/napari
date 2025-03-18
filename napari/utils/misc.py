@@ -353,34 +353,6 @@ def abspath_or_url(relpath: T, *, must_exist: bool = False) -> T:
     return OriginType(path)
 
 
-class CallDefault(inspect.Parameter):
-    warnings.warn(
-        trans._(
-            '`CallDefault` in napari v0.5.0 and will be removed in v0.6.0.',
-        ),
-        category=DeprecationWarning,
-    )
-
-    def __str__(self) -> str:
-        """wrap defaults"""
-        kind = self.kind
-        formatted = self.name
-
-        # Fill in defaults
-        if (
-            self.default is not inspect._empty
-            or kind == inspect.Parameter.KEYWORD_ONLY
-        ):
-            formatted = f'{formatted}={formatted}'
-
-        if kind == inspect.Parameter.VAR_POSITIONAL:
-            formatted = '*' + formatted
-        elif kind == inspect.Parameter.VAR_KEYWORD:
-            formatted = '**' + formatted
-
-        return formatted
-
-
 def all_subclasses(cls: type) -> set:
     """Recursively find all subclasses of class ``cls``.
 
