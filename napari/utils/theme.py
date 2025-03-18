@@ -5,7 +5,7 @@ import re
 import sys
 from ast import literal_eval
 from contextlib import suppress
-from typing import Any, Literal, overload
+from typing import Any, overload
 
 import npe2
 
@@ -134,7 +134,7 @@ def increase(font_size: str, pt: int) -> str:
     return f'{int(font_size[:-2]) + int(pt)}pt'
 
 
-def _parse_color_as_rgb(color: str | Color) -> tuple[int, int, int]:
+def _parse_color_as_rgb(color: str | Color) -> tuple | Any:
     if isinstance(color, str):
         if color.startswith('rgb('):
             return literal_eval(color.lstrip('rgb(').rstrip(')'))
@@ -238,11 +238,11 @@ def get_theme(theme_id: str) -> Theme: ...
 
 
 @overload
-def get_theme(theme_id: str, as_dict: Literal[False]) -> Theme: ...
+def get_theme(theme_id: str) -> Theme: ...
 
 
 @overload
-def get_theme(theme_id: str, as_dict: Literal[True]) -> dict[str, Any]: ...
+def get_theme(theme_id: str) -> dict[str, Any]: ...
 
 
 def get_theme(theme_id: str):
