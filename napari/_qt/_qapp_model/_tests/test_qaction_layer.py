@@ -12,12 +12,14 @@ from napari._qt._qapp_model.qactions._layerlist_context import (
     _copy_shear_to_clipboard,
     _copy_spatial_to_clipboard,
     _copy_translate_to_clipboard,
+    _copy_units_to_clipboard,
     _paste_spatial_from_clipboard,
     is_valid_spatial_in_clipboard,
 )
 from napari.components import LayerList
 from napari.layers.base._test_util_sample_layer import SampleLayer
 from napari.utils.transforms import Affine
+from napari.utils.transforms._units import get_units_from_name
 
 
 @pytest.fixture
@@ -30,6 +32,7 @@ def layer_list():
         name='l1',
         affine=Affine(scale=(0.5, 0.5), translate=(1, 2), rotate=45),
         shear=[1],
+        units=('nm', 'um'),
     )
     layer_2 = SampleLayer(
         data=np.empty((10, 10)),
@@ -88,6 +91,21 @@ def test_copy_scale_to_clipboard(layer_list):
     npt.assert_array_equal(layer_list['l2'].scale, (2, 3))
     npt.assert_array_equal(layer_list['l3'].scale, (1, 1))
     npt.assert_array_equal(layer_list['l2'].translate, (0, 0))
+
+
+@pytest.mark.usefixtures('qtbot')
+def test_copy_units_to_clipboard(layer_list):
+    _copy_units_to_clipboard(layer_list['l1'])
+    npt.assert_array_equal(
+        layer_list['l2'].units, get_units_from_name(('pixel', 'pixel'))
+    )
+    _paste_spatial_from_clipboard(layer_list)
+    npt.assert_array_equal(
+        layer_list['l2'].units, get_units_from_name(('nm', 'um'))
+    )
+    npt.assert_array_equal(
+        layer_list['l3'].units, get_units_from_name(('pixel', 'pixel'))
+    )
 
 
 @pytest.mark.usefixtures('qtbot')
