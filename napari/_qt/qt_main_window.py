@@ -844,21 +844,6 @@ class Window:
         self._disconnect_theme(theme)
 
     @property
-    def qt_viewer(self):
-        warnings.warn(
-            trans._(
-                'Public access to Window.qt_viewer is deprecated and will be removed in\n'
-                'v0.6.0. It is considered an "implementation detail" of the napari\napplication, '
-                'not part of the napari viewer model. If your use case\n'
-                'requires access to qt_viewer, please open an issue to discuss.',
-                deferred=True,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-        return self._qt_window._qt_viewer
-
-    @property
     def _qt_viewer(self):
         # this is starting to be "vestigial"... this property could be removed
         return self._qt_window._qt_viewer

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 import sys
-from contextlib import contextmanager
 from typing import TYPE_CHECKING, cast
 from warnings import warn
 
@@ -91,21 +90,6 @@ def _focus_changed(old: QWidget | None, new: QWidget | None):
             notification.timer_stop()
 
 
-# TODO: Remove in napari 0.6.0
-def get_app(*args, **kwargs) -> QApplication:
-    """Get or create the Qt QApplication. Now deprecated, use `get_qapp`."""
-    warn(
-        trans._(
-            '`QApplication` instance access through `get_app` is deprecated and will be removed in 0.6.0.\n'
-            'Please use `get_qapp` instead.\n',
-            deferred=True,
-        ),
-        category=FutureWarning,
-        stacklevel=2,
-    )
-    return get_qapp(*args, **kwargs)
-
-
 def get_qapp(
     *,
     app_name: str | None = None,
@@ -119,7 +103,7 @@ def get_qapp(
     """Get or create the Qt QApplication.
 
     There is only one global QApplication instance, which can be retrieved by
-    calling get_app again, (or by using QApplication.instance())
+    calling get_app_model again, (or by using QApplication.instance())
 
     Parameters
     ----------
@@ -164,15 +148,7 @@ def get_qapp(
     app = QApplication.instance()
     if app:
         set_values.discard('ipy_interactive')
-        if set_values:
-            warn(
-                trans._(
-                    "QApplication already existed, these arguments to to 'get_app' were ignored: {args}",
-                    deferred=True,
-                    args=set_values,
-                ),
-                stacklevel=2,
-            )
+
         if perf_config and perf_config.trace_qt_events:
             warn(
                 trans._(
@@ -237,7 +213,7 @@ def get_qapp(
         # Will patch based on config file.
         perf_config.patch_callables()
 
-    if not _app_ref:  # running get_app for the first time
+    if not _app_ref:  # running get_app_model for the first time
         # see docstring of `wait_for_workers_to_quit` for caveats on killing
         # workers at shutdown.
         app.aboutToQuit.connect(wait_for_workers_to_quit)
@@ -302,53 +278,6 @@ def quit_app():
         from napari.components.experimental.monitor import monitor
 
         monitor.stop()
-
-
-@contextmanager
-def gui_qt(*, startup_logo=False, gui_exceptions=False, force=False):
-    """Start a Qt event loop in which to run the application.
-
-    NOTE: This context manager is deprecated!. Prefer using :func:`napari.run`.
-
-    Parameters
-    ----------
-    startup_logo : bool, optional
-        Show a splash screen with the napari logo during startup.
-    gui_exceptions : bool, optional
-        Whether to show uncaught exceptions in the GUI, by default they will be
-        shown in the console that launched the event loop.
-    force : bool, optional
-        Force the application event_loop to start, even if there are no top
-        level widgets to show.
-
-    Notes
-    -----
-    This context manager is not needed if running napari within an interactive
-    IPython session. In this case, use the ``%gui qt`` magic command, or start
-    IPython with the Qt GUI event loop enabled by default by using
-    ``ipython --gui=qt``.
-    """
-    warn(
-        trans._(
-            "\nThe 'gui_qt()' context manager is deprecated.\nIf you are running napari from a script, please use 'napari.run()' as follows:\n\n    import napari\n\n    viewer = napari.Viewer()  # no prior setup needed\n    # other code using the viewer...\n    napari.run()\n\nIn IPython or Jupyter, 'napari.run()' is not necessary. napari will automatically\nstart an interactive event loop for you: \n\n    import napari\n    viewer = napari.Viewer()  # that's it!\n",
-            deferred=True,
-        ),
-        FutureWarning,
-        stacklevel=2,
-    )
-
-    app = get_app()
-    splash = None
-    if startup_logo and app.applicationName() == 'napari':
-        from napari._qt.widgets.qt_splash_screen import NapariSplashScreen
-
-        splash = NapariSplashScreen()
-        splash.close()
-    try:
-        yield app
-    except Exception:  # noqa: BLE001
-        notification_manager.receive_error(*sys.exc_info())
-    run(force=force, gui_exceptions=gui_exceptions, _func_name='gui_qt')
 
 
 def _ipython_has_eventloop() -> bool:
@@ -416,7 +345,7 @@ def run(
         has at least ``max_loop_level`` event loops running.  By default, 1.
     _func_name : str, optional
         name of calling function, by default 'run'.  This is only here to
-        provide functions like `gui_qt` a way to inject their name into the
+        provide functions a way to inject their name into the
         warning message.
 
     Raises
@@ -438,7 +367,7 @@ def run(
     if not app:
         raise RuntimeError(
             trans._(
-                'No Qt app has been created. One can be created by calling `get_app()` or `qtpy.QtWidgets.QApplication([])`',
+                'No Qt app has been created. One can be created by calling `get_app_model()` or `qtpy.QtWidgets.QApplication([])`',
                 deferred=True,
             )
         )
