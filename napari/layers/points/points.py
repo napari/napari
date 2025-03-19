@@ -2380,6 +2380,3 @@ class Points(Layer):
             and v[value] is not None
             and not (isinstance(v[value], float) and np.isnan(v[value]))
         ]
-
-
-Points._add_deprecated_properties()
