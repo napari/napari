@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import pickle
+from typing import Any
 
 import numpy as np
 import pint
@@ -30,9 +31,9 @@ def _numpy_to_list(d: dict) -> dict:
 
 
 class UnitsEncoder(json.JSONEncoder):
-    def default(self, obj):
+    def default(self, obj: Any) -> Any:
         if isinstance(obj, np.ndarray):
-            obj = _numpy_to_list(obj)
+            obj = obj.tolist()
         if isinstance(obj, pint.Unit):
             return str(obj)
         return json.JSONEncoder.default(self, obj)
