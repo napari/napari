@@ -1,4 +1,5 @@
 import warnings
+from enum import Enum, EnumMeta
 from functools import partial, wraps
 from typing import TYPE_CHECKING
 
@@ -11,19 +12,31 @@ from qtpy.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QPushButton,
-    QSlider,
     QVBoxLayout,
+    QWidget,
 )
+from superqt import QEnumComboBox, QLabeledDoubleSlider
 
 from napari._qt.dialogs.qt_modal import QtPopup
 from napari._qt.widgets.qt_dims_sorter import QtDimsSorter
 from napari._qt.widgets.qt_spinbox import QtSpinBox
 from napari._qt.widgets.qt_tooltip import QtToolTipLabel
+from napari.components.camera import (
+    DepthAxisOrientation,
+    DepthAxisOrientationStr,
+    HorizontalAxisOrientation,
+    HorizontalAxisOrientationStr,
+    VerticalAxisOrientation,
+    VerticalAxisOrientationStr,
+)
 from napari.utils.action_manager import action_manager
 from napari.utils.misc import in_ipython, in_jupyter, in_python_repl
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+    from typing import Any
+
     from napari.viewer import ViewerModel
 
 
@@ -97,6 +110,50 @@ class QtLayerButtons(QFrame):
         layout.addStretch(0)
         layout.addWidget(self.deleteButton)
         self.setLayout(layout)
+
+
+def labeled_double_slider(
+    *,
+    parent: QtPopup,
+    value: float,
+    value_range: tuple[float, float],
+    decimals: int = 0,
+    callback: 'Callable',
+) -> QLabeledDoubleSlider:
+    """Create a labeled double slider widget."""
+    slider = QLabeledDoubleSlider(parent)
+    slider.setValue(value)
+    slider.setRange(*value_range)
+    slider.setDecimals(decimals)
+    slider.valueChanged.connect(callback)
+    return slider
+
+
+def enum_combobox(
+    *,
+    parent: QtPopup,
+    enum_class: EnumMeta,
+    current_enum: Enum,
+    callback: 'Callable[[],Any] | Callable[[Enum],Any]',
+) -> QEnumComboBox:
+    """Create an enum combobox widget."""
+    combo = QEnumComboBox(parent, enum_class=enum_class)
+    combo.setCurrentEnum(current_enum)
+    combo.currentEnumChanged.connect(callback)
+    return combo
+
+
+def help_tooltip(
+    *,
+    parent: QtPopup,
+    text: str,
+    object_name: str = 'help_label',
+) -> QtToolTipLabel:
+    """Create a help tooltip widget."""
+    help_symbol = QtToolTipLabel(parent)
+    help_symbol.setObjectName(object_name)
+    help_symbol.setToolTip(text)
+    return help_symbol
 
 
 class QtViewerButtons(QFrame):
@@ -174,7 +231,7 @@ class QtViewerButtons(QFrame):
         ndb.setCheckable(True)
         ndb.setChecked(self.viewer.dims.ndisplay == 3)
         ndb.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        ndb.customContextMenuRequested.connect(self.open_perspective_popup)
+        ndb.customContextMenuRequested.connect(self.open_ndisplay_camera_popup)
 
         @self.viewer.dims.events.ndisplay.connect
         def _set_ndisplay_mode_checkstate(event):
@@ -203,29 +260,257 @@ class QtViewerButtons(QFrame):
             return True
         return False
 
-    def open_perspective_popup(self):
-        """Show a slider to control the viewer `camera.perspective`."""
-        if self.viewer.dims.ndisplay != 3:
-            return
+    def _position_popup_inside_viewer(
+        self, popup: QtPopup, button: QPushButton
+    ) -> None:
+        """Position the popup so that it remains with the viewer.
 
-        # make slider connected to perspective parameter
-        sld = QSlider(Qt.Orientation.Horizontal, self)
-        sld.setRange(0, max(90, int(self.viewer.camera.perspective)))
-        sld.setValue(int(self.viewer.camera.perspective))
-        sld.valueChanged.connect(
-            lambda v: setattr(self.viewer.camera, 'perspective', v)
+        Use the location of the button as a reference and place the popup
+        above it. move_to will adjust the position if the popup is too close
+        to the edge of the screen.
+        """
+        button_rect = button.rect()
+        button_pos = button.mapToGlobal(button_rect.topLeft())
+        popup.move_to(
+            (
+                button_pos.x(),
+                button_pos.y() - popup.sizeHint().height() - 5,
+                popup.sizeHint().width(),
+                popup.sizeHint().height(),
+            )
         )
-        self.perspective_slider = sld
+        popup.show()
 
-        # make layout
+    def _add_3d_camera_controls(
+        self,
+        popup: QtPopup,
+        form_layout: QFormLayout,
+        help_layout: QVBoxLayout,
+    ) -> None:
+        """Add 3D camera controls to the popup."""
+        self.perspective = labeled_double_slider(
+            parent=popup,
+            value=self.viewer.camera.perspective,
+            value_range=(0, 90),
+            callback=self._update_perspective,
+        )
+
+        perspective_help_symbol = help_tooltip(
+            parent=popup,
+            text='Controls perspective projection strength. 0 is orthographic, larger values increase perspective effect.',
+        )
+
+        self.rx = labeled_double_slider(
+            parent=popup,
+            value=self.viewer.camera.angles[0],
+            value_range=(-180, 180),
+            callback=partial(self._update_camera_angles, 0),
+        )
+
+        self.ry = labeled_double_slider(
+            parent=popup,
+            value=self.viewer.camera.angles[1],
+            value_range=(-89, 89),
+            callback=partial(self._update_camera_angles, 1),
+        )
+
+        self.rz = labeled_double_slider(
+            parent=popup,
+            value=self.viewer.camera.angles[2],
+            value_range=(-180, 180),
+            callback=partial(self._update_camera_angles, 2),
+        )
+
+        angle_help_symbol = help_tooltip(
+            parent=popup,
+            text='Controls the rotation angles around each axis in degrees.',
+        )
+
+        form_layout.insertRow(
+            2, QLabel(trans._('Perspective:')), self.perspective
+        )
+        form_layout.insertRow(3, QLabel(trans._('Angles    X:')), self.rx)
+        form_layout.insertRow(4, QLabel(trans._('             Y:')), self.ry)
+        form_layout.insertRow(5, QLabel(trans._('             Z:')), self.rz)
+
+        help_layout.addWidget(perspective_help_symbol)
+        help_layout.addWidget(angle_help_symbol)
+        help_layout.addWidget(QLabel(self))  # blank space
+
+    def _add_shared_camera_controls(
+        self,
+        popup: QtPopup,
+        form_layout: QFormLayout,
+        help_layout: QVBoxLayout,
+    ) -> None:
+        """Add shared camera controls to the popup."""
+        self.zoom = labeled_double_slider(
+            parent=popup,
+            value=self.viewer.camera.zoom,
+            value_range=(0.01, 100),
+            decimals=2,
+            callback=self._update_zoom,
+        )
+
+        zoom_help_symbol = help_tooltip(
+            parent=popup,
+            text='Controls zoom level of the camera. Larger values zoom in, smaller values zoom out.',
+        )
+
+        form_layout.insertRow(1, QLabel(trans._('Zoom:')), self.zoom)
+        help_layout.addWidget(zoom_help_symbol)
+
+    def _add_orientation_controls(
+        self,
+        popup: QtPopup,
+        form_layout: QFormLayout,
+        help_layout: QVBoxLayout,
+    ) -> None:
+        """Add orientation controls to the popup."""
+        orientation_layout = QHBoxLayout()
+        orientation_layout.setContentsMargins(0, 0, 0, 0)
+        orientation_widget = QWidget(popup)
+
+        self.vertical_combo = enum_combobox(
+            parent=popup,
+            enum_class=VerticalAxisOrientation,
+            current_enum=self.viewer.camera.orientation[1],
+            callback=partial(
+                self._update_orientation, VerticalAxisOrientation
+            ),
+        )
+
+        self.horizontal_combo = enum_combobox(
+            parent=popup,
+            enum_class=HorizontalAxisOrientation,
+            current_enum=self.viewer.camera.orientation[2],
+            callback=partial(
+                self._update_orientation, HorizontalAxisOrientation
+            ),
+        )
+
+        if self.viewer.dims.ndisplay == 2:
+            orientation_layout.addWidget(self.vertical_combo)
+            orientation_layout.addWidget(self.horizontal_combo)
+            orientation_help_symbol = help_tooltip(
+                parent=popup,
+                text='Controls the orientation of the vertical and horizontal camera axes.',
+            )
+
+        else:
+            self.depth_combo = enum_combobox(
+                parent=popup,
+                enum_class=DepthAxisOrientation,
+                current_enum=self.viewer.camera.orientation[0],
+                callback=partial(
+                    self._update_orientation, DepthAxisOrientation
+                ),
+            )
+
+            orientation_layout.addWidget(self.depth_combo)
+            orientation_layout.addWidget(self.vertical_combo)
+            orientation_layout.addWidget(self.horizontal_combo)
+            orientation_help_symbol = help_tooltip(
+                parent=popup,
+                text='Controls the orientation of the depth, vertical, and horizontal camera axes.',
+            )
+
+        orientation_widget.setLayout(orientation_layout)
+
+        form_layout.insertRow(
+            0, QLabel(trans._('Orientation:')), orientation_widget
+        )
+        help_layout.addWidget(orientation_help_symbol)
+
+    def open_ndisplay_camera_popup(self) -> None:
+        """Show controls for camera settings based on ndisplay mode."""
+        popup = QtPopup(self)
+        form_layout = QFormLayout()
+        help_layout = QVBoxLayout()
+
+        self._add_orientation_controls(popup, form_layout, help_layout)
+
+        self._add_shared_camera_controls(popup, form_layout, help_layout)
+
+        if self.viewer.dims.ndisplay == 3:
+            self._add_3d_camera_controls(popup, form_layout, help_layout)
+
         layout = QHBoxLayout()
-        layout.addWidget(QLabel(trans._('Perspective'), self))
-        layout.addWidget(sld)
+        layout.addLayout(form_layout)
+        layout.addLayout(help_layout)
+        popup.frame.setLayout(layout)
 
-        # popup and show
-        pop = QtPopup(self)
-        pop.frame.setLayout(layout)
-        pop.show_above_mouse()
+        # Reposition popup, must be done after all widgets are added
+        self._position_popup_inside_viewer(popup, self.ndisplayButton)
+
+    def _update_orientation(
+        self,
+        orientation_type: type[
+            DepthAxisOrientation
+            | VerticalAxisOrientation
+            | HorizontalAxisOrientation
+        ],
+        orientation_value: (
+            DepthAxisOrientationStr
+            | VerticalAxisOrientationStr
+            | HorizontalAxisOrientationStr
+        ),
+    ) -> None:
+        """Update the orientation of the camera.
+
+        Parameters
+        ----------
+        orientation_type : type[DepthAxisOrientation | VerticalAxisOrientation | HorizontalAxisOrientation]
+            The orientation type (which implies the position/axis) to update.
+        value : DepthAxisOrientationStr | VerticalAxisOrientationStr | HorizontalAxisOrientationStr
+            New orientation value for the updated axis.
+        """
+        axes = (
+            DepthAxisOrientation,
+            VerticalAxisOrientation,
+            HorizontalAxisOrientation,
+        )
+        axis_to_update = axes.index(orientation_type)
+        new_orientation = list(self.viewer.camera.orientation)
+        new_orientation[axis_to_update] = orientation_type(orientation_value)
+        self.viewer.camera.orientation = tuple(new_orientation)
+
+    def _update_camera_angles(self, idx: int, value: float) -> None:
+        """Update the camera angles.
+
+        Parameters
+        ----------
+        idx : int
+            Index of the angle to update. In the order of (rx, ry, rz).
+        value : float
+            New angle value.
+        """
+
+        angles = list(self.viewer.camera.angles)
+        angles[idx] = value
+        self.viewer.camera.angles = tuple(angles)
+
+    def _update_zoom(self, value: float) -> None:
+        """Update the camera zoom.
+
+        Parameters
+        ----------
+        value : float
+            New camera.zoom value.
+        """
+
+        self.viewer.camera.zoom = value
+
+    def _update_perspective(self, value: float) -> None:
+        """Update the camera perspective.
+
+        Parameters
+        ----------
+        value : float
+            New camera.perspective value.
+        """
+
+        self.viewer.camera.perspective = value
 
     def _open_roll_popup(self):
         """Open a grid popup to manually order the dimensions"""

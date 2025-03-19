@@ -2,8 +2,18 @@
 
 from __future__ import annotations
 
+from collections import defaultdict
+from typing import overload
+
 import numpy as np
 from numba import njit
+
+from napari.layers.shapes.shape_types import (
+    CoordinateArray,
+    CoordinateArray2D,
+    CoordinateArray3D,
+    EdgeArray,
+)
 
 
 @njit(cache=True, inline='always')
@@ -633,3 +643,87 @@ def create_box_from_bounding(bounding_box: np.ndarray) -> np.ndarray:
     result[7] = [x_min, (y_min + y_max) / 2]
     result[8] = [(x_min + x_max) / 2, (y_min + y_max) / 2]
     return result
+
+
+@overload
+def reconstruct_polygon_edges(
+    vertices: CoordinateArray2D, edges: EdgeArray
+) -> list[CoordinateArray2D]: ...
+
+
+@overload
+def reconstruct_polygon_edges(
+    vertices: CoordinateArray3D, edges: EdgeArray
+) -> list[CoordinateArray3D]: ...
+
+
+def reconstruct_polygon_edges(
+    vertices: CoordinateArray, edges: EdgeArray
+) -> list[CoordinateArray2D] | list[CoordinateArray3D]:
+    """
+    Reconstruct polygons from vertices and edges.
+
+    Parameters
+    ----------
+    vertices : np.ndarray
+        Array of vertex coordinates with shape (N, 2) or (N, 3)
+    edges : np.ndarray
+        Array of edge indices with shape (M, 2)
+
+    Returns
+    -------
+    list of np.ndarray
+        List of polygons, where each polygon is an array of vertex coordinates
+    """
+    # Create an adjacency list representation from the edges
+    adjacency = defaultdict(list)
+    for edge in edges:
+        v1, v2 = edge
+        adjacency[v1].append(v2)
+        adjacency[v2].append(v1)
+
+    # Initialize set of unvisited edges
+    unvisited_edges = {(edge[0], edge[1]) for edge in edges}
+    unvisited_edges.update({(edge[1], edge[0]) for edge in edges})
+
+    # List to store resulting polygons
+    polygons = []
+
+    # Process each edge until all are visited
+    while unvisited_edges:
+        # Start with any unvisited edge
+        edge = next(iter(unvisited_edges))
+        current_vertex = edge[0]
+        start_vertex = edge[1]
+
+        # Start a new polygon
+        polygon_indices = [start_vertex]
+
+        # Remove the first edge
+        unvisited_edges.discard((start_vertex, current_vertex))
+        unvisited_edges.discard((current_vertex, start_vertex))
+
+        # Follow the edges to form a polygon
+        while current_vertex != polygon_indices[0]:
+            polygon_indices.append(current_vertex)
+
+            # Find the next unvisited edge
+            next_vertex = None
+            for neighbor in adjacency[current_vertex]:
+                if (current_vertex, neighbor) in unvisited_edges:
+                    next_vertex = neighbor
+                    unvisited_edges.discard((current_vertex, next_vertex))
+                    unvisited_edges.discard((next_vertex, current_vertex))
+                    break
+
+            # If no unvisited edge was found, we have an open polyline
+            if next_vertex is None:
+                break
+
+            current_vertex = next_vertex
+
+        # Convert indices to coordinates and add to the result
+        polygon_vertices = vertices[polygon_indices]
+        polygons.append(polygon_vertices)
+
+    return polygons

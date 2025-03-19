@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import tempfile
 from abc import ABC, abstractmethod
 from functools import cached_property
 
 import numpy as np
 import numpy.typing as npt
 
+from napari.layers.shapes._accelerated_triangulate_dispatch import (
+    remove_path_duplicates,
+)
 from napari.layers.shapes._shapes_utils import (
     find_planar_axis,
     is_collinear,
@@ -13,7 +17,9 @@ from napari.layers.shapes._shapes_utils import (
     poly_to_mask,
     triangulate_edge,
     triangulate_face,
+    triangulate_face_and_edges,
 )
+from napari.layers.shapes.shape_types import CoordinateArray, TriangleArray
 from napari.settings import get_settings
 from napari.utils.misc import argsort
 from napari.utils.translations import trans
@@ -29,33 +35,6 @@ except ImportError:
     triangulate_path_edge_numpy = None
     triangulate_polygon_numpy_li = None
     triangulate_polygon_with_edge_numpy_li = None
-
-
-def _remove_path_duplicates_np(data: np.ndarray, closed: bool):
-    # We add the first data point at the end to get the same length bool
-    # array as the data, and also to work on closed shapes; the last value
-    # in the diff array compares the last and first vertex.
-    diff = np.diff(np.append(data, data[0:1, :], axis=0), axis=0)
-    dup = np.all(diff == 0, axis=1)
-    # if the shape is closed, check whether the first vertex is the same
-    # as the last vertex, and count it as a duplicate if so
-    if closed and dup[-1]:
-        dup[0] = True
-    # we allow repeated nodes at the end for the lasso tool, which
-    # for an instant needs both the last placed point and the point at the
-    # cursor to be the same; if the lasso implementation becomes cleaner,
-    # remove this hardcoding
-    dup[-2:] = False
-    indices = np.arange(data.shape[0])
-    return data[indices[~dup]]
-
-
-try:
-    from napari.layers.shapes._accelerated_triangulate import (
-        remove_path_duplicates,
-    )
-except ImportError:
-    remove_path_duplicates = _remove_path_duplicates_np
 
 
 class Shape(ABC):
@@ -145,11 +124,17 @@ class Shape(ABC):
         self._ndisplay = ndisplay
         self.slice_key: npt.NDArray
 
-        self._face_vertices = np.empty((0, self.ndisplay))
-        self._face_triangles = np.empty((0, 3), dtype=np.uint32)
-        self._edge_vertices = np.empty((0, self.ndisplay))
-        self._edge_offsets = np.empty((0, self.ndisplay))
-        self._edge_triangles = np.empty((0, 3), dtype=np.uint32)
+        self._face_vertices: CoordinateArray = np.empty(
+            (0, self.ndisplay), dtype=np.float32
+        )
+        self._face_triangles: TriangleArray = np.empty((0, 3), dtype=np.uint32)
+        self._edge_vertices: CoordinateArray = np.empty(
+            (0, self.ndisplay), dtype=np.float32
+        )
+        self._edge_offsets: CoordinateArray = np.empty(
+            (0, self.ndisplay), dtype=np.float32
+        )
+        self._edge_triangles: TriangleArray = np.empty((0, 3), dtype=np.uint32)
         self._box = np.empty((9, 2))
 
         self._closed = False
@@ -282,11 +267,25 @@ class Shape(ABC):
         # if we are computing both edge and face triangles, we can do so
         # with a single call to the compiled backend
         if edge and face:
-            (triangles, vertices), (centers, offsets, edge_triangles) = (
-                triangulate_polygon_with_edge_numpy_li(
-                    [data], split_edges=True
+            try:
+                (triangles, vertices), (centers, offsets, edge_triangles) = (
+                    triangulate_polygon_with_edge_numpy_li(
+                        [data], split_edges=True
+                    )
                 )
-            )
+            except Exception as e:
+                path = tempfile.mktemp(
+                    prefix='napari_comp_triang_', suffix='.npz'
+                )
+                text_path = tempfile.mktemp(
+                    prefix='napari_comp_triang_', suffix='.txt'
+                )
+                np.savez(path, data=data)
+                np.savetxt(text_path, data)
+                raise RuntimeError(
+                    f'Triangulation failed. Data saved to {path} and {text_path}'
+                ) from e
+
             self._edge_vertices = centers
             self._edge_offsets = offsets
             self._edge_triangles = edge_triangles
@@ -303,15 +302,19 @@ class Shape(ABC):
             self._edge_offsets = offsets
             self._edge_triangles = triangles
         else:
-            self._edge_vertices = np.empty((0, self.ndisplay))
-            self._edge_offsets = np.empty((0, self.ndisplay))
+            self._edge_vertices = np.empty(
+                (0, self.ndisplay), dtype=np.float32
+            )
+            self._edge_offsets = np.empty((0, self.ndisplay), dtype=np.float32)
             self._edge_triangles = np.empty((0, 3), dtype=np.uint32)
         if face:
             triangles, vertices = triangulate_polygon_numpy_li([data])
             self._face_vertices = vertices
             self._face_triangles = triangles
         else:
-            self._face_vertices = np.empty((0, self.ndisplay))
+            self._face_vertices = np.empty(
+                (0, self.ndisplay), dtype=np.float32
+            )
             self._face_triangles = np.empty((0, 3), dtype=np.uint32)
 
     def _set_meshes(  # noqa: B027
@@ -343,14 +346,27 @@ class Shape(ABC):
             Bool which determines if the edge need to be traingulated
         """
         data = remove_path_duplicates(data, closed=closed)
+        if edge and face:
+            (f_vertices, f_triangles), (centers, offsets, triangles) = (
+                triangulate_face_and_edges(data)
+            )
+            self._edge_vertices = centers
+            self._edge_offsets = offsets
+            self._edge_triangles = triangles
+            self._face_vertices = f_vertices
+            self._face_triangles = f_triangles
+            return
+
         if edge:
             centers, offsets, triangles = triangulate_edge(data, closed=closed)
             self._edge_vertices = centers
             self._edge_offsets = offsets
             self._edge_triangles = triangles
         else:
-            self._edge_vertices = np.empty((0, self.ndisplay))
-            self._edge_offsets = np.empty((0, self.ndisplay))
+            self._edge_vertices = np.empty(
+                (0, self.ndisplay), dtype=np.float32
+            )
+            self._edge_offsets = np.empty((0, self.ndisplay), dtype=np.float32)
             self._edge_triangles = np.empty((0, 3), dtype=np.uint32)
 
         ndim = data.shape[1]
@@ -363,7 +379,7 @@ class Shape(ABC):
         data2d, axis, value = find_planar_axis(data)
 
         # set empty data as fallback
-        self._face_vertices = np.empty((0, self.ndisplay))
+        self._face_vertices = np.empty((0, self.ndisplay), dtype=np.float32)
         self._face_triangles = np.empty((0, 3), dtype=np.uint32)
 
         if face and not is_collinear(data2d):
