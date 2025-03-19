@@ -25,7 +25,6 @@ from napari.layers.utils.layer_utils import calc_data_range
 from napari.utils._dtype import get_dtype_limits, normalize_dtype
 from napari.utils.colormaps import ensure_colormap
 from napari.utils.colormaps.colormap_utils import _coerce_contrast_limits
-from napari.utils.migrations import rename_argument
 from napari.utils.translations import trans
 
 __all__ = ('Image',)
@@ -223,12 +222,6 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
 
     _projectionclass = ImageProjectionMode
 
-    @rename_argument(
-        from_name='interpolation',
-        to_name='interpolation2d',
-        version='0.6.0',
-        since_version='0.4.17',
-    )
     def __init__(
         self,
         data,
