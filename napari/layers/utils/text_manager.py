@@ -5,8 +5,9 @@ from typing import Any, Union
 
 import numpy as np
 import pandas as pd
+from pydantic import PositiveFloat
 
-from napari._pydantic_compat import PositiveInt, validator
+from napari._pydantic_compat import validator
 from napari.layers.base._base_constants import Blending
 from napari.layers.utils._text_constants import Anchor
 from napari.layers.utils._text_utils import get_text_anchors
@@ -84,7 +85,7 @@ class TextManager(EventedModel):
     string: StringEncoding = ConstantStringEncoding(constant='')
     color: ColorEncoding = ConstantColorEncoding(constant='cyan')
     visible: bool = True
-    size: PositiveInt = 12
+    size: PositiveFloat = 12
     blending: Blending = Blending.TRANSLUCENT
     anchor: Anchor = Anchor.CENTER
     # Use a scalar default translation to broadcast to any dimensionality.
