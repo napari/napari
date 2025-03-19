@@ -345,7 +345,7 @@ def run(
         has at least ``max_loop_level`` event loops running.  By default, 1.
     _func_name : str, optional
         name of calling function, by default 'run'.  This is only here to
-        provide functions like `gui_qt` a way to inject their name into the
+        provide functions a way to inject their name into the
         warning message.
 
     Raises
