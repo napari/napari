@@ -120,7 +120,9 @@ def _paste_spatial_from_clipboard(ll: LayerList) -> None:
     for layer in ll.selection:
         for key in loaded:
             loaded_attr_value = loaded[key]
-            if isinstance(loaded_attr_value, list) and key != 'units':
+            if key == 'units':
+                loaded_attr_value = loaded_attr_value[-layer.ndim :]
+            elif isinstance(loaded_attr_value, list):
                 loaded_attr_value = np.array(loaded_attr_value)
             if key == 'shear':
                 loaded_attr_value = loaded_attr_value[
