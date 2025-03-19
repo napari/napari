@@ -240,20 +240,11 @@ def test_interpolation():
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     layer = Image(data, multiscale=True)
-    with pytest.deprecated_call():
-        assert layer.interpolation == 'nearest'
     assert layer.interpolation2d == 'nearest'
     assert layer.interpolation3d == 'linear'
-
-    with pytest.deprecated_call():
-        layer = Image(data, multiscale=True, interpolation2d='bicubic')
     assert layer.interpolation2d == 'cubic'
-    with pytest.deprecated_call():
-        assert layer.interpolation == 'cubic'
 
     layer.interpolation2d = 'linear'
-    with pytest.deprecated_call():
-        assert layer.interpolation == 'linear'
     assert layer.interpolation2d == 'linear'
 
 
