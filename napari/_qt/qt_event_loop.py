@@ -103,7 +103,7 @@ def get_qapp(
     """Get or create the Qt QApplication.
 
     There is only one global QApplication instance, which can be retrieved by
-    calling get_app again, (or by using QApplication.instance())
+    calling get_app_model again, (or by using QApplication.instance())
 
     Parameters
     ----------
@@ -148,15 +148,7 @@ def get_qapp(
     app = QApplication.instance()
     if app:
         set_values.discard('ipy_interactive')
-        if set_values:
-            warn(
-                trans._(
-                    "QApplication already existed, these arguments to to 'get_app' were ignored: {args}",
-                    deferred=True,
-                    args=set_values,
-                ),
-                stacklevel=2,
-            )
+
         if perf_config and perf_config.trace_qt_events:
             warn(
                 trans._(
@@ -221,7 +213,7 @@ def get_qapp(
         # Will patch based on config file.
         perf_config.patch_callables()
 
-    if not _app_ref:  # running get_app for the first time
+    if not _app_ref:  # running get_app_model for the first time
         # see docstring of `wait_for_workers_to_quit` for caveats on killing
         # workers at shutdown.
         app.aboutToQuit.connect(wait_for_workers_to_quit)
@@ -375,7 +367,7 @@ def run(
     if not app:
         raise RuntimeError(
             trans._(
-                'No Qt app has been created. One can be created by calling `get_app()` or `qtpy.QtWidgets.QApplication([])`',
+                'No Qt app has been created. One can be created by calling `get_app_model()` or `qtpy.QtWidgets.QApplication([])`',
                 deferred=True,
             )
         )
