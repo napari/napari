@@ -6,7 +6,6 @@ import itertools
 import logging
 import os.path
 import uuid
-import warnings
 from abc import ABC, ABCMeta, abstractmethod
 from collections import defaultdict
 from collections.abc import Callable, Generator, Hashable, Mapping, Sequence
@@ -53,7 +52,6 @@ from napari.utils._magicgui import (
     get_layers,
 )
 from napari.utils.events import EmitterGroup, Event, EventedDict
-from napari.utils.events.event import WarningEmitter
 from napari.utils.geometry import (
     find_front_back_face,
     intersect_line_with_axis_aligned_bounding_box_3d,
@@ -482,13 +480,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             translate=Event,
             units=Event,
             visible=Event,
-            interactive=WarningEmitter(
-                trans._(
-                    'layer.events.interactive is deprecated since 0.4.18 and will be removed in 0.6.0. Please use layer.events.mouse_pan and layer.events.mouse_zoom',
-                    deferred=True,
-                ),
-                type_name='interactive',
-            ),
             _extent_augmented=Event,
             _overlays=Event,
         )
@@ -1171,30 +1162,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             return
         self._help = help_text
         self.events.help(help=help_text)
-
-    @property
-    def interactive(self) -> bool:
-        warnings.warn(
-            trans._(
-                'Layer.interactive is deprecated since napari 0.4.18 and will be removed in 0.6.0. Please use Layer.mouse_pan and Layer.mouse_zoom instead'
-            ),
-            FutureWarning,
-            stacklevel=2,
-        )
-        return self.mouse_pan or self.mouse_zoom
-
-    @interactive.setter
-    def interactive(self, interactive: bool) -> None:
-        warnings.warn(
-            trans._(
-                'Layer.interactive is deprecated since napari 0.4.18 and will be removed in 0.6.0. Please use Layer.mouse_pan and Layer.mouse_zoom instead'
-            ),
-            FutureWarning,
-            stacklevel=2,
-        )
-        with self.events.interactive.blocker():
-            self.mouse_pan = interactive
-        self.mouse_zoom = interactive
 
     @property
     def mouse_pan(self) -> bool:
