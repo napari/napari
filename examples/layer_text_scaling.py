@@ -16,11 +16,11 @@ import napari
 viewer = napari.Viewer()
 viewer.open_sample('napari', 'astronaut')
 
-# add points with text
+# add points with text features
 points = np.array([[100, 100], [120, 120], [140, 140], [160, 160]])
-text = {
+text_scaled = {
     'string': ['Point 1', 'Point 2', 'Point 3', 'Point 4'],
-    'size': 10,  # Initial size, but is immediately overwritten
+    'size': 10,
     'color': 'magenta',
     'anchor': 'center',
     'scaling': True
@@ -28,25 +28,29 @@ text = {
 points_layer = viewer.add_points(
     points,
     size=20,
-    text=text,
+    text=text_scaled,
     name='scaled_text'
 )
+# points_layer.text.scaling = True  # alternative way to set scaling
 
 # add a second points layer slightly offset and show without scaling
-text['scaling'] = False
-text['color'] = 'green'
+text_unscaled = {
+    'string': ['Point 1', 'Point 2', 'Point 3', 'Point 4'],
+    'size': 10,
+    'color': 'green',
+    'anchor': 'center',
+}
 points_layer2 = viewer.add_points(
     points + [40, 0],
     size=20,
-    text=text,
+    text=text_unscaled,
     name='unscaled_text'
 )
 
 for layer in viewer.layers:
-    layer.scale = (3,3) # change to (1,1) to see how things are handled quite differently
+    layer.scale = (3,3) # change to (1,1) to see how things look different
 
 points_layer.events.scale_factor.connect(lambda: print(f"Scale factor change: {points_layer.scale_factor}"))
-viewer.camera.events.zoom.connect(lambda: print(f"Zoom change: {viewer.camera.zoom}"))
 
 if __name__ == '__main__':
     napari.run()
