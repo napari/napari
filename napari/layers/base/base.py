@@ -874,8 +874,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
     @scale_factor.setter
     def scale_factor(self, scale_factor):
-        self._scale_factor = scale_factor
-        self.events.scale_factor()
+        if self._scale_factor != scale_factor:
+            self._scale_factor = scale_factor
+            self.events.scale_factor()
 
     @property
     def translate(self) -> npt.NDArray:
