@@ -414,7 +414,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             -self.dims.ndisplay :
         ]
         center = cast(
-            tuple[float, float, float] | tuple[float, float],
+            'tuple[float, float, float] | tuple[float, float]',
             tuple(
                 [0.0] * (self.dims.ndisplay - len(center_array))
                 + list(center_array)

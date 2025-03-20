@@ -65,7 +65,7 @@ class AppearanceSettings(EventedModel):
     ) -> None:
         if isinstance(values, self.__class__):
             values = values.dict()
-        values = cast(dict, values)
+        values = cast('dict', values)
 
         # Check if a font_size change is needed when changing theme:
         # If the font_size setting doesn't correspond to the default value

@@ -180,5 +180,5 @@ def complete_polygon(layer: Labels):
     )
 
     cast(
-        LabelsPolygonOverlay, layer._overlays['polygon']
+        'LabelsPolygonOverlay', layer._overlays['polygon']
     ).add_polygon_to_labels(layer)

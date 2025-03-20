@@ -127,12 +127,12 @@ class QCommandLineEdit(QtW.QLineEdit):
 
     def commandPalette(self) -> QCommandPalette:
         """The parent command palette widget."""
-        return cast(QCommandPalette, self.parent())
+        return cast('QCommandPalette', self.parent())
 
     def event(self, e: QtCore.QEvent | None) -> bool:
         if e is None or e.type() != QtCore.QEvent.Type.KeyPress:
             return super().event(e)
-        e = cast(QtGui.QKeyEvent, e)
+        e = cast('QtGui.QKeyEvent', e)
         if e.modifiers() in (
             Qt.KeyboardModifier.NoModifier,
             Qt.KeyboardModifier.KeypadModifier,

@@ -58,4 +58,4 @@ def quaternion2euler_degrees(
 
     angles = (theta_1, theta_2, theta_3)
 
-    return cast(tuple[float, float, float], tuple(np.degrees(angles)))
+    return cast("tuple[float, float, float]", tuple(np.degrees(angles)))

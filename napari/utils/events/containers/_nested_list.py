@@ -98,7 +98,7 @@ def split_nested_index(index: MaybeNestedIndex) -> tuple[ParentIndex, Index]:
                     deferred=True,
                 )
             )
-        return cast(ParentIndex, tuple(first)), last
+        return cast('ParentIndex', tuple(first)), last
     return ParentIndex(()), -1  # empty tuple appends to self
 
 
@@ -318,7 +318,7 @@ class NestableEventedList(EventedList[_T]):
                     deferred=True,
                 )
             )
-        dest_i = cast(int, self._non_negative_index(dest_par, dest_i))
+        dest_i = cast('int', self._non_negative_index(dest_par, dest_i))
 
         # need to update indices as we pop, so we keep track of the indices
         # we have previously popped

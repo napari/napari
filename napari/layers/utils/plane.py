@@ -32,17 +32,17 @@ class Plane(EventedModel):
 
     @validator('normal', allow_reuse=True)
     def _normalise_vector(cls, v: npt.NDArray) -> Point3D:
-        return cast(Point3D, tuple(v / np.linalg.norm(v)))
+        return cast('Point3D', tuple(v / np.linalg.norm(v)))
 
     @validator('normal', 'position', pre=True, allow_reuse=True)
     def _ensure_tuple(cls, v: Any) -> Point3D:
-        return cast(Point3D, tuple(v))
+        return cast('Point3D', tuple(v))
 
     def shift_along_normal_vector(self, distance: float) -> None:
         """Shift the plane along its normal vector by a given distance."""
         assert len(self.position) == len(self.normal) == 3
         self.position = cast(
-            Point3D,
+            'Point3D',
             tuple(
                 p + (distance * n)
                 for p, n in zip(self.position, self.normal, strict=False)

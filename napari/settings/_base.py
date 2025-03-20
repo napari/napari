@@ -308,7 +308,7 @@ def nested_env_settings(
         for field in settings.__fields__.values():
             if not isinstance(field.type_, type(BaseModel)):
                 continue  # pragma: no cover
-            field_type = cast(BaseModel, field.type_)
+            field_type = cast('BaseModel', field.type_)
             for env_name in field.field_info.extra['env_names']:
                 for subf in field_type.__fields__.values():
                     # first check if subfield directly declares an "env"

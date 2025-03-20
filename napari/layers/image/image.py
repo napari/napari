@@ -401,7 +401,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             data = response.image.raw
             input_data = data[-1] if self.multiscale else data
             self.contrast_limits = calc_data_range(
-                typing.cast(LayerDataProtocol, input_data), rgb=self.rgb
+                typing.cast('LayerDataProtocol', input_data), rgb=self.rgb
             )
 
         super()._update_slice_response(response)
@@ -500,7 +500,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
 
     @property
     def interpolation2d(self) -> InterpolationStr:
-        return cast(InterpolationStr, str(self._interpolation2d))
+        return cast('InterpolationStr', str(self._interpolation2d))
 
     @interpolation2d.setter
     def interpolation2d(self, value: InterpolationStr | Interpolation) -> None:
@@ -523,7 +523,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
 
     @property
     def interpolation3d(self) -> InterpolationStr:
-        return cast(InterpolationStr, str(self._interpolation3d))
+        return cast('InterpolationStr', str(self._interpolation3d))
 
     @interpolation3d.setter
     def interpolation3d(self, value: InterpolationStr | Interpolation) -> None:
@@ -644,7 +644,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
                 )
             )
         return calc_data_range(
-            cast(LayerDataProtocol, input_data), rgb=self.rgb
+            cast('LayerDataProtocol', input_data), rgb=self.rgb
         )
 
     def _raw_to_displayed(self, raw: np.ndarray) -> np.ndarray:
