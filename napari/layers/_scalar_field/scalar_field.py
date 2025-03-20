@@ -24,7 +24,6 @@ from napari.layers.utils.plane import SlicingPlane
 from napari.utils._dask_utils import DaskIndexer
 from napari.utils.colormaps import AVAILABLE_COLORMAPS
 from napari.utils.events import Event
-from napari.utils.events.event import WarningEmitter
 from napari.utils.events.event_utils import connect_no_arg
 from napari.utils.geometry import clamp_point_to_bounding_box
 from napari.utils.naming import magic_name
@@ -247,13 +246,6 @@ class ScalarFieldBase(Layer, ABC):
             attenuation=Event,
             custom_interpolation_kernel_2d=Event,
             depiction=Event,
-            interpolation=WarningEmitter(
-                trans._(
-                    "'layer.events.interpolation' is deprecated please use `interpolation2d` and `interpolation3d`",
-                    deferred=True,
-                ),
-                type_name='select',
-            ),
             interpolation2d=Event,
             interpolation3d=Event,
             iso_threshold=Event,

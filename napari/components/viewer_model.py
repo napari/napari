@@ -86,7 +86,6 @@ from napari.utils.events import (
 )
 from napari.utils.events.event import WarningEmitter
 from napari.utils.key_bindings import KeymapProvider
-from napari.utils.migrations import rename_argument
 from napari.utils.misc import is_sequence
 from napari.utils.mouse_bindings import MousemapProvider
 from napari.utils.progress import progress
@@ -522,17 +521,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.camera.mouse_zoom = active_layer.mouse_zoom
             self.update_status_from_cursor()
 
-    @staticmethod
-    def rounded_division(min_val, max_val, precision):
-        warnings.warn(
-            trans._(
-                'Viewer.rounded_division is deprecated since v0.4.18 and will be removed in 0.6.0.'
-            ),
-            FutureWarning,
-            stacklevel=2,
-        )
-        return int(((min_val + max_val) / 2) / precision) * precision
-
     def _on_layers_change(self):
         if len(self.layers) == 0:
             self.dims.ndim = 2
@@ -824,12 +812,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.layers.append(layer)
         return layer
 
-    @rename_argument(
-        from_name='interpolation',
-        to_name='interpolation2d',
-        version='0.6.0',
-        since_version='0.4.17',
-    )
     def add_image(
         self,
         data=None,
