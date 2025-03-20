@@ -869,7 +869,7 @@ def triangulate_face_and_edges(
         face_triangulation = _triangulate_face(
             raw_vertices.copy(), edges.copy(), polygon_vertices
         )
-    except Exception as e:
+    except Exception as e:  # pragma: no cover
         path = tempfile.mktemp(prefix='napari_triang_', suffix='.npz')
         text_path = tempfile.mktemp(prefix='napari_triang_', suffix='.txt')
         np.savez(path, data=polygon_vertices)
@@ -967,7 +967,7 @@ def triangulate_face(
     )
     try:
         return _triangulate_face(raw_vertices, edges, polygon_vertices)
-    except Exception as e:
+    except Exception as e:  # pragma: no cover
         path = tempfile.mktemp(prefix='napari_triang_', suffix='.npz')
         text_path = tempfile.mktemp(prefix='napari_triang_', suffix='.txt')
         np.savez(path, data=polygon_vertices)

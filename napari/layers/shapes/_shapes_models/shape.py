@@ -242,7 +242,7 @@ class Shape(ABC):
 
     def _set_meshes_compiled(
         self,
-        data: npt.NDArray,
+        data: CoordinateArray,
         closed: bool = True,
         face: bool = True,
         edge: bool = True,
@@ -273,7 +273,7 @@ class Shape(ABC):
                         [data], split_edges=True
                     )
                 )
-            except Exception as e:
+            except Exception as e:  # pragma: no cover
                 path = tempfile.mktemp(
                     prefix='napari_comp_triang_', suffix='.npz'
                 )
@@ -319,7 +319,7 @@ class Shape(ABC):
 
     def _set_meshes(  # noqa: B027
         self,
-        data: npt.NDArray,
+        data: CoordinateArray,
         closed: bool = True,
         face: bool = True,
         edge: bool = True,
@@ -327,7 +327,7 @@ class Shape(ABC):
 
     def _set_meshes_py(
         self,
-        data: npt.NDArray,
+        data: CoordinateArray,
         closed: bool = True,
         face: bool = True,
         edge: bool = True,
