@@ -87,7 +87,6 @@ class TextManager(EventedModel):
     visible: bool = True
     size: PositiveFloat = 12
     scaling: bool = True
-    scaling_factor: PositiveFloat = 1.0
     blending: Blending = Blending.TRANSLUCENT
     anchor: Anchor = Anchor.CENTER
     # Use a scalar default translation to broadcast to any dimensionality.
@@ -129,7 +128,7 @@ class TextManager(EventedModel):
         """Calculate the scaled text size based on zoom level."""
         if not self.scaling or scale_factor is None:
             return self.size
-        return self.size * self.scaling_factor / scale_factor
+        return self.size / scale_factor
 
     def refresh(self, features: Any) -> None:
         """Refresh all encoded values using new layer features.
