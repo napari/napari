@@ -61,6 +61,7 @@ def test_PublicOnlyProxy():
     assert proxy.x.method() == 2
 
     assert isinstance(proxy, Tester)
+
     with pytest.warns(FutureWarning, match='Private attribute access'):
         proxy._private
 
