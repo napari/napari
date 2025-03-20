@@ -311,6 +311,14 @@ class _ShapeTriangulationBaseShapeCount(_ShapeTriangulationBase):
         (True, False),
     ]
 
+    @staticmethod
+    def skip_pr_ge100(
+        n_shapes, _n_points, _shape_type, _compiled_triangulation
+    ):
+        return n_shapes > 100
+
+    skip_params = Skip(if_in_pr=skip_pr_ge100)
+
 
 class ShapeTriangulationNonConvexSuite(_ShapeTriangulationBaseShapeCount):
     skip_params = Skip(
@@ -318,10 +326,10 @@ class ShapeTriangulationNonConvexSuite(_ShapeTriangulationBaseShapeCount):
         always=lambda n_shapes,
         n_points,
         shape_type,
-        compiled_triangulation: n_shapes == 5000
-        and n_points == 128
+        compiled_triangulation: n_points == 128
         and shape_type == 'polygon'
-        and not compiled_triangulation
+        and not compiled_triangulation,
+        if_in_pr=_ShapeTriangulationBaseShapeCount.skip_pr_ge100,
     )
 
     def setup(self, n_shapes, n_points, _shape_type, compiled_triangulation):
@@ -389,10 +397,11 @@ class ShapeTriangulationStarIntersectionSuite(
         )
         or (
             n_shapes == 100
-            and n_points == 33
+            and n_points in {33, 15}
             and shape_type == 'polygon'
             and not compiled_triangulation
         ),
+        if_in_pr=_ShapeTriangulationBaseShapeCount.skip_pr_ge100,
     )
 
     def setup(self, n_shapes, n_points, _shape_type, compiled_triangulation):
