@@ -638,7 +638,7 @@ included as well, but this information in reports or any info collected about ha
 X.509 standard encryption information. They also can be used to digitally sign files and macros to verify the integrity and origin of the file contents. The
 software retrieves certificates and updates certificate revocation lists using the Internet, when available.
                 • Windows Application Certification Kit. To ensure you have the latest certification tests, when launched this software periodically checks a
-Windows Application Certification Kit file on download.microsft.com to see if an update is available.  If an update is found, you are prompted and provided a
+Windows Application Certification Kit file on download.microsoft.com to see if an update is available.  If an update is found, you are prompted and provided a
 link to a web site where you can download the update. You may use the Windows Application Certification Kit solely to test your programs before you submit
 them for a potential Microsoft Windows Certification and for inclusion on the Microsoft Windows Store. The results you receive are for informational purposes
 only. Microsoft has no obligation to either (i) provide you with a Windows Certification for your programs and/or ii) include your program in the Microsoft

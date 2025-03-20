@@ -76,7 +76,7 @@ ActionSequence = Sequence[tuple[str, Callable[[], None]]]
 
 
 class Notification(Event):
-    """A Notifcation event.  Usually created by :class:`NotificationManager`.
+    """A Notification event.  Usually created by :class:`NotificationManager`.
 
     Parameters
     ----------
