@@ -387,7 +387,7 @@ def test_create_layer_controls_qslider(
             captured = capsys.readouterr()
             assert not captured.out
             assert not captured.err
-        if getattr(qslider, '_valuesChanged', None):
+        if isinstance(qslider, QRangeSlider):
             assert qslider.value()[0] == qslider.minimum()
         else:
             assert qslider.value() == qslider.maximum()
