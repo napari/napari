@@ -63,7 +63,9 @@ from napari.utils.migrations import _DeprecatingDict
 from napari.utils.misc import StringEnum
 from napari.utils.mouse_bindings import MousemapProvider
 from napari.utils.naming import magic_name
-from napari.utils.status_messages import generate_layer_coords_status
+from napari.utils.status_messages import (
+    generate_layer_status_strings,
+)
 from napari.utils.transforms import Affine, CompositeAffine, TransformChain
 from napari.utils.translations import trans
 
@@ -2177,7 +2179,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         view_direction: npt.ArrayLike | None = None,
         dims_displayed: list[int] | None = None,
         world: bool = False,
-    ) -> dict:
+        value: Any | None = None,
+    ) -> dict[str, str]:
         """
         Status message information of the data at a coordinate position.
 
@@ -2194,12 +2197,16 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         world : bool
             If True the position is taken to be in world coordinates
             and converted into data coordinates. False by default.
+        value : Any
+            Pre-computed value. In some cases,
 
         Returns
         -------
-        source_info : dict
+        status_dict : dict
             Dictionary containing a information that can be used as a status update.
         """
+        status_dict = self._get_source_info().copy()
+
         if position is not None:
             position = np.asarray(position)
             value = self.get_value(
@@ -2208,24 +2215,23 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 dims_displayed=dims_displayed,
                 world=world,
             )
-        else:
-            value = None
-
-        source_info = self._get_source_info()
-        # use self._translate_grid to adjust layer origin in grid mode
-        if position is not None:
-            source_info['coordinates'] = generate_layer_coords_status(
+            coords_str, value_str = generate_layer_status_strings(
                 # position may be higher-dimensional due to other
                 # layers in the viewer, but self._translate_grid already
-                # has the correct dimensionality
+                # has the correct dimensionality. We subtract translate_grid
+                # so that the coordinates are valid for the layer, regardless
+                # of grid display.
                 position[-self.ndim :] - self._translate_grid,
                 value,
             )
         else:
-            source_info['coordinates'] = generate_layer_coords_status(
-                position - self._translate_grid, value
-            )
-        return source_info
+            coords_str, value_str = '', ''
+
+        status_dict['coordinates'] = ': '.join((coords_str, value_str))
+        status_dict['coords'] = coords_str
+        status_dict['value'] = value_str
+
+        return status_dict
 
     def _get_tooltip_text(
         self,

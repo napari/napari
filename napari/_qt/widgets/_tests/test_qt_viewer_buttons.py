@@ -7,6 +7,11 @@ from qtpy.QtWidgets import QApplication
 from napari._app_model._app import get_app_model
 from napari._qt.dialogs.qt_modal import QtPopup
 from napari._qt.widgets.qt_viewer_buttons import QtViewerButtons
+from napari.components.camera import (
+    DepthAxisOrientation,
+    HorizontalAxisOrientation,
+    VerticalAxisOrientation,
+)
 from napari.components.viewer_model import ViewerModel
 from napari.viewer import Viewer
 
@@ -112,6 +117,26 @@ def test_ndisplay_button_popup(qt_viewer_buttons, qtbot):
             perspective_popup = widget
     assert perspective_popup
 
+    # check camera orientation combo changes affect viewer camera orientation
+    assert viewer_buttons.vertical_combo
+    assert (
+        viewer_buttons.vertical_combo.currentEnum()
+        == viewer.camera.orientation[1]
+    )
+    assert viewer_buttons.horizontal_combo
+    assert (
+        viewer_buttons.horizontal_combo.currentEnum()
+        == viewer.camera.orientation[2]
+    )
+    viewer_buttons.vertical_combo.setCurrentEnum(VerticalAxisOrientation.UP)
+    viewer_buttons.horizontal_combo.setCurrentEnum(
+        HorizontalAxisOrientation.LEFT
+    )
+    assert viewer.camera.orientation[1].value == 'up'
+    assert viewer.camera.orientation[2].value == 'left'
+    assert viewer.camera.orientation2d[0].value == 'up'
+    assert viewer.camera.orientation2d[1].value == 'left'
+
     # check zoom slider change affects viewer camera zoom
     assert viewer_buttons.zoom
     viewer_buttons.zoom.setValue(3)
@@ -127,6 +152,41 @@ def test_ndisplay_button_popup(qt_viewer_buttons, qtbot):
         if isinstance(widget, QtPopup):
             perspective_popup = widget
     assert perspective_popup
+
+    # check camera orientation combo changes affect viewer camera orientation
+    assert viewer_buttons.depth_combo
+    assert (
+        viewer_buttons.depth_combo.currentEnum()
+        == viewer.camera.orientation[0]
+    )
+    assert viewer_buttons.vertical_combo
+    assert (
+        viewer_buttons.vertical_combo.currentEnum()
+        == viewer.camera.orientation[1]
+    )
+    assert viewer_buttons.horizontal_combo
+    assert (
+        viewer_buttons.horizontal_combo.currentEnum()
+        == viewer.camera.orientation[2]
+    )
+    # check the values set by testing 2D orientation popup are inherited
+    assert (
+        viewer_buttons.vertical_combo.currentEnum()
+        == VerticalAxisOrientation.UP
+    )
+    assert (
+        viewer_buttons.horizontal_combo.currentEnum()
+        == HorizontalAxisOrientation.LEFT
+    )
+
+    viewer_buttons.depth_combo.setCurrentEnum(DepthAxisOrientation.AWAY)
+    viewer_buttons.vertical_combo.setCurrentEnum(VerticalAxisOrientation.DOWN)
+    viewer_buttons.horizontal_combo.setCurrentEnum(
+        HorizontalAxisOrientation.RIGHT
+    )
+    assert viewer.camera.orientation[0].value == 'away'
+    assert viewer.camera.orientation[1].value == 'down'
+    assert viewer.camera.orientation[2].value == 'right'
 
     # check perspective slider change affects viewer camera perspective
     assert viewer_buttons.perspective
