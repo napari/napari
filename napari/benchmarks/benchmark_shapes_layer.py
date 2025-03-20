@@ -315,6 +315,7 @@ class _ShapeTriangulationBaseShapeCount(_ShapeTriangulationBase):
     def skip_pr_ge100(
         n_shapes, _n_points, _shape_type, _compiled_triangulation
     ):
+        """Skip, to speedup on PR CI for performance reasons."""
         return n_shapes > 100
 
     skip_params = Skip(if_in_pr=skip_pr_ge100)
@@ -330,6 +331,16 @@ class ShapeTriangulationNonConvexSuite(_ShapeTriangulationBaseShapeCount):
         and shape_type == 'polygon'
         and not compiled_triangulation,
         if_in_pr=_ShapeTriangulationBaseShapeCount.skip_pr_ge100,
+        # to slow (40 sec)
+        if_on_ci=lambda n_shapes,
+        n_points,
+        shape_type,
+        compiled_triangulation: (
+            n_shapes == 5000
+            and n_points == 32
+            and shape_type == 'polygon'
+            and not compiled_triangulation
+        ),
     )
 
     def setup(self, n_shapes, n_points, _shape_type, compiled_triangulation):
@@ -442,10 +453,16 @@ class ShapeTriangulationHolesSuite(_ShapeTriangulationBaseShapeCount):
         (True, False),
     ]
     skip_params = Skip(
-        if_in_pr=lambda n_shapes,
+        if_in_pr=_ShapeTriangulationBaseShapeCount.skip_pr_ge100,
+        if_on_ci=lambda n_shapes,
         n_points,
         shape_type,
-        compiled_triangulation: n_shapes > 100
+        compiled_triangulation: (
+            n_shapes > 100
+            and n_points > 24
+            and shape_type == 'polygon'
+            and not compiled_triangulation
+        ),
     )
 
     def setup(self, n_shapes, n_points, _shape_type, compiled_triangulation):
