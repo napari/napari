@@ -757,31 +757,43 @@ def _normalize_vertices_and_edges(
     # Now, we make sure the vertices are unique (repeated vertices cause
     # problems in spatial algorithms, and those problems can manifest as
     # segfaults if said algorithms are implemented in C-like languages.)
-    visited = set()
+    vertex_to_idx = {}
     new_vertices = []
-    inv = []
-    for i, vertex in enumerate(vertices):
-        if tuple(vertex) not in visited:
-            visited.add(tuple(vertex))
+    edges = set()
+    prev_idx = 0
+    i = 0
+    for vertex in vertices:
+        vertex_t = tuple(vertex)
+        current_idx = vertex_to_idx.setdefault(vertex_t, i)
+        if current_idx == i:
             new_vertices.append(vertex)
-            inv.append(i)
+            i += 1
 
-    inv = np.array(inv, dtype=np.intp)
-    new_vertices = np.array(new_vertices, dtype=np.float32)
-    # new_vertices, inv = np.unique(vertices, axis=0, return_inverse=True)
+        if prev_idx < current_idx:
+            edge = (prev_idx, current_idx)
+        else:
+            edge = (current_idx, prev_idx)
+        if edge in edges:
+            edges.remove(edge)
+        else:
+            edges.add(edge)
+        prev_idx = current_idx
 
-    # Then, express the edges in terms of the unique nodes
-    edges_unique_nodes = inv[edges_raw]
+    if close:
+        vertex_t = tuple(vertices[-1])
+        idx = vertex_to_idx[vertex_t]
+        edge = (0, idx)
+        if edge in edges:
+            edges.remove(edge)
+        else:
+            edges.add(edge)
 
-    # Finally, make sure that edges are not repeated. In the case of polygons
-    # with holes, there's typically an edge going from the outer polygon to
-    # the hole, and back, and those edges might not be planar.
-    # This step counts repeated edges...
-    edges, ct = np.unique(
-        np.sort(edges_unique_nodes, axis=1), axis=0, return_counts=True
-    )
-    # and finally, we return only edges that don't repeat:
-    return new_vertices, edges[ct % 2 == 1]
+    edges.remove((0, 0))
+
+    new_vertices_array = np.array(new_vertices, dtype=np.float32)
+    edges_array = np.array(list(edges), dtype=np.uint32)
+    assert np.max(edges_array) < len(new_vertices_array)
+    return new_vertices_array, edges_array
 
 
 def _cull_triangles_not_in_poly(vertices, triangles, poly):
