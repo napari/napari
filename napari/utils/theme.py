@@ -5,7 +5,7 @@ import re
 import sys
 from ast import literal_eval
 from contextlib import suppress
-from typing import Any
+from typing import Union
 
 import npe2
 
@@ -105,7 +105,7 @@ class Theme(EventedModel):
         )
         return value
 
-    def to_rgb_dict(self) -> dict[str, Any]:
+    def to_rgb_dict(self) -> dict[str]:
         """
         This differs from baseclass `dict()` by converting colors to rgb.
         """
@@ -134,7 +134,7 @@ def increase(font_size: str, pt: int) -> str:
     return f'{int(font_size[:-2]) + int(pt)}pt'
 
 
-def _parse_color_as_rgb(color: str | Color) -> tuple | Any:
+def _parse_color_as_rgb(color: Union[str | Color]) -> tuple[int, int, int]:
     if isinstance(color, str):
         if color.startswith('rgb('):
             return literal_eval(color.lstrip('rgb(').rstrip(')'))
