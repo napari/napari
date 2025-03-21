@@ -5,7 +5,7 @@ import re
 import sys
 from ast import literal_eval
 from contextlib import suppress
-from typing import Union
+from typing import Any, Union
 
 import npe2
 
@@ -105,7 +105,7 @@ class Theme(EventedModel):
         )
         return value
 
-    def to_rgb_dict(self) -> dict[str]:
+    def to_rgb_dict(self) -> dict[str, Any]:
         """
         This differs from baseclass `dict()` by converting colors to rgb.
         """
