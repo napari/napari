@@ -296,17 +296,6 @@ class QtViewer(QSplitter):
         )
         return self.canvas.camera
 
-    @property
-    def chunk_receiver(self) -> None:
-        warnings.warn(
-            trans._(
-                'QtViewer.chunk_receiver is deprecated in version 0.5 and will be removed in a later version. '
-                'More generally the old approach to async loading was removed in version 0.5 so this value is always None. '
-                'If you need to specifically use the old approach, continue to use the latest 0.4 release.'
-            ),
-            DeprecationWarning,
-        )
-
     @staticmethod
     def _update_dask_cache_settings(
         dask_setting: DaskSettings | Event = None,
