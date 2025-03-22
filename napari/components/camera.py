@@ -62,7 +62,6 @@ class Camera(EventedModel):
         If the camera interactive panning with the mouse is enabled or not.
     mouse_zoom : bool
         If the camera interactive zooming with the mouse is enabled or not.
-        Camera interactive zooming with the mouse was removed in napari 0.6.0
     """
 
     # fields
