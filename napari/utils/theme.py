@@ -5,7 +5,7 @@ import re
 import sys
 from ast import literal_eval
 from contextlib import suppress
-from typing import Any, Union
+from typing import Any
 
 import npe2
 
@@ -134,7 +134,7 @@ def increase(font_size: str, pt: int) -> str:
     return f'{int(font_size[:-2]) + int(pt)}pt'
 
 
-def _parse_color_as_rgb(color: Union[str | Color]) -> tuple[int, int, int]:
+def _parse_color_as_rgb(color: str | Color) -> tuple[int, int, int]:
     if isinstance(color, str):
         if color.startswith('rgb('):
             return literal_eval(color.lstrip('rgb(').rstrip(')'))
