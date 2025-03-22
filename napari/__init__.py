@@ -29,7 +29,7 @@ _proto_all_ = [
 ]
 
 _submod_attrs = {
-    '_event_loop': ['gui_qt', 'run'],
+    '_event_loop': ['run'],
     'plugins.io': ['save_layers'],
     'utils': ['sys_info'],
     'utils.notifications': ['notification_manager'],
