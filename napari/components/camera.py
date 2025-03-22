@@ -60,8 +60,10 @@ class Camera(EventedModel):
         Perspective (aka "field of view" in vispy) of the camera (if 3D).
     mouse_pan : bool
         If the camera interactive panning with the mouse is enabled or not.
+        Camera interactive panning with the mouse was removed in napari 0.6.0
     mouse_zoom : bool
         If the camera interactive zooming with the mouse is enabled or not.
+        Camera interactive zooming with the mouse was removed in napari 0.6.0
     """
 
     # fields
