@@ -30,7 +30,7 @@ class NapariApplication(Application):
 
     @classmethod
     def get_app_model(cls, app_name: str = APP_NAME) -> NapariApplication:
-        return Application.get_qapp(app_name) or cls()  # type: ignore[return-value]
+        return cls()  # type: ignore[return-value]
 
 
 @lru_cache(maxsize=1)
