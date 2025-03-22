@@ -370,7 +370,14 @@ class ShapeTriangulationIntersectionSuite(_ShapeTriangulationBaseShapeCount):
         if_on_ci=lambda n_shapes,
         n_points,
         shape_type,
-        compiled_triangulation: not compiled_triangulation and n_shapes == 5000
+        compiled_triangulation: not compiled_triangulation
+        and n_shapes == 5000,
+        always=lambda n_shapes,
+        n_points,
+        shape_type,
+        compiled_triangulation: not compiled_triangulation
+        and n_shapes == 5000
+        and n_points == 33,
     )
 
     def setup(self, n_shapes, n_points, _shape_type, compiled_triangulation):
