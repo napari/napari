@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 import sys
-from contextlib import contextmanager
 from typing import TYPE_CHECKING, cast
 from warnings import warn
 
@@ -304,53 +303,6 @@ def quit_app():
         monitor.stop()
 
 
-@contextmanager
-def gui_qt(*, startup_logo=False, gui_exceptions=False, force=False):
-    """Start a Qt event loop in which to run the application.
-
-    NOTE: This context manager is deprecated!. Prefer using :func:`napari.run`.
-
-    Parameters
-    ----------
-    startup_logo : bool, optional
-        Show a splash screen with the napari logo during startup.
-    gui_exceptions : bool, optional
-        Whether to show uncaught exceptions in the GUI, by default they will be
-        shown in the console that launched the event loop.
-    force : bool, optional
-        Force the application event_loop to start, even if there are no top
-        level widgets to show.
-
-    Notes
-    -----
-    This context manager is not needed if running napari within an interactive
-    IPython session. In this case, use the ``%gui qt`` magic command, or start
-    IPython with the Qt GUI event loop enabled by default by using
-    ``ipython --gui=qt``.
-    """
-    warn(
-        trans._(
-            "\nThe 'gui_qt()' context manager is deprecated.\nIf you are running napari from a script, please use 'napari.run()' as follows:\n\n    import napari\n\n    viewer = napari.Viewer()  # no prior setup needed\n    # other code using the viewer...\n    napari.run()\n\nIn IPython or Jupyter, 'napari.run()' is not necessary. napari will automatically\nstart an interactive event loop for you: \n\n    import napari\n    viewer = napari.Viewer()  # that's it!\n",
-            deferred=True,
-        ),
-        FutureWarning,
-        stacklevel=2,
-    )
-
-    app = get_app()
-    splash = None
-    if startup_logo and app.applicationName() == 'napari':
-        from napari._qt.widgets.qt_splash_screen import NapariSplashScreen
-
-        splash = NapariSplashScreen()
-        splash.close()
-    try:
-        yield app
-    except Exception:  # noqa: BLE001
-        notification_manager.receive_error(*sys.exc_info())
-    run(force=force, gui_exceptions=gui_exceptions, _func_name='gui_qt')
-
-
 def _ipython_has_eventloop() -> bool:
     """Return True if IPython %gui qt is active.
 
@@ -416,7 +368,7 @@ def run(
         has at least ``max_loop_level`` event loops running.  By default, 1.
     _func_name : str, optional
         name of calling function, by default 'run'.  This is only here to
-        provide functions like `gui_qt` a way to inject their name into the
+        provide functions like a way to inject their name into the
         warning message.
 
     Raises
