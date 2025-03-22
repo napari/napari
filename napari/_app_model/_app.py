@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from warnings import warn
 
 from app_model import Application
 
@@ -9,7 +8,6 @@ from napari._app_model.actions._layerlist_context_actions import (
     LAYERLIST_CONTEXT_ACTIONS,
     LAYERLIST_CONTEXT_SUBMENUS,
 )
-from napari.utils.translations import trans
 
 APP_NAME = 'napari'
 
@@ -32,7 +30,7 @@ class NapariApplication(Application):
 
     @classmethod
     def get_app_model(cls, app_name: str = APP_NAME) -> NapariApplication:
-        return Application.get_app(app_name) or cls()  # type: ignore[return-value]
+        return Application.get_qapp(app_name) or cls()  # type: ignore[return-value]
 
 
 @lru_cache(maxsize=1)
@@ -56,21 +54,6 @@ def _napari_names() -> dict[str, object]:
         **_public_types(layers),
         **_public_types(viewer),
     }
-
-
-# TODO: Remove in 0.6.0
-def get_app() -> NapariApplication:
-    """Get the Napari Application singleton. Now deprecated, use `get_app_model`."""
-    warn(
-        trans._(
-            '`NapariApplication` instance access through `get_app` is deprecated and will be removed in 0.6.0.\n'
-            'Please use `get_app_model` instead.\n',
-            deferred=True,
-        ),
-        category=FutureWarning,
-        stacklevel=2,
-    )
-    return get_app_model()
 
 
 def get_app_model() -> NapariApplication:

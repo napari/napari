@@ -7,21 +7,9 @@ from qtpy.QtWidgets import QAction, QShortcut
 
 from napari._qt.qt_event_loop import (
     _ipython_has_eventloop,
-    get_app,
-    get_qapp,
     run,
     set_app_id,
 )
-
-
-def test_qapp(qapp):
-    qapp = get_qapp()
-    with pytest.warns(
-        FutureWarning,
-        match='`QApplication` instance access through `get_app` is deprecated and will be removed in 0.6.0.\nPlease use `get_qapp` instead.\n',
-    ):
-        deprecated_qapp = get_app()
-    assert qapp == deprecated_qapp
 
 
 @pytest.mark.skipif(os.name != 'nt', reason='Windows specific')
