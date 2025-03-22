@@ -779,9 +779,9 @@ def normalize_vertices_and_edges(
     # Now, we make sure the vertices are unique (repeated vertices cause
     # problems in spatial algorithms, and those problems can manifest as
     # segfaults if said algorithms are implemented in C-like languages.)
-    vertex_to_idx = {}
+    vertex_to_idx: dict[tuple[float, float], int] = {}
     new_vertices = []
-    edges = set()
+    edges: set[tuple[int, int]] = set()
     prev_idx = 0
     i = 0
     for vertex in vertices:
@@ -817,5 +817,5 @@ def normalize_vertices_and_edges(
     new_vertices_array = np.empty((len(new_vertices), 2), dtype=np.float32)
     for i, vertex in enumerate(new_vertices):
         new_vertices_array[i] = vertex
-    edges_array = np.array(list(edges), dtype=np.uint32)
+    edges_array = np.array(list(edges), dtype=np.int64)
     return new_vertices_array, edges_array
