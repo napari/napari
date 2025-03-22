@@ -10,7 +10,6 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from napari.utils.migrations import rename_argument
 from napari.utils.progress import cancelable_progress, progress
 from napari.utils.translations import trans
 
@@ -48,18 +47,6 @@ class QtLabeledProgressBar(QWidget):
 
         self.setLayout(base_layout)
 
-    @rename_argument(
-        from_name='min',
-        to_name='min_val',
-        version='0.6.0',
-        since_version='0.4.18',
-    )
-    @rename_argument(
-        from_name='max',
-        to_name='max_val',
-        version='0.6.0',
-        since_version='0.4.18',
-    )
     def setRange(self, min_val, max_val):
         self.qt_progress_bar.setRange(min_val, max_val)
 
