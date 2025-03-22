@@ -3,7 +3,7 @@ from __future__ import annotations
 import itertools
 import tempfile
 import typing
-from typing import TYPE_CHECKING, Literal, overload
+from typing import TYPE_CHECKING, overload
 
 import numpy as np
 from scipy import sparse
@@ -696,106 +696,6 @@ def triangulate_ellipse(
     return vertices, triangles
 
 
-def _normalize_vertices_and_edges(
-    vertices: CoordinateArray2D, close: bool = False
-) -> tuple[
-    CoordinateArray2D,
-    np.ndarray[tuple[int, Literal[2]], np.dtype[np.int64]],
-]:
-    """Get a list of edges that must be in triangulation for a path or polygon.
-
-    This function ensures that:
-
-    - no nodes are repeated, as this can cause problems with triangulation
-      algorithms.
-    - edges that appear twice are discarded. This allows representation of
-      polygons with holes in them.
-
-    Parameters
-    ----------
-    vertices: np.ndarray[np.floating], shape (N, 2)
-        The 2D coordinates of the polygon's vertices. They are expected to be
-        in the order in which they appear in the polygon: that is, vertices
-        that follow each other are expected to be connected to each other. The
-        exception is if the same edge is visited twice (in any direction): such
-        edges are removed.
-
-        Holes are expected to be represented by a polygon embedded within the
-        larger polygon but winding in the opposite direction.
-
-    close: bool
-        Whether to close the polygon or treat it as a path. Note: this argument
-        has no effect if the last vertex is equal to the first one — then the
-        closing is explicit.
-
-    Returns
-    -------
-    new_vertices: np.ndarray[np.floating], shape (M, 2)
-        Vertices with duplicate nodes removed.
-    edges: np.ndarray[np.intp], shape (P, 2)
-        List of edges in the polygon, expressed as an array of pairs of vertex
-        indices. This is usually [(0, 1), (1, 2), ... (N-1, 0)], but edges
-        that are visited twice are removed.
-    """
-    if tuple(vertices[0]) == tuple(vertices[-1]):  # closed polygon
-        vertices = vertices[:-1]  # make closing implicit
-        close = True
-    len_data = len(vertices)
-
-    # First, we connect every vertex to its following neighbour,
-    # ignoring the possibility of repeated vertices
-    edges_raw = np.empty((len_data, 2), dtype=np.uint32)
-    edges_raw[:, 0] = np.arange(len_data)
-    edges_raw[:, 1] = np.arange(1, len_data + 1)
-
-    if close:
-        # connect last with first vertex
-        edges_raw[-1, 1] = 0
-    else:
-        # final vertex is not connected to anything
-        edges_raw = edges_raw[:-1]
-
-    # Now, we make sure the vertices are unique (repeated vertices cause
-    # problems in spatial algorithms, and those problems can manifest as
-    # segfaults if said algorithms are implemented in C-like languages.)
-    vertex_to_idx = {}
-    new_vertices = []
-    edges = set()
-    prev_idx = 0
-    i = 0
-    for vertex in vertices:
-        vertex_t = tuple(vertex)
-        current_idx = vertex_to_idx.setdefault(vertex_t, i)
-        if current_idx == i:
-            new_vertices.append(vertex)
-            i += 1
-
-        if prev_idx < current_idx:
-            edge = (prev_idx, current_idx)
-        else:
-            edge = (current_idx, prev_idx)
-        if edge in edges:
-            edges.remove(edge)
-        else:
-            edges.add(edge)
-        prev_idx = current_idx
-
-    if close:
-        vertex_t = tuple(vertices[-1])
-        idx = vertex_to_idx[vertex_t]
-        edge = (0, idx)
-        if edge in edges:
-            edges.remove(edge)
-        else:
-            edges.add(edge)
-
-    edges.remove((0, 0))
-
-    new_vertices_array = np.array(new_vertices, dtype=np.float32)
-    edges_array = np.array(list(edges), dtype=np.uint32)
-    return new_vertices_array, edges_array
-
-
 def _cull_triangles_not_in_poly(vertices, triangles, poly):
     """Remove triangles that are not inside the polygon.
 
@@ -985,7 +885,7 @@ def triangulate_face(
     if _is_convex(polygon_vertices):
         return _fan_triangulation(polygon_vertices)
 
-    raw_vertices, edges = _normalize_vertices_and_edges(
+    raw_vertices, edges = normalize_vertices_and_edges(
         polygon_vertices, close=True
     )
     try:
@@ -1158,7 +1058,7 @@ def _remove_internal_edges(path, keep_holes=True):
     the connected components among the remaining edges, and removes all
     components except the one with the largest extent.
     """
-    v, e = _normalize_vertices_and_edges(path, close=True)
+    v, e = normalize_vertices_and_edges(path, close=True)
     n_edge = len(e)
     if n_edge == 0:
         # if there's not enough edges in the path, return fast.

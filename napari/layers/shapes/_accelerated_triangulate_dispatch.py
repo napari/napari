@@ -349,7 +349,7 @@ def reconstruct_polygon_edges_py(
     return polygons
 
 
-def _normalize_vertices_and_edges_py(
+def normalize_vertices_and_edges_py(
     vertices: CoordinateArray2D, close: bool = False
 ) -> tuple[
     CoordinateArray2D,
@@ -393,20 +393,6 @@ def _normalize_vertices_and_edges_py(
     if tuple(vertices[0]) == tuple(vertices[-1]):  # closed polygon
         vertices = vertices[:-1]  # make closing implicit
         close = True
-    len_data = len(vertices)
-
-    # First, we connect every vertex to its following neighbour,
-    # ignoring the possibility of repeated vertices
-    edges_raw = np.empty((len_data, 2), dtype=np.uint32)
-    edges_raw[:, 0] = np.arange(len_data)
-    edges_raw[:, 1] = np.arange(1, len_data + 1)
-
-    if close:
-        # connect last with first vertex
-        edges_raw[-1, 1] = 0
-    else:
-        # final vertex is not connected to anything
-        edges_raw = edges_raw[:-1]
 
     # Now, we make sure the vertices are unique (repeated vertices cause
     # problems in spatial algorithms, and those problems can manifest as
@@ -496,7 +482,7 @@ except ImportError:
     remove_path_duplicates = remove_path_duplicates_np
     create_box_from_bounding = create_box_from_bounding_py
     reconstruct_polygon_edges = reconstruct_polygon_edges_py
-    normalize_vertices_and_edges = _normalize_vertices_and_edges_py
+    normalize_vertices_and_edges = normalize_vertices_and_edges_py
 
     def warmup_numba_cache() -> None:
         # no numba, nothing to warm up

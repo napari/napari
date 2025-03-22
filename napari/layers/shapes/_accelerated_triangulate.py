@@ -776,21 +776,6 @@ def normalize_vertices_and_edges(
     ):  # closed polygon
         vertices = vertices[:-1]  # make closing implicit
         close = True
-    len_data = len(vertices)
-
-    # First, we connect every vertex to its following neighbour,
-    # ignoring the possibility of repeated vertices
-    edges_raw = np.empty((len_data, 2), dtype=np.uint32)
-    edges_raw[:, 0] = np.arange(len_data)
-    edges_raw[:, 1] = np.arange(1, len_data + 1)
-
-    if close:
-        # connect last with first vertex
-        edges_raw[-1, 1] = 0
-    else:
-        # final vertex is not connected to anything
-        edges_raw = edges_raw[:-1]
-
     # Now, we make sure the vertices are unique (repeated vertices cause
     # problems in spatial algorithms, and those problems can manifest as
     # segfaults if said algorithms are implemented in C-like languages.)
