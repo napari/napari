@@ -148,6 +148,15 @@ def get_qapp(
     app = QApplication.instance()
     if app:
         set_values.discard('ipy_interactive')
+        if set_values:
+            warn(
+                trans._(
+                    "QApplication already existed, these arguments to to 'get_qapp' were ignored: {args}",
+                    deferred=True,
+                    args=set_values,
+                ),
+                stacklevel=2,
+            )
         if perf_config and perf_config.trace_qt_events:
             warn(
                 trans._(
