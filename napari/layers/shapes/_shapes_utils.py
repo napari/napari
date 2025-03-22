@@ -14,6 +14,7 @@ from vispy.visuals.tube import _frenet_frames
 
 from napari.layers.shapes._accelerated_triangulate_dispatch import (
     generate_2D_edge_meshes,
+    normalize_vertices_and_edges,
     reconstruct_polygon_edges,
 )
 from napari.layers.shapes.shape_types import (
@@ -792,7 +793,6 @@ def _normalize_vertices_and_edges(
 
     new_vertices_array = np.array(new_vertices, dtype=np.float32)
     edges_array = np.array(list(edges), dtype=np.uint32)
-    assert np.max(edges_array) < len(new_vertices_array)
     return new_vertices_array, edges_array
 
 
@@ -886,7 +886,7 @@ def triangulate_face_and_edges(
             face_triangulation[1],
         ), triangulate_edge(polygon_vertices, closed=True)
 
-    raw_vertices, edges = _normalize_vertices_and_edges(data2d, close=True)
+    raw_vertices, edges = normalize_vertices_and_edges(data2d, close=True)
 
     try:
         face_triangulation = _triangulate_face(
