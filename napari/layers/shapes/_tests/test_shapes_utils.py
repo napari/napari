@@ -7,8 +7,8 @@ from napari.layers.shapes._accelerated_triangulate_dispatch import (
 )
 from napari.layers.shapes._shapes_utils import (
     _is_convex,
-    _normalize_vertices_and_edges,
     get_default_shape_type,
+    normalize_vertices_and_edges,
     number_of_shapes,
     perpendicular_distance,
     rdp,
@@ -492,7 +492,7 @@ def test_normalize_vertices_and_edges():
             [2, 5],
         ]
     )
-    points, edges = _normalize_vertices_and_edges(poly_hole, close=True)
+    points, edges = normalize_vertices_and_edges(poly_hole, close=True)
     assert points.shape == (8, 2)
     assert edges.shape == (8, 2)
 
