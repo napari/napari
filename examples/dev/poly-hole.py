@@ -72,7 +72,7 @@ a = np.array(
 
 
 # First, check the utils code manually using matplotlib.
-v, e = _shapes_utils._normalize_vertices_and_edges(a, close=True)
+v, e = _shapes_utils.normalize_vertices_and_edges(a, close=True)
 res = triangulate({'vertices': v, 'segments': e}, opts='p')
 v2, t = res['vertices'], res['triangles']
 centers = np.mean(v2[t], axis=1)
