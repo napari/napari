@@ -6,8 +6,8 @@ from napari.layers.shapes._accelerated_triangulate_dispatch import (
     generate_2D_edge_meshes_py,
 )
 from napari.layers.shapes._shapes_utils import (
-    _is_convex,
     get_default_shape_type,
+    is_convex,
     normalize_vertices_and_edges,
     number_of_shapes,
     perpendicular_distance,
@@ -464,7 +464,7 @@ def test_is_convex_self_intersection(angle, reverse):
     p = pentagram(reverse)
     rot = rotation_matrix(angle)
     data = np.dot(p, rot)
-    assert not _is_convex(data)
+    assert not is_convex(data)
 
 
 @pytest.mark.parametrize('angle', ANGLES, ids=str)
@@ -474,7 +474,7 @@ def test_is_convex_regular_polygon(angle, n_vertex, reverse):
     poly = generate_regular_polygon(n_vertex, reverse=reverse)
     rot = rotation_matrix(angle)
     rotated_poly = np.dot(poly, rot)
-    assert _is_convex(rotated_poly)
+    assert is_convex(rotated_poly)
 
 
 def test_normalize_vertices_and_edges():

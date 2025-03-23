@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from enum import Enum
+from math import atan2, pi
 from typing import Literal, overload
 
 import numpy as np
@@ -14,6 +16,14 @@ from napari.layers.shapes.shape_types import (
     CoordinateArray3D,
     EdgeArray,
 )
+
+
+class Orientation(Enum):
+    """Orientation of a triangle."""
+
+    clockwise = -1
+    collinear = 0
+    anticlockwise = 1
 
 
 @njit(cache=True, inline='always')
@@ -307,12 +317,14 @@ def _normalize_triangle_orientation(
         p1 = centers[ti[0]] + offsets[ti[0]]
         p2 = centers[ti[1]] + offsets[ti[1]]
         p3 = centers[ti[2]] + offsets[ti[2]]
-        if _orientation(p1, p2, p3) < 0:
+        if _orientation(p1, p2, p3) == Orientation.clockwise:
             triangles[i] = [ti[2], ti[1], ti[0]]
 
 
 @njit(cache=True, inline='always')
-def _orientation(p1: np.ndarray, p2: np.ndarray, p3: np.ndarray) -> float:
+def _orientation(
+    p1: np.ndarray, p2: np.ndarray, p3: np.ndarray
+) -> Orientation:
     """Compute the orientation of three points.
 
     In terms of napari's preferred coordinate frame (axis 0, y, is pointing
@@ -329,11 +341,139 @@ def _orientation(p1: np.ndarray, p2: np.ndarray, p3: np.ndarray) -> float:
     float
         Positive if anti-clockwise, negative if clockwise, 0 if collinear.
     """
-    # fmt: off
-    return (
-        (p2[0] - p1[0]) * (p3[1] - p1[1]) - (p2[1] - p1[1]) * (p3[0] - p1[0])
+    val = (p2[0] - p1[0]) * (p3[1] - p1[1]) - (p2[1] - p1[1]) * (p3[0] - p1[0])
+    if val < 0:
+        return Orientation.clockwise
+    if val > 0:
+        return Orientation.anticlockwise
+    return Orientation.collinear
+
+
+@njit(cache=True, inline='always')
+def _are_polar_angles_monotonic(
+    vertices: CoordinateArray2D, centroid: np.ndarray
+) -> bool:
+    """Check if the polygon, that all angles have the same orientation
+    do not have self-intersection
+
+    Parameters
+    ----------
+    vertices: np.ndarray
+        Array of vertex coordinates with shape (N, 2)
+
+    Returns
+    -------
+    bool
+        True if the polygon is simple, False otherwise
+    """
+    start_angle = atan2(
+        vertices[0][1] - centroid[1], vertices[0][0] - centroid[0]
     )
-    # fmt: on
+    prev_angle = 0
+    for i in range(1, len(vertices)):
+        angle = (
+            atan2(vertices[i][1] - centroid[1], vertices[i][0] - centroid[0])
+            - start_angle
+        )
+        if angle < 0:
+            angle += 2 * pi
+        if angle < prev_angle:
+            return False
+        prev_angle = angle
+    return True
+
+
+@njit(cache=True, inline='always')
+def _centroid(vertices: CoordinateArray2D) -> np.ndarray:
+    """Calculate the centroid of a polygon.
+
+    Parameters
+    ----------
+    vertices : np.ndarray
+        Array of vertex coordinates with shape (N, 2)
+
+    Returns
+    -------
+    np.ndarray
+        The centroid of the polygon
+    """
+    vertices_sum = np.zeros(2, dtype=np.float32)
+    for i in range(len(vertices)):
+        vertices_sum[0] += vertices[i][0]
+        vertices_sum[1] += vertices[i][1]
+    return vertices_sum / len(vertices)
+
+
+@njit(cache=True, inline='always')
+def is_convex(vertices: CoordinateArray2D) -> bool:
+    """Check if a polygon is convex.
+
+    Parameters
+    ----------
+    vertices : np.ndarray
+        Array of vertex coordinates with shape (N, 2)
+
+    Returns
+    -------
+    bool
+        True if the polygon is convex, False otherwise
+    """
+    # A polygon is convex if all its internal angles are less than 180 degrees.
+    # This is equivalent to checking that the orientation of all consecutive
+    # triples of points is the same.
+    if len(vertices) < 3:
+        return False
+    if len(vertices) == 3:
+        return True
+    orientation_ = Orientation.collinear
+    idx = 0
+    while idx < vertices.shape[0] - 2:
+        p1 = vertices[idx]
+        p2 = vertices[idx + 1]
+        p3 = vertices[idx + 2]
+        idx += 1
+        triangle_orientation = _orientation(p1, p2, p3)
+        if triangle_orientation != Orientation.collinear:
+            orientation_ = triangle_orientation
+            break
+    if orientation_ == Orientation.collinear:
+        return False
+    while idx < vertices.shape[0] - 2:
+        p1 = vertices[idx]
+        p2 = vertices[idx + 1]
+        p3 = vertices[idx + 2]
+        idx += 1
+        triangle_orientation = _orientation(p1, p2, p3)
+        if (
+            triangle_orientation != Orientation.collinear
+            and triangle_orientation != orientation_
+        ):
+            return False
+
+    triangle_orientation = _orientation(
+        vertices[idx], vertices[idx + 1], vertices[0]
+    )
+    if (
+        triangle_orientation != Orientation.collinear
+        and triangle_orientation != orientation_
+    ):
+        return False
+
+    triangle_orientation = _orientation(
+        vertices[idx + 1], vertices[0], vertices[1]
+    )
+    if (
+        triangle_orientation != Orientation.collinear
+        and triangle_orientation != orientation_
+    ):
+        return False
+
+    centroid = _centroid(vertices)
+
+    if orientation_ == Orientation.anticlockwise:
+        return _are_polar_angles_monotonic(vertices, centroid)
+
+    return _are_polar_angles_monotonic(vertices[::-1], centroid)
 
 
 @njit(cache=True, inline='always')

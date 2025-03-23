@@ -435,6 +435,113 @@ def normalize_vertices_and_edges_py(
     return new_vertices_array, edges_array
 
 
+def _are_polar_angles_monotonic(poly: npt.NDArray, orientation_: int) -> bool:
+    """Check whether a polygon with same oriented angles between successive edges is simple.
+
+    A polygon is considered simple if its edges do not intersect themselves.
+    This is determined by checking whether the angles between successive
+    vertices, measured from the centroid, increase consistently around the
+    polygon in a counterclockwise (or clockwise) direction. If the angles
+    from one vertex to the next increase, the polygon is simple.
+
+    Parameters
+    ----------
+    poly: numpy array of floats, shape (N, 2)
+        polygon vertices, in order.
+    orientation_: int
+        The orientation of the polygon. A value of `1` indicates clockwise
+        and `-1` indicates counterclockwise orientation.
+
+    Returns
+    -------
+    bool:
+        if all angles are increasing return True, otherwise False
+    """
+    if poly.shape[0] < 3:
+        return False  # Not enough vertices to form a polygon
+    if orientation_ == 1:
+        poly = poly[::-1]
+    centroid = poly.mean(axis=0)
+    angles = np.arctan2(poly[:, 1] - centroid[1], poly[:, 0] - centroid[0])
+    # orig_angles = angles.copy()
+    shifted_angles = angles - angles[0]
+    shifted_angles[shifted_angles < 0] += 2 * np.pi
+    # check if angles are increasing
+    return bool(np.all(np.diff(shifted_angles) > 0))
+
+
+def orientation(p, q, r):
+    """Determines oritentation of ordered triplet (p, q, r)
+
+    Parameters
+    ----------
+    p : (2,) array
+        Array of first point of triplet
+    q : (2,) array
+        Array of second point of triplet
+    r : (2,) array
+        Array of third point of triplet
+
+    Returns
+    -------
+    val : int
+        One of (-1, 0, 1). 0 if p, q, r are collinear, 1 if clockwise, and -1
+        if counterclockwise.
+    """
+    val = (q[1] - p[1]) * (r[0] - q[0]) - (q[0] - p[0]) * (r[1] - q[1])
+    val = np.sign(val)
+
+    return val
+
+
+def _common_orientation(poly: npt.NDArray) -> int | None:
+    """Check whether a polygon has the same orientation for all its angles. and return the orientation.
+
+    Parameters
+    ----------
+    poly: numpy array of floats, shape (N, 3)
+        Polygon vertices, in order.
+
+    Returns
+    -------
+    int or None
+        if all angles have same orientation return it, otherwise None.
+        Possible values: -1 if all angles are counterclockwise, 0 if all angles are collinear, 1 if all angles are clockwise
+    """
+    if poly.shape[0] < 3:
+        return None
+    fst = poly[:-2]
+    snd = poly[1:-1]
+    thrd = poly[2:]
+    orn_set = np.unique(orientation(fst.T, snd.T, thrd.T))
+    if orn_set.size != 1:
+        return None
+    if (orn_set[0] == orientation(poly[-2], poly[-1], poly[0])) and (
+        orn_set[0] == orientation(poly[-1], poly[0], poly[1])
+    ):
+        return int(orn_set[0])
+    return None
+
+
+def is_convex_py(poly: npt.NDArray) -> bool:
+    """Check whether a polygon is convex.
+
+    Parameters
+    ----------
+    poly: numpy array of floats, shape (N, 3)
+        Polygon vertices, in order.
+
+    Returns
+    -------
+    bool
+        True if the given polygon is convex.
+    """
+    orientation_ = _common_orientation(poly)
+    if orientation_ is None or orientation_ == 0:
+        return False
+    return _are_polar_angles_monotonic(poly, orientation_)
+
+
 CACHE_WARMUP = False
 USE_COMPILED_BACKEND = False
 
@@ -450,6 +557,7 @@ try:
     from napari.layers.shapes._accelerated_triangulate import (
         create_box_from_bounding,
         generate_2D_edge_meshes,
+        is_convex,
         normalize_vertices_and_edges,
         reconstruct_polygon_edges,
         remove_path_duplicates,
@@ -483,6 +591,7 @@ except ImportError:
     create_box_from_bounding = create_box_from_bounding_py
     reconstruct_polygon_edges = reconstruct_polygon_edges_py
     normalize_vertices_and_edges = normalize_vertices_and_edges_py
+    is_convex = is_convex_py
 
     def warmup_numba_cache() -> None:
         # no numba, nothing to warm up
