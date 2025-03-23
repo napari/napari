@@ -611,7 +611,7 @@ class _QtMainWindow(QMainWindow):
             event.ignore()
             return
 
-        self.status_thread.terminate()
+        self.status_thread.close_terminate()
         self.status_thread.wait()
 
         if self._ev and self._ev.isRunning():
