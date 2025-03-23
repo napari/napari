@@ -2641,7 +2641,7 @@ def test_thick_slice():
 
 
 @pytest.mark.parametrize(
-    ('new_name', 'value'),
+    ('name', 'value'),
     [
         ('border_width', 0.9),
         ('border_width_is_relative', False),
@@ -2650,15 +2650,15 @@ def test_thick_slice():
         ('current_border_color', 'pink'),
     ],
 )
-def test_events_callback(new_name, value):
+def test_events_callback(name, value):
     data = np.array([[0, 0, 0], [10, 10, 10]])
     layer = Points(data)
-    new_name_callback = Mock()
-    getattr(layer.events, new_name).connect(new_name_callback)
+    name_callback = Mock()
+    getattr(layer.events, name).connect(name_callback)
 
-    setattr(layer, new_name, value)
+    setattr(layer, name, value)
 
-    new_name_callback.assert_called_once()
+    name_callback.assert_called_once()
 
 
 def test_changing_symbol():
