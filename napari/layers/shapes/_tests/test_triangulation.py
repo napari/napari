@@ -140,3 +140,20 @@ def test_create_box_from_bounding():
             [1, 1],
         ],
     )
+
+
+@pytest.mark.usefixtures('_disable_jit')
+def test_is_convex_self_intersection(self_intersecting_polygon):
+    assert not ac.is_convex(self_intersecting_polygon)
+
+
+@pytest.mark.usefixtures('_disable_jit')
+def test_is_convex_regular_polygon(regular_polygon):
+    assert ac.is_convex(regular_polygon)
+
+
+@pytest.mark.usefixtures('_disable_jit')
+def test_normalize_vertices_and_edges(poly_hole):
+    points, edges = ac.normalize_vertices_and_edges(poly_hole, close=True)
+    assert points.shape == (8, 2)
+    assert edges.shape == (8, 2)
