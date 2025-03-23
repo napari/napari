@@ -369,7 +369,7 @@ def _are_polar_angles_monotonic(
     start_angle = atan2(
         vertices[0][1] - centroid[1], vertices[0][0] - centroid[0]
     )
-    prev_angle = 0
+    prev_angle = 0.0
     for i in range(1, len(vertices)):
         angle = (
             atan2(vertices[i][1] - centroid[1], vertices[i][0] - centroid[0])

@@ -470,7 +470,7 @@ def _are_polar_angles_monotonic(poly: npt.NDArray, orientation_: int) -> bool:
     return bool(np.all(np.diff(shifted_angles) > 0))
 
 
-def orientation(p, q, r):
+def orientation(p: np.ndarray, q: np.ndarray, r: np.ndarray) -> np.ndarray:
     """Determines oritentation of ordered triplet (p, q, r)
 
     Parameters
