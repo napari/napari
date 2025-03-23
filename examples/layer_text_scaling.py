@@ -50,9 +50,5 @@ points_layer2 = viewer.add_points(
 for layer in viewer.layers:
     layer.scale = (3,3) # change to (1,1) to see how things look different
 
-points_layer.events.scale_factor.connect(lambda: print(f"Scale factor change: {points_layer.scale_factor}"))
-points_layer.events.scale_factor.connect(lambda: print(f"Scale factor change, zoom: {viewer.camera.zoom}"))
-viewer.camera.events.zoom.connect(lambda: print(f"Zoom change: {viewer.camera.zoom}"))
-
 if __name__ == '__main__':
     napari.run()
