@@ -19,7 +19,6 @@ def test_image_rendering(make_napari_viewer):
 
     assert layer.rendering == 'mip'
 
-    # Change the interpolation property
     assert layer.interpolation2d == 'nearest'
     assert layer.interpolation3d == 'linear'
 
