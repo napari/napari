@@ -391,7 +391,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         ----------
         margin : float in [0, 1)
             Margin as fraction of the canvas, showing blank space around the
-            data.
+            data. Default is 0.05 (5% of the canvas).
+        reset_camera_angle : bool
+            Reset the camera angle to the default value. Default is True.
         """
 
         extent = self._sliced_extent_world_augmented
@@ -447,7 +449,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if reset_camera_angle:
             self.camera.angles = (0, 0, 90)
 
-        else:
+        if self.dims.ndisplay == 3 and not reset_camera_angle:
             grid_extent = extent.copy()
             grid_extent[1] = (
                 extent[0] + np.multiply(scene_size, grid_size) + total_spacing
