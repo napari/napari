@@ -16,7 +16,9 @@ if TYPE_CHECKING:
     from napari._qt.qt_viewer import QtViewer
 
 
-def _provide_viewer(public_proxy: bool = True) -> viewer.Viewer | None:
+def _provide_viewer(
+    public_proxy: bool = True,
+) -> viewer.ViewerModel | viewer.Viewer | None:
     """Provide `PublicOnlyProxy` (allows internal napari access) of current viewer."""
     if current_viewer := viewer.current_viewer():
         if public_proxy:
