@@ -22,7 +22,7 @@ except ModuleNotFoundError:
         return {'vertices': tri.pts, 'triangles': tri.tris}
 
 import napari
-from napari.layers.shapes import _shapes_utils
+from napari.layers.shapes import _accelerated_triangulate_dispatch as atd
 
 
 def pltri(vertices, triangles, *, mask=None, ax=None):
@@ -72,7 +72,7 @@ a = np.array(
 
 
 # First, check the utils code manually using matplotlib.
-v, e = _shapes_utils.normalize_vertices_and_edges(a, close=True)
+v, e = atd.normalize_vertices_and_edges(a, close=True)
 res = triangulate({'vertices': v, 'segments': e}, opts='p')
 v2, t = res['vertices'], res['triangles']
 centers = np.mean(v2[t], axis=1)
