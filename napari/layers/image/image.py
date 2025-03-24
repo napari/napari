@@ -25,7 +25,6 @@ from napari.layers.utils.layer_utils import calc_data_range
 from napari.utils._dtype import get_dtype_limits, normalize_dtype
 from napari.utils.colormaps import ensure_colormap
 from napari.utils.colormaps.colormap_utils import _coerce_contrast_limits
-from napari.utils.migrations import rename_argument
 from napari.utils.translations import trans
 
 __all__ = ('Image',)
@@ -223,12 +222,6 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
 
     _projectionclass = ImageProjectionMode
 
-    @rename_argument(
-        from_name='interpolation',
-        to_name='interpolation2d',
-        version='0.6.0',
-        since_version='0.4.17',
-    )
     def __init__(
         self,
         data,
@@ -440,63 +433,6 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             self.reset_contrast_limits()
         self.events.data(value=self.data)
         self._reset_editable()
-
-    @property
-    def interpolation(self):
-        """Return current interpolation mode.
-
-        Selects a preset interpolation mode in vispy that determines how volume
-        is displayed.  Makes use of the two Texture2D interpolation methods and
-        the available interpolation methods defined in
-        vispy/gloo/glsl/misc/spatial_filters.frag
-
-        Options include:
-        'bessel', 'cubic', 'linear', 'blackman', 'catrom', 'gaussian',
-        'hamming', 'hanning', 'hermite', 'kaiser', 'lanczos', 'mitchell',
-        'nearest', 'spline16', 'spline36'
-
-        Returns
-        -------
-        str
-            The current interpolation mode
-        """
-        warnings.warn(
-            trans._(
-                'Interpolation attribute is deprecated since 0.4.17. Please use interpolation2d or interpolation3d',
-            ),
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        return str(
-            self._interpolation2d
-            if self._slice_input.ndisplay == 2
-            else self._interpolation3d
-        )
-
-    @interpolation.setter
-    def interpolation(self, interpolation):
-        """Set current interpolation mode."""
-        warnings.warn(
-            trans._(
-                'Interpolation setting is deprecated since 0.4.17. Please use interpolation2d or interpolation3d',
-            ),
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        if self._slice_input.ndisplay == 3:
-            self.interpolation3d = interpolation
-        else:
-            if interpolation == 'bilinear':
-                interpolation = 'linear'
-                warnings.warn(
-                    trans._(
-                        "'bilinear' is invalid for interpolation2d (introduced in napari 0.4.17). "
-                        "Please use 'linear' instead, and please set directly the 'interpolation2d' attribute'.",
-                    ),
-                    category=DeprecationWarning,
-                    stacklevel=2,
-                )
-            self.interpolation2d = interpolation
 
     @property
     def interpolation2d(self) -> InterpolationStr:
