@@ -29,10 +29,12 @@ except ImportError:
 
 
 class BackendType(Enum):
-    bermuda = auto()
-    numba = auto()
-    triangle = auto()
-    pure_python = auto()
+    bermuda = (
+        auto()
+    )  # data processing using PartSegCore, ready to switch to bermuda
+    triangle = auto()  # data preprocessing using numba, edge triangulation using numba, triangulation using triangle
+    numba = auto()  # data preprocessing and edge triangulation using numba, triangulation using vispy
+    pure_python = auto()  # data preprocessing, edge triangulation, and triangulation using python and vispy
 
     def __str__(self):
         return self.name
