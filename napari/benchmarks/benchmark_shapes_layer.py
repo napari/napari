@@ -29,10 +29,16 @@ except ImportError:
 
 
 class BackendType(Enum):
-    compiled = auto()
+    bermuda = auto()
     numba = auto()
     triangle = auto()
     pure_python = auto()
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return self.name
 
 
 backend_list = list(BackendType)
@@ -63,7 +69,7 @@ class _BackendSelection:
                 get_settings().experimental.compiled_triangulation
             )
             get_settings().experimental.compiled_triangulation = (
-                triangulation_backend == BackendType.compiled
+                triangulation_backend == BackendType.bermuda
             )
 
         from napari.layers.shapes import _shapes_utils
@@ -105,6 +111,10 @@ class _BackendSelection:
 
     def teardown(self, *_):
         self.revert_backend()
+
+
+def skip_above_100(n_shapes, *_):
+    return n_shapes > 100
 
 
 class Shapes2DSuite(_BackendSelection):
@@ -347,8 +357,10 @@ class _ShapeTriangulationBaseShapeCount(_ShapeTriangulationBase):
         ),
         (8, 32, 128),
         ('path', 'polygon'),
-        (BackendType.compiled, BackendType.numba),
+        (BackendType.bermuda, BackendType.numba),
     ]
+
+    skip_params = Skip(if_in_pr=skip_above_100)
 
 
 class ShapeTriangulationNonConvexSuite(_ShapeTriangulationBaseShapeCount):
@@ -360,7 +372,9 @@ class ShapeTriangulationNonConvexSuite(_ShapeTriangulationBaseShapeCount):
         compiled_triangulation: n_shapes == 5000
         and n_points == 128
         and shape_type == 'polygon'
-        and not compiled_triangulation
+        and compiled_triangulation
+        not in {BackendType.bermuda, BackendType.triangle},
+        if_in_pr=skip_above_100,
     )
 
     def setup(self, n_shapes, n_points, _shape_type, compiled_triangulation):
@@ -384,13 +398,15 @@ class ShapeTriangulationIntersectionSuite(_ShapeTriangulationBaseShapeCount):
         ),
         (7, 9, 15, 33),
         ('path', 'polygon'),
-        (BackendType.compiled, BackendType.numba),
+        (BackendType.bermuda, BackendType.numba),
     ]
     skip_params = Skip(
         if_on_ci=lambda n_shapes,
         n_points,
         shape_type,
-        compiled_triangulation: not compiled_triangulation and n_shapes == 5000
+        compiled_triangulation: not compiled_triangulation
+        and n_shapes == 5000,
+        if_in_pr=skip_above_100,
     )
 
     def setup(self, n_shapes, n_points, _shape_type, compiled_triangulation):
@@ -408,7 +424,7 @@ class ShapeTriangulationStarIntersectionSuite(
         ),
         (7, 9, 15, 33),
         ('path', 'polygon'),
-        (BackendType.compiled, BackendType.numba),
+        (BackendType.bermuda, BackendType.numba),
     ]
     skip_params = Skip(
         always=lambda n_shapes,
@@ -421,16 +437,16 @@ class ShapeTriangulationStarIntersectionSuite(
         n_points,
         shape_type,
         compiled_triangulation: (
-            # 7 and 9 points are too slow to run
-            n_shapes == 5000
-            and shape_type == 'polygon'
-            and not compiled_triangulation
-        )
-        or (
-            n_shapes == 100
-            and n_points == 33
-            and shape_type == 'polygon'
-            and not compiled_triangulation
+            (
+                # 7 and 9 points are too slow to run
+                n_shapes == 5000 and shape_type == 'polygon'
+            )
+            or (
+                (n_shapes == 100 and n_points == 33)
+                and shape_type == 'polygon'
+                and compiled_triangulation
+                not in {BackendType.bermuda, BackendType.triangle}
+            )
         ),
     )
 
@@ -447,14 +463,9 @@ class ShapeTriangulationHoleSuite(_ShapeTriangulationBaseShapeCount):
         ),
         (12, 48),
         ('path', 'polygon'),
-        (BackendType.compiled, BackendType.numba),
+        (BackendType.bermuda, BackendType.numba),
     ]
-    skip_params = Skip(
-        if_in_pr=lambda n_shapes,
-        n_points,
-        shape_type,
-        compiled_triangulation: n_shapes > 100
-    )
+    skip_params = Skip(if_in_pr=skip_above_100)
 
     def setup(self, n_shapes, n_points, _shape_type, compiled_triangulation):
         self.data = polygons_with_hole(n_shapes, n_points)
@@ -469,14 +480,9 @@ class ShapeTriangulationHolesSuite(_ShapeTriangulationBaseShapeCount):
         ),
         (24, 48),
         ('path', 'polygon'),
-        (BackendType.compiled, BackendType.numba),
+        (BackendType.bermuda, BackendType.numba),
     ]
-    skip_params = Skip(
-        if_in_pr=lambda n_shapes,
-        n_points,
-        shape_type,
-        compiled_triangulation: n_shapes > 100
-    )
+    skip_params = Skip(if_in_pr=skip_above_100)
 
     def setup(self, n_shapes, n_points, _shape_type, compiled_triangulation):
         self.data = polygons_with_hole(n_shapes, n_points)
@@ -491,14 +497,11 @@ class ShapeTriangulationMixed(_ShapeTriangulationBase):
             3_000,
         ),
         ('path', 'polygon'),
-        (BackendType.compiled, BackendType.numba),
+        (BackendType.bermuda, BackendType.numba),
     ]
 
     # the case of 128 points crashes the benchmark on call of PolygonData(vertices=data).triangulate()
-    skip_params = Skip(
-        if_in_pr=lambda n_shapes, shape_type, compiled_triangulation: n_shapes
-        > 1000,
-    )
+    skip_params = Skip(if_in_pr=skip_above_100)
 
     def setup(self, n_shapes, _shape_type, compiled_triangulation):
         part_size = int(n_shapes / 10)
@@ -526,7 +529,7 @@ class MeshTriangulationSuite(_BackendSelection):
     data: list[Polygon | Path]
 
     param_names = ['shape_type', 'compiled_triangulation']
-    params = [('path', 'polygon'), (BackendType.compiled, BackendType.numba)]
+    params = [('path', 'polygon'), (BackendType.bermuda, BackendType.numba)]
 
     def setup(self, shape_type, compiled_triangulation):
         self.select_backend(compiled_triangulation)
