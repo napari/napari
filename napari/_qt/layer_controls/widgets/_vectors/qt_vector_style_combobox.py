@@ -27,9 +27,9 @@ class QtVectorStyleComboBoxControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-    vector_style_comboBox : qtpy.QtWidgets.QComboBox
+    vector_style_combobox : qtpy.QtWidgets.QComboBox
         Dropdown widget to select vector_style for the vectors.
-    vector_style_comboBox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+    vector_style_combobox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for vector_style value chooser widget.
     """
 
@@ -40,19 +40,19 @@ class QtVectorStyleComboBoxControl(QtWidgetControlsBase):
 
         # Setup widgets
         # dropdown to select the edge display vector_style
-        vector_style_comboBox = QComboBox(parent)
+        vector_style_combobox = QComboBox(parent)
         for index, (data, text) in enumerate(VECTORSTYLE_TRANSLATIONS.items()):
             data = data.value
-            vector_style_comboBox.addItem(text, data)
+            vector_style_combobox.addItem(text, data)
             if data == self._layer.vector_style:
-                vector_style_comboBox.setCurrentIndex(index)
+                vector_style_combobox.setCurrentIndex(index)
 
-        self.vector_style_comboBox = vector_style_comboBox
-        self.vector_style_comboBox.currentTextChanged.connect(
+        self.vector_style_combobox = vector_style_combobox
+        self.vector_style_combobox.currentTextChanged.connect(
             self.change_vector_style
         )
 
-        self.vector_style_comboBox_label = QtWrappedLabel(
+        self.vector_style_combobox_label = QtWrappedLabel(
             trans._('vector style:')
         )
 
@@ -71,10 +71,10 @@ class QtVectorStyleComboBoxControl(QtWidgetControlsBase):
         """Receive layer model vector style change event & update dropdown."""
         with self._layer.events.vector_style.blocker():
             vector_style = self._layer.vector_style
-            index = self.vector_style_comboBox.findText(
+            index = self.vector_style_combobox.findText(
                 vector_style, Qt.MatchFlag.MatchFixedString
             )
-            self.vector_style_comboBox.setCurrentIndex(index)
+            self.vector_style_combobox.setCurrentIndex(index)
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
-        return [(self.vector_style_comboBox_label, self.vector_style_comboBox)]
+        return [(self.vector_style_combobox_label, self.vector_style_combobox)]

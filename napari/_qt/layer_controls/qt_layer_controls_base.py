@@ -55,20 +55,15 @@ class QtLayerControls(QFrame):
         String id for the pan-zoom action to bind to the pan_zoom button.
     TRANSFORM_ACTION_NAME : str
         String id for the transform action to bind to the transform button.
-    qtOpacityBlendingControls.blendComboBox : qtpy.QtWidgets.QComboBox
-        Dropdown widget to select blending mode of layer.
-    qtOpacityBlendingControls.blendLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for the blending combobox widget.
+    _opacity_blending_controls: napari._qt.layer_controls.widgets.QtOpacityBlendingControls
+        Wrapper widget with a dropdown widget to select the layer blending mode and
+        a slider for the layer opacity.
     button_grid : qtpy.QtWidgets.QGridLayout
         GridLayout for the layer mode buttons
     button_group : qtpy.QtWidgets.QButtonGroup
         Button group for image based layer modes (PAN_ZOOM TRANSFORM).
     layer : napari.layers.Layer
         An instance of a napari layer.
-    qtOpacityBlendingControls.opacityLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for the opacity slider widget.
-    qtOpacityBlendingControls.opacitySlider : superqt.QLabeledDoubleSlider
-        Slider controlling opacity of the layer.
     panzoom_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to activate move camera mode for layer.
     transform_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton

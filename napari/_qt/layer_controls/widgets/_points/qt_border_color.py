@@ -28,9 +28,9 @@ class QtBorderColorControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-    borderColorEdit : napari._qt.widgets.qt_color_swatch.QColorSwatchEdit
+    border_color_edit : napari._qt.widgets.qt_color_swatch.QColorSwatchEdit
         ColorSwatchEdit controlling current face color of the layer.
-    borderColorEditLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+    border_color_edit_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the current egde color chooser widget.
     """
 
@@ -47,16 +47,16 @@ class QtBorderColorControl(QtWidgetControlsBase):
         )
 
         # Setup widgets
-        self.borderColorEdit = QColorSwatchEdit(
+        self.border_color_edit = QColorSwatchEdit(
             initial_color=self._layer.current_border_color,
             tooltip=trans._(
                 'Click to set the border color of currently selected points and any added afterwards.'
             ),
         )
-        self.borderColorEdit.color_changed.connect(
+        self.border_color_edit.color_changed.connect(
             self.changeCurrentBorderColor
         )
-        self.borderColorEditLabel = QtWrappedLabel(trans._('border color:'))
+        self.border_color_edit_label = QtWrappedLabel(trans._('border color:'))
 
     @Slot(np.ndarray)
     def changeCurrentBorderColor(self, color: np.ndarray) -> None:
@@ -68,8 +68,8 @@ class QtBorderColorControl(QtWidgetControlsBase):
 
     def _on_current_border_color_change(self) -> None:
         """Receive layer.current_border_color() change event and update view."""
-        with qt_signals_blocked(self.borderColorEdit):
-            self.borderColorEdit.setColor(self._layer.current_border_color)
+        with qt_signals_blocked(self.border_color_edit):
+            self.border_color_edit.setColor(self._layer.current_border_color)
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
-        return [(self.borderColorEditLabel, self.borderColorEdit)]
+        return [(self.border_color_edit_label, self.border_color_edit)]

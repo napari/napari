@@ -115,13 +115,13 @@ class QtColormapControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-    colorbarLabel : qtpy.QtWidgets.QPushButton
+    colorbar_label : qtpy.QtWidgets.QPushButton
         Button showing colorbar widget. Also enables selection of custom colormap.
-    colormapComboBox : qtpy.QtWidgets.QComboBox
+    colormap_combobox : qtpy.QtWidgets.QComboBox
         ComboBox controlling current colormap of the layer.
     colormapWidget : qtpy.QtWidgets.QWidget
         Widget to wrap combobox and label widgets related with the layer colormap attribute.
-    colormapWidgetLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+    colormap_widget_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the color mode chooser widget.
     """
 
@@ -139,22 +139,22 @@ class QtColormapControl(QtWidgetControlsBase):
             if name in self._layer.colormaps:
                 comboBox.addItem(cm._display_name, name)
 
-        comboBox.currentTextChanged.connect(self.changeColor)
-        self.colormapComboBox = comboBox
-        self.colorbarLabel = QPushButton(parent=parent)
-        self.colorbarLabel.setObjectName('colorbar')
-        self.colorbarLabel.setToolTip(trans._('Colorbar'))
-        self.colorbarLabel.clicked.connect(self._on_make_colormap)
+        comboBox.currentTextChanged.connect(self.change_color)
+        self.colormap_combobox = comboBox
+        self.colorbar_label = QPushButton(parent=parent)
+        self.colorbar_label.setObjectName('colorbar')
+        self.colorbar_label.setToolTip(trans._('Colorbar'))
+        self.colorbar_label.clicked.connect(self._on_make_colormap)
 
         colormap_layout = QHBoxLayout()
         colormap_layout.setContentsMargins(0, 0, 0, 2)
         if hasattr(self._layer, 'rgb') and self._layer.rgb:
             colormap_layout.addWidget(QLabel('RGB'))
-            self.colormapComboBox.setVisible(False)
-            self.colorbarLabel.setVisible(False)
+            self.colormap_combobox.setVisible(False)
+            self.colorbar_label.setVisible(False)
         else:
-            colormap_layout.addWidget(self.colorbarLabel)
-            colormap_layout.addWidget(self.colormapComboBox, stretch=1)
+            colormap_layout.addWidget(self.colorbar_label)
+            colormap_layout.addWidget(self.colormap_combobox, stretch=1)
         colormap_layout.addStretch(1)
         self.colormapWidget = QWidget()
         self.colormapWidget.setProperty('emphasized', True)
@@ -162,9 +162,9 @@ class QtColormapControl(QtWidgetControlsBase):
 
         self._on_colormap_change()
 
-        self.colormapWidgetLabel = QtWrappedLabel(trans._('colormap:'))
+        self.colormap_widget_label = QtWrappedLabel(trans._('colormap:'))
 
-    def changeColor(self, text):
+    def change_color(self, text):
         """Change colormap on the layer model.
 
         Parameters
@@ -172,20 +172,20 @@ class QtColormapControl(QtWidgetControlsBase):
         text : str
             Colormap name.
         """
-        self._layer.colormap = self.colormapComboBox.currentData()
+        self._layer.colormap = self.colormap_combobox.currentData()
 
     def _on_colormap_change(self):
         """Receive layer model colormap change event and update dropdown menu."""
         name = self._layer.colormap.name
-        if name not in self.colormapComboBox._allitems and (
+        if name not in self.colormap_combobox._allitems and (
             cm := AVAILABLE_COLORMAPS.get(name)
         ):
-            self.colormapComboBox._allitems.add(name)
-            self.colormapComboBox.addItem(cm._display_name, name)
+            self.colormap_combobox._allitems.add(name)
+            self.colormap_combobox.addItem(cm._display_name, name)
 
-        if name != self.colormapComboBox.currentData():
-            index = self.colormapComboBox.findData(name)
-            self.colormapComboBox.setCurrentIndex(index)
+        if name != self.colormap_combobox.currentData():
+            index = self.colormap_combobox.findData(name)
+            self.colormap_combobox.setCurrentIndex(index)
 
         # Note that QImage expects the image width followed by height
         cbar = self._layer.colormap.colorbar
@@ -195,10 +195,10 @@ class QtColormapControl(QtWidgetControlsBase):
             cbar.shape[0],
             QImage.Format_RGBA8888,
         )
-        self.colorbarLabel.setIcon(QIcon(QPixmap.fromImage(image)))
+        self.colorbar_label.setIcon(QIcon(QPixmap.fromImage(image)))
 
     def _on_make_colormap(self):
-        """Make new colormap when colorbarLabel (pushbutton) is pressed."""
+        """Make new colormap when colorbar_label (pushbutton) is pressed."""
         from napari._qt.utils import get_color
         from napari.utils.colormaps.colormap_utils import ensure_colormap
 
@@ -207,4 +207,4 @@ class QtColormapControl(QtWidgetControlsBase):
             self._layer.colormap = ensure_colormap(color)
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
-        return [(self.colormapWidgetLabel, self.colormapWidget)]
+        return [(self.colormap_widget_label, self.colormapWidget)]

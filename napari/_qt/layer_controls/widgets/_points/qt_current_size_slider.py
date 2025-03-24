@@ -31,9 +31,9 @@ class QtCurrentSizeSliderControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-    sizeSlider : superqt.QLabeledDoubleSlider
+    size_slider : superqt.QLabeledDoubleSlider
         Slider controlling current size attribute of the layer.
-    sizeSliderLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+    size_slider_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the size chooser widget.
     """
 
@@ -62,12 +62,12 @@ class QtCurrentSizeSliderControl(QtWidgetControlsBase):
         sld.setSingleStep(1)
         value = self._layer.current_size
         sld.setValue(int(value))
-        sld.valueChanged.connect(self.changeCurrentSize)
-        self.sizeSlider = sld
+        sld.valueChanged.connect(self.change_current_size)
+        self.size_slider = sld
 
-        self.sizeSliderLabel = QtWrappedLabel(trans._('point size:'))
+        self.size_slider_label = QtWrappedLabel(trans._('point size:'))
 
-    def changeCurrentSize(self, value: float) -> None:
+    def change_current_size(self, value: float) -> None:
         """Change size of points on the layer model.
 
         Parameters
@@ -82,16 +82,16 @@ class QtCurrentSizeSliderControl(QtWidgetControlsBase):
 
     def _on_current_size_change(self) -> None:
         """Receive layer model size change event and update point size slider."""
-        with qt_signals_blocked(self.sizeSlider):
+        with qt_signals_blocked(self.size_slider):
             value = self._layer.current_size
             min_val = min(value) if isinstance(value, list) else value
             max_val = max(value) if isinstance(value, list) else value
-            if min_val < self.sizeSlider.minimum():
-                self.sizeSlider.setMinimum(max(1, int(min_val - 1)))
-            if max_val > self.sizeSlider.maximum():
-                self.sizeSlider.setMaximum(int(max_val + 1))
+            if min_val < self.size_slider.minimum():
+                self.size_slider.setMinimum(max(1, int(min_val - 1)))
+            if max_val > self.size_slider.maximum():
+                self.size_slider.setMaximum(int(max_val + 1))
             with contextlib.suppress(TypeError):
-                self.sizeSlider.setValue(int(value))
+                self.size_slider.setValue(int(value))
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
-        return [(self.sizeSliderLabel, self.sizeSlider)]
+        return [(self.size_slider_label, self.size_slider)]

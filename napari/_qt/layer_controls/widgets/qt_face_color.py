@@ -28,9 +28,9 @@ class QtFaceColorControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-    faceColorEdit : napari._qt.widgets.qt_color_swatch.QColorSwatchEdit
+    face_color_edit : napari._qt.widgets.qt_color_swatch.QColorSwatchEdit
         ColorSwatchEdit controlling current face color of the layer.
-    faceColorLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+    face_color_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the current face color chooser widget.
     """
 
@@ -49,16 +49,16 @@ class QtFaceColorControl(QtWidgetControlsBase):
             )
 
         # Setup widgets
-        self.faceColorEdit = QColorSwatchEdit(
+        self.face_color_edit = QColorSwatchEdit(
             initial_color=self._layer.current_face_color,
             tooltip=tooltip,
         )
-        self.faceColorLabel = QtWrappedLabel(trans._('face color:'))
+        self.face_color_label = QtWrappedLabel(trans._('face color:'))
         self._on_current_face_color_change()
-        self.faceColorEdit.color_changed.connect(self.changeFaceColor)
+        self.face_color_edit.color_changed.connect(self.change_face_color)
 
     @Slot(np.ndarray)
-    def changeFaceColor(self, color: np.ndarray) -> None:
+    def change_face_color(self, color: np.ndarray) -> None:
         """Change face color of shapes.
 
         Parameters
@@ -74,8 +74,8 @@ class QtFaceColorControl(QtWidgetControlsBase):
 
     def _on_current_face_color_change(self) -> None:
         """Receive layer model face color change event and update color swatch."""
-        with qt_signals_blocked(self.faceColorEdit):
-            self.faceColorEdit.setColor(self._layer.current_face_color)
+        with qt_signals_blocked(self.face_color_edit):
+            self.face_color_edit.setColor(self._layer.current_face_color)
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
-        return [(self.faceColorLabel, self.faceColorEdit)]
+        return [(self.face_color_label, self.face_color_edit)]

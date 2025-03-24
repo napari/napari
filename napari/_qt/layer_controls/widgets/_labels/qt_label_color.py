@@ -116,14 +116,14 @@ class QtLabelControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-    labelColor : qtpy.QtWidget.QWidget
-        Wrapper widget for the selectionSpinBox and colorBox widgets.
-    selectionSpinBox : superqt.QLargeIntSpinBox
+    label_color : qtpy.QtWidget.QWidget
+        Wrapper widget for the selection_spinbox and colorbox widgets.
+    selection_spinbox : superqt.QLargeIntSpinBox
         Widget to select a specific label by its index.
         N.B. cannot represent labels > 2**53.
-    colorBox: QtColorBox
+    colorbox: QtColorBox
         Widget that shows current layer label color.
-    labelColorLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+    label_color_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the label chooser widget.
     """
 
@@ -138,25 +138,25 @@ class QtLabelControl(QtWidgetControlsBase):
         self._layer.events.data.connect(self._on_data_change)
 
         # Setup widgets
-        self.selectionSpinBox = QLargeIntSpinBox()
+        self.selection_spinbox = QLargeIntSpinBox()
         dtype_lims = get_dtype_limits(get_dtype(layer))
-        self.selectionSpinBox.setRange(*dtype_lims)
-        self.selectionSpinBox.setKeyboardTracking(False)
-        self.selectionSpinBox.valueChanged.connect(self.changeSelection)
-        self.selectionSpinBox.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.selection_spinbox.setRange(*dtype_lims)
+        self.selection_spinbox.setKeyboardTracking(False)
+        self.selection_spinbox.valueChanged.connect(self.change_selection)
+        self.selection_spinbox.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._on_selected_label_change()
 
-        self.labelColorLabel = QtWrappedLabel(trans._('label:'))
-        self.labelColor = QWidget()
-        self.labelColor.setProperty('emphasized', True)
+        self.label_color_label = QtWrappedLabel(trans._('label:'))
+        self.label_color = QWidget()
+        self.label_color.setProperty('emphasized', True)
         color_layout = QHBoxLayout()
         color_layout.setContentsMargins(0, 2, 0, 1)
-        self.colorBox = QtColorBox(layer)
-        color_layout.addWidget(self.colorBox)
-        color_layout.addWidget(self.selectionSpinBox)
-        self.labelColor.setLayout(color_layout)
+        self.colorbox = QtColorBox(layer)
+        color_layout.addWidget(self.colorbox)
+        color_layout.addWidget(self.selection_spinbox)
+        self.label_color.setLayout(color_layout)
 
-    def changeSelection(self, value: int) -> None:
+    def change_selection(self, value: int) -> None:
         """Change currently selected label.
 
         Parameters
@@ -165,7 +165,7 @@ class QtLabelControl(QtWidgetControlsBase):
             Index of label to select.
         """
         self._layer.selected_label = value
-        self.selectionSpinBox.clearFocus()
+        self.selection_spinbox.clearFocus()
         # TODO: decouple
         self.parent().setFocus()
 
@@ -173,16 +173,16 @@ class QtLabelControl(QtWidgetControlsBase):
         """Receive layer model label selection change event and update spinbox."""
         with self._layer.events.selected_label.blocker():
             value = self._layer.selected_label
-            self.selectionSpinBox.setValue(value)
+            self.selection_spinbox.setValue(value)
 
     def _on_data_change(self) -> None:
         """Update label selection spinbox min/max when data changes."""
         dtype_lims = get_dtype_limits(get_dtype(self._layer))
-        self.selectionSpinBox.setRange(*dtype_lims)
+        self.selection_spinbox.setRange(*dtype_lims)
 
     def disconnect_widget_controls(self) -> None:
-        self.colorBox.disconnect_widget_controls()
+        self.colorbox.disconnect_widget_controls()
         super().disconnect_widget_controls()
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
-        return [(self.labelColorLabel, self.labelColor)]
+        return [(self.label_color_label, self.label_color)]

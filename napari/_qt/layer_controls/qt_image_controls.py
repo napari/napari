@@ -29,10 +29,6 @@ class QtImageControls(QtBaseImageControls):
         String id for the pan-zoom action to bind to the pan_zoom button.
     TRANSFORM_ACTION_NAME : str
         String id for the transform action to bind to the transform button.
-    attenuationLabel : qtpy.QtWidgets.QLabel
-        Label for the attenuation slider widget.
-    attenuationSlider : superqt.QLabeledDoubleSlider
-        Slider controlling attenuation rate for `attenuated_mip` mode.
     button_grid : qtpy.QtWidgets.QGridLayout
         GridLayout for the layer mode buttons
     button_group : qtpy.QtWidgets.QButtonGroup

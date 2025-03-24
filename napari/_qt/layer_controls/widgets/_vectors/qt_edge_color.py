@@ -29,11 +29,11 @@ class QtEdgeColorPropertyControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-    color_mode_comboBox : qtpy.QtWidgets.QComboBox
+    color_mode_combobox : qtpy.QtWidgets.QComboBox
         Dropdown to select the edge color mode.
     color_mode_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the current selected edge_color_mode chooser widget.
-    edgeColorEdit : qtpy.QtWidgets.QSlider
+    edge_color_edit : qtpy.QtWidgets.QSlider
         ColorSwatchEdit controlling current edge color of the layer.
     edge_color_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the current edge color chooser widget.
@@ -64,21 +64,23 @@ class QtEdgeColorPropertyControl(QtWidgetControlsBase):
         self.edge_prop_label = QtWrappedLabel(trans._('edge property:'))
 
         # vector direct color mode adjustment and widget
-        self.edgeColorEdit = QColorSwatchEdit(
+        self.edge_color_edit = QColorSwatchEdit(
             initial_color=self._layer.edge_color,
             tooltip=trans._(
                 'Click to set current edge color',
             ),
         )
-        self.edgeColorEdit.color_changed.connect(self.change_edge_color_direct)
+        self.edge_color_edit.color_changed.connect(
+            self.change_edge_color_direct
+        )
         self.edge_color_label = QtWrappedLabel(trans._('edge color:'))
         self._on_edge_color_change()
 
         # dropdown to select the edge color mode
-        self.color_mode_comboBox = QComboBox(parent)
+        self.color_mode_combobox = QComboBox(parent)
         color_modes = [e.value for e in ColorMode]
-        self.color_mode_comboBox.addItems(color_modes)
-        self.color_mode_comboBox.currentTextChanged.connect(
+        self.color_mode_combobox.addItems(color_modes)
+        self.color_mode_combobox.currentTextChanged.connect(
             self.change_edge_color_mode
         )
         self.color_mode_label = QtWrappedLabel(trans._('edge color mode:'))
@@ -130,21 +132,21 @@ class QtEdgeColorPropertyControl(QtWidgetControlsBase):
             except ValueError:
                 # if the color mode was invalid, revert to the old mode (layer and GUI)
                 self._layer.edge_color_mode = old_mode
-                self.color_mode_comboBox.setCurrentText(old_mode)
+                self.color_mode_combobox.setCurrentText(old_mode)
                 raise
 
     def _on_edge_color_mode_change(self):
         """Receive layer model edge color mode change event & update dropdown."""
-        if not hasattr(self, 'color_mode_comboBox'):
+        if not hasattr(self, 'color_mode_combobox'):
             # Ignore early events i.e when widgets haven't been created yet.
             return
 
-        with qt_signals_blocked(self.color_mode_comboBox):
+        with qt_signals_blocked(self.color_mode_combobox):
             mode = self._layer._edge.color_mode
-            index = self.color_mode_comboBox.findText(
+            index = self.color_mode_combobox.findText(
                 mode, Qt.MatchFixedString
             )
-            self.color_mode_comboBox.setCurrentIndex(index)
+            self.color_mode_combobox.setCurrentIndex(index)
 
             self._update_edge_color_gui(mode)
 
@@ -154,8 +156,8 @@ class QtEdgeColorPropertyControl(QtWidgetControlsBase):
             self._layer._edge.color_mode == ColorMode.DIRECT
             and len(self._layer.data) > 0
         ):
-            with qt_signals_blocked(self.edgeColorEdit):
-                self.edgeColorEdit.setColor(self._layer.edge_color[0])
+            with qt_signals_blocked(self.edge_color_edit):
+                self.edge_color_edit.setColor(self._layer.edge_color[0])
         elif self._layer._edge.color_mode in (
             ColorMode.CYCLE,
             ColorMode.COLORMAP,
@@ -192,20 +194,20 @@ class QtEdgeColorPropertyControl(QtWidgetControlsBase):
             Should be: 'direct', 'cycle', 'colormap'
         """
         if mode in {'cycle', 'colormap'}:
-            self.edgeColorEdit.setHidden(True)
+            self.edge_color_edit.setHidden(True)
             self.edge_color_label.setHidden(True)
             self.color_prop_box.setHidden(False)
             self.edge_prop_label.setHidden(False)
 
         elif mode == 'direct':
-            self.edgeColorEdit.setHidden(False)
+            self.edge_color_edit.setHidden(False)
             self.edge_color_label.setHidden(False)
             self.color_prop_box.setHidden(True)
             self.edge_prop_label.setHidden(True)
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [
-            (self.color_mode_label, self.color_mode_comboBox),
-            (self.edge_color_label, self.edgeColorEdit),
+            (self.color_mode_label, self.color_mode_combobox),
+            (self.edge_color_label, self.edge_color_edit),
             (self.edge_prop_label, self.color_prop_box),
         ]

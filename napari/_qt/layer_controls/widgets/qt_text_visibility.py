@@ -24,9 +24,9 @@ class QtTextVisibilityControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-    textDispCheckBox : qtpy.QtWidgets.QCheckbox
+    text_disp_checkbox : qtpy.QtWidgets.QCheckbox
         Checkbox controlling if text on the layer is visible or not.
-    textDispLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+    text_disp_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the text visibility widget.
     """
 
@@ -42,8 +42,8 @@ class QtTextVisibilityControl(QtWidgetControlsBase):
         text_disp_cb.setToolTip(trans._('Toggle text visibility'))
         text_disp_cb.setChecked(self._layer.text.visible)
         text_disp_cb.stateChanged.connect(self.change_text_visibility)
-        self.textDispCheckBox = text_disp_cb
-        self.textDispLabel = QtWrappedLabel(trans._('display text:'))
+        self.text_disp_checkbox = text_disp_cb
+        self.text_disp_label = QtWrappedLabel(trans._('display text:'))
 
     def change_text_visibility(self, state: int) -> None:
         """Toggle the visibility of the text.
@@ -51,7 +51,7 @@ class QtTextVisibilityControl(QtWidgetControlsBase):
         Parameters
         ----------
         state : int
-            Integer value of Qt.CheckState that indicates the check state of textDispCheckBox
+            Integer value of Qt.CheckState that indicates the check state of text_disp_checkbox
         """
         with self._layer.text.events.visible.blocker(
             self._on_text_visibility_change
@@ -63,10 +63,10 @@ class QtTextVisibilityControl(QtWidgetControlsBase):
     def _on_text_visibility_change(self) -> None:
         """Receive layer model text visibiltiy change change event and update checkbox."""
         with self._layer.text.events.visible.blocker():
-            self.textDispCheckBox.setChecked(self._layer.text.visible)
+            self.text_disp_checkbox.setChecked(self._layer.text.visible)
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
-        return [(self.textDispLabel, self.textDispCheckBox)]
+        return [(self.text_disp_label, self.text_disp_checkbox)]
 
     def disconnect_widget_controls(self) -> None:
         disconnect_events(self._layer.text.events, self)

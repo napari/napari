@@ -26,9 +26,9 @@ class QtWidthSpinBoxControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-    widthSpinBox : qtpy.QtWidgets.QDoubleSpinBox
+    width_spinbox : qtpy.QtWidgets.QDoubleSpinBox
         Spin box widget controlling edge line width of vectors.
-    widthSpinBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+    width_spinbox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the edge line width of vectors chooser widget.
     """
 
@@ -39,15 +39,15 @@ class QtWidthSpinBoxControl(QtWidgetControlsBase):
 
         # Setup widgets
         # line width in pixels
-        self.widthSpinBox = QDoubleSpinBox()
-        self.widthSpinBox.setKeyboardTracking(False)
-        self.widthSpinBox.setSingleStep(0.1)
-        self.widthSpinBox.setMinimum(0.01)
-        self.widthSpinBox.setMaximum(np.inf)
-        self.widthSpinBox.setValue(self._layer.edge_width)
-        self.widthSpinBox.valueChanged.connect(self.change_width)
+        self.width_spinbox = QDoubleSpinBox()
+        self.width_spinbox.setKeyboardTracking(False)
+        self.width_spinbox.setSingleStep(0.1)
+        self.width_spinbox.setMinimum(0.01)
+        self.width_spinbox.setMaximum(np.inf)
+        self.width_spinbox.setValue(self._layer.edge_width)
+        self.width_spinbox.valueChanged.connect(self.change_width)
 
-        self.widthSpinBoxLabel = QtWrappedLabel(trans._('width:'))
+        self.width_spinbox_label = QtWrappedLabel(trans._('width:'))
 
     def change_width(self, value) -> None:
         """Change edge line width of vectors on the layer model.
@@ -58,17 +58,17 @@ class QtWidthSpinBoxControl(QtWidgetControlsBase):
             Line width of vectors.
         """
         self._layer.edge_width = value
-        self.widthSpinBox.clearFocus()
+        self.width_spinbox.clearFocus()
         # TODO: Check other way to give focus without calling parent
         self.parent().setFocus()
 
     def _on_edge_width_change(self) -> None:
         """Receive layer model width change event and update width spinbox."""
         with self._layer.events.edge_width.blocker():
-            self.widthSpinBox.setValue(self._layer.edge_width)
+            self.width_spinbox.setValue(self._layer.edge_width)
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
-        return [(self.widthSpinBoxLabel, self.widthSpinBox)]
+        return [(self.width_spinbox_label, self.width_spinbox)]
 
 
 class QtLengthSpinBoxControl(QtWidgetControlsBase):
@@ -85,10 +85,10 @@ class QtLengthSpinBoxControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-    lengthSpinBox : qtpy.QtWidgets.QDoubleSpinBox
+    length_spinbox : qtpy.QtWidgets.QDoubleSpinBox
         Spinbox widget controlling line length of vectors.
         Multiplicative factor on projections for length of all vectors.
-    lengthSpinBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+    length_spinbox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for line length of vectors chooser widget.
     """
 
@@ -99,15 +99,15 @@ class QtLengthSpinBoxControl(QtWidgetControlsBase):
 
         # Setup widgets
         # line length
-        self.lengthSpinBox = QDoubleSpinBox()
-        self.lengthSpinBox.setKeyboardTracking(False)
-        self.lengthSpinBox.setSingleStep(0.1)
-        self.lengthSpinBox.setValue(self._layer.length)
-        self.lengthSpinBox.setMinimum(0.1)
-        self.lengthSpinBox.setMaximum(np.inf)
-        self.lengthSpinBox.valueChanged.connect(self.change_length)
+        self.length_spinbox = QDoubleSpinBox()
+        self.length_spinbox.setKeyboardTracking(False)
+        self.length_spinbox.setSingleStep(0.1)
+        self.length_spinbox.setValue(self._layer.length)
+        self.length_spinbox.setMinimum(0.1)
+        self.length_spinbox.setMaximum(np.inf)
+        self.length_spinbox.valueChanged.connect(self.change_length)
 
-        self.lengthSpinBoxLabel = QtWrappedLabel(trans._('length:'))
+        self.length_spinbox_label = QtWrappedLabel(trans._('length:'))
 
     def change_length(self, value: float) -> None:
         """Change length of vectors on the layer model.
@@ -120,14 +120,14 @@ class QtLengthSpinBoxControl(QtWidgetControlsBase):
             Length of vectors.
         """
         self._layer.length = value
-        self.lengthSpinBox.clearFocus()
+        self.length_spinbox.clearFocus()
         # TODO: Check other way to give focus without calling parent
         self.parent().setFocus()
 
     def _on_length_change(self) -> None:
         """Change length of vectors."""
         with self._layer.events.length.blocker():
-            self.lengthSpinBox.setValue(self._layer.length)
+            self.length_spinbox.setValue(self._layer.length)
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
-        return [(self.lengthSpinBoxLabel, self.lengthSpinBox)]
+        return [(self.length_spinbox_label, self.length_spinbox)]

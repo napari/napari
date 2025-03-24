@@ -30,9 +30,9 @@ class QtContourSpinBoxControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-    contourSpinBox : superqt.QLargeSpinBox
+    contour_spinbox : superqt.QLargeSpinBox
         Spinbox to control the layer contour thickness.
-    contourSpinBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+    contour_spinbox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the layer contour thickness chooser widget.
     """
 
@@ -44,18 +44,18 @@ class QtContourSpinBoxControl(QtWidgetControlsBase):
         self._layer.events.contour.connect(self._on_contour_change)
 
         # Setup widgets
-        self.contourSpinBox = QLargeIntSpinBox()
+        self.contour_spinbox = QLargeIntSpinBox()
         dtype_lims = get_dtype_limits(get_dtype(layer))
-        self.contourSpinBox.setRange(0, dtype_lims[1])
-        self.contourSpinBox.setToolTip(
+        self.contour_spinbox.setRange(0, dtype_lims[1])
+        self.contour_spinbox.setToolTip(
             trans._('Set width of displayed label contours')
         )
-        self.contourSpinBox.valueChanged.connect(self.change_contour)
-        self.contourSpinBox.setKeyboardTracking(False)
-        self.contourSpinBox.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.contour_spinbox.valueChanged.connect(self.change_contour)
+        self.contour_spinbox.setKeyboardTracking(False)
+        self.contour_spinbox.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._on_contour_change()
 
-        self.contourSpinBoxLabel = QtWrappedLabel(trans._('contour:'))
+        self.contour_spinbox_label = QtWrappedLabel(trans._('contour:'))
 
     def change_contour(self, value: int) -> None:
         """Change contour thickness.
@@ -66,14 +66,14 @@ class QtContourSpinBoxControl(QtWidgetControlsBase):
             Thickness of contour.
         """
         self._layer.contour = value
-        self.contourSpinBox.clearFocus()
+        self.contour_spinbox.clearFocus()
         self.parent().setFocus()
 
     def _on_contour_change(self) -> None:
         """Receive layer model contour value change event and update spinbox."""
         with self._layer.events.contour.blocker():
             value = self._layer.contour
-            self.contourSpinBox.setValue(value)
+            self.contour_spinbox.setValue(value)
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
-        return [(self.contourSpinBoxLabel, self.contourSpinBox)]
+        return [(self.contour_spinbox_label, self.contour_spinbox)]

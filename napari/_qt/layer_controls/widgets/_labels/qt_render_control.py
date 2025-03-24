@@ -29,13 +29,13 @@ class QtLabelRenderControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-    renderComboBox : superqt.QEnumComboBox
+    render_combobox : superqt.QEnumComboBox
         Combobox to control current label render method.
-    renderComboBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+    render_combobox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the way labels should be rendered chooser widget.
-    isoGradientComboBox : superqt.QEnumComboBox
+    iso_gradient_combobox : superqt.QEnumComboBox
         Combobox to control gradient method when isosurface rendering is selected.
-    isoGradientComboBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+    iso_gradient_combobox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the chooser widget of the gradient to use when labels are using isosurface rendering.
     """
 
@@ -50,30 +50,30 @@ class QtLabelRenderControl(QtWidgetControlsBase):
         )
 
         # Setup widgets
-        renderComboBox = QEnumComboBox(enum_class=LabelsRendering)
-        renderComboBox.setCurrentEnum(LabelsRendering(self._layer.rendering))
-        renderComboBox.currentEnumChanged.connect(self.changeRendering)
-        self.renderComboBox = renderComboBox
-        self.renderComboBoxLabel = QtWrappedLabel(trans._('rendering:'))
+        render_combobox = QEnumComboBox(enum_class=LabelsRendering)
+        render_combobox.setCurrentEnum(LabelsRendering(self._layer.rendering))
+        render_combobox.currentEnumChanged.connect(self.change_rendering)
+        self.render_combobox = render_combobox
+        self.render_combobox_label = QtWrappedLabel(trans._('rendering:'))
 
-        isoGradientComboBox = QEnumComboBox(
+        iso_gradient_combobox = QEnumComboBox(
             enum_class=IsoCategoricalGradientMode
         )
-        isoGradientComboBox.setCurrentEnum(
+        iso_gradient_combobox.setCurrentEnum(
             IsoCategoricalGradientMode(self._layer.iso_gradient_mode)
         )
-        isoGradientComboBox.currentEnumChanged.connect(
-            self.changeIsoGradientMode
+        iso_gradient_combobox.currentEnumChanged.connect(
+            self.change_iso_gradient_mode
         )
-        isoGradientComboBox.setEnabled(
+        iso_gradient_combobox.setEnabled(
             self._layer.rendering == LabelsRendering.ISO_CATEGORICAL
         )
-        self.isoGradientComboBox = isoGradientComboBox
-        self.isoGradientComboBoxLabel = QtWrappedLabel(
+        self.iso_gradient_combobox = iso_gradient_combobox
+        self.iso_gradient_combobox_label = QtWrappedLabel(
             trans._('gradient\nmode:')
         )
 
-    def changeRendering(self, rendering_mode: LabelsRendering):
+    def change_rendering(self, rendering_mode: LabelsRendering):
         """Change rendering mode for image display.
 
         Parameters
@@ -89,12 +89,14 @@ class QtLabelRenderControl(QtWidgetControlsBase):
               location, lighning calculations are performed to give the visual
               appearance of a surface.
         """
-        self.isoGradientComboBox.setEnabled(
+        self.iso_gradient_combobox.setEnabled(
             rendering_mode == LabelsRendering.ISO_CATEGORICAL
         )
         self._layer.rendering = rendering_mode
 
-    def changeIsoGradientMode(self, gradient_mode: IsoCategoricalGradientMode):
+    def change_iso_gradient_mode(
+        self, gradient_mode: IsoCategoricalGradientMode
+    ):
         """Change gradient mode for isosurface rendering.
 
         Parameters
@@ -110,31 +112,31 @@ class QtLabelRenderControl(QtWidgetControlsBase):
     def _on_rendering_change(self):
         """Receive layer model rendering change event and update dropdown menu."""
         with self._layer.events.rendering.blocker():
-            self.renderComboBox.setCurrentEnum(
+            self.render_combobox.setCurrentEnum(
                 LabelsRendering(self._layer.rendering)
             )
 
     def _on_iso_gradient_mode_change(self):
         """Receive layer model iso_gradient_mode change event and update dropdown menu."""
         with self._layer.events.iso_gradient_mode.blocker():
-            self.isoGradientComboBox.setCurrentEnum(
+            self.iso_gradient_combobox.setCurrentEnum(
                 IsoCategoricalGradientMode(self._layer.iso_gradient_mode)
             )
 
     def _on_display_change_hide(self):
-        self.renderComboBox.hide()
-        self.renderComboBoxLabel.hide()
-        self.isoGradientComboBox.hide()
-        self.isoGradientComboBoxLabel.hide()
+        self.render_combobox.hide()
+        self.render_combobox_label.hide()
+        self.iso_gradient_combobox.hide()
+        self.iso_gradient_combobox_label.hide()
 
     def _on_display_change_show(self):
-        self.renderComboBox.show()
-        self.renderComboBoxLabel.show()
-        self.isoGradientComboBox.show()
-        self.isoGradientComboBoxLabel.show()
+        self.render_combobox.show()
+        self.render_combobox_label.show()
+        self.iso_gradient_combobox.show()
+        self.iso_gradient_combobox_label.show()
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [
-            (self.renderComboBoxLabel, self.renderComboBox),
-            (self.isoGradientComboBoxLabel, self.isoGradientComboBox),
+            (self.render_combobox_label, self.render_combobox),
+            (self.iso_gradient_combobox_label, self.iso_gradient_combobox),
         ]

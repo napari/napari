@@ -28,9 +28,9 @@ class QtPreserveLabelsCheckBoxControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-    preserveLabelsCheckBox : qtpy.QtWidgets.QCheckBox
+    preserve_labels_checkbox : qtpy.QtWidgets.QCheckBox
         Checkbox to control if existing labels are preserved.
-    preserveLabelsCheckBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+    preserve_labels_checkbox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the layer should preserve labels chooser widget.
     """
 
@@ -49,10 +49,10 @@ class QtPreserveLabelsCheckBoxControl(QtWidgetControlsBase):
             trans._('Preserve existing labels while painting')
         )
         preserve_labels_cb.stateChanged.connect(self.change_preserve_labels)
-        self.preserveLabelsCheckBox = preserve_labels_cb
+        self.preserve_labels_checkbox = preserve_labels_cb
         self._on_preserve_labels_change()
 
-        self.preserveLabelsCheckBoxLabel = QtWrappedLabel(
+        self.preserve_labels_checkbox_label = QtWrappedLabel(
             trans._('preserve\nlabels:')
         )
 
@@ -62,7 +62,7 @@ class QtPreserveLabelsCheckBoxControl(QtWidgetControlsBase):
         Parameters
         ----------
         state : int
-            Integer value of Qt.CheckState that indicates the check state of preserveLabelsCheckBox
+            Integer value of Qt.CheckState that indicates the check state of preserve_labels_checkbox
         """
         self._layer.preserve_labels = (
             Qt.CheckState(state) == Qt.CheckState.Checked
@@ -71,9 +71,14 @@ class QtPreserveLabelsCheckBoxControl(QtWidgetControlsBase):
     def _on_preserve_labels_change(self) -> None:
         """Receive layer model preserve_labels event and update the checkbox."""
         with self._layer.events.preserve_labels.blocker():
-            self.preserveLabelsCheckBox.setChecked(self._layer.preserve_labels)
+            self.preserve_labels_checkbox.setChecked(
+                self._layer.preserve_labels
+            )
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [
-            (self.preserveLabelsCheckBoxLabel, self.preserveLabelsCheckBox)
+            (
+                self.preserve_labels_checkbox_label,
+                self.preserve_labels_checkbox,
+            )
         ]

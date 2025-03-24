@@ -28,9 +28,9 @@ class QtDisplaySelectedLabelCheckBoxControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-    selectedColorCheckbox : qtpy.QtWidgets.QCheckBox
+    selected_color_checkbox : qtpy.QtWidgets.QCheckBox
         Checkbox to control if only currently selected label is shown.
-    selectedColorCheckboxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+    selected_color_checkbox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the layer should show only currently selected label chooser widget.
     """
 
@@ -44,15 +44,15 @@ class QtDisplaySelectedLabelCheckBoxControl(QtWidgetControlsBase):
         )
 
         # Setup widgets
-        selectedColorCheckbox = QCheckBox()
-        selectedColorCheckbox.setToolTip(
+        selected_color_checkbox = QCheckBox()
+        selected_color_checkbox.setToolTip(
             trans._('Display only selected label')
         )
-        selectedColorCheckbox.stateChanged.connect(self.toggle_selected_mode)
-        self.selectedColorCheckbox = selectedColorCheckbox
+        selected_color_checkbox.stateChanged.connect(self.toggle_selected_mode)
+        self.selected_color_checkbox = selected_color_checkbox
         self._on_show_selected_label_change()
 
-        self.selectedColorCheckboxLabel = QtWrappedLabel(
+        self.selected_color_checkbox_label = QtWrappedLabel(
             trans._('show\nselected:')
         )
 
@@ -62,7 +62,7 @@ class QtDisplaySelectedLabelCheckBoxControl(QtWidgetControlsBase):
         Parameters
         ----------
         state : int
-            Integer value of Qt.CheckState that indicates the check state of selectedColorCheckbox
+            Integer value of Qt.CheckState that indicates the check state of selected_color_checkbox
         """
         self._layer.show_selected_label = (
             Qt.CheckState(state) == Qt.CheckState.Checked
@@ -71,9 +71,11 @@ class QtDisplaySelectedLabelCheckBoxControl(QtWidgetControlsBase):
     def _on_show_selected_label_change(self) -> None:
         """Receive layer model show_selected_labels event and update the checkbox."""
         with self._layer.events.show_selected_label.blocker():
-            self.selectedColorCheckbox.setChecked(
+            self.selected_color_checkbox.setChecked(
                 self._layer.show_selected_label
             )
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
-        return [(self.selectedColorCheckboxLabel, self.selectedColorCheckbox)]
+        return [
+            (self.selected_color_checkbox_label, self.selected_color_checkbox)
+        ]

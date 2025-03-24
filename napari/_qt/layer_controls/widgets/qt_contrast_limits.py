@@ -136,9 +136,9 @@ class QtContrastLimitsSliderControl(QtWidgetControlsBase):
     ----------
         clim_popup : napari._qt.qt_range_slider_popup.QRangeSliderPopup
             Popup widget launching the contrast range slider.
-        contrastLimitsSlider : _QDoubleRangeSlider
+        contrast_limits_slider : _QDoubleRangeSlider
             Slider controlling current constrast limits of the layer.
-        contrastLimitsSliderLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        contrast_limits_slider_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
             Label for the constrast limits chooser widget.
     """
 
@@ -155,34 +155,38 @@ class QtContrastLimitsSliderControl(QtWidgetControlsBase):
         )
 
         # Setup widgets
-        self.contrastLimitsSlider = _QDoubleRangeSlider(
+        self.contrast_limits_slider = _QDoubleRangeSlider(
             Qt.Orientation.Horizontal,
         )
-        self.contrastLimitsSlider.show_clim_popup.connect(self.show_clim_popup)
+        self.contrast_limits_slider.show_clim_popup.connect(
+            self.show_clim_popup
+        )
         decimals = range_to_decimals(
             self._layer.contrast_limits_range, self._layer.dtype
         )
-        self.contrastLimitsSlider.setRange(*self._layer.contrast_limits_range)
-        self.contrastLimitsSlider.setSingleStep(10**-decimals)
-        self.contrastLimitsSlider.setValue(self._layer.contrast_limits)
-        self.contrastLimitsSlider.setToolTip(
+        self.contrast_limits_slider.setRange(
+            *self._layer.contrast_limits_range
+        )
+        self.contrast_limits_slider.setSingleStep(10**-decimals)
+        self.contrast_limits_slider.setValue(self._layer.contrast_limits)
+        self.contrast_limits_slider.setToolTip(
             trans._('Right click for detailed slider popup.')
         )
 
         self.clim_popup = None
 
         connect_setattr(
-            self.contrastLimitsSlider.valueChanged,
+            self.contrast_limits_slider.valueChanged,
             self._layer,
             'contrast_limits',
         )
         connect_setattr(
-            self.contrastLimitsSlider.rangeChanged,
+            self.contrast_limits_slider.rangeChanged,
             self._layer,
             'contrast_limits_range',
         )
 
-        self.contrastLimitsSliderLabel = QtWrappedLabel(
+        self.contrast_limits_slider_label = QtWrappedLabel(
             trans._('contrast limits:')
         )
 
@@ -194,8 +198,8 @@ class QtContrastLimitsSliderControl(QtWidgetControlsBase):
 
     def _on_contrast_limits_change(self):
         """Receive layer model contrast limits change event and update slider."""
-        with qt_signals_blocked(self.contrastLimitsSlider):
-            self.contrastLimitsSlider.setValue(self._layer.contrast_limits)
+        with qt_signals_blocked(self.contrast_limits_slider):
+            self.contrast_limits_slider.setValue(self._layer.contrast_limits)
 
         if self.clim_popup:
             with qt_signals_blocked(self.clim_popup.slider):
@@ -203,14 +207,14 @@ class QtContrastLimitsSliderControl(QtWidgetControlsBase):
 
     def _on_contrast_limits_range_change(self):
         """Receive layer model contrast limits change event and update slider."""
-        with qt_signals_blocked(self.contrastLimitsSlider):
+        with qt_signals_blocked(self.contrast_limits_slider):
             decimals = range_to_decimals(
                 self._layer.contrast_limits_range, self._layer.dtype
             )
-            self.contrastLimitsSlider.setRange(
+            self.contrast_limits_slider.setRange(
                 *self._layer.contrast_limits_range
             )
-            self.contrastLimitsSlider.setSingleStep(10**-decimals)
+            self.contrast_limits_slider.setSingleStep(10**-decimals)
 
         if self.clim_popup:
             with qt_signals_blocked(self.clim_popup.slider):
@@ -219,4 +223,6 @@ class QtContrastLimitsSliderControl(QtWidgetControlsBase):
                 )
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
-        return [(self.contrastLimitsSliderLabel, self.contrastLimitsSlider)]
+        return [
+            (self.contrast_limits_slider_label, self.contrast_limits_slider)
+        ]

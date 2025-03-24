@@ -28,9 +28,9 @@ class QtContiguousCheckBoxControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-    contigCheckBox : qtpy.QtWidgets.QCheckBox
+    contiguous_checkbox : qtpy.QtWidgets.QCheckBox
         Checkbox to control if label layer is contiguous.
-    contigCheckBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+    contiguous_checkbox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the contiguous model chooser widget.
     """
 
@@ -45,10 +45,10 @@ class QtContiguousCheckBoxControl(QtWidgetControlsBase):
         contig_cb = QCheckBox()
         contig_cb.setToolTip(trans._('Contiguous editing'))
         contig_cb.stateChanged.connect(self.change_contig)
-        self.contigCheckBox = contig_cb
+        self.contiguous_checkbox = contig_cb
         self._on_contiguous_change()
 
-        self.contigCheckBoxLabel = QtWrappedLabel(trans._('contiguous:'))
+        self.contiguous_checkbox_label = QtWrappedLabel(trans._('contiguous:'))
 
     def change_contig(self, state: int) -> None:
         """Toggle contiguous state of label layer.
@@ -56,14 +56,14 @@ class QtContiguousCheckBoxControl(QtWidgetControlsBase):
         Parameters
         ----------
         state : int
-            Integer value of Qt.CheckState that indicates the check state of contigCheckBox
+            Integer value of Qt.CheckState that indicates the check state of contiguous_checkbox
         """
         self._layer.contiguous = Qt.CheckState(state) == Qt.CheckState.Checked
 
     def _on_contiguous_change(self) -> None:
         """Receive layer model contiguous change event and update the checkbox."""
         with self._layer.events.contiguous.blocker():
-            self.contigCheckBox.setChecked(self._layer.contiguous)
+            self.contiguous_checkbox.setChecked(self._layer.contiguous)
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
-        return [(self.contigCheckBoxLabel, self.contigCheckBox)]
+        return [(self.contiguous_checkbox_label, self.contiguous_checkbox)]

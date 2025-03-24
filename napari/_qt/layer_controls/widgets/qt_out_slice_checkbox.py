@@ -26,9 +26,9 @@ class QtOutSliceCheckBoxControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-    outOfSliceCheckBox : qtpy.QtWidgets.QCheckBox
+    out_of_slice_checkbox : qtpy.QtWidgets.QCheckBox
         Checkbox to indicate whether to render out of slice.
-    outOfSliceCheckBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+    out_of_slice_checkbox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the out of slice display enablement chooser widget.
     """
 
@@ -40,12 +40,16 @@ class QtOutSliceCheckBoxControl(QtWidgetControlsBase):
         )
 
         # Setup widgets
-        self.outOfSliceCheckBox = QCheckBox()
-        self.outOfSliceCheckBox.setToolTip(trans._('Out of slice display'))
-        self.outOfSliceCheckBox.setChecked(self._layer.out_of_slice_display)
-        self.outOfSliceCheckBox.stateChanged.connect(self.change_out_of_slice)
+        self.out_of_slice_checkbox = QCheckBox()
+        self.out_of_slice_checkbox.setToolTip(trans._('Out of slice display'))
+        self.out_of_slice_checkbox.setChecked(self._layer.out_of_slice_display)
+        self.out_of_slice_checkbox.stateChanged.connect(
+            self.change_out_of_slice
+        )
 
-        self.outOfSliceCheckBoxLabel = QtWrappedLabel(trans._('out of slice:'))
+        self.out_of_slice_checkbox_label = QtWrappedLabel(
+            trans._('out of slice:')
+        )
 
     def change_out_of_slice(self, state) -> None:
         """Toggleout of slice display of points layer.
@@ -67,10 +71,10 @@ class QtOutSliceCheckBoxControl(QtWidgetControlsBase):
 
     def _on_out_of_slice_display_change(self) -> None:
         """Receive layer model out_of_slice_display change event and update checkbox."""
-        with qt_signals_blocked(self.outOfSliceCheckBox):
-            self.outOfSliceCheckBox.setChecked(
+        with qt_signals_blocked(self.out_of_slice_checkbox):
+            self.out_of_slice_checkbox.setChecked(
                 self._layer.out_of_slice_display
             )
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
-        return [(self.outOfSliceCheckBoxLabel, self.outOfSliceCheckBox)]
+        return [(self.out_of_slice_checkbox_label, self.out_of_slice_checkbox)]

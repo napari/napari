@@ -28,9 +28,9 @@ class QtGammaSliderControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-        gammaSlider : superqt.QLabeledDoubleSlider
+        gamma_slider : superqt.QLabeledDoubleSlider
             Gamma adjustment slider widget.
-        gammaSliderLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        gamma_slider_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
             Label for the gamma chooser widget.
     """
 
@@ -48,14 +48,14 @@ class QtGammaSliderControl(QtWidgetControlsBase):
         sld.setSingleStep(0.02)
         sld.setValue(self._layer.gamma)
         connect_setattr(sld.valueChanged, self._layer, 'gamma')
-        self.gammaSlider = sld
+        self.gamma_slider = sld
 
-        self.gammaSliderLabel = QtWrappedLabel(trans._('gamma:'))
+        self.gamma_slider_label = QtWrappedLabel(trans._('gamma:'))
 
     def _on_gamma_change(self):
         """Receive the layer model gamma change event and update the slider."""
-        with qt_signals_blocked(self.gammaSlider):
-            self.gammaSlider.setValue(self._layer.gamma)
+        with qt_signals_blocked(self.gamma_slider):
+            self.gamma_slider.setValue(self._layer.gamma)
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
-        return [(self.gammaSliderLabel, self.gammaSlider)]
+        return [(self.gamma_slider_label, self.gamma_slider)]

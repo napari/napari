@@ -29,9 +29,9 @@ class QtInterpolationComboBoxControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-    interpComboBox : qtpy.QtWidgets.QComboBox
+    interpolation_combobox : qtpy.QtWidgets.QComboBox
         ComboBox controlling current shading value of the layer.
-    interpComboBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+    interpolation_combobox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the shading value chooser widget.
     """
 
@@ -48,19 +48,21 @@ class QtInterpolationComboBoxControl(QtWidgetControlsBase):
         )
 
         # Setup widgets
-        self.interpComboBox = QComboBox(parent)
-        self.interpComboBox.currentTextChanged.connect(
-            self.changeInterpolation
+        self.interpolation_combobox = QComboBox(parent)
+        self.interpolation_combobox.currentTextChanged.connect(
+            self.change_interpolation
         )
-        self.interpComboBox.setToolTip(
+        self.interpolation_combobox.setToolTip(
             trans._(
                 'Texture interpolation for display.\nnearest and linear are most performant.'
             )
         )
 
-        self.interpComboBoxLabel = QtWrappedLabel(trans._('interpolation:'))
+        self.interpolation_combobox_label = QtWrappedLabel(
+            trans._('interpolation:')
+        )
 
-    def changeInterpolation(self, text: str) -> None:
+    def change_interpolation(self, text: str) -> None:
         """Change interpolation mode for image display.
 
         Parameters
@@ -93,9 +95,9 @@ class QtInterpolationComboBoxControl(QtWidgetControlsBase):
             self._layer.events.interpolation2d.blocker(),
             self._layer.events.interpolation3d.blocker(),
         ):
-            if self.interpComboBox.findText(interp_string) == -1:
-                self.interpComboBox.addItem(interp_string)
-            self.interpComboBox.setCurrentText(interp_string)
+            if self.interpolation_combobox.findText(interp_string) == -1:
+                self.interpolation_combobox.addItem(interp_string)
+            self.interpolation_combobox.setCurrentText(interp_string)
 
     def _update_interpolation_combo(self, ndisplay: int) -> None:
         interp_names = [i.value for i in Interpolation.view_subset()]
@@ -104,10 +106,12 @@ class QtInterpolationComboBoxControl(QtWidgetControlsBase):
             if ndisplay == 2
             else self._layer.interpolation3d
         )
-        with qt_signals_blocked(self.interpComboBox):
-            self.interpComboBox.clear()
-            self.interpComboBox.addItems(interp_names)
-            self.interpComboBox.setCurrentText(interp)
+        with qt_signals_blocked(self.interpolation_combobox):
+            self.interpolation_combobox.clear()
+            self.interpolation_combobox.addItems(interp_names)
+            self.interpolation_combobox.setCurrentText(interp)
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
-        return [(self.interpComboBoxLabel, self.interpComboBox)]
+        return [
+            (self.interpolation_combobox_label, self.interpolation_combobox)
+        ]

@@ -29,9 +29,9 @@ class QtSymbolComboBoxControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-    symbolComboBox : qtpy.QtWidgets.QComboBox
+    symbol_combobox : qtpy.QtWidgets.QComboBox
         Combobox controlling current symbol attribute of the layer.
-    symbolComboBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+    symbol_combobox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the current symbol chooser widget.
     """
 
@@ -63,12 +63,12 @@ class QtSymbolComboBoxControl(QtWidgetControlsBase):
                 current_index = index
 
         sym_cb.setCurrentIndex(current_index)
-        sym_cb.currentTextChanged.connect(self.changeCurrentSymbol)
-        self.symbolComboBox = sym_cb
+        sym_cb.currentTextChanged.connect(self.change_current_symbol)
+        self.symbol_combobox = sym_cb
 
-        self.symbolComboBoxLabel = QtWrappedLabel(trans._('symbol:'))
+        self.symbol_combobox_label = QtWrappedLabel(trans._('symbol:'))
 
-    def changeCurrentSymbol(self, text: str) -> None:
+    def change_current_symbol(self, text: str) -> None:
         """Change marker symbol of the points on the layer model.
 
         Parameters
@@ -81,10 +81,10 @@ class QtSymbolComboBoxControl(QtWidgetControlsBase):
 
     def _on_current_symbol_change(self) -> None:
         """Receive marker symbol change event and update the dropdown menu."""
-        with qt_signals_blocked(self.symbolComboBox):
-            self.symbolComboBox.setCurrentIndex(
-                self.symbolComboBox.findData(self._layer.current_symbol.value)
+        with qt_signals_blocked(self.symbol_combobox):
+            self.symbol_combobox.setCurrentIndex(
+                self.symbol_combobox.findData(self._layer.current_symbol.value)
             )
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
-        return [(self.symbolComboBoxLabel, self.symbolComboBox)]
+        return [(self.symbol_combobox_label, self.symbol_combobox)]

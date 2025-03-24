@@ -67,19 +67,9 @@ class QtAutoScaleControl(QtWidgetControlsBase):
         super().__init__(parent, layer)
 
         # Setup widgets
-        self.autoScaleBar = AutoScaleButtons(layer, parent)
+        self.auto_scale_bar = AutoScaleButtons(layer, parent)
 
-        self.autoScaleBarLabel = QtWrappedLabel(trans._('auto-contrast:'))
-
-    def changeColor(self, text):
-        """Change colormap on the layer model.
-
-        Parameters
-        ----------
-        text : str
-            Colormap name.
-        """
-        self._layer.colormap = self.colormapComboBox.currentData()
+        self.auto_scale_bar_label = QtWrappedLabel(trans._('auto-contrast:'))
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
-        return [(self.autoScaleBarLabel, self.autoScaleBar)]
+        return [(self.auto_scale_bar, self.auto_scale_bar_label)]

@@ -33,6 +33,14 @@ class QtBaseImageControls(QtLayerControls):
         String id for the pan-zoom action to bind to the pan_zoom button.
     TRANSFORM_ACTION_NAME : str
         String id for the transform action to bind to the transform button.
+    _auto_scale_control : napari._qt.layer_controls.widgets.QtAutoScaleControl
+        Widget to wrap widgets related with the layer auto-contrast functionality.
+    _colormap_control : napari._qt.layer_controls.widgets.QtColormapControl
+        Widget to wrap combobox and label widgets related with the layer colormap attribute.
+    _contrast_limits_slider_control : napari._qt.layer_controls.widgets.QtContrastLimitsSliderControl
+        Widget to wrap layer contrast range slider widget.
+    _gamma_slider_control : napari._qt.layer_controls.widgets.QtGammaSliderControl
+        Widget to wrap layer gamma adjustment slider widget.
     button_grid : qtpy.QtWidgets.QGridLayout
         GridLayout for the layer mode buttons
     button_group : qtpy.QtWidgets.QButtonGroup
@@ -41,22 +49,6 @@ class QtBaseImageControls(QtLayerControls):
         An instance of a napari layer.
     panzoom_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to activate move camera mode for layer.
-    qtAutoScaleControl.autoScaleBar : qtpy.QtWidgets.QWidget
-        Widget to wrap push buttons related with the layer auto-contrast funtionality.
-    qtColormapControl.colormapWidget : qtpy.QtWidgets.QWidget
-        Widget to wrap combobox and label widgets related with the layer colormap attribute.
-    qtContrastLimitsSliderControl.contrastLimitsSlider : superqt.QRangeSlider
-        Contrast range slider widget.
-    qtGammaSliderControl.gammaSlider : superqt.QLabeledDoubleSlider
-        Gamma adjustment slider widget.
-    qtOpacityBlendingControls.blendComboBox : qtpy.QtWidgets.QComboBox
-        Dropdown widget to select blending mode of layer.
-    qtOpacityBlendingControls.blendLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for the blending combobox widget.
-    qtOpacityBlendingControls.opacityLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for the opacity slider widget.
-    qtOpacityBlendingControls.opacitySlider : superqt.QLabeledDoubleSlider
-        Slider controlling opacity of the layer.
     transform_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to transform image layer.
     """

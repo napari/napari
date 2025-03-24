@@ -27,9 +27,9 @@ class QtEdgeColorControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-    edgeColorEdit : napari._qt.widgets.qt_color_swatch.QColorSwatchEdit
+    edge_color_edit : napari._qt.widgets.qt_color_swatch.QColorSwatchEdit
         ColorSwatchEdit controlling current edge color of the layer.
-    edgeColorLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+    edge_color_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the current edge color chooser widget.
     """
 
@@ -43,15 +43,15 @@ class QtEdgeColorControl(QtWidgetControlsBase):
         )
 
         # Setup widgets
-        self.edgeColorEdit = QColorSwatchEdit(
+        self.edge_color_edit = QColorSwatchEdit(
             initial_color=self._layer.current_edge_color,
             tooltip=tooltip,
         )
         self._on_current_edge_color_change()
-        self.edgeColorEdit.color_changed.connect(self.changeEdgeColor)
-        self.edgeColorLabel = QtWrappedLabel(trans._('edge color:'))
+        self.edge_color_edit.color_changed.connect(self.change_edge_color)
+        self.edge_color_label = QtWrappedLabel(trans._('edge color:'))
 
-    def changeEdgeColor(self, color: np.ndarray) -> None:
+    def change_edge_color(self, color: np.ndarray) -> None:
         """Change edge color of shapes.
 
         Parameters
@@ -65,8 +65,8 @@ class QtEdgeColorControl(QtWidgetControlsBase):
 
     def _on_current_edge_color_change(self) -> None:
         """Receive layer model edge color change event and update color swatch."""
-        with qt_signals_blocked(self.edgeColorEdit):
-            self.edgeColorEdit.setColor(self._layer.current_edge_color)
+        with qt_signals_blocked(self.edge_color_edit):
+            self.edge_color_edit.setColor(self._layer.current_edge_color)
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
-        return [(self.edgeColorLabel, self.edgeColorEdit)]
+        return [(self.edge_color_label, self.edge_color_edit)]

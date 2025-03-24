@@ -32,9 +32,9 @@ class QtColorModeComboBoxControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-    colorModeComboBox : qtpy.QtWidgets.QComboBox
+    color_mode_combobox : qtpy.QtWidgets.QComboBox
         ComboBox controlling current color mode of the layer.
-    colorModeComboBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+    color_mode_combobox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the color mode chooser widget.
     """
 
@@ -51,15 +51,15 @@ class QtColorModeComboBoxControl(QtWidgetControlsBase):
             data = data.value
             color_mode_comboBox.addItem(text, data)
 
-        self.colorModeComboBox = color_mode_comboBox
+        self.color_mode_combobox = color_mode_comboBox
         self._on_colormap_change()
         color_mode_comboBox.activated.connect(self.change_color_mode)
 
-        self.colorModeComboBoxLabel = QtWrappedLabel(trans._('color mode:'))
+        self.color_mode_combobox_label = QtWrappedLabel(trans._('color mode:'))
 
     def change_color_mode(self) -> None:
         """Change color mode of label layer"""
-        if self.colorModeComboBox.currentData() == LabelColorMode.AUTO.value:
+        if self.color_mode_combobox.currentData() == LabelColorMode.AUTO.value:
             self._layer.colormap = self._layer._original_random_colormap
         else:
             self._layer.colormap = self._layer._direct_colormap
@@ -68,20 +68,20 @@ class QtColorModeComboBoxControl(QtWidgetControlsBase):
         enable_combobox = not self._layer._is_default_colors(
             self._layer._direct_colormap.color_dict
         )
-        self.colorModeComboBox.setEnabled(enable_combobox)
+        self.color_mode_combobox.setEnabled(enable_combobox)
         if not enable_combobox:
-            self.colorModeComboBox.setToolTip(
+            self.color_mode_combobox.setToolTip(
                 'Layer needs a user-set DirectLabelColormap to enable direct '
                 'mode.'
             )
         if isinstance(self._layer.colormap, CyclicLabelColormap):
-            self.colorModeComboBox.setCurrentIndex(
-                self.colorModeComboBox.findData(LabelColorMode.AUTO.value)
+            self.color_mode_combobox.setCurrentIndex(
+                self.color_mode_combobox.findData(LabelColorMode.AUTO.value)
             )
         else:
-            self.colorModeComboBox.setCurrentIndex(
-                self.colorModeComboBox.findData(LabelColorMode.DIRECT.value)
+            self.color_mode_combobox.setCurrentIndex(
+                self.color_mode_combobox.findData(LabelColorMode.DIRECT.value)
             )
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
-        return [(self.colorModeComboBoxLabel, self.colorModeComboBox)]
+        return [(self.color_mode_combobox_label, self.color_mode_combobox)]

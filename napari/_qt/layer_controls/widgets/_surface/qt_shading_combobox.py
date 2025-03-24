@@ -28,9 +28,9 @@ class QtShadingComboBoxControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-    shadingComboBox : qtpy.QtWidgets.QComboBox
+    shading_combobox : qtpy.QtWidgets.QComboBox
         ComboBox controlling current shading value of the layer.
-    shadingComboBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+    shading_combobox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the shading value chooser widget.
     """
 
@@ -49,28 +49,28 @@ class QtShadingComboBoxControl(QtWidgetControlsBase):
             SHADING_TRANSLATION[self._layer.shading]
         )
         shading_comboBox.setCurrentIndex(index)
-        shading_comboBox.currentTextChanged.connect(self.changeShading)
-        self.shadingComboBox = shading_comboBox
+        shading_comboBox.currentTextChanged.connect(self.change_shading)
+        self.shading_combobox = shading_comboBox
 
-        self.shadingComboBoxLabel = QtWrappedLabel(trans._('shading:'))
+        self.shading_combobox_label = QtWrappedLabel(trans._('shading:'))
 
-    def changeShading(self, text: str) -> None:
+    def change_shading(self, text: str) -> None:
         """Change shading value on the surface layer.
         Parameters
         ----------
         text : str
             Name of shading mode, eg: 'flat', 'smooth', 'none'.
         """
-        self._layer.shading = self.shadingComboBox.currentData()
+        self._layer.shading = self.shading_combobox.currentData()
 
     def _on_shading_change(self) -> None:
         """Receive layer model shading change event and update combobox."""
         with self._layer.events.shading.blocker():
-            self.shadingComboBox.setCurrentIndex(
-                self.shadingComboBox.findData(
+            self.shading_combobox.setCurrentIndex(
+                self.shading_combobox.findData(
                     SHADING_TRANSLATION[self._layer.shading]
                 )
             )
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
-        return [(self.shadingComboBoxLabel, self.shadingComboBox)]
+        return [(self.shading_combobox_label, self.shading_combobox)]

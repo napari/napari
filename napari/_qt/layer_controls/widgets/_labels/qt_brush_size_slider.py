@@ -29,9 +29,9 @@ class QtBrushSizeSliderControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-    brushSizeSlider : superqt.QLabeledDoubleSlider
+    brush_size_slider : superqt.QLabeledDoubleSlider
         Slider controlling current brush size of the layer.
-    brushSizeSliderLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+    brush_size_slider_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the brush size chooser widget.
     """
 
@@ -48,13 +48,13 @@ class QtBrushSizeSliderControl(QtWidgetControlsBase):
         sld.setMinimum(1)
         sld.setMaximum(40)
         sld.setSingleStep(1)
-        sld.valueChanged.connect(self.changeSize)
-        self.brushSizeSlider = sld
+        sld.valueChanged.connect(self.change_size)
+        self.brush_size_slider = sld
         self._on_brush_size_change()
 
-        self.brushSizeSliderLabel = QtWrappedLabel(trans._('brush size:'))
+        self.brush_size_slider_label = QtWrappedLabel(trans._('brush size:'))
 
-    def changeSize(self, value: float) -> None:
+    def change_size(self, value: float) -> None:
         """Change paint brush size.
 
         Parameters
@@ -69,9 +69,9 @@ class QtBrushSizeSliderControl(QtWidgetControlsBase):
         with self._layer.events.brush_size.blocker():
             value = self._layer.brush_size
             value = np.maximum(1, int(value))
-            if value > self.brushSizeSlider.maximum():
-                self.brushSizeSlider.setMaximum(int(value))
-            self.brushSizeSlider.setValue(value)
+            if value > self.brush_size_slider.maximum():
+                self.brush_size_slider.setMaximum(int(value))
+            self.brush_size_slider.setValue(value)
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
-        return [(self.brushSizeSliderLabel, self.brushSizeSlider)]
+        return [(self.brush_size_slider_label, self.brush_size_slider)]

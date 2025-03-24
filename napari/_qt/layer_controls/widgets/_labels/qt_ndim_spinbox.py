@@ -28,9 +28,9 @@ class QtNdimSpinBoxControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-    ndimSpinBox : qtpy.QtWidgets.QSpinBox
+    ndim_spinbox : qtpy.QtWidgets.QSpinBox
         Spinbox to control the number of editable dimensions of label layer.
-    ndimSpinBoxLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+    ndim_spinbox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the number of editable dimensions chooser widget.
     """
 
@@ -45,7 +45,7 @@ class QtNdimSpinBoxControl(QtWidgetControlsBase):
 
         # Setup widgets
         ndim_sb = QSpinBox()
-        self.ndimSpinBox = ndim_sb
+        self.ndim_spinbox = ndim_sb
         ndim_sb.setToolTip(trans._('Number of dimensions for label editing'))
         ndim_sb.valueChanged.connect(self.change_n_edit_dim)
         ndim_sb.setMinimum(2)
@@ -54,7 +54,7 @@ class QtNdimSpinBoxControl(QtWidgetControlsBase):
         ndim_sb.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._on_n_edit_dimensions_change()
 
-        self.ndimSpinBoxLabel = QtWrappedLabel(trans._('n edit dim:'))
+        self.ndim_spinbox_label = QtWrappedLabel(trans._('n edit dim:'))
 
     def change_n_edit_dim(self, value: int) -> None:
         """Change the number of editable dimensions of label layer.
@@ -65,7 +65,7 @@ class QtNdimSpinBoxControl(QtWidgetControlsBase):
             The number of editable dimensions to set.
         """
         self._layer.n_edit_dimensions = value
-        self.ndimSpinBox.clearFocus()
+        self.ndim_spinbox.clearFocus()
 
         # TODO: Check how to decouple this
         self.parent().setFocus()
@@ -74,9 +74,9 @@ class QtNdimSpinBoxControl(QtWidgetControlsBase):
         """Receive layer model n-dim mode change event and update the checkbox."""
         with self._layer.events.n_edit_dimensions.blocker():
             value = self._layer.n_edit_dimensions
-            self.ndimSpinBox.setValue(int(value))
+            self.ndim_spinbox.setValue(int(value))
             # TODO: Check how to decouple this
             self.parent()._set_polygon_tool_state()
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
-        return [(self.ndimSpinBoxLabel, self.ndimSpinBox)]
+        return [(self.ndim_spinbox_label, self.ndim_spinbox)]
