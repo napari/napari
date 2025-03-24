@@ -13,6 +13,14 @@ APP_NAME = 'napari'
 
 
 class NapariApplication(Application):
+    """A singleton class representing the Napari application.
+
+    This class extends the app_model.Application class and provides a
+    singleton instance of the Napari application. It is responsible for
+    managing the application state, including the injection store and
+    registering actions and menus.
+    """
+
     def __init__(self, app_name=APP_NAME) -> None:
         # raise_synchronous_exceptions means that commands triggered via
         # ``execute_command`` will immediately raise exceptions. Normally,
@@ -30,7 +38,14 @@ class NapariApplication(Application):
 
     @classmethod
     def get_app_model(cls, app_name: str = APP_NAME) -> NapariApplication:
-        return cls()  # type: ignore[return-value]
+        """Get the Napari Application singleton.
+
+        This class method that returns the singleton instance of the
+        NapariApplication. It relies on the parent class's Application.get_app()
+        method (provided by the app_model library) to retrieve the application
+        instance by name.
+        """
+        return Application.get_app(app_name) or cls()
 
 
 @lru_cache(maxsize=1)
@@ -57,5 +72,9 @@ def _napari_names() -> dict[str, object]:
 
 
 def get_app_model() -> NapariApplication:
-    """Get the Napari Application singleton."""
+    """Get the Napari Application singleton.
+
+    This public function returns the singleton instance of the
+    NapariApplication.
+    """
     return NapariApplication.get_app_model()
