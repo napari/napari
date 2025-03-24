@@ -913,21 +913,8 @@ class Points(Layer):
     def size(self, size: float | np.ndarray | list) -> None:
         try:
             self._size = np.broadcast_to(size, len(self.data)).copy()
-        except ValueError as e:
-            # deprecated anisotropic sizes; extra check should be removed in future version
-            try:
-                self._size = np.broadcast_to(
-                    size, self.data.shape[::-1]
-                ).T.copy()
-            except ValueError:
-                raise ValueError(
-                    trans._(
-                        'Size is not compatible for broadcasting',
-                        deferred=True,
-                    )
-                ) from e
-            else:
-                self._size = np.mean(size, axis=1)
+        except ValueError:
+            self._size = np.mean(size, axis=1)
         # TODO: technically not needed to cleat the non-augmented extent... maybe it's fine like this to avoid complexity
         self.refresh(highlight=False)
 
