@@ -12,13 +12,7 @@ from skimage.draw import line, polygon2mask
 from vispy.geometry import Triangulation
 from vispy.visuals.tube import _frenet_frames
 
-from napari.layers.shapes._accelerated_triangulate_dispatch import (
-    generate_2D_edge_meshes,
-    is_convex,
-    normalize_vertices_and_edges,
-    orientation,
-    reconstruct_polygon_edges,
-)
+from napari.layers.shapes import _accelerated_triangulate_dispatch as atd
 from napari.layers.shapes.shape_types import (
     CoordinateArray,
     CoordinateArray2D,
@@ -243,10 +237,10 @@ def lines_intersect(p1, q1, p2, q2):
         Bool indicating if line segment p1q1 intersects line segment p2q2
     """
     # Determine four orientations
-    o1 = orientation(p1, q1, p2)
-    o2 = orientation(p1, q1, q2)
-    o3 = orientation(p2, q2, p1)
-    o4 = orientation(p2, q2, q1)
+    o1 = atd.orientation(p1, q1, p2)
+    o2 = atd.orientation(p1, q1, q2)
+    o3 = atd.orientation(p2, q2, p1)
+    o4 = atd.orientation(p2, q2, q1)
 
     # Test general case
     if (o1 != o2) and (o3 != o4):
@@ -318,7 +312,9 @@ def is_collinear(points: npt.NDArray) -> bool:
 
     # The collinearity test takes three points, the first two are the first
     # two in the list, and then the third is iterated through in the loop
-    return all(orientation(points[0], points[1], p) == 0 for p in points[2:])
+    return all(
+        atd.orientation(points[0], points[1], p) == 0 for p in points[2:]
+    )
 
 
 def point_to_lines(point, lines):
@@ -672,7 +668,7 @@ def triangulate_face_and_edges(
             np.empty((0, 3), dtype=np.int32),
         ), triangulate_edge(polygon_vertices, closed=True)
 
-    if is_convex(data2d):
+    if atd.is_convex(data2d):
         face_triangulation = _fan_triangulation(data2d)
         return (
             _fix_vertices_if_needed(
@@ -681,7 +677,7 @@ def triangulate_face_and_edges(
             face_triangulation[1],
         ), triangulate_edge(polygon_vertices, closed=True)
 
-    raw_vertices, edges = normalize_vertices_and_edges(data2d, close=True)
+    raw_vertices, edges = atd.normalize_vertices_and_edges(data2d, close=True)
 
     try:
         face_triangulation = _triangulate_face(
@@ -741,7 +737,7 @@ def reconstruct_and_triangulate_edge(
     Returns
     -------
     """
-    polygon_list = reconstruct_polygon_edges(vertices, edges)
+    polygon_list = atd.reconstruct_polygon_edges(vertices, edges)
     centers_list = []
     offset_list = []
     triangles_list = []
@@ -777,10 +773,10 @@ def triangulate_face(
         Px3 array of the indices of the vertices that will form the
         triangles of the triangulation
     """
-    if is_convex(polygon_vertices):
+    if atd.is_convex(polygon_vertices):
         return _fan_triangulation(polygon_vertices)
 
-    raw_vertices, edges = normalize_vertices_and_edges(
+    raw_vertices, edges = atd.normalize_vertices_and_edges(
         polygon_vertices, close=True
     )
     try:
@@ -899,7 +895,7 @@ def triangulate_edge(
         clean_path = path
 
     if clean_path.shape[-1] == 2:
-        centers, offsets, triangles = generate_2D_edge_meshes(
+        centers, offsets, triangles = atd.generate_2D_edge_meshes(
             np.asarray(clean_path, dtype=np.float32), closed=closed
         )
     else:
@@ -953,7 +949,7 @@ def _remove_internal_edges(path, keep_holes=True):
     the connected components among the remaining edges, and removes all
     components except the one with the largest extent.
     """
-    v, e = normalize_vertices_and_edges(path, close=True)
+    v, e = atd.normalize_vertices_and_edges(path, close=True)
     n_edge = len(e)
     if n_edge == 0:
         # if there's not enough edges in the path, return fast.
