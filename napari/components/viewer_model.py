@@ -387,6 +387,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     ) -> None:
         """Reset the camera view.
 
+        Ajusts the camera zoom and center the view so that all layers are
+        visible, accounting for the current grid mode and margin.
+
         Parameters
         ----------
         margin : float in [0, 1)
@@ -395,7 +398,43 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         reset_camera_angle : bool
             Reset the camera angle to the default value. Default is True.
         """
+        # Get the scene parameters, including the total_size of the grid
+        extent, scene_size, corner, total_size = self._get_scene_parameters()
 
+        self.camera.center = self._calculate_view_center(corner, total_size)
+
+        scale_factor = self._get_scale_factor(margin)
+
+        if reset_camera_angle:
+            self.camera.angles = (0, 0, 90)
+
+        # Set camera zoom based on ndisplay
+        # zoom is defined as the number of canvas pixels per world pixel
+        # The default value used below will zoom such that the whole field
+        # of view will occupy 95% of the canvas on the most filled axis
+        if np.max(scene_size) == 0:
+            self.camera.zoom = scale_factor * np.min(self._canvas_size)
+
+        elif self.dims.ndisplay == 2:
+            self.camera.zoom = self._get_2d_camera_zoom(
+                total_size, scale_factor
+            )
+
+        elif self.dims.ndisplay == 3:
+            self.camera.zoom = self._get_3d_camera_zoom(
+                extent, total_size, scale_factor
+            )
+
+        # Emit a reset view event, which is no longer used internally, but
+        # which maybe useful for building on napari.
+        self.events.reset_view(
+            center=self.camera.center,
+            zoom=self.camera.zoom,
+            angles=self.camera.angles,
+        )
+
+    def _get_scene_parameters(self):
+        """Get the scene parameters for the current grid mode."""
         extent = self._sliced_extent_world_augmented
         scene_size = extent[1] - extent[0]
         corner = extent[0]
@@ -411,8 +450,14 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             * self.grid.spacing
             * (np.array(grid_size) - 1)
         )
-        size = np.multiply(scene_size, grid_size) + total_spacing
-        center_array = np.add(corner, np.divide(size, 2))[
+        total_size = np.multiply(scene_size, grid_size) + total_spacing
+
+        return extent, scene_size, corner, total_size
+
+    def _calculate_view_center(self, corner, total_size):
+        """Calculate the center of the view based on the total size."""
+
+        center_array = np.add(corner, np.divide(total_size, 2))[
             -self.dims.ndisplay :
         ]
         center = cast(
@@ -423,54 +468,41 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             ),
         )
         assert len(center) in (2, 3)
-        self.camera.center = center
-        # zoom is defined as the number of canvas pixels per world pixel
-        # The default value used below will zoom such that the whole field
-        # of view will occupy 95% of the canvas on the most filled axis
+        return center
 
+    def _get_scale_factor(self, margin: float) -> float:
+        """Get the scale factor for camera zoom based on the margin."""
         if 0 <= margin < 1:
-            scale_factor = 1 - margin
-        else:
-            raise ValueError(
-                trans._(
-                    'margin must be between 0 and 1; got {margin} instead.',
-                    deferred=True,
-                    margin=margin,
-                )
+            return 1 - margin
+        raise ValueError(
+            trans._(
+                'margin must be between 0 and 1; got {margin} instead.',
+                deferred=True,
+                margin=margin,
             )
-        if np.max(size) == 0:
-            self.camera.zoom = scale_factor * np.min(self._canvas_size)
-        else:
-            scale = np.array(size[-2:])
-            scale[np.isclose(scale, 0)] = 1
-            self.camera.zoom = scale_factor * np.min(
-                np.array(self._canvas_size) / scale
-            )
-        if reset_camera_angle:
-            self.camera.angles = (0, 0, 90)
+        )
 
-        if self.dims.ndisplay == 3 and not reset_camera_angle:
-            grid_extent = extent.copy()
-            grid_extent[1] = (
-                extent[0] + np.multiply(scene_size, grid_size) + total_spacing
-            )
-            # adjust zoom to fit a rotated object
-            bounding_box = self._calculate_bounding_box(
-                extent=grid_extent,
-                view_direction=self.camera.view_direction,
-                up_direction=self.camera.up_direction,
-            )
-            # zoom such that the minimum of the bounding box fits the canvas
-            self.camera.zoom = scale_factor * np.min(
-                np.array(self._canvas_size) / bounding_box
-            )
+    def _get_2d_camera_zoom(
+        self, total_size: np.ndarray, scale_factor: float
+    ) -> float:
+        """Get the camera zoom for 2D view."""
+        scale = np.array(total_size[-2:])
+        scale[np.isclose(scale, 0)] = 1
+        return scale_factor * np.min(np.array(self._canvas_size) / scale)
 
-        # Emit a reset view event, which is no longer used internally, but
-        # which maybe useful for building on napari.
-        self.events.reset_view(
-            center=self.camera.center,
-            zoom=self.camera.zoom,
-            angles=self.camera.angles,
+    def _get_3d_camera_zoom(
+        self, extent: np.ndarray, total_size: np.ndarray, scale_factor: float
+    ) -> float:
+        """Calculate the zoom such that the minimum of the bounding box fits the canvas."""
+        grid_extent = extent.copy()
+        grid_extent[1] = extent[0] + total_size
+        bounding_box = self._calculate_bounding_box(
+            extent=grid_extent,
+            view_direction=self.camera.view_direction,
+            up_direction=self.camera.up_direction,
+        )
+        return scale_factor * np.min(
+            np.array(self._canvas_size) / bounding_box
         )
 
     def _calculate_bounding_box(
