@@ -448,9 +448,13 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.camera.angles = (0, 0, 90)
 
         else:
+            grid_extent = extent.copy()
+            grid_extent[1] = (
+                extent[0] + np.multiply(scene_size, grid_size) + total_spacing
+            )
             # adjust zoom to fit a rotated object
             bounding_box = self._calculate_bounding_box(
-                extent=extent,
+                extent=grid_extent,
                 view_direction=self.camera.view_direction,
                 up_direction=self.camera.up_direction,
             )
