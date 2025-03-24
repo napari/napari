@@ -6,6 +6,7 @@ from napari.layers.shapes._accelerated_triangulate_dispatch import (
     generate_2D_edge_meshes_py,
 )
 from napari.layers.shapes._shapes_utils import (
+    _is_convex,
     get_default_shape_type,
     number_of_shapes,
     perpendicular_distance,
@@ -424,3 +425,50 @@ def test_perpendicular_distance(start, end, point):
     distance = perpendicular_distance(point, start, end)
 
     assert distance == 1
+
+
+def pentagram(reverse):
+    radius = 10
+    n = 5
+    angles = np.linspace(0, 4 * np.pi, n, endpoint=False)
+    if reverse:
+        angles = angles[::-1]
+    return np.column_stack((radius * np.cos(angles), radius * np.sin(angles)))
+
+
+def generate_regular_polygon(n, reverse, radius=1):
+    angles = np.linspace(0, 2 * np.pi, n, endpoint=False)
+    if reverse:
+        angles = angles[::-1]
+    return np.column_stack((radius * np.cos(angles), radius * np.sin(angles)))
+
+
+def rotation_matrix(angle):
+    return np.array(
+        [
+            [np.cos(np.radians(angle)), -np.sin(np.radians(angle))],
+            [np.sin(np.radians(angle)), np.cos(np.radians(angle))],
+        ]
+    )
+
+
+ANGLES = [0, 5, 75, 95, 355]
+
+
+@pytest.mark.parametrize('angle', ANGLES, ids=str)
+@pytest.mark.parametrize('reverse', [False, True])
+def test_is_convex_self_intersection(angle, reverse):
+    p = pentagram(reverse)
+    rot = rotation_matrix(angle)
+    data = np.dot(p, rot)
+    assert not _is_convex(data)
+
+
+@pytest.mark.parametrize('angle', ANGLES, ids=str)
+@pytest.mark.parametrize('n_vertex', [3, 4, 7, 12, 15, 20])
+@pytest.mark.parametrize('reverse', [False, True])
+def test_is_convex_regular_polygon(angle, n_vertex, reverse):
+    poly = generate_regular_polygon(n_vertex, reverse=reverse)
+    rot = rotation_matrix(angle)
+    rotated_poly = np.dot(poly, rot)
+    assert _is_convex(rotated_poly)
