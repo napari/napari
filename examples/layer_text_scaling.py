@@ -20,7 +20,7 @@ viewer.open_sample('napari', 'astronaut')
 points = np.array([[100, 100], [120, 120], [140, 140], [160, 160]])
 text_scaled = {
     'string': ['Point 1', 'Point 2', 'Point 3', 'Point 4'],
-    'size': 6,
+    'size': 8,
     'color': 'magenta',
     'anchor': 'center',
     'scaling': True
@@ -36,7 +36,7 @@ points_layer = viewer.add_points(
 # add a second points layer slightly offset and show without scaling
 text_unscaled = {
     'string': ['Point 1', 'Point 2', 'Point 3', 'Point 4'],
-    'size': 6,
+    'size': 8,
     'color': 'green',
     'anchor': 'center',
 }
@@ -48,7 +48,7 @@ points_layer2 = viewer.add_points(
 )
 
 shape_text = {
-    'string': ['Rectangle'],
+    'string': ['Triangle'],
     'size': 12,
     'scaling': True,
 }
@@ -58,6 +58,11 @@ shapes_layer = viewer.add_shapes(
     text=shape_text,
     name='scaled_text_shapes'
 )
+
+for layer in viewer.layers:
+    layer.scale = (3, 3)
+
+viewer.reset_view()
 
 if __name__ == '__main__':
     napari.run()
