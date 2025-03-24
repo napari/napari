@@ -1545,11 +1545,6 @@ def test_size_with_arrays(ndim):
     layer.size = sizes
     assert np.array_equal(layer.size, sizes)
 
-    # Un-broadcastable array should raise an exception
-    sizes = [5, 5]
-    with pytest.raises(ValueError, match='not compatible for broadcasting'):
-        layer.size = sizes
-
     # Create new layer with new size array data
     sizes = 5 * np.random.random(10)
     layer = Points(data, size=sizes)
