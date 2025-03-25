@@ -153,6 +153,21 @@ def test_is_convex_regular_polygon(regular_polygon):
 
 
 @pytest.mark.usefixtures('_disable_jit')
+def test_is_convex_non_convex(non_convex_poly):
+    assert not ac.is_convex(non_convex_poly)
+
+
+@pytest.mark.usefixtures('_disable_jit')
+def test_line_non_convex(line):
+    assert not ac.is_convex(line)
+
+
+@pytest.mark.usefixtures('_disable_jit')
+def test_line_two_point_non_convex(line_two_point):
+    assert not ac.is_convex(line_two_point)
+
+
+@pytest.mark.usefixtures('_disable_jit')
 def test_normalize_vertices_and_edges(poly_hole):
     points, edges = ac.normalize_vertices_and_edges(poly_hole, close=True)
     assert points.shape == (8, 2)

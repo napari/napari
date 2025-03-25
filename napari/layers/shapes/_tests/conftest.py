@@ -533,6 +533,22 @@ def self_intersecting_polygon(request):
     return np.dot(poly, rot)
 
 
+@pytest.fixture(params=[0, 1, 2, 3, 4])
+def non_convex_poly(request):
+    poly = np.array([[0, 0], [2, 0], [1, 1], [2, 2], [0, 2]])
+    return np.roll(poly, request.param, axis=0)
+
+
+@pytest.fixture
+def line():
+    return np.array([[0, 0], [5, 5], [7, 7], [10, 10]])
+
+
+@pytest.fixture
+def line_two_point():
+    return np.array([[0, 0], [10, 10]])
+
+
 @pytest.fixture
 def poly_hole():
     return np.array(

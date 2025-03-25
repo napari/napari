@@ -467,11 +467,16 @@ def test_is_convex_regular_polygon(regular_polygon):
     assert is_convex_py(regular_polygon)
 
 
-@pytest.mark.parametrize('roll', [0, 1, 2, 3, 4])
-def test_is_convex_non_convex(roll):
-    poly = np.array([[0, 0], [2, 0], [1, 1], [2, 2], [0, 2]])
-    poly_roll = np.roll(poly, roll, axis=0)
-    assert not is_convex_py(poly_roll)
+def test_is_convex_non_convex(non_convex_poly):
+    assert not is_convex_py(non_convex_poly)
+
+
+def test_line_non_convex(line):
+    assert not is_convex_py(line)
+
+
+def test_line_two_point_non_convex(line_two_point):
+    assert not is_convex_py(line_two_point)
 
 
 def test_normalize_vertices_and_edges(poly_hole):
