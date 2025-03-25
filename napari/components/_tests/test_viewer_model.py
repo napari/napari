@@ -1088,6 +1088,12 @@ def test_reset_view_margin():
     assert default_zoom > large_margin_zoom
     assert no_margin_zoom > default_zoom
 
+    # check validation
+    with pytest.raises(ValueError, match='margin must be between 0 and 1'):
+        viewer.reset_view(margin=-0.1)
+    with pytest.raises(ValueError, match='margin must be between 0 and 1'):
+        viewer.reset_view(margin=1.0)
+
 
 @pytest.mark.parametrize(
     ('ndisplay', 'expected_center'),
