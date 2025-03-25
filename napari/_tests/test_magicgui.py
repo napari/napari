@@ -68,7 +68,12 @@ def test_magicgui_add_data_inheritance(make_napari_viewer, rng):
     a LayerData type.
     """
     viewer = make_napari_viewer()
-    viewer.add_image(rng.random((10, 10)), scale=(1, 2), translate=(3, 4))
+    viewer.add_image(
+        rng.random((10, 10)),
+        scale=(1, 2),
+        translate=(3, 4),
+        units=('nm', 'um'),
+    )
 
     @magicgui
     def add_data(data: types.ImageData) -> types.LabelsData:
@@ -80,6 +85,7 @@ def test_magicgui_add_data_inheritance(make_napari_viewer, rng):
     assert isinstance(viewer.layers[1], Labels)
     npt.assert_array_equal(viewer.layers[1].scale, (1, 2))
     npt.assert_array_equal(viewer.layers[1].translate, (3, 4))
+    assert viewer.layers[1].units == viewer.layers[0].units
 
 
 def test_magicgui_add_data_inheritance_two_layer(make_napari_viewer, rng):
