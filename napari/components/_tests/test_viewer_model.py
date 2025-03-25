@@ -1067,3 +1067,108 @@ def test_get_status_text():
     viewer.update_status_from_cursor()
     assert viewer.status == ' [1 2] » Labels: 0; a: 1    '
     assert viewer.tooltip.text == 'a: 1'
+
+
+def test_reset_view_margin():
+    """Test reset_view with different margin values."""
+    viewer = ViewerModel()
+    viewer.add_image(np.random.random((10, 10)))
+
+    # Reset view with default margin (0.05)
+    viewer.reset_view()
+    default_zoom = viewer.camera.zoom
+
+    viewer.reset_view(margin=0.2)
+    large_margin_zoom = viewer.camera.zoom
+
+    viewer.reset_view(margin=0)
+    no_margin_zoom = viewer.camera.zoom
+
+    # Check zoom decreases with increased margin
+    assert default_zoom > large_margin_zoom
+    assert no_margin_zoom > default_zoom
+
+
+def test_reset_view_2d():
+    viewer = ViewerModel(ndisplay=2)
+    data = np.random.random((30, 20))
+    viewer.add_image(data)
+
+    # pan the layer, then reset the view
+    viewer.camera.center = (0, 0, 0)
+    viewer.reset_view()
+
+    np.testing.assert_allclose(viewer.camera.center, (0, 14.5, 9.5))
+
+    # 3D display, 2D data, reset angle
+    viewer.dims.ndisplay = 3
+    viewer.camera.angles = (45, 45, 45)
+    viewer.reset_view()
+
+    assert viewer.camera.angles == (0, 0, 90)
+
+    # 3D display, 2D data, keep angles
+    viewer.camera.angles = (45, 45, 45)
+    viewer.reset_view(reset_camera_angle=False)
+
+    assert viewer.camera.angles == (45, 45, 45)
+
+
+def test_reset_view_3d():
+    viewer = ViewerModel(ndisplay=2)
+    data = np.random.random((10, 30, 20))
+    viewer.add_image(data)
+
+    # pan the layer, then reset the view
+    viewer.camera.center = (0, 0, 0)
+    viewer.reset_view()
+
+    np.testing.assert_allclose(viewer.camera.center, (4.5, 14.5, 9.5))
+
+    # 3D display, 3D data, reset angle
+    viewer.dims.ndisplay = 3
+    viewer.camera.angles = (45, 45, 45)
+    viewer.reset_view()
+
+    assert viewer.camera.angles == (0, 0, 90)
+
+    # 3D display, 3D data, keep angles
+    viewer.camera.angles = (45, 45, 45)
+    viewer.reset_view(reset_camera_angle=False)
+    assert viewer.camera.angles == (45, 45, 45)
+
+
+def test_reset_view_grid():
+    """Test grid view adjusts zoom appropriately."""
+    viewer = ViewerModel()
+    for _ in range(4):
+        viewer.add_image(np.random.random((10, 10)))
+
+    viewer.reset_view()
+    default_zoom = viewer.camera.zoom
+
+    # enable grid and reset view
+    viewer.grid.enabled = True
+    viewer.reset_view()
+    grid_zoom = viewer.camera.zoom
+
+    # check zoom is less with grid enabled
+    assert grid_zoom < default_zoom
+
+    # space grid apart, then reset view
+    viewer.grid.spacing = 0.2
+    viewer.reset_view()
+    spaced_grid_zoom = viewer.camera.zoom
+
+    assert spaced_grid_zoom < grid_zoom
+
+
+def test_reset_view_empty():
+    """Test reset_view with no layers."""
+    viewer = ViewerModel()
+    # Reset view should not raise errors when no layers are present
+    viewer.reset_view()
+    # Default values should be set
+    np.testing.assert_allclose(viewer.camera.center, (0, 255.5, 255.5))
+    np.testing.assert_allclose(viewer.camera.angles, (0, 0, 90))
+    assert viewer.camera.zoom > 0
