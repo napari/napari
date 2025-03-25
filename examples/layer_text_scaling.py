@@ -4,7 +4,7 @@ Layer Text Scaling
 
 Display points layer with text features.
 By using the `scaling` property of the text layer, the text is scaled with the layers as canvas zoom changes.
-Scaling can also be thought of as fixing the height of the text in world (i.e. data) coordinates,
+Scaling can also be thought of as fixing the height of the text in world coordinates,
 whereas no scaling fixes the height of the text in screen / canvas pixels.
 This world scaling is useful when there are many points and the text would otherwise overlap when zoomed out, or become illegible when zoomed in.
 
