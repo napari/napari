@@ -18,6 +18,7 @@ from qtpy.QtWidgets import (
     QPushButton,
     QRadioButton,
 )
+from superqt.sliders import QRangeSlider
 
 from napari._qt.layer_controls.qt_image_controls import QtImageControls
 from napari._qt.layer_controls.qt_labels_controls import QtLabelsControls
@@ -333,7 +334,7 @@ def test_create_layer_controls_qslider(
     # check QAbstractSlider by changing value with `setValue` from minimum value to maximum
     for qslider in ctrl.findChildren(QAbstractSlider):
         if isinstance(qslider.minimum(), float):
-            if getattr(qslider, '_valuesChanged', None):
+            if isinstance(qslider, QRangeSlider):
                 # create a list of tuples in the case the slider is ranged
                 # from (minimum, minimum) to (maximum, maximum) +
                 # from (minimum, maximum) to (minimum, minimum)
@@ -355,7 +356,7 @@ def test_create_layer_controls_qslider(
             else:
                 value_range = np.linspace(qslider.minimum(), qslider.maximum())
         else:
-            if getattr(qslider, '_valuesChanged', None):
+            if isinstance(qslider, QRangeSlider):
                 # create a list of tuples in the case the slider is ranged
                 # from (minimum, minimum) to (maximum, maximum) +
                 # from (minimum, maximum) to (minimum, minimum)
@@ -386,7 +387,7 @@ def test_create_layer_controls_qslider(
             captured = capsys.readouterr()
             assert not captured.out
             assert not captured.err
-        if getattr(qslider, '_valuesChanged', None):
+        if isinstance(qslider, QRangeSlider):
             assert qslider.value()[0] == qslider.minimum()
         else:
             assert qslider.value() == qslider.maximum()
