@@ -93,6 +93,7 @@ def _get_spatial_from_layer(layer, ndim):
         'rotate': data2physical.rotate,
         'shear': data2physical.shear,
         'affine': layer.affine.set_slice(axis).affine_matrix,
+        'units': data2physical.units,
     }
 
 
