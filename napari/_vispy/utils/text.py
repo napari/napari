@@ -57,7 +57,8 @@ def update_text(
     text_manager = layer.text
     node.rotation = text_manager.rotation
     node.color = colors
-    node.font_size = text_manager.size
+
+    node.font_size = text_manager._get_scaled_size(layer.scale_factor)
 
 
 def _has_visible_text(layer: Points | Shapes) -> bool:
