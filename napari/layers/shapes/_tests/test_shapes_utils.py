@@ -6,6 +6,7 @@ from napari.layers.shapes._accelerated_triangulate_dispatch import (
     generate_2D_edge_meshes_py,
     is_convex_py,
     normalize_vertices_and_edges_py,
+    reconstruct_polygon_edges_py,
 )
 from napari.layers.shapes._shapes_utils import (
     get_default_shape_type,
@@ -466,23 +467,35 @@ def test_is_convex_regular_polygon(regular_polygon):
     assert is_convex_py(regular_polygon)
 
 
+@pytest.mark.parametrize('roll', [0, 1, 2, 3, 4])
+def test_is_convex_non_convex(roll):
+    poly = np.array([[0, 0], [2, 0], [1, 1], [2, 2], [0, 2]])
+    poly_roll = np.roll(poly, roll, axis=0)
+    assert not is_convex_py(poly_roll)
+
+
 def test_normalize_vertices_and_edges(poly_hole):
     points, edges = normalize_vertices_and_edges_py(poly_hole, close=True)
     assert points.shape == (8, 2)
     assert edges.shape == (8, 2)
 
 
-def test_reconstruct_and_triangulate_edge():
-    vertices = np.array(
-        [(0, 0), (3, 0), (3, 3), (0, 3), (1, 1), (2, 1), (2, 2), (1, 2)]
-    )
-    edges = np.array(
-        [(0, 1), (1, 2), (2, 3), (3, 0), (4, 5), (5, 6), (6, 7), (7, 4)]
-    )
+def test_reconstruct_and_triangulate_edge(poly_hole):
+    points, edges = normalize_vertices_and_edges_py(poly_hole, close=True)
     centers, offsets, triangles = reconstruct_and_triangulate_edge(
-        vertices, edges
+        points, edges
     )
     assert len(triangles) == 16
+    assert len(offsets) == 20
+    assert len(centers) == 20
+
+
+def test_reconstruct_polygon_edges(poly_hole):
+    points, edges = normalize_vertices_and_edges_py(poly_hole, close=True)
+    polygon_list = reconstruct_polygon_edges_py(points, edges)
+    assert len(polygon_list) == 2
+    assert len(polygon_list[0]) == 4
+    assert len(polygon_list[1]) == 4
 
 
 def test_triangulate_face_and_edges(poly_hole):

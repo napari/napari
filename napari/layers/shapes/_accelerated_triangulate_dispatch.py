@@ -457,7 +457,7 @@ def _are_polar_angles_monotonic(poly: npt.NDArray, orientation_: int) -> bool:
     bool:
         if all angles are increasing return True, otherwise False
     """
-    if poly.shape[0] < 3:
+    if poly.shape[0] < 3:  # pragma: no cover
         return False  # Not enough vertices to form a polygon
     if orientation_ == 1:
         poly = poly[::-1]
