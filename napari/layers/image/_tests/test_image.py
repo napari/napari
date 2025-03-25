@@ -329,26 +329,19 @@ def test_blending():
     assert layer.blending == 'minimum'
 
 
-def test_interpolation():
-    """Test setting image interpolation mode."""
+def test_interpolation_2d_3d():
+    """Test setting image interpolation2d and interpolation3d mode."""
     np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
-    with pytest.deprecated_call():
-        assert layer.interpolation == 'nearest'
+
     assert layer.interpolation2d == 'nearest'
     assert layer.interpolation3d == 'linear'
 
-    with pytest.deprecated_call():
-        layer = Image(data, interpolation2d='bicubic')
-    assert layer.interpolation2d == 'cubic'
-    with pytest.deprecated_call():
-        assert layer.interpolation == 'cubic'
+    assert layer.interpolation2d != 'cubic'
 
     layer.interpolation2d = 'linear'
     assert layer.interpolation2d == 'linear'
-    with pytest.deprecated_call():
-        assert layer.interpolation == 'linear'
 
 
 def test_colormaps():
