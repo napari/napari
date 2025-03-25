@@ -12,7 +12,7 @@ from magicgui import magicgui
 
 from napari import Viewer, layers, types
 from napari._tests.utils import layer_test_data
-from napari.layers import Image, Labels, Layer
+from napari.layers import Image, Labels, Layer, Points, Surface
 from napari.utils._proxies import PublicOnlyProxy
 from napari.utils.migrations import _DeprecatingDict
 from napari.utils.misc import all_subclasses
@@ -28,6 +28,75 @@ except RuntimeError:
     pytest.skip(
         'Cannot test magicgui without Qt bindings.', allow_module_level=True
     )
+
+
+@pytest.fixture
+def image_layer():
+    return Image(
+        np.empty((40, 40), dtype=np.uint8),
+        scale=(1, 2),
+        translate=(3, 4),
+        units=('nm', 'um'),
+    )
+
+
+@pytest.fixture
+def image_layer3d():
+    return Image(
+        np.empty((10, 40, 40), dtype=np.uint8),
+        scale=(1, 2, 2),
+        translate=(3, 4, 4),
+        units=('nm', 'um', 'um'),
+    )
+
+
+@pytest.fixture
+def image_layer_rgb():
+    return Image(
+        np.empty((40, 40, 3), dtype=np.uint8),
+        scale=(1, 2),
+        translate=(3, 4),
+        units=('nm', 'um'),
+    )
+
+
+@pytest.fixture
+def labels_layer():
+    return Labels(
+        np.empty((40, 40), dtype=np.uint8),
+        scale=(1, 2),
+        translate=(3, 4),
+        units=('nm', 'um'),
+    )
+
+
+@pytest.fixture
+def points_layer():
+    return Points(
+        np.empty((10, 2), dtype=np.uint8).astype(np.float32),
+        scale=(1, 2),
+        translate=(3, 4),
+        units=('nm', 'um'),
+    )
+
+
+@pytest.fixture
+def surface_layer():
+    rng = np.random.default_rng(0)
+    return Surface(
+        (20 * rng.random((10, 3)), rng.integers(10, size=(6, 3))),
+        scale=(1, 2, 2),
+        translate=(3, 4, 4),
+        units=('nm', 'um', 'um'),
+    )
+
+
+@pytest.fixture(
+    params=['image_layer', 'labels_layer', 'points_layer', 'image_layer_rgb']
+)
+def layer_and_type(request):
+    data = request.getfixturevalue(request.param)
+    return data, getattr(types, f'{data.__class__.__name__}Data')
 
 
 # only test the first of each layer type
@@ -62,29 +131,50 @@ def test_magicgui_add_data(make_napari_viewer, LayerType, data, ndim):
     assert viewer.layers[0].source.widget == add_data
 
 
-def test_magicgui_add_data_inheritance(make_napari_viewer, rng):
+def test_magicgui_add_data_inheritance(
+    make_napari_viewer, layer_and_type, image_layer
+):
+    """This test validates if the scale and translate are inherited from the
+    previous layer when adding a new layer with magicgui if function requests,
+    a LayerData type.
+    """
+    layer, type_ = layer_and_type
+    viewer = make_napari_viewer()
+    viewer.add_layer(image_layer)
+
+    @magicgui
+    def add_data(data: types.ImageData) -> type_:
+        return layer.data
+
+    viewer.window.add_dock_widget(add_data)
+    add_data()
+    assert len(viewer.layers) == 2
+    assert isinstance(viewer.layers[1], layer.__class__)
+    npt.assert_array_equal(viewer.layers[1].scale, (1, 2))
+    npt.assert_array_equal(viewer.layers[1].translate, (3, 4))
+    assert viewer.layers[1].units == viewer.layers[0].units
+
+
+def test_magicgui_add_data_inheritance_surface(
+    make_napari_viewer, surface_layer, image_layer3d
+):
     """This test validates if the scale and translate are inherited from the
     previous layer when adding a new layer with magicgui if function requests,
     a LayerData type.
     """
     viewer = make_napari_viewer()
-    viewer.add_image(
-        rng.random((10, 10)),
-        scale=(1, 2),
-        translate=(3, 4),
-        units=('nm', 'um'),
-    )
+    viewer.add_layer(image_layer3d)
 
     @magicgui
-    def add_data(data: types.ImageData) -> types.LabelsData:
-        return (data > 0.5).astype('uint8')
+    def add_data(data: types.ImageData) -> types.SurfaceData:
+        return surface_layer.data
 
     viewer.window.add_dock_widget(add_data)
     add_data()
     assert len(viewer.layers) == 2
-    assert isinstance(viewer.layers[1], Labels)
-    npt.assert_array_equal(viewer.layers[1].scale, (1, 2))
-    npt.assert_array_equal(viewer.layers[1].translate, (3, 4))
+    assert isinstance(viewer.layers[1], Surface)
+    npt.assert_array_equal(viewer.layers[1].scale, (1, 2, 2))
+    npt.assert_array_equal(viewer.layers[1].translate, (3, 4, 4))
     assert viewer.layers[1].units == viewer.layers[0].units
 
 

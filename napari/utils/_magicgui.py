@@ -174,7 +174,7 @@ def _get_ndim_from_data(data, layer_type_name: str) -> int:
             return data.ndim - 1
         return data.ndim
     if layer_type_name == 'surface':
-        return data[0].ndim - 1
+        return data[0].shape[-1]
     return data.shape[-1]
 
 
