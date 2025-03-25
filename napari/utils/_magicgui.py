@@ -136,7 +136,9 @@ def _calc_affine_from_source_layers(data, source_layers: list[Layer]):
     for layer in source_layers[1:]:
         local_meta = _get_spatial_from_layer(layer, ndim)
         if not _compare_meta(meta, local_meta):
-            show_info('Cannot inherit spatial information like scale and translation from source layers. New layers may need manual setting of spatial information.')
+            show_info(
+                'Cannot inherit spatial information like scale and translation from source layers. New layers may need manual setting of spatial information.'
+            )
             return {}
 
     return meta
