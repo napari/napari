@@ -568,7 +568,7 @@ def _maybe_rerun_with_macos_fixes():
                 shutil.rmtree(tempdir)
 
 
-def _check_installation_path():
+def _check_installation_path():  # pragma: no cover
     """Check for installation path conflicts.
 
     Check if napari is present in site-packages. If napari is installed in editable mode,
