@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import weakref
 from functools import cache, partial
-from typing import TYPE_CHECKING, Any, Optional, get_args
+from typing import TYPE_CHECKING, Any, Optional, Union, get_args, get_origin
 
 import numpy as np
 from magicgui.widgets import ComboBox, FunctionGui
@@ -107,7 +107,7 @@ def _compare_meta(meta1, meta2):
     )
 
 
-def _calc_affine_from_source_layers(data, source_layers: list[Layer]):
+def _calc_affine_from_source_layers(data_ndim, source_layers: list[Layer]):
     """Calculate affine information for provided data based on source layers.
 
     Parameters
@@ -124,18 +124,24 @@ def _calc_affine_from_source_layers(data, source_layers: list[Layer]):
     """
 
     source_layers = [
-        layer for layer in source_layers if layer.ndim >= data.ndim
+        layer for layer in source_layers if layer.ndim >= data_ndim
     ]
+    to_low_dim_layers = [
+        layer.name for layer in source_layers if layer.ndim > data_ndim
+    ]
+
+    if to_low_dim_layers:
+        show_info(
+            f'Cannot inherit spatial information like scale and translation from source layers with lower dimensionality. Layers {",".join(to_low_dim_layers)} ignored.'
+        )
 
     if not source_layers:
         return {}
 
-    ndim = data.ndim
-
-    meta = _get_spatial_from_layer(source_layers[0], ndim)
+    meta = _get_spatial_from_layer(source_layers[0], data_ndim)
 
     for layer in source_layers[1:]:
-        local_meta = _get_spatial_from_layer(layer, ndim)
+        local_meta = _get_spatial_from_layer(layer, data_ndim)
         if not _compare_meta(meta, local_meta):
             show_info(
                 'Cannot inherit spatial information like scale and translation from source layers. New layers may need manual setting of spatial information.'
@@ -143,6 +149,33 @@ def _calc_affine_from_source_layers(data, source_layers: list[Layer]):
             return {}
 
     return meta
+
+
+def _get_layer_name_from_annotation(annotation: type) -> str:
+    if get_origin(annotation) is Union:
+        if len(annotation.__args__) != 2 or annotation.__args__[1] is not type(
+            None
+        ):
+            # this case should be impossible, but we'll check anyway.
+            raise TypeError(
+                f'napari supports only Optional[<layer_data_type>], not {annotation}'
+            )
+        annotation = annotation.__args__[0]
+    return annotation.__name__.replace('Data', '').lower()
+
+
+def _get_ndim_from_data(data, layer_type_name: str) -> int:
+    from napari.layers.image._image_utils import guess_rgb
+
+    if layer_type_name == 'labels':
+        return data.ndim
+    if layer_type_name == 'image':
+        if guess_rgb(data.shape):
+            return data.ndim - 1
+        return data.ndim
+    if layer_type_name == 'surface':
+        return data[0].ndim - 1
+    return data.shape[-1]
 
 
 def add_layer_data_to_viewer(gui: FunctionGui, result: Any, return_type: type):
@@ -181,7 +214,9 @@ def add_layer_data_to_viewer(gui: FunctionGui, result: Any, return_type: type):
         meta = {}
         if isinstance(gui, FunctionGui):
             layers = _get_layers_from_widget(gui, viewer)
-            meta = _calc_affine_from_source_layers(result, layers)
+            layer_type_name = _get_layer_name_from_annotation(return_type)
+            data_ndim = _get_ndim_from_data(result, layer_type_name)
+            meta = _calc_affine_from_source_layers(data_ndim, layers)
 
         _add_layer_data_to_viewer(
             result,
