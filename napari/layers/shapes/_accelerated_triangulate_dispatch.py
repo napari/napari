@@ -266,18 +266,18 @@ def create_box_from_bounding_py(bounding_box: npt.NDArray) -> npt.NDArray:
 
 
 @overload
-def reconstruct_polygon_edges_py(
+def reconstruct_polygons_from_edges_py(
     vertices: CoordinateArray2D, edges: EdgeArray
 ) -> list[CoordinateArray2D]: ...
 
 
 @overload
-def reconstruct_polygon_edges_py(
+def reconstruct_polygons_from_edges_py(
     vertices: CoordinateArray3D, edges: EdgeArray
 ) -> list[CoordinateArray3D]: ...
 
 
-def reconstruct_polygon_edges_py(
+def reconstruct_polygons_from_edges_py(
     vertices: CoordinateArray, edges: EdgeArray
 ) -> list[CoordinateArray2D] | list[CoordinateArray3D]:
     """
@@ -559,7 +559,7 @@ try:
         generate_2D_edge_meshes,
         is_convex,
         normalize_vertices_and_edges,
-        reconstruct_polygon_edges,
+        reconstruct_polygons_from_edges,
         remove_path_duplicates,
     )
 
@@ -584,7 +584,7 @@ try:
                 remove_path_duplicates(data, False)
                 is_convex(data)
                 v, e = normalize_vertices_and_edges(data)
-                reconstruct_polygon_edges(v, e)
+                reconstruct_polygons_from_edges(v, e)
             remove_path_duplicates(data, False)
             remove_path_duplicates(data, True)
             create_box_from_bounding(data2)
@@ -593,7 +593,7 @@ except ImportError:
     generate_2D_edge_meshes = generate_2D_edge_meshes_py
     remove_path_duplicates = remove_path_duplicates_np
     create_box_from_bounding = create_box_from_bounding_py
-    reconstruct_polygon_edges = reconstruct_polygon_edges_py
+    reconstruct_polygons_from_edges = reconstruct_polygons_from_edges_py
     normalize_vertices_and_edges = normalize_vertices_and_edges_py
     is_convex = is_convex_py
 

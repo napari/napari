@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from collections import defaultdict
 from enum import Enum
 from math import atan2, pi
 from typing import Literal, overload
 
 import numpy as np
 from numba import njit
+from numba.core import types
+from numba.typed import List
 
 from napari.layers.shapes.shape_types import (
     CoordinateArray,
@@ -786,18 +787,19 @@ def create_box_from_bounding(bounding_box: np.ndarray) -> np.ndarray:
 
 
 @overload
-def reconstruct_polygon_edges(
+def reconstruct_polygons_from_edges(
     vertices: CoordinateArray2D, edges: EdgeArray
 ) -> list[CoordinateArray2D]: ...
 
 
 @overload
-def reconstruct_polygon_edges(
+def reconstruct_polygons_from_edges(
     vertices: CoordinateArray3D, edges: EdgeArray
 ) -> list[CoordinateArray3D]: ...
 
 
-def reconstruct_polygon_edges(
+@njit(cache=True)
+def reconstruct_polygons_from_edges(
     vertices: CoordinateArray, edges: EdgeArray
 ) -> list[CoordinateArray2D] | list[CoordinateArray3D]:
     """
@@ -815,57 +817,59 @@ def reconstruct_polygon_edges(
     list of np.ndarray
         List of polygons, where each polygon is an array of vertex coordinates
     """
-    # Create an adjacency list representation from the edges
-    adjacency = defaultdict(list)
-    for edge in edges:
-        v1, v2 = edge
-        adjacency[v1].append(v2)
-        adjacency[v2].append(v1)
+    n_edges = edges.shape[0]
+    used = np.zeros(n_edges, dtype=np.bool_)
+    n_vertices = vertices.shape[0]
 
-    # Initialize set of unvisited edges
-    unvisited_edges = {(edge[0], edge[1]) for edge in edges}
-    unvisited_edges.update({(edge[1], edge[0]) for edge in edges})
+    # Create a list (indexed by vertex) containing lists of incident edge indices.
+    incident = List()
+    for _ in range(n_vertices):
+        incident.append(List.empty_list(types.int64))
 
-    # List to store resulting polygons
-    polygons = []
+    for i in range(n_edges):
+        start = edges[i, 0]
+        end = edges[i, 1]
+        incident[start].append(i)
+        incident[end].append(i)
 
-    # Process each edge until all are visited
-    while unvisited_edges:
-        # Start with any unvisited edge
-        edge = next(iter(unvisited_edges))
-        current_vertex = edge[0]
-        start_vertex = edge[1]
+    # List to hold all reconstructed polygons.
+    polygons = List()
 
-        # Start a new polygon
-        polygon_indices = [start_vertex]
+    for i in range(n_edges):
+        if not used[i]:
+            poly = List.empty_list(types.int64)
+            # Start a new polygon with the current edge.
+            start_v = edges[i, 0]
+            current_v = edges[i, 1]
+            poly.append(start_v)
+            poly.append(current_v)
+            used[i] = True
+            closed = False
 
-        # Remove the first edge
-        unvisited_edges.discard((start_vertex, current_vertex))
-        unvisited_edges.discard((current_vertex, start_vertex))
-
-        # Follow the edges to form a polygon
-        while current_vertex != polygon_indices[0]:
-            polygon_indices.append(current_vertex)
-
-            # Find the next unvisited edge
-            next_vertex = None
-            for neighbor in adjacency[current_vertex]:
-                if (current_vertex, neighbor) in unvisited_edges:
-                    next_vertex = neighbor
-                    unvisited_edges.discard((current_vertex, next_vertex))
-                    unvisited_edges.discard((next_vertex, current_vertex))
+            # Walk along the polygon edges until we loop back to start_v.
+            while not closed:
+                found = False
+                # Loop through edges incident to current_v.
+                for edge_idx in incident[current_v]:
+                    if not used[edge_idx]:
+                        a = edges[edge_idx, 0]
+                        b = edges[edge_idx, 1]
+                        # Choose the vertex that is not the current one.
+                        next_v = a if b == current_v else b
+                        used[edge_idx] = True
+                        if next_v == start_v:
+                            closed = True
+                        else:
+                            poly.append(next_v)
+                        current_v = next_v
+                        found = True
+                        if current_v == start_v:
+                            closed = True
+                        break  # move on as soon as we find the next edge
+                if not found:
+                    # In case of an open chain, exit.
                     break
-
-            # If no unvisited edge was found, we have an open polyline
-            if next_vertex is None:
-                break
-
-            current_vertex = next_vertex
-
-        # Convert indices to coordinates and add to the result
-        polygon_vertices = vertices[polygon_indices]
-        polygons.append(polygon_vertices)
-
+            polygons.append([vertices[x] for x in poly])
     return polygons
 
 

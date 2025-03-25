@@ -737,7 +737,7 @@ def reconstruct_and_triangulate_edge(
     Returns
     -------
     """
-    polygon_list = atd.reconstruct_polygon_edges(vertices, edges)
+    polygon_list = atd.reconstruct_polygons_from_edges(vertices, edges)
     centers_list = []
     offset_list = []
     triangles_list = []

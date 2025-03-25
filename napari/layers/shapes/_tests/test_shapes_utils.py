@@ -6,7 +6,7 @@ from napari.layers.shapes._accelerated_triangulate_dispatch import (
     generate_2D_edge_meshes_py,
     is_convex_py,
     normalize_vertices_and_edges_py,
-    reconstruct_polygon_edges_py,
+    reconstruct_polygons_from_edges_py,
 )
 from napari.layers.shapes._shapes_utils import (
     get_default_shape_type,
@@ -492,7 +492,7 @@ def test_reconstruct_and_triangulate_edge(poly_hole):
 
 def test_reconstruct_polygon_edges(poly_hole):
     points, edges = normalize_vertices_and_edges_py(poly_hole, close=True)
-    polygon_list = reconstruct_polygon_edges_py(points, edges)
+    polygon_list = reconstruct_polygons_from_edges_py(points, edges)
     assert len(polygon_list) == 2
     assert len(polygon_list[0]) == 4
     assert len(polygon_list[1]) == 4
