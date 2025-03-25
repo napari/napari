@@ -568,9 +568,37 @@ def _maybe_rerun_with_macos_fixes():
                 shutil.rmtree(tempdir)
 
 
+def _check_editable_installation():
+    """Check if napari is installed in editable mode.
+    but there is still a napari directory in site-packages.
+    """
+    napari_installation_path = Path(__file__).absolute().parent.parent
+    if napari_installation_path.name == 'site-packages':
+        # napari is installed in non-editable mode
+        return
+
+    import numpy as np
+
+    site_packages_path = Path(np.__file__).absolute().parent.parent
+    if site_packages_path.name != 'site-packages':
+        # numpy is not installed in site-packages
+        return
+
+    problematic_napari_path = site_packages_path / 'napari'
+    if problematic_napari_path.exists():
+        print(  # noqa: T201
+            f'Found a napari directory: {problematic_napari_path}, '
+            'but napari is installed in editable mode. '
+            'Please remove napari directory from site-packages.',
+            file=sys.stderr,
+        )
+        raise SystemExit(1)
+
+
 def main():
     # There a number of macOS issues we can fix with env vars
     # and/or relaunching a subprocess
+    _check_editable_installation()
     _maybe_rerun_with_macos_fixes()
 
     # Prevent https://github.com/napari/napari/issues/3415
