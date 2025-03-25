@@ -495,7 +495,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     ) -> float:
         """Calculate the zoom such that the minimum of the bounding box fits the canvas."""
         grid_extent = extent.copy()
+        # calculate max coords with grid spacing included
         grid_extent[1] = extent[0] + total_size
+
         bounding_box = self._calculate_bounding_box(
             extent=grid_extent,
             view_direction=self.camera.view_direction,
@@ -505,8 +507,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             np.array(self._canvas_size) / bounding_box
         )
 
+    @staticmethod
     def _calculate_bounding_box(
-        self,
         extent: np.ndarray,
         view_direction: tuple[float, float, float],
         up_direction: tuple[float, float, float],
@@ -535,13 +537,19 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # required for dot product
         size = np.squeeze(np.diff(extent, axis=0))
 
+        # if the size vector is (2,) and the camera vector is (3,)
+        # add a very small thickness to the size vector in the Z position
+        # to make sure the cross product is valid, and no division by zero
+        if len(size) < len(view_direction):
+            size = np.insert(size, 0, 1e-10)
+
         # get the "right" direction that is perpendicular to the view and up directions
         right_direction = np.cross(view_direction, up_direction)
 
         # project the size vector onto the up and right directions to get the
         # displayed height and width.
-        # size = L W H ; direction = [a b c]
-        # size · direction =  La + Wb + Hc = distance of size vector in given direction
+        # size = [Z Y X] ; direction = [a b c]
+        # size · direction =  Za + Yb + Xc = distance of size vector in given direction
         displayed_height = np.dot(np.abs(up_direction), size)
         displayed_width = np.dot(np.abs(right_direction), size)
 
