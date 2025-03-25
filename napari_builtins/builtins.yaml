@@ -23,6 +23,13 @@ contributions:
       python_name: napari_builtins.io:write_layer_data_with_plugins
       title: napari built-in save to folder
 
+    - id: napari.filters.gaussian
+      python_name: napari_builtins._filters:gaussian
+      title: built-in gaussian filtering
+    - id: napari.filters.sobel
+      python_name: napari_builtins._filters:sobel
+      title: built-in sobel filtering
+
     # samples
     - id: napari.data.astronaut
       title: Generate astronaut sample
