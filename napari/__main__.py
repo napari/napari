@@ -568,9 +568,11 @@ def _maybe_rerun_with_macos_fixes():
                 shutil.rmtree(tempdir)
 
 
-def _check_editable_installation():
-    """Check if napari is installed in editable mode.
-    but there is still a napari directory in site-packages.
+def _check_installation_path():
+    """Check for installation path conflicts.
+    
+    Check if napari is present in site-packages. If napari is installed in editable mode,
+    notify the user of a the conflict that napari is also in site-packages.
     """
     napari_installation_path = Path(__file__).absolute().parent.parent
     if napari_installation_path.name == 'site-packages':
@@ -596,9 +598,10 @@ def _check_editable_installation():
 
 
 def main():
+    _check_installation_path()
+    
     # There a number of macOS issues we can fix with env vars
     # and/or relaunching a subprocess
-    _check_editable_installation()
     _maybe_rerun_with_macos_fixes()
 
     # Prevent https://github.com/napari/napari/issues/3415
