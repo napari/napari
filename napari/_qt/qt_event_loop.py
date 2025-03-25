@@ -352,8 +352,8 @@ def run(
         This function will prevent calling `exec_()` if the application already
         has at least ``max_loop_level`` event loops running.  By default, 1.
     _func_name : str, optional
-        name of calling function, by default 'run'.  This is only here to
-        provide functions like a way to inject their name into the
+        name of calling function, by default 'run'.  This is here to
+        provide functions a way to inject their name into the
         warning message.
 
     Raises

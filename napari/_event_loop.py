@@ -5,9 +5,6 @@ try:
 except (ImportError, RuntimeError) as e:
     exc = e
 
-    def gui_qt(**kwargs):
-        raise exc
-
     def run(
         *,
         force=False,
