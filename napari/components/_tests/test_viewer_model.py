@@ -1089,53 +1089,53 @@ def test_reset_view_margin():
     assert no_margin_zoom > default_zoom
 
 
-def test_reset_view_2d():
-    viewer = ViewerModel(ndisplay=2)
-    data = np.random.random((30, 20))
+@pytest.mark.parametrize(
+    ('ndisplay', 'expected_center'),
+    [(2, (0, 14.5, 9.5)), (3, (4.5, 14.5, 9.5))],
+)
+def test_reset_view_center_calculation(ndisplay, expected_center):
+    """Test correct center calculation for different dimensions."""
+    viewer = ViewerModel(ndisplay=ndisplay)
+    data = np.random.random((5, 10, 30, 20))
     viewer.add_image(data)
 
-    # pan the layer, then reset the view
+    # Pan to origin then reset
     viewer.camera.center = (0, 0, 0)
     viewer.reset_view()
 
-    np.testing.assert_allclose(viewer.camera.center, (0, 14.5, 9.5))
-
-    # 3D display, 2D data, reset angle
-    viewer.dims.ndisplay = 3
-    viewer.camera.angles = (45, 45, 45)
-    viewer.reset_view()
-
-    assert viewer.camera.angles == (0, 0, 90)
-
-    # 3D display, 2D data, keep angles
-    viewer.camera.angles = (45, 45, 45)
-    viewer.reset_view(reset_camera_angle=False)
-
-    assert viewer.camera.angles == (45, 45, 45)
+    # Center should be in the middle of the data, but first coordinate depends on ndisplay
+    np.testing.assert_allclose(viewer.camera.center, expected_center)
 
 
-def test_reset_view_3d():
-    viewer = ViewerModel(ndisplay=2)
-    data = np.random.random((10, 30, 20))
-    viewer.add_image(data)
+@pytest.mark.parametrize('reset_angle', [True, False])
+def test_angle_reset(reset_angle):
+    """Test camera angle reset behavior."""
+    viewer = ViewerModel(ndisplay=3)
+    viewer.add_image(np.random.random((10, 10, 10)))
 
-    # pan the layer, then reset the view
+    # Set custom angles
+    test_angles = (45, 30, 60)
+    viewer.camera.angles = test_angles
+
+    # Reset view with specified reset_camera_angle
+    viewer.reset_view(reset_camera_angle=reset_angle)
+
+    if reset_angle:
+        assert viewer.camera.angles == (0, 0, 90)
+    else:
+        assert viewer.camera.angles == test_angles
+
+
+def test_reset_view_2d_data_in_3d_view():
+    """Test reset view with 2D data and ndisplay=3."""
+    viewer = ViewerModel(ndisplay=3)
+    viewer.add_image(np.random.random((10, 20)))
+    viewer.camera.angles = (45, 30, 60)
     viewer.camera.center = (0, 0, 0)
     viewer.reset_view()
 
-    np.testing.assert_allclose(viewer.camera.center, (4.5, 14.5, 9.5))
-
-    # 3D display, 3D data, reset angle
-    viewer.dims.ndisplay = 3
-    viewer.camera.angles = (45, 45, 45)
-    viewer.reset_view()
-
+    np.testing.assert_allclose(viewer.camera.center, (0, 4.5, 9.5))
     assert viewer.camera.angles == (0, 0, 90)
-
-    # 3D display, 3D data, keep angles
-    viewer.camera.angles = (45, 45, 45)
-    viewer.reset_view(reset_camera_angle=False)
-    assert viewer.camera.angles == (45, 45, 45)
 
 
 def test_reset_view_grid():
