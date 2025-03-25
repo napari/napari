@@ -570,7 +570,7 @@ def _maybe_rerun_with_macos_fixes():
 
 def _check_installation_path():
     """Check for installation path conflicts.
-    
+
     Check if napari is present in site-packages. If napari is installed in editable mode,
     notify the user of a the conflict that napari is also in site-packages.
     """
@@ -599,7 +599,7 @@ def _check_installation_path():
 
 def main():
     _check_installation_path()
-    
+
     # There a number of macOS issues we can fix with env vars
     # and/or relaunching a subprocess
     _maybe_rerun_with_macos_fixes()
