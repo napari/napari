@@ -581,6 +581,10 @@ try:
             ):
                 generate_2D_edge_meshes(data, True)
                 generate_2D_edge_meshes(data, False)
+                remove_path_duplicates(data, False)
+                is_convex(data)
+                v, e = normalize_vertices_and_edges(data)
+                reconstruct_polygon_edges(v, e)
             remove_path_duplicates(data, False)
             remove_path_duplicates(data, True)
             create_box_from_bounding(data2)
