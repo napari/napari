@@ -167,6 +167,9 @@ def _get_layer_name_from_annotation(annotation: type) -> str:
 def _get_ndim_from_data(data, layer_type_name: str) -> int:
     from napari.layers.image._image_utils import guess_rgb
 
+    if isinstance(data, list):
+        data = data[0]
+
     if layer_type_name == 'labels':
         return data.ndim
     if layer_type_name == 'image':
@@ -175,6 +178,8 @@ def _get_ndim_from_data(data, layer_type_name: str) -> int:
         return data.ndim
     if layer_type_name == 'surface':
         return data[0].shape[-1]
+    if layer_type_name == 'tracks':
+        return data[0].shape[-1] - 1
     return data.shape[-1]
 
 

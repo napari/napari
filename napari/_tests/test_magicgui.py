@@ -13,6 +13,7 @@ from magicgui import magicgui
 from napari import Viewer, layers, types
 from napari._tests.utils import layer_test_data
 from napari.layers import Image, Labels, Layer, Points, Surface
+from napari.utils._magicgui import _get_ndim_from_data
 from napari.utils._proxies import PublicOnlyProxy
 from napari.utils.migrations import _DeprecatingDict
 from napari.utils.misc import all_subclasses
@@ -106,6 +107,11 @@ for cls in all_subclasses(Layer):
     with contextlib.suppress(StopIteration):
         test_data.append(next(x for x in layer_test_data if x[0] is cls))
 test_data.sort(key=lambda x: x[0].__name__)  # required for xdist to work
+
+
+@pytest.mark.parametrize(('LayerType', 'data', 'ndim'), layer_test_data)
+def test_get_ndim_from_data(LayerType, data, ndim):
+    assert _get_ndim_from_data(data, LayerType.__name__.lower()) == ndim
 
 
 @pytest.mark.parametrize(('LayerType', 'data', 'ndim'), test_data)
