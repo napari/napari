@@ -89,7 +89,7 @@ class TextManager(EventedModel):
     color: ColorEncoding = ConstantColorEncoding(constant='cyan')
     visible: bool = True
     size: PositiveFloat = 12
-    scaling: bool = False
+    scaling: bool = False  # scaling changes with zoom level, consistent with other vispy visuals, see: https://github.com/vispy/vispy/blob/af2439895a13f187d840a476bd73ed480f2978f2/vispy/visuals/markers.py#L526
     blending: Blending = Blending.TRANSLUCENT
     anchor: Anchor = Anchor.CENTER
     # Use a scalar default translation to broadcast to any dimensionality.
