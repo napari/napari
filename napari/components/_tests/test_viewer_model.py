@@ -1114,7 +1114,7 @@ def test_reset_view_center_calculation(ndisplay, expected_center):
 
 
 @pytest.mark.parametrize('reset_angle', [True, False])
-def test_angle_reset(reset_angle):
+def test_reset_view_angle_reset(reset_angle):
     """Test camera angle reset behavior."""
     viewer = ViewerModel(ndisplay=3)
     viewer.add_image(np.random.random((10, 10, 10)))

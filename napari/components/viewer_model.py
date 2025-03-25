@@ -434,7 +434,20 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         )
 
     def _get_scene_parameters(self):
-        """Get the scene parameters for the current grid mode."""
+        """Get the scene parameters for the current grid mode.
+
+        Returns
+        -------
+        extent : array, shape (2, D)
+            An array with the min/max coordinate values of the layers
+            First row is min values, second row is max values.
+        scene_size : array, shape (D,)
+            Size of the bounding box containing all layers.
+        corner : array, shape (D,)
+            Minimum coordinate values of the bounding box (i.e. extent[0]).
+        total_size : array, shape (D,)
+            Total size of the scene including grid spacing
+        """
         extent = self._sliced_extent_world_augmented
         scene_size = extent[1] - extent[0]
         corner = extent[0]
@@ -471,7 +484,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         return center
 
     def _get_scale_factor(self, margin: float) -> float:
-        """Get the scale factor for camera zoom based on the margin."""
+        """Get the scale factor for camera zoom based on a valid margin."""
         if 0 <= margin < 1:
             return 1 - margin
         raise ValueError(
