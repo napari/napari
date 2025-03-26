@@ -445,7 +445,9 @@ def _install_npe2_themes(themes=None):
             try:
                 register_theme(theme.id, theme_dict, manifest.name)
             except ValueError:
-                logging.exception('Registration theme failed.')
+                logging.getLogger('napari').exception(
+                    'Registration theme failed.'
+                )
 
 
 _install_npe2_themes(_themes)

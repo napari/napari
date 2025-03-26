@@ -519,7 +519,7 @@ class QtViewer(QSplitter):
                 try:
                     vdict[name] = eval(name, cf.f_globals, cf.f_locals)
                 except NameError:
-                    logging.warning(
+                    logging.getLogger('napari').warning(
                         'Could not get variable %s from %s',
                         name,
                         cf.f_code.co_name,
@@ -624,7 +624,9 @@ class QtViewer(QSplitter):
         This only gets triggered on the async slicing path.
         """
         responses: dict[weakref.ReferenceType[Layer], Any] = event.value
-        logging.debug('QtViewer._on_slice_ready: %s', responses)
+        logging.getLogger('napari').debug(
+            'QtViewer._on_slice_ready: %s', responses
+        )
         for weak_layer, response in responses.items():
             if layer := weak_layer():
                 # Update the layer slice state to temporarily support behavior
@@ -824,7 +826,7 @@ class QtViewer(QSplitter):
                 else QFileDialog.Options()
             ),
         )
-        logging.debug(
+        logging.getLogger('napari').debug(
             trans._(
                 'QFileDialog - filename: {filename} '
                 'selected_filter: {selected_filter}',
@@ -841,7 +843,7 @@ class QtViewer(QSplitter):
                 saved = self.viewer.layers.save(
                     filename, selected=selected, _writer=writer
                 )
-                logging.debug('Saved %s', saved)
+                logging.getLogger('napari').debug('Saved %s', saved)
                 error_messages = '\n'.join(str(x.message.args[0]) for x in wa)
 
             if not saved:
