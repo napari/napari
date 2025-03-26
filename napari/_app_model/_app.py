@@ -13,7 +13,7 @@ APP_NAME = 'napari'
 
 
 class NapariApplication(Application):
-    """A singleton class representing the Napari application.
+    """A singleton (per name) class representing the Napari application.
 
     This class extends the app_model.Application class and provides a
     singleton instance of the Napari application. It is responsible for
