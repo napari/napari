@@ -23,16 +23,18 @@ from napari.utils.misc import argsort
 from napari.utils.translations import trans
 
 try:
-    from PartSegCore_compiled_backend.triangulate import (
-        triangulate_path_edge_numpy,
-        triangulate_polygon_numpy_li,
-        triangulate_polygon_with_edge_numpy_li,
+    from bermuda import (
+        triangulate_path_edge,
+        triangulate_polygons_face,
+        triangulate_polygons_face_3d,
+        triangulate_polygons_with_edge,
     )
 
 except ImportError:
-    triangulate_path_edge_numpy = None
-    triangulate_polygon_numpy_li = None
-    triangulate_polygon_with_edge_numpy_li = None
+    triangulate_path_edge = None
+    triangulate_polygons_face = None
+    triangulate_polygons_with_edge = None
+    triangulate_polygons_face_3d = None
 
 
 class Shape(ABC):
@@ -142,7 +144,7 @@ class Shape(ABC):
     def __new__(cls, *args, **kwargs):
         if (
             get_settings().experimental.compiled_triangulation
-            and triangulate_path_edge_numpy is not None
+            and triangulate_path_edge is not None
         ):
             cls._set_meshes = cls._set_meshes_compiled
         else:
@@ -232,6 +234,35 @@ class Shape(ABC):
     def z_index(self, z_index):
         self._z_index = z_index
 
+    def _set_meshes_compiled_3d(
+        self,
+        data: npt.NDArray,
+        closed: bool = True,
+        face: bool = True,
+        edge: bool = True,
+    ):
+        if face:
+            face_triangles, face_vertices = triangulate_polygons_face_3d(
+                [data]
+            )
+            self._face_vertices = face_vertices
+            self._face_triangles = face_triangles
+        else:
+            self._face_vertices = np.empty((0, self.ndisplay))
+            self._face_triangles = np.empty((0, 3), dtype=np.uint32)
+
+        if edge:
+            centers, offsets, edge_triangles = triangulate_edge(
+                data, closed=closed
+            )
+            self._edge_vertices = centers
+            self._edge_offsets = offsets
+            self._edge_triangles = edge_triangles
+        else:
+            self._edge_vertices = np.empty((0, self.ndisplay))
+            self._edge_offsets = np.empty((0, self.ndisplay))
+            self._edge_triangles = np.empty((0, 3), dtype=np.uint32)
+
     def _set_meshes_compiled(
         self,
         data: npt.NDArray,
@@ -253,7 +284,9 @@ class Shape(ABC):
             Bool which determines if the edge need to be traingulated
         """
         if data.shape[1] == 3:
-            self._set_meshes_py(data, closed=closed, face=face, edge=edge)
+            self._set_meshes_compiled_3d(
+                data, closed=closed, face=face, edge=edge
+            )
             return
 
         # if we are computing both edge and face triangles, we can do so
@@ -261,9 +294,7 @@ class Shape(ABC):
         if edge and face:
             try:
                 (triangles, vertices), (centers, offsets, edge_triangles) = (
-                    triangulate_polygon_with_edge_numpy_li(
-                        [data], split_edges=True
-                    )
+                    triangulate_polygons_with_edge([data], split_edges=True)
                 )
             except Exception as e:
                 path = tempfile.mktemp(
@@ -287,7 +318,7 @@ class Shape(ABC):
 
         # otherwise, we make individual calls to specialized functions
         if edge:
-            centers, offsets, triangles = triangulate_path_edge_numpy(
+            centers, offsets, triangles = triangulate_path_edge(
                 data, closed=closed
             )
             self._edge_vertices = centers
@@ -298,7 +329,7 @@ class Shape(ABC):
             self._edge_offsets = np.empty((0, self.ndisplay))
             self._edge_triangles = np.empty((0, 3), dtype=np.uint32)
         if face:
-            triangles, vertices = triangulate_polygon_numpy_li([data])
+            triangles, vertices = triangulate_polygons_face([data])
             self._face_vertices = vertices
             self._face_triangles = triangles
         else:

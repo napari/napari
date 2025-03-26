@@ -126,7 +126,7 @@ optional-numba = [
 optional = [
     "napari[optional-base,optional-numba]",
     "triangle",
-    "PartSegCore-compiled-backend>=0.15.11",
+    "bermuda>=0.1.2",
 ]
 testing = [
     "napari[gallery]",

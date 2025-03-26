@@ -79,10 +79,9 @@ class ExperimentalSettings(EventedSettings):
         description=trans._(
             'When enabled, triangulation (breaking down polygons into '
             "triangles that can be displayed by napari's graphics engine) is "
-            'sped up by using C++ code from the optional library '
-            'PartSegCore-compiled-backend. C++ code can cause bad crashes '
-            'called segmentation faults or access violations. If you '
-            'encounter such a crash while using this option please report '
+            'sped up by using rust code from the optional library '
+            'bermuda. Compiled code may end with crashes that will be not properly caught. '
+            'If you encounter such a crash while using this option please report '
             'it at https://github.com/napari/napari/issues.'
         ),
     )

@@ -260,12 +260,12 @@ CACHE_WARMUP = False
 USE_COMPILED_BACKEND = False
 
 try:
-    from PartSegCore_compiled_backend.triangulate import (
-        triangulate_path_edge_numpy,
+    from bermuda import (
+        triangulate_path_edge,
     )
 
 except ImportError:
-    triangulate_path_edge_numpy = None
+    triangulate_path_edge = None
 
 try:
     from napari.layers.shapes._accelerated_triangulate import (
@@ -287,8 +287,7 @@ try:
             data2 = np.array([[1, 1], [10, 15]], dtype=np.float32, order=order)
 
             if not (
-                USE_COMPILED_BACKEND
-                and triangulate_path_edge_numpy is not None
+                USE_COMPILED_BACKEND and triangulate_path_edge is not None
             ):
                 generate_2D_edge_meshes(data, True)
                 generate_2D_edge_meshes(data, False)

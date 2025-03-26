@@ -14,9 +14,7 @@ from napari.layers.shapes._shapes_models import (
 )
 from napari.layers.shapes._shapes_utils import triangulate_face
 
-BETTER_TRIANGULATION = (
-    'triangle' in sys.modules or 'PartSegCore_compiled_backend' in sys.modules
-)
+BETTER_TRIANGULATION = 'triangle' in sys.modules or 'bermuda' in sys.modules
 
 
 def test_rectangle1():
