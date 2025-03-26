@@ -294,7 +294,7 @@ class Shape(ABC):
         if edge and face:
             try:
                 (triangles, vertices), (centers, offsets, edge_triangles) = (
-                    triangulate_polygons_with_edge([data], split_edges=True)
+                    triangulate_polygons_with_edge([data])
                 )
             except Exception as e:
                 path = tempfile.mktemp(
