@@ -371,7 +371,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._mouse_pan = True
         self._mouse_zoom = True
         self._value = None
-        self.scale_factor = 1
+        self._scale_factor = 1
         self.multiscale = multiscale
         self._experimental_clipping_planes = ClippingPlaneList()
         self._mode = self._modeclass('pan_zoom')
@@ -469,6 +469,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             reload=Event,
             rotate=Event,
             scale=Event,
+            scale_factor=Event,
             set_data=Event,
             shear=Event,
             status=Event,
@@ -852,6 +853,17 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._transforms['data2physical'].scale = np.array(scale)
         self.refresh()
         self.events.scale()
+
+    @property
+    def scale_factor(self):
+        """float: Conversion factor from canvas coordinates to image coordinates."""
+        return self._scale_factor
+
+    @scale_factor.setter
+    def scale_factor(self, scale_factor):
+        if self._scale_factor != scale_factor:
+            self._scale_factor = scale_factor
+            self.events.scale_factor()
 
     @property
     def translate(self) -> npt.NDArray:
