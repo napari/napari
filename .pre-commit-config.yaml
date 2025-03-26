@@ -14,7 +14,7 @@ repos:
   - id: import-linter
     stages: [manual]
 - repo: https://github.com/python-jsonschema/check-jsonschema
-  rev: 0.31.3
+  rev: 0.32.1
   hooks:
   - id: check-github-workflows
 - repo: https://github.com/pre-commit/pre-commit-hooks
