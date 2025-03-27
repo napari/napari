@@ -56,11 +56,17 @@ class TracksFilter(Filter):
                 } else {
                     alpha = 0.;
                 }
+            } else if ($a_vertex_time < $current_time - $tail_length) {
+                if ($tail_length == 0){
+                    alpha = -1000.;
+                } else {
+                    alpha = 0.;
+                }
             } else {
                 // fade the track into the temporal distance, scaled by the
                 // maximum tail and head length from the gui
                 float fade = ($head_length + $current_time - $a_vertex_time) / ($tail_length + $head_length);
-                alpha = clamp(1.0-fade, 0.0, 1.0);
+                alpha = clamp(1.0-fade, 0.5, 1.0);
             }
 
             // when use_fade is disabled, the entire track is visible
