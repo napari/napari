@@ -893,6 +893,9 @@ with contextlib.suppress(ImportError):
     # So we cannot inherit from QtBot and declare the fixture
 
     from pytestqt.qtbot import QtBot
+    from qtpy import PYQT5, PYSIDE2
+    from qtpy.QtCore import Qt
+    from qtpy.QtWidgets import QApplication
 
     class QtBotWithOnCloseRenaming(QtBot):
         """Modified QtBot that renames widgets when closing them in tests.
@@ -944,6 +947,12 @@ with contextlib.suppress(ImportError):
         before, so we need it, even without using it directly in this fixture.
         """
         return QtBotWithOnCloseRenaming(request)
+
+    @pytest.fixture(scope='session')
+    def qapp_cls():
+        if PYQT5 or PYSIDE2:
+            QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
+        return QApplication
 
 
 @pytest.fixture
