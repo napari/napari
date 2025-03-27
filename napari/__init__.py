@@ -20,12 +20,13 @@ def _check_installation_path():  # pragma: no cover
     Check if napari is present in site-packages. If napari is installed in editable mode,
     notify the user of a the conflict that napari is also in site-packages.
     """
+    import os
     import sys
     from pathlib import Path
 
-    if 'pytest' in sys.modules:
+    if os.environ.get('CI', ''):
         # Skip the check during testing
-        # we need to move to rc layout to fix this
+        # we need to move to src layout to fix this
         return
     napari_installation_path = Path(__file__).absolute().parent.parent
     if napari_installation_path.name == 'site-packages':
