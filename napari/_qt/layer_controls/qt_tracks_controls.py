@@ -136,7 +136,7 @@ class QtTracksControls(QtLayerControls):
         """Receive layer model track line width change event and update slider."""
         with self.layer.events.head_length.blocker():
             value = self.layer.head_length
-            if value > self.head_length_slider.maximum():   
+            if value > self.head_length_slider.maximum():
                 self.head_length_slider.setMaximum(self.layer._max_length)
             self.head_length_slider.setValue(value)
 
