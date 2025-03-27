@@ -387,7 +387,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     ) -> None:
         """Reset the camera view.
 
-        Ajusts the camera zoom and center the view so that all layers are
+        Adjusts the camera zoom and center the view so that all layers are
         visible, accounting for the current grid mode and margin.
 
         Parameters
@@ -484,7 +484,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         return center
 
     def _get_scale_factor(self, margin: float) -> float:
-        """Get the scale factor for camera zoom based on a valid margin."""
+        """Get the scale factor for camera zoom with a valid margin."""
         if 0 <= margin < 1:
             return 1 - margin
         raise ValueError(

@@ -1078,17 +1078,17 @@ def test_reset_view_margin():
     viewer.reset_view()
     default_zoom = viewer.camera.zoom
 
+    # Check zoom decreases with increased margin
     viewer.reset_view(margin=0.2)
     large_margin_zoom = viewer.camera.zoom
+    assert default_zoom > large_margin_zoom
 
+    # Check zoom increases with decreased margin
     viewer.reset_view(margin=0)
     no_margin_zoom = viewer.camera.zoom
-
-    # Check zoom decreases with increased margin
-    assert default_zoom > large_margin_zoom
     assert no_margin_zoom > default_zoom
 
-    # check validation
+    # Check margins outside of the supported values
     with pytest.raises(ValueError, match='margin must be between 0 and 1'):
         viewer.reset_view(margin=-0.1)
     with pytest.raises(ValueError, match='margin must be between 0 and 1'):
@@ -1100,7 +1100,7 @@ def test_reset_view_margin():
     [(2, (0, 14.5, 9.5)), (3, (4.5, 14.5, 9.5))],
 )
 def test_reset_view_center_calculation(ndisplay, expected_center):
-    """Test correct center calculation for different dimensions."""
+    """Test correct center calculation for different dimensions after a viewer reset."""
     viewer = ViewerModel(ndisplay=ndisplay)
     data = np.random.random((5, 10, 30, 20))
     viewer.add_image(data)
@@ -1115,7 +1115,7 @@ def test_reset_view_center_calculation(ndisplay, expected_center):
 
 @pytest.mark.parametrize('reset_angle', [True, False])
 def test_reset_view_angle_reset(reset_angle):
-    """Test camera angle reset behavior."""
+    """Test camera angle behavior after a viewer reset."""
     viewer = ViewerModel(ndisplay=3)
     viewer.add_image(np.random.random((10, 10, 10)))
 
@@ -1169,7 +1169,7 @@ def test_reset_view_grid():
     assert spaced_grid_zoom < grid_zoom
 
 
-def test_reset_view_empty():
+def test_reset_view_handles_no_layers():
     """Test reset_view with no layers."""
     viewer = ViewerModel()
     # Reset view should not raise errors when no layers are present
