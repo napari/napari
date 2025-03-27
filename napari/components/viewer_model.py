@@ -556,7 +556,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if len(size) < len(view_direction):
             size = np.insert(size, 0, 1e-10)
 
-        # get the "right" direction that is perpendicular to the view and up directions
+        # get the "rightward" direction that is perpendicular to the view and up directions
         right_direction = np.cross(view_direction, up_direction)
 
         # project the size vector onto the up and right directions to get the
