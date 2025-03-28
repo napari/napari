@@ -950,7 +950,18 @@ with contextlib.suppress(ImportError):
 
     @pytest.fixture(scope='session')
     def qapp_cls():
+        """The qapp fixture uses the qapp_cls fixture to select
+        the class to use for create the QApplication instance.
+
+        As qapp fixture is using more complex logic, we decided
+        not to override it but overwrite the fixture used by it.
+
+        We need to set attributte before the QApplication is created.
+        """
         if PYQT5 or PYSIDE2:
+            # As Qt6 autodetect High dpi scaling, we need to
+            # enable it only on Qt5 bindings.
+            # https://doc.qt.io/qtforpython-6/faq/porting_from2.html#class-function-deprecations
             QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
         return QApplication
 
