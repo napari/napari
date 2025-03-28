@@ -127,7 +127,7 @@ def _calc_affine_from_source_layers(data_ndim, source_layers: list[Layer]):
         layer for layer in source_layers if layer.ndim >= data_ndim
     ]
     to_low_dim_layers = [
-        layer.name for layer in source_layers if layer.ndim > data_ndim
+        layer.name for layer in source_layers if layer.ndim < data_ndim
     ]
 
     if to_low_dim_layers:
