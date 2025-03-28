@@ -46,7 +46,8 @@ class ScaleBar(Compound):
         # convert font_size to logical pixels as vispy does
         # in vispy/visuals/text/text.py
         # 96 dpi is used as the napari reference dpi
-        font_logical_pixels = font_size * 96 / 72
+        # round to ensure box.height for font_size 10 is 36
+        font_logical_pixels = np.round(font_size * 96 / 72)
 
         # 18 is the bottom half of the default/initial box
         # 5 is the padding at the top of the text
