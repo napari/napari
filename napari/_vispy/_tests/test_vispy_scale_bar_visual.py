@@ -1,7 +1,5 @@
 from unittest.mock import MagicMock
 
-import pytest
-
 from napari._vispy.overlays.scale_bar import VispyScaleBarOverlay
 from napari.components.overlays import ScaleBarOverlay
 
@@ -24,7 +22,7 @@ def test_scale_bar_positioning(make_napari_viewer):
 
     assert model.position == 'bottom_right'
     assert model.font_size == 10
-    assert scale_bar.node.box.height == pytest.approx(36.3, abs=0.1)
+    assert scale_bar.node.box.height == 36
     assert scale_bar.y_offset == 7
 
     model.position = 'top_right'
@@ -48,5 +46,5 @@ def test_scale_bar_positioning(make_napari_viewer):
     # but should increase the box height and y_size
     model.font_size = 40
     assert scale_bar.y_offset == 7
-    assert scale_bar.y_size == pytest.approx(38.1, abs=0.1)
-    assert scale_bar.node.box.height == pytest.approx(76.3, abs=0.1)
+    assert scale_bar.y_size == 38
+    assert scale_bar.node.box.height == 76
