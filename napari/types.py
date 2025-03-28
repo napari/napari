@@ -19,7 +19,7 @@ from typing_extensions import TypedDict
 
 if TYPE_CHECKING:
     # dask zarr should be imported as `import dask.array as da` But here it is used only in type annotation to
-    # register it as a valid type fom magicgui so is passed as string and requires full qualified name to allow
+    # register it as a valid type from magicgui so is passed as string and requires full qualified name to allow
     # magicgui properly register it.
     import dask.array  # noqa: ICN001
     import zarr

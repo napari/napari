@@ -113,7 +113,7 @@ class ColorManager(EventedModel):
         ColorMode.DIRECT: colors are set by passing color values to ColorManager.colors
         ColorMode.COLORMAP: colors are set via the continuous_colormap applied to the
                             color_properties
-        ColorMode.CYCLE: colors are set vie the categorical_colormap appied to the
+        ColorMode.CYCLE: colors are set via the categorical_colormap applied to the
                          color_properties. This should be used for categorical
                          properties only.
      color_properties : Optional[ColorProperties]

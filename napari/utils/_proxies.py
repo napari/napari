@@ -214,7 +214,7 @@ def _in_main_thread() -> bool:
     General implementation of checking if we are in a proper thread.
     If Qt is available and Application is created then assign :py:func:`in_qt_main_thread` to `in_main_thread`.
     If Qt liba are not available then assign :py:func:`in_main_thread_py` to in_main_thread.
-    IF Qt libs are available but there is no Application ti wil emmit warning and return result of in_main_thread_py.
+    IF Qt libs are available but there is no Application it will emit warning and return result of in_main_thread_py.
 
     Returns
     -------

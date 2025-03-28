@@ -343,7 +343,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         * ``additive``: voxel colors are added along the view ray until
             the result is saturated.
         * ``iso``: isosurface. Cast a ray until a certain threshold is
-            encountered. At that location, lighning calculations are
+            encountered. At that location, lighting calculations are
             performed to give the visual appearance of a surface.
         * ``average``: average intensity projection. Cast a ray and display the
             average of values that were encountered.
@@ -659,7 +659,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             values_attenuated = (
                 values - self.contrast_limits[0]
             ) / self.contrast_limits[1]
-            # approx, step size is actually calculated with int(lenght(ray) * 2)
+            # approx, step size is actually calculated with int(length(ray) * 2)
             step_size = 0.5
             sumval = (
                 step_size
