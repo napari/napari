@@ -185,9 +185,9 @@ def test_magicgui_add_data_inheritance_surface(
 
 
 def test_magicgui_add_data_inheritance_two_layer(make_napari_viewer, rng):
-    """This test validates if the scale and translate are inherited from the
-    previous layers when adding a new layer with magicgui if function requests,
-    a LayerData type.
+    """This test validates if the scale and translate are inherited if more than
+    one source layer is passed to function when adding a new layer
+    with magicgui if function requests, a LayerData type.
     """
     viewer = make_napari_viewer()
     viewer.add_image(rng.random((10, 10)), scale=(1, 2), translate=(3, 4))
