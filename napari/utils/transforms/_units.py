@@ -40,7 +40,7 @@ def get_units_from_name(units: UnitsLike) -> UnitsInfo:
             return pint.get_application_registry()[units].units
         if isinstance(units, Sequence):
             return tuple(
-                pint.get_application_registry()[unit].units
+                pint.get_application_registry().parse_expression(unit).units
                 if isinstance(unit, str)
                 else unit
                 for unit in units
