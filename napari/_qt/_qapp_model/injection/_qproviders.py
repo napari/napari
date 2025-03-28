@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 from napari import components, layers, viewer
 from napari.utils._proxies import PublicOnlyProxy
 from napari.utils.translations import trans
+from napari.viewer import ViewerModel
 
 if TYPE_CHECKING:
     from napari._qt.qt_main_window import Window
@@ -23,6 +24,11 @@ def _provide_viewer(public_proxy: bool = True) -> viewer.Viewer | None:
             return PublicOnlyProxy(current_viewer)
         return current_viewer
     return None
+
+
+def _provide_viewer_model(public_proxy: bool = True) -> ViewerModel | None:
+    """Provide a Viewer (subclass of ViewerModel) if ViewerModel is needed."""
+    return _provide_viewer(public_proxy)
 
 
 def _provide_viewer_or_raise(
@@ -100,6 +106,7 @@ def _provide_active_layer_list() -> components.LayerList | None:
 # https://github.com/tlambert03/in-n-out/issues/31
 QPROVIDERS = [
     (_provide_viewer,),
+    (_provide_viewer_model,),
     (_provide_qt_viewer,),
     (_provide_window,),
     (_provide_active_layer,),

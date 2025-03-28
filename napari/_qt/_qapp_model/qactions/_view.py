@@ -17,7 +17,7 @@ from napari._qt.qt_main_window import Window
 from napari._qt.qt_viewer import QtViewer
 from napari.settings import get_settings
 from napari.utils.translations import trans
-from napari.viewer import Viewer
+from napari.viewer import Viewer, ViewerModel
 
 # View submenus
 VIEW_SUBMENUS = [
@@ -72,6 +72,19 @@ def _zoom_in(viewer: Viewer):
 
 def _zoom_out(viewer: Viewer):
     viewer.camera.zoom /= 1.5
+
+
+def _toggle_canvas_ndim(viewer: ViewerModel):
+    """Toggle the current canvas between 3D and 2D."""
+    if viewer.dims.ndisplay == 2:
+        viewer.dims.ndisplay = 3
+    else:  # == 3
+        viewer.dims.ndisplay = 2
+
+
+def _current_view_is_3d(viewer: Viewer):
+    """True if viewer.dims.ndisplay is 3."""
+    return viewer.dims.ndisplay == 3
 
 
 Q_VIEW_ACTIONS: list[Action] = [
@@ -179,6 +192,19 @@ Q_VIEW_ACTIONS: list[Action] = [
         ],
         callback=_zoom_out,
         keybindings=[StandardKeyBinding.ZoomOut],
+    ),
+    Action(
+        id='napari.viewer.dims.ndisplay',
+        title=trans._('3D View'),
+        menus=[
+            {
+                'id': MenuId.MENUBAR_VIEW,
+                'group': MenuGroup.ZOOM,
+                'order': 2,
+            }
+        ],
+        callback=_toggle_canvas_ndim,
+        toggled=ToggleRule(get_current=_current_view_is_3d),
     ),
     Action(
         id='napari.window.view.toggle_activity_dock',
