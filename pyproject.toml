@@ -241,6 +241,7 @@ napari_builtins = [
 
 [tool.setuptools_scm]
 write_to = "napari/_version.py"
+fallback_version = "0.6.0.nogit"
 
 [tool.check-manifest]
 ignore = [
