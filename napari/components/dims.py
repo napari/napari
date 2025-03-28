@@ -260,7 +260,7 @@ class Dims(EventedModel):
     @property
     def current_step(self):
         return tuple(
-            int(round((point - rng.start) / (rng.step or 1)))
+            round((point - rng.start) / (rng.step or 1))
             for point, rng in zip(self.point, self.range, strict=False)
         )
 
