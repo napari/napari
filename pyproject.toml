@@ -126,7 +126,7 @@ optional-numba = [
 optional = [
     "napari[optional-base,optional-numba]",
     "triangle",
-    "bermuda>=0.1.2",
+    "bermuda>=0.1.3",
 ]
 testing = [
     "napari[gallery]",
