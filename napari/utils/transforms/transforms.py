@@ -528,7 +528,6 @@ class Affine(Transform):
             units = (units,) * self.ndim
         if len(units) != self.ndim:
             raise ValueError(f'{units=} must have length ndim={self.ndim}.')
-
         self._units = units
 
     @property
