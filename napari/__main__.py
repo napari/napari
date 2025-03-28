@@ -353,7 +353,7 @@ def _run() -> None:
                 **kwargs,
             )
         except ReaderPluginError:
-            logging.exception(
+            logging.getLogger('napari').exception(
                 'Loading %s with %s failed with errors',
                 args.paths,
                 args.plugin,
