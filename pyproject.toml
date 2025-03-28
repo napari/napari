@@ -336,6 +336,7 @@ ignore = [
     "PYI015", # it produces bad looking files (@jni opinion)
     "W191", "Q000", "Q001", "Q002", "Q003", "ISC001", # https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
     "UP007", # temporary disable migrtion form Union[X, Y] to X | Y
+    "TC006", # put types in quotes in typing.cast
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -343,8 +344,8 @@ ignore = [
 "**/_tests/*.py" = ["B011", "INP001", "TRY301", "B018", "RUF012"]
 "napari/utils/_testsupport.py" = ["B011"]
 "tools/validate_strings.py" = ["F401"]
-"tools/**" = ["INP001", "T20"]
-"examples/**" = ["ICN001", "INP001", "T20"]
+"tools/**" = ["INP001", "T20", "LOG015"]
+"examples/**" = ["ICN001", "INP001", "T20", "LOG015"]
 "**/vendored/**" = ["TID"]
 "napari/benchmarks/**" = ["RUF012", "TID252"]
 
