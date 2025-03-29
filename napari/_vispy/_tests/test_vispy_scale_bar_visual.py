@@ -48,3 +48,21 @@ def test_scale_bar_positioning(make_napari_viewer):
     assert scale_bar.y_offset == 7
     assert scale_bar.y_size == 38
     assert scale_bar.node.box.height == 76
+
+    # setting `colored` should have no effect
+    model.colored = True
+    assert scale_bar.y_offset == 7
+    assert scale_bar.y_size == 38
+    assert scale_bar.node.box.height == 76
+    # check that the line is not at the center,
+    # but offset down due to the font size (40)
+    assert scale_bar.node.line.pos[0, 1] == scale_bar.node.box.height / 2 - 18
+
+    # changing `ticks` should have no effect
+    model.ticks = False
+    assert scale_bar.y_offset == 7
+    assert scale_bar.y_size == 38
+    assert scale_bar.node.box.height == 76
+    # check that the line is not at the center,
+    # but offset down due to the font size (40)
+    assert scale_bar.node.line.pos[0, 1] == scale_bar.node.box.height / 2 - 18
