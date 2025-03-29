@@ -58,7 +58,7 @@ class ScaleBar(Compound):
         # is in the center (0), so subtract half of the default box height (18)
         fixed_position_in_box = self.box.height / 2 - 18
         self.text.pos = [0.5, fixed_position_in_box]
-        line_data = np.array(
+        self._data = np.array(
             [
                 [0, fixed_position_in_box],
                 [1, fixed_position_in_box],
@@ -68,7 +68,7 @@ class ScaleBar(Compound):
                 [1, fixed_position_in_box + 5],
             ]
         )
-        self.line.set_data(pos=line_data)
+        self.line.set_data(pos=self._data)
 
     def set_data(self, color, ticks):
         data = self._data if ticks else self._data[:2]
