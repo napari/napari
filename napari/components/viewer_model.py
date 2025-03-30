@@ -382,21 +382,33 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             )
         return self.layers._extent_world_augmented[:, self.dims.displayed]
 
-    def reset_view(
-        self, *, margin: float = 0.05, reset_camera_angle: bool = True
-    ) -> None:
-        """Reset the camera view.
+    def reset_view(self, *, margin: float = 0.05) -> None:
+        """Reset the camera and fit the current layers to the canvas.
 
-        Adjusts the camera zoom and center the view so that all layers are
-        visible, accounting for the current grid mode and margin.
+        Resets the angles of the camera, adjust the camera zoom,
+        and centers the view so that all layers are visible,
+        accounting for the current grid mode and margin.
 
         Parameters
         ----------
         margin : float in [0, 1)
             Margin as fraction of the canvas, showing blank space around the
             data. Default is 0.05 (5% of the canvas).
-        reset_camera_angle : bool
-            Reset the camera angle to the default value. Default is True.
+        """
+        self.camera.angles = (0, 0, 90)
+        self.fit_view_to_canvas(margin=margin)
+
+    def fit_view_to_canvas(self, *, margin: float = 0.05) -> None:
+        """Fit the current data view to the canvas.
+
+        Adjusts the camera zoom and centers the view so that all visible layers
+        are within the canvas, accounting for the current grid mode and margin.
+
+        Parameters
+        ----------
+        margin : float in [0, 1)
+            Margin as fraction of the canvas, showing blank space around the
+            data. Default is 0.05 (5% of the canvas).
         """
         # Get the scene parameters, including the total_size of the grid
         extent, scene_size, corner, total_size = self._get_scene_parameters()
@@ -404,9 +416,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.camera.center = self._calculate_view_center(corner, total_size)
 
         scale_factor = self._get_scale_factor(margin)
-
-        if reset_camera_angle:
-            self.camera.angles = (0, 0, 90)
 
         # Set camera zoom based on ndisplay
         # zoom is defined as the number of canvas pixels per world pixel
