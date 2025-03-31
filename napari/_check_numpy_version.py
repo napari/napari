@@ -64,7 +64,7 @@ def limit_numpy1x_threads_on_macos_arm() -> (
     # find openblas library
     numpy_dir = Path(np.__file__).parent
     if not (numpy_dir / '.dylibs').exists():
-        logging.warning(
+        logging.getLogger('napari').warning(
             'numpy .dylibs directory not found during try to prevent numpy crash'
         )
     # Recent numpy versions are built with cibuildwheel.
@@ -74,7 +74,7 @@ def limit_numpy1x_threads_on_macos_arm() -> (
     # dynamic library at this location.
     blas_lib = list((numpy_dir / '.dylibs').glob('libopenblas*.dylib'))
     if not blas_lib:
-        logging.warning(
+        logging.getLogger('napari').warning(
             'libopenblas not found during try to prevent numpy crash'
         )
         return
@@ -88,4 +88,6 @@ def limit_numpy1x_threads_on_macos_arm() -> (
             openblas_set_num_threads(1)
             break
     else:
-        logging.warning('openblas_set_num_threads not found')
+        logging.getLogger('napari').warning(
+            'openblas_set_num_threads not found'
+        )
