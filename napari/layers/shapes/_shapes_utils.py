@@ -1224,10 +1224,11 @@ def rdp(vertices: npt.NDArray, epsilon: float) -> npt.NDArray:
 def _save_failed_triangulation(
     data: np.ndarray, target_dir: str | None = None
 ) -> tuple[str, str]:
-    """Save the data to temporary files for debugging.
-    This function is used when triangulation fails to save the data.
-    It saves data to a .npz file and a .txt file in the temporary directory.
-    And returns the paths to the saved files.
+    """Save data to temporary files for debugging.
+    
+    This function saves input data when triangulation fails.
+    It saves the same data to both a .npz file and a .txt file within the
+    temporary directory, and returns the paths to the saved files.
 
     Parameters
     ----------
