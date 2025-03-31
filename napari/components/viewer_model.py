@@ -411,7 +411,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 'reset_camera_angle is deprecated since napari 0.6.0 and will be removed in 0.7.0.'
                 'Continue to use `viewer.reset_view()` to reset the camera angles.'
                 'Use `viewer.fit_to_view()` to adjust the camera without resetting the camera angles.',
-                category=DeprecationWarning,
+                category=FutureWarning,
             )
 
         if reset_camera_angle or reset_camera_angle is None:
