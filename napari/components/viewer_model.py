@@ -396,9 +396,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             data. Default is 0.05 (5% of the canvas).
         """
         self.camera.angles = (0, 0, 90)
-        self.fit_view_to_canvas(margin=margin)
+        self.fit_to_view(margin=margin)
 
-    def fit_view_to_canvas(self, *, margin: float = 0.05) -> None:
+    def fit_to_view(self, *, margin: float = 0.05) -> None:
         """Fit the current data view to the canvas.
 
         Adjusts the camera zoom and centers the view so that all visible layers
