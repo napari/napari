@@ -93,6 +93,7 @@ jobs:
           GIT_LFS_SKIP_SMUDGE: 1
           HEAD_LABEL: ${{ github.event.pull_request.head.label }}
           PIP_CONSTRAINT: ${{ github.workspace }}/resources/constraints/benchmark.txt
+          TMPDIR: ${{ github.workspace }}/tmp
         run: |
           set -euxo pipefail
           read -ra cmd_options <<< "$ASV_OPTIONS"
@@ -147,6 +148,15 @@ jobs:
         with:
           filename: .github/TEST_FAIL_TEMPLATE.md
           update_existing: true
+
+      - name: Upload additional information about failure
+#         upload the tmp directory to the artifact
+#         this is where our code stores the dumped
+#         structures that crash triangulation
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          path: ${{ github.workspace }}/tmp
 
       - name: Add more info to artifact
         if: always()
