@@ -1225,7 +1225,7 @@ def _save_failed_triangulation(
     data: np.ndarray, target_dir: str | None = None
 ) -> tuple[str, str]:
     """Save data to temporary files for debugging.
-    
+
     This function saves input data when triangulation fails.
     It saves the same data to both a .npz file and a .txt file within the
     temporary directory, and returns the paths to the saved files.
