@@ -43,6 +43,7 @@ class VispyCamera:
 
         # Set 2D camera by default
         self._view.camera = self._2D_camera
+        self._last_3D_angles = (0, 0, 90)
 
         self._dims.events.ndisplay.connect(
             self._on_ndisplay_change, position='first'
@@ -85,6 +86,7 @@ class VispyCamera:
             )
             self._view.camera._quaternion = quat
             self._view.camera.view_changed()
+            # self._last_3D_angles = tuple(angles)
 
     @property
     def center(self):
@@ -165,7 +167,10 @@ class VispyCamera:
     def _on_ndisplay_change(self):
         if self._dims.ndisplay == 3:
             self._view.camera = self._3D_camera
+            self._camera.angles = self._last_3D_angles
         else:
+            if self._view.camera == self._3D_camera:
+                self._last_3D_angles = self.angles
             self._view.camera = self._2D_camera
 
         self._on_mouse_toggles_change()
