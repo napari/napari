@@ -96,8 +96,8 @@ jobs:
           TMPDIR: ${{ github.workspace }}/tmp
         run: |
           set -euxo pipefail
-          mkdir -p $TMPDIR
-          touch $TMPDIR/empty
+          mkdir -p "${TMPDIR}"
+          touch "${TMPDIR}/empty"
           read -ra cmd_options <<< "$ASV_OPTIONS"
 
           # ID this runner
