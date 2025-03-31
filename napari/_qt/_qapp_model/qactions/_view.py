@@ -63,7 +63,7 @@ def _get_current_tooltip_visibility() -> bool:
 
 
 def _fit_to_view(viewer: Viewer):
-    viewer.reset_view(reset_camera_angle=False)
+    viewer.fit_to_view()
 
 
 def _zoom_in(viewer: Viewer):
