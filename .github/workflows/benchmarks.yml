@@ -160,6 +160,7 @@ jobs:
         with:
           path: ${{ github.workspace }}/tmp
           include-hidden-files: true
+          name: tmp-${{ matrix.benchmark-name }}
 
       - name: Add more info to artifact
         if: always()
