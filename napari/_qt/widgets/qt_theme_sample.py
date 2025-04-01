@@ -167,7 +167,9 @@ if __name__ == '__main__':
         try:
             w = SampleWidget(theme)
         except KeyError:
-            logging.warning('%s is not a recognized theme', theme)
+            logging.getLogger('napari').warning(
+                '%s is not a recognized theme', theme
+            )
             continue
         w.setGeometry(10 + 430 * n, 0, 425, 600)
         w.show()

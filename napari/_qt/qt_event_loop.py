@@ -90,21 +90,6 @@ def _focus_changed(old: QWidget | None, new: QWidget | None):
             notification.timer_stop()
 
 
-# TODO: Remove in napari 0.6.0
-def get_app(*args, **kwargs) -> QApplication:
-    """Get or create the Qt QApplication. Now deprecated, use `get_qapp`."""
-    warn(
-        trans._(
-            '`QApplication` instance access through `get_app` is deprecated and will be removed in 0.6.0.\n'
-            'Please use `get_qapp` instead.\n',
-            deferred=True,
-        ),
-        category=FutureWarning,
-        stacklevel=2,
-    )
-    return get_qapp(*args, **kwargs)
-
-
 def get_qapp(
     *,
     app_name: str | None = None,
@@ -118,7 +103,7 @@ def get_qapp(
     """Get or create the Qt QApplication.
 
     There is only one global QApplication instance, which can be retrieved by
-    calling get_app again, (or by using QApplication.instance())
+    calling get_qapp, (or by using QApplication.instance())
 
     Parameters
     ----------
@@ -166,7 +151,7 @@ def get_qapp(
         if set_values:
             warn(
                 trans._(
-                    "QApplication already existed, these arguments to to 'get_app' were ignored: {args}",
+                    "QApplication already existed, these arguments to to 'get_qapp' were ignored: {args}",
                     deferred=True,
                     args=set_values,
                 ),
@@ -236,7 +221,7 @@ def get_qapp(
         # Will patch based on config file.
         perf_config.patch_callables()
 
-    if not _app_ref:  # running get_app for the first time
+    if not _app_ref:  # running for first time
         # see docstring of `wait_for_workers_to_quit` for caveats on killing
         # workers at shutdown.
         app.aboutToQuit.connect(wait_for_workers_to_quit)
@@ -390,7 +375,7 @@ def run(
     if not app:
         raise RuntimeError(
             trans._(
-                'No Qt app has been created. One can be created by calling `get_app()` or `qtpy.QtWidgets.QApplication([])`',
+                'No Qt app has been created. One can be created by calling `get_qapp()` or `qtpy.QtWidgets.QApplication([])`',
                 deferred=True,
             )
         )
