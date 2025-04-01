@@ -399,7 +399,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         reset_camera_angle : bool
             Whether to reset the camera angles to (0, 0, 90) before fitting
             to view. Default is True.
+
             .. deprecated:: 0.6.0
+
                 The `reset_camera_angle` paramater is deprecated and will be
                 removed in 0.7.0.
                 Continue to use `reset_view()` to reset the camera angles.
