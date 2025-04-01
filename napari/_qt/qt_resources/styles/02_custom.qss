@@ -728,15 +728,15 @@ QPushButton#close_button:disabled {
 }
 
 #help_label {
-  image: url("theme_{{ id }}:/help.svg");
+  image: url("theme_{{ id }}:/help_50.svg");
 }
 
 #righthand_label {
-  image: url("theme_{{ id }}:/righthand.svg");
+  image: url("theme_{{ id }}:/righthand_50.svg");
 }
 
 #lefthand_label {
-  image: url("theme_{{ id }}:/lefthand.svg");
+  image: url("theme_{{ id }}:/lefthand_50.svg");
 }
 
 QtPluginDialog QSplitter{
