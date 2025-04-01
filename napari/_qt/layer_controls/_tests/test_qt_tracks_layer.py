@@ -108,8 +108,8 @@ def test_update_max_tail_length(null_data, properties, qtbot):
     # update max_length beyond the current value
     layer.tail_length = layer._max_length + 200
     assert controls.tail_length_slider.maximum() == layer._max_length
-    
-    
+
+
 def test_update_max_head_length(null_data, properties, qtbot):
     """Check updating of the head length slider beyond current maximum."""
     layer = Tracks(null_data, properties=properties)
@@ -122,4 +122,3 @@ def test_update_max_head_length(null_data, properties, qtbot):
     # update max_length beyond the current value
     layer.head_length = layer._max_length + 200
     assert controls.head_length_slider.maximum() == layer._max_length
-    
