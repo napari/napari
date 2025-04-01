@@ -388,8 +388,10 @@ class ShapeTriangulationStarIntersectionSuite(
             and not compiled_triangulation
         )
         or (
-            n_shapes == 100 and n_points == 33 and shape_type == 'polygon'
-            # and not compiled_triangulation
+            n_shapes == 100
+            and n_points == 33
+            and shape_type == 'polygon'
+            and not compiled_triangulation
         ),
     )
 
