@@ -392,7 +392,7 @@ class QtViewerButtons(QFrame):
         if self.viewer.dims.ndisplay == 2:
             orientation_layout.addWidget(self.vertical_combo)
             orientation_layout.addWidget(self.horizontal_combo)
-            orientation_help_symbol = help_tooltip(
+            self.orientation_help_symbol = help_tooltip(
                 parent=popup,
                 text='Controls the orientation of the vertical and horizontal camera axes.',
             )
@@ -410,9 +410,14 @@ class QtViewerButtons(QFrame):
             orientation_layout.addWidget(self.depth_combo)
             orientation_layout.addWidget(self.vertical_combo)
             orientation_layout.addWidget(self.horizontal_combo)
-            orientation_help_symbol = help_tooltip(
+
+            self.orientation_help_symbol = help_tooltip(
                 parent=popup,
-                text='Controls the orientation of the depth, vertical, and horizontal camera axes.',
+                text='',  # updated dynamically
+            )
+            self._update_handedness_help_symbol()
+            self.viewer.camera.events.orientation.connect(
+                self._update_handedness_help_symbol
             )
 
         orientation_widget.setLayout(orientation_layout)
@@ -420,7 +425,22 @@ class QtViewerButtons(QFrame):
         form_layout.insertRow(
             0, QLabel(trans._('Orientation:')), orientation_widget
         )
-        help_layout.addWidget(orientation_help_symbol)
+        help_layout.addWidget(self.orientation_help_symbol)
+
+    def _update_handedness_help_symbol(self, event=None) -> None:
+        """Update the handedness symbol based on the camera orientation."""
+        handedness = self.viewer.camera.handedness
+        tooltip_text = (
+            'Controls the orientation of the depth, vertical, and horizontal camera axes.\n'
+            f'Currently orientation is {handedness.value}-handed.'
+        )
+        self.orientation_help_symbol.setToolTip(tooltip_text)
+        self.orientation_help_symbol.setObjectName(
+            f'{handedness.value}hand_label'
+        )
+        self.orientation_help_symbol.style().polish(
+            self.orientation_help_symbol
+        )
 
     def open_ndisplay_camera_popup(self) -> None:
         """Show controls for camera settings based on ndisplay mode."""
