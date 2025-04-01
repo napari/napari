@@ -1,4 +1,7 @@
+from itertools import product
+
 import numpy as np
+import pytest
 
 from napari.components import Camera
 
@@ -104,3 +107,22 @@ def test_calculate_view_direction_nd():
     )
     assert len(view_direction) == 5
     assert np.allclose(view_direction[[0, 2, 4]], (0, 1, 0))
+
+
+@pytest.mark.parametrize(
+    ('orientation', 'expected_handedness'),
+    zip(
+        # Could do this but the order is not locally visible, so we explicitly
+        # order the strings so we can think about handedness locally.
+        # product(DepthAxisOrientation, VerticalAxisOrientation, HorizontalAxisOrientation),
+        product(['towards', 'away'], ['down', 'up'], ['right', 'left']),
+        # hardcoded after running once
+        ['right', 'left', 'left', 'right', 'left', 'right', 'right', 'left'],
+        strict=False,
+    ),
+)
+def test_handedness(orientation, expected_handedness):
+    """Check that handedness is calculated properly."""
+    camera = Camera()
+    camera.orientation = orientation
+    assert camera.handedness == expected_handedness
