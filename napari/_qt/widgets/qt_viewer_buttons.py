@@ -9,7 +9,7 @@ from qtpy.QtWidgets import (
     QDoubleSpinBox,
     QFormLayout,
     QFrame,
-    QGridLayout,  # Add QGridLayout import
+    QGridLayout,
     QHBoxLayout,
     QLabel,
     QPushButton,
