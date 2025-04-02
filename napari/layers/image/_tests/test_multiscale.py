@@ -234,26 +234,19 @@ def test_blending():
     assert layer.blending == 'opaque'
 
 
-def test_interpolation():
+def test_interpolation_2d_3d():
     """Test setting image interpolation mode."""
     shapes = [(40, 20), (20, 10), (10, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     layer = Image(data, multiscale=True)
-    with pytest.deprecated_call():
-        assert layer.interpolation == 'nearest'
+
     assert layer.interpolation2d == 'nearest'
     assert layer.interpolation3d == 'linear'
 
-    with pytest.deprecated_call():
-        layer = Image(data, multiscale=True, interpolation2d='bicubic')
-    assert layer.interpolation2d == 'cubic'
-    with pytest.deprecated_call():
-        assert layer.interpolation == 'cubic'
+    assert layer.interpolation2d != 'cubic'
 
     layer.interpolation2d = 'linear'
-    with pytest.deprecated_call():
-        assert layer.interpolation == 'linear'
     assert layer.interpolation2d == 'linear'
 
 

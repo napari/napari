@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from warnings import warn
 
 from app_model import Application
 
@@ -9,12 +8,19 @@ from napari._app_model.actions._layerlist_context_actions import (
     LAYERLIST_CONTEXT_ACTIONS,
     LAYERLIST_CONTEXT_SUBMENUS,
 )
-from napari.utils.translations import trans
 
 APP_NAME = 'napari'
 
 
 class NapariApplication(Application):
+    """A singleton (per name) class representing the Napari application.
+
+    This class extends the app_model.Application class and provides a
+    singleton instance of the Napari application. It is responsible for
+    managing the application state, including the injection store and
+    registering actions and menus.
+    """
+
     def __init__(self, app_name=APP_NAME) -> None:
         # raise_synchronous_exceptions means that commands triggered via
         # ``execute_command`` will immediately raise exceptions. Normally,
@@ -32,7 +38,14 @@ class NapariApplication(Application):
 
     @classmethod
     def get_app_model(cls, app_name: str = APP_NAME) -> NapariApplication:
-        return Application.get_app(app_name) or cls()  # type: ignore[return-value]
+        """Get the Napari Application singleton.
+
+        This class method that returns the singleton instance of the
+        NapariApplication. It relies on the parent class's Application.get_app()
+        method (provided by the app_model library) to retrieve the application
+        instance by name.
+        """
+        return Application.get_app(app_name) or cls()
 
 
 @lru_cache(maxsize=1)
@@ -58,21 +71,10 @@ def _napari_names() -> dict[str, object]:
     }
 
 
-# TODO: Remove in 0.6.0
-def get_app() -> NapariApplication:
-    """Get the Napari Application singleton. Now deprecated, use `get_app_model`."""
-    warn(
-        trans._(
-            '`NapariApplication` instance access through `get_app` is deprecated and will be removed in 0.6.0.\n'
-            'Please use `get_app_model` instead.\n',
-            deferred=True,
-        ),
-        category=FutureWarning,
-        stacklevel=2,
-    )
-    return get_app_model()
-
-
 def get_app_model() -> NapariApplication:
-    """Get the Napari Application singleton."""
+    """Get the Napari Application singleton.
+
+    This public function returns the singleton instance of the
+    NapariApplication.
+    """
     return NapariApplication.get_app_model()

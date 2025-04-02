@@ -14,7 +14,7 @@ asciitree==0.3.3
     # via zarr
 asttokens==3.0.0
     # via stack-data
-attrs==25.1.0
+attrs==25.3.0
     # via
     #   hypothesis
     #   jsonschema
@@ -48,13 +48,13 @@ comm==0.2.2
     # via ipykernel
 contourpy==1.3.1
     # via matplotlib
-coverage==7.6.12
+coverage==7.8.0
     # via
     #   napari (pyproject.toml)
     #   pytest-cov
 cycler==0.12.1
     # via matplotlib
-dask==2025.2.0
+dask==2025.3.0
     # via
     #   napari (pyproject.toml)
     #   distributed
@@ -64,7 +64,7 @@ decorator==5.2.1
     # via ipython
 distlib==0.3.9
     # via virtualenv
-distributed==2025.2.0
+distributed==2025.3.0
     # via dask
 docstring-parser==0.16
     # via
@@ -81,7 +81,7 @@ executing==2.2.0
     # via stack-data
 fasteners==0.19
     # via zarr
-filelock==3.17.0
+filelock==3.18.0
     # via
     #   torch
     #   virtualenv
@@ -93,7 +93,7 @@ fonttools==4.56.0
     # via matplotlib
 freetype-py==2.5.1
     # via vispy
-fsspec==2025.3.0
+fsspec==2025.3.1
     # via
     #   napari (pyproject.toml)
     #   dask
@@ -108,7 +108,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.128.2
+hypothesis==6.130.5
     # via napari (pyproject.toml)
 idna==3.10
     # via requests
@@ -127,7 +127,7 @@ importlib-resources==6.5.2
     # via nibabel
 in-n-out==0.2.1
     # via app-model
-iniconfig==2.0.0
+iniconfig==2.1.0
     # via pytest
 ipykernel==6.29.5
     # via
@@ -328,7 +328,7 @@ parso==0.8.4
     # via jedi
 partd==1.4.2
     # via dask
-partsegcore-compiled-backend==0.15.11
+partsegcore-compiled-backend==0.15.12
     # via napari (pyproject.toml)
 pexpect==4.9.0
     # via ipython
@@ -343,7 +343,7 @@ pint==0.24.4
     # via napari (pyproject.toml)
 pip==25.0.1
     # via napari-plugin-manager
-platformdirs==4.3.6
+platformdirs==4.3.7
     # via
     #   jupyter-core
     #   pint
@@ -380,7 +380,7 @@ pyautogui==0.9.54
     # via napari (pyproject.toml)
 pyconify==0.2.1
     # via superqt
-pydantic==2.10.6
+pydantic==2.11.1
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
@@ -389,7 +389,7 @@ pydantic==2.10.6
     #   pydantic-compat
 pydantic-compat==0.1.2
     # via app-model
-pydantic-core==2.27.2
+pydantic-core==2.33.0
     # via pydantic
 pygetwindow==0.0.9
     # via pyautogui
@@ -407,7 +407,7 @@ pyopengl==3.1.9
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
-pyparsing==3.2.1
+pyparsing==3.2.3
     # via matplotlib
 pyperclip==1.9.0
     # via mouseinfo
@@ -464,7 +464,7 @@ python3-xlib==0.15
     #   pyautogui
 pytweening==1.2.0
     # via pyautogui
-pytz==2025.1
+pytz==2025.2
     # via pandas
 pyyaml==6.0.2
     # via
@@ -472,7 +472,7 @@ pyyaml==6.0.2
     #   dask
     #   distributed
     #   npe2
-pyzmq==26.2.1
+pyzmq==26.3.0
     # via
     #   ipykernel
     #   jupyter-client
@@ -498,13 +498,13 @@ requests==2.32.3
     #   pooch
     #   pyconify
     #   sphinx
-rich==13.9.4
+rich==14.0.0
     # via
     #   napari (pyproject.toml)
     #   npe2
     #   pytest-pretty
     #   typer
-rpds-py==0.23.1
+rpds-py==0.24.0
     # via
     #   jsonschema
     #   referencing
@@ -553,7 +553,7 @@ sphinxcontrib-serializinghtml==2.0.0
     # via sphinx
 stack-data==0.6.3
     # via ipython
-superqt==0.7.1
+superqt==0.7.3
     # via
     #   napari (pyproject.toml)
     #   magicgui
@@ -564,13 +564,13 @@ tabulate==0.9.0
     # via numpydoc
 tblib==3.0.0
     # via distributed
-tensorstore==0.1.71
+tensorstore==0.1.73
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
-threadpoolctl==3.5.0
+threadpoolctl==3.6.0
     # via scikit-learn
-tifffile==2025.2.18
+tifffile==2025.3.30
     # via
     #   napari (pyproject.toml)
     #   scikit-image
@@ -614,7 +614,7 @@ triton==3.2.0
     # via torch
 typer==0.15.2
     # via npe2
-typing-extensions==4.12.2
+typing-extensions==4.13.0
     # via
     #   napari (pyproject.toml)
     #   app-model
@@ -631,7 +631,10 @@ typing-extensions==4.12.2
     #   superqt
     #   torch
     #   typer
-tzdata==2025.1
+    #   typing-inspection
+typing-inspection==0.4.0
+    # via pydantic
+tzdata==2025.2
     # via pandas
 urllib3==2.3.0
     # via
@@ -649,7 +652,7 @@ wrapt==1.17.2
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
-xarray==2025.1.2
+xarray==2025.3.1
     # via napari (pyproject.toml)
 zarr==2.18.3
     # via

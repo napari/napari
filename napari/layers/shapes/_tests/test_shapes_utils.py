@@ -1,12 +1,15 @@
+import os
+
 import numpy as np
 import pytest
-from numpy import array
+from numpy import array, testing as npt
 
 from napari.layers.shapes._accelerated_triangulate_dispatch import (
     generate_2D_edge_meshes_py,
 )
 from napari.layers.shapes._shapes_utils import (
     _is_convex,
+    _save_failed_triangulation,
     get_default_shape_type,
     number_of_shapes,
     perpendicular_distance,
@@ -472,3 +475,22 @@ def test_is_convex_regular_polygon(angle, n_vertex, reverse):
     rot = rotation_matrix(angle)
     rotated_poly = np.dot(poly, rot)
     assert _is_convex(rotated_poly)
+
+
+def test_save_failed_triangulation(tmp_path):
+    data = np.empty((10, 10), dtype=np.uint16)
+    bin_path, text_path = _save_failed_triangulation(
+        data, target_dir=str(tmp_path)
+    )
+    assert os.path.exists(bin_path)
+    assert os.path.exists(text_path)
+    assert bin_path.endswith('.npz')
+    assert text_path.endswith('.txt')
+    assert bin_path.startswith(str(tmp_path))
+    assert text_path.startswith(str(tmp_path))
+
+    d1 = np.loadtxt(text_path)
+    npt.assert_array_equal(d1, data)
+
+    d2 = np.load(bin_path)['data']
+    npt.assert_array_equal(d2, data)
