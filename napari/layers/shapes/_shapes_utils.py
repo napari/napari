@@ -715,11 +715,8 @@ def triangulate_face(data: npt.NDArray) -> tuple[npt.NDArray, npt.NDArray]:
     else:
         try:
             vertices, triangles = PolygonData(vertices=data).triangulate()
-        except Exception as e:
-            path = tempfile.mktemp(prefix='napari_triang_', suffix='.npz')
-            text_path = tempfile.mktemp(prefix='napari_triang_', suffix='.txt')
-            np.savez(path, data=data)
-            np.savetxt(text_path, data)
+        except Exception as e:  # pragma: no cover
+            path, text_path = _save_failed_triangulation(data)
             raise RuntimeError(
                 f'Triangulation failed. Data saved to {path} and {text_path}'
             ) from e
@@ -1222,3 +1219,47 @@ def rdp(vertices: npt.NDArray, epsilon: float) -> npt.NDArray:
 
     # When epsilon is 0, avoid removing datapoints
     return vertices
+
+
+def _save_failed_triangulation(
+    data: np.ndarray, target_dir: str | None = None
+) -> tuple[str, str]:
+    """Save data to temporary files for debugging.
+
+    This function saves input data when triangulation fails.
+    It saves the same data to both a .npz file and a .txt file within the
+    temporary directory, and returns the paths to the saved files.
+
+    Parameters
+    ----------
+    data : np.ndarray
+        The data to save.
+    target_dir: str or None
+        Path to directory where the files will be saved. If None, the default
+
+    Returns
+    -------
+    tuple[str, str]
+        The paths to the saved files.
+
+    Notes
+    -----
+    Use TMPDIR environment variable to set the temporary directory.
+    """
+    with tempfile.NamedTemporaryFile(
+        delete=False,
+        suffix='.npz',
+        prefix='napari_comp_triang_',
+        dir=target_dir,
+    ) as binary_file:
+        np.savez(binary_file, data=data)
+    with tempfile.NamedTemporaryFile(
+        delete=False,
+        suffix='.txt',
+        prefix='napari_comp_triang_',
+        mode='w',
+        dir=target_dir,
+    ) as text_file:
+        np.savetxt(text_file, data)
+
+    return binary_file.name, text_file.name

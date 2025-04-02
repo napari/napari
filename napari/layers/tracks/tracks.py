@@ -575,10 +575,8 @@ class Tracks(Layer):
     def colormaps_dict(self) -> dict[str, Colormap]:
         return self._colormaps_dict
 
-    # Ignored type because mypy doesn't recognise colormaps_dict as a property
-    # TODO: investigate and fix this - not sure why this is the case?
-    @colormaps_dict.setter  # type: ignore[attr-defined]
-    def colomaps_dict(self, colormaps_dict: dict[str, Colormap]) -> None:
+    @colormaps_dict.setter
+    def colormaps_dict(self, colormaps_dict: dict[str, Colormap]) -> None:
         # validate the dictionary entries?
         self._colormaps_dict = colormaps_dict
 

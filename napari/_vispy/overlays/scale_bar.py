@@ -25,8 +25,8 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         )
         self.x_size = 150  # will be updated on zoom anyways
         # need to change from defaults because the anchor is in the center
-        self.y_offset = 20
-        self.y_size = 5
+        self.y_offset = 7  # padding from the bottom edge
+        self.y_size = 18  # half the box height
 
         self.overlay.events.box.connect(self._on_box_change)
         self.overlay.events.box_color.connect(self._on_data_change)
@@ -182,22 +182,24 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
             dpi_scale_factor = 1
 
         self.node.text.font_size = self.overlay.font_size * dpi_scale_factor
-        # ensure we recalculate the y_offset from the text size when at top of canvas
-        if 'top' in self.overlay.position:
-            self._on_position_change()
+        # changing the fox size changes the box height and positioning in it
+        self.node._update_layout(font_size=self.overlay.font_size)
+
+        # positioning in the box uses the center of the box
+        # need to adjust the y_size to be half the size of the current box height
+        self.y_size = self.node.box.height / 2
+
+        self._on_position_change()
 
     def _on_position_change(self, event=None):
         # prevent the text from being cut off by shifting down
         if 'top' in self.overlay.position:
-            # convert font_size to logical pixels as vispy does
-            # in vispy/visuals/text/text.py
-            # 72 is the vispy reference dpi
-            # 96 dpi is used as the napari reference dpi
-            font_logical_pix = self.overlay.font_size * 96 / 72
+            # adjust the positioning to account for the box height
             # 7 is base value for the default 10 font size
-            self.y_offset = 7 + font_logical_pix
+            self.y_offset = 7 + self.y_size
         else:
-            self.y_offset = 20
+            # ensure if switching from top to bottom, the offset is reset
+            self.y_offset = 7
         super()._on_position_change()
 
     def _on_visible_change(self):

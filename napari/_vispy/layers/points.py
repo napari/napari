@@ -36,6 +36,7 @@ class VispyPointsLayer(VispyBaseLayer):
         self.layer.events.canvas_size_limits.connect(
             self._on_canvas_size_limits_change
         )
+        self.layer.events.scale_factor.connect(self._update_text)
 
         self._on_data_change()
 
