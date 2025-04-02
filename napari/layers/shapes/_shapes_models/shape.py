@@ -296,7 +296,7 @@ class Shape(ABC):
                 (triangles, vertices), (centers, offsets, edge_triangles) = (
                     triangulate_polygons_with_edge([data])
                 )
-            except Exception as e:  # pragma: no cover
+            except BaseException as e:  # pragma: no cover
                 path, text_path = _save_failed_triangulation(data)
                 raise RuntimeError(
                     f'Triangulation failed. Data saved to {path} and {text_path}'
