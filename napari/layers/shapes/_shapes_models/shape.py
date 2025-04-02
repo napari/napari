@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import tempfile
 from abc import ABC, abstractmethod
 from functools import cached_property
 
@@ -11,6 +10,7 @@ from napari.layers.shapes._accelerated_triangulate_dispatch import (
     remove_path_duplicates,
 )
 from napari.layers.shapes._shapes_utils import (
+    _save_failed_triangulation,
     find_planar_axis,
     is_collinear,
     path_to_mask,
@@ -265,15 +265,8 @@ class Shape(ABC):
                         [data], split_edges=True
                     )
                 )
-            except Exception as e:
-                path = tempfile.mktemp(
-                    prefix='napari_comp_triang_', suffix='.npz'
-                )
-                text_path = tempfile.mktemp(
-                    prefix='napari_comp_triang_', suffix='.txt'
-                )
-                np.savez(path, data=data)
-                np.savetxt(text_path, data)
+            except Exception as e:  # pragma: no cover
+                path, text_path = _save_failed_triangulation(data)
                 raise RuntimeError(
                     f'Triangulation failed. Data saved to {path} and {text_path}'
                 ) from e
