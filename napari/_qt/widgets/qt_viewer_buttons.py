@@ -449,14 +449,14 @@ class QtViewerButtons(QFrame):
         grid_layout = QGridLayout()
 
         # Add orientation controls
-        self._add_orientation_controls_to_grid(popup, grid_layout)
+        self._add_orientation_controls(popup, grid_layout)
 
         # Add shared camera controls
-        self._add_shared_camera_controls_to_grid(popup, grid_layout)
+        self._add_shared_camera_controls(popup, grid_layout)
 
         # Add 3D camera controls if in 3D mode
         if self.viewer.dims.ndisplay == 3:
-            self._add_3d_camera_controls_to_grid(popup, grid_layout)
+            self._add_3d_camera_controls(popup, grid_layout)
 
         popup.frame.setLayout(grid_layout)
 
