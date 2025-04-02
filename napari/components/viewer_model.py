@@ -382,7 +382,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             )
         return self.layers._extent_world_augmented[:, self.dims.displayed]
 
-    def reset_view(self, *, margin: float = 0.05) -> None:
+    def reset_view(
+        self, *, margin: float = 0.05, reset_camera_angle: bool | None = None
+    ) -> None:
         """Reset the camera and fit the current layers to the canvas.
 
         Resets the angles of the camera, adjust the camera zoom,
@@ -394,8 +396,28 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         margin : float in [0, 1)
             Margin as fraction of the canvas, showing blank space around the
             data. Default is 0.05 (5% of the canvas).
+        reset_camera_angle : bool
+            Whether to reset the camera angles to (0, 0, 90) before fitting
+            to view. Default is True.
+
+            .. deprecated:: 0.6.0
+
+                The `reset_camera_angle` paramater is deprecated and will be
+                removed in 0.7.0.
+                Continue to use `reset_view()` to reset the camera angles.
+                Use `fit_to_view()` to adjust the camera without
+                resetting the camera angles.
         """
-        self.camera.angles = (0, 0, 90)
+        if reset_camera_angle is not None:
+            warnings.warn(
+                'reset_camera_angle is deprecated since napari 0.6.0 and will be removed in 0.7.0.'
+                'Continue to use `viewer.reset_view()` to reset the camera angles.'
+                'Use `viewer.fit_to_view()` to adjust the camera without resetting the camera angles.',
+                category=FutureWarning,
+            )
+
+        if reset_camera_angle or reset_camera_angle is None:
+            self.camera.angles = (0, 0, 90)
         self.fit_to_view(margin=margin)
 
     def fit_to_view(self, *, margin: float = 0.05) -> None:

@@ -1077,6 +1077,17 @@ def test_reset_view():
     viewer.reset_view()
     assert viewer.camera.angles == (0, 0, 90)
 
+    # Check for deprecation warning when using `reset_camera_angle`
+    viewer.camera.angles = (45, 30, 60)
+    with pytest.deprecated_call():
+        viewer.reset_view(reset_camera_angle=True)
+    assert viewer.camera.angles == (0, 0, 90)
+
+    viewer.camera.angles = (45, 30, 60)
+    with pytest.deprecated_call():
+        viewer.reset_view(reset_camera_angle=False)
+    assert viewer.camera.angles == (45, 30, 60)
+
 
 def test_fit_to_view_margin():
     """Test reset_view with different margin values."""
