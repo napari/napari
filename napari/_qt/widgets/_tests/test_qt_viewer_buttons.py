@@ -128,6 +128,8 @@ def test_ndisplay_button_popup(qt_viewer_buttons, qtbot):
         viewer_buttons.horizontal_combo.currentEnum()
         == viewer.camera.orientation[2]
     )
+    assert viewer.camera.handedness.value == 'right'
+
     viewer_buttons.vertical_combo.setCurrentEnum(VerticalAxisOrientation.UP)
     viewer_buttons.horizontal_combo.setCurrentEnum(
         HorizontalAxisOrientation.LEFT
@@ -178,12 +180,23 @@ def test_ndisplay_button_popup(qt_viewer_buttons, qtbot):
         viewer_buttons.horizontal_combo.currentEnum()
         == HorizontalAxisOrientation.LEFT
     )
+    assert viewer.camera.handedness.value == 'right'
+    assert (
+        viewer_buttons.orientation_help_symbol.objectName()
+        == 'righthand_label'
+    )
+    assert 'right-handed' in viewer_buttons.orientation_help_symbol.toolTip()
 
     viewer_buttons.depth_combo.setCurrentEnum(DepthAxisOrientation.AWAY)
     viewer_buttons.vertical_combo.setCurrentEnum(VerticalAxisOrientation.DOWN)
     viewer_buttons.horizontal_combo.setCurrentEnum(
         HorizontalAxisOrientation.RIGHT
     )
+    assert viewer.camera.handedness.value == 'left'
+    assert (
+        viewer_buttons.orientation_help_symbol.objectName() == 'lefthand_label'
+    )
+    assert 'left-handed' in viewer_buttons.orientation_help_symbol.toolTip()
     assert viewer.camera.orientation[0].value == 'away'
     assert viewer.camera.orientation[1].value == 'down'
     assert viewer.camera.orientation[2].value == 'right'
