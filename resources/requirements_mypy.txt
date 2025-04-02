@@ -40,11 +40,11 @@ psygnal==0.12.0
     #   npe2
 pyconify==0.2.1
     # via superqt
-pydantic==2.10.6
+pydantic==2.11.1
     # via
     #   -r resources/requirements_mypy.in
     #   npe2
-pydantic-core==2.27.2
+pydantic-core==2.33.0
     # via pydantic
 pygments==2.19.1
     # via
@@ -67,27 +67,27 @@ qtpy==2.4.3
     #   superqt
 requests==2.32.3
     # via pyconify
-rich==13.9.4
+rich==14.0.0
     # via
     #   npe2
     #   typer
-setuptools==77.0.3
+setuptools==78.1.0
     # via types-setuptools
 shellingham==1.5.4
     # via typer
-superqt==0.7.2
+superqt==0.7.3
     # via magicgui
 tomli-w==1.2.0
     # via npe2
 typer==0.15.2
     # via npe2
-types-pyyaml==6.0.12.20241230
+types-pyyaml==6.0.12.20250326
     # via -r resources/requirements_mypy.in
-types-requests==2.32.0.20250306
+types-requests==2.32.0.20250328
     # via -r resources/requirements_mypy.in
-types-setuptools==76.0.0.20250313
+types-setuptools==78.1.0.20250329
     # via -r resources/requirements_mypy.in
-typing-extensions==4.12.2
+typing-extensions==4.13.0
     # via
     #   magicgui
     #   mypy
@@ -95,6 +95,9 @@ typing-extensions==4.12.2
     #   pydantic-core
     #   superqt
     #   typer
+    #   typing-inspection
+typing-inspection==0.4.0
+    # via pydantic
 urllib3==2.3.0
     # via
     #   requests
