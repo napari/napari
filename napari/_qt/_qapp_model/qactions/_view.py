@@ -195,7 +195,7 @@ Q_VIEW_ACTIONS: list[Action] = [
     ),
     Action(
         id='napari.viewer.dims.ndisplay',
-        title=trans._('3D View'),
+        title=trans._('Toggle 2D/3D Camera'),
         menus=[
             {
                 'id': MenuId.MENUBAR_VIEW,
@@ -204,7 +204,6 @@ Q_VIEW_ACTIONS: list[Action] = [
             }
         ],
         callback=_toggle_canvas_ndim,
-        toggled=ToggleRule(get_current=_current_view_is_3d),
     ),
     Action(
         id='napari.window.view.toggle_activity_dock',
