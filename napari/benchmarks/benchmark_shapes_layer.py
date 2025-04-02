@@ -172,7 +172,7 @@ class Shapes3DSuite:
     layer: Shapes
 
     params = [2**i for i in range(4, 9)]
-    skip_params = Skip(if_in_pr=lambda n_shapes, backend: n_shapes > 2**5)
+    skip_params = Skip(if_in_pr=lambda n_shapes: n_shapes > 2**5)
 
     def setup(self, n):
         rng = np.random.default_rng(0)
@@ -214,7 +214,7 @@ class ShapesInteractionSuite:
     data: list[np.ndarray]
     layer: Shapes
 
-    skip_params = Skip(if_in_pr=lambda n_shapes, backend: n_shapes > 2**3)
+    params = [2**i for i in range(4, 9)]
 
     def setup(self, n):
         rng = np.random.default_rng(0)
