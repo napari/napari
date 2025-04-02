@@ -416,7 +416,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 category=FutureWarning,
             )
 
-        if reset_camera_angle or reset_camera_angle is None:
+        if (
+            reset_camera_angle or reset_camera_angle is None
+        ) and self.dims.ndisplay == 3:
             self.camera.angles = (0, 0, 90)
         self.fit_to_view(margin=margin)
 
