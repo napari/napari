@@ -1,8 +1,20 @@
+from enum import Enum, auto
 from typing import Any
 
 from napari._pydantic_compat import Field
 from napari.settings._base import EventedSettings
 from napari.utils.translations import trans
+
+
+class TriangulationBackend(Enum):
+    """
+    Enum-like class to specify which triangulation backend to use.
+    """
+
+    bermuda = auto()
+    partsegcore = auto()
+    triangle = auto()
+    none = auto()
 
 
 # this class inherits from EventedSettings instead of EventedModel because
@@ -67,6 +79,17 @@ class ExperimentalSettings(EventedSettings):
         ),
         description=trans._(
             'Max radius in pixels from first vertex for double-click to complete a polygon; set -1 to always complete.'
+        ),
+    )
+    triangulation_backend: TriangulationBackend = Field(
+        TriangulationBackend.none,
+        title=trans._('Triangulation backend to use for Shapes layer'),
+        description=trans._(
+            'Triangulation backend to use for Shapes layer.\n'
+            "The 'bermuda' requires the optional 'bermuda' package.\n"
+            "The 'partsegcore' requires the optional 'partsegcore-compiled-backend' package.\n"
+            "The 'triangle' requires the optional 'triangle' package.\n"
+            "The 'none' backend uses the default Python triangulation.\n"
         ),
     )
 
