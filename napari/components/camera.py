@@ -36,7 +36,6 @@ class Handedness(StringEnum):
 VerticalAxisOrientationStr = Literal['up', 'down']
 HorizontalAxisOrientationStr = Literal['left', 'right']
 DepthAxisOrientationStr = Literal['away', 'torwards']
-HandednessStr = Literal['right', 'left']
 
 
 DEFAULT_ORIENTATION_TYPED = (
