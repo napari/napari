@@ -28,9 +28,8 @@ except ImportError:
 
 
 class BackendType(Enum):
-    bermuda = (
-        auto()
-    )  # data processing using PartSegCore, ready to switch to bermuda
+    bermuda = auto()  # data processing using bermuda, (https://github.com/napari/bermuda), preprocessing using numba
+    partsegcore = auto()  # data preprocessing using PartSegCore (https://partseg.github.io), edge triangulation using numba
     triangle = auto()  # data preprocessing using numba, edge triangulation using numba, triangulation using triangle
     numba = auto()  # data preprocessing and edge triangulation using numba, triangulation using vispy
     pure_python = auto()  # data preprocessing, edge triangulation, and triangulation using python and vispy
@@ -43,25 +42,46 @@ class BackendType(Enum):
 
 
 backend_list = list(BackendType)
+backend_list.remove(
+    BackendType.bermuda
+)  # remove when merge bermuda backend PR #7747
+
+backend_list_complex = [BackendType.partsegcore, BackendType.numba]
+# pure python backend is too slow for large datasets
+# triangle backend requires deduplication of vertices in #6654
 
 
 class _BackendSelection:
-    triangulate: Callable | None
-    prev_settings: bool
-    prev_numba: dict[str, Callable]
+    triangulate: (
+        Callable | None
+    )  # store the original triangulate function, to be restored
+    prev_settings: bool  # store the state of NapariSettings.experimental.compiled_triangulation, to be restored
+    prev_numba: dict[
+        str, Callable
+    ]  # Dict form function name to function. It is used to store original numba functions from _accelerated_triangulate_dispatch
 
     def _disable_numba(self):
+        """Replace numba jit functions with pure python functions."""
         try:
             from napari.layers.shapes import (
-                _accelerated_triangulate_dispatch as atd,
+                _accelerated_triangulate_dispatch as _triangle_dispatch,
             )
         except ImportError:
             return
 
-        for name in atd.__all__:
-            if hasattr(atd, f'{name}_py'):
-                self.prev_numba[name] = getattr(atd, name)
-                setattr(atd, name, getattr(atd, f'{name}_py'))
+        for name in _triangle_dispatch.__all__:
+            # This part of the code assumes that all pure python functions
+            # from _accelerated_triangulate_dispatch that are used when import from
+            # _accelerated_triangulate module fails because of missing numba
+            # are named as the function that they replace with added _py suffix.
+            # So we could write generic code to replace all of them.
+            if hasattr(_triangle_dispatch, f'{name}_py'):
+                self.prev_numba[name] = getattr(_triangle_dispatch, name)
+                setattr(
+                    _triangle_dispatch,
+                    name,
+                    getattr(_triangle_dispatch, f'{name}_py'),
+                )
 
     def select_backend(self, triangulation_backend: BackendType):
         self.prev_numba = {}
@@ -70,13 +90,14 @@ class _BackendSelection:
                 get_settings().experimental.compiled_triangulation
             )
             get_settings().experimental.compiled_triangulation = (
-                triangulation_backend == BackendType.bermuda
+                triangulation_backend == BackendType.partsegcore
             )
 
         from napari.layers.shapes import _shapes_utils
 
         self.triangulate = _shapes_utils.triangulate
         if triangulation_backend != BackendType.triangle:
+            # Disable the triangle backend by overriding the function
             _shapes_utils.triangulate = None
         if triangulation_backend == BackendType.pure_python:
             self._disable_numba()
@@ -85,6 +106,7 @@ class _BackendSelection:
 
     @staticmethod
     def warmup_numba() -> None:
+        # Warmup numba cache to avoid the first call being slow
         try:
             from napari.layers.shapes._accelerated_triangulate_dispatch import (
                 warmup_numba_cache,
@@ -94,6 +116,8 @@ class _BackendSelection:
         warmup_numba_cache()
 
     def revert_backend(self):
+        # revert changes done in select_backend
+        # should be called in teardown steep.
         with suppress(AttributeError):
             get_settings().experimental.compiled_triangulation = (
                 self.prev_settings
@@ -356,7 +380,7 @@ class _ShapeTriangulationBaseShapeCount(_ShapeTriangulationBase):
         ),
         (8, 32, 128),
         ('path', 'polygon'),
-        (BackendType.bermuda, BackendType.numba),
+        backend_list_complex,
     ]
 
     skip_params = Skip(if_in_pr=skip_above_100)
@@ -397,7 +421,7 @@ class ShapeTriangulationIntersectionSuite(_ShapeTriangulationBaseShapeCount):
         ),
         (7, 9, 15, 33),
         ('path', 'polygon'),
-        (BackendType.bermuda, BackendType.numba),
+        backend_list_complex,
     ]
     skip_params = Skip(
         if_on_ci=lambda n_shapes,
@@ -423,7 +447,7 @@ class ShapeTriangulationStarIntersectionSuite(
         ),
         (7, 9, 15, 33),
         ('path', 'polygon'),
-        (BackendType.bermuda, BackendType.numba),
+        backend_list_complex,
     ]
     skip_params = Skip(
         always=lambda n_shapes,
@@ -462,7 +486,7 @@ class ShapeTriangulationHoleSuite(_ShapeTriangulationBaseShapeCount):
         ),
         (12, 48),
         ('path', 'polygon'),
-        (BackendType.bermuda, BackendType.numba),
+        backend_list_complex,
     ]
     skip_params = Skip(if_in_pr=skip_above_100)
 
@@ -479,7 +503,7 @@ class ShapeTriangulationHolesSuite(_ShapeTriangulationBaseShapeCount):
         ),
         (24, 48),
         ('path', 'polygon'),
-        (BackendType.bermuda, BackendType.numba),
+        backend_list_complex,
     ]
     skip_params = Skip(if_in_pr=skip_above_100)
 
@@ -496,7 +520,7 @@ class ShapeTriangulationMixed(_ShapeTriangulationBase):
             3_000,
         ),
         ('path', 'polygon'),
-        (BackendType.bermuda, BackendType.numba),
+        backend_list_complex,
     ]
 
     # the case of 128 points crashes the benchmark on call of PolygonData(vertices=data).triangulate()
@@ -528,7 +552,7 @@ class MeshTriangulationSuite(_BackendSelection):
     data: list[Polygon | Path]
 
     param_names = ['shape_type', 'compiled_triangulation']
-    params = [('path', 'polygon'), (BackendType.bermuda, BackendType.numba)]
+    params = [('path', 'polygon'), backend_list_complex]
 
     def setup(self, shape_type, compiled_triangulation):
         self.select_backend(compiled_triangulation)
