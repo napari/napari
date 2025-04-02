@@ -3,7 +3,6 @@
 # or the napari documentation on benchmarking
 # https://github.com/napari/napari/blob/main/docs/BENCHMARKS.md
 import itertools
-import os
 from collections.abc import Callable
 from contextlib import suppress
 from enum import Enum, auto
@@ -128,8 +127,7 @@ class Shapes2DSuite(_BackendSelection):
     params = [tuple(2**i for i in range(4, 9)), backend_list]
     params_names = ['n_shapes', 'backend']
 
-    if 'PR' in os.environ:
-        skip_params = [(2**i,) for i in range(6, 9)]
+    skip_params = Skip(if_in_pr=lambda n_shapes, backend: n_shapes > 2**5)
 
     def setup(self, n_shapes, backend):
         self.select_backend(backend)
@@ -174,8 +172,7 @@ class Shapes3DSuite:
     layer: Shapes
 
     params = [2**i for i in range(4, 9)]
-    if 'PR' in os.environ:
-        skip_params = [(2**i,) for i in range(6, 9)]
+    skip_params = Skip(if_in_pr=lambda n_shapes, backend: n_shapes > 2**5)
 
     def setup(self, n):
         rng = np.random.default_rng(0)
@@ -217,7 +214,7 @@ class ShapesInteractionSuite:
     data: list[np.ndarray]
     layer: Shapes
 
-    params = [2**i for i in range(4, 9)]
+    skip_params = Skip(if_in_pr=lambda n_shapes, backend: n_shapes > 2**3)
 
     def setup(self, n):
         rng = np.random.default_rng(0)
