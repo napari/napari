@@ -9,6 +9,7 @@ from qtpy.QtWidgets import (
     QDoubleSpinBox,
     QFormLayout,
     QFrame,
+    QGridLayout,
     QHBoxLayout,
     QLabel,
     QPushButton,
@@ -284,8 +285,7 @@ class QtViewerButtons(QFrame):
     def _add_3d_camera_controls(
         self,
         popup: QtPopup,
-        form_layout: QFormLayout,
-        help_layout: QVBoxLayout,
+        grid_layout: QGridLayout,
     ) -> None:
         """Add 3D camera controls to the popup."""
         self.perspective = labeled_double_slider(
@@ -326,22 +326,24 @@ class QtViewerButtons(QFrame):
             text='Controls the rotation angles around each axis in degrees.',
         )
 
-        form_layout.insertRow(
-            2, QLabel(trans._('Perspective:')), self.perspective
-        )
-        form_layout.insertRow(3, QLabel(trans._('Angles    X:')), self.rx)
-        form_layout.insertRow(4, QLabel(trans._('             Y:')), self.ry)
-        form_layout.insertRow(5, QLabel(trans._('             Z:')), self.rz)
+        grid_layout.addWidget(QLabel(trans._('Perspective:')), 2, 0)
+        grid_layout.addWidget(self.perspective, 2, 1)
+        grid_layout.addWidget(perspective_help_symbol, 2, 2)
 
-        help_layout.addWidget(perspective_help_symbol)
-        help_layout.addWidget(angle_help_symbol)
-        help_layout.addWidget(QLabel(self))  # blank space
+        grid_layout.addWidget(QLabel(trans._('Angles    X:')), 3, 0)
+        grid_layout.addWidget(self.rx, 3, 1)
+        grid_layout.addWidget(angle_help_symbol, 3, 2)
+
+        grid_layout.addWidget(QLabel(trans._('             Y:')), 4, 0)
+        grid_layout.addWidget(self.ry, 4, 1)
+
+        grid_layout.addWidget(QLabel(trans._('             Z:')), 5, 0)
+        grid_layout.addWidget(self.rz, 5, 1)
 
     def _add_shared_camera_controls(
         self,
         popup: QtPopup,
-        form_layout: QFormLayout,
-        help_layout: QVBoxLayout,
+        grid_layout: QGridLayout,
     ) -> None:
         """Add shared camera controls to the popup."""
         self.zoom = labeled_double_slider(
@@ -357,19 +359,19 @@ class QtViewerButtons(QFrame):
             text='Controls zoom level of the camera. Larger values zoom in, smaller values zoom out.',
         )
 
-        form_layout.insertRow(1, QLabel(trans._('Zoom:')), self.zoom)
-        help_layout.addWidget(zoom_help_symbol)
+        grid_layout.addWidget(QLabel(trans._('Zoom:')), 1, 0)
+        grid_layout.addWidget(self.zoom, 1, 1)
+        grid_layout.addWidget(zoom_help_symbol, 1, 2)
 
     def _add_orientation_controls(
         self,
         popup: QtPopup,
-        form_layout: QFormLayout,
-        help_layout: QVBoxLayout,
+        grid_layout: QGridLayout,
     ) -> None:
         """Add orientation controls to the popup."""
+        orientation_widget = QWidget(popup)
         orientation_layout = QHBoxLayout()
         orientation_layout.setContentsMargins(0, 0, 0, 0)
-        orientation_widget = QWidget(popup)
 
         self.vertical_combo = enum_combobox(
             parent=popup,
@@ -392,7 +394,7 @@ class QtViewerButtons(QFrame):
         if self.viewer.dims.ndisplay == 2:
             orientation_layout.addWidget(self.vertical_combo)
             orientation_layout.addWidget(self.horizontal_combo)
-            orientation_help_symbol = help_tooltip(
+            self.orientation_help_symbol = help_tooltip(
                 parent=popup,
                 text='Controls the orientation of the vertical and horizontal camera axes.',
             )
@@ -410,35 +412,53 @@ class QtViewerButtons(QFrame):
             orientation_layout.addWidget(self.depth_combo)
             orientation_layout.addWidget(self.vertical_combo)
             orientation_layout.addWidget(self.horizontal_combo)
-            orientation_help_symbol = help_tooltip(
+
+            self.orientation_help_symbol = help_tooltip(
                 parent=popup,
-                text='Controls the orientation of the depth, vertical, and horizontal camera axes.',
+                text='',  # updated dynamically
+            )
+            self._update_handedness_help_symbol()
+            self.viewer.camera.events.orientation.connect(
+                self._update_handedness_help_symbol
             )
 
         orientation_widget.setLayout(orientation_layout)
 
-        form_layout.insertRow(
-            0, QLabel(trans._('Orientation:')), orientation_widget
+        grid_layout.addWidget(QLabel(trans._('Orientation:')), 0, 0)
+        grid_layout.addWidget(orientation_widget, 0, 1)
+        grid_layout.addWidget(self.orientation_help_symbol, 0, 2)
+
+    def _update_handedness_help_symbol(self, event=None) -> None:
+        """Update the handedness symbol based on the camera orientation."""
+        handedness = self.viewer.camera.handedness
+        tooltip_text = (
+            'Controls the orientation of the depth, vertical, and horizontal camera axes.\n'
+            f'Currently orientation is {handedness.value}-handed.'
         )
-        help_layout.addWidget(orientation_help_symbol)
+        self.orientation_help_symbol.setToolTip(tooltip_text)
+        self.orientation_help_symbol.setObjectName(
+            f'{handedness.value}hand_label'
+        )
+        self.orientation_help_symbol.style().polish(
+            self.orientation_help_symbol
+        )
 
     def open_ndisplay_camera_popup(self) -> None:
         """Show controls for camera settings based on ndisplay mode."""
         popup = QtPopup(self)
-        form_layout = QFormLayout()
-        help_layout = QVBoxLayout()
+        grid_layout = QGridLayout()
 
-        self._add_orientation_controls(popup, form_layout, help_layout)
+        # Add orientation controls
+        self._add_orientation_controls(popup, grid_layout)
 
-        self._add_shared_camera_controls(popup, form_layout, help_layout)
+        # Add shared camera controls
+        self._add_shared_camera_controls(popup, grid_layout)
 
+        # Add 3D camera controls if in 3D mode
         if self.viewer.dims.ndisplay == 3:
-            self._add_3d_camera_controls(popup, form_layout, help_layout)
+            self._add_3d_camera_controls(popup, grid_layout)
 
-        layout = QHBoxLayout()
-        layout.addLayout(form_layout)
-        layout.addLayout(help_layout)
-        popup.frame.setLayout(layout)
+        popup.frame.setLayout(grid_layout)
 
         # Reposition popup, must be done after all widgets are added
         self._position_popup_inside_viewer(popup, self.ndisplayButton)

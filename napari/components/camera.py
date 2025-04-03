@@ -28,6 +28,11 @@ class DepthAxisOrientation(StringEnum):
     TOWARDS = auto()
 
 
+class Handedness(StringEnum):
+    RIGHT = auto()
+    LEFT = auto()
+
+
 VerticalAxisOrientationStr = Literal['up', 'down']
 HorizontalAxisOrientationStr = Literal['left', 'right']
 DepthAxisOrientationStr = Literal['away', 'torwards']
@@ -261,3 +266,16 @@ class Camera(EventedModel):
             VerticalAxisOrientation(value[0]),
             HorizontalAxisOrientation(value[1]),
         )
+
+    @property
+    def handedness(self) -> Handedness:
+        """Right or left-handedness of the current orientation."""
+        # we know default orientation is right-handed, so an odd number of
+        # differences from default means left-handed.
+        diffs = [
+            self.orientation[i] != DEFAULT_ORIENTATION_TYPED[i]
+            for i in range(3)
+        ]
+        if sum(diffs) % 2 != 0:
+            return Handedness.LEFT
+        return Handedness.RIGHT
