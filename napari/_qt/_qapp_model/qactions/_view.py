@@ -194,7 +194,7 @@ Q_VIEW_ACTIONS: list[Action] = [
         keybindings=[StandardKeyBinding.ZoomOut],
     ),
     Action(
-        id='napari.viewer.dims.ndisplay',
+        id='napari.window.view.toggle_ndisplay',
         title=trans._('Toggle 2D/3D Camera'),
         menus=[
             {
