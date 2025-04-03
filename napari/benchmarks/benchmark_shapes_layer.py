@@ -52,13 +52,14 @@ backend_list_complex = [BackendType.partsegcore, BackendType.numba]
 
 
 class _BackendSelection:
+    """Provides a representation for a preferred backend if accelerated triangulation is unavailable."""
     triangulate: (
         Callable | None
-    )  # store the original triangulate function, to be restored
-    prev_settings: bool  # store the state of NapariSettings.experimental.compiled_triangulation, to be restored
+    )  # a triangulate function
+    prev_settings: bool  # save the state of NapariSettings.experimental.compiled_triangulation, if True
     prev_numba: dict[
         str, Callable
-    ]  # Dict form function name to function. It is used to store original numba functions from _accelerated_triangulate_dispatch
+    ]  # Maps numba function names to _accelerated_triangulate_dispatch functions.
 
     def _disable_numba(self):
         """Replace numba jit functions with pure python functions."""
@@ -84,6 +85,7 @@ class _BackendSelection:
                 )
 
     def select_backend(self, triangulation_backend: BackendType):
+        """Select a desired backend for triangulation."""
         self.prev_numba = {}
         with suppress(AttributeError):
             self.prev_settings = (
@@ -106,7 +108,7 @@ class _BackendSelection:
 
     @staticmethod
     def warmup_numba() -> None:
-        # Warmup numba cache to avoid the first call being slow
+        """Warmup numba cache to avoid the first call being slow."""
         try:
             from napari.layers.shapes._accelerated_triangulate_dispatch import (
                 warmup_numba_cache,
@@ -116,8 +118,7 @@ class _BackendSelection:
         warmup_numba_cache()
 
     def revert_backend(self):
-        # revert changes done in select_backend
-        # should be called in teardown steep.
+        ""Restore changes made by select_backend function. Call in teardown step."""
         with suppress(AttributeError):
             get_settings().experimental.compiled_triangulation = (
                 self.prev_settings
