@@ -716,7 +716,7 @@ def triangulate_face(data: npt.NDArray) -> tuple[npt.NDArray, npt.NDArray]:
         try:
             vertices, triangles = PolygonData(vertices=data).triangulate()
         except Exception as e:  # pragma: no cover
-            path, text_path = _save_failed_triangulation(data)
+            path, text_path = _save_failed_triangulation(data, backend='vispy')
             raise RuntimeError(
                 f'Triangulation failed. Data saved to {path} and {text_path}'
             ) from e
@@ -1222,7 +1222,7 @@ def rdp(vertices: npt.NDArray, epsilon: float) -> npt.NDArray:
 
 
 def _save_failed_triangulation(
-    data: np.ndarray, target_dir: str | None = None
+    data: np.ndarray, target_dir: str | None = None, backend: str = ''
 ) -> tuple[str, str]:
     """Save data to temporary files for debugging.
 
@@ -1235,7 +1235,11 @@ def _save_failed_triangulation(
     data : np.ndarray
         The data to save.
     target_dir: str or None
-        Path to directory where the files will be saved. If None, the default
+        Path to the directory where the files will be saved.
+        If None, the default
+    backend: str, options
+        The backend used for triangulation. This is used to generate the
+        filename prefix.
 
     Returns
     -------
@@ -1249,14 +1253,14 @@ def _save_failed_triangulation(
     with tempfile.NamedTemporaryFile(
         delete=False,
         suffix='.npz',
-        prefix='napari_comp_triang_',
+        prefix=f'napari_{backend}_triang_',
         dir=target_dir,
     ) as binary_file:
         np.savez(binary_file, data=data)
     with tempfile.NamedTemporaryFile(
         delete=False,
         suffix='.txt',
-        prefix='napari_comp_triang_',
+        prefix=f'napari_{backend}_triang_',
         mode='w',
         dir=target_dir,
     ) as text_file:

@@ -301,7 +301,9 @@ class Shape(ABC):
                     bermuda.triangulate_polygons_with_edge([data])
                 )
             except BaseException as e:  # pragma: no cover
-                path, text_path = _save_failed_triangulation(data)
+                path, text_path = _save_failed_triangulation(
+                    data, backend='bermuda'
+                )
                 raise RuntimeError(
                     f'Triangulation failed. Data saved to {path} and {text_path}'
                 ) from e
@@ -365,7 +367,9 @@ class Shape(ABC):
                     triangulate.triangulate_polygon_with_edge_numpy_li([data])
                 )
             except BaseException as e:  # pragma: no cover
-                path, text_path = _save_failed_triangulation(data)
+                path, text_path = _save_failed_triangulation(
+                    data, backend='partsegcore'
+                )
                 raise RuntimeError(
                     f'Triangulation failed. Data saved to {path} and {text_path}'
                 ) from e
