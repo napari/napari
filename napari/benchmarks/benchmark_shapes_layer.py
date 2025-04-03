@@ -41,8 +41,8 @@ class BackendType(Enum):
         return self.name
 
 
-backend_list = list(BackendType)
-backend_list.remove(
+backends = list(BackendType)
+backends.remove(
     BackendType.bermuda
 )  # remove when merge bermuda backend PR #7747
 
@@ -53,9 +53,8 @@ backend_list_complex = [BackendType.partsegcore, BackendType.numba]
 
 class _BackendSelection:
     """Provides a representation for a preferred backend if accelerated triangulation is unavailable."""
-    triangulate: (
-        Callable | None
-    )  # a triangulate function
+
+    triangulate: Callable | None  # a triangulate function
     prev_settings: bool  # save the state of NapariSettings.experimental.compiled_triangulation, if True
     prev_numba: dict[
         str, Callable
@@ -118,7 +117,7 @@ class _BackendSelection:
         warmup_numba_cache()
 
     def revert_backend(self):
-        ""Restore changes made by select_backend function. Call in teardown step."""
+        """Restore changes made by select_backend function. Call in teardown step."""
         with suppress(AttributeError):
             get_settings().experimental.compiled_triangulation = (
                 self.prev_settings
@@ -149,7 +148,7 @@ class Shapes2DSuite(_BackendSelection):
     data: list[np.ndarray]
     layer: Shapes
 
-    params = [tuple(2**i for i in range(4, 9)), backend_list]
+    params = [tuple(2**i for i in range(4, 9)), backends]
     params_names = ['n_shapes', 'backend']
 
     skip_params = Skip(if_in_pr=lambda n_shapes, backend: n_shapes > 2**5)
