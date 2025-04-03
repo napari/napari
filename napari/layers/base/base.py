@@ -6,7 +6,6 @@ import itertools
 import logging
 import os.path
 import uuid
-import warnings
 from abc import ABC, ABCMeta, abstractmethod
 from collections import defaultdict
 from collections.abc import Callable, Generator, Hashable, Mapping, Sequence
@@ -53,7 +52,6 @@ from napari.utils._magicgui import (
     get_layers,
 )
 from napari.utils.events import EmitterGroup, Event, EventedDict
-from napari.utils.events.event import WarningEmitter
 from napari.utils.geometry import (
     find_front_back_face,
     intersect_line_with_axis_aligned_bounding_box_3d,
@@ -231,10 +229,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         Size of cursor if custom. None yields default size
     help : str
         Displayed in status bar bottom right.
-    interactive : bool
-        Determine if canvas pan/zoom interactivity is enabled.
-        This attribute is deprecated since 0.5.0 and should not be used.
-        Use the mouse_pan and mouse_zoom attributes instead.
     mouse_pan : bool
         Determine if canvas interactive panning is enabled with the mouse.
     mouse_zoom : bool
@@ -377,7 +371,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._mouse_pan = True
         self._mouse_zoom = True
         self._value = None
-        self.scale_factor = 1
+        self._scale_factor = 1
         self.multiscale = multiscale
         self._experimental_clipping_planes = ClippingPlaneList()
         self._mode = self._modeclass('pan_zoom')
@@ -475,6 +469,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             reload=Event,
             rotate=Event,
             scale=Event,
+            scale_factor=Event,
             set_data=Event,
             shear=Event,
             status=Event,
@@ -482,13 +477,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             translate=Event,
             units=Event,
             visible=Event,
-            interactive=WarningEmitter(
-                trans._(
-                    'layer.events.interactive is deprecated since 0.4.18 and will be removed in 0.6.0. Please use layer.events.mouse_pan and layer.events.mouse_zoom',
-                    deferred=True,
-                ),
-                type_name='interactive',
-            ),
             _extent_augmented=Event,
             _overlays=Event,
         )
@@ -867,6 +855,17 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self.events.scale()
 
     @property
+    def scale_factor(self):
+        """float: Conversion factor from canvas coordinates to image coordinates."""
+        return self._scale_factor
+
+    @scale_factor.setter
+    def scale_factor(self, scale_factor):
+        if self._scale_factor != scale_factor:
+            self._scale_factor = scale_factor
+            self.events.scale_factor()
+
+    @property
     def translate(self) -> npt.NDArray:
         """array: Factors to shift the layer by in units of world coordinates."""
         return self._transforms['data2physical'].translate
@@ -1173,30 +1172,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self.events.help(help=help_text)
 
     @property
-    def interactive(self) -> bool:
-        warnings.warn(
-            trans._(
-                'Layer.interactive is deprecated since napari 0.4.18 and will be removed in 0.6.0. Please use Layer.mouse_pan and Layer.mouse_zoom instead'
-            ),
-            FutureWarning,
-            stacklevel=2,
-        )
-        return self.mouse_pan or self.mouse_zoom
-
-    @interactive.setter
-    def interactive(self, interactive: bool) -> None:
-        warnings.warn(
-            trans._(
-                'Layer.interactive is deprecated since napari 0.4.18 and will be removed in 0.6.0. Please use Layer.mouse_pan and Layer.mouse_zoom instead'
-            ),
-            FutureWarning,
-            stacklevel=2,
-        )
-        with self.events.interactive.blocker():
-            self.mouse_pan = interactive
-        self.mouse_zoom = interactive
-
-    @property
     def mouse_pan(self) -> bool:
         """bool: Determine if canvas interactive panning is enabled with the mouse."""
         return self._mouse_pan
@@ -1207,9 +1182,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             return
         self._mouse_pan = mouse_pan
         self.events.mouse_pan(mouse_pan=mouse_pan)
-        self.events.interactive(
-            interactive=self.mouse_pan or self.mouse_zoom
-        )  # Deprecated since 0.5.0
 
     @property
     def mouse_zoom(self) -> bool:
@@ -1222,9 +1194,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             return
         self._mouse_zoom = mouse_zoom
         self.events.mouse_zoom(mouse_zoom=mouse_zoom)
-        self.events.interactive(
-            interactive=self.mouse_pan or self.mouse_zoom
-        )  # Deprecated since 0.5.0
 
     @property
     def cursor(self) -> str:

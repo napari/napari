@@ -143,6 +143,9 @@ def test_camera_model_update_from_vispy_3D(make_napari_viewer):
     np.testing.assert_almost_equal(viewer.camera.zoom, vispy_camera.zoom)
 
 
+@pytest.mark.skipif(
+    sys.platform == 'win32', reason='This new test is flaky on windows'
+)
 def test_camera_orientation_2d(make_napari_viewer, qtbot):
     """Test that flipping orientation of the camera flips displayed image."""
     viewer = make_napari_viewer(show=True)

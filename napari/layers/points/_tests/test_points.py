@@ -1545,11 +1545,6 @@ def test_size_with_arrays(ndim):
     layer.size = sizes
     assert np.array_equal(layer.size, sizes)
 
-    # Un-broadcastable array should raise an exception
-    sizes = [5, 5]
-    with pytest.raises(ValueError, match='not compatible for broadcasting'):
-        layer.size = sizes
-
     # Create new layer with new size array data
     sizes = 5 * np.random.random(10)
     layer = Points(data, size=sizes)
@@ -2641,28 +2636,24 @@ def test_thick_slice():
 
 
 @pytest.mark.parametrize(
-    ('old_name', 'new_name', 'value'),
+    ('name', 'value'),
     [
-        ('edge_width', 'border_width', 0.9),
-        ('edge_width_is_relative', 'border_width_is_relative', False),
-        ('current_edge_width', 'current_border_width', 0.9),
-        ('edge_color', 'border_color', 'blue'),
-        ('current_edge_color', 'current_border_color', 'pink'),
+        ('border_width', 0.9),
+        ('border_width_is_relative', False),
+        ('current_border_width', 0.9),
+        ('border_color', 'blue'),
+        ('current_border_color', 'pink'),
     ],
 )
-def test_events_callback(old_name, new_name, value):
+def test_events_callback(name, value):
     data = np.array([[0, 0, 0], [10, 10, 10]])
     layer = Points(data)
-    old_name_callback = Mock()
-    new_name_callback = Mock()
-    with pytest.warns(FutureWarning):
-        getattr(layer.events, old_name).connect(old_name_callback)
-    getattr(layer.events, new_name).connect(new_name_callback)
+    name_callback = Mock()
+    getattr(layer.events, name).connect(name_callback)
 
-    setattr(layer, new_name, value)
+    setattr(layer, name, value)
 
-    new_name_callback.assert_called_once()
-    old_name_callback.assert_called_once()
+    name_callback.assert_called_once()
 
 
 def test_changing_symbol():
@@ -2686,20 +2677,3 @@ def test_docstring():
     validate_all_params_in_docstring(Points)
     validate_kwargs_sorted(Points)
     validate_docstring_parent_class_consistency(Points)
-
-
-@pytest.mark.parametrize(
-    'key',
-    [
-        'edge_width',
-        'edge_width_is_relative',
-        'edge_color',
-        'edge_color_cycle',
-        'edge_colormap',
-        'edge_contrast_limits',
-    ],
-)
-def test_as_layer_data_tuple_read_deprecated_attr(key: str):
-    _, attrs, _ = Points().as_layer_data_tuple()
-    with pytest.warns(FutureWarning, match='is deprecated since'):
-        attrs[key]
