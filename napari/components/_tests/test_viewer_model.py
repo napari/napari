@@ -1077,20 +1077,13 @@ def test_reset_view():
     viewer.reset_view()
     assert viewer.camera.angles == (0, 0, 90)
 
-    # Check for deprecation warning when using `reset_camera_angle`
     viewer.camera.angles = (45, 30, 60)
-    with pytest.deprecated_call():
-        viewer.reset_view(reset_camera_angle=True)
-    assert viewer.camera.angles == (0, 0, 90)
-
-    viewer.camera.angles = (45, 30, 60)
-    with pytest.deprecated_call():
-        viewer.reset_view(reset_camera_angle=False)
+    viewer.reset_view(reset_camera_angle=False)
     assert viewer.camera.angles == (45, 30, 60)
 
 
 def test_fit_to_view_margin():
-    """Test reset_view with different margin values."""
+    """Test fit_to_view with different margin values."""
     viewer = ViewerModel()
     viewer.add_image(np.random.random((10, 10)))
 
@@ -1120,7 +1113,7 @@ def test_fit_to_view_margin():
     [(2, (0, 14.5, 9.5)), (3, (4.5, 14.5, 9.5))],
 )
 def test_fit_to_view_center_calculation(ndisplay, expected_center):
-    """Test correct center calculation for different dimensions after a viewer reset."""
+    """Test correct center calculation for different dimensions after fit_to_view."""
     viewer = ViewerModel(ndisplay=ndisplay)
     data = np.random.random((5, 10, 30, 20))
     viewer.add_image(data)
@@ -1134,7 +1127,7 @@ def test_fit_to_view_center_calculation(ndisplay, expected_center):
 
 
 def test_fit_to_view_2d_data_in_3d_view():
-    """Test reset view with 2D data and ndisplay=3."""
+    """Test fit_to_view with 2D data and ndisplay=3."""
     viewer = ViewerModel(ndisplay=3)
     viewer.add_image(np.random.random((10, 20)))
     viewer.camera.angles = (45, 30, 60)
@@ -1171,7 +1164,7 @@ def test_fit_to_view_grid():
 
 
 def test_fit_to_view_handles_no_layers():
-    """Test reset_view with no layers."""
+    """Test fit_to_view with no layers."""
     viewer = ViewerModel()
     # Reset view should not raise errors when no layers are present
     viewer.fit_to_view()

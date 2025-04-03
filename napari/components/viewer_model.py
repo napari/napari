@@ -399,26 +399,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         reset_camera_angle : bool
             Whether to reset the camera angles to (0, 0, 90) before fitting
             to view. Default is True.
-
-            .. deprecated:: 0.6.0
-
-                The `reset_camera_angle` paramater is deprecated and will be
-                removed in 0.7.0.
-                Continue to use `reset_view()` to reset the camera angles.
-                Use `fit_to_view()` to adjust the camera without
-                resetting the camera angles.
         """
-        if reset_camera_angle is not None:
-            warnings.warn(
-                'reset_camera_angle is deprecated since napari 0.6.0 and will be removed in 0.7.0.'
-                'Continue to use `viewer.reset_view()` to reset the camera angles.'
-                'Use `viewer.fit_to_view()` to adjust the camera without resetting the camera angles.',
-                category=FutureWarning,
-            )
-
-        if (
-            reset_camera_angle or reset_camera_angle is None
-        ) and self.dims.ndisplay == 3:
+        if self.dims.ndisplay == 3 and reset_camera_angle:
             self.camera.angles = (0, 0, 90)
         self.fit_to_view(margin=margin)
 
@@ -552,6 +534,54 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         return scale_factor * np.min(
             np.array(self._canvas_size) / bounding_box
         )
+
+    @staticmethod
+    def _calculate_bounding_box(
+        extent: np.ndarray,
+        view_direction: tuple[float, float, float],
+        up_direction: tuple[float, float, float],
+    ) -> np.ndarray:
+        """Calculate the bounding box of the rotated extent.
+
+        Parameters
+        ----------
+        extent : array, shape (2, D)
+            An array with shape (2, D) where D is the number of dimensions.
+            The min/max coordinate values of the layers in world coordinates.
+            First row contains minimum values, second row contains maximum
+            values.
+        view_direction : 3-tuple of float
+            3D view direction vector of the camera.
+        up_direction : 3-tuple of float
+            3D direction vector pointing up on the canvas.
+
+        Returns
+        -------
+        bounding_box : array, shape (2,)
+            The bounding box of the rotated extent.
+        """
+        # calculate the difference between the min and max values of the extent
+        # to know the size, and then squeeze the (1,D) array to (D) as
+        # required for dot product
+        size = np.squeeze(np.diff(extent, axis=0))
+
+        # if the size vector is (2,) and the camera vector is (3,)
+        # add a very small thickness to the size vector in the Z position
+        # to make sure the cross product is valid, and no division by zero
+        if len(size) < len(view_direction):
+            size = np.insert(size, 0, 1e-10)
+
+        # get the "rightward" direction that is perpendicular to the view and up directions
+        right_direction = np.cross(view_direction, up_direction)
+
+        # project the size vector onto the up and right directions to get the
+        # displayed height and width.
+        # size = [Z Y X] ; direction = [a b c]
+        # size · direction =  Za + Yb + Xc = distance of size vector in given direction
+        displayed_height = np.dot(np.abs(up_direction), size)
+        displayed_width = np.dot(np.abs(right_direction), size)
+
+        return np.array([displayed_height, displayed_width])
 
     @staticmethod
     def _calculate_bounding_box(
