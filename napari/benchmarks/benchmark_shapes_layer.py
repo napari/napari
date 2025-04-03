@@ -28,7 +28,6 @@ except ImportError:
 
 
 class BackendType(Enum):
-    bermuda = auto()  # data processing using bermuda, (https://github.com/napari/bermuda), preprocessing using numba
     partsegcore = auto()  # data preprocessing using PartSegCore (https://partseg.github.io), edge triangulation using numba
     triangle = auto()  # data preprocessing using numba, edge triangulation using numba, triangulation using triangle
     numba = auto()  # data preprocessing and edge triangulation using numba, triangulation using vispy
@@ -42,9 +41,6 @@ class BackendType(Enum):
 
 
 backends = list(BackendType)
-backends.remove(
-    BackendType.bermuda
-)  # remove when merge bermuda backend PR #7747
 
 backend_list_complex = [BackendType.partsegcore, BackendType.numba]
 # pure python backend is too slow for large datasets
@@ -395,8 +391,7 @@ class ShapeTriangulationNonConvexSuite(_ShapeTriangulationBaseShapeCount):
         compiled_triangulation: n_shapes == 5000
         and n_points == 128
         and shape_type == 'polygon'
-        and compiled_triangulation
-        not in {BackendType.bermuda, BackendType.triangle},
+        and compiled_triangulation != BackendType.triangle,
         if_in_pr=skip_above_100,
     )
 
@@ -467,8 +462,7 @@ class ShapeTriangulationStarIntersectionSuite(
             or (
                 (n_shapes == 100 and n_points == 33)
                 and shape_type == 'polygon'
-                and compiled_triangulation
-                not in {BackendType.bermuda, BackendType.triangle}
+                and compiled_triangulation != BackendType.triangle
             )
         ),
     )
