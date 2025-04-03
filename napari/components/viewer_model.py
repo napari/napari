@@ -383,7 +383,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         return self.layers._extent_world_augmented[:, self.dims.displayed]
 
     def reset_view(
-        self, *, margin: float = 0.05, reset_camera_angle: bool | None = None
+        self, *, margin: float = 0.05, reset_camera_angle: bool = True
     ) -> None:
         """Reset the camera and fit the current layers to the canvas.
 
