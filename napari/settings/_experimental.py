@@ -1,15 +1,14 @@
-from enum import Enum, auto
+from enum import auto
 from typing import Any
 
 from napari._pydantic_compat import Field
 from napari.settings._base import EventedSettings
+from napari.utils.compat import StrEnum
 from napari.utils.translations import trans
 
 
-class TriangulationBackend(Enum):
-    """
-    Enum-like class to specify which triangulation backend to use.
-    """
+class TriangulationBackend(StrEnum):
+    """Enum-like class to specify which triangulation backend to use."""
 
     bermuda = auto()
     partsegcore = auto()
