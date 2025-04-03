@@ -82,11 +82,6 @@ def _toggle_canvas_ndim(viewer: ViewerModel):
         viewer.dims.ndisplay = 2
 
 
-def _current_view_is_3d(viewer: Viewer):
-    """True if viewer.dims.ndisplay is 3."""
-    return viewer.dims.ndisplay == 3
-
-
 Q_VIEW_ACTIONS: list[Action] = [
     Action(
         id='napari.window.view.toggle_fullscreen',
