@@ -9,8 +9,8 @@ from skimage.draw import line, polygon2mask
 from vispy.geometry import PolygonData
 from vispy.visuals.tube import _frenet_frames
 
-from napari.layers.shapes._accelerated_triangulate_dispatch import (
-    generate_2D_edge_meshes,
+from napari.layers.shapes import (
+    _accelerated_triangulate_dispatch as _triangulate_dispatch,
 )
 from napari.utils.translations import trans
 
@@ -769,8 +769,10 @@ def triangulate_edge(
         clean_path = path
 
     if clean_path.shape[-1] == 2:
-        centers, offsets, triangles = generate_2D_edge_meshes(
-            np.asarray(clean_path, dtype=np.float32), closed=closed
+        centers, offsets, triangles = (
+            _triangulate_dispatch.generate_2D_edge_meshes(
+                np.asarray(clean_path, dtype=np.float32), closed=closed
+            )
         )
     else:
         centers, offsets, triangles = generate_tube_meshes(
