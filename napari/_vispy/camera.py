@@ -66,10 +66,8 @@ class VispyCamera:
 
         if self._view.camera == self._3D_camera:
             # Do conversion from quaternion representation to euler angles
-            angles = quaternion2euler_degrees(self._view.camera._quaternion)
-        else:
-            angles = (0, 0, 90)
-        return angles
+            return quaternion2euler_degrees(self._view.camera._quaternion)
+        return (0, 0, 90)
 
     @angles.setter
     def angles(self, angles):
@@ -165,13 +163,13 @@ class VispyCamera:
     def _on_ndisplay_change(self):
         if self._dims.ndisplay == 3:
             self._view.camera = self._3D_camera
+            self._on_angles_change()
         else:
             self._view.camera = self._2D_camera
 
         self._on_mouse_toggles_change()
         self._on_center_change()
         self._on_zoom_change()
-        self._on_angles_change()
         self._on_orientation_change()
 
     def _on_mouse_toggles_change(self):
@@ -215,8 +213,9 @@ class VispyCamera:
 
         Update camera model angles, center, and zoom.
         """
-        with self._camera.events.angles.blocker(self._on_angles_change):
-            self._camera.angles = self.angles
+        if self._view.camera == self._3D_camera:
+            with self._camera.events.angles.blocker(self._on_angles_change):
+                self._camera.angles = self.angles
         with self._camera.events.center.blocker(self._on_center_change):
             self._camera.center = self.center
         with self._camera.events.zoom.blocker(self._on_zoom_change):

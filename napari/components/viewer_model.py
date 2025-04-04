@@ -262,12 +262,12 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         )
 
         # Connect events
-        self.grid.events.connect(self.reset_view)
+        self.grid.events.connect(self.fit_to_view)
         self.grid.events.connect(self._on_grid_change)
         self.dims.events.ndisplay.connect(self._update_layers)
-        self.dims.events.ndisplay.connect(self.reset_view)
+        self.dims.events.ndisplay.connect(self.fit_to_view)
         self.dims.events.order.connect(self._update_layers)
-        self.dims.events.order.connect(self.reset_view)
+        self.dims.events.order.connect(self.fit_to_view)
         self.dims.events.point.connect(self._update_layers)
         # FIXME: the next line is a temporary workaround. With #5522 and #5751 Dims.point became
         #        the source of truth, and is now defined in world space. This exposed an existing
