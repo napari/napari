@@ -3,7 +3,7 @@ from enum import Enum, EnumMeta
 from functools import partial, wraps
 from typing import TYPE_CHECKING
 
-from qtpy.QtCore import QEvent, QPoint, Qt
+from qtpy.QtCore import QEvent, Qt
 from qtpy.QtWidgets import (
     QApplication,
     QDoubleSpinBox,
@@ -564,7 +564,6 @@ class QtViewerButtons(QFrame):
         shape_help_symbol = QtToolTipLabel(self)
         stride_help_symbol = QtToolTipLabel(self)
         spacing_help_symbol = QtToolTipLabel(self)
-        blank = QLabel(self)  # helps with placing help symbols.
 
         shape_help_msg = trans._(
             'Number of rows and columns in the grid. A value of -1 for either or both of width and height will trigger an auto calculation of the necessary grid shape to appropriately fill all the layers at the appropriate stride. 0 is not a valid entry.'
@@ -639,37 +638,25 @@ class QtViewerButtons(QFrame):
         spacing_help_symbol.setToolTip(spacing_help_msg)
 
         # layout
-        form_layout = QFormLayout()
-        form_layout.insertRow(0, QLabel(trans._('Grid stride:')), grid_stride)
-        form_layout.insertRow(1, QLabel(trans._('Grid width:')), grid_width)
-        form_layout.insertRow(2, QLabel(trans._('Grid height:')), grid_height)
-        form_layout.insertRow(
-            3, QLabel(trans._('Grid spacing:')), grid_spacing
-        )
+        grid_layout = QGridLayout()
+        grid_layout.addWidget(QLabel(trans._('Grid stride:')), 0, 0)
+        grid_layout.addWidget(grid_stride, 0, 1)
+        grid_layout.addWidget(stride_help_symbol, 0, 2)
 
-        help_layout = QVBoxLayout()
-        help_layout.addWidget(stride_help_symbol)
-        help_layout.addWidget(blank)
-        help_layout.addWidget(shape_help_symbol)
-        help_layout.addWidget(spacing_help_symbol)
+        grid_layout.addWidget(QLabel(trans._('Grid width:')), 1, 0)
+        grid_layout.addWidget(grid_width, 1, 1)
 
-        layout = QHBoxLayout()
-        layout.addLayout(form_layout)
-        layout.addLayout(help_layout)
+        grid_layout.addWidget(shape_help_symbol, 1, 2, 2, 1)  # Span rows
 
-        popup.frame.setLayout(layout)
+        grid_layout.addWidget(QLabel(trans._('Grid height:')), 2, 0)
+        grid_layout.addWidget(grid_height, 2, 1)
 
+        grid_layout.addWidget(QLabel(trans._('Grid spacing:')), 3, 0)
+        grid_layout.addWidget(grid_spacing, 3, 1)
+        grid_layout.addWidget(spacing_help_symbol, 3, 2)
+
+        popup.frame.setLayout(grid_layout)
         popup.show_above_mouse()
-
-        # adjust placement of shape help symbol.  Must be done last
-        # in order for this movement to happen.
-        delta_x = 0
-        delta_y = -15
-        shape_pos = (
-            shape_help_symbol.x() + delta_x,
-            shape_help_symbol.y() + delta_y,
-        )
-        shape_help_symbol.move(QPoint(*shape_pos))
 
     def _update_grid_width(self, value):
         """Update the width value in grid shape.
