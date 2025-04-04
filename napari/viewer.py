@@ -4,6 +4,7 @@ from weakref import WeakSet
 
 import magicgui as mgui
 import numpy as np
+import numpy.typing as npt
 
 from napari.components.viewer_model import ViewerModel
 from napari.utils import _magicgui
@@ -71,6 +72,35 @@ class Viewer(ViewerModel):
     @property
     def window(self) -> 'Window':
         return self._window
+
+    @property
+    def canvas_color(self) -> str | None:
+        """Get or set the canvas background color override.
+
+        When set to None, the canvas will use the theme's default background color.
+        Otherwise, the canvas will use the specified color.
+
+        Parameters
+        ----------
+        color : str or tuple or None
+            The color to use for the canvas background. If None, the canvas
+            will use the theme's default background color.
+            If a string, it should be a any string in vispy.color.get_color_names
+            or hex color string (e.g., '#RRGGBB').
+            If a tuple or np.array, it should be 3 or 4 floats in the range [0, 1]
+            representing RGB or RGBA values.
+
+        Returns
+        -------
+        str or None
+            The current canvas background color as a hex string,
+            or None if using the theme's default.
+        """
+        return self.window._qt_viewer.canvas.background_color_override
+
+    @canvas_color.setter
+    def canvas_color(self, color: str | tuple | npt.ArrayLike | None) -> None:
+        self.window._qt_viewer.canvas.background_color_override = color
 
     def update_console(self, variables):
         """Update console's namespace with desired variables.
