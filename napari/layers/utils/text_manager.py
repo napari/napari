@@ -5,8 +5,9 @@ from typing import Any, Union
 
 import numpy as np
 import pandas as pd
+from pydantic.v1 import PositiveFloat
 
-from napari._pydantic_compat import PositiveInt, validator
+from napari._pydantic_compat import validator
 from napari.layers.base._base_constants import Blending
 from napari.layers.utils._text_constants import Anchor
 from napari.layers.utils._text_utils import get_text_anchors
@@ -62,9 +63,12 @@ class TextManager(EventedModel):
     values : np.ndarray
         The encoded string values.
     visible : bool
-        True if the text should be displayed, false otherwise.
+        True if the text should be displayed, False otherwise.
     size : float
         Font size of the text, which must be positive. Default value is 12.
+    scaling : bool
+        True if the text should be scaled with the zoom level, False otherwise.
+        Default value is False.
     color : ColorEncoding
         Defines the color for each text element.
     blending : Blending
@@ -84,7 +88,8 @@ class TextManager(EventedModel):
     string: StringEncoding = ConstantStringEncoding(constant='')
     color: ColorEncoding = ConstantColorEncoding(constant='cyan')
     visible: bool = True
-    size: PositiveInt = 12
+    size: PositiveFloat = 12
+    scaling: bool = False  # scaling changes with zoom level, consistent with other vispy visuals, see: https://github.com/vispy/vispy/blob/af2439895a13f187d840a476bd73ed480f2978f2/vispy/visuals/markers.py#L526
     blending: Blending = Blending.TRANSLUCENT
     anchor: Anchor = Anchor.CENTER
     # Use a scalar default translation to broadcast to any dimensionality.
@@ -121,6 +126,12 @@ class TextManager(EventedModel):
             self.string = value
         else:
             super().__setattr__(key, value)
+
+    def _get_scaled_size(self, scale_factor: float | None = None) -> float:
+        """Calculate the scaled text size based on zoom level."""
+        if not self.scaling or scale_factor is None:
+            return self.size
+        return self.size / scale_factor
 
     def refresh(self, features: Any) -> None:
         """Refresh all encoded values using new layer features.

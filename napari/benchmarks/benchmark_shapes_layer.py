@@ -3,9 +3,9 @@
 # or the napari documentation on benchmarking
 # https://github.com/napari/napari/blob/main/docs/BENCHMARKS.md
 import itertools
-import os
 from collections.abc import Callable
 from contextlib import suppress
+from enum import Enum, auto
 from functools import cache, wraps
 
 import numpy as np
@@ -27,48 +27,160 @@ except ImportError:
     from napari.benchmarks.utils import Skip
 
 
-class Shapes2DSuite:
+class BackendType(Enum):
+    partsegcore = auto()  # data preprocessing using PartSegCore (https://partseg.github.io), edge triangulation using numba
+    triangle = auto()  # data preprocessing using numba, edge triangulation using numba, triangulation using triangle
+    numba = auto()  # data preprocessing and edge triangulation using numba, triangulation using vispy
+    pure_python = auto()  # data preprocessing, edge triangulation, and triangulation using python and vispy
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return self.name
+
+
+backends = list(BackendType)
+
+backend_list_complex = [BackendType.partsegcore, BackendType.numba]
+# pure python backend is too slow for large datasets
+# triangle backend requires deduplication of vertices in #6654
+
+
+class _BackendSelection:
+    """Provides a representation for a preferred backend if accelerated triangulation is unavailable."""
+
+    triangulate: Callable | None  # a triangulate function
+    prev_settings: bool  # save the state of NapariSettings.experimental.compiled_triangulation, if True
+    prev_numba: dict[
+        str, Callable
+    ]  # Maps numba function names to _accelerated_triangulate_dispatch functions.
+
+    def _disable_numba(self):
+        """Replace numba jit functions with pure python functions."""
+        try:
+            from napari.layers.shapes import (
+                _accelerated_triangulate_dispatch as _triangle_dispatch,
+            )
+        except ImportError:
+            return
+
+        for name in _triangle_dispatch.__all__:
+            # This part of the code assumes that all pure python functions
+            # from _accelerated_triangulate_dispatch that are used when import from
+            # _accelerated_triangulate module fails because of missing numba
+            # are named as the function that they replace with added _py suffix.
+            # So we could write generic code to replace all of them.
+            if hasattr(_triangle_dispatch, f'{name}_py'):
+                self.prev_numba[name] = getattr(_triangle_dispatch, name)
+                setattr(
+                    _triangle_dispatch,
+                    name,
+                    getattr(_triangle_dispatch, f'{name}_py'),
+                )
+
+    def select_backend(self, triangulation_backend: BackendType):
+        """Select a desired backend for triangulation."""
+        self.prev_numba = {}
+        with suppress(AttributeError):
+            self.prev_settings = (
+                get_settings().experimental.compiled_triangulation
+            )
+            get_settings().experimental.compiled_triangulation = (
+                triangulation_backend == BackendType.partsegcore
+            )
+
+        from napari.layers.shapes import _shapes_utils
+
+        self.triangulate = _shapes_utils.triangulate
+        if triangulation_backend != BackendType.triangle:
+            # Disable the triangle backend by overriding the function
+            _shapes_utils.triangulate = None
+        if triangulation_backend == BackendType.pure_python:
+            self._disable_numba()
+        else:
+            self.warmup_numba()
+
+    @staticmethod
+    def warmup_numba() -> None:
+        """Warmup numba cache to avoid the first call being slow."""
+        try:
+            from napari.layers.shapes._accelerated_triangulate_dispatch import (
+                warmup_numba_cache,
+            )
+        except ImportError:
+            return
+        warmup_numba_cache()
+
+    def revert_backend(self):
+        """Restore changes made by select_backend function. Call in teardown step."""
+        with suppress(AttributeError):
+            get_settings().experimental.compiled_triangulation = (
+                self.prev_settings
+            )
+
+        from napari.layers.shapes import _shapes_utils
+
+        _shapes_utils.triangulate = self.triangulate
+        with suppress(ImportError):
+            from napari.layers.shapes import (
+                _accelerated_triangulate_dispatch as atd,
+            )
+
+            for name, func in self.prev_numba.items():
+                setattr(atd, name, func)
+
+    def teardown(self, *_):
+        self.revert_backend()
+
+
+def skip_above_100(n_shapes, *_):
+    return n_shapes > 100
+
+
+class Shapes2DSuite(_BackendSelection):
     """Benchmarks for the Shapes layer with 2D data"""
 
     data: list[np.ndarray]
     layer: Shapes
 
-    params = [2**i for i in range(4, 9)]
+    params = [tuple(2**i for i in range(4, 9)), backends]
+    params_names = ['n_shapes', 'backend']
 
-    if 'PR' in os.environ:
-        skip_params = [(2**i,) for i in range(6, 9)]
+    skip_params = Skip(if_in_pr=lambda n_shapes, backend: n_shapes > 2**5)
 
-    def setup(self, n):
+    def setup(self, n_shapes, backend):
+        self.select_backend(backend)
         rng = np.random.default_rng(0)
-        self.data = [50 * rng.random((6, 2)) for _ in range(n)]
+        self.data = [50 * rng.random((6, 2)) for _ in range(n_shapes)]
         self.layer = Shapes(self.data, shape_type='polygon')
 
-    def time_create_layer(self, _n):
+    def time_create_layer(self, *_):
         """Time to create an image layer."""
         Shapes(self.data, shape_type='polygon')
 
-    def time_refresh(self, _n):
+    def time_refresh(self, *_):
         """Time to refresh view."""
         self.layer.refresh()
 
-    def time_set_view_slice(self, _n):
+    def time_set_view_slice(self, *_):
         """Time to set view slice."""
         self.layer._set_view_slice()
 
-    def time_update_thumbnail(self, _n):
+    def time_update_thumbnail(self, *_):
         """Time to update thumbnail."""
         self.layer._update_thumbnail()
 
-    def time_get_value(self, _n):
+    def time_get_value(self, *_):
         """Time to get current value."""
         for i in range(100):
             self.layer.get_value((i,) * 2)
 
-    def mem_layer(self, _n):
+    def mem_layer(self, *_):
         """Memory used by layer."""
         return self.layer
 
-    def mem_data(self, _n):
+    def mem_data(self, *_):
         """Memory used by raw data."""
         return self.data
 
@@ -80,8 +192,7 @@ class Shapes3DSuite:
     layer: Shapes
 
     params = [2**i for i in range(4, 9)]
-    if 'PR' in os.environ:
-        skip_params = [(2**i,) for i in range(6, 9)]
+    skip_params = Skip(if_in_pr=lambda n_shapes: n_shapes > 2**5)
 
     def setup(self, n):
         rng = np.random.default_rng(0)
@@ -242,49 +353,6 @@ def get_shape_type(func):
     return wrap
 
 
-class _BackendSelection:
-    triangulate: Callable | None
-    prev_settings: bool
-
-    def select_backend(self, compiled_triangulation):
-        with suppress(AttributeError):
-            self.prev_settings = (
-                get_settings().experimental.compiled_triangulation
-            )
-            get_settings().experimental.compiled_triangulation = (
-                compiled_triangulation
-            )
-
-        from napari.layers.shapes import _shapes_utils
-
-        self.triangulate = _shapes_utils.triangulate
-        _shapes_utils.triangulate = None
-        self.warmup_numba()
-
-    @staticmethod
-    def warmup_numba() -> None:
-        try:
-            from napari.layers.shapes._accelerated_triangulate_dispatch import (
-                warmup_numba_cache,
-            )
-        except ImportError:
-            return
-        warmup_numba_cache()
-
-    def revert_backend(self):
-        with suppress(AttributeError):
-            get_settings().experimental.compiled_triangulation = (
-                self.prev_settings
-            )
-
-        from napari.layers.shapes import _shapes_utils
-
-        _shapes_utils.triangulate = self.triangulate
-
-    def teardown(self, *_):
-        self.revert_backend()
-
-
 class _ShapeTriangulationBase(_BackendSelection):
     data: list[np.ndarray]
 
@@ -308,17 +376,10 @@ class _ShapeTriangulationBaseShapeCount(_ShapeTriangulationBase):
         ),
         (8, 32, 128),
         ('path', 'polygon'),
-        (True, False),
+        backend_list_complex,
     ]
 
-    @staticmethod
-    def skip_pr_ge100(
-        n_shapes, _n_points, _shape_type, _compiled_triangulation
-    ):
-        """Skip, to speedup on PR CI for performance reasons."""
-        return n_shapes > 100
-
-    skip_params = Skip(if_in_pr=skip_pr_ge100)
+    skip_params = Skip(if_in_pr=skip_above_100)
 
 
 class ShapeTriangulationNonConvexSuite(_ShapeTriangulationBaseShapeCount):
@@ -329,8 +390,8 @@ class ShapeTriangulationNonConvexSuite(_ShapeTriangulationBaseShapeCount):
         shape_type,
         compiled_triangulation: n_points == 128
         and shape_type == 'polygon'
-        and not compiled_triangulation,
-        if_in_pr=_ShapeTriangulationBaseShapeCount.skip_pr_ge100,
+        and compiled_triangulation != BackendType.triangle,
+        if_in_pr=skip_above_100,
         # to slow (40 sec)
         if_on_ci=lambda n_shapes,
         n_points,
@@ -339,7 +400,8 @@ class ShapeTriangulationNonConvexSuite(_ShapeTriangulationBaseShapeCount):
             n_shapes == 5000
             and n_points == 32
             and shape_type == 'polygon'
-            and not compiled_triangulation
+            and compiled_triangulation
+            in {BackendType.pure_python and BackendType.numba}
         ),
     )
 
@@ -364,7 +426,7 @@ class ShapeTriangulationIntersectionSuite(_ShapeTriangulationBaseShapeCount):
         ),
         (7, 9, 15, 33),
         ('path', 'polygon'),
-        (True, False),
+        backend_list_complex,
     ]
     skip_params = Skip(
         if_on_ci=lambda n_shapes,
@@ -372,12 +434,7 @@ class ShapeTriangulationIntersectionSuite(_ShapeTriangulationBaseShapeCount):
         shape_type,
         compiled_triangulation: not compiled_triangulation
         and n_shapes == 5000,
-        always=lambda n_shapes,
-        n_points,
-        shape_type,
-        compiled_triangulation: not compiled_triangulation
-        and n_shapes == 5000
-        and n_points == 33,
+        if_in_pr=skip_above_100,
     )
 
     def setup(self, n_shapes, n_points, _shape_type, compiled_triangulation):
@@ -395,7 +452,7 @@ class ShapeTriangulationStarIntersectionSuite(
         ),
         (7, 9, 15, 33),
         ('path', 'polygon'),
-        (True, False),
+        backend_list_complex,
     ]
     skip_params = Skip(
         always=lambda n_shapes,
@@ -408,18 +465,17 @@ class ShapeTriangulationStarIntersectionSuite(
         n_points,
         shape_type,
         compiled_triangulation: (
-            # 7 and 9 points are too slow to run
-            n_shapes == 5000
-            and shape_type == 'polygon'
-            and not compiled_triangulation
-        )
-        or (
-            n_shapes == 100
-            and n_points in {33, 15}
-            and shape_type == 'polygon'
-            and not compiled_triangulation
+            (
+                # 7 and 9 points are too slow to run
+                n_shapes == 5000 and shape_type == 'polygon'
+            )
+            or (
+                (n_shapes == 100 and n_points == 33)
+                and shape_type == 'polygon'
+                and compiled_triangulation != BackendType.triangle
+            )
         ),
-        if_in_pr=_ShapeTriangulationBaseShapeCount.skip_pr_ge100,
+        if_in_pr=skip_above_100,
     )
 
     def setup(self, n_shapes, n_points, _shape_type, compiled_triangulation):
@@ -435,14 +491,9 @@ class ShapeTriangulationHoleSuite(_ShapeTriangulationBaseShapeCount):
         ),
         (12, 48),
         ('path', 'polygon'),
-        (True, False),
+        backend_list_complex,
     ]
-    skip_params = Skip(
-        if_in_pr=lambda n_shapes,
-        n_points,
-        shape_type,
-        compiled_triangulation: n_shapes > 100
-    )
+    skip_params = Skip(if_in_pr=skip_above_100)
 
     def setup(self, n_shapes, n_points, _shape_type, compiled_triangulation):
         self.data = polygons_with_hole(n_shapes, n_points)
@@ -457,20 +508,9 @@ class ShapeTriangulationHolesSuite(_ShapeTriangulationBaseShapeCount):
         ),
         (24, 48),
         ('path', 'polygon'),
-        (True, False),
+        backend_list_complex,
     ]
-    skip_params = Skip(
-        if_in_pr=_ShapeTriangulationBaseShapeCount.skip_pr_ge100,
-        if_on_ci=lambda n_shapes,
-        n_points,
-        shape_type,
-        compiled_triangulation: (
-            n_shapes > 100
-            and n_points > 24
-            and shape_type == 'polygon'
-            and not compiled_triangulation
-        ),
-    )
+    skip_params = Skip(if_in_pr=skip_above_100)
 
     def setup(self, n_shapes, n_points, _shape_type, compiled_triangulation):
         self.data = polygons_with_hole(n_shapes, n_points)
@@ -485,14 +525,11 @@ class ShapeTriangulationMixed(_ShapeTriangulationBase):
             3_000,
         ),
         ('path', 'polygon'),
-        (True, False),
+        backend_list_complex,
     ]
 
     # the case of 128 points crashes the benchmark on call of PolygonData(vertices=data).triangulate()
-    skip_params = Skip(
-        if_in_pr=lambda n_shapes, shape_type, compiled_triangulation: n_shapes
-        > 1000,
-    )
+    skip_params = Skip(if_in_pr=skip_above_100)
 
     def setup(self, n_shapes, _shape_type, compiled_triangulation):
         part_size = int(n_shapes / 10)
@@ -520,7 +557,7 @@ class MeshTriangulationSuite(_BackendSelection):
     data: list[Polygon | Path]
 
     param_names = ['shape_type', 'compiled_triangulation']
-    params = [('path', 'polygon'), (True, False)]
+    params = [('path', 'polygon'), backend_list_complex]
 
     def setup(self, shape_type, compiled_triangulation):
         self.select_backend(compiled_triangulation)

@@ -31,7 +31,7 @@ __all__ = (
 )
 
 
-def remove_path_duplicates_np(
+def remove_path_duplicates_py(
     data: npt.NDArray[np.float32], closed: bool
 ) -> npt.NDArray[np.float32]:
     # We add the first data point at the end to get the same length bool
@@ -591,7 +591,7 @@ try:
 
 except ImportError:
     generate_2D_edge_meshes = generate_2D_edge_meshes_py
-    remove_path_duplicates = remove_path_duplicates_np
+    remove_path_duplicates = remove_path_duplicates_py
     create_box_from_bounding = create_box_from_bounding_py
     reconstruct_polygons_from_edges = reconstruct_polygons_from_edges_py
     normalize_vertices_and_edges = normalize_vertices_and_edges_py

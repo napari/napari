@@ -296,17 +296,6 @@ class QtViewer(QSplitter):
         )
         return self.canvas.camera
 
-    @property
-    def chunk_receiver(self) -> None:
-        warnings.warn(
-            trans._(
-                'QtViewer.chunk_receiver is deprecated in version 0.5 and will be removed in a later version. '
-                'More generally the old approach to async loading was removed in version 0.5 so this value is always None. '
-                'If you need to specifically use the old approach, continue to use the latest 0.4 release.'
-            ),
-            DeprecationWarning,
-        )
-
     @staticmethod
     def _update_dask_cache_settings(
         dask_setting: DaskSettings | Event = None,
@@ -519,7 +508,7 @@ class QtViewer(QSplitter):
                 try:
                     vdict[name] = eval(name, cf.f_globals, cf.f_locals)
                 except NameError:
-                    logging.warning(
+                    logging.getLogger('napari').warning(
                         'Could not get variable %s from %s',
                         name,
                         cf.f_code.co_name,
@@ -624,7 +613,9 @@ class QtViewer(QSplitter):
         This only gets triggered on the async slicing path.
         """
         responses: dict[weakref.ReferenceType[Layer], Any] = event.value
-        logging.debug('QtViewer._on_slice_ready: %s', responses)
+        logging.getLogger('napari').debug(
+            'QtViewer._on_slice_ready: %s', responses
+        )
         for weak_layer, response in responses.items():
             if layer := weak_layer():
                 # Update the layer slice state to temporarily support behavior
@@ -824,7 +815,7 @@ class QtViewer(QSplitter):
                 else QFileDialog.Options()
             ),
         )
-        logging.debug(
+        logging.getLogger('napari').debug(
             trans._(
                 'QFileDialog - filename: {filename} '
                 'selected_filter: {selected_filter}',
@@ -841,7 +832,7 @@ class QtViewer(QSplitter):
                 saved = self.viewer.layers.save(
                     filename, selected=selected, _writer=writer
                 )
-                logging.debug('Saved %s', saved)
+                logging.getLogger('napari').debug('Saved %s', saved)
                 error_messages = '\n'.join(str(x.message.args[0]) for x in wa)
 
             if not saved:

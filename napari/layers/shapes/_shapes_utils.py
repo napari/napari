@@ -9,10 +9,12 @@ import numpy as np
 from scipy import sparse
 from skimage import measure
 from skimage.draw import line, polygon2mask
-from vispy.geometry import Triangulation
+from vispy.geometry import PolygonData
 from vispy.visuals.tube import _frenet_frames
 
-from napari.layers.shapes import _accelerated_triangulate_dispatch as atd
+from napari.layers.shapes import (
+    _accelerated_triangulate_dispatch as _triangulate_dispatch,
+)
 from napari.layers.shapes.shape_types import (
     CoordinateArray,
     CoordinateArray2D,
@@ -237,10 +239,10 @@ def lines_intersect(p1, q1, p2, q2):
         Bool indicating if line segment p1q1 intersects line segment p2q2
     """
     # Determine four orientations
-    o1 = atd.orientation(p1, q1, p2)
-    o2 = atd.orientation(p1, q1, q2)
-    o3 = atd.orientation(p2, q2, p1)
-    o4 = atd.orientation(p2, q2, q1)
+    o1 = _triangulate_dispatch.orientation(p1, q1, p2)
+    o2 = _triangulate_dispatch.orientation(p1, q1, q2)
+    o3 = _triangulate_dispatch.orientation(p2, q2, p1)
+    o4 = _triangulate_dispatch.orientation(p2, q2, q1)
 
     # Test general case
     if (o1 != o2) and (o3 != o4):
@@ -313,7 +315,8 @@ def is_collinear(points: npt.NDArray) -> bool:
     # The collinearity test takes three points, the first two are the first
     # two in the list, and then the third is iterated through in the loop
     return all(
-        atd.orientation(points[0], points[1], p) == 0 for p in points[2:]
+        _triangulate_dispatch.orientation(points[0], points[1], p) == 0
+        for p in points[2:]
     )
 
 
@@ -668,7 +671,7 @@ def triangulate_face_and_edges(
             np.empty((0, 3), dtype=np.int32),
         ), triangulate_edge(polygon_vertices, closed=True)
 
-    if atd.is_convex(data2d):
+    if _triangulate_dispatch.is_convex(data2d):
         face_triangulation = _fan_triangulation(data2d)
         return (
             _fix_vertices_if_needed(
@@ -677,7 +680,9 @@ def triangulate_face_and_edges(
             face_triangulation[1],
         ), triangulate_edge(polygon_vertices, closed=True)
 
-    raw_vertices, edges = atd.normalize_vertices_and_edges(data2d, close=True)
+    raw_vertices, edges = _triangulate_dispatch.normalize_vertices_and_edges(
+        data2d, close=True
+    )
 
     try:
         face_triangulation = _triangulate_face(
@@ -737,7 +742,9 @@ def reconstruct_and_triangulate_edge(
     Returns
     -------
     """
-    polygon_list = atd.reconstruct_polygons_from_edges(vertices, edges)
+    polygon_list = _triangulate_dispatch.reconstruct_polygons_from_edges(
+        vertices, edges
+    )
     centers_list = []
     offset_list = []
     triangles_list = []
@@ -773,10 +780,10 @@ def triangulate_face(
         Px3 array of the indices of the vertices that will form the
         triangles of the triangulation
     """
-    if atd.is_convex(polygon_vertices):
+    if _triangulate_dispatch.is_convex(polygon_vertices):
         return _fan_triangulation(polygon_vertices)
 
-    raw_vertices, edges = atd.normalize_vertices_and_edges(
+    raw_vertices, edges = _triangulate_dispatch.normalize_vertices_and_edges(
         polygon_vertices, close=True
     )
     try:
@@ -828,11 +835,15 @@ def _triangulate_face(
             vertices, raw_triangles, polygon_vertices
         )
     else:
-        # otherwise, we use VisPy's triangulation, which is slower and gives
-        # less balanced polygons, but works.
-        tri = Triangulation(raw_vertices, edges)
-        tri.triangulate()
-        vertices, triangles = tri.pts, tri.tris
+        try:
+            vertices, triangles = PolygonData(
+                vertices=raw_vertices
+            ).triangulate()
+        except Exception as e:  # pragma: no cover
+            path, text_path = _save_failed_triangulation(raw_vertices)
+            raise RuntimeError(
+                f'Triangulation failed. Data saved to {path} and {text_path}'
+            ) from e
 
     triangles = triangles.astype(np.uint32)
 
@@ -895,8 +906,10 @@ def triangulate_edge(
         clean_path = path
 
     if clean_path.shape[-1] == 2:
-        centers, offsets, triangles = atd.generate_2D_edge_meshes(
-            np.asarray(clean_path, dtype=np.float32), closed=closed
+        centers, offsets, triangles = (
+            _triangulate_dispatch.generate_2D_edge_meshes(
+                np.asarray(clean_path, dtype=np.float32), closed=closed
+            )
         )
     else:
         centers, offsets, triangles = generate_tube_meshes(
@@ -949,7 +962,7 @@ def _remove_internal_edges(path, keep_holes=True):
     the connected components among the remaining edges, and removes all
     components except the one with the largest extent.
     """
-    v, e = atd.normalize_vertices_and_edges(path, close=True)
+    v, e = _triangulate_dispatch.normalize_vertices_and_edges(path, close=True)
     n_edge = len(e)
     if n_edge == 0:
         # if there's not enough edges in the path, return fast.
@@ -1477,3 +1490,47 @@ def rdp(vertices: npt.NDArray, epsilon: float) -> npt.NDArray:
 
     # When epsilon is 0, avoid removing datapoints
     return vertices
+
+
+def _save_failed_triangulation(
+    data: np.ndarray, target_dir: str | None = None
+) -> tuple[str, str]:
+    """Save data to temporary files for debugging.
+
+    This function saves input data when triangulation fails.
+    It saves the same data to both a .npz file and a .txt file within the
+    temporary directory, and returns the paths to the saved files.
+
+    Parameters
+    ----------
+    data : np.ndarray
+        The data to save.
+    target_dir: str or None
+        Path to directory where the files will be saved. If None, the default
+
+    Returns
+    -------
+    tuple[str, str]
+        The paths to the saved files.
+
+    Notes
+    -----
+    Use TMPDIR environment variable to set the temporary directory.
+    """
+    with tempfile.NamedTemporaryFile(
+        delete=False,
+        suffix='.npz',
+        prefix='napari_comp_triang_',
+        dir=target_dir,
+    ) as binary_file:
+        np.savez(binary_file, data=data)
+    with tempfile.NamedTemporaryFile(
+        delete=False,
+        suffix='.txt',
+        prefix='napari_comp_triang_',
+        mode='w',
+        dir=target_dir,
+    ) as text_file:
+        np.savetxt(text_file, data)
+
+    return binary_file.name, text_file.name

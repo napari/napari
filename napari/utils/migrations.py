@@ -51,17 +51,6 @@ def rename_argument(
         version when new argument was added
     """
 
-    if not since_version:
-        since_version = 'unknown'
-        warnings.warn(
-            trans._(
-                'The since_version argument was added in napari 0.4.18 and will be mandatory since 0.6.0 release.',
-                deferred=True,
-            ),
-            stacklevel=2,
-            category=FutureWarning,
-        )
-
     def _wrapper(func):
         if not hasattr(func, '_rename_argument'):
             func._rename_argument = []

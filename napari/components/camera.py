@@ -1,4 +1,3 @@
-import warnings
 from enum import auto
 from typing import TYPE_CHECKING, Literal, Optional
 
@@ -27,6 +26,11 @@ class HorizontalAxisOrientation(StringEnum):
 class DepthAxisOrientation(StringEnum):
     AWAY = auto()
     TOWARDS = auto()
+
+
+class Handedness(StringEnum):
+    RIGHT = auto()
+    LEFT = auto()
 
 
 VerticalAxisOrientationStr = Literal['up', 'down']
@@ -59,10 +63,6 @@ class Camera(EventedModel):
         sets of Euler angles may lead to the same view.
     perspective : float
         Perspective (aka "field of view" in vispy) of the camera (if 3D).
-    interactive : bool
-        If the camera mouse pan/zoom is enabled or not.
-        This attribute is deprecated since 0.5.0 and should not be used.
-        Use the mouse_pan and mouse_zoom attributes instead.
     mouse_pan : bool
         If the camera interactive panning with the mouse is enabled or not.
     mouse_zoom : bool
@@ -268,18 +268,14 @@ class Camera(EventedModel):
         )
 
     @property
-    def interactive(self) -> bool:
-        warnings.warn(
-            '`Camera.interactive` is deprecated since 0.5.0 and will be removed in 0.6.0.',
-            category=DeprecationWarning,
-        )
-        return self.mouse_pan or self.mouse_zoom
-
-    @interactive.setter
-    def interactive(self, interactive: bool):
-        warnings.warn(
-            '`Camera.interactive` is deprecated since 0.5.0 and will be removed in 0.6.0.',
-            category=DeprecationWarning,
-        )
-        self.mouse_pan = interactive
-        self.mouse_zoom = interactive
+    def handedness(self) -> Handedness:
+        """Right or left-handedness of the current orientation."""
+        # we know default orientation is right-handed, so an odd number of
+        # differences from default means left-handed.
+        diffs = [
+            self.orientation[i] != DEFAULT_ORIENTATION_TYPED[i]
+            for i in range(3)
+        ]
+        if sum(diffs) % 2 != 0:
+            return Handedness.LEFT
+        return Handedness.RIGHT
