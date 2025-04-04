@@ -1046,10 +1046,12 @@ def test_get_status_text():
     assert viewer._calc_status_from_cursor() == (
         {
             'coordinates': ' [1 2]: 0; a: 1',
+            'coords': ' [1 2]',
             'layer_base': 'Labels',
             'layer_name': 'Labels',
             'plugin': '',
             'source_type': '',
+            'value': '0; a: 1',
         },
         '',
     )
@@ -1057,20 +1059,24 @@ def test_get_status_text():
     assert viewer._calc_status_from_cursor() == (
         {
             'coordinates': ' [1 2]: 0; a: 1',
+            'coords': ' [1 2]',
             'layer_base': 'Labels',
             'layer_name': 'Labels',
             'plugin': '',
             'source_type': '',
+            'value': '0; a: 1',
         },
         'a: 1',
     )
     viewer.update_status_from_cursor()
     assert viewer.status == {
         'coordinates': ' [1 2]: 0; a: 1',
+        'coords': ' [1 2]',
         'layer_base': 'Labels',
         'layer_name': 'Labels',
         'plugin': '',
         'source_type': '',
+        'value': '0; a: 1',
     }
     assert viewer.tooltip.text == 'a: 1'
 
