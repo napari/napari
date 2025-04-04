@@ -1749,8 +1749,7 @@ class Window:
         This function finds a tight boundary around the data, resets the view
         around that boundary (and, when scale=1, such that 1 captured pixel is
         equivalent to one data pixel), takes a screenshot, then restores the
-        previous zoom and canvas sizes. Currently, only works when 2 dimensions
-        are displayed.
+        previous zoom and canvas sizes.
 
         Parameters
         ----------
