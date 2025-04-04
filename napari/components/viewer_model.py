@@ -704,6 +704,15 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         selection = self.layers.selection
         active = selection.active
 
+        # the tooltip is computed in all cases, so we compute it first
+        if self.tooltip.visible and active is not None and active._loaded:
+            tooltip_text = active._get_tooltip_text(
+                np.asarray(self.cursor.position),
+                view_direction=np.asarray(self.cursor._view_direction),
+                dims_displayed=list(self.dims.displayed),
+                world=True,
+            )
+
         for layer in self.layers[::-1]:
             if (
                 not layer.visible
@@ -744,14 +753,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             status_str = '[empty]'
         else:
             status_str = 'Ready'
-
-        if self.tooltip.visible and active is not None and active._loaded:
-            tooltip_text = active._get_tooltip_text(
-                np.asarray(self.cursor.position),
-                view_direction=np.asarray(self.cursor._view_direction),
-                dims_displayed=list(self.dims.displayed),
-                world=True,
-            )
 
         return status_str, tooltip_text
 
