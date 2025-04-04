@@ -657,22 +657,10 @@ def test_active_layer_status_update():
     time.sleep(1)
     viewer.mouse_over_canvas = True
     viewer.cursor.position = [1, 1, 1, 1, 1]
-    viewer_cursor_status = viewer._calc_status_from_cursor()[0]
-    active_layer_status = viewer.layers.selection.active.get_status(
+    assert viewer._calc_status_from_cursor()[
+        0
+    ] == viewer.layers.selection.active.get_status(
         viewer.cursor.position, world=True
-    )
-    # check coords, value and layer name
-    assert (
-        viewer_cursor_status.split('»')[0].rstrip(' ')
-        == active_layer_status['coords']
-    )
-    assert (
-        viewer_cursor_status.rstrip(' ').split(' ')[-1]
-        == active_layer_status['value']
-    )
-    assert (
-        viewer_cursor_status.split('»')[1].split(':')[0].lstrip(' ')
-        == active_layer_status['layer_name']
     )
 
 
