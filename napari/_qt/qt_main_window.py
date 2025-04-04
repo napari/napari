@@ -1687,13 +1687,6 @@ class Window:
                     deferred=True,
                 )
             )
-        if fit_to_data_extent and ndisplay > 2:
-            raise NotImplementedError(
-                trans._(
-                    'fit_to_data_extent is not yet implemented for 3D view.',
-                    deferred=True,
-                )
-            )
         if size is not None and len(size) != 2:
             raise ValueError(
                 trans._(
@@ -1705,13 +1698,17 @@ class Window:
 
         # Part 2: compute canvas size and view based on parameters
         if fit_to_data_extent:
-            extent_world = self._qt_viewer.viewer.layers.extent.world[1][
-                -ndisplay:
-            ]
-            extent_step = min(
-                self._qt_viewer.viewer.layers.extent.step[-ndisplay:]
-            )
-            size = extent_world / extent_step + 1
+            extent = self._qt_viewer.viewer.layers.extent
+            if ndisplay == 2:
+                extent_world = extent.world[1][-ndisplay:]
+                extent_step = min(extent.step[-ndisplay:])
+                size = extent_world / extent_step + 1
+            if ndisplay == 3:
+                size = self._qt_viewer.viewer._calculate_bounding_box(
+                    extent=extent.world,
+                    view_direction=self._qt_viewer.viewer.camera.view_direction,
+                    up_direction=self._qt_viewer.viewer.camera.up_direction,
+                )
         if size is not None:
             size = np.asarray(size) / self._qt_window.devicePixelRatio()
         else:
@@ -1725,7 +1722,7 @@ class Window:
             canvas.size = tuple(size.astype(int))
             if fit_to_data_extent:
                 # tight view around data
-                self._qt_viewer.viewer.reset_view(margin=0)
+                self._qt_viewer.viewer.fit_to_view(margin=0)
             try:
                 img = canvas.screenshot()
                 if flash:
