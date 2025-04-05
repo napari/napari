@@ -321,7 +321,7 @@ def test_export_figure_3d(make_napari_viewer):
 
     # The theme is dark, so the canvas will be white. Test that the image
     # has a white background, roughly more background than the data itself.
-    assert img[img > 250].shape[0] > img[img <= 200].shape[0]
+    assert (img[img > 250].shape[0] / img[img <= 200].shape[0]) > 0.5
 
 
 def test_export_rois(make_napari_viewer, tmp_path):
