@@ -98,6 +98,42 @@ def test_viewer(make_napari_viewer):
     assert viewer.dims.ndisplay == 2
 
 
+def test_canvas_color(make_napari_viewer):
+    """Test that changing canvas_color changes the canvas color."""
+    viewer = make_napari_viewer(show=True)
+    assert viewer.canvas_color == '#000000'
+
+    # test using a string changes the canvas color
+    viewer.canvas_color = 'white'
+    assert viewer.canvas_color == '#ffffff'
+
+    # check that the canvas is actually changed to white. Add a layer so
+    # that the canvas shows and not the welcome screen.
+    viewer._new_labels()
+    img = viewer.export_figure()
+    assert img[img > 250].shape[0] > img[img <= 250].shape[0]
+
+    # check that hex changes canvas color
+    viewer.canvas_color = '#0000ff'
+    assert viewer.canvas_color == '#0000ff'
+
+    # check that 3-tuple changes canvas color
+    viewer.canvas_color = (0, 1, 0)
+    assert viewer.canvas_color == '#00ff00'
+
+    # check that 4-tuple changes canvas color
+    viewer.canvas_color = (1, 0, 0, 0.5)
+    assert viewer.canvas_color == '#ff0000'
+
+    # check that numpy array changes canvas color
+    viewer.canvas_color = np.array([0, 0, 1])
+    assert viewer.canvas_color == '#0000ff'
+
+    # check that passing none resets the canvas color to default
+    viewer.canvas_color = None
+    assert viewer.canvas_color == '#000000'
+
+
 @pytest.mark.parametrize(('layer_class', 'data', 'ndim'), layer_test_data)
 def test_add_layer(make_napari_viewer, layer_class, data, ndim):
     viewer = make_napari_viewer()
