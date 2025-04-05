@@ -2,8 +2,29 @@
 
 from __future__ import annotations
 
+from enum import Enum
+from math import atan2, pi
+from typing import Literal, overload
+
 import numpy as np
 from numba import njit
+from numba.core import types
+from numba.typed import List
+
+from napari.layers.shapes.shape_types import (
+    CoordinateArray,
+    CoordinateArray2D,
+    CoordinateArray3D,
+    EdgeArray,
+)
+
+
+class Orientation(Enum):
+    """Orientation of a triangle."""
+
+    clockwise = -1
+    collinear = 0
+    anticlockwise = 1
 
 
 @njit(cache=True, inline='always')
@@ -297,12 +318,14 @@ def _normalize_triangle_orientation(
         p1 = centers[ti[0]] + offsets[ti[0]]
         p2 = centers[ti[1]] + offsets[ti[1]]
         p3 = centers[ti[2]] + offsets[ti[2]]
-        if _orientation(p1, p2, p3) < 0:
+        if _orientation(p1, p2, p3) == Orientation.clockwise:
             triangles[i] = [ti[2], ti[1], ti[0]]
 
 
 @njit(cache=True, inline='always')
-def _orientation(p1: np.ndarray, p2: np.ndarray, p3: np.ndarray) -> float:
+def _orientation(
+    p1: np.ndarray, p2: np.ndarray, p3: np.ndarray
+) -> Orientation:
     """Compute the orientation of three points.
 
     In terms of napari's preferred coordinate frame (axis 0, y, is pointing
@@ -319,11 +342,139 @@ def _orientation(p1: np.ndarray, p2: np.ndarray, p3: np.ndarray) -> float:
     float
         Positive if anti-clockwise, negative if clockwise, 0 if collinear.
     """
-    # fmt: off
-    return (
-        (p2[0] - p1[0]) * (p3[1] - p1[1]) - (p2[1] - p1[1]) * (p3[0] - p1[0])
+    val = (p2[0] - p1[0]) * (p3[1] - p1[1]) - (p2[1] - p1[1]) * (p3[0] - p1[0])
+    if val < 0:
+        return Orientation.clockwise
+    if val > 0:
+        return Orientation.anticlockwise
+    return Orientation.collinear
+
+
+@njit(cache=True, inline='always')
+def _are_polar_angles_monotonic(
+    vertices: CoordinateArray2D, centroid: np.ndarray
+) -> bool:
+    """Check if the polygon, that all angles have the same orientation
+    do not have self-intersection
+
+    Parameters
+    ----------
+    vertices: np.ndarray
+        Array of vertex coordinates with shape (N, 2)
+
+    Returns
+    -------
+    bool
+        True if the polygon is simple, False otherwise
+    """
+    start_angle = atan2(
+        vertices[0][1] - centroid[1], vertices[0][0] - centroid[0]
     )
-    # fmt: on
+    prev_angle = 0.0
+    for i in range(1, len(vertices)):
+        angle = (
+            atan2(vertices[i][1] - centroid[1], vertices[i][0] - centroid[0])
+            - start_angle
+        )
+        if angle < 0:
+            angle += 2 * pi
+        if angle < prev_angle:
+            return False
+        prev_angle = angle
+    return True
+
+
+@njit(cache=True, inline='always')
+def _centroid(vertices: CoordinateArray2D) -> np.ndarray:
+    """Calculate the centroid of a polygon.
+
+    Parameters
+    ----------
+    vertices : np.ndarray
+        Array of vertex coordinates with shape (N, 2)
+
+    Returns
+    -------
+    np.ndarray
+        The centroid of the polygon
+    """
+    vertices_sum = np.zeros(2, dtype=np.float32)
+    for i in range(len(vertices)):
+        vertices_sum[0] += vertices[i][0]
+        vertices_sum[1] += vertices[i][1]
+    return vertices_sum / len(vertices)
+
+
+@njit(cache=True, inline='always')
+def is_convex(vertices: CoordinateArray2D) -> bool:
+    """Check if a polygon is convex.
+
+    Parameters
+    ----------
+    vertices : np.ndarray
+        Array of vertex coordinates with shape (N, 2)
+
+    Returns
+    -------
+    bool
+        True if the polygon is convex, False otherwise
+    """
+    # A polygon is convex if all its internal angles are less than 180 degrees.
+    # This is equivalent to checking that the orientation of all consecutive
+    # triples of points is the same.
+    if len(vertices) < 3:
+        return False
+    if len(vertices) == 3:
+        return True
+    orientation_ = Orientation.collinear
+    idx = 0
+    while idx < vertices.shape[0] - 2:
+        p1 = vertices[idx]
+        p2 = vertices[idx + 1]
+        p3 = vertices[idx + 2]
+        idx += 1
+        triangle_orientation = _orientation(p1, p2, p3)
+        if triangle_orientation != Orientation.collinear:
+            orientation_ = triangle_orientation
+            break
+    if orientation_ == Orientation.collinear:
+        return False
+    while idx < vertices.shape[0] - 2:
+        p1 = vertices[idx]
+        p2 = vertices[idx + 1]
+        p3 = vertices[idx + 2]
+        idx += 1
+        triangle_orientation = _orientation(p1, p2, p3)
+        if (
+            triangle_orientation != Orientation.collinear
+            and triangle_orientation != orientation_
+        ):
+            return False
+
+    triangle_orientation = _orientation(
+        vertices[idx], vertices[idx + 1], vertices[0]
+    )
+    if (
+        triangle_orientation != Orientation.collinear
+        and triangle_orientation != orientation_
+    ):
+        return False
+
+    triangle_orientation = _orientation(
+        vertices[idx + 1], vertices[0], vertices[1]
+    )
+    if (
+        triangle_orientation != Orientation.collinear
+        and triangle_orientation != orientation_
+    ):
+        return False
+
+    centroid = _centroid(vertices)
+
+    if orientation_ == Orientation.anticlockwise:
+        return _are_polar_angles_monotonic(vertices, centroid)
+
+    return _are_polar_angles_monotonic(vertices[::-1], centroid)
 
 
 @njit(cache=True, inline='always')
@@ -633,3 +784,182 @@ def create_box_from_bounding(bounding_box: np.ndarray) -> np.ndarray:
     result[7] = [x_min, (y_min + y_max) / 2]
     result[8] = [(x_min + x_max) / 2, (y_min + y_max) / 2]
     return result
+
+
+@overload
+def reconstruct_polygons_from_edges(
+    vertices: CoordinateArray2D, edges: EdgeArray
+) -> list[CoordinateArray2D]: ...
+
+
+@overload
+def reconstruct_polygons_from_edges(
+    vertices: CoordinateArray3D, edges: EdgeArray
+) -> list[CoordinateArray3D]: ...
+
+
+@njit(cache=True)
+def reconstruct_polygons_from_edges(
+    vertices: CoordinateArray, edges: EdgeArray
+) -> list[CoordinateArray2D] | list[CoordinateArray3D]:
+    """
+    Reconstruct polygons from vertices and edges.
+
+    Parameters
+    ----------
+    vertices : np.ndarray
+        Array of vertex coordinates with shape (N, 2) or (N, 3)
+    edges : np.ndarray
+        Array of edge indices with shape (M, 2)
+
+    Returns
+    -------
+    list of np.ndarray
+        List of polygons, where each polygon is an array of vertex coordinates
+    """
+    n_edges = edges.shape[0]
+    used = np.zeros(n_edges, dtype=np.bool_)
+    n_vertices = vertices.shape[0]
+
+    # Create a list (indexed by vertex) containing lists of incident edge indices.
+    incident = List()
+    for _ in range(n_vertices):
+        incident.append(List.empty_list(types.int64))
+
+    for i in range(n_edges):
+        start = edges[i, 0]
+        end = edges[i, 1]
+        incident[start].append(i)
+        incident[end].append(i)
+
+    # List to hold all reconstructed polygons.
+    polygons = List()
+
+    for i in range(n_edges):
+        if not used[i]:
+            poly = List.empty_list(types.int64)
+            # Start a new polygon with the current edge.
+            start_v = edges[i, 0]
+            current_v = edges[i, 1]
+            poly.append(start_v)
+            poly.append(current_v)
+            used[i] = True
+            closed = False
+
+            # Walk along the polygon edges until we loop back to start_v.
+            while not closed:
+                found = False
+                # Loop through edges incident to current_v.
+                for edge_idx in incident[current_v]:
+                    if not used[edge_idx]:
+                        a = edges[edge_idx, 0]
+                        b = edges[edge_idx, 1]
+                        # Choose the vertex that is not the current one.
+                        next_v = a if b == current_v else b
+                        used[edge_idx] = True
+                        if next_v == start_v:
+                            closed = True
+                        else:
+                            poly.append(next_v)
+                        current_v = next_v
+                        found = True
+                        if current_v == start_v:
+                            closed = True
+                        break  # move on as soon as we find the next edge
+                if not found:
+                    # In case of an open chain, exit.
+                    break
+            polygons.append([vertices[x] for x in poly])
+    return polygons
+
+
+@njit(cache=True)
+def normalize_vertices_and_edges(
+    vertices: CoordinateArray2D, close: bool = False
+) -> tuple[
+    CoordinateArray2D,
+    np.ndarray[tuple[int, Literal[2]], np.dtype[np.int64]],
+]:
+    """Get a list of edges that must be in triangulation for a path or polygon.
+
+    This function ensures that:
+
+    - no nodes are repeated, as this can cause problems with triangulation
+      algorithms.
+    - edges that appear twice are discarded. This allows representation of
+      polygons with holes in them.
+
+    Parameters
+    ----------
+    vertices: np.ndarray[np.floating], shape (N, 2)
+        The 2D coordinates of the polygon's vertices. They are expected to be
+        in the order in which they appear in the polygon: that is, vertices
+        that follow each other are expected to be connected to each other. The
+        exception is if the same edge is visited twice (in any direction): such
+        edges are removed.
+
+        Holes are expected to be represented by a polygon embedded within the
+        larger polygon but winding in the opposite direction.
+
+    close: bool
+        Whether to close the polygon or treat it as a path. Note: this argument
+        has no effect if the last vertex is equal to the first one — then the
+        closing is explicit.
+
+    Returns
+    -------
+    new_vertices: np.ndarray[np.floating], shape (M, 2)
+        Vertices with duplicate nodes removed.
+    edges: np.ndarray[np.intp], shape (P, 2)
+        List of edges in the polygon, expressed as an array of pairs of vertex
+        indices. This is usually [(0, 1), (1, 2), ... (N-1, 0)], but edges
+        that are visited twice are removed.
+    """
+    if (
+        vertices[0, 0] == vertices[-1, 0] and vertices[0, 1] == vertices[-1, 1]
+    ):  # closed polygon
+        vertices = vertices[:-1]  # make closing implicit
+        close = True
+    # Now, we make sure the vertices are unique (repeated vertices cause
+    # problems in spatial algorithms, and those problems can manifest as
+    # segfaults if said algorithms are implemented in C-like languages.)
+    vertex_to_idx: dict[tuple[float, float], int] = {}
+    new_vertices = []
+    edges: set[tuple[int, int]] = set()
+    prev_idx = 0
+    i = 0
+    for vertex in vertices:
+        vertex_t = (vertex[0], vertex[1])
+        if vertex_t in vertex_to_idx:
+            current_idx = vertex_to_idx[vertex_t]
+        else:
+            current_idx = i
+            vertex_to_idx[vertex_t] = i
+            new_vertices.append(vertex)
+            i += 1
+
+        if prev_idx < current_idx:
+            edge = (prev_idx, current_idx)
+        else:
+            edge = (current_idx, prev_idx)
+        if edge in edges:
+            edges.remove(edge)
+        else:
+            edges.add(edge)
+        prev_idx = current_idx
+
+    if close:
+        vertex_t = (vertices[-1, 0], vertices[-1, 1])
+        idx = vertex_to_idx[vertex_t]
+        edge = (0, idx)
+        if edge in edges:
+            edges.remove(edge)
+        else:
+            edges.add(edge)
+
+    edges.remove((0, 0))
+    new_vertices_array = np.empty((len(new_vertices), 2), dtype=np.float32)
+    for i, vertex in enumerate(new_vertices):
+        new_vertices_array[i] = vertex
+    edges_array = np.array(list(edges), dtype=np.int64)
+    return new_vertices_array, edges_array

@@ -1,3 +1,5 @@
+import itertools
+
 import numpy as np
 import pytest
 
@@ -482,3 +484,84 @@ def polygons():
             dtype=np.float32,
         ),
     ]
+
+
+def generate_self_intersecting_polygon(n, reverse, radius=1):
+    assert n % 2 == 1
+    angles = np.linspace(0, 4 * np.pi, n, endpoint=False)
+    if reverse:
+        angles = angles[::-1]
+    return np.column_stack((radius * np.cos(angles), radius * np.sin(angles)))
+
+
+def generate_regular_polygon(n, reverse, radius=1):
+    angles = np.linspace(0, 2 * np.pi, n, endpoint=False)
+    if reverse:
+        angles = angles[::-1]
+    return np.column_stack((radius * np.cos(angles), radius * np.sin(angles)))
+
+
+def rotation_matrix(angle):
+    return np.array(
+        [
+            [np.cos(np.radians(angle)), -np.sin(np.radians(angle))],
+            [np.sin(np.radians(angle)), np.cos(np.radians(angle))],
+        ]
+    )
+
+
+ANGLES = [0, 5, 75, 95, 355]
+
+
+@pytest.fixture(
+    params=itertools.product(ANGLES, [3, 4, 7, 12, 15, 20], [False, True])
+)
+def regular_polygon(request):
+    angle, n_vertex, reverse = request.param
+    rot = rotation_matrix(angle)
+    poly = generate_regular_polygon(n_vertex, reverse)
+    return np.dot(poly, rot)
+
+
+@pytest.fixture(
+    params=itertools.product(ANGLES, [5, 7, 15, 21], [False, True])
+)
+def self_intersecting_polygon(request):
+    angle, n_vertex, reverse = request.param
+    rot = rotation_matrix(angle)
+    poly = generate_self_intersecting_polygon(n_vertex, reverse)
+    return np.dot(poly, rot)
+
+
+@pytest.fixture(params=[0, 1, 2, 3, 4])
+def non_convex_poly(request):
+    poly = np.array([[0, 0], [2, 0], [1, 1], [2, 2], [0, 2]])
+    return np.roll(poly, request.param, axis=0)
+
+
+@pytest.fixture
+def line():
+    return np.array([[0, 0], [5, 5], [7, 7], [10, 10]])
+
+
+@pytest.fixture
+def line_two_point():
+    return np.array([[0, 0], [10, 10]])
+
+
+@pytest.fixture
+def poly_hole():
+    return np.array(
+        [
+            [0, 0],
+            [10, 0],
+            [10, 10],
+            [0, 10],
+            [0, 0],
+            [2, 5],
+            [5, 8],
+            [8, 5],
+            [5, 2],
+            [2, 5],
+        ]
+    )
