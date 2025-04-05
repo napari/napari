@@ -704,7 +704,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         selection = self.layers.selection
         active = selection.active
 
-        # the tooltip is computed in all cases, so we compute it first
+        # Compute the tooltip first since it is always needed.
         if self.tooltip.visible and active is not None and active._loaded:
             tooltip_text = active._get_tooltip_text(
                 np.asarray(self.cursor.position),
@@ -713,8 +713,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 world=True,
             )
 
-        # if we have an active layer and a single selection, we use that to get
-        # status "the classic way" then return
+        # If there is an active layer and a single selection, calculate status using "the classic way".
+        # Then return the status and the tooltip.
         if active is not None and active._loaded and len(selection) < 2:
             status = active.get_status(
                 self.cursor.position,
@@ -724,8 +724,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             )
             return status, tooltip_text
 
-        # otherwise, we return the layer status of multiple selected layers
-        # or gridded layers
+        # Otherwise, return the layer status of multiple selected layers
+        # or gridded layers as well as the tooltip.
         for layer in self.layers[::-1]:
             if (
                 not layer.visible
