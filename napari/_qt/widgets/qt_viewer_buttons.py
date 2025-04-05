@@ -7,13 +7,11 @@ from qtpy.QtCore import QEvent, Qt
 from qtpy.QtWidgets import (
     QApplication,
     QDoubleSpinBox,
-    QFormLayout,
     QFrame,
     QGridLayout,
     QHBoxLayout,
     QLabel,
     QPushButton,
-    QVBoxLayout,
     QWidget,
 )
 from superqt import QEnumComboBox, QLabeledDoubleSlider
