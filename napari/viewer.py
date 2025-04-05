@@ -80,6 +80,9 @@ class Viewer(ViewerModel):
         When set to None, the canvas will use the theme's default background color.
         Otherwise, the canvas will use the specified color.
 
+        .. versionadded:: 0.6.0
+           The `canvas_color` property.
+
         Parameters
         ----------
         color : str or tuple or None
@@ -93,8 +96,7 @@ class Viewer(ViewerModel):
         Returns
         -------
         str or None
-            The current canvas background color as a hex string,
-            or None if using the theme's default.
+            The current canvas background color as a hex string.
         """
         return self.window._qt_viewer.canvas.background_color_override
 
