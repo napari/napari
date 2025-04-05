@@ -58,7 +58,7 @@ viewer.scale_bar.box = True
 
 # Take screenshots and export figures in 'light' theme, to show the canvas
 # margins and the extent of the exported figure.
-viewer.theme = 'light'
+viewer.canvas_color = 'white'
 screenshot = viewer.screenshot()
 figure = viewer.export_figure()
 # optionally, save the exported figure: viewer.export_figure(path='export_figure.png')
@@ -85,7 +85,7 @@ figure_no_outside_shape = viewer.export_figure()
 # The final one shows how the exported figure adapts to change in the layer extent.
 # In the second row are the screenshots, showing the fact that the entire canvas
 # is captured and that zoom is preserved.
-viewer.theme = 'dark'
+viewer.canvas_color = 'black'
 viewer.layers.select_all()
 viewer.layers.remove_selected()
 

@@ -99,11 +99,11 @@ viewer.scale_bar.length = 250
 
 # Export figure and change theme before and after exporting to show that the background canvas margins
 # are not in the exported figure.
-viewer.theme = "light"
+viewer.canvas_color = 'white'
 # Optionally for saving the exported figure: viewer.export_figure(path="export_figure.png")
 export_figure = viewer.export_figure()
 scaled_export_figure = viewer.export_figure(scale_factor=5)
-viewer.theme = "dark"
+viewer.canvas_color = 'black'
 
 viewer.add_image(export_figure, rgb=True, name='exported_figure')
 viewer.add_image(scaled_export_figure, rgb=True, name='scaled_exported_figure')
