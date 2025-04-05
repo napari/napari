@@ -13,8 +13,22 @@ from napari.layers.shapes._shapes_models import (
     Rectangle,
 )
 from napari.layers.shapes._shapes_utils import triangulate_face
+from napari.settings import get_settings
+from napari.settings._experimental import (
+    TriangulationBackend,
+)
 
 BETTER_TRIANGULATION = 'triangle' in sys.modules or 'bermuda' in sys.modules
+
+
+@pytest.fixture(autouse=True, params=list(TriangulationBackend))
+def switch_triangulation_backend(request):
+    """Fixture to switch between triangulation backends."""
+    settings = get_settings()
+    prev = settings.experimental.triangulation_backend
+    settings.experimental.triangulation_backend = request.param
+    yield
+    settings.experimental.triangulation_backend = prev
 
 
 def test_rectangle1():
