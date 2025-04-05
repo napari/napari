@@ -69,6 +69,7 @@ def _add_layer_data_to_viewer(
     viewer: viewer.Viewer | None = None,
     layer_name: str | None = None,
     source: dict | None = None,
+    meta: dict | None = None,
 ) -> None:
     """Show a result in the viewer.
 
@@ -79,13 +80,16 @@ def _add_layer_data_to_viewer(
         *just* the data part of the corresponding layer type.
     return_type : Any
         The return annotation that was used in the decorated function.
-    viewer : Optional[Viewer]
+    viewer : Viewer or None
         An optional viewer to use. Otherwise use current viewer.
-    layer_name : Optional[str]
+    layer_name : str or None
         An optional layer name to use. If a layer with this name exists, it will
         be updated.
-    source : Optional[dict]
+    source : dict or None
         An optional layer source to use.
+    meta: dict or None
+        An optional dict pased as keyword arguments to the layer constructor.
+        Currently used to pass information like a scale, units, etc.
 
     Examples
     --------
@@ -95,6 +99,8 @@ def _add_layer_data_to_viewer(
     ...     return np.random.rand(256, 256)
 
     """
+    if meta is None:
+        meta = {}
     if data is not None and (viewer := viewer or _provide_viewer()):
         if layer_name:
             with suppress(KeyError):
@@ -111,8 +117,11 @@ def _add_layer_data_to_viewer(
                 )
             return_type = return_type.__args__[0]
         layer_type = return_type.__name__.replace('Data', '').lower()
+
         with layer_source(**source) if source else nullcontext():
-            getattr(viewer, f'add_{layer_type}')(data=data, name=layer_name)
+            getattr(viewer, f'add_{layer_type}')(
+                data=data, name=layer_name, **meta
+            )
 
 
 def _add_layer_to_viewer(
