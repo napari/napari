@@ -1,4 +1,3 @@
-import os
 from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
@@ -248,7 +247,6 @@ def make_napari_viewer(
     request.node._viewer_weak_set = viewers
 
     # may be overridden by using the parameter `strict_qt`
-    is_internal_test = request.module.__name__.startswith('napari.')
 
     # disable thread for status checker
     monkeypatch.setattr(
@@ -274,11 +272,6 @@ def make_napari_viewer(
         block_plugin_discovery=True,
         **model_kwargs,
     ):
-        if strict_qt is None:
-            strict_qt = is_internal_test or os.getenv('NAPARI_STRICT_QT')
-        nonlocal _strict
-        _strict = strict_qt
-
         if not block_plugin_discovery:
             napari_plugin_manager.discovery_blocker.stop()
 
