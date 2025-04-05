@@ -302,6 +302,8 @@ def make_napari_viewer(
 
     # close viewers, but don't saving window settings while closing
     for viewer in viewers:
+        if viewer.window._qt_window.isVisible():
+            viewer.window._qt_window.hide()
         viewer._instances.remove(viewer)
         viewer.window._qt_window._instances.remove(viewer.window._qt_window)
 
