@@ -171,7 +171,7 @@ def file_extensions_string_for_layers(
     When npe2 can be imported, returns an extension string and the list
     of corresponding writers. Otherwise returns (None,[]).
 
-    The extension string is a ";;" delimeted string of entries. Each entry
+    The extension string is a ";;" delimited string of entries. Each entry
     has a brief description of the file type and a list of extensions. For
     example:
 

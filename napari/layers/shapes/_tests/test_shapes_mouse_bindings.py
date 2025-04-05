@@ -657,7 +657,7 @@ def test_rotate_shape(create_known_shapes_layer):
     layer.selected_data = {1}
     # get the position of the rotation handle
     position = tuple(layer._selected_box[9])
-    # get the vertexes
+    # get the vertices
     original_data = layer.data[1].copy()
 
     # Simulate click
