@@ -1,8 +1,19 @@
+from enum import auto
 from typing import Any
 
 from napari._pydantic_compat import Field
 from napari.settings._base import EventedSettings
+from napari.utils.compat import StrEnum
 from napari.utils.translations import trans
+
+
+class TriangulationBackend(StrEnum):
+    """Enum-like class to specify which triangulation backend to use."""
+
+    bermuda = auto()
+    partsegcore = auto()
+    triangle = auto()
+    none = auto()
 
 
 # this class inherits from EventedSettings instead of EventedModel because
@@ -69,6 +80,17 @@ class ExperimentalSettings(EventedSettings):
             'Max radius in pixels from first vertex for double-click to complete a polygon; set -1 to always complete.'
         ),
     )
+    triangulation_backend: TriangulationBackend = Field(
+        TriangulationBackend.none,
+        title=trans._('Triangulation backend to use for Shapes layer'),
+        description=trans._(
+            'Triangulation backend to use for Shapes layer.\n'
+            "The 'bermuda' requires the optional 'bermuda' package.\n"
+            "The 'partsegcore' requires the optional 'partsegcore-compiled-backend' package.\n"
+            "The 'triangle' requires the optional 'triangle' package.\n"
+            "The 'none' backend uses the default Python triangulation.\n"
+        ),
+    )
 
     compiled_triangulation: bool = Field(
         False,
@@ -79,10 +101,9 @@ class ExperimentalSettings(EventedSettings):
         description=trans._(
             'When enabled, triangulation (breaking down polygons into '
             "triangles that can be displayed by napari's graphics engine) is "
-            'sped up by using C++ code from the optional library '
-            'PartSegCore-compiled-backend. C++ code can cause bad crashes '
-            'called segmentation faults or access violations. If you '
-            'encounter such a crash while using this option please report '
+            'sped up by using rust code from the optional library '
+            'bermuda. Compiled code may end with crashes that will be not properly caught. '
+            'If you encounter such a crash while using this option please report '
             'it at https://github.com/napari/napari/issues.'
         ),
     )
