@@ -1945,7 +1945,6 @@ class Window:
             self._teardown()
             self._qt_viewer.close()
             self._qt_window.close()
-            del self._qt_window
 
     def _open_preferences_dialog(self) -> PreferencesDialog:
         """Edit preferences from the menubar."""
