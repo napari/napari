@@ -972,21 +972,12 @@ def _find_dangling_widgets(request, qtbot):
 
     from qtpy.QtWidgets import QApplication
 
-    from napari._qt.qt_main_window import _QtMainWindow
-
     top_level_widgets = QApplication.topLevelWidgets()
-
-    viewer_weak_set = getattr(request.node, '_viewer_weak_set', set())
 
     problematic_widgets = []
 
     for widget in top_level_widgets:
         if widget.parent() is not None:
-            continue
-        if (
-            isinstance(widget, _QtMainWindow)
-            and widget._qt_viewer.viewer in viewer_weak_set
-        ):
             continue
 
         if widget.__class__.__module__.startswith('qtconsole'):

@@ -1,9 +1,9 @@
+import warnings
 from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 from unittest.mock import patch
-from weakref import WeakSet
 
 import pytest
 
@@ -259,9 +259,6 @@ def make_napari_viewer(
     _initialize_plugins.cache_clear()
     init_qactions.cache_clear()
 
-    viewers: WeakSet[Viewer] = WeakSet()
-    request.node._viewer_weak_set = viewers
-
     # may be overridden by using the parameter `strict_qt`
 
     # disable thread for status checker
@@ -288,6 +285,12 @@ def make_napari_viewer(
         block_plugin_discovery=True,
         **model_kwargs,
     ):
+        if strict_qt is not None:
+            warnings.warn(
+                'strict_qt is deprecated, we use qtbot to manage qt cleanup',
+                DeprecationWarning,
+                stacklevel=2,
+            )
         if not block_plugin_discovery:
             napari_plugin_manager.discovery_blocker.stop()
 
@@ -297,7 +300,6 @@ def make_napari_viewer(
         qtbot.add_widget(
             viewer.window._qt_window, before_close_func=clean_viewer_references
         )
-        viewers.add(viewer)
 
         return viewer
 
