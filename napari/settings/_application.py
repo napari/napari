@@ -3,6 +3,12 @@ from __future__ import annotations
 from psutil import virtual_memory
 
 from napari._pydantic_compat import Field, validator
+from napari.components.camera import (
+    DEFAULT_ORIENTATION_TYPED,
+    DepthAxisOrientation,
+    HorizontalAxisOrientation,
+    VerticalAxisOrientation,
+)
 from napari.settings._constants import (
     BrushSizeOnMouseModifiers,
     LabelDTypes,
@@ -153,6 +159,26 @@ class ApplicationSettings(EventedModel):
         LoopMode.LOOP,
         title=trans._('Playback loop mode'),
         description=trans._('Loop mode for playback.'),
+    )
+
+    depth_axis_orientation: DepthAxisOrientation = Field(
+        default=DEFAULT_ORIENTATION_TYPED[0],
+        title=trans._('Depth Axis Orientation'),
+        description=trans._('Orientation of the depth axis in 3D view.'),
+    )
+    vertical_axis_orientation: VerticalAxisOrientation = Field(
+        default=DEFAULT_ORIENTATION_TYPED[1],
+        title=trans._('Vertical Axis Orientation'),
+        description=trans._(
+            'Orientation of the vertical axis in 2D and 3D view.'
+        ),
+    )
+    horizontal_axis_orientation: HorizontalAxisOrientation = Field(
+        default=DEFAULT_ORIENTATION_TYPED[2],
+        title=trans._('Horizontal Axis Orientation'),
+        description=trans._(
+            'Orientation of the horizontal axis in 2D and 3D view.'
+        ),
     )
 
     grid_stride: GridStride = Field(  # type: ignore [valid-type]
