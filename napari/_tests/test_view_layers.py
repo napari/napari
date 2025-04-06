@@ -3,7 +3,6 @@ Ensure that layers and their convenience methods on the viewer
 have the same signatures and docstrings.
 """
 
-import gc
 import inspect
 import re
 from unittest.mock import MagicMock, call
@@ -131,22 +130,24 @@ def test_signature(layer):
 
 # plugin_manager fixture is added to prevent errors due to installed plugins
 @pytest.mark.parametrize(('layer_type', 'data', 'ndim'), layer_test_data)
-def test_view(qtbot, napari_plugin_manager, layer_type, data, ndim):
+def test_view(qtbot, layer_type, data, ndim):
     np.random.seed(0)
     viewer = getattr(napari, f'view_{layer_type.__name__.lower()}')(
         data, show=False
     )
+    qtbot.add_widget(viewer.window._qt_window)
     view = viewer.window._qt_viewer
+
     check_viewer_functioning(viewer, view, data, ndim)
-    viewer.close()
 
 
 # plugin_manager fixture is added to prevent errors due to installed plugins
-def test_view_multichannel(qtbot, napari_plugin_manager):
+def test_view_multichannel(qtbot):
     """Test adding image."""
     np.random.seed(0)
     data = np.random.random((15, 10, 5))
     viewer = napari.view_image(data, channel_axis=-1, show=False)
+    qtbot.add_widget(viewer.window._qt_window)
     assert len(viewer.layers) == data.shape[-1]
     for i in range(data.shape[-1]):
         np.testing.assert_array_equal(
@@ -174,33 +175,29 @@ def test_kwargs_passed(monkeypatch):
 
 
 # plugin_manager fixture is added to prevent errors due to installed plugins
-def test_imshow(qtbot, napari_plugin_manager):
+def test_imshow(qtbot):
     shape = (10, 15)
     ndim = len(shape)
     np.random.seed(0)
     data = np.random.random(shape)
     viewer, layer = napari.imshow(data, channel_axis=None, show=False)
+    qtbot.add_widget(viewer.window._qt_window)
     view = viewer.window._qt_viewer
     check_viewer_functioning(viewer, view, data, ndim)
     assert isinstance(layer, napari.layers.Image)
-    viewer.close()
 
 
 # plugin_manager fixture is added to prevent errors due to installed plugins
-def test_imshow_multichannel(qtbot, napari_plugin_manager):
+def test_imshow_multichannel(qtbot):
     """Test adding image."""
     np.random.seed(0)
     data = np.random.random((15, 10, 5))
     viewer, layers = napari.imshow(data, channel_axis=-1, show=False)
+    qtbot.add_widget(viewer.window._qt_window)
     assert len(layers) == data.shape[-1]
     assert isinstance(layers, tuple)
     for i in range(data.shape[-1]):
         np.testing.assert_array_equal(layers[i].data, data.take(i, axis=-1))
-    viewer.close()
-    # Run a full garbage collection here so that any remaining viewer
-    # and related instances are removed for future tests that may use
-    # make_napari_viewer.
-    gc.collect()
 
 
 # plugin_manager fixture is added to prevent errors due to installed plugins
@@ -215,4 +212,3 @@ def test_imshow_with_viewer(qtbot, napari_plugin_manager, make_napari_viewer):
     np.testing.assert_array_equal(data, layer.data)
     view = viewer.window._qt_viewer
     check_viewer_functioning(viewer, view, data, ndim)
-    viewer.close()

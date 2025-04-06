@@ -18,7 +18,7 @@ def test_make_napari_viewer(pytester_pretty):
     pytester_pretty.makepyfile(
         """
         def test_make_viewer(make_napari_viewer):
-            viewer = make_napari_viewer()
+            viewer = make_napari_viewer(title='fixture test')
             assert viewer.layers == []
             assert viewer.__class__.__name__ == 'Viewer'
             assert not viewer.window._qt_window.isVisible()
