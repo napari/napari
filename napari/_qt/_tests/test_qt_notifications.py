@@ -274,7 +274,7 @@ def test_notifications_error_with_threading(make_napari_viewer, monkeypatch):
         NapariQtNotification, 'show_notification', lambda x: None
     )
     with notification_manager:
-        viewer = make_napari_viewer(strict_qt=False)
+        viewer = make_napari_viewer()
         viewer.add_image(random_image)
         result = da.divide(random_image, da.zeros((10, 10)))
         viewer.add_image(result)
