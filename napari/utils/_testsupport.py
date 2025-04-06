@@ -183,8 +183,9 @@ def clean_viewer_references(main_window: '_QtMainWindow') -> None:
     settings.application.save_window_state = False
 
     viewer = main_window._qt_viewer.viewer
-    viewer._instances.remove(viewer)
-    viewer.window._qt_window._instances.remove(viewer.window._qt_window)
+    with suppress(KeyError):
+        viewer._instances.remove(viewer)
+        viewer.window._qt_window._instances.remove(viewer.window._qt_window)
 
 
 @pytest.fixture
