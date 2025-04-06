@@ -10,6 +10,8 @@ import pytest
 if TYPE_CHECKING:
     from pytest import FixtureRequest  # noqa: PT013
 
+    from napari._qt.qt_main_window import _QtMainWindow
+
 _SAVE_GRAPH_OPNAME = '--save-leaked-object-graph'
 
 
@@ -171,6 +173,20 @@ def mock_app_model():
             Application.destroy('test_app')
 
 
+def clean_viewer_references(main_window: '_QtMainWindow') -> None:
+    """Clean up references to the viewer in the viewer._instances set."""
+    from napari.settings import get_settings
+
+    settings = get_settings()
+    settings.reset()
+    settings.application.save_window_geometry = False
+    settings.application.save_window_state = False
+
+    viewer = main_window._qt_viewer.viewer
+    viewer._instances.remove(viewer)
+    viewer.window._qt_window._instances.remove(viewer.window._qt_window)
+
+
 @pytest.fixture
 def make_napari_viewer(
     qtbot,
@@ -278,7 +294,9 @@ def make_napari_viewer(
         should_show = request.config.getoption('--show-napari-viewer')
         model_kwargs['show'] = model_kwargs.pop('show', should_show)
         viewer = ViewerClass(*model_args, **model_kwargs)
-        qtbot.addWidget(viewer.window._qt_window)
+        qtbot.add_widget(
+            viewer.window._qt_window, before_close_func=clean_viewer_references
+        )
         viewers.add(viewer)
 
         return viewer
@@ -290,15 +308,6 @@ def make_napari_viewer(
     with suppress(AttributeError):
         settings = get_settings()
         settings.reset()
-        settings.application.save_window_geometry = False
-        settings.application.save_window_state = False
-
-    # close viewers, but don't saving window settings while closing
-    for viewer in viewers:
-        if viewer.window._qt_window.isVisible():
-            viewer.window._qt_window.hide()
-        viewer._instances.remove(viewer)
-        viewer.window._qt_window._instances.remove(viewer.window._qt_window)
 
 
 @pytest.fixture
