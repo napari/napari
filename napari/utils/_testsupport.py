@@ -284,6 +284,7 @@ def make_napari_viewer(
         ViewerClass=Viewer,
         strict_qt=None,
         block_plugin_discovery=True,
+        use_qtbot=True,
         **model_kwargs,
     ):
         if strict_qt is not None:
@@ -298,9 +299,12 @@ def make_napari_viewer(
         should_show = request.config.getoption('--show-napari-viewer')
         model_kwargs['show'] = model_kwargs.pop('show', should_show)
         viewer = ViewerClass(*model_args, **model_kwargs)
-        qtbot.add_widget(
-            viewer.window._qt_window, before_close_func=clean_viewer_references
-        )
+
+        if use_qtbot:
+            qtbot.add_widget(
+                viewer.window._qt_window,
+                before_close_func=clean_viewer_references,
+            )
 
         return viewer
 
