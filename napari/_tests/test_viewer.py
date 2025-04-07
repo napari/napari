@@ -100,7 +100,7 @@ def test_viewer(make_napari_viewer):
 
 @pytest.mark.parametrize(('layer_class', 'data', 'ndim'), layer_test_data)
 def test_add_layer(make_napari_viewer, layer_class, data, ndim):
-    viewer = make_napari_viewer()
+    viewer = make_napari_viewer(show=True)
     layer = add_layer_by_type(viewer, layer_class, data, visible=True)
     check_viewer_functioning(viewer, viewer.window._qt_viewer, data, ndim)
 
@@ -150,7 +150,7 @@ def test_add_layer_magic_name(
 @skip_on_win_ci
 def test_screenshot(make_napari_viewer, qtbot):
     """Test taking a screenshot."""
-    viewer = make_napari_viewer()
+    viewer = make_napari_viewer(show=True)
 
     np.random.seed(0)
     # Add image

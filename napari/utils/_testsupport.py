@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
+from PyQt6.QtWidgets import QApplication
 
 if TYPE_CHECKING:
     from pytest import FixtureRequest  # noqa: PT013
@@ -316,6 +317,8 @@ def make_napari_viewer(
     with suppress(AttributeError):
         settings = get_settings()
         settings.reset()
+
+    QApplication.processEvents()
 
 
 @pytest.fixture

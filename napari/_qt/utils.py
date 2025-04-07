@@ -287,7 +287,9 @@ def add_flash_animation(
     effect = QGraphicsColorizeEffect(widget)
     widget.setGraphicsEffect(effect)
 
-    widget._flash_animation = QPropertyAnimation(effect, b'color')
+    widget._flash_animation = QPropertyAnimation(
+        effect, b'color', parent=widget
+    )
     widget._flash_animation.setStartValue(QColor(0, 0, 0, 0))
     widget._flash_animation.setEndValue(QColor(0, 0, 0, 0))
     widget._flash_animation.setLoopCount(1)

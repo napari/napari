@@ -517,9 +517,9 @@ def _disable_notification_dismiss_timer(monkeypatch):
     This fixture disables starting timer for closing notification
     by setting the value of `NapariQtNotification.DISMISS_AFTER` to 0.
 
-    As Qt timer is realised by thread and keep reference to the object,
-    without increase of reference counter object could be garbage collected and
-    cause segmentation fault error when Qt (C++) code try to access it without
+    As Qt timer is realized by thread and keeps reference to the object,
+    without increasing an object reference counter, so an object could be garbage collected and
+    cause segmentation fault error when Qt (C++) code tries to access it without
     checking if Python object exists.
 
     This fixture is used in all tests because it is possible to call Qt code
@@ -533,6 +533,8 @@ def _disable_notification_dismiss_timer(monkeypatch):
         monkeypatch.setattr(NapariQtNotification, 'DISMISS_AFTER', 0)
         monkeypatch.setattr(NapariQtNotification, 'FADE_IN_RATE', 0)
         monkeypatch.setattr(NapariQtNotification, 'FADE_OUT_RATE', 0)
+
+        monkeypatch.setattr(NapariQtNotification, 'slide_in', lambda x: None)
 
 
 @pytest.fixture
@@ -866,6 +868,7 @@ def _dangling_qanimations(monkeypatch, request):
     dangling_animations = []
 
     for animation, calling in animation_dkt.items():
+        # with contextlib.suppress(RuntimeError):
         if animation.state() == QPropertyAnimation.Running:
             dangling_animations.append((animation, calling))
 
