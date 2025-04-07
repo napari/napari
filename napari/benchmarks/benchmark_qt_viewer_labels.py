@@ -40,10 +40,10 @@ class QtViewerSingleLabelsSuite:
             pos=(500, 500),
             view_direction=None,
         )
-        try:
-            self.camera = self.viewer.window._qt_viewer.canvas.view.camera
-        except AttributeError:  # prior to 0.5.0
+        if NAPARI_0_4_19:
             self.camera = self.viewer.window._qt_viewer.view.camera
+        else:
+            self.camera = self.viewer.window._qt_viewer.canvas.view.camera
 
     def teardown(self):
         self.viewer.window.close()
