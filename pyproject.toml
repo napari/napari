@@ -134,6 +134,9 @@ bermuda = [
 partsegcore = [
     "PartSegCore-compiled-backend>=0.15.11",
 ]
+all_optional = [
+    "napari[optional,partsegcore]"
+]
 testing = [
     "napari[gallery]",
     "babel>=2.9.0",
