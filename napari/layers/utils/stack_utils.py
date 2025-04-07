@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import itertools
-import warnings
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -12,8 +11,6 @@ from napari.layers.image._image_utils import guess_multiscale, guess_rgb
 from napari.utils.colormaps import CYMRGB, MAGENTA_GREEN, Colormap
 from napari.utils.misc import ensure_iterable, ensure_sequence_of_iterables
 from napari.utils.translations import trans
-from .layer_utils import calc_data_range
-from .misc import StringEnum
 
 if TYPE_CHECKING:
     from napari.types import FullLayerData
