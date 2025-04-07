@@ -1,19 +1,25 @@
 from __future__ import annotations
 
 import itertools
+import warnings
 from typing import TYPE_CHECKING
 
 import numpy as np
 import pint
 
 from napari.layers import Image
-from napari.layers.image._image_utils import guess_multiscale
+from napari.layers.image._image_utils import guess_multiscale, guess_rgb
 from napari.utils.colormaps import CYMRGB, MAGENTA_GREEN, Colormap
 from napari.utils.misc import ensure_iterable, ensure_sequence_of_iterables
 from napari.utils.translations import trans
+from .layer_utils import calc_data_range
+from .misc import StringEnum
 
 if TYPE_CHECKING:
     from napari.types import FullLayerData
+
+# Default colormaps for multichannel images
+RGB = ('red', 'green', 'blue')
 
 
 def slice_from_axis(array, *, axis, element):
@@ -103,11 +109,23 @@ def split_channels(
     # so that we can use {k: next(v) for k, v in kwargs.items()} below
     for key, val in kwargs.items():
         if key == 'colormap' and val is None:
-            if n_channels == 1:
+            # Check if data is likely RGB
+            likely_rgb = False
+            if n_channels == 3:
+                # Remove channel axis from shape before guessing
+                _data = data[0] if multiscale else data
+                shape_no_channel = list(_data.shape)
+                del shape_no_channel[channel_axis]
+                if guess_rgb(tuple(shape_no_channel)):
+                    likely_rgb = True
+
+            if likely_rgb:
+                kwargs[key] = iter(RGB)  # Use RGB as default for likely RGB
+            elif n_channels == 1:
                 kwargs[key] = iter(['gray'])
             elif n_channels == 2:
                 kwargs[key] = iter(MAGENTA_GREEN)
-            else:
+            else:  # n_channels >= 3 but not likely RGB
                 kwargs[key] = itertools.cycle(CYMRGB)
 
         # make sure that iterable_kwargs are a *sequence* of iterables
