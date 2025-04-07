@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
-from PyQt6.QtWidgets import QApplication
+from qtpy.QtWidgets import QApplication
 
 if TYPE_CHECKING:
     from pytest import FixtureRequest  # noqa: PT013
