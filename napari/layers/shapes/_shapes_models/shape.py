@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from abc import ABC, abstractmethod
 from functools import cached_property
 
@@ -151,6 +152,12 @@ class Shape(ABC):
             and partsegcore_triangulate is not None
         ):
             cls._set_meshes = cls._set_meshes_compiled_partseg
+        elif (
+            get_settings().experimental.triangulation_backend
+            == TriangulationBackend.triangle
+            and 'triangle' in sys.modules
+        ):
+            cls._set_meshes = cls._set_meshes_triangle
         else:
             cls._set_meshes = cls._set_meshes_py
         return super().__new__(cls)
@@ -238,6 +245,15 @@ class Shape(ABC):
     def z_index(self, z_index):
         self._z_index = z_index
 
+    def _set_empty_edge(self) -> None:
+        self._edge_vertices = np.empty((0, self.ndisplay))
+        self._edge_offsets = np.empty((0, self.ndisplay))
+        self._edge_triangles = np.empty((0, 3), dtype=np.uint32)
+
+    def _set_empty_face(self) -> None:
+        self._face_vertices = np.empty((0, self.ndisplay))
+        self._face_triangles = np.empty((0, 3), dtype=np.uint32)
+
     def _set_meshes_compiled_3d(
         self,
         data: npt.NDArray,
@@ -252,8 +268,7 @@ class Shape(ABC):
             self._face_vertices = face_vertices
             self._face_triangles = face_triangles
         else:
-            self._face_vertices = np.empty((0, self.ndisplay))
-            self._face_triangles = np.empty((0, 3), dtype=np.uint32)
+            self._set_empty_face()
 
         if edge:
             centers, offsets, edge_triangles = triangulate_edge(
@@ -263,9 +278,15 @@ class Shape(ABC):
             self._edge_offsets = offsets
             self._edge_triangles = edge_triangles
         else:
-            self._edge_vertices = np.empty((0, self.ndisplay))
-            self._edge_offsets = np.empty((0, self.ndisplay))
-            self._edge_triangles = np.empty((0, 3), dtype=np.uint32)
+            self._set_empty_edge()
+
+    def _set_meshes(  # noqa: B027
+        self,
+        data: npt.NDArray,
+        closed: bool = True,
+        face: bool = True,
+        edge: bool = True,
+    ) -> None: ...
 
     def _set_meshes_compiled_bermuda(
         self,
@@ -275,6 +296,8 @@ class Shape(ABC):
         edge: bool = True,
     ) -> None:
         """Sets the face and edge meshes from a set of points.
+
+        Uses bermuda compiled backend for triangulation.
 
         Parameters
         ----------
@@ -317,23 +340,17 @@ class Shape(ABC):
 
         # otherwise, we make individual calls to specialized functions
         if edge:
-            centers, offsets, triangles = bermuda.triangulate_path_edge(
-                data, closed=closed
+            self._edge_vertices, self._edge_offsets, self._edge_triangles = (
+                bermuda.triangulate_path_edge(data, closed=closed)
             )
-            self._edge_vertices = centers
-            self._edge_offsets = offsets
-            self._edge_triangles = triangles
         else:
-            self._edge_vertices = np.empty((0, self.ndisplay))
-            self._edge_offsets = np.empty((0, self.ndisplay))
-            self._edge_triangles = np.empty((0, 3), dtype=np.uint32)
+            self._set_empty_edge()
         if face:
-            triangles, vertices = bermuda.triangulate_polygons_face([data])
-            self._face_vertices = vertices
-            self._face_triangles = triangles
+            self._face_triangles, self._face_vertices = (
+                bermuda.triangulate_polygons_face([data])
+            )
         else:
-            self._face_vertices = np.empty((0, self.ndisplay))
-            self._face_triangles = np.empty((0, 3), dtype=np.uint32)
+            self._set_empty_face()
 
     def _set_meshes_compiled_partseg(
         self,
@@ -343,6 +360,8 @@ class Shape(ABC):
         edge: bool = True,
     ) -> None:
         """Sets the face and edge meshes from a set of points.
+
+        Uses PartSegCore compiled backend for triangulation.
 
         Parameters
         ----------
@@ -385,35 +404,43 @@ class Shape(ABC):
 
         # otherwise, we make individual calls to specialized functions
         if edge:
-            centers, offsets, triangles = (
+            self._edge_vertices, self._edge_offsets, self._edge_triangles = (
                 partsegcore_triangulate.triangulate_path_edge_numpy(
                     data, closed=closed
                 )
             )
-            self._edge_vertices = centers
-            self._edge_offsets = offsets
-            self._edge_triangles = triangles
         else:
-            self._edge_vertices = np.empty((0, self.ndisplay))
-            self._edge_offsets = np.empty((0, self.ndisplay))
-            self._edge_triangles = np.empty((0, 3), dtype=np.uint32)
+            self._set_empty_edge()
         if face:
-            triangles, vertices = (
+            self._face_triangles, self._face_vertices = (
                 partsegcore_triangulate.triangulate_polygon_numpy_li([data])
             )
-            self._face_vertices = vertices
-            self._face_triangles = triangles
         else:
-            self._face_vertices = np.empty((0, self.ndisplay))
-            self._face_triangles = np.empty((0, 3), dtype=np.uint32)
+            self._set_empty_face()
 
-    def _set_meshes(  # noqa: B027
+    def _set_meshes_triangle(
         self,
         data: npt.NDArray,
         closed: bool = True,
         face: bool = True,
         edge: bool = True,
-    ) -> None: ...
+    ) -> None:
+        """Sets the face and edge meshes from a set of points.
+
+        Uses the triangle package to triangulate the polygon face
+
+        Parameters
+        ----------
+        data : np.ndarray
+            Nx2 or Nx3 array specifying the shape to be triangulated
+        closed : bool
+            Bool which determines if the edge is closed or not
+        face : bool
+            Bool which determines if the face need to be traingulated
+        edge : bool
+            Bool which determines if the edge need to be traingulated
+        """
+        self._set_meshes_py(data, closed=closed, face=face, edge=edge)
 
     def _set_meshes_py(
         self,
