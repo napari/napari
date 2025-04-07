@@ -40,14 +40,18 @@ class QtViewerSingleLabelsSuite:
             pos=(500, 500),
             view_direction=None,
         )
+        try:
+            self.camera = self.viewer.window._qt_viewer.canvas.view.camera
+        except AttributeError:  # prior to 0.5.0
+            self.camera = self.viewer.window._qt_viewer.view.camera
 
     def teardown(self):
         self.viewer.window.close()
 
     def time_zoom(self):
         """Time to zoom in and zoom out."""
-        self.viewer.window._qt_viewer.view.camera.zoom(0.5, center=(0.5, 0.5))
-        self.viewer.window._qt_viewer.view.camera.zoom(2.0, center=(0.5, 0.5))
+        self.camera.zoom(0.5, center=(0.5, 0.5))
+        self.camera.zoom(2.0, center=(0.5, 0.5))
 
     def time_set_view_slice(self):
         """Time to set view slice."""
