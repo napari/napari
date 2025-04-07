@@ -28,7 +28,7 @@ mypy-extensions==1.0.0
     # via mypy
 npe2==0.7.8
     # via -r resources/requirements_mypy.in
-numpy==2.2.4
+numpy==2.1.3
     # via -r resources/requirements_mypy.in
 packaging==24.2
     # via
