@@ -182,6 +182,7 @@ def clean_viewer_references(main_window: '_QtMainWindow') -> None:
     settings.application.save_window_geometry = False
     settings.application.save_window_state = False
 
+    main_window.setObjectName('handled_widget')
     viewer = main_window._qt_viewer.viewer
     with suppress(KeyError):
         viewer._instances.remove(viewer)
