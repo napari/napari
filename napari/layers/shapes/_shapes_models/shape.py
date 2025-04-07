@@ -29,9 +29,9 @@ except ImportError:
     bermuda = None
 
 try:
-    from PartSegCore_compiled_backend import triangulate
+    from PartSegCore_compiled_backend import partsegcore_triangulate
 except ImportError:
-    triangulate = None
+    partsegcore_triangulate = None
 
 
 class Shape(ABC):
@@ -148,7 +148,7 @@ class Shape(ABC):
         elif (
             get_settings().experimental.triangulation_backend
             == TriangulationBackend.partsegcore
-            and bermuda is not None
+            and partsegcore_triangulate is not None
         ):
             cls._set_meshes = cls._set_meshes_compiled_partseg
         else:
@@ -364,7 +364,9 @@ class Shape(ABC):
         if edge and face:
             try:
                 (triangles, vertices), (centers, offsets, edge_triangles) = (
-                    triangulate.triangulate_polygon_with_edge_numpy_li([data])
+                    partsegcore_triangulate.triangulate_polygon_with_edge_numpy_li(
+                        [data]
+                    )
                 )
             except BaseException as e:  # pragma: no cover
                 path, text_path = _save_failed_triangulation(
@@ -384,7 +386,9 @@ class Shape(ABC):
         # otherwise, we make individual calls to specialized functions
         if edge:
             centers, offsets, triangles = (
-                triangulate.triangulate_path_edge_numpy(data, closed=closed)
+                partsegcore_triangulate.triangulate_path_edge_numpy(
+                    data, closed=closed
+                )
             )
             self._edge_vertices = centers
             self._edge_offsets = offsets
@@ -394,8 +398,8 @@ class Shape(ABC):
             self._edge_offsets = np.empty((0, self.ndisplay))
             self._edge_triangles = np.empty((0, 3), dtype=np.uint32)
         if face:
-            triangles, vertices = triangulate.triangulate_polygon_numpy_li(
-                [data]
+            triangles, vertices = (
+                partsegcore_triangulate.triangulate_polygon_numpy_li([data])
             )
             self._face_vertices = vertices
             self._face_triangles = triangles

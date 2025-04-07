@@ -20,12 +20,21 @@ from napari.settings._experimental import (
 
 BETTER_TRIANGULATION = 'triangle' in sys.modules or 'bermuda' in sys.modules
 
+BACKEND_TO_MODULE = {
+    TriangulationBackend.triangle: 'triangle',
+    TriangulationBackend.bermuda: 'bermuda',
+    TriangulationBackend.partsegcore: 'PartSegCore_compiled_backend',
+    TriangulationBackend.none: 'napari',
+}
 
-@pytest.fixture(autouse=True, params=list(TriangulationBackend))
+
+@pytest.fixture(autouse=True, params=BACKEND_TO_MODULE)
 def switch_triangulation_backend(request):
     """Fixture to switch between triangulation backends."""
     settings = get_settings()
     prev = settings.experimental.triangulation_backend
+    if BACKEND_TO_MODULE[request.param] not in sys.modules:
+        pytest.importorskip(str(request.param))
     settings.experimental.triangulation_backend = request.param
     yield
     settings.experimental.triangulation_backend = prev
