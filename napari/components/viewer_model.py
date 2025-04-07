@@ -86,7 +86,6 @@ from napari.utils.events import (
 )
 from napari.utils.events.event import WarningEmitter
 from napari.utils.key_bindings import KeymapProvider
-from napari.utils.migrations import rename_argument
 from napari.utils.misc import is_sequence
 from napari.utils.mouse_bindings import MousemapProvider
 from napari.utils.progress import progress
@@ -955,12 +954,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.layers.append(layer)
         return layer
 
-    @rename_argument(
-        from_name='interpolation',
-        to_name='interpolation2d',
-        version='0.6.0',
-        since_version='0.4.17',
-    )
     def add_image(
         self,
         data=None,
