@@ -471,6 +471,19 @@ class ShapeTriangulationStarIntersectionSuite(
         self.select_backend(backend_type)
 
 
+def skip_triangle_backend(_n_shapes, _n_points, _shape_type, backend_type):
+    """THis is a helper function to skip triangle testing in polygon with holes case if
+    the bugfix is not available.
+
+    It may be removed after release on napari 0.6.0.
+    """
+    from napari.layers.shapes import _shapes_utils
+
+    if hasattr(_shapes_utils, '_cull_triangles_not_in_poly'):
+        return False
+    return backend_type == BackendType.triangle
+
+
 class ShapeTriangulationHoleSuite(_ShapeTriangulationBaseShapeCount):
     params = [
         (
@@ -482,6 +495,7 @@ class ShapeTriangulationHoleSuite(_ShapeTriangulationBaseShapeCount):
         backend_list_complex,
     ]
     skip_params = Skip(
+        always=skip_triangle_backend,
         if_in_pr=skip_above_100,
         if_on_ci=lambda n_shapes, n_points, shape_type, backend_type: n_shapes
         > 100
@@ -505,6 +519,7 @@ class ShapeTriangulationHolesSuite(_ShapeTriangulationBaseShapeCount):
         backend_list_complex,
     ]
     skip_params = Skip(
+        always=skip_triangle_backend,
         if_in_pr=skip_above_100,
         if_on_ci=lambda n_shapes, n_points, shape_type, backend_type: n_shapes
         > 100
