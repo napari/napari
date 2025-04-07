@@ -3,12 +3,6 @@ from __future__ import annotations
 from psutil import virtual_memory
 
 from napari._pydantic_compat import Field, validator
-from napari.components.camera import (
-    DEFAULT_ORIENTATION_TYPED,
-    DepthAxisOrientation,
-    HorizontalAxisOrientation,
-    VerticalAxisOrientation,
-)
 from napari.settings._constants import (
     BrushSizeOnMouseModifiers,
     LabelDTypes,
@@ -16,6 +10,12 @@ from napari.settings._constants import (
 )
 from napari.settings._fields import Language
 from napari.utils._base import _DEFAULT_LOCALE
+from napari.utils.camera_orientations import (
+    DEFAULT_ORIENTATION_TYPED,
+    DepthAxisOrientation,
+    HorizontalAxisOrientation,
+    VerticalAxisOrientation,
+)
 from napari.utils.events.custom_types import confloat, conint
 from napari.utils.events.evented_model import EventedModel
 from napari.utils.notifications import NotificationSeverity
