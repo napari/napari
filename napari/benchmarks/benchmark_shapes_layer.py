@@ -5,8 +5,9 @@
 import itertools
 from collections.abc import Callable
 from contextlib import suppress
-from enum import Enum, auto
+from enum import StrEnum, auto
 from functools import cache, wraps
+from typing import Any
 
 import numpy as np
 
@@ -27,8 +28,13 @@ except ImportError:
     from napari.benchmarks.utils import Skip
 
 
-class BackendType(Enum):
-    partsegcore = auto()  # data preprocessing using PartSegCore (https://partseg.github.io), edge triangulation using numba
+class BackendType(StrEnum):
+    partsegcore = (
+        auto()
+    )  # data preprocessing using PartSegCore (https://partseg.github.io)
+    bermuda = (
+        auto()
+    )  # data preprocessing using bermuda (https://github.com/napari/bermuda)
     triangle = auto()  # data preprocessing using numba, edge triangulation using numba, triangulation using triangle
     numba = auto()  # data preprocessing and edge triangulation using numba, triangulation using vispy
     pure_python = auto()  # data preprocessing, edge triangulation, and triangulation using python and vispy
@@ -51,7 +57,8 @@ class _BackendSelection:
     """Provides a representation for a preferred backend if accelerated triangulation is unavailable."""
 
     triangulate: Callable | None  # a triangulate function
-    prev_settings: bool  # save the state of NapariSettings.experimental.compiled_triangulation, if True
+    prev_settings_old: bool  # save the state of NapariSettings.experimental.compiled_triangulation,
+    prev_settings_new: Any  # save the state of NapariSettings.experimental.triangulation_backend,
     prev_numba: dict[
         str, Callable
     ]  # Maps numba function names to _accelerated_triangulate_dispatch functions.
@@ -79,9 +86,7 @@ class _BackendSelection:
                     getattr(_triangle_dispatch, f'{name}_py'),
                 )
 
-    def select_backend(self, triangulation_backend: BackendType):
-        """Select a desired backend for triangulation."""
-        self.prev_numba = {}
+    def _set_settings_old(self, triangulation_backend: BackendType):
         with suppress(AttributeError):
             self.prev_settings = (
                 get_settings().experimental.compiled_triangulation
@@ -89,6 +94,27 @@ class _BackendSelection:
             get_settings().experimental.compiled_triangulation = (
                 triangulation_backend == BackendType.partsegcore
             )
+
+    def _set_settings_new(self, triangulation_backend: BackendType):
+        self.prev_settings_new = (
+            get_settings().experimental.triangulation_backend
+        )
+        if triangulation_backend in {
+            BackendType.numba,
+            BackendType.pure_python,
+        }:
+            val = 'none'
+        else:
+            val = str(triangulation_backend)
+        get_settings().experimental.triangulation_backend = val
+
+    def select_backend(self, triangulation_backend: BackendType):
+        """Select a desired backend for triangulation."""
+        self.prev_numba = {}
+        if hasattr(get_settings().experimental, 'triangulation_backend'):
+            self._set_settings_new(triangulation_backend)
+        else:
+            self._set_settings_old(triangulation_backend)
 
         from napari.layers.shapes import _shapes_utils
 
@@ -114,10 +140,15 @@ class _BackendSelection:
 
     def revert_backend(self):
         """Restore changes made by select_backend function. Call in teardown step."""
-        with suppress(AttributeError):
-            get_settings().experimental.compiled_triangulation = (
-                self.prev_settings
+        if hasattr(get_settings().experimental, 'triangulation_backend'):
+            get_settings().experimental.triangulation_backend = (
+                self.prev_settings_new
             )
+        else:
+            with suppress(AttributeError):
+                get_settings().experimental.compiled_triangulation = (
+                    self.prev_settings
+                )
 
         from napari.layers.shapes import _shapes_utils
 
