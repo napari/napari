@@ -1591,7 +1591,7 @@ class Shapes(Layer):
 
         raise ValueError(
             trans._(
-                'face_color should be the name of a color, an array of colors, or the name of an property',
+                'face_color/edge_color should be the name of a color, an array of colors, or the name of a property',
                 deferred=True,
             )
         )
