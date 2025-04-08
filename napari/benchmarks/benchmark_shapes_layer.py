@@ -48,7 +48,11 @@ class BackendType(StrEnum):
 
 backends = list(BackendType)
 
-backend_list_complex = [BackendType.partsegcore, BackendType.numba]
+backend_list_complex = [
+    BackendType.partsegcore,
+    BackendType.bermuda,
+    BackendType.numba,
+]
 # pure python backend is too slow for large datasets
 # triangle backend requires deduplication of vertices in #6654
 

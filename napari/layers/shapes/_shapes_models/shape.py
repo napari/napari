@@ -30,7 +30,9 @@ except ImportError:
     bermuda = None
 
 try:
-    from PartSegCore_compiled_backend import partsegcore_triangulate
+    from PartSegCore_compiled_backend import (
+        triangulate as partsegcore_triangulate,
+    )
 except ImportError:
     partsegcore_triangulate = None
 
@@ -149,8 +151,8 @@ class Shape(ABC):
         elif (
             get_settings().experimental.triangulation_backend
             == TriangulationBackend.partsegcore
-            and partsegcore_triangulate is not None
         ):
+            assert partsegcore_triangulate is not None
             cls._set_meshes = cls._set_meshes_compiled_partseg
         elif (
             get_settings().experimental.triangulation_backend
