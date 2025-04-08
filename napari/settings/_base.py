@@ -508,18 +508,19 @@ def _remove_bad_keys(data: dict, keys: list[tuple[int | str, ...]]):
 def _restore_config_data(dct: dict, delete: dict, defaults: dict) -> dict:
     """delete nested dict keys, restore from defaults."""
     for k, v in delete.items():
-        # restore from defaults if present, or just delete the key
-        if k in dct:
-            if k in defaults:
-                dct[k] = defaults[k]
-            else:
-                del dct[k]
         # recurse
-        elif isinstance(v, dict):
+        if isinstance(v, dict):
             dflt = defaults.get(k)
             if not isinstance(dflt, dict):
                 dflt = {}
             _restore_config_data(dct[k], v, dflt)
+        # restore from defaults if present, or just delete the key
+        elif k in dct:
+            if k in defaults:
+                dct[k] = defaults[k]
+            else:
+                del dct[k]
+
     return dct
 
 
