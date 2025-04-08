@@ -409,6 +409,18 @@ def _centroid(vertices: CoordinateArray2D) -> np.ndarray:
 def is_convex(vertices: CoordinateArray2D) -> bool:
     """Check if a polygon is convex.
 
+    A polygon is convex when all its internal angles
+    are less equal to 180 degrees and its edges don't
+    self-intersect.
+
+    As we do not know if polygon vertices are ordered
+    clockwise or counterclockwise, we check this by checking if all
+    not collinear angles have the same orientation.
+
+    Then we check if there are no self-intersections by checking if the
+    polar angles of the vertices are monotonic.
+    The center of a polar coordinate system is the centroid of the polygon.
+
     Parameters
     ----------
     vertices : np.ndarray
@@ -419,9 +431,6 @@ def is_convex(vertices: CoordinateArray2D) -> bool:
     bool
         True if the polygon is convex, False otherwise
     """
-    # A polygon is convex if all its internal angles are less than 180 degrees.
-    # This is equivalent to checking that the orientation of all consecutive
-    # triples of points is the same.
     if len(vertices) < 3:
         return False
     if len(vertices) == 3:
