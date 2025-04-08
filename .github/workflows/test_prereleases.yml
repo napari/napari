@@ -81,6 +81,7 @@ jobs:
           COVERAGE: "no_cov"
           PYVISTA_OFF_SCREEN: True  # required for opengl on windows
           PIP_CONSTRAINT: resources/constraints/version_denylist.txt
+          PIP_EXTRA_INDEX_URL: https://www.riverbankcomputing.com/pypi/simple/
 
       # If something goes wrong, we can open an issue in the repo
       - name: Report Failures
