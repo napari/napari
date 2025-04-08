@@ -92,7 +92,8 @@ class _BackendSelection:
                 get_settings().experimental.compiled_triangulation
             )
             get_settings().experimental.compiled_triangulation = (
-                triangulation_backend == BackendType.partsegcore
+                triangulation_backend
+                in {BackendType.partsegcore, BackendType.bermuda}
             )
 
     def _set_settings_new(self, triangulation_backend: BackendType):
