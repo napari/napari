@@ -20,7 +20,8 @@ from napari._qt.dialogs.qt_modal import QtPopup
 from napari._qt.widgets.qt_dims_sorter import QtDimsSorter
 from napari._qt.widgets.qt_spinbox import QtSpinBox
 from napari._qt.widgets.qt_tooltip import QtToolTipLabel
-from napari.components.camera import (
+from napari.utils.action_manager import action_manager
+from napari.utils.camera_orientations import (
     DepthAxisOrientation,
     DepthAxisOrientationStr,
     HorizontalAxisOrientation,
@@ -28,7 +29,6 @@ from napari.components.camera import (
     VerticalAxisOrientation,
     VerticalAxisOrientationStr,
 )
-from napari.utils.action_manager import action_manager
 from napari.utils.misc import in_ipython, in_jupyter, in_python_repl
 from napari.utils.translations import trans
 

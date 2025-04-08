@@ -233,6 +233,17 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self._tooltip_visible_update
         )
 
+        self._update_camera_orientation()
+        settings.application.events.depth_axis_orientation.connect(
+            self._update_camera_orientation
+        )
+        settings.application.events.vertical_axis_orientation.connect(
+            self._update_camera_orientation
+        )
+        settings.application.events.horizontal_axis_orientation.connect(
+            self._update_camera_orientation
+        )
+
         self._update_viewer_grid()
         settings.application.events.grid_stride.connect(
             self._update_viewer_grid
@@ -310,6 +321,16 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def _tooltip_visible_update(self, event):
         self.tooltip.visible = event.value
+
+    def _update_camera_orientation(self):
+        """Update camera orientation based on settings."""
+        settings = get_settings()
+
+        self.camera.orientation = (
+            settings.application.depth_axis_orientation,
+            settings.application.vertical_axis_orientation,
+            settings.application.horizontal_axis_orientation,
+        )
 
     def _update_viewer_grid(self):
         """Keep viewer grid settings up to date with settings values."""
