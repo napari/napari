@@ -19,10 +19,9 @@ from napari.layers.shapes._shapes_utils import (
     triangulate_edge,
     triangulate_face,
 )
-from napari.settings import get_settings
-from napari.settings._experimental import TriangulationBackend
 from napari.utils.misc import argsort
 from napari.utils.translations import trans
+from napari.utils.triangulation_backend import TriangulationBackend
 
 try:
     import bermuda
@@ -35,6 +34,9 @@ try:
     )
 except ImportError:
     partsegcore_triangulate = None
+
+
+TRIANGULATION_BACKEND = TriangulationBackend.none
 
 
 class Shape(ABC):
@@ -143,20 +145,15 @@ class Shape(ABC):
 
     def __new__(cls, *args, **kwargs):
         if (
-            get_settings().experimental.triangulation_backend
-            == TriangulationBackend.bermuda
+            TriangulationBackend.bermuda == TRIANGULATION_BACKEND
             and bermuda is not None
         ):
             cls._set_meshes = cls._set_meshes_compiled_bermuda
-        elif (
-            get_settings().experimental.triangulation_backend
-            == TriangulationBackend.partsegcore
-        ):
+        elif TriangulationBackend.partsegcore == TRIANGULATION_BACKEND:
             assert partsegcore_triangulate is not None
             cls._set_meshes = cls._set_meshes_compiled_partseg
         elif (
-            get_settings().experimental.triangulation_backend
-            == TriangulationBackend.triangle
+            TriangulationBackend.triangle == TRIANGULATION_BACKEND
             and 'triangle' in sys.modules
         ):
             cls._set_meshes = cls._set_meshes_triangle

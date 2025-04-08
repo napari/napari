@@ -1,19 +1,9 @@
-from enum import auto
 from typing import Any
 
 from napari._pydantic_compat import Field
 from napari.settings._base import EventedSettings
-from napari.utils.compat import StrEnum
 from napari.utils.translations import trans
-
-
-class TriangulationBackend(StrEnum):
-    """Enum-like class to specify which triangulation backend to use."""
-
-    bermuda = auto()
-    partsegcore = auto()
-    triangle = auto()
-    none = auto()
+from napari.utils.triangulation_backend import TriangulationBackend
 
 
 # this class inherits from EventedSettings instead of EventedModel because
@@ -98,8 +88,10 @@ class ExperimentalSettings(EventedSettings):
 
     def _update_triangulation_backend(self) -> None:
         from napari.layers.shapes import _accelerated_triangulate_dispatch
+        from napari.layers.shapes._shapes_models import shape
 
         _accelerated_triangulate_dispatch.USE_COMPILED_BACKEND = (
             self.triangulation_backend
             in {TriangulationBackend.partsegcore, TriangulationBackend.bermuda}
         )
+        shape.TRIANGULATION_BACKEND = self.triangulation_backend
