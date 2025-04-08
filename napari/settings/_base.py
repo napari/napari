@@ -510,16 +510,15 @@ def _restore_config_data(dct: dict, delete: dict, defaults: dict) -> dict:
     for k, v in delete.items():
         # recurse
         if isinstance(v, dict):
-            dflt = defaults.get(k)
+            dflt = defaults.get(k, {})
             if not isinstance(dflt, dict):
                 dflt = {}
             _restore_config_data(dct[k], v, dflt)
         # restore from defaults if present, or just delete the key
+        elif k in defaults:
+            dct[k] = defaults[k]
         elif k in dct:
-            if k in defaults:
-                dct[k] = defaults[k]
-            else:
-                del dct[k]
+            del dct[k]
 
     return dct
 
