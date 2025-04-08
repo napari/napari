@@ -390,7 +390,7 @@ class ShapeTriangulationNonConvexSuite(_ShapeTriangulationBaseShapeCount):
         and shape_type == 'polygon'
         and backend_type != BackendType.triangle,
         if_in_pr=skip_above_100,
-        # to slow (40 sec)
+        # too slow (40 sec)
         if_on_ci=lambda n_shapes, n_points, shape_type, backend_type: (
             n_shapes == 5000
             and n_points == 32
@@ -472,7 +472,7 @@ class ShapeTriangulationStarIntersectionSuite(
 
 
 def skip_triangle_backend(_n_shapes, _n_points, _shape_type, backend_type):
-    """THis is a helper function to skip triangle testing in polygon with holes case if
+    """This is a helper function to skip triangle testing in polygon with holes case if
     the bugfix is not available.
 
     It may be removed after release on napari 0.6.0.
