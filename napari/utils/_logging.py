@@ -18,13 +18,13 @@ if sys.version_info < (3, 11):
     # in python 3.10 there's no public mapping, and this getLevelName function
     # is a bit less resilient (e.g: it "works" both ways (name <-> value), and if
     # invalid values are passed, it just makes up a new level)
-    def get_log_level_value(log_level_name: str | int ): -> int
+    def get_log_level_value(log_level_name: str | int) -> int:
         if log_level_name is None:
             return logging.NOTSET
         return logging.getLevelName(log_level_name)
 else:
 
-    def get_log_level_value(log_level_name: str | int ): -> int
+    def get_log_level_value(log_level_name: str | int) -> int:
         return logging.getLevelNamesMapping().get(
             log_level_name, logging.NOTSET
         )
