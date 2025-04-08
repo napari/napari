@@ -111,11 +111,11 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.56.0
+fonttools==4.57.0
     # via matplotlib
 freetype-py==2.5.1
     # via vispy
-fsspec==2025.3.1
+fsspec==2025.3.2
     # via
     #   napari (pyproject.toml)
     #   dask
@@ -134,7 +134,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.130.5
+hypothesis==6.130.9
     # via napari (pyproject.toml)
 idna==3.10
     # via
@@ -221,7 +221,7 @@ locket==1.0.0
     # via
     #   distributed
     #   partd
-lxml==5.3.1
+lxml==5.3.2
     # via
     #   napari (pyproject.toml)
     #   lxml-html-clean
@@ -451,7 +451,7 @@ pyautogui==0.9.54
     # via napari (pyproject.toml)
 pyconify==0.2.1
     # via superqt
-pydantic==2.11.1
+pydantic==2.11.2
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
@@ -460,7 +460,7 @@ pydantic==2.11.1
     #   pydantic-compat
 pydantic-compat==0.1.2
     # via app-model
-pydantic-core==2.33.0
+pydantic-core==2.33.1
     # via pydantic
 pydata-sphinx-theme==0.16.1
     # via napari-sphinx-theme
@@ -521,7 +521,7 @@ pytest==8.3.5
     #   pytest-metadata
     #   pytest-pretty
     #   pytest-qt
-pytest-cov==6.0.0
+pytest-cov==6.1.1
     # via -r resources/constraints/version_denylist.txt
 pytest-json-report==1.5.0
     # via -r resources/constraints/version_denylist.txt
@@ -555,7 +555,7 @@ pyyaml==6.0.2
     #   npe2
     #   sphinx-external-toc
     #   sphinxcontrib-mermaid
-pyzmq==26.3.0
+pyzmq==26.4.0
     # via
     #   ipykernel
     #   jupyter-client
@@ -694,7 +694,7 @@ tabulate==0.9.0
     # via
     #   jupyter-cache
     #   numpydoc
-tblib==3.0.0
+tblib==3.1.0
     # via distributed
 tensorstore==0.1.73
     # via
@@ -748,7 +748,7 @@ triton==3.2.0
     # via torch
 typer==0.15.2
     # via npe2
-typing-extensions==4.13.0
+typing-extensions==4.13.1
     # via
     #   napari (pyproject.toml)
     #   anyio
@@ -784,7 +784,7 @@ urllib3==2.3.0
     #   requests
 uvicorn==0.34.0
     # via sphinx-autobuild
-virtualenv==20.29.3
+virtualenv==20.30.0
     # via napari (pyproject.toml)
 vispy==0.14.3
     # via
