@@ -22,10 +22,10 @@ class ExperimentalSettings(EventedSettings):
     def __init__(self, **data: dict[str, Any]):
         super().__init__(**data)
 
-        self.events.compiled_triangulation.connect(
-            self._update_compiled_backend
+        self.events.triangulation_backend.connect(
+            self._update_triangulation_backend
         )
-        self._update_compiled_backend()
+        self._update_triangulation_backend()
 
     async_: bool = Field(
         False,
@@ -92,29 +92,14 @@ class ExperimentalSettings(EventedSettings):
         ),
     )
 
-    compiled_triangulation: bool = Field(
-        False,
-        title=trans._(
-            'Use C++ code to speed up creation and updates of Shapes layers'
-            '(requires optional dependencies)'
-        ),
-        description=trans._(
-            'When enabled, triangulation (breaking down polygons into '
-            "triangles that can be displayed by napari's graphics engine) is "
-            'sped up by using rust code from the optional library '
-            'bermuda. Compiled code may end with crashes that will be not properly caught. '
-            'If you encounter such a crash while using this option please report '
-            'it at https://github.com/napari/napari/issues.'
-        ),
-    )
-
     class NapariConfig:
         # Napari specific configuration
         preferences_exclude = ('schema_version',)
 
-    def _update_compiled_backend(self) -> None:
+    def _update_triangulation_backend(self) -> None:
         from napari.layers.shapes import _accelerated_triangulate_dispatch
 
         _accelerated_triangulate_dispatch.USE_COMPILED_BACKEND = (
-            self.compiled_triangulation
+            self.triangulation_backend
+            in {TriangulationBackend.partsegcore, TriangulationBackend.bermuda}
         )
