@@ -657,22 +657,10 @@ def test_active_layer_status_update():
     time.sleep(1)
     viewer.mouse_over_canvas = True
     viewer.cursor.position = [1, 1, 1, 1, 1]
-    viewer_cursor_status = viewer._calc_status_from_cursor()[0]
-    active_layer_status = viewer.layers.selection.active.get_status(
+    assert viewer._calc_status_from_cursor()[
+        0
+    ] == viewer.layers.selection.active.get_status(
         viewer.cursor.position, world=True
-    )
-    # check coords, value and layer name
-    assert (
-        viewer_cursor_status.split('»')[0].rstrip(' ')
-        == active_layer_status['coords']
-    )
-    assert (
-        viewer_cursor_status.rstrip(' ').split(' ')[-1]
-        == active_layer_status['value']
-    )
-    assert (
-        viewer_cursor_status.split('»')[1].split(':')[0].lstrip(' ')
-        == active_layer_status['layer_name']
     )
 
 
@@ -1056,16 +1044,40 @@ def test_get_status_text():
     )
     viewer.tooltip.visible = False
     assert viewer._calc_status_from_cursor() == (
-        ' [1 2] » Labels: 0; a: 1    ',
+        {
+            'coordinates': ' [1 2]: 0; a: 1',
+            'coords': ' [1 2]',
+            'layer_base': 'Labels',
+            'layer_name': 'Labels',
+            'plugin': '',
+            'source_type': '',
+            'value': '0; a: 1',
+        },
         '',
     )
     viewer.tooltip.visible = True
     assert viewer._calc_status_from_cursor() == (
-        ' [1 2] » Labels: 0; a: 1    ',
+        {
+            'coordinates': ' [1 2]: 0; a: 1',
+            'coords': ' [1 2]',
+            'layer_base': 'Labels',
+            'layer_name': 'Labels',
+            'plugin': '',
+            'source_type': '',
+            'value': '0; a: 1',
+        },
         'a: 1',
     )
     viewer.update_status_from_cursor()
-    assert viewer.status == ' [1 2] » Labels: 0; a: 1    '
+    assert viewer.status == {
+        'coordinates': ' [1 2]: 0; a: 1',
+        'coords': ' [1 2]',
+        'layer_base': 'Labels',
+        'layer_name': 'Labels',
+        'plugin': '',
+        'source_type': '',
+        'value': '0; a: 1',
+    }
     assert viewer.tooltip.text == 'a: 1'
 
 

@@ -86,7 +86,6 @@ from napari.utils.events import (
 )
 from napari.utils.events.event import WarningEmitter
 from napari.utils.key_bindings import KeymapProvider
-from napari.utils.migrations import rename_argument
 from napari.utils.misc import is_sequence
 from napari.utils.mouse_bindings import MousemapProvider
 from napari.utils.progress import progress
@@ -262,12 +261,12 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         )
 
         # Connect events
-        self.grid.events.connect(self.reset_view)
+        self.grid.events.connect(self.fit_to_view)
         self.grid.events.connect(self._on_grid_change)
         self.dims.events.ndisplay.connect(self._update_layers)
-        self.dims.events.ndisplay.connect(self.reset_view)
+        self.dims.events.ndisplay.connect(self.fit_to_view)
         self.dims.events.order.connect(self._update_layers)
-        self.dims.events.order.connect(self.reset_view)
+        self.dims.events.order.connect(self.fit_to_view)
         self.dims.events.point.connect(self._update_layers)
         # FIXME: the next line is a temporary workaround. With #5522 and #5751 Dims.point became
         #        the source of truth, and is now defined in world space. This exposed an existing
@@ -704,6 +703,28 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         selection = self.layers.selection
         active = selection.active
 
+        # Compute the tooltip first since it is always needed.
+        if self.tooltip.visible and active is not None and active._loaded:
+            tooltip_text = active._get_tooltip_text(
+                np.asarray(self.cursor.position),
+                view_direction=np.asarray(self.cursor._view_direction),
+                dims_displayed=list(self.dims.displayed),
+                world=True,
+            )
+
+        # If there is an active layer and a single selection, calculate status using "the classic way".
+        # Then return the status and the tooltip.
+        if active is not None and active._loaded and len(selection) < 2:
+            status = active.get_status(
+                self.cursor.position,
+                view_direction=self.cursor._view_direction,
+                dims_displayed=list(self.dims.displayed),
+                world=True,
+            )
+            return status, tooltip_text
+
+        # Otherwise, return the layer status of multiple selected layers
+        # or gridded layers as well as the tooltip.
         for layer in self.layers[::-1]:
             if (
                 not layer.visible
@@ -744,14 +765,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             status_str = '[empty]'
         else:
             status_str = 'Ready'
-
-        if self.tooltip.visible and active is not None and active._loaded:
-            tooltip_text = active._get_tooltip_text(
-                np.asarray(self.cursor.position),
-                view_direction=np.asarray(self.cursor._view_direction),
-                dims_displayed=list(self.dims.displayed),
-                world=True,
-            )
 
         return status_str, tooltip_text
 
@@ -941,12 +954,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.layers.append(layer)
         return layer
 
-    @rename_argument(
-        from_name='interpolation',
-        to_name='interpolation2d',
-        version='0.6.0',
-        since_version='0.4.17',
-    )
     def add_image(
         self,
         data=None,
