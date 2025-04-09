@@ -354,8 +354,13 @@ def _orientation(
 def _are_polar_angles_monotonic(
     vertices: CoordinateArray2D, centroid: np.ndarray
 ) -> bool:
-    """Check if the polygon, that all angles have the same orientation
-    do not have self-intersection
+    """Check if vertices are monastical in a polar system.
+
+    The function checks if in a polar coordinate system
+    with point 0 in centroid, the angle component
+    of vertices coordinate is increasing.
+
+    This is a second part of the polygon convexity check.
 
     Parameters
     ----------
@@ -460,23 +465,15 @@ def is_convex(vertices: CoordinateArray2D) -> bool:
         ):
             return False
 
-    triangle_orientation = _orientation(
-        vertices[idx], vertices[idx + 1], vertices[0]
-    )
-    if (
-        triangle_orientation != Orientation.collinear
-        and triangle_orientation != orientation_
-    ):
-        return False
-
-    triangle_orientation = _orientation(
-        vertices[idx + 1], vertices[0], vertices[1]
-    )
-    if (
-        triangle_orientation != Orientation.collinear
-        and triangle_orientation != orientation_
-    ):
-        return False
+    for idx0, idx1, idx2 in [(idx, idx + 1, 0), (idx + 1, 0, 1)]:
+        triangle_orientation = _orientation(
+            vertices[idx0], vertices[idx1], vertices[idx2]
+        )
+        if (
+            triangle_orientation != Orientation.collinear
+            and triangle_orientation != orientation_
+        ):
+            return False
 
     centroid = _centroid(vertices)
 
