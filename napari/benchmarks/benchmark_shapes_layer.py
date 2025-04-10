@@ -27,7 +27,7 @@ except ImportError:
     from napari.benchmarks.utils import Skip
 
 
-class BackendType(Enum):
+class TriangulationBackend(Enum):
     partsegcore = auto()  # data preprocessing using PartSegCore (https://partseg.github.io), edge triangulation using numba
     triangle = auto()  # data preprocessing using numba, edge triangulation using numba, triangulation using triangle
     numba = auto()  # data preprocessing and edge triangulation using numba, triangulation using vispy
@@ -40,12 +40,12 @@ class BackendType(Enum):
         return self.name
 
 
-backends = list(BackendType)
+backends = list(TriangulationBackend)
 
 backend_list_complex = [
-    BackendType.partsegcore,
-    BackendType.triangle,
-    BackendType.numba,
+    TriangulationBackend.partsegcore,
+    TriangulationBackend.triangle,
+    TriangulationBackend.numba,
 ]
 # pure python backend is too slow for large datasets
 # triangle backend requires deduplication of vertices in #6654
@@ -83,22 +83,22 @@ class _BackendSelection:
                     getattr(_triangle_dispatch, f'{name}_py'),
                 )
 
-    def select_backend(self, triangulation_backend: BackendType):
+    def select_backend(self, triangulation_backend: TriangulationBackend):
         """Select a desired backend for triangulation."""
         self.prev_numba = {}
         with suppress(AttributeError):
             self.prev_settings = get_settings().experimental.backend_type
             get_settings().experimental.backend_type = (
-                triangulation_backend == BackendType.partsegcore
+                triangulation_backend == TriangulationBackend.partsegcore
             )
 
         from napari.layers.shapes import _shapes_utils
 
         self.triangulate = _shapes_utils.triangulate
-        if triangulation_backend != BackendType.triangle:
+        if triangulation_backend != TriangulationBackend.triangle:
             # Disable the triangle backend by overriding the function
             _shapes_utils.triangulate = None
-        if triangulation_backend == BackendType.pure_python:
+        if triangulation_backend == TriangulationBackend.pure_python:
             self._disable_numba()
         else:
             self.warmup_numba()
@@ -367,7 +367,7 @@ class _ShapeTriangulationBaseShapeCount(_ShapeTriangulationBase):
         'n_shapes',
         'n_points',
         'shape_type',
-        'backend_type',
+        'triangulation_backend',
     ]
     params = [
         (
@@ -385,31 +385,39 @@ class _ShapeTriangulationBaseShapeCount(_ShapeTriangulationBase):
 class ShapeTriangulationNonConvexSuite(_ShapeTriangulationBaseShapeCount):
     skip_params = Skip(
         # skip a case when vispy triangulation backend fails
-        always=lambda n_shapes, n_points, shape_type, backend_type: n_points
-        == 128
+        always=lambda n_shapes,
+        n_points,
+        shape_type,
+        triangulation_backend: n_points == 128
         and shape_type == 'polygon'
-        and backend_type != BackendType.triangle,
+        and triangulation_backend != TriangulationBackend.triangle,
         if_in_pr=skip_above_100,
         # too slow (40 sec)
-        if_on_ci=lambda n_shapes, n_points, shape_type, backend_type: (
+        if_on_ci=lambda n_shapes,
+        n_points,
+        shape_type,
+        triangulation_backend: (
             n_shapes == 5000
             and n_points == 32
             and shape_type == 'polygon'
-            and backend_type in {BackendType.pure_python and BackendType.numba}
+            and triangulation_backend
+            in {
+                TriangulationBackend.pure_python and TriangulationBackend.numba
+            }
         ),
     )
 
-    def setup(self, n_shapes, n_points, _shape_type, backend_type):
+    def setup(self, n_shapes, n_points, _shape_type, triangulation_backend):
         self.data = non_convex_no_self_intersection_polygons(
             n_shapes, n_points
         )
-        self.select_backend(backend_type)
+        self.select_backend(triangulation_backend)
 
 
 class ShapeTriangulationConvexSuite(_ShapeTriangulationBaseShapeCount):
-    def setup(self, n_shapes, n_points, _shape_type, backend_type):
+    def setup(self, n_shapes, n_points, _shape_type, triangulation_backend):
         self.data = convex_polygons(n_shapes, n_points)
-        self.select_backend(backend_type)
+        self.select_backend(triangulation_backend)
 
 
 class ShapeTriangulationIntersectionSuite(_ShapeTriangulationBaseShapeCount):
@@ -426,13 +434,15 @@ class ShapeTriangulationIntersectionSuite(_ShapeTriangulationBaseShapeCount):
         if_on_ci=lambda n_shapes,
         n_points,
         shape_type,
-        backend_type: backend_type != BackendType.numba and n_shapes > 100,
+        triangulation_backend: triangulation_backend
+        != TriangulationBackend.numba
+        and n_shapes > 100,
         if_in_pr=skip_above_100,
     )
 
-    def setup(self, n_shapes, n_points, _shape_type, backend_type):
+    def setup(self, n_shapes, n_points, _shape_type, triangulation_backend):
         self.data = self_intersecting_polygons(n_shapes, n_points)
-        self.select_backend(backend_type)
+        self.select_backend(triangulation_backend)
 
 
 class ShapeTriangulationStarIntersectionSuite(
@@ -448,11 +458,16 @@ class ShapeTriangulationStarIntersectionSuite(
         backend_list_complex,
     ]
     skip_params = Skip(
-        always=lambda n_shapes, n_points, shape_type, backend_type: n_shapes
-        == 5000
+        always=lambda n_shapes,
+        n_points,
+        shape_type,
+        triangulation_backend: n_shapes == 5000
         and n_points in {15, 33}
         and shape_type == 'polygon',
-        if_on_ci=lambda n_shapes, n_points, shape_type, backend_type: (
+        if_on_ci=lambda n_shapes,
+        n_points,
+        shape_type,
+        triangulation_backend: (
             (
                 # 7 and 9 points are too slow to run
                 n_shapes == 5000 and shape_type == 'polygon'
@@ -460,18 +475,20 @@ class ShapeTriangulationStarIntersectionSuite(
             or (
                 (n_shapes == 100 and n_points == 33)
                 and shape_type == 'polygon'
-                and backend_type != BackendType.triangle
+                and triangulation_backend != TriangulationBackend.triangle
             )
         ),
         if_in_pr=skip_above_100,
     )
 
-    def setup(self, n_shapes, n_points, _shape_type, backend_type):
+    def setup(self, n_shapes, n_points, _shape_type, triangulation_backend):
         self.data = self_intersecting_stars_polygons(n_shapes, n_points)
-        self.select_backend(backend_type)
+        self.select_backend(triangulation_backend)
 
 
-def skip_triangle_backend(_n_shapes, _n_points, _shape_type, backend_type):
+def skip_triangle_backend(
+    _n_shapes, _n_points, _shape_type, triangulation_backend
+):
     """This is a helper function to skip triangle testing in polygon with holes case if
     the bugfix is not available.
 
@@ -481,7 +498,7 @@ def skip_triangle_backend(_n_shapes, _n_points, _shape_type, backend_type):
 
     if hasattr(_shapes_utils, '_cull_triangles_not_in_poly'):
         return False
-    return backend_type == BackendType.triangle
+    return triangulation_backend == TriangulationBackend.triangle
 
 
 class ShapeTriangulationHoleSuite(_ShapeTriangulationBaseShapeCount):
@@ -497,15 +514,17 @@ class ShapeTriangulationHoleSuite(_ShapeTriangulationBaseShapeCount):
     skip_params = Skip(
         always=skip_triangle_backend,
         if_in_pr=skip_above_100,
-        if_on_ci=lambda n_shapes, n_points, shape_type, backend_type: n_shapes
-        > 100
-        and backend_type == BackendType.numba
+        if_on_ci=lambda n_shapes,
+        n_points,
+        shape_type,
+        triangulation_backend: n_shapes > 100
+        and triangulation_backend == TriangulationBackend.numba
         and shape_type == 'polygon',
     )
 
-    def setup(self, n_shapes, n_points, _shape_type, backend_type):
+    def setup(self, n_shapes, n_points, _shape_type, triangulation_backend):
         self.data = polygons_with_hole(n_shapes, n_points)
-        self.select_backend(backend_type)
+        self.select_backend(triangulation_backend)
 
 
 class ShapeTriangulationHolesSuite(_ShapeTriangulationBaseShapeCount):
@@ -521,19 +540,21 @@ class ShapeTriangulationHolesSuite(_ShapeTriangulationBaseShapeCount):
     skip_params = Skip(
         always=skip_triangle_backend,
         if_in_pr=skip_above_100,
-        if_on_ci=lambda n_shapes, n_points, shape_type, backend_type: n_shapes
-        > 100
-        and backend_type == BackendType.numba
+        if_on_ci=lambda n_shapes,
+        n_points,
+        shape_type,
+        triangulation_backend: n_shapes > 100
+        and triangulation_backend == TriangulationBackend.numba
         and shape_type == 'polygon',
     )
 
-    def setup(self, n_shapes, n_points, _shape_type, backend_type):
+    def setup(self, n_shapes, n_points, _shape_type, triangulation_backend):
         self.data = polygons_with_hole(n_shapes, n_points)
-        self.select_backend(backend_type)
+        self.select_backend(triangulation_backend)
 
 
 class ShapeTriangulationMixed(_ShapeTriangulationBase):
-    param_names = ['n_shapes', 'shape_type', 'backend_type']
+    param_names = ['n_shapes', 'shape_type', 'triangulation_backend']
     params = [
         (
             100,
@@ -546,7 +567,7 @@ class ShapeTriangulationMixed(_ShapeTriangulationBase):
     # the case of 128 points crashes the benchmark on call of PolygonData(vertices=data).triangulate()
     skip_params = Skip(if_in_pr=skip_above_100)
 
-    def setup(self, n_shapes, _shape_type, backend_type):
+    def setup(self, n_shapes, _shape_type, triangulation_backend):
         part_size = int(n_shapes / 10)
         self.data = list(
             itertools.chain(
@@ -558,7 +579,7 @@ class ShapeTriangulationMixed(_ShapeTriangulationBase):
                 non_convex_no_self_intersection_polygons(part_size, 60),
             )
         )
-        self.select_backend(backend_type)
+        self.select_backend(triangulation_backend)
 
     @get_shape_type
     def time_create_shapes(self, shape_type):
@@ -571,11 +592,11 @@ class ShapeTriangulationMixed(_ShapeTriangulationBase):
 class MeshTriangulationSuite(_BackendSelection):
     data: list[Polygon | Path]
 
-    param_names = ['shape_type', 'backend_type']
+    param_names = ['shape_type', 'triangulation_backend']
     params = [('path', 'polygon'), backend_list_complex]
 
-    def setup(self, shape_type, backend_type):
-        self.select_backend(backend_type)
+    def setup(self, shape_type, triangulation_backend):
+        self.select_backend(triangulation_backend)
         part_size = 10
         self.data = [
             shape_classes[shape_type](x)
@@ -591,7 +612,7 @@ class MeshTriangulationSuite(_BackendSelection):
             )
         ]
 
-    def time_set_meshes(self, shape_type, _backend_type):
+    def time_set_meshes(self, shape_type, _triangulation_backend):
         for shape in self.data:
             shape._set_meshes(
                 shape.data,
