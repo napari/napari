@@ -1113,10 +1113,12 @@ class Labels(ScalarFieldBase):
 
         # If requested new label doesn't change old label then return
         old_label = np.asarray(self.data[int_coord]).item()
-        if old_label == new_label or (
-            self.preserve_labels
-            and old_label != self.colormap.background_value
-        ):
+        if old_label == new_label:
+            return
+        # If preserve_labels is True and old label is not same as
+        # the previous selected label then also return
+        # this covers the case of using 0 (background) fill to erase
+        if self.preserve_labels and old_label != self._prev_selected_label:
             return
 
         dims_to_fill = sorted(
@@ -1313,7 +1315,9 @@ class Labels(ScalarFieldBase):
         # current label
         if self.preserve_labels:
             if new_label == self.colormap.background_value:
-                keep_coords = self.data[slice_coord] == self.selected_label
+                keep_coords = (
+                    self.data[slice_coord] == self._prev_selected_label
+                )
             else:
                 keep_coords = (
                     self.data[slice_coord] == self.colormap.background_value
