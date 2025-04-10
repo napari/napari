@@ -164,20 +164,25 @@ class ApplicationSettings(EventedModel):
     depth_axis_orientation: DepthAxisOrientation = Field(
         default=DEFAULT_ORIENTATION_TYPED[0],
         title=trans._('Depth Axis Orientation'),
-        description=trans._('Orientation of the depth axis in 3D view.'),
+        description=trans._(
+            'Orientation of the depth axis in 3D view.\n'
+            'Default is "Towards"; <0.6.0 was "Away".'
+        ),
     )
     vertical_axis_orientation: VerticalAxisOrientation = Field(
         default=DEFAULT_ORIENTATION_TYPED[1],
         title=trans._('Vertical Axis Orientation'),
         description=trans._(
-            'Orientation of the vertical axis in 2D and 3D view.'
+            'Orientation of the vertical axis in 2D and 3D view.\n'
+            'Default is "Down"; <0.6.0 was "Down".'
         ),
     )
     horizontal_axis_orientation: HorizontalAxisOrientation = Field(
         default=DEFAULT_ORIENTATION_TYPED[2],
         title=trans._('Horizontal Axis Orientation'),
         description=trans._(
-            'Orientation of the horizontal axis in 2D and 3D view.'
+            'Orientation of the horizontal axis in 2D and 3D view.\n'
+            'Default is "Right"; <0.6.0 was "Right".'
         ),
     )
 
