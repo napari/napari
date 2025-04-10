@@ -390,27 +390,6 @@ def _are_polar_angles_monotonic(
 
 
 @njit(cache=True, inline='always')
-def _centroid(vertices: CoordinateArray2D) -> np.ndarray:
-    """Calculate the centroid of a polygon.
-
-    Parameters
-    ----------
-    vertices : np.ndarray
-        Array of vertex coordinates with shape (N, 2)
-
-    Returns
-    -------
-    np.ndarray
-        The centroid of the polygon
-    """
-    vertices_sum = np.zeros(2, dtype=np.float32)
-    for i in range(len(vertices)):
-        vertices_sum[0] += vertices[i][0]
-        vertices_sum[1] += vertices[i][1]
-    return vertices_sum / len(vertices)
-
-
-@njit(cache=True, inline='always')
 def is_convex(vertices: CoordinateArray2D) -> bool:
     """Check if a polygon is convex.
 
@@ -469,7 +448,9 @@ def is_convex(vertices: CoordinateArray2D) -> bool:
         if triangle_orientation not in [Orientation.collinear, orientation_]:
             return False
 
-    centroid = _centroid(vertices)
+    centroid = np.empty(2, dtype=np.float32)
+    centroid[0] = np.mean(vertices[:, 0])
+    centroid[1] = np.mean(vertices[:, 1])
 
     if orientation_ == Orientation.anticlockwise:
         return _are_polar_angles_monotonic(vertices, centroid)
