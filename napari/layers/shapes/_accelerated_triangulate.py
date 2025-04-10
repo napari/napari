@@ -442,37 +442,31 @@ def is_convex(vertices: CoordinateArray2D) -> bool:
         return True
     orientation_ = Orientation.collinear
     idx = 0
-    while idx < vertices.shape[0] - 2:
+    n_points = vertices.shape[0]
+    orientation_set = False
+    for idx in range(n_points - 2):
         p1 = vertices[idx]
         p2 = vertices[idx + 1]
         p3 = vertices[idx + 2]
-        idx += 1
-        triangle_orientation = _orientation(p1, p2, p3)
-        if triangle_orientation != Orientation.collinear:
-            orientation_ = triangle_orientation
-            break
+        current_orientation = _orientation(p1, p2, p3)
+        if current_orientation != Orientation.collinear:
+            if not orientation_set:
+                orientation_ = current_orientation
+                orientation_set = True
+            elif current_orientation != orientation_:
+                return False
+
     if orientation_ == Orientation.collinear:
         return False
-    while idx < vertices.shape[0] - 2:
-        p1 = vertices[idx]
-        p2 = vertices[idx + 1]
-        p3 = vertices[idx + 2]
-        idx += 1
-        triangle_orientation = _orientation(p1, p2, p3)
-        if (
-            triangle_orientation != Orientation.collinear
-            and triangle_orientation != orientation_
-        ):
-            return False
 
-    for idx0, idx1, idx2 in [(idx, idx + 1, 0), (idx + 1, 0, 1)]:
+    for idx0, idx1, idx2 in [
+        (n_points - 2, n_points - 1, 0),
+        (n_points - 1, 0, 1),
+    ]:
         triangle_orientation = _orientation(
             vertices[idx0], vertices[idx1], vertices[idx2]
         )
-        if (
-            triangle_orientation != Orientation.collinear
-            and triangle_orientation != orientation_
-        ):
+        if triangle_orientation not in [Orientation.collinear, orientation_]:
             return False
 
     centroid = _centroid(vertices)
