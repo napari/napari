@@ -142,7 +142,7 @@ jobs:
             platform: ubuntu-22.04
             backend: pyqt5
             coverage: cov
-            tox_extras: "optional"
+            tox_extras: "all_optional"
           # test without any Qt backends
           - python: "3.11"
             platform: ubuntu-22.04

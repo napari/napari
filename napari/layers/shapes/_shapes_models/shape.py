@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from abc import ABC, abstractmethod
 from functools import cached_property
 
@@ -18,21 +19,24 @@ from napari.layers.shapes._shapes_utils import (
     triangulate_edge,
     triangulate_face,
 )
-from napari.settings import get_settings
 from napari.utils.misc import argsort
 from napari.utils.translations import trans
+from napari.utils.triangulation_backend import TriangulationBackend
 
 try:
-    from PartSegCore_compiled_backend.triangulate import (
-        triangulate_path_edge_numpy,
-        triangulate_polygon_numpy_li,
-        triangulate_polygon_with_edge_numpy_li,
-    )
-
+    import bermuda
 except ImportError:
-    triangulate_path_edge_numpy = None
-    triangulate_polygon_numpy_li = None
-    triangulate_polygon_with_edge_numpy_li = None
+    bermuda = None
+
+try:
+    from PartSegCore_compiled_backend import (
+        triangulate as partsegcore_triangulate,
+    )
+except ImportError:
+    partsegcore_triangulate = None
+
+
+TRIANGULATION_BACKEND = TriangulationBackend.none
 
 
 class Shape(ABC):
@@ -141,10 +145,18 @@ class Shape(ABC):
 
     def __new__(cls, *args, **kwargs):
         if (
-            get_settings().experimental.compiled_triangulation
-            and triangulate_path_edge_numpy is not None
+            TriangulationBackend.bermuda == TRIANGULATION_BACKEND
+            and bermuda is not None
         ):
-            cls._set_meshes = cls._set_meshes_compiled
+            cls._set_meshes = cls._set_meshes_compiled_bermuda
+        elif TriangulationBackend.partsegcore == TRIANGULATION_BACKEND:
+            assert partsegcore_triangulate is not None
+            cls._set_meshes = cls._set_meshes_compiled_partseg
+        elif (
+            TriangulationBackend.triangle == TRIANGULATION_BACKEND
+            and 'triangle' in sys.modules
+        ):
+            cls._set_meshes = cls._set_meshes_triangle
         else:
             cls._set_meshes = cls._set_meshes_py
         return super().__new__(cls)
@@ -232,7 +244,50 @@ class Shape(ABC):
     def z_index(self, z_index):
         self._z_index = z_index
 
-    def _set_meshes_compiled(
+    def _set_empty_edge(self) -> None:
+        self._edge_vertices = np.empty((0, self.ndisplay))
+        self._edge_offsets = np.empty((0, self.ndisplay))
+        self._edge_triangles = np.empty((0, 3), dtype=np.uint32)
+
+    def _set_empty_face(self) -> None:
+        self._face_vertices = np.empty((0, self.ndisplay))
+        self._face_triangles = np.empty((0, 3), dtype=np.uint32)
+
+    def _set_meshes_compiled_3d(
+        self,
+        data: npt.NDArray,
+        closed: bool = True,
+        face: bool = True,
+        edge: bool = True,
+    ):
+        if face:
+            face_triangles, face_vertices = (
+                bermuda.triangulate_polygons_face_3d([data])
+            )
+            self._face_vertices = face_vertices
+            self._face_triangles = face_triangles
+        else:
+            self._set_empty_face()
+
+        if edge:
+            centers, offsets, edge_triangles = triangulate_edge(
+                data, closed=closed
+            )
+            self._edge_vertices = centers
+            self._edge_offsets = offsets
+            self._edge_triangles = edge_triangles
+        else:
+            self._set_empty_edge()
+
+    def _set_meshes(  # noqa: B027
+        self,
+        data: npt.NDArray,
+        closed: bool = True,
+        face: bool = True,
+        edge: bool = True,
+    ) -> None: ...
+
+    def _set_meshes_compiled_bermuda(
         self,
         data: npt.NDArray,
         closed: bool = True,
@@ -240,6 +295,72 @@ class Shape(ABC):
         edge: bool = True,
     ) -> None:
         """Sets the face and edge meshes from a set of points.
+
+        Uses bermuda compiled backend for triangulation.
+
+        Parameters
+        ----------
+        data : np.ndarray
+            Nx2 or Nx3 array specifying the shape to be triangulated
+        closed : bool
+            Bool which determines if the edge is closed or not
+        face : bool
+            Bool which determines if the face need to be traingulated
+        edge : bool
+            Bool which determines if the edge need to be traingulated
+        """
+        if data.shape[1] == 3:
+            self._set_meshes_compiled_3d(
+                data, closed=closed, face=face, edge=edge
+            )
+            return
+
+        # if we are computing both edge and face triangles, we can do so
+        # with a single call to the compiled backend
+        if edge and face:
+            try:
+                (triangles, vertices), (centers, offsets, edge_triangles) = (
+                    bermuda.triangulate_polygons_with_edge([data])
+                )
+            except BaseException as e:  # pragma: no cover
+                path, text_path = _save_failed_triangulation(
+                    data, backend='bermuda'
+                )
+                raise RuntimeError(
+                    f'Triangulation failed. Data saved to {path} and {text_path}'
+                ) from e
+
+            self._edge_vertices = centers
+            self._edge_offsets = offsets
+            self._edge_triangles = edge_triangles
+            self._face_vertices = vertices
+            self._face_triangles = triangles
+            return
+
+        # otherwise, we make individual calls to specialized functions
+        if edge:
+            self._edge_vertices, self._edge_offsets, self._edge_triangles = (
+                bermuda.triangulate_path_edge(data, closed=closed)
+            )
+        else:
+            self._set_empty_edge()
+        if face:
+            self._face_triangles, self._face_vertices = (
+                bermuda.triangulate_polygons_face([data])
+            )
+        else:
+            self._set_empty_face()
+
+    def _set_meshes_compiled_partseg(
+        self,
+        data: npt.NDArray,
+        closed: bool = True,
+        face: bool = True,
+        edge: bool = True,
+    ) -> None:
+        """Sets the face and edge meshes from a set of points.
+
+        Uses PartSegCore compiled backend for triangulation.
 
         Parameters
         ----------
@@ -261,12 +382,14 @@ class Shape(ABC):
         if edge and face:
             try:
                 (triangles, vertices), (centers, offsets, edge_triangles) = (
-                    triangulate_polygon_with_edge_numpy_li(
-                        [data], split_edges=True
+                    partsegcore_triangulate.triangulate_polygon_with_edge_numpy_li(
+                        [data]
                     )
                 )
-            except Exception as e:  # pragma: no cover
-                path, text_path = _save_failed_triangulation(data)
+            except BaseException as e:  # pragma: no cover
+                path, text_path = _save_failed_triangulation(
+                    data, backend='partsegcore'
+                )
                 raise RuntimeError(
                     f'Triangulation failed. Data saved to {path} and {text_path}'
                 ) from e
@@ -280,31 +403,43 @@ class Shape(ABC):
 
         # otherwise, we make individual calls to specialized functions
         if edge:
-            centers, offsets, triangles = triangulate_path_edge_numpy(
-                data, closed=closed
+            self._edge_vertices, self._edge_offsets, self._edge_triangles = (
+                partsegcore_triangulate.triangulate_path_edge_numpy(
+                    data, closed=closed
+                )
             )
-            self._edge_vertices = centers
-            self._edge_offsets = offsets
-            self._edge_triangles = triangles
         else:
-            self._edge_vertices = np.empty((0, self.ndisplay))
-            self._edge_offsets = np.empty((0, self.ndisplay))
-            self._edge_triangles = np.empty((0, 3), dtype=np.uint32)
+            self._set_empty_edge()
         if face:
-            triangles, vertices = triangulate_polygon_numpy_li([data])
-            self._face_vertices = vertices
-            self._face_triangles = triangles
+            self._face_triangles, self._face_vertices = (
+                partsegcore_triangulate.triangulate_polygon_numpy_li([data])
+            )
         else:
-            self._face_vertices = np.empty((0, self.ndisplay))
-            self._face_triangles = np.empty((0, 3), dtype=np.uint32)
+            self._set_empty_face()
 
-    def _set_meshes(  # noqa: B027
+    def _set_meshes_triangle(
         self,
         data: npt.NDArray,
         closed: bool = True,
         face: bool = True,
         edge: bool = True,
-    ) -> None: ...
+    ) -> None:
+        """Sets the face and edge meshes from a set of points.
+
+        Uses the triangle package to triangulate the polygon face
+
+        Parameters
+        ----------
+        data : np.ndarray
+            Nx2 or Nx3 array specifying the shape to be triangulated
+        closed : bool
+            Bool which determines if the edge is closed or not
+        face : bool
+            Bool which determines if the face need to be traingulated
+        edge : bool
+            Bool which determines if the edge need to be traingulated
+        """
+        self._set_meshes_py(data, closed=closed, face=face, edge=edge)
 
     def _set_meshes_py(
         self,
