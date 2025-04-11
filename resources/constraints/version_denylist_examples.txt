@@ -1,2 +1,1 @@
-nilearn
-packaging
+# Can contain test specific constraints for the examples
