@@ -86,7 +86,6 @@ from napari.utils.events import (
 )
 from napari.utils.events.event import WarningEmitter
 from napari.utils.key_bindings import KeymapProvider
-from napari.utils.migrations import rename_argument
 from napari.utils.misc import is_sequence
 from napari.utils.mouse_bindings import MousemapProvider
 from napari.utils.progress import progress
@@ -234,6 +233,17 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self._tooltip_visible_update
         )
 
+        self._update_camera_orientation()
+        settings.application.events.depth_axis_orientation.connect(
+            self._update_camera_orientation
+        )
+        settings.application.events.vertical_axis_orientation.connect(
+            self._update_camera_orientation
+        )
+        settings.application.events.horizontal_axis_orientation.connect(
+            self._update_camera_orientation
+        )
+
         self._update_viewer_grid()
         settings.application.events.grid_stride.connect(
             self._update_viewer_grid
@@ -311,6 +321,16 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def _tooltip_visible_update(self, event):
         self.tooltip.visible = event.value
+
+    def _update_camera_orientation(self):
+        """Update camera orientation based on settings."""
+        settings = get_settings()
+
+        self.camera.orientation = (
+            settings.application.depth_axis_orientation,
+            settings.application.vertical_axis_orientation,
+            settings.application.horizontal_axis_orientation,
+        )
 
     def _update_viewer_grid(self):
         """Keep viewer grid settings up to date with settings values."""
@@ -955,12 +975,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.layers.append(layer)
         return layer
 
-    @rename_argument(
-        from_name='interpolation',
-        to_name='interpolation2d',
-        version='0.6.0',
-        since_version='0.4.17',
-    )
     def add_image(
         self,
         data=None,
