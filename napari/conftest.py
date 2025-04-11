@@ -534,6 +534,9 @@ def _disable_notification_dismiss_timer(monkeypatch):
         monkeypatch.setattr(NapariQtNotification, 'FADE_IN_RATE', 0)
         monkeypatch.setattr(NapariQtNotification, 'FADE_OUT_RATE', 0)
 
+        # disable slide in animation
+        monkeypatch.setattr(NapariQtNotification, 'slide_in', lambda x: None)
+
 
 @pytest.fixture
 def single_threaded_executor():

@@ -318,6 +318,7 @@ def remove_flash_animation(widget_ref: weakref.ref[QWidget]):
     widget = widget_ref()
     try:
         widget.setGraphicsEffect(None)
+        widget._flash_animation.deleteLater()
         del widget._flash_animation
     except RuntimeError:
         # RuntimeError: wrapped C/C++ object of type QtWidgetOverlay deleted
