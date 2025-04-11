@@ -239,7 +239,7 @@ class QtImageControls(QtBaseImageControls):
             * additive: voxel colors are added along the view ray until
               the result is saturated.
             * iso: isosurface. Cast a ray until a certain threshold is
-              encountered. At that location, lighning calculations are
+              encountered. At that location, lighting calculations are
               performed to give the visual appearance of a surface.
             * attenuated_mip: attenuated maximum intensity projection. Cast a
               ray and attenuate values based on integral of encountered values,

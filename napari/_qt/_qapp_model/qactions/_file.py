@@ -196,7 +196,7 @@ Q_FILE_ACTIONS: list[Action] = [
     # If app-model supports a `kwargs` field (see:
     # https://github.com/pyapp-kit/app-model/issues/52)
     # it may allow registration of the same `id` when args are different and
-    # we can re-use `DLG_SAVE_LAYERS` below.
+    # we can reuse `DLG_SAVE_LAYERS` below.
     Action(
         id='napari.window.file.save_layers_dialog.selected',
         title=trans._('Save Selected Layers...'),

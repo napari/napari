@@ -308,7 +308,7 @@ class Dims(EventedModel):
         Parameters
         ----------
         axis : int or sequence of int
-            Dimension index or a sequence of axes whos range will be set.
+            Dimension index or a sequence of axes whose range will be set.
         _range : tuple or sequence of tuple
             Range specified as (min, max, step) or a sequence of these range
             tuples.
@@ -331,7 +331,7 @@ class Dims(EventedModel):
         Parameters
         ----------
         axis : int or sequence of int
-            Dimension index or a sequence of axes whos point will be set.
+            Dimension index or a sequence of axes whose point will be set.
         value : scalar or sequence of scalars
             Value of the point for each axis.
         """
@@ -368,7 +368,7 @@ class Dims(EventedModel):
         Parameters
         ----------
         axis : int or sequence of int
-            Dimension index or a sequence of axes whos labels will be set.
+            Dimension index or a sequence of axes whose labels will be set.
         label : str or sequence of str
             Given labels for the specified axes.
         """
@@ -436,7 +436,7 @@ class Dims(EventedModel):
         self.last_used = sliders[index]
 
     def _focus_down(self):
-        """Shift focused dimension slider to be the next slider bellow."""
+        """Shift focused dimension slider to be the next slider below."""
         sliders = [d for d in self.not_displayed if self.nsteps[d] > 1]
         if len(sliders) == 0:
             return
