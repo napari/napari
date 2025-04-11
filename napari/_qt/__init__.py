@@ -21,11 +21,12 @@ except Exception as e:
                     """
                 No Qt bindings could be found.
 
-                napari requires either PyQt5 (default) or PySide2 to be installed in the environment.
+                napari requires either PyQt5 (default), PyQt6 or PySide2 to be installed in the environment.
 
                 With pip, you can install either with:
                   $ pip install -U 'napari[all]'  # default choice
                   $ pip install -U 'napari[pyqt5]'
+                  $ pip install -U 'napari[pyqt6]'
                   $ pip install -U 'napari[pyside2]'
 
                 With conda, you need to do:
