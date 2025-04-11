@@ -496,7 +496,8 @@ class _QtMainWindow(QMainWindow):
         if (
             not confirm_need_local
             or not get_settings().application.confirm_close_window
-            or ConfirmCloseDialog(self, quit_app).exec_() == QDialog.Accepted
+            or ConfirmCloseDialog(self, quit_app).exec_()
+            == QDialog.DialogCode.Accepted
         ):
             self._quit_app = quit_app
             self._is_close_dialog[quit_app] = True
@@ -1945,7 +1946,6 @@ class Window:
             self._teardown()
             self._qt_viewer.close()
             self._qt_window.close()
-            del self._qt_window
 
     def _open_preferences_dialog(self) -> PreferencesDialog:
         """Edit preferences from the menubar."""

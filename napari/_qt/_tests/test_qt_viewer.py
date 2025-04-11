@@ -359,9 +359,6 @@ def test_export_rois(make_napari_viewer, tmp_path):
             np.count_nonzero(gray_img) == expected_values[index] * scaling**2
         ), f'Wrong number of white pixels in the ROI {index}'
 
-    # Not testing the exact content of the screenshot. It seems not to work within the test, but manual testing does.
-    viewer.close()
-
 
 def test_export_rois_3d_fail(make_napari_viewer):
     viewer = make_napari_viewer()
@@ -389,7 +386,6 @@ def test_export_rois_3d_fail(make_napari_viewer):
         NotImplementedError, match="'export_rois' is not implemented"
     ):
         viewer.export_rois(roi_data)
-    viewer.close()
 
 
 @pytest.mark.skip('new approach')
@@ -461,8 +457,6 @@ def test_qt_viewer_clipboard_with_flash(make_napari_viewer, qtbot):
     # capture screenshot
     with pytest.warns(FutureWarning):
         viewer.window.qt_viewer.clipboard(flash=True)
-
-    viewer.window.clipboard(flash=False, canvas_only=True)
 
     clipboard_image = QGuiApplication.clipboard().image()
     assert not clipboard_image.isNull()

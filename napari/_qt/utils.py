@@ -287,7 +287,9 @@ def add_flash_animation(
     effect = QGraphicsColorizeEffect(widget)
     widget.setGraphicsEffect(effect)
 
-    widget._flash_animation = QPropertyAnimation(effect, b'color')
+    widget._flash_animation = QPropertyAnimation(
+        effect, b'color', parent=widget
+    )
     widget._flash_animation.setStartValue(QColor(0, 0, 0, 0))
     widget._flash_animation.setEndValue(QColor(0, 0, 0, 0))
     widget._flash_animation.setLoopCount(1)
@@ -318,6 +320,7 @@ def remove_flash_animation(widget_ref: weakref.ref[QWidget]):
     widget = widget_ref()
     try:
         widget.setGraphicsEffect(None)
+        widget._flash_animation.deleteLater()
         del widget._flash_animation
     except RuntimeError:
         # RuntimeError: wrapped C/C++ object of type QtWidgetOverlay deleted
