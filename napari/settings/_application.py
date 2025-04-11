@@ -182,7 +182,7 @@ class ApplicationSettings(EventedModel):
         title=trans._('Horizontal Axis Orientation'),
         description=trans._(
             'Orientation of the horizontal axis in 2D and 3D view.\n'
-            'Default is "Right"; <0.6.0 was "Right".'
+            'Default is "Right".'
         ),
     )
 
