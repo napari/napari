@@ -800,6 +800,32 @@ def test_paint_with_preserve_labels():
     assert np.unique(layer.data[:3, :3]) == 1
 
 
+def test_erase_with_preserve_labels():
+    """Test painting background with square brush while preserving existing labels."""
+    data = np.zeros((15, 10), dtype=np.uint32)
+    data[:3, :3] = 1
+    layer = Labels(data)
+
+    layer.preserve_labels = True
+    assert np.unique(layer.data[:3, :3]) == 1
+
+    layer.brush_size = 9
+    layer.selected_label = 2
+    layer.paint([0, 0], layer.selected_label)
+
+    assert np.unique(layer.data[3:5, 0:3]) == 2
+    assert np.unique(layer.data[0:3, 3:5]) == 2
+    assert np.unique(layer.data[:3, :3]) == 1
+
+    layer.swap_selected_and_background_labels()
+    assert layer.selected_label == 0
+    layer.paint([0, 0], layer.selected_label)
+
+    assert np.unique(layer.data[3:5, 0:3]) == 0
+    assert np.unique(layer.data[0:3, 3:5]) == 0
+    assert np.unique(layer.data[:3, :3]) == 1
+
+
 def test_paint_2d():
     """Test painting labels with circle brush."""
     data = np.zeros((40, 40), dtype=np.uint32)
