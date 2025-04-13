@@ -800,6 +800,27 @@ def test_paint_with_preserve_labels():
     assert np.unique(layer.data[:3, :3]) == 1
 
 
+def test_setting_prev_selected_label():
+    """Test that _prev_selected_label is set when selected_label
+    is set to the colormap background_value."""
+    data = np.zeros((15, 10), dtype=np.uint32)
+    layer = Labels(data)
+
+    # set the selected label, _prev_selected_label should be None
+    layer.selected_label = 1
+    assert not layer._prev_selected_label
+
+    layer.selected_label = layer.colormap.background_value
+    assert layer._prev_selected_label == 1
+
+    layer.selected_label = 2
+    # swap the selected and background labels
+    # _prev_selected_label should be set
+    layer.swap_selected_and_background_labels()
+    assert layer.selected_label == layer.colormap.background_value
+    assert layer._prev_selected_label == 2
+
+
 def test_paint_swap_with_preserve_labels():
     """Test painting and swapping labels & background while preserving labels."""
     data = np.zeros((15, 10), dtype=np.uint32)
