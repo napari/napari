@@ -709,6 +709,7 @@ class Labels(ScalarFieldBase):
         if selected_label == self.selected_label:
             return
 
+        self._prev_selected_label = self.selected_label
         self.colormap.selection = selected_label
         self._selected_label = selected_label
         self._selected_color = self.get_color(selected_label)
