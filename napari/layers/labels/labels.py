@@ -709,7 +709,6 @@ class Labels(ScalarFieldBase):
         if selected_label == self.selected_label:
             return
 
-        self._prev_selected_label = self.selected_label
         self.colormap.selection = selected_label
         self._selected_label = selected_label
         self._selected_color = self.get_color(selected_label)
@@ -722,6 +721,7 @@ class Labels(ScalarFieldBase):
     def swap_selected_and_background_labels(self):
         """Swap between the selected label and the background label."""
         if self.selected_label != self.colormap.background_value:
+            self._prev_selected_label = self.selected_label
             self.selected_label = self.colormap.background_value
         else:
             self.selected_label = self._prev_selected_label
@@ -1116,9 +1116,14 @@ class Labels(ScalarFieldBase):
         if old_label == new_label:
             return
         # If preserve_labels is True and old label is not same as
-        # the previous selected label then also return
+        # the previous selected label or background, then also return
         # this covers the case of using 0 (background) fill to erase
-        if self.preserve_labels and old_label != self._prev_selected_label:
+        # accounting for swap_selected_and_background_labels
+        if (
+            self.preserve_labels
+            and old_label != self._prev_selected_label
+            and old_label != self.colormap.background_value
+        ):
             return
 
         dims_to_fill = sorted(
@@ -1312,11 +1317,13 @@ class Labels(ScalarFieldBase):
 
         # slice coord is a tuple of coordinate arrays per dimension
         # subset it if we want to only paint into background/only erase
-        # current label
+        # current label, accounting for swap_selected_and_background_labels
         if self.preserve_labels:
             if new_label == self.colormap.background_value:
-                keep_coords = (
-                    self.data[slice_coord] == self._prev_selected_label
+                keep_coords = self.data[slice_coord] == (
+                    self._prev_selected_label
+                    if self._prev_selected_label
+                    else self.selected_label
                 )
             else:
                 keep_coords = (
