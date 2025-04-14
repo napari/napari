@@ -14,14 +14,14 @@ def test_shape_controls_face_color(qtbot):
     qtbot.addWidget(qtctrl)
     target_color = transform_color(layer.current_face_color)[0]
     np.testing.assert_almost_equal(
-        qtctrl._face_color_control.faceColorEdit.color, target_color
+        qtctrl._face_color_control.face_color_edit.color, target_color
     )
 
     # Update current face color
     layer.current_face_color = 'red'
     target_color = transform_color(layer.current_face_color)[0]
     np.testing.assert_almost_equal(
-        qtctrl._face_color_control.faceColorEdit.color, target_color
+        qtctrl._face_color_control.face_color_edit.color, target_color
     )
 
 
@@ -32,14 +32,14 @@ def test_shape_controls_edge_color(qtbot):
     qtbot.addWidget(qtctrl)
     target_color = transform_color(layer.current_edge_color)[0]
     np.testing.assert_almost_equal(
-        qtctrl._edge_color_control.edgeColorEdit.color, target_color
+        qtctrl._edge_color_control.edge_color_edit.color, target_color
     )
 
     # Update current edge color
     layer.current_edge_color = 'red'
     target_color = transform_color(layer.current_edge_color)[0]
     np.testing.assert_almost_equal(
-        qtctrl._edge_color_control.edgeColorEdit.color, target_color
+        qtctrl._edge_color_control.edge_color_edit.color, target_color
     )
 
 
@@ -47,9 +47,9 @@ def test_text_visible_checkbox(qtbot):
     layer = Shapes(_SHAPES)
     qtctrl = QtShapesControls(layer)
     qtbot.addWidget(qtctrl)
-    qtctrl._text_visibility_control.textDispCheckBox.setChecked(True)
+    qtctrl._text_visibility_control.text_disp_checkbox.setChecked(True)
     assert layer.text.visible
-    qtctrl._text_visibility_control.textDispCheckBox.setChecked(False)
+    qtctrl._text_visibility_control.text_disp_checkbox.setChecked(False)
     assert not layer.text.visible
-    qtctrl._text_visibility_control.textDispCheckBox.setChecked(True)
+    qtctrl._text_visibility_control.text_disp_checkbox.setChecked(True)
     assert layer.text.visible
