@@ -87,7 +87,7 @@ def push(branch_name: str, update: bool = False):
                         'push',
                         '--force',
                         '--set-upstream',
-                        'origin',
+                        'napari-bot',
                         branch_name,
                     ],
                     check=True,
@@ -157,6 +157,7 @@ def create_pr_with_push(branch_name: str, access_token: str, repo=''):
             new_branch=new_branch_name,
             access_token=access_token,
             repo=repo,
+            source_user='napari-bot',
         )
 
 
