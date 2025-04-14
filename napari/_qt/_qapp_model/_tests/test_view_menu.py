@@ -9,9 +9,11 @@ from qtpy.QtWidgets import QApplication
 from napari._app_model import get_app_model
 from napari._qt._qapp_model.qactions._view import (
     _get_current_tooltip_visibility,
+    _toggle_canvas_ndim,
     toggle_action_details,
 )
 from napari._tests.utils import skip_local_focus, skip_local_popups
+from napari.viewer import ViewerModel
 
 
 def check_windows_style(viewer):
@@ -57,6 +59,7 @@ def test_toggle_axes_scale_bar_attr(
         * `arrows`
     * Viewer `scale_bar` attributes:
         * `visible`
+        * `box`
         * `colored`
         * `ticks`
     """
@@ -314,3 +317,12 @@ def test_zoom_actions(make_napari_viewer):
     # Zoom should be reset, but angle unchanged
     assert viewer.camera.zoom == pytest.approx(initial_zoom)
     assert viewer.camera.angles == (90, 0, 0)
+
+
+@pytest.mark.parametrize(('initial', 'expected'), [(3, 2), (2, 3)])
+def test_toggle_canvas_ndim(initial, expected):
+    """Check that _toggle_canvas_ndim toggles the canvas ndims."""
+    viewer = ViewerModel()
+    viewer.dims.ndisplay = initial
+    _toggle_canvas_ndim(viewer)
+    assert viewer.dims.ndisplay == expected

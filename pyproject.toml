@@ -105,7 +105,8 @@ pyside = [
     "napari[pyside2]"
 ]
 pyqt5 = [
-    "PyQt5>=5.15.8"
+    "PyQt5>=5.15.8",
+    "pyqt5-qt5<=5.15.2; sys_platform == 'Windows'",  # 5.15.2 is latest to build on Windows, required for `uv add` compatability as of uv 0.6.9
 ]
 pyqt = [
     "napari[pyqt5]"
@@ -179,6 +180,7 @@ docs = [
     "sphinx-gallery",
     "sphinx_autodoc_typehints==1.12.0",
     "sphinxcontrib-mermaid>=1.0.0",
+    "sphinxext-opengraph[social-cards]",
     "myst-nb",
     "napari-sphinx-theme>=0.3.0",
     "matplotlib",
@@ -240,6 +242,7 @@ napari_builtins = [
 
 [tool.setuptools_scm]
 write_to = "napari/_version.py"
+fallback_version = "0.6.0.nogit"
 
 [tool.check-manifest]
 ignore = [
@@ -335,6 +338,7 @@ ignore = [
     "PYI015", # it produces bad looking files (@jni opinion)
     "W191", "Q000", "Q001", "Q002", "Q003", "ISC001", # https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
     "UP007", # temporary disable migrtion form Union[X, Y] to X | Y
+    "TC006", # put types in quotes in typing.cast
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -342,8 +346,8 @@ ignore = [
 "**/_tests/*.py" = ["B011", "INP001", "TRY301", "B018", "RUF012"]
 "napari/utils/_testsupport.py" = ["B011"]
 "tools/validate_strings.py" = ["F401"]
-"tools/**" = ["INP001", "T20"]
-"examples/**" = ["ICN001", "INP001", "T20"]
+"tools/**" = ["INP001", "T20", "LOG015"]
+"examples/**" = ["ICN001", "INP001", "T20", "LOG015"]
 "**/vendored/**" = ["TID"]
 "napari/benchmarks/**" = ["RUF012", "TID252"]
 

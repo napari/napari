@@ -65,6 +65,8 @@ class QtTailLengthSliderControl(QtWidgetControlsBase):
         """Receive layer model track line width change event and update slider."""
         with self._layer.events.tail_length.blocker():
             value = self._layer.tail_length
+            if value > self.tail_length_slider.maximum():
+                self.tail_length_slider.setMaximum(self._layer._max_length)
             self.tail_length_slider.setValue(value)
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:

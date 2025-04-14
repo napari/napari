@@ -496,7 +496,8 @@ class _QtMainWindow(QMainWindow):
         if (
             not confirm_need_local
             or not get_settings().application.confirm_close_window
-            or ConfirmCloseDialog(self, quit_app).exec_() == QDialog.Accepted
+            or ConfirmCloseDialog(self, quit_app).exec_()
+            == QDialog.DialogCode.Accepted
         ):
             self._quit_app = quit_app
             self._is_close_dialog[quit_app] = True
@@ -848,7 +849,7 @@ class Window:
         warnings.warn(
             trans._(
                 'Public access to Window.qt_viewer is deprecated and will be removed in\n'
-                'v0.6.0. It is considered an "implementation detail" of the napari\napplication, '
+                'v0.7.0. It is considered an "implementation detail" of the napari\napplication, '
                 'not part of the napari viewer model. If your use case\n'
                 'requires access to qt_viewer, please open an issue to discuss.',
                 deferred=True,

@@ -3,10 +3,9 @@
 import logging
 import re
 import sys
-import warnings
 from ast import literal_eval
 from contextlib import suppress
-from typing import Any, Literal, overload
+from typing import Any
 
 import npe2
 
@@ -234,20 +233,8 @@ def get_system_theme() -> str:
     return id_
 
 
-@overload
-def get_theme(theme_id: str) -> Theme: ...
-
-
-@overload
-def get_theme(theme_id: str, as_dict: Literal[False]) -> Theme: ...
-
-
-@overload
-def get_theme(theme_id: str, as_dict: Literal[True]) -> dict[str, Any]: ...
-
-
-def get_theme(theme_id: str, as_dict: bool | None = None):
-    """Get a copy of theme based on it's id.
+def get_theme(theme_id: str):
+    """Get a copy of theme based on its id.
 
     If you get a copy of the theme, changes to the theme model will not be
     reflected in the UI unless you replace or add the modified theme to
@@ -257,13 +244,6 @@ def get_theme(theme_id: str, as_dict: bool | None = None):
     ----------
     theme_id : str
         ID of requested theme.
-    as_dict : bool
-        .. deprecated:: 0.5.0
-
-            Use ``get_theme(...).to_rgb_dict()``
-
-        Flag to indicate that the old-style dictionary
-        should be returned. This will emit deprecation warning.
 
     Returns
     -------
@@ -285,18 +265,6 @@ def get_theme(theme_id: str, as_dict: bool | None = None):
             )
         )
     theme = _themes[theme_id].copy()
-    if as_dict is not None:
-        warnings.warn(
-            trans._(
-                'The `as_dict` kwarg has been deprecated since Napari 0.5.0 and '
-                'will be removed in future version. You can use `get_theme(...).to_rgb_dict()`',
-                deferred=True,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-    if as_dict:
-        return theme.to_rgb_dict()
     return theme
 
 
@@ -445,7 +413,9 @@ def _install_npe2_themes(themes=None):
             try:
                 register_theme(theme.id, theme_dict, manifest.name)
             except ValueError:
-                logging.exception('Registration theme failed.')
+                logging.getLogger('napari').exception(
+                    'Registration theme failed.'
+                )
 
 
 _install_npe2_themes(_themes)
