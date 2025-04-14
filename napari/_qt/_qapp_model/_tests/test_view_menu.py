@@ -16,7 +16,7 @@ from napari._tests.utils import skip_local_focus, skip_local_popups
 from napari.viewer import ViewerModel
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def own_log_handler():
     def fun(msg_type, context, message):
         if msg_type == QtMsgType.QtWarningMsg:
