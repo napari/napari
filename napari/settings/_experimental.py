@@ -13,9 +13,9 @@ class ExperimentalSettings(EventedSettings):
         super().__init__(**data)
 
         self.events.triangulation_backend.connect(
-            self._update_triangulation_backend
+            _update_triangulation_backend
         )
-        self._update_triangulation_backend()
+        self.events.triangulation_backend(value=self.triangulation_backend)
 
     async_: bool = Field(
         False,
@@ -86,12 +86,15 @@ class ExperimentalSettings(EventedSettings):
         # Napari specific configuration
         preferences_exclude = ('schema_version',)
 
-    def _update_triangulation_backend(self) -> None:
-        from napari.layers.shapes import _accelerated_triangulate_dispatch
-        from napari.layers.shapes._shapes_models import shape
 
-        _accelerated_triangulate_dispatch.USE_COMPILED_BACKEND = (
-            self.triangulation_backend
-            in {TriangulationBackend.partsegcore, TriangulationBackend.bermuda}
-        )
-        shape.TRIANGULATION_BACKEND = self.triangulation_backend
+def _update_triangulation_backend(event) -> None:
+    from napari.layers.shapes import _accelerated_triangulate_dispatch
+    from napari.layers.shapes._shapes_models import shape
+
+    experimental = event.source
+
+    _accelerated_triangulate_dispatch.USE_COMPILED_BACKEND = (
+        experimental.triangulation_backend
+        in {TriangulationBackend.partsegcore, TriangulationBackend.bermuda}
+    )
+    shape.TRIANGULATION_BACKEND = experimental.triangulation_backend
