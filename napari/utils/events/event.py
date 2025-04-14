@@ -50,6 +50,7 @@ For more information see http://github.com/vispy/vispy/wiki/API_Events
 """
 
 import contextlib
+import copy
 import inspect
 import os
 import warnings
@@ -304,6 +305,40 @@ class EventEmitter:
 
         self._ignore_callback_errors: bool = False  # True
         self.print_callback_errors = 'reminders'  # 'reminders'
+
+    def __deepcopy__(self, memo):
+        # Avoid infinite recursion if already copied
+        if id(self) in memo:
+            return memo[id(self)]
+
+        # Create a new instance without calling __init__
+        new_instance = self.__class__.__new__(self.__class__)
+        memo[id(self)] = new_instance  # Register in memo early
+
+        # Copy all attributes except 'custom_list' using default deepcopy
+        for key, value in self.__dict__.items():
+            if key == '_callbacks':
+                # Custom handling: Deepcopy each element individually
+                new_callbacks = []
+                for elem in value:
+                    if isinstance(elem, tuple):
+                        # Handle weakref
+                        obj = elem[0]()
+                        if id(obj) in memo:
+                            obj = memo[id(obj)]
+                        new_elem = (
+                            weakref.ref(obj),
+                            elem[1],
+                        )
+                    else:
+                        new_elem = copy.deepcopy(elem, memo)
+                    new_callbacks.append(new_elem)
+                new_instance._callbacks = new_callbacks
+            else:
+                # Default deepcopy for other attributes
+                setattr(new_instance, key, copy.deepcopy(value, memo))
+
+        return new_instance
 
     @property
     def ignore_callback_errors(self) -> bool:
