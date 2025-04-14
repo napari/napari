@@ -108,8 +108,8 @@ LAYERS_SUBMENUS = [
 LAYERS_ACTIONS: list[Action] = [
     Action(
         id='napari.layers.measure.shape',
-        title='Enable shapes measuring',
-        callback=_layer_actions._enable_measure_shapes,
+        title='Toggle shapes measuring',
+        callback=_layer_actions._toggle_measure_shapes,
         menus=[MenuId.MENUBAR_LAYERS.LAYERS_MEASURE, MenuId.LAYERLIST_CONTEXT],
         enablement=LLSCK.all_selected_layers_shapes,
     ),

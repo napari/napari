@@ -1265,3 +1265,40 @@ def _save_failed_triangulation(
         np.savetxt(text_file, data)
 
     return binary_file.name, text_file.name
+
+
+def _triangle_area(a, b, c):
+    """Heron's formula."""
+    s = (a + b + c) / 2
+    return (s * (s - a) * (s - b) * (s - c)) ** 0.5
+
+
+def _shape_area(
+    face_triangles: npt.ArrayLike, face_vertices: npt.ArrayLike
+) -> npt.ArrayLike:
+    """Calculate the area of a shape from its triangulated faces."""
+    vert_coords = face_vertices[face_triangles]
+    edge_lengths = np.linalg.norm(
+        np.roll(vert_coords, 1, axis=1) - vert_coords, axis=2
+    )
+    return np.sum(_triangle_area(*edge_lengths.T))
+
+
+def _shape_perimeter(
+    edge_triangles: npt.ArrayLike, edge_vertices: npt.ArrayLike
+) -> npt.ArrayLike:
+    """Calculate the perimeter of a shape from its triangulated faces."""
+    # edges are saved as triangles because they are rendered with a thickness
+    # here we need to remove all duplicate vertices and only retain the edges connecting
+    # each vertex to the next in line (hence the ::2 and :2 indexing)
+    vert_coords = edge_vertices[edge_triangles[::2, :2]]
+    edge_lengths = np.linalg.norm(
+        vert_coords[:, 1] - vert_coords[:, 0], axis=1
+    )
+    return np.sum(edge_lengths)
+
+
+def measure_shape(shape):
+    return _shape_perimeter(
+        shape._edge_triangles, shape._edge_vertices
+    ), _shape_area(shape._face_triangles, shape._face_vertices)
