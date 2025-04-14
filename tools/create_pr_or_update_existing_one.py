@@ -62,36 +62,48 @@ def push(branch_name: str, update: bool = False):
     """
     Push the current branch to the remote.
     """
-    with cd(REPO_DIR):
-        logging.info('go to dir %s', REPO_DIR)
-        if update:
-            logging.info('Pushing to %s', branch_name)
-            subprocess.run(
-                [
-                    'git',
-                    'push',
-                    '--force',
-                    '--set-upstream',
-                    'napari-bot',
-                    branch_name,
-                ],
-                check=True,
-                capture_output=True,
-            )
-        else:
-            logging.info('Force pushing to %s', branch_name)
-            subprocess.run(
-                [
-                    'git',
-                    'push',
-                    '--force',
-                    '--set-upstream',
-                    'origin',
-                    branch_name,
-                ],
-                check=True,
-                capture_output=True,
-            )  # nosec
+    try:
+        with cd(REPO_DIR):
+            logging.info('go to dir %s', REPO_DIR)
+            if update:
+                logging.info('Pushing to %s', branch_name)
+                subprocess.run(
+                    [
+                        'git',
+                        'push',
+                        '--force',
+                        '--set-upstream',
+                        'napari-bot',
+                        branch_name,
+                    ],
+                    check=True,
+                    capture_output=True,
+                )
+            else:
+                logging.info('Force pushing to %s', branch_name)
+                subprocess.run(
+                    [
+                        'git',
+                        'push',
+                        '--force',
+                        '--set-upstream',
+                        'origin',
+                        branch_name,
+                    ],
+                    check=True,
+                    capture_output=True,
+                )  # nosec
+    except subprocess.CalledProcessError as e:
+        stdout = e.stdout.decode() if e.stdout else ''
+        stderr = e.stderr.decode() if e.stderr else ''
+        logging.exception(
+            'Error pushing to branch %s:\n\nstdout: %s\\nnstderr: %s\n\nWith error %d',
+            branch_name,
+            stdout,
+            stderr,
+            e.returncode,
+        )
+        raise
 
 
 def commit_message(branch_name) -> str:
