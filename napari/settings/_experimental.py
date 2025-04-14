@@ -2,6 +2,7 @@ from typing import Any
 
 from napari._pydantic_compat import Field
 from napari.settings._base import EventedSettings
+from napari.utils.events import Event
 from napari.utils.translations import trans
 from napari.utils.triangulation_backend import TriangulationBackend
 
@@ -87,11 +88,11 @@ class ExperimentalSettings(EventedSettings):
         preferences_exclude = ('schema_version',)
 
 
-def _update_triangulation_backend(event) -> None:
+def _update_triangulation_backend(event: Event) -> None:
     from napari.layers.shapes import _accelerated_triangulate_dispatch
     from napari.layers.shapes._shapes_models import shape
 
-    experimental = event.source
+    experimental: ExperimentalSettings = event.source
 
     _accelerated_triangulate_dispatch.USE_COMPILED_BACKEND = (
         experimental.triangulation_backend
