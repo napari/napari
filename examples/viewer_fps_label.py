@@ -23,5 +23,8 @@ viewer.text_overlay.visible = True
 # without warning in future versions!
 viewer.window._qt_viewer.canvas._scene_canvas.measure_fps(callback=update_fps)
 
+# call update_fps function once to have it show before
+# mouse interaction with the canvas
+update_fps(60)
 if __name__ == '__main__':
     napari.run()

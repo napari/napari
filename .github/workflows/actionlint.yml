@@ -1,4 +1,5 @@
 name: Actionlint
+# https://github.com/rhysd/actionlint
 
 on:
   pull_request:

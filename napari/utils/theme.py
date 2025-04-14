@@ -3,10 +3,9 @@
 import logging
 import re
 import sys
-import warnings
 from ast import literal_eval
 from contextlib import suppress
-from typing import Any, Literal, Optional, Union, overload
+from typing import Any
 
 import npe2
 
@@ -91,7 +90,7 @@ class Theme(EventedModel):
         assert value in STYLE_MAP, trans._(
             'Incorrect `syntax_style` value: {value} provided. Please use one of the following: {syntax_style}',
             deferred=True,
-            syntax_style=f" {', '.join(STYLE_MAP)}",
+            syntax_style=f' {", ".join(STYLE_MAP)}',
             value=value,
         )
         return value
@@ -135,7 +134,7 @@ def increase(font_size: str, pt: int) -> str:
     return f'{int(font_size[:-2]) + int(pt)}pt'
 
 
-def _parse_color_as_rgb(color: Union[str, Color]) -> tuple[int, int, int]:
+def _parse_color_as_rgb(color: str | Color) -> tuple[int, int, int]:
     if isinstance(color, str):
         if color.startswith('rgb('):
             return literal_eval(color.lstrip('rgb(').rstrip(')'))
@@ -143,7 +142,7 @@ def _parse_color_as_rgb(color: Union[str, Color]) -> tuple[int, int, int]:
     return color.as_rgb_tuple()[:3]
 
 
-def darken(color: Union[str, Color], percentage: float = 10) -> str:
+def darken(color: str | Color, percentage: float = 10) -> str:
     ratio = 1 - float(percentage) / 100
     red, green, blue = _parse_color_as_rgb(color)
     red = min(max(int(red * ratio), 0), 255)
@@ -152,7 +151,7 @@ def darken(color: Union[str, Color], percentage: float = 10) -> str:
     return f'rgb({red}, {green}, {blue})'
 
 
-def lighten(color: Union[str, Color], percentage: float = 10) -> str:
+def lighten(color: str | Color, percentage: float = 10) -> str:
     ratio = float(percentage) / 100
     red, green, blue = _parse_color_as_rgb(color)
     red = min(max(int(red + (255 - red) * ratio), 0), 255)
@@ -161,7 +160,7 @@ def lighten(color: Union[str, Color], percentage: float = 10) -> str:
     return f'rgb({red}, {green}, {blue})'
 
 
-def opacity(color: Union[str, Color], value: int = 255) -> str:
+def opacity(color: str | Color, value: int = 255) -> str:
     red, green, blue = _parse_color_as_rgb(color)
     return f'rgba({red}, {green}, {blue}, {max(min(int(value), 255), 0)})'
 
@@ -234,20 +233,8 @@ def get_system_theme() -> str:
     return id_
 
 
-@overload
-def get_theme(theme_id: str) -> Theme: ...
-
-
-@overload
-def get_theme(theme_id: str, as_dict: Literal[False]) -> Theme: ...
-
-
-@overload
-def get_theme(theme_id: str, as_dict: Literal[True]) -> dict[str, Any]: ...
-
-
-def get_theme(theme_id: str, as_dict: Optional[bool] = None):
-    """Get a copy of theme based on it's id.
+def get_theme(theme_id: str):
+    """Get a copy of theme based on its id.
 
     If you get a copy of the theme, changes to the theme model will not be
     reflected in the UI unless you replace or add the modified theme to
@@ -257,13 +244,6 @@ def get_theme(theme_id: str, as_dict: Optional[bool] = None):
     ----------
     theme_id : str
         ID of requested theme.
-    as_dict : bool
-        .. deprecated:: 0.5.0
-
-            Use ``get_theme(...).to_rgb_dict()``
-
-        Flag to indicate that the old-style dictionary
-        should be returned. This will emit deprecation warning.
 
     Returns
     -------
@@ -285,18 +265,6 @@ def get_theme(theme_id: str, as_dict: Optional[bool] = None):
             )
         )
     theme = _themes[theme_id].copy()
-    if as_dict is not None:
-        warnings.warn(
-            trans._(
-                'The `as_dict` kwarg has been deprecated since Napari 0.5.0 and '
-                'will be removed in future version. You can use `get_theme(...).to_rgb_dict()`',
-                deferred=True,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-    if as_dict:
-        return theme.to_rgb_dict()
     return theme
 
 
@@ -445,7 +413,9 @@ def _install_npe2_themes(themes=None):
             try:
                 register_theme(theme.id, theme_dict, manifest.name)
             except ValueError:
-                logging.exception('Registration theme failed.')
+                logging.getLogger('napari').exception(
+                    'Registration theme failed.'
+                )
 
 
 _install_npe2_themes(_themes)

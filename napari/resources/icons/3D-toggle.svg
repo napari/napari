@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Generator: Adobe Illustrator 23.0.6, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+
+<svg
+   version="1.1"
+   id="Layer_1"
+   x="0px"
+   y="0px"
+   viewBox="0 0 175 100"
+   xml:space="preserve"
+   sodipodi:docname="3D-toggle.svg"
+   inkscape:version="1.4 (86a8ad7, 2024-10-11)"
+   width="175"
+   height="100"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"><defs
+   id="defs6" /><sodipodi:namedview
+   id="namedview6"
+   pagecolor="#ffffff"
+   bordercolor="#000000"
+   borderopacity="0.25"
+   inkscape:showpageshadow="2"
+   inkscape:pageopacity="0.0"
+   inkscape:pagecheckerboard="0"
+   inkscape:deskcolor="#d1d1d1"
+   inkscape:zoom="1.7152783"
+   inkscape:cx="107.56272"
+   inkscape:cy="158.28335"
+   inkscape:window-width="1561"
+   inkscape:window-height="1240"
+   inkscape:window-x="1993"
+   inkscape:window-y="679"
+   inkscape:window-maximized="0"
+   inkscape:current-layer="Layer_1" />
+<g
+   id="g6"
+   transform="translate(74.9,0.05)">
+	<path
+   d="m 57.3,84.7 h -32 c -4.6,0 -8.2,-3.6 -8.2,-8.2 v -32 c 0,-4.6 3.6,-8.2 8.2,-8.2 h 32 c 4.6,0 8.2,3.6 8.2,8.2 v 32 c -0.1,4.7 -3.6,8.2 -8.2,8.2 z M 26.9,74.9 H 55.6 V 46.2 H 26.9 Z"
+   id="path1" />
+	<path
+   d="m 74.7,63.6 h -32 c -4.6,0 -8.2,-3.6 -8.2,-8.2 v -32 c 0,-4.6 3.6,-8.2 8.2,-8.2 h 32 c 4.6,0 8.2,3.6 8.2,8.2 v 32 c 0,4.6 -3.6,8.2 -8.2,8.2 z M 44.3,53.8 H 73 V 25.1 H 44.3 Z"
+   id="path2" />
+	<path
+   d="M 81.1,60.6 62.7,82.7 55.8,75.8 69.6,60.5 74.6,57"
+   id="path3" />
+	<path
+   d="M 82,26.8 61.9,46.9 55,39.9 75.4,19.5 v 0"
+   id="path4" />
+	<path
+   d="M 44.7,60.6 24.8,83.1 17.9,76.2 36.7,54 h 1.6"
+   id="path5" />
+	<path
+   d="M 19,39.4 36,18.7 46.3,21.7 29.2,42 v 0"
+   id="path6" />
+</g>
+<path
+   d="m 51.4,27.9 c 1.9,0 17.887156,3.858327 19.087156,5.458327 L 85.174865,64.058364 C 86.541094,67.313949 86.4,72.3 83.6,74.5 80.8,76.7 76.58445,76.407138 74.38445,73.607138 L 46.3,38.4 c -2.074631,-2.600791 -1.920843,-6.770066 1,-9.1 1.546365,-1.233524 2.7,-1.4 4.1,-1.4 z"
+   id="path1-8-2-8-5-11-2"
+   transform="matrix(-0.24272554,-0.19362399,0.19362031,-0.24273015,173.80312,111.2704)"
+   sodipodi:nodetypes="sccscccs" /><path
+   d="m 51.4,27.9 c 1.9,0 17.887156,3.858327 19.087156,5.458327 L 85.174865,64.058364 C 86.541094,67.313949 86.4,72.3 83.6,74.5 80.8,76.7 76.58445,76.407138 74.38445,73.607138 L 46.3,38.4 c -2.074631,-2.600791 -1.920843,-6.770066 1,-9.1 1.546365,-1.233524 2.7,-1.4 4.1,-1.4 z"
+   id="path1-8-2-8-5-11-3-6"
+   transform="matrix(-0.19362392,-0.24272562,-0.24273007,0.19362038,186.27039,98.803144)"
+   sodipodi:nodetypes="sccscccs" /><path
+   d="M 74.7,86.9 H 26.4 C 19.5,86.9 14.2,81.5 14.2,74.7 V 26.4 c 0,-6.9 5.4,-12.2 12.2,-12.2 h 48.1 c 6.9,0 12.2,5.4 12.2,12.2 v 48.1 c 0.2,7 -5.2,12.4 -12,12.4 z M 28.9,72.1 H 72.1 V 28.9 H 28.9 Z"
+   id="path1-2"
+   transform="matrix(0.48143054,0,0,0.48143054,11.483126,25.663686)" /><g
+   id="g1"
+   transform="translate(-1.0425285,-1.2006362)"><path
+     d="m 51.4,27.9 c 1.9,0 17.887156,3.858327 19.087156,5.458327 L 85.174865,64.058364 C 86.541094,67.313949 86.4,72.3 83.6,74.5 80.8,76.7 76.58445,76.407138 74.38445,73.607138 L 46.3,38.4 c -2.074631,-2.600791 -1.920843,-6.770066 1,-9.1 1.546365,-1.233524 2.7,-1.4 4.1,-1.4 z"
+     id="path1-8-2-8-5-11-2-7"
+     transform="matrix(0.30854571,-0.03472004,0.0347259,0.30854637,51.669317,42.384949)"
+     sodipodi:nodetypes="sccscccs" /><path
+     d="m 51.4,27.9 c 1.9,0 17.887156,3.858327 19.087156,5.458327 L 85.174865,64.058364 C 86.541094,67.313949 86.4,72.3 83.6,74.5 80.8,76.7 76.58445,76.407138 74.38445,73.607138 L 46.3,38.4 c -2.074631,-2.600791 -1.920843,-6.770066 1,-9.1 1.546365,-1.233524 2.7,-1.4 4.1,-1.4 z"
+     id="path1-8-2-8-5-11-3-6-1"
+     transform="matrix(0.30854572,0.03472015,0.03472579,-0.30854636,51.669303,60.016314)"
+     sodipodi:nodetypes="sccscccs" /></g></svg>

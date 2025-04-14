@@ -1,4 +1,4 @@
-from typing import Any, Union
+from typing import Any
 
 import numpy as np
 
@@ -33,7 +33,7 @@ class CategoricalColormap(EventedModel):
         default_factory=lambda: ColorCycle.validate_type('white')
     )
 
-    def map(self, color_properties: Union[list, np.ndarray]) -> np.ndarray:
+    def map(self, color_properties: list | np.ndarray) -> np.ndarray:
         """Map an array of values to an array of colors
         Parameters
         ----------
@@ -44,7 +44,7 @@ class CategoricalColormap(EventedModel):
         colors : np.ndarray
             An Nx4 color array where N is the number of property values provided.
         """
-        if isinstance(color_properties, (list, np.ndarray)):
+        if isinstance(color_properties, list | np.ndarray):
             color_properties = np.asarray(color_properties)
         else:
             color_properties = np.asarray([color_properties])
@@ -94,7 +94,7 @@ class CategoricalColormap(EventedModel):
     def validate_type(cls, val):
         if isinstance(val, cls):
             return val
-        if isinstance(val, (list, np.ndarray)):
+        if isinstance(val, list | np.ndarray):
             return cls.from_array(val)
         if isinstance(val, dict):
             return cls.from_dict(val)

@@ -195,7 +195,7 @@ def test_model_fields_are_annotated(test_settings):
         if difference:
             errors.append(
                 f"Model '{model.__name__}' does not provide annotations "
-                f"for the fields:\n{', '.join(repr(f) for f in difference)}"
+                f'for the fields:\n{", ".join(repr(f) for f in difference)}'
             )
 
     if errors:
@@ -426,3 +426,11 @@ def test_shortcut_aliases():
         },
     )
     assert settings_original == settings_canonical
+
+
+def test_env_settings_restore(monkeypatch):
+    monkeypatch.setenv('NAPARI_ASYNC', '0')
+    s = NapariSettings()
+    s.experimental.completion_radius = 1
+    assert s.env_settings() == {'experimental': {'async_': '0'}}
+    assert s._save_dict()['experimental'] == {'completion_radius': 1}

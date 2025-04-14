@@ -1,4 +1,5 @@
 import os.path
+import sys
 
 from npe2 import DynamicPlugin
 
@@ -110,7 +111,15 @@ def test_score_specificity_simple():
 
 
 def test_score_specificity_complex():
-    assert score_specificity('*/my-specific-folder/[nested]/*?.tif') == (
+    # account for py313 change in https://github.com/python/cpython/pull/113829
+    if sys.platform.startswith('win') and sys.version_info >= (3, 13):
+        relative_path = r'*\my-specific-folder\[nested]\*?.tif'
+        absolute_path = r'\\my-specific-folder\[nested]\*?.tif'
+    else:
+        relative_path = '*/my-specific-folder/[nested]/*?.tif'
+        absolute_path = '/my-specific-folder/[nested]/*?.tif'
+
+    assert score_specificity(relative_path) == (
         True,
         -3,
         [
@@ -120,8 +129,7 @@ def test_score_specificity_complex():
             MatchFlag.STAR | MatchFlag.ANY,
         ],
     )
-
-    assert score_specificity('/my-specific-folder/[nested]/*?.tif') == (
+    assert score_specificity(absolute_path) == (
         False,
         -2,
         [
@@ -149,7 +157,13 @@ def test_score_specificity_collapse_star():
         -1,
         [MatchFlag.STAR, MatchFlag.STAR],
     )
-    assert score_specificity('/abc*/*.tif') == (False, 0, [MatchFlag.STAR])
+    # account for py313 change in https://github.com/python/cpython/pull/113829
+    if sys.platform.startswith('win') and sys.version_info >= (3, 13):
+        absolute_path = r'\\abc*\*.tif'
+    else:
+        absolute_path = '/abc*/*.tif'
+
+    assert score_specificity(absolute_path) == (False, 0, [MatchFlag.STAR])
 
 
 def test_score_specificity_range():

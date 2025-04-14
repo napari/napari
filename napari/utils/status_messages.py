@@ -1,5 +1,4 @@
 from collections.abc import Iterable
-from typing import Optional
 
 import numpy as np
 import numpy.typing as npt
@@ -43,25 +42,33 @@ def status_format(value):
     return str(value)
 
 
-def generate_layer_coords_status(
-    position: Optional[npt.ArrayLike], value: Optional[tuple]
-) -> str:
+def generate_layer_status_strings(
+    position: npt.ArrayLike | None, value: tuple | None
+) -> tuple[str, str]:
     if position is not None:
         full_coord = map(str, np.round(np.array(position)).astype(int))
-        msg = f" [{' '.join(full_coord)}]"
+        pos_str = f' [{" ".join(full_coord)}]'
     else:
-        msg = ''
+        pos_str = ''
 
+    val_str = ''
     if value is not None:
         if isinstance(value, tuple) and value != (None, None):
             # it's a multiscale -> value = (data_level, value)
-            msg += f': {status_format(value[0])}'
+            val_str = f'{status_format(value[0])}'
             if value[1] is not None:
-                msg += f', {status_format(value[1])}'
+                val_str += f', {status_format(value[1])}'
         else:
             # it's either a grayscale or rgb image (scalar or list)
-            msg += f': {status_format(value)}'
-    return msg
+            val_str = f'{status_format(value)}'
+
+    return pos_str, val_str
+
+
+def generate_layer_coords_status(
+    position: npt.ArrayLike | None, value: tuple | None
+) -> str:
+    return ': '.join(generate_layer_status_strings(position, value))
 
 
 def generate_layer_status(name, position, value):
@@ -83,7 +90,7 @@ def generate_layer_status(name, position, value):
     """
     if position is not None:
         full_coord = map(str, np.round(position).astype(int))
-        msg = f"{name} [{' '.join(full_coord)}]"
+        msg = f'{name} [{" ".join(full_coord)}]'
     else:
         msg = f'{name}'
 

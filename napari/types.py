@@ -1,21 +1,21 @@
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from functools import partial, wraps
 from pathlib import Path
 from types import TracebackType
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     NewType,
     Optional,
     Union,
+    get_args,
 )
 
 import numpy as np
 
 # TODO decide where types should be defined to have single place for them
 from npe2.types import LayerName as LayerTypeName
-from typing_extensions import TypedDict, get_args
+from typing_extensions import TypedDict
 
 if TYPE_CHECKING:
     # dask zarr should be imported as `import dask.array as da` But here it is used only in type annotation to
@@ -28,28 +28,28 @@ if TYPE_CHECKING:
 
 
 __all__ = [
-    'ArrayLike',
-    'LayerTypeName',
-    'FullLayerData',
-    'LayerData',
-    'PathLike',
-    'PathOrPaths',
-    'ReaderFunction',
-    'WriterFunction',
-    'ExcInfo',
-    'WidgetCallable',
-    'AugmentedWidget',
-    'SampleData',
-    'SampleDict',
     'ArrayBase',
+    'ArrayLike',
+    'AugmentedWidget',
+    'ExcInfo',
+    'FullLayerData',
     'ImageData',
     'LabelsData',
+    'LayerData',
+    'LayerDataTuple',
+    'LayerTypeName',
+    'PathLike',
+    'PathOrPaths',
     'PointsData',
+    'ReaderFunction',
+    'SampleData',
+    'SampleDict',
     'ShapesData',
     'SurfaceData',
     'TracksData',
     'VectorsData',
-    'LayerDataTuple',
+    'WidgetCallable',
+    'WriterFunction',
     'image_reader_to_layerdata_reader',
 ]
 

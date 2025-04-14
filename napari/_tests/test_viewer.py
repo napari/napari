@@ -38,9 +38,9 @@ def _assert_shortcuts_exist_for_each_action(type_):
     }
     shortcuts.update(func.__name__ for func in type_.class_keymap.values())
     for action in actions:
-        assert (
-            action.__name__ in shortcuts
-        ), f"missing shortcut for action '{action.__name__}' on '{type_.__name__}' is missing"
+        assert action.__name__ in shortcuts, (
+            f"missing shortcut for action '{action.__name__}' on '{type_.__name__}' is missing"
+        )
 
 
 viewer_actions = _get_provider_actions(Viewer)
@@ -174,18 +174,30 @@ def test_screenshot(make_napari_viewer, qtbot):
     viewer.add_shapes(data)
 
     # Take screenshot of the image canvas only
-    screenshot = viewer.screenshot(canvas_only=True, flash=False)
+    # Test that flash animation does not occur
+    screenshot = viewer.screenshot(canvas_only=True)
+    assert not hasattr(
+        viewer.window._qt_viewer._welcome_widget, '_flash_animation'
+    )
     assert screenshot.ndim == 3
 
     # Take screenshot with the viewer included
-    screenshot = viewer.screenshot(canvas_only=False, flash=False)
+    screenshot = viewer.screenshot(canvas_only=False)
     assert screenshot.ndim == 3
 
     # test size argument (and ensure it coerces to int)
     screenshot = viewer.screenshot(canvas_only=True, size=(20, 20.0))
     assert screenshot.shape == (20, 20, 4)
-    # Here we wait until the flash animation will be over. We cannot wait on finished
-    # signal as _flash_animation may be already removed when calling wait.
+
+    # test flash animation works
+    screenshot = viewer.screenshot(canvas_only=True, flash=True)
+    assert hasattr(
+        viewer.window._qt_viewer._welcome_widget, '_flash_animation'
+    )
+
+    # Here we wait until the flash animation will be over for teardown.
+    # We cannot wait on finished signal as _flash_animation may be already
+    # removed when calling wait.
     qtbot.waitUntil(
         lambda: not hasattr(
             viewer.window._qt_viewer._welcome_widget, '_flash_animation'

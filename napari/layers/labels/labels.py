@@ -1,13 +1,11 @@
+import typing
 import warnings
 from collections import deque
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from contextlib import contextmanager
 from typing import (
     Any,
-    Callable,
     ClassVar,
-    Optional,
-    Union,
 )
 
 import numpy as np
@@ -61,7 +59,6 @@ from napari.utils.events import EmitterGroup, Event
 from napari.utils.events.custom_types import Array
 from napari.utils.misc import StringEnum, _is_array_type
 from napari.utils.naming import magic_name
-from napari.utils.status_messages import generate_layer_coords_status
 from napari.utils.translations import trans
 
 __all__ = ('Labels',)
@@ -211,6 +208,11 @@ class Labels(ScalarFieldBase):
         with a thickness equal to its value. Must be >= 0.
     brush_size : float
         Size of the paint brush in data coordinates.
+    iso_gradient_mode : str
+        Method for calulating the gradient (used to get the surface normal) in the
+        'iso_categorical' rendering mode. Must be one of {'fast', 'smooth'}.
+        'fast' uses a simple finite difference gradient in x, y, and z. 'smooth' uses an
+        isotropic Sobel gradient, which is smoother but more computationally expensive.
     selected_label : int
         Index of selected label. Can be greater than the current maximum label.
     mode : str
@@ -394,7 +396,7 @@ class Labels(ScalarFieldBase):
         self._contiguous = True
         self._brush_size = 10
 
-        self._iso_gradient_mode = IsoCategoricalGradientMode.FAST
+        self._iso_gradient_mode = IsoCategoricalGradientMode(iso_gradient_mode)
 
         self._selected_label = 1
         self.colormap.selection = self._selected_label
@@ -441,7 +443,7 @@ class Labels(ScalarFieldBase):
         self.events.rendering()
 
     @property
-    def iso_gradient_mode(self):
+    def iso_gradient_mode(self) -> str:
         """Return current gradient mode for isosurface rendering.
 
         Selects the finite-difference gradient method for the isosurface shader. Options include:
@@ -457,7 +459,7 @@ class Labels(ScalarFieldBase):
         return str(self._iso_gradient_mode)
 
     @iso_gradient_mode.setter
-    def iso_gradient_mode(self, value):
+    def iso_gradient_mode(self, value: IsoCategoricalGradientMode | str):
         self._iso_gradient_mode = IsoCategoricalGradientMode(value)
         self.events.iso_gradient_mode()
 
@@ -513,7 +515,7 @@ class Labels(ScalarFieldBase):
         )
         return abs(self.brush_size * min_scale)
 
-    def new_colormap(self, seed: Optional[int] = None):
+    def new_colormap(self, seed: int | None = None):
         if seed is None:
             seed = np.random.default_rng().integers(2**32 - 1)
 
@@ -562,12 +564,12 @@ class Labels(ScalarFieldBase):
         self.refresh(extent=False)
 
     @property
-    def data(self) -> Union[LayerDataProtocol, MultiScaleData]:
+    def data(self) -> LayerDataProtocol | MultiScaleData:
         """array: Image data."""
         return self._data
 
     @data.setter
-    def data(self, data: Union[LayerDataProtocol, MultiScaleData]):
+    def data(self, data: LayerDataProtocol | MultiScaleData):
         data = self._ensure_int_labels(data)
         self._data = data
         self._ndim = len(self._data.shape)
@@ -596,7 +598,7 @@ class Labels(ScalarFieldBase):
     @features.setter
     def features(
         self,
-        features: Union[dict[str, np.ndarray], pd.DataFrame],
+        features: dict[str, np.ndarray] | pd.DataFrame,
     ) -> None:
         self._feature_table.set_values(features)
         self._label_index = self._make_label_index()
@@ -854,7 +856,7 @@ class Labels(ScalarFieldBase):
 
     def _calculate_contour(
         self, labels: np.ndarray, data_slice: tuple[slice, ...]
-    ) -> Optional[np.ndarray]:
+    ) -> np.ndarray | None:
         """Calculate the contour of a given label array within the specified data slice.
 
         Parameters
@@ -892,12 +894,12 @@ class Labels(ScalarFieldBase):
         # Remove the latest one-pixel border from the result
         delta_slice = tuple(
             slice(s1.start - s2.start, s1.stop - s2.start)
-            for s1, s2 in zip(data_slice, expanded_slice)
+            for s1, s2 in zip(data_slice, expanded_slice, strict=False)
         )
         return sliced_labels[delta_slice]
 
     def _raw_to_displayed(
-        self, raw, data_slice: Optional[tuple[slice, ...]] = None
+        self, raw, data_slice: tuple[slice, ...] | None = None
     ) -> np.ndarray:
         """Determine displayed image from a saved raw image and a saved seed.
 
@@ -1435,7 +1437,9 @@ class Labels(ScalarFieldBase):
             self._updated_slice = tuple(
                 [
                     slice(min(s1.start, s2.start), max(s1.stop, s2.stop))
-                    for s1, s2 in zip(updated_slice, self._updated_slice)
+                    for s1, s2 in zip(
+                        updated_slice, self._updated_slice, strict=False
+                    )
                 ]
             )
 
@@ -1450,12 +1454,13 @@ class Labels(ScalarFieldBase):
 
     def get_status(
         self,
-        position: Optional[npt.ArrayLike] = None,
+        position: npt.ArrayLike | None = None,
         *,
-        view_direction: Optional[npt.ArrayLike] = None,
-        dims_displayed: Optional[list[int]] = None,
+        view_direction: npt.ArrayLike | None = None,
+        dims_displayed: list[int] | None = None,
         world: bool = False,
-    ) -> dict:
+        value: Any | None = None,
+    ) -> dict[str, str]:
         """Status message information of the data at a coordinate position.
 
         Parameters
@@ -1474,25 +1479,15 @@ class Labels(ScalarFieldBase):
 
         Returns
         -------
-        source_info : dict
+        status : dict
             Dict containing a information that can be used in a status update.
         """
-        if position is not None:
-            value = self.get_value(
-                position,
-                view_direction=view_direction,
-                dims_displayed=dims_displayed,
-                world=world,
-            )
-        else:
-            value = None
-
-        source_info = self._get_source_info()
-
-        pos = position
-        if pos is not None:
-            pos = np.asarray(pos)[-self.ndim :]
-        source_info['coordinates'] = generate_layer_coords_status(pos, value)
+        status = super().get_status(
+            position,
+            view_direction=view_direction,
+            dims_displayed=dims_displayed,
+            world=world,
+        )
 
         # if this labels layer has properties
         properties = self._get_properties(
@@ -1502,16 +1497,17 @@ class Labels(ScalarFieldBase):
             world=world,
         )
         if properties:
-            source_info['coordinates'] += '; ' + ', '.join(properties)
+            status['coordinates'] += '; ' + ', '.join(properties)
+            status['value'] += '; ' + ', '.join(properties)
 
-        return source_info
+        return status
 
     def _get_tooltip_text(
         self,
         position,
         *,
-        view_direction: Optional[np.ndarray] = None,
-        dims_displayed: Optional[list[int]] = None,
+        view_direction: np.ndarray | None = None,
+        dims_displayed: list[int] | None = None,
         world: bool = False,
     ):
         """
@@ -1549,8 +1545,8 @@ class Labels(ScalarFieldBase):
         self,
         position,
         *,
-        view_direction: Optional[np.ndarray] = None,
-        dims_displayed: Optional[list[int]] = None,
+        view_direction: np.ndarray | None = None,
+        dims_displayed: list[int] | None = None,
         world: bool = False,
     ) -> list:
         if len(self._label_index) == 0 or self.features.shape[1] == 0:
@@ -1566,7 +1562,9 @@ class Labels(ScalarFieldBase):
         if value is None:
             return []
 
-        label_value = value[1] if self.multiscale else value
+        label_value: int = typing.cast(
+            int, value[1] if self.multiscale else value
+        )
         if label_value not in self._label_index:
             return [trans._('[No Properties]')]
 

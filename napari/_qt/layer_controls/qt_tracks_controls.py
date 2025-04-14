@@ -32,7 +32,7 @@ class QtTracksControls(QtLayerControls):
     button_group : qtpy.QtWidgets.QButtonGroup
         Button group of points layer modes (ADD, PAN_ZOOM, SELECT).
     panzoom_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
-        Button for pan/zoom mode.
+        Button for activate move camera mode for layer.
     transform_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to select transform mode.
 
@@ -128,12 +128,16 @@ class QtTracksControls(QtLayerControls):
         """Receive layer model track line width change event and update slider."""
         with self.layer.events.tail_length.blocker():
             value = self.layer.tail_length
+            if value > self.tail_length_slider.maximum():
+                self.tail_length_slider.setMaximum(self.layer._max_length)
             self.tail_length_slider.setValue(value)
 
     def _on_head_length_change(self):
         """Receive layer model track line width change event and update slider."""
         with self.layer.events.head_length.blocker():
             value = self.layer.head_length
+            if value > self.head_length_slider.maximum():
+                self.head_length_slider.setMaximum(self.layer._max_length)
             self.head_length_slider.setValue(value)
 
     def _on_properties_change(self):

@@ -5,24 +5,30 @@ Any non-Qt providers should be added inside `napari/_app_model/injection/`.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from napari import components, layers, viewer
 from napari.utils._proxies import PublicOnlyProxy
 from napari.utils.translations import trans
+from napari.viewer import ViewerModel
 
 if TYPE_CHECKING:
     from napari._qt.qt_main_window import Window
     from napari._qt.qt_viewer import QtViewer
 
 
-def _provide_viewer(public_proxy: bool = True) -> Optional[viewer.Viewer]:
+def _provide_viewer(public_proxy: bool = True) -> viewer.Viewer | None:
     """Provide `PublicOnlyProxy` (allows internal napari access) of current viewer."""
     if current_viewer := viewer.current_viewer():
         if public_proxy:
             return PublicOnlyProxy(current_viewer)
         return current_viewer
     return None
+
+
+def _provide_viewer_model(public_proxy: bool = True) -> ViewerModel | None:
+    """Provide a Viewer (subclass of ViewerModel) if ViewerModel is needed."""
+    return _provide_viewer(public_proxy)
 
 
 def _provide_viewer_or_raise(
@@ -42,7 +48,7 @@ def _provide_viewer_or_raise(
     )
 
 
-def _provide_qt_viewer() -> Optional[QtViewer]:
+def _provide_qt_viewer() -> QtViewer | None:
     from napari._qt.qt_main_window import _QtMainWindow
 
     if _qmainwin := _QtMainWindow.current():
@@ -65,7 +71,7 @@ def _provide_qt_viewer_or_raise(msg: str = '') -> QtViewer:
     )
 
 
-def _provide_window() -> Optional[Window]:
+def _provide_window() -> Window | None:
     from napari._qt.qt_main_window import _QtMainWindow
 
     if _qmainwin := _QtMainWindow.current():
@@ -88,11 +94,11 @@ def _provide_window_or_raise(msg: str = '') -> Window:
     )
 
 
-def _provide_active_layer() -> Optional[layers.Layer]:
+def _provide_active_layer() -> layers.Layer | None:
     return v.layers.selection.active if (v := _provide_viewer()) else None
 
 
-def _provide_active_layer_list() -> Optional[components.LayerList]:
+def _provide_active_layer_list() -> components.LayerList | None:
     return v.layers if (v := _provide_viewer()) else None
 
 
@@ -100,6 +106,7 @@ def _provide_active_layer_list() -> Optional[components.LayerList]:
 # https://github.com/tlambert03/in-n-out/issues/31
 QPROVIDERS = [
     (_provide_viewer,),
+    (_provide_viewer_model,),
     (_provide_qt_viewer,),
     (_provide_window,),
     (_provide_active_layer,),

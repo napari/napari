@@ -1,5 +1,4 @@
-from collections.abc import Generator
-from typing import Callable
+from collections.abc import Callable, Generator
 
 import numpy as np
 from app_model.types import KeyCode
@@ -57,7 +56,7 @@ def activate_shapes_transform_mode(layer: Shapes) -> None:
     layer.mode = Mode.TRANSFORM
 
 
-@register_shapes_mode_action(trans._('Pan/zoom'))
+@register_shapes_mode_action(trans._('Move camera'))
 def activate_shapes_pan_zoom_mode(layer: Shapes) -> None:
     layer.mode = Mode.PAN_ZOOM
 
@@ -78,6 +77,12 @@ def activate_add_ellipse_mode(layer: Shapes) -> None:
 def activate_add_line_mode(layer: Shapes) -> None:
     """Activate add line tool."""
     layer.mode = Mode.ADD_LINE
+
+
+@register_shapes_mode_action(trans._('Add polylines'))
+def activate_add_polyline_mode(layer: Shapes) -> None:
+    """Activate add polyline tool."""
+    layer.mode = Mode.ADD_POLYLINE
 
 
 @register_shapes_mode_action(trans._('Add path'))
@@ -128,6 +133,7 @@ shapes_fun_to_mode = [
     (activate_add_rectangle_mode, Mode.ADD_RECTANGLE),
     (activate_add_ellipse_mode, Mode.ADD_ELLIPSE),
     (activate_add_line_mode, Mode.ADD_LINE),
+    (activate_add_polyline_mode, Mode.ADD_POLYLINE),
     (activate_add_path_mode, Mode.ADD_PATH),
     (activate_add_polygon_mode, Mode.ADD_POLYGON),
     (activate_add_polygon_lasso_mode, Mode.ADD_POLYGON_LASSO),

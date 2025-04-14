@@ -59,7 +59,7 @@ class Ellipse(Shape):
 
     @data.setter
     def data(self, data):
-        data = np.array(data).astype(float)
+        data = np.array(data).astype(np.float32)
 
         if len(self.dims_order) != data.shape[1]:
             self._dims_order = list(range(data.shape[1]))
@@ -88,6 +88,7 @@ class Ellipse(Shape):
     def _update_displayed_data(self) -> None:
         """Update the data that is to be displayed."""
         # Build boundary vertices with num_segments
+        self._clean_cache()
         vertices, triangles = triangulate_ellipse(self.data_displayed)
         self._set_meshes(vertices[1:-1], face=False)
         self._face_vertices = vertices
@@ -126,3 +127,4 @@ class Ellipse(Shape):
                 np.max(self._data, axis=0),
             ]
         )
+        self._clean_cache()

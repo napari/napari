@@ -1,4 +1,4 @@
-from typing import Callable
+from collections.abc import Callable
 
 from napari.layers.base._base_constants import Mode
 from napari.layers.surface.surface import Surface
@@ -26,7 +26,7 @@ def activate_surface_transform_mode(layer: Surface) -> None:
     layer.mode = str(Mode.TRANSFORM)
 
 
-@register_surface_mode_action(trans._('Pan/zoom'))
+@register_surface_mode_action(trans._('Move camera'))
 def activate_surface_pan_zoom_mode(layer: Surface) -> None:
     layer.mode = str(Mode.PAN_ZOOM)
 

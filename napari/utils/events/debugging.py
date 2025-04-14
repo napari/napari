@@ -9,7 +9,7 @@ from napari.utils.misc import ROOT_DIR
 from napari.utils.translations import trans
 
 try:
-    from rich import print
+    from rich import print  # noqa: A004
 except ModuleNotFoundError:
     print(
         trans._(

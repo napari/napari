@@ -2,21 +2,19 @@
 Multiple viewer widget
 ======================
 
-This is an example on how to have more than one viewer in the same napari window.
+This is an example of how to have more than one viewer in the same napari window.
 Additional viewers state will be synchronized with the main viewer.
 Switching to 3D display will only impact the main viewer.
 
-This example also contain option to enable cross that will be moved to the
+This example also contains the option to enable cross that will be moved to the
 current dims point (`viewer.dims.point`).
 
 .. tags:: gui
 """
 
 from copy import deepcopy
-from typing import Optional
 
 import numpy as np
-from packaging.version import parse as parse_version
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QCheckBox,
@@ -30,37 +28,15 @@ from qtpy.QtWidgets import (
 from superqt.utils import qthrottled
 
 import napari
-from napari.components.layerlist import Extent
 from napari.components.viewer_model import ViewerModel
-from napari.layers import Image, Labels, Layer, Vectors
+from napari.layers import Labels, Layer, Vectors
 from napari.qt import QtViewer
 from napari.utils.action_manager import action_manager
 from napari.utils.events.event import WarningEmitter
 from napari.utils.notifications import show_info
 
-NAPARI_GE_4_16 = parse_version(napari.__version__) > parse_version('0.4.16')
-
-
-def copy_layer_le_4_16(layer: Layer, name: str = ''):
-    res_layer = deepcopy(layer)
-    # this deepcopy is not optimal for labels and images layers
-    if isinstance(layer, (Image, Labels)):
-        res_layer.data = layer.data
-
-    res_layer.metadata['viewer_name'] = name
-
-    res_layer.events.disconnect()
-    res_layer.events.source = res_layer
-    for emitter in res_layer.events.emitters.values():
-        emitter.disconnect()
-        emitter.source = res_layer
-    return res_layer
-
 
 def copy_layer(layer: Layer, name: str = ''):
-    if not NAPARI_GE_4_16:
-        return copy_layer_le_4_16(layer, name)
-
     res_layer = Layer.create(*layer.as_layer_data_tuple())
     res_layer.metadata['viewer_name'] = name
     return res_layer
@@ -99,7 +75,7 @@ def center_cross_on_mouse(
             [
                 max(min_, min(p, max_)) / step
                 for p, (min_, max_, step) in zip(
-                    viewer_model.cursor.position, viewer_model.dims.range
+                    viewer_model.cursor.position, viewer_model.dims.range, strict=False
                 )
             ]
         ).astype(int)
@@ -149,8 +125,8 @@ class QtViewerWrap(QtViewer):
         self,
         filenames: list,
         stack: bool,
-        plugin: Optional[str] = None,
-        layer_type: Optional[str] = None,
+        plugin: str | None = None,
+        layer_type: str | None = None,
         **kwargs,
     ):
         """for drag and drop open files"""
@@ -161,8 +137,9 @@ class QtViewerWrap(QtViewer):
 
 class CrossWidget(QCheckBox):
     """
-    Widget to control the cross layer. because of the performance reason
-    the cross update is throttled
+    Widget to control the layer representing cross.
+    Because of the performance reasons,
+    the update of cross is throttled
     """
 
     def __init__(self, viewer: napari.Viewer) -> None:
@@ -184,26 +161,14 @@ class CrossWidget(QCheckBox):
         """
         Calculate the extent of the data.
 
-        Ignores the the cross layer itself in calculating the extent.
+        Ignores the layer with cross itself in calculating the extent.
         """
-        if NAPARI_GE_4_16:
-            layers = [
-                layer
-                for layer in self.viewer.layers
-                if layer is not self.layer
-            ]
-            self._extent = self.viewer.layers.get_extent(layers)
-        else:
-            extent_list = [
-                layer.extent
-                for layer in self.viewer.layers
-                if layer is not self.layer
-            ]
-            self._extent = Extent(
-                data=None,
-                world=self.viewer.layers._get_extent_world(extent_list),
-                step=self.viewer.layers._get_step_size(extent_list),
-            )
+        layers = [
+            layer
+            for layer in self.viewer.layers
+            if layer is not self.layer
+        ]
+        self._extent = self.viewer.layers.get_extent(layers)
         self.update_cross()
 
     def _update_ndim(self, event):
@@ -243,7 +208,7 @@ class CrossWidget(QCheckBox):
 
 class ExampleWidget(QWidget):
     """
-    Dummy widget showcasing how to place additional widgets to the right
+    Example widget showcasing how to place additional widgets to the right
     of the additional viewers.
     """
 
@@ -275,7 +240,7 @@ class MultipleViewerWidget(QSplitter):
         self.tab_widget.addTab(w1, 'Sample 1')
         self.tab_widget.addTab(w2, 'Sample 2')
         viewer_splitter = QSplitter()
-        viewer_splitter.setOrientation(Qt.Vertical)
+        viewer_splitter.setOrientation(Qt.Orientation.Vertical)
         viewer_splitter.addWidget(self.qt_viewer1)
         viewer_splitter.addWidget(self.qt_viewer2)
         viewer_splitter.setContentsMargins(0, 0, 0, 0)
@@ -339,10 +304,10 @@ class MultipleViewerWidget(QSplitter):
             return
 
         order[-3:] = order[-2], order[-3], order[-1]
-        self.viewer_model1.dims.order = order
+        self.viewer_model1.dims.order = tuple(order)
         order = list(self.viewer.dims.order)
         order[-3:] = order[-1], order[-2], order[-3]
-        self.viewer_model2.dims.order = order
+        self.viewer_model2.dims.order = tuple(order)
 
     def _layer_added(self, event):
         """add layer to additional viewers and connect all required events"""
@@ -457,9 +422,9 @@ class MultipleViewerWidget(QSplitter):
 
 
 if __name__ == '__main__':
-    from qtpy import QtCore, QtWidgets
-    QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_ShareOpenGLContexts)
-    # above two lines are needed to allow to undock the widget with
+    from qtpy import QtWidgets
+    QtWidgets.QApplication.setAttribute(Qt.ApplicationAttribute.AA_ShareOpenGLContexts)
+    # above two lines are needed to allow undocking the widget with
     # additional viewers
     view = napari.Viewer()
     dock_widget = MultipleViewerWidget(view)

@@ -3,7 +3,6 @@
 # or the napari documentation on benchmarking
 # https://github.com/napari/napari/blob/main/docs/BENCHMARKS.md
 import os
-from dataclasses import dataclass
 from functools import lru_cache
 from itertools import cycle
 
@@ -11,6 +10,7 @@ import numpy as np
 from packaging.version import parse as parse_version
 from qtpy.QtWidgets import QApplication
 from skimage.morphology import diamond, octahedron
+from vispy.app import MouseEvent
 
 import napari
 from napari.components.viewer_model import ViewerModel
@@ -20,15 +20,6 @@ from napari.utils.colormaps import DirectLabelColormap
 from .utils import Skip
 
 NAPARI_0_4_19 = parse_version(napari.__version__) <= parse_version('0.4.19')
-
-
-@dataclass
-class MouseEvent:
-    # mock mouse event class
-    type: str
-    is_dragging: bool
-    pos: list[int]
-    view_direction: list[int]
 
 
 class QtViewerSingleLabelsSuite:
@@ -43,21 +34,24 @@ class QtViewerSingleLabelsSuite:
         self.layer.brush_size = 10
         self.layer.mode = 'paint'
         self.layer.selected_label = 3
-        self.layer._last_cursor_coord = (511, 511)
         self.event = MouseEvent(
             type='mouse_move',
-            is_dragging=True,
-            pos=[500, 500],
+            press_event=MouseEvent(type='mouse_press', pos=(505, 500)),
+            pos=(500, 500),
             view_direction=None,
         )
+        if NAPARI_0_4_19:
+            self.camera = self.viewer.window._qt_viewer.view.camera
+        else:
+            self.camera = self.viewer.window._qt_viewer.canvas.view.camera
 
     def teardown(self):
         self.viewer.window.close()
 
     def time_zoom(self):
         """Time to zoom in and zoom out."""
-        self.viewer.window._qt_viewer.view.camera.zoom(0.5, center=(0.5, 0.5))
-        self.viewer.window._qt_viewer.view.camera.zoom(2.0, center=(0.5, 0.5))
+        self.camera.zoom(0.5, center=(0.5, 0.5))
+        self.camera.zoom(2.0, center=(0.5, 0.5))
 
     def time_set_view_slice(self):
         """Time to set view slice."""

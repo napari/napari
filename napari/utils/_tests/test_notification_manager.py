@@ -49,9 +49,9 @@ def test_notification_manager_no_gui(monkeypatch):
         notification_manager.notification_ready.connect(store.append)
 
         show_info('this is one way of showing an information message')
-        assert (
-            len(notification_manager.records) == 1
-        ), notification_manager.records
+        assert len(notification_manager.records) == 1, (
+            notification_manager.records
+        )
         assert store[-1].type == 'info'
 
         notification_manager.receive_info(

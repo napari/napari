@@ -1,3 +1,6 @@
+import re
+import sys
+
 import pytest
 
 from napari._qt.widgets.qt_plugin_sorter import QtPluginSorter, rst2html
@@ -144,4 +147,6 @@ def test_qt_plugin_sorter_help_info(qtbot, hook_name, help_info):
     hook_combo_box = plugin_sorter.hook_combo_box
     hook_combo_box.setCurrentText(hook_name)
 
+    if sys.version_info >= (3, 13):
+        help_info = re.sub(r'<br> +', r'<br>', help_info)
     assert help_info in info_widget.toolTip()

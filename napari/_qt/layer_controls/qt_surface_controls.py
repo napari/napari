@@ -35,7 +35,7 @@ class QtSurfaceControls(QtBaseImageControls):
     button_grid : qtpy.QtWidgets.QGridLayout
         GridLayout for the layer mode buttons
     panzoom_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
-        Button to pan/zoom shapes layer.
+        Button to activate move camera mode for layer.
     transform_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to transform shapes layer.
 
@@ -48,10 +48,11 @@ class QtSurfaceControls(QtBaseImageControls):
     def __init__(self, layer) -> None:
         super().__init__(layer)
 
+        self.layer.events.shading.connect(self._on_shading_change)
+
         colormap_layout = QHBoxLayout()
         colormap_layout.addWidget(self.colorbarLabel)
-        colormap_layout.addWidget(self.colormapComboBox)
-        colormap_layout.addStretch(1)
+        colormap_layout.addWidget(self.colormapComboBox, stretch=1)
 
         shading_comboBox = QComboBox(self)
         for display_name, shading in SHADING_TRANSLATION.items():
@@ -82,3 +83,12 @@ class QtSurfaceControls(QtBaseImageControls):
             Name of shading mode, eg: 'flat', 'smooth', 'none'.
         """
         self.layer.shading = self.shadingComboBox.currentData()
+
+    def _on_shading_change(self):
+        """Receive layer model shading change event and update combobox."""
+        with self.layer.events.shading.blocker():
+            self.shadingComboBox.setCurrentIndex(
+                self.shadingComboBox.findData(
+                    SHADING_TRANSLATION[self.layer.shading]
+                )
+            )

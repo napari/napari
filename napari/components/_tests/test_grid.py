@@ -8,6 +8,7 @@ def test_grid_creation():
     assert not grid.enabled
     assert grid.shape == (-1, -1)
     assert grid.stride == 1
+    assert grid.spacing == 0
 
 
 def test_shape_stride_creation():

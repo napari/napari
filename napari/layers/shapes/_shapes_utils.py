@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import itertools
+import tempfile
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -7,7 +9,9 @@ from skimage.draw import line, polygon2mask
 from vispy.geometry import PolygonData
 from vispy.visuals.tube import _frenet_frames
 
-from napari.layers.utils.layer_utils import segment_normal
+from napari.layers.shapes import (
+    _accelerated_triangulate_dispatch as _triangulate_dispatch,
+)
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -18,6 +22,105 @@ try:
     from triangle import triangulate
 except ModuleNotFoundError:
     triangulate = None
+
+
+def find_planar_axis(
+    points: npt.NDArray,
+) -> tuple[npt.NDArray, int | None, float | None]:
+    """Find an axis along which the input points are planar.
+
+    If points are 2D, they are returned unchanged.
+
+    If there is a planar axis, return the corresponding 2D points, the axis
+    position, and the coordinate of the plane.
+
+    If there is *no* planar axis, return an empty dataset.
+
+    Parameters
+    ----------
+    points : array, shape (npoints, ndim)
+        An array of point coordinates. ``ndim`` must be 2 or 3.
+
+    Returns
+    -------
+    points2d : array, shape (npoints | 0, 2)
+        Array of 2D points. May be empty if input points are not planar along
+        any axis.
+    axis_idx : int | None
+        The axis along which points are planar.
+    value : float | None
+        The coordinate of the points along ``axis``.
+    """
+    ndim = points.shape[1]
+    if ndim == 2:
+        return points, None, None
+    for axis_idx in range(ndim):
+        values = np.unique(points[:, axis_idx])
+        if len(values) == 1:
+            return np.delete(points, axis_idx, axis=1), axis_idx, values[0]
+    return np.empty((0, 2), dtype=points.dtype), None, None
+
+
+def _common_orientation(poly: npt.NDArray) -> int | None:
+    """Check whether a polygon has the same orientation for all its angles. and return the orientation.
+
+    Parameters
+    ----------
+    poly: numpy array of floats, shape (N, 3)
+        Polygon vertices, in order.
+
+    Returns
+    -------
+    int or None
+        if all angles have same orientation return it, otherwise None.
+        Possible values: -1 if all angles are counterclockwise, 0 if all angles are collinear, 1 if all angles are clockwise
+    """
+    fst = poly[:-2]
+    snd = poly[1:-1]
+    thrd = poly[2:]
+    orn_set = np.unique(orientation(fst.T, snd.T, thrd.T))
+    if orn_set.size != 1:
+        return None
+    if (orn_set[0] == orientation(poly[-2], poly[-1], poly[0])) and (
+        orn_set[0] == orientation(poly[-1], poly[0], poly[1])
+    ):
+        return int(orn_set[0])
+    return None
+
+
+def _are_polar_angles_monotonic(poly: npt.NDArray, orientation_: int) -> bool:
+    """Check whether a polygon with same oriented angles between successive edges is simple.
+
+    A polygon is considered simple if its edges do not intersect themselves.
+    This is determined by checking whether the angles between successive
+    vertices, measured from the centroid, increase consistently around the
+    polygon in a counterclockwise (or clockwise) direction. If the angles
+    from one vertex to the next increase, the polygon is simple.
+
+    Parameters
+    ----------
+    poly: numpy array of floats, shape (N, 2)
+        polygon vertices, in order.
+    orientation_: int
+        The orientation of the polygon. A value of `1` indicates clockwise
+        and `-1` indicates counterclockwise orientation.
+
+    Returns
+    -------
+    bool:
+        if all angles are increasing return True, otherwise False
+    """
+    if poly.shape[0] < 3:
+        return False  # Not enough vertices to form a polygon
+    if orientation_ == 1:
+        poly = poly[::-1]
+    centroid = poly.mean(axis=0)
+    angles = np.arctan2(poly[:, 1] - centroid[1], poly[:, 0] - centroid[0])
+    # orig_angles = angles.copy()
+    shifted_angles = angles - angles[0]
+    shifted_angles[shifted_angles < 0] += 2 * np.pi
+    # check if angles are increasing
+    return bool(np.all(np.diff(shifted_angles) > 0))
 
 
 def _is_convex(poly: npt.NDArray) -> bool:
@@ -33,15 +136,10 @@ def _is_convex(poly: npt.NDArray) -> bool:
     bool
         True if the given polygon is convex.
     """
-    fst = poly[:-2]
-    snd = poly[1:-1]
-    thrd = poly[2:]
-    orn_set = np.unique(orientation(fst.T, snd.T, thrd.T))
-    if orn_set.size != 1:
+    orientation_ = _common_orientation(poly)
+    if orientation_ is None or orientation_ == 0:
         return False
-    return (orn_set[0] == orientation(poly[-2], poly[-1], poly[0])) and (
-        orn_set[0] == orientation(poly[-1], poly[0], poly[1])
-    )
+    return _are_polar_angles_monotonic(poly, orientation_)
 
 
 def _fan_triangulation(poly: npt.NDArray) -> tuple[npt.NDArray, npt.NDArray]:
@@ -259,12 +357,9 @@ def on_segment(p, q, r):
     on : bool
         Bool indicating if q is on segment from p to r
     """
-    if (
-        q[0] <= max(p[0], r[0])
-        and q[0] >= min(p[0], r[0])
-        and q[1] <= max(p[1], r[1])
-        and q[1] >= min(p[1], r[1])
-    ):
+    if max(p[0], r[0]) >= q[0] >= min(p[0], r[0]) and max(p[1], r[1]) >= q[
+        1
+    ] >= min(p[1], r[1]):
         on = True
     else:
         on = False
@@ -431,7 +526,7 @@ def rectangle_to_box(data: npt.NDArray) -> npt.NDArray:
         the corners and midpoints of the box in clockwise order starting in the
         upper-left corner. The last point is the center of the box
     """
-    if not data.shape[0] == 4:
+    if data.shape[0] != 4:
         raise ValueError(
             trans._(
                 'Data shape does not match expected `[4, D]` shape specifying corners for the rectangle',
@@ -541,7 +636,7 @@ def triangulate_ellipse(
 
 
     """
-    if not corners.shape[0] == 4:
+    if corners.shape[0] != 4:
         raise ValueError(
             trans._(
                 'Data shape does not match expected `[4, D]` shape specifying corners for the ellipse',
@@ -618,7 +713,13 @@ def triangulate_face(data: npt.NDArray) -> tuple[npt.NDArray, npt.NDArray]:
     elif _is_convex(data):
         vertices, triangles = _fan_triangulation(data)
     else:
-        vertices, triangles = PolygonData(vertices=data).triangulate()
+        try:
+            vertices, triangles = PolygonData(vertices=data).triangulate()
+        except Exception as e:  # pragma: no cover
+            path, text_path = _save_failed_triangulation(data)
+            raise RuntimeError(
+                f'Triangulation failed. Data saved to {path} and {text_path}'
+            ) from e
 
     triangles = triangles.astype(np.uint32)
 
@@ -668,187 +769,17 @@ def triangulate_edge(
         clean_path = path
 
     if clean_path.shape[-1] == 2:
-        centers, offsets, triangles = generate_2D_edge_meshes(
-            clean_path, closed=closed
+        centers, offsets, triangles = (
+            _triangulate_dispatch.generate_2D_edge_meshes(
+                np.asarray(clean_path, dtype=np.float32), closed=closed
+            )
         )
     else:
         centers, offsets, triangles = generate_tube_meshes(
             clean_path, closed=closed
         )
 
-    return centers, offsets, triangles
-
-
-def _mirror_point(x, y):
-    return 2 * y - x
-
-
-def _sign_nonzero(x):
-    y = np.sign(x).astype(int)
-    y[y == 0] = 1
-    return y
-
-
-def _sign_cross(x, y):
-    """sign of cross product (faster for 2d)"""
-    if x.shape[1] == y.shape[1] == 2:
-        return _sign_nonzero(x[:, 0] * y[:, 1] - x[:, 1] * y[:, 0])
-    if x.shape[1] == y.shape[1] == 3:
-        return _sign_nonzero(np.cross(x, y))
-
-    raise ValueError(x.shape[1], y.shape[1])
-
-
-def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
-    """Determines the triangulation of a path in 2D. The resulting `offsets`
-    can be multiplied by a `width` scalar and be added to the resulting
-    `centers` to generate the vertices of the triangles for the triangulation,
-    i.e. `vertices = centers + width*offsets`. Using the `centers` and
-    `offsets` representation thus allows for the computed triangulation to be
-    independent of the line width.
-
-    Parameters
-    ----------
-    path : np.ndarray
-        Nx2 or Nx3 array of central coordinates of path to be triangulated
-    closed : bool
-        Bool which determines if the path is closed or not
-    limit : float
-        Miter limit which determines when to switch from a miter join to a
-        bevel join
-    bevel : bool
-        Bool which if True causes a bevel join to always be used. If False
-        a bevel join will only be used when the miter limit is exceeded
-
-    Returns
-    -------
-    centers : np.ndarray
-        Mx2 or Mx3 array central coordinates of path triangles.
-    offsets : np.ndarray
-        Mx2 or Mx3 array of the offsets to the central coordinates that need to
-        be scaled by the line width and then added to the centers to
-        generate the actual vertices of the triangulation
-    triangles : np.ndarray
-        Px3 array of the indices of the vertices that will form the
-        triangles of the triangulation
-    """
-
-    path = np.asarray(path, dtype=float)
-
-    # add first vertex to the end if closed
-    if closed:
-        path = np.concatenate((path, [path[0]]))
-
-    # extend path by adding a vertex at beginning and end
-    # to get the mean normals correct
-    if closed:
-        _ext_point1 = path[-2]
-        _ext_point2 = path[1]
-    else:
-        _ext_point1 = _mirror_point(path[1], path[0])
-        _ext_point2 = _mirror_point(path[-2], path[-1])
-
-    full_path = np.concatenate(([_ext_point1], path, [_ext_point2]), axis=0)
-
-    # full_normals[:-1], full_normals[1:] are normals left and right of each path vertex
-    full_normals = segment_normal(full_path[:-1], full_path[1:])
-
-    # miters per vertex are the average of left and right normals
-    miters = 0.5 * (full_normals[:-1] + full_normals[1:])
-
-    # scale miters such that their dot product with normals is 1
-    _mf_dot = np.expand_dims(
-        np.einsum('ij,ij->i', miters, full_normals[:-1]), -1
-    )
-
-    miters = np.divide(
-        miters,
-        _mf_dot,
-        where=np.abs(_mf_dot) > 1e-10,
-    )
-
-    miter_lengths_squared = (miters**2).sum(axis=1)
-
-    # miter_signs -> +1 if edges turn clockwise, -1 if anticlockwise
-    # used later to discern bevel positions
-    miter_signs = _sign_cross(full_normals[1:], full_normals[:-1])
-    miters = 0.5 * miters
-
-    # generate centers/offsets
-    centers = np.repeat(path, 2, axis=0)
-    offsets = np.repeat(miters, 2, axis=0)
-    offsets[::2] *= -1
-
-    triangles0 = np.tile(np.array([[0, 1, 3], [0, 3, 2]]), (len(path) - 1, 1))
-    triangles = triangles0 + 2 * np.repeat(
-        np.arange(len(path) - 1)[:, np.newaxis], 2, 0
-    )
-
-    # get vertex indices that are to be beveled
-    idx_bevel = np.where(
-        np.bitwise_or(bevel, miter_lengths_squared > (limit**2))
-    )[0]
-
-    if len(idx_bevel) > 0:
-        idx_offset = (miter_signs[idx_bevel] < 0).astype(int)
-
-        # outside and inside offsets are treated differently (only outside offsets get beveled)
-        # See drawing at:
-        # https://github.com/napari/napari/pull/6706#discussion_r1528790407
-        idx_bevel_outside = 2 * idx_bevel + idx_offset
-        idx_bevel_inside = 2 * idx_bevel + (1 - idx_offset)
-        sign_bevel = np.expand_dims(miter_signs[idx_bevel], -1)
-
-        # adjust offset of outer offset
-        offsets[idx_bevel_outside] = (
-            -0.5 * full_normals[:-1][idx_bevel] * sign_bevel
-        )
-        # adjust/normalize length of inner offset
-        offsets[idx_bevel_inside] /= np.sqrt(
-            miter_lengths_squared[idx_bevel, np.newaxis]
-        )
-
-        # special cases for the last vertex
-        _nonspecial = idx_bevel != len(path) - 1
-
-        idx_bevel = idx_bevel[_nonspecial]
-        idx_bevel_outside = idx_bevel_outside[_nonspecial]
-        sign_bevel = sign_bevel[_nonspecial]
-        idx_offset = idx_offset[_nonspecial]
-
-        # create new "right" bevel vertices to be added later
-        centers_bevel = path[idx_bevel]
-        offsets_bevel = -0.5 * full_normals[1:][idx_bevel] * sign_bevel
-
-        n_centers = len(centers)
-        # change vertices of triangles to the newly added right vertices
-        triangles[2 * idx_bevel, idx_offset] = len(centers) + np.arange(
-            len(idx_bevel)
-        )
-        triangles[2 * idx_bevel + (1 - idx_offset), idx_offset] = (
-            n_centers + np.arange(len(idx_bevel))
-        )
-
-        # add a new center/bevel triangle
-        triangles0 = np.tile(np.array([[0, 1, 2]]), (len(idx_bevel), 1))
-        triangles_bevel = np.array(
-            [
-                2 * idx_bevel + idx_offset,
-                2 * idx_bevel + (1 - idx_offset),
-                n_centers + np.arange(len(idx_bevel)),
-            ]
-        ).T
-        # add all new centers, offsets, and triangles
-        centers = np.concatenate([centers, centers_bevel])
-        offsets = np.concatenate([offsets, offsets_bevel])
-        triangles = np.concatenate([triangles, triangles_bevel])
-
-    # extracting vectors (~4x faster than np.moveaxis)
-    a, b, c = tuple((centers + offsets)[triangles][:, i] for i in range(3))
-    # flip negative oriented triangles
-    flip_idx = _sign_cross(b - a, c - a) < 0
-    triangles[flip_idx] = np.flip(triangles[flip_idx], axis=-1)
-
+    # offsets[2,1] = -0.5
     return centers, offsets, triangles
 
 
@@ -882,7 +813,7 @@ def generate_tube_meshes(path, closed=False, tube_points=10):
     if closed and not np.array_equal(points[0], points[-1]):
         points = np.concatenate([points, [points[0]]], axis=0)
 
-    tangents, normals, binormals = _frenet_frames(points, closed)
+    _tangents, normals, binormals = _frenet_frames(points, closed)
 
     segments = len(points) - 1
 
@@ -902,19 +833,19 @@ def generate_tube_meshes(path, closed=False, tube_points=10):
         grid_off[i] = cx[:, np.newaxis] * normal + cy[:, np.newaxis] * binormal
 
     # construct the mesh
-    indices = []
-    for i in range(segments):
-        for j in range(tube_points):
-            ip = (i + 1) % segments if closed else i + 1
-            jp = (j + 1) % tube_points
+    indices: list[tuple[int, int, int]] = []
+    for i, j in itertools.product(range(segments), range(tube_points)):
+        ip = (i + 1) % segments if closed else i + 1
+        jp = (j + 1) % tube_points
 
-            index_a = i * tube_points + j
-            index_b = ip * tube_points + j
-            index_c = ip * tube_points + jp
-            index_d = i * tube_points + jp
+        index_a = i * tube_points + j
+        index_b = ip * tube_points + j
+        index_c = ip * tube_points + jp
+        index_d = i * tube_points + jp
 
-            indices.append([index_a, index_b, index_d])
-            indices.append([index_b, index_c, index_d])
+        indices.extend(
+            ([index_a, index_b, index_d], [index_b, index_c, index_d])  # type: ignore[arg-type]
+        )
     triangles = np.array(indices, dtype=np.uint32)
 
     centers = grid.reshape(grid.shape[0] * grid.shape[1], 3)
@@ -953,7 +884,7 @@ def path_to_mask(
     vertices = vertices[~duplicates]
 
     iis, jjs = [], []
-    for v1, v2 in zip(vertices, vertices[1:]):
+    for v1, v2 in itertools.pairwise(vertices):
         ii, jj = line(*v1, *v2)
         iis.extend(ii.tolist())
         jjs.extend(jj.tolist())
@@ -1290,3 +1221,47 @@ def rdp(vertices: npt.NDArray, epsilon: float) -> npt.NDArray:
 
     # When epsilon is 0, avoid removing datapoints
     return vertices
+
+
+def _save_failed_triangulation(
+    data: np.ndarray, target_dir: str | None = None
+) -> tuple[str, str]:
+    """Save data to temporary files for debugging.
+
+    This function saves input data when triangulation fails.
+    It saves the same data to both a .npz file and a .txt file within the
+    temporary directory, and returns the paths to the saved files.
+
+    Parameters
+    ----------
+    data : np.ndarray
+        The data to save.
+    target_dir: str or None
+        Path to directory where the files will be saved. If None, the default
+
+    Returns
+    -------
+    tuple[str, str]
+        The paths to the saved files.
+
+    Notes
+    -----
+    Use TMPDIR environment variable to set the temporary directory.
+    """
+    with tempfile.NamedTemporaryFile(
+        delete=False,
+        suffix='.npz',
+        prefix='napari_comp_triang_',
+        dir=target_dir,
+    ) as binary_file:
+        np.savez(binary_file, data=data)
+    with tempfile.NamedTemporaryFile(
+        delete=False,
+        suffix='.txt',
+        prefix='napari_comp_triang_',
+        mode='w',
+        dir=target_dir,
+    ) as text_file:
+        np.savetxt(text_file, data)
+
+    return binary_file.name, text_file.name

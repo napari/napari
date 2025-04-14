@@ -25,8 +25,8 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         )
         self.x_size = 150  # will be updated on zoom anyways
         # need to change from defaults because the anchor is in the center
-        self.y_offset = 20
-        self.y_size = 5
+        self.y_offset = 7  # padding from the bottom edge
+        self.y_size = 18  # half the box height
 
         self.overlay.events.box.connect(self._on_box_change)
         self.overlay.events.box_color.connect(self._on_data_change)
@@ -135,7 +135,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.node.transform.scale = [scale, 1, 1, 1]
         self.node.text.text = f'{new_dim:g~#P}'
         self.x_size = scale  # needed to offset properly
-        self._on_position_change()
+        super()._on_position_change()
 
     def _on_data_change(self):
         """Change color and data of scale bar and box."""
@@ -173,7 +173,39 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
     def _on_text_change(self):
         """Update text information"""
-        self.node.text.font_size = self.overlay.font_size
+        # update the dpi scale factor to account for screen dpi
+        # because vispy scales pixel height of text by screen dpi
+        if self.node.text.transforms.dpi:
+            # use 96 as the napari reference dpi for historical reasons
+            dpi_scale_factor = 96 / self.node.text.transforms.dpi
+        else:
+            dpi_scale_factor = 1
+
+        self.node.text.font_size = self.overlay.font_size * dpi_scale_factor
+        # changing the fox size changes the box height and positioning in it
+        self.node._update_layout(font_size=self.overlay.font_size)
+
+        # positioning in the box uses the center of the box
+        # need to adjust the y_size to be half the size of the current box height
+        self.y_size = self.node.box.height / 2
+
+        self._on_position_change()
+
+    def _on_position_change(self, event=None):
+        # prevent the text from being cut off by shifting down
+        if 'top' in self.overlay.position:
+            # adjust the positioning to account for the box height
+            # 7 is base value for the default 10 font size
+            self.y_offset = 7 + self.y_size
+        else:
+            # ensure if switching from top to bottom, the offset is reset
+            self.y_offset = 7
+        super()._on_position_change()
+
+    def _on_visible_change(self):
+        # ensure that dpi is updated when the scale bar is visible
+        self._on_text_change()
+        return super()._on_visible_change()
 
     def reset(self):
         super().reset()

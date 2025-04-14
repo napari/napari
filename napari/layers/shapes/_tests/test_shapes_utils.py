@@ -1,9 +1,15 @@
+import os
+
 import numpy as np
 import pytest
-from numpy import array
+from numpy import array, testing as npt
 
+from napari.layers.shapes._accelerated_triangulate_dispatch import (
+    generate_2D_edge_meshes_py,
+)
 from napari.layers.shapes._shapes_utils import (
-    generate_2D_edge_meshes,
+    _is_convex,
+    _save_failed_triangulation,
     get_default_shape_type,
     number_of_shapes,
     perpendicular_distance,
@@ -358,7 +364,7 @@ def test_generate_2D_edge_meshes(
     bevel,
     expected,
 ):
-    c, o, t = generate_2D_edge_meshes(path, closed, limit, bevel)
+    c, o, t = generate_2D_edge_meshes_py(path, closed, limit, bevel)
     expected_center, expected_offsets, expected_triangles = expected
     assert np.allclose(c, expected_center)
     assert np.allclose(o, expected_offsets)
@@ -422,3 +428,69 @@ def test_perpendicular_distance(start, end, point):
     distance = perpendicular_distance(point, start, end)
 
     assert distance == 1
+
+
+def pentagram(reverse):
+    radius = 10
+    n = 5
+    angles = np.linspace(0, 4 * np.pi, n, endpoint=False)
+    if reverse:
+        angles = angles[::-1]
+    return np.column_stack((radius * np.cos(angles), radius * np.sin(angles)))
+
+
+def generate_regular_polygon(n, reverse, radius=1):
+    angles = np.linspace(0, 2 * np.pi, n, endpoint=False)
+    if reverse:
+        angles = angles[::-1]
+    return np.column_stack((radius * np.cos(angles), radius * np.sin(angles)))
+
+
+def rotation_matrix(angle):
+    return np.array(
+        [
+            [np.cos(np.radians(angle)), -np.sin(np.radians(angle))],
+            [np.sin(np.radians(angle)), np.cos(np.radians(angle))],
+        ]
+    )
+
+
+ANGLES = [0, 5, 75, 95, 355]
+
+
+@pytest.mark.parametrize('angle', ANGLES, ids=str)
+@pytest.mark.parametrize('reverse', [False, True])
+def test_is_convex_self_intersection(angle, reverse):
+    p = pentagram(reverse)
+    rot = rotation_matrix(angle)
+    data = np.dot(p, rot)
+    assert not _is_convex(data)
+
+
+@pytest.mark.parametrize('angle', ANGLES, ids=str)
+@pytest.mark.parametrize('n_vertex', [3, 4, 7, 12, 15, 20])
+@pytest.mark.parametrize('reverse', [False, True])
+def test_is_convex_regular_polygon(angle, n_vertex, reverse):
+    poly = generate_regular_polygon(n_vertex, reverse=reverse)
+    rot = rotation_matrix(angle)
+    rotated_poly = np.dot(poly, rot)
+    assert _is_convex(rotated_poly)
+
+
+def test_save_failed_triangulation(tmp_path):
+    data = np.empty((10, 10), dtype=np.uint16)
+    bin_path, text_path = _save_failed_triangulation(
+        data, target_dir=str(tmp_path)
+    )
+    assert os.path.exists(bin_path)
+    assert os.path.exists(text_path)
+    assert bin_path.endswith('.npz')
+    assert text_path.endswith('.txt')
+    assert bin_path.startswith(str(tmp_path))
+    assert text_path.startswith(str(tmp_path))
+
+    d1 = np.loadtxt(text_path)
+    npt.assert_array_equal(d1, data)
+
+    d2 = np.load(bin_path)['data']
+    npt.assert_array_equal(d2, data)

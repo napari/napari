@@ -65,12 +65,12 @@ USE_PERFMON = os.getenv('NAPARI_PERFMON', '0') != '0'
 
 
 __all__ = [
-    'perf_config',
     'USE_PERFMON',
+    'PerfEvent',
     'add_counter_event',
     'add_instant_event',
     'block_timer',
+    'perf_config',
     'perf_timer',
     'timers',
-    'PerfEvent',
 ]

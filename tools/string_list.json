@@ -548,6 +548,7 @@
       "vertex_remove",
       "activate_add_ellipse_mode",
       "activate_add_line_mode",
+      "activate_add_polyline_mode",
       "activate_add_path_mode",
       "activate_add_polygon_mode",
       "activate_add_rectangle_mode",

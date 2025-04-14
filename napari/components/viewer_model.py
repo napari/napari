@@ -4,13 +4,12 @@ import inspect
 import itertools
 import os
 import warnings
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Iterator, Mapping, MutableMapping, Sequence
 from functools import lru_cache
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
-    Optional,
     Union,
     cast,
 )
@@ -24,7 +23,10 @@ from app_model.expressions import Context
 from napari import layers
 from napari._pydantic_compat import Extra, Field, PrivateAttr, validator
 from napari.components._layer_slicer import _LayerSlicer
-from napari.components._viewer_mouse_bindings import dims_scroll
+from napari.components._viewer_mouse_bindings import (
+    dims_scroll,
+    double_click_to_zoom,
+)
 from napari.components.camera import Camera
 from napari.components.cursor import Cursor, CursorStyle
 from napari.components.dims import Dims
@@ -53,7 +55,7 @@ from napari.layers import (
     Tracks,
     Vectors,
 )
-from napari.layers._source import layer_source
+from napari.layers._source import Source, layer_source
 from napari.layers.image._image_key_bindings import image_fun_to_mode
 from napari.layers.image._image_utils import guess_labels
 from napari.layers.labels._labels_key_bindings import labels_fun_to_mode
@@ -84,7 +86,6 @@ from napari.utils.events import (
 )
 from napari.utils.events.event import WarningEmitter
 from napari.utils.key_bindings import KeymapProvider
-from napari.utils.migrations import rename_argument
 from napari.utils.misc import is_sequence
 from napari.utils.mouse_bindings import MousemapProvider
 from napari.utils.progress import progress
@@ -232,6 +233,17 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self._tooltip_visible_update
         )
 
+        self._update_camera_orientation()
+        settings.application.events.depth_axis_orientation.connect(
+            self._update_camera_orientation
+        )
+        settings.application.events.vertical_axis_orientation.connect(
+            self._update_camera_orientation
+        )
+        settings.application.events.horizontal_axis_orientation.connect(
+            self._update_camera_orientation
+        )
+
         self._update_viewer_grid()
         settings.application.events.grid_stride.connect(
             self._update_viewer_grid
@@ -240,6 +252,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self._update_viewer_grid
         )
         settings.application.events.grid_height.connect(
+            self._update_viewer_grid
+        )
+        settings.application.events.grid_spacing.connect(
             self._update_viewer_grid
         )
         settings.experimental.events.async_.connect(self._update_async)
@@ -257,12 +272,12 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         )
 
         # Connect events
-        self.grid.events.connect(self.reset_view)
+        self.grid.events.connect(self.fit_to_view)
         self.grid.events.connect(self._on_grid_change)
         self.dims.events.ndisplay.connect(self._update_layers)
-        self.dims.events.ndisplay.connect(self.reset_view)
+        self.dims.events.ndisplay.connect(self.fit_to_view)
         self.dims.events.order.connect(self._update_layers)
-        self.dims.events.order.connect(self.reset_view)
+        self.dims.events.order.connect(self.fit_to_view)
         self.dims.events.point.connect(self._update_layers)
         # FIXME: the next line is a temporary workaround. With #5522 and #5751 Dims.point became
         #        the source of truth, and is now defined in world space. This exposed an existing
@@ -283,6 +298,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         # Add mouse callback
         self.mouse_wheel_callbacks.append(dims_scroll)
+        self.mouse_double_click_callbacks.append(double_click_to_zoom)
 
         self._overlays.update({k: v() for k, v in DEFAULT_OVERLAYS.items()})
 
@@ -306,6 +322,16 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     def _tooltip_visible_update(self, event):
         self.tooltip.visible = event.value
 
+    def _update_camera_orientation(self):
+        """Update camera orientation based on settings."""
+        settings = get_settings()
+
+        self.camera.orientation = (
+            settings.application.depth_axis_orientation,
+            settings.application.vertical_axis_orientation,
+            settings.application.horizontal_axis_orientation,
+        )
+
     def _update_viewer_grid(self):
         """Keep viewer grid settings up to date with settings values."""
 
@@ -316,6 +342,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             settings.application.grid_height,
             settings.application.grid_width,
         )
+        self.grid.spacing = settings.application.grid_spacing
 
     @validator('theme', allow_reuse=True)
     def _valid_theme(cls, v):
@@ -378,58 +405,60 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     def reset_view(
         self, *, margin: float = 0.05, reset_camera_angle: bool = True
     ) -> None:
-        """Reset the camera view.
+        """Reset the camera and fit the current layers to the canvas.
+
+        Resets the angles of the camera, adjust the camera zoom,
+        and centers the view so that all layers are visible,
+        accounting for the current grid mode and margin.
 
         Parameters
         ----------
         margin : float in [0, 1)
             Margin as fraction of the canvas, showing blank space around the
-            data.
+            data. Default is 0.05 (5% of the canvas).
+        reset_camera_angle : bool
+            Whether to reset the camera angles to (0, 0, 90) before fitting
+            to view. Default is True.
         """
+        if self.dims.ndisplay == 3 and reset_camera_angle:
+            self.camera.angles = (0, 0, 90)
+        self.fit_to_view(margin=margin)
 
-        extent = self._sliced_extent_world_augmented
-        scene_size = extent[1] - extent[0]
-        corner = extent[0]
-        grid_size = list(self.grid.actual_shape(len(self.layers)))
-        if len(scene_size) > len(grid_size):
-            grid_size = [1] * (len(scene_size) - len(grid_size)) + grid_size
-        size = np.multiply(scene_size, grid_size)
-        center_array = np.add(corner, np.divide(size, 2))[
-            -self.dims.ndisplay :
-        ]
-        center = cast(
-            Union[tuple[float, float, float], tuple[float, float]],
-            tuple(
-                [0.0] * (self.dims.ndisplay - len(center_array))
-                + list(center_array)
-            ),
-        )
-        assert len(center) in (2, 3)
-        self.camera.center = center
+    def fit_to_view(self, *, margin: float = 0.05) -> None:
+        """Fit the current data view to the canvas.
+
+        Adjusts the camera zoom and centers the view so that all visible layers
+        are within the canvas, accounting for the current grid mode and margin.
+
+        Parameters
+        ----------
+        margin : float in [0, 1)
+            Margin as fraction of the canvas, showing blank space around the
+            data. Default is 0.05 (5% of the canvas).
+        """
+        # Get the scene parameters, including the total_size of the grid
+        extent, scene_size, corner, total_size = self._get_scene_parameters()
+
+        self.camera.center = self._calculate_view_center(corner, total_size)
+
+        scale_factor = self._get_scale_factor(margin)
+
+        # Set camera zoom based on ndisplay
         # zoom is defined as the number of canvas pixels per world pixel
         # The default value used below will zoom such that the whole field
         # of view will occupy 95% of the canvas on the most filled axis
-
-        if 0 <= margin < 1:
-            scale_factor = 1 - margin
-        else:
-            raise ValueError(
-                trans._(
-                    'margin must be between 0 and 1; got {margin} instead.',
-                    deferred=True,
-                    margin=margin,
-                )
-            )
-        if np.max(size) == 0:
+        if np.max(scene_size) == 0:
             self.camera.zoom = scale_factor * np.min(self._canvas_size)
-        else:
-            scale = np.array(size[-2:])
-            scale[np.isclose(scale, 0)] = 1
-            self.camera.zoom = scale_factor * np.min(
-                np.array(self._canvas_size) / scale
+
+        elif self.dims.ndisplay == 2:
+            self.camera.zoom = self._get_2d_camera_zoom(
+                total_size, scale_factor
             )
-        if reset_camera_angle:
-            self.camera.angles = (0, 0, 90)
+
+        elif self.dims.ndisplay == 3:
+            self.camera.zoom = self._get_3d_camera_zoom(
+                extent, total_size, scale_factor
+            )
 
         # Emit a reset view event, which is no longer used internally, but
         # which maybe useful for building on napari.
@@ -438,6 +467,141 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             zoom=self.camera.zoom,
             angles=self.camera.angles,
         )
+
+    def _get_scene_parameters(self):
+        """Get the scene parameters for the current grid mode.
+
+        Returns
+        -------
+        extent : array, shape (2, D)
+            An array with the min/max coordinate values of the layers
+            First row is min values, second row is max values.
+        scene_size : array, shape (D,)
+            Size of the bounding box containing all layers.
+        corner : array, shape (D,)
+            Minimum coordinate values of the bounding box (i.e. extent[0]).
+        total_size : array, shape (D,)
+            Total size of the scene including grid spacing
+        """
+        extent = self._sliced_extent_world_augmented
+        scene_size = extent[1] - extent[0]
+        corner = extent[0]
+        grid_size = list(self.grid.actual_shape(len(self.layers)))
+
+        if len(scene_size) > len(grid_size):
+            grid_size = [1] * (len(scene_size) - len(grid_size)) + grid_size
+
+        # total spacing accounts for the distance between layers
+        # results in 0 if not grid mode (grid_size = [1, 1] - 1)
+        total_spacing = (
+            np.mean(scene_size[-2:])
+            * self.grid.spacing
+            * (np.array(grid_size) - 1)
+        )
+        total_size = np.multiply(scene_size, grid_size) + total_spacing
+
+        return extent, scene_size, corner, total_size
+
+    def _calculate_view_center(self, corner, total_size):
+        """Calculate the center of the view based on the total size."""
+
+        center_array = np.add(corner, np.divide(total_size, 2))[
+            -self.dims.ndisplay :
+        ]
+        center = cast(
+            tuple[float, float, float] | tuple[float, float],
+            tuple(
+                [0.0] * (self.dims.ndisplay - len(center_array))
+                + list(center_array)
+            ),
+        )
+        assert len(center) in (2, 3)
+        return center
+
+    def _get_scale_factor(self, margin: float) -> float:
+        """Get the scale factor for camera zoom with a valid margin."""
+        if 0 <= margin < 1:
+            return 1 - margin
+        raise ValueError(
+            trans._(
+                'margin must be between 0 and 1; got {margin} instead.',
+                deferred=True,
+                margin=margin,
+            )
+        )
+
+    def _get_2d_camera_zoom(
+        self, total_size: np.ndarray, scale_factor: float
+    ) -> float:
+        """Get the camera zoom for 2D view."""
+        scale = np.array(total_size[-2:])
+        scale[np.isclose(scale, 0)] = 1
+        return scale_factor * np.min(np.array(self._canvas_size) / scale)
+
+    def _get_3d_camera_zoom(
+        self, extent: np.ndarray, total_size: np.ndarray, scale_factor: float
+    ) -> float:
+        """Calculate the zoom such that the minimum of the bounding box fits the canvas."""
+        grid_extent = extent.copy()
+        # calculate max coords with grid spacing included
+        grid_extent[1] = extent[0] + total_size
+
+        bounding_box = self._calculate_bounding_box(
+            extent=grid_extent,
+            view_direction=self.camera.view_direction,
+            up_direction=self.camera.up_direction,
+        )
+        return scale_factor * np.min(
+            np.array(self._canvas_size) / bounding_box
+        )
+
+    @staticmethod
+    def _calculate_bounding_box(
+        extent: np.ndarray,
+        view_direction: tuple[float, float, float],
+        up_direction: tuple[float, float, float],
+    ) -> np.ndarray:
+        """Calculate the bounding box of the rotated extent.
+
+        Parameters
+        ----------
+        extent : array, shape (2, D)
+            An array with shape (2, D) where D is the number of dimensions.
+            The min/max coordinate values of the layers in world coordinates.
+            First row contains minimum values, second row contains maximum
+            values.
+        view_direction : 3-tuple of float
+            3D view direction vector of the camera.
+        up_direction : 3-tuple of float
+            3D direction vector pointing up on the canvas.
+
+        Returns
+        -------
+        bounding_box : array, shape (2,)
+            The bounding box of the rotated extent.
+        """
+        # calculate the difference between the min and max values of the extent
+        # to know the size, and then squeeze the (1,D) array to (D) as
+        # required for dot product
+        size = np.squeeze(np.diff(extent, axis=0))
+
+        # if the size vector is (2,) and the camera vector is (3,)
+        # add a very small thickness to the size vector in the Z position
+        # to make sure the cross product is valid, and no division by zero
+        if len(size) < len(view_direction):
+            size = np.insert(size, 0, 1e-10)
+
+        # get the "rightward" direction that is perpendicular to the view and up directions
+        right_direction = np.cross(view_direction, up_direction)
+
+        # project the size vector onto the up and right directions to get the
+        # displayed height and width.
+        # size = [Z Y X] ; direction = [a b c]
+        # size · direction =  Za + Yb + Xc = distance of size vector in given direction
+        displayed_height = np.dot(np.abs(up_direction), size)
+        displayed_width = np.dot(np.abs(right_direction), size)
+
+        return np.array([displayed_height, displayed_width])
 
     def _new_labels(self):
         """Create new labels layer filling full world coordinates space."""
@@ -448,7 +612,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         corner = extent[0]
         shape = [
             np.round(s / sc).astype('int') + 1
-            for s, sc in zip(scene_size, scale)
+            for s, sc in zip(scene_size, scale, strict=False)
         ]
         dtype_str = get_settings().application.new_labels_dtype
         empty_labels = np.zeros(shape, dtype=dtype_str)
@@ -490,6 +654,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 layer.update_highlight_visibility(False)
             self.help = ''
             self.cursor.style = CursorStyle.STANDARD
+            self.camera.mouse_pan = True
+            self.camera.mouse_zoom = True
         else:
             active_layer.update_transform_box_visibility(True)
             active_layer.update_highlight_visibility(True)
@@ -503,17 +669,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.camera.mouse_pan = active_layer.mouse_pan
             self.camera.mouse_zoom = active_layer.mouse_zoom
             self.update_status_from_cursor()
-
-    @staticmethod
-    def rounded_division(min_val, max_val, precision):
-        warnings.warn(
-            trans._(
-                'Viewer.rounded_division is deprecated since v0.4.18 and will be removed in 0.6.0.'
-            ),
-            FutureWarning,
-            stacklevel=2,
-        )
-        return int(((min_val + max_val) / 2) / precision) * precision
 
     def _on_layers_change(self):
         if len(self.layers) == 0:
@@ -559,31 +714,80 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def _calc_status_from_cursor(
         self,
-    ) -> Optional[tuple[Union[str, Dict], str]]:
+    ) -> tuple[str | Dict, str] | None:
         if not self.mouse_over_canvas:
             return None
-        active = self.layers.selection.active
-        if active is not None:
+        coord2val: dict[str, list[str]] = {}
+        coord_str = ''
+        status_str = ''
+        tooltip_text = ''
+        selection = self.layers.selection
+        active = selection.active
+
+        # Compute the tooltip first since it is always needed.
+        if self.tooltip.visible and active is not None and active._loaded:
+            tooltip_text = active._get_tooltip_text(
+                np.asarray(self.cursor.position),
+                view_direction=np.asarray(self.cursor._view_direction),
+                dims_displayed=list(self.dims.displayed),
+                world=True,
+            )
+
+        # If there is an active layer and a single selection, calculate status using "the classic way".
+        # Then return the status and the tooltip.
+        if active is not None and active._loaded and len(selection) < 2:
             status = active.get_status(
                 self.cursor.position,
                 view_direction=self.cursor._view_direction,
                 dims_displayed=list(self.dims.displayed),
                 world=True,
             )
-
-            if self.tooltip.visible:
-                tooltip_text = active._get_tooltip_text(
-                    np.asarray(self.cursor.position),
-                    view_direction=np.asarray(self.cursor._view_direction),
-                    dims_displayed=list(self.dims.displayed),
-                    world=True,
-                )
-            else:
-                tooltip_text = ''
-
             return status, tooltip_text
 
-        return 'Ready', ''
+        # Otherwise, return the layer status of multiple selected layers
+        # or gridded layers as well as the tooltip.
+        for layer in self.layers[::-1]:
+            if (
+                not layer.visible
+                or layer.opacity == 0
+                or not layer._loaded
+                or (layer not in selection and not self.grid.enabled)
+            ):
+                continue
+            status = layer.get_status(
+                self.cursor.position,
+                view_direction=self.cursor._view_direction,
+                dims_displayed=list(self.dims.displayed),
+                world=True,
+            )
+            separator = '    '
+            emphasis = separator if layer is active else ''
+            coord_str = f'{status["coords"]} » '
+            if status['value'] != '':
+                if coord_str not in coord2val:
+                    coord2val[coord_str] = []
+                coord2val[coord_str].append(
+                    f'{layer.name}: {status["value"]}{emphasis}'
+                )
+        if coord2val:
+            if not self.grid.enabled:
+                # use a single coordinate system
+                values = list(itertools.chain(*coord2val.values()))
+                key = next(iter(coord2val))  # choose arbitrary coordinate
+                coord2val = {key: values}
+            status_strs = [
+                key + separator.join(values)
+                for key, values in coord2val.items()
+            ]
+            status_str = separator.join(status_strs)
+        elif coord_str and not self.grid.enabled:
+            status_str = coord_str + '[empty]'
+        elif self.grid.enabled:
+            status_str = '[empty]'
+        else:
+            status_str = 'Ready'
+
+        return status_str, tooltip_text
 
     def update_status_from_cursor(self):
         """Update the status and tooltip from the cursor position."""
@@ -599,9 +803,15 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         n_layers = len(self.layers)
         for i, layer in enumerate(self.layers):
             i_row, i_column = self.grid.position(n_layers - 1 - i, n_layers)
-            self._subplot(layer, (i_row, i_column), extent)
+            self._subplot(layer, (i_row, i_column), extent, self.grid.spacing)
 
-    def _subplot(self, layer, position, extent):
+    def _subplot(
+        self,
+        layer: Layer,
+        position: tuple[int, int],
+        extent: np.ndarray,
+        spacing: float,
+    ):
         """Shift a layer to a specified position in a 2D grid.
 
         Parameters
@@ -612,12 +822,20 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             New position of layer in grid.
         extent : array, shape (2, D)
             Extent of the world.
+        spacing : float, optional
+            Value for spacing between layers. Negative values will
+            cause layers to overlap. Positive values will cause layers to
+            have space between them.
         """
         scene_shift = extent[1] - extent[0]
-        translate_2d = np.multiply(scene_shift[-2:], position)
+        position_array = np.array(position)
+        # shift the layer in the grid by the extent of the scene
+        translate_2d = np.multiply(scene_shift[-2:], position_array)
+        # calculate average scene extent, and use for a symmetrical spacing adjustment
+        translate_2d += np.mean(scene_shift[-2:]) * spacing * position_array
         translate = [0] * layer.ndim
         translate[-2:] = translate_2d
-        layer._translate_grid = translate
+        layer._translate_grid = np.array(translate)
 
     @property
     def experimental(self):
@@ -757,12 +975,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.layers.append(layer)
         return layer
 
-    @rename_argument(
-        from_name='interpolation',
-        to_name='interpolation2d',
-        version='0.6.0',
-        since_version='0.4.17',
-    )
     def add_image(
         self,
         data=None,
@@ -796,7 +1008,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         translate=None,
         units=None,
         visible=True,
-    ) -> Union[Image, list[Image]]:
+    ) -> Image | list[Image]:
         """Add one or more Image layers to the layer list.
 
         Parameters
@@ -1013,7 +1225,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self,
         plugin: str,
         sample: str,
-        reader_plugin: Optional[str] = None,
+        reader_plugin: str | None = None,
         **kwargs,
     ) -> list[Layer]:
         """Open `sample` from `plugin` and add it to the viewer.
@@ -1048,7 +1260,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         from napari.plugins import _npe2, plugin_manager
 
         plugin_spec_reader = None
-        data: Union[None, SampleDataCreator, SampleData]
+        data: None | SampleDataCreator | SampleData
         # try with npe2
         data, available = _npe2.get_sample_data(plugin, sample)
 
@@ -1101,7 +1313,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 for datum in data(**kwargs):
                     added.extend(self._add_layer_from_data(*datum))
                 return added
-            if isinstance(data, (str, Path)):
+            if isinstance(data, str | Path):
                 try:
                     return self.open(data, plugin=reader_plugin)
                 except Exception as e:
@@ -1136,9 +1348,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self,
         path: PathOrPaths,
         *,
-        stack: Union[bool, list[list[PathLike]]] = False,
-        plugin: Optional[str] = 'napari',
-        layer_type: Optional[LayerTypeName] = None,
+        stack: bool | list[list[PathLike]] = False,
+        plugin: str | None = 'napari',
+        layer_type: LayerTypeName | None = None,
         **kwargs,
     ) -> list[Layer]:
         """Open a path or list of paths with plugins, and add layers to viewer.
@@ -1191,7 +1403,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         paths_: list[PathLike] = (
             [os.fspath(path)]
-            if isinstance(path, (Path, str))
+            if isinstance(path, Path | str)
             else [os.fspath(p) for p in path]
         )
 
@@ -1238,9 +1450,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def _open_or_raise_error(
         self,
-        paths: list[Union[Path, str]],
-        kwargs: Optional[Dict[str, Any]] = None,
-        layer_type: Optional[LayerTypeName] = None,
+        paths: list[Path | str],
+        kwargs: Dict[str, Any] | None = None,
+        layer_type: LayerTypeName | None = None,
         stack: bool = False,
     ):
         """Open paths if plugin choice is unambiguous, raising any errors.
@@ -1367,9 +1579,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         paths: list[PathLike],
         *,
         stack: bool,
-        kwargs: Optional[Dict] = None,
-        plugin: Optional[str] = None,
-        layer_type: Optional[LayerTypeName] = None,
+        kwargs: Dict | None = None,
+        plugin: str | None = None,
+        layer_type: LayerTypeName | None = None,
     ) -> list[Layer]:
         """Load a path or a list of paths into the viewer using plugins.
 
@@ -1440,21 +1652,27 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # add each layer to the viewer
         added: list[Layer] = []  # for layers that get added
         plugin = hookimpl.plugin_name if hookimpl else None
-        for data, filename in zip(layer_data, filenames):
+        for data, filename in zip(layer_data, filenames, strict=False):
             basename, _ext = os.path.splitext(os.path.basename(filename))
-            _data = _unify_data_and_user_kwargs(
-                data, kwargs, layer_type, fallback_name=basename
-            )
             # actually add the layer
-            with layer_source(path=filename, reader_plugin=plugin):
-                added.extend(self._add_layer_from_data(*_data))
+            if isinstance(data, Layer):
+                data._set_source(Source(path=filename, reader_plugin=plugin))
+                lyr = self.add_layer(data)
+                current_added = [lyr]
+            else:
+                _data = _unify_data_and_user_kwargs(
+                    data, kwargs, layer_type, fallback_name=basename
+                )
+                with layer_source(path=filename, reader_plugin=plugin):
+                    current_added = self._add_layer_from_data(*_data)
+            added.extend(current_added)
         return added
 
     def _add_layer_from_data(
         self,
         data,
-        meta: Optional[Mapping[str, Any]] = None,
-        layer_type: Optional[str] = None,
+        meta: Mapping[str, Any] | None = None,
+        layer_type: str | None = None,
     ) -> list[Layer]:
         """Add arbitrary layer data to the viewer.
 
@@ -1565,10 +1783,10 @@ def _normalize_layer_data(data: LayerData) -> FullLayerData:
 
     _data = list(data)
     if len(_data) > 1:
-        if not isinstance(_data[1], dict):
+        if not isinstance(_data[1], MutableMapping):
             raise ValueError(
                 trans._(
-                    'The second item in a LayerData tuple must be a dict',
+                    'The second item in a LayerData tuple must be a dict or other MutableMapping.',
                     deferred=True,
                 )
             )
@@ -1590,9 +1808,9 @@ def _normalize_layer_data(data: LayerData) -> FullLayerData:
 
 def _unify_data_and_user_kwargs(
     data: LayerData,
-    kwargs: Optional[dict] = None,
-    layer_type: Optional[LayerTypeName] = None,
-    fallback_name: Optional[str] = None,
+    kwargs: dict | None = None,
+    layer_type: LayerTypeName | None = None,
+    fallback_name: str | None = None,
 ) -> FullLayerData:
     """Merge data returned from plugins with options specified by user.
 

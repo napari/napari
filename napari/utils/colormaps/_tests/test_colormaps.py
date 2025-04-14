@@ -257,6 +257,20 @@ def test_ensure_colormap_with_recognized_hex_color_string(color):
     assert cmap.name == 'magenta'
 
 
+@pytest.mark.parametrize('color', ['white', '#FFFFFF', '#ffffff', '#ffFFffFF'])
+def test_ensure_colormap_handles_grayscale(color):
+    cmap = ensure_colormap(color)
+    assert isinstance(cmap, Colormap)
+    assert cmap.name == 'gray'
+
+
+@pytest.mark.parametrize('color', ['black', '#000000', '#000000FF'])
+def test_ensure_colormap_handles_black(color):
+    cmap = ensure_colormap(color)
+    assert isinstance(cmap, Colormap)
+    assert cmap.name == 'gray_r'
+
+
 def test_ensure_colormap_error_with_invalid_hex_color_string():
     """
     Test that ensure_colormap errors when using an invalid hex color string

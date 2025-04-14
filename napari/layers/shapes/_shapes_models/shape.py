@@ -1,20 +1,38 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Optional
+from functools import cached_property
 
 import numpy as np
 import numpy.typing as npt
 
+from napari.layers.shapes._accelerated_triangulate_dispatch import (
+    remove_path_duplicates,
+)
 from napari.layers.shapes._shapes_utils import (
+    _save_failed_triangulation,
+    find_planar_axis,
     is_collinear,
     path_to_mask,
     poly_to_mask,
     triangulate_edge,
     triangulate_face,
 )
+from napari.settings import get_settings
 from napari.utils.misc import argsort
 from napari.utils.translations import trans
+
+try:
+    from PartSegCore_compiled_backend.triangulate import (
+        triangulate_path_edge_numpy,
+        triangulate_polygon_numpy_li,
+        triangulate_polygon_with_edge_numpy_li,
+    )
+
+except ImportError:
+    triangulate_path_edge_numpy = None
+    triangulate_polygon_numpy_li = None
+    triangulate_polygon_with_edge_numpy_li = None
 
 
 class Shape(ABC):
@@ -102,7 +120,7 @@ class Shape(ABC):
     ) -> None:
         self._dims_order = dims_order or list(range(2))
         self._ndisplay = ndisplay
-        self.slice_key: Optional[npt.NDArray] = None
+        self.slice_key: npt.NDArray
 
         self._face_vertices = np.empty((0, self.ndisplay))
         self._face_triangles = np.empty((0, 3), dtype=np.uint32)
@@ -120,6 +138,16 @@ class Shape(ABC):
 
         self._data: npt.NDArray
         self._bounding_box = np.empty((0, self.ndisplay))
+
+    def __new__(cls, *args, **kwargs):
+        if (
+            get_settings().experimental.compiled_triangulation
+            and triangulate_path_edge_numpy is not None
+        ):
+            cls._set_meshes = cls._set_meshes_compiled
+        else:
+            cls._set_meshes = cls._set_meshes_py
+        return super().__new__(cls)
 
     @property
     @abstractmethod
@@ -160,7 +188,7 @@ class Shape(ABC):
         self._dims_order = dims_order
         self._update_displayed_data()
 
-    @property
+    @cached_property
     def dims_displayed(self):
         """tuple: Dimensions that are displayed."""
         return self.dims_order[-self.ndisplay :]
@@ -179,7 +207,7 @@ class Shape(ABC):
         """tuple: Dimensions that are not displayed."""
         return self.dims_order[: -self.ndisplay]
 
-    @property
+    @cached_property
     def data_displayed(self):
         """(N, 2) array: Vertices of the shape that are currently displayed."""
         return self.data[:, self.dims_displayed]
@@ -204,7 +232,7 @@ class Shape(ABC):
     def z_index(self, z_index):
         self._z_index = z_index
 
-    def _set_meshes(
+    def _set_meshes_compiled(
         self,
         data: npt.NDArray,
         closed: bool = True,
@@ -224,6 +252,81 @@ class Shape(ABC):
         edge : bool
             Bool which determines if the edge need to be traingulated
         """
+        if data.shape[1] == 3:
+            self._set_meshes_py(data, closed=closed, face=face, edge=edge)
+            return
+
+        # if we are computing both edge and face triangles, we can do so
+        # with a single call to the compiled backend
+        if edge and face:
+            try:
+                (triangles, vertices), (centers, offsets, edge_triangles) = (
+                    triangulate_polygon_with_edge_numpy_li(
+                        [data], split_edges=True
+                    )
+                )
+            except Exception as e:  # pragma: no cover
+                path, text_path = _save_failed_triangulation(data)
+                raise RuntimeError(
+                    f'Triangulation failed. Data saved to {path} and {text_path}'
+                ) from e
+
+            self._edge_vertices = centers
+            self._edge_offsets = offsets
+            self._edge_triangles = edge_triangles
+            self._face_vertices = vertices
+            self._face_triangles = triangles
+            return
+
+        # otherwise, we make individual calls to specialized functions
+        if edge:
+            centers, offsets, triangles = triangulate_path_edge_numpy(
+                data, closed=closed
+            )
+            self._edge_vertices = centers
+            self._edge_offsets = offsets
+            self._edge_triangles = triangles
+        else:
+            self._edge_vertices = np.empty((0, self.ndisplay))
+            self._edge_offsets = np.empty((0, self.ndisplay))
+            self._edge_triangles = np.empty((0, 3), dtype=np.uint32)
+        if face:
+            triangles, vertices = triangulate_polygon_numpy_li([data])
+            self._face_vertices = vertices
+            self._face_triangles = triangles
+        else:
+            self._face_vertices = np.empty((0, self.ndisplay))
+            self._face_triangles = np.empty((0, 3), dtype=np.uint32)
+
+    def _set_meshes(  # noqa: B027
+        self,
+        data: npt.NDArray,
+        closed: bool = True,
+        face: bool = True,
+        edge: bool = True,
+    ) -> None: ...
+
+    def _set_meshes_py(
+        self,
+        data: npt.NDArray,
+        closed: bool = True,
+        face: bool = True,
+        edge: bool = True,
+    ) -> None:
+        """Sets the face and edge meshes from a set of points.
+
+        Parameters
+        ----------
+        data : np.ndarray
+            Nx2 or Nx3 array specifying the shape to be triangulated
+        closed : bool
+            Bool which determines if the edge is closed or not
+        face : bool
+            Bool which determines if the face need to be traingulated
+        edge : bool
+            Bool which determines if the edge need to be traingulated
+        """
+        data = remove_path_duplicates(data, closed=closed)
         if edge:
             centers, offsets, triangles = triangulate_edge(data, closed=closed)
             self._edge_vertices = centers
@@ -234,35 +337,30 @@ class Shape(ABC):
             self._edge_offsets = np.empty((0, self.ndisplay))
             self._edge_triangles = np.empty((0, 3), dtype=np.uint32)
 
-        if face:
-            idx = np.concatenate(
-                [[True], ~np.all(data[1:] == data[:-1], axis=-1)]
-            )
-            clean_data = data[idx].copy()
+        ndim = data.shape[1]
+        # this method is called right before display, on sliced data, so
+        # ndim can only be 2 or 3. If 3D, shapes must be confined to a plane
+        # along *some* axis. We find that axis and the plane coordinate, then
+        # proceed as if 2D. If 2D, the data is passed through unchanged. And
+        # if there is no planar axis, we cannot triangulate and we return an
+        # empty data array
+        data2d, axis, value = find_planar_axis(data)
 
-            if not is_collinear(clean_data[:, -2:]):
-                if clean_data.shape[1] == 2:
-                    vertices, triangles = triangulate_face(clean_data)
-                elif len(np.unique(clean_data[:, 0])) == 1:
-                    val = np.unique(clean_data[:, 0])
-                    vertices, triangles = triangulate_face(clean_data[:, -2:])
-                    exp = np.expand_dims(np.repeat(val, len(vertices)), axis=1)
-                    vertices = np.concatenate([exp, vertices], axis=1)
-                else:
-                    triangles = np.array([])
-                    vertices = np.array([])
-                if len(triangles) > 0:
-                    self._face_vertices = vertices
-                    self._face_triangles = triangles
-                else:
-                    self._face_vertices = np.empty((0, self.ndisplay))
-                    self._face_triangles = np.empty((0, 3), dtype=np.uint32)
-            else:
-                self._face_vertices = np.empty((0, self.ndisplay))
-                self._face_triangles = np.empty((0, 3), dtype=np.uint32)
-        else:
-            self._face_vertices = np.empty((0, self.ndisplay))
-            self._face_triangles = np.empty((0, 3), dtype=np.uint32)
+        # set empty data as fallback
+        self._face_vertices = np.empty((0, self.ndisplay))
+        self._face_triangles = np.empty((0, 3), dtype=np.uint32)
+
+        if face and not is_collinear(data2d):
+            vertices, triangles = triangulate_face(data2d)
+            if ndim == 3 and axis is not None and value is not None:
+                # axis and value can be None if data 3D but not limited to an
+                # axis-aligned plane. However in that situation data2d will be
+                # empty, is_collinear is True, and we will never get here. But
+                # we check anyway for mypy's sake
+                vertices = np.insert(vertices, axis, value, axis=1)
+            if len(triangles) > 0:
+                self._face_vertices = vertices
+                self._face_triangles = triangles
 
     def _all_triangles(self):
         """Return all triangles for the shape
@@ -294,9 +392,9 @@ class Shape(ABC):
             self._data[:, self.dims_displayed] @ transform.T
         )
         self._face_vertices = self._face_vertices @ transform.T
-
+        self.__dict__.pop('data_displayed', None)  # clear cache
         points = self.data_displayed
-
+        points = remove_path_duplicates(points, closed=self._closed)
         centers, offsets, triangles = triangulate_edge(
             points, closed=self._closed
         )
@@ -309,6 +407,7 @@ class Shape(ABC):
                 np.max(self._data, axis=0),
             ]
         )
+        self._clean_cache()
 
     def shift(self, shift: npt.NDArray) -> None:
         """Performs a 2D shift on the shape
@@ -327,6 +426,7 @@ class Shape(ABC):
         self._bounding_box[:, self.dims_displayed] = (
             self._bounding_box[:, self.dims_displayed] + shift
         )
+        self._clean_cache()
 
     def scale(self, scale, center=None):
         """Performs a scaling on the shape
@@ -338,7 +438,7 @@ class Shape(ABC):
         center : list
             length 2 list specifying coordinate of center of scaling.
         """
-        if isinstance(scale, (list, np.ndarray)):
+        if isinstance(scale, list | np.ndarray):
             transform = np.array([[scale[0], 0], [0, scale[1]]])
         else:
             transform = np.array([[scale, 0], [0, scale]])
@@ -481,3 +581,9 @@ class Shape(ABC):
             mask = mask_p
 
         return mask
+
+    def _clean_cache(self) -> None:
+        if 'dims_displayed' in self.__dict__:
+            del self.__dict__['dims_displayed']
+        if 'data_displayed' in self.__dict__:
+            del self.__dict__['data_displayed']

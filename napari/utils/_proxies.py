@@ -2,7 +2,8 @@ import os
 import re
 import sys
 import warnings
-from typing import Any, Callable, Generic, TypeVar, Union
+from collections.abc import Callable
+from typing import Any, Generic, TypeVar, Union
 
 import wrapt
 
@@ -64,7 +65,7 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
             trans._(
                 "Private attribute access ('{typ}.{name}') in this context "
                 '(e.g. inside a plugin widget or dock widget) is deprecated '
-                'and will be unavailable in version 0.6.0',
+                'and will be unavailable in version 0.7.0',
                 deferred=True,
                 name=name,
                 typ=typ,

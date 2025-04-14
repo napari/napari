@@ -6,8 +6,9 @@ for any type of patching. See patch_callables() below as the main entrypoint.
 
 import logging
 import types
+from collections.abc import Callable
 from importlib import import_module
-from typing import Callable, Union
+from typing import Union
 
 from napari.utils.translations import trans
 
@@ -88,13 +89,13 @@ def _patch_attribute(
     )
 
     # Patch it with the user-provided patch_func.
-    logging.info('patching %s.%s', module.__name__, label)
+    logging.getLogger('napari').info('patching %s.%s', module.__name__, label)
     patch_func(parent, callable_str, label)
 
 
 def _import_module(
     target_str: str,
-) -> Union[tuple[types.ModuleType, str], tuple[None, None]]:
+) -> tuple[types.ModuleType, str] | tuple[None, None]:
     """Import the module portion of this target string.
 
     Try importing successively longer segments of the target_str. For example:
@@ -184,7 +185,9 @@ def patch_callables(callables: list[str], patch_func: PatchFunction) -> None:
     for target_str in callables:
         if target_str in patched:
             # Ignore duplicated targets in the config file.
-            logging.warning('skipping duplicate %s', target_str)
+            logging.getLogger('napari').warning(
+                'skipping duplicate %s', target_str
+            )
             continue
 
         # Patch the target and note that we did.
@@ -198,6 +201,8 @@ def patch_callables(callables: list[str], patch_func: PatchFunction) -> None:
             # file to contain targets that aren't in the code.
 
             # logging.exception magically logs the stack trace too!
-            logging.exception('Something went wrong while patching')
+            logging.getLogger('napari').exception(
+                'Something went wrong while patching'
+            )
 
         patched.add(target_str)

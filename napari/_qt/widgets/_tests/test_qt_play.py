@@ -70,6 +70,7 @@ CONDITIONS = [
 ]
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(
     ('nframes', 'fps', 'mode', 'rng', 'result'), CONDITIONS
 )

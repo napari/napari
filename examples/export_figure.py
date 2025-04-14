@@ -2,9 +2,11 @@
 Export Figure
 =============
 
-Display one shapes layer ontop of one image layer using the ``add_shapes`` and
-``add_image`` APIs. When the window is closed it will print the coordinates of
-your shapes.
+Display a variety of layer types in the napari viewer and export the figure with `viewer.export_figure()`.
+The exported figure is then added back as an image layer.
+
+Exported figures include the extent of all data in 2D view, and does not presently work for 3D views.
+To capture the extent of the canvas, instead of the layers, see `viewer.screenshot()`: :ref:`sphx_glr_gallery_to_screenshot.py` and :ref:`sphx_glr_gallery_screenshot_and_export_figure.py`.
 
 .. tags:: visualization-advanced
 """
@@ -106,9 +108,6 @@ viewer.theme = "dark"
 viewer.add_image(export_figure, rgb=True, name='exported_figure')
 viewer.add_image(scaled_export_figure, rgb=True, name='scaled_exported_figure')
 viewer.reset_view()
-
-# from skimage.io import imsave
-# imsave('screenshot.png', screenshot)
 
 if __name__ == '__main__':
     napari.run()

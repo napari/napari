@@ -25,6 +25,7 @@ NAMES: set[str] = {
 }
 
 __all__ = [
+    'NAMES',
     'Image',
     'Labels',
     'Layer',
@@ -33,5 +34,4 @@ __all__ = [
     'Surface',
     'Tracks',
     'Vectors',
-    'NAMES',
 ]

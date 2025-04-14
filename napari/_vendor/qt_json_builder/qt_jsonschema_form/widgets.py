@@ -158,6 +158,8 @@ class SpinDoubleSchemaWidget(SchemaWidgetMixin, QtWidgets.QDoubleSpinBox):
             self.setMinimum(self.schema['minimum'])
         if 'maximum' in self.schema:
             self.setMaximum(self.schema['maximum'])
+        if 'step' in self.schema:
+            self.setSingleStep(self.schema['step'])
 
 
     def setDescription(self, description: str):

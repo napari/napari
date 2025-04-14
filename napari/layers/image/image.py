@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+import typing
 import warnings
-from typing import Any, Literal, Union, cast
+from typing import Any, Literal, cast
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -24,7 +25,6 @@ from napari.layers.utils.layer_utils import calc_data_range
 from napari.utils._dtype import get_dtype_limits, normalize_dtype
 from napari.utils.colormaps import ensure_colormap
 from napari.utils.colormaps.colormap_utils import _coerce_contrast_limits
-from napari.utils.migrations import rename_argument
 from napari.utils.translations import trans
 
 __all__ = ('Image',)
@@ -222,12 +222,6 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
 
     _projectionclass = ImageProjectionMode
 
-    @rename_argument(
-        from_name='interpolation',
-        to_name='interpolation2d',
-        version='0.6.0',
-        since_version='0.4.17',
-    )
     def __init__(
         self,
         data,
@@ -310,7 +304,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         # Set contrast limits, colormaps and plane parameters
         if contrast_limits is None:
             if not isinstance(data, np.ndarray):
-                dtype = normalize_dtype(getattr(data, 'dtype', None))
+                dtype = normalize_dtype(getattr(data, 'dtype', np.float32))
                 if np.issubdtype(dtype, np.integer):
                     self.contrast_limits_range = get_dtype_limits(dtype)
                 else:
@@ -399,7 +393,9 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         if self._keep_auto_contrast:
             data = response.image.raw
             input_data = data[-1] if self.multiscale else data
-            self.contrast_limits = calc_data_range(input_data, rgb=self.rgb)
+            self.contrast_limits = calc_data_range(
+                typing.cast(LayerDataProtocol, input_data), rgb=self.rgb
+            )
 
         super()._update_slice_response(response)
 
@@ -423,12 +419,12 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         self.events.attenuation()
 
     @property
-    def data(self) -> Union[LayerDataProtocol, MultiScaleData]:
+    def data(self) -> LayerDataProtocol | MultiScaleData:
         """Data, possibly in multiscale wrapper. Obeys LayerDataProtocol."""
         return self._data
 
     @data.setter
-    def data(self, data: Union[LayerDataProtocol, MultiScaleData]) -> None:
+    def data(self, data: LayerDataProtocol | MultiScaleData) -> None:
         self._data_raw = data
         # note, we don't support changing multiscale in an Image instance
         self._data = MultiScaleData(data) if self.multiscale else data  # type: ignore
@@ -439,70 +435,11 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         self._reset_editable()
 
     @property
-    def interpolation(self):
-        """Return current interpolation mode.
-
-        Selects a preset interpolation mode in vispy that determines how volume
-        is displayed.  Makes use of the two Texture2D interpolation methods and
-        the available interpolation methods defined in
-        vispy/gloo/glsl/misc/spatial_filters.frag
-
-        Options include:
-        'bessel', 'cubic', 'linear', 'blackman', 'catrom', 'gaussian',
-        'hamming', 'hanning', 'hermite', 'kaiser', 'lanczos', 'mitchell',
-        'nearest', 'spline16', 'spline36'
-
-        Returns
-        -------
-        str
-            The current interpolation mode
-        """
-        warnings.warn(
-            trans._(
-                'Interpolation attribute is deprecated since 0.4.17. Please use interpolation2d or interpolation3d',
-            ),
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        return str(
-            self._interpolation2d
-            if self._slice_input.ndisplay == 2
-            else self._interpolation3d
-        )
-
-    @interpolation.setter
-    def interpolation(self, interpolation):
-        """Set current interpolation mode."""
-        warnings.warn(
-            trans._(
-                'Interpolation setting is deprecated since 0.4.17. Please use interpolation2d or interpolation3d',
-            ),
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        if self._slice_input.ndisplay == 3:
-            self.interpolation3d = interpolation
-        else:
-            if interpolation == 'bilinear':
-                interpolation = 'linear'
-                warnings.warn(
-                    trans._(
-                        "'bilinear' is invalid for interpolation2d (introduced in napari 0.4.17). "
-                        "Please use 'linear' instead, and please set directly the 'interpolation2d' attribute'.",
-                    ),
-                    category=DeprecationWarning,
-                    stacklevel=2,
-                )
-            self.interpolation2d = interpolation
-
-    @property
     def interpolation2d(self) -> InterpolationStr:
         return cast(InterpolationStr, str(self._interpolation2d))
 
     @interpolation2d.setter
-    def interpolation2d(
-        self, value: Union[InterpolationStr, Interpolation]
-    ) -> None:
+    def interpolation2d(self, value: InterpolationStr | Interpolation) -> None:
         if value == 'bilinear':
             raise ValueError(
                 trans._(
@@ -525,9 +462,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         return cast(InterpolationStr, str(self._interpolation3d))
 
     @interpolation3d.setter
-    def interpolation3d(
-        self, value: Union[InterpolationStr, Interpolation]
-    ) -> None:
+    def interpolation3d(self, value: InterpolationStr | Interpolation) -> None:
         if value == 'custom':
             raise NotImplementedError(
                 'custom interpolation is not implemented yet for 3D rendering'

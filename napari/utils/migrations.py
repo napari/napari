@@ -1,8 +1,9 @@
 import inspect
 import warnings
 from collections import UserDict
+from collections.abc import Callable
 from functools import wraps
-from typing import Any, Callable, NamedTuple
+from typing import Any, NamedTuple
 
 from napari.utils.translations import trans
 
@@ -49,17 +50,6 @@ def rename_argument(
     since_version : str
         version when new argument was added
     """
-
-    if not since_version:
-        since_version = 'unknown'
-        warnings.warn(
-            trans._(
-                'The since_version argument was added in napari 0.4.18 and will be mandatory since 0.6.0 release.',
-                deferred=True,
-            ),
-            stacklevel=2,
-            category=FutureWarning,
-        )
 
     def _wrapper(func):
         if not hasattr(func, '_rename_argument'):

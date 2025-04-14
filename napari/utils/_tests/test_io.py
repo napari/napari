@@ -8,6 +8,7 @@ from imageio.v3 import imread
 from napari.utils.io import imsave
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(
     'image_file', ['image', 'image.png', 'image.tif', 'image.bmp']
 )
@@ -73,6 +74,23 @@ def test_imsave_float(tmp_path, image_file):
 
 
 def test_imsave_large_file(monkeypatch, tmp_path):
+    """Test saving a bigtiff file.
+
+    In napari IO, we use compression when saving to tiff. bigtiff mode
+    is required when data size *after compression* is over 4GB. However,
+    bigtiff is not as broadly implemented as normal tiff, so we don't want to
+    always use that flag. Therefore, in our internal code, we catch the error
+    raised when trying to write a too-large TIFF file, then rewrite using
+    bigtiff. This test checks that the mechanism works correctly.
+
+    Generating 4GB+ of uncompressible data is expensive, so here we:
+
+    1. Generate a smaller amount of "random" data using np.empty.
+    2. Monkeypatch tifffile's save routine to raise an error *as if* bigtiff
+       was required for this small dataset.
+    3. This triggers saving as bigtiff.
+    4. We check that the file was correctly saved as bigtiff.
+    """
     old_write = tifffile.imwrite
 
     def raise_no_bigtiff(*args, **kwargs):
@@ -82,9 +100,9 @@ def test_imsave_large_file(monkeypatch, tmp_path):
 
     monkeypatch.setattr(tifffile, 'imwrite', raise_no_bigtiff)
 
-    data = np.random.randint(
-        low=0, high=2**16, size=(128, 4096, 4096), dtype='uint16'
-    )  # 4GB size
+    # create image data. It can be <4GB compressed because we
+    # monkeypatched tifffile.imwrite to raise an error if bigtiff is not set
+    data = np.empty((20, 200, 200), dtype='uint16')
 
     # create image and assert image file creation
     image_path = str(tmp_path / 'data.tif')

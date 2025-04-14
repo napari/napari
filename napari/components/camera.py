@@ -1,13 +1,24 @@
-import warnings
-from typing import Optional, Union
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 
 from napari._pydantic_compat import validator
+from napari.utils.camera_orientations import (
+    DEFAULT_ORIENTATION_TYPED,
+    DepthAxisOrientation,
+    Handedness,
+    HorizontalAxisOrientation,
+    HorizontalAxisOrientationStr,
+    VerticalAxisOrientation,
+    VerticalAxisOrientationStr,
+)
 from napari.utils.events import EventedModel
 from napari.utils.misc import ensure_n_tuple
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    import numpy.typing as npt
 
 
 class Camera(EventedModel):
@@ -27,10 +38,6 @@ class Camera(EventedModel):
         sets of Euler angles may lead to the same view.
     perspective : float
         Perspective (aka "field of view" in vispy) of the camera (if 3D).
-    interactive : bool
-        If the camera mouse pan/zoom is enabled or not.
-        This attribute is deprecated since 0.5.0 and should not be used.
-        Use the mouse_pan and mouse_zoom attributes instead.
     mouse_pan : bool
         If the camera interactive panning with the mouse is enabled or not.
     mouse_zoom : bool
@@ -38,7 +45,7 @@ class Camera(EventedModel):
     """
 
     # fields
-    center: Union[tuple[float, float, float], tuple[float, float]] = (
+    center: tuple[float, float, float] | tuple[float, float] = (
         0.0,
         0.0,
         0.0,
@@ -48,6 +55,11 @@ class Camera(EventedModel):
     perspective: float = 0
     mouse_pan: bool = True
     mouse_zoom: bool = True
+    orientation: tuple[
+        DepthAxisOrientation,
+        VerticalAxisOrientation,
+        HorizontalAxisOrientation,
+    ] = DEFAULT_ORIENTATION_TYPED
 
     # validators
     @validator('center', 'angles', pre=True, allow_reuse=True)
@@ -64,7 +76,9 @@ class Camera(EventedModel):
         """
         ang = np.deg2rad(self.angles)
         view_direction = (
-            np.sin(ang[2]) * np.cos(ang[1]),
+            # z has a negative sign for the right-handed reference frame
+            # flip (#7488)
+            -np.sin(ang[2]) * np.cos(ang[1]),
             np.cos(ang[2]) * np.cos(ang[1]),
             -np.sin(ang[1]),
         )
@@ -82,7 +96,9 @@ class Camera(EventedModel):
             seq='yzx', angles=self.angles, degrees=True
         ).as_matrix()
         return (
-            rotation_matrix[2, 2],
+            # z has a negative sign for the right-handed reference frame
+            # flip (#7488)
+            -rotation_matrix[2, 2],
             rotation_matrix[1, 2],
             rotation_matrix[0, 2],
         )
@@ -123,14 +139,22 @@ class Camera(EventedModel):
             0,
         )
         if view_direction_along_y_axis and up_direction_along_y_axis:
-            up_direction = (-1, 0, 0)  # align up direction along z axis
+            up_direction = (1, 0, 0)  # align up direction along z axis
 
-        # xyz ordering for vispy, normalise vectors for rotation matrix
-        view_vector = np.asarray(view_direction, dtype=float)[::-1]
+        # xyz ordering for vispy
+        view_vector = np.array(view_direction, dtype=float, copy=True)[::-1]
+        # flip z axis for right-handed frame
+        view_vector *= [1, 1, -1]
+        # normalise vector for rotation matrix
         view_vector /= np.linalg.norm(view_vector)
 
-        up_vector = np.asarray(up_direction, dtype=float)[::-1]
+        # xyz ordering for vispy
+        up_vector = np.array(up_direction, dtype=float, copy=True)[::-1]
+        # flip z axis for right-handed frame
+        up_vector *= [1, 1, -1]
+        # ??? why a cross product here?
         up_vector = np.cross(view_vector, up_vector)
+        # normalise vector for rotation matrix
         up_vector /= np.linalg.norm(up_vector)
 
         # explicit check for parallel view direction and up direction
@@ -154,7 +178,7 @@ class Camera(EventedModel):
 
     def calculate_nd_view_direction(
         self, ndim: int, dims_displayed: tuple[int, ...]
-    ) -> Optional[np.ndarray]:
+    ) -> Optional['npt.NDArray[np.float64]']:
         """Calculate the nD view direction vector of the camera.
 
         Parameters
@@ -177,7 +201,7 @@ class Camera(EventedModel):
 
     def calculate_nd_up_direction(
         self, ndim: int, dims_displayed: tuple[int, ...]
-    ) -> Optional[np.ndarray]:
+    ) -> np.ndarray | None:
         """Calculate the nD up direction vector of the camera.
 
         Parameters
@@ -199,18 +223,34 @@ class Camera(EventedModel):
         return up_direction_nd
 
     @property
-    def interactive(self) -> bool:
-        warnings.warn(
-            '`Camera.interactive` is deprecated since 0.5.0 and will be removed in 0.6.0.',
-            category=DeprecationWarning,
-        )
-        return self.mouse_pan or self.mouse_zoom
+    def orientation2d(
+        self,
+    ) -> tuple[VerticalAxisOrientation, HorizontalAxisOrientation]:
+        return self.orientation[1:]
 
-    @interactive.setter
-    def interactive(self, interactive: bool):
-        warnings.warn(
-            '`Camera.interactive` is deprecated since 0.5.0 and will be removed in 0.6.0.',
-            category=DeprecationWarning,
+    @orientation2d.setter
+    def orientation2d(
+        self,
+        value: tuple[
+            VerticalAxisOrientation | VerticalAxisOrientationStr,
+            HorizontalAxisOrientation | HorizontalAxisOrientationStr,
+        ],
+    ) -> None:
+        self.orientation = (
+            self.orientation[0],
+            VerticalAxisOrientation(value[0]),
+            HorizontalAxisOrientation(value[1]),
         )
-        self.mouse_pan = interactive
-        self.mouse_zoom = interactive
+
+    @property
+    def handedness(self) -> Handedness:
+        """Right or left-handedness of the current orientation."""
+        # we know default orientation is right-handed, so an odd number of
+        # differences from default means left-handed.
+        diffs = [
+            self.orientation[i] != DEFAULT_ORIENTATION_TYPED[i]
+            for i in range(3)
+        ]
+        if sum(diffs) % 2 != 0:
+            return Handedness.LEFT
+        return Handedness.RIGHT

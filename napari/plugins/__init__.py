@@ -8,7 +8,7 @@ from napari.plugins import _npe2
 from napari.plugins._plugin_manager import NapariPluginManager
 from napari.settings import get_settings
 
-__all__ = ('plugin_manager', 'menu_item_template')
+__all__ = ('menu_item_template', 'plugin_manager')
 
 from napari.utils.theme import _install_npe2_themes
 

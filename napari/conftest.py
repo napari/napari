@@ -41,7 +41,7 @@ from functools import partial
 from itertools import chain
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 from weakref import WeakKeyDictionary
 
 from npe2 import PackageMetadata
@@ -99,7 +99,9 @@ def layer_data_and_types():
     extensions = ['.tif', '.tif', '.csv', '.csv']
     layer_data = [layer.as_layer_data_tuple() for layer in layers]
     layer_types = [layer._type_string for layer in layers]
-    filenames = [layer.name + e for layer, e in zip(layers, extensions)]
+    filenames = [
+        layer.name + e for layer, e in zip(layers, extensions, strict=False)
+    ]
     return layers, layer_data, layer_types, filenames
 
 
@@ -208,10 +210,17 @@ def _fresh_settings(monkeypatch):
     """
     from napari import settings
     from napari.settings import NapariSettings
+    from napari.settings._experimental import ExperimentalSettings
 
     # prevent the developer's config file from being used if it exists
     cp = NapariSettings.__private_attributes__['_config_path']
     monkeypatch.setattr(cp, 'default', None)
+
+    monkeypatch.setattr(
+        ExperimentalSettings.__fields__['compiled_triangulation'],
+        'default',
+        True,
+    )
 
     # calling save() with no config path is normally an error
     # here we just have save() return if called without a valid path
@@ -224,8 +233,8 @@ def _fresh_settings(monkeypatch):
 
     monkeypatch.setattr(NapariSettings, 'save', _mock_save)
 
-    # this makes sure that we start with fresh settings for every test.
     settings._SETTINGS = None
+    # this makes sure that we start with fresh settings for every test.
     return
 
 
@@ -431,13 +440,13 @@ def _event_check(instance):
     def _prepare_check(name, no_event_):
         def check(instance, no_event=no_event_):
             if name in no_event:
-                assert not hasattr(
-                    instance.events, name
-                ), f'event {name} defined'
+                assert not hasattr(instance.events, name), (
+                    f'event {name} defined'
+                )
             else:
-                assert hasattr(
-                    instance.events, name
-                ), f'event {name} not defined'
+                assert hasattr(instance.events, name), (
+                    f'event {name} not defined'
+                )
 
         return check
 
@@ -884,6 +893,9 @@ with contextlib.suppress(ImportError):
     # So we cannot inherit from QtBot and declare the fixture
 
     from pytestqt.qtbot import QtBot
+    from qtpy import PYQT5, PYSIDE2
+    from qtpy.QtCore import Qt
+    from qtpy.QtWidgets import QApplication
 
     class QtBotWithOnCloseRenaming(QtBot):
         """Modified QtBot that renames widgets when closing them in tests.
@@ -935,6 +947,23 @@ with contextlib.suppress(ImportError):
         before, so we need it, even without using it directly in this fixture.
         """
         return QtBotWithOnCloseRenaming(request)
+
+    @pytest.fixture(scope='session')
+    def qapp_cls():
+        """The qapp fixture uses the qapp_cls fixture to select
+        the class to use for create the QApplication instance.
+
+        As qapp fixture is using more complex logic, we decided
+        not to override it but overwrite the fixture used by it.
+
+        We need to set attributte before the QApplication is created.
+        """
+        if PYQT5 or PYSIDE2:
+            # As Qt6 autodetect High dpi scaling, we need to
+            # enable it only on Qt5 bindings.
+            # https://doc.qt.io/qtforpython-6/faq/porting_from2.html#class-function-deprecations
+            QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
+        return QApplication
 
 
 @pytest.fixture
@@ -1030,7 +1059,7 @@ class NapariTerminalReporter(CustomTerminalReporter):
     It is created to be able to see if timeout is caused by long time execution, or it is just hanging.
     """
 
-    currentfspath: Optional[Path]
+    currentfspath: Path | None
 
     def write_fspath_result(self, nodeid: str, res, **markup: bool) -> None:
         if getattr(self, '_start_time', None) is None:

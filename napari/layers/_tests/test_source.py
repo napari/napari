@@ -13,6 +13,17 @@ def test_layer_source():
     assert points.source == Source(path='some_path', reader_plugin='napari')
 
 
+def test_cant_overwrite_source():
+    """Test that we can't overwrite the source of a layer."""
+    with layer_source(path='some_path', reader_plugin='napari'):
+        points = Points()
+    assert points.source == Source(path='some_path', reader_plugin='napari')
+    with pytest.raises(ValueError, match='Tried to set source on layer'):
+        points._set_source(
+            Source(path='other_path', reader_plugin='other_plugin')
+        )
+
+
 def test_source_context():
     """Test nested contexts, overrides, and resets."""
 

@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 
 from napari._tests.utils import skip_local_popups, skip_on_win_ci
+from napari.layers import Shapes
 from napari.utils._test_utils import read_only_mouse_event
 from napari.utils.interactions import (
     mouse_move_callbacks,
@@ -281,7 +282,7 @@ def test_grid_mode(make_napari_viewer):
         [255, 255, 0, 255],
         [0, 255, 255, 255],
     ]
-    for c, p in zip(color, pos):
+    for c, p in zip(color, pos, strict=False):
         coord = tuple(
             np.round(np.multiply(screenshot.shape[:2], p)).astype(int)
         )
@@ -302,7 +303,7 @@ def test_grid_mode(make_napari_viewer):
         [255, 255, 0, 255],
         [0, 0, 255, 255],
     ]
-    for c, p in zip(color, pos):
+    for c, p in zip(color, pos, strict=False):
         coord = tuple(
             np.round(np.multiply(screenshot.shape[:2], p)).astype(int)
         )
@@ -328,7 +329,7 @@ def test_grid_mode(make_napari_viewer):
 def test_changing_image_attenuation(make_napari_viewer):
     """Test changing attenuation value changes rendering."""
     data = np.zeros((100, 10, 10))
-    data[-1] = 1
+    data[0] = 1
 
     viewer = make_napari_viewer(show=True)
     viewer.dims.ndisplay = 3
@@ -566,7 +567,9 @@ def test_active_layer_highlight_visibility(qt_viewer):
 
     # add shapes layer setting edge and face color to `black` (so shapes aren't
     # visible unless they're selected), create a rectangle and select the created shape
-    shapes_layer = viewer.add_shapes(edge_color='black', face_color='black')
+    shapes_layer: Shapes = viewer.add_shapes(
+        edge_color='black', face_color='black'
+    )
     shapes_layer.add_rectangles([[0, 0], [1, 1]])
     shapes_layer.selected_data = {0}
 

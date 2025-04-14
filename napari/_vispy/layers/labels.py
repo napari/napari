@@ -161,7 +161,7 @@ def build_textures_from_dict(
     if len(color_dict) > max_size**2:
         raise ValueError(
             'Cannot create a 2D texture holding more than '
-            f'{max_size}**2={max_size ** 2} colors.'
+            f'{max_size}**2={max_size**2} colors.'
             f'Got {len(color_dict)}'
         )
     data = np.zeros(
@@ -318,6 +318,7 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
     def reset(self, event=None) -> None:
         super().reset()
         self._on_colormap_change()
+        self._on_iso_gradient_mode_change()
 
 
 class LabelLayerNode(ScalarFieldLayerNode):

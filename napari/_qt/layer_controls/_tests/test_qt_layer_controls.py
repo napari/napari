@@ -1,7 +1,7 @@
 import os
 import random
 import sys
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 from unittest.mock import Mock
 
 import numpy as np
@@ -18,6 +18,7 @@ from qtpy.QtWidgets import (
     QPushButton,
     QRadioButton,
 )
+from superqt.sliders import QRangeSlider
 
 from napari._qt.layer_controls.qt_image_controls import QtImageControls
 from napari._qt.layer_controls.qt_labels_controls import QtLabelsControls
@@ -50,8 +51,8 @@ from napari.utils.events.event import Event
 class LayerTypeWithData(NamedTuple):
     type: type[Layer]
     data: np.ndarray
-    colormap: Optional[DirectLabelColormap]
-    properties: Optional[dict]
+    colormap: DirectLabelColormap | None
+    properties: dict | None
     expected_isinstance: type[QtLayerControlsContainer]
 
 
@@ -333,7 +334,7 @@ def test_create_layer_controls_qslider(
     # check QAbstractSlider by changing value with `setValue` from minimum value to maximum
     for qslider in ctrl.findChildren(QAbstractSlider):
         if isinstance(qslider.minimum(), float):
-            if getattr(qslider, '_valuesChanged', None):
+            if isinstance(qslider, QRangeSlider):
                 # create a list of tuples in the case the slider is ranged
                 # from (minimum, minimum) to (maximum, maximum) +
                 # from (minimum, maximum) to (minimum, minimum)
@@ -345,15 +346,17 @@ def test_create_layer_controls_qslider(
                 num_values = base_value_range.size
                 max_value = np.full(num_values, qslider.maximum())
                 min_value = np.full(num_values, qslider.minimum())
-                value_range_to_max = list(zip(base_value_range, max_value))
+                value_range_to_max = list(
+                    zip(base_value_range, max_value, strict=False)
+                )
                 value_range_to_min = list(
-                    zip(min_value, np.flip(base_value_range))
+                    zip(min_value, np.flip(base_value_range), strict=False)
                 )
                 value_range = value_range_to_max[:-1] + value_range_to_min[:-1]
             else:
                 value_range = np.linspace(qslider.minimum(), qslider.maximum())
         else:
-            if getattr(qslider, '_valuesChanged', None):
+            if isinstance(qslider, QRangeSlider):
                 # create a list of tuples in the case the slider is ranged
                 # from (minimum, minimum) to (maximum, maximum) +
                 # from (minimum, maximum) to (minimum, minimum)
@@ -366,11 +369,13 @@ def test_create_layer_controls_qslider(
                 num_values = len(base_value_range)
                 max_value = [qslider.maximum()] * num_values
                 min_value = [qslider.minimum()] * num_values
-                value_range_to_max = list(zip(base_value_range, max_value))
+                value_range_to_max = list(
+                    zip(base_value_range, max_value, strict=False)
+                )
                 base_value_range_copy = base_value_range.copy()
                 base_value_range_copy.reverse()
                 value_range_to_min = list(
-                    zip(min_value, base_value_range_copy)
+                    zip(min_value, base_value_range_copy, strict=False)
                 )
                 value_range = value_range_to_max[:-1] + value_range_to_min[:-1]
             else:
@@ -382,7 +387,7 @@ def test_create_layer_controls_qslider(
             captured = capsys.readouterr()
             assert not captured.out
             assert not captured.err
-        if getattr(qslider, '_valuesChanged', None):
+        if isinstance(qslider, QRangeSlider):
             assert qslider.value()[0] == qslider.minimum()
         else:
             assert qslider.value() == qslider.maximum()

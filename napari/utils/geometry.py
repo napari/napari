@@ -1,5 +1,3 @@
-from typing import Optional
-
 import numpy as np
 import numpy.typing as npt
 
@@ -786,7 +784,7 @@ def distance_between_point_and_line_3d(
 
 def find_nearest_triangle_intersection(
     ray_position: np.ndarray, ray_direction: np.ndarray, triangles: np.ndarray
-) -> tuple[Optional[int], Optional[np.ndarray]]:
+) -> tuple[int | None, np.ndarray | None]:
     """Given an array of triangles, find the index and intersection location
     of a ray and the nearest triangle.
 
@@ -837,3 +835,28 @@ def find_nearest_triangle_intersection(
     intersection = intersection_points[closest_triangle_index]
 
     return closest_intersected_triangle_index, intersection
+
+
+def get_center_bbox(roi: np.ndarray) -> tuple[list[float], int, int]:
+    """Get the center coordinate, height, width of the roi.
+
+    Parameters
+    ----------
+    roi : np.ndarray
+        An array of shape (4, 2) representing a rectangular roi.
+
+    Returns
+    -------
+    center_coords: list[float, float]
+        center y and x coordinates of the roi
+    height: int
+        height of the roi in data pixels
+    width: int
+        width of the roi in data pixels
+
+    """
+    height, width = roi.max(axis=0) - roi.min(axis=0)
+    min_y, min_x = roi.min(axis=0)
+    center_coords = [min_y + height / 2, min_x + width / 2]
+
+    return center_coords, height, width

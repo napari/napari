@@ -1,9 +1,11 @@
 from unittest.mock import Mock
 
 import numpy as np
+import pytest
 from vispy import keys
 
 
+@pytest.mark.key_bindings
 def test_viewer_key_bindings(make_napari_viewer):
     """Test adding key bindings to the viewer"""
     np.random.seed(0)
@@ -76,6 +78,7 @@ def test_viewer_key_bindings(make_napari_viewer):
     mock_shift_release.reset_mock()
 
 
+@pytest.mark.key_bindings
 def test_layer_key_bindings(make_napari_viewer):
     """Test adding key bindings to a layer"""
     np.random.seed(0)

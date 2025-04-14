@@ -30,9 +30,9 @@ HOOK_SPECIFICATIONS = [
 @pytest.mark.parametrize(('name', 'func'), HOOK_SPECIFICATIONS)
 def test_hook_specification_naming(name, func):
     """All hook specifications should begin with napari_."""
-    assert name.startswith(
-        'napari_'
-    ), f"hook specification '{name}' does not start with 'napari_'"
+    assert name.startswith('napari_'), (
+        f"hook specification '{name}' does not start with 'napari_'"
+    )
 
 
 @pytest.mark.parametrize(('name', 'func'), HOOK_SPECIFICATIONS)
@@ -54,9 +54,9 @@ def test_annotation_on_hook_specification(name, func):
     if sig.parameters:
         for param in sig.parameters.values():
             for forbidden in ('_plugin', '_skip_impls', '_return_result_obj'):
-                assert (
-                    param.name != forbidden
-                ), f'Must not name hook_specification argument "{forbidden}".'
+                assert param.name != forbidden, (
+                    f'Must not name hook_specification argument "{forbidden}".'
+                )
             assert param.annotation is not param.empty, (
                 f"in hook specification '{name}', parameter '{param}' "
                 'has no type annotation'

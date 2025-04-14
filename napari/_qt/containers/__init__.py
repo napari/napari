@@ -12,10 +12,8 @@ from napari._qt.containers.qt_tree_model import QtNodeTreeModel
 from napari._qt.containers.qt_tree_view import QtNodeTreeView
 
 __all__ = [
-    'create_model',
-    'create_view',
-    'AxisModel',
     'AxisList',
+    'AxisModel',
     'QtAxisListModel',
     'QtLayerList',
     'QtLayerListModel',
@@ -23,4 +21,6 @@ __all__ = [
     'QtListView',
     'QtNodeTreeModel',
     'QtNodeTreeView',
+    'create_model',
+    'create_view',
 ]

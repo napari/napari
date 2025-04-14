@@ -1,5 +1,3 @@
-from typing import Optional
-
 from qtpy import QtCore
 from qtpy.QtWidgets import (
     QApplication,
@@ -12,7 +10,6 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from napari.utils.migrations import rename_argument
 from napari.utils.progress import cancelable_progress, progress
 from napari.utils.translations import trans
 
@@ -21,7 +18,7 @@ class QtLabeledProgressBar(QWidget):
     """QProgressBar with QLabels for description and ETA."""
 
     def __init__(
-        self, parent: Optional[QWidget] = None, prog: progress = None
+        self, parent: QWidget | None = None, prog: progress = None
     ) -> None:
         super().__init__(parent)
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose)
@@ -50,18 +47,6 @@ class QtLabeledProgressBar(QWidget):
 
         self.setLayout(base_layout)
 
-    @rename_argument(
-        from_name='min',
-        to_name='min_val',
-        version='0.6.0',
-        since_version='0.4.18',
-    )
-    @rename_argument(
-        from_name='max',
-        to_name='max_val',
-        version='0.6.0',
-        since_version='0.4.18',
-    )
     def setRange(self, min_val, max_val):
         self.qt_progress_bar.setRange(min_val, max_val)
 
@@ -105,7 +90,7 @@ class QtProgressBarGroup(QWidget):
     def __init__(
         self,
         qt_progress_bar: QtLabeledProgressBar,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose)

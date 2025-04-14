@@ -47,19 +47,41 @@ QtViewerPushButton[mode="home"] {
 }
 
 QtViewerPushButton[mode="ndisplay_button"]:checked {
-  image: url("theme_{{ id }}:/3D.svg");
+  image: url("theme_{{ id }}:/3D-toggle.svg");
+  min-width: 49px;
+  max-width: 49px;
+  min-height: 28px;
+  max-height: 28px;
+  background: qlineargradient(
+    x1: 0, y1: 0, x2: 1, y2: 0,
+    stop: 0 {{ foreground }},
+    stop: 0.3 {{ foreground }},
+    stop: 0.5 {{ highlight }},
+    stop: 1 {{ highlight }}
+  );
 }
 
 QtViewerPushButton[mode="ndisplay_button"] {
-  image: url("theme_{{ id }}:/2D.svg");
+  image: url("theme_{{ id }}:/2D-toggle.svg");
+  min-width: 49px;
+  max-width: 49px;
+  min-height: 28px;
+  max-height: 28px;
+  background: qlineargradient(
+    x1: 0, y1: 0, x2: 1, y2: 0,
+    stop: 0 {{ highlight }},
+    stop: 0.5 {{ highlight }},
+    stop: 0.7 {{ foreground }},
+    stop: 1 {{ foreground }}
+  );
 }
 
 QtViewerPushButton[mode="grid_view_button"]:checked {
-  image: url("theme_{{ id }}:/square.svg");
+  image: url("theme_{{ id }}:/canvas-standard-view.svg");
 }
 
 QtViewerPushButton[mode="grid_view_button"] {
-  image: url("theme_{{ id }}:/grid.svg");
+  image: url("theme_{{ id }}:/canvas-grid-view.svg");
 }
 
 QtModeRadioButton {
@@ -119,6 +141,10 @@ QtModeRadioButton[mode="ellipse"]::indicator {
 
 QtModeRadioButton[mode="line"]::indicator {
   image: url("theme_{{ id }}:/line.svg");
+}
+
+QtModeRadioButton[mode="polyline"]::indicator {
+  image: url("theme_{{ id }}:/polyline.svg");
 }
 
 QtModeRadioButton[mode="path"]::indicator {
@@ -212,20 +238,20 @@ QtCopyToClipboardButton {
 
 QtPlayButton {
   border-radius: 2px;
-  height: 11px;
-  width: 11px;
+  height: 13px;
+  width: 13px;
   margin: 0px 2px;
-  padding: 2px;
+  padding: 1px;
   border: 0px;
 }
 
 QtPlayButton[reverse=True] {
-    image: url("theme_{{ id }}:/left_arrow.svg");
+    image: url("theme_{{ id }}:/playback-reverse.svg");
 }
 
 QtPlayButton[reverse=False] {
   background: {{ foreground }};
-  image: url("theme_{{ id }}:/right_arrow.svg");
+  image: url("theme_{{ id }}:/playback-forward.svg");
 }
 
 QtPlayButton[reverse=True]:hover, QtPlayButton[reverse=False]:hover {
@@ -237,9 +263,6 @@ QtPlayButton[playing=True]:hover {
 }
 
 QtPlayButton[playing=True] {
-    image: url("theme_{{ id }}:/square.svg");
+    image: url("theme_{{ id }}:/playback-stop.svg");
     background-color: {{ error }};
-    height: 12px;
-    width: 12px;
-    padding: 2px;
 }

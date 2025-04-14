@@ -1,5 +1,4 @@
-import sys
-from typing import Any, cast
+from typing import Any, TypeAlias, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -8,14 +7,6 @@ from napari._pydantic_compat import validator
 from napari.utils.events import EventedModel, SelectableEventedList
 from napari.utils.geometry import intersect_line_with_plane_3d
 from napari.utils.translations import trans
-
-if sys.version_info < (3, 10):
-    # Once 3.12+ there is a new syntax, type Foo = Bar[...], but
-    # we are not there yet.
-    from typing_extensions import TypeAlias
-else:
-    from typing import TypeAlias
-
 
 Point3D: TypeAlias = tuple[float, float, float]
 
@@ -53,7 +44,8 @@ class Plane(EventedModel):
         self.position = cast(
             Point3D,
             tuple(
-                p + (distance * n) for p, n in zip(self.position, self.normal)
+                p + (distance * n)
+                for p, n in zip(self.position, self.normal, strict=False)
             ),
         )
 

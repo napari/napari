@@ -1,3 +1,5 @@
+import typing
+
 import numpy as np
 
 from napari._vispy.layers.base import VispyBaseLayer
@@ -7,11 +9,15 @@ from napari._vispy.visuals.shapes import ShapesVisual
 from napari.settings import get_settings
 from napari.utils.events import disconnect_events
 
+if typing.TYPE_CHECKING:
+    from napari.layers import Shapes
+
 
 class VispyShapesLayer(VispyBaseLayer):
     node: ShapesVisual
+    layer: 'Shapes'
 
-    def __init__(self, layer) -> None:
+    def __init__(self, layer: 'Shapes') -> None:
         node = ShapesVisual()
         super().__init__(layer, node)
 
@@ -20,6 +26,7 @@ class VispyShapesLayer(VispyBaseLayer):
         self.layer.events.face_color.connect(self._on_data_change)
         self.layer.events.highlight.connect(self._on_highlight_change)
         self.layer.text.events.connect(self._on_text_change)
+        self.layer.events.scale_factor.connect(self._update_text)
 
         # TODO: move to overlays
         self.node.highlight_vertices.symbol = 'square'

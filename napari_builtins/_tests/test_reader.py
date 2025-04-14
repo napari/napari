@@ -1,5 +1,5 @@
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, Optional
 
 import imageio.v3 as iio
 import npe2
@@ -14,7 +14,7 @@ from napari_builtins.io._write import write_csv
 def save_image(tmp_path: Path):
     """Create a temporary file."""
 
-    def _save(filename: str, data: Optional[np.ndarray] = None):
+    def _save(filename: str, data: np.ndarray | None = None):
         dest = tmp_path / filename
         data_: np.ndarray = np.random.rand(20, 20) if data is None else data
         if filename.endswith(('png', 'jpg')):
@@ -51,6 +51,7 @@ def test_animated_gif_reader(save_image):
     assert layer_data[0][0].shape == (5, 20, 20, 3)
 
 
+@pytest.mark.slow
 def test_reader_plugin_url():
     layer_data = npe2.read(
         ['https://samples.fiji.sc/FakeTracks.tif'], stack=False

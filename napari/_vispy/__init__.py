@@ -26,15 +26,15 @@ from napari._vispy.utils.quaternion import quaternion2euler_degrees
 from napari._vispy.utils.visual import create_vispy_layer, create_vispy_overlay
 
 __all__ = [
+    'VispyAxesOverlay',
     'VispyCamera',
     'VispyCanvas',
-    'VispyAxesOverlay',
-    'VispySelectionBoxOverlay',
-    'VispyScaleBarOverlay',
-    'VispyTransformBoxOverlay',
-    'VispyTextOverlay',
     'VispyLabelsPolygonOverlay',
-    'quaternion2euler_degrees',
+    'VispyScaleBarOverlay',
+    'VispySelectionBoxOverlay',
+    'VispyTextOverlay',
+    'VispyTransformBoxOverlay',
     'create_vispy_layer',
     'create_vispy_overlay',
+    'quaternion2euler_degrees',
 ]

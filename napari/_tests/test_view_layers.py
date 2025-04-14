@@ -47,9 +47,9 @@ def test_docstring(layer):
     else:
         summary_format = 'Add an? .+? layers? to the layer list.'
 
-    assert re.match(
-        summary_format, method_summary
-    ), f"improper 'Summary' section of '{method_name}'"
+    assert re.match(summary_format, method_summary), (
+        f"improper 'Summary' section of '{method_name}'"
+    )
 
     # check parameters section
     method_params = method_doc['Parameters']
@@ -67,7 +67,9 @@ def test_docstring(layer):
     else:
         try:
             assert len(method_params) == len(layer_params)
-            for method_param, layer_param in zip(method_params, layer_params):
+            for method_param, layer_param in zip(
+                method_params, layer_params, strict=False
+            ):
                 m_name, m_type, m_description = method_param
                 l_name, l_type, l_description = layer_param
 
@@ -77,12 +79,12 @@ def test_docstring(layer):
                 l_description = ' '.join(l_description)
 
                 assert m_name == l_name, 'different parameter names or order'
-                assert (
-                    m_type == l_type
-                ), f"type mismatch of parameter '{m_name}'"
-                assert (
-                    m_description == l_description
-                ), f"description mismatch of parameter '{m_name}'"
+                assert m_type == l_type, (
+                    f"type mismatch of parameter '{m_name}'"
+                )
+                assert m_description == l_description, (
+                    f"description mismatch of parameter '{m_name}'"
+                )
         except AssertionError as e:
             raise AssertionError(
                 f"docstrings don't match for class {name}"
@@ -206,7 +208,7 @@ def test_imshow_with_viewer(qtbot, napari_plugin_manager, make_napari_viewer):
     shape = (10, 15)
     ndim = len(shape)
     np.random.seed(0)
-    data = np.random.random(shape)
+    data = np.random.random(shape).astype(np.float32)
     viewer = make_napari_viewer()
     viewer2, layer = napari.imshow(data, viewer=viewer, show=False)
     assert viewer is viewer2

@@ -5,7 +5,7 @@ from napari.layers.utils._link_layers import (
 )
 
 __all__ = [
-    'link_layers',
     'layers_linked',
+    'link_layers',
     'unlink_layers',
 ]

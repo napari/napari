@@ -5,24 +5,20 @@ from __future__ import annotations
 import builtins
 import collections.abc
 import contextlib
-import importlib.metadata
 import inspect
 import itertools
 import os
 import re
 import sys
 import warnings
-from collections.abc import Iterable, Iterator, Sequence
+from collections.abc import Callable, Iterable, Iterator, Sequence
 from enum import Enum, EnumMeta
 from os import fspath, path as os_path
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
-    Optional,
     TypeVar,
-    Union,
 )
 
 import numpy as np
@@ -47,43 +43,6 @@ def parse_version(v: str) -> packaging.version._BaseVersion:
         return packaging.version.Version(v)
     except packaging.version.InvalidVersion:
         return packaging.version.LegacyVersion(v)  # type: ignore[attr-defined]
-
-
-def running_as_bundled_app(*, check_conda: bool = True) -> bool:
-    """Infer whether we are running as a bundle."""
-    # https://github.com/beeware/briefcase/issues/412
-    # https://github.com/beeware/briefcase/pull/425
-    # note that a module may not have a __package__ attribute
-    # From 0.4.12 we add a sentinel file next to the bundled sys.executable
-    warnings.warn(
-        trans._(
-            'Briefcase installations are no longer supported as of v0.4.18. '
-            'running_as_bundled_app() will be removed in a 0.6.0 release.',
-        ),
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    if (
-        check_conda
-        and (Path(sys.executable).parent / '.napari_is_bundled').exists()
-    ):
-        return True
-
-    # TODO: Remove from here on?
-    try:
-        app_module = sys.modules['__main__'].__package__
-    except AttributeError:
-        return False
-
-    if not app_module:
-        return False
-
-    try:
-        metadata = importlib.metadata.metadata(app_module)
-    except importlib.metadata.PackageNotFoundError:
-        return False
-
-    return 'Briefcase-Version' in metadata
 
 
 def running_as_constructor_app() -> bool:
@@ -131,58 +90,28 @@ def str_to_rgb(arg: str) -> list[int]:
 
 
 def ensure_iterable(
-    arg: Union[None, str, Enum, float, list, npt.NDArray],
-    color: object | bool = _sentinel,
+    arg: None | str | Enum | float | list | npt.NDArray,
 ):
     """Ensure an argument is an iterable. Useful when an input argument
     can either be a single value or a list.
-    Argument color is deprecated since version 0.5.0 and will be removed in 0.6.0.
     """
-    # deprecate color
-    if color is not _sentinel:
-        warnings.warn(
-            trans._(
-                'Argument color is deprecated since version 0.5.0 and will be removed in 0.6.0.',
-            ),
-            category=DeprecationWarning,
-            stacklevel=2,  # not sure what level to use here
-        )
-    if is_iterable(
-        arg, color=color
-    ):  # argument color is to be removed in 0.6.0
+    if is_iterable(arg):
         return arg
 
     return itertools.repeat(arg)
 
 
 def is_iterable(
-    arg: Union[None, str, Enum, float, list, npt.NDArray],
-    color: object | bool = _sentinel,
+    arg: None | str | Enum | float | list | npt.NDArray,
     allow_none: bool = False,
 ) -> bool:
-    """Determine if a single argument is an iterable.
-    Argument color is deprecated since version 0.5.0 and will be removed in 0.6.0.
-    """
-    # deprecate color
-    if color is not _sentinel:
-        warnings.warn(
-            trans._(
-                'Argument color is deprecated since version 0.5.0 and will be removed in 0.6.0.',
-            ),
-            category=DeprecationWarning,
-            stacklevel=2,  # not sure what level to use here
-        )
-
+    """Determine if a single argument is an iterable."""
     if arg is None:
         return allow_none
 
     # Here if arg is None it used to return allow_none
-    if isinstance(arg, (str, Enum)) or np.isscalar(arg):
+    if isinstance(arg, str | Enum) or np.isscalar(arg):
         return False
-
-    # this is to be removed in 0.6.0, color is never set True
-    if color is True and isinstance(arg, (list, np.ndarray)):
-        return np.array(arg).ndim != 1 or len(arg) not in [3, 4]
 
     return isinstance(arg, collections.abc.Iterable)
 
@@ -206,7 +135,7 @@ def is_sequence(arg: Any) -> bool:
 
 def ensure_sequence_of_iterables(
     obj: Any,
-    length: Optional[int] = None,
+    length: int | None = None,
     repeat_empty: bool = False,
     allow_none: bool = False,
 ):
@@ -401,7 +330,7 @@ def abspath_or_url(relpath: T, *, must_exist: bool = False) -> T:
     """
     from urllib.parse import urlparse
 
-    if not isinstance(relpath, (str, Path)):
+    if not isinstance(relpath, str | Path):
         raise TypeError(
             trans._('Argument must be a string or Path', deferred=True)
         )
@@ -422,34 +351,6 @@ def abspath_or_url(relpath: T, *, must_exist: bool = False) -> T:
             )
         )
     return OriginType(path)
-
-
-class CallDefault(inspect.Parameter):
-    warnings.warn(
-        trans._(
-            '`CallDefault` in napari v0.5.0 and will be removed in v0.6.0.',
-        ),
-        category=DeprecationWarning,
-    )
-
-    def __str__(self) -> str:
-        """wrap defaults"""
-        kind = self.kind
-        formatted = self.name
-
-        # Fill in defaults
-        if (
-            self.default is not inspect._empty
-            or kind == inspect.Parameter.KEYWORD_ONLY
-        ):
-            formatted = f'{formatted}={formatted}'
-
-        if kind == inspect.Parameter.VAR_POSITIONAL:
-            formatted = '*' + formatted
-        elif kind == inspect.Parameter.VAR_KEYWORD:
-            formatted = '**' + formatted
-
-        return formatted
 
 
 def all_subclasses(cls: type) -> set:
@@ -596,7 +497,7 @@ def _is_array_type(array: npt.ArrayLike, type_name: str) -> bool:
 
 
 def dir_hash(
-    path: Union[str, Path],
+    path: str | Path,
     include_paths: bool = True,
     ignore_hidden: bool = True,
 ) -> str:
@@ -640,7 +541,7 @@ def dir_hash(
 
 
 def paths_hash(
-    paths: Iterable[Union[str, Path]],
+    paths: Iterable[str | Path],
     include_paths: bool = True,
     ignore_hidden: bool = True,
 ) -> str:

@@ -1,3 +1,4 @@
+import os
 import sys
 
 import numpy as np
@@ -8,9 +9,36 @@ from qtpy.QtWidgets import QApplication
 from napari._app_model import get_app_model
 from napari._qt._qapp_model.qactions._view import (
     _get_current_tooltip_visibility,
+    _toggle_canvas_ndim,
     toggle_action_details,
 )
 from napari._tests.utils import skip_local_focus, skip_local_popups
+from napari.viewer import ViewerModel
+
+
+def check_windows_style(viewer):
+    if os.name != 'nt':
+        return
+    import win32con
+    import win32gui
+
+    window_handle = viewer.window._qt_window.windowHandle()
+    window_handle_id = int(window_handle.winId())
+    window_style = win32gui.GetWindowLong(window_handle_id, win32con.GWL_STYLE)
+    assert window_style & win32con.WS_BORDER == win32con.WS_BORDER
+
+
+def check_view_menu_visibility(viewer, qtbot):
+    if viewer.window._qt_window.menuBar().isNativeMenuBar():
+        return
+
+    assert not viewer.window.view_menu.isVisible()
+    qtbot.keyClick(
+        viewer.window._qt_window.menuBar(), Qt.Key_V, modifier=Qt.AltModifier
+    )
+    qtbot.waitUntil(viewer.window.view_menu.isVisible)
+    viewer.window.view_menu.close()
+    assert not viewer.window.view_menu.isVisible()
 
 
 @pytest.mark.parametrize(
@@ -50,8 +78,15 @@ def test_toggle_axes_scale_bar_attr(
 
 
 @skip_local_popups
-def test_toggle_fullscreen(make_napari_viewer, qtbot):
-    """Test toggle fullscreen action."""
+@pytest.mark.qt_log_level_fail('WARNING')
+def test_toggle_fullscreen_from_normal(make_napari_viewer, qtbot):
+    """
+    Test toggle fullscreen action from normal window state.
+
+    Check that toggling from a normal state can be done without
+    generating any type of warning and menu bar elements are visible in any
+    window state.
+    """
     action_id = 'napari.window.view.toggle_fullscreen'
     app = get_app_model()
     viewer = make_napari_viewer(show=True)
@@ -59,12 +94,19 @@ def test_toggle_fullscreen(make_napari_viewer, qtbot):
     # Check initial default state (no fullscreen)
     assert not viewer.window._qt_window.isFullScreen()
 
+    # Check `View` menu can be seen in normal window state
+    check_view_menu_visibility(viewer, qtbot)
+
     # Check fullscreen state change
     app.commands.execute_command(action_id)
     if sys.platform == 'darwin':
         # On macOS, wait for the animation to complete
         qtbot.wait(250)
     assert viewer.window._qt_window.isFullScreen()
+    check_windows_style(viewer)
+
+    # Check `View` menu can be seen in fullscreen window state
+    check_view_menu_visibility(viewer, qtbot)
 
     # Check return to non fullscreen state
     app.commands.execute_command(action_id)
@@ -72,6 +114,58 @@ def test_toggle_fullscreen(make_napari_viewer, qtbot):
         # On macOS, wait for the animation to complete
         qtbot.wait(250)
     assert not viewer.window._qt_window.isFullScreen()
+    check_windows_style(viewer)
+
+    # Check `View` still menu can be seen in non fullscreen window state
+    check_view_menu_visibility(viewer, qtbot)
+
+
+@skip_local_popups
+@pytest.mark.qt_log_level_fail('WARNING')
+def test_toggle_fullscreen_from_maximized(make_napari_viewer, qtbot):
+    """
+    Test toggle fullscreen action from maximized window state.
+
+    Check that toggling from a maximized state can be done without
+    generating any type of warning and menu bar elements are visible in any
+    window state.
+    """
+    action_id = 'napari.window.view.toggle_fullscreen'
+    app = get_app_model()
+    viewer = make_napari_viewer(show=True)
+
+    # Check fullscreen state change while maximized
+    assert not viewer.window._qt_window.isMaximized()
+    viewer.window._qt_window.showMaximized()
+
+    # Check `View` menu can be seen in maximized window state
+    check_view_menu_visibility(viewer, qtbot)
+
+    # Check fullscreen state change
+    app.commands.execute_command(action_id)
+    if sys.platform == 'darwin':
+        # On macOS, wait for the animation to complete
+        qtbot.wait(250)
+    assert viewer.window._qt_window.isFullScreen()
+    check_windows_style(viewer)
+
+    # Check `View` menu can be seen in fullscreen window state coming from maximized state
+    check_view_menu_visibility(viewer, qtbot)
+
+    # Check return to non fullscreen state
+    app.commands.execute_command(action_id)
+    if sys.platform == 'darwin':
+        # On macOS, wait for the animation to complete
+        qtbot.wait(250)
+
+    def check_not_fullscreen():
+        assert not viewer.window._qt_window.isFullScreen()
+
+    qtbot.waitUntil(check_not_fullscreen)
+    check_windows_style(viewer)
+
+    # Check `View` still menu can be seen in non fullscreen window state
+    check_view_menu_visibility(viewer, qtbot)
 
 
 @skip_local_focus
@@ -222,3 +316,12 @@ def test_zoom_actions(make_napari_viewer):
     # Zoom should be reset, but angle unchanged
     assert viewer.camera.zoom == pytest.approx(initial_zoom)
     assert viewer.camera.angles == (90, 0, 0)
+
+
+@pytest.mark.parametrize(('initial', 'expected'), [(3, 2), (2, 3)])
+def test_toggle_canvas_ndim(initial, expected):
+    """Check that _toggle_canvas_ndim toggles the canvas ndims."""
+    viewer = ViewerModel()
+    viewer.dims.ndisplay = initial
+    _toggle_canvas_ndim(viewer)
+    assert viewer.dims.ndisplay == expected

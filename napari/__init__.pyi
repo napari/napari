@@ -1,5 +1,5 @@
 import napari.utils.notifications
-from napari._qt.qt_event_loop import gui_qt, run
+from napari._qt.qt_event_loop import run
 from napari.plugins.io import save_layers
 from napari.view_layers import (
     view_image,
@@ -19,7 +19,11 @@ notification_manager: napari.utils.notifications.NotificationManager
 
 __all__ = (
     'Viewer',
+    '__version__',
     'current_viewer',
+    'notification_manager',
+    'run',
+    'save_layers',
     'view_image',
     'view_labels',
     'view_path',
@@ -28,9 +32,4 @@ __all__ = (
     'view_surface',
     'view_tracks',
     'view_vectors',
-    'save_layers',
-    'gui_qt',
-    'run',
-    'notification_manager',
-    '__version__',
 )

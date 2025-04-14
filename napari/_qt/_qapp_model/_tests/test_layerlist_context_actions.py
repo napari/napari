@@ -27,6 +27,11 @@ def test_layer_actions_ctx_menu_execute_command(
     if command_id == 'napari.layer.merge_stack':
         with pytest.raises(IndexError, match=r'images list is empty'):
             app.commands.execute_command(command_id)
+    elif command_id == 'napari.layer.merge_rgb':
+        with pytest.raises(
+            ValueError, match='Merging to RGB requires exactly 3 Image'
+        ):
+            app.commands.execute_command(command_id)
     elif command_id in [
         'napari.layer.link_selected_layers',
         'napari.layer.unlink_selected_layers',

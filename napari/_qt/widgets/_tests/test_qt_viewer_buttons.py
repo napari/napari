@@ -8,6 +8,11 @@ from napari._app_model._app import get_app_model
 from napari._qt.dialogs.qt_modal import QtPopup
 from napari._qt.widgets.qt_viewer_buttons import QtViewerButtons
 from napari.components.viewer_model import ViewerModel
+from napari.utils.camera_orientations import (
+    DepthAxisOrientation,
+    HorizontalAxisOrientation,
+    VerticalAxisOrientation,
+)
 from napari.viewer import Viewer
 
 
@@ -66,6 +71,8 @@ def test_grid_view_button_popup(qt_viewer_buttons, qtbot):
     assert viewer_buttons.grid_width_box.value() == viewer.grid.shape[1]
     assert viewer_buttons.grid_height_box
     assert viewer_buttons.grid_height_box.value() == viewer.grid.shape[0]
+    assert viewer_buttons.grid_spacing_box
+    assert viewer_buttons.grid_spacing_box.value() == viewer.grid.spacing
 
     # check that widget controls value changes update viewer grid values
     viewer_buttons.grid_stride_box.setValue(2)
@@ -74,10 +81,13 @@ def test_grid_view_button_popup(qt_viewer_buttons, qtbot):
     assert viewer_buttons.grid_width_box.value() == viewer.grid.shape[1]
     viewer_buttons.grid_height_box.setValue(2)
     assert viewer_buttons.grid_height_box.value() == viewer.grid.shape[0]
+    viewer_buttons.grid_spacing_box.setValue(0.5)
+    assert viewer_buttons.grid_spacing_box.value() == viewer.grid.spacing
 
     # check viewer grid values changes update popup widget controls values
     viewer.grid.stride = 1
     viewer.grid.shape = (-1, -1)
+    viewer.grid.spacing = 0.1
     # popup needs to be relaunched to get widget controls with the new values
     for widget in QApplication.topLevelWidgets():
         if isinstance(widget, QtPopup):
@@ -87,6 +97,7 @@ def test_grid_view_button_popup(qt_viewer_buttons, qtbot):
     viewer_buttons.grid_width_box.setValue(2)
     assert viewer_buttons.grid_width_box.value() == viewer.grid.shape[1]
     assert viewer_buttons.grid_height_box.value() == viewer.grid.shape[0]
+    assert viewer_buttons.grid_spacing_box.value() == viewer.grid.spacing
 
 
 def test_ndisplay_button_popup(qt_viewer_buttons, qtbot):
@@ -97,7 +108,43 @@ def test_ndisplay_button_popup(qt_viewer_buttons, qtbot):
     viewer, viewer_buttons = qt_viewer_buttons
     assert viewer_buttons.ndisplayButton
 
-    # toggle ndisplay to be able to trigger popup
+    # trigger popup for ndisplay==2
+    viewer.dims.ndisplay = 2
+    viewer_buttons.ndisplayButton.customContextMenuRequested.emit(QPoint())
+    perspective_popup = None
+    for widget in QApplication.topLevelWidgets():
+        if isinstance(widget, QtPopup):
+            perspective_popup = widget
+    assert perspective_popup
+
+    # check camera orientation combo changes affect viewer camera orientation
+    assert viewer_buttons.vertical_combo
+    assert (
+        viewer_buttons.vertical_combo.currentEnum()
+        == viewer.camera.orientation[1]
+    )
+    assert viewer_buttons.horizontal_combo
+    assert (
+        viewer_buttons.horizontal_combo.currentEnum()
+        == viewer.camera.orientation[2]
+    )
+    assert viewer.camera.handedness.value == 'right'
+
+    viewer_buttons.vertical_combo.setCurrentEnum(VerticalAxisOrientation.UP)
+    viewer_buttons.horizontal_combo.setCurrentEnum(
+        HorizontalAxisOrientation.LEFT
+    )
+    assert viewer.camera.orientation[1].value == 'up'
+    assert viewer.camera.orientation[2].value == 'left'
+    assert viewer.camera.orientation2d[0].value == 'up'
+    assert viewer.camera.orientation2d[1].value == 'left'
+
+    # check zoom slider change affects viewer camera zoom
+    assert viewer_buttons.zoom
+    viewer_buttons.zoom.setValue(3)
+    assert viewer.camera.zoom == viewer_buttons.zoom.value() == 3
+
+    # toggle ndisplay to be able to trigger ndisplay==3 popup
     viewer.dims.ndisplay = 2 + (viewer.dims.ndisplay == 2)
 
     # make ndisplay perspective setting popup
@@ -108,13 +155,77 @@ def test_ndisplay_button_popup(qt_viewer_buttons, qtbot):
             perspective_popup = widget
     assert perspective_popup
 
-    # check perspective slider change affects viewer camera perspective
-    assert viewer_buttons.perspective_slider
-    viewer_buttons.perspective_slider.setValue(5)
+    # check camera orientation combo changes affect viewer camera orientation
+    assert viewer_buttons.depth_combo
     assert (
-        viewer.camera.perspective
-        == viewer_buttons.perspective_slider.value()
-        == 5
+        viewer_buttons.depth_combo.currentEnum()
+        == viewer.camera.orientation[0]
+    )
+    assert viewer_buttons.vertical_combo
+    assert (
+        viewer_buttons.vertical_combo.currentEnum()
+        == viewer.camera.orientation[1]
+    )
+    assert viewer_buttons.horizontal_combo
+    assert (
+        viewer_buttons.horizontal_combo.currentEnum()
+        == viewer.camera.orientation[2]
+    )
+    # check the values set by testing 2D orientation popup are inherited
+    assert (
+        viewer_buttons.vertical_combo.currentEnum()
+        == VerticalAxisOrientation.UP
+    )
+    assert (
+        viewer_buttons.horizontal_combo.currentEnum()
+        == HorizontalAxisOrientation.LEFT
+    )
+    assert viewer.camera.handedness.value == 'right'
+    assert (
+        viewer_buttons.orientation_help_symbol.objectName()
+        == 'righthand_label'
+    )
+    assert 'right-handed' in viewer_buttons.orientation_help_symbol.toolTip()
+
+    viewer_buttons.depth_combo.setCurrentEnum(DepthAxisOrientation.AWAY)
+    viewer_buttons.vertical_combo.setCurrentEnum(VerticalAxisOrientation.DOWN)
+    viewer_buttons.horizontal_combo.setCurrentEnum(
+        HorizontalAxisOrientation.RIGHT
+    )
+    assert viewer.camera.handedness.value == 'left'
+    assert (
+        viewer_buttons.orientation_help_symbol.objectName() == 'lefthand_label'
+    )
+    assert 'left-handed' in viewer_buttons.orientation_help_symbol.toolTip()
+    assert viewer.camera.orientation[0].value == 'away'
+    assert viewer.camera.orientation[1].value == 'down'
+    assert viewer.camera.orientation[2].value == 'right'
+
+    # check perspective slider change affects viewer camera perspective
+    assert viewer_buttons.perspective
+    viewer_buttons.perspective.setValue(5)
+    assert viewer.camera.perspective == viewer_buttons.perspective.value() == 5
+
+    # check zoom slider change affects viewer camera zoom
+    assert viewer_buttons.zoom
+    viewer_buttons.zoom.setValue(5)
+    assert viewer.camera.zoom == viewer_buttons.zoom.value() == 5
+
+    # check viewer camera rotation value affects camera angles
+    assert viewer_buttons.rx
+    assert viewer_buttons.ry
+    assert viewer_buttons.rz
+    viewer_buttons.rx.setValue(90)
+    viewer_buttons.ry.setValue(45)
+    viewer_buttons.rz.setValue(0)
+    assert (
+        viewer.camera.angles
+        == (
+            viewer_buttons.rx.value(),
+            viewer_buttons.ry.value(),
+            viewer_buttons.rz.value(),
+        )
+        == (90, 45, 0)
     )
 
     # popup needs to be relaunched to get widget controls with the new values
@@ -124,16 +235,30 @@ def test_ndisplay_button_popup(qt_viewer_buttons, qtbot):
     # check viewer camera perspective value affects perspective popup slider
     # initial value
     viewer.camera.perspective = 10
+    viewer.camera.zoom = 2
+    viewer.camera.angles = (0, 0, 90)
     viewer_buttons.ndisplayButton.customContextMenuRequested.emit(QPoint())
     for widget in QApplication.topLevelWidgets():
         if isinstance(widget, QtPopup):
             perspective_popup = widget
     assert perspective_popup
-    assert viewer_buttons.perspective_slider
+    assert viewer_buttons.perspective
     assert (
-        viewer.camera.perspective
-        == viewer_buttons.perspective_slider.value()
-        == 10
+        viewer.camera.perspective == viewer_buttons.perspective.value() == 10
+    )
+    assert viewer_buttons.zoom
+    assert viewer.camera.zoom == viewer_buttons.zoom.value() == 2
+    assert viewer_buttons.rx
+    assert viewer_buttons.ry
+    assert viewer_buttons.rz
+    assert (
+        viewer.camera.angles
+        == (
+            viewer_buttons.rx.value(),
+            viewer_buttons.ry.value(),
+            viewer_buttons.rz.value(),
+        )
+        == (0, 0, 90)
     )
 
 

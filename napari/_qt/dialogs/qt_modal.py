@@ -121,7 +121,7 @@ class QtPopup(QDialog):
                         deferred=True,
                     )
                 )
-        elif isinstance(position, (tuple, list)):
+        elif isinstance(position, tuple | list):
             assert len(position) == 4, '`position` argument must have length 4'
             left, top, width, height = position
         else:

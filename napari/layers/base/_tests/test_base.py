@@ -104,3 +104,44 @@ def test_axis_labels_error():
 
     with pytest.raises(ValueError, match='must have length ndim'):
         SampleLayer(np.empty((10, 10)), axis_labels=('x', 'y', 'z'))
+
+
+def test_non_visible_mode():
+    layer = SampleLayer(np.empty((10, 10)))
+    layer.mode = 'transform'
+
+    # change layer visibility and check the layer mode gets updated
+    layer.visible = False
+    assert layer.mode == 'pan_zoom'
+    layer.visible = True
+    assert layer.mode == 'transform'
+
+
+def test_world_to_displayed_data_normal_3D():
+    layer = SampleLayer(np.empty((10, 10, 10)))
+    layer.scale = (1, 3, 2)
+
+    normal_vector = [0, 1, 1]
+
+    expected_transformed_vector = [0, 3 * (13**0.5) / 13, 2 * (13**0.5) / 13]
+
+    transformed_vector = layer._world_to_displayed_data_normal(
+        normal_vector, dims_displayed=[0, 1, 2]
+    )
+
+    assert np.allclose(transformed_vector, expected_transformed_vector)
+
+
+def test_world_to_displayed_data_normal_4D():
+    layer = SampleLayer(np.empty((10, 10, 10, 10)))
+    layer.scale = (1, 3, 2, 1)
+
+    normal_vector = [0, 1, 1]
+
+    expected_transformed_vector = [0, 3 * (13**0.5) / 13, 2 * (13**0.5) / 13]
+
+    transformed_vector = layer._world_to_displayed_data_normal(
+        normal_vector, dims_displayed=[0, 1, 2]
+    )
+
+    assert np.allclose(transformed_vector, expected_transformed_vector)

@@ -17,6 +17,7 @@ from napari.utils.key_bindings import (
 )
 
 
+@pytest.mark.key_bindings
 def test_bind_key():
     kb = {}
 
@@ -61,6 +62,7 @@ def test_bind_key():
     assert key == KeyBinding.from_str('Shift-A')
 
 
+@pytest.mark.key_bindings
 def test_bind_key_decorator():
     kb = {}
 
@@ -70,6 +72,7 @@ def test_bind_key_decorator():
     assert kb == {KeyBinding.from_str('A'): foo}
 
 
+@pytest.mark.key_bindings
 def test_keymap_provider():
     class Foo(KeymapProvider): ...
 
@@ -89,6 +92,7 @@ def test_keymap_provider():
     assert Baz.class_keymap == {KeyBinding.from_str('A'): ...}
 
 
+@pytest.mark.key_bindings
 def test_bind_keymap():
     class Foo: ...
 
@@ -133,6 +137,7 @@ class Baz(Bar):
     class_keymap = {'F': lambda x: setattr(x, 'F', 16)}
 
 
+@pytest.mark.key_bindings
 def test_handle_single_keymap_provider():
     foo = Foo()
 
@@ -185,6 +190,7 @@ def test_handle_single_keymap_provider():
     assert not hasattr(foo, 'C')
 
 
+@pytest.mark.key_bindings
 @patch('napari.utils.key_bindings.USER_KEYMAP', new_callable=dict)
 def test_bind_user_key(keymap_mock):
     foo = Foo()
@@ -217,6 +223,7 @@ def test_bind_user_key(keymap_mock):
     assert x == 42
 
 
+@pytest.mark.key_bindings
 def test_handle_multiple_keymap_providers():
     foo = Foo()
     bar = Bar()
@@ -281,6 +288,7 @@ def test_handle_multiple_keymap_providers():
     assert not hasattr(foo, 'B')
 
 
+@pytest.mark.key_bindings
 def test_inherited_keymap():
     baz = Baz()
     handler = KeymapHandler()
@@ -302,6 +310,7 @@ def test_inherited_keymap():
     }
 
 
+@pytest.mark.key_bindings
 def test_handle_on_release_bindings():
     def make_42(x):
         # on press
@@ -348,6 +357,7 @@ def test_handle_on_release_bindings():
     assert baz.aliiiens == 0
 
 
+@pytest.mark.key_bindings
 def test_bind_key_method():
     class Foo2(KeymapProvider): ...
 
@@ -365,6 +375,7 @@ def test_bind_key_method():
     assert Foo2.class_keymap[KeyBinding.from_str('B')] is bar
 
 
+@pytest.mark.key_bindings
 def test_bind_key_doc():
     doc = inspect.getdoc(bind_key)
     doc = doc.split('Notes\n-----\n')[-1]

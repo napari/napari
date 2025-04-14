@@ -4,7 +4,7 @@ import weakref
 from collections.abc import Generator
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Any, Optional
+from typing import Any
 from weakref import ReferenceType
 
 from magicgui.widgets import FunctionGui
@@ -32,11 +32,11 @@ class Source(BaseModel):
         parent layer if the layer is a duplicate.
     """
 
-    path: Optional[str] = None
-    reader_plugin: Optional[str] = None
-    sample: Optional[tuple[str, str]] = None
-    widget: Optional[FunctionGui] = None
-    parent: Optional[Layer] = None
+    path: str | None = None
+    reader_plugin: str | None = None
+    sample: tuple[str, str] | None = None
+    widget: FunctionGui | None = None
+    parent: Layer | None = None
 
     class Config:
         arbitrary_types_allowed = True
@@ -58,7 +58,9 @@ class Source(BaseModel):
 
 # layer source context management
 
-_LAYER_SOURCE: ContextVar[dict] = ContextVar('_LAYER_SOURCE', default={})
+_LAYER_SOURCE: ContextVar[dict | None] = ContextVar(
+    '_LAYER_SOURCE', default=None
+)
 
 
 @contextmanager
@@ -97,7 +99,7 @@ def layer_source(**source_kwargs: Any) -> Generator[None, None, None]:
     >>> assert points.source == Source(path='file.ext', reader_plugin='plugin')  # doctest: +SKIP
 
     """
-    token = _LAYER_SOURCE.set({**_LAYER_SOURCE.get(), **source_kwargs})
+    token = _LAYER_SOURCE.set({**(_LAYER_SOURCE.get() or {}), **source_kwargs})
     try:
         yield
     finally:
@@ -109,4 +111,4 @@ def current_source() -> Source:
 
     The main place this function is used is in :meth:`Layer.__init__`.
     """
-    return Source(**_LAYER_SOURCE.get())
+    return Source(**(_LAYER_SOURCE.get() or {}))
