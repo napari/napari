@@ -1274,8 +1274,8 @@ def _triangle_area(a, b, c):
 
 
 def _shape_area(
-    face_triangles: npt.ArrayLike, face_vertices: npt.ArrayLike
-) -> npt.ArrayLike:
+    face_triangles: np.ndarray, face_vertices: np.ndarray
+) -> np.ndarray:
     """Calculate the area of a shape from its triangulated faces."""
     vert_coords = face_vertices[face_triangles]
     edge_lengths = np.linalg.norm(
@@ -1285,8 +1285,8 @@ def _shape_area(
 
 
 def _shape_perimeter(
-    edge_triangles: npt.ArrayLike, edge_vertices: npt.ArrayLike
-) -> npt.ArrayLike:
+    edge_triangles: np.ndarray, edge_vertices: np.ndarray
+) -> np.ndarray:
     """Calculate the perimeter of a shape from its triangulated faces."""
     # edges are saved as triangles because they are rendered with a thickness
     # here we need to remove all duplicate vertices and only retain the edges connecting
