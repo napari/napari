@@ -97,7 +97,7 @@ def push(branch_name: str, update: bool = False):
         stdout = e.stdout.decode() if e.stdout else ''
         stderr = e.stderr.decode() if e.stderr else ''
         logging.exception(
-            'Error pushing to branch %s:\n\nstdout: %s\\nnstderr: %s\n\nWith error %d',
+            'Error pushing to branch %s:\n\nstdout: %s\n\nstderr: %s\n\nWith error %d',
             branch_name,
             stdout,
             stderr,
