@@ -3,7 +3,7 @@ import sys
 
 import numpy as np
 import pytest
-from qtpy.QtCore import QPoint, Qt, qInstallMessageHandler
+from qtpy.QtCore import QPoint, Qt, QtMsgType, qInstallMessageHandler
 from qtpy.QtWidgets import QApplication
 
 from napari._app_model import get_app_model
@@ -19,7 +19,7 @@ from napari.viewer import ViewerModel
 @pytest.fixture(autouse=True)
 def own_log_handler():
     def fun(msg_type, context, message):
-        if msg_type == 'warning':
+        if msg_type == QtMsgType.QtWarningMsg:
             raise RuntimeError(message)
         if prev_handler is not None:
             prev_handler(msg_type, context, message)
