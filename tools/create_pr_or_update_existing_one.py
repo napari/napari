@@ -134,10 +134,7 @@ def create_pr_with_push(branch_name: str, access_token: str, repo=''):
     """
     Create a PR.
     """
-    if branch_name == 'main':
-        new_branch_name = DEFAULT_BRANCH_NAME
-    else:
-        new_branch_name = f'{DEFAULT_BRANCH_NAME}-{branch_name}'
+    new_branch_name = f'{DEFAULT_BRANCH_NAME}-{branch_name}'
 
     if not repo:
         repo = os.environ.get('GITHUB_REPOSITORY', 'napari/napari')
