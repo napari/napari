@@ -426,3 +426,11 @@ def test_shortcut_aliases():
         },
     )
     assert settings_original == settings_canonical
+
+
+def test_env_settings_restore(monkeypatch):
+    monkeypatch.setenv('NAPARI_ASYNC', '0')
+    s = NapariSettings()
+    s.experimental.completion_radius = 1
+    assert s.env_settings() == {'experimental': {'async_': '0'}}
+    assert s._save_dict()['experimental'] == {'completion_radius': 1}

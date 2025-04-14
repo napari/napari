@@ -1,49 +1,24 @@
-from enum import auto
-from typing import TYPE_CHECKING, Literal, Optional
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 
 from napari._pydantic_compat import validator
+from napari.utils.camera_orientations import (
+    DEFAULT_ORIENTATION_TYPED,
+    DepthAxisOrientation,
+    Handedness,
+    HorizontalAxisOrientation,
+    HorizontalAxisOrientationStr,
+    VerticalAxisOrientation,
+    VerticalAxisOrientationStr,
+)
 from napari.utils.events import EventedModel
-from napari.utils.misc import StringEnum, ensure_n_tuple
+from napari.utils.misc import ensure_n_tuple
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import numpy.typing as npt
-
-
-class VerticalAxisOrientation(StringEnum):
-    UP = auto()
-    DOWN = auto()
-
-
-class HorizontalAxisOrientation(StringEnum):
-    LEFT = auto()
-    RIGHT = auto()
-
-
-class DepthAxisOrientation(StringEnum):
-    AWAY = auto()
-    TOWARDS = auto()
-
-
-class Handedness(StringEnum):
-    RIGHT = auto()
-    LEFT = auto()
-
-
-VerticalAxisOrientationStr = Literal['up', 'down']
-HorizontalAxisOrientationStr = Literal['left', 'right']
-DepthAxisOrientationStr = Literal['away', 'torwards']
-
-
-DEFAULT_ORIENTATION_TYPED = (
-    DepthAxisOrientation.TOWARDS,
-    VerticalAxisOrientation.DOWN,
-    HorizontalAxisOrientation.RIGHT,
-)
-DEFAULT_ORIENTATION = tuple(map(str, DEFAULT_ORIENTATION_TYPED))
 
 
 class Camera(EventedModel):

@@ -241,6 +241,7 @@ matplotlib==3.10.1
     # via
     #   napari (pyproject.toml)
     #   glasbey
+    #   sphinxext-opengraph
 matplotlib-inline==0.1.7
     # via
     #   ipykernel
@@ -643,6 +644,7 @@ sphinx==7.4.7
     #   sphinx-tabs
     #   sphinx-tags
     #   sphinxcontrib-mermaid
+    #   sphinxext-opengraph
 sphinx-autobuild==2024.10.3
     # via napari (pyproject.toml)
 sphinx-autodoc-typehints==1.12.0
@@ -675,6 +677,8 @@ sphinxcontrib-qthelp==2.0.0
     # via sphinx
 sphinxcontrib-serializinghtml==2.0.0
     # via sphinx
+sphinxext-opengraph==0.10.0
+    # via napari (pyproject.toml)
 sqlalchemy==2.0.40
     # via jupyter-cache
 stack-data==0.6.3
