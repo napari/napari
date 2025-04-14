@@ -422,6 +422,7 @@ class NapariQtNotification(QDialog):
             notification.severity
             >= settings.application.gui_notification_level
             and _QtMainWindow.current()
+            and _QtMainWindow.current().isVisible()
         ):
             canvas = _QtMainWindow.current()._qt_viewer._welcome_widget
             cls.from_notification(notification, canvas).show()

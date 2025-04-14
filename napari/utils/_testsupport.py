@@ -1,18 +1,17 @@
-import gc
-import os
-import sys
 import warnings
 from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 from unittest.mock import patch
-from weakref import WeakSet
 
 import pytest
+from qtpy.QtWidgets import QApplication
 
 if TYPE_CHECKING:
     from pytest import FixtureRequest  # noqa: PT013
+
+    from napari._qt.qt_main_window import _QtMainWindow
 
 _SAVE_GRAPH_OPNAME = '--save-leaked-object-graph'
 
@@ -175,6 +174,22 @@ def mock_app_model():
             Application.destroy('test_app')
 
 
+def clean_viewer_references(main_window: '_QtMainWindow') -> None:
+    """Clean up references to the viewer in the viewer._instances set."""
+    from napari.settings import get_settings
+
+    settings = get_settings()
+    settings.reset()
+    settings.application.save_window_geometry = False
+    settings.application.save_window_state = False
+
+    main_window.setObjectName('handled_widget')
+    viewer = main_window._qt_viewer.viewer
+    with suppress(KeyError):
+        viewer._instances.remove(viewer)
+        viewer.window._qt_window._instances.remove(viewer.window._qt_window)
+
+
 @pytest.fixture
 def make_napari_viewer(
     qtbot,
@@ -232,50 +247,22 @@ def make_napari_viewer(
     >>> def test_something_with_strict_qt_tests(make_napari_viewer):
     ...     viewer = make_napari_viewer(strict_qt=True)
     """
-    from qtpy.QtWidgets import QApplication, QWidget
+    from qtpy.QtWidgets import QWidget
 
     from napari import Viewer
     from napari._qt._qapp_model.qactions import init_qactions
-    from napari._qt.qt_viewer import QtViewer
     from napari.plugins import _initialize_plugins
     from napari.settings import get_settings
 
-    global GCPASS
-    GCPASS += 1
-
-    if GCPASS % 50 == 0:
-        gc.collect()
-    else:
-        gc.collect(1)
-
-    _do_not_inline_below = len(QtViewer._instances)
-    # # do not inline to avoid pytest trying to compute repr of expression.
-    # # it fails if C++ object gone but not Python object.
-    if request.config.getoption(_SAVE_GRAPH_OPNAME):
-        fail_obj_graph(QtViewer)
-    QtViewer._instances.clear()
-    assert _do_not_inline_below == 0, (
-        'Some instance of QtViewer is not properly cleaned in one of previous test. For easier debug one may '
-        f'use {_SAVE_GRAPH_OPNAME} flag for pytest to get graph of leaked objects. If you use qtbot (from pytest-qt)'
-        ' to clean Qt objects after test you may need to switch to manual clean using '
-        '`deleteLater()` and `qtbot.wait(50)` later.'
-    )
-
     settings = get_settings()
     settings.reset()
+    settings.application.save_window_geometry = False
+    settings.application.save_window_state = False
 
     _initialize_plugins.cache_clear()
     init_qactions.cache_clear()
 
-    viewers: WeakSet[Viewer] = WeakSet()
-    request.node._viewer_weak_set = viewers
-
     # may be overridden by using the parameter `strict_qt`
-    _strict = False
-
-    initial = QApplication.topLevelWidgets()
-    prior_exception = getattr(sys, 'last_value', None)
-    is_internal_test = request.module.__name__.startswith('napari.')
 
     # disable thread for status checker
     monkeypatch.setattr(
@@ -299,20 +286,27 @@ def make_napari_viewer(
         ViewerClass=Viewer,
         strict_qt=None,
         block_plugin_discovery=True,
+        use_qtbot=True,
         **model_kwargs,
     ):
-        if strict_qt is None:
-            strict_qt = is_internal_test or os.getenv('NAPARI_STRICT_QT')
-        nonlocal _strict
-        _strict = strict_qt
-
+        if strict_qt is not None:
+            warnings.warn(
+                'strict_qt is deprecated, we use qtbot to manage qt cleanup',
+                DeprecationWarning,
+                stacklevel=2,
+            )
         if not block_plugin_discovery:
             napari_plugin_manager.discovery_blocker.stop()
 
         should_show = request.config.getoption('--show-napari-viewer')
         model_kwargs['show'] = model_kwargs.pop('show', should_show)
         viewer = ViewerClass(*model_args, **model_kwargs)
-        viewers.add(viewer)
+
+        if use_qtbot:
+            qtbot.add_widget(
+                viewer.window._qt_window,
+                before_close_func=clean_viewer_references,
+            )
 
         return viewer
 
@@ -321,68 +315,10 @@ def make_napari_viewer(
     # Some tests might have the viewer closed, so this call will not be able
     # to access the window.
     with suppress(AttributeError):
-        get_settings().reset()
+        settings = get_settings()
+        settings.reset()
 
-    # close viewers, but don't saving window settings while closing
-    for viewer in viewers:
-        if hasattr(viewer.window, '_qt_window'):
-            with patch.object(
-                viewer.window._qt_window, '_save_current_window_settings'
-            ):
-                viewer.close()
-        else:
-            viewer.close()
-
-    if GCPASS % 50 == 0 or len(QtViewer._instances):
-        gc.collect()
-    else:
-        gc.collect(1)
-
-    if request.config.getoption(_SAVE_GRAPH_OPNAME):
-        fail_obj_graph(QtViewer)
-
-    if request.node.rep_call.failed:
-        # IF test failed do not check for leaks
-        QtViewer._instances.clear()
-
-    _do_not_inline_below = len(QtViewer._instances)
-
-    QtViewer._instances.clear()  # clear to prevent fail of next test
-
-    # do not inline to avoid pytest trying to compute repr of expression.
-    # it fails if C++ object gone but not Python object.
-    assert _do_not_inline_below == 0, (
-        f'{request.config.getoption(_SAVE_GRAPH_OPNAME)}, {_SAVE_GRAPH_OPNAME}'
-    )
-
-    # only check for leaked widgets if an exception was raised during the test,
-    # and "strict" mode was used.
-    if _strict and getattr(sys, 'last_value', None) is prior_exception:
-        QApplication.processEvents()
-        leak = set(QApplication.topLevelWidgets()).difference(initial)
-        leak = (x for x in leak if x.objectName() != 'handled_widget')
-        # still not sure how to clean up some of the remaining vispy
-        # vispy.app.backends._qt.CanvasBackendDesktop widgets...
-        # observed in `test_sys_info.py`
-        if any(n.__class__.__name__ != 'CanvasBackendDesktop' for n in leak):
-            # just a warning... but this can be converted to test errors
-            # in pytest with `-W error`
-            msg = f"""The following Widgets leaked!: {leak}.
-
-            Note: If other tests are failing it is likely that widgets will leak
-            as they will be (indirectly) attached to the tracebacks of previous failures.
-            Please only consider this an error if all other tests are passing.
-            """
-            # Explanation notes on the above: While we are indeed looking at the
-            # difference in sets of widgets between before and after, new object can
-            # still not be garbage collected because of it.
-            # in particular with VisPyCanvas, it looks like if a traceback keeps
-            # contains the type, then instances are still attached to the type.
-            # I'm not too sure why this is the case though.
-            if _strict == 'raise':
-                raise AssertionError(msg)
-            else:
-                warnings.warn(msg)
+    QApplication.processEvents()
 
 
 @pytest.fixture
