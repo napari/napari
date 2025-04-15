@@ -809,7 +809,7 @@ def reconstruct_polygons_from_edges(
         List of polygons, where each polygon is an array of vertex coordinates
     """
     n_edges = edges.shape[0]
-    used = np.zeros(n_edges, dtype=np.bool_)
+    visited = np.zeros(n_edges, dtype=np.bool_)
     n_vertices = vertices.shape[0]
 
     # Create a list (indexed by vertex) containing lists of incident edge indices.
@@ -827,7 +827,7 @@ def reconstruct_polygons_from_edges(
     polygons = List()
 
     for i in range(n_edges):
-        if used[i]:
+        if visited[i]:
             continue
         poly = List.empty_list(types.int64)
         # Start a new polygon with the current edge.
@@ -835,7 +835,7 @@ def reconstruct_polygons_from_edges(
         current_v = edges[i, 1]
         poly.append(start_v)
         poly.append(current_v)
-        used[i] = True
+        visited[i] = True
         closed = False
 
         # Walk along the polygon edges until we loop back to start_v.
@@ -843,13 +843,13 @@ def reconstruct_polygons_from_edges(
             found = False
             # Loop through edges incident to current_v.
             for edge_idx in incident[current_v]:
-                if used[edge_idx]:
+                if visited[edge_idx]:
                     continue
                 a = edges[edge_idx, 0]
                 b = edges[edge_idx, 1]
                 # Choose the vertex that is not the current one.
                 next_v = a if b == current_v else b
-                used[edge_idx] = True
+                visited[edge_idx] = True
                 if next_v == start_v:
                     closed = True
                 else:
