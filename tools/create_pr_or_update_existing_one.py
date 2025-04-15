@@ -15,7 +15,8 @@ from check_updated_packages import get_changed_dependencies
 REPO_DIR = Path(__file__).parent.parent / 'napari_repo'
 # GitHub API base URL
 BASE_URL = 'https://api.github.com'
-DEFAULT_BRANCH_NAME = 'auto-update-dependencies'
+DEFAULT_BRANCH_NAME_PREFIX = 'auto-update-dependencies'
+DEFAULT_BRANCH_NAME = f'{DEFAULT_BRANCH_NAME_PREFIX}-main'
 
 
 @contextmanager
@@ -62,36 +63,48 @@ def push(branch_name: str, update: bool = False):
     """
     Push the current branch to the remote.
     """
-    with cd(REPO_DIR):
-        logging.info('go to dir %s', REPO_DIR)
-        if update:
-            logging.info('Pushing to %s', branch_name)
-            subprocess.run(
-                [
-                    'git',
-                    'push',
-                    '--force',
-                    '--set-upstream',
-                    'napari-bot',
-                    branch_name,
-                ],
-                check=True,
-                capture_output=True,
-            )
-        else:
-            logging.info('Force pushing to %s', branch_name)
-            subprocess.run(
-                [
-                    'git',
-                    'push',
-                    '--force',
-                    '--set-upstream',
-                    'origin',
-                    branch_name,
-                ],
-                check=True,
-                capture_output=True,
-            )  # nosec
+    try:
+        with cd(REPO_DIR):
+            logging.info('go to dir %s', REPO_DIR)
+            if update:
+                logging.info('Pushing to %s', branch_name)
+                subprocess.run(
+                    [
+                        'git',
+                        'push',
+                        '--force',
+                        '--set-upstream',
+                        'napari-bot',
+                        branch_name,
+                    ],
+                    check=True,
+                    capture_output=True,
+                )
+            else:
+                logging.info('Force pushing to %s', branch_name)
+                subprocess.run(
+                    [
+                        'git',
+                        'push',
+                        '--force',
+                        '--set-upstream',
+                        'napari-bot',
+                        branch_name,
+                    ],
+                    check=True,
+                    capture_output=True,
+                )  # nosec
+    except subprocess.CalledProcessError as e:
+        stdout = e.stdout.decode() if e.stdout else ''
+        stderr = e.stderr.decode() if e.stderr else ''
+        logging.exception(
+            'Error pushing to branch %s:\n\nstdout: %s\n\nstderr: %s\n\nWith error %d',
+            branch_name,
+            stdout,
+            stderr,
+            e.returncode,
+        )
+        raise
 
 
 def commit_message(branch_name) -> str:
@@ -122,10 +135,7 @@ def create_pr_with_push(branch_name: str, access_token: str, repo=''):
     """
     Create a PR.
     """
-    if branch_name == 'main':
-        new_branch_name = DEFAULT_BRANCH_NAME
-    else:
-        new_branch_name = f'{DEFAULT_BRANCH_NAME}-{branch_name}'
+    new_branch_name = f'{DEFAULT_BRANCH_NAME_PREFIX}-{branch_name}'
 
     if not repo:
         repo = os.environ.get('GITHUB_REPOSITORY', 'napari/napari')
@@ -145,6 +155,7 @@ def create_pr_with_push(branch_name: str, access_token: str, repo=''):
             new_branch=new_branch_name,
             access_token=access_token,
             repo=repo,
+            source_user='napari-bot',
         )
 
 

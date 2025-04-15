@@ -59,6 +59,7 @@ def test_toggle_axes_scale_bar_attr(
         * `arrows`
     * Viewer `scale_bar` attributes:
         * `visible`
+        * `box`
         * `colored`
         * `ticks`
     """

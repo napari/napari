@@ -266,6 +266,12 @@ toggle_action_details = [
         'visible',
     ),
     (
+        'napari.window.view.toggle_viewer_scale_bar_box',
+        trans._('Scale Bar Box'),
+        'scale_bar',
+        'box',
+    ),
+    (
         'napari.window.view.toggle_viewer_scale_bar_colored',
         trans._('Scale Bar Colored'),
         'scale_bar',
