@@ -827,40 +827,42 @@ def reconstruct_polygons_from_edges(
     polygons = List()
 
     for i in range(n_edges):
-        if not used[i]:
-            poly = List.empty_list(types.int64)
-            # Start a new polygon with the current edge.
-            start_v = edges[i, 0]
-            current_v = edges[i, 1]
-            poly.append(start_v)
-            poly.append(current_v)
-            used[i] = True
-            closed = False
+        if used[i]:
+            continue
+        poly = List.empty_list(types.int64)
+        # Start a new polygon with the current edge.
+        start_v = edges[i, 0]
+        current_v = edges[i, 1]
+        poly.append(start_v)
+        poly.append(current_v)
+        used[i] = True
+        closed = False
 
-            # Walk along the polygon edges until we loop back to start_v.
-            while not closed:
-                found = False
-                # Loop through edges incident to current_v.
-                for edge_idx in incident[current_v]:
-                    if not used[edge_idx]:
-                        a = edges[edge_idx, 0]
-                        b = edges[edge_idx, 1]
-                        # Choose the vertex that is not the current one.
-                        next_v = a if b == current_v else b
-                        used[edge_idx] = True
-                        if next_v == start_v:
-                            closed = True
-                        else:
-                            poly.append(next_v)
-                        current_v = next_v
-                        found = True
-                        if current_v == start_v:
-                            closed = True
-                        break  # move on as soon as we find the next edge
-                if not found:
-                    # In case of an open chain, exit.
-                    break
-            polygons.append([vertices[x] for x in poly])
+        # Walk along the polygon edges until we loop back to start_v.
+        while not closed:
+            found = False
+            # Loop through edges incident to current_v.
+            for edge_idx in incident[current_v]:
+                if used[edge_idx]:
+                    continue
+                a = edges[edge_idx, 0]
+                b = edges[edge_idx, 1]
+                # Choose the vertex that is not the current one.
+                next_v = a if b == current_v else b
+                used[edge_idx] = True
+                if next_v == start_v:
+                    closed = True
+                else:
+                    poly.append(next_v)
+                current_v = next_v
+                found = True
+                if current_v == start_v:
+                    closed = True
+                break  # move on as soon as we find the next edge
+            if not found:
+                # In case of an open chain, exit.
+                break
+        polygons.append([vertices[x] for x in poly])
     return polygons
 
 
