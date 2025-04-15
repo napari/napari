@@ -793,15 +793,22 @@ def reconstruct_polygons_from_edges(
 def reconstruct_polygons_from_edges(
     vertices: CoordinateArray, edges: EdgeArray
 ) -> list[CoordinateArray2D] | list[CoordinateArray3D]:
-    """
-    Reconstruct polygons from vertices and edges.
+    """Reconstruct polygons from vertices and edges.
+
+    The algorithm reconstructs sub polygons using recursion.
+    Starting from the first edge, it traverses the graph until it reaches starting vertex.
+    After it, the algorithm iterates until reach the first non visited edge.
+    So the implementation has O(M) complexity.
 
     Parameters
     ----------
     vertices : np.ndarray
         Array of vertex coordinates with shape (N, 2) or (N, 3)
+        Cannot contain repeated vertices.
     edges : np.ndarray
         Array of edge indices with shape (M, 2)
+        Cannot contain repeated edges.
+
 
     Returns
     -------
@@ -824,12 +831,12 @@ def reconstruct_polygons_from_edges(
         incident[end].append(i)
 
     # List to hold all reconstructed polygons.
-    polygons = List()
+    polygons = []
 
     for i in range(n_edges):
         if visited[i]:
             continue
-        poly = List.empty_list(types.int64)
+        poly = []
         # Start a new polygon with the current edge.
         start_v = edges[i, 0]
         current_v = edges[i, 1]

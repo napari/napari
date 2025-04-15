@@ -428,7 +428,7 @@ def normalize_vertices_and_edges_py(
         else:
             edges.add(edge)
 
-    # remove the edge of length 0 that is added at first run of the above loop
+    # remove the edge of length 0 that is added at the first run of the above loop
     # because of the initialization of prev_idx to 0
     edges.remove((0, 0))
 

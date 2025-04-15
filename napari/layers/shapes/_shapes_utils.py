@@ -735,9 +735,11 @@ def reconstruct_and_triangulate_edge(
     Parameters
     ----------
     vertices: np.ndarray
-        Nx2 or Nx3 array of vertices of shape to be triangulated
+        Nx2 or Nx3 array of vertices of shape to be triangulated.
+        Cannot contain duplicated vertices.
     edges: np.ndarray
-        list of edges encoded as vertices.
+        list of edges encoded as vertices indices.
+        Cannot contain duplicated vertices.
 
     Returns
     -------
