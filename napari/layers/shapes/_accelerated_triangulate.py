@@ -417,7 +417,8 @@ def is_convex(vertices: CoordinateArray2D) -> bool:
     Parameters
     ----------
     vertices : np.ndarray
-        Array of vertex coordinates with shape (N, 2)
+        Array of vertex coordinates with shape (N, 2),
+        where N is the number of vertices
 
     Returns
     -------
