@@ -1119,10 +1119,11 @@ class Labels(ScalarFieldBase):
         old_label = np.asarray(self.data[int_coord]).item()
         if old_label == new_label:
             return
-        # If preserve_labels is True and old label is not same as
-        # the previous selected label or background, then also return
-        # this covers the case of using 0 (background) fill to erase
-        # accounting for swap_selected_and_background_labels
+        # If preserve_labels is True, then we only want to fill:
+        # - pixels of the background label, filling with the new label
+        # - pixels of the previous label, filling with the background
+        # the previous label is stored when the selected label is set
+        # to the background, e.g. by swap_selected_and_background_labels
         if (
             self.preserve_labels
             and old_label != self._prev_selected_label
