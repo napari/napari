@@ -1,0 +1,16 @@
+# https://github.com/marketplace/actions/pr-dependency-check
+name: "PR Dependency Check"
+on:
+  pull_request:
+  issue_comment:
+    types: [ created ]
+
+jobs:
+  check_dependencies:
+    runs-on: ubuntu-latest
+    if: (github.event.issue.pull_request != '' && contains(github.event.comment.body, 'merge')) || github.event_name == 'pull_request'
+    name: Check Dependencies
+    steps:
+    - uses: gregsdennis/dependencies-action@main
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
