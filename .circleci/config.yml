@@ -25,19 +25,19 @@ jobs:
           name: Setup virtual environment
           command: |
             uv venv
-            . venv/bin/activate
+            . .venv/bin/activate
 
       - run:
           name: Install napari-dev
           command: |
-            . venv/bin/activate
+            . .venv/bin/activate
             uv pip install -e "napari/[pyqt5,docs]"
           environment:
             PIP_CONSTRAINT: napari/resources/constraints/constraints_py3.10_docs.txt
       - run:
           name: Build docs
           command: |
-            . venv/bin/activate
+            . .venv/bin/activate
             cd docs
             xvfb-run --auto-servernum make html
           environment:
