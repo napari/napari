@@ -831,12 +831,12 @@ def reconstruct_polygons_from_edges(
         incident[end].append(i)
 
     # List to hold all reconstructed polygons.
-    polygons = []
+    polygons = List()
 
     for i in range(n_edges):
         if visited[i]:
             continue
-        poly = []
+        poly: list[int] = []
         # Start a new polygon with the current edge.
         start_v = edges[i, 0]
         current_v = edges[i, 1]
