@@ -1,7 +1,8 @@
 """Check the triangulation of a complex polygon with a hole in it.
 
-This PR uses the triangle library to display a complex polygon in both
-matplotlib and napari.
+The polygon is the outline of South Africa, which contains within it the
+enclave of Lesotho, and is therefore represented by a polygon with a hole in
+it.
 
 See issue https://github.com/napari/napari/issues/5673 and PR
 https://github.com/napari/napari/pull/6654
@@ -28,22 +29,23 @@ from napari.layers.shapes import _accelerated_triangulate_dispatch as atd
 def pltri(vertices, triangles, *, mask=None, ax=None):
     """Plot a triangulation in Matplotlib.
 
-    This function inverts the y-axis and transposes x and y to match
-    napari's row/columns coordinates. (Which also matches Matplotlib's
-    coordinates for images. ;)
+    Transposes x and y to match napari's row/columns coordinates.
+    (We invert the y-axis in napari to match the expected lat/lon coordinate
+    orientation of this dataset.)
     """
     if ax is None:
         fig, ax = plt.subplots()
-    ax.triplot(vertices[:, 1], -vertices[:, 0], triangles)
+    ax.triplot(vertices[:, 1], vertices[:, 0], triangles)
     if mask is not None:
         centers = np.mean(vertices[triangles], axis=1)
         color = np.where(mask, 'blue', 'red')
-        ax.scatter(centers[:, 1], -centers[:, 0], color=color)
+        ax.scatter(centers[:, 1], centers[:, 0], color=color)
 
 
 # polygon with hole from https://github.com/napari/napari/issues/5673
-# rounded to two decimal digits.
-a = np.array(
+# rounded to two decimal digits. (Actually the outline of South Africa, in
+# lat-lon.)
+za = np.array(
     [[-28.58, 196.34], [-28.08, 196.82], [-28.36, 197.22], [-28.78, 197.39],
      [-28.86, 197.84], [-29.05, 198.46], [-28.97, 199.  ], [-28.46, 199.89],
      [-24.77, 199.9 ], [-24.92, 200.17], [-25.87, 200.76], [-26.48, 200.67],
@@ -72,11 +74,11 @@ a = np.array(
 
 
 # First, check the utils code manually using matplotlib.
-v, e = atd.normalize_vertices_and_edges(a, close=True)
+v, e = atd.normalize_vertices_and_edges(za, close=True)
 res = triangulate({'vertices': v, 'segments': e}, opts='p')
 v2, t = res['vertices'], res['triangles']
 centers = np.mean(v2[t], axis=1)
-in_poly = measure.points_in_poly(centers, a)
+in_poly = measure.points_in_poly(centers, za)
 
 fig, ax = plt.subplots()
 pltri(res['vertices'], res['triangles'], mask=in_poly, ax=ax)
@@ -85,7 +87,8 @@ fig.show()
 
 # next, draw the shape in napari
 viewer = napari.Viewer()
-layer = viewer.add_shapes(a, shape_type=['polygon'])
+viewer.camera.orientation2d = ('up', 'right')  # lat goes up, lon goes right
+layer = viewer.add_shapes(za, shape_type=['polygon'])
 
 # these settings help to visualise the polygon data directly in the
 # shapes layer.
