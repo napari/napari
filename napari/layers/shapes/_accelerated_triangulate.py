@@ -20,7 +20,13 @@ from napari.layers.shapes.shape_types import (
 
 
 class Orientation(Enum):
-    """Orientation of a triangle."""
+    """Orientation of a triangle.
+    
+    The terms assume napari's preferred coordinate frame, in which
+    the 0th axis, y, is pointing down, and the 1st axis, x, is pointing
+    right. If one of the axes is flipped, the observed orientation
+    would also flip.
+    """
 
     clockwise = -1
     collinear = 0
