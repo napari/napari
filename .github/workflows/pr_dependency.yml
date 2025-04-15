@@ -11,6 +11,6 @@ jobs:
     if: (github.event.issue.pull_request != '' && contains(github.event.comment.body, 'merge')) || github.event_name == 'pull_request'
     name: Check Dependencies
     steps:
-    - uses: gregsdennis/dependencies-action@main
+    - uses: gregsdennis/dependencies-action@v1.4.1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
