@@ -134,7 +134,7 @@ contributions:
         [
           '*.3fr', '*.arw', '*.avs', '*.bay', '*.bif', '*.bmp', '*.bmq', '*.bsdf',
           '*.btf', '*.bufr', '*.bw', '*.cap', '*.cine', '*.cr2', '*.crw', '*.cs1',
-          '*.ct', '*.cur', '*.cut', '*.dc2', '*.dcm', '*.dcr', '*.dcx', '*.dds',
+          '*.csv', '*.ct', '*.cur', '*.cut', '*.dc2', '*.dcm', '*.dcr', '*.dcx', '*.dds',
           '*.dicom', '*.dng', '*.drf', '*.dsc', '*.ecw', '*.eer', '*.emf', '*.eps',
           '*.erf', '*.exr', '*.fff', '*.fit', '*.fits', '*.flc', '*.fli', '*.fpx',
           '*.ftc', '*.fts', '*.ftu', '*.fz', '*.g3', '*.gbr', '*.gdcm', '*.gel', '*.gif',
@@ -145,14 +145,15 @@ contributions:
           '*.kdc', '*.koa', '*.lbm', '*.lfp', '*.lfr', '*.lsm', '*.mdc', '*.mef',
           '*.mgh', '*.mha', '*.mhd', '*.mic', '*.mnc', '*.mnc2', '*.mos', '*.mpo',
           '*.mri', '*.mrw', '*.msp', '*.ndpi', '*.nef', '*.nhdr', '*.nia', '*.nii',
-          '*.nii.gz', '*.npz', '*.nrrd', '*.nrw', '*.ome.tif', '*.orf', '*.pbm', '*.pcd',
-          '*.pcoraw', '*.pct', '*.pcx', '*.pef', '*.pfm', '*.pgm', '*.pic', '*.pict',
-          '*.png', '*.ppm', '*.ps', '*.psd', '*.ptif', '*.ptiff', '*.ptx', '*.pxn',
-          '*.pxr', '*.qpi', '*.qptiff', '*.qtk', '*.raf', '*.ras', '*.raw', '*.rdc',
-          '*.rgb', '*.rgba', '*.rw2', '*.rwl', '*.rwz', '*.scn', '*.seq', '*.sgi',
-          '*.sr2', '*.srf', '*.srw', '*.sti', '*.stk', '*.svs', '*.swf', '*.targa',
-          '*.tf2', '*.tf8', '*.tga', '*.tif', '*.tiff', '*.vtk', '*.wap', '*.wbm',
-          '*.wbmp', '*.wdp', '*.webp', '*.wmf', '*.xbm', '*.xpm', '*.zif'
+          '*.nii.gz', '*.npy', '*.npz', '*.nrrd', '*.nrw', '*.ome.tif', '*.orf', '*.pbm',
+          '*.pcd', '*.pcoraw', '*.pct', '*.pcx', '*.pef', '*.pfm', '*.pgm', '*.pic',
+          '*.pict', '*.png', '*.ppm', '*.ps', '*.psd', '*.ptif', '*.ptiff', '*.ptx',
+          '*.pxn', '*.pxr', '*.qpi', '*.qptiff', '*.qtk', '*.raf', '*.ras', '*.raw',
+          '*.rdc', '*.rgb', '*.rgba', '*.rw2', '*.rwl', '*.rwz', '*.scn', '*.seq',
+          '*.sgi', '*.sr2', '*.srf', '*.srw', '*.sti', '*.stk', '*.svs', '*.swf',
+          '*.targa', '*.tf2', '*.tf8', '*.tga', '*.tif', '*.tiff', '*.vtk', '*.wap',
+          '*.wbm', '*.wbmp', '*.wdp', '*.webp', '*.wmf', '*.xbm', '*.xpm', '*.zarr',
+          '*.zif'
         ]
 
   writers:
