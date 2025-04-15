@@ -394,16 +394,19 @@ def is_convex(vertices: CoordinateArray2D) -> bool:
     """Check if a polygon is convex.
 
     A polygon is convex when all its internal angles
-    are less equal to 180 degrees and its edges don't
+    are less than or equal to 180 degrees and its edges don't
     self-intersect.
-
-    As we do not know if polygon vertices are ordered
-    clockwise or counterclockwise, we check this by checking if all
-    not collinear angles have the same orientation.
-
-    Then we check if there are no self-intersections by checking if the
-    polar angles of the vertices are monotonic.
-    The center of a polar coordinate system is the centroid of the polygon.
+    
+    This function determines convexity by:
+    1. Checking if all non-collinear angles have the same
+        orientation (clockwise or counterclockwise)
+    2. Verifying that the vertices' polar angles are monotonic,
+        relative to the polygon's centroid.
+        
+    - If the vertices are ordered counterclockwise, the order is
+    reversed before checking.
+    - Polygons with fewer than 3 vertices are not considered convex.
+    - A triangle is always convex.
 
     Parameters
     ----------
