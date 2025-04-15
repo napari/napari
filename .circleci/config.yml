@@ -11,7 +11,7 @@ jobs:
   build-docs:
     docker:
       # A list of available CircleCI Docker convenience images are available here: https://circleci.com/developer/images/image/cimg/python
-      - image: cimg/python:3.10.16
+      - image: cimg/python:3.10.17
     steps:
       - checkout:
           path: napari
@@ -24,15 +24,14 @@ jobs:
       - run:
           name: Setup virtual environment
           command: |
-            python -m venv venv
+            uv venv
             . venv/bin/activate
-            python -m pip install --upgrade pip
 
       - run:
           name: Install napari-dev
           command: |
             . venv/bin/activate
-            python -m pip install -e "napari/[pyqt5,docs]"
+            uv pip install -e "napari/[pyqt5,docs]"
           environment:
             PIP_CONSTRAINT: napari/resources/constraints/constraints_py3.10_docs.txt
       - run:
