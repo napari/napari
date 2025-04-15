@@ -1698,21 +1698,26 @@ class Window:
 
         # Part 2: compute canvas size and view based on parameters
         if fit_to_data_extent:
-            extent = self._qt_viewer.viewer.layers.extent
+            # Use the same scene parameter calculations as in viewer_model.fit_to_view
+            extent, _, _, total_size = (
+                self._qt_viewer.viewer._get_scene_parameters()
+            )
+
             if ndisplay == 2:
-                extent_world = extent.world[1][-ndisplay:]
-                extent_step = min(extent.step[-ndisplay:])
-                size = extent_world / extent_step + 1
+                size = np.array(total_size[-ndisplay:]).astype(int)
+
             if ndisplay == 3:
                 size = self._qt_viewer.viewer._calculate_bounding_box(
-                    extent=extent.world,
+                    extent=extent,
                     view_direction=self._qt_viewer.viewer.camera.view_direction,
                     up_direction=self._qt_viewer.viewer.camera.up_direction,
                 )
+
         if size is not None:
             size = np.asarray(size) / self._qt_window.devicePixelRatio()
         else:
             size = np.asarray(prev_size)
+
         if scale is not None:
             # multiply canvas dimensions by the scale factor to get new size
             size *= scale
