@@ -9,7 +9,7 @@ ac = pytest.importorskip('napari.layers.shapes._accelerated_triangulate')
 
 
 @pytest.fixture(params=[False, True])
-def _disable_jit(monkeypatch, request):
+def _disable_jit(request):
     """Fixture to temporarily disable numba JIT during testing.
 
     This helps to measure coverage and in debugging. *However*, reloading a
