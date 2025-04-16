@@ -49,7 +49,6 @@ from napari.layers.shapes._shapes_utils import (
     extract_shape_type,
     get_default_shape_type,
     get_shape_ndim,
-    measure_shape,
     number_of_shapes,
     rdp,
     validate_num_vertices,
@@ -3139,29 +3138,3 @@ class Shapes(Layer):
         labels = self._data_view.to_labels(labels_shape=labels_shape)
 
         return labels
-
-    def _update_features_with_measures(self, event=None):
-        if '_perimeter' not in self.features.columns:
-            self.features['_perimeter'] = 0.0
-        if '_area' not in self.features.columns:
-            self.features['_area'] = 0.0
-        self.feature_defaults = self.feature_defaults.to_dict().update(
-            {'_perimeter': 0.0, '_area': 0.0}
-        )
-
-        for i, s in enumerate(self._data_view.shapes):
-            self.features.loc[i, ['_perimeter', '_area']] = measure_shape(s)
-
-        self.refresh_text()
-
-    def toggle_measures(self):
-        if self._measuring:
-            self.events.set_data.disconnect(
-                self._update_features_with_measures
-            )
-            self.text = ''
-        else:
-            self.events.set_data.connect(self._update_features_with_measures)
-            self._update_features_with_measures()
-            self.text = 'P = {_perimeter:.3f}\nA={_area:.3f}'
-        self._measuring = not self._measuring

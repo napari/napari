@@ -240,8 +240,3 @@ def _project(ll: LayerList, axis: int = 0, mode: str = 'max') -> None:
     )
 
     ll.append(new)
-
-
-def _toggle_measure_shapes(ll: LayerList):
-    for lay in ll.selection:
-        lay.toggle_measures()

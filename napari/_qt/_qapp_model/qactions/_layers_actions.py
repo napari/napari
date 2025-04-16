@@ -1,8 +1,6 @@
 from app_model.types import Action, SubmenuItem
 
 from napari._app_model.constants import MenuGroup, MenuId
-from napari._app_model.context import LayerListSelectionContextKeys as LLSCK
-from napari.layers import _layer_actions
 from napari.utils.translations import trans
 
 LAYERS_SUBMENUS = [
@@ -105,12 +103,4 @@ LAYERS_SUBMENUS = [
 ]
 
 # placeholder, add actions here!
-LAYERS_ACTIONS: list[Action] = [
-    Action(
-        id='napari.layers.measure.shape',
-        title='Toggle shapes measuring',
-        callback=_layer_actions._toggle_measure_shapes,
-        menus=[MenuId.MENUBAR_LAYERS.LAYERS_MEASURE, MenuId.LAYERLIST_CONTEXT],
-        enablement=LLSCK.all_selected_layers_shapes,
-    ),
-]
+LAYERS_ACTIONS: list[Action] = []
