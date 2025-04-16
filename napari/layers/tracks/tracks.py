@@ -616,7 +616,7 @@ class Tracks(Layer):
         """return the vertex colors according to the currently selected
         property"""
         return self._track_colors
-    
+
     @track_colors.setter
     def track_colors(self, colors: np.ndarray) -> None:
         """set the vertex colors according to the currently selected
