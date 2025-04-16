@@ -303,7 +303,7 @@ def test_track_coloring() -> None:
     data[:, 1] = np.arange(100)
     layer = Tracks(data)
 
-    colors = np.random.randint(low=0, high=256, size=(100, 4))
+    colors = np.random.random(size=(100, 4))
     layer.track_colors = colors
 
     assert np.array_equal(layer._track_colors, colors)
