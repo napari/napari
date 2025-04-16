@@ -1702,9 +1702,13 @@ class Window:
             extent, _, _, total_size = (
                 self._qt_viewer.viewer._get_scene_parameters()
             )
+            extent_scale = min(
+                self._qt_viewer.viewer.layers.extent.step[-ndisplay:]
+            )
 
             if ndisplay == 2:
-                size = np.array(total_size[-ndisplay:]).astype(int)
+                # adjust size by the scale, to return the size in real pixels
+                size = np.ceil(total_size / extent_scale).astype(int)
 
             if ndisplay == 3:
                 size = self._qt_viewer.viewer._calculate_bounding_box(
@@ -1712,6 +1716,8 @@ class Window:
                     view_direction=self._qt_viewer.viewer.camera.view_direction,
                     up_direction=self._qt_viewer.viewer.camera.up_direction,
                 )
+                # adjust size by the scale, to return the size in real pixels
+                size = np.ceil(size / extent_scale).astype(int)
 
         if size is not None:
             size = np.asarray(size) / self._qt_window.devicePixelRatio()

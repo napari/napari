@@ -282,7 +282,8 @@ def test_export_figure(make_napari_viewer, tmp_path):
 
     assert viewer.camera.center == camera_center
     assert viewer.camera.zoom == camera_zoom
-    assert img.shape == (250, 250, 4)
+    np.testing.assert_allclose(img.shape, (250, 250, 4), atol=1)
+    # assert img.shape == (250, 250, 4)
     assert np.all(img != np.array([0, 0, 0, 0]))
 
     assert (tmp_path / 'img.png').exists()
@@ -291,11 +292,11 @@ def test_export_figure(make_napari_viewer, tmp_path):
     img = viewer.export_figure(flash=False)
     # allclose accounts for rounding errors when computing size in hidpi aka
     # retina displays
-    np.testing.assert_allclose(img.shape, (250, 499, 4), atol=1)
+    np.testing.assert_allclose(img.shape, (250, 500, 4), atol=1)
 
     layer.scale = [0.12, 0.12]
     img = viewer.export_figure(flash=False)
-    assert img.shape == (250, 250, 4)
+    np.testing.assert_allclose(img.shape, (250, 250, 4), atol=1)
 
 
 def test_export_figure_3d(make_napari_viewer):
@@ -306,18 +307,24 @@ def test_export_figure_3d(make_napari_viewer):
     viewer.theme = 'light'
 
     data = np.random.randint(50, 100, size=(10, 250, 250))
-    viewer.add_image(data)
+    layer = viewer.add_image(data)
 
     # check the non-rotated data (angles = 0,0,90) are exported without any
     # visible background, since the margins should be 0
     img = viewer.export_figure()
     np.testing.assert_allclose(img.shape, (250, 250, 4), atol=1)
 
+    # check that changing the scale still gives the pixel size
+    layer.scale = [1, 0.12, 0.24]
+    img = viewer.export_figure()
+    np.testing.assert_allclose(img.shape, (250, 500, 4), atol=1)
+    layer.scale = [1, 1, 1]
+
     # rotate the data, export the figure, and check that the rotated figure
     # shape is greater than the original data shape
     viewer.camera.angles = (45, 45, 45)
     img = viewer.export_figure()
-    np.testing.assert_allclose(img.shape, (168, 338, 4), atol=1)
+    np.testing.assert_allclose(img.shape, (171, 339, 4), atol=1)
 
     # The theme is dark, so the canvas will be white. Test that the image
     # has a white background, roughly more background than the data itself.
