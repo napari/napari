@@ -664,34 +664,39 @@ def triangulate_face_and_edges(
 
     Returns
     -------
-    face : tuple[np.ndarray, np.ndarray]
-        Tuple of vertices and triangles of the edges.
-    edges : tuple[np.ndarray, np.ndarray, np.ndarray]
-        Tuple of vertices, offsets, and triangles of the face.
+    face_tri : tuple[np.ndarray, np.ndarray]
+        Tuple of vertices and triangles of the face.
+    edge_tri : tuple[np.ndarray, np.ndarray, np.ndarray]
+        Tuple of vertices, offsets, and triangles of the edges.
     """
     data2d, axis, value = find_planar_axis(polygon_vertices)
 
     if not len(data2d) or is_collinear(data2d):
-        return (
+        face_tri = (
             np.empty((0, polygon_vertices.shape[1]), dtype=np.float32),
             np.empty((0, 3), dtype=np.int32),
-        ), triangulate_edge(polygon_vertices, closed=True)
+        )
+        edge_tri = triangulate_edge(polygon_vertices, closed=True)
+        return face_tri, edge_tri
 
     if _triangulate_dispatch.is_convex(data2d):
-        face_triangulation = _fan_triangulation(data2d)
-        return (
-            _fix_vertices_if_needed(
-                face_triangulation[0], axis=axis, value=value
-            ),
-            face_triangulation[1],
-        ), triangulate_edge(polygon_vertices, closed=True)
+        vertices, triangles = _fan_triangulation(data2d)
+        face_tri = (
+            _fix_vertices_if_needed(vertices, axis=axis, value=value),
+            triangles,
+        )
+        edge_tri = triangulate_edge(polygon_vertices, closed=True)
+        return face_tri, edge_tri
 
     raw_vertices, edges = _triangulate_dispatch.normalize_vertices_and_edges(
         data2d, close=True
     )
 
     try:
-        face_triangulation = _triangulate_face(
+        # Triangulation algorithms are brittle and can often fail with
+        # malformed vertex data. Therefore, we run the triangulation in a
+        # try/except, and save polygon data if it raises an exception.
+        vertices, triangles = _triangulate_face(
             raw_vertices.copy(), edges.copy(), polygon_vertices
         )
     except Exception as e:  # pragma: no cover
@@ -702,22 +707,20 @@ def triangulate_face_and_edges(
         raise RuntimeError(
             f'Triangulation failed. Data saved to {path} and {text_path}'
         ) from e
-    face_triangulation = (
-        _fix_vertices_if_needed(face_triangulation[0], axis=axis, value=value),
-        face_triangulation[1],
+
+    face_tri = (
+        _fix_vertices_if_needed(vertices, axis=axis, value=value),
+        triangles,
     )
+
     if len(edges) == len(polygon_vertices):
         # There is no removed edge
-        edges_triangulation = triangulate_edge(polygon_vertices, closed=True)
-
+        edge_tri = triangulate_edge(polygon_vertices, closed=True)
     else:
         # There is at least one removed edge
+        edge_tri = reconstruct_and_triangulate_edge(raw_vertices, edges)
 
-        edges_triangulation = reconstruct_and_triangulate_edge(
-            raw_vertices, edges
-        )
-
-    return face_triangulation, edges_triangulation
+    return face_tri, edge_tri
 
 
 @overload
