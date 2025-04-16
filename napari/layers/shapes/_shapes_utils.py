@@ -625,9 +625,9 @@ def _fix_vertices_if_needed(
     vertices: CoordinateArray2D, axis: int | None, value: float | None
 ) -> CoordinateArray:
     """Ensure vertices are planar along a given axis.
-    
+
     If an axis and value are provided, this function inserts the value as
-    a new coordinate along the given axis. 
+    a new coordinate along the given axis.
     Used to convert 2D vertices in 3D vertices along the plane.
 
     Parameters
