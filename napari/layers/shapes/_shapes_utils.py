@@ -6,7 +6,6 @@ import typing
 from typing import TYPE_CHECKING, overload
 
 import numpy as np
-from scipy import sparse
 from skimage import measure
 from skimage.draw import line, polygon2mask
 from vispy.geometry import PolygonData
@@ -933,84 +932,6 @@ def triangulate_edge(
 
     # offsets[2,1] = -0.5
     return centers, offsets, triangles
-
-
-def _enclosing(
-    bbox0_topleft, bbox0_bottomright, bbox1_topleft, bbox1_bottomright
-):
-    """Return true if bbox0 encloses bbox1."""
-    return np.all(bbox0_topleft <= bbox1_topleft) and np.all(
-        bbox0_bottomright >= bbox1_bottomright
-    )
-
-
-def _indices(labels_array):
-    """Return csr_matrix where mat[i, j] is 1 iff labels_array[j] == i.
-
-    Uses linear indices if labels_array has more than one dimension.
-
-    See for discussion:
-    https://github.com/scikit-image/scikit-image/issues/4855
-    """
-    linear_labels = labels_array.reshape(-1)
-    idxs = np.arange(linear_labels.size)
-    label_idxs = sparse.coo_matrix(
-        (np.broadcast_to(1, idxs.size), (linear_labels, idxs))
-    ).tocsr()
-    return label_idxs
-
-
-def _get_idxs(label2idxs_csr: sparse.csr_matrix, i: int) -> npt.NDArray:
-    """Fast access to the nonzero indices corresponding to row i."""
-    u, v = label2idxs_csr.indptr[i : i + 2]
-    return label2idxs_csr.indices[u:v]
-
-
-def _remove_internal_edges(path, keep_holes=True):
-    """Remove holes from a path representing a polygon.
-
-    Holes are represented as vertices winding in the opposite direction to the
-    enclosing polygon. They depart and reenter the enclosing polygon from the
-    same vertex, so that the edge appears twice.
-
-    This function removes the edge connecting the perimiter to the hole, finds
-    the connected components among the remaining edges, and removes all
-    components except the one with the largest extent.
-    """
-    v, e = _triangulate_dispatch.normalize_vertices_and_edges(path, close=True)
-    n_edge = len(e)
-    if n_edge == 0:
-        # if there's not enough edges in the path, return fast.
-        # Note: this condition can probably be expanded: the smallest hole
-        # is 3 edges within 3 edges (a triangle within a triangle), so we
-        # should be able to use this exit with n_edge < 6. However, there may
-        # be some edge cases to consider when drawing partial polygons
-        return path
-    m = np.max(e)
-    csr = sparse.coo_matrix(
-        (np.ones(n_edge), tuple(e.T)), shape=(m + 1, m + 1)
-    ).tocsr()
-    n_comp, labels = sparse.csgraph.connected_components(csr, directed=False)
-    comp2idxs = _indices(labels)
-    idxs = [_get_idxs(comp2idxs, i) for i in range(n_comp)]
-    # having found the connected components, we make sure we sort the vertices
-    # in adjacent sequence.
-    # TODO: Check whether we can simplify this step.
-    #  This *might* be unnecessary work because the unique vertices might be
-    #  in the correct order anyway.
-    path_orders = [
-        sparse.csgraph.depth_first_order(
-            csr, idx[0], directed=False, return_predecessors=False
-        )
-        for idx in idxs
-    ]
-    paths = [v[path_order] for path_order in path_orders]
-    if not keep_holes:
-        # any holes will necessarily have a smaller span than the enclosing
-        # polygon, so it is sufficient to check the ptp (max-min) of each array
-        # along an arbitrary axis
-        paths = [max(paths, key=lambda p: np.ptp(p[:, 0]))]
-    return paths
 
 
 def _combine_meshes(meshes_list):
