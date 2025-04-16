@@ -2,7 +2,7 @@ from functools import partial
 
 import numpy as np
 
-from napari.layers.shapes import Shapes
+import napari
 from napari.layers.shapes._shapes_models import (
     Ellipse,
     Line,
@@ -84,18 +84,18 @@ def update_features_with_measures(shapes_layer, event=None):
     shapes_layer.refresh_text()
 
 
-def _is_measuring(shapes_layer):
-    """Check if the layer is measuring by inspecting callbacks."""
+def get_connected_callback(shapes_layer):
+    """Get the connected measure callback if present."""
     for callback in shapes_layer.events.set_data.callbacks:
         f = callback[0]() if isinstance(callback, tuple) else callback
-        if f is update_features_with_measures:
-            return True
-    return False
+        if isinstance(f, partial) and f.func is update_features_with_measures:
+            return f
+    return None
 
 
-def toggle_shape_measures(shapes_layer: Shapes) -> None:
+def toggle_shape_measures(shapes_layer: napari.layers.Shapes) -> None:
     """Toggle between updating and displaying measures and not."""
-    if not _is_measuring(shapes_layer):
+    if not get_connected_callback(shapes_layer):
         shapes_layer.features[['_perimeter', '_area']] = 0.0
         shapes_layer.feature_defaults = (
             shapes_layer.feature_defaults.to_dict().update(
@@ -111,14 +111,12 @@ def toggle_shape_measures(shapes_layer: Shapes) -> None:
         shapes_layer.text = 'P = {_perimeter:.3f}\nA={_area:.3f}'
     else:
         shapes_layer.events.set_data.disconnect(
-            shapes_layer._update_features_with_measures
+            get_connected_callback(shapes_layer)
         )
 
         shapes_layer.features = shapes_layer.features.drop(
             columns=['_perimeter', '_area']
         )
-        shapes_layer.feature_defaults = shapes_layer.feature_defaults.drop(
-            columns=['_perimeter', '_area']
-        )
+        # feature_defaults are dropped automatically
 
         shapes_layer.text = ''
