@@ -738,8 +738,7 @@ def reconstruct_and_triangulate_edge(
 def reconstruct_and_triangulate_edge(
     vertices: CoordinateArray, edges: EdgeArray
 ) -> tuple[CoordinateArray, CoordinateArray, TriangleArray]:
-    """Based on the vertices and edges of a shape, reconstruct the list of shapes
-    and triangulate them.
+    """Triangulate edges when vertices form multiple disjoint polygons.
 
     Parameters
     ----------
@@ -752,6 +751,8 @@ def reconstruct_and_triangulate_edge(
 
     Returns
     -------
+    edges_tri: tuple[ndarray, ndarray, ndarray]
+        vertices, offsets, and triangles of the edge triangulation(s).
     """
     polygon_list = _triangulate_dispatch.reconstruct_polygons_from_edges(
         vertices, edges
@@ -798,6 +799,9 @@ def triangulate_face(
         polygon_vertices, close=True
     )
     try:
+        # Triangulation algorithms are brittle and can often fail with
+        # malformed vertex data. Therefore, we run the triangulation in a
+        # try/except, and save polygon data if it raises an exception.
         return _triangulate_face(raw_vertices, edges, polygon_vertices)
     except Exception as e:  # pragma: no cover
         path = tempfile.mktemp(prefix='napari_triang_', suffix='.npz')
