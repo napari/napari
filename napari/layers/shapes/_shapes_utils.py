@@ -934,60 +934,6 @@ def triangulate_edge(
     return centers, offsets, triangles
 
 
-def _combine_meshes(meshes_list):
-    """Combine a list of (centers, offsets, triangles) meshes into one.
-
-    Meshes are generated as tuples of (centers, offsets, triangles), where the
-    triangles index into the centers and offsets arrays (see
-    :func:`generate_2D_edge_meshes`). To convert multiple instances into a
-    single mesh, the centers and offsets can simply be concatenated, but the
-    triangle indices must be incremented by the cumulative length of the
-    previous centers arrays.
-
-    Parameters
-    ----------
-    meshes_list : list of tuple of arrays
-        A list where each element is a tuple of (centers, offsets, triangles).
-        Centers is an Mx2 or Mx3 array, offsets is an Mx2 or Mx3 array (where
-        M is the number of vertices in the triangulation), and triangles is a
-        Px3 array of integers, where each integer is an index into the centers
-        array.
-
-    Returns
-    -------
-    centers : np.ndarray of float
-        Mx2 or Mx3 array of vertex coordinates.
-    offsets : np.ndarray of float
-        Mx2 or Mx3 array of offsets for edge width.
-    triangles : np.ndarray of int
-        Px3 array of indices into centers to form the triangles.
-    """
-    if len(meshes_list) == 1:
-        # nothing to do in this case!
-        return meshes_list[0]
-    centers_list, offsets_list, triangles_list = list(
-        zip(*meshes_list, strict=False)
-    )
-    # Prepend zero because np.cumsum is flawed. See:
-    # https://mail.python.org/archives/list/numpy-discussion@python.org/message/PCFRGU5B4OLYA7NQDWX3Q5Q2Y5IBGP65/
-    # and discussion in that thread and linked GitHub issues and threads.
-    # cumulative size offsets will be one too long but we don't care, zip will
-    # take care of it.
-    cumulative_size_offsets = np.cumsum([0] + [len(c) for c in centers_list])
-    triangles = np.concatenate(
-        [
-            t + off
-            for t, off in zip(
-                triangles_list, cumulative_size_offsets, strict=False
-            )
-        ],
-        axis=0,
-    )
-    centers = np.concatenate(centers_list, axis=0)
-    offsets = np.concatenate(offsets_list, axis=0)
-    return centers, offsets, triangles
-
-
 def generate_tube_meshes(path, closed=False, tube_points=10):
     """Generates list of mesh vertices and triangles from a path
 
