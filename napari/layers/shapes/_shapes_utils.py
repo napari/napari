@@ -665,9 +665,9 @@ def triangulate_face_and_edges(
     Returns
     -------
     face : tuple[np.ndarray, np.ndarray]
-        Tuple of vertices, offsets, and triangles of the face.
-    edges : tuple[np.ndarray, np.ndarray, np.ndarray]
         Tuple of vertices and triangles of the edges.
+    edges : tuple[np.ndarray, np.ndarray, np.ndarray]
+        Tuple of vertices, offsets, and triangles of the face.
     """
     data2d, axis, value = find_planar_axis(polygon_vertices)
 
