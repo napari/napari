@@ -624,14 +624,16 @@ def _cull_triangles_not_in_poly(vertices, triangles, poly):
 def _fix_vertices_if_needed(
     vertices: CoordinateArray2D, axis: int | None, value: float | None
 ) -> CoordinateArray:
-    """Fix the vertices if they are not planar along the given axis.
+    """Ensure vertices are planar along a given axis.
+    
+    If an axis and value are provided, this function inserts the value as
+    a new coordinate along the given axis. 
+    Used to convert 2D vertices in 3D vertices along the plane.
 
     Parameters
     ----------
     vertices: np.ndarray[np.floating], shape (N, 2)
-        The vertices of the triangulation. Holes in the polygon are defined by
-        an embedded polygon that starts from an arbitrary point in the
-        enclosing polygon and wind in the opposite direction.
+        The vertices of the triangulation.
     axis: int
         The axis along which the vertices are planar.
     value: float
