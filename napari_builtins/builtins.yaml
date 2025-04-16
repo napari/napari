@@ -134,6 +134,10 @@ contributions:
       title: Generate 3d_balls sample
       python_name: napari_builtins._ndims_balls:labeled_particles3d
 
+  menus:
+    napari/layers/filter:
+      - command: napari.filters.gaussian
+      - command: napari.filters.sobel
   readers:
     - command: napari.get_reader
       accepts_directories: true
