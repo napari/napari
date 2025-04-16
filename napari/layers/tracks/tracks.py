@@ -619,8 +619,7 @@ class Tracks(Layer):
 
     @track_colors.setter
     def track_colors(self, colors: np.ndarray) -> None:
-        """set the vertex colors according to the currently selected
-        property"""
+        """set the vertex colors based on the currently selected property and emit an event"""
         self._track_colors = colors
         self.events.color_by()
 
