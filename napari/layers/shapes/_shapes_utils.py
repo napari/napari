@@ -593,19 +593,23 @@ def triangulate_ellipse(
 def _cull_triangles_not_in_poly(vertices, triangles, poly):
     """Remove triangles that are not inside the polygon.
 
+    Unlike VisPy, triangle's constrained Delaunay triangulation
+    returns triangles inside the hole as well. (I guess in case you want
+    to render holes but in a different color, for example.) In our case,
+    we want to get rid of them, so we cull them with some NumPy
+    calculations.
+
     Parameters
     ----------
     vertices: np.ndarray[np.floating], shape (N, 2)
-        The vertices of the triangulation. Holes in the polygon are defined by
-        an embedded polygon that starts from an arbitrary point in the
-        enclosing polygon and wind in the opposite direction.
+        The vertices of the triangulation.
     triangles: np.ndarray[np.intp], shape (M, 3)
         Triangles in the triangulation, defined by three indices into the
         vertex array.
     poly: np.ndarray[np.floating], shape (P, 2)
-        The vertices of the polygon. Holes in the polygon are defined by
-        an embedded polygon that starts from an arbitrary point in the
-        enclosing polygon and wind in the opposite direction.
+        The vertices of the polygon, in order. Holes in the polygon are
+        defined by an embedded polygon that starts from an arbitrary point in
+        the enclosing polygon and wind in the opposite direction.
 
     Returns
     -------
