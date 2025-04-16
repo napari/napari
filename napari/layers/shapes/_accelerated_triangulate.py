@@ -795,6 +795,10 @@ def reconstruct_polygons_from_edges(
 ) -> list[CoordinateArray2D] | list[CoordinateArray3D]:
     """Reconstruct polygons from vertices and edges.
 
+    This function takes the output from `normalize_vertices_and_edges` — which
+    is a vertex set and a list of possibly-disjoint edges — and produces a list
+    of independent polygons.
+
     The algorithm reconstructs sub polygons using recursion.
     Starting from the first edge, it traverses the graph until it reaches starting vertex.
     After it, the algorithm iterates until reach the first non visited edge.
@@ -867,7 +871,10 @@ def reconstruct_polygons_from_edges(
                     closed = True
                 break  # move on as soon as we find the next edge
             if not found:
-                # In case of an open chain, exit.
+                # All polygons sent as input to this function *should* be
+                # closed. However, if a user accidentally passes in an open
+                # chain of vertices, without this break, we would enter an
+                # infinite loop. Therefore, we leave it here for safety.
                 break
         polygons.append([vertices[x] for x in poly])
     return polygons

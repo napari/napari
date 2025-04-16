@@ -488,7 +488,9 @@ def orientation(p: np.ndarray, q: np.ndarray, r: np.ndarray) -> np.ndarray:
     -------
     val : int
         One of (-1, 0, 1). 0 if p, q, r are collinear, 1 if clockwise, and -1
-        if counterclockwise.
+        if counterclockwise. (These definitions assume napari's default
+        reference frame, in which the 0th axis is y pointing down, and the
+        1st axis is x, pointing right.)
     """
     val = (q[1] - p[1]) * (r[0] - q[0]) - (q[0] - p[0]) * (r[1] - q[1])
     val = np.sign(val)
@@ -497,7 +499,8 @@ def orientation(p: np.ndarray, q: np.ndarray, r: np.ndarray) -> np.ndarray:
 
 
 def _common_orientation(poly: npt.NDArray) -> int | None:
-    """Check whether a polygon has the same orientation for all its angles. and return the orientation.
+    """Check whether a polygon has the same orientation for all its angles.
+    and return the orientation.
 
     Parameters
     ----------
@@ -508,7 +511,10 @@ def _common_orientation(poly: npt.NDArray) -> int | None:
     -------
     int or None
         if all angles have same orientation return it, otherwise None.
-        Possible values: -1 if all angles are counterclockwise, 0 if all angles are collinear, 1 if all angles are clockwise
+        Possible values: -1 if all angles are counterclockwise, 0 if all angles
+        are collinear, 1 if all angles are clockwise.(These definitions
+        assume napari's default reference frame, in which the 0th axis is y,
+        pointing down, and the 1st axis is x, pointing right.)
     """
     if poly.shape[0] < 3:
         return None
