@@ -1706,18 +1706,15 @@ class Window:
                 self._qt_viewer.viewer.layers.extent.step[-ndisplay:]
             )
 
-            if ndisplay == 2:
-                # adjust size by the scale, to return the size in real pixels
-                size = np.ceil(total_size / extent_scale).astype(int)
-
             if ndisplay == 3:
-                size = self._qt_viewer.viewer._calculate_bounding_box(
+                total_size = self._qt_viewer.viewer._calculate_bounding_box(
                     extent=extent,
                     view_direction=self._qt_viewer.viewer.camera.view_direction,
                     up_direction=self._qt_viewer.viewer.camera.up_direction,
                 )
-                # adjust size by the scale, to return the size in real pixels
-                size = np.ceil(size / extent_scale).astype(int)
+
+            # adjust size by the scale, to return the size in real pixels
+            size = np.ceil(total_size / extent_scale).astype(int)
 
         if size is not None:
             size = np.asarray(size) / self._qt_window.devicePixelRatio()
