@@ -5,12 +5,14 @@ import numpy as np
 from vispy.scene import VisualNode
 from vispy.visuals.transforms import MatrixTransform
 
-from napari._vispy.overlays.base import VispyBaseOverlay
+from napari._vispy.overlays.base import (
+    VispyBaseOverlay,
+    VispyCanvasOverlay,
+    VispySceneOverlay,
+)
 from napari._vispy.utils.gl import BLENDING_MODES, get_max_texture_sizes
 from napari.components.overlays.base import (
-    CanvasOverlay,
     Overlay,
-    SceneOverlay,
 )
 from napari.layers import Layer
 from napari.utils.events import disconnect_events
@@ -84,6 +86,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
             self._on_experimental_clipping_planes_change
         )
         self.layer.events._overlays.connect(self._on_overlays_change)
+        self.node.events.parent_change.connect(self._on_parent_change)
 
     @property
     def _master_transform(self):
@@ -131,6 +134,11 @@ class VispyBaseLayer(ABC, Generic[_L]):
 
     def _on_visible_change(self):
         self.node.visible = self.layer.visible
+        for overlay_visual in self.overlays.values():
+            if isinstance(overlay_visual, VispyCanvasOverlay):
+                # needs to be done manually because it's not parented to the visual
+                # but to the viewbox
+                overlay_visual.node.visible = self.layer.visible
 
     def _on_opacity_change(self):
         self.node.opacity = self.layer.opacity
@@ -185,18 +193,27 @@ class VispyBaseLayer(ABC, Generic[_L]):
                     overlay, layer=self.layer
                 )
             self.overlays[overlay] = overlay_visual
-            if isinstance(overlay, CanvasOverlay):
-                overlay_visual.node.parent = self.node.parent.parent  # viewbox
-            elif isinstance(overlay, SceneOverlay):
-                overlay_visual.node.parent = self.node
-
-            overlay_visual.node.parent = self.node
-            overlay_visual.reset()
 
         for overlay in list(self.overlays):
             if overlay not in overlay_models:
                 overlay_visual = self.overlays.pop(overlay)
                 overlay_visual.close()
+
+        self._on_parent_change()
+
+    def _on_parent_change(self, event=None):
+        for overlay_visual in self.overlays.values():
+            if isinstance(overlay_visual, VispyCanvasOverlay):
+                # this can happen when the layer is not yet in a canvas,
+                # in which case we skip
+                if self.node.parent is not None:
+                    overlay_visual.node.parent = (
+                        self.node.parent.parent
+                    )  # viewbox
+            elif isinstance(overlay_visual, VispySceneOverlay):
+                overlay_visual.node.parent = self.node
+
+            overlay_visual.reset()
 
     def _on_matrix_change(self):
         dims_displayed = self.layer._slice_input.displayed

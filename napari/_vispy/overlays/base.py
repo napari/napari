@@ -73,9 +73,9 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         self.node.events.parent_change.connect(self._on_parent_change)
 
     def _on_parent_change(self, event):
-        if event.old is not None:
-            disconnect_events(self, event.old.canvas)
-        if event.new is not None and self.node.canvas is not None:
+        if event.old is not None and event.old.canvas is not None:
+            disconnect_events(event.old.canvas.events, self.node)
+        if event.new is not None and event.new.canvas is not None:
             # connect the canvas resize to recalculating the position
             event.new.canvas.events.resize.connect(self._on_position_change)
 
