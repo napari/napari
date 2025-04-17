@@ -27,23 +27,24 @@ try:
 except ImportError:
     from napari.benchmarks.utils import Skip
 
+try:
+    from napari.utils.triangulation_backend import TriangulationBackend
+except ImportError:
 
-class TriangulationBackend(StrEnum):
-    partsegcore = (
-        auto()
-    )  # data preprocessing using PartSegCore (https://partseg.github.io)
-    bermuda = (
-        auto()
-    )  # data preprocessing using bermuda (https://github.com/napari/bermuda)
-    triangle = auto()  # data preprocessing using numba, edge triangulation using numba, triangulation using triangle
-    numba = auto()  # data preprocessing and edge triangulation using numba, triangulation using vispy
-    pure_python = auto()  # data preprocessing, edge triangulation, and triangulation using python and vispy
+    class TriangulationBackend(StrEnum):
+        partsegcore = (
+            auto()
+        )  # data preprocessing using PartSegCore (https://partseg.github.io)
+        bermuda = auto()  # data preprocessing using bermuda (https://github.com/napari/bermuda)
+        triangle = auto()  # data preprocessing using numba, edge triangulation using numba, triangulation using triangle
+        numba = auto()  # data preprocessing and edge triangulation using numba, triangulation using vispy
+        pure_python = auto()  # data preprocessing, edge triangulation, and triangulation using python and vispy
 
-    def __str__(self):
-        return self.name
+        def __str__(self):
+            return self.name
 
-    def __repr__(self):
-        return self.name
+        def __repr__(self):
+            return self.name
 
 
 backends = list(TriangulationBackend)

@@ -19,6 +19,8 @@ from napari.layers.shapes._shapes_utils import (
     triangulate_edge,
     triangulate_face,
     triangulate_face_and_edges,
+    triangulate_face_triangle,
+    triangulate_face_vispy,
 )
 from napari.layers.shapes.shape_types import CoordinateArray, TriangleArray
 from napari.utils.misc import argsort
@@ -447,7 +449,49 @@ class Shape(ABC):
         edge : bool
             Bool which determines if the edge need to be traingulated
         """
-        self._set_meshes_py(data, closed=closed, face=face, edge=edge)
+        data = remove_path_duplicates(data, closed=closed)
+        if edge and face:
+            (f_vertices, f_triangles), (centers, offsets, triangles) = (
+                triangulate_face_and_edges(data, triangulate_face_triangle)
+            )
+            self._edge_vertices = centers
+            self._edge_offsets = offsets
+            self._edge_triangles = triangles
+            self._face_vertices = f_vertices
+            self._face_triangles = f_triangles
+            return
+
+        if edge:
+            centers, offsets, triangles = triangulate_edge(data, closed=closed)
+            self._edge_vertices = centers
+            self._edge_offsets = offsets
+            self._edge_triangles = triangles
+        else:
+            self._set_empty_edge()
+        ndim = data.shape[1]
+        # this method is called right before display, on sliced data, so
+        # ndim can only be 2 or 3. If 3D, shapes must be confined to a plane
+        # along *some* axis. We find that axis and the plane coordinate, then
+        # proceed as if 2D. If 2D, the data is passed through unchanged. And
+        # if there is no planar axis, we cannot triangulate and we return an
+        # empty data array
+        data2d, axis, value = find_planar_axis(data)
+
+        # set empty data as fallback
+        self._set_empty_face()
+        if face and not is_collinear(data2d):
+            vertices, triangles = triangulate_face(
+                data2d, triangulate_face_triangle
+            )
+            if ndim == 3 and axis is not None and value is not None:
+                # axis and value can be None if data 3D but not limited to an
+                # axis-aligned plane. However in that situation data2d will be
+                # empty, is_collinear is True, and we will never get here. But
+                # we check anyway for mypy's sake
+                vertices = np.insert(vertices, axis, value, axis=1)
+            if len(triangles) > 0:
+                self._face_vertices = vertices
+                self._face_triangles = triangles
 
     def _set_meshes_py(
         self,
@@ -472,7 +516,7 @@ class Shape(ABC):
         data = remove_path_duplicates(data, closed=closed)
         if edge and face:
             (f_vertices, f_triangles), (centers, offsets, triangles) = (
-                triangulate_face_and_edges(data)
+                triangulate_face_and_edges(data, triangulate_face_vispy)
             )
             self._edge_vertices = centers
             self._edge_offsets = offsets
@@ -487,11 +531,7 @@ class Shape(ABC):
             self._edge_offsets = offsets
             self._edge_triangles = triangles
         else:
-            self._edge_vertices = np.empty(
-                (0, self.ndisplay), dtype=np.float32
-            )
-            self._edge_offsets = np.empty((0, self.ndisplay), dtype=np.float32)
-            self._edge_triangles = np.empty((0, 3), dtype=np.uint32)
+            self._set_empty_edge()
 
         ndim = data.shape[1]
         # this method is called right before display, on sliced data, so
@@ -503,11 +543,12 @@ class Shape(ABC):
         data2d, axis, value = find_planar_axis(data)
 
         # set empty data as fallback
-        self._face_vertices = np.empty((0, self.ndisplay), dtype=np.float32)
-        self._face_triangles = np.empty((0, 3), dtype=np.uint32)
+        self._set_empty_face()
 
         if face and not is_collinear(data2d):
-            vertices, triangles = triangulate_face(data2d)
+            vertices, triangles = triangulate_face(
+                data2d, triangulate_face_vispy
+            )
             if ndim == 3 and axis is not None and value is not None:
                 # axis and value can be None if data 3D but not limited to an
                 # axis-aligned plane. However in that situation data2d will be

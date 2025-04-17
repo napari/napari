@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, overload
 import numpy as np
 from skimage import measure
 from skimage.draw import line, polygon2mask
-from vispy.geometry import PolygonData
+from vispy.geometry import Triangulation
 from vispy.visuals.tube import _frenet_frames
 
 from napari.layers.shapes import (
@@ -652,6 +652,7 @@ def _fix_vertices_if_needed(
 
 def triangulate_face_and_edges(
     polygon_vertices: CoordinateArray,
+    triangulate_face_: typing.Callable,
 ) -> tuple[
     tuple[np.ndarray, np.ndarray], tuple[np.ndarray, np.ndarray, np.ndarray]
 ]:
@@ -692,21 +693,9 @@ def triangulate_face_and_edges(
         data2d, close=True
     )
 
-    try:
-        # Triangulation algorithms are brittle and can often fail with
-        # malformed vertex data. Therefore, we run the triangulation in a
-        # try/except, and save polygon data if it raises an exception.
-        vertices, triangles = _triangulate_face(
-            raw_vertices.copy(), edges.copy(), polygon_vertices
-        )
-    except Exception as e:  # pragma: no cover
-        path = tempfile.mktemp(prefix='napari_triang_', suffix='.npz')
-        text_path = tempfile.mktemp(prefix='napari_triang_', suffix='.txt')
-        np.savez(path, data=polygon_vertices)
-        np.savetxt(text_path, polygon_vertices)
-        raise RuntimeError(
-            f'Triangulation failed. Data saved to {path} and {text_path}'
-        ) from e
+    vertices, triangles = triangulate_face_(
+        raw_vertices.copy(), edges.copy(), polygon_vertices
+    )
 
     face_tri = (
         _fix_vertices_if_needed(vertices, axis=axis, value=value),
@@ -776,6 +765,7 @@ def reconstruct_and_triangulate_edge(
 
 def triangulate_face(
     polygon_vertices: CoordinateArray2D,
+    triangulate_face_: typing.Callable,
 ) -> tuple[CoordinateArray2D, TriangleArray]:
     """Determines the triangulation of the face of a shape.
 
@@ -798,23 +788,11 @@ def triangulate_face(
     raw_vertices, edges = _triangulate_dispatch.normalize_vertices_and_edges(
         polygon_vertices, close=True
     )
-    try:
-        # Triangulation algorithms are brittle and can often fail with
-        # malformed vertex data. Therefore, we run the triangulation in a
-        # try/except, and save polygon data if it raises an exception.
-        return _triangulate_face(raw_vertices, edges, polygon_vertices)
-    except Exception as e:  # pragma: no cover
-        path = tempfile.mktemp(prefix='napari_triang_', suffix='.npz')
-        text_path = tempfile.mktemp(prefix='napari_triang_', suffix='.txt')
-        np.savez(path, data=polygon_vertices)
-        np.savetxt(text_path, polygon_vertices)
-        raise RuntimeError(
-            f'Triangulation failed. Data saved to {path} and {text_path}'
-        ) from e
+    return triangulate_face_(raw_vertices, edges, polygon_vertices)
 
 
 @overload
-def _triangulate_face(
+def triangulate_face_vispy(
     raw_vertices: CoordinateArray2D,
     edges: EdgeArray,
     polygon_vertices: CoordinateArray,
@@ -822,46 +800,67 @@ def _triangulate_face(
 
 
 @overload
-def _triangulate_face(
+def triangulate_face_vispy(
     raw_vertices: CoordinateArray3D,
     edges: EdgeArray,
     polygon_vertices: CoordinateArray,
 ) -> tuple[CoordinateArray3D, TriangleArray]: ...
 
 
-def _triangulate_face(
+def triangulate_face_vispy(
     raw_vertices: CoordinateArray,
     edges: EdgeArray,
     polygon_vertices: CoordinateArray,
 ) -> tuple[CoordinateArray, TriangleArray]:
-    if triangulate is not None:
-        # if the triangle library is installed, use it because it's faster.
-        res = triangulate(
-            {'vertices': raw_vertices, 'segments': edges}, opts='p'
+    try:
+        tri = Triangulation(raw_vertices, edges)
+        tri.triangulate()
+        vertices, triangles = tri.pts, tri.tris
+    except Exception as e:  # pragma: no cover
+        path, text_path = _save_failed_triangulation(
+            raw_vertices, backend='vispy'
         )
-        vertices = res['vertices']
-        raw_triangles = res['triangles']
-        # unlike VisPy below, triangle's constrained Delaunay triangulation
-        # returns triangles inside the hole as well. (I guess in case you want
-        # to render holes but in a different color, for example.) In our case,
-        # we want to get rid of them, so we cull them with some NumPy
-        # calculations
-        triangles = _cull_triangles_not_in_poly(
-            vertices, raw_triangles, polygon_vertices
-        )
-    else:
-        try:
-            vertices, triangles = PolygonData(
-                vertices=raw_vertices
-            ).triangulate()
-        except Exception as e:  # pragma: no cover
-            path, text_path = _save_failed_triangulation(
-                raw_vertices, backend='vispy'
-            )
-            raise RuntimeError(
-                f'Triangulation failed. Data saved to {path} and {text_path}'
-            ) from e
+        raise RuntimeError(
+            f'Triangulation failed. Data saved to {path} and {text_path}'
+        ) from e
 
+    triangles = triangles.astype(np.uint32)
+
+    return vertices, triangles
+
+
+@overload
+def triangulate_face_triangle(
+    raw_vertices: CoordinateArray2D,
+    edges: EdgeArray,
+    polygon_vertices: CoordinateArray,
+) -> tuple[CoordinateArray2D, TriangleArray]: ...
+
+
+@overload
+def triangulate_face_triangle(
+    raw_vertices: CoordinateArray3D,
+    edges: EdgeArray,
+    polygon_vertices: CoordinateArray,
+) -> tuple[CoordinateArray3D, TriangleArray]: ...
+
+
+def triangulate_face_triangle(
+    raw_vertices: CoordinateArray,
+    edges: EdgeArray,
+    polygon_vertices: CoordinateArray,
+) -> tuple[CoordinateArray, TriangleArray]:
+    res = triangulate({'vertices': raw_vertices, 'segments': edges}, opts='p')
+    vertices = res['vertices']
+    raw_triangles = res['triangles']
+    # unlike VisPy below, triangle's constrained Delaunay triangulation
+    # returns triangles inside the hole as well. (I guess in case you want
+    # to render holes but in a different color, for example.) In our case,
+    # we want to get rid of them, so we cull them with some NumPy
+    # calculations
+    triangles = _cull_triangles_not_in_poly(
+        vertices, raw_triangles, polygon_vertices
+    )
     triangles = triangles.astype(np.uint32)
 
     return vertices, triangles
