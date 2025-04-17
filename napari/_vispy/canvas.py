@@ -11,7 +11,6 @@ from vispy.scene import SceneCanvas as SceneCanvas_, Widget
 
 from napari._vispy import VispyCamera
 from napari._vispy.mouse_event import NapariMouseEvent
-from napari._vispy.overlays.base import VispyCanvasOverlay
 from napari._vispy.utils.cursor import QtCursorVisual
 from napari._vispy.utils.gl import get_max_texture_sizes
 from napari._vispy.utils.visual import create_vispy_overlay
@@ -48,9 +47,6 @@ if TYPE_CHECKING:
 
 class NapariSceneCanvas(SceneCanvas_):
     """Vispy SceneCanvas used to allow for ignoring mouse wheel events with modifiers."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
     def _process_mouse_event(self, event: MouseEvent):
         """Ignore mouse wheel events which have modifiers."""
@@ -679,28 +675,30 @@ class VispyCanvas:
         # remove stale ones if any
         for overlay in list(self._layer_overlay_to_visual[layer]):
             if overlay not in overlay_models:
-                self._disconnect_canvas_overlay_events(overlay)
                 overlay_visual = self._layer_overlay_to_visual[layer].pop(
                     overlay
                 )
+                if isinstance(overlay, CanvasOverlay):
+                    self._disconnect_canvas_overlay_events(overlay)
                 overlay_visual.close()
 
         # set parent node appropriately and connect events
         for overlay, overlay_visual in self._layer_overlay_to_visual[
             layer
         ].items():
-            if isinstance(overlay_visual, VispyCanvasOverlay):
+            if isinstance(overlay, CanvasOverlay):
                 overlay_visual.node.parent = self.view
                 self._connect_canvas_overlay_events(overlay)
             else:
                 overlay_visual.node.parent = self.layer_to_visual[layer].node
 
-            overlay_visual.node.update()
+            overlay_visual.reset()
 
     def _remove_layer_overlays_to_visual(self, layer: Layer) -> None:
         for overlay in list(self._layer_overlay_to_visual[layer]):
             overlay_visual = self._layer_overlay_to_visual[layer].pop(overlay)
-            self._disconnect_canvas_overlay_events(overlay)
+            if isinstance(overlay, CanvasOverlay):
+                self._disconnect_canvas_overlay_events(overlay)
             overlay_visual.close()
 
     def _get_ordered_visible_canvas_overlays(self):

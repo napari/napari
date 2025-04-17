@@ -127,6 +127,12 @@ class LayerOverlayMixin:
         )
         self.layer = layer
         self.layer._overlays.events.removed.connect(self.close)
+        # need manual connection here because these overlays are not necessarily
+        # always a child of the actual vispy node of the layer (eg, canvas overlays)
+        self.layer.events.visible.connect(self._on_visible_change)
+
+    def _on_visible_change(self):
+        self.node.visible = self.overlay.visible and self.layer.visible
 
     def close(self):
         disconnect_events(self.layer.events, self)
@@ -146,20 +152,3 @@ class ViewerOverlayMixin:
     def close(self):
         disconnect_events(self.viewer.events, self)
         super().close()
-
-
-class VispyLayerCanvasOverlay(LayerOverlayMixin, VispyCanvasOverlay):
-    def __init__(self, *, layer: 'Layer', overlay, node, parent=None) -> None:
-        super().__init__(
-            layer=layer,
-            node=node,
-            overlay=overlay,
-            parent=parent,
-        )
-
-        # need manual connection here because these overlays are not a child of the
-        # actual vispy node of the layer, but instead of the viewbox
-        self.layer.events.visible.connect(self._on_visible_change)
-
-    def _on_visible_change(self):
-        self.node.visible = self.overlay.visible and self.layer.visible

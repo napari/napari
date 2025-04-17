@@ -438,7 +438,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self.experimental_clipping_planes = experimental_clipping_planes
 
         # circular import
-        from napari.components.overlays import ColormapOverlay
         from napari.components.overlays.bounding_box import BoundingBoxOverlay
         from napari.components.overlays.interaction_box import (
             SelectionBoxOverlay,
@@ -488,7 +487,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 'transform_box': TransformBoxOverlay(),
                 'selection_box': SelectionBoxOverlay(),
                 'bounding_box': BoundingBoxOverlay(),
-                'colormap': ColormapOverlay(),
             }
         )
 

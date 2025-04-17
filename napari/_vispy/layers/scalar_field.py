@@ -89,6 +89,7 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
 
         self.node.parent = parent
         self.node.order = self.order
+        # reattach overlays to new node
         for child in children:
             child.parent = self.node
         self.reset()
