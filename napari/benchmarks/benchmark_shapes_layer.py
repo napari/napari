@@ -28,7 +28,7 @@ except ImportError:
     from napari.benchmarks.utils import Skip
 
 
-class BackendType(StrEnum):
+class TriangulationBackend(StrEnum):
     partsegcore = (
         auto()
     )  # data preprocessing using PartSegCore (https://partseg.github.io)
@@ -46,12 +46,12 @@ class BackendType(StrEnum):
         return self.name
 
 
-backends = list(BackendType)
+backends = list(TriangulationBackend)
 
 backend_list_complex = [
-    BackendType.partsegcore,
-    BackendType.bermuda,
-    BackendType.numba,
+    TriangulationBackend.partsegcore,
+    TriangulationBackend.bermuda,
+    TriangulationBackend.numba,
 ]
 # pure python backend is too slow for large datasets
 # triangle backend requires deduplication of vertices in #6654
@@ -90,30 +90,33 @@ class _BackendSelection:
                     getattr(_triangle_dispatch, f'{name}_py'),
                 )
 
-    def _set_settings_old(self, triangulation_backend: BackendType):
+    def _set_settings_old(self, triangulation_backend: TriangulationBackend):
         with suppress(AttributeError):
             self.prev_settings = (
                 get_settings().experimental.compiled_triangulation
             )
             get_settings().experimental.compiled_triangulation = (
                 triangulation_backend
-                in {BackendType.partsegcore, BackendType.bermuda}
+                in {
+                    TriangulationBackend.partsegcore,
+                    TriangulationBackend.bermuda,
+                }
             )
 
-    def _set_settings_new(self, triangulation_backend: BackendType):
+    def _set_settings_new(self, triangulation_backend: TriangulationBackend):
         self.prev_settings_new = (
             get_settings().experimental.triangulation_backend
         )
         if triangulation_backend in {
-            BackendType.numba,
-            BackendType.pure_python,
+            TriangulationBackend.numba,
+            TriangulationBackend.pure_python,
         }:
             val = 'none'
         else:
             val = str(triangulation_backend)
         get_settings().experimental.triangulation_backend = val
 
-    def select_backend(self, triangulation_backend: BackendType):
+    def select_backend(self, triangulation_backend: TriangulationBackend):
         """Select a desired backend for triangulation."""
         self.prev_numba = {}
         if hasattr(get_settings().experimental, 'triangulation_backend'):
@@ -124,10 +127,10 @@ class _BackendSelection:
         from napari.layers.shapes import _shapes_utils
 
         self.triangulate = _shapes_utils.triangulate
-        if triangulation_backend != BackendType.triangle:
+        if triangulation_backend != TriangulationBackend.triangle:
             # Disable the triangle backend by overriding the function
             _shapes_utils.triangulate = None
-        if triangulation_backend == BackendType.pure_python:
+        if triangulation_backend == TriangulationBackend.pure_python:
             self._disable_numba()
         else:
             self.warmup_numba()
@@ -427,7 +430,7 @@ class ShapeTriangulationNonConvexSuite(_ShapeTriangulationBaseShapeCount):
         compiled_triangulation: n_shapes == 5000
         and n_points == 128
         and shape_type == 'polygon'
-        and compiled_triangulation != BackendType.triangle,
+        and compiled_triangulation != TriangulationBackend.triangle,
         if_in_pr=skip_above_100,
     )
 
@@ -498,7 +501,7 @@ class ShapeTriangulationStarIntersectionSuite(
             or (
                 (n_shapes == 100 and n_points == 33)
                 and shape_type == 'polygon'
-                and compiled_triangulation != BackendType.triangle
+                and compiled_triangulation != TriangulationBackend.triangle
             )
         ),
     )
