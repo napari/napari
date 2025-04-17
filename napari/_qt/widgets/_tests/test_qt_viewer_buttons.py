@@ -7,12 +7,12 @@ from qtpy.QtWidgets import QApplication
 from napari._app_model._app import get_app_model
 from napari._qt.dialogs.qt_modal import QtPopup
 from napari._qt.widgets.qt_viewer_buttons import QtViewerButtons
-from napari.components.camera import (
+from napari.components.viewer_model import ViewerModel
+from napari.utils.camera_orientations import (
     DepthAxisOrientation,
     HorizontalAxisOrientation,
     VerticalAxisOrientation,
 )
-from napari.components.viewer_model import ViewerModel
 from napari.viewer import Viewer
 
 
