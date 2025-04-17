@@ -1,11 +1,11 @@
 from vispy.color import Colormap as VispyColormap
 
-from napari._vispy.overlays.base import LayerOverlayMixin, VispyCanvasOverlay
+from napari._vispy.overlays.base import VispyLayerCanvasOverlay
 from napari._vispy.visuals.colormap import Colormap
 from napari.utils.colormaps.colormap_utils import _coerce_contrast_limits
 
 
-class VispyColormapOverlay(LayerOverlayMixin, VispyCanvasOverlay):
+class VispyColormapOverlay(VispyLayerCanvasOverlay):
     def __init__(self, *, layer, overlay, parent=None) -> None:
         super().__init__(
             node=Colormap(), layer=layer, overlay=overlay, parent=parent

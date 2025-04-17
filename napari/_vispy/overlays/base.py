@@ -3,9 +3,7 @@ from typing import TYPE_CHECKING
 from vispy.visuals.transforms import MatrixTransform, STTransform
 
 from napari._vispy.utils.gl import BLENDING_MODES
-from napari.components._viewer_constants import CanvasPosition
 from napari.utils.events import disconnect_events
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from napari.layers import Layer
@@ -68,16 +66,10 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         self.y_offset = 10
         self.x_size = 0
         self.y_size = 0
+        self.x_offset_tiling = 0
+        self._canvas = None
         self.node.transform = STTransform()
         self.overlay.events.position.connect(self._on_position_change)
-        self.node.events.parent_change.connect(self._on_parent_change)
-
-    def _on_parent_change(self, event):
-        if event.old is not None and event.old.canvas is not None:
-            disconnect_events(event.old.canvas.events, self.node)
-        if event.new is not None and event.new.canvas is not None:
-            # connect the canvas resize to recalculating the position
-            event.new.canvas.events.resize.connect(self._on_position_change)
 
     def _on_position_change(self, event=None):
         # subclasses should set sizes correctly and adjust offsets to get
@@ -87,46 +79,25 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         x_max, y_max = list(self.node.canvas.size)
         position = self.overlay.position
 
-        if position == CanvasPosition.TOP_LEFT:
-            transform = [self.x_offset, self.y_offset, 0, 0]
-        elif position == CanvasPosition.TOP_CENTER:
-            transform = [x_max / 2 - self.x_size / 2, self.y_offset, 0, 0]
-        elif position == CanvasPosition.TOP_RIGHT:
-            transform = [
-                x_max - self.x_size - self.x_offset,
-                self.y_offset,
-                0,
-                0,
-            ]
-        elif position == CanvasPosition.BOTTOM_LEFT:
-            transform = [
-                self.x_offset,
-                y_max - self.y_size - self.y_offset,
-                0,
-                0,
-            ]
-        elif position == CanvasPosition.BOTTOM_CENTER:
-            transform = [
-                x_max / 2 - self.x_size / 2,
-                y_max - self.y_size - self.y_offset,
-                0,
-                0,
-            ]
-        elif position == CanvasPosition.BOTTOM_RIGHT:
-            transform = [
-                x_max - self.x_size - self.x_offset,
-                y_max - self.y_size - self.y_offset,
-                0,
-                0,
-            ]
-        else:
-            raise ValueError(
-                trans._(
-                    'Position {position} not recognized.',
-                    deferred=True,
-                    position=position,
-                )
+        x_offset = 0
+        y_offset = 0
+        if 'top' in position:
+            y_offset = self.y_offset
+        elif 'bottom' in position:
+            y_offset = y_max - self.y_size - self.y_offset
+
+        if 'left' in position:
+            x_offset = self.x_offset + self.x_offset_tiling
+        elif 'right' in position:
+            x_offset = (
+                x_max - self.x_size - self.x_offset - self.x_offset_tiling
             )
+        elif 'center' in position:
+            # tiling for 'center' is just tiling to the right, not ideal, but a lot
+            # harder to do some sort of "autocenter"
+            x_offset = x_max / 2 - self.x_size / 2 + self.x_offset_tiling
+
+        transform = [x_offset, y_offset, 0, 0]
 
         self.node.transform.translate = transform
         scale = abs(self.node.transform.scale[0])
@@ -175,3 +146,20 @@ class ViewerOverlayMixin:
     def close(self):
         disconnect_events(self.viewer.events, self)
         super().close()
+
+
+class VispyLayerCanvasOverlay(LayerOverlayMixin, VispyCanvasOverlay):
+    def __init__(self, *, layer: 'Layer', overlay, node, parent=None) -> None:
+        super().__init__(
+            layer=layer,
+            node=node,
+            overlay=overlay,
+            parent=parent,
+        )
+
+        # need manual connection here because these overlays are not a child of the
+        # actual vispy node of the layer, but instead of the viewbox
+        self.layer.events.visible.connect(self._on_visible_change)
+
+    def _on_visible_change(self):
+        self.node.visible = self.overlay.visible and self.layer.visible

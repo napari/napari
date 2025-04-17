@@ -5,15 +5,7 @@ import numpy as np
 from vispy.scene import VisualNode
 from vispy.visuals.transforms import MatrixTransform
 
-from napari._vispy.overlays.base import (
-    VispyBaseOverlay,
-    VispyCanvasOverlay,
-    VispySceneOverlay,
-)
 from napari._vispy.utils.gl import BLENDING_MODES, get_max_texture_sizes
-from napari.components.overlays.base import (
-    Overlay,
-)
 from napari.layers import Layer
 from napari.utils.events import disconnect_events
 
@@ -55,7 +47,6 @@ class VispyBaseLayer(ABC, Generic[_L]):
     """
 
     layer: _L
-    overlays: dict[Overlay, VispyBaseOverlay]
 
     def __init__(self, layer: _L, node: VisualNode) -> None:
         super().__init__()
@@ -65,7 +56,6 @@ class VispyBaseLayer(ABC, Generic[_L]):
         self._array_like = False
         self.node = node
         self.first_visible = False
-        self.overlays = {}
 
         (
             self.MAX_TEXTURE_SIZE_2D,
@@ -85,8 +75,6 @@ class VispyBaseLayer(ABC, Generic[_L]):
         self.layer.experimental_clipping_planes.events.connect(
             self._on_experimental_clipping_planes_change
         )
-        self.layer.events._overlays.connect(self._on_overlays_change)
-        self.node.events.parent_change.connect(self._on_parent_change)
 
     @property
     def _master_transform(self):
@@ -134,11 +122,6 @@ class VispyBaseLayer(ABC, Generic[_L]):
 
     def _on_visible_change(self):
         self.node.visible = self.layer.visible
-        for overlay_visual in self.overlays.values():
-            if isinstance(overlay_visual, VispyCanvasOverlay):
-                # needs to be done manually because it's not parented to the visual
-                # but to the viewbox
-                overlay_visual.node.visible = self.layer.visible
 
     def _on_opacity_change(self):
         self.node.opacity = self.layer.opacity
@@ -177,43 +160,6 @@ class VispyBaseLayer(ABC, Generic[_L]):
 
         self.node.set_gl_state(**blending_kwargs)
         self.node.update()
-
-    def _on_overlays_change(self):
-        # avoid circular import; TODO: fix?
-        from napari._vispy.utils.visual import create_vispy_overlay
-
-        overlay_models = self.layer._overlays.values()
-
-        for overlay in overlay_models:
-            if overlay in self.overlays:
-                continue
-
-            with self.layer.events._overlays.blocker():
-                overlay_visual = create_vispy_overlay(
-                    overlay, layer=self.layer
-                )
-            self.overlays[overlay] = overlay_visual
-
-        for overlay in list(self.overlays):
-            if overlay not in overlay_models:
-                overlay_visual = self.overlays.pop(overlay)
-                overlay_visual.close()
-
-        self._on_parent_change()
-
-    def _on_parent_change(self, event=None):
-        for overlay_visual in self.overlays.values():
-            if isinstance(overlay_visual, VispyCanvasOverlay):
-                # this can happen when the layer is not yet in a canvas,
-                # in which case we skip
-                if self.node.parent is not None:
-                    overlay_visual.node.parent = (
-                        self.node.parent.parent
-                    )  # viewbox
-            elif isinstance(overlay_visual, VispySceneOverlay):
-                overlay_visual.node.parent = self.node
-
-            overlay_visual.reset()
 
     def _on_matrix_change(self):
         dims_displayed = self.layer._slice_input.displayed
@@ -304,7 +250,6 @@ class VispyBaseLayer(ABC, Generic[_L]):
         self._on_blending_change()
         self._on_matrix_change()
         self._on_experimental_clipping_planes_change()
-        self._on_overlays_change()
         self._on_camera_move()
 
     def _on_poll(self, event=None):
