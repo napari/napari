@@ -70,14 +70,6 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         self.y_size = 0
         self.node.transform = STTransform()
         self.overlay.events.position.connect(self._on_position_change)
-        self.node.events.parent_change.connect(self._on_parent_change)
-
-    def _on_parent_change(self, event):
-        if event.old is not None:
-            disconnect_events(self, event.old.canvas)
-        if event.new is not None and self.node.canvas is not None:
-            # connect the canvas resize to recalculating the position
-            event.new.canvas.events.resize.connect(self._on_position_change)
 
     def _on_position_change(self, event=None):
         # subclasses should set sizes correctly and adjust offsets to get
@@ -156,6 +148,12 @@ class LayerOverlayMixin:
         )
         self.layer = layer
         self.layer._overlays.events.removed.connect(self.close)
+        # need manual connection here because these overlays are not necessarily
+        # always a child of the actual vispy node of the layer (eg, canvas overlays)
+        self.layer.events.visible.connect(self._on_visible_change)
+
+    def _on_visible_change(self):
+        self.node.visible = self.overlay.visible and self.layer.visible
 
     def close(self):
         disconnect_events(self.layer.events, self)
