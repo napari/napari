@@ -588,7 +588,11 @@ class VispyCanvas:
         napari_layer.events.visible.connect(self._reorder_layers)
         self.viewer.camera.events.angles.connect(vispy_layer._on_camera_move)
 
+        # create overlay visuals for this layer
         self._update_layer_overlays_to_visual(napari_layer)
+        # we need to trigger _on_matrix_change once after adding the overlays so that
+        # all children nodes are assigned the correct transforms
+        vispy_layer._on_matrix_change()
         self._reorder_layers()
 
     def _remove_layer(self, event: Event) -> None:
@@ -691,8 +695,6 @@ class VispyCanvas:
                 self._connect_canvas_overlay_events(overlay)
             else:
                 overlay_visual.node.parent = self.layer_to_visual[layer].node
-
-            overlay_visual.reset()
 
     def _remove_layer_overlays_to_visual(self, layer: Layer) -> None:
         for overlay in list(self._layer_overlay_to_visual[layer]):
