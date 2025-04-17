@@ -38,7 +38,7 @@ except ImportError:
     partsegcore_triangulate = None
 
 
-TRIANGULATION_BACKEND = TriangulationBackend.none
+TRIANGULATION_BACKEND = TriangulationBackend.pure_python
 
 
 class Shape(ABC):
@@ -253,12 +253,12 @@ class Shape(ABC):
         self._z_index = z_index
 
     def _set_empty_edge(self) -> None:
-        self._edge_vertices = np.empty((0, self.ndisplay))
-        self._edge_offsets = np.empty((0, self.ndisplay))
+        self._edge_vertices = np.empty((0, self.ndisplay), dtype=np.float32)
+        self._edge_offsets = np.empty((0, self.ndisplay), dtype=np.float32)
         self._edge_triangles = np.empty((0, 3), dtype=np.uint32)
 
     def _set_empty_face(self) -> None:
-        self._face_vertices = np.empty((0, self.ndisplay))
+        self._face_vertices = np.empty((0, self.ndisplay), dtype=np.float32)
         self._face_triangles = np.empty((0, 3), dtype=np.uint32)
 
     def _set_meshes_compiled_3d(

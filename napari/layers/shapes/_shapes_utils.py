@@ -13,6 +13,7 @@ from vispy.visuals.tube import _frenet_frames
 
 from napari.layers.shapes import (
     _accelerated_triangulate_dispatch as _triangulate_dispatch,
+    _accelerated_triangulate_python as _triangulate_py,
 )
 from napari.layers.shapes.shape_types import (
     CoordinateArray,
@@ -238,10 +239,10 @@ def lines_intersect(p1, q1, p2, q2):
         Bool indicating if line segment p1q1 intersects line segment p2q2
     """
     # Determine four orientations
-    o1 = _triangulate_dispatch.orientation(p1, q1, p2)
-    o2 = _triangulate_dispatch.orientation(p1, q1, q2)
-    o3 = _triangulate_dispatch.orientation(p2, q2, p1)
-    o4 = _triangulate_dispatch.orientation(p2, q2, q1)
+    o1 = _triangulate_py.orientation(p1, q1, p2)
+    o2 = _triangulate_py.orientation(p1, q1, q2)
+    o3 = _triangulate_py.orientation(p2, q2, p1)
+    o4 = _triangulate_py.orientation(p2, q2, q1)
 
     # Test general case
     if (o1 != o2) and (o3 != o4):
@@ -314,7 +315,7 @@ def is_collinear(points: npt.NDArray) -> bool:
     # The collinearity test takes three points, the first two are the first
     # two in the list, and then the third is iterated through in the loop
     return all(
-        _triangulate_dispatch.orientation(points[0], points[1], p) == 0
+        _triangulate_py.orientation(points[0], points[1], p) == 0
         for p in points[2:]
     )
 

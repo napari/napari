@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from numpy import array, testing as npt
 
-from napari.layers.shapes._accelerated_triangulate_dispatch import (
+from napari.layers.shapes._accelerated_triangulate_python import (
     generate_2D_edge_meshes_py,
     is_convex_py,
     normalize_vertices_and_edges_py,

@@ -4,7 +4,10 @@ from napari._pydantic_compat import Field
 from napari.settings._base import EventedSettings
 from napari.utils.events import Event
 from napari.utils.translations import trans
-from napari.utils.triangulation_backend import TriangulationBackend
+from napari.utils.triangulation_backend import (
+    TriangulationBackend,
+    set_backend,
+)
 
 
 # this class inherits from EventedSettings instead of EventedModel because
@@ -72,7 +75,7 @@ class ExperimentalSettings(EventedSettings):
         ),
     )
     triangulation_backend: TriangulationBackend = Field(
-        TriangulationBackend.none,
+        TriangulationBackend.pure_python,
         title=trans._('Triangulation backend to use for Shapes layer'),
         description=trans._(
             'Triangulation backend to use for Shapes layer.\n'
@@ -89,13 +92,6 @@ class ExperimentalSettings(EventedSettings):
 
 
 def _update_triangulation_backend(event: Event) -> None:
-    from napari.layers.shapes import _accelerated_triangulate_dispatch
-    from napari.layers.shapes._shapes_models import shape
-
     experimental: ExperimentalSettings = event.source
 
-    _accelerated_triangulate_dispatch.USE_COMPILED_BACKEND = (
-        experimental.triangulation_backend
-        in {TriangulationBackend.partsegcore, TriangulationBackend.bermuda}
-    )
-    shape.TRIANGULATION_BACKEND = experimental.triangulation_backend
+    set_backend(experimental.triangulation_backend)

@@ -24,7 +24,7 @@ BACKEND_TO_MODULE = {
     TriangulationBackend.triangle: 'triangle',
     TriangulationBackend.bermuda: 'bermuda',
     TriangulationBackend.partsegcore: 'PartSegCore_compiled_backend',
-    TriangulationBackend.none: 'napari',
+    TriangulationBackend.pure_python: 'napari',
 }
 
 
