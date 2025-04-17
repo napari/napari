@@ -391,7 +391,7 @@ class Shape(ABC):
             try:
                 (triangles, vertices), (centers, offsets, edge_triangles) = (
                     partsegcore_triangulate.triangulate_polygon_with_edge_numpy_li(
-                        [data]
+                        [data], split_edges=True
                     )
                 )
             except BaseException as e:  # pragma: no cover
