@@ -18,6 +18,7 @@ from napari.layers.shapes._shapes_utils import (
     rdp,
     reconstruct_and_triangulate_edge,
     triangulate_face_and_edges,
+    triangulate_face_vispy,
 )
 
 W_DATA = [[0, 3], [1, 0], [2, 3], [5, 0], [2.5, 5]]
@@ -507,7 +508,9 @@ def test_reconstruct_polygon_edges(poly_hole):
 
 
 def test_triangulate_face_and_edges(poly_hole):
-    faces, edges = triangulate_face_and_edges(poly_hole)
+    faces, edges = triangulate_face_and_edges(
+        poly_hole, triangulate_face_vispy
+    )
 
 
 def test_save_failed_triangulation(tmp_path):
