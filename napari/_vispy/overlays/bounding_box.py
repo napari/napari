@@ -22,9 +22,6 @@ class VispyBoundingBoxOverlay(LayerOverlayMixin, VispySceneOverlay):
         self.overlay.events.point_size.connect(self._on_point_size_change)
         self.overlay.events.point_color.connect(self._on_point_color_change)
 
-    def _on_visible_change(self):
-        super()._on_visible_change()
-
     def _on_bounds_change(self):
         bounds = self.layer._display_bounding_box_augmented_data_level(
             self.layer._slice_input.displayed
