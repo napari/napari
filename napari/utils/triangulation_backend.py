@@ -22,7 +22,7 @@ class TriangulationBackend(StrEnum):
     """Compiled backend implemented in C++, https://partseg.github.io"""
     triangle = auto()
     """Triangle backend implemented in C, https://www.cs.cmu.edu/~quake/triangle.html"""
-    nummba = auto()
+    numba = auto()
     """part of helper functions compiled with numba. Triangulation using vispy"""
     pure_python = auto()
     """Putre python on napari side, Triangulation using vispy"""

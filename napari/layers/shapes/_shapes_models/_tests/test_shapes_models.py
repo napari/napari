@@ -12,7 +12,10 @@ from napari.layers.shapes._shapes_models import (
     Polygon,
     Rectangle,
 )
-from napari.layers.shapes._shapes_utils import triangulate_face
+from napari.layers.shapes._shapes_utils import (
+    triangulate_face,
+    triangulate_face_triangle,
+)
 from napari.settings import get_settings
 from napari.settings._experimental import (
     TriangulationBackend,
@@ -29,14 +32,14 @@ BACKEND_TO_MODULE = {
 
 
 @pytest.fixture(autouse=True, params=BACKEND_TO_MODULE)
-def switch_triangulation_backend(request):
+def triangulation_backend(request):
     """Fixture to switch between triangulation backends."""
     settings = get_settings()
     prev = settings.experimental.triangulation_backend
     if BACKEND_TO_MODULE[request.param] not in sys.modules:
         pytest.importorskip(str(request.param))
     settings.experimental.triangulation_backend = request.param
-    yield
+    yield request.param
     settings.experimental.triangulation_backend = prev
 
 
@@ -145,12 +148,12 @@ def test_polygon_data_triangle_module():
             [15.83450076, 10.5778984],
         ]
     )
-    vertices, _triangles = triangulate_face(data)
+    vertices, _triangles = triangulate_face(data, triangulate_face_triangle)
 
     assert vertices.shape == (6, 2)
 
 
-def test_polygon():
+def test_polygon(triangulation_backend):
     """Test creating Shape with a random polygon."""
     # Test a single non convex six vertex polygon
     data = np.array(
@@ -169,7 +172,11 @@ def test_polygon():
     assert shape.data_displayed.shape == (6, 2)
     assert shape.slice_key.shape == (2, 0)
     # should get few triangles
-    expected_face = (6, 2) if BETTER_TRIANGULATION else (8, 2)
+    expected_face = (
+        (8, 2)
+        if triangulation_backend == TriangulationBackend.pure_python
+        else (6, 2)
+    )
     assert shape._edge_vertices.shape == (16, 2)
     assert shape._face_vertices.shape == expected_face
 
