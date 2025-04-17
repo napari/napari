@@ -18,7 +18,9 @@ from napari.layers.shapes._shapes_utils import (
     poly_to_mask,
     triangulate_edge,
     triangulate_face,
+    triangulate_face_and_edges,
 )
+from napari.layers.shapes.shape_types import CoordinateArray, TriangleArray
 from napari.utils.misc import argsort
 from napari.utils.translations import trans
 from napari.utils.triangulation_backend import TriangulationBackend
@@ -126,11 +128,17 @@ class Shape(ABC):
         self._ndisplay = ndisplay
         self.slice_key: npt.NDArray
 
-        self._face_vertices = np.empty((0, self.ndisplay))
-        self._face_triangles = np.empty((0, 3), dtype=np.uint32)
-        self._edge_vertices = np.empty((0, self.ndisplay))
-        self._edge_offsets = np.empty((0, self.ndisplay))
-        self._edge_triangles = np.empty((0, 3), dtype=np.uint32)
+        self._face_vertices: CoordinateArray = np.empty(
+            (0, self.ndisplay), dtype=np.float32
+        )
+        self._face_triangles: TriangleArray = np.empty((0, 3), dtype=np.uint32)
+        self._edge_vertices: CoordinateArray = np.empty(
+            (0, self.ndisplay), dtype=np.float32
+        )
+        self._edge_offsets: CoordinateArray = np.empty(
+            (0, self.ndisplay), dtype=np.float32
+        )
+        self._edge_triangles: TriangleArray = np.empty((0, 3), dtype=np.uint32)
         self._box = np.empty((9, 2))
 
         self._closed = False
@@ -255,7 +263,7 @@ class Shape(ABC):
 
     def _set_meshes_compiled_3d(
         self,
-        data: npt.NDArray,
+        data: CoordinateArray,
         closed: bool = True,
         face: bool = True,
         edge: bool = True,
@@ -419,7 +427,7 @@ class Shape(ABC):
 
     def _set_meshes_triangle(
         self,
-        data: npt.NDArray,
+        data: CoordinateArray,
         closed: bool = True,
         face: bool = True,
         edge: bool = True,
@@ -443,7 +451,7 @@ class Shape(ABC):
 
     def _set_meshes_py(
         self,
-        data: npt.NDArray,
+        data: CoordinateArray,
         closed: bool = True,
         face: bool = True,
         edge: bool = True,
@@ -462,14 +470,27 @@ class Shape(ABC):
             Bool which determines if the edge need to be traingulated
         """
         data = remove_path_duplicates(data, closed=closed)
+        if edge and face:
+            (f_vertices, f_triangles), (centers, offsets, triangles) = (
+                triangulate_face_and_edges(data)
+            )
+            self._edge_vertices = centers
+            self._edge_offsets = offsets
+            self._edge_triangles = triangles
+            self._face_vertices = f_vertices
+            self._face_triangles = f_triangles
+            return
+
         if edge:
             centers, offsets, triangles = triangulate_edge(data, closed=closed)
             self._edge_vertices = centers
             self._edge_offsets = offsets
             self._edge_triangles = triangles
         else:
-            self._edge_vertices = np.empty((0, self.ndisplay))
-            self._edge_offsets = np.empty((0, self.ndisplay))
+            self._edge_vertices = np.empty(
+                (0, self.ndisplay), dtype=np.float32
+            )
+            self._edge_offsets = np.empty((0, self.ndisplay), dtype=np.float32)
             self._edge_triangles = np.empty((0, 3), dtype=np.uint32)
 
         ndim = data.shape[1]
@@ -482,7 +503,7 @@ class Shape(ABC):
         data2d, axis, value = find_planar_axis(data)
 
         # set empty data as fallback
-        self._face_vertices = np.empty((0, self.ndisplay))
+        self._face_vertices = np.empty((0, self.ndisplay), dtype=np.float32)
         self._face_triangles = np.empty((0, 3), dtype=np.uint32)
 
         if face and not is_collinear(data2d):
