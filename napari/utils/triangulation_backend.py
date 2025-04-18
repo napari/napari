@@ -33,7 +33,7 @@ class TriangulationBackend(StrEnum):
 
     def __repr__(self) -> str:
         """Return the string representation of the backend."""
-        return self.name.replace('_', ' ').title()
+        return self.name
 
 
 def get_backend() -> TriangulationBackend:

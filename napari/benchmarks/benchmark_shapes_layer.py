@@ -78,6 +78,10 @@ class _BackendSelection:
         except ImportError:
             return
 
+        if not hasattr(_triangle_dispatch, '__all__'):
+            # new dispatch do not require this
+            return
+
         for name in _triangle_dispatch.__all__:
             # This part of the code assumes that all pure python functions
             # from _accelerated_triangulate_dispatch that are used when import from
@@ -110,14 +114,9 @@ class _BackendSelection:
         self.prev_settings_new = (
             get_settings().experimental.triangulation_backend
         )
-        if triangulation_backend in {
-            TriangulationBackend.numba,
-            TriangulationBackend.pure_python,
-        }:
-            val = 'none'
-        else:
-            val = str(triangulation_backend)
-        get_settings().experimental.triangulation_backend = val
+        get_settings().experimental.triangulation_backend = (
+            triangulation_backend
+        )
 
     def select_backend(self, triangulation_backend: TriangulationBackend):
         """Select a desired backend for triangulation."""
