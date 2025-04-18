@@ -800,6 +800,56 @@ def test_paint_with_preserve_labels():
     assert np.unique(layer.data[:3, :3]) == 1
 
 
+def test_setting_prev_selected_label():
+    """Test that _prev_selected_label is set when selected_label
+    is set to the colormap background_value."""
+    data = np.zeros((15, 10), dtype=np.uint32)
+    layer = Labels(data)
+
+    # set the selected label, _prev_selected_label should be None
+    layer.selected_label = 1
+    assert not layer._prev_selected_label
+
+    layer.selected_label = layer.colormap.background_value
+    assert layer._prev_selected_label == 1
+
+    layer.selected_label = 2
+    # swap the selected and background labels
+    # _prev_selected_label should be set
+    layer.swap_selected_and_background_labels()
+    assert layer.selected_label == layer.colormap.background_value
+    assert layer._prev_selected_label == 2
+
+
+def test_paint_swap_with_preserve_labels():
+    """Test painting and swapping labels & background while preserving labels."""
+    data = np.zeros((15, 10), dtype=np.uint32)
+    data[:3, :3] = 1
+    layer = Labels(data)
+
+    layer.preserve_labels = True
+    assert np.unique(layer.data[:3, :3]) == 1
+
+    layer.brush_size = 9
+    layer.selected_label = 2
+    layer.paint([0, 0], layer.selected_label)
+
+    assert np.unique(layer.data[3:5, 0:3]) == 2
+    assert np.unique(layer.data[0:3, 3:5]) == 2
+    assert np.unique(layer.data[:3, :3]) == 1
+
+    current_label = layer.selected_label
+    layer.swap_selected_and_background_labels()
+    assert layer.selected_label == 0
+    assert layer._prev_selected_label == current_label
+    layer.paint([0, 0], layer.selected_label)
+
+    # only label 2 should be erased
+    assert np.unique(layer.data[3:5, 0:3]) == 0
+    assert np.unique(layer.data[0:3, 3:5]) == 0
+    assert np.unique(layer.data[:3, :3]) == 1
+
+
 def test_paint_2d():
     """Test painting labels with circle brush."""
     data = np.zeros((40, 40), dtype=np.uint32)
@@ -939,6 +989,45 @@ def test_fill():
     layer.fill([0, 0], 3)
     assert np.unique(layer.data[:5, :5]) == 3
     assert np.unique(layer.data[5:10, 5:10]) == 2
+
+
+def test_fill_swap_with_preserve_labels():
+    """Test fill and swap background while preserving existing labels."""
+    data = np.zeros((15, 10), dtype=np.uint32)
+    data[:3, :3] = 1
+    layer = Labels(data)
+
+    layer.preserve_labels = True
+    assert np.unique(layer.data[:3, :3]) == 1
+
+    layer.selected_label = 2
+    prev_layer_data = layer.data
+    layer.fill([0, 0], layer.selected_label)
+    # existing label should not be filled
+    assert np.all(layer.data == prev_layer_data)
+
+    layer.fill([3, 3], layer.selected_label)
+    # background should be filled
+    assert np.unique(layer.data[3:, 0:3]) == 2
+    assert np.unique(layer.data[0:3, 3:]) == 2
+    # existing label should not be filled
+    assert np.unique(layer.data[:3, :3]) == 1
+
+    current_label = layer.selected_label
+    layer.swap_selected_and_background_labels()
+    assert layer.selected_label == 0
+    assert layer._prev_selected_label == current_label
+    prev_layer_data = layer.data
+    layer.fill([0, 0], layer.selected_label)
+    # existing label should not be erased
+    assert np.all(layer.data == prev_layer_data)
+
+    layer.fill([3, 3], layer.selected_label)
+    # the pre-swap label should be erassed
+    assert np.unique(layer.data[3:, 0:3]) == 0
+    assert np.unique(layer.data[0:3, 3:]) == 0
+    # existing label should not be filled
+    assert np.unique(layer.data[:3, :3]) == 1
 
 
 def test_value():
