@@ -7,11 +7,13 @@ With this module, downstream modules can import these helper functions without
 knowing which implementation is being used.
 """
 
-from typing import Any
+from types import ModuleType
 
 import numpy as np
 
 from napari.layers.shapes import _accelerated_triangulate_python
+
+_accelerated_triangulate_numba: ModuleType | None
 
 try:
     from napari.layers.shapes import _accelerated_triangulate_numba
@@ -26,19 +28,46 @@ normalize_vertices_and_edges = (
 )
 
 
-def __getattr__(name: str) -> Any:
-    if name in {'remove_path_duplicates', 'create_box_from_bounding'}:
-        if _accelerated_triangulate_numba is not None:
-            # If numba is available, use the numba implementation
-            return getattr(_accelerated_triangulate_numba, name)
-        # Otherwise, use the pure python implementation
-        return getattr(_accelerated_triangulate_python, f'{name}_py')
+ALWAYS_NUMBA = ('remove_path_duplicates', 'create_box_from_bounding')
+SWAPPABLE_NUMBA = (
+    'generate_2D_edge_meshes',
+    'is_convex',
+    'normalize_vertices_and_edges',
+    'reconstruct_polygons_from_edges',
+)
 
-    if USE_NUMBA_FOR_EDGE_TRIANGULATION:
-        # If numba is available, use the numba implementation
-        return getattr(_accelerated_triangulate_numba, name)
-    # Otherwise, use the pure python implementation
-    return getattr(_accelerated_triangulate_python, f'{name}_py')
+if _accelerated_triangulate_numba is not None:
+    remove_path_duplicates = (
+        _accelerated_triangulate_numba.remove_path_duplicates
+    )
+    create_box_from_bounding = (
+        _accelerated_triangulate_numba.create_box_from_bounding
+    )
+    generate_2D_edge_meshes = (
+        _accelerated_triangulate_numba.generate_2D_edge_meshes
+    )
+    is_convex = _accelerated_triangulate_numba.is_convex
+    normalize_vertices_and_edges = (
+        _accelerated_triangulate_numba.normalize_vertices_and_edges
+    )
+    reconstruct_polygons_from_edges = (
+        _accelerated_triangulate_numba.reconstruct_polygons_from_edges
+    )
+
+else:
+    remove_path_duplicates = (
+        _accelerated_triangulate_python.remove_path_duplicates_py
+    )
+    create_box_from_bounding = (
+        _accelerated_triangulate_python.create_box_from_bounding_py
+    )
+    generate_2D_edge_meshes = (
+        _accelerated_triangulate_python.generate_2D_edge_meshes_py
+    )
+    is_convex = _accelerated_triangulate_python.is_convex_py
+    reconstruct_polygons_from_edges = (
+        _accelerated_triangulate_python.reconstruct_polygons_from_edges_py
+    )
 
 
 def _set_numba(value: bool) -> None:
@@ -50,9 +79,18 @@ def _set_numba(value: bool) -> None:
         If True, use the Numba backend. If False, use the pure Python backend.
     """
     global USE_NUMBA_FOR_EDGE_TRIANGULATION
-    USE_NUMBA_FOR_EDGE_TRIANGULATION = value and (
-        _accelerated_triangulate_numba is not None
-    )
+
+    val = value and (_accelerated_triangulate_numba is not None)
+    if val:
+        for name in SWAPPABLE_NUMBA:
+            globals()[name] = getattr(_accelerated_triangulate_numba, name)
+    else:
+        for name in SWAPPABLE_NUMBA:
+            globals()[name] = getattr(
+                _accelerated_triangulate_python, f'{name}_py'
+            )
+
+    USE_NUMBA_FOR_EDGE_TRIANGULATION = val
 
 
 def warmup_numba_cache() -> None:
