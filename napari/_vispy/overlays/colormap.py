@@ -32,7 +32,7 @@ class VispyColormapOverlay(LayerOverlayMixin, VispyCanvasOverlay):
             clim=_coerce_contrast_limits(
                 self.layer.contrast_limits
             ).contrast_limits,
-            dtype=self.layer.data.dtype,
+            dtype=self.layer.dtype,
         )
         self._on_colormap_change()
         self._on_gamma_change()
