@@ -296,6 +296,19 @@ def test_track_connex_validity() -> None:
     assert np.sum(~layer._manager.track_connex) == n_tracks
 
 
+def test_track_coloring() -> None:
+    """Test if the track colors are correctly set."""
+
+    data = np.zeros((100, 4))
+    data[:, 1] = np.arange(100)
+    layer = Tracks(data)
+
+    colors = np.random.random(size=(100, 4))
+    layer.track_colors = colors
+
+    assert np.array_equal(layer._track_colors, colors)
+
+
 def test_docstring():
     validate_all_params_in_docstring(Tracks)
     validate_kwargs_sorted(Tracks)

@@ -617,6 +617,12 @@ class Tracks(Layer):
         property"""
         return self._track_colors
 
+    @track_colors.setter
+    def track_colors(self, colors: np.ndarray) -> None:
+        """set the vertex colors based on the currently selected property and emit an event"""
+        self._track_colors = colors
+        self.events.color_by()
+
     @property
     def graph_connex(self) -> np.ndarray | None:
         """vertex connections for drawing the graph"""
