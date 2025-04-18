@@ -534,6 +534,9 @@ def _disable_notification_dismiss_timer(monkeypatch):
         monkeypatch.setattr(NapariQtNotification, 'FADE_IN_RATE', 0)
         monkeypatch.setattr(NapariQtNotification, 'FADE_OUT_RATE', 0)
 
+        # disable slide in animation
+        monkeypatch.setattr(NapariQtNotification, 'slide_in', lambda x: None)
+
 
 @pytest.fixture
 def single_threaded_executor():
@@ -893,6 +896,9 @@ with contextlib.suppress(ImportError):
     # So we cannot inherit from QtBot and declare the fixture
 
     from pytestqt.qtbot import QtBot
+    from qtpy import PYQT5, PYSIDE2
+    from qtpy.QtCore import Qt
+    from qtpy.QtWidgets import QApplication
 
     class QtBotWithOnCloseRenaming(QtBot):
         """Modified QtBot that renames widgets when closing them in tests.
@@ -944,6 +950,23 @@ with contextlib.suppress(ImportError):
         before, so we need it, even without using it directly in this fixture.
         """
         return QtBotWithOnCloseRenaming(request)
+
+    @pytest.fixture(scope='session')
+    def qapp_cls():
+        """The qapp fixture uses the qapp_cls fixture to select
+        the class to use for create the QApplication instance.
+
+        As qapp fixture is using more complex logic, we decided
+        not to override it but overwrite the fixture used by it.
+
+        We need to set attributte before the QApplication is created.
+        """
+        if PYQT5 or PYSIDE2:
+            # As Qt6 autodetect High dpi scaling, we need to
+            # enable it only on Qt5 bindings.
+            # https://doc.qt.io/qtforpython-6/faq/porting_from2.html#class-function-deprecations
+            QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
+        return QApplication
 
 
 @pytest.fixture
