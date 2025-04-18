@@ -122,12 +122,11 @@ def _calc_affine_from_source_layers(data_ndim, source_layers: list[Layer]):
     dict
         Dictionary with affine information.
     """
-
-    source_layers = [
-        layer for layer in source_layers if layer.ndim >= data_ndim
-    ]
     to_low_dim_layers = [
         layer.name for layer in source_layers if layer.ndim < data_ndim
+    ]
+    source_layers_ = [
+        layer for layer in source_layers if layer.ndim >= data_ndim
     ]
 
     if to_low_dim_layers:
@@ -135,12 +134,12 @@ def _calc_affine_from_source_layers(data_ndim, source_layers: list[Layer]):
             f'Cannot inherit spatial information like scale and translation from source layers with lower dimensionality. Layers {",".join(to_low_dim_layers)} ignored.'
         )
 
-    if not source_layers:
+    if not source_layers_:
         return {}
 
-    meta = _get_spatial_from_layer(source_layers[0], data_ndim)
+    meta = _get_spatial_from_layer(source_layers_[0], data_ndim)
 
-    for layer in source_layers[1:]:
+    for layer in source_layers_[1:]:
         local_meta = _get_spatial_from_layer(layer, data_ndim)
         if not _compare_meta(meta, local_meta):
             show_info(
