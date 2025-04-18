@@ -409,13 +409,20 @@ class VispyCanvas:
         )
         mouse_callbacks(self.viewer, read_only_event)
 
-        layers = list(self.viewer.layers.selection)
-        if not layers:
-            active = self.viewer.layers.selection.active
-            layers = [] if active is None else [active]
+        active = self.viewer.layers.selection.active
+        if active is None:
+            return
 
-        for layer in layers:
-            mouse_callbacks(layer, event)
+        layers = list(self.viewer.layers.selection)
+
+        mouse_callbacks(active, read_only_event)
+
+        if active.mode != 'pan_zoom':
+            for layer in layers:
+                if isinstance(layer, active.__class__) and layer.mode == str(
+                    active.mode
+                ):
+                    mouse_callbacks(layer, read_only_event)
 
     def _on_mouse_double_click(self, event: MouseEvent) -> None:
         """Called whenever a mouse double-click happen on the canvas
