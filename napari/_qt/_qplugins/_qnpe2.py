@@ -327,7 +327,7 @@ def _toggle_or_get_widget(
 
     Returned widget will be added to main window by a processor.
     Note for magicgui type widget contributions, `Viewer` injection is done by
-    `magicgui.register_type` instead of a provider via annnotation.
+    `magicgui.register_type` instead of a provider via annotation.
     """
     viewer = _provide_viewer_or_raise(
         msg='Note that widgets cannot be opened in headless mode.',

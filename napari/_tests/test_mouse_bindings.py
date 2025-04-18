@@ -260,10 +260,10 @@ def test_unselected_layer_mouse_bindings(qtbot, make_napari_viewer):
 @pytest.mark.parametrize(
     ('position', 'dims_displayed', 'nearby_handle'),
     [
-        # Postion inside the transform box space so the inside value should be set as selected
+        # Position inside the transform box space so the inside value should be set as selected
         ([0, 3], [0, 1], InteractionBoxHandle.INSIDE),
         ([0, 3, 3], [1, 2], InteractionBoxHandle.INSIDE),
-        # Postion outside the transform box space so no handle should be set as selected
+        # Position outside the transform box space so no handle should be set as selected
         ([0, 11], [0, 1], None),
         ([0, 11, 11], [1, 2], None),
         # When 3 dimensions are being displayed no `highlight_box_handles` logic should be run

@@ -293,7 +293,7 @@ class QColorPopup(QtPopup):
         self.color_dialog.setCurrentColor(QColor(initial_color))
 
     def _on_color_selected(self, color: QColor):
-        """When a color has beeen selected and the OK button clicked."""
+        """When a color has been selected and the OK button clicked."""
         self.colorSelected.emit(color)
         self.close()
 

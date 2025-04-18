@@ -114,7 +114,7 @@ class ApplicationSettings(EventedModel):
         True,
         title=trans._('Show status bar'),
         description=trans._(
-            'Toggle diplaying the status bar for the main window.'
+            'Toggle displaying the status bar for the main window.'
         ),
     )
     preferences_size: tuple[int, int] | None = Field(
