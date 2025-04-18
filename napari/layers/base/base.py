@@ -834,7 +834,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         return self._transforms['data2physical'].units
 
     @units.setter
-    def units(self, units: Sequence[pint.Unit] | None) -> None:
+    def units(self, units: Sequence[pint.Unit | str] | None) -> None:
         prev = self.units
         # mypy bug https://github.com/python/mypy/issues/3004
         self._transforms['data2physical'].units = units  # type: ignore[assignment]
