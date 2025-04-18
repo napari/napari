@@ -169,6 +169,8 @@ def sys_info(as_html: bool = False) -> str:
         ('numba', 'numba'),
         ('triangle', 'triangle'),
         ('napari_plugin_manager', 'napari-plugin-manager'),
+        ('bermuda', 'bermuda'),
+        ('PartSegCore_compiled_backend', 'PartSegCore'),
     )
 
     for module, name in optional_modules:
