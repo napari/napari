@@ -37,7 +37,7 @@ import numpy as np
 
 import napari
 from napari.layers import Shapes
-from napari.layers.shapes._accelerated_triangulate_dispatch import (
+from napari.layers.shapes._accelerated_triangulate_python import (
     generate_2D_edge_meshes_py,
 )
 
