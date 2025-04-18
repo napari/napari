@@ -602,10 +602,10 @@ class QtColorBox(QWidget):
                         i % 2 == 1 and j % 2 == 1
                     ):
                         painter.setPen(QColor(230, 230, 230))
-                        painter.setBrush(QColor(230, 230, 230))
+                        # painter.setBrush(QColor(230, 230, 230))
                     else:
                         painter.setPen(QColor(25, 25, 25))
-                        painter.setBrush(QColor(25, 25, 25))
+                        # painter.setBrush(QColor(25, 25, 25))
                     painter.drawRect(i * 4, j * 4, 5, 5)
         else:
             color = np.round(255 * self.layer._selected_color).astype(int)

@@ -3,7 +3,7 @@ import sys
 
 import numpy as np
 import pytest
-from qtpy.QtCore import QPoint, Qt
+from qtpy.QtCore import QPoint, Qt, QtMsgType, qInstallMessageHandler
 from qtpy.QtWidgets import QApplication
 
 from napari._app_model import get_app_model
@@ -14,6 +14,19 @@ from napari._qt._qapp_model.qactions._view import (
 )
 from napari._tests.utils import skip_local_focus, skip_local_popups
 from napari.viewer import ViewerModel
+
+
+@pytest.fixture
+def own_log_handler():
+    def fun(msg_type, context, message):
+        if msg_type == QtMsgType.QtWarningMsg:
+            raise RuntimeError(message)
+        if prev_handler is not None:
+            prev_handler(msg_type, context, message)
+
+    prev_handler = qInstallMessageHandler(fun)
+    yield
+    qInstallMessageHandler(prev_handler)
 
 
 def check_windows_style(viewer):
