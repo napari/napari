@@ -727,6 +727,10 @@ class VispyCanvas:
             overlay,
             vispy_overlay,
         ) in self._get_ordered_visible_canvas_overlays():
+            if overlay.position not in CanvasPosition:
+                # some canvas overlays do no use CanvasPosition, but are
+                # instead free-floating (such as the cursor overlay)
+                continue
             vispy_overlay.x_offset_tiling = offsets[overlay.position]
             offsets[overlay.position] += (
                 vispy_overlay.x_size + vispy_overlay.x_offset
