@@ -127,6 +127,14 @@ contributions:
       title: Generate 3d_balls sample
       python_name: napari_builtins._ndims_balls:labeled_particles3d
 
+    # others
+    - id: napari.toggle_shape_measures
+      title: Toggle measuring shape dimensions
+      python_name: napari_builtins._measure_shapes:toggle_shape_measures
+
+  menus:
+    napari/layers/measure:
+      - command: napari.measure_shapes
   readers:
     - command: napari.get_reader
       accepts_directories: true
