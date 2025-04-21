@@ -215,7 +215,7 @@ def test_magicgui_add_data_inheritance_two_layer_inconsistent(
     make_napari_viewer, rng, monkeypatch
 ):
     """This test validates the scale and translate are not inherited from the
-    previous layers with inconsistend metadata when adding a new layer 
+    previous layers with inconsistend metadata when adding a new layer
     with magicgui if function requests,
     a LayerData type.
     """
