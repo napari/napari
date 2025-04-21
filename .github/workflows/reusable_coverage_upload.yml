@@ -39,6 +39,14 @@ jobs:
           # Report and write to summary.
           python -Im coverage report --format=markdown --skip-empty --skip-covered >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Print github.event
+        run: |
+          echo "github.event_name: ${{ github.event_name }}"
+          echo "github.actor: ${{ github.actor }}"
+          echo "github.repository: ${{ github.repository }}"
+          echo "github.ref_name: ${{ github.ref_name }}"
+          echo "github.event: ${{ toJSON(github.event) }}"
+
       - name: Upload coverage data
         uses: codecov/codecov-action@v5.4.2
         with:
