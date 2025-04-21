@@ -7,7 +7,6 @@ jobs:
     permissions:
       id-token: write  # Required for OIDC authentication
       contents: read    # Required for code checkout
-      checks: read
     name: Upload coverage
     runs-on: ubuntu-latest
     steps:
@@ -40,7 +39,7 @@ jobs:
           python -Im coverage report --format=markdown --skip-empty --skip-covered >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload coverage data
-        uses: codecov/codecov-action@v5.4.2
+        uses: codecov/codecov-action@v5
         with:
           fail_ci_if_error: true
           use_oidc: ${{ github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) }}
