@@ -131,7 +131,7 @@ def _calc_affine_from_source_layers(data_ndim, source_layers: list[Layer]):
 
     if lower_dim_layers:
         show_info(
-            f'Cannot inherit spatial information like scale and translation from source layers with lower dimensionality. Layers {",".join(to_low_dim_layers)} ignored.'
+            f'Cannot inherit spatial information like scale and translation from source layers with lower dimensionality. Layers {",".join(lower_dim_layers)} ignored.'
         )
 
     if not source_layers_:
