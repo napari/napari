@@ -35,8 +35,8 @@ except ModuleNotFoundError:
 
 
 def find_planar_axis(
-    points: npt.NDArray,
-) -> tuple[npt.NDArray, int | None, float | None]:
+    points: CoordinateArray,
+) -> tuple[CoordinateArray2D, int | None, float | None]:
     """Find an axis along which the input points are planar.
 
     If points are 2D, they are returned unchanged.
@@ -63,27 +63,41 @@ def find_planar_axis(
     """
     ndim = points.shape[1]
     if ndim == 2:
-        return points, None, None
+        return points, None, None  # type: ignore[return-value]
     for axis_idx in range(ndim):
         values = np.unique(points[:, axis_idx])
         if len(values) == 1:
-            return np.delete(points, axis_idx, axis=1), axis_idx, values[0]
-    return np.empty((0, 2), dtype=points.dtype), None, None
+            return np.delete(points, axis_idx, axis=1), axis_idx, values[0]  # type: ignore[return-value]
+    return np.empty((0, 2), dtype=points.dtype), None, None  # type: ignore[return-value]
 
 
-def _fan_triangulation(poly: npt.NDArray) -> tuple[npt.NDArray, npt.NDArray]:
+@typing.overload
+def _fan_triangulation(
+    poly: CoordinateArray2D,
+) -> tuple[CoordinateArray2D, TriangleArray]: ...
+
+
+@typing.overload
+def _fan_triangulation(
+    poly: CoordinateArray3D,
+) -> tuple[CoordinateArray3D, TriangleArray]: ...
+
+
+def _fan_triangulation(
+    poly: CoordinateArray,
+) -> tuple[CoordinateArray, TriangleArray]:
     """Return a fan triangulation of a given polygon.
 
     https://en.wikipedia.org/wiki/Fan_triangulation
 
     Parameters
     ----------
-    poly: numpy array of float, shape (N, 3)
+    poly: numpy array of float, shape (N, 3) or (N, 2)
         Polygon vertices, in order.
 
     Returns
     -------
-    vertices : numpy array of float, shape (N, 3)
+    vertices : numpy array of float, shape (N, 3) or (N, 2)
         The vertices of the triangulation. In this case, the input array.
     triangles : numpy array of int, shape (N, 3)
         The triangles of the triangulation, as triplets of indices into the
@@ -93,7 +107,7 @@ def _fan_triangulation(poly: npt.NDArray) -> tuple[npt.NDArray, npt.NDArray]:
     triangles = np.zeros((len(poly) - 2, 3), dtype=np.uint32)
     triangles[:, 1] = np.arange(1, len(poly) - 1)
     triangles[:, 2] = np.arange(2, len(poly))
-    return vertices, triangles
+    return vertices, triangles  # type: ignore[return-value]
 
 
 def inside_boxes(boxes):
@@ -647,14 +661,15 @@ def _fix_vertices_if_needed(
     if axis is None or value is None:
         return vertices
     new_vertices = np.insert(vertices, axis, value, axis=1)
-    return new_vertices
+    return new_vertices  # type: ignore[return-value]
 
 
 def triangulate_face_and_edges(
     polygon_vertices: CoordinateArray,
     triangulate_face_: typing.Callable,
 ) -> tuple[
-    tuple[np.ndarray, np.ndarray], tuple[np.ndarray, np.ndarray, np.ndarray]
+    tuple[CoordinateArray, TriangleArray],
+    tuple[CoordinateArray, CoordinateArray, TriangleArray],
 ]:
     """Determines the triangulation of the face and edges of a shape.
 
@@ -678,7 +693,7 @@ def triangulate_face_and_edges(
             np.empty((0, 3), dtype=np.int32),
         )
         edge_tri = triangulate_edge(polygon_vertices, closed=True)
-        return face_tri, edge_tri
+        return face_tri, edge_tri  # type: ignore[return-value]
 
     if _triangulate_dispatch.is_convex(data2d):
         vertices, triangles = _fan_triangulation(data2d)
@@ -756,7 +771,7 @@ def reconstruct_and_triangulate_edge(
         offset_list.append(offset)
         triangles_list.append(triangles + offset_idx)
         offset_idx += len(centers)
-    return (
+    return (  # type: ignore[return-value]
         np.concatenate(centers_list),
         np.concatenate(offset_list),
         np.concatenate(triangles_list),
