@@ -43,4 +43,4 @@ jobs:
         uses: codecov/codecov-action@v5.4.2
         with:
           fail_ci_if_error: true
-          use_oidc: true
+          use_oidc: ${{ github.event_name == 'push' }}
