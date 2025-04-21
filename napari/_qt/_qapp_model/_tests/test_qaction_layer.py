@@ -86,7 +86,7 @@ def layer_list_dim():
 
 @pytest.mark.usefixtures('qtbot')
 def test_copy_scale_to_clipboard(layer_list):
-    """This is the test that checks of coping scale to
+    """This is the test that checks copying scale to
     clipboard and pasting it to another layer.
 
     The layer_list contains three layers, l1, l2 and l3.
@@ -104,7 +104,7 @@ def test_copy_scale_to_clipboard(layer_list):
 
 @pytest.mark.usefixtures('qtbot')
 def test_copy_units_to_clipboard(layer_list):
-    """This is the test that checks of coping units to
+    """This is the test that checks copying units to
     clipboard and pasting it to another layer.
 
     The layer_list contains three layers, l1, l2 and l3.
@@ -128,7 +128,7 @@ def test_copy_units_to_clipboard(layer_list):
 
 @pytest.mark.usefixtures('qtbot')
 def test_copy_translate_to_clipboard(layer_list):
-    """This is the test that checks of coping translate to
+    """This is the test that checks of copying translate to
     clipboard and pasting it to another layer.
 
     The layer_list contains three layers, l1, l2 and l3.
@@ -146,7 +146,7 @@ def test_copy_translate_to_clipboard(layer_list):
 
 @pytest.mark.usefixtures('qtbot')
 def test_copy_rotate_to_clipboard(layer_list):
-    """This is the test that checks of coping rotate to
+    """This is the test that checks copying rotate to
     clipboard and pasting it to another layer.
 
     The layer_list contains three layers, l1, l2 and l3.
@@ -164,7 +164,7 @@ def test_copy_rotate_to_clipboard(layer_list):
 
 @pytest.mark.usefixtures('qtbot')
 def test_copy_affine_to_clipboard(layer_list):
-    """This is the test that checks of coping affine to
+    """This is the test that checks copying affine to
     clipboard and pasting it to another layer.
 
     The layer_list contains three layers, l1, l2 and l3.
@@ -189,7 +189,7 @@ def test_copy_affine_to_clipboard(layer_list):
 
 @pytest.mark.usefixtures('qtbot')
 def test_copy_shear_to_clipboard(layer_list):
-    """This is the test that checks of coping shear to
+    """This is the test that checks copying shear to
     clipboard and pasting it to another layer.
 
     The layer_list contains three layers, l1, l2 and l3.
@@ -207,7 +207,7 @@ def test_copy_shear_to_clipboard(layer_list):
 
 @pytest.mark.usefixtures('qtbot')
 def test_copy_spatial_to_clipboard(layer_list):
-    """This is the test that checks of coping spatial to
+    """This is the test that checks copying spatial to
     clipboard and pasting it to another layer.
 
     The layer_list contains three layers, l1, l2 and l3.
@@ -232,7 +232,7 @@ def test_copy_spatial_to_clipboard(layer_list):
 
 @pytest.mark.usefixtures('qtbot')
 def test_copy_spatial_to_clipboard_different_dim(layer_list_dim):
-    """This is the test that checks of coping spatial
+    """This is the test that checks copying spatial
     information from layer with higher dimensionality to layer
     with lower dimensionality.
 
