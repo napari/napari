@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, NamedTuple
 
 from napari.settings._fields import Version
 from napari.settings._shortcuts import ShortcutsSettings
+from napari.utils.triangulation_backend import TriangulationBackend
 
 if TYPE_CHECKING:
     from napari.settings._napari_settings import NapariSettings
@@ -172,3 +173,25 @@ def v050_060(model: NapariSettings):
                     new_keybind_list.append(kb)
             new_keybinds[action_str] = new_keybind_list
         model.shortcuts.shortcuts = new_keybinds
+
+
+@migrator('0.6.0', '0.7.0')
+def v060_070(model: NapariSettings):
+    """Migrate from v0.6.0 to v0.7.0.
+
+    In #7627 we updated the default value of the npe2 shim, which bumped the
+    minor version. However, the migration doesn't need to do anything about
+    that.
+
+    In #7747, we changed from `experimental.compiled_triangulation` (bool) to
+    `experimental.triangulation_backend` (enum). We need to migrate the bool
+    setting to oen of the backends.
+
+    Note: both PRs occurred between 0.5.6 and 0.6.0, so they require only a
+    single version bump/migration.
+    """
+    model.experimental.triangulation_backend = (
+        TriangulationBackend.partsegcore
+        if model.experimental.compiled_triangulation
+        else TriangulationBackend.triangle
+    )
