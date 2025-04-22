@@ -159,8 +159,10 @@ class Shape(ABC):
             and bermuda is not None
         ):
             cls._set_meshes = cls._set_meshes_compiled_bermuda
-        elif TriangulationBackend.partsegcore == TRIANGULATION_BACKEND:
-            assert partsegcore_triangulate is not None
+        elif (
+            TriangulationBackend.partsegcore == TRIANGULATION_BACKEND
+            and partsegcore_triangulate is not None
+        ):
             cls._set_meshes = cls._set_meshes_compiled_partseg
         elif (
             TriangulationBackend.triangle == TRIANGULATION_BACKEND
