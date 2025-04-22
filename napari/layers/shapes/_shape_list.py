@@ -498,34 +498,27 @@ class ShapeList:
             self._update_z_order()
         self._clear_cache()
 
-    def _add_multiple_shapes(
-        self,
-        shapes,
-        face_colors=None,
-        edge_colors=None,
-        z_refresh=True,
+    def _validate_and_prepare_colors(
+        self, shapes, face_colors=None, edge_colors=None
     ):
-        """Add multiple shapes at once (faster than adding them one by one)
+        """Validate inputs and prepare colors for adding multiple shapes.
 
         Parameters
         ----------
         shapes : iterable of Shape
-            Each Shape must be a subclass of Shape, one of "{'Line', 'Rectangle',
-            'Ellipse', 'Path', 'Polygon'}"
-        face_colors : iterable of face_color
-        edge_colors : iterable of edge_color
-        z_refresh : bool
-            If set to true, the mesh elements are reindexed with the new z order.
-            When shape_index is provided, z_refresh will be overwritten to false,
-            as the z indices will not change.
-            When adding a batch of shapes, set to false  and then call
-            ShapesList._update_z_order() once at the end.
+            Each Shape must be a subclass of Shape
+        face_colors : iterable of face_color or None
+            If None, default face colors will be used
+        edge_colors : iterable of edge_color or None
+            If None, default edge colors will be used
 
-        TODO: Currently shares a lot of code with `add()`, with the
-        difference being that `add()` supports inserting shapes at a specific
-        `shape_index`, whereas `add_multiple` will append them as a full batch
+        Returns
+        -------
+        face_colors : np.ndarray
+            Array of face colors
+        edge_colors : np.ndarray
+            Array of edge colors
         """
-
         if face_colors is None:
             face_colors = np.tile(np.array([1, 1, 1, 1]), (len(shapes), 1))
         else:
@@ -552,7 +545,31 @@ class ShapeList:
                 )
             )
 
-        # First pass: calculate sizes for preallocation
+        return face_colors, edge_colors
+
+    def _calculate_array_sizes(self, shapes):
+        """Calculate sizes needed for array preallocation.
+
+        Parameters
+        ----------
+        shapes : iterable of Shape
+            Each Shape must be a subclass of Shape
+
+        Returns
+        -------
+        n_shapes : int
+            Number of shapes
+        total_vertices_data : int
+            Total number of vertices
+        total_index_data : int
+            Total number of indices
+        total_mesh_vertices : int
+            Total number of mesh vertices
+        total_face_triangles : int
+            Total number of face triangles
+        total_edge_triangles : int
+            Total number of edge triangles
+        """
         n_shapes = len(shapes)
         total_vertices_data = 0
         total_index_data = 0
@@ -569,16 +586,50 @@ class ShapeList:
             total_face_triangles += len(shape._face_triangles)
             total_edge_triangles += len(shape._edge_triangles)
 
-        # Preallocate arrays
+        return (
+            n_shapes,
+            total_vertices_data,
+            total_index_data,
+            total_mesh_vertices,
+            total_face_triangles,
+            total_edge_triangles,
+        )
+
+    def _preallocate_arrays(self, shapes, sizes):
+        """Preallocate arrays for storing shape data.
+
+        Parameters
+        ----------
+        shapes : iterable of Shape
+            Each Shape must be a subclass of Shape
+        sizes : tuple
+            Tuple containing sizes for preallocation:
+            (n_shapes, total_vertices_data, total_index_data, total_mesh_vertices,
+            total_face_triangles, total_edge_triangles)
+
+        Returns
+        -------
+        arrays : dict
+            Dictionary containing preallocated arrays
+        """
+        (
+            n_shapes,
+            total_vertices_data,
+            total_index_data,
+            total_mesh_vertices,
+            total_face_triangles,
+            total_edge_triangles,
+        ) = sizes
+
+        # Determine the dimensionality from the first shape
+        # All shapes in a batch will have the same dimensionality
+        dim = shapes[0]._face_vertices.shape[1] if shapes else 3
+
         all_z_index = np.empty(n_shapes, dtype=np.int32)
         all_vertices = np.empty(
             (total_vertices_data, self.ndisplay), dtype=np.float32
         )
         all_index = np.empty(total_index_data, dtype=np.int32)
-
-        # Determine the dimensionality from the first shape
-        # All shapes in a batch will have the same dimensionality
-        dim = shapes[0]._face_vertices.shape[1] if shapes else 3
 
         all_mesh_vertices = np.empty(
             (total_mesh_vertices, dim), dtype=np.float32
@@ -602,13 +653,53 @@ class ShapeList:
             (total_triangles, 4), dtype=np.float32
         )
 
-        # Second pass: fill preallocated arrays
+        return {
+            'all_z_index': all_z_index,
+            'all_vertices': all_vertices,
+            'all_index': all_index,
+            'all_mesh_vertices': all_mesh_vertices,
+            'all_mesh_vertices_centers': all_mesh_vertices_centers,
+            'all_mesh_vertices_offsets': all_mesh_vertices_offsets,
+            'all_mesh_vertices_index': all_mesh_vertices_index,
+            'all_mesh_triangles': all_mesh_triangles,
+            'all_mesh_triangles_index': all_mesh_triangles_index,
+            'all_mesh_triangles_colors': all_mesh_triangles_colors,
+        }
+
+    def _fill_arrays(self, shapes, face_colors, edge_colors, arrays):
+        """Fill preallocated arrays with shape data.
+
+        Parameters
+        ----------
+        shapes : iterable of Shape
+            Each Shape must be a subclass of Shape
+        face_colors : np.ndarray
+            Array of face colors
+        edge_colors : np.ndarray
+            Array of edge colors
+        arrays : dict
+            Dictionary containing preallocated arrays
+
+        Returns
+        -------
+        arrays : dict
+            Dictionary containing filled arrays
+        """
+        all_z_index = arrays['all_z_index']
+        all_vertices = arrays['all_vertices']
+        all_index = arrays['all_index']
+        all_mesh_vertices = arrays['all_mesh_vertices']
+        all_mesh_vertices_centers = arrays['all_mesh_vertices_centers']
+        all_mesh_vertices_offsets = arrays['all_mesh_vertices_offsets']
+        all_mesh_vertices_index = arrays['all_mesh_vertices_index']
+        all_mesh_triangles = arrays['all_mesh_triangles']
+        all_mesh_triangles_index = arrays['all_mesh_triangles_index']
+        all_mesh_triangles_colors = arrays['all_mesh_triangles_colors']
+
         m_mesh_vertices_count = len(self._mesh.vertices)
         vertices_offset = 0
         index_offset = 0
         mesh_vertices_offset = 0
-        # face_triangles_offset = 0
-        # edge_triangles_offset = 0
         triangles_offset = 0
 
         for i, (shape, face_color, edge_color) in enumerate(
@@ -722,6 +813,31 @@ class ShapeList:
             vertices_offset += n_vertices
             index_offset += n_index
 
+        return arrays
+
+    def _assemble_mesh_properties(self, face_colors, edge_colors, arrays):
+        """Assemble mesh properties from filled arrays.
+
+        Parameters
+        ----------
+        face_colors : np.ndarray
+            Array of face colors
+        edge_colors : np.ndarray
+            Array of edge colors
+        arrays : dict
+            Dictionary containing filled arrays
+        """
+        all_z_index = arrays['all_z_index']
+        all_vertices = arrays['all_vertices']
+        all_index = arrays['all_index']
+        all_mesh_vertices = arrays['all_mesh_vertices']
+        all_mesh_vertices_centers = arrays['all_mesh_vertices_centers']
+        all_mesh_vertices_offsets = arrays['all_mesh_vertices_offsets']
+        all_mesh_vertices_index = arrays['all_mesh_vertices_index']
+        all_mesh_triangles = arrays['all_mesh_triangles']
+        all_mesh_triangles_index = arrays['all_mesh_triangles_index']
+        all_mesh_triangles_colors = arrays['all_mesh_triangles_colors']
+
         # assemble properties
         self._z_index = np.append(self._z_index, all_z_index, axis=0)
         self._face_color = np.vstack((self._face_color, face_colors))
@@ -751,6 +867,50 @@ class ShapeList:
         self._mesh.triangles_colors = np.vstack(
             (self._mesh.triangles_colors, all_mesh_triangles_colors)
         )
+
+    def _add_multiple_shapes(
+        self,
+        shapes,
+        face_colors=None,
+        edge_colors=None,
+        z_refresh=True,
+    ):
+        """Add multiple shapes at once (faster than adding them one by one)
+
+        Parameters
+        ----------
+        shapes : iterable of Shape
+            Each Shape must be a subclass of Shape, one of "{'Line', 'Rectangle',
+            'Ellipse', 'Path', 'Polygon'}"
+        face_colors : iterable of face_color
+        edge_colors : iterable of edge_color
+        z_refresh : bool
+            If set to true, the mesh elements are reindexed with the new z order.
+            When shape_index is provided, z_refresh will be overwritten to false,
+            as the z indices will not change.
+            When adding a batch of shapes, set to false  and then call
+            ShapesList._update_z_order() once at the end.
+
+        TODO: Currently shares a lot of code with `add()`, with the
+        difference being that `add()` supports inserting shapes at a specific
+        `shape_index`, whereas `add_multiple` will append them as a full batch
+        """
+        # Validate inputs and prepare colors
+        face_colors, edge_colors = self._validate_and_prepare_colors(
+            shapes, face_colors, edge_colors
+        )
+
+        # Calculate sizes for preallocation
+        sizes = self._calculate_array_sizes(shapes)
+
+        # Preallocate arrays
+        arrays = self._preallocate_arrays(shapes, sizes)
+
+        # Fill preallocated arrays
+        arrays = self._fill_arrays(shapes, face_colors, edge_colors, arrays)
+
+        # Assemble mesh properties
+        self._assemble_mesh_properties(face_colors, edge_colors, arrays)
 
         if z_refresh:
             # Set z_order
