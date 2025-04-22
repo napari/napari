@@ -853,8 +853,8 @@ def triangulate_face_triangle(
     res = triangulate({'vertices': raw_vertices, 'segments': edges}, opts='p')
     vertices = res['vertices']
     raw_triangles = res['triangles']
-    # unlike VisPy below, triangle's constrained Delaunay triangulation
-    # returns triangles inside the hole as well. (I guess in case you want
+    # triangle's constrained Delaunay triangulation
+    # returns triangles inside the hole. (perhaps in case you want
     # to render holes but in a different color, for example.) In our case,
     # we want to get rid of them, so we cull them with some NumPy
     # calculations

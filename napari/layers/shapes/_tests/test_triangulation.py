@@ -301,6 +301,5 @@ def test_normalize_vertices_and_edges_py_numba_same(country_wth_hole):
     )
     e1s = {tuple(x) for x in e1}
     e2s = {tuple(x) for x in e2}
-    assert len(e1s) == len(e2s)
     assert e1s == e2s
     npt.assert_array_equal(v1, v2)
