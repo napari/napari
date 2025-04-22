@@ -74,6 +74,7 @@ class ExperimentalSettings(EventedSettings):
             'Max radius in pixels from first vertex for double-click to complete a polygon; set -1 to always complete.'
         ),
     )
+
     triangulation_backend: TriangulationBackend = Field(
         TriangulationBackend.pure_python,
         title=trans._('Triangulation backend to use for Shapes layer'),
@@ -83,6 +84,15 @@ class ExperimentalSettings(EventedSettings):
             "The 'partsegcore' requires the optional 'partsegcore-compiled-backend' package.\n"
             "The 'triangle' requires the optional 'triangle' package.\n"
             "The 'none' backend uses the default Python triangulation.\n"
+        ),
+    )
+
+    compiled_triangulation: bool = Field(
+        default=False,
+        title=trans._('Unused option. Use "triangulation backend" instead.'),
+        description=trans._(
+            'This option was removed in napari 0.6.0. Use \n'
+            '"triangulation backend" instead.'
         ),
     )
 
