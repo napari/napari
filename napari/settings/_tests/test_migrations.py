@@ -174,7 +174,7 @@ def test_060_to_070_migration():
         schema_version='0.7.0',
         experimental={
             # must match default setting
-            'triangulation_backend': TriangulationBackend.pure_python
+            'triangulation_backend': TriangulationBackend.fastest_available
         },
     )
     settings_070_compiled_expected = NapariSettings(
