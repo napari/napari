@@ -156,6 +156,7 @@
       "napari:window:view:toggle_viewer_axes_labels",
       "napari:window:view:toggle_viewer_axesdashed",
       "napari:window:view:toggle_viewer_scale_bar",
+      "napari:window:view:toggle_viewer_scale_bar_box",
       "napari:window:view:toggle_viewer_scale_bar_colored",
       "napari:window:view:toggle_viewer_scale_bar_ticks"
     ],

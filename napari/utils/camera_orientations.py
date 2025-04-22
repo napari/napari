@@ -28,7 +28,7 @@ VerticalAxisOrientationStr = Literal['up', 'down']
 HorizontalAxisOrientationStr = Literal['left', 'right']
 DepthAxisOrientationStr = Literal['away', 'towards']
 
-
+# Prior to v0.6.0, the default would be equivalent to ('away', 'down', 'right')
 DEFAULT_ORIENTATION_TYPED = (
     DepthAxisOrientation.TOWARDS,
     VerticalAxisOrientation.DOWN,

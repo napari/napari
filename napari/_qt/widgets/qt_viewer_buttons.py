@@ -431,6 +431,8 @@ class QtViewerButtons(QFrame):
         handedness = self.viewer.camera.handedness
         tooltip_text = (
             'Controls the orientation of the depth, vertical, and horizontal camera axes.\n'
+            'Default is right-handed (towards, down, right).\n'
+            'Default prior to 0.6.0 was left-handed (away, down, right).\n'
             f'Currently orientation is {handedness.value}-handed.'
         )
         self.orientation_help_symbol.setToolTip(tooltip_text)
