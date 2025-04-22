@@ -3,6 +3,8 @@ from __future__ import annotations
 import logging
 import sys
 from collections import deque
+from collections.abc import Generator
+from contextlib import contextmanager
 from typing import TYPE_CHECKING
 
 from psygnal import Signal
@@ -98,7 +100,10 @@ LOG_HANDLER.setFormatter(
 LOG_HANDLER.setLevel(logging.DEBUG)
 
 
-def register_logger_to_napari_handler(module: str) -> None:
+@contextmanager
+def register_logger_to_napari_handler(
+    module: str,
+) -> Generator[None, None, None]:
     """
     Register a specific module's logger to use our custom log handler.
     """
@@ -107,6 +112,8 @@ def register_logger_to_napari_handler(module: str) -> None:
     if not logger.handlers and logging.lastResort:
         logger.addHandler(logging.lastResort)
     logger.addHandler(LOG_HANDLER)
+    yield
+    logger.removeHandler(LOG_HANDLER)
 
 
 def _html_tag_for_level(level_name: str, level_value: int) -> str:

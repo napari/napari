@@ -3,7 +3,6 @@ import os
 from lazy_loader import attach as _attach
 
 from napari._check_numpy_version import limit_numpy1x_threads_on_macos_arm
-from napari.utils._logging import register_logger_to_napari_handler
 
 try:
     from napari._version import version as __version__
@@ -47,8 +46,6 @@ _submod_attrs = {
     ],
     'viewer': ['Viewer', 'current_viewer'],
 }
-
-register_logger_to_napari_handler('')  # root logger
 
 # All imports in __init__ are hidden inside of `__getattr__` to prevent
 # importing the full chain of packages required when calling `import napari`.
