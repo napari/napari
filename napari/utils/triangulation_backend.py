@@ -5,8 +5,6 @@ If `set_backend` is used nex to settings, the state of the settings
 may be inconsistent with the backend used.
 """
 
-from enum import auto
-
 from napari.utils.compat import StrEnum
 
 
@@ -16,19 +14,19 @@ class TriangulationBackend(StrEnum):
     All backends, except `pure_python` are using numba compiled helper functions
     """
 
-    fastest_available = auto()
+    fastest_available = 'Fastest available'
     """Select the fastest available backend. The order of preference is:
     bermuda, partsegcore, triangle, numba, pure_python.
     """
-    bermuda = auto()
+    bermuda = 'bermuda'
     """Compiled backend implemented in Rust, https://github.com/napari/bermuda"""
-    partsegcore = auto()
+    partsegcore = 'PartSegCore'
     """Compiled backend implemented in C++, https://partseg.github.io"""
-    triangle = auto()
+    triangle = 'triangle'
     """Triangle backend implemented in C, https://www.cs.cmu.edu/~quake/triangle.html"""
-    numba = auto()
+    numba = 'Numba'
     """part of helper functions compiled with numba. Triangulation using vispy"""
-    pure_python = auto()
+    pure_python = 'Pure python'
     """Putre python on napari side, Triangulation using vispy"""
 
     def __str__(self) -> str:
