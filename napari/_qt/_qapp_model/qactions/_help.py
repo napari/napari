@@ -128,11 +128,11 @@ Q_HELP_ACTIONS: list[Action] = [
         callback=partial(web_open, url=HELP_URLS['homepage']),
         menus=[{'id': MenuId.MENUBAR_HELP, 'group': MenuGroup.NAVIGATION}],
     ),
-    Action(
-        id='napari.window.help.show_log',
-        title=trans._('Show log'),
-        callback=_show_log,
-        menus=[{'id': MenuId.MENUBAR_HELP, 'group': MenuGroup.RENDER}],
-        status_tip=trans._('View and filter logs'),
-    ),
+    # Action(
+    #     id='napari.window.help.show_log',
+    #     title=trans._('Show log'),
+    #     callback=_show_log,
+    #     menus=[{'id': MenuId.MENUBAR_HELP, 'group': MenuGroup.RENDER}],
+    #     status_tip=trans._('View and filter logs'),
+    # ),
 ]
