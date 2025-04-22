@@ -31,11 +31,19 @@ class TriangulationBackend(StrEnum):
 
     def __str__(self) -> str:
         """Return the string representation of the backend."""
-        return self.name.replace('_', ' ').title()
+        return str(self.value)
 
     def __repr__(self) -> str:
         """Return the string representation of the backend."""
         return self.name
+
+    @classmethod
+    def _missing_(cls, value):
+        """Handle missing values in the enum."""
+        # Handle the case where the value is not a valid enum member
+        if isinstance(value, str):
+            return cls[value.replace(' ', '_').lower()]
+        raise ValueError(f"'{value}' is not a valid TriangulationBackend.")
 
 
 def get_backend() -> TriangulationBackend:
