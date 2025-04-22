@@ -172,7 +172,10 @@ def test_060_to_070_migration():
     )
     settings_070_plain_expected = NapariSettings(
         schema_version='0.7.0',
-        experimental={'triangulation_backend': TriangulationBackend.triangle},
+        experimental={
+            # must match default setting
+            'triangulation_backend': TriangulationBackend.pure_python
+        },
     )
     settings_070_compiled_expected = NapariSettings(
         schema_version='0.7.0',
