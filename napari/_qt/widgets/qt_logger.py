@@ -94,7 +94,7 @@ class LogWidget(QWidget):
             self._jump_to_pos
         )
 
-        # self._on_loglevel_change()
+        self._on_loglevel_change()
         self._on_change()
         self._jump_to_pos()
 
