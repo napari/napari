@@ -8,8 +8,8 @@ import pytest
 ac = pytest.importorskip('napari.layers.shapes._accelerated_triangulate')
 
 
-@pytest.fixture
-def _disable_jit(monkeypatch):
+@pytest.fixture(params=[False, True])
+def _disable_jit(request):
     """Fixture to temporarily disable numba JIT during testing.
 
     This helps to measure coverage and in debugging. *However*, reloading a
@@ -18,7 +18,7 @@ def _disable_jit(monkeypatch):
     no class definitions, only functions.
     """
     pytest.importorskip('numba')
-    with patch('numba.core.config.DISABLE_JIT', True):
+    with patch('numba.core.config.DISABLE_JIT', request.param):
         importlib.reload(ac)
         yield
     importlib.reload(ac)
@@ -140,3 +140,50 @@ def test_create_box_from_bounding():
             [1, 1],
         ],
     )
+
+
+@pytest.mark.usefixtures('_disable_jit')
+def test_is_convex_self_intersection(self_intersecting_polygon):
+    assert not ac.is_convex(self_intersecting_polygon)
+
+
+@pytest.mark.usefixtures('_disable_jit')
+def test_is_convex_regular_polygon(regular_polygon):
+    assert ac.is_convex(regular_polygon)
+
+
+@pytest.mark.usefixtures('_disable_jit')
+def test_is_convex_non_convex(non_convex_poly):
+    assert not ac.is_convex(non_convex_poly)
+
+
+@pytest.mark.usefixtures('_disable_jit')
+def test_line_non_convex(line):
+    assert not ac.is_convex(line)
+
+
+@pytest.mark.usefixtures('_disable_jit')
+def test_line_two_point_non_convex(line_two_point):
+    assert not ac.is_convex(line_two_point)
+
+
+@pytest.mark.usefixtures('_disable_jit')
+def test_normalize_vertices_and_edges(poly_hole):
+    points, edges = ac.normalize_vertices_and_edges(poly_hole, close=True)
+    assert points.shape == (8, 2)
+    assert edges.shape == (8, 2)
+
+
+@pytest.mark.usefixtures('_disable_jit')
+def test_reconstruct_polygon_edges():
+    vertices = np.array(
+        [(0, 0), (3, 0), (3, 3), (0, 3), (1, 1), (2, 1), (2, 2), (1, 2)]
+    )
+    edges = np.array(
+        [(0, 1), (1, 2), (2, 3), (3, 0), (4, 5), (5, 6), (6, 7), (7, 4)]
+    )
+
+    res = ac.reconstruct_polygons_from_edges(vertices, edges)
+    assert len(res) == 2
+    assert len(res[0]) == 4
+    assert len(res[1]) == 4
