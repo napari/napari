@@ -775,6 +775,7 @@ disallow_untyped_defs = false
 [[tool.mypy.overrides]]
 module = [
     "napari._app_model.context._layerlist_context",
+    "napari._vispy.overlays.colormap",
     "napari.components.overlays.labels_polygon",
     "napari.plugins.io",
     "napari.utils.colormaps.vendored._cm_listed"

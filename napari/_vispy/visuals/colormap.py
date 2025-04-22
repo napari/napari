@@ -1,5 +1,17 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
 from vispy.scene import Image, Line, Node, STTransform, Text
+
+if TYPE_CHECKING:
+    from typing import Any
+
+    import numpy.typing as npt
+    from vispy.color import Colormap as VispyColormap
+
+    from napari.utils.color import ColorValue
 
 
 class Colormap(Node):
@@ -23,12 +35,16 @@ class Colormap(Node):
         self.box.transform = STTransform()
         self.ticks = Line(connect='segments', method='gl', parent=self)
         self.ticks.transform = STTransform()
-        self.tick_values = []
+        self.tick_values: list[Text] = []
 
         self._texture_size = 250
         self.set_data_and_clim()
 
-    def set_data_and_clim(self, clim=(0, 1), dtype=np.float32):
+    def set_data_and_clim(
+        self,
+        clim: tuple[float, float] = (0, 1),
+        dtype: npt.DTypeLike = np.float32,
+    ) -> None:
         self.img.set_data(
             np.linspace(
                 clim[1], clim[0], self._texture_size, dtype=dtype
@@ -36,20 +52,29 @@ class Colormap(Node):
         )
         self.img.clim = clim
 
-    def set_cmap(self, cmap):
+    def set_cmap(self, cmap: VispyColormap) -> None:
         self.img.cmap = cmap
 
-    def set_gamma(self, gamma):
+    def set_gamma(self, gamma: float) -> None:
         self.img.gamma = gamma
 
-    def set_gl_state(self, *args, **kwargs):
+    def set_gl_state(self, *args: Any, **kwargs: Any) -> None:
         self.img.set_gl_state(*args, **kwargs)
 
-    def set_size(self, size):
+    def set_size(self, size: tuple[float, float]) -> None:
         self.img.transform.scale = size[0], size[1] / self._texture_size
         self.box.transform.scale = size
 
-    def set_ticks(self, show, n, tick_length, size, font_size, clim, color):
+    def set_ticks_and_get_text_width(
+        self,
+        show: bool,
+        n: int,
+        tick_length: float,
+        size: tuple[float, float],
+        font_size: int,
+        clim: tuple[float, float],
+        color: ColorValue,
+    ) -> float:
         self.box.set_data(color=color)
         self.ticks.visible = show
         for text in self.tick_values:

@@ -1,15 +1,32 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from vispy.color import Colormap as VispyColormap
 
 from napari._vispy.overlays.base import LayerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.colormap import Colormap
 from napari.utils.colormaps.colormap_utils import _coerce_contrast_limits
 
+if TYPE_CHECKING:
+    from vispy.scene import Node
+
+    from napari.components.overlays import Overlay
+    from napari.layers import Image, Surface
+
 
 class VispyColormapOverlay(LayerOverlayMixin, VispyCanvasOverlay):
-    def __init__(self, *, layer, overlay, parent=None) -> None:
+    def __init__(
+        self,
+        *,
+        layer: Image | Surface,
+        overlay: Overlay,
+        parent: Node | None = None,
+    ) -> None:
         super().__init__(
             node=Colormap(), layer=layer, overlay=overlay, parent=parent
         )
+        self.layer: Image | Surface
         self.x_size = 50
         self.y_size = 250
         self.x_offset = 7
@@ -27,7 +44,7 @@ class VispyColormapOverlay(LayerOverlayMixin, VispyCanvasOverlay):
 
         self.reset()
 
-    def _on_data_change(self):
+    def _on_data_change(self) -> None:
         self.node.set_data_and_clim(
             clim=_coerce_contrast_limits(
                 self.layer.contrast_limits
@@ -38,17 +55,17 @@ class VispyColormapOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         self._on_gamma_change()
         self._on_ticks_change()
 
-    def _on_colormap_change(self):
+    def _on_colormap_change(self) -> None:
         self.node.set_cmap(VispyColormap(*self.layer.colormap))
 
-    def _on_gamma_change(self):
+    def _on_gamma_change(self) -> None:
         self.node.set_gamma(self.layer.gamma)
 
-    def _on_size_change(self):
+    def _on_size_change(self) -> None:
         self.node.set_size(self.overlay.size)
         self._on_ticks_change()
 
-    def _on_ticks_change(self):
+    def _on_ticks_change(self) -> None:
         text_width = self.node.set_ticks(
             show=self.overlay.ticks,
             n=self.overlay.n_ticks,
@@ -75,7 +92,7 @@ class VispyColormapOverlay(LayerOverlayMixin, VispyCanvasOverlay):
 
         self._on_position_change()
 
-    def reset(self):
+    def reset(self) -> None:
         super().reset()
         self._on_data_change()
         self._on_size_change()
