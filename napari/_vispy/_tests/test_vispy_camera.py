@@ -143,6 +143,34 @@ def test_camera_model_update_from_vispy_3D(make_napari_viewer):
     np.testing.assert_almost_equal(viewer.camera.zoom, vispy_camera.zoom)
 
 
+def test_switching_ndisplay_maintains_3D_angles(make_napari_viewer):
+    """Test that switching dims.ndisplay maintains 3D angles."""
+    viewer = make_napari_viewer()
+    vispy_camera = viewer.window._qt_viewer.canvas.camera
+
+    np.random.seed(0)
+    data = np.random.random((11, 11, 11))
+    viewer.add_image(data)
+
+    angles_3D = (24, 12, -19)
+    angles_2D = (0, 0, 90)
+
+    viewer.dims.ndisplay = 3
+    viewer.camera.angles = angles_3D
+    np.testing.assert_almost_equal(viewer.camera.angles, vispy_camera.angles)
+
+    # switching to 2D should maintain the model camera angles from 3D
+    # but the vispy camera angles will be the default 2D angles
+    viewer.dims.ndisplay = 2
+    np.testing.assert_almost_equal(viewer.camera.angles, angles_3D)
+    np.testing.assert_almost_equal(vispy_camera.angles, angles_2D)
+
+    # switching back to 3D should use the model camera angles for the
+    # vispy camera
+    viewer.dims.ndisplay = 3
+    np.testing.assert_almost_equal(viewer.camera.angles, vispy_camera.angles)
+
+
 @pytest.mark.skipif(
     sys.platform == 'win32', reason='This new test is flaky on windows'
 )

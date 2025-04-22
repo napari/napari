@@ -180,6 +180,7 @@ docs = [
     "sphinx-gallery",
     "sphinx_autodoc_typehints==1.12.0",
     "sphinxcontrib-mermaid>=1.0.0",
+    "sphinxext-opengraph[social-cards]",
     "myst-nb",
     "napari-sphinx-theme>=0.3.0",
     "matplotlib",
@@ -241,6 +242,7 @@ napari_builtins = [
 
 [tool.setuptools_scm]
 write_to = "napari/_version.py"
+fallback_version = "0.6.0.nogit"
 
 [tool.check-manifest]
 ignore = [
