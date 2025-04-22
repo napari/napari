@@ -194,8 +194,8 @@ jobs:
       - test
       - test_examples
     permissions:
-      id-token: write  # Required for OIDC
-      contents: read    # Required for checkout
+      id-token: write  # Required for OIDC authentication
+      contents: read    # Required for code checkout
     uses: ./.github/workflows/reusable_coverage_upload.yml
     secrets: inherit
 
