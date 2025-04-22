@@ -693,7 +693,7 @@ class ScalarFieldBase(Layer, ABC):
         )
 
         if self.multiscale and value is not None:
-            value = (self.data_level, value)
+            return self.data_level, value
 
         return value
 
