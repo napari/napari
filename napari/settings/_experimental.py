@@ -76,14 +76,16 @@ class ExperimentalSettings(EventedSettings):
     )
 
     triangulation_backend: TriangulationBackend = Field(
-        TriangulationBackend.pure_python,
+        TriangulationBackend.fastest_available,
         title=trans._('Triangulation backend to use for Shapes layer'),
         description=trans._(
             'Triangulation backend to use for Shapes layer.\n'
             "The 'bermuda' requires the optional 'bermuda' package.\n"
             "The 'partsegcore' requires the optional 'partsegcore-compiled-backend' package.\n"
             "The 'triangle' requires the optional 'triangle' package.\n"
-            "The 'none' backend uses the default Python triangulation.\n"
+            "The 'numba' backend requires the optional 'numba' package.\n"
+            "The 'pure python' backend uses the default Python triangulation from vispy.\n"
+            "The 'fastest available' backend will select the fastest available backend.\n"
         ),
     )
 
@@ -98,7 +100,7 @@ class ExperimentalSettings(EventedSettings):
 
     class NapariConfig:
         # Napari specific configuration
-        preferences_exclude = ('schema_version',)
+        preferences_exclude = ('schema_version', 'compiled_triangulation')
 
 
 def _update_triangulation_backend(event: Event) -> None:

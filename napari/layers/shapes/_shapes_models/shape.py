@@ -155,17 +155,29 @@ class Shape(ABC):
 
     def __new__(cls, *args, **kwargs):
         if (
-            TriangulationBackend.bermuda == TRIANGULATION_BACKEND
+            TRIANGULATION_BACKEND
+            in {
+                TriangulationBackend.bermuda,
+                TriangulationBackend.fastest_available,
+            }
             and bermuda is not None
         ):
             cls._set_meshes = cls._set_meshes_compiled_bermuda
         elif (
-            TriangulationBackend.partsegcore == TRIANGULATION_BACKEND
+            TRIANGULATION_BACKEND
+            in {
+                TriangulationBackend.partsegcore,
+                TriangulationBackend.fastest_available,
+            }
             and partsegcore_triangulate is not None
         ):
             cls._set_meshes = cls._set_meshes_compiled_partseg
         elif (
-            TriangulationBackend.triangle == TRIANGULATION_BACKEND
+            TRIANGULATION_BACKEND
+            in {
+                TriangulationBackend.triangle,
+                TriangulationBackend.fastest_available,
+            }
             and 'triangle' in sys.modules
         ):
             cls._set_meshes = cls._set_meshes_triangle

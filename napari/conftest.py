@@ -220,7 +220,7 @@ def _fresh_settings(monkeypatch):
     monkeypatch.setattr(
         ExperimentalSettings.__fields__['triangulation_backend'],
         'default',
-        TriangulationBackend.bermuda,
+        TriangulationBackend.fastest_available,
     )
 
     # calling save() with no config path is normally an error

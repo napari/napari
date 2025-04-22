@@ -16,6 +16,10 @@ class TriangulationBackend(StrEnum):
     All backends, except `pure_python` are using numba compiled helper functions
     """
 
+    fastest_available = auto()
+    """Select the fastest available backend. The order of preference is:
+    bermuda, partsegcore, triangle, numba, pure_python.
+    """
     bermuda = auto()
     """Compiled backend implemented in Rust, https://github.com/napari/bermuda"""
     partsegcore = auto()

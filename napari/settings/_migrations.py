@@ -193,6 +193,6 @@ def v060_070(model: NapariSettings):
     model.experimental.triangulation_backend = (
         TriangulationBackend.partsegcore
         if model.experimental.compiled_triangulation
-        else TriangulationBackend.pure_python  # must match default setting
+        else TriangulationBackend.fastest_available  # must match default setting
     )
     model.experimental.compiled_triangulation = False  # reset to default
