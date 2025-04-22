@@ -38,7 +38,7 @@ class TriangulationBackend(StrEnum):
         return self.name
 
     @classmethod
-    def _missing_(cls, value):
+    def _missing_(cls, value: object) -> 'TriangulationBackend':
         """Handle missing values in the enum."""
         # Handle the case where the value is not a valid enum member
         if isinstance(value, str):
