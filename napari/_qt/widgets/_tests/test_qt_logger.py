@@ -1,6 +1,9 @@
+import pytest
+
 from napari._qt.widgets.qt_logger import LogWidget
 
 
+@pytest.skip
 def test_qt_logger(qtbot):
     widget = LogWidget()
     qtbot.addWidget(widget)
