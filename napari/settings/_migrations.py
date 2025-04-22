@@ -195,3 +195,4 @@ def v060_070(model: NapariSettings):
         if model.experimental.compiled_triangulation
         else TriangulationBackend.triangle
     )
+    model.experimental.compiled_triangulation = False  # reset to default
