@@ -527,13 +527,6 @@ class ShapeList:
         `shape_index`, whereas `add_multiple` will append them as a full batch
         """
 
-        def _make_index(length, shape_index, cval=0):
-            """Same but faster than `np.repeat([[shape_index, cval]], length, axis=0)`"""
-            index = np.empty((length, 2), np.int32)
-            index.fill(cval)
-            index[:, 0] = shape_index
-            return index
-
         if face_colors is None:
             face_colors = itertools.repeat(np.array([1, 1, 1, 1]), len(shapes))
         else:
@@ -655,12 +648,9 @@ class ShapeList:
             ] = 0
 
             # Create and store face vertices index
-            face_vertices_index = _make_index(
-                n_face_vertices, shape_index, cval=0
-            )
             all_mesh_vertices_index[
                 mesh_vertices_offset : mesh_vertices_offset + n_face_vertices
-            ] = face_vertices_index
+            ] = (shape_index, 0)
 
             # Store face triangles
             face_triangles = shape._face_triangles + m_tmp
@@ -670,12 +660,9 @@ class ShapeList:
             ] = face_triangles
 
             # Create and store face triangles index
-            face_triangles_index = _make_index(
-                n_face_triangles, shape_index, cval=0
-            )
             all_mesh_triangles_index[
                 triangles_offset : triangles_offset + n_face_triangles
-            ] = face_triangles_index
+            ] = (shape_index, 0)
 
             # Create and store face triangles colors
             all_mesh_triangles_colors[
@@ -708,12 +695,9 @@ class ShapeList:
             ] = edge_offsets
 
             # Create and store edge vertices index
-            edge_vertices_index = _make_index(
-                n_edge_vertices, shape_index, cval=1
-            )
             all_mesh_vertices_index[
                 mesh_vertices_offset : mesh_vertices_offset + n_edge_vertices
-            ] = edge_vertices_index
+            ] = (shape_index, 1)
 
             # Store edge triangles
             edge_triangles = shape._edge_triangles + m_tmp
@@ -723,12 +707,9 @@ class ShapeList:
             ] = edge_triangles
 
             # Create and store edge triangles index
-            edge_triangles_index = _make_index(
-                n_edge_triangles, shape_index, cval=1
-            )
             all_mesh_triangles_index[
                 triangles_offset : triangles_offset + n_edge_triangles
-            ] = edge_triangles_index
+            ] = (shape_index, 1)
 
             # Create and store edge triangles colors
             all_mesh_triangles_colors[
