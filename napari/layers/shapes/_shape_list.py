@@ -1,3 +1,4 @@
+import itertools
 import typing
 from collections.abc import Generator, Iterable, Sequence
 from contextlib import contextmanager
@@ -534,12 +535,12 @@ class ShapeList:
             return index
 
         if face_colors is None:
-            face_colors = np.tile(np.array([1, 1, 1, 1]), (len(shapes), 1))
+            face_colors = itertools.repeat(np.array([1, 1, 1, 1]), len(shapes))
         else:
             face_colors = np.asarray(face_colors)
 
         if edge_colors is None:
-            edge_colors = np.tile(np.array([0, 0, 0, 1]), (len(shapes), 1))
+            edge_colors = itertools.repeat(np.array([0, 0, 0, 1]), len(shapes))
         else:
             edge_colors = np.asarray(edge_colors)
 
