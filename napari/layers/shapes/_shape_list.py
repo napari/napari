@@ -672,7 +672,7 @@ class ShapeList:
         triangles_offset = 0
 
         for i, (shape, face_color, edge_color) in enumerate(
-            zip(shapes, face_colors, edge_colors, strict=False)
+            zip(shapes, face_colors, edge_colors, strict=True)
         ):
             shape_index = len(self.shapes)
             self.shapes.append(shape)
