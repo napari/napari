@@ -1528,6 +1528,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         # If async is enabled then emit an event that the viewer should handle.
         if get_settings().experimental.async_:
             self.events.reload(layer=self)
+            self._refresh_sync(extent=True, force=force)
         # Otherwise, slice immediately on the calling thread.
         else:
             self._refresh_sync(
