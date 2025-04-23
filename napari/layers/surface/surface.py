@@ -455,6 +455,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         self, contrast_limits: None | tuple[float, float]
     ) -> None:
         self._vertex.contrast_limits = contrast_limits
+        self.refresh()
 
     @property
     def faces(self) -> np.ndarray:
