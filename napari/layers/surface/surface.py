@@ -315,7 +315,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         )
 
         # Set contrast_limits and colormaps
-        self._gamma = gamma
+        self.gamma = gamma
         if contrast_limits is not None:
             self._contrast_limits_range = contrast_limits
         else:
@@ -455,6 +455,16 @@ class Surface(IntensityVisualizationMixin, Layer):
         self, contrast_limits: None | tuple[float, float]
     ) -> None:
         self._vertex.contrast_limits = contrast_limits
+        self.refresh()
+
+    @property
+    def gamma(self) -> float:
+        """Gamma correction for determining colormap linearity."""
+        return self._gamma
+    
+    @gamma.setter
+    def gamma(self, gamma: float) -> None:
+        self._gamma = gamma
         self.refresh()
 
     @property
