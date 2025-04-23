@@ -133,6 +133,13 @@ def sys_info(as_html: bool = False) -> str:
 
     text += '<br><b>OpenGL:</b><br>'
 
+    try:
+        from OpenGL.version import __version__ as pyopengl_version
+
+        text += f'  - PyOpenGL: {pyopengl_version}<br>'
+    except ImportError:
+        text += '  - PyOpenGL: Import failed<br>'
+
     if loaded.get('vispy', False):
         from napari._vispy.utils.gl import get_max_texture_sizes
 
