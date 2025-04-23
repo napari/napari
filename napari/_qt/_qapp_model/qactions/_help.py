@@ -19,7 +19,7 @@ def _show_about(window: Window):
     QtAbout.showAbout(window._qt_window)
 
 
-def _show_log(window: Window):
+def _show_logs(window: Window):
     window.add_dock_widget(
         LogWidget(), name='logger', area='bottom', tabify=True
     )
@@ -129,9 +129,9 @@ Q_HELP_ACTIONS: list[Action] = [
         menus=[{'id': MenuId.MENUBAR_HELP, 'group': MenuGroup.NAVIGATION}],
     ),
     Action(
-        id='napari.window.help.show_log',
-        title=trans._('Show log'),
-        callback=_show_log,
+        id='napari.window.help.show_logs',
+        title=trans._('Show logs'),
+        callback=_show_logs,
         menus=[{'id': MenuId.MENUBAR_HELP, 'group': MenuGroup.RENDER}],
         status_tip=trans._('View and filter logs'),
     ),
