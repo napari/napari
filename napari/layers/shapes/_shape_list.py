@@ -65,6 +65,55 @@ def _ensure_color_arrays(shapes, face_colors=None, edge_colors=None):
     return face_colors, edge_colors
 
 
+def _calculate_array_sizes(shapes):
+    """Calculate sizes needed for array preallocation.
+
+    Parameters
+    ----------
+    shapes : iterable of Shape
+        Each Shape must be a subclass of Shape
+
+    Returns
+    -------
+    n_shapes : int
+        Number of shapes
+    n_vertices : int
+        Total number of vertices
+    n_indices : int
+        Total number of indices
+    n_mesh_vertices : int
+        Total number of mesh vertices
+    n_face_tri : int
+        Total number of face triangles
+    n_edge_tri : int
+        Total number of edge triangles
+    """
+    n_shapes = len(shapes)
+    n_vertices = 0
+    n_indices = 0
+    n_mesh_vertices = 0
+    n_face_tri = 0
+    n_edge_tri = 0
+
+    for shape in shapes:
+        n_vertices += len(shape.data_displayed)
+        n_indices += len(shape.data)
+        n_mesh_vertices += len(shape._face_vertices) + len(
+            shape._edge_vertices
+        )
+        n_face_tri += len(shape._face_triangles)
+        n_edge_tri += len(shape._edge_triangles)
+
+    return (
+        n_shapes,
+        n_vertices,
+        n_indices,
+        n_mesh_vertices,
+        n_face_tri,
+        n_edge_tri,
+    )
+
+
 def _batch_dec(meth):
     """
     Decorator to apply `self.batched_updates` to the current method.
@@ -544,54 +593,6 @@ class ShapeList:
             self._update_z_order()
         self._clear_cache()
 
-    def _calculate_array_sizes(self, shapes):
-        """Calculate sizes needed for array preallocation.
-
-        Parameters
-        ----------
-        shapes : iterable of Shape
-            Each Shape must be a subclass of Shape
-
-        Returns
-        -------
-        n_shapes : int
-            Number of shapes
-        total_vertices_data : int
-            Total number of vertices
-        total_index_data : int
-            Total number of indices
-        total_mesh_vertices : int
-            Total number of mesh vertices
-        total_face_triangles : int
-            Total number of face triangles
-        total_edge_triangles : int
-            Total number of edge triangles
-        """
-        n_shapes = len(shapes)
-        total_vertices_data = 0
-        total_index_data = 0
-        total_mesh_vertices = 0
-        total_face_triangles = 0
-        total_edge_triangles = 0
-
-        for shape in shapes:
-            total_vertices_data += len(shape.data_displayed)
-            total_index_data += len(shape.data)
-            total_mesh_vertices += len(shape._face_vertices) + len(
-                shape._edge_vertices
-            )
-            total_face_triangles += len(shape._face_triangles)
-            total_edge_triangles += len(shape._edge_triangles)
-
-        return (
-            n_shapes,
-            total_vertices_data,
-            total_index_data,
-            total_mesh_vertices,
-            total_face_triangles,
-            total_edge_triangles,
-        )
-
     def _preallocate_arrays(self, shapes, sizes):
         """Preallocate arrays for storing shape data.
 
@@ -905,7 +906,7 @@ class ShapeList:
         )
 
         # Calculate sizes for preallocation
-        sizes = self._calculate_array_sizes(shapes)
+        sizes = _calculate_array_sizes(shapes)
 
         # Preallocate arrays
         arrays = self._preallocate_arrays(shapes, sizes)
