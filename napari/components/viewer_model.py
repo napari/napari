@@ -1310,17 +1310,18 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         with layer_source(sample=(plugin, sample)):
             if callable(data):
                 added = []
-                needs_warning = True
+                needs_error = True
                 for datum in ensure_list_of_layer_data_tuple(data(**kwargs)):
                     if datum[0] is not None:
-                        needs_warning = False
+                        needs_error = False
                         added.extend(self._add_layer_from_data(*datum))
-                if needs_warning:
-                    warnings.warn(
+                if needs_error:
+                    raise ValueError(
                         trans._(
-                            'Reader for sample {sample} returned no layers.',
+                            'Sample "{sample}" from plugin "{plugin}" did not return any valid layer data tuples.',
                             deferred=True,
                             sample=sample,
+                            plugin=plugin,
                         )
                     )
                 return added
