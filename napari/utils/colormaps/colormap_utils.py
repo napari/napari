@@ -89,6 +89,7 @@ _VISPY_COLORMAPS_TRANSLATIONS = OrderedDict(
     husl=(trans._p('colormap', 'husl'), _VCO['husl']),
     diverging=(trans._p('colormap', 'diverging'), _VCO['diverging']),
     RdYeBuCy=(trans._p('colormap', 'RdYeBuCy'), _VCO['RdYeBuCy']),
+    HiLo=(trans._p('colormap', 'HiLo'), _VCO['HiLo']),
 )
 _VISPY_COLORMAPS_TRANSLATIONS_REVERSE = {
     v[0]: k for k, v in _VISPY_COLORMAPS_TRANSLATIONS.items()
