@@ -417,7 +417,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         return self._vertex.colors
 
     @vertex_colors.setter
-    def vertex_colors(self, vertex_colors: np.ndarray | None) -> None:
+    def vertex_colors(self, vertex_colors) -> None:
         """Values used to directly color vertices.
 
         Note that dims sliders for this layer are based on vertex_values, so
