@@ -75,8 +75,6 @@ def _calculate_array_sizes(shapes):
 
     Returns
     -------
-    n_shapes : int
-        Number of shapes
     n_vertices : int
         Total number of vertices
     n_indices : int
@@ -88,7 +86,6 @@ def _calculate_array_sizes(shapes):
     n_edge_tri : int
         Total number of edge triangles
     """
-    n_shapes = len(shapes)
     n_vertices = 0
     n_indices = 0
     n_mesh_vertices = 0
@@ -104,14 +101,7 @@ def _calculate_array_sizes(shapes):
         n_face_tri += len(shape._face_triangles)
         n_edge_tri += len(shape._edge_triangles)
 
-    return (
-        n_shapes,
-        n_vertices,
-        n_indices,
-        n_mesh_vertices,
-        n_face_tri,
-        n_edge_tri,
-    )
+    return n_vertices, n_indices, n_mesh_vertices, n_face_tri, n_edge_tri
 
 
 def _preallocate_arrays(shapes, sizes):
@@ -123,7 +113,7 @@ def _preallocate_arrays(shapes, sizes):
         Each Shape must be a subclass of Shape
     sizes : tuple
         Tuple containing sizes for preallocation:
-        (n_shapes, n_vertices, n_indices, n_mesh_vertices,
+        (n_vertices, n_indices, n_mesh_vertices,
         n_face_tri, n_edge_tri)
 
     Returns
@@ -131,14 +121,8 @@ def _preallocate_arrays(shapes, sizes):
     arrays : dict
         Dictionary containing preallocated arrays
     """
-    (
-        n_shapes,
-        n_vertices,
-        n_indices,
-        n_mesh_vertices,
-        n_face_tri,
-        n_edge_tri,
-    ) = sizes
+    n_shapes = len(shapes)
+    n_vertices, n_indices, n_mesh_vertices, n_face_tri, n_edge_tri = sizes
 
     # Determine the displayed dimensionality from the first shape
     # All shapes in a batch will have the same dimensionality
