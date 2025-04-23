@@ -114,6 +114,70 @@ def _calculate_array_sizes(shapes):
     )
 
 
+def _preallocate_arrays(ndisplay, shapes, sizes):
+    """Preallocate arrays for storing shape data.
+
+    Parameters
+    ----------
+    shapes : iterable of Shape
+        Each Shape must be a subclass of Shape
+    sizes : tuple
+        Tuple containing sizes for preallocation:
+        (n_shapes, n_vertices, n_indices, n_mesh_vertices,
+        n_face_tri, n_edge_tri)
+
+    Returns
+    -------
+    arrays : dict
+        Dictionary containing preallocated arrays
+    """
+    (
+        n_shapes,
+        n_vertices,
+        n_indices,
+        n_mesh_vertices,
+        n_face_tri,
+        n_edge_tri,
+    ) = sizes
+
+    # Determine the dimensionality from the first shape
+    # All shapes in a batch will have the same dimensionality
+    dim = shapes[0]._face_vertices.shape[1] if shapes else 3
+
+    all_z_index = np.empty(n_shapes, dtype=np.int32)
+    all_vertices = np.empty((n_vertices, ndisplay), dtype=np.float32)
+    all_index = np.empty(n_indices, dtype=np.int32)
+
+    all_mesh_vertices = np.empty((n_mesh_vertices, dim), dtype=np.float32)
+    all_mesh_vertices_centers = np.empty(
+        (n_mesh_vertices, dim), dtype=np.float32
+    )
+    all_mesh_vertices_offsets = np.empty(
+        (n_mesh_vertices, dim), dtype=np.float32
+    )
+    all_mesh_vertices_index = np.empty((n_mesh_vertices, 2), dtype=np.int32)
+
+    total_triangles = n_face_tri + n_edge_tri
+    all_mesh_triangles = np.empty((total_triangles, 3), dtype=np.int32)
+    all_mesh_triangles_index = np.empty((total_triangles, 2), dtype=np.int32)
+    all_mesh_triangles_colors = np.empty(
+        (total_triangles, 4), dtype=np.float32
+    )
+
+    return {
+        'all_z_index': all_z_index,
+        'all_vertices': all_vertices,
+        'all_index': all_index,
+        'all_mesh_vertices': all_mesh_vertices,
+        'all_mesh_vertices_centers': all_mesh_vertices_centers,
+        'all_mesh_vertices_offsets': all_mesh_vertices_offsets,
+        'all_mesh_vertices_index': all_mesh_vertices_index,
+        'all_mesh_triangles': all_mesh_triangles,
+        'all_mesh_triangles_index': all_mesh_triangles_index,
+        'all_mesh_triangles_colors': all_mesh_triangles_colors,
+    }
+
+
 def _batch_dec(meth):
     """
     Decorator to apply `self.batched_updates` to the current method.
@@ -593,77 +657,6 @@ class ShapeList:
             self._update_z_order()
         self._clear_cache()
 
-    def _preallocate_arrays(self, shapes, sizes):
-        """Preallocate arrays for storing shape data.
-
-        Parameters
-        ----------
-        shapes : iterable of Shape
-            Each Shape must be a subclass of Shape
-        sizes : tuple
-            Tuple containing sizes for preallocation:
-            (n_shapes, total_vertices_data, total_index_data, total_mesh_vertices,
-            total_face_triangles, total_edge_triangles)
-
-        Returns
-        -------
-        arrays : dict
-            Dictionary containing preallocated arrays
-        """
-        (
-            n_shapes,
-            total_vertices_data,
-            total_index_data,
-            total_mesh_vertices,
-            total_face_triangles,
-            total_edge_triangles,
-        ) = sizes
-
-        # Determine the dimensionality from the first shape
-        # All shapes in a batch will have the same dimensionality
-        dim = shapes[0]._face_vertices.shape[1] if shapes else 3
-
-        all_z_index = np.empty(n_shapes, dtype=np.int32)
-        all_vertices = np.empty(
-            (total_vertices_data, self.ndisplay), dtype=np.float32
-        )
-        all_index = np.empty(total_index_data, dtype=np.int32)
-
-        all_mesh_vertices = np.empty(
-            (total_mesh_vertices, dim), dtype=np.float32
-        )
-        all_mesh_vertices_centers = np.empty(
-            (total_mesh_vertices, dim), dtype=np.float32
-        )
-        all_mesh_vertices_offsets = np.empty(
-            (total_mesh_vertices, dim), dtype=np.float32
-        )
-        all_mesh_vertices_index = np.empty(
-            (total_mesh_vertices, 2), dtype=np.int32
-        )
-
-        total_triangles = total_face_triangles + total_edge_triangles
-        all_mesh_triangles = np.empty((total_triangles, 3), dtype=np.int32)
-        all_mesh_triangles_index = np.empty(
-            (total_triangles, 2), dtype=np.int32
-        )
-        all_mesh_triangles_colors = np.empty(
-            (total_triangles, 4), dtype=np.float32
-        )
-
-        return {
-            'all_z_index': all_z_index,
-            'all_vertices': all_vertices,
-            'all_index': all_index,
-            'all_mesh_vertices': all_mesh_vertices,
-            'all_mesh_vertices_centers': all_mesh_vertices_centers,
-            'all_mesh_vertices_offsets': all_mesh_vertices_offsets,
-            'all_mesh_vertices_index': all_mesh_vertices_index,
-            'all_mesh_triangles': all_mesh_triangles,
-            'all_mesh_triangles_index': all_mesh_triangles_index,
-            'all_mesh_triangles_colors': all_mesh_triangles_colors,
-        }
-
     def _fill_arrays(self, shapes, face_colors, edge_colors, arrays):
         """Fill preallocated arrays with shape data.
 
@@ -909,7 +902,7 @@ class ShapeList:
         sizes = _calculate_array_sizes(shapes)
 
         # Preallocate arrays
-        arrays = self._preallocate_arrays(shapes, sizes)
+        arrays = _preallocate_arrays(self.ndisplay, shapes, sizes)
 
         # Fill preallocated arrays
         arrays = self._fill_arrays(shapes, face_colors, edge_colors, arrays)
