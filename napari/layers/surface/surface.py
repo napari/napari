@@ -475,6 +475,7 @@ class Surface(IntensityVisualizationMixin, Layer):
     @colormap.setter
     def colormap(self, colormap: ValidColormapArg) -> None:
         self._vertex.continuous_colormap = colormap
+        self.refresh()
 
     @faces.setter
     def faces(self, faces: np.ndarray) -> None:
