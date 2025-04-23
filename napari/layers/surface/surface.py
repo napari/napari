@@ -458,7 +458,7 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     @property
     def faces(self) -> np.ndarray:
-        return self._faces
+        return np.asarray(self._faces)
     
     @property
     def colormap(self) -> Colormap:
@@ -479,7 +479,7 @@ class Surface(IntensityVisualizationMixin, Layer):
     def faces(self, faces: np.ndarray) -> None:
         """Array of indices of mesh triangles."""
 
-        self.faces = faces
+        self.faces = np.asarray(faces)
 
         self.refresh(extent=False)
         self.events.data(value=self.data)
