@@ -182,11 +182,6 @@ def _fill_arrays(
         Array of edge colors
     arrays : dict
         Dictionary containing preallocated arrays
-
-    Returns
-    -------
-    arrays : dict
-        Dictionary containing filled arrays
     """
     z_index = arrays['z_index']
     vertices = arrays['vertices']
@@ -313,8 +308,6 @@ def _fill_arrays(
         triangles_offset += n_edge_triangles
         vertices_offset += n_vertices
         index_offset += n_index
-
-    return arrays
 
 
 def _batch_dec(meth):
@@ -896,7 +889,7 @@ class ShapeList:
         arrays = _preallocate_arrays(shapes, sizes)
 
         # Fill preallocated arrays with mesh and index data
-        arrays = _fill_arrays(
+        _fill_arrays(
             len(self.shapes),
             len(self._mesh.vertices),
             shapes,
