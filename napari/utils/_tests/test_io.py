@@ -83,7 +83,7 @@ def test_imsave_large_file(monkeypatch, tmp_path):
     raised when trying to write a too-large TIFF file, then rewrite using
     bigtiff. This test checks that the mechanism works correctly.
 
-    Generating 4GB+ of uncompressible data is expensive, so here we:
+    Generating 4GB+ of incompressible data is expensive, so here we:
 
     1. Generate a smaller amount of "random" data using np.empty.
     2. Monkeypatch tifffile's save routine to raise an error *as if* bigtiff

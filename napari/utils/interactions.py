@@ -331,7 +331,7 @@ class Shortcut:
         Returns
         -------
         string
-            Shortcut formatted to be displayed on current paltform.
+            Shortcut formatted to be displayed on current platform.
         """
         return self._kb.to_text(use_symbols=True, joinchar=JOINCHAR)
 

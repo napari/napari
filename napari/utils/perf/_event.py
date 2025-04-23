@@ -6,7 +6,7 @@ from typing import NamedTuple
 
 
 class Span(NamedTuple):
-    """The span of time that the event ocurred.
+    """The span of time that the event occurred.
 
     Parameters
     ----------

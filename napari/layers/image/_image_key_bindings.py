@@ -59,7 +59,7 @@ def orient_plane_normal_along_view_direction(
     def sync_plane_normal_with_view_direction(
         event: None | Event = None,
     ) -> None:
-        """Plane normal syncronisation mouse callback."""
+        """Plane normal synchronisation mouse callback."""
         layer.plane.normal = layer._world_to_displayed_data_normal(
             viewer.camera.view_direction, [-3, -2, -1]
         )
