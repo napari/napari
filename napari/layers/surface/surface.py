@@ -301,6 +301,19 @@ class Surface(IntensityVisualizationMixin, Layer):
         self._texcoords = texcoords
         self._vertex_colors = vertex_colors
 
+        color_properties = (
+            self._feature_table.properties()
+            if self._vertices.size > 0
+            else self._feature_table.currents()
+        )
+        self._vertex = ColorManager._from_layer_kwargs(
+            n_colors=len(self._vertices),
+            colors=vertex_colors,
+            continuous_colormap=colormap,
+            contrast_limits=contrast_limits,
+            properties=color_properties
+        )
+
         # Set contrast_limits and colormaps
         self._gamma = gamma
         if contrast_limits is not None:
@@ -401,7 +414,7 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     @property
     def vertex_colors(self) -> np.ndarray | None:
-        return self._vertex_colors
+        return self._vertex.colors
 
     @vertex_colors.setter
     def vertex_colors(self, vertex_colors: np.ndarray | None) -> None:
@@ -420,7 +433,11 @@ class Surface(IntensityVisualizationMixin, Layer):
                 f'texture should be None or ndarray; got {type(vertex_colors)}'
             )
             raise ValueError(msg)
-        self._vertex_colors = vertex_colors
+        self._vertex._set_color(
+            color=vertex_colors,
+            n_colors=len(self._vertices),
+            current_properties=self._feature_table.currents(),
+        )
         self._update_dims()
         self.events.data(value=self.data)
         self._reset_editable()
