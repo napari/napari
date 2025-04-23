@@ -156,6 +156,167 @@ def _preallocate_arrays(shapes, sizes):
     }
 
 
+def _fill_arrays(
+    start_shape_index,
+    start_mesh_index,
+    shapes,
+    face_colors,
+    edge_colors,
+    arrays,
+):
+    """Fill preallocated arrays with shape data.
+
+    Parameters
+    ----------
+    start_shape_index : int
+        The number of starting shapes already present before we start filling
+        the arrays.
+    start_mesh_index : int
+        The number of mesh vertices in the shape list before adding these
+        shapes.
+    shapes : iterable of Shape
+        Each Shape must be a subclass of Shape
+    face_colors : np.ndarray
+        Array of face colors
+    edge_colors : np.ndarray
+        Array of edge colors
+    arrays : dict
+        Dictionary containing preallocated arrays
+
+    Returns
+    -------
+    arrays : dict
+        Dictionary containing filled arrays
+    """
+    z_index = arrays['z_index']
+    vertices = arrays['vertices']
+    index = arrays['index']
+    mesh_vertices = arrays['mesh_vertices']
+    mesh_vertices_centers = arrays['mesh_vertices_centers']
+    mesh_vertices_offsets = arrays['mesh_vertices_offsets']
+    mesh_vertices_index = arrays['mesh_vertices_index']
+    mesh_triangles = arrays['mesh_triangles']
+    mesh_triangles_index = arrays['mesh_triangles_index']
+    mesh_triangles_colors = arrays['mesh_triangles_colors']
+
+    vertices_offset = 0
+    index_offset = 0
+    mesh_vertices_offset = 0
+    triangles_offset = 0
+
+    for i, (shape, face_color, edge_color) in enumerate(
+        zip(shapes, face_colors, edge_colors, strict=True)
+    ):
+        shape_index = start_shape_index + i
+
+        # Store z_index
+        z_index[i] = shape.z_index
+
+        # Store vertices data
+        shape_data_displayed = shape.data_displayed
+        n_vertices = len(shape_data_displayed)
+        vertices[vertices_offset : vertices_offset + n_vertices] = (
+            shape_data_displayed
+        )
+
+        # Store index data
+        n_index = len(shape.data)
+        index[index_offset : index_offset + n_index] = shape_index
+
+        # Add faces to mesh
+        m_tmp = start_mesh_index
+        face_vertices = shape._face_vertices
+        n_face_vertices = len(face_vertices)
+
+        mesh_vertices[
+            mesh_vertices_offset : mesh_vertices_offset + n_face_vertices
+        ] = face_vertices
+        mesh_vertices_centers[
+            mesh_vertices_offset : mesh_vertices_offset + n_face_vertices
+        ] = face_vertices
+        mesh_vertices_offsets[
+            mesh_vertices_offset : mesh_vertices_offset + n_face_vertices
+        ] = 0
+
+        # Create and store face vertices index
+        mesh_vertices_index[
+            mesh_vertices_offset : mesh_vertices_offset + n_face_vertices
+        ] = (shape_index, 0)
+
+        # Store face triangles
+        face_triangles = shape._face_triangles + m_tmp
+        n_face_triangles = len(face_triangles)
+        mesh_triangles[
+            triangles_offset : triangles_offset + n_face_triangles
+        ] = face_triangles
+
+        # Create and store face triangles index
+        mesh_triangles_index[
+            triangles_offset : triangles_offset + n_face_triangles
+        ] = (shape_index, 0)
+
+        # Create and store face triangles colors
+        mesh_triangles_colors[
+            triangles_offset : triangles_offset + n_face_triangles
+        ] = face_color
+
+        # Update offsets
+        start_mesh_index += n_face_vertices
+        mesh_vertices_offset += n_face_vertices
+        triangles_offset += n_face_triangles
+
+        # Add edges to mesh
+        m_tmp = start_mesh_index
+
+        # Calculate edge vertices
+        edge_vertices = shape._edge_vertices
+        edge_offsets = shape._edge_offsets
+        n_edge_vertices = len(edge_vertices)
+
+        # Store edge vertices
+        vertices = edge_vertices + shape.edge_width * edge_offsets
+        mesh_vertices[
+            mesh_vertices_offset : mesh_vertices_offset + n_edge_vertices
+        ] = vertices
+        mesh_vertices_centers[
+            mesh_vertices_offset : mesh_vertices_offset + n_edge_vertices
+        ] = edge_vertices
+        mesh_vertices_offsets[
+            mesh_vertices_offset : mesh_vertices_offset + n_edge_vertices
+        ] = edge_offsets
+
+        # Create and store edge vertices index
+        mesh_vertices_index[
+            mesh_vertices_offset : mesh_vertices_offset + n_edge_vertices
+        ] = (shape_index, 1)
+
+        # Store edge triangles
+        edge_triangles = shape._edge_triangles + m_tmp
+        n_edge_triangles = len(edge_triangles)
+        mesh_triangles[
+            triangles_offset : triangles_offset + n_edge_triangles
+        ] = edge_triangles
+
+        # Create and store edge triangles index
+        mesh_triangles_index[
+            triangles_offset : triangles_offset + n_edge_triangles
+        ] = (shape_index, 1)
+
+        # Create and store edge triangles colors
+        mesh_triangles_colors[
+            triangles_offset : triangles_offset + n_edge_triangles
+        ] = edge_color
+
+        # Update offsets
+        start_mesh_index += n_edge_vertices
+        mesh_vertices_offset += n_edge_vertices
+        triangles_offset += n_edge_triangles
+        vertices_offset += n_vertices
+        index_offset += n_index
+
+    return arrays
+
+
 def _batch_dec(meth):
     """
     Decorator to apply `self.batched_updates` to the current method.
@@ -635,156 +796,7 @@ class ShapeList:
             self._update_z_order()
         self._clear_cache()
 
-    def _fill_arrays(self, shapes, face_colors, edge_colors, arrays):
-        """Fill preallocated arrays with shape data.
-
-        Parameters
-        ----------
-        shapes : iterable of Shape
-            Each Shape must be a subclass of Shape
-        face_colors : np.ndarray
-            Array of face colors
-        edge_colors : np.ndarray
-            Array of edge colors
-        arrays : dict
-            Dictionary containing preallocated arrays
-
-        Returns
-        -------
-        arrays : dict
-            Dictionary containing filled arrays
-        """
-        z_index = arrays['z_index']
-        vertices = arrays['vertices']
-        index = arrays['index']
-        mesh_vertices = arrays['mesh_vertices']
-        mesh_vertices_centers = arrays['mesh_vertices_centers']
-        mesh_vertices_offsets = arrays['mesh_vertices_offsets']
-        mesh_vertices_index = arrays['mesh_vertices_index']
-        mesh_triangles = arrays['mesh_triangles']
-        mesh_triangles_index = arrays['mesh_triangles_index']
-        mesh_triangles_colors = arrays['mesh_triangles_colors']
-
-        m_mesh_vertices_count = len(self._mesh.vertices)
-        vertices_offset = 0
-        index_offset = 0
-        mesh_vertices_offset = 0
-        triangles_offset = 0
-
-        for i, (shape, face_color, edge_color) in enumerate(
-            zip(shapes, face_colors, edge_colors, strict=True)
-        ):
-            shape_index = len(self.shapes)
-            self.shapes.append(shape)
-
-            # Store z_index
-            z_index[i] = shape.z_index
-
-            # Store vertices data
-            shape_data_displayed = shape.data_displayed
-            n_vertices = len(shape_data_displayed)
-            vertices[vertices_offset : vertices_offset + n_vertices] = (
-                shape_data_displayed
-            )
-
-            # Store index data
-            n_index = len(shape.data)
-            index[index_offset : index_offset + n_index] = shape_index
-
-            # Add faces to mesh
-            m_tmp = m_mesh_vertices_count
-            face_vertices = shape._face_vertices
-            n_face_vertices = len(face_vertices)
-
-            mesh_vertices[
-                mesh_vertices_offset : mesh_vertices_offset + n_face_vertices
-            ] = face_vertices
-            mesh_vertices_centers[
-                mesh_vertices_offset : mesh_vertices_offset + n_face_vertices
-            ] = face_vertices
-            mesh_vertices_offsets[
-                mesh_vertices_offset : mesh_vertices_offset + n_face_vertices
-            ] = 0
-
-            # Create and store face vertices index
-            mesh_vertices_index[
-                mesh_vertices_offset : mesh_vertices_offset + n_face_vertices
-            ] = (shape_index, 0)
-
-            # Store face triangles
-            face_triangles = shape._face_triangles + m_tmp
-            n_face_triangles = len(face_triangles)
-            mesh_triangles[
-                triangles_offset : triangles_offset + n_face_triangles
-            ] = face_triangles
-
-            # Create and store face triangles index
-            mesh_triangles_index[
-                triangles_offset : triangles_offset + n_face_triangles
-            ] = (shape_index, 0)
-
-            # Create and store face triangles colors
-            mesh_triangles_colors[
-                triangles_offset : triangles_offset + n_face_triangles
-            ] = face_color
-
-            # Update offsets
-            m_mesh_vertices_count += n_face_vertices
-            mesh_vertices_offset += n_face_vertices
-            triangles_offset += n_face_triangles
-
-            # Add edges to mesh
-            m_tmp = m_mesh_vertices_count
-
-            # Calculate edge vertices
-            edge_vertices = shape._edge_vertices
-            edge_offsets = shape._edge_offsets
-            n_edge_vertices = len(edge_vertices)
-
-            # Store edge vertices
-            vertices = edge_vertices + shape.edge_width * edge_offsets
-            mesh_vertices[
-                mesh_vertices_offset : mesh_vertices_offset + n_edge_vertices
-            ] = vertices
-            mesh_vertices_centers[
-                mesh_vertices_offset : mesh_vertices_offset + n_edge_vertices
-            ] = edge_vertices
-            mesh_vertices_offsets[
-                mesh_vertices_offset : mesh_vertices_offset + n_edge_vertices
-            ] = edge_offsets
-
-            # Create and store edge vertices index
-            mesh_vertices_index[
-                mesh_vertices_offset : mesh_vertices_offset + n_edge_vertices
-            ] = (shape_index, 1)
-
-            # Store edge triangles
-            edge_triangles = shape._edge_triangles + m_tmp
-            n_edge_triangles = len(edge_triangles)
-            mesh_triangles[
-                triangles_offset : triangles_offset + n_edge_triangles
-            ] = edge_triangles
-
-            # Create and store edge triangles index
-            mesh_triangles_index[
-                triangles_offset : triangles_offset + n_edge_triangles
-            ] = (shape_index, 1)
-
-            # Create and store edge triangles colors
-            mesh_triangles_colors[
-                triangles_offset : triangles_offset + n_edge_triangles
-            ] = edge_color
-
-            # Update offsets
-            m_mesh_vertices_count += n_edge_vertices
-            mesh_vertices_offset += n_edge_vertices
-            triangles_offset += n_edge_triangles
-            vertices_offset += n_vertices
-            index_offset += n_index
-
-        return arrays
-
-    def _assemble_mesh_properties(self, face_colors, edge_colors, arrays):
+    def _extend_meshes(self, face_colors, edge_colors, arrays):
         """Assemble mesh properties from filled arrays.
 
         Parameters
@@ -883,11 +895,21 @@ class ShapeList:
         # Preallocate arrays
         arrays = _preallocate_arrays(shapes, sizes)
 
-        # Fill preallocated arrays
-        arrays = self._fill_arrays(shapes, face_colors, edge_colors, arrays)
+        # Fill preallocated arrays with mesh and index data
+        arrays = _fill_arrays(
+            len(self.shapes),
+            len(self._mesh.vertices),
+            shapes,
+            face_colors,
+            edge_colors,
+            arrays,
+        )
 
-        # Assemble mesh properties
-        self._assemble_mesh_properties(face_colors, edge_colors, arrays)
+        # Update local arrays appending mesh properties
+        self._extend_meshes(face_colors, edge_colors, arrays)
+
+        # Update list of shapes
+        self.shapes.extend(shapes)
 
         if z_refresh:
             # Set z_order
