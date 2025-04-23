@@ -443,6 +443,20 @@ class Surface(IntensityVisualizationMixin, Layer):
         self._reset_editable()
 
     @property
+    def contrast_limits(self) -> None | tuple[float, float]:
+        """
+        None, (float, float) : clims for mapping the vertex_color
+        colormap property to 0 and 1
+        """
+        return self._vertex.contrast_limits
+    
+    @contrast_limits.setter
+    def contrast_limits(
+        self, contrast_limits: None | tuple[float, float]
+    ) -> None:
+        self._vertex.contrast_limits = contrast_limits
+
+    @property
     def faces(self) -> np.ndarray:
         return self._faces
     
