@@ -2,7 +2,12 @@ from typing import Any
 
 from napari._pydantic_compat import Field
 from napari.settings._base import EventedSettings
+from napari.utils.events import Event
 from napari.utils.translations import trans
+from napari.utils.triangulation_backend import (
+    TriangulationBackend,
+    set_backend,
+)
 
 
 # this class inherits from EventedSettings instead of EventedModel because
@@ -11,10 +16,10 @@ class ExperimentalSettings(EventedSettings):
     def __init__(self, **data: dict[str, Any]):
         super().__init__(**data)
 
-        self.events.compiled_triangulation.connect(
-            self._update_compiled_backend
+        self.events.triangulation_backend.connect(
+            _update_triangulation_backend
         )
-        self._update_compiled_backend()
+        self.events.triangulation_backend(value=self.triangulation_backend)
 
     async_: bool = Field(
         False,
@@ -70,30 +75,35 @@ class ExperimentalSettings(EventedSettings):
         ),
     )
 
-    compiled_triangulation: bool = Field(
-        False,
-        title=trans._(
-            'Use C++ code to speed up creation and updates of Shapes layers'
-            '(requires optional dependencies)'
-        ),
+    triangulation_backend: TriangulationBackend = Field(
+        TriangulationBackend.fastest_available,
+        title=trans._('Triangulation backend to use for Shapes layer'),
         description=trans._(
-            'When enabled, triangulation (breaking down polygons into '
-            "triangles that can be displayed by napari's graphics engine) is "
-            'sped up by using C++ code from the optional library '
-            'PartSegCore-compiled-backend. C++ code can cause bad crashes '
-            'called segmentation faults or access violations. If you '
-            'encounter such a crash while using this option please report '
-            'it at https://github.com/napari/napari/issues.'
+            'Triangulation backend to use for Shapes layer.\n'
+            "The 'bermuda' requires the optional 'bermuda' package.\n"
+            "The 'partsegcore' requires the optional 'partsegcore-compiled-backend' package.\n"
+            "The 'triangle' requires the optional 'triangle' package.\n"
+            "The 'numba' backend requires the optional 'numba' package.\n"
+            "The 'pure python' backend uses the default Python triangulation from vispy.\n"
+            "The 'fastest available' backend will select the fastest available backend.\n"
+        ),
+    )
+
+    compiled_triangulation: bool = Field(
+        default=False,
+        title=trans._('Unused option. Use "triangulation backend" instead.'),
+        description=trans._(
+            'This option was removed in napari 0.6.0. Use \n'
+            '"triangulation backend" instead.'
         ),
     )
 
     class NapariConfig:
         # Napari specific configuration
-        preferences_exclude = ('schema_version',)
+        preferences_exclude = ('schema_version', 'compiled_triangulation')
 
-    def _update_compiled_backend(self) -> None:
-        from napari.layers.shapes import _accelerated_triangulate_dispatch
 
-        _accelerated_triangulate_dispatch.USE_COMPILED_BACKEND = (
-            self.compiled_triangulation
-        )
+def _update_triangulation_backend(event: Event) -> None:
+    experimental: ExperimentalSettings = event.source
+
+    set_backend(experimental.triangulation_backend)
