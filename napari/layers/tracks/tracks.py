@@ -622,7 +622,7 @@ class Tracks(Layer):
 
         Parameters
         ----------
-        colors : np.ndarray
+        colors : np.ndarray, shape (N, 4)
             The desired color array, one color per data point. Note that the
             data are internally lexicographically sorted first by track ID,
             then by timepoint, so the color ordering must match this order,
