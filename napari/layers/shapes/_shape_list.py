@@ -202,24 +202,22 @@ def _fill_arrays(
     for i, (shape, face_color, edge_color) in enumerate(
         zip(shapes, face_colors, edge_colors, strict=True)
     ):
-        shape_index = start_shape_index + i
-
-        # Store z_index
+        # Store z_index ("number of shapes" space)
         z_index[i] = shape.z_index
 
-        # Store vertices data
-        shape_data_displayed = shape.data_displayed
-        n_vertices = len(shape_data_displayed)
-        vertices[vertices_offset : vertices_offset + n_vertices] = (
-            shape_data_displayed
-        )
-
-        # Store index data
+        shape_index = start_shape_index + i
+        # Store index data, mapping data indices back to shape indices
         n_index = len(shape.data)
         index[index_offset : index_offset + n_index] = shape_index
 
+        # Store vertices data and update vertices offset
+        n_vertices = len(shape.data_displayed)
+        vertices[vertices_offset : vertices_offset + n_vertices] = (
+            shape.data_displayed
+        )
+        vertices_offset += n_vertices
+
         # Add faces to mesh
-        m_tmp = start_mesh_index
         face_vertices = shape._face_vertices
         n_face_vertices = len(face_vertices)
 
@@ -239,7 +237,7 @@ def _fill_arrays(
         ] = (shape_index, 0)
 
         # Store face triangles
-        face_triangles = shape._face_triangles + m_tmp
+        face_triangles = shape._face_triangles + start_mesh_index
         n_face_triangles = len(face_triangles)
         mesh_triangles[
             triangles_offset : triangles_offset + n_face_triangles
@@ -261,7 +259,6 @@ def _fill_arrays(
         triangles_offset += n_face_triangles
 
         # Add edges to mesh
-        m_tmp = start_mesh_index
 
         # Calculate edge vertices
         edge_vertices = shape._edge_vertices
@@ -286,7 +283,7 @@ def _fill_arrays(
         ] = (shape_index, 1)
 
         # Store edge triangles
-        edge_triangles = shape._edge_triangles + m_tmp
+        edge_triangles = shape._edge_triangles + start_mesh_index
         n_edge_triangles = len(edge_triangles)
         mesh_triangles[
             triangles_offset : triangles_offset + n_edge_triangles
@@ -306,7 +303,6 @@ def _fill_arrays(
         start_mesh_index += n_edge_vertices
         mesh_vertices_offset += n_edge_vertices
         triangles_offset += n_edge_triangles
-        vertices_offset += n_vertices
         index_offset += n_index
 
 
