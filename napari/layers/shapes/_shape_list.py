@@ -140,9 +140,9 @@ def _preallocate_arrays(ndisplay, shapes, sizes):
         n_edge_tri,
     ) = sizes
 
-    # Determine the dimensionality from the first shape
+    # Determine the displayed dimensionality from the first shape
     # All shapes in a batch will have the same dimensionality
-    dim = shapes[0]._face_vertices.shape[1] if shapes else 3
+    dim = shapes[0]._face_vertices.shape[1]
 
     all_z_index = np.empty(n_shapes, dtype=np.int32)
     all_vertices = np.empty((n_vertices, ndisplay), dtype=np.float32)
@@ -886,6 +886,9 @@ class ShapeList:
         difference being that `add()` supports inserting shapes at a specific
         `shape_index`, whereas `add_multiple` will append them as a full batch
         """
+        if len(shapes) == 0:
+            return
+
         # Validate inputs and prepare colors
         if not all(issubclass(type(shape), Shape) for shape in shapes):
             raise ValueError(
