@@ -969,6 +969,19 @@ with contextlib.suppress(ImportError):
             QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
         return QApplication
 
+    @pytest.fixture(autouse=True)
+    def disable_get_log_level_value(monkeypatch):
+        """Enforce to not set logging to logging.NOTSET,
+        that crashes current tests
+        """
+
+        import logging
+
+        monkeypatch.setattr(
+            'napari._qt.widgets.qt_logger.get_log_level_value',
+            lambda x: logging.WARNING,
+        )
+
 
 @pytest.fixture
 def _find_dangling_widgets(request, qtbot):
