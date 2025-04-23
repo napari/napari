@@ -142,7 +142,7 @@ jobs:
             platform: ubuntu-22.04
             backend: pyqt5
             coverage: cov
-            tox_extras: "optional"
+            tox_extras: "all_optional"
           # test without any Qt backends
           - python: "3.11"
             platform: ubuntu-22.04
@@ -194,8 +194,8 @@ jobs:
       - test
       - test_examples
     permissions:
-      id-token: write  # Required for OIDC
-      contents: read    # Required for checkout
+      id-token: write  # Required for OIDC authentication
+      contents: read    # Required for code checkout
     uses: ./.github/workflows/reusable_coverage_upload.yml
     secrets: inherit
 
