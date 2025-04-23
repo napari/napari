@@ -211,15 +211,16 @@ def _fresh_settings(monkeypatch):
     from napari import settings
     from napari.settings import NapariSettings
     from napari.settings._experimental import ExperimentalSettings
+    from napari.utils.triangulation_backend import TriangulationBackend
 
     # prevent the developer's config file from being used if it exists
     cp = NapariSettings.__private_attributes__['_config_path']
     monkeypatch.setattr(cp, 'default', None)
 
     monkeypatch.setattr(
-        ExperimentalSettings.__fields__['compiled_triangulation'],
+        ExperimentalSettings.__fields__['triangulation_backend'],
         'default',
-        True,
+        TriangulationBackend.fastest_available,
     )
 
     # calling save() with no config path is normally an error
