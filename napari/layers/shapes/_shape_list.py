@@ -269,10 +269,10 @@ def _fill_arrays(
         n_edge_vertices = len(edge_vertices)
 
         # Store edge vertices
-        vertices = edge_vertices + shape.edge_width * edge_offsets
+        curr_vertices = edge_vertices + shape.edge_width * edge_offsets
         mesh_vertices[
             mesh_vertices_offset : mesh_vertices_offset + n_edge_vertices
-        ] = vertices
+        ] = curr_vertices
         mesh_vertices_centers[
             mesh_vertices_offset : mesh_vertices_offset + n_edge_vertices
         ] = edge_vertices
