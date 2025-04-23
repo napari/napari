@@ -17,7 +17,8 @@ from napari.layers.utils.interactivity_utils import (
     nd_line_segment_to_displayed_data_ray,
 )
 from napari.layers.utils.layer_utils import _FeatureTable, calc_data_range
-from napari.utils.colormaps import AVAILABLE_COLORMAPS
+from napari.utils.colormaps import AVAILABLE_COLORMAPS, Colormap, ValidColormapArg
+from napari.layers.utils.color_manager import ColorManager
 from napari.utils.events import Event
 from napari.utils.events.event_utils import connect_no_arg
 from napari.utils.geometry import find_nearest_triangle_intersection
