@@ -237,7 +237,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         texture=None,
         translate=None,
         units=None,
-        vertex_colors=None,
+        vertex_colors='white',
         visible=True,
         wireframe=None,
     ) -> None:
