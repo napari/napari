@@ -13,12 +13,16 @@ from napari.layers.surface._surface_utils import (
 )
 from napari.layers.surface.normals import SurfaceNormals
 from napari.layers.surface.wireframe import SurfaceWireframe
+from napari.layers.utils.color_manager import ColorManager
 from napari.layers.utils.interactivity_utils import (
     nd_line_segment_to_displayed_data_ray,
 )
 from napari.layers.utils.layer_utils import _FeatureTable, calc_data_range
-from napari.utils.colormaps import AVAILABLE_COLORMAPS, Colormap, ValidColormapArg
-from napari.layers.utils.color_manager import ColorManager
+from napari.utils.colormaps import (
+    AVAILABLE_COLORMAPS,
+    Colormap,
+    ValidColormapArg,
+)
 from napari.utils.events import Event
 from napari.utils.events.event_utils import connect_no_arg
 from napari.utils.geometry import find_nearest_triangle_intersection
@@ -311,7 +315,7 @@ class Surface(IntensityVisualizationMixin, Layer):
             colors=vertex_colors,
             continuous_colormap=colormap,
             contrast_limits=contrast_limits,
-            properties=color_properties
+            properties=color_properties,
         )
 
         # Set contrast_limits and colormaps
@@ -449,7 +453,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         colormap property to 0 and 1
         """
         return self._vertex.contrast_limits
-    
+
     @contrast_limits.setter
     def contrast_limits(
         self, contrast_limits: None | tuple[float, float]
@@ -461,7 +465,7 @@ class Surface(IntensityVisualizationMixin, Layer):
     def gamma(self) -> float:
         """Gamma correction for determining colormap linearity."""
         return self._gamma
-    
+
     @gamma.setter
     def gamma(self, gamma: float) -> None:
         self._gamma = gamma
@@ -470,7 +474,7 @@ class Surface(IntensityVisualizationMixin, Layer):
     @property
     def faces(self) -> np.ndarray:
         return np.asarray(self._faces)
-    
+
     @property
     def colormap(self) -> Colormap:
         """Return the colormap to be applied to a property to get the face color.
@@ -481,7 +485,7 @@ class Surface(IntensityVisualizationMixin, Layer):
             The Colormap object.
         """
         return self._vertex.continuous_colormap
-    
+
     @colormap.setter
     def colormap(self, colormap: ValidColormapArg) -> None:
         self._vertex.continuous_colormap = colormap
