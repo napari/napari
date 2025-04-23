@@ -1,4 +1,5 @@
 import subprocess
+from pathlib import Path
 from typing import NamedTuple
 
 from napari.utils import info
@@ -62,3 +63,31 @@ def test_linux_os_name_lsb(monkeypatch, tmp_path):
     assert info._linux_sys_name() == 'Ubuntu Test 20.04'
     monkeypatch.setattr(subprocess, 'run', _lsb_mock2)
     assert info._linux_sys_name() == 'Ubuntu Test 20.05'
+
+
+def test_napari_from_conda_with_metadata(monkeypatch):
+    """Test _napari_from_conda when the napari metadata file exists."""
+    from napari import __version__
+
+    def mock_glob(self, pattern):
+        return [
+            Path(f'/mock/conda-meta/napari-{__version__}-py2foo3bar.json'),
+            Path('/mock/conda-meta/napari-svg-0.2.1-py3bar2foo.json'),
+            Path('/mock/conda-meta/napari-console-0.1.3-py2foo3bar.json'),
+        ]
+
+    monkeypatch.setattr(Path, 'glob', mock_glob)
+    assert info._napari_from_conda() is True
+
+
+def test_napari_from_conda_without_metadata(monkeypatch):
+    """Test _napari_from_conda when no napari metadata file exists."""
+
+    def mock_glob(self, pattern):
+        return [
+            Path('/mock/conda-meta/napari-svg-0.2.1-py3bar2foo.json'),
+            Path('/mock/conda-meta/napari-console-0.1.3-py2foo3bar.json'),
+        ]
+
+    monkeypatch.setattr(Path, 'glob', mock_glob)
+    assert info._napari_from_conda() is False
