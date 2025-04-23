@@ -209,6 +209,7 @@ def _fill_arrays(
         # Store index data, mapping data indices back to shape indices
         n_index = len(shape.data)
         index[index_offset : index_offset + n_index] = shape_index
+        index_offset += n_index
 
         # Store vertices data and update vertices offset
         n_vertices = len(shape.data_displayed)
@@ -231,7 +232,7 @@ def _fill_arrays(
             mesh_vertices_offset : mesh_vertices_offset + n_face_vertices
         ] = 0
 
-        # Create and store face vertices index
+        # Create and store face vertices index, mapping face vertices to shapes
         mesh_vertices_index[
             mesh_vertices_offset : mesh_vertices_offset + n_face_vertices
         ] = (shape_index, 0)
@@ -243,7 +244,8 @@ def _fill_arrays(
             triangles_offset : triangles_offset + n_face_triangles
         ] = face_triangles
 
-        # Create and store face triangles index
+        # Create and store face triangles index, mapping face triangles to
+        # shapes
         mesh_triangles_index[
             triangles_offset : triangles_offset + n_face_triangles
         ] = (shape_index, 0)
@@ -303,7 +305,6 @@ def _fill_arrays(
         start_mesh_index += n_edge_vertices
         mesh_vertices_offset += n_edge_vertices
         triangles_offset += n_edge_triangles
-        index_offset += n_index
 
 
 def _batch_dec(meth):
