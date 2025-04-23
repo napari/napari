@@ -114,7 +114,7 @@ def _calculate_array_sizes(shapes):
     )
 
 
-def _preallocate_arrays(ndisplay, shapes, sizes):
+def _preallocate_arrays(shapes, sizes):
     """Preallocate arrays for storing shape data.
 
     Parameters
@@ -145,7 +145,7 @@ def _preallocate_arrays(ndisplay, shapes, sizes):
     dim = shapes[0]._face_vertices.shape[1]
 
     all_z_index = np.empty(n_shapes, dtype=np.int32)
-    all_vertices = np.empty((n_vertices, ndisplay), dtype=np.float32)
+    all_vertices = np.empty((n_vertices, dim), dtype=np.float32)
     all_index = np.empty(n_indices, dtype=np.int32)
 
     all_mesh_vertices = np.empty((n_mesh_vertices, dim), dtype=np.float32)
@@ -905,7 +905,7 @@ class ShapeList:
         sizes = _calculate_array_sizes(shapes)
 
         # Preallocate arrays
-        arrays = _preallocate_arrays(self.ndisplay, shapes, sizes)
+        arrays = _preallocate_arrays(shapes, sizes)
 
         # Fill preallocated arrays
         arrays = self._fill_arrays(shapes, face_colors, edge_colors, arrays)
