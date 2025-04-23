@@ -19,6 +19,52 @@ from napari.utils.geometry import (
 from napari.utils.translations import trans
 
 
+def _ensure_color_arrays(shapes, face_colors=None, edge_colors=None):
+    """Return as many face and edge colors as there are shapes in the input.
+
+    Parameters
+    ----------
+    shapes : iterable of Shape
+        Each Shape must be a subclass of Shape
+    face_colors : iterable of face_color or None
+        If None, default face colors will be used
+    edge_colors : iterable of edge_color or None
+        If None, default edge colors will be used
+
+    Returns
+    -------
+    face_colors : np.ndarray
+        Array of face colors
+    edge_colors : np.ndarray
+        Array of edge colors
+    """
+    if face_colors is None:
+        face_colors = np.tile(
+            np.array([1, 1, 1, 1], dtype=np.float32), (len(shapes), 1)
+        )
+    else:
+        face_colors = np.asarray(face_colors, dtype=np.float32)
+
+    if edge_colors is None:
+        # default edge color is #777777, per napari.layers.Shapes constructor
+        v = 7 / 15
+        edge_colors = np.tile(
+            np.array([v, v, v, 1], dtype=np.float32), (len(shapes), 1)
+        )
+    else:
+        edge_colors = np.asarray(edge_colors, np.float32)
+
+    if not len(face_colors) == len(edge_colors) == len(shapes):
+        raise ValueError(
+            trans._(
+                'shapes, face_colors, and edge_colors must be the same length',
+                deferred=True,
+            )
+        )
+
+    return face_colors, edge_colors
+
+
 def _batch_dec(meth):
     """
     Decorator to apply `self.batched_updates` to the current method.
@@ -498,55 +544,6 @@ class ShapeList:
             self._update_z_order()
         self._clear_cache()
 
-    def _validate_and_prepare_colors(
-        self, shapes, face_colors=None, edge_colors=None
-    ):
-        """Validate inputs and prepare colors for adding multiple shapes.
-
-        Parameters
-        ----------
-        shapes : iterable of Shape
-            Each Shape must be a subclass of Shape
-        face_colors : iterable of face_color or None
-            If None, default face colors will be used
-        edge_colors : iterable of edge_color or None
-            If None, default edge colors will be used
-
-        Returns
-        -------
-        face_colors : np.ndarray
-            Array of face colors
-        edge_colors : np.ndarray
-            Array of edge colors
-        """
-        if face_colors is None:
-            face_colors = np.tile(np.array([1, 1, 1, 1]), (len(shapes), 1))
-        else:
-            face_colors = np.asarray(face_colors)
-
-        if edge_colors is None:
-            edge_colors = np.tile(np.array([0, 0, 0, 1]), (len(shapes), 1))
-        else:
-            edge_colors = np.asarray(edge_colors)
-
-        if not len(face_colors) == len(edge_colors) == len(shapes):
-            raise ValueError(
-                trans._(
-                    'shapes, face_colors, and edge_colors must be the same length',
-                    deferred=True,
-                )
-            )
-
-        if not all(issubclass(type(shape), Shape) for shape in shapes):
-            raise ValueError(
-                trans._(
-                    'all shapes must be subclass of Shape',
-                    deferred=True,
-                )
-            )
-
-        return face_colors, edge_colors
-
     def _calculate_array_sizes(self, shapes):
         """Calculate sizes needed for array preallocation.
 
@@ -896,7 +893,14 @@ class ShapeList:
         `shape_index`, whereas `add_multiple` will append them as a full batch
         """
         # Validate inputs and prepare colors
-        face_colors, edge_colors = self._validate_and_prepare_colors(
+        if not all(issubclass(type(shape), Shape) for shape in shapes):
+            raise ValueError(
+                trans._(
+                    'all shapes must be subclass of Shape',
+                    deferred=True,
+                )
+            )
+        face_colors, edge_colors = _ensure_color_arrays(
             shapes, face_colors, edge_colors
         )
 
