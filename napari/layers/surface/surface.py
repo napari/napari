@@ -445,6 +445,21 @@ class Surface(IntensityVisualizationMixin, Layer):
     @property
     def faces(self) -> np.ndarray:
         return self._faces
+    
+    @property
+    def colormap(self) -> Colormap:
+        """Return the colormap to be applied to a property to get the face color.
+
+        Returns
+        -------
+        colormap : napari.utils.Colormap
+            The Colormap object.
+        """
+        return self._vertex.continuous_colormap
+    
+    @colormap.setter
+    def colormap(self, colormap: ValidColormapArg) -> None:
+        self._vertex.continuous_colormap = colormap
 
     @faces.setter
     def faces(self, faces: np.ndarray) -> None:
