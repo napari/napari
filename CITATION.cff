@@ -75,6 +75,11 @@ authors:
     Germany
   orcid: https://orcid.org/0000-0003-1666-5421
   alias: melonora
+- given-names: Timothy
+  family-names: Monko
+  affiliation: University of Minnesota — Twin Cities
+  orcid: https://orcid.org/0000-0003-4905-757X
+  alias: TimMonko
 - given-names: Loic
   family-names: Royer
   affiliation: Chan Zuckerberg Biohub
