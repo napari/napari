@@ -60,6 +60,10 @@ authors:
   affiliation: Quansight
   orcid: https://orcid.org/0000-0002-3212-402X
   alias: melissawm
+- given-names: Lucy
+  family-names: Liu
+  affiliation: Quansight
+  alias: lucyleeow
 - given-names: Genevieve
   family-names: Buckley
   affiliation: Monash University
@@ -180,10 +184,6 @@ authors:
   family-names: Liu
   affiliation: Chan Zuckerberg Initiative Foundation
   alias: liu-ziyang
-- given-names: Lucy
-  family-names: Liu
-  affiliation: Quansight
-  alias: lucyleeow
 - given-names: Alan
   family-names: Lowe
   affiliation: UCL & The Alan Turing Institute
