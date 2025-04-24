@@ -88,7 +88,9 @@ fig.show()
 # next, draw the shape in napari
 viewer = napari.Viewer()
 viewer.camera.orientation2d = ('up', 'right')  # lat goes up, lon goes right
-layer = viewer.add_shapes(za, shape_type=['polygon'])
+layer = viewer.add_shapes(
+        za, shape_type=['polygon'], face_color='#fdab19', edge_color='0e6639'
+        )
 
 # these settings help to visualise the polygon data directly in the
 # shapes layer.
