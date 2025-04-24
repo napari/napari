@@ -216,15 +216,15 @@ def sys_info(as_html: bool = False) -> str:
 
         _async_setting = get_settings().experimental.async_
         _autoswap_buffers = get_settings().experimental.autoswap_buffers
-        _triangulation_backend = (
+        _triangulation_backend = str(
             get_settings().experimental.triangulation_backend
         )
         _config_path = get_settings().config_path
     except ValueError:
         from napari.utils._appdirs import user_config_dir
 
-        _async_setting = os.getenv('NAPARI_ASYNC', False)
-        _autoswap_buffers = os.getenv('NAPARI_AUTOSWAP', False)
+        _async_setting = os.getenv('NAPARI_ASYNC', 'False')
+        _autoswap_buffers = os.getenv('NAPARI_AUTOSWAP', 'False')
         _triangulation_backend = os.getenv(
             'NAPARI_TRIANGULATION_BACKEND', 'Fastest available'
         )
