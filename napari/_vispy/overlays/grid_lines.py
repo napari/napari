@@ -13,13 +13,13 @@ class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
             parent=parent,
         )
 
-        self._old_directions = [1, 1, 1]
-
-        self.overlay.events.ticks.connect(self._on_ticks_change)
-        self.overlay.events.tick_spacing.connect(self._on_ticks_change)
+        self.overlay.events.color.connect(self._on_data_change)
+        self.overlay.events.tick_labels.connect(self._on_data_change)
+        self.overlay.events.tick_spacing.connect(self._on_data_change)
         self.viewer.dims.events.order.connect(self._on_data_change)
         self.viewer.dims.events.range.connect(self._on_data_change)
         self.viewer.dims.events.ndisplay.connect(self._on_data_change)
+
         self.viewer.camera.events.angles.connect(
             self._on_view_direction_change
         )
@@ -31,14 +31,23 @@ class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
         displayed = self.viewer.dims.displayed[::-1]
         ranges = [self.viewer.dims.range[i] for i in displayed]
 
-        self.node.set_extents(displayed, ranges)
-        self._on_ticks_change()
+        if self.overlay.tick_spacing == 'auto':
+            spacing = 'auto'
+        else:
+            spacing = [self.overlays.tick_spacing[i] for i in displayed]
+
+        self.node.reset_grids(self.overlay.color)
+        self.node.set_extents(ranges)
+        self.node.set_ticks(self.overlay.tick_labels, spacing, ranges)
+
+        self._on_view_direction_change()
 
     def _on_view_direction_change(self):
-        # this works but it's EXPENSIVE, we need to debounce or find a cheaper check
-        directions = np.array(self.viewer.camera.view_direction)[::-1] >= 0
-        if np.array_equal(self._old_directions, directions):
-            return
+        # this works but it's epxensive I think, we might need to debounce or find a cheaper check
+        view_direction_is_reversed = (
+            np.array(self.viewer.camera.view_direction)[::-1] >= 0
+        )
+        up_direction = np.array(self.viewer.camera.up_direction)[::-1]
 
         # flip to xyz
         displayed = self.viewer.dims.displayed[::-1]
@@ -46,18 +55,9 @@ class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
 
         self.node.set_view_direction(
             ranges,
-            directions,
+            list(view_direction_is_reversed),
+            list(up_direction),
         )
-        self._old_directions = directions
-
-    def _on_ticks_change(self):
-        # flip to xyz
-        displayed = self.viewer.dims.displayed[::-1]
-        ranges = [self.viewer.dims.range[i] for i in displayed]
-        self.node.set_ticks(
-            self.overlay.ticks, self.overlay.tick_spacing, ranges
-        )
-        self._on_view_direction_change()
 
     def reset(self):
         super().reset()

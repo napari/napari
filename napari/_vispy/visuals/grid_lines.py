@@ -10,9 +10,27 @@ class GridLines3D(Node):
         # so we use a simple empty node with children instead
         self.tick_labels = {0: [], 1: [], 2: []}
         self._last_spacing = None
+        self._color = 'white'
+        self._scale = (1, 1, 1)
         self.grids = []
+
+        self.reset_grids('white')
+
+    def reset_grids(self, color):
+        # color and scale are not exposed on the visual, so this is how we set them...
+        self._color = color
+
+        for grid in self.grids:
+            grid.parent = None
+        self.grids.clear()
+
         for _ in range(3):
-            grid = GridLines(parent=self, border_width=0)
+            grid = GridLines(
+                parent=self,
+                border_width=0,
+                color=self._color,
+                scale=self._scale,
+            )
             grid.transform = MatrixTransform()
             self.grids.append(grid)
 
@@ -20,8 +38,8 @@ class GridLines3D(Node):
         for grid in self.grids:
             grid.set_gl_state(*args, **kwargs)
 
-    def set_extents(self, displayed, ranges):
-        ndisplay = len(displayed)
+    def set_extents(self, ranges):
+        ndisplay = len(ranges)
         bounds = []
         for i in range(ndisplay):
             rng0 = ranges[i]
@@ -36,24 +54,63 @@ class GridLines3D(Node):
         for tick in self.tick_labels[2]:
             tick.visible = is_3d
 
-    def set_view_direction(self, ranges, directions):
+    def set_view_direction(self, ranges, view_reversed, up_direction):
         # translate everything with the grid on xy plane, we transpose later
-        ndisplay = len(ranges)
-        translations = []
-        for axis in range(ndisplay):
+        if len(ranges) == 2:
+            ranges.append((0, 0))
+            view_reversed.append(0)
+        far_bounds = []
+        for axis in range(3):
             self.grids[axis].transform.reset()
+            for tick in self.tick_labels[axis]:
+                tick.transform.reset()
 
-            view_inverted = directions[axis]
-            farthest_bound = ranges[axis][int(view_inverted)]
-            translations.append(farthest_bound)
-        if ndisplay == 2:
-            translations.append(0)
+            # get the translation necessary to bring the grid to the back
+            farthest_bound = ranges[axis][int(view_reversed[axis])]
+            far_bounds.append(farthest_bound)
 
         for axis in range(3):
             prev_axis = (axis - 1) % 3
-            self.grids[axis].transform.translate(
-                (0, 0, translations[prev_axis])
-            )
+            next_axis = (axis + 1) % 3
+            self.grids[axis].transform.translate((0, 0, far_bounds[prev_axis]))
+
+            for tick in self.tick_labels[axis]:
+                # undo shifts caused by grid transform so we're back to the axes
+                tick.transform.translate((0, 0, -far_bounds[prev_axis]))
+
+                # shift according to view angle to maximize visibility and have consistent positioning
+                # these branches were found by trial and error with the goal to reproduce the
+                # tick positioning by plotly (e.g: https://plotly.com/python/3d-scatter-plots/)
+                next_axis_shift = ranges[next_axis][1] - ranges[next_axis][0]
+                prev_axis_shift = ranges[prev_axis][1] - ranges[prev_axis][0]
+
+                if axis == 0:
+                    anchor_flip = -1
+                    if not view_reversed[next_axis]:
+                        tick.transform.translate((0, next_axis_shift, 0))
+                        anchor_flip *= -1
+                    if view_reversed[prev_axis]:
+                        tick.transform.translate((0, 0, prev_axis_shift))
+                        anchor_flip *= -1
+                if axis == 1:
+                    anchor_flip = 1
+                    if view_reversed[next_axis]:
+                        tick.transform.translate((0, next_axis_shift, 0))
+                        anchor_flip *= -1
+                    if not view_reversed[prev_axis]:
+                        tick.transform.translate((0, 0, prev_axis_shift))
+                        anchor_flip *= -1
+                if axis == 2:
+                    anchor_flip = -1
+                    if not view_reversed[next_axis]:
+                        tick.transform.translate((0, 0, prev_axis_shift))
+                    if view_reversed[prev_axis]:
+                        tick.transform.translate((0, next_axis_shift, 0))
+
+                if up_direction[axis] * anchor_flip >= 0:
+                    tick.anchors = ('left', 'center')
+                else:
+                    tick.anchors = ('right', 'center')
 
         # rotate grids onto the right axes
         for axis in range(3):
@@ -65,6 +122,11 @@ class GridLines3D(Node):
                 for tick in axis_ticks:
                     tick.visible = False
             return
+
+        if tick_spacing == 'auto':
+            # TODO: something smarter
+            tick_spacing = [(r.stop - r.start) / 5 for r in ranges]
+
         if tick_spacing == self._last_spacing:
             return
 
@@ -75,24 +137,16 @@ class GridLines3D(Node):
             for tick in self.tick_labels[axis]:
                 tick.parent = None
             self.tick_labels[axis].clear()
-
-            if tick_spacing == 'auto':
-                spacing = (
-                    ranges[axis].stop - ranges[axis].start
-                ) / 5  # TODO: something smarter
-            else:
-                spacing = tick_spacing[axis]
+            next_axis = (axis + 1) % ndim
 
             for val in np.arange(
-                ranges[axis].start, ranges[axis].stop, spacing
+                ranges[axis].start, ranges[axis].stop, tick_spacing[axis]
             ):
                 tick = Text(
                     text=f'{val:.3f}',
-                    pos=(val, 0, 0),
-                    anchor_x='center',
-                    anchor_y='bottom',
+                    pos=(val, ranges[next_axis].start, 0),
                     font_size=8,
-                    color='white',
+                    color=self._color,
                     parent=self.grids[axis],
                 )
                 tick.transform = MatrixTransform()

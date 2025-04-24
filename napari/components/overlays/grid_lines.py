@@ -22,8 +22,6 @@ class GridLinesOverlay(SceneOverlay):
     """
 
     color: ColorValue = Field(default_factory=lambda: ColorValue('white'))
-    ticks: bool = True
-    tick_spacing: Literal['auto'] | tuple[float, float, float] = 'auto'
-    order: int = -10
-    opacity: float = 0.5
-    blending: Blending = Blending.TRANSLUCENT_NO_DEPTH
+    tick_labels: bool = True
+    tick_spacing: Literal['auto'] | tuple[float, ...] = 'auto'
+    blending: Blending = Blending.ADDITIVE
