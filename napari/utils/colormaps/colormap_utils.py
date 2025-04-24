@@ -61,7 +61,12 @@ matplotlib_colormaps = _MATPLOTLIB_COLORMAP_NAMES = OrderedDict(
 _MATPLOTLIB_COLORMAP_NAMES_REVERSE = {
     v: k for k, v in matplotlib_colormaps.items()
 }
+
 _VISPY_COLORMAPS_ORIGINAL = _VCO = get_colormaps()
+# some colormaps use BaseColormap and custom mapping functions instead of
+# standard colors/controls, so they are broken in napari
+for broken_colormap in ('grays', 'hot', 'ice'):
+    _VISPY_COLORMAPS_ORIGINAL.pop(broken_colormap)
 _VISPY_COLORMAPS_TRANSLATIONS = OrderedDict(
     autumn=(trans._p('colormap', 'autumn'), _VCO['autumn']),
     blues=(trans._p('colormap', 'blues'), _VCO['blues']),
