@@ -211,15 +211,32 @@ def sys_info(as_html: bool = False) -> str:
         except PackageNotFoundError:
             text += f'  - {name} not installed<br>'
 
-    text += '<br><b>Settings path:</b><br>'
     try:
         from napari.settings import get_settings
 
-        text += f'  - {get_settings().config_path}'
+        _async_setting = get_settings().experimental.async_
+        _autoswap_buffers = get_settings().experimental.autoswap_buffers
+        _triangulation_backend = (
+            get_settings().experimental.triangulation_backend
+        )
+        _config_path = get_settings().config_path
     except ValueError:
         from napari.utils._appdirs import user_config_dir
 
-        text += f'  - {os.getenv("NAPARI_CONFIG", user_config_dir())}'
+        _async_setting = os.getenv('NAPARI_ASYNC', False)
+        _autoswap_buffers = os.getenv('NAPARI_AUTOSWAP', False)
+        _triangulation_backend = os.getenv(
+            'NAPARI_TRIANGULATION_BACKEND', 'Fastest available'
+        )
+        _config_path = os.getenv('NAPARI_CONFIG', user_config_dir())
+
+    text += '<br><b>Experimental Settings:</b><br>'
+    text += f'  - Async: {_async_setting}<br>'
+    text += f'  - Autoswap buffers: {_autoswap_buffers}<br>'
+    text += f'  - Triangulation backend: {_triangulation_backend}<br>'
+
+    text += '<br><b>Settings path:</b><br>'
+    text += f'  - {_config_path}'
 
     if not as_html:
         text = (
