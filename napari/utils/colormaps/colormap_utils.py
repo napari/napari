@@ -89,7 +89,6 @@ _VISPY_COLORMAPS_TRANSLATIONS = OrderedDict(
     husl=(trans._p('colormap', 'husl'), _VCO['husl']),
     diverging=(trans._p('colormap', 'diverging'), _VCO['diverging']),
     RdYeBuCy=(trans._p('colormap', 'RdYeBuCy'), _VCO['RdYeBuCy']),
-    HiLo=(trans._p('colormap', 'HiLo'), _VCO['HiLo']),
 )
 _VISPY_COLORMAPS_TRANSLATIONS_REVERSE = {
     v[0]: k for k, v in _VISPY_COLORMAPS_TRANSLATIONS.items()
@@ -151,6 +150,22 @@ INVERSE_COLORMAPS.update(
     }
 )
 
+DISCONTINUOUS_COLORMAPS = {
+    'HiLo': Colormap(
+        name='HiLo',
+        display_name='HiLo',
+        colors=[[0.0, 0.0, 0.0, 1.0], [1.0, 1.0, 1.0, 1.0]],
+        high_color=[1.0, 0.0, 0.0, 1.0],
+        low_color=[0.0, 0.0, 1.0, 1.0],
+    ),
+    'bad': Colormap(
+        name='bad',
+        display_name='bad',
+        colors=[[0.0, 0.0, 0.0, 1.0], [1.0, 1.0, 1.0, 1.0]],
+        bad_color=[1.0, 0.0, 0.0, 1.0],
+    ),
+}
+
 _FLOAT32_MAX = float(np.finfo(np.float32).max)
 _MAX_VISPY_SUPPORTED_VALUE = _FLOAT32_MAX / 8
 # Using 8 as divisor comes from experiments.
@@ -210,20 +225,6 @@ def convert_vispy_colormap(colormap, name='vispy'):
             )
         )
 
-    # Not all vispy colormaps have an `_controls`
-    # but if they do, we want to use it
-    if hasattr(colormap, '_controls'):
-        controls = colormap._controls
-    else:
-        controls = np.zeros((0,))
-
-    # Not all vispy colormaps have an `interpolation`
-    # but if they do, we want to use it
-    if hasattr(colormap, 'interpolation'):
-        interpolation = colormap.interpolation
-    else:
-        interpolation = 'linear'
-
     if name in _VISPY_COLORMAPS_TRANSLATIONS:
         display_name, _cmap = _VISPY_COLORMAPS_TRANSLATIONS[name]
     else:
@@ -234,8 +235,15 @@ def convert_vispy_colormap(colormap, name='vispy'):
         name=name,
         display_name=display_name,
         colors=colormap.colors.rgba,
-        controls=controls,
-        interpolation=interpolation,
+        controls=colormap._controls,
+        interpolation=colormap.interpolation,
+        bad_color=colormap.bad_color.rgba,
+        high_color=colormap.high_color.rgba
+        if colormap.high_color is not None
+        else None,
+        low_color=colormap.low_color.rgba
+        if colormap.low_color is not None
+        else None,
     )
 
 
@@ -692,6 +700,7 @@ ALL_COLORMAPS.update(SIMPLE_COLORMAPS)
 ALL_COLORMAPS.update(VISPY_OLD_COLORMAPS)
 ALL_COLORMAPS.update(BOP_COLORMAPS)
 ALL_COLORMAPS.update(INVERSE_COLORMAPS)
+ALL_COLORMAPS.update(DISCONTINUOUS_COLORMAPS)
 
 # ... sorted alphabetically by name
 AVAILABLE_COLORMAPS = dict(
