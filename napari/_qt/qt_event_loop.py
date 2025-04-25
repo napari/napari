@@ -21,6 +21,7 @@ from napari._qt.utils import _maybe_allow_interrupt
 from napari.resources._icons import _theme_path
 from napari.settings import get_settings
 from napari.utils import config, perf
+from napari.utils._logging import register_logger_to_napari_handler
 from napari.utils.notifications import (
     notification_manager,
     show_console_notification,
@@ -404,5 +405,9 @@ def run(
             stacklevel=2,
         )
         return
-    with notification_manager, _maybe_allow_interrupt(app):
+    with (
+        notification_manager,
+        _maybe_allow_interrupt(app),
+        register_logger_to_napari_handler(''),
+    ):
         app.exec_()
