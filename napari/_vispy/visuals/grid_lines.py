@@ -117,6 +117,7 @@ class GridLines3D(Node):
             self.grids[axis].transform.rotate(angle=120 * axis, axis=(1, 1, 1))
 
     def set_ticks(self, show_ticks, tick_spacing, ranges):
+        # TODO: this does not work correctly with axes flipping etc
         if not show_ticks:
             for axis_ticks in self.tick_labels.values():
                 for tick in axis_ticks:
@@ -124,10 +125,12 @@ class GridLines3D(Node):
             return
 
         if tick_spacing == 'auto':
-            # TODO: something smarter
-            tick_spacing = [(r.stop - r.start) / 5 for r in ranges]
+            mag = np.log10([(r.stop - r.start) / 5 for r in ranges])
+            dec, exp = np.modf(mag)
+            exp = np.floor(exp)
+            tick_spacing = 10**exp * 2
 
-        if tick_spacing == self._last_spacing:
+        if np.array_equal(tick_spacing, self._last_spacing):
             return
 
         ndim = len(ranges)
@@ -139,9 +142,22 @@ class GridLines3D(Node):
             self.tick_labels[axis].clear()
             next_axis = (axis + 1) % ndim
 
-            for val in np.arange(
-                ranges[axis].start, ranges[axis].stop, tick_spacing[axis]
-            ):
+            # TODO: broken if start stop and inverted!
+            tick_positions = np.concatenate(
+                [
+                    np.arange(
+                        np.max([0, int(np.floor(ranges[axis].start))]),
+                        ranges[axis].stop,
+                        tick_spacing[axis],
+                    ),
+                    np.arange(
+                        np.min([0, int(np.ceil(ranges[axis].stop))]),
+                        ranges[axis].start,
+                        tick_spacing[axis],
+                    ),
+                ]
+            )
+            for val in tick_positions:
                 tick = Text(
                     text=f'{val:.3f}',
                     pos=(val, ranges[next_axis].start, 0),
