@@ -8,9 +8,9 @@ from typing import NamedTuple, Union
 import numpy as np
 import skimage.color as colorconv
 from vispy.color import (
-    BaseColormap as VispyColormap,
     Color,
     ColorArray,
+    Colormap as VispyColormap,
     get_colormap,
     get_colormaps,
 )
@@ -26,7 +26,7 @@ from napari.utils.colormaps.colormap import (
 )
 from napari.utils.colormaps.inverse_colormaps import inverse_cmaps
 from napari.utils.colormaps.standardize_color import transform_color
-from napari.utils.colormaps.vendored import cm
+from napari.utils.colormaps.vendored.cm import cmap_d
 from napari.utils.translations import trans
 
 # All parsable input color types that a user can provide
@@ -61,7 +61,12 @@ matplotlib_colormaps = _MATPLOTLIB_COLORMAP_NAMES = OrderedDict(
 _MATPLOTLIB_COLORMAP_NAMES_REVERSE = {
     v: k for k, v in matplotlib_colormaps.items()
 }
-_VISPY_COLORMAPS_ORIGINAL = _VCO = get_colormaps()
+
+# some colormaps use BaseColormap and custom mapping functions instead of
+# standard colors/controls, so they are broken in napari
+_VISPY_COLORMAPS_ORIGINAL = _VCO = {
+    k: v for k, v in get_colormaps().items() if isinstance(v, VispyColormap)
+}
 _VISPY_COLORMAPS_TRANSLATIONS = OrderedDict(
     autumn=(trans._p('colormap', 'autumn'), _VCO['autumn']),
     blues=(trans._p('colormap', 'blues'), _VCO['blues']),
@@ -70,11 +75,6 @@ _VISPY_COLORMAPS_TRANSLATIONS = OrderedDict(
     reds=(trans._p('colormap', 'reds'), _VCO['reds']),
     spring=(trans._p('colormap', 'spring'), _VCO['spring']),
     summer=(trans._p('colormap', 'summer'), _VCO['summer']),
-    fire=(trans._p('colormap', 'fire'), _VCO['fire']),
-    grays=(trans._p('colormap', 'grays'), _VCO['grays']),
-    hot=(trans._p('colormap', 'hot'), _VCO['hot']),
-    ice=(trans._p('colormap', 'ice'), _VCO['ice']),
-    winter=(trans._p('colormap', 'winter'), _VCO['winter']),
     light_blues=(trans._p('colormap', 'light blues'), _VCO['light_blues']),
     orange=(trans._p('colormap', 'orange'), _VCO['orange']),
     viridis=(trans._p('colormap', 'viridis'), _VCO['viridis']),
@@ -101,6 +101,7 @@ _PRIMARY_COLORS = OrderedDict(
     cyan=(trans._p('colormap', 'cyan'), [0.0, 1.0, 1.0]),
     magenta=(trans._p('colormap', 'magenta'), [1.0, 0.0, 1.0]),
     yellow=(trans._p('colormap', 'yellow'), [1.0, 1.0, 0.0]),
+    gray=(trans._p('colormap', 'gray'), [1.0, 1.0, 1.0]),
 )
 
 SIMPLE_COLORMAPS = {
@@ -110,16 +111,23 @@ SIMPLE_COLORMAPS = {
     for name, (display_name, color) in _PRIMARY_COLORS.items()
 }
 
-# add conventional grayscale colormap as a simple one
-SIMPLE_COLORMAPS.update(
-    {
-        'gray': Colormap(
-            name='gray',
-            display_name='gray',
-            colors=[[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]],
-        )
-    }
-)
+# readd fire and ice colormap for backwards compatibility (see #7858)
+VISPY_OLD_COLORMAPS = {
+    'fire': Colormap(
+        name='fire',
+        display_name='fire',
+        colors=[
+            [1.0, 1.0, 1.0, 1.0],
+            [1.0, 1.0, 0.0, 1.0],
+            [1.0, 0.0, 0.0, 1.0],
+        ],
+    ),
+    'ice': Colormap(
+        name='ice',
+        display_name='ice',
+        colors=[[0.0, 0.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0]],
+    ),
+}
 
 # dictionary for bop colormap objects
 BOP_COLORMAPS = {
@@ -643,9 +651,9 @@ def vispy_or_mpl_colormap(name) -> Colormap:
         colormap = convert_vispy_colormap(cmap, name=name)
     else:
         try:
-            mpl_cmap = getattr(cm, name)
+            mpl_cmap = cmap_d[name]
             display_name = _MATPLOTLIB_COLORMAP_NAMES.get(name, name)
-        except AttributeError as e:
+        except KeyError as e:
             suggestion = _MATPLOTLIB_COLORMAP_NAMES_REVERSE.get(
                 name
             ) or _VISPY_COLORMAPS_TRANSLATIONS_REVERSE.get(name)
@@ -659,9 +667,7 @@ def vispy_or_mpl_colormap(name) -> Colormap:
                     )
                 ) from e
 
-            colormaps = set(_VISPY_COLORMAPS_ORIGINAL).union(
-                set(_MATPLOTLIB_COLORMAP_NAMES)
-            )
+            colormaps = set(_VISPY_COLORMAPS_ORIGINAL).union(set(cmap_d))
             raise KeyError(
                 trans._(
                     'Colormap "{name}" not found in either vispy or matplotlib. Recognized colormaps are: {colormaps}',
@@ -683,6 +689,7 @@ ALL_COLORMAPS = {
     k: vispy_or_mpl_colormap(k) for k in _MATPLOTLIB_COLORMAP_NAMES
 }
 ALL_COLORMAPS.update(SIMPLE_COLORMAPS)
+ALL_COLORMAPS.update(VISPY_OLD_COLORMAPS)
 ALL_COLORMAPS.update(BOP_COLORMAPS)
 ALL_COLORMAPS.update(INVERSE_COLORMAPS)
 
