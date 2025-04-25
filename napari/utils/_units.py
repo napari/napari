@@ -46,7 +46,7 @@ def get_unit_registry() -> 'pint.UnitRegistry':
     return pint.UnitRegistry()
 
 
-PREFERRED_TICK_VALUES = [1, 2, 2.5, 5, 7.5]
+PREFERRED_TICK_VALUES = [1, 1.5, 2, 2.5, 3, 4, 5, 7.5]
 
 
 def _generate_ticks(base, exp, min_value, max_value):

@@ -61,7 +61,12 @@ class GridLines3D(Node):
         self.update()
 
     def set_view_direction(
-        self, ranges, view_direction, up_direction, orientation_flip
+        self,
+        ranges,
+        view_direction,
+        up_direction,
+        orientation_flip,
+        force=False,
     ):
         view_is_flipped = [
             d * f >= 0
@@ -72,7 +77,7 @@ class GridLines3D(Node):
             ranges.append((0, 0))
             view_is_flipped.append(0)
 
-        if (
+        if not force and (
             np.array_equal(view_is_flipped, self._last_view_is_flipped)
             and np.array_equal(up_direction, self._last_up_direction)
             and np.array_equal(orientation_flip, self._last_orientation_flip)

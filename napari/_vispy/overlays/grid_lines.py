@@ -43,9 +43,9 @@ class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
             self.overlay.tick_labels, self.overlay.n_ticks, ranges
         )
 
-        self._on_view_direction_change()
+        self._on_view_direction_change(force=True)
 
-    def _on_view_direction_change(self):
+    def _on_view_direction_change(self, force=False):
         # all is flipped from zyx to xyz for vispy
         view_direction = np.sign(self.viewer.camera.view_direction)[::-1]
         up_direction = np.sign(self.viewer.camera.up_direction)[::-1]
@@ -66,6 +66,7 @@ class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
             list(view_direction),
             list(up_direction),
             orientation_flip,
+            force=force,
         )
 
     def reset(self):
