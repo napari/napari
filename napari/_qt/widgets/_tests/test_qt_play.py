@@ -74,8 +74,9 @@ CONDITIONS = [
 @pytest.mark.parametrize(
     ('nframes', 'fps', 'mode', 'rng', 'result'), CONDITIONS
 )
-def test_animation_thread_variants(qtbot, nframes, fps, mode, rng, result):
+def test_animation_thread_variants(qtbot, nframes, fps, mode, result):
     """This is mostly testing that AnimationWorker.advance works as expected"""
+    rng = np.random.default_rng(0)
     with make_worker(
         qtbot, fps=fps, nframes=nframes, frame_range=rng, loop_mode=mode
     ) as worker:
