@@ -268,7 +268,7 @@ napari-plugin-engine==0.2.0
     # via napari (pyproject.toml)
 napari-plugin-manager==0.1.5
     # via napari (pyproject.toml)
-napari-sphinx-theme==0.6.0
+napari-sphinx-theme==0.7.0
     # via napari (pyproject.toml)
 napari-svg==0.2.1
     # via napari (pyproject.toml)
