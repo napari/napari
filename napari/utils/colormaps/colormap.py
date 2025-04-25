@@ -74,7 +74,7 @@ class Colormap(EventedModel):
     _display_name: str | None = PrivateAttr(None)
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.LINEAR
     controls: Array = Field(default_factory=lambda: cast(Array, []))
-    bad_color: ColorValue = 'transparent'
+    bad_color: ColorValue = ColorValue('transparent')
     high_color: ColorValue | None = None
     low_color: ColorValue | None = None
 
