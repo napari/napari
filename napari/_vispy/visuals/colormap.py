@@ -92,7 +92,7 @@ class Colormap(Node):
         ticks_vals = np.interp(1 - ticks_pos, (0, 1), clim)
         max_val_width = 0
         for val, pos in zip(ticks_vals, ticks_coords[1::2], strict=True):
-            val_str = f'{val:.3}'
+            val_str = f'{val:.3g}'
             max_val_width = max(max_val_width, len(val_str))
             # using anchor_y=center doesn't work well for some reason
             # so instead we use top and shift y manually

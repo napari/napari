@@ -66,7 +66,7 @@ class VispyColormapOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         self._on_ticks_change()
 
     def _on_ticks_change(self) -> None:
-        text_width = self.node.set_ticks(
+        text_width = self.node.set_ticks_and_get_text_width(
             show=self.overlay.ticks,
             n=self.overlay.n_ticks,
             tick_length=self.overlay.tick_length,

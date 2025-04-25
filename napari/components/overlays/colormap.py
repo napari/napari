@@ -1,4 +1,5 @@
 from napari._pydantic_compat import Field
+from napari.components._viewer_constants import CanvasPosition
 from napari.components.overlays.base import CanvasOverlay
 from napari.utils.color import ColorValue
 
@@ -18,9 +19,10 @@ class ColormapOverlay(CanvasOverlay):
         The rendering order of the overlay: lower numbers get rendered first.
     """
 
-    size: tuple[float, float] = 50, 250
+    size: tuple[float, float] = 25, 150
     ticks: bool = True
     n_ticks: int = 4
     tick_length: float = 5
     font_size: float = 7
     color: ColorValue = Field(default_factory=lambda: ColorValue('white'))
+    position: CanvasPosition = CanvasPosition.TOP_RIGHT
