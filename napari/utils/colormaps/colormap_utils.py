@@ -26,7 +26,7 @@ from napari.utils.colormaps.colormap import (
 )
 from napari.utils.colormaps.inverse_colormaps import inverse_cmaps
 from napari.utils.colormaps.standardize_color import transform_color
-from napari.utils.colormaps.vendored import cm
+from napari.utils.colormaps.vendored.cm import cmap_d
 from napari.utils.translations import trans
 
 # All parsable input color types that a user can provide
@@ -650,9 +650,9 @@ def vispy_or_mpl_colormap(name) -> Colormap:
         colormap = convert_vispy_colormap(cmap, name=name)
     else:
         try:
-            mpl_cmap = getattr(cm, name)
+            mpl_cmap = cmap_d[name]
             display_name = _MATPLOTLIB_COLORMAP_NAMES.get(name, name)
-        except AttributeError as e:
+        except KeyError as e:
             suggestion = _MATPLOTLIB_COLORMAP_NAMES_REVERSE.get(
                 name
             ) or _VISPY_COLORMAPS_TRANSLATIONS_REVERSE.get(name)
@@ -666,9 +666,7 @@ def vispy_or_mpl_colormap(name) -> Colormap:
                     )
                 ) from e
 
-            colormaps = set(_VISPY_COLORMAPS_ORIGINAL).union(
-                set(_MATPLOTLIB_COLORMAP_NAMES)
-            )
+            colormaps = set(_VISPY_COLORMAPS_ORIGINAL).union(set(cmap_d))
             raise KeyError(
                 trans._(
                     'Colormap "{name}" not found in either vispy or matplotlib. Recognized colormaps are: {colormaps}',
