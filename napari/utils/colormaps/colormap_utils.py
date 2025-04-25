@@ -209,20 +209,6 @@ def convert_vispy_colormap(colormap, name='vispy'):
             )
         )
 
-    # Not all vispy colormaps have an `_controls`
-    # but if they do, we want to use it
-    if hasattr(colormap, '_controls'):
-        controls = colormap._controls
-    else:
-        controls = np.zeros((0,))
-
-    # Not all vispy colormaps have an `interpolation`
-    # but if they do, we want to use it
-    if hasattr(colormap, 'interpolation'):
-        interpolation = colormap.interpolation
-    else:
-        interpolation = 'linear'
-
     if name in _VISPY_COLORMAPS_TRANSLATIONS:
         display_name, _cmap = _VISPY_COLORMAPS_TRANSLATIONS[name]
     else:
@@ -233,8 +219,8 @@ def convert_vispy_colormap(colormap, name='vispy'):
         name=name,
         display_name=display_name,
         colors=colormap.colors.rgba,
-        controls=controls,
-        interpolation=interpolation,
+        controls=colormap._controls,
+        interpolation=colormap.interpolation,
     )
 
 
