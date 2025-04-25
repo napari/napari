@@ -1,7 +1,10 @@
 """Units utilities."""
 
+from decimal import Decimal
 from functools import lru_cache
 from typing import TYPE_CHECKING
+
+import numpy as np
 
 if TYPE_CHECKING:
     import pint
@@ -41,3 +44,43 @@ def get_unit_registry() -> 'pint.UnitRegistry':
     import pint
 
     return pint.UnitRegistry()
+
+
+PREFERRED_TICK_VALUES = [1, 2, 2.5, 5, 7.5]
+
+
+def _generate_ticks(base, exp, min_value, max_value):
+    step = Decimal(base) * Decimal(10) ** exp
+
+    # ensure we never go past min and max
+    tick_min = np.ceil(min_value / step) * step
+    tick_max = np.floor(max_value / step) * step
+
+    # actually generate ticks with the given step
+    return np.arange(tick_min, tick_max + step, step).astype(float)
+
+
+def compute_nice_ticks(min_value, max_value, target_ticks=5):
+    # Decimal needed for small values float imprecision
+    min_value = Decimal(min_value)
+    max_value = Decimal(max_value)
+
+    span = max_value - min_value
+    ideal_step = span / (target_ticks - 1)
+
+    ideal_exponent = int(np.floor(np.log10(ideal_step)))
+    exp_candidates = range(ideal_exponent - 1, ideal_exponent + 1)
+
+    best_ticks = None
+
+    for exp in exp_candidates:
+        for base in PREFERRED_TICK_VALUES:
+            ticks = _generate_ticks(base, exp, min_value, max_value)
+
+            # get number of ticks closer to target_ticks
+            if best_ticks is None or abs(len(ticks) - target_ticks) <= abs(
+                len(best_ticks) - target_ticks
+            ):
+                best_ticks = ticks
+
+    return best_ticks

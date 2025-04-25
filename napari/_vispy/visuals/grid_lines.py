@@ -2,6 +2,8 @@ import numpy as np
 from vispy.scene import MatrixTransform, STTransform
 from vispy.scene.visuals import GridLines, Node, Text
 
+from napari.utils._units import compute_nice_ticks
+
 
 class GridLines3D(Node):
     def __init__(self, *args, **kwargs):
@@ -9,7 +11,7 @@ class GridLines3D(Node):
         # compound does not play well with sub-transforms for some reason
         # so we use a simple empty node with children instead
         self.tick_labels = {0: [], 1: [], 2: []}
-        self._last_spacing = None
+        self._last_ticks = None
         self._last_view_is_flipped = ()
         self._last_up_direction = ()
         self._color = 'white'
@@ -146,20 +148,20 @@ class GridLines3D(Node):
         self._last_view_is_flipped = view_is_flipped
         self._last_orientation_flip = orientation_flip
 
-    def set_ticks(self, show_ticks, tick_spacing, ranges):
+    def set_ticks(self, show_ticks, n_ticks, ranges):
         if not show_ticks:
             for axis_ticks in self.tick_labels.values():
                 for tick in axis_ticks:
                     tick.visible = False
             return
 
-        if tick_spacing == 'auto':
-            mag = np.log10([(r.stop - r.start) / 5 for r in ranges])
-            dec, exp = np.modf(mag)
-            exp = np.floor(exp)
-            tick_spacing = 10**exp * 2
+        # generate tick positions with round values
+        tick_positions = [
+            compute_nice_ticks(r.start, r.stop, target_ticks=n_ticks)
+            for r in ranges
+        ]
 
-        if np.array_equal(tick_spacing, self._last_spacing):
+        if np.array_equal(tick_positions, self._last_ticks):
             return
 
         ndim = len(ranges)
@@ -171,23 +173,9 @@ class GridLines3D(Node):
             self.tick_labels[axis].clear()
             next_axis = (axis + 1) % ndim
 
-            tick_positions = np.concatenate(
-                [
-                    np.arange(
-                        np.max([0, int(np.floor(ranges[axis].start))]),
-                        ranges[axis].stop,
-                        tick_spacing[axis],
-                    ),
-                    np.arange(
-                        np.min([0, int(np.ceil(ranges[axis].stop))]),
-                        ranges[axis].start,
-                        tick_spacing[axis],
-                    ),
-                ]
-            )
-            for val in tick_positions:
+            for val in tick_positions[axis]:
                 tick = Text(
-                    text=f'{val:.3f}',
+                    text=f'{val:.3g}',
                     pos=(val, ranges[next_axis].start, 0),
                     font_size=8,
                     color=self._color,

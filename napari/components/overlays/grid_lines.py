@@ -1,5 +1,3 @@
-from typing import Literal
-
 from napari._pydantic_compat import Field
 from napari.components.overlays.base import SceneOverlay
 from napari.layers.base._base_constants import Blending
@@ -23,5 +21,5 @@ class GridLinesOverlay(SceneOverlay):
 
     color: ColorValue = Field(default_factory=lambda: ColorValue('white'))
     tick_labels: bool = True
-    tick_spacing: Literal['auto'] | tuple[float, ...] = 'auto'
+    n_ticks: int = 5
     blending: Blending = Blending.ADDITIVE

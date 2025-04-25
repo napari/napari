@@ -16,7 +16,7 @@ class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
 
         self.overlay.events.color.connect(self._on_data_change)
         self.overlay.events.tick_labels.connect(self._on_data_change)
-        self.overlay.events.tick_spacing.connect(self._on_data_change)
+        self.overlay.events.n_ticks.connect(self._on_data_change)
         self.viewer.dims.events.order.connect(self._on_data_change)
         self.viewer.dims.events.range.connect(self._on_data_change)
         self.viewer.dims.events.ndisplay.connect(self._on_data_change)
@@ -37,14 +37,11 @@ class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
         displayed = self.viewer.dims.displayed[::-1]
         ranges = [self.viewer.dims.range[i] for i in displayed]
 
-        if self.overlay.tick_spacing == 'auto':
-            spacing = 'auto'
-        else:
-            spacing = [self.overlays.tick_spacing[i] for i in displayed]
-
         self.node.reset_grids(self.overlay.color)
         self.node.set_extents(ranges)
-        self.node.set_ticks(self.overlay.tick_labels, spacing, ranges)
+        self.node.set_ticks(
+            self.overlay.tick_labels, self.overlay.n_ticks, ranges
+        )
 
         self._on_view_direction_change()
 
