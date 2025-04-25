@@ -72,6 +72,8 @@ za = np.array(
      [-29.26, 209.33], [-28.96, 208.98]]
     )
 
+features = {'country_name': ['South Africa']}
+text = {'string': '{country_name}', 'color': '#ffffffff', 'size': 20}
 
 # First, check the utils code manually using matplotlib.
 v, e = atd.normalize_vertices_and_edges(za, close=True)
@@ -89,7 +91,12 @@ fig.show()
 viewer = napari.Viewer()
 viewer.camera.orientation2d = ('up', 'right')  # lat goes up, lon goes right
 layer = viewer.add_shapes(
-        za, shape_type=['polygon'], face_color='#fdab19', edge_color='0e6639'
+        za,
+        shape_type=['polygon'],
+        features=features,
+        face_color='#0e6639',
+        edge_color='#fdab19',
+        text=text,
         )
 
 # these settings help to visualise the polygon data directly in the
