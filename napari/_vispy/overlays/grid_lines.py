@@ -20,6 +20,7 @@ class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
         self.viewer.dims.events.range.connect(self._on_data_change)
         self.viewer.dims.events.ndisplay.connect(self._on_data_change)
 
+        # would be nice to fire this less often to save performance
         self.viewer.camera.events.angles.connect(
             self._on_view_direction_change
         )
@@ -43,19 +44,16 @@ class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
         self._on_view_direction_change()
 
     def _on_view_direction_change(self):
-        # this works but it's epxensive I think, we might need to debounce or find a cheaper check
-        view_direction_is_reversed = (
-            np.array(self.viewer.camera.view_direction)[::-1] >= 0
-        )
-        up_direction = np.array(self.viewer.camera.up_direction)[::-1]
+        # flip to xyz for vispy
+        view_direction = np.array(self.viewer.camera.view_direction)[::-1] >= 0
+        up_direction = np.sign(self.viewer.camera.up_direction)[::-1]
 
-        # flip to xyz
         displayed = self.viewer.dims.displayed[::-1]
         ranges = [self.viewer.dims.range[i] for i in displayed]
 
         self.node.set_view_direction(
             ranges,
-            list(view_direction_is_reversed),
+            list(view_direction),
             list(up_direction),
         )
 

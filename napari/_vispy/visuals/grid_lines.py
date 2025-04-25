@@ -1,5 +1,5 @@
 import numpy as np
-from vispy.scene import MatrixTransform
+from vispy.scene import MatrixTransform, STTransform
 from vispy.scene.visuals import GridLines, Node, Text
 
 
@@ -10,6 +10,8 @@ class GridLines3D(Node):
         # so we use a simple empty node with children instead
         self.tick_labels = {0: [], 1: [], 2: []}
         self._last_spacing = None
+        self._last_view_direction = ()
+        self._last_up_direction = ()
         self._color = 'white'
         self._scale = (1, 1, 1)
         self.grids = []
@@ -54,19 +56,25 @@ class GridLines3D(Node):
         for tick in self.tick_labels[2]:
             tick.visible = is_3d
 
-    def set_view_direction(self, ranges, view_reversed, up_direction):
+    def set_view_direction(self, ranges, view_direction, up_direction):
         # translate everything with the grid on xy plane, we transpose later
         if len(ranges) == 2:
             ranges.append((0, 0))
-            view_reversed.append(0)
+            view_direction.append(0)
+
+        if np.array_equal(
+            view_direction, self._last_view_direction
+        ) and np.array_equal(up_direction, self._last_up_direction):
+            return
+
         far_bounds = []
         for axis in range(3):
             self.grids[axis].transform.reset()
             for tick in self.tick_labels[axis]:
-                tick.transform.reset()
+                tick.transform.translate = (0, 0, 0)
 
             # get the translation necessary to bring the grid to the back
-            farthest_bound = ranges[axis][int(view_reversed[axis])]
+            farthest_bound = ranges[axis][int(view_direction[axis])]
             far_bounds.append(farthest_bound)
 
         for axis in range(3):
@@ -76,7 +84,7 @@ class GridLines3D(Node):
 
             for tick in self.tick_labels[axis]:
                 # undo shifts caused by grid transform so we're back to the axes
-                tick.transform.translate((0, 0, -far_bounds[prev_axis]))
+                tick.transform.move((0, 0, -far_bounds[prev_axis]))
 
                 # shift according to view angle to maximize visibility and have consistent positioning
                 # these branches were found by trial and error with the goal to reproduce the
@@ -86,26 +94,26 @@ class GridLines3D(Node):
 
                 if axis == 0:
                     anchor_flip = -1
-                    if not view_reversed[next_axis]:
-                        tick.transform.translate((0, next_axis_shift, 0))
+                    if not view_direction[next_axis]:
+                        tick.transform.move((0, next_axis_shift, 0))
                         anchor_flip *= -1
-                    if view_reversed[prev_axis]:
-                        tick.transform.translate((0, 0, prev_axis_shift))
+                    if view_direction[prev_axis]:
+                        tick.transform.move((0, 0, prev_axis_shift))
                         anchor_flip *= -1
                 if axis == 1:
                     anchor_flip = 1
-                    if view_reversed[next_axis]:
-                        tick.transform.translate((0, next_axis_shift, 0))
+                    if view_direction[next_axis]:
+                        tick.transform.move((0, next_axis_shift, 0))
                         anchor_flip *= -1
-                    if not view_reversed[prev_axis]:
-                        tick.transform.translate((0, 0, prev_axis_shift))
+                    if not view_direction[prev_axis]:
+                        tick.transform.move((0, 0, prev_axis_shift))
                         anchor_flip *= -1
                 if axis == 2:
                     anchor_flip = -1
-                    if not view_reversed[next_axis]:
-                        tick.transform.translate((0, 0, prev_axis_shift))
-                    if view_reversed[prev_axis]:
-                        tick.transform.translate((0, next_axis_shift, 0))
+                    if not view_direction[next_axis]:
+                        tick.transform.move((0, 0, prev_axis_shift))
+                    if view_direction[prev_axis]:
+                        tick.transform.move((0, next_axis_shift, 0))
 
                 if up_direction[axis] * anchor_flip >= 0:
                     tick.anchors = ('left', 'center')
@@ -115,6 +123,9 @@ class GridLines3D(Node):
         # rotate grids onto the right axes
         for axis in range(3):
             self.grids[axis].transform.rotate(angle=120 * axis, axis=(1, 1, 1))
+
+        self._last_up_direction = up_direction
+        self._last_view_direction = view_direction
 
     def set_ticks(self, show_ticks, tick_spacing, ranges):
         # TODO: this does not work correctly with axes flipping etc
@@ -165,7 +176,7 @@ class GridLines3D(Node):
                     color=self._color,
                     parent=self.grids[axis],
                 )
-                tick.transform = MatrixTransform()
+                tick.transform = STTransform()
                 self.tick_labels[axis].append(tick)
 
             self.grids[axis].parent = self
