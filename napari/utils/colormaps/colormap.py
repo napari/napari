@@ -167,7 +167,7 @@ class Colormap(EventedModel):
                 )
             )
 
-        values = values.reshape(-1, 1)
+        values = values[..., None]
         # map NaNs, lows, and highs
         cols = np.where(np.isnan(values), self.bad_color, cols)
         if self.high_color is not None:
