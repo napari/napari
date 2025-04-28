@@ -16,9 +16,10 @@ class GridLines3D(Node):
         self._last_up_direction = ()
         self._color = 'white'
         self._scale = (1, 1, 1)
+        self._opacity = 1
         self.grids = []
 
-        self.reset_grids('white')
+        self.reset_grids(color='white')
 
     def reset_grids(self, color):
         # color and scale are not exposed on the visual, so this is how we set them...
@@ -36,11 +37,25 @@ class GridLines3D(Node):
                 scale=self._scale,
             )
             grid.transform = MatrixTransform()
+            grid.opacity = self._opacity
             self.grids.append(grid)
 
     def set_gl_state(self, *args, **kwargs):
         for grid in self.grids:
             grid.set_gl_state(*args, **kwargs)
+
+    @property
+    def opacity(self):
+        return self.grids[0].opacity
+
+    @opacity.setter
+    def opacity(self, opacity):
+        self._opacity = opacity
+        for grid in self.grids:
+            grid.opacity = opacity
+        for ticks in self.tick_labels.values():
+            for tick in ticks:
+                tick.opacity = opacity
 
     def set_extents(self, ranges):
         ndisplay = len(ranges)
@@ -187,6 +202,7 @@ class GridLines3D(Node):
                     parent=self.grids[axis],
                 )
                 tick.transform = STTransform()
+                tick.opacity = self._opacity
                 self.tick_labels[axis].append(tick)
 
             self.grids[axis].parent = self
