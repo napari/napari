@@ -15,7 +15,8 @@ from check_updated_packages import get_changed_dependencies
 REPO_DIR = Path(__file__).parent.parent / 'napari_repo'
 # GitHub API base URL
 BASE_URL = 'https://api.github.com'
-DEFAULT_BRANCH_NAME = 'auto-update-dependencies'
+DEFAULT_BRANCH_NAME_PREFIX = 'auto-update-dependencies'
+DEFAULT_BRANCH_NAME = f'{DEFAULT_BRANCH_NAME_PREFIX}-main'
 
 
 @contextmanager
@@ -134,10 +135,7 @@ def create_pr_with_push(branch_name: str, access_token: str, repo=''):
     """
     Create a PR.
     """
-    if branch_name == 'main':
-        new_branch_name = DEFAULT_BRANCH_NAME
-    else:
-        new_branch_name = f'{DEFAULT_BRANCH_NAME}-{branch_name}'
+    new_branch_name = f'{DEFAULT_BRANCH_NAME_PREFIX}-{branch_name}'
 
     if not repo:
         repo = os.environ.get('GITHUB_REPOSITORY', 'napari/napari')

@@ -4,16 +4,21 @@ import numpy as np
 import pytest
 from numpy import array, testing as npt
 
-from napari.layers.shapes._accelerated_triangulate_dispatch import (
+from napari.layers.shapes._accelerated_triangulate_python import (
     generate_2D_edge_meshes_py,
+    is_convex_py,
+    normalize_vertices_and_edges_py,
+    reconstruct_polygons_from_edges_py,
 )
 from napari.layers.shapes._shapes_utils import (
-    _is_convex,
     _save_failed_triangulation,
     get_default_shape_type,
     number_of_shapes,
     perpendicular_distance,
     rdp,
+    reconstruct_and_triangulate_edge,
+    triangulate_face_and_edges,
+    triangulate_face_vispy,
 )
 
 W_DATA = [[0, 3], [1, 0], [2, 3], [5, 0], [2.5, 5]]
@@ -458,23 +463,54 @@ def rotation_matrix(angle):
 ANGLES = [0, 5, 75, 95, 355]
 
 
-@pytest.mark.parametrize('angle', ANGLES, ids=str)
-@pytest.mark.parametrize('reverse', [False, True])
-def test_is_convex_self_intersection(angle, reverse):
-    p = pentagram(reverse)
-    rot = rotation_matrix(angle)
-    data = np.dot(p, rot)
-    assert not _is_convex(data)
+def test_is_convex_self_intersection(self_intersecting_polygon):
+    assert not is_convex_py(self_intersecting_polygon)
 
 
-@pytest.mark.parametrize('angle', ANGLES, ids=str)
-@pytest.mark.parametrize('n_vertex', [3, 4, 7, 12, 15, 20])
-@pytest.mark.parametrize('reverse', [False, True])
-def test_is_convex_regular_polygon(angle, n_vertex, reverse):
-    poly = generate_regular_polygon(n_vertex, reverse=reverse)
-    rot = rotation_matrix(angle)
-    rotated_poly = np.dot(poly, rot)
-    assert _is_convex(rotated_poly)
+def test_is_convex_regular_polygon(regular_polygon):
+    assert is_convex_py(regular_polygon)
+
+
+def test_is_convex_non_convex(non_convex_poly):
+    assert not is_convex_py(non_convex_poly)
+
+
+def test_line_non_convex(line):
+    assert not is_convex_py(line)
+
+
+def test_line_two_point_non_convex(line_two_point):
+    assert not is_convex_py(line_two_point)
+
+
+def test_normalize_vertices_and_edges(poly_hole):
+    points, edges = normalize_vertices_and_edges_py(poly_hole, close=True)
+    assert points.shape == (8, 2)
+    assert edges.shape == (8, 2)
+
+
+def test_reconstruct_and_triangulate_edge(poly_hole):
+    points, edges = normalize_vertices_and_edges_py(poly_hole, close=True)
+    centers, offsets, triangles = reconstruct_and_triangulate_edge(
+        points, edges
+    )
+    assert len(triangles) == 16
+    assert len(offsets) == 20
+    assert len(centers) == 20
+
+
+def test_reconstruct_polygon_edges(poly_hole):
+    points, edges = normalize_vertices_and_edges_py(poly_hole, close=True)
+    polygon_list = reconstruct_polygons_from_edges_py(points, edges)
+    assert len(polygon_list) == 2
+    assert len(polygon_list[0]) == 4
+    assert len(polygon_list[1]) == 4
+
+
+def test_triangulate_face_and_edges(poly_hole):
+    faces, edges = triangulate_face_and_edges(
+        poly_hole, triangulate_face_vispy
+    )
 
 
 def test_save_failed_triangulation(tmp_path):
