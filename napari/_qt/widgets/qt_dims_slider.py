@@ -704,9 +704,6 @@ class AnimationThread(QThread):
     def axis(self) -> int | None:
         """Return the axis for this animation thread."""
         return getattr(self.slider, 'axis', None)
-        if self.slider:
-            return self.slider.axis
-        return None
 
     @property
     def dims(self) -> Dims | None:
