@@ -416,9 +416,9 @@ pyperclip==1.9.0
     # via mouseinfo
 pyproject-hooks==1.2.0
     # via build
-pyqt6==6.9.0
+pyqt6==6.8.1
     # via napari (pyproject.toml)
-pyqt6-qt6==6.9.0
+pyqt6-qt6==6.8.2
     # via pyqt6
 pyqt6-sip==13.10.0
     # via pyqt6
