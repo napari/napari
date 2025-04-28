@@ -22,7 +22,11 @@ from napari.layers.shapes._shapes_utils import (
     triangulate_face_triangle,
     triangulate_face_vispy,
 )
-from napari.layers.shapes.shape_types import CoordinateArray, TriangleArray
+from napari.layers.shapes.shape_types import (
+    BoxArray,
+    CoordinateArray,
+    TriangleArray,
+)
 from napari.utils.misc import argsort
 from napari.utils.translations import trans
 from napari.utils.triangulation_backend import TriangulationBackend
@@ -141,7 +145,7 @@ class Shape(ABC):
             (0, self.ndisplay), dtype=np.float32
         )
         self._edge_triangles: TriangleArray = np.empty((0, 3), dtype=np.uint32)  # type: ignore[assignment]
-        self._box = np.empty((9, 2))
+        self._box: BoxArray = np.empty((9, 2), dtype=np.float32)  # type: ignore[assignment]
 
         self._closed = False
         self._filled = True
@@ -244,7 +248,7 @@ class Shape(ABC):
         return self.dims_order[: -self.ndisplay]
 
     @cached_property
-    def data_displayed(self):
+    def data_displayed(self) -> CoordinateArray:
         """(N, 2) array: Vertices of the shape that are currently displayed."""
         return self.data[:, self.dims_displayed]
 
@@ -305,7 +309,7 @@ class Shape(ABC):
 
     def _set_meshes(  # noqa: B027
         self,
-        data: npt.NDArray,
+        data: CoordinateArray,
         closed: bool = True,
         face: bool = True,
         edge: bool = True,
@@ -502,7 +506,7 @@ class Shape(ABC):
                 # axis-aligned plane. However in that situation data2d will be
                 # empty, is_collinear is True, and we will never get here. But
                 # we check anyway for mypy's sake
-                vertices = np.insert(vertices, axis, value, axis=1)
+                vertices = np.insert(vertices, axis, value, axis=1)  # type: ignore[assignment]
             if len(triangles) > 0:
                 self._face_vertices = vertices
                 self._face_triangles = triangles
@@ -568,7 +572,7 @@ class Shape(ABC):
                 # axis-aligned plane. However in that situation data2d will be
                 # empty, is_collinear is True, and we will never get here. But
                 # we check anyway for mypy's sake
-                vertices = np.insert(vertices, axis, value, axis=1)
+                vertices = np.insert(vertices, axis, value, axis=1)  # type: ignore[assignment]
             if len(triangles) > 0:
                 self._face_vertices = vertices
                 self._face_triangles = triangles
@@ -763,7 +767,7 @@ class Shape(ABC):
         else:
             data = self.data_displayed
 
-        data = data[:, -len(shape_plane) :]
+        data = data[:, -len(shape_plane) :]  # type: ignore[assignment]
 
         if self._filled:
             mask_p = poly_to_mask(shape_plane, (data - offset) * zoom_factor)

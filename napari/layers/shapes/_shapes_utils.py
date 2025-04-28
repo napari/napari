@@ -16,6 +16,7 @@ from napari.layers.shapes import (
     _accelerated_triangulate_python as _triangulate_py,
 )
 from napari.layers.shapes.shape_types import (
+    BoxArray,
     CoordinateArray,
     CoordinateArray2D,
     CoordinateArray3D,
@@ -394,7 +395,7 @@ def point_to_lines(point, lines):
     return index, location
 
 
-def create_box(data: npt.NDArray) -> npt.NDArray:
+def create_box(data: CoordinateArray2D) -> BoxArray:
     """Creates the axis aligned interaction box of a list of points
 
     Parameters
@@ -428,10 +429,12 @@ def create_box(data: npt.NDArray) -> npt.NDArray:
             (tl + tr + br + bl) / 4,
         ]
     )
-    return box
+    return box  # type: ignore[return-value]
 
 
-def rectangle_to_box(data: npt.NDArray) -> npt.NDArray:
+def rectangle_to_box(
+    data: np.ndarray[tuple[typing.Literal[4], int], np.dtype[np.float32]],
+) -> BoxArray:
     """Converts the four corners of a rectangle into a interaction box like
     representation. If the rectangle is not axis aligned the resulting box
     representation will not be axis aligned either
@@ -468,7 +471,7 @@ def rectangle_to_box(data: npt.NDArray) -> npt.NDArray:
             data.mean(axis=0),
         ]
     )
-    return box
+    return box  # type: ignore[return-value]
 
 
 def find_corners(data: npt.NDArray) -> npt.NDArray:
@@ -518,8 +521,8 @@ def center_radii_to_corners(
 
 
 def triangulate_ellipse(
-    corners: npt.NDArray, num_segments: int = 100
-) -> tuple[npt.NDArray, npt.NDArray]:
+    corners: CoordinateArray, num_segments: int = 100
+) -> tuple[CoordinateArray, TriangleArray]:
     """Determines the triangulation of a path. The resulting `offsets` can
     multiplied by a `width` scalar and be added to the resulting `centers`
     to generate the vertices of the triangles for the triangulation, i.e.

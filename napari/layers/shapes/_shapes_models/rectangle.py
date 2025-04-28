@@ -83,8 +83,9 @@ class Rectangle(Shape):
         data_displayed = self.data_displayed
         self._set_meshes(data_displayed, face=False)
         self._face_vertices = data_displayed
-        self._face_triangles = np.array([[0, 1, 2], [0, 2, 3]])
-        self._box = rectangle_to_box(data_displayed)
+        self._face_triangles = np.array([[0, 1, 2], [0, 2, 3]])  # type: ignore[assignment]
+        # The data displayed are in this case the four corners
+        self._box = rectangle_to_box(data_displayed)  # type: ignore[arg-type]
         self.slice_key = self._bounding_box[:, self.dims_not_displayed].astype(
             'int'
         )
