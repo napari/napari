@@ -15,6 +15,33 @@ VISPY_DEFAULT_ORIENTATION_2D = ('right', 'up', 'towards')  # xyz
 VISPY_DEFAULT_ORIENTATION_3D = ('right', 'down', 'away')  # xyz
 
 
+class SwitchableVispyCamera:
+    def __init__(self, view, dims) -> None:
+        self._view = view
+        self._dims = dims
+
+        # Create 2D camera
+        self._2D_camera = MouseToggledPanZoomCamera(aspect=1)
+        self._2D_camera.viewbox_key_event = viewbox_key_event
+
+        # Create 3D camera
+        self._3D_camera = MouseToggledArcballCamera(fov=0)
+        self._3D_camera.viewbox_key_event = viewbox_key_event
+
+        # Set 2D camera by default
+        self._view.camera = self._2D_camera
+
+        self._dims.events.ndisplay.connect(
+            self._on_ndisplay_change, position='first'
+        )
+
+    def _on_ndisplay_change(self):
+        if self._dims.ndisplay == 3:
+            self._view.camera = self._3D_camera
+        else:
+            self._view.camera = self._2D_camera
+
+
 class VispyCamera:
     """Vipsy camera for both 2D and 3D rendering.
 

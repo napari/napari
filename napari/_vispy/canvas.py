@@ -9,7 +9,7 @@ import numpy as np
 from superqt.utils import qthrottled
 from vispy.scene import SceneCanvas as SceneCanvas_, Widget
 
-from napari._vispy import VispyCamera
+from napari._vispy.camera import SwitchableVispyCamera, VispyCamera
 from napari._vispy.mouse_event import NapariMouseEvent
 from napari._vispy.utils.cursor import QtCursorVisual
 from napari._vispy.utils.gl import get_max_texture_sizes
@@ -112,7 +112,9 @@ class VispyCanvas:
         self._scene_canvas = NapariSceneCanvas(
             *args, keys=None, vsync=True, **kwargs
         )
-        self.view = self.central_widget.add_view(border_width=0)
+        self.grid = self.central_widget.add_grid(border_width=0)
+        self.cameras = []
+        self.view = self.grid.add_view(0, 0, border_width=0)
         self.camera = VispyCamera(
             self.view, self.viewer.camera, self.viewer.dims
         )
@@ -166,6 +168,7 @@ class VispyCanvas:
         self.viewer.camera.events.zoom.connect(self._on_cursor)
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
         self.viewer.layers.events.removed.connect(self._remove_layer)
+        self.viewer.grid.events.connect(self._on_grid_change)
         self.destroyed.connect(self._disconnect_theme)
 
     @property
@@ -575,8 +578,20 @@ class VispyCanvas:
         -------
         None
         """
-
-        vispy_layer.node.parent = self.view.scene
+        if self.viewer.grid.enabled:
+            row, col = self.viewer.grid.position(
+                self.viewer.layers.index(napari_layer), len(self.viewer.layers)
+            )
+            view = self.grid[col, row]
+            vispy_layer.node.parent = view.scene
+            camera = SwitchableVispyCamera(
+                self.grid[col, row], self.viewer.dims
+            )
+            self.cameras.append(camera)
+            self.camera._2D_camera.link(camera._2D_camera)
+            self.camera._3D_camera.link(camera._3D_camera)
+        else:
+            vispy_layer.node.parent = self.view.scene
         self.layer_to_visual[napari_layer] = vispy_layer
 
         napari_layer.events.visible.connect(self._reorder_layers)
@@ -681,3 +696,40 @@ class VispyCanvas:
     def enable_dims_play(self, *args) -> None:
         """Enable playing of animation. False if awaiting a draw event"""
         self.viewer.dims._play_ready = True
+
+    def _on_grid_change(self, event=None):
+        while len(self.grid.children) > 1:
+            view = self.grid.children[-1]
+            # remove_widget is bugged and does not remove from children fully, so we also set parent to None
+            self.grid.remove_widget(view)
+            view.parent = None
+        for camera in self.cameras:
+            camera._2D_camera.parent = None
+            camera._3D_camera.parent = None
+        # TODO: public way of doing this?
+        self.camera._2D_camera._linked_cameras.clear()
+        self.camera._3D_camera._linked_cameras.clear()
+        if event.type == 'enabled':
+            for napari_layer in self.viewer.layers:
+                vispy_layer = self.layer_to_visual[napari_layer]
+                if event.value:
+                    row, col = self.viewer.grid.position(
+                        self.viewer.layers.index(napari_layer),
+                        len(self.viewer.layers),
+                    )
+                    view = self.grid[col, row]
+                    vispy_layer.node.parent = view.scene
+                    # TODO: a bit overkill for now, we should only need napari to communicate with
+                    # all the cameras OR only vispy to link. However, because we rely on vispy
+                    # cameras to handle events first and then send to napari, this isn't quite
+                    # as straightforward as it seems
+                    camera = SwitchableVispyCamera(
+                        self.grid[col, row], self.viewer.dims
+                    )
+                    self.cameras.append(camera)
+                    self.camera._2D_camera.link(camera._2D_camera)
+                    self.camera._3D_camera.link(camera._3D_camera)
+                else:
+                    vispy_layer.node.parent = self.view.scene
+        elif event.type == 'stride':
+            pass

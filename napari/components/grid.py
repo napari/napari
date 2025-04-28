@@ -120,4 +120,5 @@ class GridCanvas(EventedModel):
         adj_i = adj_i % (n_row * n_column)
         i_row = adj_i // n_column
         i_column = adj_i % n_column
-        return (i_row, i_column)
+        # convert to python int from np int
+        return (int(i_row), int(i_column))
