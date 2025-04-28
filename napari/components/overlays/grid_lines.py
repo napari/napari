@@ -20,6 +20,6 @@ class GridLinesOverlay(SceneOverlay):
     """
 
     color: ColorValue = Field(default_factory=lambda: ColorValue('white'))
-    tick_labels: bool = True
-    n_ticks: int = 5
+    labels: bool = True
+    n_labels: int = Field(5, ge=2)
     blending: Blending = Blending.ADDITIVE
