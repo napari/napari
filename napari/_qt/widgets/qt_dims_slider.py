@@ -547,7 +547,7 @@ class AnimationThread(QThread):
         # FIXME there are attributes defined outside of __init__.
         super().__init__(parent=parent)
         self._interval = 1
-        self.slider: ref[QtDimSliderWidget] = lambda: None
+        self._slider: ref[QtDimSliderWidget] = lambda: None
         self._waiter = threading.Event()
         self.current = 0
         self.step = 1
@@ -555,9 +555,14 @@ class AnimationThread(QThread):
     def run(self):
         self.work()
 
+    @property
+    def slider(self) -> QtDimSliderWidget | None:
+        """Return the slider for this animation thread."""
+        return self._slider()
+
     def set_slider(self, slider):
-        prev_slider = self.slider()
-        self.slider = ref(slider)
+        prev_slider = self.slider
+        self._slider = ref(slider)
         self.set_fps(slider.fps)
         self.set_frame_range(slider.frame_range)
         if prev_slider is not None:
@@ -692,21 +697,21 @@ class AnimationThread(QThread):
 
     @property
     def loop_mode(self) -> LoopMode | None:
-        if slider := self.slider():
-            return slider.loop_mode
-        return None
+        """Loop mode for animation."""
+        return getattr(self.slider, 'loop_mode', None)
 
     @property
     def axis(self) -> int | None:
-        if slider := self.slider():
-            return slider.axis
+        """Return the axis for this animation thread."""
+        return getattr(self.slider, 'axis', None)
+        if self.slider:
+            return self.slider.axis
         return None
 
     @property
     def dims(self) -> Dims | None:
-        if slider := self.slider():
-            return slider.dims
-        return None
+        """Return the dims for this animation thread."""
+        return getattr(self.slider, 'dims', None)
 
     def finish(self):
         """Emit the finished event signal."""
