@@ -660,6 +660,9 @@ def install_certifi_opener() -> None:
 
 
 def maybe_patch_conda_exe() -> None:
+    if sys.platform != 'win32':
+        # Patch required only on Windows
+        return
     if 'CONDA_EXE' in os.environ and Path(os.environ['CONDA_EXE']).is_file():
         # conde exe already pointed by variable, no need to patch
         return
