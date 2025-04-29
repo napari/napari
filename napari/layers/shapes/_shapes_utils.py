@@ -8,11 +8,12 @@ from typing import TYPE_CHECKING, overload
 import numpy as np
 from skimage import measure
 from skimage.draw import line, polygon2mask
-from vispy.geometry import PolygonData
+from vispy.geometry import Triangulation
 from vispy.visuals.tube import _frenet_frames
 
 from napari.layers.shapes import (
     _accelerated_triangulate_dispatch as _triangulate_dispatch,
+    _accelerated_triangulate_python as _triangulate_py,
 )
 from napari.layers.shapes.shape_types import (
     CoordinateArray,
@@ -238,10 +239,10 @@ def lines_intersect(p1, q1, p2, q2):
         Bool indicating if line segment p1q1 intersects line segment p2q2
     """
     # Determine four orientations
-    o1 = _triangulate_dispatch.orientation(p1, q1, p2)
-    o2 = _triangulate_dispatch.orientation(p1, q1, q2)
-    o3 = _triangulate_dispatch.orientation(p2, q2, p1)
-    o4 = _triangulate_dispatch.orientation(p2, q2, q1)
+    o1 = _triangulate_py.orientation(p1, q1, p2)
+    o2 = _triangulate_py.orientation(p1, q1, q2)
+    o3 = _triangulate_py.orientation(p2, q2, p1)
+    o4 = _triangulate_py.orientation(p2, q2, q1)
 
     # Test general case
     if (o1 != o2) and (o3 != o4):
@@ -314,7 +315,7 @@ def is_collinear(points: npt.NDArray) -> bool:
     # The collinearity test takes three points, the first two are the first
     # two in the list, and then the third is iterated through in the loop
     return all(
-        _triangulate_dispatch.orientation(points[0], points[1], p) == 0
+        _triangulate_py.orientation(points[0], points[1], p) == 0
         for p in points[2:]
     )
 
@@ -651,6 +652,7 @@ def _fix_vertices_if_needed(
 
 def triangulate_face_and_edges(
     polygon_vertices: CoordinateArray,
+    triangulate_face_: typing.Callable,
 ) -> tuple[
     tuple[np.ndarray, np.ndarray], tuple[np.ndarray, np.ndarray, np.ndarray]
 ]:
@@ -691,21 +693,9 @@ def triangulate_face_and_edges(
         data2d, close=True
     )
 
-    try:
-        # Triangulation algorithms are brittle and can often fail with
-        # malformed vertex data. Therefore, we run the triangulation in a
-        # try/except, and save polygon data if it raises an exception.
-        vertices, triangles = _triangulate_face(
-            raw_vertices.copy(), edges.copy(), polygon_vertices
-        )
-    except Exception as e:  # pragma: no cover
-        path = tempfile.mktemp(prefix='napari_triang_', suffix='.npz')
-        text_path = tempfile.mktemp(prefix='napari_triang_', suffix='.txt')
-        np.savez(path, data=polygon_vertices)
-        np.savetxt(text_path, polygon_vertices)
-        raise RuntimeError(
-            f'Triangulation failed. Data saved to {path} and {text_path}'
-        ) from e
+    vertices, triangles = triangulate_face_(
+        raw_vertices.copy(), edges.copy(), polygon_vertices
+    )
 
     face_tri = (
         _fix_vertices_if_needed(vertices, axis=axis, value=value),
@@ -775,6 +765,7 @@ def reconstruct_and_triangulate_edge(
 
 def triangulate_face(
     polygon_vertices: CoordinateArray2D,
+    triangulate_face_: typing.Callable,
 ) -> tuple[CoordinateArray2D, TriangleArray]:
     """Determines the triangulation of the face of a shape.
 
@@ -797,23 +788,11 @@ def triangulate_face(
     raw_vertices, edges = _triangulate_dispatch.normalize_vertices_and_edges(
         polygon_vertices, close=True
     )
-    try:
-        # Triangulation algorithms are brittle and can often fail with
-        # malformed vertex data. Therefore, we run the triangulation in a
-        # try/except, and save polygon data if it raises an exception.
-        return _triangulate_face(raw_vertices, edges, polygon_vertices)
-    except Exception as e:  # pragma: no cover
-        path = tempfile.mktemp(prefix='napari_triang_', suffix='.npz')
-        text_path = tempfile.mktemp(prefix='napari_triang_', suffix='.txt')
-        np.savez(path, data=polygon_vertices)
-        np.savetxt(text_path, polygon_vertices)
-        raise RuntimeError(
-            f'Triangulation failed. Data saved to {path} and {text_path}'
-        ) from e
+    return triangulate_face_(raw_vertices, edges, polygon_vertices)
 
 
 @overload
-def _triangulate_face(
+def triangulate_face_vispy(
     raw_vertices: CoordinateArray2D,
     edges: EdgeArray,
     polygon_vertices: CoordinateArray,
@@ -821,44 +800,67 @@ def _triangulate_face(
 
 
 @overload
-def _triangulate_face(
+def triangulate_face_vispy(
     raw_vertices: CoordinateArray3D,
     edges: EdgeArray,
     polygon_vertices: CoordinateArray,
 ) -> tuple[CoordinateArray3D, TriangleArray]: ...
 
 
-def _triangulate_face(
+def triangulate_face_vispy(
     raw_vertices: CoordinateArray,
     edges: EdgeArray,
     polygon_vertices: CoordinateArray,
 ) -> tuple[CoordinateArray, TriangleArray]:
-    if triangulate is not None:
-        # if the triangle library is installed, use it because it's faster.
-        res = triangulate(
-            {'vertices': raw_vertices, 'segments': edges}, opts='p'
+    try:
+        tri = Triangulation(raw_vertices, edges)
+        tri.triangulate()
+        vertices, triangles = tri.pts, tri.tris
+    except Exception as e:  # pragma: no cover
+        path, text_path = _save_failed_triangulation(
+            raw_vertices, backend='vispy'
         )
-        vertices = res['vertices']
-        raw_triangles = res['triangles']
-        # unlike VisPy below, triangle's constrained Delaunay triangulation
-        # returns triangles inside the hole as well. (I guess in case you want
-        # to render holes but in a different color, for example.) In our case,
-        # we want to get rid of them, so we cull them with some NumPy
-        # calculations
-        triangles = _cull_triangles_not_in_poly(
-            vertices, raw_triangles, polygon_vertices
-        )
-    else:
-        try:
-            vertices, triangles = PolygonData(
-                vertices=raw_vertices
-            ).triangulate()
-        except Exception as e:  # pragma: no cover
-            path, text_path = _save_failed_triangulation(raw_vertices)
-            raise RuntimeError(
-                f'Triangulation failed. Data saved to {path} and {text_path}'
-            ) from e
+        raise RuntimeError(
+            f'Triangulation failed. Data saved to {path} and {text_path}'
+        ) from e
 
+    triangles = triangles.astype(np.uint32)
+
+    return vertices, triangles
+
+
+@overload
+def triangulate_face_triangle(
+    raw_vertices: CoordinateArray2D,
+    edges: EdgeArray,
+    polygon_vertices: CoordinateArray,
+) -> tuple[CoordinateArray2D, TriangleArray]: ...
+
+
+@overload
+def triangulate_face_triangle(
+    raw_vertices: CoordinateArray3D,
+    edges: EdgeArray,
+    polygon_vertices: CoordinateArray,
+) -> tuple[CoordinateArray3D, TriangleArray]: ...
+
+
+def triangulate_face_triangle(
+    raw_vertices: CoordinateArray,
+    edges: EdgeArray,
+    polygon_vertices: CoordinateArray,
+) -> tuple[CoordinateArray, TriangleArray]:
+    res = triangulate({'vertices': raw_vertices, 'segments': edges}, opts='p')
+    vertices = res['vertices']
+    raw_triangles = res['triangles']
+    # triangle's constrained Delaunay triangulation
+    # returns triangles inside the hole. (perhaps in case you want
+    # to render holes but in a different color, for example.) In our case,
+    # we want to get rid of them, so we cull them with some NumPy
+    # calculations
+    triangles = _cull_triangles_not_in_poly(
+        vertices, raw_triangles, polygon_vertices
+    )
     triangles = triangles.astype(np.uint32)
 
     return vertices, triangles
@@ -1375,7 +1377,7 @@ def rdp(vertices: npt.NDArray, epsilon: float) -> npt.NDArray:
 
 
 def _save_failed_triangulation(
-    data: np.ndarray, target_dir: str | None = None
+    data: np.ndarray, target_dir: str | None = None, backend: str = ''
 ) -> tuple[str, str]:
     """Save data to temporary files for debugging.
 
@@ -1388,7 +1390,11 @@ def _save_failed_triangulation(
     data : np.ndarray
         The data to save.
     target_dir: str or None
-        Path to directory where the files will be saved. If None, the default
+        Path to the directory where the files will be saved.
+        If None, the default
+    backend: str, options
+        The backend used for triangulation. This is used to generate the
+        filename prefix.
 
     Returns
     -------
@@ -1402,14 +1408,14 @@ def _save_failed_triangulation(
     with tempfile.NamedTemporaryFile(
         delete=False,
         suffix='.npz',
-        prefix='napari_comp_triang_',
+        prefix=f'napari_{backend}_triang_',
         dir=target_dir,
     ) as binary_file:
         np.savez(binary_file, data=data)
     with tempfile.NamedTemporaryFile(
         delete=False,
         suffix='.txt',
-        prefix='napari_comp_triang_',
+        prefix=f'napari_{backend}_triang_',
         mode='w',
         dir=target_dir,
     ) as text_file:
