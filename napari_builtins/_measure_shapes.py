@@ -60,7 +60,7 @@ def ellipse_perimeter(vertices):
     # no closed form exists, so we use Ramanujan's 2nd approximation
     # https://en.wikipedia.org/wiki/Perimeter_of_an_ellipse#Ramanujan's_approximations
     a = np.linalg.norm(vertices[1] - vertices[0]) / 2
-    b = np.linalg.norm(vertices[2] - vertices[3]) / 2
+    b = np.linalg.norm(vertices[2] - vertices[1]) / 2
     h = (a - b) ** 2 / (a + b) ** 2
     return np.pi * (a + b) * (1 + (3 * h) / (10 + np.sqrt(4 - 3 * h)))
 
