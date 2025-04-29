@@ -810,15 +810,9 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                         np.array_equal(cmap_.controls, custom_cmap.controls)
                         and np.array_equal(cmap_.colors, custom_cmap.colors)
                         and cmap_.interpolation == custom_cmap.interpolation
-                        and np.array_equal(
-                            cmap_.bad_color, custom_cmap.bad_color
-                        )
-                        and np.array_equal(
-                            cmap_.high_color, custom_cmap.high_color
-                        )
-                        and np.array_equal(
-                            cmap_.low_color, custom_cmap.low_color
-                        )
+                        and np.all(cmap_.bad_color == custom_cmap.bad_color)
+                        and np.all(cmap_.high_color == custom_cmap.high_color)
+                        and np.all(cmap_.low_color == custom_cmap.low_color)
                     ):
                         custom_cmap = cmap_
                         break
