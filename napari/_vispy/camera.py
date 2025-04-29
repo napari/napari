@@ -15,33 +15,6 @@ VISPY_DEFAULT_ORIENTATION_2D = ('right', 'up', 'towards')  # xyz
 VISPY_DEFAULT_ORIENTATION_3D = ('right', 'down', 'away')  # xyz
 
 
-class SwitchableVispyCamera:
-    def __init__(self, view, dims) -> None:
-        self._view = view
-        self._dims = dims
-
-        # Create 2D camera
-        self._2D_camera = MouseToggledPanZoomCamera(aspect=1)
-        self._2D_camera.viewbox_key_event = viewbox_key_event
-
-        # Create 3D camera
-        self._3D_camera = MouseToggledArcballCamera(fov=0)
-        self._3D_camera.viewbox_key_event = viewbox_key_event
-
-        # Set 2D camera by default
-        self._view.camera = self._2D_camera
-
-        self._dims.events.ndisplay.connect(
-            self._on_ndisplay_change, position='first'
-        )
-
-    def _on_ndisplay_change(self):
-        if self._dims.ndisplay == 3:
-            self._view.camera = self._3D_camera
-        else:
-            self._view.camera = self._2D_camera
-
-
 class VispyCamera:
     """Vipsy camera for both 2D and 3D rendering.
 
@@ -91,7 +64,7 @@ class VispyCamera:
         Note that angles might be different than the ones that might have generated the quaternion.
         """
 
-        if self._view.camera == self._3D_camera:
+        if isinstance(self._view.camera, MouseToggledArcballCamera):
             # Do conversion from quaternion representation to euler angles
             return quaternion2euler_degrees(self._view.camera._quaternion)
         return (0, 0, 90)
@@ -102,7 +75,7 @@ class VispyCamera:
             return
 
         # Only update angles if current camera is 3D camera
-        if self._view.camera == self._3D_camera:
+        if isinstance(self._view.camera, MouseToggledArcballCamera):
             # Create and set quaternion
             quat = self._view.camera._quaternion.create_from_euler_angles(
                 *angles,
@@ -114,7 +87,7 @@ class VispyCamera:
     @property
     def center(self):
         """tuple: Center point of camera view for 2D or 3D viewing."""
-        if self._view.camera == self._3D_camera:
+        if isinstance(self._view.camera, MouseToggledArcballCamera):
             center = tuple(self._view.camera.center)
         else:
             # in 2D, we arbitrarily choose 0.0 as the center in z
@@ -133,7 +106,7 @@ class VispyCamera:
     def zoom(self):
         """float: Scale from canvas pixels to world pixels."""
         canvas_size = np.array(self._view.canvas.size)
-        if self._view.camera == self._3D_camera:
+        if isinstance(self._view.camera, MouseToggledArcballCamera):
             # For fov = 0.0 normalize scale factor by canvas size to get scale factor.
             # Note that the scaling is stored in the `_projection` property of the
             # camera which is updated in vispy here
@@ -152,7 +125,7 @@ class VispyCamera:
         if self.zoom == zoom:
             return
         scale = np.array(self._view.canvas.size) / zoom
-        if self._view.camera == self._3D_camera:
+        if isinstance(self._view.camera, MouseToggledArcballCamera):
             self._view.camera.scale_factor = np.min(scale)
         else:
             # Set view rectangle, as left, right, width, height
@@ -240,7 +213,7 @@ class VispyCamera:
 
         Update camera model angles, center, and zoom.
         """
-        if self._view.camera == self._3D_camera:
+        if isinstance(self._view.camera, MouseToggledArcballCamera):
             with self._camera.events.angles.blocker(self._on_angles_change):
                 self._camera.angles = self.angles
         with self._camera.events.center.blocker(self._on_center_change):

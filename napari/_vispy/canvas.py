@@ -9,7 +9,7 @@ import numpy as np
 from superqt.utils import qthrottled
 from vispy.scene import SceneCanvas as SceneCanvas_, Widget
 
-from napari._vispy.camera import SwitchableVispyCamera, VispyCamera
+from napari._vispy.camera import VispyCamera
 from napari._vispy.mouse_event import NapariMouseEvent
 from napari._vispy.utils.cursor import QtCursorVisual
 from napari._vispy.utils.gl import get_max_texture_sizes
@@ -113,10 +113,11 @@ class VispyCanvas:
             *args, keys=None, vsync=True, **kwargs
         )
         self.grid = self.central_widget.add_grid(border_width=0)
+        self.views = []
         self.cameras = []
-        self.view = self.grid.add_view(0, 0, border_width=0)
-        self.camera = VispyCamera(
-            self.view, self.viewer.camera, self.viewer.dims
+        self.views.append(self.grid.add_view(0, 0, border_width=0))
+        self.cameras.append(
+            VispyCamera(self.views[0], self.viewer.camera, self.viewer.dims)
         )
         self.layer_to_visual: dict[Layer, VispyBaseLayer] = {}
         self._overlay_to_visual: dict[Overlay, VispyBaseOverlay] = {}
@@ -147,8 +148,6 @@ class VispyCanvas:
             self._key_map_handler.on_key_release
         )
         self._scene_canvas.events.draw.connect(self.enable_dims_play)
-        self._scene_canvas.events.draw.connect(self.camera.on_draw)
-
         self._scene_canvas.events.mouse_double_click.connect(
             self._on_mouse_double_click
         )
@@ -170,6 +169,8 @@ class VispyCanvas:
         self.viewer.layers.events.removed.connect(self._remove_layer)
         self.viewer.grid.events.connect(self._on_grid_change)
         self.destroyed.connect(self._disconnect_theme)
+
+        self._on_grid_change()
 
     @property
     def events(self):
@@ -198,18 +199,16 @@ class VispyCanvas:
         with # or a tuple | np.array ({3,4},) with values between 0 and 1.
 
         """
-        if self.view in self.central_widget._widgets:
-            return self.view.bgcolor.hex
+        if self.views[0] in self.central_widget._widgets:
+            return self.views[0].bgcolor.hex
         return None
 
     @background_color_override.setter
     def background_color_override(
         self, value: str | npt.ArrayLike | None
     ) -> None:
-        if value:
-            self.view.bgcolor = value
-        else:
-            self.view.bgcolor = None
+        for view in self.views:
+            view.bgcolor = value if value else None
 
     def _on_theme_change(self, event: Event) -> None:
         self._set_theme_change(event.value)
@@ -315,9 +314,10 @@ class VispyCanvas:
     def _on_interactive(self) -> None:
         """Link interactive attributes of view and viewer."""
         # Is this should be changed or renamed?
-        self.view.interactive = (
-            self.viewer.camera.mouse_zoom or self.viewer.camera.mouse_pan
-        )
+        for view in self.views:
+            view.interactive = (
+                self.viewer.camera.mouse_zoom or self.viewer.camera.mouse_pan
+            )
 
     def _map_canvas2world(
         self,
@@ -337,7 +337,8 @@ class VispyCanvas:
             of the viewer.
         """
         nd = self.viewer.dims.ndisplay
-        transform = self.view.scene.transform
+        # TODO: properly get position in correct subview
+        transform = self.views[0].scene.transform
         # cartesian to homogeneous coordinates
         mapped_position = transform.imap(list(position))
         if nd == 3:
@@ -541,7 +542,7 @@ class VispyCanvas:
                 displayed_axes = list(self.viewer.dims.displayed[-nd:])
             layer._update_draw(
                 scale_factor=1
-                / self.camera.zoom,  # this was previously self.viewer.camera.zoom; however, this can be out of sync with the camera zoom because the viewer value is used before the zoom value gets updated by Camera.on_draw
+                / self.viewer.camera.zoom,  # this was previously self.viewer.camera.zoom; however, this can be out of sync with the camera zoom because the viewer value is used before the zoom value gets updated by Camera.on_draw
                 corner_pixels_displayed=canvas_corners_world[
                     :, displayed_axes
                 ],
@@ -578,21 +579,8 @@ class VispyCanvas:
         -------
         None
         """
-        if self.viewer.grid.enabled:
-            row, col = self.viewer.grid.position(
-                self.viewer.layers.index(napari_layer), len(self.viewer.layers)
-            )
-            view = self.grid[col, row]
-            vispy_layer.node.parent = view.scene
-            camera = SwitchableVispyCamera(
-                self.grid[col, row], self.viewer.dims
-            )
-            self.cameras.append(camera)
-            self.camera._2D_camera.link(camera._2D_camera)
-            self.camera._3D_camera.link(camera._3D_camera)
-        else:
-            vispy_layer.node.parent = self.view.scene
         self.layer_to_visual[napari_layer] = vispy_layer
+        self._on_grid_change()
 
         napari_layer.events.visible.connect(self._reorder_layers)
         self.viewer.camera.events.angles.connect(vispy_layer._on_camera_move)
@@ -641,13 +629,17 @@ class VispyCanvas:
 
     def _add_overlay_to_visual(self, overlay: Overlay) -> None:
         """Create vispy overlay and add to dictionary of overlay visuals"""
-        vispy_overlay = create_vispy_overlay(
-            overlay=overlay, viewer=self.viewer
-        )
         if isinstance(overlay, CanvasOverlay):
-            vispy_overlay.node.parent = self.view
+            vispy_overlay = create_vispy_overlay(
+                overlay=overlay, viewer=self.viewer
+            )
+            vispy_overlay.node.parent = self.grid
         elif isinstance(overlay, SceneOverlay):
-            vispy_overlay.node.parent = self.view.scene
+            for view in self.views:
+                vispy_overlay = create_vispy_overlay(
+                    overlay=overlay, viewer=self.viewer
+                )
+                vispy_overlay.node.parent = view.scene
         self._overlay_to_visual[overlay] = vispy_overlay
 
     def _calculate_view_direction(
@@ -666,7 +658,8 @@ class VispyCanvas:
         w, h = self.size
         nd = self.viewer.dims.ndisplay
 
-        transform = self.view.scene.transform
+        # TODO: properly get position in correct subview
+        transform = self.views[0].scene.transform
         # map click pos to scene coordinates
         click_scene = transform.imap([x, y, 0, 1])
         # canvas center at infinite far z- (eye position in canvas coordinates)
@@ -698,38 +691,35 @@ class VispyCanvas:
         self.viewer.dims._play_ready = True
 
     def _on_grid_change(self, event=None):
-        while len(self.grid.children) > 1:
-            view = self.grid.children[-1]
-            # remove_widget is bugged and does not remove from children fully, so we also set parent to None
-            self.grid.remove_widget(view)
-            view.parent = None
         for camera in self.cameras:
             camera._2D_camera.parent = None
             camera._3D_camera.parent = None
-        # TODO: public way of doing this?
-        self.camera._2D_camera._linked_cameras.clear()
-        self.camera._3D_camera._linked_cameras.clear()
-        if event.type == 'enabled':
-            for napari_layer in self.viewer.layers:
-                vispy_layer = self.layer_to_visual[napari_layer]
-                if event.value:
-                    row, col = self.viewer.grid.position(
-                        self.viewer.layers.index(napari_layer),
-                        len(self.viewer.layers),
-                    )
-                    view = self.grid[col, row]
-                    vispy_layer.node.parent = view.scene
-                    # TODO: a bit overkill for now, we should only need napari to communicate with
-                    # all the cameras OR only vispy to link. However, because we rely on vispy
-                    # cameras to handle events first and then send to napari, this isn't quite
-                    # as straightforward as it seems
-                    camera = SwitchableVispyCamera(
-                        self.grid[col, row], self.viewer.dims
-                    )
-                    self.cameras.append(camera)
-                    self.camera._2D_camera.link(camera._2D_camera)
-                    self.camera._3D_camera.link(camera._3D_camera)
-                else:
-                    vispy_layer.node.parent = self.view.scene
-        elif event.type == 'stride':
-            pass
+            self._scene_canvas.events.draw.disconnect(camera.on_draw)
+        self.cameras.clear()
+
+        while len(self.grid.children) > 1:
+            view = self.grid.children[-1]
+            # remove_widget is bugged and does not remove from children fully, so we also set parent to None
+            view.parent = None
+            self.grid.remove_widget(view)
+
+        for napari_layer in self.viewer.layers:
+            vispy_layer = self.layer_to_visual[napari_layer]
+            if self.viewer.grid.enabled:
+                row, col = self.viewer.grid.position(
+                    self.viewer.layers.index(napari_layer),
+                    len(self.viewer.layers),
+                )
+                view = self.grid[col, row]
+                vispy_layer.node.parent = view.scene
+                # TODO: a bit overkill for now, we should only need napari to communicate with
+                # all the cameras OR only vispy to link. However, because we rely on vispy
+                # cameras to handle events first and then send to napari, this isn't quite
+                # as straightforward as it seems
+                camera = VispyCamera(
+                    self.grid[col, row], self.viewer.camera, self.viewer.dims
+                )
+                self._scene_canvas.events.draw.connect(camera.on_draw)
+                self.cameras.append(camera)
+            else:
+                vispy_layer.node.parent = self.views[0].scene
