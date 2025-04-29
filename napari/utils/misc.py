@@ -667,7 +667,9 @@ def maybe_patch_conda_exe() -> None:
         # We do not have base path, so nothing to patch
         return
     conda_path = (
-        Path(os.getenv('CONDA_PYTHON_EXE')).parent / 'Scripts' / 'conda.exe'
+        Path(os.getenv('CONDA_PYTHON_EXE', '')).parent
+        / 'Scripts'
+        / 'conda.exe'
     )
     if not conda_path.is_file():
         # conda.exe does not exist under expected location, so nothing to patch
