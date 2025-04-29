@@ -48,7 +48,7 @@ def polygon_area(vertices):
 
 def rectangle_area(vertices):
     return np.linalg.norm(vertices[1] - vertices[0]) * np.linalg.norm(
-        vertices[2] - vertices[3]
+        vertices[2] - vertices[1]
     )
 
 
