@@ -10,6 +10,7 @@ from napari.layers.shapes._shapes_models import (
     Polygon,
     Rectangle,
 )
+from napari.layers.utils.string_encoding import ConstantStringEncoding
 
 
 def path_length(vertices, connect_last=False):
@@ -108,15 +109,16 @@ def toggle_shape_measures(shapes_layer: napari.layers.Shapes) -> None:
         )
         update_features_with_measures(shapes_layer)
 
-        shapes_layer.text = 'P = {_perimeter:.3f}\nA={_area:.3f}'
+        shapes_layer.text = 'P = {_perimeter:.3g}\nA = {_area:.3g}'
     else:
         shapes_layer.events.set_data.disconnect(
             get_connected_callback(shapes_layer)
         )
 
+        # need to explicitly set constant encoding to avoid warning, why?
+        shapes_layer.text = {'string': ConstantStringEncoding(constant='')}
+
         shapes_layer.features = shapes_layer.features.drop(
             columns=['_perimeter', '_area']
         )
         # feature_defaults are dropped automatically
-
-        shapes_layer.text = ''
