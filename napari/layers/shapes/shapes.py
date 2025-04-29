@@ -575,7 +575,6 @@ class Shapes(Layer):
         self._drag_box_stored = None
         self._is_creating = False
         self._clipboard: dict[str, Shapes] = {}
-        self._measuring = False
 
         self._status = self.mode
 
