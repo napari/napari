@@ -16,6 +16,7 @@ from textwrap import wrap
 from typing import Any
 
 from napari.errors import ReaderPluginError
+from napari.utils.misc import maybe_patch_conda_exe
 from napari.utils.translations import trans
 
 
@@ -400,6 +401,7 @@ def _run() -> None:
 
         if running_as_constructor_app():
             install_certifi_opener()
+            maybe_patch_conda_exe()
         run(gui_exceptions=True)
 
 
