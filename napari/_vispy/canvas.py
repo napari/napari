@@ -589,8 +589,6 @@ class VispyCanvas:
         napari_layer.events.visible.connect(self._reorder_layers)
         self.viewer.camera.events.angles.connect(vispy_layer._on_camera_move)
 
-        # create overlay visuals for this layer
-        self._update_layer_overlays_to_visual(napari_layer)
         # we need to trigger _on_matrix_change once after adding the overlays so that
         # all children nodes are assigned the correct transforms
         vispy_layer._on_matrix_change()
@@ -748,23 +746,35 @@ class VispyCanvas:
             view.parent = None
             self.grid.remove_widget(view)
 
-        for napari_layer in self.viewer.layers:
-            vispy_layer = self.layer_to_visual[napari_layer]
-            if self.viewer.grid.enabled:
+        if self.viewer.grid.enabled:
+            for napari_layer in self.viewer.layers:
                 row, col = self.viewer.grid.position(
                     self.viewer.layers.index(napari_layer),
                     len(self.viewer.layers),
                 )
-                view = self.grid[col, row]
-                vispy_layer.node.parent = view.scene
+                view = self.grid.add_view(row, col, border_width=0)
                 # TODO: a bit overkill for now, we should only need napari to communicate with
                 # all the cameras OR only vispy to link. However, because we rely on vispy
                 # cameras to handle events first and then send to napari, this isn't quite
                 # as straightforward as it seems
                 camera = VispyCamera(
-                    self.grid[col, row], self.viewer.camera, self.viewer.dims
+                    view, self.viewer.camera, self.viewer.dims
                 )
                 self._scene_canvas.events.draw.connect(camera.on_draw)
+                self.views.append(view)
                 self.cameras.append(camera)
-            else:
+
+                vispy_layer = self.layer_to_visual[napari_layer]
+                vispy_layer.node.parent = view.scene
+                self._update_layer_overlays_to_visual(napari_layer)
+        else:
+            view = self.grid.add_view(0, 0, border_width=0)
+            camera = VispyCamera(view, self.viewer.camera, self.viewer.dims)
+            self.views = [view]
+            self.cameras = [camera]
+
+            self._scene_canvas.events.draw.connect(camera.on_draw)
+            for napari_layer in self.viewer.layers:
+                vispy_layer = self.layer_to_visual[napari_layer]
                 vispy_layer.node.parent = self.views[0].scene
+                self._update_layer_overlays_to_visual(napari_layer)
