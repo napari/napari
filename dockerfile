@@ -15,6 +15,7 @@ RUN apt-get update && \
     apt-get install -qqy  \
         build-essential \
         git \
+        libglib2.0-0 \
         mesa-utils \
         libglx-mesa0 \
         # tlambert03/setup-qt-libs
