@@ -166,7 +166,6 @@ testing_extra = [
 # needed for gallery examples
 gallery = [
     "glasbey",
-    "zarr",
     "dask[array,distributed]",
     "matplotlib",
     "pooch",
