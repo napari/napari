@@ -196,6 +196,7 @@ docs = [
     "imageio-ffmpeg",
     "pydeps",
     "seedir",
+    # triangle and bermuda needed for docs/guides/triangulation.md
     "triangle",
     "bermuda>=0.1.4",
     "pytest",
