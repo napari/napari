@@ -173,6 +173,7 @@ gallery = [
     "nilearn",
     "xarray",
     "h5netcdf",
+    "napari[optional]"
 ]
 # needed to build docs
 docs = [
