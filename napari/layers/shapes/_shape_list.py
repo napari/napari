@@ -559,6 +559,14 @@ class ShapeList:
             self.__update_displayed_called += 1
             return
 
+        # if no shapes or empty slice key, display all shapes
+        # prevents broadcasting erors when slice_key is empty or when
+        # arrays have incompatible shaopes, such as self.slice_keys (3,2,2) -- 3 shapes in 2D
+        # but a displayed slice_key of (2,0), resulting in mismatched arrays
+        if len(self.shapes) == 0 or len(self.slice_key) == 0:
+            self._displayed = np.ones(len(self.shapes), dtype=bool)
+            return
+
         # The list slice key is repeated to check against both the min and
         # max values stored in the shapes slice key.
         slice_key = np.array([self.slice_key, self.slice_key])
