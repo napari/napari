@@ -173,3 +173,61 @@ def test_inside():
     shape_list.add([shape1, shape2, shape3])
     shape_list.slice_key = (1,)
     assert shape_list.inside((0.5, 0.5)) == 1
+
+
+def test_visible_shapes_4d():
+    """Test _visible_shapes with 4D data like those from OME-Zarr/OMERO."""
+    shape1 = Polygon(
+        np.array(
+            [
+                [0, 0, 10, 10],
+                [0, 0, 10, 50],
+                [0, 0, 50, 50],
+                [0, 0, 50, 10],
+            ]
+        )
+    )
+    shape2 = Polygon(
+        np.array(
+            [
+                [0, 1, 10, 10],
+                [0, 1, 10, 50],
+                [0, 1, 50, 50],
+                [0, 1, 50, 10],
+            ]
+        )
+    )
+    shape3 = Polygon(
+        np.array(
+            [
+                [0, 0, 10, 10],
+                [0, 0, 10, 50],
+                [0, 1, 50, 50],
+                [0, 1, 50, 10],
+            ]
+        )
+    )
+
+    shape_list = ShapeList()
+    shape_list.add([shape1, shape2, shape3])
+
+    # initially, slice key is an empty array because self.slice_key is (3,2,2) and slice_key is (2,0)
+    assert shape_list.slice_key.size == 0  # check slice_key is empty array
+    visible = shape_list._visible_shapes
+    assert len(visible) == 3
+
+    # at (0,0) - should show shape1 and shape3
+    shape_list.slice_key = np.array([0, 0])
+    visible = shape_list._visible_shapes
+    assert len(visible) == 2
+    visible_shapes = [v[1] for v in visible]
+    assert shape1 in visible_shapes
+    assert shape3 in visible_shapes
+
+    # at (0,1) - should show shape2 and shape3
+    shape_list.slice_key = np.array([0, 1])
+    visible = shape_list._visible_shapes
+    assert len(visible) == 2
+    visible_shapes = [v[1] for v in visible]
+    assert shape2 in visible_shapes
+    assert shape3 in visible_shapes
