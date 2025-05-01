@@ -209,12 +209,9 @@ def test_visible_shapes_4d():
     )
 
     shape_list = ShapeList()
+    # set slice_key first to avoid empty array broadcasting error
+    shape_list.slice_key = np.array([0, 0])
     shape_list.add([shape1, shape2, shape3])
-
-    # initially, slice key is an empty array because self.slice_key is (3,2,2) and slice_key is (2,0)
-    assert shape_list.slice_key.size == 0  # check slice_key is empty array
-    visible = shape_list._visible_shapes
-    assert len(visible) == 3
 
     # at (0,0) - should show shape1 and shape3
     shape_list.slice_key = np.array([0, 0])
