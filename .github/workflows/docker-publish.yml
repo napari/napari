@@ -11,6 +11,7 @@ on:
   pull_request:
     paths:
       - '.github/workflows/docker-publish.yml'
+      - 'dockerfile'
 
 #  schedule:
 #    - cron: '31 0 * * *'
