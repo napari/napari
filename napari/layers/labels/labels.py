@@ -411,6 +411,7 @@ class Labels(ScalarFieldBase):
         self._preserve_labels = False
 
     def _slice_dtype(self):
+        """Calculate dtype of data view based on data dtype and current colormap"""
         return self.colormap._data_to_texture(
             np.zeros(0, dtype=self.dtype)
         ).dtype

@@ -312,7 +312,11 @@ class ScalarFieldBase(Layer, ABC):
         self.refresh()
 
     def _slice_dtype(self):
-        """Return the dtype of the slice."""
+        """Return the dtype of the slice view.
+
+        Overridden in Labels subclass to properly handle the
+        32 and 64 bits dtypes.
+        """
         return self.dtype
 
     @property
