@@ -87,6 +87,7 @@ class ExperimentalSettings(EventedSettings):
             "The 'pure python' backend uses the default Python triangulation from vispy.\n"
             "The 'fastest available' backend will select the fastest available backend.\n"
         ),
+        env='napari_triangulation_backend',
     )
 
     compiled_triangulation: bool = Field(

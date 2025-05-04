@@ -1365,7 +1365,10 @@ class ShapeList:
             return [
                 (i, s)
                 for i, s in enumerate(self.shapes)
-                if s.slice_key[0] <= slice_key <= s.slice_key[1]
+                if (
+                    np.all(s.slice_key[0] <= slice_key)
+                    and np.all(slice_key <= s.slice_key[1])
+                )
             ]
         return list(enumerate(self.shapes))
 
