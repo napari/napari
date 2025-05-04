@@ -289,7 +289,7 @@ class ScalarFieldBase(Layer, ABC):
         self._slice = _ImageSliceResponse.make_empty(
             slice_input=self._slice_input,
             rgb=len(self.data.shape) != self.ndim,
-            dtype=self.dtype,
+            dtype=self._slice_dtype(),
         )
 
         self._plane = SlicingPlane(thickness=1)
@@ -310,6 +310,10 @@ class ScalarFieldBase(Layer, ABC):
     def _post_init(self):
         # Trigger generation of view slice and thumbnail
         self.refresh()
+
+    def _slice_dtype(self):
+        """Return the dtype of the slice."""
+        return self.dtype
 
     @property
     def _data_view(self) -> np.ndarray:
