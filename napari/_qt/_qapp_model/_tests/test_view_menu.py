@@ -7,14 +7,13 @@ from qtpy.QtCore import QPoint, Qt
 from qtpy.QtWidgets import QApplication
 
 from napari._app_model import get_app_model
-from napari._qt._qapp_model.qactions import init_qactions
+from napari._app_model.actions._view import toggle_action_details
 from napari._qt._qapp_model.qactions._view import (
     _get_current_tooltip_visibility,
     _toggle_canvas_ndim,
-    toggle_action_details,
 )
 from napari._tests.utils import skip_local_focus, skip_local_popups
-from napari.viewer import Viewer, ViewerModel
+from napari.viewer import ViewerModel
 
 
 def check_windows_style(viewer):
@@ -65,7 +64,6 @@ def test_toggle_axes_scale_bar_attr(
         * `ticks`
     """
     app = get_app_model()
-    init_qactions()
     viewer = ViewerModel()
 
     # Get viewer attribute to check (`axes` or `scale_bar`)
@@ -75,7 +73,7 @@ def test_toggle_axes_scale_bar_attr(
     initial_value = getattr(axes_scale_bar, sub_attr)
 
     # Change sub-attribute via action command execution and check value
-    with app.injection_store.register(providers={Viewer: viewer}):
+    with app.injection_store.register(providers={ViewerModel: viewer}):
         app.commands.execute_command(action_id)
     changed_value = getattr(axes_scale_bar, sub_attr)
     assert initial_value is not changed_value

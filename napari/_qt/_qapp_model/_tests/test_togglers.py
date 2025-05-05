@@ -1,8 +1,8 @@
 from napari import Viewer
 from napari._app_model._app import get_app_model
+from napari._app_model.actions._toggle_action import ViewerModelToggleAction
 from napari._qt._qapp_model.qactions._toggle_action import (
     DockWidgetToggleAction,
-    ViewerToggleAction,
 )
 from napari._qt.qt_main_window import Window
 from napari.components import ViewerModel
@@ -10,7 +10,7 @@ from napari.components import ViewerModel
 
 def test_viewer_toggler(mock_app_model):
     viewer = ViewerModel()
-    action = ViewerToggleAction(
+    action = ViewerModelToggleAction(
         id='some.command.id',
         title='Toggle Axis Visibility',
         viewer_attribute='axes',
