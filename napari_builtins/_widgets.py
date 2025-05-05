@@ -11,32 +11,42 @@ from qtpy.QtCore import (
     Qt,
     QTimer,
 )
+from qtpy.QtGui import (
+    QGuiApplication,
+    QKeySequence,
+)
 from qtpy.QtWidgets import (
     QAbstractItemView,
     QComboBox,
+    QLabel,
     QStyledItemDelegate,
     QTableView,
+    QVBoxLayout,
 )
+from superqt import QToggleSwitch
 
 if TYPE_CHECKING:
     import napari
 
 
 class PandasModel(QAbstractTableModel):
+    """Qt Model for a pandas DataFrame."""
+
     def __init__(self, df=None, parent=None):
         super().__init__(parent)
-        self._df = df if df is not None else pd.DataFrame()
+        self.df = df if df is not None else pd.DataFrame()
+        self.editable = False
 
     # model methods necessary for qt
     def rowCount(self, parent=None):
         if parent is None:
             parent = QModelIndex()
-        return self._df.shape[0]
+        return self.df.shape[0]
 
     def columnCount(self, parent=None):
         if parent is None:
             parent = QModelIndex()
-        return self._df.shape[1] + 1  # include index
+        return self.df.shape[1] + 1  # include index
 
     def data(self, index, role=Qt.DisplayRole):
         if not index.isValid():
@@ -47,11 +57,11 @@ class PandasModel(QAbstractTableModel):
 
         if col == 0:  # index
             if role in (Qt.DisplayRole, Qt.EditRole):
-                return str(self._df.index[row])
+                return str(self.df.index[row])
             return None
 
-        value = self._df.iat[row, col - 1]
-        dtype = self._df.dtypes.iat[col - 1]
+        value = self.df.iat[row, col - 1]
+        dtype = self.df.dtypes.iat[col - 1]
 
         # show booleans as respective checkboxes
         if role == Qt.CheckStateRole and pd.api.types.is_bool_dtype(dtype):
@@ -80,9 +90,9 @@ class PandasModel(QAbstractTableModel):
         if orientation == Qt.Horizontal:
             # special case for index
             if section == 0:
-                return self._df.index.name or 'Index'
-            return self._df.columns[section - 1]
-        return self._df.index[section]
+                return self.df.index.name or 'Index'
+            return self.df.columns[section - 1]
+        return self.df.index[section]
 
     def flags(self, index):
         if not index.isValid():
@@ -92,14 +102,17 @@ class PandasModel(QAbstractTableModel):
         if col == 0:
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable  # index is read-only
 
-        dtype = self._df.dtypes.iat[col - 1]
-        base_flags = Qt.ItemFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
+        dtype = self.df.dtypes.iat[col - 1]
+        flags = Qt.ItemFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
 
-        # make boolean columns checkable
-        if pd.api.types.is_bool_dtype(dtype):
-            return base_flags | Qt.ItemIsUserCheckable
+        if self.editable:
+            # make boolean columns checkable
+            if pd.api.types.is_bool_dtype(dtype):
+                flags |= Qt.ItemIsUserCheckable
+            else:
+                flags |= Qt.ItemIsEditable
 
-        return base_flags | Qt.ItemIsEditable
+        return flags
 
     def setData(self, index, value, role=Qt.EditRole):
         if not index.isValid():
@@ -110,11 +123,11 @@ class PandasModel(QAbstractTableModel):
             return False  # index is read-only
 
         row = index.row()
-        dtype = self._df.dtypes.iat[col - 1]
+        dtype = self.df.dtypes.iat[col - 1]
 
         # checkboxes
         if role == Qt.CheckStateRole and pd.api.types.is_bool_dtype(dtype):
-            self._df.iat[row, col - 1] = value == Qt.Checked
+            self.df.iat[row, col - 1] = value == Qt.Checked
             self.dataChanged.emit(index, index, [Qt.CheckStateRole])
             return True
 
@@ -122,7 +135,7 @@ class PandasModel(QAbstractTableModel):
             try:
                 if not pd.api.types.is_categorical_dtype(dtype):
                     value = dtype.type(value)
-                self._df.iat[row, col - 1] = value
+                self.df.iat[row, col - 1] = value
             except ValueError:
                 return False
             self.dataChanged.emit(index, index, [Qt.DisplayRole, Qt.EditRole])
@@ -139,37 +152,32 @@ class PandasModel(QAbstractTableModel):
 
     def replace_data(self, df):
         with self.changing():
-            self._df = df
+            self.df = df
 
 
 class DelegateCategorical(QStyledItemDelegate):
+    """Delegate that uses comboboxes as editors for categorical data."""
+
     def createEditor(self, parent, option, index):
         proxy_model = index.model()
         source_model = proxy_model.sourceModel()
         source_index = proxy_model.mapToSource(index)
         col = source_index.column()
 
-        dtype = source_model._df.dtypes.iat[col - 1]
+        dtype = source_model.df.dtypes.iat[col - 1]
 
         if pd.api.types.is_categorical_dtype(dtype):
             editor = QComboBox(parent)
-            categories = source_model._df.iloc[:, col - 1].cat.categories
+            categories = source_model.df.iloc[:, col - 1].cat.categories
             editor.addItems([str(c) for c in categories])
             # allow arrow keys selection
             editor.setFocusPolicy(Qt.StrongFocus)
 
-            # needed to delay opening until editor is fully created
+            # force editor to open on first click, otherwise we need 2 clicks
             QTimer.singleShot(0, editor.showPopup)
             return editor
 
         return super().createEditor(parent, option, index)
-
-    def editorEvent(self, event, model, option, index):
-        # force editor to open on first click, otherwise we need 2 clicks
-        if event.type() == event.MouseButtonPress:
-            view = option.widget
-            view.edit(index)
-        return super().editorEvent(event, model, option, index)
 
     def setEditorData(self, editor, index):
         if isinstance(editor, QComboBox):
@@ -192,6 +200,8 @@ class DelegateCategorical(QStyledItemDelegate):
 
 
 class BoolFriendlyProxyModel(QSortFilterProxyModel):
+    """Sort proxy model that handles booleans correctly."""
+
     def lessThan(self, left, right):
         left_data = self.sourceModel().data(left, Qt.EditRole)
         right_data = self.sourceModel().data(right, Qt.EditRole)
@@ -203,7 +213,113 @@ class BoolFriendlyProxyModel(QSortFilterProxyModel):
         return super().lessThan(left, right)
 
 
+class PandasView(QTableView):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        # view/model setup with a proxy for sorting and filtering
+        proxy_model = BoolFriendlyProxyModel()
+        proxy_model.setSourceModel(PandasModel())
+        proxy_model.setSortCaseSensitivity(Qt.CaseInsensitive)
+        self.setModel(proxy_model)
+        self.setSortingEnabled(True)
+        # do not auto sort using index on startup
+        self.horizontalHeader().setSortIndicator(-1, Qt.AscendingOrder)
+        # disable vertical header (since we duplicate it as a column)
+        self.verticalHeader().setVisible(False)
+        # delegate which provides comboboxes for editing categorical values
+        self.setItemDelegate(DelegateCategorical())
+        # enable selection and editing
+        self.setSelectionBehavior(QTableView.SelectItems)
+        self.setSelectionMode(QTableView.ExtendedSelection)
+        self.setEditTriggers(QAbstractItemView.AllEditTriggers)
+
+    def keyPressEvent(self, event):
+        if event.matches(QKeySequence.Copy):
+            self.copySelection()
+        elif event.matches(QKeySequence.Paste):
+            self.pasteSelection()
+        else:
+            super().keyPressEvent(event)
+
+    def copySelection(self):
+        selection = self.selectedIndexes()
+        if not selection:
+            return
+
+        proxy_model = self.model()
+        model = proxy_model.sourceModel()
+        map_func = proxy_model.mapToSource
+
+        # determine selected block
+        rows = sorted({idx.row() for idx in selection})
+        cols = sorted(
+            {idx.column() for idx in selection if idx.column() > 0}
+        )  # skip index
+
+        if not rows or not cols:
+            return
+
+        # convert proxy indices to actual row/column labels
+        actual_rows = [map_func(proxy_model.index(r, 1)).row() for r in rows]
+        actual_cols = [c - 1 for c in cols]  # adjust for index
+
+        sub_df = model.df.iloc[actual_rows, actual_cols]
+
+        tsv = sub_df.to_csv(sep='\t', index=False, header=False)
+        QGuiApplication.clipboard().setText(tsv)
+
+    def pasteSelection(self):
+        proxy_model = self.model()
+        model = proxy_model.sourceModel()
+        map_func = proxy_model.mapToSource
+        df = model.df
+
+        clipboard = QGuiApplication.clipboard().text()
+        sel = self.selectedIndexes()
+
+        if not clipboard or not sel or not model.editable:
+            return
+
+        rows = clipboard.strip().split('\n')
+        data = [row.split('\t') for row in rows]
+        n_rows = len(data)
+        n_cols = max(len(row) for row in data)
+
+        # copy from top-left selected cell
+        start_proxy_index = min(sel, key=lambda x: (x.row(), x.column()))
+        start_source_index = map_func(start_proxy_index)
+        start_row = start_source_index.row()
+        start_col = start_source_index.column() - 1  # skip index column
+
+        if start_col < 0:
+            return  # trying to paste into index column — skip
+
+        for i in range(n_rows):
+            for j in range(n_cols):
+                r = start_row + i
+                c = start_col + j
+                if r >= df.shape[0] or c >= df.shape[1]:
+                    continue
+                val = data[i][j]
+                dtype = df.dtypes.iloc[c]
+                try:
+                    if not pd.api.types.is_categorical_dtype(dtype):
+                        val = dtype.type(val)
+                    df.iat[r, c] = val
+                except ValueError:
+                    # TODO: warning? undo?
+                    pass
+
+        # notify the model/view
+        top_left = model.index(start_row, start_col + 1)
+        bottom_right = model.index(start_row + n_rows - 1, start_col + n_cols)
+        model.dataChanged.emit(top_left, bottom_right)
+
+
 class FeaturesTable(QTableView):
+    """Widget to display layer features as an editable table."""
+
     def __init__(
         self,
         viewer: napari.viewer.Viewer,
@@ -216,33 +332,54 @@ class FeaturesTable(QTableView):
             self._on_active_layer_change
         )
 
-        proxy_model = BoolFriendlyProxyModel()
-        proxy_model.setSourceModel(PandasModel())
-        proxy_model.setSortCaseSensitivity(Qt.CaseInsensitive)
-        self.setModel(proxy_model)
-        self.setSortingEnabled(True)
-        # do not auto sort using index on startup
-        self.horizontalHeader().setSortIndicator(-1, Qt.AscendingOrder)
-        self.setEditTriggers(QAbstractItemView.AllEditTriggers)
-        self.setItemDelegate(DelegateCategorical())
-        self.verticalHeader().setVisible(False)
+        self.setLayout(QVBoxLayout())
+
+        self.info = QLabel('')
+        self.toggle = QToggleSwitch('Editable: ')
+        self.table = PandasView()
+        self.layout().addWidget(self.info)
+        self.layout().addWidget(self.toggle)
+        self.layout().addWidget(self.table)
+        self.layout().addStretch()
+
+        self.toggle.toggled.connect(self._on_editable_change)
+
         self._on_active_layer_change()
+        self._on_editable_change()
 
     def _on_active_layer_change(self):
-        if self._active_layer is not None:
-            self._active_layer.events.features.disconnect(
-                self._on_features_change
-            )
-
+        old_layer = self._active_layer
         self._active_layer = self.viewer.layers.selection.active
+
+        if old_layer is not None and hasattr(old_layer, 'features'):
+            old_layer.events.features.disconnect(self._on_features_change)
 
         if hasattr(self._active_layer, 'features'):
             self._active_layer.events.features.connect(
                 self._on_features_change
             )
             self._on_features_change()
+            self.table.setVisible(True)
+            self.toggle.setVisible(True)
+        else:
+            self.table.setVisible(False)
+            self.toggle.setVisible(False)
+
+        if self._active_layer is None:
+            self.info.setText('No layer selected.')
+        elif not hasattr(self._active_layer, 'features'):
+            self.info.setText(
+                f'"{self._active_layer.name}" has no features table.'
+            )
+        else:
+            self.info.setText(f'Features of "{self._active_layer.name}"')
 
     def _on_features_change(self):
         # TODO: optimize for smaller changes?
-        self.model().sourceModel().replace_data(self._active_layer.features)
-        self.resizeColumnsToContents()
+        self.table.model().sourceModel().replace_data(
+            self._active_layer.features
+        )
+        self.table.resizeColumnsToContents()
+
+    def _on_editable_change(self):
+        self.table.model().sourceModel().editable = self.toggle.isChecked()
