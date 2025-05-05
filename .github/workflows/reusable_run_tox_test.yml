@@ -152,7 +152,7 @@ jobs:
           run: |
             echo ${{ env.MAIN }}
             tox --version
-            python -m tox run --installpkg ${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp napari/_qt/_tests/test_qt_notifications.py
+            python -m tox run --installpkg ${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp -v napari/_qt/_tests/test_qt_notifications.py
             rm -r .tox
         env:
           BACKEND: ${{ env.MAIN }}
