@@ -32,7 +32,7 @@ if (
     try:
         NUMPY_VERSION_IS_THREADSAFE = (
             'cibw-run'
-            not in np.show_config('dicts')['Python Information']['path']  # type: ignore
+            not in np.show_config('dicts')['Python Information']['path']
         )
     except (KeyError, TypeError):
         NUMPY_VERSION_IS_THREADSAFE = True
