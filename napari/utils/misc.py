@@ -659,6 +659,27 @@ def install_certifi_opener() -> None:
     request.install_opener(opener)
 
 
+def maybe_patch_conda_exe() -> None:
+    if sys.platform != 'win32':
+        # Patch required only on Windows
+        return
+    if 'CONDA_EXE' in os.environ and Path(os.environ['CONDA_EXE']).is_file():
+        # conde exe already pointed by variable, no need to patch
+        return
+    if 'CONDA_PYTHON_EXE' not in os.environ:
+        # We do not have base path, so nothing to patch
+        return
+    conda_path = (
+        Path(os.getenv('CONDA_PYTHON_EXE', '')).parent
+        / 'Scripts'
+        / 'conda.exe'
+    )
+    if not conda_path.is_file():
+        # conda.exe does not exist under expected location, so nothing to patch
+        return
+    os.environ['CONDA_EXE'] = str(conda_path)
+
+
 def reorder_after_dim_reduction(order: Sequence[int]) -> tuple[int, ...]:
     """Ensure current dimension order is preserved after dims are dropped.
 
