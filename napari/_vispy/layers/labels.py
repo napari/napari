@@ -177,21 +177,6 @@ def build_textures_from_dict(
     return data
 
 
-def _select_colormap_texture(
-    colormap: CyclicLabelColormap, view_dtype, raw_dtype
-) -> np.ndarray:
-    if raw_dtype.itemsize > 2:
-        color_texture = colormap._get_mapping_from_cache(view_dtype)
-    else:
-        color_texture = colormap._get_mapping_from_cache(raw_dtype)
-
-    if color_texture is None:
-        raise ValueError(  # pragma: no cover
-            f'Cannot build a texture for dtype {raw_dtype=} and {view_dtype=}'
-        )
-    return color_texture.reshape(256, -1, 4)
-
-
 class VispyLabelsLayer(VispyScalarFieldBaseLayer):
     layer: 'Labels'
 
@@ -251,9 +236,9 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
                 colormap.background_value = (
                     colormap._background_as_minimum_dtype(raw_dtype)
                 )
-            color_texture = _select_colormap_texture(
-                colormap, view_dtype, raw_dtype
-            )
+            color_texture = colormap._get_mapping_from_cache(
+                view_dtype
+            ).reshape(256, -1, 4)
             self.node.cmap = LabelVispyColormap(
                 colormap, view_dtype=view_dtype, raw_dtype=raw_dtype
             )
