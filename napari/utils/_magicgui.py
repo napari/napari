@@ -16,19 +16,170 @@ from __future__ import annotations
 
 import weakref
 from functools import cache, partial
-from typing import TYPE_CHECKING, Any, get_args
+from typing import TYPE_CHECKING, Any, Optional, Union, get_args, get_origin
+
+import numpy as np
+from magicgui.widgets import ComboBox, FunctionGui
 
 from napari.utils._proxies import PublicOnlyProxy
+from napari.utils.notifications import show_info
 
 if TYPE_CHECKING:
     from concurrent.futures import Future
 
-    from magicgui.widgets import FunctionGui
-    from magicgui.widgets._bases import CategoricalWidget
+    from magicgui.widgets.bases import CategoricalWidget
 
     from napari._qt.qthreading import FunctionWorker
     from napari.layers import Layer
     from napari.viewer import Viewer
+
+
+def _get_layer_from_widget(gui: ComboBox, viewer: Viewer) -> Optional[Layer]:
+    """Retrieve layer used as input to function wrapped into magicgui .
+
+    Parameters
+    ----------
+    gui : magicgui.widgets.ComboBox
+        The instantiated ComboBox widget.
+
+    Returns
+    -------
+    Layer
+        layer passed as input to the function wrapped into magicgui.
+
+    """
+    from napari.layers import Layer
+
+    if isinstance(gui.value, Layer):
+        return gui.value
+
+    if gui.annotation is None or gui.annotation.__module__ != 'napari.types':
+        return None
+
+    layer_name = gui.current_choice[: -len(' (data)')]
+    return viewer.layers[layer_name]
+
+
+def _get_layers_from_widget(gui: FunctionGui, viewer: Viewer) -> list[Layer]:
+    """Retrieve layers used as input to function wrapped into magicgui .
+
+    Parameters
+    ----------
+    gui : magicgui.widgets.FunctionGui
+        The instantiated FunctionGui widget.
+
+    Returns
+    -------
+    list
+        list of layers passed as input to the function wrapped into magicgui.
+
+    """
+    res = []
+    for widg in gui:
+        if isinstance(widg, ComboBox):
+            layer = _get_layer_from_widget(widg, viewer)
+            if layer is not None:
+                res.append(layer)
+    return res
+
+
+def _get_spatial_from_layer(layer, ndim):
+    axis = np.array(range(-ndim, 0))
+
+    data2physical = layer._transforms['data2physical'].set_slice(axis)
+    return {
+        'scale': data2physical.scale,
+        'translate': data2physical.translate,
+        'rotate': data2physical.rotate,
+        'shear': data2physical.shear,
+        'affine': layer.affine.set_slice(axis).affine_matrix,
+        'units': data2physical.units,
+    }
+
+
+def _compare_meta(meta1, meta2):
+    return (
+        np.array_equal(meta1['scale'], meta2['scale'])
+        and np.array_equal(meta1['translate'], meta2['translate'])
+        and np.array_equal(meta1['rotate'], meta2['rotate'])
+        and np.array_equal(meta1['shear'], meta2['shear'])
+        and np.array_equal(meta1['affine'], meta2['affine'])
+    )
+
+
+def _calc_affine_from_source_layers(data_ndim, source_layers: list[Layer]):
+    """Calculate affine information for provided data based on source layers.
+
+    Parameters
+    ----------
+    data : array
+        Data to be added to the viewer.
+    source_layers : list
+        List of layers used to calculate affine information.
+
+    Returns
+    -------
+    dict
+        Dictionary with affine information.
+    """
+    lower_dim_layers = [
+        layer.name for layer in source_layers if layer.ndim < data_ndim
+    ]
+    source_layers_ = [
+        layer for layer in source_layers if layer.ndim >= data_ndim
+    ]
+
+    if lower_dim_layers:
+        show_info(
+            f'Cannot inherit spatial information like scale and translation from source layers with lower dimensionality. Layers {",".join(lower_dim_layers)} ignored.'
+        )
+
+    if not source_layers_:
+        return {}
+
+    meta = _get_spatial_from_layer(source_layers_[0], data_ndim)
+
+    for layer in source_layers_[1:]:
+        local_meta = _get_spatial_from_layer(layer, data_ndim)
+        if not _compare_meta(meta, local_meta):
+            show_info(
+                'Cannot inherit spatial information like scale and translation from source layers. New layers may need manual setting of spatial information.'
+            )
+            return {}
+
+    return meta
+
+
+def _get_layer_name_from_annotation(annotation: type) -> str:
+    if get_origin(annotation) is Union:
+        if len(annotation.__args__) != 2 or annotation.__args__[1] is not type(
+            None
+        ):
+            # this case should be impossible, but we'll check anyway.
+            raise TypeError(
+                f'napari supports only Optional[<layer_data_type>], not {annotation}'
+            )
+        annotation = annotation.__args__[0]
+    return annotation.__name__.replace('Data', '').lower()
+
+
+def _get_ndim_from_data(data, layer_type_name: str) -> int:
+    from napari.layers.image._image_utils import guess_rgb
+
+    if isinstance(data, list):
+        data = data[0]
+
+    if layer_type_name == 'labels':
+        return data.ndim
+    if layer_type_name == 'image':
+        if guess_rgb(data.shape):
+            return data.ndim - 1
+        return data.ndim
+    if layer_type_name == 'surface':
+        return data[0].shape[-1]
+    if layer_type_name == 'tracks':
+        return data[0].shape[-1] - 1
+    return data.shape[-1]
 
 
 def add_layer_data_to_viewer(gui: FunctionGui, result: Any, return_type: type):
@@ -64,12 +215,20 @@ def add_layer_data_to_viewer(gui: FunctionGui, result: Any, return_type: type):
     )
 
     if result is not None and (viewer := find_viewer_ancestor(gui)):
+        meta = {}
+        if isinstance(gui, FunctionGui):
+            layers = _get_layers_from_widget(gui, viewer)
+            layer_type_name = _get_layer_name_from_annotation(return_type)
+            data_ndim = _get_ndim_from_data(result, layer_type_name)
+            meta = _calc_affine_from_source_layers(data_ndim, layers)
+
         _add_layer_data_to_viewer(
             result,
             return_type=return_type,
             viewer=viewer,
             layer_name=gui.result_name,
             source={'widget': gui},
+            meta=meta,
         )
 
 
