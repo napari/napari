@@ -31,13 +31,15 @@ babel==2.17.0
     #   napari (pyproject.toml)
     #   pydata-sphinx-theme
     #   sphinx
-beautifulsoup4==4.13.3
+beautifulsoup4==4.13.4
     # via pydata-sphinx-theme
+bermuda==0.1.4
+    # via napari (pyproject.toml)
 build==1.2.2.post1
     # via npe2
 cachey==0.2.1
     # via napari (pyproject.toml)
-certifi==2025.1.31
+certifi==2025.4.26
     # via
     #   napari (pyproject.toml)
     #   requests
@@ -61,7 +63,7 @@ colorspacious==1.1.2
     # via glasbey
 comm==0.2.2
     # via ipykernel
-contourpy==1.3.1
+contourpy==1.3.2
     # via matplotlib
 coverage==7.8.0
     # via
@@ -69,17 +71,17 @@ coverage==7.8.0
     #   pytest-cov
 cycler==0.12.1
     # via matplotlib
-dask==2025.3.0
+dask==2025.4.1
     # via
     #   napari (pyproject.toml)
     #   distributed
-debugpy==1.8.13
+debugpy==1.8.14
     # via ipykernel
 decorator==5.2.1
     # via ipython
 distlib==0.3.9
     # via virtualenv
-distributed==2025.3.0
+distributed==2025.4.1
     # via dask
 docstring-parser==0.16
     # via
@@ -122,9 +124,9 @@ fsspec==2025.3.2
     #   torch
 glasbey==0.2.1
     # via napari (pyproject.toml)
-greenlet==3.1.1
+greenlet==3.2.1
     # via sqlalchemy
-h11==0.14.0
+h11==0.16.0
     # via uvicorn
 h5netcdf==1.6.1
     # via napari (pyproject.toml)
@@ -134,7 +136,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.130.9
+hypothesis==6.131.9
     # via napari (pyproject.toml)
 idna==3.10
     # via
@@ -149,7 +151,7 @@ imageio-ffmpeg==0.6.0
     # via napari (pyproject.toml)
 imagesize==1.4.1
     # via sphinx
-importlib-metadata==8.6.1
+importlib-metadata==8.7.0
     # via
     #   build
     #   dask
@@ -167,7 +169,7 @@ ipykernel==6.29.5
     #   myst-nb
     #   napari-console
     #   qtconsole
-ipython==8.34.0
+ipython==8.36.0
     # via
     #   napari (pyproject.toml)
     #   ipykernel
@@ -189,7 +191,7 @@ jsonschema==4.23.0
     # via
     #   napari (pyproject.toml)
     #   nbformat
-jsonschema-specifications==2024.10.1
+jsonschema-specifications==2025.4.1
     # via jsonschema
 jupyter-cache==1.0.1
     # via myst-nb
@@ -221,12 +223,12 @@ locket==1.0.0
     # via
     #   distributed
     #   partd
-lxml==5.3.2
+lxml==5.4.0
     # via
     #   napari (pyproject.toml)
     #   lxml-html-clean
     #   nilearn
-lxml-html-clean==0.4.1
+lxml-html-clean==0.4.2
     # via lxml
 magicgui==0.10.0
     # via napari (pyproject.toml)
@@ -292,22 +294,21 @@ networkx==3.4.2
 nibabel==5.3.2
     # via nilearn
 nilearn==0.11.1
-    # via
-    #   -r resources/constraints/version_denylist_examples.txt
-    #   napari (pyproject.toml)
+    # via napari (pyproject.toml)
 npe2==0.7.8
     # via
     #   napari (pyproject.toml)
     #   napari-plugin-manager
-numba==0.61.0
+numba==0.61.2
     # via
     #   napari (pyproject.toml)
     #   glasbey
 numcodecs==0.13.1
     # via zarr
-numpy==2.1.3
+numpy==2.2.5
     # via
     #   napari (pyproject.toml)
+    #   bermuda
     #   colorspacious
     #   contourpy
     #   dask
@@ -322,7 +323,6 @@ numpy==2.1.3
     #   numba
     #   numcodecs
     #   pandas
-    #   partsegcore-compiled-backend
     #   scikit-image
     #   scikit-learn
     #   scipy
@@ -334,43 +334,45 @@ numpy==2.1.3
     #   zarr
 numpydoc==1.8.0
     # via napari (pyproject.toml)
-nvidia-cublas-cu12==12.4.5.8
+nvidia-cublas-cu12==12.6.4.1
     # via
     #   nvidia-cudnn-cu12
     #   nvidia-cusolver-cu12
     #   torch
-nvidia-cuda-cupti-cu12==12.4.127
+nvidia-cuda-cupti-cu12==12.6.80
     # via torch
-nvidia-cuda-nvrtc-cu12==12.4.127
+nvidia-cuda-nvrtc-cu12==12.6.77
     # via torch
-nvidia-cuda-runtime-cu12==12.4.127
+nvidia-cuda-runtime-cu12==12.6.77
     # via torch
-nvidia-cudnn-cu12==9.1.0.70
+nvidia-cudnn-cu12==9.5.1.17
     # via torch
-nvidia-cufft-cu12==11.2.1.3
+nvidia-cufft-cu12==11.3.0.4
     # via torch
-nvidia-curand-cu12==10.3.5.147
+nvidia-cufile-cu12==1.11.1.6
     # via torch
-nvidia-cusolver-cu12==11.6.1.9
+nvidia-curand-cu12==10.3.7.77
     # via torch
-nvidia-cusparse-cu12==12.3.1.170
+nvidia-cusolver-cu12==11.7.1.2
+    # via torch
+nvidia-cusparse-cu12==12.5.4.2
     # via
     #   nvidia-cusolver-cu12
     #   torch
-nvidia-cusparselt-cu12==0.6.2
+nvidia-cusparselt-cu12==0.6.3
     # via torch
-nvidia-nccl-cu12==2.21.5
+nvidia-nccl-cu12==2.26.2
     # via torch
-nvidia-nvjitlink-cu12==12.4.127
+nvidia-nvjitlink-cu12==12.6.85
     # via
+    #   nvidia-cufft-cu12
     #   nvidia-cusolver-cu12
     #   nvidia-cusparse-cu12
     #   torch
-nvidia-nvtx-cu12==12.4.127
+nvidia-nvtx-cu12==12.6.77
     # via torch
-packaging==24.2
+packaging==25.0
     # via
-    #   -r resources/constraints/version_denylist_examples.txt
     #   build
     #   dask
     #   distributed
@@ -399,11 +401,9 @@ parso==0.8.4
     # via jedi
 partd==1.4.2
     # via dask
-partsegcore-compiled-backend==0.15.12
-    # via napari (pyproject.toml)
 pexpect==4.9.0
     # via ipython
-pillow==11.1.0
+pillow==11.2.1
     # via
     #   napari (pyproject.toml)
     #   imageio
@@ -413,7 +413,7 @@ pillow==11.1.0
     #   sphinx-gallery
 pint==0.24.4
     # via napari (pyproject.toml)
-pip==25.0.1
+pip==25.1
     # via napari-plugin-manager
 platformdirs==4.3.7
     # via
@@ -431,7 +431,7 @@ pooch==1.8.2
     #   scikit-image
 pretend==1.0.9
     # via napari (pyproject.toml)
-prompt-toolkit==3.0.50
+prompt-toolkit==3.0.51
     # via ipython
 psutil==7.0.0
     # via
@@ -452,7 +452,7 @@ pyautogui==0.9.54
     # via napari (pyproject.toml)
 pyconify==0.2.1
     # via superqt
-pydantic==2.11.2
+pydantic==2.11.3
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
@@ -606,6 +606,8 @@ scipy==1.15.2
     #   scikit-learn
 seedir==0.5.0
     # via napari (pyproject.toml)
+setuptools==80.0.0
+    # via triton
 shellingham==1.5.4
     # via typer
 shiboken2==5.15.2.1
@@ -625,7 +627,7 @@ sortedcontainers==2.4.0
     # via
     #   distributed
     #   hypothesis
-soupsieve==2.6
+soupsieve==2.7
     # via beautifulsoup4
 sphinx==7.4.7
     # via
@@ -683,7 +685,7 @@ sqlalchemy==2.0.40
     # via jupyter-cache
 stack-data==0.6.3
     # via ipython
-starlette==0.46.1
+starlette==0.46.2
     # via sphinx-autobuild
 stdlib-list==0.11.1
     # via pydeps
@@ -692,7 +694,7 @@ superqt==0.7.3
     #   napari (pyproject.toml)
     #   magicgui
     #   napari-plugin-manager
-sympy==1.13.1
+sympy==1.14.0
     # via torch
 tabulate==0.9.0
     # via
@@ -700,7 +702,7 @@ tabulate==0.9.0
     #   numpydoc
 tblib==3.1.0
     # via distributed
-tensorstore==0.1.73
+tensorstore==0.1.74
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
@@ -726,7 +728,7 @@ toolz==1.0.0
     #   dask
     #   distributed
     #   partd
-torch==2.6.0
+torch==2.7.0
     # via napari (pyproject.toml)
 tornado==6.4.2
     # via
@@ -748,11 +750,11 @@ traitlets==5.14.3
     #   qtconsole
 triangle==20250106
     # via napari (pyproject.toml)
-triton==3.2.0
+triton==3.3.0
     # via torch
 typer==0.15.2
     # via npe2
-typing-extensions==4.13.1
+typing-extensions==4.13.2
     # via
     #   napari (pyproject.toml)
     #   anyio
@@ -782,11 +784,11 @@ tzdata==2025.2
     # via pandas
 uc-micro-py==1.0.3
     # via linkify-it-py
-urllib3==2.3.0
+urllib3==2.4.0
     # via
     #   distributed
     #   requests
-uvicorn==0.34.0
+uvicorn==0.34.2
     # via sphinx-autobuild
 virtualenv==20.30.0
     # via napari (pyproject.toml)
@@ -794,7 +796,7 @@ vispy==0.14.3
     # via
     #   napari (pyproject.toml)
     #   napari-svg
-watchfiles==1.0.4
+watchfiles==1.0.5
     # via sphinx-autobuild
 wcwidth==0.2.13
     # via prompt-toolkit
