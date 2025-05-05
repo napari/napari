@@ -1874,7 +1874,7 @@ def test_new_colormap_int8():
 
 
 @pytest.mark.parametrize('visible', [True, False])
-@pytest.mark.parametrize('dtype', [np.uint8, np.uint32, np.int64])
+@pytest.mark.parametrize('dtype', [np.uint8, np.int8, np.uint32, np.int64])
 def test_view_dtype(visible, dtype):
     layer = Labels(np.arange(25, dtype=dtype).reshape(5, 5), visible=visible)
     assert layer._slice.image.view.dtype == np.uint8
