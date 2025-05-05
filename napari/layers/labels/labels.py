@@ -517,7 +517,7 @@ class Labels(ScalarFieldBase):
 
     def new_colormap(self, seed: int | None = None):
         if seed is None:
-            seed = np.random.default_rng().integers(2**32 - 1)
+            seed = int(np.random.default_rng().integers(2**32 - 1))
 
         orig = self._original_random_colormap
         self.colormap = shuffle_and_extend_colormap(
