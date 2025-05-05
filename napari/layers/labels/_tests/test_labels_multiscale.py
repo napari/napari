@@ -68,36 +68,21 @@ def test_3D_multiscale_labels_in_3D():
     # [0,0,0] has value 0, which is transparent, so the ray will hit the next point
     # which is [1, 0, 0] and has value 4
     # the position array is in original data coords (no downsampling)
-    assert (
-        layer.get_value(
-            [0, 0, 0], view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]
-        )
-        == 4
-    )
-    assert (
-        layer.get_value(
-            [0, 0, 0], view_direction=[-1, 0, 0], dims_displayed=[0, 1, 2]
-        )
-        == 4
-    )
-    assert (
-        layer.get_value(
-            [0, 1, 1], view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]
-        )
-        == 4
-    )
-    assert (
-        layer.get_value(
-            [0, 5, 5], view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]
-        )
-        == 3
-    )
-    assert (
-        layer.get_value(
-            [5, 0, 5], view_direction=[0, 0, -1], dims_displayed=[0, 1, 2]
-        )
-        == 5
-    )
+    assert layer.get_value(
+        [0, 0, 0], view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]
+    ) == (2, 4)
+    assert layer.get_value(
+        [0, 0, 0], view_direction=[-1, 0, 0], dims_displayed=[0, 1, 2]
+    ) == (2, 4)
+    assert layer.get_value(
+        [0, 1, 1], view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]
+    ) == (2, 4)
+    assert layer.get_value(
+        [0, 5, 5], view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]
+    ) == (2, 3)
+    assert layer.get_value(
+        [5, 0, 5], view_direction=[0, 0, -1], dims_displayed=[0, 1, 2]
+    ) == (2, 5)
 
 
 def instantiate_3D_multiscale_labels():

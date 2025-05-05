@@ -465,7 +465,7 @@ class Surface(IntensityVisualizationMixin, Layer):
                 maxs = [n - 1 for n in self.vertex_values.shape[:-1]] + list(
                     maxs
                 )
-            extrema = np.vstack([mins, maxs])
+            extrema = np.vstack([mins, maxs])  # type: ignore[assignment]
         return extrema
 
     @property

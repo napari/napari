@@ -12,12 +12,14 @@ from napari._qt._qapp_model.qactions._layerlist_context import (
     _copy_shear_to_clipboard,
     _copy_spatial_to_clipboard,
     _copy_translate_to_clipboard,
+    _copy_units_to_clipboard,
     _paste_spatial_from_clipboard,
     is_valid_spatial_in_clipboard,
 )
 from napari.components import LayerList
 from napari.layers.base._test_util_sample_layer import SampleLayer
 from napari.utils.transforms import Affine
+from napari.utils.transforms._units import get_units_from_name
 
 
 @pytest.fixture
@@ -30,6 +32,7 @@ def layer_list():
         name='l1',
         affine=Affine(scale=(0.5, 0.5), translate=(1, 2), rotate=45),
         shear=[1],
+        units=('nm', 'um'),
     )
     layer_2 = SampleLayer(
         data=np.empty((10, 10)),
@@ -65,6 +68,7 @@ def layer_list_dim():
         name='l1',
         affine=Affine(scale=(0.1, 0.5, 0.5), translate=(4, 1, 2), rotate=45),
         shear=[1, 0.5, 1],
+        units=('nm', 'um', 'mm'),
     )
     layer_2 = SampleLayer(
         data=np.empty((10, 10)),
@@ -82,6 +86,14 @@ def layer_list_dim():
 
 @pytest.mark.usefixtures('qtbot')
 def test_copy_scale_to_clipboard(layer_list):
+    """This is the test that checks copying scale to
+    clipboard and pasting it to another layer.
+
+    The layer_list contains three layers, l1, l2 and l3.
+    The l2 is selected and l1 has a non-default scale.
+    The test copy it to from l1 to l2 and check if l3 is not affected.
+    It also checks if the translate is not copied.
+    """
     _copy_scale_to_clipboard(layer_list['l1'])
     npt.assert_array_equal(layer_list['l2'].scale, (1, 1))
     _paste_spatial_from_clipboard(layer_list)
@@ -91,7 +103,39 @@ def test_copy_scale_to_clipboard(layer_list):
 
 
 @pytest.mark.usefixtures('qtbot')
+def test_copy_units_to_clipboard(layer_list):
+    """This is the test that checks copying units to
+    clipboard and pasting it to another layer.
+
+    The layer_list contains three layers, l1, l2 and l3.
+    The l2 is selected and l1 has non-default units.
+    The test copy it to from l1 to l2 and check if l3 is not affected.
+    it also checks if the scale is not copied.
+    """
+    _copy_units_to_clipboard(layer_list['l1'])
+    npt.assert_array_equal(
+        layer_list['l2'].units, get_units_from_name(('pixel', 'pixel'))
+    )
+    _paste_spatial_from_clipboard(layer_list)
+    npt.assert_array_equal(
+        layer_list['l2'].units, get_units_from_name(('nm', 'um'))
+    )
+    npt.assert_array_equal(
+        layer_list['l3'].units, get_units_from_name(('pixel', 'pixel'))
+    )
+    npt.assert_array_equal(layer_list['l2'].scale, (1, 1))
+
+
+@pytest.mark.usefixtures('qtbot')
 def test_copy_translate_to_clipboard(layer_list):
+    """This is the test that checks of copying translate to
+    clipboard and pasting it to another layer.
+
+    The layer_list contains three layers, l1, l2 and l3.
+    The l2 is selected and l1 has non-default translate.
+    The test copy it to from l1 to l2 and check if l3 is not affected.
+    It also checks if the scale is not copied.
+    """
     _copy_translate_to_clipboard(layer_list['l1'])
     npt.assert_array_equal(layer_list['l2'].translate, (0, 0))
     _paste_spatial_from_clipboard(layer_list)
@@ -102,6 +146,14 @@ def test_copy_translate_to_clipboard(layer_list):
 
 @pytest.mark.usefixtures('qtbot')
 def test_copy_rotate_to_clipboard(layer_list):
+    """This is the test that checks copying rotate to
+    clipboard and pasting it to another layer.
+
+    The layer_list contains three layers, l1, l2 and l3.
+    The l2 is selected and l1 has non-default rotate.
+    The test copy it to from l1 to l2 and check if l3 is not affected.
+    It also checks if the scale is not copied.
+    """
     _copy_rotate_to_clipboard(layer_list['l1'])
     npt.assert_array_almost_equal(layer_list['l2'].rotate, ([1, 0], [0, 1]))
     _paste_spatial_from_clipboard(layer_list)
@@ -112,6 +164,14 @@ def test_copy_rotate_to_clipboard(layer_list):
 
 @pytest.mark.usefixtures('qtbot')
 def test_copy_affine_to_clipboard(layer_list):
+    """This is the test that checks copying affine to
+    clipboard and pasting it to another layer.
+
+    The layer_list contains three layers, l1, l2 and l3.
+    The l2 is selected and l1 has non-default affine.
+    The test copy it to from l1 to l2 and check if l3 is not affected.
+    It also checks if the scale is not copied.
+    """
     _copy_affine_to_clipboard(layer_list['l1'])
     npt.assert_array_almost_equal(
         layer_list['l2'].affine.linear_matrix, Affine().linear_matrix
@@ -129,6 +189,14 @@ def test_copy_affine_to_clipboard(layer_list):
 
 @pytest.mark.usefixtures('qtbot')
 def test_copy_shear_to_clipboard(layer_list):
+    """This is the test that checks copying shear to
+    clipboard and pasting it to another layer.
+
+    The layer_list contains three layers, l1, l2 and l3.
+    The l2 is selected and l1 has non-default shear.
+    The test copy it to from l1 to l2 and check if l3 is not affected.
+    It also checks if the scale is not copied.
+    """
     _copy_shear_to_clipboard(layer_list['l1'])
     npt.assert_array_almost_equal(layer_list['l2'].shear, (0,))
     _paste_spatial_from_clipboard(layer_list)
@@ -139,6 +207,13 @@ def test_copy_shear_to_clipboard(layer_list):
 
 @pytest.mark.usefixtures('qtbot')
 def test_copy_spatial_to_clipboard(layer_list):
+    """This is the test that checks copying spatial to
+    clipboard and pasting it to another layer.
+
+    The layer_list contains three layers, l1, l2 and l3.
+    The l2 is selected and l1 has non-default spatial metadata.
+    The test copy it to from l1 to l2 and check if l3 is not affected.
+    """
     _copy_spatial_to_clipboard(layer_list['l1'])
     npt.assert_array_equal(layer_list['l2'].scale, (1, 1))
     _paste_spatial_from_clipboard(layer_list)
@@ -149,11 +224,22 @@ def test_copy_spatial_to_clipboard(layer_list):
         layer_list['l2'].affine.affine_matrix,
         layer_list['l1'].affine.affine_matrix,
     )
+    npt.assert_array_equal(
+        layer_list['l2'].units, get_units_from_name(('nm', 'um'))
+    )
     npt.assert_array_equal(layer_list['l3'].scale, (1, 1))
 
 
 @pytest.mark.usefixtures('qtbot')
 def test_copy_spatial_to_clipboard_different_dim(layer_list_dim):
+    """This is the test that checks copying spatial
+    information from layer with higher dimensionality to layer
+    with lower dimensionality.
+
+    The layer_list_dim contains two layers, l1 and l2.
+    The l1 contains 3D data and l2 contains 2D data.
+    The l2 is selected and l1 has non-default spatial metadata.
+    """
     _copy_spatial_to_clipboard(layer_list_dim['l1'])
     npt.assert_array_equal(layer_list_dim['l2'].scale, (1, 1))
     _paste_spatial_from_clipboard(layer_list_dim)
@@ -165,6 +251,9 @@ def test_copy_spatial_to_clipboard_different_dim(layer_list_dim):
     npt.assert_array_almost_equal(
         layer_list_dim['l2'].affine.affine_matrix,
         layer_list_dim['l1'].affine.affine_matrix[-3:, -3:],
+    )
+    npt.assert_array_equal(
+        layer_list_dim['l2'].units, get_units_from_name(('um', 'mm'))
     )
 
 
