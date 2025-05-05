@@ -125,9 +125,17 @@ optional-numba = [
     "numba>=0.57.1",
 ]
 optional = [
-    "napari[optional-base,optional-numba]",
+    "napari[optional-base,optional-numba,bermuda]",
     "triangle",
+]
+bermuda = [
+    "bermuda>=0.1.4",
+]
+partsegcore = [
     "PartSegCore-compiled-backend>=0.15.11",
+]
+all_optional = [
+    "napari[optional,partsegcore]"
 ]
 testing = [
     "napari[gallery]",
@@ -188,6 +196,9 @@ docs = [
     "imageio-ffmpeg",
     "pydeps",
     "seedir",
+    # triangle and bermuda needed for docs/guides/triangulation.md
+    "triangle",
+    "bermuda>=0.1.4",
     "pytest",
     "linkify-it-py",
 ]
@@ -531,6 +542,7 @@ module = [
     'napari._qt.widgets.qt_font_size',
     'napari._qt.widgets.qt_highlight_preview',
     'napari._qt.widgets.qt_keyboard_settings',
+    'napari._qt.widgets.qt_logger',
     'napari._qt.widgets.qt_message_popup',
     'napari._qt.widgets.qt_mode_buttons',
     'napari._qt.widgets.qt_plugin_sorter',

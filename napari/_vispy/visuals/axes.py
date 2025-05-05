@@ -48,7 +48,7 @@ def make_arrow_head(num_segments, axis):
         Vertices and faces of the arrowhead.
     """
     corners = np.array([[-1, -1], [-1, 1], [1, 1], [1, -1]]) * 0.1
-    vertices, faces = triangulate_ellipse(corners, num_segments)
+    vertices, faces = triangulate_ellipse(corners, num_segments)  # type: ignore[arg-type]
     full_vertices = np.zeros((num_segments + 1, 3))
     inds = list(range(3))
     inds.pop(axis)
@@ -263,7 +263,7 @@ class Axes(Compound):
             )
         else:
             arrow_vertices = np.zeros((3, 3))
-            arrow_faces = np.array([[0, 1, 2]])
+            arrow_faces = np.array([[0, 1, 2]])  # type: ignore[assignment]
             arrow_color = [[0, 0, 0, 0]]
 
         self.line.set_data(data, color)
