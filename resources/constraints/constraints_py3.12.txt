@@ -31,7 +31,7 @@ certifi==2025.4.26
     # via
     #   napari (pyproject.toml)
     #   requests
-charset-normalizer==3.4.1
+charset-normalizer==3.4.2
     # via requests
 click==8.1.8
     # via
@@ -139,7 +139,7 @@ jinja2==3.1.6
     #   distributed
     #   sphinx
     #   torch
-joblib==1.4.2
+joblib==1.5.0
     # via
     #   nilearn
     #   scikit-learn
@@ -205,7 +205,7 @@ napari-console==0.1.3
     # via napari (pyproject.toml)
 napari-plugin-engine==0.2.0
     # via napari (pyproject.toml)
-napari-plugin-manager==0.1.5
+napari-plugin-manager==0.1.6
     # via napari (pyproject.toml)
 napari-svg==0.2.1
     # via napari (pyproject.toml)
@@ -335,7 +335,7 @@ pillow==11.2.1
     #   scikit-image
 pint==0.24.4
     # via napari (pyproject.toml)
-pip==25.1
+pip==25.1.1
     # via napari-plugin-manager
 platformdirs==4.3.7
     # via
@@ -374,7 +374,7 @@ pyautogui==0.9.54
     # via napari (pyproject.toml)
 pyconify==0.2.1
     # via superqt
-pydantic==2.11.3
+pydantic==2.11.4
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
@@ -383,7 +383,7 @@ pydantic==2.11.3
     #   pydantic-compat
 pydantic-compat==0.1.2
     # via app-model
-pydantic-core==2.33.1
+pydantic-core==2.33.2
     # via pydantic
 pygetwindow==0.0.9
     # via pyautogui
@@ -408,9 +408,9 @@ pyperclip==1.9.0
     # via mouseinfo
 pyproject-hooks==1.2.0
     # via build
-pyqt6==6.8.1
+pyqt6==6.9.0
     # via napari (pyproject.toml)
-pyqt6-qt6==6.8.2
+pyqt6-qt6==6.9.0
     # via pyqt6
 pyqt6-sip==13.10.0
     # via pyqt6
@@ -506,7 +506,7 @@ scipy==1.15.2
     #   nilearn
     #   scikit-image
     #   scikit-learn
-setuptools==80.0.0
+setuptools==80.3.1
     # via
     #   torch
     #   triton
@@ -627,7 +627,7 @@ wrapt==1.17.2
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
-xarray==2025.3.1
+xarray==2025.4.0
     # via napari (pyproject.toml)
 zarr==3.0.7
     # via
