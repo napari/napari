@@ -96,6 +96,11 @@ jobs:
             backend: pyqt6
             coverage: no_cov
             min_req: ""
+          - python: "3.12"
+            platform: ubuntu-latest
+            backend: pyside6
+            coverage: no_cov
+            min_req: ""
     with:
       python_version: ${{ matrix.python }}
       platform: ${{ matrix.platform }}
