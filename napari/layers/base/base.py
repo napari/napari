@@ -1027,6 +1027,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             data=extent_data,
             world=extent_world,
             step=abs(data_to_world.scale),
+            units=self.units,
         )
 
     @cached_property
@@ -1049,6 +1050,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             data=extent_data,
             world=extent_world,
             step=abs(data_to_world.scale),
+            units=self.units,
         )
 
     def _clear_extent(self) -> None:

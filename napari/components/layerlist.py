@@ -8,6 +8,7 @@ from functools import cached_property
 from typing import TYPE_CHECKING
 
 import numpy as np
+import pint
 
 from napari.components.dims import RangeTuple
 from napari.layers import Layer
@@ -307,7 +308,12 @@ class LayerList(SelectableEventedList[Layer]):
         # switch back to original order
         return min_v[::-1], max_v[::-1]
 
-    def _get_extent_world(self, layer_extent_list, augmented=False):
+    def _get_extent_world(
+        self,
+        layer_extent_list,
+        augmented: bool = False,
+        units: tuple[pint.Unit, ...] | None = None,
+    ) -> np.ndarray[tuple[int], np.dtype[np.float32]]:
         """Extent of layers in world coordinates.
 
         Default to 2D image-like with (0, 511) min/ max values if no data is present.
@@ -325,7 +331,13 @@ class LayerList(SelectableEventedList[Layer]):
                 min_v -= 0.5
                 max_v += 0.5
         else:
-            extrema = [extent.world for extent in layer_extent_list]
+            if units is None:
+                extrema = [extent.world for extent in layer_extent_list]
+            else:
+                extrema = [
+                    self._convert_units(extent.world, extent.units, units)
+                    for extent in layer_extent_list
+                ]
             mins = [e[0] for e in extrema]
             maxs = [e[1] for e in extrema]
             min_v, max_v = self._get_min_and_max(mins, maxs)
@@ -346,7 +358,9 @@ class LayerList(SelectableEventedList[Layer]):
         """
         return self._get_step_size([layer.extent for layer in self])
 
-    def _step_size_from_scales(self, scales):
+    def _step_size_from_scales(
+        self, scales, units: tuple[pint.Unit, ...] | None
+    ):
         # Reverse order so last axes of scale with different ndim are aligned
         scales = [scale[::-1] for scale in scales]
         full_scales = list(
@@ -355,12 +369,49 @@ class LayerList(SelectableEventedList[Layer]):
         # restore original order
         return np.nanmin(full_scales, axis=1)[::-1]
 
-    def _get_step_size(self, layer_extent_list):
-        if len(self) == 0:
-            return np.ones(self.ndim)
+    @staticmethod
+    def _convert_units(
+        array: np.ndarray,
+        units: tuple[pint.Unit, ...],
+        target_units: tuple[pint.Unit, ...],
+    ) -> np.ndarray:
+        """Convert units of scale to target units.
 
-        scales = [extent.step for extent in layer_extent_list]
-        return self._step_size_from_scales(scales)
+        Parameters
+        ----------
+        array : np.ndarray
+            Scale to convert.
+        units : tuple[pint.Unit, ...]
+            Units of the scale.
+        target_units : tuple[pint.Unit, ...]
+            Target units.
+
+        Returns
+        -------
+        np.ndarray
+            Converted scale.
+        """
+        clipped_target_units = target_units[-len(units) :]
+        return np.array(
+            [
+                (array[i] * units[i]).to(clipped_target_units[i]).m
+                for i in range(len(array))
+            ]
+        )
+
+    def _get_step_size(
+        self, layer_extent_list, units: tuple[pint.Unit, ...] | None = None
+    ):
+        if len(layer_extent_list) == 0:
+            return np.ones(self.ndim)
+        if units is None:
+            scales = [extent.step for extent in layer_extent_list]
+        else:
+            scales = [
+                self._convert_units(extent.step, extent.units, units)
+                for extent in layer_extent_list
+            ]
+        return self._step_size_from_scales(scales, units=units)
 
     def get_extent(self, layers: Iterable[Layer]) -> Extent:
         """
@@ -381,11 +432,61 @@ class LayerList(SelectableEventedList[Layer]):
             extent for selected layers
         """
         extent_list = [layer.extent for layer in layers]
+        units = self._get_units(extent_list)
         return Extent(
             data=None,
-            world=self._get_extent_world(extent_list),
-            step=self._get_step_size(extent_list),
+            world=self._get_extent_world(extent_list, units=units),
+            step=self._get_step_size(extent_list, units=units),
+            units=units,
         )
+
+    @staticmethod
+    def _get_units(layers: Iterable[Extent]) -> tuple[pint.Unit, ...] | None:
+        """Get units for a given layer list.
+
+        Parameters
+        ----------
+        layers : list of Layer
+            list of layers for which units should be calculated
+
+        Returns
+        -------
+        units : list of pint.Unit or None
+            consistent units for selected layers.
+            If cannot be determined, returns None.
+        """
+        layers_ = list(layers)
+        if not layers_:
+            return None
+
+        reg = pint.get_application_registry()
+
+        def cmp(u1: pint.Unit, u2: pint.Unit) -> bool:
+            return reg.get_base_units(u1)[0] < reg.get_base_units(u2)[0]
+
+        def update_u_dkt(units_t: tuple[pint.Unit, ...]) -> None:
+            for u in units_t:
+                dim = u.dimensionality
+                if not (dim in u_dkt and cmp(u_dkt[dim], u)):
+                    u_dkt[dim] = u
+
+        units = ()
+        u_dkt = {}
+
+        update_u_dkt(units)
+
+        for extent in layers_:
+            if extent.units is None:
+                continue
+            for u1_, u2_ in zip(extent.units[::-1], units[::-1], strict=False):
+                if u1_.dimensionality != u2_.dimensionality:
+                    return None
+            if len(extent.units) > len(units):
+                update_u_dkt(extent.units[-len(units) :])
+                units = extent.units
+        if not units:
+            return None
+        return tuple(u_dkt[u.dimensionality] for u in units)
 
     @cached_property
     def extent(self) -> Extent:

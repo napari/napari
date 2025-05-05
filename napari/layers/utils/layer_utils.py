@@ -13,6 +13,7 @@ from typing import (
 import dask
 import numpy as np
 import pandas as pd
+import pint
 
 from napari.utils.action_manager import action_manager
 from napari.utils.events.custom_types import Array
@@ -48,9 +49,10 @@ class Extent(NamedTuple):
         should form a regular grid that eventually hits the maximum world coordinate.
     """
 
-    data: np.ndarray
+    data: np.ndarray | None
     world: np.ndarray
     step: np.ndarray
+    units: tuple[pint.Unit, ...] | None
 
 
 def register_layer_action(

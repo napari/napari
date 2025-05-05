@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Generic, TypeVar, cast
 
 import numpy as np
+import pint
 from vispy.scene import VisualNode
 from vispy.visuals.transforms import MatrixTransform
 
@@ -64,6 +65,8 @@ class VispyBaseLayer(ABC, Generic[_L]):
         self.node = node
         self.first_visible = False
         self.overlays = {}
+        self._units = layer.units
+        self._scale_units = (1,) * layer.ndim
 
         (
             self.MAX_TEXTURE_SIZE_2D,
@@ -84,6 +87,31 @@ class VispyBaseLayer(ABC, Generic[_L]):
             self._on_experimental_clipping_planes_change
         )
         self.layer.events._overlays.connect(self._on_overlays_change)
+
+    @property
+    def units(self):
+        return self._units
+
+    @units.setter
+    def units(self, value: tuple[pint.Unit, ...] | None):
+        if value is None:
+            self._units = self.layer.units
+            self._scale_units = (1,) * self.layer.ndim
+        else:
+            self._units = value[-self.layer.ndim :]
+            self._recalculate_units_scale()
+        self._on_matrix_change()
+
+    def _recalculate_units_scale(self):
+        if self._units is None:
+            self._scale_units = (1,) * self.layer.ndim
+            return
+
+        reg = pint.get_application_registry()
+        self._scale_units = tuple(
+            reg.get_base_units(y)[0] / reg.get_base_units(x)[0]
+            for x, y in zip(self._units, self.layer.units, strict=False)
+        )
 
     @property
     def _master_transform(self):
@@ -205,8 +233,9 @@ class VispyBaseLayer(ABC, Generic[_L]):
         # convert NumPy axis ordering to VisPy axis ordering
         # by reversing the axes order and flipping the linear
         # matrix
-        translate = transform.translate[::-1]
-        matrix = transform.linear_matrix[::-1, ::-1].T
+        scale_units = self._scale_units[::-1]
+        translate = transform.translate[::-1] * scale_units
+        matrix = transform.linear_matrix[::-1, ::-1].T * scale_units
 
         # The following accounts for the offset between samples at different
         # resolutions of 3D multi-scale array-like layers (e.g. images).
@@ -246,7 +275,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
             # Convert NumPy axis ordering to VisPy axis ordering
             # and embed in full affine matrix
             affine_offset = np.eye(4)
-            affine_offset[-1, : len(offset)] = offset[::-1]
+            affine_offset[-1, : len(offset)] = offset[::-1] * scale_units
             affine_matrix = affine_matrix @ affine_offset
             if self.layer.multiscale:
                 # For performance reasons, when displaying multiscale images,
