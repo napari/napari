@@ -261,7 +261,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
                     - self.layer.corner_pixels[0][dims_displayed][::-1]
                 )
             else:
-                child_offset = np.ones(offset_matrix.shape[1]) / 2
+                child_offset = np.full(offset_matrix.shape[1], 1 / 2)
         self._master_transform.matrix = affine_matrix
 
         child_matrix = np.eye(4)
