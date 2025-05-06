@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import pandas as pd
@@ -18,12 +19,17 @@ from qtpy.QtGui import (
 from qtpy.QtWidgets import (
     QAbstractItemView,
     QComboBox,
+    QFileDialog,
     QLabel,
+    QPushButton,
     QStyledItemDelegate,
     QTableView,
     QVBoxLayout,
 )
 from superqt import QToggleSwitch
+
+from napari.utils.history import get_save_history
+from napari.utils.misc import in_ipython
 
 if TYPE_CHECKING:
     import napari
@@ -335,14 +341,17 @@ class FeaturesTable(QTableView):
         self.setLayout(QVBoxLayout())
 
         self.info = QLabel('')
-        self.toggle = QToggleSwitch('Editable: ')
+        self.toggle = QToggleSwitch('editable.')
+        self.save = QPushButton('Save as CSV...')
         self.table = PandasView()
         self.layout().addWidget(self.info)
         self.layout().addWidget(self.toggle)
+        self.layout().addWidget(self.save)
         self.layout().addWidget(self.table)
         self.layout().addStretch()
 
         self.toggle.toggled.connect(self._on_editable_change)
+        self.save.clicked.connect(self._on_save_clicked)
 
         self._on_active_layer_change()
         self._on_editable_change()
@@ -359,11 +368,13 @@ class FeaturesTable(QTableView):
                 self._on_features_change
             )
             self._on_features_change()
-            self.table.setVisible(True)
             self.toggle.setVisible(True)
+            self.save.setVisible(True)
+            self.table.setVisible(True)
         else:
-            self.table.setVisible(False)
             self.toggle.setVisible(False)
+            self.save.setVisible(False)
+            self.table.setVisible(False)
 
         if self._active_layer is None:
             self.info.setText('No layer selected.')
@@ -383,3 +394,81 @@ class FeaturesTable(QTableView):
 
     def _on_editable_change(self):
         self.table.model().sourceModel().editable = self.toggle.isChecked()
+
+    def _on_save_clicked(self):
+        dlg = QFileDialog()
+        hist = get_save_history()
+        dlg.setHistory(hist)
+
+        fname = f'{self._active_layer.name}_features.csv'
+        fname = self._remove_invalid_chars(fname)
+
+        fname, _ = dlg.getSaveFileName(
+            self,  # parent
+            'Save layer features',  # caption
+            str(Path(hist[0]) / fname),  # directory in PyQt, dir in PySide
+            filter='*.csv',
+            options=(
+                QFileDialog.DontUseNativeDialog
+                if in_ipython()
+                else QFileDialog.Options()
+            ),
+        )
+
+        df = self.table.model().sourceModel().df
+        df.to_csv(fname)
+
+    # copied from QtViewer
+    def _remove_invalid_chars(self, selected_layer_name):
+        """Removes invalid characters from selected layer name to suggest a filename.
+
+        Parameters
+        ----------
+        selected_layer_name : str
+            The selected napari layer name.
+
+        Returns
+        -------
+        suggested_name : str
+            Suggested name from input selected layer name, without invalid characters.
+        """
+        unprintable_ascii_chars = (
+            '\x00',
+            '\x01',
+            '\x02',
+            '\x03',
+            '\x04',
+            '\x05',
+            '\x06',
+            '\x07',
+            '\x08',
+            '\x0e',
+            '\x0f',
+            '\x10',
+            '\x11',
+            '\x12',
+            '\x13',
+            '\x14',
+            '\x15',
+            '\x16',
+            '\x17',
+            '\x18',
+            '\x19',
+            '\x1a',
+            '\x1b',
+            '\x1c',
+            '\x1d',
+            '\x1e',
+            '\x1f',
+            '\x7f',
+        )
+        invalid_characters = (
+            ''.join(unprintable_ascii_chars)
+            + '/'
+            + '\\'  # invalid Windows filename character
+            + ':*?"<>|\t\n\r\x0b\x0c'  # invalid Windows path characters
+        )
+        translation_table = dict.fromkeys(map(ord, invalid_characters), None)
+        # Remove invalid characters
+        suggested_name = selected_layer_name.translate(translation_table)
+        return suggested_name
