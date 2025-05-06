@@ -64,7 +64,11 @@ class Camera(EventedModel):
     # validators
     @validator('center', 'angles', pre=True, allow_reuse=True)
     def _ensure_3_tuple(cls, v):
-        return ensure_n_tuple(v, n=3)
+        # there's a precision issue after the 13th decimal where sometimes the same
+        # camera rotation results in different values for the same position.
+        # In grid mode, this results in an infinite update loop bewteen vispy and napari
+        # which tanks performance. To avoid it, round to the 13 decimal.
+        return ensure_n_tuple(np.round(v, 13), n=3)
 
     @property
     def view_direction(self) -> tuple[float, float, float]:

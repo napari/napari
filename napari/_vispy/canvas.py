@@ -340,8 +340,11 @@ class VispyCanvas:
             of the viewer.
         """
         nd = self.viewer.dims.ndisplay
-        # TODO: properly get position in correct subview
-        transform = self.views[0].scene.transform
+
+        view = self._scene_canvas.visual_at(position) or self.views[0]
+        # combine the viewbox transform wit the scene transform
+        # so each quadrant in grid mode maps back to the main scene
+        transform = view.transform * view.scene.transform
         # cartesian to homogeneous coordinates
         mapped_position = transform.imap(list(position))
         if nd == 3:
@@ -739,12 +742,11 @@ class VispyCanvas:
             camera._3D_camera.parent = None
             self._scene_canvas.events.draw.disconnect(camera.on_draw)
         self.cameras.clear()
+        self.views.clear()
 
-        while len(self.grid.children) > 1:
-            view = self.grid.children[-1]
-            # remove_widget is bugged and does not remove from children fully, so we also set parent to None
-            view.parent = None
-            self.grid.remove_widget(view)
+        # grid are really not designed to be reset, so it's easier to replace it
+        self.grid.parent = None
+        self.grid = self.central_widget.add_grid(border_width=0)
 
         if self.viewer.grid.enabled:
             self._setup_layer_views_in_grid()
@@ -754,8 +756,8 @@ class VispyCanvas:
     def _setup_single_view(self):
         view = self.grid.add_view(0, 0, border_width=0)
         camera = VispyCamera(view, self.viewer.camera, self.viewer.dims)
-        self.views = [view]
-        self.cameras = [camera]
+        self.views.append(view)
+        self.cameras.append(camera)
 
         self._scene_canvas.events.draw.connect(camera.on_draw)
         for napari_layer in self.viewer.layers:
