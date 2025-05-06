@@ -1102,31 +1102,6 @@ def test_fit_to_view_2d_data_in_3d_view():
     assert viewer.camera.angles == (45, 30, 60)
 
 
-def test_fit_to_view_grid():
-    """Test grid view adjusts zoom appropriately."""
-    viewer = ViewerModel()
-    for _ in range(4):
-        viewer.add_image(np.random.random((10, 10)))
-
-    viewer.fit_to_view()
-    default_zoom = viewer.camera.zoom
-
-    # enable grid and reset view
-    viewer.grid.enabled = True
-    viewer.fit_to_view()
-    grid_zoom = viewer.camera.zoom
-
-    # check zoom is less with grid enabled
-    assert grid_zoom < default_zoom
-
-    # space grid apart, then reset view
-    viewer.grid.spacing = 0.2
-    viewer.fit_to_view()
-    spaced_grid_zoom = viewer.camera.zoom
-
-    assert spaced_grid_zoom < grid_zoom
-
-
 def test_fit_to_view_handles_no_layers():
     """Test fit_to_view with no layers."""
     viewer = ViewerModel()

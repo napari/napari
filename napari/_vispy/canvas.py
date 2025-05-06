@@ -175,6 +175,15 @@ class VispyCanvas:
 
         self._on_grid_change()
 
+    # for backwards compatibility
+    @property
+    def view(self):
+        return self.views[0]
+
+    @property
+    def camera(self):
+        return self.cameras[0]
+
     @property
     def events(self):
         # This is backwards compatible with the old events system
