@@ -90,11 +90,11 @@ class VispyBaseLayer(ABC, Generic[_L]):
         self.layer.events._overlays.connect(self._on_overlays_change)
 
     @property
-    def units(self):
+    def units(self) -> tuple[pint.Unit, ...]:
         return self._units
 
     @units.setter
-    def units(self, value: tuple[pint.Unit, ...] | None):
+    def units(self, value: tuple[pint.Unit, ...] | None) -> None:
         if value is None:
             self._units = self.layer.units
             self._scale_units = (1,) * self.layer.ndim
