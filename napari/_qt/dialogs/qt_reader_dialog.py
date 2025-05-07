@@ -252,7 +252,7 @@ def prepare_remaining_readers(
             error_msg,
             plugin_name,
             paths,
-            getattr(error, 'original_error', ''),
+            getattr(error, 'original_error', None),
         ) from error
 
     return readers

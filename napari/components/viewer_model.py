@@ -1558,7 +1558,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     ),
                     plugin,
                     paths,
-                    original_error=str(e),
+                    original_error=e,
                 ) from e
         # multiple plugins
         else:
