@@ -84,7 +84,7 @@ class _ThickNDSlice(Generic[_T]):
     @classmethod
     def from_dims(
         cls, dims: Dims, layer_units: tuple[pint.Unit, ...] | None = None
-    ) -> _ThickNDSlice[_T]:
+    ):
         """Generate from a Dims object's point and margins."""
         point = dims.point
         if layer_units is not None and dims.units is not None:
