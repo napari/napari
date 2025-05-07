@@ -96,6 +96,18 @@ def _napari_from_conda() -> bool:
     return any(napari_pattern.match(file.name) for file in napari_conda_files)
 
 
+def get_launch_commnad() -> str:
+    """Get the information how the program was launched.
+
+    Returns
+    -------
+    str
+        The command used to launch the program.
+    """
+
+    return ' '.join(sys.argv)
+
+
 def sys_info(as_html: bool = False) -> str:
     """Gathers relevant module versions for troubleshooting purposes.
 
@@ -237,6 +249,9 @@ def sys_info(as_html: bool = False) -> str:
 
     text += '<br><b>Settings path:</b><br>'
     text += f'  - {_config_path}'
+
+    text += '<br><b>Launch command</b><br>'
+    text += f'  - {get_launch_commnad()}<br>'
 
     if not as_html:
         text = (
