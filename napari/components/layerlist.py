@@ -335,7 +335,7 @@ class LayerList(SelectableEventedList[Layer]):
                 extrema = [extent.world for extent in layer_extent_list]
             else:
                 extrema = [
-                    self._convert_units(extent.world, extent.units, units)
+                    self._convert_units(extent.world.T, extent.units, units).T
                     for extent in layer_extent_list
                 ]
             mins = [e[0] for e in extrema]
@@ -506,6 +506,17 @@ class LayerList(SelectableEventedList[Layer]):
             RangeTuple(*x)
             for x in zip(ext.world[0], ext.world[1], ext.step, strict=False)
         )
+
+    @property
+    def _units(self) -> tuple[pint.Unit, ...] | None:
+        """Units of layers in world coordinates.
+
+        Returns
+        -------
+        units : tuple[pint.Unit, ...] or None
+            Units of layers in world coordinates.
+        """
+        return self.extent.units
 
     @property
     def ndim(self) -> int:

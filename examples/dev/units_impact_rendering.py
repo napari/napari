@@ -1,11 +1,15 @@
-import numpy as np
+import skimage
 
 import napari
 
-data = np.random.random(1000).reshape(10, 100)
+data = skimage.data.cells3d()
+
+ch1 = data[:, 0]
+ch2 = data[:, 1]
+
 
 viewer = napari.Viewer()
-viewer.add_image(data, units=('mm', 'μm'), name='image1', scale=(0.01, 1))
-viewer.add_image(data, units=('μm', 'μm'), name='image2', scale=(10, 1), colormap="red")
+viewer.add_image(ch1, units=('nm', 'nm', 'nm'), name='ch1', scale=(210, 70, 70), colormap="magenta")
+viewer.add_image(ch2, units=('μm', 'μm', 'μm'), name='ch2', scale=(0.210, 0.07, 0.07), colormap="green", blending='additive')
 
 napari.run()

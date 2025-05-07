@@ -1300,7 +1300,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             # in this case, we assume all dims are displayed dimensions
             world_slice = _ThickNDSlice.make_full((np.nan,) * self.ndim)
         else:
-            world_slice = _ThickNDSlice.from_dims(dims)
+            world_slice = _ThickNDSlice.from_dims(dims, layer_units=self.units)
+
         order_array = (
             np.arange(world_ndim)
             if dims.order is None

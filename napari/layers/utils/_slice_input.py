@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Generic, TypeVar
 
 import numpy as np
+import pint
 
 from napari.utils.misc import reorder_after_dim_reduction
 from napari.utils.transforms import Affine
@@ -81,9 +82,21 @@ class _ThickNDSlice(Generic[_T]):
         )
 
     @classmethod
-    def from_dims(cls, dims: Dims):
+    def from_dims(
+        cls, dims: Dims, layer_units: tuple[pint.Unit, ...] | None = None
+    ) -> _ThickNDSlice[_T]:
         """Generate from a Dims object's point and margins."""
-        return cls.make_full(dims.point, dims.margin_left, dims.margin_right)
+        point = dims.point
+        if layer_units is not None and dims.units is not None:
+            reg = pint.get_application_registry()
+            scale = tuple(
+                reg.get_base_units(x)[0] / reg.get_base_units(y)[0]
+                for x, y in zip(
+                    dims.units[-len(layer_units) :], layer_units, strict=True
+                )
+            )
+            point = tuple(p * s for p, s in zip(point, scale, strict=False))
+        return cls.make_full(point, dims.margin_left, dims.margin_right)
 
     def copy_with(
         self,
