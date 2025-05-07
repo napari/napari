@@ -166,6 +166,7 @@ class VispyCanvas:
         self.viewer.camera.events.zoom.connect(self._on_cursor)
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
         self.viewer.layers.events.removed.connect(self._remove_layer)
+        self.viewer.layers.events.connect(self._update_units)
         self.destroyed.connect(self._disconnect_theme)
 
     @property
