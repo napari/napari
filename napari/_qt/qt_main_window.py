@@ -460,31 +460,6 @@ class _QtMainWindow(QMainWindow):
         if settings.application.save_window_state:
             settings.application.window_state = window_state
 
-    def _warn_on_shimmed_plugins(self) -> None:
-        """Warn about shimmed plugins if needed.
-
-        In 0.6.0, a plugin using the deprecated plugin engine will be automatically
-        converted so it can be used with npe2. By default, a dialog is displayed
-        with each startup listing all shimmed plugins. The user can change this setting
-        to only be warned about newly installed shimmed plugins.
-
-        """
-        from npe2 import plugin_manager as pm
-
-        settings = get_settings()
-        shimmed_plugins = set(pm.get_shimmed_plugins())
-        if settings.plugins.only_new_shimmed_plugins_warning:
-            new_plugins = (
-                shimmed_plugins
-                - settings.plugins.already_warned_shimmed_plugins
-            )
-        else:
-            new_plugins = shimmed_plugins
-
-        if new_plugins:
-            dialog = ShimmedPluginDialog(self, new_plugins)
-            dialog.exec_()
-
     def close(self, quit_app=False, confirm_need=False):
         """Override to handle closing app or just the window."""
         if not quit_app and not self._qt_viewer.viewer.layers:
@@ -752,6 +727,31 @@ class Window:
         viewer.events.theme.connect(self._update_theme)
         viewer.events.status.connect(self._status_changed)
 
+        def _warn_on_shimmed_plugins() -> None:
+            """Warn about shimmed plugins if needed.
+
+            In 0.6.0, a plugin using the deprecated plugin engine will be automatically
+            converted so it can be used with npe2. By default, a dialog is displayed
+            with each startup listing all shimmed plugins. The user can change this setting
+            to only be warned about newly installed shimmed plugins.
+
+            """
+            from npe2 import plugin_manager as pm
+
+            settings = get_settings()
+            shimmed_plugins = set(pm.get_shimmed_plugins())
+            if settings.plugins.only_new_shimmed_plugins_warning:
+                new_plugins = (
+                    shimmed_plugins
+                    - settings.plugins.already_warned_shimmed_plugins
+                )
+            else:
+                new_plugins = shimmed_plugins
+
+            if new_plugins:
+                dialog = ShimmedPluginDialog(self, new_plugins)
+                dialog.exec_()
+
         if show:
             self.show()
             # Ensure the controls dock uses the minimum height
@@ -763,8 +763,9 @@ class Window:
                 [self._qt_viewer.dockLayerControls.minimumHeight(), 10000],
                 Qt.Orientation.Vertical,
             )
+
             # TODO: where to put this?
-            self._qt_window._warn_on_shimmed_plugins()
+            _warn_on_shimmed_plugins()
 
     def _setup_existing_themes(self, connect: bool = True):
         """This function is only executed once at the startup of napari
