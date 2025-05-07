@@ -71,10 +71,14 @@ class ReaderPluginError(ValueError):
         message: str,
         reader_plugin: str,
         paths: list[PathLike],
+        original_error: str = '',
         *args: object,
     ) -> None:
+        if original_error:
+            message = f'{message}\n\nOriginal error:\n{original_error}\n\nScroll up to see the full strack trace.'
         super().__init__(message, *args)
         self.reader_plugin = reader_plugin
+        self.original_error = original_error
         self.paths = paths
 
 
