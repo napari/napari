@@ -29,6 +29,12 @@ VIEW_SUBMENUS = [
         MenuId.MENUBAR_VIEW,
         SubmenuItem(submenu=MenuId.VIEW_SCALEBAR, title=trans._('Scale Bar')),
     ),
+    (
+        MenuId.MENUBAR_VIEW,
+        SubmenuItem(
+            submenu=MenuId.VIEW_GRIDLINES, title=trans._('Grid Lines')
+        ),
+    ),
 ]
 
 
@@ -226,7 +232,11 @@ Q_VIEW_ACTIONS: list[Action] = [
     ),
 ]
 
-MENUID_DICT = {'axes': MenuId.VIEW_AXES, 'scale_bar': MenuId.VIEW_SCALEBAR}
+MENUID_DICT = {
+    'axes': MenuId.VIEW_AXES,
+    'scale_bar': MenuId.VIEW_SCALEBAR,
+    'grid_lines': MenuId.VIEW_GRIDLINES,
+}
 
 toggle_action_details = [
     (
@@ -282,6 +292,18 @@ toggle_action_details = [
         trans._('Scale Bar Ticks'),
         'scale_bar',
         'ticks',
+    ),
+    (
+        'napari.window.view.toggle_viewer_grid_lines',
+        trans._('Grid Lines Visible'),
+        'grid_lines',
+        'visible',
+    ),
+    (
+        'napari.window.view.toggle_viewer_grid_lines_labels',
+        trans._('Grid Lines Labels'),
+        'grid_lines',
+        'labels',
     ),
 ]
 
