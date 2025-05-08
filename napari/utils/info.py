@@ -109,7 +109,7 @@ def get_plugin_list() -> str:
 
         pm = PluginManager.instance()
         pm.discover(include_npe1=True)
-        pm.index_npe1_adapters()
+        pm.index_npe1_adapters()  # type: ignore[no-untyped-call]
         fields = [
             'name',
             'package_metadata.version',
