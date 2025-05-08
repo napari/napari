@@ -3,6 +3,7 @@ import sys
 
 import numpy as np
 import pytest
+from qtpy import QT_VERSION
 from qtpy.QtCore import QPoint, Qt
 from qtpy.QtWidgets import QApplication
 
@@ -79,6 +80,10 @@ def test_toggle_axes_scale_bar_attr(
 
 
 @skip_local_popups
+@pytest.mark.skipif(
+    QT_VERSION == '6.9.0',
+    reason='bug in Qt with maximized windows, https://bugreports.qt.io/browse/QTBUG-135844',
+)
 @pytest.mark.qt_log_level_fail('WARNING')
 def test_toggle_fullscreen_from_normal(make_napari_viewer, qtbot):
     """
@@ -122,6 +127,10 @@ def test_toggle_fullscreen_from_normal(make_napari_viewer, qtbot):
 
 
 @skip_local_popups
+@pytest.mark.skipif(
+    QT_VERSION == '6.9.0',
+    reason='bug in Qt with maximized windows, https://bugreports.qt.io/browse/QTBUG-135844',
+)
 @pytest.mark.qt_log_level_fail('WARNING')
 def test_toggle_fullscreen_from_maximized(make_napari_viewer, qtbot):
     """
