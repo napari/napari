@@ -27,6 +27,7 @@ class MenuId(StrEnum):
     MENUBAR_VIEW = 'napari/view'
     VIEW_AXES = 'napari/view/axes'
     VIEW_SCALEBAR = 'napari/view/scalebar'
+    VIEW_GRIDLINES = 'napari/view/gridlines'
 
     MENUBAR_LAYERS = 'napari/layers'
     LAYERS_VISUALIZE = 'napari/layers/visualize'
