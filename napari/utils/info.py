@@ -129,7 +129,7 @@ def get_plugin_list() -> str:
                 f'  - {plugin["name"]} {plugin["package_metadata"]["version"]} ({count_contributions} contributions)'
             )
         return '<br>'.join(res) + '<br>'
-    except ImportError as e:
+    except ImportError as e:  # pragma: no cover
         return f'Failed to load plugin information: <br> {e}'
 
 
