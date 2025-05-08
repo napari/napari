@@ -1,5 +1,7 @@
 from unittest.mock import MagicMock
 
+import numpy as np
+
 from napari._vispy.overlays.scale_bar import VispyScaleBarOverlay
 from napari.components.overlays import ScaleBarOverlay
 
@@ -66,3 +68,29 @@ def test_scale_bar_positioning(make_napari_viewer):
     # check that the line is not at the center,
     # but offset down due to the font size (40)
     assert scale_bar.node.line.pos[0, 1] == scale_bar.node.box.height / 2 - 18
+
+
+def test_scale_bar_theme_change(make_napari_viewer):
+    """Test that the scale bar color updates correctly when the theme changes."""
+    viewer = make_napari_viewer()
+    model = ScaleBarOverlay()
+    scale_bar = VispyScaleBarOverlay(overlay=model, viewer=viewer)
+    assert viewer.theme == 'dark'
+    scale_bar_color_dark_theme = np.array([1.0, 1.0, 1.0, 1.0])  # white
+    # Assert that the scale bar color is white in the dark theme
+    np.testing.assert_array_equal(
+        np.array(scale_bar.node.text.color)[0], scale_bar_color_dark_theme
+    )
+
+    viewer.theme = 'light'
+    scale_bar_color_light_theme = np.array([0.0, 0.0, 0.0, 1.0])  # black
+    # Assert that the scale bar color is black in the light theme
+    np.testing.assert_array_equal(
+        np.array(scale_bar.node.text.color)[0], scale_bar_color_light_theme
+    )
+
+    viewer.theme = 'dark'
+    # Assert that the scale bar color is white in the dark theme
+    np.testing.assert_array_equal(
+        np.array(scale_bar.node.text.color)[0], scale_bar_color_dark_theme
+    )
