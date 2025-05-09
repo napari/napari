@@ -116,7 +116,7 @@ def test_empty_layer_with_edge_colormap():
         data=data,
         property_choices=default_properties,
         edge_color='angle',
-        edge_colormap='grays',
+        edge_colormap='gray',
     )
 
     assert layer.edge_color_mode == 'colormap'
