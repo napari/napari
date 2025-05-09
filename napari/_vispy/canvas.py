@@ -665,6 +665,11 @@ class VispyCanvas:
         )
 
     def _update_layer_overlays_to_visual(self, layer: Layer) -> None:
+        """Update the overlay visuals for each layer in the canvas.
+
+        Also ensures that overlays are properly assigned parents depending on
+        they class (canvas vs scene overlays).
+        """
         overlay_models = layer._overlays.values()
 
         # add missing overlay visuals
