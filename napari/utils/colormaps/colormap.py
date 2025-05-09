@@ -135,9 +135,6 @@ class Colormap(EventedModel):
 
         return v
 
-    def __iter__(self):
-        yield from (self.colors, self.controls, self.interpolation)
-
     def __len__(self):
         return len(self.colors)
 
