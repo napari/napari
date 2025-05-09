@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 from vispy.color import Colormap as VispyColormap
 
+from napari._vispy.utils.colormap import napari_cmap_to_vispy
 from napari.utils.colormaps import Colormap
 from napari.utils.colormaps.colormap_utils import (
     _MATPLOTLIB_COLORMAP_NAMES,
@@ -35,7 +36,7 @@ def test_colormap(name):
 
     # Create vispy colormap and check current colormaps match vispy
     # colormap
-    vispy_cmap = VispyColormap(*cmap)
+    vispy_cmap = napari_cmap_to_vispy(cmap)
     vispy_colors = vispy_cmap.map(values)
     np.testing.assert_almost_equal(colors, vispy_colors, decimal=6)
 
