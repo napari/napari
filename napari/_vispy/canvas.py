@@ -141,8 +141,7 @@ class VispyCanvas:
         # using an lru_cache.
         self.max_texture_sizes = get_max_texture_sizes()
 
-        for overlay in self.viewer._overlays.values():
-            self._add_overlay_to_visual(overlay)
+        self._update_viewer_overlays()
 
         self._scene_canvas.events.ignore_callback_errors = False
         self._scene_canvas.context.set_depth_func('lequal')
@@ -672,6 +671,13 @@ class VispyCanvas:
                 vispy_overlay.node.parent = view.scene
         self._overlay_to_visual[overlay] = vispy_overlay
 
+    def _update_viewer_overlays(self):
+        # TODO: the overlays are not properly updated when settings
+        #       change, might be connect missing in overlay instantiation
+        #       also, is scale bar duplicated????
+        for overlay in self.viewer._overlays.values():
+            self._add_overlay_to_visual(overlay)
+
     def _update_layer_overlays_to_visual(self, layer: Layer) -> None:
         # reparenting does not work well with grid mode (we end up with overlay visuals
         # "clipping" where the grid cell boundary used to be...) so we just remake them
@@ -773,6 +779,8 @@ class VispyCanvas:
             self._setup_layer_views_in_grid()
         else:
             self._setup_single_view()
+
+        self._update_viewer_overlays()
 
     def _setup_single_view(self):
         view = self.grid.add_view(0, 0, border_width=0)
