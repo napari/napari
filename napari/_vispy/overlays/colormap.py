@@ -2,11 +2,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import numpy as np
 from vispy.color import Colormap as VispyColormap
 
 from napari._vispy.overlays.base import LayerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.colormap import Colormap
+from napari.settings import get_settings
 from napari.utils.colormaps.colormap_utils import _coerce_contrast_limits
+from napari.utils.colormaps.standardize_color import transform_color
+from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
     from vispy.scene import Node
@@ -42,6 +46,8 @@ class VispyColormapOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         self.overlay.events.font_size.connect(self._on_ticks_change)
         self.overlay.events.color.connect(self._on_ticks_change)
 
+        get_settings().appearance.events.theme.connect(self._on_data_change)
+
         self.reset()
 
     def _on_data_change(self) -> None:
@@ -66,16 +72,40 @@ class VispyColormapOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         self._on_ticks_change()
 
     def _on_ticks_change(self) -> None:
+        # set color to the negative of theme background.
+        # the reason for using the `as_hex` here is to avoid
+        # `UserWarning` which is emitted when RGB values are above 1
+        color = self.overlay.color
+        if color is None:
+            if (
+                self.node.parent is not None
+                and self.node.parent.canvas.bgcolor
+            ):
+                background_color = self.node.parent.canvas.bgcolor.rgba
+            else:
+                background_color = get_theme(
+                    get_settings().appearance.theme
+                ).canvas.as_hex()
+                background_color = transform_color(background_color)[0]
+            color = np.subtract(1, background_color)
+            color[-1] = background_color[-1]
+
+        if self.node.transforms.dpi:
+            # use 96 as the napari reference dpi for historical reasons
+            dpi_scale_factor = 96 / self.node.transforms.dpi
+        else:
+            dpi_scale_factor = 1
+
         text_width = self.node.set_ticks_and_get_text_width(
             show=self.overlay.ticks,
             n=self.overlay.n_ticks,
             tick_length=self.overlay.tick_length,
             size=self.overlay.size,
-            font_size=self.overlay.font_size,
+            font_size=self.overlay.font_size * dpi_scale_factor,
             clim=_coerce_contrast_limits(
                 self.layer.contrast_limits
             ).contrast_limits,
-            color=self.overlay.color,
+            color=color,
         )
 
         if self.overlay.ticks:
