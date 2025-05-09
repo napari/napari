@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING
 import pandas as pd
 from qtpy.QtCore import (
     QAbstractTableModel,
+    QItemSelection,
+    QItemSelectionModel,
     QModelIndex,
     QSortFilterProxyModel,
     Qt,
@@ -25,6 +27,7 @@ from qtpy.QtWidgets import (
     QStyledItemDelegate,
     QTableView,
     QVBoxLayout,
+    QWidget,
 )
 from superqt import QToggleSwitch
 
@@ -323,7 +326,7 @@ class PandasView(QTableView):
         model.dataChanged.emit(top_left, bottom_right)
 
 
-class FeaturesTable(QTableView):
+class FeaturesTable(QWidget):
     """Widget to display layer features as an editable table."""
 
     def __init__(
@@ -332,6 +335,7 @@ class FeaturesTable(QTableView):
     ) -> None:
         super().__init__()
         self._active_layer = None
+        self._selection_blocked = False
 
         self.viewer = viewer
         self.viewer.layers.selection.events.active.connect(
@@ -353,6 +357,10 @@ class FeaturesTable(QTableView):
         self.toggle.toggled.connect(self._on_editable_change)
         self.save.clicked.connect(self._on_save_clicked)
 
+        self.table.selectionModel().selectionChanged.connect(
+            self._on_table_selection_changed
+        )
+
         self._on_active_layer_change()
         self._on_editable_change()
 
@@ -367,6 +375,13 @@ class FeaturesTable(QTableView):
             self._active_layer.events.features.connect(
                 self._on_features_change
             )
+            if hasattr(self._active_layer, 'selected_label'):
+                selection_event = self._active_layer.events.selected_label
+            elif hasattr(self._active_layer, 'selected_data'):
+                selection_event = self._active_layer.selected_data.events
+            selection_event.connect(self._on_layer_selection_changed)
+
+            self._on_layer_selection_changed()
             self._on_features_change()
             self.toggle.setVisible(True)
             self.save.setVisible(True)
@@ -394,6 +409,57 @@ class FeaturesTable(QTableView):
 
     def _on_editable_change(self):
         self.table.model().sourceModel().editable = self.toggle.isChecked()
+
+    def _on_table_selection_changed(self):
+        """Update layer selection when table cells are selected."""
+        if self._selection_blocked:
+            return
+
+        if hasattr(self._active_layer, 'selected_label'):
+            raw_index = self.table.selectionModel().currentIndex()
+            current = self.table.model().mapToSource(raw_index).row()
+            self._active_layer.selected_label = current
+
+        elif hasattr(self._active_layer, 'selected_data'):
+            selected_rows = {
+                self.table.model().mapToSource(raw_index).row()
+                for raw_index in self.table.selectionModel().selectedIndexes()
+            }
+            self._active_layer.selected_data = selected_rows
+
+    def _on_layer_selection_changed(self):
+        """Update table selected cells when layer selection changes."""
+        model = self.table.model()
+        if hasattr(self._active_layer, 'selected_label'):
+            sel = self._active_layer.selected_label
+            indices = [sel]
+        elif hasattr(self._active_layer, 'selected_data'):
+            sel = self._active_layer.selected_data
+            indices = sel
+
+        selection = QItemSelection()
+
+        for idx in indices:
+            idx = model.mapFromSource(model.sourceModel().index(idx, 0))
+            # select whole rows
+            first_cell = model.index(idx.row(), 0)
+            last_cell = model.index(idx.row(), model.columnCount() - 1)
+            selection.select(first_cell, last_cell)
+
+        # block signals while setting to prevent infinite loop
+        with self._block_selection():
+            self.table.selectionModel().select(
+                selection,
+                QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows,
+            )
+
+        self.table.viewport().update()
+
+    @contextmanager
+    def _block_selection(self):
+        self._selection_blocked = True
+        yield
+        self._selection_blocked = False
 
     def _on_save_clicked(self):
         dlg = QFileDialog()
