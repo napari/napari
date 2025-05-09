@@ -119,6 +119,10 @@ class VispyCanvas:
         self.cameras.append(
             VispyCamera(self.views[0], self.viewer.camera, self.viewer.dims)
         )
+        # overlay_view is overlapped to the whole canvas and it's
+        # where we put general canvas overlays
+        self.overlay_view = self.central_widget.add_view(border_width=0)
+
         self.layer_to_visual: dict[Layer, VispyBaseLayer] = {}
         self._overlay_to_visual: dict[Overlay, VispyBaseOverlay] = {}
         self._layer_overlay_to_visual: dict[
@@ -654,7 +658,7 @@ class VispyCanvas:
             vispy_overlay = create_vispy_overlay(
                 overlay=overlay, viewer=self.viewer
             )
-            vispy_overlay.node.parent = self.grid
+            vispy_overlay.node.parent = self.overlay_view
         else:
             for view in self.views:
                 vispy_overlay = create_vispy_overlay(
