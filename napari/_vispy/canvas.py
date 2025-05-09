@@ -651,6 +651,8 @@ class VispyCanvas:
 
         self._scene_canvas._draw_order.clear()
         self._scene_canvas.update()
+        if self.viewer.grid.enabled:
+            self._on_grid_change()
 
     def _add_overlay_to_visual(self, overlay: Overlay) -> None:
         """Create vispy overlay and add to dictionary of overlay visuals"""
