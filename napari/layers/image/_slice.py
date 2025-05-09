@@ -116,6 +116,7 @@ class _ImageSliceResponse:
             initialisation before attempting data loading.)
         dtype : np.dtype
             The dtype of the empty image slice.
+            Must match expected view dtype.
         """
         shape = (1,) * slice_input.ndisplay
         if rgb:
