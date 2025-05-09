@@ -129,13 +129,17 @@ contributions:
 
     # others
     - id: napari.toggle_shape_measures
-      title: Toggle measuring shape dimensions
+      title: Toggle shape dimensions measurement
       python_name: napari_builtins._measure_shapes:toggle_shape_measures
       enablement: active_layer_type == 'shapes'
 
   menus:
     napari/layers/measure:
       - command: napari.toggle_shape_measures
+    napari/layers/context:
+      - command: napari.toggle_shape_measures
+        when: active_layer_type == 'shapes'
+
   readers:
     - command: napari.get_reader
       accepts_directories: true
