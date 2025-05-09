@@ -238,12 +238,8 @@ def convert_vispy_colormap(colormap, name='vispy'):
         controls=colormap._controls,
         interpolation=colormap.interpolation,
         bad_color=colormap.bad_color.rgba,
-        high_color=colormap.high_color.rgba
-        if colormap.high_color is not None
-        else None,
-        low_color=colormap.low_color.rgba
-        if colormap.low_color is not None
-        else None,
+        high_color=getattr(colormap.high_color, 'rgba', None),
+        low_color=getattr(colormap.low_color, 'rgba', None),
     )
 
 
