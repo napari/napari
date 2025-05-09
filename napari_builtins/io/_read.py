@@ -14,8 +14,8 @@ from urllib.error import HTTPError, URLError
 import dask.array as da
 import imageio.v3 as iio
 import numpy as np
+import tifffile
 from dask import delayed
-from imageio import formats
 
 from napari.utils.misc import abspath_or_url
 from napari.utils.translations import trans
@@ -23,9 +23,7 @@ from napari.utils.translations import trans
 if TYPE_CHECKING:
     from napari.types import FullLayerData, LayerData, ReaderFunction
 
-
-IMAGEIO_EXTENSIONS = {x for f in formats for x in f.extensions}
-READER_EXTENSIONS = IMAGEIO_EXTENSIONS.union({'.zarr', '.lsm', '.npy'})
+TIFFILE_EXTENSIONS = {f'*.{ext}' for ext in tifffile.TIFF.FILE_EXTENSIONS}
 
 
 def _alphanumeric_key(s: str) -> list[str | int]:
@@ -90,9 +88,8 @@ def imread(filename: str) -> np.ndarray:
 
     if ext.lower() in ('.npy',):
         return np.load(filename)
-    if ext.lower() not in ['.tif', '.tiff', '.lsm']:
+    if ext.lower() not in TIFFILE_EXTENSIONS:
         return iio.imread(filename)
-    import tifffile
 
     # Pre-download urls before loading them with tifffile
     with file_or_url_context(filename) as filename:
@@ -506,7 +503,7 @@ def _magic_imreader(path: str) -> list['LayerData']:
 
 def napari_get_reader(
     path: str | list[str],
-) -> Optional['ReaderFunction']:
+) -> 'ReaderFunction':
     """Our internal fallback file reader at the end of the reader plugin chain.
 
     This will assume that the filepath is an image, and will pass all of the
@@ -522,13 +519,7 @@ def napari_get_reader(
     callable
         function that returns layer_data to be handed to viewer._add_layer_data
     """
-    if isinstance(path, str):
-        if path.endswith('.csv'):
-            return _csv_reader
-        if os.path.isdir(path):
-            return _magic_imreader
-        path = [path]
+    if isinstance(path, str) and path.endswith('.csv'):
+        return _csv_reader
 
-    if all(str(x).lower().endswith(tuple(READER_EXTENSIONS)) for x in path):
-        return _magic_imreader
-    return None  # pragma: no cover
+    return _magic_imreader
