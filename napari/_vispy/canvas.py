@@ -174,6 +174,9 @@ class VispyCanvas:
         self.viewer.camera.events.zoom.connect(self._on_cursor)
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
         self.viewer.layers.events.removed.connect(self._remove_layer)
+        self.viewer.layers.selection.events.connect(
+            self._highlight_selected_grid
+        )
         self.viewer.grid.events.connect(self._on_grid_change)
         self.destroyed.connect(self._disconnect_theme)
 
@@ -786,7 +789,8 @@ class VispyCanvas:
                 self.viewer.layers.index(napari_layer),
                 len(self.viewer.layers),
             )
-            view = self.grid.add_view(row, col, border_width=0)
+            # TODO: hook up theme to border color
+            view = self.grid.add_view(row, col, border_width=1)
             # TODO: a bit overkill for now, we should only need napari to communicate with
             # all the cameras OR only vispy to link. However, because we rely on vispy
             # cameras to handle events first and then send to napari, this isn't quite
@@ -799,3 +803,21 @@ class VispyCanvas:
             vispy_layer = self.layer_to_visual[napari_layer]
             vispy_layer.node.parent = view.scene
             self._update_layer_overlays_to_visual(napari_layer)
+
+        self._highlight_selected_grid()
+
+    def _highlight_selected_grid(self):
+        if not self.viewer.grid.enabled:
+            return
+        for napari_layer in self.viewer.layers:
+            row, col = self.viewer.grid.position(
+                self.viewer.layers.index(napari_layer),
+                len(self.viewer.layers),
+            )
+            # TODO: hook up theme to border color
+            color = 'gray'
+            if napari_layer in self.viewer.layers.selection:
+                color = 'white'
+            if napari_layer is self.viewer.layers.selection.active:
+                color = 'yellow'
+            self.grid[row, col].border_color = color
