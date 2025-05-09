@@ -673,31 +673,34 @@ class VispyCanvas:
         self._overlay_to_visual[overlay] = vispy_overlay
 
     def _update_layer_overlays_to_visual(self, layer: Layer) -> None:
+        # reparenting does not work well with grid mode (we end up with overlay visuals
+        # "clipping" where the grid cell boundary used to be...) so we just remake them
+        # whenever we need to change them
+        for overlay in list(self._layer_overlay_to_visual[layer]):
+            overlay_visual = self._layer_overlay_to_visual[layer].pop(overlay)
+            overlay_visual.close()
+
         overlay_models = layer._overlays.values()
-
-        # add missing overlay visuals
         for overlay in overlay_models:
-            if overlay in self._layer_overlay_to_visual[layer]:
-                continue
-
             with layer.events._overlays.blocker():
                 overlay_visual = create_vispy_overlay(overlay, layer=layer)
             self._layer_overlay_to_visual[layer][overlay] = overlay_visual
-
-        # remove stale ones if any
-        for overlay in list(self._layer_overlay_to_visual[layer]):
-            if overlay not in overlay_models:
-                overlay_visual = self._layer_overlay_to_visual[layer].pop(
-                    overlay
-                )
-                overlay_visual.close()
 
         # set parent node appropriately and connect events
         for overlay, overlay_visual in self._layer_overlay_to_visual[
             layer
         ].items():
             if isinstance(overlay, CanvasOverlay):
-                overlay_visual.node.parent = self.view
+                if self.viewer.grid.enabled:
+                    row, col = self.viewer.grid.position(
+                        self.viewer.layers.index(layer),
+                        len(self.viewer.layers),
+                    )
+                    view = self.grid[row, col]
+                else:
+                    view = self.overlay_view
+
+                overlay_visual.node.parent = view
             else:
                 overlay_visual.node.parent = self.layer_to_visual[layer].node
 
