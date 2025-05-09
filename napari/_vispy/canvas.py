@@ -160,7 +160,12 @@ class VispyCanvas:
         self._scene_canvas.events.draw.connect(self.on_draw)
         self.viewer.cursor.events.style.connect(self._on_cursor)
         self.viewer.cursor.events.size.connect(self._on_cursor)
-        self.viewer.events.theme.connect(self._on_theme_change)
+        # position=first is important to some downstream components such as
+        # scale_bar overlay which need to have access to the updated color
+        # by the time they get updated as well
+        self.viewer.events.theme.connect(
+            self._on_theme_change, position='first'
+        )
         self.viewer.camera.events.mouse_pan.connect(self._on_interactive)
         self.viewer.camera.events.mouse_zoom.connect(self._on_interactive)
         self.viewer.camera.events.zoom.connect(self._on_cursor)
