@@ -158,9 +158,9 @@ DISCONTINUOUS_COLORMAPS = {
         high_color=[1.0, 0.0, 0.0, 1.0],
         low_color=[0.0, 0.0, 1.0, 1.0],
     ),
-    'bad': Colormap(
-        name='bad',
-        display_name='bad',
+    'nan': Colormap(
+        name='nan',
+        display_name='NaN',
         colors=[[0.0, 0.0, 0.0, 1.0], [1.0, 1.0, 1.0, 1.0]],
         bad_color=[1.0, 0.0, 0.0, 1.0],
     ),
@@ -237,7 +237,7 @@ def convert_vispy_colormap(colormap, name='vispy'):
         colors=colormap.colors.rgba,
         controls=colormap._controls,
         interpolation=colormap.interpolation,
-        bad_color=colormap.bad_color.rgba,
+        nan_color=colormap.bad_color.rgba,
         high_color=getattr(colormap.high_color, 'rgba', None),
         low_color=getattr(colormap.low_color, 'rgba', None),
     )
@@ -806,7 +806,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                         np.array_equal(cmap_.controls, custom_cmap.controls)
                         and np.array_equal(cmap_.colors, custom_cmap.colors)
                         and cmap_.interpolation == custom_cmap.interpolation
-                        and np.all(cmap_.bad_color == custom_cmap.bad_color)
+                        and np.all(cmap_.nan_color == custom_cmap.nan_color)
                         and np.all(cmap_.high_color == custom_cmap.high_color)
                         and np.all(cmap_.low_color == custom_cmap.low_color)
                     ):

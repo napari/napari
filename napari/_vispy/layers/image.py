@@ -125,6 +125,7 @@ class VispyImageLayer(VispyScalarFieldBaseLayer):
     def _on_colormap_change(self, event=None) -> None:
         cmap_args = self.layer.colormap.dict()
         cmap_args.pop('name')
+        cmap_args['bad_color'] = cmap_args.pop('nan_color')
         self.node.cmap = VispyColormap(**cmap_args)
 
     def _update_mip_minip_cutoff(self) -> None:

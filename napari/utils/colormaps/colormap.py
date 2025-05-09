@@ -60,8 +60,8 @@ class Colormap(EventedModel):
         'zero'. If 'linear', ncontrols = ncolors (one
         color per control point). If 'zero', ncontrols
         = ncolors+1 (one color per bin).
-    bad_color : ColorValue
-        Mapping for NaN values.
+    nan_color : ColorValue
+        Mapping for NaN values. Equivalent to matplotlib's `bad_color`
     high_color : ColorValue
         Mapping for values equal to or greater than 1.
     low_color : ColorValue
@@ -74,7 +74,7 @@ class Colormap(EventedModel):
     _display_name: str | None = PrivateAttr(None)
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.LINEAR
     controls: Array = Field(default_factory=lambda: cast(Array, []))
-    bad_color: ColorValue = ColorValue('transparent')
+    nan_color: ColorValue = ColorValue('transparent')
     high_color: ColorValue | None = None
     low_color: ColorValue | None = None
 
@@ -169,7 +169,7 @@ class Colormap(EventedModel):
 
         values = values[..., None]
         # map NaNs, lows, and highs
-        cols = np.where(np.isnan(values), self.bad_color, cols)
+        cols = np.where(np.isnan(values), self.nan_color, cols)
         if self.high_color is not None:
             cols = np.where(values >= 1, self.high_color, cols)
         if self.low_color is not None:
