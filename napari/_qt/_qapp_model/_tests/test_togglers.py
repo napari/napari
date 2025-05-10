@@ -1,16 +1,18 @@
-from napari import Viewer
+import pytest
+
 from napari._app_model._app import get_app_model
+from napari._app_model.actions._toggle_action import ViewerModelToggleAction
 from napari._qt._qapp_model.qactions._toggle_action import (
     DockWidgetToggleAction,
-    ViewerToggleAction,
 )
 from napari._qt.qt_main_window import Window
 from napari.components import ViewerModel
 
 
-def test_viewer_toggler(mock_app_model):
+@pytest.mark.usefixtures('mock_app_model')
+def test_viewer_toggler():
     viewer = ViewerModel()
-    action = ViewerToggleAction(
+    action = ViewerModelToggleAction(
         id='some.command.id',
         title='Toggle Axis Visibility',
         viewer_attribute='axes',
@@ -23,7 +25,7 @@ def test_viewer_toggler(mock_app_model):
     # so this provider is used over `_provide_viewer`, which would raise an error
     with app.injection_store.register(
         providers=[
-            (lambda: viewer, Viewer, 100),
+            (lambda: viewer, ViewerModel, 100),
         ]
     ):
         assert viewer.axes.visible is False
