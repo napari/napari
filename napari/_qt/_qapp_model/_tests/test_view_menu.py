@@ -46,7 +46,7 @@ def check_view_menu_visibility(viewer, qtbot):
     ('action_id', 'action_title', 'viewer_attr', 'sub_attr'),
     toggle_action_details,
 )
-def test_toggle_axes_scale_bar_attr(
+def test_toggle_axes_scale_bar_grid_lines_attr(
     make_napari_viewer, action_id, action_title, viewer_attr, sub_attr
 ):
     """
@@ -63,19 +63,22 @@ def test_toggle_axes_scale_bar_attr(
         * `box`
         * `colored`
         * `ticks`
+    * Viewer `grid_lienes` attributes:
+        * `visible`
+        * `labels`
     """
     app = get_app_model()
     viewer = make_napari_viewer()
 
     # Get viewer attribute to check (`axes` or `scale_bar`)
-    axes_scale_bar = getattr(viewer, viewer_attr)
+    axes_scale_bar_grid_lines = getattr(viewer, viewer_attr)
 
     # Get initial sub-attribute value (for example `axes.visible`)
-    initial_value = getattr(axes_scale_bar, sub_attr)
+    initial_value = getattr(axes_scale_bar_grid_lines, sub_attr)
 
     # Change sub-attribute via action command execution and check value
     app.commands.execute_command(action_id)
-    changed_value = getattr(axes_scale_bar, sub_attr)
+    changed_value = getattr(axes_scale_bar_grid_lines, sub_attr)
     assert initial_value is not changed_value
 
 
