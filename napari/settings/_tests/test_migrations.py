@@ -6,6 +6,7 @@ from unittest.mock import patch
 import pytest
 
 from napari.settings import NapariSettings, _migrations
+from napari.utils.triangulation_backend import TriangulationBackend
 
 
 @pytest.fixture
@@ -162,3 +163,25 @@ def test_050_to_060_migration_linux_win():
         schema_version='0.6.0', shortcuts={'shortcuts': shortcuts_dict}
     )
     assert settings050 == settings060
+
+
+def test_060_to_070_migration():
+    settings_060_plain = NapariSettings(schema_version='0.6.0')
+    settings_060_compiled = NapariSettings(
+        schema_version='0.6.0', experimental={'compiled_triangulation': True}
+    )
+    settings_070_plain_expected = NapariSettings(
+        schema_version='0.7.0',
+        experimental={
+            # must match default setting
+            'triangulation_backend': TriangulationBackend.fastest_available
+        },
+    )
+    settings_070_compiled_expected = NapariSettings(
+        schema_version='0.7.0',
+        experimental={
+            'triangulation_backend': TriangulationBackend.partsegcore
+        },
+    )
+    assert settings_060_plain == settings_070_plain_expected
+    assert settings_060_compiled == settings_070_compiled_expected

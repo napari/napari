@@ -410,6 +410,12 @@ class Labels(ScalarFieldBase):
         self._status = self.mode
         self._preserve_labels = False
 
+    def _slice_dtype(self):
+        """Calculate dtype of data view based on data dtype and current colormap"""
+        return self.colormap._data_to_texture(
+            np.zeros(0, dtype=normalize_dtype(self.dtype))
+        ).dtype
+
     def _post_init(self):
         self._reset_history()
         # Trigger generation of view slice and thumbnail
@@ -517,7 +523,7 @@ class Labels(ScalarFieldBase):
 
     def new_colormap(self, seed: int | None = None):
         if seed is None:
-            seed = np.random.default_rng().integers(2**32 - 1)
+            seed = int(np.random.default_rng().integers(2**32 - 1))
 
         orig = self._original_random_colormap
         self.colormap = shuffle_and_extend_colormap(
@@ -708,8 +714,12 @@ class Labels(ScalarFieldBase):
     def selected_label(self, selected_label):
         if selected_label == self.selected_label:
             return
-
-        self._prev_selected_label = self.selected_label
+        # when setting the label to the background, store the previous
+        # otherwise, clear it
+        if selected_label == self.colormap.background_value:
+            self._prev_selected_label = self.selected_label
+        else:
+            self._prev_selected_label = None
         self.colormap.selection = selected_label
         self._selected_label = selected_label
         self._selected_color = self.get_color(selected_label)
@@ -1113,8 +1123,16 @@ class Labels(ScalarFieldBase):
 
         # If requested new label doesn't change old label then return
         old_label = np.asarray(self.data[int_coord]).item()
-        if old_label == new_label or (
+        if old_label == new_label:
+            return
+        # If preserve_labels is True, then we only want to fill:
+        # - pixels of the background label, filling with the new label
+        # - pixels of the previous label, filling with the background
+        # the previous label is stored when the selected label is set
+        # to the background, e.g. by swap_selected_and_background_labels
+        if (
             self.preserve_labels
+            and old_label != self._prev_selected_label
             and old_label != self.colormap.background_value
         ):
             return
@@ -1310,10 +1328,14 @@ class Labels(ScalarFieldBase):
 
         # slice coord is a tuple of coordinate arrays per dimension
         # subset it if we want to only paint into background/only erase
-        # current label
+        # current label, accounting for swap_selected_and_background_labels
         if self.preserve_labels:
             if new_label == self.colormap.background_value:
-                keep_coords = self.data[slice_coord] == self.selected_label
+                keep_coords = self.data[slice_coord] == (
+                    self._prev_selected_label
+                    if self._prev_selected_label
+                    else self.selected_label
+                )
             else:
                 keep_coords = (
                     self.data[slice_coord] == self.colormap.background_value
