@@ -42,6 +42,7 @@ class Blending(StringEnum):
     ADDITIVE = auto()
     MINIMUM = auto()
     OPAQUE = auto()
+    MULTIPLICATIVE = auto()
 
 
 BLENDING_TRANSLATIONS = OrderedDict(
@@ -51,6 +52,7 @@ BLENDING_TRANSLATIONS = OrderedDict(
         (Blending.ADDITIVE, trans._('additive')),
         (Blending.MINIMUM, trans._('minimum')),
         (Blending.OPAQUE, trans._('opaque')),
+        (Blending.MULTIPLICATIVE, trans._('multiplicative')),
     ]
 )
 
