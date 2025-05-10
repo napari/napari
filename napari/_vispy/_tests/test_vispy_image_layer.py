@@ -6,7 +6,9 @@ import pytest
 
 from napari._vispy._tests.utils import vispy_image_scene_size
 from napari._vispy.layers.image import VispyImageLayer
+from napari._vispy.utils.visual import create_vispy_overlay
 from napari.components.dims import Dims
+from napari.components.overlays import BoundingBoxOverlay
 from napari.layers import Image
 
 
@@ -144,6 +146,11 @@ def test_transforming_child_node(
     im_layer, translate, exp_translate, rotate, exp_rotate
 ):
     layer = VispyImageLayer(im_layer)
+
+    overlay = create_vispy_overlay(BoundingBoxOverlay(), layer=im_layer)
+    overlay.node.parent = layer.node
+    layer._on_matrix_change()
+
     npt.assert_array_almost_equal(
         layer.node.transform.matrix[-1][:2], (-0.5, -0.5)
     )
@@ -179,6 +186,11 @@ def test_transforming_child_node(
 
 def test_transforming_child_node_pyramid(pyramid_layer):
     layer = VispyImageLayer(pyramid_layer)
+
+    overlay = create_vispy_overlay(BoundingBoxOverlay(), layer=pyramid_layer)
+    overlay.node.parent = layer.node
+    layer._on_matrix_change()
+
     corner_pixels_world = np.array([[0, 0], [20, 20]])
     npt.assert_array_almost_equal(
         layer.node.transform.matrix[-1][:2], (-0.5, -0.5)
