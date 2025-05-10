@@ -138,7 +138,7 @@ def get_plugin_list() -> str:
                 if x is not None
             )
             res.append(
-                f'  - {plugin["name"]} {plugin["package_metadata"]["version"]} ({count_contributions} contributions)'
+                f'  - {plugin["name"]}: {plugin["package_metadata"]["version"]} ({count_contributions} contributions)'
             )
         return '<br>'.join(res) + '<br>'
     except ImportError as e:  # pragma: no cover
@@ -287,7 +287,7 @@ def sys_info(as_html: bool = False) -> str:
     text += '<br><b>Settings path:</b><br>'
     text += f'  - {_config_path}<br>'
 
-    text += '<br><b>Launch command</b><br>'
+    text += '<br><b>Launch command:</b><br>'
     text += f'  - {get_launch_command()}<br>'
 
     text += '<br><b>Plugins:</b><br>'
