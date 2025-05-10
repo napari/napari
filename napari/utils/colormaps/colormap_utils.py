@@ -150,6 +150,22 @@ INVERSE_COLORMAPS.update(
     }
 )
 
+DISCONTINUOUS_COLORMAPS = {
+    'HiLo': Colormap(
+        name='HiLo',
+        display_name='HiLo',
+        colors=[[0.0, 0.0, 0.0, 1.0], [1.0, 1.0, 1.0, 1.0]],
+        high_color=[1.0, 0.0, 0.0, 1.0],
+        low_color=[0.0, 0.0, 1.0, 1.0],
+    ),
+    'nan': Colormap(
+        name='nan',
+        display_name='NaN',
+        colors=[[0.0, 0.0, 0.0, 1.0], [1.0, 1.0, 1.0, 1.0]],
+        bad_color=[1.0, 0.0, 0.0, 1.0],
+    ),
+}
+
 _FLOAT32_MAX = float(np.finfo(np.float32).max)
 _MAX_VISPY_SUPPORTED_VALUE = _FLOAT32_MAX / 8
 # Using 8 as divisor comes from experiments.
@@ -221,6 +237,9 @@ def convert_vispy_colormap(colormap, name='vispy'):
         colors=colormap.colors.rgba,
         controls=colormap._controls,
         interpolation=colormap.interpolation,
+        nan_color=colormap.bad_color.rgba,
+        high_color=getattr(colormap.high_color, 'rgba', None),
+        low_color=getattr(colormap.low_color, 'rgba', None),
     )
 
 
@@ -677,6 +696,7 @@ ALL_COLORMAPS.update(SIMPLE_COLORMAPS)
 ALL_COLORMAPS.update(VISPY_OLD_COLORMAPS)
 ALL_COLORMAPS.update(BOP_COLORMAPS)
 ALL_COLORMAPS.update(INVERSE_COLORMAPS)
+ALL_COLORMAPS.update(DISCONTINUOUS_COLORMAPS)
 
 # ... sorted alphabetically by name
 AVAILABLE_COLORMAPS = dict(
@@ -786,6 +806,9 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                         np.array_equal(cmap_.controls, custom_cmap.controls)
                         and np.array_equal(cmap_.colors, custom_cmap.colors)
                         and cmap_.interpolation == custom_cmap.interpolation
+                        and np.all(cmap_.nan_color == custom_cmap.nan_color)
+                        and np.all(cmap_.high_color == custom_cmap.high_color)
+                        and np.all(cmap_.low_color == custom_cmap.low_color)
                     ):
                         custom_cmap = cmap_
                         break

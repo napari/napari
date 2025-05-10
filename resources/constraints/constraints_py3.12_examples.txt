@@ -617,7 +617,7 @@ urllib3==2.4.0
     #   requests
 virtualenv==20.30.0
     # via napari (pyproject.toml)
-vispy==0.14.3
+vispy==0.15.0
     # via
     #   napari (pyproject.toml)
     #   napari-svg
