@@ -1311,7 +1311,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             if callable(data):
                 added = []
                 needs_error = True
-                for datum in ensure_list_of_layer_data_tuple(data(**kwargs)):
+                for datum in ensure_list_of_layer_data_tuple(
+                    list(data(**kwargs))
+                ):
                     if datum[0] is not None:
                         needs_error = False
                         added.extend(self._add_layer_from_data(*datum))
