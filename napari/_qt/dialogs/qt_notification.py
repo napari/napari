@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
+from contextlib import suppress
 from typing import ClassVar
 
 from qtpy.QtCore import (
@@ -196,7 +197,9 @@ class NapariQtNotification(QDialog):
         self.timer_stop()
         self.opacity_anim.stop()
         self.geom_anim.stop()
-        self._instances.remove(self)
+        with suppress(ValueError):
+            # if show is not called, the element is not in list
+            self._instances.remove(self)
         if self.parent() is not None:
             notifications = self._instances
             if len(notifications) > 1 and notifications[-1] == self:
