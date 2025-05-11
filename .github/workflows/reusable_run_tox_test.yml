@@ -152,6 +152,7 @@ jobs:
           run: |
             echo ${{ env.MAIN }}
             ulimit -c unlimited
+            echo 'core.%p' | sudo tee /proc/sys/kernel/core_pattern
             tox --version
             python -m tox run --installpkg ${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
             rm -r .tox
