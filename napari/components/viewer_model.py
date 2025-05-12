@@ -5,12 +5,12 @@ import itertools
 import os
 import warnings
 from collections.abc import Iterator, Mapping, MutableMapping, Sequence
+from contextlib import AbstractContextManager
 from functools import lru_cache
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
-    ContextManager,
     Union,
     cast,
 )
@@ -713,7 +713,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         """Set layer slicer to force synchronous if async is disabled."""
         self._layer_slicer._force_sync = not event.value
 
-    def force_sync(self) -> ContextManager[None]:
+    def force_sync(self) -> AbstractContextManager[None]:
         """Context manager to temporarily force slicing to be synchronous."""
         return self._layer_slicer.force_sync()
 
