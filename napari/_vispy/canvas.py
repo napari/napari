@@ -666,6 +666,8 @@ class VispyCanvas:
             self._overlay_to_visuals.setdefault(overlay, []).append(
                 vispy_overlay
             )
+            # needed to bring up to date to the viewer
+            vispy_overlay.reset()
         else:
             for view in self.views:
                 vispy_overlay = create_vispy_overlay(
@@ -676,6 +678,9 @@ class VispyCanvas:
                 self._overlay_to_visuals.setdefault(overlay, []).append(
                     vispy_overlay
                 )
+
+                # needed to bring up to date to the viewer
+                vispy_overlay.reset()
 
     def _update_viewer_overlays(self):
         # TODO: the overlays are not properly updated when settings
@@ -720,6 +725,9 @@ class VispyCanvas:
                 overlay_visual.node.parent = view
             else:
                 overlay_visual.node.parent = self.layer_to_visual[layer].node
+
+            # needed to bring up to date to the viewer
+            overlay_visual.reset()
 
     def _remove_layer_overlays_to_visual(self, layer: Layer) -> None:
         for overlay in list(self._layer_overlay_to_visual[layer]):
