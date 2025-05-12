@@ -1,15 +1,24 @@
+import os
+
 import numpy as np
 import pytest
-from numpy import array
+from numpy import array, testing as npt
 
-from napari.layers.shapes._accelerated_triangulate_dispatch import (
+from napari.layers.shapes._accelerated_triangulate_python import (
     generate_2D_edge_meshes_py,
+    is_convex_py,
+    normalize_vertices_and_edges_py,
+    reconstruct_polygons_from_edges_py,
 )
 from napari.layers.shapes._shapes_utils import (
+    _save_failed_triangulation,
     get_default_shape_type,
     number_of_shapes,
     perpendicular_distance,
     rdp,
+    reconstruct_and_triangulate_edge,
+    triangulate_face_and_edges,
+    triangulate_face_vispy,
 )
 
 W_DATA = [[0, 3], [1, 0], [2, 3], [5, 0], [2.5, 5]]
@@ -424,3 +433,100 @@ def test_perpendicular_distance(start, end, point):
     distance = perpendicular_distance(point, start, end)
 
     assert distance == 1
+
+
+def pentagram(reverse):
+    radius = 10
+    n = 5
+    angles = np.linspace(0, 4 * np.pi, n, endpoint=False)
+    if reverse:
+        angles = angles[::-1]
+    return np.column_stack((radius * np.cos(angles), radius * np.sin(angles)))
+
+
+def generate_regular_polygon(n, reverse, radius=1):
+    angles = np.linspace(0, 2 * np.pi, n, endpoint=False)
+    if reverse:
+        angles = angles[::-1]
+    return np.column_stack((radius * np.cos(angles), radius * np.sin(angles)))
+
+
+def rotation_matrix(angle):
+    return np.array(
+        [
+            [np.cos(np.radians(angle)), -np.sin(np.radians(angle))],
+            [np.sin(np.radians(angle)), np.cos(np.radians(angle))],
+        ]
+    )
+
+
+ANGLES = [0, 5, 75, 95, 355]
+
+
+def test_is_convex_self_intersection(self_intersecting_polygon):
+    assert not is_convex_py(self_intersecting_polygon)
+
+
+def test_is_convex_regular_polygon(regular_polygon):
+    assert is_convex_py(regular_polygon)
+
+
+def test_is_convex_non_convex(non_convex_poly):
+    assert not is_convex_py(non_convex_poly)
+
+
+def test_line_non_convex(line):
+    assert not is_convex_py(line)
+
+
+def test_line_two_point_non_convex(line_two_point):
+    assert not is_convex_py(line_two_point)
+
+
+def test_normalize_vertices_and_edges(poly_hole):
+    points, edges = normalize_vertices_and_edges_py(poly_hole, close=True)
+    assert points.shape == (8, 2)
+    assert edges.shape == (8, 2)
+
+
+def test_reconstruct_and_triangulate_edge(poly_hole):
+    points, edges = normalize_vertices_and_edges_py(poly_hole, close=True)
+    centers, offsets, triangles = reconstruct_and_triangulate_edge(
+        points, edges
+    )
+    assert len(triangles) == 16
+    assert len(offsets) == 20
+    assert len(centers) == 20
+
+
+def test_reconstruct_polygon_edges(poly_hole):
+    points, edges = normalize_vertices_and_edges_py(poly_hole, close=True)
+    polygon_list = reconstruct_polygons_from_edges_py(points, edges)
+    assert len(polygon_list) == 2
+    assert len(polygon_list[0]) == 4
+    assert len(polygon_list[1]) == 4
+
+
+def test_triangulate_face_and_edges(poly_hole):
+    faces, edges = triangulate_face_and_edges(
+        poly_hole, triangulate_face_vispy
+    )
+
+
+def test_save_failed_triangulation(tmp_path):
+    data = np.empty((10, 10), dtype=np.uint16)
+    bin_path, text_path = _save_failed_triangulation(
+        data, target_dir=str(tmp_path)
+    )
+    assert os.path.exists(bin_path)
+    assert os.path.exists(text_path)
+    assert bin_path.endswith('.npz')
+    assert text_path.endswith('.txt')
+    assert bin_path.startswith(str(tmp_path))
+    assert text_path.startswith(str(tmp_path))
+
+    d1 = np.loadtxt(text_path)
+    npt.assert_array_equal(d1, data)
+
+    d2 = np.load(bin_path)['data']
+    npt.assert_array_equal(d2, data)

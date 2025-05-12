@@ -10,6 +10,12 @@ from napari.settings._constants import (
 )
 from napari.settings._fields import Language
 from napari.utils._base import _DEFAULT_LOCALE
+from napari.utils.camera_orientations import (
+    DEFAULT_ORIENTATION_TYPED,
+    DepthAxisOrientation,
+    HorizontalAxisOrientation,
+    VerticalAxisOrientation,
+)
 from napari.utils.events.custom_types import confloat, conint
 from napari.utils.events.evented_model import EventedModel
 from napari.utils.notifications import NotificationSeverity
@@ -153,6 +159,31 @@ class ApplicationSettings(EventedModel):
         LoopMode.LOOP,
         title=trans._('Playback loop mode'),
         description=trans._('Loop mode for playback.'),
+    )
+
+    depth_axis_orientation: DepthAxisOrientation = Field(
+        default=DEFAULT_ORIENTATION_TYPED[0],
+        title=trans._('Depth Axis Orientation'),
+        description=trans._(
+            'Orientation of the depth axis in 3D view.\n'
+            'Default is "Towards"; <0.6.0 was "Away".'
+        ),
+    )
+    vertical_axis_orientation: VerticalAxisOrientation = Field(
+        default=DEFAULT_ORIENTATION_TYPED[1],
+        title=trans._('Vertical Axis Orientation'),
+        description=trans._(
+            'Orientation of the vertical axis in 2D and 3D view.\n'
+            'Default is "Down".'
+        ),
+    )
+    horizontal_axis_orientation: HorizontalAxisOrientation = Field(
+        default=DEFAULT_ORIENTATION_TYPED[2],
+        title=trans._('Horizontal Axis Orientation'),
+        description=trans._(
+            'Orientation of the horizontal axis in 2D and 3D view.\n'
+            'Default is "Right".'
+        ),
     )
 
     grid_stride: GridStride = Field(  # type: ignore [valid-type]

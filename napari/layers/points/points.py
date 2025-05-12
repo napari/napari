@@ -53,10 +53,7 @@ from napari.utils.colormaps import Colormap, ValidColormapArg
 from napari.utils.colormaps.standardize_color import hex_to_name, rgb_to_hex
 from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
-from napari.utils.events.migrations import deprecation_warning_event
 from napari.utils.geometry import project_points_onto_plane, rotate_points
-from napari.utils.migrations import add_deprecated_property, rename_argument
-from napari.utils.status_messages import generate_layer_coords_status
 from napari.utils.transforms import Affine
 from napari.utils.translations import trans
 
@@ -355,36 +352,6 @@ class Points(Layer):
     # If more points are present then they are randomly subsampled
     _max_points_thumbnail = 1024
 
-    @rename_argument(
-        'edge_width', 'border_width', since_version='0.5.0', version='0.6.0'
-    )
-    @rename_argument(
-        'edge_width_is_relative',
-        'border_width_is_relative',
-        since_version='0.5.0',
-        version='0.6.0',
-    )
-    @rename_argument(
-        'edge_color', 'border_color', since_version='0.5.0', version='0.6.0'
-    )
-    @rename_argument(
-        'edge_color_cycle',
-        'border_color_cycle',
-        since_version='0.5.0',
-        version='0.6.0',
-    )
-    @rename_argument(
-        'edge_colormap',
-        'border_colormap',
-        since_version='0.5.0',
-        version='0.6.0',
-    )
-    @rename_argument(
-        'edge_contrast_limits',
-        'border_contrast_limits',
-        since_version='0.5.0',
-        version='0.6.0',
-    )
     def __init__(
         self,
         data=None,
@@ -509,28 +476,6 @@ class Points(Layer):
             feature_defaults=Event,
         )
 
-        deprecated_events = {}
-        for attr in [
-            '{}_width',
-            'current_{}_width',
-            '{}_width_is_relative',
-            '{}_color',
-            'current_{}_color',
-        ]:
-            old_attr = attr.format('edge')
-            new_attr = attr.format('border')
-            old_emitter = deprecation_warning_event(
-                'layer.events',
-                old_attr,
-                new_attr,
-                since_version='0.5.0',
-                version='0.6.0',
-            )
-            getattr(self.events, new_attr).connect(old_emitter)
-            deprecated_events[old_attr] = old_emitter
-
-        self.events.add(**deprecated_events)
-
         # Save the point coordinates
         self._data = np.asarray(data)
 
@@ -615,30 +560,6 @@ class Points(Layer):
 
         # Trigger generation of view slice and thumbnail
         self.refresh(extent=False)
-
-    @classmethod
-    def _add_deprecated_properties(cls) -> None:
-        """Adds deprecated properties to class."""
-        deprecated_properties = [
-            'edge_width',
-            'edge_width_is_relative',
-            'current_edge_width',
-            'edge_color',
-            'edge_color_cycle',
-            'edge_colormap',
-            'edge_contrast_limits',
-            'current_edge_color',
-            'edge_color_mode',
-        ]
-        for old_property in deprecated_properties:
-            new_property = old_property.replace('edge', 'border')
-            add_deprecated_property(
-                cls,
-                old_property,
-                new_property,
-                since_version='0.5.0',
-                version='0.6.0',
-            )
 
     @property
     def data(self) -> np.ndarray:
@@ -993,29 +914,12 @@ class Points(Layer):
         try:
             self._size = np.broadcast_to(size, len(self.data)).copy()
         except ValueError as e:
-            # deprecated anisotropic sizes; extra check should be removed in future version
-            try:
-                self._size = np.broadcast_to(
-                    size, self.data.shape[::-1]
-                ).T.copy()
-            except ValueError:
-                raise ValueError(
-                    trans._(
-                        'Size is not compatible for broadcasting',
-                        deferred=True,
-                    )
-                ) from e
-            else:
-                self._size = np.mean(size, axis=1)
-                warnings.warn(
-                    trans._(
-                        'Since 0.4.18 point sizes must be isotropic; the average from each dimension will be'
-                        ' used instead. This will become an error in version 0.6.0.',
-                        deferred=True,
-                    ),
-                    category=DeprecationWarning,
-                    stacklevel=2,
+            raise ValueError(
+                trans._(
+                    'Size is not compatible for broadcasting (may be anisotropic)',
+                    deferred=True,
                 )
+            ) from e
         # TODO: technically not needed to cleat the non-augmented extent... maybe it's fine like this to avoid complexity
         self.refresh(highlight=False)
 
@@ -1027,15 +931,6 @@ class Points(Layer):
     @current_size.setter
     def current_size(self, size: None | float) -> None:
         if isinstance(size, list | tuple | np.ndarray):
-            warnings.warn(
-                trans._(
-                    'Since 0.4.18 point sizes must be isotropic; the average from each dimension will be used instead. '
-                    'This will become an error in version 0.6.0.',
-                    deferred=True,
-                ),
-                category=DeprecationWarning,
-                stacklevel=2,
-            )
             size = size[-1]
         if not isinstance(size, numbers.Number):
             raise TypeError(
@@ -2110,7 +2005,7 @@ class Points(Layer):
         self.events.data(
             value=self.data,
             action=ActionType.ADDED,
-            data_indices=(-1,),
+            data_indices=tuple(np.arange(-len(coords), 0)),
             vertex_indices=((),),
         )
         self.selected_data = set(np.arange(cur_points, len(self.data)))
@@ -2404,19 +2299,11 @@ class Points(Layer):
         # source_info : dict
         #     Dict containing information that can be used in a status update.
         #"""
-        if position is not None:
-            value = self.get_value(
-                position,
-                view_direction=view_direction,
-                dims_displayed=dims_displayed,
-                world=world,
-            )
-        else:
-            value = None
-
-        source_info = self._get_source_info()
-        source_info['coordinates'] = generate_layer_coords_status(
-            position[-self.ndim :], value
+        status = super().get_status(
+            position,
+            view_direction=view_direction,
+            dims_displayed=dims_displayed,
+            world=world,
         )
 
         # if this points layer has properties
@@ -2427,9 +2314,10 @@ class Points(Layer):
             world=world,
         )
         if properties:
-            source_info['coordinates'] += '; ' + ', '.join(properties)
+            status['coordinates'] += '; ' + ', '.join(properties)
+            status['value'] += '; ' + ', '.join(properties)
 
-        return source_info
+        return status
 
     def _get_tooltip_text(
         self,
@@ -2499,6 +2387,3 @@ class Points(Layer):
             and v[value] is not None
             and not (isinstance(v[value], float) and np.isnan(v[value]))
         ]
-
-
-Points._add_deprecated_properties()

@@ -289,7 +289,7 @@ class ScalarFieldBase(Layer, ABC):
         self._slice = _ImageSliceResponse.make_empty(
             slice_input=self._slice_input,
             rgb=len(self.data.shape) != self.ndim,
-            dtype=self.dtype,
+            dtype=self._slice_dtype(),
         )
 
         self._plane = SlicingPlane(thickness=1)
@@ -310,6 +310,14 @@ class ScalarFieldBase(Layer, ABC):
     def _post_init(self):
         # Trigger generation of view slice and thumbnail
         self.refresh()
+
+    def _slice_dtype(self):
+        """Return the dtype of the slice view.
+
+        Overridden in Labels subclass to properly handle the
+        32 and 64 bits dtypes.
+        """
+        return self.dtype
 
     @property
     def _data_view(self) -> np.ndarray:
@@ -667,7 +675,7 @@ class ScalarFieldBase(Layer, ABC):
         start_point: np.ndarray | None,
         end_point: np.ndarray | None,
         dims_displayed: list[int],
-    ) -> int | None:
+    ) -> int | None | tuple[int, int | None]:
         """Get the first non-background value encountered along a ray.
 
         Parameters
@@ -681,15 +689,21 @@ class ScalarFieldBase(Layer, ABC):
 
         Returns
         -------
-        value : int
+        value : int or tuple
             The first non-zero value encountered along the ray. If a
             non-zero value is not encountered, returns None.
+            If multiscale is True, returns a tuple of (data_level, value).
         """
-        return self._get_value_ray(
+        value = self._get_value_ray(
             start_point=start_point,
             end_point=end_point,
             dims_displayed=dims_displayed,
         )
+
+        if self.multiscale and value is not None:
+            return self.data_level, value
+
+        return value
 
     def _get_offset_data_position(self, position: npt.NDArray) -> npt.NDArray:
         """Adjust position for offset between viewer and data coordinates.

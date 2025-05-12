@@ -377,7 +377,7 @@ def show_console_notification(notification: Notification):
 
         print(notification)  # noqa: T201
     except Exception:
-        logging.exception(
+        logging.getLogger('napari').exception(
             'An error occurred while trying to format an error and show it in console.\n'
             'You can try to uninstall IPython to disable rich traceback formatting\n'
             'And/or report a bug to napari'

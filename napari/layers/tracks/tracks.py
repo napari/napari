@@ -228,7 +228,7 @@ class Tracks(Layer):
         else:
             maxs = np.max(self.data, axis=0)
             mins = np.min(self.data, axis=0)
-            extrema = np.vstack([mins, maxs])
+            extrema = np.vstack([mins, maxs])  # type: ignore[assignment]
         return extrema[:, 1:]
 
     def _get_ndim(self) -> int:
@@ -575,10 +575,8 @@ class Tracks(Layer):
     def colormaps_dict(self) -> dict[str, Colormap]:
         return self._colormaps_dict
 
-    # Ignored type because mypy doesn't recognise colormaps_dict as a property
-    # TODO: investigate and fix this - not sure why this is the case?
-    @colormaps_dict.setter  # type: ignore[attr-defined]
-    def colomaps_dict(self, colormaps_dict: dict[str, Colormap]) -> None:
+    @colormaps_dict.setter
+    def colormaps_dict(self, colormaps_dict: dict[str, Colormap]) -> None:
         # validate the dictionary entries?
         self._colormaps_dict = colormaps_dict
 
@@ -615,9 +613,24 @@ class Tracks(Layer):
 
     @property
     def track_colors(self) -> np.ndarray | None:
-        """return the vertex colors according to the currently selected
-        property"""
+        """Return current vertex colors."""
         return self._track_colors
+
+    @track_colors.setter
+    def track_colors(self, colors: np.ndarray) -> None:
+        """Set vertex colors directly and emit corresponding event.
+
+        Parameters
+        ----------
+        colors : np.ndarray, shape (N, 4)
+            The desired color array, one color per data point. Note that the
+            data are internally lexicographically sorted first by track ID,
+            then by timepoint, so the color ordering must match this order,
+            which may not be the input order. Use `Tracks.data` to find the
+            current sorted data.
+        """
+        self._track_colors = colors
+        self.events.color_by()
 
     @property
     def graph_connex(self) -> np.ndarray | None:

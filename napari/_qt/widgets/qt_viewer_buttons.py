@@ -1,30 +1,40 @@
 import warnings
+from enum import Enum, EnumMeta
 from functools import partial, wraps
 from typing import TYPE_CHECKING
 
-from qtpy.QtCore import QEvent, QPoint, Qt
+from qtpy.QtCore import QEvent, Qt
 from qtpy.QtWidgets import (
     QApplication,
     QDoubleSpinBox,
-    QFormLayout,
     QFrame,
+    QGridLayout,
     QHBoxLayout,
     QLabel,
     QPushButton,
-    QVBoxLayout,
+    QWidget,
 )
-from superqt import QLabeledDoubleSlider
+from superqt import QEnumComboBox, QLabeledDoubleSlider
 
 from napari._qt.dialogs.qt_modal import QtPopup
 from napari._qt.widgets.qt_dims_sorter import QtDimsSorter
 from napari._qt.widgets.qt_spinbox import QtSpinBox
 from napari._qt.widgets.qt_tooltip import QtToolTipLabel
 from napari.utils.action_manager import action_manager
+from napari.utils.camera_orientations import (
+    DepthAxisOrientation,
+    DepthAxisOrientationStr,
+    HorizontalAxisOrientation,
+    HorizontalAxisOrientationStr,
+    VerticalAxisOrientation,
+    VerticalAxisOrientationStr,
+)
 from napari.utils.misc import in_ipython, in_jupyter, in_python_repl
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from typing import Any
 
     from napari.viewer import ViewerModel
 
@@ -116,6 +126,20 @@ def labeled_double_slider(
     slider.setDecimals(decimals)
     slider.valueChanged.connect(callback)
     return slider
+
+
+def enum_combobox(
+    *,
+    parent: QtPopup,
+    enum_class: EnumMeta,
+    current_enum: Enum,
+    callback: 'Callable[[],Any] | Callable[[Enum],Any]',
+) -> QEnumComboBox:
+    """Create an enum combobox widget."""
+    combo = QEnumComboBox(parent, enum_class=enum_class)
+    combo.setCurrentEnum(current_enum)
+    combo.currentEnumChanged.connect(callback)
+    return combo
 
 
 def help_tooltip(
@@ -259,8 +283,7 @@ class QtViewerButtons(QFrame):
     def _add_3d_camera_controls(
         self,
         popup: QtPopup,
-        form_layout: QFormLayout,
-        help_layout: QVBoxLayout,
+        grid_layout: QGridLayout,
     ) -> None:
         """Add 3D camera controls to the popup."""
         self.perspective = labeled_double_slider(
@@ -301,22 +324,24 @@ class QtViewerButtons(QFrame):
             text='Controls the rotation angles around each axis in degrees.',
         )
 
-        form_layout.insertRow(
-            1, QLabel(trans._('Perspective:')), self.perspective
-        )
-        form_layout.insertRow(2, QLabel(trans._('Angles    X:')), self.rx)
-        form_layout.insertRow(3, QLabel(trans._('             Y:')), self.ry)
-        form_layout.insertRow(4, QLabel(trans._('             Z:')), self.rz)
+        grid_layout.addWidget(QLabel(trans._('Perspective:')), 2, 0)
+        grid_layout.addWidget(self.perspective, 2, 1)
+        grid_layout.addWidget(perspective_help_symbol, 2, 2)
 
-        help_layout.addWidget(perspective_help_symbol)
-        help_layout.addWidget(angle_help_symbol)
-        help_layout.addWidget(QLabel(self))  # blank space
+        grid_layout.addWidget(QLabel(trans._('Angles    X:')), 3, 0)
+        grid_layout.addWidget(self.rx, 3, 1)
+        grid_layout.addWidget(angle_help_symbol, 3, 2)
+
+        grid_layout.addWidget(QLabel(trans._('             Y:')), 4, 0)
+        grid_layout.addWidget(self.ry, 4, 1)
+
+        grid_layout.addWidget(QLabel(trans._('             Z:')), 5, 0)
+        grid_layout.addWidget(self.rz, 5, 1)
 
     def _add_shared_camera_controls(
         self,
         popup: QtPopup,
-        form_layout: QFormLayout,
-        help_layout: QVBoxLayout,
+        grid_layout: QGridLayout,
     ) -> None:
         """Add shared camera controls to the popup."""
         self.zoom = labeled_double_slider(
@@ -332,27 +357,143 @@ class QtViewerButtons(QFrame):
             text='Controls zoom level of the camera. Larger values zoom in, smaller values zoom out.',
         )
 
-        form_layout.insertRow(0, QLabel(trans._('Zoom:')), self.zoom)
-        help_layout.addWidget(zoom_help_symbol)
+        grid_layout.addWidget(QLabel(trans._('Zoom:')), 1, 0)
+        grid_layout.addWidget(self.zoom, 1, 1)
+        grid_layout.addWidget(zoom_help_symbol, 1, 2)
+
+    def _add_orientation_controls(
+        self,
+        popup: QtPopup,
+        grid_layout: QGridLayout,
+    ) -> None:
+        """Add orientation controls to the popup."""
+        orientation_widget = QWidget(popup)
+        orientation_layout = QHBoxLayout()
+        orientation_layout.setContentsMargins(0, 0, 0, 0)
+
+        self.vertical_combo = enum_combobox(
+            parent=popup,
+            enum_class=VerticalAxisOrientation,
+            current_enum=self.viewer.camera.orientation[1],
+            callback=partial(
+                self._update_orientation, VerticalAxisOrientation
+            ),
+        )
+
+        self.horizontal_combo = enum_combobox(
+            parent=popup,
+            enum_class=HorizontalAxisOrientation,
+            current_enum=self.viewer.camera.orientation[2],
+            callback=partial(
+                self._update_orientation, HorizontalAxisOrientation
+            ),
+        )
+
+        if self.viewer.dims.ndisplay == 2:
+            orientation_layout.addWidget(self.vertical_combo)
+            orientation_layout.addWidget(self.horizontal_combo)
+            self.orientation_help_symbol = help_tooltip(
+                parent=popup,
+                text='Controls the orientation of the vertical and horizontal camera axes.',
+            )
+
+        else:
+            self.depth_combo = enum_combobox(
+                parent=popup,
+                enum_class=DepthAxisOrientation,
+                current_enum=self.viewer.camera.orientation[0],
+                callback=partial(
+                    self._update_orientation, DepthAxisOrientation
+                ),
+            )
+
+            orientation_layout.addWidget(self.depth_combo)
+            orientation_layout.addWidget(self.vertical_combo)
+            orientation_layout.addWidget(self.horizontal_combo)
+
+            self.orientation_help_symbol = help_tooltip(
+                parent=popup,
+                text='',  # updated dynamically
+            )
+            self._update_handedness_help_symbol()
+            self.viewer.camera.events.orientation.connect(
+                self._update_handedness_help_symbol
+            )
+
+        orientation_widget.setLayout(orientation_layout)
+
+        grid_layout.addWidget(QLabel(trans._('Orientation:')), 0, 0)
+        grid_layout.addWidget(orientation_widget, 0, 1)
+        grid_layout.addWidget(self.orientation_help_symbol, 0, 2)
+
+    def _update_handedness_help_symbol(self, event=None) -> None:
+        """Update the handedness symbol based on the camera orientation."""
+        handedness = self.viewer.camera.handedness
+        tooltip_text = (
+            'Controls the orientation of the depth, vertical, and horizontal camera axes.\n'
+            'Default is right-handed (towards, down, right).\n'
+            'Default prior to 0.6.0 was left-handed (away, down, right).\n'
+            f'Currently orientation is {handedness.value}-handed.'
+        )
+        self.orientation_help_symbol.setToolTip(tooltip_text)
+        self.orientation_help_symbol.setObjectName(
+            f'{handedness.value}hand_label'
+        )
+        self.orientation_help_symbol.style().polish(
+            self.orientation_help_symbol
+        )
 
     def open_ndisplay_camera_popup(self) -> None:
         """Show controls for camera settings based on ndisplay mode."""
         popup = QtPopup(self)
-        form_layout = QFormLayout()
-        help_layout = QVBoxLayout()
+        grid_layout = QGridLayout()
 
-        self._add_shared_camera_controls(popup, form_layout, help_layout)
+        # Add orientation controls
+        self._add_orientation_controls(popup, grid_layout)
 
+        # Add shared camera controls
+        self._add_shared_camera_controls(popup, grid_layout)
+
+        # Add 3D camera controls if in 3D mode
         if self.viewer.dims.ndisplay == 3:
-            self._add_3d_camera_controls(popup, form_layout, help_layout)
+            self._add_3d_camera_controls(popup, grid_layout)
 
-        layout = QHBoxLayout()
-        layout.addLayout(form_layout)
-        layout.addLayout(help_layout)
-        popup.frame.setLayout(layout)
+        popup.frame.setLayout(grid_layout)
 
         # Reposition popup, must be done after all widgets are added
         self._position_popup_inside_viewer(popup, self.ndisplayButton)
+
+    def _update_orientation(
+        self,
+        orientation_type: type[
+            DepthAxisOrientation
+            | VerticalAxisOrientation
+            | HorizontalAxisOrientation
+        ],
+        orientation_value: (
+            DepthAxisOrientationStr
+            | VerticalAxisOrientationStr
+            | HorizontalAxisOrientationStr
+        ),
+    ) -> None:
+        """Update the orientation of the camera.
+
+        Parameters
+        ----------
+        orientation_type : type[DepthAxisOrientation | VerticalAxisOrientation | HorizontalAxisOrientation]
+            The orientation type (which implies the position/axis) to update.
+        value : DepthAxisOrientationStr | VerticalAxisOrientationStr | HorizontalAxisOrientationStr
+            New orientation value for the updated axis.
+        """
+        axes = (
+            DepthAxisOrientation,
+            VerticalAxisOrientation,
+            HorizontalAxisOrientation,
+        )
+        axis_to_update = axes.index(orientation_type)
+        new_orientation = list(self.viewer.camera.orientation)
+        new_orientation[axis_to_update] = orientation_type(orientation_value)
+        self.viewer.camera.orientation = tuple(new_orientation)
 
     def _update_camera_angles(self, idx: int, value: float) -> None:
         """Update the camera angles.
@@ -423,7 +564,6 @@ class QtViewerButtons(QFrame):
         shape_help_symbol = QtToolTipLabel(self)
         stride_help_symbol = QtToolTipLabel(self)
         spacing_help_symbol = QtToolTipLabel(self)
-        blank = QLabel(self)  # helps with placing help symbols.
 
         shape_help_msg = trans._(
             'Number of rows and columns in the grid. A value of -1 for either or both of width and height will trigger an auto calculation of the necessary grid shape to appropriately fill all the layers at the appropriate stride. 0 is not a valid entry.'
@@ -498,37 +638,25 @@ class QtViewerButtons(QFrame):
         spacing_help_symbol.setToolTip(spacing_help_msg)
 
         # layout
-        form_layout = QFormLayout()
-        form_layout.insertRow(0, QLabel(trans._('Grid stride:')), grid_stride)
-        form_layout.insertRow(1, QLabel(trans._('Grid width:')), grid_width)
-        form_layout.insertRow(2, QLabel(trans._('Grid height:')), grid_height)
-        form_layout.insertRow(
-            3, QLabel(trans._('Grid spacing:')), grid_spacing
-        )
+        grid_layout = QGridLayout()
+        grid_layout.addWidget(QLabel(trans._('Grid stride:')), 0, 0)
+        grid_layout.addWidget(grid_stride, 0, 1)
+        grid_layout.addWidget(stride_help_symbol, 0, 2)
 
-        help_layout = QVBoxLayout()
-        help_layout.addWidget(stride_help_symbol)
-        help_layout.addWidget(blank)
-        help_layout.addWidget(shape_help_symbol)
-        help_layout.addWidget(spacing_help_symbol)
+        grid_layout.addWidget(QLabel(trans._('Grid width:')), 1, 0)
+        grid_layout.addWidget(grid_width, 1, 1)
 
-        layout = QHBoxLayout()
-        layout.addLayout(form_layout)
-        layout.addLayout(help_layout)
+        grid_layout.addWidget(shape_help_symbol, 1, 2, 2, 1)  # Span rows
 
-        popup.frame.setLayout(layout)
+        grid_layout.addWidget(QLabel(trans._('Grid height:')), 2, 0)
+        grid_layout.addWidget(grid_height, 2, 1)
 
+        grid_layout.addWidget(QLabel(trans._('Grid spacing:')), 3, 0)
+        grid_layout.addWidget(grid_spacing, 3, 1)
+        grid_layout.addWidget(spacing_help_symbol, 3, 2)
+
+        popup.frame.setLayout(grid_layout)
         popup.show_above_mouse()
-
-        # adjust placement of shape help symbol.  Must be done last
-        # in order for this movement to happen.
-        delta_x = 0
-        delta_y = -15
-        shape_pos = (
-            shape_help_symbol.x() + delta_x,
-            shape_help_symbol.y() + delta_y,
-        )
-        shape_help_symbol.move(QPoint(*shape_pos))
 
     def _update_grid_width(self, value):
         """Update the width value in grid shape.

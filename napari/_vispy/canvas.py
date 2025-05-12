@@ -537,7 +537,8 @@ class VispyCanvas:
             else:
                 displayed_axes = list(self.viewer.dims.displayed[-nd:])
             layer._update_draw(
-                scale_factor=1 / self.viewer.camera.zoom,
+                scale_factor=1
+                / self.camera.zoom,  # this was previously self.viewer.camera.zoom; however, this can be out of sync with the camera zoom because the viewer value is used before the zoom value gets updated by Camera.on_draw
                 corner_pixels_displayed=canvas_corners_world[
                     :, displayed_axes
                 ],

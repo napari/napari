@@ -22,6 +22,7 @@ from superqt import QElidingLineEdit
 
 from napari._qt.dialogs.qt_modal import QtPopup
 from napari._qt.widgets.qt_scrollbar import ModifiedScrollBar
+from napari.components import Dims
 from napari.settings import get_settings
 from napari.settings._constants import LoopMode
 from napari.utils.events.event_utils import connect_setattr_value
@@ -49,7 +50,7 @@ class QtDimSliderWidget(QWidget):
         super().__init__(parent=parent)
         self.axis = axis
         self.qt_dims: QtDims = parent
-        self.dims = parent.dims
+        self.dims: Dims = parent.dims
         self.axis_label = None
         self.slider = None
         self.play_button = None
@@ -546,16 +547,23 @@ class AnimationThread(QThread):
         # FIXME there are attributes defined outside of __init__.
         super().__init__(parent=parent)
         self._interval = 1
-        self.slider = None
+        self._slider: ref[QtDimSliderWidget] = lambda: None
         self._waiter = threading.Event()
+        self.current = 0
+        self.step = 1
 
     def run(self):
         self.work()
 
+    @property
+    def slider(self) -> QtDimSliderWidget | None:
+        """Return the slider for this animation thread."""
+        return self._slider()
+
     def set_slider(self, slider):
         prev_slider = self.slider
-        self.slider = slider
-        self.set_fps(self.slider.fps)
+        self._slider = ref(slider)
+        self.set_fps(slider.fps)
         self.set_frame_range(slider.frame_range)
         if prev_slider is not None:
             prev_slider.fps_changed.disconnect(self.set_fps)
@@ -688,16 +696,19 @@ class AnimationThread(QThread):
         return None
 
     @property
-    def loop_mode(self):
-        return self.slider.loop_mode
+    def loop_mode(self) -> LoopMode | None:
+        """Loop mode for animation."""
+        return getattr(self.slider, 'loop_mode', None)
 
     @property
-    def axis(self):
-        return self.slider.axis
+    def axis(self) -> int | None:
+        """Return the axis for this animation thread."""
+        return getattr(self.slider, 'axis', None)
 
     @property
-    def dims(self):
-        return self.slider.dims
+    def dims(self) -> Dims | None:
+        """Return the dims for this animation thread."""
+        return getattr(self.slider, 'dims', None)
 
     def finish(self):
         """Emit the finished event signal."""
@@ -706,4 +717,5 @@ class AnimationThread(QThread):
     def _on_axis_changed(self):
         """Update the current frame if the axis has changed."""
         # slot for external events to update the current frame
-        self.current = self.dims.current_step[self.axis]
+        if self.dims is not None:
+            self.current = self.dims.current_step[self.axis]

@@ -496,7 +496,8 @@ class _QtMainWindow(QMainWindow):
         if (
             not confirm_need_local
             or not get_settings().application.confirm_close_window
-            or ConfirmCloseDialog(self, quit_app).exec_() == QDialog.Accepted
+            or ConfirmCloseDialog(self, quit_app).exec_()
+            == QDialog.DialogCode.Accepted
         ):
             self._quit_app = quit_app
             self._is_close_dialog[quit_app] = True
@@ -848,7 +849,7 @@ class Window:
         warnings.warn(
             trans._(
                 'Public access to Window.qt_viewer is deprecated and will be removed in\n'
-                'v0.6.0. It is considered an "implementation detail" of the napari\napplication, '
+                'v0.7.0. It is considered an "implementation detail" of the napari\napplication, '
                 'not part of the napari viewer model. If your use case\n'
                 'requires access to qt_viewer, please open an issue to discuss.',
                 deferred=True,
@@ -1687,13 +1688,6 @@ class Window:
                     deferred=True,
                 )
             )
-        if fit_to_data_extent and ndisplay > 2:
-            raise NotImplementedError(
-                trans._(
-                    'fit_to_data_extent is not yet implemented for 3D view.',
-                    deferred=True,
-                )
-            )
         if size is not None and len(size) != 2:
             raise ValueError(
                 trans._(
@@ -1705,17 +1699,29 @@ class Window:
 
         # Part 2: compute canvas size and view based on parameters
         if fit_to_data_extent:
-            extent_world = self._qt_viewer.viewer.layers.extent.world[1][
-                -ndisplay:
-            ]
-            extent_step = min(
+            # Use the same scene parameter calculations as in viewer_model.fit_to_view
+            extent, _, _, total_size = (
+                self._qt_viewer.viewer._get_scene_parameters()
+            )
+            extent_scale = min(
                 self._qt_viewer.viewer.layers.extent.step[-ndisplay:]
             )
-            size = extent_world / extent_step + 1
+
+            if ndisplay == 3:
+                total_size = self._qt_viewer.viewer._calculate_bounding_box(
+                    extent=extent,
+                    view_direction=self._qt_viewer.viewer.camera.view_direction,
+                    up_direction=self._qt_viewer.viewer.camera.up_direction,
+                )
+
+            # adjust size by the scale, to return the size in real pixels
+            size = np.ceil(total_size / extent_scale).astype(int)
+
         if size is not None:
             size = np.asarray(size) / self._qt_window.devicePixelRatio()
         else:
             size = np.asarray(prev_size)
+
         if scale is not None:
             # multiply canvas dimensions by the scale factor to get new size
             size *= scale
@@ -1725,7 +1731,7 @@ class Window:
             canvas.size = tuple(size.astype(int))
             if fit_to_data_extent:
                 # tight view around data
-                self._qt_viewer.viewer.reset_view(margin=0)
+                self._qt_viewer.viewer.fit_to_view(margin=0)
             try:
                 img = canvas.screenshot()
                 if flash:
@@ -1752,8 +1758,7 @@ class Window:
         This function finds a tight boundary around the data, resets the view
         around that boundary (and, when scale=1, such that 1 captured pixel is
         equivalent to one data pixel), takes a screenshot, then restores the
-        previous zoom and canvas sizes. Currently, only works when 2 dimensions
-        are displayed.
+        previous zoom and canvas sizes.
 
         Parameters
         ----------

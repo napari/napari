@@ -1,9 +1,11 @@
 import contextlib
 import os
 import platform
+import re
 import subprocess
 import sys
 from importlib.metadata import PackageNotFoundError, version
+from pathlib import Path
 
 import napari
 
@@ -71,6 +73,41 @@ def _sys_name() -> str:
     return ''
 
 
+def _napari_from_conda() -> bool:
+    """
+    Try to check if napari was installed using conda.
+
+    This is done by checking for the presence of a conda metadata json file
+    in the current environment's conda-meta directory.
+
+    Returns
+    -------
+    bool
+        True if the main napari application is installed via conda, False otherwise.
+    """
+    # Check for napari-related conda metadata files
+    napari_conda_files = list(
+        Path(sys.prefix, 'conda-meta').glob('napari-*.json')
+    )
+    # Match only the napari package by using napari-<version>.json
+    # This is to exclude plugins napari-svg, etc.
+    napari_pattern = re.compile(r'^napari-\d+(\.\d+)*.*\.json$')
+
+    return any(napari_pattern.match(file.name) for file in napari_conda_files)
+
+
+def get_launch_command() -> str:
+    """Get the information how the program was launched.
+
+    Returns
+    -------
+    str
+        The command used to launch the program.
+    """
+
+    return ' '.join(sys.argv)
+
+
 def sys_info(as_html: bool = False) -> str:
     """Gathers relevant module versions for troubleshooting purposes.
 
@@ -80,10 +117,10 @@ def sys_info(as_html: bool = False) -> str:
         if True, info will be returned as HTML, suitable for a QTextEdit widget
     """
     sys_version = sys.version.replace('\n', ' ')
-    text = (
-        f'<b>napari</b>: {napari.__version__}<br>'
-        f'<b>Platform</b>: {platform.platform()}<br>'
-    )
+    text = f'<b>napari</b>: {napari.__version__}'
+    if _napari_from_conda():
+        text += ' (from conda)'
+    text += f'<br><b>Platform</b>: {platform.platform()}<br>'
 
     __sys_name = _sys_name()
     if __sys_name:
@@ -94,9 +131,9 @@ def sys_info(as_html: bool = False) -> str:
     try:
         from qtpy import API_NAME, PYQT_VERSION, PYSIDE_VERSION, QtCore
 
-        if API_NAME == 'PySide2':
+        if API_NAME in {'PySide2', 'PySide6'}:
             API_VERSION = PYSIDE_VERSION
-        elif API_NAME == 'PyQt5':
+        elif API_NAME in {'PyQt5', 'PyQt6'}:
             API_VERSION = PYQT_VERSION
         else:
             API_VERSION = ''
@@ -132,6 +169,13 @@ def sys_info(as_html: bool = False) -> str:
             text += f'<b>{name}</b>: Import failed<br>'
 
     text += '<br><b>OpenGL:</b><br>'
+
+    try:
+        from OpenGL.version import __version__ as pyopengl_version
+
+        text += f'  - PyOpenGL: {pyopengl_version}<br>'
+    except ImportError:
+        text += '  - PyOpenGL: Import failed<br>'
 
     if loaded.get('vispy', False):
         from napari._vispy.utils.gl import get_max_texture_sizes
@@ -169,6 +213,8 @@ def sys_info(as_html: bool = False) -> str:
         ('numba', 'numba'),
         ('triangle', 'triangle'),
         ('napari_plugin_manager', 'napari-plugin-manager'),
+        ('bermuda', 'bermuda'),
+        ('PartSegCore_compiled_backend', 'PartSegCore'),
     )
 
     for module, name in optional_modules:
@@ -177,15 +223,35 @@ def sys_info(as_html: bool = False) -> str:
         except PackageNotFoundError:
             text += f'  - {name} not installed<br>'
 
-    text += '<br><b>Settings path:</b><br>'
     try:
         from napari.settings import get_settings
 
-        text += f'  - {get_settings().config_path}'
+        _async_setting = str(get_settings().experimental.async_)
+        _autoswap_buffers = str(get_settings().experimental.autoswap_buffers)
+        _triangulation_backend = str(
+            get_settings().experimental.triangulation_backend
+        )
+        _config_path = get_settings().config_path
     except ValueError:
         from napari.utils._appdirs import user_config_dir
 
-        text += f'  - {os.getenv("NAPARI_CONFIG", user_config_dir())}'
+        _async_setting = str(os.getenv('NAPARI_ASYNC', 'False'))
+        _autoswap_buffers = str(os.getenv('NAPARI_AUTOSWAP', 'False'))
+        _triangulation_backend = str(
+            os.getenv('NAPARI_TRIANGULATION_BACKEND', 'Fastest available')
+        )
+        _config_path = os.getenv('NAPARI_CONFIG', user_config_dir())
+
+    text += '<br><b>Experimental Settings:</b><br>'
+    text += f'  - Async: {_async_setting}<br>'
+    text += f'  - Autoswap buffers: {_autoswap_buffers}<br>'
+    text += f'  - Triangulation backend: {_triangulation_backend}<br>'
+
+    text += '<br><b>Settings path:</b><br>'
+    text += f'  - {_config_path}'
+
+    text += '<br><b>Launch command</b><br>'
+    text += f'  - {get_launch_command()}<br>'
 
     if not as_html:
         text = (

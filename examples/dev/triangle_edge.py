@@ -37,7 +37,7 @@ import numpy as np
 
 import napari
 from napari.layers import Shapes
-from napari.layers.shapes._accelerated_triangulate_dispatch import (
+from napari.layers.shapes._accelerated_triangulate_python import (
     generate_2D_edge_meshes_py,
 )
 
@@ -337,6 +337,13 @@ def add_helper_layers(viewer: napari.Viewer, source_layer):
         partial(update_helper_layers, viewer=viewer, source_layer=source_layer)
     )
 
+def pentagram():
+    radius = 10
+    n = 5
+    angles = np.linspace(0, 4 * np.pi, n, endpoint=False)
+    return np.column_stack((radius * np.cos(angles), radius * np.sin(angles)))
+
+
 
 path = np.array([[0,0], [0,1], [1,1], [1,0]]) * 10
 sparkle = np.array([[1, 1], [10, 0], [1, -1], [0, -10],
@@ -344,6 +351,7 @@ sparkle = np.array([[1, 1], [10, 0], [1, -1], [0, -10],
 fork = np.array([[2, 10], [0, -5], [-2, 10], [-2, -10], [2, -10]])
 
 poly_hole = np.array([[0,0], [10, 0], [10, 10], [0, 10], [0, 0], [2, 5], [5, 8], [8, 5], [5, 2], [2, 5]]) *1.5
+
 
 polygons = [
     # square
@@ -368,6 +376,7 @@ polygons = [
               [15.83450076, 10.5778984]],
              ) + np.array([[60, -15]]),
     poly_hole + np.array([[65, 20]]),
+    pentagram() + np.array([[70, 75]]),
     ]
 
 paths = [

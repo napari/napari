@@ -103,14 +103,16 @@ def _get_monitor_config() -> dict | None:
     """
 
     if not ENABLE_MONITOR:
-        logging.warning('Monitor: not starting, disabled')
+        logging.getLogger('napari').warning('Monitor: not starting, disabled')
         return None
 
     # The NAPARI_MON environment variable points to our config file.
     config = _load_monitor_config()
 
     if config is None:
-        logging.warning('Monitor: not starting, no usable config file')
+        logging.getLogger('napari').warning(
+            'Monitor: not starting, no usable config file'
+        )
         return None
 
     return config

@@ -21,11 +21,12 @@ except Exception as e:
                     """
                 No Qt bindings could be found.
 
-                napari requires either PyQt5 (default) or PySide2 to be installed in the environment.
+                napari requires either PyQt5 (default), PyQt6 or PySide2 to be installed in the environment.
 
                 With pip, you can install either with:
                   $ pip install -U 'napari[all]'  # default choice
                   $ pip install -U 'napari[pyqt5]'
+                  $ pip install -U 'napari[pyqt6]'
                   $ pip install -U 'napari[pyside2]'
 
                 With conda, you need to do:
@@ -87,7 +88,7 @@ if tuple(int(x) for x in QtCore.__version__.split('.')[:3]) < (5, 12, 3):
     warn(message=warn_message, stacklevel=1)
 
 
-from napari._qt.qt_event_loop import get_app, get_qapp, gui_qt, quit_app, run
+from napari._qt.qt_event_loop import get_qapp, quit_app, run
 from napari._qt.qt_main_window import Window
 
-__all__ = ['Window', 'get_app', 'get_qapp', 'gui_qt', 'quit_app', 'run']
+__all__ = ['Window', 'get_qapp', 'quit_app', 'run']
