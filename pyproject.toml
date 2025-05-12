@@ -106,7 +106,7 @@ pyside = [
 ]
 pyqt5 = [
     "PyQt5>=5.15.8",
-    "pyqt5-qt5<=5.15.2; sys_platform == 'Windows'",  # 5.15.2 is latest to build on Windows, required for `uv add` compatability as of uv 0.6.9
+    "pyqt5-qt5<=5.15.2; sys_platform == 'Windows'",  # 5.15.2 is latest to build on Windows, required for `uv add` compatibility as of uv 0.6.9
 ]
 pyqt = [
     "napari[pyqt5]"

@@ -110,7 +110,7 @@ SIMPLE_COLORMAPS = {
     for name, (display_name, color) in _PRIMARY_COLORS.items()
 }
 
-# readd fire and ice colormap for backwards compatibility (see #7858)
+# re-add fire and ice colormap for backwards compatibility (see #7858)
 VISPY_OLD_COLORMAPS = {
     'fire': Colormap(
         name='fire',

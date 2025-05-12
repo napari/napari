@@ -333,9 +333,9 @@ class Shape(ABC):
         closed : bool
             Bool which determines if the edge is closed or not
         face : bool
-            Bool which determines if the face need to be traingulated
+            Bool which determines if the face need to be triangulated
         edge : bool
-            Bool which determines if the edge need to be traingulated
+            Bool which determines if the edge need to be triangulated
         """
         if data.shape[1] == 3:
             self._set_meshes_compiled_3d(
@@ -463,9 +463,9 @@ class Shape(ABC):
         closed : bool
             Bool which determines if the edge is closed or not
         face : bool
-            Bool which determines if the face need to be traingulated
+            Bool which determines if the face need to be triangulated
         edge : bool
-            Bool which determines if the edge need to be traingulated
+            Bool which determines if the edge need to be triangulated
         """
         data = remove_path_duplicates(data, closed=closed)
         if edge and face:
