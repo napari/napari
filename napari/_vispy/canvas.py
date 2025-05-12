@@ -675,6 +675,10 @@ class VispyCanvas:
         # TODO: the overlays are not properly updated when settings
         #       change, might be connect missing in overlay instantiation
         #       also, is scale bar duplicated????
+        for overlay in list(self._overlay_to_visual):
+            overlay_visual = self._overlay_to_visual.pop(overlay)
+            overlay_visual.close()
+
         for overlay in self.viewer._overlays.values():
             self._add_overlay_to_visual(overlay)
 
