@@ -996,6 +996,35 @@ def test_open_or_get_error_preferred_fails(builtins, tmp_path):
         viewer._open_or_raise_error([str(pth)])
 
 
+def test_open_sample_invalid_layer_data_tuple(tmp_plugin):
+    """Test that sample returning malformed layer data tuple raises error."""
+    viewer = ViewerModel()
+
+    @tmp_plugin.contribute.sample_data
+    def return_invalid_ldt():
+        return [('image', np.zeros((10, 10)))]
+
+    with pytest.raises(
+        TypeError, match='Not a valid list of layer data tuples!'
+    ):
+        viewer.open_sample('tmp_plugin', 'return_invalid_ldt')
+
+
+def test_open_sample_null_layer_sentinel(tmp_plugin):
+    """Test that sample returning null layer sentinel raises error."""
+    viewer = ViewerModel()
+
+    @tmp_plugin.contribute.sample_data
+    def return_null_layer():
+        return [(None,)]
+
+    with pytest.raises(
+        ValueError,
+        match='Sample "return_null_layer" from plugin "tmp_plugin" did not return any valid layer data tuples.',
+    ):
+        viewer.open_sample('tmp_plugin', 'return_null_layer')
+
+
 def test_slice_order_with_mixed_dims():
     viewer = ViewerModel(ndisplay=2)
     image_2d = viewer.add_image(np.zeros((4, 5)))
