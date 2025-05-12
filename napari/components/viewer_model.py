@@ -86,7 +86,7 @@ from napari.utils.events import (
 )
 from napari.utils.events.event import WarningEmitter
 from napari.utils.key_bindings import KeymapProvider
-from napari.utils.misc import is_sequence
+from napari.utils.misc import ensure_list_of_layer_data_tuple, is_sequence
 from napari.utils.mouse_bindings import MousemapProvider
 from napari.utils.progress import progress
 from napari.utils.theme import available_themes, is_theme_available
@@ -1314,8 +1314,22 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         with layer_source(sample=(plugin, sample)):
             if callable(data):
                 added = []
-                for datum in data(**kwargs):
-                    added.extend(self._add_layer_from_data(*datum))
+                needs_error = True
+                for datum in ensure_list_of_layer_data_tuple(
+                    list(data(**kwargs))
+                ):
+                    if datum[0] is not None:
+                        needs_error = False
+                        added.extend(self._add_layer_from_data(*datum))
+                if needs_error:
+                    raise ValueError(
+                        trans._(
+                            'Sample "{sample}" from plugin "{plugin}" did not return any valid layer data tuples.',
+                            deferred=True,
+                            sample=sample,
+                            plugin=plugin,
+                        )
+                    )
                 return added
             if isinstance(data, str | Path):
                 try:
