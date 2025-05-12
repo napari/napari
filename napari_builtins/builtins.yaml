@@ -132,7 +132,7 @@ contributions:
     # widgets
     - id: napari.widgets.features_table
       title: Features table widget
-      python_name: napari_builtins._widgets:FeaturesTable
+      python_name: napari_builtins._qt.features_table:FeaturesTable
 
   readers:
     - command: napari.get_reader

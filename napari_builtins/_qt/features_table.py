@@ -481,6 +481,10 @@ class FeaturesTable(QWidget):
             ),
         )
 
+        if not fname:
+            # was closed without saving
+            return
+
         df = self.table.model().sourceModel().df
         df.to_csv(fname)
 

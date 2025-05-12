@@ -1,5 +1,5 @@
 from napari.components import ViewerModel
-from napari_builtins._widgets import FeaturesTable
+from napari_builtins._qt.features_table import FeaturesTable
 
 
 def test_features_table(qtbot):
