@@ -17,8 +17,13 @@ jobs:
         with:
           python-version: 3.11
 
+      - name: Install uv
+        run: |
+          set -x
+          pip install -U uv
+
       - name: Run check
-        run: python tools/check_extensions.py
+        run: uv run tools/check_extensions.py
 
       - name: Create PR updating extension list
         uses: peter-evans/create-pull-request@v7

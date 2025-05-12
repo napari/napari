@@ -1,3 +1,10 @@
+# /// script
+# dependencies = [
+#   "imageio",
+#   "tifffile",
+# ]
+# ///
+
 import re
 import sys
 from pathlib import Path
