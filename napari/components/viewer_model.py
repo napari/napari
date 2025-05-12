@@ -712,6 +712,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         """Set layer slicer to force synchronous if async is disabled."""
         self._layer_slicer._force_sync = not event.value
 
+    def force_sync(self):
+        """Context manager to temporarily force slicing to be synchronous."""
+        return self._layer_slicer.force_sync()
+
     def _calc_status_from_cursor(
         self,
     ) -> tuple[str | Dict, str] | None:
