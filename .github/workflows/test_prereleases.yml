@@ -83,6 +83,13 @@ jobs:
           PIP_CONSTRAINT: resources/constraints/version_denylist.txt
           PIP_EXTRA_INDEX_URL: https://www.riverbankcomputing.com/pypi/simple/
 
+      - name: Upload leaked viewer graph
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: leaked ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.qt_backend }}
+          path: ./*leak-backref-graph*.pdf
+
       # If something goes wrong, we can open an issue in the repo
       - name: Report Failures
         if: ${{ failure() && github.event_name == 'schedule' }}
