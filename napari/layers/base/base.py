@@ -1529,7 +1529,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             return
         logger.debug('Layer.refresh: %s', self)
         # If async is enabled then emit an event that the viewer should handle.
-        if get_settings().experimental.async_:
+        if get_settings().experimental.async_ and data_displayed:
+            # full async slice reload, it will also update everything when done slicing
+            # via the callback of layer.loaded which calls _refresh_sync
             self.events.reload(layer=self)
         # Otherwise, slice immediately on the calling thread.
         else:
