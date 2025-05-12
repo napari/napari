@@ -4,8 +4,8 @@ from vispy.geometry import MeshData
 from vispy.visuals.filters import TextureFilter
 
 from napari._vispy.layers.base import VispyBaseLayer
-from napari._vispy.utils.colormap import napari_cmap_to_vispy
 from napari._vispy.visuals.surface import SurfaceVisual
+from napari.utils.colormaps.colormap_utils import _napari_cmap_to_vispy
 
 
 class VispySurfaceLayer(VispyBaseLayer):
@@ -136,7 +136,7 @@ class VispySurfaceLayer(VispyBaseLayer):
             )
             cmap = VispyColormap(colors)
         else:
-            cmap = napari_cmap_to_vispy(self.layer.colormap)
+            cmap = _napari_cmap_to_vispy(self.layer.colormap)
         if self.layer._slice_input.ndisplay == 3:
             self.node.view_program['texture2D_LUT'] = (
                 cmap.texture_lut() if (hasattr(cmap, 'texture_lut')) else None

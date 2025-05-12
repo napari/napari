@@ -243,6 +243,14 @@ def convert_vispy_colormap(colormap, name='vispy'):
     )
 
 
+def _napari_cmap_to_vispy(colormap: Colormap) -> VispyColormap:
+    """Convert a napari colormap to its equivalent vispy colormap."""
+    cmap_args = colormap.dict()
+    cmap_args.pop('name')
+    cmap_args['bad_color'] = cmap_args.pop('nan_color')
+    return VispyColormap(**cmap_args)
+
+
 def _validate_rgb(colors, *, tolerance=0.0):
     """Return the subset of colors that is in [0, 1] for all channels.
 
