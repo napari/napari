@@ -5,6 +5,9 @@ on:
   schedule:
     # * is a special character in YAML so you have to quote this string
     - cron:  '6 6 * * *' # every sunday
+  pull_request:
+    paths:
+      - '.github/workflows/check_extenstions.yml'
 
 jobs:
   read_extentions:
