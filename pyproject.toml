@@ -892,7 +892,7 @@ ignore_imports = [
 
 [tool.codespell]
 # Ref: https://github.com/codespell-project/codespell#using-a-config-file
-skip = '.git*,*.svg,*.rtf,*.rtf.tmpl'
+skip = '.git*,*.svg,*.rtf,*.rtf.tmpl,.venv,./tools/string_list.json'
 check-hidden = true
 # lines with é -- non-English
 ignore-regex = '(.*[àéç].*|^\s*"image/\S+": ".*|\biTerm\b)'
