@@ -124,7 +124,7 @@ class VispyCanvas:
         self.overlay_view = self.central_widget.add_view(border_width=0)
 
         self.layer_to_visual: dict[Layer, VispyBaseLayer] = {}
-        self._overlay_to_visual: dict[Overlay, VispyBaseOverlay] = {}
+        self._overlay_to_visuals: dict[Overlay, list[VispyBaseOverlay]] = {}
         self._layer_overlay_to_visual: dict[
             Layer, dict[Overlay, VispyBaseOverlay]
         ] = {}
@@ -663,21 +663,28 @@ class VispyCanvas:
                 overlay=overlay, viewer=self.viewer
             )
             vispy_overlay.node.parent = self.overlay_view
+            self._overlay_to_visuals.setdefault(overlay, []).append(
+                vispy_overlay
+            )
         else:
             for view in self.views:
                 vispy_overlay = create_vispy_overlay(
                     overlay=overlay, viewer=self.viewer
                 )
                 vispy_overlay.node.parent = view.scene
-        self._overlay_to_visual[overlay] = vispy_overlay
+
+                self._overlay_to_visuals.setdefault(overlay, []).append(
+                    vispy_overlay
+                )
 
     def _update_viewer_overlays(self):
         # TODO: the overlays are not properly updated when settings
         #       change, might be connect missing in overlay instantiation
         #       also, is scale bar duplicated????
-        for overlay in list(self._overlay_to_visual):
-            overlay_visual = self._overlay_to_visual.pop(overlay)
-            overlay_visual.close()
+        for overlay in list(self._overlay_to_visuals):
+            overlay_visuals = self._overlay_to_visuals.pop(overlay)
+            for overlay_visual in overlay_visuals:
+                overlay_visual.close()
 
         for overlay in self.viewer._overlays.values():
             self._add_overlay_to_visual(overlay)
