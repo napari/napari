@@ -811,13 +811,12 @@ class VispyCanvas:
         self._update_viewer_overlays()
 
     def _setup_single_view(self):
-        for napari_layer in self.viewer.layers:
-            vispy_layer = self.layer_to_visual[napari_layer]
+        for napari_layer, vispy_layer in self.layer_to_visual.items():
             vispy_layer.node.parent = self.view.scene
             self._update_layer_overlays_to_visual(napari_layer)
 
     def _setup_layer_views_in_grid(self):
-        for napari_layer in self.viewer.layers:
+        for napari_layer, vispy_layer in self.layer_to_visual.items():
             row, col = self.viewer.grid.position(
                 self.viewer.layers.index(napari_layer),
                 len(self.viewer.layers),
@@ -833,7 +832,6 @@ class VispyCanvas:
             self.grid_views.append(view)
             self.grid_cameras.append(camera)
 
-            vispy_layer = self.layer_to_visual[napari_layer]
             vispy_layer.node.parent = view.scene
             self._update_layer_overlays_to_visual(napari_layer)
 
