@@ -22,7 +22,7 @@ toggle_action_details = [
         'labels',
     ),
     (
-        'napari.window.view.toggle_viewer_axesdashed',
+        'napari.window.view.toggle_viewer_axes_dashed',
         trans._('Axes Dashed'),
         'axes',
         'dashed',
