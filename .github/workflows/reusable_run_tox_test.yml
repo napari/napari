@@ -104,6 +104,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install gdb
+          which python
 
       - name: Disable ptrace security restrictions
         if: runner.os == 'Linux'
