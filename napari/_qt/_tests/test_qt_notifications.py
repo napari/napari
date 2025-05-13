@@ -136,7 +136,6 @@ def test_clean_current_path_exist(make_napari_viewer):
     )
 
 
-@pytest.mark.usefixtures('_clean_current')
 @pytest.mark.parametrize(
     ('raise_func', 'warn_func'),
     [(_raise, _warn), (_threading_raise, _threading_warn)],
