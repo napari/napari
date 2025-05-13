@@ -161,4 +161,11 @@ BLENDING_MODES = {
         'blend': True,
         'blend_equation': 'min',
     },
+    'multiplicative': {
+        'depth_test': False,
+        'cull_face': False,
+        'blend': True,
+        'blend_func': ('dst_color', 'zero', 'one', 'one'),
+        'blend_equation': 'func_add',
+    },
 }
