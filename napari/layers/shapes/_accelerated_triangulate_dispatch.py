@@ -23,6 +23,7 @@ except ImportError:
 USE_NUMBA_FOR_EDGE_TRIANGULATION = _accelerated_triangulate_numba is not None
 RUN_WARMUP = _accelerated_triangulate_numba is not None
 CACHE_WARMUP = False
+UNIVERSAL_CACHE_WARMUP = False
 
 normalize_vertices_and_edges = (
     _accelerated_triangulate_python.normalize_vertices_and_edges_py
@@ -99,22 +100,42 @@ def _set_warmup(value: bool) -> None:
     RUN_WARMUP = value
 
 
+def warmup_universal_numba():
+    """Warm up the functions that are used even with compiled backends."""
+    global UNIVERSAL_CACHE_WARMUP
+    if UNIVERSAL_CACHE_WARMUP:
+        return
+    UNIVERSAL_CACHE_WARMUP = True
+
+    for order in ('C', 'F'):
+        data = np.array(
+            [[0, 0], [1, 1], [0, 1], [1, 0]], dtype=np.float32, order=order
+        )
+        data2 = np.array([[1, 1], [10, 15]], dtype=np.float32, order=order)
+
+        _accelerated_triangulate_numba.remove_path_duplicates(data, False)
+        _accelerated_triangulate_numba.remove_path_duplicates(data, True)
+        _accelerated_triangulate_numba.create_box_from_bounding(data2)
+
+
 def warmup_numba_cache() -> None:
     if _accelerated_triangulate_numba is None:
         # no numba, nothing to warm up
         return
     if not RUN_WARMUP:
+        warmup_universal_numba()
         return
     global CACHE_WARMUP
     if CACHE_WARMUP:
         return
 
     CACHE_WARMUP = True
+    warmup_universal_numba()
+
     for order in ('C', 'F'):
         data = np.array(
             [[0, 0], [1, 1], [0, 1], [1, 0]], dtype=np.float32, order=order
         )
-        data2 = np.array([[1, 1], [10, 15]], dtype=np.float32, order=order)
 
         if not USE_NUMBA_FOR_EDGE_TRIANGULATION:
             _accelerated_triangulate_numba.generate_2D_edge_meshes(data, True)
@@ -127,6 +148,3 @@ def warmup_numba_cache() -> None:
             _accelerated_triangulate_numba.reconstruct_polygons_from_edges(
                 v, e
             )
-        _accelerated_triangulate_numba.remove_path_duplicates(data, False)
-        _accelerated_triangulate_numba.remove_path_duplicates(data, True)
-        _accelerated_triangulate_numba.create_box_from_bounding(data2)
