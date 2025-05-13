@@ -2,15 +2,26 @@ from __future__ import annotations
 
 import itertools
 import tempfile
-from typing import TYPE_CHECKING
+import typing
+from typing import TYPE_CHECKING, overload
 
 import numpy as np
+from skimage import measure
 from skimage.draw import line, polygon2mask
-from vispy.geometry import PolygonData
+from vispy.geometry import Triangulation
 from vispy.visuals.tube import _frenet_frames
 
-from napari.layers.shapes._accelerated_triangulate_dispatch import (
-    generate_2D_edge_meshes,
+from napari.layers.shapes import (
+    _accelerated_triangulate_dispatch as _triangulate_dispatch,
+    _accelerated_triangulate_python as _triangulate_py,
+)
+from napari.layers.shapes.shape_types import (
+    BoxArray,
+    CoordinateArray,
+    CoordinateArray2D,
+    CoordinateArray3D,
+    EdgeArray,
+    TriangleArray,
 )
 from napari.utils.translations import trans
 
@@ -25,8 +36,8 @@ except ModuleNotFoundError:
 
 
 def find_planar_axis(
-    points: npt.NDArray,
-) -> tuple[npt.NDArray, int | None, float | None]:
+    points: CoordinateArray,
+) -> tuple[CoordinateArray2D, int | None, float | None]:
     """Find an axis along which the input points are planar.
 
     If points are 2D, they are returned unchanged.
@@ -53,108 +64,41 @@ def find_planar_axis(
     """
     ndim = points.shape[1]
     if ndim == 2:
-        return points, None, None
+        return points, None, None  # type: ignore[return-value]
     for axis_idx in range(ndim):
         values = np.unique(points[:, axis_idx])
         if len(values) == 1:
-            return np.delete(points, axis_idx, axis=1), axis_idx, values[0]
-    return np.empty((0, 2), dtype=points.dtype), None, None
+            return np.delete(points, axis_idx, axis=1), axis_idx, values[0]  # type: ignore[return-value]
+    return np.empty((0, 2), dtype=points.dtype), None, None  # type: ignore[return-value]
 
 
-def _common_orientation(poly: npt.NDArray) -> int | None:
-    """Check whether a polygon has the same orientation for all its angles. and return the orientation.
-
-    Parameters
-    ----------
-    poly: numpy array of floats, shape (N, 3)
-        Polygon vertices, in order.
-
-    Returns
-    -------
-    int or None
-        if all angles have same orientation return it, otherwise None.
-        Possible values: -1 if all angles are counterclockwise, 0 if all angles are collinear, 1 if all angles are clockwise
-    """
-    fst = poly[:-2]
-    snd = poly[1:-1]
-    thrd = poly[2:]
-    orn_set = np.unique(orientation(fst.T, snd.T, thrd.T))
-    if orn_set.size != 1:
-        return None
-    if (orn_set[0] == orientation(poly[-2], poly[-1], poly[0])) and (
-        orn_set[0] == orientation(poly[-1], poly[0], poly[1])
-    ):
-        return int(orn_set[0])
-    return None
+@typing.overload
+def _fan_triangulation(
+    poly: CoordinateArray2D,
+) -> tuple[CoordinateArray2D, TriangleArray]: ...
 
 
-def _are_polar_angles_monotonic(poly: npt.NDArray, orientation_: int) -> bool:
-    """Check whether a polygon with same oriented angles between successive edges is simple.
-
-    A polygon is considered simple if its edges do not intersect themselves.
-    This is determined by checking whether the angles between successive
-    vertices, measured from the centroid, increase consistently around the
-    polygon in a counterclockwise (or clockwise) direction. If the angles
-    from one vertex to the next increase, the polygon is simple.
-
-    Parameters
-    ----------
-    poly: numpy array of floats, shape (N, 2)
-        polygon vertices, in order.
-    orientation_: int
-        The orientation of the polygon. A value of `1` indicates clockwise
-        and `-1` indicates counterclockwise orientation.
-
-    Returns
-    -------
-    bool:
-        if all angles are increasing return True, otherwise False
-    """
-    if poly.shape[0] < 3:
-        return False  # Not enough vertices to form a polygon
-    if orientation_ == 1:
-        poly = poly[::-1]
-    centroid = poly.mean(axis=0)
-    angles = np.arctan2(poly[:, 1] - centroid[1], poly[:, 0] - centroid[0])
-    # orig_angles = angles.copy()
-    shifted_angles = angles - angles[0]
-    shifted_angles[shifted_angles < 0] += 2 * np.pi
-    # check if angles are increasing
-    return bool(np.all(np.diff(shifted_angles) > 0))
+@typing.overload
+def _fan_triangulation(
+    poly: CoordinateArray3D,
+) -> tuple[CoordinateArray3D, TriangleArray]: ...
 
 
-def _is_convex(poly: npt.NDArray) -> bool:
-    """Check whether a polygon is convex.
-
-    Parameters
-    ----------
-    poly: numpy array of floats, shape (N, 3)
-        Polygon vertices, in order.
-
-    Returns
-    -------
-    bool
-        True if the given polygon is convex.
-    """
-    orientation_ = _common_orientation(poly)
-    if orientation_ is None or orientation_ == 0:
-        return False
-    return _are_polar_angles_monotonic(poly, orientation_)
-
-
-def _fan_triangulation(poly: npt.NDArray) -> tuple[npt.NDArray, npt.NDArray]:
+def _fan_triangulation(
+    poly: CoordinateArray,
+) -> tuple[CoordinateArray, TriangleArray]:
     """Return a fan triangulation of a given polygon.
 
     https://en.wikipedia.org/wiki/Fan_triangulation
 
     Parameters
     ----------
-    poly: numpy array of float, shape (N, 3)
+    poly: numpy array of float, shape (N, 3) or (N, 2)
         Polygon vertices, in order.
 
     Returns
     -------
-    vertices : numpy array of float, shape (N, 3)
+    vertices : numpy array of float, shape (N, 3) or (N, 2)
         The vertices of the triangulation. In this case, the input array.
     triangles : numpy array of int, shape (N, 3)
         The triangles of the triangulation, as triplets of indices into the
@@ -164,7 +108,7 @@ def _fan_triangulation(poly: npt.NDArray) -> tuple[npt.NDArray, npt.NDArray]:
     triangles = np.zeros((len(poly) - 2, 3), dtype=np.uint32)
     triangles[:, 1] = np.arange(1, len(poly) - 1)
     triangles[:, 2] = np.arange(2, len(poly))
-    return vertices, triangles
+    return vertices, triangles  # type: ignore[return-value]
 
 
 def inside_boxes(boxes):
@@ -310,10 +254,10 @@ def lines_intersect(p1, q1, p2, q2):
         Bool indicating if line segment p1q1 intersects line segment p2q2
     """
     # Determine four orientations
-    o1 = orientation(p1, q1, p2)
-    o2 = orientation(p1, q1, q2)
-    o3 = orientation(p2, q2, p1)
-    o4 = orientation(p2, q2, q1)
+    o1 = _triangulate_py.orientation(p1, q1, p2)
+    o2 = _triangulate_py.orientation(p1, q1, q2)
+    o3 = _triangulate_py.orientation(p2, q2, p1)
+    o4 = _triangulate_py.orientation(p2, q2, q1)
 
     # Test general case
     if (o1 != o2) and (o3 != o4):
@@ -367,30 +311,6 @@ def on_segment(p, q, r):
     return on
 
 
-def orientation(p, q, r):
-    """Determines oritentation of ordered triplet (p, q, r)
-
-    Parameters
-    ----------
-    p : (2,) array
-        Array of first point of triplet
-    q : (2,) array
-        Array of second point of triplet
-    r : (2,) array
-        Array of third point of triplet
-
-    Returns
-    -------
-    val : int
-        One of (-1, 0, 1). 0 if p, q, r are collinear, 1 if clockwise, and -1
-        if counterclockwise.
-    """
-    val = (q[1] - p[1]) * (r[0] - q[0]) - (q[0] - p[0]) * (r[1] - q[1])
-    val = np.sign(val)
-
-    return val
-
-
 def is_collinear(points: npt.NDArray) -> bool:
     """Determines if a list of 2D points are collinear.
 
@@ -409,7 +329,10 @@ def is_collinear(points: npt.NDArray) -> bool:
 
     # The collinearity test takes three points, the first two are the first
     # two in the list, and then the third is iterated through in the loop
-    return all(orientation(points[0], points[1], p) == 0 for p in points[2:])
+    return all(
+        _triangulate_py.orientation(points[0], points[1], p) == 0
+        for p in points[2:]
+    )
 
 
 def point_to_lines(point, lines):
@@ -472,7 +395,7 @@ def point_to_lines(point, lines):
     return index, location
 
 
-def create_box(data: npt.NDArray) -> npt.NDArray:
+def create_box(data: CoordinateArray2D) -> BoxArray:
     """Creates the axis aligned interaction box of a list of points
 
     Parameters
@@ -506,10 +429,12 @@ def create_box(data: npt.NDArray) -> npt.NDArray:
             (tl + tr + br + bl) / 4,
         ]
     )
-    return box
+    return box  # type: ignore[return-value]
 
 
-def rectangle_to_box(data: npt.NDArray) -> npt.NDArray:
+def rectangle_to_box(
+    data: np.ndarray[tuple[typing.Literal[4], int], np.dtype[np.float32]],
+) -> BoxArray:
     """Converts the four corners of a rectangle into a interaction box like
     representation. If the rectangle is not axis aligned the resulting box
     representation will not be axis aligned either
@@ -546,7 +471,7 @@ def rectangle_to_box(data: npt.NDArray) -> npt.NDArray:
             data.mean(axis=0),
         ]
     )
-    return box
+    return box  # type: ignore[return-value]
 
 
 def find_corners(data: npt.NDArray) -> npt.NDArray:
@@ -596,8 +521,8 @@ def center_radii_to_corners(
 
 
 def triangulate_ellipse(
-    corners: npt.NDArray, num_segments: int = 100
-) -> tuple[npt.NDArray, npt.NDArray]:
+    corners: CoordinateArray, num_segments: int = 100
+) -> tuple[CoordinateArray, TriangleArray]:
     """Determines the triangulation of a path. The resulting `offsets` can
     multiplied by a `width` scalar and be added to the resulting `centers`
     to generate the vertices of the triangles for the triangulation, i.e.
@@ -682,12 +607,189 @@ def triangulate_ellipse(
     return vertices, triangles
 
 
-def triangulate_face(data: npt.NDArray) -> tuple[npt.NDArray, npt.NDArray]:
+def _cull_triangles_not_in_poly(vertices, triangles, poly):
+    """Remove triangles that are not inside the polygon.
+
+    Unlike VisPy, triangle's constrained Delaunay triangulation
+    returns triangles inside the hole as well. (I guess in case you want
+    to render holes but in a different color, for example.) In our case,
+    we want to get rid of them, so we cull them with some NumPy
+    calculations.
+
+    Parameters
+    ----------
+    vertices: np.ndarray[np.floating], shape (N, 2)
+        The vertices of the triangulation.
+    triangles: np.ndarray[np.intp], shape (M, 3)
+        Triangles in the triangulation, defined by three indices into the
+        vertex array.
+    poly: np.ndarray[np.floating], shape (P, 2)
+        The vertices of the polygon, in order. Holes in the polygon are
+        defined by an embedded polygon that starts from an arbitrary point in
+        the enclosing polygon and wind in the opposite direction.
+
+    Returns
+    -------
+    culled_triangles: np.ndarray[np.intp], shape (P, 3), P ≤ M
+        A subset of the input triangles.
+    """
+    centers = np.mean(vertices[triangles], axis=1)
+    in_poly = measure.points_in_poly(centers, poly)
+    return triangles[in_poly]
+
+
+def _fix_vertices_if_needed(
+    vertices: CoordinateArray2D, axis: int | None, value: float | None
+) -> CoordinateArray:
+    """Ensure vertices are planar along a given axis.
+
+    If an axis and value are provided, this function inserts the value as
+    a new coordinate along the given axis.
+    Used to convert 2D vertices in 3D vertices along the plane.
+
+    Parameters
+    ----------
+    vertices: np.ndarray[np.floating], shape (N, 2)
+        The vertices of the triangulation.
+    axis: int
+        The axis along which the vertices are planar.
+    value: float
+        The coordinate of the plane.
+
+    Returns
+    -------
+    new_vertices: np.ndarray[np.floating], shape (N, 3)
+        The vertices of the triangulation with the given axis fixed.
+    """
+    if axis is None or value is None:
+        return vertices
+    new_vertices = np.insert(vertices, axis, value, axis=1)
+    return new_vertices  # type: ignore[return-value]
+
+
+def triangulate_face_and_edges(
+    polygon_vertices: CoordinateArray,
+    triangulate_face_: typing.Callable,
+) -> tuple[
+    tuple[CoordinateArray, TriangleArray],
+    tuple[CoordinateArray, CoordinateArray, TriangleArray],
+]:
+    """Determines the triangulation of the face and edges of a shape.
+
+    Parameters
+    ----------
+    polygon_vertices : np.ndarray
+        Nx2 array of vertices of shape to be triangulated
+
+    Returns
+    -------
+    face_tri : tuple[np.ndarray, np.ndarray]
+        Tuple of vertices and triangles of the face.
+    edge_tri : tuple[np.ndarray, np.ndarray, np.ndarray]
+        Tuple of vertices, offsets, and triangles of the edges.
+    """
+    data2d, axis, value = find_planar_axis(polygon_vertices)
+
+    if not len(data2d) or is_collinear(data2d):
+        face_tri = (
+            np.empty((0, polygon_vertices.shape[1]), dtype=np.float32),
+            np.empty((0, 3), dtype=np.int32),
+        )
+        edge_tri = triangulate_edge(polygon_vertices, closed=True)
+        return face_tri, edge_tri  # type: ignore[return-value]
+
+    if _triangulate_dispatch.is_convex(data2d):
+        vertices, triangles = _fan_triangulation(data2d)
+        face_tri = (
+            _fix_vertices_if_needed(vertices, axis=axis, value=value),
+            triangles,
+        )
+        edge_tri = triangulate_edge(polygon_vertices, closed=True)
+        return face_tri, edge_tri
+
+    raw_vertices, edges = _triangulate_dispatch.normalize_vertices_and_edges(
+        data2d, close=True
+    )
+
+    vertices, triangles = triangulate_face_(
+        raw_vertices.copy(), edges.copy(), polygon_vertices
+    )
+
+    face_tri = (
+        _fix_vertices_if_needed(vertices, axis=axis, value=value),
+        triangles,
+    )
+
+    if len(edges) == len(polygon_vertices):
+        # There is no removed edge
+        edge_tri = triangulate_edge(polygon_vertices, closed=True)
+    else:
+        # There is at least one removed edge
+        edge_tri = reconstruct_and_triangulate_edge(raw_vertices, edges)
+
+    return face_tri, edge_tri
+
+
+@overload
+def reconstruct_and_triangulate_edge(
+    vertices: CoordinateArray2D, edges: EdgeArray
+) -> tuple[CoordinateArray2D, CoordinateArray2D, TriangleArray]: ...
+
+
+@overload
+def reconstruct_and_triangulate_edge(
+    vertices: CoordinateArray3D, edges: EdgeArray
+) -> tuple[CoordinateArray3D, CoordinateArray3D, TriangleArray]: ...
+
+
+def reconstruct_and_triangulate_edge(
+    vertices: CoordinateArray, edges: EdgeArray
+) -> tuple[CoordinateArray, CoordinateArray, TriangleArray]:
+    """Triangulate edges when vertices form multiple disjoint polygons.
+
+    Parameters
+    ----------
+    vertices: np.ndarray
+        Nx2 or Nx3 array of vertices of shape to be triangulated.
+        Cannot contain duplicated vertices.
+    edges: np.ndarray
+        list of edges encoded as vertices indices.
+        Cannot contain duplicated vertices.
+
+    Returns
+    -------
+    edges_tri: tuple[ndarray, ndarray, ndarray]
+        vertices, offsets, and triangles of the edge triangulation(s).
+    """
+    polygon_list = _triangulate_dispatch.reconstruct_polygons_from_edges(
+        vertices, edges
+    )
+    centers_list = []
+    offset_list = []
+    triangles_list = []
+    offset_idx = 0
+    for polygon in polygon_list:
+        centers, offset, triangles = triangulate_edge(polygon, closed=True)
+        centers_list.append(centers)
+        offset_list.append(offset)
+        triangles_list.append(triangles + offset_idx)
+        offset_idx += len(centers)
+    return (  # type: ignore[return-value]
+        np.concatenate(centers_list),
+        np.concatenate(offset_list),
+        np.concatenate(triangles_list),
+    )
+
+
+def triangulate_face(
+    polygon_vertices: CoordinateArray2D,
+    triangulate_face_: typing.Callable,
+) -> tuple[CoordinateArray2D, TriangleArray]:
     """Determines the triangulation of the face of a shape.
 
     Parameters
     ----------
-    data : np.ndarray
+    polygon_vertices : np.ndarray
         Nx2 array of vertices of shape to be triangulated
 
     Returns
@@ -698,46 +800,112 @@ def triangulate_face(data: npt.NDArray) -> tuple[npt.NDArray, npt.NDArray]:
         Px3 array of the indices of the vertices that will form the
         triangles of the triangulation
     """
+    if _triangulate_dispatch.is_convex(polygon_vertices):
+        return _fan_triangulation(polygon_vertices)
 
-    if triangulate is not None:
-        len_data = len(data)
+    raw_vertices, edges = _triangulate_dispatch.normalize_vertices_and_edges(
+        polygon_vertices, close=True
+    )
+    return triangulate_face_(raw_vertices, edges, polygon_vertices)
 
-        edges = np.empty((len_data, 2), dtype=np.uint32)
-        edges[:, 0] = np.arange(len_data)
-        edges[:, 1] = np.arange(1, len_data + 1)
-        # connect last with first vertex
-        edges[-1, 1] = 0
 
-        res = triangulate({'vertices': data, 'segments': edges}, 'p')
-        vertices, triangles = res['vertices'], res['triangles']
-    elif _is_convex(data):
-        vertices, triangles = _fan_triangulation(data)
-    else:
-        try:
-            vertices, triangles = PolygonData(vertices=data).triangulate()
-        except Exception as e:
-            path = tempfile.mktemp(prefix='napari_triang_', suffix='.npz')
-            text_path = tempfile.mktemp(prefix='napari_triang_', suffix='.txt')
-            np.savez(path, data=data)
-            np.savetxt(text_path, data)
-            raise RuntimeError(
-                f'Triangulation failed. Data saved to {path} and {text_path}'
-            ) from e
+@overload
+def triangulate_face_vispy(
+    raw_vertices: CoordinateArray2D,
+    edges: EdgeArray,
+    polygon_vertices: CoordinateArray,
+) -> tuple[CoordinateArray2D, TriangleArray]: ...
+
+
+@overload
+def triangulate_face_vispy(
+    raw_vertices: CoordinateArray3D,
+    edges: EdgeArray,
+    polygon_vertices: CoordinateArray,
+) -> tuple[CoordinateArray3D, TriangleArray]: ...
+
+
+def triangulate_face_vispy(
+    raw_vertices: CoordinateArray,
+    edges: EdgeArray,
+    polygon_vertices: CoordinateArray,
+) -> tuple[CoordinateArray, TriangleArray]:
+    try:
+        tri = Triangulation(raw_vertices, edges)
+        tri.triangulate()
+        vertices, triangles = tri.pts, tri.tris
+    except Exception as e:  # pragma: no cover
+        path, text_path = _save_failed_triangulation(
+            raw_vertices, backend='vispy'
+        )
+        raise RuntimeError(
+            f'Triangulation failed. Data saved to {path} and {text_path}'
+        ) from e
 
     triangles = triangles.astype(np.uint32)
 
     return vertices, triangles
 
 
+@overload
+def triangulate_face_triangle(
+    raw_vertices: CoordinateArray2D,
+    edges: EdgeArray,
+    polygon_vertices: CoordinateArray,
+) -> tuple[CoordinateArray2D, TriangleArray]: ...
+
+
+@overload
+def triangulate_face_triangle(
+    raw_vertices: CoordinateArray3D,
+    edges: EdgeArray,
+    polygon_vertices: CoordinateArray,
+) -> tuple[CoordinateArray3D, TriangleArray]: ...
+
+
+def triangulate_face_triangle(
+    raw_vertices: CoordinateArray,
+    edges: EdgeArray,
+    polygon_vertices: CoordinateArray,
+) -> tuple[CoordinateArray, TriangleArray]:
+    res = triangulate({'vertices': raw_vertices, 'segments': edges}, opts='p')
+    vertices = res['vertices']
+    raw_triangles = res['triangles']
+    # triangle's constrained Delaunay triangulation
+    # returns triangles inside the hole. (perhaps in case you want
+    # to render holes but in a different color, for example.) In our case,
+    # we want to get rid of them, so we cull them with some NumPy
+    # calculations
+    triangles = _cull_triangles_not_in_poly(
+        vertices, raw_triangles, polygon_vertices
+    )
+    triangles = triangles.astype(np.uint32)
+
+    return vertices, triangles
+
+
+@typing.overload
 def triangulate_edge(
-    path: npt.NDArray, closed: bool = False
-) -> tuple[npt.NDArray, npt.NDArray, npt.NDArray]:
-    """Determines the triangulation of a path. The resulting `offsets` can
-    multiplied by a `width` scalar and be added to the resulting `centers`
-    to generate the vertices of the triangles for the triangulation, i.e.
-    `vertices = centers + width*offsets`. Using the `centers` and `offsets`
-    representation thus allows for the computed triangulation to be
-    independent of the line width.
+    path: CoordinateArray2D, closed: bool = False
+) -> tuple[CoordinateArray2D, CoordinateArray2D, TriangleArray]: ...
+
+
+@typing.overload
+def triangulate_edge(
+    path: CoordinateArray3D, closed: bool = False
+) -> tuple[CoordinateArray3D, CoordinateArray3D, TriangleArray]: ...
+
+
+def triangulate_edge(
+    path: CoordinateArray, closed: bool = False
+) -> tuple[CoordinateArray, CoordinateArray, TriangleArray]:
+    """Determines the triangulation of a path.
+
+    The resulting `offsets` can multiplied by a `width` scalar and be added
+    to the resulting `centers` to generate the vertices of the triangles for
+    the triangulation, i.e. `vertices = centers + width*offsets`. Using the
+    `centers` and `offsets` representation thus allows for the computed
+    triangulation to be independent of the line width.
 
     Parameters
     ----------
@@ -772,8 +940,10 @@ def triangulate_edge(
         clean_path = path
 
     if clean_path.shape[-1] == 2:
-        centers, offsets, triangles = generate_2D_edge_meshes(
-            np.asarray(clean_path, dtype=np.float32), closed=closed
+        centers, offsets, triangles = (
+            _triangulate_dispatch.generate_2D_edge_meshes(
+                np.asarray(clean_path, dtype=np.float32), closed=closed
+            )
         )
     else:
         centers, offsets, triangles = generate_tube_meshes(
@@ -1222,3 +1392,51 @@ def rdp(vertices: npt.NDArray, epsilon: float) -> npt.NDArray:
 
     # When epsilon is 0, avoid removing datapoints
     return vertices
+
+
+def _save_failed_triangulation(
+    data: np.ndarray, target_dir: str | None = None, backend: str = ''
+) -> tuple[str, str]:
+    """Save data to temporary files for debugging.
+
+    This function saves input data when triangulation fails.
+    It saves the same data to both a .npz file and a .txt file within the
+    temporary directory, and returns the paths to the saved files.
+
+    Parameters
+    ----------
+    data : np.ndarray
+        The data to save.
+    target_dir: str or None
+        Path to the directory where the files will be saved.
+        If None, the default
+    backend: str, options
+        The backend used for triangulation. This is used to generate the
+        filename prefix.
+
+    Returns
+    -------
+    tuple[str, str]
+        The paths to the saved files.
+
+    Notes
+    -----
+    Use TMPDIR environment variable to set the temporary directory.
+    """
+    with tempfile.NamedTemporaryFile(
+        delete=False,
+        suffix='.npz',
+        prefix=f'napari_{backend}_triang_',
+        dir=target_dir,
+    ) as binary_file:
+        np.savez(binary_file, data=data)
+    with tempfile.NamedTemporaryFile(
+        delete=False,
+        suffix='.txt',
+        prefix=f'napari_{backend}_triang_',
+        mode='w',
+        dir=target_dir,
+    ) as text_file:
+        np.savetxt(text_file, data)
+
+    return binary_file.name, text_file.name

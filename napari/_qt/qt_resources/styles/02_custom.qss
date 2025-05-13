@@ -579,8 +579,7 @@ QPushButton#close_button:disabled {
   background: {{ primary }};
 }
 
-#error_label {
-  image: url("theme_{{ id }}:/warning.svg");
+#error_label, #success_label, #help_label, #righthand_label, #lefthand_label {
   max-width: 18px;
   max-height: 18px;
   min-width: 18px;
@@ -588,30 +587,26 @@ QPushButton#close_button:disabled {
   margin: 0px;
   margin-left: 1px;
   padding: 2px;
+}
+#error_label {
+  image: url("theme_{{ id }}:/warning.svg");
 }
 
 #success_label {
   image: url("theme_{{ id }}:/check.svg");
-  max-width: 18px;
-  max-height: 18px;
-  min-width: 18px;
-  min-height: 18px;
-  margin: 0px;
-  margin-left: 1px;
-  padding: 2px;
 }
 
 #help_label {
-  image: url("theme_{{ id }}:/help.svg");
-  max-width: 18px;
-  max-height: 18px;
-  min-width: 18px;
-  min-height: 18px;
-  margin: 0px;
-  margin-left: 1px;
-  padding: 2px;
+  image: url("theme_{{ id }}:/help_50.svg");
 }
 
+#righthand_label {
+  image: url("theme_{{ id }}:/righthand_50.svg");
+}
+
+#lefthand_label {
+  image: url("theme_{{ id }}:/lefthand_50.svg");
+}
 
 QtPluginDialog QSplitter{
   padding-right: 2;

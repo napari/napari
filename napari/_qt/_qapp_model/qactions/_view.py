@@ -12,12 +12,11 @@ from app_model.types import (
 )
 
 from napari._app_model.constants import MenuGroup, MenuId
-from napari._qt._qapp_model.qactions._toggle_action import ViewerToggleAction
 from napari._qt.qt_main_window import Window
 from napari._qt.qt_viewer import QtViewer
 from napari.settings import get_settings
 from napari.utils.translations import trans
-from napari.viewer import Viewer
+from napari.viewer import Viewer, ViewerModel
 
 # View submenus
 VIEW_SUBMENUS = [
@@ -63,7 +62,7 @@ def _get_current_tooltip_visibility() -> bool:
 
 
 def _fit_to_view(viewer: Viewer):
-    viewer.reset_view(reset_camera_angle=False)
+    viewer.fit_to_view()
 
 
 def _zoom_in(viewer: Viewer):
@@ -72,6 +71,14 @@ def _zoom_in(viewer: Viewer):
 
 def _zoom_out(viewer: Viewer):
     viewer.camera.zoom /= 1.5
+
+
+def _toggle_canvas_ndim(viewer: ViewerModel):
+    """Toggle the current canvas between 3D and 2D."""
+    if viewer.dims.ndisplay == 2:
+        viewer.dims.ndisplay = 3
+    else:  # == 3
+        viewer.dims.ndisplay = 2
 
 
 Q_VIEW_ACTIONS: list[Action] = [
@@ -181,6 +188,18 @@ Q_VIEW_ACTIONS: list[Action] = [
         keybindings=[StandardKeyBinding.ZoomOut],
     ),
     Action(
+        id='napari.window.view.toggle_ndisplay',
+        title=trans._('Toggle 2D/3D Camera'),
+        menus=[
+            {
+                'id': MenuId.MENUBAR_VIEW,
+                'group': MenuGroup.ZOOM,
+                'order': 2,
+            }
+        ],
+        callback=_toggle_canvas_ndim,
+    ),
+    Action(
         id='napari.window.view.toggle_activity_dock',
         title=trans._('Toggle Activity Dock'),
         menus=[
@@ -205,70 +224,3 @@ Q_VIEW_ACTIONS: list[Action] = [
         toggled=ToggleRule(get_current=_get_current_tooltip_visibility),
     ),
 ]
-
-MENUID_DICT = {'axes': MenuId.VIEW_AXES, 'scale_bar': MenuId.VIEW_SCALEBAR}
-
-toggle_action_details = [
-    (
-        'napari.window.view.toggle_viewer_axes',
-        trans._('Axes Visible'),
-        'axes',
-        'visible',
-    ),
-    (
-        'napari.window.view.toggle_viewer_axes_colored',
-        trans._('Axes Colored'),
-        'axes',
-        'colored',
-    ),
-    (
-        'napari.window.view.toggle_viewer_axes_labels',
-        trans._('Axes Labels'),
-        'axes',
-        'labels',
-    ),
-    (
-        'napari.window.view.toggle_viewer_axesdashed',
-        trans._('Axes Dashed'),
-        'axes',
-        'dashed',
-    ),
-    (
-        'napari.window.view.toggle_viewer_axes_arrows',
-        trans._('Axes Arrows'),
-        'axes',
-        'arrows',
-    ),
-    (
-        'napari.window.view.toggle_viewer_scale_bar',
-        trans._('Scale Bar Visible'),
-        'scale_bar',
-        'visible',
-    ),
-    (
-        'napari.window.view.toggle_viewer_scale_bar_colored',
-        trans._('Scale Bar Colored'),
-        'scale_bar',
-        'colored',
-    ),
-    (
-        'napari.window.view.toggle_viewer_scale_bar_ticks',
-        trans._('Scale Bar Ticks'),
-        'scale_bar',
-        'ticks',
-    ),
-]
-
-# Add `Action`s that toggle various viewer `axes` and `scale_bar` sub-attributes
-# E.g., `toggle_viewer_scale_bar_ticks` toggles the sub-attribute `ticks` of the
-# viewer attribute `scale_bar`
-for cmd, cmd_title, viewer_attr, sub_attr in toggle_action_details:
-    Q_VIEW_ACTIONS.append(
-        ViewerToggleAction(
-            id=cmd,
-            title=cmd_title,
-            viewer_attribute=viewer_attr,
-            sub_attribute=sub_attr,
-            menus=[{'id': MENUID_DICT[viewer_attr]}],
-        )
-    )

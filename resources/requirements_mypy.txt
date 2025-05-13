@@ -6,11 +6,11 @@ appdirs==1.4.4
     # via npe2
 build==1.2.2.post1
     # via npe2
-certifi==2025.1.31
+certifi==2025.4.26
     # via requests
-charset-normalizer==3.4.1
+charset-normalizer==3.4.2
     # via requests
-click==8.1.8
+click==8.2.0
     # via typer
 docstring-parser==0.16
     # via magicgui
@@ -24,27 +24,27 @@ mdurl==0.1.2
     # via markdown-it-py
 mypy==1.15.0
     # via -r resources/requirements_mypy.in
-mypy-extensions==1.0.0
+mypy-extensions==1.1.0
     # via mypy
 npe2==0.7.8
     # via -r resources/requirements_mypy.in
-numpy==2.1.3
+numpy==2.2.5
     # via -r resources/requirements_mypy.in
-packaging==24.2
+packaging==25.0
     # via
     #   build
     #   qtpy
-psygnal==0.12.0
+psygnal==0.13.0
     # via
     #   magicgui
     #   npe2
 pyconify==0.2.1
     # via superqt
-pydantic==2.10.6
+pydantic==2.11.4
     # via
     #   -r resources/requirements_mypy.in
     #   npe2
-pydantic-core==2.27.2
+pydantic-core==2.33.2
     # via pydantic
 pygments==2.19.1
     # via
@@ -52,9 +52,9 @@ pygments==2.19.1
     #   superqt
 pyproject-hooks==1.2.0
     # via build
-pyqt6==6.8.1
+pyqt6==6.9.0
     # via -r resources/requirements_mypy.in
-pyqt6-qt6==6.8.2
+pyqt6-qt6==6.9.0
     # via pyqt6
 pyqt6-sip==13.10.0
     # via pyqt6
@@ -67,27 +67,27 @@ qtpy==2.4.3
     #   superqt
 requests==2.32.3
     # via pyconify
-rich==13.9.4
+rich==14.0.0
     # via
     #   npe2
     #   typer
-setuptools==76.0.0
+setuptools==80.4.0
     # via types-setuptools
 shellingham==1.5.4
     # via typer
-superqt==0.7.1
+superqt==0.7.3
     # via magicgui
 tomli-w==1.2.0
     # via npe2
-typer==0.15.2
+typer==0.15.3
     # via npe2
-types-pyyaml==6.0.12.20241230
+types-pyyaml==6.0.12.20250402
     # via -r resources/requirements_mypy.in
-types-requests==2.32.0.20250306
+types-requests==2.32.0.20250328
     # via -r resources/requirements_mypy.in
-types-setuptools==75.8.2.20250305
+types-setuptools==80.4.0.20250511
     # via -r resources/requirements_mypy.in
-typing-extensions==4.12.2
+typing-extensions==4.13.2
     # via
     #   magicgui
     #   mypy
@@ -95,7 +95,10 @@ typing-extensions==4.12.2
     #   pydantic-core
     #   superqt
     #   typer
-urllib3==2.3.0
+    #   typing-inspection
+typing-inspection==0.4.0
+    # via pydantic
+urllib3==2.4.0
     # via
     #   requests
     #   types-requests
