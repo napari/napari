@@ -2,30 +2,22 @@ import csv
 import itertools
 import os
 import re
-import tempfile
-import urllib.parse
 from collections.abc import Sequence
-from contextlib import contextmanager, suppress
+from contextlib import suppress
 from glob import glob
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional, Union
-from urllib.error import HTTPError, URLError
 
 import dask.array as da
 import imageio.v3 as iio
 import numpy as np
 from dask import delayed
-from imageio import formats
 
 from napari.utils.misc import abspath_or_url
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from napari.types import FullLayerData, LayerData, ReaderFunction
-
-
-IMAGEIO_EXTENSIONS = {x for f in formats for x in f.extensions}
-READER_EXTENSIONS = IMAGEIO_EXTENSIONS.union({'.zarr', '.lsm', '.npy'})
 
 
 def _alphanumeric_key(s: str) -> list[str | int]:
@@ -44,41 +36,13 @@ def _is_url(filename):
     return isinstance(filename, str) and URL_REGEX.match(filename) is not None
 
 
-@contextmanager
-def file_or_url_context(resource_name):
-    """Yield name of file from the given resource (i.e. file or url).
-
-    Originally vendored from scikit-image/skimage/io/util.py
-    """
-    if _is_url(resource_name):
-        url_components = urllib.parse.urlparse(resource_name)
-        _, ext = os.path.splitext(url_components.path)
-        try:
-            with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as f:
-                u = urllib.request.urlopen(resource_name)
-                f.write(u.read())
-            # f must be closed before yielding
-            yield f.name
-        except (URLError, HTTPError):  # pragma: no cover
-            # could not open URL
-            os.remove(f.name)
-            raise
-        except BaseException:  # pragma: no cover
-            # could not create temporary file
-            raise
-        else:
-            os.remove(f.name)
-    else:
-        yield resource_name
-
-
 def imread(filename: str) -> np.ndarray:
-    """Custom implementation of imread to avoid skimage dependency.
+    """Dispatch reading images to imageio.v3 imread.
 
     Parameters
     ----------
     filename : string
-        The path from which to read the image.
+        The path or URI from which to read the image.
 
     Returns
     -------
@@ -90,13 +54,8 @@ def imread(filename: str) -> np.ndarray:
 
     if ext.lower() in ('.npy',):
         return np.load(filename)
-    if ext.lower() not in ['.tif', '.tiff', '.lsm']:
-        return iio.imread(filename)
-    import tifffile
 
-    # Pre-download urls before loading them with tifffile
-    with file_or_url_context(filename) as filename:
-        return tifffile.imread(str(filename))
+    return iio.imread(str(filename))
 
 
 def _guess_zarr_path(path: str) -> bool:
@@ -506,7 +465,7 @@ def _magic_imreader(path: str) -> list['LayerData']:
 
 def napari_get_reader(
     path: str | list[str],
-) -> Optional['ReaderFunction']:
+) -> 'ReaderFunction':
     """Our internal fallback file reader at the end of the reader plugin chain.
 
     This will assume that the filepath is an image, and will pass all of the
@@ -522,13 +481,7 @@ def napari_get_reader(
     callable
         function that returns layer_data to be handed to viewer._add_layer_data
     """
-    if isinstance(path, str):
-        if path.endswith('.csv'):
-            return _csv_reader
-        if os.path.isdir(path):
-            return _magic_imreader
-        path = [path]
+    if isinstance(path, str) and path.endswith('.csv'):
+        return _csv_reader
 
-    if all(str(x).lower().endswith(tuple(READER_EXTENSIONS)) for x in path):
-        return _magic_imreader
-    return None  # pragma: no cover
+    return _magic_imreader
