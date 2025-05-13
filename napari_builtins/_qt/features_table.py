@@ -9,7 +9,6 @@ from qtpy.QtCore import (
     QAbstractTableModel,
     QItemSelection,
     QItemSelectionModel,
-    QModelIndex,
     QSortFilterProxyModel,
     Qt,
     QTimer,
@@ -89,7 +88,9 @@ class PandasModel(QAbstractTableModel):
 
         return None
 
-    def headerData(self, section, orientation, role=Qt.ItemDataRole.DisplayRole):
+    def headerData(
+        self, section, orientation, role=Qt.ItemDataRole.DisplayRole
+    ):
         if role != Qt.ItemDataRole.DisplayRole:
             return None
         if orientation == Qt.Orientation.Horizontal:
@@ -101,14 +102,18 @@ class PandasModel(QAbstractTableModel):
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
 
         col = index.column()
         if col == 0:
-            return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable  # index is read-only
+            return (
+                Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
+            )  # index is read-only
 
         dtype = self.df.dtypes.iat[col - 1]
-        flags = Qt.ItemFlags(Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled)
+        flags = Qt.ItemFlags(
+            Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled
+        )
 
         if self.editable:
             # make boolean columns checkable
@@ -119,7 +124,7 @@ class PandasModel(QAbstractTableModel):
 
         return flags
 
-    def setData(self, index, value, role=Qt.EditRole):
+    def setData(self, index, value, role=Qt.ItemDataRole.EditRole):
         if not index.isValid():
             return False
 
@@ -131,9 +136,14 @@ class PandasModel(QAbstractTableModel):
         dtype = self.df.dtypes.iat[col - 1]
 
         # checkboxes
-        if role == Qt.ItemDataRole.CheckStateRole and pd.api.types.is_bool_dtype(dtype):
+        if (
+            role == Qt.ItemDataRole.CheckStateRole
+            and pd.api.types.is_bool_dtype(dtype)
+        ):
             self.df.iat[row, col - 1] = value == Qt.Checked
-            self.dataChanged.emit(index, index, [Qt.CheckStateRole])
+            self.dataChanged.emit(
+                index, index, [Qt.ItemDataRole.CheckStateRole]
+            )
             return True
 
         if role == Qt.ItemDataRole.EditRole:
@@ -143,7 +153,11 @@ class PandasModel(QAbstractTableModel):
                 self.df.iat[row, col - 1] = value
             except ValueError:
                 return False
-            self.dataChanged.emit(index, index, [Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole])
+            self.dataChanged.emit(
+                index,
+                index,
+                [Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole],
+            )
             return True
 
         return False
@@ -186,7 +200,7 @@ class DelegateCategorical(QStyledItemDelegate):
 
     def setEditorData(self, editor, index):
         if isinstance(editor, QComboBox):
-            value = index.model().data(index, Qt.EditRole)
+            value = index.model().data(index, Qt.ItemDataRole.EditRole)
             i = editor.findText(value)
             if i >= 0:
                 editor.setCurrentIndex(i)
@@ -198,7 +212,7 @@ class DelegateCategorical(QStyledItemDelegate):
             source_index = model.mapToSource(index)
             source_model = model.sourceModel()
             source_model.setData(
-                source_index, editor.currentText(), Qt.EditRole
+                source_index, editor.currentText(), Qt.ItemDataRole.EditRole
             )
         else:
             super().setModelData(editor, model, index)
@@ -208,8 +222,8 @@ class BoolFriendlyProxyModel(QSortFilterProxyModel):
     """Sort proxy model that handles booleans correctly."""
 
     def lessThan(self, left, right):
-        left_data = self.sourceModel().data(left, Qt.EditRole)
-        right_data = self.sourceModel().data(right, Qt.EditRole)
+        left_data = self.sourceModel().data(left, Qt.ItemDataRole.EditRole)
+        right_data = self.sourceModel().data(right, Qt.ItemDataRole.EditRole)
 
         # ensure booleans compare as expected
         if isinstance(left_data, bool) and isinstance(right_data, bool):
