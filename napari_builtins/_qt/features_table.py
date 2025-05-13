@@ -48,16 +48,12 @@ class PandasModel(QAbstractTableModel):
 
     # model methods necessary for qt
     def rowCount(self, parent=None):
-        if parent is None:
-            parent = QModelIndex()
         return self.df.shape[0]
 
     def columnCount(self, parent=None):
-        if parent is None:
-            parent = QModelIndex()
         return self.df.shape[1] + 1  # include index
 
-    def data(self, index, role=Qt.DisplayRole):
+    def data(self, index, role=Qt.ItemDataRole.DisplayRole):
         if not index.isValid():
             return None
 
@@ -65,7 +61,7 @@ class PandasModel(QAbstractTableModel):
         col = index.column()
 
         if col == 0:  # index
-            if role in (Qt.DisplayRole, Qt.EditRole):
+            if role in {Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole}:
                 return str(self.df.index[row])
             return None
 
@@ -76,7 +72,7 @@ class PandasModel(QAbstractTableModel):
         if role == Qt.CheckStateRole and pd.api.types.is_bool_dtype(dtype):
             return Qt.Checked if value else Qt.Unchecked
 
-        if role in (Qt.DisplayRole, Qt.EditRole):
+        if role in {Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole}:
             # format based on dtype
             if pd.api.types.is_float_dtype(dtype):
                 return f'{value:.6g}'
@@ -85,18 +81,18 @@ class PandasModel(QAbstractTableModel):
             if pd.api.types.is_datetime64_any_dtype(dtype):
                 return value.strftime('%Y-%m-%d')
             if pd.api.types.is_bool_dtype(dtype):
-                if role == Qt.DisplayRole:
+                if role == Qt.ItemDataRole.DisplayRole:
                     return ''  # do not show True/False text
-                if role == Qt.EditRole:
+                if role == Qt.ItemDataRole.EditRole:
                     return value  # needed for proper sorting
             return str(value)
 
         return None
 
-    def headerData(self, section, orientation, role=Qt.DisplayRole):
-        if role != Qt.DisplayRole:
+    def headerData(self, section, orientation, role=Qt.ItemDataRole.DisplayRole):
+        if role != Qt.ItemDataRole.DisplayRole:
             return None
-        if orientation == Qt.Horizontal:
+        if orientation == Qt.Orientation.Horizontal:
             # special case for index
             if section == 0:
                 return self.df.index.name or 'Index'
@@ -109,17 +105,17 @@ class PandasModel(QAbstractTableModel):
 
         col = index.column()
         if col == 0:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable  # index is read-only
+            return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable  # index is read-only
 
         dtype = self.df.dtypes.iat[col - 1]
-        flags = Qt.ItemFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
+        flags = Qt.ItemFlags(Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled)
 
         if self.editable:
             # make boolean columns checkable
             if pd.api.types.is_bool_dtype(dtype):
-                flags |= Qt.ItemIsUserCheckable
+                flags |= Qt.ItemFlag.ItemIsUserCheckable
             else:
-                flags |= Qt.ItemIsEditable
+                flags |= Qt.ItemFlag.ItemIsEditable
 
         return flags
 
@@ -135,19 +131,19 @@ class PandasModel(QAbstractTableModel):
         dtype = self.df.dtypes.iat[col - 1]
 
         # checkboxes
-        if role == Qt.CheckStateRole and pd.api.types.is_bool_dtype(dtype):
+        if role == Qt.ItemDataRole.CheckStateRole and pd.api.types.is_bool_dtype(dtype):
             self.df.iat[row, col - 1] = value == Qt.Checked
             self.dataChanged.emit(index, index, [Qt.CheckStateRole])
             return True
 
-        if role == Qt.EditRole:
+        if role == Qt.ItemDataRole.EditRole:
             try:
                 if not pd.api.types.is_categorical_dtype(dtype):
                     value = dtype.type(value)
                 self.df.iat[row, col - 1] = value
             except ValueError:
                 return False
-            self.dataChanged.emit(index, index, [Qt.DisplayRole, Qt.EditRole])
+            self.dataChanged.emit(index, index, [Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole])
             return True
 
         return False
@@ -217,7 +213,7 @@ class BoolFriendlyProxyModel(QSortFilterProxyModel):
 
         # ensure booleans compare as expected
         if isinstance(left_data, bool) and isinstance(right_data, bool):
-            return not left_data and right_data
+            return left_data < right_data
 
         return super().lessThan(left, right)
 
@@ -239,7 +235,7 @@ class PandasView(QTableView):
         # delegate which provides comboboxes for editing categorical values
         self.setItemDelegate(DelegateCategorical())
         # enable selection and editing
-        self.setSelectionBehavior(QTableView.SelectItems)
+        self.setSelectionBehavior(QTableView.SelectionBehavior.SelectItems)
         self.setSelectionMode(QTableView.ExtendedSelection)
         self.setEditTriggers(QAbstractItemView.AllEditTriggers)
 
