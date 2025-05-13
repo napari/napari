@@ -9,7 +9,6 @@ from qtpy.QtCore import (
     QAbstractTableModel,
     QItemSelection,
     QItemSelectionModel,
-    QModelIndex,
     QSortFilterProxyModel,
     Qt,
     QTimer,
@@ -89,7 +88,9 @@ class PandasModel(QAbstractTableModel):
 
         return None
 
-    def headerData(self, section, orientation, role=Qt.ItemDataRole.DisplayRole):
+    def headerData(
+        self, section, orientation, role=Qt.ItemDataRole.DisplayRole
+    ):
         if role != Qt.ItemDataRole.DisplayRole:
             return None
         if orientation == Qt.Orientation.Horizontal:
@@ -105,10 +106,14 @@ class PandasModel(QAbstractTableModel):
 
         col = index.column()
         if col == 0:
-            return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable  # index is read-only
+            return (
+                Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
+            )  # index is read-only
 
         dtype = self.df.dtypes.iat[col - 1]
-        flags = Qt.ItemFlags(Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled)
+        flags = Qt.ItemFlags(
+            Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled
+        )
 
         if self.editable:
             # make boolean columns checkable
@@ -131,7 +136,10 @@ class PandasModel(QAbstractTableModel):
         dtype = self.df.dtypes.iat[col - 1]
 
         # checkboxes
-        if role == Qt.ItemDataRole.CheckStateRole and pd.api.types.is_bool_dtype(dtype):
+        if (
+            role == Qt.ItemDataRole.CheckStateRole
+            and pd.api.types.is_bool_dtype(dtype)
+        ):
             self.df.iat[row, col - 1] = value == Qt.Checked
             self.dataChanged.emit(index, index, [Qt.CheckStateRole])
             return True
@@ -143,7 +151,11 @@ class PandasModel(QAbstractTableModel):
                 self.df.iat[row, col - 1] = value
             except ValueError:
                 return False
-            self.dataChanged.emit(index, index, [Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole])
+            self.dataChanged.emit(
+                index,
+                index,
+                [Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole],
+            )
             return True
 
         return False
