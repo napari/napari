@@ -195,23 +195,19 @@ class VispyCanvas:
 
     @property
     def background_color_override(self) -> str | None:
-        """Background color of VispyCanvas.view returned as hex string. When not None, color is shown instead of
-        VispyCanvas.bgcolor. The setter expects str (any in vispy.color.get_color_names) or hex starting
-        with # or a tuple | np.array ({3,4},) with values between 0 and 1.
+        """Background color of VispyCanvas.
+
+        When not None, color is shown instead of VispyCanvas.bgcolor.
 
         """
-        if self.view in self.central_widget._widgets:
-            return self.view.bgcolor.hex
-        return None
+        return self._background_color_override
 
     @background_color_override.setter
     def background_color_override(
         self, value: str | npt.ArrayLike | None
     ) -> None:
-        if value:
-            self.view.bgcolor = value
-        else:
-            self.view.bgcolor = None
+        self._background_color_override = value
+        self.bgcolor = value or self._last_theme_color
 
     def _on_theme_change(self, event: Event) -> None:
         self._set_theme_change(event.value)
@@ -241,7 +237,7 @@ class VispyCanvas:
 
     @bgcolor.setter
     def bgcolor(self, value: str | npt.ArrayLike) -> None:
-        self._scene_canvas.bgcolor = value
+        self._scene_canvas.bgcolor = self._background_color_override or value
 
     @property
     def central_widget(self) -> Widget:
