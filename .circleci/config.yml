@@ -11,7 +11,7 @@ jobs:
   build-docs:
     docker:
       # A list of available CircleCI Docker convenience images are available here: https://circleci.com/developer/images/image/cimg/python
-      - image: cimg/python:3.12.9
+      - image: cimg/python:3.12.10
     steps:
       - checkout:
           path: napari
