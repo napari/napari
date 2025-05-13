@@ -2642,18 +2642,17 @@ class Shapes(Layer):
                     self._data_view.edit(index, vertices[:-1])
             if self._mode in {Mode.ADD_POLYGON, Mode.ADD_POLYGON_LASSO}:
                 vertices = self._data_view.shapes[index].data
+                if self._mode == Mode.ADD_POLYGON_LASSO:
+                    vertices = rdp(
+                        vertices,
+                        epsilon=get_settings().experimental.rdp_epsilon,
+                    )
                 if len(vertices) <= 3:
                     self._data_view.remove(index)
                     # Clear selected data to prevent issues.
                     # See https://github.com/napari/napari/pull/6912#discussion_r1601169680
                     self.selected_data.clear()
-                elif self._mode == Mode.ADD_POLYGON:
-                    self._data_view.edit(index, vertices[:-1])
                 else:
-                    vertices = rdp(
-                        vertices,
-                        epsilon=get_settings().experimental.rdp_epsilon,
-                    )
                     self._data_view.edit(
                         index,
                         vertices[:-1],
