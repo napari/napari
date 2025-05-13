@@ -7,7 +7,7 @@ from weakref import WeakSet
 
 import numpy as np
 from superqt.utils import qthrottled
-from vispy.scene import SceneCanvas as SceneCanvas_, Widget
+from vispy.scene import SceneCanvas as SceneCanvas_, ViewBox, Widget
 
 from napari._vispy.camera import VispyCamera
 from napari._vispy.mouse_event import NapariMouseEvent
@@ -54,6 +54,13 @@ class NapariSceneCanvas(SceneCanvas_):
         if event.handled:
             return
         super()._process_mouse_event(event)
+
+
+class NapariViewBox(ViewBox):
+    """ViewBox which defaults to border_width=1."""
+
+    def __init__(self, *args, border_width=1, **kwargs):
+        super().__init__(*args, border_width=border_width, **kwargs)
 
 
 class VispyCanvas:
@@ -112,16 +119,16 @@ class VispyCanvas:
         self._scene_canvas = NapariSceneCanvas(
             *args, keys=None, vsync=True, **kwargs
         )
-        self.grid = self.central_widget.add_grid(border_width=0)
-        self.views = []
-        self.cameras = []
-        self.views.append(self.grid.add_view(0, 0, border_width=0))
-        self.cameras.append(
-            VispyCamera(self.views[0], self.viewer.camera, self.viewer.dims)
+
+        self.view = self.central_widget.add_view(border_width=0)
+        self.camera = VispyCamera(
+            self.view, self.viewer.camera, self.viewer.dims
         )
-        # overlay_view is overlapped to the whole canvas and it's
-        # where we put general canvas overlays
-        self.overlay_view = self.central_widget.add_view(border_width=0)
+
+        self.grid = self.central_widget.add_grid(border_width=0)
+        self.grid._default_class = NapariViewBox
+        self.grid_views = []
+        self.grid_cameras = []
 
         self.layer_to_visual: dict[Layer, VispyBaseLayer] = {}
         self._overlay_to_visuals: dict[Overlay, list[VispyBaseOverlay]] = {}
@@ -154,6 +161,7 @@ class VispyCanvas:
             self._key_map_handler.on_key_release
         )
         self._scene_canvas.events.draw.connect(self.enable_dims_play)
+        self._scene_canvas.events.draw.connect(self.camera.on_draw)
         self._scene_canvas.events.mouse_double_click.connect(
             self._on_mouse_double_click
         )
@@ -181,15 +189,6 @@ class VispyCanvas:
 
         self._on_grid_change()
 
-    # for backwards compatibility
-    @property
-    def view(self):
-        return self.views[0]
-
-    @property
-    def camera(self):
-        return self.cameras[0]
-
     @property
     def events(self):
         # This is backwards compatible with the old events system
@@ -212,21 +211,18 @@ class VispyCanvas:
 
     @property
     def background_color_override(self) -> str | None:
-        """Background color of VispyCanvas.view returned as hex string. When not None, color is shown instead of
-        VispyCanvas.bgcolor. The setter expects str (any in vispy.color.get_color_names) or hex starting
-        with # or a tuple | np.array ({3,4},) with values between 0 and 1.
+        """Background color of VispyCanvas.
 
+        When not None, color is shown instead of VispyCanvas.bgcolor.
         """
-        if self.views[0] in self.central_widget._widgets:
-            return self.views[0].bgcolor.hex
-        return None
+        return self._background_color_override
 
     @background_color_override.setter
     def background_color_override(
         self, value: str | npt.ArrayLike | None
     ) -> None:
-        for view in self.views:
-            view.bgcolor = value if value else None
+        self._background_color_override = value
+        self.bgcolor = value or self._last_theme_color
 
     def _on_theme_change(self, event: Event) -> None:
         self._set_theme_change(event.value)
@@ -256,7 +252,7 @@ class VispyCanvas:
 
     @bgcolor.setter
     def bgcolor(self, value: str | npt.ArrayLike) -> None:
-        self._scene_canvas.bgcolor = value
+        self._scene_canvas.bgcolor = self._background_color_override or value
 
     @property
     def central_widget(self) -> Widget:
@@ -332,10 +328,9 @@ class VispyCanvas:
     def _on_interactive(self) -> None:
         """Link interactive attributes of view and viewer."""
         # Is this should be changed or renamed?
-        for view in self.views:
-            view.interactive = (
-                self.viewer.camera.mouse_zoom or self.viewer.camera.mouse_pan
-            )
+        self.grid.interactive = (
+            self.viewer.camera.mouse_zoom or self.viewer.camera.mouse_pan
+        )
 
     def _map_canvas2world(
         self,
@@ -356,10 +351,11 @@ class VispyCanvas:
         """
         nd = self.viewer.dims.ndisplay
 
-        view = self._scene_canvas.visual_at(position) or self.views[0]
+        view = self._scene_canvas.visual_at(position) or self.view
         # combine the viewbox transform wit the scene transform
         # so each quadrant in grid mode maps back to the main scene
         transform = view.transform * view.scene.transform
+
         # cartesian to homogeneous coordinates
         mapped_position = transform.imap(list(position))
         if nd == 3:
@@ -410,6 +406,14 @@ class VispyCanvas:
         None
         """
         if event.pos is None:
+            return
+
+        if (
+            self.viewer.grid.enabled
+            and self._scene_canvas.visual_at(event.pos) is self.view
+        ):
+            # this means we're in an empty quadrant, so do nothing
+            event.handled = True
             return
 
         napari_event = NapariMouseEvent(
@@ -563,7 +567,7 @@ class VispyCanvas:
                 displayed_axes = list(self.viewer.dims.displayed[-nd:])
             layer._update_draw(
                 scale_factor=1
-                / self.viewer.camera.zoom,  # this was previously self.viewer.camera.zoom; however, this can be out of sync with the camera zoom because the viewer value is used before the zoom value gets updated by Camera.on_draw
+                / self.camera.zoom,  # this was previously self.viewer.camera.zoom; however, this can be out of sync with the camera zoom because the viewer value is used before the zoom value gets updated by Camera.on_draw
                 corner_pixels_displayed=canvas_corners_world[
                     :, displayed_axes
                 ],
@@ -662,14 +666,19 @@ class VispyCanvas:
             vispy_overlay = create_vispy_overlay(
                 overlay=overlay, viewer=self.viewer
             )
-            vispy_overlay.node.parent = self.overlay_view
+            vispy_overlay.node.parent = self.view
             self._overlay_to_visuals.setdefault(overlay, []).append(
                 vispy_overlay
             )
             # needed to bring up to date to the viewer
             vispy_overlay.reset()
         else:
-            for view in self.views:
+            if self.viewer.grid.enabled:
+                views = self.grid_views
+            else:
+                views = [self.view]
+
+            for view in views:
                 vispy_overlay = create_vispy_overlay(
                     overlay=overlay, viewer=self.viewer
                 )
@@ -683,9 +692,6 @@ class VispyCanvas:
                 vispy_overlay.reset()
 
     def _update_viewer_overlays(self):
-        # TODO: the overlays are not properly updated when settings
-        #       change, might be connect missing in overlay instantiation
-        #       also, is scale bar duplicated????
         for overlay in list(self._overlay_to_visuals):
             overlay_visuals = self._overlay_to_visuals.pop(overlay)
             for overlay_visual in overlay_visuals:
@@ -720,7 +726,7 @@ class VispyCanvas:
                     )
                     view = self.grid[row, col]
                 else:
-                    view = self.overlay_view
+                    view = self.view
 
                 overlay_visual.node.parent = view
             else:
@@ -750,8 +756,11 @@ class VispyCanvas:
         w, h = self.size
         nd = self.viewer.dims.ndisplay
 
-        # TODO: properly get position in correct subview
-        transform = self.views[0].scene.transform
+        view = self._scene_canvas.visual_at(event_pos) or self.view
+        # combine the viewbox transform wit the scene transform
+        # so each quadrant in grid mode maps back to the main scene
+        transform = view.transform * view.scene.transform
+
         # map click pos to scene coordinates
         click_scene = transform.imap([x, y, 0, 1])
         # canvas center at infinite far z- (eye position in canvas coordinates)
@@ -783,12 +792,12 @@ class VispyCanvas:
         self.viewer.dims._play_ready = True
 
     def _on_grid_change(self, event=None):
-        for camera in self.cameras:
+        for camera in self.grid_cameras:
             camera._2D_camera.parent = None
             camera._3D_camera.parent = None
             self._scene_canvas.events.draw.disconnect(camera.on_draw)
-        self.cameras.clear()
-        self.views.clear()
+        self.grid_cameras.clear()
+        self.grid_views.clear()
 
         # grid are really not designed to be reset, so it's easier to replace it
         self.grid.parent = None
@@ -802,15 +811,9 @@ class VispyCanvas:
         self._update_viewer_overlays()
 
     def _setup_single_view(self):
-        view = self.grid.add_view(0, 0, border_width=0)
-        camera = VispyCamera(view, self.viewer.camera, self.viewer.dims)
-        self.views.append(view)
-        self.cameras.append(camera)
-
-        self._scene_canvas.events.draw.connect(camera.on_draw)
         for napari_layer in self.viewer.layers:
             vispy_layer = self.layer_to_visual[napari_layer]
-            vispy_layer.node.parent = self.views[0].scene
+            vispy_layer.node.parent = self.view.scene
             self._update_layer_overlays_to_visual(napari_layer)
 
     def _setup_layer_views_in_grid(self):
@@ -820,15 +823,15 @@ class VispyCanvas:
                 len(self.viewer.layers),
             )
             # TODO: hook up theme to border color
-            view = self.grid.add_view(row, col, border_width=1)
+            view = self.grid[row, col]
             # TODO: a bit overkill for now, we should only need napari to communicate with
             # all the cameras OR only vispy to link. However, because we rely on vispy
             # cameras to handle events first and then send to napari, this isn't quite
             # as straightforward as it seems
             camera = VispyCamera(view, self.viewer.camera, self.viewer.dims)
             self._scene_canvas.events.draw.connect(camera.on_draw)
-            self.views.append(view)
-            self.cameras.append(camera)
+            self.grid_views.append(view)
+            self.grid_cameras.append(camera)
 
             vispy_layer = self.layer_to_visual[napari_layer]
             vispy_layer.node.parent = view.scene
@@ -839,15 +842,21 @@ class VispyCanvas:
     def _highlight_selected_grid(self):
         if not self.viewer.grid.enabled:
             return
+
+        highlights = np.full(self.grid.grid_size, -1)
+
         for napari_layer in self.viewer.layers:
             row, col = self.viewer.grid.position(
                 self.viewer.layers.index(napari_layer),
                 len(self.viewer.layers),
             )
-            # TODO: hook up theme to border color
-            color = 'gray'
             if napari_layer in self.viewer.layers.selection:
-                color = 'white'
-            if napari_layer is self.viewer.layers.selection.active:
-                color = 'yellow'
-            self.grid[row, col].border_color = color
+                highlights[row, col] = 1
+            else:
+                highlights[row, col] = 0
+
+        for row, col in np.ndindex(self.grid.grid_size):
+            hl = highlights[row, col]
+            self.grid[row, col].border_color = (
+                'yellow' if hl == 1 else 'gray' if hl == 0 else 'black'
+            )
