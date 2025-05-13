@@ -100,8 +100,11 @@ def _set_warmup(value: bool) -> None:
     RUN_WARMUP = value
 
 
-def warmup_universal_numba():
+def warmup_universal_numba() -> None:
     """Warm up the functions that are used even with compiled backends."""
+    if _accelerated_triangulate_numba is None:
+        # no numba, nothing to warm up
+        return
     global UNIVERSAL_CACHE_WARMUP
     if UNIVERSAL_CACHE_WARMUP:
         return
