@@ -103,7 +103,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install gdb
+          sudo apt-get install python${{ inputs.python_version }}-dbg gdb
           which python
           ls -l $(dirname $(which python))
 
