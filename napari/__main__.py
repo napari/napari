@@ -16,20 +16,18 @@ from textwrap import wrap
 from typing import Any
 
 from napari.errors import ReaderPluginError
+from napari.utils.misc import maybe_patch_conda_exe
 from napari.utils.translations import trans
 
 
 class InfoAction(argparse.Action):
     def __call__(self, *args, **kwargs):
         # prevent unrelated INFO logs when doing "napari --info"
-        from npe2 import cli
 
         from napari.utils import sys_info
 
         logging.basicConfig(level=logging.WARNING)
         print(sys_info())  # noqa: T201
-        print('Plugins:')  # noqa: T201
-        cli.list(fields='', sort='0', format='compact')
         sys.exit()
 
 
@@ -400,6 +398,7 @@ def _run() -> None:
 
         if running_as_constructor_app():
             install_certifi_opener()
+            maybe_patch_conda_exe()
         run(gui_exceptions=True)
 
 

@@ -129,7 +129,7 @@ jobs:
           path: napari_repo  # place in a named directory
           repository: ${{ env.FULL_NAME }}
           ref: ${{ env.BRANCH }}
-          token: ${{ secrets.GHA_TOKEN_NAPARI_BOT_MAIN_REPO }}
+          token: ${{ secrets.GHA_TOKEN_BOT_REPO }}
 
       - name: Add napari-bot/napari to napari_repo upstreams
         run: |

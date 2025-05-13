@@ -657,22 +657,10 @@ def test_active_layer_status_update():
     time.sleep(1)
     viewer.mouse_over_canvas = True
     viewer.cursor.position = [1, 1, 1, 1, 1]
-    viewer_cursor_status = viewer._calc_status_from_cursor()[0]
-    active_layer_status = viewer.layers.selection.active.get_status(
+    assert viewer._calc_status_from_cursor()[
+        0
+    ] == viewer.layers.selection.active.get_status(
         viewer.cursor.position, world=True
-    )
-    # check coords, value and layer name
-    assert (
-        viewer_cursor_status.split('»')[0].rstrip(' ')
-        == active_layer_status['coords']
-    )
-    assert (
-        viewer_cursor_status.rstrip(' ').split(' ')[-1]
-        == active_layer_status['value']
-    )
-    assert (
-        viewer_cursor_status.split('»')[1].split(':')[0].lstrip(' ')
-        == active_layer_status['layer_name']
     )
 
 
@@ -1008,6 +996,35 @@ def test_open_or_get_error_preferred_fails(builtins, tmp_path):
         viewer._open_or_raise_error([str(pth)])
 
 
+def test_open_sample_invalid_layer_data_tuple(tmp_plugin):
+    """Test that sample returning malformed layer data tuple raises error."""
+    viewer = ViewerModel()
+
+    @tmp_plugin.contribute.sample_data
+    def return_invalid_ldt():
+        return [('image', np.zeros((10, 10)))]
+
+    with pytest.raises(
+        TypeError, match='Not a valid list of layer data tuples!'
+    ):
+        viewer.open_sample('tmp_plugin', 'return_invalid_ldt')
+
+
+def test_open_sample_null_layer_sentinel(tmp_plugin):
+    """Test that sample returning null layer sentinel raises error."""
+    viewer = ViewerModel()
+
+    @tmp_plugin.contribute.sample_data
+    def return_null_layer():
+        return [(None,)]
+
+    with pytest.raises(
+        ValueError,
+        match='Sample "return_null_layer" from plugin "tmp_plugin" did not return any valid layer data tuples.',
+    ):
+        viewer.open_sample('tmp_plugin', 'return_null_layer')
+
+
 def test_slice_order_with_mixed_dims():
     viewer = ViewerModel(ndisplay=2)
     image_2d = viewer.add_image(np.zeros((4, 5)))
@@ -1056,14 +1073,143 @@ def test_get_status_text():
     )
     viewer.tooltip.visible = False
     assert viewer._calc_status_from_cursor() == (
-        ' [1 2] » Labels: 0; a: 1    ',
+        {
+            'coordinates': ' [1 2]: 0; a: 1',
+            'coords': ' [1 2]',
+            'layer_base': 'Labels',
+            'layer_name': 'Labels',
+            'plugin': '',
+            'source_type': '',
+            'value': '0; a: 1',
+        },
         '',
     )
     viewer.tooltip.visible = True
     assert viewer._calc_status_from_cursor() == (
-        ' [1 2] » Labels: 0; a: 1    ',
+        {
+            'coordinates': ' [1 2]: 0; a: 1',
+            'coords': ' [1 2]',
+            'layer_base': 'Labels',
+            'layer_name': 'Labels',
+            'plugin': '',
+            'source_type': '',
+            'value': '0; a: 1',
+        },
         'a: 1',
     )
     viewer.update_status_from_cursor()
-    assert viewer.status == ' [1 2] » Labels: 0; a: 1    '
+    assert viewer.status == {
+        'coordinates': ' [1 2]: 0; a: 1',
+        'coords': ' [1 2]',
+        'layer_base': 'Labels',
+        'layer_name': 'Labels',
+        'plugin': '',
+        'source_type': '',
+        'value': '0; a: 1',
+    }
     assert viewer.tooltip.text == 'a: 1'
+
+
+def test_reset_view():
+    """Test camera angle behavior after a viewer reset."""
+    viewer = ViewerModel(ndisplay=3)
+    viewer.add_image(np.random.random((10, 10, 10)))
+    viewer.camera.angles = (45, 30, 60)
+    viewer.reset_view()
+    assert viewer.camera.angles == (0, 0, 90)
+
+    viewer.camera.angles = (45, 30, 60)
+    viewer.reset_view(reset_camera_angle=False)
+    assert viewer.camera.angles == (45, 30, 60)
+
+
+def test_fit_to_view_margin():
+    """Test fit_to_view with different margin values."""
+    viewer = ViewerModel()
+    viewer.add_image(np.random.random((10, 10)))
+
+    # Reset view with default margin (0.05)
+    viewer.fit_to_view()
+    default_zoom = viewer.camera.zoom
+
+    # Check zoom decreases with increased margin
+    viewer.fit_to_view(margin=0.2)
+    large_margin_zoom = viewer.camera.zoom
+    assert default_zoom > large_margin_zoom
+
+    # Check zoom increases with decreased margin
+    viewer.fit_to_view(margin=0)
+    no_margin_zoom = viewer.camera.zoom
+    assert no_margin_zoom > default_zoom
+
+    # Check margins outside of the supported values
+    with pytest.raises(ValueError, match='margin must be between 0 and 1'):
+        viewer.fit_to_view(margin=-0.1)
+    with pytest.raises(ValueError, match='margin must be between 0 and 1'):
+        viewer.fit_to_view(margin=1.0)
+
+
+@pytest.mark.parametrize(
+    ('ndisplay', 'expected_center'),
+    [(2, (0, 14.5, 9.5)), (3, (4.5, 14.5, 9.5))],
+)
+def test_fit_to_view_center_calculation(ndisplay, expected_center):
+    """Test correct center calculation for different dimensions after fit_to_view."""
+    viewer = ViewerModel(ndisplay=ndisplay)
+    data = np.random.random((5, 10, 30, 20))
+    viewer.add_image(data)
+
+    # Pan to origin then reset
+    viewer.camera.center = (0, 0, 0)
+    viewer.fit_to_view()
+
+    # Center should be in the middle of the data, but first coordinate depends on ndisplay
+    np.testing.assert_allclose(viewer.camera.center, expected_center)
+
+
+def test_fit_to_view_2d_data_in_3d_view():
+    """Test fit_to_view with 2D data and ndisplay=3."""
+    viewer = ViewerModel(ndisplay=3)
+    viewer.add_image(np.random.random((10, 20)))
+    viewer.camera.angles = (45, 30, 60)
+    viewer.camera.center = (0, 0, 0)
+    viewer.fit_to_view()
+
+    np.testing.assert_allclose(viewer.camera.center, (0, 4.5, 9.5))
+    assert viewer.camera.angles == (45, 30, 60)
+
+
+def test_fit_to_view_grid():
+    """Test grid view adjusts zoom appropriately."""
+    viewer = ViewerModel()
+    for _ in range(4):
+        viewer.add_image(np.random.random((10, 10)))
+
+    viewer.fit_to_view()
+    default_zoom = viewer.camera.zoom
+
+    # enable grid and reset view
+    viewer.grid.enabled = True
+    viewer.fit_to_view()
+    grid_zoom = viewer.camera.zoom
+
+    # check zoom is less with grid enabled
+    assert grid_zoom < default_zoom
+
+    # space grid apart, then reset view
+    viewer.grid.spacing = 0.2
+    viewer.fit_to_view()
+    spaced_grid_zoom = viewer.camera.zoom
+
+    assert spaced_grid_zoom < grid_zoom
+
+
+def test_fit_to_view_handles_no_layers():
+    """Test fit_to_view with no layers."""
+    viewer = ViewerModel()
+    # Reset view should not raise errors when no layers are present
+    viewer.fit_to_view()
+    # Default values should be set
+    np.testing.assert_allclose(viewer.camera.center, (0, 255.5, 255.5))
+    np.testing.assert_allclose(viewer.camera.angles, (0, 0, 90))
+    assert viewer.camera.zoom > 0

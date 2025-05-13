@@ -266,36 +266,6 @@ class QtViewer(QSplitter):
         for layer in self.viewer.layers:
             self._add_layer(layer)
 
-    @property
-    def view(self):
-        """
-        Rectangular  vispy viewbox widget in which a subscene is rendered. Access directly within the QtViewer will
-        become deprecated.
-        """
-        warnings.warn(
-            trans._(
-                'Access to QtViewer.view is deprecated since 0.5.0 and will be removed in the napari 0.6.0. Change to QtViewer.canvas.view instead.'
-            ),
-            FutureWarning,
-            stacklevel=2,
-        )
-        return self.canvas.view
-
-    @property
-    def camera(self):
-        """
-        The Vispy camera class which contains both the 2d and 3d camera used to describe the perspective by which a
-        scene is viewed and interacted with. Access directly within the QtViewer will become deprecated.
-        """
-        warnings.warn(
-            trans._(
-                'Access to QtViewer.camera will become deprecated in the 0.6.0. Change to QtViewer.canvas.camera instead.'
-            ),
-            FutureWarning,
-            stacklevel=2,
-        )
-        return self.canvas.camera
-
     @staticmethod
     def _update_dask_cache_settings(
         dask_setting: DaskSettings | Event = None,
@@ -628,8 +598,12 @@ class QtViewer(QSplitter):
                 # `set_data` notifies the corresponding vispy layer of the new
                 # slice.
                 layer.events.set_data()
-                layer._update_thumbnail()
-                layer._set_highlight(force=True)
+                layer._refresh_sync(
+                    data_displayed=True,
+                    thumbnail=True,
+                    highlight=True,
+                    extent=True,
+                )
 
     def _on_active_change(self):
         """When active layer changes change keymap handler."""

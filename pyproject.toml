@@ -69,7 +69,7 @@ dependencies = [
     "toolz>=0.11.0",
     "tqdm>=4.56.0",
     "typing_extensions>=4.6.1",
-    "vispy>=0.14.1,<0.15",
+    "vispy>=0.15.0,<0.16",
     "wrapt>=1.13.3",
 ]
 dynamic = [
@@ -125,9 +125,17 @@ optional-numba = [
     "numba>=0.57.1",
 ]
 optional = [
-    "napari[optional-base,optional-numba]",
+    "napari[optional-base,optional-numba,bermuda]",
     "triangle",
+]
+bermuda = [
+    "bermuda>=0.1.4",
+]
+partsegcore = [
     "PartSegCore-compiled-backend>=0.15.11",
+]
+all_optional = [
+    "napari[optional,partsegcore]"
 ]
 testing = [
     "napari[gallery]",
@@ -180,6 +188,7 @@ docs = [
     "sphinx-gallery",
     "sphinx_autodoc_typehints==1.12.0",
     "sphinxcontrib-mermaid>=1.0.0",
+    "sphinxext-opengraph[social-cards]",
     "myst-nb",
     "napari-sphinx-theme>=0.3.0",
     "matplotlib",
@@ -187,6 +196,9 @@ docs = [
     "imageio-ffmpeg",
     "pydeps",
     "seedir",
+    # triangle and bermuda needed for docs/guides/triangulation.md
+    "triangle",
+    "bermuda>=0.1.4",
     "pytest",
     "linkify-it-py",
 ]
@@ -530,6 +542,7 @@ module = [
     'napari._qt.widgets.qt_font_size',
     'napari._qt.widgets.qt_highlight_preview',
     'napari._qt.widgets.qt_keyboard_settings',
+    'napari._qt.widgets.qt_logger',
     'napari._qt.widgets.qt_message_popup',
     'napari._qt.widgets.qt_mode_buttons',
     'napari._qt.widgets.qt_plugin_sorter',

@@ -3,15 +3,18 @@ import sys
 
 import numpy as np
 import pytest
+from qtpy import QT_VERSION
 from qtpy.QtCore import QPoint, Qt
 from qtpy.QtWidgets import QApplication
 
 from napari._app_model import get_app_model
+from napari._app_model.actions._view import toggle_action_details
 from napari._qt._qapp_model.qactions._view import (
     _get_current_tooltip_visibility,
-    toggle_action_details,
+    _toggle_canvas_ndim,
 )
 from napari._tests.utils import skip_local_focus, skip_local_popups
+from napari.viewer import ViewerModel
 
 
 def check_windows_style(viewer):
@@ -44,7 +47,7 @@ def check_view_menu_visibility(viewer, qtbot):
     toggle_action_details,
 )
 def test_toggle_axes_scale_bar_attr(
-    make_napari_viewer, action_id, action_title, viewer_attr, sub_attr
+    action_id, action_title, viewer_attr, sub_attr
 ):
     """
     Test toggle actions related with viewer axes and scale bar attributes.
@@ -57,11 +60,12 @@ def test_toggle_axes_scale_bar_attr(
         * `arrows`
     * Viewer `scale_bar` attributes:
         * `visible`
+        * `box`
         * `colored`
         * `ticks`
     """
     app = get_app_model()
-    viewer = make_napari_viewer()
+    viewer = ViewerModel()
 
     # Get viewer attribute to check (`axes` or `scale_bar`)
     axes_scale_bar = getattr(viewer, viewer_attr)
@@ -70,12 +74,17 @@ def test_toggle_axes_scale_bar_attr(
     initial_value = getattr(axes_scale_bar, sub_attr)
 
     # Change sub-attribute via action command execution and check value
-    app.commands.execute_command(action_id)
+    with app.injection_store.register(providers={ViewerModel: viewer}):
+        app.commands.execute_command(action_id)
     changed_value = getattr(axes_scale_bar, sub_attr)
     assert initial_value is not changed_value
 
 
 @skip_local_popups
+@pytest.mark.skipif(
+    QT_VERSION == '6.9.0',
+    reason='bug in Qt with maximized windows, https://bugreports.qt.io/browse/QTBUG-135844',
+)
 @pytest.mark.qt_log_level_fail('WARNING')
 def test_toggle_fullscreen_from_normal(make_napari_viewer, qtbot):
     """
@@ -119,6 +128,10 @@ def test_toggle_fullscreen_from_normal(make_napari_viewer, qtbot):
 
 
 @skip_local_popups
+@pytest.mark.skipif(
+    QT_VERSION == '6.9.0',
+    reason='bug in Qt with maximized windows, https://bugreports.qt.io/browse/QTBUG-135844',
+)
 @pytest.mark.qt_log_level_fail('WARNING')
 def test_toggle_fullscreen_from_maximized(make_napari_viewer, qtbot):
     """
@@ -314,3 +327,12 @@ def test_zoom_actions(make_napari_viewer):
     # Zoom should be reset, but angle unchanged
     assert viewer.camera.zoom == pytest.approx(initial_zoom)
     assert viewer.camera.angles == (90, 0, 0)
+
+
+@pytest.mark.parametrize(('initial', 'expected'), [(3, 2), (2, 3)])
+def test_toggle_canvas_ndim(initial, expected):
+    """Check that _toggle_canvas_ndim toggles the canvas ndims."""
+    viewer = ViewerModel()
+    viewer.dims.ndisplay = initial
+    _toggle_canvas_ndim(viewer)
+    assert viewer.dims.ndisplay == expected

@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import json
 import pickle
+from typing import Any
 
 import numpy as np
+import pint
 from app_model.expressions import parse_expression
 from app_model.types import Action
 from qtpy.QtCore import QMimeData
@@ -28,6 +30,15 @@ def _numpy_to_list(d: dict) -> dict:
     return d
 
 
+class UnitsEncoder(json.JSONEncoder):
+    def default(self, obj: Any) -> Any:
+        if isinstance(obj, np.ndarray):
+            obj = obj.tolist()
+        if isinstance(obj, pint.Unit):
+            return str(obj)
+        return json.JSONEncoder.default(self, obj)
+
+
 def _set_data_in_clipboard(data: dict) -> None:
     data = _numpy_to_list(data)
     clip = QApplication.clipboard()
@@ -35,7 +46,7 @@ def _set_data_in_clipboard(data: dict) -> None:
         show_warning('Cannot access clipboard')
         return
 
-    d = json.dumps(data)
+    d = json.dumps(data, cls=UnitsEncoder)
     p = pickle.dumps(data)
     mime_data = QMimeData()
     mime_data.setText(d)
@@ -52,6 +63,7 @@ def _copy_spatial_to_clipboard(layer: Layer) -> None:
             'scale': layer.scale,
             'shear': layer.shear,
             'translate': layer.translate,
+            'units': layer.units,
         }
     )
 
@@ -74,6 +86,10 @@ def _copy_scale_to_clipboard(layer: Layer) -> None:
 
 def _copy_translate_to_clipboard(layer: Layer) -> None:
     _set_data_in_clipboard({'translate': layer.translate})
+
+
+def _copy_units_to_clipboard(layer: Layer) -> None:
+    _set_data_in_clipboard({'units': layer.units})
 
 
 def _get_spatial_from_clipboard() -> dict | None:
@@ -104,7 +120,9 @@ def _paste_spatial_from_clipboard(ll: LayerList) -> None:
     for layer in ll.selection:
         for key in loaded:
             loaded_attr_value = loaded[key]
-            if isinstance(loaded_attr_value, list):
+            if key == 'units':
+                loaded_attr_value = loaded_attr_value[-layer.ndim :]
+            elif isinstance(loaded_attr_value, list):
                 loaded_attr_value = np.array(loaded_attr_value)
             if key == 'shear':
                 loaded_attr_value = loaded_attr_value[
@@ -134,7 +152,7 @@ def is_valid_spatial_in_clipboard() -> bool:
         return False
 
     return set(loaded).issubset(
-        {'affine', 'rotate', 'scale', 'shear', 'translate'}
+        {'affine', 'rotate', 'scale', 'shear', 'translate', 'units'}
     )
 
 
@@ -178,6 +196,13 @@ Q_LAYERLIST_CONTEXT_ACTIONS = [
         id='napari.layer.copy_translate_to_clipboard',
         title=trans._('Copy translate to clipboard'),
         callback=_copy_translate_to_clipboard,
+        menus=[{'id': MenuId.LAYERS_CONTEXT_COPY_SPATIAL}],
+        enablement=(LLSCK.num_selected_layers == 1),
+    ),
+    Action(
+        id='napari.layer.copy_units_to_clipboard',
+        title=trans._('Copy units to clipboard'),
+        callback=_copy_units_to_clipboard,
         menus=[{'id': MenuId.LAYERS_CONTEXT_COPY_SPATIAL}],
         enablement=(LLSCK.num_selected_layers == 1),
     ),

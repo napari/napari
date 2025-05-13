@@ -211,15 +211,16 @@ def _fresh_settings(monkeypatch):
     from napari import settings
     from napari.settings import NapariSettings
     from napari.settings._experimental import ExperimentalSettings
+    from napari.utils.triangulation_backend import TriangulationBackend
 
     # prevent the developer's config file from being used if it exists
     cp = NapariSettings.__private_attributes__['_config_path']
     monkeypatch.setattr(cp, 'default', None)
 
     monkeypatch.setattr(
-        ExperimentalSettings.__fields__['compiled_triangulation'],
+        ExperimentalSettings.__fields__['triangulation_backend'],
         'default',
-        True,
+        TriangulationBackend.fastest_available,
     )
 
     # calling save() with no config path is normally an error
@@ -533,6 +534,9 @@ def _disable_notification_dismiss_timer(monkeypatch):
         monkeypatch.setattr(NapariQtNotification, 'DISMISS_AFTER', 0)
         monkeypatch.setattr(NapariQtNotification, 'FADE_IN_RATE', 0)
         monkeypatch.setattr(NapariQtNotification, 'FADE_OUT_RATE', 0)
+
+        # disable slide in animation
+        monkeypatch.setattr(NapariQtNotification, 'slide_in', lambda x: None)
 
 
 @pytest.fixture
@@ -964,6 +968,19 @@ with contextlib.suppress(ImportError):
             # https://doc.qt.io/qtforpython-6/faq/porting_from2.html#class-function-deprecations
             QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
         return QApplication
+
+    @pytest.fixture(autouse=True)
+    def disable_get_log_level_value(monkeypatch):
+        """Enforce to not set logging to logging.NOTSET,
+        that crashes current tests
+        """
+
+        import logging
+
+        monkeypatch.setattr(
+            'napari._qt.widgets.qt_logger.get_log_level_value',
+            lambda x: logging.WARNING,
+        )
 
 
 @pytest.fixture
