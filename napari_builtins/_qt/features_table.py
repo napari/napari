@@ -4,6 +4,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import numpy as np
 import pandas as pd
 from qtpy.QtCore import (
     QAbstractTableModel,
@@ -226,7 +227,9 @@ class BoolFriendlyProxyModel(QSortFilterProxyModel):
         right_data = self.sourceModel().data(right, Qt.ItemDataRole.EditRole)
 
         # ensure booleans compare as expected
-        if isinstance(left_data, bool) and isinstance(right_data, bool):
+        if isinstance(left_data, bool | np.bool) and isinstance(
+            right_data, bool | np.bool
+        ):
             return left_data < right_data
 
         return super().lessThan(left, right)
