@@ -21,6 +21,7 @@ except ImportError:
     _accelerated_triangulate_numba = None
 
 USE_NUMBA_FOR_EDGE_TRIANGULATION = _accelerated_triangulate_numba is not None
+RUN_WARMUP = _accelerated_triangulate_numba is not None
 CACHE_WARMUP = False
 
 normalize_vertices_and_edges = (
@@ -93,9 +94,16 @@ def _set_numba(value: bool) -> None:
     USE_NUMBA_FOR_EDGE_TRIANGULATION = val
 
 
+def _set_warmup(value: bool) -> None:
+    global RUN_WARMUP
+    RUN_WARMUP = value
+
+
 def warmup_numba_cache() -> None:
     if _accelerated_triangulate_numba is None:
         # no numba, nothing to warm up
+        return
+    if not RUN_WARMUP:
         return
     global CACHE_WARMUP
     if CACHE_WARMUP:

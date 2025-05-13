@@ -74,10 +74,12 @@ def set_backend(backend: TriangulationBackend) -> TriangulationBackend:
     """
     from napari.layers.shapes._accelerated_triangulate_dispatch import (
         _set_numba,
+        _set_warmup,
     )
     from napari.layers.shapes._shapes_models import shape
 
     _set_numba(backend != TriangulationBackend.pure_python)
+    _set_warmup(backend == TriangulationBackend.numba)
 
     prev = shape.TRIANGULATION_BACKEND
 
