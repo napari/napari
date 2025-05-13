@@ -96,6 +96,55 @@ def _napari_from_conda() -> bool:
     return any(napari_pattern.match(file.name) for file in napari_conda_files)
 
 
+def get_launch_command() -> str:
+    """Get the information how the program was launched.
+
+    Returns
+    -------
+    str
+        The command used to launch the program.
+    """
+
+    return ' '.join(sys.argv)
+
+
+def get_plugin_list() -> str:
+    """Get a list of installed plugins.
+
+    Returns
+    -------
+    str
+        A string containing the names and versions of installed plugins.
+    """
+    try:
+        from npe2 import PluginManager
+
+        pm = PluginManager.instance()
+        pm.discover(include_npe1=True)
+        pm.index_npe1_adapters()  # type: ignore[no-untyped-call]
+        fields = [
+            'name',
+            'package_metadata.version',
+            'contributions',
+        ]
+        pm_dict = pm.dict(include=set(fields))
+
+        res = []
+
+        for plugin in pm_dict['plugins'].values():
+            count_contributions = sum(
+                len(x)
+                for x in plugin['contributions'].values()
+                if x is not None
+            )
+            res.append(
+                f'  - {plugin["name"]}: {plugin["package_metadata"]["version"]} ({count_contributions} contributions)'
+            )
+        return '<br>'.join(res) + '<br>'
+    except ImportError as e:  # pragma: no cover
+        return f'Failed to load plugin information: <br> {e}'
+
+
 def sys_info(as_html: bool = False) -> str:
     """Gathers relevant module versions for troubleshooting purposes.
 
@@ -236,7 +285,13 @@ def sys_info(as_html: bool = False) -> str:
     text += f'  - Triangulation backend: {_triangulation_backend}<br>'
 
     text += '<br><b>Settings path:</b><br>'
-    text += f'  - {_config_path}'
+    text += f'  - {_config_path}<br>'
+
+    text += '<br><b>Launch command:</b><br>'
+    text += f'  - {get_launch_command()}<br>'
+
+    text += '<br><b>Plugins:</b><br>'
+    text += get_plugin_list()
 
     if not as_html:
         text = (
