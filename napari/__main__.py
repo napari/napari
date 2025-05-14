@@ -23,14 +23,11 @@ from napari.utils.translations import trans
 class InfoAction(argparse.Action):
     def __call__(self, *args, **kwargs):
         # prevent unrelated INFO logs when doing "napari --info"
-        from npe2 import cli
 
         from napari.utils import sys_info
 
         logging.basicConfig(level=logging.WARNING)
         print(sys_info())  # noqa: T201
-        print('Plugins:')  # noqa: T201
-        cli.list(fields='', sort='0', format='compact')
         sys.exit()
 
 

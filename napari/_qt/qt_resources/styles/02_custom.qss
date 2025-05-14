@@ -20,6 +20,10 @@ QtLayerButtons, QtViewerButtons, QtLayerList {
   min-width: 242px;
 }
 
+QLabel#logo_silhouette {
+  image: url("theme_{{ id }}:/logo_silhouette.svg");
+}
+
 /* ------------- QMainWindow --------- */
 /* QDockWidgets will use the MainWindow styles
 as long as they are docked (though they use the
@@ -134,136 +138,6 @@ QSplitter {
   spacing: 0px;
   padding: 0px;
   margin: 0px;
-}
-
-QtDivider {
-  spacing: 0px;
-  padding: 0px;
-  border: 0px;
-  margin: 0px 3px 0px 3px;
-  min-width: 214px;
-  min-height: 1px;
-  max-height: 1px;
-}
-
-QtDivider[selected=true] {
-  background-color: {{ text }};
-}
-
-QtDivider[selected=false] {
-  background-color: {{ background }};
-}
-
-
-/* --------------- QtLayerWidget -------------------- */
-
-QtLayerWidget {
-  padding: 0px;
-  background-color: {{ foreground }};
-  border-radius: 2px;
-  min-height: 32px;
-  max-height: 32px;
-  min-width: 228px;
-}
-
-QtLayerWidget[selected="true"] {
-  background-color: {{ current }};
-}
-
-
-QtLayerWidget > QLabel {
-  background-color: transparent;
-  padding: 0px;
-  qproperty-alignment: AlignCenter;
-}
-
-
-/* The name of the layer*/
-QtLayerWidget > QLineEdit {
-  background-color: transparent;
-  border: none;
-  border-radius: 2px;
-  padding: 2px;
-  font-size: {{ increase(font_size, 2) }};
-  qproperty-alignment: right;
-}
-
-QtLayerWidget > QLineEdit:disabled {
-  background-color: transparent;
-  border-color: transparent;
-  border-radius: 3px;
-}
-
-QtLayerWidget > QLineEdit:focus {
-  background-color: {{ darken(current, 20) }};
-  selection-background-color: {{ lighten(current, 20) }};
-}
-
-QtLayerWidget QCheckBox::indicator {
-  background-color: transparent;
-}
-
-QtLayerWidget QCheckBox::indicator:hover {
-  background-color:  transparent;
-}
-
-QtLayerWidget > QCheckBox#visibility {
-  spacing: 0px;
-  margin: 0px 0px 0px 4px;
-}
-
-QtLayerWidget > QCheckBox#visibility::indicator{
-  width: 18px;
-  height: 18px;
-}
-
-QtLayerWidget > QCheckBox#visibility::indicator:unchecked {
-  image: url("theme_{{ id }}:/visibility_off_50.svg");
-}
-
-QtLayerWidget > QCheckBox#visibility::indicator:checked {
-  image: url("theme_{{ id }}:/visibility.svg");
-}
-
-
-QLabel[layer_type_label="true"] {
-  max-width: 20px;
-  min-width: 20px;
-  min-height: 20px;
-  max-height: 20px;
-  margin-right: 4px;
-}
-
-QLabel#Shapes {
-  image: url("theme_{{ id }}:/new_shapes.svg");
-}
-
-QLabel#Points {
-  image: url("theme_{{ id }}:/new_points.svg");
-}
-
-QLabel#Labels {
-  image: url("theme_{{ id }}:/new_labels.svg");
-}
-
-QLabel#Image {
-  image: url("theme_{{ id }}:/new_image.svg");
-}
-
-QLabel#Multiscale {
-  image: url("theme_{{ id }}:/new_image.svg");
-}
-
-QLabel#Surface {
-  image: url("theme_{{ id }}:/new_surface.svg");
-}
-
-QLabel#Vectors {
-  image: url("theme_{{ id }}:/new_vectors.svg");
-}
-
-QLabel#logo_silhouette {
-  image: url("theme_{{ id }}:/logo_silhouette.svg");
 }
 
 
@@ -441,11 +315,6 @@ QtDimSliderWidget > QLineEdit {
 
 
 /* ------------ Special Dialogs ------------ */
-
-QtAboutKeybindings {
-  min-width: 600px;
-  min-height: 605px;
-}
 
 QtAbout > QTextEdit{
   margin: 0px;
