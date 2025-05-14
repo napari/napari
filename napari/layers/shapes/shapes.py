@@ -2650,15 +2650,16 @@ class Shapes(Layer):
                         epsilon=get_settings().experimental.rdp_epsilon,
                     )
                     if len(vertices) <= 3 and prev_vertices > 3:
-                        eps = get_settings().experimental.rdp_epsilon
-                        removed_vertices = prev_vertices - len(vertices)
                         show_warning(
                             trans._(
-                                'Polygon must have at least 3 vertices. With current rep epsilon value {eps},'
-                                ' the {removed_vertices} vertices were removed.',
-                                'Cannot create polygon.',
-                                eps=eps,
-                                removed_vertices=removed_vertices,
+                                'Polygons must have three or more vertices. '
+                                'Lasso polygons are simplified using an '
+                                'algorithm called RDP, which may cause '
+                                'polygons smaller than the RDP epsilon '
+                                'parameter to disappear entirely. If you are '
+                                'having trouble drawing small polygons, try '
+                                'reducing the value of napari > Settings > '
+                                'Experimental > RDP epsilon.'
                             ),
                         )
                 if len(vertices) <= 3:
