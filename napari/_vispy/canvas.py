@@ -834,12 +834,8 @@ class VispyCanvas:
                 self.viewer.layers.index(napari_layer),
                 len(self.viewer.layers),
             )
-            # TODO: hook up theme to border color
+            # TODO: hook up theme to border color?
             view = self.grid[row, col]
-            # TODO: a bit overkill for now, we should only need napari to communicate with
-            # all the cameras OR only vispy to link. However, because we rely on vispy
-            # cameras to handle events first and then send to napari, this isn't quite
-            # as straightforward as it seems
             camera = VispyCamera(view, self.viewer.camera, self.viewer.dims)
             self._scene_canvas.events.draw.connect(camera.on_draw)
             self.grid_views.append(view)
