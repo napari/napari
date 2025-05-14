@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pandas as pd
@@ -10,6 +10,7 @@ from qtpy.QtCore import (
     QAbstractTableModel,
     QItemSelection,
     QItemSelectionModel,
+    QModelIndex,
     QSortFilterProxyModel,
     Qt,
     QTimer,
@@ -41,7 +42,7 @@ if TYPE_CHECKING:
 class PandasModel(QAbstractTableModel):
     """Qt Model for a pandas DataFrame."""
 
-    def __init__(self, df=None, parent=None):
+    def __init__(self, df: pd.DataFrame | None = None, parent=None):
         super().__init__(parent)
         self.df = df if df is not None else pd.DataFrame()
         self.editable = False
@@ -53,7 +54,7 @@ class PandasModel(QAbstractTableModel):
     def columnCount(self, parent=None):
         return self.df.shape[1] + 1  # include index
 
-    def data(self, index, role=Qt.ItemDataRole.DisplayRole):
+    def data(self, index: QModelIndex, role=Qt.ItemDataRole.DisplayRole):
         if not index.isValid():
             return None
 
@@ -90,8 +91,11 @@ class PandasModel(QAbstractTableModel):
         return None
 
     def headerData(
-        self, section, orientation, role=Qt.ItemDataRole.DisplayRole
-    ):
+        self,
+        section: int,
+        orientation: Qt.Orientation,
+        role=Qt.ItemDataRole.DisplayRole,
+    ) -> Any:
         if role != Qt.ItemDataRole.DisplayRole:
             return None
         if orientation == Qt.Orientation.Horizontal:
@@ -101,20 +105,17 @@ class PandasModel(QAbstractTableModel):
             return self.df.columns[section - 1]
         return self.df.index[section]
 
-    def flags(self, index):
+    def flags(self, index: QModelIndex) -> Qt.ItemFlags:
         if not index.isValid():
             return Qt.ItemFlag.ItemIsEnabled
 
         col = index.column()
+        # index is read-only
         if col == 0:
-            return (
-                Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
-            )  # index is read-only
+            return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
 
         dtype = self.df.dtypes.iat[col - 1]
-        flags = Qt.ItemFlags(
-            Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled
-        )
+        flags = Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled
 
         if self.editable:
             # make boolean columns checkable
@@ -125,7 +126,9 @@ class PandasModel(QAbstractTableModel):
 
         return flags
 
-    def setData(self, index, value, role=Qt.ItemDataRole.EditRole):
+    def setData(
+        self, index: QModelIndex, value: Any, role=Qt.ItemDataRole.EditRole
+    ) -> bool:
         if not index.isValid():
             return False
 
@@ -178,7 +181,7 @@ class PandasModel(QAbstractTableModel):
 class DelegateCategorical(QStyledItemDelegate):
     """Delegate that uses comboboxes as editors for categorical data."""
 
-    def createEditor(self, parent, option, index):
+    def createEditor(self, parent, option, index: QModelIndex) -> QWidget:
         proxy_model = index.model()
         source_model = proxy_model.sourceModel()
         source_index = proxy_model.mapToSource(index)
@@ -199,7 +202,7 @@ class DelegateCategorical(QStyledItemDelegate):
 
         return super().createEditor(parent, option, index)
 
-    def setEditorData(self, editor, index):
+    def setEditorData(self, editor: QWidget, index: QModelIndex):
         if isinstance(editor, QComboBox):
             value = index.model().data(index, Qt.ItemDataRole.EditRole)
             i = editor.findText(value)
@@ -208,7 +211,9 @@ class DelegateCategorical(QStyledItemDelegate):
         else:
             super().setEditorData(editor, index)
 
-    def setModelData(self, editor, model, index):
+    def setModelData(
+        self, editor: QWidget, model: QSortFilterProxyModel, index: QModelIndex
+    ):
         if isinstance(editor, QComboBox):
             source_index = model.mapToSource(index)
             source_model = model.sourceModel()
@@ -222,7 +227,7 @@ class DelegateCategorical(QStyledItemDelegate):
 class BoolFriendlyProxyModel(QSortFilterProxyModel):
     """Sort proxy model that handles booleans correctly."""
 
-    def lessThan(self, left, right):
+    def lessThan(self, left: Any, right: Any) -> bool:
         left_data = self.sourceModel().data(left, Qt.ItemDataRole.EditRole)
         right_data = self.sourceModel().data(right, Qt.ItemDataRole.EditRole)
 
