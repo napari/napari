@@ -2172,7 +2172,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 world=world,
             )
             coords_str, value_str = generate_layer_status_strings(
-                # TODO: account for viewbox shift
                 position[-self.ndim :],
                 value,
             )

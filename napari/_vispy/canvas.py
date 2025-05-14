@@ -184,10 +184,10 @@ class VispyCanvas:
         self.viewer.layers.selection.events.connect(
             self._highlight_selected_grid
         )
-        self.viewer.grid.events.connect(self._on_grid_change)
+        self.viewer.grid.events.connect(self._update_scenegraph)
         self.destroyed.connect(self._disconnect_theme)
 
-        self._on_grid_change()
+        self._update_scenegraph()
 
     @property
     def events(self):
@@ -328,9 +328,11 @@ class VispyCanvas:
     def _on_interactive(self) -> None:
         """Link interactive attributes of view and viewer."""
         # Is this should be changed or renamed?
-        self.grid.interactive = (
+        interactive = (
             self.viewer.camera.mouse_zoom or self.viewer.camera.mouse_pan
         )
+        self.view.interactive = interactive
+        self.grid.interactive = interactive
 
     def _map_canvas2world(
         self,
@@ -606,15 +608,14 @@ class VispyCanvas:
         """
         self.layer_to_visual[napari_layer] = vispy_layer
         self._layer_overlay_to_visual[napari_layer] = {}
-        self._on_grid_change()
 
         napari_layer.events.visible.connect(self._reorder_layers)
         self.viewer.camera.events.angles.connect(vispy_layer._on_camera_move)
 
+        self._update_scenegraph()
         # we need to trigger _on_matrix_change once after adding the overlays so that
         # all children nodes are assigned the correct transforms
         vispy_layer._on_matrix_change()
-        self._reorder_layers()
 
     def _remove_layer(self, event: Event) -> None:
         """Upon receiving event closes the Vispy visual, deletes it and reorders the still existing layers.
@@ -648,6 +649,7 @@ class VispyCanvas:
             vispy_layer.order = i
 
             # the bottommost visible layer needs special treatment for blending
+            # TODO: this actually changes in grid mode!
             if layer.visible and not first_visible_found:
                 vispy_layer.first_visible = True
                 first_visible_found = True
@@ -657,8 +659,7 @@ class VispyCanvas:
 
         self._scene_canvas._draw_order.clear()
         self._scene_canvas.update()
-        if self.viewer.grid.enabled:
-            self._on_grid_change()
+        self._update_scenegraph()
 
     def _add_overlay_to_visual(self, overlay: Overlay) -> None:
         """Create vispy overlay and add to dictionary of overlay visuals"""
@@ -791,7 +792,7 @@ class VispyCanvas:
         """Enable playing of animation. False if awaiting a draw event"""
         self.viewer.dims._play_ready = True
 
-    def _on_grid_change(self, event=None):
+    def _update_scenegraph(self, event=None):
         for camera in self.grid_cameras:
             camera._2D_camera.parent = None
             camera._3D_camera.parent = None
