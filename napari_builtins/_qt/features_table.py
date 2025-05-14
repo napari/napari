@@ -4,7 +4,6 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-import numpy as np
 import pandas as pd
 from qtpy.QtCore import (
     QAbstractTableModel,
@@ -231,10 +230,9 @@ class BoolFriendlyProxyModel(QSortFilterProxyModel):
         left_data = self.sourceModel().data(left, Qt.ItemDataRole.EditRole)
         right_data = self.sourceModel().data(right, Qt.ItemDataRole.EditRole)
 
-        # ensure booleans compare as expected
-        if isinstance(left_data, bool | np.bool) and isinstance(
-            right_data, bool | np.bool
-        ):
+        # ensure booleans compare as expected. Not sure what happens internally in qt
+        # that doesn't work, but doing it ourselves in python works.
+        if all(pd.api.types.is_bool(d) for d in (left_data, right_data)):
             return left_data < right_data
 
         return super().lessThan(left, right)
