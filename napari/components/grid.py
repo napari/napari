@@ -1,3 +1,5 @@
+from collections.abc import Iterator
+
 import numpy as np
 
 from napari.settings._application import (
@@ -133,6 +135,8 @@ class GridCanvas(EventedModel):
             i for i in range(nlayers) if self.position(i, nlayers) == position
         )
 
-    def iter_quadrants(self, nlayers):
-        for position in np.ndindex(self.actual_shape(nlayers)):
-            yield position, self.contents_at(position, nlayers)
+    def iter_quadrants(
+        self, nlayers: int
+    ) -> Iterator[tuple[tuple[int, int], tuple[int, ...]]]:
+        for row, col in np.ndindex(self.actual_shape(nlayers)):
+            yield (row, col), self.contents_at((row, col), nlayers)
