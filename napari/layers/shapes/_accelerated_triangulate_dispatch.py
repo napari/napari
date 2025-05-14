@@ -23,6 +23,9 @@ except ImportError:
 USE_NUMBA_FOR_EDGE_TRIANGULATION = _accelerated_triangulate_numba is not None
 RUN_WARMUP = _accelerated_triangulate_numba is not None
 CACHE_WARMUP = False
+# Some numba functions are used even if for non-numba triangulation backends,
+# *if* numba is available. This tracks whether those functions have been warmed
+# up already.
 UNIVERSAL_CACHE_WARMUP = False
 
 normalize_vertices_and_edges = (
