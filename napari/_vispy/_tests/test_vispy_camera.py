@@ -7,6 +7,7 @@ import pytest
 def test_camera(make_napari_viewer):
     """Test vispy camera creation in 2D."""
     viewer = make_napari_viewer()
+    vispy_camera = viewer.window._qt_viewer.canvas.camera
 
     np.random.seed(0)
     data = np.random.random((11, 11, 11))
@@ -16,7 +17,6 @@ def test_camera(make_napari_viewer):
     # updated
     assert viewer.dims.ndisplay == 2
 
-    vispy_camera = viewer.window._qt_viewer.canvas.camera
     np.testing.assert_almost_equal(viewer.camera.angles, (0, 0, 90))
     np.testing.assert_almost_equal(viewer.camera.center, (0, 5.0, 5.0))
     np.testing.assert_almost_equal(viewer.camera.angles, vispy_camera.angles)
@@ -27,6 +27,7 @@ def test_camera(make_napari_viewer):
 def test_vispy_camera_update_from_model(make_napari_viewer):
     """Test vispy camera update from model in 2D."""
     viewer = make_napari_viewer()
+    vispy_camera = viewer.window._qt_viewer.canvas.camera
 
     np.random.seed(0)
     data = np.random.random((11, 11, 11))
@@ -40,7 +41,6 @@ def test_vispy_camera_update_from_model(make_napari_viewer):
     viewer.camera.center = (11, 12)
     viewer.camera.zoom = 4
 
-    vispy_camera = viewer.window._qt_viewer.canvas.camera
     np.testing.assert_almost_equal(viewer.camera.angles, (0, 0, 90))
     np.testing.assert_almost_equal(viewer.camera.center, (0, 11, 12))
     np.testing.assert_almost_equal(viewer.camera.zoom, 4)
@@ -52,6 +52,7 @@ def test_vispy_camera_update_from_model(make_napari_viewer):
 def test_camera_model_update_from_vispy(make_napari_viewer):
     """Test camera model updates from vispy in 2D."""
     viewer = make_napari_viewer()
+    vispy_camera = viewer.window._qt_viewer.canvas.camera
 
     np.random.seed(0)
     data = np.random.random((11, 11, 11))
@@ -61,7 +62,6 @@ def test_camera_model_update_from_vispy(make_napari_viewer):
     # updated
     assert viewer.dims.ndisplay == 2
 
-    vispy_camera = viewer.window._qt_viewer.canvas.camera
     # Update vispy camera center and zoom
     vispy_camera.center = (11, 12)
     vispy_camera.zoom = 4
@@ -78,6 +78,7 @@ def test_camera_model_update_from_vispy(make_napari_viewer):
 def test_3D_camera(make_napari_viewer):
     """Test vispy camera creation in 3D."""
     viewer = make_napari_viewer()
+    vispy_camera = viewer.window._qt_viewer.canvas.camera
 
     np.random.seed(0)
     data = np.random.random((11, 11, 11))
@@ -85,7 +86,6 @@ def test_3D_camera(make_napari_viewer):
 
     viewer.dims.ndisplay = 3
 
-    vispy_camera = viewer.window._qt_viewer.canvas.camera
     # Test camera values have updated
     np.testing.assert_almost_equal(viewer.camera.angles, (0, 0, 90))
     np.testing.assert_almost_equal(viewer.camera.center, (5.0, 5.0, 5.0))
@@ -97,6 +97,7 @@ def test_3D_camera(make_napari_viewer):
 def test_vispy_camera_update_from_model_3D(make_napari_viewer):
     """Test vispy camera update from model in 3D."""
     viewer = make_napari_viewer()
+    vispy_camera = viewer.window._qt_viewer.canvas.camera
 
     np.random.seed(0)
     data = np.random.random((11, 11, 11))
@@ -109,7 +110,6 @@ def test_vispy_camera_update_from_model_3D(make_napari_viewer):
     viewer.camera.center = (11, 12, 15)
     viewer.camera.zoom = 4
 
-    vispy_camera = viewer.window._qt_viewer.canvas.camera
     np.testing.assert_almost_equal(viewer.camera.angles, (24, 12, -19))
     np.testing.assert_almost_equal(viewer.camera.center, (11, 12, 15))
     np.testing.assert_almost_equal(viewer.camera.zoom, 4)
@@ -121,6 +121,7 @@ def test_vispy_camera_update_from_model_3D(make_napari_viewer):
 def test_camera_model_update_from_vispy_3D(make_napari_viewer):
     """Test camera model updates from vispy in 3D."""
     viewer = make_napari_viewer()
+    vispy_camera = viewer.window._qt_viewer.canvas.camera
 
     np.random.seed(0)
     data = np.random.random((11, 11, 11))
@@ -128,7 +129,6 @@ def test_camera_model_update_from_vispy_3D(make_napari_viewer):
 
     viewer.dims.ndisplay = 3
 
-    vispy_camera = viewer.window._qt_viewer.canvas.camera
     # Update vispy camera angles, center, and zoom
     viewer.camera.angles = (24, 12, -19)
     vispy_camera.center = (11, 12, 15)
@@ -146,6 +146,7 @@ def test_camera_model_update_from_vispy_3D(make_napari_viewer):
 def test_switching_ndisplay_maintains_3D_angles(make_napari_viewer):
     """Test that switching dims.ndisplay maintains 3D angles."""
     viewer = make_napari_viewer()
+    vispy_camera = viewer.window._qt_viewer.canvas.camera
 
     np.random.seed(0)
     data = np.random.random((11, 11, 11))
@@ -154,7 +155,6 @@ def test_switching_ndisplay_maintains_3D_angles(make_napari_viewer):
     angles_3D = (24, 12, -19)
     angles_2D = (0, 0, 90)
 
-    vispy_camera = viewer.window._qt_viewer.canvas.camera
     viewer.dims.ndisplay = 3
     viewer.camera.angles = angles_3D
     np.testing.assert_almost_equal(viewer.camera.angles, vispy_camera.angles)

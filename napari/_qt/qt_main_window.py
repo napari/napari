@@ -1700,7 +1700,7 @@ class Window:
         # Part 2: compute canvas size and view based on parameters
         if fit_to_data_extent:
             # Use the same scene parameter calculations as in viewer_model.fit_to_view
-            extent, _, total_size = (
+            extent, _, _, total_size = (
                 self._qt_viewer.viewer._get_scene_parameters()
             )
             extent_scale = min(
@@ -1739,9 +1739,6 @@ class Window:
             finally:
                 # make sure we always go back to the right canvas size
                 canvas.size = prev_size
-
-                # regrab camera, which might be a new object by now
-                camera = self._qt_viewer.viewer.camera
                 camera.center = old_center
                 camera.zoom = old_zoom
         else:
