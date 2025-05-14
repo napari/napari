@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import numpy as np
-from vispy.color import Colormap as VispyColormap
 from vispy.scene import Node
 
 from napari._vispy.layers.scalar_field import (
@@ -14,7 +13,10 @@ from napari._vispy.visuals.image import Image as ImageNode
 from napari._vispy.visuals.volume import Volume as VolumeNode
 from napari.layers.base._base_constants import Blending
 from napari.layers.image.image import Image
-from napari.utils.colormaps.colormap_utils import _coerce_contrast_limits
+from napari.utils.colormaps.colormap_utils import (
+    _coerce_contrast_limits,
+    _napari_cmap_to_vispy,
+)
 from napari.utils.translations import trans
 
 
@@ -123,7 +125,7 @@ class VispyImageLayer(VispyScalarFieldBaseLayer):
         self._on_iso_threshold_change()
 
     def _on_colormap_change(self, event=None) -> None:
-        self.node.cmap = VispyColormap(*self.layer.colormap)
+        self.node.cmap = _napari_cmap_to_vispy(self.layer.colormap)
 
     def _update_mip_minip_cutoff(self) -> None:
         # discard fragments beyond contrast limits, but only with translucent blending

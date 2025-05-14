@@ -33,7 +33,7 @@ certifi==2025.4.26
     #   requests
 charset-normalizer==3.4.2
     # via requests
-click==8.1.8
+click==8.2.0
     # via
     #   dask
     #   distributed
@@ -86,7 +86,7 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.57.0
+fonttools==4.58.0
     # via matplotlib
 freetype-py==2.5.1
     # via vispy
@@ -105,7 +105,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.131.9
+hypothesis==6.131.15
     # via napari (pyproject.toml)
 idna==3.10
     # via requests
@@ -187,7 +187,7 @@ markdown-it-py==3.0.0
     # via rich
 markupsafe==3.0.2
     # via jinja2
-matplotlib==3.10.1
+matplotlib==3.10.3
     # via
     #   napari (pyproject.toml)
     #   glasbey
@@ -342,7 +342,7 @@ pint==0.24.4
     # via napari (pyproject.toml)
 pip==25.1.1
     # via napari-plugin-manager
-platformdirs==4.3.7
+platformdirs==4.3.8
     # via
     #   jupyter-core
     #   pint
@@ -365,7 +365,7 @@ psutil==7.0.0
     #   napari (pyproject.toml)
     #   distributed
     #   ipykernel
-psygnal==0.12.0
+psygnal==0.13.0
     # via
     #   napari (pyproject.toml)
     #   app-model
@@ -515,13 +515,13 @@ scikit-learn==1.6.1
     # via
     #   glasbey
     #   nilearn
-scipy==1.15.2
+scipy==1.15.3
     # via
     #   napari (pyproject.toml)
     #   nilearn
     #   scikit-image
     #   scikit-learn
-setuptools==80.3.1
+setuptools==80.4.0
     # via triton
 shellingham==1.5.4
     # via typer
@@ -532,7 +532,7 @@ shiboken6==6.4.2
     #   pyside6-essentials
 six==1.17.0
     # via python-dateutil
-snowballstemmer==2.2.0
+snowballstemmer==3.0.1
     # via sphinx
 sortedcontainers==2.4.0
     # via
@@ -571,7 +571,7 @@ tensorstore==0.1.74
     #   napari (pyproject.toml)
 threadpoolctl==3.6.0
     # via scikit-learn
-tifffile==2025.3.30
+tifffile==2025.5.10
     # via
     #   napari (pyproject.toml)
     #   scikit-image
@@ -636,9 +636,9 @@ urllib3==2.4.0
     # via
     #   distributed
     #   requests
-virtualenv==20.30.0
+virtualenv==20.31.2
     # via napari (pyproject.toml)
-vispy==0.14.3
+vispy==0.15.0
     # via
     #   napari (pyproject.toml)
     #   napari-svg
