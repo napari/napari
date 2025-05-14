@@ -3,12 +3,14 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy as np
-from vispy.color import Colormap as VispyColormap
 
 from napari._vispy.overlays.base import LayerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.colormap import Colormap
 from napari.settings import get_settings
-from napari.utils.colormaps.colormap_utils import _coerce_contrast_limits
+from napari.utils.colormaps.colormap_utils import (
+    _coerce_contrast_limits,
+    _napari_cmap_to_vispy,
+)
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.theme import get_theme
 
@@ -62,7 +64,7 @@ class VispyColormapOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         self._on_ticks_change()
 
     def _on_colormap_change(self) -> None:
-        self.node.set_cmap(VispyColormap(*self.layer.colormap))
+        self.node.set_cmap(_napari_cmap_to_vispy(self.layer.colormap))
 
     def _on_gamma_change(self) -> None:
         self.node.set_gamma(self.layer.gamma)
