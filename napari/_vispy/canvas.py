@@ -612,6 +612,7 @@ class VispyCanvas:
         napari_layer.events.visible.connect(self._reorder_layers)
         self.viewer.camera.events.angles.connect(vispy_layer._on_camera_move)
 
+        self._reorder_layers()
         self._update_scenegraph()
         # we need to trigger _on_matrix_change once after adding the overlays so that
         # all children nodes are assigned the correct transforms
@@ -639,17 +640,29 @@ class VispyCanvas:
         self._remove_layer_overlays_to_visual(layer)
         del self._layer_overlay_to_visual[layer]
         self._reorder_layers()
+        self._update_scenegraph()
 
     def _reorder_layers(self) -> None:
         """When the list is reordered, propagate changes to draw order."""
+        if self.viewer.grid.enabled:
+            for _, layer_indices in self.viewer.grid.iter_quadrants(
+                len(self.viewer.layers)
+            ):
+                if not layer_indices:
+                    continue
+                layers = [self.viewer.layers[idx] for idx in layer_indices]
+                self._reorder_layers_in_the_same_view(layers)
+        else:
+            self._reorder_layers_in_the_same_view(self.viewer.layers)
+
+    def _reorder_layers_in_the_same_view(self, layers):
         first_visible_found = False
 
-        for i, layer in enumerate(self.viewer.layers):
+        for i, layer in enumerate(layers):
             vispy_layer = self.layer_to_visual[layer]
             vispy_layer.order = i
 
             # the bottommost visible layer needs special treatment for blending
-            # TODO: this actually changes in grid mode!
             if layer.visible and not first_visible_found:
                 vispy_layer.first_visible = True
                 first_visible_found = True
@@ -659,7 +672,6 @@ class VispyCanvas:
 
         self._scene_canvas._draw_order.clear()
         self._scene_canvas.update()
-        self._update_scenegraph()
 
     def _add_overlay_to_visual(self, overlay: Overlay) -> None:
         """Create vispy overlay and add to dictionary of overlay visuals"""
@@ -842,20 +854,17 @@ class VispyCanvas:
         if not self.viewer.grid.enabled:
             return
 
-        highlights = np.full(self.grid.grid_size, -1)
-
-        for napari_layer in self.viewer.layers:
-            row, col = self.viewer.grid.position(
-                self.viewer.layers.index(napari_layer),
-                len(self.viewer.layers),
-            )
-            if napari_layer in self.viewer.layers.selection:
-                highlights[row, col] = 1
+        for (row, col), layer_indices in self.viewer.grid.iter_quadrants(
+            len(self.viewer.layers)
+        ):
+            if not layer_indices:
+                color = 'black'
+            elif any(
+                self.viewer.layers[idx] in self.viewer.layers.selection
+                for idx in layer_indices
+            ):
+                color = 'yellow'
             else:
-                highlights[row, col] = 0
+                color = 'gray'
 
-        for row, col in np.ndindex(self.grid.grid_size):
-            hl = highlights[row, col]
-            self.grid[row, col].border_color = (
-                'yellow' if hl == 1 else 'gray' if hl == 0 else 'black'
-            )
+            self.grid[row, col].border_color = color

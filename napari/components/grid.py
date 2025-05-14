@@ -89,7 +89,7 @@ class GridCanvas(EventedModel):
         n_row = max(1, n_row)
         n_column = max(1, n_column)
 
-        return (n_row, n_column)
+        return (int(n_row), int(n_column))
 
     def position(self, index: int, nlayers: int) -> tuple[int, int]:
         """Return the position of a given linear index in grid.
@@ -122,3 +122,17 @@ class GridCanvas(EventedModel):
         i_column = adj_i % n_column
         # convert to python int from np int
         return (int(i_row), int(i_column))
+
+    def contents_at(
+        self, position: tuple[int, int], nlayers: int
+    ) -> tuple[int, ...]:
+        if not self.enabled:
+            return ()
+
+        return tuple(
+            i for i in range(nlayers) if self.position(i, nlayers) == position
+        )
+
+    def iter_quadrants(self, nlayers):
+        for position in np.ndindex(self.actual_shape(nlayers)):
+            yield position, self.contents_at(position, nlayers)
