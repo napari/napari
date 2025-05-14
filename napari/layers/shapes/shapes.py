@@ -2650,6 +2650,7 @@ class Shapes(Layer):
                         epsilon=get_settings().experimental.rdp_epsilon,
                     )
                     if len(vertices) <= 3 and prev_vertices > 3:
+                        # https://github.com/napari/napari/issues/7903
                         show_warning(
                             trans._(
                                 'Polygons must have three or more vertices. '
