@@ -78,6 +78,7 @@ from napari.utils.colormaps.standardize_color import (
 from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
 from napari.utils.misc import ensure_iterable
+from napari.utils.notifications import show_warning
 from napari.utils.translations import trans
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
@@ -2643,10 +2644,23 @@ class Shapes(Layer):
             if self._mode in {Mode.ADD_POLYGON, Mode.ADD_POLYGON_LASSO}:
                 vertices = self._data_view.shapes[index].data
                 if self._mode == Mode.ADD_POLYGON_LASSO:
+                    prev_vertices = len(vertices)
                     vertices = rdp(
                         vertices,
                         epsilon=get_settings().experimental.rdp_epsilon,
                     )
+                    if len(vertices) <= 3 and prev_vertices > 3:
+                        eps = get_settings().experimental.rdp_epsilon
+                        removed_vertices = prev_vertices - len(vertices)
+                        show_warning(
+                            trans._(
+                                'Polygon must have at least 3 vertices. With current rep epsilon value {eps},'
+                                ' the {removed_vertices} vertices were removed.',
+                                'Cannot create polygon.',
+                                eps=eps,
+                                removed_vertices=removed_vertices,
+                            ),
+                        )
                 if len(vertices) <= 3:
                     self._data_view.remove(index)
                     # Clear selected data to prevent issues.
