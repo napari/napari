@@ -136,9 +136,6 @@ contributions:
   menus:
     napari/layers/measure:
       - command: napari.toggle_shape_measures
-    napari/layers/context:
-      - command: napari.toggle_shape_measures
-        when: active_layer_type == 'shapes'
 
   readers:
     - command: napari.get_reader
